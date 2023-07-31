@@ -7,6 +7,8 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
+#include <map>
 
 /*
  * Callbacks
@@ -16,17 +18,33 @@
  *
  */
 
-enum token {
-    INVALID,
-    INT,
-    FLOAT,
-    STRING,
-    ASSIGN,
-    CALLBACK,
-    PREPROC,
-    COMMENT // {} /* */
-};
+#define ENUM_LIST(XX) \
+	XX(INVALID, "invalid") \
+	XX(INT, "int") \
+	XX(FLOAT, "float") \
+	XX(COMMENT, "comment") \
+    XX(STRING, "string") \
+	XX(CALLBACK, "callback") \
+	XX(END_CALLBACK, "end callback") \
+	XX(KEYWORDS, "keywords:") \
+	XX(ASSIGN, ":=") \
+	XX(EQUAL, "=") \
+	XX(SUB, "-") \
+	XX(ADD, "+") \
+	XX(s, "invalsid")
 
+#define ENUM(name, str) name,
+enum token {
+	ENUM_LIST(ENUM)
+};
+#undef ENUM
+extern const char *tokenStrings[];
+
+std::ostream& operator<<(std::ostream& os, const token& tok);
+
+/*
+ * LEXER CLASS
+ */
 class Lexer {
 public:
     struct Token {
@@ -40,22 +58,35 @@ public:
 private:
     std::string input;
     size_t pos;
-    char prev_char;
     char current_char;
     size_t line;
     std::string buffer;
     std::vector<Token> tokens;
+
+	static bool is_space(const char& ch);
+    void flush_buffer();
+    void next_char(int chars = 1);
+	void skip_whitespace();
+    std::string look_ahead(int chars);
+
+	bool is_comment();
+    void get_comment();
+	bool is_callback();
+    void get_callback();
+	void get_invalid();
+	bool is_string() const;
+	void get_string();
+	bool is_declaration();
+	void get_declaration();
+	bool is_num() const;
+	void get_num();
+
 public:
 
     explicit Lexer(const std::string& input);
     ~Lexer() = default;
 
-    void flush_buffer();
-    void next_char(int chars = 1);
-    std::string look_ahead(int chars);
-    Token next_token();
-    Token get_comment();
-    Token get_callback();
+    void next_token();
 };
 
 
