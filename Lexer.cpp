@@ -3,13 +3,16 @@
 //
 
 #include "Lexer.h"
+#include <algorithm>
+#include <vector>
 
-Lexer::Lexer(const std::string &input) : input(input), pos(0), line(0) {
+Lexer::Lexer(const char* &input) : input(input), pos(0), line(0) {
 
 //    this->prev_char = input[0];
-    this->current_char = input[0];
+    this->current_char = *input;
+    this->input_length = strlen(input);
 
-    while (pos < input.length()) {
+    while (pos < input_length) {
 		next_token();
     }
 
@@ -20,10 +23,15 @@ Lexer::Lexer(const std::string &input) : input(input), pos(0), line(0) {
 }
 
 void Lexer::next_token() {
-	if (is_comment()) {get_comment();}
-	else if (is_callback()) {get_callback();}
-	else if (is_string()) {get_string();}
-	else if (is_num()) {get_num();}
+	if (is_comment()) get_comment();
+	else if (is_string()) get_string();
+//	else if (is_num()) get_num();
+    else if (is_math()) get_math();
+    else if (is_bracket()) get_bracket();
+    else if (is_assignment()) get_assignment();
+    else if (is_arrow()) get_arrow();
+//	else if (is_callback()) get_callback();
+    else if (is_text_or_num()) get_text_or_num();
 	else {get_invalid();}
 }
 
@@ -94,55 +102,141 @@ void Lexer::get_string() {
 	skip_whitespace();
 }
 
-bool Lexer::is_declaration() {
-	return (look_ahead(4).find("decl") == 0);
+void Lexer::get_literal() {
+
+    for (int i = KEYWORD; tokenStrings[i] != nullptr; i++) {
+        std::cout << strlen(tokenStrings[i]) << std::endl;
+    }
 }
 
-void Lexer::get_declaration() {
-	flush_buffer();
-	while(!is_space(current_char)) {
-		next_char();
-	}
-	tokens.emplace_back(KEYWORDS, this->buffer, this->line);
-	skip_whitespace();
+bool Lexer::is_math() const {
+    return current_char == '-' || current_char == '+' || current_char == '/' || current_char == '*';
 }
 
-bool Lexer::is_num() const {
-	return std::isdigit(current_char);
+void Lexer::get_math() {
+    for (auto &ch: MATH) {
+        if (current_char == ch) {
+            flush_buffer();
+            for (int i = 0; tokenStrings[i] != nullptr; i++) {
+                if (*tokenStrings[i] == ch)
+                    tokens.emplace_back((token)i, std::string(1,this->current_char), this->line);
+                else
+                    stderr;
+            }
+            next_char();
+            skip_whitespace();
+        }
+    }
 }
 
-void Lexer::get_num() {
-	flush_buffer();
-	while(std::isdigit(current_char)) {
-		next_char();
-	}
-	if (current_char == '.') {
-		next_char();
-		while(std::isdigit(current_char)) {
-			next_char();
-		}
-		tokens.emplace_back(FLOAT, this->buffer, this->line);
-	} else
-		tokens.emplace_back(INT, this->buffer, this->line);
-	skip_whitespace();
+bool Lexer::is_bracket() const {
+    return current_char == '(' || current_char == ')' || current_char == '[' || current_char == ']' ||
+    current_char == '{' || current_char == '}';
+}
+
+void Lexer::get_bracket() {
+    token tok;
+    if (current_char == '(')
+        tok = OPEN_PARENTH;
+    else if (current_char == ')')
+        tok = CLOSED_PARENTH;
+    else if (current_char == '[')
+        tok = OPEN_BRACKET;
+    else if (current_char == ']')
+        tok = CLOSED_BRACKET;
+    else if (current_char == '{')
+        tok = OPEN_CURLY;
+    else if (current_char == '}')
+        tok = CLOSED_CURLY;
+    tokens.emplace_back(tok, std::string(1,this->current_char), this->line);
+    next_char();
+    skip_whitespace();
+}
+
+bool Lexer::is_assignment() {
+    return look_ahead(2) == ":=";
+}
+
+void Lexer::get_assignment() {
+    tokens.emplace_back(ASSIGN, ":=", this->line);
+    next_char(2);
+    skip_whitespace();
+}
+
+bool Lexer::is_arrow() {
+    return look_ahead(2) == "->";
+}
+
+void Lexer::get_arrow() {
+    tokens.emplace_back(ARROW, "->", this->line);
+    next_char(2);
+    skip_whitespace();
+}
+
+bool Lexer::is_var_identifier(char c) {
+    return std::any_of(VAR_IDENT.begin(), VAR_IDENT.end(), [&](const auto& ch) {return ch == c;});
+}
+
+bool Lexer::is_text_or_num() {
+    return std::isalnum(current_char) || current_char == '_' || is_var_identifier(current_char);
+}
+
+void Lexer::get_text_or_num() {
+    flush_buffer();
+    while(std::isdigit(current_char)) {
+        next_char();
+    }
+    // check if is float
+    if (current_char == '.') {
+        next_char();
+        while(std::isdigit(current_char)) {
+            next_char();
+        }
+        tokens.emplace_back(FLOAT, this->buffer, this->line);
+    // check if next char is _ or text
+    } else if (is_text_or_num()) {
+        while (is_text_or_num()) {
+            next_char();
+        }
+        // detect callback!
+        if (buffer[0] == 'o' && buffer[1] == 'n' && std::iswblank(current_char)) {
+            next_char();
+            while (!is_space(current_char)) {
+                next_char();
+            }
+            tokens.emplace_back(CALLBACK, this->buffer, this->line);
+        } else if (buffer[0] == 'e' && buffer[1] == 'n' && buffer[2] == 'd' && std::iswblank(current_char)) {
+            next_char();
+            while (!is_space(current_char)) {
+                next_char();
+            }
+            tokens.emplace_back(END_CALLBACK, this->buffer, this->line);
+        } else
+            tokens.emplace_back(KEYWORD, this->buffer, this->line);
+    } else // is probably int
+        tokens.emplace_back(INT, this->buffer, this->line);
+    skip_whitespace();
+
 }
 
 void Lexer::next_char(int chars) {
     for(int i = 0; i<chars; i++) {
-		if (pos >= input.size()) break;
+		if (pos >= input_length) break;
         buffer += current_char;
         pos++;
-        this->current_char = input[pos];
+        input++;
+        this->current_char = *input;
         if (this->current_char == '\n') {this->line++; }
     }
 }
 
 void Lexer::skip_whitespace() {
 	while (is_space(current_char)) {
-		if (pos >= input.size()) break;
+		if (pos >= input_length) break;
 		buffer += current_char;
 		pos++;
-		this->current_char = input[pos];
+        input++;
+		this->current_char = *input;
 		if (this->current_char == '\n') {this->line++;}
 	}
 }
@@ -157,10 +251,11 @@ void Lexer::flush_buffer() {
 
 std::string Lexer::look_ahead(int chars) {
     std::string la_buffer;
-    if (input.length() < pos+chars)
-        return input.substr(pos);
-    for (int i = 0; i < chars; i++) {
-        la_buffer += input[this->pos + i];
+    int real_chars = chars;
+    if (input_length < pos+chars)
+        real_chars = input_length - pos;
+    for (int i = 0; i < real_chars; i++) {
+        la_buffer += input[i];
     }
     return la_buffer;
 }
@@ -174,6 +269,7 @@ std::ostream &operator<<(std::ostream &os, const Lexer::Token &tok) {
     os << "Type: " << tok.type << ", Value: " << tok.val << ", Line: " << tok.line;
     return os;
 }
+
 
 #define STRING(name, str) str,
 const char *tokenStrings[] = {

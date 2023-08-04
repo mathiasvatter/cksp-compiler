@@ -24,20 +24,32 @@
 	XX(FLOAT, "float") \
 	XX(COMMENT, "comment") \
     XX(STRING, "string") \
-	XX(CALLBACK, "callback") \
+	XX(KEYWORD, "keyword") \
+	XX(CALLBACK, "begin callback") \
 	XX(END_CALLBACK, "end callback") \
-	XX(KEYWORDS, "keywords:") \
-	XX(ASSIGN, ":=") \
-	XX(EQUAL, "=") \
+	XX(ASSIGN, ":=")     \
+	XX(ARROW, "->")     \
+    XX(EQUAL, "=") \
 	XX(SUB, "-") \
 	XX(ADD, "+") \
-	XX(s, "invalsid")
+    XX(DIV, "/")      \
+	XX(MULT, "*")        \
+    XX(OPEN_PARENTH, "(")\
+    XX(CLOSED_PARENTH, ")")       \
+    XX(OPEN_BRACKET, "[")\
+    XX(CLOSED_BRACKET, "]") \
+    XX(OPEN_CURLY, "{") \
+    XX(CLOSED_CURLY, "}")\
+    XX(GT, ">") \
+    XX(s, "invalsid")
+
 
 #define ENUM(name, str) name,
 enum token {
 	ENUM_LIST(ENUM)
 };
 #undef ENUM
+
 extern const char *tokenStrings[];
 
 std::ostream& operator<<(std::ostream& os, const token& tok);
@@ -56,7 +68,8 @@ public:
         size_t line;
     };
 private:
-    std::string input;
+    const char * input;
+    size_t input_length;
     size_t pos;
     char current_char;
     size_t line;
@@ -76,15 +89,26 @@ private:
 	void get_invalid();
 	bool is_string() const;
 	void get_string();
-	bool is_declaration();
-	void get_declaration();
-	bool is_num() const;
-	void get_num();
+    bool is_math() const;
+    void get_math();
+    bool is_bracket() const;
+    void get_bracket();
+    bool is_assignment();
+    void get_assignment();
+    bool is_arrow();
+    void get_arrow();
+    bool is_text_or_num();
+    void get_text_or_num();
+    void get_literal();
+    bool is_var_identifier(char c);
+    std::vector<char> MATH = {'-','+', '/', '*'};
+    std::vector<char> PARENTH = {'(',')', '[', ']', '{', '}'};
+    std::vector<char> VAR_IDENT = {'$', '%', '~', '?', '@', '!'};
 
 public:
-
-    explicit Lexer(const std::string& input);
+    explicit Lexer(const char* &input);
     ~Lexer() = default;
+
 
     void next_token();
 };
