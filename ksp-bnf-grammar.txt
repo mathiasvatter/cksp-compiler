@@ -1,0 +1,24 @@
+<real> ::= <int> "." <int>
+<int> ::= [1-9]+
+<num> ::= ("-")? (<int> | <real>)
+<text> ::= ([0-9] | [a-z] | [A-Z] | "_")+ | <text> "." <text>
+<string> ::= "\'" <text> "\'"
+<variable> ::= ("$" | "~" | "@" )? <text>
+<array> ::= ("!" | "%" | "?")? <text> "[" (<num> ("," <num>)? )? "]"
+<constant> ::= "const" <variable>
+<variable_declaration> ::= "polyphonic" <variable> | <variable>
+<array_declaration> ::= <array> ":=" "(" <int> ("," <int>)? ")"
+<constant_declaration> ::= <constant> ":=" (<string> | <num>)
+<declaration> ::= "declare " (<constant_declaration> | 
+<variable_declaration> | <array_declaration>)
+<init_callback> ::= "\n" "on init" "\n" <declaration>* "\n" "end on" "\n"
+<callback> ::= "on " ("async_complete" | "controller" | "init" | 
+"listener" | "note" | "persistence_changed" | "pgs_changed" | "poly_at" | 
+"release" | "rpn/nrpn" | "ui_control" | "ui_update")
+
+<assignment> ::= (<variable> | <array>) ":=" (<num> | <string>)
+<comparison> ::= "=" | "<" | ">" | "<=" | ">=" | "!="
+<statement>
+<condition>
+<if_statement>
+<while_statement>
