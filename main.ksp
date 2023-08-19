@@ -30,7 +30,7 @@ on init
 	define SCRIPT_TITLE := "Trinity Drums 2"
 	message("** Script " & "'" & SCRIPT_TITLE & "'" & " Compile " & __LOCALE_TIME__ & " " & __LOCALE_DATE__ & " **")
 	set_script_title(SCRIPT_TITLE)
-	declare const UI_HEIGHT := 608
+	declare const UI_HEIGHT := 608 - 69
 	declare const UI_WIDTH := 750
 	set_ui_height_px(UI_HEIGHT-68)
 	set_ui_width_px(UI_WIDTH)
@@ -40,8 +40,19 @@ on init
 	declare const TRUE := 1
 	declare const FALSE := 0
 	declare $i
+	declare a
+	a := 0x77AAFF // sets a to 77AAFF, or 7842559
+    a := 077AAFFh // sets a to 77AAFF, or 7842559. First 0 can be a digit 0-9!
+    a := 1100b // LSB-right, sets a to 12
+    a := b1100 // LSB-left, sets a to 3
+    a := 9b0111110h .and. 1
+	declare floaty := 0.033
 	declare polyphonic iterator
-	declare read soundset_ids[3] = (0,1,2)
+	declare read soundset_ids[3] := ...
+	(0,1,2)
+	for i := 0 to num_elements(soundset_ids)-1
+	    message(i)
+	end for
 	declare hide_state[2] := (HIDE_WHOLE_CONTROL,HIDE_PART_NOTHING)
 end on
 
