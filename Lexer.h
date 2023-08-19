@@ -97,13 +97,15 @@ private:
     void get_assignment();
     bool is_arrow();
     void get_arrow();
-    bool is_text_or_num();
+    bool is_variable();
     void get_text_or_num();
     void get_literal();
     bool is_var_identifier(char c);
     std::vector<char> MATH = {'-','+', '/', '*'};
-    std::vector<char> PARENTH = {'(',')', '[', ']', '{', '}'};
+    std::vector<char> PARENTH = {'(',')', '[', ']'};
     std::vector<char> VAR_IDENT = {'$', '%', '~', '?', '@', '!'};
+//    std::vector<char> COMMENT = {'{', '}', "//", "/*", "*/"};
+
 
 public:
     explicit Lexer(const char* &input);

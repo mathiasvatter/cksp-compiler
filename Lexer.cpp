@@ -31,7 +31,7 @@ void Lexer::next_token() {
     else if (is_assignment()) get_assignment();
     else if (is_arrow()) get_arrow();
 //	else if (is_callback()) get_callback();
-    else if (is_text_or_num()) get_text_or_num();
+    else if (is_variable()) get_text_or_num();
 	else {get_invalid();}
 }
 
@@ -177,7 +177,7 @@ bool Lexer::is_var_identifier(char c) {
     return std::any_of(VAR_IDENT.begin(), VAR_IDENT.end(), [&](const auto& ch) {return ch == c;});
 }
 
-bool Lexer::is_text_or_num() {
+bool Lexer::is_variable() {
     return std::isalnum(current_char) || current_char == '_' || is_var_identifier(current_char);
 }
 
@@ -194,8 +194,8 @@ void Lexer::get_text_or_num() {
         }
         tokens.emplace_back(FLOAT, this->buffer, this->line);
     // check if next char is _ or text
-    } else if (is_text_or_num()) {
-        while (is_text_or_num()) {
+    } else if (is_variable()) {
+        while (is_variable()) {
             next_char();
         }
         // detect callback!
