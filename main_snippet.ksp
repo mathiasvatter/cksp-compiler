@@ -1,0 +1,7 @@
+on init
+	make_perfview
+	for i := 0 to num_elements(soundset_ids)-1
+	    message(i)
+	end for
+end on
+
