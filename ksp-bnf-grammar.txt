@@ -1,10 +1,12 @@
 <real> ::= <int> "." <int>
-<int> ::= [1-9]+
+
+
+
 <num> ::= ("-")? (<int> | <real>)
-<text> ::= ([0-9] | [a-z] | [A-Z] | "_")+ | <text> "." <text>
+<keyword> ::= ([0-9] | [a-z] | [A-Z] | "_")+ | <keyword> "." <keyword>
 <string> ::= "\'" <text> "\'"
-<variable> ::= ("$" | "~" | "@" )? <text>
-<array> ::= ("!" | "%" | "?")? <text> "[" (<num> ("," <num>)? )? "]"
+<variable> ::= ("$" | "~" | "@" )? <keyword>
+<array> ::= ("!" | "%" | "?")? <keyword> "[" (<num> ("," <num>)? )? "]"
 <constant> ::= "const" <variable>
 <variable_declaration> ::= "polyphonic" <variable> | <variable>
 <array_declaration> ::= <array> ":=" "(" <int> ("," <int>)? ")"
@@ -16,9 +18,21 @@
 "listener" | "note" | "persistence_changed" | "pgs_changed" | "poly_at" | 
 "release" | "rpn/nrpn" | "ui_control" | "ui_update")
 
+
+<int> ::= [1-9]+
+<math> ::= - | + | mod | / | * | <binary_op>
+<linebreak> ::= \n
 <assignment> ::= (<variable> | <array>) ":=" (<num> | <string>)
 <comparison> ::= "=" | "<" | ">" | "<=" | ">=" | "!="
-<statement>
-<condition>
-<if_statement>
-<while_statement>
+<bool> ::= and | or | not
+<binary_op> ::= .and. | .xor. | .or. | .not.
+
+<function_definition> ::= function (
+
+<expression> ::= (<int> | <variable>) <math> <expression> | (<int> | <variable>)
+<condition> ::= <expression> <comparison> <expression> (<bool> <condition>)*
+<if_statement> ::= if (? <condition> )? <linebreak> <statement> else? <linebreak> <statement> end if <linebreak>
+<while_statement> ::= while (? <condition> )? <linebreak> <statement> end while <linebreak>
+<for_statement> ::= for <variable> := <expression> <linebreak> <statement> end for <linebreak>
+<select_statement> ::= select (? <expression> )? <linebreak> (case <expression> <linebreak> <statement>)+ end select <linebreak>
+<statement> ::= (<if_statement> | <while_statement> | <for_statement> | <select_statement>)*
