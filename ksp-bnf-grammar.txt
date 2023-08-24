@@ -1,8 +1,8 @@
-<real> ::= <int> "." <int>
 
 
 
-<num> ::= ("-")? (<int> | <real>)
+
+
 <keyword> ::= ([0-9] | [a-z] | [A-Z] | "_")+ | <keyword> "." <keyword>
 <string> ::= "\'" <text> "\'"
 <variable> ::= ("$" | "~" | "@" )? <keyword>
@@ -19,17 +19,21 @@
 "release" | "rpn/nrpn" | "ui_control" | "ui_update")
 
 
-<int> ::= [1-9]+
-<math> ::= - | + | mod | / | * | <binary_op>
+<int> ::= ("-")? [1-9]+ | "int(" <real> ")"
+<real> ::= ("-")? <int> "." <int> | "real(" <int> ")"
+<num> ::= (<int> | <real>)
+<math_op> ::= - | + | mod | / | * | <binary_op>
 <linebreak> ::= \n
 <assignment> ::= (<variable> | <array>) ":=" (<num> | <string>)
 <comparison> ::= "=" | "<" | ">" | "<=" | ">=" | "!="
 <bool> ::= and | or | not
 <binary_op> ::= .and. | .xor. | .or. | .not.
 
-<function_definition> ::= function (
+<function_header> ::= <keyword> "(" (<expression> ("," <expression>)?)? ")"
+<function_definition> ::= "function" <function_header> ("->" <variable>)? <linebreak> <statement> "end function" <linebreak>
+<function_call> ::= "call" <function_header>
 
-<expression> ::= (<int> | <variable>) <math> <expression> | (<int> | <variable>)
+<expression> ::= (<int> | <variable>) <math_op> <expression> | (<int> | <variable>)
 <condition> ::= <expression> <comparison> <expression> (<bool> <condition>)*
 <if_statement> ::= if (? <condition> )? <linebreak> <statement> else? <linebreak> <statement> end if <linebreak>
 <while_statement> ::= while (? <condition> )? <linebreak> <statement> end while <linebreak>

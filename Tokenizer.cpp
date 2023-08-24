@@ -198,7 +198,7 @@ bool Tokenizer::contains(char c, std::vector<char>& vec) {
     return std::any_of(vec.begin(), vec.end(), [&](const auto& ch) {return ch == c;});
 }
 
-bool Tokenizer::is_keyword_or_num() {
+bool Tokenizer::is_keyword_or_num() const {
     return std::isalnum(current_char) || current_char == '_' || contains(current_char, VAR_IDENT);
 }
 
