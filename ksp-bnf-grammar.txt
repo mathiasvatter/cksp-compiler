@@ -3,12 +3,10 @@
 
 
 
-<keyword> ::= ([0-9] | [a-z] | [A-Z] | "_")+ | <keyword> "." <keyword>
-<string> ::= "\'" <text> "\'"
-<variable> ::= ("$" | "~" | "@" )? <keyword>
+
 <array> ::= ("!" | "%" | "?")? <keyword> "[" (<num> ("," <num>)? )? "]"
 <constant> ::= "const" <variable>
-<variable_declaration> ::= "polyphonic" <variable> | <variable>
+
 <array_declaration> ::= <array> ":=" "(" <int> ("," <int>)? ")"
 <constant_declaration> ::= <constant> ":=" (<string> | <num>)
 <declaration> ::= "declare " (<constant_declaration> | 
@@ -22,21 +20,28 @@
 <int> ::= ("-")? [1-9]+ | "int(" <real> ")"
 <real> ::= ("-")? <int> "." <int> | "real(" <int> ")"
 <num> ::= (<int> | <real>)
-<math_op> ::= - | + | mod | / | * | <binary_op>
+<binary_op> ::= - | + | mod | / | * | <bitwise_op>
 <linebreak> ::= \n
 <assignment> ::= (<variable> | <array>) ":=" (<num> | <string>)
 <comparison> ::= "=" | "<" | ">" | "<=" | ">=" | "!="
 <bool> ::= and | or | not
-<binary_op> ::= .and. | .xor. | .or. | .not.
+<bitwise_op> ::= .and. | .xor. | .or. | .not.
 
 <function_header> ::= <keyword> "(" (<expression> ("," <expression>)?)? ")"
 <function_definition> ::= "function" <function_header> ("->" <variable>)? <linebreak> <statement> "end function" <linebreak>
 <function_call> ::= "call" <function_header>
 
-<expression> ::= (<int> | <variable>) <math_op> <expression> | (<int> | <variable>)
+
+<keyword> ::= ([0-9] | [a-z] | [A-Z] | "_")+ | <keyword> "." <keyword>
+<string> ::= "\'" <text> "\'"
+<variable> ::= ("$" | "~" | "@" )? <keyword>
+<variable_declaration> ::= "declare" <variable> | "declare" <variable_assignment>
+<variable_assignment> ::= <variable> ":=" (<expression> | <string>)
+
+<expression> ::= (<int> | <variable>) <binary_op> <expression> | (<int> | <variable>)
+<statement> ::= (<if_statement> | <while_statement> | <for_statement> | <select_statement>)*
+<for_statement> ::= for <variable> := <expression> <linebreak> <statement> end for <linebreak>
 <condition> ::= <expression> <comparison> <expression> (<bool> <condition>)*
 <if_statement> ::= if (? <condition> )? <linebreak> <statement> else? <linebreak> <statement> end if <linebreak>
 <while_statement> ::= while (? <condition> )? <linebreak> <statement> end while <linebreak>
-<for_statement> ::= for <variable> := <expression> <linebreak> <statement> end for <linebreak>
 <select_statement> ::= select (? <expression> )? <linebreak> (case <expression> <linebreak> <statement>)+ end select <linebreak>
-<statement> ::= (<if_statement> | <while_statement> | <for_statement> | <select_statement>)*
