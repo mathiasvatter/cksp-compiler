@@ -19,14 +19,9 @@ struct VariableNode: ASTNode {
 	VariableNode(const std::string& n) : name(n) {}
 };
 
-struct BinaryOpNode: ASTNode {
-	std::string op;
-	BinaryOpNode(const std::string& op) : op(op) {}
-};
-
 struct ExpressionNode: ASTNode {
-	std::shared_ptr<ASTNode> left;
-	std::shared_ptr<ASTNode> right;
-
-	BinaryOpNode
+	std::unique_ptr<ASTNode> left, right;
+	std::string op;
+	ExpressionNode(std::string op, std::unique_ptr<ASTNode> left, std::unique_ptr<ASTNode> right)
+	: op(std::move(op)), left(std::move(left)), right(std::move(right)) {}
 };

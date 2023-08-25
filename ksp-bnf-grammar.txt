@@ -38,7 +38,8 @@
 <variable_declaration> ::= "declare" <variable> | "declare" <variable_assignment>
 <variable_assignment> ::= <variable> ":=" (<expression> | <string>)
 
-<expression> ::= (<int> | <variable>) <binary_op> <expression> | (<int> | <variable>)
+<binary_expression> ::=
+<expression> ::= (<int> | <variable> | <function_header>) <binary_op> <expression> | (<int> | <variable> | <function_header>)
 <statement> ::= (<if_statement> | <while_statement> | <for_statement> | <select_statement>)*
 <for_statement> ::= for <variable> := <expression> <linebreak> <statement> end for <linebreak>
 <condition> ::= <expression> <comparison> <expression> (<bool> <condition>)*
