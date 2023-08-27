@@ -11,14 +11,10 @@
 
 #include "Tokens.h"
 
-/*
- * Callbacks
- * Variables
- * Operator
- * Control Statement
- *
- */
 
+/*
+ * Token struct that gets line numbers, the token type and its value
+ */
 struct Token {
     Token(token type, const std::string &val, size_t line);
     friend std::ostream& operator<<(std::ostream& os, const Token& tok);
@@ -27,6 +23,20 @@ struct Token {
     size_t line;
 };
 
+/*
+ * helper function to search vectors for chars, std::String and Keyword obj
+ */
+inline static bool contains(std::vector<char> &vec, char c) {
+    return std::any_of(vec.begin(), vec.end(), [&](const auto& ch) {return ch == c;});
+};
+inline static bool contains(const std::vector<std::string>& vec, const std::string& value) {
+    return std::find(vec.begin(), vec.end(), value) != vec.end();
+};
+inline static bool contains(const std::vector<Keyword>& vec, const std::string& value) {
+    return std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
+        return kw.value == value;
+    }) != vec.end();
+};
 
 /*
  * Tokenizer Class
@@ -42,9 +52,6 @@ private:
     std::string buffer;
     std::vector<Token> tokens;
 
-    static bool contains(char c, std::vector<char>& vec);
-    static bool contains(const std::vector<std::string>& vec, const std::string& value);
-    static bool contains(const std::vector<Keyword>& vec, const std::string& value);
     static token get_token_type(const std::vector<Keyword>& vec, const std::string& value);
     [[nodiscard]] char peek(int ahead = 1) const;
     void next_char(int chars = 1);
@@ -77,5 +84,5 @@ private:
 public:
     explicit Tokenizer(const char* &input);
     ~Tokenizer() = default;
-    void tokenize();
+    std::vector<Token> tokenize();
 };

@@ -12,9 +12,6 @@
 <declaration> ::= "declare " (<constant_declaration> | 
 <variable_declaration> | <array_declaration>)
 <init_callback> ::= "\n" "on init" "\n" <declaration>* "\n" "end on" "\n"
-<callback> ::= "on " ("async_complete" | "controller" | "init" | 
-"listener" | "note" | "persistence_changed" | "pgs_changed" | "poly_at" | 
-"release" | "rpn/nrpn" | "ui_control" | "ui_update")
 
 
 <int> ::= ("-")? [1-9]+ | "int(" <real> ")"
@@ -28,21 +25,29 @@
 <bitwise_op> ::= .and. | .xor. | .or. | .not.
 
 <function_header> ::= <keyword> "(" (<expression> ("," <expression>)?)? ")"
-<function_definition> ::= "function" <function_header> ("->" <variable>)? <linebreak> <statement> "end function" <linebreak>
+<function_definition> ::= "function" <function_header> ("->" <variable>)? <linebreak> <statements> "end function" <linebreak>
 <function_call> ::= "call" <function_header>
 
 
 <keyword> ::= ([0-9] | [a-z] | [A-Z] | "_")+ | <keyword> "." <keyword>
 <string> ::= "\'" <text> "\'"
-<variable> ::= ("$" | "~" | "@" )? <keyword>
-<variable_declaration> ::= "declare" <variable> | "declare" <variable_assignment>
-<variable_assignment> ::= <variable> ":=" (<expression> | <string>)
+<variable_identifier> ::= "$" | "~" | "@"
+<array_identifier> ::= "!" | "%" | "?"
+<variable> ::= <variable_identifier>? <keyword>
+<variable_declaration> ::= "declare" <variable> | "declare" <variable_assign>
+<variable_assign> ::= <variable> ":=" (<expression> | <string>) <linebreak>
 
-<binary_expression> ::=
-<expression> ::= (<int> | <variable> | <function_header>) <binary_op> <expression> | (<int> | <variable> | <function_header>)
-<statement> ::= (<if_statement> | <while_statement> | <for_statement> | <select_statement>)*
-<for_statement> ::= for <variable> := <expression> <linebreak> <statement> end for <linebreak>
+<assign_statement> ::= <variable_assign> | <array_assign>
+<binary_expression> ::= (<int> | <variable> | <function_header>) <binary_op> <expression> | (<int> | <variable> | <function_header>)
+<expression> ::=
+<statements> ::= (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement)*
+<for_statement> ::= for <variable> := <expression> <linebreak> <statements> end for <linebreak>
 <condition> ::= <expression> <comparison> <expression> (<bool> <condition>)*
-<if_statement> ::= if (? <condition> )? <linebreak> <statement> else? <linebreak> <statement> end if <linebreak>
-<while_statement> ::= while (? <condition> )? <linebreak> <statement> end while <linebreak>
-<select_statement> ::= select (? <expression> )? <linebreak> (case <expression> <linebreak> <statement>)+ end select <linebreak>
+<if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>
+<while_statement> ::= while (? <condition> )? <linebreak> <statements> end while <linebreak>
+<select_statement> ::= select (? <expression> )? <linebreak> (case <expression> <linebreak> <statements>)+ end select <linebreak>
+
+<callback_identifier> ::= ("async_complete" | "controller" | "init" |
+                          "listener" | "note" | "persistence_changed" | "pgs_changed" | "poly_at" |
+                          "release" | "rpn/nrpn" | "ui_control" | "ui_update")
+<callback> ::= "on" <callback_identifier> <linebreak> <statements> "end on"

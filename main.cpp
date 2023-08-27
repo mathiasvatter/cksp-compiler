@@ -2,7 +2,8 @@
 #include <fstream>
 #include <sstream>
 
-#include "Tokenizer.h"
+//#include "Tokenizer.h"
+#include "Parser.h"
 
 std::string read_file(const char* filename) {
     std::ifstream file(filename);
@@ -22,7 +23,9 @@ int main() {
     auto path = "../main_snippet.ksp";
 	std::string ksp_code = read_file(path);
     const char * ksp_code_ptr = ksp_code.c_str();
-	Tokenizer lex(ksp_code_ptr);
+	Tokenizer tokenizer(ksp_code_ptr);
+    auto tokens = tokenizer.tokenize();
+    Parser parser(tokens);
 //    std::cout << ksp_code << std::endl;
 	std::cout << std::__fs::filesystem::current_path();
     return 0;

@@ -16,33 +16,34 @@ std::ostream &operator<<(std::ostream &os, const Token &tok) {
     return os;
 }
 
-
+/*
+ * Tokenizer Functions
+ */
 Tokenizer::Tokenizer(const char* &input) : input(input), pos(0), line(1) {
     current_char = *input;
     input_length = strlen(input);
 
-    // Startzeitpunkt speichern
-    auto start_time = std::chrono::high_resolution_clock::now();
-    tokenize();
-    // Endzeitpunkt speichern
-    auto end_time = std::chrono::high_resolution_clock::now();
-
-    // Dauer berechnen
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-
-	for (auto & token: tokens) {
-        if (token.type != COMMENT && token.type != LINEBRK)
-		    std::cout << token << '\n';
-	}
-	std::cout << std::endl;
-
-    // Dauer in Millisekunden ausgeben
-    std::cout << "Time measured: " << duration.count() << " ms" << std::endl;
+//    // Startzeitpunkt speichern
+//    auto start_time = std::chrono::high_resolution_clock::now();
+//    tokenize();
+//    // Endzeitpunkt speichern
+//    auto end_time = std::chrono::high_resolution_clock::now();
+//
+//    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+//
+//	for (auto & token: tokens) {
+//        if (token.type != COMMENT && token.type != LINEBRK)
+//		    std::cout << token << '\n';
+//	}
+//	std::cout << std::endl;
+//
+//    // Dauer in Millisekunden ausgeben
+//    std::cout << "Time measured: " << duration.count() << " ms" << std::endl;
 }
 
-void Tokenizer::tokenize() {
+std::vector<Token> Tokenizer::tokenize() {
     while (pos < input_length) {
-        if (current_char == '/' || current_char == '{') {
+        if (current_char == '/' && (peek() =='*' || peek() =='/') || current_char == '{') {
             get_comment();
         } else if (current_char == '\n') {
             get_linebreak();
@@ -50,15 +51,15 @@ void Tokenizer::tokenize() {
             get_keyword_or_num();
         } else if (is_string()) {
             get_string();
-        } else if (contains(current_char, MATH) && peek() != '>') {
+        } else if (contains(MATH, current_char) && peek() != '>') {
             get_math();
-        } else if (contains(current_char, PARENTH)) {
+        } else if (contains(PARENTH, current_char)) {
             get_parenth();
         } else if (current_char == ':' && peek() == '=') {
             get_assignment();
         } else if (current_char == '-' && peek() == '>') {
             get_arrow();
-        } else if (contains(current_char, COMPARISON_START)) {
+        } else if (contains(COMPARISON_START, current_char)) {
             get_comparison();
         } else if (current_char == '.' && peek() != '.') {
             get_bitwise_operator();
@@ -69,6 +70,7 @@ void Tokenizer::tokenize() {
         } else
             get_invalid();
     }
+    return tokens;
 }
 
 void Tokenizer::next_char(int chars) {
@@ -121,11 +123,11 @@ void Tokenizer::get_comment() {
             // skip nex_char(); so that the \n can be tokenized
             // if multi-line comment c++ style
         } else if (peek() == '*') {
-            while (current_char != '*' and peek() != '/') {
+            while (current_char != '*' or peek() != '/') {
                 next_char();
                 if (current_char == '\n') line++;
             }
-            next_char();
+            next_char(2);
         }
     }
     if (not buffer.empty())
@@ -194,12 +196,9 @@ void Tokenizer::get_arrow() {
     skip_whitespace();
 }
 
-bool Tokenizer::contains(char c, std::vector<char>& vec) {
-    return std::any_of(vec.begin(), vec.end(), [&](const auto& ch) {return ch == c;});
-}
-
 bool Tokenizer::is_keyword_or_num() const {
-    return std::isalnum(current_char) || current_char == '_' || contains(current_char, VAR_IDENT);
+    return std::isalnum(current_char) || current_char == '_' || contains(VAR_IDENT, current_char) || contains(
+            ARRAY_IDENT, current_char);
 }
 
 void Tokenizer::get_keyword_or_num() {
@@ -226,8 +225,8 @@ void Tokenizer::get_keyword_or_num() {
         token tok;
         if (is_hexadecimal(buffer)) {
             tokens.emplace_back(HEXADECIMAL, this->buffer, this->line);
-        } else if (is_binary(buffer)) {
-            tokens.emplace_back(BINARY, this->buffer, this->line);
+//        } else if (is_binary(buffer)) {
+//            tokens.emplace_back(BINARY, this->buffer, this->line);
         } else if (is_callback_start()) {
             tokens.pop_back();
             tokens.emplace_back(BEGIN_CALLBACK, "on " + this->buffer, this->line);
@@ -375,16 +374,6 @@ bool Tokenizer::is_callback_end() {
     if (!tokens.empty())
         return tokens.back().val == "end" && buffer == "on";
     return false;
-}
-
-bool Tokenizer::contains(const std::vector<std::string> &vec, const std::string &value) {
-    return std::find(vec.begin(), vec.end(), value) != vec.end();
-}
-
-bool Tokenizer::contains(const std::vector<Keyword> &vec, const std::string &value) {
-    return std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
-        return kw.value == value;
-    }) != vec.end();
 }
 
 token Tokenizer::get_token_type(const std::vector<Keyword> &vec, const std::string &value) {

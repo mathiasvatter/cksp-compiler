@@ -2,8 +2,7 @@
 // Created by Mathias Vatter on 20.08.23.
 //
 
-#ifndef COMPILER_TOKENS_H
-#define COMPILER_TOKENS_H
+#pragma once
 
 /// defines the token names and the string that represents them while debugging
 #define ENUM_LIST(XX) \
@@ -114,7 +113,8 @@ struct Keyword {
 
 inline std::vector<char> MATH = {'-','+', '/', '*'};
 inline std::vector<char> PARENTH = {'(',')', '[', ']'};
-inline std::vector<char> VAR_IDENT = {'$', '%', '~', '?', '@', '!'};
+inline std::vector<char> VAR_IDENT = {'$', '~', '@'};
+inline std::vector<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
 inline std::vector<char> COMMENT_START = {'{', '/'};
 inline std::vector<char> COMPARISON_START = {'<', '>', '='};
 inline std::vector<Keyword> UI_CONTROLS = {{UI_LABEL, "ui_label"}, {UI_BUTTON, "ui_button"}, {UI_SWITCH, "ui_switch"}, {UI_SLIDER, "ui_slider"}, {UI_MENU, "ui_menu"},
@@ -137,5 +137,3 @@ inline std::vector<Keyword> BITWISE_OPERATORS = {{BIT_AND, ".and."}, {BIT_OR, ".
 inline std::vector<Keyword> BOOL_OPERATORS = {{BOOL_AND, "and"}, {BOOL_OR, "or"}, {BOOL_NOT, "not"}};
 
 
-
-#endif //COMPILER_TOKENS_H
