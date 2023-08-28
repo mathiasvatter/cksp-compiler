@@ -9,7 +9,7 @@
 /*
  * TOKEN STRUCT
  */
-Token::Token(token type, const std::string &val, size_t line): line(line), type(type), val(val) {}
+Token::Token(token type, const std::string& val, size_t line): line(line), type(type), val(val) {}
 
 std::ostream &operator<<(std::ostream &os, const Token &tok) {
     os << "Type: " << tok.type << " | Value: " << tok.val << " | Line: " << tok.line;

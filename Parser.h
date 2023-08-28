@@ -7,7 +7,7 @@
 #include "Tokenizer.h"
 #include "AST.h"
 #include "Tokens.h"
-
+//#include "ASTVisitor.h"
 
 inline static std::map<token, int> BinaryOpPrecendence = {
         {token::BOOL_OR, 1},
@@ -44,13 +44,13 @@ private:
     std::optional<NodeInt> parse_int();
     std::optional<NodeVariable> parse_variable();
     std::optional<NodeAST> parse_binary_expr();
-    std::optional<NodeAST> parse_binary_expr_rhs(int precedence, std::optional<NodeAST> lhs);
+    std::optional<NodeAST> _parse_binary_expr_rhs(int precedence, std::optional<NodeAST> lhs);
     /// ( expression )
-    std::optional<NodeAST> parse_parenth_expr();
+    std::optional<NodeAST> _parse_parenth_expr();
     /// parse identifierexpr, numberexpr, parenthexpr
-    std::optional<NodeAST> parse_primary_expr();
+    std::optional<NodeAST> _parse_primary_expr();
     std::optional<NodeVariableAssign> parse_variable_assign();
-//    std::optional<NodeAssignStatement> parse_assign_statement();
+    std::optional<NodeAssignStatement> parse_assign_statement();
 //    std::optional<NodeStatements> parse_statements();
 //    std::optional<NodeCallback> parse_callback();
 };

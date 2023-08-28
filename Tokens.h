@@ -99,10 +99,10 @@ inline const char *tokenStrings[] = {
 //inline const char *tokenStrings[];
 
 /// overwrite the << operator to make debugging easier
-inline std::ostream &operator<<(std::ostream &os, const token &tok) {
-    os << tokenStrings[tok];
-    return os;
-}
+//inline std::ostream &operator<<(std::ostream &os, const token &tok) {
+//    os << tokenStrings[tok];
+//    return os;
+//}
 
 /// combines the token type and the actual Keyword that should be searched for by lexer
 struct Keyword {

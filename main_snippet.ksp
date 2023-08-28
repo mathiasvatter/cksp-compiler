@@ -5,5 +5,3 @@
 	end for
 end on*/
 bims := (4 + 6)*23 mod 4/7
-
-

@@ -15,67 +15,63 @@ enum numberType {
     INTEGER,
     REAL
 };
+//class ASTVisitor;
 
 struct NodeAST {
     NodeAST() = default;
 	virtual ~NodeAST() = default;
-    virtual inline void print() const {};
+	virtual void accept(class ASTVisitor& visitor);
 };
+
 
 struct NodeInt : NodeAST {
 	int value;
 	inline explicit NodeInt(int v) : value(v) {}
-    inline void print() const override {
-        std::cout << "IntNode: " << value << std::endl;
-    }
+	void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeVariable: NodeAST {
     char ident;
 	std::string name;
 	inline NodeVariable(std::string name, char ident) : name(std::move(name)), ident(ident) {}
-    inline void print() const override {
-        std::cout << "VariableNode: " << name << " (" << ident << ")" << std::endl;
-    }
+	void accept(ASTVisitor& visitor) override;
+
 };
 
 struct NodeBinaryExpr: NodeAST {
     numberType type; //real or int?
-	std::variant<NodeVariable, NodeInt, NodeAST> left, right;
+	NodeAST left, right;
 	std::string op;
 
-    inline explicit NodeBinaryExpr(std::string op, std::variant<NodeVariable, NodeInt, NodeAST> left, std::variant<NodeVariable, NodeInt, NodeAST> right)
+    inline explicit NodeBinaryExpr(std::string op, NodeAST left, NodeAST right)
     : op(std::move(op)), left(std::move(left)), right(std::move(right)) {}
-    inline void print() const override {
-        std::cout << "BinaryExprNode: " << op << std::endl;
-        std::visit([&](auto& node) { node.print(); }, left);
-        std::visit([&](auto& node) { node.print(); }, right);
-    }
+	void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeVariableAssign: NodeAST {
     NodeVariable variable;
     std::string assignment_op;
-    std::variant<NodeAST> assignee;
+    std::variant<NodeAST, NodeBinaryExpr> assignee;
     char linebreak;
 
     inline NodeVariableAssign(NodeVariable variable,std::string assignmentOp,
-                       std::variant<NodeAST> assignee) : variable(
-            std::move(variable)), assignment_op(std::move(assignmentOp)), assignee(std::move(assignee)) {}
-    inline void print() const override {
-        std::cout << "VariableAssignment: " << assignment_op << std::endl;
-        std::visit([&](auto& node) { node.print(); }, assignee);
-    }
+                       std::variant<NodeAST, NodeBinaryExpr> assignee, char linebreak) : variable(
+            std::move(variable)), assignment_op(std::move(assignmentOp)), assignee(std::move(assignee)), linebreak(linebreak) {}
+	void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeAssignStatement: NodeAST {
     NodeVariableAssign assignment;
+
+	explicit NodeAssignStatement(NodeVariableAssign assignment) : assignment(std::move(assignment)) {}
+	void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeStatements: NodeAST {
     std::vector<NodeAssignStatement> statements;
-//    explicit NodeStatements(std::vector<std::unique_ptr<NodeAST>> statements)
-//    : statements(std::move(statements)) {}
+
+	explicit NodeStatements(std::vector<NodeAssignStatement> statements) : statements(std::move(statements)) {}
+	void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeCallback: NodeAST {
@@ -83,7 +79,15 @@ struct NodeCallback: NodeAST {
     char linebreak;
     std::vector<NodeStatements> statements;
     std::string end_callback;
-//    explicit NodeCallback(std::string begin_cb, std::vector<std::unique_ptr<NodeAST>> stmts,
-//                          std::string end_cb)
-//    : begin_callback(std::move(begin_cb)), statements(std::move(stmts)), end_callback(std::move(end_cb)) {}
+
+	NodeCallback(std::string begin_callback,
+				 char linebreak,
+				 std::vector<NodeStatements> statements,
+				 std::string end_callback)
+		: begin_callback(std::move(begin_callback)), linebreak(linebreak), statements(std::move(statements)), end_callback(std::move(end_callback)) {}
+	void accept(ASTVisitor& visitor) override;
 };
+
+
+
+

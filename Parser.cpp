@@ -3,6 +3,7 @@
 //
 
 #include "Parser.h"
+#include "ASTVisitor.h"
 
 #include <utility>
 
@@ -10,7 +11,10 @@ Parser::Parser(std::vector<Token> tokens): m_tokens(std::move(tokens)) {
 	m_pos = 0;
     while(peek()->type == token::COMMENT || peek()->type == token::LINEBRK)
         consume();
-    parse_variable_assign().value().print();
+	ASTPrinter printer;
+	parse_assign_statement().value().accept(printer);
+//    parse_variable_assign().value();
+
 }
 
 std::optional<Token> Parser::peek(int ahead) const {
@@ -29,10 +33,8 @@ Token Parser::consume(int tokens) {
 std::optional<NodeInt> Parser::parse_int() {
     if (peek().has_value()) {
         if (peek()->type == token::INT) {
-//            auto d = consume().val;
-//            int b = std::stoi(d);
             return NodeInt(std::stoi(consume().val));
-        } else if (peek()->type == token::SUB && peek(2)->type == token::INT) {
+        } else if (peek()->type == token::SUB && peek(1)->type == token::INT) {
             auto value = consume().val;
             value += consume().val;
             return NodeInt(std::stoi(value));
@@ -58,14 +60,14 @@ std::optional<NodeVariable> Parser::parse_variable() {
 
 std::optional<NodeAST> Parser::parse_binary_expr() {
     if (peek().has_value()) {
-        if(auto lhs = parse_primary_expr()) {
-            return parse_binary_expr_rhs(0, lhs);
+        if(auto lhs = _parse_primary_expr()) {
+            return _parse_binary_expr_rhs(0, lhs);
         }
     }
     return {};
 }
 
-std::optional<NodeAST> Parser::parse_binary_expr_rhs(int precedence, std::optional<NodeAST> lhs) {
+std::optional<NodeAST> Parser::_parse_binary_expr_rhs(int precedence, std::optional<NodeAST> lhs) {
     while(true) {
         int prec = get_binop_precedence(peek()->type);
         if(prec < precedence)
@@ -73,13 +75,13 @@ std::optional<NodeAST> Parser::parse_binary_expr_rhs(int precedence, std::option
         // its not -1 so it is a binop
         auto bin_op = peek()->val;
         consume();
-        auto rhs = parse_primary_expr();
+        auto rhs = _parse_primary_expr();
         if (!rhs.has_value()) {
             return {};
         }
         int next_precedence = get_binop_precedence(peek()->type);
         if (prec < next_precedence) {
-            rhs = parse_binary_expr_rhs(prec + 1, rhs);
+            rhs = _parse_binary_expr_rhs(prec + 1, rhs);
             if (!rhs.has_value()) {
                 return {};
             }
@@ -88,7 +90,7 @@ std::optional<NodeAST> Parser::parse_binary_expr_rhs(int precedence, std::option
     }
 }
 
-std::optional<NodeAST> Parser::parse_parenth_expr() {
+std::optional<NodeAST> Parser::_parse_parenth_expr() {
     if (peek().has_value()) {
         consume(); // eat (
         auto V = parse_binary_expr();
@@ -100,18 +102,18 @@ std::optional<NodeAST> Parser::parse_parenth_expr() {
         return V;
     }
 
-    return std::optional<NodeBinaryExpr>();
+    return {};
 }
 
 
-std::optional<NodeAST> Parser::parse_primary_expr() {
+std::optional<NodeAST> Parser::_parse_primary_expr() {
     if (peek().has_value()) {
         if (peek()->type == token::KEYWORD) {
             return parse_variable();
         } else if (peek()->type == token::INT) {
             return parse_int();
         } else if (peek()->type == token::OPEN_PARENTH) {
-            return parse_parenth_expr();
+            return _parse_parenth_expr();
         } else {
             std::cerr << "Unknown expression token!" << std::endl;
         }
@@ -129,18 +131,29 @@ int Parser::get_binop_precedence(token tok) {
 }
 
 std::optional<NodeVariableAssign> Parser::parse_variable_assign() {
-    if (peek().has_value() && peek()->type == token::KEYWORD) {
-        auto variable = parse_variable();
-        if (peek().has_value() && peek()->type == token::ASSIGN) {
-            auto assignment = peek()->val;
-            consume();
-            if (peek().has_value()) {
-                auto expr = parse_binary_expr();
-                return NodeVariableAssign(variable.value(), assignment, expr.value());
-            }
-        } else
-            std::cerr << "Expected Assignment token in line " << peek()->line << std::endl;
-    }
+	auto variable = parse_variable();
+	auto assignment = peek()->val;
+	consume();
+	if (peek().has_value()) {
+		auto expr = parse_binary_expr();
+		if (peek().has_value() && peek()->type == token::LINEBRK) {
+			auto linebreak = consume().val[0];
+			return NodeVariableAssign(variable.value(), assignment, expr.value(), linebreak);
+		}
+		else
+			std::cerr << "Expected linebreak in line "<< peek()->line << std::endl;
+	}
     return {};
+}
+
+std::optional<NodeAssignStatement> Parser::parse_assign_statement() {
+	if (peek().has_value() && peek()->type == token::KEYWORD) {
+		if (peek(1).has_value() && peek(1)->type == token::ASSIGN) {
+			return NodeAssignStatement(parse_variable_assign().value());
+		} else {
+			std::cerr << "Expected assignment operator in line "<< peek()->line << std::endl;
+		}
+	}
+	return {};
 }
 
