@@ -21,6 +21,7 @@ struct Token {
     token type;
     std::string val;
     size_t line;
+    std::string file;
 };
 
 /*
