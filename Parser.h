@@ -36,22 +36,23 @@ public:
 private:
 	size_t m_pos;
 	std::vector<Token> m_tokens;
+	token curr_token;
 
-	[[nodiscard]] std::optional<Token> peek(int ahead = 0) const;
+	[[nodiscard]] std::optional<Token> peek(int ahead = 0);
 	Token consume(int tokens = 1);
     static int get_binop_precedence(token tok);
 
-    std::optional<NodeInt> parse_int();
-    std::optional<NodeVariable> parse_variable();
-    std::optional<NodeAST> parse_binary_expr();
-    std::optional<NodeAST> _parse_binary_expr_rhs(int precedence, std::optional<NodeAST> lhs);
+    std::optional<std::unique_ptr<NodeInt>> parse_int();
+    std::optional<std::unique_ptr<NodeVariable>> parse_variable();
+    std::optional<std::unique_ptr<NodeAST>> parse_binary_expr();
+    std::optional<std::unique_ptr<NodeAST>> _parse_binary_expr_rhs(int precedence, std::unique_ptr<NodeAST> lhs);
     /// ( expression )
-    std::optional<NodeAST> _parse_parenth_expr();
+    std::optional<std::unique_ptr<NodeAST>> _parse_parenth_expr();
     /// parse identifierexpr, numberexpr, parenthexpr
-    std::optional<NodeAST> _parse_primary_expr();
-    std::optional<NodeVariableAssign> parse_variable_assign();
-    std::optional<NodeAssignStatement> parse_assign_statement();
-//    std::optional<NodeStatements> parse_statements();
-//    std::optional<NodeCallback> parse_callback();
+    std::optional<std::unique_ptr<NodeAST>> _parse_primary_expr();
+    std::optional<std::unique_ptr<NodeVariableAssign>> parse_variable_assign();
+    std::optional<std::unique_ptr<NodeAST>> parse_assign_statement();
+    std::optional<std::unique_ptr<NodeStatements>> parse_statements();
+    std::optional<std::unique_ptr<NodeCallback>> parse_callback();
 };
 

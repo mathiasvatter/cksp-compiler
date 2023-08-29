@@ -1,7 +1,7 @@
-/*on init
-	make_perfview
+on init
+	/*make_perfview
 	for i := 0 to num_elements(soundset_ids)-1
 	    message(i)
-	end for
-end on*/
-bims := (4 + 6)*23 mod 4/7
+	end for*/
+    bims := (4 + 6)*23 mod 4+5/7
+end on

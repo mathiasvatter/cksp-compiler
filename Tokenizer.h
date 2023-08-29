@@ -16,7 +16,7 @@
  * Token struct that gets line numbers, the token type and its value
  */
 struct Token {
-    Token(token type, const std::string& val, size_t line);
+    Token(token type, std::string  val, size_t line);
     friend std::ostream& operator<<(std::ostream& os, const Token& tok);
     token type;
     std::string val;

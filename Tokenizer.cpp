@@ -4,12 +4,13 @@
 
 #include "Tokenizer.h"
 #include <algorithm>
+#include <utility>
 #include <vector>
 
 /*
  * TOKEN STRUCT
  */
-Token::Token(token type, const std::string& val, size_t line): line(line), type(type), val(val) {}
+Token::Token(token type, std::string  val, size_t line): line(line), type(type), val(std::move(val)) {}
 
 std::ostream &operator<<(std::ostream &os, const Token &tok) {
     os << "Type: " << tok.type << " | Value: " << tok.val << " | Line: " << tok.line;
@@ -131,7 +132,7 @@ void Tokenizer::get_comment() {
         }
     }
     if (not buffer.empty())
-	    tokens.emplace_back(COMMENT, this->buffer, this->line);
+//	    tokens.emplace_back(COMMENT, this->buffer, this->line);
 	skip_whitespace();
 }
 
