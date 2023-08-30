@@ -10,8 +10,8 @@ class Result {
 public:
     std::variant<T, CompileError> value;
 
-    inline Result(T val) : value(std::move(val)) {}
-    inline Result(CompileError err) : value(std::move(err)) {}
+    inline explicit Result(T val) : value(std::move(val)) {}
+    inline explicit Result(CompileError err) : value(std::move(err)) {}
 
     inline bool is_error() const {
         return std::holds_alternative<CompileError>(value);
@@ -25,9 +25,9 @@ public:
         return std::get<T>(value);
     }
 
-    inline const CompileError& get_error() const {
+    [[nodiscard]] inline const CompileError& get_error() const {
         if(!is_error()) {
-            throw std::runtime_error("Attempt to get error from a successful result")
+            throw std::runtime_error("Attempt to get error from a successful result");
         }
         return std::get<CompileError>(value);
     }

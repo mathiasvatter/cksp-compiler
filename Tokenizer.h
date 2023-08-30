@@ -9,6 +9,7 @@
 #include <iostream>
 #include <map>
 
+#include "Result.h"
 #include "Tokens.h"
 
 
@@ -55,10 +56,9 @@ private:
 
     static token get_token_type(const std::vector<Keyword>& vec, const std::string& value);
     [[nodiscard]] char peek(int ahead = 1) const;
-    void next_char(int chars = 1);
+    void consume(int chars = 1);
     void flush_buffer();
 	void skip_whitespace();
-    std::string look_ahead(int chars);
 
 	static bool is_space(const char& ch);
 	[[nodiscard]] bool is_string() const;

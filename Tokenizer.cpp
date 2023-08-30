@@ -21,25 +21,9 @@ std::ostream &operator<<(std::ostream &os, const Token &tok) {
  * Tokenizer Functions
  */
 Tokenizer::Tokenizer(const char* &input) : input(input), pos(0), line(1) {
-    current_char = *input;
-    input_length = strlen(input);
+	current_char = *input;
+	input_length = strlen(input);
 
-//    // Startzeitpunkt speichern
-//    auto start_time = std::chrono::high_resolution_clock::now();
-//    tokenize();
-//    // Endzeitpunkt speichern
-//    auto end_time = std::chrono::high_resolution_clock::now();
-//
-//    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-//
-//	for (auto & token: tokens) {
-//        if (token.type != COMMENT && token.type != LINEBRK)
-//		    std::cout << token << '\n';
-//	}
-//	std::cout << std::endl;
-//
-//    // Dauer in Millisekunden ausgeben
-//    std::cout << "Time measured: " << duration.count() << " ms" << std::endl;
 }
 
 std::vector<Token> Tokenizer::tokenize() {
@@ -74,9 +58,13 @@ std::vector<Token> Tokenizer::tokenize() {
     return tokens;
 }
 
-void Tokenizer::next_char(int chars) {
+void Tokenizer::consume(int chars) {
     for(int i = 0; i<chars; i++) {
-        if (pos >= input_length) break;
+        if (pos >= input_length) {
+			auto err_msg = "Reached end of file.";
+			CompileError(ErrorType::TokenError, err_msg, line, "end token", std::string(1,current_char)).print();
+			exit(EXIT_FAILURE);
+		}
         buffer += current_char;
         pos++;
         input++;
@@ -86,7 +74,11 @@ void Tokenizer::next_char(int chars) {
 
 void Tokenizer::skip_whitespace() {
     while (is_space(current_char)) {
-        if (pos >= input_length) break;
+        if (pos >= input_length) {
+			auto err_msg = "Reached end of file.";
+			CompileError(ErrorType::TokenError, err_msg, line, "end token", std::string(1,current_char)).print();
+			exit(EXIT_FAILURE);
+		}
         buffer += current_char;
         pos++;
         input++;
@@ -95,15 +87,22 @@ void Tokenizer::skip_whitespace() {
 }
 
 char Tokenizer::peek(int ahead) const {
-    if (input_length < pos+ahead)
-        return 0;
+    if (input_length < pos+ahead) {
+		auto err_msg = "Reached end of file.";
+		CompileError(ErrorType::TokenError, err_msg, line, "end token", std::string(1,current_char)).print();
+		exit(EXIT_FAILURE);
+	}
+
     return input[ahead];
 }
 
 void Tokenizer::get_invalid() {
 	flush_buffer();
-    next_char();
+	consume();
 	tokens.emplace_back(INVALID, buffer, line);
+	auto err_msg = "Found invalid token.";
+	CompileError(ErrorType::TokenError, err_msg, line, "valid token", buffer).print();
+	exit(EXIT_FAILURE);
 	skip_whitespace();
 }
 
@@ -111,24 +110,24 @@ void Tokenizer::get_comment() {
 	flush_buffer();
 	if (current_char == '{') { // multi-line ksp style
 		while (current_char != '}') {
-			next_char();
+			consume();
             if (current_char == '\n') line++;
 		}
-		next_char();
+		consume();
 	} else if (current_char == '/') {
         // if one-line comment c++ style
         if (peek() == '/') {
             while (current_char != '\n') {
-                next_char();
+				consume();
             }
             // skip nex_char(); so that the \n can be tokenized
             // if multi-line comment c++ style
         } else if (peek() == '*') {
             while (current_char != '*' or peek() != '/') {
-                next_char();
+				consume();
                 if (current_char == '\n') line++;
             }
-            next_char(2);
+			consume(2);
         }
     }
     if (not buffer.empty())
@@ -143,11 +142,11 @@ bool Tokenizer::is_string() const {
 void Tokenizer::get_string() {
 	flush_buffer();
 	char starting_char = current_char;
-	next_char();
+	consume();
 	while(current_char != starting_char) {
-		next_char();
+		consume();
 	}
-	next_char();
+	consume();
 	tokens.emplace_back(STRING, this->buffer, this->line);
 	skip_whitespace();
 }
@@ -165,7 +164,7 @@ void Tokenizer::get_math() {
         tok = MULT;
     }
     tokens.emplace_back(tok, std::string(1,this->current_char), this->line);
-    next_char();
+	consume();
     skip_whitespace();
 }
 
@@ -181,19 +180,19 @@ void Tokenizer::get_parenth() {
     else if (current_char == ']')
         tok = CLOSED_BRACKET;
     tokens.emplace_back(tok, std::string(1,this->current_char), this->line);
-    next_char();
+	consume();
     skip_whitespace();
 }
 
 void Tokenizer::get_assignment() {
     tokens.emplace_back(ASSIGN, ":=", this->line);
-    next_char(2);
+	consume(2);
     skip_whitespace();
 }
 
 void Tokenizer::get_arrow() {
     tokens.emplace_back(ARROW, "->", this->line);
-    next_char(2);
+	consume(2);
     skip_whitespace();
 }
 
@@ -205,29 +204,32 @@ bool Tokenizer::is_keyword_or_num() const {
 void Tokenizer::get_keyword_or_num() {
     flush_buffer();
     while(std::isdigit(current_char)) {
-        next_char();
+		consume();
     }
     // check if is float or bitwise operator
     if (current_char == '.') {
-        next_char();
+		consume();
         // is float
         if (std::isdigit(current_char)) {
             while (std::isdigit(current_char)) {
-                next_char();
+				consume();
             }
             tokens.emplace_back(FLOAT, this->buffer, this->line);
-        } else
-            std::cerr << buffer << " is not a known Keyword" << std::endl;
+        } else {
+			auto err_msg = "Found unknown keyword. Dots in Keywords are not allowed.";
+			CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer).print();
+			exit(EXIT_FAILURE);
+		}
     // check if next char is _ or text
     } else if (is_keyword_or_num()) {
         while (is_keyword_or_num()) {
-            next_char();
+			consume();
         }
         token tok;
         if (is_hexadecimal(buffer)) {
             tokens.emplace_back(HEXADECIMAL, this->buffer, this->line);
-//        } else if (is_binary(buffer)) {
-//            tokens.emplace_back(BINARY, this->buffer, this->line);
+        } else if (is_binary(buffer)) {
+            tokens.emplace_back(BINARY, this->buffer, this->line);
         } else if (is_callback_start()) {
             tokens.pop_back();
             tokens.emplace_back(BEGIN_CALLBACK, "on " + this->buffer, this->line);
@@ -270,7 +272,7 @@ void Tokenizer::get_keyword_or_num() {
 void Tokenizer::get_linebreak() {
     tokens.emplace_back(LINEBRK, "\n", this->line);
     this->line++;
-    next_char();
+	consume();
     skip_whitespace();
 }
 
@@ -280,33 +282,37 @@ void Tokenizer::get_comparison() {
     if (current_char == '>' ) {
         if (peek() == '=') {
             tok = GREATER_EQUAL;
-            next_char();
+			consume();
         } else
             tok = GREATER_THAN;
     } else if (current_char == '<') {
         if (peek() == '=') {
             tok = LESS_EQUAL;
-            next_char();
+			consume();
         } else
             tok = LESS_THAN;
     } else if (current_char == '=') {
         tok = EQUAL;
-    } else std::cerr << "Error in comparison operator" << std::endl;
+    } else {
+		auto err_msg = "Unknown comparison operator.";
+		CompileError(ErrorType::TokenError, err_msg, line, "<, >, =", buffer).print();
+		exit(EXIT_FAILURE);
+	}
     tokens.emplace_back(tok, std::string(1,this->current_char), this->line);
-    next_char();
+	consume();
     skip_whitespace();
 }
 
 void Tokenizer::get_comma() {
     flush_buffer();
     tokens.emplace_back(COMMA, std::string(1,this->current_char), this->line);
-    next_char();
+	consume();
     skip_whitespace();
 }
 
 void Tokenizer::get_line_continuation() {
     flush_buffer();
-    next_char(3);
+	consume(3);
     tokens.emplace_back(LINE_CONTINUE, buffer, line);
     skip_whitespace();
 
@@ -314,18 +320,20 @@ void Tokenizer::get_line_continuation() {
 
 void Tokenizer::get_bitwise_operator() {
     flush_buffer();
-    next_char();
+	consume();
     while(std::isalpha(current_char)) {
-        next_char();
+		consume();
     }
-    next_char();
+	consume();
     if (contains(BITWISE_OPERATORS, buffer)) {
         token tok = get_token_type(BITWISE_OPERATORS, buffer);
         tokens.emplace_back(tok, buffer, this->line);
     } else {
-        std::cerr << buffer << " is not a known Keyword" << std::endl;
+		auto err_msg = "Found unknown keyword. Dots in Keywords are not allowed.";
+		CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer).print();
+		exit(EXIT_FAILURE);
     }
-    next_char();
+	consume();
     skip_whitespace();
 }
 
@@ -337,27 +345,21 @@ void Tokenizer::flush_buffer() {
     this->buffer.clear();
 }
 
-std::string Tokenizer::look_ahead(int chars) {
-    std::string la_buffer;
-    int real_chars = chars;
-    if (input_length < pos+chars)
-        real_chars = input_length - pos;
-    for (int i = 0; i < real_chars; i++) {
-        la_buffer += input[i];
-    }
-    return la_buffer;
-}
-
 bool Tokenizer::is_binary(const std::string& str) {
-    // Überprüfen, ob der String mit "b" beginnt oder auf "b" endet
-    if (str.back() == 'b' || str[0] == 'b') {
-        return true;
-    }
-        // Überprüfen, ob der String mit einer Ziffer beginnt, "b" in der Mitte hat und mit "h" endet
-    else if (str.size() > 2 && isdigit(str[0]) && str.find('b') != std::string::npos && str.back() == 'h') {
-        return true;
-    }
-    return false;
+	// Überprüfen, ob der String mit "b" beginnt und nur Ziffern enthält
+	if (str[0] == 'b') {
+		return std::all_of(str.begin() + 1, str.end(), [](char c) { return c == '0' || c == '1'; });
+	}
+		// Überprüfen, ob der String auf "b" endet und nur Ziffern enthält
+	else if (str.back() == 'b') {
+		return std::all_of(str.begin(), str.end() - 1, [](char c) { return c == '0' || c == '1'; });
+	}
+		// Überprüfen, ob der String mit einer Ziffer beginnt, "b" in der Mitte hat und mit "h" endet
+	else if (str.size() > 2 && isdigit(str[0]) && str.find('b') != std::string::npos && str.back() == 'h') {
+		size_t b_pos = str.find('b');
+		return std::all_of(str.begin() + 1, str.begin() + b_pos, [](char c) { return c == '0' || c == '1'; });
+	}
+	return false;
 }
 
 bool Tokenizer::is_hexadecimal(const std::string& str) {
@@ -387,6 +389,7 @@ token Tokenizer::get_token_type(const std::vector<Keyword> &vec, const std::stri
     }
     return INVALID; // Rückgabe von UNKNOWN, wenn die Zeichenkette nicht gefunden wird
 }
+
 
 
 

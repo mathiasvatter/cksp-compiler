@@ -3,10 +3,13 @@
 //
 
 #pragma once
+#include <iostream>
+#include <utility>
 
 /// defines the token names and the string that represents them while debugging
 #define ENUM_LIST(XX) \
 	XX(INVALID, "invalid") \
+	XX(END_TOKEN, "end_of_file") \
 	XX(LINEBRK, "linebreak") \
 	XX(INT, "int") \
 	XX(FLOAT, "float") \
@@ -99,14 +102,14 @@ inline const char *tokenStrings[] = {
 //inline const char *tokenStrings[];
 
 /// overwrite the << operator to make debugging easier
-//inline std::ostream &operator<<(std::ostream &os, const token &tok) {
-//    os << tokenStrings[tok];
-//    return os;
-//}
+inline std::ostream &operator<<(std::ostream &os, const token &tok) {
+    os << tokenStrings[tok];
+    return os;
+}
 
 /// combines the token type and the actual Keyword that should be searched for by lexer
 struct Keyword {
-	inline Keyword(token type, std::string keyword) : type(type), value(keyword) {};
+	inline Keyword(token type, std::string keyword) : type(type), value(std::move(keyword)) {};
 	token type;
 	std::string value;
 };

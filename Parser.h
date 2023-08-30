@@ -7,6 +7,7 @@
 #include "Tokenizer.h"
 #include "AST.h"
 #include "Tokens.h"
+#include "Result.h"
 //#include "ASTVisitor.h"
 
 inline static std::map<token, int> BinaryOpPrecendence = {
