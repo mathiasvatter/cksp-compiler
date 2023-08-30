@@ -39,8 +39,8 @@ private:
 	std::vector<Token> m_tokens;
 	token curr_token;
 
-	[[nodiscard]] std::optional<Token> peek(int ahead = 0);
-	Token consume(int tokens = 1);
+	[[nodiscard]] Token peek(int ahead = 0);
+	Token consume();
     static int get_binop_precedence(token tok);
 
     std::optional<std::unique_ptr<NodeInt>> parse_int();
@@ -54,6 +54,6 @@ private:
     std::optional<std::unique_ptr<NodeVariableAssign>> parse_variable_assign();
     std::optional<std::unique_ptr<NodeAST>> parse_assign_statement();
     std::optional<std::unique_ptr<NodeStatements>> parse_statements();
-    std::optional<std::unique_ptr<NodeCallback>> parse_callback();
+    Result<std::unique_ptr<NodeCallback>> parse_callback();
 };
 

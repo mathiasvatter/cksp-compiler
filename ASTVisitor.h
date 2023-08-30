@@ -10,13 +10,17 @@
 class ASTVisitor {
 public:
 	virtual void visit(NodeInt& node) = 0;
+    virtual void visit(NodeReal& node) = 0;
+    virtual void visit(NodeString& node) = 0;
 	virtual void visit(NodeVariable& node) = 0;
 	virtual void visit(NodeBinaryExpr& node) = 0;
 	virtual void visit(NodeVariableAssign& node)  = 0;
 	virtual void visit(NodeAssignStatement& node)  = 0;
 	virtual void visit(NodeStatements& node)  = 0;
 	virtual void visit(NodeCallback& node)  = 0;
-
+    virtual void visit(NodeProgramm& node)  = 0;
+    virtual void visit(NodeFunctionHeader& node)  = 0;
+    virtual void visit(NodeFunctionDefinition& node)  = 0;
 };
 
 class ASTPrinter : public ASTVisitor {
@@ -65,5 +69,22 @@ public:
 		node.statements->accept(*this);
 		std::cout << "End_Callback(" << node.end_callback << ")"<< std::endl;
 	}
+
+    void visit(NodeReal& node) override {
+        std::cout << "";
+    }
+    void visit(NodeString& node) override {
+        std::cout << "";
+    }
+    void visit(NodeFunctionHeader& node) override {
+        std::cout << "";
+    }
+    void visit(NodeFunctionDefinition& node) override {
+        std::cout << "";
+    }
+    void visit(NodeProgramm& node) override {
+        std::cout << "";
+    }
+
 };
 

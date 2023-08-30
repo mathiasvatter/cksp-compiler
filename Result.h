@@ -13,7 +13,7 @@ public:
     inline explicit Result(T val) : value(std::move(val)) {}
     inline explicit Result(CompileError err) : value(std::move(err)) {}
 
-    inline bool is_error() const {
+    [[nodiscard]] inline bool is_error() const {
         return std::holds_alternative<CompileError>(value);
     }
 
