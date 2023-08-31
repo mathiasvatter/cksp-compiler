@@ -254,13 +254,18 @@ void Tokenizer::get_keyword_or_num() {
                 }
             }
             tokens.emplace_back(tok, val, line);
-
         } else if (contains(STATEMENT_SYNTAX, buffer)) {
             tok = get_token_type(STATEMENT_SYNTAX, buffer);
             tokens.emplace_back(tok, buffer, line);
         } else if (contains(UI_CONTROLS, buffer)) {
-            tok = get_token_type(UI_CONTROLS, buffer);
-            tokens.emplace_back(tok, buffer, line);
+			tok = get_token_type(UI_CONTROLS, buffer);
+			tokens.emplace_back(tok, buffer, line);
+		} else if (contains(IMPORT_SYNTAX, buffer)) {
+			tok = get_token_type(IMPORT_SYNTAX, buffer);
+			tokens.emplace_back(tok, buffer, line);
+		} else if (contains(DECLARATION_SYNTAX, buffer)) {
+			tok = get_token_type(DECLARATION_SYNTAX, buffer);
+			tokens.emplace_back(tok, buffer, line);
         } else
             tokens.emplace_back(KEYWORD, buffer, line);
     } else // is probably int

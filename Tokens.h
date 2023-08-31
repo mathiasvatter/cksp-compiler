@@ -65,8 +65,13 @@
     XX(TO, "to") \
     XX(DOWNTO, "downto") \
     XX(ELSE, "else") \
-    XX(CASE, "select_case") \
-    XX(AS, "as") \
+    XX(CASE, "select_case")   \
+    XX(IMPORT, "import") \
+    XX(AS, "import_as") \
+    XX(DECLARE, "declare") \
+    XX(DEFINE, "define") \
+    XX(CONST, "const") \
+    XX(POLYPHONIC, "polyphonic") \
     XX(LINE_CONTINUE, "line_continue") \
     XX(UI_LABEL, "") \
     XX(UI_BUTTON, "") \
@@ -84,7 +89,6 @@
     XX(UI_FILE_SELECTOR, "") \
     XX(UI_PANEL, "") \
     XX(UI_MOUSE_AREA, "")
-
 
 
 #define ENUM(name, str) name,
@@ -125,7 +129,9 @@ inline std::vector<Keyword> UI_CONTROLS = {{UI_LABEL, "ui_label"}, {UI_BUTTON, "
 										   {UI_KNOB, "ui_knob"}, {UI_TABLE, "ui_table"}, {UI_XY, "ui_xy"},
 										   {UI_TEXT_EDIT, "ui_text_edit"}, {UI_LEVEL_METER, "ui_level_meter"}, {UI_FILE_SELECTOR, "ui_file_selector"},
 										   {UI_PANEL, "ui_panel"}, {UI_MOUSE_AREA, "ui_mouse_area"}};
-inline std::vector<Keyword> STATEMENT_SYNTAX = {{TO, "to"}, {DOWNTO, "downto"}, {ELSE, "else"}, {CASE, "case"}, {AS, "as"}};
+inline std::vector<Keyword> DECLARATION_SYNTAX = {{DECLARE, "declare"}, {DEFINE, "define"}, {CONST, "const"}, {POLYPHONIC, "polyphonic"}};
+inline std::vector<Keyword> IMPORT_SYNTAX = {{IMPORT, "import"}, {AS, "as"}};
+inline std::vector<Keyword> STATEMENT_SYNTAX = {{TO, "to"}, {DOWNTO, "downto"}, {ELSE, "else"}, {CASE, "case"}};
 // control statements that also have an end
 inline std::vector<Keyword> END_STATEMENTS = {{END_FUNCTION, "end function"}, {END_FOR, "end for"}, {END_WHILE, "end while"},
 											  {END_IF,       "end if"}, {END_SELECT, "end select"}, {END_CONSTBLOCK, "end const"}, {END_LIST, "end list"},

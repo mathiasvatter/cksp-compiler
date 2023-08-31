@@ -40,13 +40,13 @@
 <assign_statement> ::= <variable_assign> | <array_assign>
 <binary_expression> ::= (<int> | <variable> | <function_header>) <binary_op> <expression> | (<int> | <variable> | <function_header>)
 <expression> ::=
-<statements> ::= (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement)*
+<statements> ::= (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement> | <import_statement>)*
 <for_statement> ::= for <variable> := <expression> <linebreak> <statements> end for <linebreak>
 <condition> ::= <expression> <comparison> <expression> (<bool> <condition>)*
 <if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>
 <while_statement> ::= while (? <condition> )? <linebreak> <statements> end while <linebreak>
 <select_statement> ::= select (? <expression> )? <linebreak> (case <expression> <linebreak> <statements>)+ end select <linebreak>
-
+<import_statement> ::= import <filepath> (as <keyword>)?
 <callback_identifier> ::= ("async_complete" | "controller" | "init" |
                           "listener" | "note" | "persistence_changed" | "pgs_changed" | "poly_at" |
                           "release" | "rpn/nrpn" | "ui_control" | "ui_update")

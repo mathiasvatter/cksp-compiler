@@ -3,5 +3,5 @@ on init
 	for i := 0 to num_elements(soundset_ids)-1
 	    message(i)
 	end for*/
-    0b011h := (4 + 6)*23 mod 4+5/7.0
-end on ....
+    b0111110h := (4 + 6)*23 mod 4+5/1.5
+end on
