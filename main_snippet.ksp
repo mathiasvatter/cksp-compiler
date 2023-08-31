@@ -6,3 +6,4 @@ on init
     bims := (bums + 6)*23 mod 4+5/7
     bums := -2
 end on
+//u*

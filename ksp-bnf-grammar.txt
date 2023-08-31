@@ -25,7 +25,7 @@
 <bitwise_op> ::= .and. | .xor. | .or. | .not.
 
 <function_header> ::= <keyword> "(" (<expression> ("," <expression>)?)? ")"
-<function_definition> ::= "function" <function_header> ("->" <variable>)? <linebreak> <statement>* "end function"
+<function_definition> ::= "function" <function_header> ("->" <variable>)? ("override")? <linebreak> <statement>* "end function"
 <function_call> ::= "call" <function_header>
 
 
@@ -35,7 +35,7 @@
 <array_identifier> ::= "!" | "%" | "?"
 <variable> ::= <variable_identifier>? <keyword>
 <variable_declaration> ::= "declare" <variable> | "declare" <variable_assign>
-<variable_assign> ::= <variable> ":=" (<expression> | <string>) <linebreak>
+<variable_assign> ::= <variable> ":=" (<expression> | <string>)
 
 <assign_statement> ::= <variable_assign> | <array_assign>
 <binary_expression> ::= (<int> | <variable> | <function_header>) <binary_op> <binary_expression> | (<int> | <variable> | <function_header>)

@@ -54,10 +54,12 @@ private:
 		/// parse identifierexpr, numberexpr, parenthexpr
 		std::optional<std::unique_ptr<NodeAST>> _parse_primary_expr();
     std::optional<std::unique_ptr<NodeVariableAssign>> parse_variable_assign();
-    std::optional<std::unique_ptr<NodeAST>> parse_assign_statement();
+    std::optional<std::unique_ptr<NodeAssignStatement>> parse_assign_statement();
 	// combines all possible statement types
     std::optional<std::unique_ptr<NodeStatement>> parse_statement();
     Result<std::unique_ptr<NodeCallback>> parse_callback();
 	Result<std::unique_ptr<NodeProgram>> parse_program();
+    Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition();
+    Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header();
 };
 

@@ -46,7 +46,7 @@ inline static bool contains(const std::vector<Keyword>& vec, const std::string& 
 class Tokenizer {
 
 private:
-    const char * input;
+    std::string input;
     size_t input_length;
     size_t pos;
     char current_char;
@@ -83,7 +83,7 @@ private:
     void get_keyword_or_num();
 
 public:
-    explicit Tokenizer(const char* &input);
+    explicit Tokenizer(std::string input);
     ~Tokenizer() = default;
     std::vector<Token> tokenize();
 };

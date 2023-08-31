@@ -63,13 +63,13 @@ public:
 	}
 
 	void visit(NodeCallback& node) override {
-		std::cout << "Begin_Callback(" << node.begin_callback << ")" << std::endl;
-		std::cout << "Stmts {" << std::endl;
+		std::cout << "Callback(" << node.begin_callback << ")" << std::endl;
+		std::cout << "Stmts{" << std::endl ;
 		for(auto& statement : node.statements) {
 			statement->accept(*this);
 		}
 		std::cout << "}" << std::endl;
-		std::cout << "End_Callback(" << node.end_callback << ")"<< std::endl;
+		std::cout << "End_callback(" << node.end_callback << ")"<< std::endl;
 	}
 
     void visit(NodeReal& node) override {
@@ -85,7 +85,18 @@ public:
         std::cout << "";
     }
     void visit(NodeProgram& node) override {
-        std::cout << "";
+        std::cout << "Callbacks: " << std::endl;
+        for(auto& callback: node.callbacks) {
+            callback->accept(*this);
+        }
+        std::cout << "Functions:" << std::endl;
+        for( auto & function : node.function_definitions) {
+            function->accept(*this);
+        }
+        std::cout << "Macros:" << std::endl;
+        for (auto & macro : node.macro_definitions) {
+            macro -> accept(*this);
+        }
     }
 
 };

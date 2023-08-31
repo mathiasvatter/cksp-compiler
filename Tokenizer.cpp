@@ -20,14 +20,16 @@ std::ostream &operator<<(std::ostream &os, const Token &tok) {
 /*
  * Tokenizer Functions
  */
-Tokenizer::Tokenizer(const char* &input) : input(input), pos(0), line(1) {
-	current_char = *input;
-	input_length = strlen(input);
+Tokenizer::Tokenizer(std::string input) : pos(0), line(1){
+    this->input = std::move(input);
+    this->input += '\n';
+	current_char = this->input.at(pos);
+	input_length = this->input.size();
 
 }
 
 std::vector<Token> Tokenizer::tokenize() {
-    while (pos < input_length) {
+    while (pos < input_length-1) {
         if (current_char == '/' && (peek() =='*' || peek() =='/') || current_char == '{') {
             get_comment();
         } else if (current_char == '\n') {
@@ -55,45 +57,44 @@ std::vector<Token> Tokenizer::tokenize() {
         } else
             get_invalid();
     }
+    tokens.emplace_back(END_TOKEN, buffer, line);
     return tokens;
 }
 
 void Tokenizer::consume(int chars) {
     for(int i = 0; i<chars; i++) {
-        if (pos >= input_length) {
+        if (pos+1 >= input_length) {
 			auto err_msg = "Reached end of file.";
 			CompileError(ErrorType::TokenError, err_msg, line, "end token", std::string(1,current_char)).print();
 			exit(EXIT_FAILURE);
 		}
         buffer += current_char;
         pos++;
-        input++;
-        this->current_char = *input;
+        current_char = input.at(pos);
     }
 }
 
 void Tokenizer::skip_whitespace() {
     while (is_space(current_char)) {
-        if (pos >= input_length) {
+        if (pos+1 >= input_length) {
 			auto err_msg = "Reached end of file.";
 			CompileError(ErrorType::TokenError, err_msg, line, "end token", std::string(1,current_char)).print();
 			exit(EXIT_FAILURE);
 		}
         buffer += current_char;
         pos++;
-        input++;
-        this->current_char = *input;
+        current_char = input.at(pos);
     }
 }
 
 char Tokenizer::peek(int ahead) const {
-    if (input_length < pos+ahead) {
+    if (input_length <= pos+ahead) {
 		auto err_msg = "Reached end of file.";
 		CompileError(ErrorType::TokenError, err_msg, line, "end token", std::string(1,current_char)).print();
 		exit(EXIT_FAILURE);
 	}
 
-    return input[ahead];
+    return input.at(pos+ahead);
 }
 
 void Tokenizer::get_invalid() {
@@ -216,14 +217,22 @@ void Tokenizer::get_keyword_or_num() {
             }
             tokens.emplace_back(FLOAT, this->buffer, this->line);
         } else {
-			auto err_msg = "Found unknown keyword. Dots in Keywords are not allowed.";
+			auto err_msg = "Found unknown keyword.";
 			CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer).print();
 			exit(EXIT_FAILURE);
 		}
     // check if next char is _ or text
     } else if (is_keyword_or_num()) {
-        while (is_keyword_or_num()) {
-			consume();
+        consume();
+        while (std::isalnum(current_char) || current_char == '_') {
+            consume();
+        }
+        // catch var identifier in the middle of keyword
+        if (contains(VAR_IDENT, current_char) || contains(ARRAY_IDENT, current_char)) {
+            consume();
+            auto err_msg = "Incorrect placement of variable/array identifier";
+            CompileError(ErrorType::TokenError, err_msg, line, "valid variable", buffer).print();
+            exit(EXIT_FAILURE);
         }
         token tok;
         if (is_hexadecimal(buffer)) {
@@ -266,8 +275,25 @@ void Tokenizer::get_keyword_or_num() {
 		} else if (contains(DECLARATION_SYNTAX, buffer)) {
 			tok = get_token_type(DECLARATION_SYNTAX, buffer);
 			tokens.emplace_back(tok, buffer, line);
-        } else
+        } else {
             tokens.emplace_back(KEYWORD, buffer, line);
+        }
+        // see if char after keyword is dot
+        if (current_char == '.') {
+            consume();
+            tokens.emplace_back(DOT, ".", line);
+            if (std::isalnum(current_char) || current_char == '_') {
+                flush_buffer();
+                while(std::isalnum(current_char) || current_char == '_') {
+                    consume();
+                }
+                tokens.emplace_back(KEYWORD, buffer, line);
+            } else {
+                auto err_msg = "Found unknown keyword.";
+                CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer).print();
+                exit(EXIT_FAILURE);
+            }
+        }
     } else // is probably int
         tokens.emplace_back(INT, buffer, line);
     skip_whitespace();

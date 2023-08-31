@@ -25,19 +25,17 @@ int main() {
 
     auto path = "../main_snippet.ksp";
 	std::string ksp_code = read_file(path);
-    const char * ksp_code_ptr = ksp_code.c_str();
-	Tokenizer tokenizer(ksp_code_ptr);
+	Tokenizer tokenizer(ksp_code);
     auto tokens = tokenizer.tokenize();
+	for (auto & token: tokens) {
+        if (token.type != COMMENT && token.type != LINEBRK)
+		    std::cout << token << '\n';
+	}
+	std::cout << std::endl;
     Parser parser(tokens);
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-//
-//	for (auto & token: tokens) {
-//        if (token.type != COMMENT && token.type != LINEBRK)
-//		    std::cout << token << '\n';
-//	}
-//	std::cout << std::endl;
 
     // Dauer in Millisekunden ausgeben
     std::cout << "Time measured: " << duration.count() << " ms" << std::endl;
