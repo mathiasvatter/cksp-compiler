@@ -3,5 +3,6 @@ on init
 	for i := 0 to num_elements(soundset_ids)-1
 	    message(i)
 	end for*/
-    bims := (4 + 6)*23 mod 4+5/7
+    bims := (bums + 6)*23 mod 4+5/7
+    bums := -2
 end on

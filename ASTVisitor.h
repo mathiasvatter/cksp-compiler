@@ -16,9 +16,9 @@ public:
 	virtual void visit(NodeBinaryExpr& node) = 0;
 	virtual void visit(NodeVariableAssign& node)  = 0;
 	virtual void visit(NodeAssignStatement& node)  = 0;
-	virtual void visit(NodeStatements& node)  = 0;
+	virtual void visit(NodeStatement& node)  = 0;
 	virtual void visit(NodeCallback& node)  = 0;
-    virtual void visit(NodeProgramm& node)  = 0;
+    virtual void visit(NodeProgram& node)  = 0;
     virtual void visit(NodeFunctionHeader& node)  = 0;
     virtual void visit(NodeFunctionDefinition& node)  = 0;
 };
@@ -53,20 +53,22 @@ public:
 	void visit(NodeAssignStatement& node) override {
 		std::cout << "AssignStmt(";
 		node.assignment->accept(*this);
-		std::cout << ") " << std::endl;
+		std::cout << ")";
 	}
 
-	void visit(NodeStatements& node) override {
+	void visit(NodeStatement& node) override {
+		std::cout << "StmtWrapper(" ;
+		node.statement->accept(*this);
+		std::cout << ")" << std::endl;
+	}
+
+	void visit(NodeCallback& node) override {
+		std::cout << "Begin_Callback(" << node.begin_callback << ")" << std::endl;
 		std::cout << "Stmts {" << std::endl;
 		for(auto& statement : node.statements) {
 			statement->accept(*this);
 		}
 		std::cout << "}" << std::endl;
-	}
-
-	void visit(NodeCallback& node) override {
-		std::cout << "Begin_Callback(" << node.begin_callback << ")" << std::endl;
-		node.statements->accept(*this);
 		std::cout << "End_Callback(" << node.end_callback << ")"<< std::endl;
 	}
 
@@ -82,7 +84,7 @@ public:
     void visit(NodeFunctionDefinition& node) override {
         std::cout << "";
     }
-    void visit(NodeProgramm& node) override {
+    void visit(NodeProgram& node) override {
         std::cout << "";
     }
 

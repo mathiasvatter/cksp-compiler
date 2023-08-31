@@ -38,7 +38,7 @@ void NodeAssignStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-void NodeStatements::accept(ASTVisitor &visitor) {
+void NodeStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
@@ -46,7 +46,7 @@ void NodeCallback::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-void NodeProgramm::accept(ASTVisitor& visitor) {
+void NodeProgram::accept(ASTVisitor& visitor) {
     visitor.visit(*this);
 }
 

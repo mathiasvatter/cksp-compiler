@@ -76,20 +76,21 @@ struct NodeAssignStatement: NodeAST {
 	void accept(ASTVisitor& visitor) override;
 };
 
-struct NodeStatements: NodeAST {
-    std::vector<std::unique_ptr<NodeAST>> statements;
+// can be assign_statement, if_statement etc.
+struct NodeStatement: NodeAST {
+    std::unique_ptr<NodeAST> statement;
 
-	explicit NodeStatements(std::vector<std::unique_ptr<NodeAST>> statements) : statements(std::move(statements)) {}
+	explicit NodeStatement(std::unique_ptr<NodeAST> statement) : statement(std::move(statement)) {}
 	void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeCallback: NodeAST {
     std::string begin_callback;
-    std::unique_ptr<NodeStatements> statements;
+    std::vector<std::unique_ptr<NodeStatement>> statements;
     std::string end_callback;
 
 	inline NodeCallback(std::string begin_callback,
-				 std::unique_ptr<NodeStatements> statements,
+				 std::vector<std::unique_ptr<NodeStatement>> statements,
 				 std::string end_callback)
 		: begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {}
 	void accept(ASTVisitor& visitor) override;
@@ -107,24 +108,24 @@ struct NodeFunctionHeader: NodeAST {
 struct NodeFunctionDefinition: NodeAST {
     std::unique_ptr<NodeFunctionHeader> header;
     std::unique_ptr<NodeVariable> return_variable;
-    std::vector<std::unique_ptr<NodeStatements>> body;
+    std::vector<std::unique_ptr<NodeStatement>> body;
 
     inline NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
                            std::unique_ptr<NodeVariable> returnVariable,
-                           std::vector<std::unique_ptr<NodeStatements>> body)
+                           std::vector<std::unique_ptr<NodeStatement>> body)
                            : header(std::move(header)), return_variable(std::move(returnVariable)),
                            body(std::move(body)) {};
     void accept(ASTVisitor& visitor) override;
 };
 
-struct NodeProgramm: NodeAST {
+struct NodeProgram: NodeAST {
     std::vector<std::unique_ptr<NodeAST>> callbacks;
     std::vector<std::unique_ptr<NodeAST>> function_definitions;
     std::vector<std::unique_ptr<NodeAST>> macro_definitions;
 
-    inline NodeProgramm(std::vector<std::unique_ptr<NodeAST>> callbacks,
-                 std::vector<std::unique_ptr<NodeAST>> functionDefinitions,
-                 std::vector<std::unique_ptr<NodeAST>> macroDefinitions)
+    inline NodeProgram(std::vector<std::unique_ptr<NodeAST>> callbacks,
+					   std::vector<std::unique_ptr<NodeAST>> functionDefinitions,
+					   std::vector<std::unique_ptr<NodeAST>> macroDefinitions)
                  : callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)),
                  macro_definitions(std::move(macroDefinitions)) {}
     void accept(ASTVisitor& visitor) override;
