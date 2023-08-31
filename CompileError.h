@@ -18,7 +18,8 @@ enum class ErrorType {
 	SyntaxError,
 	TypeError,
 	UndefinedVariable,
-	TokenError
+	TokenError,
+    ParseError
 	// TODO weitere Fehlerarten
 };
 
@@ -43,12 +44,13 @@ private:
 	size_t line_number;
     std::string file_name;
 
-    inline std::string error_type_to_string() const {
+    [[nodiscard]] inline std::string error_type_to_string() const {
         switch(type) {
             case ErrorType::SyntaxError: return "SyntaxError";
             case ErrorType::TypeError: return "TypeError";
             case ErrorType::UndefinedVariable: return "UndeclaredVariable";
             case ErrorType::TokenError: return "TokenError";
+            case ErrorType::ParseError: return "ParseError";
             // TODO weitere Fehlerarten
         }
     }

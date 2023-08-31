@@ -6,8 +6,20 @@
 #include "AST.h"
 #include "ASTVisitor.h"
 
+void NodeAST::accept(ASTVisitor &visitor) {
+
+}
+
 void NodeInt::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
+}
+
+void NodeReal::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeString::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
 }
 
 void NodeVariable::accept(ASTVisitor &visitor) {
@@ -34,6 +46,14 @@ void NodeCallback::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-void NodeAST::accept(ASTVisitor &visitor) {
+void NodeProgramm::accept(ASTVisitor& visitor) {
+    visitor.visit(*this);
+}
 
+void NodeFunctionHeader::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeFunctionDefinition::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
 }

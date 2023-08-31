@@ -23,19 +23,29 @@ struct NodeAST {
 	virtual void accept(class ASTVisitor& visitor);
 };
 
-
 struct NodeInt : NodeAST {
 	int value;
 	inline explicit NodeInt(int v) : value(v) {}
 	void accept(ASTVisitor& visitor) override;
 };
 
+struct NodeReal : NodeAST {
+    float value;
+    inline explicit NodeReal(float value) : value(value) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeString : NodeAST {
+    std::string value;
+    inline explicit NodeString(std::string value) : value(std::move(value)) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
 struct NodeVariable: NodeAST {
     char ident;
 	std::string name;
-	inline NodeVariable(const std::string &name, char ident) : name(name), ident(ident) {}
+	inline NodeVariable(std::string name, char ident) : name(std::move(name)), ident(ident) {}
 	void accept(ASTVisitor& visitor) override;
-
 };
 
 struct NodeBinaryExpr: NodeAST {
@@ -52,11 +62,10 @@ struct NodeVariableAssign: NodeAST {
     std::unique_ptr<NodeVariable> variable;
     std::string assignment_op;
     std::unique_ptr<NodeAST> assignee;
-    char linebreak;
 
     inline NodeVariableAssign(std::unique_ptr<NodeVariable> variable,std::string assignmentOp,
-                       std::unique_ptr<NodeAST> assignee, char linebreak) : variable(
-            std::move(variable)), assignment_op(std::move(assignmentOp)), assignee(std::move(assignee)), linebreak(linebreak) {}
+                       std::unique_ptr<NodeAST> assignee) : variable(
+            std::move(variable)), assignment_op(std::move(assignmentOp)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
 };
 
@@ -76,16 +85,49 @@ struct NodeStatements: NodeAST {
 
 struct NodeCallback: NodeAST {
     std::string begin_callback;
-    char linebreak;
     std::unique_ptr<NodeStatements> statements;
     std::string end_callback;
 
-	inline NodeCallback(const std::string &begin_callback,
-				 char linebreak,
+	inline NodeCallback(std::string begin_callback,
 				 std::unique_ptr<NodeStatements> statements,
-				 const std::string &end_callback)
-		: begin_callback(begin_callback), linebreak(linebreak), statements(std::move(statements)), end_callback(end_callback) {}
+				 std::string end_callback)
+		: begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {}
 	void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeFunctionHeader: NodeAST {
+    std::string name;
+    std::vector<std::unique_ptr<NodeAST>> args;
+
+    inline NodeFunctionHeader(std::string name, std::vector<std::unique_ptr<NodeAST>> args)
+    : name(std::move(name)), args(std::move(args)) {};
+    void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeFunctionDefinition: NodeAST {
+    std::unique_ptr<NodeFunctionHeader> header;
+    std::unique_ptr<NodeVariable> return_variable;
+    std::vector<std::unique_ptr<NodeStatements>> body;
+
+    inline NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
+                           std::unique_ptr<NodeVariable> returnVariable,
+                           std::vector<std::unique_ptr<NodeStatements>> body)
+                           : header(std::move(header)), return_variable(std::move(returnVariable)),
+                           body(std::move(body)) {};
+    void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeProgramm: NodeAST {
+    std::vector<std::unique_ptr<NodeAST>> callbacks;
+    std::vector<std::unique_ptr<NodeAST>> function_definitions;
+    std::vector<std::unique_ptr<NodeAST>> macro_definitions;
+
+    inline NodeProgramm(std::vector<std::unique_ptr<NodeAST>> callbacks,
+                 std::vector<std::unique_ptr<NodeAST>> functionDefinitions,
+                 std::vector<std::unique_ptr<NodeAST>> macroDefinitions)
+                 : callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)),
+                 macro_definitions(std::move(macroDefinitions)) {}
+    void accept(ASTVisitor& visitor) override;
 };
 
 
