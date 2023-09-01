@@ -107,12 +107,12 @@ struct NodeFunctionHeader: NodeAST {
 
 struct NodeFunctionDefinition: NodeAST {
     std::unique_ptr<NodeFunctionHeader> header;
-    std::unique_ptr<NodeVariable> return_variable;
+    std::optional<std::unique_ptr<NodeVariable>> return_variable;
     bool override;
     std::vector<std::unique_ptr<NodeStatement>> body;
 
     inline NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
-                           std::unique_ptr<NodeVariable> returnVariable, bool override,
+                           std::optional<std::unique_ptr<NodeVariable>> returnVariable, bool override,
                            std::vector<std::unique_ptr<NodeStatement>> body)
                            : header(std::move(header)), return_variable(std::move(returnVariable)), override(override),
                            body(std::move(body)) {};

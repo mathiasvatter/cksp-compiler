@@ -79,10 +79,24 @@ public:
         std::cout << "";
     }
     void visit(NodeFunctionHeader& node) override {
-        std::cout << "";
+        std::cout << "function " << node.name << "(";
+        for(auto& arg: node.args) {
+            arg->accept(*this);
+        }
+        std::cout << ")" << std::endl;
     }
     void visit(NodeFunctionDefinition& node) override {
         std::cout << "";
+        node.header ->accept(*this);
+        if (node.return_variable.has_value())
+            node.return_variable.value()->accept(*this);
+        if (node.override) {
+            std::cout << "override" << std::endl;
+        }
+        for(auto& stmt: node.body) {
+            stmt->accept(*this);
+        }
+        std::cout << "end function" << std::endl;
     }
     void visit(NodeProgram& node) override {
         std::cout << "Callbacks: " << std::endl;

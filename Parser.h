@@ -44,19 +44,19 @@ private:
     static int _get_binop_precedence(token tok);
 	void _skip_linebreaks();
 
-    std::optional<std::unique_ptr<NodeInt>> parse_int();
-    std::optional<std::unique_ptr<NodeVariable>> parse_variable();
-    std::optional<std::unique_ptr<NodeAST>> parse_binary_expr();
+    Result<std::unique_ptr<NodeInt>> parse_int();
+    Result<std::unique_ptr<NodeVariable>> parse_variable();
+    Result<std::unique_ptr<NodeAST>> parse_binary_expr();
 	/// Helper function for parsing binary expressions recursion
-		std::optional<std::unique_ptr<NodeAST>> _parse_binary_expr_rhs(int precedence, std::unique_ptr<NodeAST> lhs);
+		Result<std::unique_ptr<NodeAST>> _parse_binary_expr_rhs(int precedence, std::unique_ptr<NodeAST> lhs);
 		/// ( expression )
-		std::optional<std::unique_ptr<NodeAST>> _parse_parenth_expr();
+		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr();
 		/// parse identifierexpr, numberexpr, parenthexpr
-		std::optional<std::unique_ptr<NodeAST>> _parse_primary_expr();
-    std::optional<std::unique_ptr<NodeVariableAssign>> parse_variable_assign();
-    std::optional<std::unique_ptr<NodeAssignStatement>> parse_assign_statement();
+		Result<std::unique_ptr<NodeAST>> _parse_primary_expr();
+    Result<std::unique_ptr<NodeVariableAssign>> parse_variable_assign();
+    Result<std::unique_ptr<NodeAST>> parse_assign_statement();
 	// combines all possible statement types
-    std::optional<std::unique_ptr<NodeStatement>> parse_statement();
+    Result<std::unique_ptr<NodeStatement>> parse_statement();
     Result<std::unique_ptr<NodeCallback>> parse_callback();
 	Result<std::unique_ptr<NodeProgram>> parse_program();
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition();
