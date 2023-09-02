@@ -329,7 +329,7 @@ void Tokenizer::get_comparison() {
 		CompileError(ErrorType::TokenError, err_msg, line, "<, >, =", buffer).print();
 		exit(EXIT_FAILURE);
 	}
-    tokens.emplace_back(tok, std::string(1,this->current_char), this->line);
+    tokens.emplace_back(token::COMPARISON, std::string(1,this->current_char), this->line);
 	consume();
     skip_whitespace();
 }

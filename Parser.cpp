@@ -139,7 +139,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, 
                 return Result<std::unique_ptr<NodeAST>>(rhs.get_error());
             }
         }
-		if (contains(COMPARISON_START, bin_op.val[0])) {
+		if (bin_op.type == token::COMPARISON) {
 			//Check if rhs is NodeComparisonExpr because comparisons in comparisons are not allowed
 			if (dynamic_cast<NodeComparisonExpr *>(lhs.get()) != nullptr) {
 				return Result<std::unique_ptr<NodeAST>>(
@@ -149,7 +149,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, 
 			} else {
 				lhs = std::make_unique<NodeComparisonExpr>(bin_op.val, std::move(lhs), std::move(rhs.unwrap()));
 			}
-		} else if (contains(BOOL_OPERATORS, bin_op.val)){
+		} else if (bin_op.type == token::BOOL){
 			lhs = std::make_unique<NodeBooleanExpr>(bin_op.val, std::move(lhs), std::move(rhs.unwrap()));
 		} else {
 			lhs = std::make_unique<NodeBinaryExpr>(bin_op.val, std::move(lhs), std::move(rhs.unwrap()));

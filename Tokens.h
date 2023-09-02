@@ -42,9 +42,11 @@
     XX(GREATER_EQUAL, "greater equal") \
     XX(LESS_EQUAL, "less equal") \
     XX(EQUAL, "equal") \
+    XX(COMPARISON, "comparison_operator") \
     XX(BOOL_AND, "bool_and") \
     XX(BOOL_OR, "bool_or") \
     XX(BOOL_NOT, "bool_not") \
+    XX(BOOL, "boolean_operator") \
     XX(FUNCTION, "function") \
     XX(OVERRIDE, "override") \
     XX(FOR, "for") \
@@ -145,6 +147,6 @@ inline std::vector<std::string> CALLBACKS = {"init", "note", "release", "midi_in
 											 "rpn", "nrpn", "ui_update", "_pgs_changed", "pgs_changed",
 											 "poly_at", "listener", "async_complete", "persistence_changed", "ui_control"};
 inline std::vector<Keyword> BITWISE_OPERATORS = {{BIT_AND, ".and."}, {BIT_OR, ".or."}, {BIT_NOT, ".not."}, {BIT_XOR, ".xor."}};
-inline std::vector<Keyword> BOOL_OPERATORS = {{BOOL_AND, "and"}, {BOOL_OR, "or"}, {BOOL_NOT, "not"}};
+inline std::vector<Keyword> BOOL_OPERATORS = {{BOOL, "and"}, {BOOL, "or"}, {BOOL, "not"}};
 
 
