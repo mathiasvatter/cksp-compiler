@@ -47,6 +47,11 @@ void Parser::_skip_linebreaks() {
     }
 }
 
+Result<std::unique_ptr<NodeString>> Parser::parse_string() {
+    auto return_value = std::make_unique<NodeString>(std::move(consume().val));
+    return Result<std::unique_ptr<NodeString>>(std::move(return_value));
+}
+
 Result<std::unique_ptr<NodeAST>> Parser::parse_number() {
     std::string value;
     bool is_negative = false;
@@ -401,6 +406,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     auto value = std::make_unique<NodeFunctionDefinition>(std::move(func_header), std::move(func_return_var), func_override, std::move(func_body));
     return Result<std::unique_ptr<NodeFunctionDefinition>>(std::move(value));
 }
+
 
 
 
