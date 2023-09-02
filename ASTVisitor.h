@@ -14,6 +14,8 @@ public:
     virtual void visit(NodeString& node) = 0;
 	virtual void visit(NodeVariable& node) = 0;
 	virtual void visit(NodeBinaryExpr& node) = 0;
+	virtual void visit(NodeComparisonExpr& node) = 0;
+	virtual void visit(NodeBooleanExpr& node) = 0;
 	virtual void visit(NodeVariableAssign& node)  = 0;
 	virtual void visit(NodeAssignStatement& node)  = 0;
 	virtual void visit(NodeStatement& node)  = 0;
@@ -35,9 +37,24 @@ public:
 
 	void visit(NodeBinaryExpr& node) override {
 		std::cout << "BinaryExpr(";
-		std::cout << node.op << " ";
 		node.left->accept(*this);
-		std::cout << " ";
+		std::cout << " " << node.op << " ";
+		node.right->accept(*this);
+		std::cout << ")" ;
+	}
+
+	void visit(NodeComparisonExpr& node) override {
+		std::cout << "ConditionExpr(";
+		node.left->accept(*this);
+		std::cout << " " << node.comparison_op << " ";
+		node.right->accept(*this);
+		std::cout << ")" ;
+	}
+
+	void visit(NodeBooleanExpr& node) override {
+		std::cout << "BooleanExpr(";
+		node.left->accept(*this);
+		std::cout << " " << node.boolean_op << " ";
 		node.right->accept(*this);
 		std::cout << ")" ;
 	}
@@ -79,15 +96,17 @@ public:
         std::cout << "";
     }
     void visit(NodeFunctionHeader& node) override {
-        std::cout << "function " << node.name << "(";
+        std::cout << node.name << "(";
         for(auto& arg: node.args) {
             arg->accept(*this);
+			std::cout << ", ";
         }
-        std::cout << ")" << std::endl;
+        std::cout << ")";
     }
     void visit(NodeFunctionDefinition& node) override {
-        std::cout << "";
+        std::cout << "function ";
         node.header ->accept(*this);
+		std::cout << "\n";
         if (node.return_variable.has_value())
             node.return_variable.value()->accept(*this);
         if (node.override) {

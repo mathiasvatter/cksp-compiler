@@ -40,11 +40,13 @@
 <assign_statement> ::= <variable_assign> | <array_assign>
 <binary_expression> ::= (<int> | <variable> | <function_header>) <binary_op> <binary_expression> | (<int> | <variable> | <function_header>)
 <real_expression> ::= (<real> | <variable>
+<boolean_expression> ::= <comparison_expression> <bool> <comparison_expression>
+<comparison_expression> ::= <binary_expression> <comparison>
+<condition> ::= <boolean_expression> | <comparison_expression>
 <string_expression> ::= (<string> | <variable> | <function_header>) (& (<string> | <variable> | <function_header>))?
 <expression> ::= <binary_expression> | <real_expression> | <string_expression>
 <statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement) <linebreak>
 <for_statement> ::= for <variable> := <expression> <linebreak> <statements> end for <linebreak>
-<condition> ::= <expression> <comparison> <expression> (<bool> <condition>)*
 <if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>
 <while_statement> ::= while (? <condition> )? <linebreak> <statements> end while <linebreak>
 <select_statement> ::= select (? <expression> )? <linebreak> (case <expression> <linebreak> <statements>)+ end select <linebreak>

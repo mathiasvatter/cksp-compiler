@@ -301,7 +301,7 @@ void Tokenizer::get_keyword_or_num() {
 
 
 void Tokenizer::get_linebreak() {
-    tokens.emplace_back(LINEBRK, "\n", this->line);
+    tokens.emplace_back(LINEBRK, "linebreak", this->line);
     this->line++;
 	consume();
     skip_whitespace();
@@ -360,11 +360,10 @@ void Tokenizer::get_bitwise_operator() {
         token tok = get_token_type(BITWISE_OPERATORS, buffer);
         tokens.emplace_back(tok, buffer, this->line);
     } else {
-		auto err_msg = "Found unknown keyword. Dots in Keywords are not allowed.";
+		auto err_msg = "Found unknown keyword. Keywords starting with dots are not allowed.";
 		CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer).print();
 		exit(EXIT_FAILURE);
     }
-	consume();
     skip_whitespace();
 }
 

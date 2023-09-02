@@ -58,6 +58,26 @@ struct NodeBinaryExpr: NodeAST {
 	void accept(ASTVisitor& visitor) override;
 };
 
+struct NodeComparisonExpr: NodeAST {
+	std::unique_ptr<NodeAST> left, right;
+	std::string comparison_op;
+
+	NodeComparisonExpr(std::string comparison_op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right)
+					  : left(std::move(left)), right(std::move(right)), comparison_op(std::move(comparison_op)) {}
+	void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeBooleanExpr: NodeAST {
+	std::unique_ptr<NodeAST> left, right;
+	std::string boolean_op;
+
+	NodeBooleanExpr(std::string boolean_op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right)
+		: left(std::move(left)), right(std::move(right)), boolean_op(std::move(boolean_op)) {}
+	void accept(ASTVisitor& visitor) override;
+};
+
+
+
 struct NodeVariableAssign: NodeAST {
     std::unique_ptr<NodeVariable> variable;
     std::string assignment_op;

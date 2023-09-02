@@ -25,7 +25,7 @@ public:
         return std::get<T>(value);
     }
 
-    [[nodiscard]] inline const CompileError& get_error() const {
+    [[nodiscard]] inline CompileError& get_error() {
         if(!is_error()) {
             throw std::runtime_error("Attempt to get error from a successful result");
         }

@@ -30,7 +30,10 @@ public:
     : type(type), message(std::move(message)),  expected(std::move(expected)),  got(std::move(got)),
 	line_number(lineNumber), file_name(std::move(fileName)) {}
 
-    inline void print() const {
+    inline void print() {
+		if (got == "\n") {
+			got = "linebreak";
+		}
         std::cout << red << "CompileError [Type: " << error_type_to_string() << ", File: " << file_name <<
         ", Line: " << line_number << "]: " << reset << message << " Expected: '" << expected << "', got: '"
 		<< got << "'" <<std::endl;

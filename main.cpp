@@ -28,7 +28,7 @@ int main() {
 	Tokenizer tokenizer(ksp_code);
     auto tokens = tokenizer.tokenize();
 	for (auto & token: tokens) {
-        if (token.type != COMMENT && token.type != LINEBRK)
+        if (token.type != COMMENT) // && token.type != LINEBRK)
 		    std::cout << token << '\n';
 	}
 	std::cout << std::endl;

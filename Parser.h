@@ -18,6 +18,7 @@ inline static std::map<token, int> BinaryOpPrecendence = {
         {token::LESS_THAN, 5},
         {token::GREATER_EQUAL, 6},
         {token::LESS_EQUAL, 7},
+		{token::EQUAL, 7},
         {token::BIT_XOR, 8},
         {token::BIT_OR, 9},
         {token::BIT_AND, 10},
