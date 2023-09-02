@@ -50,9 +50,9 @@
 <if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>
 <while_statement> ::= while (? <condition> )? <linebreak> <statements> end while <linebreak>
 <select_statement> ::= select (? <expression> )? <linebreak> (case <expression> <linebreak> <statements>)+ end select <linebreak>
-<import_statement> ::= import <filepath> (as <keyword>)?
+<import> ::= import <filepath> (as <keyword>)?
 <callback_identifier> ::= ("async_complete" | "controller" | "init" |
                           "listener" | "note" | "persistence_changed" | "pgs_changed" | "poly_at" |
                           "release" | "rpn/nrpn" | "ui_control" | "ui_update")
 <callback> ::= "on" <callback_identifier> <linebreak> <statement>* "end on"
-<programm> ::= ((<callback> | <function_definition>) <linebreak>)*
+<programm> ::= ((<callback> | <function_definition> | <macro_definition> | <import>) <linebreak>)*

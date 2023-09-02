@@ -47,25 +47,39 @@ void Parser::_skip_linebreaks() {
     }
 }
 
-Result<std::unique_ptr<NodeInt>> Parser::parse_int() {
+Result<std::unique_ptr<NodeAST>> Parser::parse_number() {
     std::string value;
-    if (peek().type == token::INT) {
-        value = consume().val;
-    } else if (peek().type == token::SUB && peek(1).type == token::INT) {
-        value = consume().val;
-        value += consume().val;
-    } else {
-        auto err_msg = "Found unknown Integer Syntax.";
-        return Result<std::unique_ptr<NodeInt>>(
-                CompileError(ErrorType::ParseError, err_msg, peek().line, "(negative) Integer", peek().val));
+    bool is_negative = false;
+    if (peek().type == token::SUB && (peek(1).type == token::INT || peek(1).type == token::FLOAT)) {
+        consume(); // Konsumiere den '-'
+        is_negative = true;
     }
-    try {
-        auto return_value = std::make_unique<NodeInt>(std::stoi(value));
-        return Result<std::unique_ptr<NodeInt>>(std::move(return_value));
-    } catch (const std::exception& e) {
-        auto err_msg = "Did not recognize Integer.";
-        return Result<std::unique_ptr<NodeInt>>(
-                CompileError(ErrorType::ParseError, err_msg, peek().line, "Integer", peek().val));
+    if (peek().type != token::INT && peek().type != token::FLOAT) {
+        return Result<std::unique_ptr<NodeAST>>(
+                CompileError(ErrorType::ParseError, "Expected a number.", peek().line, "INT or REAL", peek().val));
+    }
+    Token next = consume(); // sollte jetzt entweder INT oder FLOAT sein
+    value = next.val;
+    if (is_negative) value = "-" + value;
+
+    if (next.type == token::INT) {
+        try {
+            auto node = std::make_unique<NodeInt>(std::stoi(value));
+            node->type = ASTType::Integer;
+            return Result<std::unique_ptr<NodeAST>>(std::move(node));
+        } catch (const std::exception& e) {
+            return Result<std::unique_ptr<NodeAST>>(
+                    CompileError(ErrorType::ParseError, "Invalid integer format.", peek().line, "valid integer", peek().val));
+        }
+    } else {
+        try {
+            auto node = std::make_unique<NodeReal>(std::stof(value));
+            node->type = ASTType::Real;
+            return Result<std::unique_ptr<NodeAST>>(std::move(node));
+        } catch (const std::exception& e) {
+            return Result<std::unique_ptr<NodeAST>>(
+                    CompileError(ErrorType::ParseError, "Invalid real format.", peek().line, "valid real", peek().val));
+        }
     }
 }
 
@@ -92,6 +106,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_binary_expr() {
 
 Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr() {
     if (peek().type == token::KEYWORD) {
+        // is function
 		if (peek(1).type == token::OPEN_PARENTH) {
 			auto var_function = parse_function_header();
 			if (!var_function.is_error()) {
@@ -99,25 +114,28 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr() {
 			}
 			return Result<std::unique_ptr<NodeAST>>(var_function.get_error());
 		}
+        // is variable
         auto var = parse_variable();
         if(!var.is_error()) {
             return Result<std::unique_ptr<NodeAST>>(std::move(var.unwrap()));
         }
         return Result<std::unique_ptr<NodeAST>>(var.get_error());
-    } else if (peek().type == token::INT || (peek().type == token::SUB && peek(1).type == token::INT)) {
-        auto integer = parse_int();
-        if(!integer.is_error()) {
-            return Result<std::unique_ptr<NodeAST>>(std::move(integer.unwrap()));
-        }
-        return Result<std::unique_ptr<NodeAST>>(integer.get_error());
+    // is expression in brackets
     } else if (peek().type == token::OPEN_PARENTH) {
 		return _parse_parenth_expr();
     } else {
-        return Result<std::unique_ptr<NodeAST>>(
-                CompileError(ErrorType::ParseError,
-							 "Found unknown expression token.",
-							 peek().line, "keyword, integer, parenthesis", peek().val));
+        auto integer = parse_number();
+        if (!integer.is_error()) {
+            return Result<std::unique_ptr<NodeAST>>(std::move(integer.unwrap()));
+        }
+        return Result<std::unique_ptr<NodeAST>>(integer.get_error());
     }
+//    } else {
+//        return Result<std::unique_ptr<NodeAST>>(
+//                CompileError(ErrorType::ParseError,
+//							 "Found unknown expression token.",
+//							 peek().line, "keyword, integer, parenthesis", peek().val));
+//    }
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, std::unique_ptr<NodeAST> lhs) {
@@ -139,21 +157,28 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, 
                 return Result<std::unique_ptr<NodeAST>>(rhs.get_error());
             }
         }
+        ASTType type = ASTType::Unknown;
 		if (bin_op.type == token::COMPARISON) {
-			//Check if rhs is NodeComparisonExpr because comparisons in comparisons are not allowed
-			if (dynamic_cast<NodeComparisonExpr *>(lhs.get()) != nullptr) {
-				return Result<std::unique_ptr<NodeAST>>(
-					CompileError(ErrorType::SyntaxError,
-								 "Nested Comparisons are not allowed.",
-								 peek().line, "valid expression operator", bin_op.val));
-			} else {
-				lhs = std::make_unique<NodeComparisonExpr>(bin_op.val, std::move(lhs), std::move(rhs.unwrap()));
-			}
+            //Check if rhs is NodeComparisonExpr because comparisons in comparisons are not allowed
+            if (lhs->type == ASTType::Comparison) {
+                return Result<std::unique_ptr<NodeAST>>(
+                        CompileError(ErrorType::SyntaxError,
+                                     "Nested Comparisons are not allowed.",
+                                     peek().line, "valid expression operator", bin_op.val));
+            }
+            type = ASTType::Comparison;
 		} else if (bin_op.type == token::BOOL){
-			lhs = std::make_unique<NodeBooleanExpr>(bin_op.val, std::move(lhs), std::move(rhs.unwrap()));
-		} else {
-			lhs = std::make_unique<NodeBinaryExpr>(bin_op.val, std::move(lhs), std::move(rhs.unwrap()));
+			type = ASTType::Boolean;
 		}
+        // brauch ich das jetzt schon, oder vllt erst nachher beim typisierungs-check?
+        if (lhs->type == Integer && rhs.unwrap()->type == Real || lhs->type == Real && rhs.unwrap()->type == Integer) {
+            return Result<std::unique_ptr<NodeAST>>(
+                    CompileError(ErrorType::SyntaxError,
+                                 "Merging of different Expression Types is not allowed.",
+                                 peek().line, "One Expression Type per Expression", bin_op.val));
+        }
+        lhs = std::make_unique<NodeBinaryExpr>(bin_op.val, std::move(lhs), std::move(rhs.unwrap()));
+        lhs->type = type;
     }
 }
 
@@ -257,6 +282,7 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback() {
 }
 
 Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
+    std::vector<std::unique_ptr<NodeImport>> imports;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
     std::vector<std::unique_ptr<NodeAST>> macro_definitions;
@@ -282,7 +308,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
         _skip_linebreaks();
 
     }
-    auto value = std::make_unique<NodeProgram>(std::move(callbacks), std::move(function_definitions), std::move(macro_definitions));
+    auto value = std::make_unique<NodeProgram>(std::move(callbacks), std::move(function_definitions), std::move(imports), std::move(macro_definitions));
     return Result<std::unique_ptr<NodeProgram>>(std::move(value));
 }
 

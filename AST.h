@@ -11,33 +11,39 @@
 
 #include "Tokens.h"
 
-enum numberType {
-    INTEGER,
-    REAL
+enum ASTType {
+    Integer,
+    Real,
+    Boolean,
+    Comparison,
+    String,
+    Unknown,
+    Void
+
 };
-//class ASTVisitor;
 
 struct NodeAST {
-    NodeAST() = default;
+    ASTType type;
+    inline NodeAST() : type(ASTType::Unknown) {}
 	virtual ~NodeAST() = default;
 	virtual void accept(class ASTVisitor& visitor);
 };
 
 struct NodeInt : NodeAST {
 	int value;
-	inline explicit NodeInt(int v) : value(v) {}
+	inline explicit NodeInt(int v) : value(v) {type = ASTType::Integer;}
 	void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeReal : NodeAST {
     float value;
-    inline explicit NodeReal(float value) : value(value) {}
+    inline explicit NodeReal(float value) : value(value) {type = ASTType::Real;}
     void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeString : NodeAST {
     std::string value;
-    inline explicit NodeString(std::string value) : value(std::move(value)) {}
+    inline explicit NodeString(std::string value) : value(std::move(value)) {type = ASTType::String;}
     void accept(ASTVisitor& visitor) override;
 };
 
@@ -48,8 +54,17 @@ struct NodeVariable: NodeAST {
 	void accept(ASTVisitor& visitor) override;
 };
 
+struct NodeArray : NodeAST {
+    char ident;
+    std::string name;
+    int size;
+    int idx;
+    NodeArray(char ident, std::string name, int size, int idx) : ident(ident), name(std::move(name)), size(size),
+                                                                        idx(idx) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
 struct NodeBinaryExpr: NodeAST {
-    numberType type; //real or int?
 	std::unique_ptr<NodeAST> left, right;
 	std::string op;
 
@@ -76,8 +91,6 @@ struct NodeBooleanExpr: NodeAST {
 	void accept(ASTVisitor& visitor) override;
 };
 
-
-
 struct NodeVariableAssign: NodeAST {
     std::unique_ptr<NodeVariable> variable;
     std::string assignment_op;
@@ -95,6 +108,7 @@ struct NodeAssignStatement: NodeAST {
 	explicit NodeAssignStatement(std::unique_ptr<NodeVariableAssign> assignment) : assignment(std::move(assignment)) {}
 	void accept(ASTVisitor& visitor) override;
 };
+
 
 // can be assign_statement, if_statement etc.
 struct NodeStatement: NodeAST {
@@ -114,6 +128,13 @@ struct NodeCallback: NodeAST {
 				 std::string end_callback)
 		: begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {}
 	void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeImport : NodeAST {
+    std::string filepath;
+    std::string alias;
+
+    inline explicit NodeImport(std::string filepath, std::string alias="") : filepath(std::move(filepath)), alias(std::move(alias)) {}
 };
 
 struct NodeFunctionHeader: NodeAST {
@@ -143,13 +164,15 @@ struct NodeProgram: NodeAST {
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
     std::vector<std::unique_ptr<NodeAST>> macro_definitions;
+    std::vector<std::unique_ptr<NodeImport>> imports;
     // TODO macro ASTNode still in progress
 
     inline NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 					   std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions,
+                       std::vector<std::unique_ptr<NodeImport>> imports,
 					   std::vector<std::unique_ptr<NodeAST>> macroDefinitions)
                  : callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)),
-                 macro_definitions(std::move(macroDefinitions)) {}
+                   imports(std::move(imports)), macro_definitions(std::move(macroDefinitions)) {}
     void accept(ASTVisitor& visitor) override;
 };
 

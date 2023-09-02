@@ -47,7 +47,8 @@ private:
     static int _get_binop_precedence(token tok);
 	void _skip_linebreaks();
 
-    Result<std::unique_ptr<NodeInt>> parse_int();
+    Result<std::unique_ptr<NodeAST>> parse_number();
+    Result<std::unique_ptr<NodeReal>> parse_real();
     Result<std::unique_ptr<NodeVariable>> parse_variable();
     Result<std::unique_ptr<NodeAST>> parse_binary_expr();
 	/// Helper function for parsing binary expressions recursion

@@ -26,6 +26,10 @@ void NodeVariable::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
+void NodeArray::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
 void NodeBinaryExpr::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }

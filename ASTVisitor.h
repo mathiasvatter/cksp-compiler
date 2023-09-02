@@ -12,7 +12,8 @@ public:
 	virtual void visit(NodeInt& node) = 0;
     virtual void visit(NodeReal& node) = 0;
     virtual void visit(NodeString& node) = 0;
-	virtual void visit(NodeVariable& node) = 0;
+    virtual void visit(NodeVariable& node) = 0;
+    virtual void visit(NodeArray& node) = 0;
 	virtual void visit(NodeBinaryExpr& node) = 0;
 	virtual void visit(NodeComparisonExpr& node) = 0;
 	virtual void visit(NodeBooleanExpr& node) = 0;
@@ -31,12 +32,25 @@ public:
 		std::cout << node.value;
 	}
 
+    void visit(NodeReal& node) override {
+        std::cout << node.value;
+    }
+
 	void visit(NodeVariable& node) override {
-		std::cout << node.name << "(" << node.ident << ") ";
+		std::cout << "(" << node.ident << ")" << node.name;
 	}
 
+    void visit(NodeArray& node) override {
+        std::cout << "(" << node.ident << ")" << node.name << "[" << node.size << "].at(" << node.idx << ")";
+    }
+
 	void visit(NodeBinaryExpr& node) override {
-		std::cout << "BinaryExpr(";
+        std::string expression_type = "BinaryExpr(";
+        if(node.type == Comparison)
+            expression_type = "ComparisonExpr(";
+        else if (node.type == Boolean)
+            expression_type = "BooleanExpr(";
+		std::cout << expression_type;
 		node.left->accept(*this);
 		std::cout << " " << node.op << " ";
 		node.right->accept(*this);
@@ -89,9 +103,6 @@ public:
 		std::cout << "End_callback(" << node.end_callback << ")"<< std::endl;
 	}
 
-    void visit(NodeReal& node) override {
-        std::cout << "";
-    }
     void visit(NodeString& node) override {
         std::cout << "";
     }
