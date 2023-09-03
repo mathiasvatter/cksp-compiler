@@ -29,6 +29,7 @@
     XX(DIV, "div")      \
 	XX(MULT, "mult")        \
 	XX(MODULO, "modulo")        \
+	XX(STRING_OPERATOR, "add_string")        \
 	XX(BIT_AND, "bit_and")        \
 	XX(BIT_OR, "bit_or")        \
 	XX(BIT_XOR, "bit_xor")        \
@@ -46,7 +47,6 @@
     XX(BOOL_AND, "bool_and") \
     XX(BOOL_OR, "bool_or") \
     XX(BOOL_NOT, "bool_not") \
-    XX(BOOL, "boolean_operator") \
     XX(FUNCTION, "function") \
     XX(OVERRIDE, "override") \
     XX(FOR, "for") \
@@ -122,12 +122,12 @@ struct Keyword {
 	std::string value;
 };
 
-inline std::vector<char> MATH = {'-','+', '/', '*'};
+inline std::vector<char> BINARY_OPERATORS = {'-', '+', '/', '*', '&'};
 inline std::vector<char> PARENTH = {'(',')', '[', ']'};
 inline std::vector<char> VAR_IDENT = {'$', '~', '@'};
 inline std::vector<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
 inline std::vector<char> COMMENT_START = {'{', '/'};
-inline std::vector<char> COMPARISON_START = {'<', '>', '='};
+inline std::vector<char> COMPARISON_OPERATORS_START = {'<', '>', '='};
 inline std::vector<Keyword> UI_CONTROLS = {{UI_LABEL, "ui_label"}, {UI_BUTTON, "ui_button"}, {UI_SWITCH, "ui_switch"}, {UI_SLIDER, "ui_slider"}, {UI_MENU, "ui_menu"},
 										   {UI_VALUE_EDIT, "ui_value_edit"}, {UI_WAVEFORM, "ui_waveform"}, {UI_WAVETABLE, "ui_wavetable"},
 										   {UI_KNOB, "ui_knob"}, {UI_TABLE, "ui_table"}, {UI_XY, "ui_xy"},
@@ -147,6 +147,6 @@ inline std::vector<std::string> CALLBACKS = {"init", "note", "release", "midi_in
 											 "rpn", "nrpn", "ui_update", "_pgs_changed", "pgs_changed",
 											 "poly_at", "listener", "async_complete", "persistence_changed", "ui_control"};
 inline std::vector<Keyword> BITWISE_OPERATORS = {{BIT_AND, ".and."}, {BIT_OR, ".or."}, {BIT_NOT, ".not."}, {BIT_XOR, ".xor."}};
-inline std::vector<Keyword> BOOL_OPERATORS = {{BOOL, "and"}, {BOOL, "or"}, {BOOL, "not"}};
+inline std::vector<Keyword> BOOL_OPERATORS = {{BOOL_AND, "and"}, {BOOL_OR, "or"}, {BOOL_NOT, "not"}};
 
 

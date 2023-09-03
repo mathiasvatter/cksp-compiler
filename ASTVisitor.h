@@ -14,9 +14,9 @@ public:
     virtual void visit(NodeString& node) = 0;
     virtual void visit(NodeVariable& node) = 0;
     virtual void visit(NodeArray& node) = 0;
-	virtual void visit(NodeBinaryExpr& node) = 0;
-	virtual void visit(NodeComparisonExpr& node) = 0;
-	virtual void visit(NodeBooleanExpr& node) = 0;
+    virtual void visit(NodeBinaryExpr& node) = 0;
+    virtual void visit(NodeUnaryExpr& node) = 0;
+	virtual void visit(NodeStringExpr& node) = 0;
 	virtual void visit(NodeVariableAssign& node)  = 0;
 	virtual void visit(NodeAssignStatement& node)  = 0;
 	virtual void visit(NodeStatement& node)  = 0;
@@ -36,6 +36,10 @@ public:
         std::cout << node.value;
     }
 
+    void visit(NodeString& node) override {
+        std::cout << node.value;
+    }
+
 	void visit(NodeVariable& node) override {
 		std::cout << "(" << node.ident << ")" << node.name;
 	}
@@ -50,6 +54,8 @@ public:
             expression_type = "ComparisonExpr(";
         else if (node.type == Boolean)
             expression_type = "BooleanExpr(";
+        else if (node.type ==String)
+            expression_type = "StringExpr(";
 		std::cout << expression_type;
 		node.left->accept(*this);
 		std::cout << " " << node.op << " ";
@@ -57,19 +63,19 @@ public:
 		std::cout << ")" ;
 	}
 
-	void visit(NodeComparisonExpr& node) override {
-		std::cout << "ConditionExpr(";
-		node.left->accept(*this);
-		std::cout << " " << node.comparison_op << " ";
-		node.right->accept(*this);
-		std::cout << ")" ;
-	}
+    void visit(NodeUnaryExpr& node) override {
+        std::cout << "UnaryExpr(";
+        std::cout << node.op.val << " ";
+        node.operand->accept(*this);
+        std::cout << ")" ;
+    }
 
-	void visit(NodeBooleanExpr& node) override {
-		std::cout << "BooleanExpr(";
-		node.left->accept(*this);
-		std::cout << " " << node.boolean_op << " ";
-		node.right->accept(*this);
+	void visit(NodeStringExpr& node) override {
+		std::cout << "StringExp(";
+        for(auto& expr : node.string_expressions) {
+            expr->accept(*this);
+            std::cout << ", ";
+        }
 		std::cout << ")" ;
 	}
 
@@ -103,9 +109,6 @@ public:
 		std::cout << "End_callback(" << node.end_callback << ")"<< std::endl;
 	}
 
-    void visit(NodeString& node) override {
-        std::cout << "";
-    }
     void visit(NodeFunctionHeader& node) override {
         std::cout << node.name << "(";
         for(auto& arg: node.args) {

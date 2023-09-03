@@ -10,6 +10,7 @@
 #include <variant>
 
 #include "Tokens.h"
+#include "Tokenizer.h"
 
 enum ASTType {
     Integer,
@@ -64,6 +65,13 @@ struct NodeArray : NodeAST {
     void accept(ASTVisitor& visitor) override;
 };
 
+struct NodeUnaryExpr : NodeAST {
+    std::unique_ptr<NodeAST> operand;
+    Token op;
+    inline NodeUnaryExpr(Token op, std::unique_ptr<NodeAST> operand) : operand(std::move(operand)), op(std::move(op)) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
 struct NodeBinaryExpr: NodeAST {
 	std::unique_ptr<NodeAST> left, right;
 	std::string op;
@@ -73,22 +81,11 @@ struct NodeBinaryExpr: NodeAST {
 	void accept(ASTVisitor& visitor) override;
 };
 
-struct NodeComparisonExpr: NodeAST {
-	std::unique_ptr<NodeAST> left, right;
-	std::string comparison_op;
-
-	NodeComparisonExpr(std::string comparison_op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right)
-					  : left(std::move(left)), right(std::move(right)), comparison_op(std::move(comparison_op)) {}
-	void accept(ASTVisitor& visitor) override;
-};
-
-struct NodeBooleanExpr: NodeAST {
-	std::unique_ptr<NodeAST> left, right;
-	std::string boolean_op;
-
-	NodeBooleanExpr(std::string boolean_op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right)
-		: left(std::move(left)), right(std::move(right)), boolean_op(std::move(boolean_op)) {}
-	void accept(ASTVisitor& visitor) override;
+struct NodeStringExpr : NodeAST {
+    std::vector<std::unique_ptr<NodeAST>> string_expressions;
+    explicit NodeStringExpr(std::vector<std::unique_ptr<NodeAST>> stringExpressions) : string_expressions(std::move(
+            stringExpressions)) {}
+    void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeVariableAssign: NodeAST {

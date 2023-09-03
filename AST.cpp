@@ -34,14 +34,6 @@ void NodeBinaryExpr::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-void NodeComparisonExpr::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
-}
-
-void NodeBooleanExpr::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
-}
-
 void NodeVariableAssign::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
@@ -67,5 +59,13 @@ void NodeFunctionHeader::accept(ASTVisitor &visitor) {
 }
 
 void NodeFunctionDefinition::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeUnaryExpr::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeStringExpr::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }

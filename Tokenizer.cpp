@@ -34,20 +34,21 @@ std::vector<Token> Tokenizer::tokenize() {
             get_comment();
         } else if (current_char == '\n') {
             get_linebreak();
+            fix_line_continuation();
         } else if (is_keyword_or_num()) {
             get_keyword_or_num();
         } else if (is_string()) {
             get_string();
-        } else if (contains(MATH, current_char) && peek() != '>') {
-            get_math();
+        } else if (contains(BINARY_OPERATORS, current_char) && peek() != '>') {
+            get_binary_operators();
         } else if (contains(PARENTH, current_char)) {
             get_parenth();
         } else if (current_char == ':' && peek() == '=') {
             get_assignment();
         } else if (current_char == '-' && peek() == '>') {
             get_arrow();
-        } else if (contains(COMPARISON_START, current_char)) {
-            get_comparison();
+        } else if (contains(COMPARISON_OPERATORS_START, current_char)) {
+            get_comparison_operators();
         } else if (current_char == '.' && peek() != '.') {
             get_bitwise_operator();
         } else if (current_char == '.' && peek() == '.' && peek(2) == '.') {
@@ -152,7 +153,7 @@ void Tokenizer::get_string() {
 	skip_whitespace();
 }
 
-void Tokenizer::get_math() {
+void Tokenizer::get_binary_operators() {
     flush_buffer();
     token tok;
     if (current_char == '-') {
@@ -163,6 +164,8 @@ void Tokenizer::get_math() {
         tok = DIV;
     } else if (current_char == '*') {
         tok = MULT;
+    } else if (current_char == '&') {
+        tok = STRING_OPERATOR;
     }
     tokens.emplace_back(tok, std::string(1,this->current_char), this->line);
 	consume();
@@ -307,7 +310,7 @@ void Tokenizer::get_linebreak() {
     skip_whitespace();
 }
 
-void Tokenizer::get_comparison() {
+void Tokenizer::get_comparison_operators() {
     flush_buffer();
     token tok;
     if (current_char == '>' ) {
@@ -347,6 +350,16 @@ void Tokenizer::get_line_continuation() {
     tokens.emplace_back(LINE_CONTINUE, buffer, line);
     skip_whitespace();
 
+}
+
+void Tokenizer::fix_line_continuation() {
+    // to be handled right after token LINEBRK is inserted
+    if(tokens.size() >= 2) {
+        if (tokens.back().type == token::LINEBRK && tokens.at(tokens.size()-2).type == token::LINE_CONTINUE) {
+            tokens.pop_back();
+            tokens.pop_back();
+        }
+    }
 }
 
 void Tokenizer::get_bitwise_operator() {

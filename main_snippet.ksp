@@ -1,15 +1,17 @@
+
 on init
 	/*make_perfview
 	for i := 0 to num_elements(soundset_ids)-1
 	    message(i)
 	end for*/
-    bims := (bums + 6)*23 mod 4+5/7 + pow(2.1,2) = 3+d and  6> 5
-    bums := -2
-    string := "er"
+    bims := not(4+4)
+    bums := -2 & "string" & 3+4+(5+6) & "another"
+    //d
 end on
 //u*
 
-
+/*
 function ppi(1, 2, 3)
     kacki := 3+bumsi mod 5
 end function
+*/

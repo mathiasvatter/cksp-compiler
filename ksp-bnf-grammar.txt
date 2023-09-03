@@ -44,7 +44,7 @@
 <comparison_expression> ::= <binary_expression> <comparison>
 <condition> ::= <boolean_expression> | <comparison_expression>
 <string_expression> ::= (<string> | <variable> | <function_header>) (& (<string> | <variable> | <function_header>))?
-<expression> ::= <binary_expression> | <real_expression> | <string_expression>
+<expression> ::= <unary_expression> | <binary_expression>
 <statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement) <linebreak>
 <for_statement> ::= for <variable> := <expression> <linebreak> <statements> end for <linebreak>
 <if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>

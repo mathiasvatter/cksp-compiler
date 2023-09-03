@@ -65,6 +65,8 @@ private:
     bool is_keyword_or_num() const;
 
     void get_line_continuation();
+    /// removes linebrk if there was a line_continuation before. Needs to be inserted right after linbrk isnert
+    void fix_line_continuation();
     void get_bitwise_operator();
     bool is_callback_end();
     bool is_callback_start();
@@ -74,9 +76,9 @@ private:
     void get_linebreak();
     void get_comment();
 	void get_invalid();
-    void get_comparison();
+    void get_comparison_operators();
 	void get_string();
-    void get_math();
+    void get_binary_operators();
     void get_parenth();
     void get_assignment();
     void get_arrow();

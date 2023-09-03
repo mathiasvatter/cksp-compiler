@@ -14,7 +14,7 @@ inline static std::map<token, int> BinaryOpPrecendence = {
         {token::BOOL_OR, 1},
         {token::BOOL_AND, 2},
 		{token::BOOL_NOT, 3},
-		{token::BOOL, 3},
+//		{token::BOOL, 3},
         {token::GREATER_THAN, 4},
         {token::LESS_THAN, 5},
         {token::GREATER_EQUAL, 6},
@@ -31,6 +31,10 @@ inline static std::map<token, int> BinaryOpPrecendence = {
         {token::DIV, 13},
         {token::MODULO, 13}
 };
+
+inline static bool is_unary_operator(token op) {
+    return op == token::SUB || op == token::BIT_NOT || op == token::BOOL_NOT;
+}
 
 class Parser {
 
@@ -50,12 +54,19 @@ private:
     Result<std::unique_ptr<NodeAST>> parse_number();
     Result<std::unique_ptr<NodeString>> parse_string();
     Result<std::unique_ptr<NodeVariable>> parse_variable();
+    /// parses every expression from binary, string, unary to number and variable
+    Result<std::unique_ptr<NodeAST>> parse_expression();
+    Result<std::unique_ptr<NodeAST>> parse_string_expr();
+        /// Helper function for parsing binary string expression recursively
+        Result<std::unique_ptr<NodeAST>> _parse_string_expr_rhs(std::unique_ptr<NodeAST> lhs);
+    /// parse unary or binary expression
     Result<std::unique_ptr<NodeAST>> parse_binary_expr();
-	/// Helper function for parsing binary expressions recursion
+    Result<std::unique_ptr<NodeAST>> parse_unary_expr();
+	    /// Helper function for parsing binary expressions recursion
 		Result<std::unique_ptr<NodeAST>> _parse_binary_expr_rhs(int precedence, std::unique_ptr<NodeAST> lhs);
 		/// ( expression )
 		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr();
-		/// parse identifierexpr, numberexpr, parenthexpr
+		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr();
     Result<std::unique_ptr<NodeVariableAssign>> parse_variable_assign();
     Result<std::unique_ptr<NodeAST>> parse_assign_statement();
