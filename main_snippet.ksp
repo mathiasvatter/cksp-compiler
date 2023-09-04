@@ -1,11 +1,11 @@
-
+import "deine mudda" as "mum"
 on init
 	/*make_perfview
 	for i := 0 to num_elements(soundset_ids)-1
 	    message(i)
 	end for*/
-    bims := not(4+4)
-    bums := sdf & "string" & 3+4+(5+6) & "another"
+    bims := not(4+array[4])
+    bums[3] := sdf & "string" & 3+4+(5+6) & "another"
     //d
 end on
 //u*

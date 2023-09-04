@@ -54,6 +54,7 @@ private:
     Result<std::unique_ptr<NodeAST>> parse_number();
     Result<std::unique_ptr<NodeString>> parse_string();
     Result<std::unique_ptr<NodeVariable>> parse_variable();
+    Result<std::unique_ptr<NodeArray>> parse_array(std::unique_ptr<NodeVariable> array_variable);
     /// parses every expression from binary, string, unary to number and variable
     Result<std::unique_ptr<NodeAST>> parse_expression();
     Result<std::unique_ptr<NodeAST>> parse_string_expr();
@@ -68,13 +69,13 @@ private:
 		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr();
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr();
-    Result<std::unique_ptr<NodeVariableAssign>> parse_variable_assign();
     Result<std::unique_ptr<NodeAST>> parse_assign_statement();
 	// combines all possible statement types
     Result<std::unique_ptr<NodeStatement>> parse_statement();
-    Result<std::unique_ptr<NodeCallback>> parse_callback();
-	Result<std::unique_ptr<NodeProgram>> parse_program();
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition();
     Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header();
+    Result<std::unique_ptr<NodeCallback>> parse_callback();
+    Result<std::unique_ptr<NodeImport>> parse_import();
+	Result<std::unique_ptr<NodeProgram>> parse_program();
 };
 

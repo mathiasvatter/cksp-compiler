@@ -7,7 +7,6 @@
 #include "ASTVisitor.h"
 
 void NodeAST::accept(ASTVisitor &visitor) {
-
 }
 
 void NodeInt::accept(ASTVisitor &visitor) {
@@ -31,10 +30,6 @@ void NodeArray::accept(ASTVisitor &visitor) {
 }
 
 void NodeBinaryExpr::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
-}
-
-void NodeVariableAssign::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
@@ -66,6 +61,3 @@ void NodeUnaryExpr::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 
-void NodeStringExpr::accept(ASTVisitor &visitor) {
-    visitor.visit(*this);
-}

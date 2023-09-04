@@ -56,12 +56,12 @@ struct NodeVariable: NodeAST {
 };
 
 struct NodeArray : NodeAST {
-    char ident;
-    std::string name;
-    int size;
-    int idx;
-    NodeArray(char ident, std::string name, int size, int idx) : ident(ident), name(std::move(name)), size(size),
-                                                                        idx(idx) {}
+    std::unique_ptr<NodeVariable> name;
+    std::unique_ptr<NodeAST> size = nullptr;
+    std::vector<std::unique_ptr<NodeAST>> indexes;
+    inline NodeArray(std::unique_ptr<NodeVariable> name, std::unique_ptr<NodeAST> size,
+              std::vector<std::unique_ptr<NodeAST>> indexes)
+              : name(std::move(name)), size(std::move(size)), indexes(std::move(indexes)) {}
     void accept(ASTVisitor& visitor) override;
 };
 
@@ -81,31 +81,14 @@ struct NodeBinaryExpr: NodeAST {
 	void accept(ASTVisitor& visitor) override;
 };
 
-struct NodeStringExpr : NodeAST {
-    std::vector<std::unique_ptr<NodeAST>> string_expressions;
-    explicit NodeStringExpr(std::vector<std::unique_ptr<NodeAST>> stringExpressions) : string_expressions(std::move(
-            stringExpressions)) {}
-    void accept(ASTVisitor& visitor) override;
-};
-
-struct NodeVariableAssign: NodeAST {
-    std::unique_ptr<NodeVariable> variable;
-    std::string assignment_op;
+struct NodeAssignStatement: NodeAST {
+    std::unique_ptr<NodeAST> array_variable;
     std::unique_ptr<NodeAST> assignee;
 
-    inline NodeVariableAssign(std::unique_ptr<NodeVariable> variable,std::string assignmentOp,
-                       std::unique_ptr<NodeAST> assignee) : variable(
-            std::move(variable)), assignment_op(std::move(assignmentOp)), assignee(std::move(assignee)) {}
+    inline NodeAssignStatement(std::unique_ptr<NodeAST> array_variable, std::unique_ptr<NodeAST> assignee)
+    : array_variable(std::move(array_variable)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
 };
-
-struct NodeAssignStatement: NodeAST {
-    std::unique_ptr<NodeVariableAssign> assignment;
-
-	explicit NodeAssignStatement(std::unique_ptr<NodeVariableAssign> assignment) : assignment(std::move(assignment)) {}
-	void accept(ASTVisitor& visitor) override;
-};
-
 
 // can be assign_statement, if_statement etc.
 struct NodeStatement: NodeAST {

@@ -1,21 +1,10 @@
 
 
 
+//*******************************+ KSP BNF ************************
 
-
-
-<array> ::= ("!" | "%" | "?")? <keyword> "[" (<num> ("," <num>)? )? "]"
-<constant> ::= "const" <variable>
-
-<array_declaration> ::= <array> ":=" "(" <int> ("," <int>)? ")"
-<constant_declaration> ::= <constant> ":=" (<string> | <num>)
-<declaration> ::= "declare " (<constant_declaration> | 
-<variable_declaration> | <array_declaration>)
-<init_callback> ::= "\n" "on init" "\n" <declaration>* "\n" "end on" "\n"
-
-
-<int> ::= ("-")? [1-9]+ | "int(" <real> ")"
-<real> ::= ("-")? <int> "." <int> | "real(" <int> ")"
+<int> ::= [1-9]+ | "int(" <real> ")"
+<real> ::= <int> "." <int> | "real(" <int> ")"
 <num> ::= (<int> | <real>)
 <binary_op> ::= - | + | mod | / | * | <bitwise_op> | <comparison_op> | <bool_op
 <unary_op> ::= not | .not. | -
@@ -26,6 +15,7 @@
 <bitwise_op> ::= .and. | .xor. | .or. | .not.
 <string_op> ::= &
 
+//******** FUNCTIONS
 <function_header> ::= <keyword> "(" (<expression> ("," <expression>)?)? ")"
 <function_definition> ::= "function" <function_header> ("->" <variable>)? ("override")? <linebreak> <statement>* "end function"
 <function_call> ::= "call" <function_header>
@@ -39,24 +29,24 @@
 <variable_declaration> ::= "declare" <variable> | "declare" <variable_assign>
 <variable_assign> ::= <variable> ":=" (<expression> | <string>)
 
-<unary_expression> ::= <unary_op> (<int> | <real> | <variable> | <function_header>)
-<primary_expression> ::= <int> | <real> | <variable> | <function_header> | <unary_expression> | "("<binary_expression>")"
-<binary_expression> ::= <primary_expression> <binary_op> <binary_expression>
+<unary_expression> ::= <unary_op> (<num> | <variable> | <function_header>)
+<primary_expression> ::= <num> | <variable> | <function_header> | <unary_expression> | "("<binary_expression>")"
+<binary_expression> ::= <primary_expression> (<binary_op> <binary_expression>)?
 <string_expression> ::= (<string> | <binary_expression>) (<string_op> (<string> | <binary_expression>))?
 <expression> ::= <string_expression> | <binary_expression>
 
+// Special cases of expressions for type checking
+<condition> ::= <boolean_expression>
+<boolean_expression> ::= <comparison_expression> (<bool> <comparison_expression>)?
+<comparison_expression> ::= <binary_expression> <comparison_op> <binary_expression>
 
 <assign_statement> ::= <variable_assign> | <array_assign>
-<real_expression> ::= (<real> | <variable>
-<boolean_expression> ::= <comparison_expression> <bool> <comparison_expression>
-<comparison_expression> ::= <binary_expression> <comparison_op>
-<condition> ::= <boolean_expression> | <comparison_expression>
 <statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement) <linebreak>
 <for_statement> ::= for <variable> := <expression> <linebreak> <statements> end for <linebreak>
 <if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>
 <while_statement> ::= while (? <condition> )? <linebreak> <statements> end while <linebreak>
 <select_statement> ::= select (? <expression> )? <linebreak> (case <expression> <linebreak> <statements>)+ end select <linebreak>
-<import> ::= import <filepath> (as <keyword>)?
+<import> ::= import <string> (as <keyword>)?
 <callback_identifier> ::= ("async_complete" | "controller" | "init" |
                           "listener" | "note" | "persistence_changed" | "pgs_changed" | "poly_at" |
                           "release" | "rpn/nrpn" | "ui_control" | "ui_update")

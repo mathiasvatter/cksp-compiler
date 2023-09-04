@@ -16,8 +16,6 @@ public:
     virtual void visit(NodeArray& node) = 0;
     virtual void visit(NodeBinaryExpr& node) = 0;
     virtual void visit(NodeUnaryExpr& node) = 0;
-	virtual void visit(NodeStringExpr& node) = 0;
-	virtual void visit(NodeVariableAssign& node)  = 0;
 	virtual void visit(NodeAssignStatement& node)  = 0;
 	virtual void visit(NodeStatement& node)  = 0;
 	virtual void visit(NodeCallback& node)  = 0;
@@ -45,7 +43,17 @@ public:
 	}
 
     void visit(NodeArray& node) override {
-        std::cout << "(" << node.ident << ")" << node.name << "[" << node.size << "].at(" << node.idx << ")";
+        node.name->accept(*this);
+        std::cout << "[";
+        if (node.size != nullptr)
+            node.size->accept(*this);
+        std::cout << "].at(";
+        for(int i=0; i<node.indexes.size()-1; i++) {
+            node.indexes[i]->accept(*this);
+            std::cout << ", ";
+        }
+        node.indexes[node.indexes.size()-1]->accept(*this);
+        std::cout << ")";
     }
 
 	void visit(NodeBinaryExpr& node) override {
@@ -70,26 +78,11 @@ public:
         std::cout << ")" ;
     }
 
-	void visit(NodeStringExpr& node) override {
-		std::cout << "StringExp(";
-        for(auto& expr : node.string_expressions) {
-            expr->accept(*this);
-            std::cout << ", ";
-        }
-		std::cout << ")" ;
-	}
-
-	void visit(NodeVariableAssign& node) override {
-		std::cout << "VariableAssign(";
-		node.variable->accept(*this);
-		std::cout << node.assignment_op << " ";
-		node.assignee->accept(*this);
-		std::cout << ")";
-	}
-
 	void visit(NodeAssignStatement& node) override {
-		std::cout << "AssignStmt(";
-		node.assignment->accept(*this);
+		std::cout << "VariableAssign(";
+		node.array_variable->accept(*this);
+		std::cout << ":= ";
+		node.assignee->accept(*this);
 		std::cout << ")";
 	}
 
@@ -111,10 +104,11 @@ public:
 
     void visit(NodeFunctionHeader& node) override {
         std::cout << node.name << "(";
-        for(auto& arg: node.args) {
-            arg->accept(*this);
-			std::cout << ", ";
+        for(int i=0; i<node.args.size()-1; i++) {
+            node.args[i]->accept(*this);
+            std::cout << ", ";
         }
+        node.args[node.args.size()-1]->accept(*this);
         std::cout << ")";
     }
     void visit(NodeFunctionDefinition& node) override {
