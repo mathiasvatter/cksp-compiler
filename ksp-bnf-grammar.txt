@@ -17,12 +17,14 @@
 <int> ::= ("-")? [1-9]+ | "int(" <real> ")"
 <real> ::= ("-")? <int> "." <int> | "real(" <int> ")"
 <num> ::= (<int> | <real>)
-<binary_op> ::= - | + | mod | / | * | <bitwise_op>
+<binary_op> ::= - | + | mod | / | * | <bitwise_op> | <comparison_op> | <bool_op
+<unary_op> ::= not | .not. | -
 <linebreak> ::= \n
 <assignment> ::= (<variable> | <array>) ":=" (<num> | <string>)
-<comparison> ::= "=" | "<" | ">" | "<=" | ">=" | "!="
-<bool> ::= and | or | not
+<comparison_op> ::= "=" | "<" | ">" | "<=" | ">=" | "!="
+<bool_op> ::= and | or | not
 <bitwise_op> ::= .and. | .xor. | .or. | .not.
+<string_op> ::= &
 
 <function_header> ::= <keyword> "(" (<expression> ("," <expression>)?)? ")"
 <function_definition> ::= "function" <function_header> ("->" <variable>)? ("override")? <linebreak> <statement>* "end function"
@@ -37,14 +39,18 @@
 <variable_declaration> ::= "declare" <variable> | "declare" <variable_assign>
 <variable_assign> ::= <variable> ":=" (<expression> | <string>)
 
+<unary_expression> ::= <unary_op> (<int> | <real> | <variable> | <function_header>)
+<primary_expression> ::= <int> | <real> | <variable> | <function_header> | <unary_expression> | "("<binary_expression>")"
+<binary_expression> ::= <primary_expression> <binary_op> <binary_expression>
+<string_expression> ::= (<string> | <binary_expression>) (<string_op> (<string> | <binary_expression>))?
+<expression> ::= <string_expression> | <binary_expression>
+
+
 <assign_statement> ::= <variable_assign> | <array_assign>
-<binary_expression> ::= (<int> | <variable> | <function_header>) <binary_op> <binary_expression> | (<int> | <variable> | <function_header>)
 <real_expression> ::= (<real> | <variable>
 <boolean_expression> ::= <comparison_expression> <bool> <comparison_expression>
-<comparison_expression> ::= <binary_expression> <comparison>
+<comparison_expression> ::= <binary_expression> <comparison_op>
 <condition> ::= <boolean_expression> | <comparison_expression>
-<string_expression> ::= (<string> | <variable> | <function_header>) (& (<string> | <variable> | <function_header>))?
-<expression> ::= <unary_expression> | <binary_expression>
 <statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement) <linebreak>
 <for_statement> ::= for <variable> := <expression> <linebreak> <statements> end for <linebreak>
 <if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>
