@@ -82,6 +82,11 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_number() {
 }
 
 Result<std::unique_ptr<NodeVariable>> Parser::parse_variable() {
+    VarType type = VarType::Mutable;
+    if(peek().type == token::CONST)
+        type = VarType::Const;
+    if(peek().type == token::POLYPHONIC)
+        type = VarType::Polyphonic;
     // see if variable already has identifier
     char ident = 0;
     std::string var_name = peek().val;
@@ -90,30 +95,24 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_variable() {
         var_name = peek().val.substr(1);
     }
     consume();
-    auto return_value = std::make_unique<NodeVariable>(var_name, ident);
+    auto return_value = std::make_unique<NodeVariable>(var_name, type, ident);
     return Result<std::unique_ptr<NodeVariable>>(std::move(return_value));
 }
 
 Result<std::unique_ptr<NodeArray>> Parser::parse_array(std::unique_ptr<NodeVariable> array_variable) {
     std::unique_ptr<NodeAST> size;
-    std::vector<std::unique_ptr<NodeAST>> indexes;
+    std::unique_ptr<NodeParamList> indexes;
     if(peek().type == token::OPEN_BRACKET) {
-        consume();
-        while(peek().type != token::CLOSED_BRACKET) {
-            auto index = parse_binary_expr();
-            if (!index.is_error()) {
-                indexes.push_back(std::move(index.unwrap()));
-            } else
-                return Result<std::unique_ptr<NodeArray>>(index.get_error());
-            if (peek().type == token::COMMA) {
-                consume();
-            }
+        auto index_params = parse_param_list(token::CLOSED_BRACKET);
+        if(index_params.is_error()) {
+            return Result<std::unique_ptr<NodeArray>>(index_params.get_error());
         }
-        consume();
+        indexes = std::move(index_params.unwrap());
     } else {
         return Result<std::unique_ptr<NodeArray>>(CompileError(ErrorType::SyntaxError,
              "Found unknown Array Syntax.", peek().line, "[", peek().val));
     }
+    array_variable->type = VarType::Array;
     auto return_value = std::make_unique<NodeArray>(std::move(array_variable), std::move(size), std::move(indexes));
     return Result<std::unique_ptr<NodeArray>>(std::move(return_value));
 }
@@ -296,7 +295,12 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_assign_statement() {
         value = std::move(var.unwrap());
     if(peek().type == token::ASSIGN) {
         consume();
-        auto assignee = parse_expression();
+        // array initializer
+        token end_token = token::LINEBRK;
+        if(peek().type == token::OPEN_PARENTH) {
+            end_token = consume().type;
+        }
+        auto assignee = parse_param_list(end_token);
         if(assignee.is_error()) {
             return Result<std::unique_ptr<NodeAST>>(assignee.get_error());
         }
@@ -394,23 +398,37 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
     return Result<std::unique_ptr<NodeProgram>>(std::move(value));
 }
 
+Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(token end) {
+    std::vector<std::unique_ptr<NodeAST>> params;
+    if(end == token::CLOSED_PARENTH || end == token::CLOSED_BRACKET)
+        consume();
+    while(peek().type != end && peek().type != token::LINEBRK) {
+        auto param = parse_expression();
+        if (!param.is_error()) {
+            params.push_back(std::move(param.unwrap()));
+        } else
+            return Result<std::unique_ptr<NodeParamList>>(param.get_error());
+        if (peek().type == token::COMMA) {
+            consume();
+        }
+    }
+    // if current token is not ) or ] do not consume, the next node needs it
+    if(end == token::CLOSED_PARENTH || end == token::CLOSED_BRACKET)
+        consume();
+    auto return_value = std::make_unique<NodeParamList>(std::move(params));
+    return Result<std::unique_ptr<NodeParamList>>(std::move(return_value));
+}
+
 Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header() {
     std::string func_name;
-    std::vector<std::unique_ptr<NodeAST>> func_args;
+    std::unique_ptr<NodeParamList> func_args;
 	func_name = consume().val;
 	if (peek().type == token::OPEN_PARENTH) {
-		consume();
-		while(peek().type != token::CLOSED_PARENTH) {
-			auto func_arg = parse_binary_expr();
-			if (!func_arg.is_error()) {
-				func_args.push_back(std::move(func_arg.unwrap()));
-			} else
-				return Result<std::unique_ptr<NodeFunctionHeader>>(func_arg.get_error());
-			if (peek().type == token::COMMA) {
-				consume();
-			}
-		}
-		consume();
+        auto func_arguments = parse_param_list(token::CLOSED_PARENTH);
+        if (func_arguments.is_error()) {
+            return Result<std::unique_ptr<NodeFunctionHeader>>(func_arguments.get_error());
+        }
+        func_args = std::move(func_arguments.unwrap());
 	} else {
 		return Result<std::unique_ptr<NodeFunctionHeader>>(CompileError(ErrorType::SyntaxError,
          "Function keywords need to be followed by parenthesis.",peek().line, ")", peek().val));
@@ -479,10 +497,10 @@ Result<std::unique_ptr<NodeImport>> Parser::parse_import() {
     consume();
     if(peek().type ==token::STRING) {
         std::string filepath = consume().val;
-        if (!std::filesystem::exists(filepath)) {
-            return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
-            "Not a valid filepath",peek().line,"valid path",filepath));
-        }
+//        if (!std::filesystem::exists(filepath)) {
+//            return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
+//            "Not a valid filepath",peek().line,"valid path",filepath));
+//        }
         std::string alias;
         if(peek().type == token::AS) {
             // consume as token
@@ -501,6 +519,8 @@ Result<std::unique_ptr<NodeImport>> Parser::parse_import() {
         "Not a filepath",peek().line,"path",peek().val));
     }
 }
+
+
 
 
 

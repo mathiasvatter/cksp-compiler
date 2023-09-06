@@ -55,6 +55,7 @@ private:
     Result<std::unique_ptr<NodeString>> parse_string();
     Result<std::unique_ptr<NodeVariable>> parse_variable();
     Result<std::unique_ptr<NodeArray>> parse_array(std::unique_ptr<NodeVariable> array_variable);
+    Result<std::unique_ptr<NodeParamList>> parse_param_list(token end);
     /// parses every expression from binary, string, unary to number and variable
     Result<std::unique_ptr<NodeAST>> parse_expression();
     Result<std::unique_ptr<NodeAST>> parse_string_expr();

@@ -23,6 +23,13 @@ enum ASTType {
 
 };
 
+enum VarType {
+    Const,
+    Polyphonic,
+    Array,
+    Mutable
+};
+
 struct NodeAST {
     ASTType type;
     inline NodeAST() : type(ASTType::Unknown) {}
@@ -49,22 +56,30 @@ struct NodeString : NodeAST {
 };
 
 struct NodeVariableDeclaration {
-    
+
 };
 
 struct NodeVariable: NodeAST {
     char ident;
+    VarType type = VarType::Mutable;
 	std::string name;
-	inline NodeVariable(std::string name, char ident) : name(std::move(name)), ident(ident) {}
+	inline NodeVariable(std::string name, VarType type, char ident)
+    : name(std::move(name)), type(type), ident(ident) {}
 	void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeParamList: NodeAST {
+    std::vector<std::unique_ptr<NodeAST>> params;
+    inline explicit NodeParamList(std::vector<std::unique_ptr<NodeAST>> params) : params(std::move(params)) {}
+    void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeArray : NodeAST {
     std::unique_ptr<NodeVariable> name;
     std::unique_ptr<NodeAST> size = nullptr;
-    std::vector<std::unique_ptr<NodeAST>> indexes;
+    std::unique_ptr<NodeParamList> indexes;
     inline NodeArray(std::unique_ptr<NodeVariable> name, std::unique_ptr<NodeAST> size,
-              std::vector<std::unique_ptr<NodeAST>> indexes)
+              std::unique_ptr<NodeParamList> indexes)
               : name(std::move(name)), size(std::move(size)), indexes(std::move(indexes)) {}
     void accept(ASTVisitor& visitor) override;
 };
@@ -86,8 +101,8 @@ struct NodeBinaryExpr: NodeAST {
 
 struct NodeAssignStatement: NodeAST {
     std::unique_ptr<NodeAST> array_variable;
-    std::unique_ptr<NodeAST> assignee;
-    inline NodeAssignStatement(std::unique_ptr<NodeAST> array_variable, std::unique_ptr<NodeAST> assignee)
+    std::unique_ptr<NodeParamList> assignee;
+    inline NodeAssignStatement(std::unique_ptr<NodeAST> array_variable, std::unique_ptr<NodeParamList> assignee)
     : array_variable(std::move(array_variable)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
 };
@@ -120,9 +135,9 @@ struct NodeImport : NodeAST {
 
 struct NodeFunctionHeader: NodeAST {
     std::string name;
-    std::vector<std::unique_ptr<NodeAST>> args;
+    std::unique_ptr<NodeParamList> args;
 
-    inline NodeFunctionHeader(std::string name, std::vector<std::unique_ptr<NodeAST>> args)
+    inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeParamList> args)
     : name(std::move(name)), args(std::move(args)) {};
     void accept(ASTVisitor& visitor) override;
 };

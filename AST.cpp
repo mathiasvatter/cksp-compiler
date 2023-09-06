@@ -61,3 +61,6 @@ void NodeUnaryExpr::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 
+void NodeParamList::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}

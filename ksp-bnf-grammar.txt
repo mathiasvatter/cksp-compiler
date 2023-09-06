@@ -16,7 +16,7 @@
 <string_op> ::= &
 
 //******** FUNCTIONS
-<function_header> ::= <keyword> "(" (<expression> ("," <expression>)?)? ")"
+<function_header> ::= <keyword> "(" <param_list> ")"
 <function_definition> ::= "function" <function_header> ("->" <variable>)? ("override")? <linebreak> <statement>* "end function"
 <function_call> ::= "call" <function_header>
 
@@ -29,7 +29,8 @@
 <variable> ::= (const | polyphonic)? <identifier>? <keyword>
 <array> ::= <variable> [ <binary_expression> (, <binary_expression>)? ]
 <variable_declaration> ::= "declare" <variable> | "declare" <variable_assign>
-<variable_assign> ::= <variable> ":=" (<expression> | <string>)
+<array_declaration> ::= "declare" <array>
+<param_list> ::= (<expression> ("," <expression>)?)?
 
 <unary_expression> ::= <unary_op> (<num> | <variable> | <function_header>)
 <primary_expression> ::= <num> | <variable> | <function_header> | <unary_expression> | "("<binary_expression>")"
@@ -42,7 +43,7 @@
 <boolean_expression> ::= <comparison_expression> (<bool> <comparison_expression>)?
 <comparison_expression> ::= <binary_expression> <comparison_op> <binary_expression>
 
-<assign_statement> ::= <variable_assign> | <array_assign>
+<assign_statement> ::= (<variable> | <array>) ":=" "("? <param_list> ")"?
 <statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement) <linebreak>
 <for_statement> ::= for <variable> := <expression> <linebreak> <statements> end for <linebreak>
 <if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>

@@ -1,4 +1,4 @@
-import "deine mudda" as "mum"
+import "deine mudda" as mum
 on init
 	/*make_perfview
 	for i := 0 to num_elements(soundset_ids)-1
@@ -10,8 +10,8 @@ on init
 end on
 //u*
 
-/*
-function ppi(1, 2, 3)
+
+function ppi()
     kacki := 3+bumsi mod 5
 end function
-*/
+

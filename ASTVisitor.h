@@ -16,7 +16,8 @@ public:
     virtual void visit(NodeArray& node) = 0;
     virtual void visit(NodeBinaryExpr& node) = 0;
     virtual void visit(NodeUnaryExpr& node) = 0;
-	virtual void visit(NodeAssignStatement& node)  = 0;
+    virtual void visit(NodeAssignStatement& node)  = 0;
+    virtual void visit(NodeParamList& node)  = 0;
 	virtual void visit(NodeStatement& node)  = 0;
 	virtual void visit(NodeCallback& node)  = 0;
     virtual void visit(NodeProgram& node)  = 0;
@@ -48,12 +49,18 @@ public:
         if (node.size != nullptr)
             node.size->accept(*this);
         std::cout << "].at(";
-        for(int i=0; i<node.indexes.size()-1; i++) {
-            node.indexes[i]->accept(*this);
-            std::cout << ", ";
-        }
-        node.indexes[node.indexes.size()-1]->accept(*this);
+        node.indexes->accept(*this);
         std::cout << ")";
+    }
+
+    void visit(NodeParamList& node) override {
+        if (!node.params.empty()) {
+            for (int i = 0; i < node.params.size() - 1; i++) {
+                node.params[i]->accept(*this);
+                std::cout << ", ";
+            }
+            node.params[node.params.size() - 1]->accept(*this);
+        }
     }
 
 	void visit(NodeBinaryExpr& node) override {
@@ -104,11 +111,7 @@ public:
 
     void visit(NodeFunctionHeader& node) override {
         std::cout << node.name << "(";
-        for(int i=0; i<node.args.size()-1; i++) {
-            node.args[i]->accept(*this);
-            std::cout << ", ";
-        }
-        node.args[node.args.size()-1]->accept(*this);
+        node.args->accept(*this);
         std::cout << ")";
     }
     void visit(NodeFunctionDefinition& node) override {
