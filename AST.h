@@ -48,6 +48,10 @@ struct NodeString : NodeAST {
     void accept(ASTVisitor& visitor) override;
 };
 
+struct NodeVariableDeclaration {
+    
+};
+
 struct NodeVariable: NodeAST {
     char ident;
 	std::string name;
@@ -75,7 +79,6 @@ struct NodeUnaryExpr : NodeAST {
 struct NodeBinaryExpr: NodeAST {
 	std::unique_ptr<NodeAST> left, right;
 	std::string op;
-
     inline explicit NodeBinaryExpr(std::string op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right)
     : op(std::move(op)), left(std::move(left)), right(std::move(right)) {}
 	void accept(ASTVisitor& visitor) override;
@@ -84,7 +87,6 @@ struct NodeBinaryExpr: NodeAST {
 struct NodeAssignStatement: NodeAST {
     std::unique_ptr<NodeAST> array_variable;
     std::unique_ptr<NodeAST> assignee;
-
     inline NodeAssignStatement(std::unique_ptr<NodeAST> array_variable, std::unique_ptr<NodeAST> assignee)
     : array_variable(std::move(array_variable)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
@@ -93,7 +95,6 @@ struct NodeAssignStatement: NodeAST {
 // can be assign_statement, if_statement etc.
 struct NodeStatement: NodeAST {
     std::unique_ptr<NodeAST> statement;
-
 	explicit NodeStatement(std::unique_ptr<NodeAST> statement) : statement(std::move(statement)) {}
 	void accept(ASTVisitor& visitor) override;
 };

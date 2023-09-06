@@ -340,9 +340,8 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback() {
         std::vector<std::unique_ptr<NodeStatement>> stmts;
         while (peek().type != token::END_CALLBACK) {
             if (peek().type == token::BEGIN_CALLBACK) {
-                return Result<std::unique_ptr<NodeCallback>>(
-                    CompileError(ErrorType::ParseError,
-								 "", peek().line, "end on", peek().val));
+                return Result<std::unique_ptr<NodeCallback>>(CompileError(ErrorType::ParseError,
+                 "", peek().line, "end on", peek().val));
             }
             auto stmt = parse_statement();
             if (!stmt.is_error()) {
@@ -355,9 +354,8 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback() {
         auto value = std::make_unique<NodeCallback>(begin_callback,std::move(stmts), end_callback);
         return Result<std::unique_ptr<NodeCallback>>(std::move(value));
     } else {
-        return Result<std::unique_ptr<NodeCallback>>(
-                CompileError(ErrorType::ParseError,
-							 "", peek().line, "linebreak", peek().val));
+        return Result<std::unique_ptr<NodeCallback>>(CompileError(ErrorType::ParseError,
+         "", peek().line, "linebreak", peek().val));
     }
 }
 

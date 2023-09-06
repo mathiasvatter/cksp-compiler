@@ -25,7 +25,9 @@
 <string> ::= "\'" <text> "\'"
 <variable_identifier> ::= "$" | "~" | "@"
 <array_identifier> ::= "!" | "%" | "?"
-<variable> ::= <variable_identifier>? <keyword>
+<identifier> ::= <variable_identifier> | <array_identifier>
+<variable> ::= (const | polyphonic)? <identifier>? <keyword>
+<array> ::= <variable> [ <binary_expression> (, <binary_expression>)? ]
 <variable_declaration> ::= "declare" <variable> | "declare" <variable_assign>
 <variable_assign> ::= <variable> ":=" (<expression> | <string>)
 
