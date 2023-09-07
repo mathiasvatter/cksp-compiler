@@ -55,32 +55,28 @@ struct NodeString : NodeAST {
     void accept(ASTVisitor& visitor) override;
 };
 
-struct NodeVariableDeclaration {
-
-};
-
 struct NodeVariable: NodeAST {
     char ident;
-    VarType type = VarType::Mutable;
+    VarType var_type = VarType::Mutable;
 	std::string name;
 	inline NodeVariable(std::string name, VarType type, char ident)
-    : name(std::move(name)), type(type), ident(ident) {}
+    : name(std::move(name)), var_type(type), ident(ident) {}
 	void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeParamList: NodeAST {
     std::vector<std::unique_ptr<NodeAST>> params;
-    inline explicit NodeParamList(std::vector<std::unique_ptr<NodeAST>> params) : params(std::move(params)) {}
+    inline explicit NodeParamList(std::vector<std::unique_ptr<NodeAST>> params={}) : params(std::move(params)) {}
     void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeArray : NodeAST {
     std::unique_ptr<NodeVariable> name;
-    std::unique_ptr<NodeAST> size = nullptr;
+    std::unique_ptr<NodeParamList> sizes = nullptr;
     std::unique_ptr<NodeParamList> indexes;
-    inline NodeArray(std::unique_ptr<NodeVariable> name, std::unique_ptr<NodeAST> size,
+    inline NodeArray(std::unique_ptr<NodeVariable> name, std::unique_ptr<NodeParamList> sizes,
               std::unique_ptr<NodeParamList> indexes)
-              : name(std::move(name)), size(std::move(size)), indexes(std::move(indexes)) {}
+              : name(std::move(name)), sizes(std::move(sizes)), indexes(std::move(indexes)) {}
     void accept(ASTVisitor& visitor) override;
 };
 
@@ -96,6 +92,14 @@ struct NodeBinaryExpr: NodeAST {
 	std::string op;
     inline explicit NodeBinaryExpr(std::string op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right)
     : op(std::move(op)), left(std::move(left)), right(std::move(right)) {}
+	void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeDeclareStatement : NodeAST {
+	std::unique_ptr<NodeAST> to_be_declared;
+	std::unique_ptr<NodeParamList> assignee;
+	inline explicit NodeDeclareStatement(std::unique_ptr<NodeAST> to_be_declared, std::unique_ptr<NodeParamList> assignee)
+		: to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
 };
 

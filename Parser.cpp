@@ -99,21 +99,27 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_variable() {
     return Result<std::unique_ptr<NodeVariable>>(std::move(return_value));
 }
 
-Result<std::unique_ptr<NodeArray>> Parser::parse_array(std::unique_ptr<NodeVariable> array_variable) {
-    std::unique_ptr<NodeAST> size;
+Result<std::unique_ptr<NodeArray>> Parser::parse_array(std::unique_ptr<NodeVariable> array_variable, bool is_size) {
+//    std::unique_ptr<NodeAST> size;
     std::unique_ptr<NodeParamList> indexes;
+	std::unique_ptr<NodeParamList> sizes;
     if(peek().type == token::OPEN_BRACKET) {
         auto index_params = parse_param_list(token::CLOSED_BRACKET);
         if(index_params.is_error()) {
             return Result<std::unique_ptr<NodeArray>>(index_params.get_error());
         }
-        indexes = std::move(index_params.unwrap());
+		sizes = std::make_unique<NodeParamList>();
+//		if (is_size) {
+//			sizes = std::move(index_params.unwrap());
+//		} else {
+			indexes = std::move(index_params.unwrap());
+//		}
     } else {
         return Result<std::unique_ptr<NodeArray>>(CompileError(ErrorType::SyntaxError,
              "Found unknown Array Syntax.", peek().line, "[", peek().val));
     }
-    array_variable->type = VarType::Array;
-    auto return_value = std::make_unique<NodeArray>(std::move(array_variable), std::move(size), std::move(indexes));
+    array_variable->var_type = VarType::Array;
+    auto return_value = std::make_unique<NodeArray>(std::move(array_variable), std::move(sizes), std::move(indexes));
     return Result<std::unique_ptr<NodeArray>>(std::move(return_value));
 }
 
@@ -279,49 +285,71 @@ int Parser::_get_binop_precedence(token tok) {
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_assign_statement() {
-    auto value = std::unique_ptr<NodeAST>();
-    auto var = parse_variable();
-    if(var.is_error()) {
-        return Result<std::unique_ptr<NodeAST>>(var.get_error());
-    }
-    // array assignment
-    if(peek().type == token::OPEN_BRACKET) {
-        auto array = parse_array(std::move(var.unwrap()));
-        if(array.is_error()) {
-            return Result<std::unique_ptr<NodeAST>>(array.get_error());
-        }
-        value = std::move(array.unwrap());
-    } else
-        value = std::move(var.unwrap());
+	// make it possible to have more than one variable before assign
+	auto var_list = parse_param_list(token::ASSIGN);
+	if(var_list.is_error()) {
+		return Result<std::unique_ptr<NodeAST>>(var_list.get_error());
+	}
+	auto vars = std::move(var_list.unwrap());
+//    auto value = std::unique_ptr<NodeAST>();
+//    auto var = parse_variable();
+//    if(var.is_error()) {
+//        return Result<std::unique_ptr<NodeAST>>(var.get_error());
+//    }
+//    // array assignment
+//    if(peek().type == token::OPEN_BRACKET) {
+//        auto array = parse_array(std::move(var.unwrap()));
+//        if(array.is_error()) {
+//            return Result<std::unique_ptr<NodeAST>>(array.get_error());
+//        }
+//        value = std::move(array.unwrap());
+//    } else
+//        value = std::move(var.unwrap());
     if(peek().type == token::ASSIGN) {
-        consume();
-        // array initializer
-        token end_token = token::LINEBRK;
-        if(peek().type == token::OPEN_PARENTH) {
-            end_token = consume().type;
-        }
-        auto assignee = parse_param_list(end_token);
-        if(assignee.is_error()) {
-            return Result<std::unique_ptr<NodeAST>>(assignee.get_error());
-        }
-        auto return_value = std::make_unique<NodeAssignStatement>(std::move(value), std::move(assignee.unwrap()));
-        return Result<std::unique_ptr<NodeAST>>(std::move(return_value));
+		auto assignee = _parse_assignee();
+		if(assignee.is_error()) {
+			return Result<std::unique_ptr<NodeAST>>(assignee.get_error());
+		}
+		auto return_value = std::make_unique<NodeAssignStatement>(std::move(vars), std::move(assignee.unwrap()));
+		return Result<std::unique_ptr<NodeAST>>(std::move(return_value));
     } else {
         return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
         "Found invalid Assign Statement Syntax.", peek().line, ":=", peek().val));
     }
 }
 
+Result<std::unique_ptr<NodeParamList>> Parser::_parse_assignee() {
+	consume();
+	// array initializer
+	token end_token = token::LINEBRK;
+	if(peek().type == token::OPEN_PARENTH) {
+		end_token = token::CLOSED_PARENTH;
+	}
+	auto assignee = parse_param_list(end_token);
+	if(assignee.is_error()) {
+		return Result<std::unique_ptr<NodeParamList>>(assignee.get_error());
+	}
+	return Result<std::unique_ptr<NodeParamList>>(std::move(assignee.unwrap()));
+}
+
 Result<std::unique_ptr<NodeStatement>> Parser::parse_statement() {
     _skip_linebreaks();
     std::unique_ptr<NodeAST> stmt;
     // assign statement
-    if (peek().type == token::KEYWORD) {
-        auto assign_stmt = parse_assign_statement();
-        if (assign_stmt.is_error()) {
-            return Result<std::unique_ptr<NodeStatement>>(assign_stmt.get_error());
-        }
-        stmt = std::move(assign_stmt.unwrap());
+    if (peek().type == token::KEYWORD || peek().type == token::DEFINE || peek().type == token::DECLARE) {
+		if(peek().type == token::DEFINE || peek().type == token::DECLARE) {
+			auto declare_stmt = parse_declare_statement();
+			if(declare_stmt.is_error()) {
+				return Result<std::unique_ptr<NodeStatement>>(declare_stmt.get_error());
+			}
+			stmt = std::move(declare_stmt.unwrap());
+		} else {
+			auto assign_stmt = parse_assign_statement();
+			if (assign_stmt.is_error()) {
+				return Result<std::unique_ptr<NodeStatement>>(assign_stmt.get_error());
+			}
+			stmt = std::move(assign_stmt.unwrap());
+		}
     } else {
         return Result<std::unique_ptr<NodeStatement>>(CompileError(ErrorType::SyntaxError,
          "Found invalid Statement Syntax.", peek().line, "Assign Statement", peek().val));
@@ -518,6 +546,57 @@ Result<std::unique_ptr<NodeImport>> Parser::parse_import() {
         return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
         "Not a filepath",peek().line,"path",peek().val));
     }
+}
+
+Result<std::unique_ptr<NodeAST>> Parser::parse_declare_statement() {
+	VarType type = VarType::Mutable;
+	if(peek().type == token::DECLARE) {
+		consume();
+		if(peek().type == token::CONST) {
+			consume();
+			type = VarType::Const;
+		} else if (peek().type == token::POLYPHONIC) {
+			consume();
+			type = VarType::Polyphonic;
+		}
+	}
+	if(peek().type ==token::DEFINE) {
+		consume();
+		type = VarType::Const;
+	}
+	auto variable_declarations = parse_param_list(token::ASSIGN);
+	if(variable_declarations.is_error()) {
+		return Result<std::unique_ptr<NodeAST>>(variable_declarations.get_error());
+	}
+	auto variables = std::move(variable_declarations.unwrap());
+	for(auto &var: variables->params) {
+		auto var_ptr = dynamic_cast<NodeVariable*>(var.get());
+		auto arr_ptr = dynamic_cast<NodeArray*>(var.get());
+		if(var_ptr) {
+			// var ist ein NodeVariable
+			var_ptr->var_type = type;
+		} else if(arr_ptr) {
+			// var ist ein NodeArray
+			std::swap(arr_ptr->sizes, arr_ptr->indexes);
+		} else {
+			// var ist weder ein NodeVariable noch ein NodeArray
+			return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
+	  "Can only declare arrays, variables or constants.", peek().line, "array or variable"));
+		}
+	}
+	std::unique_ptr<NodeParamList> assignees;
+	// if there is an assignment following
+	if (peek().type == token::ASSIGN) {
+		auto assignee = _parse_assignee();
+		if(assignee.is_error()) {
+			return Result<std::unique_ptr<NodeAST>>(assignee.get_error());
+		}
+		assignees = std::move(assignee.unwrap());
+	}
+	// initializes empty param list
+	assignees = std::make_unique<NodeParamList>();
+	auto return_value = std::make_unique<NodeDeclareStatement>(std::move(variables), std::move(assignees));
+	return Result<std::unique_ptr<NodeAST>>(std::move(return_value));
 }
 
 

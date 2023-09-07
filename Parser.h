@@ -54,8 +54,10 @@ private:
     Result<std::unique_ptr<NodeAST>> parse_number();
     Result<std::unique_ptr<NodeString>> parse_string();
     Result<std::unique_ptr<NodeVariable>> parse_variable();
-    Result<std::unique_ptr<NodeArray>> parse_array(std::unique_ptr<NodeVariable> array_variable);
-    Result<std::unique_ptr<NodeParamList>> parse_param_list(token end);
+	/// handles the expression inside brackets as size if is_size=true, else those are handled as indexes
+    Result<std::unique_ptr<NodeArray>> parse_array(std::unique_ptr<NodeVariable> array_variable, bool is_size=false);
+	/// stops either at end token or at linebreak
+    Result<std::unique_ptr<NodeParamList>> parse_param_list(token end = token::LINEBRK);
     /// parses every expression from binary, string, unary to number and variable
     Result<std::unique_ptr<NodeAST>> parse_expression();
     Result<std::unique_ptr<NodeAST>> parse_string_expr();
@@ -70,7 +72,9 @@ private:
 		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr();
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr();
+	Result<std::unique_ptr<NodeParamList>> _parse_assignee();
     Result<std::unique_ptr<NodeAST>> parse_assign_statement();
+	Result<std::unique_ptr<NodeAST>> parse_declare_statement();
 	// combines all possible statement types
     Result<std::unique_ptr<NodeStatement>> parse_statement();
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition();

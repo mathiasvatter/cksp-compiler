@@ -28,8 +28,7 @@
 <identifier> ::= <variable_identifier> | <array_identifier>
 <variable> ::= (const | polyphonic)? <identifier>? <keyword>
 <array> ::= <variable> [ <binary_expression> (, <binary_expression>)? ]
-<variable_declaration> ::= "declare" <variable> | "declare" <variable_assign>
-<array_declaration> ::= "declare" <array>
+<declare_statement> ::= "declare" (<variable> | <array> | <assign_statement>)
 <param_list> ::= (<expression> ("," <expression>)?)?
 
 <unary_expression> ::= <unary_op> (<num> | <variable> | <function_header>)
@@ -43,7 +42,7 @@
 <boolean_expression> ::= <comparison_expression> (<bool> <comparison_expression>)?
 <comparison_expression> ::= <binary_expression> <comparison_op> <binary_expression>
 
-<assign_statement> ::= (<variable> | <array>) ":=" "("? <param_list> ")"?
+<assign_statement> ::= <param_list> ":=" "("? <param_list> ")"?
 <statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement) <linebreak>
 <for_statement> ::= for <variable> := <expression> <linebreak> <statements> end for <linebreak>
 <if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>

@@ -13,7 +13,8 @@ public:
     virtual void visit(NodeReal& node) = 0;
     virtual void visit(NodeString& node) = 0;
     virtual void visit(NodeVariable& node) = 0;
-    virtual void visit(NodeArray& node) = 0;
+	virtual void visit(NodeArray& node) = 0;
+	virtual void visit(NodeDeclareStatement& node) = 0;
     virtual void visit(NodeBinaryExpr& node) = 0;
     virtual void visit(NodeUnaryExpr& node) = 0;
     virtual void visit(NodeAssignStatement& node)  = 0;
@@ -43,11 +44,16 @@ public:
 		std::cout << "(" << node.ident << ")" << node.name;
 	}
 
+	void visit(NodeDeclareStatement& node) override {
+		std::cout << "declare ";
+		node.to_be_declared->accept(*this);
+		node.assignee->accept(*this);
+	}
+
     void visit(NodeArray& node) override {
         node.name->accept(*this);
         std::cout << "[";
-        if (node.size != nullptr)
-            node.size->accept(*this);
+		node.sizes->accept(*this);
         std::cout << "].at(";
         node.indexes->accept(*this);
         std::cout << ")";
@@ -94,18 +100,16 @@ public:
 	}
 
 	void visit(NodeStatement& node) override {
-		std::cout << "StmtWrapper(" ;
+		std::cout << "Stmt(" ;
 		node.statement->accept(*this);
 		std::cout << ")" << std::endl;
 	}
 
 	void visit(NodeCallback& node) override {
 		std::cout << "Callback(" << node.begin_callback << ")" << std::endl;
-		std::cout << "Stmts{" << std::endl ;
 		for(auto& statement : node.statements) {
 			statement->accept(*this);
 		}
-		std::cout << "}" << std::endl;
 		std::cout << "End_callback(" << node.end_callback << ")"<< std::endl;
 	}
 
