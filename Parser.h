@@ -77,6 +77,8 @@ private:
 	Result<std::unique_ptr<NodeAST>> parse_declare_statement();
 	// combines all possible statement types
     Result<std::unique_ptr<NodeStatement>> parse_statement();
+    Result<std::unique_ptr<NodeIfStatement>> parse_if_statement();
+    Result<std::unique_ptr<NodeIfStatement>> parse_else_statement(std::unique_ptr<NodeIfStatement> prev_if);
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition();
     Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header();
     Result<std::unique_ptr<NodeCallback>> parse_callback();

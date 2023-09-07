@@ -248,16 +248,20 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, 
             //Check if rhs is NodeComparisonExpr because comparisons in comparisons are not allowed
             if (lhs->type == ASTType::Comparison) {
                 return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-                                     "Nested Comparisons are not allowed.", peek().line, "valid expression operator", bin_op.val));
+                 "Nested Comparisons are not allowed.", peek().line, "valid expression operator", bin_op.val));
             }
             type = ASTType::Comparison;
 		} else if (bin_op.type == token::BOOL_AND || bin_op.type == token::BOOL_OR){
 			type = ASTType::Boolean;
+            if (not(lhs->type == ASTType::Comparison && rhs.unwrap()->type == ASTType::Comparison)) {
+                return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
+                 "Boolean Operators can only connect Comparisons.", peek().line, "Comparisons"));
+            }
 		}
         // brauch ich das jetzt schon, oder vllt erst nachher beim typisierungs-check?
         if (lhs->type == Integer && rhs.unwrap()->type == Real || lhs->type == Real && rhs.unwrap()->type == Integer) {
             return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-                                 "Merging of different Expression Types is not allowed.", peek().line, "One Expression Type per Expression", bin_op.val));
+             "Merging of different Expression Types is not allowed.", peek().line, "One Expression Type per Expression", bin_op.val));
         }
         lhs = std::make_unique<NodeBinaryExpr>(bin_op.val, std::move(lhs), std::move(rhs.unwrap()));
         lhs->type = type;
@@ -581,10 +585,12 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_declare_statement() {
 		} else {
 			// var ist weder ein NodeVariable noch ein NodeArray
 			return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-	  "Can only declare arrays, variables or constants.", peek().line, "array or variable"));
+	        "Can only declare arrays, variables or constants.", peek().line, "array or variable"));
 		}
 	}
 	std::unique_ptr<NodeParamList> assignees;
+	// initializes empty param list
+	assignees = std::make_unique<NodeParamList>();
 	// if there is an assignment following
 	if (peek().type == token::ASSIGN) {
 		auto assignee = _parse_assignee();
@@ -593,11 +599,29 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_declare_statement() {
 		}
 		assignees = std::move(assignee.unwrap());
 	}
-	// initializes empty param list
-	assignees = std::make_unique<NodeParamList>();
 	auto return_value = std::make_unique<NodeDeclareStatement>(std::move(variables), std::move(assignees));
 	return Result<std::unique_ptr<NodeAST>>(std::move(return_value));
 }
+
+//Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement() {
+//    //consume if
+//    consume();
+//    auto condition_result = parse_expression();
+//    if(condition_result.is_error()) {
+//        return Result<std::unique_ptr<NodeIfStatement>>(condition_result.get_error());
+//    }
+//    auto condition = std::move(condition_result.unwrap());
+//    if(not(condition->type == ASTType::Boolean || condition->type == ASTType::Comparison)) {
+//        return Result<std::unique_ptr<NodeIfStatement>>(CompileError(ErrorType::SyntaxError,
+//        "If Statement needs condition.", peek().line, "condition"));
+//    }
+//    auto if_statements = parse_
+//    if(peek().type == token::ELSE) {
+//        auto else_statement
+//    }
+//
+//}
+
 
 
 

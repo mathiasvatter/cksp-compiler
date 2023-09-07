@@ -118,6 +118,15 @@ struct NodeStatement: NodeAST {
 	void accept(ASTVisitor& visitor) override;
 };
 
+struct NodeIfStatement: NodeAST {
+    std::unique_ptr<NodeBinaryExpr> condition;
+    std::vector<std::unique_ptr<NodeStatement>> statements;
+    std::vector<std::unique_ptr<NodeStatement>> else_statements = {};
+    inline NodeIfStatement(std::unique_ptr<NodeBinaryExpr> condition, std::vector<std::unique_ptr<NodeStatement>> statements,std::vector<std::unique_ptr<NodeStatement>> elseStatements)
+    : condition(std::move(condition)), statements(std::move(statements)), else_statements(std::move(elseStatements)) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
 struct NodeCallback: NodeAST {
     std::string begin_callback;
     std::vector<std::unique_ptr<NodeStatement>> statements;

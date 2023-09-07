@@ -53,7 +53,6 @@
     XX(WHILE, "while") \
     XX(IF, "if") \
     XX(SELECT, "select") \
-    XX(CONSTBLOCK, "constblock") \
     XX(LIST, "list") \
     XX(TASKFUNC, "taskfunc") \
     XX(MACRO, "macro") \
@@ -62,7 +61,7 @@
     XX(END_WHILE, "end while") \
     XX(END_IF, "end if") \
     XX(END_SELECT, "end select") \
-    XX(END_CONSTBLOCK, "end constblock") \
+    XX(END_CONST, "end constblock") \
     XX(END_LIST, "end list") \
     XX(END_TASKFUNC, "end taskfunc") \
     XX(END_MACRO, "end macro") \
@@ -138,10 +137,10 @@ inline std::vector<Keyword> IMPORT_SYNTAX = {{IMPORT, "import"}, {AS, "as"}};
 inline std::vector<Keyword> STATEMENT_SYNTAX = {{TO, "to"}, {DOWNTO, "downto"}, {ELSE, "else"}, {CASE, "case"}, {OVERRIDE, "override"}};
 // control statements that also have an end
 inline std::vector<Keyword> END_STATEMENTS = {{END_FUNCTION, "end function"}, {END_FOR, "end for"}, {END_WHILE, "end while"},
-											  {END_IF,       "end if"}, {END_SELECT, "end select"}, {END_CONSTBLOCK, "end const"}, {END_LIST, "end list"},
+											  {END_IF,       "end if"}, {END_SELECT, "end select"}, {END_CONST, "end const"}, {END_LIST, "end list"},
 											  {END_MACRO,    "end macro"}, {END_TASKFUNC, "end taskfunc"}};
 inline std::vector<Keyword> STATEMENTS = {{FUNCTION, "function"}, {FOR, "for"}, {WHILE, "while"},
-										  {IF,       "if"}, {SELECT, "select"}, {CONSTBLOCK, "const"}, {LIST, "list"},
+										  {IF,       "if"}, {SELECT, "select"}, {CONST, "const"}, {LIST, "list"},
 										  {MACRO,    "macro"}, {TASKFUNC, "taskfunc"}};
 inline std::vector<std::string> CALLBACKS = {"init", "note", "release", "midi_in", "controller",
 											 "rpn", "nrpn", "ui_update", "_pgs_changed", "pgs_changed",

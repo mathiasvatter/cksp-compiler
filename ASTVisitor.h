@@ -19,7 +19,8 @@ public:
     virtual void visit(NodeUnaryExpr& node) = 0;
     virtual void visit(NodeAssignStatement& node)  = 0;
     virtual void visit(NodeParamList& node)  = 0;
-	virtual void visit(NodeStatement& node)  = 0;
+    virtual void visit(NodeStatement& node)  = 0;
+    virtual void visit(NodeIfStatement& node)  = 0;
 	virtual void visit(NodeCallback& node)  = 0;
     virtual void visit(NodeProgram& node)  = 0;
     virtual void visit(NodeFunctionHeader& node)  = 0;
@@ -47,7 +48,10 @@ public:
 	void visit(NodeDeclareStatement& node) override {
 		std::cout << "declare ";
 		node.to_be_declared->accept(*this);
-		node.assignee->accept(*this);
+        if(!node.assignee->params.empty()) {
+            std::cout << " := ";
+		    node.assignee->accept(*this);
+        }
 	}
 
     void visit(NodeArray& node) override {
@@ -104,6 +108,20 @@ public:
 		node.statement->accept(*this);
 		std::cout << ")" << std::endl;
 	}
+
+    void visit(NodeIfStatement& node) override {
+        std::cout << "if " ;
+        node.condition->accept(*this);
+        std::cout << std::endl;
+        for(auto &stmt: node.statements) {
+            stmt->accept(*this);
+        }
+        std::cout << "else" << std::endl;
+        for(auto &stmt: node.else_statements) {
+            stmt->accept(*this);
+        }
+        std::cout << "end if" << std::endl;
+    }
 
 	void visit(NodeCallback& node) override {
 		std::cout << "Callback(" << node.begin_callback << ")" << std::endl;

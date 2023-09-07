@@ -4,9 +4,11 @@ on init
 	for i := 0 to num_elements(soundset_ids)-1
 	    message(i)
 	end for*/
+	declare uno, dos, tres, poopy := 1,2,3,4
     //bims, schrimps := not(4+array[4]), 5
     declare bums[3] := (1,2,3)
     bums[3] := sdf & "string" & 3+4+(5+6) & "another"
+    condition := 4=5 and 2<3
     //d
 end on
 //u*
