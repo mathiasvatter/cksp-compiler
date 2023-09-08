@@ -72,3 +72,7 @@ void NodeDeclareStatement::accept(ASTVisitor &visitor) {
 void NodeIfStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+void NodeForStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}

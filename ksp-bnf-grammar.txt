@@ -44,7 +44,7 @@
 
 <assign_statement> ::= <param_list> ":=" "("? <param_list> ")"?
 <statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement) <linebreak>
-<for_statement> ::= for <variable> := <expression> <linebreak> <statements> end for <linebreak>
+<for_statement> ::= for <assign_statement> (to | downto) <binary_expression> <linebreak> <statements> end for <linebreak>
 <if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>
 <while_statement> ::= while (? <condition> )? <linebreak> <statements> end while <linebreak>
 <select_statement> ::= select (? <expression> )? <linebreak> (case <expression> <linebreak> <statements>)+ end select <linebreak>

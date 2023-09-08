@@ -21,6 +21,7 @@ public:
     virtual void visit(NodeParamList& node)  = 0;
     virtual void visit(NodeStatement& node)  = 0;
     virtual void visit(NodeIfStatement& node)  = 0;
+    virtual void visit(NodeForStatement& node)  = 0;
 	virtual void visit(NodeCallback& node)  = 0;
     virtual void visit(NodeProgram& node)  = 0;
     virtual void visit(NodeFunctionHeader& node)  = 0;
@@ -120,10 +121,22 @@ public:
         for(auto &stmt: node.else_statements) {
             stmt->accept(*this);
         }
-        std::cout << "end if" << std::endl;
+        std::cout << "end if";
     }
 
-	void visit(NodeCallback& node) override {
+    void visit(NodeForStatement& node) override {
+        std::cout << "for " ;
+        node.iterator->accept(*this);
+        std::cout << " " << node.to.val << " ";
+        node.iterator_end->accept(*this);
+        std::cout << std::endl;
+        for(auto &stmt: node.statements) {
+            stmt->accept(*this);
+        }
+        std::cout << "end for";
+    }
+
+    void visit(NodeCallback& node) override {
 		std::cout << "Callback(" << node.begin_callback << ")" << std::endl;
 		for(auto& statement : node.statements) {
 			statement->accept(*this);

@@ -78,11 +78,12 @@ private:
 	// combines all possible statement types
     Result<std::unique_ptr<NodeStatement>> parse_statement();
     Result<std::unique_ptr<NodeIfStatement>> parse_if_statement();
-    Result<std::unique_ptr<NodeIfStatement>> parse_else_statement(std::unique_ptr<NodeIfStatement> prev_if);
+    Result<std::unique_ptr<NodeForStatement>> parse_for_statement();
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition();
     Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header();
     Result<std::unique_ptr<NodeCallback>> parse_callback();
     Result<std::unique_ptr<NodeImport>> parse_import();
 	Result<std::unique_ptr<NodeProgram>> parse_program();
+
 };
 

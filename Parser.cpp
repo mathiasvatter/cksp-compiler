@@ -341,22 +341,34 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement() {
     std::unique_ptr<NodeAST> stmt;
     // assign statement
     if (peek().type == token::KEYWORD || peek().type == token::DEFINE || peek().type == token::DECLARE) {
-		if(peek().type == token::DEFINE || peek().type == token::DECLARE) {
-			auto declare_stmt = parse_declare_statement();
-			if(declare_stmt.is_error()) {
-				return Result<std::unique_ptr<NodeStatement>>(declare_stmt.get_error());
-			}
-			stmt = std::move(declare_stmt.unwrap());
-		} else {
-			auto assign_stmt = parse_assign_statement();
-			if (assign_stmt.is_error()) {
-				return Result<std::unique_ptr<NodeStatement>>(assign_stmt.get_error());
-			}
-			stmt = std::move(assign_stmt.unwrap());
-		}
+        if (peek().type == token::DEFINE || peek().type == token::DECLARE) {
+            auto declare_stmt = parse_declare_statement();
+            if (declare_stmt.is_error()) {
+                return Result<std::unique_ptr<NodeStatement>>(declare_stmt.get_error());
+            }
+            stmt = std::move(declare_stmt.unwrap());
+        } else {
+            auto assign_stmt = parse_assign_statement();
+            if (assign_stmt.is_error()) {
+                return Result<std::unique_ptr<NodeStatement>>(assign_stmt.get_error());
+            }
+            stmt = std::move(assign_stmt.unwrap());
+        }
+    } else if (peek().type == token::IF) {
+        auto if_stmt = parse_if_statement();
+        if (if_stmt.is_error()) {
+            return Result<std::unique_ptr<NodeStatement>>(if_stmt.get_error());
+        }
+        stmt = std::move(if_stmt.unwrap());
+    } else if (peek().type == token::FOR) {
+        auto for_stmt = parse_for_statement();
+        if(for_stmt.is_error()) {
+            return Result<std::unique_ptr<NodeStatement>>(for_stmt.get_error());
+        }
+        stmt = std::move(for_stmt.unwrap());
     } else {
         return Result<std::unique_ptr<NodeStatement>>(CompileError(ErrorType::SyntaxError,
-         "Found invalid Statement Syntax.", peek().line, "Assign Statement", peek().val));
+         "Found invalid Statement Syntax.", peek().line, "Statement", peek().val));
     }
 	if(peek().type == token::LINEBRK) {
 		consume();
@@ -442,7 +454,7 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(token end) {
             return Result<std::unique_ptr<NodeParamList>>(param.get_error());
         if (peek().type == token::COMMA) {
             consume();
-        }
+        } else break;
     }
     // if current token is not ) or ] do not consume, the next node needs it
     if(end == token::CLOSED_PARENTH || end == token::CLOSED_BRACKET)
@@ -603,26 +615,103 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_declare_statement() {
 	return Result<std::unique_ptr<NodeAST>>(std::move(return_value));
 }
 
-//Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement() {
-//    //consume if
-//    consume();
-//    auto condition_result = parse_expression();
-//    if(condition_result.is_error()) {
-//        return Result<std::unique_ptr<NodeIfStatement>>(condition_result.get_error());
-//    }
-//    auto condition = std::move(condition_result.unwrap());
-//    if(not(condition->type == ASTType::Boolean || condition->type == ASTType::Comparison)) {
-//        return Result<std::unique_ptr<NodeIfStatement>>(CompileError(ErrorType::SyntaxError,
-//        "If Statement needs condition.", peek().line, "condition"));
-//    }
-//    auto if_statements = parse_
-//    if(peek().type == token::ELSE) {
-//        auto else_statement
-//    }
-//
-//}
+Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement() {
+    //consume if
+    consume();
+    auto condition_result = parse_expression();
+    if(condition_result.is_error()) {
+        return Result<std::unique_ptr<NodeIfStatement>>(condition_result.get_error());
+    }
+    auto condition = std::move(condition_result.unwrap());
+    if(not(condition->type == ASTType::Boolean || condition->type == ASTType::Comparison)) {
+        return Result<std::unique_ptr<NodeIfStatement>>(CompileError(ErrorType::SyntaxError,
+        "If Statement needs condition.", peek().line, "condition"));
+    }
+    if(peek().type != token::LINEBRK) {
+        return Result<std::unique_ptr<NodeIfStatement>>(CompileError(ErrorType::SyntaxError,
+         "Expected linebreak after if-condition.", peek().line, "linebreak", peek().val));
+    }
+    std::vector<std::unique_ptr<NodeStatement>> if_stmts = {};
+    while (peek().type != token::END_IF && peek().type != token::ELSE) {
+        auto stmt = parse_statement();
+        if (!stmt.is_error()) {
+            if_stmts.push_back(std::move(stmt.unwrap()));
+        } else {
+            return Result<std::unique_ptr<NodeIfStatement>>(stmt.get_error());
+        }
+    }
+    bool no_end_if = false;
+    std::vector<std::unique_ptr<NodeStatement>> else_stmts = {};
+    if(peek().type == token::ELSE) {
+        consume();
+        if(not(peek().type == token::IF || peek().type == token::LINEBRK)) {
+            return Result<std::unique_ptr<NodeIfStatement>>(CompileError(ErrorType::SyntaxError,
+            "Expected linebreak after else-condition.", peek().line, "linebreak", peek().val));
+        }
+        if(peek().type == token::IF) {
+            no_end_if = true;
+            auto stmt = parse_if_statement();
+            if (stmt.is_error()) {
+                return Result<std::unique_ptr<NodeIfStatement>>(stmt.get_error());
+            }
+            auto stmt_val = std::make_unique<NodeStatement>(std::move(stmt.unwrap()));
+            else_stmts.push_back(std::move(stmt_val));
+        } else {
+            while (peek().type != token::END_IF) {
+                auto stmt = parse_statement();
+                if (stmt.is_error()) {
+                    return Result<std::unique_ptr<NodeIfStatement>>(stmt.get_error());
+                }
+                else_stmts.push_back(std::move(stmt.unwrap()));
+            }
+        }
+    }
+    if(peek().type == token::END_IF || no_end_if) {
+        if (!no_end_if) consume();
+        auto return_value = std::make_unique<NodeIfStatement>(std::move(condition), std::move(if_stmts), std::move(else_stmts));
+        return Result<std::unique_ptr<NodeIfStatement>>(std::move(return_value));
+    } else {
+        return Result<std::unique_ptr<NodeIfStatement>>(CompileError(ErrorType::SyntaxError,
+         "Missing end token.", peek().line, "end if", peek().val));
+    }
 
+}
 
+Result<std::unique_ptr<NodeForStatement>> Parser::parse_for_statement() {
+    //consume for
+    consume();
+    auto assign_stmt = parse_assign_statement();
+    if(assign_stmt.is_error()) {
+        return Result<std::unique_ptr<NodeForStatement>>(assign_stmt.get_error());
+    }
+    auto iterator = std::move(assign_stmt.unwrap());
+    if(not(peek().type == token::TO || peek().type == token::DOWNTO)) {
+        return Result<std::unique_ptr<NodeForStatement>>(CompileError(ErrorType::SyntaxError,
+        "Incorrect for loop Syntax.", peek().line, "to/downto", peek().val));
+    }
+    Token to = consume(); //consume to or downto
+    auto expression_stmt = parse_binary_expr();
+    if(expression_stmt.is_error()) {
+        return Result<std::unique_ptr<NodeForStatement>>(expression_stmt.get_error());
+    }
+    auto iterator_end = std::move(expression_stmt.unwrap());
+    if(peek().type != token::LINEBRK) {
+        return Result<std::unique_ptr<NodeForStatement>>(CompileError(ErrorType::SyntaxError,
+         "Missing linebreak in for loop", peek().line, "linebreak", peek().val));
+    }
+    consume(); //consume linebreak
+    std::vector<std::unique_ptr<NodeStatement>> stmts = {};
+    while (peek().type != token::END_FOR) {
+        auto stmt = parse_statement();
+        if (stmt.is_error()) {
+            return Result<std::unique_ptr<NodeForStatement>>(stmt.get_error());
+        }
+        stmts.push_back(std::move(stmt.unwrap()));
+    }
+    consume(); // consume end for
+    auto return_value = std::make_unique<NodeForStatement>(std::move(iterator), to, std::move(iterator_end), std::move(stmts));
+    return Result<std::unique_ptr<NodeForStatement>>(std::move(return_value));
+}
 
 
 

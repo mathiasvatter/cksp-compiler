@@ -119,11 +119,21 @@ struct NodeStatement: NodeAST {
 };
 
 struct NodeIfStatement: NodeAST {
-    std::unique_ptr<NodeBinaryExpr> condition;
+    std::unique_ptr<NodeAST> condition;
     std::vector<std::unique_ptr<NodeStatement>> statements;
     std::vector<std::unique_ptr<NodeStatement>> else_statements = {};
-    inline NodeIfStatement(std::unique_ptr<NodeBinaryExpr> condition, std::vector<std::unique_ptr<NodeStatement>> statements,std::vector<std::unique_ptr<NodeStatement>> elseStatements)
+    inline NodeIfStatement(std::unique_ptr<NodeAST> condition, std::vector<std::unique_ptr<NodeStatement>> statements,std::vector<std::unique_ptr<NodeStatement>> elseStatements)
     : condition(std::move(condition)), statements(std::move(statements)), else_statements(std::move(elseStatements)) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeForStatement : NodeAST {
+    std::unique_ptr<NodeAST> iterator;
+    Token to;
+    std::unique_ptr<NodeAST> iterator_end;
+    std::vector<std::unique_ptr<NodeStatement>> statements;
+    inline NodeForStatement(std::unique_ptr<NodeAST> iterator, Token to, std::unique_ptr<NodeAST> iterator_end, std::vector<std::unique_ptr<NodeStatement>> statements)
+    : iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), statements(std::move(statements)) {}
     void accept(ASTVisitor& visitor) override;
 };
 
