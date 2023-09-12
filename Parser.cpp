@@ -272,9 +272,8 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_parenth_expr() {
     consume(); // eat (
     auto expr = parse_binary_expr();
     if (peek().type != token::CLOSED_PARENTH) {
-		return Result<std::unique_ptr<NodeAST>>(
-        	CompileError(ErrorType::ParseError,
-						 "Missing parenthesis.", peek().line, ")", peek().val));
+		return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::ParseError,
+		 "Missing parenthesis.", peek().line, ")", peek().val));
     }
     consume(); // eat )
     return expr;
@@ -329,11 +328,14 @@ Result<std::unique_ptr<NodeParamList>> Parser::_parse_assignee() {
 	if(peek().type == token::OPEN_PARENTH) {
 		end_token = token::CLOSED_PARENTH;
 	}
-	auto assignee = parse_param_list(end_token);
+	auto assignee = parse_expression();//parse_param_list(end_token);
 	if(assignee.is_error()) {
 		return Result<std::unique_ptr<NodeParamList>>(assignee.get_error());
 	}
-	return Result<std::unique_ptr<NodeParamList>>(std::move(assignee.unwrap()));
+	std::vector<std::unique_ptr<NodeAST>> param_list = {};
+	param_list.push_back(std::move(assignee.unwrap()));
+	auto return_value = std::make_unique<NodeParamList>(std::move(param_list));
+	return Result<std::unique_ptr<NodeParamList>>(std::move(return_value));
 }
 
 Result<std::unique_ptr<NodeStatement>> Parser::parse_statement() {
@@ -456,18 +458,27 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 
 Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(token end) {
     std::vector<std::unique_ptr<NodeAST>> params;
-    std::unique_ptr<NodeParamList> nested_params = {};
+//    std::unique_ptr<NodeParamList> nested_params = {};
+
     if(peek().type == token::OPEN_PARENTH || peek().type == token::OPEN_BRACKET)
         consume();
-    while(peek().type != token::LINEBRK) {
-        auto param = parse_expression();
-        if (!param.is_error()) {
-            params.push_back(std::move(param.unwrap()));
-        } else
-            return Result<std::unique_ptr<NodeParamList>>(param.get_error());
-        if (peek().type == token::COMMA) {
-            consume();
-        } else break;
+    while(peek().type != token::LINEBRK && peek().type != end) {
+		if (peek().type == token::OPEN_PARENTH) {
+			auto nested_param = parse_param_list(token::CLOSED_PARENTH);
+			if (nested_param.is_error()) {
+				return Result<std::unique_ptr<NodeParamList>>(nested_param.get_error());
+			}
+			params.push_back(std::move(nested_param.unwrap()));
+		} else {
+			auto param = parse_expression();
+			if (!param.is_error()) {
+				params.push_back(std::move(param.unwrap()));
+			} else
+				return Result<std::unique_ptr<NodeParamList>>(param.get_error());
+		}
+		if (peek().type == token::COMMA) {
+			consume();
+		} else break;
     }
 //    // if it is a nested param list
 //    if(peek(1).type == token::COMMA && peek().type == token::CLOSED_PARENTH) {
@@ -625,21 +636,21 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_declare_statement() {
 		return Result<std::unique_ptr<NodeAST>>(variable_declarations.get_error());
 	}
 	auto variables = std::move(variable_declarations.unwrap());
-	for(auto &var: variables->params) {
-		auto var_ptr = dynamic_cast<NodeVariable*>(var.get());
-		auto arr_ptr = dynamic_cast<NodeArray*>(var.get());
-		if(var_ptr) {
-			// var ist ein NodeVariable
-			var_ptr->var_type = type;
-		} else if(arr_ptr) {
-			// var ist ein NodeArray
-			std::swap(arr_ptr->sizes, arr_ptr->indexes);
-		} else {
-			// var ist weder ein NodeVariable noch ein NodeArray
-			return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-	        "Can only declare arrays, variables or constants.", peek().line, "array or variable"));
-		}
-	}
+//	for(auto &var: variables->params) {
+//		auto var_ptr = dynamic_cast<NodeVariable*>(var.get());
+//		auto arr_ptr = dynamic_cast<NodeArray*>(var.get());
+//		if(var_ptr) {
+//			// var ist ein NodeVariable
+//			var_ptr->var_type = type;
+//		} else if(arr_ptr) {
+//			// var ist ein NodeArray
+//			std::swap(arr_ptr->sizes, arr_ptr->indexes);
+//		} else {
+//			// var ist weder ein NodeVariable noch ein NodeArray
+//			return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
+//	        "Can only declare arrays, variables or constants.", peek().line, "array or variable"));
+//		}
+//	}
 	std::unique_ptr<NodeParamList> assignees;
 	// initializes empty param list
 	assignees = std::make_unique<NodeParamList>();

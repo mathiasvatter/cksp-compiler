@@ -11,6 +11,7 @@
 //#include "ASTVisitor.h"
 
 inline static std::map<token, int> BinaryOpPrecendence = {
+		{token::COMMA, 1},
         {token::BOOL_OR, 1},
         {token::BOOL_AND, 2},
 		{token::BOOL_NOT, 3},

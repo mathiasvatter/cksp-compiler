@@ -4,8 +4,8 @@ on init
 	for i := 0 to num_elements(soundset_ids)-1
 	    message(i)
 	end for*/
-	{declare uno, dos, tres, poopy := 1,2,3,4
-    bims, schrimps := not(4+array[4]), 5
+	declare poopy, arr[] := (1), (1,4)
+    {bims, schrimps := not(4+array[4]), 5
     declare bums[3] := (1,2,3)
     bums[3] := sdf & "string" & 3+4+(5+6) & "another"
     condition := 4=5 and 2<3
@@ -13,13 +13,13 @@ on init
         d := 3
     else if 5=6
         d := 5
-    end if}
+    end if
     for i := 0 to 4-1
         d := 5
-    end for
+    end for}
+    brutus()
     while 4<2
         s := 4
-        brutus()
     end while
     //d
 end on

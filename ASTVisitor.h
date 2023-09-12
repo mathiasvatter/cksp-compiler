@@ -51,10 +51,10 @@ public:
 	void visit(NodeDeclareStatement& node) override {
 		std::cout << "declare ";
 		node.to_be_declared->accept(*this);
-        if(!node.assignee->params.empty()) {
+//        if(!node.assignee->params.empty()) {
             std::cout << " := ";
 		    node.assignee->accept(*this);
-        }
+//        }
 	}
 
     void visit(NodeArray& node) override {
@@ -68,11 +68,13 @@ public:
 
     void visit(NodeParamList& node) override {
         if (!node.params.empty()) {
+			std::cout << "[";
             for (int i = 0; i < node.params.size() - 1; i++) {
                 node.params[i]->accept(*this);
                 std::cout << ", ";
             }
             node.params[node.params.size() - 1]->accept(*this);
+			std::cout << "]";
         }
     }
 
