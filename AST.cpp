@@ -76,3 +76,11 @@ void NodeIfStatement::accept(ASTVisitor &visitor) {
 void NodeForStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+void NodeWhileStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeFunctionCall::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}

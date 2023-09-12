@@ -22,9 +22,11 @@ public:
     virtual void visit(NodeStatement& node)  = 0;
     virtual void visit(NodeIfStatement& node)  = 0;
     virtual void visit(NodeForStatement& node)  = 0;
+    virtual void visit(NodeWhileStatement& node)  = 0;
 	virtual void visit(NodeCallback& node)  = 0;
     virtual void visit(NodeProgram& node)  = 0;
     virtual void visit(NodeFunctionHeader& node)  = 0;
+    virtual void visit(NodeFunctionCall& node)  = 0;
     virtual void visit(NodeFunctionDefinition& node)  = 0;
 };
 
@@ -124,6 +126,16 @@ public:
         std::cout << "end if";
     }
 
+    void visit(NodeWhileStatement& node) override {
+        std::cout << "while(" ;
+        node.condition->accept(*this);
+        std::cout << ") " << std::endl;
+        for(auto &stmt: node.statements) {
+            stmt->accept(*this);
+        }
+        std::cout << "end while";
+    }
+
     void visit(NodeForStatement& node) override {
         std::cout << "for " ;
         node.iterator->accept(*this);
@@ -149,6 +161,14 @@ public:
         node.args->accept(*this);
         std::cout << ")";
     }
+
+    void visit(NodeFunctionCall& node) override {
+        if (node.is_call) {
+            std::cout << "call ";
+        }
+        node.function->accept(*this);
+    }
+
     void visit(NodeFunctionDefinition& node) override {
         std::cout << "function ";
         node.header ->accept(*this);

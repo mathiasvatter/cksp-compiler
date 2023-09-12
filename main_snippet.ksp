@@ -17,6 +17,10 @@ on init
     for i := 0 to 4-1
         d := 5
     end for
+    while 4<2
+        s := 4
+        brutus()
+    end while
     //d
 end on
 //u*

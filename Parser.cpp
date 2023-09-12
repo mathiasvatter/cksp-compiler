@@ -347,6 +347,12 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement() {
                 return Result<std::unique_ptr<NodeStatement>>(declare_stmt.get_error());
             }
             stmt = std::move(declare_stmt.unwrap());
+        } else if (peek().type == token::CALL xor peek(1).type == token::OPEN_PARENTH) {
+            auto function_call = parse_function_call();
+            if (function_call.is_error()) {
+                return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
+            }
+            stmt = std::move(function_call.unwrap());
         } else {
             auto assign_stmt = parse_assign_statement();
             if (assign_stmt.is_error()) {
@@ -362,10 +368,16 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement() {
         stmt = std::move(if_stmt.unwrap());
     } else if (peek().type == token::FOR) {
         auto for_stmt = parse_for_statement();
-        if(for_stmt.is_error()) {
+        if (for_stmt.is_error()) {
             return Result<std::unique_ptr<NodeStatement>>(for_stmt.get_error());
         }
         stmt = std::move(for_stmt.unwrap());
+    } else if (peek().type == token::WHILE) {
+        auto while_stmt = parse_while_statement();
+        if(while_stmt.is_error()) {
+            return Result<std::unique_ptr<NodeStatement>>(while_stmt.get_error());
+        }
+        stmt = std::move(while_stmt.unwrap());
     } else {
         return Result<std::unique_ptr<NodeStatement>>(CompileError(ErrorType::SyntaxError,
          "Found invalid Statement Syntax.", peek().line, "Statement", peek().val));
@@ -444,9 +456,10 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 
 Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(token end) {
     std::vector<std::unique_ptr<NodeAST>> params;
-    if(end == token::CLOSED_PARENTH || end == token::CLOSED_BRACKET)
+    std::unique_ptr<NodeParamList> nested_params = {};
+    if(peek().type == token::OPEN_PARENTH || peek().type == token::OPEN_BRACKET)
         consume();
-    while(peek().type != end && peek().type != token::LINEBRK) {
+    while(peek().type != token::LINEBRK) {
         auto param = parse_expression();
         if (!param.is_error()) {
             params.push_back(std::move(param.unwrap()));
@@ -456,6 +469,18 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(token end) {
             consume();
         } else break;
     }
+//    // if it is a nested param list
+//    if(peek(1).type == token::COMMA && peek().type == token::CLOSED_PARENTH) {
+//        consume(); //consume )
+//        consume(); //consume comma
+//        auto nested_param_list = parse_param_list();
+//        if (nested_param_list.is_error()) {
+//            return Result<std::unique_ptr<NodeParamList>>(nested_param_list.get_error());
+//        }
+//        nested_params = std::move(nested_param_list.unwrap());
+//        nested_params
+//    }
+
     // if current token is not ) or ] do not consume, the next node needs it
     if(end == token::CLOSED_PARENTH || end == token::CLOSED_BRACKET)
         consume();
@@ -480,6 +505,21 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header() {
     auto value = std::make_unique<NodeFunctionHeader>(func_name, std::move(func_args));
     return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(value));
 }
+
+Result<std::unique_ptr<NodeFunctionCall>> Parser::parse_function_call() {
+    bool is_call = false;
+    if(peek().type == token::CALL) {
+        is_call = true;
+        consume(); //consume call
+    }
+    auto func_stmt = parse_function_header();
+    if(func_stmt.is_error()){
+        return Result<std::unique_ptr<NodeFunctionCall>>(func_stmt.get_error());
+    }
+    auto return_value = std::make_unique<NodeFunctionCall>(is_call, std::move(func_stmt.unwrap()));
+    return Result<std::unique_ptr<NodeFunctionCall>>(std::move(return_value));
+}
+
 
 Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definition() {
     std::unique_ptr<NodeFunctionHeader> func_header;
@@ -711,6 +751,35 @@ Result<std::unique_ptr<NodeForStatement>> Parser::parse_for_statement() {
     consume(); // consume end for
     auto return_value = std::make_unique<NodeForStatement>(std::move(iterator), to, std::move(iterator_end), std::move(stmts));
     return Result<std::unique_ptr<NodeForStatement>>(std::move(return_value));
+}
+
+Result<std::unique_ptr<NodeWhileStatement>> Parser::parse_while_statement() {
+    consume(); // consume while
+    auto condition_result = parse_expression();
+    if(condition_result.is_error()) {
+        return Result<std::unique_ptr<NodeWhileStatement>>(condition_result.get_error());
+    }
+    auto condition = std::move(condition_result.unwrap());
+    if(not(condition->type == ASTType::Boolean || condition->type == ASTType::Comparison)) {
+        return Result<std::unique_ptr<NodeWhileStatement>>(CompileError(ErrorType::SyntaxError,
+         "If Statement needs condition.", peek().line, "condition"));
+    }
+    if(peek().type != token::LINEBRK) {
+        return Result<std::unique_ptr<NodeWhileStatement>>(CompileError(ErrorType::SyntaxError,
+         "Expected linebreak after while-condition.", peek().line, "linebreak", peek().val));
+    }
+    consume(); //consume linebreak
+    std::vector<std::unique_ptr<NodeStatement>> stmts = {};
+    while (peek().type != token::END_WHILE) {
+        auto stmt = parse_statement();
+        if (stmt.is_error()) {
+            return Result<std::unique_ptr<NodeWhileStatement>>(stmt.get_error());
+        }
+        stmts.push_back(std::move(stmt.unwrap()));
+    }
+    consume(); // consume end for
+    auto return_value = std::make_unique<NodeWhileStatement>(std::move(condition), std::move(stmts));
+    return Result<std::unique_ptr<NodeWhileStatement>>(std::move(return_value));
 }
 
 

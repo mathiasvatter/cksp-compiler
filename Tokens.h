@@ -48,6 +48,7 @@
     XX(BOOL_OR, "bool_or") \
     XX(BOOL_NOT, "bool_not") \
     XX(FUNCTION, "function") \
+    XX(CALL, "func_call") \
     XX(OVERRIDE, "override") \
     XX(FOR, "for") \
     XX(WHILE, "while") \
@@ -134,7 +135,8 @@ inline std::vector<Keyword> UI_CONTROLS = {{UI_LABEL, "ui_label"}, {UI_BUTTON, "
 										   {UI_PANEL, "ui_panel"}, {UI_MOUSE_AREA, "ui_mouse_area"}};
 inline std::vector<Keyword> DECLARATION_SYNTAX = {{DECLARE, "declare"}, {DEFINE, "define"}, {CONST, "const"}, {POLYPHONIC, "polyphonic"}};
 inline std::vector<Keyword> IMPORT_SYNTAX = {{IMPORT, "import"}, {AS, "as"}};
-inline std::vector<Keyword> STATEMENT_SYNTAX = {{TO, "to"}, {DOWNTO, "downto"}, {ELSE, "else"}, {CASE, "case"}, {OVERRIDE, "override"}};
+inline std::vector<Keyword> STATEMENT_SYNTAX = {{TO, "to"}, {DOWNTO, "downto"}, {ELSE, "else"}, {CASE, "case"}};
+inline std::vector<Keyword> FUNCTION_SYNTAX = {{OVERRIDE, "override"}, {CALL, "call"}};
 // control statements that also have an end
 inline std::vector<Keyword> END_STATEMENTS = {{END_FUNCTION, "end function"}, {END_FOR, "end for"}, {END_WHILE, "end while"},
 											  {END_IF,       "end if"}, {END_SELECT, "end select"}, {END_CONST, "end const"}, {END_LIST, "end list"},

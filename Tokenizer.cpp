@@ -278,6 +278,9 @@ void Tokenizer::get_keyword_or_num() {
 		} else if (contains(DECLARATION_SYNTAX, buffer)) {
 			tok = get_token_type(DECLARATION_SYNTAX, buffer);
 			tokens.emplace_back(tok, buffer, line);
+        } else if (contains(FUNCTION_SYNTAX, buffer)) {
+            tok = get_token_type(FUNCTION_SYNTAX, buffer);
+            tokens.emplace_back(tok, buffer, line);
         } else {
             tokens.emplace_back(KEYWORD, buffer, line);
         }

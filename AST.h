@@ -137,6 +137,14 @@ struct NodeForStatement : NodeAST {
     void accept(ASTVisitor& visitor) override;
 };
 
+struct NodeWhileStatement : NodeAST {
+    std::unique_ptr<NodeAST> condition;
+    std::vector<std::unique_ptr<NodeStatement>> statements;
+    inline NodeWhileStatement(std::unique_ptr<NodeAST> condition, std::vector<std::unique_ptr<NodeStatement>> statements)
+    : condition(std::move(condition)), statements(std::move(statements)) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
 struct NodeCallback: NodeAST {
     std::string begin_callback;
     std::vector<std::unique_ptr<NodeStatement>> statements;
@@ -152,7 +160,6 @@ struct NodeCallback: NodeAST {
 struct NodeImport : NodeAST {
     std::string filepath;
     std::string alias;
-
     inline explicit NodeImport(std::string filepath, std::string alias="") : filepath(std::move(filepath)), alias(std::move(alias)) {}
 };
 
@@ -162,6 +169,14 @@ struct NodeFunctionHeader: NodeAST {
 
     inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeParamList> args)
     : name(std::move(name)), args(std::move(args)) {};
+    void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeFunctionCall : NodeAST {
+    bool is_call=false;
+    std::unique_ptr<NodeFunctionHeader> function;
+    inline NodeFunctionCall(bool isCall, std::unique_ptr<NodeFunctionHeader> function)
+    : is_call(isCall), function(std::move(function)) {}
     void accept(ASTVisitor& visitor) override;
 };
 
