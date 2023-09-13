@@ -59,6 +59,7 @@ private:
     Result<std::unique_ptr<NodeArray>> parse_array(std::unique_ptr<NodeVariable> array_variable, bool is_size=false);
 	/// stops either at end token or at linebreak
     Result<std::unique_ptr<NodeParamList>> parse_param_list(token end = token::LINEBRK);
+	Result<std::unique_ptr<NodeParamList>> parse_into_param_list(std::unique_ptr<NodeAST> expression);
     /// parses every expression from binary, string, unary to number and variable
     Result<std::unique_ptr<NodeAST>> parse_expression();
     Result<std::unique_ptr<NodeAST>> parse_string_expr();

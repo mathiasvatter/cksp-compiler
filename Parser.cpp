@@ -257,6 +257,8 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, 
                 return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
                  "Boolean Operators can only connect Comparisons.", peek().line, "Comparisons"));
             }
+		} else if (bin_op.type == token::COMMA) {
+			type = ASTType::ParamList;
 		}
         // brauch ich das jetzt schon, oder vllt erst nachher beim typisierungs-check?
         if (lhs->type == Integer && rhs.unwrap()->type == Real || lhs->type == Real && rhs.unwrap()->type == Integer) {
@@ -336,6 +338,22 @@ Result<std::unique_ptr<NodeParamList>> Parser::_parse_assignee() {
 	param_list.push_back(std::move(assignee.unwrap()));
 	auto return_value = std::make_unique<NodeParamList>(std::move(param_list));
 	return Result<std::unique_ptr<NodeParamList>>(std::move(return_value));
+}
+
+Result<std::unique_ptr<NodeParamList>> Parser::parse_into_param_list(std::unique_ptr<NodeAST> expression) {
+	std::vector<std::unique_ptr<NodeAST>> param_list = {};
+	if (expression->type == ASTType::Unknown) {
+		return Result<std::unique_ptr<NodeParamList>>(CompileError(ErrorType::SyntaxError,
+		 "Found invalid Parameter List Statement Syntax.", peek().line, ":=", peek().val));
+	}
+	if(expression->type == ASTType::ParamList) {
+		if(auto temp = dynamic_cast<NodeBinaryExpr*>(expression.get())) {
+			expression.release();
+			std::unique_ptr<NodeBinaryExpr> param_expression(temp);
+			param_list.push_back(std::move(param_expression->left));
+			param_list.push_back(std::move(param_expression->right));
+		}
+	}
 }
 
 Result<std::unique_ptr<NodeStatement>> Parser::parse_statement() {
