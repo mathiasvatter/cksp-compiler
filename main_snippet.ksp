@@ -4,6 +4,7 @@ on init
 	for i := 0 to num_elements(soundset_ids)-1
 	    message(i)
 	end for*/
+	define NUM_ROWS, SUM(idx, skol) := 3, idx+skol
 	declare poopy, arr[3,(4+5)] := (1), (1,4+3)
     bims, schrimps := not(4+array[4]), 5
     declare bums[3] := (1,2,3)
@@ -17,11 +18,13 @@ on init
     for i := 0 to 2-1
         d := 5
     end for
-    brutus()
     while 4<2
         s := 4
     end while
-    //d
+    brutus()
+    select 4
+        case 4
+    end select
 end on
 //u*
 
@@ -30,3 +33,4 @@ function ppi()
     kacki := 3+bumsi mod 5
 end function
 }
+

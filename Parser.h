@@ -58,7 +58,7 @@ private:
 	/// handles the expression inside brackets as size if is_size=true, else those are handled as indexes
     Result<std::unique_ptr<NodeArray>> parse_array(std::unique_ptr<NodeVariable> array_variable);
 	/// stops either at end token or at linebreak
-    Result<std::unique_ptr<NodeParamList>> parse_param_list(token end = token::LINEBRK);
+    Result<std::unique_ptr<NodeParamList>> parse_param_list();
 	Result<std::unique_ptr<NodeAST>> parse_into_param_list(std::unique_ptr<NodeAST> expression);
     /// parses every expression from binary, string, unary to number and variable
     Result<std::unique_ptr<NodeAST>> parse_expression();
@@ -81,6 +81,7 @@ private:
     Result<std::unique_ptr<NodeIfStatement>> parse_if_statement();
     Result<std::unique_ptr<NodeForStatement>> parse_for_statement();
     Result<std::unique_ptr<NodeWhileStatement>> parse_while_statement();
+	Result<std::unique_ptr<NodeSelectStatement>> parse_select_statement();
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition();
     Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header();
     Result<std::unique_ptr<NodeFunctionCall>> parse_function_call();

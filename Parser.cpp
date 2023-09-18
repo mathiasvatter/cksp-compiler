@@ -103,7 +103,7 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_array(std::unique_ptr<NodeVaria
     std::unique_ptr<NodeParamList> indexes;
 	std::unique_ptr<NodeParamList> sizes;
     if(peek().type == token::OPEN_BRACKET) {
-        auto index_params = parse_param_list(token::CLOSED_BRACKET);
+        auto index_params = parse_param_list();
         if(index_params.is_error()) {
             return Result<std::unique_ptr<NodeArray>>(index_params.get_error());
         }
@@ -286,7 +286,7 @@ int Parser::_get_binop_precedence(token tok) {
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_assign_statement() {
 	// make it possible to have more than one variable before assign
-	auto var_list = parse_param_list(token::ASSIGN);
+	auto var_list = parse_param_list();
 	if(var_list.is_error()) {
 		return Result<std::unique_ptr<NodeAST>>(var_list.get_error());
 	}
@@ -383,6 +383,12 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement() {
             return Result<std::unique_ptr<NodeStatement>>(while_stmt.get_error());
         }
         stmt = std::move(while_stmt.unwrap());
+	} else if (peek().type == token::SELECT) {
+		auto select_stmt = parse_select_statement();
+		if(select_stmt.is_error()) {
+			return Result<std::unique_ptr<NodeStatement>>(select_stmt.get_error());
+		}
+		stmt = std::move(select_stmt.unwrap());
     } else {
         return Result<std::unique_ptr<NodeStatement>>(CompileError(ErrorType::SyntaxError,
          "Found invalid Statement Syntax.", peek().line, "Statement", peek().val));
@@ -459,37 +465,49 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
     return Result<std::unique_ptr<NodeProgram>>(std::move(value));
 }
 
-Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(token end) {
-    std::vector<std::unique_ptr<NodeAST>> params;
-    if(peek().type == token::OPEN_PARENTH || peek().type == token::OPEN_BRACKET)
+Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list() {
+    std::unique_ptr<NodeParamList> params;
+    if(peek().type == token::OPEN_BRACKET)
         consume();
-    while(peek().type != token::LINEBRK && peek().type != end) {
-        auto param = parse_expression();
-        if (!param.is_error()) {
-            params.push_back(std::move(param.unwrap()));
-        } else
-            return Result<std::unique_ptr<NodeParamList>>(param.get_error());
-		if (peek().type == token::COMMA) {
-			consume();
-		} else break;
-    }
-    // if current token is not ) or ] do not consume, the next node needs it
-    if(end == token::CLOSED_PARENTH || end == token::CLOSED_BRACKET)
+    auto param_expression = parse_expression();
+	if(param_expression.is_error()) {
+		return Result<std::unique_ptr<NodeParamList>>(param_expression.get_error());
+	}
+	auto param_list = parse_into_param_list(std::move(param_expression.unwrap()));
+	if(param_list.is_error()) {
+		return Result<std::unique_ptr<NodeParamList>>(param_list.get_error());
+	}
+    if(peek().type == token::CLOSED_BRACKET)
         consume();
-    auto return_value = std::make_unique<NodeParamList>(std::move(params));
-    return Result<std::unique_ptr<NodeParamList>>(std::move(return_value));
+	auto unwrapped_params = std::move(param_list.unwrap());
+
+	if (dynamic_cast<NodeParamList*>(unwrapped_params.get())) {
+		// Wenn variables bereits vom Typ NodeParamList ist, übertrage den Besitz
+		params = std::unique_ptr<NodeParamList>(static_cast<NodeParamList*>(unwrapped_params.release()));
+	} else {
+		// Andernfalls erstelle einen neuen NodeParamList und füge variables hinzu
+		params = std::make_unique<NodeParamList>();
+		params->params.push_back(std::move(unwrapped_params));
+	}
+    return Result<std::unique_ptr<NodeParamList>>(std::move(params));
 }
 
 Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header() {
     std::string func_name;
-    std::unique_ptr<NodeParamList> func_args;
+    std::unique_ptr<NodeParamList> func_args = std::make_unique<NodeParamList>();
 	func_name = consume().val;
 	if (peek().type == token::OPEN_PARENTH) {
-        auto func_arguments = parse_param_list(token::CLOSED_PARENTH);
-        if (func_arguments.is_error()) {
-            return Result<std::unique_ptr<NodeFunctionHeader>>(func_arguments.get_error());
-        }
-        func_args = std::move(func_arguments.unwrap());
+		if(peek(1).type != token::CLOSED_PARENTH) {
+			auto param_list = parse_param_list();
+			if (param_list.is_error()) {
+				Result<std::unique_ptr<NodeFunctionHeader>>(param_list.get_error());
+			}
+			func_args = std::move(param_list.unwrap());
+		} else {
+			// consume both parentheses and add empty vector as Param List
+			consume();
+			consume();
+		}
 	} else {
 		return Result<std::unique_ptr<NodeFunctionHeader>>(CompileError(ErrorType::SyntaxError,
          "Function keywords need to be followed by parenthesis.",peek().line, ")", peek().val));
@@ -612,33 +630,20 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_declare_statement() {
 		consume();
 		type = VarType::Const;
 	}
-    auto variable_declarations = parse_expression();
+    auto variable_declarations = parse_param_list();
 	if(variable_declarations.is_error()) {
 		return Result<std::unique_ptr<NodeAST>>(variable_declarations.get_error());
 	}
-    auto var_list = parse_into_param_list(std::move(variable_declarations.unwrap()));
-    if(var_list.is_error()) {
-        return Result<std::unique_ptr<NodeAST>>(var_list.get_error());
-    }
-	auto variables = std::move(var_list.unwrap());
-
-    std::unique_ptr<NodeParamList> p_list;
-    if (dynamic_cast<NodeParamList*>(variables.get())) {
-        // Wenn variables bereits vom Typ NodeParamList ist, übertrage den Besitz
-        p_list = std::unique_ptr<NodeParamList>(static_cast<NodeParamList*>(variables.release()));
-    } else {
-        // Andernfalls erstelle einen neuen NodeParamList und füge variables hinzu
-        p_list = std::make_unique<NodeParamList>();
-        p_list->params.push_back(std::move(variables));
-    }
-
-    for(auto &var: p_list->params) {
+	auto variables = std::move(variable_declarations.unwrap());
+    for(auto &var: variables->params) {
         if (auto variable = dynamic_cast<NodeVariable*>(var.get())) {
             // var ist eine Instanz von NodeVariable
             variable->var_type = type;
         } else if (auto array = dynamic_cast<NodeArray*>(var.get())) {
-            // var ist eine Instanz von NodeArray
-            std::swap(array->indexes, array->sizes);
+			// var ist eine Instanz von NodeArray
+			std::swap(array->indexes, array->sizes);
+		} else if (auto function = dynamic_cast<NodeFunctionHeader*>(var.get())) {
+
         } else {
             // var ist weder NodeVariable noch NodeArray
             return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
@@ -663,7 +668,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_declare_statement() {
 	    // initializes empty param list
 	    assignees = std::make_unique<NodeParamList>();
 
-	auto return_value = std::make_unique<NodeDeclareStatement>(std::move(p_list), std::move(assignees));
+	auto return_value = std::make_unique<NodeDeclareStatement>(std::move(variables), std::move(assignees));
 	return Result<std::unique_ptr<NodeAST>>(std::move(return_value));
 }
 
@@ -792,6 +797,47 @@ Result<std::unique_ptr<NodeWhileStatement>> Parser::parse_while_statement() {
     consume(); // consume end for
     auto return_value = std::make_unique<NodeWhileStatement>(std::move(condition), std::move(stmts));
     return Result<std::unique_ptr<NodeWhileStatement>>(std::move(return_value));
+}
+
+Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement() {
+	consume(); //consume select
+	auto expression = parse_expression();
+	if(peek().type != token::LINEBRK) {
+		return Result<std::unique_ptr<NodeSelectStatement>>(CompileError(ErrorType::SyntaxError,
+		"Expected linebreak after select-expression.", peek().line, "linebreak", peek().val));
+	}
+	consume(); //consume linebreak
+	if(peek().type != token::CASE) {
+		return Result<std::unique_ptr<NodeSelectStatement>>(CompileError(ErrorType::SyntaxError,
+		 "Expected cases in select-expression.", peek().line, "case <expression>", peek().val));
+	}
+	std::map<std::unique_ptr<NodeAST>, std::vector<std::unique_ptr<NodeStatement>>> cases;
+	while (peek().type != token::END_SELECT) {
+		if(peek().type == token::CASE) {
+			consume(); //consume case
+			auto cas = parse_expression();
+			if(cas.is_error()) {
+				return Result<std::unique_ptr<NodeSelectStatement>>(cas.get_error());
+			}
+			if(peek().type != token::LINEBRK) {
+				return Result<std::unique_ptr<NodeSelectStatement>>(CompileError(ErrorType::SyntaxError,
+				 "Expected linebreak after case.", peek().line, "linebreak", peek().val));
+			}
+			consume(); //consume linebreak
+			std::vector<std::unique_ptr<NodeStatement>> stmts = {};
+			while(peek().type != token::END_SELECT && peek().type != token::CASE) {
+				auto stmt = parse_statement();
+				if (stmt.is_error()) {
+					return Result<std::unique_ptr<NodeSelectStatement>>(stmt.get_error());
+				}
+				stmts.push_back(std::move(stmt.unwrap()));
+			}
+			cases.insert(std::make_pair(std::move(cas.unwrap()),std::move( stmts)));
+		}
+	}
+	consume(); // consume end select
+	auto return_value = std::make_unique<NodeSelectStatement>(std::move(expression.unwrap()), std::move(cases));
+	return Result<std::unique_ptr<NodeSelectStatement>>(std::move(return_value));
 }
 
 

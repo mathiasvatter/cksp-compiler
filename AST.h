@@ -146,6 +146,15 @@ struct NodeWhileStatement : NodeAST {
     void accept(ASTVisitor& visitor) override;
 };
 
+struct NodeSelectStatement : NodeAST {
+	std::unique_ptr<NodeAST> expression;
+	std::map<std::unique_ptr<NodeAST>, std::vector<std::unique_ptr<NodeStatement>>> cases;
+
+	inline NodeSelectStatement(std::unique_ptr<NodeAST> expression, std::map<std::unique_ptr<NodeAST>, std::vector<std::unique_ptr<NodeStatement>>> cases)
+		: expression(std::move(expression)), cases(std::move(cases)) {}
+	void accept(ASTVisitor& visitor) override;
+};
+
 struct NodeCallback: NodeAST {
     std::string begin_callback;
     std::vector<std::unique_ptr<NodeStatement>> statements;
@@ -166,9 +175,9 @@ struct NodeImport : NodeAST {
 
 struct NodeFunctionHeader: NodeAST {
     std::string name;
-    std::unique_ptr<NodeAST> args;
+    std::unique_ptr<NodeParamList> args;
 
-    inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeAST> args)
+    inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeParamList> args)
     : name(std::move(name)), args(std::move(args)) {};
     void accept(ASTVisitor& visitor) override;
 };

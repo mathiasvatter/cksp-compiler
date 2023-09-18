@@ -84,3 +84,7 @@ void NodeWhileStatement::accept(ASTVisitor &visitor) {
 void NodeFunctionCall::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+void NodeSelectStatement::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}

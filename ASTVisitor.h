@@ -22,7 +22,8 @@ public:
     virtual void visit(NodeStatement& node)  = 0;
     virtual void visit(NodeIfStatement& node)  = 0;
     virtual void visit(NodeForStatement& node)  = 0;
-    virtual void visit(NodeWhileStatement& node)  = 0;
+	virtual void visit(NodeWhileStatement& node)  = 0;
+	virtual void visit(NodeSelectStatement& node)  = 0;
 	virtual void visit(NodeCallback& node)  = 0;
     virtual void visit(NodeProgram& node)  = 0;
     virtual void visit(NodeFunctionHeader& node)  = 0;
@@ -149,6 +150,21 @@ public:
         }
         std::cout << "end for";
     }
+
+	void visit(NodeSelectStatement& node) override {
+		std::cout << "select " ;
+		node.expression->accept(*this);
+		std::cout << std::endl;
+		for(const auto &cas: node.cases) {
+			std::cout << "case ";
+			cas.first->accept(*this);
+			std::cout << std::endl;
+			for(auto &stmt: cas.second) {
+				stmt->accept(*this);
+			}
+		}
+		std::cout << "end select";
+	}
 
     void visit(NodeCallback& node) override {
 		std::cout << "Callback(" << node.begin_callback << ")" << std::endl;

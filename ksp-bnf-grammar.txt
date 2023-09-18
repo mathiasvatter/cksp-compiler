@@ -16,7 +16,7 @@
 <string_op> ::= &
 
 //******** FUNCTIONS
-<function_header> ::= <keyword> "(" <param_list> ")"
+<function_header> ::= <keyword> "(" (<param_list> | <expression) ")"
 <function_definition> ::= "function" <function_header> ("->" <variable>)? ("override")? <linebreak> <statement>* "end function"
 <function_call> ::= "call" <function_header>
 
@@ -27,6 +27,9 @@
 <macro_iteration> ::= "iterate_macro" "(" <keyword> ")" ":=" <binary_expression> "to" <binary_expression>
 <macro_literation> ::= "literate_macro" "(" <keyword> ")" "on" <param_list>
 
+//******** DEFINE
+<define_statement> ::= "define" <param_list> := <param_list>
+
 <keyword> ::= ([0-9] | [a-z] | [A-Z] | "_")+ | <keyword> "." <keyword>
 <string> ::= "\'" <text> "\'"
 <variable_identifier> ::= "$" | "~" | "@"
@@ -34,21 +37,21 @@
 <identifier> ::= <variable_identifier> | <array_identifier>
 <variable> ::= (const | polyphonic)? <identifier>? <keyword>
 <array> ::= <variable> [ <binary_expression> (, <binary_expression>)? ]
-<declare_statement> ::= "declare" (<variable> | <array> | <assign_statement>)
 <param_list> ::= (<expression> ("," <expression>)?)?
+<declare_statement> ::= "declare" <param_list> ":="? <param_list>?
 
 <unary_expression> ::= <unary_op> (<num> | <variable> | <function_header>)
 <primary_expression> ::= <num> | <variable> | <function_header> | <unary_expression> | "("<binary_expression>")"
 <binary_expression> ::= <primary_expression> (<binary_op> <binary_expression>)?
 <string_expression> ::= (<string> | <binary_expression>) (<string_op> (<string> | <binary_expression>))?
-<expression> ::= <string_expression> | <binary_expression>
+<expression> ::= <string_expression> | <binary_expression> | <param_list>
 
 // Special cases of expressions for type checking
 <condition> ::= <boolean_expression>
 <boolean_expression> ::= <comparison_expression> (<bool> <comparison_expression>)?
 <comparison_expression> ::= <binary_expression> <comparison_op> <binary_expression>
 
-<assign_statement> ::= <param_list> ":=" "("? <param_list> ")"?
+<assign_statement> ::= <param_list> ":=" <param_list>
 <statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement) <linebreak>
 <for_statement> ::= for <assign_statement> (to | downto) <binary_expression> <linebreak> <statements> end for <linebreak>
 <if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>
