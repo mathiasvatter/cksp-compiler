@@ -20,6 +20,12 @@
 <function_definition> ::= "function" <function_header> ("->" <variable>)? ("override")? <linebreak> <statement>* "end function"
 <function_call> ::= "call" <function_header>
 
+//******* MACROS
+<macro_header> ::= <keyword> "(" <param_list ")"
+<macro_definition> ::= "macro" <macro_header> <linebreak> <statement>* "end macro"
+<macro_call> ::= <macro_header>
+<macro_iteration> ::= "iterate_macro" "(" <keyword> ")" ":=" <binary_expression> "to" <binary_expression>
+<macro_literation> ::= "literate_macro" "(" <keyword> ")" "on" <param_list>
 
 <keyword> ::= ([0-9] | [a-z] | [A-Z] | "_")+ | <keyword> "." <keyword>
 <string> ::= "\'" <text> "\'"

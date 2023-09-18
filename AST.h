@@ -97,17 +97,17 @@ struct NodeBinaryExpr: NodeAST {
 };
 
 struct NodeDeclareStatement : NodeAST {
-	std::unique_ptr<NodeAST> to_be_declared;
-	std::unique_ptr<NodeParamList> assignee;
-	inline explicit NodeDeclareStatement(std::unique_ptr<NodeAST> to_be_declared, std::unique_ptr<NodeParamList> assignee)
+	std::unique_ptr<NodeParamList> to_be_declared;
+	std::unique_ptr<NodeAST> assignee;
+	inline explicit NodeDeclareStatement(std::unique_ptr<NodeParamList> to_be_declared, std::unique_ptr<NodeAST> assignee)
 		: to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeAssignStatement: NodeAST {
-    std::unique_ptr<NodeAST> array_variable;
-    std::unique_ptr<NodeParamList> assignee;
-    inline NodeAssignStatement(std::unique_ptr<NodeAST> array_variable, std::unique_ptr<NodeParamList> assignee)
+    std::unique_ptr<NodeParamList> array_variable;
+    std::unique_ptr<NodeAST> assignee;
+    inline NodeAssignStatement(std::unique_ptr<NodeParamList> array_variable, std::unique_ptr<NodeAST> assignee)
     : array_variable(std::move(array_variable)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
 };
@@ -166,9 +166,9 @@ struct NodeImport : NodeAST {
 
 struct NodeFunctionHeader: NodeAST {
     std::string name;
-    std::unique_ptr<NodeParamList> args;
+    std::unique_ptr<NodeAST> args;
 
-    inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeParamList> args)
+    inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeAST> args)
     : name(std::move(name)), args(std::move(args)) {};
     void accept(ASTVisitor& visitor) override;
 };
