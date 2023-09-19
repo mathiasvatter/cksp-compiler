@@ -28,7 +28,8 @@ enum VarType {
     Const,
     Polyphonic,
     Array,
-    Mutable
+    Mutable,
+	Define
 };
 
 struct NodeAST {
@@ -98,16 +99,24 @@ struct NodeBinaryExpr: NodeAST {
 
 struct NodeDeclareStatement : NodeAST {
 	std::unique_ptr<NodeParamList> to_be_declared;
-	std::unique_ptr<NodeAST> assignee;
-	inline explicit NodeDeclareStatement(std::unique_ptr<NodeParamList> to_be_declared, std::unique_ptr<NodeAST> assignee)
+	std::unique_ptr<NodeParamList> assignee;
+	inline explicit NodeDeclareStatement(std::unique_ptr<NodeParamList> to_be_declared, std::unique_ptr<NodeParamList> assignee)
 		: to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {}
+	void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeDefineStatement : NodeAST {
+	std::unique_ptr<NodeParamList> to_be_defined;
+	std::unique_ptr<NodeParamList> assignee;
+	inline NodeDefineStatement(std::unique_ptr<NodeParamList> to_be_defined, std::unique_ptr<NodeParamList> assignee)
+		: to_be_defined(std::move(to_be_defined)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeAssignStatement: NodeAST {
     std::unique_ptr<NodeParamList> array_variable;
-    std::unique_ptr<NodeAST> assignee;
-    inline NodeAssignStatement(std::unique_ptr<NodeParamList> array_variable, std::unique_ptr<NodeAST> assignee)
+    std::unique_ptr<NodeParamList> assignee;
+    inline NodeAssignStatement(std::unique_ptr<NodeParamList> array_variable, std::unique_ptr<NodeParamList> assignee)
     : array_variable(std::move(array_variable)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
 };
@@ -209,14 +218,16 @@ struct NodeProgram: NodeAST {
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
     std::vector<std::unique_ptr<NodeAST>> macro_definitions;
     std::vector<std::unique_ptr<NodeImport>> imports;
+	std::vector<std::unique_ptr<NodeDefineStatement>> defines;
     // TODO macro ASTNode still in progress
 
     inline NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 					   std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions,
                        std::vector<std::unique_ptr<NodeImport>> imports,
-					   std::vector<std::unique_ptr<NodeAST>> macroDefinitions)
+					   std::vector<std::unique_ptr<NodeAST>> macroDefinitions,
+					   std::vector<std::unique_ptr<NodeDefineStatement>> defines)
                  : callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)),
-                   imports(std::move(imports)), macro_definitions(std::move(macroDefinitions)) {}
+                   imports(std::move(imports)), macro_definitions(std::move(macroDefinitions)), defines(std::move(defines)) {}
     void accept(ASTVisitor& visitor) override;
 };
 

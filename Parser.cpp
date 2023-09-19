@@ -294,14 +294,11 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_assign_statement() {
 
     if(peek().type == token::ASSIGN) {
         consume(); // consume :=
-		auto assignee =  parse_expression(); //_parse_assignee();
+		auto assignee =  parse_param_list(); //_parse_assignee();
 		if(assignee.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(assignee.get_error());
 		}
-        auto param_list = parse_into_param_list(std::move(assignee.unwrap()));
-        if(param_list.is_error())
-            return Result<std::unique_ptr<NodeAST>>(param_list.get_error());
-		auto return_value = std::make_unique<NodeAssignStatement>(std::move(vars), std::move(param_list.unwrap()));
+		auto return_value = std::make_unique<NodeAssignStatement>(std::move(vars), std::move(assignee.unwrap()));
 		return Result<std::unique_ptr<NodeAST>>(std::move(return_value));
     } else {
         return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
@@ -309,50 +306,24 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_assign_statement() {
     }
 }
 
-Result<std::unique_ptr<NodeAST>> Parser::parse_into_param_list(std::unique_ptr<NodeAST> expression) {
-    auto param_list = std::make_unique<NodeParamList>();
-//    if (expression->type == ASTType::Unknown) {
-//        return Result<std::unique_ptr<NodeParamList>>(CompileError(ErrorType::SyntaxError,
-//           "Found invalid Parameter List Statement Syntax.", peek().line));
-//    }
-
-    if (expression->type == ASTType::ParamList) {
-        if (auto temp = dynamic_cast<NodeBinaryExpr*>(expression.get())) {
-            auto left = std::move(temp->left);
-            auto right = std::move(temp->right);
-
-            auto leftResult = parse_into_param_list(std::move(left));
-            param_list->params.push_back(std::move(leftResult.unwrap()));
-
-            auto rightResult = parse_into_param_list(std::move(right));
-            param_list->params.push_back(std::move(rightResult.unwrap()));
-
-            auto result = std::unique_ptr<NodeAST>(std::move(param_list));
-            result->type = ASTType::ParamList;
-            return Result<std::unique_ptr<NodeAST>>(std::move(result));
-        } else {
-            return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-               "Found invalid Parameter List Statement Syntax.", peek().line));
-        }
-    } else {
-//        param_list->params.push_back(std::move(expression));
-        return Result<std::unique_ptr<NodeAST>>(std::move(expression));
-    }
-}
-
-
 Result<std::unique_ptr<NodeStatement>> Parser::parse_statement() {
     _skip_linebreaks();
     std::unique_ptr<NodeAST> stmt;
     // assign statement
-    if (peek().type == token::KEYWORD || peek().type == token::DEFINE || peek().type == token::DECLARE) {
-        if (peek().type == token::DEFINE || peek().type == token::DECLARE) {
-            auto declare_stmt = parse_declare_statement();
-            if (declare_stmt.is_error()) {
-                return Result<std::unique_ptr<NodeStatement>>(declare_stmt.get_error());
-            }
-            stmt = std::move(declare_stmt.unwrap());
-        } else if (peek().type == token::CALL xor peek(1).type == token::OPEN_PARENTH) {
+    if (peek().type == token::KEYWORD || peek().type == token::DEFINE || peek().type == token::DECLARE || peek().type == token::CALL) {
+        if (peek().type == token::DECLARE) {
+			auto declare_stmt = parse_declare_statement();
+			if (declare_stmt.is_error()) {
+				return Result<std::unique_ptr<NodeStatement>>(declare_stmt.get_error());
+			}
+			stmt = std::move(declare_stmt.unwrap());
+		} else if (peek().type == token::DEFINE) {
+			auto define_stmt = parse_define_statement();
+			if (define_stmt.is_error()) {
+				return Result<std::unique_ptr<NodeStatement>>(define_stmt.get_error());
+			}
+			stmt = std::move(define_stmt.unwrap());
+        } else if ((peek().type == token::CALL) xor (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK)){
             auto function_call = parse_function_call();
             if (function_call.is_error()) {
                 return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
@@ -435,33 +406,36 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
     std::vector<std::unique_ptr<NodeAST>> macro_definitions;
+	std::vector<std::unique_ptr<NodeDefineStatement>> defines;
     while (peek().type != token::END_TOKEN) {
         _skip_linebreaks();
         if (peek().type == token::BEGIN_CALLBACK) {
             auto callback = parse_callback();
-            if (!callback.is_error()) {
-                callbacks.push_back(std::move(callback.unwrap()));
-            } else
+            if (callback.is_error())
                 return Result<std::unique_ptr<NodeProgram>>(callback.get_error());
+			callbacks.push_back(std::move(callback.unwrap()));
         } else if (peek().type == token::FUNCTION) {
             auto function = parse_function_definition();
-            if (!function.is_error()) {
-                function_definitions.push_back(std::move(function.unwrap()));
-            } else
+            if (function.is_error())
                 return Result<std::unique_ptr<NodeProgram>>(function.get_error());
+			function_definitions.push_back(std::move(function.unwrap()));
         } else if (peek().type == token::IMPORT) {
             auto import = parse_import();
-            if (!import.is_error()) {
-                imports.push_back(std::move(import.unwrap()));
-            } else
+            if (import.is_error())
                 return Result<std::unique_ptr<NodeProgram>>(import.get_error());
+			imports.push_back(std::move(import.unwrap()));
+		} else if (peek().type == token::DEFINE) {
+			auto define_stmt = parse_define_statement();
+			if (define_stmt.is_error())
+				return Result<std::unique_ptr<NodeProgram>>(define_stmt.get_error());
+			defines.push_back(std::move(define_stmt.unwrap()));
         } else {
             return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::ParseError,
-             "", peek().line, "callback, function, macro", peek().val));
+             "", peek().line, "import, define, callback, function, macro", peek().val));
         }
         _skip_linebreaks();
     }
-    auto value = std::make_unique<NodeProgram>(std::move(callbacks), std::move(function_definitions), std::move(imports), std::move(macro_definitions));
+    auto value = std::make_unique<NodeProgram>(std::move(callbacks), std::move(function_definitions), std::move(imports), std::move(macro_definitions), std::move(defines));
     return Result<std::unique_ptr<NodeProgram>>(std::move(value));
 }
 
@@ -473,7 +447,7 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list() {
 	if(param_expression.is_error()) {
 		return Result<std::unique_ptr<NodeParamList>>(param_expression.get_error());
 	}
-	auto param_list = parse_into_param_list(std::move(param_expression.unwrap()));
+	auto param_list = _parse_into_param_list(std::move(param_expression.unwrap()));
 	if(param_list.is_error()) {
 		return Result<std::unique_ptr<NodeParamList>>(param_list.get_error());
 	}
@@ -492,6 +466,32 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list() {
     return Result<std::unique_ptr<NodeParamList>>(std::move(params));
 }
 
+Result<std::unique_ptr<NodeAST>> Parser::_parse_into_param_list(std::unique_ptr<NodeAST> expression) {
+	auto param_list = std::make_unique<NodeParamList>();
+
+	if (expression->type == ASTType::ParamList) {
+		if (auto temp = dynamic_cast<NodeBinaryExpr*>(expression.get())) {
+			auto left = std::move(temp->left);
+			auto right = std::move(temp->right);
+
+			auto leftResult = _parse_into_param_list(std::move(left));
+			param_list->params.push_back(std::move(leftResult.unwrap()));
+
+			auto rightResult = _parse_into_param_list(std::move(right));
+			param_list->params.push_back(std::move(rightResult.unwrap()));
+
+			auto result = std::unique_ptr<NodeAST>(std::move(param_list));
+			result->type = ASTType::ParamList;
+			return Result<std::unique_ptr<NodeAST>>(std::move(result));
+		} else {
+			return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
+			 "Found invalid Parameter List Statement Syntax.", peek().line));
+		}
+	} else {
+		return Result<std::unique_ptr<NodeAST>>(std::move(expression));
+	}
+}
+
 Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header() {
     std::string func_name;
     std::unique_ptr<NodeParamList> func_args = std::make_unique<NodeParamList>();
@@ -508,9 +508,6 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header() {
 			consume();
 			consume();
 		}
-	} else {
-		return Result<std::unique_ptr<NodeFunctionHeader>>(CompileError(ErrorType::SyntaxError,
-         "Function keywords need to be followed by parenthesis.",peek().line, ")", peek().val));
 	}
     auto value = std::make_unique<NodeFunctionHeader>(func_name, std::move(func_args));
     return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(value));
@@ -626,10 +623,6 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_declare_statement() {
 			type = VarType::Polyphonic;
 		}
 	}
-	if(peek().type ==token::DEFINE) {
-		consume();
-		type = VarType::Const;
-	}
     auto variable_declarations = parse_param_list();
 	if(variable_declarations.is_error()) {
 		return Result<std::unique_ptr<NodeAST>>(variable_declarations.get_error());
@@ -651,19 +644,15 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_declare_statement() {
         }
     }
 
-	std::unique_ptr<NodeAST> assignees = nullptr;
+	std::unique_ptr<NodeParamList> assignees = nullptr;
 	// if there is an assignment following
 	if (peek().type == token::ASSIGN) {
         consume(); //consume :=
-		auto assignee = parse_expression(); //_parse_assignee();
+		auto assignee = parse_param_list();
 		if(assignee.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(assignee.get_error());
 		}
-        auto param_list = parse_into_param_list(std::move(assignee.unwrap()));
-        if(param_list.is_error()) {
-            return Result<std::unique_ptr<NodeAST>>(param_list.get_error());
-        }
-		assignees = std::move(param_list.unwrap());
+		assignees = std::move(assignee.unwrap());
 	} else
 	    // initializes empty param list
 	    assignees = std::make_unique<NodeParamList>();
@@ -838,6 +827,26 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement() {
 	consume(); // consume end select
 	auto return_value = std::make_unique<NodeSelectStatement>(std::move(expression.unwrap()), std::move(cases));
 	return Result<std::unique_ptr<NodeSelectStatement>>(std::move(return_value));
+}
+
+Result<std::unique_ptr<NodeDefineStatement>> Parser::parse_define_statement() {
+	consume(); //consume define keyword
+	VarType type = VarType::Define;
+	auto definitions = parse_param_list();
+	if(definitions.is_error()) {
+		return Result<std::unique_ptr<NodeDefineStatement>>(definitions.get_error());
+	}
+	if(peek().type != token::ASSIGN) {
+		return Result<std::unique_ptr<NodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
+		 "Defines need to have expressions assigned.", peek().line, ":=", peek().val));
+	}
+	consume(); // consume assign :=
+	auto assignees = parse_param_list();
+	if(assignees.is_error()) {
+		return Result<std::unique_ptr<NodeDefineStatement>>(assignees.get_error());
+	}
+	auto return_value = std::make_unique<NodeDefineStatement>(std::move(definitions.unwrap()), std::move(assignees.unwrap()));
+	return Result<std::unique_ptr<NodeDefineStatement>>(std::move(return_value));
 }
 
 

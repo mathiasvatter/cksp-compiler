@@ -15,6 +15,7 @@ public:
     virtual void visit(NodeVariable& node) = 0;
 	virtual void visit(NodeArray& node) = 0;
 	virtual void visit(NodeDeclareStatement& node) = 0;
+	virtual void visit(NodeDefineStatement& node) = 0;
     virtual void visit(NodeBinaryExpr& node) = 0;
     virtual void visit(NodeUnaryExpr& node) = 0;
     virtual void visit(NodeAssignStatement& node)  = 0;
@@ -52,10 +53,19 @@ public:
 	void visit(NodeDeclareStatement& node) override {
 		std::cout << "declare ";
 		node.to_be_declared->accept(*this);
-//        if(!node.assignee->params.empty()) {
+        if(!node.assignee->params.empty()) {
             std::cout << " := ";
 		    node.assignee->accept(*this);
-//        }
+        }
+	}
+
+	void visit(NodeDefineStatement& node) override {
+		std::cout << "define ";
+		node.to_be_defined->accept(*this);
+		if(!node.assignee->params.empty()) {
+			std::cout << " := ";
+			node.assignee->accept(*this);
+		}
 	}
 
     void visit(NodeArray& node) override {
@@ -214,6 +224,11 @@ public:
         for (auto & macro : node.macro_definitions) {
             macro -> accept(*this);
         }
+		std::cout << "Defines:" << std::endl;
+		for (auto & define : node.defines) {
+			define -> accept(*this);
+		}
+		std::cout << std::endl;
     }
 
 };

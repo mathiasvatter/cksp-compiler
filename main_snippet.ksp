@@ -1,4 +1,5 @@
 import "deine mudda" as mum
+define sd := 4
 on init
 	/*make_perfview
 	for i := 0 to num_elements(soundset_ids)-1
@@ -24,6 +25,13 @@ on init
     brutus()
     select 4
         case 4
+            brutus2()
+        case 5 .and. 6
+            for i := 0 to num_elements(poopy)-1
+                message(i)
+            end for
+        case 3 .and. 6
+            exit
     end select
 end on
 //u*

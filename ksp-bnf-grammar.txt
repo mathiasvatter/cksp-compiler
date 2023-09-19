@@ -16,9 +16,9 @@
 <string_op> ::= &
 
 //******** FUNCTIONS
-<function_header> ::= <keyword> "(" (<param_list> | <expression) ")"
+<function_header> ::= <keyword> ("(" (<param_list> | <expression) ")")?
 <function_definition> ::= "function" <function_header> ("->" <variable>)? ("override")? <linebreak> <statement>* "end function"
-<function_call> ::= "call" <function_header>
+<function_call> ::= "call"? <function_header>
 
 //******* MACROS
 <macro_header> ::= <keyword> "(" <param_list ")"
@@ -52,7 +52,7 @@
 <comparison_expression> ::= <binary_expression> <comparison_op> <binary_expression>
 
 <assign_statement> ::= <param_list> ":=" <param_list>
-<statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement) <linebreak>
+<statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement | <funcion_call> ) <linebreak>
 <for_statement> ::= for <assign_statement> (to | downto) <binary_expression> <linebreak> <statements> end for <linebreak>
 <if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>
 <while_statement> ::= while (? <condition> )? <linebreak> <statements> end while <linebreak>
