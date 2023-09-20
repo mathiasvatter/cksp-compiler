@@ -755,6 +755,14 @@ Result<std::unique_ptr<NodeForStatement>> Parser::parse_for_statement() {
         stmts.push_back(std::move(stmt.unwrap()));
     }
     consume(); // consume end for
+
+	std::vector<std::unique_ptr<NodeAST>> iterator_param_list;
+	iterator_param_list.push_back(std::move(iterator));
+	auto args = std::make_unique<NodeParamList>(std::move(iterator_param_list));
+	auto inc_func_header = std::make_unique<NodeFunctionHeader>("inc", std::move(args));
+	auto inc_func_call = std::make_unique<NodeFunctionCall>(false, std::move(inc_func_header));
+	auto inc_func_stmt = std::make_unique<NodeStatement>(std::move(inc_func_call));
+	stmts.push_back(std::move(inc_func_stmt));
     auto return_value = std::make_unique<NodeForStatement>(std::move(iterator), to, std::move(iterator_end), std::move(stmts));
     return Result<std::unique_ptr<NodeForStatement>>(std::move(return_value));
 }

@@ -5,7 +5,7 @@ on init
 	for i := 0 to num_elements(soundset_ids)-1
 	    message(i)
 	end for*/
-	define NUM_ROWS, SUM(idx, skol) := 3, idx+skol
+	define NUM_ROWS, SUM(idx, skol) := 3, idx+(skol,skil)
 	declare poopy, arr[3,(4+5)] := (1), (1,4+3)
     bims, schrimps := not(4+array[4]), 5
     declare bums[3] := (1,2,3)

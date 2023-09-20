@@ -90,5 +90,8 @@ private:
     Result<std::unique_ptr<NodeImport>> parse_import();
 	Result<std::unique_ptr<NodeProgram>> parse_program();
 
+	bool is_boolean_expression(std::unique_ptr<NodeAST> expr);
+	bool is_comparison_expression(std::unique_ptr<NodeAST> expr);
+	bool is_condition_expression(std::unique_ptr<NodeAST> expr);
 };
 
