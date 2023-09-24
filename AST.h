@@ -29,7 +29,8 @@ enum VarType {
     Polyphonic,
     Array,
     Mutable,
-	Define
+	Define,
+    UI_Control
 };
 
 struct NodeAST {
@@ -40,14 +41,14 @@ struct NodeAST {
 };
 
 struct NodeInt : NodeAST {
-	int value;
-	inline explicit NodeInt(int v) : value(v) {type = ASTType::Integer;}
+	int32_t value;
+	inline explicit NodeInt(int32_t v) : value(v) {type = ASTType::Integer;}
 	void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeReal : NodeAST {
-    float value;
-    inline explicit NodeReal(float value) : value(value) {type = ASTType::Real;}
+    double value;
+    inline explicit NodeReal(double value) : value(value) {type = ASTType::Real;}
     void accept(ASTVisitor& visitor) override;
 };
 
@@ -82,6 +83,16 @@ struct NodeArray : NodeAST {
     void accept(ASTVisitor& visitor) override;
 };
 
+struct NodeDeclareControlStatement : NodeAST {
+    bool is_persistent;
+    std::string ui_control_type;
+    std::unique_ptr<NodeAST> control_var;
+    std::unique_ptr<NodeParamList> params;
+    inline NodeDeclareControlStatement(bool isPersistent, std::string uiControlType, std::unique_ptr<NodeAST> controlVar,std::unique_ptr<NodeParamList> params)
+            : is_persistent(isPersistent), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
 struct NodeUnaryExpr : NodeAST {
     std::unique_ptr<NodeAST> operand;
     Token op;
@@ -97,11 +108,13 @@ struct NodeBinaryExpr: NodeAST {
 	void accept(ASTVisitor& visitor) override;
 };
 
+
 struct NodeDeclareStatement : NodeAST {
+    bool is_persistent;
 	std::unique_ptr<NodeParamList> to_be_declared;
 	std::unique_ptr<NodeParamList> assignee;
-	inline explicit NodeDeclareStatement(std::unique_ptr<NodeParamList> to_be_declared, std::unique_ptr<NodeParamList> assignee)
-		: to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {}
+	inline explicit NodeDeclareStatement(bool isPersistent, std::unique_ptr<NodeParamList> to_be_declared, std::unique_ptr<NodeParamList> assignee)
+		: is_persistent(isPersistent), to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
 };
 
@@ -119,6 +132,30 @@ struct NodeAssignStatement: NodeAST {
     inline NodeAssignStatement(std::unique_ptr<NodeParamList> array_variable, std::unique_ptr<NodeParamList> assignee)
     : array_variable(std::move(array_variable)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeConstStatement : NodeAST {
+    std::string prefix;
+    std::vector<std::unique_ptr<NodeDeclareStatement>> constants;
+    inline NodeConstStatement(std::string prefix, std::vector<std::unique_ptr<NodeDeclareStatement>> constants)
+            : prefix(std::move(prefix)), constants(std::move(constants)) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeStructStatement : NodeAST {
+    std::string prefix;
+    std::vector<std::unique_ptr<NodeDeclareStatement>> members;
+    inline NodeStructStatement(std::string prefix, std::vector<std::unique_ptr<NodeDeclareStatement>> members)
+    : prefix(std::move(prefix)), members(std::move(members)) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeFamilyStatement : NodeAST {
+    std::string prefix;
+    std::vector<std::unique_ptr<NodeDeclareStatement>> members;
+    inline NodeFamilyStatement(std::string prefix, std::vector<std::unique_ptr<NodeDeclareStatement>> members)
+            : prefix(std::move(prefix)), members(std::move(members)) {}
+    void accept(ASTVisitor& visitor) override;
 };
 
 // can be assign_statement, if_statement etc.

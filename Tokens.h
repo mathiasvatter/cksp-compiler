@@ -55,6 +55,9 @@
     XX(IF, "if") \
     XX(SELECT, "select") \
     XX(LIST, "list") \
+    XX(CONST, "const") \
+    XX(FAMILY, "family") \
+    XX(STRUCT, "struct") \
     XX(TASKFUNC, "taskfunc") \
     XX(MACRO, "macro") \
     XX(END_FUNCTION, "end function") \
@@ -64,6 +67,8 @@
     XX(END_SELECT, "end select") \
     XX(END_CONST, "end constblock") \
     XX(END_LIST, "end list") \
+    XX(END_FAMILY, "end family") \
+    XX(END_STRUCT, "end struct") \
     XX(END_TASKFUNC, "end taskfunc") \
     XX(END_MACRO, "end macro") \
     XX(TO, "to") \
@@ -73,26 +78,11 @@
     XX(IMPORT, "import") \
     XX(AS, "import_as") \
     XX(DECLARE, "declare") \
+    XX(READ, "read") \
     XX(DEFINE, "define") \
-    XX(CONST, "const") \
     XX(POLYPHONIC, "polyphonic") \
     XX(LINE_CONTINUE, "line_continue") \
-    XX(UI_LABEL, "") \
-    XX(UI_BUTTON, "") \
-    XX(UI_SWITCH, "") \
-    XX(UI_SLIDER, "") \
-    XX(UI_MENU, "") \
-    XX(UI_VALUE_EDIT, "") \
-    XX(UI_WAVEFORM, "") \
-    XX(UI_WAVETABLE, "") \
-    XX(UI_KNOB, "") \
-    XX(UI_TABLE, "") \
-    XX(UI_XY, "") \
-    XX(UI_TEXT_EDIT, "") \
-    XX(UI_LEVEL_METER, "") \
-    XX(UI_FILE_SELECTOR, "") \
-    XX(UI_PANEL, "") \
-    XX(UI_MOUSE_AREA, "")
+    XX(UI_CONTROL, "ui_control")
 
 
 #define ENUM(name, str) name,
@@ -128,22 +118,23 @@ inline std::vector<char> VAR_IDENT = {'$', '~', '@'};
 inline std::vector<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
 inline std::vector<char> COMMENT_START = {'{', '/'};
 inline std::vector<char> COMPARISON_OPERATORS_START = {'<', '>', '='};
-inline std::vector<Keyword> UI_CONTROLS = {{UI_LABEL, "ui_label"}, {UI_BUTTON, "ui_button"}, {UI_SWITCH, "ui_switch"}, {UI_SLIDER, "ui_slider"}, {UI_MENU, "ui_menu"},
-										   {UI_VALUE_EDIT, "ui_value_edit"}, {UI_WAVEFORM, "ui_waveform"}, {UI_WAVETABLE, "ui_wavetable"},
-										   {UI_KNOB, "ui_knob"}, {UI_TABLE, "ui_table"}, {UI_XY, "ui_xy"},
-										   {UI_TEXT_EDIT, "ui_text_edit"}, {UI_LEVEL_METER, "ui_level_meter"}, {UI_FILE_SELECTOR, "ui_file_selector"},
-										   {UI_PANEL, "ui_panel"}, {UI_MOUSE_AREA, "ui_mouse_area"}};
-inline std::vector<Keyword> DECLARATION_SYNTAX = {{DECLARE, "declare"}, {DEFINE, "define"}, {CONST, "const"}, {POLYPHONIC, "polyphonic"}};
+inline std::vector<std::string> UI_CONTROLS = {"ui_label", "ui_button", "ui_switch", "ui_slider", "ui_menu",
+										   "ui_value_edit", "ui_waveform", "ui_wavetable",
+										   "ui_knob", "ui_table", "ui_xy",
+										   "ui_text_edit", "ui_level_meter", "ui_file_selector",
+										   "ui_panel", "ui_mouse_area"};
+inline std::vector<Keyword> DECLARATION_SYNTAX = {{DECLARE, "declare"}, {DEFINE, "define"}, {CONST, "const"}, {POLYPHONIC, "polyphonic"}, {READ, "read"}};
 inline std::vector<Keyword> IMPORT_SYNTAX = {{IMPORT, "import"}, {AS, "as"}};
 inline std::vector<Keyword> STATEMENT_SYNTAX = {{TO, "to"}, {DOWNTO, "downto"}, {ELSE, "else"}, {CASE, "case"}};
 inline std::vector<Keyword> FUNCTION_SYNTAX = {{OVERRIDE, "override"}, {CALL, "call"}};
 // control statements that also have an end
 inline std::vector<Keyword> END_STATEMENTS = {{END_FUNCTION, "end function"}, {END_FOR, "end for"}, {END_WHILE, "end while"},
-											  {END_IF,       "end if"}, {END_SELECT, "end select"}, {END_CONST, "end const"}, {END_LIST, "end list"},
+											  {END_IF,       "end if"}, {END_SELECT, "end select"}, {END_CONST, "end const"},
+                                              {END_LIST, "end list"}, {END_FAMILY, "end family"}, {END_STRUCT, "end struct"},
 											  {END_MACRO,    "end macro"}, {END_TASKFUNC, "end taskfunc"}};
-inline std::vector<Keyword> STATEMENTS = {{FUNCTION, "function"}, {FOR, "for"}, {WHILE, "while"},
-										  {IF,       "if"}, {SELECT, "select"}, {CONST, "const"}, {LIST, "list"},
-										  {MACRO,    "macro"}, {TASKFUNC, "taskfunc"}};
+inline std::vector<Keyword> STATEMENTS = {{FUNCTION, "function"}, {FOR, "for"}, {WHILE, "while"}, {IF, "if"},
+                                          {SELECT, "select"}, {CONST, "const"}, {LIST, "list"}, {FAMILY, "family"},
+                                          {STRUCT, "struct"}, {MACRO,    "macro"}, {TASKFUNC, "taskfunc"}};
 inline std::vector<std::string> CALLBACKS = {"init", "note", "release", "midi_in", "controller",
 											 "rpn", "nrpn", "ui_update", "_pgs_changed", "pgs_changed",
 											 "poly_at", "listener", "async_complete", "persistence_changed", "ui_control"};

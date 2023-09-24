@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <utility>
 #include <vector>
+#include <fstream>
+#include <sstream>
 
 /*
  * TOKEN STRUCT
@@ -20,8 +22,9 @@ std::ostream &operator<<(std::ostream &os, const Token &tok) {
 /*
  * Tokenizer Functions
  */
-Tokenizer::Tokenizer(std::string input) : pos(0), line(1){
-    this->input = std::move(input);
+Tokenizer::Tokenizer(std::string file) : pos(0), line(1){
+    this->file = std::move(file);
+    this->input = read_file(this->file);
     this->input += '\n';
 	current_char = this->input.at(pos);
 	input_length = this->input.size();
@@ -110,12 +113,19 @@ void Tokenizer::get_invalid() {
 
 void Tokenizer::get_comment() {
 	flush_buffer();
-	if (current_char == '{') { // multi-line ksp style
-		while (current_char != '}') {
-			consume();
+    int nesting_level = 0; // nesting levels for {{}} comments
+    if (current_char == '{') { // multi-line ksp style
+        nesting_level++;
+        while (nesting_level > 0) {
+            consume();
             if (current_char == '\n') line++;
-		}
-		consume();
+            if (current_char == '{') {
+                nesting_level++;
+            } else if (current_char == '}') {
+                nesting_level--;
+            }
+        }
+        consume();
 	} else if (current_char == '/') {
         // if one-line comment c++ style
         if (peek() == '/') {
@@ -270,7 +280,7 @@ void Tokenizer::get_keyword_or_num() {
             tok = get_token_type(STATEMENT_SYNTAX, buffer);
             tokens.emplace_back(tok, buffer, line);
         } else if (contains(UI_CONTROLS, buffer)) {
-			tok = get_token_type(UI_CONTROLS, buffer);
+			tok = token::UI_CONTROL;
 			tokens.emplace_back(tok, buffer, line);
 		} else if (contains(IMPORT_SYNTAX, buffer)) {
 			tok = get_token_type(IMPORT_SYNTAX, buffer);
@@ -282,24 +292,24 @@ void Tokenizer::get_keyword_or_num() {
             tok = get_token_type(FUNCTION_SYNTAX, buffer);
             tokens.emplace_back(tok, buffer, line);
         } else {
+            if (current_char == '.') {
+                consume();
+    //            tokens.emplace_back(DOT, ".", line);
+                if (std::isalnum(current_char) || current_char == '_') {
+//                    flush_buffer();
+                    while(std::isalnum(current_char) || current_char == '_') {
+                        consume();
+                    }
+//                    tokens.emplace_back(KEYWORD, buffer, line);
+                } else {
+                    auto err_msg = "Found unknown keyword.";
+                    CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer).print();
+                    exit(EXIT_FAILURE);
+                }
+            }
             tokens.emplace_back(KEYWORD, buffer, line);
         }
         // see if char after keyword is dot
-        if (current_char == '.') {
-            consume();
-            tokens.emplace_back(DOT, ".", line);
-            if (std::isalnum(current_char) || current_char == '_') {
-                flush_buffer();
-                while(std::isalnum(current_char) || current_char == '_') {
-                    consume();
-                }
-                tokens.emplace_back(KEYWORD, buffer, line);
-            } else {
-                auto err_msg = "Found unknown keyword.";
-                CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer).print();
-                exit(EXIT_FAILURE);
-            }
-        }
     } else // is probably int
         tokens.emplace_back(INT, buffer, line);
     skip_whitespace();
@@ -392,25 +402,20 @@ void Tokenizer::flush_buffer() {
 }
 
 bool Tokenizer::is_binary(const std::string& str) {
-	// Überprüfen, ob der String mit "b" beginnt und nur Ziffern enthält
-	if (str[0] == 'b') {
-		return std::all_of(str.begin() + 1, str.end(), [](char c) { return c == '0' || c == '1'; });
-	}
-		// Überprüfen, ob der String auf "b" endet und nur Ziffern enthält
-	else if (str.back() == 'b') {
-		return std::all_of(str.begin(), str.end() - 1, [](char c) { return c == '0' || c == '1'; });
-	}
-		// Überprüfen, ob der String mit einer Ziffer beginnt, "b" in der Mitte hat und mit "h" endet
-	else if (str.size() > 2 && isdigit(str[0]) && str.find('b') != std::string::npos && str.back() == 'h') {
-		size_t b_pos = str.find('b');
-		return std::all_of(str.begin() + 1, str.begin() + b_pos, [](char c) { return c == '0' || c == '1'; });
-	}
-	return false;
+    // Überprüfen, ob der String mit "b" beginnt und nur 0 und 1 enthält
+    bool starts_with_b = str.size() > 1 && str[0] == 'b' &&
+                       std::all_of(str.begin() + 1, str.end(), [](char c){ return c == '0' || c == '1'; });
+
+    // Überprüfen, ob der String mit "b" endet und nur 0 und 1 enthält
+    bool ends_width_b = str.size() > 1 && str.back() == 'b' &&
+                     std::all_of(str.begin(), str.end() - 1, [](char c){ return c == '0' || c == '1'; });
+    // XOR-Prüfung
+    return starts_with_b xor ends_width_b;
 }
 
 bool Tokenizer::is_hexadecimal(const std::string& str) {
-    // Überprüfen, ob der String mit "0x" beginnt oder mit einem Ziffer gefolgt von "h"
-    return (str.substr(0, 2) == "0x" || (str.size() > 1 && str.back() == 'h' && isdigit(str[0]) && str.find('b') == std::string::npos));
+    // Überprüfen, ob der String mit "0x" beginnt xor mit einer ziffer beginnt und mit h endet
+    return (str.substr(0, 2) == "0x") xor (str.size() > 1 && str.back() == 'h' && isdigit(str[0]));
 }
 
 bool Tokenizer::is_callback_start() {
@@ -434,6 +439,18 @@ token Tokenizer::get_token_type(const std::vector<Keyword> &vec, const std::stri
         return it->type;
     }
     return INVALID; // Rückgabe von UNKNOWN, wenn die Zeichenkette nicht gefunden wird
+}
+
+std::string Tokenizer::read_file(const std::string& filename) {
+    std::ifstream f(filename);
+    std::stringstream buf;
+    if (f.is_open()) {
+        buf << f.rdbuf();
+        f.close();
+    } else {
+        std::cout << "Unable to open file\n";
+    }
+    return buf.str();
 }
 
 

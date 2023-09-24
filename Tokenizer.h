@@ -47,6 +47,7 @@ class Tokenizer {
 
 private:
     std::string input;
+    std::string file;
     size_t input_length;
     size_t pos;
     char current_char;
@@ -59,6 +60,8 @@ private:
     void consume(int chars = 1);
     void flush_buffer();
 	void skip_whitespace();
+
+    std::string read_file(const std::string& filename);
 
 	static bool is_space(const char& ch);
 	[[nodiscard]] bool is_string() const;
@@ -85,7 +88,7 @@ private:
     void get_keyword_or_num();
 
 public:
-    explicit Tokenizer(std::string input);
+    explicit Tokenizer(std::string file);
     ~Tokenizer() = default;
     std::vector<Token> tokenize();
 };

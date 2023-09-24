@@ -30,6 +30,33 @@
 //******* START_INC
 
 
+//********* const block
+<const_statement> ::= "const" <keyword> <linebreak>+ (<assign_statement> <linebreak>)+ "end const"
+
+//******** struct
+<struct_statement> ::= "struct" <keyword> <linebreak>+ (<declare_statement> <linebreak>)+ "end struct"
+
+//****** family
+<family_statement> ::= "family" <keyword> <linebreak>+ (<declare_statement> <linebreak>)+ "end family"
+
+//******** ui_controls
+<ui_label> ::= declare ui_label $<variable-name> (<grid-width>, <grid-height>)
+UI_BUTTON ::= declare ui_button $<variable-name>
+UI_SWITCH ::= declare ui_switch $<variable-name>
+UI_SLIDER ::= declare ui_slider $<variable-name> (<min>, <max>)
+UI_MENU ::= declare ui_menu $<variable-name>
+UI_VALUE_EDIT ::= declare ui_value_edit $<variable-name> (<min>, <max>, <$display-ratio>)
+UI_WAVEFORM ::= declare ui_waveform $<variable-name> (<grid-width>, <grid-height>)
+UI_WAVETABLE ::= declare ui_wavetable $<variable-name>
+UI_KNOB ::= declare ui_knob $<variable-name> (<min>, <max>, <display-ratio>)
+UI_TABLE ::= declare ui_table %<array-name>[num-elements] (<grid-width>, <grid-height>, <range>)
+UI_XY ::= declare ui_xy ?<array-name>[num-elements]
+UI_TEXT_EDIT ::= declare ui_text_edit @<variable-name>
+UI_LEVEL_METER ::= declare ui_level_meter $<variable-name>
+UI_FILE_SELECTOR ::= declare ui_file_selector $<variable-name>
+UI_PANEL ::= declare ui_panel $<variable-name>
+UI_MOUSE_AREA ::= declare ui_mouse_area $<variable-name>
+
 //******** DEFINE
 <define_statement> ::= "define" <param_list> := <param_list>
 
@@ -38,10 +65,10 @@
 <variable_identifier> ::= "$" | "~" | "@"
 <array_identifier> ::= "!" | "%" | "?"
 <identifier> ::= <variable_identifier> | <array_identifier>
-<variable> ::= (const | polyphonic)? <identifier>? <keyword>
+<variable> ::=  <identifier>? <keyword>
 <array> ::= <variable> [ <binary_expression> (, <binary_expression>)? ]
 <param_list> ::= (<expression> ("," <expression>)?)?
-<declare_statement> ::= "declare" <param_list> ":="? <param_list>?
+<declare_statement> ::= "declare" "read"? (const | polyphonic)? <param_list> ":="? <param_list>?
 
 <unary_expression> ::= <unary_op> (<num> | <variable> | <function_header>)
 <primary_expression> ::= <num> | <variable> | <function_header> | <unary_expression> | "("<binary_expression>")"

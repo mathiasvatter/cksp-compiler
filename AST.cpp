@@ -92,3 +92,19 @@ void NodeFunctionCall::accept(ASTVisitor &visitor) {
 void NodeSelectStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
+
+void NodeConstStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeStructStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeFamilyStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeDeclareControlStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}

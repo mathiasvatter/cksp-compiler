@@ -1,21 +1,11 @@
 #include <iostream>
-#include <fstream>
-#include <sstream>
+#include <filesystem>
+
 
 //#include "Tokenizer.h"
 #include "Parser.h"
+#include "Preprocessor.h"
 
-std::string read_file(const char* filename) {
-    std::ifstream file(filename);
-    std::stringstream buffer;
-    if (file.is_open()) {
-        buffer << file.rdbuf();
-        file.close();
-    } else {
-        std::cout << "Unable to open file\n";
-    }
-    return buffer.str();
-}
 
 
 int main() {
@@ -23,16 +13,16 @@ int main() {
 	// Startzeitpunkt speichern
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    auto path = "../main_snippet.ksp";
-	std::string ksp_code = read_file(path);
-	Tokenizer tokenizer(ksp_code);
+    auto path = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
+	Tokenizer tokenizer(path);
     auto tokens = tokenizer.tokenize();
 	for (auto & token: tokens) {
         if (token.type != COMMENT) // && token.type != LINEBRK)
 		    std::cout << token << '\n';
 	}
 	std::cout << std::endl;
-    Parser parser(tokens);
+    Preprocessor preprocessor(tokens, path);
+    Parser parser(preprocessor.get_tokens());
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);

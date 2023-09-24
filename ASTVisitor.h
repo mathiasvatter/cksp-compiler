@@ -14,12 +14,16 @@ public:
     virtual void visit(NodeString& node) = 0;
     virtual void visit(NodeVariable& node) = 0;
 	virtual void visit(NodeArray& node) = 0;
-	virtual void visit(NodeDeclareStatement& node) = 0;
+    virtual void visit(NodeDeclareStatement& node) = 0;
+    virtual void visit(NodeDeclareControlStatement& node) = 0;
 	virtual void visit(NodeDefineStatement& node) = 0;
     virtual void visit(NodeBinaryExpr& node) = 0;
     virtual void visit(NodeUnaryExpr& node) = 0;
     virtual void visit(NodeAssignStatement& node)  = 0;
     virtual void visit(NodeParamList& node)  = 0;
+    virtual void visit(NodeConstStatement& node)  = 0;
+    virtual void visit(NodeStructStatement& node)  = 0;
+    virtual void visit(NodeFamilyStatement& node)  = 0;
     virtual void visit(NodeStatement& node)  = 0;
     virtual void visit(NodeIfStatement& node)  = 0;
     virtual void visit(NodeForStatement& node)  = 0;
@@ -58,6 +62,16 @@ public:
 		    node.assignee->accept(*this);
         }
 	}
+
+    void visit(NodeDeclareControlStatement& node) override {
+        std::cout << "declare ";
+        if(node.is_persistent) {
+            std::cout << "read ";
+        }
+        std::cout << node.ui_control_type;
+        node.control_var->accept(*this);
+        node.params -> accept(*this);
+    }
 
 	void visit(NodeDefineStatement& node) override {
 		std::cout << "define ";
@@ -118,6 +132,30 @@ public:
 		node.assignee->accept(*this);
 		std::cout << ")";
 	}
+
+    void visit(NodeConstStatement& node) override {
+        std::cout << "Const(" << node.prefix << std::endl;
+        for(auto &stmt: node.constants) {
+            stmt->accept(*this);
+        }
+        std::cout << ")";
+    }
+
+    void visit(NodeStructStatement& node) override {
+        std::cout << "Struct(" << node.prefix << std::endl;
+        for(auto &stmt: node.members) {
+            stmt->accept(*this);
+        }
+        std::cout << ")";
+    }
+
+    void visit(NodeFamilyStatement& node) override {
+        std::cout << "Family(" << node.prefix << std::endl;
+        for(auto &stmt: node.members) {
+            stmt->accept(*this);
+        }
+        std::cout << ")";
+    }
 
 	void visit(NodeStatement& node) override {
 		std::cout << "Stmt(" ;

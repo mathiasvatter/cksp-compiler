@@ -51,6 +51,10 @@ private:
 	Token consume();
     static int _get_binop_precedence(token tok);
 	void _skip_linebreaks();
+    std::string sanitize_binary(const std::string& input);
+    /// convert eg 0bFFFh into 0xbFFF
+    std::string sanitize_hex(const std::string& input);
+    Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base);
 
     Result<std::unique_ptr<NodeAST>> parse_number();
     Result<std::unique_ptr<NodeString>> parse_string();
@@ -75,8 +79,10 @@ private:
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr();
     Result<std::unique_ptr<NodeAST>> parse_assign_statement();
-	Result<std::unique_ptr<NodeAST>> parse_declare_statement();
+    Result<std::unique_ptr<NodeDeclareStatement>> parse_declare_statement();
+    Result<std::unique_ptr<NodeDeclareControlStatement>> parse_declare_control_statement();
 	Result<std::unique_ptr<NodeDefineStatement>> parse_define_statement();
+    Result<std::unique_ptr<NodeAST>> parse_const_struct_family_statement();
 	/// combines all possible statement types
     Result<std::unique_ptr<NodeStatement>> parse_statement();
     Result<std::unique_ptr<NodeIfStatement>> parse_if_statement();
