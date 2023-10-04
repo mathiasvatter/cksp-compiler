@@ -105,6 +105,6 @@ void NodeFamilyStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 
-void NodeDeclareControlStatement::accept(ASTVisitor &visitor) {
+void NodeUIControl::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }

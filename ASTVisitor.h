@@ -15,7 +15,7 @@ public:
     virtual void visit(NodeVariable& node) = 0;
 	virtual void visit(NodeArray& node) = 0;
     virtual void visit(NodeDeclareStatement& node) = 0;
-    virtual void visit(NodeDeclareControlStatement& node) = 0;
+    virtual void visit(NodeUIControl& node) = 0;
 	virtual void visit(NodeDefineStatement& node) = 0;
     virtual void visit(NodeBinaryExpr& node) = 0;
     virtual void visit(NodeUnaryExpr& node) = 0;
@@ -51,8 +51,27 @@ public:
     }
 
 	void visit(NodeVariable& node) override {
-		std::cout << "(" << node.ident << ")" << node.name;
+        if(node.is_persistent)
+            std::cout << "read ";
+		std::cout << "(var)" << node.name;
 	}
+
+    void visit(NodeArray& node) override {
+        if(node.is_persistent)
+            std::cout << "read ";
+        std::cout << "(arr)" << node.name;
+        std::cout << "[";
+        node.sizes->accept(*this);
+        std::cout << "].at(";
+        node.indexes->accept(*this);
+        std::cout << ")";
+    }
+
+    void visit(NodeUIControl& node) override {
+        std::cout << node.ui_control_type;
+        node.control_var->accept(*this);
+        node.params -> accept(*this);
+    }
 
 	void visit(NodeDeclareStatement& node) override {
 		std::cout << "declare ";
@@ -63,16 +82,6 @@ public:
         }
 	}
 
-    void visit(NodeDeclareControlStatement& node) override {
-        std::cout << "declare ";
-        if(node.is_persistent) {
-            std::cout << "read ";
-        }
-        std::cout << node.ui_control_type;
-        node.control_var->accept(*this);
-        node.params -> accept(*this);
-    }
-
 	void visit(NodeDefineStatement& node) override {
 		std::cout << "define ";
 		node.to_be_defined->accept(*this);
@@ -82,14 +91,6 @@ public:
 		}
 	}
 
-    void visit(NodeArray& node) override {
-        node.name->accept(*this);
-        std::cout << "[";
-		node.sizes->accept(*this);
-        std::cout << "].at(";
-        node.indexes->accept(*this);
-        std::cout << ")";
-    }
 
     void visit(NodeParamList& node) override {
         if (!node.params.empty()) {

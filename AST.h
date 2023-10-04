@@ -59,11 +59,11 @@ struct NodeString : NodeAST {
 };
 
 struct NodeVariable: NodeAST {
-    char ident;
+    bool is_persistent;
     VarType var_type = VarType::Mutable;
 	std::string name;
-	inline NodeVariable(std::string name, VarType type, char ident)
-    : name(std::move(name)), var_type(type), ident(ident) {}
+	inline NodeVariable(bool is_persistent, std::string name, VarType type)
+    : is_persistent(is_persistent), name(std::move(name)), var_type(type) {}
 	void accept(ASTVisitor& visitor) override;
 };
 
@@ -74,22 +74,24 @@ struct NodeParamList: NodeAST {
 };
 
 struct NodeArray : NodeAST {
-    std::unique_ptr<NodeVariable> name;
+    bool is_persistent;
+    VarType var_type = VarType::Array;
+    std::string name;
     std::unique_ptr<NodeParamList> sizes = nullptr;
     std::unique_ptr<NodeParamList> indexes;
-    inline NodeArray(std::unique_ptr<NodeVariable> name, std::unique_ptr<NodeParamList> sizes,
+    inline NodeArray(bool is_persistent, std::string name, VarType var_type, std::unique_ptr<NodeParamList> sizes,
               std::unique_ptr<NodeParamList> indexes)
-              : name(std::move(name)), sizes(std::move(sizes)), indexes(std::move(indexes)) {}
+              : is_persistent(is_persistent), name(std::move(name)), var_type(var_type),
+              sizes(std::move(sizes)), indexes(std::move(indexes)) {}
     void accept(ASTVisitor& visitor) override;
 };
 
-struct NodeDeclareControlStatement : NodeAST {
-    bool is_persistent;
+struct NodeUIControl : NodeAST {
     std::string ui_control_type;
-    std::unique_ptr<NodeAST> control_var;
+    std::unique_ptr<NodeAST> control_var; //Array or Variable
     std::unique_ptr<NodeParamList> params;
-    inline NodeDeclareControlStatement(bool isPersistent, std::string uiControlType, std::unique_ptr<NodeAST> controlVar,std::unique_ptr<NodeParamList> params)
-            : is_persistent(isPersistent), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {}
+    inline NodeUIControl(std::string uiControlType, std::unique_ptr<NodeAST> controlVar, std::unique_ptr<NodeParamList> params)
+            : ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {}
     void accept(ASTVisitor& visitor) override;
 };
 
@@ -110,11 +112,10 @@ struct NodeBinaryExpr: NodeAST {
 
 
 struct NodeDeclareStatement : NodeAST {
-    bool is_persistent;
 	std::unique_ptr<NodeParamList> to_be_declared;
 	std::unique_ptr<NodeParamList> assignee;
-	inline explicit NodeDeclareStatement(bool isPersistent, std::unique_ptr<NodeParamList> to_be_declared, std::unique_ptr<NodeParamList> assignee)
-		: is_persistent(isPersistent), to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {}
+	inline explicit NodeDeclareStatement(std::unique_ptr<NodeParamList> to_be_declared, std::unique_ptr<NodeParamList> assignee)
+		: to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
 };
 

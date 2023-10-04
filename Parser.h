@@ -53,14 +53,14 @@ private:
 	void _skip_linebreaks();
     std::string sanitize_binary(const std::string& input);
     /// convert eg 0bFFFh into 0xbFFF
-    std::string sanitize_hex(const std::string& input);
+    static std::string sanitize_hex(const std::string& input);
     Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base);
 
     Result<std::unique_ptr<NodeAST>> parse_number();
     Result<std::unique_ptr<NodeString>> parse_string();
-    Result<std::unique_ptr<NodeVariable>> parse_variable();
+    Result<std::unique_ptr<NodeVariable>> parse_variable(bool is_persistent=false, VarType var_type=VarType::Mutable);
 	/// handles the expression inside brackets as size if is_size=true, else those are handled as indexes
-    Result<std::unique_ptr<NodeArray>> parse_array(std::unique_ptr<NodeVariable> array_variable);
+    Result<std::unique_ptr<NodeArray>> parse_array(bool is_persistent=false, VarType var_type=VarType::Array);
 	/// stops either at end token or at linebreak
     Result<std::unique_ptr<NodeParamList>> parse_param_list();
 	Result<std::unique_ptr<NodeAST>> _parse_into_param_list(std::unique_ptr<NodeAST> expression);
@@ -79,8 +79,10 @@ private:
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr();
     Result<std::unique_ptr<NodeAST>> parse_assign_statement();
+    Result<std::unique_ptr<NodeVariable>> parse_declare_variable();
+    Result<std::unique_ptr<NodeArray>> parse_declare_array();
+    Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control();
     Result<std::unique_ptr<NodeDeclareStatement>> parse_declare_statement();
-    Result<std::unique_ptr<NodeDeclareControlStatement>> parse_declare_control_statement();
 	Result<std::unique_ptr<NodeDefineStatement>> parse_define_statement();
     Result<std::unique_ptr<NodeAST>> parse_const_struct_family_statement();
 	/// combines all possible statement types
@@ -96,8 +98,11 @@ private:
     Result<std::unique_ptr<NodeImport>> parse_import();
 	Result<std::unique_ptr<NodeProgram>> parse_program();
 
+
+
 	bool is_boolean_expression(std::unique_ptr<NodeAST> expr);
 	bool is_comparison_expression(std::unique_ptr<NodeAST> expr);
 	bool is_condition_expression(std::unique_ptr<NodeAST> expr);
+    bool is_nested_param_list(std::unique_ptr<NodeAST> expr);
 };
 
