@@ -300,8 +300,8 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, 
                 return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
                  "Boolean Operators can only connect Comparisons.", peek().line, "Comparisons"));
             }
-		} else if (bin_op.type == token::COMMA) {
-			type = ASTType::ParamList;
+//		} else if (bin_op.type == token::COMMA) {
+//			type = ASTType::ParamList;
 		}
         // brauch ich das jetzt schon, oder vllt erst nachher beim typisierungs-check?
         if (lhs->type == Integer && rhs.unwrap()->type == Real || lhs->type == Real && rhs.unwrap()->type == Integer) {
@@ -499,55 +499,46 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list() {
     std::unique_ptr<NodeParamList> params;
     if(peek().type == token::OPEN_BRACKET)
         consume();
-    auto param_expression = parse_expression();
-	if(param_expression.is_error()) {
-		return Result<std::unique_ptr<NodeParamList>>(param_expression.get_error());
-	}
-//	auto param_list = _parse_into_param_list(std::move(param_expression.unwrap()));
-//	if(param_list.is_error()) {
-//		return Result<std::unique_ptr<NodeParamList>>(param_list.get_error());
-//	}
+    auto param_list = std::make_unique<NodeParamList>();
+    auto result = _parse_into_param_list(param_list->params);
+    if (result.is_error()) {
+        return Result<std::unique_ptr<NodeParamList>>(result.get_error());
+    }
     if(peek().type == token::CLOSED_BRACKET)
         consume();
-//	auto unwrapped_params = std::move(param_list.unwrap());
-    params = std::make_unique<NodeParamList>();
-    params->params.push_back(std::move(param_expression.unwrap()));
-    auto unwrapped_params = std::move(params);
-	if (dynamic_cast<NodeParamList*>(unwrapped_params.get())) {
-		// Wenn variables bereits vom Typ NodeParamList ist, übertrage den Besitz
-		params = std::unique_ptr<NodeParamList>(static_cast<NodeParamList*>(unwrapped_params.release()));
-	} else {
-		// Andernfalls erstelle einen neuen NodeParamList und füge variables hinzu
-		params = std::make_unique<NodeParamList>();
-		params->params.push_back(std::move(unwrapped_params));
-	}
-    return Result<std::unique_ptr<NodeParamList>>(std::move(params));
+
+    return Result<std::unique_ptr<NodeParamList>>(std::move(param_list));
 }
 
-Result<std::unique_ptr<NodeAST>> Parser::_parse_into_param_list(std::unique_ptr<NodeAST> expression) {
-	auto param_list = std::make_unique<NodeParamList>();
-
-	if (expression->type == ASTType::ParamList) {
-		if (auto temp = dynamic_cast<NodeBinaryExpr*>(expression.get())) {
-			auto left = std::move(temp->left);
-			auto right = std::move(temp->right);
-
-			auto leftResult = _parse_into_param_list(std::move(left));
-			param_list->params.push_back(std::move(leftResult.unwrap()));
-
-			auto rightResult = _parse_into_param_list(std::move(right));
-			param_list->params.push_back(std::move(rightResult.unwrap()));
-
-		} else {
-			return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-			 "Found invalid Parameter List Statement Syntax.", peek().line));
-		}
-	} else {
-		return Result<std::unique_ptr<NodeAST>>(std::move(expression));
-	}
-    auto result = std::unique_ptr<NodeAST>(std::move(param_list));
-    result->type = ASTType::ParamList;
-    return Result<std::unique_ptr<NodeAST>>(std::move(result));
+Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params) {
+    while (true) {
+        if (peek().type == token::OPEN_PARENTH) {
+            size_t backup_pos = m_pos; // backup token index
+            auto exprResult = parse_expression();
+            if (!exprResult.is_error() && peek().type == token::COMMA) {
+                params.push_back(std::move(exprResult.unwrap()));
+            } else {
+                m_pos = backup_pos; // set back token index
+                consume(); // consume (
+                auto nested_param_list = std::make_unique<NodeParamList>();
+                auto nestedResult = _parse_into_param_list(nested_param_list->params);
+                if (nestedResult.is_error()) {
+                    return nestedResult;
+                }
+                params.push_back(std::move(nested_param_list));
+                if (peek().type == token::CLOSED_PARENTH) consume(); // consume )
+            }
+        } else {
+            auto exprResult = parse_expression();
+            if (exprResult.is_error()) {
+                return Result<SuccessTag>(exprResult.get_error());
+            }
+            params.push_back(std::move(exprResult.unwrap()));
+        }
+        if (peek().type != token::COMMA) break;
+        consume(); // consume comma
+    }
+    return Result<SuccessTag>(SuccessTag{});
 }
 
 Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header() {
@@ -1045,6 +1036,14 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_struct_family_statement() {
     else if (construct.type == token::STRUCT)
         return_value = std::make_unique<NodeStructStatement>(std::move(prefix.val), std::move(stmts));
     return Result<std::unique_ptr<NodeAST>>(std::move(return_value));
+}
+
+size_t Parser::get_current_pos() const {
+    return m_pos;
+}
+
+void Parser::set_current_pos(size_t mPos) {
+    m_pos = mPos;
 }
 
 

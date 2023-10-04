@@ -5,6 +5,8 @@
 #pragma once
 #include "CompileError.h"
 
+struct SuccessTag {};
+
 template<typename T>
 class Result {
 public:

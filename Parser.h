@@ -11,7 +11,7 @@
 //#include "ASTVisitor.h"
 
 inline static std::map<token, int> BinaryOpPrecendence = {
-		{token::COMMA, 1},
+//		{token::COMMA, 1},
         {token::BOOL_OR, 1},
         {token::BOOL_AND, 2},
 		{token::BOOL_NOT, 3},
@@ -41,10 +41,12 @@ class Parser {
 
 public:
     explicit Parser(std::vector<Token> tokens);
+    [[nodiscard]] size_t get_current_pos() const;
+    void set_current_pos(size_t mPos);
 
 private:
 	size_t m_pos;
-	std::vector<Token> m_tokens;
+    std::vector<Token> m_tokens;
 	token curr_token;
 
 	[[nodiscard]] Token peek(int ahead = 0);
@@ -63,7 +65,7 @@ private:
     Result<std::unique_ptr<NodeArray>> parse_array(bool is_persistent=false, VarType var_type=VarType::Array);
 	/// stops either at end token or at linebreak
     Result<std::unique_ptr<NodeParamList>> parse_param_list();
-	Result<std::unique_ptr<NodeAST>> _parse_into_param_list(std::unique_ptr<NodeAST> expression);
+	Result<SuccessTag> _parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params);
     /// parses every expression from binary, string, unary to number and variable
     Result<std::unique_ptr<NodeAST>> parse_expression();
     Result<std::unique_ptr<NodeAST>> parse_string_expr();
