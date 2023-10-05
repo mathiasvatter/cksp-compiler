@@ -25,10 +25,14 @@ Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
     handle_imports();
 }
 
+Token& Preprocessor::get_tok() {
+    return m_tokens.at(m_pos);
+}
+
 Token Preprocessor::peek(int ahead) {
     if (m_tokens.size() < m_pos+ahead) {
         auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
-        CompileError(ErrorType::ParseError, err_msg, m_tokens.at(m_pos).line, "end token", m_tokens.at(m_pos).val).print();
+        CompileError(ErrorType::ParseError, err_msg, m_tokens.at(m_pos).line, "end token", m_tokens.at(m_pos).val, m_tokens.at(m_pos).file).print();
         exit(EXIT_FAILURE);
     }
     m_curr_token = m_tokens.at(m_pos+ahead).type;
@@ -41,7 +45,7 @@ Token Preprocessor::consume() {
         return m_tokens.at(m_pos++);
     }
     auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
-    CompileError(ErrorType::ParseError, err_msg, m_tokens.at(m_pos).line, "end token", m_tokens.at(m_pos).val).print();
+    CompileError(ErrorType::ParseError, err_msg, m_tokens.at(m_pos).line, "end token", m_tokens.at(m_pos).val, m_tokens.at(m_pos).file).print();
     exit(EXIT_FAILURE);
 }
 
@@ -61,14 +65,18 @@ Result<std::unique_ptr<NodeImport>> Preprocessor::parse_import() {
                 alias = consume().val;
             } else {
                 return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
-                "Incorrect import Syntax.",peek().line,"as <keyword>",peek().val));
+                "Incorrect import Syntax.",peek().line,"as <keyword>",peek().val, peek().file));
             }
         }
-        auto return_value = std::make_unique<NodeImport>(filepath, alias);
+        if(peek().type != token::LINEBRK)
+            return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
+            "Incorrect import Syntax.",peek().line,"linebreak",peek().val, peek().file));
+        consume(); //consume linebreak
+        auto return_value = std::make_unique<NodeImport>(filepath, alias, get_tok());
         return Result<std::unique_ptr<NodeImport>>(std::move(return_value));
     } else {
         return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
-        "Not a filepath",peek().line,"path",peek().val));
+        "Not a filepath",peek().line,"path",peek().val, peek().file));
     }
 }
 
@@ -81,7 +89,7 @@ void Preprocessor::handle_imports() {
         } else {
             if (m_imported_files.find(path.unwrap()) == m_imported_files.end()) {  // Überprüfe auf zirkuläre Abhängigkeiten
                 m_imported_files.insert(path.unwrap());
-
+                std::cout << path.unwrap() << std::endl;
                 Tokenizer tokenizer(path.unwrap());
                 auto new_tokens = tokenizer.tokenize();
 
@@ -89,6 +97,10 @@ void Preprocessor::handle_imports() {
 
                 // Hier die Tokens der importierten Datei in m_tokens einfügen
                 auto tokens = preprocessor.get_tokens();
+                for (auto & token: tokens) {
+                    if (token.type != COMMENT && token.type != LINEBRK)
+                        std::cout << token << '\n';
+                }
                 m_tokens.insert(m_tokens.end(), tokens.begin(), tokens.end());
             }
         }
@@ -110,7 +122,7 @@ Result<std::string> Preprocessor::resolve_path(const std::string& import_path) {
             return Result<std::string>(rel.string());
         } else {
             return Result<std::string>(CompileError(ErrorType::ParseError,
-            "Found incorrect path.", 0, "valid path", rel));
+            "Found incorrect path.", m_tokens.at(m_pos).line, "valid path", rel, m_current_file));
         }
     }
 
@@ -125,51 +137,38 @@ Result<std::string> Preprocessor::resolve_path(const std::string& import_path) {
         auto new_absPath = resolve_overlap(current_base, rel);
         if (std::filesystem::exists(new_absPath))
             return Result<std::string>(new_absPath);
+        auto resolve_error = current_base.string() + ", " + rel.string();
         return Result<std::string>(CompileError(ErrorType::ParseError,
-        "Found incorrect path.", 0, "valid path", new_absPath));
+        "Could not resolve paths.", m_tokens.at(m_pos).line, "valid path", resolve_error, m_current_file));
     }
 }
 
 std::string Preprocessor::resolve_overlap(const std::string& base_path, const std::string& relative_path) {
     std::filesystem::path base(base_path);
-    std::filesystem::path rel(relative_path);
+    std::filesystem::path relative(relative_path);
 
-    std::vector<std::string> baseComponents;
+    std::vector<std::filesystem::path> baseParts;
     for (const auto& part : base) {
-        baseComponents.push_back(part.string());
+        baseParts.push_back(part);
     }
 
-    std::vector<std::string> relComponents;
-    for (const auto& part : rel) {
-        relComponents.push_back(part.string());
+    std::vector<std::filesystem::path> relativeParts;
+    for (const auto& part : relative) {
+        relativeParts.push_back(part);
+    }
+    // do as long as its
+    while (!baseParts.empty() && !relativeParts.empty() && baseParts.back() != relativeParts.front()) {
+        baseParts.pop_back();
+    }
+    baseParts.pop_back(); //erase common bit
+
+    std::filesystem::path mergedPath;
+    for (const auto& part : baseParts) {
+        mergedPath /= part;
+    }
+    for (const auto& part : relativeParts) {
+        mergedPath /= part;
     }
 
-    // Finde den längsten gemeinsamen Suffix
-    auto itBase = baseComponents.rbegin();
-    auto itRel = relComponents.rbegin();
-    std::vector<std::string> commonSuffix;
-
-    while (itBase != baseComponents.rend() && itRel != relComponents.rend()) {
-        if (*itBase != *itRel) {
-            break;
-        }
-        commonSuffix.push_back(*itBase);
-        ++itBase;
-        ++itRel;
-    }
-
-    // Entferne den gemeinsamen Suffix vom Basispfad und vom relativen Pfad
-    baseComponents.erase(itBase.base(), baseComponents.end());
-    relComponents.erase(relComponents.begin(), itRel.base());
-
-    // Kombiniere die Pfade
-    std::filesystem::path result;
-    for (const auto& part : baseComponents) {
-        result /= part;
-    }
-    for (const auto& part : relComponents) {
-        result /= part;
-    }
-
-    return result.string();
+    return mergedPath.string();
 }

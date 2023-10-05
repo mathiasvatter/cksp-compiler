@@ -26,9 +26,9 @@ enum class ErrorType {
 class CompileError {
 public:
 
-    inline CompileError(ErrorType type, std::string message, size_t lineNumber, std::string expected="", std::string got="", std::string fileName="")
+    inline CompileError(ErrorType type, std::string message, size_t lineNumber, std::string expected, std::string got,const std::string &fileName)
     : type(type), message(std::move(message)),  expected(std::move(expected)),  got(std::move(got)),
-	line_number(lineNumber), file_name(std::move(fileName)) {}
+	line_number(lineNumber), file_name(fileName) {}
 
     inline void print() {
 		if (got == "\n") {

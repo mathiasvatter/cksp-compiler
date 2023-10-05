@@ -16,12 +16,9 @@ int main() {
     auto path = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 	Tokenizer tokenizer(path);
     auto tokens = tokenizer.tokenize();
-	for (auto & token: tokens) {
-        if (token.type != COMMENT) // && token.type != LINEBRK)
-		    std::cout << token << '\n';
-	}
 	std::cout << std::endl;
     Preprocessor preprocessor(tokens, path);
+
     Parser parser(preprocessor.get_tokens());
 
     auto end_time = std::chrono::high_resolution_clock::now();

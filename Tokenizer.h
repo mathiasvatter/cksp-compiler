@@ -17,7 +17,8 @@
  * Token struct that gets line numbers, the token type and its value
  */
 struct Token {
-    Token(token type, std::string  val, size_t line);
+    Token() : type(token::INVALID), val(""), line(0), file("") {}
+    Token(token type, std::string val, size_t line, std::string &file);
     friend std::ostream& operator<<(std::ostream& os, const Token& tok);
     token type;
     std::string val;
@@ -61,7 +62,7 @@ private:
     void flush_buffer();
 	void skip_whitespace();
 
-    std::string read_file(const std::string& filename);
+    static std::string read_file(const std::string& filename);
 
 	static bool is_space(const char& ch);
 	[[nodiscard]] bool is_string() const;

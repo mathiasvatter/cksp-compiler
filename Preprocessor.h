@@ -21,6 +21,7 @@ private:
     std::vector<std::unique_ptr<NodeImport>> m_import_statements;
     std::unordered_set<std::string> m_imported_files;  // Um zirkuläre Abhängigkeiten zu vermeiden
 
+    Token& get_tok();
     Token peek(int ahead=0);
     Token consume();
 

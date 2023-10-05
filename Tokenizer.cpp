@@ -12,7 +12,8 @@
 /*
  * TOKEN STRUCT
  */
-Token::Token(token type, std::string  val, size_t line): line(line), type(type), val(std::move(val)) {}
+Token::Token(token type, std::string  val, size_t line, std::string &file)
+            : line(line), type(type), val(std::move(val)), file(file) {}
 
 std::ostream &operator<<(std::ostream &os, const Token &tok) {
     os << "Type: " << tok.type << " | Value: " << tok.val << " | Line: " << tok.line;
@@ -61,7 +62,7 @@ std::vector<Token> Tokenizer::tokenize() {
         } else
             get_invalid();
     }
-    tokens.emplace_back(END_TOKEN, buffer, line);
+    tokens.emplace_back(END_TOKEN, buffer, line, file);
     return tokens;
 }
 
@@ -69,7 +70,7 @@ void Tokenizer::consume(int chars) {
     for(int i = 0; i<chars; i++) {
         if (pos+1 >= input_length) {
 			auto err_msg = "Reached end of file.";
-			CompileError(ErrorType::TokenError, err_msg, line, "end token", std::string(1,current_char)).print();
+			CompileError(ErrorType::TokenError, err_msg, line, "end token", std::string(1,current_char), file).print();
 			exit(EXIT_FAILURE);
 		}
         buffer += current_char;
@@ -82,7 +83,7 @@ void Tokenizer::skip_whitespace() {
     while (is_space(current_char)) {
         if (pos+1 >= input_length) {
 			auto err_msg = "Reached end of file.";
-			CompileError(ErrorType::TokenError, err_msg, line, "end token", std::string(1,current_char)).print();
+			CompileError(ErrorType::TokenError, err_msg, line, "end token", std::string(1,current_char), file).print();
 			exit(EXIT_FAILURE);
 		}
         buffer += current_char;
@@ -94,7 +95,7 @@ void Tokenizer::skip_whitespace() {
 char Tokenizer::peek(int ahead) const {
     if (input_length <= pos+ahead) {
 		auto err_msg = "Reached end of file.";
-		CompileError(ErrorType::TokenError, err_msg, line, "end token", std::string(1,current_char)).print();
+		CompileError(ErrorType::TokenError, err_msg, line, "end token", std::string(1,current_char), file).print();
 		exit(EXIT_FAILURE);
 	}
 
@@ -104,9 +105,9 @@ char Tokenizer::peek(int ahead) const {
 void Tokenizer::get_invalid() {
 	flush_buffer();
 	consume();
-	tokens.emplace_back(INVALID, buffer, line);
+	tokens.emplace_back(INVALID, buffer, line, file);
 	auto err_msg = "Found invalid token.";
-	CompileError(ErrorType::TokenError, err_msg, line, "valid token", buffer).print();
+	CompileError(ErrorType::TokenError, err_msg, line, "valid token", buffer, file).print();
 	exit(EXIT_FAILURE);
 	skip_whitespace();
 }
@@ -159,7 +160,7 @@ void Tokenizer::get_string() {
 		consume();
 	}
 	consume();
-	tokens.emplace_back(STRING, this->buffer, this->line);
+	tokens.emplace_back(STRING, buffer, line, file);
 	skip_whitespace();
 }
 
@@ -177,7 +178,7 @@ void Tokenizer::get_binary_operators() {
     } else if (current_char == '&') {
         tok = STRING_OPERATOR;
     }
-    tokens.emplace_back(tok, std::string(1,this->current_char), this->line);
+    tokens.emplace_back(tok, std::string(1,current_char), line, file);
 	consume();
     skip_whitespace();
 }
@@ -193,25 +194,25 @@ void Tokenizer::get_parenth() {
         tok = OPEN_BRACKET;
     else if (current_char == ']')
         tok = CLOSED_BRACKET;
-    tokens.emplace_back(tok, std::string(1,this->current_char), this->line);
+    tokens.emplace_back(tok, std::string(1,current_char), line, file);
 	consume();
     skip_whitespace();
 }
 
 void Tokenizer::get_assignment() {
-    tokens.emplace_back(ASSIGN, ":=", this->line);
+    tokens.emplace_back(ASSIGN, ":=", line, file);
 	consume(2);
     skip_whitespace();
 }
 
 void Tokenizer::get_arrow() {
-    tokens.emplace_back(ARROW, "->", this->line);
+    tokens.emplace_back(ARROW, "->", line, file);
 	consume(2);
     skip_whitespace();
 }
 
 bool Tokenizer::is_keyword_or_num() const {
-    return std::isalnum(current_char) || current_char == '_' || contains(VAR_IDENT, current_char) || contains(
+    return std::isalnum(current_char) || current_char == '_' || current_char == '#' || contains(VAR_IDENT, current_char) || contains(
             ARRAY_IDENT, current_char);
 }
 
@@ -228,10 +229,10 @@ void Tokenizer::get_keyword_or_num() {
             while (std::isdigit(current_char)) {
 				consume();
             }
-            tokens.emplace_back(FLOAT, this->buffer, this->line);
+            tokens.emplace_back(FLOAT, buffer, line, file);
         } else {
 			auto err_msg = "Found unknown keyword.";
-			CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer).print();
+			CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer, file).print();
 			exit(EXIT_FAILURE);
 		}
     // check if next char is _ or text
@@ -244,25 +245,25 @@ void Tokenizer::get_keyword_or_num() {
         if (contains(VAR_IDENT, current_char) || contains(ARRAY_IDENT, current_char)) {
             consume();
             auto err_msg = "Incorrect placement of variable/array identifier";
-            CompileError(ErrorType::TokenError, err_msg, line, "valid variable", buffer).print();
+            CompileError(ErrorType::TokenError, err_msg, line, "valid variable", buffer, file).print();
             exit(EXIT_FAILURE);
         }
         token tok;
         if (is_hexadecimal(buffer)) {
-            tokens.emplace_back(HEXADECIMAL, this->buffer, this->line);
+            tokens.emplace_back(HEXADECIMAL, buffer, line, file);
         } else if (is_binary(buffer)) {
-            tokens.emplace_back(BINARY, this->buffer, this->line);
+            tokens.emplace_back(BINARY, buffer, line, file);
         } else if (is_callback_start()) {
             tokens.pop_back();
-            tokens.emplace_back(BEGIN_CALLBACK, "on " + this->buffer, this->line);
+            tokens.emplace_back(BEGIN_CALLBACK, "on " + buffer, line, file);
         } else if (is_callback_end()) {
             tokens.pop_back();
-            tokens.emplace_back(END_CALLBACK, "end " + this->buffer, this->line);
+            tokens.emplace_back(END_CALLBACK, "end " + buffer, line, file);
         } else if (buffer == "mod") {
-            tokens.emplace_back(MODULO, this->buffer, this->line);
+            tokens.emplace_back(MODULO, buffer, line, file);
         } else if (contains(BOOL_OPERATORS, buffer)) {
             tok = get_token_type(BOOL_OPERATORS, buffer);
-            tokens.emplace_back(tok, this->buffer, this->line);
+            tokens.emplace_back(tok, buffer, line, file);
         } else if (contains(STATEMENTS, buffer)) {
             // get begin statements
             tok = get_token_type(STATEMENTS, buffer);
@@ -275,24 +276,24 @@ void Tokenizer::get_keyword_or_num() {
                     tok = get_token_type(END_STATEMENTS, val);
                 }
             }
-            tokens.emplace_back(tok, val, line);
+            tokens.emplace_back(tok, val, line, file);
         } else if (contains(STATEMENT_SYNTAX, buffer)) {
             tok = get_token_type(STATEMENT_SYNTAX, buffer);
-            tokens.emplace_back(tok, buffer, line);
+            tokens.emplace_back(tok, buffer, line, file);
         } else if (contains(UI_CONTROLS, buffer)) {
 			tok = token::UI_CONTROL;
-			tokens.emplace_back(tok, buffer, line);
+			tokens.emplace_back(tok, buffer, line, file);
 		} else if (contains(IMPORT_SYNTAX, buffer)) {
 			tok = get_token_type(IMPORT_SYNTAX, buffer);
-			tokens.emplace_back(tok, buffer, line);
+			tokens.emplace_back(tok, buffer, line, file);
 		} else if (contains(DECLARATION_SYNTAX, buffer)) {
 			tok = get_token_type(DECLARATION_SYNTAX, buffer);
-			tokens.emplace_back(tok, buffer, line);
+			tokens.emplace_back(tok, buffer, line, file);
         } else if (contains(FUNCTION_SYNTAX, buffer)) {
             tok = get_token_type(FUNCTION_SYNTAX, buffer);
-            tokens.emplace_back(tok, buffer, line);
+            tokens.emplace_back(tok, buffer, line, file);
         } else {
-            if (current_char == '.') {
+            while (current_char == '.') {
                 consume();
     //            tokens.emplace_back(DOT, ".", line);
                 if (std::isalnum(current_char) || current_char == '_') {
@@ -303,21 +304,22 @@ void Tokenizer::get_keyword_or_num() {
 //                    tokens.emplace_back(KEYWORD, buffer, line);
                 } else {
                     auto err_msg = "Found unknown keyword.";
-                    CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer).print();
+                    CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer, file).print();
                     exit(EXIT_FAILURE);
                 }
             }
-            tokens.emplace_back(KEYWORD, buffer, line);
+            if(current_char == '#') consume();
+            tokens.emplace_back(KEYWORD, buffer, line, file);
         }
         // see if char after keyword is dot
     } else // is probably int
-        tokens.emplace_back(INT, buffer, line);
+        tokens.emplace_back(INT, buffer, line, file);
     skip_whitespace();
 }
 
 
 void Tokenizer::get_linebreak() {
-    tokens.emplace_back(LINEBRK, "linebreak", this->line);
+    tokens.emplace_back(LINEBRK, "linebreak", line, file);
     this->line++;
 	consume();
     skip_whitespace();
@@ -342,17 +344,17 @@ void Tokenizer::get_comparison_operators() {
         tok = EQUAL;
     } else {
 		auto err_msg = "Unknown comparison operator.";
-		CompileError(ErrorType::TokenError, err_msg, line, "<, >, =", buffer).print();
+		CompileError(ErrorType::TokenError, err_msg, line, "<, >, =", buffer, file).print();
 		exit(EXIT_FAILURE);
 	}
-    tokens.emplace_back(token::COMPARISON, std::string(1,this->current_char), this->line);
+    tokens.emplace_back(token::COMPARISON, std::string(1,current_char), line, file);
 	consume();
     skip_whitespace();
 }
 
 void Tokenizer::get_comma() {
     flush_buffer();
-    tokens.emplace_back(COMMA, std::string(1,this->current_char), this->line);
+    tokens.emplace_back(COMMA, std::string(1,current_char), line, file);
 	consume();
     skip_whitespace();
 }
@@ -360,7 +362,7 @@ void Tokenizer::get_comma() {
 void Tokenizer::get_line_continuation() {
     flush_buffer();
 	consume(3);
-    tokens.emplace_back(LINE_CONTINUE, buffer, line);
+    tokens.emplace_back(LINE_CONTINUE, buffer, line, file);
     skip_whitespace();
 
 }
@@ -384,10 +386,10 @@ void Tokenizer::get_bitwise_operator() {
 	consume();
     if (contains(BITWISE_OPERATORS, buffer)) {
         token tok = get_token_type(BITWISE_OPERATORS, buffer);
-        tokens.emplace_back(tok, buffer, this->line);
+        tokens.emplace_back(tok, buffer, line, file);
     } else {
 		auto err_msg = "Found unknown keyword. Keywords starting with dots are not allowed.";
-		CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer).print();
+		CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer, file).print();
 		exit(EXIT_FAILURE);
     }
     skip_whitespace();
@@ -438,7 +440,7 @@ token Tokenizer::get_token_type(const std::vector<Keyword> &vec, const std::stri
     if (it != vec.end()) {
         return it->type;
     }
-    return INVALID; // Rückgabe von UNKNOWN, wenn die Zeichenkette nicht gefunden wird
+    return INVALID;
 }
 
 std::string Tokenizer::read_file(const std::string& filename) {

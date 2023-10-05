@@ -49,11 +49,12 @@ private:
     std::vector<Token> m_tokens;
 	token curr_token;
 
+    Token& get_tok();
 	[[nodiscard]] Token peek(int ahead = 0);
 	Token consume();
     static int _get_binop_precedence(token tok);
 	void _skip_linebreaks();
-    std::string sanitize_binary(const std::string& input);
+    static std::string sanitize_binary(const std::string& input);
     /// convert eg 0bFFFh into 0xbFFF
     static std::string sanitize_hex(const std::string& input);
     Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base);
