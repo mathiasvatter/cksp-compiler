@@ -243,11 +243,19 @@ struct NodeFunctionDefinition: NodeAST {
     std::vector<std::unique_ptr<NodeStatement>> body;
 
     inline NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
-                           std::optional<std::unique_ptr<NodeVariable>> returnVariable, bool override,
-                           std::vector<std::unique_ptr<NodeStatement>> body, Token &tok)
-                           : NodeAST(tok), header(std::move(header)), return_variable(std::move(returnVariable)), override(override),
-                           body(std::move(body)) {};
+	   std::optional<std::unique_ptr<NodeVariable>> returnVariable, bool override,
+	   std::vector<std::unique_ptr<NodeStatement>> body, Token &tok)
+	   : NodeAST(tok), header(std::move(header)), return_variable(std::move(returnVariable)), override(override),
+	   body(std::move(body)) {};
     void accept(ASTVisitor& visitor) override;
+};
+
+struct NodeMacroDefinition : NodeAST {
+	std::unique_ptr<NodeAST> header;
+	std::vector<std::unique_ptr<NodeStatement>> body;
+	inline NodeMacroDefinition(std::unique_ptr<NodeAST> header, std::vector<std::unique_ptr<NodeStatement>> body)
+		: header(std::move(header)), body(std::move(body)) {}
+	void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeProgram: NodeAST {

@@ -33,7 +33,8 @@ public:
     virtual void visit(NodeProgram& node)  = 0;
     virtual void visit(NodeFunctionHeader& node)  = 0;
     virtual void visit(NodeFunctionCall& node)  = 0;
-    virtual void visit(NodeFunctionDefinition& node)  = 0;
+	virtual void visit(NodeFunctionDefinition& node)  = 0;
+	virtual void visit(NodeMacroDefinition& node)  = 0;
 };
 
 class ASTPrinter : public ASTVisitor {
@@ -250,6 +251,17 @@ public:
         }
         std::cout << "end function" << std::endl;
     }
+
+	void visit(NodeMacroDefinition& node) override {
+		std::cout << "macro ";
+		node.header ->accept(*this);
+		std::cout << "\n";
+		for(auto& stmt: node.body) {
+			stmt->accept(*this);
+		}
+		std::cout << "end macro" << std::endl;
+	}
+
     void visit(NodeProgram& node) override {
         std::cout << "Callbacks: " << std::endl;
         for(auto& callback: node.callbacks) {

@@ -108,3 +108,7 @@ void NodeFamilyStatement::accept(ASTVisitor &visitor) {
 void NodeUIControl::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+void NodeMacroDefinition::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
