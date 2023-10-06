@@ -21,7 +21,7 @@
 <function_call> ::= "call"? <function_header>
 
 //******* MACROS
-<macro_header> ::= <keyword> "(" <param_list ")"
+<macro_header> ::= <keyword> "(" <param_list> ")"
 <macro_definition> ::= "macro" <macro_header> <linebreak> <statement>* "end macro"
 <macro_call> ::= <macro_header>
 <macro_iteration> ::= "iterate_macro" "(" <keyword> ")" ":=" <binary_expression> "to" <binary_expression>

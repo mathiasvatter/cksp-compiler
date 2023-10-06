@@ -10,8 +10,9 @@
 
 class Preprocessor {
 public:
-    Preprocessor(std::vector<Token> tokens, std::string current_file);
-
+    Preprocessor(std::vector<Token> tokens, std::string current_file, std::unordered_set<std::string>& imported_files);
+	~Preprocessor() = default;
+	void main_loop();
     std::vector<Token> get_tokens();
 private:
     size_t m_pos;

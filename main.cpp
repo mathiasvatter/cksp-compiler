@@ -16,10 +16,12 @@ int main() {
     auto path = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 	Tokenizer tokenizer(path);
     auto tokens = tokenizer.tokenize();
-	std::cout << std::endl;
-    Preprocessor preprocessor(tokens, path);
 
-    Parser parser(preprocessor.get_tokens());
+	std::unordered_set<std::string> imported_files = {};
+    Preprocessor preprocessor(tokens, path, imported_files);
+
+	auto preprocessed_tokens = preprocessor.get_tokens();
+    Parser parser(std::move(preprocessed_tokens));
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);

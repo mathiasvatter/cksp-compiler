@@ -6,11 +6,14 @@
 #include <iostream>
 #include "Preprocessor.h"
 
-Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
-    : m_tokens(std::move(tokens)), m_current_file(std::move(current_file)) {
-    m_pos = 0;
-    m_curr_token = m_tokens.at(0).type;
+Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file, std::unordered_set<std::string>& imported_files)
+    : m_tokens(std::move(tokens)), m_current_file(std::move(current_file)), m_imported_files(imported_files) {
+	m_pos = 0;
+	m_curr_token = m_tokens.at(0).type;
+	main_loop();
+}
 
+void Preprocessor::main_loop() {
     while (peek().type != token::END_TOKEN) {
         if(peek().type == token::IMPORT) {
             auto import_stmt = parse_import();
@@ -22,7 +25,12 @@ Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
             consume();
         }
     }
+	// check END_TOKEN status
+	if (!m_tokens.empty() && m_tokens.back().type == token::END_TOKEN) {
+		m_tokens.pop_back();
+	}
     handle_imports();
+	m_tokens.emplace_back(END_TOKEN, "", 0, m_current_file);
 }
 
 Token& Preprocessor::get_tok() {
@@ -92,15 +100,11 @@ void Preprocessor::handle_imports() {
                 std::cout << path.unwrap() << std::endl;
                 Tokenizer tokenizer(path.unwrap());
                 auto new_tokens = tokenizer.tokenize();
-
-                Preprocessor preprocessor(new_tokens, path.unwrap());  // Rekursiver Aufruf
+                Preprocessor preprocessor(new_tokens, path.unwrap(), m_imported_files);  // Rekursiver Aufruf
 
                 // Hier die Tokens der importierten Datei in m_tokens einfügen
                 auto tokens = preprocessor.get_tokens();
-                for (auto & token: tokens) {
-                    if (token.type != COMMENT && token.type != LINEBRK)
-                        std::cout << token << '\n';
-                }
+
                 m_tokens.insert(m_tokens.end(), tokens.begin(), tokens.end());
             }
         }
