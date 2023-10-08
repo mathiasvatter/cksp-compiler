@@ -34,7 +34,10 @@ public:
     virtual void visit(NodeFunctionHeader& node)  = 0;
     virtual void visit(NodeFunctionCall& node)  = 0;
 	virtual void visit(NodeFunctionDefinition& node)  = 0;
-	virtual void visit(NodeMacroDefinition& node)  = 0;
+    virtual void visit(NodeMacroHeader& node)  = 0;
+    virtual void visit(NodeMacroDefinition& node)  = 0;
+    virtual void visit(NodeGetControlStatement& node)  = 0;
+    virtual void visit(NodeSetControlStatement& node)  = 0;
 };
 
 class ASTPrinter : public ASTVisitor {
@@ -252,15 +255,32 @@ public:
         std::cout << "end function" << std::endl;
     }
 
+    void visit(NodeMacroHeader& node) override {
+        std::cout << node.name << "(";
+//        node.args->accept(*this);
+        std::cout << ")";
+    }
+
 	void visit(NodeMacroDefinition& node) override {
 		std::cout << "macro ";
 		node.header ->accept(*this);
 		std::cout << "\n";
-		for(auto& stmt: node.body) {
-			stmt->accept(*this);
-		}
+//		for(auto& stmt: node.body) {
+//			stmt->accept(*this);
+//		}
 		std::cout << "end macro" << std::endl;
 	}
+
+    void visit(NodeGetControlStatement& node) override {
+        std::cout << node.ui_id << " -> " << node.control_param;
+    }
+
+    void visit(NodeSetControlStatement& node) override {
+        node.get_control ->accept(*this);
+        std::cout << " := ";
+        node.assignee -> accept(*this);
+        std::cout << std::endl;
+    }
 
     void visit(NodeProgram& node) override {
         std::cout << "Callbacks: " << std::endl;

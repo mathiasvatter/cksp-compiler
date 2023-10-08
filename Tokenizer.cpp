@@ -62,7 +62,8 @@ std::vector<Token> Tokenizer::tokenize() {
         } else
             get_invalid();
     }
-    tokens.emplace_back(END_TOKEN, buffer, line, file);
+    tokens.emplace_back(token::LINEBRK, "\n", line, file);
+    tokens.emplace_back(END_TOKEN, "", 0, file);
     return tokens;
 }
 

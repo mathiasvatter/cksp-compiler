@@ -23,7 +23,6 @@
 //******* MACROS
 <macro_header> ::= <keyword> "(" <param_list> ")"
 <macro_definition> ::= "macro" <macro_header> <linebreak> <statement>* "end macro"
-<macro_call> ::= <macro_header>
 <macro_iteration> ::= "iterate_macro" "(" <keyword> ")" ":=" <binary_expression> "to" <binary_expression>
 <macro_literation> ::= "literate_macro" "(" <keyword> ")" "on" <param_list>
 
@@ -87,6 +86,8 @@ UI_MOUSE_AREA ::= declare ui_mouse_area $<variable-name>
 <boolean_expression> ::= <comparison_expression> (<bool> <comparison_expression>)?
 <comparison_expression> ::= <binary_expression> <comparison_op> <binary_expression>
 
+<get_control_statement> ::= <keyword> "->" <keyword>
+<set_control_statement> ::= <get_control_statement> "::=" <expression>
 <assign_statement> ::= <param_list> ":=" <param_list>
 <statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement | <funcion_call> ) <linebreak>
 <for_statement> ::= for <assign_statement> (to | downto) <binary_expression> <linebreak> <statements> end for <linebreak>

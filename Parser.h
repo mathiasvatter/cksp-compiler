@@ -94,11 +94,13 @@ private:
     Result<std::unique_ptr<NodeForStatement>> parse_for_statement();
     Result<std::unique_ptr<NodeWhileStatement>> parse_while_statement();
 	Result<std::unique_ptr<NodeSelectStatement>> parse_select_statement();
+    Result<std::unique_ptr<NodeGetControlStatement>> parse_get_control_statement();
+    Result<std::unique_ptr<NodeSetControlStatement>> parse_set_control_statement();
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition();
     Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header();
     Result<std::unique_ptr<NodeFunctionCall>> parse_function_call();
     Result<std::unique_ptr<NodeCallback>> parse_callback();
-    Result<std::unique_ptr<NodeImport>> parse_import();
+
 	Result<std::unique_ptr<NodeProgram>> parse_program();
 
 

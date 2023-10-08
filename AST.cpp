@@ -112,3 +112,15 @@ void NodeUIControl::accept(ASTVisitor &visitor) {
 void NodeMacroDefinition::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
+
+void NodeMacroHeader::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeGetControlStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeSetControlStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}

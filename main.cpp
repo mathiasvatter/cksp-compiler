@@ -17,10 +17,13 @@ int main() {
 	Tokenizer tokenizer(path);
     auto tokens = tokenizer.tokenize();
 
-	std::unordered_set<std::string> imported_files = {};
-    Preprocessor preprocessor(tokens, path, imported_files);
+    Preprocessor preprocessor(tokens, path);
+    auto preprocessed_tokens = preprocessor.get_tokens();
 
-	auto preprocessed_tokens = preprocessor.get_tokens();
+//    for(auto& tok: preprocessed_tokens) {
+//        if(tok.type != token::COMMENT or tok.type != token::LINEBRK)
+//            std::cout << tok << std::endl;
+//    }
     Parser parser(std::move(preprocessed_tokens));
 
     auto end_time = std::chrono::high_resolution_clock::now();

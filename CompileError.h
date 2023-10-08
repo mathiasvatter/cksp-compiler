@@ -19,7 +19,8 @@ enum class ErrorType {
 	TypeError,
 	UndefinedVariable,
 	TokenError,
-    ParseError
+    ParseError,
+    PreprocessorError
 	// TODO weitere Fehlerarten
 };
 
@@ -54,6 +55,7 @@ private:
             case ErrorType::UndefinedVariable: return "UndeclaredVariable";
             case ErrorType::TokenError: return "TokenError";
             case ErrorType::ParseError: return "ParseError";
+            case ErrorType::PreprocessorError: return "PreprocessorError";
             // TODO weitere Fehlerarten
         }
     }
