@@ -78,6 +78,8 @@
     XX(IMPORT, "import") \
     XX(AS, "import_as") \
     XX(DECLARE, "declare") \
+    XX(LOCAL, "local") \
+    XX(GLOBAL, "global") \
     XX(READ, "read") \
     XX(DEFINE, "define") \
     XX(POLYPHONIC, "polyphonic") \
@@ -117,13 +119,14 @@ inline std::vector<char> PARENTH = {'(',')', '[', ']'};
 inline std::vector<char> VAR_IDENT = {'$', '~', '@'};
 inline std::vector<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
 inline std::vector<char> COMMENT_START = {'{', '/'};
-inline std::vector<char> COMPARISON_OPERATORS_START = {'<', '>', '='};
+inline std::vector<char> COMPARISON_OPERATORS_START = {'<', '>', '=', '#'};
 inline std::vector<std::string> UI_CONTROLS = {"ui_label", "ui_button", "ui_switch", "ui_slider", "ui_menu",
 										   "ui_value_edit", "ui_waveform", "ui_wavetable",
 										   "ui_knob", "ui_table", "ui_xy",
 										   "ui_text_edit", "ui_level_meter", "ui_file_selector",
 										   "ui_panel", "ui_mouse_area"};
-inline std::vector<Keyword> DECLARATION_SYNTAX = {{DECLARE, "declare"}, {DEFINE, "define"}, {CONST, "const"}, {POLYPHONIC, "polyphonic"}, {READ, "read"}};
+inline std::vector<Keyword> DECLARATION_SYNTAX = {{DECLARE, "declare"}, {DEFINE, "define"}, {CONST, "const"}, {POLYPHONIC, "polyphonic"},
+                                                  {READ, "read"}, {LOCAL, "local"}, {GLOBAL, "global"}};
 inline std::vector<Keyword> IMPORT_SYNTAX = {{IMPORT, "import"}, {AS, "as"}};
 inline std::vector<Keyword> STATEMENT_SYNTAX = {{TO, "to"}, {DOWNTO, "downto"}, {ELSE, "else"}, {CASE, "case"}};
 inline std::vector<Keyword> FUNCTION_SYNTAX = {{OVERRIDE, "override"}, {CALL, "call"}};

@@ -7,6 +7,7 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 
 // ANSI-Escapesequenz für Rot
 const std::string red = "\033[31m";
@@ -36,8 +37,12 @@ public:
 			got = "linebreak";
 		}
         std::cout << red << "CompileError [Type: " << error_type_to_string() << ", File: " << file_name <<
-        ", Line: " << line_number << "]: " << reset << message << " Expected: '" << expected << "', got: '"
-		<< got << "'" <<std::endl;
+        ", Line: " << line_number << "]: " << std::endl;
+        std::cout << message << " Expected: '" << expected << "', got: '"
+		<< got << "'" << std::endl;
+
+        // Zeige die entsprechende Zeile aus der Datei
+        std::cout << "In line " << line_number << ": " << get_line_from_file() << reset << std::endl;
     }
 
 private:
@@ -58,6 +63,19 @@ private:
             case ErrorType::PreprocessorError: return "PreprocessorError";
             // TODO weitere Fehlerarten
         }
+    }
+
+    std::string get_line_from_file() {
+        std::ifstream file(file_name);
+        std::string line;
+        if (file.is_open()) {
+            for (size_t i = 0; i < line_number && std::getline(file, line); ++i) {
+                // Nichts tun, nur bis zur gewünschten Zeile lesen
+            }
+            file.close();
+            return line;
+        }
+        return "Unable to open file.";
     }
 };
 

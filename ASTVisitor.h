@@ -272,7 +272,8 @@ public:
 	}
 
     void visit(NodeGetControlStatement& node) override {
-        std::cout << node.ui_id << " -> " << node.control_param;
+        node.ui_id ->accept(*this);
+        std::cout << " -> " << node.control_param;
     }
 
     void visit(NodeSetControlStatement& node) override {

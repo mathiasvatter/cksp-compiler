@@ -61,6 +61,7 @@ struct NodeString : NodeAST {
 
 struct NodeVariable: NodeAST {
     bool is_persistent;
+    bool is_local;
     VarType var_type = VarType::Mutable;
 	std::string name;
 	inline NodeVariable(bool is_persistent, std::string name, VarType type, Token tok) : NodeAST(tok), is_persistent(is_persistent), name(std::move(name)), var_type(type) {}
@@ -75,6 +76,7 @@ struct NodeParamList: NodeAST {
 
 struct NodeArray : NodeAST {
     bool is_persistent;
+    bool is_local;
     VarType var_type = VarType::Array;
     std::string name;
     std::unique_ptr<NodeParamList> sizes = nullptr;
@@ -136,9 +138,9 @@ struct NodeAssignStatement: NodeAST {
 };
 
 struct NodeGetControlStatement : NodeAST {
-    std::string ui_id;
+    std::unique_ptr<NodeAST> ui_id; //array or variable
     std::string control_param;
-    inline NodeGetControlStatement(std::string uiId, std::string controlParam, Token tok)
+    inline NodeGetControlStatement(std::unique_ptr<NodeAST> uiId, std::string controlParam, Token tok)
     : NodeAST(tok), ui_id(std::move(uiId)), control_param(std::move(controlParam)) {}
     void accept(ASTVisitor& visitor) override;
 };

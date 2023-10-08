@@ -67,13 +67,13 @@ UI_MOUSE_AREA ::= declare ui_mouse_area $<variable-name>
 <variable> ::=  <identifier>? <keyword>
 <array> ::= <identifier>? <keyword> [ <param_list> ]
 <param_list> ::= (<expression> ("," <expression>)?)?
-<declare_statement> ::= "declare" "read"? (const | polyphonic)? <param_list> ":="? <param_list>?
+<declare_statement> ::=  <declare_list> ":="? <param_list>?
 
 
-<declare_list> ::=
-<declare_variable> ::= read? (const | polyphonic)? <variable>
-<declare_array> ::= read? <array>
-<declare_control> ::= read? <ui_control> (variable | array) ("(" <param_list> ")")?
+<declare_list> ::= (<declare_variable> | <declare_array> | <declare_control>) ("," <declare_list>)?
+<declare_variable> ::= read? (local | global)? (const | polyphonic)? <variable>
+<declare_array> ::= read? (local | global)? <array>
+<declare_control> ::= read? (local | global)? <ui_control> (variable | array) ("(" <param_list> ")")?
 
 <unary_expression> ::= <unary_op> (<num> | <variable> | <function_header>)
 <primary_expression> ::= <num> | <variable> | <function_header> | <unary_expression> | "("<binary_expression>")"
@@ -86,7 +86,7 @@ UI_MOUSE_AREA ::= declare ui_mouse_area $<variable-name>
 <boolean_expression> ::= <comparison_expression> (<bool> <comparison_expression>)?
 <comparison_expression> ::= <binary_expression> <comparison_op> <binary_expression>
 
-<get_control_statement> ::= <keyword> "->" <keyword>
+<get_control_statement> ::= (<array> | <variable>) "->" <keyword>
 <set_control_statement> ::= <get_control_statement> "::=" <expression>
 <assign_statement> ::= <param_list> ":=" <param_list>
 <statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement | <funcion_call> ) <linebreak>

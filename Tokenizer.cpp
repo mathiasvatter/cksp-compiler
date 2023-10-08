@@ -213,8 +213,11 @@ void Tokenizer::get_arrow() {
 }
 
 bool Tokenizer::is_keyword_or_num() const {
-    return std::isalnum(current_char) || current_char == '_' || current_char == '#' || contains(VAR_IDENT, current_char) || contains(
+    bool is_keyword_or_num = std::isalnum(current_char) || current_char == '_' || contains(VAR_IDENT, current_char) || contains(
             ARRAY_IDENT, current_char);
+    bool is_macro = current_char =='#' and (std::isalnum(peek()) || peek() == '_' || contains(VAR_IDENT, peek()) || contains(
+            ARRAY_IDENT, peek()));
+    return is_keyword_or_num or is_macro;
 }
 
 void Tokenizer::get_keyword_or_num() {
@@ -238,7 +241,8 @@ void Tokenizer::get_keyword_or_num() {
 		}
     // check if next char is _ or text
     } else if (is_keyword_or_num()) {
-        consume();
+        if(current_char =='#') consume(); //consume # for macro iteration
+        consume(); //consume possible identifier
         while (std::isalnum(current_char) || current_char == '_') {
             consume();
         }
@@ -343,6 +347,8 @@ void Tokenizer::get_comparison_operators() {
             tok = LESS_THAN;
     } else if (current_char == '=') {
         tok = EQUAL;
+    } else if (current_char == '#') {
+        // NOT
     } else {
 		auto err_msg = "Unknown comparison operator.";
 		CompileError(ErrorType::TokenError, err_msg, line, "<, >, =", buffer, file).print();

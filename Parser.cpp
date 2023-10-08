@@ -233,6 +233,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_binary_expr() {
 
 Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr() {
     if (peek().type == token::KEYWORD) {
+        std::unique_ptr<NodeAST> stmt = nullptr;
         // is function
 		if (peek(1).type == token::OPEN_PARENTH) {
 			auto var_function = parse_function_header();
@@ -245,14 +246,26 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr() {
             if (var_array.is_error()) {
                 return Result<std::unique_ptr<NodeAST>>(var_array.get_error());
             }
-            return Result<std::unique_ptr<NodeAST>>(std::move(var_array.unwrap()));
+            if(peek().type == token::ARROW) {
+                auto get_control = parse_get_control_statement(std::move(var_array.unwrap()));
+                if (get_control.is_error())
+                    return Result<std::unique_ptr<NodeAST>>(get_control.get_error());
+                stmt = std::move(std::move(get_control.unwrap()));
+            } else stmt = std::move(std::move(var_array.unwrap()));
+            return Result<std::unique_ptr<NodeAST>>(std::move(stmt));
         } else {
             // is variable
             auto var = parse_variable();
             if (var.is_error()) {
                 return Result<std::unique_ptr<NodeAST>>(var.get_error());
             }
-            return Result<std::unique_ptr<NodeAST>>(std::move(var.unwrap()));
+            if(peek().type == token::ARROW) {
+                auto get_control = parse_get_control_statement(std::move(var.unwrap()));
+                if (get_control.is_error())
+                    return Result<std::unique_ptr<NodeAST>>(get_control.get_error());
+                stmt = std::move(std::move(get_control.unwrap()));
+            } else stmt = std::move(std::move(var.unwrap()));
+            return Result<std::unique_ptr<NodeAST>>(std::move(stmt));
         }
     // is expression in brackets
     } else if (peek().type == token::OPEN_PARENTH) {
@@ -439,9 +452,10 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement() {
 		return Result<std::unique_ptr<NodeStatement>>(std::move(value));
 	} else {
 		return Result<std::unique_ptr<NodeStatement>>(CompileError(ErrorType::SyntaxError,
-         "Missing linebreak after statement.", peek().line, "linebreak", peek().val, peek().file));
+         "Found incorrect statement syntax.", peek().line, "", peek().val, peek().file));
 	}
 }
+
 
 Result<std::unique_ptr<NodeCallback>> Parser::parse_callback() {
     std::string begin_callback = consume().val;
@@ -638,7 +652,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement() {
     consume(); //consume declare
     std::unique_ptr<NodeParamList> to_be_declared = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
-    if(not(peek().type == token::KEYWORD or peek().type == token::UI_CONTROL or peek().type ==token::READ or peek().type==token::CONST or peek().type ==token::POLYPHONIC))
+    if(not(peek().type == KEYWORD or peek().type == UI_CONTROL or peek().type ==READ or peek().type==CONST or peek().type ==POLYPHONIC or peek().type==LOCAL or peek().type==GLOBAL))
         return Result<std::unique_ptr<NodeDeclareStatement>>(CompileError(ErrorType::ParseError,
         "Incorrect syntax in declare statement.",peek().line,"variable name",peek().val, peek().file));
     do {
@@ -651,15 +665,14 @@ Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement() 
             }
             to_be_declared->params.push_back(std::move(parsed_ui_control.unwrap()));
         // array
-        } else if ((peek().type == token::KEYWORD && peek(1).type == token::OPEN_BRACKET) xor
-                    (peek(1).type == token::KEYWORD && peek(2).type == token::OPEN_BRACKET)) {
+        } else if (is_array_declaration()) {
             auto parsed_arr = parse_declare_array();
             if(parsed_arr.is_error()) {
                 return Result<std::unique_ptr<NodeDeclareStatement>>(parsed_arr.get_error());
             }
             to_be_declared->params.push_back(std::move(parsed_arr.unwrap()));
         // variable
-        } else if(peek().type == token::KEYWORD xor peek(1).type == token::KEYWORD xor (peek(2).type == token::KEYWORD && peek().type == token::READ)) {
+        } else if(is_variable_declaration()) {
             auto parsed_var = parse_declare_variable();
             if (parsed_var.is_error()) {
                 return Result<std::unique_ptr<NodeDeclareStatement>>(parsed_var.get_error());
@@ -685,10 +698,48 @@ Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement() 
 	return Result<std::unique_ptr<NodeDeclareStatement>>(std::move(return_value));
 }
 
+bool Parser::is_variable_declaration() {
+    // read local (const | polyphonic) keyword
+    bool first = peek().type == READ and (peek(1).type == LOCAL or peek(1).type == GLOBAL) and (peek(2).type == CONST || peek(2).type == POLYPHONIC) and peek(3).type == KEYWORD;
+    // read (const | polyphonic) keyword
+    bool second = peek().type == READ and (peek(1).type == CONST || peek(1).type == POLYPHONIC) and peek(2).type == KEYWORD;
+    // read keyword
+    bool third = peek().type == READ and peek(1).type == KEYWORD;
+    // keyword
+    bool fourth = peek().type == KEYWORD;
+    // (const | polyphonic) keyword
+    bool fifth = (peek().type == CONST || peek().type == POLYPHONIC) and peek(1).type == KEYWORD;
+    // read local keyword
+    bool sixth = peek().type == READ and (peek(1).type == LOCAL or peek(1).type == GLOBAL) and peek(2).type == KEYWORD;
+    // local keyword
+    bool seventh = (peek().type == LOCAL or peek().type == GLOBAL) and peek(1).type == KEYWORD;
+
+    return first xor second xor third xor fourth xor fifth xor sixth xor seventh;
+}
+
+bool Parser::is_array_declaration() {
+    // read local a[]
+    bool first = peek().type == READ and (peek(1).type == LOCAL or peek(1).type == GLOBAL) and peek(2).type == KEYWORD and peek(3).type == OPEN_BRACKET;
+    // local a[]
+    bool second = (peek().type == LOCAL or peek().type == GLOBAL) and peek(1).type == KEYWORD and peek(2).type == OPEN_BRACKET;
+    // read a[]
+    bool third = peek().type == READ and peek(1).type == KEYWORD and peek(2).type == OPEN_BRACKET;
+    // a[]
+    bool fourth = peek().type == KEYWORD and peek(1).type == OPEN_BRACKET;
+
+    return first xor second xor third xor fourth;
+}
+
+
 Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable() {
     bool is_persistent = false;
     if(peek().type == token::READ) {
         is_persistent = true;
+        consume();
+    }
+    bool is_local = false;
+    if(peek().type == token::LOCAL or peek().type == token::GLOBAL) {
+        is_local = peek().type == token::LOCAL;
         consume();
     }
     VarType var_type = VarType::Mutable;
@@ -714,6 +765,11 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_declare_array() {
     bool is_persistent = false;
     if(peek().type == token::READ) {
         is_persistent = true;
+        consume();
+    }
+    bool is_local = false;
+    if(peek().type == token::LOCAL or peek().type == token::GLOBAL) {
+        is_local = peek().type == token::LOCAL;
         consume();
     }
     VarType var_type = VarType::Array;
@@ -1016,8 +1072,19 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_struct_family_statement() {
     return Result<std::unique_ptr<NodeAST>>(std::move(return_value));
 }
 
-Result<std::unique_ptr<NodeGetControlStatement>> Parser::parse_get_control_statement() {
-    auto ui_id = consume().val;
+Result<std::unique_ptr<NodeGetControlStatement>> Parser::parse_get_control_statement(std::unique_ptr<NodeAST> ui_id) {
+//    std::unique_ptr<NodeAST> ui_id;
+//    if(peek(1).type == token::OPEN_BRACKET) {
+//        auto ui_control = parse_array();
+//        if(ui_control.is_error())
+//            return Result<std::unique_ptr<NodeGetControlStatement>>(ui_control.get_error());
+//        ui_id = std::move(ui_control.unwrap());
+//    } else {
+//        auto ui_control = parse_variable();
+//        if(ui_control.is_error())
+//            return Result<std::unique_ptr<NodeGetControlStatement>>(ui_control.get_error());
+//        ui_id = std::move(ui_control.unwrap());
+//    }
     if(peek().type != token::ARROW) {
         return Result<std::unique_ptr<NodeGetControlStatement>>(CompileError(ErrorType::SyntaxError,
      "Wrong control statement syntax.", peek().line, "->", peek().val, peek().file));
@@ -1028,20 +1095,8 @@ Result<std::unique_ptr<NodeGetControlStatement>> Parser::parse_get_control_state
          "Wrong control statement syntax.", peek().line, "<control_parameter>", peek().val, peek().file));
     }
     auto control_param = consume().val;
-    auto result = std::make_unique<NodeGetControlStatement>(ui_id, control_param, get_tok());
+    auto result = std::make_unique<NodeGetControlStatement>(std::move(ui_id), control_param, get_tok());
     return Result<std::unique_ptr<NodeGetControlStatement>>(std::move(result));
-}
-
-Result<std::unique_ptr<NodeSetControlStatement>> Parser::parse_set_control_statement() {
-    auto get_control_stmt = parse_get_control_statement();
-    if(get_control_stmt.is_error())
-        return Result<std::unique_ptr<NodeSetControlStatement>>(get_control_stmt.get_error());
-    if(peek().type != token::ASSIGN) {
-        return Result<std::unique_ptr<NodeSetControlStatement>>(CompileError(ErrorType::SyntaxError,
-         "Wrong set control statement syntax.", peek().line, ":=", peek().val, peek().file));
-    }
-    consume(); //consume :=
-
 }
 
 
