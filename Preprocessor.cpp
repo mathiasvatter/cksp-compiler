@@ -214,13 +214,13 @@ Result<SuccessTag> Preprocessor::process_macros() {
 //				m_macro_calls.push_back(std::move(macro_call.unwrap()));
 			}
 		} else if ((peek().type == token::LINEBRK and peek(1).type == ITERATE_MACRO) xor (m_pos == 0 and peek().type == ITERATE_MACRO)) {
+            if (peek().type == LINEBRK) consume(); //consume linebreak
 			auto macro_iteration = parse_iterate_macro();
 			if (macro_iteration.is_error())
 				return Result<SuccessTag>(macro_iteration.get_error());
 			m_macro_iterations.push_back(std::move(macro_iteration.unwrap()));
-        } else {
-            consume();
         }
+        consume();
     }
     return Result<SuccessTag>(SuccessTag{});
 }
@@ -256,8 +256,9 @@ Result<SuccessTag> Preprocessor::evaluate_macro_call(std::unique_ptr<NodeMacroHe
 			}
 		}
 	}
+
 	m_tokens.insert(m_tokens.begin() + m_pos, macro_body.begin(), macro_body.end());
-//	m_pos += macro_body.size();
+	m_pos += macro_body.size();
 	return Result<SuccessTag>(SuccessTag{});
 }
 
@@ -265,7 +266,7 @@ Result<SuccessTag> Preprocessor::evaluate_macro_call(std::unique_ptr<NodeMacroHe
 
 
 bool Preprocessor::is_macro_call() {
-	bool macro_call = peek().type == token::LINEBRK && peek(1).type == token::KEYWORD && (peek(2).type == token::LINEBRK xor peek(2).type == token::OPEN_PARENTH);
+	bool macro_call = peek().type == LINEBRK && peek(1).type == token::KEYWORD && (peek(2).type == token::LINEBRK xor peek(2).type == token::OPEN_PARENTH);
 	bool macro_call_beginning = m_pos == 0 && peek(0).type == token::KEYWORD && (peek(1).type == token::LINEBRK xor peek(1).type == token::OPEN_PARENTH);
 	return macro_call xor macro_call_beginning;
 }
