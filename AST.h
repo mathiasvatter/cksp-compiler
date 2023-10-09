@@ -284,6 +284,19 @@ struct NodeMacroDefinition : NodeAST {
 	void accept(ASTVisitor& visitor) override;
 };
 
+struct NodeIterateMacro : NodeAST {
+	std::unique_ptr<NodeMacroHeader> macro_header;
+	std::vector<Token> from;
+	std::vector<Token> to;
+	inline NodeIterateMacro(std::unique_ptr<NodeMacroHeader> macro_header, std::vector<Token> from, std::vector<Token> to)
+	: macro_header(std::move(macro_header)), from(std::move(from)), to(std::move(to)) {}
+};
+
+struct NodeLiterateMacro : NodeAST {
+	std::unique_ptr<NodeMacroHeader> macro_header;
+	std::vector<Token> params;
+};
+
 struct NodeProgram: NodeAST {
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;

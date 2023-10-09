@@ -288,8 +288,8 @@ void Tokenizer::get_keyword_or_num() {
         } else if (contains(UI_CONTROLS, buffer)) {
 			tok = token::UI_CONTROL;
 			tokens.emplace_back(tok, buffer, line, file);
-		} else if (contains(IMPORT_SYNTAX, buffer)) {
-			tok = get_token_type(IMPORT_SYNTAX, buffer);
+		} else if (contains(PREPROCESSOR_SYNTAX, buffer)) {
+			tok = get_token_type(PREPROCESSOR_SYNTAX, buffer);
 			tokens.emplace_back(tok, buffer, line, file);
 		} else if (contains(DECLARATION_SYNTAX, buffer)) {
 			tok = get_token_type(DECLARATION_SYNTAX, buffer);

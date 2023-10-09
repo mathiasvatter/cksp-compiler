@@ -11,15 +11,16 @@
 
 Parser::Parser(std::vector<Token> tokens): m_tokens(std::move(tokens)) {
 	m_pos = 0;
-    curr_token = m_tokens.at(0).type;
+	m_curr_token = m_tokens.at(0).type;
+}
 
+void Parser::parse() {
 	ASTPrinter printer;
-    auto prog = parse_program();
-    if (prog.is_error())
-        prog.get_error().print();
-    else
-	    prog.unwrap()->accept(printer);
-
+	auto prog = parse_program();
+	if (prog.is_error())
+		prog.get_error().print();
+	else
+		prog.unwrap()->accept(printer);
 }
 
 Token& Parser::get_tok() {
@@ -40,14 +41,14 @@ Token Parser::peek(int ahead) {
         CompileError(ErrorType::ParseError, err_msg, m_tokens.at(m_pos).line, "end token", m_tokens.at(m_pos).val, m_tokens.at(m_pos).file).print();
         exit(EXIT_FAILURE);
     }
-	curr_token = m_tokens.at(m_pos).type;
+	m_curr_token = m_tokens.at(m_pos).type;
 	return m_tokens.at(m_pos+ahead);
 
 }
 
 Token Parser::consume() {
     if (m_pos < m_tokens.size()) {
-        curr_token = m_tokens.at(m_pos + 1).type;
+		m_curr_token = m_tokens.at(m_pos + 1).type;
         return m_tokens.at(m_pos++);
     }
     auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
@@ -705,16 +706,18 @@ bool Parser::is_variable_declaration() {
     bool second = peek().type == READ and (peek(1).type == CONST || peek(1).type == POLYPHONIC) and peek(2).type == KEYWORD;
     // read keyword
     bool third = peek().type == READ and peek(1).type == KEYWORD;
-    // keyword
-    bool fourth = peek().type == KEYWORD;
-    // (const | polyphonic) keyword
-    bool fifth = (peek().type == CONST || peek().type == POLYPHONIC) and peek(1).type == KEYWORD;
     // read local keyword
     bool sixth = peek().type == READ and (peek(1).type == LOCAL or peek(1).type == GLOBAL) and peek(2).type == KEYWORD;
+    // (const | polyphonic) keyword
+    bool fifth = (peek().type == CONST || peek().type == POLYPHONIC) and peek(1).type == KEYWORD;
     // local keyword
     bool seventh = (peek().type == LOCAL or peek().type == GLOBAL) and peek(1).type == KEYWORD;
+	// local (const | polyphonic) keyword
+	bool eighth = (peek().type == LOCAL or peek().type == GLOBAL) and (peek(1).type == CONST || peek(1).type == POLYPHONIC) and peek(2).type == KEYWORD;
+    // keyword
+    bool fourth = peek().type == KEYWORD;
 
-    return first xor second xor third xor fourth xor fifth xor sixth xor seventh;
+    return first xor second xor third xor fourth xor fifth xor sixth xor seventh xor eighth;
 }
 
 bool Parser::is_array_declaration() {

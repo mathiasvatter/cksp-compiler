@@ -25,6 +25,7 @@ int main() {
 //            std::cout << tok << std::endl;
 //    }
     Parser parser(std::move(preprocessed_tokens));
+	parser.parse();
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);

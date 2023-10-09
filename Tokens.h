@@ -84,6 +84,11 @@
     XX(DEFINE, "define") \
     XX(POLYPHONIC, "polyphonic") \
     XX(LINE_CONTINUE, "line_continue") \
+    XX(ON, "on") \
+    XX(ITERATE_MACRO, "iterate_macro") \
+    XX(LITERATE_MACRO, "literate_macro") \
+    XX(START_INC, "start_inc") \
+    XX(END_INC, "end_inc") \
     XX(UI_CONTROL, "ui_control")
 
 
@@ -127,7 +132,9 @@ inline std::vector<std::string> UI_CONTROLS = {"ui_label", "ui_button", "ui_swit
 										   "ui_panel", "ui_mouse_area"};
 inline std::vector<Keyword> DECLARATION_SYNTAX = {{DECLARE, "declare"}, {DEFINE, "define"}, {CONST, "const"}, {POLYPHONIC, "polyphonic"},
                                                   {READ, "read"}, {LOCAL, "local"}, {GLOBAL, "global"}};
-inline std::vector<Keyword> IMPORT_SYNTAX = {{IMPORT, "import"}, {AS, "as"}};
+inline std::vector<Keyword> PREPROCESSOR_SYNTAX = {{IMPORT, "import"}, {AS, "as"}, {ON, "on"},
+												   {ITERATE_MACRO, "iterate_macro"}, {LITERATE_MACRO, "literate_macro"},
+													{START_INC, "start_inc"}, {END_INC, "end_inc"}};
 inline std::vector<Keyword> STATEMENT_SYNTAX = {{TO, "to"}, {DOWNTO, "downto"}, {ELSE, "else"}, {CASE, "case"}};
 inline std::vector<Keyword> FUNCTION_SYNTAX = {{OVERRIDE, "override"}, {CALL, "call"}};
 // control statements that also have an end

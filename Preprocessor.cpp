@@ -7,7 +7,7 @@
 #include "Preprocessor.h"
 
 Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
-    : m_tokens(std::move(tokens)), m_current_file(std::move(current_file)) {
+    : Parser(std::move(tokens)), m_current_file(std::move(current_file)) {
     m_imported_tokens = {};
 	m_pos = 0;
 	m_curr_token = m_tokens.at(0).type;
@@ -25,33 +25,8 @@ Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
     }
 }
 
-Token& Preprocessor::get_tok() {
-    return m_tokens.at(m_pos);
-}
-
 std::vector<Token> Preprocessor::get_tokens() {
     return std::move(m_tokens);
-}
-
-Token Preprocessor::peek(int ahead) {
-    if (m_tokens.size() < m_pos+ahead) {
-        auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
-        CompileError(ErrorType::PreprocessorError, err_msg, m_tokens.at(m_pos).line, "end token", m_tokens.at(m_pos).val, m_tokens.at(m_pos).file).print();
-        exit(EXIT_FAILURE);
-    }
-    m_curr_token = m_tokens.at(m_pos+ahead).type;
-    return m_tokens.at(m_pos+ahead);
-}
-
-Token Preprocessor::consume() {
-    if (m_pos < m_tokens.size()) {
-        m_curr_token = m_tokens.at(m_pos + 1).type;
-        Token tok = m_tokens.at(m_pos++);
-        return tok;
-    }
-    auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
-    CompileError(ErrorType::PreprocessorError, err_msg, m_tokens.at(m_pos).line, "end token", m_tokens.at(m_pos).val, m_tokens.at(m_pos).file).print();
-    exit(EXIT_FAILURE);
 }
 
 void Preprocessor::remove_last() {
@@ -239,7 +214,7 @@ Result<SuccessTag> Preprocessor::process_macros() {
                 if (macro_call.is_error())
                     return Result<SuccessTag>(macro_call.get_error());
                 m_macro_calls.push_back(std::move(macro_call.unwrap()));
-            } else consume();
+            }
         } else {
             consume();
         }

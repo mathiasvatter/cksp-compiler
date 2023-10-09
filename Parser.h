@@ -43,15 +43,16 @@ public:
     explicit Parser(std::vector<Token> tokens);
     [[nodiscard]] size_t get_current_pos() const;
     void set_current_pos(size_t mPos);
+	void parse();
 
-private:
+protected:
 	size_t m_pos;
     std::vector<Token> m_tokens;
-	token curr_token;
+	token m_curr_token;
 
-    Token& get_tok();
 	[[nodiscard]] Token peek(int ahead = 0);
 	Token consume();
+    Token& get_tok();
     static int _get_binop_precedence(token tok);
 	void _skip_linebreaks();
     static std::string sanitize_binary(const std::string& input);
@@ -62,9 +63,7 @@ private:
     Result<std::unique_ptr<NodeAST>> parse_number();
     Result<std::unique_ptr<NodeString>> parse_string();
     Result<std::unique_ptr<NodeVariable>> parse_variable(bool is_persistent=false, VarType var_type=VarType::Mutable);
-	/// handles the expression inside brackets as size if is_size=true, else those are handled as indexes
     Result<std::unique_ptr<NodeArray>> parse_array(bool is_persistent=false, VarType var_type=VarType::Array);
-	/// stops either at end token or at linebreak
     Result<std::unique_ptr<NodeParamList>> parse_param_list();
 	Result<SuccessTag> _parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params);
     /// parses every expression from binary, string, unary to number and variable
@@ -81,6 +80,7 @@ private:
 		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr();
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr();
+private:
     Result<std::unique_ptr<NodeAST>> parse_assign_statement();
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable();
     Result<std::unique_ptr<NodeArray>> parse_declare_array();
