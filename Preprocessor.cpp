@@ -19,8 +19,7 @@ Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
     if(result.is_error()) {
         result.get_error().print();
         auto err_msg = "Preprocessor failed while processing macros.";
-        CompileError(ErrorType::PreprocessorError, err_msg, m_tokens.at(m_pos).line, "", m_tokens.at(m_pos).val,
-                     m_tokens.at(m_pos).file).print();
+        CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",peek().file).print();
         exit(EXIT_FAILURE);
     }
 }
@@ -170,7 +169,6 @@ std::string Preprocessor::resolve_overlap(const std::string& base_path, const st
     for (const auto& part : base) {
         baseParts.push_back(part);
     }
-
     std::vector<std::filesystem::path> relativeParts;
     for (const auto& part : relative) {
         relativeParts.push_back(part);
@@ -180,7 +178,6 @@ std::string Preprocessor::resolve_overlap(const std::string& base_path, const st
         baseParts.pop_back();
     }
     baseParts.pop_back(); //erase common bit
-
     std::filesystem::path mergedPath;
     for (const auto& part : baseParts) {
         mergedPath /= part;
@@ -207,20 +204,32 @@ Result<SuccessTag> Preprocessor::process_macros() {
     }
     m_pos = 0;
     while (peek().type != token::END_TOKEN) {
-        if(peek().type == token::LINEBRK && peek(1).type == token::KEYWORD && (peek(2).type == token::LINEBRK xor peek(2).type == token::OPEN_PARENTH)) {
-            consume(); //consume linebreak
-            if (is_defined_macro(peek().val)) {
-                auto macro_call = parse_macro_call();
-                if (macro_call.is_error())
-                    return Result<SuccessTag>(macro_call.get_error());
-                m_macro_calls.push_back(std::move(macro_call.unwrap()));
-            }
+        if(is_macro_call()) {
+			if (peek().type == LINEBRK) consume(); //consume linebreak
+			if (is_defined_macro(peek().val)) {
+				auto macro_call = parse_macro_call();
+				if (macro_call.is_error())
+					return Result<SuccessTag>(macro_call.get_error());
+				m_macro_calls.push_back(std::move(macro_call.unwrap()));
+			}
+		} else if ((peek().type == token::LINEBRK and peek(1).type == ITERATE_MACRO) xor (m_pos == 0 and peek().type == ITERATE_MACRO)) {
+			auto macro_iteration = parse_iterate_macro();
+			if (macro_iteration.is_error())
+				return Result<SuccessTag>(macro_iteration.get_error());
+			m_macro_iterations.push_back(std::move(macro_iteration.unwrap()));
         } else {
             consume();
         }
     }
     return Result<SuccessTag>(SuccessTag{});
 }
+
+bool Preprocessor::is_macro_call() {
+	bool macro_call = peek().type == token::LINEBRK && peek(1).type == token::KEYWORD && (peek(2).type == token::LINEBRK xor peek(2).type == token::OPEN_PARENTH);
+	bool macro_call_beginning = m_pos == 0 && peek(0).type == token::KEYWORD && (peek(1).type == token::LINEBRK xor peek(1).type == token::OPEN_PARENTH);
+	return macro_call xor macro_call_beginning;
+}
+
 
 bool Preprocessor::is_defined_macro(const std::string &name) {
     for(auto &macro_def : m_macro_definitions) {
@@ -287,6 +296,11 @@ Result<std::unique_ptr<NodeMacroDefinition>> Preprocessor::parse_macro_definitio
     }
     consume(); //consume linebreak
     remove_tokens(begin, m_pos);
+	for(auto &arg : macro_header->args) {
+		if(not(arg.size() == 1 and arg.at(0).type == token::KEYWORD))
+			return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::SyntaxError,
+			 "Only keywords allowed as parameters when defining macros.",arg.at(0).line,"keyword",arg.at(0).val, arg.at(0).file));
+	}
     auto value = std::make_unique<NodeMacroDefinition>(std::move(macro_header), std::move(macro_body), get_tok());
     return Result<std::unique_ptr<NodeMacroDefinition>>(std::move(value));
 }
@@ -305,4 +319,102 @@ Result<std::unique_ptr<NodeMacroHeader>> Preprocessor::parse_macro_call() {
     return std::move(macro_header);
 }
 
+Result<std::unique_ptr<NodeIterateMacro>> Preprocessor::parse_iterate_macro() {
+	size_t begin = m_pos;
+	consume(); // consume iterate_macro
+	if(peek().type != token::OPEN_PARENTH) {
+		return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
+		 "Found invalid iterate_macro statement syntax.",peek().line,"(",peek().val, peek().file));
+	}
+	consume(); //consume (
+	if(peek().type != token::KEYWORD) {
+		return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
+	  "Found invalid macro header in iterate_macro statement syntax.",peek().line,"valid <macro_header>",peek().val, peek().file));
+	}
+	Token macro_header = consume();
+	if(peek().type != token::CLOSED_PARENTH) {
+		return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
+	  "Found invalid iterate_macro statement syntax.",peek().line,")",peek().val, peek().file));
+	}
+	consume(); //consume )
+	if(peek().type != token::ASSIGN) {
+		return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
+		  "Found invalid iterate_macro statement syntax.",peek().line,":=",peek().val, peek().file));
+	}
+	consume(); //consume :=
+	auto from_stmt = parse_binary_expr();
+	if(from_stmt.is_error())
+		return Result<std::unique_ptr<NodeIterateMacro>>(from_stmt.get_error());
+	SimpleInterpreter interpreter;
+	auto from_interpreted = interpreter.evaluate_int_expression(from_stmt.unwrap());
+	if(from_interpreted.is_error())
+		return Result<std::unique_ptr<NodeIterateMacro>>(from_interpreted.get_error());
+	int from = from_interpreted.unwrap();
+	if(peek().type != token::TO) {
+		return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
+		  "Found invalid iterate_macro statement syntax.",peek().line,"to",peek().val, peek().file));
+	}
+	consume(); // consume "to"
+	auto to_stmt = parse_binary_expr();
+	if(to_stmt.is_error())
+		return Result<std::unique_ptr<NodeIterateMacro>>(to_stmt.get_error());
+	auto to_interpreted = interpreter.evaluate_int_expression(to_stmt.unwrap());
+	if(to_interpreted.is_error())
+		return Result<std::unique_ptr<NodeIterateMacro>>(to_interpreted.get_error());
+	int to = to_interpreted.unwrap();
+	if(peek().type != token::LINEBRK) {
+		return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
+		  "Found invalid iterate_macro statement syntax. Missing linebreak after iterate_macro statement.",peek().line,"linebreak",peek().val, peek().file));
+	}
+	consume(); //consume linebreak
+	remove_tokens(begin, m_pos);
 
+	auto result = std::make_unique<NodeIterateMacro>(std::move(macro_header), from, to);
+	return Result<std::unique_ptr<NodeIterateMacro>>(std::move(result));
+}
+
+
+Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>& root) {
+	std::string preprocessor_error = "Statement needs to be evaluated to a single int value before compilation.";
+	if (auto intNode = dynamic_cast<NodeInt*>(root.get())) {
+		return Result<int>(intNode->value);
+	} else if (auto unaryExprNode = dynamic_cast<NodeUnaryExpr*>(root.get())) {
+		auto operandValueStmt = evaluate_int_expression(unaryExprNode->operand);
+		if(operandValueStmt.is_error()) return Result<int>(operandValueStmt.get_error());
+		int operandValue = operandValueStmt.unwrap();
+		if (unaryExprNode->op.type == token::SUB) { // Assuming SUB represents the '-' unary operator
+			return Result<int>(-operandValue);
+		}
+		// Add other unary operations here if needed
+		return Result<int>(CompileError(ErrorType::PreprocessorError,
+					 "Unsupported unary operation. "+preprocessor_error,
+					 root->tok.line,"-",unaryExprNode->op.val, root->tok.file));
+	} else if (auto binaryExprNode = dynamic_cast<NodeBinaryExpr*>(root.get())) {
+		auto leftValueStmt = evaluate_int_expression(binaryExprNode->left);
+		if(leftValueStmt.is_error()) return Result<int>(leftValueStmt.get_error());
+		int leftValue = leftValueStmt.unwrap();
+		auto rightValueStmt = evaluate_int_expression(binaryExprNode->right);
+		if(rightValueStmt.is_error()) return Result<int>(rightValueStmt.get_error());
+		int rightValue = rightValueStmt.unwrap();
+		if (binaryExprNode->op == "+") {
+			return Result<int>(leftValue + rightValue);
+		} else if (binaryExprNode->op == "-") {
+			return Result<int>(leftValue - rightValue);
+		} else if (binaryExprNode->op == "*") {
+			return Result<int>(leftValue * rightValue);
+		} else if (binaryExprNode->op == "/") {
+			if (rightValue == 0) {
+				return Result<int>(CompileError(ErrorType::PreprocessorError,"Divison by zero. "+preprocessor_error,
+				 root->tok.line,"", std::to_string(rightValue), root->tok.file));
+			}
+			return Result<int>(leftValue / rightValue);
+		} else if (binaryExprNode->op == "mod") {
+			return Result<int>(leftValue % rightValue);
+		}
+		// Add other binary operations here if needed
+		return Result<int>(CompileError(ErrorType::PreprocessorError,"Unsupported binary operation. "+preprocessor_error,
+		 root->tok.line,"*, /, -, +, mod", binaryExprNode->op, root->tok.file));
+	}
+	return Result<int>(CompileError(ErrorType::PreprocessorError,"Unknown expression statement. No variables allowed. "+preprocessor_error,
+	 root->tok.line,"", "", root->tok.file));
+}

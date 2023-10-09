@@ -9,7 +9,7 @@
 #include "AST.h"
 #include "Parser.h"
 
-class Preprocessor : Parser{
+class Preprocessor : Parser {
 public:
     Preprocessor(std::vector<Token> tokens, std::string current_file);
 	~Preprocessor() = default;
@@ -21,6 +21,7 @@ private:
     std::vector<std::unique_ptr<NodeImport>> m_import_statements;
     std::vector<std::unique_ptr<NodeMacroDefinition>> m_macro_definitions;
     std::vector<std::unique_ptr<NodeMacroHeader>> m_macro_calls;
+	std::vector<std::unique_ptr<NodeIterateMacro>> m_macro_iterations;
 
     void remove_last();
     void remove_tokens(size_t start, size_t end);
@@ -37,6 +38,14 @@ private:
     Result<std::unique_ptr<NodeMacroHeader>> parse_macro_header();
     Result<std::unique_ptr<NodeMacroDefinition>> parse_macro_definition();
     Result<std::unique_ptr<NodeMacroHeader>> parse_macro_call();
+	Result<std::unique_ptr<NodeIterateMacro>> parse_iterate_macro();
     bool is_defined_macro(const std::string &name);
+	bool is_macro_call();
+
 };
 
+class SimpleInterpreter {
+public:
+	explicit SimpleInterpreter() {}
+	Result<int> evaluate_int_expression(std::unique_ptr<NodeAST>& root);
+};

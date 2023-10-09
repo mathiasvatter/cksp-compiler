@@ -273,7 +273,7 @@ struct NodeMacroHeader : NodeAST {
     std::vector<std::vector<Token>> args;
     inline NodeMacroHeader(std::string name, std::vector<std::vector<Token>> args, Token tok)
     : NodeAST(tok), name(std::move(name)), args(std::move(args)) {}
-    void accept(ASTVisitor& visitor) override;
+//    void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeMacroDefinition : NodeAST {
@@ -281,15 +281,15 @@ struct NodeMacroDefinition : NodeAST {
     std::vector<Token> body;
     inline NodeMacroDefinition(std::unique_ptr<NodeMacroHeader> header, std::vector<Token> body, Token tok)
     : NodeAST(tok), header(std::move(header)), body(std::move(body)) {}
-	void accept(ASTVisitor& visitor) override;
+//	void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeIterateMacro : NodeAST {
-	std::unique_ptr<NodeMacroHeader> macro_header;
-	std::vector<Token> from;
-	std::vector<Token> to;
-	inline NodeIterateMacro(std::unique_ptr<NodeMacroHeader> macro_header, std::vector<Token> from, std::vector<Token> to)
-	: macro_header(std::move(macro_header)), from(std::move(from)), to(std::move(to)) {}
+	Token macro_header;
+	int from;
+	int to;
+	inline NodeIterateMacro(Token macro_header, int from, int to)
+	: macro_header(std::move(macro_header)), from(from), to(to) {}
 };
 
 struct NodeLiterateMacro : NodeAST {

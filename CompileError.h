@@ -36,13 +36,20 @@ public:
 		if (got == "\n") {
 			got = "linebreak";
 		}
-        std::cout << red << "CompileError [Type: " << error_type_to_string() << ", File: " << file_name <<
-        ", Line: " << line_number << "]: " << std::endl;
-        std::cout << message << " Expected: '" << expected << "', got: '"
-		<< got << "'" << std::endl;
+        std::cout << red << "CompileError [Type: " << error_type_to_string() << ", File: " << file_name;
+		if(line_number != -1)
+        	std::cout << ", Line: " << line_number;
+		std::cout << "]: " << std::endl;
+        std::cout << message << " ";
+		if(!expected.empty())
+			std::cout << "Expected: '" << expected << "', ";
+		if(!got.empty())
+			std::cout << "got: '" << got << "'";
+		std::cout << std::endl;
 
         // Zeige die entsprechende Zeile aus der Datei
-        std::cout << "In line " << line_number << ": " << get_line_from_file() << reset << std::endl;
+		if(line_number != -1)
+        	std::cout << "In line " << line_number << ": " << get_line_from_file() << reset << std::endl;
     }
 
 private:
