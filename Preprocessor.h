@@ -40,7 +40,10 @@ private:
     Result<std::unique_ptr<NodeMacroHeader>> parse_macro_call();
 	Result<std::unique_ptr<NodeIterateMacro>> parse_iterate_macro();
     bool is_defined_macro(const std::string &name);
+//	Result<std::unique_ptr<NodeMacroDefinition>&> get_defined_macro(std::unique_ptr<NodeMacroHeader> &macro_call);
+
 	bool is_macro_call();
+	Result<SuccessTag> evaluate_macro_call(std::unique_ptr<NodeMacroHeader> macro_call);
 
 };
 

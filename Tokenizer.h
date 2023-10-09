@@ -41,6 +41,10 @@ inline static bool contains(const std::vector<Keyword>& vec, const std::string& 
     }) != vec.end();
 };
 
+inline static long count_char(const std::string& str, char c) {
+	return std::count(str.begin(), str.end(), c);
+}
+
 /*
  * Tokenizer Class
  */

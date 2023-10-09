@@ -210,7 +210,8 @@ Result<SuccessTag> Preprocessor::process_macros() {
 				auto macro_call = parse_macro_call();
 				if (macro_call.is_error())
 					return Result<SuccessTag>(macro_call.get_error());
-				m_macro_calls.push_back(std::move(macro_call.unwrap()));
+				evaluate_macro_call(std::move(macro_call.unwrap()));
+//				m_macro_calls.push_back(std::move(macro_call.unwrap()));
 			}
 		} else if ((peek().type == token::LINEBRK and peek(1).type == ITERATE_MACRO) xor (m_pos == 0 and peek().type == ITERATE_MACRO)) {
 			auto macro_iteration = parse_iterate_macro();
@@ -223,6 +224,45 @@ Result<SuccessTag> Preprocessor::process_macros() {
     }
     return Result<SuccessTag>(SuccessTag{});
 }
+
+Result<SuccessTag> Preprocessor::evaluate_macro_call(std::unique_ptr<NodeMacroHeader> macro_call) {
+	std::vector<Token> macro_body = {};
+	std::vector<std::vector<Token>> macro_params = {};
+	bool valid_macro_call = false;
+	for(auto &macro_def : m_macro_definitions) {
+		if(macro_call->name == macro_def->header->name and macro_call->args.size() == macro_def->header->args.size()) {
+			macro_body = macro_def->body;
+			macro_params = macro_def->header->args;
+			valid_macro_call = true;
+			break;
+		}
+	}
+	if(!valid_macro_call)
+		return Result<SuccessTag>(CompileError(ErrorType::PreprocessorError,
+		"Found incorrect number of parameters in macro call.", macro_call->tok.line, "valid number of parameters", std::to_string(macro_call->args.size()), macro_call->tok.file));
+
+	// substitution
+	for(int i = 0; i < macro_params.size(); i++) {
+		for (size_t j = 0; j < macro_body.size(); ) {
+			// find keyword from params in body
+			if(macro_params[i][0].val == macro_body[j].val) {
+				// Füge die Tokens aus macro_call->args[i] vor dem aktuellen Token ein
+				macro_body.insert(macro_body.begin() + j, macro_call->args[i].begin(), macro_call->args[i].end());
+
+				// Lösche das aktuelle Token
+				macro_body.erase(macro_body.begin() + j + macro_call->args[i].size());
+			} else {
+				++j;
+			}
+		}
+	}
+	m_tokens.insert(m_tokens.begin() + m_pos, macro_body.begin(), macro_body.end());
+//	m_pos += macro_body.size();
+	return Result<SuccessTag>(SuccessTag{});
+}
+
+
+
 
 bool Preprocessor::is_macro_call() {
 	bool macro_call = peek().type == token::LINEBRK && peek(1).type == token::KEYWORD && (peek(2).type == token::LINEBRK xor peek(2).type == token::OPEN_PARENTH);

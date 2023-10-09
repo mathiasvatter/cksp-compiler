@@ -241,9 +241,9 @@ void Tokenizer::get_keyword_or_num() {
 		}
     // check if next char is _ or text
     } else if (is_keyword_or_num()) {
-        if(current_char =='#') consume(); //consume # for macro iteration
+//        if(current_char =='#') consume(); //consume # for macro iteration
         consume(); //consume possible identifier
-        while (std::isalnum(current_char) || current_char == '_') {
+        while (std::isalnum(current_char) || current_char == '_' || current_char == '#') {
             consume();
         }
         // catch var identifier in the middle of keyword
@@ -301,9 +301,9 @@ void Tokenizer::get_keyword_or_num() {
             while (current_char == '.') {
                 consume();
     //            tokens.emplace_back(DOT, ".", line);
-                if (std::isalnum(current_char) || current_char == '_') {
+                if (std::isalnum(current_char) || current_char == '_' || current_char == '#') {
 //                    flush_buffer();
-                    while(std::isalnum(current_char) || current_char == '_') {
+                    while(std::isalnum(current_char) || current_char == '_' || current_char == '#') {
                         consume();
                     }
 //                    tokens.emplace_back(KEYWORD, buffer, line);
@@ -313,7 +313,12 @@ void Tokenizer::get_keyword_or_num() {
                     exit(EXIT_FAILURE);
                 }
             }
-            if(current_char == '#') consume();
+			// keywords have to contain either 0 or exactly 2 occurences of #
+			if (not(count_char(buffer, '#') == 2 or count_char(buffer, '#') == 0)) {
+				auto err_msg = "Found invalid keyword. Keywords have to contain either 0 or exactly 2 occurrences of '#'.";
+				CompileError(ErrorType::TokenError, err_msg, line, "valid keyword", buffer, file).print();
+				exit(EXIT_FAILURE);
+			}
             tokens.emplace_back(KEYWORD, buffer, line, file);
         }
         // see if char after keyword is dot
