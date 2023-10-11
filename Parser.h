@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "Tokenizer.h"
+#include "Tokenizer/Tokenizer.h"
 #include "AST.h"
-#include "Tokens.h"
+#include "Tokenizer/Tokens.h"
 #include "Result.h"
 //#include "ASTVisitor.h"
 

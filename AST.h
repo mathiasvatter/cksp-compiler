@@ -9,8 +9,8 @@
 #include <optional>
 #include <variant>
 
-#include "Tokens.h"
-#include "Tokenizer.h"
+#include "Tokenizer/Tokens.h"
+#include "Tokenizer/Tokenizer.h"
 
 enum ASTType {
     Integer,

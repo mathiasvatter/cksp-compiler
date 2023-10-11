@@ -4,7 +4,7 @@
 
 //#include "Tokenizer.h"
 #include "Parser.h"
-#include "Preprocessor.h"
+#include "Preprocessor/Preprocessor.h"
 
 
 
@@ -18,6 +18,7 @@ int main() {
     auto tokens = tokenizer.tokenize();
 
     Preprocessor preprocessor(tokens, path);
+    preprocessor.process();
     auto preprocessed_tokens = preprocessor.get_tokens();
 
 //    for(auto& tok: preprocessed_tokens) {

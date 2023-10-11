@@ -9,7 +9,7 @@
 #include <iostream>
 #include <map>
 
-#include "Result.h"
+#include "../Result.h"
 #include "Tokens.h"
 
 
