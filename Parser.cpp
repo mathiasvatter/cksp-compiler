@@ -829,7 +829,7 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control() {
         }
         control_params = std::move(param_list.unwrap());
     } else {
-        control_params = std::unique_ptr<NodeParamList>();
+        control_params = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
     }
     auto result = std::make_unique<NodeUIControl>(std::move(ui_control_type), std::move(control_var), std::move(control_params), get_tok());
     return Result<std::unique_ptr<NodeUIControl>>(std::move(result));

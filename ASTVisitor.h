@@ -72,8 +72,9 @@ public:
     }
 
     void visit(NodeUIControl& node) override {
-        std::cout << node.ui_control_type;
+        std::cout << node.ui_control_type << " ";
         node.control_var->accept(*this);
+		std::cout << " ";
         node.params -> accept(*this);
     }
 

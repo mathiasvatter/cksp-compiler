@@ -20,9 +20,11 @@ protected:
     std::string m_current_file;
 
     void remove_last();
-    void remove_tokens(size_t start, size_t end);
+    void remove_tokens(std::vector<Token>& tok, size_t start, size_t end);
 
-
+	[[nodiscard]] Token peek(const std::vector<Token>& tok, int ahead = 0);
+	Token consume(const std::vector<Token>& tok);
+	const Token& get_tok(const std::vector<Token>& tok) const;
 private:
 
 

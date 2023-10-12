@@ -271,8 +271,9 @@ struct NodeFunctionDefinition: NodeAST {
 struct NodeMacroHeader : NodeAST {
     std::string name;
     std::vector<std::vector<Token>> args;
-    inline NodeMacroHeader(std::string name, std::vector<std::vector<Token>> args, Token tok)
-    : NodeAST(tok), name(std::move(name)), args(std::move(args)) {}
+	size_t token_pos;
+    inline NodeMacroHeader(std::string name, std::vector<std::vector<Token>> args, size_t pos, Token tok)
+    : NodeAST(tok), name(std::move(name)), args(std::move(args)), token_pos(pos) {}
 //    void accept(ASTVisitor& visitor) override;
 };
 

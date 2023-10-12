@@ -19,15 +19,15 @@ void PreprocessorImport::process_imports(std::vector<Token> tokens, std::string 
     m_current_file = std::move(current_file);
     m_imported_files = imported_files;
     m_pos = 0;
-    while (peek().type != token::END_TOKEN) {
-        if(peek().type == token::IMPORT) {
+    while (peek(m_tokens).type != token::END_TOKEN) {
+        if(peek(m_tokens).type == token::IMPORT) {
             auto import_stmt = parse_import();
             if(import_stmt.is_error())
                 import_stmt.get_error().print();
             else
                 m_import_statements.push_back(std::move(import_stmt.unwrap()));
         } else {
-            consume();
+            consume(m_tokens);
         }
     }
     // check END_TOKEN status and remove END_TOKEN from imported files
@@ -61,33 +61,33 @@ void PreprocessorImport::handle_imports() {
 Result<std::unique_ptr<NodeImport>> PreprocessorImport::parse_import() {
     //consume import token IMPORT
     size_t begin = m_pos;
-    consume();
-    if(peek().type ==token::STRING) {
-        std::string filepath = consume().val;
+    consume(m_tokens);
+    if(peek(m_tokens).type ==token::STRING) {
+        std::string filepath = consume(m_tokens).val;
         // erase ""
         filepath.erase(0,1);
         filepath.pop_back();
         std::string alias;
-        if(peek().type == token::AS) {
+        if(peek(m_tokens).type == token::AS) {
             // consume as token
-            consume();
-            if(peek().type == token::KEYWORD) {
-                alias = consume().val;
+            consume(m_tokens);
+            if(peek(m_tokens).type == token::KEYWORD) {
+                alias = consume(m_tokens).val;
             } else {
                 return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
-                                                                        "Incorrect import Syntax.",peek().line,"as <keyword>",peek().val, peek().file));
+                                                                        "Incorrect import Syntax.",peek(m_tokens).line,"as <keyword>",peek(m_tokens).val, peek(m_tokens).file));
             }
         }
-        if(peek().type != token::LINEBRK)
+        if(peek(m_tokens).type != token::LINEBRK)
             return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
-                                                                    "Incorrect import Syntax.",peek().line,"linebreak",peek().val, peek().file));
-        consume(); //consume linebreak
-        remove_tokens(begin, m_pos);
-        auto return_value = std::make_unique<NodeImport>(filepath, alias, get_tok());
+                                                                    "Incorrect import Syntax.",peek(m_tokens).line,"linebreak",peek(m_tokens).val, peek(m_tokens).file));
+        consume(m_tokens); //consume linebreak
+        remove_tokens(m_tokens, begin, m_pos);
+        auto return_value = std::make_unique<NodeImport>(filepath, alias, get_tok(m_tokens));
         return Result<std::unique_ptr<NodeImport>>(std::move(return_value));
     } else {
         return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::PreprocessorError,
-                                                                "Not a filepath",peek().line,"path",peek().val, peek().file));
+                                                                "Not a filepath",peek(m_tokens).line,"path",peek(m_tokens).val, peek(m_tokens).file));
     }
 }
 
