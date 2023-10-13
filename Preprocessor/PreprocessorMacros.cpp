@@ -36,10 +36,19 @@ Result<SuccessTag> PreprocessorMacros::process_macro_definitions() {
             consume(m_tokens);
         }
     }
+
+	for (auto &macro : m_macro_definitions) {
+		macro->body.emplace_back(END_TOKEN, "", 0, m_current_file);
+		auto macro_call_evaluation = process_macro_calls(macro->body);
+		if(macro->body.back().type == token::END_TOKEN) macro->body.pop_back(); // delete end_token
+		if (macro_call_evaluation.is_error())
+			return Result<SuccessTag>(macro_call_evaluation.get_error());
+	}
     return Result<SuccessTag>(SuccessTag{});
 }
 
 Result<SuccessTag> PreprocessorMacros::process_macro_calls(std::vector<Token>& tok) {
+	std::vector<std::unique_ptr<NodeMacroHeader>> macro_calls;
     m_pos = 0;
     while (peek(tok).type != token::END_TOKEN) {
         if(is_macro_call(tok)) {
@@ -47,7 +56,8 @@ Result<SuccessTag> PreprocessorMacros::process_macro_calls(std::vector<Token>& t
                 auto macro_call = parse_macro_call(tok);
                 if (macro_call.is_error())
                     return Result<SuccessTag>(macro_call.get_error());
-                auto macro_call_evaluation = evaluate_macro_call(std::move(macro_call.unwrap()), tok);
+//				macro_calls.push_back(std::move(macro_call.unwrap()));
+				auto macro_call_evaluation = evaluate_macro_call(std::move(macro_call.unwrap()), tok);
 				if (macro_call_evaluation.is_error())
 					return Result<SuccessTag>(macro_call_evaluation.get_error());
             } else consume(tok);
@@ -59,6 +69,13 @@ Result<SuccessTag> PreprocessorMacros::process_macro_calls(std::vector<Token>& t
             m_macro_iterations.push_back(std::move(macro_iteration.unwrap()));
         } else consume(tok);
     }
+
+//	for (auto &macro : macro_calls) {
+//		auto macro_call_evaluation = evaluate_macro_call(std::move(macro), tok);
+//		if (macro_call_evaluation.is_error())
+//			return Result<SuccessTag>(macro_call_evaluation.get_error());
+//	}
+
     return Result<SuccessTag>(SuccessTag{});
 }
 
@@ -91,26 +108,27 @@ Result<SuccessTag> PreprocessorMacros::evaluate_macro_call(std::unique_ptr<NodeM
 
     // substitution
     for(int i = 0; i < macro_params.size(); i++) {
-        for (size_t j = 0; j < macro_body.size(); ) {
-            // find keyword from params in body
-            if(macro_params[i][0].val == macro_body[j].val) {
-                // Füge die Tokens aus macro_call->args[i] vor dem aktuellen Token ein
-                macro_body.insert(macro_body.begin() + j, macro_call->args[i].begin(), macro_call->args[i].end());
-                // Lösche das aktuelle Token
-                macro_body.erase(macro_body.begin() + j + macro_call->args[i].size());
-            } else {
-                ++j;
-            }
-        }
+		// if the foo in macro(foo) is going to be replaced with foo anyways do not bother substituting -> as it ends in infinite loop
+		if(macro_call->args[i].size() == 1 and macro_call->args[i][0].val != macro_params[i][0].val)
+			for (size_t j = 0; j < macro_body.size(); ) {
+				// find keyword from params in body
+				if(macro_params[i][0].val == macro_body[j].val) {
+					// Füge die Tokens aus macro_call->args[i] vor dem aktuellen Token ein
+					macro_body.insert(macro_body.begin() + j, macro_call->args[i].begin(), macro_call->args[i].end());
+					// Lösche das aktuelle Token
+					macro_body.erase(macro_body.begin() + j + macro_call->args[i].size());
+				} else {
+					++j;
+				}
+			}
     }
 	// add end_token so that process_macro_calls while loop stops
 	macro_body.emplace_back(END_TOKEN, "", 0, m_current_file);
-
     auto macro_call_result = process_macro_calls(macro_body);
     if (macro_call_result.is_error())
         return Result<SuccessTag>(macro_call_result.get_error());
-
 	if(macro_body.back().type == token::END_TOKEN) macro_body.pop_back(); // delete end_token
+
 	// alter m_pos to the position of the start of the macro_call (since all macro_call tokens got deleted in parse_macro_call)
     m_pos = macro_call->token_pos;
 	// insert macro_body into tok at position of macro_call
