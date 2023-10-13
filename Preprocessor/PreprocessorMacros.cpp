@@ -93,7 +93,6 @@ Result<SuccessTag> PreprocessorMacros::process_macro_calls(std::vector<Token>& t
     return Result<SuccessTag>(SuccessTag{});
 }
 
-
 Result<SuccessTag> PreprocessorMacros::evaluate_macro_call(std::unique_ptr<NodeMacroHeader> macro_call, std::vector<Token>& tok) {
     std::vector<Token> macro_body;
     std::vector<std::vector<Token>> macro_params = {};
@@ -183,8 +182,6 @@ bool PreprocessorMacros::is_iterate_macro(const std::vector<Token>& tok) {
 		return m_pos == 0 and peek(tok).type == ITERATE_MACRO;
 }
 
-
-
 bool PreprocessorMacros::is_defined_macro(const std::string &name) {
     for(auto &macro_def : m_macro_definitions) {
         if(name == macro_def->header->name) {
@@ -193,7 +190,6 @@ bool PreprocessorMacros::is_defined_macro(const std::string &name) {
     }
     return false;
 }
-
 
 Result<std::unique_ptr<NodeMacroHeader>> PreprocessorMacros::parse_macro_header(std::vector<Token>& tok) {
     std::vector<std::vector<Token>> macro_args = {};
@@ -333,7 +329,6 @@ Result<std::vector<std::unique_ptr<NodeMacroHeader>>> PreprocessorMacros::parse_
 	if(macro_header_result.is_error())
 		return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(macro_header_result.get_error());
 	std::vector<std::unique_ptr<NodeMacroHeader>> iterate_macros={};
-//	iterate_macros.reserve(to - from + 1);
 
 	std::unique_ptr<NodeMacroHeader> macro_header = std::move(macro_header_result.unwrap()->header);
 	macro_header->token_pos = begin;
@@ -348,6 +343,49 @@ Result<std::vector<std::unique_ptr<NodeMacroHeader>>> PreprocessorMacros::parse_
 	if(is_downto) std::reverse(iterate_macros.begin(), iterate_macros.end());
     return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(std::move(iterate_macros));
 }
+
+Result<std::vector<std::unique_ptr<NodeMacroHeader>>> PreprocessorMacros::parse_literate_macro(std::vector<Token>& tok) {
+	size_t begin = m_pos;
+	consume(tok); // consume literate_macro
+	if(peek(tok).type != token::OPEN_PARENTH) {
+		return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+	  "Found invalid literate_macro statement syntax.",peek(tok).line,"(",peek(tok).val, peek(tok).file));
+	}
+	consume(tok); //consume (
+	if(peek(tok).type != token::KEYWORD) {
+		return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+	  "Found invalid macro header in literate_macro statement syntax.",peek(tok).line,"valid <macro_header>",peek(tok).val, peek(tok).file));
+	}
+	Token macro = consume(tok);
+	if(!is_defined_macro(macro.val)) {
+		return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+	  "Called macro in literate_macro statement has not been defined.",peek(tok).line,"",peek(tok).val, peek(tok).file));
+	}
+	if(peek(tok).type != token::CLOSED_PARENTH) {
+		return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+	  "Found invalid literate_macro statement syntax.",peek(tok).line,")",peek(tok).val, peek(tok).file));
+	}
+	consume(tok); //consume )
+	if(peek(tok).type != token::ON) {
+		return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+	  "Found invalid literate_macro statement syntax.",peek(tok).line,"on",peek(tok).val, peek(tok).file));
+	}
+	std::vector<Token> literate_params = {};
+	do {
+		if(peek(tok).type == COMMA) consume(tok);
+		if(peek(tok).type == KEYWORD)
+			literate_params.push_back(consume(tok));
+	} while(peek(tok).type == token::COMMA);
+
+	if(peek(tok).type != token::LINEBRK) {
+		return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+	  "Found invalid literate_macro statement syntax. Missing linebreak after iterate_macro statement.",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
+	}
+	consume(tok); //consume linebreak
+	remove_tokens(tok, begin, m_pos);
+
+}
+
 
 Result<std::unique_ptr<NodeMacroDefinition>> PreprocessorMacros::get_macro_definition(Token& macro_name, int num_args) {
 	for(auto &macro_def : m_macro_definitions) {

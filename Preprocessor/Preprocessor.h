@@ -35,6 +35,7 @@ protected:
 	Result<std::unique_ptr<NodeAST>> _parse_parenth_expr(const std::vector<Token>& tok);
 };
 
+
 class SimpleInterpreter {
 public:
 	explicit SimpleInterpreter() {}

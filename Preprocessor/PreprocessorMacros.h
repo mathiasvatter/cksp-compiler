@@ -23,7 +23,8 @@ private:
     Result<std::unique_ptr<NodeMacroDefinition>> parse_macro_definition(std::vector<Token>& tok);
     Result<std::unique_ptr<NodeMacroHeader>> parse_macro_call(std::vector<Token>& tok);
 	Result<std::vector<std::unique_ptr<NodeMacroHeader>>> parse_iterate_macro(std::vector<Token>& tok);
-//	Result<std::unique_ptr<NodeMacroDefinition>&> get_defined_macro(std::unique_ptr<NodeMacroHeader> &macro_call);
+	Result<std::vector<std::unique_ptr<NodeMacroHeader>>> parse_literate_macro(std::vector<Token>& tok);
+
 
     Result<SuccessTag> process_macro_definitions();
     Result<SuccessTag> process_macro_calls(std::vector<Token>& tok);
