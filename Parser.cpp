@@ -157,20 +157,27 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(bool is_persistent,
 }
 
 Result<std::unique_ptr<NodeArray>> Parser::parse_array(bool is_persistent, VarType var_type) {
-    std::unique_ptr<NodeParamList> indexes;
-	std::unique_ptr<NodeParamList> sizes;
+    std::unique_ptr<NodeParamList> indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));;
+	std::unique_ptr<NodeParamList> sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
     // see if variable already has identifier
     auto arr_name = consume().val;
     if(peek().type == token::OPEN_BRACKET) {
-        auto index_params = parse_param_list();
-        if(index_params.is_error()) {
-            return Result<std::unique_ptr<NodeArray>>(index_params.get_error());
+        consume(); // consume [
+        // if it is an empty array initialization
+        if (peek().type != token::CLOSED_BRACKET) {
+            auto index_params = parse_param_list();
+            if (index_params.is_error()) {
+                return Result<std::unique_ptr<NodeArray>>(index_params.get_error());
+            }
+            indexes = std::move(index_params.unwrap());
         }
-		sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
-        indexes = std::move(index_params.unwrap());
+        if(peek().type != token::CLOSED_BRACKET)
+            return Result<std::unique_ptr<NodeArray>>(CompileError(ErrorType::SyntaxError,
+           "Found unknown Array Syntax.", peek().line, "]", peek().val, peek().file));
+        consume(); // consume ]
     } else {
         return Result<std::unique_ptr<NodeArray>>(CompileError(ErrorType::SyntaxError,
-             "Found unknown Array Syntax.", peek().line, "[", peek().val, peek().file));
+         "Found unknown Array Syntax.", peek().line, "[", peek().val, peek().file));
     }
     auto return_value = std::make_unique<NodeArray>(is_persistent, arr_name, var_type, std::move(sizes), std::move(indexes), get_tok());
     return Result<std::unique_ptr<NodeArray>>(std::move(return_value));
@@ -518,15 +525,13 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 
 Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list() {
     std::unique_ptr<NodeParamList> params;
-    if(peek().type == token::OPEN_BRACKET)
-        consume();
     auto param_list = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
+
     auto result = _parse_into_param_list(param_list->params);
     if (result.is_error()) {
         return Result<std::unique_ptr<NodeParamList>>(result.get_error());
     }
-    if(peek().type == token::CLOSED_BRACKET)
-        consume();
+
 
     return Result<std::unique_ptr<NodeParamList>>(std::move(param_list));
 }
@@ -649,7 +654,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 }
 
 Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement() {
-    consume(); //consume declare
+    if(peek().type == DECLARE) consume(); //consume declare
     std::unique_ptr<NodeParamList> to_be_declared = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
     if(not(peek().type == KEYWORD or peek().type == UI_CONTROL or peek().type ==READ or peek().type==CONST or peek().type ==POLYPHONIC or peek().type==LOCAL or peek().type==GLOBAL))
         return Result<std::unique_ptr<NodeDeclareStatement>>(CompileError(ErrorType::ParseError,

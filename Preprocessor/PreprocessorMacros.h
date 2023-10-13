@@ -31,7 +31,7 @@ private:
     bool is_defined_macro(const std::string &name);
     bool is_macro_call(const std::vector<Token>& tok);
 	static bool is_replacement_macro(const std::vector<std::vector<Token>>& args);
-	bool is_iterate_macro(const std::vector<Token>& tok);
+	bool is_beginning_of_line_keyword(const std::vector<Token>& tok, token token);
 	static Result<SuccessTag> substitute_macro_params(std::vector<Token>& macro_body, const std::vector<std::vector<Token>>& placeholders, const std::vector<std::vector<Token>>& new_args);
     Result<SuccessTag> evaluate_macro_call(std::unique_ptr<NodeMacroHeader> macro_call, std::vector<Token>& tok);
 
