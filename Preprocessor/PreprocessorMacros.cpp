@@ -37,14 +37,24 @@ Result<SuccessTag> PreprocessorMacros::process_macro_definitions() {
         }
     }
 
-	for (auto &macro : m_macro_definitions) {
-		macro->body.emplace_back(END_TOKEN, "", 0, m_current_file);
-		auto macro_call_evaluation = process_macro_calls(macro->body);
-		if(macro->body.back().type == token::END_TOKEN) macro->body.pop_back(); // delete end_token
-		if (macro_call_evaluation.is_error())
-			return Result<SuccessTag>(macro_call_evaluation.get_error());
-	}
+//	for (auto &macro : m_macro_definitions) {
+//		macro->body.emplace_back(END_TOKEN, "", 0, m_current_file);
+//		auto macro_call_evaluation = process_macro_calls(macro->body);
+//		if (macro->body.back().type == token::END_TOKEN) macro->body.pop_back(); // delete end_token
+//		if (macro_call_evaluation.is_error())
+//			return Result<SuccessTag>(macro_call_evaluation.get_error());
+//	}
     return Result<SuccessTag>(SuccessTag{});
+}
+
+bool PreprocessorMacros::is_replacement_macro(const std::vector<std::vector<Token>>& args) {
+	for (auto &arg : args) {
+		for (auto &tok : arg) {
+			if (tok.type == KEYWORD && count_char(tok.val, '#') == 2)
+				return true;
+		}
+	}
+	return false;
 }
 
 Result<SuccessTag> PreprocessorMacros::process_macro_calls(std::vector<Token>& tok) {
@@ -61,12 +71,16 @@ Result<SuccessTag> PreprocessorMacros::process_macro_calls(std::vector<Token>& t
 				if (macro_call_evaluation.is_error())
 					return Result<SuccessTag>(macro_call_evaluation.get_error());
             } else consume(tok);
-        } else if ((peek(tok).type == token::LINEBRK and peek(tok, 1).type == ITERATE_MACRO) xor (m_pos == 0 and peek(tok).type == ITERATE_MACRO)) {
+        } else if (is_iterate_macro(tok)) {
             if (peek(tok).type == LINEBRK) consume(tok); //consume linebreak
             auto macro_iteration = parse_iterate_macro(tok);
             if (macro_iteration.is_error())
                 return Result<SuccessTag>(macro_iteration.get_error());
-            m_macro_iterations.push_back(std::move(macro_iteration.unwrap()));
+            for(auto &macro_call : macro_iteration.unwrap()) {
+				auto macro_call_evaluation = evaluate_macro_call(std::move(macro_call), tok);
+				if (macro_call_evaluation.is_error())
+					return Result<SuccessTag>(macro_call_evaluation.get_error());
+			}
         } else consume(tok);
     }
 
@@ -106,22 +120,13 @@ Result<SuccessTag> PreprocessorMacros::evaluate_macro_call(std::unique_ptr<NodeM
     }
     m_macro_evaluation_stack.push_back(macro_call->name);
 
+
     // substitution
-    for(int i = 0; i < macro_params.size(); i++) {
-		// if the foo in macro(foo) is going to be replaced with foo anyways do not bother substituting -> as it ends in infinite loop
-		if(macro_call->args[i].size() == 1 and macro_call->args[i][0].val != macro_params[i][0].val)
-			for (size_t j = 0; j < macro_body.size(); ) {
-				// find keyword from params in body
-				if(macro_params[i][0].val == macro_body[j].val) {
-					// Füge die Tokens aus macro_call->args[i] vor dem aktuellen Token ein
-					macro_body.insert(macro_body.begin() + j, macro_call->args[i].begin(), macro_call->args[i].end());
-					// Lösche das aktuelle Token
-					macro_body.erase(macro_body.begin() + j + macro_call->args[i].size());
-				} else {
-					++j;
-				}
-			}
-    }
+	auto substitution_result = substitute_macro_params(macro_body, macro_params, macro_call->args);
+	if(substitution_result.is_error()) {
+		return substitution_result;
+	}
+
 	// add end_token so that process_macro_calls while loop stops
 	macro_body.emplace_back(END_TOKEN, "", 0, m_current_file);
     auto macro_call_result = process_macro_calls(macro_body);
@@ -139,6 +144,30 @@ Result<SuccessTag> PreprocessorMacros::evaluate_macro_call(std::unique_ptr<NodeM
     return Result<SuccessTag>(SuccessTag{});
 }
 
+Result<SuccessTag> PreprocessorMacros::substitute_macro_params(std::vector<Token>& macro_body, const std::vector<std::vector<Token>>& placeholders, const std::vector<std::vector<Token>>& new_args) {
+	for(int i = 0; i < placeholders.size(); i++) {
+		// if the foo in macro(foo) is going to be replaced with foo anyways do not bother substituting -> as it ends in infinite loop
+		if(not(new_args[i].size() == 1 and new_args[i][0].val == placeholders[i][0].val))
+			for (size_t j = 0; j < macro_body.size(); ) {
+				// find keyword from params in body
+				if(placeholders[i][0].val == macro_body[j].val) {
+					// Füge die Tokens aus new_args[i] vor dem aktuellen Token ein
+					macro_body.insert(macro_body.begin() + j, new_args[i].begin(), new_args[i].end());
+					// Lösche das aktuelle Token
+					macro_body.erase(macro_body.begin() + j + new_args[i].size());
+				} else if(count_char(placeholders[i][0].val, '#') == 2 and contains(macro_body[j].val, placeholders[i][0].val)) {
+					std::string hashtag_replacement;
+					for(auto & arg : new_args[i]) {
+						hashtag_replacement += arg.val;
+					}
+					macro_body[j].val.replace(macro_body[j].val.find(placeholders[i][0].val), placeholders[i][0].val.size(), hashtag_replacement);
+				} else {
+					++j;
+				}
+			}
+	}
+	return Result<SuccessTag>(SuccessTag{});
+}
 
 bool PreprocessorMacros::is_macro_call(const std::vector<Token>& tok) {
 	if(m_pos > 0)
@@ -146,6 +175,14 @@ bool PreprocessorMacros::is_macro_call(const std::vector<Token>& tok) {
 	else
 		return m_pos == 0 && peek(tok, 0).type == token::KEYWORD && (peek(tok, 1).type == token::LINEBRK xor peek(tok, 1).type == token::OPEN_PARENTH);
 }
+
+bool PreprocessorMacros::is_iterate_macro(const std::vector<Token>& tok) {
+	if(m_pos>0)
+		return (peek(tok, -1).type == token::LINEBRK and peek(tok, 0).type == ITERATE_MACRO);
+	else
+		return m_pos == 0 and peek(tok).type == ITERATE_MACRO;
+}
+
 
 
 bool PreprocessorMacros::is_defined_macro(const std::string &name) {
@@ -159,10 +196,10 @@ bool PreprocessorMacros::is_defined_macro(const std::string &name) {
 
 
 Result<std::unique_ptr<NodeMacroHeader>> PreprocessorMacros::parse_macro_header(std::vector<Token>& tok) {
-    std::string macro_name;
     std::vector<std::vector<Token>> macro_args = {};
 	size_t start_pos = m_pos;
-    macro_name = consume(tok).val;
+    Token macro = consume(tok);
+    std::string macro_name = macro.val;
     if (peek(tok).type == token::OPEN_PARENTH) {
         consume(tok); // consume (
         if (peek(tok).type != token::CLOSED_PARENTH) {
@@ -178,7 +215,7 @@ Result<std::unique_ptr<NodeMacroHeader>> PreprocessorMacros::parse_macro_header(
         }
         consume(tok);
     }
-    auto value = std::make_unique<NodeMacroHeader>(macro_name, std::move(macro_args), start_pos, get_tok(tok));
+    auto value = std::make_unique<NodeMacroHeader>(macro_name, std::move(macro_args), start_pos, macro);
     return Result<std::unique_ptr<NodeMacroHeader>>(std::move(value));
 }
 
@@ -189,7 +226,7 @@ Result<std::unique_ptr<NodeMacroDefinition>> PreprocessorMacros::parse_macro_def
     consume(tok); //consume "macro"
     if (peek(tok).type != token::KEYWORD) {
         return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::SyntaxError,
-                                                                         "Missing macro name.",peek(tok).line,"keyword",peek(tok).val, peek(tok).file));
+	 "Missing macro name.",peek(tok).line,"keyword",peek(tok).val, peek(tok).file));
     }
     auto header = parse_macro_header(tok);
     if (header.is_error()) {
@@ -198,26 +235,26 @@ Result<std::unique_ptr<NodeMacroDefinition>> PreprocessorMacros::parse_macro_def
     macro_header = std::move(header.unwrap());
     if (peek(tok).type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::SyntaxError,
-                                                                         "Missing necessary linebreak after macro header.",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
+	 "Missing necessary linebreak after macro header.",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
     }
     consume(tok); // consume linebreak
     while (peek(tok).type != token::END_MACRO) {
         if(peek(tok).type == token::MACRO)
             return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::PreprocessorError,
-                                                                             "Nested macros are not allowed. Maybe you forgot an 'end macro' along the line?",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
+		 "Nested macros are not allowed. Maybe you forgot an 'end macro' along the line?",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
         macro_body.push_back(consume(tok));
     }
     consume(tok); // consume end macro
     if (peek(tok).type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::SyntaxError,
-                                                                         "Missing necessary linebreak after 'end macro'.",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
+	 "Missing necessary linebreak after 'end macro'.",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
     }
     consume(tok); //consume linebreak
     remove_tokens(tok, begin, m_pos);
     for(auto &arg : macro_header->args) {
         if(not(arg.size() == 1 and arg.at(0).type == token::KEYWORD))
             return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::SyntaxError,
-                                                                             "Only keywords allowed as parameters when defining macros.",arg.at(0).line,"keyword",arg.at(0).val, arg.at(0).file));
+		 "Only keywords allowed as parameters when defining macros.",arg.at(0).line,"keyword",arg.at(0).val, arg.at(0).file));
     }
     auto value = std::make_unique<NodeMacroDefinition>(std::move(macro_header), std::move(macro_body), get_tok(tok));
     return Result<std::unique_ptr<NodeMacroDefinition>>(std::move(value));
@@ -230,111 +267,96 @@ Result<std::unique_ptr<NodeMacroHeader>> PreprocessorMacros::parse_macro_call(st
         return Result<std::unique_ptr<NodeMacroHeader>>(macro_header.get_error());
     if (peek(tok).type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeMacroHeader>>(CompileError(ErrorType::SyntaxError,
-                                                                     "Missing necessary linebreak after macro call. Maybe you forgot a closing parenthesis?",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
+		 "Missing necessary linebreak after macro call. Maybe you forgot a closing parenthesis?",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
     }
     consume(tok); // consume linebreak
     remove_tokens(tok, begin, m_pos);
     return std::move(macro_header);
 }
 
-Result<std::unique_ptr<NodeIterateMacro>> PreprocessorMacros::parse_iterate_macro(std::vector<Token>& tok) {
+Result<std::vector<std::unique_ptr<NodeMacroHeader>>> PreprocessorMacros::parse_iterate_macro(std::vector<Token>& tok) {
     size_t begin = m_pos;
     consume(tok); // consume iterate_macro
     if(peek(tok).type != token::OPEN_PARENTH) {
-        return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-                                                                      "Found invalid iterate_macro statement syntax.",peek(tok).line,"(",peek(tok).val, peek(tok).file));
+        return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+	  	"Found invalid iterate_macro statement syntax.",peek(tok).line,"(",peek(tok).val, peek(tok).file));
     }
     consume(tok); //consume (
     if(peek(tok).type != token::KEYWORD) {
-        return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-                                                                      "Found invalid macro header in iterate_macro statement syntax.",peek(tok).line,"valid <macro_header>",peek(tok).val, peek(tok).file));
+        return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+	  "Found invalid macro header in iterate_macro statement syntax.",peek(tok).line,"valid <macro_header>",peek(tok).val, peek(tok).file));
     }
-    Token macro_header = consume(tok);
+    Token macro = consume(tok);
+	if(!is_defined_macro(macro.val)) {
+		return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+	  "Called macro in iterate_macro statement has not been defined.",peek(tok).line,"",peek(tok).val, peek(tok).file));
+	}
     if(peek(tok).type != token::CLOSED_PARENTH) {
-        return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-                                                                      "Found invalid iterate_macro statement syntax.",peek(tok).line,")",peek(tok).val, peek(tok).file));
+        return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+	  "Found invalid iterate_macro statement syntax.",peek(tok).line,")",peek(tok).val, peek(tok).file));
     }
     consume(tok); //consume )
     if(peek(tok).type != token::ASSIGN) {
-        return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-                                                                      "Found invalid iterate_macro statement syntax.",peek(tok).line,":=",peek(tok).val, peek(tok).file));
+        return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+	  "Found invalid iterate_macro statement syntax.",peek(tok).line,":=",peek(tok).val, peek(tok).file));
     }
     consume(tok); //consume :=
-    auto from_stmt = parse_binary_expr();
+    auto from_stmt = parse_binary_expr(tok);
     if(from_stmt.is_error())
-        return Result<std::unique_ptr<NodeIterateMacro>>(from_stmt.get_error());
+        return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(from_stmt.get_error());
     SimpleInterpreter interpreter;
     auto from_interpreted = interpreter.evaluate_int_expression(from_stmt.unwrap());
     if(from_interpreted.is_error())
-        return Result<std::unique_ptr<NodeIterateMacro>>(from_interpreted.get_error());
+        return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(from_interpreted.get_error());
     int from = from_interpreted.unwrap();
-    if(peek(tok).type != token::TO) {
-        return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-                                                                      "Found invalid iterate_macro statement syntax.",peek(tok).line,"to",peek(tok).val, peek(tok).file));
+    if(not(peek(tok).type == token::TO or peek(tok).type == token::DOWNTO)) {
+        return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+	  "Found invalid iterate_macro statement syntax.",peek(tok).line,"to/downto",peek(tok).val, peek(tok).file));
     }
+	bool is_downto = peek(tok).type == token::DOWNTO;
     consume(tok); // consume "to"
-    auto to_stmt = parse_binary_expr();
+    auto to_stmt = parse_binary_expr(tok);
     if(to_stmt.is_error())
-        return Result<std::unique_ptr<NodeIterateMacro>>(to_stmt.get_error());
+        return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(to_stmt.get_error());
     auto to_interpreted = interpreter.evaluate_int_expression(to_stmt.unwrap());
     if(to_interpreted.is_error())
-        return Result<std::unique_ptr<NodeIterateMacro>>(to_interpreted.get_error());
+        return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(to_interpreted.get_error());
     int to = to_interpreted.unwrap();
     if(peek(tok).type != token::LINEBRK) {
-        return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-                                                                      "Found invalid iterate_macro statement syntax. Missing linebreak after iterate_macro statement.",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
+        return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+	  "Found invalid iterate_macro statement syntax. Missing linebreak after iterate_macro statement.",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
     }
     consume(tok); //consume linebreak
     remove_tokens(tok, begin, m_pos);
 
-    auto result = std::make_unique<NodeIterateMacro>(std::move(macro_header), from, to);
-    return Result<std::unique_ptr<NodeIterateMacro>>(std::move(result));
+	auto macro_header_result = get_macro_definition(macro, 1);
+	if(macro_header_result.is_error())
+		return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(macro_header_result.get_error());
+	std::vector<std::unique_ptr<NodeMacroHeader>> iterate_macros={};
+//	iterate_macros.reserve(to - from + 1);
+
+	std::unique_ptr<NodeMacroHeader> macro_header = std::move(macro_header_result.unwrap()->header);
+	macro_header->token_pos = begin;
+	std::vector<std::vector<Token>> args(1, std::vector<Token>(1));
+	if(!is_downto) std::swap(to, from);
+	for(int i = from; i>=to; i--) {
+		args[0][0] = {Token{INT, std::to_string(i), macro.line, macro.file}};
+		auto new_macro_header = std::make_unique<NodeMacroHeader>(macro_header->name,args,macro_header->token_pos,macro_header->tok);
+		iterate_macros.push_back(std::move(new_macro_header));
+	}
+	// so that the macro calls will be unpacked in the correct order since each header saves its og position in m_tokens
+	if(is_downto) std::reverse(iterate_macros.begin(), iterate_macros.end());
+    return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(std::move(iterate_macros));
 }
 
-
-Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>& root) {
-    std::string preprocessor_error = "Statement needs to be evaluated to a single int value before compilation.";
-    if (auto intNode = dynamic_cast<NodeInt *>(root.get())) {
-        return Result<int>(intNode->value);
-    } else if (auto unaryExprNode = dynamic_cast<NodeUnaryExpr *>(root.get())) {
-        auto operandValueStmt = evaluate_int_expression(unaryExprNode->operand);
-        if (operandValueStmt.is_error()) return Result<int>(operandValueStmt.get_error());
-        int operandValue = operandValueStmt.unwrap();
-        if (unaryExprNode->op.type == token::SUB) { // Assuming SUB represents the '-' unary operator
-            return Result<int>(-operandValue);
-        }
-        // Add other unary operations here if needed
-        return Result<int>(CompileError(ErrorType::PreprocessorError,
-                                        "Unsupported unary operation. " + preprocessor_error,
-                                        root->tok.line, "-", unaryExprNode->op.val, root->tok.file));
-    } else if (auto binaryExprNode = dynamic_cast<NodeBinaryExpr *>(root.get())) {
-        auto leftValueStmt = evaluate_int_expression(binaryExprNode->left);
-        if (leftValueStmt.is_error()) return Result<int>(leftValueStmt.get_error());
-        int leftValue = leftValueStmt.unwrap();
-        auto rightValueStmt = evaluate_int_expression(binaryExprNode->right);
-        if (rightValueStmt.is_error()) return Result<int>(rightValueStmt.get_error());
-        int rightValue = rightValueStmt.unwrap();
-        if (binaryExprNode->op == "+") {
-            return Result<int>(leftValue + rightValue);
-        } else if (binaryExprNode->op == "-") {
-            return Result<int>(leftValue - rightValue);
-        } else if (binaryExprNode->op == "*") {
-            return Result<int>(leftValue * rightValue);
-        } else if (binaryExprNode->op == "/") {
-            if (rightValue == 0) {
-                return Result<int>(CompileError(ErrorType::PreprocessorError, "Divison by zero. " + preprocessor_error,
-                                                root->tok.line, "", std::to_string(rightValue), root->tok.file));
-            }
-            return Result<int>(leftValue / rightValue);
-        } else if (binaryExprNode->op == "mod") {
-            return Result<int>(leftValue % rightValue);
-        }
-        // Add other binary operations here if needed
-        return Result<int>(
-                CompileError(ErrorType::PreprocessorError, "Unsupported binary operation. " + preprocessor_error,
-                             root->tok.line, "*, /, -, +, mod", binaryExprNode->op, root->tok.file));
-    }
-    return Result<int>(CompileError(ErrorType::PreprocessorError,
-                                    "Unknown expression statement. No variables allowed. " + preprocessor_error,
-                                    root->tok.line, "", "", root->tok.file));
+Result<std::unique_ptr<NodeMacroDefinition>> PreprocessorMacros::get_macro_definition(Token& macro_name, int num_args) {
+	for(auto &macro_def : m_macro_definitions) {
+		if(macro_name.val == macro_def->header->name and macro_def->header->args.size() == num_args) {
+			auto m_header = std::make_unique<NodeMacroHeader>(macro_def->header->name,macro_def->header->args,macro_def->header->token_pos,macro_def->header->tok);
+			auto m_def = std::make_unique<NodeMacroDefinition>(std::move(m_header),macro_def->body,macro_def->tok);
+			return Result<std::unique_ptr<NodeMacroDefinition>>(std::move(m_def));
+		}
+	}
+	return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::PreprocessorError,
+	"Found incorrect number of parameters in macro call.",macro_name.line,"valid number of parameters",std::to_string(num_args),macro_name.file));
 }

@@ -14,13 +14,9 @@ Parser::Parser(std::vector<Token> tokens): m_tokens(std::move(tokens)) {
 	m_curr_token = m_tokens.at(0).type;
 }
 
-void Parser::parse() {
-	ASTPrinter printer;
-	auto prog = parse_program();
-	if (prog.is_error())
-		prog.get_error().print();
-	else
-		prog.unwrap()->accept(printer);
+Result<std::unique_ptr<NodeProgram>> Parser::parse() {
+	return parse_program();
+
 }
 
 Token& Parser::get_tok() {
@@ -508,6 +504,8 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 			if (define_stmt.is_error())
 				return Result<std::unique_ptr<NodeProgram>>(define_stmt.get_error());
 			defines.push_back(std::move(define_stmt.unwrap()));
+		} else if (peek().type == token::MACRO) {
+			while (peek().type != token::END_MACRO) consume(); consume();
         } else {
             return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::ParseError,
              "", peek().line, "import, define, callback, function, macro", peek().val, peek().file));

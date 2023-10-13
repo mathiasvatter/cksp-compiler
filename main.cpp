@@ -5,8 +5,7 @@
 //#include "Tokenizer.h"
 #include "Parser.h"
 #include "Preprocessor/Preprocessor.h"
-
-
+#include "ASTVisitor.h"
 
 int main() {
 
@@ -26,10 +25,16 @@ int main() {
 //            std::cout << tok << std::endl;
 //    }
     Parser parser(std::move(preprocessed_tokens));
-	parser.parse();
+	auto ast = parser.parse();
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+
+	ASTPrinter printer;
+	if (ast.is_error())
+		ast.get_error().print();
+	else
+		ast.unwrap()->accept(printer);
 
     // Dauer in Millisekunden ausgeben
     std::cout << "Time measured: " << duration.count() << " ms" << std::endl;

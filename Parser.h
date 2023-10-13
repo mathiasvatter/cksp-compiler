@@ -43,7 +43,7 @@ public:
     explicit Parser(std::vector<Token> tokens);
     [[nodiscard]] size_t get_current_pos() const;
     void set_current_pos(size_t mPos);
-	void parse();
+	Result<std::unique_ptr<NodeProgram>> parse();
 
 protected:
 	size_t m_pos;
@@ -55,6 +55,8 @@ protected:
     Token& get_tok();
     static int _get_binop_precedence(token tok);
 	void _skip_linebreaks();
+
+private:
     static std::string sanitize_binary(const std::string& input);
     /// convert eg 0bFFFh into 0xbFFF
     static std::string sanitize_hex(const std::string& input);
@@ -80,7 +82,6 @@ protected:
 		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr();
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr();
-private:
     Result<std::unique_ptr<NodeAST>> parse_assign_statement();
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable();
     Result<std::unique_ptr<NodeArray>> parse_declare_array();
