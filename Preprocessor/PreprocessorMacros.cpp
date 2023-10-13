@@ -6,7 +6,8 @@
 
 PreprocessorMacros::PreprocessorMacros(std::vector<Token> tokens, const std::string &currentFile)
 	: Preprocessor(std::move(tokens),currentFile) {
-
+	m_pos = 0;
+	m_curr_token = m_tokens.at(0).type;
 }
 
 

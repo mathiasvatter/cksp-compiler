@@ -6,44 +6,48 @@
 
 PreprocessorImport::PreprocessorImport(std::vector<Token> tokens, std::string current_file)
         : Preprocessor(std::move(tokens), std::move(current_file)) {
-    m_imported_tokens = {};
     m_pos = 0;
     m_curr_token = m_tokens.at(0).type;
-    process_imports(m_tokens, m_current_file, m_imported_files);
-    m_tokens = std::move(m_imported_tokens);
-    m_tokens.emplace_back(END_TOKEN, "", 0, m_current_file);
 }
 
-void PreprocessorImport::process_imports(std::vector<Token> tokens, std::string current_file, std::unordered_set<std::string>& imported_files) {
-    m_tokens = std::move(tokens);
+Result<SuccessTag> PreprocessorImport::process_imports() {
+	m_imported_files.insert(m_current_file);
+	auto result = process_import_statements(m_tokens, m_current_file);
+	if(result.is_error())
+		return Result<SuccessTag>(result.get_error());
+	m_tokens.emplace_back(END_TOKEN, "", 0, m_current_file);
+	return Result<SuccessTag>(result.unwrap());
+}
+
+
+Result<SuccessTag> PreprocessorImport::process_import_statements(std::vector<Token>& tokens, std::string current_file) {
+//    m_tokens = std::move(tokens);
     m_current_file = std::move(current_file);
-    m_imported_files = imported_files;
     m_pos = 0;
-    while (peek(m_tokens).type != token::END_TOKEN) {
-        if(peek(m_tokens).type == token::IMPORT) {
-            auto import_stmt = parse_import();
+    while (peek(tokens).type != token::END_TOKEN) {
+        if(peek(tokens).type == token::IMPORT) {
+            auto import_stmt = parse_import(tokens);
             if(import_stmt.is_error())
-                import_stmt.get_error().print();
+                Result<SuccessTag>(import_stmt.get_error());
             else
                 m_import_statements.push_back(std::move(import_stmt.unwrap()));
         } else {
-            consume(m_tokens);
+            consume(tokens);
         }
     }
     // check END_TOKEN status and remove END_TOKEN from imported files
-    if (!m_tokens.empty() && m_tokens.back().type == token::END_TOKEN) {
-        m_tokens.pop_back();
+    if (!tokens.empty() && tokens.back().type == token::END_TOKEN) {
+		tokens.pop_back();
     }
-    m_imported_tokens.insert(m_imported_tokens.end(), m_tokens.begin(), m_tokens.end());
-    m_tokens.clear();
-    handle_imports();
+	evaluate_imports(tokens);
+	return Result<SuccessTag>(SuccessTag{});
 }
 
 
-void PreprocessorImport::handle_imports() {
+Result<SuccessTag> PreprocessorImport::evaluate_imports(std::vector<Token>& tokens) {
     for (auto & import_stmt : m_import_statements) {
         auto alias = import_stmt->alias;
-        auto path = resolve_path(import_stmt->filepath);
+        auto path = resolve_path(import_stmt->filepath, tokens);
         if(path.is_error()) {
             path.get_error().print();
         } else {
@@ -52,46 +56,51 @@ void PreprocessorImport::handle_imports() {
                 std::cout << path.unwrap() << std::endl;
                 Tokenizer tokenizer(path.unwrap());
                 auto new_tokens = tokenizer.tokenize();
-                process_imports(new_tokens, path.unwrap(), m_imported_files);
+
+                auto processed_imports = process_import_statements(new_tokens, path.unwrap());
+				if(processed_imports.is_error())
+					return Result<SuccessTag>(processed_imports.get_error());
+				tokens.insert(tokens.end(), new_tokens.begin(), new_tokens.end());
             }
         }
     }
+	return Result<SuccessTag>(SuccessTag{});
 }
 
-Result<std::unique_ptr<NodeImport>> PreprocessorImport::parse_import() {
+Result<std::unique_ptr<NodeImport>> PreprocessorImport::parse_import(std::vector<Token>& tokens) {
     //consume import token IMPORT
     size_t begin = m_pos;
-    consume(m_tokens);
-    if(peek(m_tokens).type ==token::STRING) {
-        std::string filepath = consume(m_tokens).val;
+    consume(tokens);
+    if(peek(tokens).type ==token::STRING) {
+        std::string filepath = consume(tokens).val;
         // erase ""
         filepath.erase(0,1);
         filepath.pop_back();
         std::string alias;
-        if(peek(m_tokens).type == token::AS) {
+        if(peek(tokens).type == token::AS) {
             // consume as token
-            consume(m_tokens);
-            if(peek(m_tokens).type == token::KEYWORD) {
-                alias = consume(m_tokens).val;
+            consume(tokens);
+            if(peek(tokens).type == token::KEYWORD) {
+                alias = consume(tokens).val;
             } else {
                 return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
-                                                                        "Incorrect import Syntax.",peek(m_tokens).line,"as <keyword>",peek(m_tokens).val, peek(m_tokens).file));
+                                                                        "Incorrect import Syntax.",peek(tokens).line,"as <keyword>",peek(tokens).val, peek(tokens).file));
             }
         }
-        if(peek(m_tokens).type != token::LINEBRK)
+        if(peek(tokens).type != token::LINEBRK)
             return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
-                                                                    "Incorrect import Syntax.",peek(m_tokens).line,"linebreak",peek(m_tokens).val, peek(m_tokens).file));
-        consume(m_tokens); //consume linebreak
-        remove_tokens(m_tokens, begin, m_pos);
-        auto return_value = std::make_unique<NodeImport>(filepath, alias, get_tok(m_tokens));
+                                                                    "Incorrect import Syntax.",peek(tokens).line,"linebreak",peek(tokens).val, peek(tokens).file));
+        consume(tokens); //consume linebreak
+        remove_tokens(tokens, begin, m_pos);
+        auto return_value = std::make_unique<NodeImport>(filepath, alias, get_tok(tokens));
         return Result<std::unique_ptr<NodeImport>>(std::move(return_value));
     } else {
         return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::PreprocessorError,
-                                                                "Not a filepath",peek(m_tokens).line,"path",peek(m_tokens).val, peek(m_tokens).file));
+                                                                "Not a filepath",peek(tokens).line,"path",peek(tokens).val, peek(tokens).file));
     }
 }
 
-Result<std::string> PreprocessorImport::resolve_path(const std::string& import_path) {
+Result<std::string> PreprocessorImport::resolve_path(const std::string& import_path, std::vector<Token>& tokens) {
     std::filesystem::path current_file(m_current_file);
     std::filesystem::path current_base = current_file.parent_path();
     std::filesystem::path rel(import_path);
@@ -102,12 +111,12 @@ Result<std::string> PreprocessorImport::resolve_path(const std::string& import_p
             return Result<std::string>(rel.string());
         } else {
             return Result<std::string>(CompileError(ErrorType::PreprocessorError,
-                                                    "Found incorrect path.", m_tokens.at(m_pos).line, "valid path", rel, m_current_file));
+			"Found incorrect path.", tokens.at(m_pos).line, "valid path", rel, m_current_file));
         }
     }
 
-    // Andernfalls mache den Pfad absolut in Bezug auf den Basispfad
-    std::filesystem::path combined = current_base / rel;
+    // Andernfalls mache den Pfad absolut in Bezug auf den Basispfad. Lexically normal removes ../
+    std::filesystem::path combined = (current_base / rel).lexically_normal();
     std::filesystem::path absPath = std::filesystem::absolute(combined);
 
     // Überprüfe, ob der Pfad existiert
@@ -119,7 +128,7 @@ Result<std::string> PreprocessorImport::resolve_path(const std::string& import_p
             return Result<std::string>(new_absPath);
         auto resolve_error = current_base.string() + ", " + rel.string();
         return Result<std::string>(CompileError(ErrorType::PreprocessorError,
-                                                "Could not resolve paths.", m_tokens.at(m_pos).line, "valid path", resolve_error, m_current_file));
+		"Could not resolve paths.", tokens.at(m_pos).line, "valid path", resolve_error, m_current_file));
     }
 }
 
