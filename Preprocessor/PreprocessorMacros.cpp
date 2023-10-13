@@ -4,6 +4,12 @@
 
 #include "PreprocessorMacros.h"
 
+PreprocessorMacros::PreprocessorMacros(std::vector<Token> tokens, const std::string &currentFile)
+	: Preprocessor(std::move(tokens),currentFile) {
+
+}
+
+
 Result<SuccessTag> PreprocessorMacros::process_macros() {
     auto processed_macro_defs = process_macro_definitions();
     if(processed_macro_defs.is_error())

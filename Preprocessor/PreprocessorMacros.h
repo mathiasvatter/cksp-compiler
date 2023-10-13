@@ -8,8 +8,7 @@
 
 class PreprocessorMacros : public Preprocessor {
 public:
-    PreprocessorMacros(std::vector<Token> tokens, const std::string &currentFile)
-    : Preprocessor(std::move(tokens),currentFile) {}
+    PreprocessorMacros(std::vector<Token> tokens, const std::string &currentFile);
     Result<SuccessTag> process_macros();
 
 private:
