@@ -15,11 +15,11 @@ private:
     std::vector<std::unique_ptr<NodeImport>> m_import_statements;
 
     // Imports
-	Result<SuccessTag> process_import_statements(std::vector<Token>& tokens, std::string current_file);
+	Result<SuccessTag> process_import_statements(std::vector<Token>& tokens, const std::string& current_file);
     Result<std::unique_ptr<NodeImport>> parse_import(std::vector<Token>& tokens);
-    Result<std::string> resolve_path(const std::string& import_path, std::vector<Token>& tokens);
+    Result<std::string> resolve_path(const std::string& import_path, std::vector<Token>& tokens, const std::string& curr_file);
     std::string resolve_overlap(const std::string& base_path, const std::string& relative_path);
-	Result<SuccessTag> evaluate_imports(std::vector<Token>& tokens);
+	Result<SuccessTag> evaluate_import(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file);
 };
 
 

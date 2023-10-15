@@ -8,6 +8,8 @@
 #include <vector>
 #include <optional>
 #include <variant>
+#include <list>
+
 
 #include "Tokenizer/Tokens.h"
 #include "Tokenizer/Tokenizer.h"
@@ -280,8 +282,9 @@ struct NodeMacroHeader : NodeAST {
 struct NodeMacroDefinition : NodeAST {
 	std::unique_ptr<NodeMacroHeader> header;
     std::vector<Token> body;
-    inline NodeMacroDefinition(std::unique_ptr<NodeMacroHeader> header, std::vector<Token> body, Token tok)
-    : NodeAST(tok), header(std::move(header)), body(std::move(body)) {}
+    bool has_recursive_calls;
+    inline NodeMacroDefinition(std::unique_ptr<NodeMacroHeader> header, std::vector<Token> body, bool recur, Token tok)
+    : NodeAST(tok), header(std::move(header)), body(std::move(body)), has_recursive_calls(recur) {}
 //	void accept(ASTVisitor& visitor) override;
 };
 

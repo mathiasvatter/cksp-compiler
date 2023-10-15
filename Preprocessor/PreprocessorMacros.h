@@ -27,6 +27,7 @@ private:
 
 
     Result<SuccessTag> process_macro_definitions();
+    Result<SuccessTag> process_macro_iterations();
     Result<SuccessTag> process_macro_calls(std::vector<Token>& tok);
     bool is_defined_macro(const std::string &name);
     bool is_macro_call(const std::vector<Token>& tok);

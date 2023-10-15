@@ -49,6 +49,7 @@ protected:
 	size_t m_pos;
     std::vector<Token> m_tokens;
 	token m_curr_token;
+    std::string m_curr_token_value;
 
 	[[nodiscard]] Token peek(int ahead = 0);
 	Token consume();

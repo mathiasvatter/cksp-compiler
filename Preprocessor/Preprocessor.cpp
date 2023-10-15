@@ -47,6 +47,7 @@ Token Preprocessor::peek(const std::vector<Token>& tok, int ahead) {
 		exit(EXIT_FAILURE);
 	}
 	m_curr_token = tok.at(m_pos).type;
+    m_curr_token_value = tok.at(m_pos).val;
 	return tok.at(m_pos+ahead);
 
 }
@@ -54,6 +55,7 @@ Token Preprocessor::peek(const std::vector<Token>& tok, int ahead) {
 Token Preprocessor::consume(const std::vector<Token>& tok) {
 	if (m_pos < tok.size()) {
 		m_curr_token = tok.at(m_pos + 1).type;
+        m_curr_token_value = tok.at(m_pos+1).val;
 		return tok.at(m_pos++);
 	}
 	auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";

@@ -37,13 +37,6 @@ Result<SuccessTag> PreprocessorMacros::process_macro_definitions() {
         }
     }
 
-//	for (auto &macro : m_macro_definitions) {
-//		macro->body.emplace_back(END_TOKEN, "", 0, m_current_file);
-//		auto macro_call_evaluation = process_macro_calls(macro->body);
-//		if (macro->body.back().type == token::END_TOKEN) macro->body.pop_back(); // delete end_token
-//		if (macro_call_evaluation.is_error())
-//			return Result<SuccessTag>(macro_call_evaluation.get_error());
-//	}
     return Result<SuccessTag>(SuccessTag{});
 }
 
@@ -56,6 +49,7 @@ bool PreprocessorMacros::is_replacement_macro(const std::vector<std::vector<Toke
 	}
 	return false;
 }
+
 
 Result<SuccessTag> PreprocessorMacros::process_macro_calls(std::vector<Token>& tok) {
 	std::vector<std::unique_ptr<NodeMacroHeader>> macro_calls;
@@ -88,21 +82,17 @@ Result<SuccessTag> PreprocessorMacros::process_macro_calls(std::vector<Token>& t
         } else consume(tok);
     }
 
-//	for (auto &macro : macro_calls) {
-//		auto macro_call_evaluation = evaluate_macro_call(std::move(macro), tok);
-//		if (macro_call_evaluation.is_error())
-//			return Result<SuccessTag>(macro_call_evaluation.get_error());
-//	}
-
     return Result<SuccessTag>(SuccessTag{});
 }
 
 Result<SuccessTag> PreprocessorMacros::evaluate_macro_call(std::unique_ptr<NodeMacroHeader> macro_call, std::vector<Token>& tok) {
     std::vector<Token> macro_body;
     std::vector<std::vector<Token>> macro_params = {};
+    bool has_recursive_macro_calls;
     bool valid_macro_call = false;
     for(auto &macro_def : m_macro_definitions) {
         if(macro_call->name == macro_def->header->name and macro_call->args.size() == macro_def->header->args.size()) {
+            has_recursive_macro_calls = macro_def->has_recursive_calls;
             macro_body = macro_def->body;
             macro_params = macro_def->header->args;
             valid_macro_call = true;
@@ -129,14 +119,14 @@ Result<SuccessTag> PreprocessorMacros::evaluate_macro_call(std::unique_ptr<NodeM
 	if(substitution_result.is_error()) {
 		return substitution_result;
 	}
-
-	// add end_token so that process_macro_calls while loop stops
-	macro_body.emplace_back(END_TOKEN, "", 0, m_current_file);
-    auto macro_call_result = process_macro_calls(macro_body);
-    if (macro_call_result.is_error())
-        return Result<SuccessTag>(macro_call_result.get_error());
-	if(macro_body.back().type == token::END_TOKEN) macro_body.pop_back(); // delete end_token
-
+    if(has_recursive_macro_calls) {
+        // add end_token so that process_macro_calls while loop stops
+        macro_body.emplace_back(END_TOKEN, "", 0, m_current_file);
+        auto macro_call_result = process_macro_calls(macro_body);
+        if (macro_call_result.is_error())
+            return Result<SuccessTag>(macro_call_result.get_error());
+        if (macro_body.back().type == token::END_TOKEN) macro_body.pop_back(); // delete end_token
+    }
 	// alter m_pos to the position of the start of the macro_call (since all macro_call tokens got deleted in parse_macro_call)
     m_pos = macro_call->token_pos;
 	// insert macro_body into tok at position of macro_call
@@ -198,27 +188,50 @@ bool PreprocessorMacros::is_defined_macro(const std::string &name) {
 
 Result<std::unique_ptr<NodeMacroHeader>> PreprocessorMacros::parse_macro_header(std::vector<Token>& tok) {
     std::vector<std::vector<Token>> macro_args = {};
-	size_t start_pos = m_pos;
+    size_t start_pos = m_pos;
     Token macro = consume(tok);
     std::string macro_name = macro.val;
+
     if (peek(tok).type == token::OPEN_PARENTH) {
         consume(tok); // consume (
+
         if (peek(tok).type != token::CLOSED_PARENTH) {
-            while (peek(tok).type != token::CLOSED_PARENTH) {
-                std::vector<Token> arg = {};
-                while (peek(tok).type != token::COMMA and peek(tok).type != token::CLOSED_PARENTH) {
-                    arg.push_back(consume(tok));
+            int parenth_depth = 1; // Start with 1 because we've already consumed the first OPEN_PARENTH
+            while (parenth_depth > 0) {
+                if (peek(tok).type == token::OPEN_PARENTH) {
+                    parenth_depth++;
+                } else if (peek(tok).type == token::CLOSED_PARENTH) {
+                    parenth_depth--;
+                } else if (peek(tok).type == token::END_TOKEN) {
+                    return Result<std::unique_ptr<NodeMacroHeader>>(CompileError(ErrorType::SyntaxError,
+                     "Unexpected end of tokens. Missing closing parenthesis.",peek(tok).line, ")", peek(tok).val,peek(tok).file));
                 }
-                if(peek(tok).type == token::COMMA)
-                    consume(tok); //consume COMMA
+                std::vector<Token> arg = {};
+                while (peek(tok).type != token::COMMA and parenth_depth > 0) {
+                    arg.push_back(consume(tok));
+                    if (peek(tok).type == token::OPEN_PARENTH) {
+                        parenth_depth++;
+                    } else if (peek(tok).type == token::CLOSED_PARENTH) {
+                        parenth_depth--;
+                    }
+                }
+                if (peek(tok).type == token::COMMA && parenth_depth > 0) {
+                    consume(tok); // consume COMMA only if we're not at the outermost parenthesis level
+                }
                 macro_args.push_back(arg);
             }
+            if (peek(tok).type != token::CLOSED_PARENTH) {
+                return Result<std::unique_ptr<NodeMacroHeader>>(CompileError(ErrorType::SyntaxError,
+             "Missing closing parenthesis.",peek(tok).line, ")", peek(tok).val,peek(tok).file));
+            }
         }
-        consume(tok);
+        consume(tok); //consume )
     }
+
     auto value = std::make_unique<NodeMacroHeader>(macro_name, std::move(macro_args), start_pos, macro);
     return Result<std::unique_ptr<NodeMacroHeader>>(std::move(value));
 }
+
 
 Result<std::unique_ptr<NodeMacroDefinition>> PreprocessorMacros::parse_macro_definition(std::vector<Token>& tok) {
     std::unique_ptr<NodeMacroHeader> macro_header;
@@ -239,7 +252,10 @@ Result<std::unique_ptr<NodeMacroDefinition>> PreprocessorMacros::parse_macro_def
 	 "Missing necessary linebreak after macro header.",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
     }
     consume(tok); // consume linebreak
+    bool has_recursive_calls = false;
     while (peek(tok).type != token::END_MACRO) {
+        has_recursive_calls &= (is_macro_call(tok) or is_beginning_of_line_keyword(tok, ITERATE_MACRO) or
+                is_beginning_of_line_keyword(tok, LITERATE_MACRO));
         if(peek(tok).type == token::MACRO)
             return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::PreprocessorError,
 		 "Nested macros are not allowed. Maybe you forgot an 'end macro' along the line?",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
@@ -257,7 +273,7 @@ Result<std::unique_ptr<NodeMacroDefinition>> PreprocessorMacros::parse_macro_def
             return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::SyntaxError,
 		 "Only keywords allowed as parameters when defining macros.",arg.at(0).line,"keyword",arg.at(0).val, arg.at(0).file));
     }
-    auto value = std::make_unique<NodeMacroDefinition>(std::move(macro_header), std::move(macro_body), get_tok(tok));
+    auto value = std::make_unique<NodeMacroDefinition>(std::move(macro_header), std::move(macro_body), has_recursive_calls, get_tok(tok));
     return Result<std::unique_ptr<NodeMacroDefinition>>(std::move(value));
 }
 
@@ -333,18 +349,24 @@ Result<std::vector<std::unique_ptr<NodeMacroHeader>>> PreprocessorMacros::parse_
 	auto macro_header_result = get_macro_definition(macro, 1);
 	if(macro_header_result.is_error())
 		return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(macro_header_result.get_error());
-	std::vector<std::unique_ptr<NodeMacroHeader>> iterate_macros={};
-
+    std::vector<std::unique_ptr<NodeMacroHeader>> iterate_macros={};
+    iterate_macros.reserve(std::abs(from-to));
 	std::unique_ptr<NodeMacroHeader> macro_header = std::move(macro_header_result.unwrap()->header);
 	macro_header->token_pos = begin;
 	std::vector<std::vector<Token>> args(1, std::vector<Token>(1));
-	if(!is_downto) std::swap(to, from);
-	for(int i = from; i>=to; i--) {
-		args[0][0] = {Token{INT, std::to_string(i), macro.line, macro.file}};
-		iterate_macros.push_back(std::make_unique<NodeMacroHeader>(macro_header->name,args,macro_header->token_pos,macro_header->tok));
-	}
-	// so that the macro calls will be unpacked in the correct order since each header saves its og position in m_tokens
-	if(is_downto) std::reverse(iterate_macros.begin(), iterate_macros.end());
+
+    if (is_downto) {
+        for (int i = to; i <= from; i++) {
+            args[0][0] = {Token{INT, std::to_string(i), macro.line, macro.file}};
+            iterate_macros.push_back(std::make_unique<NodeMacroHeader>(macro_header->name, args, macro_header->token_pos, macro_header->tok));
+        }
+    } else {
+        for (int i = to; i >= from; i--) {
+            args[0][0] = {Token{INT, std::to_string(i), macro.line, macro.file}};
+            iterate_macros.push_back(std::make_unique<NodeMacroHeader>(macro_header->name, args, macro_header->token_pos, macro_header->tok));
+        }
+    }
+
     return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(std::move(iterate_macros));
 }
 
@@ -415,7 +437,7 @@ Result<std::unique_ptr<NodeMacroDefinition>> PreprocessorMacros::get_macro_defin
 	for(auto &macro_def : m_macro_definitions) {
 		if(macro_name.val == macro_def->header->name and macro_def->header->args.size() == num_args) {
 			auto m_header = std::make_unique<NodeMacroHeader>(macro_def->header->name,macro_def->header->args,macro_def->header->token_pos,macro_def->header->tok);
-			auto m_def = std::make_unique<NodeMacroDefinition>(std::move(m_header),macro_def->body,macro_def->tok);
+			auto m_def = std::make_unique<NodeMacroDefinition>(std::move(m_header),macro_def->body,macro_def->has_recursive_calls, macro_def->tok);
 			return Result<std::unique_ptr<NodeMacroDefinition>>(std::move(m_def));
 		}
 	}

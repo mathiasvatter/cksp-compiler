@@ -14,6 +14,7 @@ public:
 private:
     Result<std::unique_ptr<NodeDefineStatement>> parse_define_statement();
 
+    std::vector<std::unique_ptr<NodeDefineStatement>> m_define_statements;
 };
 
 

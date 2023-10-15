@@ -59,6 +59,8 @@ std::vector<Token> Tokenizer::tokenize() {
             get_line_continuation();
         } else if (current_char == ',') {
             get_comma();
+        } else if(is_space(current_char)) {
+            skip_whitespace();
         } else
             get_invalid();
     }
@@ -158,6 +160,9 @@ void Tokenizer::get_string() {
 	char starting_char = current_char;
 	consume();
 	while(current_char != starting_char) {
+        if (current_char == '\\' and peek() == starting_char) {
+            consume();
+        }
 		consume();
 	}
 	consume();
