@@ -56,6 +56,10 @@ UI_FILE_SELECTOR ::= declare ui_file_selector $<variable-name>
 UI_PANEL ::= declare ui_panel $<variable-name>
 UI_MOUSE_AREA ::= declare ui_mouse_area $<variable-name>
 
+
+.not. sh_left(bit_list, 1) .and. bit_list
+1
+
 //******** DEFINE
 <define_statement> ::= "define" <param_list> := <param_list>
 

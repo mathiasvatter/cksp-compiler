@@ -39,11 +39,13 @@ Result<SuccessTag> PreprocessorDefine::evaluate_define_statements() {
 	m_pos = 0;
 	while (peek(m_tokens).type != token::END_TOKEN) {
 		if(peek(m_tokens).type == KEYWORD and peek(m_tokens, -1).type != MACRO) {
+			size_t begin = m_pos;
 			auto define_stmt = get_define_statement(peek(m_tokens).val);
 			if(define_stmt != nullptr) {
 				auto evaluation_result = evaluate_define_statement(define_stmt);
 				if(evaluation_result.is_error())
 					return Result<SuccessTag>(evaluation_result.get_error());
+				remove_tokens(m_tokens, begin, m_pos);
 			} else consume(m_tokens);
 		} else consume(m_tokens);
 	}

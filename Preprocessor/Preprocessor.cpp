@@ -147,6 +147,7 @@ Result<SuccessTag> Preprocessor::substitute_macro_params(std::vector<Token>& mac
 					macro_body.insert(macro_body.begin() + j, new_args[i].begin(), new_args[i].end());
 					// Lösche das aktuelle Token
 					macro_body.erase(macro_body.begin() + j + new_args[i].size());
+					j+=new_args[i].size();
 					tokenReplaced = true;
 					break; // break out of the inner loop since we've replaced the token
 				} else if(count_char(placeholders[i][0].val, '#') == 2 and contains(macro_body[j].val, placeholders[i][0].val)) {
@@ -176,6 +177,7 @@ Result<std::vector<std::vector<Token>>> Preprocessor::parse_nested_params_list(s
 		consume(tok); // consume (
 		if (peek(tok).type != token::CLOSED_PARENTH) {
 			int parenth_depth = 1; // Start with 1 because we've already consumed the first OPEN_PARENTH
+			std::vector<Token> arg;
 			while (parenth_depth > 0) {
 				if (peek(tok).type == token::OPEN_PARENTH) {
 					parenth_depth++;
@@ -183,31 +185,26 @@ Result<std::vector<std::vector<Token>>> Preprocessor::parse_nested_params_list(s
 					parenth_depth--;
 				} else if (peek(tok).type == token::END_TOKEN) {
 					return Result<std::vector<std::vector<Token>>>(CompileError(ErrorType::SyntaxError,
-				"Unexpected end of tokens. Missing closing parenthesis.",peek(tok).line, ")", peek(tok).val,peek(tok).file));
+																				"Unexpected end of tokens. Missing closing parenthesis.",peek(tok).line, ")", peek(tok).val,peek(tok).file));
 				}
-				std::vector<Token> arg = {};
-				while (peek(tok).type != token::COMMA and parenth_depth > 0) {
+				//(val)
+				if (peek(tok).type == token::COMMA && parenth_depth == 1) {
+					params_list.push_back(arg);
+					arg.clear();
+					consume(tok); // consume COMMA
+				} else if(parenth_depth > 0) {
 					arg.push_back(consume(tok));
-					if (peek(tok).type == token::OPEN_PARENTH) {
-						parenth_depth++;
-					} else if (peek(tok).type == token::CLOSED_PARENTH) {
-						parenth_depth--;
-					}
 				}
-				if (peek(tok).type == token::COMMA && parenth_depth > 0) {
-					consume(tok); // consume COMMA only if we're not at the outermost parenthesis level
-				}
-				params_list.push_back(arg);
 			}
-			if (peek(tok).type != token::CLOSED_PARENTH) {
-				return Result<std::vector<std::vector<Token>>>(CompileError(ErrorType::SyntaxError,
-			"Missing closing parenthesis.",peek(tok).line, ")", peek(tok).val,peek(tok).file));
+			if (!arg.empty()) {
+				params_list.push_back(arg);
 			}
 		}
 		consume(tok); //consume )
 	}
 	return Result<std::vector<std::vector<Token>>>(std::move(params_list));
 }
+
 
 
 
