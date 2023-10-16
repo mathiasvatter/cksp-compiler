@@ -123,14 +123,6 @@ struct NodeDeclareStatement : NodeAST {
 	void accept(ASTVisitor& visitor) override;
 };
 
-struct NodeDefineStatement : NodeAST {
-	std::unique_ptr<NodeParamList> to_be_defined;
-	std::unique_ptr<NodeParamList> assignee;
-	inline NodeDefineStatement(std::unique_ptr<NodeParamList> to_be_defined, std::unique_ptr<NodeParamList> assignee, Token tok)
-    : NodeAST(tok), to_be_defined(std::move(to_be_defined)), assignee(std::move(assignee)) {}
-	void accept(ASTVisitor& visitor) override;
-};
-
 struct NodeAssignStatement: NodeAST {
     std::unique_ptr<NodeParamList> array_variable;
     std::unique_ptr<NodeParamList> assignee;
@@ -270,13 +262,26 @@ struct NodeFunctionDefinition: NodeAST {
     void accept(ASTVisitor& visitor) override;
 };
 
+struct NodeDefineHeader : NodeAST {
+	std::string name;
+	std::vector<std::vector<Token>> args;
+	inline NodeDefineHeader(std::string name, std::vector<std::vector<Token>> args, Token tok)
+	: NodeAST(tok), name(std::move(name)), args(std::move(args)) {}
+};
+
+struct NodeDefineStatement : NodeAST {
+	std::unique_ptr<NodeDefineHeader> to_be_defined;
+	std::vector<Token> assignee;
+	inline NodeDefineStatement(std::unique_ptr<NodeDefineHeader> to_be_defined, std::vector<Token> assignee)
+		: to_be_defined(std::move(to_be_defined)), assignee(std::move(assignee)) {}
+};
+
 struct NodeMacroHeader : NodeAST {
     std::string name;
     std::vector<std::vector<Token>> args;
 	size_t token_pos;
     inline NodeMacroHeader(std::string name, std::vector<std::vector<Token>> args, size_t pos, Token tok)
     : NodeAST(tok), name(std::move(name)), args(std::move(args)), token_pos(pos) {}
-//    void accept(ASTVisitor& visitor) override;
 };
 
 struct NodeMacroDefinition : NodeAST {
@@ -285,20 +290,6 @@ struct NodeMacroDefinition : NodeAST {
     bool has_recursive_calls;
     inline NodeMacroDefinition(std::unique_ptr<NodeMacroHeader> header, std::vector<Token> body, bool recur, Token tok)
     : NodeAST(tok), header(std::move(header)), body(std::move(body)), has_recursive_calls(recur) {}
-//	void accept(ASTVisitor& visitor) override;
-};
-
-struct NodeIterateMacro : NodeAST {
-	Token macro_header;
-	int from;
-	int to;
-	inline NodeIterateMacro(Token macro_header, int from, int to)
-	: macro_header(std::move(macro_header)), from(from), to(to) {}
-};
-
-struct NodeLiterateMacro : NodeAST {
-	std::unique_ptr<NodeMacroHeader> macro_header;
-	std::vector<Token> params;
 };
 
 struct NodeProgram: NodeAST {

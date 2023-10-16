@@ -88,7 +88,7 @@ private:
     Result<std::unique_ptr<NodeArray>> parse_declare_array();
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control();
     Result<std::unique_ptr<NodeDeclareStatement>> parse_declare_statement();
-	Result<std::unique_ptr<NodeDefineStatement>> parse_define_statement();
+//	Result<std::unique_ptr<NodeDefineStatement>> parse_define_statement();
     Result<std::unique_ptr<NodeAST>> parse_const_struct_family_statement();
 	/// combines all possible statement types
     Result<std::unique_ptr<NodeStatement>> parse_statement();

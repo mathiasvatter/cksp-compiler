@@ -19,13 +19,23 @@ public:
 protected:
     std::string m_current_file;
 
+	// define collection
+	std::vector<std::unique_ptr<NodeDefineStatement>> m_define_statements;
+	std::vector<std::string> m_define_strings;
+	// macro collection
+	std::vector<std::unique_ptr<NodeMacroDefinition>> m_macro_definitions;
+
+
     void remove_last();
     void remove_tokens(std::vector<Token>& tok, size_t start, size_t end);
+	static size_t search(const std::vector<std::string>& vec, const std::string& str);
 
 	[[nodiscard]] Token peek(const std::vector<Token>& tok, int ahead = 0);
 	Token consume(const std::vector<Token>& tok);
-	const Token& get_tok(const std::vector<Token>& tok) const;
+	[[nodiscard]] const Token& get_tok(const std::vector<Token>& tok) const;
 
+	static Result<SuccessTag> substitute_macro_params(std::vector<Token>& macro_body, const std::vector<std::vector<Token>>& placeholders, const std::vector<std::vector<Token>>& new_args);
+	Result<std::vector<std::vector<Token>>> parse_nested_params_list(std::vector<Token>& tok);
 	Result<std::unique_ptr<NodeAST>> parse_int(const std::vector<Token>& tok);
 	Result<std::unique_ptr<NodeAST>> parse_binary_expr(const std::vector<Token>& tok);
 	Result<std::unique_ptr<NodeAST>> _parse_primary_expr(const std::vector<Token>& tok);

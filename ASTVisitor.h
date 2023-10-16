@@ -16,7 +16,7 @@ public:
 	virtual void visit(NodeArray& node) = 0;
     virtual void visit(NodeDeclareStatement& node) = 0;
     virtual void visit(NodeUIControl& node) = 0;
-	virtual void visit(NodeDefineStatement& node) = 0;
+//	virtual void visit(NodeDefineStatement& node) = 0;
     virtual void visit(NodeBinaryExpr& node) = 0;
     virtual void visit(NodeUnaryExpr& node) = 0;
     virtual void visit(NodeAssignStatement& node)  = 0;
@@ -87,14 +87,14 @@ public:
         }
 	}
 
-	void visit(NodeDefineStatement& node) override {
-		std::cout << "define ";
-		node.to_be_defined->accept(*this);
-		if(!node.assignee->params.empty()) {
-			std::cout << " := ";
-			node.assignee->accept(*this);
-		}
-	}
+//	void visit(NodeDefineStatement& node) override {
+//		std::cout << "define ";
+//		node.to_be_defined->accept(*this);
+//		if(!node.assignee->params.empty()) {
+//			std::cout << " := ";
+//			node.assignee->accept(*this);
+//		}
+//	}
 
 
     void visit(NodeParamList& node) override {
@@ -293,14 +293,14 @@ public:
         for( auto & function : node.function_definitions) {
             function->accept(*this);
         }
-        std::cout << "Macros:" << std::endl;
-        for (auto & macro : node.macro_definitions) {
-            macro -> accept(*this);
-        }
-		std::cout << "Defines:" << std::endl;
-		for (auto & define : node.defines) {
-			define -> accept(*this);
-		}
+//        std::cout << "Macros:" << std::endl;
+//        for (auto & macro : node.macro_definitions) {
+//            macro -> accept(*this);
+//        }
+//		std::cout << "Defines:" << std::endl;
+//		for (auto & define : node.defines) {
+//			define -> accept(*this);
+//		}
 		std::cout << std::endl;
     }
 

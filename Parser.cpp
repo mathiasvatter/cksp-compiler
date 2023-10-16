@@ -388,19 +388,14 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement() {
     _skip_linebreaks();
     std::unique_ptr<NodeAST> stmt;
     // assign statement
-    if (peek().type == token::KEYWORD || peek().type == token::DEFINE || peek().type == token::DECLARE || peek().type == token::CALL) {
+    if (peek().type == token::KEYWORD || peek().type == token::DECLARE || peek().type == token::CALL) {
         if (peek().type == token::DECLARE) {
             auto declare_stmt = parse_declare_statement();
             if (declare_stmt.is_error()) {
                 return Result<std::unique_ptr<NodeStatement>>(declare_stmt.get_error());
             }
             stmt = std::move(declare_stmt.unwrap());
-        } else if (peek().type == token::DEFINE) {
-            auto define_stmt = parse_define_statement();
-            if (define_stmt.is_error()) {
-                return Result<std::unique_ptr<NodeStatement>>(define_stmt.get_error());
-            }
-            stmt = std::move(define_stmt.unwrap());
+
         } else if ((peek().type == token::CALL) xor
                    (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK)) {
             auto function_call = parse_function_call();
@@ -507,10 +502,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
                 return Result<std::unique_ptr<NodeProgram>>(function.get_error());
 			function_definitions.push_back(std::move(function.unwrap()));
 		} else if (peek().type == token::DEFINE) {
-			auto define_stmt = parse_define_statement();
-			if (define_stmt.is_error())
-				return Result<std::unique_ptr<NodeProgram>>(define_stmt.get_error());
-			defines.push_back(std::move(define_stmt.unwrap()));
+			while (peek().type != token::LINEBRK) consume(); consume();
 		} else if (peek().type == token::MACRO) {
 			while (peek().type != token::END_MACRO) consume(); consume();
         } else {
@@ -1014,25 +1006,25 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement() {
 	return Result<std::unique_ptr<NodeSelectStatement>>(std::move(return_value));
 }
 
-Result<std::unique_ptr<NodeDefineStatement>> Parser::parse_define_statement() {
-	consume(); //consume define keyword
-	VarType type = VarType::Define;
-	auto definitions = parse_param_list();
-	if(definitions.is_error()) {
-		return Result<std::unique_ptr<NodeDefineStatement>>(definitions.get_error());
-	}
-	if(peek().type != token::ASSIGN) {
-		return Result<std::unique_ptr<NodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
-		 "Defines need to have expressions assigned.", peek().line, ":=", peek().val, peek().file));
-	}
-	consume(); // consume assign :=
-	auto assignees = parse_param_list();
-	if(assignees.is_error()) {
-		return Result<std::unique_ptr<NodeDefineStatement>>(assignees.get_error());
-	}
-	auto return_value = std::make_unique<NodeDefineStatement>(std::move(definitions.unwrap()), std::move(assignees.unwrap()), get_tok());
-	return Result<std::unique_ptr<NodeDefineStatement>>(std::move(return_value));
-}
+//Result<std::unique_ptr<NodeDefineStatement>> Parser::parse_define_statement() {
+//	consume(); //consume define keyword
+//	VarType type = VarType::Define;
+//	auto definitions = parse_param_list();
+//	if(definitions.is_error()) {
+//		return Result<std::unique_ptr<NodeDefineStatement>>(definitions.get_error());
+//	}
+//	if(peek().type != token::ASSIGN) {
+//		return Result<std::unique_ptr<NodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
+//		 "Defines need to have expressions assigned.", peek().line, ":=", peek().val, peek().file));
+//	}
+//	consume(); // consume assign :=
+//	auto assignees = parse_param_list();
+//	if(assignees.is_error()) {
+//		return Result<std::unique_ptr<NodeDefineStatement>>(assignees.get_error());
+//	}
+//	auto return_value = std::make_unique<NodeDefineStatement>(std::move(definitions.unwrap()), std::move(assignees.unwrap()), get_tok());
+//	return Result<std::unique_ptr<NodeDefineStatement>>(std::move(return_value));
+//}
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_const_struct_family_statement() {
     Token construct = consume(); //consume family, struct, const

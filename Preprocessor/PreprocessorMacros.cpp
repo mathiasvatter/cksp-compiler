@@ -137,31 +137,6 @@ Result<SuccessTag> PreprocessorMacros::evaluate_macro_call(std::unique_ptr<NodeM
     return Result<SuccessTag>(SuccessTag{});
 }
 
-Result<SuccessTag> PreprocessorMacros::substitute_macro_params(std::vector<Token>& macro_body, const std::vector<std::vector<Token>>& placeholders, const std::vector<std::vector<Token>>& new_args) {
-	for(int i = 0; i < placeholders.size(); i++) {
-		// if the foo in macro(foo) is going to be replaced with foo anyways do not bother substituting -> as it ends in infinite loop
-		if(not(new_args[i].size() == 1 and new_args[i][0].val == placeholders[i][0].val))
-			for (size_t j = 0; j < macro_body.size(); ) {
-				// find keyword from params in body
-				if(placeholders[i][0].val == macro_body[j].val) {
-					// Füge die Tokens aus new_args[i] vor dem aktuellen Token ein
-					macro_body.insert(macro_body.begin() + j, new_args[i].begin(), new_args[i].end());
-					// Lösche das aktuelle Token
-					macro_body.erase(macro_body.begin() + j + new_args[i].size());
-				} else if(count_char(placeholders[i][0].val, '#') == 2 and contains(macro_body[j].val, placeholders[i][0].val)) {
-					std::string hashtag_replacement;
-					for(auto & arg : new_args[i]) {
-						hashtag_replacement += arg.val;
-					}
-					macro_body[j].val.replace(macro_body[j].val.find(placeholders[i][0].val), placeholders[i][0].val.size(), hashtag_replacement);
-				} else {
-					++j;
-				}
-			}
-	}
-	return Result<SuccessTag>(SuccessTag{});
-}
-
 bool PreprocessorMacros::is_macro_call(const std::vector<Token>& tok) {
 	if(m_pos > 0)
 		return peek(tok, -1).type == LINEBRK && peek(tok, 0).type == token::KEYWORD && (peek(tok, 1).type == token::LINEBRK xor peek(tok, 1).type == token::OPEN_PARENTH);
@@ -186,49 +161,22 @@ bool PreprocessorMacros::is_defined_macro(const std::string &name) {
     return false;
 }
 
+
+
 Result<std::unique_ptr<NodeMacroHeader>> PreprocessorMacros::parse_macro_header(std::vector<Token>& tok) {
-    std::vector<std::vector<Token>> macro_args = {};
     size_t start_pos = m_pos;
     Token macro = consume(tok);
     std::string macro_name = macro.val;
 
-    if (peek(tok).type == token::OPEN_PARENTH) {
-        consume(tok); // consume (
+	if(search(m_define_strings, macro_name) != -1)
+		return Result<std::unique_ptr<NodeMacroHeader>>(CompileError(ErrorType::SyntaxError,
+		 "Found naming conflict in macro name. A define constant of this name already exists.",peek(tok).line,"",macro_name, peek(tok).file));
 
-        if (peek(tok).type != token::CLOSED_PARENTH) {
-            int parenth_depth = 1; // Start with 1 because we've already consumed the first OPEN_PARENTH
-            while (parenth_depth > 0) {
-                if (peek(tok).type == token::OPEN_PARENTH) {
-                    parenth_depth++;
-                } else if (peek(tok).type == token::CLOSED_PARENTH) {
-                    parenth_depth--;
-                } else if (peek(tok).type == token::END_TOKEN) {
-                    return Result<std::unique_ptr<NodeMacroHeader>>(CompileError(ErrorType::SyntaxError,
-                     "Unexpected end of tokens. Missing closing parenthesis.",peek(tok).line, ")", peek(tok).val,peek(tok).file));
-                }
-                std::vector<Token> arg = {};
-                while (peek(tok).type != token::COMMA and parenth_depth > 0) {
-                    arg.push_back(consume(tok));
-                    if (peek(tok).type == token::OPEN_PARENTH) {
-                        parenth_depth++;
-                    } else if (peek(tok).type == token::CLOSED_PARENTH) {
-                        parenth_depth--;
-                    }
-                }
-                if (peek(tok).type == token::COMMA && parenth_depth > 0) {
-                    consume(tok); // consume COMMA only if we're not at the outermost parenthesis level
-                }
-                macro_args.push_back(arg);
-            }
-            if (peek(tok).type != token::CLOSED_PARENTH) {
-                return Result<std::unique_ptr<NodeMacroHeader>>(CompileError(ErrorType::SyntaxError,
-             "Missing closing parenthesis.",peek(tok).line, ")", peek(tok).val,peek(tok).file));
-            }
-        }
-        consume(tok); //consume )
-    }
+	auto macro_args_result = parse_nested_params_list(tok);
+	if(macro_args_result.is_error())
+		return Result<std::unique_ptr<NodeMacroHeader>>(macro_args_result.get_error());
 
-    auto value = std::make_unique<NodeMacroHeader>(macro_name, std::move(macro_args), start_pos, macro);
+    auto value = std::make_unique<NodeMacroHeader>(macro_name, std::move(macro_args_result.unwrap()), start_pos, macro);
     return Result<std::unique_ptr<NodeMacroHeader>>(std::move(value));
 }
 
@@ -254,8 +202,8 @@ Result<std::unique_ptr<NodeMacroDefinition>> PreprocessorMacros::parse_macro_def
     consume(tok); // consume linebreak
     bool has_recursive_calls = false;
     while (peek(tok).type != token::END_MACRO) {
-        has_recursive_calls &= (is_macro_call(tok) or is_beginning_of_line_keyword(tok, ITERATE_MACRO) or
-                is_beginning_of_line_keyword(tok, LITERATE_MACRO));
+        has_recursive_calls |= is_macro_call(tok) or is_beginning_of_line_keyword(tok, ITERATE_MACRO) or
+                is_beginning_of_line_keyword(tok, LITERATE_MACRO);
         if(peek(tok).type == token::MACRO)
             return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::PreprocessorError,
 		 "Nested macros are not allowed. Maybe you forgot an 'end macro' along the line?",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));

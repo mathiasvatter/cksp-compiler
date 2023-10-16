@@ -7,6 +7,7 @@
 #include "Preprocessor.h"
 #include "PreprocessorImport.h"
 #include "PreprocessorMacros.h"
+#include "PreprocessorDefine.h"
 
 Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
     : Parser(std::move(tokens)), m_current_file(std::move(current_file)) {
@@ -24,6 +25,16 @@ void Preprocessor::process() {
 		exit(EXIT_FAILURE);
 	}
     m_tokens = std::move(imports.get_tokens());
+
+	PreprocessorDefine defines(m_tokens, m_current_file);
+	result = defines.process_defines();
+	if(result.is_error()) {
+		result.get_error().print();
+		auto err_msg = "Preprocessor failed while processing define statements.";
+		CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",peek(m_tokens).file).print();
+		exit(EXIT_FAILURE);
+	}
+	m_tokens = std::move(defines.get_tokens());
 
     PreprocessorMacros macros(m_tokens, m_current_file);
     result = macros.process_macros();
@@ -91,6 +102,112 @@ void Preprocessor::remove_tokens(std::vector<Token>& tok, size_t start, size_t e
     }
 }
 
+size_t Preprocessor::search(const std::vector<std::string>& vec, const std::string& str) {
+	auto it = std::find(vec.begin(), vec.end(), str);
+	if (it != vec.end())
+		return std::distance(vec.begin(), it);
+	return (size_t)-1;
+}
+
+//Result<SuccessTag> Preprocessor::substitute_macro_params(std::vector<Token>& macro_body, const std::vector<std::vector<Token>>& placeholders, const std::vector<std::vector<Token>>& new_args) {
+//	for(int i = 0; i < placeholders.size(); i++) {
+//		// if the foo in macro(foo) is going to be replaced with foo anyways do not bother substituting -> as it ends in infinite loop
+//		if(not(new_args[i].size() == 1 and new_args[i][0].val == placeholders[i][0].val))
+//			for (size_t j = 0; j < macro_body.size(); ) {
+//				// find keyword from params in body
+//				if(placeholders[i][0].val == macro_body[j].val) {
+//					// Füge die Tokens aus new_args[i] vor dem aktuellen Token ein
+//					macro_body.insert(macro_body.begin() + j, new_args[i].begin(), new_args[i].end());
+//					// Lösche das aktuelle Token
+//					macro_body.erase(macro_body.begin() + j + new_args[i].size());
+//				} else if(count_char(placeholders[i][0].val, '#') == 2 and contains(macro_body[j].val, placeholders[i][0].val)) {
+//					std::string hashtag_replacement;
+//					for(auto & arg : new_args[i]) {
+//						hashtag_replacement += arg.val;
+//					}
+//					macro_body[j].val.replace(macro_body[j].val.find(placeholders[i][0].val), placeholders[i][0].val.size(), hashtag_replacement);
+//				} else {
+//					++j;
+//				}
+//			}
+//	}
+//	return Result<SuccessTag>(SuccessTag{});
+//}
+
+Result<SuccessTag> Preprocessor::substitute_macro_params(std::vector<Token>& macro_body, const std::vector<std::vector<Token>>& placeholders, const std::vector<std::vector<Token>>& new_args) {
+	for (size_t j = 0; j < macro_body.size(); ) {
+		bool tokenReplaced = false;
+
+		for(int i = 0; i < placeholders.size(); i++) {
+			// if the foo in macro(foo) is going to be replaced with foo anyways do not bother substituting -> as it ends in infinite loop
+			if(not(new_args[i].size() == 1 and new_args[i][0].val == placeholders[i][0].val)) {
+				// find keyword from params in body
+				if(placeholders[i][0].val == macro_body[j].val) {
+					// Füge die Tokens aus new_args[i] vor dem aktuellen Token ein
+					macro_body.insert(macro_body.begin() + j, new_args[i].begin(), new_args[i].end());
+					// Lösche das aktuelle Token
+					macro_body.erase(macro_body.begin() + j + new_args[i].size());
+					tokenReplaced = true;
+					break; // break out of the inner loop since we've replaced the token
+				} else if(count_char(placeholders[i][0].val, '#') == 2 and contains(macro_body[j].val, placeholders[i][0].val)) {
+					std::string hashtag_replacement;
+					for(auto & arg : new_args[i]) {
+						hashtag_replacement += arg.val;
+					}
+					macro_body[j].val.replace(macro_body[j].val.find(placeholders[i][0].val), placeholders[i][0].val.size(), hashtag_replacement);
+					tokenReplaced = true;
+					break; // break out of the inner loop since we've replaced the token
+				}
+			}
+		}
+
+		if (!tokenReplaced) {
+			++j;
+		}
+	}
+
+	return Result<SuccessTag>(SuccessTag{});
+}
+
+
+Result<std::vector<std::vector<Token>>> Preprocessor::parse_nested_params_list(std::vector<Token>& tok) {
+	std::vector<std::vector<Token>> params_list = {};
+	if (peek(tok).type == token::OPEN_PARENTH) {
+		consume(tok); // consume (
+		if (peek(tok).type != token::CLOSED_PARENTH) {
+			int parenth_depth = 1; // Start with 1 because we've already consumed the first OPEN_PARENTH
+			while (parenth_depth > 0) {
+				if (peek(tok).type == token::OPEN_PARENTH) {
+					parenth_depth++;
+				} else if (peek(tok).type == token::CLOSED_PARENTH) {
+					parenth_depth--;
+				} else if (peek(tok).type == token::END_TOKEN) {
+					return Result<std::vector<std::vector<Token>>>(CompileError(ErrorType::SyntaxError,
+				"Unexpected end of tokens. Missing closing parenthesis.",peek(tok).line, ")", peek(tok).val,peek(tok).file));
+				}
+				std::vector<Token> arg = {};
+				while (peek(tok).type != token::COMMA and parenth_depth > 0) {
+					arg.push_back(consume(tok));
+					if (peek(tok).type == token::OPEN_PARENTH) {
+						parenth_depth++;
+					} else if (peek(tok).type == token::CLOSED_PARENTH) {
+						parenth_depth--;
+					}
+				}
+				if (peek(tok).type == token::COMMA && parenth_depth > 0) {
+					consume(tok); // consume COMMA only if we're not at the outermost parenthesis level
+				}
+				params_list.push_back(arg);
+			}
+			if (peek(tok).type != token::CLOSED_PARENTH) {
+				return Result<std::vector<std::vector<Token>>>(CompileError(ErrorType::SyntaxError,
+			"Missing closing parenthesis.",peek(tok).line, ")", peek(tok).val,peek(tok).file));
+			}
+		}
+		consume(tok); //consume )
+	}
+	return Result<std::vector<std::vector<Token>>>(std::move(params_list));
+}
 
 
 

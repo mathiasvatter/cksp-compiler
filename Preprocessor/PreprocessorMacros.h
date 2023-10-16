@@ -12,7 +12,6 @@ public:
     Result<SuccessTag> process_macros();
 
 private:
-    std::vector<std::unique_ptr<NodeMacroDefinition>> m_macro_definitions;
     std::vector<std::unique_ptr<NodeMacroHeader>> m_macro_iterations;
     std::vector<std::string> m_macro_evaluation_stack;
     std::vector<Token> m_macro_tokens;
@@ -25,7 +24,6 @@ private:
 	Result<std::vector<std::unique_ptr<NodeMacroHeader>>> parse_iterate_macro(std::vector<Token>& tok);
 	Result<std::vector<std::unique_ptr<NodeMacroHeader>>> parse_literate_macro(std::vector<Token>& tok);
 
-
     Result<SuccessTag> process_macro_definitions();
     Result<SuccessTag> process_macro_iterations();
     Result<SuccessTag> process_macro_calls(std::vector<Token>& tok);
@@ -33,7 +31,6 @@ private:
     bool is_macro_call(const std::vector<Token>& tok);
 	static bool is_replacement_macro(const std::vector<std::vector<Token>>& args);
 	bool is_beginning_of_line_keyword(const std::vector<Token>& tok, token token);
-	static Result<SuccessTag> substitute_macro_params(std::vector<Token>& macro_body, const std::vector<std::vector<Token>>& placeholders, const std::vector<std::vector<Token>>& new_args);
     Result<SuccessTag> evaluate_macro_call(std::unique_ptr<NodeMacroHeader> macro_call, std::vector<Token>& tok);
 
 };

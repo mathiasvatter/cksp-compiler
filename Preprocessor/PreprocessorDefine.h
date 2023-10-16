@@ -12,9 +12,15 @@ public:
     Result<SuccessTag> process_defines();
 
 private:
-    Result<std::unique_ptr<NodeDefineStatement>> parse_define_statement();
+	Result<SuccessTag> evaluate_define_statements();
+	Result<SuccessTag> evaluate_define_statement(std::unique_ptr<NodeDefineStatement>* define_stmt);
 
-    std::vector<std::unique_ptr<NodeDefineStatement>> m_define_statements;
+	std::unique_ptr<NodeDefineStatement>* get_define_statement(const std::string &name);
+
+	Result<std::unique_ptr<NodeDefineStatement>> parse_define_statement();
+	Result<std::unique_ptr<NodeDefineHeader>> parse_define_header();
+
+
 };
 
 
