@@ -26,6 +26,9 @@ int main() {
 //        if(tok.type != token::COMMENT or tok.type != token::LINEBRK)
 //            std::cout << tok << std::endl;
 //    }
+	auto preprocessor_time = std::chrono::high_resolution_clock::now();
+	auto preprocessor_duration = std::chrono::duration_cast<std::chrono::milliseconds>(preprocessor_time - start_time);
+
     Parser parser(std::move(preprocessed_tokens));
 	auto ast = parser.parse();
 
@@ -39,7 +42,7 @@ int main() {
 		ast.unwrap()->accept(printer);
 
     // Dauer in Millisekunden ausgeben
-    std::cout << "Time measured: " << duration.count() << " ms" << std::endl;
+    std::cout << "Preprocessor Time: " << preprocessor_duration.count() << " ms, Time measured: " << duration.count() << " ms" << std::endl;
 
 //    std::cout << ksp_code << std::endl;
 	std::cout << std::__fs::filesystem::current_path();

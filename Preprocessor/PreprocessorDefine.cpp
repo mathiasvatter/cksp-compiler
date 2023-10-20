@@ -15,7 +15,7 @@ Result<SuccessTag> PreprocessorDefine::process_defines() {
     // parse defines
     while (peek(m_tokens).type != token::END_TOKEN) {
         if(peek(m_tokens).type == token::DEFINE) {
-            auto define = parse_define_statement();
+            auto define = parse_define_statement(m_tokens);
             if(define.is_error())
                 return Result<SuccessTag>(define.get_error());
 			if(search(m_define_strings, define.unwrap()->to_be_defined->name) != -1)
@@ -27,7 +27,11 @@ Result<SuccessTag> PreprocessorDefine::process_defines() {
             consume(m_tokens);
         }
     }
-	auto evaluation_result = evaluate_define_statements();
+//	for(auto &def : m_define_statements) {
+//		evaluate_define_statements(def->assignee);
+//	}
+
+	auto evaluation_result = evaluate_define_statements(m_tokens);
 	if(evaluation_result.is_error())
 		return Result<SuccessTag>(evaluation_result.get_error());
 
@@ -35,42 +39,43 @@ Result<SuccessTag> PreprocessorDefine::process_defines() {
 }
 
 
-Result<SuccessTag> PreprocessorDefine::evaluate_define_statements() {
+Result<SuccessTag> PreprocessorDefine::evaluate_define_statements(std::vector<Token>& tok) {
 	m_pos = 0;
-	while (peek(m_tokens).type != token::END_TOKEN) {
-		if(peek(m_tokens).type == KEYWORD and peek(m_tokens, -1).type != MACRO) {
-			size_t begin = m_pos;
-			auto define_stmt = get_define_statement(peek(m_tokens).val);
+	while (peek(tok).type != token::END_TOKEN) {
+		if(peek(tok).type == KEYWORD and m_pos > 0 and (peek(tok, -1).type != MACRO or peek(tok, -1).type != FUNCTION)) {
+			auto define_stmt = get_define_statement(peek(tok).val);
 			if(define_stmt != nullptr) {
-				auto evaluation_result = evaluate_define_statement(define_stmt);
+				auto evaluation_result = evaluate_define_statement(tok, define_stmt);
 				if(evaluation_result.is_error())
 					return Result<SuccessTag>(evaluation_result.get_error());
-				remove_tokens(m_tokens, begin, m_pos);
-			} else consume(m_tokens);
-		} else consume(m_tokens);
+			} else consume(tok);
+		} else consume(tok);
 	}
 	return Result<SuccessTag>(SuccessTag{});
 }
 
-Result<SuccessTag> PreprocessorDefine::evaluate_define_statement(std::unique_ptr<NodeDefineStatement>* define_stmt) {
+Result<SuccessTag> PreprocessorDefine::evaluate_define_statement(std::vector<Token>& tok, std::unique_ptr<NodeDefineStatement>* define_stmt) {
 	std::vector<std::vector<Token>> new_args = {};
-	if(peek(m_tokens, 1).type == OPEN_PARENTH) {
-		auto defined_stmt = parse_define_header();
+	size_t og_pos = m_pos;
+	if(peek(tok, 1).type == OPEN_PARENTH) {
+		auto defined_stmt = parse_define_header(tok);
 		if(defined_stmt.is_error())
 			return Result<SuccessTag>(defined_stmt.get_error());
 		new_args = defined_stmt.unwrap()->args;
-	}
+	} else
+		tok.erase(tok.begin() + m_pos);
+
 	std::vector<Token> replace = (*define_stmt)->assignee;
 	auto placeholders = (*define_stmt)->to_be_defined->args;
 	for(auto &r : replace) {
-		r.line = peek(m_tokens).line;
-		r.file = peek(m_tokens).file;
+		r.line = peek(tok).line;
+		r.file = peek(tok).file;
 	}
 
 	if(new_args.size() != placeholders.size())
 		return Result<SuccessTag>(CompileError(ErrorType::PreprocessorError,
 	 "Found different numbers in define constant call than originally defined. Maybe there exists a macro with the same name?",
-	 peek(m_tokens).line,std::to_string(placeholders.size()),std::to_string(new_args.size()), peek(m_tokens).file));
+	 peek(tok).line,std::to_string(placeholders.size()),std::to_string(new_args.size()), peek(tok).file));
 
 	if (!new_args.empty()) {
 		auto substitution_result = substitute_macro_params(replace, placeholders, new_args);
@@ -78,10 +83,18 @@ Result<SuccessTag> PreprocessorDefine::evaluate_define_statement(std::unique_ptr
 			return Result<SuccessTag>(substitution_result.get_error());
 	}
 
+//	if(has_recursive_macro_calls) {
+		// add end_token so that process_macro_calls while loop stops
+		replace.emplace_back(END_TOKEN, "", 0, m_current_file);
+		auto define_call_result = evaluate_define_statements(replace);
+		if (define_call_result.is_error())
+			return Result<SuccessTag>(define_call_result.get_error());
+		if (replace.back().type == token::END_TOKEN) replace.pop_back(); // delete end_token
+//	}
+	m_pos = og_pos;
 	// insert macro_body into tok at position of define call
-	m_tokens.insert(m_tokens.begin() + m_pos, replace.begin(), replace.end());
+	tok.insert(tok.begin() + m_pos, replace.begin(), replace.end());
 	m_pos += replace.size();
-	m_tokens.erase(m_tokens.begin() + m_pos);
 	return Result<SuccessTag>(SuccessTag{});
 }
 
@@ -96,58 +109,62 @@ std::unique_ptr<NodeDefineStatement>* PreprocessorDefine::get_define_statement(c
 }
 
 
-Result<std::unique_ptr<NodeDefineStatement>> PreprocessorDefine::parse_define_statement() {
+Result<std::unique_ptr<NodeDefineStatement>> PreprocessorDefine::parse_define_statement(std::vector<Token>& tok) {
 	size_t begin = m_pos;
 
-    consume(m_tokens); //consume define
-	if (peek(m_tokens).type != token::KEYWORD) {
+    consume(tok); //consume define
+	if (peek(tok).type != token::KEYWORD) {
 		return Result<std::unique_ptr<NodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
-		 "Missing define name.",peek(m_tokens).line,"keyword",peek(m_tokens).val, peek(m_tokens).file));
+		 "Missing define name.",peek(tok).line,"keyword",peek(tok).val, peek(tok).file));
 	}
-	auto define_header_result = parse_define_header();
+	auto define_header_result = parse_define_header(tok);
 	if(define_header_result.is_error())
 		return Result<std::unique_ptr<NodeDefineStatement>>(define_header_result.get_error());
 
-	if(peek(m_tokens).type != ASSIGN)
+	if(peek(tok).type != ASSIGN)
 		return Result<std::unique_ptr<NodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
- 	"Found invalid Define Statement Syntax. Missing <assign> symbol.", peek(m_tokens).line, ":=", peek(m_tokens).val, peek(m_tokens).file));
-	consume(m_tokens); //consume :=
+ 	"Found invalid Define Statement Syntax. Missing <assign> symbol.", peek(tok).line, ":=", peek(tok).val, peek(tok).file));
+	consume(tok); //consume :=
 
 	std::vector<Token> assignee = {};
-	while(peek(m_tokens).type != LINEBRK) {
-		if (peek(m_tokens).type == token::END_TOKEN)
+	while(peek(tok).type != LINEBRK) {
+		if (peek(tok).type == token::END_TOKEN)
 			return Result<std::unique_ptr<NodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
-			"Unexpected end of tokens. Missing assignment of define statement.",peek(m_tokens).line, "", peek(m_tokens).val,peek(m_tokens).file));
-		assignee.push_back(consume(m_tokens));
+			"Unexpected end of tokens. Missing assignment of define statement.",peek(tok).line, "", peek(tok).val,peek(tok).file));
+		assignee.push_back(consume(tok));
 	}
 	if(assignee.empty()) {
 		return Result<std::unique_ptr<NodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
-	 "Found empty define statement assignment.",peek(m_tokens).line, "", peek(m_tokens).val,peek(m_tokens).file));
+	 "Found empty define statement assignment.",peek(tok).line, "", peek(tok).val,peek(tok).file));
 	}
-	if (peek(m_tokens).type != token::LINEBRK) {
+	if (peek(tok).type != token::LINEBRK) {
 		return Result<std::unique_ptr<NodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
-	 	"Missing necessary linebreak after define statement.",peek(m_tokens).line,"linebreak",peek(m_tokens).val, peek(m_tokens).file));
+	 	"Missing necessary linebreak after define statement.",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
 	}
 	for(const auto &ass : assignee) {
 		if(ass.type == KEYWORD and define_header_result.unwrap()->name == ass.val) {
 			return Result<std::unique_ptr<NodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
-	 "A define constant cannot define itself.",peek(m_tokens).line,"","", peek(m_tokens).file));
+	 "A define constant cannot define itself.",peek(tok).line,"","", peek(tok).file));
 		}
 	}
-	consume(m_tokens); //consume linebreak
+	consume(tok); //consume linebreak
 
-	remove_tokens(m_tokens, begin, m_pos);
+	remove_tokens(tok, begin, m_pos);
 	auto define_statement = std::make_unique<NodeDefineStatement>(std::move(define_header_result.unwrap()), std::move(assignee));
 	return Result<std::unique_ptr<NodeDefineStatement>>(std::move(define_statement));
 }
 
-Result<std::unique_ptr<NodeDefineHeader>> PreprocessorDefine::parse_define_header() {
-	Token define = consume(m_tokens);
+Result<std::unique_ptr<NodeDefineHeader>> PreprocessorDefine::parse_define_header(std::vector<Token>& tok) {
+	size_t begin = m_pos;
+
+	Token define = consume(tok);
 	std::string define_name = define.val;
 
-	auto define_args_result = parse_nested_params_list(m_tokens);
+	auto define_args_result = parse_nested_params_list(tok);
 	if(define_args_result.is_error())
 		return Result<std::unique_ptr<NodeDefineHeader>>(define_args_result.get_error());
+
+	remove_tokens(tok, begin, m_pos);
 
 	auto value = std::make_unique<NodeDefineHeader>(define_name, std::move(define_args_result.unwrap()), define);
 	return Result<std::unique_ptr<NodeDefineHeader>>(std::move(value));

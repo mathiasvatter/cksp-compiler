@@ -185,7 +185,7 @@ Result<std::vector<std::vector<Token>>> Preprocessor::parse_nested_params_list(s
 					parenth_depth--;
 				} else if (peek(tok).type == token::END_TOKEN) {
 					return Result<std::vector<std::vector<Token>>>(CompileError(ErrorType::SyntaxError,
-																				"Unexpected end of tokens. Missing closing parenthesis.",peek(tok).line, ")", peek(tok).val,peek(tok).file));
+					"Unexpected end of tokens. Missing closing parenthesis.",peek(tok).line, ")", peek(tok).val,peek(tok).file));
 				}
 				//(val)
 				if (peek(tok).type == token::COMMA && parenth_depth == 1) {
