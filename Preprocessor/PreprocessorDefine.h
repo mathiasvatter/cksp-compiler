@@ -13,11 +13,12 @@ public:
 
 private:
 
-//	Result<SuccessTag> process_define_definitions();
+	Result<SuccessTag> process_define_definitions();
 //	Result<SuccessTag> process_define_call();
 
-	Result<SuccessTag> evaluate_define_statements(std::vector<Token>& tok);
+	Result<SuccessTag> process_define_calls(std::vector<Token>& tok);
 	Result<SuccessTag> evaluate_define_statement(std::vector<Token>& tok, std::unique_ptr<NodeDefineStatement>* define_stmt);
+    bool is_define_call(const std::vector<Token>& tok);
 
 	std::unique_ptr<NodeDefineStatement>* get_define_statement(const std::string &name);
 

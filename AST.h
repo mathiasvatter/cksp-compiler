@@ -272,8 +272,9 @@ struct NodeDefineHeader : NodeAST {
 struct NodeDefineStatement : NodeAST {
 	std::unique_ptr<NodeDefineHeader> to_be_defined;
 	std::vector<Token> assignee;
-	inline NodeDefineStatement(std::unique_ptr<NodeDefineHeader> to_be_defined, std::vector<Token> assignee)
-		: to_be_defined(std::move(to_be_defined)), assignee(std::move(assignee)) {}
+    bool has_recursive_calls;
+	inline NodeDefineStatement(std::unique_ptr<NodeDefineHeader> to_be_defined, std::vector<Token> assignee, bool recur)
+		: to_be_defined(std::move(to_be_defined)), assignee(std::move(assignee)), has_recursive_calls(recur) {}
 };
 
 struct NodeMacroHeader : NodeAST {
