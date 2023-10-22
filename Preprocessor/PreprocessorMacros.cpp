@@ -127,7 +127,7 @@ Result<SuccessTag> PreprocessorMacros::evaluate_macro_call(std::unique_ptr<NodeM
             return Result<SuccessTag>(macro_call_result.get_error());
         if (macro_body.back().type == token::END_TOKEN) macro_body.pop_back(); // delete end_token
     }
-	// alter m_pos to the position of the start of the macro_call (since all macro_call tokens got deleted in parse_macro_call)
+	// alter m_pos to the position of the start of the macro_call (since all macro_call m_tokens got deleted in parse_macro_call)
     m_pos = macro_call->token_pos;
 	// insert macro_body into tok at position of macro_call
     tok.insert(tok.begin() + m_pos, macro_body.begin(), macro_body.end());
@@ -206,7 +206,7 @@ Result<std::unique_ptr<NodeMacroDefinition>> PreprocessorMacros::parse_macro_def
                 is_beginning_of_line_keyword(tok, LITERATE_MACRO);
         if(peek(tok).type == token::MACRO)
             return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::PreprocessorError,
-		 "Nested macros are not allowed. Maybe you forgot an 'end macro' along the line?",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
+		 "Nested macros are not allowed. Maybe you forgot an 'end macro' along the m_line?",peek(tok).line,"linebreak",peek(tok).val, peek(tok).file));
         macro_body.push_back(consume(tok));
     }
     consume(tok); // consume end macro
@@ -247,11 +247,43 @@ Result<std::vector<std::unique_ptr<NodeMacroHeader>>> PreprocessorMacros::parse_
 	  	"Found invalid iterate_macro statement syntax.",peek(tok).line,"(",peek(tok).val, peek(tok).file));
     }
     consume(tok); //consume (
+
     if(peek(tok).type != token::KEYWORD) {
         return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
-	  "Found invalid macro header in iterate_macro statement syntax.",peek(tok).line,"valid <macro_header>",peek(tok).val, peek(tok).file));
+      "Found invalid macro header in iterate_macro statement syntax.",peek(tok).line,"valid <macro_header>",peek(tok).val, peek(tok).file));
     }
-    Token macro = consume(tok);
+
+    // its keyword(#n#)
+    // its declare ui_button btn_#n#
+
+    std::unique_ptr<NodeMacroHeader> macro_header;
+    // its <keyword> and already defined
+//    if(peek(tok).type == KEYWORD and peek(tok, 1).type == CLOSED_PARENTH) {
+        Token macro = consume(tok);
+        auto macro_header_result = get_macro_definition(macro, 1);
+        if(macro_header_result.is_error())
+            return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(macro_header_result.get_error());
+        macro_header = std::move(macro_header_result.unwrap()->header);
+        macro_header->token_pos = begin;
+
+//    }
+
+//    std::vector<Token> macro_to_iterate = {};
+//    int nested_param = 1;
+//    while(nested_param > 0) {
+//        if(peek(tok).type == OPEN_PARENTH)
+//            nested_param++;
+//        if(peek(tok).type == CLOSED_PARENTH)
+//            nested_param--;
+//        if(peek(tok).type == LINEBRK)
+//            return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
+//          "Found invalid iterate_macro statement syntax.",peek(tok).m_line,")",peek(tok).val, peek(tok).file));
+//        macro_to_iterate.push_back(consume(tok));
+//    }
+
+
+
+//    Token macro = consume(tok);
 	if(!is_defined_macro(macro.val)) {
 		return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(CompileError(ErrorType::SyntaxError,
 	  "Called macro in iterate_macro statement has not been defined.",peek(tok).line,"",peek(tok).val, peek(tok).file));
@@ -294,13 +326,9 @@ Result<std::vector<std::unique_ptr<NodeMacroHeader>>> PreprocessorMacros::parse_
     consume(tok); //consume linebreak
     remove_tokens(tok, begin, m_pos);
 
-	auto macro_header_result = get_macro_definition(macro, 1);
-	if(macro_header_result.is_error())
-		return Result<std::vector<std::unique_ptr<NodeMacroHeader>>>(macro_header_result.get_error());
     std::vector<std::unique_ptr<NodeMacroHeader>> iterate_macros={};
     iterate_macros.reserve(std::abs(from-to));
-	std::unique_ptr<NodeMacroHeader> macro_header = std::move(macro_header_result.unwrap()->header);
-	macro_header->token_pos = begin;
+
 	std::vector<std::vector<Token>> args(1, std::vector<Token>(1));
 
     if (is_downto) {

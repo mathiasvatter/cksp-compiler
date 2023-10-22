@@ -49,7 +49,7 @@ public:
 
         // Zeige die entsprechende Zeile aus der Datei
 		if(line_number != -1)
-        	std::cout << "In line " << line_number << ": " << get_line_from_file() << reset << std::endl;
+        	std::cout << "In m_line " << line_number << ": " << get_line_from_file() << reset << std::endl;
     }
 
 private:

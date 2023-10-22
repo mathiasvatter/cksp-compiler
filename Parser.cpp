@@ -33,7 +33,7 @@ void Parser::set_current_pos(size_t mPos) {
 
 Token Parser::peek(int ahead) {
 	if (m_tokens.size() < m_pos+ahead) {
-        auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
+        auto err_msg = "Reached the end of the m_tokens. Wrong Syntax discovered.";
         CompileError(ErrorType::ParseError, err_msg, m_tokens.at(m_pos).line, "end token", m_tokens.at(m_pos).val, m_tokens.at(m_pos).file).print();
         exit(EXIT_FAILURE);
     }
@@ -47,7 +47,7 @@ Token Parser::consume() {
 		m_curr_token = m_tokens.at(m_pos + 1).type;
         return m_tokens.at(m_pos++);
     }
-    auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
+    auto err_msg = "Reached the end of the m_tokens. Wrong Syntax discovered.";
     CompileError(ErrorType::ParseError, err_msg, m_tokens.at(m_pos).line, "end token", m_tokens.at(m_pos).val, m_tokens.at(m_pos).file).print();
     exit(EXIT_FAILURE);
 }
@@ -1015,7 +1015,7 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement() {
 //	}
 //	if(peek().type != token::ASSIGN) {
 //		return Result<std::unique_ptr<NodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
-//		 "Defines need to have expressions assigned.", peek().line, ":=", peek().val, peek().file));
+//		 "Defines need to have expressions assigned.", peek().m_line, ":=", peek().val, peek().file));
 //	}
 //	consume(); // consume assign :=
 //	auto assignees = parse_param_list();

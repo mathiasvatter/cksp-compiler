@@ -21,7 +21,7 @@ Result<SuccessTag> PreprocessorImport::process_imports() {
 
 
 Result<SuccessTag> PreprocessorImport::process_import_statements(std::vector<Token>& tokens, const std::string& current_file) {
-//    m_tokens = std::move(tokens);
+//    m_tokens = std::move(m_tokens);
 //    m_current_file = std::move(current_file);
     m_pos = 0;
     while (peek(tokens).type != token::END_TOKEN) {

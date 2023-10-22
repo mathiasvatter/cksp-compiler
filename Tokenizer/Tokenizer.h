@@ -14,7 +14,7 @@
 
 
 /*
- * Token struct that gets line numbers, the token type and its value
+ * Token struct that gets m_line numbers, the token type and its value
  */
 struct Token {
     Token() : type(token::INVALID), val(""), line(0), file("") {}
@@ -54,18 +54,18 @@ inline static long count_char(const std::string& str, char c) {
 class Tokenizer {
 
 private:
-    std::string input;
-    std::string file;
-    size_t input_length;
-    size_t pos;
-    char current_char;
-    size_t line;
-    std::string buffer;
-    std::vector<Token> tokens;
+    std::string m_input;
+    std::string m_current_file;
+    size_t m_input_length;
+    size_t m_pos;
+    char m_current_char;
+    size_t m_line;
+    std::string m_buffer;
+    std::vector<Token> m_tokens;
 
     static token get_token_type(const std::vector<Keyword>& vec, const std::string& value);
-    [[nodiscard]] char peek(int ahead = 1) const;
-    void consume(int chars = 1);
+    [[nodiscard]] char peek(int ahead = 0) const;
+    char consume();
     void flush_buffer();
 	void skip_whitespace();
 

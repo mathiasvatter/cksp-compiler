@@ -53,7 +53,7 @@ std::vector<Token> Preprocessor::get_tokens() {
 
 Token Preprocessor::peek(const std::vector<Token>& tok, int ahead) {
 	if (tok.size() < m_pos+ahead) {
-		auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
+		auto err_msg = "Reached the end of the m_tokens. Wrong Syntax discovered.";
 		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "end token", tok.at(m_pos).val, tok.at(m_pos).file).print();
 		exit(EXIT_FAILURE);
 	}
@@ -69,7 +69,7 @@ Token Preprocessor::consume(const std::vector<Token>& tok) {
         m_curr_token_value = tok.at(m_pos+1).val;
 		return tok.at(m_pos++);
 	}
-	auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
+	auto err_msg = "Reached the end of the m_tokens. Wrong Syntax discovered.";
 	CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "end token", tok.at(m_pos).val, tok.at(m_pos).file).print();
 	exit(EXIT_FAILURE);
 }
@@ -185,7 +185,7 @@ Result<std::vector<std::vector<Token>>> Preprocessor::parse_nested_params_list(s
 					parenth_depth--;
 				} else if (peek(tok).type == token::END_TOKEN) {
 					return Result<std::vector<std::vector<Token>>>(CompileError(ErrorType::SyntaxError,
-					"Unexpected end of tokens. Missing closing parenthesis.",peek(tok).line, ")", peek(tok).val,peek(tok).file));
+					"Unexpected end of m_tokens. Missing closing parenthesis.",peek(tok).line, ")", peek(tok).val,peek(tok).file));
 				}
 				//(val)
 				if (peek(tok).type == token::COMMA && parenth_depth == 1) {

@@ -33,7 +33,7 @@ Result<SuccessTag> PreprocessorDefine::process_define_definitions() {
                 return Result<SuccessTag>(define.get_error());
             if(search(m_define_strings, define.unwrap()->to_be_defined->name) != -1)
                 return Result<SuccessTag>(CompileError(ErrorType::PreprocessorError,
-                                                       "Define constant has already been defined.",peek(m_tokens).line,"",define.unwrap()->to_be_defined->name, peek(m_tokens).file));
+               "Define constant has already been defined.",peek(m_tokens).line,"",define.unwrap()->to_be_defined->name, peek(m_tokens).file));
             m_define_strings.push_back(define.unwrap()->to_be_defined->name);
             m_define_statements.push_back(std::move(define.unwrap()));
         } else {
@@ -158,7 +158,7 @@ Result<std::unique_ptr<NodeDefineStatement>> PreprocessorDefine::parse_define_st
 	while(peek(tok).type != LINEBRK) {
 		if (peek(tok).type == token::END_TOKEN)
 			return Result<std::unique_ptr<NodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
-			"Unexpected end of tokens. Missing assignment of define statement.",peek(tok).line, "", peek(tok).val,peek(tok).file));
+			"Unexpected end of m_tokens. Missing assignment of define statement.",peek(tok).line, "", peek(tok).val,peek(tok).file));
 
         if(is_define_call(tok)) {
             if(define_header_result.unwrap()->name == peek(tok).val) {
@@ -180,7 +180,7 @@ Result<std::unique_ptr<NodeDefineStatement>> PreprocessorDefine::parse_define_st
 //	for(const auto &ass : assignee) {
 //		if(ass.type == KEYWORD and define_header_result.unwrap()->name == ass.val) {
 //			return Result<std::unique_ptr<NodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
-//	 "A define constant cannot define itself.",peek(tok).line,"","", peek(tok).file));
+//	 "A define constant cannot define itself.",peek(tok).m_line,"","", peek(tok).file));
 //		}
 //	}
 
