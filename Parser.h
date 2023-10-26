@@ -61,46 +61,46 @@ private:
     static std::string sanitize_binary(const std::string& input);
     /// convert eg 0bFFFh into 0xbFFF
     static std::string sanitize_hex(const std::string& input);
-    Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base);
+    Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base, NodeAST* parent);
 
-    Result<std::unique_ptr<NodeAST>> parse_number();
-    Result<std::unique_ptr<NodeString>> parse_string();
-    Result<std::unique_ptr<NodeVariable>> parse_variable(bool is_persistent=false, VarType var_type=VarType::Mutable);
-    Result<std::unique_ptr<NodeArray>> parse_array(bool is_persistent=false, VarType var_type=VarType::Array);
-    Result<std::unique_ptr<NodeParamList>> parse_param_list();
-	Result<SuccessTag> _parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params);
+    Result<std::unique_ptr<NodeAST>> parse_number(NodeAST* parent);
+    Result<std::unique_ptr<NodeString>> parse_string(NodeAST* parent);
+    Result<std::unique_ptr<NodeVariable>> parse_variable(NodeAST* parent, bool is_persistent=false, VarType var_type=VarType::Mutable);
+    Result<std::unique_ptr<NodeArray>> parse_array(NodeAST* parent, bool is_persistent=false, VarType var_type=VarType::Array);
+    Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent);
+	Result<SuccessTag> _parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent);
     /// parses every expression from binary, string, unary to number and variable
-    Result<std::unique_ptr<NodeAST>> parse_expression();
-    Result<std::unique_ptr<NodeAST>> parse_string_expr();
+    Result<std::unique_ptr<NodeAST>> parse_expression(NodeAST* parent);
+    Result<std::unique_ptr<NodeAST>> parse_string_expr(NodeAST* parent);
         /// Helper function for parsing binary string expression recursively
-        Result<std::unique_ptr<NodeAST>> _parse_string_expr_rhs(std::unique_ptr<NodeAST> lhs);
+        Result<std::unique_ptr<NodeAST>> _parse_string_expr_rhs(std::unique_ptr<NodeAST> lhs, NodeAST* parent);
     /// parse unary or binary expression
-    Result<std::unique_ptr<NodeAST>> parse_binary_expr();
-    Result<std::unique_ptr<NodeAST>> parse_unary_expr();
+    Result<std::unique_ptr<NodeAST>> parse_binary_expr(NodeAST* parent);
+    Result<std::unique_ptr<NodeAST>> parse_unary_expr(NodeAST* parent);
 	    /// Helper function for parsing binary expressions recursion
-		Result<std::unique_ptr<NodeAST>> _parse_binary_expr_rhs(int precedence, std::unique_ptr<NodeAST> lhs);
+		Result<std::unique_ptr<NodeAST>> _parse_binary_expr_rhs(int precedence, std::unique_ptr<NodeAST> lhs, NodeAST* parent);
 		/// ( expression )
-		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr();
+		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr(NodeAST* parent);
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
-		Result<std::unique_ptr<NodeAST>> _parse_primary_expr();
-    Result<std::unique_ptr<NodeAST>> parse_assign_statement();
-    Result<std::unique_ptr<NodeVariable>> parse_declare_variable();
-    Result<std::unique_ptr<NodeArray>> parse_declare_array();
-    Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control();
-    Result<std::unique_ptr<NodeDeclareStatement>> parse_declare_statement();
+		Result<std::unique_ptr<NodeAST>> _parse_primary_expr(NodeAST* parent);
+    Result<std::unique_ptr<NodeAST>> parse_assign_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
+    Result<std::unique_ptr<NodeArray>> parse_declare_array(NodeAST* parent);
+    Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);
+    Result<std::unique_ptr<NodeDeclareStatement>> parse_declare_statement(NodeAST* parent);
 //	Result<std::unique_ptr<NodeDefineStatement>> parse_define_statement();
-    Result<std::unique_ptr<NodeAST>> parse_const_struct_family_statement();
+    Result<std::unique_ptr<NodeAST>> parse_const_struct_family_statement(NodeAST* parent);
 	/// combines all possible statement types
-    Result<std::unique_ptr<NodeStatement>> parse_statement();
-    Result<std::unique_ptr<NodeIfStatement>> parse_if_statement();
-    Result<std::unique_ptr<NodeForStatement>> parse_for_statement();
-    Result<std::unique_ptr<NodeWhileStatement>> parse_while_statement();
-	Result<std::unique_ptr<NodeSelectStatement>> parse_select_statement();
+    Result<std::unique_ptr<NodeStatement>> parse_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeIfStatement>> parse_if_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeForStatement>> parse_for_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeWhileStatement>> parse_while_statement(NodeAST* parent);
+	Result<std::unique_ptr<NodeSelectStatement>> parse_select_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeGetControlStatement>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id);
-    Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition();
-    Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header();
-    Result<std::unique_ptr<NodeFunctionCall>> parse_function_call();
-    Result<std::unique_ptr<NodeCallback>> parse_callback();
+    Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition(NodeAST* parent);
+    Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header(NodeAST* parent);
+    Result<std::unique_ptr<NodeFunctionCall>> parse_function_call(NodeAST* parent);
+    Result<std::unique_ptr<NodeCallback>> parse_callback(NodeAST* parent);
 
 	Result<std::unique_ptr<NodeProgram>> parse_program();
 
