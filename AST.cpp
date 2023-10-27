@@ -9,6 +9,13 @@
 void NodeAST::accept(ASTVisitor &visitor) {
 }
 
+void NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
+	if (parent) {
+		newNode->parent = parent;
+		parent->replace_child(this, std::move(newNode));
+	}
+}
+
 void NodeInt::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
@@ -33,12 +40,26 @@ void NodeBinaryExpr::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
+void NodeBinaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (left.get() == oldChild) {
+		left = std::move(newChild);
+	} else if (right.get() == oldChild) {
+		right = std::move(newChild);
+	}
+}
+
 void NodeAssignStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
 void NodeStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
+}
+
+void NodeStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (statement.get() == oldChild) {
+		statement = std::move(newChild);
+	}
 }
 
 void NodeCallback::accept(ASTVisitor &visitor) {
@@ -65,6 +86,15 @@ void NodeParamList::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 
+void NodeParamList::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	for (auto& param : params) {
+		if (param.get() == oldChild) {
+			param = std::move(newChild);
+			return;
+		}
+	}
+}
+
 void NodeDeclareStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
@@ -79,6 +109,12 @@ void NodeIfStatement::accept(ASTVisitor &visitor) {
 
 void NodeForStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
+}
+
+void NodeForStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (iterator_end.get() == oldChild) {
+		iterator_end = std::move(newChild);
+	}
 }
 
 void NodeWhileStatement::accept(ASTVisitor &visitor) {

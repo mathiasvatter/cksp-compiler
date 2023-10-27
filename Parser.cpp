@@ -95,7 +95,6 @@ Result<std::unique_ptr<NodeInt>> Parser::parse_int(const Token& tok, int base, N
     try {
         long long val = std::stoll(value, nullptr, base);
         auto node_int = std::make_unique<NodeInt>(static_cast<int32_t>(val & 0xFFFFFFFF), get_tok());
-        node_int->type = ASTType::Integer;
         node_int->parent= parent;
         return Result<std::unique_ptr<NodeInt>>(std::move(node_int));
     } catch (const std::exception& e) {
@@ -125,11 +124,10 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_number(NodeAST* parent) {
         try {
             auto node_real = std::make_unique<NodeReal>(std::stod(value.val), get_tok());
             node_real->parent = parent;
-            node_real->type = ASTType::Real;
             return Result<std::unique_ptr<NodeAST>>(std::move(node_real));
         } catch (const std::exception &e) {
             return Result<std::unique_ptr<NodeAST>>(
-                    CompileError(ErrorType::ParseError, "Invalid real format.", value.line, "valid real", value.val, value.file));
+			CompileError(ErrorType::ParseError, "Invalid real format.", value.line, "valid real", value.val, value.file));
         }
     } else if(value.type == token::HEXADECIMAL) {
         auto parsed_hex = parse_int(value, 16, parent);
@@ -236,8 +234,11 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_string_expr_rhs(std::unique_ptr<
         if (rhs.is_error()) {
             return Result<std::unique_ptr<NodeAST>>(rhs.get_error());
         }
-        lhs = std::make_unique<NodeBinaryExpr>(string_op.val, std::move(lhs), std::move(rhs.unwrap()), get_tok());
-        lhs->parent = parent;
+		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(string_op.val, std::move(lhs), std::move(rhs.unwrap()), get_tok());
+		node_binary_expr->left->parent = node_binary_expr.get();
+		node_binary_expr->right->parent = node_binary_expr.get();
+		node_binary_expr->parent = parent;
+        lhs = std::move(node_binary_expr);
         lhs->type = ASTType::String;
     }
 }
@@ -266,7 +267,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
                 return Result<std::unique_ptr<NodeAST>>(var_array.get_error());
             }
             if(peek().type == token::ARROW) {
-                auto get_control = parse_get_control_statement(std::move(var_array.unwrap()));
+                auto get_control = parse_get_control_statement(std::move(var_array.unwrap()), parent);
                 if (get_control.is_error())
                     return Result<std::unique_ptr<NodeAST>>(get_control.get_error());
                 stmt = std::move(std::move(get_control.unwrap()));
@@ -279,7 +280,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
                 return Result<std::unique_ptr<NodeAST>>(var.get_error());
             }
             if(peek().type == token::ARROW) {
-                auto get_control = parse_get_control_statement(std::move(var.unwrap()));
+                auto get_control = parse_get_control_statement(std::move(var.unwrap()), parent);
                 if (get_control.is_error())
                     return Result<std::unique_ptr<NodeAST>>(get_control.get_error());
                 stmt = std::move(std::move(get_control.unwrap()));
@@ -354,10 +355,14 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, 
         // brauch ich das jetzt schon, oder vllt erst nachher beim typisierungs-check?
         if (lhs->type == Integer && rhs.unwrap()->type == Real || lhs->type == Real && rhs.unwrap()->type == Integer) {
             return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-             "Merging of different Expression Types is not allowed.", peek().line, "One Expression Type per Expression", bin_op.val, peek().file));
+             "Merging of different Expression Types (real and int) is not allowed. Use int(<expr>) or real(<expr>) to cast types.",
+			 peek().line, "", bin_op.val, peek().file));
         }
-        lhs = std::make_unique<NodeBinaryExpr>(bin_op.val, std::move(lhs), std::move(rhs.unwrap()), get_tok());
-        lhs->parent = parent;
+		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(bin_op.val, std::move(lhs), std::move(rhs.unwrap()), get_tok());
+        node_binary_expr->parent = parent;
+		node_binary_expr->left->parent = node_binary_expr.get();
+		node_binary_expr->right->parent = node_binary_expr.get();
+        lhs = std::move(node_binary_expr);
         lhs->type = type;
     }
 }
@@ -381,28 +386,29 @@ int Parser::_get_binop_precedence(token tok) {
     return precedence;
 }
 
-Result<std::unique_ptr<NodeAST>> Parser::parse_assign_statement(NodeAST* parent) {
+Result<std::unique_ptr<NodeAssignStatement>> Parser::parse_assign_statement(NodeAST* parent) {
     auto node_assign_statement = std::make_unique<NodeAssignStatement>(get_tok());
 	// make it possible to have more than one variable before assign
 	auto var_list = parse_param_list(node_assign_statement.get());
 	if(var_list.is_error()) {
-		return Result<std::unique_ptr<NodeAST>>(var_list.get_error());
+		return Result<std::unique_ptr<NodeAssignStatement>>(var_list.get_error());
 	}
 	auto vars = std::move(var_list.unwrap());
     if(peek().type != token::ASSIGN) {
-        return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
+        return Result<std::unique_ptr<NodeAssignStatement>>(CompileError(ErrorType::SyntaxError,
 "Found invalid Assign Statement Syntax.", peek().line,":=", peek().val, peek().file));
     }
     consume(); // consume :=
     auto assignee =  parse_param_list(node_assign_statement.get()); //_parse_assignee();
     if(assignee.is_error()) {
-        return Result<std::unique_ptr<NodeAST>>(assignee.get_error());
+        return Result<std::unique_ptr<NodeAssignStatement>>(assignee.get_error());
     }
     node_assign_statement->array_variable = std::move(vars);
     node_assign_statement->assignee = std::move(assignee.unwrap());
     node_assign_statement->parent = parent;
+
 //    auto return_value = std::make_unique<NodeAssignStatement>(std::move(vars), std::move(assignee.unwrap()), get_tok());
-    return Result<std::unique_ptr<NodeAST>>(std::move(node_assign_statement));
+    return Result<std::unique_ptr<NodeAssignStatement>>(std::move(node_assign_statement));
 }
 
 Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) {
@@ -420,20 +426,20 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
 
         } else if ((peek().type == token::CALL) xor
                    (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK)) {
-            auto function_call = parse_function_call(parent);
+            auto function_call = parse_function_call(node_statement.get());
             if (function_call.is_error()) {
                 return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
             }
             stmt = std::move(function_call.unwrap());
         } else {
-            auto assign_stmt = parse_assign_statement();
+            auto assign_stmt = parse_assign_statement(node_statement.get());
             if (assign_stmt.is_error()) {
                 return Result<std::unique_ptr<NodeStatement>>(assign_stmt.get_error());
             }
             stmt = std::move(assign_stmt.unwrap());
         }
     } else if (peek().type == token::CONST || peek().type == token::FAMILY || peek().type == token::STRUCT) {
-        auto construct_stmt = parse_const_struct_family_statement();
+        auto construct_stmt = parse_const_struct_family_statement(node_statement.get());
         if(construct_stmt.is_error()) {
             return Result<std::unique_ptr<NodeStatement>>(construct_stmt.get_error());
         }
@@ -548,15 +554,13 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 }
 
 Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent) {
-    std::unique_ptr<NodeParamList> params;
+//    std::unique_ptr<NodeParamList> params;
     auto param_list = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
     param_list->parent = parent;
-    auto result = _parse_into_param_list(param_list->params, parent);
+    auto result = _parse_into_param_list(param_list->params, param_list.get());
     if (result.is_error()) {
         return Result<std::unique_ptr<NodeParamList>>(result.get_error());
     }
-
-
     return Result<std::unique_ptr<NodeParamList>>(std::move(param_list));
 }
 
@@ -601,7 +605,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
 	if (peek().type == token::OPEN_PARENTH) {
         consume(); // consume (
 		if(peek().type != token::CLOSED_PARENTH) {
-            auto param_list = parse_param_list();
+            auto param_list = parse_param_list(node_function_header.get());
             if (param_list.is_error()) {
                 Result<std::unique_ptr<NodeFunctionHeader>>(param_list.get_error());
             }
@@ -649,7 +653,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
         return Result<std::unique_ptr<NodeFunctionDefinition>>(CompileError(ErrorType::SyntaxError,
         "Missing function name.",peek().line,"keyword",peek().val, peek().file));
     }
-    auto header = parse_function_header();
+    auto header = parse_function_header(node_function_definition.get());
     if (header.is_error()) {
         return Result<std::unique_ptr<NodeFunctionDefinition>>(header.get_error());
     }
@@ -730,7 +734,7 @@ Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement(No
 	// if there is an assignment following
 	if (peek().type == token::ASSIGN) {
         consume(); //consume :=
-		auto assignee = parse_param_list();
+		auto assignee = parse_param_list(node_declare_statement.get());
 		if(assignee.is_error()) {
 			return Result<std::unique_ptr<NodeDeclareStatement>>(assignee.get_error());
 		}
@@ -741,7 +745,7 @@ Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement(No
 
     assignees->parent = node_declare_statement.get();
     node_declare_statement->to_be_declared = std::move(to_be_declared);
-    node_declare_statement->to_be_declared = std::move(assignees);
+    node_declare_statement->assignee = std::move(assignees);
     node_declare_statement->parent = parent;
 //	auto return_value = std::make_unique<NodeDeclareStatement>(std::move(to_be_declared), std::move(assignees), get_tok());
 	return Result<std::unique_ptr<NodeDeclareStatement>>(std::move(node_declare_statement));
@@ -892,7 +896,7 @@ Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement(NodeAST* par
     auto node_if_statement = std::make_unique<NodeIfStatement>(get_tok());
     //consume if
     consume();
-    auto condition_result = parse_expression();
+    auto condition_result = parse_expression(node_if_statement.get());
     if(condition_result.is_error()) {
         return Result<std::unique_ptr<NodeIfStatement>>(condition_result.get_error());
     }
@@ -1102,14 +1106,6 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_struct_family_statement(Nod
         end_construct = token::END_STRUCT;
     }
 
-    std::unique_ptr<NodeAST> return_value = nullptr;
-    if (construct.type == token::CONST)
-        return_value = std::make_unique<NodeConstStatement>(get_tok());
-    else if (construct.type == token::FAMILY)
-        return_value = std::make_unique<NodeFamilyStatement>(get_tok());
-    else if (construct.type == token::STRUCT)
-        return_value = std::make_unique<NodeStructStatement>(get_tok());
-
     if(peek().type != token::KEYWORD) {
         return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
             "Found unknown const/family/struct syntax.", peek().line, "valid identifier", peek().val, peek().file));
@@ -1120,10 +1116,11 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_struct_family_statement(Nod
             "Expected linebreak.", peek().line, "linebreak", peek().val, peek().file));
     }
     consume(); // consume linebreak
+
     std::vector<std::unique_ptr<NodeDeclareStatement>> stmts;
     while(peek().type != end_construct) {
         _skip_linebreaks();
-        auto declare_stmt = parse_declare_statement(return_value.get());
+        auto declare_stmt = parse_declare_statement(nullptr);
         if(declare_stmt.is_error()) {
             return Result<std::unique_ptr<NodeAST>>(declare_stmt.get_error());
         }
@@ -1135,17 +1132,26 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_struct_family_statement(Nod
         consume();
     }
     consume();
-//    std::unique_ptr<NodeAST> return_value = nullptr;
-    if (construct.type == token::CONST)
-        return_value = std::make_unique<NodeConstStatement>(std::move(prefix.val), std::move(stmts), get_tok());
-    else if (construct.type == token::FAMILY)
-        return_value = std::make_unique<NodeFamilyStatement>(std::move(prefix.val), std::move(stmts), get_tok());
-    else if (construct.type == token::STRUCT)
-        return_value = std::make_unique<NodeStructStatement>(std::move(prefix.val), std::move(stmts), get_tok());
+
+	std::unique_ptr<NodeAST> return_value = nullptr;
+	if (construct.type == token::CONST) {
+		auto node_const_statement = std::make_unique<NodeConstStatement>(std::move(prefix.val), std::move(stmts), get_tok());
+		for (auto &stmt : node_const_statement->constants) { stmt->parent = return_value.get(); }
+		return_value = std::move(node_const_statement);
+	} else if (construct.type == token::FAMILY) {
+		auto node_family_statement = std::make_unique<NodeFamilyStatement>(std::move(prefix.val), std::move(stmts), get_tok());
+		for (auto &stmt : node_family_statement->members) { stmt->parent = return_value.get(); }
+		return_value = std::move(node_family_statement);
+	} else if (construct.type == token::STRUCT) {
+		auto node_struct_statement = std::make_unique<NodeStructStatement>(std::move(prefix.val), std::move(stmts), get_tok());
+		for (auto &stmt : node_struct_statement->members) { stmt->parent = return_value.get(); }
+		return_value = std::move(node_struct_statement);
+	}
+	// set the parent for each statement in stmts
     return Result<std::unique_ptr<NodeAST>>(std::move(return_value));
 }
 
-Result<std::unique_ptr<NodeGetControlStatement>> Parser::parse_get_control_statement(std::unique_ptr<NodeAST> ui_id) {
+Result<std::unique_ptr<NodeGetControlStatement>> Parser::parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent) {
 //    std::unique_ptr<NodeAST> ui_id;
 //    if(peek(1).type == token::OPEN_BRACKET) {
 //        auto ui_control = parse_array();
@@ -1168,8 +1174,10 @@ Result<std::unique_ptr<NodeGetControlStatement>> Parser::parse_get_control_state
          "Wrong control statement syntax.", peek().line, "<control_parameter>", peek().val, peek().file));
     }
     auto control_param = consume().val;
-    auto result = std::make_unique<NodeGetControlStatement>(std::move(ui_id), control_param, get_tok());
-    return Result<std::unique_ptr<NodeGetControlStatement>>(std::move(result));
+    auto node_get_control_statement = std::make_unique<NodeGetControlStatement>(std::move(ui_id), control_param, get_tok());
+	node_get_control_statement->ui_id->parent = node_get_control_statement.get();
+	node_get_control_statement->parent = parent;
+    return Result<std::unique_ptr<NodeGetControlStatement>>(std::move(node_get_control_statement));
 }
 
 

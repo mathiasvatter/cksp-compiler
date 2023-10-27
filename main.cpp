@@ -6,6 +6,8 @@
 #include "Parser.h"
 #include "Preprocessor/Preprocessor.h"
 #include "ASTVisitor.h"
+#include "ASTDesugar.h"
+#include "ASTPrinter.h"
 
 int main() {
 
@@ -30,16 +32,23 @@ int main() {
 	auto preprocessor_duration = std::chrono::duration_cast<std::chrono::milliseconds>(preprocessor_time - start_time);
 
     Parser parser(std::move(preprocessed_tokens));
-	auto ast = parser.parse();
+	auto ast_result = parser.parse();
+	if (ast_result.is_error()) {
+		ast_result.get_error().print();
+		exit(EXIT_FAILURE);
+	}
+
+	auto ast = std::move(ast_result.unwrap());
+
+	ASTDesugar desugar;
+	ast->accept(desugar);
+
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
 	ASTPrinter printer;
-	if (ast.is_error())
-		ast.get_error().print();
-	else
-		ast.unwrap()->accept(printer);
+	ast->accept(printer);
 
     // Dauer in Millisekunden ausgeben
     std::cout << "Preprocessor Time: " << preprocessor_duration.count() << " ms, Time measured: " << duration.count() << " ms" << std::endl;

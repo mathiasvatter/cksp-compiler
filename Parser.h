@@ -83,7 +83,7 @@ private:
 		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr(NodeAST* parent);
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr(NodeAST* parent);
-    Result<std::unique_ptr<NodeAST>> parse_assign_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeAssignStatement>> parse_assign_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
     Result<std::unique_ptr<NodeArray>> parse_declare_array(NodeAST* parent);
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);
@@ -96,7 +96,7 @@ private:
     Result<std::unique_ptr<NodeForStatement>> parse_for_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeWhileStatement>> parse_while_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeSelectStatement>> parse_select_statement(NodeAST* parent);
-    Result<std::unique_ptr<NodeGetControlStatement>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id);
+    Result<std::unique_ptr<NodeGetControlStatement>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent);
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition(NodeAST* parent);
     Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header(NodeAST* parent);
     Result<std::unique_ptr<NodeFunctionCall>> parse_function_call(NodeAST* parent);

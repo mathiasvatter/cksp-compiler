@@ -42,6 +42,8 @@ struct NodeAST {
     inline explicit NodeAST(const Token tok=Token()) : tok(tok), type(ASTType::Unknown) {}
 	virtual ~NodeAST() = default;
 	virtual void accept(class ASTVisitor& visitor);
+	virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {};
+	void replace_with(std::unique_ptr<NodeAST> newNode);
 };
 
 struct NodeInt : NodeAST {
@@ -75,6 +77,7 @@ struct NodeParamList: NodeAST {
     std::vector<std::unique_ptr<NodeAST>> params;
     inline explicit NodeParamList(std::vector<std::unique_ptr<NodeAST>> params, Token tok) : NodeAST(tok), params(std::move(params)) {}
     void accept(ASTVisitor& visitor) override;
+	virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 };
 
 struct NodeArray : NodeAST {
@@ -117,8 +120,8 @@ struct NodeBinaryExpr: NodeAST {
     inline NodeBinaryExpr(std::string op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right, Token tok)
     : NodeAST(tok), op(std::move(op)), left(std::move(left)), right(std::move(right)) {}
 	void accept(ASTVisitor& visitor) override;
+	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 };
-
 
 struct NodeDeclareStatement : NodeAST {
 	std::unique_ptr<NodeParamList> to_be_declared;
@@ -127,6 +130,7 @@ struct NodeDeclareStatement : NodeAST {
 	inline NodeDeclareStatement(std::unique_ptr<NodeParamList> to_be_declared, std::unique_ptr<NodeParamList> assignee, Token tok)
     : NodeAST(tok), to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
+//	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 };
 
 struct NodeAssignStatement: NodeAST {
@@ -187,6 +191,7 @@ struct NodeStatement: NodeAST {
     inline explicit NodeStatement(Token tok) : NodeAST(tok) {}
     inline NodeStatement(std::unique_ptr<NodeAST> statement, Token tok) : NodeAST(tok), statement(std::move(statement)) {}
 	void accept(ASTVisitor& visitor) override;
+	virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 };
 
 struct NodeIfStatement: NodeAST {
@@ -200,14 +205,15 @@ struct NodeIfStatement: NodeAST {
 };
 
 struct NodeForStatement : NodeAST {
-    std::unique_ptr<NodeAST> iterator;
+    std::unique_ptr<NodeAssignStatement> iterator;
     Token to;
     std::unique_ptr<NodeAST> iterator_end;
     std::vector<std::unique_ptr<NodeStatement>> statements;
     inline explicit NodeForStatement(Token tok) : NodeAST(tok) {}
-    inline NodeForStatement(std::unique_ptr<NodeAST> iterator, Token to, std::unique_ptr<NodeAST> iterator_end, std::vector<std::unique_ptr<NodeStatement>> statements, Token tok)
+    inline NodeForStatement(std::unique_ptr<NodeAssignStatement> iterator, Token to, std::unique_ptr<NodeAST> iterator_end, std::vector<std::unique_ptr<NodeStatement>> statements, Token tok)
     : NodeAST(tok), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), statements(std::move(statements)) {}
     void accept(ASTVisitor& visitor) override;
+	virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 };
 
 struct NodeWhileStatement : NodeAST {
