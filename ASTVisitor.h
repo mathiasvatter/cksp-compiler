@@ -34,14 +34,21 @@ public:
 		node.right->accept(*this);
 	};
     virtual void visit(NodeDeclareStatement& node) {
-		node.to_be_declared->accept(*this);
-		node.assignee->accept(*this);
+		node.statement->accept(*this);
 	};
+    virtual void visit(NodeSingleDeclareStatement& node) {
+        node.to_be_declared ->accept(*this);
+        node.assignee -> accept(*this);
+    };
 //	virtual void visit(NodeDefineStatement& node) = 0;
     virtual void visit(NodeAssignStatement& node) {
 		node.array_variable->accept(*this);
 		node.assignee->accept(*this);
 	};
+    virtual void visit(NodeSingleAssignStatement& node) {
+        node.array_variable ->accept(*this);
+        node.assignee -> accept(*this);
+    };
     virtual void visit(NodeGetControlStatement& node) {
 		node.ui_id->accept(*this);
 	};
@@ -121,6 +128,12 @@ public:
 	};
 //    virtual void visit(NodeMacroHeader& node)  = 0;
 //    virtual void visit(NodeMacroDefinition& node)  = 0;
+
+    virtual void visit(NodeStatementList& node) {
+        for(auto & stmt : node.statements) {
+            stmt->accept(*this);
+        }
+    };
 };
 
 

@@ -50,12 +50,18 @@ public:
 
 	void visit(NodeDeclareStatement& node) override {
 		std::cout << "declare ";
-		node.to_be_declared->accept(*this);
-		if(!node.assignee->params.empty()) {
-			std::cout << " := ";
-			node.assignee->accept(*this);
-		}
+		node.statement->accept(*this);
 	}
+
+    void visit(NodeSingleDeclareStatement& node) override {
+        std::cout << "declare ";
+        node.to_be_declared->accept(*this);
+        if(node.assignee != nullptr) {
+            std::cout << ":= ";
+            node.assignee->accept(*this);
+        }
+        std::cout << "";
+    }
 
 //	void visit(NodeDefineStatement& node) override {
 //		std::cout << "define ";
@@ -102,12 +108,22 @@ public:
 	}
 
 	void visit(NodeAssignStatement& node) override {
-		std::cout << "VariableAssign(";
+		std::cout << "";
 		node.array_variable->accept(*this);
-		std::cout << ":= ";
-		node.assignee->accept(*this);
-		std::cout << ")";
+        if (node.assignee != nullptr) {
+            std::cout << ":= ";
+            node.assignee->accept(*this);
+        }
+		std::cout << "";
 	}
+
+    void visit(NodeSingleAssignStatement& node) override {
+        std::cout << "VariableAssign(";
+        node.array_variable->accept(*this);
+        std::cout << ":= ";
+        node.assignee->accept(*this);
+        std::cout << ")";
+    }
 
 	void visit(NodeConstStatement& node) override {
 		std::cout << "Const(" << node.prefix << std::endl;

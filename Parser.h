@@ -84,6 +84,7 @@ private:
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr(NodeAST* parent);
     Result<std::unique_ptr<NodeAssignStatement>> parse_assign_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeAssignStatement>> parse_into_assign_statement(std::unique_ptr<NodeParamList> array_variable, NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
     Result<std::unique_ptr<NodeArray>> parse_declare_array(NodeAST* parent);
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);

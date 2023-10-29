@@ -48,6 +48,16 @@ void NodeBinaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
 	}
 }
 
+void NodeUnaryExpr::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeUnaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+    if (operand.get() == oldChild) {
+        operand = std::move(newChild);
+    }
+}
+
 void NodeAssignStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
@@ -78,10 +88,6 @@ void NodeFunctionDefinition::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 
-void NodeUnaryExpr::accept(ASTVisitor &visitor) {
-    visitor.visit(*this);
-}
-
 void NodeParamList::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
@@ -99,6 +105,12 @@ void NodeDeclareStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
+void NodeDeclareStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+    if (statement.get() == oldChild) {
+        statement = std::move(newChild);
+    }
+}
+
 //void NodeDefineStatement::accept(ASTVisitor &visitor) {
 //	visitor.visit(*this);
 //}
@@ -112,7 +124,7 @@ void NodeForStatement::accept(ASTVisitor &visitor) {
 }
 
 void NodeForStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
-	if (iterator_end.get() == oldChild) {
+    if (iterator_end.get() == oldChild) {
 		iterator_end = std::move(newChild);
 	}
 }
@@ -133,12 +145,39 @@ void NodeConstStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 
+void NodeConstStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+    for (auto& c : constants) {
+        if (c.get() == oldChild) {
+            c = std::move(newChild);
+            return;
+        }
+    }
+}
+
 void NodeStructStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 
+void NodeStructStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+    for (auto& m : members) {
+        if (m.get() == oldChild) {
+            m = std::move(newChild);
+            return;
+        }
+    }
+}
+
 void NodeFamilyStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
+}
+
+void NodeFamilyStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+    for (auto& m : members) {
+        if (m.get() == oldChild) {
+            m = std::move(newChild);
+            return;
+        }
+    }
 }
 
 void NodeUIControl::accept(ASTVisitor &visitor) {
@@ -158,5 +197,26 @@ void NodeGetControlStatement::accept(ASTVisitor &visitor) {
 }
 
 void NodeSetControlStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeStatementList::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeStatementList::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+    for (auto& stmt : statements) {
+        if (stmt.get() == oldChild) {
+            stmt = std::move(newChild);
+            return;
+        }
+    }
+}
+
+void NodeSingleAssignStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+
+void NodeSingleDeclareStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
