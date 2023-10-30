@@ -105,11 +105,6 @@ void NodeDeclareStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-void NodeDeclareStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
-    if (statement.get() == oldChild) {
-        statement = std::move(newChild);
-    }
-}
 
 //void NodeDefineStatement::accept(ASTVisitor &visitor) {
 //	visitor.visit(*this);

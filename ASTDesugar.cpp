@@ -9,63 +9,77 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
 	if (node.left) node.left->accept(*this);
 	if (node.right) node.right->accept(*this);
 
+    auto right_int = cast_node<NodeInt>(node.right.get());
+    auto left_int = cast_node<NodeInt>(node.left.get());
+    auto right_real = cast_node<NodeReal>(node.right.get());
+    auto left_real = cast_node<NodeReal>(node.left.get());
+
 	if(contains(MATH_OPERATORS, node.op) or node.op == ".and." or node.op == ".or" or node.op == ".xor") {
-		if (auto right_int = dynamic_cast<NodeInt *>(node.right.get())) {
-			if (node.op == "/" and right_int->value == 0) {
-				CompileError(ErrorType::MathError,"Warning: Found division by zero.",node.tok.line,"","",node.tok.file).print();
-				return;
-			}
-		}
+        // division by zero
+        if (right_int and node.op == "/" and right_int->value == 0) {
+            CompileError(ErrorType::MathError,"Warning: Found division by zero.",node.tok.line,"","",node.tok.file).print();
+            return;
+        }
+        if(left_int and left_int->value == 0 and node.op == "*" or right_int and right_int->value == 0 and node.op == "*") {
+            auto new_node = std::make_unique<NodeInt>(0, node.tok);
+            new_node-> parent = node.parent;
+            node.replace_with(std::move(new_node));
+            return;
+        }
 		// constant folding
-		if (auto left_int = dynamic_cast<NodeInt *>(node.left.get())) {
-			if (auto right_int = dynamic_cast<NodeInt *>(node.right.get())) {
-				// Beide Operanden sind Integers. Führe die Operation aus und ersetze den Knoten.
-				int32_t result = 0;
-				auto int_operations = std::unordered_map<std::string, std::function<int32_t(int32_t, int32_t)>>{
-					{"+", [](int32_t a, int32_t b) { return a + b; }},
-					{"-", [](int32_t a, int32_t b) { return a - b; }},
-					{"*", [](int32_t a, int32_t b) { return a * b; }},
-					{"/", [](int32_t a, int32_t b) { return a / b; }},
-					{"mod", [](int32_t a, int32_t b) { return a % b; }},
-					{".and.", [](int32_t a, int32_t b) { return a & b; }},
-					{".or.", [](int32_t a, int32_t b) { return a | b; }},
-					{".xor.", [](int32_t a, int32_t b) { return a ^ b; }}
-				};
-				if (int_operations.find(node.op) != int_operations.end()) {
-					result = int_operations[node.op](left_int->value, right_int->value);
-					auto new_node = std::make_unique<NodeInt>(result, node.tok);
-					node.replace_with(std::move(new_node));
-				}
-			}
+		if (left_int and right_int) {
+            // Beide Operanden sind Integers. Führe die Operation aus und ersetze den Knoten.
+            int32_t result = 0;
+            auto int_operations = std::unordered_map<std::string, std::function<int32_t(int32_t, int32_t)>>{
+                {"+", [](int32_t a, int32_t b) { return a + b; }},
+                {"-", [](int32_t a, int32_t b) { return a - b; }},
+                {"*", [](int32_t a, int32_t b) { return a * b; }},
+                {"/", [](int32_t a, int32_t b) { return a / b; }},
+                {"mod", [](int32_t a, int32_t b) { return a % b; }},
+                {".and.", [](int32_t a, int32_t b) { return a & b; }},
+                {".or.", [](int32_t a, int32_t b) { return a | b; }},
+                {".xor.", [](int32_t a, int32_t b) { return a ^ b; }}
+            };
+            if (int_operations.find(node.op) != int_operations.end()) {
+                result = int_operations[node.op](left_int->value, right_int->value);
+                auto new_node = std::make_unique<NodeInt>(result, node.tok);
+                new_node->parent = node.parent;
+                node.replace_with(std::move(new_node));
+            }
 		}
 	}
 	if(contains(MATH_OPERATORS, node.op)) {
-		if (auto right_real = dynamic_cast<NodeReal *>(node.right.get())) {
-			if(node.op == "/" and right_real->value == (double)0) {
-				CompileError(ErrorType::MathError, "Found division by zero. Result will be infinite.", node.tok.line, "", "", node.tok.file).print();
-				exit(EXIT_FAILURE);
-			}
-		}
+        // check division by zero
+        if(right_real and node.op == "/" and right_real->value == (double)0) {
+            CompileError(ErrorType::MathError, "Found division by zero. Result will be infinite.", node.tok.line, "", "", node.tok.file).print();
+            exit(EXIT_FAILURE);
+        }
 		// constant folding
-		if (auto left_real = dynamic_cast<NodeReal *>(node.left.get())) {
-			if (auto right_real = dynamic_cast<NodeReal *>(node.right.get())) {
-				double result = 0;
-				auto real_operations = std::unordered_map<std::string, std::function<double(double, double)>>{
-					{"+", [](double a, double b) { return a + b; }},
-					{"-", [](double a, double b) { return a - b; }},
-					{"*", [](double a, double b) { return a * b; }},
-					{"/", [](double a, double b) { return a / b; }},
-					{"mod", [](double a, double b) { return std::fmod(a, b); }}
-				};
-				if (real_operations.find(node.op) != real_operations.end()) {
-					result = real_operations[node.op](left_real->value, right_real->value);
-					auto new_node = std::make_unique<NodeInt>(result, node.tok);
-					node.replace_with(std::move(new_node));
-				}
-			}
+		if (left_real and right_real) {
+            double result = 0;
+            auto real_operations = std::unordered_map<std::string, std::function<double(double, double)>>{
+                {"+", [](double a, double b) { return a + b; }},
+                {"-", [](double a, double b) { return a - b; }},
+                {"*", [](double a, double b) { return a * b; }},
+                {"/", [](double a, double b) { return a / b; }},
+                {"mod", [](double a, double b) { return std::fmod(a, b); }}
+            };
+            if (real_operations.find(node.op) != real_operations.end()) {
+                result = real_operations[node.op](left_real->value, right_real->value);
+                auto new_node = std::make_unique<NodeReal>(result, node.tok);
+                new_node->parent = node.parent;
+                node.replace_with(std::move(new_node));
+            }
 		}
 	}
 }
+
+//void ASTDesugar::visit(NodeFunctionCall& node) {
+//    if(node.function->name == "real" or node.function->name == "int_to_real") {
+//
+//    }
+//}
+
 
 void ASTDesugar::visit(NodeAssignStatement &node) {
     if(node.array_variable->params.size() < node.assignee->params.size()) {
@@ -73,27 +87,6 @@ void ASTDesugar::visit(NodeAssignStatement &node) {
          "Found incorrect assign statement syntax. There are more values to assign than assignees.", node.tok.line, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
-
-    bool is_declaration = false;
-    auto* declareStmt = dynamic_cast<NodeDeclareStatement*>(node.parent);
-    if (declareStmt != nullptr) is_declaration = true;
-    bool is_const_block = false;
-    auto* constStmt = dynamic_cast<NodeConstStatement*>(node.parent->parent);
-    if(constStmt != nullptr) is_const_block = true;
-    if(is_const_block)
-        for(auto & arr_var : node.array_variable->params) {
-            auto* var = dynamic_cast<NodeVariable*>(arr_var.get());
-            if(var == nullptr) {
-                CompileError(ErrorType::SyntaxError,"Found incorrect const block syntax. No arrays allowed in const blocks.", node.tok.line, "", "", node.tok.file).print();
-                exit(EXIT_FAILURE);
-            }
-            if(var->var_type != Mutable) {
-                CompileError(ErrorType::SyntaxError,"Warning: Found incorrect const block syntax. No other variable types allowed in const blocks.", node.tok.line, "", "", node.tok.file).print();
-            }
-            var->var_type = Const;
-            var->name = constStmt->prefix + "." + var->name;
-        }
-
     std::vector<std::unique_ptr<NodeSingleAssignStatement>> assign_statements;
     for(auto &arr_var : node.array_variable->params) {
         auto node_single_assign_stmt = std::make_unique<NodeSingleAssignStatement>(node.tok);
@@ -105,58 +98,133 @@ void ASTDesugar::visit(NodeAssignStatement &node) {
     for(auto &ass : node.assignee->params) {
         values.push_back(std::shared_ptr<NodeAST>(std::move(ass)));
     }
-    // in case there is nothing assigned
-    if(!node.assignee->params.empty())
-        // there were more variables given than values -> repeat the last value
-        while(values.size() < assign_statements.size()) {
-            values.push_back(values.back());
-        }
+    // there were more variables given than values -> repeat the last value
+    while(values.size() < assign_statements.size()) {
+        values.push_back(values.back());
+    }
 
     auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
 
-    std::vector<std::unique_ptr<NodeAST>> single_statements;
     for(int i = 0; i<assign_statements.size(); i++) {
         auto &stmt = assign_statements[i];
-        // in case there is nothing assigned -> nullptr
-        if (!node.assignee->params.empty()) {
-            auto &val = values[i];
-            stmt->assignee = val;
-            stmt->assignee->parent = stmt.get();
-        }
-        if(is_declaration) {
-            auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(node.tok);
-            node_declare_statement->to_be_declared = std::move(stmt->array_variable);
-            node_declare_statement->to_be_declared->parent = node_declare_statement.get();
-            node_declare_statement->assignee = std::move(stmt->assignee);
-            if(node_declare_statement->assignee != nullptr)
-                node_declare_statement->assignee->parent = node_declare_statement.get();
-            single_statements.push_back(std::move(node_declare_statement));
-        } else single_statements.push_back(std::move(stmt));
-    }
-
-    for(auto & stmt : single_statements) {
-        auto node_statement = std::make_unique<NodeStatement>(std::move(stmt), node.tok);
-        node_statement->statement->parent = node_statement.get();
-        node_statement->parent = node_statement_list.get();
-        node_statement_list->statements.push_back(std::move(node_statement));
+        auto &val = values[i];
+        stmt->assignee = val;
+        stmt->assignee->parent = stmt.get();
+        node_statement_list->statements.push_back(std::move(
+                statement_wrapper(std::move(stmt), node_statement_list.get())));
     }
     node_statement_list->parent = node.parent;
     node.replace_with(std::move(node_statement_list));
 }
 
 void ASTDesugar::visit(NodeDeclareStatement& node) {
-    node.statement->accept(*this);
-    node.statement->parent = node.parent;
-    node.replace_with(std::move(node.statement));
+    if(node.to_be_declared->params.size() < node.assignee->params.size()) {
+        CompileError(ErrorType::SyntaxError,
+         "Found incorrect declare statement syntax. There are more values to assign than to be declared.", node.tok.line, "", "", node.tok.file).print();
+        exit(EXIT_FAILURE);
+    }
+
+    std::vector<std::unique_ptr<NodeSingleDeclareStatement>> declare_statements;
+    for(auto &declaration : node.to_be_declared->params) {
+        auto node_single_assign_stmt = std::make_unique<NodeSingleDeclareStatement>(node.tok);
+        declaration->parent = node_single_assign_stmt.get();
+        node_single_assign_stmt->to_be_declared = std::move(declaration);
+        declare_statements.push_back(std::move(node_single_assign_stmt));
+    }
+    std::vector<std::shared_ptr<NodeAST>> values;
+    for(auto &ass : node.assignee->params) {
+        values.push_back(std::shared_ptr<NodeAST>(std::move(ass)));
+    }
+    // in case there is nothing assigned
+    if(!node.assignee->params.empty())
+        // there were more variables given than values -> repeat the last value
+        while(values.size() < declare_statements.size()) {
+            values.push_back(values.back());
+        }
+
+    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+    // get to_be_declared and their values together and put them in to NodeStatement
+    for(int i = 0; i<declare_statements.size(); i++) {
+        auto &stmt = declare_statements[i];
+        // in case there is nothing assigned -> nullptr
+        if (!node.assignee->params.empty()) {
+            auto &val = values[i];
+            stmt->assignee = val;
+            stmt->assignee->parent = stmt.get();
+        }
+        node_statement_list->statements.push_back(std::move(
+                statement_wrapper(std::move(stmt), node_statement_list.get())));
+    }
+    node_statement_list->parent = node.parent;
+    node.replace_with(std::move(node_statement_list));
+}
+
+void ASTDesugar::visit(NodeFamilyStatement& node) {
+    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+    for(auto &member : node.members) {
+        member->accept(*this);
+        // check declares
+        auto stmt_list = cast_node<NodeStatementList>(member.get());
+        for(auto &stmt : stmt_list->statements) {
+            auto node_stmt = cast_node<NodeStatement>(stmt.get());
+            auto declare_stmt = cast_node<NodeSingleDeclareStatement>(node_stmt->statement.get());
+            if(declare_stmt) {
+                auto node_array = cast_node<NodeArray>(declare_stmt->to_be_declared.get());
+                if(node_array) node_array->name = node.prefix + "." + node_array->name;
+                auto node_variable = cast_node<NodeVariable>(declare_stmt->to_be_declared.get());
+                if(node_variable) node_variable->name = node.prefix + "." + node_variable->name;
+            }
+        }
+        member->parent = node_statement_list.get();
+        node_statement_list->statements.push_back(std::move(member));
+    }
+    node_statement_list->parent = node.parent;
+    node.replace_with(std::move(node_statement_list));
 }
 
 void ASTDesugar::visit(NodeConstStatement& node) {
     auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
     std::vector<int32_t> const_indexes;
+    int32_t iter = 0;
+    int32_t pre = 0;
     for(int i = 0; i<node.constants.size(); i++){
         node.constants[i]->accept(*this);
-        const_indexes.push_back(i);
+        // check constants and give them values
+        auto stmt_list = cast_node<NodeStatementList>(node.constants[i].get());
+        for(auto &stmt : stmt_list->statements) {
+            auto node_stmt = cast_node<NodeStatement>(stmt.get());
+            auto declare_stmt = cast_node<NodeSingleDeclareStatement>(node_stmt->statement.get());
+            if(!declare_stmt->assignee)
+                declare_stmt->assignee = make_int(pre+iter, declare_stmt);
+            else {
+                auto node_int = cast_node<NodeInt>(declare_stmt->assignee.get());
+                if(!node_int) {
+                    CompileError(ErrorType::SyntaxError,
+                 "Found incorrect <const block> syntax. Only integers can be assigned in <const blocks>.", node.tok.line,"", "", node.tok.file).print();
+                    exit(EXIT_FAILURE);
+                }
+                pre = node_int->value;
+                iter = 0;
+            }
+            auto var = cast_node<NodeVariable>(declare_stmt->to_be_declared.get());
+            if (!var) {
+                CompileError(ErrorType::SyntaxError,
+                 "Found incorrect <const block> syntax. Only variables allowed in <const blocks>.", node.tok.line,"", "", node.tok.file).print();
+                exit(EXIT_FAILURE);
+            }
+            if (var->var_type != Mutable) {
+                CompileError(ErrorType::SyntaxError,
+             "Warning: Found incorrect const block syntax. No other variable types allowed in const blocks. Casted variable type to <const>.",node.tok.line, "", "", node.tok.file).print();
+            }
+            var->type = Integer;
+            var->var_type = Const;
+            var->name = node.prefix + "." + var->name;
+        }
+
+        const_indexes.push_back(pre+iter);
+        node.constants[i] -> parent = node_statement_list.get();
         node_statement_list->statements.push_back(std::move(node.constants[i]));
+        iter++;
     }
     auto array = make_declare_array(node.prefix, node.constants.size(), const_indexes, node_statement_list.get());
     node_statement_list->statements.push_back(std::move(array));
@@ -166,49 +234,6 @@ void ASTDesugar::visit(NodeConstStatement& node) {
     node.replace_with(std::move(node_statement_list));
 
 }
-
-std::unique_ptr<NodeInt> ASTDesugar::make_int(int32_t value, NodeAST* parent) {
-    auto node_int = std::make_unique<NodeInt>(value, parent->tok);
-    node_int->parent = parent;
-    return node_int;
-}
-
-std::unique_ptr<NodeParamList> ASTDesugar::make_init_array_list(const std::vector<int32_t>& values, NodeAST* parent) {
-    auto node_array_init_list = std::unique_ptr<NodeParamList>(new NodeParamList({}, parent->tok));
-    node_array_init_list -> parent = parent;
-    for(auto & i : values) {
-        node_array_init_list->params.push_back(make_int(i, node_array_init_list.get()));
-    }
-    return node_array_init_list;
-}
-
-std::unique_ptr<NodeStatement> ASTDesugar::make_declare_array(const std::string& name, int32_t size, const std::vector<int32_t>& values, NodeAST* parent) {
-    auto sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, parent->tok));
-    sizes->params.push_back(make_int(size, parent));
-    auto indexes  = std::unique_ptr<NodeParamList>(new NodeParamList({}, parent->tok));
-    auto node_array = std::make_unique<NodeArray>(false, name, Array, std::move(sizes), std::move(indexes), parent->tok);
-    node_array->sizes->parent = node_array.get();
-    node_array->indexes->parent = node_array.get();
-    auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), make_init_array_list(values, parent), parent->tok);
-    node_declare_statement->to_be_declared->parent = node_declare_statement.get();
-    node_declare_statement->assignee->parent = node_declare_statement.get();
-    auto node_statement = std::make_unique<NodeStatement>(std::move(node_declare_statement), parent->tok);
-    node_statement->statement->parent = node_statement.get();
-    node_statement->parent = parent;
-    return node_statement;
-}
-
-std::unique_ptr<NodeStatement> ASTDesugar::make_declare_variable(const std::string& name, int32_t value, VarType type, NodeAST* parent) {
-    auto node_variable = std::make_unique<NodeVariable>(false, name, type, parent->tok);
-    auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), make_int(value, parent), parent->tok);
-    node_declare_statement->assignee->parent = node_declare_statement.get();
-    node_declare_statement->to_be_declared->parent = node_declare_statement.get();
-    auto node_statement = std::make_unique<NodeStatement>(std::move(node_declare_statement), parent->tok);
-    node_statement->parent = parent;
-    return node_statement;
-}
-
-
 
 void ASTDesugar::visit(NodeForStatement& node) {
 	// check if there is only one var and assignee
@@ -258,17 +283,15 @@ void ASTDesugar::visit(NodeForStatement& node) {
     auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(node.tok);
     node_assign_statement->array_variable = std::move(assign_var);
     node_assign_statement->assignee = std::move(node.iterator->assignee->params[0]);
-    auto node_statement = std::make_unique<NodeStatement>(std::move(node_assign_statement), node.tok);
-    node_statement->statement->parent = node_statement.get();
-
     auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-    node_statement->parent = node_statement_list.get();
-    node_statement_list->statements.push_back(std::move(node_statement));
+    node_statement_list->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_statement_list.get()));
     node_while_statement->parent = node_statement_list.get();
     node_statement_list->statements.push_back(std::move(node_while_statement));
 
 	node.replace_with(std::move(node_statement_list));
 }
+
+
 
 std::unique_ptr<NodeStatement> ASTDesugar::make_function_call(const std::string& name, std::vector<std::unique_ptr<NodeAST>> args, NodeAST* parent, Token tok) {
     auto func_args = std::unique_ptr<NodeParamList>(new NodeParamList(std::move(args), tok));
@@ -297,6 +320,51 @@ std::unique_ptr<NodeBinaryExpr>ASTDesugar::make_binary_expr(ASTType type, const 
     comparison->left->parent = comparison.get();
     comparison->right->parent = comparison.get();
     return comparison;
+}
+
+std::unique_ptr<NodeInt> ASTDesugar::make_int(int32_t value, NodeAST* parent) {
+    auto node_int = std::make_unique<NodeInt>(value, parent->tok);
+    node_int->parent = parent;
+    return node_int;
+}
+
+std::unique_ptr<NodeParamList> ASTDesugar::make_init_array_list(const std::vector<int32_t>& values, NodeAST* parent) {
+    auto node_array_init_list = std::unique_ptr<NodeParamList>(new NodeParamList({}, parent->tok));
+    node_array_init_list -> parent = parent;
+    for(auto & i : values) {
+        node_array_init_list->params.push_back(make_int(i, node_array_init_list.get()));
+    }
+    return node_array_init_list;
+}
+
+std::unique_ptr<NodeStatement> ASTDesugar::make_declare_array(const std::string& name, int32_t size, const std::vector<int32_t>& values, NodeAST* parent) {
+    auto sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, parent->tok));
+    sizes->params.push_back(make_int(size, parent));
+    auto indexes  = std::unique_ptr<NodeParamList>(new NodeParamList({}, parent->tok));
+    auto node_array = std::make_unique<NodeArray>(false, name, Array, std::move(sizes), std::move(indexes), parent->tok);
+    node_array->sizes->parent = node_array.get();
+    node_array->indexes->parent = node_array.get();
+    node_array->type = Integer;
+    auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), make_init_array_list(values, parent), parent->tok);
+    node_declare_statement->to_be_declared->parent = node_declare_statement.get();
+    node_declare_statement->assignee->parent = node_declare_statement.get();
+    return statement_wrapper(std::move(node_declare_statement), parent);
+}
+
+std::unique_ptr<NodeStatement> ASTDesugar::make_declare_variable(const std::string& name, int32_t value, VarType type, NodeAST* parent) {
+    auto node_variable = std::make_unique<NodeVariable>(false, name, type, parent->tok);
+    node_variable->type = Integer;
+    auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), make_int(value, parent), parent->tok);
+    node_declare_statement->assignee->parent = node_declare_statement.get();
+    node_declare_statement->to_be_declared->parent = node_declare_statement.get();
+    return statement_wrapper(std::move(node_declare_statement), parent);
+}
+
+template<typename T>std::unique_ptr<NodeStatement> ASTDesugar::statement_wrapper(std::unique_ptr<T> node, NodeAST* parent) {
+    auto node_statement = std::make_unique<NodeStatement>(std::move(node), node->tok);
+    node_statement->statement->parent = node_statement.get();
+    node_statement->parent = parent;
+    return node_statement;
 }
 
 

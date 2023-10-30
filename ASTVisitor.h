@@ -34,7 +34,8 @@ public:
 		node.right->accept(*this);
 	};
     virtual void visit(NodeDeclareStatement& node) {
-		node.statement->accept(*this);
+        node.to_be_declared ->accept(*this);
+        node.assignee -> accept(*this);
 	};
     virtual void visit(NodeSingleDeclareStatement& node) {
         node.to_be_declared ->accept(*this);

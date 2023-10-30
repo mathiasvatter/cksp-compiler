@@ -65,6 +65,7 @@ struct NodeString : NodeAST {
 };
 
 struct NodeVariable: NodeAST {
+    bool is_engine = false;
     bool is_persistent;
     bool is_local;
     VarType var_type = VarType::Mutable;
@@ -81,6 +82,7 @@ struct NodeParamList: NodeAST {
 };
 
 struct NodeArray : NodeAST {
+    bool is_engine = false;
     bool is_persistent;
     bool is_local;
     VarType var_type = VarType::Array;
@@ -143,14 +145,13 @@ struct NodeSingleAssignStatement : NodeAST {
 };
 
 struct NodeDeclareStatement : NodeAST {
-//	std::unique_ptr<NodeParamList> to_be_declared;
-//	std::unique_ptr<NodeParamList> assignee;
-    std::unique_ptr<NodeAST> statement;
+	std::unique_ptr<NodeParamList> to_be_declared;
+	std::unique_ptr<NodeParamList> assignee;
+//    std::unique_ptr<NodeAST> statement;
     inline explicit NodeDeclareStatement(Token tok) : NodeAST(tok) {}
-	inline NodeDeclareStatement(std::unique_ptr<NodeAST> statement, Token tok)
-    : NodeAST(tok), statement(std::move(statement)) {}
+	inline NodeDeclareStatement(std::unique_ptr<NodeParamList> to_be_declared, std::unique_ptr<NodeParamList> assignee, Token tok)
+    : NodeAST(tok), to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
-	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 };
 
 struct NodeSingleDeclareStatement : NodeAST {
@@ -161,7 +162,6 @@ struct NodeSingleDeclareStatement : NodeAST {
     : NodeAST(tok), to_be_declared(std::move(arrayVariable)), assignee(std::move(assignee)) {}
     void accept(ASTVisitor& visitor) override;
 };
-
 
 struct NodeGetControlStatement : NodeAST {
     std::unique_ptr<NodeAST> ui_id; //array or variable
@@ -285,6 +285,7 @@ struct NodeImport : NodeAST {
 };
 
 struct NodeFunctionHeader: NodeAST {
+    bool is_engine = false;
     std::string name;
     std::unique_ptr<NodeParamList> args;
     inline explicit NodeFunctionHeader(Token tok) : NodeAST(tok) {}
@@ -304,12 +305,12 @@ struct NodeFunctionCall : NodeAST {
 
 struct NodeFunctionDefinition: NodeAST {
     std::unique_ptr<NodeFunctionHeader> header;
-    std::optional<std::unique_ptr<NodeVariable>> return_variable;
+    std::optional<std::unique_ptr<NodeParamList>> return_variable;
     bool override;
     std::vector<std::unique_ptr<NodeStatement>> body;
     inline explicit NodeFunctionDefinition(Token tok) : NodeAST(tok) {}
     inline NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
-	   std::optional<std::unique_ptr<NodeVariable>> returnVariable, bool override,
+	   std::optional<std::unique_ptr<NodeParamList>> returnVariable, bool override,
 	   std::vector<std::unique_ptr<NodeStatement>> body, Token tok)
 	   : NodeAST(tok), header(std::move(header)), return_variable(std::move(returnVariable)), override(override),
 	   body(std::move(body)) {};

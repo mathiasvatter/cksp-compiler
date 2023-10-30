@@ -645,7 +645,7 @@ Result<std::unique_ptr<NodeFunctionCall>> Parser::parse_function_call(NodeAST* p
 Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definition(NodeAST* parent) {
     auto node_function_definition = std::make_unique<NodeFunctionDefinition>(get_tok());
     std::unique_ptr<NodeFunctionHeader> func_header;
-    std::optional<std::unique_ptr<NodeVariable>> func_return_var;
+    std::optional<std::unique_ptr<NodeParamList>> func_return_var;
     std::vector<std::unique_ptr<NodeStatement>> func_body;
     bool func_override = false;
     consume(); //consume "function"
@@ -662,7 +662,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     if (peek().type == token::ARROW) {
         consume();
         if (peek().type == token::KEYWORD) {
-            auto return_var = parse_variable(parent);
+            auto return_var = parse_param_list(parent);
             if (return_var.is_error()) {
                 Result<std::unique_ptr<NodeFunctionDefinition>>(return_var.get_error());
             }
@@ -730,33 +730,33 @@ Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement(No
         }
     } while(peek().type == token::COMMA);
 
-//	std::unique_ptr<NodeParamList> assignees = nullptr;
-//	// if there is an assignment following
-//	if (peek().type == token::ASSIGN) {
-//        consume(); //consume :=
-//		auto assignee = parse_param_list(node_declare_statement.get());
-//		if(assignee.is_error()) {
-//			return Result<std::unique_ptr<NodeDeclareStatement>>(assignee.get_error());
-//		}
-//		assignees = std::move(assignee.unwrap());
-//	} else
-//	    // initializes empty param list
-//	    assignees = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
-//
-//    assignees->parent = node_declare_statement.get();
-//    node_declare_statement->to_be_declared = std::move(to_be_declared);
-//    node_declare_statement->assignee = std::move(assignees);
-//    node_declare_statement->parent = parent;
-////	auto return_value = std::make_unique<NodeDeclareStatement>(std::move(to_be_declared), std::move(assignees), get_tok());
-//	return Result<std::unique_ptr<NodeDeclareStatement>>(std::move(node_declare_statement));
-    auto node_assign_statement = parse_into_assign_statement(std::move(to_be_declared), node_declare_statement.get());
-    if (node_assign_statement.is_error()) {
-        return Result<std::unique_ptr<NodeDeclareStatement>>(node_assign_statement.get_error());
-    }
-    node_declare_statement->statement = std::move(node_assign_statement.unwrap());
-    node_declare_statement->statement->parent = node_declare_statement.get();
+	std::unique_ptr<NodeParamList> assignees = nullptr;
+	// if there is an assignment following
+	if (peek().type == token::ASSIGN) {
+        consume(); //consume :=
+		auto assignee = parse_param_list(node_declare_statement.get());
+		if(assignee.is_error()) {
+			return Result<std::unique_ptr<NodeDeclareStatement>>(assignee.get_error());
+		}
+		assignees = std::move(assignee.unwrap());
+	} else
+	    // initializes empty param list
+	    assignees = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
+
+    assignees->parent = node_declare_statement.get();
+    node_declare_statement->to_be_declared = std::move(to_be_declared);
+    node_declare_statement->assignee = std::move(assignees);
     node_declare_statement->parent = parent;
+//	auto return_value = std::make_unique<NodeDeclareStatement>(std::move(to_be_declared), std::move(assignees), get_tok());
 	return Result<std::unique_ptr<NodeDeclareStatement>>(std::move(node_declare_statement));
+//    auto node_assign_statement = parse_into_assign_statement(std::move(to_be_declared), node_declare_statement.get());
+//    if (node_assign_statement.is_error()) {
+//        return Result<std::unique_ptr<NodeDeclareStatement>>(node_assign_statement.get_error());
+//    }
+//    node_declare_statement->statement = std::move(node_assign_statement.unwrap());
+//    node_declare_statement->statement->parent = node_declare_statement.get();
+//    node_declare_statement->parent = parent;
+//	return Result<std::unique_ptr<NodeDeclareStatement>>(std::move(node_declare_statement));
 }
 
 Result<std::unique_ptr<NodeAssignStatement>> Parser::parse_into_assign_statement(std::unique_ptr<NodeParamList> array_variable, NodeAST* parent) {

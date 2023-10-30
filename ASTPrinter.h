@@ -50,7 +50,12 @@ public:
 
 	void visit(NodeDeclareStatement& node) override {
 		std::cout << "declare ";
-		node.statement->accept(*this);
+        node.to_be_declared->accept(*this);
+        if(node.assignee != nullptr) {
+            std::cout << ":= ";
+            node.assignee->accept(*this);
+        }
+        std::cout << "";
 	}
 
     void visit(NodeSingleDeclareStatement& node) override {
@@ -110,10 +115,8 @@ public:
 	void visit(NodeAssignStatement& node) override {
 		std::cout << "";
 		node.array_variable->accept(*this);
-        if (node.assignee != nullptr) {
-            std::cout << ":= ";
-            node.assignee->accept(*this);
-        }
+        std::cout << ":= ";
+        node.assignee->accept(*this);
 		std::cout << "";
 	}
 
@@ -230,12 +233,14 @@ public:
 	void visit(NodeFunctionDefinition& node) override {
 		std::cout << "function ";
 		node.header ->accept(*this);
-		std::cout << "\n";
-		if (node.return_variable.has_value())
-			node.return_variable.value()->accept(*this);
+		if (node.return_variable.has_value()) {
+            std::cout << " -> ";
+            node.return_variable.value()->accept(*this);
+        }
 		if (node.override) {
 			std::cout << "override" << std::endl;
 		}
+		std::cout << "\n";
 		for(auto& stmt: node.body) {
 			stmt->accept(*this);
 		}
