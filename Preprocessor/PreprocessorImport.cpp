@@ -87,19 +87,19 @@ Result<std::unique_ptr<NodeImport>> PreprocessorImport::parse_import(std::vector
                 alias = consume(tokens).val;
             } else {
                 return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
-                                                                        "Incorrect import Syntax.",peek(tokens).line,"as <keyword>",peek(tokens).val, peek(tokens).file));
+            "Incorrect import Syntax.",peek(tokens).line,"as <keyword>",peek(tokens).val, peek(tokens).file));
             }
         }
         if(peek(tokens).type != token::LINEBRK)
             return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
-                                                                    "Incorrect import Syntax.",peek(tokens).line,"linebreak",peek(tokens).val, peek(tokens).file));
+    "Incorrect import Syntax.",peek(tokens).line,"linebreak",peek(tokens).val, peek(tokens).file));
         consume(tokens); //consume linebreak
         remove_tokens(tokens, begin, m_pos);
         auto return_value = std::make_unique<NodeImport>(filepath, alias, get_tok(tokens));
         return Result<std::unique_ptr<NodeImport>>(std::move(return_value));
     } else {
         return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::PreprocessorError,
-                                                                "Not a filepath",peek(tokens).line,"path",peek(tokens).val, peek(tokens).file));
+    "Not a filepath",peek(tokens).line,"path",peek(tokens).val, peek(tokens).file));
     }
 }
 
