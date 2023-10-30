@@ -6,6 +6,13 @@
 
 #include "ASTVisitor.h"
 #include <unordered_map>
+#include <type_traits>
+
+template <typename T>
+bool is_instance_of(NodeAST* node) {
+    static_assert(std::is_base_of<NodeAST, T>::value, "T must be a subclass of NodeAST");
+    return dynamic_cast<T*>(node) != nullptr;
+}
 
 inline std::vector<std::string> MATH_OPERATORS = {"-", "+", "/", "*", "mod"};
 
@@ -30,6 +37,5 @@ private:
     std::unique_ptr<NodeParamList> make_init_array_list(const std::vector<int32_t>& values, NodeAST* parent);
     std::unique_ptr<NodeStatement> make_declare_array(const std::string& name, int32_t size, const std::vector<int32_t>& values, NodeAST* parent);
     std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, VarType type, NodeAST* parent);
-
 };
 
