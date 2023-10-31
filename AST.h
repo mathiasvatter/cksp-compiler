@@ -22,7 +22,9 @@ enum ASTType {
     String,
     Unknown,
 	ParamList,
-    Void
+    Void,
+	StatementList,
+	Statement
 
 };
 
@@ -179,52 +181,54 @@ struct NodeSetControlStatement : NodeAST {
     void accept(ASTVisitor& visitor) override;
 };
 
-struct NodeConstStatement : NodeAST {
-    std::string prefix;
-    std::vector<std::unique_ptr<NodeAST>> constants;
-    inline explicit NodeConstStatement(Token tok) : NodeAST(tok) {}
-    inline NodeConstStatement(std::string prefix, std::vector<std::unique_ptr<NodeAST>> constants, Token tok)
-    : NodeAST(tok), prefix(std::move(prefix)), constants(std::move(constants)) {}
-    void accept(ASTVisitor& visitor) override;
-    void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
-};
-
-struct NodeStructStatement : NodeAST {
-    std::string prefix;
-    std::vector<std::unique_ptr<NodeAST>> members;
-    inline explicit NodeStructStatement(Token tok) : NodeAST(tok) {}
-    inline NodeStructStatement(std::string prefix, std::vector<std::unique_ptr<NodeAST>> members, Token tok)
-    : NodeAST(tok), prefix(std::move(prefix)), members(std::move(members)) {}
-    void accept(ASTVisitor& visitor) override;
-    void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
-};
-
-struct NodeFamilyStatement : NodeAST {
-    std::string prefix;
-    std::vector<std::unique_ptr<NodeAST>> members;
-    inline explicit NodeFamilyStatement(Token tok) : NodeAST(tok) {}
-    inline NodeFamilyStatement(std::string prefix, std::vector<std::unique_ptr<NodeAST>> members, Token tok)
-    : NodeAST(tok), prefix(std::move(prefix)), members(std::move(members)) {}
-    void accept(ASTVisitor& visitor) override;
-    void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
-};
-
 // can be assign_statement, if_statement etc.
 struct NodeStatement: NodeAST {
     std::unique_ptr<NodeAST> statement;
-    inline explicit NodeStatement(Token tok) : NodeAST(tok) {}
-    inline NodeStatement(std::unique_ptr<NodeAST> statement, Token tok) : NodeAST(tok), statement(std::move(statement)) {}
+    inline explicit NodeStatement(Token tok) : NodeAST(tok) {type = Statement;}
+    inline NodeStatement(std::unique_ptr<NodeAST> statement, Token tok) : NodeAST(tok), statement(std::move(statement)) {type = Statement;}
 	void accept(ASTVisitor& visitor) override;
 	virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 };
 
-struct NodeStatementList : NodeAST {
-    std::vector<std::unique_ptr<NodeAST>> statements;
-    inline explicit NodeStatementList(Token tok) : NodeAST(tok) {}
-    inline NodeStatementList(std::vector<std::unique_ptr<NodeAST>> statements, Token tok)
-    : NodeAST(tok), statements(std::move(statements)) {}
+struct NodeConstStatement : NodeAST {
+    std::string prefix;
+    std::vector<std::unique_ptr<NodeStatement>> constants;
+    inline explicit NodeConstStatement(Token tok) : NodeAST(tok) {}
+    inline NodeConstStatement(std::string prefix, std::vector<std::unique_ptr<NodeStatement>> constants, Token tok)
+    : NodeAST(tok), prefix(std::move(prefix)), constants(std::move(constants)) {}
     void accept(ASTVisitor& visitor) override;
-    virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+//    void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+};
+
+struct NodeStructStatement : NodeAST {
+    std::string prefix;
+    std::vector<std::unique_ptr<NodeStatement>> members;
+    inline explicit NodeStructStatement(Token tok) : NodeAST(tok) {}
+    inline NodeStructStatement(std::string prefix, std::vector<std::unique_ptr<NodeStatement>> members, Token tok)
+    : NodeAST(tok), prefix(std::move(prefix)), members(std::move(members)) {}
+    void accept(ASTVisitor& visitor) override;
+//    void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+};
+
+
+struct NodeFamilyStatement : NodeAST {
+    std::string prefix;
+    std::vector<std::unique_ptr<NodeStatement>> members;
+    inline explicit NodeFamilyStatement(Token tok) : NodeAST(tok) {}
+    inline NodeFamilyStatement(std::string prefix, std::vector<std::unique_ptr<NodeStatement>> members, Token tok)
+    : NodeAST(tok), prefix(std::move(prefix)), members(std::move(members)) {}
+    void accept(ASTVisitor& visitor) override;
+//    void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+};
+
+
+struct NodeStatementList : NodeAST {
+    std::vector<std::unique_ptr<NodeStatement>> statements;
+    inline explicit NodeStatementList(Token tok) : NodeAST(tok) {type = StatementList;}
+    inline NodeStatementList(std::vector<std::unique_ptr<NodeStatement>> statements, Token tok)
+    : NodeAST(tok), statements(std::move(statements)) {type = StatementList;}
+    void accept(ASTVisitor& visitor) override;
+//    virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 };
 
 struct NodeIfStatement: NodeAST {

@@ -140,40 +140,40 @@ void NodeConstStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 
-void NodeConstStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
-    for (auto& c : constants) {
-        if (c.get() == oldChild) {
-            c = std::move(newChild);
-            return;
-        }
-    }
-}
+//void NodeConstStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+//    for (auto& c : constants) {
+//        if (c.get() == oldChild) {
+//            c = std::move(newChild);
+//            return;
+//        }
+//    }
+//}
 
 void NodeStructStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 
-void NodeStructStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
-    for (auto& m : members) {
-        if (m.get() == oldChild) {
-            m = std::move(newChild);
-            return;
-        }
-    }
-}
+//void NodeStructStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+//    for (auto& m : members) {
+//        if (m.get() == oldChild) {
+//            m = std::move(newChild);
+//            return;
+//        }
+//    }
+//}
 
 void NodeFamilyStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 
-void NodeFamilyStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
-    for (auto& m : members) {
-        if (m.get() == oldChild) {
-            m = std::move(newChild);
-            return;
-        }
-    }
-}
+//void NodeFamilyStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+//    for (auto& m : members) {
+//        if (m.get() == oldChild) {
+//            m = std::move(newChild);
+//            return;
+//        }
+//    }
+//}
 
 void NodeUIControl::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
@@ -199,14 +199,14 @@ void NodeStatementList::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 
-void NodeStatementList::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
-    for (auto& stmt : statements) {
-        if (stmt.get() == oldChild) {
-            stmt = std::move(newChild);
-            return;
-        }
-    }
-}
+//void NodeStatementList::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+//    for (auto& stmt : statements) {
+//        if (stmt.get() == oldChild) {
+//            stmt = std::move(newChild);
+//            return;
+//        }
+//    }
+//}
 
 void NodeSingleAssignStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);

@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 
+
 // ANSI-Escapesequenz für Rot
 const std::string red = "\033[31m";
 
@@ -52,6 +53,7 @@ public:
 		if(line_number != -1)
         	std::cout << "In line " << line_number << ": " << get_line_from_file() << reset << std::endl;
     }
+
 
 private:
     ErrorType type;

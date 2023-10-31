@@ -39,6 +39,7 @@ public:
 	/// alter for loops to while loops
 	void visit(NodeForStatement& node) override;
 
+
 private:
     template<typename T>std::unique_ptr<NodeStatement> statement_wrapper(std::unique_ptr<T> node, NodeAST* parent);
     static std::unique_ptr<NodeStatement> make_function_call(const std::string& name, std::vector<std::unique_ptr<NodeAST>> args, NodeAST* parent, Token tok);

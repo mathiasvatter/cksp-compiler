@@ -87,6 +87,7 @@ void ASTDesugar::visit(NodeAssignStatement &node) {
          "Found incorrect assign statement syntax. There are more values to assign than assignees.", node.tok.line, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
+	node.assignee->accept(*this);
     std::vector<std::unique_ptr<NodeSingleAssignStatement>> assign_statements;
     for(auto &arr_var : node.array_variable->params) {
         auto node_single_assign_stmt = std::make_unique<NodeSingleAssignStatement>(node.tok);
@@ -123,13 +124,13 @@ void ASTDesugar::visit(NodeDeclareStatement& node) {
          "Found incorrect declare statement syntax. There are more values to assign than to be declared.", node.tok.line, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
-
+	node.assignee->accept(*this);
     std::vector<std::unique_ptr<NodeSingleDeclareStatement>> declare_statements;
     for(auto &declaration : node.to_be_declared->params) {
-        auto node_single_assign_stmt = std::make_unique<NodeSingleDeclareStatement>(node.tok);
-        declaration->parent = node_single_assign_stmt.get();
-        node_single_assign_stmt->to_be_declared = std::move(declaration);
-        declare_statements.push_back(std::move(node_single_assign_stmt));
+        auto node_single_declare_stmt = std::make_unique<NodeSingleDeclareStatement>(node.tok);
+        declaration->parent = node_single_declare_stmt.get();
+        node_single_declare_stmt->to_be_declared = std::move(declaration);
+        declare_statements.push_back(std::move(node_single_declare_stmt));
     }
     std::vector<std::shared_ptr<NodeAST>> values;
     for(auto &ass : node.assignee->params) {
@@ -164,9 +165,22 @@ void ASTDesugar::visit(NodeFamilyStatement& node) {
     for(auto &member : node.members) {
         member->accept(*this);
         // check declares
-        auto stmt_list = cast_node<NodeStatementList>(member.get());
+		auto n_stmt = cast_node<NodeStatement>(member.get());
+        auto stmt_list = cast_node<NodeStatementList>(n_stmt->statement.get());
+		auto new_stmt_list = std::make_unique<NodeStatementList>(node.tok);
         for(auto &stmt : stmt_list->statements) {
-            auto node_stmt = cast_node<NodeStatement>(stmt.get());
+			auto node_stmt = cast_node<NodeStatement>(stmt.get());
+			auto stmt_list_recur = cast_node<NodeStatementList>(node_stmt->statement.get());
+			if (stmt_list_recur)
+				new_stmt_list->statements.insert(new_stmt_list->statements.end(),
+												 std::make_move_iterator(stmt_list_recur->statements.begin()),
+												 std::make_move_iterator(stmt_list_recur->statements.end()));
+			else
+				new_stmt_list->statements.push_back(std::move(stmt));
+		}
+		for(auto &stmt : new_stmt_list->statements) {
+			stmt->parent = new_stmt_list.get();
+			auto node_stmt = cast_node<NodeStatement>(stmt.get());
             auto declare_stmt = cast_node<NodeSingleDeclareStatement>(node_stmt->statement.get());
             if(declare_stmt) {
                 auto node_array = cast_node<NodeArray>(declare_stmt->to_be_declared.get());
@@ -175,6 +189,8 @@ void ASTDesugar::visit(NodeFamilyStatement& node) {
                 if(node_variable) node_variable->name = node.prefix + "." + node_variable->name;
             }
         }
+		new_stmt_list->parent = n_stmt;
+		n_stmt->statement = std::move(new_stmt_list);
         member->parent = node_statement_list.get();
         node_statement_list->statements.push_back(std::move(member));
     }
@@ -190,7 +206,8 @@ void ASTDesugar::visit(NodeConstStatement& node) {
     for(int i = 0; i<node.constants.size(); i++){
         node.constants[i]->accept(*this);
         // check constants and give them values
-        auto stmt_list = cast_node<NodeStatementList>(node.constants[i].get());
+		auto n_stmt = cast_node<NodeStatement>(node.constants[i].get());
+        auto stmt_list = cast_node<NodeStatementList>(n_stmt->statement.get());
         for(auto &stmt : stmt_list->statements) {
             auto node_stmt = cast_node<NodeStatement>(stmt.get());
             auto declare_stmt = cast_node<NodeSingleDeclareStatement>(node_stmt->statement.get());
@@ -285,8 +302,9 @@ void ASTDesugar::visit(NodeForStatement& node) {
     node_assign_statement->assignee = std::move(node.iterator->assignee->params[0]);
     auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_statement_list.get()));
-    node_while_statement->parent = node_statement_list.get();
-    node_statement_list->statements.push_back(std::move(node_while_statement));
+
+    node_statement_list->statements.push_back(statement_wrapper(std::move(node_while_statement), node_statement_list.get()));
+
 
 	node.replace_with(std::move(node_statement_list));
 }

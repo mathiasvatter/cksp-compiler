@@ -8,7 +8,15 @@
 #include "AST.h"
 #include "Tokenizer/Tokens.h"
 #include "Result.h"
-//#include "ASTVisitor.h"
+
+
+// Hilfsfunktion, die das Result-Objekt zurückgibt, wenn kein Fehler vorliegt.
+template<typename T> Result<T> handle_error(Result<T> result) {
+	if (result.is_error()) {
+		return Result<T>(result.get_error());
+	}
+	return result; // Return the success result directly
+}
 
 inline static std::map<token, int> BinaryOpPrecendence = {
 //		{token::COMMA, 1},
@@ -91,6 +99,8 @@ private:
     Result<std::unique_ptr<NodeDeclareStatement>> parse_declare_statement(NodeAST* parent);
 //	Result<std::unique_ptr<NodeDefineStatement>> parse_define_statement();
     Result<std::unique_ptr<NodeAST>> parse_const_struct_family_statement(NodeAST* parent);
+	Result<std::unique_ptr<NodeAST>> parse_family_statement(NodeAST* parent);
+
 	/// combines all possible statement types
     Result<std::unique_ptr<NodeStatement>> parse_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeIfStatement>> parse_if_statement(NodeAST* parent);
@@ -104,6 +114,8 @@ private:
     Result<std::unique_ptr<NodeCallback>> parse_callback(NodeAST* parent);
 
 	Result<std::unique_ptr<NodeProgram>> parse_program();
+
+	Result<SuccessTag> consume_linebreak(const std::string& construct);
 
     bool is_variable_declaration();
     bool is_array_declaration();

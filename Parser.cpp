@@ -438,12 +438,18 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
             }
             stmt = std::move(assign_stmt.unwrap());
         }
-    } else if (peek().type == token::CONST || peek().type == token::FAMILY || peek().type == token::STRUCT) {
-        auto construct_stmt = parse_const_struct_family_statement(node_statement.get());
-        if(construct_stmt.is_error()) {
-            return Result<std::unique_ptr<NodeStatement>>(construct_stmt.get_error());
-        }
-        stmt = std::move(construct_stmt.unwrap());
+    } else if (peek().type == token::CONST || peek().type == token::STRUCT) {
+		auto construct_stmt = parse_const_struct_family_statement(node_statement.get());
+		if (construct_stmt.is_error()) {
+			return Result<std::unique_ptr<NodeStatement>>(construct_stmt.get_error());
+		}
+		stmt = std::move(construct_stmt.unwrap());
+	} else if (peek().type == token::FAMILY) {
+		auto family_stmt = parse_family_statement(node_statement.get());
+		if (family_stmt.is_error()) {
+			return Result<std::unique_ptr<NodeStatement>>(family_stmt.get_error());
+		}
+		stmt = std::move(family_stmt.unwrap());
     } else if (peek().type == token::IF) {
         auto if_stmt = parse_if_statement(node_statement.get());
         if (if_stmt.is_error()) {
@@ -1129,6 +1135,36 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement(Node
 //	return Result<std::unique_ptr<NodeDefineStatement>>(std::move(return_value));
 //}
 
+Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent) {
+	auto node_family_statement = std::make_unique<NodeFamilyStatement>(get_tok());
+	Token construct = consume(); //consume family
+	token end_construct = token::END_FAMILY;
+	if(peek().type != token::KEYWORD) {
+		return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
+		 "Found unknown family syntax.", peek().line, "valid prefix", peek().val, peek().file));
+	}
+	auto prefix = consume(); //consume prefix
+	auto l = consume_linebreak("<family statement>");
+	if(l.is_error())
+		return Result<std::unique_ptr<NodeAST>>(l.get_error());
+	std::vector<std::unique_ptr<NodeStatement>> stmts;
+	while(peek().type != token::END_FAMILY) {
+		_skip_linebreaks();
+		auto declare_stmt = parse_statement(nullptr);
+		if(declare_stmt.is_error()) {
+			return Result<std::unique_ptr<NodeAST>>(declare_stmt.get_error());
+		}
+		declare_stmt.unwrap() -> parent = node_family_statement.get();
+		stmts.push_back(std::move(declare_stmt.unwrap()));
+	}
+	consume(); // consume end family
+	node_family_statement->prefix = prefix.val;
+	node_family_statement->members = std::move(stmts);
+	node_family_statement -> parent = parent;
+	return Result<std::unique_ptr<NodeAST>>(std::move(node_family_statement));
+}
+
+
 Result<std::unique_ptr<NodeAST>> Parser::parse_const_struct_family_statement(NodeAST* parent) {
     Token construct = consume(); //consume family, struct, const
     token end_construct = token::END_CONST;
@@ -1140,7 +1176,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_struct_family_statement(Nod
 
     if(peek().type != token::KEYWORD) {
         return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-            "Found unknown const/family/struct syntax.", peek().line, "valid identifier", peek().val, peek().file));
+            "Found unknown const/family/struct syntax.", peek().line, "valid prefix", peek().val, peek().file));
     }
     auto prefix = consume(); //consume prefix
     if(peek().type != token::LINEBRK) {
@@ -1149,19 +1185,20 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_struct_family_statement(Nod
     }
     consume(); // consume linebreak
 
-    std::vector<std::unique_ptr<NodeAST>> stmts;
+    std::vector<std::unique_ptr<NodeStatement>> stmts;
     while(peek().type != end_construct) {
         _skip_linebreaks();
         auto declare_stmt = parse_declare_statement(nullptr);
         if(declare_stmt.is_error()) {
             return Result<std::unique_ptr<NodeAST>>(declare_stmt.get_error());
         }
-        stmts.push_back(std::move(declare_stmt.unwrap()));
-        if(peek().type != token::LINEBRK) {
-            return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-               "Missing linebreak after statement.", peek().line, "linebreak", peek().val, peek().file));
-        }
-        consume();
+		auto node_stmt = std::make_unique<NodeStatement>(std::move(declare_stmt.unwrap()), get_tok());
+		node_stmt->statement->parent = node_stmt.get();
+        stmts.push_back(std::move(node_stmt));
+
+		auto l = consume_linebreak("<statement>");
+		if(l.is_error())
+			return Result<std::unique_ptr<NodeAST>>(l.get_error());
     }
     consume();
 
@@ -1170,10 +1207,6 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_struct_family_statement(Nod
 		auto node_const_statement = std::make_unique<NodeConstStatement>(std::move(prefix.val), std::move(stmts), get_tok());
 		for (auto &stmt : node_const_statement->constants) { stmt->parent = node_const_statement.get(); }
 		return_value = std::move(node_const_statement);
-	} else if (construct.type == token::FAMILY) {
-		auto node_family_statement = std::make_unique<NodeFamilyStatement>(std::move(prefix.val), std::move(stmts), get_tok());
-		for (auto &stmt : node_family_statement->members) { stmt->parent = node_family_statement.get(); }
-		return_value = std::move(node_family_statement);
 	} else if (construct.type == token::STRUCT) {
 		auto node_struct_statement = std::make_unique<NodeStructStatement>(std::move(prefix.val), std::move(stmts), get_tok());
 		for (auto &stmt : node_struct_statement->members) { stmt->parent = node_struct_statement.get(); }
@@ -1183,6 +1216,16 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_struct_family_statement(Nod
 	// set the parent for each statement in stmts
     return Result<std::unique_ptr<NodeAST>>(std::move(return_value));
 }
+
+Result<SuccessTag> Parser::consume_linebreak(const std::string& construct) {
+	if(peek().type != token::LINEBRK) {
+		return Result<SuccessTag>(CompileError(ErrorType::SyntaxError,
+		 "Missing linebreak in "+construct+".", peek().line, "linebreak", peek().val, peek().file));
+	}
+	consume(); // consume linebreak
+	return Result<SuccessTag>(SuccessTag{});
+}
+
 
 Result<std::unique_ptr<NodeGetControlStatement>> Parser::parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent) {
 //    std::unique_ptr<NodeAST> ui_id;

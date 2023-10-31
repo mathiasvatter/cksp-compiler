@@ -8,6 +8,7 @@
 #include "ASTVisitor.h"
 #include "ASTDesugar.h"
 #include "ASTPrinter.h"
+#include "ASTTypeCasting.h"
 
 int main() {
 
@@ -43,6 +44,8 @@ int main() {
 	ASTDesugar desugar;
 	ast->accept(desugar);
 
+	ASTTypeCasting typecast;
+	ast->accept(typecast);
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
