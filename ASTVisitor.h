@@ -129,9 +129,12 @@ public:
 			function_definition->accept(*this);
 		}
 	};
-//    virtual void visit(NodeMacroHeader& node)  = 0;
-//    virtual void visit(NodeMacroDefinition& node)  = 0;
-
+    virtual void visit(NodeMacroHeader& node) {
+    };
+    virtual void visit(NodeMacroDefinition& node) {
+    };
+    virtual void visit(NodeImport& node) {
+    };
     virtual void visit(NodeStatementList& node) {
         for(auto & stmt : node.statements) {
             stmt->accept(*this);

@@ -24,10 +24,12 @@ inline std::vector<std::string> MATH_OPERATORS = {"-", "+", "/", "*", "mod"};
 
 class ASTDesugar : public ASTVisitor {
 public:
+    ASTDesugar();
 	/// do constant folding for int and reals
 	void visit(NodeBinaryExpr& node) override;
     /// render real() and int() -> not doing because of overriding existing functions?
-//    void visit(NodeFunctionCall& node) override;
+    void visit(NodeFunctionCall& node) override;
+    void visit(NodeProgram& node) override;
     /// turn into single assign statements
 	void visit(NodeAssignStatement& node) override;
     /// turn into single declare statements
@@ -39,8 +41,16 @@ public:
 	/// alter for loops to while loops
 	void visit(NodeForStatement& node) override;
 
+    void visit(NodeArray& node) override;
+    void visit(NodeVariable& node) override;
 
 private:
+    std::vector<std::tuple<NodeArray*, NodeParamList*>> m_declared_arrays;
+    std::vector<std::unique_ptr<NodeVariable>> m_declared_variables;
+    std::stack<std::string> m_prefixes;
+    std::stack<std::vector<NodeFunctionHeader*>> m_function_stack;
+    std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
+
     template<typename T>std::unique_ptr<NodeStatement> statement_wrapper(std::unique_ptr<T> node, NodeAST* parent);
     static std::unique_ptr<NodeStatement> make_function_call(const std::string& name, std::vector<std::unique_ptr<NodeAST>> args, NodeAST* parent, Token tok);
     static std::unique_ptr<NodeBinaryExpr> make_binary_expr(ASTType type, const std::string& op, std::unique_ptr<NodeAST> lhs, std::unique_ptr<NodeAST> rhs, NodeAST* parent, Token tok);
