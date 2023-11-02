@@ -96,7 +96,9 @@ public:
 	virtual void visit(NodeSelectStatement& node) {
 		node.expression->accept(*this);
 		for(const auto &cas: node.cases) {
-			cas.first->accept(*this);
+            for(auto &c: cas.first) {
+                c->accept(*this);
+            }
 			for(auto &stmt: cas.second) {
 				stmt->accept(*this);
 			}
@@ -130,6 +132,8 @@ public:
     virtual void visit(NodeMacroHeader& node) {
     };
     virtual void visit(NodeMacroDefinition& node) {
+    };
+    virtual void visit(NodeMacroCall& node) {
     };
     virtual void visit(NodeImport& node) {
     };

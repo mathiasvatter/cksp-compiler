@@ -200,7 +200,9 @@ public:
 		std::cout << std::endl;
 		for(const auto &cas: node.cases) {
 			std::cout << "case ";
-			cas.first->accept(*this);
+            for(auto &stmt: cas.first) {
+                stmt->accept(*this);
+            }
 			std::cout << std::endl;
 			for(auto &stmt: cas.second) {
 				stmt->accept(*this);

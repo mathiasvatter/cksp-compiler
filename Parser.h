@@ -48,7 +48,7 @@ inline static bool is_unary_operator(token op) {
 class Parser {
 
 public:
-    explicit Parser(std::vector<Token> tokens);
+    explicit Parser(std::vector<Token> tokens, std::vector<std::string> macro_definitions);
     [[nodiscard]] size_t get_current_pos() const;
     void set_current_pos(size_t mPos);
 	Result<std::unique_ptr<NodeProgram>> parse();
@@ -58,6 +58,7 @@ protected:
     std::vector<Token> m_tokens;
 	token m_curr_token;
     std::string m_curr_token_value;
+    std::vector<std::string> m_macro_definitions;
 
 	[[nodiscard]] Token peek(int ahead = 0);
 	Token consume();
@@ -113,12 +114,17 @@ private:
     Result<std::unique_ptr<NodeFunctionCall>> parse_function_call(NodeAST* parent);
     Result<std::unique_ptr<NodeCallback>> parse_callback(NodeAST* parent);
 
+    Result<std::unique_ptr<NodeMacroDefinition>> parse_macro_definition(NodeAST* parent);
+    Result<std::unique_ptr<NodeMacroHeader>> parse_macro_header(NodeAST* parent);
+    Result<std::unique_ptr<NodeMacroCall>> parse_macro_call(NodeAST* parent);
+    Result<std::vector<std::string>> parse_nested_params_list();
 	Result<std::unique_ptr<NodeProgram>> parse_program();
 
 	Result<SuccessTag> consume_linebreak(const std::string& construct);
 
     bool is_variable_declaration();
     bool is_array_declaration();
+    bool is_macro_call();
 
 	bool is_boolean_expression(std::unique_ptr<NodeAST> expr);
 	bool is_comparison_expression(std::unique_ptr<NodeAST> expr);

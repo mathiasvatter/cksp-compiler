@@ -10,7 +10,7 @@
 #include "PreprocessorDefine.h"
 
 Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
-    : Parser(std::move(tokens)), m_current_file(std::move(current_file)) {
+    : Parser(std::move(tokens), std::move(std::vector<std::string>())), m_current_file(std::move(current_file)) {
 }
 
 void Preprocessor::process() {
@@ -45,6 +45,7 @@ void Preprocessor::process() {
         exit(EXIT_FAILURE);
     }
     m_tokens = std::move(macros.get_tokens());
+    m_macro_evaluation_stack = std::move(macros.m_macro_evaluation_stack);
 }
 
 std::vector<Token> Preprocessor::get_tokens() {
@@ -205,6 +206,13 @@ Result<std::vector<std::vector<Token>>> Preprocessor::parse_nested_params_list(s
 	return Result<std::vector<std::vector<Token>>>(std::move(params_list));
 }
 
+std::string Preprocessor::token_vector_to_string(const std::vector<Token>& tokens) {
+    std::string output;
+    for (auto const & tok : tokens) {
+        output += tok.val;
+    }
+    return output;
+}
 
 
 
@@ -288,6 +296,10 @@ Result<std::unique_ptr<NodeAST>> Preprocessor::_parse_parenth_expr(const std::ve
 	}
 	consume(tok); // eat )
 	return expr;
+}
+
+const std::vector<std::string> &Preprocessor::get_macro_definitions() const {
+    return m_macro_evaluation_stack;
 }
 
 Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>& root) {

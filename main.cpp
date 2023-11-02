@@ -32,7 +32,7 @@ int main() {
 	auto preprocessor_time = std::chrono::high_resolution_clock::now();
 	auto preprocessor_duration = std::chrono::duration_cast<std::chrono::milliseconds>(preprocessor_time - start_time);
 
-    Parser parser(std::move(preprocessed_tokens));
+    Parser parser(std::move(preprocessed_tokens), preprocessor.get_macro_definitions());
 	auto ast_result = parser.parse();
 	if (ast_result.is_error()) {
 		ast_result.get_error().print();

@@ -16,6 +16,9 @@ public:
 	~Preprocessor() = default;
     std::vector<Token> get_tokens();
     void process();
+
+    const std::vector<std::string> &get_macro_definitions() const;
+
 protected:
     std::string m_current_file;
 
@@ -24,6 +27,7 @@ protected:
 	std::vector<std::string> m_define_strings;
 	// macro collection
 	std::vector<std::unique_ptr<NodeMacroDefinition>> m_macro_definitions;
+    std::vector<std::string> m_macro_evaluation_stack;
 
 
     void remove_last();
@@ -33,7 +37,7 @@ protected:
 	[[nodiscard]] Token peek(const std::vector<Token>& tok, int ahead = 0);
 	Token consume(const std::vector<Token>& tok);
 	[[nodiscard]] const Token& get_tok(const std::vector<Token>& tok) const;
-
+    std::string token_vector_to_string(const std::vector<Token>& tokens);
 	static Result<SuccessTag> substitute_macro_params(std::vector<Token>& macro_body, const std::vector<std::vector<Token>>& placeholders, const std::vector<std::vector<Token>>& new_args);
 	Result<std::vector<std::vector<Token>>> parse_nested_params_list(std::vector<Token>& tok);
 	Result<std::unique_ptr<NodeAST>> parse_int(const std::vector<Token>& tok);

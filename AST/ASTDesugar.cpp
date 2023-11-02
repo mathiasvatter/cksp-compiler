@@ -132,12 +132,17 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
          "Found incorrect amount of function arguments when using <call>.", node.tok.line, "0", std::to_string(node.function->args->params.size()), node.tok.file).print();
         exit(EXIT_FAILURE);
     }
-
+    if(std::find(m_function_call_stack.begin(), m_function_call_stack.end(), node.function->name) != m_function_call_stack.end()) {
+        // recursive function call detected
+        CompileError(ErrorType::SyntaxError,"Recursive function call detected. Calling functions inside their definition is not allowed.", node.tok.line, "", node.function->name, node.tok.file).print();
+        exit(EXIT_FAILURE);
+    }
     node.function->accept(*this);
 
     if (!node.function->args->params.empty())
         // substitution start
         if (auto node_function_def = get_function_definition(node.function.get())) {
+            m_function_call_stack.push_back(node.function->name);
             node_function_def->parent = node.parent;
             auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
             node_statement_list->parent = node.parent;
@@ -151,6 +156,7 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
             m_substitution_stack.pop();
             node_statement_list->statements = std::move(node_function_def->body);
             node.replace_with(std::move(node_statement_list));
+            m_function_call_stack.pop_back();
         }
 }
 

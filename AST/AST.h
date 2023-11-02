@@ -476,9 +476,9 @@ struct NodeWhileStatement : NodeAST {
 
 struct NodeSelectStatement : NodeAST {
 	std::unique_ptr<NodeAST> expression;
-	std::map<std::unique_ptr<NodeAST>, std::vector<std::unique_ptr<NodeStatement>>> cases;
+	std::map<std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> cases;
     inline explicit NodeSelectStatement(Token tok) : NodeAST(tok) {}
-	inline NodeSelectStatement(std::unique_ptr<NodeAST> expression, std::map<std::unique_ptr<NodeAST>, std::vector<std::unique_ptr<NodeStatement>>> cases, Token tok)
+	inline NodeSelectStatement(std::unique_ptr<NodeAST> expression, std::map<std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> cases, Token tok)
     : NodeAST(tok), expression(std::move(expression)), cases(std::move(cases)) {}
 	void accept(ASTVisitor& visitor) override;
     NodeSelectStatement(const NodeSelectStatement& other);
@@ -487,7 +487,9 @@ struct NodeSelectStatement : NodeAST {
         parent = new_parent;
         expression->update_parents(this);
         for (auto & pair : cases) {
-            pair.first->update_parents(this);
+            for(auto &stmt : pair.first) {
+                stmt->update_parents(this);
+            }
             for(auto &stmt : pair.second) {
                 stmt->update_parents(this);
             }
@@ -597,27 +599,50 @@ struct NodeDefineStatement : NodeAST {
 
 struct NodeMacroHeader : NodeAST {
     std::string name;
-    std::vector<std::vector<Token>> args;
-	size_t token_pos;
-    inline NodeMacroHeader(std::string name, std::vector<std::vector<Token>> args, size_t pos, Token tok)
-    : NodeAST(tok), name(std::move(name)), args(std::move(args)), token_pos(pos) {}
+    std::vector<std::string> args;
+    inline NodeMacroHeader(std::string name, std::vector<std::string> args, Token tok)
+    : NodeAST(tok), name(std::move(name)), args(std::move(args)) {}
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
     NodeMacroHeader(const NodeMacroHeader& other);
     std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        parent = new_parent;
+//        args->update_parents(this);
+    }
 };
 
 struct NodeMacroDefinition : NodeAST {
 	std::unique_ptr<NodeMacroHeader> header;
-    std::vector<Token> body;
-    bool has_recursive_calls;
-    inline NodeMacroDefinition(std::unique_ptr<NodeMacroHeader> header, std::vector<Token> body, bool recur, Token tok)
-    : NodeAST(tok), header(std::move(header)), body(std::move(body)), has_recursive_calls(recur) {}
+    std::vector<std::unique_ptr<NodeAST>> body;
+    inline explicit NodeMacroDefinition(Token tok) : NodeAST(tok) {}
+    inline NodeMacroDefinition(std::unique_ptr<NodeMacroHeader> header, std::vector<std::unique_ptr<NodeAST>> body, Token tok)
+    : NodeAST(tok), header(std::move(header)), body(std::move(body)) {}
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
     NodeMacroDefinition(const NodeMacroDefinition& other);
     // Clone Methode
     std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        parent = new_parent;
+        header->update_parents(this);
+        for(auto & b : body)
+            b ->update_parents(this);
+    }
+};
+
+struct NodeMacroCall : NodeAST {
+    std::unique_ptr<NodeMacroHeader> macro;
+    inline explicit NodeMacroCall(Token tok) : NodeAST(tok) {}
+    inline NodeMacroCall(std::unique_ptr<NodeMacroHeader> macro, Token tok)
+            : NodeAST(tok), macro(std::move(macro)) {}
+    void accept(ASTVisitor& visitor) override;
+    NodeMacroCall(const NodeMacroCall& other);
+    std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        parent = new_parent;
+        macro->update_parents(this);
+    }
 };
 
 struct NodeProgram: NodeAST {

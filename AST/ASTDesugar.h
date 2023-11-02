@@ -55,6 +55,7 @@ private:
     std::stack<std::string> m_prefixes;
     std::stack<std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>>> m_substitution_stack;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
+    std::vector<std::string> m_function_call_stack;
 
     std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> get_substitution_vector(NodeFunctionHeader* definition, NodeFunctionHeader* call);
     /// returns substitute for current node.name, or nullptr if there is no substitute

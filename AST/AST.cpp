@@ -297,11 +297,11 @@ std::unique_ptr<NodeAST> NodeWhileStatement::clone() const {
 }
 
 // ************* Helper to clone map with unique_ptr keys and vector of unique_ptr values ***************
-static std::map<std::unique_ptr<NodeAST>, std::vector<std::unique_ptr<NodeStatement>>> clone_map(
-        const std::map<std::unique_ptr<NodeAST>, std::vector<std::unique_ptr<NodeStatement>>>& original) {
-    std::map<std::unique_ptr<NodeAST>, std::vector<std::unique_ptr<NodeStatement>>> cloned_map;
+static std::map< std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> clone_map(
+        const std::map<std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>>& original) {
+    std::map<std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> cloned_map;
     for (const auto& pair : original) {
-        cloned_map[clone_unique(pair.first)] = clone_vector(pair.second);
+        cloned_map[clone_vector(pair.first)] = clone_vector(pair.second);
     }
     return cloned_map;
 }
@@ -390,7 +390,7 @@ void NodeMacroHeader::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeMacroHeader::NodeMacroHeader(const NodeMacroHeader& other)
-        : NodeAST(other.tok), name(other.name), args(other.args), token_pos(other.token_pos) {}
+        : NodeAST(other.tok), name(other.name), args(other.args) {}
 std::unique_ptr<NodeAST> NodeMacroHeader::clone() const {
     return std::make_unique<NodeMacroHeader>(*this);
 }
@@ -400,9 +400,19 @@ void NodeMacroDefinition::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeMacroDefinition::NodeMacroDefinition(const NodeMacroDefinition& other)
-        : NodeAST(other.tok), header(clone_unique(other.header)), body(other.body), has_recursive_calls(other.has_recursive_calls) {}
+        : NodeAST(other.tok), header(clone_unique(other.header)), body(clone_vector(other.body)) {}
 std::unique_ptr<NodeAST> NodeMacroDefinition::clone() const {
     return std::make_unique<NodeMacroDefinition>(*this);
+}
+
+// ************* NodeMacroCall ***************
+void NodeMacroCall::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+NodeMacroCall::NodeMacroCall(const NodeMacroCall& other)
+        : NodeAST(other.tok), macro(clone_unique(other.macro)) {}
+std::unique_ptr<NodeAST> NodeMacroCall::clone() const {
+    return std::make_unique<NodeMacroCall>(*this);
 }
 
 // ************* NodeProgramm ***************
