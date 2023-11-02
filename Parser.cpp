@@ -3,7 +3,7 @@
 //
 
 #include "Parser.h"
-#include "ASTVisitor.h"
+#include "AST/ASTVisitor.h"
 
 #include <filesystem>
 #include <utility>
@@ -256,7 +256,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
         std::unique_ptr<NodeAST> stmt = nullptr;
         // is function
 		if (peek(1).type == token::OPEN_PARENTH) {
-			auto var_function = parse_function_header(parent);
+			auto var_function = parse_function_call(parent);
 			if (!var_function.is_error()) {
 				return Result<std::unique_ptr<NodeAST>>(std::move(var_function.unwrap()));
 			}
@@ -493,6 +493,8 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
 
 Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
     auto node_callback = std::make_unique<NodeCallback>(get_tok());
+    auto node_statement_list = std::make_unique<NodeStatementList>(get_tok());
+    node_statement_list->parent = node_callback.get();
     std::string begin_callback = consume().val;
     if(peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeCallback>>(CompileError(ErrorType::ParseError,
@@ -506,15 +508,16 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
             return Result<std::unique_ptr<NodeCallback>>(CompileError(ErrorType::ParseError,
          "", peek().line, "end on", peek().val, peek().file));
         }
-        auto stmt = parse_statement(node_callback.get());
+        auto stmt = parse_statement(node_statement_list.get());
         if (stmt.is_error()) {
             return Result<std::unique_ptr<NodeCallback>>(stmt.get_error());
         }
         stmts.push_back(std::move(stmt.unwrap()));
     }
+    node_statement_list->statements = std::move(stmts);
     std::string end_callback = consume().val; // Consume END_CALLBACK
     node_callback->begin_callback = std::move(begin_callback);
-    node_callback->statements = std::move(stmts);
+    node_callback->statements = std::move(node_statement_list);
     node_callback->end_callback = std::move(end_callback);
     node_callback->parent = parent;
 //    auto value = std::make_unique<NodeCallback>(begin_callback,std::move(stmts), end_callback, get_tok());

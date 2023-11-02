@@ -25,11 +25,16 @@ inline std::vector<std::string> MATH_OPERATORS = {"-", "+", "/", "*", "mod"};
 class ASTDesugar : public ASTVisitor {
 public:
     ASTDesugar();
+    /// check if init callback exists
+    void visit(NodeProgram& node) override;
 	/// do constant folding for int and reals
 	void visit(NodeBinaryExpr& node) override;
-    /// render real() and int() -> not doing because of overriding existing functions?
+    /// initiating substitution
     void visit(NodeFunctionCall& node) override;
-    void visit(NodeProgram& node) override;
+//    void visit(NodeFunctionDefinition& node) override;
+    void visit(NodeSingleDeclareStatement& node) override;
+    void visit(NodeSingleAssignStatement& node) override;
+
     /// turn into single assign statements
 	void visit(NodeAssignStatement& node) override;
     /// turn into single declare statements
@@ -48,9 +53,12 @@ private:
     std::vector<std::tuple<NodeArray*, NodeParamList*>> m_declared_arrays;
     std::vector<std::unique_ptr<NodeVariable>> m_declared_variables;
     std::stack<std::string> m_prefixes;
-    std::stack<std::vector<NodeFunctionHeader*>> m_function_stack;
+    std::stack<std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>>> m_substitution_stack;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
 
+    std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> get_substitution_vector(NodeFunctionHeader* definition, NodeFunctionHeader* call);
+    /// returns substitute for current node.name, or nullptr if there is no substitute
+    std::unique_ptr<NodeAST> get_substitute(const std::string& name);
     template<typename T>std::unique_ptr<NodeStatement> statement_wrapper(std::unique_ptr<T> node, NodeAST* parent);
     static std::unique_ptr<NodeStatement> make_function_call(const std::string& name, std::vector<std::unique_ptr<NodeAST>> args, NodeAST* parent, Token tok);
     static std::unique_ptr<NodeBinaryExpr> make_binary_expr(ASTType type, const std::string& op, std::unique_ptr<NodeAST> lhs, std::unique_ptr<NodeAST> rhs, NodeAST* parent, Token tok);
@@ -58,5 +66,6 @@ private:
     std::unique_ptr<NodeParamList> make_init_array_list(const std::vector<int32_t>& values, NodeAST* parent);
     std::unique_ptr<NodeStatement> make_declare_array(const std::string& name, int32_t size, const std::vector<int32_t>& values, NodeAST* parent);
     std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, VarType type, NodeAST* parent);
+    std::unique_ptr<NodeFunctionDefinition> get_function_definition(NodeFunctionHeader* function_header);
 };
 

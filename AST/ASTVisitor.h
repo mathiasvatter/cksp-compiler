@@ -103,9 +103,7 @@ public:
 		}
 	};
 	virtual void visit(NodeCallback& node) {
-		for(auto & stmt : node.statements) {
-			stmt->accept(*this);
-		}
+		node.statements->accept(*this);
 	};
     virtual void visit(NodeFunctionHeader& node) {
 		node.args->accept(*this);

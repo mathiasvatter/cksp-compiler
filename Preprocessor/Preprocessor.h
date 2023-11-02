@@ -7,7 +7,7 @@
 #include <utility>
 
 #include "../Tokenizer/Tokenizer.h"
-#include "../AST.h"
+#include "../AST/AST.h"
 #include "../Parser.h"
 
 class Preprocessor : public Parser {

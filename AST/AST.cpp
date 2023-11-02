@@ -37,7 +37,7 @@ void NodeString::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 std::unique_ptr<NodeAST> NodeString::clone() const {
-return std::make_unique<NodeString>(*this);
+    return std::make_unique<NodeString>(*this);
 }
 
 // ************* NodeVariable ***************
@@ -321,7 +321,7 @@ void NodeCallback::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeCallback::NodeCallback(const NodeCallback& other)
-        : NodeAST(other), begin_callback(other.begin_callback), statements(clone_vector(other.statements)), end_callback(other.end_callback) {}
+        : NodeAST(other), begin_callback(other.begin_callback), statements(clone_unique(other.statements)), end_callback(other.end_callback) {}
 std::unique_ptr<NodeAST>  NodeCallback::clone() const {
     return std::make_unique<NodeCallback>(*this);
 }
@@ -340,7 +340,8 @@ void NodeFunctionHeader::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeFunctionHeader::NodeFunctionHeader(const NodeFunctionHeader& other)
-        : NodeAST(other), name(other.name), args(clone_unique(other.args)) {}
+        : NodeAST(other), name(other.name), args(clone_unique(other.args)), arg_types(other.arg_types) {
+}
 std::unique_ptr<NodeAST> NodeFunctionHeader::clone() const {
     return std::make_unique<NodeFunctionHeader>(*this);
 }

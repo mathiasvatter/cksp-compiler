@@ -211,9 +211,7 @@ public:
 
 	void visit(NodeCallback& node) override {
 		std::cout << "Callback(" << node.begin_callback << ")" << std::endl;
-		for(auto& statement : node.statements) {
-			statement->accept(*this);
-		}
+		node.statements->accept(*this);
 		std::cout << "End_callback(" << node.end_callback << ")"<< std::endl;
 	}
 

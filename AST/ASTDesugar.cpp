@@ -80,32 +80,119 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
 }
 
 void ASTDesugar::visit(NodeArray& node) {
+    node.sizes->accept(*this);
+    node.indexes->accept(*this);
+    // substitution
+    if(!m_substitution_stack.empty()) {
+        if(auto substitute = get_substitute(node.name)) {
+            node.replace_with(std::move(substitute));
+            return;
+        }
+    }
+    // add prefixes
     if(!m_prefixes.empty()) {
         node.name = m_prefixes.top() + "." + node.name;
     }
-    node.sizes->accept(*this);
-    node.indexes->accept(*this);
 }
 
 void ASTDesugar::visit(NodeVariable& node) {
+    // substitution
+    if(!m_substitution_stack.empty()) {
+        if(auto substitute = get_substitute(node.name)) {
+            node.replace_with(std::move(substitute));
+            return;
+        }
+    }
+    // add prefixes
     if(!m_prefixes.empty()) {
         node.name = m_prefixes.top() + "." + node.name;
     }
 }
 
 void ASTDesugar::visit(NodeProgram& node) {
-    m_function_definitions = std::move(node.function_definitions);
-    for(auto & callback : node.callbacks) {
-        callback->accept(*this);
-    }
 //    for(auto & function_definition : node.function_definitions) {
 //        function_definition->accept(*this);
 //    }
-
+    m_function_definitions = std::move(node.function_definitions);
+    bool has_init_callback = false;
+    for(auto & callback : node.callbacks) {
+        callback->accept(*this);
+        if(callback->begin_callback == "on init") has_init_callback = true;
+    }
+    if(!has_init_callback) {
+        CompileError(ErrorType::SyntaxError, "Unable to compile. Missing <init callback>.", -1, "", "", node.tok.file).print();
+        exit(EXIT_FAILURE);
+    }
+    node.function_definitions = std::move(m_function_definitions);
 }
 
 void ASTDesugar::visit(NodeFunctionCall& node) {
+    if(node.is_call and !node.function->args->params.empty()) {
+        CompileError(ErrorType::SyntaxError,
+         "Found incorrect amount of function arguments when using <call>.", node.tok.line, "0", std::to_string(node.function->args->params.size()), node.tok.file).print();
+        exit(EXIT_FAILURE);
+    }
 
+    node.function->accept(*this);
+
+    if (!node.function->args->params.empty())
+        // substitution start
+        if (auto node_function_def = get_function_definition(node.function.get())) {
+            node_function_def->parent = node.parent;
+            auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+            node_statement_list->parent = node.parent;
+            auto substitution_vec = get_substitution_vector(node_function_def->header.get(), node.function.get());
+            m_substitution_stack.push(std::move(substitution_vec));
+//            node_function_def->accept(*this);
+            for(auto& stmt: node_function_def->body) {
+                stmt->accept(*this);
+                stmt->parent = node_statement_list.get();
+            }
+            m_substitution_stack.pop();
+            node_statement_list->statements = std::move(node_function_def->body);
+            node.replace_with(std::move(node_statement_list));
+        }
+}
+
+std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> ASTDesugar::get_substitution_vector(NodeFunctionHeader* definition, NodeFunctionHeader* call) {
+    std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> substitution_vector;
+    for(int i= 0; i<definition->args->params.size(); i++) {
+        auto &var = definition->args->params[i];
+        std::pair<std::string, std::unique_ptr<NodeAST>> pair;
+        if(auto node_variable = cast_node<NodeVariable>(var.get())) {
+            pair.first = node_variable->name;
+        } else if (auto node_array = cast_node<NodeArray>(var.get())) {
+            pair.first = node_array->name;
+        } else {
+            CompileError(ErrorType::SyntaxError,
+             "Unable to substitute function arguments. Only <keywords> can be substituted.", definition->tok.line, "<keyword>", var->tok.val,definition->tok.file).print();
+            exit(EXIT_FAILURE);
+        }
+        pair.second = std::move(call->args->params[i]);
+        substitution_vector.push_back(std::move(pair));
+    }
+    return substitution_vector;
+}
+
+std::unique_ptr<NodeAST> ASTDesugar::get_substitute(const std::string& name) {
+    for(auto & pair : m_substitution_stack.top()) {
+        if(pair.first == name) {
+            return pair.second->clone();
+        }
+    }
+    return nullptr;
+}
+
+
+void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
+    node.to_be_declared ->accept(*this);
+    if(node.assignee)
+        node.assignee -> accept(*this);
+}
+
+void ASTDesugar::visit(NodeSingleAssignStatement& node) {
+    node.array_variable ->accept(*this);
+    node.assignee -> accept(*this);
 }
 
 
@@ -381,6 +468,20 @@ std::unique_ptr<NodeStatement> ASTDesugar::make_declare_variable(const std::stri
     node_declare_statement->assignee->parent = node_declare_statement.get();
     node_declare_statement->to_be_declared->parent = node_declare_statement.get();
     return statement_wrapper(std::move(node_declare_statement), parent);
+}
+
+std::unique_ptr<NodeFunctionDefinition> ASTDesugar::get_function_definition(NodeFunctionHeader *function_header) {
+    for(auto & function_def : m_function_definitions) {
+        if(function_def->header->name == function_header->name) {
+            if(function_def->header->args->params.size() == function_header->args->params.size()) {
+                function_def->is_used = true;
+                auto copy = function_def->clone();
+                copy->update_parents(nullptr);
+                return std::unique_ptr<NodeFunctionDefinition>(static_cast<NodeFunctionDefinition*>(copy.release()));
+            }
+        }
+    }
+    return nullptr;
 }
 
 template<typename T>std::unique_ptr<NodeStatement> ASTDesugar::statement_wrapper(std::unique_ptr<T> node, NodeAST* parent) {

@@ -5,7 +5,7 @@
 #pragma once
 
 #include "Tokenizer/Tokenizer.h"
-#include "AST.h"
+#include "AST/AST.h"
 #include "Tokenizer/Tokens.h"
 #include "Result.h"
 

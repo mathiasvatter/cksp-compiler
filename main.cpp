@@ -5,10 +5,10 @@
 //#include "Tokenizer.h"
 #include "Parser.h"
 #include "Preprocessor/Preprocessor.h"
-#include "ASTVisitor.h"
-#include "ASTDesugar.h"
-#include "ASTPrinter.h"
-#include "ASTTypeCasting.h"
+#include "AST/ASTVisitor.h"
+#include "AST/ASTDesugar.h"
+#include "AST/ASTPrinter.h"
+#include "AST/ASTTypeCasting.h"
 
 int main() {
 
