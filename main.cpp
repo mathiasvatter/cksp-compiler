@@ -9,6 +9,7 @@
 #include "AST/ASTDesugar.h"
 #include "AST/ASTPrinter.h"
 #include "AST/ASTTypeCasting.h"
+#include "AST/ASTMacros.h"
 
 int main() {
 
@@ -40,6 +41,9 @@ int main() {
 	}
 
 	auto ast = std::move(ast_result.unwrap());
+
+    ASTMacros macro_processing;
+    ast->accept(macro_processing);
 
 	ASTDesugar desugar;
 	ast->accept(desugar);

@@ -390,7 +390,7 @@ void NodeMacroHeader::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeMacroHeader::NodeMacroHeader(const NodeMacroHeader& other)
-        : NodeAST(other.tok), name(other.name), args(other.args) {}
+        : NodeAST(other.tok), name(other.name), args(clone_unique(other.args)) {}
 std::unique_ptr<NodeAST> NodeMacroHeader::clone() const {
     return std::make_unique<NodeMacroHeader>(*this);
 }

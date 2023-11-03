@@ -119,6 +119,7 @@ private:
     Result<std::unique_ptr<NodeMacroCall>> parse_macro_call(NodeAST* parent);
     Result<std::vector<std::string>> parse_nested_params_list();
 	Result<std::unique_ptr<NodeProgram>> parse_program();
+    std::vector<std::unique_ptr<NodeMacroDefinition>> macro_definitions;
 
 	Result<SuccessTag> consume_linebreak(const std::string& construct);
 
