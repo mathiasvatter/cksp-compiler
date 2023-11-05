@@ -1,0 +1,321 @@
+END_USE_CODE
+RESET_CONDITION(<unknown>)
+SET_CONDITION(<unknown>)
+USE_CODE_IF(<unknown>)
+USE_CODE_IF_NOT(<unknown>)
+_get_engine_par(<parameter>, <group>, <slot>, <generic>):integer
+_get_engine_par_disp(<parameter>, <group>, <slot>, <generic>):string
+_get_folder(<file-path>):string
+_load_ir_sample(<file-name>, <slot>, <generic>):integer
+_num_slices(<group-idx>):integer
+_pgs_create_key(<key-id>, <size>)
+_pgs_get_key_val(<key-id>, <index>):integer
+_pgs_key_exists(<key-id>):boolean
+_pgs_set_key_val(<key-id>, <index>, <value>)
+_read_persistent_var(<variable>)
+_reset_rls_trig_counter(<note>)
+_set_engine_par(<parameter>, <value>, <group>, <slot>, <generic>):integer
+_set_skin_offset(<value>)
+_slice_idx_loop_end(<group-idx>, <loop-idx>):integer
+_slice_idx_loop_start(<group-idx>, <loop-idx>):integer
+_slice_length(<group-idx>, <slice-idx>):integer
+_slice_loop_count(<group-idx>, <loop-idx>):integer
+_slice_start(<group-idx>, <slice-idx>):integer
+_will_never_terminate(<event-id>)
+abs(<real-value>):real
+acos(<real-value>):real
+add_menu_item(<variable>, <text>, <number>)
+add_text_line(<variable>, <text>)
+allow_group(<group-idx>)
+array_equal(<int-array>, <int-array>):boolean
+asin(<real-value>):real
+atan(<real-value>):real
+attach_level_meter(<ui-id>, <group-idx>, <slot-idx>, <channel-idx>, <bus-idx>)
+attach_zone(<waveform>, <zone-id>, <parameter>)
+by_marks(<bit-mark>):integer
+by_track(<track-idx>):integer
+cc_delivery_request(<controller-number>)
+ceil(<real-value>):real
+change_listener_par(<signal-type>, <parameter>)
+change_note(<event-id>, <new-note-number>)
+change_pan(<event-id>, <panorama>, <relative-bit>)
+change_time_with_pitch(<event-id>, <time>):integer
+change_tune(<event-id>, <tune-amount>, <relative-bit>)
+change_velo(<event-id>, <new-velocity-number>)
+change_vol(<event-id>, <volume>, <relative-bit>)
+cbrt(<real-value>):real
+cos(<real-value>):real
+dec(<expression>):integer
+delete_event_mark(<event-id>, <bit-mark>)
+detect_pitch(<zone-id>, <return-variable>):integer
+detect_rms(<zone-id>, <return-variable>):integer
+detect_peak(<zone-id>, <return-variable>):integer
+detect_loudness(<zone-id>, <return-variable>):integer
+detect_sample_type(<zone-id>, <return-variable>):integer
+detect_instrument_type(<zone-id>, <return-variable>):integer
+detect_drum_type(<zone-id>, <return-variable>):integer
+disable_logging(<log-type>)
+disallow_group(<group-idx>)
+dont_use_machine_mode(<event-id>)
+event_status(<event-id>):integer
+exit
+exp(<real-value>):real
+exp2(<real-value>):real
+expose_controls
+fade_in(<event-id>, <fade-time>)
+fade_out(<event-id>, <fade-time>, <stop-voice>)
+find_group(<group-name>):integer
+find_mod(<group-idx>, <mod-name>):integer
+find_target(<group-idx>, <mod-idx>, <target-name>):integer
+find_zone(<sample-name>):integer
+floor(<real-value>):real
+fs_get_filename(<ui-id>, <return-parameter>):string
+fs_navigate(<ui-id>, <direction>)
+get_control_par(<ui-id>, <control-parameter>):integer
+get_control_par_arr(<ui-id>, <control-parameter>, <index>):integer
+get_control_par_real_arr(<ui-id>, <control-parameter>, <index>):real
+get_control_par_str(<ui-id>, <control-parameter>):string
+get_control_par_str_arr(<ui-id>, <control-parameter>, <index>):string
+get_engine_par(<parameter>, <group>, <slot>, <generic>):integer
+get_engine_par_disp(<parameter>, <group>, <slot>, <generic>):string
+get_engine_par_disp_m(<parameter>, <instr-slot-idx>, <slot>, <generic>):string
+get_engine_par_m(<parameter>, <instr-slot-idx>, <slot>, <generic>):integer
+get_event_ids(<int-array>)
+get_event_mark(<event-id>, <bit-mark>):integer
+get_event_par(<event-id>, <parameter>):integer
+get_event_par_arr(<event-id>, <parameter>, <group-idx>):integer
+get_folder(<file-path>):string
+get_font_id(<file-path>):integer
+get_group_idx(<group-name>):integer
+get_group_par(<group-idx>, <parameter>):integer
+get_key_color(<note-number>):integer
+get_key_name(<note-number>):integer
+get_key_triggerstate(<note-number>):integer
+get_key_type(<note-number>):integer
+get_keyrange_max_note(<note-number>):integer
+get_keyrange_min_note(<note-number>):integer
+get_keyrange_name(<note-number>):integer
+get_loop_par(<zone-id>, <loop-id>, <parameter>):integer
+get_menu_item_str(<ui-id>, <index>):string
+get_menu_item_value(<ui-id>, <index>):integer
+get_menu_item_visibility(<ui-id>, <index>):integer
+get_mod_idx(<group-idx>, <mod-name>):integer
+get_num_zones():integer
+get_purge_state(<group-idx>):integer
+get_sample(<zone-id>,<return-parameter>):string
+get_sample_length(<zone-id>):integer
+get_target_idx(<group-idx>, <mod-idx>, <target-name>):integer
+get_ui_id(<variable>):integer
+get_ui_wf_property(<waveform>, <property>, <index>):integer
+get_voice_limit(<voice-type>):integer
+get_zone_id(<zone-idx>):integer
+get_zone_par(<zone-id>, <parameter>):integer
+get_zone_status(<zone-id>):integer
+group_name(<group-idx>):string
+guiidx_to_slotidx(<instr-gui-idx>):integer
+hide_part(<variable>, <value>)
+ignore_controller
+ignore_event(<event-id>)
+ignore_midi
+import_nckp(<file-path>):string
+in_range(<int-or-real-value>, <int-or-real-value>, <int-or-real-value>):boolean
+inc(<expression>)
+int(<real-value>):integer
+int_to_real(<integer>):real
+is_zone_empty(<zone-id>):integer
+iterate_macro(<expression>)
+iterate_post_macro(<expression>)
+literate_macro(<expression>)
+literate_post_macro(<expression>)
+load_array(<int-or-string-array>, <mode>):integer
+load_array_str(<int-or-string-array>, <file-path>):integer
+load_ir_sample(<file-name>, <slot>, <generic>):integer
+load_ir_sample_m(<file-name>, <output-idx>, <slot>, <generic>):integer
+load_native_ui(<file-path>)
+load_midi_file(<file-path>):integer
+load_patch(<file-path>, <instr-slot-idx>)
+load_performance_view(<file-name>):string
+log(<real-value>):real
+log2(<real-value>):real
+log10(<real-value>):real
+lsb(<value>):integer
+make_instr_persistent(<variable>)
+make_perfview
+make_persistent(<variable>)
+message(<variable-or-text>)
+mf_copy_export_area(<zone-id>)
+mf_get_buffer_size():integer
+mf_get_byte_one():integer
+mf_get_byte_two():integer
+mf_get_channel():integer
+mf_get_command():integer
+mf_get_event_par(<event-id>, <parameter>):integer
+mf_get_first(<track-idx>)
+mf_get_id():integer
+mf_get_last(<track-idx>)
+mf_get_last_filename():string
+mf_get_length():integer
+mf_get_mark(<event-id>, <mark>):integer
+mf_get_next(<track-idx>)
+mf_get_next_at(<track-idx>, <pos>)
+mf_get_note_length():integer
+mf_get_num_tracks():integer
+mf_get_pos():integer
+mf_get_prev(<track-idx>)
+mf_get_prev_at(<track-idx>, <pos>)
+mf_get_track_idx():integer
+mf_insert_event(<track>, <pos>, <command>, <byte1>, <byte2>):integer
+mf_insert_file(<file-path>, <track-offset>, <position-offset>, <mode>):integer
+mf_remove_event(<event-id>)
+mf_reset():integer
+mf_set_buffer_size(<size>):integer
+mf_set_byte_one(<value>)
+mf_set_byte_two(<value>)
+mf_set_channel(<value>)
+mf_set_command(<command>)
+mf_set_event_par(<event-id>, <parameter>, <value>)
+mf_set_export_area(<name>, <start-pos>, <end-pos>, <start-track>, <end-track>):integer
+mf_set_note_length(<value>)
+mf_set_num_export_areas(<value>)
+mf_set_length(<value>)
+mf_set_mark(<event-id>, <mark>, <status>)
+mf_set_pos(<pos>)
+move_control(<variable>, <x-grid-unit>, <y-grid-unit>)
+move_control_px(<variable>, <x-pos-px>, <y-pos-px>)
+ms_to_ticks(<microseconds>):integer
+msb(<value>):integer
+note_off(<event-id>)
+num_elements(<any-array-variable>):integer
+num_slices(<group-idx>):integer
+num_slices_zone(<zone-id>):integer
+output_channel_name(<output-idx>):integer
+pgs_create_key(<key-id>, <size>)
+pgs_create_str_key(<key-id>)
+pgs_get_key_val(<key-id>, <index>):integer
+pgs_get_str_key_val(<key-id>):string
+pgs_key_exists(<key-id>):boolean
+pgs_set_key_val(<key-id>, <index>, <value>)
+pgs_set_str_key_val(<key-id>, <text>)
+pgs_str_key_exists(<key-id>):boolean
+play_note(<note-number>, <velocity>, <sample-offset>, <duration>):integer
+pow(<real-value>, <real-value>):real
+purge_group(<group-idx>, <mode>):integer
+random(<min>, <max>):integer
+read_persistent_var(<variable>)
+real(<integer>):real
+real_to_int(<real-value>):integer
+redirect_midi(<event-id>, <instr-slot-idx>, <instr-bank-slot-idx>)
+redirect_output(<event-id>, <output-type>, <output-idx>)
+remove_keyrange(<key-number>)
+reset_engine
+reset_ksp_timer
+reset_rls_trig_counter(<note>)
+round(<real-value>):real
+save_array(<int-or-string-array>, <mode>):integer
+save_array_str(<int-or-string-array>, <file-path>):integer
+save_midi_file(<file-path>):integer
+search(<int-array>, <value>):integer
+search(<int-array>, <value>, <from>, <to>):integer
+set_bounds(<control>, <x>, <y>, <width>, <height>)
+set_button_properties(<button>, <text>, <picture>, <text-alignment>, <font-type>, <textpos-y>)
+set_control_help(<variable>, <text>)
+set_control_par(<ui-id>, <control-parameter>, <value>)
+set_control_par_arr(<ui-id>, <control-parameter>, <value>, <index>)
+set_control_par_real_arr(<ui-id>, <control-parameter>, <real-value>, <index>)
+set_control_par_str(<ui-id>, <control-parameter>, <text>)
+set_control_par_str_arr(<ui-id>, <control-parameter>, <text>, <index>)
+set_controller(<controller-number>, <controller-value>)
+set_engine_par(<parameter>, <value>, <group>, <slot>, <generic>):integer
+set_engine_par_m(<parameter>, <value>, <instr-slot-idx>, <slot>, <generic>):integer
+set_event_mark(<event-id>, <bit-mark>)
+set_event_par(<event-id>, <parameter>, <value>)
+set_event_par_arr(<event-id>, <parameter>, <value>, <group-idx>)
+set_group_dyn_par_name(<group-dyn-par>, <name>)
+set_key_color(<note-number>, <key-color-constant>)
+set_key_name(<key-number>, <key-name>)
+set_key_pressed(<key-number>, <value>)
+set_key_pressed_support(<value>)
+set_key_type(<note-number>, key-type-constant>)
+set_keyrange(<key-number1>, <key-number2>, <range-name>)
+set_knob_defval(<knob-variable>, <value>)
+set_knob_label(<knob-variable>, <text>)
+set_knob_properties(<knob>, <text>, <default>)
+set_knob_unit(<knob-variable>, <unit>)
+set_label_properties(<label>, <text>, <picture>, <text-alignment>, <font-type>, <textpos-y>)
+set_level_meter_properties(<level-meter>, <bg-color>, <off-color>, <on-color>, <overload-color>)
+set_listener(<signal-type>, <parameter>)
+set_loop_par(<zone-id>, <loop-id>, <parameter>, <value>):integer
+set_menu_item_str(<menu-id>, <index>, <text>)
+set_menu_item_value(<menu-id>, <index>, <value>)
+set_menu_item_visibility(<menu-id>, <index>, <visibility>)
+set_menu_properties(<menu>, <picture>, <font-type>, <text-alignment>, <textpos-y>)
+set_midi(<channel>, <command>, <byte1>, <byte2>)
+set_nrpn(<address>, <value>)
+set_num_user_zones(<size>)
+set_rpn(<address>, <value>)
+set_sample(<zone-id>, <file-path>):integer
+set_script_title(<text>)
+set_skin_offset(<value>)
+set_slider_properties(<slider>, <default>, <picture>, <mouse-behaviour>)
+set_snapshot_type(<snapshot-type>)
+set_switch_properties(<switch>, <text>, <picture>, <text-alignment>, <font-type>, <textpos-y>)
+set_table_properties(<table>, <bar-color>, <zero-line-color>)
+set_table_steps_shown(<int-array>, <num-steps>)
+set_text(<variable>, <text>)
+set_text_edit_properties(<text-edit>, <text>, <picture>, <text-alignment>, <font-type>, <textpos-y>)
+set_ui_color(<hex-value>)
+set_ui_height(<height>)
+set_ui_height_px(<value>)
+set_ui_wf_property(<waveform>, <property>, <index>, <value>)
+set_ui_width_px(<value>)
+set_value_edit_properties(<value-edit>, <text>, <font-type>, <textpos-y>, <show-arrows>)
+set_voice_limit(<voice-type>,<value>)
+set_waveform_properties(<waveform>, <bar-color>, <zero-line-color>, <bg-color>, <bg-alpha>, <wave-color>, <wave-cursor-color>, <slice-marker-color>, <wf-vis-mode>)
+set_wavetable2d_properties(<wavetable>, <wt-zone>, <bg-color>, <bg-alpha>, <wave-color>, <wave-alpha>, <wave-end-color>, <wave-end-alpha>)
+set_wavetable3d_properties(<wavetable>, <wt-zone>, <bg-color>, <bg-alpha>, <wt-color>, <wt-alpha>, <wt-end-color>, <wt-end-alpha>, <parallax-x>, <parallax-y>)
+set_zone_par(<zone-id>, <parameter>, <value>):integer
+sgn(<int-or-real-value>):integer
+sh_left(<expression>, <amount>):integer
+sh_right(<expression>, <amount>):integer
+show_library_tab
+signbit(<int-or-real-value>):integer
+sin(<real-value>):real
+slice_idx_loop_end(<group-idx>, <loop-idx>):integer
+slice_idx_loop_start(<group-idx>, <loop-idx>):integer
+slice_length(<group-idx>, <slice-idx>):integer
+slice_loop_count(<group-idx>, <loop-idx>):integer
+slice_start(<group-idx>, <slice-idx>):integer
+sort(<int-or-real-array>, <direction>)
+sort(<int-or-real-array>, <direction>, <from>, <to>)
+sqrt(<real-value>):real
+stop_wait(<callback-id>, <par>)
+tan(<real-value>):real
+ticks_to_ms(<ticks>):integer
+unload_slot(<instr-slot-idx>)
+wait(<wait-time>)
+wait_async(<event-id>):integer
+watch_var(<variable>)
+watch_array_idx(<any-array-variable>, <index>)
+wait_ticks(<wait-time>)
+will_never_terminate(<event-id>)
+zone_slice_idx_loop_end(<zone-id>, <loop-idx>):integer
+zone_slice_idx_loop_start(<zone-id>, <loop-idx>):integer
+zone_slice_length(<zone-id>, <slice-idx>):integer
+zone_slice_loop_count(<zone-id>, <loop-idx>):integer
+zone_slice_start(<zone-id>, <slice-idx>):integer
+mf_reset
+mf_get_buffer_size
+mf_get_byte_one
+mf_get_byte_two
+mf_get_channel
+mf_get_command
+mf_get_last_filename
+abs
+in_range
+sh_left
+sh_right
+by_marks
+int_to_real
+real
+real_to_int
+int
