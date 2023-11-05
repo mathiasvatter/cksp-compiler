@@ -72,6 +72,7 @@
     XX(END_TASKFUNC, "end taskfunc") \
     XX(END_MACRO, "end macro") \
     XX(TO, "to") \
+    XX(STEP, "step") \
     XX(DOWNTO, "downto") \
     XX(ELSE, "else") \
     XX(CASE, "select_case")   \
@@ -135,7 +136,7 @@ inline std::vector<Keyword> DECLARATION_SYNTAX = {{DECLARE, "declare"}, {DEFINE,
 inline std::vector<Keyword> PREPROCESSOR_SYNTAX = {{IMPORT, "import"}, {AS, "as"}, {ON, "on"},
 												   {ITERATE_MACRO, "iterate_macro"}, {LITERATE_MACRO, "literate_macro"},
 													{START_INC, "start_inc"}, {END_INC, "end_inc"}};
-inline std::vector<Keyword> STATEMENT_SYNTAX = {{TO, "to"}, {DOWNTO, "downto"}, {ELSE, "else"}, {CASE, "case"}};
+inline std::vector<Keyword> STATEMENT_SYNTAX = {{TO, "to"}, {DOWNTO, "downto"}, {STEP, "step"}, {ELSE, "else"}, {CASE, "case"}};
 inline std::vector<Keyword> FUNCTION_SYNTAX = {{OVERRIDE, "override"}, {CALL, "call"}};
 // control statements that also have an end
 inline std::vector<Keyword> END_STATEMENTS = {{END_FUNCTION, "end function"}, {END_FOR, "end for"}, {END_WHILE, "end while"},

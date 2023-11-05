@@ -276,7 +276,8 @@ void NodeForStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeForStatement::NodeForStatement(const NodeForStatement& other)
-        : NodeAST(other), iterator(clone_unique(other.iterator)), to(other.to), iterator_end(clone_unique(other.iterator_end)), statements(clone_vector(other.statements)) {}
+        : NodeAST(other), iterator(clone_unique(other.iterator)), to(other.to), iterator_end(clone_unique(other.iterator_end)),
+        step(clone_unique(other.step)), statements(clone_vector(other.statements)) {}
 std::unique_ptr<NodeAST> NodeForStatement::clone() const {
     return std::make_unique<NodeForStatement>(*this);
 }
@@ -321,7 +322,7 @@ void NodeCallback::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeCallback::NodeCallback(const NodeCallback& other)
-        : NodeAST(other), begin_callback(other.begin_callback), statements(clone_unique(other.statements)), end_callback(other.end_callback) {}
+        : NodeAST(other), begin_callback(other.begin_callback), callback_id(clone_unique(other.callback_id)), statements(clone_unique(other.statements)), end_callback(other.end_callback) {}
 std::unique_ptr<NodeAST>  NodeCallback::clone() const {
     return std::make_unique<NodeCallback>(*this);
 }
@@ -390,7 +391,7 @@ void NodeMacroHeader::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeMacroHeader::NodeMacroHeader(const NodeMacroHeader& other)
-        : NodeAST(other.tok), name(other.name), args(clone_unique(other.args)) {}
+        : NodeAST(other.tok), name(other.name), args(clone_unique(other.args)), args_string(other.args_string) {}
 std::unique_ptr<NodeAST> NodeMacroHeader::clone() const {
     return std::make_unique<NodeMacroHeader>(*this);
 }
@@ -413,6 +414,27 @@ NodeMacroCall::NodeMacroCall(const NodeMacroCall& other)
         : NodeAST(other.tok), macro(clone_unique(other.macro)) {}
 std::unique_ptr<NodeAST> NodeMacroCall::clone() const {
     return std::make_unique<NodeMacroCall>(*this);
+}
+
+// ************* NodeIterateMacro ***************
+void NodeIterateMacro::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+NodeIterateMacro::NodeIterateMacro(const NodeIterateMacro& other)
+        : NodeAST(other.tok), macro_call(clone_unique(other.macro_call)), iterator_start(clone_unique(other.iterator_start)),
+          iterator_end(clone_unique(other.iterator_end)) {}
+std::unique_ptr<NodeAST> NodeIterateMacro::clone() const {
+    return std::make_unique<NodeIterateMacro>(*this);
+}
+
+// ************* NodeLiterateMacro ***************
+void NodeLiterateMacro::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+NodeLiterateMacro::NodeLiterateMacro(const NodeLiterateMacro& other)
+        : NodeAST(other.tok), macro_call(clone_unique(other.macro_call)), literate_tokens(clone_unique(other.literate_tokens)) {}
+std::unique_ptr<NodeAST> NodeLiterateMacro::clone() const {
+    return std::make_unique<NodeLiterateMacro>(*this);
 }
 
 // ************* NodeProgramm ***************

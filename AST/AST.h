@@ -55,6 +55,18 @@ struct NodeAST {
     }
 };
 
+template <typename T>
+bool is_instance_of(NodeAST* node) {
+    static_assert(std::is_base_of<NodeAST, T>::value, "T must be a subclass of NodeAST");
+    return dynamic_cast<T*>(node) != nullptr;
+}
+
+template <typename T>
+T* cast_node(NodeAST* node) {
+    static_assert(std::is_base_of<NodeAST, T>::value, "T must be a subclass of NodeAST");
+    return dynamic_cast<T*>(node);
+}
+
 // Hilfsfunktion zum Klonen von unique_ptrs
 template <typename T>
 std::unique_ptr<T> clone_unique(const std::unique_ptr<T>& source) {
@@ -438,6 +450,7 @@ struct NodeForStatement : NodeAST {
     std::unique_ptr<NodeAssignStatement> iterator;
     Token to;
     std::unique_ptr<NodeAST> iterator_end;
+    std::unique_ptr<NodeAST> step;
     std::vector<std::unique_ptr<NodeStatement>> statements;
     inline explicit NodeForStatement(Token tok) : NodeAST(tok) {}
     inline NodeForStatement(std::unique_ptr<NodeAssignStatement> iterator, Token to, std::unique_ptr<NodeAST> iterator_end, std::vector<std::unique_ptr<NodeStatement>> statements, Token tok)
@@ -450,6 +463,7 @@ struct NodeForStatement : NodeAST {
         parent = new_parent;
         iterator->update_parents(this);
         iterator_end->update_parents(this);
+        if (step) step ->update_parents(this);
         for (auto & stmt : statements) {
             stmt->update_parents(this);
         }
@@ -499,6 +513,7 @@ struct NodeSelectStatement : NodeAST {
 
 struct NodeCallback: NodeAST {
     std::string begin_callback;
+    std::unique_ptr<NodeAST> callback_id;
     std::unique_ptr<NodeStatementList> statements;
     std::string end_callback;
     inline explicit NodeCallback(Token tok) : NodeAST(tok) {}
@@ -509,6 +524,8 @@ struct NodeCallback: NodeAST {
     std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
+        if(callback_id)
+            callback_id->update_parents(this);
         statements->update_parents(this);
     }
 };
@@ -600,6 +617,7 @@ struct NodeDefineStatement : NodeAST {
 struct NodeMacroHeader : NodeAST {
     std::string name;
     std::unique_ptr<NodeParamList> args;
+    std::vector<std::string> args_string;
     explicit NodeMacroHeader(Token tok) : NodeAST(tok) {}
     inline NodeMacroHeader(std::string name, std::unique_ptr<NodeParamList> args, Token tok)
     : NodeAST(tok), name(std::move(name)), args(std::move(args)) {}
@@ -646,8 +664,46 @@ struct NodeMacroCall : NodeAST {
     }
 };
 
-struct NodeProgram: NodeAST {
+struct NodeIterateMacro : NodeAST {
+    std::unique_ptr<NodeStatement> macro_call;
+    std::unique_ptr<NodeAST> iterator_start;
+    Token to;
+    std::unique_ptr<NodeAST> iterator_end;
+    explicit NodeIterateMacro(Token tok) : NodeAST(tok) {};
+    inline NodeIterateMacro(std::unique_ptr<NodeStatement> macroCall, std::unique_ptr<NodeAST> iteratorStart,
+                     Token to, std::unique_ptr<NodeAST> iteratorEnd, Token tok) : NodeAST(tok), macro_call(std::move(macroCall)),
+                     iterator_start(std::move(iteratorStart)), to(std::move(to)), iterator_end(std::move(iteratorEnd)) {}
+    void accept(ASTVisitor& visitor) override;
+    NodeIterateMacro(const NodeIterateMacro& other);
+    std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        parent = new_parent;
+        macro_call->update_parents(this);
+        iterator_start->update_parents(this);
+        iterator_end->update_parents(this);
+    }
+};
+
+struct NodeLiterateMacro : NodeAST {
+    std::unique_ptr<NodeStatement> macro_call;
+    std::unique_ptr<NodeParamList> literate_tokens;
+    explicit NodeLiterateMacro(Token tok) : NodeAST(tok) {}
+    inline NodeLiterateMacro(std::unique_ptr<NodeStatement> macro_call, std::unique_ptr<NodeParamList> literate_tokens, Token tok) :
+    NodeAST(tok), macro_call(std::move(macro_call)), literate_tokens(std::move(literate_tokens)) {}
+    void accept(ASTVisitor& visitor) override;
+    NodeLiterateMacro(const NodeLiterateMacro& other);
+    std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        parent = new_parent;
+        macro_call->update_parents(this);
+        literate_tokens->update_parents(this);
+    }
+};
+
+struct NodeProgram : NodeAST {
     std::vector<std::unique_ptr<NodeMacroCall>> macro_calls;
+    std::vector<std::unique_ptr<NodeIterateMacro>> macro_iterations;
+    std::vector<std::unique_ptr<NodeLiterateMacro>> macro_literations;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
     std::vector<std::unique_ptr<NodeMacroDefinition>> macro_definitions;

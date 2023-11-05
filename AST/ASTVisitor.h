@@ -9,6 +9,20 @@
 
 class ASTVisitor {
 public:
+    template<typename T>std::unique_ptr<NodeStatement> statement_wrapper(std::unique_ptr<T> node, NodeAST* parent) {
+        auto node_statement = std::make_unique<NodeStatement>(std::move(node), node->tok);
+        node_statement->statement->parent = node_statement.get();
+        node_statement->parent = parent;
+        return node_statement;
+    }
+    static std::unique_ptr<NodeStatement> make_function_call(const std::string& name, std::vector<std::unique_ptr<NodeAST>> args, NodeAST* parent, Token tok);
+    static std::unique_ptr<NodeBinaryExpr> make_binary_expr(ASTType type, const std::string& op, std::unique_ptr<NodeAST> lhs, std::unique_ptr<NodeAST> rhs, NodeAST* parent, Token tok);
+    static std::unique_ptr<NodeInt> make_int(int32_t value, NodeAST* parent);
+    std::unique_ptr<NodeParamList> make_init_array_list(const std::vector<int32_t>& values, NodeAST* parent);
+    std::unique_ptr<NodeStatement> make_declare_array(const std::string& name, int32_t size, const std::vector<int32_t>& values, NodeAST* parent);
+    std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, VarType type, NodeAST* parent);
+
+
 	virtual void visit(NodeInt& node) {};
     virtual void visit(NodeReal& node) {};
     virtual void visit(NodeString& node) {};
@@ -136,6 +150,10 @@ public:
     virtual void visit(NodeMacroCall& node) {
     };
     virtual void visit(NodeImport& node) {
+    };
+    virtual void visit(NodeIterateMacro& node) {
+    };
+    virtual void visit(NodeLiterateMacro& node) {
     };
     virtual void visit(NodeStatementList& node) {
         for(auto & stmt : node.statements) {
