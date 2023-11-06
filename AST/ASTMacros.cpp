@@ -43,11 +43,11 @@ void ASTMacros::visit(NodeFunctionDefinition &node) {
 void ASTMacros::visit(NodeVariable &node) {
     // substitution
     if (!m_substitution_stack.empty()) {
-        if (count_char(node.name, '#') == 2) {
-            node.name = get_text_replacement(node.name);
-        } else if (auto substitute = get_substitute(node.name)) {
+        if (auto substitute = get_substitute(node.name)) {
             node.replace_with(std::move(substitute));
             return;
+        } else if (count_char(node.name, '#') == 2) {
+            node.name = get_text_replacement(node.name);
         }
     }
 }
@@ -144,7 +144,7 @@ std::unique_ptr<NodeMacroDefinition> ASTMacros::get_macro_definition(NodeMacroHe
 }
 
 void ASTMacros::visit(NodeIterateMacro& node) {
-    if(is_instance_of<NodeIterateMacro>(node.parent->parent)) {
+    if(is_instance_of<NodeIterateMacro>(node.parent->parent) or is_instance_of<NodeLiterateMacro>(node.parent->parent)) {
         CompileError(ErrorType::PreprocessorError,"Found nested <iterate_macro>.", node.tok.line, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
@@ -192,7 +192,44 @@ void ASTMacros::visit(NodeIterateMacro& node) {
 }
 
 void ASTMacros::visit(NodeLiterateMacro& node) {
+    if(is_instance_of<NodeIterateMacro>(node.parent->parent) or is_instance_of<NodeLiterateMacro>(node.parent->parent)) {
+        CompileError(ErrorType::PreprocessorError,"Found nested <literate_macro>.", node.tok.line, "", "", node.tok.file).print();
+        exit(EXIT_FAILURE);
+    }
+//    if(node.literate_tokens->params.empty()) {
+//        CompileError(ErrorType::PreprocessorError,"Unable to find any <literate_tokens> in <literate_macro>.", node.tok.line, "", "", node.tok.file).print();
+//        exit(EXIT_FAILURE);
+//    }
+    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+    node_statement_list->parent = node.parent;
+    for (int i = 0; i<node.literate_tokens->params.size(); i++) {
+        std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> substitution_vector;
+        substitution_vector.emplace_back(std::pair("#n#", make_int(i, node.parent)));
+        auto literate_token = node.literate_tokens->params[i]->clone();
+        literate_token->update_parents(node_statement_list.get());
+        substitution_vector.emplace_back(std::pair("#l#", std::move(literate_token)));
+        m_substitution_stack.push(std::move(substitution_vector));
 
+        auto macro_call = node.macro_call->statement->clone();
+        macro_call->update_parents(&node);
+        // is real macro call
+        if (auto node_macro_call = cast_node<NodeMacroCall>(macro_call.get())) {
+            auto literate_token2 = node.literate_tokens->params[i]->clone();
+            literate_token2->update_parents(node_macro_call->macro->args.get());
+            if(node_macro_call->macro->args->params.empty())
+                node_macro_call->macro->args->params.push_back(std::move(literate_token2));
+        } else if (node.parent == m_main_ptr) {
+            CompileError(ErrorType::PreprocessorError,"Cannot iterate <statements> on program level.", node.tok.line, "", "", node.tok.file).print();
+            exit(EXIT_FAILURE);
+        }
+
+        auto node_statement = statement_wrapper(std::move(macro_call), &node);
+        node_statement->accept(*this);
+        node_statement->parent = node_statement_list.get();
+        node_statement_list->statements.push_back(std::move(node_statement));
+        m_substitution_stack.pop();
+    }
+    node.replace_with(std::move(node_statement_list));
 }
 
 
@@ -209,6 +246,8 @@ std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> ASTMacros::get_sub
             pair.first = node_function_call->function->name;
         } else if (auto node_int = cast_node<NodeInt>(var.get())) {
             pair.first = std::to_string(node_int->value);
+        } else if (auto node_string = cast_node<NodeString>(var.get())) {
+            pair.first = node_string->value;
         } else {
             CompileError(ErrorType::SyntaxError,
          "Unable to substitute macro arguments. Only <keywords> can be substituted.", definition->tok.line, "<keyword>", var->tok.val,definition->tok.file).print();
@@ -249,6 +288,8 @@ std::string ASTMacros::get_text_replacement(const std::string& name) {
                 new_name = node_function_call->function->name;
             } else if (auto node_int = cast_node<NodeInt>(pair.second.get())) {
                 new_name = std::to_string(node_int->value);
+            } else if (auto node_string = cast_node<NodeString>(pair.second.get())) {
+                new_name = node_string->value;
             } else {
                 CompileError(ErrorType::SyntaxError,
                  "Unable to substitute macro arguments. Only <keywords> can be substituted.", pair.second->tok.line, "<keyword>", pair.second->tok.val,pair.second->tok.file).print();

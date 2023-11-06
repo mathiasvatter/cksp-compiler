@@ -144,6 +144,7 @@ public:
 		}
 	};
     virtual void visit(NodeMacroHeader& node) {
+        node.args->accept(*this);
     };
     virtual void visit(NodeMacroDefinition& node) {
     };

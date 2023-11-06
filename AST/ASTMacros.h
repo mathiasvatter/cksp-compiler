@@ -33,7 +33,7 @@ private:
 
     std::unique_ptr<NodeMacroDefinition> get_macro_definition(NodeMacroHeader* macro_header);
     bool is_program_level_macro(NodeMacroCall* macro_call);
-    std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> get_substitution_vector(NodeMacroHeader* definition, NodeMacroHeader* call);
+    static std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> get_substitution_vector(NodeMacroHeader* definition, NodeMacroHeader* call);
     /// returns substitute for current node.name, or nullptr if there is no substitute
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
     std::string get_text_replacement(const std::string& name);

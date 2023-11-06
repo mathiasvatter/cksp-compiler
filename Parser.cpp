@@ -498,7 +498,7 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
         return Result<std::unique_ptr<NodeStatement>>(CompileError(ErrorType::SyntaxError,
          "Found invalid Statement Syntax.", peek().line, "Statement", peek().val, peek().file));
     }
-    if(!is_instance_of<NodeIterateMacro>(parent)) {
+    if(!is_instance_of<NodeIterateMacro>(parent) and !is_instance_of<NodeLiterateMacro>(parent)) {
         if (peek().type != token::LINEBRK) {
             return Result<std::unique_ptr<NodeStatement>>(CompileError(ErrorType::SyntaxError,
     "Found incorrect statement syntax.", peek().line,"", peek().val, peek().file));
@@ -754,9 +754,9 @@ Result<std::unique_ptr<NodeIterateMacro>> Parser::parse_iterate_macro(NodeAST* p
     if(iterator_end.is_error()) {
         return Result<std::unique_ptr<NodeIterateMacro>>(iterator_end.get_error());
     }
-    auto l = consume_linebreak("<iterate_macro>");
-    if(l.is_error())
-        return Result<std::unique_ptr<NodeIterateMacro>>(l.get_error());
+//    auto l = consume_linebreak("<iterate_macro>");
+//    if(l.is_error())
+//        return Result<std::unique_ptr<NodeIterateMacro>>(l.get_error());
 
     node_iterate_macro->macro_call = std::move(node_statement.unwrap());
     node_iterate_macro->iterator_start = std::move(iterator_start.unwrap());
@@ -790,9 +790,9 @@ Result<std::unique_ptr<NodeLiterateMacro>> Parser::parse_literate_macro(NodeAST*
     auto param_list = parse_param_list(node_literate_macro.get());
     if(param_list.is_error())
         return Result<std::unique_ptr<NodeLiterateMacro>>(param_list.get_error());
-    auto l = consume_linebreak("<literate_macro>");
-    if(l.is_error())
-        return Result<std::unique_ptr<NodeLiterateMacro>>(l.get_error());
+//    auto l = consume_linebreak("<literate_macro>");
+//    if(l.is_error())
+//        return Result<std::unique_ptr<NodeLiterateMacro>>(l.get_error());
     node_literate_macro->macro_call = std::move(node_statement.unwrap());
     node_literate_macro->literate_tokens = std::move(param_list.unwrap());
     return Result<std::unique_ptr<NodeLiterateMacro>>(std::move(node_literate_macro));
