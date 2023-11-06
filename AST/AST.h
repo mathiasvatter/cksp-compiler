@@ -248,8 +248,8 @@ struct NodeSingleAssignStatement : NodeAST {
     std::unique_ptr<NodeAST> array_variable;
     std::shared_ptr<NodeAST> assignee;
     inline explicit NodeSingleAssignStatement(Token tok) : NodeAST(tok) {}
-    NodeSingleAssignStatement(std::unique_ptr<NodeAST> arrayVariable, std::shared_ptr<NodeAST> assignee)
-            : array_variable(std::move(arrayVariable)), assignee(std::move(assignee)) {}
+    NodeSingleAssignStatement(std::unique_ptr<NodeAST> arrayVariable, std::shared_ptr<NodeAST> assignee, Token tok)
+            : NodeAST(tok), array_variable(std::move(arrayVariable)), assignee(std::move(assignee)) {}
     void accept(ASTVisitor& visitor) override;
     virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Copy Constructor
@@ -669,6 +669,7 @@ struct NodeIterateMacro : NodeAST {
     std::unique_ptr<NodeAST> iterator_start;
     Token to;
     std::unique_ptr<NodeAST> iterator_end;
+    std::unique_ptr<NodeAST> step;
     explicit NodeIterateMacro(Token tok) : NodeAST(tok) {};
     inline NodeIterateMacro(std::unique_ptr<NodeStatement> macroCall, std::unique_ptr<NodeAST> iteratorStart,
                      Token to, std::unique_ptr<NodeAST> iteratorEnd, Token tok) : NodeAST(tok), macro_call(std::move(macroCall)),
@@ -681,6 +682,7 @@ struct NodeIterateMacro : NodeAST {
         macro_call->update_parents(this);
         iterator_start->update_parents(this);
         iterator_end->update_parents(this);
+        step->update_parents(this);
     }
 };
 

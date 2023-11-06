@@ -366,26 +366,36 @@ void ASTDesugar::visit(NodeForStatement& node) {
     std::unique_ptr<NodeAST> assign_var = iterator_var->clone();
     std::unique_ptr<NodeAST> function_var = iterator_var->clone();
 
-	std::string comparison_op = "<=";
-    std::string function_name = "inc";
-	if(node.to.type == DOWNTO) {
-		comparison_op = ">=";
-        function_name = "dec";
-	}
     // while statement
 	auto node_while_statement = std::make_unique<NodeWhileStatement>(node.tok);
 
-    // function call
-    std::vector<std::unique_ptr<NodeAST>> args;
-    args.push_back(std::move(function_var));
-    auto inc_statement = make_function_call(function_name, std::move(args), node_while_statement.get(), node.tok);
-    node.statements.push_back(std::move(inc_statement));
+    if(!node.step) {
+        // function call
+        std::string function_name = "inc";
+        if (node.to.type == DOWNTO) function_name = "dec";
+        std::vector<std::unique_ptr<NodeAST>> args;
+        args.push_back(std::move(function_var));
+        auto inc_statement = make_function_call(function_name, std::move(args), node_while_statement.get(), node.tok);
+        inc_statement->update_parents(node_while_statement.get());
+        node.statements.push_back(std::move(inc_statement));
+    } else {
+        auto assign_var2 = function_var->clone();
+        auto inc_expression = make_binary_expr(Integer, "+", std::move(function_var), std::move(node.step), &node, node.tok);
+        auto node_inc_statement = std::make_unique<NodeSingleAssignStatement>(std::move(assign_var2), std::move(inc_expression), node.tok);
+        auto node_statement = statement_wrapper(std::move(node_inc_statement), node_while_statement.get());
+        node_statement->update_parents(node_while_statement.get());
+        node.statements.push_back(std::move(node_statement));
+    }
+
     // handle parenting of while statement body
 	for(auto & stmt : node.statements) {
 		stmt->parent = node_while_statement.get();
 		stmt->accept(*this);
 	}
 
+    // handle while condition
+    std::string comparison_op = "<=";
+    if(node.to.type == DOWNTO) comparison_op = ">=";
     // make comparison expression
     auto comparison = make_binary_expr(Comparison, comparison_op, std::move(iterator_var), std::move(node.iterator_end), node_while_statement.get(), node.tok);
 

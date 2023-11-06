@@ -617,7 +617,10 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
             return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::ParseError,
              "Found unknown construct.", peek().line, "<callback>, <function_definition>", peek().val, peek().file));
         }
-        _skip_linebreaks();
+        auto l = consume_linebreak("<program-level construct>");
+        if(l.is_error())
+            return Result<std::unique_ptr<NodeProgram>>(l.get_error());
+//        _skip_linebreaks();
     }
     node_program->callbacks = std::move(callbacks);
     node_program->function_definitions = std::move(function_definitions);
@@ -754,6 +757,14 @@ Result<std::unique_ptr<NodeIterateMacro>> Parser::parse_iterate_macro(NodeAST* p
     if(iterator_end.is_error()) {
         return Result<std::unique_ptr<NodeIterateMacro>>(iterator_end.get_error());
     }
+    std::unique_ptr<NodeAST> step;
+    if(peek().type == STEP) {
+        consume(); // consume step
+        auto step_expression = parse_binary_expr(node_iterate_macro.get());
+        if(step_expression.is_error())
+            return Result<std::unique_ptr<NodeIterateMacro>>(step_expression.get_error());
+        step = std::move(step_expression.unwrap());
+    }
 //    auto l = consume_linebreak("<iterate_macro>");
 //    if(l.is_error())
 //        return Result<std::unique_ptr<NodeIterateMacro>>(l.get_error());
@@ -762,6 +773,7 @@ Result<std::unique_ptr<NodeIterateMacro>> Parser::parse_iterate_macro(NodeAST* p
     node_iterate_macro->iterator_start = std::move(iterator_start.unwrap());
     node_iterate_macro->iterator_end = std::move(iterator_end.unwrap());
     node_iterate_macro -> to = to;
+    node_iterate_macro->step = std::move(step);
     return Result<std::unique_ptr<NodeIterateMacro>>(std::move(node_iterate_macro));
 }
 

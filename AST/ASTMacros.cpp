@@ -159,6 +159,15 @@ void ASTMacros::visit(NodeIterateMacro& node) {
         iterator_end.get_error().print();
         exit(EXIT_FAILURE);
     }
+    int step = 1;
+    if(node.step) {
+        auto step_evaluation = evaluator.evaluate_int_expression(node.step);
+        if (step_evaluation.is_error()) {
+            step_evaluation.get_error().print();
+            exit(EXIT_FAILURE);
+        }
+        step = step_evaluation.unwrap();
+    }
     auto from = iterator_start.unwrap();
     auto to = iterator_end.unwrap();
 
@@ -185,7 +194,7 @@ void ASTMacros::visit(NodeIterateMacro& node) {
         node_statement_list->statements.push_back(std::move(node_statement));
         m_substitution_stack.pop();
 
-        if(node.to.type == DOWNTO) i--; else i++;
+        if(node.to.type == DOWNTO) i-=step; else i+=step;
     }
 
     node.replace_with(std::move(node_statement_list));
