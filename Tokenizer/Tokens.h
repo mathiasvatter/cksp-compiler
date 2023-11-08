@@ -88,6 +88,11 @@
     XX(ON, "on") \
     XX(ITERATE_MACRO, "iterate_macro") \
     XX(LITERATE_MACRO, "literate_macro") \
+    XX(SET_CONDITION, "set_condition") \
+    XX(RESET_CONDITION, "reset_condition") \
+    XX(USE_CODE_IF, "use_code_if") \
+    XX(USE_CODE_IF_NOT, "use_code_if_not") \
+    XX(END_USE_CODE, "end_use_code") \
     XX(START_INC, "start_inc") \
     XX(END_INC, "end_inc") \
     XX(UI_CONTROL, "ui_control")
@@ -135,7 +140,8 @@ inline std::vector<Keyword> DECLARATION_SYNTAX = {{DECLARE, "declare"}, {DEFINE,
                                                   {READ, "read"}, {LOCAL, "local"}, {GLOBAL, "global"}};
 inline std::vector<Keyword> PREPROCESSOR_SYNTAX = {{IMPORT, "import"}, {AS, "as"}, {ON, "on"},
 												   {ITERATE_MACRO, "iterate_macro"}, {LITERATE_MACRO, "literate_macro"},
-													{START_INC, "start_inc"}, {END_INC, "end_inc"}};
+													{START_INC, "START_INC"}, {END_INC, "END_INC"}, {SET_CONDITION, "SET_CONDITION"}, {RESET_CONDITION, "RESET_CONDITION"},
+                                                   {USE_CODE_IF, "USE_CODE_IF"}, {USE_CODE_IF_NOT, "USE_CODE_IF_NOT"}, {END_USE_CODE, "END_USE_CODE"}};
 inline std::vector<Keyword> STATEMENT_SYNTAX = {{TO, "to"}, {DOWNTO, "downto"}, {STEP, "step"}, {ELSE, "else"}, {CASE, "case"}};
 inline std::vector<Keyword> FUNCTION_SYNTAX = {{OVERRIDE, "override"}, {CALL, "call"}};
 // control statements that also have an end
