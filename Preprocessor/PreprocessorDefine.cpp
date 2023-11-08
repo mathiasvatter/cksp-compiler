@@ -63,6 +63,8 @@ Result<SuccessTag> PreprocessorDefine::process_define_calls(std::vector<Token>& 
 		if(is_define_call(tok)) {
 			auto define_stmt = get_define_statement(peek(tok).val);
 			if(define_stmt != nullptr) {
+				std::cout << (*define_stmt)->to_be_defined->name << std::endl;
+				consume(tok);
 				auto evaluation_result = evaluate_define_statement(tok, define_stmt);
 				if(evaluation_result.is_error())
 					return Result<SuccessTag>(evaluation_result.get_error());

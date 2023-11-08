@@ -682,7 +682,8 @@ struct NodeIterateMacro : NodeAST {
         macro_call->update_parents(this);
         iterator_start->update_parents(this);
         iterator_end->update_parents(this);
-        step->update_parents(this);
+		if(step)
+        	step->update_parents(this);
     }
 };
 

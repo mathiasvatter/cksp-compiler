@@ -17,13 +17,17 @@
  * Token struct that gets m_line numbers, the token type and its value
  */
 struct Token {
-    Token() : type(token::INVALID), val(""), line(0), file("") {}
-    Token(token type, std::string val, size_t line, std::string &file);
-    friend std::ostream& operator<<(std::ostream& os, const Token& tok);
     token type;
     std::string val;
     size_t line;
     std::string file;
+
+    Token() : type(token::INVALID), val(""), line(0), file("") {}
+    Token(token type, std::string val, size_t line, std::string &file);
+    friend std::ostream& operator<<(std::ostream& os, const Token& tok);
+	bool operator==(const Token &other) const {
+		return type == other.type && val == other.val;
+	}
 };
 
 /*

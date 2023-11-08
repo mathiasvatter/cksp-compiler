@@ -458,6 +458,9 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
         if (literate_macro.is_error())
             return Result<std::unique_ptr<NodeStatement>>(literate_macro.get_error());
         stmt = std::move(literate_macro.unwrap());
+//	} else if (peek().type == token::DEFINE) {
+//		while (peek().type != token::LINEBRK) consume();
+//		consume();
     } else if (peek().type == token::CONST || peek().type == token::STRUCT) {
 		auto construct_stmt = parse_const_struct_family_statement(node_statement.get());
 		if (construct_stmt.is_error()) {
@@ -1202,8 +1205,11 @@ Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement(NodeAST* par
         return Result<std::unique_ptr<NodeIfStatement>>(CompileError(ErrorType::SyntaxError,
          "Expected linebreak after if-condition.", peek().line, "linebreak", peek().val, peek().file));
     }
+	consume(); // consume linebreak
+	_skip_linebreaks();
     std::vector<std::unique_ptr<NodeStatement>> if_stmts = {};
     while (peek().type != token::END_IF && peek().type != token::ELSE) {
+		if(peek().type == END_IF or peek().type == ELSE) break;
         auto stmt = parse_statement(node_if_statement.get());
         if (stmt.is_error()) {
             return Result<std::unique_ptr<NodeIfStatement>>(stmt.get_error());
@@ -1347,12 +1353,14 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement(Node
 		"Expected linebreak after select-expression.", peek().line, "linebreak", peek().val, peek().file));
 	}
 	consume(); //consume linebreak
+	_skip_linebreaks();
 	if(peek().type != token::CASE) {
 		return Result<std::unique_ptr<NodeSelectStatement>>(CompileError(ErrorType::SyntaxError,
 		 "Expected cases in select-expression.", peek().line, "case <expression>", peek().val, peek().file));
 	}
 	std::map<std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> cases;
 	while (peek().type != token::END_SELECT) {
+		_skip_linebreaks();
 		if(peek().type == token::CASE) {
 			consume(); //consume case
             std::vector<std::unique_ptr<NodeAST>> cas = {};
