@@ -132,7 +132,7 @@ struct NodeParamList: NodeAST {
     std::vector<std::unique_ptr<NodeAST>> params;
     inline explicit NodeParamList(std::vector<std::unique_ptr<NodeAST>> params, Token tok) : NodeAST(tok), params(std::move(params)) {}
     void accept(ASTVisitor& visitor) override;
-	virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Kopierkonstruktor
     NodeParamList(const NodeParamList& other);
     // Clone Methode

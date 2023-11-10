@@ -9,6 +9,8 @@
 #include "PreprocessorMacros.h"
 #include "PreprocessorDefine.h"
 #include "PreprocessorConditions.h"
+#include "PreprocessorParser.h"
+#include "PreASTDesugar.h"
 
 Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
     : Parser(std::move(tokens), std::move(std::vector<std::string>())), m_current_file(std::move(current_file)) {
@@ -37,15 +39,26 @@ void Preprocessor::process() {
 	}
 	m_tokens = std::move(conditions.get_tokens());
 
-	PreprocessorDefine defines(m_tokens, m_current_file);
-	result = defines.process_defines();
-	if(result.is_error()) {
-		result.get_error().print();
-		auto err_msg = "Preprocessor failed while processing define statements.";
-		CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",peek(m_tokens).file).print();
-		exit(EXIT_FAILURE);
-	}
-	m_tokens = std::move(defines.get_tokens());
+    PreprocessorParser parser(m_tokens, m_current_file);
+    auto result_parse = parser.parse_program(nullptr);
+    if(result_parse.is_error()) {
+        result_parse.get_error().print();
+        auto err_msg = "Preprocessor failed while processing define statements.";
+        CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",peek(m_tokens).file).print();
+        exit(EXIT_FAILURE);
+    }
+    PreASTDesugar desugar;
+    result_parse.unwrap()->accept(desugar);
+    m_tokens = std::move(desugar.m_tokens);
+//	PreprocessorDefine defines(m_tokens, m_current_file);
+//	result = defines.process_defines();
+//	if(result.is_error()) {
+//		result.get_error().print();
+//		auto err_msg = "Preprocessor failed while processing define statements.";
+//		CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",peek(m_tokens).file).print();
+//		exit(EXIT_FAILURE);
+//	}
+//	m_tokens = std::move(defines.get_tokens());
 
     PreprocessorMacros macros(m_tokens, m_current_file);
     result = macros.process_macros();
