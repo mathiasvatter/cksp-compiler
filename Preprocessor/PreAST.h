@@ -7,11 +7,15 @@
 #include <utility>
 
 #include "../Tokenizer/Tokenizer.h"
+#include "../AST/AST.h"
 
 struct PreNodeAST {
 	PreNodeAST* parent = nullptr;
 	explicit PreNodeAST(PreNodeAST* parent= nullptr) : parent(parent) {}
+    virtual ~PreNodeAST() = default;
     virtual void accept(class PreASTVisitor& visitor) {}
+    // Virtuelle clone()-Methode für tiefe Kopien
+    virtual std::unique_ptr<PreNodeAST> clone() const = 0;
     virtual void replace_child(PreNodeAST* oldChild, std::unique_ptr<PreNodeAST> newChild) {};
     void replace_with(std::unique_ptr<PreNodeAST> newNode);
 };
@@ -20,24 +24,32 @@ struct PreNodeNumber : PreNodeAST {
     Token number;
     PreNodeNumber(Token tok, PreNodeAST* parent) : PreNodeAST(parent), number(std::move(tok)) {}
     void accept(PreASTVisitor& visitor) override;
+    PreNodeNumber(const PreNodeNumber& other) : PreNodeAST(other), number(other.number) {}
+    std::unique_ptr<PreNodeAST> clone() const override;
 };
 
 struct PreNodeKeyword : PreNodeAST {
     Token keyword;
 	PreNodeKeyword(Token tok, PreNodeAST *parent) : PreNodeAST(parent), keyword(std::move(tok)) {}
     void accept(PreASTVisitor& visitor) override;
+    PreNodeKeyword(const PreNodeKeyword& other) : PreNodeAST(other), keyword(other.keyword) {}
+    std::unique_ptr<PreNodeAST> clone() const override;
 };
 
 struct PreNodeOther : PreNodeAST {
     Token other;
 	PreNodeOther(Token tok, PreNodeAST *parent) : PreNodeAST(parent), other(std::move(tok)) {}
     void accept(PreASTVisitor& visitor) override;
+    PreNodeOther(const PreNodeOther& other) : PreNodeAST(other), other(other.other) {}
+    std::unique_ptr<PreNodeAST> clone() const override;
 };
 
 struct PreNodeStatement : PreNodeAST {
     std::unique_ptr<PreNodeAST> statement;
     PreNodeStatement(std::unique_ptr<PreNodeAST> statement, PreNodeAST *parent) : PreNodeAST(parent), statement(std::move(statement)) {}
     void accept(PreASTVisitor& visitor) override;
+    PreNodeStatement(const PreNodeStatement& other) : PreNodeAST(other), statement(clone_unique(other.statement)) {}
+    std::unique_ptr<PreNodeAST> clone() const override;
     void replace_child(PreNodeAST* oldChild, std::unique_ptr<PreNodeAST> newChild) override;
 };
 
@@ -45,6 +57,8 @@ struct PreNodeChunk : PreNodeAST {
 	std::vector<std::unique_ptr<PreNodeAST>> chunk;
     PreNodeChunk(std::vector<std::unique_ptr<PreNodeAST>> chunk, PreNodeAST *parent) : PreNodeAST(parent), chunk(std::move(chunk)) {}
     void accept(PreASTVisitor& visitor) override;
+    PreNodeChunk(const PreNodeChunk& other) : PreNodeAST(other), chunk(clone_vector(other.chunk)) {}
+    std::unique_ptr<PreNodeAST> clone() const override;
     void replace_child(PreNodeAST* oldChild, std::unique_ptr<PreNodeAST> newChild) override;
 };
 
@@ -52,14 +66,18 @@ struct PreNodeList : PreNodeAST {
     std::vector<std::unique_ptr<PreNodeChunk>> params;
     PreNodeList(std::vector<std::unique_ptr<PreNodeChunk>> params, PreNodeAST *parent) : PreNodeAST(parent), params(std::move(params)) {}
     void accept(PreASTVisitor& visitor) override;
+    PreNodeList(const PreNodeList& other) : PreNodeAST(other), params(clone_vector(other.params)) {}
+    std::unique_ptr<PreNodeAST> clone() const override;
 };
 
 struct PreNodeDefineHeader : PreNodeAST {
-	std::string name;
+	Token name;
     std::unique_ptr<PreNodeList> args;
-	PreNodeDefineHeader(std::string name, std::unique_ptr<PreNodeList> args, PreNodeAST *parent)
+	PreNodeDefineHeader(Token name, std::unique_ptr<PreNodeList> args, PreNodeAST *parent)
 		: PreNodeAST(parent), name(std::move(name)), args(std::move(args)) {}
     void accept(PreASTVisitor& visitor) override;
+    PreNodeDefineHeader(const PreNodeDefineHeader& other) : PreNodeAST(other), name(other.name), args(clone_unique(other.args)) {}
+    std::unique_ptr<PreNodeAST> clone() const override;
 };
 
 struct PreNodeDefineStatement : PreNodeAST {
@@ -68,12 +86,16 @@ struct PreNodeDefineStatement : PreNodeAST {
     PreNodeDefineStatement(std::unique_ptr<PreNodeDefineHeader> header, std::unique_ptr<PreNodeChunk> body, PreNodeAST* parent)
     : PreNodeAST(parent), header(std::move(header)), body(std::move(body)) {}
     void accept(PreASTVisitor& visitor) override;
+    PreNodeDefineStatement(const PreNodeDefineStatement& other) : PreNodeAST(other), header(clone_unique(other.header)), body(clone_unique(other.body)) {}
+    std::unique_ptr<PreNodeAST> clone() const override;
 };
 
 struct PreNodeDefineCall : PreNodeAST {
     std::unique_ptr<PreNodeDefineHeader> define;
     PreNodeDefineCall(std::unique_ptr<PreNodeDefineHeader> define, PreNodeAST* parent) : PreNodeAST(parent), define(std::move(define)) {}
     void accept(PreASTVisitor& visitor) override;
+    PreNodeDefineCall(const PreNodeDefineCall& other) : PreNodeAST(other), define(clone_unique(other.define)) {}
+    std::unique_ptr<PreNodeAST> clone() const override;
 };
 
 struct PreNodeProgram : PreNodeAST {
@@ -83,6 +105,9 @@ struct PreNodeProgram : PreNodeAST {
     : PreNodeAST(parent), program(std::move(program)), define_statements(std::move(defines)) {}
     void accept(PreASTVisitor& visitor) override;
     void replace_child(PreNodeAST* oldChild, std::unique_ptr<PreNodeAST> newChild) override;
+    PreNodeProgram(const PreNodeProgram& other) : PreNodeAST(other),
+    program(clone_vector(other.program)), define_statements(clone_vector(other.define_statements)) {}
+    std::unique_ptr<PreNodeAST> clone() const override;
 };
 
 

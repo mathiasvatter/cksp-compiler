@@ -8,36 +8,39 @@
 
 class PreASTDesugar : public PreASTVisitor {
 public:
+
+    void visit(PreNodeNumber& node) override;
+    void visit(PreNodeKeyword& node) override;
+    void visit(PreNodeOther& node) override;
+    void visit(PreNodeStatement& node) override;
+    void visit(PreNodeChunk& node) override;
+    void visit(PreNodeDefineHeader& node) override;
+    void visit(PreNodeList& node) override;
+    void visit(PreNodeDefineStatement& node) override;
+    void visit(PreNodeDefineCall& node) override;
+    void visit(PreNodeProgram& node) override;
+
+private:
+    PreNodeProgram* m_main_ptr;
+    std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_definitions;
+
+    std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
+    static std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> get_substitution_vector(PreNodeDefineHeader* definition, PreNodeDefineHeader* call);
+    std::unique_ptr<PreNodeDefineStatement> get_define_definition(PreNodeDefineHeader* define_header);
+    std::string get_text_replacement(const std::string& name);
+
+    std::stack<std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>>> m_substitution_stack;
+    std::vector<std::string> m_define_call_stack;
+
+};
+
+class PreASTCombine : public PreASTVisitor {
+public:
     std::vector<Token> m_tokens;
 
-    void visit(PreNodeNumber& node) override {
-        m_tokens.push_back(std::move(node.number));
-    }
-    void visit(PreNodeKeyword& node) override {
-        m_tokens.push_back(std::move(node.keyword));
-    }
-    void visit(PreNodeOther& node) override {
-        m_tokens.push_back(std::move(node.other));
-    }
-    void visit(PreNodeStatement& node) override {
-        node.statement->accept(*this);
-    }
-//    void visit(PreNodeChunk& node) override {
-//    }
-    void visit(PreNodeDefineHeader& node) override {
-
-    }
-    void visit(PreNodeList& node) override {
-
-    }
-    void visit(PreNodeDefineStatement& node) override {
-
-    }
-    void visit(PreNodeDefineCall& node) override {
-
-    }
-//    void visit(PreNodeProgram& node) override {
-//
-//    }
+    void visit(PreNodeNumber& node) override;
+    void visit(PreNodeKeyword& node) override;
+    void visit(PreNodeOther& node) override;
+    void visit(PreNodeProgram& node) override;
 };
 

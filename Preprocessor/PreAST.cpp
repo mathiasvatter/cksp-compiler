@@ -15,13 +15,22 @@ void PreNodeAST::replace_with(std::unique_ptr<PreNodeAST> newNode) {
 void PreNodeNumber::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+std::unique_ptr<PreNodeAST> PreNodeNumber::clone() const {
+    return std::make_unique<PreNodeNumber>(*this);
+}
 
 void PreNodeKeyword::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+std::unique_ptr<PreNodeAST> PreNodeKeyword::clone() const {
+    return std::make_unique<PreNodeKeyword>(*this);
+}
 
 void PreNodeOther::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
+}
+std::unique_ptr<PreNodeAST> PreNodeOther::clone() const {
+    return std::make_unique<PreNodeOther>(*this);
 }
 
 void PreNodeStatement::accept(PreASTVisitor &visitor) {
@@ -32,6 +41,9 @@ void PreNodeStatement::replace_child(PreNodeAST* oldChild, std::unique_ptr<PreNo
         statement = std::move(newChild);
         return;
     }
+}
+std::unique_ptr<PreNodeAST> PreNodeStatement::clone() const {
+    return std::make_unique<PreNodeStatement>(*this);
 }
 
 void PreNodeChunk::accept(PreASTVisitor &visitor) {
@@ -45,21 +57,36 @@ void PreNodeChunk::replace_child(PreNodeAST* oldChild, std::unique_ptr<PreNodeAS
         }
     }
 }
+std::unique_ptr<PreNodeAST> PreNodeChunk::clone() const {
+    return std::make_unique<PreNodeChunk>(*this);
+}
 
 void PreNodeList::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
+}
+std::unique_ptr<PreNodeAST> PreNodeList::clone() const {
+    return std::make_unique<PreNodeList>(*this);
 }
 
 void PreNodeDefineHeader::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+std::unique_ptr<PreNodeAST> PreNodeDefineHeader::clone() const {
+    return std::make_unique<PreNodeDefineHeader>(*this);
+}
 
 void PreNodeDefineStatement::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+std::unique_ptr<PreNodeAST> PreNodeDefineStatement::clone() const {
+    return std::make_unique<PreNodeDefineStatement>(*this);
+}
 
 void PreNodeDefineCall::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
+}
+std::unique_ptr<PreNodeAST> PreNodeDefineCall::clone() const {
+    return std::make_unique<PreNodeDefineCall>(*this);
 }
 
 void PreNodeProgram::accept(PreASTVisitor &visitor) {
@@ -72,4 +99,7 @@ void PreNodeProgram::replace_child(PreNodeAST* oldChild, std::unique_ptr<PreNode
             return;
         }
     }
+}
+std::unique_ptr<PreNodeAST> PreNodeProgram::clone() const {
+    return std::make_unique<PreNodeProgram>(*this);
 }

@@ -23,8 +23,10 @@ private:
     Result<std::unique_ptr<PreNodeDefineStatement>> parse_define_definition(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeDefineCall>> parse_define_call(PreNodeAST* parent);
 
-    std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_statements;
+//    std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_statements;
+    std::vector<std::string> m_define_statements;
 
     bool is_define_call(const Token &tok);
+    bool is_define_definition();
 };
 

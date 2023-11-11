@@ -48,8 +48,11 @@ void Preprocessor::process() {
         exit(EXIT_FAILURE);
     }
     PreASTDesugar desugar;
-    result_parse.unwrap()->accept(desugar);
-    m_tokens = std::move(desugar.m_tokens);
+    auto pre_ast = std::move(result_parse.unwrap());
+    pre_ast->accept(desugar);
+    PreASTCombine combine;
+    pre_ast->accept(combine);
+    m_tokens = std::move(combine.m_tokens);
 //	PreprocessorDefine defines(m_tokens, m_current_file);
 //	result = defines.process_defines();
 //	if(result.is_error()) {
