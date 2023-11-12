@@ -579,6 +579,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 	std::vector<std::unique_ptr<NodeDefineStatement>> defines;
     auto node_program = std::make_unique<NodeProgram>(get_tok());
     while (peek().type != token::END_TOKEN) {
+//        std::cout << peek() << ", ";
         _skip_linebreaks();
         if (peek().type == token::BEGIN_CALLBACK) {
             auto callback = parse_callback(node_program.get());
@@ -623,7 +624,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
         auto l = consume_linebreak("<program-level construct>");
         if(l.is_error())
             return Result<std::unique_ptr<NodeProgram>>(l.get_error());
-//        _skip_linebreaks();
+        _skip_linebreaks();
     }
     node_program->callbacks = std::move(callbacks);
     node_program->function_definitions = std::move(function_definitions);

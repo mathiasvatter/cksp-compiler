@@ -7,9 +7,9 @@
 #include "Preprocessor.h"
 #include "PreAST.h"
 
-class PreprocessorParser : public Preprocessor {
+class PreprocessorParser : public Parser {
 public:
-    PreprocessorParser(std::vector<Token> tokens, const std::string &currentFile);
+    explicit PreprocessorParser(std::vector<Token> tokens);
 
     Result<std::unique_ptr<PreNodeProgram>> parse_program(PreNodeAST* parent);
 private:
@@ -19,14 +19,29 @@ private:
     Result<std::unique_ptr<PreNodeAST>> parse_token(PreNodeAST* parent);
 //    Result<std::unique_ptr<PreNodeChunk>> parse_chunk(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeList>> parse_list(PreNodeAST* parent);
+
+    /// DEFINES
     Result<std::unique_ptr<PreNodeDefineHeader>> parse_define_header(PreNodeAST* parent);
-    Result<std::unique_ptr<PreNodeDefineStatement>> parse_define_definition(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeDefineCall>> parse_define_call(PreNodeAST* parent);
+    Result<std::unique_ptr<PreNodeDefineStatement>> parse_define_definition(PreNodeAST* parent);
 
-//    std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_statements;
+    /// MACROS
+    Result<std::unique_ptr<PreNodeMacroHeader>> parse_macro_header(PreNodeAST* parent);
+    Result<std::unique_ptr<PreNodeMacroCall>> parse_macro_call(PreNodeAST* parent);
+    Result<std::unique_ptr<PreNodeMacroDefinition>> parse_macro_definition(PreNodeAST* parent);
+    Result<std::unique_ptr<PreNodeIterateMacro>> parse_iterate_macro(PreNodeAST* parent);
+    Result<std::unique_ptr<PreNodeLiterateMacro>> parse_literate_macro(PreNodeAST* parent);
+
+
+    //    std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_statements;
     std::vector<std::string> m_define_statements;
+    std::vector<std::string> m_macro_definitions;
 
-    bool is_define_call(const Token &tok);
+    bool is_func_call(const Token &tok, const std::vector<std::string> &definitions);
+    bool is_macro_call(const Token &tok);
     bool is_define_definition();
+    bool is_macro_definition();
 };
+
+
 

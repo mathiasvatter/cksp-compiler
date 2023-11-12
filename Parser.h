@@ -66,7 +66,6 @@ protected:
     static int _get_binop_precedence(token tok);
 	void _skip_linebreaks();
 
-private:
     static std::string sanitize_binary(const std::string& input);
     /// convert eg 0bFFFh into 0xbFFF
     static std::string sanitize_hex(const std::string& input);
@@ -126,7 +125,7 @@ private:
     std::vector<std::unique_ptr<NodeMacroDefinition>> macro_definitions;
 
 	Result<SuccessTag> consume_linebreak(const std::string& construct);
-
+private:
     bool is_variable_declaration();
     bool is_array_declaration();
     bool is_macro_call();

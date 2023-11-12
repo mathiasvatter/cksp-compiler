@@ -5,6 +5,7 @@
 #include "PreAST.h"
 #include "PreASTVisitor.h"
 
+// ************* PreNodeAST *************
 void PreNodeAST::replace_with(std::unique_ptr<PreNodeAST> newNode) {
     if (parent) {
         newNode->parent = parent;
@@ -12,6 +13,7 @@ void PreNodeAST::replace_with(std::unique_ptr<PreNodeAST> newNode) {
     }
 }
 
+// ************* PreNodeNumber *************
 void PreNodeNumber::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
@@ -19,6 +21,7 @@ std::unique_ptr<PreNodeAST> PreNodeNumber::clone() const {
     return std::make_unique<PreNodeNumber>(*this);
 }
 
+// ************* PreNodeKeyword *************
 void PreNodeKeyword::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
@@ -26,6 +29,7 @@ std::unique_ptr<PreNodeAST> PreNodeKeyword::clone() const {
     return std::make_unique<PreNodeKeyword>(*this);
 }
 
+// ************* PreNodeOther *************
 void PreNodeOther::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
@@ -33,6 +37,7 @@ std::unique_ptr<PreNodeAST> PreNodeOther::clone() const {
     return std::make_unique<PreNodeOther>(*this);
 }
 
+// ************* PreNodeStatement *************
 void PreNodeStatement::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
@@ -46,6 +51,7 @@ std::unique_ptr<PreNodeAST> PreNodeStatement::clone() const {
     return std::make_unique<PreNodeStatement>(*this);
 }
 
+// ************* PreNodeChunk *************
 void PreNodeChunk::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
@@ -61,6 +67,7 @@ std::unique_ptr<PreNodeAST> PreNodeChunk::clone() const {
     return std::make_unique<PreNodeChunk>(*this);
 }
 
+// ************* PreNodeList *************
 void PreNodeList::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
@@ -68,6 +75,15 @@ std::unique_ptr<PreNodeAST> PreNodeList::clone() const {
     return std::make_unique<PreNodeList>(*this);
 }
 
+// ************* PreNodeMacroHeader *************
+void PreNodeMacroHeader::accept(PreASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+std::unique_ptr<PreNodeAST> PreNodeMacroHeader::clone() const {
+    return std::make_unique<PreNodeMacroHeader>(*this);
+}
+
+// ************* PreNodeDefineHeader *************
 void PreNodeDefineHeader::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
@@ -75,6 +91,15 @@ std::unique_ptr<PreNodeAST> PreNodeDefineHeader::clone() const {
     return std::make_unique<PreNodeDefineHeader>(*this);
 }
 
+// ************* PreNodeMacroDefinition *************
+void PreNodeMacroDefinition::accept(PreASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+std::unique_ptr<PreNodeAST> PreNodeMacroDefinition::clone() const {
+    return std::make_unique<PreNodeMacroDefinition>(*this);
+}
+
+// ************* PreNodeDefineStatement *************
 void PreNodeDefineStatement::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
@@ -82,6 +107,15 @@ std::unique_ptr<PreNodeAST> PreNodeDefineStatement::clone() const {
     return std::make_unique<PreNodeDefineStatement>(*this);
 }
 
+// ************* PreNodeMacroCall *************
+void PreNodeMacroCall::accept(PreASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+std::unique_ptr<PreNodeAST> PreNodeMacroCall::clone() const {
+    return std::make_unique<PreNodeMacroCall>(*this);
+}
+
+// ************* PreNodeDefineCall *************
 void PreNodeDefineCall::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
@@ -89,6 +123,28 @@ std::unique_ptr<PreNodeAST> PreNodeDefineCall::clone() const {
     return std::make_unique<PreNodeDefineCall>(*this);
 }
 
+// ************* PreNodeIterateMacro *************
+void PreNodeIterateMacro::accept(PreASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+PreNodeIterateMacro::PreNodeIterateMacro(const PreNodeIterateMacro& other)
+        : PreNodeAST(other), macro_call(clone_unique(other.macro_call)), iterator_start(other.iterator_start),
+          iterator_end(other.iterator_end) {}
+std::unique_ptr<PreNodeAST> PreNodeIterateMacro::clone() const {
+    return std::make_unique<PreNodeIterateMacro>(*this);
+}
+
+// ************* PreNodeLiterateMacro *************
+void PreNodeLiterateMacro::accept(PreASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+PreNodeLiterateMacro::PreNodeLiterateMacro(const PreNodeLiterateMacro& other)
+        : PreNodeAST(other), macro_call(clone_unique(other.macro_call)), literate_tokens(clone_unique(other.literate_tokens)) {}
+std::unique_ptr<PreNodeAST> PreNodeLiterateMacro::clone() const {
+    return std::make_unique<PreNodeLiterateMacro>(*this);
+}
+
+// ************* PreNodeProgram *************
 void PreNodeProgram::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }

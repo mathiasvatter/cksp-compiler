@@ -39,7 +39,7 @@ void Preprocessor::process() {
 	}
 	m_tokens = std::move(conditions.get_tokens());
 
-    PreprocessorParser parser(m_tokens, m_current_file);
+    PreprocessorParser parser(m_tokens);
     auto result_parse = parser.parse_program(nullptr);
     if(result_parse.is_error()) {
         result_parse.get_error().print();

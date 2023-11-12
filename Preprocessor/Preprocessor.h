@@ -49,11 +49,10 @@ protected:
 	Result<std::unique_ptr<NodeAST>> _parse_parenth_expr(const std::vector<Token>& tok);
 };
 
-
 class SimpleInterpreter {
 public:
-	explicit SimpleInterpreter() {}
-	Result<int> evaluate_int_expression(std::unique_ptr<NodeAST>& root);
+    explicit SimpleInterpreter() {}
+    Result<int> evaluate_int_expression(std::unique_ptr<NodeAST>& root);
 };
 
 
