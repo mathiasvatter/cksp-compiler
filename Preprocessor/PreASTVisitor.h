@@ -9,6 +9,14 @@
 class PreASTVisitor {
 public:
     virtual void visit(PreNodeNumber& node) {};
+    virtual void visit(PreNodeInt& node) {};
+    virtual void visit(PreNodeUnaryExpr& node) {
+        node.operand->accept(*this);
+    };
+    virtual void visit(PreNodeBinaryExpr& node) {
+        node.left->accept(*this);
+        node.right->accept(*this);
+    };
     virtual void visit(PreNodeKeyword& node) {};
     virtual void visit(PreNodeOther& node) {};
     virtual void visit(PreNodeStatement& node) {

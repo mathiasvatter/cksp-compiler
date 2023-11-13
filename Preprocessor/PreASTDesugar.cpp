@@ -3,6 +3,7 @@
 //
 
 #include "PreASTDesugar.h"
+#include "SimpleExprInterpreter.h"
 
 
 void PreASTDesugar::visit(PreNodeProgram& node) {
@@ -28,7 +29,16 @@ void PreASTDesugar::visit(PreNodeNumber& node) {
             return;
         }
     }
+}
 
+void PreASTDesugar::visit(PreNodeInt& node) {
+    // substitution
+    if (!m_substitution_stack.empty()) {
+        if (auto substitute = get_substitute(node.number.val)) {
+            node.replace_with(std::move(substitute));
+            return;
+        }
+    }
 }
 
 void PreASTDesugar::visit(PreNodeKeyword& node) {
@@ -75,10 +85,10 @@ void PreASTDesugar::visit(PreNodeDefineStatement& node) {
 }
 
 void PreASTDesugar::visit(PreNodeDefineCall& node) {
-    if(std::find(m_define_call_stack.begin(), m_define_call_stack.end(), node.define->name.val) != m_define_call_stack.end()) {
+    Token token_name = node.define->name->keyword;
+    if(std::find(m_define_call_stack.begin(), m_define_call_stack.end(), token_name.val) != m_define_call_stack.end()) {
         // recursive function call detected
-        Token t = node.define->name;
-        CompileError(ErrorType::PreprocessorError,"Recursive define call detected. Calling defines inside their definition is not allowed.", t.line, "", node.define->name.val, t.file).print();
+        CompileError(ErrorType::PreprocessorError,"Recursive define call detected. Calling defines inside their definition is not allowed.", token_name.line, "", token_name.val, token_name.file).print();
         exit(EXIT_FAILURE);
     }
 
@@ -86,7 +96,7 @@ void PreASTDesugar::visit(PreNodeDefineCall& node) {
     //substitution
     auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
     if( auto node_define_definition = get_define_definition(node.define.get())) {
-        m_define_call_stack.push_back(node.define->name.val);
+        m_define_call_stack.push_back(token_name.val);
         node_define_definition->parent = node.parent;
         auto substitution_vec = get_substitution_vector(node_define_definition->header.get(), node.define.get());
         m_substitution_stack.push(std::move(substitution_vec));
@@ -100,16 +110,17 @@ void PreASTDesugar::visit(PreNodeDefineCall& node) {
 }
 
 void PreASTDesugar::visit(PreNodeMacroCall& node) {
-    if(std::find(m_macro_call_stack.begin(), m_macro_call_stack.end(), node.macro->name.val) != m_macro_call_stack.end()) {
+    Token token_name = node.macro->name->keyword;
+    if(std::find(m_macro_call_stack.begin(), m_macro_call_stack.end(), token_name.val) != m_macro_call_stack.end()) {
         // recursive function call detected
-        CompileError(ErrorType::PreprocessorError,"Recursive macro call detected. Calling macros inside their definition is not allowed.", node.macro->name.line, "", node.macro->name.val, node.macro->name.file).print();
+        CompileError(ErrorType::PreprocessorError,"Recursive macro call detected. Calling macros inside their definition is not allowed.", token_name.line, "", token_name.val, token_name.file).print();
         exit(EXIT_FAILURE);
     }
     node.macro->accept(*this);
     // substitution
     auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
     if(auto node_macro_definition = get_macro_definition(node.macro.get())) {
-        m_macro_call_stack.push_back(node.macro->name.val);
+        m_macro_call_stack.push_back(token_name.val);
         node_macro_definition->parent = node.parent;
         auto substitution_vec = get_substitution_vector(node_macro_definition->header.get(), node.macro.get());
         m_substitution_stack.push(std::move(substitution_vec));
@@ -134,14 +145,33 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
         }
     node.macro_call->params[0]->chunk.push_back(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, (std::string &) ""),nullptr));
 
-//    node.macro_call->accept(*this);
+    node.macro_call->accept(*this);
+    node.iterator_start->accept(*this);
+    node.iterator_end->accept(*this);
+    node.step->accept(*this);
 
-    auto from = node.iterator_start;
-    auto to = node.iterator_end;
-    auto step = node.step;
+    SimpleExprInterpreter evaluate;
+    auto from_result = evaluate.evaluate_int_expression(node.iterator_start);
+    if(from_result.is_error()) {
+        from_result.get_error().print();
+        exit(EXIT_FAILURE);
+    }
+    auto to_result = evaluate.evaluate_int_expression(node.iterator_end);
+    if(to_result.is_error()) {
+        to_result.get_error().print();
+        exit(EXIT_FAILURE);
+    }
+    auto step_result = evaluate.evaluate_int_expression(node.step);
+    if(step_result.is_error()) {
+        step_result.get_error().print();
+        exit(EXIT_FAILURE);
+    }
+
+    int from = from_result.unwrap();
+    int to = to_result.unwrap();
+    int step = step_result.unwrap();
 
     auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
-
     int i = from;
     while(node.to.type == DOWNTO ? i > to : i < to) {
         std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
@@ -210,7 +240,7 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar
         auto &var = definition->args->params[i]->chunk[0];
         if(definition->args->params[i]->chunk.size() > 1) {
             CompileError(ErrorType::SyntaxError,
-         "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>", definition->name.line, "", "",definition->name.file).print();
+         "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>", definition->name->keyword.line, "", "",definition->name->keyword.file).print();
             exit(EXIT_FAILURE);
         }
         std::pair<std::string, std::unique_ptr<PreNodeChunk>> pair;
@@ -222,13 +252,13 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar
             } else {
                 CompileError(ErrorType::SyntaxError,
                              "Unable to substitute <define> arguments. Only <keywords> can be substituted.",
-                             definition->name.line, "<keyword>", "", definition->name.file).print();
+                             definition->name->keyword.line, "<keyword>", "", definition->name->keyword.file).print();
                 exit(EXIT_FAILURE);
             }
         } else {
             CompileError(ErrorType::SyntaxError,
                          "Unable to substitute <define> arguments. Only <keywords> can be substituted.",
-                         definition->name.line, "<keyword>", "", definition->name.file).print();
+                         definition->name->keyword.line, "<keyword>", "", definition->name->keyword.file).print();
             exit(EXIT_FAILURE);
         }
         pair.second = std::move(call->args->params[i]);
@@ -239,7 +269,7 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar
 
 std::unique_ptr<PreNodeDefineStatement> PreASTDesugar::get_define_definition(PreNodeDefineHeader *define_header) {
     for(auto & def : m_define_definitions) {
-        if(def->header->name.val == define_header->name.val) {
+        if(def->header->name->keyword.val == define_header->name->keyword.val) {
             auto copy = def->clone();
             return std::unique_ptr<PreNodeDefineStatement>(static_cast<PreNodeDefineStatement*>(copy.release()));
         }
@@ -249,7 +279,7 @@ std::unique_ptr<PreNodeDefineStatement> PreASTDesugar::get_define_definition(Pre
 
 std::unique_ptr<PreNodeMacroDefinition> PreASTDesugar::get_macro_definition(PreNodeMacroHeader *macro_header) {
     for(auto & macro_def : m_macro_definitions) {
-        if(macro_def->header->name.val == macro_header->name.val) {
+        if(macro_def->header->name->keyword.val == macro_header->name->keyword.val) {
             if(macro_def->header->args->params.size() == macro_header->args->params.size()) {
                 auto copy = macro_def->clone();
                 copy->update_parents(nullptr);

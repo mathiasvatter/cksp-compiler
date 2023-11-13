@@ -53,26 +53,7 @@ void Preprocessor::process() {
     PreASTCombine combine;
     pre_ast->accept(combine);
     m_tokens = std::move(combine.m_tokens);
-//	PreprocessorDefine defines(m_tokens, m_current_file);
-//	result = defines.process_defines();
-//	if(result.is_error()) {
-//		result.get_error().print();
-//		auto err_msg = "Preprocessor failed while processing define statements.";
-//		CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",peek(m_tokens).file).print();
-//		exit(EXIT_FAILURE);
-//	}
-//	m_tokens = std::move(defines.get_tokens());
 
-    PreprocessorMacros macros(m_tokens, m_current_file);
-    result = macros.process_macros();
-    if(result.is_error()) {
-        result.get_error().print();
-        auto err_msg = "Preprocessor failed while processing macros.";
-        CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",peek(m_tokens).file).print();
-        exit(EXIT_FAILURE);
-    }
-    m_tokens = std::move(macros.get_tokens());
-    m_macro_evaluation_stack = std::move(macros.m_macro_evaluation_stack);
 }
 
 std::vector<Token> Preprocessor::get_tokens() {

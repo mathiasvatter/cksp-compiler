@@ -9,7 +9,7 @@
 #include "AST/ASTDesugar.h"
 #include "AST/ASTPrinter.h"
 #include "AST/ASTTypeCasting.h"
-#include "AST/ASTMacros.h"
+//#include "AST/ASTMacros.h"
 
 int main() {
 

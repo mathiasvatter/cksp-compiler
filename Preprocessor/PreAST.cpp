@@ -21,6 +21,42 @@ std::unique_ptr<PreNodeAST> PreNodeNumber::clone() const {
     return std::make_unique<PreNodeNumber>(*this);
 }
 
+// ************* PreNodeInt *************
+void PreNodeInt::accept(PreASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+std::unique_ptr<PreNodeAST> PreNodeInt::clone() const {
+    return std::make_unique<PreNodeInt>(*this);
+}
+
+// ************* PreNodeUnaryExpr *************
+void PreNodeUnaryExpr::accept(PreASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+std::unique_ptr<PreNodeAST> PreNodeUnaryExpr::clone() const {
+    return std::make_unique<PreNodeUnaryExpr>(*this);
+}
+void PreNodeUnaryExpr::replace_child(PreNodeAST* oldChild, std::unique_ptr<PreNodeAST> newChild) {
+    if (operand.get() == oldChild) {
+        operand = std::move(newChild);
+    }
+}
+
+// ************* PreNodeBinaryExpr *************
+void PreNodeBinaryExpr::accept(PreASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+std::unique_ptr<PreNodeAST> PreNodeBinaryExpr::clone() const {
+    return std::make_unique<PreNodeBinaryExpr>(*this);
+}
+void PreNodeBinaryExpr::replace_child(PreNodeAST* oldChild, std::unique_ptr<PreNodeAST> newChild) {
+    if (left.get() == oldChild) {
+        left = std::move(newChild);
+    } else if (right.get() == oldChild) {
+        right = std::move(newChild);
+    }
+}
+
 // ************* PreNodeKeyword *************
 void PreNodeKeyword::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
@@ -128,8 +164,8 @@ void PreNodeIterateMacro::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
 PreNodeIterateMacro::PreNodeIterateMacro(const PreNodeIterateMacro& other)
-        : PreNodeAST(other), macro_call(clone_unique(other.macro_call)), iterator_start(other.iterator_start),
-          iterator_end(other.iterator_end) {}
+        : PreNodeAST(other), macro_call(clone_unique(other.macro_call)), iterator_start(clone_unique(other.iterator_start)),
+          iterator_end(clone_unique(other.iterator_end)) {}
 std::unique_ptr<PreNodeAST> PreNodeIterateMacro::clone() const {
     return std::make_unique<PreNodeIterateMacro>(*this);
 }

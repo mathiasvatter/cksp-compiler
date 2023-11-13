@@ -10,6 +10,7 @@ class PreASTDesugar : public PreASTVisitor {
 public:
 
     void visit(PreNodeNumber& node) override;
+    void visit(PreNodeInt& node) override;
     void visit(PreNodeKeyword& node) override;
     void visit(PreNodeOther& node) override;
     void visit(PreNodeStatement& node) override;

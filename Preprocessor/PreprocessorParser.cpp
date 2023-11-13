@@ -135,11 +135,17 @@ Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_token(PreNodeAST* 
         stmt = std::move(node_statement);
     } else if(peek().type == KEYWORD or peek().type == STRING) {
         auto result_keyword = parse_keyword(parent);
-        if(result_keyword.is_error())
+        if (result_keyword.is_error())
             return Result<std::unique_ptr<PreNodeAST>>(result_keyword.get_error());
         node_statement->statement = std::move(result_keyword.unwrap());
         stmt = std::move(node_statement);
-    } else if(peek().type == INT or peek().type == FLOAT or peek().type == BINARY or peek().type == HEXADECIMAL) {
+    } else if(peek().type == INT) {
+        auto result_int = parse_int(parent);
+        if (result_int.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_int.get_error());
+        node_statement->statement = std::move(result_int.unwrap());
+        stmt = std::move(node_statement);
+    } else if(peek().type == FLOAT or peek().type == BINARY or peek().type == HEXADECIMAL) {
         auto result_number = parse_number(parent);
         if (result_number.is_error())
             return Result<std::unique_ptr<PreNodeAST>>(result_number.get_error());
@@ -209,9 +215,12 @@ Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *
 }
 
 Result<std::unique_ptr<PreNodeDefineHeader>> PreprocessorParser::parse_define_header(PreNodeAST *parent) {
-    Token name = consume();
+    auto node_define_header = std::make_unique<PreNodeDefineHeader>(nullptr, nullptr, parent);
+    auto define_name = parse_keyword(node_define_header.get());
+    if(define_name.is_error())
+        return Result<std::unique_ptr<PreNodeDefineHeader>>(define_name.get_error());
+    node_define_header->name = std::move(define_name.unwrap());
 //    std::unique_ptr<PreNodeList> args;
-    auto node_define_header = std::make_unique<PreNodeDefineHeader>(std::move(name), nullptr, parent);
     std::unique_ptr<PreNodeList> define_args = std::make_unique<PreNodeList>(std::vector<std::unique_ptr<PreNodeChunk>>{}, node_define_header.get());
     if(peek().type == OPEN_PARENTH) {
         auto define_args_result = parse_list(node_define_header.get());
@@ -247,7 +256,7 @@ Result<std::unique_ptr<PreNodeDefineStatement>> PreprocessorParser::parse_define
             return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
          "Unexpected end of m_tokens. Missing assignment of define statement.",peek().line, "", peek().val,peek().file));
 
-        if(peek().type == KEYWORD and define_header_result.unwrap()->name.val == peek().val) {
+        if(peek().type == KEYWORD and define_header_result.unwrap()->name->keyword.val == peek().val) {
             return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
 	    "A define constant cannot define itself.",peek().line,"","", peek().file));
 		}
@@ -282,8 +291,12 @@ Result<std::unique_ptr<PreNodeDefineCall>> PreprocessorParser::parse_define_call
 }
 
 Result<std::unique_ptr<PreNodeMacroHeader>> PreprocessorParser::parse_macro_header(PreNodeAST* parent) {
-    auto macro_name = consume();
-    auto node_macro_header = std::make_unique<PreNodeMacroHeader>(std::move(macro_name), nullptr, parent);
+
+    auto node_macro_header = std::make_unique<PreNodeMacroHeader>(nullptr, nullptr, parent);
+    auto macro_name = parse_keyword(node_macro_header.get());
+    if(macro_name.is_error())
+        return Result<std::unique_ptr<PreNodeMacroHeader>>(macro_name.get_error());
+    node_macro_header->name = std::move(macro_name.unwrap());
     std::unique_ptr<PreNodeList> macro_args = std::make_unique<PreNodeList>(std::move(std::vector<std::unique_ptr<PreNodeChunk>>{}), node_macro_header.get());
 
     if (peek().type == token::OPEN_PARENTH) {
@@ -359,13 +372,9 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
       "Found invalid <iterate_macro> statement syntax.", peek().line,":=", peek().val, peek().file));
     }
     consume(); // consume :=
-    SimpleInterpreter evaluator;
-    auto iterator_start =  parse_binary_expr(nullptr); //_parse_iterator_start();
+    auto iterator_start =  parse_binary_expr(node_iterate_macro.get()); //_parse_iterator_start();
     if(iterator_start.is_error())
         return Result<std::unique_ptr<PreNodeIterateMacro>>(iterator_start.get_error());
-    auto it_start = evaluator.evaluate_int_expression(iterator_start.unwrap());
-    if(it_start.is_error())
-        return Result<std::unique_ptr<PreNodeIterateMacro>>(it_start.get_error());
 
     if(not(peek().type == token::TO or peek().type == token::DOWNTO)) {
         return Result<std::unique_ptr<PreNodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
@@ -373,23 +382,17 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
     }
     Token to = consume(); // consume downto/to
 
-    auto iterator_end =  parse_binary_expr(nullptr); //_parse_iterator_end();
+    auto iterator_end =  parse_binary_expr(node_iterate_macro.get()); //_parse_iterator_end();
     if(iterator_end.is_error())
         return Result<std::unique_ptr<PreNodeIterateMacro>>(iterator_end.get_error());
-    auto it_end = evaluator.evaluate_int_expression(iterator_end.unwrap());
-    if(it_end.is_error())
-        return Result<std::unique_ptr<PreNodeIterateMacro>>(it_end.get_error());
 
-    int step = 1;
+    std::unique_ptr<PreNodeAST> step = std::make_unique<PreNodeInt>(1, Token(INT, "1", 0, (std::string &) ""), node_iterate_macro.get());
     if(peek().type == STEP) {
         consume(); // consume step
-        auto step_result = parse_binary_expr(nullptr);
+        auto step_result = parse_binary_expr(node_iterate_macro.get());
         if(step_result.is_error())
             return Result<std::unique_ptr<PreNodeIterateMacro>>(step_result.get_error());
-        auto step_expression = evaluator.evaluate_int_expression(step_result.unwrap());
-        if(step_expression.is_error())
-            return Result<std::unique_ptr<PreNodeIterateMacro>>(step_expression.get_error());
-        step = step_expression.unwrap();
+        step = std::move(step_result.unwrap());
     }
     if (peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<PreNodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
@@ -397,10 +400,10 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
     }
     consume(); // consume linebreak
     node_iterate_macro->macro_call = std::move(node_statement.unwrap());
-    node_iterate_macro->iterator_start = it_start.unwrap();
-    node_iterate_macro->iterator_end = it_end.unwrap();
+    node_iterate_macro->iterator_start = std::move(iterator_start.unwrap());
+    node_iterate_macro->iterator_end = std::move(iterator_end.unwrap());
     node_iterate_macro -> to = to;
-    node_iterate_macro->step = step;
+    node_iterate_macro->step = std::move(step);
     return Result<std::unique_ptr<PreNodeIterateMacro>>(std::move(node_iterate_macro));
 }
 
@@ -444,6 +447,97 @@ Result<std::unique_ptr<PreNodeLiterateMacro>> PreprocessorParser::parse_literate
     node_literate_macro->macro_call = std::move(node_statement.unwrap());
     node_literate_macro->literate_tokens = std::move(node_chunk);
     return Result<std::unique_ptr<PreNodeLiterateMacro>>(std::move(node_literate_macro));
+}
+
+
+Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_int(PreNodeAST *parent) {
+    auto token = consume();
+    auto value = token.val;
+    try {
+        long long val = std::stoll(value, nullptr, 10);
+        auto node = std::make_unique<PreNodeInt>(static_cast<int32_t>(val & 0xFFFFFFFF), token, parent);
+        return Result<std::unique_ptr<PreNodeAST>>(std::move(node));
+    } catch (const std::exception& e) {
+        auto expected = std::string(1, "valid int base "[10]);
+        return Result<std::unique_ptr<PreNodeAST>>(CompileError(ErrorType::PreprocessorError,
+        "Invalid integer format.", token.line, expected, value, token.file));
+    }
+}
+
+Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_binary_expr(PreNodeAST *parent) {
+    auto lhs = _parse_primary_expr(parent);
+    if(!lhs.is_error()) {
+        return _parse_binary_expr_rhs(0, std::move(lhs.unwrap()), parent);
+    }
+    return Result<std::unique_ptr<PreNodeAST>>(lhs.get_error());
+}
+
+Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::_parse_primary_expr(PreNodeAST *parent) {
+    if (peek().type == token::OPEN_PARENTH) {
+        return _parse_parenth_expr(parent);
+    } else if (peek().type == token::INT) {
+        return parse_int(parent);
+        // unary operators bool_not, bit_not, sub
+    } else if (is_unary_operator(peek().type)) {
+        return parse_unary_expr(parent);
+    } else if(is_func_call(peek(), m_define_statements)) {
+        auto result_define_call = parse_define_call(parent);
+        if (result_define_call.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_define_call.get_error());
+        return Result<std::unique_ptr<PreNodeAST>>(std::move(result_define_call.unwrap()));
+    } else {
+        return Result<std::unique_ptr<PreNodeAST>>(CompileError(ErrorType::PreprocessorError,
+        "Found unknown expression token. No variables allowed in Preprocessor since statement has to be evaluated during compile time.",
+        peek().line, "integer, define constant", peek().val, peek().file));
+    }
+}
+
+Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_unary_expr(PreNodeAST *parent) {
+    Token unary_op = consume();
+    auto node_unary_expr = std::make_unique<PreNodeUnaryExpr>(unary_op, nullptr, parent);
+    auto expr = _parse_primary_expr(node_unary_expr.get());
+    if(expr.is_error()) {
+        return Result<std::unique_ptr<PreNodeAST>>(expr.get_error());
+    }
+    node_unary_expr->operand = std::move(expr.unwrap());
+    return Result<std::unique_ptr<PreNodeAST>>(std::move(node_unary_expr));
+}
+
+Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::_parse_binary_expr_rhs(int precedence, std::unique_ptr<PreNodeAST> lhs, PreNodeAST *parent) {
+    while(true) {
+        int prec = _get_binop_precedence(peek().type);
+        if(prec < precedence)
+            return Result<std::unique_ptr<PreNodeAST>>(std::move(lhs));
+        // its not -1 so it is a binop
+        auto bin_op = peek();
+        consume();
+        auto rhs = _parse_primary_expr(parent);
+        if (rhs.is_error()) {
+            return Result<std::unique_ptr<PreNodeAST>>(rhs.get_error());
+        }
+        int next_precedence = _get_binop_precedence(peek().type);
+        if (prec < next_precedence) {
+            rhs = _parse_binary_expr_rhs(prec + 1, std::move(rhs.unwrap()), parent);
+            if (rhs.is_error()) {
+                return Result<std::unique_ptr<PreNodeAST>>(rhs.get_error());
+            }
+        }
+        auto node_binary_expr = std::make_unique<PreNodeBinaryExpr>(bin_op, std::move(lhs), std::move(rhs.unwrap()),parent);
+        node_binary_expr->left->parent = node_binary_expr.get();
+        node_binary_expr->right->parent = node_binary_expr.get();
+        lhs = std::move(node_binary_expr);
+    }
+}
+
+Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::_parse_parenth_expr(PreNodeAST *parent) {
+    consume(); // eat (
+    auto expr = parse_binary_expr(parent);
+    if (peek().type != token::CLOSED_PARENTH) {
+        return Result<std::unique_ptr<PreNodeAST>>(CompileError(ErrorType::PreprocessorError,
+    "Missing parenthesis.", peek().line, ")", peek().val, peek().file));
+    }
+    consume(); // eat )
+    return expr;
 }
 
 
