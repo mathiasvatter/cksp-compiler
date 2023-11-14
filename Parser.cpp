@@ -47,6 +47,7 @@ Token Parser::peek(int ahead) {
 Token Parser::consume() {
     if (m_pos < m_tokens.size()) {
 		m_curr_token = m_tokens.at(m_pos + 1).type;
+		m_curr_token_value = m_tokens.at(m_pos).val;
         return m_tokens.at(m_pos++);
     }
     auto err_msg = "Reached the end of the m_tokens. Wrong Syntax discovered.";

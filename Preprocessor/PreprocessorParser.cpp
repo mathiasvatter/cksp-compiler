@@ -88,7 +88,7 @@ bool PreprocessorParser::is_func_call(const Token &tok, const std::vector<std::s
 bool PreprocessorParser::is_macro_call(const Token &tok) {
     bool syntax = false;
     if(m_pos >0)
-        syntax = peek().type == KEYWORD and m_pos > 0 and peek(-1).type == LINEBRK and (peek(1).type == OPEN_PARENTH or peek(1).type == LINEBRK);
+        syntax = peek().type == KEYWORD and m_pos > 0 and (peek(-1).type == LINEBRK or peek(-1).type == OPEN_PARENTH) and (peek(1).type == OPEN_PARENTH or peek(1).type == LINEBRK or peek(1).type == CLOSED_PARENTH);
     else
         syntax = peek().type == KEYWORD and peek(1).type == LINEBRK;
 

@@ -145,7 +145,7 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
         }
     node.macro_call->params[0]->chunk.push_back(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, (std::string &) ""),nullptr));
 
-    node.macro_call->accept(*this);
+//    node.macro_call->accept(*this);
     node.iterator_start->accept(*this);
     node.iterator_end->accept(*this);
     node.step->accept(*this);
@@ -179,11 +179,24 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
         auto node_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INT, std::to_string(i), 0, (std::string &) ""),
                                                                                                  nullptr), nullptr);
         node_number_chunk->chunk.push_back(std::move(node_statement));
+		auto node_number_chunk_macro_arg = std::unique_ptr<PreNodeChunk>(static_cast<PreNodeChunk*>(node_number_chunk->clone().release()));
+
         substitution_vector.emplace_back(std::pair("#n#", std::move(node_number_chunk)));
         m_substitution_stack.push(std::move(substitution_vector));
 
         auto macro_call = node.macro_call->params[0]->clone();
         macro_call->update_parents(node_new_chunk.get());
+
+		// if is real macro call, add #n# to its arguments
+		if (auto node_chunk = dynamic_cast<PreNodeChunk*>(macro_call.get())) {
+			if (auto node_stmt = dynamic_cast<PreNodeStatement*>(node_chunk->chunk[0].get())) {
+				if(auto node_macro_call = dynamic_cast<PreNodeMacroCall*>(node_stmt->statement.get())) {
+					node_macro_call->macro->args->params.push_back(std::move(node_number_chunk_macro_arg));
+					node_macro_call->macro->args->update_parents(node_macro_call->macro.get());
+				}
+			}
+		}
+
         macro_call->accept(*this);
         node_new_chunk->chunk.push_back(std::move(macro_call));
         m_substitution_stack.pop();
@@ -249,6 +262,8 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar
                 pair.first = node_keyword->keyword.val;
             } else if (auto node_number = dynamic_cast<PreNodeNumber *>(node_statement->statement.get())) {
                 pair.first = node_number->number.val;
+			} else if (auto node_int = dynamic_cast<PreNodeInt *>(node_statement->statement.get())) {
+				pair.first = node_int->number.val;
             } else {
                 CompileError(ErrorType::SyntaxError,
                              "Unable to substitute <define> arguments. Only <keywords> can be substituted.",
@@ -317,18 +332,7 @@ std::string PreASTDesugar::get_text_replacement(const std::string& name) {
                 exit(EXIT_FAILURE);
             }
             auto &var = pair.second->chunk[0];
-            if(auto node_statement = dynamic_cast<PreNodeStatement*>(var.get())) {
-                if (auto node_keyword = dynamic_cast<PreNodeKeyword *>(node_statement->statement.get())) {
-                    new_name = node_keyword->keyword.val;
-                } else if (auto node_number = dynamic_cast<PreNodeNumber *>(node_statement->statement.get())) {
-                    new_name = node_number->number.val;
-                } else {
-                    CompileError(ErrorType::SyntaxError,
-                                 "Unable to substitute <define> arguments. Only <keywords> can be substituted.", -1,
-                                 "<keyword>", "", "").print();
-                    exit(EXIT_FAILURE);
-                }
-            }
+            new_name = var->get_string();
             if(count_char(name, '#') == 2)
                 return name.substr(0, start) + new_name + name.substr(end+1);
             else
@@ -340,6 +344,10 @@ std::string PreASTDesugar::get_text_replacement(const std::string& name) {
 
 void PreASTCombine::visit(PreNodeNumber &node) {
     m_tokens.push_back(std::move(node.number));
+}
+
+void PreASTCombine::visit(PreNodeInt &node) {
+	m_tokens.push_back(std::move(node.number));
 }
 
 void PreASTCombine::visit(PreNodeKeyword &node) {

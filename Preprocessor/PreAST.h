@@ -21,6 +21,7 @@ struct PreNodeAST {
     virtual void update_parents(PreNodeAST* new_parent) {
         parent = new_parent;
     }
+	virtual std::string get_string() = 0;
 };
 
 struct PreNodeNumber : PreNodeAST {
@@ -29,6 +30,9 @@ struct PreNodeNumber : PreNodeAST {
     void accept(PreASTVisitor& visitor) override;
     PreNodeNumber(const PreNodeNumber& other) : PreNodeAST(other), number(other.number) {}
     std::unique_ptr<PreNodeAST> clone() const override;
+	std::string get_string() override {
+		return number.val;
+	}
 };
 
 struct PreNodeInt : PreNodeAST {
@@ -38,6 +42,9 @@ struct PreNodeInt : PreNodeAST {
     void accept(PreASTVisitor& visitor) override;
     PreNodeInt(const PreNodeInt& other) : PreNodeAST(other), integer(other.integer), number(other.number) {}
     std::unique_ptr<PreNodeAST> clone() const override;
+	std::string get_string() override {
+		return number.val;
+	}
 };
 
 struct PreNodeUnaryExpr : PreNodeAST {
@@ -52,6 +59,9 @@ struct PreNodeUnaryExpr : PreNodeAST {
         parent = new_parent;
         operand->update_parents(this);
     }
+	std::string get_string() override {
+		return op.val + operand->get_string();
+	}
 };
 
 struct PreNodeBinaryExpr: PreNodeAST {
@@ -69,6 +79,9 @@ struct PreNodeBinaryExpr: PreNodeAST {
         left->update_parents(this);
         right->update_parents(this);
     }
+	std::string get_string() override {
+		return left->get_string() + op.val + left->get_string();;
+	}
 };
 
 struct PreNodeKeyword : PreNodeAST {
@@ -77,6 +90,9 @@ struct PreNodeKeyword : PreNodeAST {
     void accept(PreASTVisitor& visitor) override;
     PreNodeKeyword(const PreNodeKeyword& other) : PreNodeAST(other), keyword(other.keyword) {}
     std::unique_ptr<PreNodeAST> clone() const override;
+	std::string get_string() override {
+		return keyword.val;
+	}
 };
 
 struct PreNodeOther : PreNodeAST {
@@ -85,6 +101,9 @@ struct PreNodeOther : PreNodeAST {
     void accept(PreASTVisitor& visitor) override;
     PreNodeOther(const PreNodeOther& other) : PreNodeAST(other), other(other.other) {}
     std::unique_ptr<PreNodeAST> clone() const override;
+	std::string get_string() override {
+		return other.val;
+	}
 };
 
 struct PreNodeStatement : PreNodeAST {
@@ -97,6 +116,9 @@ struct PreNodeStatement : PreNodeAST {
     void update_parents(PreNodeAST* new_parent) override {
         statement->update_parents(this);
     }
+	std::string get_string() override {
+		return statement->get_string();
+	}
 };
 
 struct PreNodeChunk : PreNodeAST {
@@ -112,6 +134,13 @@ struct PreNodeChunk : PreNodeAST {
             c->update_parents(this);
         }
     }
+	std::string get_string() override {
+		std::string str;
+		for(auto &c : chunk) {
+			str += c->get_string();
+		}
+		return str;
+	}
 };
 
 struct PreNodeList : PreNodeAST {
@@ -126,6 +155,13 @@ struct PreNodeList : PreNodeAST {
             p->update_parents(this);
         }
     }
+	std::string get_string() override {
+		std::string str;
+		for(auto & p : params) {
+			str += p->get_string();
+		}
+		return str;
+	}
 };
 
 struct PreNodeMacroHeader : PreNodeAST {
@@ -141,6 +177,9 @@ struct PreNodeMacroHeader : PreNodeAST {
         args->update_parents(this);
         name->update_parents(this);
     }
+	std::string get_string() override {
+		return name->get_string() + args->get_string();
+	}
 };
 
 struct PreNodeDefineHeader : PreNodeAST {
@@ -155,6 +194,9 @@ struct PreNodeDefineHeader : PreNodeAST {
         parent = new_parent;
         args->update_parents(this);
     }
+	std::string get_string() override {
+		return name->get_string() + args->get_string();
+	}
 };
 
 struct PreNodeMacroDefinition : PreNodeAST {
@@ -170,6 +212,9 @@ struct PreNodeMacroDefinition : PreNodeAST {
         header->update_parents(this);
         body->update_parents(this);
     }
+	std::string get_string() override {
+		return header->get_string() + body->get_string();
+	}
 };
 
 struct PreNodeDefineStatement : PreNodeAST {
@@ -185,6 +230,9 @@ struct PreNodeDefineStatement : PreNodeAST {
         header->update_parents(this);
         body->update_parents(this);
     }
+	std::string get_string() override {
+		return header->get_string() + body->get_string();
+	}
 };
 
 struct PreNodeMacroCall : PreNodeAST {
@@ -197,6 +245,9 @@ struct PreNodeMacroCall : PreNodeAST {
         parent = new_parent;
         macro->update_parents(this);
     }
+	std::string get_string() override {
+		return macro->get_string();
+	}
 };
 
 struct PreNodeDefineCall : PreNodeAST {
@@ -209,6 +260,9 @@ struct PreNodeDefineCall : PreNodeAST {
         parent = new_parent;
         define->update_parents(this);
     }
+	std::string get_string() override {
+		return define->get_string();
+	}
 };
 
 struct PreNodeIterateMacro : PreNodeAST {
@@ -229,6 +283,9 @@ struct PreNodeIterateMacro : PreNodeAST {
         parent = new_parent;
         macro_call->update_parents(this);
     }
+	std::string get_string() override {
+		return macro_call->get_string() + iterator_start->get_string() + to.val + iterator_end->get_string() + step->get_string();
+	}
 };
 
 struct PreNodeLiterateMacro : PreNodeAST {
@@ -244,6 +301,9 @@ struct PreNodeLiterateMacro : PreNodeAST {
         macro_call->update_parents(this);
         literate_tokens->update_parents(this);
     }
+	std::string get_string() override {
+		return macro_call->get_string() + literate_tokens->get_string();
+	}
 };
 
 struct PreNodeProgram : PreNodeAST {
@@ -270,6 +330,9 @@ struct PreNodeProgram : PreNodeAST {
             def ->update_parents(this);
         }
     }
+	std::string get_string() override {
+		return "";
+	}
 };
 
 
