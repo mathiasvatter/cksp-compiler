@@ -45,6 +45,15 @@ inline static bool is_unary_operator(token op) {
     return op == token::SUB || op == token::BIT_NOT || op == token::BOOL_NOT;
 }
 
+inline static int _get_binop_precedence(token tok) {
+	int precedence = BinaryOpPrecendence[tok];
+	if (precedence <= 0) {
+		return -1;
+	}
+	return precedence;
+}
+
+
 class Parser {
 
 public:
@@ -63,7 +72,6 @@ protected:
 	[[nodiscard]] Token peek(int ahead = 0);
 	Token consume();
     Token& get_tok();
-    static int _get_binop_precedence(token tok);
 	void _skip_linebreaks();
 
     static std::string sanitize_binary(const std::string& input);

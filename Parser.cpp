@@ -379,14 +379,6 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_parenth_expr(NodeAST* parent) {
     return expr;
 }
 
-int Parser::_get_binop_precedence(token tok) {
-    int precedence = BinaryOpPrecendence[tok];
-    if (precedence <= 0) {
-        return -1;
-    }
-    return precedence;
-}
-
 Result<std::unique_ptr<NodeAssignStatement>> Parser::parse_assign_statement(NodeAST* parent) {
     auto node_assign_statement = std::make_unique<NodeAssignStatement>(get_tok());
 	// make it possible to have more than one variable before assign

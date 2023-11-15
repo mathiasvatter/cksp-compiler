@@ -260,10 +260,13 @@ Result<std::unique_ptr<PreNodeDefineStatement>> PreprocessorParser::parse_define
             return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
 	    "A define constant cannot define itself.",peek().line,"","", peek().file));
 		}
-
-        auto result_token = parse_token(node_chunk.get());
-        if(result_token.is_error())
-            return Result<std::unique_ptr<PreNodeDefineStatement>>(result_token.get_error());
+//		std::unique_ptr<PreNodeAST> result_token;
+		auto result_token = parse_token(node_chunk.get());
+        if(result_token.is_error()) {
+//			result_token = parse_token(node_chunk.get());
+//			if(result_token.is_error())
+            	return Result<std::unique_ptr<PreNodeDefineStatement>>(result_token.get_error());
+		}
         node_chunk->chunk.push_back(std::move(result_token.unwrap()));
     }
     if(node_chunk->chunk.empty()) {
@@ -486,6 +489,10 @@ Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::_parse_primary_expr(PreN
             return Result<std::unique_ptr<PreNodeAST>>(result_define_call.get_error());
         return Result<std::unique_ptr<PreNodeAST>>(std::move(result_define_call.unwrap()));
     } else {
+//		auto result_token = parse_token(parent);
+//		if(result_token.is_error())
+//			return Result<std::unique_ptr<PreNodeAST>>(result_token.get_error());
+//		return Result<std::unique_ptr<PreNodeAST>>(std::move(result_token.unwrap()));
         return Result<std::unique_ptr<PreNodeAST>>(CompileError(ErrorType::PreprocessorError,
         "Found unknown expression token. No variables allowed in Preprocessor since statement has to be evaluated during compile time.",
         peek().line, "integer, define constant", peek().val, peek().file));

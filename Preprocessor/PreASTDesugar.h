@@ -52,5 +52,8 @@ public:
     void visit(PreNodeKeyword& node) override;
     void visit(PreNodeOther& node) override;
     void visit(PreNodeProgram& node) override;
+	void visit(PreNodeUnaryExpr& node) override;
+	void visit(PreNodeBinaryExpr& node) override;
+
 };
 

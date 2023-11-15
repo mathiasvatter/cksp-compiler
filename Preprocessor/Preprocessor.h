@@ -13,6 +13,7 @@
 class Preprocessor : public Parser {
 public:
     Preprocessor(std::vector<Token> tokens, std::string current_file);
+	Preprocessor();
 	~Preprocessor() = default;
     std::vector<Token> get_tokens();
     void process();
