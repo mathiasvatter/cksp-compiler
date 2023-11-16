@@ -267,13 +267,13 @@ struct PreNodeDefineCall : PreNodeAST {
 
 struct PreNodeIterateMacro : PreNodeAST {
     std::unique_ptr<PreNodeList> macro_call;
-    std::unique_ptr<PreNodeAST> iterator_start;
+    std::unique_ptr<PreNodeChunk> iterator_start;
     Token to;
-    std::unique_ptr<PreNodeAST> iterator_end;
-    std::unique_ptr<PreNodeAST> step;
+    std::unique_ptr<PreNodeChunk> iterator_end;
+    std::unique_ptr<PreNodeChunk> step;
     explicit PreNodeIterateMacro(PreNodeAST *parent) : PreNodeAST(parent) {};
-    PreNodeIterateMacro(std::unique_ptr<PreNodeList> macroCall, std::unique_ptr<PreNodeAST> iteratorStart,
-                            Token to, std::unique_ptr<PreNodeAST> iteratorEnd, std::unique_ptr<PreNodeAST> step, PreNodeAST *parent)
+    PreNodeIterateMacro(std::unique_ptr<PreNodeList> macroCall, std::unique_ptr<PreNodeChunk> iteratorStart,
+                            Token to, std::unique_ptr<PreNodeChunk> iteratorEnd, std::unique_ptr<PreNodeChunk> step, PreNodeAST *parent)
                             : PreNodeAST(parent), macro_call(std::move(macroCall)),
                             iterator_start(std::move(iteratorStart)), to(std::move(to)), iterator_end(std::move(iteratorEnd)), step(std::move(step)) {}
     void accept(PreASTVisitor& visitor) override;
@@ -304,6 +304,28 @@ struct PreNodeLiterateMacro : PreNodeAST {
 	std::string get_string() override {
 		return macro_call->get_string() + literate_tokens->get_string();
 	}
+};
+
+struct PreNodeIncrementer : PreNodeAST {
+    std::unique_ptr<PreNodeChunk> body;
+    std::unique_ptr<PreNodeAST> counter;
+    std::unique_ptr<PreNodeChunk> iterator_start;
+    std::unique_ptr<PreNodeChunk> iterator_step;
+    PreNodeIncrementer(std::unique_ptr<PreNodeChunk> body, std::unique_ptr<PreNodeAST> counter, std::unique_ptr<PreNodeChunk> iterator_start, std::unique_ptr<PreNodeChunk> iterator_step, PreNodeAST *parent) :
+    PreNodeAST(parent), body(std::move(body)), counter(std::move(counter)), iterator_start(std::move(iterator_start)), iterator_step(std::move(iterator_step)) {}
+    void accept(PreASTVisitor& visitor) override;
+    PreNodeIncrementer(const PreNodeIncrementer& other);
+    std::unique_ptr<PreNodeAST> clone() const override;
+    void update_parents(PreNodeAST* new_parent) override {
+        parent = new_parent;
+        body->update_parents(this);
+        counter->update_parents(this);
+        iterator_start->update_parents(this);
+        iterator_step->update_parents(this);
+    }
+    std::string get_string() override {
+        return body->get_string() + counter->get_string() + iterator_start->get_string() + iterator_step->get_string();
+    }
 };
 
 struct PreNodeProgram : PreNodeAST {

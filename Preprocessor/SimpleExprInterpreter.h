@@ -8,23 +8,24 @@
 
 class SimpleExprInterpreter {
 public:
-    explicit SimpleExprInterpreter(std::unique_ptr<PreNodeChunk> chunk);
-    Result<int> evaluate_int_expression(std::unique_ptr<PreNodeAST>& root);
+    explicit SimpleExprInterpreter(const std::string& file, int line) : m_file(file), m_line(line) {}
+    Result<int> parse_and_evaluate(std::vector<std::unique_ptr<PreNodeAST>> n);
 
-	std::vector<std::unique_ptr<PreNodeAST>> m_nodes;
+//	std::vector<std::unique_ptr<PreNodeAST>> m_nodes;
 	size_t m_pos = 0;
 	int m_line;
 	std::string m_file;
-	[[nodiscard]] PreNodeAST* peek(int ahead = 0);
-	std::unique_ptr<PreNodeAST> consume();
+	[[nodiscard]] PreNodeAST* peek(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, int ahead = 0);
+	std::unique_ptr<PreNodeAST> consume(const std::vector<std::unique_ptr<PreNodeAST>>& nodes);
 
-	Result<std::unique_ptr<PreNodeAST>> parse();
-	Result<std::unique_ptr<PreNodeAST>> parse_binary_expr(PreNodeAST *parent);
-	Result<std::unique_ptr<PreNodeAST>> _parse_primary_expr(PreNodeAST *parent);
-	Result<std::unique_ptr<PreNodeAST>> parse_unary_expr(PreNodeAST *parent);
-	Result<std::unique_ptr<PreNodeAST>> _parse_binary_expr_rhs(int precedence, std::unique_ptr<PreNodeAST> lhs, PreNodeAST *parent);
+    Result<int> evaluate_int_expression(std::unique_ptr<PreNodeAST>& root);
+	Result<std::unique_ptr<PreNodeAST>> parse(std::vector<std::unique_ptr<PreNodeAST>> n);
+	Result<std::unique_ptr<PreNodeAST>> parse_binary_expr(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, PreNodeAST *parent);
+	Result<std::unique_ptr<PreNodeAST>> _parse_primary_expr(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, PreNodeAST *parent);
+	Result<std::unique_ptr<PreNodeAST>> parse_unary_expr(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, PreNodeAST *parent);
+	Result<std::unique_ptr<PreNodeAST>> _parse_binary_expr_rhs(int precedence, std::unique_ptr<PreNodeAST> lhs, const std::vector<std::unique_ptr<PreNodeAST>>& nodes, PreNodeAST *parent);
 	/// ( expression )
-	Result<std::unique_ptr<PreNodeAST>> _parse_parenth_expr(PreNodeAST *parent);
+	Result<std::unique_ptr<PreNodeAST>> _parse_parenth_expr(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, PreNodeAST *parent);
 };
 
 

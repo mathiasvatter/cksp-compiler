@@ -67,6 +67,12 @@ public:
 //        node.literate_tokens->accept(*this);
 //        node.macro_call->accept(*this);
     };
+    virtual void visit(PreNodeIncrementer& node) {
+        node.body->accept(*this);
+        node.counter->accept(*this);
+        node.iterator_start->accept(*this);
+        node.iterator_step->accept(*this);
+    };
 
 
 };

@@ -197,18 +197,18 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
     node.iterator_end->accept(*this);
     node.step->accept(*this);
 
-    SimpleExprInterpreter evaluate;
-    auto from_result = evaluate.evaluate_int_expression(node.iterator_start);
+    SimpleExprInterpreter eval(node.to.file, node.to.line);
+    auto from_result = eval.parse_and_evaluate(std::move(node.iterator_start->chunk));
     if(from_result.is_error()) {
         from_result.get_error().print();
         exit(EXIT_FAILURE);
     }
-    auto to_result = evaluate.evaluate_int_expression(node.iterator_end);
+    auto to_result = eval.parse_and_evaluate(std::move(node.iterator_end->chunk));
     if(to_result.is_error()) {
         to_result.get_error().print();
         exit(EXIT_FAILURE);
     }
-    auto step_result = evaluate.evaluate_int_expression(node.step);
+    auto step_result = eval.parse_and_evaluate(std::move(node.step->chunk));
     if(step_result.is_error()) {
         step_result.get_error().print();
         exit(EXIT_FAILURE);
@@ -250,7 +250,6 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
 
         if(node.to.type == DOWNTO) i-=step; else i+=step;
     }
-
     node.replace_with(std::move(node_new_chunk));
 }
 

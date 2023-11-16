@@ -375,9 +375,15 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
       "Found invalid <iterate_macro> statement syntax.", peek().line,":=", peek().val, peek().file));
     }
     consume(); // consume :=
-    auto iterator_start =  parse_binary_expr(node_iterate_macro.get()); //_parse_iterator_start();
-    if(iterator_start.is_error())
-        return Result<std::unique_ptr<PreNodeIterateMacro>>(iterator_start.get_error());
+
+    auto node_iterator_start = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node_iterate_macro.get());
+    while(peek().type != LINEBRK) {
+        if(peek().type == token::TO or peek().type == token::DOWNTO) break;
+        auto result_token = parse_token(node_iterator_start.get());
+        if(result_token.is_error())
+            return Result<std::unique_ptr<PreNodeIterateMacro>>(result_token.get_error());
+        node_iterator_start->chunk.push_back(std::move(result_token.unwrap()));
+    }
 
     if(not(peek().type == token::TO or peek().type == token::DOWNTO)) {
         return Result<std::unique_ptr<PreNodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
@@ -385,17 +391,30 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
     }
     Token to = consume(); // consume downto/to
 
-    auto iterator_end =  parse_binary_expr(node_iterate_macro.get()); //_parse_iterator_end();
-    if(iterator_end.is_error())
-        return Result<std::unique_ptr<PreNodeIterateMacro>>(iterator_end.get_error());
+    auto node_iterator_end = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node_iterate_macro.get());
+    while(peek().type != LINEBRK) {
+        if(peek().type == STEP) break;
+        auto result_token = parse_token(node_iterator_end.get());
+        if(result_token.is_error())
+            return Result<std::unique_ptr<PreNodeIterateMacro>>(result_token.get_error());
+        node_iterator_end->chunk.push_back(std::move(result_token.unwrap()));
+    }
 
-    std::unique_ptr<PreNodeAST> step = std::make_unique<PreNodeInt>(1, Token(INT, "1", 0, (std::string &) ""), node_iterate_macro.get());
+    auto step = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node_iterate_macro.get());
+    auto step_statement = std::make_unique<PreNodeStatement>(nullptr, step.get());
+    auto node_int = std::make_unique<PreNodeInt>(1, Token(INT, "1", 0, (std::string &) ""), step_statement.get());
+    step_statement->statement = std::move(node_int);
+    step->chunk.push_back(std::move(step_statement));
     if(peek().type == STEP) {
         consume(); // consume step
-        auto step_result = parse_binary_expr(node_iterate_macro.get());
-        if(step_result.is_error())
-            return Result<std::unique_ptr<PreNodeIterateMacro>>(step_result.get_error());
-        step = std::move(step_result.unwrap());
+        auto node_step = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, parent);
+        while(peek().type != LINEBRK) {
+            auto result_token = parse_token(node_step.get());
+            if(result_token.is_error())
+                return Result<std::unique_ptr<PreNodeIterateMacro>>(result_token.get_error());
+            node_step->chunk.push_back(std::move(result_token.unwrap()));
+        }
+        step = std::move(node_step);
     }
     if (peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<PreNodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
@@ -403,8 +422,8 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
     }
     consume(); // consume linebreak
     node_iterate_macro->macro_call = std::move(node_statement.unwrap());
-    node_iterate_macro->iterator_start = std::move(iterator_start.unwrap());
-    node_iterate_macro->iterator_end = std::move(iterator_end.unwrap());
+    node_iterate_macro->iterator_start = std::move(node_iterator_start);
+    node_iterate_macro->iterator_end = std::move(node_iterator_end);
     node_iterate_macro -> to = to;
     node_iterate_macro->step = std::move(step);
     return Result<std::unique_ptr<PreNodeIterateMacro>>(std::move(node_iterate_macro));
