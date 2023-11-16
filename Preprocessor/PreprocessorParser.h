@@ -14,6 +14,7 @@ public:
     Result<std::unique_ptr<PreNodeProgram>> parse_program(PreNodeAST* parent);
 private:
     Result<std::unique_ptr<PreNodeNumber>> parse_number(PreNodeAST* parent);
+    Result<std::unique_ptr<PreNodeAST>> parse_int(PreNodeAST *parent);
     Result<std::unique_ptr<PreNodeKeyword>> parse_keyword(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeOther>> parse_other(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeAST>> parse_token(PreNodeAST* parent);
@@ -32,13 +33,7 @@ private:
     Result<std::unique_ptr<PreNodeIterateMacro>> parse_iterate_macro(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeLiterateMacro>> parse_literate_macro(PreNodeAST* parent);
 
-    Result<std::unique_ptr<PreNodeAST>> parse_int(PreNodeAST *parent);
-    Result<std::unique_ptr<PreNodeAST>> parse_binary_expr(PreNodeAST *parent);
-    Result<std::unique_ptr<PreNodeAST>> _parse_primary_expr(PreNodeAST *parent);
-    Result<std::unique_ptr<PreNodeAST>> parse_unary_expr(PreNodeAST *parent);
-    Result<std::unique_ptr<PreNodeAST>> _parse_binary_expr_rhs(int precedence, std::unique_ptr<PreNodeAST> lhs, PreNodeAST *parent);
-    /// ( expression )
-    Result<std::unique_ptr<PreNodeAST>> _parse_parenth_expr(PreNodeAST *parent);
+    Result<std::unique_ptr<PreNodeIncrementer>> parse_incrementer(PreNodeAST* parent);
 
     //    std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_statements;
     std::vector<std::string> m_define_statements;

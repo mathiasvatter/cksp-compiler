@@ -151,6 +151,12 @@ Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_token(PreNodeAST* 
             return Result<std::unique_ptr<PreNodeAST>>(result_number.get_error());
         node_statement->statement = std::move(result_number.unwrap());
         stmt = std::move(node_statement);
+    } else if (peek().type == START_INC) {
+        auto result_inc = parse_incrementer(parent);
+        if (result_inc.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_inc.get_error());
+        node_statement->statement = std::move(result_inc.unwrap());
+        stmt = std::move(node_statement);
     } else {
         auto result_other = parse_other(parent);
         if(result_other.is_error())
@@ -163,6 +169,20 @@ Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_token(PreNodeAST* 
 Result<std::unique_ptr<PreNodeNumber>> PreprocessorParser::parse_number(PreNodeAST *parent) {
     auto node_number = std::make_unique<PreNodeNumber>(consume(), parent);
     return Result<std::unique_ptr<PreNodeNumber>>(std::move(node_number));
+}
+
+Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_int(PreNodeAST *parent) {
+    auto token = consume();
+    auto value = token.val;
+    try {
+        long long val = std::stoll(value, nullptr, 10);
+        auto node = std::make_unique<PreNodeInt>(static_cast<int32_t>(val & 0xFFFFFFFF), token, parent);
+        return Result<std::unique_ptr<PreNodeAST>>(std::move(node));
+    } catch (const std::exception& e) {
+        auto expected = std::string(1, "valid int base "[10]);
+        return Result<std::unique_ptr<PreNodeAST>>(CompileError(ErrorType::PreprocessorError,
+        "Invalid integer format.", token.line, expected, value, token.file));
+    }
 }
 
 Result<std::unique_ptr<PreNodeKeyword>> PreprocessorParser::parse_keyword(PreNodeAST *parent) {
@@ -471,100 +491,59 @@ Result<std::unique_ptr<PreNodeLiterateMacro>> PreprocessorParser::parse_literate
     return Result<std::unique_ptr<PreNodeLiterateMacro>>(std::move(node_literate_macro));
 }
 
-
-Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_int(PreNodeAST *parent) {
-    auto token = consume();
-    auto value = token.val;
-    try {
-        long long val = std::stoll(value, nullptr, 10);
-        auto node = std::make_unique<PreNodeInt>(static_cast<int32_t>(val & 0xFFFFFFFF), token, parent);
-        return Result<std::unique_ptr<PreNodeAST>>(std::move(node));
-    } catch (const std::exception& e) {
-        auto expected = std::string(1, "valid int base "[10]);
-        return Result<std::unique_ptr<PreNodeAST>>(CompileError(ErrorType::PreprocessorError,
-        "Invalid integer format.", token.line, expected, value, token.file));
+Result<std::unique_ptr<PreNodeIncrementer>> PreprocessorParser::parse_incrementer(PreNodeAST *parent) {
+    auto node_incrementer = std::make_unique<PreNodeIncrementer>(nullptr, nullptr, nullptr, nullptr, parent);
+    consume(); // consume START_INC
+    if(peek().type != token::OPEN_PARENTH) {
+        return Result<std::unique_ptr<PreNodeIncrementer>>(CompileError(ErrorType::PreprocessorError,
+    "Found invalid <START_INC> statement syntax.",peek().line,"(",peek().val, peek().file));
     }
-}
-
-Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_binary_expr(PreNodeAST *parent) {
-    auto lhs = _parse_primary_expr(parent);
-    if(!lhs.is_error()) {
-        return _parse_binary_expr_rhs(0, std::move(lhs.unwrap()), parent);
+    auto node_list = parse_list(node_incrementer.get());
+    if(node_list.is_error())
+        return Result<std::unique_ptr<PreNodeIncrementer>>(node_list.get_error());
+    auto list = std::move(node_list.unwrap());
+    if(list->params.size() != 3) {
+        return Result<std::unique_ptr<PreNodeIncrementer>>(CompileError(ErrorType::PreprocessorError,
+        "Found invalid arguments in <START_INC> statement syntax.",peek().line,"<name>, <start>, <step>",list->get_string(), peek().file));
     }
-    return Result<std::unique_ptr<PreNodeAST>>(lhs.get_error());
-}
 
-Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::_parse_primary_expr(PreNodeAST *parent) {
-    if (peek().type == token::OPEN_PARENTH) {
-        return _parse_parenth_expr(parent);
-    } else if (peek().type == token::INT) {
-        return parse_int(parent);
-        // unary operators bool_not, bit_not, sub
-    } else if (is_unary_operator(peek().type)) {
-        return parse_unary_expr(parent);
-    } else if(is_func_call(peek(), m_define_statements)) {
-        auto result_define_call = parse_define_call(parent);
-        if (result_define_call.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_define_call.get_error());
-        return Result<std::unique_ptr<PreNodeAST>>(std::move(result_define_call.unwrap()));
-    } else {
-//		auto result_token = parse_token(parent);
-//		if(result_token.is_error())
-//			return Result<std::unique_ptr<PreNodeAST>>(result_token.get_error());
-//		return Result<std::unique_ptr<PreNodeAST>>(std::move(result_token.unwrap()));
-        return Result<std::unique_ptr<PreNodeAST>>(CompileError(ErrorType::PreprocessorError,
-        "Found unknown expression token. No variables allowed in Preprocessor since statement has to be evaluated during compile time.",
-        peek().line, "integer, define constant", peek().val, peek().file));
+    if (peek().type != token::LINEBRK) {
+        return Result<std::unique_ptr<PreNodeIncrementer>>(CompileError(ErrorType::PreprocessorError,
+      "Missing necessary linebreak after <START_INC> statement.",peek().line,"linebreak",peek().val, peek().file));
     }
-}
+    consume(); // consume linebreak
 
-Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_unary_expr(PreNodeAST *parent) {
-    Token unary_op = consume();
-    auto node_unary_expr = std::make_unique<PreNodeUnaryExpr>(unary_op, nullptr, parent);
-    auto expr = _parse_primary_expr(node_unary_expr.get());
-    if(expr.is_error()) {
-        return Result<std::unique_ptr<PreNodeAST>>(expr.get_error());
-    }
-    node_unary_expr->operand = std::move(expr.unwrap());
-    return Result<std::unique_ptr<PreNodeAST>>(std::move(node_unary_expr));
-}
-
-Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::_parse_binary_expr_rhs(int precedence, std::unique_ptr<PreNodeAST> lhs, PreNodeAST *parent) {
-    while(true) {
-        int prec = _get_binop_precedence(peek().type);
-        if(prec < precedence)
-            return Result<std::unique_ptr<PreNodeAST>>(std::move(lhs));
-        // its not -1 so it is a binop
-        auto bin_op = peek();
-        consume();
-        auto rhs = _parse_primary_expr(parent);
-        if (rhs.is_error()) {
-            return Result<std::unique_ptr<PreNodeAST>>(rhs.get_error());
+    auto node_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node_incrementer.get());
+    while (peek().type != token::END_INC) {
+        if(peek().type == END_INC) break;
+        if(peek().type == END_TOKEN) {
+            return Result<std::unique_ptr<PreNodeIncrementer>>(CompileError(ErrorType::PreprocessorError,
+        "Missing <END_INC>. Reached the end of the file.",peek().line,"<END_INC>","", peek().file));
         }
-        int next_precedence = _get_binop_precedence(peek().type);
-        if (prec < next_precedence) {
-            rhs = _parse_binary_expr_rhs(prec + 1, std::move(rhs.unwrap()), parent);
-            if (rhs.is_error()) {
-                return Result<std::unique_ptr<PreNodeAST>>(rhs.get_error());
-            }
-        }
-        auto node_binary_expr = std::make_unique<PreNodeBinaryExpr>(bin_op, std::move(lhs), std::move(rhs.unwrap()),parent);
-        node_binary_expr->left->parent = node_binary_expr.get();
-        node_binary_expr->right->parent = node_binary_expr.get();
-        lhs = std::move(node_binary_expr);
+        auto result_token = parse_token(node_chunk.get());
+        if(result_token.is_error())
+            return Result<std::unique_ptr<PreNodeIncrementer>>(result_token.get_error());
+        node_chunk->chunk.push_back(std::move(result_token.unwrap()));
     }
+    consume(); // consume END_INC
+
+    if (peek().type != token::LINEBRK) {
+        return Result<std::unique_ptr<PreNodeIncrementer>>(CompileError(ErrorType::PreprocessorError,
+    "Missing necessary linebreak after <END_INC> statement.",peek().line,"linebreak",peek().val, peek().file));
+    }
+    consume(); // consume linebreak
+
+    node_incrementer->body = std::move(node_chunk);
+    node_incrementer->counter = std::move(list->params[0]);
+    node_incrementer->counter->parent = node_incrementer.get();
+    node_incrementer->iterator_start = std::move(list->params[1]);
+    node_incrementer->iterator_start->parent = node_incrementer.get();
+    node_incrementer->iterator_step = std::move(list->params[2]);
+    node_incrementer->iterator_step->parent = node_incrementer.get();
+    return Result<std::unique_ptr<PreNodeIncrementer>>(std::move(node_incrementer));
 }
 
-Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::_parse_parenth_expr(PreNodeAST *parent) {
-    consume(); // eat (
-    auto expr = parse_binary_expr(parent);
-    if (peek().type != token::CLOSED_PARENTH) {
-        return Result<std::unique_ptr<PreNodeAST>>(CompileError(ErrorType::PreprocessorError,
-    "Missing parenthesis.", peek().line, ")", peek().val, peek().file));
-    }
-    consume(); // eat )
-    return expr;
-}
+
 
 
 

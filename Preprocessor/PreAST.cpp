@@ -180,6 +180,16 @@ std::unique_ptr<PreNodeAST> PreNodeLiterateMacro::clone() const {
     return std::make_unique<PreNodeLiterateMacro>(*this);
 }
 
+// ************* PreNodeIncrementer *************
+void PreNodeIncrementer::accept(PreASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+PreNodeIncrementer::PreNodeIncrementer(const PreNodeIncrementer& other)
+        : PreNodeAST(other), body(clone_unique(other.body)), counter(clone_unique(other.counter)), iterator_start(clone_unique(other.iterator_start)), iterator_step(clone_unique(other.iterator_step)) {}
+std::unique_ptr<PreNodeAST> PreNodeIncrementer::clone() const {
+    return std::make_unique<PreNodeIncrementer>(*this);
+}
+
 // ************* PreNodeProgram *************
 void PreNodeProgram::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
