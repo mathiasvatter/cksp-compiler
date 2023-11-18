@@ -106,7 +106,8 @@ protected:
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);
     Result<std::unique_ptr<NodeDeclareStatement>> parse_declare_statement(NodeAST* parent);
 //	Result<std::unique_ptr<NodeDefineStatement>> parse_define_statement();
-    Result<std::unique_ptr<NodeAST>> parse_const_struct_family_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeAST>> parse_const_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeAST>> parse_list_block(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_family_statement(NodeAST* parent);
 
 	/// combines all possible statement types
@@ -122,11 +123,11 @@ protected:
     Result<std::unique_ptr<NodeCallback>> parse_callback(NodeAST* parent);
 
     /// Macros
-    Result<std::unique_ptr<NodeMacroDefinition>> parse_macro_definition(NodeAST* parent);
-    Result<std::unique_ptr<NodeMacroHeader>> parse_macro_header(NodeAST* parent);
-    Result<std::unique_ptr<NodeMacroCall>> parse_macro_call(NodeAST* parent);
-    Result<std::unique_ptr<NodeIterateMacro>> parse_iterate_macro(NodeAST* parent);
-    Result<std::unique_ptr<NodeLiterateMacro>> parse_literate_macro(NodeAST* parent);
+//    Result<std::unique_ptr<NodeMacroDefinition>> parse_macro_definition(NodeAST* parent);
+//    Result<std::unique_ptr<NodeMacroHeader>> parse_macro_header(NodeAST* parent);
+//    Result<std::unique_ptr<NodeMacroCall>> parse_macro_call(NodeAST* parent);
+//    Result<std::unique_ptr<NodeIterateMacro>> parse_iterate_macro(NodeAST* parent);
+//    Result<std::unique_ptr<NodeLiterateMacro>> parse_literate_macro(NodeAST* parent);
 
 
 	Result<std::unique_ptr<NodeProgram>> parse_program();
@@ -136,7 +137,6 @@ protected:
 private:
     bool is_variable_declaration();
     bool is_array_declaration();
-    bool is_macro_call();
 
 	bool is_boolean_expression(std::unique_ptr<NodeAST> expr);
 	bool is_comparison_expression(std::unique_ptr<NodeAST> expr);

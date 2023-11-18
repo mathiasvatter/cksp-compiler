@@ -416,11 +416,6 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
                 return Result<std::unique_ptr<NodeStatement>>(declare_stmt.get_error());
             }
             stmt = std::move(declare_stmt.unwrap());
-        } else if (is_macro_call()) {
-            auto macro_call = parse_macro_call(node_statement.get());
-            if (macro_call.is_error())
-                return Result<std::unique_ptr<NodeStatement>>(macro_call.get_error());
-            stmt = std::move(macro_call.unwrap());
         } else if ((peek().type == token::CALL) xor
                    (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK or peek(1).type == CLOSED_PARENTH)) {
             auto function_call = parse_function_call(node_statement.get());
@@ -435,27 +430,8 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
             }
             stmt = std::move(assign_stmt.unwrap());
         }
-    } else if (peek().type == token::MACRO) {
-        auto macro = parse_macro_definition(node_statement.get());
-        if (macro.is_error())
-            return Result<std::unique_ptr<NodeStatement>>(macro.get_error());
-        macro_definitions.push_back(std::move(macro.unwrap()));
-//        stmt = std::move(macro.unwrap());
-    } else if (peek().type == token::ITERATE_MACRO) {
-        auto iterate_macro = parse_iterate_macro(node_statement.get());
-        if (iterate_macro.is_error())
-            return Result<std::unique_ptr<NodeStatement>>(iterate_macro.get_error());
-        stmt = std::move(iterate_macro.unwrap());
-    } else if (peek().type == token::LITERATE_MACRO) {
-        auto literate_macro = parse_literate_macro(node_statement.get());
-        if (literate_macro.is_error())
-            return Result<std::unique_ptr<NodeStatement>>(literate_macro.get_error());
-        stmt = std::move(literate_macro.unwrap());
-//	} else if (peek().type == token::DEFINE) {
-//		while (peek().type != token::LINEBRK) consume();
-//		consume();
-    } else if (peek().type == token::CONST || peek().type == token::STRUCT) {
-		auto construct_stmt = parse_const_struct_family_statement(node_statement.get());
+    } else if (peek().type == token::CONST) {
+		auto construct_stmt = parse_const_statement(node_statement.get());
 		if (construct_stmt.is_error()) {
 			return Result<std::unique_ptr<NodeStatement>>(construct_stmt.get_error());
 		}
@@ -485,11 +461,17 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
         }
         stmt = std::move(while_stmt.unwrap());
 	} else if (peek().type == token::SELECT) {
-		auto select_stmt = parse_select_statement(node_statement.get());
-		if(select_stmt.is_error()) {
-			return Result<std::unique_ptr<NodeStatement>>(select_stmt.get_error());
-		}
-		stmt = std::move(select_stmt.unwrap());
+        auto select_stmt = parse_select_statement(node_statement.get());
+        if (select_stmt.is_error()) {
+            return Result<std::unique_ptr<NodeStatement>>(select_stmt.get_error());
+        }
+        stmt = std::move(select_stmt.unwrap());
+    } else if (peek().type == token::LIST) {
+        auto list_block = parse_list_block(node_statement.get());
+        if (list_block.is_error()) {
+            return Result<std::unique_ptr<NodeStatement>>(list_block.get_error());
+        }
+        stmt = std::move(list_block.unwrap());
     } else {
         return Result<std::unique_ptr<NodeStatement>>(CompileError(ErrorType::SyntaxError,
          "Found invalid Statement Syntax.", peek().line, "Statement", peek().val, peek().file));
@@ -563,53 +545,26 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
 }
 
 Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
-    std::vector<std::unique_ptr<NodeIterateMacro>> macro_iterations;
-    std::vector<std::unique_ptr<NodeLiterateMacro>> macro_literations;
-    std::vector<std::unique_ptr<NodeMacroCall>> macro_calls;
-    std::vector<std::unique_ptr<NodeImport>> imports;
+//    std::vector<std::unique_ptr<NodeIterateMacro>> macro_iterations;
+//    std::vector<std::unique_ptr<NodeLiterateMacro>> macro_literations;
+//    std::vector<std::unique_ptr<NodeMacroCall>> macro_calls;
+//    std::vector<std::unique_ptr<NodeImport>> imports;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
-	std::vector<std::unique_ptr<NodeDefineStatement>> defines;
+//	std::vector<std::unique_ptr<NodeDefineStatement>> defines;
     auto node_program = std::make_unique<NodeProgram>(get_tok());
     while (peek().type != token::END_TOKEN) {
-//        std::cout << peek() << ", ";
         _skip_linebreaks();
         if (peek().type == token::BEGIN_CALLBACK) {
             auto callback = parse_callback(node_program.get());
             if (callback.is_error())
                 return Result<std::unique_ptr<NodeProgram>>(callback.get_error());
-//			program.push_back(std::move(callback.unwrap()));
 			callbacks.push_back(std::move(callback.unwrap()));
         } else if (peek().type == token::FUNCTION) {
             auto function = parse_function_definition(node_program.get());
             if (function.is_error())
                 return Result<std::unique_ptr<NodeProgram>>(function.get_error());
-//            program.push_back(std::move(function.unwrap()));
 			function_definitions.push_back(std::move(function.unwrap()));
-		} else if (peek().type == token::DEFINE) {
-            while (peek().type != token::LINEBRK) consume();
-            consume();
-        } else if(is_macro_call()) {
-            auto macro_call = parse_macro_call(node_program.get());
-            if (macro_call.is_error())
-                return Result<std::unique_ptr<NodeProgram>>(macro_call.get_error());
-//            macro_call_definitions.push_back(std::move(macro_call.unwrap()));
-            macro_calls.push_back(std::move(macro_call.unwrap()));
-		} else if (peek().type == token::MACRO) {
-            auto macro = parse_macro_definition(node_program.get());
-            if (macro.is_error())
-                return Result<std::unique_ptr<NodeProgram>>(macro.get_error());
-            macro_definitions.push_back(std::move(macro.unwrap()));
-        } else if (peek().type == token::ITERATE_MACRO) {
-            auto iterate_macro = parse_iterate_macro(node_program.get());
-            if (iterate_macro.is_error())
-                return Result<std::unique_ptr<NodeProgram>>(iterate_macro.get_error());
-            macro_iterations.push_back(std::move(iterate_macro.unwrap()));
-        } else if (peek().type == token::LITERATE_MACRO) {
-            auto literate_macro = parse_literate_macro(node_program.get());
-            if (literate_macro.is_error())
-                return Result<std::unique_ptr<NodeProgram>>(literate_macro.get_error());
-            macro_literations.push_back(std::move(literate_macro.unwrap()));
         } else {
             return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::ParseError,
              "Found unknown construct.", peek().line, "<callback>, <function_definition>", peek().val, peek().file));
@@ -622,189 +577,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
     node_program->callbacks = std::move(callbacks);
     node_program->function_definitions = std::move(function_definitions);
     node_program->macro_definitions = std::move(macro_definitions);
-    node_program->imports = std::move(imports);
-    node_program->defines = std::move(defines);
-    node_program->macro_calls = std::move(macro_calls);
-    node_program->macro_iterations = std::move(macro_iterations);
-    node_program->macro_literations = std::move(macro_literations);
-//    auto value = std::make_unique<NodeProgram>(std::move(callbacks), std::move(function_definitions), std::move(imports), std::move(macro_definitions), std::move(defines), get_tok());
     return Result<std::unique_ptr<NodeProgram>>(std::move(node_program));
-}
-
-Result<std::unique_ptr<NodeMacroDefinition>> Parser::parse_macro_definition(NodeAST* parent) {
-    auto node_macro_definition = std::make_unique<NodeMacroDefinition>(get_tok());
-    consume(); // consume macro
-    if (peek().type != token::KEYWORD) {
-        return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::SyntaxError,
-     "Missing macro name.",peek().line,"keyword",peek().val, peek().file));
-    }
-    auto header = parse_macro_header(node_macro_definition.get());
-    if (header.is_error()) {
-        return Result<std::unique_ptr<NodeMacroDefinition>>(header.get_error());
-    }
-    node_macro_definition->header = std::move(header.unwrap());
-    if (peek().type != token::LINEBRK) {
-        return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::SyntaxError,
-         "Missing necessary linebreak after macro header.",peek().line,"linebreak",peek().val, peek().file));
-    }
-    consume(); // consume linebreak
-    while (peek().type != token::END_MACRO) {
-        _skip_linebreaks();
-        if(peek().type == END_MACRO) break;
-        if (peek().type == token::BEGIN_CALLBACK) {
-            auto callback = parse_callback(node_macro_definition.get());
-            if (callback.is_error())
-                return Result<std::unique_ptr<NodeMacroDefinition>>(callback.get_error());
-            node_macro_definition->body.push_back(std::move(callback.unwrap()));
-        } else if (peek().type == token::FUNCTION) {
-            auto function = parse_function_definition(node_macro_definition.get());
-            if (function.is_error())
-                return Result<std::unique_ptr<NodeMacroDefinition>>(function.get_error());
-            node_macro_definition->body.push_back(std::move(function.unwrap()));
-        } else if (peek().type == token::MACRO) {
-            return Result<std::unique_ptr<NodeMacroDefinition>>(CompileError(ErrorType::PreprocessorError,
-             "Nested macros are not allowed. Maybe you forgot an 'end macro' along the m_line?",peek().line,"",peek().val, peek().file));
-        } else {
-            auto stmt = parse_statement(node_macro_definition.get());
-            if (stmt.is_error()) {
-                return Result<std::unique_ptr<NodeMacroDefinition>>(stmt.get_error());
-            }
-            if(stmt.unwrap()->statement)
-                node_macro_definition->body.push_back(std::move(stmt.unwrap()));
-        }
-    }
-    consume(); // consume end macro
-    node_macro_definition->parent = parent;
-    return Result<std::unique_ptr<NodeMacroDefinition>>(std::move(node_macro_definition));
-}
-
-Result<std::unique_ptr<NodeMacroHeader>> Parser::parse_macro_header(NodeAST* parent) {
-    auto node_macro_header = std::make_unique<NodeMacroHeader>(get_tok());
-    node_macro_header->parent = parent;
-    auto macro_name = consume().val;
-    std::unique_ptr<NodeParamList> macro_args = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
-    macro_args->parent=node_macro_header.get();
-    if (peek().type == token::OPEN_PARENTH) {
-        consume(); // consume (
-        if(peek().type != token::CLOSED_PARENTH) {
-            auto param_list = parse_param_list(node_macro_header.get());
-            if (param_list.is_error()) {
-                Result<std::unique_ptr<NodeFunctionHeader>>(param_list.get_error());
-            }
-            macro_args = std::move(param_list.unwrap());
-        }
-        if (peek().type == token::CLOSED_PARENTH) {
-            // consume both parentheses and add empty vector as Param List
-            consume();
-        }
-    }
-    node_macro_header->name = std::move(macro_name);
-    node_macro_header->args = std::move(macro_args);
-    return Result<std::unique_ptr<NodeMacroHeader>>(std::move(node_macro_header));
-}
-
-Result<std::unique_ptr<NodeMacroCall>> Parser::parse_macro_call(NodeAST* parent) {
-    auto node_macro_call = std::make_unique<NodeMacroCall>(get_tok());
-    auto macro_stmt = parse_macro_header(node_macro_call.get());
-    if(macro_stmt.is_error()){
-        return Result<std::unique_ptr<NodeMacroCall>>(macro_stmt.get_error());
-    }
-    node_macro_call->macro = std::move(macro_stmt.unwrap());
-    node_macro_call->parent = parent;
-    return Result<std::unique_ptr<NodeMacroCall>>(std::move(node_macro_call));
-}
-
-bool Parser::is_macro_call() {
-    return peek().type == KEYWORD and (peek(1).type == LINEBRK or peek(1).type == OPEN_PARENTH or peek(-1).type == OPEN_PARENTH)
-            and contains(m_macro_definitions, peek().val);
-}
-
-Result<std::unique_ptr<NodeIterateMacro>> Parser::parse_iterate_macro(NodeAST* parent) {
-    auto node_iterate_macro = std::make_unique<NodeIterateMacro>(get_tok());
-    node_iterate_macro->parent = parent;
-    consume(); // consume iterate_macro
-    if(peek().type != token::OPEN_PARENTH) {
-        return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-	  	"Found invalid <iterate_macro> statement syntax.",peek().line,"(",peek().val, peek().file));
-    }
-    consume(); //consume (
-    auto node_statement = parse_statement(node_iterate_macro.get());
-    if(node_statement.is_error())
-        return Result<std::unique_ptr<NodeIterateMacro>>(node_statement.get_error());
-    if(peek().type != token::CLOSED_PARENTH) {
-        return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-          "Found invalid <iterate_macro> statement syntax.",peek().line,")",peek().val, peek().file));
-    }
-    consume(); //consume )
-    if(peek().type != token::ASSIGN) {
-        return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-     "Found invalid <iterate_macro> statement syntax.", peek().line,":=", peek().val, peek().file));
-    }
-    consume(); // consume :=
-    auto iterator_start =  parse_binary_expr(node_iterate_macro.get()); //_parse_iterator_start();
-    if(iterator_start.is_error()) {
-        return Result<std::unique_ptr<NodeIterateMacro>>(iterator_start.get_error());
-    }
-    if(not(peek().type == token::TO or peek().type == token::DOWNTO)) {
-        return Result<std::unique_ptr<NodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-      "Found invalid <iterate_macro> statement syntax.", peek().line,"<to>/<downto>", peek().val, peek().file));
-    }
-    Token to = consume(); // consume downto/to
-    auto iterator_end =  parse_binary_expr(node_iterate_macro.get()); //_parse_iterator_end();
-    if(iterator_end.is_error()) {
-        return Result<std::unique_ptr<NodeIterateMacro>>(iterator_end.get_error());
-    }
-    std::unique_ptr<NodeAST> step;
-    if(peek().type == STEP) {
-        consume(); // consume step
-        auto step_expression = parse_binary_expr(node_iterate_macro.get());
-        if(step_expression.is_error())
-            return Result<std::unique_ptr<NodeIterateMacro>>(step_expression.get_error());
-        step = std::move(step_expression.unwrap());
-    }
-//    auto l = consume_linebreak("<iterate_macro>");
-//    if(l.is_error())
-//        return Result<std::unique_ptr<NodeIterateMacro>>(l.get_error());
-
-    node_iterate_macro->macro_call = std::move(node_statement.unwrap());
-    node_iterate_macro->iterator_start = std::move(iterator_start.unwrap());
-    node_iterate_macro->iterator_end = std::move(iterator_end.unwrap());
-    node_iterate_macro -> to = to;
-    node_iterate_macro->step = std::move(step);
-    return Result<std::unique_ptr<NodeIterateMacro>>(std::move(node_iterate_macro));
-}
-
-Result<std::unique_ptr<NodeLiterateMacro>> Parser::parse_literate_macro(NodeAST* parent) {
-    auto node_literate_macro = std::make_unique<NodeLiterateMacro>(get_tok());
-    node_literate_macro->parent = parent;
-    consume(); // consume literate_macro
-    if(peek().type != token::OPEN_PARENTH) {
-        return Result<std::unique_ptr<NodeLiterateMacro>>(CompileError(ErrorType::SyntaxError,
-        "Found invalid <literate_macro> statement syntax.",peek().line,"(",peek().val, peek().file));
-    }
-    consume(); //consume (
-    auto node_statement = parse_statement(node_literate_macro.get());
-    if(node_statement.is_error())
-        return Result<std::unique_ptr<NodeLiterateMacro>>(node_statement.get_error());
-    if(peek().type != token::CLOSED_PARENTH) {
-        return Result<std::unique_ptr<NodeLiterateMacro>>(CompileError(ErrorType::SyntaxError,
-        "Found invalid <literate_macro> statement syntax.",peek().line,")",peek().val, peek().file));
-    }
-    consume(); //consume )
-    if(peek().type != token::ON) {
-        return Result<std::unique_ptr<NodeLiterateMacro>>(CompileError(ErrorType::SyntaxError,
-      "Found invalid <literate_macro> statement syntax.", peek().line,"on", peek().val, peek().file));
-    }
-    consume(); // consume on
-    auto param_list = parse_param_list(node_literate_macro.get());
-    if(param_list.is_error())
-        return Result<std::unique_ptr<NodeLiterateMacro>>(param_list.get_error());
-//    auto l = consume_linebreak("<literate_macro>");
-//    if(l.is_error())
-//        return Result<std::unique_ptr<NodeLiterateMacro>>(l.get_error());
-    node_literate_macro->macro_call = std::move(node_statement.unwrap());
-    node_literate_macro->literate_tokens = std::move(param_list.unwrap());
-    return Result<std::unique_ptr<NodeLiterateMacro>>(std::move(node_literate_macro));
 }
 
 Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent) {
@@ -873,7 +646,6 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
     node_function_header->name = func_name;
     node_function_header->args = std::move(func_args);
     node_function_header->parent = parent;
-//    auto value = std::make_unique<NodeFunctionHeader>(func_name, std::move(func_args), get_tok());
     return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(node_function_header));
 }
 
@@ -891,7 +663,6 @@ Result<std::unique_ptr<NodeFunctionCall>> Parser::parse_function_call(NodeAST* p
     node_function_call->is_call = is_call;
     node_function_call->function = std::move(func_stmt.unwrap());
     node_function_call->parent = parent;
-//    auto return_value = std::make_unique<NodeFunctionCall>(is_call, std::move(func_stmt.unwrap()), get_tok());
     return Result<std::unique_ptr<NodeFunctionCall>>(std::move(node_function_call));
 }
 
@@ -950,7 +721,6 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     node_function_definition->return_variable = std::move(func_return_var);
     node_function_definition->override = func_override;
     node_function_definition->body = std::move(func_body);
-//    auto value = std::make_unique<NodeFunctionDefinition>(std::move(func_header), std::move(func_return_var), func_override, std::move(func_body), get_tok());
     return Result<std::unique_ptr<NodeFunctionDefinition>>(std::move(node_function_definition));
 }
 
@@ -1005,16 +775,7 @@ Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement(No
     node_declare_statement->to_be_declared = std::move(to_be_declared);
     node_declare_statement->assignee = std::move(assignees);
     node_declare_statement->parent = parent;
-//	auto return_value = std::make_unique<NodeDeclareStatement>(std::move(to_be_declared), std::move(assignees), get_tok());
 	return Result<std::unique_ptr<NodeDeclareStatement>>(std::move(node_declare_statement));
-//    auto node_assign_statement = parse_into_assign_statement(std::move(to_be_declared), node_declare_statement.get());
-//    if (node_assign_statement.is_error()) {
-//        return Result<std::unique_ptr<NodeDeclareStatement>>(node_assign_statement.get_error());
-//    }
-//    node_declare_statement->statement = std::move(node_assign_statement.unwrap());
-//    node_declare_statement->statement->parent = node_declare_statement.get();
-//    node_declare_statement->parent = parent;
-//	return Result<std::unique_ptr<NodeDeclareStatement>>(std::move(node_declare_statement));
 }
 
 Result<std::unique_ptr<NodeAssignStatement>> Parser::parse_into_assign_statement(std::unique_ptr<NodeParamList> array_variable, NodeAST* parent) {
@@ -1286,6 +1047,8 @@ Result<std::unique_ptr<NodeForStatement>> Parser::parse_for_statement(NodeAST* p
     consume(); //consume linebreak
     std::vector<std::unique_ptr<NodeStatement>> stmts = {};
     while (peek().type != token::END_FOR) {
+        _skip_linebreaks();
+        if(peek().type == token::END_FOR) break;
         auto stmt = parse_statement(node_for_statement.get());
         if (stmt.is_error()) {
             return Result<std::unique_ptr<NodeForStatement>>(stmt.get_error());
@@ -1394,26 +1157,6 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement(Node
 	return Result<std::unique_ptr<NodeSelectStatement>>(std::move(node_select_statement));
 }
 
-//Result<std::unique_ptr<NodeDefineStatement>> Parser::parse_define_statement() {
-//	consume(); //consume define keyword
-//	VarType type = VarType::Define;
-//	auto definitions = parse_param_list();
-//	if(definitions.is_error()) {
-//		return Result<std::unique_ptr<NodeDefineStatement>>(definitions.get_error());
-//	}
-//	if(peek().type != token::ASSIGN) {
-//		return Result<std::unique_ptr<NodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
-//		 "Defines need to have expressions assigned.", peek().m_line, ":=", peek().val, peek().file));
-//	}
-//	consume(); // consume assign :=
-//	auto assignees = parse_param_list();
-//	if(assignees.is_error()) {
-//		return Result<std::unique_ptr<NodeDefineStatement>>(assignees.get_error());
-//	}
-//	auto return_value = std::make_unique<NodeDefineStatement>(std::move(definitions.unwrap()), std::move(assignees.unwrap()), get_tok());
-//	return Result<std::unique_ptr<NodeDefineStatement>>(std::move(return_value));
-//}
-
 Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent) {
 	auto node_family_statement = std::make_unique<NodeFamilyStatement>(get_tok());
 	Token construct = consume(); //consume family
@@ -1444,16 +1187,57 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 	return Result<std::unique_ptr<NodeAST>>(std::move(node_family_statement));
 }
 
+Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
+    auto node_list_block = std::make_unique<NodeListStatement>(get_tok());
+    Token construct = consume(); //consume list
+    if(peek().type != token::KEYWORD) {
+        return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
+     "Found unknown <list> syntax.", peek().line, "valid <keyword>", peek().val, peek().file));
+    }
+    Token name = consume(); // consume keyword
+    if(peek().type != token::OPEN_BRACKET) {
+        return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
+     "Found unknown <list> syntax.", peek().line, "[", peek().val, peek().file));
+    }
+    consume(); // consume [
+    if(peek().type == COMMA) {
+        consume(); // consume comma
+    }
+    if(peek().type != token::CLOSED_BRACKET) {
+        return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
+     "Found unknown <list> syntax.", peek().line, "]", peek().val, peek().file));
+    }
+    consume(); // consume ]
+    if(peek().type != token::LINEBRK) {
+        return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
+         "Expected linebreak.", peek().line, "linebreak", peek().val, peek().file));
+    }
+    consume(); // consume linebreak
+    std::vector<std::unique_ptr<NodeParamList>> stmts;
+    while(peek().type != END_LIST) {
+        _skip_linebreaks();
+        if(peek().type == END_LIST) break;
+        auto param_list = parse_param_list(node_list_block.get());
+        if(param_list.is_error()) {
+            return Result<std::unique_ptr<NodeAST>>(param_list.get_error());
+        }
+        stmts.push_back(std::move(param_list.unwrap()));
+        auto l = consume_linebreak("<statement>");
+        if(l.is_error())
+            return Result<std::unique_ptr<NodeAST>>(l.get_error());
+    }
+    consume(); // consume end_list
+    node_list_block->parent = parent;
+    node_list_block->name = name.val;
+    node_list_block->body = std::move(stmts);
+    return Result<std::unique_ptr<NodeAST>>(std::move(node_list_block));
+}
 
-Result<std::unique_ptr<NodeAST>> Parser::parse_const_struct_family_statement(NodeAST* parent) {
+
+Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) {
+    auto node_const_statement = std::make_unique<NodeConstStatement>(get_tok());
     Token construct = consume(); //consume family, struct, const
     token end_construct = token::END_CONST;
-    if (construct.type == token::FAMILY) {
-        end_construct = token::END_FAMILY;
-    } else if (construct.type == token::STRUCT) {
-        end_construct = token::END_STRUCT;
-    }
-
     if(peek().type != token::KEYWORD) {
         return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
             "Found unknown const/family/struct syntax.", peek().line, "valid prefix", peek().val, peek().file));
@@ -1468,33 +1252,23 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_struct_family_statement(Nod
     std::vector<std::unique_ptr<NodeStatement>> stmts;
     while(peek().type != end_construct) {
         _skip_linebreaks();
-        auto declare_stmt = parse_declare_statement(nullptr);
+        if(peek().type == end_construct) break;
+        auto declare_stmt = parse_declare_statement(node_const_statement.get());
         if(declare_stmt.is_error()) {
             return Result<std::unique_ptr<NodeAST>>(declare_stmt.get_error());
         }
 		auto node_stmt = std::make_unique<NodeStatement>(std::move(declare_stmt.unwrap()), get_tok());
 		node_stmt->statement->parent = node_stmt.get();
         stmts.push_back(std::move(node_stmt));
-
 		auto l = consume_linebreak("<statement>");
 		if(l.is_error())
 			return Result<std::unique_ptr<NodeAST>>(l.get_error());
     }
-    consume();
+    consume(); // consume end_const
 
-	std::unique_ptr<NodeAST> return_value = nullptr;
-	if (construct.type == token::CONST) {
-		auto node_const_statement = std::make_unique<NodeConstStatement>(std::move(prefix.val), std::move(stmts), get_tok());
-		for (auto &stmt : node_const_statement->constants) { stmt->parent = node_const_statement.get(); }
-		return_value = std::move(node_const_statement);
-	} else if (construct.type == token::STRUCT) {
-		auto node_struct_statement = std::make_unique<NodeStructStatement>(std::move(prefix.val), std::move(stmts), get_tok());
-		for (auto &stmt : node_struct_statement->members) { stmt->parent = node_struct_statement.get(); }
-		return_value = std::move(node_struct_statement);
-	}
-    return_value -> parent = parent;
+    node_const_statement -> parent = parent;
 	// set the parent for each statement in stmts
-    return Result<std::unique_ptr<NodeAST>>(std::move(return_value));
+    return Result<std::unique_ptr<NodeAST>>(std::move(node_const_statement));
 }
 
 Result<SuccessTag> Parser::consume_linebreak(const std::string& construct) {

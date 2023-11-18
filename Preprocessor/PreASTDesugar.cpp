@@ -51,7 +51,6 @@ void PreASTDesugar::visit(PreNodeKeyword& node) {
             node.keyword.val = get_text_replacement(node.keyword.val);
         }
     }
-
 }
 
 void PreASTDesugar::visit(PreNodeOther& node) {
@@ -68,7 +67,6 @@ void PreASTDesugar::visit(PreNodeChunk& node) {
 	for(int i=0; i<node.chunk.size(); ++i) {
 		if(auto node_statement = dynamic_cast<PreNodeStatement*>(node.chunk[i].get())) {
 			if(auto node_chunk = dynamic_cast<PreNodeChunk*>(node_statement->statement.get())) {
-//				auto node_statement_list = cast_node<NodeStatementList>(node.chunk[i]->statement.get());
 				// Wir speichern die Statements der inneren NodeStatementList
 				auto &inner_chunk = node_chunk->chunk;
 				// Fügen Sie die inneren Statements an der aktuellen Position ein
@@ -99,32 +97,6 @@ void PreASTDesugar::visit(PreNodeList& node) {
             p->accept(*this);
     }
 }
-
-//void PreASTDesugar::visit(NodeStatementList& node) {
-//	for(auto & stmt : node.statements) {
-//		stmt->accept(*this);
-//		stmt->parent = &node;
-//	}
-//	for(int i=0; i<node.statements.size(); ++i) {
-//		if(node.statements[i]->statement->type == StatementList) {
-//			auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get());
-//			// Wir speichern die Statements der inneren NodeStatementList
-//			auto& inner_statements = node_statement_list->statements;
-//			// Fügen Sie die inneren Statements an der aktuellen Position ein
-//			node.statements.insert(
-//				node.statements.begin() + i + 1,
-//				std::make_move_iterator(inner_statements.begin()),
-//				std::make_move_iterator(inner_statements.end())
-//			);
-//			// Entfernen Sie das ursprüngliche NodeStatementList-Element
-//			node.statements.erase(node.statements.begin() + i);
-//			// Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
-//			i += inner_statements.size() - 1;
-//			// Die inneren Statements sind jetzt leer, da sie verschoben wurden
-//			inner_statements.clear();
-//		}
-//	}
-//}
 
 void PreASTDesugar::visit(PreNodeDefineStatement& node) {
     node.header->accept(*this);
@@ -220,7 +192,7 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
 
     auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
     int i = from;
-    while(node.to.type == DOWNTO ? i > to : i < to) {
+    while(node.to.type == DOWNTO ? i >= to : i <= to) {
         std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
         auto node_number_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
         auto node_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INT, std::to_string(i), 0, (std::string &) ""),
@@ -299,7 +271,7 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar
         auto &var = definition->args->params[i]->chunk[0];
         if(definition->args->params[i]->chunk.size() > 1) {
             CompileError(ErrorType::SyntaxError,
-         "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>", definition->name->keyword.line, "", "",definition->name->keyword.file).print();
+         "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>", definition->name->keyword.line, "", definition->get_string(),definition->name->keyword.file).print();
             exit(EXIT_FAILURE);
         }
         std::pair<std::string, std::unique_ptr<PreNodeChunk>> pair;
@@ -372,11 +344,11 @@ std::string PreASTDesugar::get_text_replacement(const std::string& name) {
     for (auto &pair: m_substitution_stack.top()) {
         if (pair.first == substr) {
             std::string new_name ;
-            if(pair.second->chunk.size() > 1) {
-                CompileError(ErrorType::SyntaxError,
-                "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-call>", -1, "", "","").print();
-                exit(EXIT_FAILURE);
-            }
+//            if(pair.second->chunk.size() > 1) {
+//                CompileError(ErrorType::SyntaxError,
+//                "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-call>", -1, "", "","").print();
+//                exit(EXIT_FAILURE);
+//            }
             auto &var = pair.second->chunk[0];
             new_name = var->get_string();
             if(count_char(name, '#') == 2)
@@ -387,36 +359,3 @@ std::string PreASTDesugar::get_text_replacement(const std::string& name) {
     }
     return name;
 }
-
-void PreASTCombine::visit(PreNodeNumber &node) {
-    m_tokens.push_back(std::move(node.number));
-}
-
-void PreASTCombine::visit(PreNodeInt &node) {
-	m_tokens.push_back(std::move(node.number));
-}
-
-void PreASTCombine::visit(PreNodeKeyword &node) {
-    m_tokens.push_back(std::move(node.keyword));
-}
-
-void PreASTCombine::visit(PreNodeOther &node) {
-    m_tokens.push_back(std::move(node.other));
-}
-
-void PreASTCombine::visit(PreNodeProgram& node) {
-    for(auto & n : node.program) {
-        n->accept(*this);
-    }
-};
-
-void PreASTCombine::visit(PreNodeUnaryExpr& node) {
-	m_tokens.push_back(std::move(node.op));
-	node.operand->accept(*this);
-};
-
-void PreASTCombine::visit(PreNodeBinaryExpr& node) {
-	node.left->accept(*this);
-	m_tokens.push_back(std::move(node.op));
-	node.right->accept(*this);
-};

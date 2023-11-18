@@ -282,6 +282,9 @@ struct PreNodeIterateMacro : PreNodeAST {
     void update_parents(PreNodeAST* new_parent) override {
         parent = new_parent;
         macro_call->update_parents(this);
+        iterator_start->update_parents(this);
+        iterator_end->update_parents(this);
+        step->update_parents(this);
     }
 	std::string get_string() override {
 		return macro_call->get_string() + iterator_start->get_string() + to.val + iterator_end->get_string() + step->get_string();
@@ -307,24 +310,28 @@ struct PreNodeLiterateMacro : PreNodeAST {
 };
 
 struct PreNodeIncrementer : PreNodeAST {
-    std::unique_ptr<PreNodeChunk> body;
+    Token tok;
+    std::vector<std::unique_ptr<PreNodeChunk>> body;
     std::unique_ptr<PreNodeAST> counter;
     std::unique_ptr<PreNodeChunk> iterator_start;
     std::unique_ptr<PreNodeChunk> iterator_step;
-    PreNodeIncrementer(std::unique_ptr<PreNodeChunk> body, std::unique_ptr<PreNodeAST> counter, std::unique_ptr<PreNodeChunk> iterator_start, std::unique_ptr<PreNodeChunk> iterator_step, PreNodeAST *parent) :
-    PreNodeAST(parent), body(std::move(body)), counter(std::move(counter)), iterator_start(std::move(iterator_start)), iterator_step(std::move(iterator_step)) {}
+    std::vector<bool> incrementation;
+    PreNodeIncrementer(std::vector<std::unique_ptr<PreNodeChunk>> body, std::unique_ptr<PreNodeAST> counter, std::unique_ptr<PreNodeChunk> iterator_start, std::unique_ptr<PreNodeChunk> iterator_step, Token tok, std::vector<bool> incrementation, PreNodeAST *parent) :
+    PreNodeAST(parent), incrementation(std::move(incrementation)), tok(std::move(tok)), body(std::move(body)), counter(std::move(counter)), iterator_start(std::move(iterator_start)), iterator_step(std::move(iterator_step)) {}
     void accept(PreASTVisitor& visitor) override;
     PreNodeIncrementer(const PreNodeIncrementer& other);
     std::unique_ptr<PreNodeAST> clone() const override;
     void update_parents(PreNodeAST* new_parent) override {
         parent = new_parent;
-        body->update_parents(this);
+        for (auto & b : body) {
+            b->update_parents(this);
+        }
         counter->update_parents(this);
         iterator_start->update_parents(this);
         iterator_step->update_parents(this);
     }
     std::string get_string() override {
-        return body->get_string() + counter->get_string() + iterator_start->get_string() + iterator_step->get_string();
+        return counter->get_string() + iterator_start->get_string() + iterator_step->get_string();
     }
 };
 

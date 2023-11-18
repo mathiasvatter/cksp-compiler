@@ -6,11 +6,11 @@
 #include <iostream>
 #include "Preprocessor.h"
 #include "PreprocessorImport.h"
-#include "PreprocessorMacros.h"
-#include "PreprocessorDefine.h"
 #include "PreprocessorConditions.h"
 #include "PreprocessorParser.h"
 #include "PreASTDesugar.h"
+#include "PreASTCombine.h"
+#include "PreASTIncrementer.h"
 
 Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
     : Parser(std::move(tokens), std::move(std::vector<std::string>())), m_current_file(std::move(current_file)) {
@@ -43,13 +43,15 @@ void Preprocessor::process() {
     auto result_parse = parser.parse_program(nullptr);
     if(result_parse.is_error()) {
         result_parse.get_error().print();
-        auto err_msg = "Preprocessor failed while processing define statements.";
+        auto err_msg = "Preprocessor failed.";
         CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",peek(m_tokens).file).print();
         exit(EXIT_FAILURE);
     }
     PreASTDesugar desugar;
     auto pre_ast = std::move(result_parse.unwrap());
     pre_ast->accept(desugar);
+    PreASTIncrementer incrementer;
+    pre_ast->accept(incrementer);
     PreASTCombine combine;
     pre_ast->accept(combine);
     m_tokens = std::move(combine.m_tokens);
@@ -118,67 +120,6 @@ size_t Preprocessor::search(const std::vector<std::string>& vec, const std::stri
 	return (size_t)-1;
 }
 
-//Result<SuccessTag> Preprocessor::substitute_macro_params(std::vector<Token>& macro_body, const std::vector<std::vector<Token>>& placeholders, const std::vector<std::vector<Token>>& new_args) {
-//	for(int i = 0; i < placeholders.size(); i++) {
-//		// if the foo in macro(foo) is going to be replaced with foo anyways do not bother substituting -> as it ends in infinite loop
-//		if(not(new_args[i].size() == 1 and new_args[i][0].val == placeholders[i][0].val))
-//			for (size_t j = 0; j < macro_body.size(); ) {
-//				// find keyword from params in body
-//				if(placeholders[i][0].val == macro_body[j].val) {
-//					// Füge die Tokens aus new_args[i] vor dem aktuellen Token ein
-//					macro_body.insert(macro_body.begin() + j, new_args[i].begin(), new_args[i].end());
-//					// Lösche das aktuelle Token
-//					macro_body.erase(macro_body.begin() + j + new_args[i].size());
-//				} else if(count_char(placeholders[i][0].val, '#') == 2 and contains(macro_body[j].val, placeholders[i][0].val)) {
-//					std::string hashtag_replacement;
-//					for(auto & arg : new_args[i]) {
-//						hashtag_replacement += arg.val;
-//					}
-//					macro_body[j].val.replace(macro_body[j].val.find(placeholders[i][0].val), placeholders[i][0].val.size(), hashtag_replacement);
-//				} else {
-//					++j;
-//				}
-//			}
-//	}
-//	return Result<SuccessTag>(SuccessTag{});
-//}
-
-Result<SuccessTag> Preprocessor::substitute_macro_params(std::vector<Token>& macro_body, const std::vector<std::vector<Token>>& placeholders, const std::vector<std::vector<Token>>& new_args) {
-	for (size_t j = 0; j < macro_body.size(); ) {
-		bool tokenReplaced = false;
-
-		for(int i = 0; i < placeholders.size(); i++) {
-			// if the foo in macro(foo) is going to be replaced with foo anyways do not bother substituting -> as it ends in infinite loop
-			if(not(new_args[i].size() == 1 and new_args[i][0].val == placeholders[i][0].val)) {
-				// find keyword from params in body
-				if(placeholders[i][0].val == macro_body[j].val) {
-					// Füge die Tokens aus new_args[i] vor dem aktuellen Token ein
-					macro_body.insert(macro_body.begin() + j, new_args[i].begin(), new_args[i].end());
-					// Lösche das aktuelle Token
-					macro_body.erase(macro_body.begin() + j + new_args[i].size());
-					j+=new_args[i].size();
-					tokenReplaced = true;
-					break; // break out of the inner loop since we've replaced the token
-				} else if(count_char(placeholders[i][0].val, '#') == 2 and contains(macro_body[j].val, placeholders[i][0].val)) {
-					std::string hashtag_replacement;
-					for(auto & arg : new_args[i]) {
-						hashtag_replacement += arg.val;
-					}
-					macro_body[j].val.replace(macro_body[j].val.find(placeholders[i][0].val), placeholders[i][0].val.size(), hashtag_replacement);
-					tokenReplaced = true;
-					break; // break out of the inner loop since we've replaced the token
-				}
-			}
-		}
-
-		if (!tokenReplaced) {
-			++j;
-		}
-	}
-
-	return Result<SuccessTag>(SuccessTag{});
-}
-
 
 Result<std::vector<std::vector<Token>>> Preprocessor::parse_nested_params_list(std::vector<Token>& tok) {
 	std::vector<std::vector<Token>> params_list = {};
@@ -221,8 +162,6 @@ std::string Preprocessor::token_vector_to_string(const std::vector<Token>& token
     }
     return output;
 }
-
-
 
 Result<std::unique_ptr<NodeAST>> Preprocessor::parse_int(const std::vector<Token>& tok) {
 	auto token = consume(tok);

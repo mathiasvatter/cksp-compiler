@@ -165,7 +165,7 @@ void PreNodeIterateMacro::accept(PreASTVisitor &visitor) {
 }
 PreNodeIterateMacro::PreNodeIterateMacro(const PreNodeIterateMacro& other)
         : PreNodeAST(other), macro_call(clone_unique(other.macro_call)), iterator_start(clone_unique(other.iterator_start)),
-          iterator_end(clone_unique(other.iterator_end)) {}
+          iterator_end(clone_unique(other.iterator_end)), step(clone_unique(other.step)) {}
 std::unique_ptr<PreNodeAST> PreNodeIterateMacro::clone() const {
     return std::make_unique<PreNodeIterateMacro>(*this);
 }
@@ -185,7 +185,7 @@ void PreNodeIncrementer::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
 PreNodeIncrementer::PreNodeIncrementer(const PreNodeIncrementer& other)
-        : PreNodeAST(other), body(clone_unique(other.body)), counter(clone_unique(other.counter)), iterator_start(clone_unique(other.iterator_start)), iterator_step(clone_unique(other.iterator_step)) {}
+        : PreNodeAST(other), incrementation(other.incrementation), tok(other.tok), body(clone_vector(other.body)), counter(clone_unique(other.counter)), iterator_start(clone_unique(other.iterator_start)), iterator_step(clone_unique(other.iterator_step)) {}
 std::unique_ptr<PreNodeAST> PreNodeIncrementer::clone() const {
     return std::make_unique<PreNodeIncrementer>(*this);
 }

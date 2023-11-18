@@ -35,10 +35,13 @@ private:
 
     Result<std::unique_ptr<PreNodeIncrementer>> parse_incrementer(PreNodeAST* parent);
 
-    //    std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_statements;
-    std::vector<std::string> m_define_statements;
-    std::vector<std::string> m_macro_definitions;
+    //    std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_strings;
+    std::vector<std::string> m_define_strings;
+    std::vector<std::string> m_macro_strings;
+    std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_definitions;
 
+
+    bool is_empty_line();
     bool is_func_call(const Token &tok, const std::vector<std::string> &definitions);
     bool is_macro_call(const Token &tok);
     bool is_define_definition();

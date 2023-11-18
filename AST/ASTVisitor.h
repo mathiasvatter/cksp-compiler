@@ -88,6 +88,11 @@ public:
 			member->accept(*this);
 		}
 	};
+    virtual void visit(NodeListStatement& node) {
+        for(auto & b : node.body) {
+            b->accept(*this);
+        }
+    };
     virtual void visit(NodeStatement& node) {
 		node.statement->accept(*this);
 	};

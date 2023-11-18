@@ -408,6 +408,24 @@ struct NodeFamilyStatement : NodeAST {
     }
 };
 
+struct NodeListStatement : NodeAST {
+    std::string name;
+    std::vector<std::unique_ptr<NodeParamList>> body;
+    inline explicit NodeListStatement(Token tok) : NodeAST(tok) {}
+    inline NodeListStatement(std::string name, std::vector<std::unique_ptr<NodeParamList>> body, Token tok)
+    : NodeAST(tok), name(std::move(name)), body(std::move(body)) {}
+    void accept(ASTVisitor& visitor) override;
+    // Kopierkonstruktor
+    NodeListStatement(const NodeListStatement& other);
+    // Clone Methode
+    std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        for (auto & b : body) {
+            b->update_parents(this);
+        }
+    }
+};
+
 struct NodeStatementList : NodeAST {
     std::vector<std::unique_ptr<NodeStatement>> statements;
     inline explicit NodeStatementList(Token tok) : NodeAST(tok) {type = StatementList;}

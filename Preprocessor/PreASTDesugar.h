@@ -43,17 +43,5 @@ private:
 
 };
 
-class PreASTCombine : public PreASTVisitor {
-public:
-    std::vector<Token> m_tokens;
 
-    void visit(PreNodeNumber& node) override;
-	void visit(PreNodeInt& node) override;
-    void visit(PreNodeKeyword& node) override;
-    void visit(PreNodeOther& node) override;
-    void visit(PreNodeProgram& node) override;
-	void visit(PreNodeUnaryExpr& node) override;
-	void visit(PreNodeBinaryExpr& node) override;
-
-};
 
