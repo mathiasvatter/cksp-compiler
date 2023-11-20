@@ -11,6 +11,7 @@
 	XX(INVALID, "invalid") \
 	XX(END_TOKEN, "end_of_file") \
 	XX(LINEBRK, "linebreak") \
+	XX(TYPE, "type") \
 	XX(INT, "int") \
 	XX(FLOAT, "float") \
 	XX(HEXADECIMAL, "hexadecimal") \
@@ -129,6 +130,7 @@ inline std::vector<char> BINARY_OPERATORS = {'-', '+', '/', '*', '&'};
 inline std::vector<char> PARENTH = {'(',')', '[', ']'};
 inline std::vector<char> VAR_IDENT = {'$', '~', '@'};
 inline std::vector<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
+inline std::vector<Keyword> TYPES = {{INT, "$"}, {FLOAT, "~"}, {STRING, "@"}, {INT, "%"}, {FLOAT, "?"}, {STRING, "!"}};
 inline std::vector<char> COMMENT_START = {'{', '/'};
 inline std::vector<char> COMPARISON_OPERATORS_START = {'<', '>', '=', '#'};
 inline std::vector<std::string> UI_CONTROLS = {"ui_label", "ui_button", "ui_switch", "ui_slider", "ui_menu",

@@ -5,7 +5,7 @@
 #include "PreprocessorParser.h"
 
 PreprocessorParser::PreprocessorParser(std::vector<Token> tokens) : Parser(
-        std::move(tokens), std::move(std::vector<std::string>())) {
+        std::move(tokens)) {
     m_pos = 0;
     m_curr_token = m_tokens.at(0).type;
 }

@@ -351,7 +351,7 @@ void NodeFunctionHeader::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeFunctionHeader::NodeFunctionHeader(const NodeFunctionHeader& other)
-        : NodeAST(other), name(other.name), args(clone_unique(other.args)), arg_types(other.arg_types) {
+        : NodeAST(other), name(other.name), args(clone_unique(other.args)), arg_ast_types(other.arg_ast_types), arg_var_types(other.arg_var_types) {
 }
 std::unique_ptr<NodeAST> NodeFunctionHeader::clone() const {
     return std::make_unique<NodeFunctionHeader>(*this);

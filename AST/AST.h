@@ -562,7 +562,8 @@ struct NodeFunctionHeader: NodeAST {
     bool is_engine = false;
     std::string name;
     std::unique_ptr<NodeParamList> args;
-    std::vector<ASTType> arg_types;
+    std::vector<ASTType> arg_ast_types;
+    std::vector<VarType> arg_var_types;
     inline explicit NodeFunctionHeader(Token tok) : NodeAST(tok) {}
     inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeParamList> args, Token tok)
     : NodeAST(tok), name(std::move(name)), args(std::move(args)) {};

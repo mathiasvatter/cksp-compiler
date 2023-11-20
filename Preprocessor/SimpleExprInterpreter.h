@@ -29,3 +29,10 @@ public:
 };
 
 
+class SimpleInterpreter {
+public:
+    explicit SimpleInterpreter() {}
+    Result<int> evaluate_int_expression(std::unique_ptr<NodeAST>& root);
+};
+
+

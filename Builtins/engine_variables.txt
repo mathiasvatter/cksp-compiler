@@ -1,4 +1,3 @@
-[variables]
 $ALL_EVENTS
 $ALL_GROUPS
 $CC_NUM

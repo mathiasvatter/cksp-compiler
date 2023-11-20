@@ -57,7 +57,7 @@ inline static int _get_binop_precedence(token tok) {
 class Parser {
 
 public:
-    explicit Parser(std::vector<Token> tokens, std::vector<std::string> macro_definitions);
+    explicit Parser(std::vector<Token> tokens);
     [[nodiscard]] size_t get_current_pos() const;
     void set_current_pos(size_t mPos);
 	Result<std::unique_ptr<NodeProgram>> parse();
@@ -67,7 +67,6 @@ protected:
     std::vector<Token> m_tokens;
 	token m_curr_token;
     std::string m_curr_token_value;
-    std::vector<std::string> m_macro_definitions;
 
 	[[nodiscard]] Token peek(int ahead = 0);
 	Token consume();

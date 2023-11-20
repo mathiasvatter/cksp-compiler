@@ -52,6 +52,17 @@ inline static long count_char(const std::string& str, char c) {
 	return std::count(str.begin(), str.end(), c);
 }
 
+inline static token get_token_type(const std::vector<Keyword>& vec, const std::string& value) {
+    auto it = std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
+        return kw.value == value;
+    });
+
+    if (it != vec.end()) {
+        return it->type;
+    }
+    return INVALID;
+}
+
 /*
  * Tokenizer Class
  */
@@ -67,7 +78,6 @@ private:
     std::string m_buffer;
     std::vector<Token> m_tokens;
 
-    static token get_token_type(const std::vector<Keyword>& vec, const std::string& value);
     [[nodiscard]] char peek(int ahead = 0) const;
     char consume();
     void flush_buffer();
@@ -88,6 +98,7 @@ private:
     static bool is_hexadecimal(const std::string& str);
     static bool is_binary(const std::string& str);
     void get_comma();
+    void get_type();
     void get_linebreak();
     void get_comment();
 	void get_invalid();

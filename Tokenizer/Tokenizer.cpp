@@ -61,6 +61,8 @@ std::vector<Token> Tokenizer::tokenize() {
             get_comma();
         } else if(is_space(peek())) {
             skip_whitespace();
+        } else if(peek() == ':') {
+            get_type();
         } else
             get_invalid();
     }
@@ -376,6 +378,14 @@ void Tokenizer::get_comma() {
     skip_whitespace();
 }
 
+void Tokenizer::get_type() {
+    flush_buffer();
+    m_tokens.emplace_back(TYPE, std::string(1, peek()), m_line, m_current_file);
+    consume();
+    skip_whitespace();
+}
+
+
 void Tokenizer::get_line_continuation() {
     flush_buffer();
 	consume();
@@ -449,17 +459,6 @@ bool Tokenizer::is_callback_end() {
     if (!m_tokens.empty())
         return m_tokens.back().val == "end" && m_buffer == "on";
     return false;
-}
-
-token Tokenizer::get_token_type(const std::vector<Keyword> &vec, const std::string &value) {
-    auto it = std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
-        return kw.value == value;
-    });
-
-    if (it != vec.end()) {
-        return it->type;
-    }
-    return INVALID;
 }
 
 std::string Tokenizer::read_file(const std::string& filename) {

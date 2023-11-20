@@ -9,10 +9,10 @@
 #include <utility>
 
 
-Parser::Parser(std::vector<Token> tokens, std::vector<std::string> macro_definitions): m_tokens(std::move(tokens)) {
-    m_macro_definitions = std::move(macro_definitions);
+Parser::Parser(std::vector<Token> tokens): m_tokens(std::move(tokens)) {
 	m_pos = 0;
-	m_curr_token = m_tokens.at(0).type;
+    if(!m_tokens.empty())
+	    m_curr_token = m_tokens.at(0).type;
 }
 
 Result<std::unique_ptr<NodeProgram>> Parser::parse() {
@@ -148,13 +148,6 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_number(NodeAST* parent) {
 }
 
 Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, bool is_persistent, VarType var_type) {
-    // see if variable already has identifier
-//    char ident = 0;
-//    std::string var_name = peek().val;
-//    if (contains(VAR_IDENT, peek().val[0])) {
-//        ident = peek().val[0];
-//        var_name = peek().val.substr(1);
-//    }
     auto var_name = consume().val;
     auto node_variable = std::make_unique<NodeVariable>(is_persistent, var_name, var_type, get_tok());
     node_variable->parent = parent;
@@ -194,7 +187,6 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_array(NodeAST* parent, bool is_
     node_array->name = arr_name;
     node_array->sizes = std::move(sizes);
     node_array->indexes = std::move(indexes);
-//    auto return_value = std::make_unique<NodeArray>(is_persistent, arr_name, var_type, std::move(sizes), std::move(indexes), get_tok());
     return Result<std::unique_ptr<NodeArray>>(std::move(node_array));
 }
 
@@ -1284,12 +1276,12 @@ Result<SuccessTag> Parser::consume_linebreak(const std::string& construct) {
 Result<std::unique_ptr<NodeGetControlStatement>> Parser::parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent) {
 //    std::unique_ptr<NodeAST> ui_id;
 //    if(peek(1).type == token::OPEN_BRACKET) {
-//        auto ui_control = parse_array();
+//        auto ui_control = parse_builtin_array();
 //        if(ui_control.is_error())
 //            return Result<std::unique_ptr<NodeGetControlStatement>>(ui_control.get_error());
 //        ui_id = std::move(ui_control.unwrap());
 //    } else {
-//        auto ui_control = parse_variable();
+//        auto ui_control = parse_builtin_variable();
 //        if(ui_control.is_error())
 //            return Result<std::unique_ptr<NodeGetControlStatement>>(ui_control.get_error());
 //        ui_id = std::move(ui_control.unwrap());

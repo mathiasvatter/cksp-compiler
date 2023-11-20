@@ -9,6 +9,7 @@
 #include "AST/ASTDesugar.h"
 #include "AST/ASTPrinter.h"
 #include "AST/ASTTypeCasting.h"
+#include "Preprocessor/PreprocessorBuiltins.h"
 //#include "AST/ASTMacros.h"
 
 int main() {
@@ -30,10 +31,16 @@ int main() {
 //        if(tok.type != token::COMMENT or tok.type != token::LINEBRK)
 //            std::cout << tok << std::endl;
 //    }
+
+    std::filesystem::path curr_path = __FILE__;
+    PreprocessorBuiltins builtins((std::string) curr_path.parent_path() + "/Builtins/engine_variables.txt", (std::string) curr_path.parent_path() + "/Builtins/engine_functions.txt");
+    builtins.process_builtins();
+
+
 	auto preprocessor_time = std::chrono::high_resolution_clock::now();
 	auto preprocessor_duration = std::chrono::duration_cast<std::chrono::milliseconds>(preprocessor_time - start_time);
 
-    Parser parser(std::move(preprocessed_tokens), preprocessor.get_macro_definitions());
+    Parser parser(std::move(preprocessed_tokens));
 	auto ast_result = parser.parse();
 	if (ast_result.is_error()) {
 		ast_result.get_error().print();
