@@ -4,6 +4,25 @@
 
 #include "ASTDesugar.h"
 
+
+ASTDesugar::ASTDesugar(const std::vector<std::unique_ptr<NodeFunctionHeader>> &mBuiltinFunctions) : m_builtin_functions(
+        mBuiltinFunctions) {
+}
+
+void ASTDesugar::visit(NodeProgram& node) {
+    m_function_definitions = std::move(node.function_definitions);
+    m_in_init_callback = false;
+    for(auto & callback : node.callbacks) {
+        if(callback->begin_callback == "on init") m_in_init_callback = true;
+        callback->accept(*this);
+    }
+    if(!m_in_init_callback) {
+        CompileError(ErrorType::SyntaxError, "Unable to compile. Missing <init callback>.", -1, "", "", node.tok.file).print();
+        exit(EXIT_FAILURE);
+    }
+    node.function_definitions = std::move(m_function_definitions);
+}
+
 void ASTDesugar::visit(NodeBinaryExpr& node) {
 	// Besuche zuerst die Kinder des Knotens
 	if (node.left) node.left->accept(*this);
@@ -83,6 +102,13 @@ void ASTDesugar::visit(NodeArray& node) {
             node.replace_with(std::move(substitute));
             return;
         }
+    } else {
+        if(contains(VAR_IDENT, node.name[0])) {
+            auto identifier = node.name[0];
+            node.name = node.name.erase(0,1);
+            token token_type = get_token_type(TYPES, std::to_string(identifier));
+            node.type = token_to_type(token_type);
+        }
     }
     // add prefixes
     if(!m_prefixes.empty()) {
@@ -97,28 +123,18 @@ void ASTDesugar::visit(NodeVariable& node) {
             node.replace_with(std::move(substitute));
             return;
         }
+    } else {
+        if(contains(VAR_IDENT, node.name[0])) {
+            auto identifier = node.name[0];
+            node.name = node.name.erase(0,1);
+            token token_type = get_token_type(TYPES, std::to_string(identifier));
+            node.type = token_to_type(token_type);
+        }
     }
     // add prefixes
     if(!m_prefixes.empty()) {
         node.name = m_prefixes.top() + "." + node.name;
     }
-}
-
-void ASTDesugar::visit(NodeProgram& node) {
-//    for(auto & function_definition : node.function_definitions) {
-//        function_definition->accept(*this);
-//    }
-    m_function_definitions = std::move(node.function_definitions);
-    bool has_init_callback = false;
-    for(auto & callback : node.callbacks) {
-        callback->accept(*this);
-        if(callback->begin_callback == "on init") has_init_callback = true;
-    }
-    if(!has_init_callback) {
-        CompileError(ErrorType::SyntaxError, "Unable to compile. Missing <init callback>.", -1, "", "", node.tok.file).print();
-        exit(EXIT_FAILURE);
-    }
-    node.function_definitions = std::move(m_function_definitions);
 }
 
 void ASTDesugar::visit(NodeFunctionCall& node) {
@@ -134,25 +150,28 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
     }
     node.function->accept(*this);
 
-    if (!node.function->args->params.empty())
-        // substitution start
-        if (auto node_function_def = get_function_definition(node.function.get())) {
-            m_function_call_stack.push_back(node.function->name);
-            node_function_def->parent = node.parent;
-            auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-            node_statement_list->parent = node.parent;
+    // substitution start
+    if (auto node_function_def = get_function_definition(node.function.get())) {
+        m_function_call_stack.push_back(node.function->name);
+        node_function_def->parent = node.parent;
+        auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+        node_statement_list->parent = node.parent;
+        if (!node.function->args->params.empty()) {
             auto substitution_vec = get_substitution_vector(node_function_def->header.get(), node.function.get());
             m_substitution_stack.push(std::move(substitution_vec));
-//            node_function_def->accept(*this);
-            for(auto& stmt: node_function_def->body) {
-                stmt->accept(*this);
-                stmt->parent = node_statement_list.get();
-            }
-            m_substitution_stack.pop();
-            node_statement_list->statements = std::move(node_function_def->body);
-            node.replace_with(std::move(node_statement_list));
-            m_function_call_stack.pop_back();
         }
+        for(auto& stmt: node_function_def->body) {
+            stmt->accept(*this);
+            stmt->parent = node_statement_list.get();
+        }
+        if (!node.function->args->params.empty()) m_substitution_stack.pop();
+        node_statement_list->statements = std::move(node_function_def->body);
+        node.replace_with(std::move(node_statement_list));
+        m_function_call_stack.pop_back();
+    } else if (!is_builtin_function(node.function.get())) {
+        CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).print();
+        exit(EXIT_FAILURE);
+    }
 }
 
 std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> ASTDesugar::get_substitution_vector(NodeFunctionHeader* definition, NodeFunctionHeader* call) {
@@ -424,6 +443,27 @@ std::unique_ptr<NodeFunctionDefinition> ASTDesugar::get_function_definition(Node
         }
     }
     return nullptr;
+}
+
+bool ASTDesugar::is_builtin_function(NodeFunctionHeader *function) {
+    auto it = std::find_if(m_builtin_functions.begin(), m_builtin_functions.end(),
+                           [&](const std::unique_ptr<NodeFunctionHeader> &func) {
+                               return (func->name == function->name and
+                               func->arg_ast_types.size() == function->args->params.size());
+                           });
+    return it != m_builtin_functions.end();
+}
+
+void ASTDesugar::handle_function_overrides() {
+    std::vector<NodeFunctionDefinition*> override_functions;
+    for (const auto& function : m_function_definitions) {
+        if (function->override) {
+            override_functions.push_back(function.get());
+        }
+    }
+
+
+
 }
 
 

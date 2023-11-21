@@ -542,7 +542,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 //    std::vector<std::unique_ptr<NodeMacroCall>> macro_calls;
 //    std::vector<std::unique_ptr<NodeImport>> imports;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
-    std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
+//    std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
 //	std::vector<std::unique_ptr<NodeDefineStatement>> defines;
     auto node_program = std::make_unique<NodeProgram>(get_tok());
     while (peek().type != token::END_TOKEN) {
@@ -556,7 +556,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
             auto function = parse_function_definition(node_program.get());
             if (function.is_error())
                 return Result<std::unique_ptr<NodeProgram>>(function.get_error());
-			function_definitions.push_back(std::move(function.unwrap()));
+			m_function_definitions.push_back(std::move(function.unwrap()));
         } else {
             return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::ParseError,
              "Found unknown construct.", peek().line, "<callback>, <function_definition>", peek().val, peek().file));
@@ -567,8 +567,8 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
         _skip_linebreaks();
     }
     node_program->callbacks = std::move(callbacks);
-    node_program->function_definitions = std::move(function_definitions);
-    node_program->macro_definitions = std::move(macro_definitions);
+    node_program->function_definitions = std::move(m_function_definitions);
+//    node_program->macro_definitions = std::move(m_macro_definitions);
     return Result<std::unique_ptr<NodeProgram>>(std::move(node_program));
 }
 
@@ -692,12 +692,38 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     if (peek().type == token::OVERRIDE) {
         consume();
         func_override = true;
+
+        // Entfernen Sie alle Nicht-Override-Funktionen, die dieselbe Signatur haben
+        auto new_end = std::remove_if(m_function_definitions.begin(), m_function_definitions.end(),
+                                      [&func_header](const std::unique_ptr<NodeFunctionDefinition>& function) {
+                                          if (!function->override) {
+                                              return func_header->name == function->header->name and func_header->args->params.size() == function->header->args->params.size();
+                                          }
+                                          return false; // Funktionen mit override = true nicht entfernen
+                                      });
+
+        // Tatsächliches Entfernen der Elemente aus dem Vektor
+        m_function_definitions.erase(new_end, m_function_definitions.end());
+
+
     }
     if (peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeFunctionDefinition>>(CompileError(ErrorType::SyntaxError,
         "Missing necessary linebreak after function header.",peek().line,"linebreak",peek().val, peek().file));
     }
     consume(); // consume linebreak
+
+    // check if function was already defined
+    auto it = std::find_if(m_function_definitions.begin(), m_function_definitions.end(),
+                           [&](const std::unique_ptr<NodeFunctionDefinition> &func) {
+                               return (func->header->name == func_header->name and
+                                       func->header->args->params.size() == func_header->args->params.size());
+                           });
+    if(it != m_function_definitions.end() and !func_override) {
+        return Result<std::unique_ptr<NodeFunctionDefinition>>(CompileError(ErrorType::SyntaxError,
+        "Function has already been defined.",func_header->tok.line,"",func_header->name, peek().file));
+    }
+
     while (peek().type != token::END_FUNCTION) {
         _skip_linebreaks();
         if(peek().type == END_FUNCTION) break;

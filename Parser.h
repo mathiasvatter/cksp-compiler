@@ -130,7 +130,8 @@ protected:
 
 
 	Result<std::unique_ptr<NodeProgram>> parse_program();
-    std::vector<std::unique_ptr<NodeMacroDefinition>> macro_definitions;
+//    std::vector<std::unique_ptr<NodeMacroDefinition>> m_macro_definitions;
+    std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
 
 	Result<SuccessTag> consume_linebreak(const std::string& construct);
 private:

@@ -14,6 +14,22 @@ void ASTTypeCasting::visit(NodeArray& node) {
 	node.indexes->accept(*this);
 }
 
+void ASTTypeCasting::visit(NodeBinaryExpr& node) {
+    node.left->accept(*this);
+    node.right->accept(*this);
+//    if(node.left->type != node.right->type) {
+//        CompileError(ErrorType::TypeError,"Found operands of different types in <binary_expression>.", node.tok.line, "", "", node.tok.file).print();
+//        exit(EXIT_FAILURE);
+//    }
+    node.type = node.left->type;
+}
+
+void ASTTypeCasting::visit(NodeUnaryExpr& node) {
+    node.operand->accept(*this);
+    node.type = node.operand->type;
+}
+
+
 void ASTTypeCasting::visit(NodeParamList& node) {
 	for(auto & param : node.params) {
 		param->accept(*this);

@@ -12,6 +12,8 @@ inline std::vector<std::string> MATH_OPERATORS = {"-", "+", "/", "*", "mod"};
 
 class ASTDesugar : public ASTVisitor {
 public:
+    explicit ASTDesugar(const std::vector<std::unique_ptr<NodeFunctionHeader>> &mBuiltinFunctions);
+
     /// check if init callback exists
     void visit(NodeProgram& node) override;
 	/// do constant folding for int and reals
@@ -37,6 +39,10 @@ public:
     void visit(NodeVariable& node) override;
 
 private:
+    const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_builtin_functions;
+    bool is_builtin_function(NodeFunctionHeader* function);
+
+    bool m_in_init_callback;
 
     std::vector<std::tuple<NodeArray*, NodeParamList*>> m_declared_arrays;
     std::vector<std::unique_ptr<NodeVariable>> m_declared_variables;
@@ -49,5 +55,6 @@ private:
     /// returns substitute for current node.name, or nullptr if there is no substitute
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
     std::unique_ptr<NodeFunctionDefinition> get_function_definition(NodeFunctionHeader* function_header);
+    void handle_function_overrides();
 };
 

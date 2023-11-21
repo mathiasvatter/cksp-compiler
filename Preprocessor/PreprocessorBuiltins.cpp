@@ -89,21 +89,7 @@ std::unique_ptr<NodeArray> PreprocessorBuiltins::parse_builtin_array() {
 
 ASTType PreprocessorBuiltins::get_identifier_type(char identifier) {
     token token_type = get_token_type(TYPES, std::to_string(identifier));
-    ASTType type;
-    switch (token_type) {
-        case INT:
-            type = Integer;
-            break;
-        case FLOAT:
-            type = Real;
-            break;
-        case STRING:
-            type = String;
-            break;
-        default:
-            type = Integer;
-    }
-    return type;
+    return token_to_type(token_type);
 }
 
 Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_function() {
