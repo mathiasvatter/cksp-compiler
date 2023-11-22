@@ -182,7 +182,7 @@ void Tokenizer::get_binary_operators() {
     } else if (peek() == '*') {
         tok = MULT;
     } else if (peek() == '&') {
-        tok = STRING_OPERATOR;
+        tok = STRING_OP;
     }
     m_tokens.emplace_back(tok, std::string(1, peek()), m_line, m_current_file);
 	consume();

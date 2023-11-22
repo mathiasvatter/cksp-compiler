@@ -30,7 +30,7 @@
     XX(DIV, "div")      \
 	XX(MULT, "mult")        \
 	XX(MODULO, "modulo")        \
-	XX(STRING_OPERATOR, "add_string")        \
+	XX(STRING_OP, "add_string")        \
 	XX(BIT_AND, "bit_and")        \
 	XX(BIT_OR, "bit_or")        \
 	XX(BIT_XOR, "bit_xor")        \
@@ -44,6 +44,7 @@
     XX(GREATER_EQUAL, "greater equal") \
     XX(LESS_EQUAL, "less equal") \
     XX(EQUAL, "equal") \
+    XX(NOT_EQUAL, "not_equal") \
     XX(COMPARISON, "comparison_operator") \
     XX(BOOL_AND, "bool_and") \
     XX(BOOL_OR, "bool_or") \
@@ -159,5 +160,14 @@ inline std::vector<std::string> CALLBACKS = {"init", "note", "release", "midi_in
 											 "poly_at", "listener", "async_complete", "persistence_changed", "ui_control"};
 inline std::vector<Keyword> BITWISE_OPERATORS = {{BIT_AND, ".and."}, {BIT_OR, ".or."}, {BIT_NOT, ".not."}, {BIT_XOR, ".xor."}};
 inline std::vector<Keyword> BOOL_OPERATORS = {{BOOL_AND, "and"}, {BOOL_OR, "or"}, {BOOL_NOT, "not"}};
-
+inline std::vector<Keyword> MATH_OPERATORS = {{SUB, "-"}, {ADD, "+"}, {DIV, "/"}, {MULT, "*"}, {MODULO, "mod"}};
+inline std::vector<Keyword> UNARY_OPERATORS = {{SUB, "-"}, {BIT_NOT, ".not."}, {BOOL_NOT, "not"}};
+inline std::vector<Keyword> COMPARISON_OPERATORS = {{LESS_THAN, "<"}, {GREATER_THAN, ">"}, {EQUAL, "="}, {LESS_EQUAL, "<="}, {GREATER_EQUAL, ">="}, {NOT_EQUAL, "#"}};
+inline std::vector<Keyword> STRING_OPERATOR = {{STRING_OP, "&"}};
+inline const std::vector<Keyword> ALL_OPERATORS = []{
+    std::vector<Keyword> ops = BITWISE_OPERATORS;
+    ops.insert(ops.end(), MATH_OPERATORS.begin(), MATH_OPERATORS.end());
+    ops.insert(ops.end(), BOOL_OPERATORS.begin(), BOOL_OPERATORS.end());
+    return ops;
+}();
 

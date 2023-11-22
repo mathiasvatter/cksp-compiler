@@ -23,6 +23,7 @@ void PreprocessorBuiltins::process_builtins() {
         builtin_functions.get_error().print();
         exit(EXIT_FAILURE);
     }
+
 }
 
 
@@ -130,7 +131,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_
 
 ASTType PreprocessorBuiltins::get_type_annotation() {
     Token token_type = consume(m_tokens); // get type token
-    ASTType type = Unknown;
+    ASTType type = Any;
     if(token_type.val.find("int") != std::string::npos) {
         type = Integer;
     } else if (token_type.val.find("real") != std::string::npos) {

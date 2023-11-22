@@ -46,7 +46,7 @@ void NodeVariable::accept(ASTVisitor &visitor) {
 }
 NodeVariable::NodeVariable(const NodeVariable& other) : NodeAST(other),
     is_engine(other.is_engine), is_persistent(other.is_persistent),
-    is_local(other.is_local), var_type(other.var_type), name(other.name) {}
+    is_local(other.is_local), var_type(other.var_type), name(other.name), declaration(other.declaration) {}
 std::unique_ptr<NodeAST> NodeVariable::clone() const {
     return std::make_unique<NodeVariable>(*this);
 }
@@ -77,8 +77,8 @@ void NodeArray::accept(ASTVisitor &visitor) {
 NodeArray::NodeArray(const NodeArray& other)
         : NodeAST(other), is_engine(other.is_engine), is_persistent(other.is_persistent),
           is_local(other.is_local), var_type(other.var_type), name(other.name),
-          sizes(clone_unique(other.sizes)), indexes(clone_unique(other.indexes)) {
-}
+          sizes(clone_unique(other.sizes)), indexes(clone_unique(other.indexes)),
+          declaration(other.declaration) {}
 std::unique_ptr<NodeAST> NodeArray::clone() const {
     return std::make_unique<NodeArray>(*this);
 }
@@ -144,7 +144,7 @@ void NodeSingleAssignStatement::accept(ASTVisitor &visitor) {
 }
 NodeSingleAssignStatement::NodeSingleAssignStatement(const NodeSingleAssignStatement& other)
         : NodeAST(other),
-          array_variable(clone_unique(other.array_variable)), assignee(other.assignee) {}
+          array_variable(clone_unique(other.array_variable)), assignee(clone_unique(other.assignee)) {}
 std::unique_ptr<NodeAST> NodeSingleAssignStatement::clone() const {
     return std::make_unique<NodeSingleAssignStatement>(*this);
 }
@@ -173,7 +173,7 @@ void NodeSingleDeclareStatement::accept(ASTVisitor &visitor) {
 }
 NodeSingleDeclareStatement::NodeSingleDeclareStatement(const NodeSingleDeclareStatement& other)
         : NodeAST(other),
-          to_be_declared(clone_unique(other.to_be_declared)), assignee(other.assignee) {}
+          to_be_declared(clone_unique(other.to_be_declared)), assignee(clone_unique(other.assignee)) {}
 std::unique_ptr<NodeAST> NodeSingleDeclareStatement::clone() const {
     return std::make_unique<NodeSingleDeclareStatement>(*this);
 }

@@ -19,9 +19,9 @@ public:
     Result<std::unique_ptr<NodeFunctionHeader>> parse_builtin_function();
     Result<std::pair<std::vector<ASTType>, std::vector<VarType>>> parse_builtin_args_list();
 
-    const std::vector<std::unique_ptr<NodeVariable>> &get_builtin_variables() const;
-    const std::vector<std::unique_ptr<NodeArray>> &get_builtin_arrays() const;
-    const std::vector<std::unique_ptr<NodeFunctionHeader>> &get_builtin_functions() const;
+    [[nodiscard]] const std::vector<std::unique_ptr<NodeVariable>> &get_builtin_variables() const;
+    [[nodiscard]] const std::vector<std::unique_ptr<NodeArray>> &get_builtin_arrays() const;
+    [[nodiscard]] const std::vector<std::unique_ptr<NodeFunctionHeader>> &get_builtin_functions() const;
 
 private:
     std::vector<std::unique_ptr<NodeVariable>> m_builtin_variables;

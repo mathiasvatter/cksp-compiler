@@ -24,22 +24,22 @@ void ASTDesugar::visit(NodeProgram& node) {
 }
 
 void ASTDesugar::visit(NodeBinaryExpr& node) {
-	// Besuche zuerst die Kinder des Knotens
-	if (node.left) node.left->accept(*this);
-	if (node.right) node.right->accept(*this);
+	node.left->accept(*this);
+	node.right->accept(*this);
 
     auto right_int = cast_node<NodeInt>(node.right.get());
     auto left_int = cast_node<NodeInt>(node.left.get());
     auto right_real = cast_node<NodeReal>(node.right.get());
     auto left_real = cast_node<NodeReal>(node.left.get());
 
-	if(contains(MATH_OPERATORS, node.op) or node.op == ".and." or node.op == ".or" or node.op == ".xor") {
+	if(contains(MATH_OPERATORS, node.op) or contains(BITWISE_OPERATORS, node.op)) {
         // division by zero
-        if (right_int and node.op == "/" and right_int->value == 0) {
+        if (right_int and get_token_type(MATH_OPERATORS, node.op) == DIV and right_int->value == 0) {
             CompileError(ErrorType::MathError,"Warning: Found division by zero.",node.tok.line,"","",node.tok.file).print();
             return;
         }
-        if(left_int and left_int->value == 0 and node.op == "*" or right_int and right_int->value == 0 and node.op == "*") {
+        if(left_int and left_int->value == 0 and get_token_type(MATH_OPERATORS, node.op) == MULT or right_int and right_int->value == 0 and
+                get_token_type(MATH_OPERATORS, node.op) == MULT) {
             auto new_node = std::make_unique<NodeInt>(0, node.tok);
             new_node-> parent = node.parent;
             node.replace_with(std::move(new_node));
@@ -49,18 +49,18 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
 		if (left_int and right_int) {
             // Beide Operanden sind Integers. Führe die Operation aus und ersetze den Knoten.
             int32_t result = 0;
-            auto int_operations = std::unordered_map<std::string, std::function<int32_t(int32_t, int32_t)>>{
-                {"+", [](int32_t a, int32_t b) { return a + b; }},
-                {"-", [](int32_t a, int32_t b) { return a - b; }},
-                {"*", [](int32_t a, int32_t b) { return a * b; }},
-                {"/", [](int32_t a, int32_t b) { return a / b; }},
-                {"mod", [](int32_t a, int32_t b) { return a % b; }},
-                {".and.", [](int32_t a, int32_t b) { return a & b; }},
-                {".or.", [](int32_t a, int32_t b) { return a | b; }},
-                {".xor.", [](int32_t a, int32_t b) { return a ^ b; }}
+            auto int_operations = std::unordered_map<token, std::function<int32_t(int32_t, int32_t)>>{
+                {ADD, [](int32_t a, int32_t b) { return a + b; }},
+                {SUB, [](int32_t a, int32_t b) { return a - b; }},
+                {MULT, [](int32_t a, int32_t b) { return a * b; }},
+                {DIV, [](int32_t a, int32_t b) { return a / b; }},
+                {MODULO, [](int32_t a, int32_t b) { return a % b; }},
+                {BIT_AND, [](int32_t a, int32_t b) { return a & b; }},
+                {BIT_OR, [](int32_t a, int32_t b) { return a | b; }},
+                {BIT_XOR, [](int32_t a, int32_t b) { return a ^ b; }}
             };
-            if (int_operations.find(node.op) != int_operations.end()) {
-                result = int_operations[node.op](left_int->value, right_int->value);
+            if (int_operations.find(get_token_type(ALL_OPERATORS, node.op)) != int_operations.end()) {
+                result = int_operations[get_token_type(ALL_OPERATORS, node.op)](left_int->value, right_int->value);
                 auto new_node = std::make_unique<NodeInt>(result, node.tok);
                 new_node->parent = node.parent;
                 node.replace_with(std::move(new_node));
@@ -76,15 +76,15 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
 		// constant folding
 		if (left_real and right_real) {
             double result = 0;
-            auto real_operations = std::unordered_map<std::string, std::function<double(double, double)>>{
-                {"+", [](double a, double b) { return a + b; }},
-                {"-", [](double a, double b) { return a - b; }},
-                {"*", [](double a, double b) { return a * b; }},
-                {"/", [](double a, double b) { return a / b; }},
-                {"mod", [](double a, double b) { return std::fmod(a, b); }}
+            auto real_operations = std::unordered_map<token, std::function<double(double, double)>>{
+                {ADD, [](double a, double b) { return a + b; }},
+                {SUB, [](double a, double b) { return a - b; }},
+                {MULT, [](double a, double b) { return a * b; }},
+                {DIV, [](double a, double b) { return a / b; }},
+                {MODULO, [](double a, double b) { return std::fmod(a, b); }}
             };
-            if (real_operations.find(node.op) != real_operations.end()) {
-                result = real_operations[node.op](left_real->value, right_real->value);
+            if (real_operations.find(get_token_type(MATH_OPERATORS, node.op)) != real_operations.end()) {
+                result = real_operations[get_token_type(MATH_OPERATORS, node.op)](left_real->value, right_real->value);
                 auto new_node = std::make_unique<NodeReal>(result, node.tok);
                 new_node->parent = node.parent;
                 node.replace_with(std::move(new_node));
@@ -98,17 +98,18 @@ void ASTDesugar::visit(NodeArray& node) {
     node.indexes->accept(*this);
     // substitution
     if(!m_substitution_stack.empty()) {
-        if(auto substitute = get_substitute(node.name)) {
+        if (auto substitute = get_substitute(node.name)) {
+            substitute->update_parents(node.parent);
+            substitute->accept(*this);
             node.replace_with(std::move(substitute));
             return;
         }
-    } else {
-        if(contains(VAR_IDENT, node.name[0])) {
-            auto identifier = node.name[0];
-            node.name = node.name.erase(0,1);
-            token token_type = get_token_type(TYPES, std::to_string(identifier));
-            node.type = token_to_type(token_type);
-        }
+    }
+    if(contains(VAR_IDENT, node.name[0])) {
+        auto identifier = node.name[0];
+        node.name = node.name.erase(0,1);
+        token token_type = get_token_type(TYPES, std::to_string(identifier));
+        node.type = token_to_type(token_type);
     }
     // add prefixes
     if(!m_prefixes.empty()) {
@@ -120,16 +121,17 @@ void ASTDesugar::visit(NodeVariable& node) {
     // substitution
     if(!m_substitution_stack.empty()) {
         if(auto substitute = get_substitute(node.name)) {
+            substitute->update_parents(node.parent);
+            substitute->accept(*this);
             node.replace_with(std::move(substitute));
             return;
         }
-    } else {
-        if(contains(VAR_IDENT, node.name[0])) {
-            auto identifier = node.name[0];
-            node.name = node.name.erase(0,1);
-            token token_type = get_token_type(TYPES, std::to_string(identifier));
-            node.type = token_to_type(token_type);
-        }
+    }
+    if(contains(VAR_IDENT, node.name[0])) {
+        std::string identifier(1, node.name[0]);
+        node.name = node.name.erase(0,1);
+        token token_type = get_token_type(TYPES, identifier);
+        node.type = token_to_type(token_type);
     }
     // add prefixes
     if(!m_prefixes.empty()) {
@@ -168,7 +170,11 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
         node_statement_list->statements = std::move(node_function_def->body);
         node.replace_with(std::move(node_statement_list));
         m_function_call_stack.pop_back();
-    } else if (!is_builtin_function(node.function.get())) {
+    } else if (auto builtin_func = get_builtin_function(node.function.get())) {
+        node.function->type = builtin_func->type;
+        node.function->arg_ast_types = builtin_func->arg_ast_types;
+        node.function->arg_var_types = builtin_func->arg_var_types;
+    } else {
         CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).print();
         exit(EXIT_FAILURE);
     }
@@ -231,9 +237,9 @@ void ASTDesugar::visit(NodeAssignStatement &node) {
         node_single_assign_stmt->array_variable = std::move(arr_var);
         assign_statements.push_back(std::move(node_single_assign_stmt));
     }
-    std::vector<std::shared_ptr<NodeAST>> values;
+    std::vector<std::unique_ptr<NodeAST>> values;
     for(auto &ass : node.assignee->params) {
-        values.push_back(std::shared_ptr<NodeAST>(std::move(ass)));
+        values.push_back(std::move(ass));
     }
     // there were more variables given than values -> repeat the last value
     while(values.size() < assign_statements.size()) {
@@ -245,12 +251,13 @@ void ASTDesugar::visit(NodeAssignStatement &node) {
     for(int i = 0; i<assign_statements.size(); i++) {
         auto &stmt = assign_statements[i];
         auto &val = values[i];
-        stmt->assignee = val;
+        stmt->assignee = std::move(val);
         stmt->assignee->parent = stmt.get();
         node_statement_list->statements.push_back(std::move(
                 statement_wrapper(std::move(stmt), node_statement_list.get())));
     }
     node_statement_list->parent = node.parent;
+    node_statement_list->update_parents(node.parent);
     node_statement_list->accept(*this);
     node.replace_with(std::move(node_statement_list));
 }
@@ -270,9 +277,9 @@ void ASTDesugar::visit(NodeDeclareStatement& node) {
         node_single_declare_stmt->to_be_declared = std::move(declaration);
         declare_statements.push_back(std::move(node_single_declare_stmt));
     }
-    std::vector<std::shared_ptr<NodeAST>> values;
+    std::vector<std::unique_ptr<NodeAST>> values;
     for(auto &ass : node.assignee->params) {
-        values.push_back(std::shared_ptr<NodeAST>(std::move(ass)));
+        values.push_back(std::move(ass));
     }
     // in case there is nothing assigned
     if(!node.assignee->params.empty())
@@ -288,13 +295,14 @@ void ASTDesugar::visit(NodeDeclareStatement& node) {
         // in case there is nothing assigned -> nullptr
         if (!node.assignee->params.empty()) {
             auto &val = values[i];
-            stmt->assignee = val;
+            stmt->assignee = std::move(val);
             stmt->assignee->parent = stmt.get();
         }
         node_statement_list->statements.push_back(std::move(
                 statement_wrapper(std::move(stmt), node_statement_list.get())));
     }
     node_statement_list->parent = node.parent;
+    node_statement_list->update_parents(node.parent);
     node_statement_list->accept(*this);
     node.replace_with(std::move(node_statement_list));
 
@@ -395,20 +403,20 @@ void ASTDesugar::visit(NodeForStatement& node) {
         std::vector<std::unique_ptr<NodeAST>> args;
         args.push_back(std::move(function_var));
         auto inc_statement = make_function_call(function_name, std::move(args), node_while_statement.get(), node.tok);
-        inc_statement->update_parents(node_while_statement.get());
+        inc_statement->update_parents(&node);
         node.statements.push_back(std::move(inc_statement));
     } else {
         auto assign_var2 = function_var->clone();
         auto inc_expression = make_binary_expr(Integer, "+", std::move(function_var), std::move(node.step), &node, node.tok);
         auto node_inc_statement = std::make_unique<NodeSingleAssignStatement>(std::move(assign_var2), std::move(inc_expression), node.tok);
         auto node_statement = statement_wrapper(std::move(node_inc_statement), node_while_statement.get());
-        node_statement->update_parents(node_while_statement.get());
+        node_statement->update_parents(&node);
         node.statements.push_back(std::move(node_statement));
     }
 
     // handle parenting of while statement body
 	for(auto & stmt : node.statements) {
-		stmt->parent = node_while_statement.get();
+//		stmt->update_parents(node_while_statement.get());
 		stmt->accept(*this);
 	}
 
@@ -428,6 +436,7 @@ void ASTDesugar::visit(NodeForStatement& node) {
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_statement_list.get()));
 
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_while_statement), node_statement_list.get()));
+    node_statement_list->update_parents(node.parent);
 	node.replace_with(std::move(node_statement_list));
 }
 
@@ -445,26 +454,18 @@ std::unique_ptr<NodeFunctionDefinition> ASTDesugar::get_function_definition(Node
     return nullptr;
 }
 
-bool ASTDesugar::is_builtin_function(NodeFunctionHeader *function) {
+NodeFunctionHeader* ASTDesugar::get_builtin_function(NodeFunctionHeader *function) {
     auto it = std::find_if(m_builtin_functions.begin(), m_builtin_functions.end(),
                            [&](const std::unique_ptr<NodeFunctionHeader> &func) {
                                return (func->name == function->name and
                                func->arg_ast_types.size() == function->args->params.size());
                            });
-    return it != m_builtin_functions.end();
-}
-
-void ASTDesugar::handle_function_overrides() {
-    std::vector<NodeFunctionDefinition*> override_functions;
-    for (const auto& function : m_function_definitions) {
-        if (function->override) {
-            override_functions.push_back(function.get());
-        }
+    if(it != m_builtin_functions.end()) {
+        return m_builtin_functions[std::distance(m_builtin_functions.begin(), it)].get();
     }
-
-
-
+    return nullptr;
 }
+
 
 
 

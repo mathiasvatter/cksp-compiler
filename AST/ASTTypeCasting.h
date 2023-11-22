@@ -8,14 +8,31 @@
 
 class ASTTypeCasting : public ASTVisitor {
 public:
+    void visit(NodeProgram& node) override;
+    void visit(NodeSingleDeclareStatement& node) override;
+    void visit(NodeParamList& node) override;
+    void visit(NodeSingleAssignStatement& node) override;
+    void visit(NodeVariable& node) override;
 	void visit(NodeArray& node) override;
-	void visit(NodeVariable& node) override;
+    void visit(NodeInt& node) override;
+    void visit(NodeString& node) override;
+    void visit(NodeReal& node) override;
     void visit(NodeBinaryExpr& node) override;
     void visit(NodeUnaryExpr& node) override;
-
-    void visit(NodeParamList& node) override;
+    void visit(NodeFunctionCall& node) override;
+    void visit(NodeFunctionHeader& node) override;
 	void visit(NodeStatementList& node) override;
 //	void visit(NodeStatement& node) override;
+
+private:
+
+    std::vector<NodeVariable*> m_declared_variables;
+    NodeVariable* get_declared_variable(NodeVariable* var);
+    std::vector<NodeArray*> m_declared_arrays;
+    NodeArray* get_declared_array(NodeArray* arr);
+
+    std::vector<NodeUIControl*> m_declared_controls;
+    NodeUIControl* get_declared_control(NodeUIControl* arr);
 
 };
 

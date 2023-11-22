@@ -22,7 +22,7 @@ _slice_length(groupidx, sliceidx):integer
 _slice_loop_count(groupidx, loopidx):integer
 _slice_start(groupidx, sliceidx):integer
 _will_never_terminate(eventid)
-abs(realvalue):real
+abs(int_real):int_real
 acos(realvalue):real
 add_menu_item(variable, text, number)
 add_text_line(variable, text)
@@ -275,8 +275,8 @@ set_wavetable2d_properties(wavetable, wtzone, bgcolor, bgalpha, wavecolor, wavea
 set_wavetable3d_properties(wavetable, wtzone, bgcolor, bgalpha, wtcolor, wtalpha, wtendcolor, wtendalpha, parallaxx, parallaxy)
 set_zone_par(zoneid, parameter, value):integer
 sgn(intorrealvalue):integer
-sh_left(expression, amount):integer
-sh_right(expression, amount):integer
+sh_left(int, amount):integer
+sh_right(int, amount):integer
 show_library_tab
 signbit(intorrealvalue):integer
 sin(realvalue):real
@@ -310,12 +310,11 @@ mf_get_byte_two
 mf_get_channel
 mf_get_command
 mf_get_last_filename
-abs
 in_range
 sh_left
 sh_right
 by_marks
-int_to_real
-real
-real_to_int
-int
+int_to_real(int):real
+real(int):real
+real_to_int(real):int
+int(real):int

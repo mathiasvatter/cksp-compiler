@@ -8,7 +8,6 @@
 #include <unordered_map>
 #include <type_traits>
 
-inline std::vector<std::string> MATH_OPERATORS = {"-", "+", "/", "*", "mod"};
 
 class ASTDesugar : public ASTVisitor {
 public:
@@ -40,7 +39,7 @@ public:
 
 private:
     const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_builtin_functions;
-    bool is_builtin_function(NodeFunctionHeader* function);
+    NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
 
     bool m_in_init_callback;
 
@@ -55,6 +54,5 @@ private:
     /// returns substitute for current node.name, or nullptr if there is no substitute
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
     std::unique_ptr<NodeFunctionDefinition> get_function_definition(NodeFunctionHeader* function_header);
-    void handle_function_overrides();
 };
 

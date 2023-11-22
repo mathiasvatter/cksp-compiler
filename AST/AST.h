@@ -22,6 +22,7 @@ enum ASTType {
     Comparison,
     String,
     Unknown,
+    Any,
 	ParamList,
     Void,
 	StatementList,
@@ -66,6 +67,7 @@ struct NodeAST {
     virtual void update_parents(NodeAST* new_parent) {
         parent = new_parent;
     }
+    virtual std::string get_string() = 0;
 };
 
 template <typename T>
@@ -105,6 +107,9 @@ struct NodeInt : NodeAST {
     NodeInt(const NodeInt& other) : NodeAST(other.tok), value(other.value) {}
     // Clone Methode
     std::unique_ptr<NodeAST> clone() const override;
+    std::string get_string() override {
+        return std::to_string(value);
+    }
 };
 
 struct NodeReal : NodeAST {
@@ -115,6 +120,9 @@ struct NodeReal : NodeAST {
     NodeReal(const NodeReal& other) : NodeAST(other.tok), value(other.value) {}
     // Clone Methode
     std::unique_ptr<NodeAST> clone() const override;
+    std::string get_string() override {
+        return std::to_string(value);
+    }
 };
 
 struct NodeString : NodeAST {
@@ -125,6 +133,9 @@ struct NodeString : NodeAST {
     NodeString(const NodeString& other) : NodeAST(other.tok), value(other.value) {}
     // Clone Methode
     std::unique_ptr<NodeAST> clone() const override;
+    std::string get_string() override {
+        return value;
+    }
 };
 
 struct NodeVariable: NodeAST {
@@ -133,12 +144,16 @@ struct NodeVariable: NodeAST {
     bool is_local;
     VarType var_type = VarType::Mutable;
 	std::string name;
+    NodeAST* declaration; // index in declaration array
 	inline NodeVariable(bool is_persistent, std::string name, VarType type, Token tok) : NodeAST(tok), is_persistent(is_persistent), name(std::move(name)), var_type(type) {}
 	void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
     NodeVariable(const NodeVariable& other);
     // Clone Methode
     std::unique_ptr<NodeAST> clone() const override;
+    std::string get_string() override {
+        return name;
+    }
 };
 
 struct NodeParamList: NodeAST {
@@ -156,6 +171,13 @@ struct NodeParamList: NodeAST {
             param->update_parents(this);
         }
     }
+    std::string get_string() override {
+        std::string str;
+        for(auto & p : params) {
+            str += p->get_string() + ", ";
+        }
+        return str.erase(-1);
+    }
 };
 
 struct NodeArray : NodeAST {
@@ -167,6 +189,7 @@ struct NodeArray : NodeAST {
     std::string name;
     std::unique_ptr<NodeParamList> sizes = nullptr;
     std::unique_ptr<NodeParamList> indexes;
+    NodeAST* declaration;
     inline explicit NodeArray(Token tok) : NodeAST(tok) {}
     inline NodeArray(bool is_persistent, std::string name, VarType var_type, std::unique_ptr<NodeParamList> sizes,
               std::unique_ptr<NodeParamList> indexes, Token tok)
@@ -181,6 +204,9 @@ struct NodeArray : NodeAST {
         parent = new_parent;
         if (sizes) sizes->update_parents(this);
         if (indexes) indexes->update_parents(this);
+    }
+    std::string get_string() override {
+        return name;
     }
 };
 
@@ -201,6 +227,9 @@ struct NodeUIControl : NodeAST {
         control_var->update_parents(this);
         if (params) params->update_parents(this);
     }
+    std::string get_string() override {
+        return control_var->get_string();
+    }
 };
 
 struct NodeUnaryExpr : NodeAST {
@@ -217,6 +246,9 @@ struct NodeUnaryExpr : NodeAST {
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         operand->update_parents(this);
+    }
+    std::string get_string() override {
+        return op.val + operand->get_string();
     }
 };
 
@@ -237,6 +269,9 @@ struct NodeBinaryExpr: NodeAST {
         left->update_parents(this);
         right->update_parents(this);
     }
+    std::string get_string() override {
+        return left->get_string() + "op.val" + right->get_string();
+    }
 };
 
 struct NodeAssignStatement: NodeAST {
@@ -255,13 +290,16 @@ struct NodeAssignStatement: NodeAST {
         array_variable->update_parents(this);
         assignee->update_parents(this);
     }
+    std::string get_string() override {
+        return array_variable->get_string() + " := " + assignee->get_string();
+    }
 };
 
 struct NodeSingleAssignStatement : NodeAST {
     std::unique_ptr<NodeAST> array_variable;
-    std::shared_ptr<NodeAST> assignee;
+    std::unique_ptr<NodeAST> assignee;
     inline explicit NodeSingleAssignStatement(Token tok) : NodeAST(tok) {}
-    NodeSingleAssignStatement(std::unique_ptr<NodeAST> arrayVariable, std::shared_ptr<NodeAST> assignee, Token tok)
+    NodeSingleAssignStatement(std::unique_ptr<NodeAST> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
             : NodeAST(tok), array_variable(std::move(arrayVariable)), assignee(std::move(assignee)) {}
     void accept(ASTVisitor& visitor) override;
     virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
@@ -273,6 +311,9 @@ struct NodeSingleAssignStatement : NodeAST {
         parent = new_parent;
         array_variable->update_parents(this);
         assignee->update_parents(this);
+    }
+    std::string get_string() override {
+        return array_variable->get_string() + " := " + assignee->get_string();
     }
 };
 
@@ -291,15 +332,18 @@ struct NodeDeclareStatement : NodeAST {
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         to_be_declared->update_parents(this);
-        assignee->update_parents(this);
+        if(assignee) assignee->update_parents(this);
+    }
+    std::string get_string() override {
+        return "declare " + to_be_declared->get_string() + " := " + assignee->get_string();
     }
 };
 
 struct NodeSingleDeclareStatement : NodeAST {
     std::unique_ptr<NodeAST> to_be_declared;
-    std::shared_ptr<NodeAST> assignee;
+    std::unique_ptr<NodeAST> assignee;
     inline explicit NodeSingleDeclareStatement(Token tok) : NodeAST(tok) {}
-    NodeSingleDeclareStatement(std::unique_ptr<NodeAST> arrayVariable, std::shared_ptr<NodeAST> assignee, Token tok)
+    NodeSingleDeclareStatement(std::unique_ptr<NodeAST> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
     : NodeAST(tok), to_be_declared(std::move(arrayVariable)), assignee(std::move(assignee)) {}
     void accept(ASTVisitor& visitor) override;
     virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
@@ -310,7 +354,10 @@ struct NodeSingleDeclareStatement : NodeAST {
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         to_be_declared->update_parents(this);
-        assignee->update_parents(this);
+        if(assignee) assignee->update_parents(this);
+    }
+    std::string get_string() override {
+        return "declare " + to_be_declared->get_string() + " := " + assignee->get_string();
     }
 };
 
@@ -327,6 +374,9 @@ struct NodeGetControlStatement : NodeAST {
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         ui_id->update_parents(this);
+    }
+    std::string get_string() override {
+        return ui_id->get_string() + " -> " + control_param;
     }
 };
 
@@ -345,6 +395,9 @@ struct NodeSetControlStatement : NodeAST {
         get_control->update_parents(this);
         assignee->update_parents(this);
     }
+    std::string get_string() override {
+        return get_control->get_string() + " := " + assignee->get_string();
+    }
 };
 
 // can be assign_statement, if_statement etc.
@@ -361,6 +414,9 @@ struct NodeStatement: NodeAST {
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         statement->update_parents(this);
+    }
+    std::string get_string() override {
+        return statement->get_string();
     }
 };
 
@@ -381,6 +437,7 @@ struct NodeConstStatement : NodeAST {
             c->update_parents(this);
         }
     }
+    std::string get_string() override { return ""; }
 };
 
 struct NodeStructStatement : NodeAST {
@@ -400,6 +457,7 @@ struct NodeStructStatement : NodeAST {
             member->update_parents(this);
         }
     }
+    std::string get_string() override { return ""; }
 };
 
 struct NodeFamilyStatement : NodeAST {
@@ -419,6 +477,7 @@ struct NodeFamilyStatement : NodeAST {
             member->update_parents(this);
         }
     }
+    std::string get_string() override { return ""; }
 };
 
 struct NodeListStatement : NodeAST {
@@ -437,6 +496,7 @@ struct NodeListStatement : NodeAST {
             b->update_parents(this);
         }
     }
+    std::string get_string() override { return ""; }
 };
 
 struct NodeStatementList : NodeAST {
@@ -453,6 +513,14 @@ struct NodeStatementList : NodeAST {
             stmt->update_parents(this);
         }
     }
+    std::string get_string() override {
+        std::string str;
+        for(auto & stmt : statements) {
+            str += stmt->get_string();
+        }
+        return str;
+    }
+
 };
 
 struct NodeIfStatement: NodeAST {
@@ -475,6 +543,7 @@ struct NodeIfStatement: NodeAST {
             stmt->update_parents(this);
         }
     }
+    std::string get_string() override { return ""; }
 };
 
 struct NodeForStatement : NodeAST {
@@ -499,6 +568,7 @@ struct NodeForStatement : NodeAST {
             stmt->update_parents(this);
         }
     }
+    std::string get_string() override { return ""; }
 };
 
 struct NodeWhileStatement : NodeAST {
@@ -517,6 +587,7 @@ struct NodeWhileStatement : NodeAST {
             stmt->update_parents(this);
         }
     }
+    std::string get_string() override { return ""; }
 };
 
 struct NodeSelectStatement : NodeAST {
@@ -540,6 +611,7 @@ struct NodeSelectStatement : NodeAST {
             }
         }
     }
+    std::string get_string() override { return ""; }
 };
 
 struct NodeCallback: NodeAST {
@@ -559,6 +631,7 @@ struct NodeCallback: NodeAST {
             callback_id->update_parents(this);
         statements->update_parents(this);
     }
+    std::string get_string() override { return ""; }
 };
 
 struct NodeImport : NodeAST {
@@ -569,6 +642,7 @@ struct NodeImport : NodeAST {
     void accept(ASTVisitor& visitor) override;
     NodeImport(const NodeImport& other);
     std::unique_ptr<NodeAST> clone() const override;
+    std::string get_string() override { return ""; }
 };
 
 struct NodeFunctionHeader: NodeAST {
@@ -587,6 +661,9 @@ struct NodeFunctionHeader: NodeAST {
         parent = new_parent;
         args->update_parents(this);
     }
+    std::string get_string() override {
+        return name + "(" + args->get_string() + ")";
+    }
 };
 
 struct NodeFunctionCall : NodeAST {
@@ -601,6 +678,9 @@ struct NodeFunctionCall : NodeAST {
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         function->update_parents(this);
+    }
+    std::string get_string() override {
+        return function->get_string();
     }
 };
 
@@ -625,6 +705,7 @@ struct NodeFunctionDefinition: NodeAST {
         for(auto & stmt : body) stmt->update_parents(this);
         if(return_variable.has_value()) return_variable.value()->update_parents(this);
     }
+    std::string get_string() override {return "";}
 };
 
 struct NodeDefineHeader : NodeAST {
@@ -634,6 +715,7 @@ struct NodeDefineHeader : NodeAST {
 	: NodeAST(tok), name(std::move(name)), args(std::move(args)) {}
     NodeDefineHeader(const NodeDefineHeader& other);
     std::unique_ptr<NodeAST> clone() const override;
+    std::string get_string() override {return "";}
 };
 
 struct NodeDefineStatement : NodeAST {
@@ -644,6 +726,7 @@ struct NodeDefineStatement : NodeAST {
 		: to_be_defined(std::move(to_be_defined)), assignee(std::move(assignee)), has_recursive_calls(recur) {}
     NodeDefineStatement(const NodeDefineStatement& other);
     std::unique_ptr<NodeAST> clone() const override;
+    std::string get_string() override {return "";}
 };
 
 struct NodeMacroHeader : NodeAST {
@@ -661,6 +744,7 @@ struct NodeMacroHeader : NodeAST {
         parent = new_parent;
         args->update_parents(this);
     }
+    std::string get_string() override {return "";}
 };
 
 struct NodeMacroDefinition : NodeAST {
@@ -680,6 +764,7 @@ struct NodeMacroDefinition : NodeAST {
         for(auto & b : body)
             b ->update_parents(this);
     }
+    std::string get_string() override {return "";}
 };
 
 struct NodeMacroCall : NodeAST {
@@ -694,6 +779,7 @@ struct NodeMacroCall : NodeAST {
         parent = new_parent;
         macro->update_parents(this);
     }
+    std::string get_string() override {return "";}
 };
 
 struct NodeIterateMacro : NodeAST {
@@ -717,6 +803,7 @@ struct NodeIterateMacro : NodeAST {
 		if(step)
         	step->update_parents(this);
     }
+    std::string get_string() override {return "";}
 };
 
 struct NodeLiterateMacro : NodeAST {
@@ -733,6 +820,7 @@ struct NodeLiterateMacro : NodeAST {
         macro_call->update_parents(this);
         literate_tokens->update_parents(this);
     }
+    std::string get_string() override {return "";}
 };
 
 struct NodeProgram : NodeAST {
@@ -764,6 +852,7 @@ struct NodeProgram : NodeAST {
         for(auto & f : function_definitions)
             f->update_parents(this);
     }
+    std::string get_string() override {return "";}
 };
 
 

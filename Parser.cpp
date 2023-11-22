@@ -217,7 +217,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_string_expr(NodeAST* parent) {
 Result<std::unique_ptr<NodeAST>> Parser::_parse_string_expr_rhs(std::unique_ptr<NodeAST> lhs, NodeAST* parent) {
     while(true) {
         Token string_op = peek();
-        if(peek().type != token::STRING_OPERATOR) {
+        if(peek().type != token::STRING_OP) {
             return Result<std::unique_ptr<NodeAST>>(std::move(lhs));
         }
         consume();
@@ -1258,9 +1258,10 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) 
     token end_construct = token::END_CONST;
     if(peek().type != token::KEYWORD) {
         return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-            "Found unknown const/family/struct syntax.", peek().line, "valid prefix", peek().val, peek().file));
+            "Found unknown const syntax.", peek().line, "valid prefix", peek().val, peek().file));
     }
     auto prefix = consume(); //consume prefix
+
     if(peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
             "Expected linebreak.", peek().line, "linebreak", peek().val, peek().file));
@@ -1285,6 +1286,8 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) 
     consume(); // consume end_const
 
     node_const_statement -> parent = parent;
+    node_const_statement->prefix = prefix.val;
+    node_const_statement->constants = std::move(stmts);
 	// set the parent for each statement in stmts
     return Result<std::unique_ptr<NodeAST>>(std::move(node_const_statement));
 }
