@@ -136,9 +136,10 @@ public:
 		node.header ->accept(*this);
 		if (node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);
-		for(auto& stmt: node.body) {
-			stmt->accept(*this);
-		}
+        node.body->accept(*this);
+//		for(auto& stmt: node.body) {
+//			stmt->accept(*this);
+//		}
 	};
     virtual void visit(NodeProgram& node) {
 		for(auto & callback : node.callbacks) {

@@ -653,7 +653,8 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     auto node_function_definition = std::make_unique<NodeFunctionDefinition>(get_tok());
     std::unique_ptr<NodeFunctionHeader> func_header;
     std::optional<std::unique_ptr<NodeParamList>> func_return_var;
-    std::vector<std::unique_ptr<NodeStatement>> func_body;
+    auto func_body = std::make_unique<NodeStatementList>(get_tok());
+    func_body->parent = node_function_definition.get();
     bool func_override = false;
     consume(); //consume "function"
     if (peek().type != token::KEYWORD) {
@@ -722,7 +723,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
             return Result<std::unique_ptr<NodeFunctionDefinition>>(stmt.get_error());
         }
         if(stmt.unwrap()->statement)
-            func_body.push_back(std::move(stmt.unwrap()));
+            func_body->statements.push_back(std::move(stmt.unwrap()));
     }
     consume();
     node_function_definition->header = std::move(func_header);

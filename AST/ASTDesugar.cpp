@@ -191,8 +191,6 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
     if (auto node_function_def = get_function_definition(node.function.get())) {
         m_function_call_stack.push_back(node.function->name);
         node_function_def->parent = node.parent;
-        auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-        node_statement_list->parent = node.parent;
         if (!node.function->args->params.empty()) {
             auto substitution_vec = get_substitution_vector(node_function_def->header.get(), node.function.get());
             m_substitution_stack.push(std::move(substitution_vec));
@@ -206,11 +204,11 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 //            stmt->accept(*this);
 //            stmt->parent = node_statement_list.get();
 //        }
-        node_statement_list->statements = std::move(node_function_def->body);
-        node_statement_list->update_parents(node.parent);
-        node_statement_list->accept(*this);
+//        node_statement_list->statements = std::move(node_function_def->body);
+        node_function_def->body->update_parents(node.parent);
+        node_function_def->body->accept(*this);
         if (!node.function->args->params.empty()) m_substitution_stack.pop();
-        node.replace_with(std::move(node_statement_list));
+        node.replace_with(std::move(node_function_def->body));
         m_processing_function = false;
         m_function_call_stack.pop_back();
     } else if (auto builtin_func = get_builtin_function(node.function.get())) {

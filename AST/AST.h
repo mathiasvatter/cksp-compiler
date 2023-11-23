@@ -697,11 +697,11 @@ struct NodeFunctionDefinition: NodeAST {
     std::unique_ptr<NodeFunctionHeader> header;
     std::optional<std::unique_ptr<NodeParamList>> return_variable;
     bool override;
-    std::vector<std::unique_ptr<NodeStatement>> body;
+    std::unique_ptr<NodeStatementList> body;
     inline explicit NodeFunctionDefinition(Token tok) : NodeAST(tok) {}
     inline NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
 	   std::optional<std::unique_ptr<NodeParamList>> returnVariable, bool override,
-	   std::vector<std::unique_ptr<NodeStatement>> body, Token tok)
+       std::unique_ptr<NodeStatementList> body, Token tok)
 	   : NodeAST(tok), header(std::move(header)), return_variable(std::move(returnVariable)), override(override),
 	   body(std::move(body)) {};
     void accept(ASTVisitor& visitor) override;
@@ -710,7 +710,7 @@ struct NodeFunctionDefinition: NodeAST {
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         header->update_parents(this);
-        for(auto & stmt : body) stmt->update_parents(this);
+        body->update_parents(this);
         if(return_variable.has_value()) return_variable.value()->update_parents(this);
     }
     std::string get_string() override {return "";}

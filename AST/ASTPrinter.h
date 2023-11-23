@@ -241,9 +241,7 @@ public:
 			std::cout << "override" << std::endl;
 		}
 		std::cout << "\n";
-		for(auto& stmt: node.body) {
-			stmt->accept(*this);
-		}
+		node.body->accept(*this);
 		std::cout << "end function" << std::endl;
 	}
 
