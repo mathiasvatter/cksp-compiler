@@ -3,9 +3,9 @@ RESET_CONDITION(unknown)
 SET_CONDITION(unknown)
 USE_CODE_IF(unknown)
 USE_CODE_IF_NOT(unknown)
-_get_engine_par(parameter, group, slot, generic):integer
+_get_engine_par(int, group, slot, generic):integer
 _get_engine_par_disp(parameter, group, slot, generic):string
-_get_folder(filepath):string
+_get_folder(string):string
 _load_ir_sample(filename, slot, generic):integer
 _num_slices(groupidx):integer
 _pgs_create_key(keyid, size)
@@ -275,8 +275,8 @@ set_wavetable2d_properties(wavetable, wtzone, bgcolor, bgalpha, wavecolor, wavea
 set_wavetable3d_properties(wavetable, wtzone, bgcolor, bgalpha, wtcolor, wtalpha, wtendcolor, wtendalpha, parallaxx, parallaxy)
 set_zone_par(zoneid, parameter, value):integer
 sgn(intorrealvalue):integer
-sh_left(int, amount):integer
-sh_right(int, amount):integer
+sh_left(int, int):integer
+sh_right(int, int):integer
 show_library_tab
 signbit(intorrealvalue):integer
 sin(realvalue):real
@@ -288,7 +288,7 @@ slice_start(groupidx, sliceidx):integer
 sort(intorrealarray, direction)
 sort(intorrealarray, direction, from, to)
 sqrt(realvalue):real
-stop_wait(callbackid, par)
+stop_wait(int, int)
 tan(realvalue):real
 ticks_to_ms(ticks):integer
 unload_slot(instrslotidx)
@@ -311,8 +311,6 @@ mf_get_channel
 mf_get_command
 mf_get_last_filename
 in_range
-sh_left
-sh_right
 by_marks
 int_to_real(int):real
 real(int):real

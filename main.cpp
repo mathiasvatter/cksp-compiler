@@ -55,7 +55,7 @@ int main() {
 	ASTDesugar desugar(builtins.get_builtin_functions());
 	ast->accept(desugar);
 
-	ASTTypeCasting typecast;
+	ASTTypeCasting typecast(builtins.get_builtin_variables(), builtins.get_builtin_arrays());
 	ast->accept(typecast);
 
     auto end_time = std::chrono::high_resolution_clock::now();

@@ -8,6 +8,8 @@
 
 class ASTTypeCasting : public ASTVisitor {
 public:
+    ASTTypeCasting(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables, const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays);
+
     void visit(NodeProgram& node) override;
     void visit(NodeSingleDeclareStatement& node) override;
     void visit(NodeParamList& node) override;
@@ -21,10 +23,12 @@ public:
     void visit(NodeUnaryExpr& node) override;
     void visit(NodeFunctionCall& node) override;
     void visit(NodeFunctionHeader& node) override;
-	void visit(NodeStatementList& node) override;
+//	void visit(NodeStatementList& node) override;
 //	void visit(NodeStatement& node) override;
 
 private:
+    const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables;
+    const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays;
 
     std::vector<NodeVariable*> m_declared_variables;
     NodeVariable* get_declared_variable(NodeVariable* var);
@@ -34,5 +38,7 @@ private:
     std::vector<NodeUIControl*> m_declared_controls;
     NodeUIControl* get_declared_control(NodeUIControl* arr);
 
+    NodeVariable* get_builtin_variable(NodeVariable* var);
+    NodeArray* get_builtin_array(NodeArray* arr);
 };
 

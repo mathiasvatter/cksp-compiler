@@ -570,6 +570,8 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent)
     if (result.is_error()) {
         return Result<std::unique_ptr<NodeParamList>>(result.get_error());
     }
+
+
     return Result<std::unique_ptr<NodeParamList>>(std::move(param_list));
 }
 
@@ -577,6 +579,7 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
     while (true) {
         if (peek().type == token::OPEN_PARENTH) {
             size_t backup_pos = m_pos; // backup token index
+//            consume(); // consume (
             auto exprResult = parse_expression(parent);
             if (!exprResult.is_error()) {
                 params.push_back(std::move(exprResult.unwrap()));

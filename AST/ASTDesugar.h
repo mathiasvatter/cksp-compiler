@@ -34,7 +34,8 @@ public:
     /// replace family block with single declare statements
     void visit(NodeFamilyStatement& node) override;
 	/// alter for loops to while loops
-	void visit(NodeForStatement& node) override;
+    void visit(NodeForStatement& node) override;
+    void visit(NodeStatementList& node) override;
 
     void visit(NodeArray& node) override;
     void visit(NodeVariable& node) override;
@@ -60,5 +61,7 @@ private:
     /// returns substitute for current node.name, or nullptr if there is no substitute
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
     std::unique_ptr<NodeFunctionDefinition> get_function_definition(NodeFunctionHeader* function_header);
+
+    std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok);
 };
 

@@ -68,6 +68,9 @@ struct NodeAST {
         parent = new_parent;
     }
     virtual std::string get_string() = 0;
+    virtual void update_token_data(const Token& token) {
+        tok.line = token.line; tok.file = token.file;
+    }
 };
 
 template <typename T>
@@ -184,7 +187,12 @@ struct NodeParamList: NodeAST {
         for(auto & p : params) {
             str += p->get_string() + ", ";
         }
-        return str.erase(-1);
+        return str.erase(str.size() - 2);
+    }
+    void update_token_data(const Token& token) override {
+        for(auto &p : params) {
+            p->update_token_data(token);
+        }
     }
 };
 
@@ -216,6 +224,10 @@ struct NodeArray : NodeAST {
     std::string get_string() override {
         return name;
     }
+    void update_token_data(const Token& token) override {
+        if(sizes) sizes -> update_token_data(token);
+        if(indexes) indexes ->update_token_data(token);
+    }
 };
 
 struct NodeUIControl : NodeAST {
@@ -238,6 +250,10 @@ struct NodeUIControl : NodeAST {
     std::string get_string() override {
         return control_var->get_string();
     }
+    void update_token_data(const Token& token) override {
+        control_var -> update_token_data(token);
+        params -> update_token_data(token);
+    }
 };
 
 struct NodeUnaryExpr : NodeAST {
@@ -257,6 +273,10 @@ struct NodeUnaryExpr : NodeAST {
     }
     std::string get_string() override {
         return op.val + operand->get_string();
+    }
+    void update_token_data(const Token& token) override {
+        operand -> update_token_data(token);
+        op.line = token.line; op.file = token.file;
     }
 };
 
@@ -280,6 +300,10 @@ struct NodeBinaryExpr: NodeAST {
     std::string get_string() override {
         return left->get_string() + "op.val" + right->get_string();
     }
+    void update_token_data(const Token& token) override {
+        left -> update_token_data(token);
+        right -> update_token_data(token);
+    }
 };
 
 struct NodeAssignStatement: NodeAST {
@@ -300,6 +324,10 @@ struct NodeAssignStatement: NodeAST {
     }
     std::string get_string() override {
         return array_variable->get_string() + " := " + assignee->get_string();
+    }
+    void update_token_data(const Token& token) override {
+        array_variable -> update_token_data(token);
+        assignee -> update_token_data(token);
     }
 };
 
@@ -323,6 +351,10 @@ struct NodeSingleAssignStatement : NodeAST {
     std::string get_string() override {
         return array_variable->get_string() + " := " + assignee->get_string();
     }
+    void update_token_data(const Token& token) override {
+        array_variable -> update_token_data(token);
+        assignee -> update_token_data(token);
+    }
 };
 
 struct NodeDeclareStatement : NodeAST {
@@ -344,6 +376,10 @@ struct NodeDeclareStatement : NodeAST {
     }
     std::string get_string() override {
         return "declare " + to_be_declared->get_string() + " := " + assignee->get_string();
+    }
+    void update_token_data(const Token& token) override {
+        to_be_declared -> update_token_data(token);
+        assignee -> update_token_data(token);
     }
 };
 
@@ -367,6 +403,10 @@ struct NodeSingleDeclareStatement : NodeAST {
     std::string get_string() override {
         return "declare " + to_be_declared->get_string() + " := " + assignee->get_string();
     }
+    void update_token_data(const Token& token) override {
+        to_be_declared -> update_token_data(token);
+        assignee -> update_token_data(token);
+    }
 };
 
 struct NodeGetControlStatement : NodeAST {
@@ -385,6 +425,9 @@ struct NodeGetControlStatement : NodeAST {
     }
     std::string get_string() override {
         return ui_id->get_string() + " -> " + control_param;
+    }
+    void update_token_data(const Token& token) override {
+        ui_id -> update_token_data(token);
     }
 };
 
@@ -406,6 +449,10 @@ struct NodeSetControlStatement : NodeAST {
     std::string get_string() override {
         return get_control->get_string() + " := " + assignee->get_string();
     }
+    void update_token_data(const Token& token) override {
+        get_control -> update_token_data(token);
+        assignee -> update_token_data(token);
+    }
 };
 
 // can be assign_statement, if_statement etc.
@@ -425,6 +472,9 @@ struct NodeStatement: NodeAST {
     }
     std::string get_string() override {
         return statement->get_string();
+    }
+    void update_token_data(const Token& token) override {
+        statement -> update_token_data(token);
     }
 };
 
@@ -446,6 +496,11 @@ struct NodeConstStatement : NodeAST {
         }
     }
     std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+        for(auto &c : constants) {
+            c->update_token_data(token);
+        }
+    }
 };
 
 struct NodeStructStatement : NodeAST {
@@ -466,6 +521,11 @@ struct NodeStructStatement : NodeAST {
         }
     }
     std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+        for(auto &m : members) {
+            m->update_token_data(token);
+        }
+    }
 };
 
 struct NodeFamilyStatement : NodeAST {
@@ -486,6 +546,11 @@ struct NodeFamilyStatement : NodeAST {
         }
     }
     std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+        for(auto &m : members) {
+            m->update_token_data(token);
+        }
+    }
 };
 
 struct NodeListStatement : NodeAST {
@@ -505,6 +570,11 @@ struct NodeListStatement : NodeAST {
         }
     }
     std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+        for(auto &b : body) {
+            b->update_token_data(token);
+        }
+    }
 };
 
 struct NodeStatementList : NodeAST {
@@ -528,7 +598,11 @@ struct NodeStatementList : NodeAST {
         }
         return str;
     }
-
+    void update_token_data(const Token& token) override {
+        for(auto &stmt : statements) {
+            stmt->update_token_data(token);
+        }
+    }
 };
 
 struct NodeIfStatement: NodeAST {
@@ -552,6 +626,15 @@ struct NodeIfStatement: NodeAST {
         }
     }
     std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+        condition -> update_token_data(token);
+        for(auto &stmt : statements) {
+            stmt->update_token_data(token);
+        }
+        for(auto &stmt : else_statements) {
+            stmt->update_token_data(token);
+        }
+    }
 };
 
 struct NodeForStatement : NodeAST {
@@ -577,6 +660,15 @@ struct NodeForStatement : NodeAST {
         }
     }
     std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+        iterator -> update_token_data(token);
+        to.line = token.line; to.file = token.file;
+        iterator_end -> update_token_data(token);
+        if(step) step ->update_token_data(token);
+        for(auto &stmt : statements) {
+            stmt->update_token_data(token);
+        }
+    }
 };
 
 struct NodeWhileStatement : NodeAST {
@@ -596,6 +688,12 @@ struct NodeWhileStatement : NodeAST {
         }
     }
     std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+        condition -> update_token_data(token);
+        for(auto &stmt : statements) {
+            stmt->update_token_data(token);
+        }
+    }
 };
 
 struct NodeSelectStatement : NodeAST {
@@ -620,6 +718,17 @@ struct NodeSelectStatement : NodeAST {
         }
     }
     std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+        expression -> update_token_data(token);
+        for (auto & pair : cases) {
+            for(auto &stmt : pair.first) {
+                stmt->update_token_data(token);
+            }
+            for(auto &stmt : pair.second) {
+                stmt->update_token_data(token);
+            }
+        }
+    }
 };
 
 struct NodeCallback: NodeAST {
@@ -635,11 +744,14 @@ struct NodeCallback: NodeAST {
     std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
-        if(callback_id)
-            callback_id->update_parents(this);
+        if(callback_id) callback_id->update_parents(this);
         statements->update_parents(this);
     }
     std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+        if(callback_id) callback_id -> update_token_data(token);
+        statements -> update_token_data(token);
+    }
 };
 
 struct NodeImport : NodeAST {
@@ -651,6 +763,7 @@ struct NodeImport : NodeAST {
     NodeImport(const NodeImport& other);
     std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {}
 };
 
 struct NodeFunctionHeader: NodeAST {
@@ -672,6 +785,10 @@ struct NodeFunctionHeader: NodeAST {
     std::string get_string() override {
         return name + "(" + args->get_string() + ")";
     }
+    void update_token_data(const Token& token) override {
+        tok.line = token.line; tok.file = token.file;
+        args -> update_token_data(token);
+    }
 };
 
 struct NodeFunctionCall : NodeAST {
@@ -689,6 +806,9 @@ struct NodeFunctionCall : NodeAST {
     }
     std::string get_string() override {
         return function->get_string();
+    }
+    void update_token_data(const Token& token) override {
+        function -> update_token_data(token);
     }
 };
 
@@ -714,6 +834,10 @@ struct NodeFunctionDefinition: NodeAST {
         if(return_variable.has_value()) return_variable.value()->update_parents(this);
     }
     std::string get_string() override {return "";}
+    void update_token_data(const Token& token) override {
+        header -> update_token_data(token);
+        if(return_variable.has_value()) return_variable.value()->update_token_data(token);
+    }
 };
 
 struct NodeProgram : NodeAST {
@@ -735,6 +859,7 @@ struct NodeProgram : NodeAST {
             f->update_parents(this);
     }
     std::string get_string() override {return "";}
+    void update_token_data(const Token& token) override {}
 };
 
 

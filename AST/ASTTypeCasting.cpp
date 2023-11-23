@@ -5,6 +5,9 @@
 #include "ASTTypeCasting.h"
 #include "ASTDesugar.h"
 
+ASTTypeCasting::ASTTypeCasting(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables, const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays)
+    : m_builtin_arrays(m_builtin_arrays), m_builtin_variables(m_builtin_variables) {
+}
 
 void ASTTypeCasting::visit(NodeProgram& node) {
     for(auto & callback : node.callbacks) {
@@ -58,6 +61,7 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
     } else {
         node.to_be_declared->type = Unknown;
     }
+
 }
 
 void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
@@ -73,14 +77,22 @@ void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
 
 void ASTTypeCasting::visit(NodeVariable& node) {
     if(is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
-        if(auto var_declaration = get_declared_variable(&node)) {
+        if(get_builtin_variable(&node)) {
+            CompileError(ErrorType::TypeError,"Variable declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).print();
+            exit(EXIT_FAILURE);
+        }
+        if(get_declared_variable(&node)) {
             CompileError(ErrorType::TypeError,"Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
             exit(EXIT_FAILURE);
         } else {
             m_declared_variables.push_back(&node);
         }
     } else if (auto node_ui_control = cast_node<NodeUIControl>(node.parent)) {
-        if(auto var_declaration = get_declared_control(node_ui_control)) {
+        if(get_builtin_variable(&node)) {
+            CompileError(ErrorType::TypeError,"Variable declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).print();
+            exit(EXIT_FAILURE);
+        }
+        if(get_declared_control(node_ui_control)) {
             CompileError(ErrorType::TypeError,"Control Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
             exit(EXIT_FAILURE);
         } else {
@@ -96,9 +108,11 @@ void ASTTypeCasting::visit(NodeVariable& node) {
             if (node.declaration->type == Unknown) {
                 node.declaration->type = node.type;
             }
+        } else if(auto builtin_var = get_builtin_variable(&node)) {
+            node.type = builtin_var->type;
         } else {
             CompileError(ErrorType::TypeError,"Variable has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
+//            exit(EXIT_FAILURE);
         }
     }
 
@@ -107,6 +121,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 void ASTTypeCasting::visit(NodeArray& node) {
 	node.sizes->accept(*this);
 	node.indexes->accept(*this);
+
 }
 
 void ASTTypeCasting::visit(NodeInt& node) {
@@ -228,6 +243,10 @@ void ASTTypeCasting::visit(NodeFunctionHeader& node) {
             if(node.arg_ast_types[i] == Number and (node.args->params[i]->type == Integer or node.args->params[i]->type == Real)) {
                 node.arg_ast_types[i] = node.args->params[i]->type;
             }
+            // give unknown variables types
+            if(node.arg_ast_types[i] != Number and node.arg_ast_types[i] != Any and node.args->params[i]->type == Unknown) {
+                node.args->params[i]->type = node.arg_ast_types[i];
+            }
             if(node.arg_ast_types[i] == Any) {
                 node.arg_ast_types[i] = node.args->params[i]->type;
             }
@@ -243,36 +262,36 @@ void ASTTypeCasting::visit(NodeFunctionHeader& node) {
 
 }
 
-void ASTTypeCasting::visit(NodeStatementList& node) {
-	for(auto & stmt : node.statements) {
-		stmt->accept(*this);
-//		stmt->parent = &node;
-	}
-	for(int i=0; i<node.statements.size(); ++i) {
-		if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
-			// Wir speichern die Statements der inneren NodeStatementList
-			auto& inner_statements = node_statement_list->statements;
-			// Fügen Sie die inneren Statements an der aktuellen Position ein
-			node.statements.insert(
-				node.statements.begin() + i + 1,
-				std::make_move_iterator(inner_statements.begin()),
-				std::make_move_iterator(inner_statements.end())
-			);
-			// Entfernen Sie das ursprüngliche NodeStatementList-Element
-			node.statements.erase(node.statements.begin() + i);
-			// Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
-			i += inner_statements.size() - 1;
-			// Die inneren Statements sind jetzt leer, da sie verschoben wurden
-			inner_statements.clear();
-		}
-	}
-    node.update_parents(&node);
-}
+//void ASTTypeCasting::visit(NodeStatementList& node) {
+//	for(auto & stmt : node.statements) {
+//		stmt->accept(*this);
+////		stmt->parent = &node;
+//	}
+//	for(int i=0; i<node.statements.size(); ++i) {
+//		if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
+//			// Wir speichern die Statements der inneren NodeStatementList
+//			auto& inner_statements = node_statement_list->statements;
+//			// Fügen Sie die inneren Statements an der aktuellen Position ein
+//			node.statements.insert(
+//				node.statements.begin() + i + 1,
+//				std::make_move_iterator(inner_statements.begin()),
+//				std::make_move_iterator(inner_statements.end())
+//			);
+//			// Entfernen Sie das ursprüngliche NodeStatementList-Element
+//			node.statements.erase(node.statements.begin() + i);
+//			// Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
+//			i += inner_statements.size() - 1;
+//			// Die inneren Statements sind jetzt leer, da sie verschoben wurden
+//			inner_statements.clear();
+//		}
+//	}
+//    node.update_parents(&node);
+//}
 
 NodeVariable *ASTTypeCasting::get_declared_variable(NodeVariable *var) {
     auto it = std::find_if(m_declared_variables.begin(), m_declared_variables.end(),
                            [&](NodeVariable* variable) {
-                               return variable->name == var->name;
+                               return to_lower(variable->name) == to_lower(var->name);
                            });
     if(it != m_declared_variables.end()) {
         return m_declared_variables[std::distance(m_declared_variables.begin(), it)];
@@ -294,13 +313,37 @@ NodeArray *ASTTypeCasting::get_declared_array(NodeArray *arr) {
 NodeUIControl *ASTTypeCasting::get_declared_control(NodeUIControl *ctr) {
     auto it = std::find_if(m_declared_controls.begin(), m_declared_controls.end(),
                            [&](NodeUIControl* control) {
-                               return control->get_string() == ctr->get_string();
+                               return to_lower(control->get_string()) == to_lower(ctr->get_string());
                            });
     if(it != m_declared_controls.end()) {
         return m_declared_controls[std::distance(m_declared_controls.begin(), it)];
     }
     return nullptr;
 }
+
+NodeVariable* ASTTypeCasting::get_builtin_variable(NodeVariable *var) {
+    auto it = std::find_if(m_builtin_variables.begin(), m_builtin_variables.end(),
+                           [&](const std::unique_ptr<NodeVariable> &variable) {
+                               return variable->name == var->name;
+                           });
+    if(it != m_builtin_variables.end()) {
+        return m_builtin_variables[std::distance(m_builtin_variables.begin(), it)].get();
+    }
+    return nullptr;
+}
+
+NodeArray* ASTTypeCasting::get_builtin_array(NodeArray *arr) {
+    auto it = std::find_if(m_builtin_arrays.begin(), m_builtin_arrays.end(),
+                           [&](const std::unique_ptr<NodeArray> &array) {
+                               return array->name == arr->name;
+                           });
+    if(it != m_builtin_arrays.end()) {
+        return m_builtin_arrays[std::distance(m_builtin_arrays.begin(), it)].get();
+    }
+    return nullptr;
+}
+
+
 
 
 

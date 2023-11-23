@@ -196,21 +196,58 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
             m_substitution_stack.push(std::move(substitution_vec));
         }
         m_processing_function = true;
-        // inlining
-        if(node_function_def->return_variable.has_value()) {
-
-        }
 //        for(auto& stmt: node_function_def->body) {
 //            stmt->accept(*this);
 //            stmt->parent = node_statement_list.get();
 //        }
 //        node_statement_list->statements = std::move(node_function_def->body);
-        node_function_def->body->update_parents(node.parent);
+//        node_function_def->body->update_parents(node.parent);
+        node_function_def->body->update_token_data(node.tok);
         node_function_def->body->accept(*this);
         if (!node.function->args->params.empty()) m_substitution_stack.pop();
-        node.replace_with(std::move(node_function_def->body));
         m_processing_function = false;
         m_function_call_stack.pop_back();
+        // has return variable
+        if(node_function_def->return_variable.has_value()) {
+            if(is_instance_of<NodeStatementList>(node.parent->parent)) {
+                CompileError(ErrorType::SyntaxError,"Function returns a value. Move function into assign statement.", node.tok.line, node_function_def->return_variable.value()->get_string(), "<assignment>", node.tok.file).print();
+                exit(EXIT_FAILURE);
+            }
+            // inlining
+            if(node_function_def->body->statements.size() == 1) {
+                if(auto node_statement = cast_node<NodeStatement>(node_function_def->body->statements[0].get())) {
+                    if(auto node_assignment = cast_node<NodeSingleAssignStatement>(node_statement->statement.get())) {
+                        if(node_assignment->array_variable->get_string() == node_function_def->return_variable.value()->get_string()) {
+                            node.replace_with(std::move(node_assignment->assignee));
+                            return;
+                        } else {
+                            CompileError(ErrorType::SyntaxError,"Given return variable of function could not be found in function body.", node.tok.line, node_function_def->return_variable.value()->get_string(), node_assignment->array_variable->get_string(), node.tok.file).print();
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+                }
+            } else if(node_function_def->body->statements.size() > 1) {
+                if(is_instance_of<NodeSingleDeclareStatement>(node.parent) or is_instance_of<NodeSingleAssignStatement>(node.parent)) {
+                    std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> substitution_vec;
+                    if (auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent)) {
+                        substitution_vec.emplace_back(node_function_def->return_variable.value()->get_string(),
+                                                      node_declaration->to_be_declared->clone());
+                    } else if (auto node_assignment = cast_node<NodeSingleAssignStatement>(node.parent)) {
+                        substitution_vec.emplace_back(node_function_def->return_variable.value()->get_string(),
+                                                      node_assignment->array_variable->clone());
+                    }
+                    m_substitution_stack.push(std::move(substitution_vec));
+                    node_function_def->body->accept(*this);
+                    m_substitution_stack.pop();
+                    node.parent->replace_with(std::move(node_function_def->body));
+                    return;
+                } else {
+                    CompileError(ErrorType::SyntaxError,"Function can not be inlined since it consists of too many lines. Move function into assign statement.", node.tok.line, "<assignment>", "", node.tok.file).print();
+                    exit(EXIT_FAILURE);
+                }
+            }
+        }
+        node.replace_with(std::move(node_function_def->body));
     } else if (auto builtin_func = get_builtin_function(node.function.get())) {
         node.function->type = builtin_func->type;
         node.function->arg_ast_types = builtin_func->arg_ast_types;
@@ -264,7 +301,55 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     if(node.assignee)
         node.assignee -> accept(*this);
 
-    if(m_processing_function) {
+    // make param list if it is array declaration
+    if(auto node_array = cast_node<NodeArray>(node.to_be_declared.get())) {
+        if(node.assignee and !is_instance_of<NodeParamList>(node.assignee.get())) {
+            auto node_param_list = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.assignee->tok));
+            node_param_list->params.push_back(std::move(node.assignee));
+            node_param_list->parent = &node;
+            node.assignee = std::move(node_param_list);
+        }
+        if(!node_array->sizes->params.empty()) {
+            node_array->dimensions = node_array->sizes->params.size();
+            // multidimensional array
+            if (node_array->sizes->params.size() > 1) {
+                node_array->name = "_"+node_array->name;
+                auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+                auto node_expression = create_right_nested_binary_expr(node_array->sizes->params, 0, "*", node_array->tok);
+                node_expression->parent = node_array->sizes.get();
+                for(int i = 0; i<node_array->sizes->params.size(); i++) {
+                    auto node_variable = std::make_unique<NodeVariable>(false, node_array->name+".SIZE_D"+std::to_string(i+1), Const, node.tok);
+                    auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), std::move(node_array->sizes->params[i]), node.tok);
+                    auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
+                    node_statement_list->statements.push_back(std::move(node_statement));
+                }
+                node_array->sizes->params.clear();
+                node_array->sizes->params.push_back(std::move(node_expression));
+                auto node_declaration = statement_wrapper(node.clone(), node.parent);
+                node_statement_list->statements.push_back(std::move(node_declaration));
+                node_statement_list->update_parents(node.parent);
+                if(m_processing_function and !m_in_init_callback) {
+                    auto node_dead_end = std::make_unique<NodeDeadEnd>(node.tok);
+                    m_declare_statements_to_move.push_back(statement_wrapper(std::move(node_statement_list), node.parent));
+                    node.replace_with(std::move(node_dead_end));
+                } else {
+                    node.replace_with(std::move(node_statement_list));
+                }
+            }
+        } else {
+            if(!node.assignee) {
+                CompileError(ErrorType::SyntaxError,"Unable to infer array size.", node.tok.line, "initializer list", "",node.tok.file).print();
+                exit(EXIT_FAILURE);
+            }
+            // if size is empty -> get it from declaration
+            if(auto node_param_list = cast_node<NodeParamList>(node.assignee.get())) {
+                auto node_int = make_int((int32_t) node_param_list->params.size(), node_array->sizes.get());
+                node_array->sizes->params.push_back(std::move(node_int));
+            }
+        }
+    }
+
+    if(m_processing_function and !m_in_init_callback) {
         auto node_dead_end = std::make_unique<NodeDeadEnd>(node.tok);
         auto node_declaration = statement_wrapper(node.clone(), node.parent);
         node_declaration->update_parents(nullptr);
@@ -274,9 +359,41 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 
 }
 
+std::unique_ptr<NodeAST> ASTDesugar::create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok) {
+    // Basisfall: Wenn nur ein Element übrig ist, gib dieses zurück.
+    if (index >= nodes.size() - 1) {
+        return nodes[index]->clone();
+    }
+    // Erstelle die rechte Seite der Expression rekursiv.
+    auto right = create_right_nested_binary_expr(nodes, index + 1, op, tok);
+    // Kombiniere das aktuelle Element mit der rechten Seite in einer NodeBinaryExpr.
+    return std::make_unique<NodeBinaryExpr>(op, nodes[index]->clone(), std::move(right), tok);
+}
+
 void ASTDesugar::visit(NodeSingleAssignStatement& node) {
     node.array_variable ->accept(*this);
     node.assignee -> accept(*this);
+
+    if(auto node_array = cast_node<NodeArray>(node.array_variable.get())) {
+        if (!node_array->indexes->params.empty()) {
+            if (node_array->indexes->params.size()>1) {
+//                node_array->name = "_"+node_array->name;
+//                auto node_expression = create_right_nested_binary_expr(node_array->indexes->params, 0, "*", node_array->tok);
+//                node_expression->parent = node_array->indexes.get();
+//                for(int i = 0; i<node_array->sizes->params.size(); i++) {
+//                    auto node_variable = std::make_unique<NodeVariable>(false, node_array->name+".SIZE_D"+std::to_string(i+1), Const, node.tok);
+//                    auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), std::move(node_array->sizes->params[i]), node.tok);
+//                    auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
+//                    node_statement_list->statements.push_back(std::move(node_statement));
+//                }
+//                node_array->sizes->params.clear();
+//                node_array->sizes->params.push_back(std::move(node_expression));
+//                auto node_declaration = statement_wrapper(node.clone(), node.parent);
+//                node_statement_list->statements.push_back(std::move(node_declaration));
+//                node_statement_list->update_parents(node.parent);
+            }
+        }
+    }
 }
 
 
@@ -286,8 +403,7 @@ void ASTDesugar::visit(NodeAssignStatement &node) {
          "Found incorrect assign statement syntax. There are more values to assign than assignees.", node.tok.line, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
-//    node.array_variable->accept(*this);
-//	node.assignee->accept(*this);
+
     std::vector<std::unique_ptr<NodeSingleAssignStatement>> assign_statements;
     for(auto &arr_var : node.array_variable->params) {
         auto node_single_assign_stmt = std::make_unique<NodeSingleAssignStatement>(node.tok);
@@ -326,8 +442,7 @@ void ASTDesugar::visit(NodeDeclareStatement& node) {
          "Found incorrect declare statement syntax. There are more values to assign than to be declared.", node.tok.line, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
-//    node.to_be_declared->accept(*this);
-//    node.assignee->accept(*this);
+
     std::vector<std::unique_ptr<NodeSingleDeclareStatement>> declare_statements;
     for(auto &declaration : node.to_be_declared->params) {
         auto node_single_declare_stmt = std::make_unique<NodeSingleDeclareStatement>(node.tok);
@@ -363,7 +478,6 @@ void ASTDesugar::visit(NodeDeclareStatement& node) {
     node_statement_list->update_parents(node.parent);
     node_statement_list->accept(*this);
     node.replace_with(std::move(node_statement_list));
-
 }
 
 void ASTDesugar::visit(NodeFamilyStatement& node) {
@@ -372,11 +486,12 @@ void ASTDesugar::visit(NodeFamilyStatement& node) {
     m_family_prefixes.push(pref);
     auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
     for(auto &member : node.members) {
-        member->accept(*this);
+//        member->accept(*this);
         member->parent = node_statement_list.get();
         node_statement_list->statements.push_back(std::move(member));
     }
     node_statement_list->parent = node.parent;
+    node_statement_list->accept(*this);
     node.replace_with(std::move(node_statement_list));
     m_family_prefixes.pop();
 }
@@ -420,7 +535,6 @@ void ASTDesugar::visit(NodeConstStatement& node) {
             }
             var->type = Integer;
             var->var_type = Const;
-//            var->name = node.prefix + "." + var->name;
         }
 
         const_indexes.push_back(pre+iter);
@@ -433,6 +547,7 @@ void ASTDesugar::visit(NodeConstStatement& node) {
     auto constant = make_declare_variable(node.prefix+".SIZE", node.constants.size(), Const, node_statement_list.get());
     node_statement_list->statements.push_back(std::move(constant));
     node_statement_list->parent = node.parent;
+//    node_statement_list->accept(*this);
     node.replace_with(std::move(node_statement_list));
     m_const_prefixes.pop();
 }
@@ -475,7 +590,7 @@ void ASTDesugar::visit(NodeForStatement& node) {
     // handle parenting of while statement body
 	for(auto & stmt : node.statements) {
 //		stmt->update_parents(node_while_statement.get());
-		stmt->accept(*this);
+//		stmt->accept(*this);
 	}
 
     // handle while condition
@@ -495,6 +610,7 @@ void ASTDesugar::visit(NodeForStatement& node) {
 
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_while_statement), node_statement_list.get()));
     node_statement_list->update_parents(node.parent);
+    node_statement_list->accept(*this);
 	node.replace_with(std::move(node_statement_list));
 }
 
@@ -522,6 +638,32 @@ NodeFunctionHeader* ASTDesugar::get_builtin_function(NodeFunctionHeader *functio
         return m_builtin_functions[std::distance(m_builtin_functions.begin(), it)].get();
     }
     return nullptr;
+}
+
+void ASTDesugar::visit(NodeStatementList& node) {
+    for(auto & stmt : node.statements) {
+        stmt->accept(*this);
+//		stmt->parent = &node;
+    }
+    for(int i=0; i<node.statements.size(); ++i) {
+        if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
+            // Wir speichern die Statements der inneren NodeStatementList
+            auto& inner_statements = node_statement_list->statements;
+            // Fügen Sie die inneren Statements an der aktuellen Position ein
+            node.statements.insert(
+                    node.statements.begin() + i + 1,
+                    std::make_move_iterator(inner_statements.begin()),
+                    std::make_move_iterator(inner_statements.end())
+            );
+            // Entfernen Sie das ursprüngliche NodeStatementList-Element
+            node.statements.erase(node.statements.begin() + i);
+            // Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
+            i += inner_statements.size() - 1;
+            // Die inneren Statements sind jetzt leer, da sie verschoben wurden
+            inner_statements.clear();
+        }
+    }
+    node.update_parents(&node);
 }
 
 

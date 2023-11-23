@@ -63,6 +63,13 @@ inline static token get_token_type(const std::vector<Keyword>& vec, const std::s
     return INVALID;
 }
 
+inline static std::string to_lower(const std::string& input) {
+    std::string output = input;
+    std::transform(output.begin(), output.end(), output.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+    return output;
+}
+
 /*
  * Tokenizer Class
  */
