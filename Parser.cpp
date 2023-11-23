@@ -468,13 +468,11 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
         return Result<std::unique_ptr<NodeStatement>>(CompileError(ErrorType::SyntaxError,
          "Found invalid Statement Syntax.", peek().line, "Statement", peek().val, peek().file));
     }
-    if(!is_instance_of<NodeIterateMacro>(parent) and !is_instance_of<NodeLiterateMacro>(parent)) {
-        if (peek().type != token::LINEBRK) {
-            return Result<std::unique_ptr<NodeStatement>>(CompileError(ErrorType::SyntaxError,
-    "Found incorrect statement syntax.", peek().line,"", peek().val, peek().file));
-        }
-        consume();
+    if (peek().type != token::LINEBRK) {
+        return Result<std::unique_ptr<NodeStatement>>(CompileError(ErrorType::SyntaxError,
+"Found incorrect statement syntax.", peek().line,"", peek().val, peek().file));
     }
+    consume();
     _skip_linebreaks();
     node_statement->statement = std::move(stmt);
     node_statement->parent = parent;
@@ -537,13 +535,7 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
 }
 
 Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
-//    std::vector<std::unique_ptr<NodeIterateMacro>> macro_iterations;
-//    std::vector<std::unique_ptr<NodeLiterateMacro>> macro_literations;
-//    std::vector<std::unique_ptr<NodeMacroCall>> macro_calls;
-//    std::vector<std::unique_ptr<NodeImport>> imports;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
-//    std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
-//	std::vector<std::unique_ptr<NodeDefineStatement>> defines;
     auto node_program = std::make_unique<NodeProgram>(get_tok());
     while (peek().type != token::END_TOKEN) {
         _skip_linebreaks();
@@ -568,12 +560,10 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
     }
     node_program->callbacks = std::move(callbacks);
     node_program->function_definitions = std::move(m_function_definitions);
-//    node_program->macro_definitions = std::move(m_macro_definitions);
     return Result<std::unique_ptr<NodeProgram>>(std::move(node_program));
 }
 
 Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent) {
-//    std::unique_ptr<NodeParamList> params;
     auto param_list = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
     param_list->parent = parent;
     auto result = _parse_into_param_list(param_list->params, param_list.get());

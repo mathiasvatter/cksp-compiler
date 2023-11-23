@@ -148,23 +148,12 @@ public:
 			function_definition->accept(*this);
 		}
 	};
-    virtual void visit(NodeMacroHeader& node) {
-        node.args->accept(*this);
-    };
-    virtual void visit(NodeMacroDefinition& node) {
-    };
-    virtual void visit(NodeMacroCall& node) {
-    };
-    virtual void visit(NodeImport& node) {
-    };
-    virtual void visit(NodeIterateMacro& node) {
-    };
-    virtual void visit(NodeLiterateMacro& node) {
-    };
     virtual void visit(NodeStatementList& node) {
         for(auto & stmt : node.statements) {
             stmt->accept(*this);
         }
+    };
+    virtual void visit(NodeImport& node) {
     };
 };
 
