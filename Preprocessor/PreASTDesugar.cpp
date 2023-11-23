@@ -328,6 +328,7 @@ std::unique_ptr<PreNodeDefineStatement> PreASTDesugar::get_define_definition(Pre
     for(auto & def : m_define_definitions) {
         if(def->header->name->keyword.val == define_header->name->keyword.val) {
             auto copy = def->clone();
+            copy->update_parents(nullptr);
             return std::unique_ptr<PreNodeDefineStatement>(static_cast<PreNodeDefineStatement*>(copy.release()));
         }
     }

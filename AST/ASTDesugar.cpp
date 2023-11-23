@@ -11,16 +11,33 @@ ASTDesugar::ASTDesugar(const std::vector<std::unique_ptr<NodeFunctionHeader>> &m
 
 void ASTDesugar::visit(NodeProgram& node) {
     m_function_definitions = std::move(node.function_definitions);
-    m_in_init_callback = false;
+//    for(auto & func_def : m_function_definitions) {
+//        for(auto & b : func_def->body) {
+//            b->accept(*this);
+//        }
+//    }
     for(auto & callback : node.callbacks) {
-        if(callback->begin_callback == "on init") m_in_init_callback = true;
         callback->accept(*this);
     }
-    if(!m_in_init_callback) {
+    if(!m_init_callback) {
         CompileError(ErrorType::SyntaxError, "Unable to compile. Missing <init callback>.", -1, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
+    m_init_callback->statements->statements.insert(m_init_callback->statements->statements.begin(),
+                                                   std::make_move_iterator(m_declare_statements_to_move.begin()),
+                                                   std::make_move_iterator(m_declare_statements_to_move.end()));
     node.function_definitions = std::move(m_function_definitions);
+}
+
+void ASTDesugar::visit(NodeCallback& node) {
+    m_in_init_callback = false;
+    if(node.begin_callback == "on init") {
+        m_in_init_callback = true;
+        m_init_callback = &node;
+    }
+    if(node.callback_id)
+        node.callback_id->accept(*this);
+    node.statements->accept(*this);
 }
 
 void ASTDesugar::visit(NodeBinaryExpr& node) {
@@ -99,9 +116,10 @@ void ASTDesugar::visit(NodeArray& node) {
     // substitution
     if(!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.name)) {
-            substitute->update_parents(node.parent);
-            substitute->accept(*this);
-            node.replace_with(std::move(substitute));
+//            substitute->update_parents(node.parent);
+//            substitute->accept(*this);
+//            node.replace_with(std::move(substitute));
+            node.name = substitute->get_string();
             return;
         }
     }
@@ -112,8 +130,22 @@ void ASTDesugar::visit(NodeArray& node) {
         node.type = token_to_type(token_type);
     }
     // add prefixes
-    if(!m_prefixes.empty()) {
-        node.name = m_prefixes.top() + "." + node.name;
+    if(!m_family_prefixes.empty() and is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
+        node.name = m_family_prefixes.top() + "." + node.name;
+    }
+    if(!m_const_prefixes.empty()) {
+        node.name = m_const_prefixes.top() + "." + node.name;
+    }
+}
+
+void ASTDesugar::visit(NodeFunctionHeader& node) {
+    node.args->accept(*this);
+    // substitution
+    if (!m_substitution_stack.empty()) {
+        if (auto substitute = get_substitute(node.name)) {
+            node.name = substitute->get_string();
+            return;
+        }
     }
 }
 
@@ -122,7 +154,7 @@ void ASTDesugar::visit(NodeVariable& node) {
     if(!m_substitution_stack.empty()) {
         if(auto substitute = get_substitute(node.name)) {
             substitute->update_parents(node.parent);
-            substitute->accept(*this);
+//            substitute->accept(*this);
             node.replace_with(std::move(substitute));
             return;
         }
@@ -134,8 +166,11 @@ void ASTDesugar::visit(NodeVariable& node) {
         node.type = token_to_type(token_type);
     }
     // add prefixes
-    if(!m_prefixes.empty()) {
-        node.name = m_prefixes.top() + "." + node.name;
+    if(!m_family_prefixes.empty() and is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
+        node.name = m_family_prefixes.top() + "." + node.name;
+    }
+    if(!m_const_prefixes.empty()) {
+        node.name = m_const_prefixes.top() + "." + node.name;
     }
 }
 
@@ -162,13 +197,21 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
             auto substitution_vec = get_substitution_vector(node_function_def->header.get(), node.function.get());
             m_substitution_stack.push(std::move(substitution_vec));
         }
-        for(auto& stmt: node_function_def->body) {
-            stmt->accept(*this);
-            stmt->parent = node_statement_list.get();
+        m_processing_function = true;
+        // inlining
+        if(node_function_def->return_variable.has_value()) {
+
         }
-        if (!node.function->args->params.empty()) m_substitution_stack.pop();
+//        for(auto& stmt: node_function_def->body) {
+//            stmt->accept(*this);
+//            stmt->parent = node_statement_list.get();
+//        }
         node_statement_list->statements = std::move(node_function_def->body);
+        node_statement_list->update_parents(node.parent);
+        node_statement_list->accept(*this);
+        if (!node.function->args->params.empty()) m_substitution_stack.pop();
         node.replace_with(std::move(node_statement_list));
+        m_processing_function = false;
         m_function_call_stack.pop_back();
     } else if (auto builtin_func = get_builtin_function(node.function.get())) {
         node.function->type = builtin_func->type;
@@ -201,11 +244,19 @@ std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> ASTDesugar::get_su
 }
 
 std::unique_ptr<NodeAST> ASTDesugar::get_substitute(const std::string& name) {
-    for(auto & pair : m_substitution_stack.top()) {
-        if(pair.first == name) {
-            return pair.second->clone();
-        }
+    const auto & vector = m_substitution_stack.top();
+    auto it = std::find_if(vector.begin(), vector.end(),
+                           [&](const std::pair<std::string, std::unique_ptr<NodeAST>> &pair) {
+                               return pair.first == name;
+                           });
+    if(it != vector.end()) {
+        return vector[std::distance(vector.begin(), it)].second->clone();
     }
+//    for(auto & pair : m_substitution_stack.top()) {
+//        if(pair.first == name) {
+//            return pair.second->clone();
+//        }
+//    }
     return nullptr;
 }
 
@@ -214,6 +265,15 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     node.to_be_declared ->accept(*this);
     if(node.assignee)
         node.assignee -> accept(*this);
+
+    if(m_processing_function) {
+        auto node_dead_end = std::make_unique<NodeDeadEnd>(node.tok);
+        auto node_declaration = statement_wrapper(node.clone(), node.parent);
+        node_declaration->update_parents(nullptr);
+        m_declare_statements_to_move.push_back(std::move(node_declaration));
+        node.replace_with(std::move(node_dead_end));
+    }
+
 }
 
 void ASTDesugar::visit(NodeSingleAssignStatement& node) {
@@ -310,8 +370,8 @@ void ASTDesugar::visit(NodeDeclareStatement& node) {
 
 void ASTDesugar::visit(NodeFamilyStatement& node) {
     std::string pref = node.prefix;
-    if(!m_prefixes.empty()) pref = m_prefixes.top() + "." + node.prefix;
-    m_prefixes.push(pref);
+    if(!m_family_prefixes.empty()) pref = m_family_prefixes.top() + "." + node.prefix;
+    m_family_prefixes.push(pref);
     auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
     for(auto &member : node.members) {
         member->accept(*this);
@@ -320,13 +380,13 @@ void ASTDesugar::visit(NodeFamilyStatement& node) {
     }
     node_statement_list->parent = node.parent;
     node.replace_with(std::move(node_statement_list));
-    m_prefixes.pop();
+    m_family_prefixes.pop();
 }
 
 void ASTDesugar::visit(NodeConstStatement& node) {
     std::string pref = node.prefix;
-    if(!m_prefixes.empty()) pref = m_prefixes.top() + "." + node.prefix;
-    m_prefixes.push(pref);
+    if(!m_const_prefixes.empty()) pref = m_const_prefixes.top() + "." + node.prefix;
+    m_const_prefixes.push(pref);
     auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
     std::vector<int32_t> const_indexes;
     int32_t iter = 0;
@@ -376,7 +436,7 @@ void ASTDesugar::visit(NodeConstStatement& node) {
     node_statement_list->statements.push_back(std::move(constant));
     node_statement_list->parent = node.parent;
     node.replace_with(std::move(node_statement_list));
-    m_prefixes.pop();
+    m_const_prefixes.pop();
 }
 
 void ASTDesugar::visit(NodeForStatement& node) {

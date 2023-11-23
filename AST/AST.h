@@ -99,6 +99,14 @@ std::vector<std::unique_ptr<T>> clone_vector(const std::vector<std::unique_ptr<T
     return new_vec;
 }
 
+struct NodeDeadEnd : NodeAST {
+    NodeDeadEnd(const Token tok) : NodeAST(tok) {};
+    void accept(ASTVisitor& visitor) override;
+    NodeDeadEnd(const NodeDeadEnd& other) : NodeAST(other.tok) {}
+    std::unique_ptr<NodeAST> clone() const override;
+    std::string get_string() override {return "";}
+};
+
 struct NodeInt : NodeAST {
 	int32_t value;
 	inline explicit NodeInt(int32_t v, const Token tok) : NodeAST(tok), value(v) {type = ASTType::Integer;}

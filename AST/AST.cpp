@@ -16,6 +16,14 @@ void NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 	}
 }
 
+// ************* NodeDeadEnd ***************
+void NodeDeadEnd::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+std::unique_ptr<NodeAST> NodeDeadEnd::clone() const {
+    return std::make_unique<NodeDeadEnd>(*this);
+}
+
 // ************* NodeInt ***************
 void NodeInt::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);

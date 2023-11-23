@@ -15,10 +15,12 @@ public:
 
     /// check if init callback exists
     void visit(NodeProgram& node) override;
+    void visit(NodeCallback& node) override;
 	/// do constant folding for int and reals
 	void visit(NodeBinaryExpr& node) override;
     /// initiating substitution
     void visit(NodeFunctionCall& node) override;
+    void visit(NodeFunctionHeader& node) override;
 //    void visit(NodeFunctionDefinition& node) override;
     void visit(NodeSingleDeclareStatement& node) override;
     void visit(NodeSingleAssignStatement& node) override;
@@ -41,14 +43,18 @@ private:
     const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_builtin_functions;
     NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
 
-    bool m_in_init_callback;
+    bool m_in_init_callback = false;
+    NodeCallback* m_init_callback;
+    bool m_processing_function = false;
 
     std::vector<std::tuple<NodeArray*, NodeParamList*>> m_declared_arrays;
     std::vector<std::unique_ptr<NodeVariable>> m_declared_variables;
-    std::stack<std::string> m_prefixes;
+    std::stack<std::string> m_family_prefixes;
+    std::stack<std::string> m_const_prefixes;
     std::stack<std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>>> m_substitution_stack;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
     std::vector<std::string> m_function_call_stack;
+    std::vector<std::unique_ptr<NodeStatement>> m_declare_statements_to_move;
 
     std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> get_substitution_vector(NodeFunctionHeader* definition, NodeFunctionHeader* call);
     /// returns substitute for current node.name, or nullptr if there is no substitute

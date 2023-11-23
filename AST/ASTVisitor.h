@@ -22,7 +22,7 @@ public:
     std::unique_ptr<NodeStatement> make_declare_array(const std::string& name, int32_t size, const std::vector<int32_t>& values, NodeAST* parent);
     std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, VarType type, NodeAST* parent);
 
-
+    virtual void visit(NodeDeadEnd& node) {};
 	virtual void visit(NodeInt& node) {};
     virtual void visit(NodeReal& node) {};
     virtual void visit(NodeString& node) {};
