@@ -46,6 +46,7 @@ private:
 
     bool m_in_init_callback = false;
     NodeCallback* m_init_callback;
+    NodeCallback* m_current_callback;
     bool m_processing_function = false;
 
     std::vector<std::tuple<NodeArray*, NodeParamList*>> m_declared_arrays;

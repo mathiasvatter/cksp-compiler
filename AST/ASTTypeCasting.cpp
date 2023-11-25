@@ -76,7 +76,8 @@ void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
 }
 
 void ASTTypeCasting::visit(NodeVariable& node) {
-    if(is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
+    auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
+    if(node_declare_statement and node_declare_statement->to_be_declared.get() == &node) {
         if(get_builtin_variable(&node)) {
             CompileError(ErrorType::TypeError,"Variable declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).print();
             exit(EXIT_FAILURE);
@@ -119,9 +120,77 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 }
 
 void ASTTypeCasting::visit(NodeArray& node) {
-	node.sizes->accept(*this);
-	node.indexes->accept(*this);
 
+    if(is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
+        if(get_builtin_array(&node)) {
+            CompileError(ErrorType::TypeError,"Array declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).print();
+            exit(EXIT_FAILURE);
+        }
+        if(get_declared_array(&node)) {
+            CompileError(ErrorType::TypeError,"Array has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
+            exit(EXIT_FAILURE);
+        } else {
+            m_declared_arrays.push_back(&node);
+        }
+    } else {
+        if(auto node_declaration = get_declared_array(&node)) {
+            node.declaration = node_declaration;
+            node.dimensions = node_declaration->dimensions;
+            node.sizes = std::unique_ptr<NodeParamList>(static_cast<NodeParamList*>(node_declaration->sizes->clone().release()));
+            node.sizes->update_parents(&node);
+            if(node.sizes->params.size() != node.indexes->params.size()) {
+                CompileError(ErrorType::TypeError,"Got wrong array dimensions.", node.tok.line, std::to_string(node.sizes->params.size()), std::to_string(node.indexes->params.size()), node.tok.file).print();
+                exit(EXIT_FAILURE);
+            }
+            // convert indexes of multidimensional array
+            if(node.dimensions > 1) {
+                auto node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0, node.tok);
+                node.indexes->params.clear();
+                node.indexes->params.push_back(std::move(node_expression));
+                node.indexes->update_parents(&node);
+            }
+
+            if (node.declaration->type != Unknown) {
+                node.type = node.declaration->type;
+            }
+            if (node.declaration->type == Unknown) {
+                node.declaration->type = node.type;
+            }
+        } else if(auto builtin_var = get_builtin_array(&node)) {
+            node.type = builtin_var->type;
+        } else {
+            CompileError(ErrorType::TypeError,"Array has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
+//            exit(EXIT_FAILURE);
+        }
+    }
+    node.sizes->accept(*this);
+    node.indexes->accept(*this);
+
+}
+
+std::unique_ptr<NodeAST> ASTTypeCasting::calculate_index_expression(
+        const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok) {
+
+    // Basisfall: letztes Element in der Berechnung
+    if (dimension == indices.size() - 1) {
+        return indices[dimension]->clone();
+    }
+
+    // Produkt der Größen der nachfolgenden Dimensionen
+    std::unique_ptr<NodeAST> size_product = sizes[dimension + 1]->clone();
+    for (size_t i = dimension + 2; i < sizes.size(); ++i) {
+        size_product = std::make_unique<NodeBinaryExpr>("*", std::move(size_product), sizes[i]->clone(), tok);
+    }
+
+    // Berechnung des aktuellen Teils der Formel
+    std::unique_ptr<NodeAST> current_part = std::make_unique<NodeBinaryExpr>(
+            "*", indices[dimension]->clone(), std::move(size_product), tok);
+
+    // Rekursiver Aufruf für den nächsten Teil der Formel
+    std::unique_ptr<NodeAST> next_part = calculate_index_expression(sizes, indices, dimension + 1, tok);
+
+    // Kombinieren des aktuellen Teils mit dem nächsten Teil
+    return std::make_unique<NodeBinaryExpr>("+", std::move(current_part), std::move(next_part), tok);
 }
 
 void ASTTypeCasting::visit(NodeInt& node) {

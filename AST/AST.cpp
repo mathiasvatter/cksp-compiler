@@ -86,7 +86,7 @@ NodeArray::NodeArray(const NodeArray& other)
         : NodeAST(other), is_engine(other.is_engine), is_persistent(other.is_persistent),
           is_local(other.is_local), var_type(other.var_type), name(other.name),
           sizes(clone_unique(other.sizes)), indexes(clone_unique(other.indexes)),
-          declaration(other.declaration) {}
+          declaration(other.declaration), dimensions(other.dimensions) {}
 std::unique_ptr<NodeAST> NodeArray::clone() const {
     return std::make_unique<NodeArray>(*this);
 }

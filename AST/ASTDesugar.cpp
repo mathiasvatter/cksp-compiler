@@ -11,30 +11,40 @@ ASTDesugar::ASTDesugar(const std::vector<std::unique_ptr<NodeFunctionHeader>> &m
 
 void ASTDesugar::visit(NodeProgram& node) {
     m_function_definitions = std::move(node.function_definitions);
-//    for(auto & func_def : m_function_definitions) {
-//        for(auto & b : func_def->body) {
-//            b->accept(*this);
-//        }
-//    }
+//    std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
+//    node.function_definitions = std::move(function_definitions);
+
+    // check for init callback; get pointer to init callback
     for(auto & callback : node.callbacks) {
-        callback->accept(*this);
+        if(callback->begin_callback == "on init") m_init_callback = callback.get();
     }
     if(!m_init_callback) {
         CompileError(ErrorType::SyntaxError, "Unable to compile. Missing <init callback>.", -1, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
+
+    for(auto & callback : node.callbacks) {
+        callback->accept(*this);
+    }
+    for(auto & function : m_function_definitions) {
+        if(function->is_used and function->header->args->params.empty() and !function->return_variable.has_value()) {
+            function->body->accept(*this);
+        }
+    }
+    for(auto & function : m_function_definitions) {
+        if(function->is_used and function->header->args->params.empty() and !function->return_variable.has_value()) {
+            node.function_definitions.push_back(std::move(function));
+        }
+    }
     m_init_callback->statements->statements.insert(m_init_callback->statements->statements.begin(),
                                                    std::make_move_iterator(m_declare_statements_to_move.begin()),
                                                    std::make_move_iterator(m_declare_statements_to_move.end()));
-    node.function_definitions = std::move(m_function_definitions);
 }
 
 void ASTDesugar::visit(NodeCallback& node) {
+    m_current_callback = &node;
     m_in_init_callback = false;
-    if(node.begin_callback == "on init") {
-        m_in_init_callback = true;
-        m_init_callback = &node;
-    }
+    if(&node == m_init_callback) m_in_init_callback = true;
     if(node.callback_id)
         node.callback_id->accept(*this);
     node.statements->accept(*this);
@@ -189,6 +199,7 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 
     // substitution start
     if (auto node_function_def = get_function_definition(node.function.get())) {
+        node_function_def->is_used = true;
         m_function_call_stack.push_back(node.function->name);
         node_function_def->parent = node.parent;
         if (!node.function->args->params.empty()) {
@@ -196,12 +207,6 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
             m_substitution_stack.push(std::move(substitution_vec));
         }
         m_processing_function = true;
-//        for(auto& stmt: node_function_def->body) {
-//            stmt->accept(*this);
-//            stmt->parent = node_statement_list.get();
-//        }
-//        node_statement_list->statements = std::move(node_function_def->body);
-//        node_function_def->body->update_parents(node.parent);
         node_function_def->body->update_token_data(node.tok);
         node_function_def->body->accept(*this);
         if (!node.function->args->params.empty()) m_substitution_stack.pop();
@@ -287,11 +292,6 @@ std::unique_ptr<NodeAST> ASTDesugar::get_substitute(const std::string& name) {
     if(it != vector.end()) {
         return vector[std::distance(vector.begin(), it)].second->clone();
     }
-//    for(auto & pair : m_substitution_stack.top()) {
-//        if(pair.first == name) {
-//            return pair.second->clone();
-//        }
-//    }
     return nullptr;
 }
 
@@ -313,18 +313,18 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
             node_array->dimensions = node_array->sizes->params.size();
             // multidimensional array
             if (node_array->sizes->params.size() > 1) {
-                node_array->name = "_"+node_array->name;
+//                node_array->name = "_"+node_array->name;
                 auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
                 auto node_expression = create_right_nested_binary_expr(node_array->sizes->params, 0, "*", node_array->tok);
                 node_expression->parent = node_array->sizes.get();
                 for(int i = 0; i<node_array->sizes->params.size(); i++) {
                     auto node_variable = std::make_unique<NodeVariable>(false, node_array->name+".SIZE_D"+std::to_string(i+1), Const, node.tok);
-                    auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), std::move(node_array->sizes->params[i]), node.tok);
+                    auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), node_array->sizes->params[i]->clone(), node.tok);
                     auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
                     node_statement_list->statements.push_back(std::move(node_statement));
                 }
-                node_array->sizes->params.clear();
-                node_array->sizes->params.push_back(std::move(node_expression));
+                node_array->indexes->params.clear();
+                node_array->indexes->params.push_back(std::move(node_expression));
                 auto node_declaration = statement_wrapper(node.clone(), node.parent);
                 node_statement_list->statements.push_back(std::move(node_declaration));
                 node_statement_list->update_parents(node.parent);
