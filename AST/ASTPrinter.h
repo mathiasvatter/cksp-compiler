@@ -1,0 +1,68 @@
+//
+// Created by Mathias Vatter on 27.10.23.
+//
+
+#pragma once
+
+#include "ASTVisitor.h"
+
+class ASTPrinter : public ASTVisitor {
+public:
+    void visit(NodeProgram& node) override;
+
+	void visit(NodeInt& node) override;
+
+	void visit(NodeReal& node) override;
+
+	void visit(NodeString& node) override;
+
+	void visit(NodeVariable& node) override;
+
+	void visit(NodeArray& node) override;
+
+	void visit(NodeUIControl& node) override;
+
+	void visit(NodeDeclareStatement& node) override;
+
+    void visit(NodeSingleDeclareStatement& node) override;
+
+	void visit(NodeParamList& node) override;
+
+	void visit(NodeBinaryExpr& node) override;
+
+	void visit(NodeUnaryExpr& node) override;
+
+	void visit(NodeAssignStatement& node) override;
+
+    void visit(NodeSingleAssignStatement& node) override;
+
+	void visit(NodeConstStatement& node) override;
+
+	void visit(NodeStructStatement& node) override;
+
+	void visit(NodeFamilyStatement& node) override;
+
+	void visit(NodeStatement& node) override;
+
+	void visit(NodeIfStatement& node) override;
+
+	void visit(NodeWhileStatement& node) override;
+
+	void visit(NodeForStatement& node) override;
+
+	void visit(NodeSelectStatement& node) override;
+
+	void visit(NodeCallback& node) override;
+
+	void visit(NodeFunctionHeader& node) override;
+
+	void visit(NodeFunctionCall& node) override;
+
+	void visit(NodeFunctionDefinition& node) override;
+
+	void visit(NodeGetControlStatement& node) override;
+
+	void visit(NodeSetControlStatement& node) override;
+
+
+};

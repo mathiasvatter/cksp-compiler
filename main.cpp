@@ -1,28 +1,72 @@
 #include <iostream>
-#include <fstream>
-#include <sstream>
+#include <filesystem>
 
-#include "Lexer.h"
 
-std::string read_file(const char* filename) {
-    std::ifstream file(filename);
-    std::stringstream buffer;
-    if (file.is_open()) {
-        buffer << file.rdbuf();
-        file.close();
-    } else {
-        std::cout << "Unable to open file\n";
-    }
-    return buffer.str();
-}
-
+//#include "Tokenizer.h"
+#include "Parser.h"
+#include "Preprocessor/Preprocessor.h"
+#include "AST/ASTVisitor.h"
+#include "AST/ASTDesugar.h"
+#include "AST/ASTPrinter.h"
+#include "AST/ASTTypeCasting.h"
+#include "Preprocessor/PreprocessorBuiltins.h"
+//#include "AST/ASTMacros.h"
 
 int main() {
 
-    auto path = "../main.ksp";
-	std::string ksp_code = read_file(path);
-    const char * ksp_code_ptr = ksp_code.c_str();
-	Lexer lex(ksp_code_ptr);
+	// Startzeitpunkt speichern
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    auto path = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
+//    path = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//    path = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+	Tokenizer tokenizer(path);
+    auto tokens = tokenizer.tokenize();
+
+    Preprocessor preprocessor(tokens, path);
+    preprocessor.process();
+    auto preprocessed_tokens = preprocessor.get_tokens();
+
+//    for(auto& tok: preprocessed_tokens) {
+//        if(tok.type != token::COMMENT or tok.type != token::LINEBRK)
+//            std::cout << tok << std::endl;
+//    }
+
+    std::filesystem::path curr_path = __FILE__;
+    PreprocessorBuiltins builtins((std::string) curr_path.parent_path() + "/Builtins/engine_variables.txt", (std::string) curr_path.parent_path() + "/Builtins/engine_functions.txt");
+    builtins.process_builtins();
+
+
+	auto preprocessor_time = std::chrono::high_resolution_clock::now();
+	auto preprocessor_duration = std::chrono::duration_cast<std::chrono::milliseconds>(preprocessor_time - start_time);
+
+    Parser parser(std::move(preprocessed_tokens));
+	auto ast_result = parser.parse();
+	if (ast_result.is_error()) {
+		ast_result.get_error().print();
+		exit(EXIT_FAILURE);
+	}
+
+	auto ast = std::move(ast_result.unwrap());
+
+//    ASTMacros macro_processing;
+//    ast->accept(macro_processing);
+
+	ASTDesugar desugar(builtins.get_builtin_functions());
+	ast->accept(desugar);
+
+	ASTTypeCasting typecast(builtins.get_builtin_variables(), builtins.get_builtin_arrays());
+	ast->accept(typecast);
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+
+	ASTPrinter printer;
+	ast->accept(printer);
+
+    // Dauer in Millisekunden ausgeben
+    std::cout << "Preprocessor Time: " << preprocessor_duration.count() << " ms, Time measured: " << duration.count() << " ms" << std::endl;
+
 //    std::cout << ksp_code << std::endl;
 	std::cout << std::__fs::filesystem::current_path();
     return 0;

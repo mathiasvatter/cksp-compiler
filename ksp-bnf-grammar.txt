@@ -1,24 +1,108 @@
-<real> ::= <int> "." <int>
-<int> ::= [1-9]+
-<num> ::= ("-")? (<int> | <real>)
-<text> ::= ([0-9] | [a-z] | [A-Z] | "_")+ | <text> "." <text>
-<string> ::= "\'" <text> "\'"
-<variable> ::= ("$" | "~" | "@" )? <text>
-<array> ::= ("!" | "%" | "?")? <text> "[" (<num> ("," <num>)? )? "]"
-<constant> ::= "const" <variable>
-<variable_declaration> ::= "polyphonic" <variable> | <variable>
-<array_declaration> ::= <array> ":=" "(" <int> ("," <int>)? ")"
-<constant_declaration> ::= <constant> ":=" (<string> | <num>)
-<declaration> ::= "declare " (<constant_declaration> | 
-<variable_declaration> | <array_declaration>)
-<init_callback> ::= "\n" "on init" "\n" <declaration>* "\n" "end on" "\n"
-<callback> ::= "on " ("async_complete" | "controller" | "init" | 
-"listener" | "note" | "persistence_changed" | "pgs_changed" | "poly_at" | 
-"release" | "rpn/nrpn" | "ui_control" | "ui_update")
 
+
+
+//*******************************+ KSP BNF ************************
+
+<int> ::= [1-9]+ | "int(" <real> ")"
+<real> ::= <int> "." <int> | "real(" <int> ")"
+<num> ::= (<int> | <real>)
+<binary_op> ::= - | + | mod | / | * | <bitwise_op> | <comparison_op> | <bool_op
+<unary_op> ::= not | .not. | -
+<linebreak> ::= \n
 <assignment> ::= (<variable> | <array>) ":=" (<num> | <string>)
-<comparison> ::= "=" | "<" | ">" | "<=" | ">=" | "!="
-<statement>
-<condition>
-<if_statement>
-<while_statement>
+<comparison_op> ::= "=" | "<" | ">" | "<=" | ">=" | "!="
+<bool_op> ::= and | or | not
+<bitwise_op> ::= .and. | .xor. | .or. | .not.
+<string_op> ::= &
+
+//******** FUNCTIONS
+<function_header> ::= <keyword> ("(" (<param_list> | <expression) ")")?
+<function_definition> ::= "function" <function_header> ("->" <variable>)? ("override")? <linebreak> <statement>* "end function"
+<function_call> ::= "call"? <function_header>
+
+//******* MACROS
+<macro_header> ::= <keyword> "(" <param_list> ")"
+<macro_definition> ::= "macro" <macro_header> <linebreak> <statement>* "end macro"
+<macro_iteration> ::= "iterate_macro" "(" <keyword> ")" ":=" <binary_expression> "to" <binary_expression>
+<macro_literation> ::= "literate_macro" "(" <keyword> ")" "on" <param_list>
+
+//******* START_INC
+
+
+//********* const block
+<const_statement> ::= "const" <keyword> <linebreak>+ (<assign_statement> <linebreak>)+ "end const"
+
+//******** struct
+<struct_statement> ::= "struct" <keyword> <linebreak>+ (<declare_statement> <linebreak>)+ "end struct"
+
+//****** family
+<family_statement> ::= "family" <keyword> <linebreak>+ (<declare_statement> <linebreak>)+ "end family"
+
+//******** ui_controls
+<ui_label> ::= declare ui_label $<variable-name> (<grid-width>, <grid-height>)
+UI_BUTTON ::= declare ui_button $<variable-name>
+UI_SWITCH ::= declare ui_switch $<variable-name>
+UI_SLIDER ::= declare ui_slider $<variable-name> (<min>, <max>)
+UI_MENU ::= declare ui_menu $<variable-name>
+UI_VALUE_EDIT ::= declare ui_value_edit $<variable-name> (<min>, <max>, <$display-ratio>)
+UI_WAVEFORM ::= declare ui_waveform $<variable-name> (<grid-width>, <grid-height>)
+UI_WAVETABLE ::= declare ui_wavetable $<variable-name>
+UI_KNOB ::= declare ui_knob $<variable-name> (<min>, <max>, <display-ratio>)
+UI_TABLE ::= declare ui_table %<array-name>[num-elements] (<grid-width>, <grid-height>, <range>)
+UI_XY ::= declare ui_xy ?<array-name>[num-elements]
+UI_TEXT_EDIT ::= declare ui_text_edit @<variable-name>
+UI_LEVEL_METER ::= declare ui_level_meter $<variable-name>
+UI_FILE_SELECTOR ::= declare ui_file_selector $<variable-name>
+UI_PANEL ::= declare ui_panel $<variable-name>
+UI_MOUSE_AREA ::= declare ui_mouse_area $<variable-name>
+
+
+.not. sh_left(bit_list, 1) .and. bit_list
+1
+
+//******** DEFINE
+<define_statement> ::= "define" <param_list> := <param_list>
+
+<keyword> ::= ([0-9] | [a-z] | [A-Z] | "_")+ | <keyword> "." <keyword>
+<string> ::= "\'" <text> "\'"
+<variable_identifier> ::= "$" | "~" | "@"
+<array_identifier> ::= "!" | "%" | "?"
+<identifier> ::= <variable_identifier> | <array_identifier>
+<variable> ::=  <identifier>? <keyword>
+<array> ::= <identifier>? <keyword> [ <param_list> ]
+<param_list> ::= (<expression> ("," <expression>)?)?
+<declare_statement> ::=  <declare_list> ":="? <param_list>?
+
+
+<declare_list> ::= (<declare_variable> | <declare_array> | <declare_control>) ("," <declare_list>)?
+<declare_variable> ::= read? (local | global)? (const | polyphonic)? <variable>
+<declare_array> ::= read? (local | global)? <array>
+<declare_control> ::= read? (local | global)? <ui_control> (variable | array) ("(" <param_list> ")")?
+
+<unary_expression> ::= <unary_op> (<num> | <variable> | <function_header>)
+<primary_expression> ::= <num> | <variable> | <function_header> | <unary_expression> | "("<binary_expression>")"
+<binary_expression> ::= <primary_expression> (<binary_op> <binary_expression>)?
+<string_expression> ::= (<string> | <binary_expression>) (<string_op> (<string> | <binary_expression>))?
+<expression> ::= <string_expression> | <binary_expression> | <param_list>
+
+// Special cases of expressions for type checking
+<condition> ::= <boolean_expression>
+<boolean_expression> ::= <comparison_expression> (<bool> <comparison_expression>)?
+<comparison_expression> ::= <binary_expression> <comparison_op> <binary_expression>
+
+<get_control_statement> ::= (<array> | <variable>) "->" <keyword>
+<set_control_statement> ::= <get_control_statement> "::=" <expression>
+<assign_statement> ::= <param_list> ":=" <param_list>
+<statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement | <funcion_call> ) <linebreak>
+<for_statement> ::= for <assign_statement> (to | downto) <binary_expression> <linebreak> <statements> end for <linebreak>
+<if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>
+<while_statement> ::= while (? <condition> )? <linebreak> <statements> end while <linebreak>
+<select_statement> ::= select (? <expression> )? <linebreak> (case <expression> <linebreak> <statements>)+ end select <linebreak>
+<import> ::= import <string> (as <keyword>)?
+<callback_identifier> ::= ("async_complete" | "controller" | "init" |
+                          "listener" | "note" | "persistence_changed" | "pgs_changed" | "poly_at" |
+                          "release" | "rpn/nrpn" | "ui_control" | "ui_update")
+<callback> ::= "on" <callback_identifier> <linebreak> <statement>* "end on"
+<programm> ::= ((<callback> | <function_definition> | <macro_definition> | <import>) <linebreak>)*
+
+

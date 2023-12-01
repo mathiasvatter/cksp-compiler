@@ -1,0 +1,185 @@
+//
+// Created by Mathias Vatter on 18.11.23.
+//
+
+#include "PreprocessorBuiltins.h"
+
+
+PreprocessorBuiltins::PreprocessorBuiltins(const std::string& builtin_vars, const std::string& builtin_functions)
+: Preprocessor(std::vector<Token>{}, (std::string)"") {
+    m_pos = 0;
+    m_builtin_variables_file = builtin_vars;
+    m_builtin_functions_file = builtin_functions;
+}
+
+void PreprocessorBuiltins::process_builtins() {
+    auto builtin_vars = parse_builtin_variables(m_builtin_variables_file);
+    if(builtin_vars.is_error()) {
+        builtin_vars.get_error().print();
+        exit(EXIT_FAILURE);
+    }
+    auto builtin_functions = parse_builtin_functions(m_builtin_functions_file);
+    if(builtin_functions.is_error()) {
+        builtin_functions.get_error().print();
+        exit(EXIT_FAILURE);
+    }
+
+}
+
+
+Result<SuccessTag> PreprocessorBuiltins::parse_builtin_variables(const std::string &file) {
+    Tokenizer tokenizer(file);
+    m_tokens = tokenizer.tokenize();
+    m_pos = 0;
+    while(peek(m_tokens).type != END_TOKEN) {
+        if(peek(m_tokens).type == KEYWORD) {
+            if(contains(VAR_IDENT, peek(m_tokens).val[0])) {
+                m_builtin_variables.push_back(std::move(parse_builtin_variable()));
+            } else if(contains(ARRAY_IDENT, peek(m_tokens).val[0])) {
+                m_builtin_arrays.push_back(std::move(parse_builtin_array()));
+            } else {
+                return Result<SuccessTag>(CompileError(ErrorType::PreprocessorError,
+               "Failed loading builtins. Found builtin variable without identifier.", peek(m_tokens).line, "<identifier>", peek(m_tokens).val, peek(m_tokens).file));
+            }
+        } else consume(m_tokens);
+    }
+    return Result<SuccessTag>(SuccessTag{});
+}
+
+Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::string &file) {
+    Tokenizer tokenizer(file);
+    m_tokens = tokenizer.tokenize();
+    m_pos = 0;
+    while(peek(m_tokens).type != END_TOKEN) {
+        if(peek(m_tokens).type == KEYWORD) {
+            auto result_function = parse_builtin_function();
+            if(result_function.is_error()) {
+                return Result<SuccessTag>(result_function.get_error());
+            }
+            m_builtin_functions.push_back(std::move(result_function.unwrap()));
+        } else consume(m_tokens);
+    }
+    return Result<SuccessTag>(SuccessTag{});
+}
+
+
+std::unique_ptr<NodeVariable> PreprocessorBuiltins::parse_builtin_variable() {
+    Token name = consume(m_tokens); // consume variable name token
+    // cut away identifier
+    std::string var_name = name.val.erase(0,1);
+    ASTType type = get_identifier_type(var_name[0]);
+    auto node_variable = std::make_unique<NodeVariable>(false, var_name, Mutable, name);
+    node_variable->type = type;
+    node_variable->is_local = false;
+    node_variable->is_engine = true;
+    return std::move(node_variable);
+}
+
+std::unique_ptr<NodeArray> PreprocessorBuiltins::parse_builtin_array() {
+    Token name = consume(m_tokens); // consume array name token
+    std::string arr_name = name.val.erase(0,1);
+    ASTType type = get_identifier_type(arr_name[0]);
+    std::unique_ptr<NodeParamList> size = std::unique_ptr<NodeParamList>(new NodeParamList({}, name));;
+    std::unique_ptr<NodeParamList> index = std::unique_ptr<NodeParamList>(new NodeParamList({}, name));;
+    auto node_array = std::make_unique<NodeArray>(false, arr_name, Array, std::move(size), std::move(index), name);
+    node_array->type = type;
+    node_array->is_local = false;
+    node_array->is_engine = true;
+    return std::move(node_array);
+}
+
+ASTType PreprocessorBuiltins::get_identifier_type(char identifier) {
+    token token_type = get_token_type(TYPES, std::to_string(identifier));
+    return token_to_type(token_type);
+}
+
+Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_function() {
+    Token func_name = consume(m_tokens); // consume function name
+    std::unique_ptr<NodeParamList> func_args = std::unique_ptr<NodeParamList>(new NodeParamList({}, func_name));
+    std::vector<ASTType> arg_types;
+    std::vector<VarType> arg_var_types;
+    if (peek(m_tokens).type == token::OPEN_PARENTH) {
+        consume(m_tokens); // consume (
+        if(peek(m_tokens).type != token::CLOSED_PARENTH) {
+            auto arg_pair = parse_builtin_args_list();
+            if (arg_pair.is_error()) {
+                Result<std::unique_ptr<NodeFunctionHeader>>(arg_pair.get_error());
+            }
+            arg_types = arg_pair.unwrap().first;
+            arg_var_types = arg_pair.unwrap().second;
+        }
+        if (peek(m_tokens).type == token::CLOSED_PARENTH) {
+            consume(m_tokens);
+        } else {
+            return Result<std::unique_ptr<NodeFunctionHeader>>(CompileError(ErrorType::PreprocessorError,
+           "Failed loading builtins. Found unknown <function_header> syntax.", peek(m_tokens).line, ")", peek(m_tokens).val, peek(m_tokens).file));
+        }
+    }
+
+    ASTType return_type = Void;
+    if(peek(m_tokens).type == TYPE) {
+        consume(m_tokens); // consume :
+        return_type = get_type_annotation();
+    }
+    auto node_function = std::make_unique<NodeFunctionHeader>(func_name.val, std::move(func_args), func_name);
+    node_function->type = return_type;
+    node_function->is_engine = true;
+    node_function->arg_var_types = arg_var_types;
+    node_function->arg_ast_types = arg_types;
+    return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(node_function));
+}
+
+ASTType PreprocessorBuiltins::get_type_annotation() {
+    Token token_type = consume(m_tokens); // get type token
+    ASTType type = Any;
+    if(token_type.val.find("int") != std::string::npos) {
+        type = Integer;
+    } else if (token_type.val.find("real") != std::string::npos) {
+        type = Real;
+    } else if (token_type.val.find("string") != std::string::npos) {
+        type = String;
+    }
+    if(token_type.val.find("int") != std::string::npos and token_type.val.find("real") != std::string::npos) {
+        type = Number;
+    }
+    return type;
+}
+
+VarType PreprocessorBuiltins::get_var_type_annotation(const std::string& keyword) {
+    if(keyword.find("array") != std::string::npos) {
+        return Array;
+    }
+    return Mutable;
+}
+
+Result<std::pair<std::vector<ASTType>, std::vector<VarType>>> PreprocessorBuiltins::parse_builtin_args_list() {
+    std::vector<ASTType> arg_types;
+    std::vector<VarType> arg_var_types;
+    while(peek(m_tokens).type != CLOSED_PARENTH) {
+        if(peek(m_tokens).type == CLOSED_PARENTH) break;
+        if(peek(m_tokens).type == KEYWORD or peek(m_tokens).type == TO) {
+            arg_var_types.push_back(get_var_type_annotation(peek(m_tokens).val));
+            arg_types.push_back(get_type_annotation());
+        } else {
+            return Result<std::pair<std::vector<ASTType>, std::vector<VarType>>>(CompileError(ErrorType::PreprocessorError,
+        "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
+        }
+        if(peek(m_tokens).type == COMMA) consume(m_tokens); // consume comma
+    }
+    auto result_pair = std::pair(arg_types, arg_var_types);
+    return Result<std::pair<std::vector<ASTType>, std::vector<VarType>>>(result_pair);
+}
+
+const std::vector<std::unique_ptr<NodeVariable>> &PreprocessorBuiltins::get_builtin_variables() const {
+    return m_builtin_variables;
+}
+
+const std::vector<std::unique_ptr<NodeArray>> &PreprocessorBuiltins::get_builtin_arrays() const {
+    return m_builtin_arrays;
+}
+
+const std::vector<std::unique_ptr<NodeFunctionHeader>> &PreprocessorBuiltins::get_builtin_functions() const {
+    return m_builtin_functions;
+}
+
+
