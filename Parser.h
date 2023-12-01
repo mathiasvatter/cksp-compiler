@@ -119,14 +119,6 @@ protected:
     Result<std::unique_ptr<NodeFunctionCall>> parse_function_call(NodeAST* parent);
     Result<std::unique_ptr<NodeCallback>> parse_callback(NodeAST* parent);
 
-    /// Macros
-//    Result<std::unique_ptr<NodeMacroDefinition>> parse_macro_definition(NodeAST* parent);
-//    Result<std::unique_ptr<NodeMacroHeader>> parse_macro_header(NodeAST* parent);
-//    Result<std::unique_ptr<NodeMacroCall>> parse_macro_call(NodeAST* parent);
-//    Result<std::unique_ptr<NodeIterateMacro>> parse_iterate_macro(NodeAST* parent);
-//    Result<std::unique_ptr<NodeLiterateMacro>> parse_literate_macro(NodeAST* parent);
-
-
 	Result<std::unique_ptr<NodeProgram>> parse_program();
 //    std::vector<std::unique_ptr<NodeMacroDefinition>> m_macro_definitions;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;

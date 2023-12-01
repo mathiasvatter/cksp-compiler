@@ -66,13 +66,13 @@ void ASTPrinter::visit(NodeSingleDeclareStatement &node) {
 
 void ASTPrinter::visit(NodeParamList &node) {
     if (!node.params.empty()) {
-        std::cout << "[";
+        if (node.params.size() > 1) std::cout << "[";
         for (int i = 0; i < node.params.size() - 1; i++) {
             node.params[i]->accept(*this);
             std::cout << ", ";
         }
         node.params[node.params.size() - 1]->accept(*this);
-        std::cout << "]";
+        if(node.params.size() > 1) std::cout << "]";
     }
 }
 

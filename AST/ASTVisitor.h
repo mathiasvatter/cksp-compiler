@@ -21,6 +21,7 @@ public:
     std::unique_ptr<NodeParamList> make_init_array_list(const std::vector<int32_t>& values, NodeAST* parent);
     std::unique_ptr<NodeStatement> make_declare_array(const std::string& name, int32_t size, const std::vector<int32_t>& values, NodeAST* parent);
     std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, VarType type, NodeAST* parent);
+    std::unique_ptr<NodeStatementList> array_initialization(NodeArray* array, NodeParamList* list);
 
     virtual void visit(NodeDeadEnd& node) {};
 	virtual void visit(NodeInt& node) {};

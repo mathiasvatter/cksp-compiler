@@ -58,9 +58,24 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
         if(node.to_be_declared->type == Unknown) {
             node.to_be_declared->type = node.assignee->type;
         }
+        // initialization
+//        if(node.assignee->type == String) {
+//            auto node_array = cast_node<NodeArray>(node.to_be_declared.get());
+//            auto node_param_list = cast_node<NodeParamList>(node.assignee.get());
+//            if(node_array and node_param_list) {
+//                auto node_declare_statement = node.clone();
+//                auto node_statement_list = array_initialization(node_array, node_param_list);
+//                node_statement_list->statements.insert(node_statement_list->statements.begin(), statement_wrapper(std::move(node_declare_statement), node_statement_list.get()));
+//                node_statement_list->update_parents(node.parent);
+//                node.replace_with(std::move(node_statement_list));
+//                return;
+//            }
+//        }
+
     } else {
         node.to_be_declared->type = Unknown;
     }
+
 
 }
 
@@ -138,10 +153,10 @@ void ASTTypeCasting::visit(NodeArray& node) {
             node.dimensions = node_declaration->dimensions;
             node.sizes = std::unique_ptr<NodeParamList>(static_cast<NodeParamList*>(node_declaration->sizes->clone().release()));
             node.sizes->update_parents(&node);
-            if(node.sizes->params.size() != node.indexes->params.size()) {
-                CompileError(ErrorType::TypeError,"Got wrong array dimensions.", node.tok.line, std::to_string(node.sizes->params.size()), std::to_string(node.indexes->params.size()), node.tok.file).print();
-                exit(EXIT_FAILURE);
-            }
+//            if(node.sizes->params.size() != node.indexes->params.size()) {
+//                CompileError(ErrorType::TypeError,"Got wrong array dimensions.", node.tok.line, std::to_string(node.sizes->params.size()), std::to_string(node.indexes->params.size()), node.tok.file).print();
+//                exit(EXIT_FAILURE);
+//            }
             // convert indexes of multidimensional array
             if(node.dimensions > 1) {
                 auto node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0, node.tok);

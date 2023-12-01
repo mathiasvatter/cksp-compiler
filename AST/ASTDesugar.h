@@ -24,6 +24,7 @@ public:
 //    void visit(NodeFunctionDefinition& node) override;
     void visit(NodeSingleDeclareStatement& node) override;
     void visit(NodeSingleAssignStatement& node) override;
+    void visit(NodeParamList& node) override;
 
     /// turn into single assign statements
 	void visit(NodeAssignStatement& node) override;
@@ -43,6 +44,7 @@ public:
 private:
     const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_builtin_functions;
     NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
+    NodeFunctionHeader* get_builtin_function(const std::string &function);
 
     bool m_in_init_callback = false;
     NodeCallback* m_init_callback;
@@ -64,5 +66,9 @@ private:
     std::unique_ptr<NodeFunctionDefinition> get_function_definition(NodeFunctionHeader* function_header);
 
     std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok);
+
+    std::vector<std::unique_ptr<NodeStatement>> add_read_functions(NodeAST* var, NodeAST* parent);
+
+    void add_vector_to_statement_list(std::unique_ptr<NodeStatementList> &list, std::vector<std::unique_ptr<NodeStatement>> stmts);
 };
 

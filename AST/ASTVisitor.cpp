@@ -71,6 +71,22 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_declare_array(const std::string&
     node_declare_statement->assignee->parent = node_declare_statement.get();
     return statement_wrapper(std::move(node_declare_statement), parent);
 }
+
+std::unique_ptr<NodeStatementList> ASTVisitor::array_initialization(NodeArray* array, NodeParamList* list) {
+    auto node_statement_list = std::make_unique<NodeStatementList>(array->tok);
+    auto node_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(array->clone().release()));
+    for(int i = 0; i<list->params.size(); i++) {
+        auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(list->params[i]->tok);
+        node_array->indexes->params.clear();
+        node_array->indexes->params.push_back(make_int((int32_t)i, node_array->indexes.get()));
+        node_assign_statement->array_variable = node_array->clone();
+        node_assign_statement->assignee = std::move(list->params[i]);
+        node_assign_statement->update_parents(node_statement_list.get());
+        node_statement_list->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_statement_list.get()));
+    }
+    return std::move(node_statement_list);
+}
+
 //
 //template<typename T>std::unique_ptr<NodeStatement> ASTVisitor::statement_wrapper(std::unique_ptr<T> node, NodeAST* parent) {
 //    auto node_statement = std::make_unique<NodeStatement>(std::move(node), node->tok);

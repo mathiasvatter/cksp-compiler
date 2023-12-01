@@ -570,12 +570,14 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent)
     if (result.is_error()) {
         return Result<std::unique_ptr<NodeParamList>>(result.get_error());
     }
-
-
+//    if(param_list->params.size() == 1 and dynamic_cast<NodeParamList*>(param_list->params[0].get())) {
+//        return Result<std::unique_ptr<NodeParamList>>(std::move(param_list->params[0]));
+//    }
     return Result<std::unique_ptr<NodeParamList>>(std::move(param_list));
 }
 
 Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent) {
+    size_t end_backup_pos; // in case of declaration list and ui_slider sliddd(0,1), <-
     while (true) {
         if (peek().type == token::OPEN_PARENTH) {
             size_t backup_pos = m_pos; // backup token index
@@ -597,12 +599,19 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
             }
         } else {
             auto exprResult = parse_expression(parent);
-            if (exprResult.is_error()) {
+            if (!exprResult.is_error()) {
+                params.push_back(std::move(exprResult.unwrap()));
+            } else {
+                // eg case declare ui_slider sli_bum(0,100), ui_button btn_buuuuu
+                if(peek(end_backup_pos-m_pos).type == COMMA) {
+                    m_pos = end_backup_pos;
+                    break;
+                }
                 return Result<SuccessTag>(exprResult.get_error());
             }
-            params.push_back(std::move(exprResult.unwrap()));
         }
         if (peek().type != token::COMMA) break;
+        end_backup_pos = m_pos;
         consume(); // consume comma
     }
     return Result<SuccessTag>(SuccessTag{});
@@ -743,7 +752,7 @@ Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement(No
     to_be_declared->parent = node_declare_statement.get();
     if(not(peek().type == KEYWORD or peek().type == UI_CONTROL or peek().type ==READ or peek().type==CONST or peek().type ==POLYPHONIC or peek().type==LOCAL or peek().type==GLOBAL))
         return Result<std::unique_ptr<NodeDeclareStatement>>(CompileError(ErrorType::ParseError,
-        "Incorrect syntax in declare statement.",peek().line,"variable name",peek().val, peek().file));
+        "Incorrect syntax in declare statement.",peek().line,"<ui_control>, <variable>, <array>",peek().val, peek().file));
     do {
         if(peek().type == token::COMMA) consume();
         // ui_control
@@ -767,6 +776,9 @@ Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement(No
                 return Result<std::unique_ptr<NodeDeclareStatement>>(parsed_var.get_error());
             }
             to_be_declared->params.push_back(std::move(parsed_var.unwrap()));
+        } else {
+            return Result<std::unique_ptr<NodeDeclareStatement>>(CompileError(ErrorType::ParseError,
+        "Incorrect syntax in declare statement.",peek().line,"<ui_control>, <variable>, <array>",peek().val, peek().file));
         }
     } while(peek().type == token::COMMA);
 
