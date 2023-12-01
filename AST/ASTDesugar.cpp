@@ -133,10 +133,10 @@ void ASTDesugar::visit(NodeArray& node) {
             return;
         }
     }
-    if(contains(VAR_IDENT, node.name[0])) {
-        auto identifier = node.name[0];
+    if(contains(ARRAY_IDENT, node.name[0])) {
+        std::string identifier(1, node.name[0]);
         node.name = node.name.erase(0,1);
-        token token_type = get_token_type(TYPES, std::to_string(identifier));
+        token token_type = get_token_type(TYPES, identifier);
         node.type = token_to_type(token_type);
     }
     // add prefixes
