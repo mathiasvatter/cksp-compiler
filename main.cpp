@@ -10,6 +10,7 @@
 #include "AST/ASTPrinter.h"
 #include "AST/ASTTypeCasting.h"
 #include "Preprocessor/PreprocessorBuiltins.h"
+#include "AST/ASTTypeChecking.h"
 //#include "AST/ASTMacros.h"
 
 int main() {
@@ -57,6 +58,9 @@ int main() {
 
 	ASTTypeCasting typecast(builtins.get_builtin_variables(), builtins.get_builtin_arrays());
 	ast->accept(typecast);
+
+    ASTTypeChecking type_check;
+    ast->accept(type_check);
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);

@@ -36,6 +36,7 @@ public:
     void visit(NodeFamilyStatement& node) override;
 	/// alter for loops to while loops
     void visit(NodeForStatement& node) override;
+    void visit(NodeListStatement& node) override;
     void visit(NodeStatementList& node) override;
 
     void visit(NodeArray& node) override;

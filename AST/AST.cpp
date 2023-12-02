@@ -263,7 +263,7 @@ void NodeListStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeListStatement::NodeListStatement(const NodeListStatement& other)
-        : NodeAST(other), name(other.name), body(clone_vector(other.body)) {}
+        : NodeAST(other), name(other.name), size(other.size), body(clone_vector(other.body)) {}
 std::unique_ptr<NodeAST> NodeListStatement::clone() const {
     return std::make_unique<NodeListStatement>(*this);
 }

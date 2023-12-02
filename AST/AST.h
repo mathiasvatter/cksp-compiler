@@ -555,10 +555,11 @@ struct NodeFamilyStatement : NodeAST {
 
 struct NodeListStatement : NodeAST {
     std::string name;
+    int32_t size;
     std::vector<std::unique_ptr<NodeParamList>> body;
     inline explicit NodeListStatement(Token tok) : NodeAST(tok) {}
-    inline NodeListStatement(std::string name, std::vector<std::unique_ptr<NodeParamList>> body, Token tok)
-    : NodeAST(tok), name(std::move(name)), body(std::move(body)) {}
+    inline NodeListStatement(std::string name, int32_t size, std::vector<std::unique_ptr<NodeParamList>> body, Token tok)
+    : NodeAST(tok), name(std::move(name)), size(size), body(std::move(body)) {}
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
     NodeListStatement(const NodeListStatement& other);

@@ -87,6 +87,18 @@ std::unique_ptr<NodeStatementList> ASTVisitor::array_initialization(NodeArray* a
     return std::move(node_statement_list);
 }
 
+std::unique_ptr<NodeArray> ASTVisitor::make_array(const std::string &name, int32_t size, const Token& tok, NodeAST *parent) {
+    auto node_sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, tok));
+    auto node_int = make_int(size, node_sizes.get());
+    node_sizes->params.push_back(std::move(node_int));
+    auto node_indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, tok));
+    auto node_array = std::make_unique<NodeArray>(false, name, VarType::Array, std::move(node_sizes), std::move(node_indexes), tok);
+    node_array->indexes->parent = node_array.get();
+    node_array->sizes->parent = node_array.get();
+    node_array->parent = parent;
+    return std::move(node_array);
+}
+
 //
 //template<typename T>std::unique_ptr<NodeStatement> ASTVisitor::statement_wrapper(std::unique_ptr<T> node, NodeAST* parent) {
 //    auto node_statement = std::make_unique<NodeStatement>(std::move(node), node->tok);

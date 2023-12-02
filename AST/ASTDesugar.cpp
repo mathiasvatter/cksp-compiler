@@ -710,6 +710,54 @@ void ASTDesugar::add_vector_to_statement_list(std::unique_ptr<NodeStatementList>
     list->statements.insert(list->statements.end(),std::make_move_iterator(stmts.begin()),std::make_move_iterator(stmts.end()));
 }
 
+void ASTDesugar::visit(NodeListStatement &node) {
+    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+    auto node_declare_main_array = std::make_unique<NodeSingleDeclareStatement>(make_array(node.name, node.size, node.tok, node_statement_list.get()), nullptr, node.tok);
+    auto main_size = (int32_t)node.body.size();
+    auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(std::make_unique<NodeVariable>(false, node.name+".SIZE", VarType::Const, node.tok), make_int(main_size,nullptr), node.tok);
+    node_statement_list->statements.push_back(statement_wrapper(std::move(node_declare_main_array), node_statement_list.get()));
+    node_statement_list->statements.push_back(statement_wrapper(std::move(node_declare_main_const), node_statement_list.get()));
+
+    auto node_sizes_array = make_array(node.name+".sizes", main_size, node.tok, nullptr);
+    auto node_positions_array = make_array(node.name+".pos", main_size, node.tok, nullptr);
+    std::vector<int32_t> sizes(node.body.size());
+    std::vector<int32_t> positions(node.body.size());
+    auto node_sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.tok));
+    auto node_positions = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.tok));
+    positions[0] = 0;
+    for(int i = 0; i<node.body.size(); i++) {
+        sizes[i] = (int32_t)node.body[i]->params.size();
+        positions[std::min(i+1, (int)node.body.size())] = sizes[i]+positions[std::max(0,i-1)];
+        auto node_size = make_int(sizes[i], node_sizes.get());
+        node_sizes->params.push_back(std::move(node_size));
+        auto node_position = make_int(positions[i], node_positions.get());
+        node_positions->params.push_back(std::move(node_position));
+    }
+    auto node_sizes_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_sizes_array), std::move(node_sizes), node.tok);
+    auto node_positions_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_positions_array), std::move(node_positions), node.tok);
+    node_statement_list->statements.push_back(statement_wrapper(std::move(node_sizes_declaration), node_statement_list.get()));
+    node_statement_list->statements.push_back(statement_wrapper(std::move(node_positions_declaration), node_statement_list.get()));
+
+    auto node_iterator_var = std::make_unique<NodeVariable>(false, "list_it", VarType::Mutable, node.tok);
+
+//    auto node_position_array ;
+    for(int i = 0; i<node.body.size(); i++) {
+        auto node_array_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
+        auto node_array = make_array(node.name+std::to_string(sizes[i]), sizes[i], node.tok, node_array_declaration.get());
+        node_array_declaration->to_be_declared = std::move(node_array);
+        node_array_declaration->assignee = std::move(node.body[i]);
+
+        auto node_const_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
+        auto node_variable = std::make_unique<NodeVariable>(false, node.name+std::to_string(sizes[i])+".SIZE", VarType::Const, node.tok);
+        node_const_declaration->to_be_declared = std::move(node_variable);
+        node_const_declaration->assignee = make_int(sizes[i], node_const_declaration.get());
+
+        auto node_for_assign_statement = std::make_unique<NodeSingleAssignStatement>(node_iterator_var->clone(), make_int(0, nullptr), node.tok);
+        auto node_for_statement = std::make_unique<NodeForStatement>(node.tok);
+    }
+
+}
+
 
 
 
