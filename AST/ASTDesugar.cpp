@@ -22,7 +22,7 @@ void ASTDesugar::visit(NodeProgram& node) {
         CompileError(ErrorType::SyntaxError, "Unable to compile. Missing <init callback>.", -1, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
-
+    declare_compiler_variables();
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }
@@ -36,6 +36,7 @@ void ASTDesugar::visit(NodeProgram& node) {
             node.function_definitions.push_back(std::move(function));
         }
     }
+    // add declarations from function bodies to beginning of m_init_callback
     m_init_callback->statements->statements.insert(m_init_callback->statements->statements.begin(),
                                                    std::make_move_iterator(m_declare_statements_to_move.begin()),
                                                    std::make_move_iterator(m_declare_statements_to_move.end()));
@@ -324,7 +325,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
         if(!node_array->sizes->params.empty()) {
             node_array->dimensions = node_array->sizes->params.size();
             // multidimensional array
-            if (node_array->sizes->params.size() > 1) {
+            if (node_array->dimensions > 1) {
 //                node_array->name = "_"+node_array->name;
                 auto node_expression = create_right_nested_binary_expr(node_array->sizes->params, 0, "*", node_array->tok);
                 node_expression->parent = node_array->sizes.get();
@@ -336,6 +337,9 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
                 }
                 node_array->indexes->params.clear();
                 node_array->indexes->params.push_back(std::move(node_expression));
+//            } else { // no multidimensional array
+//                // copy sizes over to indexes for declaration
+//                node_array->indexes = std::unique_ptr<NodeParamList>(static_cast<NodeParamList*>(node_array->sizes->clone().release()));
             }
         } else {
             if(!node.assignee) {
@@ -345,6 +349,8 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
             // if size is empty -> get it from declaration
             if(param_list) {
                 auto node_int = make_int((int32_t) param_list->params.size(), node_array->sizes.get());
+                // copy also in indexes for declaration
+//                node_array->indexes->params.push_back(node_int->clone());
                 node_array->sizes->params.push_back(std::move(node_int));
             }
         }
@@ -603,21 +609,21 @@ void ASTDesugar::visit(NodeForStatement& node) {
         args.push_back(std::move(function_var));
         auto inc_statement = make_function_call(function_name, std::move(args), node_while_statement.get(), node.tok);
         inc_statement->update_parents(&node);
-        node.statements.push_back(std::move(inc_statement));
+        node.statements->statements.push_back(std::move(inc_statement));
     } else {
         auto assign_var2 = function_var->clone();
         auto inc_expression = make_binary_expr(Integer, "+", std::move(function_var), std::move(node.step), &node, node.tok);
         auto node_inc_statement = std::make_unique<NodeSingleAssignStatement>(std::move(assign_var2), std::move(inc_expression), node.tok);
         auto node_statement = statement_wrapper(std::move(node_inc_statement), node_while_statement.get());
         node_statement->update_parents(&node);
-        node.statements.push_back(std::move(node_statement));
+        node.statements->statements.push_back(std::move(node_statement));
     }
 
     // handle parenting of while statement body
-	for(auto & stmt : node.statements) {
+//	for(auto & stmt : node.statements) {
 //		stmt->update_parents(node_while_statement.get());
 //		stmt->accept(*this);
-	}
+//	}
 
     // handle while condition
     std::string comparison_op = "<=";
@@ -712,9 +718,11 @@ void ASTDesugar::add_vector_to_statement_list(std::unique_ptr<NodeStatementList>
 
 void ASTDesugar::visit(NodeListStatement &node) {
     auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-    auto node_declare_main_array = std::make_unique<NodeSingleDeclareStatement>(make_array(node.name, node.size, node.tok, node_statement_list.get()), nullptr, node.tok);
+    auto node_main_array = make_array(node.name, node.size, node.tok, node_statement_list.get());
+    node_main_array->var_type = List;
+    auto node_declare_main_array = std::make_unique<NodeSingleDeclareStatement>(node_main_array->clone(), nullptr, node.tok);
     auto main_size = (int32_t)node.body.size();
-    auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(std::make_unique<NodeVariable>(false, node.name+".SIZE", VarType::Const, node.tok), make_int(main_size,nullptr), node.tok);
+    auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(std::make_unique<NodeVariable>(false, node.name+".SIZE", VarType::Const, node.tok), make_int(main_size,&node), node.tok);
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_declare_main_array), node_statement_list.get()));
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_declare_main_const), node_statement_list.get()));
 
@@ -726,8 +734,9 @@ void ASTDesugar::visit(NodeListStatement &node) {
     auto node_positions = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.tok));
     positions[0] = 0;
     for(int i = 0; i<node.body.size(); i++) {
-        sizes[i] = (int32_t)node.body[i]->params.size();
-        positions[std::min(i+1, (int)node.body.size())] = sizes[i]+positions[std::max(0,i-1)];
+        sizes[i] = static_cast<int32_t>(node.body[i]->params.size());
+        if(i>0) positions[i] = positions[i - 1] + sizes[i - 1];
+//        std::cout << sizes[i] << ", " << positions[i] << std::endl;
         auto node_size = make_int(sizes[i], node_sizes.get());
         node_sizes->params.push_back(std::move(node_size));
         auto node_position = make_int(positions[i], node_positions.get());
@@ -738,24 +747,47 @@ void ASTDesugar::visit(NodeListStatement &node) {
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_sizes_declaration), node_statement_list.get()));
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_positions_declaration), node_statement_list.get()));
 
-    auto node_iterator_var = std::make_unique<NodeVariable>(false, "list_it", VarType::Mutable, node.tok);
+    auto node_iterator_var = std::make_unique<NodeVariable>(false, m_compiler_variables[0], VarType::Mutable, node.tok);
 
-//    auto node_position_array ;
     for(int i = 0; i<node.body.size(); i++) {
         auto node_array_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
-        auto node_array = make_array(node.name+std::to_string(sizes[i]), sizes[i], node.tok, node_array_declaration.get());
-        node_array_declaration->to_be_declared = std::move(node_array);
+        auto node_array = make_array(node.name+std::to_string(i), sizes[i], node.tok, node_array_declaration.get());
+        node_array_declaration->to_be_declared = node_array->clone();
         node_array_declaration->assignee = std::move(node.body[i]);
+        node_statement_list->statements.push_back(statement_wrapper(std::move(node_array_declaration), node_statement_list.get()));
 
         auto node_const_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
-        auto node_variable = std::make_unique<NodeVariable>(false, node.name+std::to_string(sizes[i])+".SIZE", VarType::Const, node.tok);
+        auto node_variable = std::make_unique<NodeVariable>(false, node.name+std::to_string(i)+".SIZE", VarType::Const, node.tok);
         node_const_declaration->to_be_declared = std::move(node_variable);
         node_const_declaration->assignee = make_int(sizes[i], node_const_declaration.get());
+        node_statement_list->statements.push_back(statement_wrapper(std::move(node_const_declaration), node_statement_list.get()));
 
-        auto node_for_assign_statement = std::make_unique<NodeSingleAssignStatement>(node_iterator_var->clone(), make_int(0, nullptr), node.tok);
-        auto node_for_statement = std::make_unique<NodeForStatement>(node.tok);
+        auto node_while_body = std::make_unique<NodeStatementList>(node.tok);
+        auto node_expression = make_binary_expr(ASTType::Integer, "+", node_iterator_var->clone(), make_int(positions[i], &node),nullptr, node.tok);
+        node_main_array->indexes->params.clear();
+        node_main_array->indexes->params.push_back(std::move(node_expression));
+
+        node_array->indexes->params.push_back(node_iterator_var->clone());
+        auto node_main_array_copy = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(node_main_array->clone().release()));
+        node_main_array_copy->name = "_"+node_main_array_copy->name;
+        auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(node_main_array_copy), std::move(node_array), node.tok);
+        node_while_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_while_body.get()));
+        auto node_while_loop = make_while_loop(node_iterator_var.get(), 0, sizes[i], std::move(node_while_body), node_statement_list.get());
+        node_statement_list->statements.push_back(statement_wrapper(std::move(node_while_loop), node_statement_list.get()));
     }
+    node_statement_list->update_parents(node.parent);
+    node_statement_list->accept(*this);
+    node.replace_with(std::move(node_statement_list));
+}
 
+void ASTDesugar::declare_compiler_variables() {
+    for(auto & var_name: m_compiler_variables) {
+        Token tok = Token(KEYWORD, var_name, 0, (std::string&)"");
+        auto node_variable = std::make_unique<NodeVariable>(false, var_name, VarType::Mutable, tok);
+        auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), nullptr, tok);
+        node_var_declaration->to_be_declared->parent = node_var_declaration.get();
+        m_declare_statements_to_move.push_back(statement_wrapper(std::move(node_var_declaration), m_init_callback->statements.get()));
+    }
 }
 
 

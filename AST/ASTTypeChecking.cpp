@@ -21,7 +21,7 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
         node.assignee->accept(*this);
         // initialization of array lists
         auto node_array = cast_node<NodeArray>(node.to_be_declared.get());
-        if (node_array and node.assignee->type != Integer) {
+        if (node_array and node.assignee->type == String) {
             auto node_param_list = cast_node<NodeParamList>(node.assignee.get());
             if (node_param_list) {
                 auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement*>(node.clone().release()));

@@ -131,22 +131,8 @@ void ASTGenerator::visit(NodeWhileStatement &node) {
     os << "while(" ;
     node.condition->accept(*this);
     os << ") " << std::endl;
-    for(auto &stmt: node.statements) {
-        stmt->accept(*this);
-    }
+    node.statements->accept(*this);
     os << "end while";
-}
-
-void ASTGenerator::visit(NodeForStatement &node) {
-    os << "for " ;
-    node.iterator->accept(*this);
-    os << " " << node.to.val << " ";
-    node.iterator_end->accept(*this);
-    os << std::endl;
-    for(auto &stmt: node.statements) {
-        stmt->accept(*this);
-    }
-    os << "end for";
 }
 
 void ASTGenerator::visit(NodeSelectStatement &node) {

@@ -22,7 +22,7 @@ public:
     std::unique_ptr<NodeStatement> make_declare_array(const std::string& name, int32_t size, const std::vector<int32_t>& values, NodeAST* parent);
     std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, VarType type, NodeAST* parent);
     std::unique_ptr<NodeStatementList> array_initialization(NodeArray* array, NodeParamList* list);
-//    std::unique_ptr<NodeStatementList> make_while_loop(NodeAST* var, const std::string& comparison_op, std::unique_ptr<NodeStatement> inc_function);
+    std::unique_ptr<NodeStatementList> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeStatementList> body, NodeAST* parent);
     static std::unique_ptr<NodeArray> make_array(const std::string& name, int32_t size, const Token& tok, NodeAST* parent);
 
 
@@ -106,15 +106,11 @@ public:
     virtual void visit(NodeForStatement& node) {
 		node.iterator->accept(*this);
 		node.iterator_end->accept(*this);
-		for(auto & stmt : node.statements) {
-			stmt->accept(*this);
-		}
+        node.statements->accept(*this);
 	};
 	virtual void visit(NodeWhileStatement& node) {
 		node.condition->accept(*this);
-		for(auto & stmt : node.statements) {
-			stmt->accept(*this);
-		}
+        node.statements->accept(*this);
 	};
 	virtual void visit(NodeSelectStatement& node) {
 		node.expression->accept(*this);

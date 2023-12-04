@@ -47,6 +47,7 @@ enum VarType {
     Const,
     Polyphonic,
     Array,
+    List,
     Mutable,
 	Define,
     UI_Control
@@ -643,9 +644,9 @@ struct NodeForStatement : NodeAST {
     Token to;
     std::unique_ptr<NodeAST> iterator_end;
     std::unique_ptr<NodeAST> step;
-    std::vector<std::unique_ptr<NodeStatement>> statements;
+    std::unique_ptr<NodeStatementList> statements;
     inline explicit NodeForStatement(Token tok) : NodeAST(tok) {}
-    inline NodeForStatement(std::unique_ptr<NodeAssignStatement> iterator, Token to, std::unique_ptr<NodeAST> iterator_end, std::vector<std::unique_ptr<NodeStatement>> statements, Token tok)
+    inline NodeForStatement(std::unique_ptr<NodeAssignStatement> iterator, Token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeStatementList> statements, Token tok)
     : NodeAST(tok), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), statements(std::move(statements)) {}
     void accept(ASTVisitor& visitor) override;
 	virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
@@ -656,9 +657,7 @@ struct NodeForStatement : NodeAST {
         iterator->update_parents(this);
         iterator_end->update_parents(this);
         if (step) step ->update_parents(this);
-        for (auto & stmt : statements) {
-            stmt->update_parents(this);
-        }
+        statements->update_parents(this);
     }
     std::string get_string() override { return ""; }
     void update_token_data(const Token& token) override {
@@ -666,17 +665,15 @@ struct NodeForStatement : NodeAST {
         to.line = token.line; to.file = token.file;
         iterator_end -> update_token_data(token);
         if(step) step ->update_token_data(token);
-        for(auto &stmt : statements) {
-            stmt->update_token_data(token);
-        }
+        statements->update_token_data(token);
     }
 };
 
 struct NodeWhileStatement : NodeAST {
     std::unique_ptr<NodeAST> condition;
-    std::vector<std::unique_ptr<NodeStatement>> statements;
+    std::unique_ptr<NodeStatementList> statements;
     inline explicit NodeWhileStatement(Token tok) : NodeAST(tok) {}
-    inline NodeWhileStatement(std::unique_ptr<NodeAST> condition, std::vector<std::unique_ptr<NodeStatement>> statements, Token tok)
+    inline NodeWhileStatement(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeStatementList> statements, Token tok)
     : NodeAST(tok), condition(std::move(condition)), statements(std::move(statements)) {}
     void accept(ASTVisitor& visitor) override;
     NodeWhileStatement(const NodeWhileStatement& other);
@@ -684,16 +681,12 @@ struct NodeWhileStatement : NodeAST {
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         condition->update_parents(this);
-        for (auto & stmt : statements) {
-            stmt->update_parents(this);
-        }
+        statements->update_parents(this);
     }
     std::string get_string() override { return ""; }
     void update_token_data(const Token& token) override {
         condition -> update_token_data(token);
-        for(auto &stmt : statements) {
-            stmt->update_token_data(token);
-        }
+        statements->update_token_data(token);
     }
 };
 

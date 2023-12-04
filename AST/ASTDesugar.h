@@ -47,6 +47,9 @@ private:
     NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
     NodeFunctionHeader* get_builtin_function(const std::string &function);
 
+    std::vector<std::string> m_compiler_variables = {"list_it", "string_it"};
+    void declare_compiler_variables();
+
     bool m_in_init_callback = false;
     NodeCallback* m_init_callback;
     NodeCallback* m_current_callback;

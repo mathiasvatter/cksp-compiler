@@ -162,9 +162,7 @@ void ASTPrinter::visit(NodeWhileStatement &node) {
     std::cout << "while(" ;
     node.condition->accept(*this);
     std::cout << ") " << std::endl;
-    for(auto &stmt: node.statements) {
-        stmt->accept(*this);
-    }
+    node.statements->accept(*this);
     std::cout << "end while";
 }
 
@@ -174,9 +172,7 @@ void ASTPrinter::visit(NodeForStatement &node) {
     std::cout << " " << node.to.val << " ";
     node.iterator_end->accept(*this);
     std::cout << std::endl;
-    for(auto &stmt: node.statements) {
-        stmt->accept(*this);
-    }
+    node.statements->accept(*this);
     std::cout << "end for";
 }
 

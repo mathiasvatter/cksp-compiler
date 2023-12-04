@@ -39,8 +39,6 @@ public:
 
     void visit(NodeWhileStatement& node) override;
 
-    void visit(NodeForStatement& node) override;
-
     void visit(NodeSelectStatement& node) override;
 
     void visit(NodeCallback& node) override;

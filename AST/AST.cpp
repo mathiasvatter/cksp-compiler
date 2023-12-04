@@ -295,7 +295,7 @@ void NodeForStatement::accept(ASTVisitor &visitor) {
 }
 NodeForStatement::NodeForStatement(const NodeForStatement& other)
         : NodeAST(other), iterator(clone_unique(other.iterator)), to(other.to), iterator_end(clone_unique(other.iterator_end)),
-        step(clone_unique(other.step)), statements(clone_vector(other.statements)) {}
+        step(clone_unique(other.step)), statements(clone_unique(other.statements)) {}
 std::unique_ptr<NodeAST> NodeForStatement::clone() const {
     return std::make_unique<NodeForStatement>(*this);
 }
@@ -310,7 +310,7 @@ void NodeWhileStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeWhileStatement::NodeWhileStatement(const NodeWhileStatement& other)
-        : NodeAST(other), condition(clone_unique(other.condition)), statements(clone_vector(other.statements)) {}
+        : NodeAST(other), condition(clone_unique(other.condition)), statements(clone_unique(other.statements)) {}
 std::unique_ptr<NodeAST> NodeWhileStatement::clone() const {
     return std::make_unique<NodeWhileStatement>(*this);
 }

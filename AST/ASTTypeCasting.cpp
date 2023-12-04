@@ -134,18 +134,39 @@ void ASTTypeCasting::visit(NodeArray& node) {
             m_declared_arrays.push_back(&node);
         }
     } else {
-        if(auto node_declaration = get_declared_array(&node)) {
+        // in case the user wants the raw array
+        bool has_compiler_identifier = node.name[0] == '_';
+        if (has_compiler_identifier) node.name = node.name.erase(0,1);
+
+        auto node_declaration = get_declared_array(&node);
+        if(node_declaration and not has_compiler_identifier) {
             node.declaration = node_declaration;
             node.dimensions = node_declaration->dimensions;
+            // get var type from declaration because of List
+            node.var_type = node_declaration->var_type;
             node.sizes = std::unique_ptr<NodeParamList>(static_cast<NodeParamList*>(node_declaration->sizes->clone().release()));
             node.sizes->update_parents(&node);
-//            if(node.sizes->params.size() != node.indexes->params.size()) {
-//                CompileError(ErrorType::TypeError,"Got wrong array dimensions.", node.tok.line, std::to_string(node.sizes->params.size()), std::to_string(node.indexes->params.size()), node.tok.file).print();
-//                exit(EXIT_FAILURE);
-//            }
+
             // convert indexes of multidimensional array
             if(node.dimensions > 1) {
                 auto node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0, node.tok);
+                node.indexes->params.clear();
+                node.indexes->params.push_back(std::move(node_expression));
+                node.indexes->update_parents(&node);
+            }
+
+            // convert indexes of list
+            if(node.var_type == List) {
+                if(node.indexes->params.size() != 2) {
+                    CompileError(ErrorType::SyntaxError,"Got wrong amount of indexes for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).print();
+                    exit(EXIT_FAILURE);
+                }
+                auto node_position_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(
+                        get_declared_array(make_array(node.name+".pos", 0, node.tok, nullptr).get())->clone().release()));
+                node_position_array->indexes->params.clear();
+                node_position_array->indexes->params.push_back(std::move(node.indexes->params[0]));
+
+                auto node_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_position_array), std::move(node.indexes->params[1]), &node, node.tok);
                 node.indexes->params.clear();
                 node.indexes->params.push_back(std::move(node_expression));
                 node.indexes->update_parents(&node);
@@ -159,6 +180,10 @@ void ASTTypeCasting::visit(NodeArray& node) {
             }
         } else if(auto builtin_var = get_builtin_array(&node)) {
             node.type = builtin_var->type;
+        } else if (node_declaration and has_compiler_identifier) {
+            node.declaration = node_declaration;
+            node.var_type = Array;
+            node.name = "_"+node.name;
         } else {
             CompileError(ErrorType::TypeError,"Array has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
 //            exit(EXIT_FAILURE);

@@ -99,6 +99,23 @@ std::unique_ptr<NodeArray> ASTVisitor::make_array(const std::string &name, int32
     return std::move(node_array);
 }
 
+std::unique_ptr<NodeStatementList> ASTVisitor::make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeStatementList> body, NodeAST* parent) {
+    auto node_statement_list = std::make_unique<NodeStatementList>(var->tok);
+
+    auto node_assignment = std::make_unique<NodeSingleAssignStatement>(var->clone(), make_int(from, var), var->tok);
+    node_statement_list->statements.push_back(statement_wrapper(std::move(node_assignment), node_statement_list.get()));
+    auto node_comparison = make_binary_expr(ASTType::Comparison, "<", var->clone(), make_int(to, var), nullptr, var->tok);
+    std::vector<std::unique_ptr<NodeAST>> func_args;
+    func_args.push_back(var->clone());
+    auto node_increment = make_function_call("inc", std::move(func_args), nullptr, var->tok);
+    body->statements.push_back(std::move(node_increment));
+    auto node_while = std::make_unique<NodeWhileStatement>(std::move(node_comparison), std::move(body), var->tok);
+    node_statement_list->statements.push_back(statement_wrapper(std::move(node_while), node_statement_list.get()));
+    node_statement_list->update_parents(parent);
+    return std::move(node_statement_list);
+}
+
+
 //
 //template<typename T>std::unique_ptr<NodeStatement> ASTVisitor::statement_wrapper(std::unique_ptr<T> node, NodeAST* parent) {
 //    auto node_statement = std::make_unique<NodeStatement>(std::move(node), node->tok);

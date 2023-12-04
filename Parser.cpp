@@ -1069,22 +1069,23 @@ Result<std::unique_ptr<NodeForStatement>> Parser::parse_for_statement(NodeAST* p
          "Missing linebreak in <for-loop>", peek().line, "linebreak", peek().val, peek().file));
     }
     consume(); //consume linebreak
-    std::vector<std::unique_ptr<NodeStatement>> stmts = {};
+    auto node_statement_list = std::make_unique<NodeStatementList>(get_tok());
+    node_statement_list->parent = node_for_statement.get();
     while (peek().type != token::END_FOR) {
         _skip_linebreaks();
         if(peek().type == token::END_FOR) break;
-        auto stmt = parse_statement(node_for_statement.get());
+        auto stmt = parse_statement(node_statement_list.get());
         if (stmt.is_error()) {
             return Result<std::unique_ptr<NodeForStatement>>(stmt.get_error());
         }
         if(stmt.unwrap()->statement)
-            stmts.push_back(std::move(stmt.unwrap()));
+            node_statement_list->statements.push_back(std::move(stmt.unwrap()));
     }
     consume(); // consume end for
     node_for_statement->iterator = std::move(iterator);
     node_for_statement->to = to;
     node_for_statement->iterator_end = std::move(iterator_end);
-    node_for_statement->statements = std::move(stmts);
+    node_for_statement->statements = std::move(node_statement_list);
     node_for_statement->step = std::move(step);
     node_for_statement->parent = parent;
 //    auto return_value = std::make_unique<NodeForStatement>(std::move(iterator), to, std::move(iterator_end), std::move(stmts), get_tok());
@@ -1108,18 +1109,19 @@ Result<std::unique_ptr<NodeWhileStatement>> Parser::parse_while_statement(NodeAS
          "Expected linebreak after while-condition.", peek().line, "linebreak", peek().val, peek().file));
     }
     consume(); //consume linebreak
-    std::vector<std::unique_ptr<NodeStatement>> stmts = {};
+    auto node_statement_list = std::make_unique<NodeStatementList>(get_tok());
+    node_statement_list->parent = node_while_statement.get();
     while (peek().type != token::END_WHILE) {
-        auto stmt = parse_statement(node_while_statement.get());
+        auto stmt = parse_statement(node_statement_list.get());
         if (stmt.is_error()) {
             return Result<std::unique_ptr<NodeWhileStatement>>(stmt.get_error());
         }
         if(stmt.unwrap()->statement)
-            stmts.push_back(std::move(stmt.unwrap()));
+            node_statement_list->statements.push_back(std::move(stmt.unwrap()));
     }
     consume(); // consume end for
     node_while_statement->condition = std::move(condition);
-    node_while_statement->statements = std::move(stmts);
+    node_while_statement->statements = std::move(node_statement_list);
     node_while_statement ->parent = parent;
 //    auto return_value = std::make_unique<NodeWhileStatement>(std::move(condition), std::move(stmts), get_tok());
     return Result<std::unique_ptr<NodeWhileStatement>>(std::move(node_while_statement));
