@@ -54,6 +54,11 @@ public:
         	std::cout << "In line " << line_number << ": " << get_line_from_file() << reset << std::endl;
     }
 
+    inline void exit() {
+        print();
+        ::exit(EXIT_FAILURE);
+    }
+
 
 private:
     ErrorType type;

@@ -53,7 +53,7 @@ int main() {
 //    ASTMacros macro_processing;
 //    ast->accept(macro_processing);
 
-	ASTDesugar desugar(builtins.get_builtin_functions());
+	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions());
 	ast->accept(desugar);
 
 	ASTTypeCasting typecast(builtins.get_builtin_variables(), builtins.get_builtin_arrays());

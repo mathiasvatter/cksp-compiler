@@ -11,7 +11,7 @@
 
 class ASTDesugar : public ASTVisitor {
 public:
-    explicit ASTDesugar(const std::vector<std::unique_ptr<NodeFunctionHeader>> &mBuiltinFunctions);
+    ASTDesugar(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables, const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions);
 
     /// check if init callback exists
     void visit(NodeProgram& node) override;
@@ -26,6 +26,7 @@ public:
     void visit(NodeSingleAssignStatement& node) override;
     void visit(NodeParamList& node) override;
 
+    void visit(NodeGetControlStatement& node) override;
     /// turn into single assign statements
 	void visit(NodeAssignStatement& node) override;
     /// turn into single declare statements
@@ -49,6 +50,11 @@ private:
 
     std::vector<std::string> m_compiler_variables = {"list_it", "string_it"};
     void declare_compiler_variables();
+
+    const std::vector<std::unique_ptr<NodeVariable>>& m_builtin_variables;
+    std::unique_ptr<NodeVariable> shorthand_to_control_param(const std::string& shorthand);
+    // returns either string (for get/set_control_par_str) or integer (for get/set_control_par)
+    static ASTType get_control_function_type(const std::string& control_param);
 
     bool m_in_init_callback = false;
     NodeCallback* m_init_callback;
