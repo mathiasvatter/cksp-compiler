@@ -14,16 +14,12 @@ PreprocessorBuiltins::PreprocessorBuiltins(const std::string& builtin_vars, cons
 
 void PreprocessorBuiltins::process_builtins() {
     auto builtin_vars = parse_builtin_variables(m_builtin_variables_file);
-    if(builtin_vars.is_error()) {
-        builtin_vars.get_error().print();
-        exit(EXIT_FAILURE);
-    }
-    auto builtin_functions = parse_builtin_functions(m_builtin_functions_file);
-    if(builtin_functions.is_error()) {
-        builtin_functions.get_error().print();
-        exit(EXIT_FAILURE);
-    }
+    if(builtin_vars.is_error())
+        builtin_vars.get_error().exit();
 
+    auto builtin_functions = parse_builtin_functions(m_builtin_functions_file);
+    if(builtin_functions.is_error())
+        builtin_functions.get_error().exit();
 }
 
 
@@ -56,7 +52,11 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::stri
             if(result_function.is_error()) {
                 return Result<SuccessTag>(result_function.get_error());
             }
-            m_builtin_functions.push_back(std::move(result_function.unwrap()));
+            if(is_property_function(result_function.unwrap()->name)) {
+                m_property_functions.push_back(std::move(result_function.unwrap()));
+            } else {
+                m_builtin_functions.push_back(std::move(result_function.unwrap()));
+            }
         } else consume(m_tokens);
     }
     return Result<SuccessTag>(SuccessTag{});
@@ -66,8 +66,10 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::stri
 std::unique_ptr<NodeVariable> PreprocessorBuiltins::parse_builtin_variable() {
     Token name = consume(m_tokens); // consume variable name token
     // cut away identifier
-    std::string var_name = name.val.erase(0,1);
+    std::string var_name = name.val;
     ASTType type = get_identifier_type(var_name[0]);
+    if(contains(TYPES, std::string(1, var_name[0])))
+        var_name = var_name.erase(0,1);
     auto node_variable = std::make_unique<NodeVariable>(false, var_name, Mutable, name);
     node_variable->type = type;
     node_variable->is_local = false;
@@ -89,7 +91,7 @@ std::unique_ptr<NodeArray> PreprocessorBuiltins::parse_builtin_array() {
 }
 
 ASTType PreprocessorBuiltins::get_identifier_type(char identifier) {
-    token token_type = get_token_type(TYPES, std::to_string(identifier));
+    token token_type = get_token_type(TYPES, std::string(1, identifier));
     return token_to_type(token_type);
 }
 
@@ -101,7 +103,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_
     if (peek(m_tokens).type == token::OPEN_PARENTH) {
         consume(m_tokens); // consume (
         if(peek(m_tokens).type != token::CLOSED_PARENTH) {
-            auto arg_pair = parse_builtin_args_list();
+            auto arg_pair = parse_builtin_args_list(func_args);
             if (arg_pair.is_error()) {
                 Result<std::unique_ptr<NodeFunctionHeader>>(arg_pair.get_error());
             }
@@ -119,7 +121,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_
     ASTType return_type = Void;
     if(peek(m_tokens).type == TYPE) {
         consume(m_tokens); // consume :
-        return_type = get_type_annotation();
+        return_type = get_type_annotation(consume(m_tokens));
     }
     auto node_function = std::make_unique<NodeFunctionHeader>(func_name.val, std::move(func_args), func_name);
     node_function->type = return_type;
@@ -129,17 +131,17 @@ Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_
     return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(node_function));
 }
 
-ASTType PreprocessorBuiltins::get_type_annotation() {
-    Token token_type = consume(m_tokens); // get type token
+ASTType PreprocessorBuiltins::get_type_annotation(const Token& tok) {
+//    Token token_type = tok; // get type token
     ASTType type = Any;
-    if(token_type.val.find("int") != std::string::npos) {
+    if(tok.val.find("int") != std::string::npos) {
         type = Integer;
-    } else if (token_type.val.find("real") != std::string::npos) {
+    } else if (tok.val.find("real") != std::string::npos) {
         type = Real;
-    } else if (token_type.val.find("string") != std::string::npos) {
+    } else if (tok.val.find("string") != std::string::npos) {
         type = String;
     }
-    if(token_type.val.find("int") != std::string::npos and token_type.val.find("real") != std::string::npos) {
+    if(tok.val.find("int") != std::string::npos and tok.val.find("real") != std::string::npos) {
         type = Number;
     }
     return type;
@@ -152,14 +154,17 @@ VarType PreprocessorBuiltins::get_var_type_annotation(const std::string& keyword
     return Mutable;
 }
 
-Result<std::pair<std::vector<ASTType>, std::vector<VarType>>> PreprocessorBuiltins::parse_builtin_args_list() {
+Result<std::pair<std::vector<ASTType>, std::vector<VarType>>> PreprocessorBuiltins::parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args) {
     std::vector<ASTType> arg_types;
     std::vector<VarType> arg_var_types;
     while(peek(m_tokens).type != CLOSED_PARENTH) {
         if(peek(m_tokens).type == CLOSED_PARENTH) break;
         if(peek(m_tokens).type == KEYWORD or peek(m_tokens).type == TO) {
-            arg_var_types.push_back(get_var_type_annotation(peek(m_tokens).val));
-            arg_types.push_back(get_type_annotation());
+            Token tok = peek(m_tokens);
+            auto arg = parse_builtin_variable();
+            func_args->params.push_back(std::move(arg));
+            arg_var_types.push_back(get_var_type_annotation(tok.val));
+            arg_types.push_back(get_type_annotation(tok));
         } else {
             return Result<std::pair<std::vector<ASTType>, std::vector<VarType>>>(CompileError(ErrorType::PreprocessorError,
         "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
@@ -182,4 +187,10 @@ const std::vector<std::unique_ptr<NodeFunctionHeader>> &PreprocessorBuiltins::ge
     return m_builtin_functions;
 }
 
+const std::vector<std::unique_ptr<NodeFunctionHeader>> &PreprocessorBuiltins::get_property_functions() const {
+    return m_property_functions;
+}
 
+bool PreprocessorBuiltins::is_property_function(const std::string &fun_name) {
+    return contains(fun_name, "_properties") || contains(fun_name, "set_bounds");
+}

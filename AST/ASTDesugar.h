@@ -11,7 +11,8 @@
 
 class ASTDesugar : public ASTVisitor {
 public:
-    ASTDesugar(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables, const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions);
+    ASTDesugar(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables, const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
+               const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_property_functions);
 
     /// check if init callback exists
     void visit(NodeProgram& node) override;
@@ -56,6 +57,10 @@ private:
     // returns either string (for get/set_control_par_str) or integer (for get/set_control_par)
     static ASTType get_control_function_type(const std::string& control_param);
 
+    const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_property_functions;
+    NodeFunctionHeader* get_property_function(NodeFunctionHeader* function);
+    std::unique_ptr<NodeStatementList> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header);
+
     bool m_in_init_callback = false;
     NodeCallback* m_init_callback;
     NodeCallback* m_current_callback;
@@ -75,10 +80,7 @@ private:
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
     std::unique_ptr<NodeFunctionDefinition> get_function_definition(NodeFunctionHeader* function_header);
 
-    std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok);
 
-    std::vector<std::unique_ptr<NodeStatement>> add_read_functions(NodeAST* var, NodeAST* parent);
 
-    void add_vector_to_statement_list(std::unique_ptr<NodeStatementList> &list, std::vector<std::unique_ptr<NodeStatement>> stmts);
 };
 

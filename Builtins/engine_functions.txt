@@ -1,3 +1,20 @@
+// set properties functions
+set_bounds(control, x, y, width, height)
+set_button_properties(button, text, picture, text_alignment, font_type, textpos_y)
+set_knob_properties(knob, text, default)
+set_label_properties(label, text, picture, text_alignment, font_type, textpos_y)
+set_level_meter_properties(level_meter, bg_color, off_color, on_color, overload_color)
+set_menu_properties(menu, picture, font_type, text_alignment, textpos_y)
+set_slider_properties(slider, default, picture, mouse_behaviour)
+set_switch_properties(switch, text, picture, text_alignment, font_type, textpos_y)
+set_table_properties(table, bar_color, zero_line_color)
+set_text_edit_properties(textedit, text, picture, text_alignment, font_type, textpos_y)
+set_value_edit_properties(valueedit, text, font_type, textpos_y, show_arrows)
+set_waveform_properties(waveform, bar_color, zero_line_color, bg_color, bg_alpha, wave_color, wave_cursor_color, slicemarkers_color, wf_vis_mode)
+set_wavetable2d_properties(wavetable, wt_zone, bg_color, bg_alpha, wave_color, wave_alpha, wave_end_color, wave_end_alpha)
+set_wavetable3d_properties(wavetable, wt_zone, bg_color, bg_alpha, wt_color, wt_alpha, wt_end_color, wt_end_alpha, parallax_x, parallax_y)
+
+// builtin functions
 END_USE_CODE
 RESET_CONDITION(unknown)
 SET_CONDITION(unknown)
@@ -69,17 +86,17 @@ find_mod(groupidx, modname):integer
 find_target(groupidx, modidx, targetname):integer
 find_zone(samplename):integer
 floor(realvalue):real
-fs_get_filename(uiid, returnparameter):string
-fs_navigate(uiid, direction)
-get_control_par(uiid, controlparameter):integer
-get_control_par_arr(uiid, controlparameter, index):integer
-get_control_par_real_arr(uiid, controlparameter, index):real
-get_control_par_str(uiid, controlparameter):string
-get_control_par_str_arr(uiid, controlparameter, index):string
-get_engine_par(parameter, group, slot, generic):integer
-get_engine_par_disp(parameter, group, slot, generic):string
-get_engine_par_disp_m(parameter, instrslotidx, slot, generic):string
-get_engine_par_m(parameter, instrslotidx, slot, generic):integer
+fs_get_filename(int, returnparameter):string
+fs_navigate(int, direction)
+get_control_par(int, int):integer
+get_control_par_arr(int, int, int):integer
+get_control_par_real_arr(int, int, int):real
+get_control_par_str(int, int):string
+get_control_par_str_arr(int, int, int):string
+get_engine_par(int, int, int, int):integer
+get_engine_par_disp(int, int, int, int):string
+get_engine_par_disp_m(int, int, slot, int):string
+get_engine_par_m(parameter, int, slot, int):integer
 get_event_ids(intarray)
 get_event_mark(eventid, bitmark):integer
 get_event_par(eventid, parameter):integer
@@ -129,8 +146,8 @@ literate_macro(expression)
 literate_post_macro(expression)
 load_array(intorstringarray, mode):integer
 load_array_str(intorstringarray, filepath):integer
-load_ir_sample(filename, slot, generic):integer
-load_ir_sample_m(filename, outputidx, slot, generic):integer
+load_ir_sample(filename, slot, int):integer
+load_ir_sample_m(filename, outputidx, slot, int):integer
 load_native_ui(filepath)
 load_midi_file(filepath):integer
 load_patch(filepath, instrslotidx)
@@ -216,17 +233,15 @@ save_array_str(intorstringarray, filepath):integer
 save_midi_file(filepath):integer
 search(intarray, value):integer
 search(intarray, value, from, to):integer
-set_bounds(control, x, y, width, height)
-set_button_properties(button, text, picture, textalignment, fonttype, textposy)
 set_control_help(variable, text)
-set_control_par(uiid, controlparameter, value)
-set_control_par_arr(uiid, controlparameter, value, index)
-set_control_par_real_arr(uiid, controlparameter, realvalue, index)
-set_control_par_str(uiid, controlparameter, text)
-set_control_par_str_arr(uiid, controlparameter, text, index)
-set_controller(controllernumber, controllervalue)
-set_engine_par(parameter, value, group, slot, generic):integer
-set_engine_par_m(parameter, value, instrslotidx, slot, generic):integer
+set_control_par(int, int, int)
+set_control_par_arr(int, int, int, int)
+set_control_par_real_arr(int, int, real, int)
+set_control_par_str(int, int, string)
+set_control_par_str_arr(int, int, string, int)
+set_controller(int, int)
+set_engine_par(int, int, int, int, int):integer
+set_engine_par_m(int, int, int, int, int):integer
 set_event_mark(eventid, bitmark)
 set_event_par(eventid, parameter, value)
 set_event_par_arr(eventid, parameter, value, groupidx)
@@ -239,16 +254,12 @@ set_key_type(notenumber, keytypeconstant)
 set_keyrange(keynumber1, keynumber2, rangename)
 set_knob_defval(knobvariable, value)
 set_knob_label(knobvariable, text)
-set_knob_properties(knob, text, default)
 set_knob_unit(knobvariable, unit)
-set_label_properties(label, text, picture, textalignment, fonttype, textposy)
-set_level_meter_properties(levelmeter, bgcolor, offcolor, oncolor, overloadcolor)
 set_listener(signaltype, parameter)
 set_loop_par(zoneid, loopid, parameter, value):integer
 set_menu_item_str(menuid, index, text)
 set_menu_item_value(menuid, index, value)
 set_menu_item_visibility(menuid, index, visibility)
-set_menu_properties(menu, picture, fonttype, textalignment, textposy)
 set_midi(channel, command, byte1, byte2)
 set_nrpn(address, value)
 set_num_user_zones(size)
@@ -256,23 +267,15 @@ set_rpn(address, value)
 set_sample(zoneid, filepath):integer
 set_script_title(text)
 set_skin_offset(value)
-set_slider_properties(slider, default, picture, mousebehaviour)
 set_snapshot_type(snapshottype)
-set_switch_properties(switch, text, picture, textalignment, fonttype, textposy)
-set_table_properties(table, barcolor, zerolinecolor)
 set_table_steps_shown(intarray, numsteps)
 set_text(variable, text)
-set_text_edit_properties(textedit, text, picture, textalignment, fonttype, textposy)
 set_ui_color(hexvalue)
 set_ui_height(height)
 set_ui_height_px(value)
 set_ui_wf_property(waveform, property, index, value)
 set_ui_width_px(value)
-set_value_edit_properties(valueedit, text, fonttype, textposy, showarrows)
 set_voice_limit(voicetype,value)
-set_waveform_properties(waveform, barcolor, zerolinecolor, bgcolor, bgalpha, wavecolor, wavecursorcolor, slicemarkercolor, wfvismode)
-set_wavetable2d_properties(wavetable, wtzone, bgcolor, bgalpha, wavecolor, wavealpha, waveendcolor, waveendalpha)
-set_wavetable3d_properties(wavetable, wtzone, bgcolor, bgalpha, wtcolor, wtalpha, wtendcolor, wtendalpha, parallaxx, parallaxy)
 set_zone_par(zoneid, parameter, value):integer
 sgn(intorrealvalue):integer
 sh_left(int, int):integer

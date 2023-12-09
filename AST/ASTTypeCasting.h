@@ -33,7 +33,7 @@ private:
     std::vector<NodeVariable*> m_declared_variables;
     NodeVariable* get_declared_variable(NodeVariable* var);
     std::vector<NodeArray*> m_declared_arrays;
-    NodeArray* get_declared_array(NodeArray* arr);
+    NodeArray* get_declared_array(const std::string& arr);
 
     std::vector<NodeUIControl*> m_declared_controls;
     NodeUIControl* get_declared_control(NodeUIControl* arr);

@@ -11,6 +11,7 @@
 #include "AST/ASTTypeCasting.h"
 #include "Preprocessor/PreprocessorBuiltins.h"
 #include "AST/ASTTypeChecking.h"
+#include "AST/ASTVariables.h"
 //#include "AST/ASTMacros.h"
 
 int main() {
@@ -53,8 +54,11 @@ int main() {
 //    ASTMacros macro_processing;
 //    ast->accept(macro_processing);
 
-	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions());
+	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions());
 	ast->accept(desugar);
+
+    ASTVariables variables(builtins.get_builtin_functions());
+    ast->accept(variables);
 
 	ASTTypeCasting typecast(builtins.get_builtin_variables(), builtins.get_builtin_arrays());
 	ast->accept(typecast);

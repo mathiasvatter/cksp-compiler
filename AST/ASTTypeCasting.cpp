@@ -58,8 +58,8 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
         if(node.to_be_declared->type == Unknown) {
             node.to_be_declared->type = node.assignee->type;
         }
-    } else {
-        node.to_be_declared->type = Unknown;
+//    } else {
+//        node.to_be_declared->type = Unknown;
     }
 
 
@@ -70,6 +70,8 @@ void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
     node.assignee->accept(*this);
     if(node.array_variable->type == Unknown) {
         node.array_variable->type = node.assignee->type;
+    } else if(node.assignee->type == Unknown and node.array_variable->type != Unknown) {
+        node.assignee->type = node.array_variable->type;
     } else if (node.array_variable->type != node.assignee->type) {
         CompileError(ErrorType::TypeError,"Found incorrect variable type in assignment.", node.tok.line, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
@@ -85,7 +87,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
         }
         if(get_declared_variable(&node)) {
             CompileError(ErrorType::TypeError,"Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
+//            exit(EXIT_FAILURE);
         } else {
             m_declared_variables.push_back(&node);
         }
@@ -102,8 +104,15 @@ void ASTTypeCasting::visit(NodeVariable& node) {
             m_declared_variables.push_back(&node);
         }
     } else {
-        if(auto node_declaration = get_declared_variable(&node)) {
-            node.declaration = node_declaration;
+        // sometimes a variable can also be an array if notated without brackets
+        auto node_first_declaration = get_declared_variable(&node);
+        auto node_first_array_declaration = get_declared_array(node.name);
+        if(node_first_declaration || node_first_array_declaration) {
+            if(node_first_declaration) node.declaration = node_first_declaration;
+            if(node_first_array_declaration) {
+                node.declaration = node_first_array_declaration;
+                node.var_type = Array;
+            }
             if (node.declaration->type != Unknown) {
                 node.type = node.declaration->type;
             }
@@ -114,7 +123,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
             node.type = builtin_var->type;
         } else {
             CompileError(ErrorType::TypeError,"Variable has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
-//            exit(EXIT_FAILURE);
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -127,7 +136,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
             CompileError(ErrorType::TypeError,"Array declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).print();
             exit(EXIT_FAILURE);
         }
-        if(get_declared_array(&node)) {
+        if(get_declared_array(node.name)) {
             CompileError(ErrorType::TypeError,"Array has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
             exit(EXIT_FAILURE);
         } else {
@@ -138,7 +147,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
         bool has_compiler_identifier = node.name[0] == '_';
         if (has_compiler_identifier) node.name = node.name.erase(0,1);
 
-        auto node_declaration = get_declared_array(&node);
+        auto node_declaration = get_declared_array(node.name);
         if(node_declaration and not has_compiler_identifier) {
             node.declaration = node_declaration;
             node.dimensions = node_declaration->dimensions;
@@ -162,7 +171,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
                     exit(EXIT_FAILURE);
                 }
                 auto node_position_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(
-                        get_declared_array(make_array(node.name+".pos", 0, node.tok, nullptr).get())->clone().release()));
+                        get_declared_array(node.name+".pos")->clone().release()));
                 node_position_array->indexes->params.clear();
                 node_position_array->indexes->params.push_back(std::move(node.indexes->params[0]));
 
@@ -186,7 +195,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
             node.name = "_"+node.name;
         } else {
             CompileError(ErrorType::TypeError,"Array has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
-//            exit(EXIT_FAILURE);
+            exit(EXIT_FAILURE);
         }
     }
     node.sizes->accept(*this);
@@ -246,6 +255,8 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
     bool string_and_unknown = node.left->type == String and node.right->type == Unknown or node.left->type == Unknown and node.right->type == String;
     bool comp_and_unknown = node.left->type == Comparison and node.right->type == Unknown or node.left->type == Unknown and node.right->type == Comparison;
     bool bool_and_unknown = node.left->type == Boolean and node.right->type == Unknown or node.left->type == Unknown and node.right->type == Boolean;
+    bool one_bool = node.left->type == Boolean or node.right->type == Boolean;
+    bool one_comp = node.left->type == Comparison or node.right->type == Comparison;
     bool both_integers = node.left->type == Integer and node.right->type == Integer;
     bool both_reals = node.left->type == Real and node.right->type == Real;
     bool both_comps = node.left->type == Comparison and node.right->type == Comparison;
@@ -280,6 +291,8 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
         if(both_comps) {
             node.type = Boolean;
         } else if (both_bools) {
+            node.type = Boolean;
+        } else if(one_bool and one_comp) {
             node.type = Boolean;
         } else {
             // error, only comparisons can be bound together with bool operators
@@ -394,10 +407,10 @@ NodeVariable *ASTTypeCasting::get_declared_variable(NodeVariable *var) {
     return nullptr;
 }
 
-NodeArray *ASTTypeCasting::get_declared_array(NodeArray *arr) {
+NodeArray *ASTTypeCasting::get_declared_array(const std::string& arr) {
     auto it = std::find_if(m_declared_arrays.begin(), m_declared_arrays.end(),
                            [&](NodeArray* array) {
-                               return array->name == arr->name;
+                               return array->name == arr;
                            });
     if(it != m_declared_arrays.end()) {
         return m_declared_arrays[std::distance(m_declared_arrays.begin(), it)];

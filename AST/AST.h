@@ -402,7 +402,10 @@ struct NodeSingleDeclareStatement : NodeAST {
         if(assignee) assignee->update_parents(this);
     }
     std::string get_string() override {
-        return "declare " + to_be_declared->get_string() + " := " + assignee->get_string();
+        auto string = to_be_declared->get_string();
+        if(assignee)
+            string += " := " + assignee->get_string();
+        return string;
     }
     void update_token_data(const Token& token) override {
         to_be_declared -> update_token_data(token);

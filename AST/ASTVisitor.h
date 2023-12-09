@@ -24,6 +24,7 @@ public:
     std::unique_ptr<NodeStatementList> array_initialization(NodeArray* array, NodeParamList* list);
     std::unique_ptr<NodeStatementList> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeStatementList> body, NodeAST* parent);
     static std::unique_ptr<NodeArray> make_array(const std::string& name, int32_t size, const Token& tok, NodeAST* parent);
+    void add_vector_to_statement_list(std::unique_ptr<NodeStatementList> &list, std::vector<std::unique_ptr<NodeStatement>> stmts);
 
 
     virtual void visit(NodeDeadEnd& node) {};

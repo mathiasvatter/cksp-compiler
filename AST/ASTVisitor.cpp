@@ -115,6 +115,10 @@ std::unique_ptr<NodeStatementList> ASTVisitor::make_while_loop(NodeAST* var, int
     return std::move(node_statement_list);
 }
 
+void ASTVisitor::add_vector_to_statement_list(std::unique_ptr<NodeStatementList> &list, std::vector<std::unique_ptr<NodeStatement>> stmts) {
+    list->statements.insert(list->statements.end(),std::make_move_iterator(stmts.begin()),std::make_move_iterator(stmts.end()));
+}
+
 
 //
 //template<typename T>std::unique_ptr<NodeStatement> ASTVisitor::statement_wrapper(std::unique_ptr<T> node, NodeAST* parent) {
