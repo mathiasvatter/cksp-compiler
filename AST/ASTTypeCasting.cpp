@@ -48,22 +48,32 @@ void ASTTypeCasting::visit(NodeParamList& node) {
 
 }
 
+void ASTTypeCasting::visit(NodeUIControl& node) {
+    node.control_var->accept(*this);
+
+    // unused variable declarations being replaced with node_dead_end
+    if(!node.control_var) return;
+
+    node.params->accept(*this);
+}
+
+
 void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
     node.to_be_declared ->accept(*this);
+
+    // unused variable declarations being replaced with node_dead_end
+    if(!node.to_be_declared) return;
 
     if(node.assignee) {
         node.assignee->accept(*this);
         if(node.to_be_declared->type != Unknown and node.assignee->type != node.to_be_declared->type) {
             CompileError(ErrorType::TypeError,"Found incorrect variable type in declaration.", node.tok.line, "", "", node.tok.file).print();
             exit(EXIT_FAILURE);
-        }
-        if(node.assignee->type == Unknown and node.to_be_declared->type != Unknown) {
+        } else if(node.assignee->type == Unknown and node.to_be_declared->type != Unknown) {
             node.assignee->type = node.to_be_declared->type;
-        }
-        if(node.to_be_declared->type == Unknown) {
+        } else if(node.to_be_declared->type == Unknown) {
             node.to_be_declared->type = node.assignee->type;
         }
-
     }
 
     if(node.assignee) {
@@ -100,11 +110,23 @@ void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
         CompileError(ErrorType::TypeError,"Found incorrect variable type in assignment.", node.tok.line, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
+    // a second time to get the new types to the declaration pointer!
+    node.array_variable->accept(*this);
+    node.assignee->accept(*this);
 }
 
 void ASTTypeCasting::visit(NodeVariable& node) {
     auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
+    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
     auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+
+    if(node_declaration || node_ui_control) {
+        if(!node.is_used) {
+            node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
+            return;
+        }
+    }
+
     if(!node_declaration and !node_ui_control) {
         if (node.declaration->type != Unknown) {
             node.type = node.declaration->type;
@@ -117,7 +139,16 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 
 void ASTTypeCasting::visit(NodeArray& node) {
     auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
+    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
     auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+
+    if(node_declaration || node_ui_control) {
+        if(!node.is_used) {
+            node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
+            return;
+        }
+    }
+
     if(!node_declaration and !node_ui_control) {
         if (node.declaration->type != Unknown) {
             node.type = node.declaration->type;
@@ -126,8 +157,11 @@ void ASTTypeCasting::visit(NodeArray& node) {
             node.declaration->type = node.type;
         }
     }
+    auto err = CompileError(ErrorType::TypeError,"Found incorrect type in array brackets.", node.tok.line, "Integer", "", node.tok.file);
     node.sizes->accept(*this);
+    if(node.sizes->type != Integer and node.sizes->type != Unknown) err.exit();
     node.indexes->accept(*this);
+    if(node.indexes->type != Integer and node.indexes->type != Unknown) err.exit();
 
 }
 
@@ -177,8 +211,6 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
 //    }
     std::pair<ASTType, ASTType> types(node.left->type, node.right->type);
 
-
-
     auto err = CompileError(ErrorType::TypeError,"Found operands of different types in <binary_expression>.", node.tok.line, "", "", node.tok.file);
     bool left_unknown = node.left->type == Unknown;
     bool right_unknown = node.right->type == Unknown;
@@ -203,14 +235,14 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
             node.type = Integer;
         } else if (both_reals) {
             node.type = Real;
-        } else if (int_and_unknown) {
+        } else if (int_and_unknown or both_unknown) {
             node.type = Integer; node.right->type = Integer; node.left->type = Integer;
         } else if (real_and_unknown) {
             node.type = Real;
             node.right->type = Real;
             node.left->type = Real;
-        } else if (both_unknown) {
-            node.type = Unknown;
+//        } else if (both_unknown) {
+//            node.type = Unknown;
         } else {
             // please use real() and int() to use Real and Integer numbers in a single expression
             err.print();
@@ -307,31 +339,31 @@ void ASTTypeCasting::visit(NodeFunctionHeader& node) {
 
 }
 
-//void ASTTypeCasting::visit(NodeStatementList& node) {
-//	for(auto & stmt : node.statements) {
-//		stmt->accept(*this);
-////		stmt->parent = &node;
-//	}
-//	for(int i=0; i<node.statements.size(); ++i) {
-//		if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
-//			// Wir speichern die Statements der inneren NodeStatementList
-//			auto& inner_statements = node_statement_list->statements;
-//			// Fügen Sie die inneren Statements an der aktuellen Position ein
-//			node.statements.insert(
-//				node.statements.begin() + i + 1,
-//				std::make_move_iterator(inner_statements.begin()),
-//				std::make_move_iterator(inner_statements.end())
-//			);
-//			// Entfernen Sie das ursprüngliche NodeStatementList-Element
-//			node.statements.erase(node.statements.begin() + i);
-//			// Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
-//			i += inner_statements.size() - 1;
-//			// Die inneren Statements sind jetzt leer, da sie verschoben wurden
-//			inner_statements.clear();
-//		}
-//	}
-//    node.update_parents(&node);
-//}
+void ASTTypeCasting::visit(NodeStatementList& node) {
+	for(auto & stmt : node.statements) {
+		stmt->accept(*this);
+//		stmt->parent = &node;
+	}
+	for(int i=0; i<node.statements.size(); ++i) {
+		if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
+			// Wir speichern die Statements der inneren NodeStatementList
+			auto& inner_statements = node_statement_list->statements;
+			// Fügen Sie die inneren Statements an der aktuellen Position ein
+			node.statements.insert(
+				node.statements.begin() + i + 1,
+				std::make_move_iterator(inner_statements.begin()),
+				std::make_move_iterator(inner_statements.end())
+			);
+			// Entfernen Sie das ursprüngliche NodeStatementList-Element
+			node.statements.erase(node.statements.begin() + i);
+			// Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
+			i += inner_statements.size() - 1;
+			// Die inneren Statements sind jetzt leer, da sie verschoben wurden
+			inner_statements.clear();
+		}
+	}
+    node.update_parents(&node);
+}
 
 NodeVariable *ASTTypeCasting::get_declared_variable(NodeVariable *var) {
     auto it = std::find_if(m_declared_variables.begin(), m_declared_variables.end(),

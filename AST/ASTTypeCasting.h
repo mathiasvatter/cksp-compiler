@@ -12,6 +12,7 @@ public:
 
     void visit(NodeProgram& node) override;
     void visit(NodeSingleDeclareStatement& node) override;
+    void visit(NodeUIControl& node) override;
     void visit(NodeParamList& node) override;
     void visit(NodeSingleAssignStatement& node) override;
     void visit(NodeVariable& node) override;
@@ -23,7 +24,7 @@ public:
     void visit(NodeUnaryExpr& node) override;
     void visit(NodeFunctionCall& node) override;
     void visit(NodeFunctionHeader& node) override;
-//	void visit(NodeStatementList& node) override;
+	void visit(NodeStatementList& node) override;
 //	void visit(NodeStatement& node) override;
 
 private:

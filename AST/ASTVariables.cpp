@@ -51,16 +51,21 @@ void ASTVariables::visit(NodeArray& node) {
         if (has_compiler_identifier) node.name = node.name.erase(0,1);
 
         auto node_declaration = get_declared_array(node.name);
+        if(node_declaration) node_declaration->is_used = true;
         if(node_declaration and not has_compiler_identifier) {
             node.declaration = node_declaration;
             node.dimensions = node_declaration->dimensions;
             // get var type from declaration because of List
-            node.var_type = node_declaration->var_type;
-            node.sizes = std::unique_ptr<NodeParamList>(static_cast<NodeParamList*>(node_declaration->sizes->clone().release()));
-            node.sizes->update_parents(&node);
+            if(node_declaration->var_type == List) node.var_type = node_declaration->var_type;
+            // only copy sizes from declaration if there is an index (passing arrays only by keyword)
+            if(!node.indexes->params.empty()) {
+                node.sizes = std::unique_ptr<NodeParamList>(
+                        static_cast<NodeParamList *>(node_declaration->sizes->clone().release()));
+                node.sizes->update_parents(&node);
+            }
 
             // convert indexes of multidimensional array
-            if(node.dimensions > 1) {
+            if(node.dimensions > 1 and !node.indexes->params.empty()) {
                 auto node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0, node.tok);
                 node.indexes->params.clear();
                 node.indexes->params.push_back(std::move(node_expression));
@@ -84,16 +89,11 @@ void ASTVariables::visit(NodeArray& node) {
                 node.indexes->update_parents(&node);
             }
 
-//            if (node.declaration->type != Unknown) {
-//                node.type = node.declaration->type;
-//            }
-//            if (node.declaration->type == Unknown) {
-//                node.declaration->type = node.type;
-//            }
         } else if(auto builtin_var = get_builtin_array(&node)) {
             node.declaration = builtin_var;
         } else if (node_declaration and has_compiler_identifier) {
             node.declaration = node_declaration;
+            node.dimensions = 1;
             node.var_type = Array;
             node.name = "_"+node.name;
         } else {
@@ -130,14 +130,20 @@ void ASTVariables::visit(NodeVariable& node) {
             m_declared_variables.push_back(&node);
         }
     } else {
-        // sometimes a variable can also be an array if notated without brackets
+        // sometimes a variable can also be an array if notated without brackets -> replace with array node
         auto node_first_declaration = get_declared_variable(&node);
         auto node_first_array_declaration = get_declared_array(node.name);
         if(node_first_declaration || node_first_array_declaration) {
-            if(node_first_declaration) node.declaration = node_first_declaration;
+            if(node_first_declaration) {
+                node.declaration = node_first_declaration;
+                node_first_declaration->is_used = true;
+            }
             if(node_first_array_declaration) {
-                node.declaration = node_first_array_declaration;
-                node.var_type = Array;
+                auto node_array = make_array(node.name, 0, node.tok, node.parent);
+                node_array->sizes->params.clear();
+                node_array->declaration = node_first_array_declaration;
+                node_array->accept(*this);
+                node.replace_with(std::move(node_array));
             }
         } else if(auto builtin_var = get_builtin_variable(&node)) {
             node.declaration = builtin_var;

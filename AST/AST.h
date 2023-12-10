@@ -151,6 +151,7 @@ struct NodeString : NodeAST {
 };
 
 struct NodeVariable: NodeAST {
+    bool is_used = false;
     bool is_engine = false;
     bool is_persistent;
     bool is_local;
@@ -198,6 +199,7 @@ struct NodeParamList: NodeAST {
 };
 
 struct NodeArray : NodeAST {
+    bool is_used = false;
     bool is_engine = false;
     bool is_persistent;
     bool is_local;
