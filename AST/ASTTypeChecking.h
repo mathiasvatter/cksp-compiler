@@ -12,8 +12,8 @@ public:
     void visit(NodeSingleDeclareStatement& node) override;
 //    void visit(NodeParamList& node) override;
 //    void visit(NodeSingleAssignStatement& node) override;
-//    void visit(NodeVariable& node) override;
-//    void visit(NodeArray& node) override;
+    void visit(NodeVariable& node) override;
+    void visit(NodeArray& node) override;
 //    void visit(NodeInt& node) override;
 //    void visit(NodeString& node) override;
 //    void visit(NodeReal& node) override;

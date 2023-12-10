@@ -144,8 +144,8 @@ iterate_macro(expression)
 iterate_post_macro(expression)
 literate_macro(expression)
 literate_post_macro(expression)
-load_array(intorstringarray, mode):integer
-load_array_str(intorstringarray, filepath):integer
+load_array(intorstringarray, int):integer
+load_array_str(intorstringarray, string):integer
 load_ir_sample(filename, slot, int):integer
 load_ir_sample_m(filename, outputidx, slot, int):integer
 load_native_ui(filepath)

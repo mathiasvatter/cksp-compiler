@@ -9,7 +9,9 @@
 
 class ASTVariables : public ASTVisitor {
 public:
-    explicit ASTVariables(const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions);
+    ASTVariables(const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
+                  const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables,
+                  const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays);
 
     void visit(NodeProgram& node) override;
     void visit(NodeCallback& node) override;
@@ -29,19 +31,27 @@ private:
     const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_builtin_functions;
     NodeFunctionHeader* get_builtin_function(const std::string &function);
 
-//    const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables;
-//    const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays;
+    /// builtin engine variables
+    const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables;
+    NodeVariable* get_builtin_variable(NodeVariable* var);
+    /// builtin engine arrays
+    const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays;
+    NodeArray* get_builtin_array(NodeArray* arr);
 
-//    std::vector<NodeVariable*> m_declared_variables;
-//    NodeVariable* get_declared_variable(NodeVariable* var);
-//    std::vector<NodeArray*> m_declared_arrays;
-//    NodeArray* get_declared_array(NodeArray* arr);
+    /// declared variables
+    std::vector<NodeVariable*> m_declared_variables;
+    NodeVariable* get_declared_variable(NodeVariable* var);
+    /// declared arrays
+    std::vector<NodeArray*> m_declared_arrays;
+    NodeArray* get_declared_array(const std::string& arr);
+    /// declared ui_controls
+    std::vector<NodeUIControl*> m_declared_controls;
+    NodeUIControl* get_declared_control(NodeUIControl* arr);
 
-    /// multidimensional arrays
-    std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok);
+    /// multidimensional array method for getting the index at runtime
+    std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok);
 
 
-    std::vector<std::unique_ptr<NodeStatement>> add_read_functions(NodeAST* var, NodeAST* parent);
 
 };
 

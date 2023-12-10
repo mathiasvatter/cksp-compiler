@@ -49,7 +49,7 @@ private:
     NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
     NodeFunctionHeader* get_builtin_function(const std::string &function);
 
-    std::vector<std::string> m_compiler_variables = {"list_it", "string_it"};
+    std::vector<std::string> m_compiler_variables = {"$list_it", "$string_it"};
     void declare_compiler_variables();
 
     const std::vector<std::unique_ptr<NodeVariable>>& m_builtin_variables;
@@ -80,6 +80,9 @@ private:
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
     std::unique_ptr<NodeFunctionDefinition> get_function_definition(NodeFunctionHeader* function_header);
 
+    std::vector<std::unique_ptr<NodeStatement>> add_read_functions(NodeAST* var, NodeAST* parent);
+    /// multidimensional array method for getting the size at declaration time
+    std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok);
 
 
 };

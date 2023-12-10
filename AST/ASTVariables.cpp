@@ -4,8 +4,10 @@
 
 #include "ASTVariables.h"
 
-ASTVariables::ASTVariables(const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions)
-        : m_builtin_functions(m_builtin_functions) {}
+ASTVariables::ASTVariables(const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
+                           const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables,
+                           const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays)
+        : m_builtin_functions(m_builtin_functions), m_builtin_variables(m_builtin_variables), m_builtin_arrays(m_builtin_arrays) {}
 
 
 void ASTVariables::visit(NodeProgram& node) {
@@ -31,98 +33,136 @@ void ASTVariables::visit(NodeCallback& node) {
 }
 
 void ASTVariables::visit(NodeArray& node) {
+
+    if(is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
+        if(get_builtin_array(&node)) {
+            CompileError(ErrorType::SyntaxError,"Array declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).print();
+            exit(EXIT_FAILURE);
+        }
+        if(get_declared_array(node.name)) {
+            CompileError(ErrorType::SyntaxError,"Array has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
+            exit(EXIT_FAILURE);
+        } else {
+            m_declared_arrays.push_back(&node);
+        }
+    } else {
+        // in case the user wants the raw array
+        bool has_compiler_identifier = node.name[0] == '_';
+        if (has_compiler_identifier) node.name = node.name.erase(0,1);
+
+        auto node_declaration = get_declared_array(node.name);
+        if(node_declaration and not has_compiler_identifier) {
+            node.declaration = node_declaration;
+            node.dimensions = node_declaration->dimensions;
+            // get var type from declaration because of List
+            node.var_type = node_declaration->var_type;
+            node.sizes = std::unique_ptr<NodeParamList>(static_cast<NodeParamList*>(node_declaration->sizes->clone().release()));
+            node.sizes->update_parents(&node);
+
+            // convert indexes of multidimensional array
+            if(node.dimensions > 1) {
+                auto node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0, node.tok);
+                node.indexes->params.clear();
+                node.indexes->params.push_back(std::move(node_expression));
+                node.indexes->update_parents(&node);
+            }
+
+            // convert indexes of list
+            if(node.var_type == List) {
+                if(node.indexes->params.size() != 2) {
+                    CompileError(ErrorType::SyntaxError,"Got wrong amount of indexes for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).print();
+                    exit(EXIT_FAILURE);
+                }
+                auto node_position_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(
+                                                                              get_declared_array(node.name+".pos")->clone().release()));
+                node_position_array->indexes->params.clear();
+                node_position_array->indexes->params.push_back(std::move(node.indexes->params[0]));
+
+                auto node_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_position_array), std::move(node.indexes->params[1]), &node, node.tok);
+                node.indexes->params.clear();
+                node.indexes->params.push_back(std::move(node_expression));
+                node.indexes->update_parents(&node);
+            }
+
+//            if (node.declaration->type != Unknown) {
+//                node.type = node.declaration->type;
+//            }
+//            if (node.declaration->type == Unknown) {
+//                node.declaration->type = node.type;
+//            }
+        } else if(auto builtin_var = get_builtin_array(&node)) {
+            node.declaration = builtin_var;
+        } else if (node_declaration and has_compiler_identifier) {
+            node.declaration = node_declaration;
+            node.var_type = Array;
+            node.name = "_"+node.name;
+        } else {
+            CompileError(ErrorType::TypeError,"Array has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
+            exit(EXIT_FAILURE);
+        }
+    }
     node.sizes->accept(*this);
     node.indexes->accept(*this);
 }
 
 void ASTVariables::visit(NodeVariable& node) {
+    auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
+    if(node_declare_statement and node_declare_statement->to_be_declared.get() == &node) {
+        if(get_builtin_variable(&node)) {
+            CompileError(ErrorType::TypeError,"Variable declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).exit();
+        }
+        if(get_declared_variable(&node)) {
+            CompileError(ErrorType::TypeError,"Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
+//            exit(EXIT_FAILURE);
+        } else {
+            m_declared_variables.push_back(&node);
+        }
+    } else if (auto node_ui_control = cast_node<NodeUIControl>(node.parent)) {
+        if(get_builtin_variable(&node)) {
+            CompileError(ErrorType::TypeError,"Variable declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).print();
+            exit(EXIT_FAILURE);
+        }
+        if(get_declared_control(node_ui_control)) {
+            CompileError(ErrorType::TypeError,"Control Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
+            exit(EXIT_FAILURE);
+        } else {
+            m_declared_controls.push_back(node_ui_control);
+            m_declared_variables.push_back(&node);
+        }
+    } else {
+        // sometimes a variable can also be an array if notated without brackets
+        auto node_first_declaration = get_declared_variable(&node);
+        auto node_first_array_declaration = get_declared_array(node.name);
+        if(node_first_declaration || node_first_array_declaration) {
+            if(node_first_declaration) node.declaration = node_first_declaration;
+            if(node_first_array_declaration) {
+                node.declaration = node_first_array_declaration;
+                node.var_type = Array;
+            }
+        } else if(auto builtin_var = get_builtin_variable(&node)) {
+            node.declaration = builtin_var;
+        } else {
+            CompileError(ErrorType::TypeError,"Variable has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
+            exit(EXIT_FAILURE);
+        }
+    }
 }
 
 void ASTVariables::visit(NodeFunctionCall &node) {
+    node.function->accept(*this);
 }
 
 void ASTVariables::visit(NodeSingleDeclareStatement& node) {
     node.to_be_declared ->accept(*this);
     if(node.assignee)
         node.assignee -> accept(*this);
-    // in case node.assignee is function substitution -> then this node gets replaced
-    if(!node.to_be_declared and !node.assignee) return;
-
-    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-    // check if is_persistent
-    bool is_persistent = false;
-    auto node_array = cast_node<NodeArray>(node.to_be_declared.get());
-    if(node_array) is_persistent = node_array->is_persistent;
-    auto node_variable = cast_node<NodeVariable>(node.to_be_declared.get());
-    if(node_variable) is_persistent = node_variable->is_persistent;
-
-    NodeParamList* param_list = nullptr;
-    if(node.assignee) param_list = cast_node<NodeParamList>(node.assignee.get());
-
-    // make param list if it is array declaration
-    if(node_array) {
-        if(node.assignee and !param_list) {
-            auto node_param_list = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.assignee->tok));
-            node_param_list->params.push_back(std::move(node.assignee));
-            node_param_list->parent = &node;
-            node.assignee = std::move(node_param_list);
-        }
-        // array size is not empty
-        if(!node_array->sizes->params.empty()) {
-            node_array->dimensions = node_array->sizes->params.size();
-            // multidimensional array
-            if (node_array->dimensions > 1) {
-                auto node_expression = create_right_nested_binary_expr(node_array->sizes->params, 0, "*", node_array->tok);
-                node_expression->parent = node_array->sizes.get();
-                for(int i = 0; i<node_array->sizes->params.size(); i++) {
-                    auto node_var = std::make_unique<NodeVariable>(false, node_array->name+".SIZE_D"+std::to_string(i+1), Const, node.tok);
-                    auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_var), node_array->sizes->params[i]->clone(), node.tok);
-                    auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
-                    node_statement_list->statements.push_back(std::move(node_statement));
-                }
-                node_array->indexes->params.clear();
-                node_array->indexes->params.push_back(std::move(node_expression));
-            }
-        } else {
-            if(!node.assignee) {
-                CompileError(ErrorType::SyntaxError,"Unable to infer array size.", node.tok.line, "initializer list", "",node.tok.file).exit();
-            }
-            // if size is empty -> get it from declaration
-            if(param_list) {
-                auto node_int = make_int((int32_t) param_list->params.size(), node_array->sizes.get());
-                node_array->sizes->params.push_back(std::move(node_int));
-            }
-        }
-    } else if(node_variable) {
-        // a list of values is assigned to a declared variable
-        if(param_list and param_list->params.size() > 1) {
-            CompileError(ErrorType::SyntaxError,"Unable to assign a list of values to variable.", node.tok.line, "single value", "list of values",node.tok.file).exit();
-        }
-    }
-
-    node_statement_list->statements.push_back(statement_wrapper(node.clone(), node.parent));
-    // add make_persistent and read_persistent_var
-    if(is_persistent) {
-        add_vector_to_statement_list(node_statement_list, add_read_functions(node.to_be_declared.get(), node_statement_list.get()));
-    }
-    node_statement_list->update_parents(node.parent);
-
-    node.replace_with(std::move(node_statement_list));
 
 }
 
-std::unique_ptr<NodeAST> ASTVariables::create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok) {
-    // Basisfall: Wenn nur ein Element übrig ist, gib dieses zurück.
-    if (index >= nodes.size() - 1) {
-        return nodes[index]->clone();
-    }
-    // Erstelle die rechte Seite der Expression rekursiv.
-    auto right = create_right_nested_binary_expr(nodes, index + 1, op, tok);
-    // Kombiniere das aktuelle Element mit der rechten Seite in einer NodeBinaryExpr.
-    return std::make_unique<NodeBinaryExpr>(op, nodes[index]->clone(), std::move(right), tok);
-}
 
 void ASTVariables::visit(NodeSingleAssignStatement &node) {
+    node.array_variable->accept(*this);
+    node.assignee->accept(*this);
 }
 
 void ASTVariables::visit(NodeStatementList& node) {
@@ -150,24 +190,7 @@ void ASTVariables::visit(NodeStatementList& node) {
     node.update_parents(&node);
 }
 
-std::vector<std::unique_ptr<NodeStatement>> ASTVariables::add_read_functions(NodeAST* var, NodeAST* parent) {
-    std::vector<std::unique_ptr<NodeStatement>> statements;
 
-    std::string persistent1 = "make_persistent";
-    std::string persistent2 = "read_persistent_var";
-    auto node_function = get_builtin_function(persistent1)->clone();
-    auto make_persistent = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(node_function.release()));
-    make_persistent->args->params.clear();
-    make_persistent->args->params.push_back(var->clone());
-    statements.push_back(statement_wrapper(std::move(make_persistent), parent));
-
-    node_function = get_builtin_function(persistent2)->clone();
-    auto read_persistent = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(node_function.release()));
-    read_persistent->args->params.clear();
-    read_persistent->args->params.push_back(var->clone());
-    statements.push_back(statement_wrapper(std::move(read_persistent), parent));
-    return std::move(statements);
-}
 
 NodeFunctionHeader* ASTVariables::get_builtin_function(const std::string &function) {
     auto it = std::find_if(m_builtin_functions.begin(), m_builtin_functions.end(),
@@ -178,4 +201,84 @@ NodeFunctionHeader* ASTVariables::get_builtin_function(const std::string &functi
         return m_builtin_functions[std::distance(m_builtin_functions.begin(), it)].get();
     }
     return nullptr;
+}
+
+NodeVariable* ASTVariables::get_builtin_variable(NodeVariable *var) {
+    auto it = std::find_if(m_builtin_variables.begin(), m_builtin_variables.end(),
+                           [&](const std::unique_ptr<NodeVariable> &variable) {
+                               return variable->name == var->name;
+                           });
+    if(it != m_builtin_variables.end()) {
+        return m_builtin_variables[std::distance(m_builtin_variables.begin(), it)].get();
+    }
+    return nullptr;
+}
+
+NodeArray* ASTVariables::get_builtin_array(NodeArray *arr) {
+    auto it = std::find_if(m_builtin_arrays.begin(), m_builtin_arrays.end(),
+                           [&](const std::unique_ptr<NodeArray> &array) {
+                               return array->name == arr->name;
+                           });
+    if(it != m_builtin_arrays.end()) {
+        return m_builtin_arrays[std::distance(m_builtin_arrays.begin(), it)].get();
+    }
+    return nullptr;
+}
+
+NodeVariable *ASTVariables::get_declared_variable(NodeVariable *var) {
+    auto it = std::find_if(m_declared_variables.begin(), m_declared_variables.end(),
+                           [&](NodeVariable* variable) {
+                               return to_lower(variable->name) == to_lower(var->name);
+                           });
+    if(it != m_declared_variables.end()) {
+        return m_declared_variables[std::distance(m_declared_variables.begin(), it)];
+    }
+    return nullptr;
+}
+
+NodeArray *ASTVariables::get_declared_array(const std::string& arr) {
+    auto it = std::find_if(m_declared_arrays.begin(), m_declared_arrays.end(),
+                           [&](NodeArray* array) {
+                               return array->name == arr;
+                           });
+    if(it != m_declared_arrays.end()) {
+        return m_declared_arrays[std::distance(m_declared_arrays.begin(), it)];
+    }
+    return nullptr;
+}
+
+NodeUIControl *ASTVariables::get_declared_control(NodeUIControl *ctr) {
+    auto it = std::find_if(m_declared_controls.begin(), m_declared_controls.end(),
+                           [&](NodeUIControl* control) {
+                               return to_lower(control->get_string()) == to_lower(ctr->get_string());
+                           });
+    if(it != m_declared_controls.end()) {
+        return m_declared_controls[std::distance(m_declared_controls.begin(), it)];
+    }
+    return nullptr;
+}
+
+std::unique_ptr<NodeAST> ASTVariables::calculate_index_expression(
+        const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok) {
+
+    // Basisfall: letztes Element in der Berechnung
+    if (dimension == indices.size() - 1) {
+        return indices[dimension]->clone();
+    }
+
+    // Produkt der Größen der nachfolgenden Dimensionen
+    std::unique_ptr<NodeAST> size_product = sizes[dimension + 1]->clone();
+    for (size_t i = dimension + 2; i < sizes.size(); ++i) {
+        size_product = std::make_unique<NodeBinaryExpr>("*", std::move(size_product), sizes[i]->clone(), tok);
+    }
+
+    // Berechnung des aktuellen Teils der Formel
+    std::unique_ptr<NodeAST> current_part = std::make_unique<NodeBinaryExpr>(
+            "*", indices[dimension]->clone(), std::move(size_product), tok);
+
+    // Rekursiver Aufruf für den nächsten Teil der Formel
+    std::unique_ptr<NodeAST> next_part = calculate_index_expression(sizes, indices, dimension + 1, tok);
+
+    // Kombinieren des aktuellen Teils mit dem nächsten Teil
+    return std::make_unique<NodeBinaryExpr>("+", std::move(current_part), std::move(next_part), tok);
 }

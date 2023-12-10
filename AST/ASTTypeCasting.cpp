@@ -22,12 +22,14 @@ void ASTTypeCasting::visit(NodeParamList& node) {
     // infer type only if every member has same type (array declaration, assignment)
     auto node_declaration = dynamic_cast<NodeSingleDeclareStatement*>(node.parent);
     auto node_assignment = cast_node<NodeSingleAssignStatement>(node.parent);
-    auto node_func_call = cast_node<NodeFunctionHeader>(node.parent);
+//    auto node_func_header = cast_node<NodeFunctionHeader>(node.parent);
+
     std::vector<ASTType> types;
 
-    for(auto &n : node.params) {
-        n->accept(*this);
-        types.push_back(n->type);
+    for(int i = 0; i<node.params.size(); i++) {
+
+        node.params[i]->accept(*this);
+        types.push_back(node.params[i]->type);
     }
     // Verwenden Sie std::adjacent_find, um zu prüfen, ob alle Elemente gleich sind
     auto it = std::adjacent_find(types.begin(), types.end(),
@@ -55,13 +57,35 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
             CompileError(ErrorType::TypeError,"Found incorrect variable type in declaration.", node.tok.line, "", "", node.tok.file).print();
             exit(EXIT_FAILURE);
         }
+        if(node.assignee->type == Unknown and node.to_be_declared->type != Unknown) {
+            node.assignee->type = node.to_be_declared->type;
+        }
         if(node.to_be_declared->type == Unknown) {
             node.to_be_declared->type = node.assignee->type;
         }
-//    } else {
-//        node.to_be_declared->type = Unknown;
+
     }
 
+    if(node.assignee) {
+        node.assignee->accept(*this);
+        // initialization of array lists
+        auto node_array = cast_node<NodeArray>(node.to_be_declared.get());
+        if (node_array and node.assignee->type == String) {
+            auto node_param_list = cast_node<NodeParamList>(node.assignee.get());
+            if (node_param_list) {
+                auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement*>(node.clone().release()));
+                auto node_statement_list = array_initialization(node_array, node_param_list);
+                // remove list assignment from declare_statement
+                node_declare_statement->assignee.release();
+                node_statement_list->statements.insert(node_statement_list->statements.begin(),
+                                                       statement_wrapper(std::move(node_declare_statement),
+                                                                         node_statement_list.get()));
+                node_statement_list->update_parents(node.parent);
+                node.replace_with(std::move(node_statement_list));
+                return;
+            }
+        }
+    }
 
 }
 
@@ -79,123 +103,27 @@ void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
 }
 
 void ASTTypeCasting::visit(NodeVariable& node) {
-    auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
-    if(node_declare_statement and node_declare_statement->to_be_declared.get() == &node) {
-        if(get_builtin_variable(&node)) {
-            CompileError(ErrorType::TypeError,"Variable declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
+    auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
+    auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+    if(!node_declaration and !node_ui_control) {
+        if (node.declaration->type != Unknown) {
+            node.type = node.declaration->type;
         }
-        if(get_declared_variable(&node)) {
-            CompileError(ErrorType::TypeError,"Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
-//            exit(EXIT_FAILURE);
-        } else {
-            m_declared_variables.push_back(&node);
-        }
-    } else if (auto node_ui_control = cast_node<NodeUIControl>(node.parent)) {
-        if(get_builtin_variable(&node)) {
-            CompileError(ErrorType::TypeError,"Variable declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
-        }
-        if(get_declared_control(node_ui_control)) {
-            CompileError(ErrorType::TypeError,"Control Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
-        } else {
-            m_declared_controls.push_back(node_ui_control);
-            m_declared_variables.push_back(&node);
-        }
-    } else {
-        // sometimes a variable can also be an array if notated without brackets
-        auto node_first_declaration = get_declared_variable(&node);
-        auto node_first_array_declaration = get_declared_array(node.name);
-        if(node_first_declaration || node_first_array_declaration) {
-            if(node_first_declaration) node.declaration = node_first_declaration;
-            if(node_first_array_declaration) {
-                node.declaration = node_first_array_declaration;
-                node.var_type = Array;
-            }
-            if (node.declaration->type != Unknown) {
-                node.type = node.declaration->type;
-            }
-            if (node.declaration->type == Unknown) {
-                node.declaration->type = node.type;
-            }
-        } else if(auto builtin_var = get_builtin_variable(&node)) {
-            node.type = builtin_var->type;
-        } else {
-            CompileError(ErrorType::TypeError,"Variable has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
+        if (node.declaration->type == Unknown) {
+            node.declaration->type = node.type;
         }
     }
-
 }
 
 void ASTTypeCasting::visit(NodeArray& node) {
-
-    if(is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
-        if(get_builtin_array(&node)) {
-            CompileError(ErrorType::TypeError,"Array declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
+    auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
+    auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+    if(!node_declaration and !node_ui_control) {
+        if (node.declaration->type != Unknown) {
+            node.type = node.declaration->type;
         }
-        if(get_declared_array(node.name)) {
-            CompileError(ErrorType::TypeError,"Array has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
-        } else {
-            m_declared_arrays.push_back(&node);
-        }
-    } else {
-        // in case the user wants the raw array
-        bool has_compiler_identifier = node.name[0] == '_';
-        if (has_compiler_identifier) node.name = node.name.erase(0,1);
-
-        auto node_declaration = get_declared_array(node.name);
-        if(node_declaration and not has_compiler_identifier) {
-            node.declaration = node_declaration;
-            node.dimensions = node_declaration->dimensions;
-            // get var type from declaration because of List
-            node.var_type = node_declaration->var_type;
-            node.sizes = std::unique_ptr<NodeParamList>(static_cast<NodeParamList*>(node_declaration->sizes->clone().release()));
-            node.sizes->update_parents(&node);
-
-            // convert indexes of multidimensional array
-            if(node.dimensions > 1) {
-                auto node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0, node.tok);
-                node.indexes->params.clear();
-                node.indexes->params.push_back(std::move(node_expression));
-                node.indexes->update_parents(&node);
-            }
-
-            // convert indexes of list
-            if(node.var_type == List) {
-                if(node.indexes->params.size() != 2) {
-                    CompileError(ErrorType::SyntaxError,"Got wrong amount of indexes for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).print();
-                    exit(EXIT_FAILURE);
-                }
-                auto node_position_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(
-                        get_declared_array(node.name+".pos")->clone().release()));
-                node_position_array->indexes->params.clear();
-                node_position_array->indexes->params.push_back(std::move(node.indexes->params[0]));
-
-                auto node_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_position_array), std::move(node.indexes->params[1]), &node, node.tok);
-                node.indexes->params.clear();
-                node.indexes->params.push_back(std::move(node_expression));
-                node.indexes->update_parents(&node);
-            }
-
-            if (node.declaration->type != Unknown) {
-                node.type = node.declaration->type;
-            }
-            if (node.declaration->type == Unknown) {
-                node.declaration->type = node.type;
-            }
-        } else if(auto builtin_var = get_builtin_array(&node)) {
-            node.type = builtin_var->type;
-        } else if (node_declaration and has_compiler_identifier) {
-            node.declaration = node_declaration;
-            node.var_type = Array;
-            node.name = "_"+node.name;
-        } else {
-            CompileError(ErrorType::TypeError,"Array has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
+        if (node.declaration->type == Unknown) {
+            node.declaration->type = node.type;
         }
     }
     node.sizes->accept(*this);
@@ -247,6 +175,10 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
 //        CompileError(ErrorType::TypeError,"Found operands of different types in <binary_expression>.", node.tok.line, "", "", node.tok.file).print();
 //        exit(EXIT_FAILURE);
 //    }
+    std::pair<ASTType, ASTType> types(node.left->type, node.right->type);
+
+
+
     auto err = CompileError(ErrorType::TypeError,"Found operands of different types in <binary_expression>.", node.tok.line, "", "", node.tok.file);
     bool left_unknown = node.left->type == Unknown;
     bool right_unknown = node.right->type == Unknown;
@@ -258,6 +190,7 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
     bool one_bool = node.left->type == Boolean or node.right->type == Boolean;
     bool one_comp = node.left->type == Comparison or node.right->type == Comparison;
     bool both_integers = node.left->type == Integer and node.right->type == Integer;
+    bool both_unknown = node.left->type == Unknown and node.right->type == Unknown;
     bool both_reals = node.left->type == Real and node.right->type == Real;
     bool both_comps = node.left->type == Comparison and node.right->type == Comparison;
     bool both_bools = node.left->type == Boolean and node.right->type == Boolean;
@@ -273,7 +206,11 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
         } else if (int_and_unknown) {
             node.type = Integer; node.right->type = Integer; node.left->type = Integer;
         } else if (real_and_unknown) {
-            node.type = Real; node.right->type = Real; node.left->type = Real;
+            node.type = Real;
+            node.right->type = Real;
+            node.left->type = Real;
+        } else if (both_unknown) {
+            node.type = Unknown;
         } else {
             // please use real() and int() to use Real and Integer numbers in a single expression
             err.print();
@@ -282,7 +219,11 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
         if(both_integers) {
             node.type = Integer;
         } else if (int_and_unknown) {
-            node.type = Integer; node.right->type = Integer; node.left->type = Integer;
+            node.type = Integer;
+            node.right->type = Integer;
+            node.left->type = Integer;
+        } else if (both_unknown) {
+            node.type = Unknown;
         } else {
             // error, bitwise operators can only be used in between integer values.
             err.print();
@@ -350,15 +291,11 @@ void ASTTypeCasting::visit(NodeFunctionHeader& node) {
         for(int i = 0; i<node.args->params.size(); i++) {
             if(node.arg_ast_types[i] == Number and (node.args->params[i]->type == Integer or node.args->params[i]->type == Real)) {
                 node.arg_ast_types[i] = node.args->params[i]->type;
-            }
-            // give unknown variables types
-            if(node.arg_ast_types[i] != Number and node.arg_ast_types[i] != Any and node.args->params[i]->type == Unknown) {
+            } else if(node.arg_ast_types[i] != Any and node.args->params[i]->type == Unknown) {
                 node.args->params[i]->type = node.arg_ast_types[i];
-            }
-            if(node.arg_ast_types[i] == Any) {
+            } else if(node.arg_ast_types[i] == Any) {
                 node.arg_ast_types[i] = node.args->params[i]->type;
-            }
-            if(node.args->params[i]->type != node.arg_ast_types[i] ) {
+            } else if(node.args->params[i]->type != node.arg_ast_types[i] ) {
                 err.print();
             }
         }

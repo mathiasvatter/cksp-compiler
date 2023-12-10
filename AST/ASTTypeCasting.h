@@ -42,5 +42,7 @@ private:
     NodeArray* get_builtin_array(NodeArray* arr);
     std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok);
 
+//    std::pair<ASTType, ASTType>
+
 };
 

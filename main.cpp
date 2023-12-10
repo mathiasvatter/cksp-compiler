@@ -57,7 +57,7 @@ int main() {
 	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions());
 	ast->accept(desugar);
 
-    ASTVariables variables(builtins.get_builtin_functions());
+    ASTVariables variables(builtins.get_builtin_functions(), builtins.get_builtin_variables(), builtins.get_builtin_arrays());
     ast->accept(variables);
 
 	ASTTypeCasting typecast(builtins.get_builtin_variables(), builtins.get_builtin_arrays());
