@@ -43,6 +43,19 @@ inline ASTType token_to_type(token tok) {
     }
 };
 
+inline token type_to_token(ASTType type) {
+	switch (type) {
+		case Integer:
+			return INT;
+		case Real:
+			return FLOAT;
+		case String:
+			return STRING;
+		default:
+			return INT;
+	}
+};
+
 enum VarType {
     Const,
     Polyphonic,

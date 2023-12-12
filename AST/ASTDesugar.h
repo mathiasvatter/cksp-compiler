@@ -23,11 +23,11 @@ public:
     void visit(NodeFunctionCall& node) override;
     void visit(NodeFunctionHeader& node) override;
 //    void visit(NodeFunctionDefinition& node) override;
+	void visit(NodeUIControl& node) override;
     void visit(NodeSingleDeclareStatement& node) override;
     void visit(NodeSingleAssignStatement& node) override;
     void visit(NodeParamList& node) override;
 
-	void visit(NodeUIControl& node) override;
     void visit(NodeGetControlStatement& node) override;
     /// turn into single assign statements
 	void visit(NodeAssignStatement& node) override;
@@ -53,7 +53,7 @@ private:
 	const std::vector<std::unique_ptr<NodeUIControl>>& m_builtin_widgets;
 	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
-    std::vector<std::string> m_compiler_variables = {"$list_it", "$string_it"};
+    std::vector<std::string> m_compiler_variables = {"$list_it", "$ui_array_it", "$string_it"};
     void declare_compiler_variables();
 
     const std::vector<std::unique_ptr<NodeVariable>>& m_builtin_variables;

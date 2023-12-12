@@ -54,6 +54,9 @@ public:
     void visit(NodeSetControlStatement& node) override;
 
     std::ostringstream os;
+
+	void generate(const std::string& path) const;
+	void print() const;
 };
 
 

@@ -372,8 +372,8 @@ void ASTTypeCasting::visit(NodeFunctionHeader& node) {
 					CompileError(ErrorType::TypeError,
 					 "Found wrong type in function arguments. Argument needs to be of type <Array>.",node.tok.line,"<Array>",node.args->params[i]->get_string(),node.tok.file).exit();
 				}
-			} else if(node_array) {
-				CompileError(ErrorType::TypeError, "Found wrong type in engine widget arguments. Argument cannot be of type <Array>.", node.tok.line, "<Variable>", node.args->params[i]->get_string(), node.tok.file).exit();
+//			} else if(node_array) {
+//				CompileError(ErrorType::TypeError, "Found wrong type in engine widget arguments. Argument cannot be of type <Array>.", node.tok.line, "<Variable>", node.args->params[i]->get_string(), node.tok.file).exit();
 			}
 		}
 	}

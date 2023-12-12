@@ -3,7 +3,7 @@
 //
 
 #include "ASTDesugar.h"
-
+#include "Preprocessor/SimpleExprInterpreter.h"
 
 ASTDesugar::ASTDesugar(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables, const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
                        const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_property_functions, const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
@@ -771,26 +771,83 @@ void ASTDesugar::visit(NodeUIControl &node) {
 	node.params->accept(*this);
 
 	auto node_widget_array = cast_node<NodeArray>(engine_widget->control_var.get());
+	// check if is_persistent
+	bool is_persistent = false;
 	auto node_array = cast_node<NodeArray>(node.control_var.get());
-	// is UI Array
-//	auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-//	if(node_array and !node_widget_array) {
-//		// multidimensional array
-//		if (node_array->dimensions > 1) {
-//			auto node_expression = create_right_nested_binary_expr(node_array->sizes->params, 0, "*", node_array->tok);
-//			node_expression->parent = node_array->sizes.get();
-//			for(int i = 0; i<node_array->sizes->params.size(); i++) {
-//				auto node_var = std::make_unique<NodeVariable>(false, node_array->name+".SIZE_D"+std::to_string(i+1), Const, node.tok);
-//				auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_var), node_array->sizes->params[i]->clone(), node.tok);
-//				auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
-//				node_statement_list->statements.push_back(std::move(node_statement));
-//			}
-//			node_array->indexes->params.clear();
-//			node_array->indexes->params.push_back(std::move(node_expression));
-//		}
-//		auto node_variable = std::make_unique<NodeVariable>()
-//	}
+	if(node_array) is_persistent = node_array->is_persistent;
+	auto node_variable = cast_node<NodeVariable>(node.control_var.get());
+	if(node_variable) is_persistent = node_variable->is_persistent;
 
+	// add make_persistent and read_persistent_var
+	auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+	// is UI Array
+	if(node_array and !node_widget_array) {
+		if(node_array->sizes->params.empty()) {
+			CompileError(ErrorType::SyntaxError,"Unable to infer array size.", node.tok.line, "initializer list", "",node.tok.file).exit();
+		}
+		node_array->dimensions = node_array->sizes->params.size();
+		// multidimensional array
+		auto node_expression = create_right_nested_binary_expr(node_array->sizes->params, 0, "*", node_array->tok);
+		node_expression->parent = node_array->sizes.get();
+		if (node_array->dimensions > 1) {
+			for(int i = 0; i<node_array->sizes->params.size(); i++) {
+				auto node_var = std::make_unique<NodeVariable>(false, node_array->name+".SIZE_D"+std::to_string(i+1), Const, node.tok);
+				auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_var), node_array->sizes->params[i]->clone(), node.tok);
+				auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
+				node_statement_list->statements.push_back(std::move(node_statement));
+			}
+			node_array->indexes->params.clear();
+			node_array->indexes->params.push_back(node_expression->clone());
+		}
+		// calculate array size
+		SimpleInterpreter eval;
+		auto array_size = eval.evaluate_int_expression(node_expression);
+		if(array_size.is_error()) {
+			array_size.get_error().exit();
+		}
+		auto node_ui_array_declaration = std::make_unique<NodeSingleDeclareStatement>(node_array->clone(), nullptr, node.tok);
+		node_ui_array_declaration->to_be_declared->type = engine_widget->control_var->type;
+		node_statement_list->statements.push_back(statement_wrapper(node_ui_array_declaration->clone(), node_statement_list.get()));
+		for(int i = 0; i<array_size.unwrap(); i++) {
+			auto node_control_var = std::make_unique<NodeVariable>(node_array->is_persistent, node_array->name+std::to_string(i), UI_Control, node.tok);
+			auto new_node_ui_control = std::unique_ptr<NodeUIControl>(static_cast<NodeUIControl*>(node.clone().release()));
+			new_node_ui_control->control_var = node_control_var->clone();
+			auto new_node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(new_node_ui_control),
+																					 nullptr, node.tok);
+			node_statement_list->statements.push_back(statement_wrapper(std::move(new_node_declaration), node_statement_list.get()));
+			if(is_persistent) add_vector_to_statement_list(node_statement_list, add_read_functions(node_control_var.get(), node_statement_list.get()));
+		}
+
+		auto node_iterator_var = std::make_unique<NodeVariable>(false, m_compiler_variables[1], VarType::Mutable, node.tok);
+		node_iterator_var->accept(*this);
+		auto node_while_body = std::make_unique<NodeStatementList>(node.tok);
+
+		auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(get_builtin_function("get_ui_id")->clone().release()));
+		node_get_ui_id->args->params.clear();
+		node_get_ui_id->args->params.push_back(std::make_unique<NodeVariable>(node_array->is_persistent, node_array->name+std::to_string(0), UI_Control, node.tok));
+
+		auto node_while_body_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_get_ui_id), node_iterator_var->clone(),nullptr, node.tok);
+
+		auto node_raw_array_copy = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(node_array->clone().release()));
+		node_raw_array_copy->indexes->params.clear();
+		node_raw_array_copy->indexes->params.push_back(node_iterator_var->clone());
+		// only access raw array if multidimensional
+		if(node_array->dimensions>1) node_raw_array_copy->name = "_"+node_raw_array_copy->name;
+		auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(node_raw_array_copy), std::move(node_while_body_expression), node.tok);
+		node_while_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_while_body.get()));
+		auto node_while_loop = make_while_loop(node_iterator_var.get(), 0, array_size.unwrap(), std::move(node_while_body), node_statement_list.get());
+		node_statement_list->statements.push_back(statement_wrapper(std::move(node_while_loop), node_statement_list.get()));
+		node_statement_list->update_parents(node.parent);
+
+	} else {
+		if(is_persistent) {
+			add_vector_to_statement_list(node_statement_list, add_read_functions(node.control_var.get(), node_statement_list.get()));
+		}
+
+		node_statement_list->update_parents(node.parent->parent);
+		node_statement_list->statements.insert(node_statement_list->statements.begin(), statement_wrapper(node.parent->clone(), node_statement_list.get()));
+	}
+	node.parent->replace_with(std::move(node_statement_list));
 }
 
 void ASTDesugar::visit(NodeListStatement &node) {
@@ -827,7 +884,6 @@ void ASTDesugar::visit(NodeListStatement &node) {
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_positions_declaration), node_statement_list.get()));
 
     auto node_iterator_var = std::make_unique<NodeVariable>(false, m_compiler_variables[0], VarType::Mutable, node.tok);
-
     for(int i = 0; i<node.body.size(); i++) {
         auto node_array_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
         auto node_array = make_array(node_main_array->name+std::to_string(i), sizes[i], node.tok, node_array_declaration.get());

@@ -182,7 +182,8 @@ void ASTVariables::visit(NodeVariable& node) {
         } else if(node_builtin_variable) {
             node.declaration = node_builtin_variable;
         } else {
-            CompileError(ErrorType::SyntaxError,"Variable has not been declared.", node.tok.line, "", node.name, node.tok.file).exit();
+            CompileError(ErrorType::SyntaxError,"Variable has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
+//			exit(EXIT_FAILURE);
         }
     }
 }

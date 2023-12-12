@@ -5,6 +5,21 @@
 #include "ASTGenerator.h"
 
 
+void ASTGenerator::generate(const std::string& path) const {
+	std::ofstream outFile(path);
+	if (outFile) {
+		outFile << os.str();
+	} else {
+		// Fehlerbehandlung, falls die Datei nicht geöffnet werden kann
+		std::cerr << "Fehler beim Öffnen der Datei: " << path << std::endl;
+	}
+}
+
+void ASTGenerator::print() const {
+	std::cout << os.str();
+}
+
+
 void ASTGenerator::visit(NodeProgram &node) {
     for(auto& callback: node.callbacks) {
         callback->accept(*this);
@@ -28,24 +43,32 @@ void ASTGenerator::visit(NodeString &node) {
 }
 
 void ASTGenerator::visit(NodeVariable &node) {
-    if(node.is_persistent)
-        os << "read ";
     if(node.var_type == VarType::Polyphonic)
         os << " polyphonic ";
     else if(node.var_type == VarType::Const)
         os << " const ";
-    os << "(var)" << node.name;
+    os << node.name;
 }
 
 void ASTGenerator::visit(NodeArray &node) {
-    if(node.is_persistent)
-        os << "read ";
-    os << "(arr)" << node.name;
-    os << "[";
-    node.sizes->accept(*this);
-    os << "].at(";
-    node.indexes->accept(*this);
-    os << ")";
+	auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
+	if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
+	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+
+//	get_token_value(TYPES, type_to_token(node.type))
+
+    os << node.name;
+	if(node_declaration or node_ui_control or !node.indexes->params.empty())
+    	os << "[";
+	if(node_declaration || node_ui_control)
+		if(node.dimensions> 1)
+			node.indexes->accept(*this);
+		else
+    		node.sizes->accept(*this);
+	else
+    	node.indexes->accept(*this);
+	if(node_declaration or node_ui_control or !node.indexes->params.empty())
+	    os << "]";
 }
 
 void ASTGenerator::visit(NodeUIControl &node) {
@@ -67,50 +90,38 @@ void ASTGenerator::visit(NodeSingleDeclareStatement &node) {
 
 void ASTGenerator::visit(NodeParamList &node) {
     if (!node.params.empty()) {
-        os << "[";
+        if(node.params.size() > 1) os << "(";
         for (int i = 0; i < node.params.size() - 1; i++) {
             node.params[i]->accept(*this);
             os << ", ";
         }
         node.params[node.params.size() - 1]->accept(*this);
-        os << "]";
+		if(node.params.size() > 1) os << ")";
     }
 }
 
 void ASTGenerator::visit(NodeBinaryExpr &node) {
-    std::string expression_type = "BinaryExpr(";
-    if(node.type == Comparison)
-        expression_type = "ComparisonExpr(";
-    else if (node.type == Boolean)
-        expression_type = "BooleanExpr(";
-    else if (node.type ==String)
-        expression_type = "StringExpr(";
-    os << expression_type;
     node.left->accept(*this);
     os << " " << node.op << " ";
     node.right->accept(*this);
-    os << ")" ;
 }
 
 void ASTGenerator::visit(NodeUnaryExpr &node) {
-    os << "UnaryExpr(";
     os << node.op.val << " ";
     node.operand->accept(*this);
-    os << ")" ;
 }
 
 void ASTGenerator::visit(NodeSingleAssignStatement &node) {
-    os << "VariableAssign(";
     node.array_variable->accept(*this);
-    os << ":= ";
+    os << " := ";
     node.assignee->accept(*this);
-    os << ")";
 }
 
 void ASTGenerator::visit(NodeStatement &node) {
-    os << "Stmt(" ;
-    node.statement->accept(*this);
-    os << ")" << std::endl;
+	if(!is_instance_of<NodeDeadEnd>(node.statement.get())) {
+		node.statement->accept(*this);
+		os << std::endl;
+	}
 }
 
 void ASTGenerator::visit(NodeIfStatement &node) {
@@ -153,9 +164,15 @@ void ASTGenerator::visit(NodeSelectStatement &node) {
 }
 
 void ASTGenerator::visit(NodeCallback &node) {
-    os << "Callback(" << node.begin_callback << ")" << std::endl;
+    os << node.begin_callback;
+	if(node.callback_id) {
+		os << "(";
+		node.callback_id->accept(*this);
+		os << ")";
+	}
+	os << std::endl;
     node.statements->accept(*this);
-    os << "End_callback(" << node.end_callback << ")"<< std::endl;
+    os << node.end_callback << std::endl;
 }
 
 void ASTGenerator::visit(NodeFunctionHeader &node) {

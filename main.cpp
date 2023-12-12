@@ -12,6 +12,7 @@
 #include "Preprocessor/PreprocessorBuiltins.h"
 #include "AST/ASTTypeChecking.h"
 #include "AST/ASTVariables.h"
+#include "Generator/ASTGenerator.h"
 //#include "AST/ASTMacros.h"
 
 int main() {
@@ -73,9 +74,12 @@ int main() {
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
-	ASTPrinter printer;
-	ast->accept(printer);
+//	ASTPrinter printer;
+//	ast->accept(printer);
 
+	ASTGenerator generator;
+	ast->accept(generator);
+	generator.print();
     // Dauer in Millisekunden ausgeben
     std::cout << "Preprocessor Time: " << preprocessor_duration.count() << " ms, Time measured: " << duration.count() << " ms" << std::endl;
 
