@@ -237,6 +237,8 @@ struct NodeUIControl : NodeAST {
     std::string ui_control_type;
     std::unique_ptr<NodeAST> control_var; //Array or Variable
     std::unique_ptr<NodeParamList> params;
+	std::vector<ASTType> arg_ast_types;
+	std::vector<VarType> arg_var_types;
     inline explicit NodeUIControl(Token tok) : NodeAST(tok) {}
     inline NodeUIControl(std::string uiControlType, std::unique_ptr<NodeAST> controlVar, std::unique_ptr<NodeParamList> params, Token tok)
                 : NodeAST(tok), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {}

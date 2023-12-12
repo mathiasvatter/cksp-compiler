@@ -6,8 +6,10 @@
 
 ASTVariables::ASTVariables(const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
                            const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables,
-                           const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays)
-        : m_builtin_functions(m_builtin_functions), m_builtin_variables(m_builtin_variables), m_builtin_arrays(m_builtin_arrays) {}
+                           const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays,
+						   const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
+        : m_builtin_functions(m_builtin_functions), m_builtin_variables(m_builtin_variables),
+		m_builtin_arrays(m_builtin_arrays), m_builtin_widgets(m_builtin_widgets) {}
 
 
 void ASTVariables::visit(NodeProgram& node) {
@@ -32,19 +34,53 @@ void ASTVariables::visit(NodeCallback& node) {
     node.statements->accept(*this);
 }
 
-void ASTVariables::visit(NodeArray& node) {
+void ASTVariables::visit(NodeUIControl& node) {
+	auto engine_widget = get_builtin_widget(node.ui_control_type);
+	if(!engine_widget) {
+		CompileError(ErrorType::SyntaxError, "Did not recognize engine widget.", node.tok.line, "valid widget type", node.ui_control_type, node.tok.file).exit();
+	}
 
-    if(is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
-        if(get_builtin_array(&node)) {
-            CompileError(ErrorType::SyntaxError,"Array declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
-        }
+	node.control_var->accept(*this);
+	node.params->accept(*this);
+
+	//check variable type
+	auto node_variable = cast_node<NodeVariable>(node.control_var.get());
+	auto node_array = cast_node<NodeArray>(node.control_var.get());
+	if(node_array and !is_instance_of<NodeArray>(engine_widget->control_var.get())) {
+		CompileError(ErrorType::SyntaxError, "Engine Widget Variable needs to be of type <Variable>", node.tok.line, "<Variable>", "<Array>", node.tok.file).exit();
+	}
+	if(node_variable and !is_instance_of<NodeVariable>(engine_widget->control_var.get())) {
+		CompileError(ErrorType::SyntaxError, "Engine Widget Variable needs to be of type <Array>", node.tok.line, "<Array>", "<Variable>", node.tok.file).exit();
+	}
+
+	//check param size
+	if(engine_widget->params->params.size() != node.params->params.size()) {
+		CompileError(ErrorType::SyntaxError, "Got incorrect size of Engine Widget parameters.", node.tok.line, std::to_string(engine_widget->params->params.size()), std::to_string(node.params->params.size()), node.tok.file).exit();
+	}
+
+}
+
+void ASTVariables::visit(NodeArray& node) {
+	auto node_builtin_array = get_builtin_array(&node);
+	auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
+	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+	if(node_builtin_array && (node_declare_statement || node_ui_control) ){
+		CompileError(ErrorType::SyntaxError,"Array shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).exit();
+	}
+    if(node_declare_statement) {
         if(get_declared_array(node.name)) {
-            CompileError(ErrorType::SyntaxError,"Array has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
+            CompileError(ErrorType::SyntaxError,"Array has already been declared.", node.tok.line, "", node.name, node.tok.file).exit();
         } else {
             m_declared_arrays.push_back(&node);
         }
+	} else if (node_ui_control) {
+		if(get_declared_control(node_ui_control)) {
+			CompileError(ErrorType::SyntaxError,"Control Widget Array has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
+			exit(EXIT_FAILURE);
+		} else {
+			m_declared_controls.push_back(node_ui_control);
+			m_declared_arrays.push_back(&node);
+		}
     } else {
         // in case the user wants the raw array
         bool has_compiler_identifier = node.name[0] == '_';
@@ -89,15 +125,15 @@ void ASTVariables::visit(NodeArray& node) {
                 node.indexes->update_parents(&node);
             }
 
-        } else if(auto builtin_var = get_builtin_array(&node)) {
-            node.declaration = builtin_var;
+        } else if(node_builtin_array) {
+            node.declaration = node_builtin_array;
         } else if (node_declaration and has_compiler_identifier) {
             node.declaration = node_declaration;
             node.dimensions = 1;
             node.var_type = Array;
             node.name = "_"+node.name;
         } else {
-            CompileError(ErrorType::TypeError,"Array has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
+            CompileError(ErrorType::SyntaxError,"Array has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
             exit(EXIT_FAILURE);
         }
     }
@@ -107,23 +143,21 @@ void ASTVariables::visit(NodeArray& node) {
 
 void ASTVariables::visit(NodeVariable& node) {
     auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
+	auto node_builtin_variable = get_builtin_variable(&node);
+	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+	if(node_builtin_variable && (node_declare_statement || node_ui_control) ){
+		CompileError(ErrorType::SyntaxError,"Variable shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).exit();
+	}
     if(node_declare_statement and node_declare_statement->to_be_declared.get() == &node) {
-        if(get_builtin_variable(&node)) {
-            CompileError(ErrorType::TypeError,"Variable declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).exit();
-        }
         if(get_declared_variable(&node)) {
-            CompileError(ErrorType::TypeError,"Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
+            CompileError(ErrorType::SyntaxError,"Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
 //            exit(EXIT_FAILURE);
         } else {
             m_declared_variables.push_back(&node);
         }
-    } else if (auto node_ui_control = cast_node<NodeUIControl>(node.parent)) {
-        if(get_builtin_variable(&node)) {
-            CompileError(ErrorType::TypeError,"Variable declaration shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
-        }
+    } else if (node_ui_control) {
         if(get_declared_control(node_ui_control)) {
-            CompileError(ErrorType::TypeError,"Control Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
+            CompileError(ErrorType::SyntaxError,"Control Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
             exit(EXIT_FAILURE);
         } else {
             m_declared_controls.push_back(node_ui_control);
@@ -145,11 +179,10 @@ void ASTVariables::visit(NodeVariable& node) {
                 node_array->accept(*this);
                 node.replace_with(std::move(node_array));
             }
-        } else if(auto builtin_var = get_builtin_variable(&node)) {
-            node.declaration = builtin_var;
+        } else if(node_builtin_variable) {
+            node.declaration = node_builtin_variable;
         } else {
-            CompileError(ErrorType::TypeError,"Variable has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
+            CompileError(ErrorType::SyntaxError,"Variable has not been declared.", node.tok.line, "", node.name, node.tok.file).exit();
         }
     }
 }
@@ -196,8 +229,6 @@ void ASTVariables::visit(NodeStatementList& node) {
     node.update_parents(&node);
 }
 
-
-
 NodeFunctionHeader* ASTVariables::get_builtin_function(const std::string &function) {
     auto it = std::find_if(m_builtin_functions.begin(), m_builtin_functions.end(),
                            [&](const std::unique_ptr<NodeFunctionHeader> &func) {
@@ -229,6 +260,17 @@ NodeArray* ASTVariables::get_builtin_array(NodeArray *arr) {
         return m_builtin_arrays[std::distance(m_builtin_arrays.begin(), it)].get();
     }
     return nullptr;
+}
+
+NodeUIControl* ASTVariables::get_builtin_widget(const std::string &ui_control) {
+	auto it = std::find_if(m_builtin_widgets.begin(), m_builtin_widgets.end(),
+						   [&](const std::unique_ptr<NodeUIControl> &widget) {
+							 return (widget->ui_control_type == ui_control);
+						   });
+	if(it != m_builtin_widgets.end()) {
+		return m_builtin_widgets[std::distance(m_builtin_widgets.begin(), it)].get();
+	}
+	return nullptr;
 }
 
 NodeVariable *ASTVariables::get_declared_variable(NodeVariable *var) {

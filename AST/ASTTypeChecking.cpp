@@ -15,6 +15,7 @@ void ASTTypeChecking::visit(NodeProgram& node) {
 }
 
 void ASTTypeChecking::visit(NodeVariable& node) {
+
     // only print error if it is in a declaration
     if(node.type == Unknown) {
         auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);

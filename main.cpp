@@ -35,7 +35,11 @@ int main() {
 //    }
 
     std::filesystem::path curr_path = __FILE__;
-    PreprocessorBuiltins builtins((std::string) curr_path.parent_path() + "/Builtins/engine_variables.txt", (std::string) curr_path.parent_path() + "/Builtins/engine_functions.txt");
+	std::string engine_variables_file = (std::string) curr_path.parent_path() + "/Builtins/engine_variables.txt";
+	std::string engine_functions_file = (std::string) curr_path.parent_path() + "/Builtins/engine_functions.txt";
+	std::string engine_widgets_file = (std::string) curr_path.parent_path() + "/Builtins/engine_widgets.txt";;
+
+    PreprocessorBuiltins builtins(engine_variables_file, engine_functions_file, engine_widgets_file);
     builtins.process_builtins();
 
 
@@ -54,13 +58,13 @@ int main() {
 //    ASTMacros macro_processing;
 //    ast->accept(macro_processing);
 
-	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions());
+	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions(), builtins.get_builtin_widgets());
 	ast->accept(desugar);
 
-    ASTVariables variables(builtins.get_builtin_functions(), builtins.get_builtin_variables(), builtins.get_builtin_arrays());
+    ASTVariables variables(builtins.get_builtin_functions(), builtins.get_builtin_variables(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets());
     ast->accept(variables);
 
-	ASTTypeCasting typecast(builtins.get_builtin_variables(), builtins.get_builtin_arrays());
+	ASTTypeCasting typecast(builtins.get_builtin_variables(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets());
 	ast->accept(typecast);
 
     ASTTypeChecking type_check;

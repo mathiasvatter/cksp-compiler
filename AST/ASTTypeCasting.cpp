@@ -5,8 +5,10 @@
 #include "ASTTypeCasting.h"
 #include "ASTDesugar.h"
 
-ASTTypeCasting::ASTTypeCasting(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables, const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays)
-    : m_builtin_arrays(m_builtin_arrays), m_builtin_variables(m_builtin_variables) {
+ASTTypeCasting::ASTTypeCasting(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables,
+							   const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays,
+							   const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
+    : m_builtin_arrays(m_builtin_arrays), m_builtin_variables(m_builtin_variables), m_builtin_widgets(m_builtin_widgets) {
 }
 
 void ASTTypeCasting::visit(NodeProgram& node) {
@@ -49,12 +51,45 @@ void ASTTypeCasting::visit(NodeParamList& node) {
 }
 
 void ASTTypeCasting::visit(NodeUIControl& node) {
-    node.control_var->accept(*this);
+	auto engine_widget = get_builtin_widget(node.ui_control_type);
+	if(node.control_var->type == Unknown) {
+		node.control_var->type = engine_widget->control_var->type;
+	} else if (node.control_var->type != engine_widget->control_var->type) {
+		CompileError(ErrorType::TypeError,"Found different types in engine widget declaration.", node.tok.line, "", "", node.tok.file).print();
+		exit(EXIT_FAILURE);
+	}
+
+	node.control_var->accept(*this);
 
     // unused variable declarations being replaced with node_dead_end
     if(!node.control_var) return;
 
+	auto err = CompileError(ErrorType::TypeError,"Found wrong type in engine widget arguments.", node.tok.line, "", "", node.tok.file);
+	if(!node.arg_ast_types.empty()) {
+		for (int i = 0; i < node.params->params.size(); i++) {
+			if (node.arg_ast_types[i] == Number
+				and (node.params->params[i]->type == Integer or node.params->params[i]->type == Real)) {
+				node.arg_ast_types[i] = node.params->params[i]->type;
+			} else if (node.arg_ast_types[i] != Any and node.params->params[i]->type == Unknown) {
+				node.params->params[i]->type = node.arg_ast_types[i];
+			} else if (node.arg_ast_types[i] == Any) {
+				node.arg_ast_types[i] = node.params->params[i]->type;
+			} else if (node.params->params[i]->type != node.arg_ast_types[i]) {
+				err.print();
+			}
+
+			auto node_array = cast_node<NodeArray>(node.params->params[i].get());
+			if(node.arg_var_types[i] == Array) {
+				if(!node_array) {
+					CompileError(ErrorType::TypeError,"Found wrong type in engine widget arguments. Argument needs to be of type <Array>.", node.tok.line, "<Array>", node.params->params[i]->get_string(), node.tok.file).exit();
+				}
+			} else if(node_array) {
+				CompileError(ErrorType::TypeError,"Found wrong type in engine widget arguments. Argument cannot be of type <Array>.", node.tok.line, "<Variable>", node.params->params[i]->get_string(), node.tok.file).exit();
+			}
+		}
+	}
     node.params->accept(*this);
+
 }
 
 
@@ -316,26 +351,38 @@ void ASTTypeCasting::visit(NodeFunctionCall& node) {
 }
 
 void ASTTypeCasting::visit(NodeFunctionHeader& node) {
-    node.args->accept(*this);
     auto err = CompileError(ErrorType::TypeError,"Found wrong type in function arguments.", node.tok.line, "", "", node.tok.file);
 
-    if(!node.arg_ast_types.empty())
-        for(int i = 0; i<node.args->params.size(); i++) {
-            if(node.arg_ast_types[i] == Number and (node.args->params[i]->type == Integer or node.args->params[i]->type == Real)) {
-                node.arg_ast_types[i] = node.args->params[i]->type;
-            } else if(node.arg_ast_types[i] != Any and node.args->params[i]->type == Unknown) {
-                node.args->params[i]->type = node.arg_ast_types[i];
-            } else if(node.arg_ast_types[i] == Any) {
-                node.arg_ast_types[i] = node.args->params[i]->type;
-            } else if(node.args->params[i]->type != node.arg_ast_types[i] ) {
-                err.print();
-            }
-        }
+    if(!node.arg_ast_types.empty()) {
+		for (int i = 0; i < node.args->params.size(); i++) {
+			if (node.arg_ast_types[i] == Number
+				and (node.args->params[i]->type == Integer or node.args->params[i]->type == Real)) {
+				node.arg_ast_types[i] = node.args->params[i]->type;
+			} else if (node.arg_ast_types[i] != Any and node.args->params[i]->type == Unknown) {
+				node.args->params[i]->type = node.arg_ast_types[i];
+			} else if (node.arg_ast_types[i] == Any) {
+				node.arg_ast_types[i] = node.args->params[i]->type;
+			} else if (node.args->params[i]->type != node.arg_ast_types[i]) {
+				err.print();
+			}
 
+			auto node_array = cast_node<NodeArray>(node.args->params[i].get());
+			if(node.arg_var_types[i] == Array) {
+				if (!node_array) {
+					CompileError(ErrorType::TypeError,
+					 "Found wrong type in function arguments. Argument needs to be of type <Array>.",node.tok.line,"<Array>",node.args->params[i]->get_string(),node.tok.file).exit();
+				}
+			} else if(node_array) {
+				CompileError(ErrorType::TypeError, "Found wrong type in engine widget arguments. Argument cannot be of type <Array>.", node.tok.line, "<Variable>", node.args->params[i]->get_string(), node.tok.file).exit();
+			}
+		}
+	}
     // eg abs(number):number if arg is int-> abs is int
     if(node.type == Number) {
         node.type =node.args->type;
     }
+
+    node.args->accept(*this);
 
 }
 
@@ -418,6 +465,17 @@ NodeArray* ASTTypeCasting::get_builtin_array(NodeArray *arr) {
         return m_builtin_arrays[std::distance(m_builtin_arrays.begin(), it)].get();
     }
     return nullptr;
+}
+
+NodeUIControl* ASTTypeCasting::get_builtin_widget(const std::string &ui_control) {
+	auto it = std::find_if(m_builtin_widgets.begin(), m_builtin_widgets.end(),
+						   [&](const std::unique_ptr<NodeUIControl> &widget) {
+							 return (widget->ui_control_type == ui_control);
+						   });
+	if(it != m_builtin_widgets.end()) {
+		return m_builtin_widgets[std::distance(m_builtin_widgets.begin(), it)].get();
+	}
+	return nullptr;
 }
 
 

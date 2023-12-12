@@ -1,17 +1,17 @@
 // widgets
-declare ui_button $variable_name
-declare ui_file_selector $variable_name
-declare ui_label $variable_name (int, int)
-declare ui_level_meter $variable_name
-declare ui_knob $variable_name (int, int, int)
-declare ui_menu $variable_name
-declare ui_mouse_area $variable_name
-declare ui_panel $variable_name
-declare ui_slider $variable_name (int, int)
-declare ui_switch $variable_name
-declare ui_table %array_name[num_elements] (int, int, int)
-declare ui_text_edit @variable_name
-declare ui_value_edit $variable_name (int, int, int)
-declare ui_waveform $variable_name (int, int)
-declare ui_wavetable $variable_name
-declare ui_xy ?array_name[num_elements]
+ui_button $variable_name
+ui_file_selector $variable_name
+ui_label $variable_name (int, int)
+ui_level_meter $variable_name
+ui_knob $variable_name (int, int, int)
+ui_menu $variable_name
+ui_mouse_area $variable_name
+ui_panel $variable_name
+ui_slider $variable_name (int, int)
+ui_switch $variable_name
+ui_table %array_name[num_elements] (int, int, int)
+ui_text_edit @variable_name
+ui_value_edit $variable_name (int, int, int)
+ui_waveform $variable_name (int, int)
+ui_wavetable $variable_name
+ui_xy ?array_name[num_elements]

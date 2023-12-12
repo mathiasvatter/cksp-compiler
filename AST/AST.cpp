@@ -97,7 +97,8 @@ void NodeUIControl::accept(ASTVisitor &visitor) {
 }
 NodeUIControl::NodeUIControl(const NodeUIControl& other)
         : NodeAST(other), ui_control_type(other.ui_control_type),
-          control_var(clone_unique(other.control_var)), params(clone_unique(other.params)) {}
+          control_var(clone_unique(other.control_var)), params(clone_unique(other.params)),
+		  arg_ast_types(other.arg_ast_types), arg_var_types(other.arg_var_types) {}
 std::unique_ptr<NodeAST> NodeUIControl::clone() const {
     return std::make_unique<NodeUIControl>(*this);
 }

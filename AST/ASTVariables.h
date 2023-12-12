@@ -11,7 +11,8 @@ class ASTVariables : public ASTVisitor {
 public:
     ASTVariables(const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
                   const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables,
-                  const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays);
+                  const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays,
+				 const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets);
 
     void visit(NodeProgram& node) override;
     void visit(NodeCallback& node) override;
@@ -20,23 +21,27 @@ public:
     void visit(NodeSingleDeclareStatement& node) override;
     void visit(NodeSingleAssignStatement& node) override;
 
-    void visit(NodeStatementList& node) override;
 
+    void visit(NodeStatementList& node) override;
+	void visit(NodeUIControl& node) override;
     void visit(NodeArray& node) override;
     void visit(NodeVariable& node) override;
 
 private:
     NodeCallback* m_init_callback;
 
+	/// builtin engine functions
     const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_builtin_functions;
     NodeFunctionHeader* get_builtin_function(const std::string &function);
-
     /// builtin engine variables
     const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables;
     NodeVariable* get_builtin_variable(NodeVariable* var);
     /// builtin engine arrays
     const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays;
     NodeArray* get_builtin_array(NodeArray* arr);
+	/// builtin engine widgets
+	const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
+	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
     /// declared variables
     std::vector<NodeVariable*> m_declared_variables;

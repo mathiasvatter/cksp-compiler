@@ -12,7 +12,7 @@
 class ASTDesugar : public ASTVisitor {
 public:
     ASTDesugar(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables, const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
-               const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_property_functions);
+               const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_property_functions, const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets);
 
     /// check if init callback exists
     void visit(NodeProgram& node) override;
@@ -27,6 +27,7 @@ public:
     void visit(NodeSingleAssignStatement& node) override;
     void visit(NodeParamList& node) override;
 
+	void visit(NodeUIControl& node) override;
     void visit(NodeGetControlStatement& node) override;
     /// turn into single assign statements
 	void visit(NodeAssignStatement& node) override;
@@ -48,6 +49,9 @@ private:
     const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_builtin_functions;
     NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
     NodeFunctionHeader* get_builtin_function(const std::string &function);
+
+	const std::vector<std::unique_ptr<NodeUIControl>>& m_builtin_widgets;
+	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
     std::vector<std::string> m_compiler_variables = {"$list_it", "$string_it"};
     void declare_compiler_variables();
@@ -83,7 +87,6 @@ private:
     std::vector<std::unique_ptr<NodeStatement>> add_read_functions(NodeAST* var, NodeAST* parent);
     /// multidimensional array method for getting the size at declaration time
     std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok);
-
 
 };
 

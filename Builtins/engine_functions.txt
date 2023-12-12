@@ -20,292 +20,288 @@ RESET_CONDITION(unknown)
 SET_CONDITION(unknown)
 USE_CODE_IF(unknown)
 USE_CODE_IF_NOT(unknown)
-_get_engine_par(int, group, slot, generic):integer
+_get_engine_par(int, group, slot, generic): int
 _get_engine_par_disp(parameter, group, slot, generic):string
 _get_folder(string):string
-_load_ir_sample(filename, slot, generic):integer
-_num_slices(groupidx):integer
+_load_ir_sample(filename, slot, generic): int
+_num_slices(group_idx): int
 _pgs_create_key(keyid, size)
-_pgs_get_key_val(keyid, index):integer
+_pgs_get_key_val(keyid, index): int
 _pgs_key_exists(keyid):boolean
 _pgs_set_key_val(keyid, index, value)
 _read_persistent_var(variable)
 _reset_rls_trig_counter(note)
-_set_engine_par(parameter, value, group, slot, generic):integer
+_set_engine_par(parameter, value, group, slot, generic): int
 _set_skin_offset(value)
-_slice_idx_loop_end(groupidx, loopidx):integer
-_slice_idx_loop_start(groupidx, loopidx):integer
-_slice_length(groupidx, sliceidx):integer
-_slice_loop_count(groupidx, loopidx):integer
-_slice_start(groupidx, sliceidx):integer
-_will_never_terminate(eventid)
+_slice_idx_loop_end(group_idx, loop_idx: int): int
+_slice_idx_loop_start(group_idx, loop_idx: int): int
+_slice_length(group_idx, sliceidx): int
+_slice_loop_count(group_idx, loop_idx: int): int
+_slice_start(group_idx, sliceidx): int
+_will_never_terminate(event_id)
 abs(int_real):int_real
 acos(realvalue):real
 add_menu_item(variable, text, number)
 add_text_line(variable, text)
-allow_group(groupidx)
-array_equal(intarray, intarray):boolean
+allow_group(group_idx)
+array_equal(array: int, array: int):boolean
 asin(realvalue):real
 atan(realvalue):real
-attach_level_meter(uiid, groupidx, slotidx, channelidx, busidx)
-attach_zone(waveform, zoneid, parameter)
-by_marks(bitmark):integer
-by_track(trackidx):integer
-cc_delivery_request(controllernumber)
-ceil(realvalue):real
-change_listener_par(signaltype, parameter)
-change_note(eventid, newnotenumber)
-change_pan(eventid, panorama, relativebit)
-change_time_with_pitch(eventid, time):integer
-change_tune(eventid, tuneamount, relativebit)
-change_velo(eventid, newvelocitynumber)
-change_vol(eventid, volume, relativebit)
-cbrt(realvalue):real
-cos(realvalue):real
-dec(expression):integer
-delete_event_mark(eventid, bitmark)
-detect_pitch(zoneid, returnvariable):integer
-detect_rms(zoneid, returnvariable):integer
-detect_peak(zoneid, returnvariable):integer
-detect_loudness(zoneid, returnvariable):integer
-detect_sample_type(zoneid, returnvariable):integer
-detect_instrument_type(zoneid, returnvariable):integer
-detect_drum_type(zoneid, returnvariable):integer
-disable_logging(logtype)
-disallow_group(groupidx)
-dont_use_machine_mode(eventid)
-event_status(eventid):integer
+attach_level_meter(uiid, group_idx, slotidx, channelidx, busidx)
+attach_zone(waveform, zone_id: int, parameter: int)
+by_marks(bitmark: int): int
+by_track(trackidx: int): int
+cc_delivery_request(controller_number: int)
+ceil(value: real):real
+change_listener_par(signaltype: int, parameter: int)
+change_note(event_id: int, newnote_number: int)
+change_pan(event_id: int, panorama, relativebit: int)
+change_time_with_pitch(event_id: int, time: int): int
+change_tune(event_id: int, tuneamount: int, relativebit: int)
+change_velo(event_id: int, newvelocitynumber: int)
+change_vol(event_id: int, volume: int, relativebit: int)
+cbrt(value: real):real
+cos(value: real):real
+dec(expression: int): int
+delete_event_mark(event_id: int, bitmark: int)
+detect_pitch(zone_id: int, returnvariable: int): int
+detect_rms(zone_id: int, returnvariable: int): int
+detect_peak(zone_id: int, returnvariable: int): int
+detect_loudness(zone_id: int, returnvariable: int): int
+detect_sample_type(zone_id: int, returnvariable: int): int
+detect_instrument_type(zone_id: int, returnvariable: int): int
+detect_drum_type(zone_id: int, returnvariable: int): int
+disable_logging(logtype: int)
+disallow_group(group_idx: int)
+dont_use_machine_mode(event_id: int)
+event_status(event_id): int
 exit
-exp(realvalue):real
-exp2(realvalue):real
+exp(value: real): real
+exp2(value: real): real
 expose_controls
-fade_in(eventid, fadetime)
-fade_out(eventid, fadetime, stopvoice)
-find_group(groupname):integer
-find_mod(groupidx, modname):integer
-find_target(groupidx, modidx, targetname):integer
-find_zone(samplename):integer
+fade_in(event_id, fadetime)
+fade_out(event_id, fadetime, stopvoice)
+find_group(groupname): int
+find_mod(group_idx, modname): int
+find_target(group_idx, modidx, targetname): int
+find_zone(samplename): int
 floor(realvalue):real
 fs_get_filename(int, returnparameter):string
 fs_navigate(int, direction)
-get_control_par(int, int):integer
-get_control_par_arr(int, int, int):integer
-get_control_par_real_arr(int, int, int):real
-get_control_par_str(int, int):string
-get_control_par_str_arr(int, int, int):string
-get_engine_par(int, int, int, int):integer
+get_control_par(ui_id: int, control_par: int): int
+get_control_par_arr(ui_id: int, control_par: int, index: int): int
+get_control_par_real_arr(ui_id: int, control_par: int, index: int):real
+get_control_par_str(ui_id: int, control_par: int):string
+get_control_par_str_arr(ui_id: int, control_par: int, index: int):string
+get_engine_par(int, int, int, int): int
 get_engine_par_disp(int, int, int, int):string
 get_engine_par_disp_m(int, int, slot, int):string
-get_engine_par_m(parameter, int, slot, int):integer
-get_event_ids(intarray)
-get_event_mark(eventid, bitmark):integer
-get_event_par(eventid, parameter):integer
-get_event_par_arr(eventid, parameter, groupidx):integer
-get_folder(filepath):string
-get_font_id(filepath):integer
-get_group_idx(groupname):integer
-get_group_par(groupidx, parameter):integer
-get_key_color(notenumber):integer
-get_key_name(notenumber):integer
-get_key_triggerstate(notenumber):integer
-get_key_type(notenumber):integer
-get_keyrange_max_note(notenumber):integer
-get_keyrange_min_note(notenumber):integer
-get_keyrange_name(notenumber):integer
-get_loop_par(zoneid, loopid, parameter):integer
-get_menu_item_str(uiid, index):string
-get_menu_item_value(uiid, index):integer
-get_menu_item_visibility(uiid, index):integer
-get_mod_idx(groupidx, modname):integer
-get_num_zones():integer
-get_purge_state(groupidx):integer
-get_sample(zoneid,returnparameter):string
-get_sample_length(zoneid):integer
-get_target_idx(groupidx, modidx, targetname):integer
-get_ui_id(variable):integer
-get_ui_wf_property(waveform, property, index):integer
-get_voice_limit(voicetype):integer
-get_zone_id(zoneidx):integer
-get_zone_par(zoneid, parameter):integer
-get_zone_status(zoneid):integer
-group_name(groupidx):string
-guiidx_to_slotidx(instrguiidx):integer
+get_engine_par_m(parameter, int, slot, int): int
+get_event_ids(array: int)
+get_event_mark(event_id: int, bitmark: int): int
+get_event_par(event_id: int, parameter: int): int
+get_event_par_arr(event_id: int, parameter: int, group_idx: int): int
+get_folder(filepath: string):string
+get_font_id(filepath: string): int
+get_group_idx(groupname: string): int
+get_group_par(group_idx: int, parameter: int): int
+get_key_color(note_number: int): int
+get_key_name(note_number: int): int
+get_key_triggerstate(note_number: int): int
+get_key_type(note_number: int): int
+get_keyrange_max_note(note_number: int): int
+get_keyrange_min_note(note_number: int): int
+get_keyrange_name(note_number: int): int
+get_loop_par(zoneid: int, loopid: int, parameter: int): int
+get_menu_item_str(uiid: int, index: int):string
+get_menu_item_value(uiid: int, index: int): int
+get_menu_item_visibility(uiid: int, index: int): int
+get_mod_idx(group_idx: int, modname: string): int
+get_num_zones(): int
+get_purge_state(group_idx: int): int
+get_sample(zone_id: int,returnparameter: int):string
+get_sample_length(zone_id: int): int
+get_target_idx(group_idx, mod_idx: int, targetname: string): int
+get_ui_id(variable: int): int
+get_ui_wf_property(waveform: int, property: int, index: int): int
+get_voice_limit(voice_type: int): int
+get_zone_id(zone_idx: int): int
+get_zone_par(zone_id, parameter): int
+get_zone_status(zone_id): int
+group_name(group_idx):string
+guiidx_to_slotidx(instrguiidx): int
 hide_part(variable, value)
 ignore_controller
-ignore_event(eventid)
+ignore_event(event_id)
 ignore_midi
-import_nckp(filepath):string
-in_range(intorrealvalue, intorrealvalue, intorrealvalue):boolean
-inc(expression)
-int(realvalue):integer
-int_to_real(integer):real
-is_zone_empty(zoneid):integer
-iterate_macro(expression)
-iterate_post_macro(expression)
-literate_macro(expression)
-literate_post_macro(expression)
-load_array(intorstringarray, int):integer
-load_array_str(intorstringarray, string):integer
-load_ir_sample(filename, slot, int):integer
-load_ir_sample_m(filename, outputidx, slot, int):integer
-load_native_ui(filepath)
-load_midi_file(filepath):integer
-load_patch(filepath, instrslotidx)
-load_performance_view(filename):string
-log(realvalue):real
-log2(realvalue):real
-log10(realvalue):real
-lsb(value):integer
+import_nckp(filepath: string):string
+in_range(value: number, value: number, value: number):boolean
+inc(expression: int)
+int(value: real): int
+int_to_real(value: int): real
+is_zone_empty(zone_id: int): int
+load_array(array: any, int): int
+load_array_str(array: any, path: string): int
+load_ir_sample(filename: string, slot: int, int): int
+load_ir_sample_m(filename: string, outputidx: int, slot: int, int): int
+load_native_ui(filepath: string)
+load_midi_file(filepath: string): int
+load_patch(filepath: string, instrslotidx: int)
+load_performance_view(filename: string):string
+log(value: real):real
+log2(value: real):real
+log10(value: real):real
+lsb(value: int): int
 make_instr_persistent(variable)
 make_perfview
-make_persistent(variable)
-message(variableortext)
-mf_copy_export_area(zoneid)
-mf_get_buffer_size():integer
-mf_get_byte_one():integer
-mf_get_byte_two():integer
-mf_get_channel():integer
-mf_get_command():integer
-mf_get_event_par(eventid, parameter):integer
-mf_get_first(trackidx)
-mf_get_id():integer
-mf_get_last(trackidx)
+make_persistent(variable: number)
+message(variableortext: any)
+mf_copy_export_area(zone_id: int)
+mf_get_buffer_size(): int
+mf_get_byte_one(): int
+mf_get_byte_two(): int
+mf_get_channel(): int
+mf_get_command(): int
+mf_get_event_par(event_id: int, parameter: int): int
+mf_get_first(track_idx: int)
+mf_get_id(): int
+mf_get_last(track_idx: int)
 mf_get_last_filename():string
-mf_get_length():integer
-mf_get_mark(eventid, mark):integer
-mf_get_next(trackidx)
-mf_get_next_at(trackidx, pos)
-mf_get_note_length():integer
-mf_get_num_tracks():integer
-mf_get_pos():integer
-mf_get_prev(trackidx)
-mf_get_prev_at(trackidx, pos)
-mf_get_track_idx():integer
-mf_insert_event(track, pos, command, byte1, byte2):integer
-mf_insert_file(filepath, trackoffset, positionoffset, mode):integer
-mf_remove_event(eventid)
-mf_reset():integer
-mf_set_buffer_size(size):integer
+mf_get_length(): int
+mf_get_mark(event_id, mark): int
+mf_get_next(track_idx: int)
+mf_get_next_at(track_idx: int, pos)
+mf_get_note_length(): int
+mf_get_num_tracks(): int
+mf_get_pos(): int
+mf_get_prev(track_idx: int)
+mf_get_prev_at(track_idx: int, pos: int)
+mf_get_track_idx(): int
+mf_insert_event(track, pos, command, byte1, byte2): int
+mf_insert_file(filepath: string, trackoffset: int, positionoffset: int, mode: int): int
+mf_remove_event(event_id: int)
+mf_reset(): int
+mf_set_buffer_size(size: int): int
 mf_set_byte_one(value)
 mf_set_byte_two(value)
 mf_set_channel(value)
 mf_set_command(command)
-mf_set_event_par(eventid, parameter, value)
-mf_set_export_area(name, startpos, endpos, starttrack, endtrack):integer
+mf_set_event_par(event_id, parameter, value)
+mf_set_export_area(name, startpos, endpos, starttrack, endtrack): int
 mf_set_note_length(value)
 mf_set_num_export_areas(value)
 mf_set_length(value)
-mf_set_mark(eventid, mark, status)
+mf_set_mark(event_id, mark, status)
 mf_set_pos(pos)
 move_control(variable, xgridunit, ygridunit)
 move_control_px(variable, xpospx, ypospx)
-ms_to_ticks(microseconds):integer
-msb(value):integer
-note_off(eventid)
-num_elements(anyarrayvariable):integer
-num_slices(groupidx):integer
-num_slices_zone(zoneid):integer
-output_channel_name(outputidx):integer
+ms_to_ticks(microseconds): int
+msb(value): int
+note_off(event_id)
+num_elements(anyarrayvariable): int
+num_slices(group_idx): int
+num_slices_zone(zone_id): int
+output_channel_name(outputidx): int
 pgs_create_key(keyid, size)
 pgs_create_str_key(keyid)
-pgs_get_key_val(keyid, index):integer
+pgs_get_key_val(keyid, index): int
 pgs_get_str_key_val(keyid):string
 pgs_key_exists(keyid):boolean
 pgs_set_key_val(keyid, index, value)
 pgs_set_str_key_val(keyid, text)
 pgs_str_key_exists(keyid):boolean
-play_note(notenumber, velocity, sampleoffset, duration):integer
-pow(realvalue, realvalue):real
-purge_group(groupidx, mode):integer
-random(min, max):integer
-read_persistent_var(variable)
-real(integer):real
-real_to_int(realvalue):integer
-redirect_midi(eventid, instrslotidx, instrbankslotidx)
-redirect_output(eventid, outputtype, outputidx)
-remove_keyrange(keynumber)
+play_note(note_number, velocity, sampleoffset, duration): int
+pow(value: real, value: real):real
+purge_group(group_idx, mode): int
+random(min, max): int
+read_persistent_var(variable: any)
+real(value: int):real
+real_to_int(value: real): int
+redirect_midi(event_id: int, instrslotidx: int, instrbankslotidx: int)
+redirect_output(event_id: int, outputtype: int, outputidx: int)
+remove_keyrange(keynumber: int)
 reset_engine
 reset_ksp_timer
-reset_rls_trig_counter(note)
-round(realvalue):real
-save_array(intorstringarray, mode):integer
-save_array_str(intorstringarray, filepath):integer
-save_midi_file(filepath):integer
-search(intarray, value):integer
-search(intarray, value, from, to):integer
-set_control_help(variable, text)
+reset_rls_trig_counter(note: int)
+round(value: real):real
+save_array(array: any, mode: int): int
+save_array_str(array: any, filepath: string): int
+save_midi_file(filepath: string): int
+search(intarray: int, value: int): int
+search(intarray: int, value: int, from: int, to: int): int
+set_control_help(variable: number, text: string)
 set_control_par(int, int, int)
 set_control_par_arr(int, int, int, int)
 set_control_par_real_arr(int, int, real, int)
 set_control_par_str(int, int, string)
 set_control_par_str_arr(int, int, string, int)
 set_controller(int, int)
-set_engine_par(int, int, int, int, int):integer
-set_engine_par_m(int, int, int, int, int):integer
-set_event_mark(eventid, bitmark)
-set_event_par(eventid, parameter, value)
-set_event_par_arr(eventid, parameter, value, groupidx)
-set_group_dyn_par_name(groupdynpar, name)
-set_key_color(notenumber, keycolorconstant)
-set_key_name(keynumber, keyname)
-set_key_pressed(keynumber, value)
-set_key_pressed_support(value)
-set_key_type(notenumber, keytypeconstant)
+set_engine_par(int, int, int, int, int): int
+set_engine_par_m(int, int, int, int, int): int
+set_event_mark(event_id: int, bitmark: int)
+set_event_par(event_id: int, parameter: int, value: int)
+set_event_par_arr(event_id: int, parameter: int, value: int, group_idx: int)
+set_group_dyn_par_name(groupdynpar: int, name: string)
+set_key_color(note_number: int, keycolorconstant: int)
+set_key_name(keynumber: int, keyname: string)
+set_key_pressed(keynumber: int, value: int)
+set_key_pressed_support(value: int)
+set_key_type(note_number: int, keytypeconstant: int)
 set_keyrange(keynumber1, keynumber2, rangename)
 set_knob_defval(knobvariable, value)
-set_knob_label(knobvariable, text)
-set_knob_unit(knobvariable, unit)
-set_listener(signaltype, parameter)
-set_loop_par(zoneid, loopid, parameter, value):integer
-set_menu_item_str(menuid, index, text)
-set_menu_item_value(menuid, index, value)
-set_menu_item_visibility(menuid, index, visibility)
+set_knob_label(knobvariable, text: string)
+set_knob_unit(knobvariable, unit: int)
+set_listener(signaltype, parameter: int)
+set_loop_par(zone_id: int, loopid: int, parameter: int, value: int): int
+set_menu_item_str(menu_id: int, index: int, text: string)
+set_menu_item_value(menu_id: int, index: int, value)
+set_menu_item_visibility(menu_id: int, index: int, visibility: int)
 set_midi(channel, command, byte1, byte2)
 set_nrpn(address, value)
 set_num_user_zones(size)
 set_rpn(address, value)
-set_sample(zoneid, filepath):integer
+set_sample(zone_id, filepath): int
 set_script_title(text)
 set_skin_offset(value)
 set_snapshot_type(snapshottype)
-set_table_steps_shown(intarray, numsteps)
-set_text(variable, text)
-set_ui_color(hexvalue)
-set_ui_height(height)
-set_ui_height_px(value)
-set_ui_wf_property(waveform, property, index, value)
-set_ui_width_px(value)
-set_voice_limit(voicetype,value)
-set_zone_par(zoneid, parameter, value):integer
-sgn(intorrealvalue):integer
-sh_left(int, int):integer
-sh_right(int, int):integer
+set_table_steps_shown(intarray: int, numsteps: int)
+set_text(variable: number, text: string)
+set_ui_color(hexvalue: int)
+set_ui_height(height: int)
+set_ui_height_px(value: int)
+set_ui_wf_property(waveform: int, property: int, index: int, value: int)
+set_ui_width_px(value: int)
+set_voice_limit(voicetype: int, value: int)
+set_zone_par(zone_id: int, parameter: int, value: int): int
+sgn(value: number): int
+sh_left(int, int): int
+sh_right(int, int): int
 show_library_tab
-signbit(intorrealvalue):integer
+signbit(value: number): int
 sin(realvalue):real
-slice_idx_loop_end(groupidx, loopidx):integer
-slice_idx_loop_start(groupidx, loopidx):integer
-slice_length(groupidx, sliceidx):integer
-slice_loop_count(groupidx, loopidx):integer
-slice_start(groupidx, sliceidx):integer
-sort(intorrealarray, direction)
-sort(intorrealarray, direction, from, to)
-sqrt(realvalue):real
+slice_idx_loop_end(group_idx: int, loop_idx: int): int
+slice_idx_loop_start(group_idx: int, loop_idx: int): int
+slice_length(group_idx: int, slice_idx: int): int
+slice_loop_count(group_idx: int, loop_idx: int): int
+slice_start(group_idx: int, slice_idx: int): int
+sort(array: number, direction: int)
+sort(array: number, direction: int, from: int, to: int)
+sqrt(value: real):real
 stop_wait(int, int)
-tan(realvalue):real
-ticks_to_ms(ticks):integer
-unload_slot(instrslotidx)
-wait(waittime)
-wait_async(eventid):integer
-watch_var(variable)
-watch_array_idx(anyarrayvariable, index)
-wait_ticks(waittime)
-will_never_terminate(eventid)
-zone_slice_idx_loop_end(zoneid, loopidx):integer
-zone_slice_idx_loop_start(zoneid, loopidx):integer
-zone_slice_length(zoneid, sliceidx):integer
-zone_slice_loop_count(zoneid, loopidx):integer
-zone_slice_start(zoneid, sliceidx):integer
+tan(value: real):real
+ticks_to_ms(ticks: int): int
+unload_slot(instrslotidx: int)
+wait(waittime: int)
+wait_async(event_id: int): int
+watch_var(variable: any)
+watch_array_idx(array: any, index: int)
+wait_ticks(waittime: int)
+will_never_terminate(event_id)
+zone_slice_idx_loop_end(zone_id: int, loop_idx: int): int
+zone_slice_idx_loop_start(zone_id: int, loop_idx: int): int
+zone_slice_length(zone_id: int, slice_idx: int): int
+zone_slice_loop_count(zone_id: int, loop_idx: int): int
+zone_slice_start(zone_id: int, slice_idx: int): int
 mf_reset
 mf_get_buffer_size
 mf_get_byte_one

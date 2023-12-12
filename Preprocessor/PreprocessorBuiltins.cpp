@@ -5,11 +5,12 @@
 #include "PreprocessorBuiltins.h"
 
 
-PreprocessorBuiltins::PreprocessorBuiltins(const std::string& builtin_vars, const std::string& builtin_functions)
+PreprocessorBuiltins::PreprocessorBuiltins(const std::string& builtin_vars, const std::string& builtin_functions, const std::string& builtin_widgets)
 : Preprocessor(std::vector<Token>{}, (std::string)"") {
     m_pos = 0;
     m_builtin_variables_file = builtin_vars;
     m_builtin_functions_file = builtin_functions;
+	m_builtin_widgets_file = builtin_widgets;
 }
 
 void PreprocessorBuiltins::process_builtins() {
@@ -20,6 +21,10 @@ void PreprocessorBuiltins::process_builtins() {
     auto builtin_functions = parse_builtin_functions(m_builtin_functions_file);
     if(builtin_functions.is_error())
         builtin_functions.get_error().exit();
+
+	auto builtin_widgets = parse_builtin_widgets(m_builtin_widgets_file);
+	if(builtin_widgets.is_error())
+		builtin_widgets.get_error().exit();
 }
 
 
@@ -60,6 +65,22 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::stri
         } else consume(m_tokens);
     }
     return Result<SuccessTag>(SuccessTag{});
+}
+
+Result<SuccessTag> PreprocessorBuiltins::parse_builtin_widgets(const std::string &file) {
+	Tokenizer tokenizer(file);
+	m_tokens = tokenizer.tokenize();
+	m_pos = 0;
+	while(peek(m_tokens).type != END_TOKEN) {
+		if(peek(m_tokens).type == UI_CONTROL) {
+			auto result_ui_control = parse_builtin_ui_control();
+			if(result_ui_control.is_error()) {
+				return Result<SuccessTag>(result_ui_control.get_error());
+			}
+			m_builtin_widgets.push_back(std::move(result_ui_control.unwrap()));
+		} else consume(m_tokens);
+	}
+	return Result<SuccessTag>(SuccessTag{});
 }
 
 
@@ -131,6 +152,51 @@ Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_
     return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(node_function));
 }
 
+Result<std::unique_ptr<NodeUIControl>> PreprocessorBuiltins::parse_builtin_ui_control() {
+	Token tok = consume(m_tokens);
+	std::string ui_control_type = tok.val; // consume ui_control identifier
+	if(peek(m_tokens).type != KEYWORD) {
+		return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::PreprocessorError,
+		"Failed loading builtins. Found unknown <engine_widget> syntax.", peek(m_tokens).line, "<Keyword>", peek(m_tokens).val, peek(m_tokens).file));
+	}
+	std::unique_ptr<NodeAST> node_var;
+	if(peek(m_tokens, 1).type == OPEN_BRACKET) {
+		node_var = std::move(parse_builtin_array());
+		consume(m_tokens); // consume open bracket
+		if(peek(m_tokens).type == KEYWORD) consume(m_tokens);
+		if(peek(m_tokens).type == CLOSED_BRACKET) consume(m_tokens);
+	} else {
+		node_var = parse_builtin_variable();
+	}
+	std::unique_ptr<NodeParamList> params = std::unique_ptr<NodeParamList>(new NodeParamList({}, tok));
+	std::vector<ASTType> arg_types;
+	std::vector<VarType> arg_var_types;
+	if (peek(m_tokens).type == token::OPEN_PARENTH) {
+		consume(m_tokens); // consume (
+		if(peek(m_tokens).type != token::CLOSED_PARENTH) {
+			auto arg_pair = parse_builtin_args_list(params);
+			if (arg_pair.is_error()) {
+				Result<std::unique_ptr<NodeFunctionHeader>>(arg_pair.get_error());
+			}
+			arg_types = arg_pair.unwrap().first;
+			arg_var_types = arg_pair.unwrap().second;
+		}
+		if (peek(m_tokens).type == token::CLOSED_PARENTH) {
+			consume(m_tokens);
+		} else {
+			return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::PreprocessorError,
+			"Failed loading builtins. Found unknown <engine_widget> parameter syntax.", peek(m_tokens).line, ")", peek(m_tokens).val, peek(m_tokens).file));
+		}
+	}
+	auto node_ui_control = std::make_unique<NodeUIControl>(ui_control_type, std::move(node_var), std::move(params), tok);
+	node_ui_control->control_var->parent = node_ui_control.get();
+	node_ui_control->params->parent = node_ui_control.get();
+	node_ui_control->arg_var_types = std::move(arg_var_types);
+	node_ui_control->arg_ast_types = std::move(arg_types);
+	node_ui_control->type = node_ui_control->control_var->type;
+	return Result<std::unique_ptr<NodeUIControl>>(std::move(node_ui_control));
+}
+
 ASTType PreprocessorBuiltins::get_type_annotation(const Token& tok) {
 //    Token token_type = tok; // get type token
     ASTType type = Any;
@@ -140,8 +206,7 @@ ASTType PreprocessorBuiltins::get_type_annotation(const Token& tok) {
         type = Real;
     } else if (tok.val.find("string") != std::string::npos) {
         type = String;
-    }
-    if(tok.val.find("int") != std::string::npos and tok.val.find("real") != std::string::npos) {
+    } else if(tok.val.find("number") != std::string::npos) {
         type = Number;
     }
     return type;
@@ -199,6 +264,12 @@ const std::vector<std::unique_ptr<NodeFunctionHeader>> &PreprocessorBuiltins::ge
     return m_property_functions;
 }
 
+const std::vector<std::unique_ptr<NodeUIControl>> &PreprocessorBuiltins::get_builtin_widgets() const {
+	return m_builtin_widgets;
+}
+
 bool PreprocessorBuiltins::is_property_function(const std::string &fun_name) {
     return contains(fun_name, "_properties") || contains(fun_name, "set_bounds");
 }
+
+

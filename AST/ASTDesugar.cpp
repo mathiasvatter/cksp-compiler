@@ -6,8 +6,8 @@
 
 
 ASTDesugar::ASTDesugar(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables, const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
-                       const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_property_functions)
-: m_builtin_functions(m_builtin_functions), m_builtin_variables(m_builtin_variables), m_property_functions(m_property_functions) {
+                       const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_property_functions, const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
+: m_builtin_functions(m_builtin_functions), m_builtin_variables(m_builtin_variables), m_property_functions(m_property_functions), m_builtin_widgets(m_builtin_widgets) {
 }
 
 void ASTDesugar::visit(NodeProgram& node) {
@@ -131,7 +131,7 @@ void ASTDesugar::visit(NodeArray& node) {
 //            substitute->accept(*this);
 //            node.replace_with(std::move(substitute));
             node.name = substitute->get_string();
-            return;
+//            return;
         }
     }
     if(contains(ARRAY_IDENT, node.name[0])) {
@@ -147,6 +147,7 @@ void ASTDesugar::visit(NodeArray& node) {
     if(!m_const_prefixes.empty()) {
         node.name = m_const_prefixes.top() + "." + node.name;
     }
+
 }
 
 void ASTDesugar::visit(NodeFunctionHeader& node) {
@@ -332,7 +333,7 @@ std::unique_ptr<NodeAST> ASTDesugar::get_substitute(const std::string& name) {
 
 
 void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
-    node.to_be_declared ->accept(*this);
+	node.to_be_declared ->accept(*this);
     if(node.assignee)
         node.assignee -> accept(*this);
     // in case node.assignee is function substitution -> then this node gets replaced
@@ -760,6 +761,38 @@ void ASTDesugar::visit(NodeStatementList& node) {
     node.update_parents(&node);
 }
 
+void ASTDesugar::visit(NodeUIControl &node) {
+	auto engine_widget = get_builtin_widget(node.ui_control_type);
+	if(!engine_widget) {
+		CompileError(ErrorType::SyntaxError, "Did not recognize engine widget.", node.tok.line, "valid widget type", node.ui_control_type, node.tok.file).exit();
+	}
+
+	node.control_var->accept(*this);
+	node.params->accept(*this);
+
+	auto node_widget_array = cast_node<NodeArray>(engine_widget->control_var.get());
+	auto node_array = cast_node<NodeArray>(node.control_var.get());
+	// is UI Array
+//	auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+//	if(node_array and !node_widget_array) {
+//		// multidimensional array
+//		if (node_array->dimensions > 1) {
+//			auto node_expression = create_right_nested_binary_expr(node_array->sizes->params, 0, "*", node_array->tok);
+//			node_expression->parent = node_array->sizes.get();
+//			for(int i = 0; i<node_array->sizes->params.size(); i++) {
+//				auto node_var = std::make_unique<NodeVariable>(false, node_array->name+".SIZE_D"+std::to_string(i+1), Const, node.tok);
+//				auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_var), node_array->sizes->params[i]->clone(), node.tok);
+//				auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
+//				node_statement_list->statements.push_back(std::move(node_statement));
+//			}
+//			node_array->indexes->params.clear();
+//			node_array->indexes->params.push_back(std::move(node_expression));
+//		}
+//		auto node_variable = std::make_unique<NodeVariable>()
+//	}
+
+}
+
 void ASTDesugar::visit(NodeListStatement &node) {
     auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
     auto node_main_array = make_array(node.name, node.size, node.tok, node_statement_list.get());
@@ -883,6 +916,17 @@ NodeFunctionHeader* ASTDesugar::get_property_function(NodeFunctionHeader *functi
         return m_property_functions[std::distance(m_property_functions.begin(), it)].get();
     }
     return nullptr;
+}
+
+NodeUIControl* ASTDesugar::get_builtin_widget(const std::string &ui_control) {
+	auto it = std::find_if(m_builtin_widgets.begin(), m_builtin_widgets.end(),
+						   [&](const std::unique_ptr<NodeUIControl> &widget) {
+							 return (widget->ui_control_type == ui_control);
+						   });
+	if(it != m_builtin_widgets.end()) {
+		return m_builtin_widgets[std::distance(m_builtin_widgets.begin(), it)].get();
+	}
+	return nullptr;
 }
 
 ASTType ASTDesugar::get_control_function_type(const std::string& control_param) {
