@@ -164,6 +164,14 @@ Result<std::pair<std::vector<ASTType>, std::vector<VarType>>> PreprocessorBuilti
             auto arg = parse_builtin_variable();
             func_args->params.push_back(std::move(arg));
             arg_var_types.push_back(get_var_type_annotation(tok.val));
+            if(peek(m_tokens).type == TYPE) {
+                consume(m_tokens); // consume semicolon
+                if(peek(m_tokens).type != KEYWORD) {
+                    return Result<std::pair<std::vector<ASTType>, std::vector<VarType>>>(CompileError(ErrorType::PreprocessorError,
+                      "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
+                }
+                tok = consume(m_tokens);
+            }
             arg_types.push_back(get_type_annotation(tok));
         } else {
             return Result<std::pair<std::vector<ASTType>, std::vector<VarType>>>(CompileError(ErrorType::PreprocessorError,
