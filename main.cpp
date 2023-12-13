@@ -80,7 +80,7 @@ int main() {
 	ASTGenerator generator;
 	ast->accept(generator);
 	generator.print();
-	generator.generate("/Users/Mathias/Scripting/ksp-compiler/test.txt");
+	generator.generate((std::string) curr_path.parent_path()+"/test.txt");
     // Dauer in Millisekunden ausgeben
     std::cout << "Preprocessor Time: " << preprocessor_duration.count() << " ms, Time measured: " << duration.count() << " ms" << std::endl;
 

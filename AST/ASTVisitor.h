@@ -5,6 +5,8 @@
 #pragma once
 
 #include <iostream>
+#include <unordered_map>
+
 #include "AST.h"
 
 class ASTVisitor {
