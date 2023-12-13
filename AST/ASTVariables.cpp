@@ -13,14 +13,9 @@ ASTVariables::ASTVariables(const std::vector<std::unique_ptr<NodeFunctionHeader>
 
 
 void ASTVariables::visit(NodeProgram& node) {
-    // check for init callback; get pointer to init callback
+
     for(auto & callback : node.callbacks) {
-        if(callback->begin_callback == "on init") m_init_callback = callback.get();
-    }
-    if(!m_init_callback) {
-        CompileError(ErrorType::SyntaxError, "Unable to compile. Missing <init callback>.", -1, "", "", node.tok.file).exit();
-    }
-    for(auto & callback : node.callbacks) {
+		std::cout << callback->begin_callback << std::endl;
         callback->accept(*this);
     }
     for(auto & function_definition : node.function_definitions) {
@@ -29,8 +24,9 @@ void ASTVariables::visit(NodeProgram& node) {
 }
 
 void ASTVariables::visit(NodeCallback& node) {
-    if(node.callback_id)
-        node.callback_id->accept(*this);
+    if(node.callback_id) {
+		node.callback_id->accept(*this);
+	}
     node.statements->accept(*this);
 }
 
@@ -67,9 +63,10 @@ void ASTVariables::visit(NodeArray& node) {
 	if(node_builtin_array && (node_declare_statement || node_ui_control) ){
 		CompileError(ErrorType::SyntaxError,"Array shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).exit();
 	}
-    if(node_declare_statement) {
+    if(node_declare_statement and node_declare_statement->to_be_declared.get() == &node) {
         if(get_declared_array(node.name)) {
-            CompileError(ErrorType::SyntaxError,"Array has already been declared.", node.tok.line, "", node.name, node.tok.file).exit();
+            CompileError(ErrorType::SyntaxError,"Array has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
+//			exit(EXIT_FAILURE);
         } else {
             m_declared_arrays.push_back(&node);
         }
@@ -92,7 +89,7 @@ void ASTVariables::visit(NodeArray& node) {
             node.declaration = node_declaration;
             node.dimensions = node_declaration->dimensions;
             // get var type from declaration because of List
-            if(node_declaration->var_type == List) node.var_type = node_declaration->var_type;
+            if(node_declaration->var_type == List or node_declaration->var_type == UI_Control) node.var_type = node_declaration->var_type;
             // only copy sizes from declaration if there is an index (passing arrays only by keyword)
             if(!node.indexes->params.empty()) {
                 node.sizes = std::unique_ptr<NodeParamList>(
@@ -134,7 +131,7 @@ void ASTVariables::visit(NodeArray& node) {
             node.name = "_"+node.name;
         } else {
             CompileError(ErrorType::SyntaxError,"Array has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
+//            exit(EXIT_FAILURE);
         }
     }
     node.sizes->accept(*this);
@@ -169,6 +166,7 @@ void ASTVariables::visit(NodeVariable& node) {
         auto node_first_array_declaration = get_declared_array(node.name);
         if(node_first_declaration || node_first_array_declaration) {
             if(node_first_declaration) {
+				if(node_first_declaration->var_type == UI_Control) node.var_type = node_first_declaration->var_type;
                 node.declaration = node_first_declaration;
                 node_first_declaration->is_used = true;
             }
@@ -183,7 +181,7 @@ void ASTVariables::visit(NodeVariable& node) {
             node.declaration = node_builtin_variable;
         } else {
             CompileError(ErrorType::SyntaxError,"Variable has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
-			exit(EXIT_FAILURE);
+//			exit(EXIT_FAILURE);
         }
     }
 }
@@ -288,7 +286,7 @@ NodeVariable *ASTVariables::get_declared_variable(NodeVariable *var) {
 NodeArray *ASTVariables::get_declared_array(const std::string& arr) {
     auto it = std::find_if(m_declared_arrays.begin(), m_declared_arrays.end(),
                            [&](NodeArray* array) {
-                               return array->name == arr;
+                               return to_lower(array->name) == to_lower(arr);
                            });
     if(it != m_declared_arrays.end()) {
         return m_declared_arrays[std::distance(m_declared_arrays.begin(), it)];
@@ -299,7 +297,7 @@ NodeArray *ASTVariables::get_declared_array(const std::string& arr) {
 NodeUIControl *ASTVariables::get_declared_control(NodeUIControl *ctr) {
     auto it = std::find_if(m_declared_controls.begin(), m_declared_controls.end(),
                            [&](NodeUIControl* control) {
-                               return to_lower(control->get_string()) == to_lower(ctr->get_string());
+                               return control->get_string() == ctr->get_string();
                            });
     if(it != m_declared_controls.end()) {
         return m_declared_controls[std::distance(m_declared_controls.begin(), it)];

@@ -392,7 +392,6 @@ Result<std::unique_ptr<NodeAssignStatement>> Parser::parse_assign_statement(Node
     node_assign_statement->assignee = std::move(assignee.unwrap());
     node_assign_statement->parent = parent;
 
-//    auto return_value = std::make_unique<NodeAssignStatement>(std::move(vars), std::move(assignee.unwrap()), get_tok());
     return Result<std::unique_ptr<NodeAssignStatement>>(std::move(node_assign_statement));
 }
 
@@ -888,7 +887,9 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
     if(parsed_var.is_error()) {
         return Result<std::unique_ptr<NodeVariable>>(parsed_var.get_error());
     }
-    return Result<std::unique_ptr<NodeVariable>>(std::move(parsed_var.unwrap()));
+	auto node_variable = std::move(parsed_var.unwrap());
+	node_variable->is_local = is_local;
+    return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
 
 Result<std::unique_ptr<NodeArray>> Parser::parse_declare_array(NodeAST* parent) {
@@ -911,9 +912,10 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_declare_array(NodeAST* parent) 
     if(parsed_arr.is_error()) {
         return Result<std::unique_ptr<NodeArray>>(parsed_arr.get_error());
     }
-    auto array = std::move(parsed_arr.unwrap());
-    std::swap(array->indexes, array->sizes);
-    return Result<std::unique_ptr<NodeArray>>(std::move(array));
+    auto node_array = std::move(parsed_arr.unwrap());
+    std::swap(node_array->indexes, node_array->sizes);
+	node_array->is_local = is_local;
+    return Result<std::unique_ptr<NodeArray>>(std::move(node_array));
 }
 
 Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST* parent) {
@@ -976,17 +978,16 @@ Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement(NodeAST* par
         return Result<std::unique_ptr<NodeIfStatement>>(condition_result.get_error());
     }
     auto condition = std::move(condition_result.unwrap());
-//    if(not(condition->type == ASTType::Boolean || condition->type == ASTType::Comparison)) {
-//        return Result<std::unique_ptr<NodeIfStatement>>(CompileError(ErrorType::SyntaxError,
-//        "If Statement needs condition.", peek().line, "condition", "", peek().file));
-//    }
+
     if(peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeIfStatement>>(CompileError(ErrorType::SyntaxError,
          "Expected linebreak after if-condition.", peek().line, "linebreak", peek().val, peek().file));
     }
 	consume(); // consume linebreak
 	_skip_linebreaks();
-    std::vector<std::unique_ptr<NodeStatement>> if_stmts = {};
+	auto if_statements = std::make_unique<NodeStatementList>(get_tok());
+	if_statements->parent = node_if_statement.get();
+//    std::vector<std::unique_ptr<NodeStatement>> if_stmts = {};
     while (peek().type != token::END_IF && peek().type != token::ELSE) {
 		if(peek().type == END_IF or peek().type == ELSE) break;
         auto stmt = parse_statement(node_if_statement.get());
@@ -994,10 +995,12 @@ Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement(NodeAST* par
             return Result<std::unique_ptr<NodeIfStatement>>(stmt.get_error());
         }
         if(stmt.unwrap()->statement)
-            if_stmts.push_back(std::move(stmt.unwrap()));
+            if_statements->statements.push_back(std::move(stmt.unwrap()));
     }
     bool no_end_if = false;
-    std::vector<std::unique_ptr<NodeStatement>> else_stmts = {};
+	auto else_statements = std::make_unique<NodeStatementList>(get_tok());
+	else_statements->parent = node_if_statement.get();
+//    std::vector<std::unique_ptr<NodeStatement>> else_stmts = {};
     if(peek().type == token::ELSE) {
         consume();
         if(not(peek().type == token::IF || peek().type == token::LINEBRK)) {
@@ -1011,7 +1014,7 @@ Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement(NodeAST* par
                 return Result<std::unique_ptr<NodeIfStatement>>(stmt.get_error());
             }
             auto stmt_val = std::make_unique<NodeStatement>(std::move(stmt.unwrap()), get_tok());
-            else_stmts.push_back(std::move(stmt_val));
+			else_statements->statements.push_back(std::move(stmt_val));
         } else {
             while (peek().type != token::END_IF) {
                 auto stmt = parse_statement(node_if_statement.get());
@@ -1019,7 +1022,7 @@ Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement(NodeAST* par
                     return Result<std::unique_ptr<NodeIfStatement>>(stmt.get_error());
                 }
                 if(stmt.unwrap()->statement)
-                    else_stmts.push_back(std::move(stmt.unwrap()));
+					else_statements->statements.push_back(std::move(stmt.unwrap()));
             }
         }
     }
@@ -1029,8 +1032,8 @@ Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement(NodeAST* par
     }
     if (!no_end_if) consume();
     node_if_statement->condition = std::move(condition);
-    node_if_statement->statements = std::move(if_stmts);
-    node_if_statement->else_statements = std::move(else_stmts);
+    node_if_statement->statements = std::move(if_statements);
+    node_if_statement->else_statements = std::move(else_statements);
     node_if_statement->parent = parent;
 //    auto return_value = std::make_unique<NodeIfStatement>(std::move(condition), std::move(if_stmts), std::move(else_stmts), get_tok());
     return Result<std::unique_ptr<NodeIfStatement>>(std::move(node_if_statement));

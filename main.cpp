@@ -21,7 +21,7 @@ int main() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     auto path = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
-//    path = "/Users/mathias/Scripting/the-score/the-score.ksp";
+    path = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    path = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 	Tokenizer tokenizer(path);
     auto tokens = tokenizer.tokenize();
@@ -80,6 +80,7 @@ int main() {
 	ASTGenerator generator;
 	ast->accept(generator);
 	generator.print();
+	generator.generate("/Users/Mathias/Scripting/ksp-compiler/test.txt");
     // Dauer in Millisekunden ausgeben
     std::cout << "Preprocessor Time: " << preprocessor_duration.count() << " ms, Time measured: " << duration.count() << " ms" << std::endl;
 

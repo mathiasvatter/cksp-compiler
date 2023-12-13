@@ -22,6 +22,19 @@ U get_pair_value(const std::vector<std::pair<T, U>>& vec, T type) {
 	return U();  // Gibt den Standardwert des Typs U zurück.
 }
 
+inline std::string sanitize_dots(const std::string& str) {
+	std::string result;
+	for (char ch : str) {
+		if (ch == '.') {
+			result += "__";
+		} else {
+			result += ch;
+		}
+	}
+	return result;
+}
+
+
 class ASTGenerator : public ASTVisitor {
 public:
     void visit(NodeProgram& node) override;

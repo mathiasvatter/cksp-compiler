@@ -285,7 +285,7 @@ void NodeIfStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeIfStatement::NodeIfStatement(const NodeIfStatement& other)
-        : NodeAST(other), condition(clone_unique(other.condition)), statements(clone_vector(other.statements)), else_statements(clone_vector(other.else_statements)) {}
+        : NodeAST(other), condition(clone_unique(other.condition)), statements(clone_unique(other.statements)), else_statements(clone_unique(other.else_statements)) {}
 std::unique_ptr<NodeAST> NodeIfStatement::clone() const {
     return std::make_unique<NodeIfStatement>(*this);
 }
@@ -334,6 +334,12 @@ NodeSelectStatement::NodeSelectStatement(const NodeSelectStatement& other)
         : NodeAST(other), expression(clone_unique(other.expression)), cases(clone_map(other.cases)) {}
 std::unique_ptr<NodeAST> NodeSelectStatement::clone() const {
     return std::make_unique<NodeSelectStatement>(*this);
+}
+
+void NodeSelectStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (expression.get() == oldChild) {
+		expression = std::move(newChild);
+	}
 }
 
 // ************* NodeCallback ***************

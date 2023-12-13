@@ -148,13 +148,9 @@ void ASTPrinter::visit(NodeIfStatement &node) {
     std::cout << "if " ;
     node.condition->accept(*this);
     std::cout << std::endl;
-    for(auto &stmt: node.statements) {
-        stmt->accept(*this);
-    }
+	node.statements->accept(*this);
     std::cout << "else" << std::endl;
-    for(auto &stmt: node.else_statements) {
-        stmt->accept(*this);
-    }
+	node.else_statements->accept(*this);
     std::cout << "end if";
 }
 
