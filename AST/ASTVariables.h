@@ -44,6 +44,7 @@ private:
 
     /// declared variables
     std::vector<NodeVariable*> m_declared_variables;
+//    std::unordered_map<std::string, NodeVariable*> m_declared_variables;
     NodeVariable* get_declared_variable(NodeVariable* var);
     /// declared arrays
     std::vector<NodeArray*> m_declared_arrays;

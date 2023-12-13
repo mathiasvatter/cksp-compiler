@@ -3,7 +3,7 @@
 //
 
 #include "ASTDesugar.h"
-#include "Preprocessor/SimpleExprInterpreter.h"
+#include "../Preprocessor/SimpleExprInterpreter.h"
 
 ASTDesugar::ASTDesugar(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables, const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
                        const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_property_functions, const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
@@ -1050,7 +1050,7 @@ std::unique_ptr<NodeVariable> ASTDesugar::shorthand_to_control_param(const std::
     if(control_par == "default") control_par += "_value";
     auto it = std::find_if(m_builtin_variables.begin(), m_builtin_variables.end(),
                            [&](const std::unique_ptr<NodeVariable> &var) {
-                               return control_par == to_lower(var->name) or "control_par_"+control_par == to_lower(var->name);
+                               return string_compare(control_par, var->name) or string_compare("control_par_"+control_par, var->name);
                            });
     if(it != m_builtin_variables.end()) {
         auto control_var = m_builtin_variables[std::distance(m_builtin_variables.begin(), it)]->clone();

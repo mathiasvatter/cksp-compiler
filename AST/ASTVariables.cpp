@@ -273,9 +273,14 @@ NodeUIControl* ASTVariables::get_builtin_widget(const std::string &ui_control) {
 }
 
 NodeVariable *ASTVariables::get_declared_variable(NodeVariable *var) {
+//    auto it = m_declared_variables.find(var->name);
+//    if (it != m_declared_variables.end()) {
+//        return it->second;
+//    }
+//    return nullptr;
     auto it = std::find_if(m_declared_variables.begin(), m_declared_variables.end(),
                            [&](NodeVariable* variable) {
-                               return to_lower(variable->name) == to_lower(var->name);
+                               return string_compare(variable->name, var->name);
                            });
     if(it != m_declared_variables.end()) {
         return m_declared_variables[std::distance(m_declared_variables.begin(), it)];
@@ -286,7 +291,7 @@ NodeVariable *ASTVariables::get_declared_variable(NodeVariable *var) {
 NodeArray *ASTVariables::get_declared_array(const std::string& arr) {
     auto it = std::find_if(m_declared_arrays.begin(), m_declared_arrays.end(),
                            [&](NodeArray* array) {
-                               return to_lower(array->name) == to_lower(arr);
+                               return string_compare(array->name, arr);
                            });
     if(it != m_declared_arrays.end()) {
         return m_declared_arrays[std::distance(m_declared_arrays.begin(), it)];

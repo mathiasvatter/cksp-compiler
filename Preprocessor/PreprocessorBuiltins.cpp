@@ -100,8 +100,10 @@ std::unique_ptr<NodeVariable> PreprocessorBuiltins::parse_builtin_variable() {
 
 std::unique_ptr<NodeArray> PreprocessorBuiltins::parse_builtin_array() {
     Token name = consume(m_tokens); // consume array name token
-    std::string arr_name = name.val.erase(0,1);
+    std::string arr_name = name.val;
     ASTType type = get_identifier_type(arr_name[0]);
+    if(contains(TYPES, std::string(1, arr_name[0])))
+        arr_name = arr_name.erase(0,1);
     std::unique_ptr<NodeParamList> size = std::unique_ptr<NodeParamList>(new NodeParamList({}, name));;
     std::unique_ptr<NodeParamList> index = std::unique_ptr<NodeParamList>(new NodeParamList({}, name));;
     auto node_array = std::make_unique<NodeArray>(false, arr_name, Array, std::move(size), std::move(index), name);
