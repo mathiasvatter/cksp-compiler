@@ -629,10 +629,10 @@ struct NodeStatementList : NodeAST {
 
 struct NodeIfStatement: NodeAST {
     std::unique_ptr<NodeAST> condition;
-    std::vector<std::unique_ptr<NodeStatement>> statements;
-    std::vector<std::unique_ptr<NodeStatement>> else_statements = {};
+    std::unique_ptr<NodeStatementList> statements;
+	std::unique_ptr<NodeStatementList> else_statements;
     inline explicit NodeIfStatement(Token tok) : NodeAST(tok) {}
-    inline NodeIfStatement(std::unique_ptr<NodeAST> condition, std::vector<std::unique_ptr<NodeStatement>> statements,std::vector<std::unique_ptr<NodeStatement>> elseStatements, Token tok)
+    inline NodeIfStatement(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeStatementList> statements,std::unique_ptr<NodeStatementList> elseStatements, Token tok)
     : NodeAST(tok), condition(std::move(condition)), statements(std::move(statements)), else_statements(std::move(elseStatements)) {}
     void accept(ASTVisitor& visitor) override;
     NodeIfStatement(const NodeIfStatement& other);
@@ -640,22 +640,14 @@ struct NodeIfStatement: NodeAST {
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         condition->update_parents(this);
-        for (auto & stmt : statements) {
-            stmt->update_parents(this);
-        }
-        for (auto & stmt : else_statements) {
-            stmt->update_parents(this);
-        }
+		statements->update_parents(this);
+		else_statements->update_parents(this);
     }
     std::string get_string() override { return ""; }
     void update_token_data(const Token& token) override {
         condition -> update_token_data(token);
-        for(auto &stmt : statements) {
-            stmt->update_token_data(token);
-        }
-        for(auto &stmt : else_statements) {
-            stmt->update_token_data(token);
-        }
+		statements->update_token_data(token);
+		else_statements->update_token_data(token);
     }
 };
 
@@ -669,7 +661,7 @@ struct NodeForStatement : NodeAST {
     inline NodeForStatement(std::unique_ptr<NodeAssignStatement> iterator, Token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeStatementList> statements, Token tok)
     : NodeAST(tok), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), statements(std::move(statements)) {}
     void accept(ASTVisitor& visitor) override;
-	virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     NodeForStatement(const NodeForStatement& other);
     std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
@@ -718,6 +710,7 @@ struct NodeSelectStatement : NodeAST {
     : NodeAST(tok), expression(std::move(expression)), cases(std::move(cases)) {}
 	void accept(ASTVisitor& visitor) override;
     NodeSelectStatement(const NodeSelectStatement& other);
+	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;

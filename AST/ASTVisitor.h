@@ -103,6 +103,8 @@ public:
 	};
     virtual void visit(NodeIfStatement& node) {
 		node.condition->accept(*this);
+		node.statements->accept(*this);
+		node.else_statements->accept(*this);
 	};
     virtual void visit(NodeForStatement& node) {
 		node.iterator->accept(*this);
@@ -125,6 +127,7 @@ public:
 		}
 	};
 	virtual void visit(NodeCallback& node) {
+		if(node.callback_id) node.callback_id->accept(*this);
 		node.statements->accept(*this);
 	};
     virtual void visit(NodeFunctionHeader& node) {

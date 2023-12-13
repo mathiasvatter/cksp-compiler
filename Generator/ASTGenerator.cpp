@@ -44,11 +44,11 @@ void ASTGenerator::visit(NodeString &node) {
 
 void ASTGenerator::visit(NodeVariable &node) {
     if(node.var_type == VarType::Polyphonic)
-        os << " polyphonic ";
+        os << "polyphonic ";
     else if(node.var_type == VarType::Const)
-        os << " const ";
+        os << "const ";
 	os << get_pair_value(variable_identifier, node.type);
-    os << node.name;
+    os << sanitize_dots(node.name);
 }
 
 void ASTGenerator::visit(NodeArray &node) {
@@ -57,7 +57,7 @@ void ASTGenerator::visit(NodeArray &node) {
 	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
 
 	os << get_pair_value(array_identifier, node.type);
-    os << node.name;
+    os << sanitize_dots(node.name);
 	if(node_declaration or node_ui_control or !node.indexes->params.empty())
     	os << "[";
 	if(node_declaration || node_ui_control)
@@ -75,14 +75,16 @@ void ASTGenerator::visit(NodeUIControl &node) {
     os << node.ui_control_type << " ";
     node.control_var->accept(*this);
     os << " ";
+	if(!node.params->params.empty()) os << "(";
     node.params -> accept(*this);
+	if(!node.params->params.empty()) os << ")";
 }
 
 void ASTGenerator::visit(NodeSingleDeclareStatement &node) {
     os << "declare ";
     node.to_be_declared->accept(*this);
     if(node.assignee != nullptr) {
-        os << ":= ";
+        os << " := ";
         node.assignee->accept(*this);
     }
     os << "";
@@ -90,13 +92,13 @@ void ASTGenerator::visit(NodeSingleDeclareStatement &node) {
 
 void ASTGenerator::visit(NodeParamList &node) {
     if (!node.params.empty()) {
-        if(node.params.size() > 1) os << "(";
+//        if(node.params.size() > 1) os << "(";
         for (int i = 0; i < node.params.size() - 1; i++) {
             node.params[i]->accept(*this);
             os << ", ";
         }
         node.params[node.params.size() - 1]->accept(*this);
-		if(node.params.size() > 1) os << ")";
+//		if(node.params.size() > 1) os << ")";
     }
 }
 
@@ -107,7 +109,7 @@ void ASTGenerator::visit(NodeBinaryExpr &node) {
 }
 
 void ASTGenerator::visit(NodeUnaryExpr &node) {
-    os << node.op.val << " ";
+    os << node.op.val;
     node.operand->accept(*this);
 }
 
@@ -125,17 +127,13 @@ void ASTGenerator::visit(NodeStatement &node) {
 }
 
 void ASTGenerator::visit(NodeIfStatement &node) {
-    os << "if " ;
+    os << "if(" ;
     node.condition->accept(*this);
-    os << std::endl;
-    for(auto &stmt: node.statements) {
-        stmt->accept(*this);
-    }
-	if (!node.else_statements.empty()) {
+    os << ")" << std::endl;
+	node.statements->accept(*this);
+	if (!node.else_statements->statements.empty()) {
     	os << "else" << std::endl;
-		for (auto &stmt : node.else_statements) {
-			stmt->accept(*this);
-		}
+		node.else_statements->accept(*this);
 	}
     os << "end if";
 }
@@ -149,9 +147,9 @@ void ASTGenerator::visit(NodeWhileStatement &node) {
 }
 
 void ASTGenerator::visit(NodeSelectStatement &node) {
-    os << "select " ;
+    os << "select(" ;
     node.expression->accept(*this);
-    os << std::endl;
+    os << ")" << std::endl;
     for(const auto &cas: node.cases) {
         os << "case ";
         for(auto &stmt: cas.first) {
@@ -178,9 +176,10 @@ void ASTGenerator::visit(NodeCallback &node) {
 }
 
 void ASTGenerator::visit(NodeFunctionHeader &node) {
-    os << node.name << "(";
+    os << sanitize_dots(node.name);
+	if(!node.args->params.empty()) os << "(";
     node.args->accept(*this);
-    os << ")";
+	if(!node.args->params.empty()) os << ")";
 }
 
 void ASTGenerator::visit(NodeFunctionCall &node) {

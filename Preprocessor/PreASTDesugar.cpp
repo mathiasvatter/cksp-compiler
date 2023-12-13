@@ -422,14 +422,14 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> PreASTDesugar::
     builtins.emplace_back("__MIN__", std::make_unique<PreNodeInt>(local_time->tm_min, Token(INT, std::to_string(local_time->tm_min), 0, (std::string&)""), nullptr));
     builtins.emplace_back("__HOUR__", std::make_unique<PreNodeInt>(local_time->tm_hour, Token(INT, std::to_string(local_time->tm_hour), 0, (std::string&)""), nullptr));
     builtins.emplace_back("__HOUR12__", std::make_unique<PreNodeInt>(local_time->tm_hour % 12, Token(INT, std::to_string(local_time->tm_hour % 12), 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__AMPM__", std::make_unique<PreNodeKeyword>(Token(STRING, (local_time->tm_hour >= 12 ? "PM" : "AM"), 0, (std::string&)""), nullptr));
+    builtins.emplace_back("__AMPM__", std::make_unique<PreNodeKeyword>(Token(STRING, (local_time->tm_hour >= 12 ? "\"PM\"" : "\"AM\""), 0, (std::string&)""), nullptr));
     builtins.emplace_back("__DAY__", std::make_unique<PreNodeInt>(local_time->tm_mday, Token(INT, std::to_string(local_time->tm_mday), 0, (std::string&)""), nullptr));
     builtins.emplace_back("__MONTH__", std::make_unique<PreNodeInt>(local_time->tm_mon + 1, Token(INT, std::to_string(local_time->tm_mon + 1), 0, (std::string&)""), nullptr));
     builtins.emplace_back("__YEAR__", std::make_unique<PreNodeInt>(local_time->tm_year + 1900, Token(INT, std::to_string(local_time->tm_year + 1900), 0, (std::string&)""), nullptr));
     builtins.emplace_back("__YEAR2__", std::make_unique<PreNodeInt>(local_time->tm_year % 100, Token(INT, std::to_string(local_time->tm_year % 100), 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__LOCALE_MONTH__", std::make_unique<PreNodeKeyword>(Token(STRING, locale_month, 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__LOCALE_MONTH_ABBR__", std::make_unique<PreNodeKeyword>(Token(STRING, locale_month_abbr, 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__LOCALE_DATE__", std::make_unique<PreNodeKeyword>(Token(STRING, locale_date, 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__LOCALE_TIME__", std::make_unique<PreNodeKeyword>(Token(STRING, locale_time, 0, (std::string&)""), nullptr));
+    builtins.emplace_back("__LOCALE_MONTH__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_month+"\"", 0, (std::string&)""), nullptr));
+    builtins.emplace_back("__LOCALE_MONTH_ABBR__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_month_abbr+"\"", 0, (std::string&)""), nullptr));
+    builtins.emplace_back("__LOCALE_DATE__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_date+"\"", 0, (std::string&)""), nullptr));
+    builtins.emplace_back("__LOCALE_TIME__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_time+"\"", 0, (std::string&)""), nullptr));
     return builtins;
 }

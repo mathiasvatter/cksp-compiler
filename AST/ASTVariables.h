@@ -28,7 +28,6 @@ public:
     void visit(NodeVariable& node) override;
 
 private:
-    NodeCallback* m_init_callback;
 
 	/// builtin engine functions
     const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_builtin_functions;
