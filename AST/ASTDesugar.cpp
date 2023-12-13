@@ -396,7 +396,15 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     }
 
     if(is_persistent) {
-        add_vector_to_statement_list(node_statement_list, add_read_functions(node.to_be_declared.get(), node_statement_list.get()));
+		NodeAST* to_be_declared_ptr = node.to_be_declared.get();
+		// clear indexes if it is array because of: make_persistent_var(arr[124]) <-
+		std::unique_ptr<NodeArray> node_array_copy;
+		if(node_array) {
+			node_array_copy = std::unique_ptr<NodeArray>(static_cast<NodeArray *>(node.to_be_declared->clone().release()));
+			node_array_copy->indexes->params.clear();
+			to_be_declared_ptr = node_array_copy.get();
+		}
+        add_vector_to_statement_list(node_statement_list, add_read_functions(to_be_declared_ptr, node_statement_list.get()));
     }
 
     // special treatment if declaration is inside function -> move to init_callback

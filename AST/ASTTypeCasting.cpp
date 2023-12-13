@@ -358,7 +358,7 @@ void ASTTypeCasting::visit(NodeFunctionHeader& node) {
 			if (node.arg_ast_types[i] == Number
 				and (node.args->params[i]->type == Integer or node.args->params[i]->type == Real)) {
 				node.arg_ast_types[i] = node.args->params[i]->type;
-			} else if (node.arg_ast_types[i] != Any and node.args->params[i]->type == Unknown) {
+			} else if (node.arg_ast_types[i] != Any and node.arg_ast_types[i] != Number and node.args->params[i]->type == Unknown) {
 				node.args->params[i]->type = node.arg_ast_types[i];
 			} else if (node.arg_ast_types[i] == Any) {
 				node.arg_ast_types[i] = node.args->params[i]->type;

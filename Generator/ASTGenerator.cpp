@@ -47,6 +47,7 @@ void ASTGenerator::visit(NodeVariable &node) {
         os << " polyphonic ";
     else if(node.var_type == VarType::Const)
         os << " const ";
+	os << get_pair_value(variable_identifier, node.type);
     os << node.name;
 }
 
@@ -55,8 +56,7 @@ void ASTGenerator::visit(NodeArray &node) {
 	if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
 	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
 
-//	get_token_value(TYPES, type_to_token(node.type))
-
+	os << get_pair_value(array_identifier, node.type);
     os << node.name;
 	if(node_declaration or node_ui_control or !node.indexes->params.empty())
     	os << "[";
@@ -131,10 +131,12 @@ void ASTGenerator::visit(NodeIfStatement &node) {
     for(auto &stmt: node.statements) {
         stmt->accept(*this);
     }
-    os << "else" << std::endl;
-    for(auto &stmt: node.else_statements) {
-        stmt->accept(*this);
-    }
+	if (!node.else_statements.empty()) {
+    	os << "else" << std::endl;
+		for (auto &stmt : node.else_statements) {
+			stmt->accept(*this);
+		}
+	}
     os << "end if";
 }
 

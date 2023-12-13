@@ -154,7 +154,7 @@ log10(value: real):real
 lsb(value: int): int
 make_instr_persistent(variable)
 make_perfview
-make_persistent(variable: number)
+make_persistent(variable)
 message(variableortext: any)
 mf_copy_export_area(zone_id: int)
 mf_get_buffer_size(): int
