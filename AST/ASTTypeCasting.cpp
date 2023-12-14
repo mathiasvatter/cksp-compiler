@@ -177,10 +177,11 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 	}
 
     if(!node_declaration and !node_ui_control) {
-        if (node.declaration->type != Unknown) {
+		if(node.declaration->type != Unknown and node.type != Unknown and node.declaration->type != node.type) {
+			CompileError(ErrorType::TypeError,"Found variables of same name and different types.", node.tok.line, type_to_string(node.declaration->type), type_to_string(node.type), node.tok.file).exit();
+		} else if (node.declaration->type != Unknown) {
             node.type = node.declaration->type;
-        }
-        if (node.declaration->type == Unknown) {
+        } else if (node.declaration->type == Unknown) {
             node.declaration->type = node.type;
         }
     }
@@ -204,12 +205,13 @@ void ASTTypeCasting::visit(NodeArray& node) {
 	}
 
     if(!node_declaration and !node_ui_control) {
-        if (node.declaration->type != Unknown) {
-            node.type = node.declaration->type;
-        }
-        if (node.declaration->type == Unknown) {
-            node.declaration->type = node.type;
-        }
+		if(node.declaration->type != Unknown and node.type != Unknown and node.declaration->type != node.type) {
+			CompileError(ErrorType::TypeError,"Found arrays of same name and different types.", node.tok.line, type_to_string(node.declaration->type), type_to_string(node.type), node.tok.file).exit();
+		} else if (node.declaration->type != Unknown) {
+			node.type = node.declaration->type;
+		} else if (node.declaration->type == Unknown) {
+			node.declaration->type = node.type;
+		}
     }
     auto err = CompileError(ErrorType::TypeError,"Found incorrect type in array brackets.", node.tok.line, "Integer", "", node.tok.file);
     node.sizes->accept(*this);
@@ -370,16 +372,18 @@ void ASTTypeCasting::visit(NodeFunctionCall& node) {
 }
 
 void ASTTypeCasting::visit(NodeFunctionHeader& node) {
-    auto err = CompileError(ErrorType::TypeError,"Found wrong type in function arguments.", node.tok.line, "", "", node.tok.file);
 
     if(!node.arg_ast_types.empty()) {
 		for (int i = 0; i < node.args->params.size(); i++) {
+    		auto err = CompileError(ErrorType::TypeError,"Found wrong type in function arguments.", node.tok.line,
+									type_to_string(node.arg_ast_types[i]),
+									type_to_string(node.args->params[i]->type), node.tok.file);
 			if (node.arg_ast_types[i] == Number
 				and (node.args->params[i]->type == Integer or node.args->params[i]->type == Real)) {
 				node.arg_ast_types[i] = node.args->params[i]->type;
 			} else if (node.arg_ast_types[i] != Any and node.arg_ast_types[i] != Number and node.args->params[i]->type == Unknown) {
 				node.args->params[i]->type = node.arg_ast_types[i];
-			} else if (node.arg_ast_types[i] == Any) {
+			} else if (node.arg_ast_types[i] == Any || node.arg_ast_types[i] == Unknown) {
 				node.arg_ast_types[i] = node.args->params[i]->type;
 			} else if (node.args->params[i]->type != node.arg_ast_types[i]) {
 				err.print();

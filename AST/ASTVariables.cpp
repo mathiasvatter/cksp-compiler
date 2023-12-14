@@ -15,9 +15,12 @@ ASTVariables::ASTVariables(const std::vector<std::unique_ptr<NodeFunctionHeader>
 void ASTVariables::visit(NodeProgram& node) {
 
     for(auto & callback : node.callbacks) {
-		std::cout << callback->begin_callback << std::endl;
+		std::cout << callback->begin_callback;
+		if(callback->callback_id) std::cout <<"("<< callback->callback_id->get_string() << ")";
+		std::cout << std::endl;
         callback->accept(*this);
     }
+	std::cout << "Anzahl der Elemente: " << m_declared_variables.size() << ", Kapazität: " << m_declared_variables.bucket_count() << ", Lastfaktor: " << m_declared_variables.load_factor() << std::endl;
     for(auto & function_definition : node.function_definitions) {
         function_definition->accept(*this);
     }
@@ -68,15 +71,15 @@ void ASTVariables::visit(NodeArray& node) {
             CompileError(ErrorType::SyntaxError,"Array has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
 //			exit(EXIT_FAILURE);
         } else {
-            m_declared_arrays.push_back(&node);
+            m_declared_arrays[node.name] = &node;
         }
 	} else if (node_ui_control) {
 		if(get_declared_control(node_ui_control)) {
 			CompileError(ErrorType::SyntaxError,"Control Widget Array has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
 			exit(EXIT_FAILURE);
 		} else {
-			m_declared_controls.push_back(node_ui_control);
-			m_declared_arrays.push_back(&node);
+			m_declared_controls[node_ui_control->get_string()] = node_ui_control;
+			m_declared_arrays[node.name] = &node;
 		}
     } else {
         // in case the user wants the raw array
@@ -145,25 +148,33 @@ void ASTVariables::visit(NodeVariable& node) {
 	if(node_builtin_variable && (node_declare_statement || node_ui_control) ){
 		CompileError(ErrorType::SyntaxError,"Variable shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).exit();
 	}
+
     if(node_declare_statement and node_declare_statement->to_be_declared.get() == &node) {
-        if(get_declared_variable(&node)) {
+        if(get_declared_variable(node.name)) {
             CompileError(ErrorType::SyntaxError,"Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
 //            exit(EXIT_FAILURE);
         } else {
-            m_declared_variables.push_back(&node);
+            m_declared_variables.insert({node.name, &node});
+			m_variables_declared++;
         }
     } else if (node_ui_control) {
         if(get_declared_control(node_ui_control)) {
             CompileError(ErrorType::SyntaxError,"Control Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
             exit(EXIT_FAILURE);
         } else {
-            m_declared_controls.push_back(node_ui_control);
-            m_declared_variables.push_back(&node);
+			m_declared_controls[node_ui_control->get_string()] = node_ui_control;
+			m_declared_variables.insert({node.name, &node});
+			m_variables_declared++;
         }
     } else {
+		// no removing of raw array identifier for the variable search
+        auto node_first_declaration = get_declared_variable(node.name);
+		// in case the user wants the raw array
+		bool has_compiler_identifier = node.name[0] == '_';
+		if (has_compiler_identifier) node.name = node.name.erase(0,1);
         // sometimes a variable can also be an array if notated without brackets -> replace with array node
-        auto node_first_declaration = get_declared_variable(&node);
         auto node_first_array_declaration = get_declared_array(node.name);
+		if (has_compiler_identifier) node.name = "_"+node.name;
         if(node_first_declaration || node_first_array_declaration) {
             if(node_first_declaration) {
 				if(node_first_declaration->var_type == UI_Control) node.var_type = node_first_declaration->var_type;
@@ -171,7 +182,7 @@ void ASTVariables::visit(NodeVariable& node) {
                 node_first_declaration->is_used = true;
             }
             if(node_first_array_declaration) {
-                auto node_array = make_array(node.name, 0, node.tok, node.parent);
+				auto node_array = make_array(node.name, 0, node.tok, node.parent);
                 node_array->sizes->params.clear();
                 node_array->declaration = node_first_array_declaration;
                 node_array->accept(*this);
@@ -272,42 +283,28 @@ NodeUIControl* ASTVariables::get_builtin_widget(const std::string &ui_control) {
 	return nullptr;
 }
 
-NodeVariable *ASTVariables::get_declared_variable(NodeVariable *var) {
-//    auto it = m_declared_variables.find(var->name);
-//    if (it != m_declared_variables.end()) {
-//        return it->second;
-//    }
-//    return nullptr;
-    auto it = std::find_if(m_declared_variables.begin(), m_declared_variables.end(),
-                           [&](NodeVariable* variable) {
-                               return string_compare(variable->name, var->name);
-                           });
-    if(it != m_declared_variables.end()) {
-        return m_declared_variables[std::distance(m_declared_variables.begin(), it)];
+NodeVariable *ASTVariables::get_declared_variable(const std::string& var) {
+    auto it = m_declared_variables.find(var);
+    if (it != m_declared_variables.end()) {
+        return it->second;
     }
     return nullptr;
 }
 
 NodeArray *ASTVariables::get_declared_array(const std::string& arr) {
-    auto it = std::find_if(m_declared_arrays.begin(), m_declared_arrays.end(),
-                           [&](NodeArray* array) {
-                               return string_compare(array->name, arr);
-                           });
-    if(it != m_declared_arrays.end()) {
-        return m_declared_arrays[std::distance(m_declared_arrays.begin(), it)];
-    }
-    return nullptr;
+	auto it = m_declared_arrays.find(arr);
+	if (it != m_declared_arrays.end()) {
+		return it->second;
+	}
+	return nullptr;
 }
 
 NodeUIControl *ASTVariables::get_declared_control(NodeUIControl *ctr) {
-    auto it = std::find_if(m_declared_controls.begin(), m_declared_controls.end(),
-                           [&](NodeUIControl* control) {
-                               return control->get_string() == ctr->get_string();
-                           });
-    if(it != m_declared_controls.end()) {
-        return m_declared_controls[std::distance(m_declared_controls.begin(), it)];
-    }
-    return nullptr;
+	auto it = m_declared_controls.find(ctr->get_string());
+	if (it != m_declared_controls.end()) {
+		return it->second;
+	}
+	return nullptr;
 }
 
 std::unique_ptr<NodeAST> ASTVariables::calculate_index_expression(

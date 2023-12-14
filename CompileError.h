@@ -35,6 +35,7 @@ public:
 	line_number(lineNumber), file_name(fileName) {}
 
     inline void print() {
+//		return;
 		if (got == "\n") {
 			got = "linebreak";
 		}
@@ -55,6 +56,7 @@ public:
     }
 
     inline void exit() {
+//		return;
         print();
         ::exit(EXIT_FAILURE);
     }

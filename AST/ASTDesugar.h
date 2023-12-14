@@ -68,6 +68,7 @@ private:
     NodeCallback* m_init_callback;
     NodeCallback* m_current_callback;
     bool m_processing_function = false;
+	bool evaluating_functions = false;
 
     std::vector<std::tuple<NodeArray*, NodeParamList*>> m_declared_arrays;
     std::vector<std::unique_ptr<NodeVariable>> m_declared_variables;
@@ -82,6 +83,7 @@ private:
     /// returns substitute for current node.name, or nullptr if there is no substitute
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
     std::unique_ptr<NodeFunctionDefinition> get_function_definition(NodeFunctionHeader* function_header);
+	int local_var_counter = 0;
 
     std::vector<std::unique_ptr<NodeStatement>> add_read_functions(NodeAST* var, NodeAST* parent);
     /// multidimensional array method for getting the size at declaration time
