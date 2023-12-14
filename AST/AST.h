@@ -30,29 +30,32 @@ enum ASTType {
 
 };
 
+inline std::string type_to_string(ASTType type) {
+	switch (type) {
+		case Integer: return "Integer";
+		case Real: return "Real";
+		case String: return "String";
+		case Any: return "Any";
+		case Unknown: return "Unknown";
+		default: return "Invalid";
+	}
+}
+
 inline ASTType token_to_type(token tok) {
     switch (tok) {
-        case INT:
-            return Integer;
-        case FLOAT:
-            return Real;
-        case STRING:
-            return String;
-        default:
-            return Integer;
+        case INT: return Integer;
+        case FLOAT: return Real;
+        case STRING: return String;
+        default: return Integer;
     }
 };
 
 inline token type_to_token(ASTType type) {
 	switch (type) {
-		case Integer:
-			return INT;
-		case Real:
-			return FLOAT;
-		case String:
-			return STRING;
-		default:
-			return INT;
+		case Integer: return INT;
+		case Real: return FLOAT;
+		case String: return STRING;
+		default: return INT;
 	}
 };
 
@@ -168,6 +171,7 @@ struct NodeVariable: NodeAST {
     bool is_engine = false;
     bool is_persistent;
     bool is_local;
+	bool is_global;
     VarType var_type = VarType::Mutable;
 	std::string name;
     NodeAST* declaration; // index in declaration array
@@ -216,6 +220,7 @@ struct NodeArray : NodeAST {
     bool is_engine = false;
     bool is_persistent;
     bool is_local;
+	bool is_global;
     int dimensions = 1;
     VarType var_type = VarType::Array;
     std::string name;
@@ -436,6 +441,7 @@ struct NodeGetControlStatement : NodeAST {
     inline NodeGetControlStatement(std::unique_ptr<NodeAST> uiId, std::string controlParam, Token tok)
     : NodeAST(tok), ui_id(std::move(uiId)), control_param(std::move(controlParam)) {}
     void accept(ASTVisitor& visitor) override;
+	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Kopierkonstruktor
     NodeGetControlStatement(const NodeGetControlStatement& other);
     // Clone Methode
@@ -458,6 +464,7 @@ struct NodeSetControlStatement : NodeAST {
     inline NodeSetControlStatement(std::unique_ptr<NodeGetControlStatement> getControl, std::unique_ptr<NodeAST> assignee, Token tok)
     : NodeAST(tok), get_control(std::move(getControl)), assignee(std::move(assignee)) {}
     void accept(ASTVisitor& visitor) override;
+//	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Kopierkonstruktor
     NodeSetControlStatement(const NodeSetControlStatement& other);
     // Clone Methode
@@ -635,6 +642,7 @@ struct NodeIfStatement: NodeAST {
     inline NodeIfStatement(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeStatementList> statements,std::unique_ptr<NodeStatementList> elseStatements, Token tok)
     : NodeAST(tok), condition(std::move(condition)), statements(std::move(statements)), else_statements(std::move(elseStatements)) {}
     void accept(ASTVisitor& visitor) override;
+	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     NodeIfStatement(const NodeIfStatement& other);
     std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
@@ -688,6 +696,7 @@ struct NodeWhileStatement : NodeAST {
     inline NodeWhileStatement(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeStatementList> statements, Token tok)
     : NodeAST(tok), condition(std::move(condition)), statements(std::move(statements)) {}
     void accept(ASTVisitor& visitor) override;
+	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     NodeWhileStatement(const NodeWhileStatement& other);
     std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {

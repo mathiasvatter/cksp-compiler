@@ -867,8 +867,10 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
         consume();
     }
     bool is_local = false;
+	bool is_global = false;
     if(peek().type == token::LOCAL or peek().type == token::GLOBAL) {
         is_local = peek().type == token::LOCAL;
+		is_global = peek().type == token::GLOBAL;
         consume();
     }
     VarType var_type = VarType::Mutable;
@@ -889,6 +891,7 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
     }
 	auto node_variable = std::move(parsed_var.unwrap());
 	node_variable->is_local = is_local;
+	node_variable->is_global = is_global;
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
 
@@ -899,8 +902,10 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_declare_array(NodeAST* parent) 
         consume();
     }
     bool is_local = false;
+	bool is_global = false;
     if(peek().type == token::LOCAL or peek().type == token::GLOBAL) {
         is_local = peek().type == token::LOCAL;
+		is_global = peek().type == token::GLOBAL;
         consume();
     }
     VarType var_type = VarType::Array;
@@ -915,6 +920,7 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_declare_array(NodeAST* parent) 
     auto node_array = std::move(parsed_arr.unwrap());
     std::swap(node_array->indexes, node_array->sizes);
 	node_array->is_local = is_local;
+	node_array->is_global = is_global;
     return Result<std::unique_ptr<NodeArray>>(std::move(node_array));
 }
 

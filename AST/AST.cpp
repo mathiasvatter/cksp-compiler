@@ -54,7 +54,7 @@ void NodeVariable::accept(ASTVisitor &visitor) {
 }
 NodeVariable::NodeVariable(const NodeVariable& other) : NodeAST(other),
     is_engine(other.is_engine), is_persistent(other.is_persistent),
-    is_local(other.is_local), var_type(other.var_type), name(other.name), declaration(other.declaration) {}
+    is_local(other.is_local), is_global(other.is_global), var_type(other.var_type), name(other.name), declaration(other.declaration) {}
 std::unique_ptr<NodeAST> NodeVariable::clone() const {
     return std::make_unique<NodeVariable>(*this);
 }
@@ -84,7 +84,7 @@ void NodeArray::accept(ASTVisitor &visitor) {
 }
 NodeArray::NodeArray(const NodeArray& other)
         : NodeAST(other), is_engine(other.is_engine), is_persistent(other.is_persistent),
-          is_local(other.is_local), var_type(other.var_type), name(other.name),
+          is_local(other.is_local), is_global(other.is_global), var_type(other.var_type), name(other.name),
           sizes(clone_unique(other.sizes)), indexes(clone_unique(other.indexes)),
           declaration(other.declaration), dimensions(other.dimensions) {}
 std::unique_ptr<NodeAST> NodeArray::clone() const {
@@ -203,6 +203,11 @@ NodeGetControlStatement::NodeGetControlStatement(const NodeGetControlStatement& 
 std::unique_ptr<NodeAST> NodeGetControlStatement::clone() const {
     return std::make_unique<NodeGetControlStatement>(*this);
 }
+void NodeGetControlStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (ui_id.get() == oldChild) {
+		ui_id = std::move(newChild);
+	}
+}
 
 // ************* NodeSetControlStatement ***************
 void NodeSetControlStatement::accept(ASTVisitor &visitor) {
@@ -289,6 +294,11 @@ NodeIfStatement::NodeIfStatement(const NodeIfStatement& other)
 std::unique_ptr<NodeAST> NodeIfStatement::clone() const {
     return std::make_unique<NodeIfStatement>(*this);
 }
+void NodeIfStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (condition.get() == oldChild) {
+		condition = std::move(newChild);
+	}
+}
 
 // ************* NodeForStatement ***************
 void NodeForStatement::accept(ASTVisitor &visitor) {
@@ -315,6 +325,11 @@ NodeWhileStatement::NodeWhileStatement(const NodeWhileStatement& other)
 std::unique_ptr<NodeAST> NodeWhileStatement::clone() const {
     return std::make_unique<NodeWhileStatement>(*this);
 }
+void NodeWhileStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (condition.get() == oldChild) {
+		condition = std::move(newChild);
+	}
+}
 
 // ************* Helper to clone map with unique_ptr keys and vector of unique_ptr values ***************
 static std::map< std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> clone_map(
@@ -339,7 +354,24 @@ std::unique_ptr<NodeAST> NodeSelectStatement::clone() const {
 void NodeSelectStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (expression.get() == oldChild) {
 		expression = std::move(newChild);
-	}
+	} else
+		for (auto it = cases.begin(); it != cases.end(); ++it) {
+			auto& key = it->first; // Der Schlüssel (Vektor von unique_ptr)
+			auto& value = it->second; // Der Wert (Vektor von unique_ptr)
+
+			for(size_t i = 0; i < key.size(); ++i) {
+				if (key[i].get() == oldChild) {
+					// Kopieren Sie den Schlüssel und ersetzen Sie das Element
+					std::vector<std::unique_ptr<NodeAST>> newKey = clone_vector(key);
+					newKey[i] = std::move(newChild);
+
+					// Entfernen Sie den alten Eintrag und fügen Sie den neuen Eintrag hinzu
+					cases.erase(it);
+					cases[std::move(newKey)] = std::move(value);
+					return; // Verlassen Sie die Funktion, nachdem das erste Element ersetzt wurde
+				}
+			}
+		}
 }
 
 // ************* NodeCallback ***************

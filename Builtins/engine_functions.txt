@@ -101,7 +101,7 @@ get_event_ids(array: int)
 get_event_mark(event_id: int, bitmark: int): int
 get_event_par(event_id: int, parameter: int): int
 get_event_par_arr(event_id: int, parameter: int, group_idx: int): int
-get_folder(filepath: string):string
+get_folder(path_variable: int):string
 get_font_id(filepath: string): int
 get_group_idx(groupname: string): int
 get_group_par(group_idx: int, parameter: int): int
