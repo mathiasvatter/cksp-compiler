@@ -5,6 +5,7 @@
 #pragma once
 #include <iostream>
 #include <utility>
+#include <unordered_map>
 
 /// defines the token names and the string that represents them while debugging
 #define ENUM_LIST(XX) \
@@ -131,7 +132,7 @@ inline std::vector<char> BINARY_OPERATORS = {'-', '+', '/', '*', '&'};
 inline std::vector<char> PARENTH = {'(',')', '[', ']'};
 inline std::vector<char> VAR_IDENT = {'$', '~', '@'};
 inline std::vector<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
-inline std::vector<Keyword> TYPES = {{INT, "$"}, {FLOAT, "~"}, {STRING, "@"}, {INT, "%"}, {FLOAT, "?"}, {STRING, "!"}};
+inline std::unordered_map<std::string, token> TYPES = {{"$", INT}, {"~", FLOAT}, {"@", STRING}, {"%", INT}, {"?", FLOAT}, {"!", STRING}};
 inline std::vector<char> COMMENT_START = {'{', '/'};
 inline std::vector<char> COMPARISON_OPERATORS_START = {'<', '>', '=', '#'};
 inline std::vector<std::string> UI_CONTROLS = {"ui_label", "ui_button", "ui_switch", "ui_slider", "ui_menu",
@@ -139,35 +140,42 @@ inline std::vector<std::string> UI_CONTROLS = {"ui_label", "ui_button", "ui_swit
 										   "ui_knob", "ui_table", "ui_xy",
 										   "ui_text_edit", "ui_level_meter", "ui_file_selector",
 										   "ui_panel", "ui_mouse_area"};
-inline std::vector<Keyword> DECLARATION_SYNTAX = {{DECLARE, "declare"}, {DEFINE, "define"}, {CONST, "const"}, {POLYPHONIC, "polyphonic"},
-                                                  {READ, "read"}, {LOCAL, "local"}, {GLOBAL, "global"}};
-inline std::vector<Keyword> PREPROCESSOR_SYNTAX = {{IMPORT, "import"}, {AS, "as"}, {ON, "on"},
-												   {ITERATE_MACRO, "iterate_macro"}, {LITERATE_MACRO, "literate_macro"},
-													{START_INC, "START_INC"}, {END_INC, "END_INC"}, {SET_CONDITION, "SET_CONDITION"}, {RESET_CONDITION, "RESET_CONDITION"},
-                                                   {USE_CODE_IF, "USE_CODE_IF"}, {USE_CODE_IF_NOT, "USE_CODE_IF_NOT"}, {END_USE_CODE, "END_USE_CODE"}};
-inline std::vector<Keyword> STATEMENT_SYNTAX = {{TO, "to"}, {DOWNTO, "downto"}, {STEP, "step"}, {ELSE, "else"}, {CASE, "case"}};
-inline std::vector<Keyword> FUNCTION_SYNTAX = {{OVERRIDE, "override"}, {CALL, "call"}};
+inline std::unordered_map<std::string, token> DECLARATION_SYNTAX = {{"declare", DECLARE}, {"define", DEFINE}, {"const", CONST}, {"polyphonic", POLYPHONIC},
+                                                  {"read", READ}, {"local", LOCAL}, {"global", GLOBAL}};
+inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{"import", IMPORT}, {"as", AS}, {"on", ON},
+												   {"iterate_macro", ITERATE_MACRO}, {"literate_macro", LITERATE_MACRO},
+													{"START_INC", START_INC}, {"END_INC", END_INC}, {"SET_CONDITION", SET_CONDITION}, {"RESET_CONDITION", RESET_CONDITION},
+                                                   {"USE_CODE_IF", USE_CODE_IF}, {"USE_CODE_IF_NOT", USE_CODE_IF_NOT}, {"END_USE_CODE", END_USE_CODE}};
+inline std::unordered_map<std::string, token> STATEMENT_SYNTAX = {{"to", TO}, {"downto", DOWNTO}, {"step", STEP}, {"else", ELSE}, {"case", CASE}};
+inline std::unordered_map<std::string, token> FUNCTION_SYNTAX = {{"override", OVERRIDE}, {"call", CALL}};
 // control statements that also have an end
-inline std::vector<Keyword> END_STATEMENTS = {{END_FUNCTION, "end function"}, {END_FOR, "end for"}, {END_WHILE, "end while"},
-											  {END_IF,       "end if"}, {END_SELECT, "end select"}, {END_CONST, "end const"},
-                                              {END_LIST, "end list"}, {END_FAMILY, "end family"}, {END_STRUCT, "end struct"},
-											  {END_MACRO,    "end macro"}, {END_TASKFUNC, "end taskfunc"}};
-inline std::vector<Keyword> STATEMENTS = {{FUNCTION, "function"}, {FOR, "for"}, {WHILE, "while"}, {IF, "if"},
-                                          {SELECT, "select"}, {CONST, "const"}, {LIST, "list"}, {FAMILY, "family"},
-                                          {STRUCT, "struct"}, {MACRO,    "macro"}, {TASKFUNC, "taskfunc"}};
+inline std::unordered_map<std::string, token> END_STATEMENTS = {{"end function", END_FUNCTION}, {"end for", END_FOR}, {"end while", END_WHILE},
+											  {"end if", END_IF}, {"end select", END_SELECT}, {"end const", END_CONST},
+                                              {"end list", END_LIST}, {"end family", END_FAMILY}, {"end struct", END_STRUCT},
+											  {"end macro", END_MACRO}, {"end taskfunc", END_TASKFUNC}};
+inline std::unordered_map<std::string, token> STATEMENTS = {{"function", FUNCTION}, {"for", FOR}, {"while", WHILE}, {"if", IF},
+                                          {"select", SELECT}, {"const", CONST}, {"list", LIST}, {"family", FAMILY},
+                                          {"struct", STRUCT}, {"macro", MACRO}, {"taskfunc", TASKFUNC}};
 inline std::vector<std::string> CALLBACKS = {"init", "note", "release", "midi_in", "controller",
 											 "rpn", "nrpn", "ui_update", "_pgs_changed", "pgs_changed",
 											 "poly_at", "listener", "async_complete", "persistence_changed", "ui_control"};
-inline std::vector<Keyword> BITWISE_OPERATORS = {{BIT_AND, ".and."}, {BIT_OR, ".or."}, {BIT_NOT, ".not."}, {BIT_XOR, ".xor."}};
-inline std::vector<Keyword> BOOL_OPERATORS = {{BOOL_AND, "and"}, {BOOL_OR, "or"}, {BOOL_NOT, "not"}};
-inline std::vector<Keyword> MATH_OPERATORS = {{SUB, "-"}, {ADD, "+"}, {DIV, "/"}, {MULT, "*"}, {MODULO, "mod"}};
-inline std::vector<Keyword> UNARY_OPERATORS = {{SUB, "-"}, {BIT_NOT, ".not."}, {BOOL_NOT, "not"}};
-inline std::vector<Keyword> COMPARISON_OPERATORS = {{LESS_THAN, "<"}, {GREATER_THAN, ">"}, {EQUAL, "="}, {LESS_EQUAL, "<="}, {GREATER_EQUAL, ">="}, {NOT_EQUAL, "#"}};
-inline std::vector<Keyword> STRING_OPERATOR = {{STRING_OP, "&"}};
-inline const std::vector<Keyword> ALL_OPERATORS = []{
-    std::vector<Keyword> ops = BITWISE_OPERATORS;
-    ops.insert(ops.end(), MATH_OPERATORS.begin(), MATH_OPERATORS.end());
-    ops.insert(ops.end(), BOOL_OPERATORS.begin(), BOOL_OPERATORS.end());
+
+inline std::unordered_map<std::string, token> BITWISE_OPERATORS = {{".and.", BIT_AND}, {".or.", BIT_OR}, {".not.", BIT_NOT}, {".xor.", BIT_XOR}};
+//inline std::vector<Keyword> BITWISE_OPERATORS = {{BIT_AND, ".and."}, {BIT_OR, ".or."}, {BIT_NOT, ".not."}, {BIT_XOR, ".xor."}};
+inline std::unordered_map<std::string, token> BOOL_OPERATORS = {{"and", BOOL_AND}, {"or", BOOL_OR}, {"not", BOOL_NOT}};
+//inline std::vector<Keyword> BOOL_OPERATORS = {{BOOL_AND, "and"}, {BOOL_OR, "or"}, {BOOL_NOT, "not"}};
+inline std::unordered_map<std::string, token> MATH_OPERATORS = {{"-", SUB}, {"+", ADD}, {"/", DIV}, {"*", MULT}, {"mod", MODULO}};
+//inline std::vector<Keyword> MATH_OPERATORS = {{SUB, "-"}, {ADD, "+"}, {DIV, "/"}, {MULT, "*"}, {MODULO, "mod"}};
+inline std::unordered_map<std::string, token> UNARY_OPERATORS = {{"-", SUB}, {".not.", BIT_NOT}, {"not", BOOL_NOT}};
+//inline std::vector<Keyword> UNARY_OPERATORS = {{SUB, "-"}, {BIT_NOT, ".not."}, {BOOL_NOT, "not"}};
+inline std::unordered_map<std::string, token> COMPARISON_OPERATORS = {{"<", LESS_THAN}, {">", GREATER_THAN}, {"=", EQUAL}, {"<=", LESS_EQUAL}, {">=", GREATER_EQUAL}, {"#", NOT_EQUAL}};
+//inline std::vector<Keyword> COMPARISON_OPERATORS = {{LESS_THAN, "<"}, {GREATER_THAN, ">"}, {EQUAL, "="}, {LESS_EQUAL, "<="}, {GREATER_EQUAL, ">="}, {NOT_EQUAL, "#"}};
+inline std::unordered_map<std::string, token> STRING_OPERATOR = {{"&", STRING_OP}};
+//inline std::vector<Keyword> STRING_OPERATOR = {{STRING_OP, "&"}};
+inline const std::unordered_map<std::string, token> ALL_OPERATORS = []{
+    std::unordered_map<std::string, token> ops = BITWISE_OPERATORS;
+    ops.insert(MATH_OPERATORS.begin(), MATH_OPERATORS.end());
+    ops.insert(BOOL_OPERATORS.begin(), BOOL_OPERATORS.end());
     return ops;
 }();
 

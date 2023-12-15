@@ -287,9 +287,9 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
     bool both_comps = node.left->type == Comparison and node.right->type == Comparison;
     bool both_bools = node.left->type == Boolean and node.right->type == Boolean;
     // is string
-    if(contains(STRING_OPERATOR, node.op)) {
+    if(get_token_type(STRING_OPERATOR, node.op)) {
         node.type = String;
-    } else if (contains(MATH_OPERATORS, node.op)) {
+    } else if (get_token_type(MATH_OPERATORS, node.op)) {
         // can only be int op int || float op float
         if(both_integers) {
             node.type = Integer;
@@ -307,7 +307,7 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
             // please use real() and int() to use Real and Integer numbers in a single expression
             err.exit();
         }
-    } else if (contains(BITWISE_OPERATORS, node.op)) {
+    } else if (get_token_type(BITWISE_OPERATORS, node.op)) {
         if(both_integers) {
             node.type = Integer;
         } else if (int_and_unknown) {
@@ -320,7 +320,7 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
             // error, bitwise operators can only be used in between integer values.
             err.exit();
         }
-    } else if (contains(BOOL_OPERATORS, node.op)) {
+    } else if (get_token_type(BOOL_OPERATORS, node.op)) {
         if(both_comps) {
             node.type = Boolean;
         } else if (both_bools) {
@@ -333,7 +333,7 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
             // error, only comparisons can be bound together with bool operators
             err.exit();
         }
-    } else if (contains(COMPARISON_OPERATORS, node.op)) {
+    } else if (get_token_type(COMPARISON_OPERATORS, node.op)) {
         // can only be int op int || float op float
         if(both_integers) {
             node.type = Comparison;
@@ -423,12 +423,14 @@ void ASTTypeCasting::visit(NodeFunctionHeader& node) {
 void ASTTypeCasting::visit(NodeStatementList& node) {
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
-//		stmt->parent = &node;
 	}
 	for(int i=0; i<node.statements.size(); ++i) {
 		if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
 			// Wir speichern die Statements der inneren NodeStatementList
 			auto& inner_statements = node_statement_list->statements;
+            for (auto& stmt : inner_statements) {
+                stmt->parent = &node;
+            }
 			// Fügen Sie die inneren Statements an der aktuellen Position ein
 			node.statements.insert(
 				node.statements.begin() + i + 1,
@@ -443,7 +445,7 @@ void ASTTypeCasting::visit(NodeStatementList& node) {
 			inner_statements.clear();
 		}
 	}
-    node.update_parents(&node);
+//    node.update_parents(&node);
 }
 
 

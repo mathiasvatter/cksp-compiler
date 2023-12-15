@@ -15,9 +15,9 @@ ASTVariables::ASTVariables(const std::unordered_map<std::string, std::unique_ptr
 void ASTVariables::visit(NodeProgram& node) {
 
     for(auto & callback : node.callbacks) {
-		std::cout << callback->begin_callback;
-		if(callback->callback_id) std::cout <<"("<< callback->callback_id->get_string() << ")";
-		std::cout << std::endl;
+//		std::cout << callback->begin_callback;
+//		if(callback->callback_id) std::cout <<"("<< callback->callback_id->get_string() << ")";
+//		std::cout << std::endl;
         callback->accept(*this);
     }
     for(auto & function_definition : node.function_definitions) {
@@ -222,6 +222,9 @@ void ASTVariables::visit(NodeStatementList& node) {
         if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
             // Wir speichern die Statements der inneren NodeStatementList
             auto& inner_statements = node_statement_list->statements;
+            for (auto& stmt : inner_statements) {
+                stmt->parent = &node;
+            }
             // Fügen Sie die inneren Statements an der aktuellen Position ein
             node.statements.insert(
                     node.statements.begin() + i + 1,
@@ -236,7 +239,7 @@ void ASTVariables::visit(NodeStatementList& node) {
             inner_statements.clear();
         }
     }
-    node.update_parents(&node);
+//    node.update_parents(&node);
 }
 
 NodeFunctionHeader* ASTVariables::get_builtin_function(const std::string &function) {

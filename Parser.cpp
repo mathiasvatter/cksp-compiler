@@ -197,7 +197,6 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_expression(NodeAST* parent) {
         return Result<std::unique_ptr<NodeAST>>(lhs.get_error());
     }
     return _parse_string_expr_rhs(std::move(lhs.unwrap()), parent);
-//    return std::move(lhs);
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_string_expr(NodeAST* parent) {
@@ -306,7 +305,6 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_unary_expr(NodeAST* parent) {
     node_unary_expr->op = unary_op;
     node_unary_expr->operand = std::move(expr.unwrap());
     node_unary_expr->parent = parent;
-//    auto return_value = std::make_unique<NodeUnaryExpr>(unary_op, std::move(expr.unwrap()), get_tok());
     return Result<std::unique_ptr<NodeAST>>(std::move(node_unary_expr));
 }
 
@@ -346,11 +344,11 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, 
 //            }
 		}
         // brauch ich das jetzt schon, oder vllt erst nachher beim typisierungs-check?
-        if (lhs->type == Integer && rhs.unwrap()->type == Real || lhs->type == Real && rhs.unwrap()->type == Integer) {
-            return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-             "Merging of different Expression Types (real and int) is not allowed. Use int(<expr>) or real(<expr>) to cast types.",
-			 peek().line, "", bin_op.val, peek().file));
-        }
+//        if (lhs->type == Integer && rhs.unwrap()->type == Real || lhs->type == Real && rhs.unwrap()->type == Integer) {
+//            return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
+//             "Merging of different Expression Types (real and int) is not allowed. Use int(<expr>) or real(<expr>) to cast types.",
+//			 peek().line, "", bin_op.val, peek().file));
+//        }
 		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(bin_op.val, std::move(lhs), std::move(rhs.unwrap()), get_tok());
         node_binary_expr->parent = parent;
 		node_binary_expr->left->parent = node_binary_expr.get();

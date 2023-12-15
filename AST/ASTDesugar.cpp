@@ -35,7 +35,7 @@ void ASTDesugar::visit(NodeProgram& node) {
 	evaluating_functions = true;
     for(auto & function : m_function_definitions) {
         if(function->is_used and function->header->args->params.empty() and !function->return_variable.has_value()) {
-    		m_processing_function = true;
+//    		m_processing_function = true;
             m_variable_scope_stack.emplace();
             function->body->accept(*this);
             m_variable_scope_stack.pop();
@@ -71,7 +71,7 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
     auto right_real = cast_node<NodeReal>(node.right.get());
     auto left_real = cast_node<NodeReal>(node.left.get());
 
-	if(contains(MATH_OPERATORS, node.op) or contains(BITWISE_OPERATORS, node.op)) {
+	if(get_token_type(MATH_OPERATORS, node.op) or get_token_type(BITWISE_OPERATORS, node.op)) {
         // division by zero
         if (right_int and get_token_type(MATH_OPERATORS, node.op) == DIV and right_int->value == 0) {
             CompileError(ErrorType::MathError,"Warning: Found division by zero.",node.tok.line,"","",node.tok.file).print();
@@ -98,15 +98,16 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
                 {BIT_OR, [](int32_t a, int32_t b) { return a | b; }},
                 {BIT_XOR, [](int32_t a, int32_t b) { return a ^ b; }}
             };
-            if (int_operations.find(get_token_type(ALL_OPERATORS, node.op)) != int_operations.end()) {
-                result = int_operations[get_token_type(ALL_OPERATORS, node.op)](left_int->value, right_int->value);
+            token tok = *get_token_type(ALL_OPERATORS, node.op);
+            if (int_operations.find(tok) != int_operations.end()) {
+                result = int_operations[tok](left_int->value, right_int->value);
                 auto new_node = std::make_unique<NodeInt>(result, node.tok);
                 new_node->parent = node.parent;
                 node.replace_with(std::move(new_node));
             }
 		}
 	}
-	if(contains(MATH_OPERATORS, node.op)) {
+	if(get_token_type(MATH_OPERATORS, node.op)) {
         // check division by zero
         if(right_real and node.op == "/" and right_real->value == (double)0) {
             CompileError(ErrorType::MathError, "Found division by zero. Result will be infinite.", node.tok.line, "", "", node.tok.file).print();
@@ -122,8 +123,9 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
                 {DIV, [](double a, double b) { return a / b; }},
                 {MODULO, [](double a, double b) { return std::fmod(a, b); }}
             };
-            if (real_operations.find(get_token_type(MATH_OPERATORS, node.op)) != real_operations.end()) {
-                result = real_operations[get_token_type(MATH_OPERATORS, node.op)](left_real->value, right_real->value);
+            token tok = *get_token_type(MATH_OPERATORS, node.op);
+            if (real_operations.find(tok) != real_operations.end()) {
+                result = real_operations[tok](left_real->value, right_real->value);
                 auto new_node = std::make_unique<NodeReal>(result, node.tok);
                 new_node->parent = node.parent;
                 node.replace_with(std::move(new_node));
@@ -150,7 +152,7 @@ void ASTDesugar::visit(NodeArray& node) {
     if(contains(ARRAY_IDENT, node.name[0])) {
         std::string identifier(1, node.name[0]);
         node.name = node.name.erase(0,1);
-        token token_type = get_token_type(TYPES, identifier);
+        token token_type = *get_token_type(TYPES, identifier);
         node.type = token_to_type(token_type);
     }
     // local variable substitution
@@ -195,7 +197,7 @@ void ASTDesugar::visit(NodeVariable& node) {
     if(contains(VAR_IDENT, node.name[0]) || contains(ARRAY_IDENT, node.name[0])) {
         std::string identifier(1, node.name[0]);
         node.name = node.name.erase(0,1);
-        token token_type = get_token_type(TYPES, identifier);
+        token token_type = *get_token_type(TYPES, identifier);
         node.type = token_to_type(token_type);
         original_type = node.type;
     }
@@ -838,6 +840,9 @@ void ASTDesugar::visit(NodeStatementList& node) {
         if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
             // Wir speichern die Statements der inneren NodeStatementList
             auto& inner_statements = node_statement_list->statements;
+            for (auto& stmt : inner_statements) {
+                stmt->parent = &node;
+            }
             // Fügen Sie die inneren Statements an der aktuellen Position ein
             node.statements.insert(
                     node.statements.begin() + i + 1,
@@ -852,7 +857,7 @@ void ASTDesugar::visit(NodeStatementList& node) {
             inner_statements.clear();
         }
     }
-    node.update_parents(&node);
+//    node.update_parents(&node);
 }
 
 void ASTDesugar::visit(NodeUIControl &node) {
@@ -1024,7 +1029,10 @@ std::unique_ptr<NodeFunctionDefinition> ASTDesugar::get_function_definition(Node
         if(function_def->header->name == function_header->name) {
             if(function_def->header->args->params.size() == function_header->args->params.size()) {
                 function_def->is_used = true;
-                auto copy = function_def->clone();
+                auto copy = std::unique_ptr<NodeFunctionDefinition>(static_cast<NodeFunctionDefinition*>(function_def->clone().release()));
+//                copy->body->parent = copy.get();
+//                copy->header->parent = copy.get();
+//                copy->header->args->parent = copy->header.get();
                 copy->update_parents(nullptr);
                 return std::unique_ptr<NodeFunctionDefinition>(static_cast<NodeFunctionDefinition*>(copy.release()));
             }

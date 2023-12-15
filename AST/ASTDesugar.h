@@ -55,7 +55,7 @@ private:
 //	const std::vector<std::unique_ptr<NodeUIControl>>& m_builtin_widgets;
 	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
-    std::vector<std::string> m_compiler_variables = {"$list_it", "$ui_array_it", "$string_it"};
+    std::vector<std::string> m_compiler_variables = {"$_list_it", "$_ui_array_it", "$_string_it"};
     void declare_compiler_variables();
 
 
@@ -73,12 +73,12 @@ private:
     bool m_in_init_callback = false;
     NodeCallback* m_init_callback;
     NodeCallback* m_current_callback;
-    bool m_processing_function = false;
+//    bool m_processing_function = false;
 	bool evaluating_functions = false;
-    bool has_local_variables = false;
+//    bool has_local_variables = false;
 
-    std::vector<std::tuple<NodeArray*, NodeParamList*>> m_declared_arrays;
-    std::vector<std::unique_ptr<NodeVariable>> m_declared_variables;
+//    std::vector<std::tuple<NodeArray*, NodeParamList*>> m_declared_arrays;
+//    std::vector<std::unique_ptr<NodeVariable>> m_declared_variables;
     std::stack<std::string> m_family_prefixes;
     std::stack<std::string> m_const_prefixes;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
