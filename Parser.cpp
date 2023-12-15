@@ -548,6 +548,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
             if (function.is_error())
                 return Result<std::unique_ptr<NodeProgram>>(function.get_error());
 			m_function_definitions.push_back(std::move(function.unwrap()));
+            m_functions.insert({m_function_definitions.back()->header->name, m_function_definitions.back().get()});
         } else {
             return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::ParseError,
              "Found unknown construct.", peek().line, "<callback>, <function_definition>", peek().val, peek().file));
@@ -569,9 +570,6 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent)
     if (result.is_error()) {
         return Result<std::unique_ptr<NodeParamList>>(result.get_error());
     }
-//    if(param_list->params.size() == 1 and dynamic_cast<NodeParamList*>(param_list->params[0].get())) {
-//        return Result<std::unique_ptr<NodeParamList>>(std::move(param_list->params[0]));
-//    }
     return Result<std::unique_ptr<NodeParamList>>(std::move(param_list));
 }
 
@@ -656,6 +654,7 @@ Result<std::unique_ptr<NodeFunctionCall>> Parser::parse_function_call(NodeAST* p
     node_function_call->is_call = is_call;
     node_function_call->function = std::move(func_stmt.unwrap());
     node_function_call->parent = parent;
+    mark_function_as_used(node_function_call->function->name);
     return Result<std::unique_ptr<NodeFunctionCall>>(std::move(node_function_call));
 }
 
@@ -1351,6 +1350,12 @@ Result<std::unique_ptr<NodeGetControlStatement>> Parser::parse_get_control_state
     return Result<std::unique_ptr<NodeGetControlStatement>>(std::move(node_get_control_statement));
 }
 
+void Parser::mark_function_as_used(const std::string& func_name) {
+    auto it = m_functions.find(func_name);
+    if(it != m_functions.end()) {
+        it->second->is_used = true;
+    }
+}
 
 
 

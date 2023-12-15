@@ -8,6 +8,7 @@
 #include <vector>
 #include <iostream>
 #include <map>
+#include <unordered_map>
 
 #include "../Result.h"
 #include "Tokens.h"
@@ -73,6 +74,14 @@ inline static std::string get_token_value(const std::vector<Keyword>& vec, const
 		return it->value;
 	}
 	return "";
+}
+
+inline static token get_token_type(const std::unordered_map<std::string, token>& keywordMap, const std::string& value) {
+    auto it = keywordMap.find(value);
+    if (it != keywordMap.end()) {
+        return it->second;
+    }
+    return INVALID;
 }
 
 inline static std::string to_lower(const std::string& input) {
