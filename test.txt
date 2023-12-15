@@ -1,61 +1,112 @@
 on init
-declare $ui_array_it
-declare $_i0
-declare $__i01
-declare @_bl2
-declare @_bl3
-declare @_bl4
-declare $_new_click_time5
-declare $_click_interval6
-declare $double_click_state
-declare const $double_click_interval
-declare @_bl8
+declare $list_it
+declare $_i5
+declare $_ii6
 declare $lib__i
 declare ui_panel $__table 
 set_control_par(get_ui_id($__table), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
-$_i0 := 0
-$__i01 := 2
-message($_i0)
-if($double_click_state = 1)
-end if
 declare $bit
-$bit := .not..not.$bit .and. .not.sh_left(1, 0) .and. .not.$bit .and. .not.sh_left(1, 0) .and. -0 .and. sh_left(1, 0) .and. .not.-0 .and. sh_left(1, 0) .and. .not.$bit .and. .not.sh_left(1, 0) .and. -0 .and. sh_left(1, 0)
-@_bl2 := "["
+declare @_bl0 := "["
 $lib__i := 0
 while($lib__i <= 31) 
-@_bl2 := @_bl2 & sh_right(-sh_right(abs(0) - 1, 31) * $bit + sh_left(sh_right($bit, 0) .and. .not.sh_left(-1, 32), 0), 31 - $lib__i) .and. 1
+@_bl0 := @_bl0 & sh_right(-sh_right(abs(0) - 1, 31) * $bit + sh_left(sh_right($bit, 0) .and. .not.sh_left(-1, 32), 0), 31 - $lib__i) .and. 1
 if($lib__i < 31)
-@_bl2 := @_bl2 & ", "
+@_bl0 := @_bl0 & ", "
 end if
 inc($lib__i)
 end while
-@_bl2 := @_bl2 & "]"
-message(@_bl2)
-declare %arr[128 * 2]
-make_persistent(%arr)
-read_persistent_var(%arr)
-declare ui_label $lbl_s (1, 1)
-$lbl_s := 0
-declare %btn_bums[2 * 2]
-make_persistent(%btn_bums)
-read_persistent_var(%btn_bums)
-declare ui_button $_btn_bums0 
-make_persistent($_btn_bums0)
-read_persistent_var($_btn_bums0)
-declare ui_button $_btn_bums1 
-make_persistent($_btn_bums1)
-read_persistent_var($_btn_bums1)
-declare ui_button $_btn_bums2 
-make_persistent($_btn_bums2)
-read_persistent_var($_btn_bums2)
-declare ui_button $_btn_bums3 
-make_persistent($_btn_bums3)
-read_persistent_var($_btn_bums3)
-$ui_array_it := 0
-while($ui_array_it < 4) 
-%_btn_bums[$ui_array_it] := get_ui_id($_btn_bums3) + $ui_array_it
-inc($ui_array_it)
+@_bl0 := @_bl0 & "]"
+message(@_bl0)
+declare @_bl1 := "["
+$lib__i := 0
+while($lib__i <= 31) 
+@_bl1 := @_bl1 & sh_right(-sh_right(abs(0) - 1, 31) * $bit + sh_left(sh_right($bit, 0) .and. .not.sh_left(-1, 32), 0), 31 - $lib__i) .and. 1
+if($lib__i < 31)
+@_bl1 := @_bl1 & ", "
+end if
+inc($lib__i)
 end while
+@_bl1 := @_bl1 & "]"
+message(@_bl1)
+declare !stringi[3]
+!stringi[0] := "1"
+!stringi[1] := "2"
+!stringi[2] := "3"
+make_persistent(!stringi)
+read_persistent_var(!stringi)
+declare %category_elements[10]
+load_array(%category_elements, 2)
+declare %category_accum[11]
+%category_accum[$lib__i] := %category_accum[0 - 0 - $lib__i - 1 .and. sh_right(0 - $lib__i - 1, 31)] + %category_elements[$lib__i]
+call messages
+declare $fortnite
+message(2)
+$fortnite := 2
+declare ui_label $lbl_sd (1, 1)
+$fortnite := get_control_par(get_ui_id($lbl_sd), $CONTROL_PAR_VALUE)
+set_control_par(get_ui_id($lbl_sd), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($lbl_sd), $CONTROL_PAR_POS_Y))
+set_control_par_str(get_ui_id($lbl_sd), $CONTROL_PAR_TEXT, "d")
+set_control_par(get_ui_id($lbl_sd), $CONTROL_PAR_POS_Y, 4)
+declare const $sizezeze := 2
+declare ?liste[$sizezeze * 3] := 0, 1, 2.3, 4.56
+make_persistent(?liste)
+read_persistent_var(?liste)
+message(?liste[2 * 3 + 3])
+declare !all_fx_texts[19]
+declare %all_fx_texts__pos[4] := 0, 5, 9, 14
+declare !all_fx_texts0[5]
+!all_fx_texts0[0] := "Low Pass -12dB"
+!all_fx_texts0[1] := "Cutoff"
+!all_fx_texts0[2] := "Hz"
+!all_fx_texts0[3] := "Reso"
+!all_fx_texts0[4] := "%"
+$list_it := 0
+while($list_it < 5) 
+!_all_fx_texts[$list_it + 0] := !all_fx_texts0[$list_it]
+inc($list_it)
+end while
+declare !all_fx_texts1[4]
+!all_fx_texts1[0] := "Low Pass -24dB"
+!all_fx_texts1[1] := "Cutoff"
+!all_fx_texts1[2] := "Hz"
+!all_fx_texts1[3] := "Reso"
+$list_it := 0
+while($list_it < 4) 
+!_all_fx_texts[$list_it + 5] := !all_fx_texts1[$list_it]
+inc($list_it)
+end while
+declare !all_fx_texts2[5]
+!all_fx_texts2[0] := "Low Pass Vintage"
+!all_fx_texts2[1] := "Cutoff"
+!all_fx_texts2[2] := "Hz"
+!all_fx_texts2[3] := "Reso"
+!all_fx_texts2[4] := "%"
+$list_it := 0
+while($list_it < 5) 
+!_all_fx_texts[$list_it + 9] := !all_fx_texts2[$list_it]
+inc($list_it)
+end while
+declare !all_fx_texts3[5]
+!all_fx_texts3[0] := "High Pass -12dB"
+!all_fx_texts3[1] := "Cutoff"
+!all_fx_texts3[2] := "Hz"
+!all_fx_texts3[3] := "Reso"
+!all_fx_texts3[4] := "%"
+$list_it := 0
+while($list_it < 5) 
+!_all_fx_texts[$list_it + 14] := !all_fx_texts3[$list_it]
+inc($list_it)
+end while
+message(!all_fx_texts[%all_fx_texts__pos[4] + 2])
+declare const $cum := 3
+make_persistent(const $cum)
+read_persistent_var(const $cum)
+declare %eve[2 * $cum * 4 * 5] := 2
+message(%eve[1 * $cum * 4 * 5 + 5 * 4 * 5 + 2 * 5 + 2])
+declare 
+declare $b := 19
+message(3)
+$b := 3
 declare $ooo__ggg
 $ooo__ggg := 4
 declare $o
@@ -90,7 +141,7 @@ message("7: " & 7)
 message("8: " & 8)
 message("9: " & 9)
 message("10: " & 10)
-message("** Script " & "'" & "MAIN" & "'" & " Compile " & "18:08:38" & " " & "12/14/23" & " **")
+message("** Script " & "'" & "MAIN" & "'" & " Compile " & "15:09:57" & " " & "12/15/23" & " **")
 set_script_title("MAIN")
 declare const $UI_HEIGHT := 352
 declare const $UI_WIDTH := 785
@@ -101,17 +152,17 @@ $bit := -sh_right(abs(0) - 1, 31) * -sh_right(abs(0) - 1, 31) * sh_right(-1, 32)
 $bit := .not..not.$bit .and. .not.sh_left(1, 28) .and. .not.$bit .and. .not.sh_left(1, 28) .and. -0 .and. sh_left(1, 28) .and. .not.-0 .and. sh_left(1, 28) .and. .not.$bit .and. .not.sh_left(1, 28) .and. -0 .and. sh_left(1, 28)
 $bit := .not..not.$bit .and. .not.sh_left(1, 16) .and. .not.$bit .and. .not.sh_left(1, 16) .and. -0 .and. sh_left(1, 16) .and. .not.-0 .and. sh_left(1, 16) .and. .not.$bit .and. .not.sh_left(1, 16) .and. -0 .and. sh_left(1, 16)
 $bit := .not..not.$bit .and. .not.sh_left(1, 0) .and. .not.$bit .and. .not.sh_left(1, 0) .and. -0 .and. sh_left(1, 0) .and. .not.-0 .and. sh_left(1, 0) .and. .not.$bit .and. .not.sh_left(1, 0) .and. -0 .and. sh_left(1, 0)
-@_bl3 := "["
+declare @_bl4 := "["
 $lib__i := 0
 while($lib__i <= 31) 
-@_bl3 := @_bl3 & sh_right(-sh_right(abs(0) - 1, 31) * $bit + sh_left(sh_right($bit, 0) .and. .not.sh_left(-1, 32), 0), 31 - $lib__i) .and. 1
+@_bl4 := @_bl4 & sh_right(-sh_right(abs(0) - 1, 31) * $bit + sh_left(sh_right($bit, 0) .and. .not.sh_left(-1, 32), 0), 31 - $lib__i) .and. 1
 if($lib__i < 31)
-@_bl3 := @_bl3 & ", "
+@_bl4 := @_bl4 & ", "
 end if
 inc($lib__i)
 end while
-@_bl3 := @_bl3 & "]"
-message(@_bl3)
+@_bl4 := @_bl4 & "]"
+message(@_bl4)
 declare ui_menu $table_tbl 
 set_control_par(get_ui_id($table_tbl), $CONTROL_PAR_PARENT_PANEL, get_ui_id($__table))
 $lib__i := 0
@@ -166,53 +217,15 @@ set_menu_item_value($tbl3, 0, get_menu_item_value($tbl3, 0) + 1)
 set_menu_item_value($tbl3, get_menu_item_value($tbl3, 0) + 1 - get_menu_item_value($tbl3, 0) + 1 - 1 .and. sh_right(get_menu_item_value($tbl3, 0) + 1 - 1, 31), 100)
 set_menu_item_value($tbl3, 0, get_menu_item_value($tbl3, 0) + 1)
 end on
-on ui_control($_btn_bums0)
-@_bl4 := "["
-$lib__i := 0
-while($lib__i <= 31) 
-@_bl4 := @_bl4 & sh_right(-sh_right(abs(0) - 1, 31) * $bit + sh_left(sh_right($bit, 0) .and. .not.sh_left(-1, 32), 0), 31 - $lib__i) .and. 1
-if($lib__i < 31)
-@_bl4 := @_bl4 & ", "
-end if
-inc($lib__i)
-end while
-@_bl4 := @_bl4 & "]"
-message(@_bl4)
-call double_click
-if($double_click_state = 1)
-message("clicked")
-end if
-end on
-on ui_control($_btn_bums1)
-@_bl8 := "["
-$lib__i := 0
-while($lib__i <= 31) 
-@_bl8 := @_bl8 & sh_right(-sh_right(abs(0) - 1, 31) * $bit + sh_left(sh_right($bit, 0) .and. .not.sh_left(-1, 32), 0), 31 - $lib__i) .and. 1
-if($lib__i < 31)
-@_bl8 := @_bl8 & ", "
-end if
-inc($lib__i)
-end while
-@_bl8 := @_bl8 & "]"
-message(@_bl8)
-call double_click
-if($double_click_state = 1)
-message("clicked")
-end if
-end on
 on release
 end on
-function nothing
-message(1)
+function messages
+$_i5 := 0
+message(2)
+call more_messages
 end function
-function double_click
-const $double_click_interval := 220
-$double_click_state := 0
-$_click_interval6 := $ENGINE_UPTIME - $_new_click_time5
-$_new_click_time5 := $ENGINE_UPTIME
-if($_click_interval6 < $double_click_interval)
-$double_click_state := 1
-end if
-call nothing
+function more_messages
+$_ii6 := 0
+message("more_messages")
 end function
 

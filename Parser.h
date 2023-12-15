@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <unordered_map>
+
 #include "Tokenizer/Tokenizer.h"
 #include "AST/AST.h"
 #include "Tokenizer/Tokens.h"
@@ -122,15 +124,13 @@ protected:
 	Result<std::unique_ptr<NodeProgram>> parse_program();
 //    std::vector<std::unique_ptr<NodeMacroDefinition>> m_macro_definitions;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
+    std::unordered_map<std::string, NodeFunctionDefinition*> m_functions;
+    void mark_function_as_used(const std::string& func_name);
 
 	Result<SuccessTag> consume_linebreak(const std::string& construct);
 private:
     bool is_variable_declaration();
     bool is_array_declaration();
 
-	bool is_boolean_expression(std::unique_ptr<NodeAST> expr);
-	bool is_comparison_expression(std::unique_ptr<NodeAST> expr);
-	bool is_condition_expression(std::unique_ptr<NodeAST> expr);
-    bool is_nested_param_list(std::unique_ptr<NodeAST> expr);
 };
 

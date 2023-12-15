@@ -34,7 +34,9 @@ void ASTDesugar::visit(NodeProgram& node) {
     for(auto & function : m_function_definitions) {
         if(function->is_used and function->header->args->params.empty() and !function->return_variable.has_value()) {
     		m_processing_function = true;
+            m_variable_scope_stack.emplace();
             function->body->accept(*this);
+            m_variable_scope_stack.pop();
         }
     }
 	evaluating_functions = false;
@@ -129,17 +131,24 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
 }
 
 void ASTDesugar::visit(NodeArray& node) {
+    // function args substitution
+    if(!m_substitution_stack.empty()) {
+        if (auto substitute = get_substitute(node.name)) {
+            node.name = substitute->get_string();
+        }
+    }
     node.sizes->accept(*this);
     node.indexes->accept(*this);
+
     if(contains(ARRAY_IDENT, node.name[0])) {
         std::string identifier(1, node.name[0]);
         node.name = node.name.erase(0,1);
         token token_type = get_token_type(TYPES, identifier);
         node.type = token_to_type(token_type);
     }
-    // substitution
-    if(!m_substitution_stack.empty()) {
-        if (auto substitute = get_substitute(node.name)) {
+    // local variable substitution
+    if(!m_variable_scope_stack.empty()) {
+        if(auto substitute = get_local_variable_substitute(node.name)) {
             node.name = substitute->get_string();
         }
     }
@@ -165,6 +174,14 @@ void ASTDesugar::visit(NodeFunctionHeader& node) {
 }
 
 void ASTDesugar::visit(NodeVariable& node) {
+    // substitution
+    if(!m_substitution_stack.empty()) {
+        if(auto substitute = get_substitute(node.name)) {
+            substitute->update_parents(node.parent);
+            node.replace_with(std::move(substitute));
+            return;
+        }
+    }
 	// save original type before substitution
 	ASTType original_type = Unknown;
     // if notated without brackets -> variable can be array
@@ -174,12 +191,12 @@ void ASTDesugar::visit(NodeVariable& node) {
         token token_type = get_token_type(TYPES, identifier);
         original_type = token_to_type(token_type);
     }
-    // substitution
-    if(!m_substitution_stack.empty()) {
-        if(auto substitute = get_substitute(node.name)) {
+    // local variable substitution
+    if(!m_variable_scope_stack.empty()) {
+        if(auto substitute = get_local_variable_substitute(node.name)) {
             substitute->update_parents(node.parent);
-			if(substitute->type == Unknown)
-				substitute->type = original_type;
+            if(substitute->type == Unknown)
+                substitute->type = original_type;
             node.replace_with(std::move(substitute));
             return;
         }
@@ -216,25 +233,25 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 		if(node.is_call and node_function_def->return_variable.has_value()) {
 			CompileError(ErrorType::SyntaxError, "Found incorrect use of return variable when using <call>.", node.tok.line, "", "", node.tok.file).exit();
 		}
-		m_processing_function = true;
-        node_function_def->is_used = true;
-		m_function_call_stack.push_back(node.function->name);
+//        node_function_def->is_used = true;
         if(node.is_call) {
-//			node_function_def->update_parents(node.parent);
 //			node_function_def->body->accept(*this);
-			m_function_call_stack.pop_back();
-			m_processing_function = evaluating_functions || !m_function_call_stack.empty();
-			return;
+//            if(has_local_variables) m_variable_scope_stack.pop();
+//            has_local_variables = false;
+//			m_function_call_stack.pop_back();
+            return;
 		}
         // make functions call
         if(node.function->args->params.empty() and !node_function_def->return_variable.has_value()) {
             node.is_call = true;
-//			node_function_def->update_parents(node.parent);
 //			node_function_def->body->accept(*this);
-			m_function_call_stack.pop_back();
-			m_processing_function = evaluating_functions || !m_function_call_stack.empty();
+//            if(has_local_variables) m_variable_scope_stack.pop();
+//            has_local_variables = false;
+//			m_function_call_stack.pop_back();
             return;
         }
+		m_function_call_stack.push_back(node.function->name);
+        m_variable_scope_stack.emplace();
 		node_function_def->parent = node.parent;
 		if (!node.function->args->params.empty()) {
 			auto substitution_vec = get_substitution_vector(node_function_def->header.get(), node.function.get());
@@ -243,9 +260,12 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 		node_function_def->body->update_token_data(node.tok);
 		node_function_def->body->accept(*this);
 		if (!node.function->args->params.empty()) m_substitution_stack.pop();
+//        pop_substitution_stack();
+        m_variable_scope_stack.pop();
+//        has_local_variables = false;
 
 		m_function_call_stack.pop_back();
-		m_processing_function = evaluating_functions || !m_function_call_stack.empty();
+//		m_processing_function = evaluating_functions || !m_function_call_stack.empty();
         // has return variable
         if(node_function_def->return_variable.has_value()) {
             if(is_instance_of<NodeStatementList>(node.parent->parent)) {
@@ -307,6 +327,11 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
     }
 }
 
+void ASTDesugar::pop_substitution_stack() {
+    if(m_function_call_stack.size() > m_substitution_stack.size())
+        m_substitution_stack.pop();
+}
+
 std::unique_ptr<NodeStatementList> ASTDesugar::inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
     auto node_statement_list = std::make_unique<NodeStatementList>(function_header->tok);
     for(int i = 1; i<function_header->args->params.size(); i++) {
@@ -365,24 +390,25 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     auto node_variable = cast_node<NodeVariable>(node.to_be_declared.get());
     if(node_variable) {is_persistent = node_variable->is_persistent; is_local = node_variable->is_local; is_global = node_variable->is_global;}
 	// if currently in function inlining
-	if(m_processing_function and !is_global) {
+	if(in_function() and !is_global) {
 		node.to_be_declared ->accept(*this);
-
+        auto new_name = "_"+node.to_be_declared->get_string()+std::to_string(local_var_counter++);
 		std::unique_ptr<NodeAST> node_substitute;
 		if(node_array) {
 			auto node_local_array = std::unique_ptr<NodeArray>(static_cast<NodeArray *>(node.to_be_declared->clone().release()));
-			node_local_array->name = "_"+node_local_array->name+std::to_string(local_var_counter++);
+			node_local_array->name = new_name;
 			node_substitute = std::move(node_local_array);
 		} else if(node_variable) {
 			auto node_local_var = std::unique_ptr<NodeVariable>(static_cast<NodeVariable *>(node.to_be_declared->clone().release()));
-			node_local_var->name = "_"+node_local_var->name+std::to_string(local_var_counter++);
+			node_local_var->name = new_name;
 			node_substitute = std::move(node_local_var);
 		}
-		if (m_substitution_stack.empty()) {
-			m_substitution_stack.emplace();
-		}
-		m_substitution_stack.top().emplace_back(node.to_be_declared->get_string(), std::move(node_substitute));
+//        has_local_variables = true;
+		m_variable_scope_stack.top().insert({node.to_be_declared->get_string(), std::move(node_substitute)});
 	}
+    node_variable = cast_node<NodeVariable>(node.to_be_declared.get());
+    node_array = cast_node<NodeArray>(node.to_be_declared.get());
+
 	node.to_be_declared ->accept(*this);
     if(node.assignee)
         node.assignee -> accept(*this);
@@ -454,7 +480,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 
 
     // special treatment if declaration is inside function -> move to init_callback
-    if(!m_substitution_stack.empty() || m_processing_function) {
+    if(in_function() and !m_in_init_callback) {
         std::unique_ptr<NodeAST> stmt;
         if(node.assignee) {
             auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(), node.assignee->clone(),node.tok);
@@ -487,6 +513,11 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     }
 
 }
+
+bool ASTDesugar::in_function() {
+    return !m_function_call_stack.empty() || evaluating_functions;
+}
+
 
 std::unique_ptr<NodeAST> ASTDesugar::create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok) {
     // Basisfall: Wenn nur ein Element übrig ist, gib dieses zurück.
@@ -1075,6 +1106,13 @@ std::unique_ptr<NodeVariable> ASTDesugar::shorthand_to_control_param(const std::
     return nullptr;
 }
 
+std::unique_ptr<NodeAST> ASTDesugar::get_local_variable_substitute(const std::string& name) {
+    auto it = m_variable_scope_stack.top().find(name);
+    if(it != m_variable_scope_stack.top().end()) {
+        return it->second->clone();
+    }
+    return nullptr;
+}
 
 
 
