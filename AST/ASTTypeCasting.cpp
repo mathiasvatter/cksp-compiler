@@ -5,10 +5,9 @@
 #include "ASTTypeCasting.h"
 #include "ASTDesugar.h"
 
-ASTTypeCasting::ASTTypeCasting(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables,
-							   const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays,
-							   const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
-    : m_builtin_arrays(m_builtin_arrays), m_builtin_variables(m_builtin_variables), m_builtin_widgets(m_builtin_widgets) {
+ASTTypeCasting::ASTTypeCasting(const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
+: m_builtin_widgets(m_builtin_widgets) {
+
 }
 
 void ASTTypeCasting::visit(NodeProgram& node) {
@@ -447,68 +446,11 @@ void ASTTypeCasting::visit(NodeStatementList& node) {
     node.update_parents(&node);
 }
 
-NodeVariable *ASTTypeCasting::get_declared_variable(NodeVariable *var) {
-    auto it = std::find_if(m_declared_variables.begin(), m_declared_variables.end(),
-                           [&](NodeVariable* variable) {
-                               return to_lower(variable->name) == to_lower(var->name);
-                           });
-    if(it != m_declared_variables.end()) {
-        return m_declared_variables[std::distance(m_declared_variables.begin(), it)];
-    }
-    return nullptr;
-}
-
-NodeArray *ASTTypeCasting::get_declared_array(const std::string& arr) {
-    auto it = std::find_if(m_declared_arrays.begin(), m_declared_arrays.end(),
-                           [&](NodeArray* array) {
-                               return array->name == arr;
-                           });
-    if(it != m_declared_arrays.end()) {
-        return m_declared_arrays[std::distance(m_declared_arrays.begin(), it)];
-    }
-    return nullptr;
-}
-
-NodeUIControl *ASTTypeCasting::get_declared_control(NodeUIControl *ctr) {
-    auto it = std::find_if(m_declared_controls.begin(), m_declared_controls.end(),
-                           [&](NodeUIControl* control) {
-                               return to_lower(control->get_string()) == to_lower(ctr->get_string());
-                           });
-    if(it != m_declared_controls.end()) {
-        return m_declared_controls[std::distance(m_declared_controls.begin(), it)];
-    }
-    return nullptr;
-}
-
-NodeVariable* ASTTypeCasting::get_builtin_variable(NodeVariable *var) {
-    auto it = std::find_if(m_builtin_variables.begin(), m_builtin_variables.end(),
-                           [&](const std::unique_ptr<NodeVariable> &variable) {
-                               return variable->name == var->name;
-                           });
-    if(it != m_builtin_variables.end()) {
-        return m_builtin_variables[std::distance(m_builtin_variables.begin(), it)].get();
-    }
-    return nullptr;
-}
-
-NodeArray* ASTTypeCasting::get_builtin_array(NodeArray *arr) {
-    auto it = std::find_if(m_builtin_arrays.begin(), m_builtin_arrays.end(),
-                           [&](const std::unique_ptr<NodeArray> &array) {
-                               return array->name == arr->name;
-                           });
-    if(it != m_builtin_arrays.end()) {
-        return m_builtin_arrays[std::distance(m_builtin_arrays.begin(), it)].get();
-    }
-    return nullptr;
-}
 
 NodeUIControl* ASTTypeCasting::get_builtin_widget(const std::string &ui_control) {
-	auto it = std::find_if(m_builtin_widgets.begin(), m_builtin_widgets.end(),
-						   [&](const std::unique_ptr<NodeUIControl> &widget) {
-							 return (widget->ui_control_type == ui_control);
-						   });
+	auto it = m_builtin_widgets.find(ui_control);
 	if(it != m_builtin_widgets.end()) {
-		return m_builtin_widgets[std::distance(m_builtin_widgets.begin(), it)].get();
+        return it->second.get();
 	}
 	return nullptr;
 }

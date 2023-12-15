@@ -4,10 +4,10 @@
 
 #include "ASTVariables.h"
 
-ASTVariables::ASTVariables(const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
-                           const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables,
-                           const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays,
-						   const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
+ASTVariables::ASTVariables(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
+                           const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
+                           const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
+                           const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
         : m_builtin_functions(m_builtin_functions), m_builtin_variables(m_builtin_variables),
 		m_builtin_arrays(m_builtin_arrays), m_builtin_widgets(m_builtin_widgets) {}
 
@@ -251,34 +251,25 @@ NodeFunctionHeader* ASTVariables::get_builtin_function(const std::string &functi
 }
 
 NodeVariable* ASTVariables::get_builtin_variable(NodeVariable *var) {
-    auto it = std::find_if(m_builtin_variables.begin(), m_builtin_variables.end(),
-                           [&](const std::unique_ptr<NodeVariable> &variable) {
-                               return variable->name == var->name;
-                           });
+    auto it = m_builtin_variables.find(var->name);
     if(it != m_builtin_variables.end()) {
-        return m_builtin_variables[std::distance(m_builtin_variables.begin(), it)].get();
+        return it->second.get();
     }
     return nullptr;
 }
 
 NodeArray* ASTVariables::get_builtin_array(NodeArray *arr) {
-    auto it = std::find_if(m_builtin_arrays.begin(), m_builtin_arrays.end(),
-                           [&](const std::unique_ptr<NodeArray> &array) {
-                               return array->name == arr->name;
-                           });
+    auto it = m_builtin_arrays.find(arr->name);
     if(it != m_builtin_arrays.end()) {
-        return m_builtin_arrays[std::distance(m_builtin_arrays.begin(), it)].get();
+        return it->second.get();
     }
     return nullptr;
 }
 
 NodeUIControl* ASTVariables::get_builtin_widget(const std::string &ui_control) {
-	auto it = std::find_if(m_builtin_widgets.begin(), m_builtin_widgets.end(),
-						   [&](const std::unique_ptr<NodeUIControl> &widget) {
-							 return (widget->ui_control_type == ui_control);
-						   });
+	auto it = m_builtin_widgets.find(ui_control);
 	if(it != m_builtin_widgets.end()) {
-		return m_builtin_widgets[std::distance(m_builtin_widgets.begin(), it)].get();
+        return it->second.get();
 	}
 	return nullptr;
 }

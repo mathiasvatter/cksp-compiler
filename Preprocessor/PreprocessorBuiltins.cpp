@@ -35,9 +35,11 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_variables(const std::stri
     while(peek(m_tokens).type != END_TOKEN) {
         if(peek(m_tokens).type == KEYWORD) {
             if(contains(VAR_IDENT, peek(m_tokens).val[0])) {
-                m_builtin_variables.push_back(std::move(parse_builtin_variable()));
+                auto node_variable = std::move(parse_builtin_variable());
+                m_builtin_variables.insert({node_variable->name, std::move(node_variable)});
             } else if(contains(ARRAY_IDENT, peek(m_tokens).val[0])) {
-                m_builtin_arrays.push_back(std::move(parse_builtin_array()));
+                auto node_array = std::move(parse_builtin_array());
+                m_builtin_arrays.insert({node_array->name, std::move(node_array)});
             } else {
                 return Result<SuccessTag>(CompileError(ErrorType::PreprocessorError,
                "Failed loading builtins. Found builtin variable without identifier.", peek(m_tokens).line, "<identifier>", peek(m_tokens).val, peek(m_tokens).file));
@@ -58,7 +60,7 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::stri
                 return Result<SuccessTag>(result_function.get_error());
             }
             if(is_property_function(result_function.unwrap()->name)) {
-                m_property_functions.push_back(std::move(result_function.unwrap()));
+                m_property_functions.insert({result_function.unwrap()->name, std::move(result_function.unwrap())});
             } else {
                 m_builtin_functions.push_back(std::move(result_function.unwrap()));
             }
@@ -77,7 +79,7 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_widgets(const std::string
 			if(result_ui_control.is_error()) {
 				return Result<SuccessTag>(result_ui_control.get_error());
 			}
-			m_builtin_widgets.push_back(std::move(result_ui_control.unwrap()));
+			m_builtin_widgets.insert({result_ui_control.unwrap()->ui_control_type, std::move(result_ui_control.unwrap())});
 		} else consume(m_tokens);
 	}
 	return Result<SuccessTag>(SuccessTag{});
@@ -252,11 +254,11 @@ Result<std::pair<std::vector<ASTType>, std::vector<VarType>>> PreprocessorBuilti
     return Result<std::pair<std::vector<ASTType>, std::vector<VarType>>>(result_pair);
 }
 
-const std::vector<std::unique_ptr<NodeVariable>> &PreprocessorBuiltins::get_builtin_variables() const {
+const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &PreprocessorBuiltins::get_builtin_variables() const {
     return m_builtin_variables;
 }
 
-const std::vector<std::unique_ptr<NodeArray>> &PreprocessorBuiltins::get_builtin_arrays() const {
+const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &PreprocessorBuiltins::get_builtin_arrays() const {
     return m_builtin_arrays;
 }
 
@@ -264,11 +266,11 @@ const std::vector<std::unique_ptr<NodeFunctionHeader>> &PreprocessorBuiltins::ge
     return m_builtin_functions;
 }
 
-const std::vector<std::unique_ptr<NodeFunctionHeader>> &PreprocessorBuiltins::get_property_functions() const {
+const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &PreprocessorBuiltins::get_property_functions() const {
     return m_property_functions;
 }
 
-const std::vector<std::unique_ptr<NodeUIControl>> &PreprocessorBuiltins::get_builtin_widgets() const {
+const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &PreprocessorBuiltins::get_builtin_widgets() const {
 	return m_builtin_widgets;
 }
 

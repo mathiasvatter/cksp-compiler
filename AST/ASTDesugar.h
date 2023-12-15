@@ -10,8 +10,10 @@
 
 class ASTDesugar : public ASTVisitor {
 public:
-    ASTDesugar(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables, const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
-               const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_property_functions, const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets);
+    ASTDesugar(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
+               const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
+               const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &m_property_functions,
+               const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets);
 
     /// check if init callback exists
     void visit(NodeProgram& node) override;
@@ -49,18 +51,22 @@ private:
     NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
     NodeFunctionHeader* get_builtin_function(const std::string &function);
 
-	const std::vector<std::unique_ptr<NodeUIControl>>& m_builtin_widgets;
+    const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>>& m_builtin_widgets;
+//	const std::vector<std::unique_ptr<NodeUIControl>>& m_builtin_widgets;
 	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
     std::vector<std::string> m_compiler_variables = {"$list_it", "$ui_array_it", "$string_it"};
     void declare_compiler_variables();
 
-    const std::vector<std::unique_ptr<NodeVariable>>& m_builtin_variables;
+
+    const std::unordered_map<std::string, std::unique_ptr<NodeVariable>>& m_builtin_variables;
+//    const std::vector<std::unique_ptr<NodeVariable>>& m_builtin_variables;
     std::unique_ptr<NodeVariable> shorthand_to_control_param(const std::string& shorthand);
     // returns either string (for get/set_control_par_str) or integer (for get/set_control_par)
     static ASTType get_control_function_type(const std::string& control_param);
 
-    const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_property_functions;
+    const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>>& m_property_functions;
+//    const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_property_functions;
     NodeFunctionHeader* get_property_function(NodeFunctionHeader* function);
     std::unique_ptr<NodeStatementList> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header);
 

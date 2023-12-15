@@ -91,6 +91,13 @@ inline static std::string to_lower(const std::string& input) {
     return output;
 }
 
+inline static std::string to_upper(const std::string& input) {
+    std::string output = input;
+    std::transform(output.begin(), output.end(), output.begin(),
+                   [](unsigned char c) { return std::toupper(c); });
+    return output;
+}
+
 inline bool string_compare(const std::string& str1, const std::string& str2) {
     if (str1.length() != str2.length()) {
         return false;
