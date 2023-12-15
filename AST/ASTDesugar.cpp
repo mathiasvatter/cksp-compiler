@@ -131,14 +131,19 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
 }
 
 void ASTDesugar::visit(NodeArray& node) {
+    node.sizes->accept(*this);
+    node.indexes->accept(*this);
     // function args substitution
     if(!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.name)) {
-            node.name = substitute->get_string();
+            if(auto substitute_array = cast_node<NodeArray>(substitute.get())) {
+                node.name = substitute_array->name;
+            } else {
+                node.replace_with(std::move(substitute));
+                return;
+            }
         }
     }
-    node.sizes->accept(*this);
-    node.indexes->accept(*this);
 
     if(contains(ARRAY_IDENT, node.name[0])) {
         std::string identifier(1, node.name[0]);
