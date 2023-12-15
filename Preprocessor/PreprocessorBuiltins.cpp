@@ -91,7 +91,7 @@ std::unique_ptr<NodeVariable> PreprocessorBuiltins::parse_builtin_variable() {
     // cut away identifier
     std::string var_name = name.val;
     ASTType type = get_identifier_type(var_name[0]);
-    if(contains(TYPES, std::string(1, var_name[0])))
+    if(get_token_type(TYPES, std::string(1, var_name[0])))
         var_name = var_name.erase(0,1);
     auto node_variable = std::make_unique<NodeVariable>(false, var_name, Mutable, name);
     node_variable->type = type;
@@ -104,7 +104,7 @@ std::unique_ptr<NodeArray> PreprocessorBuiltins::parse_builtin_array() {
     Token name = consume(m_tokens); // consume array name token
     std::string arr_name = name.val;
     ASTType type = get_identifier_type(arr_name[0]);
-    if(contains(TYPES, std::string(1, arr_name[0])))
+    if(get_token_type(TYPES, std::string(1, arr_name[0])))
         arr_name = arr_name.erase(0,1);
     std::unique_ptr<NodeParamList> size = std::unique_ptr<NodeParamList>(new NodeParamList({}, name));;
     std::unique_ptr<NodeParamList> index = std::unique_ptr<NodeParamList>(new NodeParamList({}, name));;
@@ -116,7 +116,7 @@ std::unique_ptr<NodeArray> PreprocessorBuiltins::parse_builtin_array() {
 }
 
 ASTType PreprocessorBuiltins::get_identifier_type(char identifier) {
-    token token_type = get_token_type(TYPES, std::string(1, identifier));
+    token token_type = *get_token_type(TYPES, std::string(1, identifier));
     return token_to_type(token_type);
 }
 

@@ -24,7 +24,6 @@ struct StringEqual {
 };
 
 
-
 class ASTVariables : public ASTVisitor {
 public:
     ASTVariables(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,

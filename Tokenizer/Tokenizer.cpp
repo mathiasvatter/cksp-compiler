@@ -273,37 +273,37 @@ void Tokenizer::get_keyword_or_num() {
             m_tokens.emplace_back(END_CALLBACK, "end " + m_buffer, m_line, m_current_file);
         } else if (m_buffer == "mod") {
             m_tokens.emplace_back(MODULO, m_buffer, m_line, m_current_file);
-        } else if (contains(BOOL_OPERATORS, m_buffer)) {
-            tok = get_token_type(BOOL_OPERATORS, m_buffer);
-            m_tokens.emplace_back(tok, m_buffer, m_line, m_current_file);
-        } else if (contains(STATEMENTS, m_buffer)) {
+        } else if (auto type = get_token_type(BOOL_OPERATORS, m_buffer)) {
+//            tok = get_token_type(BOOL_OPERATORS, m_buffer);
+            m_tokens.emplace_back(*type, m_buffer, m_line, m_current_file);
+        } else if (auto type = get_token_type(STATEMENTS, m_buffer)) {
             // get begin statements
-            tok = get_token_type(STATEMENTS, m_buffer);
+//            tok = get_token_type(STATEMENTS, m_buffer);
             std::string val = m_buffer;
             // get end statements
             if (!m_tokens.empty()) {
                 if (m_tokens.back().val == "end") {
                     m_tokens.pop_back();
                     val = "end " + m_buffer;
-                    tok = get_token_type(END_STATEMENTS, val);
+                    type = get_token_type(END_STATEMENTS, val);
                 }
             }
-            m_tokens.emplace_back(tok, val, m_line, m_current_file);
-        } else if (contains(STATEMENT_SYNTAX, m_buffer)) {
-            tok = get_token_type(STATEMENT_SYNTAX, m_buffer);
-            m_tokens.emplace_back(tok, m_buffer, m_line, m_current_file);
+            m_tokens.emplace_back(*type, val, m_line, m_current_file);
+        } else if (auto type = get_token_type(STATEMENT_SYNTAX, m_buffer)) {
+//            tok = get_token_type(STATEMENT_SYNTAX, m_buffer);
+            m_tokens.emplace_back(*type, m_buffer, m_line, m_current_file);
         } else if (contains(UI_CONTROLS, m_buffer)) {
 			tok = token::UI_CONTROL;
 			m_tokens.emplace_back(tok, m_buffer, m_line, m_current_file);
-		} else if (contains(PREPROCESSOR_SYNTAX, m_buffer)) {
-			tok = get_token_type(PREPROCESSOR_SYNTAX, m_buffer);
-			m_tokens.emplace_back(tok, m_buffer, m_line, m_current_file);
-		} else if (contains(DECLARATION_SYNTAX, m_buffer)) {
-			tok = get_token_type(DECLARATION_SYNTAX, m_buffer);
-			m_tokens.emplace_back(tok, m_buffer, m_line, m_current_file);
-        } else if (contains(FUNCTION_SYNTAX, m_buffer)) {
-            tok = get_token_type(FUNCTION_SYNTAX, m_buffer);
-            m_tokens.emplace_back(tok, m_buffer, m_line, m_current_file);
+		} else if (auto type = get_token_type(PREPROCESSOR_SYNTAX, m_buffer)) {
+//			tok = get_token_type(PREPROCESSOR_SYNTAX, m_buffer);
+			m_tokens.emplace_back(*type, m_buffer, m_line, m_current_file);
+		} else if (auto type = get_token_type(DECLARATION_SYNTAX, m_buffer)) {
+//			tok = get_token_type(DECLARATION_SYNTAX, m_buffer);
+			m_tokens.emplace_back(*type, m_buffer, m_line, m_current_file);
+        } else if (auto type = get_token_type(FUNCTION_SYNTAX, m_buffer)) {
+//            tok = get_token_type(FUNCTION_SYNTAX, m_buffer);
+            m_tokens.emplace_back(*type, m_buffer, m_line, m_current_file);
         } else {
             while (peek() == '.') {
                 consume();
@@ -320,12 +320,6 @@ void Tokenizer::get_keyword_or_num() {
                     exit(EXIT_FAILURE);
                 }
             }
-			// keywords have to contain either 0 or exactly 2 occurences of #
-//			if (not(count_char(m_buffer, '#') == 2 or count_char(m_buffer, '#') == 0)) {
-//				auto err_msg = "Found invalid keyword. Keywords have to contain either 0 or exactly 2 occurrences of '#'.";
-//				CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).print();
-//				exit(EXIT_FAILURE);
-//			}
             m_tokens.emplace_back(KEYWORD, m_buffer, m_line, m_current_file);
         }
         // see if char after keyword is dot
@@ -413,9 +407,9 @@ void Tokenizer::get_bitwise_operator() {
 		consume();
     }
 	consume();
-    if (contains(BITWISE_OPERATORS, m_buffer)) {
-        token tok = get_token_type(BITWISE_OPERATORS, m_buffer);
-        m_tokens.emplace_back(tok, m_buffer, m_line, m_current_file);
+    if (auto tok = get_token_type(BITWISE_OPERATORS, m_buffer)) {
+//        tok = get_token_type(BITWISE_OPERATORS, m_buffer);
+        m_tokens.emplace_back(*tok, m_buffer, m_line, m_current_file);
     } else {
 		auto err_msg = "Found unknown keyword. Keywords starting with dots are not allowed.";
 		CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).print();

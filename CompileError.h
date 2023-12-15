@@ -48,11 +48,11 @@ public:
 			std::cout << "Expected: '" << expected << "', ";
 		if(!got.empty())
 			std::cout << "got: '" << got << "'";
-		std::cout << std::endl;
+		std::cout << reset << std::endl;
 
         // Zeige die entsprechende Zeile aus der Datei
 		if(line_number != -1)
-        	std::cout << "In line " << line_number << ": " << get_line_from_file() << reset << std::endl;
+        	std::cout << "In line " << line_number << ": " << get_line_from_file() << std::endl;
     }
 
     inline void exit() {

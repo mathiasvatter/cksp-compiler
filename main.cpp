@@ -56,11 +56,17 @@ int main() {
 
 	auto ast = std::move(ast_result.unwrap());
 
+    auto parsing_time = std::chrono::high_resolution_clock::now();
+    auto parsing_duration = std::chrono::duration_cast<std::chrono::milliseconds>(parsing_time-preprocessor_time);
+
 //    ASTMacros macro_processing;
 //    ast->accept(macro_processing);
 
 	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions(), builtins.get_builtin_widgets());
 	ast->accept(desugar);
+
+    auto desugaring_time = std::chrono::high_resolution_clock::now();
+    auto desugaring_duration = std::chrono::duration_cast<std::chrono::milliseconds>(desugaring_time-parsing_time);
 
     ASTVariables variables(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets());
     ast->accept(variables);
@@ -72,6 +78,7 @@ int main() {
     ast->accept(type_check);
 
     auto end_time = std::chrono::high_resolution_clock::now();
+    auto type_checking_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - desugaring_time);
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
 //	ASTPrinter printer;
@@ -82,7 +89,11 @@ int main() {
 //	generator.print();
 	generator.generate((std::string) curr_path.parent_path()+"/test.txt");
     // Dauer in Millisekunden ausgeben
-    std::cout << "Preprocessor Time: " << preprocessor_duration.count() << " ms, Time measured: " << duration.count() << " ms" << std::endl;
+    std::cout << "Preprocessor Time: " << preprocessor_duration.count() << " ms, " << std::endl;
+    std::cout << "Parsing Time: " << parsing_duration.count() << " ms, " << std::endl;
+    std::cout << "Desugaring Time: " << desugaring_duration.count() << " ms, " << std::endl;
+    std::cout << "Typechecking Time: " << type_checking_duration.count() << " ms, "<< std::endl;
+    std::cout << "Time measured: " << duration.count() << " ms" << std::endl;
 
 //    std::cout << ksp_code << std::endl;
 	std::cout << std::__fs::filesystem::current_path();

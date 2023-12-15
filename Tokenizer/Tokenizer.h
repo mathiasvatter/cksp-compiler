@@ -57,7 +57,6 @@ inline static token get_token_type(const std::vector<Keyword>& vec, const std::s
     auto it = std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
         return kw.value == value;
     });
-
     if (it != vec.end()) {
         return it->type;
     }
@@ -76,12 +75,12 @@ inline static std::string get_token_value(const std::vector<Keyword>& vec, const
 	return "";
 }
 
-inline static token get_token_type(const std::unordered_map<std::string, token>& keywordMap, const std::string& value) {
+inline static std::optional<token> get_token_type(const std::unordered_map<std::string, token>& keywordMap, const std::string& value) {
     auto it = keywordMap.find(value);
     if (it != keywordMap.end()) {
         return it->second;
     }
-    return INVALID;
+    return std::nullopt;
 }
 
 inline static std::string to_lower(const std::string& input) {
