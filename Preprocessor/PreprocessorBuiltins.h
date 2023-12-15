@@ -21,20 +21,24 @@ public:
 	Result<std::unique_ptr<NodeUIControl>> parse_builtin_ui_control();
     Result<std::pair<std::vector<ASTType>, std::vector<VarType>>> parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args);
 
-    [[nodiscard]] const std::vector<std::unique_ptr<NodeVariable>> &get_builtin_variables() const;
-    [[nodiscard]] const std::vector<std::unique_ptr<NodeArray>> &get_builtin_arrays() const;
+    [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &get_builtin_variables() const;
+    [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &get_builtin_arrays() const;
     [[nodiscard]] const std::vector<std::unique_ptr<NodeFunctionHeader>> &get_builtin_functions() const;
-    [[nodiscard]] const std::vector<std::unique_ptr<NodeFunctionHeader>> &get_property_functions() const;
-	[[nodiscard]] const std::vector<std::unique_ptr<NodeUIControl>> &get_builtin_widgets() const;
+    [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &get_property_functions() const;
+	[[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &get_builtin_widgets() const;
 
 
 private:
-//    std::unordered_map<std::string, std::unique_ptr<NodeVariable>> m_builtin_variables;
-    std::vector<std::unique_ptr<NodeVariable>> m_builtin_variables;
-    std::vector<std::unique_ptr<NodeArray>> m_builtin_arrays;
+    std::unordered_map<std::string, std::unique_ptr<NodeVariable>> m_builtin_variables;
+//    std::vector<std::unique_ptr<NodeVariable>> m_builtin_variables;
+    std::unordered_map<std::string, std::unique_ptr<NodeArray>> m_builtin_arrays;
+//    std::vector<std::unique_ptr<NodeArray>> m_builtin_arrays;
     std::vector<std::unique_ptr<NodeFunctionHeader>> m_builtin_functions;
-    std::vector<std::unique_ptr<NodeFunctionHeader>> m_property_functions;
-	std::vector<std::unique_ptr<NodeUIControl>> m_builtin_widgets;
+//    std::vector<std::unique_ptr<NodeFunctionHeader>> m_builtin_functions;
+    std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> m_property_functions;
+//    std::vector<std::unique_ptr<NodeFunctionHeader>> m_property_functions;
+    std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> m_builtin_widgets;
+//	std::vector<std::unique_ptr<NodeUIControl>> m_builtin_widgets;
 
 
     std::string m_builtin_variables_file;

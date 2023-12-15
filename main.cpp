@@ -62,10 +62,10 @@ int main() {
 	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions(), builtins.get_builtin_widgets());
 	ast->accept(desugar);
 
-    ASTVariables variables(builtins.get_builtin_functions(), builtins.get_builtin_variables(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets());
+    ASTVariables variables(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets());
     ast->accept(variables);
 
-	ASTTypeCasting typecast(builtins.get_builtin_variables(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets());
+	ASTTypeCasting typecast(builtins.get_builtin_widgets());
 	ast->accept(typecast);
 
     ASTTypeChecking type_check;

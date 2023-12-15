@@ -27,10 +27,10 @@ struct StringEqual {
 
 class ASTVariables : public ASTVisitor {
 public:
-    ASTVariables(const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
-                  const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables,
-                  const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays,
-				 const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets);
+    ASTVariables(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
+                 const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
+                 const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
+                 const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets);
 
     void visit(NodeProgram& node) override;
     void visit(NodeCallback& node) override;
@@ -47,17 +47,22 @@ public:
 
 private:
 
+
+
 	/// builtin engine functions
     const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_builtin_functions;
     NodeFunctionHeader* get_builtin_function(const std::string &function);
     /// builtin engine variables
-    const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables;
+    const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables;
+//    const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables;
     NodeVariable* get_builtin_variable(NodeVariable* var);
     /// builtin engine arrays
-    const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays;
+    const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays;
+//    const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays;
     NodeArray* get_builtin_array(NodeArray* arr);
 	/// builtin engine widgets
-	const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
+    const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
+//	const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
 	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
     /// declared variables

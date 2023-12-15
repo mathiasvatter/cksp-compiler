@@ -5,8 +5,10 @@
 #include "ASTDesugar.h"
 #include "../Preprocessor/SimpleExprInterpreter.h"
 
-ASTDesugar::ASTDesugar(const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables, const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
-                       const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_property_functions, const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
+ASTDesugar::ASTDesugar(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
+                       const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
+                       const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &m_property_functions,
+                       const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
 : m_builtin_functions(m_builtin_functions), m_builtin_variables(m_builtin_variables), m_property_functions(m_property_functions), m_builtin_widgets(m_builtin_widgets) {
 }
 
@@ -1055,23 +1057,17 @@ NodeFunctionHeader* ASTDesugar::get_builtin_function(const std::string &function
 }
 
 NodeFunctionHeader* ASTDesugar::get_property_function(NodeFunctionHeader *function) {
-    auto it = std::find_if(m_property_functions.begin(), m_property_functions.end(),
-                           [&](const std::unique_ptr<NodeFunctionHeader> &func) {
-                               return func->name == function->name;
-                           });
+    auto it = m_property_functions.find(function->name);
     if(it != m_property_functions.end()) {
-        return m_property_functions[std::distance(m_property_functions.begin(), it)].get();
+        return it->second.get();
     }
     return nullptr;
 }
 
 NodeUIControl* ASTDesugar::get_builtin_widget(const std::string &ui_control) {
-	auto it = std::find_if(m_builtin_widgets.begin(), m_builtin_widgets.end(),
-						   [&](const std::unique_ptr<NodeUIControl> &widget) {
-							 return (widget->ui_control_type == ui_control);
-						   });
+	auto it = m_builtin_widgets.find(ui_control);
 	if(it != m_builtin_widgets.end()) {
-		return m_builtin_widgets[std::distance(m_builtin_widgets.begin(), it)].get();
+        return it->second.get();
 	}
 	return nullptr;
 }
@@ -1101,13 +1097,15 @@ std::unique_ptr<NodeVariable> ASTDesugar::shorthand_to_control_param(const std::
     if(control_par == "x") control_par = "pos_x";
     if(control_par == "y") control_par = "pos_y";
     if(control_par == "default") control_par += "_value";
-    auto it = std::find_if(m_builtin_variables.begin(), m_builtin_variables.end(),
-                           [&](const std::unique_ptr<NodeVariable> &var) {
-                               return string_compare(control_par, var->name) or string_compare("control_par_"+control_par, var->name);
-                           });
+    auto it = m_builtin_variables.find(to_upper(control_par));
+    if(it == m_builtin_variables.end()) it = m_builtin_variables.find(to_upper("control_par_"+control_par));
+//    auto it = std::find_if(m_builtin_variables.begin(), m_builtin_variables.end(),
+//                           [&](const std::unique_ptr<NodeVariable> &var) {
+//                               return string_compare(control_par, var->name) or string_compare("control_par_"+control_par, var->name);
+//                           });
     if(it != m_builtin_variables.end()) {
-        auto control_var = m_builtin_variables[std::distance(m_builtin_variables.begin(), it)]->clone();
-        return std::unique_ptr<NodeVariable>(static_cast<NodeVariable*>(control_var.release()));
+//        auto control_var = m_builtin_variables[std::distance(m_builtin_variables.begin(), it)]->clone();
+        return std::unique_ptr<NodeVariable>(static_cast<NodeVariable*>(it->second->clone().release()));
     }
     return nullptr;
 }
