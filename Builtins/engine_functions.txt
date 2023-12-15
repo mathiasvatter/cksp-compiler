@@ -39,15 +39,15 @@ _slice_length(group_idx, sliceidx): int
 _slice_loop_count(group_idx, loop_idx: int): int
 _slice_start(group_idx, sliceidx): int
 _will_never_terminate(event_id)
-abs(int_real):int_real
-acos(realvalue):real
+abs(value: number):number
+acos(value: real):real
 add_menu_item(variable, text, number)
 add_text_line(variable, text)
-allow_group(group_idx)
+allow_group(group_idx: int)
 array_equal(array: int, array: int):boolean
-asin(realvalue):real
-atan(realvalue):real
-attach_level_meter(uiid, group_idx, slotidx, channelidx, busidx)
+asin(value: real):real
+atan(value: real):real
+attach_level_meter(ui_id: int, group_idx: int, slot_idx: int, channel_idx: int, bus_idx: int)
 attach_zone(waveform, zone_id: int, parameter: int)
 by_marks(bitmark: int): int
 by_track(trackidx: int): int
@@ -88,14 +88,14 @@ find_zone(samplename): int
 floor(realvalue):real
 fs_get_filename(int, returnparameter):string
 fs_navigate(int, direction)
-get_control_par(ui_id: int, control_par: int): int
-get_control_par_arr(ui_id: int, control_par: int, index: int): int
-get_control_par_real_arr(ui_id: int, control_par: int, index: int):real
-get_control_par_str(ui_id: int, control_par: int):string
-get_control_par_str_arr(ui_id: int, control_par: int, index: int):string
-get_engine_par(int, int, int, int): int
-get_engine_par_disp(int, int, int, int):string
-get_engine_par_disp_m(int, int, slot, int):string
+get_control_par(ui_id: number, control_par: int): int
+get_control_par_arr(ui_id: number, control_par: int, index: int): int
+get_control_par_real_arr(ui_id: number, control_par: int, index: int):real
+get_control_par_str(ui_id: number, control_par: int):string
+get_control_par_str_arr(ui_id: number, control_par: int, index: int):string
+get_engine_par(ui_id: number, int, int, int): int
+get_engine_par_disp(ui_id: number, int, int, int):string
+get_engine_par_disp_m(ui_id: number, int, slot, int):string
 get_engine_par_m(parameter, int, slot, int): int
 get_event_ids(array: int)
 get_event_mark(event_id: int, bitmark: int): int
@@ -122,7 +122,7 @@ get_purge_state(group_idx: int): int
 get_sample(zone_id: int,returnparameter: int):string
 get_sample_length(zone_id: int): int
 get_target_idx(group_idx, mod_idx: int, targetname: string): int
-get_ui_id(variable: int): int
+get_ui_id(variable: number): int
 get_ui_wf_property(waveform: int, property: int, index: int): int
 get_voice_limit(voice_type: int): int
 get_zone_id(zone_idx: int): int
@@ -135,7 +135,7 @@ ignore_controller
 ignore_event(event_id)
 ignore_midi
 import_nckp(filepath: string):string
-in_range(value: number, value: number, value: number):boolean
+in_range(value: number, value: number, value: number):bool
 inc(expression: int)
 int(value: real): int
 int_to_real(value: int): real
@@ -210,10 +210,10 @@ pgs_key_exists(keyid):boolean
 pgs_set_key_val(keyid, index, value)
 pgs_set_str_key_val(keyid, text)
 pgs_str_key_exists(keyid):boolean
-play_note(note_number, velocity, sampleoffset, duration): int
+play_note(note_number: int, velocity: int, sampleoffset: int, duration: int): int
 pow(value: real, value: real):real
 purge_group(group_idx, mode): int
-random(min, max): int
+random(min: int, max: int): int
 read_persistent_var(variable: any)
 real(value: int):real
 real_to_int(value: real): int
@@ -230,13 +230,13 @@ save_midi_file(filepath: string): int
 search(intarray: int, value: int): int
 search(intarray: int, value: int, from: int, to: int): int
 set_control_help(variable: number, text: string)
-set_control_par(int, int, int)
-set_control_par_arr(int, int, int, int)
-set_control_par_real_arr(int, int, real, int)
-set_control_par_str(int, int, string)
-set_control_par_str_arr(int, int, string, int)
-set_controller(int, int)
-set_engine_par(int, int, int, int, int): int
+set_control_par(number, int, int)
+set_control_par_arr(number, int, int, int)
+set_control_par_real_arr(number, int, real, int)
+set_control_par_str(number, int, any)
+set_control_par_str_arr(number, int, any, int)
+set_controller(cc_num: int, value: int)
+set_engine_par(parameter: int, value: int, group: int, slot: int, generic: int): int
 set_engine_par_m(int, int, int, int, int): int
 set_event_mark(event_id: int, bitmark: int)
 set_event_par(event_id: int, parameter: int, value: int)
@@ -251,7 +251,7 @@ set_keyrange(keynumber1, keynumber2, rangename)
 set_knob_defval(knobvariable, value)
 set_knob_label(knobvariable, text: string)
 set_knob_unit(knobvariable, unit: int)
-set_listener(signaltype, parameter: int)
+set_listener(signaltype: int, parameter: int)
 set_loop_par(zone_id: int, loopid: int, parameter: int, value: int): int
 set_menu_item_str(menu_id: int, index: int, text: string)
 set_menu_item_value(menu_id: int, index: int, value)
@@ -278,7 +278,7 @@ sh_left(int, int): int
 sh_right(int, int): int
 show_library_tab
 signbit(value: number): int
-sin(realvalue):real
+sin(value: real):real
 slice_idx_loop_end(group_idx: int, loop_idx: int): int
 slice_idx_loop_start(group_idx: int, loop_idx: int): int
 slice_length(group_idx: int, slice_idx: int): int
@@ -287,15 +287,15 @@ slice_start(group_idx: int, slice_idx: int): int
 sort(array: number, direction: int)
 sort(array: number, direction: int, from: int, to: int)
 sqrt(value: real):real
-stop_wait(int, int)
+stop_wait(callback_id: int, parameter: int)
 tan(value: real):real
 ticks_to_ms(ticks: int): int
-unload_slot(instrslotidx: int)
-wait(waittime: int)
+unload_slot(instr_slot_idx: int)
+wait(wait_time: int)
 wait_async(event_id: int): int
 watch_var(variable: any)
 watch_array_idx(array: any, index: int)
-wait_ticks(waittime: int)
+wait_ticks(wait_time: int)
 will_never_terminate(event_id)
 zone_slice_idx_loop_end(zone_id: int, loop_idx: int): int
 zone_slice_idx_loop_start(zone_id: int, loop_idx: int): int
@@ -311,8 +311,8 @@ mf_get_command
 mf_get_last_filename
 in_range
 by_marks
-int_to_real(int):real
-real(int):real
-real_to_int(real):int
-int(real):int
+int_to_real(value: int):real
+real(value: int):real
+real_to_int(value: real):int
+int(value: real):int
 continue

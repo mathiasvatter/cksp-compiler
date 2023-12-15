@@ -75,7 +75,7 @@ void ASTTypeCasting::visit(NodeUIControl& node) {
 			} else if (node.arg_ast_types[i] == Any) {
 				node.arg_ast_types[i] = node.params->params[i]->type;
 			} else if (node.params->params[i]->type != node.arg_ast_types[i]) {
-				err.print();
+				err.exit();
 			}
 
 			auto node_array = cast_node<NodeArray>(node.params->params[i].get());
@@ -106,6 +106,8 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
             exit(EXIT_FAILURE);
         } else if(node.assignee->type == Unknown and node.to_be_declared->type != Unknown) {
             node.assignee->type = node.to_be_declared->type;
+        } else if(node.to_be_declared->type == String and node.assignee->type == Integer) {
+            node.to_be_declared->type = node.to_be_declared->type;
         } else if(node.to_be_declared->type == Unknown) {
             node.to_be_declared->type = node.assignee->type;
         }
@@ -141,6 +143,8 @@ void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
         node.array_variable->type = node.assignee->type;
     } else if(node.assignee->type == Unknown and node.array_variable->type != Unknown) {
         node.assignee->type = node.array_variable->type;
+    } else if(node.array_variable->type == String and node.assignee->type == Integer) {
+        node.array_variable->type = node.array_variable->type;
     } else if (node.array_variable->type != node.assignee->type) {
         CompileError(ErrorType::TypeError,"Found incorrect variable type in assignment.", node.tok.line, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
@@ -188,6 +192,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 }
 
 void ASTTypeCasting::visit(NodeArray& node) {
+
     auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
     if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
     auto node_ui_control = cast_node<NodeUIControl>(node.parent);
@@ -201,7 +206,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
 
 	auto node_callback_id = cast_node<NodeCallback>(node.parent);
 	if(node_callback_id and node.var_type != UI_Control) {
-		CompileError(ErrorType::TypeError,"Variable needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line, "<UI_Control>", node.get_string(), node.tok.file).exit();
+		CompileError(ErrorType::TypeError,"Array needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line, "<UI_Control>", node.get_string(), node.tok.file).exit();
 	}
 
     if(!node_declaration and !node_ui_control) {
@@ -301,7 +306,7 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
 //            node.type = Unknown;
         } else {
             // please use real() and int() to use Real and Integer numbers in a single expression
-            err.print();
+            err.exit();
         }
     } else if (contains(BITWISE_OPERATORS, node.op)) {
         if(both_integers) {
@@ -314,7 +319,7 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
             node.type = Unknown;
         } else {
             // error, bitwise operators can only be used in between integer values.
-            err.print();
+            err.exit();
         }
     } else if (contains(BOOL_OPERATORS, node.op)) {
         if(both_comps) {
@@ -323,9 +328,11 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
             node.type = Boolean;
         } else if(one_bool and one_comp) {
             node.type = Boolean;
+        } else if (both_unknown) {
+            node.type = Boolean;
         } else {
             // error, only comparisons can be bound together with bool operators
-            err.print();
+            err.exit();
         }
     } else if (contains(COMPARISON_OPERATORS, node.op)) {
         // can only be int op int || float op float
@@ -336,13 +343,17 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
         } else if (int_and_unknown) {
             node.type = Comparison; node.right->type = Integer; node.left->type = Integer;
         } else if (real_and_unknown) {
-            node.type = Comparison; node.right->type = Real; node.left->type = Real;
+            node.type = Comparison;
+            node.right->type = Real;
+            node.left->type = Real;
+        } else if(both_unknown) {
+            node.type = Comparison;
         } else {
             // only int op int || real op real can be strung together by comparison operator
-            err.print();
+            err.exit();
         }
     } else {
-        err.print();
+        err.exit();
     }
 }
 
@@ -353,16 +364,16 @@ void ASTTypeCasting::visit(NodeUnaryExpr& node) {
         if(node.operand->type == Integer or node.operand->type == Real) {
             node.type = node.operand->type;
         } else {
-            err.print();
+            err.exit();
         }
     } else if(node.op.type == BOOL_NOT) {
         if(node.operand->type == Boolean or node.operand->type == Comparison) {
             node.type = Boolean;
         } else {
-            err.print();
+            err.exit();
         }
     } else {
-        err.print();
+        err.exit();
     }
 }
 
@@ -378,15 +389,16 @@ void ASTTypeCasting::visit(NodeFunctionHeader& node) {
     		auto err = CompileError(ErrorType::TypeError,"Found wrong type in function arguments.", node.tok.line,
 									type_to_string(node.arg_ast_types[i]),
 									type_to_string(node.args->params[i]->type), node.tok.file);
+
 			if (node.arg_ast_types[i] == Number
 				and (node.args->params[i]->type == Integer or node.args->params[i]->type == Real)) {
 				node.arg_ast_types[i] = node.args->params[i]->type;
 			} else if (node.arg_ast_types[i] != Any and node.arg_ast_types[i] != Number and node.args->params[i]->type == Unknown) {
 				node.args->params[i]->type = node.arg_ast_types[i];
-			} else if (node.arg_ast_types[i] == Any || node.arg_ast_types[i] == Unknown) {
+			} else if (node.arg_ast_types[i] == Any || node.arg_ast_types[i] == Unknown || node.arg_ast_types[i] == Number) {
 				node.arg_ast_types[i] = node.args->params[i]->type;
 			} else if (node.args->params[i]->type != node.arg_ast_types[i]) {
-				err.print();
+				err.exit();
 			}
 
 			auto node_array = cast_node<NodeArray>(node.args->params[i].get());

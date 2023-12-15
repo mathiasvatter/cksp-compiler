@@ -756,6 +756,7 @@ struct NodeCallback: NodeAST {
 	inline NodeCallback(std::string begin_callback, std::unique_ptr<NodeStatementList> statements, std::string end_callback, Token tok)
      : NodeAST(tok), begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {}
 	void accept(ASTVisitor& visitor) override;
+    virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     NodeCallback(const NodeCallback& other);
     std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {

@@ -350,7 +350,6 @@ NodeSelectStatement::NodeSelectStatement(const NodeSelectStatement& other)
 std::unique_ptr<NodeAST> NodeSelectStatement::clone() const {
     return std::make_unique<NodeSelectStatement>(*this);
 }
-
 void NodeSelectStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (expression.get() == oldChild) {
 		expression = std::move(newChild);
@@ -382,6 +381,11 @@ NodeCallback::NodeCallback(const NodeCallback& other)
         : NodeAST(other), begin_callback(other.begin_callback), callback_id(clone_unique(other.callback_id)), statements(clone_unique(other.statements)), end_callback(other.end_callback) {}
 std::unique_ptr<NodeAST>  NodeCallback::clone() const {
     return std::make_unique<NodeCallback>(*this);
+}
+void NodeCallback::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+    if (callback_id.get() == oldChild) {
+        callback_id = std::move(newChild);
+    }
 }
 
 // ************* NodeImport ***************
