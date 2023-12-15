@@ -29,6 +29,7 @@ public:
 
 
 private:
+//    std::unordered_map<std::string, std::unique_ptr<NodeVariable>> m_builtin_variables;
     std::vector<std::unique_ptr<NodeVariable>> m_builtin_variables;
     std::vector<std::unique_ptr<NodeArray>> m_builtin_arrays;
     std::vector<std::unique_ptr<NodeFunctionHeader>> m_builtin_functions;
@@ -42,7 +43,7 @@ private:
 
 
     static ASTType get_identifier_type(char identifier);
-    ASTType get_type_annotation(const Token& tok);
+    static ASTType get_type_annotation(const Token& tok);
     static VarType get_var_type_annotation(const std::string& keyword);
     static bool is_property_function(const std::string& fun_name);
 };

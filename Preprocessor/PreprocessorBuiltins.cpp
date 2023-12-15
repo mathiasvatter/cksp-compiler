@@ -210,6 +210,8 @@ ASTType PreprocessorBuiltins::get_type_annotation(const Token& tok) {
         type = String;
     } else if(tok.val.find("number") != std::string::npos) {
         type = Number;
+    } else if(tok.val.find("bool") != std::string::npos) {
+        type = Boolean;
     }
     return type;
 }

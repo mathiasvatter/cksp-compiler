@@ -194,7 +194,8 @@ void ASTDesugar::visit(NodeVariable& node) {
         std::string identifier(1, node.name[0]);
         node.name = node.name.erase(0,1);
         token token_type = get_token_type(TYPES, identifier);
-        original_type = token_to_type(token_type);
+        node.type = token_to_type(token_type);
+        original_type = node.type;
     }
     // local variable substitution
     if(!m_variable_scope_stack.empty()) {

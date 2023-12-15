@@ -20,7 +20,6 @@ void ASTVariables::visit(NodeProgram& node) {
 		std::cout << std::endl;
         callback->accept(*this);
     }
-	std::cout << "Anzahl der Elemente: " << m_declared_variables.size() << ", Kapazität: " << m_declared_variables.bucket_count() << ", Lastfaktor: " << m_declared_variables.load_factor() << std::endl;
     for(auto & function_definition : node.function_definitions) {
         function_definition->accept(*this);
     }
@@ -184,6 +183,7 @@ void ASTVariables::visit(NodeVariable& node) {
             if(node_first_array_declaration) {
 				auto node_array = make_array(node.name, 0, node.tok, node.parent);
                 node_array->sizes->params.clear();
+                node_array->type = node.type;
                 node_array->declaration = node_first_array_declaration;
                 node_array->accept(*this);
                 node.replace_with(std::move(node_array));
