@@ -77,8 +77,6 @@ private:
 	bool evaluating_functions = false;
 //    bool has_local_variables = false;
 
-//    std::vector<std::tuple<NodeArray*, NodeParamList*>> m_declared_arrays;
-//    std::vector<std::unique_ptr<NodeVariable>> m_declared_variables;
     std::stack<std::string> m_family_prefixes;
     std::stack<std::string> m_const_prefixes;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
@@ -86,9 +84,9 @@ private:
 
     std::vector<std::string> m_function_call_stack;
 
-    std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> get_substitution_vector(NodeFunctionHeader* definition, NodeFunctionHeader* call);
+    static std::unordered_map<std::string, std::unique_ptr<NodeAST>> get_substitution_map(NodeFunctionHeader* definition, NodeFunctionHeader* call);
     /// returns substitute for current node.name, or nullptr if there is no substitute
-    std::stack<std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>>> m_substitution_stack;
+    std::stack<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_substitution_stack;
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
     std::unique_ptr<NodeFunctionDefinition> get_function_definition(NodeFunctionHeader* function_header);
 
@@ -101,6 +99,5 @@ private:
     std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok);
 
     bool in_function();
-    void pop_substitution_stack();
 };
 

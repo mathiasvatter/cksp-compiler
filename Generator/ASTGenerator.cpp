@@ -35,7 +35,11 @@ void ASTGenerator::visit(NodeInt &node) {
 }
 
 void ASTGenerator::visit(NodeReal &node) {
-    os << node.value;
+    // check if whole number
+    if(std::floor(node.value) == node.value) {
+        os << std::fixed << std::setprecision(1) << node.value;
+    } else
+        os << node.value;
 }
 
 void ASTGenerator::visit(NodeString &node) {
@@ -85,7 +89,10 @@ void ASTGenerator::visit(NodeSingleDeclareStatement &node) {
     node.to_be_declared->accept(*this);
     if(node.assignee != nullptr) {
         os << " := ";
+        auto node_param_list = cast_node<NodeParamList>(node.assignee.get());
+        if(node_param_list) os << "(";
         node.assignee->accept(*this);
+        if(node_param_list) os << ")";
     }
     os << "";
 }

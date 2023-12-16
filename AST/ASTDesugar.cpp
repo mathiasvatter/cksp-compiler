@@ -264,8 +264,8 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
         m_variable_scope_stack.emplace();
 		node_function_def->parent = node.parent;
 		if (!node.function->args->params.empty()) {
-			auto substitution_vec = get_substitution_vector(node_function_def->header.get(), node.function.get());
-			m_substitution_stack.push(std::move(substitution_vec));
+			auto substitution_map = get_substitution_map(node_function_def->header.get(), node.function.get());
+			m_substitution_stack.push(std::move(substitution_map));
 		}
 		node_function_def->body->update_token_data(node.tok);
 		node_function_def->body->accept(*this);
@@ -296,19 +296,19 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
                 }
             } else if(node_function_def->body->statements.size() > 1) {
                 if(is_instance_of<NodeSingleDeclareStatement>(node.parent) or is_instance_of<NodeSingleAssignStatement>(node.parent)) {
-                    std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> substitution_vec;
+                    std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_map;
                     if (auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent)) {
-                        substitution_vec.emplace_back(node_function_def->return_variable.value()->get_string(),
-                                                      node_declaration->to_be_declared->clone());
+                        substitution_map.insert({node_function_def->return_variable.value()->get_string(),
+                                                      node_declaration->to_be_declared->clone()});
                         auto node_declare = std::make_unique<NodeSingleDeclareStatement>(node_declaration->to_be_declared->clone(),
                                                                                          nullptr, node_declaration->tok);
                         node_function_def->body->statements.insert(node_function_def->body->statements.begin(),
                                                                    statement_wrapper(std::move(node_declare), node_function_def->body.get()));
                     } else if (auto node_assignment = cast_node<NodeSingleAssignStatement>(node.parent)) {
-                        substitution_vec.emplace_back(node_function_def->return_variable.value()->get_string(),
-                                                      node_assignment->array_variable->clone());
+                        substitution_map.insert({node_function_def->return_variable.value()->get_string(),
+                                                      node_assignment->array_variable->clone()});
                     }
-                    m_substitution_stack.push(std::move(substitution_vec));
+                    m_substitution_stack.push(std::move(substitution_map));
                     node_function_def->body->accept(*this);
                     node_function_def->body->parent = node.parent->parent;
                     m_substitution_stack.pop();
@@ -337,11 +337,6 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
     }
 }
 
-void ASTDesugar::pop_substitution_stack() {
-    if(m_function_call_stack.size() > m_substitution_stack.size())
-        m_substitution_stack.pop();
-}
-
 std::unique_ptr<NodeStatementList> ASTDesugar::inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
     auto node_statement_list = std::make_unique<NodeStatementList>(function_header->tok);
     for(int i = 1; i<function_header->args->params.size(); i++) {
@@ -354,8 +349,8 @@ std::unique_ptr<NodeStatementList> ASTDesugar::inline_property_function(NodeFunc
 }
 
 
-std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> ASTDesugar::get_substitution_vector(NodeFunctionHeader* definition, NodeFunctionHeader* call) {
-    std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> substitution_vector;
+std::unordered_map<std::string, std::unique_ptr<NodeAST>> ASTDesugar::get_substitution_map(NodeFunctionHeader* definition, NodeFunctionHeader* call) {
+    std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_vector;
     for(int i= 0; i<definition->args->params.size(); i++) {
         auto &var = definition->args->params[i];
         std::pair<std::string, std::unique_ptr<NodeAST>> pair;
@@ -369,38 +364,46 @@ std::vector<std::pair<std::string, std::unique_ptr<NodeAST>>> ASTDesugar::get_su
             exit(EXIT_FAILURE);
         }
         pair.second = std::move(call->args->params[i]);
-        substitution_vector.push_back(std::move(pair));
+        substitution_vector.insert(std::move(pair));
     }
     return substitution_vector;
 }
 
 std::unique_ptr<NodeAST> ASTDesugar::get_substitute(const std::string& name) {
-    const auto & vector = m_substitution_stack.top();
-    auto it = std::find_if(vector.begin(), vector.end(),
-                           [&](const std::pair<std::string, std::unique_ptr<NodeAST>> &pair) {
-                               return pair.first == name;
-                           });
-    if(it != vector.end()) {
-        return vector[std::distance(vector.begin(), it)].second->clone();
+    const auto & map = m_substitution_stack.top();
+    auto it = map.find(name);
+    if(it != map.end()) {
+        return it->second->clone();
     }
     return nullptr;
 }
 
 
 void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
-	if(node.to_be_declared->get_string() == "hold_value") {
-		std::cout <<"";
-	}
     // check if is_persistent
     bool is_persistent = false;
 	bool is_local = false;
 	bool is_global = false;
+    bool is_const = false;
     auto node_array = cast_node<NodeArray>(node.to_be_declared.get());
-    if(node_array) {is_persistent = node_array->is_persistent; is_local = node_array->is_local; is_global = node_array->is_global;}
+    if(node_array) {
+        is_persistent = node_array->is_persistent;
+        is_local = node_array->is_local;
+        is_global = node_array->is_global;
+        is_const = node_array->var_type == Const;
+    }
     auto node_variable = cast_node<NodeVariable>(node.to_be_declared.get());
-    if(node_variable) {is_persistent = node_variable->is_persistent; is_local = node_variable->is_local; is_global = node_variable->is_global;}
+    if(node_variable) {
+        is_persistent = node_variable->is_persistent;
+        is_local = node_variable->is_local;
+        is_global = node_variable->is_global;
+        is_const = node_variable->var_type == Const;
+    }
+    if(is_const and !node.assignee)
+        CompileError(ErrorType::SyntaxError,
+                     "Found <const> declaration without value assignment.", node.tok.line, "<assignment>", "",node.tok.file).exit();
 	// if currently in function inlining
-	if(in_function() and !is_global) {
+	if(in_function() and !is_global and !is_const) {
 		node.to_be_declared ->accept(*this);
         auto new_name = "_"+node.to_be_declared->get_string()+std::to_string(local_var_counter++);
 		std::unique_ptr<NodeAST> node_substitute;
@@ -413,7 +416,6 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 			node_local_var->name = new_name;
 			node_substitute = std::move(node_local_var);
 		}
-//        has_local_variables = true;
 		m_variable_scope_stack.top().insert({node.to_be_declared->get_string(), std::move(node_substitute)});
 	}
     node_variable = cast_node<NodeVariable>(node.to_be_declared.get());
@@ -492,12 +494,15 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     // special treatment if declaration is inside function -> move to init_callback
     if(in_function() and !m_in_init_callback) {
         std::unique_ptr<NodeAST> stmt;
-        if(node.assignee) {
-            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(), node.assignee->clone(),node.tok);
+        std::unique_ptr<NodeAST> assignee = nullptr;
+        if (node.assignee and !is_const) {
+            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(),
+                                                                               node.assignee->clone(), node.tok);
             node_assignment->update_parents(node.parent);
-			node_assignment->accept(*this);
+            node_assignment->accept(*this);
             stmt = std::move(node_assignment);
         } else {
+            assignee = std::move(node.assignee);
             auto node_dead_end = std::make_unique<NodeDeadEnd>(node.tok);
             stmt = std::move(node_dead_end);
         }
@@ -509,7 +514,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
         bool local_variable_already_declared = it != m_declare_statements_to_move.end();
         if(!local_variable_already_declared) {
             auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node.to_be_declared),
-                                                                                 nullptr, node.tok);
+                                                                                 std::move(assignee), node.tok);
             node_statement_list->statements.insert(node_statement_list->statements.begin(), statement_wrapper(std::move(node_declaration), m_init_callback));
             auto statement = statement_wrapper(std::move(node_statement_list), m_init_callback);
             statement->update_parents(m_init_callback);
@@ -1107,12 +1112,8 @@ std::unique_ptr<NodeVariable> ASTDesugar::shorthand_to_control_param(const std::
     if(control_par == "default") control_par += "_value";
     auto it = m_builtin_variables.find(to_upper(control_par));
     if(it == m_builtin_variables.end()) it = m_builtin_variables.find(to_upper("control_par_"+control_par));
-//    auto it = std::find_if(m_builtin_variables.begin(), m_builtin_variables.end(),
-//                           [&](const std::unique_ptr<NodeVariable> &var) {
-//                               return string_compare(control_par, var->name) or string_compare("control_par_"+control_par, var->name);
-//                           });
+
     if(it != m_builtin_variables.end()) {
-//        auto control_var = m_builtin_variables[std::distance(m_builtin_variables.begin(), it)]->clone();
         return std::unique_ptr<NodeVariable>(static_cast<NodeVariable*>(it->second->clone().release()));
     }
     return nullptr;
