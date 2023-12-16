@@ -59,9 +59,11 @@ void ASTTypeCasting::visit(NodeUIControl& node) {
 	}
 
 	node.control_var->accept(*this);
-
     // unused variable declarations being replaced with node_dead_end
-    if(!node.control_var) return;
+    if(!node.control_var) {
+        node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
+        return;
+    }
 
 	auto err = CompileError(ErrorType::TypeError,"Found wrong type in engine widget arguments.", node.tok.line, "", "", node.tok.file);
 	if(!node.arg_ast_types.empty()) {
