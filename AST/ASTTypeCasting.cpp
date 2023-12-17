@@ -102,16 +102,30 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
 
     if(node.assignee) {
         node.assignee->accept(*this);
-        if(node.to_be_declared->type != Unknown and node.assignee->type != node.to_be_declared->type) {
-            CompileError(ErrorType::TypeError,"Found incorrect variable type in declaration.", node.tok.line, "", "", node.tok.file).print();
-            exit(EXIT_FAILURE);
-        } else if(node.assignee->type == Unknown and node.to_be_declared->type != Unknown) {
+
+        if(node.assignee->type == Unknown and node.to_be_declared->type != Unknown) {
             node.assignee->type = node.to_be_declared->type;
         } else if(node.to_be_declared->type == String and node.assignee->type == Integer) {
             node.to_be_declared->type = node.to_be_declared->type;
         } else if(node.to_be_declared->type == Unknown) {
             node.to_be_declared->type = node.assignee->type;
         }
+
+//        if(node.to_be_declared->type == Compiler and node.assignee->type != Unknown) {
+//            if(auto node_array = cast_node<NodeArray>(node.to_be_declared.get())) {
+//                node_array->name = m_compiler_arrays.find(node.assignee->type)->second;
+//                node_array->type = node.assignee->type;
+//            }
+//        }
+
+        if(node.to_be_declared->type != Unknown and node.assignee->type != node.to_be_declared->type) {
+            CompileError(ErrorType::TypeError, "Found incorrect variable type in declaration.", node.tok.line, "", "",
+                         node.tok.file).print();
+//            exit(EXIT_FAILURE);
+        }
+        // a second time to get the new types to the declaration pointer!
+        node.to_be_declared->accept(*this);
+
     }
 
     if(node.assignee) {
@@ -132,22 +146,40 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
                 node.replace_with(std::move(node_statement_list));
                 return;
             }
+        } else if (!node_array and node.assignee->type == String) {
+            auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(), std::move(node.assignee), node.tok);
+            auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node.to_be_declared), nullptr, node.tok);
+            node_statement_list->statements.push_back(statement_wrapper(std::move(node_declaration), node_statement_list.get()));
+            node_statement_list->statements.push_back(statement_wrapper(std::move(node_assignment), node_statement_list.get()));
+            node_statement_list->update_parents(node.parent);
+            node.replace_with(std::move(node_statement_list));
         }
     }
 
 }
 
 void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
-    node.array_variable->accept(*this);
     node.assignee->accept(*this);
+//    if(node.array_variable->type == Compiler and node.assignee->type != Unknown) {
+//        if(auto node_array = cast_node<NodeArray>(node.array_variable.get())) {
+//            node_array->name = m_compiler_arrays.find(node.assignee->type)->second;
+//            node_array->type = node.assignee->type;
+//            m_return_variables.insert({static_cast<NodeInt*>(node_array->indexes->params[0].get())->value, node_array->type});
+//        }
+//    }
+    node.array_variable->accept(*this);
     if(node.array_variable->type == Unknown) {
         node.array_variable->type = node.assignee->type;
     } else if(node.assignee->type == Unknown and node.array_variable->type != Unknown) {
         node.assignee->type = node.array_variable->type;
     } else if(node.array_variable->type == String and node.assignee->type == Integer) {
         node.array_variable->type = node.array_variable->type;
-    } else if (node.array_variable->type != node.assignee->type) {
-        CompileError(ErrorType::TypeError,"Found incorrect variable type in assignment.", node.tok.line, "", "", node.tok.file).print();
+    }
+
+    if (node.array_variable->type != Unknown and node.array_variable->type != node.assignee->type) {
+        CompileError(ErrorType::TypeError, "Found incorrect variable type in assignment.", node.tok.line, "", "",
+                     node.tok.file).print();
         exit(EXIT_FAILURE);
     }
     // a second time to get the new types to the declaration pointer!
@@ -210,7 +242,13 @@ void ASTTypeCasting::visit(NodeArray& node) {
 		CompileError(ErrorType::TypeError,"Array needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line, "<UI_Control>", node.get_string(), node.tok.file).exit();
 	}
 
+
     if(!node_declaration and !node_ui_control) {
+        // cannot be declaration
+//        if(node.type == Compiler) {
+//            node.type = m_return_variables.find(static_cast<NodeInt*>(node.indexes->params[0].get())->value)->second;
+//            node.name = m_compiler_arrays.find(node.type)->second;
+//        }
 		if(node.declaration->type != Unknown and node.type != Unknown and node.declaration->type != node.type) {
 			CompileError(ErrorType::TypeError,"Found arrays of same name and different types.", node.tok.line, type_to_string(node.declaration->type), type_to_string(node.type), node.tok.file).exit();
 		} else if (node.declaration->type != Unknown) {

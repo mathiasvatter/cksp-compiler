@@ -7,9 +7,10 @@
 ASTVariables::ASTVariables(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
                            const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
                            const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
-                           const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
+                           const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
+                           std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines)
         : m_builtin_functions(m_builtin_functions), m_builtin_variables(m_builtin_variables),
-		m_builtin_arrays(m_builtin_arrays), m_builtin_widgets(m_builtin_widgets) {}
+		m_builtin_arrays(m_builtin_arrays), m_builtin_widgets(m_builtin_widgets), m_function_inlines(std::move(m_function_inlines)) {}
 
 
 void ASTVariables::visit(NodeProgram& node) {
@@ -30,6 +31,27 @@ void ASTVariables::visit(NodeCallback& node) {
 		node.callback_id->accept(*this);
 	}
     node.statements->accept(*this);
+}
+
+void ASTVariables::visit(NodeStatement& node) {
+    if(!node.function_inlines.empty()) {
+        auto node_statement_list = std::make_unique<NodeStatementList>(node.function_inlines[0]->tok);
+        node_statement_list->parent = &node;
+        for(auto & func : node.function_inlines) {
+            auto it = m_function_inlines.find(func);
+            node_statement_list->statements.push_back(std::move(it->second));
+        }
+        node_statement_list->statements.push_back(statement_wrapper(std::move(node.statement), &node));
+        node_statement_list->accept(*this);
+        node.statement = std::move(node_statement_list);
+    } else
+    //    for (auto & pair: m_function_inlines) {
+//        if (!is_instance_of<NodeStatement>(pair.first)) {
+//
+//        }
+//
+//    }
+        node.statement->accept(*this);
 }
 
 void ASTVariables::visit(NodeUIControl& node) {
@@ -82,7 +104,7 @@ void ASTVariables::visit(NodeArray& node) {
 		}
     } else {
         // in case the user wants the raw array
-        bool has_compiler_identifier = node.name[0] == '_';
+        bool has_compiler_identifier = node.name[0] == '_'; //&& m_compiler_arrays.find(node.name) == m_compiler_arrays.end();
         if (has_compiler_identifier) node.name = node.name.erase(0,1);
 
         auto node_declaration = get_declared_array(node.name);

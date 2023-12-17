@@ -29,7 +29,8 @@ public:
     ASTVariables(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
                  const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
                  const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
-                 const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets);
+                 const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
+                 std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines);
 
     void visit(NodeProgram& node) override;
     void visit(NodeCallback& node) override;
@@ -38,6 +39,7 @@ public:
     void visit(NodeSingleDeclareStatement& node) override;
     void visit(NodeSingleAssignStatement& node) override;
 
+    void visit(NodeStatement& node) override;
 
     void visit(NodeStatementList& node) override;
 	void visit(NodeUIControl& node) override;
@@ -46,7 +48,7 @@ public:
 
 private:
 
-
+    std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines;
 
 	/// builtin engine functions
     const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_builtin_functions;
