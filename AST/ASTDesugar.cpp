@@ -28,10 +28,10 @@ void ASTDesugar::visit(NodeProgram& node) {
 		m_init_callback = node.callbacks[0].get();
 	}
 
-    declare_compiler_variables();
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }
+    declare_compiler_variables();
 	evaluating_functions = true;
     for(auto & function : m_function_definitions) {
         if(function->is_used and function->header->args->params.empty() and !function->return_variable.has_value()) {
@@ -42,6 +42,7 @@ void ASTDesugar::visit(NodeProgram& node) {
         }
     }
 	evaluating_functions = false;
+//    insert_function_inlines();
     for(auto & function : m_function_definitions) {
         if(function->is_used and function->header->args->params.empty() and !function->return_variable.has_value()) {
             node.function_definitions.push_back(std::move(function));
@@ -60,6 +61,7 @@ void ASTDesugar::visit(NodeCallback& node) {
     if(node.callback_id)
         node.callback_id->accept(*this);
     node.statements->accept(*this);
+    m_current_callback_idx++;
 }
 
 void ASTDesugar::visit(NodeBinaryExpr& node) {
@@ -140,8 +142,8 @@ void ASTDesugar::visit(NodeArray& node) {
     // function args substitution
     if(!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.name)) {
-            if(auto substitute_array = cast_node<NodeArray>(substitute.get())) {
-                node.name = substitute_array->name;
+            if(is_instance_of<NodeArray>(substitute.get()) || is_instance_of<NodeVariable>(substitute.get())) {
+                node.name = substitute->get_string();
             } else {
                 node.replace_with(std::move(substitute));
                 return;
@@ -233,31 +235,20 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
         // recursive function call detected
         CompileError(ErrorType::SyntaxError,"Recursive function call detected. Calling functions inside their definition is not allowed.", node.tok.line, "", node.function->name, node.tok.file).exit();
     }
+    NodeStatement* nearest_statement = m_current_statement;
     node.function->accept(*this);
 
-	if(node.function->name == "set_note_selection") {
-		std::cout <<"";
-	}
     // substitution start
     if (auto node_function_def = get_function_definition(node.function.get())) {
 		if(node.is_call and node_function_def->return_variable.has_value()) {
 			CompileError(ErrorType::SyntaxError, "Found incorrect use of return variable when using <call>.", node.tok.line, "", "", node.tok.file).exit();
 		}
-//        node_function_def->is_used = true;
         if(node.is_call) {
-//			node_function_def->body->accept(*this);
-//            if(has_local_variables) m_variable_scope_stack.pop();
-//            has_local_variables = false;
-//			m_function_call_stack.pop_back();
             return;
 		}
         // make functions call
         if(node.function->args->params.empty() and !node_function_def->return_variable.has_value()) {
             node.is_call = true;
-//			node_function_def->body->accept(*this);
-//            if(has_local_variables) m_variable_scope_stack.pop();
-//            has_local_variables = false;
-//			m_function_call_stack.pop_back();
             return;
         }
 		m_function_call_stack.push_back(node.function->name);
@@ -270,12 +261,9 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 		node_function_def->body->update_token_data(node.tok);
 		node_function_def->body->accept(*this);
 		if (!node.function->args->params.empty()) m_substitution_stack.pop();
-//        pop_substitution_stack();
         m_variable_scope_stack.pop();
-//        has_local_variables = false;
-
 		m_function_call_stack.pop_back();
-//		m_processing_function = evaluating_functions || !m_function_call_stack.empty();
+
         // has return variable
         if(node_function_def->return_variable.has_value()) {
             if(is_instance_of<NodeStatementList>(node.parent->parent)) {
@@ -295,32 +283,53 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
                     }
                 }
             } else if(node_function_def->body->statements.size() > 1) {
-                if(is_instance_of<NodeSingleDeclareStatement>(node.parent) or is_instance_of<NodeSingleAssignStatement>(node.parent)) {
-                    std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_map;
-                    if (auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent)) {
-                        substitution_map.insert({node_function_def->return_variable.value()->get_string(),
-                                                      node_declaration->to_be_declared->clone()});
-                        auto node_declare = std::make_unique<NodeSingleDeclareStatement>(node_declaration->to_be_declared->clone(),
-                                                                                         nullptr, node_declaration->tok);
-                        node_function_def->body->statements.insert(node_function_def->body->statements.begin(),
-                                                                   statement_wrapper(std::move(node_declare), node_function_def->body.get()));
-                    } else if (auto node_assignment = cast_node<NodeSingleAssignStatement>(node.parent)) {
-                        substitution_map.insert({node_function_def->return_variable.value()->get_string(),
-                                                      node_assignment->array_variable->clone()});
-                    }
-                    m_substitution_stack.push(std::move(substitution_map));
-                    node_function_def->body->accept(*this);
-                    node_function_def->body->parent = node.parent->parent;
-                    m_substitution_stack.pop();
-                    node.parent->replace_with(std::move(node_function_def->body));
-                    return;
-                } else {
-                    CompileError(ErrorType::SyntaxError,"Function can not be inlined since it consists of too many lines. Move function into assign statement.", node.tok.line, "<assignment>", "", node.tok.file).print();
-                    exit(EXIT_FAILURE);
+                auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
+                auto node_assignment = cast_node<NodeSingleAssignStatement>(node.parent);
+//                if(node_declaration or node_assignment) {
+                std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_map;
+//                if (node_declaration) {
+//                    substitution_map.insert({node_function_def->return_variable.value()->get_string(),
+//                                                  node_declaration->to_be_declared->clone()});
+//                    auto node_declare = std::make_unique<NodeSingleDeclareStatement>(node_declaration->to_be_declared->clone(),
+//                                                                                     nullptr, node_declaration->tok);
+//                    node_function_def->body->statements.insert(node_function_def->body->statements.begin(),
+//                                                               statement_wrapper(std::move(node_declare), node_function_def->body.get()));
+//                } else if (node_assignment) {
+//                    substitution_map.insert({node_function_def->return_variable.value()->get_string(),
+//                                                  node_assignment->array_variable->clone()});
+//                } else {
+                    auto node_return_array = make_array("return_vars_int", 0, node.tok, node.parent);
+                    node_return_array->type = Compiler;
+                    node_return_array->indexes->params.push_back(make_int(m_current_inline_idx++, node_return_array->indexes.get()));
+                    node_return_array->accept(*this);
+                    substitution_map.insert({node_function_def->return_variable.value()->get_string(),
+                                             node_return_array->clone()});
+                    node.replace_with(std::move(node_return_array));
+//                }
+                m_substitution_stack.push(std::move(substitution_map));
+                node_function_def->body->accept(*this);
+                m_substitution_stack.pop();
+                node_function_def->body->parent = node.parent->parent;
+                // if external new inline
+//                if(!node_declaration and !node_assignment) {
+                    auto node_statement = statement_wrapper(std::move(node_function_def->body), nullptr);
+                    auto ptr = node_statement->statement.get();
+                    m_function_inlines.insert({ptr, std::move(node_statement)});
+                    nearest_statement->function_inlines.push_back(ptr);
+//                } else {
+//                    node.parent->replace_with(std::move(node_function_def->body));
+//                }
+                return;
+//                } else {
+//                    CompileError(ErrorType::SyntaxError,"Function can not be inlined since it consists of too many lines. Move function into assign statement.", node.tok.line, "<assignment>", "", node.tok.file).print();
+//                    exit(EXIT_FAILURE);
+//                }
                 }
             }
-        }
+
+
         node.replace_with(std::move(node_function_def->body));
+
     } else if (auto builtin_func = get_builtin_function(node.function.get())) {
         node.function->type = builtin_func->type;
         node.function->arg_ast_types = builtin_func->arg_ast_types;
@@ -336,6 +345,25 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
         CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).exit();
     }
 }
+
+void ASTDesugar::visit(NodeStatement& node) {
+    m_current_statement = &node;
+    node.statement->accept(*this);
+};
+
+void ASTDesugar::insert_function_inlines() {
+//    for (auto & pair: m_function_inlines) {
+//        if (!is_instance_of<NodeStatement>(pair.first)) {
+//
+//        }
+//        auto node_statement_list = std::make_unique<NodeStatementList>(pair.first->tok);
+//        node_statement_list->parent = pair.first;
+//        node_statement_list->statements.push_back(statement_wrapper(std::move(pair.second), node_statement_list.get()));
+//        node_statement_list->statements.push_back(statement_wrapper(std::move(pair.first->statement),node_statement_list.get()));
+//        pair.first->statement = std::move(node_statement_list);
+//    }
+}
+
 
 std::unique_ptr<NodeStatementList> ASTDesugar::inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
     auto node_statement_list = std::make_unique<NodeStatementList>(function_header->tok);
@@ -843,6 +871,7 @@ void ASTDesugar::visit(NodeStatementList& node) {
     }
     for(int i=0; i<node.statements.size(); ++i) {
         if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
+
             // Wir speichern die Statements der inneren NodeStatementList
             auto& inner_statements = node_statement_list->statements;
             for (auto& stmt : inner_statements) {
@@ -1019,13 +1048,23 @@ void ASTDesugar::visit(NodeListStatement &node) {
 }
 
 void ASTDesugar::declare_compiler_variables() {
+    Token tok = Token(KEYWORD, "compiler_variable", 0, (std::string&)"");
     for(auto & var_name: m_compiler_variables) {
-        Token tok = Token(KEYWORD, var_name, 0, (std::string&)"");
         auto node_variable = std::make_unique<NodeVariable>(false, var_name, VarType::Mutable, tok);
+        node_variable->type = Compiler;
         auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), nullptr, tok);
         node_var_declaration->to_be_declared->parent = node_var_declaration.get();
         node_var_declaration->accept(*this);
         m_declare_statements_to_move.push_back(statement_wrapper(std::move(node_var_declaration), m_init_callback->statements.get()));
+    }
+    for(auto &arr_name : m_compiler_arrays) {
+        auto node_array = make_array(arr_name.second, m_current_callback_idx-1, tok, m_init_callback);
+        node_array -> type = arr_name.first;
+//        node_array -> type = arr_name.second;
+        auto node_arr_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), nullptr, tok);
+        node_arr_declaration->to_be_declared->parent = node_arr_declaration.get();
+        node_arr_declaration->accept(*this);
+        m_declare_statements_to_move.push_back(statement_wrapper(std::move(node_arr_declaration), m_init_callback->statements.get()));
     }
 }
 
@@ -1125,6 +1164,10 @@ std::unique_ptr<NodeAST> ASTDesugar::get_local_variable_substitute(const std::st
         return it->second->clone();
     }
     return nullptr;
+}
+
+std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> ASTDesugar::get_function_inlines() {
+    return std::move(m_function_inlines);
 }
 
 

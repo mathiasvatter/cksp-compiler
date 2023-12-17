@@ -28,6 +28,8 @@ public:
     static std::unique_ptr<NodeArray> make_array(const std::string& name, int32_t size, const Token& tok, NodeAST* parent);
     void add_vector_to_statement_list(std::unique_ptr<NodeStatementList> &list, std::vector<std::unique_ptr<NodeStatement>> stmts);
 
+    std::vector<std::string> m_compiler_variables = {"$_list_it", "$_ui_array_it", "$_string_it"};
+    std::unordered_map<ASTType, std::string> m_compiler_arrays = {{Integer, "return_vars_int"},{Real, "return_vars_real"}, {String, "return_vars_str"}};
 
     virtual void visit(NodeDeadEnd& node) {};
 	virtual void visit(NodeInt& node) {};

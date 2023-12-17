@@ -21,7 +21,7 @@ int main() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     auto path = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
-    path = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//    path = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    path = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 	Tokenizer tokenizer(path);
     auto tokens = tokenizer.tokenize();
@@ -68,7 +68,7 @@ int main() {
     auto desugaring_time = std::chrono::high_resolution_clock::now();
     auto desugaring_duration = std::chrono::duration_cast<std::chrono::milliseconds>(desugaring_time-parsing_time);
 
-    ASTVariables variables(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets());
+    ASTVariables variables(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets(), desugar.get_function_inlines());
     ast->accept(variables);
 
 	ASTTypeCasting typecast(builtins.get_builtin_widgets());
@@ -77,17 +77,17 @@ int main() {
     ASTTypeChecking type_check;
     ast->accept(type_check);
 
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto type_checking_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - desugaring_time);
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-
 //	ASTPrinter printer;
 //	ast->accept(printer);
 
 	ASTGenerator generator;
 	ast->accept(generator);
-//	generator.print();
+	generator.print();
 	generator.generate((std::string) curr_path.parent_path()+"/test.txt");
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto type_checking_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - desugaring_time);
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
     // Dauer in Millisekunden ausgeben
     std::cout << "Preprocessor Time: " << preprocessor_duration.count() << " ms, " << std::endl;
     std::cout << "Parsing Time: " << parsing_duration.count() << " ms, " << std::endl;

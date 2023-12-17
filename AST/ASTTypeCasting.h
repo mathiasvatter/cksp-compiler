@@ -34,6 +34,7 @@ private:
 //	const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
 	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
+    std::unordered_map<int, ASTType> m_return_variables;
 
     std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok);
 

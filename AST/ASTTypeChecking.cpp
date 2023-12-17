@@ -52,5 +52,7 @@ void ASTTypeChecking::visit(NodeArray& node) {
 
 void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
     node.to_be_declared->accept(*this);
+    if(node.assignee)
+        node.assignee->accept(*this);
 
 }

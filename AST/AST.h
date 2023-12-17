@@ -26,7 +26,8 @@ enum ASTType {
 	ParamList,
     Void,
 	StatementList,
-	Statement
+	Statement,
+    Compiler
 
 };
 
@@ -66,7 +67,7 @@ enum VarType {
     List,
     Mutable,
 	Define,
-    UI_Control
+    UI_Control,
 };
 
 struct NodeAST {
@@ -172,6 +173,7 @@ struct NodeVariable: NodeAST {
     bool is_persistent;
     bool is_local;
 	bool is_global;
+    bool is_compiler;
     VarType var_type = VarType::Mutable;
 	std::string name;
     NodeAST* declaration; // index in declaration array
@@ -221,6 +223,7 @@ struct NodeArray : NodeAST {
     bool is_persistent;
     bool is_local;
 	bool is_global;
+    bool is_compiler;
     int dimensions = 1;
     VarType var_type = VarType::Array;
     std::string name;
@@ -483,9 +486,12 @@ struct NodeSetControlStatement : NodeAST {
     }
 };
 
+struct NodeStatementList;
+
 // can be assign_statement, if_statement etc.
 struct NodeStatement: NodeAST {
     std::unique_ptr<NodeAST> statement;
+    std::vector<NodeAST*> function_inlines = {};
     inline explicit NodeStatement(Token tok) : NodeAST(tok) {type = Statement;}
     inline NodeStatement(std::unique_ptr<NodeAST> statement, Token tok) : NodeAST(tok), statement(std::move(statement)) {type = Statement;}
 	void accept(ASTVisitor& visitor) override;
@@ -503,6 +509,35 @@ struct NodeStatement: NodeAST {
     }
     void update_token_data(const Token& token) override {
         statement -> update_token_data(token);
+    }
+};
+
+
+struct NodeStatementList : NodeAST {
+    std::vector<std::unique_ptr<NodeStatement>> statements;
+    inline explicit NodeStatementList(Token tok) : NodeAST(tok) {type = StatementList;}
+    inline NodeStatementList(std::vector<std::unique_ptr<NodeStatement>> statements, Token tok)
+            : NodeAST(tok), statements(std::move(statements)) {type = StatementList;}
+    void accept(ASTVisitor& visitor) override;
+    NodeStatementList(const NodeStatementList& other);
+    std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        parent = new_parent;
+        for (auto & stmt : statements) {
+            stmt->update_parents(this);
+        }
+    }
+    std::string get_string() override {
+        std::string str;
+        for(auto & stmt : statements) {
+            str += stmt->get_string();
+        }
+        return str;
+    }
+    void update_token_data(const Token& token) override {
+        for(auto &stmt : statements) {
+            stmt->update_token_data(token);
+        }
     }
 };
 
@@ -602,34 +637,6 @@ struct NodeListStatement : NodeAST {
     void update_token_data(const Token& token) override {
         for(auto &b : body) {
             b->update_token_data(token);
-        }
-    }
-};
-
-struct NodeStatementList : NodeAST {
-    std::vector<std::unique_ptr<NodeStatement>> statements;
-    inline explicit NodeStatementList(Token tok) : NodeAST(tok) {type = StatementList;}
-    inline NodeStatementList(std::vector<std::unique_ptr<NodeStatement>> statements, Token tok)
-    : NodeAST(tok), statements(std::move(statements)) {type = StatementList;}
-    void accept(ASTVisitor& visitor) override;
-    NodeStatementList(const NodeStatementList& other);
-    std::unique_ptr<NodeAST> clone() const override;
-    void update_parents(NodeAST* new_parent) override {
-        parent = new_parent;
-        for (auto & stmt : statements) {
-            stmt->update_parents(this);
-        }
-    }
-    std::string get_string() override {
-        std::string str;
-        for(auto & stmt : statements) {
-            str += stmt->get_string();
-        }
-        return str;
-    }
-    void update_token_data(const Token& token) override {
-        for(auto &stmt : statements) {
-            stmt->update_token_data(token);
         }
     }
 };

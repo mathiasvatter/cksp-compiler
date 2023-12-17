@@ -42,7 +42,7 @@ public:
     void visit(NodeForStatement& node) override;
     void visit(NodeListStatement& node) override;
     void visit(NodeStatementList& node) override;
-
+    void visit(NodeStatement& node) override;
     void visit(NodeArray& node) override;
     void visit(NodeVariable& node) override;
 
@@ -55,7 +55,7 @@ private:
 //	const std::vector<std::unique_ptr<NodeUIControl>>& m_builtin_widgets;
 	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
-    std::vector<std::string> m_compiler_variables = {"$_list_it", "$_ui_array_it", "$_string_it"};
+
     void declare_compiler_variables();
 
 
@@ -73,6 +73,10 @@ private:
     bool m_in_init_callback = false;
     NodeCallback* m_init_callback;
     NodeCallback* m_current_callback;
+    int m_current_callback_idx = 0;
+    /// used for counting up the return_var_idx
+    int m_current_inline_idx = 0;
+    NodeStatement* m_current_statement;
 //    bool m_processing_function = false;
 	bool evaluating_functions = false;
 //    bool has_local_variables = false;
@@ -90,7 +94,14 @@ private:
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
     std::unique_ptr<NodeFunctionDefinition> get_function_definition(NodeFunctionHeader* function_header);
 
-	int local_var_counter = 0;
+    void insert_function_inlines();
+    std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> m_function_inlines;
+public:
+    std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> get_function_inlines();
+
+private:
+
+    int local_var_counter = 0;
     std::stack<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_variable_scope_stack;
     std::unique_ptr<NodeAST> get_local_variable_substitute(const std::string& name);
 
