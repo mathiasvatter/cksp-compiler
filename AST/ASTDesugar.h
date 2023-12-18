@@ -40,6 +40,9 @@ public:
     void visit(NodeFamilyStatement& node) override;
 	/// alter for loops to while loops
     void visit(NodeForStatement& node) override;
+    void visit(NodeWhileStatement& node) override;
+    void visit(NodeIfStatement& node) override;
+
     void visit(NodeListStatement& node) override;
     void visit(NodeStatementList& node) override;
     void visit(NodeStatement& node) override;
@@ -55,7 +58,7 @@ private:
 //	const std::vector<std::unique_ptr<NodeUIControl>>& m_builtin_widgets;
 	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
-
+    void declare_dummy_return_variable();
     void declare_compiler_variables();
 
 
@@ -76,7 +79,9 @@ private:
     int m_current_callback_idx = 0;
     /// used for counting up the return_var_idx
     int m_current_inline_idx = 0;
-    NodeStatement* m_current_statement;
+    NodeAST* m_return_dummy_declaration;
+
+    NodeAST* m_current_function_inline_statement;
 //    bool m_processing_function = false;
 	bool evaluating_functions = false;
 //    bool has_local_variables = false;
@@ -84,7 +89,7 @@ private:
     std::stack<std::string> m_family_prefixes;
     std::stack<std::string> m_const_prefixes;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
-    std::vector<std::unique_ptr<NodeStatement>> m_declare_statements_to_move;
+//    std::vector<std::unique_ptr<NodeStatement>> m_declare_statements_to_move;
 
     std::vector<std::string> m_function_call_stack;
 
@@ -102,7 +107,11 @@ public:
 private:
 
     int local_var_counter = 0;
-    std::stack<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_variable_scope_stack;
+    std::vector<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_variable_scope_stack;
+    std::vector<std::unique_ptr<NodeStatement>> m_local_declare_statements;
+    std::set<std::string> m_local_variables;
+    std::set<std::string> m_local_already_declared_vars;
+    NodeAST* m_local_var_dummy_declaration;
     std::unique_ptr<NodeAST> get_local_variable_substitute(const std::string& name);
 
     std::vector<std::unique_ptr<NodeStatement>> add_read_functions(NodeAST* var, NodeAST* parent);

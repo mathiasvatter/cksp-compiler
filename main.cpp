@@ -21,7 +21,7 @@ int main() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     auto path = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
-//    path = "/Users/mathias/Scripting/the-score/the-score.ksp";
+    path = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    path = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 	Tokenizer tokenizer(path);
     auto tokens = tokenizer.tokenize();
@@ -71,7 +71,7 @@ int main() {
     ASTVariables variables(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets(), desugar.get_function_inlines());
     ast->accept(variables);
 
-	ASTTypeCasting typecast(builtins.get_builtin_widgets());
+	ASTTypeCasting typecast(builtins.get_builtin_widgets(), builtins.get_builtin_functions());
 	ast->accept(typecast);
 
     ASTTypeChecking type_check;
@@ -82,7 +82,7 @@ int main() {
 
 	ASTGenerator generator;
 	ast->accept(generator);
-	generator.print();
+//	generator.print();
 	generator.generate((std::string) curr_path.parent_path()+"/test.txt");
 
     auto end_time = std::chrono::high_resolution_clock::now();

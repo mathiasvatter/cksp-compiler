@@ -125,7 +125,9 @@ Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_
     std::unique_ptr<NodeParamList> func_args = std::unique_ptr<NodeParamList>(new NodeParamList({}, func_name));
     std::vector<ASTType> arg_types;
     std::vector<VarType> arg_var_types;
+    bool has_forced_parenth = false;
     if (peek(m_tokens).type == token::OPEN_PARENTH) {
+        has_forced_parenth = true;
         consume(m_tokens); // consume (
         if(peek(m_tokens).type != token::CLOSED_PARENTH) {
             auto arg_pair = parse_builtin_args_list(func_args);
@@ -151,6 +153,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_
     auto node_function = std::make_unique<NodeFunctionHeader>(func_name.val, std::move(func_args), func_name);
     node_function->type = return_type;
     node_function->is_engine = true;
+    node_function->has_forced_parenth = has_forced_parenth;
     node_function->arg_var_types = arg_var_types;
     node_function->arg_ast_types = arg_types;
     return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(node_function));

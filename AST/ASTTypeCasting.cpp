@@ -5,8 +5,9 @@
 #include "ASTTypeCasting.h"
 #include "ASTDesugar.h"
 
-ASTTypeCasting::ASTTypeCasting(const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
-: m_builtin_widgets(m_builtin_widgets) {
+ASTTypeCasting::ASTTypeCasting(const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
+                               const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions)
+: m_builtin_widgets(m_builtin_widgets), m_builtin_functions(m_builtin_functions) {
 
 }
 
@@ -59,11 +60,7 @@ void ASTTypeCasting::visit(NodeUIControl& node) {
 	}
 
 	node.control_var->accept(*this);
-    // unused variable declarations being replaced with node_dead_end
-    if(!node.control_var) {
-        node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
-        return;
-    }
+
 
 	auto err = CompileError(ErrorType::TypeError,"Found wrong type in engine widget arguments.", node.tok.line, "", "", node.tok.file);
 	if(!node.arg_ast_types.empty()) {
@@ -97,8 +94,7 @@ void ASTTypeCasting::visit(NodeUIControl& node) {
 void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
     node.to_be_declared ->accept(*this);
 
-    // unused variable declarations being replaced with node_dead_end
-    if(!node.to_be_declared) return;
+
 
     if(node.assignee) {
         node.assignee->accept(*this);
@@ -109,16 +105,7 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
             node.to_be_declared->type = node.to_be_declared->type;
         } else if(node.to_be_declared->type == Unknown) {
             node.to_be_declared->type = node.assignee->type;
-        }
-
-//        if(node.to_be_declared->type == Compiler and node.assignee->type != Unknown) {
-//            if(auto node_array = cast_node<NodeArray>(node.to_be_declared.get())) {
-//                node_array->name = m_compiler_arrays.find(node.assignee->type)->second;
-//                node_array->type = node.assignee->type;
-//            }
-//        }
-
-        if(node.to_be_declared->type != Unknown and node.assignee->type != node.to_be_declared->type) {
+        } else if(node.to_be_declared->type != Unknown and node.assignee->type != node.to_be_declared->type) {
             CompileError(ErrorType::TypeError, "Found incorrect variable type in declaration.", node.tok.line, "", "",
                          node.tok.file).print();
 //            exit(EXIT_FAILURE);
@@ -161,13 +148,6 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
 
 void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
     node.assignee->accept(*this);
-//    if(node.array_variable->type == Compiler and node.assignee->type != Unknown) {
-//        if(auto node_array = cast_node<NodeArray>(node.array_variable.get())) {
-//            node_array->name = m_compiler_arrays.find(node.assignee->type)->second;
-//            node_array->type = node.assignee->type;
-//            m_return_variables.insert({static_cast<NodeInt*>(node_array->indexes->params[0].get())->value, node_array->type});
-//        }
-//    }
     node.array_variable->accept(*this);
     if(node.array_variable->type == Unknown) {
         node.array_variable->type = node.assignee->type;
@@ -175,9 +155,7 @@ void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
         node.assignee->type = node.array_variable->type;
     } else if(node.array_variable->type == String and node.assignee->type == Integer) {
         node.array_variable->type = node.array_variable->type;
-    }
-
-    if (node.array_variable->type != Unknown and node.array_variable->type != node.assignee->type) {
+    } else if (node.array_variable->type != Unknown and node.array_variable->type != node.assignee->type) {
         CompileError(ErrorType::TypeError, "Found incorrect variable type in assignment.", node.tok.line, "", "",
                      node.tok.file).print();
         exit(EXIT_FAILURE);
@@ -188,16 +166,17 @@ void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
 }
 
 void ASTTypeCasting::visit(NodeVariable& node) {
+
     auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
     if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
     auto node_ui_control = cast_node<NodeUIControl>(node.parent);
 
-    if(node_declaration || node_ui_control) {
-        if(!node.is_used) {
-            node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
-            return;
-        }
-    }
+//    if(node_declaration || node_ui_control) {
+//        if(!node.is_used) {
+//            node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
+//            return;
+//        }
+//    }
 
 	auto node_callback_id = cast_node<NodeCallback>(node.parent);
 	if(node_callback_id) {
@@ -213,7 +192,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 		}
 	}
 
-    if(!node_declaration and !node_ui_control) {
+    if(!node_declaration and !node_ui_control and !node.is_compiler_return and !node.is_local) {
 		if(node.declaration->type != Unknown and node.type != Unknown and node.declaration->type != node.type) {
 			CompileError(ErrorType::TypeError,"Found variables of same name and different types.", node.tok.line, type_to_string(node.declaration->type), type_to_string(node.type), node.tok.file).exit();
 		} else if (node.declaration->type != Unknown) {
@@ -222,6 +201,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
             node.declaration->type = node.type;
         }
     }
+
 }
 
 void ASTTypeCasting::visit(NodeArray& node) {
@@ -230,12 +210,12 @@ void ASTTypeCasting::visit(NodeArray& node) {
     if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
     auto node_ui_control = cast_node<NodeUIControl>(node.parent);
 
-    if(node_declaration || node_ui_control) {
-        if(!node.is_used) {
-            node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
-            return;
-        }
-    }
+//    if(node_declaration || node_ui_control) {
+//        if(!node.is_used) {
+//            node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
+//            return;
+//        }
+//    }
 
 	auto node_callback_id = cast_node<NodeCallback>(node.parent);
 	if(node_callback_id and node.var_type != UI_Control) {
@@ -244,11 +224,6 @@ void ASTTypeCasting::visit(NodeArray& node) {
 
 
     if(!node_declaration and !node_ui_control) {
-        // cannot be declaration
-//        if(node.type == Compiler) {
-//            node.type = m_return_variables.find(static_cast<NodeInt*>(node.indexes->params[0].get())->value)->second;
-//            node.name = m_compiler_arrays.find(node.type)->second;
-//        }
 		if(node.declaration->type != Unknown and node.type != Unknown and node.declaration->type != node.type) {
 			CompileError(ErrorType::TypeError,"Found arrays of same name and different types.", node.tok.line, type_to_string(node.declaration->type), type_to_string(node.type), node.tok.file).exit();
 		} else if (node.declaration->type != Unknown) {
@@ -262,6 +237,18 @@ void ASTTypeCasting::visit(NodeArray& node) {
     if(node.sizes->type != Integer and node.sizes->type != Unknown) err.exit();
     node.indexes->accept(*this);
     if(node.indexes->type != Integer and node.indexes->type != Unknown) err.exit();
+
+    if(node.var_type == UI_Control and node.indexes->params.empty()) {
+        auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
+        if(node_control_function and contains(node_control_function->name, "control_par")) {
+            auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(
+                    static_cast<NodeFunctionHeader *>(get_builtin_function("get_ui_id")->clone().release()));
+            node_get_ui_id->args->params.clear();
+            node_get_ui_id->args->params.push_back(node.clone());
+            node_get_ui_id->update_parents(node.parent);
+            node.replace_with(std::move(node_get_ui_id));
+        }
+    }
 
 }
 
@@ -497,6 +484,16 @@ NodeUIControl* ASTTypeCasting::get_builtin_widget(const std::string &ui_control)
 	return nullptr;
 }
 
+NodeFunctionHeader* ASTTypeCasting::get_builtin_function(const std::string &function) {
+    auto it = std::find_if(m_builtin_functions.begin(), m_builtin_functions.end(),
+                           [&](const std::unique_ptr<NodeFunctionHeader> &func) {
+                               return (func->name == function);
+                           });
+    if(it != m_builtin_functions.end()) {
+        return m_builtin_functions[std::distance(m_builtin_functions.begin(), it)].get();
+    }
+    return nullptr;
+}
 
 
 

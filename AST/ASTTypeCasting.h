@@ -9,7 +9,8 @@
 class ASTTypeCasting : public ASTVisitor {
 public:
     explicit ASTTypeCasting(
-            const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets);
+            const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
+            const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions);
 
     void visit(NodeProgram& node) override;
     void visit(NodeSingleDeclareStatement& node) override;
@@ -33,6 +34,9 @@ private:
     const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
 //	const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
 	NodeUIControl* get_builtin_widget(const std::string &ui_control);
+
+    const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions;
+    NodeFunctionHeader* get_builtin_function(const std::string &function);
 
     std::unordered_map<int, ASTType> m_return_variables;
 

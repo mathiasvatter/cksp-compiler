@@ -53,9 +53,9 @@ void NodeVariable::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeVariable::NodeVariable(const NodeVariable& other) : NodeAST(other),
-    is_engine(other.is_engine), is_persistent(other.is_persistent),
-    is_local(other.is_local), is_global(other.is_global), is_compiler(other.is_compiler),
-    var_type(other.var_type), name(other.name), declaration(other.declaration) {}
+                                                        is_engine(other.is_engine), is_persistent(other.is_persistent),
+                                                        is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
+                                                        var_type(other.var_type), name(other.name), declaration(other.declaration) {}
 std::unique_ptr<NodeAST> NodeVariable::clone() const {
     return std::make_unique<NodeVariable>(*this);
 }
@@ -85,7 +85,7 @@ void NodeArray::accept(ASTVisitor &visitor) {
 }
 NodeArray::NodeArray(const NodeArray& other)
         : NodeAST(other), is_engine(other.is_engine), is_persistent(other.is_persistent),
-          is_local(other.is_local), is_global(other.is_global), is_compiler(other.is_compiler),
+          is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
           var_type(other.var_type), name(other.name),
           sizes(clone_unique(other.sizes)), indexes(clone_unique(other.indexes)),
           declaration(other.declaration), dimensions(other.dimensions) {}
@@ -404,7 +404,9 @@ void NodeFunctionHeader::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeFunctionHeader::NodeFunctionHeader(const NodeFunctionHeader& other)
-        : NodeAST(other), name(other.name), args(clone_unique(other.args)), arg_ast_types(other.arg_ast_types), arg_var_types(other.arg_var_types) {
+        : NodeAST(other), name(other.name), is_engine(other.is_engine),
+        has_forced_parenth(other.has_forced_parenth), args(clone_unique(other.args)),
+        arg_ast_types(other.arg_ast_types), arg_var_types(other.arg_var_types) {
 }
 std::unique_ptr<NodeAST> NodeFunctionHeader::clone() const {
     return std::make_unique<NodeFunctionHeader>(*this);
