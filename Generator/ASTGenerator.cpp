@@ -116,7 +116,7 @@ void ASTGenerator::visit(NodeBinaryExpr &node) {
 }
 
 void ASTGenerator::visit(NodeUnaryExpr &node) {
-    os << node.op.val;
+    os << node.op.val << " ";
     node.operand->accept(*this);
 }
 
@@ -183,10 +183,13 @@ void ASTGenerator::visit(NodeCallback &node) {
 }
 
 void ASTGenerator::visit(NodeFunctionHeader &node) {
+    if(node.name == "mf_reset") {
+
+    }
     os << sanitize_dots(node.name);
-	if(!node.args->params.empty()) os << "(";
+	if(!node.args->params.empty() || node.has_forced_parenth) os << "(";
     node.args->accept(*this);
-	if(!node.args->params.empty()) os << ")";
+	if(!node.args->params.empty() || node.has_forced_parenth) os << ")";
 }
 
 void ASTGenerator::visit(NodeFunctionCall &node) {

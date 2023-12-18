@@ -27,7 +27,7 @@ enum ASTType {
     Void,
 	StatementList,
 	Statement,
-    Compiler
+//    Compiler
 
 };
 
@@ -170,10 +170,10 @@ struct NodeString : NodeAST {
 struct NodeVariable: NodeAST {
     bool is_used = false;
     bool is_engine = false;
-    bool is_persistent;
-    bool is_local;
-	bool is_global;
-    bool is_compiler;
+    bool is_persistent = false;
+    bool is_local = false;
+	bool is_global = false;
+    bool is_compiler_return = false;
     VarType var_type = VarType::Mutable;
 	std::string name;
     NodeAST* declaration; // index in declaration array
@@ -220,10 +220,10 @@ struct NodeParamList: NodeAST {
 struct NodeArray : NodeAST {
     bool is_used = false;
     bool is_engine = false;
-    bool is_persistent;
-    bool is_local;
-	bool is_global;
-    bool is_compiler;
+    bool is_persistent = false;
+    bool is_local = false;
+	bool is_global = false;
+    bool is_compiler_return = false;
     int dimensions = 1;
     VarType var_type = VarType::Array;
     std::string name;
@@ -792,6 +792,7 @@ struct NodeImport : NodeAST {
 
 struct NodeFunctionHeader: NodeAST {
     bool is_engine = false;
+    bool has_forced_parenth = false;
     std::string name;
     std::unique_ptr<NodeParamList> args;
     std::vector<ASTType> arg_ast_types;

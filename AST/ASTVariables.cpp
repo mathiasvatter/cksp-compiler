@@ -39,18 +39,15 @@ void ASTVariables::visit(NodeStatement& node) {
         node_statement_list->parent = &node;
         for(auto & func : node.function_inlines) {
             auto it = m_function_inlines.find(func);
+            if(!is_instance_of<NodeStatementList>(it->first)) {
+
+            }
             node_statement_list->statements.push_back(std::move(it->second));
         }
         node_statement_list->statements.push_back(statement_wrapper(std::move(node.statement), &node));
         node_statement_list->accept(*this);
         node.statement = std::move(node_statement_list);
     } else
-    //    for (auto & pair: m_function_inlines) {
-//        if (!is_instance_of<NodeStatement>(pair.first)) {
-//
-//        }
-//
-//    }
         node.statement->accept(*this);
 }
 
@@ -81,6 +78,10 @@ void ASTVariables::visit(NodeUIControl& node) {
 }
 
 void ASTVariables::visit(NodeArray& node) {
+
+    if(node.name == "_id") {
+
+    }
 	auto node_builtin_array = get_builtin_array(&node);
 	auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
 	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
@@ -104,7 +105,7 @@ void ASTVariables::visit(NodeArray& node) {
 		}
     } else {
         // in case the user wants the raw array
-        bool has_compiler_identifier = node.name[0] == '_'; //&& m_compiler_arrays.find(node.name) == m_compiler_arrays.end();
+        bool has_compiler_identifier = node.name[0] == '_' && node.name[1] != '_' && !node.is_engine; //&& m_return_arrays.find(node.name) == m_return_arrays.end();
         if (has_compiler_identifier) node.name = node.name.erase(0,1);
 
         auto node_declaration = get_declared_array(node.name);
@@ -163,6 +164,16 @@ void ASTVariables::visit(NodeArray& node) {
 }
 
 void ASTVariables::visit(NodeVariable& node) {
+    // handle return_vars -> do not check if they have been declared
+    if(node.is_compiler_return or node.is_local) {
+        node.is_used = true;
+        return;
+    }
+
+    if(node.name == "_id") {
+
+    }
+
     auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
 	auto node_builtin_variable = get_builtin_variable(&node);
 	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
@@ -190,26 +201,25 @@ void ASTVariables::visit(NodeVariable& node) {
     } else {
 		// no removing of raw array identifier for the variable search
         auto node_first_declaration = get_declared_variable(node.name);
-		// in case the user wants the raw array
-		bool has_compiler_identifier = node.name[0] == '_';
-		if (has_compiler_identifier) node.name = node.name.erase(0,1);
+        // in case the user wants the raw array
+        bool has_compiler_identifier = node.name[0] == '_' && node.name[1] != '_' && !node.is_engine;
+        if (has_compiler_identifier) node.name = node.name.erase(0, 1);
         // sometimes a variable can also be an array if notated without brackets -> replace with array node
         auto node_first_array_declaration = get_declared_array(node.name);
-		if (has_compiler_identifier) node.name = "_"+node.name;
-        if(node_first_declaration || node_first_array_declaration) {
-            if(node_first_declaration) {
-				if(node_first_declaration->var_type == UI_Control) node.var_type = node_first_declaration->var_type;
-                node.declaration = node_first_declaration;
-                node_first_declaration->is_used = true;
-            }
-            if(node_first_array_declaration) {
-				auto node_array = make_array(node.name, 0, node.tok, node.parent);
-                node_array->sizes->params.clear();
-                node_array->type = node.type;
-                node_array->declaration = node_first_array_declaration;
-                node_array->accept(*this);
-                node.replace_with(std::move(node_array));
-            }
+        if (has_compiler_identifier) node.name = "_" + node.name;
+        if (!node_first_array_declaration) node_first_array_declaration = get_declared_array(node.name);
+        if(node_first_declaration) {
+            if(node_first_declaration->var_type == UI_Control) node.var_type = node_first_declaration->var_type;
+            node.declaration = node_first_declaration;
+            node_first_declaration->is_used = true;
+        // can only be array if parent is param_list or callback
+        } else if((cast_node<NodeParamList>(node.parent) || cast_node<NodeCallback>(node.parent)) && node_first_array_declaration) {
+            auto node_array = make_array(node.name, 0, node.tok, node.parent);
+            node_array->sizes->params.clear();
+            node_array->type = node.type;
+            node_array->declaration = node_first_array_declaration;
+            node_array->accept(*this);
+            node.replace_with(std::move(node_array));
         } else if(node_builtin_variable) {
             node.declaration = node_builtin_variable;
         } else {
@@ -217,6 +227,7 @@ void ASTVariables::visit(NodeVariable& node) {
 //			exit(EXIT_FAILURE);
         }
     }
+
 }
 
 void ASTVariables::visit(NodeFunctionCall &node) {
