@@ -7,6 +7,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <set>
+#include <unordered_set>
 
 #include "AST.h"
 
@@ -29,14 +30,15 @@ public:
     static std::unique_ptr<NodeArray> make_array(const std::string& name, int32_t size, const Token& tok, NodeAST* parent);
     void add_vector_to_statement_list(std::unique_ptr<NodeStatementList> &list, std::vector<std::unique_ptr<NodeStatement>> stmts);
 
+    std::set<std::string> m_restricted_builtin_functions = {"save_array", "save_array_str", "load_array", "load_array_str"};
     std::vector<std::string> m_compiler_variables = {"$_list_it", "$_ui_array_it", "$_string_it"};
     std::unordered_map<ASTType, std::string> m_return_arrays = {{Integer, "_return_vars_int"}, {Real, "_return_vars_real"}, {String, "_return_vars_str"}};
     std::unordered_map<ASTType, std::string> m_local_var_arrays = {{Integer, "_loc_var_int"}, {Real, "_loc_var_real"}, {String, "_loc_var_str"}};
 
     virtual void visit(NodeDeadEnd& node) {};
-	virtual void visit(NodeInt& node) {};
-    virtual void visit(NodeReal& node) {};
-    virtual void visit(NodeString& node) {};
+	virtual void visit(NodeInt& node) {node.type = Integer;};
+    virtual void visit(NodeReal& node) {node.type = Real;};
+    virtual void visit(NodeString& node) {node.type = String;};
     virtual void visit(NodeVariable& node) {};
     virtual void visit(NodeParamList& node) {
 		for(auto & param : node.params) {
