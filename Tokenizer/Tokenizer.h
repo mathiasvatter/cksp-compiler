@@ -37,8 +37,14 @@ struct Token {
 inline static bool contains(std::vector<char> &vec, char c) {
     return std::any_of(vec.begin(), vec.end(), [&](const auto& ch) {return ch == c;});
 };
+inline static bool contains(std::set<char> &vec, char c) {
+    return vec.find(c) != vec.end();
+};
 inline static bool contains(const std::vector<std::string>& vec, const std::string& value) {
     return std::find(vec.begin(), vec.end(), value) != vec.end();
+};
+inline static bool contains(const std::set<std::string>& vec, const std::string& value) {
+    return vec.find(value) != vec.end();
 };
 inline static bool contains(const std::vector<Keyword>& vec, const std::string& value) {
     return std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
@@ -51,6 +57,18 @@ inline static bool contains(const std::string& string, const std::string& substr
 
 inline static long count_char(const std::string& str, char c) {
 	return std::count(str.begin(), str.end(), c);
+}
+
+inline std::string remove_substring(const std::string& str, const std::string& substring) {
+    // Suche nach dem Substring im Hauptstring
+    size_t pos = str.find(substring);
+    // Wenn der Substring gefunden wurde, entferne ihn
+    if (pos != std::string::npos) {
+        auto new_str = str;
+        new_str.erase(pos, substring.length());
+        return new_str;
+    }
+    return str;
 }
 
 inline static token get_token_type(const std::vector<Keyword>& vec, const std::string& value) {

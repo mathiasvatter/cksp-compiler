@@ -6,6 +6,7 @@
 #include <iostream>
 #include <utility>
 #include <unordered_map>
+#include <set>
 
 /// defines the token names and the string that represents them while debugging
 #define ENUM_LIST(XX) \
@@ -128,14 +129,14 @@ struct Keyword {
 	std::string value;
 };
 
-inline std::vector<char> BINARY_OPERATORS = {'-', '+', '/', '*', '&'};
-inline std::vector<char> PARENTH = {'(',')', '[', ']'};
-inline std::vector<char> VAR_IDENT = {'$', '~', '@'};
-inline std::vector<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
+inline std::set<char> BINARY_OPERATORS = {'-', '+', '/', '*', '&'};
+inline std::set<char> PARENTH = {'(',')', '[', ']'};
+inline std::set<char> VAR_IDENT = {'$', '~', '@'};
+inline std::set<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
 inline std::unordered_map<std::string, token> TYPES = {{"$", INT}, {"~", FLOAT}, {"@", STRING}, {"%", INT}, {"?", FLOAT}, {"!", STRING}};
-inline std::vector<char> COMMENT_START = {'{', '/'};
-inline std::vector<char> COMPARISON_OPERATORS_START = {'<', '>', '=', '#'};
-inline std::vector<std::string> UI_CONTROLS = {"ui_label", "ui_button", "ui_switch", "ui_slider", "ui_menu",
+inline std::set<char> COMMENT_START = {'{', '/'};
+inline std::set<char> COMPARISON_OPERATORS_START = {'<', '>', '=', '#'};
+inline std::set<std::string> UI_CONTROLS = {"ui_label", "ui_button", "ui_switch", "ui_slider", "ui_menu",
 										   "ui_value_edit", "ui_waveform", "ui_wavetable",
 										   "ui_knob", "ui_table", "ui_xy",
 										   "ui_text_edit", "ui_level_meter", "ui_file_selector",
@@ -156,10 +157,10 @@ inline std::unordered_map<std::string, token> END_STATEMENTS = {{"end function",
 inline std::unordered_map<std::string, token> STATEMENTS = {{"function", FUNCTION}, {"for", FOR}, {"while", WHILE}, {"if", IF},
                                           {"select", SELECT}, {"const", CONST}, {"list", LIST}, {"family", FAMILY},
                                           {"struct", STRUCT}, {"macro", MACRO}, {"taskfunc", TASKFUNC}};
-inline std::vector<std::string> CALLBACKS = {"init", "note", "release", "midi_in", "controller",
+inline std::set<std::string> CALLBACKS = {"init", "note", "release", "midi_in", "controller",
 											 "rpn", "nrpn", "ui_update", "_pgs_changed", "pgs_changed",
 											 "poly_at", "listener", "async_complete", "persistence_changed", "ui_control"};
-
+inline std::set<std::string> RESTRICTED_CALLBACKS = {"init", "persistence_changed", "ui_control", "pgs_changed"};
 inline std::unordered_map<std::string, token> BITWISE_OPERATORS = {{".and.", BIT_AND}, {".or.", BIT_OR}, {".not.", BIT_NOT}, {".xor.", BIT_XOR}};
 //inline std::vector<Keyword> BITWISE_OPERATORS = {{BIT_AND, ".and."}, {BIT_OR, ".or."}, {BIT_NOT, ".not."}, {BIT_XOR, ".xor."}};
 inline std::unordered_map<std::string, token> BOOL_OPERATORS = {{"and", BOOL_AND}, {"or", BOOL_OR}, {"not", BOOL_NOT}};

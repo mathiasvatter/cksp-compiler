@@ -428,7 +428,7 @@ void NodeFunctionDefinition::accept(ASTVisitor &visitor) {
 }
 NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& other)
         : NodeAST(other), header(clone_unique(other.header)), override(other.override),
-          body(clone_unique(other.body)) {
+          call(other.call), body(clone_unique(other.body)) {
     if (other.return_variable) {
         return_variable = std::make_optional(clone_unique(other.return_variable.value()));
     }

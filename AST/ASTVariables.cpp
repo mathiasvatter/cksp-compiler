@@ -21,9 +21,11 @@ void ASTVariables::visit(NodeProgram& node) {
 //		std::cout << std::endl;
         callback->accept(*this);
     }
+    m_evaluating_functions = true;
     for(auto & function_definition : node.function_definitions) {
         function_definition->accept(*this);
     }
+    m_evaluating_functions = false;
 }
 
 void ASTVariables::visit(NodeCallback& node) {
@@ -78,8 +80,7 @@ void ASTVariables::visit(NodeUIControl& node) {
 }
 
 void ASTVariables::visit(NodeArray& node) {
-
-    if(node.name == "_id") {
+    if(node.name == "btn_edit_pics") {
 
     }
 	auto node_builtin_array = get_builtin_array(&node);
@@ -112,6 +113,7 @@ void ASTVariables::visit(NodeArray& node) {
         if(node_declaration) node_declaration->is_used = true;
         if(node_declaration and not has_compiler_identifier) {
             node.declaration = node_declaration;
+            node.type = node.declaration->type;
             node.dimensions = node_declaration->dimensions;
             // get var type from declaration because of List
             if(node_declaration->var_type == List or node_declaration->var_type == UI_Control) node.var_type = node_declaration->var_type;
@@ -149,10 +151,12 @@ void ASTVariables::visit(NodeArray& node) {
 
         } else if(node_builtin_array) {
             node.declaration = node_builtin_array;
+            node.type = node.declaration->type;
         } else if (node_declaration and has_compiler_identifier) {
             node.declaration = node_declaration;
             node.dimensions = 1;
             node.var_type = Array;
+            node.type = node.declaration->type;
             node.name = "_"+node.name;
         } else {
             CompileError(ErrorType::SyntaxError,"Array has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
@@ -168,10 +172,6 @@ void ASTVariables::visit(NodeVariable& node) {
     if(node.is_compiler_return or node.is_local) {
         node.is_used = true;
         return;
-    }
-
-    if(node.name == "_id") {
-
     }
 
     auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
@@ -211,6 +211,7 @@ void ASTVariables::visit(NodeVariable& node) {
         if(node_first_declaration) {
             if(node_first_declaration->var_type == UI_Control) node.var_type = node_first_declaration->var_type;
             node.declaration = node_first_declaration;
+            node.type = node.declaration->type;
             node_first_declaration->is_used = true;
         // can only be array if parent is param_list or callback
         } else if((cast_node<NodeParamList>(node.parent) || cast_node<NodeCallback>(node.parent)) && node_first_array_declaration) {
@@ -222,6 +223,8 @@ void ASTVariables::visit(NodeVariable& node) {
             node.replace_with(std::move(node_array));
         } else if(node_builtin_variable) {
             node.declaration = node_builtin_variable;
+            node.type = node.declaration->type;
+            node.is_engine = node_builtin_variable->is_engine;
         } else {
             CompileError(ErrorType::SyntaxError,"Variable has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
 //			exit(EXIT_FAILURE);
@@ -231,16 +234,73 @@ void ASTVariables::visit(NodeVariable& node) {
 }
 
 void ASTVariables::visit(NodeFunctionCall &node) {
+//    if(m_evaluating_functions) {
+//        auto it = std::find_if(m_function_call_order.begin(), m_function_call_order.end(),
+//                               [&](NodeFunctionHeader* &func) {
+//                                   return (func->name == node.function->name);
+//                               });
+//        if(fun->header->name == "on_saving_preset_dialog") {
+//
+//        }
+//    }
     node.function->accept(*this);
 }
 
 void ASTVariables::visit(NodeSingleDeclareStatement& node) {
+    if(node.assignee) {
+        node.assignee->accept(*this);
+
+        auto node_variable = cast_node<NodeVariable>(node.assignee.get());
+        auto node_array = cast_node<NodeArray>(node.assignee.get());
+        auto node_declare_variable = cast_node<NodeVariable>(node.to_be_declared.get());
+        auto node_declare_array = cast_node<NodeArray>(node.to_be_declared.get());
+        // replace declaration with declaration and assignment when assignment is variable or array
+        if(node_variable || node_array) {
+            auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(), std::move(node.assignee), node.tok);
+            node_statement_list->statements.push_back(statement_wrapper(node.clone(),node_statement_list.get()));
+            node_statement_list->statements.push_back(statement_wrapper(std::move(node_assignment), node_statement_list.get()));
+            node_statement_list->update_parents(node.parent);
+            node_statement_list->accept(*this);
+            node.replace_with(std::move(node_statement_list));
+            return;
+            // add assignment to declaration if variable is declared and assigned to a string
+        } else if (node_declare_variable and node_declare_variable->var_type != Const and (node.assignee->type == String || node.assignee->type == Unknown)) {
+            auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(),std::move(node.assignee), node.tok);
+            auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node.to_be_declared),nullptr, node.tok);
+            node_statement_list->statements.push_back(statement_wrapper(std::move(node_declaration), node_statement_list.get()));
+            node_statement_list->statements.push_back(statement_wrapper(std::move(node_assignment), node_statement_list.get()));
+            node_statement_list->update_parents(node.parent);
+            node_statement_list->accept(*this);
+            node.replace_with(std::move(node_statement_list));
+            return;
+            // initialize string array in a special way
+        } else if (node_declare_array and (node.assignee->type == String || node.assignee->type == Unknown)) {
+            auto node_param_list = cast_node<NodeParamList>(node.assignee.get());
+            if (node_param_list) {
+                auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement *>(node.clone().release()));
+                auto node_statement_list = array_initialization(node_declare_array, node_param_list);
+                // remove list assignment from declare_statement
+                node_declare_statement->assignee.release();
+                node_statement_list->statements.insert(node_statement_list->statements.begin(),statement_wrapper(std::move(node_declare_statement),node_statement_list.get()));
+                node_statement_list->update_parents(node.parent);
+                node_statement_list->accept(*this);
+                node.replace_with(std::move(node_statement_list));
+                return;
+            }
+        }
+    }
     node.to_be_declared ->accept(*this);
-    if(node.assignee)
-        node.assignee -> accept(*this);
 
 }
 
+void ASTVariables::visit(NodeParamList &node) {
+    for(const auto & param : node.params) {
+        param->accept(*this);
+        node.type = param->type;
+    }
+}
 
 void ASTVariables::visit(NodeSingleAssignStatement &node) {
     node.array_variable->accept(*this);

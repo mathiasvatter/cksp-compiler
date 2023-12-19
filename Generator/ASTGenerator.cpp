@@ -21,11 +21,13 @@ void ASTGenerator::print() const {
 
 
 void ASTGenerator::visit(NodeProgram &node) {
-    for(auto& callback: node.callbacks) {
-        callback->accept(*this);
-    }
+    // get init callback first
+    node.callbacks[0]->accept(*this);
     for(auto & function : node.function_definitions) {
         function->accept(*this);
+    }
+    for(int i = 1; i<node.callbacks.size(); i++) {
+        node.callbacks[i]->accept(*this);
     }
     os << std::endl;
 }
@@ -60,7 +62,12 @@ void ASTGenerator::visit(NodeArray &node) {
 	if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
 	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
 
+    if(node.name == "btn_edit_pics") {
+
+    }
+
 	os << get_pair_value(array_identifier, node.type);
+    if(node.dimensions>1) os << "_";
     os << sanitize_dots(node.name);
 	if(node_declaration or node_ui_control or !node.indexes->params.empty())
     	os << "[";
@@ -183,9 +190,6 @@ void ASTGenerator::visit(NodeCallback &node) {
 }
 
 void ASTGenerator::visit(NodeFunctionHeader &node) {
-    if(node.name == "mf_reset") {
-
-    }
     os << sanitize_dots(node.name);
 	if(!node.args->params.empty() || node.has_forced_parenth) os << "(";
     node.args->accept(*this);
@@ -202,14 +206,7 @@ void ASTGenerator::visit(NodeFunctionCall &node) {
 void ASTGenerator::visit(NodeFunctionDefinition &node) {
     os << "function ";
     node.header ->accept(*this);
-    if (node.return_variable.has_value()) {
-        os << " -> ";
-        node.return_variable.value()->accept(*this);
-    }
-    if (node.override) {
-        os << "override" << std::endl;
-    }
-    os << "\n";
+    os << std::endl;
     node.body->accept(*this);
     os << "end function" << std::endl;
 }

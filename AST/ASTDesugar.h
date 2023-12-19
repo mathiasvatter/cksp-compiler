@@ -63,43 +63,40 @@ private:
 
 
     const std::unordered_map<std::string, std::unique_ptr<NodeVariable>>& m_builtin_variables;
-//    const std::vector<std::unique_ptr<NodeVariable>>& m_builtin_variables;
     std::unique_ptr<NodeVariable> shorthand_to_control_param(const std::string& shorthand);
     // returns either string (for get/set_control_par_str) or integer (for get/set_control_par)
     static ASTType get_control_function_type(const std::string& control_param);
 
     const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>>& m_property_functions;
-//    const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_property_functions;
     NodeFunctionHeader* get_property_function(NodeFunctionHeader* function);
     std::unique_ptr<NodeStatementList> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header);
 
-    bool m_in_init_callback = false;
     NodeCallback* m_init_callback;
     NodeCallback* m_current_callback;
     int m_current_callback_idx = 0;
-    /// used for counting up the return_var_idx
-    int m_current_inline_idx = 0;
     NodeAST* m_return_dummy_declaration;
 
-    NodeAST* m_current_function_inline_statement;
 //    bool m_processing_function = false;
 	bool evaluating_functions = false;
 //    bool has_local_variables = false;
 
     std::stack<std::string> m_family_prefixes;
     std::stack<std::string> m_const_prefixes;
-    std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
 //    std::vector<std::unique_ptr<NodeStatement>> m_declare_statements_to_move;
 
-    std::vector<std::string> m_function_call_stack;
 
+    NodeAST* m_current_function_inline_statement = nullptr;
+    std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
+    NodeFunctionDefinition* m_current_function = nullptr;
+    std::unordered_map<std::string, NodeFunctionDefinition*> m_functions_in_use;
+    std::stack<std::string> m_function_call_stack;
     static std::unordered_map<std::string, std::unique_ptr<NodeAST>> get_substitution_map(NodeFunctionHeader* definition, NodeFunctionHeader* call);
     /// returns substitute for current node.name, or nullptr if there is no substitute
     std::stack<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_substitution_stack;
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
-    std::unique_ptr<NodeFunctionDefinition> get_function_definition(NodeFunctionHeader* function_header);
-
-    void insert_function_inlines();
+    NodeFunctionDefinition* get_function_definition(NodeFunctionHeader* function_header);
+    std::vector<NodeFunctionDefinition*> m_function_call_order;
+    void remove_duplicates(std::vector<NodeFunctionDefinition*>& vec);
     std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> m_function_inlines;
 public:
     std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> get_function_inlines();

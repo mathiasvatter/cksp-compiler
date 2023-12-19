@@ -839,6 +839,7 @@ struct NodeFunctionCall : NodeAST {
 
 struct NodeFunctionDefinition: NodeAST {
     bool is_used = false;
+    std::set<NodeFunctionCall*> call = {};
     std::unique_ptr<NodeFunctionHeader> header;
     std::optional<std::unique_ptr<NodeParamList>> return_variable;
     bool override;

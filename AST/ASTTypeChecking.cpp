@@ -71,9 +71,6 @@ void ASTTypeChecking::visit(NodeVariable& node) {
     }
     if(node.is_local) {
         if(node.type == Unknown) node.type = Integer;
-        if(node.name == "INST_LIB_DESCRIPTION_ID") {
-
-        }
         auto local_var_name = m_local_var_arrays.find(node.type)->second;
         auto node_local_variable = make_array(local_var_name, 0, node.tok, node.parent);
         auto idx = extract_last_number(node.name, &node);

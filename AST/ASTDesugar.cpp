@@ -35,26 +35,34 @@ void ASTDesugar::visit(NodeProgram& node) {
 	evaluating_functions = true;
     for(auto & function : m_function_definitions) {
         if(function->is_used and function->header->args->params.empty() and !function->return_variable.has_value()) {
-//    		m_processing_function = true;
+            m_functions_in_use.insert({function->header->name, function.get()});
             m_variable_scope_stack.emplace_back();
             function->body->accept(*this);
             m_variable_scope_stack.pop_back();
+            m_functions_in_use.erase(function->header->name);
         }
     }
 	evaluating_functions = false;
-//    insert_function_inlines();
+//    remove_duplicates(m_function_call_order);
+////    std::reverse(m_function_call_order.begin(), m_function_call_order.end());
+//    for (auto & fun : m_function_call_order) {
+//        auto it = std::find_if(m_function_definitions.begin(), m_function_definitions.end(),
+//                               [&](const std::unique_ptr<NodeFunctionDefinition> &func) {
+//                                   return (func.get() == fun);
+//                               });
+//        if(fun->header->name == "on_saving_preset_dialog") {
+//
+//        }
+//        auto function_def = std::move(m_function_definitions[std::distance(m_function_definitions.begin(), it)]);
+//        if(!function_def->call.empty())
+//            node.function_definitions.push_back(std::move(function_def));
+//    }
     for(auto & function : m_function_definitions) {
-        if(function->is_used and function->header->args->params.empty() and !function->return_variable.has_value()) {
+        if(function and !function->call.empty()) {
             node.function_definitions.push_back(std::move(function));
         }
     }
-//    // add local variables from function bodies to beginning of m_init_callback
-//    std::vector<std::unique_ptr<NodeStatement>> temp;
-//    temp.reserve(m_local_declare_statements.size());
-//    // Verschieben der Elemente aus der Map in den temporären Vektor
-//    for (auto& pair : m_local_declare_statements) {
-//        temp.push_back(std::move(pair.second));
-//    }
+    // add local variables from function bodies to beginning of m_init_callback
     m_init_callback->statements->statements.insert(m_init_callback->statements->statements.begin(),
                                                    std::make_move_iterator(m_local_declare_statements.begin()),
                                                    std::make_move_iterator(m_local_declare_statements.end()));
@@ -62,8 +70,6 @@ void ASTDesugar::visit(NodeProgram& node) {
 
 void ASTDesugar::visit(NodeCallback& node) {
     m_current_callback = &node;
-    m_in_init_callback = false;
-    if(&node == m_init_callback) m_in_init_callback = true;
     if(node.callback_id)
         node.callback_id->accept(*this);
     node.statements->accept(*this);
@@ -242,7 +248,7 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
         CompileError(ErrorType::SyntaxError,
          "Found incorrect amount of function arguments when using <call>.", node.tok.line, "0", std::to_string(node.function->args->params.size()), node.tok.file).exit();
     }
-    if(std::find(m_function_call_stack.begin(), m_function_call_stack.end(), node.function->name) != m_function_call_stack.end()) {
+    if(m_functions_in_use.find(node.function->name) != m_functions_in_use.end()) {
         // recursive function call detected
         CompileError(ErrorType::SyntaxError,"Recursive function call detected. Calling functions inside their definition is not allowed.", node.tok.line, "", node.function->name, node.tok.file).exit();
     }
@@ -251,19 +257,34 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
     node.function->accept(*this);
 
     // substitution start
-    if (auto node_function_def = get_function_definition(node.function.get())) {
-		if(node.is_call and node_function_def->return_variable.has_value()) {
+    if (auto function_def = get_function_definition(node.function.get())) {
+        if(evaluating_functions and m_current_callback != m_init_callback and function_def->header->args->params.empty() and !function_def->return_variable.has_value())
+            m_function_call_order.push_back(function_def);
+		if(node.is_call and function_def->return_variable.has_value()) {
 			CompileError(ErrorType::SyntaxError, "Found incorrect use of return variable when using <call>.", node.tok.line, "", "", node.tok.file).exit();
 		}
-        if(node.is_call) {
-            return;
-		}
-        // make functions call
-        if(node.function->args->params.empty() and !node_function_def->return_variable.has_value()) {
-            node.is_call = true;
-            return;
+        function_def->call.insert(&node);
+        m_current_function = function_def;
+        // inline if current call is <on init>
+        if(m_current_callback != m_init_callback) {
+            if (node.is_call) {
+                return;
+            }
+            // make functions call
+//            if (node.function->args->params.empty() and !function_def->return_variable.has_value()) {
+//                node.is_call = true;
+//                return;
+//            }
+        } else if(node.is_call){
+            CompileError(ErrorType::SyntaxError, "The usage of <call> keyword is not allowed in the <on init> callback. Automatically removed <call> and inlined function. Consider not using the <call> keyword.", node.tok.line, "", "<call>", node.tok.file).print();
+            node.is_call = false;
         }
-		m_function_call_stack.push_back(node.function->name);
+
+
+        auto node_function_def = std::unique_ptr<NodeFunctionDefinition>(static_cast<NodeFunctionDefinition*>(function_def->clone().release()));
+        node_function_def->update_parents(nullptr);
+        m_functions_in_use.insert({node.function->name, function_def});
+		m_function_call_stack.push(node.function->name);
         m_variable_scope_stack.emplace_back();
 		node_function_def->parent = node.parent;
 		if (!node.function->args->params.empty()) {
@@ -274,8 +295,10 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 		node_function_def->body->accept(*this);
 		if (!node.function->args->params.empty()) m_substitution_stack.pop();
         m_variable_scope_stack.pop_back();
-		m_function_call_stack.pop_back();
-
+        m_functions_in_use.erase(node.function->name);
+		m_function_call_stack.pop();
+        function_def->call.erase(&node);
+//        function_def->is_used = false;
         // has return variable
         if(node_function_def->return_variable.has_value()) {
             if(is_instance_of<NodeStatementList>(node.parent->parent)) {
@@ -343,15 +366,28 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 //                }
                 }
             }
-
-
-        node.replace_with(std::move(node_function_def->body));
-
+        // Only replace if function has actually statements
+        if(!node_function_def->body->statements.empty()) {
+            node.replace_with(std::move(node_function_def->body));
+        } else {
+            node.replace_with(std::make_unique<NodeDeadEnd>(node.tok));
+        }
     } else if (auto builtin_func = get_builtin_function(node.function.get())) {
         node.function->type = builtin_func->type;
         node.function->has_forced_parenth = builtin_func->has_forced_parenth;
         node.function->arg_ast_types = builtin_func->arg_ast_types;
         node.function->arg_var_types = builtin_func->arg_var_types;
+
+        if(m_restricted_builtin_functions.find(builtin_func->name) != m_restricted_builtin_functions.end()) {
+            if(!contains(RESTRICTED_CALLBACKS, remove_substring(m_current_callback->begin_callback, "on "))) {
+                CompileError(ErrorType::SyntaxError,"<"+builtin_func->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks.", node.tok.line, "", "<"+m_current_callback->begin_callback+">", node.tok.file).print();
+            } else {
+                if(m_current_function)
+                if(m_current_function->call.find(&node) != m_current_function->call.end())
+                    CompileError(ErrorType::SyntaxError,"<"+builtin_func->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks. Not in a called function.", node.tok.line, "", "<"+m_current_function->header->name+"> in <"+m_current_callback->begin_callback+">", node.tok.file).print();
+            }
+        }
+
     } else if (auto property_func = get_property_function(node.function.get())) {
         if(node.function->args->params.size() < 2)
             CompileError(ErrorType::SyntaxError,"Found Property Function with insufficient amount of arguments.", node.tok.line, "At least 2 arguments", std::to_string(node.function->args->params.size()), node.tok.file).exit();
@@ -367,21 +403,7 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 void ASTDesugar::visit(NodeStatement& node) {
 //    m_current_function_inline_statement = &node;
     node.statement->accept(*this);
-};
-
-void ASTDesugar::insert_function_inlines() {
-//    for (auto & pair: m_function_inlines) {
-//        if (!is_instance_of<NodeStatement>(pair.first)) {
-//
-//        }
-//        auto node_statement_list = std::make_unique<NodeStatementList>(pair.first->tok);
-//        node_statement_list->parent = pair.first;
-//        node_statement_list->statements.push_back(statement_wrapper(std::move(pair.second), node_statement_list.get()));
-//        node_statement_list->statements.push_back(statement_wrapper(std::move(pair.first->statement),node_statement_list.get()));
-//        pair.first->statement = std::move(node_statement_list);
-//    }
 }
-
 
 std::unique_ptr<NodeStatementList> ASTDesugar::inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
     auto node_statement_list = std::make_unique<NodeStatementList>(function_header->tok);
@@ -515,6 +537,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
         }
         // multidimensional array
         if (node_array->dimensions > 1) {
+//            node_array->name = "_"+node_array->name;
             auto node_expression = create_right_nested_binary_expr(node_array->sizes->params, 0, "*", node_array->tok);
             node_expression->parent = node_array->sizes.get();
             for(int i = 0; i<node_array->sizes->params.size(); i++) {
@@ -1152,17 +1175,12 @@ void ASTDesugar::declare_dummy_return_variable() {
 
 }
 
-std::unique_ptr<NodeFunctionDefinition> ASTDesugar::get_function_definition(NodeFunctionHeader *function_header) {
+NodeFunctionDefinition* ASTDesugar::get_function_definition(NodeFunctionHeader *function_header) {
     for(auto & function_def : m_function_definitions) {
         if(function_def->header->name == function_header->name) {
             if(function_def->header->args->params.size() == function_header->args->params.size()) {
                 function_def->is_used = true;
-                auto copy = std::unique_ptr<NodeFunctionDefinition>(static_cast<NodeFunctionDefinition*>(function_def->clone().release()));
-//                copy->body->parent = copy.get();
-//                copy->header->parent = copy.get();
-//                copy->header->args->parent = copy->header.get();
-                copy->update_parents(nullptr);
-                return std::unique_ptr<NodeFunctionDefinition>(static_cast<NodeFunctionDefinition*>(copy.release()));
+                return function_def.get();
             }
         }
     }
@@ -1257,8 +1275,38 @@ std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> ASTDesugar::get_fun
 }
 
 
+void ASTDesugar::remove_duplicates(std::vector<NodeFunctionDefinition*>& vec) {
+//    std::unordered_set<NodeFunctionDefinition*> seen;
+//    auto newEnd = std::remove_if(vec.begin(), vec.end(), [&seen](NodeFunctionDefinition* ptr) {
+//        if (seen.find(ptr) != seen.end()) {
+//            // Wenn das Element bereits gesehen wurde, entferne es
+//            return true;
+//        } else {
+//            // Andernfalls füge es zum Set hinzu und behalte es im Vektor
+//            seen.insert(ptr);
+//            return false;
+//        }
+//    });
+//
+//    vec.erase(newEnd, vec.end());
 
+    std::unordered_set<NodeFunctionDefinition*> seen;
+    auto newEnd = std::remove_if(vec.begin(), vec.end(), [&seen](NodeFunctionDefinition* ptr) {
+        if(ptr->header->name == "on_saving_preset_dialog") {
 
+        }
+        if (seen.find(ptr) == seen.end()) {
+            // Wenn das Element noch nicht gesehen wurde, füge es zum Set hinzu und behalte es im Vektor
+            seen.insert(ptr);
+            return false;
+        } else {
+            // Wenn das Element bereits gesehen wurde, entferne es
+            return true;
+        }
+    });
+
+    vec.erase(newEnd, vec.end());
+}
 
 
 
