@@ -11,7 +11,7 @@
 class ASTDesugar : public ASTVisitor {
 public:
     ASTDesugar(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
-               const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
+               const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
                const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &m_property_functions,
                const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets);
 
@@ -50,9 +50,9 @@ public:
     void visit(NodeVariable& node) override;
 
 private:
-    const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_builtin_functions;
+    const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash>& m_builtin_functions;
     NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
-    NodeFunctionHeader* get_builtin_function(const std::string &function);
+    NodeFunctionHeader* get_builtin_function(const std::string &function, int params);
 
     const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>>& m_builtin_widgets;
 //	const std::vector<std::unique_ptr<NodeUIControl>>& m_builtin_widgets;

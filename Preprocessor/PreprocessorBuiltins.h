@@ -23,22 +23,19 @@ public:
 
     [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &get_builtin_variables() const;
     [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &get_builtin_arrays() const;
-    [[nodiscard]] const std::vector<std::unique_ptr<NodeFunctionHeader>> &get_builtin_functions() const;
+    [[nodiscard]] const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &get_builtin_functions() const;
     [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &get_property_functions() const;
 	[[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &get_builtin_widgets() const;
 
 
 private:
     std::unordered_map<std::string, std::unique_ptr<NodeVariable>> m_builtin_variables;
-//    std::vector<std::unique_ptr<NodeVariable>> m_builtin_variables;
     std::unordered_map<std::string, std::unique_ptr<NodeArray>> m_builtin_arrays;
-//    std::vector<std::unique_ptr<NodeArray>> m_builtin_arrays;
-    std::vector<std::unique_ptr<NodeFunctionHeader>> m_builtin_functions;
 //    std::vector<std::unique_ptr<NodeFunctionHeader>> m_builtin_functions;
+    std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> m_builtin_functions;
+
     std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> m_property_functions;
-//    std::vector<std::unique_ptr<NodeFunctionHeader>> m_property_functions;
     std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> m_builtin_widgets;
-//	std::vector<std::unique_ptr<NodeUIControl>> m_builtin_widgets;
 
 
     std::string m_builtin_variables_file;

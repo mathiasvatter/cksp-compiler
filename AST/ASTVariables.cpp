@@ -5,7 +5,7 @@
 #include "ASTVariables.h"
 
 ASTVariables::ASTVariables(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
-                           const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
+                           const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
                            const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
                            const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
                            std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines)
@@ -327,16 +327,16 @@ void ASTVariables::visit(NodeStatementList& node) {
 //    node.update_parents(&node);
 }
 
-NodeFunctionHeader* ASTVariables::get_builtin_function(const std::string &function) {
-    auto it = std::find_if(m_builtin_functions.begin(), m_builtin_functions.end(),
-                           [&](const std::unique_ptr<NodeFunctionHeader> &func) {
-                               return (func->name == function);
-                           });
-    if(it != m_builtin_functions.end()) {
-        return m_builtin_functions[std::distance(m_builtin_functions.begin(), it)].get();
-    }
-    return nullptr;
-}
+//NodeFunctionHeader* ASTVariables::get_builtin_function(const std::string &function) {
+//    auto it = std::find_if(m_builtin_functions.begin(), m_builtin_functions.end(),
+//                           [&](const std::unique_ptr<NodeFunctionHeader> &func) {
+//                               return (func->name == function);
+//                           });
+//    if(it != m_builtin_functions.end()) {
+//        return m_builtin_functions[std::distance(m_builtin_functions.begin(), it)].get();
+//    }
+//    return nullptr;
+//}
 
 NodeVariable* ASTVariables::get_builtin_variable(NodeVariable *var) {
     auto it = m_builtin_variables.find(var->name);

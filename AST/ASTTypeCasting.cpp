@@ -6,7 +6,7 @@
 #include "ASTDesugar.h"
 
 ASTTypeCasting::ASTTypeCasting(const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
-                               const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions)
+                               const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions)
 : m_builtin_widgets(m_builtin_widgets), m_builtin_functions(m_builtin_functions) {
 
 }
@@ -239,7 +239,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
         auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
         if(node_control_function and contains(node_control_function->name, "control_par")) {
             auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(
-                    static_cast<NodeFunctionHeader *>(get_builtin_function("get_ui_id")->clone().release()));
+                    static_cast<NodeFunctionHeader *>(get_builtin_function("get_ui_id", 1)->clone().release()));
             node_get_ui_id->args->params.clear();
             node_get_ui_id->args->params.push_back(node.clone());
             node_get_ui_id->update_parents(node.parent);
@@ -484,13 +484,17 @@ NodeUIControl* ASTTypeCasting::get_builtin_widget(const std::string &ui_control)
 	return nullptr;
 }
 
-NodeFunctionHeader* ASTTypeCasting::get_builtin_function(const std::string &function) {
-    auto it = std::find_if(m_builtin_functions.begin(), m_builtin_functions.end(),
-                           [&](const std::unique_ptr<NodeFunctionHeader> &func) {
-                               return (func->name == function);
-                           });
+NodeFunctionHeader* ASTTypeCasting::get_builtin_function(const std::string &function, int params) {
+//    auto it = std::find_if(m_builtin_functions.begin(), m_builtin_functions.end(),
+//                           [&](const std::unique_ptr<NodeFunctionHeader> &func) {
+//                               return (func->name == function);
+//                           });
+//    if(it != m_builtin_functions.end()) {
+//        return m_builtin_functions[std::distance(m_builtin_functions.begin(), it)].get();
+//    }
+    auto it = m_builtin_functions.find({function, params});
     if(it != m_builtin_functions.end()) {
-        return m_builtin_functions[std::distance(m_builtin_functions.begin(), it)].get();
+        return it->second.get();
     }
     return nullptr;
 }
