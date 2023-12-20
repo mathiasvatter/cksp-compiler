@@ -61,7 +61,7 @@ public:
         node.macro->accept(*this);
     };
     virtual void visit(PreNodeIterateMacro& node) {
-//        node.macro_call->accept(*this);
+        node.macro_call->accept(*this);
     };
     virtual void visit(PreNodeLiterateMacro& node) {
 //        node.literate_tokens->accept(*this);

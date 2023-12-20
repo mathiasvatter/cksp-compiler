@@ -21,8 +21,9 @@ int main() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     auto path = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
-    path = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//    path = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    path = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+//    path = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 	Tokenizer tokenizer(path);
     auto tokens = tokenizer.tokenize();
 

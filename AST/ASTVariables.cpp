@@ -21,11 +21,9 @@ void ASTVariables::visit(NodeProgram& node) {
 //		std::cout << std::endl;
         callback->accept(*this);
     }
-    m_evaluating_functions = true;
     for(auto & function_definition : node.function_definitions) {
         function_definition->accept(*this);
     }
-    m_evaluating_functions = false;
 }
 
 void ASTVariables::visit(NodeCallback& node) {
@@ -80,9 +78,6 @@ void ASTVariables::visit(NodeUIControl& node) {
 }
 
 void ASTVariables::visit(NodeArray& node) {
-    if(node.name == "btn_edit_pics") {
-
-    }
 	auto node_builtin_array = get_builtin_array(&node);
 	auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
 	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
@@ -115,6 +110,12 @@ void ASTVariables::visit(NodeArray& node) {
             node.declaration = node_declaration;
             node.type = node.declaration->type;
             node.dimensions = node_declaration->dimensions;
+
+            // rename declaration when List
+            if(node_declaration->var_type == List) {
+                if(node_declaration->name[0] != '_')
+                    node_declaration->name = "_"+node_declaration->name;
+            }
             // get var type from declaration because of List
             if(node_declaration->var_type == List or node_declaration->var_type == UI_Control) node.var_type = node_declaration->var_type;
             // only copy sizes from declaration if there is an index (passing arrays only by keyword)
@@ -134,6 +135,7 @@ void ASTVariables::visit(NodeArray& node) {
 
             // convert indexes of list
             if(node.var_type == List) {
+
                 if(node.indexes->params.size() != 2) {
                     CompileError(ErrorType::SyntaxError,"Got wrong amount of indexes for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).print();
                     exit(EXIT_FAILURE);
@@ -147,6 +149,7 @@ void ASTVariables::visit(NodeArray& node) {
                 node.indexes->params.clear();
                 node.indexes->params.push_back(std::move(node_expression));
                 node.indexes->update_parents(&node);
+                node.name = "_"+node.name;
             }
 
         } else if(node_builtin_array) {
@@ -180,7 +183,6 @@ void ASTVariables::visit(NodeVariable& node) {
 	if(node_builtin_variable && (node_declare_statement || node_ui_control) ){
 		CompileError(ErrorType::SyntaxError,"Variable shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).exit();
 	}
-
     if(node_declare_statement and node_declare_statement->to_be_declared.get() == &node) {
         if(get_declared_variable(node.name)) {
             CompileError(ErrorType::SyntaxError,"Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
@@ -234,15 +236,6 @@ void ASTVariables::visit(NodeVariable& node) {
 }
 
 void ASTVariables::visit(NodeFunctionCall &node) {
-//    if(m_evaluating_functions) {
-//        auto it = std::find_if(m_function_call_order.begin(), m_function_call_order.end(),
-//                               [&](NodeFunctionHeader* &func) {
-//                                   return (func->name == node.function->name);
-//                               });
-//        if(fun->header->name == "on_saving_preset_dialog") {
-//
-//        }
-//    }
     node.function->accept(*this);
 }
 
