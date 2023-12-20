@@ -14,11 +14,10 @@ ASTVariables::ASTVariables(const std::unordered_map<std::string, std::unique_ptr
 
 
 void ASTVariables::visit(NodeProgram& node) {
-
+    for(auto & builtin_array : m_builtin_arrays) {
+        m_declared_arrays.insert({builtin_array.first, builtin_array.second.get()});
+    }
     for(auto & callback : node.callbacks) {
-//		std::cout << callback->begin_callback;
-//		if(callback->callback_id) std::cout <<"("<< callback->callback_id->get_string() << ")";
-//		std::cout << std::endl;
         callback->accept(*this);
     }
     for(auto & function_definition : node.function_definitions) {

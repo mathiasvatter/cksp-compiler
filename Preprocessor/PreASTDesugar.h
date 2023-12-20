@@ -28,7 +28,10 @@ public:
 private:
     PreNodeProgram* m_main_ptr;
     std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_definitions;
+    std::unordered_map<std::string, PreNodeDefineStatement*> m_define_lookup;
     std::vector<std::unique_ptr<PreNodeMacroDefinition>> m_macro_definitions;
+    std::unordered_map<StringIntKey, PreNodeMacroDefinition*, StringIntKeyHash> m_macro_lookup;
+
 
     std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
     template<typename T> static std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> get_substitution_vector(T* definition, T* call);

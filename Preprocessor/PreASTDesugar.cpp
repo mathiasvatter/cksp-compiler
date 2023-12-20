@@ -10,13 +10,20 @@
 
 void PreASTDesugar::visit(PreNodeProgram& node) {
     m_main_ptr = &node;
-    m_define_definitions = std::move(node.define_statements);
-    m_macro_definitions = std::move(node.macro_definitions);
+    for(auto & def : node.define_statements) {
+        m_define_lookup.insert({def->header->name->keyword.val, def.get()});
+    }
+    for(auto & def : node.macro_definitions) {
+        m_macro_lookup.insert({{def->header->name->keyword.val, (int)def->header->args->params.size()}, def.get()});
+    }
+
+//    m_define_definitions = std::move(node.define_statements);
+//    m_macro_definitions = std::move(node.macro_definitions);
     m_builtin_defines = get_builtin_defines();
-    for(auto & def : m_define_definitions) {
+    for(auto & def : node.define_statements) {
         def->accept(*this);
     }
-    for(auto & def : m_macro_definitions) {
+    for(auto & def : node.macro_definitions) {
         def->accept(*this);
     }
     for(auto & n : node.program) {
@@ -325,26 +332,36 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar
 }
 
 std::unique_ptr<PreNodeDefineStatement> PreASTDesugar::get_define_definition(PreNodeDefineHeader *define_header) {
-    for(auto & def : m_define_definitions) {
-        if(def->header->name->keyword.val == define_header->name->keyword.val) {
-            auto copy = def->clone();
-            copy->update_parents(nullptr);
-            return std::unique_ptr<PreNodeDefineStatement>(static_cast<PreNodeDefineStatement*>(copy.release()));
-        }
+    auto it = m_define_lookup.find(define_header->name->keyword.val);
+    if(it != m_define_lookup.end()) {
+        auto copy = it->second->clone();
+        copy->update_parents(nullptr);
+        return std::unique_ptr<PreNodeDefineStatement>(static_cast<PreNodeDefineStatement*>(copy.release()));
+
     }
+//    for(auto & def : m_define_definitions) {
+//        if(def->header->name->keyword.val == define_header->name->keyword.val) {
+//        }
+//    }
     return nullptr;
 }
 
 std::unique_ptr<PreNodeMacroDefinition> PreASTDesugar::get_macro_definition(PreNodeMacroHeader *macro_header) {
-    for(auto & macro_def : m_macro_definitions) {
-        if(macro_def->header->name->keyword.val == macro_header->name->keyword.val) {
-            if(macro_def->header->args->params.size() == macro_header->args->params.size()) {
-                auto copy = macro_def->clone();
-                copy->update_parents(nullptr);
-                return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
-            }
-        }
+    auto it = m_macro_lookup.find({macro_header->name->keyword.val, (int)macro_header->args->params.size()});
+    if(it != m_macro_lookup.end()) {
+        auto copy = it->second->clone();
+        copy->update_parents(nullptr);
+        return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
     }
+//    for(auto & macro_def : m_macro_definitions) {
+//        if(macro_def->header->name->keyword.val == macro_header->name->keyword.val) {
+//            if(macro_def->header->args->params.size() == macro_header->args->params.size()) {
+//                auto copy = macro_def->clone();
+//                copy->update_parents(nullptr);
+//                return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
+//            }
+//        }
+//    }
     return nullptr;
 }
 
