@@ -39,10 +39,6 @@ std::vector<Token> Tokenizer::tokenize() {
         } else if (peek() == '\n') {
             get_linebreak();
             fix_line_continuation();
-        } else if (is_keyword_or_num()) {
-            get_keyword_or_num();
-        } else if (is_string()) {
-            get_string();
         } else if (contains(BINARY_OPERATORS, peek()) && peek(1) != '>') {
             get_binary_operators();
         } else if (contains(PARENTH, peek())) {
@@ -51,6 +47,10 @@ std::vector<Token> Tokenizer::tokenize() {
             get_assignment();
         } else if (peek() == '-' && peek(1) == '>') {
             get_arrow();
+        } else if (is_keyword_or_num()) {
+            get_keyword_or_num();
+        } else if (is_string()) {
+            get_string();
         } else if (contains(COMPARISON_OPERATORS_START, peek())) {
             get_comparison_operators();
         } else if (peek() == '.' && peek(1) != '.') {
@@ -307,13 +307,10 @@ void Tokenizer::get_keyword_or_num() {
         } else {
             while (peek() == '.') {
                 consume();
-    //            m_tokens.emplace_back(DOT, ".", m_line);
                 if (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-//                    flush_buffer();
                     while(std::isalnum(peek()) || peek() == '_' || peek() == '#') {
                         consume();
                     }
-//                    m_tokens.emplace_back(KEYWORD, m_buffer, m_line);
                 } else {
                     auto err_msg = "Found unknown keyword.";
                     CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).print();

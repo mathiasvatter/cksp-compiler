@@ -24,12 +24,9 @@ void ASTTypeCasting::visit(NodeParamList& node) {
     // infer type only if every member has same type (array declaration, assignment)
     auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
     auto node_assignment = cast_node<NodeSingleAssignStatement>(node.parent);
-//    auto node_func_header = cast_node<NodeFunctionHeader>(node.parent);
 
     std::vector<ASTType> types;
-
     for(int i = 0; i<node.params.size(); i++) {
-
         node.params[i]->accept(*this);
         types.push_back(node.params[i]->type);
     }
@@ -395,6 +392,9 @@ void ASTTypeCasting::visit(NodeUnaryExpr& node) {
     } else if(node.op.type == BOOL_NOT) {
         if(node.operand->type == Boolean or node.operand->type == Comparison) {
             node.type = Boolean;
+        // e.g. not -1...
+        } else if(node.operand->type == Integer) {
+            node.type = node.operand->type;
         } else {
             err.exit();
         }

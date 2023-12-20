@@ -61,7 +61,6 @@ private:
     void declare_dummy_return_variable();
     void declare_compiler_variables();
 
-
     const std::unordered_map<std::string, std::unique_ptr<NodeVariable>>& m_builtin_variables;
     std::unique_ptr<NodeVariable> shorthand_to_control_param(const std::string& shorthand);
     // returns either string (for get/set_control_par_str) or integer (for get/set_control_par)
@@ -85,6 +84,8 @@ private:
 
     NodeAST* m_current_function_inline_statement = nullptr;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
+    std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> m_function_lookup;
+
     NodeFunctionDefinition* m_current_function = nullptr;
     std::unordered_map<std::string, NodeFunctionDefinition*> m_functions_in_use;
     std::stack<std::string> m_function_call_stack;

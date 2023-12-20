@@ -14,6 +14,10 @@ ASTDesugar::ASTDesugar(const std::unordered_map<std::string, std::unique_ptr<Nod
 
 void ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
+    for(auto & def : node.function_definitions) {
+        m_function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
+    }
+
     m_function_definitions = std::move(node.function_definitions);
 
     // check for init callback; get pointer to init callback
@@ -1155,14 +1159,19 @@ void ASTDesugar::declare_dummy_return_variable() {
 }
 
 NodeFunctionDefinition* ASTDesugar::get_function_definition(NodeFunctionHeader *function_header) {
-    for(auto & function_def : m_function_definitions) {
-        if(function_def->header->name == function_header->name) {
-            if(function_def->header->args->params.size() == function_header->args->params.size()) {
-                function_def->is_used = true;
-                return function_def.get();
-            }
-        }
+    auto it = m_function_lookup.find({function_header->name, (int)function_header->args->params.size()});
+    if(it != m_function_lookup.end()) {
+        it->second->is_used = true;
+        return it->second;
     }
+//    for(auto & function_def : m_function_definitions) {
+//        if(function_def->header->name == function_header->name) {
+//            if(function_def->header->args->params.size() == function_header->args->params.size()) {
+//                function_def->is_used = true;
+//                return function_def.get();
+//            }
+//        }
+//    }
     return nullptr;
 }
 

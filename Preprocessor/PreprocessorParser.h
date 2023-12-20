@@ -7,23 +7,6 @@
 #include "Preprocessor.h"
 #include "PreAST.h"
 
-// Struktur für den zusammengesetzten Schlüssel
-struct StringIntKey {
-    std::string str;
-    int num;
-
-    bool operator==(const StringIntKey& other) const {
-        return str == other.str && num == other.num;
-    }
-};
-
-// Benutzerdefinierte Hash-Funktion
-struct StringIntKeyHash {
-    std::size_t operator()(const StringIntKey& key) const {
-        return std::hash<std::string>()(key.str) ^ std::hash<int>()(key.num);
-    }
-};
-
 
 class PreprocessorParser : public Parser {
 public:
