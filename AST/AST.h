@@ -364,7 +364,7 @@ struct NodeSingleAssignStatement : NodeAST {
     NodeSingleAssignStatement(std::unique_ptr<NodeAST> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
             : NodeAST(tok), array_variable(std::move(arrayVariable)), assignee(std::move(assignee)) {}
     void accept(ASTVisitor& visitor) override;
-    virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+    void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Copy Constructor
     NodeSingleAssignStatement(const NodeSingleAssignStatement& other);
     // Clone Method
@@ -839,6 +839,7 @@ struct NodeFunctionCall : NodeAST {
 
 struct NodeFunctionDefinition: NodeAST {
     bool is_used = false;
+    bool is_compiled = false;
     std::set<NodeFunctionCall*> call = {};
     std::unique_ptr<NodeFunctionHeader> header;
     std::optional<std::unique_ptr<NodeParamList>> return_variable;

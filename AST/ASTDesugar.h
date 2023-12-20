@@ -71,18 +71,16 @@ private:
     NodeFunctionHeader* get_property_function(NodeFunctionHeader* function);
     std::unique_ptr<NodeStatementList> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header);
 
+    NodeProgram* m_program;
     NodeCallback* m_init_callback;
     NodeCallback* m_current_callback;
     int m_current_callback_idx = 0;
     NodeAST* m_return_dummy_declaration;
 
-//    bool m_processing_function = false;
 	bool evaluating_functions = false;
-//    bool has_local_variables = false;
 
     std::stack<std::string> m_family_prefixes;
     std::stack<std::string> m_const_prefixes;
-//    std::vector<std::unique_ptr<NodeStatement>> m_declare_statements_to_move;
 
 
     NodeAST* m_current_function_inline_statement = nullptr;
@@ -96,7 +94,6 @@ private:
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
     NodeFunctionDefinition* get_function_definition(NodeFunctionHeader* function_header);
     std::vector<NodeFunctionDefinition*> m_function_call_order;
-    void remove_duplicates(std::vector<NodeFunctionDefinition*>& vec);
     std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> m_function_inlines;
 public:
     std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> get_function_inlines();

@@ -62,10 +62,6 @@ void ASTGenerator::visit(NodeArray &node) {
 	if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
 	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
 
-    if(node.name == "btn_edit_pics") {
-
-    }
-
 	os << get_pair_value(array_identifier, node.type);
     if(node.dimensions>1) os << "_";
     os << sanitize_dots(node.name);

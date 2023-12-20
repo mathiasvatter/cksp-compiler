@@ -7,6 +7,24 @@
 #include "Preprocessor.h"
 #include "PreAST.h"
 
+// Struktur für den zusammengesetzten Schlüssel
+struct StringIntKey {
+    std::string str;
+    int num;
+
+    bool operator==(const StringIntKey& other) const {
+        return str == other.str && num == other.num;
+    }
+};
+
+// Benutzerdefinierte Hash-Funktion
+struct StringIntKeyHash {
+    std::size_t operator()(const StringIntKey& key) const {
+        return std::hash<std::string>()(key.str) ^ std::hash<int>()(key.num);
+    }
+};
+
+
 class PreprocessorParser : public Parser {
 public:
     explicit PreprocessorParser(std::vector<Token> tokens);
@@ -35,14 +53,20 @@ private:
 
     Result<std::unique_ptr<PreNodeIncrementer>> parse_incrementer(PreNodeAST* parent);
 
+    PreNodeProgram* m_program;
+
     //    std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_strings;
-    std::vector<std::string> m_define_strings;
-    std::vector<std::string> m_macro_strings;
+    std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_define_strings;
+    // macro name and num_macro_arguments
+    std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_macro_strings;
+    std::set<std::string> m_macro_iterate_strings;
+    bool m_parsing_iterator_macro = false;
     std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_definitions;
 
+    int get_num_params_in_definition();
 
     bool is_empty_line();
-    bool is_func_call(const Token &tok, const std::vector<std::string> &definitions);
+    bool is_define_call(const Token &tok);
     bool is_macro_call(const Token &tok);
     bool is_define_definition();
     bool is_macro_definition();

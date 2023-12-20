@@ -50,8 +50,6 @@ public:
 private:
 
     std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines;
-    std::vector<NodeFunctionHeader*> m_function_call_order;
-    bool m_evaluating_functions = false;
 
 	/// builtin engine functions
     const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_builtin_functions;
