@@ -62,7 +62,8 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::stri
             if(is_property_function(result_function.unwrap()->name)) {
                 m_property_functions.insert({result_function.unwrap()->name, std::move(result_function.unwrap())});
             } else {
-                m_builtin_functions.push_back(std::move(result_function.unwrap()));
+                auto node_function = std::move(result_function.unwrap());
+                m_builtin_functions[{node_function->name, (int)node_function->args->params.size()}] = std::move(node_function);
             }
         } else consume(m_tokens);
     }
@@ -265,7 +266,7 @@ const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &PreprocessorB
     return m_builtin_arrays;
 }
 
-const std::vector<std::unique_ptr<NodeFunctionHeader>> &PreprocessorBuiltins::get_builtin_functions() const {
+const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &PreprocessorBuiltins::get_builtin_functions() const {
     return m_builtin_functions;
 }
 

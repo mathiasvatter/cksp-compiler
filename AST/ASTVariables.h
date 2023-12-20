@@ -27,7 +27,7 @@ struct StringEqual {
 class ASTVariables : public ASTVisitor {
 public:
     ASTVariables(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
-                 const std::vector<std::unique_ptr<NodeFunctionHeader>> &m_builtin_functions,
+                 const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
                  const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
                  const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
                  std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines);
@@ -52,8 +52,8 @@ private:
     std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines;
 
 	/// builtin engine functions
-    const std::vector<std::unique_ptr<NodeFunctionHeader>>& m_builtin_functions;
-    NodeFunctionHeader* get_builtin_function(const std::string &function);
+    const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash>& m_builtin_functions;
+//    NodeFunctionHeader* get_builtin_function(const std::string &function);
     /// builtin engine variables
     const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables;
 //    const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables;
