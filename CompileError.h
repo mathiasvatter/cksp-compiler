@@ -17,9 +17,10 @@ const std::string red = "\033[31m";
 const std::string reset = "\033[0m";
 
 enum class ErrorType {
+    FileError,
 	SyntaxError,
 	TypeError,
-	UndefinedVariable,
+	Variable,
 	TokenError,
     ParseError,
     PreprocessorError,
@@ -74,11 +75,12 @@ private:
         switch(type) {
             case ErrorType::SyntaxError: return "SyntaxError";
             case ErrorType::TypeError: return "TypeError";
-            case ErrorType::UndefinedVariable: return "UndeclaredVariable";
+            case ErrorType::Variable: return "Variable";
             case ErrorType::TokenError: return "TokenError";
             case ErrorType::ParseError: return "ParseError";
             case ErrorType::PreprocessorError: return "PreprocessorError";
 			case ErrorType::MathError: return "MathError";
+            case ErrorType::FileError: return "FileError";
             // TODO weitere Fehlerarten
         }
     }

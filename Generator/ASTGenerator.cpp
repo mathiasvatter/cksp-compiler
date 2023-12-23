@@ -21,6 +21,7 @@ void ASTGenerator::print() const {
 
 
 void ASTGenerator::visit(NodeProgram &node) {
+    os << get_compiled_date_time() << std::endl;
     // get init callback first
     node.callbacks[0]->accept(*this);
     for(auto & function : node.function_definitions) {
@@ -219,3 +220,12 @@ void ASTGenerator::visit(NodeSetControlStatement &node) {
     os << std::endl;
 }
 
+std::string ASTGenerator::get_compiled_date_time() {
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+
+    std::ostringstream ss;
+    ss << "{ Compiled with cksp version " << COMPILER_VERSION;
+    ss << std::put_time(std::localtime(&in_time_t), " on %a %b %d %H:%M:%S %Y }");
+    return ss.str();
+}

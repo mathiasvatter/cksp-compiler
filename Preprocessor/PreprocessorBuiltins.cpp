@@ -3,14 +3,19 @@
 //
 
 #include "PreprocessorBuiltins.h"
+#include "engine_widgets.h"
+#include "engine_variables.h"
+#include "engine_functions.h"
 
-
-PreprocessorBuiltins::PreprocessorBuiltins(const std::string& builtin_vars, const std::string& builtin_functions, const std::string& builtin_widgets)
+PreprocessorBuiltins::PreprocessorBuiltins()
 : Preprocessor(std::vector<Token>{}, (std::string)"") {
     m_pos = 0;
-    m_builtin_variables_file = builtin_vars;
-    m_builtin_functions_file = builtin_functions;
-	m_builtin_widgets_file = builtin_widgets;
+//    m_builtin_variables_file = builtin_vars;
+//    m_builtin_functions_file = builtin_functions;
+//	m_builtin_widgets_file = builtin_widgets;
+    m_builtin_variables_file = "engine_variables.h";
+    m_builtin_functions_file = "engine_functions.h";
+	m_builtin_widgets_file = "engine_widgets.h";
 }
 
 void PreprocessorBuiltins::process_builtins() {
@@ -29,7 +34,9 @@ void PreprocessorBuiltins::process_builtins() {
 
 
 Result<SuccessTag> PreprocessorBuiltins::parse_builtin_variables(const std::string &file) {
+    std::string data(reinterpret_cast<char*>(engine_variables), engine_variables_len);
     Tokenizer tokenizer(file);
+    tokenizer.set_input(data);
     m_tokens = tokenizer.tokenize();
     m_pos = 0;
     while(peek(m_tokens).type != END_TOKEN) {
@@ -50,7 +57,9 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_variables(const std::stri
 }
 
 Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::string &file) {
+    std::string data(reinterpret_cast<char*>(engine_functions), engine_functions_len);
     Tokenizer tokenizer(file);
+    tokenizer.set_input(data);
     m_tokens = tokenizer.tokenize();
     m_pos = 0;
     while(peek(m_tokens).type != END_TOKEN) {
@@ -71,7 +80,9 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::stri
 }
 
 Result<SuccessTag> PreprocessorBuiltins::parse_builtin_widgets(const std::string &file) {
+    std::string data(reinterpret_cast<char*>(engine_widgets), engine_widgets_len);
 	Tokenizer tokenizer(file);
+    tokenizer.set_input(data);
 	m_tokens = tokenizer.tokenize();
 	m_pos = 0;
 	while(peek(m_tokens).type != END_TOKEN) {

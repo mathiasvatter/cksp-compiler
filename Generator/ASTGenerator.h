@@ -62,11 +62,15 @@ public:
 
     std::ostringstream os;
 
+
 	void generate(const std::string& path) const;
 	void print() const;
 
 	std::vector<std::pair<ASTType, char>> array_identifier = {{String, '!'}, {Integer, '%'}, {Real, '?'}};
 	std::vector<std::pair<ASTType, char>> variable_identifier = {{String, '@'}, {Integer, '$'}, {Real, '~'}};
+
+private:
+    static std::string get_compiled_date_time();
 };
 
 

@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <set>
 
+#include "version.h"
+
 /// defines the token names and the string that represents them while debugging
 #define ENUM_LIST(XX) \
 	XX(INVALID, "invalid") \

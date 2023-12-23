@@ -1,8 +1,6 @@
 #include <iostream>
 #include <filesystem>
 
-
-//#include "Tokenizer.h"
 #include "Parser.h"
 #include "Preprocessor/Preprocessor.h"
 #include "AST/ASTVisitor.h"
@@ -13,23 +11,70 @@
 #include "AST/ASTTypeChecking.h"
 #include "AST/ASTVariables.h"
 #include "Generator/ASTGenerator.h"
-//#include "AST/ASTMacros.h"
 
-int main() {
+int main(int argc, char* argv[]) {
 
-	// Startzeitpunkt speichern
+    std::string inputFilename;
+    std::string outputFilename;
+
+//    inputFilename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
+//    inputFilename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//    inputFilename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+//    inputFilename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
+//    inputFilename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
+//    inputFilename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+
+        std::string help = R"(
+Usage: cksp [options] <input-file>
+Options:
+ -h, --help        Display usage information
+ -o <file>         Set output file name (default: <input_dir>/out.txt)
+ -v, --version     Display version number
+)";
+        std::string version = "cksp:\t\t"+COMPILER_VERSION+"\n";
+        if (arg == "-h" || arg == "--help") {
+            std::cout << help;
+            return 0;
+        } else if (arg == "-o") {
+            if (i + 1 < argc) {
+                outputFilename = argv[++i];
+            } else {
+                std::cerr << "Error: -o option requires one argument.\n";
+                return 1;
+            }
+        } else if (arg == "-v" || arg == "--version") {
+            std::cout << version;
+            return 0;
+        } else {
+            inputFilename = arg;
+        }
+    }
+
+    if (inputFilename.empty()) {
+        std::cerr << "Error: No input file provided.\n";
+        return 1;
+    }
+    if (std::filesystem::path(inputFilename).is_relative()) {
+        inputFilename = std::filesystem::current_path() / inputFilename;
+    }
+    if (outputFilename.empty()) {
+        outputFilename = std::filesystem::path(inputFilename).parent_path() / "out.txt";
+    }
+
+    std::cout << "Input File: " << inputFilename << std::endl;
+    std::cout << "Output File: " << outputFilename << std::endl;
+
+    // Startzeitpunkt speichern
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    auto path = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
-    path = "/Users/mathias/Scripting/the-score/the-score.ksp";
-//    path = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
-//    path = "/Users/mathias/Scripting/legato-dev/legato.ksp";
-//    path = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
-//    path = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
-	Tokenizer tokenizer(path);
+
+	Tokenizer tokenizer(inputFilename);
     auto tokens = tokenizer.tokenize();
 
-    Preprocessor preprocessor(tokens, path);
+    Preprocessor preprocessor(tokens, inputFilename);
     preprocessor.process();
     auto preprocessed_tokens = preprocessor.get_tokens();
 
@@ -39,11 +84,11 @@ int main() {
 //    }
 
     std::filesystem::path curr_path = __FILE__;
-	std::string engine_variables_file = (std::string) curr_path.parent_path() + "/Builtins/engine_variables.txt";
-	std::string engine_functions_file = (std::string) curr_path.parent_path() + "/Builtins/engine_functions.txt";
-	std::string engine_widgets_file = (std::string) curr_path.parent_path() + "/Builtins/engine_widgets.txt";;
+//	std::string engine_variables_file = (std::string) curr_path.parent_path() + "/Builtins/engine_variables.txt";
+//	std::string engine_functions_file = (std::string) curr_path.parent_path() + "/Builtins/engine_functions.txt";
+//	std::string engine_widgets_file = (std::string) curr_path.parent_path() + "/Builtins/engine_widgets.txt";;
 
-    PreprocessorBuiltins builtins(engine_variables_file, engine_functions_file, engine_widgets_file);
+    PreprocessorBuiltins builtins;
     builtins.process_builtins();
 
 
@@ -53,17 +98,13 @@ int main() {
     Parser parser(std::move(preprocessed_tokens));
 	auto ast_result = parser.parse();
 	if (ast_result.is_error()) {
-		ast_result.get_error().print();
-		exit(EXIT_FAILURE);
+		ast_result.get_error().exit();
 	}
 
 	auto ast = std::move(ast_result.unwrap());
 
     auto parsing_time = std::chrono::high_resolution_clock::now();
     auto parsing_duration = std::chrono::duration_cast<std::chrono::milliseconds>(parsing_time-preprocessor_time);
-
-//    ASTMacros macro_processing;
-//    ast->accept(macro_processing);
 
 	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions(), builtins.get_builtin_widgets());
 	ast->accept(desugar);
@@ -98,7 +139,6 @@ int main() {
     std::cout << "Typechecking Time: " << type_checking_duration.count() << " ms, "<< std::endl;
     std::cout << "Time measured: " << duration.count() << " ms" << std::endl;
 
-//    std::cout << ksp_code << std::endl;
 	std::cout << std::__fs::filesystem::current_path();
     return 0;
 }
