@@ -13,7 +13,6 @@
 #include "../Result.h"
 #include "Tokens.h"
 
-
 /*
  * Token struct that gets m_line numbers, the token type and its value
  */
@@ -191,7 +190,9 @@ private:
     void get_keyword_or_num();
 
 public:
-    explicit Tokenizer(std::string file);
+    explicit Tokenizer(const std::string& file);
     ~Tokenizer() = default;
+//    bool set_input_file(const std::string& file, bool read_f=true);
+    bool set_input(const std::string& input);
     std::vector<Token> tokenize();
 };

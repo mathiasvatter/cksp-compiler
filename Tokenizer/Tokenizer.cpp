@@ -23,16 +23,33 @@ std::ostream &operator<<(std::ostream &os, const Token &tok) {
 /*
  * Tokenizer Functions
  */
-Tokenizer::Tokenizer(std::string file) : m_pos(0), m_line(1){
-    m_current_file = std::move(file);
-    m_input = read_file(m_current_file);
+Tokenizer::Tokenizer(const std::string& file) : m_pos(0), m_line(1) {
+    m_current_file = file;
+    // do not attempt to read header files!
+    if (std::filesystem::path(file).extension() != ".h") {
+        m_input = read_file(m_current_file);
+    }
     m_input += '\n';
     m_current_char = m_input.at(m_pos);
     m_input_length = m_input.size();
 
 }
 
+bool Tokenizer::set_input(const std::string& input) {
+    m_input = input;
+    m_pos = 0;
+    m_line = 1;
+    m_input += '\n';
+    m_current_char = m_input.at(m_pos);
+    m_input_length = m_input.size();
+    return true;
+}
+
+
 std::vector<Token> Tokenizer::tokenize() {
+    if(m_input.empty())
+        CompileError(ErrorType::TokenError, "Missing input file to tokenize.", 0, "<input file>", "", m_current_file).exit();
+
     while (m_pos < m_input_length - 1) {
         if (peek() == '/' && (peek(1) == '*' || peek(1) == '/') || peek() == '{') {
             get_comment();
@@ -409,8 +426,7 @@ void Tokenizer::get_bitwise_operator() {
         m_tokens.emplace_back(*tok, m_buffer, m_line, m_current_file);
     } else {
 		auto err_msg = "Found unknown keyword. Keywords starting with dots are not allowed.";
-		CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).print();
-		exit(EXIT_FAILURE);
+		CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
     }
     skip_whitespace();
 }
@@ -459,7 +475,7 @@ std::string Tokenizer::read_file(const std::string& filename) {
         buf << f.rdbuf();
         f.close();
     } else {
-        std::cout << "Unable to open file\n";
+        CompileError(ErrorType::FileError, "Unable to open file.", -1, "valid path", filename, "").exit();
     }
     return buf.str();
 }

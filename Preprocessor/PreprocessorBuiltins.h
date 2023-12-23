@@ -8,7 +8,7 @@
 
 class PreprocessorBuiltins : public Preprocessor {
 public:
-	PreprocessorBuiltins(const std::string& builtin_vars, const std::string& builtin_functions, const std::string& builtin_widgets);
+	explicit PreprocessorBuiltins();
     Result<SuccessTag> parse_builtin_variables(const std::string &file);
     Result<SuccessTag> parse_builtin_functions(const std::string &file);
 	Result<SuccessTag> parse_builtin_widgets(const std::string &file);
