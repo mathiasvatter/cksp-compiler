@@ -14,6 +14,27 @@
 
 int main(int argc, char* argv[]) {
 
+    Token tok = Token(INT, "0", -1, "");
+    auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(tok);
+    auto node_variable = std::make_unique<NodeVariable>(false, "var", Mutable, tok);
+    auto node_int = std::make_unique<NodeInt>(3, tok);
+    auto node_int_replacement = std::make_unique<NodeInt>(15, tok);
+    node_declaration->to_be_declared = std::move(node_variable);
+    node_declaration->assignee = std::move(node_int);
+    auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), tok);
+    node_statement->update_parents(nullptr);
+    auto declare_ptr = static_cast<NodeSingleDeclareStatement*>(node_statement->statement.get());
+    if(declare_ptr->assignee)
+        std::cout << "no nullptr" << std::endl;
+    declare_ptr->to_be_declared->parent->replace_with(std::move(node_int_replacement));
+    if(declare_ptr-> assignee)
+        std::cout << "that is wrong" << std::endl;
+
+    return 0;
+
+
+
+
     std::string inputFilename;
     std::string outputFilename;
 
@@ -58,10 +79,10 @@ Options:
         return 1;
     }
     if (std::filesystem::path(inputFilename).is_relative()) {
-        inputFilename = std::filesystem::current_path() / inputFilename;
+        inputFilename = std::filesystem::path(std::filesystem::current_path() / inputFilename).string();
     }
     if (outputFilename.empty()) {
-        outputFilename = std::filesystem::path(inputFilename).parent_path() / "out.txt";
+        outputFilename = std::filesystem::path(std::filesystem::path(inputFilename).parent_path() / "out.txt").string();
     }
 
     std::cout << "Input File: " << inputFilename << std::endl;
@@ -127,7 +148,7 @@ Options:
 	ASTGenerator generator;
 	ast->accept(generator);
 //	generator.print();
-	generator.generate((std::string) curr_path.parent_path()+"/test.txt");
+	generator.generate(std::filesystem::path(curr_path.parent_path() / "test.txt").string());
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto type_checking_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - desugaring_time);
@@ -139,6 +160,6 @@ Options:
     std::cout << "Typechecking Time: " << type_checking_duration.count() << " ms, "<< std::endl;
     std::cout << "Time measured: " << duration.count() << " ms" << std::endl;
 
-	std::cout << std::__fs::filesystem::current_path();
+	std::cout << std::filesystem::current_path();
     return 0;
 }

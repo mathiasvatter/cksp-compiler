@@ -1,6 +1,7 @@
 //
 // Created by Mathias Vatter on 27.10.23.
 //
+#include <functional>
 
 #include "ASTDesugar.h"
 #include "../Preprocessor/SimpleExprInterpreter.h"
@@ -462,6 +463,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     node_array = cast_node<NodeArray>(node.to_be_declared.get());
 
 	node.to_be_declared ->accept(*this);
+    bool has_been_moved = &node == nullptr;
     if(node.assignee)
         node.assignee -> accept(*this);
     // in case node.assignee is function substitution -> then this node gets replaced
@@ -1107,7 +1109,7 @@ void ASTDesugar::visit(NodeListStatement &node) {
 }
 
 void ASTDesugar::declare_compiler_variables() {
-    Token tok = Token(KEYWORD, "compiler_variable", 0, (std::string&)"");
+    Token tok = Token(KEYWORD, "compiler_variable", 0, "");
     for(auto & var_name: m_compiler_variables) {
         auto node_variable = std::make_unique<NodeVariable>(false, var_name, VarType::Mutable, tok);
 //        node_variable->is_compiler_return = true;
@@ -1140,7 +1142,7 @@ void ASTDesugar::declare_compiler_variables() {
 }
 
 void ASTDesugar::declare_dummy_return_variable() {
-    Token tok = Token(KEYWORD, "compiler_variable", 0, (std::string&)"");
+    Token tok = Token(KEYWORD, "compiler_variable", 0, "");
     std::string dummy_name = "_return_dummy";
     auto node_return_dummy = std::make_unique<NodeVariable>(false, dummy_name, VarType::Mutable, tok);
     node_return_dummy->type = Unknown;

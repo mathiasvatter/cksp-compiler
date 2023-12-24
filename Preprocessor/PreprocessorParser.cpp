@@ -468,7 +468,8 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
 
     auto step = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node_iterate_macro.get());
     auto step_statement = std::make_unique<PreNodeStatement>(nullptr, step.get());
-    auto node_int = std::make_unique<PreNodeInt>(1, Token(INT, "1", 0, (std::string &) ""), step_statement.get());
+//    Token toki = Token(INT, "1", 0, "");
+    auto node_int = std::make_unique<PreNodeInt>(1,  Token(INT, "1", 0, ""), step_statement.get());
     step_statement->statement = std::move(node_int);
     step->chunk.push_back(std::move(step_statement));
     if(peek().type == STEP) {
