@@ -1,0 +1,89 @@
+cmake_minimum_required(VERSION 3.23)
+project(CKSP_Compiler VERSION 0.0.1)
+
+set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
+configure_file(
+        ${CMAKE_SOURCE_DIR}/version.h.in
+        ${GENERATED_DIR}/version.h
+)
+
+set(CMAKE_CXX_STANDARD 23)
+
+# Pfad zu den Textdateien
+set(TEXT_FILES_DIR "${CMAKE_SOURCE_DIR}/Builtins")
+
+# Pfad zum Verzeichnis, in dem die generierten Header-Dateien abgelegt werden sollen
+set(GENERATED_HEADERS_DIR "${CMAKE_BINARY_DIR}/generated_headers")
+file(MAKE_DIRECTORY ${GENERATED_HEADERS_DIR})
+
+# Finden Sie alle Textdateien im angegebenen Verzeichnis
+file(GLOB TEXT_FILES "${TEXT_FILES_DIR}/*.txt")
+
+# Für jede Textdatei
+foreach(TEXT_FILE ${TEXT_FILES})
+    # Erstellen Sie einen Namen für die generierte Header-Datei
+    get_filename_component(FILENAME ${TEXT_FILE} NAME_WE)
+    set(HEADER_FILENAME "${GENERATED_HEADERS_DIR}/${FILENAME}.h")
+
+    # Führen Sie ein benutzerdefiniertes Kommando aus, um die Datei zu konvertieren
+    add_custom_command(
+            OUTPUT ${HEADER_FILENAME}
+            COMMAND python3 ${CMAKE_SOURCE_DIR}/text_file_to_header.py ${TEXT_FILE} ${HEADER_FILENAME}
+            DEPENDS ${TEXT_FILE}
+    )
+
+    # Fügen Sie die generierte Header-Datei zur Liste der Quelldateien hinzu
+    list(APPEND GENERATED_HEADERS ${HEADER_FILENAME})
+endforeach()
+
+include_directories(${GENERATED_HEADERS_DIR}
+        ${GENERATED_DIR})
+
+add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
+        Tokenizer/Tokens.h
+        Tokenizer/Tokenizer.h
+        Tokenizer/Tokenizer.cpp
+        Parser.h
+        Parser.cpp
+        CompileError.cpp
+        CompileError.h
+        Result.h
+        Preprocessor/Preprocessor.cpp
+        Preprocessor/Preprocessor.h
+        Preprocessor/PreprocessorImport.cpp
+        Preprocessor/PreprocessorImport.h
+        Preprocessor/PreprocessorConditions.cpp
+        Preprocessor/PreprocessorConditions.h
+        Preprocessor/PreAST.h
+        Preprocessor/PreAST.cpp
+        Preprocessor/PreASTVisitor.h
+        Preprocessor/PreASTVisitor.cpp
+        Preprocessor/PreprocessorParser.cpp
+        Preprocessor/PreprocessorParser.h
+        Preprocessor/PreASTDesugar.cpp
+        Preprocessor/PreASTDesugar.h
+        AST/AST.h
+        AST/AST.cpp
+        AST/ASTVisitor.h
+        AST/ASTVisitor.cpp
+        AST/ASTDesugar.cpp
+        AST/ASTPrinter.cpp
+        AST/ASTTypeCasting.cpp
+        AST/ASTVisitor.cpp
+        Preprocessor/SimpleExprInterpreter.cpp
+        Preprocessor/SimpleExprInterpreter.h
+        Preprocessor/PreASTCombine.cpp
+        Preprocessor/PreASTCombine.h
+        Preprocessor/PreASTIncrementer.cpp
+        Preprocessor/PreASTIncrementer.h
+        Preprocessor/PreprocessorBuiltins.cpp
+        Preprocessor/PreprocessorBuiltins.h
+        Generator/ASTGenerator.cpp
+        Generator/ASTGenerator.h
+        AST/ASTTypeChecking.cpp
+        AST/ASTTypeChecking.h
+        AST/ASTVariables.cpp
+        AST/ASTVariables.h
+        ${GENERATED_HEADERS}
+        generated/version.h
+)
