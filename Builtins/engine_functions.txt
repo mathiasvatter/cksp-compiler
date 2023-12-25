@@ -302,15 +302,6 @@ zone_slice_idx_loop_start(zone_id: int, loop_idx: int): int
 zone_slice_length(zone_id: int, slice_idx: int): int
 zone_slice_loop_count(zone_id: int, loop_idx: int): int
 zone_slice_start(zone_id: int, slice_idx: int): int
-mf_reset
-mf_get_buffer_size
-mf_get_byte_one
-mf_get_byte_two
-mf_get_channel
-mf_get_command
-mf_get_last_filename
-in_range
-by_marks
 int_to_real(value: int):real
 real(value: int):real
 real_to_int(value: real):int

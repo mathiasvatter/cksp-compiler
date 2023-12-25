@@ -50,7 +50,7 @@ Result<SuccessTag> PreprocessorImport::evaluate_import(std::vector<Token>& token
         } else {
             if (m_imported_files.find(path.unwrap()) == m_imported_files.end()) {  // Überprüfe auf zirkuläre Abhängigkeiten
                 m_imported_files.insert(path.unwrap());
-//                std::cout << path.unwrap() << std::endl;
+                std::cout << path.unwrap() << std::endl;
                 Tokenizer tokenizer(path.unwrap());
                 auto new_tokens = tokenizer.tokenize();
 
@@ -114,7 +114,7 @@ Result<std::string> PreprocessorImport::resolve_path(const std::string& import_p
             return Result<std::string>(rel.string());
         } else {
             return Result<std::string>(CompileError(ErrorType::PreprocessorError,
-			"Found incorrect path.", tokens.at(m_pos).line, "valid path", rel, curr_file));
+			"Found incorrect path.", tokens.at(m_pos).line, "valid path", rel.string(), curr_file));
         }
     }
 
@@ -126,7 +126,7 @@ Result<std::string> PreprocessorImport::resolve_path(const std::string& import_p
     if (std::filesystem::exists(absPath)) {
         return Result<std::string>(absPath.string());
     } else {
-        auto new_absPath = resolve_overlap(current_base, rel);
+        auto new_absPath = resolve_overlap(current_base.string(), rel.string());
         if (std::filesystem::exists(new_absPath))
             return Result<std::string>(new_absPath);
         auto resolve_error = current_base.string() + ", " + rel.string();

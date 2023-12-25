@@ -11,36 +11,36 @@
 #include "AST/ASTTypeChecking.h"
 #include "AST/ASTVariables.h"
 #include "Generator/ASTGenerator.h"
+#include "Readme.h"
+
 
 int main(int argc, char* argv[]) {
 
-    std::string inputFilename;
-    std::string outputFilename;
+    std::string input_filename;
+    std::string output_filename;
 
-//    inputFilename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
-//    inputFilename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-//    inputFilename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
-//    inputFilename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
-//    inputFilename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
-//    inputFilename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
-
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-
-        std::string help = R"(
+    std::string help = R"(
 Usage: cksp [options] <input-file>
+
 Options:
  -h, --help        Display usage information
  -o <file>         Set output file name (default: <input_dir>/out.txt)
  -v, --version     Display version number
+
 )";
-        std::string version = "cksp:\t\t"+COMPILER_VERSION+"\n";
+    std::string data(reinterpret_cast<char*>(Readme), Readme_len);
+    help += data;
+    std::string version = "cksp:\t\t"+COMPILER_VERSION+"\n";
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+
         if (arg == "-h" || arg == "--help") {
             std::cout << help;
             return 0;
         } else if (arg == "-o") {
             if (i + 1 < argc) {
-                outputFilename = argv[++i];
+                output_filename = argv[++i];
             } else {
                 std::cerr << "Error: -o option requires one argument.\n";
                 return 1;
@@ -49,32 +49,41 @@ Options:
             std::cout << version;
             return 0;
         } else {
-            inputFilename = arg;
+            input_filename = arg;
         }
     }
 
-    if (inputFilename.empty()) {
+    if (input_filename.empty()) {
         std::cerr << "Error: No input file provided.\n";
+        std::cout << help;
         return 1;
     }
-    if (std::filesystem::path(inputFilename).is_relative()) {
-        inputFilename = std::filesystem::current_path() / inputFilename;
+    if (std::filesystem::path(input_filename).is_relative()) {
+        input_filename = std::filesystem::path(std::filesystem::current_path() / input_filename).string();
     }
-    if (outputFilename.empty()) {
-        outputFilename = std::filesystem::path(inputFilename).parent_path() / "out.txt";
+    if (output_filename.empty()) {
+        output_filename = std::filesystem::path(std::filesystem::path(input_filename).parent_path() / "out.txt").string();
     }
 
-    std::cout << "Input File: " << inputFilename << std::endl;
-    std::cout << "Output File: " << outputFilename << std::endl;
+    //    input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
+//    input_filename = "C:\\Users\\mathi\\Documents\\Scripting\\the-score\\the-score.ksp";
+//    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+//    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
+//    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
+//    input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
+
+    std::cout << "Input File: " << input_filename << std::endl;
+    std::cout << "Output File: " << output_filename << std::endl;
 
     // Startzeitpunkt speichern
     auto start_time = std::chrono::high_resolution_clock::now();
 
 
-	Tokenizer tokenizer(inputFilename);
+	Tokenizer tokenizer(input_filename);
     auto tokens = tokenizer.tokenize();
 
-    Preprocessor preprocessor(tokens, inputFilename);
+    Preprocessor preprocessor(tokens, input_filename);
     preprocessor.process();
     auto preprocessed_tokens = preprocessor.get_tokens();
 
@@ -84,13 +93,9 @@ Options:
 //    }
 
     std::filesystem::path curr_path = __FILE__;
-//	std::string engine_variables_file = (std::string) curr_path.parent_path() + "/Builtins/engine_variables.txt";
-//	std::string engine_functions_file = (std::string) curr_path.parent_path() + "/Builtins/engine_functions.txt";
-//	std::string engine_widgets_file = (std::string) curr_path.parent_path() + "/Builtins/engine_widgets.txt";;
 
     PreprocessorBuiltins builtins;
     builtins.process_builtins();
-
 
 	auto preprocessor_time = std::chrono::high_resolution_clock::now();
 	auto preprocessor_duration = std::chrono::duration_cast<std::chrono::milliseconds>(preprocessor_time - start_time);
@@ -127,7 +132,9 @@ Options:
 	ASTGenerator generator;
 	ast->accept(generator);
 //	generator.print();
-	generator.generate((std::string) curr_path.parent_path()+"/test.txt");
+//	generator.generate(std::filesystem::path(curr_path.parent_path() / "test.txt").string());
+    generator.generate(output_filename);
+
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto type_checking_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - desugaring_time);
@@ -139,6 +146,7 @@ Options:
     std::cout << "Typechecking Time: " << type_checking_duration.count() << " ms, "<< std::endl;
     std::cout << "Time measured: " << duration.count() << " ms" << std::endl;
 
-	std::cout << std::__fs::filesystem::current_path();
+    std::cout << "Saved compiled file to: " << output_filename << std::endl;
+//	std::cout << std::filesystem::current_path();
     return 0;
 }

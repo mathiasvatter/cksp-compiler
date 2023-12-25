@@ -8,7 +8,13 @@
 #include <vector>
 #include <iostream>
 #include <map>
-#include <unordered_map>
+#include <algorithm>
+#include <stack>
+#include <cmath>
+#include <iomanip>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 
 #include "../Result.h"
 #include "Tokens.h"
@@ -23,7 +29,7 @@ struct Token {
     std::string file;
 
     Token() : type(token::INVALID), val(""), line(0), file("") {}
-    Token(token type, std::string val, size_t line, std::string &file);
+    Token(token type, std::string val, size_t line, const std::string &file);
     friend std::ostream& operator<<(std::ostream& os, const Token& tok);
 	bool operator==(const Token &other) const {
 		return type == other.type && val == other.val;
@@ -125,6 +131,7 @@ inline bool string_compare(const std::string& str1, const std::string& str2) {
     }
     return true;
 }
+
 
 // Struktur für den zusammengesetzten Schlüssel
 struct StringIntKey {
