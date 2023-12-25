@@ -95,26 +95,49 @@ void PreASTDesugar::visit(PreNodeChunk& node) {
     for(auto &c : node.chunk) {
         c->accept(*this);
     }
-	for(int i=0; i<node.chunk.size(); ++i) {
-		if(auto node_statement = dynamic_cast<PreNodeStatement*>(node.chunk[i].get())) {
-			if(auto node_chunk = dynamic_cast<PreNodeChunk*>(node_statement->statement.get())) {
-				// Wir speichern die Statements der inneren NodeStatementList
-				auto &inner_chunk = node_chunk->chunk;
-				// Fügen Sie die inneren Statements an der aktuellen Position ein
-				node.chunk.insert(
-					node.chunk.begin() + i + 1,
-					std::make_move_iterator(inner_chunk.begin()),
-					std::make_move_iterator(inner_chunk.end())
-				);
-				// Entfernen Sie das ursprüngliche NodeStatementList-Element
-				node.chunk.erase(node.chunk.begin() + i);
-				// Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
-				i += inner_chunk.size() - 1;
-				// Die inneren Statements sind jetzt leer, da sie verschoben wurden
-				inner_chunk.clear();
-			}
-		}
-	}
+
+//	for(int i=0; i<node.chunk.size(); ++i) {
+//		if(auto node_statement = dynamic_cast<PreNodeStatement*>(node.chunk[i].get())) {
+//			if(auto node_chunk = dynamic_cast<PreNodeChunk*>(node_statement->statement.get())) {
+//				// Wir speichern die Statements der inneren NodeStatementList
+//				auto &inner_chunk = node_chunk->chunk;
+//				// Fügen Sie die inneren Statements an der aktuellen Position ein
+//				node.chunk.insert(
+//					node.chunk.begin() + i + 1,
+//					std::make_move_iterator(inner_chunk.begin()),
+//					std::make_move_iterator(inner_chunk.end())
+//				);
+//				// Entfernen Sie das ursprüngliche NodeStatementList-Element
+//				node.chunk.erase(node.chunk.begin() + i);
+//				// Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
+//				i += inner_chunk.size() - 1;
+//				// Die inneren Statements sind jetzt leer, da sie verschoben wurden
+//				inner_chunk.clear();
+//			}
+//		}
+//	}
+    std::vector<std::unique_ptr<PreNodeAST>> temp;
+
+    for(int i = 0; i < node.chunk.size(); ++i) {
+        if(auto node_statement = dynamic_cast<PreNodeStatement*>(node.chunk[i].get())) {
+            if(auto node_chunk = dynamic_cast<PreNodeChunk*>(node_statement->statement.get())) {
+                // Fügen Sie die inneren Statements zum temporären Vector hinzu
+                auto &inner_chunk = node_chunk->chunk;
+                temp.insert(temp.end(),
+                            std::make_move_iterator(inner_chunk.begin()),
+                            std::make_move_iterator(inner_chunk.end())
+                );
+                // Markieren Sie das aktuelle Element zur Löschung
+                node.chunk[i] = nullptr;
+                continue; // Überspringen Sie das erhöhen des Indexes
+            }
+        }
+        // Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht gelöscht werden soll
+        temp.push_back(std::move(node.chunk[i]));
+    }
+
+// Ersetzen Sie die alte Liste durch die neue
+    node.chunk = std::move(temp);
 }
 
 void PreASTDesugar::visit(PreNodeDefineHeader& node) {

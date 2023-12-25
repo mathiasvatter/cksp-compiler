@@ -310,11 +310,12 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
                     node_return_var->parent = node.parent;
                     substitution_map.insert({node_function_def->return_variable.value()->get_string(),
                                              node_return_var->clone()});
+                    auto node_parent_parent = node.parent->parent;
                     node.replace_with(std::move(node_return_var));
                     m_substitution_stack.push(std::move(substitution_map));
                     node_function_def->body->accept(*this);
                     m_substitution_stack.pop();
-                    node_function_def->body->parent = node.parent->parent;
+                    node_function_def->body->parent = node_parent_parent;
                     auto node_statement = statement_wrapper(std::move(node_function_def->body), nullptr);
                     auto ptr = node_statement->statement.get();
                     m_function_inlines.insert({ptr, std::move(node_statement)});
@@ -463,11 +464,16 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     node_array = cast_node<NodeArray>(node.to_be_declared.get());
 
 	node.to_be_declared ->accept(*this);
-    bool has_been_moved = &node == nullptr;
+
+    // in case node.assignee is function substitution -> then this node gets replaced
+//    if(!node.to_be_declared and !node.assignee) return;
+    if(&node == m_current_node_replaced) {
+        m_current_node_replaced = nullptr;
+        return;
+    }
+
     if(node.assignee)
         node.assignee -> accept(*this);
-    // in case node.assignee is function substitution -> then this node gets replaced
-    if(!node.to_be_declared and !node.assignee) return;
 
     // add make_persistent and read_persistent_var
     auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
@@ -610,9 +616,14 @@ std::vector<std::unique_ptr<NodeStatement>> ASTDesugar::add_read_functions(NodeA
 void ASTDesugar::visit(NodeSingleAssignStatement& node) {
     m_current_function_inline_statement = node.parent;
     node.array_variable ->accept(*this);
+
     // needed to add check, because if node.array_variable is getControlStatement, this whole node will be replaced
-    if(node.assignee)
-        node.assignee -> accept(*this);
+    if(&node == m_current_node_replaced) {
+        m_current_node_replaced = nullptr;
+        return;
+    }
+
+    node.assignee -> accept(*this);
 }
 
 void ASTDesugar::visit(NodeParamList& node) {
@@ -751,6 +762,7 @@ void ASTDesugar::visit(NodeGetControlStatement& node) {
     node_control_function_call->update_parents(node.parent);
     // if it is in an assignment statement and this node is the left side, replace the parent of this node too
     if(node_assign_statement && node_assign_statement->array_variable.get() == &node) {
+        m_current_node_replaced = node.parent;
         node.parent->replace_with(std::move(node_control_function_call));
     } else {
         node.replace_with(std::move(node_control_function_call));
@@ -904,34 +916,64 @@ void ASTDesugar::visit(NodeStatementList& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
-    for(int i=0; i<node.statements.size(); ++i) {
+//    for(int i=0; i<node.statements.size(); ++i) {
+//        if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
+//
+//            // Wir speichern die Statements der inneren NodeStatementList
+//            auto& inner_statements = node_statement_list->statements;
+//
+//            inner_statements[0]->function_inlines.insert(inner_statements[0]->function_inlines.end(),
+//                                                         node.statements[i]->function_inlines.begin(),
+//                                                         node.statements[i]->function_inlines.end());
+//            for (auto& stmt : inner_statements) {
+//                stmt->parent = &node;
+//            }
+//            // Fügen Sie die inneren Statements an der aktuellen Position ein
+//            node.statements.insert(
+//                    node.statements.begin() + i + 1,
+//                    std::make_move_iterator(inner_statements.begin()),
+//                    std::make_move_iterator(inner_statements.end())
+//            );
+//            // Entfernen Sie das ursprüngliche NodeStatementList-Element
+//            node.statements.erase(node.statements.begin() + i);
+//            // Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
+//            i += inner_statements.size() - 1;
+//            // Die inneren Statements sind jetzt leer, da sie verschoben wurden
+//            inner_statements.clear();
+//        }
+//    }
+    std::vector<std::unique_ptr<NodeStatement>> temp;
+    for(int i = 0; i < node.statements.size(); ++i) {
         if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
-
-
-            // Wir speichern die Statements der inneren NodeStatementList
+            // Übertragen Sie die function_inlines vom aktuellen NodeStatementList-Element
+            // auf das erste Element der inneren NodeStatementList
             auto& inner_statements = node_statement_list->statements;
-
-            inner_statements[0]->function_inlines.insert(inner_statements[0]->function_inlines.end(),
-                                                         node.statements[i]->function_inlines.begin(),
-                                                         node.statements[i]->function_inlines.end());
+            if (!inner_statements.empty()) {
+                inner_statements[0]->function_inlines.insert(
+                        inner_statements[0]->function_inlines.end(),
+                        std::make_move_iterator(node.statements[i]->function_inlines.begin()),
+                        std::make_move_iterator(node.statements[i]->function_inlines.end())
+                );
+            }
+            // Aktualisieren Sie das parent-Attribut für jedes innere Statement
             for (auto& stmt : inner_statements) {
                 stmt->parent = &node;
             }
-            // Fügen Sie die inneren Statements an der aktuellen Position ein
-            node.statements.insert(
-                    node.statements.begin() + i + 1,
+            // Fügen Sie die inneren Statements zum temporären Vector hinzu
+            temp.insert(
+                    temp.end(),
                     std::make_move_iterator(inner_statements.begin()),
                     std::make_move_iterator(inner_statements.end())
             );
-            // Entfernen Sie das ursprüngliche NodeStatementList-Element
-            node.statements.erase(node.statements.begin() + i);
-            // Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
-            i += inner_statements.size() - 1;
-            // Die inneren Statements sind jetzt leer, da sie verschoben wurden
-            inner_statements.clear();
+            // Überspringen Sie das Hinzufügen des aktuellen NodeStatementList-Elements zu `temp`
+            continue;
         }
+        // Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht speziell behandelt wird
+        temp.push_back(std::move(node.statements[i]));
     }
-//    node.update_parents(&node);
+    // Ersetzen Sie die alte Liste durch die neue
+    node.statements = std::move(temp);
+
 }
 
 void ASTDesugar::visit(NodeUIControl &node) {
@@ -1019,6 +1061,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 		node_statement_list->statements.insert(node_statement_list->statements.begin(), statement_wrapper(std::move(node_declare_statement), node_statement_list.get()));
 		node_statement_list->update_parents(node.parent->parent);
 	}
+    m_current_node_replaced = node.parent;
 	node.parent->replace_with(std::move(node_statement_list));
 }
 
