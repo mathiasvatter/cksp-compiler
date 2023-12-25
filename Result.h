@@ -3,6 +3,9 @@
 //
 
 #pragma once
+
+#include <variant>
+
 #include "CompileError.h"
 
 struct SuccessTag {};

@@ -26,7 +26,7 @@ public:
     void visit(PreNodeProgram& node) override;
 
 private:
-    PreNodeProgram* m_main_ptr;
+    PreNodeProgram* m_main_ptr = nullptr;
     std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_definitions;
     std::unordered_map<std::string, PreNodeDefineStatement*> m_define_lookup;
     std::vector<std::unique_ptr<PreNodeMacroDefinition>> m_macro_definitions;

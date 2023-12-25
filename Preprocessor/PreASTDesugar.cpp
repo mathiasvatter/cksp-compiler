@@ -95,26 +95,49 @@ void PreASTDesugar::visit(PreNodeChunk& node) {
     for(auto &c : node.chunk) {
         c->accept(*this);
     }
-	for(int i=0; i<node.chunk.size(); ++i) {
-		if(auto node_statement = dynamic_cast<PreNodeStatement*>(node.chunk[i].get())) {
-			if(auto node_chunk = dynamic_cast<PreNodeChunk*>(node_statement->statement.get())) {
-				// Wir speichern die Statements der inneren NodeStatementList
-				auto &inner_chunk = node_chunk->chunk;
-				// Fügen Sie die inneren Statements an der aktuellen Position ein
-				node.chunk.insert(
-					node.chunk.begin() + i + 1,
-					std::make_move_iterator(inner_chunk.begin()),
-					std::make_move_iterator(inner_chunk.end())
-				);
-				// Entfernen Sie das ursprüngliche NodeStatementList-Element
-				node.chunk.erase(node.chunk.begin() + i);
-				// Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
-				i += inner_chunk.size() - 1;
-				// Die inneren Statements sind jetzt leer, da sie verschoben wurden
-				inner_chunk.clear();
-			}
-		}
-	}
+
+//	for(int i=0; i<node.chunk.size(); ++i) {
+//		if(auto node_statement = dynamic_cast<PreNodeStatement*>(node.chunk[i].get())) {
+//			if(auto node_chunk = dynamic_cast<PreNodeChunk*>(node_statement->statement.get())) {
+//				// Wir speichern die Statements der inneren NodeStatementList
+//				auto &inner_chunk = node_chunk->chunk;
+//				// Fügen Sie die inneren Statements an der aktuellen Position ein
+//				node.chunk.insert(
+//					node.chunk.begin() + i + 1,
+//					std::make_move_iterator(inner_chunk.begin()),
+//					std::make_move_iterator(inner_chunk.end())
+//				);
+//				// Entfernen Sie das ursprüngliche NodeStatementList-Element
+//				node.chunk.erase(node.chunk.begin() + i);
+//				// Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
+//				i += inner_chunk.size() - 1;
+//				// Die inneren Statements sind jetzt leer, da sie verschoben wurden
+//				inner_chunk.clear();
+//			}
+//		}
+//	}
+    std::vector<std::unique_ptr<PreNodeAST>> temp;
+
+    for(int i = 0; i < node.chunk.size(); ++i) {
+        if(auto node_statement = dynamic_cast<PreNodeStatement*>(node.chunk[i].get())) {
+            if(auto node_chunk = dynamic_cast<PreNodeChunk*>(node_statement->statement.get())) {
+                // Fügen Sie die inneren Statements zum temporären Vector hinzu
+                auto &inner_chunk = node_chunk->chunk;
+                temp.insert(temp.end(),
+                            std::make_move_iterator(inner_chunk.begin()),
+                            std::make_move_iterator(inner_chunk.end())
+                );
+                // Markieren Sie das aktuelle Element zur Löschung
+                node.chunk[i] = nullptr;
+                continue; // Überspringen Sie das erhöhen des Indexes
+            }
+        }
+        // Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht gelöscht werden soll
+        temp.push_back(std::move(node.chunk[i]));
+    }
+
+// Ersetzen Sie die alte Liste durch die neue
+    node.chunk = std::move(temp);
 }
 
 void PreASTDesugar::visit(PreNodeDefineHeader& node) {
@@ -193,7 +216,7 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
             CompileError(ErrorType::PreprocessorError,"Found nested <iterate_macro>.", -1, "", "", "").print();
             exit(EXIT_FAILURE);
         }
-    node.macro_call->params[0]->chunk.push_back(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, (std::string &) ""),nullptr));
+    node.macro_call->params[0]->chunk.push_back(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, ""),nullptr));
 
 //    node.macro_call->accept(*this);
     node.iterator_start->accept(*this);
@@ -226,7 +249,7 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
     while(node.to.type == DOWNTO ? i >= to : i <= to) {
         std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
         auto node_number_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
-        auto node_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INT, std::to_string(i), 0, (std::string &) ""),
+        auto node_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INT, std::to_string(i), 0, ""),
                                                                                                  nullptr), nullptr);
         node_number_chunk->chunk.push_back(std::move(node_statement));
 		auto node_number_chunk_macro_arg = std::unique_ptr<PreNodeChunk>(static_cast<PreNodeChunk*>(node_number_chunk->clone().release()));
@@ -266,14 +289,14 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
             CompileError(ErrorType::PreprocessorError,"Found nested <literate_macro>.", -1, "", "", "").print();
             exit(EXIT_FAILURE);
         }
-    node.macro_call->params[0]->chunk.push_back(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, (std::string &) ""),nullptr));
+    node.macro_call->params[0]->chunk.push_back(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, ""),nullptr));
 
     auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
 
     for (int i = 0; i<node.literate_tokens->chunk.size(); i++) {
         std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
         auto node_number_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
-        auto node_number_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INT, std::to_string(i), 0, (std::string &) ""),nullptr), nullptr);
+        auto node_number_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INT, std::to_string(i), 0, ""),nullptr), nullptr);
         node_number_chunk->chunk.push_back(std::move(node_number_statement));
 
         substitution_vector.emplace_back(std::pair("#n#", std::move(node_number_chunk)));
@@ -435,18 +458,18 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> PreASTDesugar::
     std::string locale_time = ss.str();
 
     std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> builtins;
-    builtins.emplace_back("__SEC__", std::make_unique<PreNodeInt>(local_time->tm_sec, Token(INT, std::to_string(local_time->tm_sec), 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__MIN__", std::make_unique<PreNodeInt>(local_time->tm_min, Token(INT, std::to_string(local_time->tm_min), 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__HOUR__", std::make_unique<PreNodeInt>(local_time->tm_hour, Token(INT, std::to_string(local_time->tm_hour), 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__HOUR12__", std::make_unique<PreNodeInt>(local_time->tm_hour % 12, Token(INT, std::to_string(local_time->tm_hour % 12), 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__AMPM__", std::make_unique<PreNodeKeyword>(Token(STRING, (local_time->tm_hour >= 12 ? "\"PM\"" : "\"AM\""), 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__DAY__", std::make_unique<PreNodeInt>(local_time->tm_mday, Token(INT, std::to_string(local_time->tm_mday), 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__MONTH__", std::make_unique<PreNodeInt>(local_time->tm_mon + 1, Token(INT, std::to_string(local_time->tm_mon + 1), 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__YEAR__", std::make_unique<PreNodeInt>(local_time->tm_year + 1900, Token(INT, std::to_string(local_time->tm_year + 1900), 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__YEAR2__", std::make_unique<PreNodeInt>(local_time->tm_year % 100, Token(INT, std::to_string(local_time->tm_year % 100), 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__LOCALE_MONTH__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_month+"\"", 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__LOCALE_MONTH_ABBR__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_month_abbr+"\"", 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__LOCALE_DATE__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_date+"\"", 0, (std::string&)""), nullptr));
-    builtins.emplace_back("__LOCALE_TIME__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_time+"\"", 0, (std::string&)""), nullptr));
+    builtins.emplace_back("__SEC__", std::make_unique<PreNodeInt>(local_time->tm_sec, Token(INT, std::to_string(local_time->tm_sec), 0, ""), nullptr));
+    builtins.emplace_back("__MIN__", std::make_unique<PreNodeInt>(local_time->tm_min, Token(INT, std::to_string(local_time->tm_min), 0, ""), nullptr));
+    builtins.emplace_back("__HOUR__", std::make_unique<PreNodeInt>(local_time->tm_hour, Token(INT, std::to_string(local_time->tm_hour), 0, ""), nullptr));
+    builtins.emplace_back("__HOUR12__", std::make_unique<PreNodeInt>(local_time->tm_hour % 12, Token(INT, std::to_string(local_time->tm_hour % 12), 0, ""), nullptr));
+    builtins.emplace_back("__AMPM__", std::make_unique<PreNodeKeyword>(Token(STRING, (local_time->tm_hour >= 12 ? "\"PM\"" : "\"AM\""), 0, ""), nullptr));
+    builtins.emplace_back("__DAY__", std::make_unique<PreNodeInt>(local_time->tm_mday, Token(INT, std::to_string(local_time->tm_mday), 0, ""), nullptr));
+    builtins.emplace_back("__MONTH__", std::make_unique<PreNodeInt>(local_time->tm_mon + 1, Token(INT, std::to_string(local_time->tm_mon + 1), 0, ""), nullptr));
+    builtins.emplace_back("__YEAR__", std::make_unique<PreNodeInt>(local_time->tm_year + 1900, Token(INT, std::to_string(local_time->tm_year + 1900), 0, ""), nullptr));
+    builtins.emplace_back("__YEAR2__", std::make_unique<PreNodeInt>(local_time->tm_year % 100, Token(INT, std::to_string(local_time->tm_year % 100), 0, ""), nullptr));
+    builtins.emplace_back("__LOCALE_MONTH__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_month+"\"", 0, ""), nullptr));
+    builtins.emplace_back("__LOCALE_MONTH_ABBR__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_month_abbr+"\"", 0, ""), nullptr));
+    builtins.emplace_back("__LOCALE_DATE__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_date+"\"", 0, ""), nullptr));
+    builtins.emplace_back("__LOCALE_TIME__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_time+"\"", 0, ""), nullptr));
     return builtins;
 }

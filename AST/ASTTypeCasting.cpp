@@ -231,9 +231,11 @@ void ASTTypeCasting::visit(NodeArray& node) {
     }
     auto err = CompileError(ErrorType::TypeError,"Found incorrect type in array brackets.", node.tok.line, "Integer", "", node.tok.file);
     node.sizes->accept(*this);
-    if(node.sizes->type != Integer and node.sizes->type != Unknown) err.exit();
+    if(node.sizes->type != Integer and node.sizes->type != Unknown)
+        err.exit();
     node.indexes->accept(*this);
-    if(node.indexes->type != Integer and node.indexes->type != Unknown) err.exit();
+    if(node.indexes->type != Integer and node.indexes->type != Unknown)
+        err.exit();
 
     if(node.var_type == UI_Control and node.indexes->params.empty()) {
         auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
@@ -451,28 +453,59 @@ void ASTTypeCasting::visit(NodeStatementList& node) {
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
 	}
-	for(int i=0; i<node.statements.size(); ++i) {
-		if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
-			// Wir speichern die Statements der inneren NodeStatementList
-			auto& inner_statements = node_statement_list->statements;
+//	for(int i=0; i<node.statements.size(); ++i) {
+//		if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
+//			// Wir speichern die Statements der inneren NodeStatementList
+//			auto& inner_statements = node_statement_list->statements;
+//            for (auto& stmt : inner_statements) {
+//                stmt->parent = &node;
+//            }
+//			// Fügen Sie die inneren Statements an der aktuellen Position ein
+//			node.statements.insert(
+//				node.statements.begin() + i + 1,
+//				std::make_move_iterator(inner_statements.begin()),
+//				std::make_move_iterator(inner_statements.end())
+//			);
+//			// Entfernen Sie das ursprüngliche NodeStatementList-Element
+//			node.statements.erase(node.statements.begin() + i);
+//			// Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
+//			i += inner_statements.size() - 1;
+//			// Die inneren Statements sind jetzt leer, da sie verschoben wurden
+//			inner_statements.clear();
+//		}
+//	}
+
+    std::vector<std::unique_ptr<NodeStatement>> temp;
+    for(int i = 0; i < node.statements.size(); ++i) {
+        if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
+            // Übertragen Sie die function_inlines vom aktuellen NodeStatementList-Element
+            // auf das erste Element der inneren NodeStatementList
+            auto& inner_statements = node_statement_list->statements;
+            if (!inner_statements.empty()) {
+                inner_statements[0]->function_inlines.insert(
+                        inner_statements[0]->function_inlines.end(),
+                        std::make_move_iterator(node.statements[i]->function_inlines.begin()),
+                        std::make_move_iterator(node.statements[i]->function_inlines.end())
+                );
+            }
+            // Aktualisieren Sie das parent-Attribut für jedes innere Statement
             for (auto& stmt : inner_statements) {
                 stmt->parent = &node;
             }
-			// Fügen Sie die inneren Statements an der aktuellen Position ein
-			node.statements.insert(
-				node.statements.begin() + i + 1,
-				std::make_move_iterator(inner_statements.begin()),
-				std::make_move_iterator(inner_statements.end())
-			);
-			// Entfernen Sie das ursprüngliche NodeStatementList-Element
-			node.statements.erase(node.statements.begin() + i);
-			// Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
-			i += inner_statements.size() - 1;
-			// Die inneren Statements sind jetzt leer, da sie verschoben wurden
-			inner_statements.clear();
-		}
-	}
-//    node.update_parents(&node);
+            // Fügen Sie die inneren Statements zum temporären Vector hinzu
+            temp.insert(
+                    temp.end(),
+                    std::make_move_iterator(inner_statements.begin()),
+                    std::make_move_iterator(inner_statements.end())
+            );
+            // Überspringen Sie das Hinzufügen des aktuellen NodeStatementList-Elements zu `temp`
+            continue;
+        }
+        // Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht speziell behandelt wird
+        temp.push_back(std::move(node.statements[i]));
+    }
+    // Ersetzen Sie die alte Liste durch die neue
+    node.statements = std::move(temp);
 }
 
 

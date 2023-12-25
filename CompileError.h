@@ -82,10 +82,11 @@ private:
 			case ErrorType::MathError: return "MathError";
             case ErrorType::FileError: return "FileError";
             // TODO weitere Fehlerarten
+            default: return "UnknownError";
         }
-    }
+    };
 
-    std::string get_line_from_file() {
+    inline std::string get_line_from_file() {
         std::ifstream file(file_name);
         std::string line;
         if (file.is_open()) {

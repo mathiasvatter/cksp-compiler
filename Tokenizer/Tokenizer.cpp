@@ -6,13 +6,11 @@
 #include <algorithm>
 #include <utility>
 #include <vector>
-#include <fstream>
-#include <sstream>
 
 /*
  * TOKEN STRUCT
  */
-Token::Token(token type, std::string  val, size_t line, std::string &file)
+Token::Token(token type, std::string  val, size_t line, const std::string &file)
             : line(line), type(type), val(std::move(val)), file(file) {}
 
 std::ostream &operator<<(std::ostream &os, const Token &tok) {

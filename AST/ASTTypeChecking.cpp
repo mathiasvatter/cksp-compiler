@@ -23,8 +23,9 @@ void ASTTypeChecking::visit(NodeCallback &node) {
 
 void ASTTypeChecking::visit(NodeUIControl& node) {
     node.control_var->accept(*this);
-    // unused variable declarations being replaced with node_dead_end
-    if(!node.control_var) {
+    // unused variable declarations being replaced with node_dead_end, replace also parent
+    if(&node == m_current_node_replaced) {
+        m_current_node_replaced = node.parent;
         node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
         return;
     }
@@ -37,6 +38,7 @@ void ASTTypeChecking::visit(NodeVariable& node) {
     auto node_ui_control = cast_node<NodeUIControl>(node.parent);
     if(node_declaration || node_ui_control) {
         if(!node.is_used) {
+            m_current_node_replaced = node.parent;
             node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
             return;
         }
@@ -109,6 +111,7 @@ void ASTTypeChecking::visit(NodeArray& node) {
 
     if(node_declaration || node_ui_control) {
         if(!node.is_used) {
+            m_current_node_replaced = node.parent;
             node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
             return;
         }
@@ -134,10 +137,14 @@ void ASTTypeChecking::visit(NodeArray& node) {
 }
 
 void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
-    // unused variable declarations being replaced with node_dead_end
-    if(!node.to_be_declared) return;
-
     node.to_be_declared->accept(*this);
+
+    // unused variable declarations being replaced with node_dead_end
+    if(&node == m_current_node_replaced) {
+        m_current_node_replaced = nullptr;
+        return;
+    }
+
     if(node.assignee)
         node.assignee->accept(*this);
 

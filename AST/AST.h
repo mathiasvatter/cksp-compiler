@@ -4,11 +4,13 @@
 
 #pragma once
 #include <string>
-#include <utility>
+//#include <utility>
 #include <vector>
 #include <optional>
 #include <variant>
 #include <list>
+//#include <memory>
+#include <chrono>
 
 
 #include "../Tokenizer/Tokens.h"
@@ -71,11 +73,19 @@ enum VarType {
 };
 
 struct NodeAST {
+//    bool has_been_moved = false;
     Token tok;
     ASTType type;
     NodeAST* parent = nullptr;
     inline explicit NodeAST(const Token tok=Token()) : tok(tok), type(ASTType::Unknown) {}
 	virtual ~NodeAST() = default;
+
+//    // Benutzerdefinierter Kopierkonstruktor
+//    inline NodeAST(const NodeAST& other)
+//            : tok(other.tok), type(other.type), parent(other.parent) {
+//        shared_this = other.shared_this; // Kopieren des shared_ptr
+//    }
+
     // Virtuelle clone()-Methode für tiefe Kopien
     virtual std::unique_ptr<NodeAST> clone() const = 0;
 	virtual void accept(class ASTVisitor& visitor);
@@ -89,6 +99,29 @@ struct NodeAST {
     virtual void update_token_data(const Token& token) {
         tok.line = token.line; tok.file = token.file;
     }
+//
+//    // Move-Konstruktor
+//    NodeAST(NodeAST&& other) noexcept
+//            : tok(std::move(other.tok)), type(other.type), parent(other.parent) {
+//        shared_this = std::move(other.shared_this); // Move des shared_ptr
+//        other.parent = nullptr; // Setzen Sie den Quellzeiger auf nullptr
+//    }
+//
+//    // Move-Zuweisungsoperator
+//    NodeAST& operator=(NodeAST&& other) noexcept {
+//        if (this != &other) {
+//            tok = std::move(other.tok);
+//            type = other.type;
+//            parent = other.parent;
+//            shared_this = std::move(other.shared_this); // Move des shared_ptr
+//            other.parent = nullptr; // Setzen Sie den Quellzeiger auf nullptr
+//        }
+//        return *this;
+//    }
+//
+//    // shared_ptr zur Aufbewahrung einer gemeinsamen Instanz in den abgeleiteten Klassen
+//    std::shared_ptr<NodeAST> shared_this;
+
 };
 
 template <typename T>
@@ -121,7 +154,7 @@ std::vector<std::unique_ptr<T>> clone_vector(const std::vector<std::unique_ptr<T
 }
 
 struct NodeDeadEnd : NodeAST {
-    NodeDeadEnd(const Token tok) : NodeAST(tok) {};
+    explicit NodeDeadEnd(const Token tok) : NodeAST(tok) {};
     void accept(ASTVisitor& visitor) override;
     NodeDeadEnd(const NodeDeadEnd& other) : NodeAST(other.tok) {}
     std::unique_ptr<NodeAST> clone() const override;
@@ -176,13 +209,13 @@ struct NodeVariable: NodeAST {
     bool is_compiler_return = false;
     VarType var_type = VarType::Mutable;
 	std::string name;
-    NodeAST* declaration; // index in declaration array
+    NodeAST* declaration = nullptr; // index in declaration array
 	inline NodeVariable(bool is_persistent, std::string name, VarType type, Token tok) : NodeAST(tok), is_persistent(is_persistent), name(std::move(name)), var_type(type) {}
 	void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
     NodeVariable(const NodeVariable& other);
     // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {
         return name;
     }
@@ -196,7 +229,7 @@ struct NodeParamList: NodeAST {
     // Kopierkonstruktor
     NodeParamList(const NodeParamList& other);
     // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         for(auto& param : params) {
@@ -228,8 +261,8 @@ struct NodeArray : NodeAST {
     VarType var_type = VarType::Array;
     std::string name;
     std::unique_ptr<NodeParamList> sizes = nullptr;
-    std::unique_ptr<NodeParamList> indexes;
-    NodeAST* declaration;
+    std::unique_ptr<NodeParamList> indexes = nullptr;
+    NodeAST* declaration = nullptr;
     inline explicit NodeArray(Token tok) : NodeAST(tok) {}
     inline NodeArray(bool is_persistent, std::string name, VarType var_type, std::unique_ptr<NodeParamList> sizes,
               std::unique_ptr<NodeParamList> indexes, Token tok)
@@ -239,7 +272,7 @@ struct NodeArray : NodeAST {
     // Kopierkonstruktor
     NodeArray(const NodeArray& other);
     // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         if (sizes) sizes->update_parents(this);
@@ -267,7 +300,7 @@ struct NodeUIControl : NodeAST {
     // Copy Constructor
     NodeUIControl(const NodeUIControl& other);
     // Clone Method
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         control_var->update_parents(this);
@@ -292,7 +325,7 @@ struct NodeUnaryExpr : NodeAST {
     // Copy Constructor
     NodeUnaryExpr(const NodeUnaryExpr& other);
     // Clone Method
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         operand->update_parents(this);
@@ -317,7 +350,7 @@ struct NodeBinaryExpr: NodeAST {
     // Copy Constructor
     NodeBinaryExpr(const NodeBinaryExpr& other);
     // Clone Method
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         left->update_parents(this);
@@ -342,7 +375,7 @@ struct NodeAssignStatement: NodeAST {
     // Copy Constructor
     NodeAssignStatement(const NodeAssignStatement& other);
     // Clone Method
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         array_variable->update_parents(this);
@@ -368,7 +401,7 @@ struct NodeSingleAssignStatement : NodeAST {
     // Copy Constructor
     NodeSingleAssignStatement(const NodeSingleAssignStatement& other);
     // Clone Method
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         array_variable->update_parents(this);
@@ -394,7 +427,7 @@ struct NodeDeclareStatement : NodeAST {
     // Copy Constructor
     NodeDeclareStatement(const NodeDeclareStatement& other);
     // Clone Method
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         to_be_declared->update_parents(this);
@@ -420,7 +453,7 @@ struct NodeSingleDeclareStatement : NodeAST {
     // Copy Constructor
     NodeSingleDeclareStatement(const NodeSingleDeclareStatement& other);
     // Clone Method
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         to_be_declared->update_parents(this);
@@ -448,7 +481,7 @@ struct NodeGetControlStatement : NodeAST {
     // Kopierkonstruktor
     NodeGetControlStatement(const NodeGetControlStatement& other);
     // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         ui_id->update_parents(this);
@@ -471,7 +504,7 @@ struct NodeSetControlStatement : NodeAST {
     // Kopierkonstruktor
     NodeSetControlStatement(const NodeSetControlStatement& other);
     // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         get_control->update_parents(this);
@@ -495,11 +528,11 @@ struct NodeStatement: NodeAST {
     inline explicit NodeStatement(Token tok) : NodeAST(tok) {type = Statement;}
     inline NodeStatement(std::unique_ptr<NodeAST> statement, Token tok) : NodeAST(tok), statement(std::move(statement)) {type = Statement;}
 	void accept(ASTVisitor& visitor) override;
-	virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Kopierkonstruktor
     NodeStatement(const NodeStatement& other);
     // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         statement->update_parents(this);
@@ -520,7 +553,7 @@ struct NodeStatementList : NodeAST {
             : NodeAST(tok), statements(std::move(statements)) {type = StatementList;}
     void accept(ASTVisitor& visitor) override;
     NodeStatementList(const NodeStatementList& other);
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         for (auto & stmt : statements) {
@@ -551,7 +584,7 @@ struct NodeConstStatement : NodeAST {
     // Kopierkonstruktor
     NodeConstStatement(const NodeConstStatement& other);
     // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         for (auto & c : constants) {
@@ -576,7 +609,7 @@ struct NodeStructStatement : NodeAST {
     // Kopierkonstruktor
     NodeStructStatement(const NodeStructStatement& other);
     // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         for (auto & member : members) {
@@ -601,7 +634,7 @@ struct NodeFamilyStatement : NodeAST {
     // Kopierkonstruktor
     NodeFamilyStatement(const NodeFamilyStatement& other);
     // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         for (auto & member : members) {
@@ -618,7 +651,7 @@ struct NodeFamilyStatement : NodeAST {
 
 struct NodeListStatement : NodeAST {
     std::string name;
-    int32_t size;
+    int32_t size = 0;
     std::vector<std::unique_ptr<NodeParamList>> body;
     inline explicit NodeListStatement(Token tok) : NodeAST(tok) {}
     inline NodeListStatement(std::string name, int32_t size, std::vector<std::unique_ptr<NodeParamList>> body, Token tok)
@@ -627,7 +660,7 @@ struct NodeListStatement : NodeAST {
     // Kopierkonstruktor
     NodeListStatement(const NodeListStatement& other);
     // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         for (auto & b : body) {
             b->update_parents(this);
@@ -651,7 +684,7 @@ struct NodeIfStatement: NodeAST {
     void accept(ASTVisitor& visitor) override;
 	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     NodeIfStatement(const NodeIfStatement& other);
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         condition->update_parents(this);
@@ -678,7 +711,7 @@ struct NodeForStatement : NodeAST {
     void accept(ASTVisitor& visitor) override;
 	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     NodeForStatement(const NodeForStatement& other);
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         iterator->update_parents(this);
@@ -705,7 +738,7 @@ struct NodeWhileStatement : NodeAST {
     void accept(ASTVisitor& visitor) override;
 	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     NodeWhileStatement(const NodeWhileStatement& other);
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         condition->update_parents(this);
@@ -727,7 +760,7 @@ struct NodeSelectStatement : NodeAST {
 	void accept(ASTVisitor& visitor) override;
     NodeSelectStatement(const NodeSelectStatement& other);
 	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         expression->update_parents(this);
@@ -763,9 +796,9 @@ struct NodeCallback: NodeAST {
 	inline NodeCallback(std::string begin_callback, std::unique_ptr<NodeStatementList> statements, std::string end_callback, Token tok)
      : NodeAST(tok), begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {}
 	void accept(ASTVisitor& visitor) override;
-    virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+    void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     NodeCallback(const NodeCallback& other);
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         if(callback_id) callback_id->update_parents(this);
@@ -785,7 +818,7 @@ struct NodeImport : NodeAST {
     : NodeAST(tok), filepath(std::move(filepath)), alias(std::move(alias)) {}
     void accept(ASTVisitor& visitor) override;
     NodeImport(const NodeImport& other);
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override { return ""; }
     void update_token_data(const Token& token) override {}
 };
@@ -802,7 +835,7 @@ struct NodeFunctionHeader: NodeAST {
     : NodeAST(tok), name(std::move(name)), args(std::move(args)) {};
     void accept(ASTVisitor& visitor) override;
     NodeFunctionHeader(const NodeFunctionHeader& other);
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         args->update_parents(this);
@@ -824,7 +857,7 @@ struct NodeFunctionCall : NodeAST {
     : NodeAST(tok), is_call(isCall), function(std::move(function)) {}
     void accept(ASTVisitor& visitor) override;
     NodeFunctionCall(const NodeFunctionCall& other);
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         function->update_parents(this);
@@ -843,7 +876,7 @@ struct NodeFunctionDefinition: NodeAST {
     std::set<NodeFunctionCall*> call = {};
     std::unique_ptr<NodeFunctionHeader> header;
     std::optional<std::unique_ptr<NodeParamList>> return_variable;
-    bool override;
+    bool override = false;
     std::unique_ptr<NodeStatementList> body;
     inline explicit NodeFunctionDefinition(Token tok) : NodeAST(tok) {}
     inline NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
@@ -853,7 +886,7 @@ struct NodeFunctionDefinition: NodeAST {
 	   body(std::move(body)) {};
     void accept(ASTVisitor& visitor) override;
     NodeFunctionDefinition(const NodeFunctionDefinition& other);
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         header->update_parents(this);
@@ -877,7 +910,7 @@ struct NodeProgram : NodeAST {
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
     NodeProgram(const NodeProgram& other);
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         for(auto & c : callbacks)

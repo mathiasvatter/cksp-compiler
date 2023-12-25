@@ -248,9 +248,9 @@ Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *
         int parenth_depth = 1; // Start with 1 because we've already consumed the first OPEN_PARENTH
         auto node_chunk = std::make_unique<PreNodeChunk>(std::move(std::vector<std::unique_ptr<PreNodeAST>>{}), node_list.get());
         while (parenth_depth > 0) {
-            if (peek().type == token::OPEN_PARENTH) {
+            if (peek().type == token::OPEN_PARENTH or peek().type == token::OPEN_BRACKET) {
                 parenth_depth++;
-            } else if (peek().type == token::CLOSED_PARENTH) {
+            } else if (peek().type == token::CLOSED_PARENTH or peek().type == token::CLOSED_BRACKET) {
                 parenth_depth--;
             } else if (peek().type == token::END_TOKEN) {
                 return Result<std::unique_ptr<PreNodeList>>(CompileError(ErrorType::PreprocessorError,
@@ -468,7 +468,8 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
 
     auto step = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node_iterate_macro.get());
     auto step_statement = std::make_unique<PreNodeStatement>(nullptr, step.get());
-    auto node_int = std::make_unique<PreNodeInt>(1, Token(INT, "1", 0, (std::string &) ""), step_statement.get());
+//    Token toki = Token(INT, "1", 0, "");
+    auto node_int = std::make_unique<PreNodeInt>(1,  Token(INT, "1", 0, ""), step_statement.get());
     step_statement->statement = std::move(node_int);
     step->chunk.push_back(std::move(step_statement));
     if(peek().type == STEP) {
