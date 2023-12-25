@@ -1018,6 +1018,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 			new_control_name = node_array->name+std::to_string(i);
 			if(node_array->dimensions>1) new_control_name = "_"+new_control_name;
 			auto node_control_var = std::make_unique<NodeVariable>(false, new_control_name, UI_Control, node.tok);
+            node_control_var->is_used = true;
 			auto new_node_ui_control = std::unique_ptr<NodeUIControl>(static_cast<NodeUIControl*>(node.clone().release()));
 			new_node_ui_control->control_var = node_control_var->clone();
 			auto new_node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(new_node_ui_control),
