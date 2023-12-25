@@ -50,7 +50,7 @@ Result<SuccessTag> PreprocessorImport::evaluate_import(std::vector<Token>& token
         } else {
             if (m_imported_files.find(path.unwrap()) == m_imported_files.end()) {  // Überprüfe auf zirkuläre Abhängigkeiten
                 m_imported_files.insert(path.unwrap());
-//                std::cout << path.unwrap() << std::endl;
+                std::cout << path.unwrap() << std::endl;
                 Tokenizer tokenizer(path.unwrap());
                 auto new_tokens = tokenizer.tokenize();
 

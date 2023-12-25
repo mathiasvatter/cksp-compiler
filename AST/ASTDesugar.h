@@ -50,6 +50,9 @@ public:
     void visit(NodeVariable& node) override;
 
 private:
+
+    NodeAST* m_current_node_replaced = nullptr;
+
     const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash>& m_builtin_functions;
     NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
     NodeFunctionHeader* get_builtin_function(const std::string &function, int params);
@@ -70,11 +73,11 @@ private:
     NodeFunctionHeader* get_property_function(NodeFunctionHeader* function);
     std::unique_ptr<NodeStatementList> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header);
 
-    NodeProgram* m_program;
-    NodeCallback* m_init_callback;
-    NodeCallback* m_current_callback;
+    NodeProgram* m_program = nullptr;
+    NodeCallback* m_init_callback = nullptr;
+    NodeCallback* m_current_callback = nullptr;
     int m_current_callback_idx = 0;
-    NodeAST* m_return_dummy_declaration;
+    NodeAST* m_return_dummy_declaration = nullptr;
 
 	bool evaluating_functions = false;
 

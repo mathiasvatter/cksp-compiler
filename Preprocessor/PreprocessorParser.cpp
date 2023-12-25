@@ -248,9 +248,9 @@ Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *
         int parenth_depth = 1; // Start with 1 because we've already consumed the first OPEN_PARENTH
         auto node_chunk = std::make_unique<PreNodeChunk>(std::move(std::vector<std::unique_ptr<PreNodeAST>>{}), node_list.get());
         while (parenth_depth > 0) {
-            if (peek().type == token::OPEN_PARENTH) {
+            if (peek().type == token::OPEN_PARENTH or peek().type == token::OPEN_BRACKET) {
                 parenth_depth++;
-            } else if (peek().type == token::CLOSED_PARENTH) {
+            } else if (peek().type == token::CLOSED_PARENTH or peek().type == token::CLOSED_BRACKET) {
                 parenth_depth--;
             } else if (peek().type == token::END_TOKEN) {
                 return Result<std::unique_ptr<PreNodeList>>(CompileError(ErrorType::PreprocessorError,
