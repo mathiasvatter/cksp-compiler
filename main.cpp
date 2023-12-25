@@ -127,8 +127,8 @@ Options:
 	ASTGenerator generator;
 	ast->accept(generator);
 //	generator.print();
-	generator.generate(std::filesystem::path(curr_path.parent_path() / "test.txt").string());
-//    generator.generate(output_filename);
+//	generator.generate(std::filesystem::path(curr_path.parent_path() / "test.txt").string());
+    generator.generate(output_filename);
 
 
     auto end_time = std::chrono::high_resolution_clock::now();
