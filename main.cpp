@@ -11,6 +11,7 @@
 #include "AST/ASTTypeChecking.h"
 #include "AST/ASTVariables.h"
 #include "Generator/ASTGenerator.h"
+#include "Readme.h"
 
 
 int main(int argc, char* argv[]) {
@@ -20,11 +21,15 @@ int main(int argc, char* argv[]) {
 
     std::string help = R"(
 Usage: cksp [options] <input-file>
+
 Options:
  -h, --help        Display usage information
  -o <file>         Set output file name (default: <input_dir>/out.txt)
  -v, --version     Display version number
+
 )";
+    std::string data(reinterpret_cast<char*>(Readme), Readme_len);
+    help += data;
     std::string version = "cksp:\t\t"+COMPILER_VERSION+"\n";
 
     for (int i = 1; i < argc; ++i) {

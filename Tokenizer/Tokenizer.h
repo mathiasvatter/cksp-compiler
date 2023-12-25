@@ -13,6 +13,8 @@
 #include <cmath>
 #include <iomanip>
 #include <filesystem>
+#include <fstream>
+#include <sstream>
 
 #include "../Result.h"
 #include "Tokens.h"
@@ -129,6 +131,7 @@ inline bool string_compare(const std::string& str1, const std::string& str2) {
     }
     return true;
 }
+
 
 // Struktur für den zusammengesetzten Schlüssel
 struct StringIntKey {
