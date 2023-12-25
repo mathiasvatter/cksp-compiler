@@ -122,10 +122,9 @@ protected:
     Result<std::unique_ptr<NodeCallback>> parse_callback(NodeAST* parent);
 
 	Result<std::unique_ptr<NodeProgram>> parse_program();
-//    std::vector<std::unique_ptr<NodeMacroDefinition>> m_macro_definitions;
-    std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
-    std::unordered_map<std::string, NodeFunctionDefinition*> m_functions;
-    void mark_function_as_used(const std::string& func_name);
+    std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_function_definitions;
+//    std::unordered_map<std::string, NodeFunctionDefinition*> m_functions;
+    void mark_function_as_used(const std::string& func_name, int num_args);
 
 	Result<SuccessTag> consume_linebreak(const std::string& construct);
 private:
