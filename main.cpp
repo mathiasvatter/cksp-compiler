@@ -61,7 +61,7 @@ Options:
     }
 
     //    input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
-    input_filename = "C:\\Users\\mathi\\Documents\\Scripting\\the-score\\the-score.ksp";
+//    input_filename = "C:\\Users\\mathi\\Documents\\Scripting\\the-score\\the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
@@ -141,6 +141,7 @@ Options:
     std::cout << "Typechecking Time: " << type_checking_duration.count() << " ms, "<< std::endl;
     std::cout << "Time measured: " << duration.count() << " ms" << std::endl;
 
-	std::cout << std::filesystem::current_path();
+    std::cout << "Saved compiled file to: " << output_filename << std::endl;
+//	std::cout << std::filesystem::current_path();
     return 0;
 }

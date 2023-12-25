@@ -54,10 +54,11 @@ std::unique_ptr<NodeAST> NodeString::clone() const {
 void NodeVariable::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
-NodeVariable::NodeVariable(const NodeVariable& other) : NodeAST(other),
-                                                        is_engine(other.is_engine), is_persistent(other.is_persistent),
-                                                        is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
-                                                        var_type(other.var_type), name(other.name), declaration(other.declaration) {}
+NodeVariable::NodeVariable(const NodeVariable& other)
+        : NodeAST(other),
+        is_engine(other.is_engine), is_used(other.is_used), is_persistent(other.is_persistent),
+        is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
+        var_type(other.var_type), name(other.name), declaration(other.declaration) {}
 std::unique_ptr<NodeAST> NodeVariable::clone() const {
     return std::make_unique<NodeVariable>(*this);
 }
@@ -86,7 +87,7 @@ void NodeArray::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeArray::NodeArray(const NodeArray& other)
-        : NodeAST(other), is_engine(other.is_engine), is_persistent(other.is_persistent),
+        : NodeAST(other), is_engine(other.is_engine), is_used(other.is_used), is_persistent(other.is_persistent),
           is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
           var_type(other.var_type), name(other.name),
           sizes(clone_unique(other.sizes)), indexes(clone_unique(other.indexes)),
