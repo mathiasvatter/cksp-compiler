@@ -12,9 +12,7 @@ void NodeAST::accept(ASTVisitor &visitor) {
 void NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 	if (parent) {
 		newNode->parent = parent;
-//        this->has_been_moved = true;
 		parent->replace_child(this, std::move(newNode));
-//        delete this;
 	}
 }
 

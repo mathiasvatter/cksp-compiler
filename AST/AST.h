@@ -73,18 +73,11 @@ enum VarType {
 };
 
 struct NodeAST {
-//    bool has_been_moved = false;
     Token tok;
     ASTType type;
     NodeAST* parent = nullptr;
     inline explicit NodeAST(const Token tok=Token()) : tok(tok), type(ASTType::Unknown) {}
 	virtual ~NodeAST() = default;
-
-//    // Benutzerdefinierter Kopierkonstruktor
-//    inline NodeAST(const NodeAST& other)
-//            : tok(other.tok), type(other.type), parent(other.parent) {
-//        shared_this = other.shared_this; // Kopieren des shared_ptr
-//    }
 
     // Virtuelle clone()-Methode für tiefe Kopien
     virtual std::unique_ptr<NodeAST> clone() const = 0;
@@ -99,29 +92,6 @@ struct NodeAST {
     virtual void update_token_data(const Token& token) {
         tok.line = token.line; tok.file = token.file;
     }
-//
-//    // Move-Konstruktor
-//    NodeAST(NodeAST&& other) noexcept
-//            : tok(std::move(other.tok)), type(other.type), parent(other.parent) {
-//        shared_this = std::move(other.shared_this); // Move des shared_ptr
-//        other.parent = nullptr; // Setzen Sie den Quellzeiger auf nullptr
-//    }
-//
-//    // Move-Zuweisungsoperator
-//    NodeAST& operator=(NodeAST&& other) noexcept {
-//        if (this != &other) {
-//            tok = std::move(other.tok);
-//            type = other.type;
-//            parent = other.parent;
-//            shared_this = std::move(other.shared_this); // Move des shared_ptr
-//            other.parent = nullptr; // Setzen Sie den Quellzeiger auf nullptr
-//        }
-//        return *this;
-//    }
-//
-//    // shared_ptr zur Aufbewahrung einer gemeinsamen Instanz in den abgeleiteten Klassen
-//    std::shared_ptr<NodeAST> shared_this;
-
 };
 
 template <typename T>

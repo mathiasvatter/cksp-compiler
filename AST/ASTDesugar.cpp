@@ -161,6 +161,7 @@ void ASTDesugar::visit(NodeArray& node) {
     if(!m_variable_scope_stack.empty()) {
         if(auto substitute = get_local_variable_substitute(node.name)) {
             node.name = substitute->get_string();
+            node.is_local = true;
         }
     }
     // add prefixes
@@ -466,7 +467,6 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 	node.to_be_declared ->accept(*this);
 
     // in case node.assignee is function substitution -> then this node gets replaced
-//    if(!node.to_be_declared and !node.assignee) return;
     if(&node == m_current_node_replaced) {
         m_current_node_replaced = nullptr;
         return;
