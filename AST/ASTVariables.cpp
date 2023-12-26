@@ -179,6 +179,7 @@ void ASTVariables::visit(NodeVariable& node) {
     auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
 	auto node_builtin_variable = get_builtin_variable(&node);
 	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+    auto node_param_list = cast_node<NodeParamList>(node.parent);
 	if(node_builtin_variable && (node_declare_statement || node_ui_control) ){
 		CompileError(ErrorType::SyntaxError,"Variable shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).exit();
 	}
@@ -210,12 +211,15 @@ void ASTVariables::visit(NodeVariable& node) {
         if (has_compiler_identifier) node.name = "_" + node.name;
         if (!node_first_array_declaration) node_first_array_declaration = get_declared_array(node.name);
         if(node_first_declaration) {
-            if(node_first_declaration->var_type == UI_Control) node.var_type = node_first_declaration->var_type;
             node.declaration = node_first_declaration;
             node.type = node.declaration->type;
             node_first_declaration->is_used = true;
+            if (node_first_declaration->var_type == UI_Control) {
+                node.var_type = node_first_declaration->var_type;
+            }
+
         // can only be array if parent is param_list or callback
-        } else if((cast_node<NodeParamList>(node.parent) || cast_node<NodeCallback>(node.parent)) && node_first_array_declaration) {
+        } else if((node_param_list || cast_node<NodeCallback>(node.parent)) && node_first_array_declaration) {
             auto node_array = make_array(node.name, 0, node.tok, node.parent);
             node_array->sizes->params.clear();
             node_array->type = node.type;
@@ -227,7 +231,7 @@ void ASTVariables::visit(NodeVariable& node) {
             node.type = node.declaration->type;
             node.is_engine = node_builtin_variable->is_engine;
         } else {
-            CompileError(ErrorType::SyntaxError,"Variable has not been declared.", node.tok.line, "", node.name, node.tok.file).exit();
+            CompileError(ErrorType::SyntaxError,"Variable has not been declared. If it was declared as local variable it may be out of scope.", node.tok.line, "", node.name, node.tok.file).exit();
 //			exit(EXIT_FAILURE);
         }
     }
@@ -236,6 +240,14 @@ void ASTVariables::visit(NodeVariable& node) {
 
 void ASTVariables::visit(NodeFunctionCall &node) {
     node.function->accept(*this);
+    // replace node variable when in get_ui_id and not ui_control
+    if(node.function->name == "get_ui_id" and !node.function->args->params.empty()) {
+        if(auto node_variable = cast_node<NodeVariable>(node.function->args->params[0].get())) {
+            if(node_variable->var_type != UI_Control) {
+                node.replace_with(std::move(node.function->args->params[0]));
+            }
+        }
+    }
 }
 
 void ASTVariables::visit(NodeSingleDeclareStatement& node) {

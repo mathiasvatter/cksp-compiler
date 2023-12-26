@@ -107,7 +107,9 @@ private:
     int local_var_counter = 0;
     std::vector<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_variable_scope_stack;
     std::vector<std::unique_ptr<NodeStatement>> m_local_declare_statements;
-    std::set<std::string> m_local_variables;
+    /// holds the size of the local variables and their real names + _ + size is idx
+    /// gets resettet when out of init
+    std::stack<std::string> m_local_variables;
     std::set<std::string> m_local_already_declared_vars;
     NodeAST* m_local_var_dummy_declaration;
     std::unique_ptr<NodeAST> get_local_variable_substitute(const std::string& name);
