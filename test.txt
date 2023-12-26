@@ -1,6 +1,8 @@
-{ Compiled with cksp version 0.0.1 on Tue Dec 26 10:31:23 2023 }
+{ Compiled with cksp version 0.0.1 on Tue Dec 26 10:44:37 2023 }
 on init
 declare !_favorite_button_pics_2[2]
+!_favorite_button_pics_2[0] := "btn_fav"
+!_favorite_button_pics_2[1] := "btn_fav_blurr"
 declare $_list_it
 declare ?_return_vars_real[4]
 declare !_return_vars_str[4]
@@ -40,7 +42,6 @@ declare $lib__i
 declare ui_panel $__table 
 set_control_par(get_ui_id($__table), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
 declare $i
-!_favorite_button_pics_2 := "btn_fav", "btn_fav_blurr"
 if(%trans_zone_ids[1] = - 1)
 %_return_vars_int[1] := search(%trans_zone_ids, - 1)
 else
@@ -196,7 +197,7 @@ message("7: " & 7)
 message("8: " & 8)
 message("9: " & 9)
 message("10: " & 10)
-message("** Script " & "'" & "MAIN" & "'" & " Compile " & "10:31:23" & " " & "12/26/23" & " **")
+message("** Script " & "'" & "MAIN" & "'" & " Compile " & "10:44:37" & " " & "12/26/23" & " **")
 set_script_title("MAIN")
 declare const $UI_HEIGHT := 352
 declare const $UI_WIDTH := 785

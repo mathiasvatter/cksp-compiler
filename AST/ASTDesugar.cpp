@@ -542,7 +542,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     if(in_function()) {
         std::unique_ptr<NodeAST> stmt;
         std::unique_ptr<NodeAST> assignee = nullptr;
-        if (node.assignee and !is_const) {
+        if (node.assignee and !is_const and !node_array) {
             auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(),
                                                                                node.assignee->clone(), node.tok);
             node_assignment->update_parents(node.parent);
