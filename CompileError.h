@@ -59,6 +59,7 @@ public:
     inline void exit() {
 //		return;
         print();
+        std::cout << red << "\nSeems like the compilation exited with a failure.\n" << reset << "Please report any compiler related bugs by creating an issue providing a minimal viable code snippet at: https://bitbucket.org/MathiasVatter/ksp-compiler/issues" << std::endl;
         ::exit(EXIT_FAILURE);
     }
 

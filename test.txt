@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.1 on Tue Dec 26 10:44:37 2023 }
+{ Compiled with cksp version 0.0.1 on Tue Dec 26 10:52:53 2023 }
 on init
 declare !_favorite_button_pics_2[2]
 !_favorite_button_pics_2[0] := "btn_fav"
@@ -197,7 +197,7 @@ message("7: " & 7)
 message("8: " & 8)
 message("9: " & 9)
 message("10: " & 10)
-message("** Script " & "'" & "MAIN" & "'" & " Compile " & "10:44:37" & " " & "12/26/23" & " **")
+message("** Script " & "'" & "MAIN" & "'" & " Compile " & "10:52:53" & " " & "12/26/23" & " **")
 set_script_title("MAIN")
 declare const $UI_HEIGHT := 352
 declare const $UI_WIDTH := 785

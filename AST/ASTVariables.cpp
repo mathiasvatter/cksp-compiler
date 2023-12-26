@@ -92,8 +92,8 @@ void ASTVariables::visit(NodeArray& node) {
         }
 	} else if (node_ui_control) {
 		if(get_declared_control(node_ui_control)) {
-			CompileError(ErrorType::SyntaxError,"Control Widget Array has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
-			exit(EXIT_FAILURE);
+			CompileError(ErrorType::SyntaxError,"Control Widget Array has already been declared.", node.tok.line, "", node.name, node.tok.file).exit();
+//			exit(EXIT_FAILURE);
 		} else {
 			m_declared_controls[node_ui_control->get_string()] = node_ui_control;
 			m_declared_arrays[node.name] = &node;
@@ -161,7 +161,7 @@ void ASTVariables::visit(NodeArray& node) {
             node.type = node.declaration->type;
             node.name = "_"+node.name;
         } else {
-            CompileError(ErrorType::SyntaxError,"Array has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
+            CompileError(ErrorType::SyntaxError,"Array has not been declared.", node.tok.line, "", node.name, node.tok.file).exit();
 //            exit(EXIT_FAILURE);
         }
     }
@@ -192,8 +192,8 @@ void ASTVariables::visit(NodeVariable& node) {
         }
     } else if (node_ui_control) {
         if(get_declared_control(node_ui_control)) {
-            CompileError(ErrorType::SyntaxError,"Control Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
-            exit(EXIT_FAILURE);
+            CompileError(ErrorType::SyntaxError,"Control Variable has already been declared.", node.tok.line, "", node.name, node.tok.file).exit();
+//            exit(EXIT_FAILURE);
         } else {
 			m_declared_controls[node_ui_control->get_string()] = node_ui_control;
 			m_declared_variables.insert({node.name, &node});
@@ -227,7 +227,7 @@ void ASTVariables::visit(NodeVariable& node) {
             node.type = node.declaration->type;
             node.is_engine = node_builtin_variable->is_engine;
         } else {
-            CompileError(ErrorType::SyntaxError,"Variable has not been declared.", node.tok.line, "", node.name, node.tok.file).print();
+            CompileError(ErrorType::SyntaxError,"Variable has not been declared.", node.tok.line, "", node.name, node.tok.file).exit();
 //			exit(EXIT_FAILURE);
         }
     }
