@@ -35,7 +35,7 @@ void PreASTDesugar::visit(PreNodeNumber& node) {
     // substitution
     if (!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.number.val)) {
-            substitute->update_line(node.number.line);
+            substitute->update_token_data(node.number.line);
             node.replace_with(std::move(substitute));
             return;
         }
@@ -46,7 +46,7 @@ void PreASTDesugar::visit(PreNodeInt& node) {
     // substitution
     if (!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.number.val)) {
-            substitute->update_line(node.number.line);
+            substitute->update_token_data(node.number.line);
             node.replace_with(std::move(substitute));
             return;
         }
@@ -55,7 +55,7 @@ void PreASTDesugar::visit(PreNodeInt& node) {
 
 void PreASTDesugar::visit(PreNodeKeyword& node) {
     if(auto builtin_define = get_builtin_define(node.keyword.val)) {
-        builtin_define->update_line(node.keyword.line);
+        builtin_define->update_token_data(node.keyword.line);
         node.replace_with(std::move(builtin_define));
         return;
     }
@@ -63,7 +63,7 @@ void PreASTDesugar::visit(PreNodeKeyword& node) {
     // substitution
     if (!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.keyword.val)) {
-            substitute->update_line(node.keyword.line);
+            substitute->update_token_data(node.keyword.line);
             node.replace_with(std::move(substitute));
             return;
         } else if (count_char(node.keyword.val, '#') == 2) {

@@ -100,7 +100,7 @@ void ASTVariables::visit(NodeArray& node) {
 		}
     } else {
         // in case the user wants the raw array
-        bool has_compiler_identifier = node.name[0] == '_' && node.name[1] != '_' && !node.is_engine; //&& m_return_arrays.find(node.name) == m_return_arrays.end();
+        bool has_compiler_identifier = node.name[0] == '_' && node.name[1] != '_' && !node.is_engine && !node.is_local; //&& m_return_arrays.find(node.name) == m_return_arrays.end();
         if (has_compiler_identifier) node.name = node.name.erase(0,1);
 
         auto node_declaration = get_declared_array(node.name);

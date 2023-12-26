@@ -4,7 +4,6 @@ Known Issues:
  - possible issues with declaring local arrays
  - possible issues with accessing local variables after their scope?
  - possible issues with entering real numbers without .0 in real expression
- - issues with overridden functions -> CompileError when overridden function is defined before non-overridden function
 
 Not supported (yet):
  - <import as> namespaces

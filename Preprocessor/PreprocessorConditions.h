@@ -18,16 +18,15 @@ private:
     bool is_condition_definition(const std::vector<Token>& tok, const Token& peek, token token_type);
 	void reset_condition(const Token& condition);
 
-    std::vector<std::string> builtin_conditions = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG"};
+    std::set<std::string> builtin_conditions = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG"};
 
     Result<SuccessTag> get_conditions();
 	Result<SuccessTag> evaluate_conditions();
     Result<Token> parse_condition_definition(std::vector<Token>& tok);
 	/// returns true if the following tokens should be evaluated
-	Result<bool> parse_use_code_if(std::vector<Token>& tok);
+	Result<SuccessTag> parse_use_code_if();
 	Result<SuccessTag> parse_end_use_code(std::vector<Token>& tok);
-    std::vector<Token> m_conditions;
-    std::vector<Token> m_macro_tokens;
+    std::set<std::string> m_conditions;
 };
 
 

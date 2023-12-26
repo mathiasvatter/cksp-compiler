@@ -1,12 +1,14 @@
-{ Compiled with cksp version 0.0.1 on Tue Dec 26 00:17:55 2023 }
+{ Compiled with cksp version 0.0.1 on Tue Dec 26 10:31:23 2023 }
 on init
+declare !_favorite_button_pics_2[2]
 declare $_list_it
-declare ?_return_vars_real[3]
-declare !_return_vars_str[3]
-declare %_return_vars_int[3]
-declare ?_loc_var_real[11]
-declare !_loc_var_str[11]
-declare %_loc_var_int[11]
+declare ?_return_vars_real[4]
+declare !_return_vars_str[4]
+declare %_return_vars_int[4]
+declare ?_loc_var_real[13]
+declare !_loc_var_str[13]
+declare %_loc_var_int[13]
+declare ui_button $btn_devOverwrite 
 declare %arr[2] := (2, 1)
 declare $val := 1
 %_loc_var_int[0] := 0
@@ -38,6 +40,7 @@ declare $lib__i
 declare ui_panel $__table 
 set_control_par(get_ui_id($__table), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
 declare $i
+!_favorite_button_pics_2 := "btn_fav", "btn_fav_blurr"
 if(%trans_zone_ids[1] = - 1)
 %_return_vars_int[1] := search(%trans_zone_ids, - 1)
 else
@@ -50,17 +53,6 @@ message($i)
 inc($i)
 end while
 declare $bit
-!_loc_var_str[2] := "["
-$lib__i := 0
-while($lib__i <= 31) 
-!_loc_var_str[2] := !_loc_var_str[2] & sh_right(- sh_right(abs(0) - 1, 31) * $bit + sh_left(sh_right($bit, 0) .and. .not. sh_left(- 1, 32), 0), 31 - $lib__i) .and. 1
-if($lib__i < 31)
-!_loc_var_str[2] := !_loc_var_str[2] & ", "
-end if
-inc($lib__i)
-end while
-!_loc_var_str[2] := !_loc_var_str[2] & "]"
-message(!_loc_var_str[2])
 !_loc_var_str[3] := "["
 $lib__i := 0
 while($lib__i <= 31) 
@@ -72,6 +64,17 @@ inc($lib__i)
 end while
 !_loc_var_str[3] := !_loc_var_str[3] & "]"
 message(!_loc_var_str[3])
+!_loc_var_str[4] := "["
+$lib__i := 0
+while($lib__i <= 31) 
+!_loc_var_str[4] := !_loc_var_str[4] & sh_right(- sh_right(abs(0) - 1, 31) * $bit + sh_left(sh_right($bit, 0) .and. .not. sh_left(- 1, 32), 0), 31 - $lib__i) .and. 1
+if($lib__i < 31)
+!_loc_var_str[4] := !_loc_var_str[4] & ", "
+end if
+inc($lib__i)
+end while
+!_loc_var_str[4] := !_loc_var_str[4] & "]"
+message(!_loc_var_str[4])
 declare !stringi[3]
 !stringi[0] := "1"
 !stringi[1] := "2"
@@ -83,7 +86,7 @@ load_array(%category_elements, 2)
 declare %category_accum[11]
 %category_accum[$lib__i] := %category_accum[0 - 0 - $lib__i - 1 .and. sh_right(0 - $lib__i - 1, 31)] + %category_elements[$lib__i]
 declare ui_slider $sli_slider (0, 100)
-%_loc_var_int[4] := 0
+%_loc_var_int[5] := 0
 message(2)
 %_return_vars_int[1] := 2
 declare $fortnite
@@ -154,7 +157,7 @@ declare const $eve__SIZE_D2
 const $eve__SIZE_D2 := $cum
 message(%_eve[1 * $cum * 4 * 5 + 5 * 4 * 5 + 2 * 5 + 2])
 declare $b := 19
-%_loc_var_int[5] := 0
+%_loc_var_int[6] := 0
 message(3)
 %_return_vars_int[1] := 3
 $b := %_return_vars_int[1]
@@ -193,7 +196,7 @@ message("7: " & 7)
 message("8: " & 8)
 message("9: " & 9)
 message("10: " & 10)
-message("** Script " & "'" & "MAIN" & "'" & " Compile " & "00:17:55" & " " & "12/26/23" & " **")
+message("** Script " & "'" & "MAIN" & "'" & " Compile " & "10:31:23" & " " & "12/26/23" & " **")
 set_script_title("MAIN")
 declare const $UI_HEIGHT := 352
 declare const $UI_WIDTH := 785
@@ -204,17 +207,17 @@ $bit := - sh_right(abs(0) - 1, 31) * - sh_right(abs(0) - 1, 31) * sh_right(- 1, 
 $bit := .not. .not. $bit .and. .not. sh_left(1, 28) .and. .not. $bit .and. .not. sh_left(1, 28) .and. - 0 .and. sh_left(1, 28) .and. .not. - 0 .and. sh_left(1, 28) .and. .not. $bit .and. .not. sh_left(1, 28) .and. - 0 .and. sh_left(1, 28)
 $bit := .not. .not. $bit .and. .not. sh_left(1, 16) .and. .not. $bit .and. .not. sh_left(1, 16) .and. - 0 .and. sh_left(1, 16) .and. .not. - 0 .and. sh_left(1, 16) .and. .not. $bit .and. .not. sh_left(1, 16) .and. - 0 .and. sh_left(1, 16)
 $bit := .not. .not. $bit .and. .not. sh_left(1, 0) .and. .not. $bit .and. .not. sh_left(1, 0) .and. - 0 .and. sh_left(1, 0) .and. .not. - 0 .and. sh_left(1, 0) .and. .not. $bit .and. .not. sh_left(1, 0) .and. - 0 .and. sh_left(1, 0)
-!_loc_var_str[6] := "["
+!_loc_var_str[7] := "["
 $lib__i := 0
 while($lib__i <= 31) 
-!_loc_var_str[6] := !_loc_var_str[6] & sh_right(- sh_right(abs(0) - 1, 31) * $bit + sh_left(sh_right($bit, 0) .and. .not. sh_left(- 1, 32), 0), 31 - $lib__i) .and. 1
+!_loc_var_str[7] := !_loc_var_str[7] & sh_right(- sh_right(abs(0) - 1, 31) * $bit + sh_left(sh_right($bit, 0) .and. .not. sh_left(- 1, 32), 0), 31 - $lib__i) .and. 1
 if($lib__i < 31)
-!_loc_var_str[6] := !_loc_var_str[6] & ", "
+!_loc_var_str[7] := !_loc_var_str[7] & ", "
 end if
 inc($lib__i)
 end while
-!_loc_var_str[6] := !_loc_var_str[6] & "]"
-message(!_loc_var_str[6])
+!_loc_var_str[7] := !_loc_var_str[7] & "]"
+message(!_loc_var_str[7])
 declare ui_menu $table_tbl 
 set_control_par(get_ui_id($table_tbl), $CONTROL_PAR_PARENT_PANEL, get_ui_id($__table))
 $lib__i := 0
@@ -269,6 +272,10 @@ set_menu_item_value($tbl3, 0, get_menu_item_value($tbl3, 0) + 1)
 set_menu_item_value($tbl3, get_menu_item_value($tbl3, 0) + 1 - get_menu_item_value($tbl3, 0) + 1 - 1 .and. sh_right(get_menu_item_value($tbl3, 0) + 1 - 1, 31), 100)
 set_menu_item_value($tbl3, 0, get_menu_item_value($tbl3, 0) + 1)
 end on
+function more_messages
+%_loc_var_int[8] := 0
+message("more_messages")
+end function
 function load_other_stuff
 message("load_other_stuff")
 end function
@@ -280,46 +287,46 @@ function load_stuff
 load_array(%arr, 2)
 call load_more_stuff
 end function
-function preset_tags_action
-message("this function is overriden")
-end function
 function messages
-%_loc_var_int[8] := 0
+%_loc_var_int[10] := 0
 message(2)
-%_loc_var_int[9] := 0
+%_loc_var_int[11] := 0
 message("more_messages")
 end function
+on ui_control($btn_devOverwrite)
+$btn_devOverwrite := 0
+call more_messages
+end on
 on note
-%_loc_var_int[7] := 0
-while(%_loc_var_int[7] <= num_elements(%arr) - 1) 
-if(%arr[%_loc_var_int[7]] = 3)
-%_return_vars_int[3] := %_loc_var_int[7]
+%_loc_var_int[9] := 0
+while(%_loc_var_int[9] <= num_elements(%arr) - 1) 
+if(%arr[%_loc_var_int[9]] = 3)
+%_return_vars_int[4] := %_loc_var_int[9]
 end if
-inc(%_loc_var_int[7])
+inc(%_loc_var_int[9])
 end while
-$furz := %_return_vars_int[3]
+$furz := %_return_vars_int[4]
 call load_stuff
-call preset_tags_action
 end on
 on release
 call messages
-%_loc_var_int[10] := 0
-while(%_loc_var_int[10] <= num_elements(%arr) - 1) 
-if(%arr[%_loc_var_int[10]] = 3)
-%_return_vars_int[4] := %_loc_var_int[10]
+%_loc_var_int[12] := 0
+while(%_loc_var_int[12] <= num_elements(%arr) - 1) 
+if(%arr[%_loc_var_int[12]] = 3)
+%_return_vars_int[5] := %_loc_var_int[12]
 end if
-inc(%_loc_var_int[10])
-end while
-$furz := %_return_vars_int[4]
-end on
-on ui_control($sli_slider)
-%_loc_var_int[11] := 0
-while(%_loc_var_int[11] <= num_elements(%arr) - 1) 
-if(%arr[%_loc_var_int[11]] = 3)
-%_return_vars_int[5] := %_loc_var_int[11]
-end if
-inc(%_loc_var_int[11])
+inc(%_loc_var_int[12])
 end while
 $furz := %_return_vars_int[5]
+end on
+on ui_control($sli_slider)
+%_loc_var_int[13] := 0
+while(%_loc_var_int[13] <= num_elements(%arr) - 1) 
+if(%arr[%_loc_var_int[13]] = 3)
+%_return_vars_int[6] := %_loc_var_int[13]
+end if
+inc(%_loc_var_int[13])
+end while
+$furz := %_return_vars_int[6]
 end on
 

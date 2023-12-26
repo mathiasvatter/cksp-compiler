@@ -21,7 +21,7 @@ struct PreNodeAST {
     virtual void update_parents(PreNodeAST* new_parent) {
         parent = new_parent;
     }
-    virtual void update_line(size_t new_line) = 0;
+    virtual void update_token_data(size_t new_line) = 0;
 	virtual std::string get_string() = 0;
 };
 
@@ -34,7 +34,7 @@ struct PreNodeNumber : PreNodeAST {
 	std::string get_string() override {
 		return number.val;
 	}
-    void update_line(size_t new_line) override {
+    void update_token_data(size_t new_line) override {
         number.line = new_line;
     }
 };
@@ -49,7 +49,7 @@ struct PreNodeInt : PreNodeAST {
 	std::string get_string() override {
 		return number.val;
 	}
-    void update_line(size_t new_line) override {
+    void update_token_data(size_t new_line) override {
         number.line = new_line;
     }
 };
@@ -69,9 +69,9 @@ struct PreNodeUnaryExpr : PreNodeAST {
 	std::string get_string() override {
 		return op.val + operand->get_string();
 	}
-    void update_line(size_t new_line) override {
+    void update_token_data(size_t new_line) override {
         op.line = new_line;
-        operand->update_line(new_line);
+        operand->update_token_data(new_line);
     }
 };
 
@@ -93,10 +93,10 @@ struct PreNodeBinaryExpr: PreNodeAST {
 	std::string get_string() override {
 		return left->get_string() + op.val + left->get_string();;
 	}
-    void update_line(size_t new_line) override {
+    void update_token_data(size_t new_line) override {
         op.line = new_line;
-        left->update_line(new_line);
-        right->update_line(new_line);
+        left->update_token_data(new_line);
+        right->update_token_data(new_line);
     }
 };
 
@@ -109,7 +109,7 @@ struct PreNodeKeyword : PreNodeAST {
 	std::string get_string() override {
 		return keyword.val;
 	}
-    void update_line(size_t new_line) override {
+    void update_token_data(size_t new_line) override {
         keyword.line = new_line;
     }
 };
@@ -123,7 +123,7 @@ struct PreNodeOther : PreNodeAST {
 	std::string get_string() override {
 		return other.val;
 	}
-    void update_line(size_t new_line) override {
+    void update_token_data(size_t new_line) override {
         other.line = new_line;
     }
 };
@@ -141,8 +141,8 @@ struct PreNodeStatement : PreNodeAST {
 	std::string get_string() override {
 		return statement->get_string();
 	}
-    void update_line(size_t new_line) override {
-        statement->update_line(new_line);
+    void update_token_data(size_t new_line) override {
+        statement->update_token_data(new_line);
     }
 };
 
@@ -166,9 +166,9 @@ struct PreNodeChunk : PreNodeAST {
 		}
 		return str;
 	}
-    void update_line(size_t new_line) override {
+    void update_token_data(size_t new_line) override {
         for(auto & c : chunk) {
-            c->update_line(new_line);
+            c->update_token_data(new_line);
         }
     }
 };
@@ -192,9 +192,9 @@ struct PreNodeList : PreNodeAST {
 		}
 		return str;
 	}
-    void update_line(size_t new_line) override {
+    void update_token_data(size_t new_line) override {
         for(auto & p : params) {
-            p->update_line(new_line);
+            p->update_token_data(new_line);
         }
     }
 };
@@ -215,9 +215,9 @@ struct PreNodeMacroHeader : PreNodeAST {
 	std::string get_string() override {
 		return name->get_string() + args->get_string();
 	}
-    void update_line(size_t new_line) override {
-        name->update_line(new_line);
-        args->update_line(new_line);
+    void update_token_data(size_t new_line) override {
+        name->update_token_data(new_line);
+        args->update_token_data(new_line);
     }
 };
 
@@ -236,9 +236,9 @@ struct PreNodeDefineHeader : PreNodeAST {
 	std::string get_string() override {
 		return name->get_string() + args->get_string();
 	}
-    void update_line(size_t new_line) override {
-        name->update_line(new_line);
-        args->update_line(new_line);
+    void update_token_data(size_t new_line) override {
+        name->update_token_data(new_line);
+        args->update_token_data(new_line);
     }
 };
 
@@ -258,9 +258,9 @@ struct PreNodeMacroDefinition : PreNodeAST {
 	std::string get_string() override {
 		return header->get_string() + body->get_string();
 	}
-    void update_line(size_t new_line) override {
-        header->update_line(new_line);
-        body->update_line(new_line);
+    void update_token_data(size_t new_line) override {
+        header->update_token_data(new_line);
+        body->update_token_data(new_line);
     }
 };
 
@@ -280,9 +280,9 @@ struct PreNodeDefineStatement : PreNodeAST {
 	std::string get_string() override {
 		return header->get_string() + body->get_string();
 	}
-    void update_line(size_t new_line) override {
-        header->update_line(new_line);
-        body->update_line(new_line);
+    void update_token_data(size_t new_line) override {
+        header->update_token_data(new_line);
+        body->update_token_data(new_line);
     }
 };
 
@@ -299,8 +299,8 @@ struct PreNodeMacroCall : PreNodeAST {
 	std::string get_string() override {
 		return macro->get_string();
 	}
-    void update_line(size_t new_line) override {
-        macro->update_line(new_line);
+    void update_token_data(size_t new_line) override {
+        macro->update_token_data(new_line);
     }
 };
 
@@ -317,8 +317,8 @@ struct PreNodeDefineCall : PreNodeAST {
 	std::string get_string() override {
 		return define->get_string();
 	}
-    void update_line(size_t new_line) override {
-        define->update_line(new_line);
+    void update_token_data(size_t new_line) override {
+        define->update_token_data(new_line);
     }
 };
 
@@ -346,12 +346,12 @@ struct PreNodeIterateMacro : PreNodeAST {
 	std::string get_string() override {
 		return macro_call->get_string() + iterator_start->get_string() + to.val + iterator_end->get_string() + step->get_string();
 	}
-    void update_line(size_t new_line) override {
-        macro_call->update_line(new_line);
-        iterator_start->update_line(new_line);
+    void update_token_data(size_t new_line) override {
+        macro_call->update_token_data(new_line);
+        iterator_start->update_token_data(new_line);
         to.line = new_line;
-        iterator_end->update_line(new_line);
-        step->update_line(new_line);
+        iterator_end->update_token_data(new_line);
+        step->update_token_data(new_line);
     }
 };
 
@@ -371,9 +371,9 @@ struct PreNodeLiterateMacro : PreNodeAST {
 	std::string get_string() override {
 		return macro_call->get_string() + literate_tokens->get_string();
 	}
-    void update_line(size_t new_line) override {
-        macro_call->update_line(new_line);
-        literate_tokens->update_line(new_line);
+    void update_token_data(size_t new_line) override {
+        macro_call->update_token_data(new_line);
+        literate_tokens->update_token_data(new_line);
     }
 };
 
@@ -401,14 +401,14 @@ struct PreNodeIncrementer : PreNodeAST {
     std::string get_string() override {
         return counter->get_string() + iterator_start->get_string() + iterator_step->get_string();
     }
-    void update_line(size_t new_line) override {
+    void update_token_data(size_t new_line) override {
         tok.line = new_line;
         for(auto & b : body) {
-            b->update_line(new_line);
+            b->update_token_data(new_line);
         }
-        counter->update_line(new_line);
-        iterator_start->update_line(new_line);
-        iterator_step->update_line(new_line);
+        counter->update_token_data(new_line);
+        iterator_start->update_token_data(new_line);
+        iterator_step->update_token_data(new_line);
     }
 };
 
@@ -439,7 +439,7 @@ struct PreNodeProgram : PreNodeAST {
 	std::string get_string() override {
 		return "";
 	}
-    void update_line(size_t new_line) override {}
+    void update_token_data(size_t new_line) override {}
 };
 
 
