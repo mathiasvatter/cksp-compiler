@@ -369,6 +369,26 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_parenth_expr(NodeAST* parent) {
     return expr;
 }
 
+Result<std::unique_ptr<NodeSingleAssignStatement>> Parser::parse_single_assign_statement(NodeAST* parent) {
+    auto node_single_assign_statement = std::make_unique<NodeSingleAssignStatement>(get_tok());
+    auto node_assign_statement_res = parse_assign_statement(parent);
+    if(node_assign_statement_res.is_error())
+        Result<std::unique_ptr<NodeSingleAssignStatement>>(node_assign_statement_res.get_error());
+    auto node_assign_statement = std::move(node_assign_statement_res.unwrap());
+    if(node_assign_statement->array_variable->params.size() != 1) {
+        return Result<std::unique_ptr<NodeSingleAssignStatement>>(CompileError(ErrorType::ParseError,
+         "Incorrect Syntax in <Single Assign Statement>.", peek().line, "One Assignment", std::to_string(node_assign_statement->array_variable->params.size()), peek().file));
+    }
+    if(node_assign_statement->assignee->params.size() != 1) {
+        return Result<std::unique_ptr<NodeSingleAssignStatement>>(CompileError(ErrorType::ParseError,
+        "Incorrect Syntax in <Single Assign Statement>.", peek().line, "One Assignment", std::to_string(node_assign_statement->assignee->params.size()), peek().file));
+    }
+    node_single_assign_statement->array_variable = std::move(node_assign_statement->array_variable->params[0]);
+    node_single_assign_statement->assignee = std::move(node_assign_statement->assignee->params[0]);
+    node_single_assign_statement->update_parents(parent);
+    return Result<std::unique_ptr<NodeSingleAssignStatement>>(std::move(node_single_assign_statement));
+}
+
 Result<std::unique_ptr<NodeAssignStatement>> Parser::parse_assign_statement(NodeAST* parent) {
     auto node_assign_statement = std::make_unique<NodeAssignStatement>(get_tok());
 	// make it possible to have more than one variable before assign
@@ -438,11 +458,19 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
         }
         stmt = std::move(if_stmt.unwrap());
     } else if (peek().type == token::FOR) {
-        auto for_stmt = parse_for_statement(node_statement.get());
-        if (for_stmt.is_error()) {
-            return Result<std::unique_ptr<NodeStatement>>(for_stmt.get_error());
+        if(is_ranged_for_loop()) {
+            auto for_stmt = parse_ranged_for_statement(node_statement.get());
+            if (for_stmt.is_error()) {
+                return Result<std::unique_ptr<NodeStatement>>(for_stmt.get_error());
+            }
+            stmt = std::move(for_stmt.unwrap());
+        } else {
+            auto for_stmt = parse_for_statement(node_statement.get());
+            if (for_stmt.is_error()) {
+                return Result<std::unique_ptr<NodeStatement>>(for_stmt.get_error());
+            }
+            stmt = std::move(for_stmt.unwrap());
         }
-        stmt = std::move(for_stmt.unwrap());
     } else if (peek().type == token::WHILE) {
         auto while_stmt = parse_while_statement(node_statement.get());
         if(while_stmt.is_error()) {
@@ -708,34 +736,11 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
         func_override = true;
     }
 
-//        // Entfernen Sie alle Nicht-Override-Funktionen, die dieselbe Signatur haben
-//        auto new_end = std::remove_if(m_function_definitions.begin(), m_function_definitions.end(),
-//                                      [&func_header](const std::unique_ptr<NodeFunctionDefinition>& function) {
-//                                          if (!function->override) {
-//                                              return func_header->name == function->header->name and func_header->args->params.size() == function->header->args->params.size();
-//                                          }
-//                                          return false; // Funktionen mit override = true nicht entfernen
-//                                      });
-//
-//        // Tatsächliches Entfernen der Elemente aus dem Vektor
-//        m_function_definitions.erase(new_end, m_function_definitions.end());
-//    }
     if (peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeFunctionDefinition>>(CompileError(ErrorType::SyntaxError,
         "Missing necessary linebreak after function header.",peek().line,"linebreak",peek().val, peek().file));
     }
     consume(); // consume linebreak
-
-    // check if function was already defined
-//    auto it = std::find_if(m_function_definitions.begin(), m_function_definitions.end(),
-//                           [&](const std::unique_ptr<NodeFunctionDefinition> &func) {
-//                               return (func->header->name == func_header->name and
-//                                       func->header->args->params.size() == func_header->args->params.size());
-//                           });
-//    if(it != m_function_definitions.end() and !func_override) {
-//        return Result<std::unique_ptr<NodeFunctionDefinition>>(CompileError(ErrorType::SyntaxError,
-//        "Function has already been defined.",func_header->tok.line,"",func_header->name, peek().file));
-//    }
 
     while (peek().type != token::END_FUNCTION) {
         _skip_linebreaks();
@@ -752,9 +757,6 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     node_function_definition->return_variable = std::move(func_return_var);
     node_function_definition->override = func_override;
     node_function_definition->body = std::move(func_body);
-
-
-
     return Result<std::unique_ptr<NodeFunctionDefinition>>(std::move(node_function_definition));
 }
 
@@ -1114,6 +1116,66 @@ Result<std::unique_ptr<NodeForStatement>> Parser::parse_for_statement(NodeAST* p
 //    auto return_value = std::make_unique<NodeForStatement>(std::move(iterator), to, std::move(iterator_end), std::move(stmts), get_tok());
     return Result<std::unique_ptr<NodeForStatement>>(std::move(node_for_statement));
 }
+
+bool Parser::is_ranged_for_loop() {
+    size_t begin = m_pos;
+    while(peek().type != LINEBRK) {
+        if(peek().type == ASSIGN) {
+            m_pos = begin;
+            return false;
+        }
+        else if(peek().type == IN){
+            m_pos = begin;
+            return true;
+        }
+        else {
+            consume();
+        }
+    }
+    return false;
+}
+
+Result<std::unique_ptr<NodeRangedForStatement>> Parser::parse_ranged_for_statement(NodeAST* parent) {
+    auto node_for_statement = std::make_unique<NodeRangedForStatement>(get_tok());
+    //consume for
+    consume();
+    auto key_value_result = parse_param_list(node_for_statement.get());
+    if(key_value_result.is_error())
+        Result<std::unique_ptr<NodeRangedForStatement>>(key_value_result.get_error());
+    if(peek().type != token::IN)
+        return Result<std::unique_ptr<NodeRangedForStatement>>(CompileError(ErrorType::SyntaxError,
+          "Incorrect Syntax for range-based <for-loop>.", peek().line, "in", peek().val, peek().file));
+    Token to = consume(); //consume in
+    auto expression_stmt = parse_binary_expr(node_for_statement.get());
+    if(expression_stmt.is_error()) {
+        return Result<std::unique_ptr<NodeRangedForStatement>>(expression_stmt.get_error());
+    }
+    if(peek().type != token::LINEBRK) {
+        return Result<std::unique_ptr<NodeRangedForStatement>>(CompileError(ErrorType::SyntaxError,
+          "Missing linebreak in <for-loop>", peek().line, "linebreak", peek().val, peek().file));
+    }
+    consume(); //consume linebreak
+    auto node_statement_list = std::make_unique<NodeStatementList>(get_tok());
+    node_statement_list->parent = node_for_statement.get();
+    while (peek().type != token::END_FOR) {
+        _skip_linebreaks();
+        if(peek().type == token::END_FOR) break;
+        auto stmt = parse_statement(node_statement_list.get());
+        if (stmt.is_error()) {
+            return Result<std::unique_ptr<NodeRangedForStatement>>(stmt.get_error());
+        }
+        if(stmt.unwrap()->statement)
+            node_statement_list->statements.push_back(std::move(stmt.unwrap()));
+    }
+    consume(); // consume end for
+    node_for_statement->keys = std::move(key_value_result.unwrap());
+    node_for_statement->range = std::move(expression_stmt.unwrap());
+    node_for_statement->statements = std::move(node_statement_list);
+    node_for_statement->parent = parent;
+//    auto return_value = std::make_unique<NodeForStatement>(std::move(iterator), to, std::move(iterator_end), std::move(stmts), get_tok());
+    return Result<std::unique_ptr<NodeRangedForStatement>>(std::move(node_for_statement));
+}
+
 
 Result<std::unique_ptr<NodeWhileStatement>> Parser::parse_while_statement(NodeAST* parent) {
     auto node_while_statement = std::make_unique<NodeWhileStatement>(get_tok());
