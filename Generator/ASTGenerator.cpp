@@ -38,11 +38,16 @@ void ASTGenerator::visit(NodeInt &node) {
 }
 
 void ASTGenerator::visit(NodeReal &node) {
-    // check if whole number
-    if(std::floor(node.value) == node.value) {
+    std::ios oldState(nullptr); // Zum Speichern des ursprünglichen Stream-Zustands
+    oldState.copyfmt(os); // Zustand von 'os' kopieren
+
+    if (std::floor(node.value) == node.value) {
         os << std::fixed << std::setprecision(1) << node.value;
-    } else
-        os << node.value;
+    } else {
+        os << std::defaultfloat << node.value;
+    }
+
+    os.copyfmt(oldState); // Stream-Zustand auf den ursprünglichen Zustand zurücksetzen
 }
 
 void ASTGenerator::visit(NodeString &node) {
@@ -114,12 +119,14 @@ void ASTGenerator::visit(NodeParamList &node) {
 }
 
 void ASTGenerator::visit(NodeBinaryExpr &node) {
-    auto is_nested_bin_expr = cast_node<NodeBinaryExpr>(node.parent);
+    auto is_nested_bin_expr = is_instance_of<NodeBinaryExpr>(node.parent) || is_instance_of<NodeUnaryExpr>(node.parent);
     if(is_nested_bin_expr and node.type != String) os << "(";
+
     node.left->accept(*this);
     os << " " << node.op << " ";
     node.right->accept(*this);
     if(is_nested_bin_expr and node.type != String) os << ")";
+
 }
 
 void ASTGenerator::visit(NodeUnaryExpr &node) {

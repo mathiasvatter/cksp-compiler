@@ -155,6 +155,19 @@ void PreASTDesugar::visit(PreNodeList& node) {
 void PreASTDesugar::visit(PreNodeDefineStatement& node) {
     node.header->accept(*this);
     node.body->accept(*this);
+
+    auto node_body = std::unique_ptr<PreNodeChunk>(static_cast<PreNodeChunk*>(node.body->clone().release()));
+    SimpleExprInterpreter eval("", 0);
+    auto eval_result = eval.parse_and_evaluate(std::move(node_body->chunk));
+    if(!eval_result.is_error()) {
+        Token tok = Token(INT, std::to_string(eval_result.unwrap()), 0, "");
+        auto int_token = std::make_unique<PreNodeInt>(eval_result.unwrap(), tok, nullptr);
+        auto node_statement = std::make_unique<PreNodeStatement>(std::move(int_token), nullptr);
+        node_statement->update_parents(&node);
+        node.body->chunk.clear();
+        node.body->chunk.push_back(std::move(node_statement));
+    }
+
 }
 
 void PreASTDesugar::visit(PreNodeDefineCall& node) {
