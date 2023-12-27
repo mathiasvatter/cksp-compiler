@@ -319,6 +319,22 @@ void NodeForStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST>
     }
 }
 
+// ************* NodeRangedForStatement ***************
+void NodeRangedForStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+NodeRangedForStatement::NodeRangedForStatement(const NodeRangedForStatement& other)
+        : NodeAST(other), keys(clone_unique(other.keys)), range(clone_unique(other.range)),
+        statements(clone_unique(other.statements)) {}
+std::unique_ptr<NodeAST> NodeRangedForStatement::clone() const {
+    return std::make_unique<NodeRangedForStatement>(*this);
+}
+void NodeRangedForStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+    if (range.get() == oldChild) {
+        range = std::move(newChild);
+    }
+}
+
 // ************* NodeWhileStatement ***************
 void NodeWhileStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);

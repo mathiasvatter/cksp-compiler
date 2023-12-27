@@ -78,6 +78,7 @@
     XX(END_TASKFUNC, "end taskfunc") \
     XX(END_MACRO, "end macro") \
     XX(TO, "to") \
+    XX(IN, "in") \
     XX(STEP, "step") \
     XX(DOWNTO, "downto") \
     XX(ELSE, "else") \
@@ -149,7 +150,7 @@ inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{"import", 
 												   {"iterate_macro", ITERATE_MACRO}, {"literate_macro", LITERATE_MACRO},
 													{"START_INC", START_INC}, {"END_INC", END_INC}, {"SET_CONDITION", SET_CONDITION}, {"RESET_CONDITION", RESET_CONDITION},
                                                    {"USE_CODE_IF", USE_CODE_IF}, {"USE_CODE_IF_NOT", USE_CODE_IF_NOT}, {"END_USE_CODE", END_USE_CODE}};
-inline std::unordered_map<std::string, token> STATEMENT_SYNTAX = {{"to", TO}, {"downto", DOWNTO}, {"step", STEP}, {"else", ELSE}, {"case", CASE}};
+inline std::unordered_map<std::string, token> STATEMENT_SYNTAX = {{"to", TO}, {"downto", DOWNTO}, {"step", STEP}, {"else", ELSE}, {"case", CASE}, {"in", IN}};
 inline std::unordered_map<std::string, token> FUNCTION_SYNTAX = {{"override", OVERRIDE}, {"call", CALL}};
 // control statements that also have an end
 inline std::unordered_map<std::string, token> END_STATEMENTS = {{"end function", END_FUNCTION}, {"end for", END_FOR}, {"end while", END_WHILE},

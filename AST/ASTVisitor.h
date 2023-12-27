@@ -119,6 +119,11 @@ public:
 		node.iterator_end->accept(*this);
         node.statements->accept(*this);
 	};
+    virtual void visit(NodeRangedForStatement& node) {
+        node.keys->accept(*this);
+        node.range->accept(*this);
+        node.statements->accept(*this);
+    };
 	virtual void visit(NodeWhileStatement& node) {
 		node.condition->accept(*this);
         node.statements->accept(*this);

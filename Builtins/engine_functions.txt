@@ -126,8 +126,8 @@ get_ui_id(variable: number): int
 get_ui_wf_property(waveform: int, property: int, index: int): int
 get_voice_limit(voice_type: int): int
 get_zone_id(zone_idx: int): int
-get_zone_par(zone_id, parameter): int
-get_zone_status(zone_id): int
+get_zone_par(zone_id: int, parameter): int
+get_zone_status(zone_id: int): int
 group_name(group_idx):string
 guiidx_to_slotidx(instrguiidx): int
 hide_part(variable, value)

@@ -699,6 +699,31 @@ struct NodeForStatement : NodeAST {
     }
 };
 
+struct NodeRangedForStatement : NodeAST {
+    std::unique_ptr<NodeParamList> keys;
+    std::unique_ptr<NodeAST> range;
+    std::unique_ptr<NodeStatementList> statements;
+    inline explicit NodeRangedForStatement(Token tok) : NodeAST(tok) {}
+    inline NodeRangedForStatement(std::unique_ptr<NodeParamList> keys, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeStatementList> statements, Token tok)
+    : NodeAST(tok), keys(std::move(keys)), range(std::move(range)), statements(std::move(statements)) {}
+    void accept(ASTVisitor& visitor) override;
+    void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+    NodeRangedForStatement(const NodeRangedForStatement& other);
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        parent = new_parent;
+        keys->update_parents(this);
+        range->update_parents(this);
+        statements->update_parents(this);
+    }
+    std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+        keys -> update_token_data(token);
+        range -> update_token_data(token);
+        statements->update_token_data(token);
+    }
+};
+
 struct NodeWhileStatement : NodeAST {
     std::unique_ptr<NodeAST> condition;
     std::unique_ptr<NodeStatementList> statements;

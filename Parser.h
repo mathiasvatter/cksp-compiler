@@ -99,6 +99,7 @@ protected:
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr(NodeAST* parent);
     Result<std::unique_ptr<NodeAssignStatement>> parse_assign_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeSingleAssignStatement>> parse_single_assign_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAssignStatement>> parse_into_assign_statement(std::unique_ptr<NodeParamList> array_variable, NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
     Result<std::unique_ptr<NodeArray>> parse_declare_array(NodeAST* parent);
@@ -113,6 +114,8 @@ protected:
     Result<std::unique_ptr<NodeStatement>> parse_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeIfStatement>> parse_if_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeForStatement>> parse_for_statement(NodeAST* parent);
+    bool is_ranged_for_loop();
+    Result<std::unique_ptr<NodeRangedForStatement>> parse_ranged_for_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeWhileStatement>> parse_while_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeSelectStatement>> parse_select_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeGetControlStatement>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent);
