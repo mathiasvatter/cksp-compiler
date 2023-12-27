@@ -337,6 +337,11 @@ Result<std::unique_ptr<PreNodeDefineStatement>> PreprocessorParser::parse_define
         return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
      "Missing necessary linebreak after define statement.",peek().line,"linebreak",peek().val, peek().file));
     }
+    // add parentheses before and after
+//    auto node_open_parenth = std::make_unique<PreNodeOther>(Token(OPEN_PARENTH, "(", 0, ""), node_chunk.get());
+//    auto node_closed_parenth = std::make_unique<PreNodeOther>(Token(CLOSED_PARENTH, ")", 0, ""), node_chunk.get());
+//    node_chunk->chunk.insert(node_chunk->chunk.begin(), std::move(node_open_parenth));
+//    node_chunk->chunk.push_back(std::move(node_closed_parenth));
     consume(); //consume linebreak
     define_statement->header = std::move(define_header_result.unwrap());
     define_statement->body = std::move(node_chunk);

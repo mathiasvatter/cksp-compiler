@@ -101,7 +101,7 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
                 {ADD, [](int32_t a, int32_t b) { return a + b; }},
                 {SUB, [](int32_t a, int32_t b) { return a - b; }},
                 {MULT, [](int32_t a, int32_t b) { return a * b; }},
-                {DIV, [](int32_t a, int32_t b) { return a / b; }},
+//                {DIV, [](int32_t a, int32_t b) { return a / b; }},
                 {MODULO, [](int32_t a, int32_t b) { return a % b; }},
                 {BIT_AND, [](int32_t a, int32_t b) { return a & b; }},
                 {BIT_OR, [](int32_t a, int32_t b) { return a | b; }},
@@ -166,7 +166,8 @@ void ASTDesugar::visit(NodeArray& node) {
         node.type = token_to_type(token_type);
     }
     // local variable substitution
-    if(!m_variable_scope_stack.empty()) {
+    // do local variable substitution only if parent is not declare statement because scope
+    if(!m_variable_scope_stack.empty() and !is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
         if(auto substitute = get_local_variable_substitute(node.name)) {
             node.name = substitute->get_string();
             node.is_local = true;
@@ -213,7 +214,8 @@ void ASTDesugar::visit(NodeVariable& node) {
         original_type = node.type;
     }
     // local variable substitution
-    if(!m_variable_scope_stack.empty()) {
+    // do local variable substitution only if parent is not declare statement because scope
+    if(!m_variable_scope_stack.empty() and !is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
         if(auto substitute = get_local_variable_substitute(node.name)) {
             substitute->update_parents(node.parent);
             if(substitute->type == Unknown)

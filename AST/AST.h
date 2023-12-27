@@ -312,6 +312,7 @@ struct NodeUnaryExpr : NodeAST {
 struct NodeBinaryExpr: NodeAST {
 	std::unique_ptr<NodeAST> left, right;
 	std::string op;
+    bool has_forced_parenth = false;
     inline explicit NodeBinaryExpr(Token tok) : NodeAST(tok) {}
     inline NodeBinaryExpr(std::string op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right, Token tok)
     : NodeAST(tok), op(std::move(op)), left(std::move(left)), right(std::move(right)) {}

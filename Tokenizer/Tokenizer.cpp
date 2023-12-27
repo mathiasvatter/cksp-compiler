@@ -351,6 +351,7 @@ void Tokenizer::get_linebreak() {
 void Tokenizer::get_comparison_operators() {
     flush_buffer();
     token tok;
+//    std::string token;
     if (peek() == '>' ) {
         if (peek(1) == '=') {
             tok = GREATER_EQUAL;
@@ -372,8 +373,8 @@ void Tokenizer::get_comparison_operators() {
 		CompileError(ErrorType::TokenError, err_msg, m_line, "<, >, =", m_buffer, m_current_file).print();
 		exit(EXIT_FAILURE);
 	}
-    m_tokens.emplace_back(token::COMPARISON, std::string(1, peek()), m_line, m_current_file);
 	consume();
+    m_tokens.emplace_back(token::COMPARISON, m_buffer, m_line, m_current_file);
     skip_whitespace();
 }
 

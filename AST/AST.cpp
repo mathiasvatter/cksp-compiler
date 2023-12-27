@@ -126,7 +126,7 @@ void NodeBinaryExpr::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeBinaryExpr::NodeBinaryExpr(const NodeBinaryExpr& other)
-        : NodeAST(other), op(other.op),
+        : NodeAST(other), op(other.op), has_forced_parenth(other.has_forced_parenth),
           left(clone_unique(other.left)), right(clone_unique(other.right)) {}
 std::unique_ptr<NodeAST> NodeBinaryExpr::clone() const {
     return std::make_unique<NodeBinaryExpr>(*this);
