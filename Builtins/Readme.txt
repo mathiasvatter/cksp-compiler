@@ -2,7 +2,6 @@ Known Issues:
  - Incrementer cannot start in one macro definition and end outside, has to stay in one scope
  - lists can only be declared in blocks and not with <declare list ls[]> and then appended with list_add()
  - possible issues with declaring local arrays
- - possible issues with accessing local variables after their scope?
  - possible issues with entering real numbers without .0 in real expression
 
 Not supported (yet):

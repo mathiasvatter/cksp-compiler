@@ -66,8 +66,11 @@ void PreASTDesugar::visit(PreNodeKeyword& node) {
             substitute->update_token_data(node.keyword);
             node.replace_with(std::move(substitute));
             return;
-        } else if (count_char(node.keyword.val, '#') == 2) {
-            node.keyword.val = get_text_replacement(node.keyword.val);
+        } else {
+            // in case there are more # substitutions in one word
+            while (count_char(node.keyword.val, '#') >= 2) {
+                node.keyword.val = get_text_replacement(node.keyword.val);
+            }
         }
     }
 }
@@ -414,7 +417,7 @@ std::string PreASTDesugar::get_text_replacement(const std::string& name) {
     std::string substr = name;
     std::size_t start;
     std::size_t end;
-    if(count_char(name, '#') == 2) {
+    if(count_char(name, '#') >= 2) {
         start = name.find('#');
         end = name.find('#', start + 1);
         substr = name.substr(start, end - start + 1);
@@ -429,7 +432,7 @@ std::string PreASTDesugar::get_text_replacement(const std::string& name) {
 //            }
             auto &var = pair.second->chunk[0];
             new_name = var->get_string();
-            if(count_char(name, '#') == 2)
+            if(count_char(name, '#') >= 2)
                 return name.substr(0, start) + new_name + name.substr(end+1);
             else
                 return new_name;

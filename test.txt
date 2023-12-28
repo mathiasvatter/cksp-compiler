@@ -1,15 +1,30 @@
-{ Compiled with cksp version 0.0.1 on Thu Dec 28 13:47:28 2023 }
+{ Compiled with cksp version 0.0.1 on Thu Dec 28 15:43:33 2023 }
 on init
 declare ?_return_vars_real[3]
 declare !_return_vars_str[3]
 declare %_return_vars_int[3]
-declare ?_loc_var_real[4]
-declare !_loc_var_str[4]
-declare %_loc_var_int[4]
-declare $_ := 10
-message($_)
-declare %note_id[128]
-declare $note
+declare $_ui_array_it
+declare ?_loc_var_real[0]
+declare !_loc_var_str[0]
+declare %_loc_var_int[0]
+declare %buttiLabels[5] := (10)
+declare $i := 10
+declare %btn_butti[2]
+declare ui_button $btn_butti0 
+declare ui_button $btn_butti1 
+$_ui_array_it := 0
+while($_ui_array_it < 2) 
+%btn_butti[$_ui_array_it] := get_ui_id($btn_butti0) + $_ui_array_it
+inc($_ui_array_it)
+end while
+declare ui_label $lbl_butti (1, 1)
+$i := 0
+while($i <= (num_elements(%btn_butti) - 1)) 
+set_control_par(%btn_butti[$i], $CONTROL_PAR_VALUE, 0)
+inc($i)
+end while
+$btn_butti0 := 1
+set_control_par_str(get_ui_id($lbl_butti), $CONTROL_PAR_TEXT, %buttiLabels[0])
 declare $o
 $o := 0
 while($o >= 3) 
@@ -13059,7 +13074,7 @@ message("10: " & 10)
 declare $lib__i
 declare ui_panel $__table 
 set_control_par(get_ui_id($__table), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
-message("** Script " & "'" & "MAIN" & "'" & " Compile " & "13:47:28" & " " & "12/28/23" & " **")
+message("** Script " & "'" & "MAIN" & "'" & " Compile " & "15:43:33" & " " & "12/28/23" & " **")
 set_script_title("MAIN")
 declare const $UI_HEIGHT := 352
 declare const $UI_WIDTH := 785
@@ -13135,20 +13150,6 @@ set_menu_item_value($tbl3, (get_menu_item_value($tbl3, 0) + 1) - (((get_menu_ite
 set_menu_item_value($tbl3, 0, get_menu_item_value($tbl3, 0) + 1)
 set_menu_item_value($tbl3, (get_menu_item_value($tbl3, 0) + 1) - (((get_menu_item_value($tbl3, 0) + 1) - 1) .and. sh_right((get_menu_item_value($tbl3, 0) + 1) - 1, 31)), 100)
 set_menu_item_value($tbl3, 0, get_menu_item_value($tbl3, 0) + 1)
-end on
-on listener
-%_loc_var_int[0] := 0
-while(%_loc_var_int[0] <= ($NUM_GROUPS - 1)) 
-%_loc_var_int[2] := 0
-while(%_loc_var_int[2] <= ($NUM_GROUPS - 1)) 
-set_event_par_arr(%note_id[%_loc_var_int[0]], $EVENT_PAR_ALLOW_GROUP, 0, %_loc_var_int[2])
-inc(%_loc_var_int[2])
-end while
-message(%_loc_var_int[0])
-message($note)
-inc(%_loc_var_int[0])
-end while
-message(%_loc_var_int[0])
 end on
 on release
 end on
