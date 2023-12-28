@@ -101,7 +101,7 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
                 {ADD, [](int32_t a, int32_t b) { return a + b; }},
                 {SUB, [](int32_t a, int32_t b) { return a - b; }},
                 {MULT, [](int32_t a, int32_t b) { return a * b; }},
-//                {DIV, [](int32_t a, int32_t b) { return a / b; }},
+                {DIV, [](int32_t a, int32_t b) { return a / b; }},
                 {MODULO, [](int32_t a, int32_t b) { return a % b; }},
                 {BIT_AND, [](int32_t a, int32_t b) { return a & b; }},
                 {BIT_OR, [](int32_t a, int32_t b) { return a | b; }},
@@ -1037,6 +1037,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 			CompileError(ErrorType::SyntaxError,"Unable to infer array size.", node.tok.line, "initializer list", "",node.tok.file).exit();
 		}
 		node_array->dimensions = node_array->sizes->params.size();
+        node_array->is_persistent = false;
 		// multidimensional array
 		auto node_expression = create_right_nested_binary_expr(node_array->sizes->params, 0, "*", node_array->tok);
 		// calculate array size
@@ -1045,6 +1046,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 		if(array_size.is_error()) {
 			array_size.get_error().exit();
 		}
+//        auto node_ui_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(node_array->clone().release()));
 		auto node_ui_array_declaration = std::make_unique<NodeSingleDeclareStatement>(node_array->clone(), nullptr, node.tok);
 		node_ui_array_declaration->to_be_declared->type = engine_widget->control_var->type;
 		node_statement_list->statements.push_back(statement_wrapper(node_ui_array_declaration->clone(), node_statement_list.get()));

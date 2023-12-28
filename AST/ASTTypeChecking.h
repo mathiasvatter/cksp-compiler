@@ -23,7 +23,7 @@ public:
 //    void visit(NodeUnaryExpr& node) override;
 //    void visit(NodeFunctionCall& node) override;
 //    void visit(NodeFunctionHeader& node) override;
-//	void visit(NodeStatementList& node) override;
+	void visit(NodeStatementList& node) override;
 //	void visit(NodeStatement& node) override;
 
 

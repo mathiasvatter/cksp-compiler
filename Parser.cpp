@@ -998,9 +998,7 @@ Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement(NodeAST* par
     auto node_if_statement = std::make_unique<NodeIfStatement>(get_tok());
     //consume if
     consume();
-    if(peek().val == "cur_pitch") {
 
-    }
     auto condition_result = parse_expression(node_if_statement.get());
     if(condition_result.is_error()) {
         return Result<std::unique_ptr<NodeIfStatement>>(condition_result.get_error());
