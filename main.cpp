@@ -75,7 +75,7 @@ Options:
 //    input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
 
     output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
-    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
+//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
 //    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
 
     std::cout << "Input File: " << input_filename << std::endl;

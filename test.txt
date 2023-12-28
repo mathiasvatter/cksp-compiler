@@ -1,11 +1,13 @@
-{ Compiled with cksp version 0.0.1 on Wed Dec 27 14:33:59 2023 }
+{ Compiled with cksp version 0.0.1 on Thu Dec 28 13:47:28 2023 }
 on init
-declare ?_return_vars_real[2]
-declare !_return_vars_str[2]
-declare %_return_vars_int[2]
+declare ?_return_vars_real[3]
+declare !_return_vars_str[3]
+declare %_return_vars_int[3]
 declare ?_loc_var_real[4]
 declare !_loc_var_str[4]
 declare %_loc_var_int[4]
+declare $_ := 10
+message($_)
 declare %note_id[128]
 declare $note
 declare $o
@@ -13057,7 +13059,7 @@ message("10: " & 10)
 declare $lib__i
 declare ui_panel $__table 
 set_control_par(get_ui_id($__table), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
-message("** Script " & "'" & "MAIN" & "'" & " Compile " & "14:33:59" & " " & "12/27/23" & " **")
+message("** Script " & "'" & "MAIN" & "'" & " Compile " & "13:47:28" & " " & "12/28/23" & " **")
 set_script_title("MAIN")
 declare const $UI_HEIGHT := 352
 declare const $UI_WIDTH := 785
@@ -13066,9 +13068,9 @@ set_ui_width_px($UI_WIDTH)
 set_snapshot_type(0)
 declare $bit
 $bit := (- sh_right(abs(0) - 1, 31) * ((- sh_right(abs(0) - 1, 31) * sh_right(- 1, 32)) + ($bit .or. sh_left(.not. sh_left(- 1, 32), 0)))) + (- sh_right(abs(1) - 1, 31) * (- sh_right(0, 31) * ($bit .and. .not. sh_left(.not. sh_left(- 1, 32), 0))))
-$bit := .not. .not. ($bit .and. .not. sh_left(1, 28)) .and. .not. ($bit .and. .not. sh_left(1, 28)) .and. (- 0 .and. sh_left(1, 28)) .and. .not. (- 0 .and. sh_left(1, 28)) .and. .not. ($bit .and. .not. sh_left(1, 28)) .and. (- 0 .and. sh_left(1, 28))
-$bit := .not. .not. ($bit .and. .not. sh_left(1, 16)) .and. .not. ($bit .and. .not. sh_left(1, 16)) .and. (- 0 .and. sh_left(1, 16)) .and. .not. (- 0 .and. sh_left(1, 16)) .and. .not. ($bit .and. .not. sh_left(1, 16)) .and. (- 0 .and. sh_left(1, 16))
-$bit := .not. .not. ($bit .and. .not. sh_left(1, 0)) .and. .not. ($bit .and. .not. sh_left(1, 0)) .and. (- 0 .and. sh_left(1, 0)) .and. .not. (- 0 .and. sh_left(1, 0)) .and. .not. ($bit .and. .not. sh_left(1, 0)) .and. (- 0 .and. sh_left(1, 0))
+$bit := .not. (.not. (($bit .and. .not. sh_left(1, 28)) .and. .not. (($bit .and. .not. sh_left(1, 28)) .and. (- 0 .and. sh_left(1, 28)))) .and. .not. ((- 0 .and. sh_left(1, 28)) .and. .not. (($bit .and. .not. sh_left(1, 28)) .and. (- 0 .and. sh_left(1, 28)))))
+$bit := .not. (.not. (($bit .and. .not. sh_left(1, 16)) .and. .not. (($bit .and. .not. sh_left(1, 16)) .and. (- 0 .and. sh_left(1, 16)))) .and. .not. ((- 0 .and. sh_left(1, 16)) .and. .not. (($bit .and. .not. sh_left(1, 16)) .and. (- 0 .and. sh_left(1, 16)))))
+$bit := .not. (.not. (($bit .and. .not. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (- 0 .and. sh_left(1, 0)))) .and. .not. ((- 0 .and. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (- 0 .and. sh_left(1, 0)))))
 !_loc_var_str[0] := "["
 $lib__i := 0
 while($lib__i <= 31) 

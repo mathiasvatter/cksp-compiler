@@ -6,19 +6,44 @@
 
 
 void ASTTypeChecking::visit(NodeProgram& node) {
+    m_init_callback = node.callbacks[0].get();
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }
     for(auto & function_definition : node.function_definitions) {
         function_definition->accept(*this);
     }
+
+    // add return variables to beginning of init callback
+    auto node_return_vars = declare_return_vars();
+    m_init_callback->statements->statements.insert(m_init_callback->statements->statements.begin(),
+                                                   std::make_move_iterator(node_return_vars->statements.begin()),
+                                                   std::make_move_iterator(node_return_vars->statements.end()));
 }
 
+std::unique_ptr<NodeStatementList> ASTTypeChecking::declare_return_vars() {
+    Token tok = Token(KEYWORD, "compiler_variable", 0, "");
+    auto node_statement_list = std::make_unique<NodeStatementList>(tok);
+    for(auto &arr_name : m_return_arrays) {
+        auto node_array = make_array(arr_name.second, m_current_return_idx+1, tok, nullptr);
+        node_array -> type = arr_name.first;
+        node_array-> is_used = true;
+        node_array->is_engine = true;
+        node_array->is_global = true;
+        auto node_arr_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), nullptr, tok);
+        node_arr_declaration->to_be_declared->parent = node_arr_declaration.get();
+        node_arr_declaration->accept(*this);
+        node_statement_list->statements.push_back(statement_wrapper(std::move(node_arr_declaration), node_statement_list.get()));
+    }
+    return std::move(node_statement_list);
+}
+
+
 void ASTTypeChecking::visit(NodeCallback &node) {
-    m_current_return_idx += m_max_returns_in_current_callback+1;
-    m_max_returns_in_current_callback = 0;
     if(node.callback_id) node.callback_id->accept(*this);
     node.statements->accept(*this);
+    m_current_return_idx += m_max_returns_in_current_callback+1;
+    m_max_returns_in_current_callback = 0;
 }
 
 void ASTTypeChecking::visit(NodeUIControl& node) {

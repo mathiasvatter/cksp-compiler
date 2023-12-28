@@ -1204,17 +1204,17 @@ void ASTDesugar::declare_compiler_variables() {
         node_var_declaration->accept(*this);
         m_local_declare_statements.push_back(statement_wrapper(std::move(node_var_declaration), m_init_callback->statements.get()));
     }
-    for(auto &arr_name : m_return_arrays) {
-        auto node_array = make_array(arr_name.second, m_current_callback_idx-1, tok, m_init_callback);
-        node_array -> type = arr_name.first;
-        node_array-> is_used = true;
-        node_array->is_engine = true;
-        node_array->is_global = true;
-        auto node_arr_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), nullptr, tok);
-        node_arr_declaration->to_be_declared->parent = node_arr_declaration.get();
-        node_arr_declaration->accept(*this);
-        m_local_declare_statements.push_back(statement_wrapper(std::move(node_arr_declaration), m_init_callback->statements.get()));
-    }
+//    for(auto &arr_name : m_return_arrays) {
+//        auto node_array = make_array(arr_name.second, m_current_callback_idx, tok, m_init_callback);
+//        node_array -> type = arr_name.first;
+//        node_array-> is_used = true;
+//        node_array->is_engine = true;
+//        node_array->is_global = true;
+//        auto node_arr_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), nullptr, tok);
+//        node_arr_declaration->to_be_declared->parent = node_arr_declaration.get();
+//        node_arr_declaration->accept(*this);
+//        m_local_declare_statements.push_back(statement_wrapper(std::move(node_arr_declaration), m_init_callback->statements.get()));
+//    }
     for(auto &arr_name : m_local_var_arrays) {
         auto node_array = make_array(arr_name.second, m_local_variables.size(), tok, m_init_callback);
         node_array -> type = arr_name.first;
