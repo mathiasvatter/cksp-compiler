@@ -202,37 +202,6 @@ void ASTTypeChecking::visit(NodeStatementList& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
-
-    std::vector<std::unique_ptr<NodeStatement>> temp;
-    for(int i = 0; i < node.statements.size(); ++i) {
-        if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
-            // Übertragen Sie die function_inlines vom aktuellen NodeStatementList-Element
-            // auf das erste Element der inneren NodeStatementList
-            auto& inner_statements = node_statement_list->statements;
-            if (!inner_statements.empty()) {
-                inner_statements[0]->function_inlines.insert(
-                        inner_statements[0]->function_inlines.end(),
-                        std::make_move_iterator(node.statements[i]->function_inlines.begin()),
-                        std::make_move_iterator(node.statements[i]->function_inlines.end())
-                );
-            }
-            // Aktualisieren Sie das parent-Attribut für jedes innere Statement
-            for (auto& stmt : inner_statements) {
-                stmt->parent = &node;
-            }
-            // Fügen Sie die inneren Statements zum temporären Vector hinzu
-            temp.insert(
-                    temp.end(),
-                    std::make_move_iterator(inner_statements.begin()),
-                    std::make_move_iterator(inner_statements.end())
-            );
-            // Überspringen Sie das Hinzufügen des aktuellen NodeStatementList-Elements zu `temp`
-            continue;
-        }
-        // Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht speziell behandelt wird
-        temp.push_back(std::move(node.statements[i]));
-    }
     // Ersetzen Sie die alte Liste durch die neue
-    node.statements = std::move(temp);
-
+    node.statements = std::move(cleanup_node_statement_list(&node));
 }

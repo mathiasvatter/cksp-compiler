@@ -119,6 +119,40 @@ void ASTVisitor::add_vector_to_statement_list(std::unique_ptr<NodeStatementList>
     list->statements.insert(list->statements.end(),std::make_move_iterator(stmts.begin()),std::make_move_iterator(stmts.end()));
 }
 
+std::vector<std::unique_ptr<NodeStatement>> ASTVisitor::cleanup_node_statement_list(NodeStatementList* node) {
+    std::vector<std::unique_ptr<NodeStatement>> temp;
+    for(int i = 0; i < node->statements.size(); ++i) {
+        if(auto node_statement_list = cast_node<NodeStatementList>(node->statements[i]->statement.get())) {
+            // Übertragen Sie die function_inlines vom aktuellen NodeStatementList-Element
+            // auf das erste Element der inneren NodeStatementList
+            auto& inner_statements = node_statement_list->statements;
+            if (!inner_statements.empty()) {
+                inner_statements[0]->function_inlines.insert(
+                        inner_statements[0]->function_inlines.end(),
+                        std::make_move_iterator(node->statements[i]->function_inlines.begin()),
+                        std::make_move_iterator(node->statements[i]->function_inlines.end())
+                );
+            }
+            // Aktualisieren Sie das parent-Attribut für jedes innere Statement
+            for (auto& stmt : inner_statements) {
+                stmt->parent = node;
+            }
+            // Fügen Sie die inneren Statements zum temporären Vector hinzu
+            temp.insert(
+                    temp.end(),
+                    std::make_move_iterator(inner_statements.begin()),
+                    std::make_move_iterator(inner_statements.end())
+            );
+            // Überspringen Sie das Hinzufügen des aktuellen NodeStatementList-Elements zu `temp`
+            continue;
+        }
+        // Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht speziell behandelt wird
+        temp.push_back(std::move(node->statements[i]));
+    }
+    // Ersetzen Sie die alte Liste durch die neue
+    return std::move(temp);
+}
+
 
 //
 //template<typename T>std::unique_ptr<NodeStatement> ASTVisitor::statement_wrapper(std::unique_ptr<T> node, NodeAST* parent) {

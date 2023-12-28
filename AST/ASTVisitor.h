@@ -29,6 +29,8 @@ public:
     std::unique_ptr<NodeStatementList> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeStatementList> body, NodeAST* parent);
     static std::unique_ptr<NodeArray> make_array(const std::string& name, int32_t size, const Token& tok, NodeAST* parent);
     void add_vector_to_statement_list(std::unique_ptr<NodeStatementList> &list, std::vector<std::unique_ptr<NodeStatement>> stmts);
+    /// puts nested statement list in one, returns new vector to replace node->statements with
+    static std::vector<std::unique_ptr<NodeStatement>> cleanup_node_statement_list(NodeStatementList* node);
 
     std::set<std::string> m_restricted_builtin_functions = {"save_array", "save_array_str", "load_array", "load_array_str"};
     std::vector<std::string> m_compiler_variables = {"$_list_it", "$_ui_array_it", "$_string_it"};

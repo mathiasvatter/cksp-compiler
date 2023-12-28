@@ -253,47 +253,6 @@ void ASTVariables::visit(NodeFunctionCall &node) {
 void ASTVariables::visit(NodeSingleDeclareStatement& node) {
     if(node.assignee) {
         node.assignee->accept(*this);
-
-//        auto node_variable = cast_node<NodeVariable>(node.assignee.get());
-//        auto node_array = cast_node<NodeArray>(node.assignee.get());
-//        auto node_declare_variable = cast_node<NodeVariable>(node.to_be_declared.get());
-//        auto node_declare_array = cast_node<NodeArray>(node.to_be_declared.get());
-//        // replace declaration with declaration and assignment when assignment is variable or array
-//        if(node_variable || node_array) {
-//            auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-//            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(), std::move(node.assignee), node.tok);
-//            node_statement_list->statements.push_back(statement_wrapper(node.clone(),node_statement_list.get()));
-//            node_statement_list->statements.push_back(statement_wrapper(std::move(node_assignment), node_statement_list.get()));
-//            node_statement_list->update_parents(node.parent);
-//            node_statement_list->accept(*this);
-//            node.replace_with(std::move(node_statement_list));
-//            return;
-//            // add assignment to declaration if variable is declared and assigned to a string
-//        } else if (node_declare_variable and node_declare_variable->var_type != Const and (node.assignee->type == String || node.assignee->type == Unknown)) {
-//            auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-//            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(),std::move(node.assignee), node.tok);
-//            auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node.to_be_declared),nullptr, node.tok);
-//            node_statement_list->statements.push_back(statement_wrapper(std::move(node_declaration), node_statement_list.get()));
-//            node_statement_list->statements.push_back(statement_wrapper(std::move(node_assignment), node_statement_list.get()));
-//            node_statement_list->update_parents(node.parent);
-//            node_statement_list->accept(*this);
-//            node.replace_with(std::move(node_statement_list));
-//            return;
-//            // initialize string array in a special way
-//        } else if (node_declare_array and (node.assignee->type == String || node.assignee->type == Unknown)) {
-//            auto node_param_list = cast_node<NodeParamList>(node.assignee.get());
-//            if (node_param_list) {
-//                auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement *>(node.clone().release()));
-//                auto node_statement_list = array_initialization(node_declare_array, node_param_list);
-//                // remove list assignment from declare_statement
-//                node_declare_statement->assignee.release();
-//                node_statement_list->statements.insert(node_statement_list->statements.begin(),statement_wrapper(std::move(node_declare_statement),node_statement_list.get()));
-//                node_statement_list->update_parents(node.parent);
-//                node_statement_list->accept(*this);
-//                node.replace_with(std::move(node_statement_list));
-//                return;
-//            }
-//        }
     }
     node.to_be_declared ->accept(*this);
 
@@ -315,59 +274,8 @@ void ASTVariables::visit(NodeStatementList& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
-//    for(int i=0; i<node.statements.size(); ++i) {
-//        if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
-//            // Wir speichern die Statements der inneren NodeStatementList
-//            auto& inner_statements = node_statement_list->statements;
-//            for (auto& stmt : inner_statements) {
-//                stmt->parent = &node;
-//            }
-//            // Fügen Sie die inneren Statements an der aktuellen Position ein
-//            node.statements.insert(
-//                    node.statements.begin() + i + 1,
-//                    std::make_move_iterator(inner_statements.begin()),
-//                    std::make_move_iterator(inner_statements.end())
-//            );
-//            // Entfernen Sie das ursprüngliche NodeStatementList-Element
-//            node.statements.erase(node.statements.begin() + i);
-//            // Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
-//            i += inner_statements.size() - 1;
-//            // Die inneren Statements sind jetzt leer, da sie verschoben wurden
-//            inner_statements.clear();
-//        }
-//    }
-
-    std::vector<std::unique_ptr<NodeStatement>> temp;
-    for(int i = 0; i < node.statements.size(); ++i) {
-        if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
-            // Übertragen Sie die function_inlines vom aktuellen NodeStatementList-Element
-            // auf das erste Element der inneren NodeStatementList
-            auto& inner_statements = node_statement_list->statements;
-            if (!inner_statements.empty()) {
-                inner_statements[0]->function_inlines.insert(
-                        inner_statements[0]->function_inlines.end(),
-                        std::make_move_iterator(node.statements[i]->function_inlines.begin()),
-                        std::make_move_iterator(node.statements[i]->function_inlines.end())
-                );
-            }
-            // Aktualisieren Sie das parent-Attribut für jedes innere Statement
-            for (auto& stmt : inner_statements) {
-                stmt->parent = &node;
-            }
-            // Fügen Sie die inneren Statements zum temporären Vector hinzu
-            temp.insert(
-                    temp.end(),
-                    std::make_move_iterator(inner_statements.begin()),
-                    std::make_move_iterator(inner_statements.end())
-            );
-            // Überspringen Sie das Hinzufügen des aktuellen NodeStatementList-Elements zu `temp`
-            continue;
-        }
-        // Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht speziell behandelt wird
-        temp.push_back(std::move(node.statements[i]));
-    }
     // Ersetzen Sie die alte Liste durch die neue
-    node.statements = std::move(temp);
+    node.statements = std::move(cleanup_node_statement_list(&node));
 }
 
 //NodeFunctionHeader* ASTVariables::get_builtin_function(const std::string &function) {
