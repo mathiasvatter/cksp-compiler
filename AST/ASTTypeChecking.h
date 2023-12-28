@@ -29,10 +29,12 @@ public:
 
 private:
     NodeAST* m_current_node_replaced = nullptr;
+    NodeCallback* m_init_callback = nullptr;
 
     int m_max_returns_in_current_callback = 0;
     int m_current_return_idx = 0;
     static int extract_last_number(const std::string& str, NodeAST* var);
+    std::unique_ptr<NodeStatementList> declare_return_vars();
 
 };
 
