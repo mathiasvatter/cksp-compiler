@@ -79,6 +79,7 @@ void ASTVariables::visit(NodeUIControl& node) {
 void ASTVariables::visit(NodeArray& node) {
 	auto node_builtin_array = get_builtin_array(&node);
 	auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
+    if(node_declare_statement and node_declare_statement->to_be_declared.get() != &node) node_declare_statement = nullptr;
 	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
 	if(node_builtin_array && (node_declare_statement || node_ui_control) ){
 		CompileError(ErrorType::SyntaxError,"Array shadows builtin variable. Try renaming the variable.", node.tok.line, "", node.name, node.tok.file).exit();
@@ -177,6 +178,7 @@ void ASTVariables::visit(NodeVariable& node) {
     }
 
     auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
+    if(node_declare_statement and node_declare_statement->to_be_declared.get() != &node) node_declare_statement = nullptr;
 	auto node_builtin_variable = get_builtin_variable(&node);
 	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
     auto node_param_list = cast_node<NodeParamList>(node.parent);

@@ -23,10 +23,16 @@ std::ostream &operator<<(std::ostream &os, const Token &tok) {
  */
 Tokenizer::Tokenizer(const std::string& file) : m_pos(0), m_line(1) {
     m_current_file = file;
-    // do not attempt to read header files!
-    if (std::filesystem::path(file).extension() != ".h") {
-        m_input = read_file(m_current_file);
+
+    // do not continue if file has no valid filetype
+    std::set<std::string> allowed_filetypes = {".ksp", ".nckp", ".h"};
+    std::string extension = std::filesystem::path(file).extension();
+    if(allowed_filetypes.find(extension) == allowed_filetypes.end()) {
+        CompileError(ErrorType::FileError, "Unable to open file. Not a valid file type.", -1, "*.ksp or *.nckp",extension, "").exit();
     }
+    if(extension == ".nckp") m_is_json = true;
+    if(extension != ".h")
+        m_input = read_file(m_current_file);
     m_input += '\n';
     m_current_char = m_input.at(m_pos);
     m_input_length = m_input.size();
@@ -49,7 +55,7 @@ std::vector<Token> Tokenizer::tokenize() {
         CompileError(ErrorType::TokenError, "Missing input file to tokenize.", 0, "<input file>", "", m_current_file).exit();
 
     while (m_pos < m_input_length - 1) {
-        if (peek() == '/' && (peek(1) == '*' || peek(1) == '/') || peek() == '{') {
+        if (peek() == '/' && (peek(1) == '*' || peek(1) == '/') || (peek() == '{' && !m_is_json)) {
             get_comment();
         } else if (peek() == '\n') {
             get_linebreak();
@@ -78,6 +84,8 @@ std::vector<Token> Tokenizer::tokenize() {
             skip_whitespace();
         } else if(peek() == ':') {
             get_type();
+        } else if(m_is_json and (peek() == '}' || peek() == '{')) {
+            get_curly_brackets();
         } else
             get_invalid();
     }
@@ -219,6 +227,19 @@ void Tokenizer::get_parenth() {
 	consume();
     skip_whitespace();
 }
+
+void Tokenizer::get_curly_brackets() {
+    flush_buffer();
+    token tok;
+    if (peek() == '{')
+        tok = OPEN_CURLY;
+    else if (peek() == '}')
+        tok = CLOSED_CURLY;
+    m_tokens.emplace_back(tok, std::string(1, peek()), m_line, m_current_file);
+    consume();
+    skip_whitespace();
+}
+
 
 void Tokenizer::get_assignment() {
     m_tokens.emplace_back(ASSIGN, ":=", m_line, m_current_file);
@@ -470,7 +491,7 @@ bool Tokenizer::is_callback_end() {
 std::string Tokenizer::read_file(const std::string& filename) {
     std::ifstream f(filename);
     std::stringstream buf;
-    if (!f.is_open() or std::filesystem::path(filename).extension() != ".ksp") {
+    if (!f.is_open()) {
         CompileError(ErrorType::FileError, "Unable to open file.", -1, "valid path/valid *.ksp file", filename, "").exit();
     } else {
         buf << f.rdbuf();

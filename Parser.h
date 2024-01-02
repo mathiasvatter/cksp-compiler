@@ -60,7 +60,8 @@ public:
     explicit Parser(std::vector<Token> tokens);
     [[nodiscard]] size_t get_current_pos() const;
     void set_current_pos(size_t mPos);
-	Result<std::unique_ptr<NodeProgram>> parse();
+
+    Result<std::unique_ptr<NodeProgram>> parse();
 
 protected:
 	size_t m_pos;
