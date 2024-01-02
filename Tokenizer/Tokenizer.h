@@ -164,6 +164,7 @@ private:
     std::string m_buffer;
     std::vector<Token> m_tokens;
 
+    bool m_is_json = false;
     [[nodiscard]] char peek(int ahead = 0) const;
     char consume();
     void flush_buffer();
@@ -195,6 +196,7 @@ private:
     void get_assignment();
     void get_arrow();
     void get_keyword_or_num();
+    void get_curly_brackets();
 
 public:
     explicit Tokenizer(const std::string& file);

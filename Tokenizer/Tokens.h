@@ -42,7 +42,9 @@
     XX(OPEN_PARENTH, "open_parenth")\
     XX(CLOSED_PARENTH, "closed_parenth")       \
     XX(OPEN_BRACKET, "open_bracket")\
-    XX(CLOSED_BRACKET, "closed_bracked") \
+    XX(CLOSED_BRACKET, "closed_bracket") \
+    XX(OPEN_CURLY, "closed_curly") \
+    XX(CLOSED_CURLY, "closed_curly") \
     XX(GREATER_THAN, "greater than") \
     XX(LESS_THAN, "less than") \
     XX(GREATER_EQUAL, "greater equal") \

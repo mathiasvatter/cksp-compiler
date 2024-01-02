@@ -73,7 +73,8 @@ Options:
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
 //    input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
 //    input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
-//	input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
+    input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
+//    input_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/performance_view/as2_gui_dev.nckp";
 
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
@@ -88,15 +89,15 @@ Options:
 
 	Tokenizer tokenizer(input_filename);
     auto tokens = tokenizer.tokenize();
+    for(auto& tok: tokens) {
+//        if(tok.type != token::COMMENT or tok.type != token::LINEBRK)
+            std::cout << tok << std::endl;
+    }
 
     Preprocessor preprocessor(tokens, input_filename);
     preprocessor.process();
     auto preprocessed_tokens = preprocessor.get_tokens();
 
-//    for(auto& tok: preprocessed_tokens) {
-//        if(tok.type != token::COMMENT or tok.type != token::LINEBRK)
-//            std::cout << tok << std::endl;
-//    }
 
     std::filesystem::path curr_path = __FILE__;
 
