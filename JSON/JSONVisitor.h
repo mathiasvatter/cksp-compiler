@@ -17,6 +17,24 @@ public:
 
 };
 
+inline std::map<int, std::string> UI_CONTROL_INDEX = {
+        {0, "ui_panel"},
+        {1, "ui_button"},
+        {2, "ui_file_selector"},
+        {3, "ui_knob"},
+        {4, "ui_label"},
+        {5, "ui_level_meter"},
+        {6, "ui_menu"},
+        {7, "ui_slider"},
+        {8, "ui_switch"},
+        {9, "ui_table"},
+        {10, "ui_text_edit"},
+        {11, "ui_value_edit"},
+        {12, "ui_waveform"},
+        {13, "ui_wavetable"},
+        {14, "ui_xy"},
+        {15, "ui_mouse_area"},
+};
 
 class NCKPTranslator : public JSONVisitor {
 public:
@@ -31,4 +49,6 @@ private:
     std::string m_current_property;
     int m_current_control_idx;
     std::unordered_map<std::string, int> m_ui_controls;
+    std::vector<std::unique_ptr<NodeUIControl>> m_ui_variables;
+    std::vector<std::unique_ptr<NodeUIControl>> collect_ui_variables();
 };

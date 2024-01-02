@@ -45,3 +45,7 @@ void NCKPTranslator::visit(JSONObject &object) {
     }
 }
 
+std::vector<std::unique_ptr<NodeUIControl>> NCKPTranslator::collect_ui_variables() {
+    return std::vector<std::unique_ptr<NodeUIControl>>();
+}
+

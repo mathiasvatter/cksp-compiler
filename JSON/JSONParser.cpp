@@ -33,6 +33,8 @@ std::unique_ptr<JSONValue> JSONParser::parse_value() {
                 return std::make_unique<JSONBool>(false);
             } else if (tok.val == "true") {
                 return std::make_unique<JSONBool>(true);
+            } else if (tok.val == "null") {
+                return nullptr;
             }
         default:
             CompileError(ErrorType::ParseError, "Found incorrect json syntax.", tok.line, "", tok.val, tok.file).exit();
