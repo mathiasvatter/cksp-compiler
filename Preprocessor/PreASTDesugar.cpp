@@ -24,6 +24,9 @@ void PreASTDesugar::visit(PreNodeProgram& node) {
         def->accept(*this);
     }
     for(auto & def : node.macro_definitions) {
+		if(def->header->name->keyword.val == "add_single_note") {
+
+		}
         def->accept(*this);
     }
     for(auto & n : node.program) {
@@ -32,6 +35,7 @@ void PreASTDesugar::visit(PreNodeProgram& node) {
 }
 
 void PreASTDesugar::visit(PreNodeNumber& node) {
+	m_debug_token = node.get_string();
     // substitution
     if (!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.number.val)) {
@@ -43,6 +47,8 @@ void PreASTDesugar::visit(PreNodeNumber& node) {
 }
 
 void PreASTDesugar::visit(PreNodeInt& node) {
+	m_debug_token = node.get_string();
+
     // substitution
     if (!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.number.val)) {
@@ -54,6 +60,8 @@ void PreASTDesugar::visit(PreNodeInt& node) {
 }
 
 void PreASTDesugar::visit(PreNodeKeyword& node) {
+	m_debug_token = node.get_string();
+
     if(auto builtin_define = get_builtin_define(node.keyword.val)) {
         builtin_define->update_token_data(node.keyword);
         node.replace_with(std::move(builtin_define));
@@ -68,7 +76,7 @@ void PreASTDesugar::visit(PreNodeKeyword& node) {
             return;
         } else {
             // in case there are more # substitutions in one word
-            while (count_char(node.keyword.val, '#') >= 2) {
+            if (count_char(node.keyword.val, '#') >= 2) {
                 node.keyword.val = get_text_replacement(node.keyword.val);
             }
         }
@@ -88,6 +96,8 @@ std::unique_ptr<PreNodeAST> PreASTDesugar::get_builtin_define(const std::string&
 
 
 void PreASTDesugar::visit(PreNodeOther& node) {
+	m_debug_token = node.get_string();
+
 }
 
 void PreASTDesugar::visit(PreNodeStatement& node) {
@@ -199,6 +209,10 @@ void PreASTDesugar::visit(PreNodeDefineCall& node) {
 }
 
 void PreASTDesugar::visit(PreNodeMacroCall& node) {
+	m_debug_token = node.get_string();
+	if(node.macro->name->keyword.val == "get_single_velo_range") {
+
+	}
     Token token_name = node.macro->name->keyword;
     if(std::find(m_macro_call_stack.begin(), m_macro_call_stack.end(), token_name.val) != m_macro_call_stack.end()) {
         // recursive function call detected

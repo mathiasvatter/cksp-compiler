@@ -89,6 +89,7 @@
     XX(LOCAL, "local") \
     XX(GLOBAL, "global") \
     XX(READ, "read") \
+    XX(PERS, "pers") \
     XX(DEFINE, "define") \
     XX(POLYPHONIC, "polyphonic") \
     XX(LINE_CONTINUE, "line_continue") \
@@ -145,7 +146,7 @@ inline std::set<std::string> UI_CONTROLS = {"ui_label", "ui_button", "ui_switch"
 										   "ui_text_edit", "ui_level_meter", "ui_file_selector",
 										   "ui_panel", "ui_mouse_area"};
 inline std::unordered_map<std::string, token> DECLARATION_SYNTAX = {{"declare", DECLARE}, {"define", DEFINE}, {"const", CONST}, {"polyphonic", POLYPHONIC},
-                                                  {"read", READ}, {"local", LOCAL}, {"global", GLOBAL}};
+                                                  {"read", READ},{"pers", PERS}, {"local", LOCAL}, {"global", GLOBAL}};
 inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{"import", IMPORT}, {"as", AS}, {"on", ON},
 												   {"iterate_macro", ITERATE_MACRO}, {"literate_macro", LITERATE_MACRO},
 													{"START_INC", START_INC}, {"END_INC", END_INC}, {"SET_CONDITION", SET_CONDITION}, {"RESET_CONDITION", RESET_CONDITION},
