@@ -173,14 +173,14 @@ struct NodeString : NodeAST {
 struct NodeVariable: NodeAST {
     bool is_used = false;
     bool is_engine = false;
-    bool is_persistent = false;
+    std::optional<Token> persistence;
     bool is_local = false;
 	bool is_global = false;
     bool is_compiler_return = false;
     VarType var_type = VarType::Mutable;
 	std::string name;
     NodeAST* declaration = nullptr; // index in declaration array
-	inline NodeVariable(bool is_persistent, std::string name, VarType type, Token tok) : NodeAST(tok), is_persistent(is_persistent), name(std::move(name)), var_type(type) {}
+	inline NodeVariable(std::optional<Token> is_persistent, std::string name, VarType type, Token tok) : NodeAST(tok), persistence(is_persistent), name(std::move(name)), var_type(type) {}
 	void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
     NodeVariable(const NodeVariable& other);
@@ -223,7 +223,7 @@ struct NodeParamList: NodeAST {
 struct NodeArray : NodeAST {
     bool is_used = false;
     bool is_engine = false;
-    bool is_persistent = false;
+    std::optional<Token> persistence;
     bool is_local = false;
 	bool is_global = false;
     bool is_compiler_return = false;
@@ -234,10 +234,10 @@ struct NodeArray : NodeAST {
     std::unique_ptr<NodeParamList> indexes = nullptr;
     NodeAST* declaration = nullptr;
     inline explicit NodeArray(Token tok) : NodeAST(tok) {}
-    inline NodeArray(bool is_persistent, std::string name, VarType var_type, std::unique_ptr<NodeParamList> sizes,
+    inline NodeArray(std::optional<Token> is_persistent, std::string name, VarType var_type, std::unique_ptr<NodeParamList> sizes,
               std::unique_ptr<NodeParamList> indexes, Token tok)
-              : NodeAST(tok), is_persistent(is_persistent), name(std::move(name)), var_type(var_type),
-              sizes(std::move(sizes)), indexes(std::move(indexes)) {}
+              : NodeAST(tok), persistence(is_persistent), name(std::move(name)), var_type(var_type),
+                sizes(std::move(sizes)), indexes(std::move(indexes)) {}
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
     NodeArray(const NodeArray& other);

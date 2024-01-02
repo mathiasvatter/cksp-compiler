@@ -73,6 +73,7 @@ protected:
     Token& get_tok();
 	void _skip_linebreaks();
 
+    static std::optional<Token> get_persistent_keyword(const Token& tok);
     static std::string sanitize_binary(const std::string& input);
     /// convert eg 0bFFFh into 0xbFFF
     static std::string sanitize_hex(const std::string& input);
@@ -80,8 +81,8 @@ protected:
 
     Result<std::unique_ptr<NodeAST>> parse_number(NodeAST* parent);
     Result<std::unique_ptr<NodeString>> parse_string(NodeAST* parent);
-    Result<std::unique_ptr<NodeVariable>> parse_variable(NodeAST* parent, bool is_persistent=false, VarType var_type=VarType::Mutable);
-    Result<std::unique_ptr<NodeArray>> parse_array(NodeAST* parent, bool is_persistent=false, VarType var_type=VarType::Array);
+    Result<std::unique_ptr<NodeVariable>> parse_variable(NodeAST* parent, std::optional<Token> is_persistent=std::optional<Token>(), VarType var_type=VarType::Mutable);
+    Result<std::unique_ptr<NodeArray>> parse_array(NodeAST* parent, std::optional<Token> is_persistent=std::optional<Token>(), VarType var_type=VarType::Array);
     Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent);
 	Result<SuccessTag> _parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent);
     /// parses every expression from binary, string, unary to number and variable

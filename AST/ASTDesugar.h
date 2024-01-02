@@ -114,7 +114,7 @@ private:
     NodeAST* m_local_var_dummy_declaration;
     std::unique_ptr<NodeAST> get_local_variable_substitute(const std::string& name);
 
-    std::vector<std::unique_ptr<NodeStatement>> add_read_functions(NodeAST* var, NodeAST* parent);
+    std::vector<std::unique_ptr<NodeStatement>> add_read_functions(const Token& persistence, NodeAST* var, NodeAST* parent);
     /// multidimensional array method for getting the size at declaration time
     std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok);
 
