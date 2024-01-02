@@ -181,7 +181,7 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_array(NodeAST* parent, std::opt
          "Found unknown Array Syntax.", peek().line, "[", peek().val, peek().file));
     }
     node_array->parent = parent;
-    node_array->persistence = is_persistent;
+    node_array->persistence = std::move(is_persistent);
     node_array->is_local = false;
     node_array->var_type = var_type;
     node_array->name = arr_name;
