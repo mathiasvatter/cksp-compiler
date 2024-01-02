@@ -50,7 +50,7 @@ std::unique_ptr<NodeBinaryExpr>ASTVisitor::make_binary_expr(ASTType type, const 
 }
 
 std::unique_ptr<NodeStatement> ASTVisitor::make_declare_variable(const std::string& name, int32_t value, VarType type, NodeAST* parent) {
-    auto node_variable = std::make_unique<NodeVariable>(false, name, type, parent->tok);
+    auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), name, type, parent->tok);
     node_variable->type = Integer;
     auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), make_int(value, parent), parent->tok);
     node_declare_statement->assignee->parent = node_declare_statement.get();
@@ -62,7 +62,7 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_declare_array(const std::string&
     auto sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, parent->tok));
     sizes->params.push_back(make_int(size, parent));
     auto indexes  = std::unique_ptr<NodeParamList>(new NodeParamList({}, parent->tok));
-    auto node_array = std::make_unique<NodeArray>(false, name, Array, std::move(sizes), std::move(indexes), parent->tok);
+    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), name, Array, std::move(sizes), std::move(indexes), parent->tok);
     node_array->sizes->parent = node_array.get();
     node_array->indexes->parent = node_array.get();
     node_array->type = Integer;
@@ -92,7 +92,7 @@ std::unique_ptr<NodeArray> ASTVisitor::make_array(const std::string &name, int32
     auto node_int = make_int(size, node_sizes.get());
     node_sizes->params.push_back(std::move(node_int));
     auto node_indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, tok));
-    auto node_array = std::make_unique<NodeArray>(false, name, VarType::Array, std::move(node_sizes), std::move(node_indexes), tok);
+    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), name, VarType::Array, std::move(node_sizes), std::move(node_indexes), tok);
     node_array->indexes->parent = node_array.get();
     node_array->sizes->parent = node_array.get();
     node_array->parent = parent;

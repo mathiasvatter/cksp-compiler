@@ -17,7 +17,7 @@ void ASTPrinter::visit(NodeString &node) {
 }
 
 void ASTPrinter::visit(NodeVariable &node) {
-    if(node.is_persistent)
+    if(node.persistence)
         std::cout << "read ";
     if(node.var_type == VarType::Polyphonic)
         std::cout << " polyphonic ";
@@ -27,7 +27,7 @@ void ASTPrinter::visit(NodeVariable &node) {
 }
 
 void ASTPrinter::visit(NodeArray &node) {
-    if(node.is_persistent)
+    if(node.persistence)
         std::cout << "read ";
     std::cout << "(arr)" << node.name;
     std::cout << "[";

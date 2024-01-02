@@ -105,7 +105,7 @@ std::unique_ptr<NodeVariable> PreprocessorBuiltins::parse_builtin_variable() {
     ASTType type = get_identifier_type(var_name[0]);
     if(get_token_type(TYPES, std::string(1, var_name[0])))
         var_name = var_name.erase(0,1);
-    auto node_variable = std::make_unique<NodeVariable>(false, var_name, Mutable, name);
+    auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name, Mutable, name);
     node_variable->type = type;
     node_variable->is_local = false;
     node_variable->is_engine = true;
@@ -120,7 +120,7 @@ std::unique_ptr<NodeArray> PreprocessorBuiltins::parse_builtin_array() {
         arr_name = arr_name.erase(0,1);
     std::unique_ptr<NodeParamList> size = std::unique_ptr<NodeParamList>(new NodeParamList({}, name));;
     std::unique_ptr<NodeParamList> index = std::unique_ptr<NodeParamList>(new NodeParamList({}, name));;
-    auto node_array = std::make_unique<NodeArray>(false, arr_name, Array, std::move(size), std::move(index), name);
+    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), arr_name, Array, std::move(size), std::move(index), name);
     node_array->type = type;
     node_array->is_local = false;
     node_array->is_engine = true;

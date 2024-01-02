@@ -314,7 +314,7 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
                     std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_map;
                     auto node_return_var_name =
                             "_return_var_" + std::to_string(nearest_statement->function_inlines.size());
-                    auto node_return_var = std::make_unique<NodeVariable>(false, node_return_var_name, Mutable,
+                    auto node_return_var = std::make_unique<NodeVariable>(std::optional<Token>(), node_return_var_name, Mutable,
                                                                           node.tok);
                     node_return_var->declaration = m_return_dummy_declaration;
                     node_return_var->is_compiler_return = true;
@@ -424,8 +424,8 @@ std::unique_ptr<NodeAST> ASTDesugar::get_substitute(const std::string& name) {
 
 void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     m_current_function_inline_statement = node.parent;
-    // check if is_persistent
-    bool is_persistent = false;
+    // check if persistence
+    std::optional<Token> persistence;
 	bool is_local = false;
 	bool is_global = false;
     bool is_const = false;
@@ -434,7 +434,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     if(node_array) {
         if(in_function()) node_array->is_local = true;
         if(m_current_callback != m_init_callback) node_array->is_local = true;
-        is_persistent = node_array->is_persistent;
+        persistence = node_array->persistence;
         is_local = node_array->is_local;
         is_global = node_array->is_global;
         if(node_array->is_global) node_array->is_local = false;
@@ -445,7 +445,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     if(node_variable) {
         if(in_function()) node_variable->is_local = true;
         if(m_current_callback != m_init_callback) node_variable->is_local = true;
-        is_persistent = node_variable->is_persistent;
+        persistence = node_variable->persistence;
         is_local = node_variable->is_local;
         is_global = node_variable->is_global;
         if(node_variable->is_global) node_variable->is_local = false;
@@ -533,7 +533,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
             auto node_expression = create_right_nested_binary_expr(node_array->sizes->params, 0, "*", node_array->tok);
             node_expression->parent = node_array->sizes.get();
             for(int i = 0; i<node_array->sizes->params.size(); i++) {
-                auto node_var = std::make_unique<NodeVariable>(false, node_array->name+".SIZE_D"+std::to_string(i+1), Const, node.tok);
+                auto node_var = std::make_unique<NodeVariable>(std::optional<Token>(), node_array->name+".SIZE_D"+std::to_string(i+1), Const, node.tok);
                 auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_var), node_array->sizes->params[i]->clone(), node.tok);
                 auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
                 node_statement_list->statements.push_back(std::move(node_statement));
@@ -548,7 +548,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
         }
     }
 
-    if(is_persistent) {
+    if(persistence) {
 		NodeAST* to_be_declared_ptr = node.to_be_declared.get();
 		// clear indexes if it is array because of: make_persistent_var(arr[124]) <-
 		std::unique_ptr<NodeArray> node_array_copy;
@@ -557,7 +557,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 			node_array_copy->indexes->params.clear();
 			to_be_declared_ptr = node_array_copy.get();
 		}
-        add_vector_to_statement_list(node_statement_list, add_read_functions(to_be_declared_ptr, node_statement_list.get()));
+        add_vector_to_statement_list(node_statement_list, add_read_functions(persistence.value(), to_be_declared_ptr, node_statement_list.get()));
     }
 
     // special treatment if declaration is inside function -> move to init_callback
@@ -616,22 +616,22 @@ std::unique_ptr<NodeAST> ASTDesugar::create_right_nested_binary_expr(const std::
     return std::make_unique<NodeBinaryExpr>(op, nodes[index]->clone(), std::move(right), tok);
 }
 
-std::vector<std::unique_ptr<NodeStatement>> ASTDesugar::add_read_functions(NodeAST* var, NodeAST* parent) {
+std::vector<std::unique_ptr<NodeStatement>> ASTDesugar::add_read_functions(const Token& persistence, NodeAST* var, NodeAST* parent) {
     std::vector<std::unique_ptr<NodeStatement>> statements;
 
-    std::string persistent1 = "make_persistent";
-    std::string persistent2 = "read_persistent_var";
-    auto node_function = get_builtin_function(persistent1,1)->clone();
-    auto make_persistent = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(node_function.release()));
-    make_persistent->args->params.clear();
-    make_persistent->args->params.push_back(var->clone());
-    statements.push_back(statement_wrapper(std::move(make_persistent), parent));
-
-    node_function = get_builtin_function(persistent2,1)->clone();
-    auto read_persistent = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(node_function.release()));
-    read_persistent->args->params.clear();
-    read_persistent->args->params.push_back(var->clone());
-    statements.push_back(statement_wrapper(std::move(read_persistent), parent));
+    std::map<token, std::vector<std::string>> persistences = {{READ, {"make_persistent", "read_persistent_var"}},
+                                                              {PERS, {"make_persistent"}}, {INSTPERS, {"make_instr_persistent"}}};
+    for(auto &pers : persistences) {
+        if(persistence.type == pers.first) {
+            for(auto &pers_func : pers.second) {
+                auto node_function = get_builtin_function(pers_func,1)->clone();
+                auto make_persistent = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(node_function.release()));
+                make_persistent->args->params.clear();
+                make_persistent->args->params.push_back(var->clone());
+                statements.push_back(statement_wrapper(std::move(make_persistent), parent));
+            }
+        }
+    }
     return std::move(statements);
 }
 
@@ -1022,12 +1022,12 @@ void ASTDesugar::visit(NodeUIControl &node) {
 	node.params->accept(*this);
 
 	auto node_widget_array = cast_node<NodeArray>(engine_widget->control_var.get());
-	// check if is_persistent
-	bool is_persistent = false;
+	// check if persistence
+	std::optional<Token> persistence;
 	auto node_array = cast_node<NodeArray>(node.control_var.get());
-	if(node_array) is_persistent = node_array->is_persistent;
+	if(node_array) persistence = node_array->persistence;
 	auto node_variable = cast_node<NodeVariable>(node.control_var.get());
-	if(node_variable) is_persistent = node_variable->is_persistent;
+	if(node_variable) persistence = node_variable->persistence;
 
 	// add make_persistent and read_persistent_var
 	auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
@@ -1037,7 +1037,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 			CompileError(ErrorType::SyntaxError,"Unable to infer array size.", node.tok.line, "initializer list", "",node.tok.file).exit();
 		}
 		node_array->dimensions = node_array->sizes->params.size();
-        node_array->is_persistent = false;
+        node_array->persistence = std::optional<Token>();
 		// multidimensional array
 		auto node_expression = create_right_nested_binary_expr(node_array->sizes->params, 0, "*", node_array->tok);
 		// calculate array size
@@ -1054,26 +1054,26 @@ void ASTDesugar::visit(NodeUIControl &node) {
 		for(int i = 0; i<array_size.unwrap(); i++) {
 			new_control_name = node_array->name+std::to_string(i);
 			if(node_array->dimensions>1) new_control_name = "_"+new_control_name;
-			auto node_control_var = std::make_unique<NodeVariable>(false, new_control_name, UI_Control, node.tok);
+			auto node_control_var = std::make_unique<NodeVariable>(std::optional<Token>(), new_control_name, UI_Control, node.tok);
             node_control_var->is_used = true;
 			auto new_node_ui_control = std::unique_ptr<NodeUIControl>(static_cast<NodeUIControl*>(node.clone().release()));
 			new_node_ui_control->control_var = node_control_var->clone();
 			auto new_node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(new_node_ui_control),
 																					 nullptr, node.tok);
 			node_statement_list->statements.push_back(statement_wrapper(std::move(new_node_declaration), node_statement_list.get()));
-			if(is_persistent) add_vector_to_statement_list(node_statement_list, add_read_functions(node_control_var.get(), node_statement_list.get()));
+			if(persistence) add_vector_to_statement_list(node_statement_list, add_read_functions(persistence.value(), node_control_var.get(), node_statement_list.get()));
 		}
         // reinstantiate control name for while loop after
 		new_control_name = node_array->name+std::to_string(0);
 		if(node_array->dimensions>1) new_control_name = "_"+new_control_name;
 
-		auto node_iterator_var = std::make_unique<NodeVariable>(false, m_compiler_variables[1], VarType::Mutable, node.tok);
+		auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), m_compiler_variables[1], VarType::Mutable, node.tok);
 //		node_iterator_var->accept(*this);
 		auto node_while_body = std::make_unique<NodeStatementList>(node.tok);
 
 		auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(get_builtin_function("get_ui_id",1)->clone().release()));
 		node_get_ui_id->args->params.clear();
-		node_get_ui_id->args->params.push_back(std::make_unique<NodeVariable>(node_array->is_persistent, new_control_name, UI_Control, node.tok));
+		node_get_ui_id->args->params.push_back(std::make_unique<NodeVariable>(node_array->persistence, new_control_name, UI_Control, node.tok));
 
 		auto node_while_body_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_get_ui_id), node_iterator_var->clone(),nullptr, node.tok);
 
@@ -1090,8 +1090,8 @@ void ASTDesugar::visit(NodeUIControl &node) {
 		node_statement_list->accept(*this);
 
 	} else {
-		if(is_persistent) {
-			add_vector_to_statement_list(node_statement_list, add_read_functions(node.control_var.get(), node_statement_list.get()));
+		if(persistence) {
+			add_vector_to_statement_list(node_statement_list, add_read_functions(persistence.value(), node.control_var.get(), node_statement_list.get()));
 		}
 		// split declare statement into declare + assign statement
 		auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement*>(node.parent->clone().release()));
@@ -1122,7 +1122,7 @@ void ASTDesugar::visit(NodeListStatement &node) {
 
     auto node_declare_main_array = std::make_unique<NodeSingleDeclareStatement>(node_main_array->clone(), nullptr, node.tok);
     auto main_size = (int32_t)node.body.size();
-    auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(std::make_unique<NodeVariable>(false, name_wo_ident+".SIZE", VarType::Const, node.tok), make_int(main_size,&node), node.tok);
+    auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(std::make_unique<NodeVariable>(std::optional<Token>(), name_wo_ident+".SIZE", VarType::Const, node.tok), make_int(main_size,&node), node.tok);
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_declare_main_array), node_statement_list.get()));
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_declare_main_const), node_statement_list.get()));
 
@@ -1160,7 +1160,7 @@ void ASTDesugar::visit(NodeListStatement &node) {
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_sizes_declaration), node_statement_list.get()));
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_positions_declaration), node_statement_list.get()));
 
-    auto node_iterator_var = std::make_unique<NodeVariable>(false, m_compiler_variables[0], VarType::Mutable, node.tok);
+    auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), m_compiler_variables[0], VarType::Mutable, node.tok);
     for(int i = 0; i<node.body.size(); i++) {
         auto node_array_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
         auto node_array = make_array(name_wo_ident+std::to_string(i), sizes[i], node.tok, node_array_declaration.get());
@@ -1169,7 +1169,7 @@ void ASTDesugar::visit(NodeListStatement &node) {
         node_statement_list->statements.push_back(statement_wrapper(std::move(node_array_declaration), node_statement_list.get()));
 
         auto node_const_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
-        auto node_variable = std::make_unique<NodeVariable>(false, name_wo_ident+std::to_string(i)+".SIZE", VarType::Const, node.tok);
+        auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), name_wo_ident+std::to_string(i)+".SIZE", VarType::Const, node.tok);
         node_const_declaration->to_be_declared = std::move(node_variable);
         node_const_declaration->assignee = make_int(sizes[i], node_const_declaration.get());
         node_statement_list->statements.push_back(statement_wrapper(std::move(node_const_declaration), node_statement_list.get()));
@@ -1196,7 +1196,7 @@ void ASTDesugar::declare_compiler_variables() {
 //    m_current_callback = m_init_callback;
     Token tok = Token(KEYWORD, "compiler_variable", 0, "");
     for(auto & var_name: m_compiler_variables) {
-        auto node_variable = std::make_unique<NodeVariable>(false, var_name, VarType::Mutable, tok);
+        auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name, VarType::Mutable, tok);
         node_variable->is_engine = true;
         node_variable->is_global = true;
         auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), nullptr, tok);
@@ -1232,7 +1232,7 @@ void ASTDesugar::declare_dummy_return_variable() {
     m_current_callback = m_init_callback;
     Token tok = Token(KEYWORD, "compiler_variable", 0, "");
     std::string dummy_name = "_return_dummy";
-    auto node_return_dummy = std::make_unique<NodeVariable>(false, dummy_name, VarType::Mutable, tok);
+    auto node_return_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), dummy_name, VarType::Mutable, tok);
     node_return_dummy->type = Unknown;
     node_return_dummy->is_engine = true;
     auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_return_dummy), nullptr, tok);
@@ -1241,7 +1241,7 @@ void ASTDesugar::declare_dummy_return_variable() {
     m_local_declare_statements.push_back(statement_wrapper(std::move(node_var_declaration), m_init_callback));
 
     std::string local_var_dummy_name = "_local_dummy_";
-    auto node_local_var_dummy = std::make_unique<NodeVariable>(false, local_var_dummy_name, VarType::Mutable, tok);
+    auto node_local_var_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), local_var_dummy_name, VarType::Mutable, tok);
     node_local_var_dummy->type = Unknown;
     node_local_var_dummy->is_engine = true;
     auto node_local_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_local_var_dummy), nullptr, tok);

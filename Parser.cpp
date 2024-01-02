@@ -147,14 +147,14 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_number(NodeAST* parent) {
     CompileError(ErrorType::ParseError, "Unknown number type.", value.line, "INT, REAL, HEXADECIMAL, BINARY", value.val, value.file));
 }
 
-Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, bool is_persistent, VarType var_type) {
+Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, std::optional<Token> is_persistent, VarType var_type) {
     auto var_name = consume().val;
     auto node_variable = std::make_unique<NodeVariable>(is_persistent, var_name, var_type, get_tok());
     node_variable->parent = parent;
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
 
-Result<std::unique_ptr<NodeArray>> Parser::parse_array(NodeAST* parent, bool is_persistent, VarType var_type) {
+Result<std::unique_ptr<NodeArray>> Parser::parse_array(NodeAST* parent, std::optional<Token> is_persistent, VarType var_type) {
     auto node_array = std::make_unique<NodeArray>(get_tok());
     std::unique_ptr<NodeParamList> indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));;
     indexes->parent = node_array.get();
@@ -181,7 +181,7 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_array(NodeAST* parent, bool is_
          "Found unknown Array Syntax.", peek().line, "[", peek().val, peek().file));
     }
     node_array->parent = parent;
-    node_array->is_persistent = is_persistent;
+    node_array->persistence = is_persistent;
     node_array->is_local = false;
     node_array->var_type = var_type;
     node_array->name = arr_name;
@@ -768,7 +768,7 @@ Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement(No
     if(peek().type == DECLARE) consume(); //consume declare
     std::unique_ptr<NodeParamList> to_be_declared = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
     to_be_declared->parent = node_declare_statement.get();
-    if(not(peek().type == KEYWORD or peek().type == UI_CONTROL or peek().type ==READ or peek().type==CONST or peek().type ==POLYPHONIC or peek().type==LOCAL or peek().type==GLOBAL))
+    if(not(peek().type == KEYWORD or peek().type == UI_CONTROL or get_persistent_keyword(peek()) or peek().type==CONST or peek().type ==POLYPHONIC or peek().type==LOCAL or peek().type==GLOBAL))
         return Result<std::unique_ptr<NodeDeclareStatement>>(CompileError(ErrorType::ParseError,
         "Incorrect syntax in declare statement.",peek().line,"<ui_control>, <variable>, <array>",peek().val, peek().file));
     do {
@@ -846,13 +846,13 @@ Result<std::unique_ptr<NodeAssignStatement>> Parser::parse_into_assign_statement
 
 bool Parser::is_variable_declaration() {
     // read local (const | polyphonic) keyword
-    bool first = peek().type == READ and (peek(1).type == LOCAL or peek(1).type == GLOBAL) and (peek(2).type == CONST || peek(2).type == POLYPHONIC) and peek(3).type == KEYWORD;
+    bool first = get_persistent_keyword(peek()) and (peek(1).type == LOCAL or peek(1).type == GLOBAL) and (peek(2).type == CONST || peek(2).type == POLYPHONIC) and peek(3).type == KEYWORD;
     // read (const | polyphonic) keyword
-    bool second = peek().type == READ and (peek(1).type == CONST || peek(1).type == POLYPHONIC) and peek(2).type == KEYWORD;
+    bool second = get_persistent_keyword(peek()) and (peek(1).type == CONST || peek(1).type == POLYPHONIC) and peek(2).type == KEYWORD;
     // read keyword
-    bool third = peek().type == READ and peek(1).type == KEYWORD;
+    bool third = get_persistent_keyword(peek()) and peek(1).type == KEYWORD;
     // read local keyword
-    bool sixth = peek().type == READ and (peek(1).type == LOCAL or peek(1).type == GLOBAL) and peek(2).type == KEYWORD;
+    bool sixth = get_persistent_keyword(peek()) and (peek(1).type == LOCAL or peek(1).type == GLOBAL) and peek(2).type == KEYWORD;
     // (const | polyphonic) keyword
     bool fifth = (peek().type == CONST || peek().type == POLYPHONIC) and peek(1).type == KEYWORD;
     // local keyword
@@ -867,22 +867,28 @@ bool Parser::is_variable_declaration() {
 
 bool Parser::is_array_declaration() {
     // read local a[]
-    bool first = peek().type == READ and (peek(1).type == LOCAL or peek(1).type == GLOBAL) and peek(2).type == KEYWORD and peek(3).type == OPEN_BRACKET;
+    bool first = get_persistent_keyword(peek()) and (peek(1).type == LOCAL or peek(1).type == GLOBAL) and peek(2).type == KEYWORD and peek(3).type == OPEN_BRACKET;
     // local a[]
     bool second = (peek().type == LOCAL or peek().type == GLOBAL) and peek(1).type == KEYWORD and peek(2).type == OPEN_BRACKET;
     // read a[]
-    bool third = peek().type == READ and peek(1).type == KEYWORD and peek(2).type == OPEN_BRACKET;
+    bool third = get_persistent_keyword(peek()) and peek(1).type == KEYWORD and peek(2).type == OPEN_BRACKET;
     // a[]
     bool fourth = peek().type == KEYWORD and peek(1).type == OPEN_BRACKET;
 
     return first xor second xor third xor fourth;
 }
 
+std::optional<Token> Parser::get_persistent_keyword(const Token& tok) {
+    if(tok.type == READ || tok.type == PERS || tok.type == INSTPERS) {
+        return tok;
+    }
+    return {};
+}
+
 
 Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* parent) {
-    bool is_persistent = false;
-    if(peek().type == token::READ) {
-        is_persistent = true;
+    auto persistence = get_persistent_keyword(peek());
+    if(persistence) {
         consume();
     }
     bool is_local = false;
@@ -904,7 +910,7 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
         return Result<std::unique_ptr<NodeVariable>>(CompileError(ErrorType::SyntaxError,
             "Found unknown variable declaration syntax.", peek().line, "variable keyword", peek().val, peek().file));
     }
-    auto parsed_var = parse_variable(parent, is_persistent, var_type);
+    auto parsed_var = parse_variable(parent, persistence, var_type);
     if(parsed_var.is_error()) {
         return Result<std::unique_ptr<NodeVariable>>(parsed_var.get_error());
     }
@@ -915,9 +921,8 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
 }
 
 Result<std::unique_ptr<NodeArray>> Parser::parse_declare_array(NodeAST* parent) {
-    bool is_persistent = false;
-    if(peek().type == token::READ) {
-        is_persistent = true;
+    auto persistence = get_persistent_keyword(peek());
+    if(persistence) {
         consume();
     }
     bool is_local = false;
@@ -932,7 +937,7 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_declare_array(NodeAST* parent) 
         return Result<std::unique_ptr<NodeArray>>(CompileError(ErrorType::SyntaxError,
          "Found unknown array declaration syntax.", peek().line, "array keyword", peek().val, peek().file));
     }
-    auto parsed_arr = parse_array(parent, is_persistent, var_type);
+    auto parsed_arr = parse_array(parent, persistence, var_type);
     if(parsed_arr.is_error()) {
         return Result<std::unique_ptr<NodeArray>>(parsed_arr.get_error());
     }
@@ -945,9 +950,8 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_declare_array(NodeAST* parent) 
 
 Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST* parent) {
     auto node_ui_control = std::make_unique<NodeUIControl>(get_tok());
-    bool is_persistent = false;
-    if(peek().type == token::READ) {
-        is_persistent = true;
+    auto persistence = get_persistent_keyword(peek());
+    if(persistence) {
         consume();
     }
     VarType var_type = VarType::UI_Control;
@@ -962,7 +966,7 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
     }
     std::unique_ptr<NodeAST> control_var;
     if(peek(1).type == token::OPEN_BRACKET) {
-        auto parsed_arr = parse_array(node_ui_control.get(), is_persistent, var_type);
+        auto parsed_arr = parse_array(node_ui_control.get(), persistence, var_type);
         if(parsed_arr.is_error()) {
             return Result<std::unique_ptr<NodeUIControl>>(parsed_arr.get_error());
         }
@@ -970,7 +974,7 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
         std::swap(array->indexes, array->sizes);
         control_var = std::move(array);
     } else {
-        auto parsed_var = parse_variable(node_ui_control.get(), is_persistent, var_type);
+        auto parsed_var = parse_variable(node_ui_control.get(), persistence, var_type);
         if(parsed_var.is_error()) {
             return Result<std::unique_ptr<NodeUIControl>>(parsed_var.get_error());
         }
