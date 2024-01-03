@@ -3,6 +3,8 @@
 //
 
 #include "ASTVariables.h"
+#include "../JSON/JSONParser.h"
+#include "../JSON/JSONVisitor.h"
 
 ASTVariables::ASTVariables(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
                            const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
@@ -249,7 +251,21 @@ void ASTVariables::visit(NodeFunctionCall &node) {
                 node.replace_with(std::move(node.function->args->params[0]));
             }
         }
-    }
+    } else if(node.function->name == "import_nckp" and node.function->args->params.size() == 1) {
+		if(auto path = cast_node<NodeString>(node.function->args->params[0].get())) {
+
+			Tokenizer tokenizer(remove_quotes(path->value));
+			auto tokens = tokenizer.tokenize();
+			JSONParser parser(std::move(tokens));
+			auto ast = parser.parse_json();
+			NCKPTranslator translator(m_builtin_widgets);
+			ast->accept(translator);
+			auto ui_variables = translator.collect_ui_variables();
+			for(auto &ui_control : ui_variables) {
+				ui_control->accept(*this);
+			}
+		}
+	}
 }
 
 void ASTVariables::visit(NodeSingleDeclareStatement& node) {

@@ -76,6 +76,19 @@ inline std::string remove_substring(const std::string& str, const std::string& s
     return str;
 }
 
+inline std::string remove_quotes(const std::string &input) {
+	// Überprüfen Sie, ob der String die Mindestlänge hat und ob er mit Anführungszeichen beginnt und endet
+	if (input.size() >= 2 &&
+		((input.front() == '"' && input.back() == '"') ||
+			(input.front() == '\'' && input.back() == '\''))) {
+		// Entfernen Sie die Anführungszeichen am Anfang und am Ende
+		return input.substr(1, input.size() - 2);
+	} else {
+		// Wenn keine Anführungszeichen vorhanden sind, geben Sie den ursprünglichen String zurück
+		return input;
+	}
+}
+
 inline static token get_token_type(const std::vector<Keyword>& vec, const std::string& value) {
     auto it = std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
         return kw.value == value;

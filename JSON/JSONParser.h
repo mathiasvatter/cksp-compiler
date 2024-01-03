@@ -8,7 +8,6 @@
 #include <utility>
 
 #include "../Parser.h"
-#include "JSONVisitor.h"
 
 struct JSONValue {
     virtual ~JSONValue() = default;
@@ -18,48 +17,36 @@ struct JSONValue {
 struct JSONString : JSONValue {
     std::string value;
     inline explicit JSONString(std::string  val) : value(std::move(val)) {}
-    inline void accept(JSONVisitor& visitor) override {
-        visitor.visit(*this);
-    }
+	void accept(JSONVisitor& visitor) override;
 };
 
 struct JSONInt : JSONValue {
     int value;
     inline explicit JSONInt(int val) : value(val) {}
-    inline void accept(JSONVisitor& visitor) override {
-        visitor.visit(*this);
-    }
+	void accept(JSONVisitor& visitor) override;
 };
 
 struct JSONFloat : JSONValue {
     double value;
     inline explicit JSONFloat(double val) : value(val) {}
-    inline void accept(JSONVisitor& visitor) override {
-        visitor.visit(*this);
-    }
+	void accept(JSONVisitor& visitor) override;
 };
 
 struct JSONBool : JSONValue {
     bool value;
     inline explicit JSONBool(bool val) : value(val) {}
-    inline void accept(JSONVisitor& visitor) override {
-        visitor.visit(*this);
-    }
+	void accept(JSONVisitor& visitor) override;
 };
 
 
 struct JSONObject : JSONValue {
     std::map<std::string, std::unique_ptr<JSONValue>> properties;
-    inline void accept(JSONVisitor& visitor) override {
-        visitor.visit(*this);
-    }
+	void accept(JSONVisitor& visitor) override;
 };
 
 struct JSONArray : JSONValue {
     std::vector<std::unique_ptr<JSONValue>> elements;
-    inline void accept(JSONVisitor& visitor) override {
-        visitor.visit(*this);
-    }
+	void accept(JSONVisitor& visitor) override;
 };
 
 

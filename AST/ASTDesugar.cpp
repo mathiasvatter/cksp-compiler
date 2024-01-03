@@ -174,8 +174,13 @@ void ASTDesugar::visit(NodeArray& node) {
         }
     }
     // add prefixes
-    if(!m_family_prefixes.empty() and is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
-        node.name = m_family_prefixes.top() + "." + node.name;
+    if(!m_family_prefixes.empty()) {
+		auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
+		if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
+		auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+		if(node_declare_statement || node_ui_control) {
+			node.name = m_family_prefixes.top() + "." + node.name;
+		}
     }
     if(!m_const_prefixes.empty()) {
         node.name = m_const_prefixes.top() + "." + node.name;
@@ -228,7 +233,9 @@ void ASTDesugar::visit(NodeVariable& node) {
     if(!m_family_prefixes.empty()) {
         // add prefixes only if parent is declare statement and node is to_be_declared and not assigned
         auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
-        if(node_declare_statement and &node == node_declare_statement->to_be_declared.get()){
+		if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
+		auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+        if(node_declare_statement || node_ui_control){
             node.name = m_family_prefixes.top() + "." + node.name;
         }
     }
