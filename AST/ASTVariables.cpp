@@ -178,7 +178,9 @@ void ASTVariables::visit(NodeVariable& node) {
         node.is_used = true;
         return;
     }
+	if(node.name == "lib_prefix") {
 
+	}
     auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
     if(node_declare_statement and node_declare_statement->to_be_declared.get() != &node) node_declare_statement = nullptr;
 	auto node_builtin_variable = get_builtin_variable(&node);
