@@ -32,7 +32,7 @@ private:
     std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_definitions;
     std::unordered_map<std::string, PreNodeDefineStatement*> m_define_lookup;
     std::vector<std::unique_ptr<PreNodeMacroDefinition>> m_macro_definitions;
-    std::unordered_map<StringIntKey, PreNodeMacroDefinition*, StringIntKeyHash> m_macro_lookup;
+    std::unordered_map<std::string, PreNodeMacroDefinition*> m_macro_lookup;
 
 
     std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);

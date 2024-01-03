@@ -38,17 +38,22 @@ inline std::map<int, std::string> UI_CONTROL_INDEX = {
 
 class NCKPTranslator : public JSONVisitor {
 public:
-    void visit(JSONObject& object) override;
+	explicit NCKPTranslator(const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets);
+	void visit(JSONObject& object) override;
     void visit(JSONArray& array) override;
     void visit(JSONString& str) override;
     void visit(JSONInt& num) override;
     void visit(JSONFloat& num) override;
     void visit(JSONBool& boolean) override;
 
+    std::vector<std::unique_ptr<NodeUIControl>> collect_ui_variables();
 private:
+	std::stack<std::pair<std::string, JSONValue*>> m_panel_prefixes;
+	JSONValue* m_current_object = nullptr;
+	JSONValue* m_current_panel_object = nullptr;
     std::string m_current_property;
     int m_current_control_idx;
     std::unordered_map<std::string, int> m_ui_controls;
-    std::vector<std::unique_ptr<NodeUIControl>> m_ui_variables;
-    std::vector<std::unique_ptr<NodeUIControl>> collect_ui_variables();
+	const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
+//    std::vector<std::unique_ptr<NodeUIControl>> m_ui_variables;
 };
