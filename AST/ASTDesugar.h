@@ -107,6 +107,7 @@ private:
     int local_var_counter = 0;
     std::vector<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_variable_scope_stack;
     std::vector<std::unique_ptr<NodeStatement>> m_local_declare_statements;
+	std::vector<std::unique_ptr<NodeStatement>> m_compiler_variable_declare_statements;
     /// holds the size of the local variables and their real names + _ + size is idx
     /// gets resettet when out of init
     std::stack<std::string> m_local_variables;

@@ -52,8 +52,11 @@ void ASTDesugar::visit(NodeProgram& node) {
 	evaluating_functions = false;
     // add local variables from function bodies to beginning of m_init_callback
     m_init_callback->statements->statements.insert(m_init_callback->statements->statements.begin(),
-                                                   std::make_move_iterator(m_local_declare_statements.begin()),
-                                                   std::make_move_iterator(m_local_declare_statements.end()));
+                                                   std::make_move_iterator(m_compiler_variable_declare_statements.begin()),
+                                                   std::make_move_iterator(m_compiler_variable_declare_statements.end()));
+	m_init_callback->statements->statements.insert(m_init_callback->statements->statements.end(),
+												   std::make_move_iterator(m_local_declare_statements.begin()),
+												   std::make_move_iterator(m_local_declare_statements.end()));
 }
 
 void ASTDesugar::visit(NodeCallback& node) {
@@ -218,6 +221,7 @@ void ASTDesugar::visit(NodeVariable& node) {
         node.type = token_to_type(token_type);
         original_type = node.type;
     }
+
     // local variable substitution
     // do local variable substitution only if parent is not declare statement because scope
     if(!m_variable_scope_stack.empty() and !is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
@@ -1209,7 +1213,7 @@ void ASTDesugar::declare_compiler_variables() {
         auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), nullptr, tok);
         node_var_declaration->to_be_declared->parent = node_var_declaration.get();
         node_var_declaration->accept(*this);
-        m_local_declare_statements.push_back(statement_wrapper(std::move(node_var_declaration), m_init_callback->statements.get()));
+		m_compiler_variable_declare_statements.push_back(statement_wrapper(std::move(node_var_declaration), m_init_callback->statements.get()));
     }
 //    for(auto &arr_name : m_return_arrays) {
 //        auto node_array = make_array(arr_name.second, m_current_callback_idx, tok, m_init_callback);
