@@ -2,9 +2,9 @@
 // Created by Mathias Vatter on 21.01.24.
 //
 
-#include "ASTDesugar1.h"
+#include "ASTDesugarStructs.h"
 
-void ASTDesugar1::visit(NodeProgram& node) {
+void ASTDesugarStructs::visit(NodeProgram& node) {
     m_program = &node;
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
@@ -14,12 +14,12 @@ void ASTDesugar1::visit(NodeProgram& node) {
     }
 }
 
-void ASTDesugar1::visit(NodeCallback& node) {
+void ASTDesugarStructs::visit(NodeCallback& node) {
     if(node.callback_id) node.callback_id->accept(*this);
     node.statements->accept(*this);
 }
 
-void ASTDesugar1::visit(NodeStatementList& node) {
+void ASTDesugarStructs::visit(NodeStatementList& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
@@ -27,7 +27,7 @@ void ASTDesugar1::visit(NodeStatementList& node) {
     node.statements = std::move(cleanup_node_statement_list(&node));
 }
 
-void ASTDesugar1::visit(NodeConstStatement& node) {
+void ASTDesugarStructs::visit(NodeConstStatement& node) {
     std::string pref = node.prefix;
     if(!m_const_prefixes.empty()) pref = m_const_prefixes.top() + "." + node.prefix;
     m_const_prefixes.push(pref);
@@ -83,7 +83,7 @@ void ASTDesugar1::visit(NodeConstStatement& node) {
     m_const_prefixes.pop();
 }
 
-void ASTDesugar1::visit(NodeFamilyStatement& node) {
+void ASTDesugarStructs::visit(NodeFamilyStatement& node) {
     std::string pref = node.prefix;
     if(!m_family_prefixes.empty()) pref = m_family_prefixes.top() + "." + node.prefix;
     m_family_prefixes.push(pref);
@@ -98,7 +98,7 @@ void ASTDesugar1::visit(NodeFamilyStatement& node) {
     m_family_prefixes.pop();
 }
 
-void ASTDesugar1::visit(NodeDeclareStatement& node) {
+void ASTDesugarStructs::visit(NodeDeclareStatement& node) {
     if(node.to_be_declared->params.size() < node.assignee->params.size()) {
         CompileError(ErrorType::SyntaxError,
                      "Found incorrect declare statement syntax. There are more values to assign than to be declared.", node.tok.line, "", "", node.tok.file).print();
@@ -142,7 +142,7 @@ void ASTDesugar1::visit(NodeDeclareStatement& node) {
     node.replace_with(std::move(node_statement_list));
 }
 
-void ASTDesugar1::visit(NodeAssignStatement &node) {
+void ASTDesugarStructs::visit(NodeAssignStatement &node) {
     if(node.array_variable->params.size() < node.assignee->params.size()) {
         CompileError(ErrorType::SyntaxError,
                      "Found incorrect assign statement syntax. There are more values to assign than assignees.", node.tok.line, "", "", node.tok.file).print();
@@ -184,7 +184,7 @@ void ASTDesugar1::visit(NodeAssignStatement &node) {
     node.replace_with(std::move(node_statement_list));
 }
 
-void ASTDesugar1::visit(NodeArray& node) {
+void ASTDesugarStructs::visit(NodeArray& node) {
     node.sizes->accept(*this);
     node.indexes->accept(*this);
 
@@ -209,7 +209,7 @@ void ASTDesugar1::visit(NodeArray& node) {
 
 }
 
-void ASTDesugar1::visit(NodeVariable& node) {
+void ASTDesugarStructs::visit(NodeVariable& node) {
     // save original type before substitution
     // if notated without brackets -> variable can be array
     if(contains(VAR_IDENT, node.name[0]) || contains(ARRAY_IDENT, node.name[0])) {
@@ -234,7 +234,7 @@ void ASTDesugar1::visit(NodeVariable& node) {
     }
 }
 
-void ASTDesugar1::visit(NodeListStatement &node) {
+void ASTDesugarStructs::visit(NodeListStatement &node) {
     auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
     auto node_main_array = make_array(node.name, node.size, node.tok, node_statement_list.get());
     // accept first to get rid of array identifier

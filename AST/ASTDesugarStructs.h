@@ -6,16 +6,13 @@
 
 #include "ASTVisitor.h"
 
-class ASTDesugar1: public ASTVisitor {
+class ASTDesugarStructs: public ASTVisitor {
     void visit(NodeProgram& node) override;
     void visit(NodeCallback& node) override;
 
-//    void visit(NodeSingleDeclareStatement& node) override;
-//    void visit(NodeSingleAssignStatement& node) override;
-//    void visit(NodeParamList& node) override;
-
-//    void visit(NodeGetControlStatement& node) override;
+    /// turn into single declare statements
     void visit(NodeDeclareStatement& node) override;
+    /// turn into single assign statements
     void visit(NodeAssignStatement& node) override;
 
     /// replace const block with single declare statements
@@ -25,13 +22,12 @@ class ASTDesugar1: public ASTVisitor {
     /// alter for loops to while loops
 
 //    void visit(NodeForStatement& node) override;
-//    void visit(NodeWhileStatement& node) override;
-//    void visit(NodeIfStatement& node) override;
 
     void visit(NodeListStatement& node) override;
     void visit(NodeStatementList& node) override;
-//    void visit(NodeStatement& node) override;
+    /// Ingest type definition character and add family/const prefixes
     void visit(NodeArray& node) override;
+    /// Ingest type definition character and add family/const prefixes
     void visit(NodeVariable& node) override;
 
 private:

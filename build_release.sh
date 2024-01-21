@@ -1,0 +1,1 @@
+/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -B cmake-build-release -DCMAKE_BUILD_TYPE=Release -S . && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake --build cmake-build-release -- -j 8

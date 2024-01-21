@@ -54,33 +54,26 @@ private:
 
 	/// builtin engine functions
     const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash>& m_builtin_functions;
-//    NodeFunctionHeader* get_builtin_function(const std::string &function);
     /// builtin engine variables
     const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables;
-//    const std::vector<std::unique_ptr<NodeVariable>> &m_builtin_variables;
     NodeVariable* get_builtin_variable(NodeVariable* var);
     /// builtin engine arrays
     const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays;
-//    const std::vector<std::unique_ptr<NodeArray>> &m_builtin_arrays;
     NodeArray* get_builtin_array(NodeArray* arr);
 	/// builtin engine widgets
     const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
-//	const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
 	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
     const std::vector<std::unique_ptr<NodeAST>> &m_external_variables;
 
     /// declared variables
-//    std::vector<NodeVariable*> m_declared_variables;
     std::unordered_map<std::string, NodeVariable*, StringHash, StringEqual> m_declared_variables;
     NodeVariable* get_declared_variable(const std::string& var);
 	int m_variables_declared = 0;
     /// declared arrays
-//    std::vector<NodeArray*> m_declared_arrays;
 	std::unordered_map<std::string, NodeArray*, StringHash, StringEqual> m_declared_arrays;
     NodeArray* get_declared_array(const std::string& arr);
     /// declared ui_controls
-//    std::vector<NodeUIControl*> m_declared_controls;
 	std::unordered_map<std::string, NodeUIControl*, StringHash, StringEqual> m_declared_controls;
     NodeUIControl* get_declared_control(NodeUIControl* arr);
 

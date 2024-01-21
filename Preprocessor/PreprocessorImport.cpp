@@ -24,8 +24,6 @@ Result<SuccessTag> PreprocessorImport::process_imports() {
 
 
 Result<SuccessTag> PreprocessorImport::process_import_statements(std::vector<Token>& tokens, const std::string& current_file) {
-//    m_tokens = std::move(m_tokens);
-//    m_current_file = std::move(current_file);
     m_pos = 0;
     while (peek(tokens).type != token::END_TOKEN) {
         if(peek(tokens).type == token::IMPORT) {
@@ -34,7 +32,6 @@ Result<SuccessTag> PreprocessorImport::process_import_statements(std::vector<Tok
                 Result<SuccessTag>(import_stmt.get_error());
             else
                 evaluate_import(tokens, import_stmt.unwrap(), current_file);
-//                m_import_statements.push_back(std::move(import_stmt.unwrap()));
         } else if (peek(tokens).type == token::KEYWORD and peek(tokens).val == "import_nckp") {
             auto import_nckp_stmt = parse_import_nckp(tokens);
             if(import_nckp_stmt.is_error())

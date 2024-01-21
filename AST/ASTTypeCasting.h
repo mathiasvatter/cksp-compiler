@@ -32,7 +32,6 @@ public:
 private:
 
     const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
-//	const std::vector<std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
 	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
     const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions;
