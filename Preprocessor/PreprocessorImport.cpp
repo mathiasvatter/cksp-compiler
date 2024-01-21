@@ -3,9 +3,12 @@
 //
 
 #include "PreprocessorImport.h"
+#include "../JSON/JSONParser.h"
+#include "../JSON/JSONVisitor.h"
 
-PreprocessorImport::PreprocessorImport(std::vector<Token> tokens, std::string current_file)
-        : Preprocessor(std::move(tokens), std::move(current_file)) {
+PreprocessorImport::PreprocessorImport(std::vector<Token> tokens, std::string current_file,
+               const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
+        : Preprocessor(std::move(tokens), std::move(current_file)), m_builtin_widgets(m_builtin_widgets) {
     m_pos = 0;
     m_curr_token = m_tokens.at(0).type;
 }
@@ -27,11 +30,17 @@ Result<SuccessTag> PreprocessorImport::process_import_statements(std::vector<Tok
     while (peek(tokens).type != token::END_TOKEN) {
         if(peek(tokens).type == token::IMPORT) {
             auto import_stmt = parse_import(tokens);
-            if(import_stmt.is_error())
+            if (import_stmt.is_error())
                 Result<SuccessTag>(import_stmt.get_error());
             else
                 evaluate_import(tokens, import_stmt.unwrap(), current_file);
 //                m_import_statements.push_back(std::move(import_stmt.unwrap()));
+        } else if (peek(tokens).type == token::KEYWORD and peek(tokens).val == "import_nckp") {
+            auto import_nckp_stmt = parse_import_nckp(tokens);
+            if(import_nckp_stmt.is_error())
+                Result<SuccessTag>(import_nckp_stmt.get_error());
+            else
+                evaluate_import_nckp(tokens, import_nckp_stmt.unwrap(), current_file);
         } else {
             consume(tokens);
         }
@@ -42,32 +51,79 @@ Result<SuccessTag> PreprocessorImport::process_import_statements(std::vector<Tok
 
 
 Result<SuccessTag> PreprocessorImport::evaluate_import(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file) {
-//    for (auto & import_stmt : m_import_statements) {
-        auto alias = import_stmt->alias;
-        auto path = resolve_path(import_stmt->filepath, tokens, current_file);
-        if(path.is_error()) {
-            path.get_error().print();
-        } else {
-            if (m_imported_files.find(path.unwrap()) == m_imported_files.end()) {  // Überprüfe auf zirkuläre Abhängigkeiten
-                m_imported_files.insert(path.unwrap());
-                std::cout << path.unwrap() << std::endl;
-                Tokenizer tokenizer(path.unwrap());
-                auto new_tokens = tokenizer.tokenize();
+    auto alias = import_stmt->alias;
+    auto path = resolve_path(import_stmt->filepath, tokens, current_file);
+    if(path.is_error()) {
+        path.get_error().print();
+    } else {
+        if (m_imported_files.find(path.unwrap()) == m_imported_files.end()) {  // Überprüfe auf zirkuläre Abhängigkeiten
+            m_imported_files.insert(path.unwrap());
+            std::cout << path.unwrap() << std::endl;
+            Tokenizer tokenizer(path.unwrap());
+            auto new_tokens = tokenizer.tokenize();
 
-                size_t og_pos = m_pos;
-                auto processed_imports = process_import_statements(new_tokens, path.unwrap());
-				if(processed_imports.is_error())
-					return Result<SuccessTag>(processed_imports.get_error());
-                m_pos = og_pos;
-                // check END_TOKEN status and remove END_TOKEN from imported files
-                if (!tokens.empty() && tokens.back().type == token::END_TOKEN) {
-                    tokens.pop_back();
-                }
-				tokens.insert(tokens.end(), new_tokens.begin(), new_tokens.end());
+            size_t og_pos = m_pos;
+            auto processed_imports = process_import_statements(new_tokens, path.unwrap());
+            if(processed_imports.is_error())
+                return Result<SuccessTag>(processed_imports.get_error());
+            m_pos = og_pos;
+            // check END_TOKEN status and remove END_TOKEN from imported files
+            if (!tokens.empty() && tokens.back().type == token::END_TOKEN) {
+                tokens.pop_back();
             }
+            tokens.insert(tokens.end(), new_tokens.begin(), new_tokens.end());
         }
-//    }
+    }
 	return Result<SuccessTag>(SuccessTag{});
+}
+
+Result<SuccessTag> PreprocessorImport::evaluate_import_nckp(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file) {
+    auto path = resolve_path(import_stmt->filepath, tokens, current_file);
+    if(path.is_error()) {
+        path.get_error().print();
+    } else {
+        std::cout << path.unwrap() << std::endl;
+
+        Tokenizer tokenizer(path.unwrap());
+        auto nckp_tokens = tokenizer.tokenize();
+        JSONParser parser(std::move(nckp_tokens));
+        auto ast = parser.parse_json();
+        NCKPTranslator translator(m_builtin_widgets);
+        ast->accept(translator);
+        auto ui_variables = translator.collect_ui_variables();
+        m_external_variables = std::move(ui_variables);
+    }
+    return Result<SuccessTag>(SuccessTag{});
+}
+
+Result<std::unique_ptr<NodeImport>> PreprocessorImport::parse_import_nckp(std::vector<Token>& tokens) {
+    size_t begin = m_pos;
+    consume(tokens);
+    if(peek(tokens).type != OPEN_PARENTH) {
+        return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
+        "Incorrect import_nckp Syntax.",peek(tokens).line,"(",peek(tokens).val, peek(tokens).file));
+    }
+    consume(tokens);
+    if(peek(tokens).type !=STRING) {
+        return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::PreprocessorError,
+        "Not a filepath",peek(tokens).line,"path",peek(tokens).val, peek(tokens).file));
+    }
+    std::string filepath = consume(tokens).val;
+    // erase ""
+    filepath.erase(0,1);
+    filepath.pop_back();
+    if(peek(tokens).type != CLOSED_PARENTH) {
+        return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
+        "Incorrect import_nckp Syntax.",peek(tokens).line,")",peek(tokens).val, peek(tokens).file));
+    }
+    consume(tokens);
+    if(peek(tokens).type != token::LINEBRK)
+        return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
+        "Incorrect import Syntax.",peek(tokens).line,"linebreak",peek(tokens).val, peek(tokens).file));
+    consume(tokens); //consume linebreak
+    remove_tokens(tokens, begin, m_pos);
+    auto return_value = std::make_unique<NodeImport>(filepath, "", get_tok(tokens));
+    return Result<std::unique_ptr<NodeImport>>(std::move(return_value));
 }
 
 Result<std::unique_ptr<NodeImport>> PreprocessorImport::parse_import(std::vector<Token>& tokens) {

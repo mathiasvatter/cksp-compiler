@@ -55,8 +55,8 @@ void NCKPTranslator::visit(JSONObject &object) {
 	}
 }
 
-std::vector<std::unique_ptr<NodeUIControl>> NCKPTranslator::collect_ui_variables() {
-	std::vector<std::unique_ptr<NodeUIControl>> ui_variables;
+std::vector<std::unique_ptr<NodeAST>> NCKPTranslator::collect_ui_variables() {
+	std::vector<std::unique_ptr<NodeAST>> ui_variables;
 	for(auto &ui_pair : m_ui_controls) {
 		auto it = UI_CONTROL_INDEX.find(ui_pair.second);
 		if(it == UI_CONTROL_INDEX.end()) {

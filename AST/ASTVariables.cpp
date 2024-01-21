@@ -10,12 +10,17 @@ ASTVariables::ASTVariables(const std::unordered_map<std::string, std::unique_ptr
                            const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
                            const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
                            const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
+                           const std::vector<std::unique_ptr<NodeAST>> &m_external_variables,
                            std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines)
         : m_builtin_functions(m_builtin_functions), m_builtin_variables(m_builtin_variables),
-		m_builtin_arrays(m_builtin_arrays), m_builtin_widgets(m_builtin_widgets), m_function_inlines(std::move(m_function_inlines)) {}
+		m_builtin_arrays(m_builtin_arrays), m_builtin_widgets(m_builtin_widgets),
+        m_function_inlines(std::move(m_function_inlines)), m_external_variables(m_external_variables) {}
 
 
 void ASTVariables::visit(NodeProgram& node) {
+    for(auto & external_var : m_external_variables) {
+        external_var->accept(*this);
+    }
     for(auto & builtin_array : m_builtin_arrays) {
         m_declared_arrays.insert({builtin_array.first, builtin_array.second.get()});
     }
@@ -180,10 +185,6 @@ void ASTVariables::visit(NodeVariable& node) {
         return;
     }
 
-    if(node.name == "main_panel_midi_dnd_btn_darken") {
-
-    }
-
     auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
     if(node_declare_statement and node_declare_statement->to_be_declared.get() != &node) node_declare_statement = nullptr;
 	auto node_builtin_variable = get_builtin_variable(&node);
@@ -256,20 +257,20 @@ void ASTVariables::visit(NodeFunctionCall &node) {
                 node.replace_with(std::move(node.function->args->params[0]));
             }
         }
-    } else if(node.function->name == "import_nckp" and node.function->args->params.size() == 1) {
-		if(auto path = cast_node<NodeString>(node.function->args->params[0].get())) {
-
-			Tokenizer tokenizer(remove_quotes(path->value));
-			auto tokens = tokenizer.tokenize();
-			JSONParser parser(std::move(tokens));
-			auto ast = parser.parse_json();
-			NCKPTranslator translator(m_builtin_widgets);
-			ast->accept(translator);
-			auto ui_variables = translator.collect_ui_variables();
-			for(auto &ui_control : ui_variables) {
-				ui_control->accept(*this);
-			}
-		}
+//    } else if(node.function->name == "import_nckp" and node.function->args->params.size() == 1) {
+//		if(auto path = cast_node<NodeString>(node.function->args->params[0].get())) {
+//
+//			Tokenizer tokenizer(remove_quotes(path->value));
+//			auto tokens = tokenizer.tokenize();
+//			JSONParser parser(std::move(tokens));
+//			auto ast = parser.parse_json();
+//			NCKPTranslator translator(m_builtin_widgets);
+//			ast->accept(translator);
+//			auto ui_variables = translator.collect_ui_variables();
+//			for(auto &ui_control : ui_variables) {
+//				ui_control->accept(*this);
+//			}
+//		}
 	}
 }
 

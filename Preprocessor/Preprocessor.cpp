@@ -19,15 +19,15 @@ Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
 void Preprocessor::process() {
 	Result<SuccessTag> result = Result<SuccessTag>(SuccessTag{});
 
-    PreprocessorImport imports(m_tokens, m_current_file);
-	result = imports.process_imports();
-	if(result.is_error()) {
-		result.get_error().print();
-		auto err_msg = "Preprocessor failed while processing import statements.";
-		CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",peek(m_tokens).file).print();
-		exit(EXIT_FAILURE);
-	}
-    m_tokens = std::move(imports.get_tokens());
+//    PreprocessorImport imports(m_tokens, m_current_file, m_builtin_widgets);
+//	result = imports.process_imports();
+//	if(result.is_error()) {
+//		result.get_error().print();
+//		auto err_msg = "Preprocessor failed while processing import statements.";
+//		CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",peek(m_tokens).file).print();
+//		exit(EXIT_FAILURE);
+//	}
+//    m_tokens = std::move(imports.get_tokens());
 
 	PreprocessorConditions conditions(m_tokens, m_current_file);
 	result = conditions.process_conditions();
@@ -117,6 +117,10 @@ std::string Preprocessor::token_vector_to_string(const std::vector<Token>& token
         output += tok.val;
     }
     return output;
+}
+
+const std::vector<std::unique_ptr<NodeAST>> &Preprocessor::get_external_variables() const {
+    return m_external_variables;
 }
 
 

@@ -13,6 +13,7 @@
 #include "Generator/ASTGenerator.h"
 #include "Readme.h"
 #include "AST/ASTDesugar1.h"
+#include "Preprocessor/PreprocessorImport.h"
 
 
 int main(int argc, char* argv[]) {
@@ -80,6 +81,7 @@ Options:
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
 //    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
+    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds.txt";
 
     std::cout << "Input File: " << input_filename << std::endl;
     std::cout << "Output File: " << output_filename << std::endl;
@@ -95,15 +97,24 @@ Options:
 //            std::cout << tok << std::endl;
 //    }
 
+    PreprocessorBuiltins builtins;
+    builtins.process_builtins();
+
+    PreprocessorImport imports(tokens, input_filename, builtins.get_builtin_widgets());
+    auto import_result = imports.process_imports();
+    if(import_result.is_error()) {
+        import_result.get_error().print();
+        auto err_msg = "Preprocessor failed while processing import statements.";
+        CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",input_filename).print();
+        exit(EXIT_FAILURE);
+    }
+    tokens = std::move(imports.get_tokens());
+
     Preprocessor preprocessor(tokens, input_filename);
     preprocessor.process();
     auto preprocessed_tokens = preprocessor.get_tokens();
 
-
     std::filesystem::path curr_path = __FILE__;
-
-    PreprocessorBuiltins builtins;
-    builtins.process_builtins();
 
 	auto preprocessor_time = std::chrono::high_resolution_clock::now();
 	auto preprocessor_duration = std::chrono::duration_cast<std::chrono::milliseconds>(preprocessor_time - start_time);
@@ -128,7 +139,7 @@ Options:
     auto desugaring_time = std::chrono::high_resolution_clock::now();
     auto desugaring_duration = std::chrono::duration_cast<std::chrono::milliseconds>(desugaring_time-parsing_time);
 
-    ASTVariables variables(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets(), desugar.get_function_inlines());
+    ASTVariables variables(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets(), imports.get_external_variables(), desugar.get_function_inlines());
     ast->accept(variables);
 
 	ASTTypeCasting typecast(builtins.get_builtin_widgets(), builtins.get_builtin_functions());

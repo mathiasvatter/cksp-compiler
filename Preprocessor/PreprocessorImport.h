@@ -7,19 +7,28 @@
 
 class PreprocessorImport : public Preprocessor {
 public:
-    PreprocessorImport(std::vector<Token> tokens, std::string current_file);
+    PreprocessorImport(std::vector<Token> tokens, std::string current_file,
+                       const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets);
+
 	Result<SuccessTag> process_imports();
+
 private:
     std::vector<Token> m_imported_tokens;
     std::unordered_set<std::string> m_imported_files;  // Um zirkuläre Abhängigkeiten zu vermeiden
     std::vector<std::unique_ptr<NodeImport>> m_import_statements;
 
+    const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
+//    std::vector<std::unique_ptr<NodeAST>> m_external_variables;
+
     // Imports
 	Result<SuccessTag> process_import_statements(std::vector<Token>& tokens, const std::string& current_file);
     Result<std::unique_ptr<NodeImport>> parse_import(std::vector<Token>& tokens);
+    Result<std::unique_ptr<NodeImport>> parse_import_nckp(std::vector<Token>& tokens);
     Result<std::string> resolve_path(const std::string& import_path, std::vector<Token>& tokens, const std::string& curr_file);
     std::string resolve_overlap(const std::string& base_path, const std::string& relative_path);
 	Result<SuccessTag> evaluate_import(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file);
+    Result<SuccessTag> evaluate_import_nckp(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file);
+
 };
 
 
