@@ -37,5 +37,6 @@ Thumbs.db
 cmake-build*
 *.json
 CMakeLists.txt
+_Releases/*
 
 

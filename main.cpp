@@ -32,7 +32,7 @@ Options:
 )";
     std::string data(reinterpret_cast<char*>(Readme), Readme_len);
     help += data;
-    std::string version = "cksp:\t\t"+COMPILER_VERSION+"\n";
+    std::string version = "cksp version "+COMPILER_VERSION+"\n";
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
