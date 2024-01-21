@@ -360,36 +360,53 @@ static std::map< std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_
     return cloned_map;
 }
 
+static std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeStatementList>>> clone_cases(
+        const std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeStatementList>>>& original) {
+    std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeStatementList>>> cloned_cases;
+    cloned_cases.reserve(original.size());
+    for (auto& pair : original) {
+        cloned_cases.emplace_back(clone_vector(pair.first), clone_unique(pair.second));
+    }
+    return cloned_cases;
+}
+
 // ************* NodeSelectStatement ***************
 void NodeSelectStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeSelectStatement::NodeSelectStatement(const NodeSelectStatement& other)
-        : NodeAST(other), expression(clone_unique(other.expression)), cases(clone_map(other.cases)) {}
+        : NodeAST(other), expression(clone_unique(other.expression)), cases(clone_cases(other.cases)) {}
 std::unique_ptr<NodeAST> NodeSelectStatement::clone() const {
     return std::make_unique<NodeSelectStatement>(*this);
 }
 void NodeSelectStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (expression.get() == oldChild) {
 		expression = std::move(newChild);
-	} else
-		for (auto it = cases.begin(); it != cases.end(); ++it) {
-			auto& key = it->first; // Der Schlüssel (Vektor von unique_ptr)
-			auto& value = it->second; // Der Wert (Vektor von unique_ptr)
+	} else {
+        for ( auto & cas : cases) {
+            if(cas.first[0].get() == oldChild) {
+                cas.first[0] = std::move(newChild);
+            }
+        }
 
-			for(size_t i = 0; i < key.size(); ++i) {
-				if (key[i].get() == oldChild) {
-					// Kopieren Sie den Schlüssel und ersetzen Sie das Element
-					std::vector<std::unique_ptr<NodeAST>> newKey = clone_vector(key);
-					newKey[i] = std::move(newChild);
-
-					// Entfernen Sie den alten Eintrag und fügen Sie den neuen Eintrag hinzu
-					cases.erase(it);
-					cases[std::move(newKey)] = std::move(value);
-					return; // Verlassen Sie die Funktion, nachdem das erste Element ersetzt wurde
-				}
-			}
-		}
+//        for (auto it = cases.begin(); it != cases.end(); ++it) {
+//            auto &key = it->first; // Der Schlüssel (Vektor von unique_ptr)
+//            auto &value = it->second; // Der Wert (Vektor von unique_ptr)
+//
+//            for (size_t i = 0; i < key.size(); ++i) {
+//                if (key[i].get() == oldChild) {
+//                    // Kopieren Sie den Schlüssel und ersetzen Sie das Element
+//                    std::vector<std::unique_ptr<NodeAST>> newKey = clone_vector(key);
+//                    newKey[i] = std::move(newChild);
+//
+//                    // Entfernen Sie den alten Eintrag und fügen Sie den neuen Eintrag hinzu
+//                    cases.erase(it);
+//                    cases[std::move(newKey)] = std::move(value);
+//                    return; // Verlassen Sie die Funktion, nachdem das erste Element ersetzt wurde
+//                }
+//            }
+//        }
+    }
 }
 
 // ************* NodeCallback ***************

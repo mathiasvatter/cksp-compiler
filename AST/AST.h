@@ -438,7 +438,7 @@ struct NodeSingleDeclareStatement : NodeAST {
     }
     void update_token_data(const Token& token) override {
         to_be_declared -> update_token_data(token);
-        assignee -> update_token_data(token);
+        if(assignee) assignee -> update_token_data(token);
     }
 };
 
@@ -749,9 +749,9 @@ struct NodeWhileStatement : NodeAST {
 
 struct NodeSelectStatement : NodeAST {
 	std::unique_ptr<NodeAST> expression;
-	std::map<std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> cases;
+    std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeStatementList>>> cases;
     inline explicit NodeSelectStatement(Token tok) : NodeAST(tok) {}
-	inline NodeSelectStatement(std::unique_ptr<NodeAST> expression, std::map<std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> cases, Token tok)
+	inline NodeSelectStatement(std::unique_ptr<NodeAST> expression, std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeStatementList>>> cases, Token tok)
     : NodeAST(tok), expression(std::move(expression)), cases(std::move(cases)) {}
 	void accept(ASTVisitor& visitor) override;
     NodeSelectStatement(const NodeSelectStatement& other);
@@ -764,9 +764,7 @@ struct NodeSelectStatement : NodeAST {
             for(auto &stmt : pair.first) {
                 stmt->update_parents(this);
             }
-            for(auto &stmt : pair.second) {
-                stmt->update_parents(this);
-            }
+            pair.second->update_parents(this);
         }
     }
     std::string get_string() override { return ""; }
@@ -776,9 +774,7 @@ struct NodeSelectStatement : NodeAST {
             for(auto &stmt : pair.first) {
                 stmt->update_token_data(token);
             }
-            for(auto &stmt : pair.second) {
-                stmt->update_token_data(token);
-            }
+            pair.second->update_token_data(token);
         }
     }
 };

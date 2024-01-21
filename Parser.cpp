@@ -1234,7 +1234,7 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement(Node
 		return Result<std::unique_ptr<NodeSelectStatement>>(CompileError(ErrorType::SyntaxError,
 		 "Expected cases in select-expression.", peek().line, "case <expression>", peek().val, peek().file));
 	}
-	std::map<std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> cases;
+    std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeStatementList>>> cases;
 	while (peek().type != token::END_SELECT) {
 		_skip_linebreaks();
 		if(peek().type == token::CASE) {
@@ -1256,23 +1256,26 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement(Node
 				 "Expected linebreak after case.", peek().line, "linebreak", peek().val, peek().file));
 			}
 			consume(); //consume linebreak
-			std::vector<std::unique_ptr<NodeStatement>> stmts = {};
+            auto stmts = std::make_unique<NodeStatementList>(get_tok());
+            stmts->parent = node_select_statement.get();
+//			std::vector<std::unique_ptr<NodeStatement>> stmts = {};
 			while(peek().type != token::END_SELECT && peek().type != token::CASE) {
 				auto stmt = parse_statement(node_select_statement.get());
 				if (stmt.is_error()) {
 					return Result<std::unique_ptr<NodeSelectStatement>>(stmt.get_error());
 				}
-                if(stmt.unwrap()->statement)
-                    stmts.push_back(std::move(stmt.unwrap()));
+                if(stmt.unwrap()->statement) {
+                    stmt.unwrap()->parent = stmts.get();
+                    stmts->statements.push_back(std::move(stmt.unwrap()));
+                }
 			}
-			cases.insert(std::make_pair(std::move(cas),std::move( stmts)));
+			cases.emplace_back(std::move(cas),std::move(stmts));
 		}
 	}
 	consume(); // consume end select
     node_select_statement->expression = std::move(expression.unwrap());
     node_select_statement->cases = std::move(cases);
     node_select_statement->parent = parent;
-//	auto return_value = std::make_unique<NodeSelectStatement>(std::move(expression.unwrap()), std::move(cases), get_tok());
 	return Result<std::unique_ptr<NodeSelectStatement>>(std::move(node_select_statement));
 }
 

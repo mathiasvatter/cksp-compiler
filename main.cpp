@@ -12,6 +12,7 @@
 #include "AST/ASTVariables.h"
 #include "Generator/ASTGenerator.h"
 #include "Readme.h"
+#include "AST/ASTDesugar1.h"
 
 
 int main(int argc, char* argv[]) {
@@ -67,13 +68,13 @@ Options:
 
     //    input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = "C:\\Users\\mathi\\Documents\\Scripting\\the-score\\the-score.ksp";
-    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
 //    input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
 //    input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
-//    input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
+    input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
 //    input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
@@ -117,6 +118,9 @@ Options:
 
     auto parsing_time = std::chrono::high_resolution_clock::now();
     auto parsing_duration = std::chrono::duration_cast<std::chrono::milliseconds>(parsing_time-preprocessor_time);
+
+    ASTDesugar1 desugar1;
+    ast->accept(desugar1);
 
 	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions(), builtins.get_builtin_widgets());
 	ast->accept(desugar);

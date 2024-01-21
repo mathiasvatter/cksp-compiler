@@ -53,6 +53,7 @@ void ASTVariables::visit(NodeStatement& node) {
 }
 
 void ASTVariables::visit(NodeUIControl& node) {
+
 	auto engine_widget = get_builtin_widget(node.ui_control_type);
 	if(!engine_widget) {
 		CompileError(ErrorType::SyntaxError, "Did not recognize engine widget.", node.tok.line, "valid widget type", node.ui_control_type, node.tok.file).exit();
@@ -178,9 +179,11 @@ void ASTVariables::visit(NodeVariable& node) {
         node.is_used = true;
         return;
     }
-	if(node.name == "lib_prefix") {
 
-	}
+    if(node.name == "main_panel_midi_dnd_btn_darken") {
+
+    }
+
     auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
     if(node_declare_statement and node_declare_statement->to_be_declared.get() != &node) node_declare_statement = nullptr;
 	auto node_builtin_variable = get_builtin_variable(&node);

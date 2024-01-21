@@ -54,7 +54,7 @@ void ASTDesugar::visit(NodeProgram& node) {
     m_init_callback->statements->statements.insert(m_init_callback->statements->statements.begin(),
                                                    std::make_move_iterator(m_compiler_variable_declare_statements.begin()),
                                                    std::make_move_iterator(m_compiler_variable_declare_statements.end()));
-	m_init_callback->statements->statements.insert(m_init_callback->statements->statements.end(),
+	m_init_callback->statements->statements.insert(m_init_callback->statements->statements.begin(),
 												   std::make_move_iterator(m_local_declare_statements.begin()),
 												   std::make_move_iterator(m_local_declare_statements.end()));
 }
@@ -162,12 +162,12 @@ void ASTDesugar::visit(NodeArray& node) {
         }
     }
 
-    if(contains(VAR_IDENT, node.name[0]) || contains(ARRAY_IDENT, node.name[0])) {
-        std::string identifier(1, node.name[0]);
-        node.name = node.name.erase(0,1);
-        token token_type = *get_token_type(TYPES, identifier);
-        node.type = token_to_type(token_type);
-    }
+//    if(contains(VAR_IDENT, node.name[0]) || contains(ARRAY_IDENT, node.name[0])) {
+//        std::string identifier(1, node.name[0]);
+//        node.name = node.name.erase(0,1);
+//        token token_type = *get_token_type(TYPES, identifier);
+//        node.type = token_to_type(token_type);
+//    }
     // local variable substitution
     // do local variable substitution only if parent is not declare statement because scope
     if(!m_variable_scope_stack.empty() and !is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
@@ -176,18 +176,18 @@ void ASTDesugar::visit(NodeArray& node) {
             node.is_local = true;
         }
     }
-    // add prefixes
-    if(!m_family_prefixes.empty()) {
-		auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
-		if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
-		auto node_ui_control = cast_node<NodeUIControl>(node.parent);
-		if(node_declare_statement || node_ui_control) {
-			node.name = m_family_prefixes.top() + "." + node.name;
-		}
-    }
-    if(!m_const_prefixes.empty()) {
-        node.name = m_const_prefixes.top() + "." + node.name;
-    }
+//    // add prefixes
+//    if(!m_family_prefixes.empty()) {
+//		auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
+//		if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
+//		auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+//		if(node_declare_statement || node_ui_control) {
+//			node.name = m_family_prefixes.top() + "." + node.name;
+//		}
+//    }
+//    if(!m_const_prefixes.empty()) {
+//        node.name = m_const_prefixes.top() + "." + node.name;
+//    }
 
 }
 
@@ -211,16 +211,16 @@ void ASTDesugar::visit(NodeVariable& node) {
             return;
         }
     }
-	// save original type before substitution
-	ASTType original_type = Unknown;
-    // if notated without brackets -> variable can be array
-    if(contains(VAR_IDENT, node.name[0]) || contains(ARRAY_IDENT, node.name[0])) {
-        std::string identifier(1, node.name[0]);
-        node.name = node.name.erase(0,1);
-        token token_type = *get_token_type(TYPES, identifier);
-        node.type = token_to_type(token_type);
-        original_type = node.type;
-    }
+//	// save original type before substitution
+////	ASTType original_type = Unknown;
+//    // if notated without brackets -> variable can be array
+//    if(contains(VAR_IDENT, node.name[0]) || contains(ARRAY_IDENT, node.name[0])) {
+//        std::string identifier(1, node.name[0]);
+//        node.name = node.name.erase(0,1);
+//        token token_type = *get_token_type(TYPES, identifier);
+//        node.type = token_to_type(token_type);
+////        original_type = node.type;
+//    }
 
     // local variable substitution
     // do local variable substitution only if parent is not declare statement because scope
@@ -228,24 +228,24 @@ void ASTDesugar::visit(NodeVariable& node) {
         if(auto substitute = get_local_variable_substitute(node.name)) {
             substitute->update_parents(node.parent);
             if(substitute->type == Unknown)
-                substitute->type = original_type;
+                substitute->type = node.type;
             node.replace_with(std::move(substitute));
             return;
         }
     }
-    // add prefixes
-    if(!m_family_prefixes.empty()) {
-        // add prefixes only if parent is declare statement and node is to_be_declared and not assigned
-        auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
-		if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
-		auto node_ui_control = cast_node<NodeUIControl>(node.parent);
-        if(node_declare_statement || node_ui_control){
-            node.name = m_family_prefixes.top() + "." + node.name;
-        }
-    }
-    if(!m_const_prefixes.empty()) {
-        node.name = m_const_prefixes.top() + "." + node.name;
-    }
+//    // add prefixes
+//    if(!m_family_prefixes.empty()) {
+//        // add prefixes only if parent is declare statement and node is to_be_declared and not assigned
+//        auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
+//		if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
+//		auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+//        if(node_declare_statement || node_ui_control){
+//            node.name = m_family_prefixes.top() + "." + node.name;
+//        }
+//    }
+//    if(!m_const_prefixes.empty()) {
+//        node.name = m_const_prefixes.top() + "." + node.name;
+//    }
 }
 
 void ASTDesugar::visit(NodeFunctionCall& node) {
@@ -673,85 +673,85 @@ void ASTDesugar::visit(NodeParamList& node) {
 }
 
 void ASTDesugar::visit(NodeAssignStatement &node) {
-    if(node.array_variable->params.size() < node.assignee->params.size()) {
-        CompileError(ErrorType::SyntaxError,
-         "Found incorrect assign statement syntax. There are more values to assign than assignees.", node.tok.line, "", "", node.tok.file).print();
-        exit(EXIT_FAILURE);
-    }
-    std::vector<std::unique_ptr<NodeSingleAssignStatement>> assign_statements;
-    for(auto &arr_var : node.array_variable->params) {
-        auto node_single_assign_stmt = std::make_unique<NodeSingleAssignStatement>(node.tok);
-        arr_var->parent = node_single_assign_stmt.get();
-        node_single_assign_stmt->array_variable = std::move(arr_var);
-        assign_statements.push_back(std::move(node_single_assign_stmt));
-    }
-    std::vector<std::unique_ptr<NodeAST>> values;
-    for(auto &ass : node.assignee->params) {
-        values.push_back(std::move(ass));
-    }
-    // there were more variables given than values -> repeat the last value
-    while(values.size() < assign_statements.size()) {
-        values.push_back(values.back()->clone());
-    }
-
-    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-
-    for(int i = 0; i<assign_statements.size(); i++) {
-        auto &stmt = assign_statements[i];
-        auto &val = values[i];
-        stmt->assignee = std::move(val);
-        stmt->assignee->parent = stmt.get();
-        node_statement_list->statements.push_back(std::move(
-                statement_wrapper(std::move(stmt), node_statement_list.get())));
-    }
-    node_statement_list->parent = node.parent;
-    node_statement_list->update_parents(node.parent);
-    node_statement_list->accept(*this);
-    node.replace_with(std::move(node_statement_list));
+//    if(node.array_variable->params.size() < node.assignee->params.size()) {
+//        CompileError(ErrorType::SyntaxError,
+//         "Found incorrect assign statement syntax. There are more values to assign than assignees.", node.tok.line, "", "", node.tok.file).print();
+//        exit(EXIT_FAILURE);
+//    }
+//    std::vector<std::unique_ptr<NodeSingleAssignStatement>> assign_statements;
+//    for(auto &arr_var : node.array_variable->params) {
+//        auto node_single_assign_stmt = std::make_unique<NodeSingleAssignStatement>(node.tok);
+//        arr_var->parent = node_single_assign_stmt.get();
+//        node_single_assign_stmt->array_variable = std::move(arr_var);
+//        assign_statements.push_back(std::move(node_single_assign_stmt));
+//    }
+//    std::vector<std::unique_ptr<NodeAST>> values;
+//    for(auto &ass : node.assignee->params) {
+//        values.push_back(std::move(ass));
+//    }
+//    // there were more variables given than values -> repeat the last value
+//    while(values.size() < assign_statements.size()) {
+//        values.push_back(values.back()->clone());
+//    }
+//
+//    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+//
+//    for(int i = 0; i<assign_statements.size(); i++) {
+//        auto &stmt = assign_statements[i];
+//        auto &val = values[i];
+//        stmt->assignee = std::move(val);
+//        stmt->assignee->parent = stmt.get();
+//        node_statement_list->statements.push_back(std::move(
+//                statement_wrapper(std::move(stmt), node_statement_list.get())));
+//    }
+//    node_statement_list->parent = node.parent;
+//    node_statement_list->update_parents(node.parent);
+//    node_statement_list->accept(*this);
+//    node.replace_with(std::move(node_statement_list));
 }
 
 void ASTDesugar::visit(NodeDeclareStatement& node) {
-    if(node.to_be_declared->params.size() < node.assignee->params.size()) {
-        CompileError(ErrorType::SyntaxError,
-         "Found incorrect declare statement syntax. There are more values to assign than to be declared.", node.tok.line, "", "", node.tok.file).print();
-        exit(EXIT_FAILURE);
-    }
-
-    std::vector<std::unique_ptr<NodeSingleDeclareStatement>> declare_statements;
-    for(auto &declaration : node.to_be_declared->params) {
-        auto node_single_declare_stmt = std::make_unique<NodeSingleDeclareStatement>(node.tok);
-        declaration->parent = node_single_declare_stmt.get();
-        node_single_declare_stmt->to_be_declared = std::move(declaration);
-        declare_statements.push_back(std::move(node_single_declare_stmt));
-    }
-    std::vector<std::unique_ptr<NodeAST>> values;
-    for(auto &ass : node.assignee->params) {
-        values.push_back(std::move(ass));
-    }
-    // in case there is nothing assigned
-    if(!node.assignee->params.empty())
-        // there were more variables given than values -> repeat the last value
-        while(values.size() < declare_statements.size()) {
-            values.push_back(values.back()->clone());
-        }
-
-    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-    // get to_be_declared and their values together and put them in to NodeStatement
-    for(int i = 0; i<declare_statements.size(); i++) {
-        auto &stmt = declare_statements[i];
-        // in case there is nothing assigned -> nullptr
-        if (!node.assignee->params.empty()) {
-            auto &val = values[i];
-            stmt->assignee = std::move(val);
-            stmt->assignee->parent = stmt.get();
-        }
-        node_statement_list->statements.push_back(std::move(
-                statement_wrapper(std::move(stmt), node_statement_list.get())));
-    }
-    node_statement_list->parent = node.parent;
-    node_statement_list->update_parents(node.parent);
-    node_statement_list->accept(*this);
-    node.replace_with(std::move(node_statement_list));
+//    if(node.to_be_declared->params.size() < node.assignee->params.size()) {
+//        CompileError(ErrorType::SyntaxError,
+//         "Found incorrect declare statement syntax. There are more values to assign than to be declared.", node.tok.line, "", "", node.tok.file).print();
+//        exit(EXIT_FAILURE);
+//    }
+//
+//    std::vector<std::unique_ptr<NodeSingleDeclareStatement>> declare_statements;
+//    for(auto &declaration : node.to_be_declared->params) {
+//        auto node_single_declare_stmt = std::make_unique<NodeSingleDeclareStatement>(node.tok);
+//        declaration->parent = node_single_declare_stmt.get();
+//        node_single_declare_stmt->to_be_declared = std::move(declaration);
+//        declare_statements.push_back(std::move(node_single_declare_stmt));
+//    }
+//    std::vector<std::unique_ptr<NodeAST>> values;
+//    for(auto &ass : node.assignee->params) {
+//        values.push_back(std::move(ass));
+//    }
+//    // in case there is nothing assigned
+//    if(!node.assignee->params.empty())
+//        // there were more variables given than values -> repeat the last value
+//        while(values.size() < declare_statements.size()) {
+//            values.push_back(values.back()->clone());
+//        }
+//
+//    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+//    // get to_be_declared and their values together and put them in to NodeStatement
+//    for(int i = 0; i<declare_statements.size(); i++) {
+//        auto &stmt = declare_statements[i];
+//        // in case there is nothing assigned -> nullptr
+//        if (!node.assignee->params.empty()) {
+//            auto &val = values[i];
+//            stmt->assignee = std::move(val);
+//            stmt->assignee->parent = stmt.get();
+//        }
+//        node_statement_list->statements.push_back(std::move(
+//                statement_wrapper(std::move(stmt), node_statement_list.get())));
+//    }
+//    node_statement_list->parent = node.parent;
+//    node_statement_list->update_parents(node.parent);
+//    node_statement_list->accept(*this);
+//    node.replace_with(std::move(node_statement_list));
 }
 
 void ASTDesugar::visit(NodeGetControlStatement& node) {
@@ -803,74 +803,74 @@ void ASTDesugar::visit(NodeGetControlStatement& node) {
 }
 
 void ASTDesugar::visit(NodeFamilyStatement& node) {
-    std::string pref = node.prefix;
-    if(!m_family_prefixes.empty()) pref = m_family_prefixes.top() + "." + node.prefix;
-    m_family_prefixes.push(pref);
-    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-    for(auto &member : node.members) {
-        member->parent = node_statement_list.get();
-        node_statement_list->statements.push_back(std::move(member));
-    }
-    node_statement_list->parent = node.parent;
-    node_statement_list->accept(*this);
-    node.replace_with(std::move(node_statement_list));
-    m_family_prefixes.pop();
+//    std::string pref = node.prefix;
+//    if(!m_family_prefixes.empty()) pref = m_family_prefixes.top() + "." + node.prefix;
+//    m_family_prefixes.push(pref);
+//    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+//    for(auto &member : node.members) {
+//        member->parent = node_statement_list.get();
+//        node_statement_list->statements.push_back(std::move(member));
+//    }
+//    node_statement_list->parent = node.parent;
+//    node_statement_list->accept(*this);
+//    node.replace_with(std::move(node_statement_list));
+//    m_family_prefixes.pop();
 }
 
 void ASTDesugar::visit(NodeConstStatement& node) {
-    std::string pref = node.prefix;
-    if(!m_const_prefixes.empty()) pref = m_const_prefixes.top() + "." + node.prefix;
-    m_const_prefixes.push(pref);
-    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-    std::vector<int32_t> const_indexes;
-    int32_t iter = 0;
-    int32_t pre = 0;
-    for(int i = 0; i<node.constants.size(); i++){
-        node.constants[i]->accept(*this);
-        // check constants and give them values
-        auto stmt_list = cast_node<NodeStatementList>(node.constants[i]->statement.get());
-        for(auto &stmt : stmt_list->statements) {
-            auto node_stmt = cast_node<NodeStatement>(stmt.get());
-            auto declare_stmt = cast_node<NodeSingleDeclareStatement>(node_stmt->statement.get());
-            if(!declare_stmt->assignee)
-                declare_stmt->assignee = make_int(pre+iter, declare_stmt);
-            else {
-                auto node_int = cast_node<NodeInt>(declare_stmt->assignee.get());
-                if(!node_int) {
-                    CompileError(ErrorType::SyntaxError,
-                 "Found incorrect <const block> syntax. Only integers can be assigned in <const blocks>.", node.tok.line,"", "", node.tok.file).print();
-                    exit(EXIT_FAILURE);
-                }
-                pre = node_int->value;
-                iter = 0;
-            }
-            auto var = cast_node<NodeVariable>(declare_stmt->to_be_declared.get());
-            if (!var) {
-                CompileError(ErrorType::SyntaxError,
-                 "Found incorrect <const block> syntax. Only variables allowed in <const blocks>.", node.tok.line,"", "", node.tok.file).print();
-                exit(EXIT_FAILURE);
-            }
-            if (var->var_type != Mutable) {
-                CompileError(ErrorType::SyntaxError,
-             "Warning: Found incorrect const block syntax. No other variable types allowed in const blocks. Casted variable type to <const>.",node.tok.line, "", "", node.tok.file).print();
-            }
-            var->type = Integer;
-            var->var_type = Const;
-        }
-
-        const_indexes.push_back(pre+iter);
-        node.constants[i] -> parent = node_statement_list.get();
-        node_statement_list->statements.push_back(std::move(node.constants[i]));
-        iter++;
-    }
-    auto array = make_declare_array(node.prefix, node.constants.size(), const_indexes, node_statement_list.get());
-    node_statement_list->statements.push_back(std::move(array));
-    auto constant = make_declare_variable(node.prefix+".SIZE", node.constants.size(), Const, node_statement_list.get());
-    node_statement_list->statements.push_back(std::move(constant));
-    node_statement_list->parent = node.parent;
-//    node_statement_list->accept(*this);
-    node.replace_with(std::move(node_statement_list));
-    m_const_prefixes.pop();
+//    std::string pref = node.prefix;
+//    if(!m_const_prefixes.empty()) pref = m_const_prefixes.top() + "." + node.prefix;
+//    m_const_prefixes.push(pref);
+//    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+//    std::vector<int32_t> const_indexes;
+//    int32_t iter = 0;
+//    int32_t pre = 0;
+//    for(int i = 0; i<node.constants.size(); i++){
+//        node.constants[i]->accept(*this);
+//        // check constants and give them values
+//        auto stmt_list = cast_node<NodeStatementList>(node.constants[i]->statement.get());
+//        for(auto &stmt : stmt_list->statements) {
+//            auto node_stmt = cast_node<NodeStatement>(stmt.get());
+//            auto declare_stmt = cast_node<NodeSingleDeclareStatement>(node_stmt->statement.get());
+//            if(!declare_stmt->assignee)
+//                declare_stmt->assignee = make_int(pre+iter, declare_stmt);
+//            else {
+//                auto node_int = cast_node<NodeInt>(declare_stmt->assignee.get());
+//                if(!node_int) {
+//                    CompileError(ErrorType::SyntaxError,
+//                 "Found incorrect <const block> syntax. Only integers can be assigned in <const blocks>.", node.tok.line,"", "", node.tok.file).print();
+//                    exit(EXIT_FAILURE);
+//                }
+//                pre = node_int->value;
+//                iter = 0;
+//            }
+//            auto var = cast_node<NodeVariable>(declare_stmt->to_be_declared.get());
+//            if (!var) {
+//                CompileError(ErrorType::SyntaxError,
+//                 "Found incorrect <const block> syntax. Only variables allowed in <const blocks>.", node.tok.line,"", "", node.tok.file).print();
+//                exit(EXIT_FAILURE);
+//            }
+//            if (var->var_type != Mutable) {
+//                CompileError(ErrorType::SyntaxError,
+//             "Warning: Found incorrect const block syntax. No other variable types allowed in const blocks. Casted variable type to <const>.",node.tok.line, "", "", node.tok.file).print();
+//            }
+//            var->type = Integer;
+//            var->var_type = Const;
+//        }
+//
+//        const_indexes.push_back(pre+iter);
+//        node.constants[i] -> parent = node_statement_list.get();
+//        node_statement_list->statements.push_back(std::move(node.constants[i]));
+//        iter++;
+//    }
+//    auto array = make_declare_array(node.prefix, node.constants.size(), const_indexes, node_statement_list.get());
+//    node_statement_list->statements.push_back(std::move(array));
+//    auto constant = make_declare_variable(node.prefix+".SIZE", node.constants.size(), Const, node_statement_list.get());
+//    node_statement_list->statements.push_back(std::move(constant));
+//    node_statement_list->parent = node.parent;
+////    node_statement_list->accept(*this);
+//    node.replace_with(std::move(node_statement_list));
+//    m_const_prefixes.pop();
 }
 
 void ASTDesugar::visit(NodeForStatement& node) {
@@ -963,64 +963,8 @@ void ASTDesugar::visit(NodeStatementList& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
-//    for(int i=0; i<node.statements.size(); ++i) {
-//        if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
-//
-//            // Wir speichern die Statements der inneren NodeStatementList
-//            auto& inner_statements = node_statement_list->statements;
-//
-//            inner_statements[0]->function_inlines.insert(inner_statements[0]->function_inlines.end(),
-//                                                         node.statements[i]->function_inlines.begin(),
-//                                                         node.statements[i]->function_inlines.end());
-//            for (auto& stmt : inner_statements) {
-//                stmt->parent = &node;
-//            }
-//            // Fügen Sie die inneren Statements an der aktuellen Position ein
-//            node.statements.insert(
-//                    node.statements.begin() + i + 1,
-//                    std::make_move_iterator(inner_statements.begin()),
-//                    std::make_move_iterator(inner_statements.end())
-//            );
-//            // Entfernen Sie das ursprüngliche NodeStatementList-Element
-//            node.statements.erase(node.statements.begin() + i);
-//            // Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
-//            i += inner_statements.size() - 1;
-//            // Die inneren Statements sind jetzt leer, da sie verschoben wurden
-//            inner_statements.clear();
-//        }
-//    }
-//    std::vector<std::unique_ptr<NodeStatement>> temp;
-//    for(int i = 0; i < node.statements.size(); ++i) {
-//        if(auto node_statement_list = cast_node<NodeStatementList>(node.statements[i]->statement.get())) {
-//            // Übertragen Sie die function_inlines vom aktuellen NodeStatementList-Element
-//            // auf das erste Element der inneren NodeStatementList
-//            auto& inner_statements = node_statement_list->statements;
-//            if (!inner_statements.empty()) {
-//                inner_statements[0]->function_inlines.insert(
-//                        inner_statements[0]->function_inlines.end(),
-//                        std::make_move_iterator(node.statements[i]->function_inlines.begin()),
-//                        std::make_move_iterator(node.statements[i]->function_inlines.end())
-//                );
-//            }
-//            // Aktualisieren Sie das parent-Attribut für jedes innere Statement
-//            for (auto& stmt : inner_statements) {
-//                stmt->parent = &node;
-//            }
-//            // Fügen Sie die inneren Statements zum temporären Vector hinzu
-//            temp.insert(
-//                    temp.end(),
-//                    std::make_move_iterator(inner_statements.begin()),
-//                    std::make_move_iterator(inner_statements.end())
-//            );
-//            // Überspringen Sie das Hinzufügen des aktuellen NodeStatementList-Elements zu `temp`
-//            continue;
-//        }
-//        // Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht speziell behandelt wird
-//        temp.push_back(std::move(node.statements[i]));
-//    }
     // Ersetzen Sie die alte Liste durch die neue
     node.statements = std::move(cleanup_node_statement_list(&node));
-
 }
 
 void ASTDesugar::visit(NodeUIControl &node) {
@@ -1078,7 +1022,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 		new_control_name = node_array->name+std::to_string(0);
 		if(node_array->dimensions>1) new_control_name = "_"+new_control_name;
 
-		auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), m_compiler_variables[1], VarType::Mutable, node.tok);
+		auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", VarType::Mutable, node.tok);
 //		node_iterator_var->accept(*this);
 		auto node_while_body = std::make_unique<NodeStatementList>(node.tok);
 
@@ -1171,7 +1115,7 @@ void ASTDesugar::visit(NodeListStatement &node) {
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_sizes_declaration), node_statement_list.get()));
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_positions_declaration), node_statement_list.get()));
 
-    auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), m_compiler_variables[0], VarType::Mutable, node.tok);
+    auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", VarType::Mutable, node.tok);
     for(int i = 0; i<node.body.size(); i++) {
         auto node_array_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
         auto node_array = make_array(name_wo_ident+std::to_string(i), sizes[i], node.tok, node_array_declaration.get());
@@ -1207,7 +1151,8 @@ void ASTDesugar::declare_compiler_variables() {
 //    m_current_callback = m_init_callback;
     Token tok = Token(KEYWORD, "compiler_variable", 0, "");
     for(auto & var_name: m_compiler_variables) {
-        auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name, VarType::Mutable, tok);
+        auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name.first, VarType::Mutable, tok);
+        node_variable->type = var_name.second;
         node_variable->is_engine = true;
         node_variable->is_global = true;
         auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), nullptr, tok);
