@@ -153,7 +153,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
             CompileError(ErrorType::TypeError,
                          "Variable needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line,
                          "<UI_Control>", node.get_string(), node.tok.file).print();
-//            exit(EXIT_FAILURE);
+            exit(EXIT_FAILURE);
         } else {
 			if(node.declaration->parent) {
 				auto ui_control_declaration = cast_node<NodeUIControl>(node.declaration->parent);
