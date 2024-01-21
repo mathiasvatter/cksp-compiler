@@ -173,13 +173,13 @@ void ASTGenerator::visit(NodeSelectStatement &node) {
     os << ")" << std::endl;
     for(const auto &cas: node.cases) {
         os << "case ";
-        for(auto &stmt: cas.first) {
-            stmt->accept(*this);
+        cas.first[0]->accept(*this);
+        if(cas.first.size() == 2) {
+            os << " to ";
+            cas.first[1]->accept(*this);
         }
         os << std::endl;
-        for(auto &stmt: cas.second) {
-            stmt->accept(*this);
-        }
+        cas.second->accept(*this);
     }
     os << "end select";
 }

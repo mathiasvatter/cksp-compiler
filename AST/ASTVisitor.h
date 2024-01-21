@@ -33,7 +33,9 @@ public:
     static std::vector<std::unique_ptr<NodeStatement>> cleanup_node_statement_list(NodeStatementList* node);
 
     std::set<std::string> m_restricted_builtin_functions = {"save_array", "save_array_str", "load_array", "load_array_str"};
-    std::vector<std::string> m_compiler_variables = {"$_list_it", "$_ui_array_it", "$_string_it"};
+    std::unordered_map<std::string, ASTType> m_compiler_variables = {{"_list_it",Integer}, {"_ui_array_it", Integer},
+                                                                     {"_string_it", Integer},
+                                                                     {"_iterator", Integer}};
     std::unordered_map<ASTType, std::string> m_return_arrays = {{Integer, "_return_vars_int"}, {Real, "_return_vars_real"}, {String, "_return_vars_str"}};
     std::unordered_map<ASTType, std::string> m_local_var_arrays = {{Integer, "_loc_var_int"}, {Real, "_loc_var_real"}, {String, "_loc_var_str"}};
 
@@ -136,9 +138,7 @@ public:
             for(auto &c: cas.first) {
                 c->accept(*this);
             }
-			for(auto &stmt: cas.second) {
-				stmt->accept(*this);
-			}
+            cas.second->accept(*this);
 		}
 	};
 	virtual void visit(NodeCallback& node) {

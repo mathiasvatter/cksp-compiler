@@ -182,9 +182,7 @@ void ASTPrinter::visit(NodeSelectStatement &node) {
             stmt->accept(*this);
         }
         std::cout << std::endl;
-        for(auto &stmt: cas.second) {
-            stmt->accept(*this);
-        }
+        cas.second->accept(*this);
     }
     std::cout << "end select";
 }

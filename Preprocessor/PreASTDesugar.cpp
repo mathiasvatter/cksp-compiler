@@ -224,7 +224,18 @@ void PreASTDesugar::visit(PreNodeMacroCall& node) {
 		if(!node.macro->args->params.empty()) {
 			auto substitution_vec = get_substitution_vector(node_macro_definition->header.get(), node.macro.get());
 			m_substitution_stack.push(std::move(substitution_vec));
-		}
+		} else {
+        // if parent is literate -> replace #l# in substitution vector with first arg of macro
+            if(node.macro->args->params.empty() and node_macro_definition->header->args->params.size() == 1) {
+                if(!m_substitution_stack.empty())
+                    for(auto &subst : m_substitution_stack.top()) {
+                        if(subst.first == "#l#") {
+                            subst.first = node_macro_definition->header->args->params[0]->get_string();
+                        }
+                    }
+            }
+        }
+
         node_macro_definition->body->accept(*this);
         node_new_chunk = std::move(node_macro_definition->body);
         node_new_chunk->parent = node.parent;
@@ -339,13 +350,13 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
         auto node_number_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INT, std::to_string(i), 0, ""),nullptr), nullptr);
         node_number_chunk->chunk.push_back(std::move(node_number_statement));
 
-        substitution_vector.emplace_back(std::pair("#n#", std::move(node_number_chunk)));
         auto literate_token = node.literate_tokens->chunk[i]->clone();
         auto node_literate_statement = std::make_unique<PreNodeStatement>(std::move(literate_token), nullptr);
         auto node_literate_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
         node_literate_chunk->chunk.push_back(std::move(node_literate_statement));
 
         substitution_vector.emplace_back(std::pair("#l#", std::move(node_literate_chunk)));
+        substitution_vector.emplace_back(std::pair("#n#", std::move(node_number_chunk)));
         m_substitution_stack.push(std::move(substitution_vector));
 
         auto macro_call = node.macro_call->params[0]->clone();
