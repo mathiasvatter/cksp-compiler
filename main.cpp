@@ -12,7 +12,7 @@
 #include "AST/ASTVariables.h"
 #include "Generator/ASTGenerator.h"
 #include "Readme.h"
-#include "AST/ASTDesugar1.h"
+#include "AST/ASTDesugarStructs.h"
 #include "Preprocessor/PreprocessorImport.h"
 
 
@@ -130,7 +130,7 @@ Options:
     auto parsing_time = std::chrono::high_resolution_clock::now();
     auto parsing_duration = std::chrono::duration_cast<std::chrono::milliseconds>(parsing_time-preprocessor_time);
 
-    ASTDesugar1 desugar1;
+    ASTDesugarStructs desugar1;
     ast->accept(desugar1);
 
 	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions(), builtins.get_builtin_widgets());

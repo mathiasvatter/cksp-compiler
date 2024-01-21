@@ -30,20 +30,13 @@ public:
     void visit(NodeParamList& node) override;
 
     void visit(NodeGetControlStatement& node) override;
-    /// turn into single assign statements
-	void visit(NodeAssignStatement& node) override;
-    /// turn into single declare statements
-    void visit(NodeDeclareStatement& node) override;
-    /// replace const block with single declare statements
-    void visit(NodeConstStatement& node) override;
-    /// replace family block with single declare statements
-    void visit(NodeFamilyStatement& node) override;
+
 	/// alter for loops to while loops
     void visit(NodeForStatement& node) override;
     void visit(NodeWhileStatement& node) override;
     void visit(NodeIfStatement& node) override;
 
-    void visit(NodeListStatement& node) override;
+//    void visit(NodeListStatement& node) override;
     void visit(NodeStatementList& node) override;
     void visit(NodeStatement& node) override;
     void visit(NodeArray& node) override;
