@@ -26,7 +26,7 @@ Tokenizer::Tokenizer(const std::string& file) : m_pos(0), m_line(1) {
 
     // do not continue if file has no valid filetype
     std::set<std::string> allowed_filetypes = {".ksp", ".nckp", ".h"};
-    std::string extension = std::filesystem::path(file).extension();
+    std::string extension = std::filesystem::path(file).extension().string();
     if(allowed_filetypes.find(extension) == allowed_filetypes.end()) {
         CompileError(ErrorType::FileError, "Unable to open file. Not a valid file type.", -1, "*.ksp or *.nckp",extension, "").exit();
     }
