@@ -1,11 +1,11 @@
 // set properties functions
 set_bounds(control, x, y, width, height)
 set_button_properties(button, text, picture, text_alignment, font_type, textpos_y)
-set_knob_properties(knob, text, default)
+set_knob_properties(knob, text, default_value)
 set_label_properties(label, text, picture, text_alignment, font_type, textpos_y)
 set_level_meter_properties(level_meter, bg_color, off_color, on_color, overload_color)
 set_menu_properties(menu, picture, font_type, text_alignment, textpos_y)
-set_slider_properties(slider, default, picture, mouse_behaviour)
+set_slider_properties(slider, default_value, picture, mouse_behaviour)
 set_switch_properties(switch, text, picture, text_alignment, font_type, textpos_y)
 set_table_properties(table, bar_color, zero_line_color)
 set_text_edit_properties(textedit, text, picture, text_alignment, font_type, textpos_y)
