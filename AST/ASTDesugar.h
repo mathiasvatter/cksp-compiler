@@ -31,8 +31,7 @@ public:
 
     void visit(NodeGetControlStatement& node) override;
 
-	/// alter for loops to while loops
-    void visit(NodeForStatement& node) override;
+//    void visit(NodeForStatement& node) override;
     void visit(NodeWhileStatement& node) override;
     void visit(NodeIfStatement& node) override;
 
@@ -41,6 +40,8 @@ public:
     void visit(NodeStatement& node) override;
     void visit(NodeArray& node) override;
     void visit(NodeVariable& node) override;
+
+	std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> get_function_inlines();
 
 private:
 
@@ -51,7 +52,6 @@ private:
     NodeFunctionHeader* get_builtin_function(const std::string &function, int params);
 
     const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>>& m_builtin_widgets;
-//	const std::vector<std::unique_ptr<NodeUIControl>>& m_builtin_widgets;
 	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
     void declare_dummy_return_variable();
@@ -77,7 +77,6 @@ private:
     std::stack<std::string> m_family_prefixes;
     std::stack<std::string> m_const_prefixes;
 
-
     NodeAST* m_current_function_inline_statement = nullptr;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
     std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> m_function_lookup;
@@ -92,10 +91,6 @@ private:
     NodeFunctionDefinition* get_function_definition(NodeFunctionHeader* function_header);
     std::vector<NodeFunctionDefinition*> m_function_call_order;
     std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> m_function_inlines;
-public:
-    std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> get_function_inlines();
-
-private:
 
     int local_var_counter = 0;
     std::vector<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_variable_scope_stack;

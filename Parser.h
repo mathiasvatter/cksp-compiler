@@ -107,7 +107,6 @@ protected:
     Result<std::unique_ptr<NodeArray>> parse_declare_array(NodeAST* parent);
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);
     Result<std::unique_ptr<NodeDeclareStatement>> parse_declare_statement(NodeAST* parent);
-//	Result<std::unique_ptr<NodeDefineStatement>> parse_define_statement();
     Result<std::unique_ptr<NodeAST>> parse_const_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_list_block(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_family_statement(NodeAST* parent);
@@ -128,7 +127,6 @@ protected:
 
 	Result<std::unique_ptr<NodeProgram>> parse_program();
     std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_function_definitions;
-//    std::unordered_map<std::string, NodeFunctionDefinition*> m_functions;
     void mark_function_as_used(const std::string& func_name, int num_args);
 
 	Result<SuccessTag> consume_linebreak(const std::string& construct);

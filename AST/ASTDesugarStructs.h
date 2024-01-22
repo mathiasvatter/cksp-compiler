@@ -20,8 +20,7 @@ class ASTDesugarStructs: public ASTVisitor {
     /// replace family block with single declare statements
     void visit(NodeFamilyStatement& node) override;
     /// alter for loops to while loops
-
-//    void visit(NodeForStatement& node) override;
+    void visit(NodeForStatement& node) override;
 
     void visit(NodeListStatement& node) override;
     void visit(NodeStatementList& node) override;
