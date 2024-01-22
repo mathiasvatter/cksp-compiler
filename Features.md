@@ -35,8 +35,8 @@ var1, arr1[3] := 0
 
 ## Inlining Functions everywhere
 
-Contrary to limitations in the `SublimeKSP Plugin`, `cksp` allows for (returning) functions of varying line 
-counts to be inlined into `if-statement` conditions, `for-loop` conditions or other constructs.
+Contrary to limitations in the `SublimeKSP Plugin`, `cksp` allows for (returning) functions of varying line counts to be
+inlined into `if-statement` conditions, `for-loop` conditions or other constructs.
 
 ```c
 function long_search(array, value) -> return
@@ -56,12 +56,45 @@ on init
 end on
 ```
 
-## Local Variables
+## Scoped Local Variables
+
+Local variables can be declared in every scope. They retain their value while inside the scope and can not be accessed 
+anymore when outside the scope.
+They are thread safe since every callback gets its own section in the internal local variable array.
+_Note: local arrays are currently not supported by version 0.0.2_
+
+```c
+on init
+    declare i, j := 5
+    for i := 0 to 4
+        declare local i := 0
+        message(i)                             // prints 0 in for every iteration
+        message("sth")
+    end for
+    message(i)                                 // prints 4 since it refers to the variable i declared before the for-loop
+    
+    if 3 < 5                     
+        declare local i := 1                  
+        message(i)                             // prints 1 since it refers to the local variable i declared in the
+                                               // if-statement scope
+    else
+        declare local i := 2
+        message(i)                             // prints 2 since it refers to the local i declared in the else scope
+    end if
+    message(i)                                 // prints 4 again since it refers to the global i declared before the 
+                                               // for-loop
+end on
+
+on controller
+    declare local i := 9
+    message(i)                                 // prints 9 since i was declared locally on callback level
+end on
+```
 
 ## Default Case in Select Statements
 
 Since `vanilla KSP` is missing a shorthand for a `default case` in `select` statements, `cksp` implements the `default` 
-keyword which gets substituted to cover the whole range of an _32 bit integer_ (`-2147483648 to 134217727`).
+keyword which gets substituted to cover the whole range of a _32-bit integer_ (`-2147483648 to 134217727`).
 
 ```c
 select (CC[VCC_PITCH_BEND])

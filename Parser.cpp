@@ -407,6 +407,21 @@ Result<std::unique_ptr<NodeAssignStatement>> Parser::parse_assign_statement(Node
     return Result<std::unique_ptr<NodeAssignStatement>>(std::move(node_assign_statement));
 }
 
+Result<std::unique_ptr<NodeReturnStatement>> Parser::parse_return_statement(NodeAST* parent) {
+	consume(); // consume return keyword
+	auto node_return_statement = std::make_unique<NodeReturnStatement>(get_tok());
+	while(peek().type != token::LINEBRK) {
+		auto expr_result = parse_expression(node_return_statement.get());
+		if(expr_result.is_error()) {
+			return Result<std::unique_ptr<NodeReturnStatement>>(expr_result.get_error());
+		}
+		node_return_statement->return_variables.push_back(std::move(expr_result.unwrap()));
+		if(peek().type == token::COMMA) consume();
+	}
+	node_return_statement->parent = parent;
+	return Result<std::unique_ptr<NodeReturnStatement>>(std::move(node_return_statement));
+}
+
 Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) {
     auto node_statement = std::make_unique<NodeStatement>(get_tok());
     _skip_linebreaks();

@@ -74,7 +74,6 @@ public:
 		if(node.assignee)
         	node.assignee -> accept(*this);
     };
-//	virtual void visit(NodeDefineStatement& node) = 0;
     virtual void visit(NodeAssignStatement& node) {
 		node.array_variable->accept(*this);
 		node.assignee->accept(*this);
@@ -83,6 +82,11 @@ public:
         node.array_variable ->accept(*this);
 		node.assignee -> accept(*this);
     };
+	virtual void visit(NodeReturnStatement& node) {
+		for(auto &ret : node.return_variables) {
+			ret->accept(*this);
+		}
+	};
     virtual void visit(NodeGetControlStatement& node) {
 		node.ui_id->accept(*this);
 	};
