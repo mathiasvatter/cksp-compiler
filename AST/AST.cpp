@@ -197,6 +197,23 @@ void NodeSingleDeclareStatement::replace_child(NodeAST* oldChild, std::unique_pt
     }
 }
 
+// ************* NodeReturnStatement ***************
+void NodeReturnStatement::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+NodeReturnStatement::NodeReturnStatement(const NodeReturnStatement& other)
+	: NodeAST(other), return_variables(clone_vector(other.return_variables)) {}
+std::unique_ptr<NodeAST> NodeReturnStatement::clone() const {
+	return std::make_unique<NodeReturnStatement>(*this);
+}
+void NodeReturnStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	for(auto &ret : return_variables) {
+		if (ret.get() == oldChild) {
+			ret = std::move(newChild);
+		}
+	}
+}
+
 // ************* NodeGetControlStatement ***************
 void NodeGetControlStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);

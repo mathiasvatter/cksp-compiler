@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.2 on Mon Jan 22 16:14:38 2024 }
+{ Compiled with cksp version 0.0.2 on Mon Jan 22 16:57:55 2024 }
 on init
 declare ?_return_vars_real[6]
 declare !_return_vars_str[6]
@@ -11,25 +11,10 @@ declare %_loc_var_int[9]
 declare $_iterator
 declare $i := 5
 message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
 %_return_vars_int[0] := 1 + - 2
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
 message("sdlfkj")
 %_return_vars_int[1] := 24
 $i := %_return_vars_int[0] + %_return_vars_int[1]
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
 message("sdlfkj")
 %_return_vars_int[0] := 7
 while($i <= (%_return_vars_int[0] - 1)) 
@@ -40,17 +25,7 @@ inc($i)
 end while
 message($i)
 message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
 %_return_vars_int[0] := 7
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
 message("sdlfkj")
 %_return_vars_int[1] := 9
 if(%_return_vars_int[0] < %_return_vars_int[1])
@@ -58,8 +33,10 @@ if(%_return_vars_int[0] < %_return_vars_int[1])
 message("i: " & %_loc_var_int[1])
 end if
 message($i)
+message("sdlfkj")
+%_return_vars_int[0] := 9
 select($i)
-case 5
+case %_return_vars_int[0]
 %_loc_var_int[2] := 0
 message("i: " & %_loc_var_int[2])
 case 6
@@ -145,7 +122,7 @@ message("7: " & 7)
 message("8: " & 8)
 message("9: " & 9)
 message("10: " & 10)
-message("** Script " & "'" & "MAIN" & "'" & " Compile " & "16:14:38" & " " & "01/22/24" & " **")
+message("** Script " & "'" & "MAIN" & "'" & " Compile " & "16:57:55" & " " & "01/22/24" & " **")
 set_script_title("MAIN")
 declare const $UI_HEIGHT := 352
 declare const $UI_WIDTH := 785
@@ -253,11 +230,6 @@ if(%_loc_var_int[3] < $double_click_interval)
 $double_click_state := 1
 end if
 call nothing
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
-message("sdlfkj")
 message("sdlfkj")
 %_return_vars_int[2] := %_loc_var_int[0] + 3
 if(%_return_vars_int[2] = 1)

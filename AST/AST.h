@@ -442,6 +442,33 @@ struct NodeSingleDeclareStatement : NodeAST {
     }
 };
 
+struct NodeReturnStatement : NodeAST {
+	std::vector<std::unique_ptr<NodeAST>> return_variables;
+	inline explicit NodeReturnStatement(Token tok) : NodeAST(tok) {}
+	NodeReturnStatement(std::vector<std::unique_ptr<NodeAST>> return_variables, Token tok)
+		: NodeAST(tok), return_variables(std::move(return_variables)) {}
+	void accept(ASTVisitor& visitor) override;
+	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	// Copy Constructor
+	NodeReturnStatement(const NodeReturnStatement& other);
+	// Clone Method
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		for(auto &ret : return_variables) {
+			ret->update_parents(this);
+		}
+	}
+	std::string get_string() override {
+		return "";
+	}
+	void update_token_data(const Token& token) override {
+		for(auto &ret : return_variables) {
+			ret->update_token_data(token);
+		}
+	}
+};
+
 struct NodeGetControlStatement : NodeAST {
     std::unique_ptr<NodeAST> ui_id; //array or variable
     std::string control_param;
