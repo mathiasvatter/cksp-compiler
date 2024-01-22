@@ -320,6 +320,28 @@ void ASTDesugarStructs::visit(NodeListStatement &node) {
     node.replace_with(std::move(node_statement_list));
 }
 
+void ASTDesugarStructs::visit(NodeRangedForStatement& node) {
+	// check if keys are either variable or array objects
+	for(auto &var : node.keys->params) {
+		if(!is_instance_of<NodeVariable>(var.get())) {
+			CompileError(ErrorType::SyntaxError, "Found incorrect key in ranged-for-loop syntax.", node.tok.line, "<variable>", var->get_string(), node.tok.file).exit();
+		}
+	}
+	if(node.keys->params.size() != 2) {
+		CompileError(ErrorType::SyntaxError, "Found incorrect ranged-for-loop syntax.", node.tok.line, "key, value", node.keys->params[0]->get_string(), node.tok.file).exit();
+	}
+	if(!is_instance_of<NodeVariable>(node.range.get())) {
+		CompileError(ErrorType::SyntaxError, "Found incorrect ranged-for-loop syntax.", node.tok.line, "<array_variable>", node.range->get_string(), node.tok.file).exit();
+	}
+
+	auto node_key_variable = static_cast<NodeVariable*>(node.keys->params[0].get());
+	node_key_variable->name = "_loc_key";
+	node_key_variable->is_local = true;
+
+
+
+}
+
 void ASTDesugarStructs::visit(NodeForStatement& node) {
 //	m_variable_scope_stack.emplace_back();
 
