@@ -677,83 +677,86 @@ void ASTDesugar::visit(NodeGetControlStatement& node) {
     }
 }
 
-void ASTDesugar::visit(NodeForStatement& node) {
-    m_variable_scope_stack.emplace_back();
-
-	// check if there is only one var and assignee
-	if(node.iterator->array_variable->params.size() != 1 or node.iterator->assignee->params.size() != 1) {
-		CompileError(ErrorType::SyntaxError, "Found incorrect for-loop syntax.", node.tok.line, "one iterator per for-loop", "multiple iterators", node.tok.file).print();
-		exit(EXIT_FAILURE);
-	}
-    m_current_function_inline_statement = node.parent;
-	node.iterator_end->accept(*this);
-    node.iterator->array_variable->accept(*this);
-    m_current_function_inline_statement = node.parent;
-    node.iterator->assignee->accept(*this);
-
-    // function arg
-	std::unique_ptr<NodeAST> iterator_var = node.iterator->array_variable->params[0]->clone();
-    std::unique_ptr<NodeAST> assign_var = iterator_var->clone();
-    std::unique_ptr<NodeAST> function_var = iterator_var->clone();
-
-    // while statement
-	auto node_while_statement = std::make_unique<NodeWhileStatement>(node.tok);
-
-    if(!node.step) {
-        // function call
-        std::string function_name = "inc";
-        if (node.to.type == DOWNTO) function_name = "dec";
-        std::vector<std::unique_ptr<NodeAST>> args;
-        args.push_back(std::move(function_var));
-        auto inc_statement = make_function_call(function_name, std::move(args), node_while_statement.get(), node.tok);
-        inc_statement->update_parents(&node);
-        node.statements->statements.push_back(std::move(inc_statement));
-    } else {
-        auto assign_var2 = function_var->clone();
-        auto inc_expression = make_binary_expr(Integer, "+", std::move(function_var), std::move(node.step), &node, node.tok);
-        auto node_inc_statement = std::make_unique<NodeSingleAssignStatement>(std::move(assign_var2), std::move(inc_expression), node.tok);
-        auto node_statement = statement_wrapper(std::move(node_inc_statement), node_while_statement.get());
-        node_statement->update_parents(&node);
-        node.statements->statements.push_back(std::move(node_statement));
-    }
-
-    // handle while condition
-    std::string comparison_op = "<=";
-    if(node.to.type == DOWNTO) comparison_op = ">=";
-    // make comparison expression
-    auto comparison = make_binary_expr(Comparison, comparison_op, std::move(iterator_var), std::move(node.iterator_end), node_while_statement.get(), node.tok);
-
-	node_while_statement->condition = std::move(comparison);
-	node_while_statement->statements = std::move(node.statements);
-
-    // new local iterator
-//    auto node_local_declare_statement = std::make_unique<NodeSingleDeclareStatement>(node.tok);
-//    auto node_local_iterator = std::make_unique<NodeVariable>(false, "loc_i", Mutable, node.tok);
-//    node_local_iterator->is_local = true;
-//    node_local_declare_statement->to_be_declared = std::move(node_local_iterator);
-//    node_local_declare_statement->assignee = std::move(node.iterator->assignee->params[0]);
-
-    auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(node.tok);
-    node_assign_statement->array_variable = std::move(assign_var);
-    node_assign_statement->assignee = std::move(node.iterator->assignee->params[0]);
-
-    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-    node_statement_list->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_statement_list.get()));
-//    node_statement_list->statements.push_back(statement_wrapper(std::move(node_local_declare_statement), node_statement_list.get()));
-
-    node_statement_list->statements.push_back(statement_wrapper(std::move(node_while_statement), node_statement_list.get()));
-    node_statement_list->update_parents(node.parent);
-    node_statement_list->accept(*this);
-
-    m_variable_scope_stack.pop_back();
-
-	node.replace_with(std::move(node_statement_list));
-}
+//void ASTDesugar::visit(NodeForStatement& node) {
+//    m_variable_scope_stack.emplace_back();
+//
+//	// check if there is only one var and assignee
+//	if(node.iterator->array_variable->params.size() != 1 or node.iterator->assignee->params.size() != 1) {
+//		CompileError(ErrorType::SyntaxError, "Found incorrect for-loop syntax.", node.tok.line, "one iterator per for-loop", "multiple iterators", node.tok.file).print();
+//		exit(EXIT_FAILURE);
+//	}
+//    m_current_function_inline_statement = node.parent;
+//	node.iterator_end->accept(*this);
+//    node.iterator->array_variable->accept(*this);
+//    m_current_function_inline_statement = node.parent;
+//    node.iterator->assignee->accept(*this);
+//
+//    // function arg
+//	std::unique_ptr<NodeAST> iterator_var = node.iterator->array_variable->params[0]->clone();
+//    std::unique_ptr<NodeAST> assign_var = iterator_var->clone();
+//    std::unique_ptr<NodeAST> function_var = iterator_var->clone();
+//
+//    // while statement
+//	auto node_while_statement = std::make_unique<NodeWhileStatement>(node.tok);
+//
+//    if(!node.step) {
+//        // function call
+//        std::string function_name = "inc";
+//        if (node.to.type == DOWNTO) function_name = "dec";
+//        std::vector<std::unique_ptr<NodeAST>> args;
+//        args.push_back(std::move(function_var));
+//        auto inc_statement = make_function_call(function_name, std::move(args), node_while_statement.get(), node.tok);
+//        inc_statement->update_parents(&node);
+//        node.statements->statements.push_back(std::move(inc_statement));
+//    } else {
+//        auto assign_var2 = function_var->clone();
+//        auto inc_expression = make_binary_expr(Integer, "+", std::move(function_var), std::move(node.step), &node, node.tok);
+//        auto node_inc_statement = std::make_unique<NodeSingleAssignStatement>(std::move(assign_var2), std::move(inc_expression), node.tok);
+//        auto node_statement = statement_wrapper(std::move(node_inc_statement), node_while_statement.get());
+//        node_statement->update_parents(&node);
+//        node.statements->statements.push_back(std::move(node_statement));
+//    }
+//
+//    // handle while condition
+//    std::string comparison_op = "<=";
+//    if(node.to.type == DOWNTO) comparison_op = ">=";
+//    // make comparison expression
+//    auto comparison = make_binary_expr(Comparison, comparison_op, std::move(iterator_var), std::move(node.iterator_end), node_while_statement.get(), node.tok);
+//
+//	node_while_statement->condition = std::move(comparison);
+//	node_while_statement->statements = std::move(node.statements);
+//
+//    // new local iterator
+////    auto node_local_declare_statement = std::make_unique<NodeSingleDeclareStatement>(node.tok);
+////    auto node_local_iterator = std::make_unique<NodeVariable>(false, "loc_i", Mutable, node.tok);
+////    node_local_iterator->is_local = true;
+////    node_local_declare_statement->to_be_declared = std::move(node_local_iterator);
+////    node_local_declare_statement->assignee = std::move(node.iterator->assignee->params[0]);
+//
+//    auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(node.tok);
+//    node_assign_statement->array_variable = std::move(assign_var);
+//    node_assign_statement->assignee = std::move(node.iterator->assignee->params[0]);
+//
+//    auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+//    node_statement_list->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_statement_list.get()));
+////    node_statement_list->statements.push_back(statement_wrapper(std::move(node_local_declare_statement), node_statement_list.get()));
+//
+//    node_statement_list->statements.push_back(statement_wrapper(std::move(node_while_statement), node_statement_list.get()));
+//    node_statement_list->update_parents(node.parent);
+//    node_statement_list->accept(*this);
+//
+//    m_variable_scope_stack.pop_back();
+//
+//	node.replace_with(std::move(node_statement_list));
+//}
 
 void ASTDesugar::visit(NodeWhileStatement& node) {
     m_current_function_inline_statement = node.parent;
     node.condition->accept(*this);
+	m_variable_scope_stack.emplace_back();
     node.statements->accept(*this);
+	m_variable_scope_stack.pop_back();
+
 }
 
 void ASTDesugar::visit(NodeIfStatement& node) {

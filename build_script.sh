@@ -1,7 +1,23 @@
 #!/bin/bash
+
+ARM_DIR="macos_arm64"
+INTEL_DIR="macos_x86_64"
+WINDOWS_DIR="windows"
+
+# Überprüfen, auf welcher macOS-Architektur man sich befindet
+ARCH=$(uname -m)
+if [ "$ARCH" == "arm64" ]; then
+    TARGET_DIR="$ARM_DIR"
+    CMAKE_DIR="/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake"
+else
+    TARGET_DIR="$INTEL_DIR"
+    CMAKE_DIR="/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake"
+fi
+
 BUILD_DIR="cmake-build-release"
 
-/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -B $BUILD_DIR -DCMAKE_BUILD_TYPE=Release -S . && /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake --build $BUILD_DIR -- -j 8
+# build and deploy executable
+$CMAKE_DIR -B $BUILD_DIR -DCMAKE_BUILD_TYPE=Release -S . && $CMAKE_DIR --build $BUILD_DIR -- -j 8
 
 # check if cksp exists
 if [ ! -f "$BUILD_DIR/cksp" ]; then
@@ -20,9 +36,6 @@ if [ ! -d "$RELEASES_DIR" ]; then
 fi
 
 RELEASE_DIR="${RELEASES_DIR}/cksp_v${VERSION}_release"
-ARM_DIR="macos_arm64"
-INTEL_DIR="macos_x86"
-WINDOWS_DIR="windows"
 
 # Erstellen des Release-Ordners
 mkdir -p "$RELEASE_DIR"
@@ -35,9 +48,9 @@ mkdir -p "$RELEASE_DIR/$INTEL_DIR"
 mkdir -p "$RELEASE_DIR/$WINDOWS_DIR"
 
 # Kopieren der Binärdateien in den Release-Ordner
-cp "$BUILD_DIR/cksp" "$RELEASE_DIR/$ARM_DIR/cksp"
+cp "$BUILD_DIR/cksp" "$RELEASE_DIR/$TARGET_DIR/cksp"
 
 # zipping it up
-zip -vr "${RELEASE_DIR}.zip" $RELEASE_DIR -x "*.DS_Store"
+zip -vr "${RELEASE_DIR}.zip" "$RELEASE_DIR" -x "*.DS_Store"
 
 echo "Release files copied to $RELEASE_DIR"

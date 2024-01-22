@@ -330,7 +330,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, 
         }
         ASTType type = ASTType::Unknown;
 		if (bin_op.type == token::COMPARISON) {
-            //Check if rhs is NodeComparisonExpr because comparisons in comparisons are not allowed
+            // Check if rhs is NodeComparisonExpr because comparisons in comparisons are not allowed
             if (lhs->type == ASTType::Comparison) {
                 return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
                  "Nested Comparisons are not allowed.", peek().line, "valid expression operator", bin_op.val, peek().file));
@@ -338,17 +338,8 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, 
             type = ASTType::Comparison;
 		} else if (bin_op.type == token::BOOL_AND || bin_op.type == token::BOOL_OR){
 			type = ASTType::Boolean;
-//            if (not(lhs->type == ASTType::Comparison && rhs.unwrap()->type == ASTType::Comparison)) {
-//                return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-//                 "Boolean Operators can only connect Comparisons.", peek().line, "Comparisons", "", peek().file));
-//            }
 		}
-        // brauch ich das jetzt schon, oder vllt erst nachher beim typisierungs-check?
-//        if (lhs->type == Integer && rhs.unwrap()->type == Real || lhs->type == Real && rhs.unwrap()->type == Integer) {
-//            return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-//             "Merging of different Expression Types (real and int) is not allowed. Use int(<expr>) or real(<expr>) to cast types.",
-//			 peek().line, "", bin_op.val, peek().file));
-//        }
+
 		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(bin_op.val, std::move(lhs), std::move(rhs.unwrap()), get_tok());
         node_binary_expr->parent = parent;
 		node_binary_expr->left->parent = node_binary_expr.get();
@@ -1180,7 +1171,6 @@ Result<std::unique_ptr<NodeRangedForStatement>> Parser::parse_ranged_for_stateme
     node_for_statement->range = std::move(expression_stmt.unwrap());
     node_for_statement->statements = std::move(node_statement_list);
     node_for_statement->parent = parent;
-//    auto return_value = std::make_unique<NodeForStatement>(std::move(iterator), to, std::move(iterator_end), std::move(stmts), get_tok());
     return Result<std::unique_ptr<NodeRangedForStatement>>(std::move(node_for_statement));
 }
 
