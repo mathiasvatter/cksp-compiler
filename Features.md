@@ -56,7 +56,22 @@ on init
 end on
 ```
 
-## Local Variables on callback level
+## Local Variables
 
+## Default Case in Select Statements
 
+Since `vanilla KSP` is missing a shorthand for a `default case` in `select` statements, `cksp` implements the `default` 
+keyword which gets substituted to cover the whole range of an _32 bit integer_ (`-2147483648 to 134217727`).
 
+```c
+select (CC[VCC_PITCH_BEND])
+    case -8191 to -1
+        message("Pitch Bend down")
+    case 0
+        message("Pitch Bend center")
+    case 1 to 8191
+        message("Pitch Bend up")
+    case default
+        message("We're not sure how you got this Pitch Bend value!")
+end select
+```

@@ -1230,17 +1230,27 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement(Node
 		if(peek().type == token::CASE) {
 			consume(); //consume case
             std::vector<std::unique_ptr<NodeAST>> cas = {};
-			auto cas_result = parse_expression(node_select_statement.get());
-			if(cas_result.is_error())
-				return Result<std::unique_ptr<NodeSelectStatement>>(cas_result.get_error());
-            cas.push_back(std::move(cas_result.unwrap()));
-            if(peek().type == token::TO) {
-                consume(); // consume to
-                auto cas2_result = parse_expression(node_select_statement.get());
-                if(cas2_result.is_error())
-                    return Result<std::unique_ptr<NodeSelectStatement>>(cas2_result.get_error());
-                cas.push_back(std::move(cas2_result.unwrap()));
-            }
+			if(peek().type == token::DEFAULT) {
+				consume(); // consume default token
+				Token low_end = Token(INT, "080000000H", 0, "");
+				Token high_end = Token(INT, "07FFFFFFH", 0, "");
+				auto node_int_low = std::move(parse_int(low_end, 16, node_select_statement.get()).unwrap());
+				cas.push_back(std::move(node_int_low));
+				auto node_int_high = std::move(parse_int(high_end, 16, node_select_statement.get()).unwrap());
+				cas.push_back(std::move(node_int_high));
+			} else {
+				auto cas_result = parse_expression(node_select_statement.get());
+				if (cas_result.is_error())
+					return Result<std::unique_ptr<NodeSelectStatement>>(cas_result.get_error());
+				cas.push_back(std::move(cas_result.unwrap()));
+				if (peek().type == token::TO) {
+					consume(); // consume to
+					auto cas2_result = parse_expression(node_select_statement.get());
+					if (cas2_result.is_error())
+						return Result<std::unique_ptr<NodeSelectStatement>>(cas2_result.get_error());
+					cas.push_back(std::move(cas2_result.unwrap()));
+				}
+			}
 			if(peek().type != token::LINEBRK) {
 				return Result<std::unique_ptr<NodeSelectStatement>>(CompileError(ErrorType::SyntaxError,
 				 "Expected linebreak after case.", peek().line, "linebreak", peek().val, peek().file));
@@ -1248,7 +1258,6 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement(Node
 			consume(); //consume linebreak
             auto stmts = std::make_unique<NodeStatementList>(get_tok());
             stmts->parent = node_select_statement.get();
-//			std::vector<std::unique_ptr<NodeStatement>> stmts = {};
 			while(peek().type != token::END_SELECT && peek().type != token::CASE) {
 				auto stmt = parse_statement(node_select_statement.get());
 				if (stmt.is_error()) {
