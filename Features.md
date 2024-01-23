@@ -3,6 +3,10 @@
 The following describes added/retracted features to `vanilla KSP Script` that differ from `nojanath's` fork of `Nils 
 Liberg's SublimeKSP plugin`.
 
+## Global Preprocessor Conditions
+
+Preprocessor directives `SET_CONDITION` and `RESET_CONDITION` are project wide and not on a per file basis. A condition `DEV_STATE` set in one file can be used to edit code blocks with `USE_CODE_IF` or `USE_CODE_IF_NOT` in all imported `*.ksp` files.
+
 ## Single-line Declarations
 
 Use a comma separated syntax to declare `variables`, `arrays` or `ui_controls` in one line and assign values to them.
