@@ -427,15 +427,14 @@ std::unique_ptr<PreNodeMacroDefinition> PreASTDesugar::get_macro_definition(PreN
         copy->update_parents(nullptr);
         return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
     }
-//    for(auto & macro_def : m_macro_definitions) {
-//        if(macro_def->header->name->keyword.val == macro_header->name->keyword.val) {
-//            if(macro_def->header->args->params.size() == macro_header->args->params.size()) {
-//                auto copy = macro_def->clone();
-//                copy->update_parents(nullptr);
-//                return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
-//            }
-//        }
-//    }
+	// if macro call has no arguments (literate or iterate) then search only for macro_names
+    for(auto & macro_def : m_main_ptr->macro_definitions) {
+        if(macro_def->header->name->keyword.val == macro_header->name->keyword.val) {
+			auto copy = macro_def->clone();
+			copy->update_parents(nullptr);
+			return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
+		}
+    }
     return nullptr;
 }
 
