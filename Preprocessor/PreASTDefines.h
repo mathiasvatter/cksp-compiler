@@ -45,6 +45,6 @@ private:
 	std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> m_builtin_defines;
 	static std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> get_builtin_defines();
 	std::unique_ptr<PreNodeAST> get_builtin_define(const std::string& keyword);
-	
+
 };
 
