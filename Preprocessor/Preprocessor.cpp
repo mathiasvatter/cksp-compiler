@@ -47,8 +47,8 @@ void Preprocessor::process() {
         CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",peek(m_tokens).file).print();
         exit(EXIT_FAILURE);
     }
-    PreASTDesugar desugar;
     auto pre_ast = std::move(result_parse.unwrap());
+    PreASTDesugar desugar;
     pre_ast->accept(desugar);
     PreASTIncrementer incrementer;
     pre_ast->accept(incrementer);
