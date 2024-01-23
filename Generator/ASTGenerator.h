@@ -52,8 +52,8 @@ public:
 	void generate(const std::string& path) const;
 	void print() const;
 
-	std::unordered_map<ASTType, char> array_identifier = {{String, '!'}, {Integer, '%'}, {Real, '?'}, {Unknown, ' '}};
-	std::unordered_map<ASTType, char> variable_identifier = {{String, '@'}, {Integer, '$'}, {Real, '~'}, {Unknown, ' '}};
+	std::unordered_map<ASTType, std::string> array_identifier = {{String, "!"}, {Integer, "%"}, {Real, "?"}, {Unknown, ""}};
+	std::unordered_map<ASTType, std::string> variable_identifier = {{String, "@"}, {Integer, "$"}, {Real, "~"}, {Unknown, ""}};
 
 private:
     static std::string get_compiled_date_time();

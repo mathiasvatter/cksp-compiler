@@ -81,7 +81,7 @@ void ASTTypeChecking::visit(NodeVariable& node) {
 
 	if(node.type == Unknown or node.type == Number or node.type == Any) {
         // no return_var information printed pls
-        if(!node.is_compiler_return and !node.is_local)
+        if(!node.is_compiler_return and !node.is_local and !node.is_engine)
 		    CompileError(ErrorType::TypeError,"Could not infer variable type. Variable is Unknown/Number/Any", node.tok.line, "valid type", node.name, node.tok.file).print();
 	}
 
