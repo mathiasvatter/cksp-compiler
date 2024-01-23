@@ -96,9 +96,9 @@ end on
 have to be declared beforehand and only exist within the scope of the `for-loop`.
 
 ```c
-declare array[5] := (3,4,6,8,10)                // is equivalent to:
+declare array[5] := ("3","4","6","8","10")      // is equivalent to:
 for key, val in array                           // for key := 0 to num_elements(array)-1
-    message(key & ", " & val)                 //  message(key & ", " & array[key])
+    message(key & ", " & val)                   // message(key & ", " & array[key])
 end for
 ```
 
