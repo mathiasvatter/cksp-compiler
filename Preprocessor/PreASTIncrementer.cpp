@@ -147,6 +147,9 @@ void PreASTIncrementer::visit(PreNodeIncrementer& node) {
 }
 
 void PreASTIncrementer::visit(PreNodeProgram &node) {
+	for(auto & def : node.macro_definitions) {
+		def->accept(*this);
+	}
     for(auto & n : node.program) {
         n->accept(*this);
     }

@@ -5,24 +5,14 @@
 #include "PreASTDesugar.h"
 #include "SimpleExprInterpreter.h"
 #include <locale>
-#include <sstream>
-
 
 void PreASTDesugar::visit(PreNodeProgram& node) {
     m_main_ptr = &node;
-    for(auto & def : node.define_statements) {
-        m_define_lookup.insert({def->header->name->keyword.val, def.get()});
-    }
+
     for(auto & def : node.macro_definitions) {
         m_macro_lookup.insert({{def->header->name->keyword.val, (int)def->header->args->params.size()}, def.get()});
     }
 
-//    m_define_definitions = std::move(node.define_statements);
-//    m_macro_definitions = std::move(node.macro_definitions);
-    m_builtin_defines = get_builtin_defines();
-    for(auto & def : node.define_statements) {
-        def->accept(*this);
-    }
     for(auto & def : node.macro_definitions) {
         def->accept(*this);
     }
@@ -45,7 +35,6 @@ void PreASTDesugar::visit(PreNodeNumber& node) {
 
 void PreASTDesugar::visit(PreNodeInt& node) {
 	m_debug_token = node.get_string();
-
     // substitution
     if (!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.number.val)) {
@@ -58,12 +47,6 @@ void PreASTDesugar::visit(PreNodeInt& node) {
 
 void PreASTDesugar::visit(PreNodeKeyword& node) {
 	m_debug_token = node.get_string();
-
-    if(auto builtin_define = get_builtin_define(node.keyword.val)) {
-        builtin_define->update_token_data(node.keyword);
-        node.replace_with(std::move(builtin_define));
-        return;
-    }
 
     // substitution
     if (!m_substitution_stack.empty()) {
@@ -86,21 +69,8 @@ void PreASTDesugar::visit(PreNodeKeyword& node) {
 //	}
 //}
 
-std::unique_ptr<PreNodeAST> PreASTDesugar::get_builtin_define(const std::string& keyword) {
-    auto it = std::find_if(m_builtin_defines.begin(), m_builtin_defines.end(),
-                           [&](const std::pair<std::string, std::unique_ptr<PreNodeAST>> &pair) {
-                               return pair.first == keyword;
-                           });
-    if(it != m_builtin_defines.end()) {
-        return m_builtin_defines[std::distance(m_builtin_defines.begin(), it)].second->clone();
-    }
-    return nullptr;
-}
-
-
 void PreASTDesugar::visit(PreNodeOther& node) {
 	m_debug_token = node.get_string();
-
 }
 
 void PreASTDesugar::visit(PreNodeStatement& node) {
@@ -112,26 +82,6 @@ void PreASTDesugar::visit(PreNodeChunk& node) {
         c->accept(*this);
     }
 
-//	for(int i=0; i<node.chunk.size(); ++i) {
-//		if(auto node_statement = dynamic_cast<PreNodeStatement*>(node.chunk[i].get())) {
-//			if(auto node_chunk = dynamic_cast<PreNodeChunk*>(node_statement->statement.get())) {
-//				// Wir speichern die Statements der inneren NodeStatementList
-//				auto &inner_chunk = node_chunk->chunk;
-//				// Fügen Sie die inneren Statements an der aktuellen Position ein
-//				node.chunk.insert(
-//					node.chunk.begin() + i + 1,
-//					std::make_move_iterator(inner_chunk.begin()),
-//					std::make_move_iterator(inner_chunk.end())
-//				);
-//				// Entfernen Sie das ursprüngliche NodeStatementList-Element
-//				node.chunk.erase(node.chunk.begin() + i);
-//				// Anpassen des Indexes, um die eingefügten Elemente zu berücksichtigen
-//				i += inner_chunk.size() - 1;
-//				// Die inneren Statements sind jetzt leer, da sie verschoben wurden
-//				inner_chunk.clear();
-//			}
-//		}
-//	}
     std::vector<std::unique_ptr<PreNodeAST>> temp;
 
     for(int i = 0; i < node.chunk.size(); ++i) {
@@ -156,59 +106,10 @@ void PreASTDesugar::visit(PreNodeChunk& node) {
     node.chunk = std::move(temp);
 }
 
-void PreASTDesugar::visit(PreNodeDefineHeader& node) {
-    if(node.args)
-        node.args->accept(*this);
-}
-
 void PreASTDesugar::visit(PreNodeList& node) {
     for(auto &p : node.params){
-        if(p)
-            p->accept(*this);
+        if(p) p->accept(*this);
     }
-}
-
-void PreASTDesugar::visit(PreNodeDefineStatement& node) {
-    node.header->accept(*this);
-    node.body->accept(*this);
-
-    auto node_body = std::unique_ptr<PreNodeChunk>(static_cast<PreNodeChunk*>(node.body->clone().release()));
-    SimpleExprInterpreter eval("", 0);
-    auto eval_result = eval.parse_and_evaluate(std::move(node_body->chunk));
-    if(!eval_result.is_error()) {
-        Token tok = Token(INT, std::to_string(eval_result.unwrap()), 0, "");
-        auto int_token = std::make_unique<PreNodeInt>(eval_result.unwrap(), tok, nullptr);
-        auto node_statement = std::make_unique<PreNodeStatement>(std::move(int_token), nullptr);
-        node_statement->update_parents(&node);
-        node.body->chunk.clear();
-        node.body->chunk.push_back(std::move(node_statement));
-    }
-
-}
-
-void PreASTDesugar::visit(PreNodeDefineCall& node) {
-    Token token_name = node.define->name->keyword;
-    if(std::find(m_define_call_stack.begin(), m_define_call_stack.end(), token_name.val) != m_define_call_stack.end()) {
-        // recursive function call detected
-        CompileError(ErrorType::PreprocessorError,"Recursive define call detected. Calling defines inside their definition is not allowed.", token_name.line, "", token_name.val, token_name.file).print();
-        exit(EXIT_FAILURE);
-    }
-
-    node.define->accept(*this);
-    //substitution
-    auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
-    if( auto node_define_definition = get_define_definition(node.define.get())) {
-        m_define_call_stack.push_back(token_name.val);
-        node_define_definition->parent = node.parent;
-        auto substitution_vec = get_substitution_vector(node_define_definition->header.get(), node.define.get());
-        m_substitution_stack.push(std::move(substitution_vec));
-        node_define_definition->body->accept(*this);
-        node_new_chunk = std::move(node_define_definition->body);
-        node_new_chunk->parent = node.parent;
-        m_substitution_stack.pop();
-        m_define_call_stack.pop_back();
-    }
-    node.replace_with(std::move(node_new_chunk));
 }
 
 void PreASTDesugar::visit(PreNodeMacroCall& node) {
@@ -233,12 +134,13 @@ void PreASTDesugar::visit(PreNodeMacroCall& node) {
 		} else {
         // if parent is literate -> replace #l# in substitution vector with first arg of macro
             if(node.macro->args->params.empty() and node_macro_definition->header->args->params.size() == 1) {
-                if(!m_substitution_stack.empty())
+                if(!m_substitution_stack.empty()) {
                     for(auto &subst : m_substitution_stack.top()) {
                         if(subst.first == "#l#") {
                             subst.first = node_macro_definition->header->args->params[0]->get_string();
                         }
                     }
+				}
             }
         }
 
@@ -301,7 +203,7 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
         node_number_chunk->chunk.push_back(std::move(node_statement));
 		auto node_number_chunk_macro_arg = std::unique_ptr<PreNodeChunk>(static_cast<PreNodeChunk*>(node_number_chunk->clone().release()));
 
-        substitution_vector.emplace_back(std::pair("#n#", std::move(node_number_chunk)));
+        substitution_vector.push_back(std::pair("#n#", std::move(node_number_chunk)));
         m_substitution_stack.push(std::move(substitution_vector));
 
         auto macro_call = node.macro_call->params[0]->clone();
@@ -328,13 +230,11 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
 
 void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
     if(node.macro_call->params.size()>1) {
-        CompileError(ErrorType::PreprocessorError,"Found incorrect <literate_macro> syntax.", -1, "", "", "").print();
-        exit(EXIT_FAILURE);
+        CompileError(ErrorType::PreprocessorError,"Found incorrect <literate_macro> syntax.", -1, "", "", "").exit();
     }
     if(node.parent->parent != nullptr)
         if(dynamic_cast<PreNodeIterateMacro*>(node.parent->parent->parent) or dynamic_cast<PreNodeLiterateMacro*>(node.parent->parent->parent)) {
-            CompileError(ErrorType::PreprocessorError,"Found nested <literate_macro>.", -1, "", "", "").print();
-            exit(EXIT_FAILURE);
+            CompileError(ErrorType::PreprocessorError,"Found nested <literate_macro>.", -1, "", "", "").exit();
         }
     node.macro_call->params[0]->chunk.push_back(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, ""),nullptr));
 
@@ -349,7 +249,6 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
 	node.literate_tokens->chunk = std::move(node_new_literate_tokens->chunk);
 
     auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
-
     for (int i = 0; i<node.literate_tokens->chunk.size(); i++) {
         std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
         auto node_number_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
@@ -361,8 +260,8 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
         auto node_literate_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
         node_literate_chunk->chunk.push_back(std::move(node_literate_statement));
 
-        substitution_vector.emplace_back(std::pair("#l#", std::move(node_literate_chunk)));
-        substitution_vector.emplace_back(std::pair("#n#", std::move(node_number_chunk)));
+        substitution_vector.push_back(std::pair("#l#", std::move(node_literate_chunk)));
+        substitution_vector.push_back(std::pair("#n#", std::move(node_number_chunk)));
         m_substitution_stack.push(std::move(substitution_vector));
 
         auto macro_call = node.macro_call->params[0]->clone();
@@ -375,55 +274,34 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
     node.replace_with(std::move(node_new_chunk));
 }
 
-template<typename T>
-std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar::get_substitution_vector(T* definition, T* call) {
-    std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
-    for(int i= 0; i<definition->args->params.size(); i++) {
-        auto &var = definition->args->params[i]->chunk[0];
-        if(definition->args->params[i]->chunk.size() > 1) {
-            CompileError(ErrorType::SyntaxError,
-         "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>", definition->name->keyword.line, "", definition->get_string(),definition->name->keyword.file).print();
-            exit(EXIT_FAILURE);
-        }
-        std::pair<std::string, std::unique_ptr<PreNodeChunk>> pair;
-        if(auto node_statement = dynamic_cast<PreNodeStatement*>(var.get())) {
-            if (auto node_keyword = dynamic_cast<PreNodeKeyword *>(node_statement->statement.get())) {
-                pair.first = node_keyword->keyword.val;
-            } else if (auto node_number = dynamic_cast<PreNodeNumber *>(node_statement->statement.get())) {
-                pair.first = node_number->number.val;
+std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar::get_substitution_vector(PreNodeMacroHeader* definition, PreNodeMacroHeader* call) {
+	std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
+	for(int i= 0; i<definition->args->params.size(); i++) {
+		auto &var = definition->args->params[i]->chunk[0];
+		if(definition->args->params[i]->chunk.size() > 1) {
+			CompileError(ErrorType::SyntaxError,
+			 "Unable to substitute <macro> arguments. Found wrong number of substitution tokens in <macro-header>", definition->name->keyword.line, "", definition->get_string(),definition->name->keyword.file).exit();
+		}
+		std::pair<std::string, std::unique_ptr<PreNodeChunk>> pair;
+		if(auto node_statement = dynamic_cast<PreNodeStatement*>(var.get())) {
+			if (auto node_keyword = dynamic_cast<PreNodeKeyword *>(node_statement->statement.get())) {
+				pair.first = node_keyword->keyword.val;
+			} else if (auto node_number = dynamic_cast<PreNodeNumber *>(node_statement->statement.get())) {
+				pair.first = node_number->number.val;
 			} else if (auto node_int = dynamic_cast<PreNodeInt *>(node_statement->statement.get())) {
 				pair.first = node_int->number.val;
-            } else {
-                CompileError(ErrorType::SyntaxError,
-                             "Unable to substitute <define> arguments. Only <keywords> can be substituted.",
-                             definition->name->keyword.line, "<keyword>", "", definition->name->keyword.file).print();
-                exit(EXIT_FAILURE);
-            }
-        } else {
-            CompileError(ErrorType::SyntaxError,
-                         "Unable to substitute <define> arguments. Only <keywords> can be substituted.",
-                         definition->name->keyword.line, "<keyword>", "", definition->name->keyword.file).print();
-            exit(EXIT_FAILURE);
-        }
-        pair.second = std::move(call->args->params[i]);
-        substitution_vector.push_back(std::move(pair));
-    }
-    return substitution_vector;
-}
-
-std::unique_ptr<PreNodeDefineStatement> PreASTDesugar::get_define_definition(PreNodeDefineHeader *define_header) {
-    auto it = m_define_lookup.find(define_header->name->keyword.val);
-    if(it != m_define_lookup.end()) {
-        auto copy = it->second->clone();
-        copy->update_parents(nullptr);
-        return std::unique_ptr<PreNodeDefineStatement>(static_cast<PreNodeDefineStatement*>(copy.release()));
-
-    }
-//    for(auto & def : m_define_definitions) {
-//        if(def->header->name->keyword.val == define_header->name->keyword.val) {
-//        }
-//    }
-    return nullptr;
+			} else {
+				CompileError(ErrorType::SyntaxError,
+				 "Unable to substitute <macro> arguments. Only <keywords> can be substituted.",definition->name->keyword.line, "<keyword>", "", definition->name->keyword.file).exit();
+			}
+		} else {
+			CompileError(ErrorType::SyntaxError,
+			 "Unable to substitute <macro> arguments. Only <keywords> can be substituted.",definition->name->keyword.line, "<keyword>", "", definition->name->keyword.file).exit();
+		}
+		pair.second = std::move(call->args->params[i]);
+		substitution_vector.push_back(std::move(pair));
+	}
+	return substitution_vector;
 }
 
 std::unique_ptr<PreNodeMacroDefinition> PreASTDesugar::get_macro_definition(PreNodeMacroHeader *macro_header) {
@@ -479,53 +357,4 @@ std::string PreASTDesugar::get_text_replacement(const std::string& name) {
         }
     }
     return name;
-}
-
-std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> PreASTDesugar::get_builtin_defines() {
-    auto now = std::chrono::system_clock::now();
-    // Umwandlung in time_t für einfacheren Zugriff auf Kalenderdaten
-    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-
-    // Konvertiere time_t zu tm-Struktur für lokale Zeit
-    std::tm* local_time = std::localtime(&now_c);
-
-    // Lokalisierung einstellen
-    std::locale loc(""); // System-Standard-Locale
-    std::ostringstream ss;
-
-    // Lokalisierter Monatsname
-    ss.imbue(loc);
-    ss << std::put_time(local_time, "%B");
-    std::string locale_month = ss.str();
-    ss.str(""); ss.clear(); // String-Stream zurücksetzen
-
-    // Lokalisierter abgekürzter Monatsname
-    ss << std::put_time(local_time, "%b");
-    std::string locale_month_abbr = ss.str();
-    ss.str(""); ss.clear(); // String-Stream zurücksetzen
-
-    // Lokalisiertes Datum
-    ss << std::put_time(local_time, "%x");
-    std::string locale_date = ss.str();
-    ss.str(""); ss.clear(); // String-Stream zurücksetzen
-
-    // Lokalisierte Uhrzeit
-    ss << std::put_time(local_time, "%X");
-    std::string locale_time = ss.str();
-
-    std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> builtins;
-    builtins.emplace_back("__SEC__", std::make_unique<PreNodeInt>(local_time->tm_sec, Token(INT, std::to_string(local_time->tm_sec), 0, ""), nullptr));
-    builtins.emplace_back("__MIN__", std::make_unique<PreNodeInt>(local_time->tm_min, Token(INT, std::to_string(local_time->tm_min), 0, ""), nullptr));
-    builtins.emplace_back("__HOUR__", std::make_unique<PreNodeInt>(local_time->tm_hour, Token(INT, std::to_string(local_time->tm_hour), 0, ""), nullptr));
-    builtins.emplace_back("__HOUR12__", std::make_unique<PreNodeInt>(local_time->tm_hour % 12, Token(INT, std::to_string(local_time->tm_hour % 12), 0, ""), nullptr));
-    builtins.emplace_back("__AMPM__", std::make_unique<PreNodeKeyword>(Token(STRING, (local_time->tm_hour >= 12 ? "\"PM\"" : "\"AM\""), 0, ""), nullptr));
-    builtins.emplace_back("__DAY__", std::make_unique<PreNodeInt>(local_time->tm_mday, Token(INT, std::to_string(local_time->tm_mday), 0, ""), nullptr));
-    builtins.emplace_back("__MONTH__", std::make_unique<PreNodeInt>(local_time->tm_mon + 1, Token(INT, std::to_string(local_time->tm_mon + 1), 0, ""), nullptr));
-    builtins.emplace_back("__YEAR__", std::make_unique<PreNodeInt>(local_time->tm_year + 1900, Token(INT, std::to_string(local_time->tm_year + 1900), 0, ""), nullptr));
-    builtins.emplace_back("__YEAR2__", std::make_unique<PreNodeInt>(local_time->tm_year % 100, Token(INT, std::to_string(local_time->tm_year % 100), 0, ""), nullptr));
-    builtins.emplace_back("__LOCALE_MONTH__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_month+"\"", 0, ""), nullptr));
-    builtins.emplace_back("__LOCALE_MONTH_ABBR__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_month_abbr+"\"", 0, ""), nullptr));
-    builtins.emplace_back("__LOCALE_DATE__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_date+"\"", 0, ""), nullptr));
-    builtins.emplace_back("__LOCALE_TIME__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_time+"\"", 0, ""), nullptr));
-    return builtins;
 }
