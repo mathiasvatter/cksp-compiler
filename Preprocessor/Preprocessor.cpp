@@ -11,6 +11,7 @@
 #include "PreASTDesugar.h"
 #include "PreASTCombine.h"
 #include "PreASTIncrementer.h"
+#include "PreASTDefines.h"
 
 Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
     : Parser(std::move(tokens)), m_current_file(std::move(current_file)) {
@@ -48,10 +49,12 @@ void Preprocessor::process() {
         exit(EXIT_FAILURE);
     }
     auto pre_ast = std::move(result_parse.unwrap());
-    PreASTDesugar desugar;
-    pre_ast->accept(desugar);
+	PreASTDefines defines;
+	pre_ast->accept(defines);
     PreASTIncrementer incrementer;
     pre_ast->accept(incrementer);
+    PreASTDesugar desugar;
+    pre_ast->accept(desugar);
     PreASTCombine combine;
     pre_ast->accept(combine);
     m_tokens = std::move(combine.m_tokens);

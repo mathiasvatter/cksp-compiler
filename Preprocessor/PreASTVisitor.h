@@ -6,6 +6,7 @@
 
 #include "PreAST.h"
 
+
 class PreASTVisitor {
 public:
     virtual void visit(PreNodeNumber& node) {};
@@ -61,11 +62,14 @@ public:
         node.macro->accept(*this);
     };
     virtual void visit(PreNodeIterateMacro& node) {
+		node.iterator_start->accept(*this);
+		node.iterator_end->accept(*this);
+		node.step ->accept(*this);
         node.macro_call->accept(*this);
     };
     virtual void visit(PreNodeLiterateMacro& node) {
-//        node.literate_tokens->accept(*this);
-//        node.macro_call->accept(*this);
+        node.literate_tokens->accept(*this);
+        node.macro_call->accept(*this);
     };
     virtual void visit(PreNodeIncrementer& node) {
         node.counter->accept(*this);
@@ -78,7 +82,3 @@ public:
 
 
 };
-//
-//class PreASTPrinter : public PreASTVisitor {
-//
-//};
