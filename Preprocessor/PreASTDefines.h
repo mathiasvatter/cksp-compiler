@@ -32,9 +32,6 @@ private:
 	PreNodeProgram* m_main_ptr = nullptr;
 	std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_definitions;
 	std::unordered_map<std::string, PreNodeDefineStatement*> m_define_lookup;
-	std::vector<std::unique_ptr<PreNodeMacroDefinition>> m_macro_definitions;
-	std::unordered_map<StringIntKey, PreNodeMacroDefinition*, StringIntKeyHash> m_macro_lookup;
-//    std::unordered_map<std::string, PreNodeMacroDefinition*> m_macro_lookup;
 
 	std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
 	std::unique_ptr<PreNodeDefineStatement> get_define_definition(PreNodeDefineHeader* define_header);
@@ -44,12 +41,10 @@ private:
 	std::stack<std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>>> m_substitution_stack;
 
 	std::vector<std::string> m_define_call_stack;
-//	std::vector<std::string> m_macro_call_stack;
 
 	std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> m_builtin_defines;
 	static std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> get_builtin_defines();
 	std::unique_ptr<PreNodeAST> get_builtin_define(const std::string& keyword);
-
-
+	
 };
 
