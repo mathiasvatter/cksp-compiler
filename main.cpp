@@ -81,7 +81,7 @@ Options:
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
 //    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
-//    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds.txt";
+    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
 
     std::cout << "Input File: " << input_filename << std::endl;
     std::cout << "Output File: " << output_filename << std::endl;

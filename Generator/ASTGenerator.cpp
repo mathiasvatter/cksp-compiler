@@ -59,7 +59,7 @@ void ASTGenerator::visit(NodeVariable &node) {
         os << "polyphonic ";
     else if(node.var_type == VarType::Const)
         os << "const ";
-	os << get_pair_value(variable_identifier, node.type);
+	os << variable_identifier.find(node.type)->second;
     os << sanitize_dots(node.name);
 }
 
@@ -68,7 +68,7 @@ void ASTGenerator::visit(NodeArray &node) {
 	if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
 	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
 
-	os << get_pair_value(array_identifier, node.type);
+	os << array_identifier.find(node.type)->second;
     if(node.dimensions>1) os << "_";
     os << sanitize_dots(node.name);
 	if(node_declaration or node_ui_control or !node.indexes->params.empty())

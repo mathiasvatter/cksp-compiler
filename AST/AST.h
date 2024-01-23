@@ -49,7 +49,7 @@ inline ASTType token_to_type(token tok) {
         case INT: return Integer;
         case FLOAT: return Real;
         case STRING: return String;
-        default: return Integer;
+        default: return Unknown;
     }
 };
 
