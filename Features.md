@@ -1,6 +1,6 @@
 # Features
 
-The following describes added/retracted features to vanilla KSP Script that differ from `nojanath's` fork of `Nils 
+The following describes added/retracted features to `vanilla KSP Script` that differ from `nojanath's` fork of `Nils 
 Liberg's SublimeKSP plugin`.
 
 ## Single-line Declarations
@@ -30,7 +30,7 @@ Just as declaring multiple variables in one line – one can assign values of va
 ```c
 var1, var2, var3 := 0, 1.1, "string"                            
 arr1[3], arr2[3], arr3[3] := (0), (4,3,2), ("3","2","1")
-var1, arr1[3] := 0  
+var1, arr1[3] := 0                                                  // assigns 0 to var1 and to every element of arr1
 ```
 
 ## Inlining Functions everywhere
@@ -61,34 +61,45 @@ end on
 Local variables can be declared in every scope. They retain their value while inside the scope and can not be accessed 
 anymore when outside the scope.
 They are thread safe since every callback gets its own section in the internal local variable array.
-_Note: local arrays are currently not supported by version 0.0.2_
+_Note: local arrays are currently not supported in `version 0.0.2`_
 
 ```c
 on init
     declare i, j := 5
     for i := 0 to 4
-        declare local i := 0
-        message(i)                             // prints 0 in for every iteration
+        declare local j := 0
+        message(j)                             // prints 5 in for every iteration
         message("sth")
     end for
-    message(i)                                 // prints 4 since it refers to the variable i declared before the for-loop
+    message(j)                                 // prints 5 since it refers to the j declared before the for-loop
     
     if 3 < 5                     
-        declare local i := 1                  
-        message(i)                             // prints 1 since it refers to the local variable i declared in the
-                                               // if-statement scope
+        declare local j := 1                  
+        message(j)                             // prints 1 since it refers to the j declared in the if-statement scope
     else
-        declare local i := 2
-        message(i)                             // prints 2 since it refers to the local i declared in the else scope
+        declare local j := 2
+        message(j)                             // prints 2 since it refers to the local j declared in the else scope
     end if
-    message(i)                                 // prints 4 again since it refers to the global i declared before the 
+    message(j)                                 // prints 5 again since it refers to the j declared before the 
                                                // for-loop
 end on
 
 on controller
-    declare local i := 9
-    message(i)                                 // prints 9 since i was declared locally on callback level
+    declare local j := 9
+    message(j)                                 // prints 9 since j was declared locally on the controller callback level
 end on
+```
+
+## Range-Based For-Loops
+
+`cksp` introduces a new syntax to iterate over array elements using `key, value` pairs. The `key, value` variables do not 
+have to be declared beforehand and only exist within the scope of the `for-loop`.
+
+```c
+declare array[5] := (3,4,6,8,10)                // is equivalent to:
+for key, val in array                           // for key := 0 to num_elements(array)-1
+    message(key & ", " & val)                 //  message(key & ", " & array[key])
+end for
 ```
 
 ## Default Case in Select Statements

@@ -19,6 +19,7 @@ public:
         node_statement->parent = parent;
         return node_statement;
     }
+	static bool is_to_be_declared(NodeAST* node);
     static std::unique_ptr<NodeStatement> make_function_call(const std::string& name, std::vector<std::unique_ptr<NodeAST>> args, NodeAST* parent, Token tok);
     static std::unique_ptr<NodeBinaryExpr> make_binary_expr(ASTType type, const std::string& op, std::unique_ptr<NodeAST> lhs, std::unique_ptr<NodeAST> rhs, NodeAST* parent, Token tok);
     static std::unique_ptr<NodeInt> make_int(int32_t value, NodeAST* parent);
@@ -160,9 +161,6 @@ public:
 		if (node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);
         node.body->accept(*this);
-//		for(auto& stmt: node.body) {
-//			stmt->accept(*this);
-//		}
 	};
     virtual void visit(NodeProgram& node) {
 		for(auto & callback : node.callbacks) {
@@ -177,6 +175,9 @@ public:
             stmt->accept(*this);
         }
     };
+	virtual void visit(NodeScope& node) {
+		node.scope->accept(*this);
+	};
     virtual void visit(NodeImport& node) {
     };
 };

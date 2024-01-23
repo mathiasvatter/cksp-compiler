@@ -43,9 +43,9 @@ void ASTDesugar::visit(NodeProgram& node) {
     for(auto & function : m_function_definitions) {
         if(function->is_used and function->header->args->params.empty() and !function->return_variable.has_value()) {
             m_functions_in_use.insert({function->header->name, function.get()});
-            m_variable_scope_stack.emplace_back();
+//            m_variable_scope_stack.emplace_back();
             function->body->accept(*this);
-            m_variable_scope_stack.pop_back();
+//            m_variable_scope_stack.pop_back();
             m_functions_in_use.erase(function->header->name);
         }
     }
@@ -60,7 +60,7 @@ void ASTDesugar::visit(NodeProgram& node) {
 }
 
 void ASTDesugar::visit(NodeCallback& node) {
-    m_variable_scope_stack.emplace_back();
+//    m_variable_scope_stack.emplace_back();
     // empty the local var stack after init, because the idx can be reused now
     if(m_current_callback == m_init_callback) {
         m_local_variables = std::stack<std::string>();
@@ -71,7 +71,7 @@ void ASTDesugar::visit(NodeCallback& node) {
     node.statements->accept(*this);
     m_current_callback_idx++;
 
-    m_variable_scope_stack.pop_back();
+//    m_variable_scope_stack.pop_back();
 }
 
 void ASTDesugar::visit(NodeBinaryExpr& node) {
@@ -194,7 +194,7 @@ void ASTDesugar::visit(NodeVariable& node) {
 
     // local variable substitution
     // do local variable substitution only if parent is not declare statement because scope
-    if(!m_variable_scope_stack.empty() and !is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
+    if(!m_variable_scope_stack.empty() and !is_to_be_declared(&node)) {
         if(auto substitute = get_local_variable_substitute(node.name)) {
             substitute->update_parents(node.parent);
             if(substitute->type == Unknown)
@@ -246,7 +246,7 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
         node_function_def->update_parents(nullptr);
 		m_function_call_stack.push(node.function->name);
         m_functions_in_use.insert({node.function->name, function_def});
-        m_variable_scope_stack.emplace_back();
+//        m_variable_scope_stack.emplace_back();
 		node_function_def->parent = node.parent;
 		if (!node.function->args->params.empty()) {
 			auto substitution_map = get_substitution_map(node_function_def->header.get(), node.function.get());
@@ -255,7 +255,7 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 		node_function_def->body->update_token_data(node.tok);
 		node_function_def->body->accept(*this);
 		if (!node.function->args->params.empty()) m_substitution_stack.pop();
-        m_variable_scope_stack.pop_back();
+//        m_variable_scope_stack.pop_back();
         m_functions_in_use.erase(node.function->name);
 		m_function_call_stack.pop();
         function_def->call.erase(&node);
@@ -680,26 +680,20 @@ void ASTDesugar::visit(NodeGetControlStatement& node) {
 void ASTDesugar::visit(NodeWhileStatement& node) {
     m_current_function_inline_statement = node.parent;
     node.condition->accept(*this);
-	m_variable_scope_stack.emplace_back();
-	// use this to make sure that inc(i) does not get replaced if i is also a local variable
-	for (int i = 0; i<node.statements->statements.size()-1; i++) {
-		node.statements->statements[i] ->accept(*this);
-	}
-	// pop local variable stack before inc(i)
-	m_variable_scope_stack.pop_back();
-	node.statements->statements[node.statements->statements.size()-1]->accept(*this);
-//    node.statements->accept(*this);
+//	m_variable_scope_stack.emplace_back();
+    node.statements->accept(*this);
+//	m_variable_scope_stack.pop_back();
 }
 
 void ASTDesugar::visit(NodeIfStatement& node) {
     m_current_function_inline_statement = node.parent;
     node.condition->accept(*this);
-	m_variable_scope_stack.emplace_back();
+//	m_variable_scope_stack.emplace_back();
     node.statements->accept(*this);
-	m_variable_scope_stack.pop_back();
-	m_variable_scope_stack.emplace_back();
+//	m_variable_scope_stack.pop_back();
+//	m_variable_scope_stack.emplace_back();
     node.else_statements->accept(*this);
-	m_variable_scope_stack.pop_back();
+//	m_variable_scope_stack.pop_back();
 }
 
 void ASTDesugar::visit(NodeSelectStatement& node) {
@@ -716,11 +710,14 @@ void ASTDesugar::visit(NodeSelectStatement& node) {
 }
 
 void ASTDesugar::visit(NodeStatementList& node) {
+	if(node.scope) m_variable_scope_stack.emplace_back();
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
+	if(node.scope) m_variable_scope_stack.pop_back();
+
     // Ersetzen Sie die alte Liste durch die neue
-    node.statements = std::move(cleanup_node_statement_list(&node));
+    if(!node.scope) node.statements = std::move(cleanup_node_statement_list(&node));
 }
 
 void ASTDesugar::visit(NodeUIControl &node) {

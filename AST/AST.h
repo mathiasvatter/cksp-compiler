@@ -545,6 +545,7 @@ struct NodeStatement: NodeAST {
 
 
 struct NodeStatementList : NodeAST {
+	bool scope = false;
     std::vector<std::unique_ptr<NodeStatement>> statements;
     inline explicit NodeStatementList(Token tok) : NodeAST(tok) {type = StatementList;}
     inline NodeStatementList(std::vector<std::unique_ptr<NodeStatement>> statements, Token tok)
@@ -697,14 +698,34 @@ struct NodeIfStatement: NodeAST {
     }
 };
 
+struct NodeScope : NodeAST {
+	std::unique_ptr<NodeStatementList> scope;
+	inline explicit NodeScope(Token tok) : NodeAST(tok) {}
+	inline NodeScope(std::unique_ptr<NodeStatementList> scope, Token tok)
+	: NodeAST(tok), scope(std::move(scope)) {}
+	void accept(ASTVisitor& visitor) override;
+	NodeScope(const NodeScope& other);
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		scope->update_parents(this);
+	}
+	std::string get_string() override {
+		return scope->get_string();
+	}
+	void update_token_data(const Token& token) override {
+		scope->update_token_data(token);
+	}
+};
+
 struct NodeForStatement : NodeAST {
-    std::unique_ptr<NodeAssignStatement> iterator;
+    std::unique_ptr<NodeSingleAssignStatement> iterator;
     Token to;
     std::unique_ptr<NodeAST> iterator_end;
     std::unique_ptr<NodeAST> step;
     std::unique_ptr<NodeStatementList> statements;
     inline explicit NodeForStatement(Token tok) : NodeAST(tok) {}
-    inline NodeForStatement(std::unique_ptr<NodeAssignStatement> iterator, Token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeStatementList> statements, Token tok)
+    inline NodeForStatement(std::unique_ptr<NodeSingleAssignStatement> iterator, Token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeStatementList> statements, Token tok)
     : NodeAST(tok), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), statements(std::move(statements)) {}
     void accept(ASTVisitor& visitor) override;
 	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
