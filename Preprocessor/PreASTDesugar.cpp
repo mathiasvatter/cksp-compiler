@@ -14,7 +14,7 @@ void PreASTDesugar::visit(PreNodeProgram& node) {
         m_define_lookup.insert({def->header->name->keyword.val, def.get()});
     }
     for(auto & def : node.macro_definitions) {
-        m_macro_lookup.insert({def->header->name->keyword.val, def.get()});
+        m_macro_lookup.insert({{def->header->name->keyword.val, (int)def->header->args->params.size()}, def.get()});
     }
 
 //    m_define_definitions = std::move(node.define_statements);
@@ -421,7 +421,7 @@ std::unique_ptr<PreNodeDefineStatement> PreASTDesugar::get_define_definition(Pre
 }
 
 std::unique_ptr<PreNodeMacroDefinition> PreASTDesugar::get_macro_definition(PreNodeMacroHeader *macro_header) {
-    auto it = m_macro_lookup.find(macro_header->name->keyword.val);
+    auto it = m_macro_lookup.find({macro_header->name->keyword.val, (int)macro_header->args->params.size()});
     if(it != m_macro_lookup.end()) {
         auto copy = it->second->clone();
         copy->update_parents(nullptr);

@@ -153,6 +153,12 @@ std::vector<std::unique_ptr<NodeStatement>> ASTVisitor::cleanup_node_statement_l
     return std::move(temp);
 }
 
+bool ASTVisitor::is_to_be_declared(NodeAST *node) {
+	// check if parent is declare statement and if yes then node is on the left side
+	auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node);
+	return node_declare_statement and node == node_declare_statement->to_be_declared.get();
+}
+
 
 //
 //template<typename T>std::unique_ptr<NodeStatement> ASTVisitor::statement_wrapper(std::unique_ptr<T> node, NodeAST* parent) {

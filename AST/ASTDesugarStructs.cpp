@@ -15,8 +15,31 @@ void ASTDesugarStructs::visit(NodeProgram& node) {
 }
 
 void ASTDesugarStructs::visit(NodeCallback& node) {
+	node.statements->scope = true;
     if(node.callback_id) node.callback_id->accept(*this);
     node.statements->accept(*this);
+}
+
+void ASTDesugarStructs::visit(NodeFunctionDefinition& node) {
+	node.header->accept(*this);
+	if (node.return_variable.has_value())
+		node.return_variable.value()->accept(*this);
+	node.body->scope = true;
+	node.body->accept(*this);
+}
+
+void ASTDesugarStructs::visit(NodeIfStatement& node) {
+	node.condition->accept(*this);
+	node.statements->scope = true;
+	node.statements->accept(*this);
+	node.else_statements->scope = true;
+	node.else_statements->accept(*this);
+}
+
+void ASTDesugarStructs::visit(NodeWhileStatement& node) {
+	node.condition->accept(*this);
+	node.statements->scope = true;
+	node.statements->accept(*this);
 }
 
 void ASTDesugarStructs::visit(NodeStatementList& node) {
@@ -148,10 +171,10 @@ void ASTDesugarStructs::visit(NodeAssignStatement &node) {
                      "Found incorrect assign statement syntax. There are more values to assign than assignees.", node.tok.line, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
-    // handle assign statement in for statement in ASTDesugar because of local variable concerns.
-    if(cast_node<NodeForStatement>(node.parent)) {
-        return;
-    }
+//    // handle assign statement in for statement in ASTDesugar because of local variable concerns.
+//    if(cast_node<NodeForStatement>(node.parent)) {
+//        return;
+//    }
     std::vector<std::unique_ptr<NodeSingleAssignStatement>> assign_statements;
     for(auto &arr_var : node.array_variable->params) {
         auto node_single_assign_stmt = std::make_unique<NodeSingleAssignStatement>(node.tok);
@@ -194,6 +217,16 @@ void ASTDesugarStructs::visit(NodeArray& node) {
         token token_type = *get_token_type(TYPES, identifier);
         node.type = token_to_type(token_type);
     }
+
+//	// local variable substitution
+//	// do local variable substitution only if parent is not declare statement because scope
+//	if(!m_variable_scope_stack.empty() and !is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
+//		if(auto substitute = get_local_variable_substitute(node.name)) {
+//			node.name = substitute->get_string();
+//			node.is_local = true;
+//		}
+//	}
+
     // add prefixes
     if(!m_family_prefixes.empty()) {
         auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
@@ -218,6 +251,17 @@ void ASTDesugarStructs::visit(NodeVariable& node) {
         token token_type = *get_token_type(TYPES, identifier);
         node.type = token_to_type(token_type);
     }
+
+	// range-based for-loop substitution
+	if(!m_key_value_scope_stack.empty() and !is_to_be_declared(&node)) {
+		if(auto substitute = get_key_value_substitute(node.name)) {
+			substitute->update_parents(node.parent);
+			if(substitute->type == Unknown)
+				substitute->type = node.type;
+			node.replace_with(std::move(substitute));
+			return;
+		}
+	}
 
     // add prefixes
     if(!m_family_prefixes.empty()) {
@@ -335,21 +379,36 @@ void ASTDesugarStructs::visit(NodeRangedForStatement& node) {
 	}
 
 	auto node_key_variable = static_cast<NodeVariable*>(node.keys->params[0].get());
-	node_key_variable->name = "_loc_key";
 	node_key_variable->is_local = true;
+	node_key_variable->type = Integer;
+	auto node_key_declaration = std::make_unique<NodeSingleDeclareStatement>(node.keys->params[0]->clone(),nullptr, node.tok);
+	auto node_key_iterator = std::make_unique<NodeSingleAssignStatement>(node.keys->params[0]->clone(), make_int(0, &node), node.tok);
+	Token token_to = Token(TO, "to", node.tok.line, node.tok.file);
+	std::vector<std::unique_ptr<NodeAST>> args;
+	args.push_back(node.range->clone());
+	auto node_num_elements = make_function_call("num_elements", std::move(args), &node, node.tok);
+	auto node_end_range = make_binary_expr(Integer, "-", std::move(node_num_elements->statement), make_int(1, &node), &node, node.tok);
+	auto node_value_array = make_array(node.range->get_string(), 1, node.tok, &node);
+	node_value_array->sizes->params.clear();
+	node_value_array->indexes->params.push_back(std::move(node.keys->params[0]));
+	m_key_value_scope_stack.emplace_back();
+	m_key_value_scope_stack.back().insert({node.keys->params[1]->get_string(), std::move(node_value_array)});
 
+	auto node_for_statement = std::make_unique<NodeForStatement>(std::move(node_key_iterator), token_to, std::move(node_end_range), std::move(node.statements), node.tok);
+	auto node_scope = std::make_unique<NodeStatementList>(node.tok);
+	node_scope->statements.push_back(statement_wrapper(std::move(node_key_declaration), node_scope.get()));
+	node_scope->statements.push_back(statement_wrapper(std::move(node_for_statement), node_scope.get()));
+	node_scope->scope = true;
+	node_scope->update_parents(node.parent);
+	node_scope->accept(*this);
 
-
+	m_key_value_scope_stack.pop_back();
+	node.replace_with(std::move(node_scope));
 }
 
 void ASTDesugarStructs::visit(NodeForStatement& node) {
 //	m_variable_scope_stack.emplace_back();
 
-	// check if there is only one var and assignee
-	if(node.iterator->array_variable->params.size() != 1 or node.iterator->assignee->params.size() != 1) {
-		CompileError(ErrorType::SyntaxError, "Found incorrect for-loop syntax.", node.tok.line, "one iterator per for-loop", "multiple iterators", node.tok.file).print();
-		exit(EXIT_FAILURE);
-	}
 //	m_current_function_inline_statement = node.parent;
 	node.iterator_end->accept(*this);
 	node.iterator->array_variable->accept(*this);
@@ -357,7 +416,7 @@ void ASTDesugarStructs::visit(NodeForStatement& node) {
 	node.iterator->assignee->accept(*this);
 
 	// function arg
-	std::unique_ptr<NodeAST> iterator_var = node.iterator->array_variable->params[0]->clone();
+	std::unique_ptr<NodeAST> iterator_var = node.iterator->array_variable->clone();
 	std::unique_ptr<NodeAST> assign_var = iterator_var->clone();
 	std::unique_ptr<NodeAST> function_var = iterator_var->clone();
 
@@ -400,7 +459,7 @@ void ASTDesugarStructs::visit(NodeForStatement& node) {
 
 	auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(node.tok);
 	node_assign_statement->array_variable = std::move(assign_var);
-	node_assign_statement->assignee = std::move(node.iterator->assignee->params[0]);
+	node_assign_statement->assignee = std::move(node.iterator->assignee);
 
 	auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
 	node_statement_list->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_statement_list.get()));
@@ -413,4 +472,14 @@ void ASTDesugarStructs::visit(NodeForStatement& node) {
 //	m_variable_scope_stack.pop_back();
 
 	node.replace_with(std::move(node_statement_list));
+}
+
+std::unique_ptr<NodeAST> ASTDesugarStructs::get_key_value_substitute(const std::string& name) {
+	for (auto rit = m_key_value_scope_stack.rbegin(); rit != m_key_value_scope_stack.rend(); ++rit) {
+		auto it = rit->find(name);
+		if(it != rit->end()) {
+			return it->second->clone();
+		}
+	}
+	return nullptr;
 }

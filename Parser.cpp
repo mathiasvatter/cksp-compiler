@@ -1079,7 +1079,7 @@ Result<std::unique_ptr<NodeForStatement>> Parser::parse_for_statement(NodeAST* p
     auto node_for_statement = std::make_unique<NodeForStatement>(get_tok());
     //consume for
     consume();
-    auto assign_stmt = parse_assign_statement(node_for_statement.get());
+    auto assign_stmt = parse_single_assign_statement(node_for_statement.get());
     if(assign_stmt.is_error()) {
         return Result<std::unique_ptr<NodeForStatement>>(assign_stmt.get_error());
     }
@@ -1127,7 +1127,6 @@ Result<std::unique_ptr<NodeForStatement>> Parser::parse_for_statement(NodeAST* p
     node_for_statement->statements = std::move(node_statement_list);
     node_for_statement->step = std::move(step);
     node_for_statement->parent = parent;
-//    auto return_value = std::make_unique<NodeForStatement>(std::move(iterator), to, std::move(iterator_end), std::move(stmts), get_tok());
     return Result<std::unique_ptr<NodeForStatement>>(std::move(node_for_statement));
 }
 
@@ -1441,6 +1440,9 @@ Result<std::unique_ptr<NodeGetControlStatement>> Parser::parse_get_control_state
      "Wrong control statement syntax.", peek().line, "->", peek().val, peek().file));
     }
     consume(); // consume ->
+	if(peek().type == token::DEFAULT) {
+		m_tokens[m_pos].type = token::KEYWORD;
+	}
     if(peek().type != token::KEYWORD) {
         return Result<std::unique_ptr<NodeGetControlStatement>>(CompileError(ErrorType::SyntaxError,
          "Wrong control statement syntax.", peek().line, "<control_parameter>", peek().val, peek().file));
