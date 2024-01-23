@@ -80,6 +80,12 @@ void PreASTDesugar::visit(PreNodeKeyword& node) {
     }
 }
 
+//void PreASTDesugar::visit(PreNodeIncrementer& node) {
+//	for(auto &b : node.body) {
+//		b->accept(*this);
+//	}
+//}
+
 std::unique_ptr<PreNodeAST> PreASTDesugar::get_builtin_define(const std::string& keyword) {
     auto it = std::find_if(m_builtin_defines.begin(), m_builtin_defines.end(),
                            [&](const std::pair<std::string, std::unique_ptr<PreNodeAST>> &pair) {

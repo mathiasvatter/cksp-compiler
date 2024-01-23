@@ -22,6 +22,7 @@ public:
     void visit(PreNodeMacroCall& node) override;
     void visit(PreNodeIterateMacro& node) override;
     void visit(PreNodeLiterateMacro& node) override;
+//	void visit(PreNodeIncrementer& node) override;
 
     void visit(PreNodeProgram& node) override;
 

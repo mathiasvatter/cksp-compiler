@@ -25,8 +25,9 @@ void PreASTIncrementer::update_last_incrementer_var(PreNodeAST& node, const std:
             if(node_line != var.second) {
                 auto &tuple_to_increase = m_incrementer_stack.at(find_substitute(node_val));
                 if(auto node_int = dynamic_cast<PreNodeInt*>(std::get<2>(tuple_to_increase)->chunk[0].get())) {
-                    node_int->integer = node_int->integer+std::get<int32_t>(tuple_to_increase);
                     node_int->number.val = std::to_string(node_int->integer);
+					// increase for next time
+                    node_int->integer = node_int->integer+std::get<int32_t>(tuple_to_increase);
                 }
             }
             var.first = std::move(node.clone());
@@ -120,6 +121,7 @@ void PreASTIncrementer::visit(PreNodeIncrementer& node) {
         c->accept(*this);
     }
 
+	m_incrementer_stack.pop_back();
 
 //    int ii = 0;
 //    for (int i = 0; i<node.body.size(); i++) {
