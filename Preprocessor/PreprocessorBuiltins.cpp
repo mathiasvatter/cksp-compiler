@@ -47,7 +47,10 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_variables(const std::stri
             } else if(contains(ARRAY_IDENT, peek(m_tokens).val[0])) {
                 auto node_array = std::move(parse_builtin_array());
                 m_builtin_arrays.insert({node_array->name, std::move(node_array)});
-            } else {
+            } else if(contains(BUILTIN_CONDITIONS, peek(m_tokens).val)) {
+				auto node_variable = std::move(parse_builtin_variable());
+				m_builtin_variables.insert({node_variable->name, std::move(node_variable)});
+			} else {
                 return Result<SuccessTag>(CompileError(ErrorType::PreprocessorError,
                "Failed loading builtins. Found builtin variable without identifier.", peek(m_tokens).line, "<identifier>", peek(m_tokens).val, peek(m_tokens).file));
             }
@@ -63,7 +66,7 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::stri
     m_tokens = tokenizer.tokenize();
     m_pos = 0;
     while(peek(m_tokens).type != END_TOKEN) {
-        if(peek(m_tokens).type == KEYWORD) {
+        if(peek(m_tokens).type == KEYWORD || peek(m_tokens).type == SET_CONDITION || peek(m_tokens).type == RESET_CONDITION) {
             auto result_function = parse_builtin_function();
             if(result_function.is_error()) {
                 return Result<SuccessTag>(result_function.get_error());

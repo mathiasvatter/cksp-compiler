@@ -164,12 +164,12 @@ bool PreprocessorConditions::is_beginning_of_line_keyword(const std::vector<Toke
         return m_pos == 0 and peek(tok).type == token;
 }
 
-bool PreprocessorConditions::is_builtin_condition(const std::vector<Token> &tok, const Token& token) {
-    return (contains(builtin_conditions, token.val));
+bool PreprocessorConditions::is_builtin_condition(const Token& token) {
+    return (contains(BUILTIN_CONDITIONS, token.val));
 }
 
-bool PreprocessorConditions::is_condition_definition(const std::vector<Token> &tok, const Token &peek, token token_type) {
-    return peek.type == token_type and is_beginning_of_line_keyword(tok, peek.type) and not is_builtin_condition(tok, peek);
+bool PreprocessorConditions::is_condition_definition(const std::vector<Token> &tok, const Token &pk, token token_type) {
+    return pk.type == token_type and is_beginning_of_line_keyword(tok, pk.type) and not is_builtin_condition(peek(tok, 2));
 }
 
 void PreprocessorConditions::reset_condition(const Token& condition) {

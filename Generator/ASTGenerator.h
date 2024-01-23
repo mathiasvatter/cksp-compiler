@@ -7,20 +7,6 @@
 #include <sstream>
 #include "../AST/ASTVisitor.h"
 
-template<typename T, typename U>
-U get_pair_value(const std::vector<std::pair<T, U>>& vec, T type) {
-	auto it = std::find_if(vec.begin(), vec.end(), [type](const std::pair<T, U>& pair) {
-	  return pair.first == type;
-	});
-
-	if (it != vec.end()) {
-		return it->second;
-	}
-
-	// Hier können Sie entscheiden, was passieren soll, wenn kein Match gefunden wird.
-	// Zum Beispiel könnten Sie einen Standardwert zurückgeben oder eine Ausnahme werfen.
-	return U();  // Gibt den Standardwert des Typs U zurück.
-}
 
 inline std::string sanitize_dots(const std::string& str) {
 	std::string result;
@@ -66,8 +52,8 @@ public:
 	void generate(const std::string& path) const;
 	void print() const;
 
-	std::vector<std::pair<ASTType, char>> array_identifier = {{String, '!'}, {Integer, '%'}, {Real, '?'}};
-	std::vector<std::pair<ASTType, char>> variable_identifier = {{String, '@'}, {Integer, '$'}, {Real, '~'}};
+	std::unordered_map<ASTType, char> array_identifier = {{String, '!'}, {Integer, '%'}, {Real, '?'}, {Unknown, ' '}};
+	std::unordered_map<ASTType, char> variable_identifier = {{String, '@'}, {Integer, '$'}, {Real, '~'}, {Unknown, ' '}};
 
 private:
     static std::string get_compiled_date_time();

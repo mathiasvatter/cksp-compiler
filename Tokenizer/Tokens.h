@@ -170,6 +170,8 @@ inline std::set<std::string> CALLBACKS = {"init", "note", "release", "midi_in", 
 											 "rpn", "nrpn", "ui_update", "_pgs_changed", "pgs_changed",
 											 "poly_at", "listener", "async_complete", "persistence_changed", "ui_control"};
 inline std::set<std::string> RESTRICTED_CALLBACKS = {"init", "persistence_changed", "ui_control", "pgs_changed", "async_complete"};
+inline std::set<std::string> BUILTIN_CONDITIONS = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG"};
+
 inline std::unordered_map<std::string, token> BITWISE_OPERATORS = {{".and.", BIT_AND}, {".or.", BIT_OR}, {".not.", BIT_NOT}, {".xor.", BIT_XOR}};
 //inline std::vector<Keyword> BITWISE_OPERATORS = {{BIT_AND, ".and."}, {BIT_OR, ".or."}, {BIT_NOT, ".not."}, {BIT_XOR, ".xor."}};
 inline std::unordered_map<std::string, token> BOOL_OPERATORS = {{"and", BOOL_AND}, {"or", BOOL_OR}, {"not", BOOL_NOT}};

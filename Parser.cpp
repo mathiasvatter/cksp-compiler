@@ -427,7 +427,7 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
     _skip_linebreaks();
     std::unique_ptr<NodeAST> stmt;
     // assign statement
-    if (peek().type == token::KEYWORD || peek().type == token::DECLARE || peek().type == token::CALL) {
+    if (peek().type == KEYWORD || peek().type == DECLARE || peek().type == CALL || peek().type == SET_CONDITION || peek().type == RESET_CONDITION) {
         if (peek().type == token::DECLARE) {
             auto declare_stmt = parse_declare_statement(node_statement.get());
             if (declare_stmt.is_error()) {
