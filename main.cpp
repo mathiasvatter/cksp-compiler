@@ -14,7 +14,7 @@
 #include "Readme.h"
 #include "AST/ASTDesugarStructs.h"
 #include "Preprocessor/PreprocessorImport.h"
-
+#include "Preprocessor/PreprocessorPragma.h"
 
 int main(int argc, char* argv[]) {
 
@@ -83,12 +83,17 @@ Options:
 //    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
 //    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
 
-    std::cout << "Input File: " << input_filename << std::endl;
-    std::cout << "Output File: " << output_filename << std::endl;
-
     // Startzeitpunkt speichern
     auto start_time = std::chrono::high_resolution_clock::now();
 
+	PreprocessorPragma pragma(input_filename);
+	pragma.process();
+	if(!pragma.get_output_path().empty()) {
+		output_filename = pragma.get_output_path();
+	}
+
+    std::cout << "Input File: " << input_filename << std::endl;
+    std::cout << "Output File: " << output_filename << std::endl;
 
 	Tokenizer tokenizer(input_filename);
     auto tokens = tokenizer.tokenize();

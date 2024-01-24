@@ -169,7 +169,7 @@ void Tokenizer::get_comment() {
             consume();
         }
     }
-    if (not m_buffer.empty())
+//    if (not m_buffer.empty())
 //	    m_tokens.emplace_back(COMMENT, this->m_buffer, this->m_line);
 	skip_whitespace();
 }
@@ -488,7 +488,7 @@ bool Tokenizer::is_callback_end() {
     return false;
 }
 
-std::string Tokenizer::read_file(const std::string& filename) {
+std::string read_file(const std::string& filename) {
     std::ifstream f(filename);
     std::stringstream buf;
     if (!f.is_open()) {

@@ -49,7 +49,7 @@ Result<SuccessTag> PreprocessorImport::process_import_statements(std::vector<Tok
 
 Result<SuccessTag> PreprocessorImport::evaluate_import(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file) {
     auto alias = import_stmt->alias;
-    auto path = resolve_path(import_stmt->filepath, tokens, current_file);
+    auto path = resolve_path(import_stmt->filepath, peek(tokens), current_file);
     if(path.is_error()) {
         path.get_error().print();
     } else {
@@ -75,7 +75,7 @@ Result<SuccessTag> PreprocessorImport::evaluate_import(std::vector<Token>& token
 }
 
 Result<SuccessTag> PreprocessorImport::evaluate_import_nckp(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file) {
-    auto path = resolve_path(import_stmt->filepath, tokens, current_file);
+    auto path = resolve_path(import_stmt->filepath, peek(tokens), current_file);
     if(path.is_error()) {
         path.get_error().print();
     } else {
@@ -156,7 +156,7 @@ Result<std::unique_ptr<NodeImport>> PreprocessorImport::parse_import(std::vector
     }
 }
 
-Result<std::string> PreprocessorImport::resolve_path(const std::string& import_path, std::vector<Token>& tokens, const std::string& curr_file) {
+Result<std::string> resolve_path(const std::string& import_path, const Token& token, const std::string& curr_file) {
     std::filesystem::path current_file(curr_file);
     std::filesystem::path current_base = current_file.parent_path();
     std::filesystem::path rel(import_path);
@@ -167,7 +167,7 @@ Result<std::string> PreprocessorImport::resolve_path(const std::string& import_p
             return Result<std::string>(rel.string());
         } else {
             return Result<std::string>(CompileError(ErrorType::PreprocessorError,
-			"Found incorrect path.", tokens.at(m_pos).line, "valid path", rel.string(), curr_file));
+			"Found incorrect path.", token.line, "valid path", rel.string(), curr_file));
         }
     }
 
@@ -184,11 +184,11 @@ Result<std::string> PreprocessorImport::resolve_path(const std::string& import_p
             return Result<std::string>(new_absPath);
         auto resolve_error = current_base.string() + ", " + rel.string();
         return Result<std::string>(CompileError(ErrorType::PreprocessorError,
-		"Could not resolve paths.", tokens.at(m_pos).line, "valid path", resolve_error, m_current_file));
+		"Could not resolve paths.", token.line, "valid path", resolve_error, curr_file));
     }
 }
 
-std::string PreprocessorImport::resolve_overlap(const std::string& base_path, const std::string& relative_path) {
+std::string resolve_overlap(const std::string& base_path, const std::string& relative_path) {
     std::filesystem::path base(base_path);
     std::filesystem::path relative(relative_path);
 

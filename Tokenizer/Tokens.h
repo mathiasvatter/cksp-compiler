@@ -107,8 +107,8 @@
     XX(END_USE_CODE, "end_use_code") \
     XX(START_INC, "start_inc") \
     XX(END_INC, "end_inc") \
-    XX(UI_CONTROL, "ui_control")
-
+    XX(UI_CONTROL, "ui_control")\
+	XX(PRAGMA, "pragma")
 
 #define ENUM(name, str) name,
 enum token {

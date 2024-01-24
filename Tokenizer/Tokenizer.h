@@ -162,12 +162,20 @@ struct StringIntKeyHash {
     }
 };
 
+static std::string read_file(const std::string& filename);
+
 /*
  * Tokenizer Class
  */
 class Tokenizer {
+public:
+	explicit Tokenizer(const std::string& file);
+	~Tokenizer() = default;
+//    bool set_input_file(const std::string& file, bool read_f=true);
+	bool set_input(const std::string& input);
+	std::vector<Token> tokenize();
 
-private:
+protected:
     std::string m_input;
     std::string m_current_file;
     size_t m_input_length;
@@ -183,12 +191,11 @@ private:
     void flush_buffer();
 	void skip_whitespace();
 
-    static std::string read_file(const std::string& filename);
-
 	static bool is_space(const char& ch);
 	[[nodiscard]] bool is_string() const;
     bool is_keyword_or_num() const;
 
+//	void get_pragma();
     void get_line_continuation();
     /// removes linebrk if there was a line_continuation before. Needs to be inserted right after linbrk isnert
     void fix_line_continuation();
@@ -211,10 +218,4 @@ private:
     void get_keyword_or_num();
     void get_curly_brackets();
 
-public:
-    explicit Tokenizer(const std::string& file);
-    ~Tokenizer() = default;
-//    bool set_input_file(const std::string& file, bool read_f=true);
-    bool set_input(const std::string& input);
-    std::vector<Token> tokenize();
 };
