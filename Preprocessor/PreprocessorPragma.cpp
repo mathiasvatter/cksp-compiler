@@ -36,7 +36,8 @@ void PreprocessorPragma::process() {
 	}
 
 	for (auto & opt : m_pragma_options) {
-		if(std::filesystem::exists(opt)) {
+        std::filesystem::path path(opt);
+		if(std::filesystem::exists(path.parent_path())) {
 			auto result = resolve_path(opt, Token(), m_input_file);
 			if(result.is_error()) {
 				result.get_error().exit();
