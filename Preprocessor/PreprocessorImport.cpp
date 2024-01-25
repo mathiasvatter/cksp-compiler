@@ -5,6 +5,7 @@
 #include "PreprocessorImport.h"
 #include "../JSON/JSONParser.h"
 #include "../JSON/JSONVisitor.h"
+#include "../FileHandler.h"
 
 PreprocessorImport::PreprocessorImport(std::vector<Token> tokens, std::string current_file,
                const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
@@ -56,7 +57,8 @@ Result<SuccessTag> PreprocessorImport::evaluate_import(std::vector<Token>& token
         if (m_imported_files.find(path.unwrap()) == m_imported_files.end()) {  // Überprüfe auf zirkuläre Abhängigkeiten
             m_imported_files.insert(path.unwrap());
             std::cout << path.unwrap() << std::endl;
-            Tokenizer tokenizer(path.unwrap());
+            FileHandler file_handler(path.unwrap());
+            Tokenizer tokenizer(file_handler.get_output(), path.unwrap(), file_handler.get_file_type());
             auto new_tokens = tokenizer.tokenize();
 
             size_t og_pos = m_pos;
@@ -80,8 +82,8 @@ Result<SuccessTag> PreprocessorImport::evaluate_import_nckp(std::vector<Token>& 
         path.get_error().print();
     } else {
         std::cout << path.unwrap() << std::endl;
-
-        Tokenizer tokenizer(path.unwrap());
+        FileHandler file_handler(path.unwrap());
+        Tokenizer tokenizer(file_handler.get_output(), path.unwrap(), file_handler.get_file_type());
         auto nckp_tokens = tokenizer.tokenize();
         JSONParser parser(std::move(nckp_tokens));
         auto ast = parser.parse_json();

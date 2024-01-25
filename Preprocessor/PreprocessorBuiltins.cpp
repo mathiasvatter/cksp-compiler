@@ -35,8 +35,8 @@ void PreprocessorBuiltins::process_builtins() {
 
 Result<SuccessTag> PreprocessorBuiltins::parse_builtin_variables(const std::string &file) {
     std::string data(reinterpret_cast<char*>(engine_variables), engine_variables_len);
-    Tokenizer tokenizer(file);
-    tokenizer.set_input(data);
+    Tokenizer tokenizer(data, file);
+//    tokenizer.set_input(data);
     m_tokens = tokenizer.tokenize();
     m_pos = 0;
     while(peek(m_tokens).type != END_TOKEN) {
@@ -61,8 +61,8 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_variables(const std::stri
 
 Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::string &file) {
     std::string data(reinterpret_cast<char*>(engine_functions), engine_functions_len);
-    Tokenizer tokenizer(file);
-    tokenizer.set_input(data);
+    Tokenizer tokenizer(data, file);
+//    tokenizer.set_input(data);
     m_tokens = tokenizer.tokenize();
     m_pos = 0;
     while(peek(m_tokens).type != END_TOKEN) {
@@ -84,8 +84,8 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::stri
 
 Result<SuccessTag> PreprocessorBuiltins::parse_builtin_widgets(const std::string &file) {
     std::string data(reinterpret_cast<char*>(engine_widgets), engine_widgets_len);
-	Tokenizer tokenizer(file);
-    tokenizer.set_input(data);
+	Tokenizer tokenizer(data, file);
+//    tokenizer.set_input(data);
 	m_tokens = tokenizer.tokenize();
 	m_pos = 0;
 	while(peek(m_tokens).type != END_TOKEN) {
