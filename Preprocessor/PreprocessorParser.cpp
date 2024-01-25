@@ -198,6 +198,12 @@ Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_token(PreNodeAST* 
             return Result<std::unique_ptr<PreNodeAST>>(result_inc.get_error());
         node_statement->statement = std::move(result_inc.unwrap());
         stmt = std::move(node_statement);
+    } else if (peek().type == PRAGMA) {
+        auto result_pragma = parse_pragma(node_statement.get());
+        if (result_pragma.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_pragma.get_error());
+        node_statement->statement = std::move(result_pragma.unwrap());
+        stmt = std::move(node_statement);
     } else {
         auto result_other = parse_other(parent);
         if(result_other.is_error())
@@ -629,6 +635,39 @@ bool PreprocessorParser::is_empty_line() {
     return peek().type == LINEBRK and peek(-1).type == LINEBRK;
 }
 
+Result<std::unique_ptr<PreNodePragma>> PreprocessorParser::parse_pragma(PreNodeAST* parent) {
+    auto node_pragma = std::make_unique<PreNodePragma>(nullptr, nullptr, parent);
+    auto token = consume(); // consume #pragma
+    std::string pragma_error_msg = "Unable to process #pragma syntax.";
+    if(peek().type != KEYWORD) {
+        return Result<std::unique_ptr<PreNodePragma>>(CompileError(ErrorType::PreprocessorError,
+    pragma_error_msg, token.line, "Valid pragma option.",token.val, token.file));
+    }
+    auto node_option = parse_keyword(node_pragma.get());
+    if(peek().type != OPEN_PARENTH) {
+        return Result<std::unique_ptr<PreNodePragma>>(CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, "(",token.val, token.file));
+    }
+    consume(); // consume (
+    if(peek().type != KEYWORD and peek().type != STRING) {
+        return Result<std::unique_ptr<PreNodePragma>>(CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, "Valid pragma parameter in <string>, <integer> format.",token.val, token.file));
+    }
+    auto result_keyword = parse_keyword(node_pragma.get());
+    if (result_keyword.is_error())
+        return Result<std::unique_ptr<PreNodePragma>>(result_keyword.get_error());
+    auto node_parameter = std::move(result_keyword.unwrap());
+
+    if(peek().type != CLOSED_PARENTH) {
+        CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, ")",token.val, token.file).exit();
+    }
+    consume(); // consume )
+    if(peek().type != LINEBRK) {
+        CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, "linebreak",token.val, token.file).exit();
+    }
+    consume(); // consume \n
+    node_pragma->option = std::move(node_option.unwrap());
+    node_pragma->argument = std::move(node_parameter);
+    return Result<std::unique_ptr<PreNodePragma>>(std::move(node_pragma));
+}
 
 
 

@@ -17,9 +17,11 @@ public:
     std::vector<Token> get_tokens();
     void process();
     const std::vector<std::unique_ptr<NodeAST>> &get_external_variables() const;
+    const std::string &get_output_path() const;
 
 protected:
     std::string m_current_file;
+    std::string m_output_path;
 
     // gets filled by import preprocessor
     std::vector<std::unique_ptr<NodeAST>> m_external_variables;
