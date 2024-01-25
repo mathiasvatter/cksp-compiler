@@ -21,6 +21,7 @@ private:
     Result<std::unique_ptr<PreNodeAST>> parse_token(PreNodeAST* parent);
 //    Result<std::unique_ptr<PreNodeChunk>> parse_chunk(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeList>> parse_list(PreNodeAST* parent);
+    Result<std::unique_ptr<PreNodePragma>> parse_pragma(PreNodeAST* parent);
 
     /// DEFINES
     Result<std::unique_ptr<PreNodeDefineHeader>> parse_define_header(PreNodeAST* parent);

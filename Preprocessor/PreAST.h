@@ -128,6 +128,24 @@ struct PreNodeOther : PreNodeAST {
     }
 };
 
+struct PreNodePragma : PreNodeAST {
+    std::unique_ptr<PreNodeKeyword> option;
+    std::unique_ptr<PreNodeKeyword> argument;
+    PreNodePragma(std::unique_ptr<PreNodeKeyword> opt, std::unique_ptr<PreNodeKeyword> arg, PreNodeAST *parent)
+    : PreNodeAST(parent), option(std::move(opt)), argument(std::move(arg)) {}
+    void accept(PreASTVisitor& visitor) override;
+    PreNodePragma(const PreNodePragma& other)
+    : PreNodeAST(other), option(clone_unique(other.option)), argument(clone_unique(other.argument)) {}
+    [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+    std::string get_string() override {
+        return option->get_string();
+    }
+    void update_token_data(const Token &token) override {
+        option->update_token_data(token);
+        argument->update_token_data(token);
+    }
+};
+
 struct PreNodeStatement : PreNodeAST {
     std::unique_ptr<PreNodeAST> statement;
     PreNodeStatement(std::unique_ptr<PreNodeAST> statement, PreNodeAST *parent) : PreNodeAST(parent), statement(std::move(statement)) {}

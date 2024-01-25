@@ -151,7 +151,7 @@ inline std::set<std::string> UI_CONTROLS = {"ui_label", "ui_button", "ui_switch"
 										   "ui_panel", "ui_mouse_area"};
 inline std::unordered_map<std::string, token> DECLARATION_SYNTAX = {{"declare", DECLARE}, {"define", DEFINE}, {"const", CONST}, {"polyphonic", POLYPHONIC},
                                                   {"read", READ},{"pers", PERS}, {"instpers", INSTPERS}, {"local", LOCAL}, {"global", GLOBAL}};
-inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{"import", IMPORT}, {"as", AS}, {"on", ON},
+inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{"#pragma", PRAGMA}, {"import", IMPORT}, {"as", AS}, {"on", ON},
 												   {"iterate_macro", ITERATE_MACRO}, {"literate_macro", LITERATE_MACRO},
 													{"START_INC", START_INC}, {"END_INC", END_INC}, {"SET_CONDITION", SET_CONDITION}, {"RESET_CONDITION", RESET_CONDITION},
                                                    {"USE_CODE_IF", USE_CODE_IF}, {"USE_CODE_IF_NOT", USE_CODE_IF_NOT}, {"END_USE_CODE", END_USE_CODE}};

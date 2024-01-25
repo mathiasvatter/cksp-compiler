@@ -12,6 +12,7 @@
 #include "PreASTCombine.h"
 #include "PreASTIncrementer.h"
 #include "PreASTDefines.h"
+#include "PreASTPragma.h"
 
 Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
     : Parser(std::move(tokens)), m_current_file(std::move(current_file)) {
@@ -49,16 +50,23 @@ void Preprocessor::process() {
         exit(EXIT_FAILURE);
     }
     auto pre_ast = std::move(result_parse.unwrap());
+    PreASTPragma pragma;
+    pre_ast->accept(pragma);
+    m_output_path = pragma.get_output_path();
+
 	PreASTDefines defines;
 	pre_ast->accept(defines);
+
     PreASTIncrementer incrementer;
     pre_ast->accept(incrementer);
+
     PreASTDesugar desugar;
     pre_ast->accept(desugar);
+
     PreASTCombine combine;
     pre_ast->accept(combine);
-    m_tokens = std::move(combine.m_tokens);
 
+    m_tokens = std::move(combine.m_tokens);
 }
 
 std::vector<Token> Preprocessor::get_tokens() {
@@ -124,6 +132,10 @@ std::string Preprocessor::token_vector_to_string(const std::vector<Token>& token
 
 const std::vector<std::unique_ptr<NodeAST>> &Preprocessor::get_external_variables() const {
     return m_external_variables;
+}
+
+const std::string &Preprocessor::get_output_path() const {
+    return m_output_path;
 }
 
 

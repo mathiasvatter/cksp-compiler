@@ -73,6 +73,14 @@ std::unique_ptr<PreNodeAST> PreNodeOther::clone() const {
     return std::make_unique<PreNodeOther>(*this);
 }
 
+// ************* PreNodePragma *************
+void PreNodePragma::accept(PreASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+std::unique_ptr<PreNodeAST> PreNodePragma::clone() const {
+    return std::make_unique<PreNodePragma>(*this);
+}
+
 // ************* PreNodeStatement *************
 void PreNodeStatement::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);

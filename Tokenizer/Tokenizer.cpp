@@ -132,8 +132,7 @@ void Tokenizer::get_invalid() {
 	consume();
 	m_tokens.emplace_back(INVALID, m_buffer, m_line, m_current_file);
 	auto err_msg = "Found invalid token.";
-	CompileError(ErrorType::TokenError, err_msg, m_line, "valid token", m_buffer, m_current_file).print();
-	exit(EXIT_FAILURE);
+	CompileError(ErrorType::TokenError, err_msg, m_line, "valid token", m_buffer, m_current_file).exit();
 	skip_whitespace();
 }
 

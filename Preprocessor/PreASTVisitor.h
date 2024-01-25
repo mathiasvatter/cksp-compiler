@@ -20,6 +20,10 @@ public:
     };
     virtual void visit(PreNodeKeyword& node) {};
     virtual void visit(PreNodeOther& node) {};
+    virtual void visit(PreNodePragma& node) {
+//        node.option->accept(*this);
+//        node.argument->accept(*this);
+    };
     virtual void visit(PreNodeStatement& node) {
         node.statement->accept(*this);
     };
