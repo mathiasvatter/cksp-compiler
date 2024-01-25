@@ -30,7 +30,9 @@ void PreASTPragma::visit(PreNodePragma& node) {
             if (output_path.is_error()) {
                 output_path.get_error().exit();
             }
-            m_output_path = output_path.unwrap();
+            if (std::filesystem::path(output_path.unwrap()).extension() == ".txt") {
+                m_output_path = output_path.unwrap();
+            }
         }
     }
 

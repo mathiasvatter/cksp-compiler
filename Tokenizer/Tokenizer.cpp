@@ -21,41 +21,27 @@ std::ostream &operator<<(std::ostream &os, const Token &tok) {
 /*
  * Tokenizer Functions
  */
-Tokenizer::Tokenizer(const std::string& file) : m_pos(0), m_line(1) {
+Tokenizer::Tokenizer(const std::string& input, const std::string& file, FileType file_type) : m_pos(0), m_line(1) {
     m_current_file = file;
+    m_is_json = false;
+    if(file_type == FileType::nckp) m_is_json = true;
 
-    // do not continue if file has no valid filetype
-    std::set<std::string> allowed_filetypes = {".ksp", ".nckp", ".h"};
-    std::string extension = std::filesystem::path(file).extension().string();
-    if(allowed_filetypes.find(extension) == allowed_filetypes.end()) {
-        CompileError(ErrorType::FileError, "Unable to open file. Not a valid file type.", -1, "*.ksp or *.nckp",extension, "").exit();
-    }
-    if(extension == ".nckp") m_is_json = true;
-    if(extension != ".h")
-        m_input = read_file(m_current_file);
-    m_input += '\n';
-    m_current_char = m_input.at(m_pos);
-    m_input_length = m_input.size();
-
-}
-
-bool Tokenizer::set_input(const std::string& input) {
     m_input = input;
-    m_pos = 0;
-    m_line = 1;
     m_input += '\n';
     m_current_char = m_input.at(m_pos);
     m_input_length = m_input.size();
-    return true;
 }
-
 
 std::vector<Token> Tokenizer::tokenize() {
     if(m_input.empty())
         CompileError(ErrorType::TokenError, "Missing input file to tokenize.", 0, "<input file>", "", m_current_file).exit();
 
     while (m_pos < m_input_length - 1) {
-        if (peek() == '/' && (peek(1) == '*' || peek(1) == '/') || (peek() == '{' && !m_is_json)) {
+        if(is_pragma()) {
+            consume();
+            consume();
+        }
+        else if (peek() == '/' && (peek(1) == '*' || peek(1) == '/') || (peek() == '{' && !m_is_json)) {
             get_comment();
         } else if (peek() == '\n') {
             get_linebreak();
@@ -135,6 +121,13 @@ void Tokenizer::get_invalid() {
 	CompileError(ErrorType::TokenError, err_msg, m_line, "valid token", m_buffer, m_current_file).exit();
 	skip_whitespace();
 }
+
+bool Tokenizer::is_pragma() {
+    return peek(0) == '/' and peek(1) == '/' and peek(2) == '#' and
+            peek(3) == 'p' and peek(4) == 'r' and peek(5) == 'a' and
+            peek(6) == 'g' and peek(7) == 'm' and peek(8) == 'a';
+}
+
 
 void Tokenizer::get_comment() {
 	flush_buffer();

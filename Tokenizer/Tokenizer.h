@@ -18,6 +18,7 @@
 
 #include "../Result.h"
 #include "Tokens.h"
+#include "../FileHandler.h"
 
 /*
  * Token struct that gets m_line numbers, the token type and its value
@@ -169,10 +170,8 @@ static std::string read_file(const std::string& filename);
  */
 class Tokenizer {
 public:
-	explicit Tokenizer(const std::string& file);
+	Tokenizer(const std::string& input, const std::string& file, FileType file_type = FileType::ksp);
 	~Tokenizer() = default;
-//    bool set_input_file(const std::string& file, bool read_f=true);
-	bool set_input(const std::string& input);
 	std::vector<Token> tokenize();
 
 protected:
@@ -195,6 +194,7 @@ protected:
 	[[nodiscard]] bool is_string() const;
     bool is_keyword_or_num() const;
 
+    bool is_pragma();
 //	void get_pragma();
     void get_line_continuation();
     /// removes linebrk if there was a line_continuation before. Needs to be inserted right after linbrk isnert

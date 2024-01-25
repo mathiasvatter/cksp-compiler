@@ -15,6 +15,7 @@
 #include "AST/ASTDesugarStructs.h"
 #include "Preprocessor/PreprocessorImport.h"
 #include "Preprocessor/PreASTPragma.h"
+#include "FileHandler.h"
 
 int main(int argc, char* argv[]) {
 
@@ -25,9 +26,9 @@ int main(int argc, char* argv[]) {
 Usage: cksp [options] <input-file>
 
 Options:
- -h, --help        Display usage information
- -o <file>         Set output file name (default: <input_dir>/out.txt)
- -v, --version     Display version number
+ -h, --help                    Display usage information
+ -o <file>, --output <file>    Set output file name (default: <input_dir>/out.txt)
+ -v, --version                 Display version number
 
 )";
     std::string data(reinterpret_cast<char*>(Readme), Readme_len);
@@ -63,9 +64,7 @@ Options:
     if (std::filesystem::path(input_filename).is_relative()) {
         input_filename = std::filesystem::path(std::filesystem::current_path() / input_filename).string();
     }
-    if (output_filename.empty()) {
-        output_filename = std::filesystem::path(std::filesystem::path(input_filename).parent_path() / "out.txt").string();
-    }
+    std::string standard_output_path = std::filesystem::path(std::filesystem::path(input_filename).parent_path() / "out.txt").string();
 
     //    input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = "C:\\Users\\mathi\\Documents\\Scripting\\the-score\\the-score.ksp";
@@ -87,9 +86,13 @@ Options:
     auto start_time = std::chrono::high_resolution_clock::now();
 
     std::cout << "Input File: " << input_filename << std::endl;
-    std::cout << "Output File: " << output_filename << std::endl;
+    if(output_filename.empty())
+        std::cout << "Output File: " << standard_output_path << std::endl;
+    else
+        std::cout << "Output File: " << output_filename << std::endl;
 
-	Tokenizer tokenizer(input_filename);
+    FileHandler file_handler(input_filename);
+	Tokenizer tokenizer(file_handler.get_output(), input_filename);
     auto tokens = tokenizer.tokenize();
 //    for(auto& tok: tokens) {
 ////        if(tok.type != token::COMMENT or tok.type != token::LINEBRK)
@@ -113,8 +116,11 @@ Options:
     preprocessor.process();
     auto preprocessed_tokens = preprocessor.get_tokens();
 
-    if(!preprocessor.get_output_path().empty())
+    // ---------- output path -----------
+    if(output_filename.empty() && !preprocessor.get_output_path().empty())
         output_filename = preprocessor.get_output_path();
+    if(output_filename.empty())
+        output_filename = standard_output_path;
     std::filesystem::path curr_path = __FILE__;
 
 	auto preprocessor_time = std::chrono::high_resolution_clock::now();
