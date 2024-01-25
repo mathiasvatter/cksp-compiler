@@ -1,3 +1,6 @@
+For a more extensive collection of features please refer to the repository wiki:
+https://bitbucket.org/MathiasVatter/ksp-compiler/wiki/Features
+
 Known Issues:
  - Incrementer cannot start in one macro definition and end outside, has to stay in one scope
  - lists can only be declared in blocks and not with <declare list ls[]> and then appended with list_add()

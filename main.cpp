@@ -11,62 +11,20 @@
 #include "AST/ASTTypeChecking.h"
 #include "AST/ASTVariables.h"
 #include "Generator/ASTGenerator.h"
-#include "Readme.h"
 #include "AST/ASTDesugarStructs.h"
 #include "Preprocessor/PreprocessorImport.h"
-#include "Preprocessor/PreASTPragma.h"
 #include "FileHandler.h"
+#include "CommandLineOptions.h"
 
 int main(int argc, char* argv[]) {
 
-    std::string input_filename;
-    std::string output_filename;
+    CommandLineOptions cmd_options(argc, argv);
 
-    std::string help = R"(
-Usage: cksp [options] <input-file>
+    const std::string& input_filename = cmd_options.get_input_file();
+    std::string output_filename = cmd_options.get_output_file();
+    const std::string& standard_output_path = cmd_options.get_standard_output_file();
 
-Options:
- -h, --help                    Display usage information
- -o <file>, --output <file>    Set output file name (default: <input_dir>/out.txt)
- -v, --version                 Display version number
-
-)";
-    std::string data(reinterpret_cast<char*>(Readme), Readme_len);
-    help += data;
-    std::string version = "cksp version "+COMPILER_VERSION+"\n";
-
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-
-        if (arg == "-h" || arg == "--help") {
-            std::cout << help;
-            return 0;
-        } else if (arg == "-o") {
-            if (i + 1 < argc) {
-                output_filename = argv[++i];
-            } else {
-                std::cerr << "Error: -o option requires one argument.\n";
-                return 1;
-            }
-        } else if (arg == "-v" || arg == "--version") {
-            std::cout << version;
-            return 0;
-        } else {
-            input_filename = arg;
-        }
-    }
-
-    if (input_filename.empty()) {
-        std::cerr << "Error: No input file provided.\n";
-        std::cout << help;
-        return 1;
-    }
-    if (std::filesystem::path(input_filename).is_relative()) {
-        input_filename = std::filesystem::path(std::filesystem::current_path() / input_filename).string();
-    }
-    std::string standard_output_path = std::filesystem::path(std::filesystem::path(input_filename).parent_path() / "out.txt").string();
-
-    //    input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
+//    input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = "C:\\Users\\mathi\\Documents\\Scripting\\the-score\\the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";

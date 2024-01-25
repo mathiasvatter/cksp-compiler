@@ -41,7 +41,7 @@ RELEASE_DIR="${RELEASES_DIR}/cksp_v${VERSION}_release"
 mkdir -p "$RELEASE_DIR"
 
 # create readme file
-"$BUILD_DIR/cksp" --help >> "$RELEASE_DIR/readme.txt"
+"$BUILD_DIR/cksp" --help > "$RELEASE_DIR/Readme.txt"
 
 mkdir -p "$RELEASE_DIR/$ARM_DIR"
 mkdir -p "$RELEASE_DIR/$INTEL_DIR"
@@ -49,6 +49,7 @@ mkdir -p "$RELEASE_DIR/$WINDOWS_DIR"
 
 # Kopieren der Binärdateien in den Release-Ordner
 cp "$BUILD_DIR/cksp" "$RELEASE_DIR/$TARGET_DIR/cksp"
+cp "wiki/Features.md" "$RELEASE_DIR/Features.md"
 
 # zipping it up
 zip -vr "${RELEASE_DIR}.zip" "$RELEASE_DIR" -x "*.DS_Store"
