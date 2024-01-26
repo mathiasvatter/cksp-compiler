@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 
     CommandLineOptions cmd_options(argc, argv);
 
-    const std::string& input_filename = cmd_options.get_input_file();
+	std::string input_filename = cmd_options.get_input_file();
     std::string output_filename = cmd_options.get_output_file();
     const std::string& standard_output_path = cmd_options.get_standard_output_file();
 

@@ -94,6 +94,20 @@ std::unique_ptr<NodeAST> NodeArray::clone() const {
     return std::make_unique<NodeArray>(*this);
 }
 
+// ************* NodeNDArray ***************
+void NodeNDArray::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+NodeNDArray::NodeNDArray(const NodeNDArray& other)
+	: NodeAST(other), is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
+	  is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
+	  var_type(other.var_type), name(other.name),
+	  sizes(clone_unique(other.sizes)), indexes(clone_unique(other.indexes)),
+	  declaration(other.declaration), dimensions(other.dimensions) {}
+std::unique_ptr<NodeAST> NodeNDArray::clone() const {
+	return std::make_unique<NodeNDArray>(*this);
+}
+
 // ************* NodeUIControl ***************
 void NodeUIControl::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
@@ -303,17 +317,6 @@ NodeStatementList::NodeStatementList(const NodeStatementList& other) : NodeAST(o
 }
 std::unique_ptr<NodeAST> NodeStatementList::clone() const {
     return std::make_unique<NodeStatementList>(*this);
-}
-
-// ************* NodeScope ***************
-void NodeScope::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
-}
-NodeScope::NodeScope(const NodeScope& other)
-		: NodeAST(other), scope(clone_unique(other.scope)) {}
-
-std::unique_ptr<NodeAST> NodeScope::clone() const {
-	return std::make_unique<NodeScope>(*this);
 }
 
 // ************* NodeIfStatement ***************

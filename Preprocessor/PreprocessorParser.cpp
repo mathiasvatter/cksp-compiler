@@ -174,7 +174,7 @@ Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_token(PreNodeAST* 
             return Result<std::unique_ptr<PreNodeAST>>(result_literate_macro.get_error());
         node_statement->statement = std::move(result_literate_macro.unwrap());
         stmt = std::move(node_statement);
-    } else if(peek().type == KEYWORD or peek().type == STRING) {
+    } else if(peek().type == KEYWORD or peek().type == STRING or peek().type == DEFAULT or peek().type == RETURN) {
         auto result_keyword = parse_keyword(node_statement.get());
         if (result_keyword.is_error())
             return Result<std::unique_ptr<PreNodeAST>>(result_keyword.get_error());

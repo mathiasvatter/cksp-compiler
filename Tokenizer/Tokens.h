@@ -108,6 +108,7 @@
     XX(START_INC, "start_inc") \
     XX(END_INC, "end_inc") \
     XX(UI_CONTROL, "ui_control")\
+    XX(RETURN, "return")\
 	XX(PRAGMA, "pragma")
 
 #define ENUM(name, str) name,
@@ -157,7 +158,7 @@ inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{"#pragma",
                                                    {"USE_CODE_IF", USE_CODE_IF}, {"USE_CODE_IF_NOT", USE_CODE_IF_NOT}, {"END_USE_CODE", END_USE_CODE}};
 inline std::unordered_map<std::string, token> STATEMENT_SYNTAX = {{"to", TO}, {"downto", DOWNTO}, {"step", STEP}, {"else", ELSE},
 																  {"case", CASE}, {"in", IN}, {"default", DEFAULT}};
-inline std::unordered_map<std::string, token> FUNCTION_SYNTAX = {{"override", OVERRIDE}, {"call", CALL}};
+inline std::unordered_map<std::string, token> FUNCTION_SYNTAX = {{"override", OVERRIDE}, {"call", CALL}, {"return", RETURN}};
 // control statements that also have an end
 inline std::unordered_map<std::string, token> END_STATEMENTS = {{"end function", END_FUNCTION}, {"end for", END_FOR}, {"end while", END_WHILE},
 											  {"end if", END_IF}, {"end select", END_SELECT}, {"end const", END_CONST},
