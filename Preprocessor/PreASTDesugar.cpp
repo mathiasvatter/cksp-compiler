@@ -5,6 +5,7 @@
 #include "PreASTDesugar.h"
 #include "SimpleExprInterpreter.h"
 #include <locale>
+#include <iterator>
 
 void PreASTDesugar::visit(PreNodeProgram& node) {
     m_main_ptr = &node;
@@ -57,7 +58,7 @@ void PreASTDesugar::visit(PreNodeKeyword& node) {
         } else {
             // in case there are more # substitutions in one word
             if (count_char(node.keyword.val, '#') >= 2) {
-                node.keyword.val = get_text_replacement(node.keyword.val);
+                node.keyword.val = get_text_replacement(node.keyword);
             }
         }
     }
@@ -331,30 +332,33 @@ std::unique_ptr<PreNodeAST> PreASTDesugar::get_substitute(const std::string& nam
     return nullptr;
 }
 
-std::string PreASTDesugar::get_text_replacement(const std::string& name) {
-    std::string substr = name;
+std::string PreASTDesugar::get_text_replacement(const Token& name) {
+    std::string substr = name.val;
     std::size_t start;
     std::size_t end;
-    if(count_char(name, '#') >= 2) {
-        start = name.find('#');
-        end = name.find('#', start + 1);
-        substr = name.substr(start, end - start + 1);
+	auto replacements = count_char(name.val, '#');
+	if(replacements % 2 != 0) {
+		CompileError(ErrorType::PreprocessorError,
+		 "Found wrong number of # in macro replacement", name.line, "", name.val,name.file).exit();
+	}
+    if(count_char(name.val, '#') >= 2) {
+        start = name.val.find('#');
+        end = name.val.find('#', start + 1);
+        substr = name.val.substr(start, end - start + 1);
     }
+
     for (auto &pair: m_substitution_stack.top()) {
         if (pair.first == substr) {
+
             std::string new_name ;
-//            if(pair.second->chunk.size() > 1) {
-//                CompileError(ErrorType::SyntaxError,
-//                "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-call>", -1, "", "","").print();
-//                exit(EXIT_FAILURE);
-//            }
+
             auto &var = pair.second->chunk[0];
             new_name = var->get_string();
-            if(count_char(name, '#') >= 2)
-                return name.substr(0, start) + new_name + name.substr(end+1);
+            if(count_char(name.val, '#') >= 2)
+                return name.val.substr(0, start) + new_name + name.val.substr(end+1);
             else
                 return new_name;
         }
     }
-    return name;
+    return name.val;
 }

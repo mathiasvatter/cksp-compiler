@@ -54,6 +54,10 @@ public:
 		node.sizes->accept(*this);
 		node.indexes->accept(*this);
 	};
+	virtual void visit(NodeNDArray& node) {
+		node.sizes->accept(*this);
+		node.indexes->accept(*this);
+	};
     virtual void visit(NodeUIControl& node){
 		node.control_var->accept(*this);
 		node.params->accept(*this);
@@ -175,9 +179,6 @@ public:
             stmt->accept(*this);
         }
     };
-	virtual void visit(NodeScope& node) {
-		node.scope->accept(*this);
-	};
     virtual void visit(NodeImport& node) {
     };
 };

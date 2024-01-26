@@ -257,6 +257,43 @@ struct NodeArray : NodeAST {
     }
 };
 
+struct NodeNDArray : NodeAST {
+	bool is_used = false;
+	bool is_engine = false;
+	std::optional<Token> persistence;
+	bool is_local = false;
+	bool is_global = false;
+	bool is_compiler_return = false;
+	int dimensions = 1;
+	VarType var_type = VarType::Array;
+	std::string name;
+	std::unique_ptr<NodeParamList> sizes = nullptr;
+	std::unique_ptr<NodeParamList> indexes = nullptr;
+	NodeAST* declaration = nullptr;
+	inline explicit NodeNDArray(Token tok) : NodeAST(tok) {}
+	inline NodeNDArray(std::optional<Token> is_persistent, std::string name, VarType var_type, std::unique_ptr<NodeParamList> sizes,
+					 std::unique_ptr<NodeParamList> indexes, Token tok)
+		: NodeAST(tok), persistence(is_persistent), name(std::move(name)), var_type(var_type),
+		  sizes(std::move(sizes)), indexes(std::move(indexes)) {}
+	void accept(ASTVisitor& visitor) override;
+	// Kopierkonstruktor
+	NodeNDArray(const NodeNDArray& other);
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		if (sizes) sizes->update_parents(this);
+		if (indexes) indexes->update_parents(this);
+	}
+	std::string get_string() override {
+		return name;
+	}
+	void update_token_data(const Token& token) override {
+		if(sizes) sizes -> update_token_data(token);
+		if(indexes) indexes ->update_token_data(token);
+	}
+};
+
 struct NodeUIControl : NodeAST {
     std::string ui_control_type;
     std::unique_ptr<NodeAST> control_var; //Array or Variable
@@ -696,26 +733,6 @@ struct NodeIfStatement: NodeAST {
 		statements->update_token_data(token);
 		else_statements->update_token_data(token);
     }
-};
-
-struct NodeScope : NodeAST {
-	std::unique_ptr<NodeStatementList> scope;
-	inline explicit NodeScope(Token tok) : NodeAST(tok) {}
-	inline NodeScope(std::unique_ptr<NodeStatementList> scope, Token tok)
-	: NodeAST(tok), scope(std::move(scope)) {}
-	void accept(ASTVisitor& visitor) override;
-	NodeScope(const NodeScope& other);
-	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-	void update_parents(NodeAST* new_parent) override {
-		parent = new_parent;
-		scope->update_parents(this);
-	}
-	std::string get_string() override {
-		return scope->get_string();
-	}
-	void update_token_data(const Token& token) override {
-		scope->update_token_data(token);
-	}
 };
 
 struct NodeForStatement : NodeAST {

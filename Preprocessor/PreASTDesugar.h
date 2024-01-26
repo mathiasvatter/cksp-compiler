@@ -38,7 +38,7 @@ private:
     std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
     static std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> get_substitution_vector(PreNodeMacroHeader* definition, PreNodeMacroHeader* call);
     std::unique_ptr<PreNodeMacroDefinition> get_macro_definition(PreNodeMacroHeader* macro_header);
-    std::string get_text_replacement(const std::string& name);
+    std::string get_text_replacement(const Token& name);
 
     std::stack<std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>>> m_substitution_stack;
     std::vector<std::string> m_define_call_stack;

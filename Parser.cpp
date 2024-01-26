@@ -246,6 +246,9 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_binary_expr(NodeAST* parent) {
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
+	if(peek().type == token::RETURN) {
+		m_tokens[m_pos].type = token::KEYWORD;
+	}
     if (peek().type == token::KEYWORD) {
         std::unique_ptr<NodeAST> stmt = nullptr;
         // is function
@@ -427,7 +430,7 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
     _skip_linebreaks();
     std::unique_ptr<NodeAST> stmt;
     // assign statement
-    if (peek().type == KEYWORD || peek().type == DECLARE || peek().type == CALL || peek().type == SET_CONDITION || peek().type == RESET_CONDITION) {
+    if (peek().type == KEYWORD || peek().type == RETURN || peek().type == DECLARE || peek().type == CALL || peek().type == SET_CONDITION || peek().type == RESET_CONDITION) {
         if (peek().type == token::DECLARE) {
             auto declare_stmt = parse_declare_statement(node_statement.get());
             if (declare_stmt.is_error()) {
@@ -436,11 +439,11 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
             stmt = std::move(declare_stmt.unwrap());
         } else if ((peek().type == token::CALL) xor
                    (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK or peek(1).type == CLOSED_PARENTH)) {
-            auto function_call = parse_function_call(node_statement.get());
-            if (function_call.is_error()) {
-                return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
-            }
-            stmt = std::move(function_call.unwrap());
+			auto function_call = parse_function_call(node_statement.get());
+			if (function_call.is_error()) {
+				return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
+			}
+			stmt = std::move(function_call.unwrap());
         } else {
             auto assign_stmt = parse_assign_statement(node_statement.get());
             if (assign_stmt.is_error()) {
@@ -729,6 +732,9 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     func_return_var = {};
     if (peek().type == token::ARROW) {
         consume();
+		if(peek().type == token::RETURN) {
+			m_tokens[m_pos].type = KEYWORD;
+		}
         if (peek().type == token::KEYWORD) {
             auto return_var = parse_param_list(parent);
             if (return_var.is_error()) {
