@@ -45,10 +45,10 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Input File: " << input_filename << std::endl;
     if(output_filename.empty())
-        std::cout << "Output File: " << standard_output_path << std::endl;
+        std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << standard_output_path << std::endl;
     else
-        std::cout << "Output File: " << output_filename << std::endl;
-
+        std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << output_filename << std::endl;
+    std::cout << std::endl;
     FileHandler file_handler(input_filename);
 	Tokenizer tokenizer(file_handler.get_output(), input_filename);
     auto tokens = tokenizer.tokenize();
@@ -70,6 +70,9 @@ int main(int argc, char* argv[]) {
     }
     tokens = std::move(imports.get_tokens());
 
+    auto import_time = std::chrono::high_resolution_clock::now();
+    auto import_duration = std::chrono::duration_cast<std::chrono::milliseconds>(import_time-start_time);
+
     Preprocessor preprocessor(tokens, input_filename);
     preprocessor.process();
     auto preprocessed_tokens = preprocessor.get_tokens();
@@ -82,7 +85,7 @@ int main(int argc, char* argv[]) {
     std::filesystem::path curr_path = __FILE__;
 
 	auto preprocessor_time = std::chrono::high_resolution_clock::now();
-	auto preprocessor_duration = std::chrono::duration_cast<std::chrono::milliseconds>(preprocessor_time - start_time);
+	auto preprocessor_duration = std::chrono::duration_cast<std::chrono::milliseconds>(preprocessor_time - import_time);
 
     Parser parser(std::move(preprocessed_tokens));
 	auto ast_result = parser.parse();
@@ -127,13 +130,15 @@ int main(int argc, char* argv[]) {
     auto type_checking_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - desugaring_time);
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
     // Dauer in Millisekunden ausgeben
+    std::cout << std::endl;
+    std::cout << "Import Time: " << import_duration.count() << " ms, " << std::endl;
     std::cout << "Preprocessor Time: " << preprocessor_duration.count() << " ms, " << std::endl;
     std::cout << "Parsing Time: " << parsing_duration.count() << " ms, " << std::endl;
     std::cout << "Desugaring Time: " << desugaring_duration.count() << " ms, " << std::endl;
     std::cout << "Typechecking Time: " << type_checking_duration.count() << " ms, "<< std::endl;
     std::cout << "Time measured: " << duration.count() << " ms" << std::endl;
 
-    std::cout << "Saved compiled file to: " << output_filename << std::endl;
+    std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << output_filename << std::endl;
 //	std::cout << std::filesystem::current_path();
     return 0;
 }

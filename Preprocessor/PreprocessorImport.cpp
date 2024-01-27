@@ -56,7 +56,7 @@ Result<SuccessTag> PreprocessorImport::evaluate_import(std::vector<Token>& token
     } else {
         if (m_imported_files.find(path.unwrap()) == m_imported_files.end()) {  // Überprüfe auf zirkuläre Abhängigkeiten
             m_imported_files.insert(path.unwrap());
-            std::cout << path.unwrap() << std::endl;
+//            std::cout << path.unwrap() << std::endl;
             FileHandler file_handler(path.unwrap());
             Tokenizer tokenizer(file_handler.get_output(), path.unwrap(), file_handler.get_file_type());
             auto new_tokens = tokenizer.tokenize();
@@ -81,7 +81,7 @@ Result<SuccessTag> PreprocessorImport::evaluate_import_nckp(std::vector<Token>& 
     if(path.is_error()) {
         path.get_error().print();
     } else {
-        std::cout << path.unwrap() << std::endl;
+//        std::cout << path.unwrap() << std::endl;
         FileHandler file_handler(path.unwrap());
         Tokenizer tokenizer(file_handler.get_output(), path.unwrap(), file_handler.get_file_type());
         auto nckp_tokens = tokenizer.tokenize();
