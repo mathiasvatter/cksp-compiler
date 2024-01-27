@@ -333,32 +333,25 @@ std::unique_ptr<PreNodeAST> PreASTDesugar::get_substitute(const std::string& nam
 }
 
 std::string PreASTDesugar::get_text_replacement(const Token& name) {
-    std::string substr = name.val;
-    std::size_t start;
-    std::size_t end;
 	auto replacements = count_char(name.val, '#');
 	if(replacements % 2 != 0) {
 		CompileError(ErrorType::PreprocessorError,
 		 "Found wrong number of # in macro replacement", name.line, "", name.val,name.file).exit();
 	}
-    if(count_char(name.val, '#') >= 2) {
-        start = name.val.find('#');
-        end = name.val.find('#', start + 1);
-        substr = name.val.substr(start, end - start + 1);
-    }
 
-    for (auto &pair: m_substitution_stack.top()) {
-        if (pair.first == substr) {
-
-            std::string new_name ;
-
-            auto &var = pair.second->chunk[0];
-            new_name = var->get_string();
-            if(count_char(name.val, '#') >= 2)
-                return name.val.substr(0, start) + new_name + name.val.substr(end+1);
-            else
-                return new_name;
+    std::string result = name.val;
+    // Für jedes Ersetzungspaar
+    for (const auto& replacement : m_substitution_stack.top()) {
+        size_t start = 0;
+        while ((start = result.find(replacement.first, start)) != std::string::npos) {
+            // Ersetzt den gefundenen Substring durch pair.second
+            std::string replace_with = replacement.second->chunk[0]->get_string();
+            result.replace(start, replacement.first.length(), replace_with);
+            // Bewegt den Startpunkt vorbei am zuletzt ersetzten Substring,
+            // um Endlosschleifen zu vermeiden
+            start += replace_with.length();
         }
     }
-    return name.val;
+
+    return result;
 }

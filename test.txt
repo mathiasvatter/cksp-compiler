@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.3 on Fri Jan 26 18:25:20 2024 }
+{ Compiled with cksp version 0.0.3 on Sat Jan 27 09:38:54 2024 }
 on init
 declare ?_return_vars_real[5]
 declare !_return_vars_str[5]
@@ -9,73 +9,94 @@ declare ?_loc_var_real[7]
 declare !_loc_var_str[7]
 declare %_loc_var_int[7]
 declare $_iterator
-message(0)
-message(1)
-message(2)
-message(3)
-message(4)
-message(5)
-message(6)
-message(7)
-message(8)
-message(9)
-message(10)
-message(11)
-message(12)
-message(13)
-message(14)
-message(15)
-message(16)
-message(17)
-message(18)
-message(19)
-message(20)
-message(21)
-message(22)
-message(23)
-message(24)
-message(25)
-message(26)
-message(27)
-message(28)
-message(29)
-message(30)
-message(31)
-message(32)
-message(33)
-message(34)
-message(35)
-message(36)
-message(37)
-message(38)
-message(39)
-message(40)
-message(41)
-message(42)
-message(43)
-message(44)
-message(45)
-message(46)
+declare %var_repl_repl[4]
+declare ui_button $var_repl_repl0 
+declare ui_button $var_repl_repl1 
+declare ui_button $var_repl_repl2 
+declare ui_button $var_repl_repl3 
+$_iterator := 0
+while($_iterator < 4) 
+%var_repl_repl[$_iterator] := get_ui_id($var_repl_repl0) + $_iterator
+inc($_iterator)
+end while
+set_control_par_str(get_ui_id(%var_repl_repl), $CONTROL_PAR_HELP, "Listen to this ensemble separately")
+select(3)
+case 1 to 45
+message("d")
+end select
 declare $lib__i
 declare ui_panel $__table 
 set_control_par(get_ui_id($__table), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
-%_loc_var_int[0] := 2
-message(%_loc_var_int[0])
-if($double_click_state = 1)
-end if
+$lib__i := 0
+while($lib__i <= 1) 
+message("df")
+inc($lib__i)
+end while
+declare %_test__lbl_multi[23 * 2]
+declare ui_label $_test__lbl_multi0 (1, 1)
+declare ui_label $_test__lbl_multi1 (1, 1)
+declare ui_label $_test__lbl_multi2 (1, 1)
+declare ui_label $_test__lbl_multi3 (1, 1)
+declare ui_label $_test__lbl_multi4 (1, 1)
+declare ui_label $_test__lbl_multi5 (1, 1)
+declare ui_label $_test__lbl_multi6 (1, 1)
+declare ui_label $_test__lbl_multi7 (1, 1)
+declare ui_label $_test__lbl_multi8 (1, 1)
+declare ui_label $_test__lbl_multi9 (1, 1)
+declare ui_label $_test__lbl_multi10 (1, 1)
+declare ui_label $_test__lbl_multi11 (1, 1)
+declare ui_label $_test__lbl_multi12 (1, 1)
+declare ui_label $_test__lbl_multi13 (1, 1)
+declare ui_label $_test__lbl_multi14 (1, 1)
+declare ui_label $_test__lbl_multi15 (1, 1)
+declare ui_label $_test__lbl_multi16 (1, 1)
+declare ui_label $_test__lbl_multi17 (1, 1)
+declare ui_label $_test__lbl_multi18 (1, 1)
+declare ui_label $_test__lbl_multi19 (1, 1)
+declare ui_label $_test__lbl_multi20 (1, 1)
+declare ui_label $_test__lbl_multi21 (1, 1)
+declare ui_label $_test__lbl_multi22 (1, 1)
+declare ui_label $_test__lbl_multi23 (1, 1)
+declare ui_label $_test__lbl_multi24 (1, 1)
+declare ui_label $_test__lbl_multi25 (1, 1)
+declare ui_label $_test__lbl_multi26 (1, 1)
+declare ui_label $_test__lbl_multi27 (1, 1)
+declare ui_label $_test__lbl_multi28 (1, 1)
+declare ui_label $_test__lbl_multi29 (1, 1)
+declare ui_label $_test__lbl_multi30 (1, 1)
+declare ui_label $_test__lbl_multi31 (1, 1)
+declare ui_label $_test__lbl_multi32 (1, 1)
+declare ui_label $_test__lbl_multi33 (1, 1)
+declare ui_label $_test__lbl_multi34 (1, 1)
+declare ui_label $_test__lbl_multi35 (1, 1)
+declare ui_label $_test__lbl_multi36 (1, 1)
+declare ui_label $_test__lbl_multi37 (1, 1)
+declare ui_label $_test__lbl_multi38 (1, 1)
+declare ui_label $_test__lbl_multi39 (1, 1)
+declare ui_label $_test__lbl_multi40 (1, 1)
+declare ui_label $_test__lbl_multi41 (1, 1)
+declare ui_label $_test__lbl_multi42 (1, 1)
+declare ui_label $_test__lbl_multi43 (1, 1)
+declare ui_label $_test__lbl_multi44 (1, 1)
+declare ui_label $_test__lbl_multi45 (1, 1)
+$_iterator := 0
+while($_iterator < 46) 
+%_test__lbl_multi[$_iterator] := get_ui_id($_test__lbl_multi0) + $_iterator
+inc($_iterator)
+end while
 declare $bit
 $bit := .not. (.not. (($bit .and. .not. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (- 0 .and. sh_left(1, 0)))) .and. .not. ((- 0 .and. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (- 0 .and. sh_left(1, 0)))))
-!_loc_var_str[1] := "["
+!_loc_var_str[0] := "["
 $lib__i := 0
 while($lib__i <= 31) 
-!_loc_var_str[1] := !_loc_var_str[1] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(- 1, 32), 0), 31 - $lib__i) .and. 1)
+!_loc_var_str[0] := !_loc_var_str[0] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(- 1, 32), 0), 31 - $lib__i) .and. 1)
 if($lib__i < 31)
-!_loc_var_str[1] := !_loc_var_str[1] & ", "
+!_loc_var_str[0] := !_loc_var_str[0] & ", "
 end if
 inc($lib__i)
 end while
-!_loc_var_str[1] := !_loc_var_str[1] & "]"
-message(!_loc_var_str[1])
+!_loc_var_str[0] := !_loc_var_str[0] & "]"
+message(!_loc_var_str[0])
 declare %_arr[128 * 2]
 make_persistent(%_arr)
 read_persistent_var(%_arr)
@@ -133,7 +154,7 @@ message("7: " & 7)
 message("8: " & 8)
 message("9: " & 9)
 message("10: " & 10)
-message("** Script " & "'" & "MAIN" & "'" & " Compile " & "18:25:20" & " " & "01/26/24" & " **")
+message("** Script " & "'" & "MAIN" & "'" & " Compile " & "09:38:54" & " " & "01/27/24" & " **")
 set_script_title("MAIN")
 declare const $UI_HEIGHT := 352
 declare const $UI_WIDTH := 785
@@ -144,17 +165,17 @@ $bit := (- sh_right(abs(0) - 1, 31) * ((- sh_right(abs(0) - 1, 31) * sh_right(- 
 $bit := .not. (.not. (($bit .and. .not. sh_left(1, 28)) .and. .not. (($bit .and. .not. sh_left(1, 28)) .and. (- 0 .and. sh_left(1, 28)))) .and. .not. ((- 0 .and. sh_left(1, 28)) .and. .not. (($bit .and. .not. sh_left(1, 28)) .and. (- 0 .and. sh_left(1, 28)))))
 $bit := .not. (.not. (($bit .and. .not. sh_left(1, 16)) .and. .not. (($bit .and. .not. sh_left(1, 16)) .and. (- 0 .and. sh_left(1, 16)))) .and. .not. ((- 0 .and. sh_left(1, 16)) .and. .not. (($bit .and. .not. sh_left(1, 16)) .and. (- 0 .and. sh_left(1, 16)))))
 $bit := .not. (.not. (($bit .and. .not. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (- 0 .and. sh_left(1, 0)))) .and. .not. ((- 0 .and. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (- 0 .and. sh_left(1, 0)))))
-!_loc_var_str[2] := "["
+!_loc_var_str[1] := "["
 $lib__i := 0
 while($lib__i <= 31) 
-!_loc_var_str[2] := !_loc_var_str[2] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(- 1, 32), 0), 31 - $lib__i) .and. 1)
+!_loc_var_str[1] := !_loc_var_str[1] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(- 1, 32), 0), 31 - $lib__i) .and. 1)
 if($lib__i < 31)
-!_loc_var_str[2] := !_loc_var_str[2] & ", "
+!_loc_var_str[1] := !_loc_var_str[1] & ", "
 end if
 inc($lib__i)
 end while
-!_loc_var_str[2] := !_loc_var_str[2] & "]"
-message(!_loc_var_str[2])
+!_loc_var_str[1] := !_loc_var_str[1] & "]"
+message(!_loc_var_str[1])
 declare ui_menu $table_tbl 
 set_control_par(get_ui_id($table_tbl), $CONTROL_PAR_PARENT_PANEL, get_ui_id($__table))
 $lib__i := 0
@@ -240,6 +261,9 @@ if(%_loc_var_int[2] < $double_click_interval)
 $double_click_state := 1
 end if
 call nothing
+if($double_click_state = 1)
+message("clicked")
+end if
 end on
 on ui_control($_btn_bums1)
 !_loc_var_str[4] := "["

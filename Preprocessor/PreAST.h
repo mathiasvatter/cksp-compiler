@@ -128,6 +128,20 @@ struct PreNodeOther : PreNodeAST {
     }
 };
 
+struct PreNodeDeadEnd : PreNodeAST {
+    Token sth;
+    PreNodeDeadEnd(Token tok, PreNodeAST *parent) : PreNodeAST(parent), sth(std::move(tok)) {}
+    void accept(PreASTVisitor& visitor) override;
+    PreNodeDeadEnd(const PreNodeDeadEnd& other) : PreNodeAST(other), sth(other.sth) {}
+    [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+    std::string get_string() override {
+        return sth.val;
+    }
+    void update_token_data(const Token &token) override {
+        sth.line = token.line; sth.file = token.file;
+    }
+};
+
 struct PreNodePragma : PreNodeAST {
     std::unique_ptr<PreNodeKeyword> option;
     std::unique_ptr<PreNodeKeyword> argument;
@@ -444,15 +458,9 @@ struct PreNodeProgram : PreNodeAST {
     [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
     void update_parents(PreNodeAST* new_parent) override {
         parent = new_parent;
-        for(auto & p : program) {
-            p->update_parents(this);
-        }
-        for(auto & def : define_statements) {
-            def ->update_parents(this);
-        }
-        for(auto & def : macro_definitions) {
-            def ->update_parents(this);
-        }
+        for(auto & p : program) p->update_parents(this);
+        for(auto & def : define_statements) def ->update_parents(this);
+        for(auto & def : macro_definitions) def ->update_parents(this);
     }
 	std::string get_string() override {
 		return "";
