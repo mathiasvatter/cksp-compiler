@@ -49,7 +49,7 @@ mkdir -p "$RELEASE_DIR/$WINDOWS_DIR"
 
 # Kopieren der Binärdateien in den Release-Ordner
 cp "$BUILD_DIR/cksp" "$RELEASE_DIR/$TARGET_DIR/cksp"
-cp "wiki/Features.md" "$RELEASE_DIR/Features.md"
+# cp "wiki/Features.md" "$RELEASE_DIR/Features.md"
 
 # zipping it up
 zip -vr "${RELEASE_DIR}.zip" "$RELEASE_DIR" -x "*.DS_Store"
