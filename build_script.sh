@@ -47,6 +47,7 @@ mkdir -p "$RELEASE_DIR/$ARM_DIR"
 mkdir -p "$RELEASE_DIR/$INTEL_DIR"
 mkdir -p "$RELEASE_DIR/$WINDOWS_DIR"
 
+rm "$RELEASE_DIR/$TARGET_DIR/cksp"
 # Kopieren der Binärdateien in den Release-Ordner
 cp "$BUILD_DIR/cksp" "$RELEASE_DIR/$TARGET_DIR/cksp"
 # cp "wiki/Features.md" "$RELEASE_DIR/Features.md"

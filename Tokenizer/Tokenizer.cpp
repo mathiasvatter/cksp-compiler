@@ -21,7 +21,8 @@ std::ostream &operator<<(std::ostream &os, const Token &tok) {
 /*
  * Tokenizer Functions
  */
-Tokenizer::Tokenizer(const std::string& input, const std::string& file, FileType file_type) : m_pos(0), m_line(1) {
+Tokenizer::Tokenizer(const std::string& input, const std::string& file, FileType file_type)
+    : m_pos(0), m_line(1), m_line_pos(0) {
     m_current_file = file;
     m_is_json = false;
     if(file_type == FileType::nckp) m_is_json = true;
