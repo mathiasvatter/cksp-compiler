@@ -60,20 +60,24 @@ public:
     inline CompileError(ErrorType type, std::string message, std::string expected, const struct Token& token);;
     inline CompileError(ErrorType type, std::string message, size_t lineNumber, std::string expected, std::string got,const std::string &fileName)
     : m_type(type), message(std::move(message)),  expected(std::move(expected)),  got(std::move(got)),
-	line_number(lineNumber), file_name(fileName) {}
+	line_number(lineNumber), file_name(fileName) {line_position=0;}
 
-    inline void print(ErrorType err=ErrorType::CompileError) {
+    inline void print(ErrorType err=ErrorType::CompileWarning) {
 		if (got == "\n") {
 			got = "linebreak";
 		}
+        auto error_code = ColorCode::White;
         if(err == ErrorType::CompileError)
-            std::cout << ColorCode::Red << ColorCode::Bold << error_type_to_string(err) << " " << ColorCode::Reset;
+            error_code = ColorCode::Red;
         if(err == ErrorType::CompileWarning)
-            std::cout << ColorCode::Yellow << ColorCode::Bold << error_type_to_string(err) << ColorCode::Reset;
-        std::cout << ColorCode::Red << "[Type: " << error_type_to_string(m_type);
-        std::cout << ", " << "Position: " << file_name;
+            error_code = ColorCode::Yellow;
+        std::cout << error_code << ColorCode::Bold << error_type_to_string(err) << ColorCode::Reset;
+        std::cout << error_code << " [Type: " << ColorCode::Bold << error_type_to_string(m_type) << ColorCode::Reset;
+        std::cout << error_code << ", " << "Position: " << file_name;
 		if(line_number != -1)
         	std::cout << ":" << line_number;
+        if(line_position != 0)
+            std::cout << ":" << line_position;
 		std::cout << "]" << std::endl;
         std::cout << message << " ";
 		if(!expected.empty())
@@ -103,6 +107,7 @@ private:
 	std::string expected;
 	std::string got;
 	size_t line_number;
+    size_t line_position;
     std::string file_name;
 
     [[nodiscard]] static inline std::string error_type_to_string(ErrorType type) {
