@@ -19,7 +19,7 @@ Result<SuccessTag> PreprocessorImport::process_imports() {
 	auto result = process_import_statements(m_tokens, m_current_file);
 	if(result.is_error())
 		return Result<SuccessTag>(result.get_error());
-	m_tokens.emplace_back(END_TOKEN, "", 0, m_current_file);
+	m_tokens.emplace_back(END_TOKEN, "", 0, 0,m_current_file);
 	return Result<SuccessTag>(result.unwrap());
 }
 

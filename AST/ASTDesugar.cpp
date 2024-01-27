@@ -818,7 +818,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 
 void ASTDesugar::declare_compiler_variables() {
 //    m_current_callback = m_init_callback;
-    Token tok = Token(KEYWORD, "compiler_variable", 0, "");
+    Token tok = Token(KEYWORD, "compiler_variable", 0, 0,"");
     for(auto & var_name: m_compiler_variables) {
         auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name.first, VarType::Mutable, tok);
         node_variable->type = var_name.second;
@@ -855,7 +855,7 @@ void ASTDesugar::declare_compiler_variables() {
 
 void ASTDesugar::declare_dummy_return_variable() {
     m_current_callback = m_init_callback;
-    Token tok = Token(KEYWORD, "compiler_variable", 0, "");
+    Token tok = Token(KEYWORD, "compiler_variable", 0, 0,"");
     std::string dummy_name = "_return_dummy";
     auto node_return_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), dummy_name, VarType::Mutable, tok);
     node_return_dummy->type = Unknown;

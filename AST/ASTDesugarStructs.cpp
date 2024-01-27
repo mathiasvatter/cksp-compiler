@@ -383,7 +383,7 @@ void ASTDesugarStructs::visit(NodeRangedForStatement& node) {
 	node_key_variable->type = Integer;
 	auto node_key_declaration = std::make_unique<NodeSingleDeclareStatement>(node.keys->params[0]->clone(),nullptr, node.tok);
 	auto node_key_iterator = std::make_unique<NodeSingleAssignStatement>(node.keys->params[0]->clone(), make_int(0, &node), node.tok);
-	Token token_to = Token(TO, "to", node.tok.line, node.tok.file);
+	Token token_to = Token(TO, "to", node.tok.line, node.tok.pos, node.tok.file);
 	std::vector<std::unique_ptr<NodeAST>> args;
 	args.push_back(node.range->clone());
 	auto node_num_elements = make_function_call("num_elements", std::move(args), &node, node.tok);

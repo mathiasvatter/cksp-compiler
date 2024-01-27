@@ -105,7 +105,7 @@ void PreASTIncrementer::visit(PreNodeIncrementer& node) {
 
     auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{},&node);
     auto node_int = std::make_unique<PreNodeInt>((int32_t) from,
-                                                 Token(INT, std::to_string(from), node.tok.line,node.tok.file), node_new_chunk.get());
+                                                 Token(INT, std::to_string(from), node.tok.line,node.tok.pos,node.tok.file), node_new_chunk.get());
     node_new_chunk->chunk.push_back(std::move(node_int));
     std::tuple<std::string, int32_t, std::unique_ptr<PreNodeChunk>> subst_tuple(counter_var, step, std::move(node_new_chunk));
 //    if(!m_incrementer_stack.empty()) {

@@ -22,7 +22,7 @@ void ASTTypeChecking::visit(NodeProgram& node) {
 }
 
 std::unique_ptr<NodeStatementList> ASTTypeChecking::declare_return_vars() {
-    Token tok = Token(KEYWORD, "compiler_variable", 0, "");
+    Token tok = Token(KEYWORD, "compiler_variable", 0,0, "");
     auto node_statement_list = std::make_unique<NodeStatementList>(tok);
     for(auto &arr_name : m_return_arrays) {
         auto node_array = make_array(arr_name.second, m_current_return_idx+1, tok, nullptr);
