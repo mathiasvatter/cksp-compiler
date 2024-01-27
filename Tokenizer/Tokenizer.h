@@ -181,6 +181,7 @@ protected:
     size_t m_pos;
     char m_current_char;
     size_t m_line;
+    size_t m_line_pos;
     std::string m_buffer;
     std::vector<Token> m_tokens;
 
