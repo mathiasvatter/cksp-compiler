@@ -72,7 +72,8 @@ void ASTTypeChecking::visit(NodeVariable& node) {
     // only print error if it is in a declaration
     if(node.type == Unknown) {
         if(node_declaration or node_ui_control) {
-            CompileError(ErrorType::TypeError,"Could not infer variable type. Automatically casted as <Integer>. Consider using a variable identifier.", node.tok.line, "", node.name, node.tok.file).print();
+//            CompileError(ErrorType::TypeError,"Could not infer variable type. Automatically casted as <Integer>. Consider using a variable identifier.", node.tok.line, "", node.name, node.tok.file).print();
+            CompileError(ErrorType::TypeError,"Could not infer variable type. Automatically casted as <Integer>. Consider using a variable identifier.", "", node.tok).print();
 			node.type = Integer;
 		} else {
 			node.type = node.declaration->type;
@@ -147,7 +148,8 @@ void ASTTypeChecking::visit(NodeArray& node) {
 //        auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
 //        auto node_ui_control = cast_node<NodeUIControl>(node.parent);
         if(node_declaration or node_ui_control) {
-			CompileError(ErrorType::TypeError,"Could not infer array type. Automatically casted as <Integer>. Consider using a variable identifier.", node.tok.line, "", node.name, node.tok.file).print();
+//            CompileError(ErrorType::TypeError,"Could not infer array type. Automatically casted as <Integer>. Consider using a variable identifier.", node.tok.line, "", node.name, node.tok.file).print();
+            CompileError(ErrorType::TypeError,"Could not infer array type. Automatically casted as <Integer>. Consider using a variable identifier.", "", node.tok).print();
 			node.type = Integer;
         } else {
 			node.type = node.declaration->type;
