@@ -18,8 +18,7 @@ class FileHandler {
 public:
     static std::string read_file(const std::string& filename);
 
-    explicit FileHandler(const std::string &mInputFile);
-    std::unordered_map<std::string, FileType> m_allowed_filetypes = {{".ksp", FileType::ksp}, {".nckp", FileType::nckp}};
+    explicit FileHandler(const std::string &mInputFile);    std::unordered_map<std::string, FileType> m_allowed_filetypes = {{".ksp", FileType::ksp}, {".nckp", FileType::nckp}};
     [[nodiscard]] const std::string &get_output() const;
     [[nodiscard]] FileType get_file_type() const;
 

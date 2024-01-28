@@ -57,48 +57,12 @@ enum class ErrorType {
 
 class CompileError {
 public:
-    inline CompileError(ErrorType type, std::string message, std::string expected, const struct Token& token);;
-    inline CompileError(ErrorType type, std::string message, size_t lineNumber, std::string expected, std::string got,const std::string &fileName)
-    : m_type(type), message(std::move(message)),  expected(std::move(expected)),  got(std::move(got)),
-	line_number(lineNumber), file_name(fileName) {line_position=0;}
+    CompileError(ErrorType type, std::string message, std::string expected, const struct Token& token);
+    CompileError(ErrorType type, std::string message, size_t lineNumber, std::string expected, std::string got,std::string fileName);
 
-    inline void print(ErrorType err=ErrorType::CompileWarning) {
-		if (got == "\n") {
-			got = "linebreak";
-		}
-        auto error_code = ColorCode::White;
-        if(err == ErrorType::CompileError)
-            error_code = ColorCode::Red;
-        if(err == ErrorType::CompileWarning)
-            error_code = ColorCode::Yellow;
-        std::cout << error_code << ColorCode::Bold << error_type_to_string(err) << ColorCode::Reset;
-        std::cout << error_code << " [Type: " << ColorCode::Bold << error_type_to_string(m_type) << ColorCode::Reset;
-        std::cout << error_code << ", " << "Position: " << file_name;
-		if(line_number != -1)
-        	std::cout << ":" << line_number;
-        if(line_position != 0)
-            std::cout << ":" << line_position;
-		std::cout << "]" << std::endl;
-        std::cout << message << " ";
-		if(!expected.empty())
-			std::cout << "Expected: '" << expected << "', ";
-		if(!got.empty())
-			std::cout << "got: '" << got << "'";
-		std::cout << ColorCode::Reset << std::endl;
+    void print(ErrorType err=ErrorType::CompileWarning);
 
-        // Zeige die entsprechende Zeile aus der Datei
-		if(line_number != -1) {
-            std::cout << ColorCode::Bold << "In line " << line_number << ": " << ColorCode::Reset;
-            std::cout << get_line_from_file() << std::endl;
-        }
-    }
-
-    inline void exit(ErrorType err=ErrorType::CompileError) {
-        print(err);
-        std::cout << ColorCode::Red << "\nSeems like the compilation exited with a failure." << std::endl;
-        std::cout << ColorCode::Reset << "Please report any compiler related bugs by creating an issue providing a minimal viable code snippet at: https://bitbucket.org/MathiasVatter/ksp-compiler/issues" << std::endl;
-        ::exit(EXIT_FAILURE);
-    }
+    void exit(ErrorType err=ErrorType::CompileError);
 
 
 private:
@@ -109,6 +73,8 @@ private:
 	size_t line_number;
     size_t line_position;
     std::string file_name;
+
+    std::string get_line_from_file();
 
     [[nodiscard]] static inline std::string error_type_to_string(ErrorType type) {
         switch(type) {
@@ -127,17 +93,7 @@ private:
         }
     };
 
-    inline std::string get_line_from_file() {
-        std::ifstream file(file_name);
-        std::string line;
-        if (file.is_open()) {
-            for (size_t i = 0; i < line_number && std::getline(file, line); ++i) {
-                // Nichts tun, nur bis zur gewünschten Zeile lesen
-            }
-            file.close();
-            return line;
-        }
-        return "Unable to open file.";
-    }
+    // Funktion, die alle \t in einem String durch Spaces ersetzt
+    static std::string replace_tabs_with_spaces(const std::string& input, int spacesPerTab = 4);
 };
 
