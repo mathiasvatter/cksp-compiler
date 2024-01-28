@@ -67,12 +67,12 @@ public:
 
 private:
     ErrorType m_type;
-    std::string message;
-	std::string expected;
-	std::string got;
-	size_t line_number;
-    size_t line_position;
-    std::string file_name;
+    std::string m_message;
+	std::string m_expected;
+	std::string m_got;
+	size_t m_line_number;
+    size_t m_line_position;
+    std::string m_file_name;
 
     std::string get_line_from_file();
 

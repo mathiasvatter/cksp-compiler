@@ -8,18 +8,18 @@
 #include <utility>
 
 CompileError::CompileError(ErrorType type, std::string message, std::string expected, const Token &token)
-        : m_type(type), message(std::move(message)), expected(std::move(expected)) {
-    line_number = token.line; file_name = token.file; got = token.val; line_position = token.pos;
+        : m_type(type), m_message(std::move(message)), m_expected(std::move(expected)) {
+    m_line_number = token.line; m_file_name = token.file; m_got = token.val; m_line_position = token.pos;
 }
 
 CompileError::CompileError(ErrorType type, std::string message, size_t lineNumber, std::string expected,
                            std::string got, std::string fileName)
-        : m_type(type), message(std::move(message)),  expected(std::move(expected)),  got(std::move(got)),
-          line_number(lineNumber), file_name(std::move(fileName)) {line_position=0;}
+        : m_type(type), m_message(std::move(message)), m_expected(std::move(expected)), m_got(std::move(got)),
+          m_line_number(lineNumber), m_file_name(std::move(fileName)) { m_line_position=0;}
 
 void CompileError::print(ErrorType err) {
-    if (got == "\n") {
-        got = "linebreak";
+    if (m_got == "\n") {
+        m_got = "linebreak";
     }
     auto error_code = ColorCode::Red;
     if(err == ErrorType::CompileError)
@@ -28,29 +28,29 @@ void CompileError::print(ErrorType err) {
         error_code = ColorCode::Yellow;
     std::cout << error_code << ColorCode::Bold << error_type_to_string(err) << ColorCode::Reset;
     std::cout << error_code << " [Type: " << ColorCode::Bold << error_type_to_string(m_type) << ColorCode::Reset;
-    std::cout << error_code << ", " << "Position: " << file_name;
-    if(line_number != -1)
-        std::cout << ":" << line_number;
-    if(line_position > 0)
-        std::cout << ":" << line_position;
+    std::cout << error_code << ", " << "Position: " << m_file_name;
+    if(m_line_number != -1)
+        std::cout << ":" << m_line_number;
+    if(m_line_position > 0)
+        std::cout << ":" << m_line_position;
     std::cout << "]" << std::endl;
-    std::cout << message << " ";
-    if(!expected.empty())
-        std::cout << "Expected: '" << expected << "', ";
-    if(!got.empty())
-        std::cout << "got: '" << got << "'";
+    std::cout << m_message << " ";
+    if(!m_expected.empty())
+        std::cout << "Expected: '" << m_expected << "', ";
+    if(!m_got.empty())
+        std::cout << "m_got: '" << m_got << "'";
     std::cout << ColorCode::Reset << std::endl;
 
     // Zeige die entsprechende Zeile aus der Datei
-    if(line_number != -1) {
-        std::string in_line = "In line " + std::to_string(line_number) + ": ";
+    if(m_line_number != -1) {
+        std::string in_line = "In line " + std::to_string(m_line_number) + ": ";
         std::cout << ColorCode::Bold << in_line << ColorCode::Reset;
         std::string line = replace_tabs_with_spaces(get_line_from_file(), 1);
         std::cout << line << std::endl;
 
-        if(line_position > 0) {
+        if(m_line_position > 0) {
             for (int i = 0; i < (in_line.length() + line.length()); i++) {
-                if (line_position-1 + in_line.length() == i) {
+                if (m_line_position - 1 + in_line.length() == i) {
                     std::cout << "^";
                 } else {
                     std::cout << " ";
@@ -69,16 +69,16 @@ void CompileError::exit(ErrorType err) {
 }
 
 std::string CompileError::get_line_from_file() {
-    std::ifstream file(file_name);
+    std::ifstream file(m_file_name);
     std::string line;
     if (file.is_open()) {
-        for (size_t i = 0; i < line_number && std::getline(file, line); ++i) {
+        for (size_t i = 0; i < m_line_number && std::getline(file, line); ++i) {
             // Nichts tun, nur bis zur gewünschten Zeile lesen
         }
         file.close();
         return line;
     }
-    CompileError(ErrorType::FileError, "Unable to open file.", -1, "valid path/valid *.ksp file", file_name, "").exit();
+    CompileError(ErrorType::FileError, "Unable to open file.", -1, "valid path/valid *.ksp file", m_file_name, "").exit();
     return "";
 }
 
