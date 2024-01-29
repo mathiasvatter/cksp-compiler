@@ -35,7 +35,8 @@ if [ ! -d "$RELEASES_DIR" ]; then
 	mkdir -p "$RELEASES_DIR"
 fi
 
-RELEASE_DIR="${RELEASES_DIR}/cksp_v${VERSION}_release"
+VERSION_DIR="cksp_v${VERSION}_release"
+RELEASE_DIR="${RELEASES_DIR}/${VERSION_DIR}"
 
 # Erstellen des Release-Ordners
 mkdir -p "$RELEASE_DIR"
@@ -52,7 +53,11 @@ rm "$RELEASE_DIR/$TARGET_DIR/cksp"
 cp "$BUILD_DIR/cksp" "$RELEASE_DIR/$TARGET_DIR/cksp"
 # cp "wiki/Features.md" "$RELEASE_DIR/Features.md"
 
+# Wechseln in das Verzeichnis _Releases vor dem Zippen
+cd "$RELEASES_DIR"
 # zipping it up
-zip -vr "${RELEASE_DIR}.zip" "$RELEASE_DIR" -x "*.DS_Store"
+zip -vr "${VERSION_DIR}.zip" "$VERSION_DIR" -x "*.DS_Store"
+# Zurück zum ursprünglichen Verzeichnis
+cd -
 
 echo "Release files copied to $RELEASE_DIR"
