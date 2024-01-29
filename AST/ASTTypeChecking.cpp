@@ -49,9 +49,10 @@ void ASTTypeChecking::visit(NodeCallback &node) {
 void ASTTypeChecking::visit(NodeUIControl& node) {
     node.control_var->accept(*this);
     // unused variable declarations being replaced with node_dead_end, replace also parent
-    if(&node == m_current_node_replaced) {
+    if(cast_node<NodeDeadEnd>(node.control_var.get())) {
+//    if(&node == m_current_node_replaced) {
         m_current_node_replaced = node.parent;
-        node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
+        node.replace_with(std::make_unique<NodeDeadEnd>(node.tok));
         return;
     }
     node.params->accept(*this);
@@ -64,11 +65,10 @@ void ASTTypeChecking::visit(NodeVariable& node) {
     if(node_declaration || node_ui_control) {
         if(!node.is_used) {
             m_current_node_replaced = node.parent;
-            node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
+            node.replace_with(std::make_unique<NodeDeadEnd>(node.tok));
             return;
         }
     }
-
     // only print error if it is in a declaration
     if(node.type == Unknown) {
         if(node_declaration or node_ui_control) {
@@ -79,7 +79,6 @@ void ASTTypeChecking::visit(NodeVariable& node) {
 			node.type = node.declaration->type;
 		}
     }
-
 	if(node.type == Unknown or node.type == Number or node.type == Any) {
         // no return_var information printed pls
         if(!node.is_compiler_return and !node.is_local and !node.is_engine)
@@ -138,7 +137,7 @@ void ASTTypeChecking::visit(NodeArray& node) {
     if(node_declaration || node_ui_control) {
         if(!node.is_used) {
             m_current_node_replaced = node.parent;
-            node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
+            node.replace_with(std::make_unique<NodeDeadEnd>(node.tok));
             return;
         }
     }
@@ -167,8 +166,10 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
     node.to_be_declared->accept(*this);
 
     // unused variable declarations being replaced with node_dead_end
-    if(&node == m_current_node_replaced) {
+    if(cast_node<NodeDeadEnd>(node.to_be_declared.get())) {
+//    if(&node == m_current_node_replaced) {
         m_current_node_replaced = nullptr;
+        node.replace_with(std::make_unique<NodeDeadEnd>(node.tok));
         return;
     }
 

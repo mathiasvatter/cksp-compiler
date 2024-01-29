@@ -38,7 +38,7 @@ void CompileError::print(ErrorType err) {
     if(!m_expected.empty())
         std::cout << "Expected: '" << m_expected << "', ";
     if(!m_got.empty())
-        std::cout << "m_got: '" << m_got << "'";
+        std::cout << "got: '" << m_got << "'";
     std::cout << ColorCode::Reset << std::endl;
 
     // Zeige die entsprechende Zeile aus der Datei

@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
 //    input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
 //    input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
-    input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
+//    input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
 //    input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
