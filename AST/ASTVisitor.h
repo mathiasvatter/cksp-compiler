@@ -40,7 +40,7 @@ public:
     std::unordered_map<ASTType, std::string> m_return_arrays = {{Integer, "_return_vars_int"}, {Real, "_return_vars_real"}, {String, "_return_vars_str"}};
     std::unordered_map<ASTType, std::string> m_local_var_arrays = {{Integer, "_loc_var_int"}, {Real, "_loc_var_real"}, {String, "_loc_var_str"}};
 
-    virtual void visit(NodeDeadEnd& node) {};
+    virtual void visit(NodeDeadCode& node) {};
 	virtual void visit(NodeInt& node) {node.type = Integer;};
     virtual void visit(NodeReal& node) {node.type = Real;};
     virtual void visit(NodeString& node) {node.type = String;};

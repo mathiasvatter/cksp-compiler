@@ -142,7 +142,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 
 //    if(node_declaration || node_ui_control) {
 //        if(!node.is_used) {
-//            node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
+//            node.parent->replace_with(std::make_unique<NodeDeadCode>(node.tok));
 //            return;
 //        }
 //    }
@@ -184,7 +184,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
 
 //    if(node_declaration || node_ui_control) {
 //        if(!node.is_used) {
-//            node.parent->replace_with(std::make_unique<NodeDeadEnd>(node.tok));
+//            node.parent->replace_with(std::make_unique<NodeDeadCode>(node.tok));
 //            return;
 //        }
 //    }

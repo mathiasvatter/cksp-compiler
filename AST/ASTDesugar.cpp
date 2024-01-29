@@ -310,7 +310,7 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
             if (!node_function_def->body->statements.empty()) {
                 node.replace_with(std::move(node_function_def->body));
             } else {
-                node.replace_with(std::make_unique<NodeDeadEnd>(node.tok));
+                node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
             }
         } else {
             m_program->function_definitions.push_back(std::move(node_function_def));
@@ -540,7 +540,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
             stmt = std::move(node_assignment);
         } else {
             assignee = std::move(node.assignee);
-            auto node_dead_end = std::make_unique<NodeDeadEnd>(node.tok);
+            auto node_dead_end = std::make_unique<NodeDeadCode>(node.tok);
             stmt = std::move(node_dead_end);
         }
         if(node_array or is_global or is_const) {

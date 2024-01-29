@@ -20,7 +20,7 @@ public:
     };
     virtual void visit(PreNodeKeyword& node) {};
     virtual void visit(PreNodeOther& node) {};
-    virtual void visit(PreNodeDeadEnd& node) {};
+    virtual void visit(PreNodeDeadCode& node) {};
     virtual void visit(PreNodePragma& node) {
 //        node.option->accept(*this);
 //        node.argument->accept(*this);

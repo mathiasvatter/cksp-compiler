@@ -123,10 +123,10 @@ std::vector<std::unique_ptr<T>> clone_vector(const std::vector<std::unique_ptr<T
     return new_vec;
 }
 
-struct NodeDeadEnd : NodeAST {
-    explicit NodeDeadEnd(const Token tok) : NodeAST(tok) {};
+struct NodeDeadCode : NodeAST {
+    explicit NodeDeadCode(const Token tok) : NodeAST(tok) {};
     void accept(ASTVisitor& visitor) override;
-    NodeDeadEnd(const NodeDeadEnd& other) : NodeAST(other.tok) {}
+    NodeDeadCode(const NodeDeadCode& other) : NodeAST(other.tok) {}
     std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {return "";}
 };
@@ -427,7 +427,6 @@ struct NodeSingleAssignStatement : NodeAST {
 struct NodeDeclareStatement : NodeAST {
 	std::unique_ptr<NodeParamList> to_be_declared;
 	std::unique_ptr<NodeParamList> assignee;
-//    std::unique_ptr<NodeAST> statement;
     inline explicit NodeDeclareStatement(Token tok) : NodeAST(tok) {}
 	inline NodeDeclareStatement(std::unique_ptr<NodeParamList> to_be_declared, std::unique_ptr<NodeParamList> assignee, Token tok)
     : NodeAST(tok), to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {}
@@ -535,7 +534,6 @@ struct NodeSetControlStatement : NodeAST {
     inline NodeSetControlStatement(std::unique_ptr<NodeGetControlStatement> getControl, std::unique_ptr<NodeAST> assignee, Token tok)
     : NodeAST(tok), get_control(std::move(getControl)), assignee(std::move(assignee)) {}
     void accept(ASTVisitor& visitor) override;
-//	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Kopierkonstruktor
     NodeSetControlStatement(const NodeSetControlStatement& other);
     // Clone Methode

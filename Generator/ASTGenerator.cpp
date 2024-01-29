@@ -141,7 +141,7 @@ void ASTGenerator::visit(NodeSingleAssignStatement &node) {
 }
 
 void ASTGenerator::visit(NodeStatement &node) {
-	if(!is_instance_of<NodeDeadEnd>(node.statement.get())) {
+	if(!is_instance_of<NodeDeadCode>(node.statement.get())) {
 		node.statement->accept(*this);
 		os << std::endl;
 	}
