@@ -128,11 +128,11 @@ struct PreNodeOther : PreNodeAST {
     }
 };
 
-struct PreNodeDeadEnd : PreNodeAST {
+struct PreNodeDeadCode : PreNodeAST {
     Token sth;
-    PreNodeDeadEnd(Token tok, PreNodeAST *parent) : PreNodeAST(parent), sth(std::move(tok)) {}
+    PreNodeDeadCode(Token tok, PreNodeAST *parent) : PreNodeAST(parent), sth(std::move(tok)) {}
     void accept(PreASTVisitor& visitor) override;
-    PreNodeDeadEnd(const PreNodeDeadEnd& other) : PreNodeAST(other), sth(other.sth) {}
+    PreNodeDeadCode(const PreNodeDeadCode& other) : PreNodeAST(other), sth(other.sth) {}
     [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
     std::string get_string() override {
         return sth.val;

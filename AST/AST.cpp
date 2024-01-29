@@ -16,12 +16,12 @@ void NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 	}
 }
 
-// ************* NodeDeadEnd ***************
-void NodeDeadEnd::accept(ASTVisitor &visitor) {
+// ************* NodeDeadCode ***************
+void NodeDeadCode::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-std::unique_ptr<NodeAST> NodeDeadEnd::clone() const {
-    return std::make_unique<NodeDeadEnd>(*this);
+std::unique_ptr<NodeAST> NodeDeadCode::clone() const {
+    return std::make_unique<NodeDeadCode>(*this);
 }
 
 // ************* NodeInt ***************

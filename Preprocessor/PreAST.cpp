@@ -73,12 +73,12 @@ std::unique_ptr<PreNodeAST> PreNodeOther::clone() const {
     return std::make_unique<PreNodeOther>(*this);
 }
 
-// ************* PreNodeDeadEnd *************
-void PreNodeDeadEnd::accept(PreASTVisitor &visitor) {
+// ************* PreNodeDeadCode *************
+void PreNodeDeadCode::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
-std::unique_ptr<PreNodeAST> PreNodeDeadEnd::clone() const {
-    return std::make_unique<PreNodeDeadEnd>(*this);
+std::unique_ptr<PreNodeAST> PreNodeDeadCode::clone() const {
+    return std::make_unique<PreNodeDeadCode>(*this);
 }
 
 // ************* PreNodePragma *************
