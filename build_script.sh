@@ -11,7 +11,7 @@ if [ "$ARCH" == "arm64" ]; then
     CMAKE_DIR="/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake"
 else
     TARGET_DIR="$INTEL_DIR"
-    CMAKE_DIR="/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake"
+    CMAKE_DIR="/Applications/CLion.app/Contents/bin/cmake/mac/x64/bin/cmake"
 fi
 
 BUILD_DIR="cmake-build-release"

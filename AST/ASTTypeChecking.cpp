@@ -72,7 +72,6 @@ void ASTTypeChecking::visit(NodeVariable& node) {
     // only print error if it is in a declaration
     if(node.type == Unknown) {
         if(node_declaration or node_ui_control) {
-//            CompileError(ErrorType::TypeError,"Could not infer variable type. Automatically casted as <Integer>. Consider using a variable identifier.", node.tok.line, "", node.name, node.tok.file).print();
             CompileError(ErrorType::TypeError,"Could not infer variable type. Automatically casted as <Integer>. Consider using a variable identifier.", "", node.tok).print();
 			node.type = Integer;
 		} else {
@@ -82,7 +81,7 @@ void ASTTypeChecking::visit(NodeVariable& node) {
 	if(node.type == Unknown or node.type == Number or node.type == Any) {
         // no return_var information printed pls
         if(!node.is_compiler_return and !node.is_local and !node.is_engine)
-		    CompileError(ErrorType::TypeError,"Could not infer variable type. Variable is Unknown/Number/Any", node.tok.line, "valid type", node.name, node.tok.file).print();
+		    CompileError(ErrorType::TypeError,"Could not infer variable type. Variable is Unknown/Number/Any", "valid type", node.tok).print();
 	}
 
     if(node.is_compiler_return) {
@@ -147,7 +146,6 @@ void ASTTypeChecking::visit(NodeArray& node) {
 //        auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
 //        auto node_ui_control = cast_node<NodeUIControl>(node.parent);
         if(node_declaration or node_ui_control) {
-//            CompileError(ErrorType::TypeError,"Could not infer array type. Automatically casted as <Integer>. Consider using a variable identifier.", node.tok.line, "", node.name, node.tok.file).print();
             CompileError(ErrorType::TypeError,"Could not infer array type. Automatically casted as <Integer>. Consider using a variable identifier.", "", node.tok).print();
 			node.type = Integer;
         } else {
@@ -155,7 +153,7 @@ void ASTTypeChecking::visit(NodeArray& node) {
 		}
     }
 	if(node.type == Unknown or node.type == Number or node.type == Any) {
-		CompileError(ErrorType::TypeError,"Could not infer array type. Variable is Unknown/Number/Any", node.tok.line, "valid type", node.name, node.tok.file).print();
+		CompileError(ErrorType::TypeError,"Could not infer array type. Variable is Unknown/Number/Any", "valid type", node.tok).print();
 	}
 
     node.indexes->accept(*this);

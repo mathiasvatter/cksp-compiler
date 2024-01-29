@@ -72,6 +72,7 @@ private:
 	std::string m_got;
 	size_t m_line_number;
     size_t m_line_position;
+	size_t m_marker_length;
     std::string m_file_name;
 
     std::string get_line_from_file();
