@@ -18,9 +18,8 @@ Known Issues:
 Not supported (yet):
  - <import as> namespaces
  - structs
- - taskfunctions
+ - task functions
  - concat()
- - pragma
  - iterate_post_macro(), literate_post_macro()
 
 Preprocessor Order:
@@ -32,6 +31,7 @@ Preprocessor Order:
  - Preprocessor Parsing to PreAST
  - PreAST desugaring:
      - defines are substituted
+     - <START_INC> directive is executed
      - iterate_macro and literate_macro are expanded
      - macros are substituted
 

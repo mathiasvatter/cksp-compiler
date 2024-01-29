@@ -4,6 +4,8 @@
 
 #include <iostream>
 #include <filesystem>
+#include <sstream>
+
 #include "CommandLineOptions.h"
 #include "version.h"
 #include "Readme.h"
@@ -67,4 +69,15 @@ const std::string &CommandLineOptions::get_output_file() const {
 
 const std::string &CommandLineOptions::get_standard_output_file() const {
     return m_standard_output_file;
+}
+
+std::string CommandLineOptions::get_help_option() {
+	std::ostringstream ss;
+	ss << "Usage: cksp [options] <input-file>" << std::endl;
+	ss << std::endl;
+	ss << "Options:" << std::endl;
+	for(const auto & tuple : m_option_tuples) {
+		ss << "-" << std::get<0>(tuple) << ", --" << std::get<1>(tuple) << " " << std::get<2>(tuple) << "\t\t" << std::get<4>(tuple) << std::endl;
+	}
+	return ss.str();
 }

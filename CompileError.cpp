@@ -10,12 +10,16 @@
 CompileError::CompileError(ErrorType type, std::string message, std::string expected, const Token &token)
         : m_type(type), m_message(std::move(message)), m_expected(std::move(expected)) {
     m_line_number = token.line; m_file_name = token.file; m_got = token.val; m_line_position = token.pos;
+	m_marker_length = token.val.length();
 }
 
 CompileError::CompileError(ErrorType type, std::string message, size_t lineNumber, std::string expected,
                            std::string got, std::string fileName)
         : m_type(type), m_message(std::move(message)), m_expected(std::move(expected)), m_got(std::move(got)),
-          m_line_number(lineNumber), m_file_name(std::move(fileName)) { m_line_position=0;}
+          m_line_number(lineNumber), m_file_name(std::move(fileName)) {
+	m_line_position = 0;
+	m_marker_length = 0;
+}
 
 void CompileError::print(ErrorType err) {
     if (m_got == "\n") {
@@ -49,14 +53,17 @@ void CompileError::print(ErrorType err) {
         std::cout << line << std::endl;
 
         if(m_line_position > 0) {
+			std::cout << error_code;
+			auto start_pos = m_line_position - 1 + in_line.length();
+			auto end_pos = m_line_position - 1 + in_line.length() + m_marker_length-1;
             for (int i = 0; i < (in_line.length() + line.length()); i++) {
-                if (m_line_position - 1 + in_line.length() == i) {
+                if (i >= start_pos && i <= end_pos) {
                     std::cout << "^";
                 } else {
                     std::cout << " ";
                 }
             }
-            std::cout << std::endl;
+            std::cout << ColorCode::Reset << std::endl;
         }
     }
 }
