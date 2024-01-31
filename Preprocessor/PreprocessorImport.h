@@ -6,7 +6,7 @@
 #include "Preprocessor.h"
 
 Result<std::string> resolve_path(const std::string& import_path, const Token& token, const std::string& curr_file);
-static std::string resolve_overlap(const std::string& base_path, const std::string& relative_path);
+static Result<std::string> resolve_overlap(const std::string& base_path, const std::string& relative_path);
 
 class PreprocessorImport : public Preprocessor {
 public:
