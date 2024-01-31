@@ -153,7 +153,7 @@ Result<std::unique_ptr<NodeImport>> PreprocessorImport::parse_import(std::vector
         auto return_value = std::make_unique<NodeImport>(filepath, alias, get_tok(tokens));
         return Result<std::unique_ptr<NodeImport>>(std::move(return_value));
     } else {
-        return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::PreprocessorError,
+        return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::FileError,
     "Not a filepath",peek(tokens).line,"path",peek(tokens).val, peek(tokens).file));
     }
 }
@@ -168,7 +168,7 @@ Result<std::string> resolve_path(const std::string& import_path, const Token& to
         if (std::filesystem::exists(rel)) {
             return Result<std::string>(rel.string());
         } else {
-            return Result<std::string>(CompileError(ErrorType::PreprocessorError,
+            return Result<std::string>(CompileError(ErrorType::FileError,
 			"Found incorrect path.", token.line, "valid path", rel.string(), curr_file));
         }
     }
@@ -181,16 +181,20 @@ Result<std::string> resolve_path(const std::string& import_path, const Token& to
     if (std::filesystem::exists(absPath)) {
         return Result<std::string>(absPath.string());
     } else {
-        auto new_absPath = resolve_overlap(current_base.string(), rel.string());
-        if (std::filesystem::exists(new_absPath))
-            return Result<std::string>(new_absPath);
         auto resolve_error = current_base.string() + ", " + rel.string();
-        return Result<std::string>(CompileError(ErrorType::PreprocessorError,
+        auto new_absPath = resolve_overlap(current_base.string(), rel.string());
+        if(new_absPath.is_error())
+            return Result<std::string>(CompileError(ErrorType::FileError,
+            "Could not resolve paths.", token.line, "valid path", resolve_error, curr_file));
+
+        if (std::filesystem::exists(new_absPath.unwrap()))
+            return Result<std::string>(new_absPath.unwrap());
+        return Result<std::string>(CompileError(ErrorType::FileError,
 		"Could not resolve paths.", token.line, "valid path", resolve_error, curr_file));
     }
 }
 
-std::string resolve_overlap(const std::string& base_path, const std::string& relative_path) {
+Result<std::string> resolve_overlap(const std::string& base_path, const std::string& relative_path) {
     std::filesystem::path base(base_path);
     std::filesystem::path relative(relative_path);
 
@@ -206,6 +210,13 @@ std::string resolve_overlap(const std::string& base_path, const std::string& rel
     while (!baseParts.empty() && !relativeParts.empty() && baseParts.back() != relativeParts.front()) {
         baseParts.pop_back();
     }
+
+    // Überprüfen, ob keine Übereinstimmung gefunden wurde
+    if (baseParts.empty() || relativeParts.empty() || baseParts.back() != relativeParts.front()) {
+        return Result<std::string>(CompileError(ErrorType::FileError,
+        "Could not resolve paths.", -1, "valid path", "", ""));
+    }
+
     baseParts.pop_back(); //erase common bit
     std::filesystem::path mergedPath;
     for (const auto& part : baseParts) {
@@ -214,5 +225,5 @@ std::string resolve_overlap(const std::string& base_path, const std::string& rel
     for (const auto& part : relativeParts) {
         mergedPath /= part;
     }
-    return mergedPath.string();
+    return Result<std::string>(mergedPath.string());
 }
