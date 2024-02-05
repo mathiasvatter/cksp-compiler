@@ -841,7 +841,7 @@ void ASTDesugar::declare_compiler_variables() {
 //        m_local_declare_statements.push_back(statement_wrapper(std::move(node_arr_declaration), m_init_callback->statements.get()));
 //    }
     for(auto &arr_name : m_local_var_arrays) {
-        auto node_array = make_array(arr_name.second, m_local_variables.size(), tok, m_init_callback);
+        auto node_array = make_array(arr_name.second, std::max(1,(int)m_local_variables.size()), tok, m_init_callback);
         node_array -> type = arr_name.first;
         node_array-> is_used = true;
         node_array->is_engine = true;

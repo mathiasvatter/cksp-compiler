@@ -1,3 +1,8 @@
+//******* MACROS
+<macro_header> ::= <keyword> "(" <param_list> ")"
+<macro_definition> ::= "macro" <macro_header> <linebreak> <statement>* "end macro"
+<macro_iteration> ::= "iterate_macro" "(" <keyword> ")" ":=" <binary_expression> "to" <binary_expression>
+<macro_literation> ::= "literate_macro" "(" <keyword> ")" "on" <param_list>
 
 
 
@@ -6,12 +11,11 @@
 <int> ::= [1-9]+ | "int(" <real> ")"
 <real> ::= <int> "." <int> | "real(" <int> ")"
 <num> ::= (<int> | <real>)
-<binary_op> ::= - | + | mod | / | * | <bitwise_op> | <comparison_op> | <bool_op
+<binary_op> ::= - | + | mod | / | * | <bitwise_op> | <comparison_op> | <bool_op>
 <unary_op> ::= not | .not. | -
 <linebreak> ::= \n
-<assignment> ::= (<variable> | <array>) ":=" (<num> | <string>)
-<comparison_op> ::= "=" | "<" | ">" | "<=" | ">=" | "!="
-<bool_op> ::= and | or | not
+<comparison_op> ::= "=" | "<" | ">" | "<=" | ">=" | "#"
+<bool_op> ::= and | or | not | xor
 <bitwise_op> ::= .and. | .xor. | .or. | .not.
 <string_op> ::= &
 
@@ -20,11 +24,6 @@
 <function_definition> ::= "function" <function_header> ("->" <variable>)? ("override")? <linebreak> <statement>* "end function"
 <function_call> ::= "call"? <function_header>
 
-//******* MACROS
-<macro_header> ::= <keyword> "(" <param_list> ")"
-<macro_definition> ::= "macro" <macro_header> <linebreak> <statement>* "end macro"
-<macro_iteration> ::= "iterate_macro" "(" <keyword> ")" ":=" <binary_expression> "to" <binary_expression>
-<macro_literation> ::= "literate_macro" "(" <keyword> ")" "on" <param_list>
 
 //******* START_INC
 
@@ -57,27 +56,19 @@ UI_PANEL ::= declare ui_panel $<variable-name>
 UI_MOUSE_AREA ::= declare ui_mouse_area $<variable-name>
 
 
-.not. sh_left(bit_list, 1) .and. bit_list
-1
-
-//******** DEFINE
-<define_statement> ::= "define" <param_list> := <param_list>
-
-<keyword> ::= ([0-9] | [a-z] | [A-Z] | "_")+ | <keyword> "." <keyword>
+<char> ::= "A" | ... | "Z" | "a" | ... | "z" | "0" | ... | "9"
+<keyword> ::= <char> | "." | "_" | <keyword>
 <string> ::= "\'" <text> "\'"
-<variable_identifier> ::= "$" | "~" | "@"
-<array_identifier> ::= "!" | "%" | "?"
-<identifier> ::= <variable_identifier> | <array_identifier>
-<variable> ::=  <identifier>? <keyword>
-<array> ::= <identifier>? <keyword> [ <param_list> ]
-<param_list> ::= (<expression> ("," <expression>)?)?
-<declare_statement> ::=  <declare_list> ":="? <param_list>?
+<variable_ident> ::= "$" | "~" | "@"
+<array_ident> ::= "!" | "%" | "?"
+<variable> ::=  <var_ident>? <keyword>
+<array> ::= <array_ident>? <keyword> [ <param_list> ]
+<param_list> ::= "(" <expression> ("," <expression>)* ")"
 
-
-<declare_list> ::= (<declare_variable> | <declare_array> | <declare_control>) ("," <declare_list>)?
-<declare_variable> ::= read? (local | global)? (const | polyphonic)? <variable>
-<declare_array> ::= read? (local | global)? <array>
-<declare_control> ::= read? (local | global)? <ui_control> (variable | array) ("(" <param_list> ")")?
+<declare_statement> ::=  declare <declare_list> (":=" <param_list>)?
+<declare_variable> ::= (const | polyphonic)? <variable>
+<declare_control> ::= <ui_control> (<variable> | <array>) ("(" <param_list> ")")?
+<declare_list> ::= (read | pers | instpers)? (local | global)? ( <declare_variable> | <array> | <declare_control>) ("," <declare_list>)*
 
 <unary_expression> ::= <unary_op> (<num> | <variable> | <function_header>)
 <primary_expression> ::= <num> | <variable> | <function_header> | <unary_expression> | "("<binary_expression>")"

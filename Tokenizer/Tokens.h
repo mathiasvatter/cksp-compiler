@@ -55,6 +55,7 @@
     XX(BOOL_AND, "bool_and") \
     XX(BOOL_OR, "bool_or") \
     XX(BOOL_NOT, "bool_not") \
+    XX(BOOL_XOR, "bool_xor") \
     XX(FUNCTION, "function") \
     XX(CALL, "func_call") \
     XX(OVERRIDE, "override") \
@@ -138,6 +139,10 @@ struct Keyword {
 	std::string value;
 };
 
+inline int MAX_CALLBACK_LINES = 4990;
+inline int MAX_UI_CONTROLS = 999;
+inline int MAX_ARRAY_ELEMENTS = 1000000;
+
 inline std::set<char> BINARY_OPERATORS = {'-', '+', '/', '*', '&'};
 inline std::set<char> PARENTH = {'(',')', '[', ']'};
 inline std::set<char> VAR_IDENT = {'$', '~', '@'};
@@ -169,13 +174,14 @@ inline std::unordered_map<std::string, token> STATEMENTS = {{"function", FUNCTIO
                                           {"struct", STRUCT}, {"macro", MACRO}, {"taskfunc", TASKFUNC}};
 inline std::set<std::string> CALLBACKS = {"init", "note", "release", "midi_in", "controller",
 											 "rpn", "nrpn", "ui_update", "_pgs_changed", "pgs_changed",
-											 "poly_at", "listener", "async_complete", "persistence_changed", "ui_control"};
+											 "poly_at", "listener", "async_complete", "persistence_changed", "ui_control", "ui_controls"};
 inline std::set<std::string> RESTRICTED_CALLBACKS = {"init", "persistence_changed", "ui_control", "pgs_changed", "async_complete"};
+
 inline std::set<std::string> BUILTIN_CONDITIONS = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG"};
 
 inline std::unordered_map<std::string, token> BITWISE_OPERATORS = {{".and.", BIT_AND}, {".or.", BIT_OR}, {".not.", BIT_NOT}, {".xor.", BIT_XOR}};
 //inline std::vector<Keyword> BITWISE_OPERATORS = {{BIT_AND, ".and."}, {BIT_OR, ".or."}, {BIT_NOT, ".not."}, {BIT_XOR, ".xor."}};
-inline std::unordered_map<std::string, token> BOOL_OPERATORS = {{"and", BOOL_AND}, {"or", BOOL_OR}, {"not", BOOL_NOT}};
+inline std::unordered_map<std::string, token> BOOL_OPERATORS = {{"and", BOOL_AND}, {"or", BOOL_OR}, {"not", BOOL_NOT}, {"xor", BOOL_XOR}};
 //inline std::vector<Keyword> BOOL_OPERATORS = {{BOOL_AND, "and"}, {BOOL_OR, "or"}, {BOOL_NOT, "not"}};
 inline std::unordered_map<std::string, token> MATH_OPERATORS = {{"-", SUB}, {"+", ADD}, {"/", DIV}, {"*", MULT}, {"mod", MODULO}};
 //inline std::vector<Keyword> MATH_OPERATORS = {{SUB, "-"}, {ADD, "+"}, {DIV, "/"}, {MULT, "*"}, {MODULO, "mod"}};

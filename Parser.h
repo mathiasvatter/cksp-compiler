@@ -21,6 +21,7 @@ template<typename T> Result<T> handle_error(Result<T> result) {
 }
 
 inline static std::map<token, int> BinaryOpPrecendence = {
+        {token::BOOL_XOR, 1},
         {token::BOOL_OR, 1},
         {token::BOOL_AND, 2},
 		{token::BOOL_NOT, 3},
