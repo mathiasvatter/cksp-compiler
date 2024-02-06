@@ -43,12 +43,11 @@ int main(int argc, char* argv[]) {
     // Startzeitpunkt speichern
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    std::cout << "Input File: " << input_filename << std::endl;
-    if(output_filename.empty())
-        std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << standard_output_path << std::endl;
-    else
-        std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << output_filename << std::endl;
-    std::cout << std::endl;
+//    if(output_filename.empty())
+//        std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << standard_output_path << std::endl;
+//    else
+//        std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << output_filename << std::endl;
+//    std::cout << std::endl;
     FileHandler file_handler(input_filename);
 	Tokenizer tokenizer(file_handler.get_output(), input_filename);
     auto tokens = tokenizer.tokenize();
@@ -82,6 +81,9 @@ int main(int argc, char* argv[]) {
         output_filename = preprocessor.get_output_path();
     if(output_filename.empty())
         output_filename = standard_output_path;
+    std::cout << "Input File: " << input_filename << std::endl;
+    std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << output_filename << std::endl;
+    std::cout << std::endl;
     std::filesystem::path curr_path = __FILE__;
 
 	auto preprocessor_time = std::chrono::high_resolution_clock::now();
