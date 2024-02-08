@@ -1,99 +1,120 @@
-//******* MACROS
-<macro_header> ::= <keyword> "(" <param_list> ")"
-<macro_definition> ::= "macro" <macro_header> <linebreak> <statement>* "end macro"
-<macro_iteration> ::= "iterate_macro" "(" <keyword> ")" ":=" <binary_expression> "to" <binary_expression>
-<macro_literation> ::= "literate_macro" "(" <keyword> ")" "on" <param_list>
+(********************************************************************)
+(*                          CKSP EBNF                               *)
+(********************************************************************)
+
+(* *********************** Preprocessor *************************** *)
+
+(* Macros *)
+pre_param_list = (param_list ("," pre_keyword)?)+
+macro_header = pre_keyword ("(" pre_param_list ")")?
+macro_definition = "macro" macro_header linebreak+ statement* "end macro" linebreak+
+macro_iteration = "iterate_macro" "(" pre_keyword ")" ":=" binary_expression "to" binary_expression linebreak+
+macro_literation = "literate_macro" "(" pre_keyword ")" "on" pre_param_list linebreak+
+
+(* Incrementer *)
+incrementer = "START_INC" "(" (int | pre_keyword) "," num "," num ")" program linebreak+ "END_INC" linebreak+
+
+(* Define Constant *)
+define_header = pre_keyword ("(" pre_param_list ")")?
+define_definition = "define" define_header ":=" (expression  | "," | pre_keyword)* linebreak+
+
+(* Pragma Directive *)
+pragma = "#pragma" "output_path" "(" string ")" linebreak+
+
+(* Import Statement *)
+import_statement = "import" string ("as" keyword)?
 
 
+(* *********************** Main Grammar *************************** *)
 
-//*******************************+ KSP BNF ************************
+(* Program Architecture *)
+programm = (callback | function_definition | macro_definition | import_statement)*
+callback = "on" callback_identifier ("("variable | array")")? linebreak statement* "end on" linebreak+
 
-<int> ::= [1-9]+ | "int(" <real> ")"
-<real> ::= <int> "." <int> | "real(" <int> ")"
-<num> ::= (<int> | <real>)
-<binary_op> ::= - | + | mod | / | * | <bitwise_op> | <comparison_op> | <bool_op>
-<unary_op> ::= not | .not. | -
-<linebreak> ::= \n
-<comparison_op> ::= "=" | "<" | ">" | "<=" | ">=" | "#"
-<bool_op> ::= and | or | not | xor
-<bitwise_op> ::= .and. | .xor. | .or. | .not.
-<string_op> ::= &
+(* Expressions *)
+unary_expression = unary_op (num | variable | array | ndarray | function_header)
+primary_expression = num | variable | array | ndarray | function_header | unary_expression | "("binary_expression")"
+binary_expression = primary_expression (binary_op binary_expression)?
+string_expression = (string | binary_expression) (string_op (string | binary_expression))?
+expression = string_expression | binary_expression | param_list
+(* Special cases of expressions for type checking *)
+condition = boolean_expression
+boolean_expression = comparison_expression (bool comparison_expression)?
+comparison_expression = binary_expression comparison_op binary_expression
 
-//******** FUNCTIONS
-<function_header> ::= <keyword> ("(" (<param_list> | <expression) ")")?
-<function_definition> ::= "function" <function_header> ("->" <variable>)? ("override")? <linebreak> <statement>* "end function"
-<function_call> ::= "call"? <function_header>
+(* Variables *)
+variable =  var_ident? keyword
+array = array_ident? keyword "[" expression "]"
+ndarray = array_ident? keyword "[" param_list "]"
+param_list = expression ("," expression)*
 
+(* Declaration and Assignment *)
+declare_variable = ("const" | "polyphonic")? variable
+declare_control = ui_label | ui_button | ui_switch | ui_slider | ui_menu | ui_value_edit | ui_waveform | ui_wavetable | ui_knob | ui_table | ui_xy | ui_text_edit | ui_level_meter | ui_file_selector | ui_panel | ui_mouse_area
+declare_list = ("read" | "pers" | "instpers")? ("local" | "global")? ( declare_variable | array | declare_control) ("," declare_list)*
+declare_statement =  "declare" declare_list (":=" param_list)?
+assign_statement = param_list ":=" param_list
 
-//******* START_INC
+(* Statements *)
+statement = linebreak* (if_statement | while_statement | for_statement | select_statement | assign_statement | funcion_call ) linebreak+
+get_control_statement = (array | variable) "-" keyword
+set_control_statement = get_control_statement "=" expression
+for_statement = "for" assign_statement ("to" | "downto") binary_expression linebreak+ statements "end for" linebreak+
+if_statement = "if" (? condition )? linebreak+ statements else? linebreak statements "end if" linebreak+
+while_statement = "while" (? condition )? linebreak+ statements "end while" linebreak+
+select_statement = "select" (? expression )? linebreak+ ("case" (expression | "default") linebreak statements)+ "end select" linebreak+
+(* const *)
+const_statement = "const" keyword linebreak+ (assign_statement linebreak)+ "end const" linebreak+
+(* struct *)
+struct_statement = "struct" keyword linebreak+ (declare_statement linebreak)+ "end struct" linebreak+
+(* family *)
+family_statement = "family" keyword linebreak+ (declare_statement linebreak)+ "end family" linebreak+
 
+(* Functions *)
+function_header = keyword ("(" (param_list | expression)? ")")?
+function_definition = "function" function_header ("-" variable)? ("override")? linebreak+ statement* "end function"
+function_call = "call"? function_header
 
-//********* const block
-<const_statement> ::= "const" <keyword> <linebreak>+ (<assign_statement> <linebreak>)+ "end const"
+(* ui_controls *)
+ui_label = "ui_label" "$"?variable "("expression, expression")"
+ui_button = "ui_button" "$"?variable
+ui_switch = "ui_switch" "$"?variable
+ui_slider = "ui_slider" "$"?variable "("expression, expression")"
+ui_menu = "ui_menu" "$"?variable
+ui_value_edit = "ui_value_edit" "$"?variable "("expression, expression, expression")"
+ui_waveform = "ui_waveform" "$"?variable "("expression, expression")"
+ui_wavetable = "ui_wavetable" "$"?variable
+ui_knob = "ui_knob" "$"?variable "("expression, expression, expression")"
+ui_table = "ui_table" "%"?array"["expression"]" "("expression, expression, expression")"
+ui_xy = "ui_xy" "?"?array"["expression"]"
+ui_text_edit = "ui_text_edit" "@"?variable
+ui_level_meter = "ui_level_meter" "$"?variable
+ui_file_selector = "ui_file_selector" "$"?variable
+ui_panel = "ui_panel" "$"?variable
+ui_mouse_area = "ui_mouse_area" "$"?variable
 
-//******** struct
-<struct_statement> ::= "struct" <keyword> <linebreak>+ (<declare_statement> <linebreak>)+ "end struct"
+(* Terminals *)
+int = [0-9]+
+real = int+ "." int*
+num = (int | real)
+binary_op = "-" | "+" | "mod" | "/" | "*" | bitwise_op | comparison_op | bool_op | string_op
+unary_op = "not" | ".not." | "-"
+linebreak = "\n"
+comparison_op = "=" | "" | "" | "=" | "=" | "#"
+bool_op = "and" | "or" | "not" | "xor"
+bitwise_op = ".and." | ".xor." | ".or." | ".not."
+string_op = "&"
 
-//****** family
-<family_statement> ::= "family" <keyword> <linebreak>+ (<declare_statement> <linebreak>)+ "end family"
-
-//******** ui_controls
-<ui_label> ::= declare ui_label $<variable-name> (<grid-width>, <grid-height>)
-UI_BUTTON ::= declare ui_button $<variable-name>
-UI_SWITCH ::= declare ui_switch $<variable-name>
-UI_SLIDER ::= declare ui_slider $<variable-name> (<min>, <max>)
-UI_MENU ::= declare ui_menu $<variable-name>
-UI_VALUE_EDIT ::= declare ui_value_edit $<variable-name> (<min>, <max>, <$display-ratio>)
-UI_WAVEFORM ::= declare ui_waveform $<variable-name> (<grid-width>, <grid-height>)
-UI_WAVETABLE ::= declare ui_wavetable $<variable-name>
-UI_KNOB ::= declare ui_knob $<variable-name> (<min>, <max>, <display-ratio>)
-UI_TABLE ::= declare ui_table %<array-name>[num-elements] (<grid-width>, <grid-height>, <range>)
-UI_XY ::= declare ui_xy ?<array-name>[num-elements]
-UI_TEXT_EDIT ::= declare ui_text_edit @<variable-name>
-UI_LEVEL_METER ::= declare ui_level_meter $<variable-name>
-UI_FILE_SELECTOR ::= declare ui_file_selector $<variable-name>
-UI_PANEL ::= declare ui_panel $<variable-name>
-UI_MOUSE_AREA ::= declare ui_mouse_area $<variable-name>
-
-
-<char> ::= "A" | ... | "Z" | "a" | ... | "z" | "0" | ... | "9"
-<keyword> ::= <char> | "." | "_" | <keyword>
-<string> ::= "\'" <text> "\'"
-<variable_ident> ::= "$" | "~" | "@"
-<array_ident> ::= "!" | "%" | "?"
-<variable> ::=  <var_ident>? <keyword>
-<array> ::= <array_ident>? <keyword> [ <param_list> ]
-<param_list> ::= "(" <expression> ("," <expression>)* ")"
-
-<declare_statement> ::=  declare <declare_list> (":=" <param_list>)?
-<declare_variable> ::= (const | polyphonic)? <variable>
-<declare_control> ::= <ui_control> (<variable> | <array>) ("(" <param_list> ")")?
-<declare_list> ::= (read | pers | instpers)? (local | global)? ( <declare_variable> | <array> | <declare_control>) ("," <declare_list>)*
-
-<unary_expression> ::= <unary_op> (<num> | <variable> | <function_header>)
-<primary_expression> ::= <num> | <variable> | <function_header> | <unary_expression> | "("<binary_expression>")"
-<binary_expression> ::= <primary_expression> (<binary_op> <binary_expression>)?
-<string_expression> ::= (<string> | <binary_expression>) (<string_op> (<string> | <binary_expression>))?
-<expression> ::= <string_expression> | <binary_expression> | <param_list>
-
-// Special cases of expressions for type checking
-<condition> ::= <boolean_expression>
-<boolean_expression> ::= <comparison_expression> (<bool> <comparison_expression>)?
-<comparison_expression> ::= <binary_expression> <comparison_op> <binary_expression>
-
-<get_control_statement> ::= (<array> | <variable>) "->" <keyword>
-<set_control_statement> ::= <get_control_statement> "::=" <expression>
-<assign_statement> ::= <param_list> ":=" <param_list>
-<statement> ::= <linebreak>* (<if_statement> | <while_statement> | <for_statement> | <select_statement> | <assign_statement | <funcion_call> ) <linebreak>
-<for_statement> ::= for <assign_statement> (to | downto) <binary_expression> <linebreak> <statements> end for <linebreak>
-<if_statement> ::= if (? <condition> )? <linebreak> <statements> else? <linebreak> <statements> end if <linebreak>
-<while_statement> ::= while (? <condition> )? <linebreak> <statements> end while <linebreak>
-<select_statement> ::= select (? <expression> )? <linebreak> (case <expression> <linebreak> <statements>)+ end select <linebreak>
-<import> ::= import <string> (as <keyword>)?
-<callback_identifier> ::= ("async_complete" | "controller" | "init" |
+char = "A" | ... | "Z" | "a" | ... | "z" | "0" | ... | "9"
+keyword = char | "." | "_" | keyword
+pre_keyword = "#" keyword "#" | keyword
+string = "\'" text "\'"
+variable_ident = "$" | "~" | "@"
+array_ident = "!" | "%" | "?"
+callback_identifier = ("async_complete" | "controller" | "init" |
                           "listener" | "note" | "persistence_changed" | "pgs_changed" | "poly_at" |
                           "release" | "rpn/nrpn" | "ui_control" | "ui_update")
-<callback> ::= "on" <callback_identifier> <linebreak> <statement>* "end on"
-<programm> ::= ((<callback> | <function_definition> | <macro_definition> | <import>) <linebreak>)*
+
+
 
 
