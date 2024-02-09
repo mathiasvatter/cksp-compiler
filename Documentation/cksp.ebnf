@@ -24,11 +24,14 @@ pragma = "#pragma" "output_path" "(" string ")" linebreak+
 (* Import Statement *)
 import_statement = "import" string ("as" keyword)?
 
+(* Preprocessor Program *)
+preprocessor_program = program | define_definition | macro_definition | incrementer | pragma | import_statement | preprocessor_program
+
 
 (* *********************** Main Grammar *************************** *)
 
 (* Program Architecture *)
-programm = (callback | function_definition | macro_definition | import_statement)*
+programm = callback | function_definition | program
 callback = "on" callback_identifier ("("variable | array")")? linebreak statement* "end on" linebreak+
 
 (* Expressions *)
@@ -56,11 +59,12 @@ declare_statement =  "declare" declare_list (":=" param_list)?
 assign_statement = param_list ":=" param_list
 
 (* Statements *)
-statement = linebreak* (if_statement | while_statement | for_statement | select_statement | assign_statement | funcion_call ) linebreak+
-get_control_statement = (array | variable) "-" keyword
-set_control_statement = get_control_statement "=" expression
+statement = linebreak* (if_statement | while_statement | for_statement | foreach_statement | select_statement | assign_statement | funcion_call ) linebreak+
+get_control_statement = (array | variable) "->" keyword
+set_control_statement = get_control_statement ":=" expression
 for_statement = "for" assign_statement ("to" | "downto") binary_expression linebreak+ statements "end for" linebreak+
-if_statement = "if" (? condition )? linebreak+ statements else? linebreak statements "end if" linebreak+
+foreach_statement = "for" variable "," variable "in" array linebreak+ statements "end for" linebreak+
+if_statement = "if" (? condition )? linebreak+ statements (else linebreak+ statements)? "end if" linebreak+
 while_statement = "while" (? condition )? linebreak+ statements "end while" linebreak+
 select_statement = "select" (? expression )? linebreak+ ("case" (expression | "default") linebreak statements)+ "end select" linebreak+
 (* const *)
@@ -72,7 +76,7 @@ family_statement = "family" keyword linebreak+ (declare_statement linebreak)+ "e
 
 (* Functions *)
 function_header = keyword ("(" (param_list | expression)? ")")?
-function_definition = "function" function_header ("-" variable)? ("override")? linebreak+ statement* "end function"
+function_definition = "function" function_header ("->" variable)? ("override")? linebreak+ statement* "end function"
 function_call = "call"? function_header
 
 (* ui_controls *)
@@ -85,8 +89,8 @@ ui_value_edit = "ui_value_edit" "$"?variable "("expression, expression, expressi
 ui_waveform = "ui_waveform" "$"?variable "("expression, expression")"
 ui_wavetable = "ui_wavetable" "$"?variable
 ui_knob = "ui_knob" "$"?variable "("expression, expression, expression")"
-ui_table = "ui_table" "%"?array"["expression"]" "("expression, expression, expression")"
-ui_xy = "ui_xy" "?"?array"["expression"]"
+ui_table = "ui_table" "%"?array "("expression, expression, expression")"
+ui_xy = "ui_xy" "?"?array
 ui_text_edit = "ui_text_edit" "@"?variable
 ui_level_meter = "ui_level_meter" "$"?variable
 ui_file_selector = "ui_file_selector" "$"?variable
@@ -100,7 +104,7 @@ num = (int | real)
 binary_op = "-" | "+" | "mod" | "/" | "*" | bitwise_op | comparison_op | bool_op | string_op
 unary_op = "not" | ".not." | "-"
 linebreak = "\n"
-comparison_op = "=" | "" | "" | "=" | "=" | "#"
+comparison_op = "=" | "<" | ">" | "=" | "=" | "#"
 bool_op = "and" | "or" | "not" | "xor"
 bitwise_op = ".and." | ".xor." | ".or." | ".not."
 string_op = "&"
