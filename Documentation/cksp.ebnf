@@ -10,6 +10,7 @@ macro_header = pre_keyword ("(" pre_param_list ")")?
 macro_definition = "macro" macro_header linebreak+ statement* "end macro" linebreak+
 macro_iteration = "iterate_macro" "(" pre_keyword ")" ":=" binary_expression "to" binary_expression linebreak+
 macro_literation = "literate_macro" "(" pre_keyword ")" "on" pre_param_list linebreak+
+pre_keyword = "#" keyword "#" | keyword
 
 (* Incrementer *)
 incrementer = "START_INC" "(" (int | pre_keyword) "," num "," num ")" program linebreak+ "END_INC" linebreak+
@@ -111,7 +112,6 @@ string_op = "&"
 
 char = "A" | ... | "Z" | "a" | ... | "z" | "0" | ... | "9"
 keyword = char | "." | "_" | keyword
-pre_keyword = "#" keyword "#" | keyword
 string = "\'" text "\'"
 variable_ident = "$" | "~" | "@"
 array_ident = "!" | "%" | "?"
