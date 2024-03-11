@@ -121,4 +121,16 @@ callback_identifier = ("async_complete" | "controller" | "init" |
 
 
 
-
+// keyword
+// string
+// callback
+// numeric
+// comment
+// function
+// variable
+// ui_control
+// bitwise_op
+// bool_op
+// string_op
+// comparison_op
+// arithmetic_op

@@ -273,6 +273,7 @@ set_ui_wf_property(waveform: int, property: int, index: int, value: int)
 set_ui_width_px(value: int)
 set_voice_limit(voicetype: int, value: int)
 set_zone_par(zone_id: int, parameter: int, value: int): int
+set_map_editor_event_color(hexvalue: int)
 sgn(value: number): int
 sh_left(int, int): int
 sh_right(int, int): int
@@ -308,7 +309,7 @@ real_to_int(value: real):int
 int(value: real):int
 continue
 
-//nks 2 builtin functions
+// nks 2 builtin functions
 set_nks_nav_par(group_idx: int,index: int,param_id: int)
 get_nks_nav_par(group_idx: int, index: int): int
 set_nks_nav_name(group_idx: int,index: int,name: string)
