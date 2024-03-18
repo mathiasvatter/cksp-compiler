@@ -51,8 +51,8 @@ mkdir -p "$RELEASE_DIR/$WINDOWS_DIR"
 rm "$RELEASE_DIR/$TARGET_DIR/cksp"
 # Kopieren der Binärdateien in den Release-Ordner
 cp "$BUILD_DIR/cksp" "$RELEASE_DIR/$TARGET_DIR/cksp"
-"wiki/convert_to_pdf.sh" "wiki/Features.md"
-cp "wiki/Features.pdf" "$RELEASE_DIR/Features.pdf"
+"ksp-compiler.wiki/convert_to_pdf.sh" "ksp-compiler.wiki/Features.md"
+cp "ksp-compiler.wiki/Features.pdf" "$RELEASE_DIR/Features.pdf"
 
 # Wechseln in das Verzeichnis _Releases vor dem Zippen
 cd "$RELEASES_DIR"
