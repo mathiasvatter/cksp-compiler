@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 //    input_filename = "C:\\Users\\mathi\\Documents\\Scripting\\the-score\\the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
-//    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
+    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
 //    input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
 //    input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
