@@ -135,7 +135,7 @@ bool Tokenizer::is_pragma() {
 void Tokenizer::get_comment() {
 	flush_buffer();
     int nesting_level = 0; // nesting levels for {{}} comments
-    if (peek() == '{') { // multi-m_line ksp style
+    if (peek() == '{') { // multi-line ksp style
         nesting_level++;
         while (nesting_level > 0) {
             consume();
@@ -154,7 +154,7 @@ void Tokenizer::get_comment() {
 				consume();
             }
             // skip nex_char(); so that the \n can be tokenized
-            // if multi-m_line comment c++ style
+            // if multi-line comment c++ style
         } else if (peek(1) == '*') {
             while (peek() != '*' or peek(1) != '/') {
 				consume();

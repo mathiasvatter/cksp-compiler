@@ -21,7 +21,7 @@
 #include "../FileHandler.h"
 
 /*
- * Token struct that gets m_line numbers, the token type and its value
+ * Token struct that gets line numbers, the token type and its value
  */
 struct Token {
     token type;
