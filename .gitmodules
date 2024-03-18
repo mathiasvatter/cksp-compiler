@@ -1,0 +1,3 @@
+[submodule "ksp-compiler.wiki"]
+	path = ksp-compiler.wiki
+	url = git@github.com:mathiasvatter/ksp-compiler.wiki.git
