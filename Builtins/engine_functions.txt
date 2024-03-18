@@ -20,71 +20,73 @@ RESET_CONDITION(unknown)
 SET_CONDITION(unknown)
 USE_CODE_IF(unknown)
 USE_CODE_IF_NOT(unknown)
-_get_engine_par(int, group, slot, generic): int
-_get_engine_par_disp(parameter, group, slot, generic):string
-_get_folder(string):string
-_load_ir_sample(filename, slot, generic): int
-_num_slices(group_idx): int
-_pgs_create_key(keyid, size)
-_pgs_get_key_val(keyid, index): int
-_pgs_key_exists(keyid):boolean
-_pgs_set_key_val(keyid, index, value)
-_read_persistent_var(variable)
-_reset_rls_trig_counter(note)
-_set_engine_par(parameter, value, group, slot, generic): int
-_set_skin_offset(value)
-_slice_idx_loop_end(group_idx, loop_idx: int): int
-_slice_idx_loop_start(group_idx, loop_idx: int): int
-_slice_length(group_idx, sliceidx): int
-_slice_loop_count(group_idx, loop_idx: int): int
-_slice_start(group_idx, sliceidx): int
-_will_never_terminate(event_id)
+_get_engine_par(parameter: int, group: int, slot: int, generic: int): int
+_get_engine_par_disp(parameter: int, group: int, slot: int, generic: int):string
+_get_folder(path_variable: string):string
+_load_ir_sample(filename: string, slot: int, generic: int): int
+_num_slices(group_idx: int): int
+_pgs_create_key(keyid: any, size: int)
+_pgs_get_key_val(keyid: any, index: int): int
+_pgs_key_exists(keyid: any):boolean
+_pgs_set_key_val(keyid: any, index: int, value: int)
+_read_persistent_var(variable: any)
+_reset_rls_trig_counter(note: int)
+_set_engine_par(parameter: int, value: int, group: int, slot: int, generic: int): int
+_set_skin_offset(value: int)
+_slice_idx_loop_end(group_idx: int, loop_idx: int): int
+_slice_idx_loop_start(group_idx: int, loop_idx: int): int
+_slice_length(group_idx: int, slice_idx: int): int
+_slice_loop_count(group_idx: int, loop_idx: int): int
+_slice_start(group_idx: int, slice_idx: int): int
+_will_never_terminate(event_id: int)
 abs(value: number):number
 acos(value: real):real
-add_menu_item(variable, text, number)
-add_text_line(variable, text)
+add_menu_item(variable: int, text: string, number: int)
+add_text_line(variable: int, text: string)
 allow_group(group_idx: int)
 array_equal(array: int, array: int):boolean
 asin(value: real):real
 atan(value: real):real
 attach_level_meter(ui_id: int, group_idx: int, slot_idx: int, channel_idx: int, bus_idx: int)
-attach_zone(waveform, zone_id: int, parameter: int)
+attach_zone(waveform: int, zone_id: int, parameter: int)
 by_marks(bitmark: int): int
-by_track(trackidx: int): int
+by_track(track_idx: int): int
 cc_delivery_request(controller_number: int)
 ceil(value: real):real
 change_listener_par(signaltype: int, parameter: int)
-change_note(event_id: int, newnote_number: int)
-change_pan(event_id: int, panorama, relativebit: int)
+change_note(event_id: int, new_note_number: int)
+change_pan(event_id: int, panorama: int, relative_bit: int)
 change_time_with_pitch(event_id: int, time: int): int
-change_tune(event_id: int, tuneamount: int, relativebit: int)
-change_velo(event_id: int, newvelocitynumber: int)
-change_vol(event_id: int, volume: int, relativebit: int)
+change_tune(event_id: int, tune_amount: int, relative_bit: int)
+change_velo(event_id: int, new_velocity: int)
+change_vol(event_id: int, volume: int, relative_bit: int)
 cbrt(value: real):real
 cos(value: real):real
 dec(expression: int): int
-delete_event_mark(event_id: int, bitmark: int)
-detect_pitch(zone_id: int, returnvariable: int): int
-detect_rms(zone_id: int, returnvariable: int): int
-detect_peak(zone_id: int, returnvariable: int): int
-detect_loudness(zone_id: int, returnvariable: int): int
-detect_sample_type(zone_id: int, returnvariable: int): int
-detect_instrument_type(zone_id: int, returnvariable: int): int
-detect_drum_type(zone_id: int, returnvariable: int): int
-disable_logging(logtype: int)
+delete_event_mark(event_id: int, bit_mark: int)
+detect_pitch(zone_id: int, return_var: int): int
+detect_rms(zone_id: int, return_var: int): int
+detect_peak(zone_id: int, return_var: int): int
+detect_loudness(zone_id: int, return_var: int): int
+detect_sample_type(zone_id: int, return_var: int): int
+detect_instrument_type(zone_id: int, return_var: int): int
+detect_drum_type(zone_id: int, return_var: int): int
+disable_logging(log_type: int)
 disallow_group(group_idx: int)
 dont_use_machine_mode(event_id: int)
-event_status(event_id): int
+event_status(event_id: int): int
 exit
 exp(value: real): real
 exp2(value: real): real
-expose_controls
-fade_in(event_id, fadetime)
-fade_out(event_id, fadetime, stopvoice)
-find_group(groupname): int
-find_mod(group_idx, modname): int
-find_target(group_idx, modidx, targetname): int
-find_zone(samplename): int
+fade_in(event_id: int, fade_time: int)
+fade_out(event_id: int, fade_time: int, stop_voice: int)
+
+// deprecated
+find_group(group_name: string): int
+find_mod(group_idx: int, mod_name: int): int
+find_target(group_idx: int, mod_idx: int, targetname): int
+
+find_zone(samplename: string): int
 floor(realvalue):real
 fs_get_filename(int, returnparameter):string
 fs_navigate(int, direction)
