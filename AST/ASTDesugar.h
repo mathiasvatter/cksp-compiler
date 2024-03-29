@@ -51,6 +51,7 @@ private:
     const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash>& m_builtin_functions;
     NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
     NodeFunctionHeader* get_builtin_function(const std::string &function, int params);
+    std::unique_ptr<NodeFunctionCall> wrap_in_get_ui_id(std::unique_ptr<NodeAST> variable);
 
     const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>>& m_builtin_widgets;
 	NodeUIControl* get_builtin_widget(const std::string &ui_control);
