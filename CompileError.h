@@ -54,6 +54,8 @@ enum class ErrorType {
 	// TODO weitere Fehlerarten
 };
 
+/// execute command line operations
+std::string exec(const char* cmd);
 
 class CompileError {
 public:
@@ -76,6 +78,10 @@ private:
     std::string m_file_name;
 
     std::string get_line_from_file();
+    static std::string get_os_version();
+    static std::string get_os_architecture();
+    static std::string url_encode(const std::string &value);
+    std::string generate_github_issue_url(const std::string &username, const std::string &repo);
 
     [[nodiscard]] static inline std::string error_type_to_string(ErrorType type) {
         switch(type) {
