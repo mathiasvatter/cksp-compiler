@@ -6,6 +6,13 @@
 #include "Tokenizer/Tokenizer.h"
 
 #include <utility>
+#include <format>
+#if defined(_WIN32)
+    #include <windows.h>
+    #include <VersionHelpers.h>
+#elif defined(__APPLE__) || defined(__linux__)
+    #include <sys/utsname.h>
+#endif
 
 CompileError::CompileError(ErrorType type, std::string message, std::string expected, const Token &token)
         : m_type(type), m_message(std::move(message)), m_expected(std::move(expected)) {
@@ -71,7 +78,7 @@ void CompileError::print(ErrorType err) {
 void CompileError::exit(ErrorType err) {
     print(err);
     std::cout << ColorCode::Red << "\nSeems like the compilation exited with a failure." << std::endl;
-    std::cout << ColorCode::Reset << "Please report any compiler related bugs by creating an issue providing a minimal viable code snippet at: https://bitbucket.org/MathiasVatter/ksp-compiler/issues" << std::endl;
+    std::cout << ColorCode::Reset << "To help make cksp better, please report any compiler related issues here: " << generate_github_issue_url("mathiasvatter", "cksp-compiler-issues") << std::endl;
     ::exit(EXIT_FAILURE);
 }
 
@@ -101,4 +108,110 @@ std::string CompileError::replace_tabs_with_spaces(const std::string &input, int
         }
     }
     return output;
+}
+
+std::string CompileError::get_os_version() {
+    std::string os_version;
+    #if defined(_WIN32)
+        if (IsWindows10OrGreater()) {
+            os_version = "Windows 10";
+        } else if (IsWindows8Point1OrGreater()) {
+            os_version = "Windows 8.1";
+        } else if (IsWindows8OrGreater()) {
+            os_version = "Windows 8";
+        } else if (IsWindows7SP1OrGreater()) {
+            os_version = "Windows 7 SP1";
+        } else if (IsWindows7OrGreater()) {
+            os_version = "Windows 7";
+        } else {
+            os_version = "Windows version unknown";
+        }
+    #elif defined(__APPLE__)
+        try {
+            os_version = exec("sw_vers -productName");
+            os_version += " ";
+            os_version += exec("sw_vers -productVersion");
+        } catch (const std::runtime_error& e) {
+            os_version = "Failed to get macOS version";
+        }
+    #elif defined(__linux__)
+        try {
+            os_version = exec("lsb_release -d");
+            os_version.erase(0, os_version.find(":") + 1); // Entfernt "Description:" Teil der Ausgabe
+            os_version.erase(0, os_version.find_first_not_of(" \t")); // Trimmt führende Leerzeichen
+        } catch (const std::runtime_error& e) {
+            os_version = "Failed to get Linux distribution version";
+        }
+    #endif
+    return os_version;
+}
+
+std::string CompileError::get_os_architecture() {
+    std::string os_architecture;
+#if defined(_WIN32)
+    BOOL isWow64 = FALSE;
+        IsWow64Process(GetCurrentProcess(), &isWow64);
+        if (isWow64) {
+            os_architecture = "x64";
+        } else {
+            os_architecture = "x86";
+        }
+#elif defined(__APPLE__) || defined(__linux__)
+    struct utsname buffer{};
+    if (uname(&buffer) != -1) {
+        os_architecture = buffer.machine;
+    }
+#endif
+    return os_architecture;
+}
+
+std::string CompileError::generate_github_issue_url(const std::string &username, const std::string &repo) {
+    // Fehlermeldung und Code-Snippet für das Issue vorbereiten
+    std::string issue_title = std::format("{}: {}", error_type_to_string(m_type), m_message);
+    std::string issue_body = std::format("**Error Message**\n\n{}\n\n", m_message) +
+                             std::format("**Code Snippet**\n\n```\n{}\n```\n\n", get_line_from_file()) +
+                             std::format("**Actual Behavior**\n\nGot: {}\n\n**Expected Behavior**\n\nExpected: {}\n\n", m_got, m_expected) +
+                             std::format("**CKSP Version**\n\nv{}\n\n", COMPILER_VERSION) +
+                             std::format("**Environment**\n\n- OS Version: {}\n- Architecture: {}\n\n", get_os_version(), get_os_architecture());
+    std::string encoded_title = url_encode(issue_title);
+    std::string encoded_body = url_encode(issue_body);
+    std::string encoded_labels = url_encode("bug");
+
+    std::string issueUrl = std::format("https://github.com/{}/{}/issues/new?labels={}&title={}&body={}", username, repo, encoded_labels, encoded_title, encoded_body);
+    return issueUrl;
+}
+
+std::string CompileError::url_encode(const std::string &value) {
+    std::ostringstream encoded;
+    encoded.fill('0');
+    encoded << std::hex;
+
+    for (char c : value) {
+        // Behalte alphanumerische Zeichen und einige andere intakt
+        if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+            encoded << c;
+        } else {
+            // Prozent-encode andere Zeichen
+            encoded << std::uppercase;
+            encoded << '%' << std::setw(2) << int((unsigned char) c);
+            encoded << std::nouppercase;
+        }
+    }
+
+    return encoded.str();
+}
+
+
+std::string exec(const char *cmd) {
+    std::array<char, 128> buffer{};
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        return "";
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
+    return result;
 }
