@@ -326,10 +326,20 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
                 CompileError(ErrorType::SyntaxError,"<"+builtin_func->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks.", node.tok.line, "", "<"+m_current_callback->begin_callback+">", node.tok.file).print();
             } else {
                 if(m_current_function)
-                if(m_current_function->call.find(&node) != m_current_function->call.end())
-                    CompileError(ErrorType::SyntaxError,"<"+builtin_func->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks. Not in a called function.", node.tok.line, "", "<"+m_current_function->header->name+"> in <"+m_current_callback->begin_callback+">", node.tok.file).print();
+                    if(m_current_function->call.find(&node) != m_current_function->call.end())
+                        CompileError(ErrorType::SyntaxError,"<"+builtin_func->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks. Not in a called function.", node.tok.line, "", "<"+m_current_function->header->name+"> in <"+m_current_callback->begin_callback+">", node.tok.file).print();
             }
         }
+        // add missing get_ui_id as first parameter if control_par function is used
+//        if (node.function->name.contains("control_par")) {
+//            if(auto get_ui_id = cast_node<NodeFunctionCall>(node.function->args->params[0].get())) {
+//                if(get_ui_id->function->name != "get_ui_id") {
+//                    node.function->args->params[0] = wrap_in_get_ui_id(std::move(node.function->args->params[0]));
+//                }
+//            } else {
+//                node.function->args->params[0] = wrap_in_get_ui_id(std::move(node.function->args->params[0]));
+//            }
+//        }
 
     } else if (auto property_func = get_property_function(node.function.get())) {
         if(node.function->args->params.size() < 2)
@@ -653,14 +663,16 @@ void ASTDesugar::visit(NodeGetControlStatement& node) {
     node_control_function->args->params.clear();
     // if it is a variable and not builtin -> wrap it in get_ui_id()
     if(is_instance_of<NodeVariable>(node.ui_id.get()) and m_builtin_variables.find(node.ui_id->get_string()) == m_builtin_variables.end()) {
-        auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(get_builtin_function("get_ui_id",1)->clone().release()));
-        node_get_ui_id->args->params.clear();
-        node_get_ui_id->args->params.push_back(std::move(node.ui_id));
-        node_control_function->args->params.push_back(std::make_unique<NodeFunctionCall>(false, std::move(node_get_ui_id), node.tok));
+//        auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(get_builtin_function("get_ui_id",1)->clone().release()));
+//        node_get_ui_id->args->params.clear();
+//        node_get_ui_id->args->params.push_back(std::move(node.ui_id));
+//        node_control_function->args->params.push_back(std::make_unique<NodeFunctionCall>(false, std::move(node_get_ui_id), node.tok));
+        node_control_function->args->params.push_back(wrap_in_get_ui_id(std::move(node.ui_id)));
     } else {
         node_control_function->args->params.push_back(std::move(node.ui_id));
     }
     node_control_function->args->params.push_back(std::move(control_param));
+    // in case it is an assignment
     if(node_assign_statement && node_assign_statement->array_variable.get() == &node) {
         node_assign_statement->assignee->parent = node_control_function->args.get();
         node_control_function->args->params.push_back(std::move(node_assign_statement->assignee));
@@ -676,6 +688,15 @@ void ASTDesugar::visit(NodeGetControlStatement& node) {
         node.replace_with(std::move(node_control_function_call));
     }
 }
+
+std::unique_ptr<NodeFunctionCall> ASTDesugar::wrap_in_get_ui_id(std::unique_ptr<NodeAST> variable) {
+    auto parent_tok = variable->parent->tok;
+    auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(get_builtin_function("get_ui_id",1)->clone().release()));
+    node_get_ui_id->args->params.clear();
+    node_get_ui_id->args->params.push_back(std::move(variable));
+    return std::make_unique<NodeFunctionCall>(false, std::move(node_get_ui_id), parent_tok);
+}
+
 
 void ASTDesugar::visit(NodeWhileStatement& node) {
     m_current_function_inline_statement = node.parent;

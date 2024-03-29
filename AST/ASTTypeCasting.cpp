@@ -226,30 +226,30 @@ void ASTTypeCasting::visit(NodeArray& node) {
 
 }
 
-std::unique_ptr<NodeAST> ASTTypeCasting::calculate_index_expression(
-        const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok) {
-
-    // Basisfall: letztes Element in der Berechnung
-    if (dimension == indices.size() - 1) {
-        return indices[dimension]->clone();
-    }
-
-    // Produkt der Größen der nachfolgenden Dimensionen
-    std::unique_ptr<NodeAST> size_product = sizes[dimension + 1]->clone();
-    for (size_t i = dimension + 2; i < sizes.size(); ++i) {
-        size_product = std::make_unique<NodeBinaryExpr>("*", std::move(size_product), sizes[i]->clone(), tok);
-    }
-
-    // Berechnung des aktuellen Teils der Formel
-    std::unique_ptr<NodeAST> current_part = std::make_unique<NodeBinaryExpr>(
-            "*", indices[dimension]->clone(), std::move(size_product), tok);
-
-    // Rekursiver Aufruf für den nächsten Teil der Formel
-    std::unique_ptr<NodeAST> next_part = calculate_index_expression(sizes, indices, dimension + 1, tok);
-
-    // Kombinieren des aktuellen Teils mit dem nächsten Teil
-    return std::make_unique<NodeBinaryExpr>("+", std::move(current_part), std::move(next_part), tok);
-}
+//std::unique_ptr<NodeAST> ASTTypeCasting::calculate_index_expression(
+//        const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok) {
+//
+//    // Basisfall: letztes Element in der Berechnung
+//    if (dimension == indices.size() - 1) {
+//        return indices[dimension]->clone();
+//    }
+//
+//    // Produkt der Größen der nachfolgenden Dimensionen
+//    std::unique_ptr<NodeAST> size_product = sizes[dimension + 1]->clone();
+//    for (size_t i = dimension + 2; i < sizes.size(); ++i) {
+//        size_product = std::make_unique<NodeBinaryExpr>("*", std::move(size_product), sizes[i]->clone(), tok);
+//    }
+//
+//    // Berechnung des aktuellen Teils der Formel
+//    std::unique_ptr<NodeAST> current_part = std::make_unique<NodeBinaryExpr>(
+//            "*", indices[dimension]->clone(), std::move(size_product), tok);
+//
+//    // Rekursiver Aufruf für den nächsten Teil der Formel
+//    std::unique_ptr<NodeAST> next_part = calculate_index_expression(sizes, indices, dimension + 1, tok);
+//
+//    // Kombinieren des aktuellen Teils mit dem nächsten Teil
+//    return std::make_unique<NodeBinaryExpr>("+", std::move(current_part), std::move(next_part), tok);
+//}
 
 void ASTTypeCasting::visit(NodeInt& node) {
     node.type = Integer;
