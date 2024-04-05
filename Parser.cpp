@@ -186,6 +186,7 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_array(NodeAST* parent, std::opt
     node_array->name = arr_token.val;
     node_array->sizes = std::move(sizes);
     node_array->indexes = std::move(indexes);
+    node_array->dimensions = node_array->indexes->params.size();
     return Result<std::unique_ptr<NodeArray>>(std::move(node_array));
 }
 
@@ -976,6 +977,8 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
    "Found unknown ui_control declaration syntax.", "array or variable keyword", peek()));
     }
     std::unique_ptr<NodeAST> control_var;
+    // check if it has second Brackets -> ui_control array
+    std::unique_ptr<NodeParamList> control_array_sizes;
     if(peek(1).type == token::OPEN_BRACKET) {
         auto parsed_arr = parse_array(node_ui_control.get(), persistence, var_type);
         if(parsed_arr.is_error()) {
@@ -983,6 +986,24 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
         }
         auto array = std::move(parsed_arr.unwrap());
         std::swap(array->indexes, array->sizes);
+
+        // is ui_control array
+        if(peek().type == token::OPEN_BRACKET) {
+            consume(); // consume [
+            auto sizes = parse_param_list(node_ui_control.get());
+            if(sizes.is_error()) {
+                return Result<std::unique_ptr<NodeUIControl>>(sizes.get_error());
+            }
+            control_array_sizes = std::move(sizes.unwrap());
+            if(peek().type != token::CLOSED_BRACKET) {
+                return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::SyntaxError,
+                "Expected closing bracket after ui_control array size.", "]", peek()));
+            }
+            consume(); // consume ]
+        } else {
+            control_array_sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
+        }
+
         control_var = std::move(array);
     } else {
         auto parsed_var = parse_variable(node_ui_control.get(), persistence, var_type);
@@ -991,6 +1012,7 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
         }
         control_var = std::move(parsed_var.unwrap());
     }
+
     std::unique_ptr<NodeParamList> control_params;
     if(peek().type == token::OPEN_PARENTH) {
         auto param_list = parse_param_list(node_ui_control.get());
@@ -1005,7 +1027,7 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
     node_ui_control->ui_control_type = std::move(ui_control_type);
     node_ui_control->control_var = std::move(control_var);
     node_ui_control->params = std::move(control_params);
-//    auto result = std::make_unique<NodeUIControl>(std::move(ui_control_type), std::move(control_var), std::move(control_params), get_tok());
+    node_ui_control->sizes = std::move(control_array_sizes);
     return Result<std::unique_ptr<NodeUIControl>>(std::move(node_ui_control));
 }
 

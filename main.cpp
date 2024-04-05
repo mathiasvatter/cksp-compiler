@@ -15,6 +15,7 @@
 #include "Preprocessor/PreprocessorImport.h"
 #include "FileHandler.h"
 #include "CommandLineOptions.h"
+#include "AST/ASTDefinitionChecker.h"
 
 int main(int argc, char* argv[]) {
 
@@ -25,8 +26,9 @@ int main(int argc, char* argv[]) {
     const std::string& standard_output_path = cli_options.get_standard_output_file();
 
 //    input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
+    input_filename = "/Users/mathias/Scripting/sonu-libraries/try.ksp";
 //    input_filename = "C:\\Users\\mathi\\Documents\\Scripting\\the-score\\the-score.ksp";
-    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -36,7 +38,7 @@ int main(int argc, char* argv[]) {
 //    input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
-    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
+//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
 //    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
 //    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
 
@@ -103,29 +105,31 @@ int main(int argc, char* argv[]) {
     ASTDesugarStructs desugar1;
     ast->accept(desugar1);
 
-	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions(), builtins.get_builtin_widgets());
-	ast->accept(desugar);
+    ASTDefinitionChecker definition_checker(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets(), imports.get_external_variables());
+    ast->accept(definition_checker);
 
+	ASTPrinter printer;
+	ast->accept(printer);
+
+//	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions(), builtins.get_builtin_widgets());
+//	ast->accept(desugar);
+//
     auto desugaring_time = std::chrono::high_resolution_clock::now();
     auto desugaring_duration = std::chrono::duration_cast<std::chrono::milliseconds>(desugaring_time-parsing_time);
-
-    ASTVariables variables(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets(), imports.get_external_variables(), desugar.get_function_inlines());
-    ast->accept(variables);
-
-	ASTTypeCasting typecast(builtins.get_builtin_widgets(), builtins.get_builtin_functions());
-	ast->accept(typecast);
-
-    ASTTypeChecking type_check;
-    ast->accept(type_check);
-
-//	ASTPrinter printer;
-//	ast->accept(printer);
-
-	ASTGenerator generator;
-	ast->accept(generator);
-//	generator.print();
-//	generator.generate(std::filesystem::path(curr_path.parent_path() / "test.txt").string());
-    generator.generate(output_filename);
+//
+//    ASTVariables variables(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets(), imports.get_external_variables(), desugar.get_function_inlines());
+//    ast->accept(variables);
+//
+//	ASTTypeCasting typecast(builtins.get_builtin_widgets(), builtins.get_builtin_functions());
+//	ast->accept(typecast);
+//
+//    ASTTypeChecking type_check;
+//    ast->accept(type_check);
+//
+//
+//	ASTGenerator generator;
+//	ast->accept(generator);
+//    generator.generate(output_filename);
 
 
     auto end_time = std::chrono::high_resolution_clock::now();

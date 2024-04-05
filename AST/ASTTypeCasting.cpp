@@ -44,7 +44,6 @@ void ASTTypeCasting::visit(NodeParamList& node) {
         CompileError(ErrorType::TypeError,"Found different types in declaration.", node.tok.line, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
-
 }
 
 void ASTTypeCasting::visit(NodeUIControl& node) {
@@ -100,7 +99,8 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
         } else if(node.to_be_declared->type == Unknown) {
             node.to_be_declared->type = node.assignee->type;
         } else if(node.to_be_declared->type != Unknown and node.assignee->type != node.to_be_declared->type) {
-            CompileError(ErrorType::TypeError, "Found incorrect variable type in declaration.", node.tok.line, "", "",
+            CompileError(ErrorType::TypeError, "Found incorrect variable type in declaration.", node.tok.line,
+                         type_to_string(node.to_be_declared->type), type_to_string(node.assignee->type),
                          node.tok.file).print();
 //            exit(EXIT_FAILURE);
         }
