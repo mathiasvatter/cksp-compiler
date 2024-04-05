@@ -122,14 +122,14 @@ void ASTDesugarStructs::visit(NodeFamilyStatement& node) {
 }
 
 void ASTDesugarStructs::visit(NodeDeclareStatement& node) {
-    if(node.to_be_declared->params.size() < node.assignee->params.size()) {
+    if(node.to_be_declared.size() < node.assignee->params.size()) {
         CompileError(ErrorType::SyntaxError,
                      "Found incorrect declare statement syntax. There are more values to assign than to be declared.", node.tok.line, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
 
     std::vector<std::unique_ptr<NodeSingleDeclareStatement>> declare_statements;
-    for(auto &declaration : node.to_be_declared->params) {
+    for(auto &declaration : node.to_be_declared) {
         auto node_single_declare_stmt = std::make_unique<NodeSingleDeclareStatement>(node.tok);
         declaration->parent = node_single_declare_stmt.get();
         node_single_declare_stmt->to_be_declared = std::move(declaration);
