@@ -156,7 +156,7 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, co
 
 Result<std::unique_ptr<NodeArray>> Parser::parse_array(NodeAST* parent, std::optional<Token> is_persistent, VarType var_type) {
     auto arr_token = consume();
-    auto node_array = std::make_unique<NodeArray>(arr_token);
+    auto node_array = std::make_unique<NodeArray>(arr_token.val, arr_token);
     std::unique_ptr<NodeParamList> indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, arr_token));;
     indexes->parent = node_array.get();
 	std::unique_ptr<NodeParamList> sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, arr_token));
@@ -183,7 +183,7 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_array(NodeAST* parent, std::opt
     node_array->persistence = std::move(is_persistent);
     node_array->is_local = false;
     node_array->var_type = var_type;
-    node_array->name = arr_token.val;
+//    node_array->name = arr_token.val;
     node_array->sizes = std::move(sizes);
     node_array->indexes = std::move(indexes);
     node_array->dimensions = node_array->indexes->params.size();
@@ -778,8 +778,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement(NodeAST* parent) {
     auto node_declare_statement = std::make_unique<NodeDeclareStatement>(get_tok());
     if(peek().type == DECLARE) consume(); //consume declare
-    std::unique_ptr<NodeParamList> to_be_declared = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
-    to_be_declared->parent = node_declare_statement.get();
+    std::vector<std::unique_ptr<NodeVarSubType>> to_be_declared;
     if(not(peek().type == KEYWORD or peek().type == UI_CONTROL or get_persistent_keyword(peek()) or peek().type==CONST or peek().type ==POLYPHONIC or peek().type==LOCAL or peek().type==GLOBAL))
         return Result<std::unique_ptr<NodeDeclareStatement>>(CompileError(ErrorType::ParseError,
         "Incorrect syntax in declare statement.","<ui_control>, <variable>, <array>",peek()));
@@ -791,21 +790,21 @@ Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement(No
             if (parsed_ui_control.is_error()) {
                 return Result<std::unique_ptr<NodeDeclareStatement>>(parsed_ui_control.get_error());
             }
-            to_be_declared->params.push_back(std::move(parsed_ui_control.unwrap()));
+            to_be_declared.push_back(std::move(parsed_ui_control.unwrap()));
         // array
         } else if (is_array_declaration()) {
             auto parsed_arr = parse_declare_array(node_declare_statement.get());
             if(parsed_arr.is_error()) {
                 return Result<std::unique_ptr<NodeDeclareStatement>>(parsed_arr.get_error());
             }
-            to_be_declared->params.push_back(std::move(parsed_arr.unwrap()));
+            to_be_declared.push_back(std::move(parsed_arr.unwrap()));
         // variable
         } else if(is_variable_declaration()) {
             auto parsed_var = parse_declare_variable(node_declare_statement.get());
             if (parsed_var.is_error()) {
                 return Result<std::unique_ptr<NodeDeclareStatement>>(parsed_var.get_error());
             }
-            to_be_declared->params.push_back(std::move(parsed_var.unwrap()));
+            to_be_declared.push_back(std::move(parsed_var.unwrap()));
         } else {
             return Result<std::unique_ptr<NodeDeclareStatement>>(CompileError(ErrorType::ParseError,
         "Incorrect syntax in declare statement.","<ui_control>, <variable>, <array>",peek()));
@@ -976,7 +975,7 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
         return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::SyntaxError,
    "Found unknown ui_control declaration syntax.", "array or variable keyword", peek()));
     }
-    std::unique_ptr<NodeAST> control_var;
+    std::unique_ptr<NodeVarSubType> control_var;
     // check if it has second Brackets -> ui_control array
     std::unique_ptr<NodeParamList> control_array_sizes;
     if(peek(1).type == token::OPEN_BRACKET) {

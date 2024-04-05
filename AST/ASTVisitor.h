@@ -70,7 +70,9 @@ public:
 		node.right->accept(*this);
 	};
     virtual void visit(NodeDeclareStatement& node) {
-        node.to_be_declared ->accept(*this);
+        for(auto const &decl : node.to_be_declared) {
+            decl->accept(*this);
+        }
 		if(node.assignee)
         	node.assignee -> accept(*this);
 	};

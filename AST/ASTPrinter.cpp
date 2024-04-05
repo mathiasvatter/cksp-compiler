@@ -46,7 +46,9 @@ void ASTPrinter::visit(NodeUIControl &node) {
 
 void ASTPrinter::visit(NodeDeclareStatement &node) {
     std::cout << "declare ";
-    node.to_be_declared->accept(*this);
+    for(auto const &decl : node.to_be_declared) {
+        decl->accept(*this);
+    }
     if(node.assignee != nullptr) {
         std::cout << ":= ";
         node.assignee->accept(*this);

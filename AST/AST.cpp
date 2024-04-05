@@ -17,12 +17,24 @@ void NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 	}
 }
 
+// ************* NodeVarSubType ***************
+void NodeVarSubType::accept(ASTVisitor &visitor) {
+}
+NodeVarSubType::NodeVarSubType(const NodeVarSubType& other)
+        : NodeAST(other),
+          is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
+          is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
+          var_type(other.var_type), name(other.name), declaration(other.declaration) {}
+std::unique_ptr<NodeAST> NodeVarSubType::clone() const {
+    return std::make_unique<NodeVarSubType>(*this);
+}
+
 // ************* NodeDeadCode ***************
 void NodeDeadCode::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-std::unique_ptr<NodeAST> NodeDeadCode::clone() const {
-    return std::make_unique<NodeDeadCode>(*this);
+NodeDeadCode* NodeDeadCode::do_clone() const {
+    return new NodeDeadCode(*this);
 }
 
 // ************* NodeInt ***************
@@ -54,10 +66,7 @@ void NodeVariable::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeVariable::NodeVariable(const NodeVariable& other)
-        : NodeAST(other),
-          is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
-          is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
-          var_type(other.var_type), name(other.name), declaration(other.declaration) {}
+        : NodeVarSubType(other) {}
 std::unique_ptr<NodeAST> NodeVariable::clone() const {
     return std::make_unique<NodeVariable>(*this);
 }
@@ -86,11 +95,8 @@ void NodeArray::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeArray::NodeArray(const NodeArray& other)
-        : NodeAST(other), is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
-          is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
-          show_brackets(other.show_brackets), var_type(other.var_type), name(other.name),
-          sizes(clone_unique(other.sizes)), indexes(clone_unique(other.indexes)),
-          declaration(other.declaration), dimensions(other.dimensions) {}
+        : NodeVarSubType(other), show_brackets(other.show_brackets), sizes(clone_unique(other.sizes)),
+        indexes(clone_unique(other.indexes)), dimensions(other.dimensions) {}
 std::unique_ptr<NodeAST> NodeArray::clone() const {
     return std::make_unique<NodeArray>(*this);
 }
@@ -119,7 +125,7 @@ void NodeUIControl::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeUIControl::NodeUIControl(const NodeUIControl& other)
-        : NodeAST(other), ui_control_type(other.ui_control_type),
+        : NodeVarSubType(other), ui_control_type(other.ui_control_type),
           control_var(clone_unique(other.control_var)), params(clone_unique(other.params)),
           sizes(clone_unique(other.sizes)), arg_ast_types(other.arg_ast_types), arg_var_types(other.arg_var_types) {}
 std::unique_ptr<NodeAST> NodeUIControl::clone() const {
@@ -194,7 +200,7 @@ void NodeDeclareStatement::accept(ASTVisitor &visitor) {
 }
 NodeDeclareStatement::NodeDeclareStatement(const NodeDeclareStatement& other)
         : NodeAST(other),
-          to_be_declared(clone_unique(other.to_be_declared)), assignee(clone_unique(other.assignee)) {}
+          to_be_declared(clone_vector(other.to_be_declared)), assignee(clone_unique(other.assignee)) {}
 std::unique_ptr<NodeAST> NodeDeclareStatement::clone() const {
     return std::make_unique<NodeDeclareStatement>(*this);
 }
