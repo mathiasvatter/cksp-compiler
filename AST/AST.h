@@ -92,6 +92,9 @@ struct NodeAST {
     virtual void update_token_data(const Token& token) {
         tok.line = token.line; tok.file = token.file;
     }
+    virtual class ASTHandler* get_handler() const {
+        return nullptr;
+    }
 };
 
 template <typename T>
@@ -170,9 +173,30 @@ struct NodeString : NodeAST {
     }
 };
 
+//struct NodeVarSubType : NodeAST {
+//    bool is_used = false;
+//    bool is_engine = false;
+//    std::optional<Token> persistence;
+//    bool is_local = false;
+//    bool is_global = false;
+//    bool is_compiler_return = false;
+//    VarType var_type;
+//    std::string name;
+//    inline explicit NodeVarSubType(std::string name, Token tok) : NodeAST(tok), name(std::move(name)) {}
+//    void accept(ASTVisitor& visitor) override;
+//    // Kopierkonstruktor
+//    NodeVarSubType(const NodeVarSubType& other) : NodeAST(other.tok), name(other.name) {}
+//    // Clone Methode
+//    std::unique_ptr<NodeAST> clone() const override;
+//    std::string get_string() override {
+//        return name;
+//    }
+//};
+
 struct NodeVariable: NodeAST {
     bool is_used = false;
     bool is_engine = false;
+    bool is_reference = false;
     std::optional<Token> persistence;
     bool is_local = false;
 	bool is_global = false;
@@ -226,8 +250,10 @@ struct NodeArray : NodeAST {
     std::optional<Token> persistence;
     bool is_local = false;
 	bool is_global = false;
+    bool is_reference = false;
     bool is_compiler_return = false;
     int dimensions = 1;
+    bool show_brackets = true;
     VarType var_type = VarType::Array;
     std::string name;
     std::unique_ptr<NodeParamList> sizes = nullptr;
@@ -236,7 +262,7 @@ struct NodeArray : NodeAST {
     inline explicit NodeArray(Token tok) : NodeAST(tok) {}
     inline NodeArray(std::optional<Token> is_persistent, std::string name, VarType var_type, std::unique_ptr<NodeParamList> sizes,
               std::unique_ptr<NodeParamList> indexes, Token tok)
-              : NodeAST(tok), persistence(is_persistent), name(std::move(name)), var_type(var_type),
+              : NodeAST(tok), persistence(std::move(is_persistent)), name(std::move(name)), var_type(var_type),
                 sizes(std::move(sizes)), indexes(std::move(indexes)) {}
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
@@ -255,16 +281,19 @@ struct NodeArray : NodeAST {
         if(sizes) sizes -> update_token_data(token);
         if(indexes) indexes ->update_token_data(token);
     }
+    ASTHandler* get_handler() const override;
 };
 
 struct NodeNDArray : NodeAST {
 	bool is_used = false;
 	bool is_engine = false;
 	std::optional<Token> persistence;
+    bool is_reference = false;
 	bool is_local = false;
 	bool is_global = false;
 	bool is_compiler_return = false;
 	int dimensions = 1;
+    bool show_brackets = true;
 	VarType var_type = VarType::Array;
 	std::string name;
 	std::unique_ptr<NodeParamList> sizes = nullptr;
@@ -298,6 +327,7 @@ struct NodeUIControl : NodeAST {
     std::string ui_control_type;
     std::unique_ptr<NodeAST> control_var; //Array or Variable
     std::unique_ptr<NodeParamList> params;
+    std::unique_ptr<NodeParamList> sizes; // if it is ui_control array
 	std::vector<ASTType> arg_ast_types;
 	std::vector<VarType> arg_var_types;
     inline explicit NodeUIControl(Token tok) : NodeAST(tok) {}
@@ -476,6 +506,7 @@ struct NodeSingleDeclareStatement : NodeAST {
         to_be_declared -> update_token_data(token);
         if(assignee) assignee -> update_token_data(token);
     }
+    ASTHandler* get_handler() const override;
 };
 
 struct NodeReturnStatement : NodeAST {
@@ -904,31 +935,10 @@ struct NodeFunctionHeader: NodeAST {
     }
 };
 
-struct NodeFunctionCall : NodeAST {
-    bool is_call=false;
-    std::unique_ptr<NodeFunctionHeader> function;
-    inline explicit NodeFunctionCall(Token tok) : NodeAST(tok) {}
-    inline NodeFunctionCall(bool isCall, std::unique_ptr<NodeFunctionHeader> function, Token tok)
-    : NodeAST(tok), is_call(isCall), function(std::move(function)) {}
-    void accept(ASTVisitor& visitor) override;
-    NodeFunctionCall(const NodeFunctionCall& other);
-    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    void update_parents(NodeAST* new_parent) override {
-        parent = new_parent;
-        function->update_parents(this);
-    }
-    std::string get_string() override {
-        return function->get_string();
-    }
-    void update_token_data(const Token& token) override {
-        function -> update_token_data(token);
-    }
-};
-
 struct NodeFunctionDefinition: NodeAST {
     bool is_used = false;
     bool is_compiled = false;
-    std::set<NodeFunctionCall*> call = {};
+    std::set<class NodeFunctionCall*> call = {};
     std::unique_ptr<NodeFunctionHeader> header;
     std::optional<std::unique_ptr<NodeParamList>> return_variable;
     bool override = false;
@@ -952,6 +962,29 @@ struct NodeFunctionDefinition: NodeAST {
     void update_token_data(const Token& token) override {
         header -> update_token_data(token);
         if(return_variable.has_value()) return_variable.value()->update_token_data(token);
+    }
+};
+
+
+struct NodeFunctionCall : NodeAST {
+    bool is_call=false;
+    std::unique_ptr<NodeFunctionHeader> function;
+    NodeFunctionDefinition* definition = nullptr;
+    inline explicit NodeFunctionCall(Token tok) : NodeAST(tok) {}
+    inline NodeFunctionCall(bool isCall, std::unique_ptr<NodeFunctionHeader> function, Token tok)
+            : NodeAST(tok), is_call(isCall), function(std::move(function)) {}
+    void accept(ASTVisitor& visitor) override;
+    NodeFunctionCall(const NodeFunctionCall& other);
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        parent = new_parent;
+        function->update_parents(this);
+    }
+    std::string get_string() override {
+        return function->get_string();
+    }
+    void update_token_data(const Token& token) override {
+        function -> update_token_data(token);
     }
 };
 

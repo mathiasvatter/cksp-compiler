@@ -164,6 +164,22 @@ struct StringIntKeyHash {
     }
 };
 
+// user-defined hash functions for comparison of variables and unordered_map
+struct StringHash {
+    size_t operator()(const std::string& key) const {
+        std::string lower_key;
+        std::transform(key.begin(), key.end(), std::back_inserter(lower_key), [](unsigned char c){ return std::tolower(c); });
+        return std::hash<std::string>()(key);
+    }
+};
+
+struct StringEqual {
+    bool operator()(const std::string& a, const std::string& b) const {
+        return string_compare(a, b);
+//		return a == b;
+    }
+};
+
 static std::string read_file(const std::string& filename);
 
 /*

@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.4 on Fri Mar 29 15:47:14 2024 }
+{ Compiled with cksp version 0.0.4 on Tue Apr 02 16:44:36 2024 }
 on init
 declare ?_return_vars_real[5]
 declare !_return_vars_str[5]
@@ -156,7 +156,7 @@ message("7: " & 7)
 message("8: " & 8)
 message("9: " & 9)
 message("10: " & 10)
-message("** Script " & "'" & "MAIN" & "'" & " Compile " & "15:47:14" & " " & "03/29/24" & " **")
+message("** Script " & "'" & "MAIN" & "'" & " Compile " & "16:44:36" & " " & "04/02/24" & " **")
 set_script_title("MAIN")
 declare const $UI_HEIGHT := 352
 declare const $UI_WIDTH := 785
