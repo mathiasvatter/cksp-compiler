@@ -46,7 +46,7 @@ public:
     void visit(JSONFloat& num) override;
     void visit(JSONBool& boolean) override;
 
-    std::vector<std::unique_ptr<NodeAST>> collect_ui_variables();
+    std::vector<std::unique_ptr<DataStructure>> collect_ui_variables();
 private:
 	std::stack<std::pair<std::string, JSONValue*>> m_panel_prefixes;
 	JSONValue* m_current_object = nullptr;

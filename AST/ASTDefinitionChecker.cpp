@@ -5,24 +5,11 @@
 #include "ASTDefinitionChecker.h"
 #include "ASTHandler.h"
 
-ASTDefinitionChecker::ASTDefinitionChecker(
-        const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
-        const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
-        const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
-        const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
-        const std::vector<std::unique_ptr<NodeAST>> &m_external_variables) :
-        m_builtin_variables(m_builtin_variables),
-        m_builtin_functions(m_builtin_functions),
-        m_builtin_arrays(m_builtin_arrays),
-        m_builtin_widgets(m_builtin_widgets),
-        m_external_variables(m_external_variables) {
-
+ASTDefinitionChecker::ASTDefinitionChecker(DefinitionProvider& def_provider) : m_def_provider(def_provider) {
 }
 
 void ASTDefinitionChecker::visit(NodeProgram& node) {
-    for(auto & external_var : m_external_variables) {
-        external_var->accept(*this);
-    }
+
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }
@@ -32,21 +19,29 @@ void ASTDefinitionChecker::visit(NodeProgram& node) {
 }
 
 void ASTDefinitionChecker::visit(NodeVariable& node) {
-    verify_variable(&node);
+    auto declaration = m_def_provider.get_declaration(&node);
+    if(declaration->data_type == Array) {
+        auto node_array = make_array(node.name, 0, node.tok, node.parent);
+        node_array->sizes->params.clear();
+        node_array->accept(*this);
+        node.replace_with(std::move(node_array));
+    }
+//    verify_variable(&node);
 //    if(node.declaration) {
 //        node.type = node.declaration->type;
 //    }
 }
 
 void ASTDefinitionChecker::visit(NodeArray& node) {
-    verify_array(&node);
+    auto declaration = m_def_provider.get_declaration(&node);
+//    verify_array(&node);
     auto array_handler = node.get_handler();
     if(node.declaration) {
         auto node_lowered = array_handler->perform_lowering(node);
         node.replace_with(std::move(node_lowered));
 //        // handle multidimensional array reference
 //        // convert indexes of multidimensional array
-//        if(node.var_type == Array and node.dimensions > 1 and !node.show_brackets) {
+//        if(node.data_type == Array and node.dimensions > 1 and !node.show_brackets) {
 //            auto node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0, node.tok);
 //            node.indexes->params.clear();
 //            node.indexes->params.push_back(std::move(node_expression));
@@ -55,7 +50,7 @@ void ASTDefinitionChecker::visit(NodeArray& node) {
 //
 //        // handle list reference
 //        // convert indexes of list
-//        if(node.var_type == List and !node.show_brackets) {
+//        if(node.data_type == List and !node.show_brackets) {
 //            if(node.indexes->params.size() != 2) {
 //                CompileError(ErrorType::SyntaxError,"Got wrong amount of indexes for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).print();
 //                exit(EXIT_FAILURE);
@@ -95,17 +90,13 @@ void ASTDefinitionChecker::visit(NodeUIControl &node) {
 
 void ASTDefinitionChecker::visit(NodeStatementList& node) {
     if(node.scope) {
-        m_declared_arrays.emplace_back();
-        m_declared_variables.emplace_back();
-        m_declared_controls.emplace_back();
+        m_def_provider.add_scope();
     }
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
     if(node.scope) {
-        m_declared_arrays.pop_back();
-        m_declared_variables.pop_back();
-        m_declared_controls.pop_back();
+        m_def_provider.remove_scope();
     }
 
     // Ersetzen Sie die alte Liste durch die neue
@@ -153,7 +144,7 @@ void ASTDefinitionChecker::verify_array(NodeArray *arr, bool is_strict) {
 //            arr->type = arr->declaration->type;
             arr->dimensions = node_declaration->dimensions;
             // get var type from declaration because of List or UI Control
-            arr->var_type = node_declaration->var_type;
+            arr->data_type = node_declaration->data_type;
             // only copy sizes from declaration if there is an index (passing arrays only by keyword)
             arr->sizes = std::unique_ptr<NodeParamList>(static_cast<NodeParamList *>(node_declaration->sizes->clone().release()));
             arr->sizes->update_parents(arr);
@@ -169,7 +160,7 @@ void ASTDefinitionChecker::verify_array(NodeArray *arr, bool is_strict) {
 //            match_types(arr->declaration, arr);
 //            arr->type = arr->declaration->type;
             arr->dimensions = 1;
-            arr->var_type = Array;
+            arr->data_type = Array;
         } else if (is_strict) {
             CompileError(ErrorType::SyntaxError,"Array has not been declared.", arr->tok.line, "", arr->name, arr->tok.file).exit();
 //            exit(EXIT_FAILURE);
@@ -212,7 +203,7 @@ void ASTDefinitionChecker::verify_variable(NodeVariable *var, bool is_strict) {
             var->declaration = node_var_declaration;
 //            match_types(var->declaration, var);
 //            var->type = var->declaration->type;
-            var->var_type = node_var_declaration->var_type;
+            var->data_type = node_var_declaration->data_type;
 
             // can only be array if parent is param_list or callback
         } else if (auto node_array_declaration = get_declared_array(var->name)) {

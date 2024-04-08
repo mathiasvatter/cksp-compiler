@@ -83,12 +83,12 @@ void ASTDesugarStructs::visit(NodeConstStatement& node) {
                              "Found incorrect <const block> syntax. Only variables allowed in <const blocks>.", node.tok.line,"", "", node.tok.file).print();
                 exit(EXIT_FAILURE);
             }
-            if (var->var_type != Mutable) {
+            if (var->data_type != Mutable) {
                 CompileError(ErrorType::SyntaxError,
                              "Warning: Found incorrect const block syntax. No other variable types allowed in const blocks. Casted variable type to <const>.",node.tok.line, "", "", node.tok.file).print();
             }
             var->type = Integer;
-            var->var_type = Const;
+            var->data_type = Const;
         }
 
         const_indexes.push_back(pre+iter);
@@ -211,12 +211,12 @@ void ASTDesugarStructs::visit(NodeArray& node) {
     node.sizes->accept(*this);
     node.indexes->accept(*this);
 
-    if(contains(VAR_IDENT, node.name[0]) || contains(ARRAY_IDENT, node.name[0])) {
-        std::string identifier(1, node.name[0]);
-        node.name = node.name.erase(0,1);
-        token token_type = *get_token_type(TYPES, identifier);
-        node.type = token_to_type(token_type);
-    }
+//    if(contains(VAR_IDENT, node.name[0]) || contains(ARRAY_IDENT, node.name[0])) {
+//        std::string identifier(1, node.name[0]);
+//        node.name = node.name.erase(0,1);
+//        token token_type = *get_token_type(TYPES, identifier);
+//        node.type = token_to_type(token_type);
+//    }
 
 //	// local variable substitution
 //	// do local variable substitution only if parent is not declare statement because scope
@@ -245,12 +245,12 @@ void ASTDesugarStructs::visit(NodeArray& node) {
 void ASTDesugarStructs::visit(NodeVariable& node) {
     // save original type before substitution
     // if notated without brackets -> variable can be array
-    if(contains(VAR_IDENT, node.name[0]) || contains(ARRAY_IDENT, node.name[0])) {
-        std::string identifier(1, node.name[0]);
-        node.name = node.name.erase(0,1);
-        token token_type = *get_token_type(TYPES, identifier);
-        node.type = token_to_type(token_type);
-    }
+//    if(contains(VAR_IDENT, node.name[0]) || contains(ARRAY_IDENT, node.name[0])) {
+//        std::string identifier(1, node.name[0]);
+//        node.name = node.name.erase(0,1);
+//        token token_type = *get_token_type(TYPES, identifier);
+//        node.type = token_to_type(token_type);
+//    }
 
 	// range-based for-loop substitution
 	if(!m_key_value_scope_stack.empty() and !is_to_be_declared(&node)) {
@@ -290,11 +290,11 @@ void ASTDesugarStructs::visit(NodeListStatement &node) {
     for(auto & param : node.body) {
         max_dimension = std::max(max_dimension, (int)param->params.size());
     }
-    if(max_dimension>1) node_main_array->var_type = List;
+    if(max_dimension>1) node_main_array->data_type = List;
 
     auto node_declare_main_array = std::make_unique<NodeSingleDeclareStatement>(node_main_array->clone(), nullptr, node.tok);
     auto main_size = (int32_t)node.body.size();
-    auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(std::make_unique<NodeVariable>(std::optional<Token>(), name_wo_ident+".SIZE", VarType::Const, node.tok), make_int(main_size,&node), node.tok);
+    auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(std::make_unique<NodeVariable>(std::optional<Token>(), name_wo_ident+".SIZE", DataType::Const, node.tok), make_int(main_size, &node), node.tok);
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_declare_main_array), node_statement_list.get()));
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_declare_main_const), node_statement_list.get()));
 
@@ -332,7 +332,7 @@ void ASTDesugarStructs::visit(NodeListStatement &node) {
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_sizes_declaration), node_statement_list.get()));
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_positions_declaration), node_statement_list.get()));
 
-    auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", VarType::Mutable, node.tok);
+    auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", DataType::Mutable, node.tok);
     for(int i = 0; i<node.body.size(); i++) {
         auto node_array_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
         auto node_array = make_array(name_wo_ident+std::to_string(i), sizes[i], node.tok, node_array_declaration.get());
@@ -341,7 +341,7 @@ void ASTDesugarStructs::visit(NodeListStatement &node) {
         node_statement_list->statements.push_back(statement_wrapper(std::move(node_array_declaration), node_statement_list.get()));
 
         auto node_const_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
-        auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), name_wo_ident+std::to_string(i)+".SIZE", VarType::Const, node.tok);
+        auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), name_wo_ident+std::to_string(i)+".SIZE", DataType::Const, node.tok);
         node_const_declaration->to_be_declared = std::move(node_variable);
         node_const_declaration->assignee = make_int(sizes[i], node_const_declaration.get());
         node_statement_list->statements.push_back(statement_wrapper(std::move(node_const_declaration), node_statement_list.get()));

@@ -19,9 +19,9 @@ void ASTPrinter::visit(NodeString &node) {
 void ASTPrinter::visit(NodeVariable &node) {
     if(node.persistence)
         std::cout << " read ";
-    if(node.var_type == VarType::Polyphonic)
+    if(node.data_type == DataType::Polyphonic)
         std::cout << " polyphonic ";
-    else if(node.var_type == VarType::Const)
+    else if(node.data_type == DataType::Const)
         std::cout << " const ";
     std::cout << node.name;
 }
