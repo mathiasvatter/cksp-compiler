@@ -120,12 +120,12 @@ void ASTVariables::visit(NodeArray& node) {
             node.dimensions = node_declaration->dimensions;
 
             // rename declaration when List
-            if(node_declaration->var_type == List) {
+            if(node_declaration->data_type == List) {
                 if(node_declaration->name[0] != '_')
                     node_declaration->name = "_"+node_declaration->name;
             }
             // get var type from declaration because of List
-            if(node_declaration->var_type == List or node_declaration->var_type == UI_Control) node.var_type = node_declaration->var_type;
+            if(node_declaration->data_type == List or node_declaration->data_type == UI_Control) node.data_type = node_declaration->data_type;
             // only copy sizes from declaration if there is an index (passing arrays only by keyword)
             if(!node.indexes->params.empty()) {
                 node.sizes = std::unique_ptr<NodeParamList>(
@@ -142,7 +142,7 @@ void ASTVariables::visit(NodeArray& node) {
             }
 
             // convert indexes of list
-            if(node.var_type == List) {
+            if(node.data_type == List) {
 
                 if(node.indexes->params.size() != 2) {
                     CompileError(ErrorType::SyntaxError,"Got wrong amount of indexes for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).print();
@@ -166,7 +166,7 @@ void ASTVariables::visit(NodeArray& node) {
         } else if (node_declaration and has_compiler_identifier) {
             node.declaration = node_declaration;
             node.dimensions = 1;
-            node.var_type = Array;
+            node.data_type = Array;
             node.type = node.declaration->type;
             node.name = "_"+node.name;
         } else {
@@ -224,8 +224,8 @@ void ASTVariables::visit(NodeVariable& node) {
             node.declaration = node_first_declaration;
             node.type = node.declaration->type;
             node_first_declaration->is_used = true;
-            if (node_first_declaration->var_type == UI_Control) {
-                node.var_type = node_first_declaration->var_type;
+            if (node_first_declaration->data_type == UI_Control) {
+                node.data_type = node_first_declaration->data_type;
             }
 
         // can only be array if parent is param_list or callback
@@ -253,7 +253,7 @@ void ASTVariables::visit(NodeFunctionCall &node) {
     // replace node variable when in get_ui_id and not ui_control
     if(node.function->name == "get_ui_id" and !node.function->args->params.empty()) {
         if(auto node_variable = cast_node<NodeVariable>(node.function->args->params[0].get())) {
-            if(node_variable->var_type != UI_Control) {
+            if(node_variable->data_type != UI_Control) {
                 node.replace_with(std::move(node.function->args->params[0]));
             }
         }

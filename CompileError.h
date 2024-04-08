@@ -67,7 +67,6 @@ public:
     void exit(ErrorType err=ErrorType::CompileError);
 
 
-private:
     ErrorType m_type;
     std::string m_message;
 	std::string m_expected;

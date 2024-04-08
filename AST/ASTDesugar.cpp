@@ -416,7 +416,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
         is_local = node_array->is_local;
         is_global = node_array->is_global;
         if(node_array->is_global) node_array->is_local = false;
-        is_const = node_array->var_type == Const;
+        is_const = node_array->data_type == Const;
         is_engine = node_array->is_engine;
     }
     auto node_variable = cast_node<NodeVariable>(node.to_be_declared.get());
@@ -427,7 +427,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
         is_local = node_variable->is_local;
         is_global = node_variable->is_global;
         if(node_variable->is_global) node_variable->is_local = false;
-        is_const = node_variable->var_type == Const;
+        is_const = node_variable->data_type == Const;
         is_engine = node_variable->is_engine;
     }
 //    is_local &= !is_global;
@@ -786,7 +786,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 			auto node_control_var = std::make_unique<NodeVariable>(std::optional<Token>(), new_control_name, UI_Control, node.tok);
             node_control_var->is_used = true;
 			auto new_node_ui_control = std::unique_ptr<NodeUIControl>(static_cast<NodeUIControl*>(node.clone().release()));
-			new_node_ui_control->control_var = node_control_var->clone();
+			new_node_ui_control->control_var = clone_as<NodeVariable>(node_control_var.get());
 			auto new_node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(new_node_ui_control),
 																					 nullptr, node.tok);
 			node_statement_list->statements.push_back(statement_wrapper(std::move(new_node_declaration), node_statement_list.get()));
@@ -796,7 +796,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 		new_control_name = node_array->name+std::to_string(0);
 		if(node_array->dimensions>1) new_control_name = "_"+new_control_name;
 
-		auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", VarType::Mutable, node.tok);
+		auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", DataType::Mutable, node.tok);
 //		node_iterator_var->accept(*this);
 		auto node_while_body = std::make_unique<NodeStatementList>(node.tok);
 
@@ -841,7 +841,7 @@ void ASTDesugar::declare_compiler_variables() {
 //    m_current_callback = m_init_callback;
     Token tok = Token(KEYWORD, "compiler_variable", 0, 0,"");
     for(auto & var_name: m_compiler_variables) {
-        auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name.first, VarType::Mutable, tok);
+        auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name.first, DataType::Mutable, tok);
         node_variable->type = var_name.second;
         node_variable->is_engine = true;
         node_variable->is_global = true;
@@ -878,7 +878,7 @@ void ASTDesugar::declare_dummy_return_variable() {
     m_current_callback = m_init_callback;
     Token tok = Token(KEYWORD, "compiler_variable", 0, 0,"");
     std::string dummy_name = "_return_dummy";
-    auto node_return_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), dummy_name, VarType::Mutable, tok);
+    auto node_return_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), dummy_name, DataType::Mutable, tok);
     node_return_dummy->type = Unknown;
     node_return_dummy->is_engine = true;
     auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_return_dummy), nullptr, tok);
@@ -887,7 +887,7 @@ void ASTDesugar::declare_dummy_return_variable() {
     m_local_declare_statements.push_back(statement_wrapper(std::move(node_var_declaration), m_init_callback));
 
     std::string local_var_dummy_name = "_local_dummy_";
-    auto node_local_var_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), local_var_dummy_name, VarType::Mutable, tok);
+    auto node_local_var_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), local_var_dummy_name, DataType::Mutable, tok);
     node_local_var_dummy->type = Unknown;
     node_local_var_dummy->is_engine = true;
     auto node_local_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_local_var_dummy), nullptr, tok);

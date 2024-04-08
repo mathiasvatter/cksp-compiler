@@ -83,8 +83,8 @@ protected:
 
     Result<std::unique_ptr<NodeAST>> parse_number(NodeAST* parent);
     Result<std::unique_ptr<NodeString>> parse_string(NodeAST* parent);
-    Result<std::unique_ptr<NodeVariable>> parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent=std::optional<Token>(), VarType var_type=VarType::Mutable);
-    Result<std::unique_ptr<NodeArray>> parse_array(NodeAST* parent, std::optional<Token> is_persistent=std::optional<Token>(), VarType var_type=VarType::Array);
+    Result<std::unique_ptr<NodeVariable>> parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent=std::optional<Token>(), DataType var_type=DataType::Mutable);
+    Result<std::unique_ptr<NodeArray>> parse_array(NodeAST* parent, std::optional<Token> is_persistent=std::optional<Token>(), DataType var_type=DataType::Array);
 //    Result<std::unique_ptr<NodeNDArray>> parse_ndarray(std::unique_ptr<NodeArray> array);
 
     Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent);

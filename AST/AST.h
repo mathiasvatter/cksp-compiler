@@ -63,35 +63,35 @@ inline token type_to_token(ASTType type) {
 	}
 };
 
-enum VarType {
+enum DataType {
     Const,
     Polyphonic,
     Array,
+    NDArray,
     List,
     Mutable,
 	Define,
     UI_Control,
 };
 
-template <typename Derived>
-struct NodeInterface {
-    virtual ~NodeInterface() = default;
-    // Virtuelle clone()-Methode für tiefe Kopien
-    std::unique_ptr<Derived> clone() const {
-        return std::unique_ptr<Derived>(static_cast<Derived*>(this->do_clone()));
+inline ASTType infer_type_from_identifier(std::string& var_name) {
+    ASTType type = ASTType::Unknown;
+    if(contains(VAR_IDENT, var_name[0]) || contains(ARRAY_IDENT, var_name[0])) {
+        std::string identifier(1, var_name[0]);
+        var_name = var_name.erase(0,1);
+        token token_type = *get_token_type(TYPES, identifier);
+        type = token_to_type(token_type);
     }
-    virtual Derived* do_clone() const = 0;
-};
+    return type;
+}
 
-struct NodeAST: public NodeInterface<NodeAST> {
+struct NodeAST {
     Token tok;
     ASTType type;
     NodeAST* parent = nullptr;
     inline explicit NodeAST(const Token tok=Token()) : tok(tok), type(ASTType::Unknown) {}
 	virtual ~NodeAST() = default;
-    NodeAST* do_clone() const override {
-        return nullptr;
-    }
+    virtual std::unique_ptr<NodeAST> clone() const = 0;
 	virtual void accept(class ASTVisitor& visitor);
 	virtual void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {};
 	void replace_with(std::unique_ptr<NodeAST> newNode);
@@ -137,12 +137,18 @@ std::vector<std::unique_ptr<T>> clone_vector(const std::vector<std::unique_ptr<T
     return new_vec;
 }
 
+template<typename T>
+std::unique_ptr<T> clone_as(NodeAST* node) {
+    auto cloned_ptr = node->clone(); // Nutzt die clone()-Methode der NodeAST Klasse
+    return std::unique_ptr<T>(static_cast<T*>(cloned_ptr.release()));
+}
+
+
 struct NodeDeadCode : NodeAST {
     explicit NodeDeadCode(const Token tok) : NodeAST(tok) {};
     void accept(ASTVisitor& visitor) override;
     NodeDeadCode(const NodeDeadCode& other) : NodeAST(other.tok) {}
-//    std::unique_ptr<NodeAST> clone() const override;
-    NodeDeadCode* do_clone() const override;
+    std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {return "";}
 };
 
@@ -153,8 +159,7 @@ struct NodeInt : NodeAST {
     // Kopierkonstruktor
     NodeInt(const NodeInt& other) : NodeAST(other.tok), value(other.value) {}
     // Clone Methode
-//    std::unique_ptr<NodeAST> clone() const override;
-    NodeDeadCode* do_clone() const override;
+    std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {
         return std::to_string(value);
     }
@@ -186,21 +191,21 @@ struct NodeString : NodeAST {
     }
 };
 
-struct NodeVarSubType : NodeAST {
+struct DataStructure : NodeAST {
     bool is_used = false;
     bool is_engine = false;
     std::optional<Token> persistence;
-    bool is_reference = false;
+    bool is_reference = true;
     bool is_local = false;
     bool is_global = false;
     bool is_compiler_return = false;
-    VarType var_type;
+    DataType data_type;
     std::string name;
-    NodeAST* declaration = nullptr; // index in declaration array
-    inline explicit NodeVarSubType(std::string name, Token tok) : NodeAST(tok), name(std::move(name)) {}
+    DataStructure* declaration = nullptr; // index in declaration array
+    inline explicit DataStructure(std::string name, Token tok) : NodeAST(tok), name(std::move(name)) {}
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
-    NodeVarSubType(const NodeVarSubType& other);
+    DataStructure(const DataStructure& other);
     // Clone Methode
     std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {
@@ -208,10 +213,10 @@ struct NodeVarSubType : NodeAST {
     }
 };
 
-struct NodeVariable: NodeVarSubType {
-	inline NodeVariable(std::optional<Token> is_persistent, std::string name, VarType type, Token tok) : NodeVarSubType(name, tok) {
+struct NodeVariable: DataStructure {
+	inline NodeVariable(std::optional<Token> is_persistent, std::string name, DataType type, Token tok) : DataStructure(name, tok) {
         persistence = std::move(is_persistent);
-        var_type = type;
+        data_type = type;
     }
 	void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
@@ -249,18 +254,18 @@ struct NodeParamList: NodeAST {
     }
 };
 
-struct NodeArray : NodeVarSubType {
+struct NodeArray : DataStructure {
     int dimensions = 1;
     bool show_brackets = true;
     std::unique_ptr<NodeParamList> sizes = nullptr;
     std::unique_ptr<NodeParamList> indexes = nullptr;
-    inline explicit NodeArray(std::string name, Token tok) : NodeVarSubType(name, tok) {}
-    inline NodeArray(std::optional<Token> is_persistent, std::string name, VarType var_type, std::unique_ptr<NodeParamList> sizes,
-              std::unique_ptr<NodeParamList> indexes, Token tok)
-              : NodeVarSubType(name, tok),
+    inline explicit NodeArray(std::string name, Token tok) : DataStructure(name, tok) {}
+    inline NodeArray(std::optional<Token> is_persistent, std::string name, DataType var_type, std::unique_ptr<NodeParamList> sizes,
+                     std::unique_ptr<NodeParamList> indexes, Token tok)
+              : DataStructure(name, tok),
                 sizes(std::move(sizes)), indexes(std::move(indexes)) {
         persistence = std::move(is_persistent);
-        this->var_type = var_type;
+        this->data_type = var_type;
     }
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
@@ -289,14 +294,14 @@ struct NodeNDArray : NodeAST {
 	bool is_compiler_return = false;
 	int dimensions = 1;
     bool show_brackets = true;
-	VarType var_type = VarType::Array;
+	DataType var_type = DataType::Array;
 	std::string name;
 	std::unique_ptr<NodeParamList> sizes = nullptr;
 	std::unique_ptr<NodeParamList> indexes = nullptr;
 	NodeAST* declaration = nullptr;
 	inline explicit NodeNDArray(Token tok) : NodeAST(tok) {}
-	inline NodeNDArray(std::optional<Token> is_persistent, std::string name, VarType var_type, std::unique_ptr<NodeParamList> sizes,
-					 std::unique_ptr<NodeParamList> indexes, Token tok)
+	inline NodeNDArray(std::optional<Token> is_persistent, std::string name, DataType var_type, std::unique_ptr<NodeParamList> sizes,
+                       std::unique_ptr<NodeParamList> indexes, Token tok)
 		: NodeAST(tok), persistence(is_persistent), name(std::move(name)), var_type(var_type),
 		  sizes(std::move(sizes)), indexes(std::move(indexes)) {}
 	void accept(ASTVisitor& visitor) override;
@@ -318,16 +323,16 @@ struct NodeNDArray : NodeAST {
 	}
 };
 
-struct NodeUIControl : NodeVarSubType {
+struct NodeUIControl : DataStructure {
     std::string ui_control_type;
-    std::unique_ptr<NodeVarSubType> control_var; //Array or Variable
+    std::unique_ptr<DataStructure> control_var; //Array or Variable
     std::unique_ptr<NodeParamList> params;
     std::unique_ptr<NodeParamList> sizes; // if it is ui_control array
 	std::vector<ASTType> arg_ast_types;
-	std::vector<VarType> arg_var_types;
-    inline explicit NodeUIControl(Token tok) : NodeVarSubType("", tok) {}
-    inline NodeUIControl(std::string uiControlType, std::unique_ptr<NodeVarSubType> controlVar, std::unique_ptr<NodeParamList> params, Token tok)
-                : NodeVarSubType("", tok), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {}
+	std::vector<DataType> arg_var_types;
+    inline explicit NodeUIControl(Token tok) : DataStructure("", tok) {}
+    inline NodeUIControl(std::string uiControlType, std::unique_ptr<DataStructure> controlVar, std::unique_ptr<NodeParamList> params, Token tok)
+                : DataStructure("", tok), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {}
     void accept(ASTVisitor& visitor) override;
     // Copy Constructor
     NodeUIControl(const NodeUIControl& other);
@@ -450,10 +455,10 @@ struct NodeSingleAssignStatement : NodeAST {
 };
 
 struct NodeDeclareStatement : NodeAST {
-	std::vector<std::unique_ptr<NodeVarSubType>> to_be_declared;
+	std::vector<std::unique_ptr<DataStructure>> to_be_declared;
 	std::unique_ptr<NodeParamList> assignee;
     inline explicit NodeDeclareStatement(Token tok) : NodeAST(tok) {}
-	inline NodeDeclareStatement(std::vector<std::unique_ptr<NodeVarSubType>> to_be_declared, std::unique_ptr<NodeParamList> assignee, Token tok)
+	inline NodeDeclareStatement(std::vector<std::unique_ptr<DataStructure>> to_be_declared, std::unique_ptr<NodeParamList> assignee, Token tok)
     : NodeAST(tok), to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
     // Copy Constructor
@@ -918,7 +923,7 @@ struct NodeFunctionHeader: NodeAST {
     std::string name;
     std::unique_ptr<NodeParamList> args;
     std::vector<ASTType> arg_ast_types;
-    std::vector<VarType> arg_var_types;
+    std::vector<DataType> arg_var_types;
     inline explicit NodeFunctionHeader(Token tok) : NodeAST(tok) {}
     inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeParamList> args, Token tok)
     : NodeAST(tok), name(std::move(name)), args(std::move(args)) {};

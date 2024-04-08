@@ -5,18 +5,14 @@
 #pragma once
 
 #include "ASTVisitor.h"
+#include "DefinitionProvider.h"
 
 /// check all user variable definitions -> get pointers
 /// check all function definitions -> get pointers
 /// check all builtin var definitions -> get pointers
 class ASTDefinitionChecker: public ASTVisitor {
 public:
-    explicit ASTDefinitionChecker(
-            const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
-            const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
-            const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
-            const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
-            const std::vector<std::unique_ptr<NodeAST>> &m_external_variables);
+    explicit ASTDefinitionChecker(DefinitionProvider& def_provider);
 
     void visit(NodeProgram& node) override;
 //    void visit(NodeSingleDeclareStatement& node) override;
@@ -47,35 +43,7 @@ public:
     static bool type_mismatch(NodeAST* node1, NodeAST* node2);
 private:
 
-    /// external variables from eg nckp file
-    const std::vector<std::unique_ptr<NodeAST>> &m_external_variables;
-    /// builtin engine variables
-    const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables;
-    NodeVariable* get_builtin_variable(NodeVariable* var);
-    /// builtin engine arrays
-    const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays;
-    NodeArray* get_builtin_array(NodeArray* arr);
-    /// builtin engine widgets
-    const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
-    NodeUIControl* get_builtin_widget(const std::string &ui_control);
-    /// builtin engine functions
-    const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions;
-    NodeFunctionHeader* get_builtin_function(const std::string &function, int params);
-
-    std::unordered_map<int, ASTType> m_return_variables;
-
-    /// declared variables
-    std::vector<std::unordered_map<std::string, NodeVariable*, StringHash, StringEqual>> m_declared_variables;
-    NodeVariable* get_declared_variable(const std::string& var);
-    int m_variables_declared = 0;
-    /// declared arrays
-    std::vector<std::unordered_map<std::string, NodeArray*, StringHash, StringEqual>> m_declared_arrays;
-    // when is variable = raw array? if variable has _ in front and is array and was declared without _
-    NodeArray* get_raw_declared_array(const std::string& var);
-    NodeArray* get_declared_array(const std::string& arr);
-    /// declared ui_controls
-    std::vector<std::unordered_map<std::string, NodeUIControl*, StringHash, StringEqual>> m_declared_controls;
-    NodeUIControl* get_declared_control(NodeUIControl* arr);
+    DefinitionProvider& m_def_provider;
 
     /// multidimensional array method for getting the index at runtime
     std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok);

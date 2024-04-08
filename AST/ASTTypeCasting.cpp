@@ -149,7 +149,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 
 	auto node_callback_id = cast_node<NodeCallback>(node.parent);
 	if(node_callback_id) {
-		if(node.var_type != UI_Control) {
+		if(node.data_type != UI_Control) {
             CompileError(ErrorType::TypeError,
                          "Variable needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line,
                          "<UI_Control>", node.get_string(), node.tok.file).print();
@@ -190,7 +190,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
 //    }
 
 	auto node_callback_id = cast_node<NodeCallback>(node.parent);
-	if(node_callback_id and node.var_type != UI_Control) {
+	if(node_callback_id and node.data_type != UI_Control) {
 		CompileError(ErrorType::TypeError,"Array needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line, "<UI_Control>", node.get_string(), node.tok.file).exit();
 	}
 
@@ -212,7 +212,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
     if(node.indexes->type != Integer and node.indexes->type != Unknown)
         err.exit();
 
-    if(node.var_type == UI_Control and node.indexes->params.empty()) {
+    if(node.data_type == UI_Control and node.indexes->params.empty()) {
         auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
         if(node_control_function and contains(node_control_function->name, "control_par")) {
             auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(
