@@ -16,8 +16,8 @@
 	XX(END_TOKEN, "end_of_file") \
 	XX(LINEBRK, "linebreak") \
 	XX(TYPE, "type") \
-	XX(INT, "int") \
-	XX(FLOAT, "float") \
+	XX(INTNUM, "int") \
+	XX(FLOATNUM, "float") \
 	XX(HEXADECIMAL, "hexadecimal") \
 	XX(BINARY, "binary") \
 	XX(COMMENT, "comment") \
@@ -147,7 +147,7 @@ inline std::set<char> BINARY_OPERATORS = {'-', '+', '/', '*', '&'};
 inline std::set<char> PARENTH = {'(',')', '[', ']'};
 inline std::set<char> VAR_IDENT = {'$', '~', '@'};
 inline std::set<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
-inline std::unordered_map<std::string, token> TYPES = {{"$", INT}, {"~", FLOAT}, {"@", STRING}, {"%", INT}, {"?", FLOAT}, {"!", STRING}};
+inline std::unordered_map<std::string, token> TYPES = {{"$", INTNUM}, {"~", FLOATNUM}, {"@", STRING}, {"%", INTNUM}, {"?", FLOATNUM}, {"!", STRING}};
 inline std::set<char> COMMENT_START = {'{', '/'};
 inline std::set<char> COMPARISON_OPERATORS_START = {'<', '>', '=', '#'};
 inline std::set<std::string> UI_CONTROLS = {"ui_label", "ui_button", "ui_switch", "ui_slider", "ui_menu",

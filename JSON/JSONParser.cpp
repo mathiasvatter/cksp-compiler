@@ -24,10 +24,10 @@ std::unique_ptr<JSONValue> JSONParser::parse_value() {
 		case SUB:
 			consume();
 			tok = peek();
-        case INT:
+        case INTNUM:
             consume();
             return std::make_unique<JSONInt>(std::stoi(tok.val));
-        case FLOAT:
+        case FLOATNUM:
             consume();
             return std::make_unique<JSONFloat>(std::stod(tok.val));
         case OPEN_CURLY:

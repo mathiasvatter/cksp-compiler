@@ -150,6 +150,7 @@ std::string CompileError::get_os_version() {
 std::string CompileError::get_os_architecture() {
     std::string os_architecture;
 #if defined(_WIN32)
+//    os_architecture = "x86";
     BOOL isWow64 = FALSE;
         IsWow64Process(GetCurrentProcess(), &isWow64);
         if (isWow64) {
