@@ -7,6 +7,7 @@
 
 #include <utility>
 #include <format>
+#include <array>
 #if defined(_WIN32)
     #include <windows.h>
     #include <VersionHelpers.h>
@@ -167,17 +168,22 @@ std::string CompileError::get_os_architecture() {
 
 std::string CompileError::generate_github_issue_url(const std::string &username, const std::string &repo) {
     // Fehlermeldung und Code-Snippet für das Issue vorbereiten
-    std::string issue_title = std::format("{}: {}", error_type_to_string(m_type), m_message);
-    std::string issue_body = std::format("**Error Message**\n\n{}\n\n", m_message) +
-                             std::format("**Code Snippet**\n\n```\n{}\n```\n\n", get_line_from_file()) +
-                             std::format("**Actual Behavior**\n\nGot: {}\n\n**Expected Behavior**\n\nExpected: {}\n\n", m_got, m_expected) +
-                             std::format("**CKSP Version**\n\nv{}\n\n", COMPILER_VERSION) +
-                             std::format("**Environment**\n\n- OS Version: {}\n- Architecture: {}\n\n", get_os_version(), get_os_architecture());
+    std::stringstream ss; // Added this line
+    ss << error_type_to_string(m_type) << ": " << m_message; // Added this line
+    std::string issue_title = ss.str(); // Changed this line
+
+    std::stringstream issue_body; // Added this line
+    issue_body << "**Error Message**\n\n" << m_message << "\n\n"
+               << "**Code Snippet**\n\n```\n" << get_line_from_file() << "\n```\n\n"
+               << "**Actual Behavior**\n\nGot: " << m_got << "\n\n**Expected Behavior**\n\nExpected: " << m_expected << "\n\n"
+               << "**CKSP Version**\n\nv" << COMPILER_VERSION << "\n\n"
+               << "**Environment**\n\n- OS Version: " << get_os_version() << "\n- Architecture: " << get_os_architecture() << "\n\n";
+
     std::string encoded_title = url_encode(issue_title);
-    std::string encoded_body = url_encode(issue_body);
+    std::string encoded_body = url_encode(issue_body.str()); // Changed this line
     std::string encoded_labels = url_encode("bug");
 
-    std::string issueUrl = std::format("https://github.com/{}/{}/issues/new?labels={}&title={}&body={}", username, repo, encoded_labels, encoded_title, encoded_body);
+    std::string issueUrl = "https://github.com/" + username + "/" + repo + "/issues/new?labels=" + encoded_labels + "&title=" + encoded_title + "&body=" + encoded_body; // Changed this line
     return issueUrl;
 }
 
