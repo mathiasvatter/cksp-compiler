@@ -46,8 +46,8 @@ inline std::string type_to_string(ASTType type) {
 
 inline ASTType token_to_type(token tok) {
     switch (tok) {
-        case INT: return Integer;
-        case FLOAT: return Real;
+        case INTNUM: return Integer;
+        case FLOATNUM: return Real;
         case STRING: return String;
         default: return Unknown;
     }
@@ -55,10 +55,10 @@ inline ASTType token_to_type(token tok) {
 
 inline token type_to_token(ASTType type) {
 	switch (type) {
-		case Integer: return INT;
-		case Real: return FLOAT;
+		case Integer: return INTNUM;
+		case Real: return FLOATNUM;
 		case String: return STRING;
-		default: return INT;
+		default: return INTNUM;
 	}
 };
 

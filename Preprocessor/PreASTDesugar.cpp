@@ -199,7 +199,7 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
     while(node.to.type == DOWNTO ? i >= to : i <= to) {
         std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
         auto node_number_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
-        auto node_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INT, std::to_string(i), 0, 0, ""),
+        auto node_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INTNUM, std::to_string(i), 0, 0, ""),
                                                                                                  nullptr), nullptr);
         node_number_chunk->chunk.push_back(std::move(node_statement));
 		auto node_number_chunk_macro_arg = std::unique_ptr<PreNodeChunk>(static_cast<PreNodeChunk*>(node_number_chunk->clone().release()));
@@ -253,7 +253,7 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
     for (int i = 0; i<node.literate_tokens->chunk.size(); i++) {
         std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
         auto node_number_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
-        auto node_number_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INT, std::to_string(i), 0, 0,""),nullptr), nullptr);
+        auto node_number_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INTNUM, std::to_string(i), 0, 0,""),nullptr), nullptr);
         node_number_chunk->chunk.push_back(std::move(node_number_statement));
 
         auto literate_token = node.literate_tokens->chunk[i]->clone();
