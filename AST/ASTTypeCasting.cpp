@@ -174,6 +174,18 @@ void ASTTypeCasting::visit(NodeVariable& node) {
         }
     }
 
+	if(node.var_type == UI_Control) {
+		auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
+		if(node_control_function and contains(node_control_function->name, "control_par")) {
+			auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(
+				static_cast<NodeFunctionHeader *>(get_builtin_function("get_ui_id", 1)->clone().release()));
+			node_get_ui_id->args->params.clear();
+			node_get_ui_id->args->params.push_back(node.clone());
+			node_get_ui_id->update_parents(node.parent);
+			node.replace_with(std::move(node_get_ui_id));
+		}
+	}
+
 }
 
 void ASTTypeCasting::visit(NodeArray& node) {

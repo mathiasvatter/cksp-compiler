@@ -38,17 +38,19 @@ void ASTGenerator::visit(NodeInt &node) {
 }
 
 void ASTGenerator::visit(NodeReal &node) {
-    std::ios oldState(nullptr); // Zum Speichern des ursprünglichen Stream-Zustands
-    oldState.copyfmt(os); // Zustand von 'os' kopieren
+	std::ios oldState(nullptr);
+	oldState.copyfmt(os); // Speichert den aktuellen Zustand von os
 
-    if (std::floor(node.value) == node.value) {
-        os << std::fixed << std::setprecision(1) << node.value;
-    } else {
-        os << std::defaultfloat << node.value;
-    }
+	// Überprüfen, ob der Wert genau einer Ganzzahl entspricht
+	if (std::abs(node.value - std::round(node.value)) < std::numeric_limits<double>::epsilon()) {
+		os << std::fixed << std::setprecision(1) << node.value; // Rundet auf eine Nachkommastelle, für den Fall 0.000000
+	} else {
+		os << std::fixed << std::setprecision(15) << node.value; // Zeigt den Wert mit maximaler Präzision
+	}
 
-    os.copyfmt(oldState); // Stream-Zustand auf den ursprünglichen Zustand zurücksetzen
+	os.copyfmt(oldState); // Stellt den ursprünglichen Zustand von os wieder her
 }
+
 
 void ASTGenerator::visit(NodeString &node) {
     os << node.value;

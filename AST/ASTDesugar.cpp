@@ -150,6 +150,14 @@ void ASTDesugar::visit(NodeArray& node) {
 
     node.sizes->accept(*this);
     node.indexes->accept(*this);
+    // local variable substitution
+    // do local variable substitution only if parent is not declare statement because scope
+    if(!m_variable_scope_stack.empty() and !is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
+        if(auto substitute = get_local_variable_substitute(node.name)) {
+            node.name = substitute->get_string();
+            node.is_local = true;
+        }
+    }
     // function args substitution
     if(!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.name)) {
@@ -159,14 +167,6 @@ void ASTDesugar::visit(NodeArray& node) {
                 node.replace_with(std::move(substitute));
                 return;
             }
-        }
-    }
-    // local variable substitution
-    // do local variable substitution only if parent is not declare statement because scope
-    if(!m_variable_scope_stack.empty() and !is_instance_of<NodeSingleDeclareStatement>(node.parent)) {
-        if(auto substitute = get_local_variable_substitute(node.name)) {
-            node.name = substitute->get_string();
-            node.is_local = true;
         }
     }
 }
@@ -183,15 +183,6 @@ void ASTDesugar::visit(NodeFunctionHeader& node) {
 }
 
 void ASTDesugar::visit(NodeVariable& node) {
-    // substitution
-    if(!m_substitution_stack.empty()) {
-        if(auto substitute = get_substitute(node.name)) {
-            substitute->update_parents(node.parent);
-            node.replace_with(std::move(substitute));
-            return;
-        }
-    }
-
     // local variable substitution
     // do local variable substitution only if parent is not declare statement because scope
     if(!m_variable_scope_stack.empty() and !is_to_be_declared(&node)) {
@@ -203,6 +194,15 @@ void ASTDesugar::visit(NodeVariable& node) {
             return;
         }
     }
+    // substitution
+    if(!m_substitution_stack.empty()) {
+        if(auto substitute = get_substitute(node.name)) {
+            substitute->update_parents(node.parent);
+            node.replace_with(std::move(substitute));
+            return;
+        }
+    }
+
 }
 
 void ASTDesugar::visit(NodeFunctionCall& node) {
