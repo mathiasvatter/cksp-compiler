@@ -55,9 +55,9 @@ void ASTDesugarStructs::visit(NodeConstStatement& node) {
     if(!m_const_prefixes.empty()) pref = m_const_prefixes.top() + "." + node.prefix;
     m_const_prefixes.push(pref);
     auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-    std::vector<int32_t> const_indexes;
-    int32_t iter = 0;
-    int32_t pre = 0;
+    std::vector<std::unique_ptr<NodeAST>> const_indexes;
+    std::unique_ptr<NodeAST> iter = make_int(0, node_statement_list.get());
+    std::unique_ptr<NodeAST> pre = make_int(0, node_statement_list.get());
     for(int i = 0; i<node.constants.size(); i++){
         node.constants[i]->accept(*this);
         // check constants and give them values
@@ -65,17 +65,18 @@ void ASTDesugarStructs::visit(NodeConstStatement& node) {
         for(auto &stmt : stmt_list->statements) {
             auto node_stmt = cast_node<NodeStatement>(stmt.get());
             auto declare_stmt = cast_node<NodeSingleDeclareStatement>(node_stmt->statement.get());
-            if(!declare_stmt->assignee)
-                declare_stmt->assignee = make_int(pre+iter, declare_stmt);
-            else {
-                auto node_int = cast_node<NodeInt>(declare_stmt->assignee.get());
-                if(!node_int) {
-                    CompileError(ErrorType::SyntaxError,
-                                 "Found incorrect <const block> syntax. Only integers can be assigned in <const blocks>.", node.tok.line,"", "", node.tok.file).print();
-                    exit(EXIT_FAILURE);
-                }
-                pre = node_int->value;
-                iter = 0;
+            if(!declare_stmt->assignee) {
+				declare_stmt->assignee = make_binary_expr(ASTType::Integer, "+", pre->clone(), iter->clone(), nullptr, node.tok);
+				declare_stmt->assignee->update_parents(declare_stmt);
+			} else {
+//                auto node_int = cast_node<NodeInt>(declare_stmt->assignee.get());
+//                if(!node_int) {
+//                    CompileError(ErrorType::SyntaxError,
+//                                 "Found incorrect <const block> syntax. Only integers can be assigned in <const blocks>.", node.tok.line,"", "", node.tok.file).print();
+//                    exit(EXIT_FAILURE);
+//                }
+                pre = declare_stmt->assignee->clone();
+                iter = make_int(0, node_statement_list.get());
             }
             auto var = cast_node<NodeVariable>(declare_stmt->to_be_declared.get());
             if (!var) {
@@ -91,12 +92,17 @@ void ASTDesugarStructs::visit(NodeConstStatement& node) {
             var->var_type = Const;
         }
 
-        const_indexes.push_back(pre+iter);
+        const_indexes.push_back(make_binary_expr(ASTType::Integer, "+", pre->clone(), iter->clone(), nullptr, node.tok));
         node.constants[i] -> parent = node_statement_list.get();
         node_statement_list->statements.push_back(std::move(node.constants[i]));
-        iter++;
+        iter = make_binary_expr(ASTType::Integer, "+", iter->clone(), make_int(1, node_statement_list.get()), nullptr, node.tok);;
     }
-    auto array = make_declare_array(node.prefix, node.constants.size(), const_indexes, node_statement_list.get());
+	auto node_array = make_array(node.prefix, node.constants.size(), node.tok, node_statement_list.get());
+	auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), nullptr, node.tok);
+	node_declare_statement->assignee = std::unique_ptr<NodeParamList>(new NodeParamList(std::move(const_indexes), node.tok));
+	auto array = statement_wrapper(std::move(node_declare_statement), nullptr);
+//    auto array = make_declare_array(node.prefix, node.constants.size(), {}, node_statement_list.get());
+	array->update_parents(node_statement_list.get());
     node_statement_list->statements.push_back(std::move(array));
     auto constant = make_declare_variable(node.prefix+".SIZE", node.constants.size(), Const, node_statement_list.get());
     node_statement_list->statements.push_back(std::move(constant));
@@ -229,14 +235,14 @@ void ASTDesugarStructs::visit(NodeArray& node) {
 
     // add prefixes
     if(!m_family_prefixes.empty()) {
-        auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
-        if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
+//        auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
+//        if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
         auto node_ui_control = cast_node<NodeUIControl>(node.parent);
-        if(node_declare_statement || node_ui_control) {
+        if(is_to_be_declared(&node) || node_ui_control) {
             node.name = m_family_prefixes.top() + "." + node.name;
         }
     }
-    if(!m_const_prefixes.empty()) {
+    if(!m_const_prefixes.empty() and is_to_be_declared(&node)) {
         node.name = m_const_prefixes.top() + "." + node.name;
     }
 
@@ -266,14 +272,14 @@ void ASTDesugarStructs::visit(NodeVariable& node) {
     // add prefixes
     if(!m_family_prefixes.empty()) {
         // add prefixes only if parent is declare statement and node is to_be_declared and not assigned
-        auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
-        if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
+//        auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
+//        if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
         auto node_ui_control = cast_node<NodeUIControl>(node.parent);
-        if(node_declare_statement || node_ui_control){
+        if(is_to_be_declared(&node) || node_ui_control){
             node.name = m_family_prefixes.top() + "." + node.name;
         }
     }
-    if(!m_const_prefixes.empty()) {
+    if(!m_const_prefixes.empty() and is_to_be_declared(&node)) {
         node.name = m_const_prefixes.top() + "." + node.name;
     }
 }

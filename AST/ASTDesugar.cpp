@@ -84,18 +84,7 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
     auto left_real = cast_node<NodeReal>(node.left.get());
 
 	if(get_token_type(MATH_OPERATORS, node.op) or get_token_type(BITWISE_OPERATORS, node.op)) {
-        // division by zero
-        if (right_int and get_token_type(MATH_OPERATORS, node.op) == DIV and right_int->value == 0) {
-            CompileError(ErrorType::MathError,"Warning: Found division by zero.",node.tok.line,"","",node.tok.file).print();
-            return;
-        }
-        if(left_int and left_int->value == 0 and get_token_type(MATH_OPERATORS, node.op) == MULT or right_int and right_int->value == 0 and
-                get_token_type(MATH_OPERATORS, node.op) == MULT) {
-            auto new_node = std::make_unique<NodeInt>(0, node.tok);
-            new_node-> parent = node.parent;
-            node.replace_with(std::move(new_node));
-            return;
-        }
+
 		// constant folding
 		if (left_int and right_int) {
             // Beide Operanden sind Integers. Führe die Operation aus und ersetze den Knoten.
@@ -116,7 +105,30 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
                 auto new_node = std::make_unique<NodeInt>(result, node.tok);
                 new_node->parent = node.parent;
                 node.replace_with(std::move(new_node));
+				return;
             }
+		}
+		// division by zero
+		if (right_int and get_token_type(MATH_OPERATORS, node.op) == DIV and right_int->value == 0) {
+			CompileError(ErrorType::MathError,"Warning: Found division by zero.",node.tok.line,"","",node.tok.file).print();
+			return;
+		}
+		if(left_int and left_int->value == 0 and get_token_type(MATH_OPERATORS, node.op) == MULT or right_int and right_int->value == 0 and
+			get_token_type(MATH_OPERATORS, node.op) == MULT) {
+			auto new_node = std::make_unique<NodeInt>(0, node.tok);
+			new_node-> parent = node.parent;
+			node.replace_with(std::move(new_node));
+			return;
+		}
+		// 0 + var
+		if(left_int and left_int->value == 0 and get_token_type(MATH_OPERATORS, node.op) == ADD) {
+			node.replace_with(std::move(node.right));
+			return;
+		}
+		// var + 0
+		if(right_int and right_int->value == 0 and get_token_type(MATH_OPERATORS, node.op) == ADD) {
+			node.replace_with(std::move(node.left));
+			return;
 		}
 	}
 	if(get_token_type(MATH_OPERATORS, node.op)) {
@@ -141,6 +153,7 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
                 auto new_node = std::make_unique<NodeReal>(result, node.tok);
                 new_node->parent = node.parent;
                 node.replace_with(std::move(new_node));
+				return;
             }
 		}
 	}
