@@ -12,6 +12,7 @@ void PreASTDesugar::visit(PreNodeProgram& node) {
 
     for(auto & def : node.macro_definitions) {
         m_macro_lookup.insert({{def->header->name->keyword.val, (int)def->header->args->params.size()}, def.get()});
+		m_macro_string_lookup.insert({def->header->name->keyword.val, def.get()});
     }
 
     for(auto & def : node.macro_definitions) {
@@ -115,13 +116,15 @@ void PreASTDesugar::visit(PreNodeList& node) {
 
 void PreASTDesugar::visit(PreNodeMacroCall& node) {
 	m_debug_token = node.get_string();
+
+    node.macro->accept(*this);
+
     Token token_name = node.macro->name->keyword;
     if(std::find(m_macro_call_stack.begin(), m_macro_call_stack.end(), token_name.val) != m_macro_call_stack.end()) {
         // recursive function call detected
         CompileError(ErrorType::PreprocessorError,"Recursive macro call detected. Calling macros inside their definition is not allowed.", token_name.line, "", token_name.val, token_name.file).print();
         exit(EXIT_FAILURE);
     }
-    node.macro->accept(*this);
     // substitution
     auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
 
@@ -150,10 +153,26 @@ void PreASTDesugar::visit(PreNodeMacroCall& node) {
         node_new_chunk->parent = node.parent;
 		if(!node.macro->args->params.empty()) {
 			m_substitution_stack.pop();
+
 		}
         m_macro_call_stack.pop_back();
-    }
-    node.replace_with(std::move(node_new_chunk));
+    	node.replace_with(std::move(node_new_chunk));
+    } else {
+		// if node is iterate, pop off last arg because of #n#
+//		if(node.is_iterate_macro) {
+//			node.macro->args->params.pop_back();
+//		}
+		// macro is function -> replace
+//		auto node_function_call = std::make_unique<PreNodeFunctionCall>(std::move(node.macro), node.parent);
+//		node_function_call->function->parent = node_function_call.get();
+//		node.replace_with(std::move(node_function_call));
+
+	}
+}
+
+void PreASTDesugar::visit(PreNodeMacroHeader& node) {
+	node.name->accept(*this);
+	node.args->accept(*this);
 }
 
 void PreASTDesugar::visit(PreNodeIterateMacro& node) {
@@ -214,8 +233,10 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
 		if (auto node_chunk = dynamic_cast<PreNodeChunk*>(macro_call.get())) {
 			if (auto node_stmt = dynamic_cast<PreNodeStatement*>(node_chunk->chunk[0].get())) {
 				if(auto node_macro_call = dynamic_cast<PreNodeMacroCall*>(node_stmt->statement.get())) {
-					node_macro_call->macro->args->params.push_back(std::move(node_number_chunk_macro_arg));
-					node_macro_call->macro->args->update_parents(node_macro_call->macro.get());
+					if(get_macro_definition(node_macro_call->macro.get())) {
+						node_macro_call->macro->args->params.push_back(std::move(node_number_chunk_macro_arg));
+						node_macro_call->macro->args->update_parents(node_macro_call->macro.get());
+					}
 				}
 			}
 		}
@@ -312,14 +333,21 @@ std::unique_ptr<PreNodeMacroDefinition> PreASTDesugar::get_macro_definition(PreN
         copy->update_parents(nullptr);
         return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
     }
-	// if macro call has no arguments (literate or iterate) then search only for macro_names
-    for(auto & macro_def : m_main_ptr->macro_definitions) {
-        if(macro_def->header->name->keyword.val == macro_header->name->keyword.val) {
-			auto copy = macro_def->clone();
-			copy->update_parents(nullptr);
-			return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
-		}
-    }
+	// if macro call has no arguments (literate or iterate) and therefore does not match its original definition
+	auto it2 = m_macro_string_lookup.find(macro_header->name->keyword.val);
+	if(it2 != m_macro_string_lookup.end()) {
+		auto copy = it2->second->clone();
+		copy->update_parents(nullptr);
+		return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
+	}
+
+//    for(auto & macro_def : m_main_ptr->macro_definitions) {
+//        if(macro_def->header->name->keyword.val == macro_header->name->keyword.val) {
+//			auto copy = macro_def->clone();
+//			copy->update_parents(nullptr);
+//			return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
+//		}
+//    }
     return nullptr;
 }
 

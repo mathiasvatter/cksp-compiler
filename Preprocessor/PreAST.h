@@ -234,10 +234,11 @@ struct PreNodeList : PreNodeAST {
 struct PreNodeMacroHeader : PreNodeAST {
     std::unique_ptr<PreNodeKeyword> name;
     std::unique_ptr<PreNodeList> args;
+	bool has_parenth = false;
     PreNodeMacroHeader(std::unique_ptr<PreNodeKeyword> name, std::unique_ptr<PreNodeList> args, PreNodeAST *parent)
     : PreNodeAST(parent), name(std::move(name)), args(std::move(args)) {}
     void accept(PreASTVisitor& visitor) override;
-    PreNodeMacroHeader(const PreNodeMacroHeader& other) : PreNodeAST(other), name(clone_unique(other.name)), args(clone_unique(other.args)) {}
+    PreNodeMacroHeader(const PreNodeMacroHeader& other) : PreNodeAST(other), has_parenth(other.has_parenth), name(clone_unique(other.name)), args(clone_unique(other.args)) {}
     [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
     void update_parents(PreNodeAST* new_parent) override {
         parent = new_parent;
@@ -252,6 +253,7 @@ struct PreNodeMacroHeader : PreNodeAST {
         args->update_token_data(token);
     }
 };
+
 
 struct PreNodeDefineHeader : PreNodeAST {
     std::unique_ptr<PreNodeKeyword> name;
@@ -320,9 +322,10 @@ struct PreNodeDefineStatement : PreNodeAST {
 
 struct PreNodeMacroCall : PreNodeAST {
     std::unique_ptr<PreNodeMacroHeader> macro;
+	bool is_iterate_macro = false;
     PreNodeMacroCall(std::unique_ptr<PreNodeMacroHeader> macro, PreNodeAST* parent) : PreNodeAST(parent), macro(std::move(macro)) {}
     void accept(PreASTVisitor& visitor) override;
-    PreNodeMacroCall(const PreNodeMacroCall& other) : PreNodeAST(other), macro(clone_unique(other.macro)) {}
+    PreNodeMacroCall(const PreNodeMacroCall& other) : PreNodeAST(other), is_iterate_macro(other.is_iterate_macro), macro(clone_unique(other.macro)) {}
     [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
     void update_parents(PreNodeAST* new_parent) override {
         parent = new_parent;
@@ -334,6 +337,24 @@ struct PreNodeMacroCall : PreNodeAST {
     void update_token_data(const Token &token) override {
         macro->update_token_data(token);
     }
+};
+
+struct PreNodeFunctionCall : PreNodeAST {
+	std::unique_ptr<PreNodeMacroHeader> function;
+	PreNodeFunctionCall(std::unique_ptr<PreNodeMacroHeader> function, PreNodeAST* parent) : PreNodeAST(parent), function(std::move(function)) {}
+	void accept(PreASTVisitor& visitor) override;
+	PreNodeFunctionCall(const PreNodeFunctionCall& other) : PreNodeAST(other), function(clone_unique(other.function)) {}
+	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+	void update_parents(PreNodeAST* new_parent) override {
+		parent = new_parent;
+		function->update_parents(this);
+	}
+	std::string get_string() override {
+		return function->get_string();
+	}
+	void update_token_data(const Token &token) override {
+		function->update_token_data(token);
+	}
 };
 
 struct PreNodeDefineCall : PreNodeAST {

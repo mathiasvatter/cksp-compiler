@@ -91,24 +91,44 @@ bool PreprocessorParser::is_define_call(const Token &tok) {
 }
 
 bool PreprocessorParser::is_macro_call(const Token &tok) {
-    bool syntax = false;
-    if(m_pos >0)
-        syntax = peek().type == KEYWORD and m_pos > 0 and (peek(-1).type == LINEBRK or peek(-1).type == OPEN_PARENTH) and (peek(1).type == OPEN_PARENTH or peek(1).type == LINEBRK or peek(1).type == CLOSED_PARENTH);
-    else
-        syntax = peek().type == KEYWORD and peek(1).type == LINEBRK;
+	if(peek().type != KEYWORD) return false;
 
-    if(syntax) {
-        // check if inside iterate_macro because then search for strings
-        if(m_parsing_iterator_macro) {
-            syntax &= m_macro_iterate_strings.find(tok.val) != m_macro_iterate_strings.end();
-        } else {
-            int num_args = get_num_params_in_definition();
-            //search in m_define_strings
-            auto it = m_macro_strings.find({tok.val, num_args});
-            syntax &= it != m_macro_strings.end();
-        }
-    }
-    return syntax;
+	bool is_macro_call = peek().type == KEYWORD;
+	bool is_iterator_macro_call = peek().type == KEYWORD;
+
+	if(m_pos<=0) {
+		// iterator macro call cannot be at first position in fil
+		is_iterator_macro_call = false;
+		// macro call has to have linebreak or open parenth after it
+		is_macro_call &= (peek(1).type == OPEN_PARENTH or peek(1).type == LINEBRK);
+	} else {
+		// iterator macro call has to have open parenth beforehand
+		is_iterator_macro_call &= peek(-1).type == OPEN_PARENTH and (m_parsing_iterator_macro || m_parsing_literate_macro) and (peek(1).type == OPEN_PARENTH or peek(1).type == CLOSED_PARENTH);
+		// macro call has to have linebreak before and either linebreak or open parenth after it
+		is_macro_call &= peek(-1).type == LINEBRK and (peek(1).type == OPEN_PARENTH or peek(1).type == LINEBRK);
+	}
+
+//    bool syntax = peek().type == KEYWORD;
+//    if(m_pos >0)
+//        syntax &= m_pos > 0 and (peek(-1).type == LINEBRK or peek(-1).type == OPEN_PARENTH) and (peek(1).type == OPEN_PARENTH or peek(1).type == LINEBRK or peek(1).type == CLOSED_PARENTH);
+//    else
+//        syntax &= peek(1).type == LINEBRK;
+
+//	if(is_iterator_macro_call) {
+//		return is_iterator_macro_call && m_macro_iterate_strings.find(tok.val) != m_macro_iterate_strings.end();
+//	}
+//    if(syntax) {
+//        // check if inside iterate_macro because then search for strings
+//        if(m_parsing_iterator_macro) {
+//            syntax &= m_macro_iterate_strings.find(tok.val) != m_macro_iterate_strings.end();
+////        } else {
+////            int num_args = get_num_params_in_definition();
+////            //search in m_define_strings
+////            auto it = m_macro_strings.find({tok.val, num_args});
+////            syntax &= it != m_macro_strings.end();
+//        }
+//    }
+    return is_iterator_macro_call || is_macro_call;
 }
 
 int PreprocessorParser::get_num_params_in_definition() {
@@ -374,6 +394,7 @@ Result<std::unique_ptr<PreNodeMacroHeader>> PreprocessorParser::parse_macro_head
     std::unique_ptr<PreNodeList> macro_args = std::make_unique<PreNodeList>(std::move(std::vector<std::unique_ptr<PreNodeChunk>>{}), node_macro_header.get());
 
     if (peek().type == token::OPEN_PARENTH) {
+		node_macro_header->has_parenth = true;
         auto macro_args_result = parse_list(node_macro_header.get());
         if (macro_args_result.is_error())
             return Result<std::unique_ptr<PreNodeMacroHeader>>(macro_args_result.get_error());
@@ -390,6 +411,7 @@ Result<std::unique_ptr<PreNodeMacroCall>> PreprocessorParser::parse_macro_call(P
     if(macro_stmt.is_error()){
         return Result<std::unique_ptr<PreNodeMacroCall>>(macro_stmt.get_error());
     }
+	node_macro_call->is_iterate_macro = m_parsing_iterator_macro;
     node_macro_call->macro = std::move(macro_stmt.unwrap());
     return Result<std::unique_ptr<PreNodeMacroCall>>(std::move(node_macro_call));
 }
@@ -509,7 +531,7 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
 }
 
 Result<std::unique_ptr<PreNodeLiterateMacro>> PreprocessorParser::parse_literate_macro(PreNodeAST* parent) {
-    m_parsing_iterator_macro = true;
+	m_parsing_literate_macro = true;
     auto node_literate_macro = std::make_unique<PreNodeLiterateMacro>(nullptr, nullptr, parent);
     consume(); // consume literate_macro
     if(peek().type != token::OPEN_PARENTH) {
@@ -548,7 +570,7 @@ Result<std::unique_ptr<PreNodeLiterateMacro>> PreprocessorParser::parse_literate
 
     node_literate_macro->macro_call = std::move(node_statement.unwrap());
     node_literate_macro->literate_tokens = std::move(node_chunk);
-    m_parsing_iterator_macro = false;
+	m_parsing_literate_macro = false;
     return Result<std::unique_ptr<PreNodeLiterateMacro>>(std::move(node_literate_macro));
 }
 
