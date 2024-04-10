@@ -57,6 +57,7 @@ public:
         }
     };
     virtual void visit(PreNodeMacroHeader& node) {
+		node.name->accept(*this);
         node.args->accept(*this);
     };
     virtual void visit(PreNodeMacroDefinition& node) {
@@ -66,6 +67,9 @@ public:
     virtual void visit(PreNodeMacroCall& node) {
         node.macro->accept(*this);
     };
+	virtual void visit(PreNodeFunctionCall& node) {
+		node.function->accept(*this);
+	};
     virtual void visit(PreNodeIterateMacro& node) {
 		node.iterator_start->accept(*this);
 		node.iterator_end->accept(*this);

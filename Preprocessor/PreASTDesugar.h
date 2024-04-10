@@ -20,6 +20,7 @@ public:
 //    void visit(PreNodeDefineStatement& node) override;
 //    void visit(PreNodeDefineCall& node) override;
     void visit(PreNodeMacroCall& node) override;
+	void visit(PreNodeMacroHeader& node) override;
     void visit(PreNodeIterateMacro& node) override;
     void visit(PreNodeLiterateMacro& node) override;
 //	void visit(PreNodeIncrementer& node) override;
@@ -30,10 +31,9 @@ private:
 	std::string m_debug_token;
 
     PreNodeProgram* m_main_ptr = nullptr;
-    std::vector<std::unique_ptr<PreNodeMacroDefinition>> m_macro_definitions;
+//    std::vector<std::unique_ptr<PreNodeMacroDefinition>> m_macro_definitions;
 	std::unordered_map<StringIntKey, PreNodeMacroDefinition*, StringIntKeyHash> m_macro_lookup;
-//    std::unordered_map<std::string, PreNodeMacroDefinition*> m_macro_lookup;
-
+    std::unordered_map<std::string, PreNodeMacroDefinition*> m_macro_string_lookup;
 
     std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
     static std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> get_substitution_vector(PreNodeMacroHeader* definition, PreNodeMacroHeader* call);

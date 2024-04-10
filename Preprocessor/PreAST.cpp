@@ -167,6 +167,14 @@ std::unique_ptr<PreNodeAST> PreNodeMacroCall::clone() const {
     return std::make_unique<PreNodeMacroCall>(*this);
 }
 
+// ************* PreNodeFunctionCall *************
+void PreNodeFunctionCall::accept(PreASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+std::unique_ptr<PreNodeAST> PreNodeFunctionCall::clone() const {
+	return std::make_unique<PreNodeFunctionCall>(*this);
+}
+
 // ************* PreNodeDefineCall *************
 void PreNodeDefineCall::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);

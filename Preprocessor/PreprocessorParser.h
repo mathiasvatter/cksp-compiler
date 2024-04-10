@@ -45,6 +45,7 @@ private:
     std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_macro_strings;
     std::set<std::string> m_macro_iterate_strings;
     bool m_parsing_iterator_macro = false;
+	bool m_parsing_literate_macro = false;
     std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_definitions;
 
     int get_num_params_in_definition();

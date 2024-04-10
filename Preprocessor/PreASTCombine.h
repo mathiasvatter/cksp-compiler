@@ -18,5 +18,8 @@ public:
     void visit(PreNodeUnaryExpr& node) override;
     void visit(PreNodeBinaryExpr& node) override;
     void visit(PreNodeIncrementer& node) override;
+	void visit(PreNodeList& node) override;
+	void visit(PreNodeMacroHeader& node) override;
+
 };
 
