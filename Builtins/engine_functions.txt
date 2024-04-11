@@ -41,7 +41,7 @@ _slice_start(group_idx: int, slice_idx: int): int
 _will_never_terminate(event_id: int)
 abs(value: number):number
 acos(value: real):real
-add_menu_item(variable: int, text: string, number: int)
+add_menu_item(variable: int, text: any, number: int)
 add_text_line(variable: int, text: string)
 allow_group(group_idx: int)
 array_equal(array: int, array: int):boolean

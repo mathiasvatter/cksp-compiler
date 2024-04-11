@@ -108,27 +108,17 @@ bool PreprocessorParser::is_macro_call(const Token &tok) {
 		is_macro_call &= peek(-1).type == LINEBRK and (peek(1).type == OPEN_PARENTH or peek(1).type == LINEBRK);
 	}
 
-//    bool syntax = peek().type == KEYWORD;
-//    if(m_pos >0)
-//        syntax &= m_pos > 0 and (peek(-1).type == LINEBRK or peek(-1).type == OPEN_PARENTH) and (peek(1).type == OPEN_PARENTH or peek(1).type == LINEBRK or peek(1).type == CLOSED_PARENTH);
-//    else
-//        syntax &= peek(1).type == LINEBRK;
-
-//	if(is_iterator_macro_call) {
-//		return is_iterator_macro_call && m_macro_iterate_strings.find(tok.val) != m_macro_iterate_strings.end();
-//	}
-//    if(syntax) {
-//        // check if inside iterate_macro because then search for strings
-//        if(m_parsing_iterator_macro) {
-//            syntax &= m_macro_iterate_strings.find(tok.val) != m_macro_iterate_strings.end();
-////        } else {
-////            int num_args = get_num_params_in_definition();
-////            //search in m_define_strings
-////            auto it = m_macro_strings.find({tok.val, num_args});
-////            syntax &= it != m_macro_strings.end();
-//        }
-//    }
-    return is_iterator_macro_call || is_macro_call;
+	if(is_iterator_macro_call) {
+		is_iterator_macro_call &= (m_macro_iterate_strings.find(tok.val) != m_macro_iterate_strings.end() or (count_char(tok.val, '#') % 2 == 0));
+		return is_iterator_macro_call;
+	}
+	if(is_macro_call) {
+		int num_args = get_num_params_in_definition();
+		//search in m_define_strings
+		is_macro_call &= (m_macro_strings.find({tok.val, num_args}) != m_macro_strings.end() or (count_char(tok.val, '#') % 2 == 0));
+		return is_macro_call;
+	}
+	return false;
 }
 
 int PreprocessorParser::get_num_params_in_definition() {

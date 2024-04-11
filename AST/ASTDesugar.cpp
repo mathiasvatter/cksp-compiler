@@ -173,14 +173,29 @@ void ASTDesugar::visit(NodeArray& node) {
     }
     // function args substitution
     if(!m_substitution_stack.empty()) {
-        if (auto substitute = get_substitute(node.name)) {
-            if(is_instance_of<NodeArray>(substitute.get()) || is_instance_of<NodeVariable>(substitute.get())) {
-                node.name = substitute->get_string();
-            } else {
-                node.replace_with(std::move(substitute));
-                return;
-            }
-        }
+		if (auto substitute = get_substitute(node.name)) {
+			if (is_instance_of<NodeArray>(substitute.get()) || is_instance_of<NodeVariable>(substitute.get())) {
+				node.name = substitute->get_string();
+			} else {
+				substitute->update_parents(node.parent);
+				node.replace_with(std::move(substitute));
+				return;
+			}
+		// for namespaces and methods
+		} else {
+			auto namespaces = get_namespaces(node.name);
+			std::string new_name;
+			for(auto & namespace_ : namespaces) {
+				if (auto subst = get_substitute(namespace_)) {
+					new_name += subst->get_string()+".";
+				} else {
+					new_name += namespace_+".";
+				}
+			}
+			if(!new_name.empty() and new_name.back() == '.' and node.name.back() != '.')
+				new_name.pop_back();
+			node.name = new_name;
+		}
     }
 }
 
@@ -196,6 +211,9 @@ void ASTDesugar::visit(NodeFunctionHeader& node) {
 }
 
 void ASTDesugar::visit(NodeVariable& node) {
+	if(node.name == "sli_#sliderName#")  {
+
+	}
     // local variable substitution
     // do local variable substitution only if parent is not declare statement because scope
     if(!m_variable_scope_stack.empty() and !is_to_be_declared(&node)) {
@@ -207,14 +225,36 @@ void ASTDesugar::visit(NodeVariable& node) {
             return;
         }
     }
-    // substitution
-    if(!m_substitution_stack.empty()) {
-        if(auto substitute = get_substitute(node.name)) {
-            substitute->update_parents(node.parent);
-            node.replace_with(std::move(substitute));
-            return;
-        }
-    }
+//    // substitution
+//    if(!m_substitution_stack.empty()) {
+//        if(auto substitute = get_substitute(node.name)) {
+//            substitute->update_parents(node.parent);
+//            node.replace_with(std::move(substitute));
+//            return;
+//        }
+//    }
+	// function args substitution
+	if(!m_substitution_stack.empty()) {
+		if (auto substitute = get_substitute(node.name)) {
+			substitute->update_parents(node.parent);
+			node.replace_with(std::move(substitute));
+			return;
+		// for namespaces and methods
+		} else {
+			auto namespaces = get_namespaces(node.name);
+			std::string new_name;
+			for(auto & namespace_ : namespaces) {
+				if (auto subst = get_substitute(namespace_)) {
+					new_name += subst->get_string()+".";
+				} else {
+					new_name += namespace_+".";
+				}
+			}
+			if(!new_name.empty() and new_name.back() == '.' and node.name.back() != '.')
+				new_name.pop_back();
+			node.name = new_name;
+		}
+	}
 
 }
 
