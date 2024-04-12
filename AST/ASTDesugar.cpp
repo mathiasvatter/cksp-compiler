@@ -183,18 +183,17 @@ void ASTDesugar::visit(NodeArray& node) {
 			}
 		// for namespaces and methods
 		} else {
-			auto namespaces = get_namespaces(node.name);
-			std::string new_name;
-			for(auto & namespace_ : namespaces) {
-				if (auto subst = get_substitute(namespace_)) {
-					new_name += subst->get_string()+".";
-				} else {
-					new_name += namespace_+".";
-				}
-			}
-			if(!new_name.empty() and new_name.back() == '.' and node.name.back() != '.')
-				new_name.pop_back();
-			node.name = new_name;
+            auto namespaces = get_namespaces(node.name);
+            std::string new_name;
+            if (auto subst = get_substitute(namespaces.at(0))) {
+                new_name += subst->get_string();
+            } else {
+                new_name += namespaces.at(0);
+            }
+            for(size_t i = 1; i<namespaces.size(); i++) {
+                new_name += "."+namespaces.at(i);
+            }
+            node.name = new_name;
 		}
     }
 }
@@ -238,18 +237,17 @@ void ASTDesugar::visit(NodeVariable& node) {
 			return;
 		// for namespaces and methods
 		} else {
-			auto namespaces = get_namespaces(node.name);
-			std::string new_name;
-			for(auto & namespace_ : namespaces) {
-				if (auto subst = get_substitute(namespace_)) {
-					new_name += subst->get_string()+".";
-				} else {
-					new_name += namespace_+".";
-				}
-			}
-			if(!new_name.empty() and new_name.back() == '.' and node.name.back() != '.')
-				new_name.pop_back();
-			node.name = new_name;
+            auto namespaces = get_namespaces(node.name);
+            std::string new_name;
+            if (auto subst = get_substitute(namespaces.at(0))) {
+                new_name += subst->get_string();
+            } else {
+                new_name += namespaces.at(0);
+            }
+            for(size_t i = 1; i<namespaces.size(); i++) {
+                new_name += "."+namespaces.at(i);
+            }
+            node.name = new_name;
 		}
 	}
 
