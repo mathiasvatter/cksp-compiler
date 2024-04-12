@@ -206,9 +206,21 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
 //            node.replace_with(std::move(node_statement_list));
 //            return;
             // initialize string array in a special way
-        } else if (node_declare_array and (node.assignee->type == String || node.assignee->type == Unknown)) {
+        } else if (node_declare_array) {
             auto node_param_list = cast_node<NodeParamList>(node.assignee.get());
-            if (node_param_list) {
+			// check if one element of param list is non const variable or array -> split up initlialization
+			bool has_var = false;
+			if(node_param_list) {
+				for (auto &param : node_param_list->params) {
+					auto node_var = cast_node<NodeVariable>(param.get());
+					auto node_arr = cast_node<NodeArray>(param.get());
+					if ((node_var and node_var->var_type != Const and !node_var->is_engine) or node_arr) {
+						has_var = true;
+						break;
+					}
+				}
+			}
+            if (node_param_list and (has_var || node.assignee->type == String || node.assignee->type == Unknown)) {
                 auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement *>(node.clone().release()));
                 auto node_statement_list = array_initialization(node_declare_array, node_param_list);
                 // remove list assignment from declare_statement

@@ -144,9 +144,18 @@ void ASTGenerator::visit(NodeSingleAssignStatement &node) {
 
 void ASTGenerator::visit(NodeStatement &node) {
 	if(!is_instance_of<NodeDeadCode>(node.statement.get())) {
+		os << get_indent();
 		node.statement->accept(*this);
 		os << std::endl;
 	}
+}
+
+void ASTGenerator::visit(NodeStatementList& node) {
+	m_scope_count++;
+	for(auto & stmt : node.statements) {
+		stmt->accept(*this);
+	}
+	m_scope_count--;
 }
 
 void ASTGenerator::visit(NodeIfStatement &node) {
@@ -158,7 +167,7 @@ void ASTGenerator::visit(NodeIfStatement &node) {
     	os << "else" << std::endl;
 		node.else_statements->accept(*this);
 	}
-    os << "end if";
+    os << get_indent() << "end if";
 }
 
 void ASTGenerator::visit(NodeWhileStatement &node) {
@@ -166,7 +175,7 @@ void ASTGenerator::visit(NodeWhileStatement &node) {
     node.condition->accept(*this);
     os << ") " << std::endl;
     node.statements->accept(*this);
-    os << "end while";
+    os << get_indent() << "end while";
 }
 
 void ASTGenerator::visit(NodeSelectStatement &node) {
@@ -183,7 +192,7 @@ void ASTGenerator::visit(NodeSelectStatement &node) {
         os << std::endl;
         cas.second->accept(*this);
     }
-    os << "end select";
+    os << get_indent() << "end select";
 }
 
 void ASTGenerator::visit(NodeCallback &node) {

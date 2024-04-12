@@ -36,6 +36,7 @@ public:
     void visit(NodeUnaryExpr& node) override;
     void visit(NodeSingleAssignStatement& node) override;
     void visit(NodeStatement& node) override;
+	void visit(NodeStatementList& node) override;
     void visit(NodeIfStatement& node) override;
     void visit(NodeWhileStatement& node) override;
     void visit(NodeSelectStatement& node) override;
@@ -56,6 +57,15 @@ public:
 	std::unordered_map<ASTType, std::string> variable_identifier = {{String, "@"}, {Integer, "$"}, {Real, "~"}, {Unknown, ""}};
 
 private:
+	std::string m_indent = "  ";
+	int m_scope_count = 0;
+	inline std::string get_indent() {
+		std::string result;
+		for (int i = 0; i < m_scope_count; i++) {
+			result += m_indent;
+		}
+		return result;
+	}
     static std::string get_compiled_date_time();
 };
 
