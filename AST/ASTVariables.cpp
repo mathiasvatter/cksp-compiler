@@ -241,7 +241,7 @@ void ASTVariables::visit(NodeVariable& node) {
             node.type = node.declaration->type;
             node.is_engine = node_builtin_variable->is_engine;
         } else {
-            CompileError(ErrorType::SyntaxError,"Variable has not been declared. If it was declared as local variable it may be out of scope.", node.tok.line, "", node.name, node.tok.file).print();
+            CompileError(ErrorType::SyntaxError,"Variable has not been declared. If it was declared as local variable it may be out of scope.", node.tok.line, "", node.name, node.tok.file).exit();
 //			exit(EXIT_FAILURE);
         }
     }

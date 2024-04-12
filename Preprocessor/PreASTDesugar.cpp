@@ -50,9 +50,6 @@ void PreASTDesugar::visit(PreNodeInt& node) {
 void PreASTDesugar::visit(PreNodeKeyword& node) {
 	m_debug_token = node.get_string();
 
-	if(node.keyword.val == "sli_#sliderName#") {
-
-	}
     // substitution
     if (!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.keyword.val)) {
@@ -66,9 +63,7 @@ void PreASTDesugar::visit(PreNodeKeyword& node) {
             }
         }
     }
-//	if(node.keyword.val == "ui_control.sliAutomControls") {
-//
-//	}
+
 }
 
 //void PreASTDesugar::visit(PreNodeIncrementer& node) {
@@ -125,13 +120,6 @@ void PreASTDesugar::visit(PreNodeMacroCall& node) {
 
     node.macro->accept(*this);
 
-	if(node.macro->name->keyword.val == "ui_control.sliAutomControls") {
-
-		if(contains(node.macro->args->params[0]->get_string(),"layout031")) {
-
-		}
-	}
-
     Token token_name = node.macro->name->keyword;
     if(std::find(m_macro_call_stack.begin(), m_macro_call_stack.end(), token_name.val) != m_macro_call_stack.end()) {
         // recursive function call detected
@@ -160,19 +148,9 @@ void PreASTDesugar::visit(PreNodeMacroCall& node) {
 				}
             }
         }
-//		if(node.macro->name->keyword.val == "ui_control.sliAutomControls") {
-//			std::string to_replace;
-//			for(auto &subst : m_substitution_stack.top()) {
-//				if(subst.first == "#sliderName#") {
-//					to_replace = subst.second->get_string();
-//				}
-//			}
-//		}
+
         node_macro_definition->body->accept(*this);
         node_new_chunk = std::move(node_macro_definition->body);
-		if(contains(node_new_chunk->get_string(), "#sliderName")) {
-			std::cout << node_new_chunk->get_string() << std::endl;
-		}
 //		node_new_chunk->update_token_data(node.macro->name->keyword);
         node_new_chunk->parent = node.parent;
 		if(!node.macro->args->params.empty()) {
@@ -407,8 +385,6 @@ std::string PreASTDesugar::get_text_replacement(const Token& name) {
 			}
 		}
     }
-	if(contains(result, "#sliderName#")) {
 
-	}
     return result;
 }

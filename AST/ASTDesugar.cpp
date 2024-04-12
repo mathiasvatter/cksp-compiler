@@ -211,9 +211,6 @@ void ASTDesugar::visit(NodeFunctionHeader& node) {
 }
 
 void ASTDesugar::visit(NodeVariable& node) {
-	if(node.name == "sli_#sliderName#")  {
-
-	}
     // local variable substitution
     // do local variable substitution only if parent is not declare statement because scope
     if(!m_variable_scope_stack.empty() and !is_to_be_declared(&node)) {

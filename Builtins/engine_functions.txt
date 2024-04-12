@@ -83,7 +83,7 @@ fade_out(event_id: int, fade_time: int, stop_voice: int)
 
 // deprecated
 find_group(group_name: string): int
-find_mod(group_idx: int, mod_name: int): int
+find_mod(group_idx: int, mod_name: string): int
 find_target(group_idx: int, mod_idx: int, targetname): int
 
 find_zone(samplename: string): int
