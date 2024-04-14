@@ -549,10 +549,9 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
                 auto node_int = make_int((int32_t) param_list->params.size(), node_array->sizes.get());
                 node_array->sizes->params.push_back(std::move(node_int));
             }
-        // not empty ->array size is dimension
-        } else {
-            node_array->dimensions = node_array->sizes->params.size();
         }
+        // not empty ->array size is dimension
+		if(node_array->var_type != List) node_array->dimensions = node_array->sizes->params.size();
         // multidimensional array
         if (node_array->dimensions > 1) {
 //            node_array->name = "_"+node_array->name;
