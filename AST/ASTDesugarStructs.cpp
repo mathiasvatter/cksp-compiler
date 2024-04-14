@@ -287,6 +287,7 @@ void ASTDesugarStructs::visit(NodeVariable& node) {
 void ASTDesugarStructs::visit(NodeListStatement &node) {
     auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
     auto node_main_array = make_array(node.name, node.size, node.tok, node_statement_list.get());
+	node_main_array->dimensions = 1;
     // accept first to get rid of array identifier
     node_main_array->accept(*this);
     std::string name_wo_ident = node_main_array->name;
@@ -316,7 +317,7 @@ void ASTDesugarStructs::visit(NodeListStatement &node) {
         node.replace_with(std::move(node_statement_list));
         return;
     }
-
+	node_main_array->dimensions = 2;
     auto node_sizes_array = make_array(name_wo_ident+".sizes", main_size, node.tok, nullptr);
     auto node_positions_array = make_array(name_wo_ident+".pos", main_size, node.tok, nullptr);
     std::vector<int32_t> sizes(node.body.size());

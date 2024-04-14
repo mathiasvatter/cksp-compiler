@@ -164,7 +164,7 @@ void ASTGenerator::visit(NodeIfStatement &node) {
     os << ")" << std::endl;
 	node.statements->accept(*this);
 	if (!node.else_statements->statements.empty()) {
-    	os << "else" << std::endl;
+    	os << get_indent() << "else" << std::endl;
 		node.else_statements->accept(*this);
 	}
     os << get_indent() << "end if";
@@ -183,7 +183,7 @@ void ASTGenerator::visit(NodeSelectStatement &node) {
     node.expression->accept(*this);
     os << ")" << std::endl;
     for(const auto &cas: node.cases) {
-        os << "case ";
+        os << get_indent() << "case ";
         cas.first[0]->accept(*this);
         if(cas.first.size() == 2) {
             os << " to ";

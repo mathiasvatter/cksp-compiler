@@ -117,6 +117,12 @@ void ASTVariables::visit(NodeArray& node) {
         if(node_declaration and not has_compiler_identifier) {
             node.declaration = node_declaration;
             node.type = node.declaration->type;
+
+//			// temparily fill in node.dimensions to check whether the amount of dimensions is correct
+//			if(node.dimensions != node_declaration->dimensions) {
+//				CompileError(ErrorType::SyntaxError,"Found wrong amount of dimensions in array "+node.name+".", node.tok.line, std::to_string(node_declaration->dimensions), std::to_string(node.dimensions), node.tok.file).exit();
+//			}
+
             node.dimensions = node_declaration->dimensions;
 
             // rename declaration when List
