@@ -120,7 +120,7 @@ void PreASTIncrementer::visit(PreNodeIncrementer& node) {
         c->update_parents(&node);
         c->accept(*this);
     }
-
+	if(!m_last_incrementer_var.empty()) m_last_incrementer_var.pop_back();
 	m_incrementer_stack.pop_back();
 
 //    int ii = 0;
