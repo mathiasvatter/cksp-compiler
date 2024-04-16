@@ -118,12 +118,12 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_number(NodeAST* parent) {
     auto value = consume(); // consume int/float/hexa/binary
     std::unique_ptr<NodeAST> number_node = nullptr;
     // convert with c methods, error catching
-    if (value.type == token::INTNUM) {
+    if (value.type == token::INT) {
         auto parsed_int = parse_int(value, 10, parent);
         if(parsed_int.is_error())
             return Result<std::unique_ptr<NodeAST>>(parsed_int.get_error());
         return Result<std::unique_ptr<NodeAST>>(std::move(parsed_int.unwrap()));
-    } else if(value.type == token::FLOATNUM) {
+    } else if(value.type == token::FLOAT) {
         try {
             auto node_real = std::make_unique<NodeReal>(std::stod(value.val), get_tok());
             node_real->parent = parent;
@@ -287,7 +287,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
     // is expression in brackets
     } else if (peek().type == token::OPEN_PARENTH) {
         return _parse_parenth_expr(parent);
-    } else if (peek().type == token::INTNUM || peek().type == token::FLOATNUM || peek().type == token::HEXADECIMAL || peek().type == token::BINARY) {
+    } else if (peek().type == token::INT || peek().type == token::FLOAT || peek().type == token::HEXADECIMAL || peek().type == token::BINARY) {
         return parse_number(parent);
     // unary operators bool_not, bit_not, sub
     } else if (is_unary_operator(peek().type)){
@@ -1254,8 +1254,8 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement(Node
             std::vector<std::unique_ptr<NodeAST>> cas = {};
 			if(peek().type == token::DEFAULT) {
 				consume(); // consume default token
-				Token low_end = Token(token::INTNUM, "080000000H", 0,0, "");
-				Token high_end = Token(token::INTNUM, "07FFFFFFH", 0,0, "");
+				Token low_end = Token(token::INT, "080000000H", 0,0, "");
+				Token high_end = Token(token::INT, "07FFFFFFH", 0,0, "");
 				auto node_int_low = std::move(parse_int(low_end, 16, node_select_statement.get()).unwrap());
 				cas.push_back(std::move(node_int_low));
 				auto node_int_high = std::move(parse_int(high_end, 16, node_select_statement.get()).unwrap());

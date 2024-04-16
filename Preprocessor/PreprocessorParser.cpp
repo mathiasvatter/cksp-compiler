@@ -196,13 +196,13 @@ Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_token(PreNodeAST* 
             return Result<std::unique_ptr<PreNodeAST>>(result_keyword.get_error());
         node_statement->statement = std::move(result_keyword.unwrap());
         stmt = std::move(node_statement);
-    } else if(peek().type == token::INTNUM) {
+    } else if(peek().type == token::INT) {
         auto result_int = parse_int(node_statement.get());
         if (result_int.is_error())
             return Result<std::unique_ptr<PreNodeAST>>(result_int.get_error());
         node_statement->statement = std::move(result_int.unwrap());
         stmt = std::move(node_statement);
-    } else if(peek().type == token::FLOATNUM or peek().type == token::BINARY or peek().type == token::HEXADECIMAL) {
+    } else if(peek().type == token::FLOAT or peek().type == token::BINARY or peek().type == token::HEXADECIMAL) {
         auto result_number = parse_number(node_statement.get());
         if (result_number.is_error())
             return Result<std::unique_ptr<PreNodeAST>>(result_number.get_error());
@@ -501,7 +501,7 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
     auto step = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node_iterate_macro.get());
     auto step_statement = std::make_unique<PreNodeStatement>(nullptr, step.get());
 //    Token toki = Token(INT, "1", 0, "");
-    auto node_int = std::make_unique<PreNodeInt>(1,  Token(token::INTNUM, "1", 0, 0, ""), step_statement.get());
+    auto node_int = std::make_unique<PreNodeInt>(1,  Token(token::INT, "1", 0, 0, ""), step_statement.get());
     step_statement->statement = std::move(node_int);
     step->chunk.push_back(std::move(step_statement));
     if(peek().type == token::STEP) {
