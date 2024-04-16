@@ -430,7 +430,8 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
     _skip_linebreaks();
     std::unique_ptr<NodeAST> stmt;
     // assign statement
-    if (peek().type == KEYWORD || peek().type == RETURN || peek().type == DECLARE || peek().type == CALL || peek().type == SET_CONDITION || peek().type == RESET_CONDITION) {
+    if (peek().type == token::KEYWORD || peek().type == token::RETURN || peek().type == token::DECLARE
+		|| peek().type == token::CALL || peek().type == token::SET_CONDITION || peek().type == token::RESET_CONDITION) {
         if (peek().type == token::DECLARE) {
             auto declare_stmt = parse_declare_statement(node_statement.get());
             if (declare_stmt.is_error()) {
@@ -438,7 +439,7 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
             }
             stmt = std::move(declare_stmt.unwrap());
         } else if ((peek().type == token::CALL) xor
-                   (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK or peek(1).type == CLOSED_PARENTH)) {
+                   (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK or peek(1).type == token::CLOSED_PARENTH)) {
 			auto function_call = parse_function_call(node_statement.get());
 			if (function_call.is_error()) {
 				return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
@@ -653,7 +654,7 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
                 params.push_back(std::move(exprResult.unwrap()));
             } else {
                 // eg case declare ui_slider sli_bum(0,100), ui_button btn_buuuuu
-                if(peek(end_backup_pos-m_pos).type == COMMA) {
+                if(peek(end_backup_pos-m_pos).type == token::COMMA) {
                     m_pos = end_backup_pos;
                     break;
                 }
@@ -733,7 +734,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     if (peek().type == token::ARROW) {
         consume();
 		if(peek().type == token::RETURN) {
-			m_tokens[m_pos].type = KEYWORD;
+			m_tokens[m_pos].type = token::KEYWORD;
 		}
         if (peek().type == token::KEYWORD) {
             auto return_var = parse_param_list(parent);
@@ -759,7 +760,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 
     while (peek().type != token::END_FUNCTION) {
         _skip_linebreaks();
-        if(peek().type == END_FUNCTION) break;
+        if(peek().type == token::END_FUNCTION) break;
         auto stmt = parse_statement(node_function_definition.get());
         if (stmt.is_error()) {
             return Result<std::unique_ptr<NodeFunctionDefinition>>(stmt.get_error());
@@ -777,10 +778,11 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 
 Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement(NodeAST* parent) {
     auto node_declare_statement = std::make_unique<NodeDeclareStatement>(get_tok());
-    if(peek().type == DECLARE) consume(); //consume declare
+    if(peek().type == token::DECLARE) consume(); //consume declare
     std::unique_ptr<NodeParamList> to_be_declared = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
     to_be_declared->parent = node_declare_statement.get();
-    if(not(peek().type == KEYWORD or peek().type == UI_CONTROL or get_persistent_keyword(peek()) or peek().type==CONST or peek().type ==POLYPHONIC or peek().type==LOCAL or peek().type==GLOBAL))
+    if(not(peek().type == token::KEYWORD or peek().type == token::UI_CONTROL or get_persistent_keyword(peek())
+		or peek().type == token::CONST or peek().type == token::POLYPHONIC or peek().type== token::LOCAL or peek().type== token::GLOBAL))
         return Result<std::unique_ptr<NodeDeclareStatement>>(CompileError(ErrorType::ParseError,
         "Incorrect syntax in declare statement.","<ui_control>, <variable>, <array>",peek()));
     do {
@@ -858,40 +860,40 @@ Result<std::unique_ptr<NodeAssignStatement>> Parser::parse_into_assign_statement
 
 bool Parser::is_variable_declaration() {
     // read local (const | polyphonic) keyword
-    bool first = get_persistent_keyword(peek()) and (peek(1).type == LOCAL or peek(1).type == GLOBAL) and (peek(2).type == CONST || peek(2).type == POLYPHONIC) and peek(3).type == KEYWORD;
+    bool first = get_persistent_keyword(peek()) and (peek(1).type == token::LOCAL or peek(1).type == token::GLOBAL) and (peek(2).type == token::CONST || peek(2).type == token::POLYPHONIC) and peek(3).type == token::KEYWORD;
     // read (const | polyphonic) keyword
-    bool second = get_persistent_keyword(peek()) and (peek(1).type == CONST || peek(1).type == POLYPHONIC) and peek(2).type == KEYWORD;
+    bool second = get_persistent_keyword(peek()) and (peek(1).type == token::CONST || peek(1).type == token::POLYPHONIC) and peek(2).type == token::KEYWORD;
     // read keyword
-    bool third = get_persistent_keyword(peek()) and peek(1).type == KEYWORD;
+    bool third = get_persistent_keyword(peek()) and peek(1).type == token::KEYWORD;
     // read local keyword
-    bool sixth = get_persistent_keyword(peek()) and (peek(1).type == LOCAL or peek(1).type == GLOBAL) and peek(2).type == KEYWORD;
+    bool sixth = get_persistent_keyword(peek()) and (peek(1).type == token::LOCAL or peek(1).type == token::GLOBAL) and peek(2).type == token::KEYWORD;
     // (const | polyphonic) keyword
-    bool fifth = (peek().type == CONST || peek().type == POLYPHONIC) and peek(1).type == KEYWORD;
+    bool fifth = (peek().type == token::CONST || peek().type == token::POLYPHONIC) and peek(1).type == token::KEYWORD;
     // local keyword
-    bool seventh = (peek().type == LOCAL or peek().type == GLOBAL) and peek(1).type == KEYWORD;
+    bool seventh = (peek().type == token::LOCAL or peek().type == token::GLOBAL) and peek(1).type == token::KEYWORD;
 	// local (const | polyphonic) keyword
-	bool eighth = (peek().type == LOCAL or peek().type == GLOBAL) and (peek(1).type == CONST || peek(1).type == POLYPHONIC) and peek(2).type == KEYWORD;
+	bool eighth = (peek().type == token::LOCAL or peek().type == token::GLOBAL) and (peek(1).type == token::CONST || peek(1).type == token::POLYPHONIC) and peek(2).type == token::KEYWORD;
     // keyword
-    bool fourth = peek().type == KEYWORD;
+    bool fourth = peek().type == token::KEYWORD;
 
     return first xor second xor third xor fourth xor fifth xor sixth xor seventh xor eighth;
 }
 
 bool Parser::is_array_declaration() {
     // read local a[]
-    bool first = get_persistent_keyword(peek()) and (peek(1).type == LOCAL or peek(1).type == GLOBAL) and peek(2).type == KEYWORD and peek(3).type == OPEN_BRACKET;
+    bool first = get_persistent_keyword(peek()) and (peek(1).type == token::LOCAL or peek(1).type == token::GLOBAL) and peek(2).type == token::KEYWORD and peek(3).type == token::OPEN_BRACKET;
     // local a[]
-    bool second = (peek().type == LOCAL or peek().type == GLOBAL) and peek(1).type == KEYWORD and peek(2).type == OPEN_BRACKET;
+    bool second = (peek().type == token::LOCAL or peek().type == token::GLOBAL) and peek(1).type == token::KEYWORD and peek(2).type == token::OPEN_BRACKET;
     // read a[]
-    bool third = get_persistent_keyword(peek()) and peek(1).type == KEYWORD and peek(2).type == OPEN_BRACKET;
+    bool third = get_persistent_keyword(peek()) and peek(1).type == token::KEYWORD and peek(2).type == token::OPEN_BRACKET;
     // a[]
-    bool fourth = peek().type == KEYWORD and peek(1).type == OPEN_BRACKET;
+    bool fourth = peek().type == token::KEYWORD and peek(1).type == token::OPEN_BRACKET;
 
     return first xor second xor third xor fourth;
 }
 
 std::optional<Token> Parser::get_persistent_keyword(const Token& tok) {
-    if(tok.type == READ || tok.type == PERS || tok.type == INSTPERS) {
+    if(tok.type == token::READ || tok.type == token::PERS || tok.type == token::INSTPERS) {
         return tok;
     }
     return {};
@@ -1031,7 +1033,7 @@ Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement(NodeAST* par
 	if_statements->parent = node_if_statement.get();
 //    std::vector<std::unique_ptr<NodeStatement>> if_stmts = {};
     while (peek().type != token::END_IF && peek().type != token::ELSE) {
-		if(peek().type == END_IF or peek().type == ELSE) break;
+		if(peek().type == token::END_IF or peek().type == token::ELSE) break;
         auto stmt = parse_statement(node_if_statement.get());
         if (stmt.is_error()) {
             return Result<std::unique_ptr<NodeIfStatement>>(stmt.get_error());
@@ -1101,7 +1103,7 @@ Result<std::unique_ptr<NodeForStatement>> Parser::parse_for_statement(NodeAST* p
     }
     auto iterator_end = std::move(expression_stmt.unwrap());
     std::unique_ptr<NodeAST> step;
-    if(peek().type == STEP) {
+    if(peek().type == token::STEP) {
         consume(); // consume step
         auto step_expression = parse_binary_expr(node_for_statement.get());
         if(step_expression.is_error()) {
@@ -1138,12 +1140,12 @@ Result<std::unique_ptr<NodeForStatement>> Parser::parse_for_statement(NodeAST* p
 
 bool Parser::is_ranged_for_loop() {
     size_t begin = m_pos;
-    while(peek().type != LINEBRK) {
-        if(peek().type == ASSIGN) {
+    while(peek().type != token::LINEBRK) {
+        if(peek().type == token::ASSIGN) {
             m_pos = begin;
             return false;
         }
-        else if(peek().type == IN){
+        else if(peek().type == token::IN){
             m_pos = begin;
             return true;
         }
@@ -1252,8 +1254,8 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement(Node
             std::vector<std::unique_ptr<NodeAST>> cas = {};
 			if(peek().type == token::DEFAULT) {
 				consume(); // consume default token
-				Token low_end = Token(INTNUM, "080000000H", 0,0, "");
-				Token high_end = Token(INTNUM, "07FFFFFFH", 0,0, "");
+				Token low_end = Token(token::INTNUM, "080000000H", 0,0, "");
+				Token high_end = Token(token::INTNUM, "07FFFFFFH", 0,0, "");
 				auto node_int_low = std::move(parse_int(low_end, 16, node_select_statement.get()).unwrap());
 				cas.push_back(std::move(node_int_low));
 				auto node_int_high = std::move(parse_int(high_end, 16, node_select_statement.get()).unwrap());
@@ -1341,7 +1343,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
      "Found unknown <list> syntax.", "[", peek()));
     }
     consume(); // consume [
-    if(peek().type == COMMA) {
+    if(peek().type == token::COMMA) {
         consume(); // consume comma
     }
     if(peek().type != token::CLOSED_BRACKET) {
@@ -1356,9 +1358,9 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
     consume(); // consume linebreak
     std::vector<std::unique_ptr<NodeParamList>> stmts;
     int32_t size = 0;
-    while(peek().type != END_LIST) {
+    while(peek().type != token::END_LIST) {
         _skip_linebreaks();
-        if(peek().type == END_LIST) break;
+        if(peek().type == token::END_LIST) break;
         auto param_list = parse_param_list(node_list_block.get());
         if(param_list.is_error()) {
             return Result<std::unique_ptr<NodeAST>>(param_list.get_error());

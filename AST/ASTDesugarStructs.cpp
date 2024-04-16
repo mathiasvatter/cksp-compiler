@@ -390,7 +390,7 @@ void ASTDesugarStructs::visit(NodeRangedForStatement& node) {
 	node_key_variable->type = Integer;
 	auto node_key_declaration = std::make_unique<NodeSingleDeclareStatement>(node.keys->params[0]->clone(),nullptr, node.tok);
 	auto node_key_iterator = std::make_unique<NodeSingleAssignStatement>(node.keys->params[0]->clone(), make_int(0, &node), node.tok);
-	Token token_to = Token(TO, "to", node.tok.line, node.tok.pos, node.tok.file);
+	Token token_to = Token(token::TO, "to", node.tok.line, node.tok.pos, node.tok.file);
 	std::vector<std::unique_ptr<NodeAST>> args;
 	args.push_back(node.range->clone());
 	auto node_num_elements = make_function_call("num_elements", std::move(args), &node, node.tok);
@@ -433,7 +433,7 @@ void ASTDesugarStructs::visit(NodeForStatement& node) {
 	if(!node.step) {
 		// function call
 		std::string function_name = "inc";
-		if (node.to.type == DOWNTO) function_name = "dec";
+		if (node.to.type == token::DOWNTO) function_name = "dec";
 		std::vector<std::unique_ptr<NodeAST>> args;
 		args.push_back(std::move(function_var));
 		auto inc_statement = make_function_call(function_name, std::move(args), node_while_statement.get(), node.tok);
@@ -450,7 +450,7 @@ void ASTDesugarStructs::visit(NodeForStatement& node) {
 
 	// handle while condition
 	std::string comparison_op = "<=";
-	if(node.to.type == DOWNTO) comparison_op = ">=";
+	if(node.to.type == token::DOWNTO) comparison_op = ">=";
 	// make comparison expression
 	auto comparison = make_binary_expr(Comparison, comparison_op, std::move(iterator_var), std::move(node.iterator_end), node_while_statement.get(), node.tok);
 

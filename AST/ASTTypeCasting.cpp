@@ -372,13 +372,13 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
 void ASTTypeCasting::visit(NodeUnaryExpr& node) {
     node.operand->accept(*this);
     auto err = CompileError(ErrorType::TypeError,"Found different types in <unary_expression>.", node.tok.line, "", "", node.tok.file);
-    if(node.op.type == SUB or node.op.type == BIT_NOT) {
+    if(node.op.type == token::SUB or node.op.type == token::BIT_NOT) {
         if(node.operand->type == Integer or node.operand->type == Real) {
             node.type = node.operand->type;
         } else {
             err.exit();
         }
-    } else if(node.op.type == BOOL_NOT) {
+    } else if(node.op.type == token::BOOL_NOT) {
         if(node.operand->type == Boolean or node.operand->type == Comparison) {
             node.type = Boolean;
         // e.g. not -1...

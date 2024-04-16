@@ -61,7 +61,7 @@ bool PreASTIncrementer::update_last_incrementer_var(PreNodeAST* node, PreNodeInt
 }
 
 void PreASTIncrementer::visit(PreNodeIncrementer& node) {
-    auto node_chunk = dynamic_cast<PreNodeChunk*>(node.counter.get());
+	auto node_chunk = safe_cast<PreNodeChunk>(node.counter.get(), PreNodeType::CHUNK);
     if(!node_chunk) {
         CompileError(ErrorType::PreprocessorError,"Found unknown syntax in <START_INC> arguments.", node.tok.line, "<name>, <start>, <step>", node_chunk->get_string(), node.tok.file).exit();
     }
@@ -87,7 +87,7 @@ void PreASTIncrementer::visit(PreNodeIncrementer& node) {
 
 //    auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{},&node);
     auto node_int = std::make_unique<PreNodeInt>((int32_t) from,
-                                                 Token(INTNUM, std::to_string(from), node.tok.line,node.tok.pos,node.tok.file), &node);
+                                                 Token(token::INTNUM, std::to_string(from), node.tok.line,node.tok.pos,node.tok.file), &node);
 //    node_new_chunk->chunk.push_back(std::move(node_int));
     std::tuple<std::string, int32_t, std::unique_ptr<PreNodeInt>> subst_tuple(counter_var, step, std::move(node_int));
     m_incrementer_stack.push_back(std::move(subst_tuple));

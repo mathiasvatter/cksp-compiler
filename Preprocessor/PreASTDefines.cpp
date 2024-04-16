@@ -94,28 +94,7 @@ void PreASTDefines::visit(PreNodeChunk& node) {
 	for(auto &c : node.chunk) {
 		c->accept(*this);
 	}
-
-	std::vector<std::unique_ptr<PreNodeAST>> temp;
-	for(int i = 0; i < node.chunk.size(); ++i) {
-		if(auto node_statement = dynamic_cast<PreNodeStatement*>(node.chunk[i].get())) {
-			if(auto node_chunk = dynamic_cast<PreNodeChunk*>(node_statement->statement.get())) {
-				// Fügen Sie die inneren Statements zum temporären Vector hinzu
-				auto &inner_chunk = node_chunk->chunk;
-				temp.insert(temp.end(),
-							std::make_move_iterator(inner_chunk.begin()),
-							std::make_move_iterator(inner_chunk.end())
-				);
-				// Markieren Sie das aktuelle Element zur Löschung
-				node.chunk[i] = nullptr;
-				continue; // Überspringen Sie das erhöhen des Indexes
-			}
-		}
-		// Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht gelöscht werden soll
-		temp.push_back(std::move(node.chunk[i]));
-	}
-
-	// Ersetzen Sie die alte Liste durch die neue
-	node.chunk = std::move(temp);
+	node.chunk = cleanup_node_chunk(&node);
 }
 
 void PreASTDefines::visit(PreNodeDefineHeader& node) {
@@ -136,7 +115,7 @@ void PreASTDefines::visit(PreNodeDefineStatement& node) {
 	SimpleExprInterpreter eval("", 0);
 	auto eval_result = eval.parse_and_evaluate(std::move(node_body->chunk));
 	if(!eval_result.is_error()) {
-		Token tok = Token(INTNUM, std::to_string(eval_result.unwrap()), 0, 0,"");
+		Token tok = Token(token::INTNUM, std::to_string(eval_result.unwrap()), 0, 0,"");
 		auto int_token = std::make_unique<PreNodeInt>(eval_result.unwrap(), tok, nullptr);
 		auto node_statement = std::make_unique<PreNodeStatement>(std::move(int_token), nullptr);
 		node_statement->update_parents(&node);
@@ -149,8 +128,7 @@ void PreASTDefines::visit(PreNodeDefineCall& node) {
 	Token token_name = node.define->name->keyword;
 	if(std::find(m_define_call_stack.begin(), m_define_call_stack.end(), token_name.val) != m_define_call_stack.end()) {
 		// recursive function call detected
-		CompileError(ErrorType::PreprocessorError,"Recursive define call detected. Calling defines inside their definition is not allowed.", token_name.line, "", token_name.val, token_name.file).print();
-		exit(EXIT_FAILURE);
+		CompileError(ErrorType::PreprocessorError,"Recursive define call detected. Calling defines inside their definition is not allowed.", token_name.line, "", token_name.val, token_name.file).exit();
 	}
 
 	node.define->accept(*this);
@@ -176,7 +154,6 @@ std::unique_ptr<PreNodeDefineStatement> PreASTDefines::get_define_definition(Pre
 		auto copy = it->second->clone();
 		copy->update_parents(nullptr);
 		return std::unique_ptr<PreNodeDefineStatement>(static_cast<PreNodeDefineStatement*>(copy.release()));
-
 	}
 	return nullptr;
 }
@@ -199,21 +176,7 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDefines::ge
 			 "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>", definition->name->keyword.line, "", definition->get_string(),definition->name->keyword.file).exit();
 		}
 		std::pair<std::string, std::unique_ptr<PreNodeChunk>> pair;
-		if(auto node_statement = dynamic_cast<PreNodeStatement*>(var.get())) {
-			if (auto node_keyword = dynamic_cast<PreNodeKeyword *>(node_statement->statement.get())) {
-				pair.first = node_keyword->keyword.val;
-			} else if (auto node_number = dynamic_cast<PreNodeNumber *>(node_statement->statement.get())) {
-				pair.first = node_number->number.val;
-			} else if (auto node_int = dynamic_cast<PreNodeInt *>(node_statement->statement.get())) {
-				pair.first = node_int->number.val;
-			} else {
-				CompileError(ErrorType::SyntaxError,
-				 "Unable to substitute <define> arguments. Only <keywords> can be substituted.",definition->name->keyword.line, "<keyword>", "", definition->name->keyword.file).exit();
-			}
-		} else {
-			CompileError(ErrorType::SyntaxError,
-		 	"Unable to substitute <define> arguments. Only <keywords> can be substituted.",definition->name->keyword.line, "<keyword>", "", definition->name->keyword.file).exit();
-		}
+		pair.first = var->get_string();
 		pair.second = std::move(call->args->params[i]);
 		substitution_vector.insert(std::move(pair));
 	}
@@ -253,18 +216,19 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> PreASTDefines::
 	std::string locale_time = ss.str();
 
 	std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> builtins;
-	builtins.emplace_back("__SEC__", std::make_unique<PreNodeInt>(local_time->tm_sec, Token(INTNUM, std::to_string(local_time->tm_sec), 0, 0, ""), nullptr));
-	builtins.emplace_back("__MIN__", std::make_unique<PreNodeInt>(local_time->tm_min, Token(INTNUM, std::to_string(local_time->tm_min), 0, 0, ""), nullptr));
-	builtins.emplace_back("__HOUR__", std::make_unique<PreNodeInt>(local_time->tm_hour, Token(INTNUM, std::to_string(local_time->tm_hour), 0, 0, ""), nullptr));
-	builtins.emplace_back("__HOUR12__", std::make_unique<PreNodeInt>(local_time->tm_hour % 12, Token(INTNUM, std::to_string(local_time->tm_hour % 12), 0, 0, ""), nullptr));
-	builtins.emplace_back("__AMPM__", std::make_unique<PreNodeKeyword>(Token(STRING, (local_time->tm_hour >= 12 ? "\"PM\"" : "\"AM\""), 0, 0, ""), nullptr));
-	builtins.emplace_back("__DAY__", std::make_unique<PreNodeInt>(local_time->tm_mday, Token(INTNUM, std::to_string(local_time->tm_mday), 0, 0, ""), nullptr));
-	builtins.emplace_back("__MONTH__", std::make_unique<PreNodeInt>(local_time->tm_mon + 1, Token(INTNUM, std::to_string(local_time->tm_mon + 1), 0, 0, ""), nullptr));
-	builtins.emplace_back("__YEAR__", std::make_unique<PreNodeInt>(local_time->tm_year + 1900, Token(INTNUM, std::to_string(local_time->tm_year + 1900), 0, 0, ""), nullptr));
-	builtins.emplace_back("__YEAR2__", std::make_unique<PreNodeInt>(local_time->tm_year % 100, Token(INTNUM, std::to_string(local_time->tm_year % 100), 0, 0, ""), nullptr));
-	builtins.emplace_back("__LOCALE_MONTH__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_month+"\"", 0, 0, ""), nullptr));
-	builtins.emplace_back("__LOCALE_MONTH_ABBR__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_month_abbr+"\"", 0, 0, ""), nullptr));
-	builtins.emplace_back("__LOCALE_DATE__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_date+"\"", 0, 0, ""), nullptr));
-	builtins.emplace_back("__LOCALE_TIME__", std::make_unique<PreNodeKeyword>(Token(STRING, "\""+locale_time+"\"", 0, 0, ""), nullptr));
+	builtins.emplace_back("__SEC__", std::make_unique<PreNodeInt>(local_time->tm_sec, Token(token::INTNUM, std::to_string(local_time->tm_sec), 0, 0, ""), nullptr));
+	builtins.emplace_back("__MIN__", std::make_unique<PreNodeInt>(local_time->tm_min, Token(token::INTNUM, std::to_string(local_time->tm_min), 0, 0, ""), nullptr));
+	builtins.emplace_back("__HOUR__", std::make_unique<PreNodeInt>(local_time->tm_hour, Token(token::INTNUM, std::to_string(local_time->tm_hour), 0, 0, ""), nullptr));
+	builtins.emplace_back("__HOUR12__", std::make_unique<PreNodeInt>(local_time->tm_hour % 12, Token(token::INTNUM, std::to_string(local_time->tm_hour % 12), 0, 0, ""), nullptr));
+	builtins.emplace_back("__AMPM__", std::make_unique<PreNodeKeyword>(Token(token::STRING, (local_time->tm_hour >= 12 ? "\"PM\"" : "\"AM\""), 0, 0, ""), nullptr));
+	builtins.emplace_back("__DAY__", std::make_unique<PreNodeInt>(local_time->tm_mday, Token(token::INTNUM, std::to_string(local_time->tm_mday), 0, 0, ""), nullptr));
+	builtins.emplace_back("__MONTH__", std::make_unique<PreNodeInt>(local_time->tm_mon + 1, Token(token::INTNUM, std::to_string(local_time->tm_mon + 1), 0, 0, ""), nullptr));
+	builtins.emplace_back("__YEAR__", std::make_unique<PreNodeInt>(local_time->tm_year + 1900, Token(token::INTNUM, std::to_string(local_time->tm_year + 1900), 0, 0, ""), nullptr));
+	builtins.emplace_back("__YEAR2__", std::make_unique<PreNodeInt>(local_time->tm_year % 100, Token(token::INTNUM, std::to_string(local_time->tm_year % 100), 0, 0, ""), nullptr));
+	builtins.emplace_back("__LOCALE_MONTH__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+locale_month+"\"", 0, 0, ""), nullptr));
+	builtins.emplace_back("__LOCALE_MONTH_ABBR__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+locale_month_abbr+"\"", 0, 0, ""), nullptr));
+	builtins.emplace_back("__LOCALE_DATE__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+locale_date+"\"", 0, 0, ""), nullptr));
+	builtins.emplace_back("__LOCALE_TIME__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+locale_time+"\"", 0, 0, ""), nullptr));
+	builtins.emplace_back("__CKSP_VER__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+COMPILER_VERSION+"\"", 0, 0, ""), nullptr));
 	return builtins;
 }
