@@ -271,7 +271,7 @@ void Tokenizer::get_keyword_or_num() {
             while (std::isdigit(peek())) {
 				consume();
             }
-            m_tokens.emplace_back(token::FLOATNUM, m_buffer, m_line, m_line_pos-m_buffer.length(), m_current_file);
+            m_tokens.emplace_back(token::FLOAT, m_buffer, m_line, m_line_pos-m_buffer.length(), m_current_file);
         } else {
 			auto err_msg = "Found unknown keyword.";
 			CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).print();
@@ -352,7 +352,7 @@ void Tokenizer::get_keyword_or_num() {
         }
         // see if char after keyword is dot
     } else // is probably int
-        m_tokens.emplace_back(token::INTNUM, m_buffer, m_line, m_line_pos-m_buffer.length(), m_current_file);
+        m_tokens.emplace_back(token::INT, m_buffer, m_line, m_line_pos-m_buffer.length(), m_current_file);
     skip_whitespace();
 }
 
