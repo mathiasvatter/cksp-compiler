@@ -9,6 +9,7 @@
 class PreASTDesugar : public PreASTVisitor {
 public:
 
+    void visit(PreNodeProgram& node) override;
     void visit(PreNodeNumber& node) override;
     void visit(PreNodeInt& node) override;
     void visit(PreNodeKeyword& node) override;
@@ -25,7 +26,6 @@ public:
     void visit(PreNodeLiterateMacro& node) override;
 //	void visit(PreNodeIncrementer& node) override;
 
-    void visit(PreNodeProgram& node) override;
 
 private:
 	std::string m_debug_token;

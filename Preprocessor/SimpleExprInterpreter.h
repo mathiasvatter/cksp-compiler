@@ -31,7 +31,7 @@ public:
 
 class SimpleInterpreter {
 public:
-    explicit SimpleInterpreter() {}
+    explicit SimpleInterpreter() = default;
     Result<int> evaluate_int_expression(std::unique_ptr<NodeAST>& root);
 };
 

@@ -40,11 +40,11 @@ Result<std::unique_ptr<PreNodeProgram>> PreprocessorParser::parse_program(PreNod
             if (result_define.is_error())
                 return Result<std::unique_ptr<PreNodeProgram>>(result_define.get_error());
             m_program->define_statements.push_back(std::move(result_define.unwrap()));
-        } else if (is_macro_definition()) {
-            auto result_macro_def = parse_macro_definition(parent);
-            if (result_macro_def.is_error())
-                return Result<std::unique_ptr<PreNodeProgram>>(result_macro_def.get_error());
-            m_program->macro_definitions.push_back(std::move(result_macro_def.unwrap()));
+//        } else if (is_macro_definition()) {
+//            auto result_macro_def = parse_macro_definition(parent);
+//            if (result_macro_def.is_error())
+//                return Result<std::unique_ptr<PreNodeProgram>>(result_macro_def.get_error());
+//            m_program->macro_definitions.push_back(std::move(result_macro_def.unwrap()));
         } else {
             auto token_result = parse_token(parent);
             if (token_result.is_error())
@@ -160,7 +160,13 @@ int PreprocessorParser::get_num_params_in_definition() {
 Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_token(PreNodeAST* parent) {
     std::unique_ptr<PreNodeAST> stmt;
     auto node_statement = std::make_unique<PreNodeStatement>(nullptr, parent);
-    if(is_define_call(peek())) {
+	if (is_macro_definition()) {
+		auto result_macro_def = parse_macro_definition(node_statement.get());
+		if (result_macro_def.is_error())
+			return Result<std::unique_ptr<PreNodeAST>>(result_macro_def.get_error());
+		node_statement->statement = std::move(result_macro_def.unwrap());
+		stmt = std::move(node_statement);
+	} else if(is_define_call(peek())) {
         auto result_define_call = parse_define_call(node_statement.get());
         if (result_define_call.is_error())
             return Result<std::unique_ptr<PreNodeAST>>(result_define_call.get_error());
@@ -448,6 +454,9 @@ Result<std::unique_ptr<PreNodeMacroDefinition>> PreprocessorParser::parse_macro_
 }
 
 Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_macro(PreNodeAST* parent) {
+	if(m_parsing_iterator_macro || m_parsing_literate_macro) {
+		CompileError(ErrorType::SyntaxError,"Found nested macro iteration.", peek().line, "", "", peek().file).exit();
+	}
     m_parsing_iterator_macro = true;
     auto node_iterate_macro = std::make_unique<PreNodeIterateMacro>(parent);
     consume(); // consume iterate_macro
@@ -521,6 +530,9 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
 }
 
 Result<std::unique_ptr<PreNodeLiterateMacro>> PreprocessorParser::parse_literate_macro(PreNodeAST* parent) {
+	if(m_parsing_iterator_macro || m_parsing_literate_macro) {
+		CompileError(ErrorType::SyntaxError,"Found nested macro iteration.", peek().line, "", "", peek().file).exit();
+	}
 	m_parsing_literate_macro = true;
     auto node_literate_macro = std::make_unique<PreNodeLiterateMacro>(nullptr, nullptr, parent);
     consume(); // consume literate_macro
@@ -605,11 +617,11 @@ Result<std::unique_ptr<PreNodeIncrementer>> PreprocessorParser::parse_incremente
                 if (result_define.is_error())
                     return Result<std::unique_ptr<PreNodeIncrementer>>(result_define.get_error());
                 m_program->define_statements.push_back(std::move(result_define.unwrap()));
-            } else if (is_macro_definition()) {
-                auto result_macro_def = parse_macro_definition(parent);
-                if (result_macro_def.is_error())
-                    return Result<std::unique_ptr<PreNodeIncrementer>>(result_macro_def.get_error());
-                m_program->macro_definitions.push_back(std::move(result_macro_def.unwrap()));
+//            } else if (is_macro_definition()) {
+//                auto result_macro_def = parse_macro_definition(parent);
+//                if (result_macro_def.is_error())
+//                    return Result<std::unique_ptr<PreNodeIncrementer>>(result_macro_def.get_error());
+//                m_program->macro_definitions.push_back(std::move(result_macro_def.unwrap()));
             } else {
                 auto token_result = parse_token(parent);
                 if (token_result.is_error())
