@@ -20,7 +20,7 @@ void PreASTPragma::visit(PreNodePragma& node) {
     }
     auto argument = node.argument->keyword.val;
     std::string current_file = node.argument->keyword.file;
-    if(node.argument->keyword.type == STRING) {
+    if(node.argument->keyword.type == token::STRING) {
         // erase ""
         argument.erase(0,1);
         argument.pop_back();

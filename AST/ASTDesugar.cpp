@@ -90,14 +90,14 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
             // Beide Operanden sind Integers. Führe die Operation aus und ersetze den Knoten.
             int32_t result = 0;
             auto int_operations = std::unordered_map<token, std::function<int32_t(int32_t, int32_t)>>{
-                {ADD, [](int32_t a, int32_t b) { return a + b; }},
-                {SUB, [](int32_t a, int32_t b) { return a - b; }},
-                {MULT, [](int32_t a, int32_t b) { return a * b; }},
-                {DIV, [](int32_t a, int32_t b) { return a / b; }},
-                {MODULO, [](int32_t a, int32_t b) { return a % b; }},
-                {BIT_AND, [](int32_t a, int32_t b) { return a & b; }},
-                {BIT_OR, [](int32_t a, int32_t b) { return a | b; }},
-                {BIT_XOR, [](int32_t a, int32_t b) { return a ^ b; }}
+                {token::ADD, [](int32_t a, int32_t b) { return a + b; }},
+                {token::SUB, [](int32_t a, int32_t b) { return a - b; }},
+                {token::MULT, [](int32_t a, int32_t b) { return a * b; }},
+                {token::DIV, [](int32_t a, int32_t b) { return a / b; }},
+                {token::MODULO, [](int32_t a, int32_t b) { return a % b; }},
+                {token::BIT_AND, [](int32_t a, int32_t b) { return a & b; }},
+                {token::BIT_OR, [](int32_t a, int32_t b) { return a | b; }},
+                {token::BIT_XOR, [](int32_t a, int32_t b) { return a ^ b; }}
             };
             token tok = *get_token_type(ALL_OPERATORS, node.op);
             if (int_operations.find(tok) != int_operations.end()) {
@@ -109,24 +109,24 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
             }
 		}
 		// division by zero
-		if (right_int and get_token_type(MATH_OPERATORS, node.op) == DIV and right_int->value == 0) {
+		if (right_int and get_token_type(MATH_OPERATORS, node.op) == token::DIV and right_int->value == 0) {
 			CompileError(ErrorType::MathError,"Warning: Found division by zero.",node.tok.line,"","",node.tok.file).print();
 			return;
 		}
-		if(left_int and left_int->value == 0 and get_token_type(MATH_OPERATORS, node.op) == MULT or right_int and right_int->value == 0 and
-			get_token_type(MATH_OPERATORS, node.op) == MULT) {
+		if(left_int and left_int->value == 0 and get_token_type(MATH_OPERATORS, node.op) == token::MULT or right_int and right_int->value == 0 and
+			get_token_type(MATH_OPERATORS, node.op) == token::MULT) {
 			auto new_node = std::make_unique<NodeInt>(0, node.tok);
 			new_node-> parent = node.parent;
 			node.replace_with(std::move(new_node));
 			return;
 		}
 		// 0 + var
-		if(left_int and left_int->value == 0 and get_token_type(MATH_OPERATORS, node.op) == ADD) {
+		if(left_int and left_int->value == 0 and get_token_type(MATH_OPERATORS, node.op) == token::ADD) {
 			node.replace_with(std::move(node.right));
 			return;
 		}
 		// var + 0
-		if(right_int and right_int->value == 0 and get_token_type(MATH_OPERATORS, node.op) == ADD) {
+		if(right_int and right_int->value == 0 and get_token_type(MATH_OPERATORS, node.op) == token::ADD) {
 			node.replace_with(std::move(node.left));
 			return;
 		}
@@ -141,11 +141,11 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
 		if (left_real and right_real) {
             double result = 0;
             auto real_operations = std::unordered_map<token, std::function<double(double, double)>>{
-                {ADD, [](double a, double b) { return a + b; }},
-                {SUB, [](double a, double b) { return a - b; }},
-                {MULT, [](double a, double b) { return a * b; }},
-                {DIV, [](double a, double b) { return a / b; }},
-                {MODULO, [](double a, double b) { return std::fmod(a, b); }}
+                {token::ADD, [](double a, double b) { return a + b; }},
+                {token::SUB, [](double a, double b) { return a - b; }},
+                {token::MULT, [](double a, double b) { return a * b; }},
+                {token::DIV, [](double a, double b) { return a / b; }},
+                {token::MODULO, [](double a, double b) { return std::fmod(a, b); }}
             };
             token tok = *get_token_type(MATH_OPERATORS, node.op);
             if (real_operations.find(tok) != real_operations.end()) {
@@ -644,8 +644,8 @@ std::unique_ptr<NodeAST> ASTDesugar::create_right_nested_binary_expr(const std::
 std::vector<std::unique_ptr<NodeStatement>> ASTDesugar::add_read_functions(const Token& persistence, NodeAST* var, NodeAST* parent) {
     std::vector<std::unique_ptr<NodeStatement>> statements;
 
-    std::map<token, std::vector<std::string>> persistences = {{READ, {"make_persistent", "read_persistent_var"}},
-                                                              {PERS, {"make_persistent"}}, {INSTPERS, {"make_instr_persistent"}}};
+    std::map<token, std::vector<std::string>> persistences = {{token::READ, {"make_persistent", "read_persistent_var"}},
+                                                              {token::PERS, {"make_persistent"}}, {token::INSTPERS, {"make_instr_persistent"}}};
     for(auto &pers : persistences) {
         if(persistence.type == pers.first) {
             for(auto &pers_func : pers.second) {
@@ -886,7 +886,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 
 void ASTDesugar::declare_compiler_variables() {
 //    m_current_callback = m_init_callback;
-    Token tok = Token(KEYWORD, "compiler_variable", 0, 0,"");
+    Token tok = Token(token::KEYWORD, "compiler_variable", 0, 0,"");
     for(auto & var_name: m_compiler_variables) {
         auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name.first, VarType::Mutable, tok);
         node_variable->type = var_name.second;
@@ -923,7 +923,7 @@ void ASTDesugar::declare_compiler_variables() {
 
 void ASTDesugar::declare_dummy_return_variable() {
     m_current_callback = m_init_callback;
-    Token tok = Token(KEYWORD, "compiler_variable", 0, 0,"");
+    Token tok = Token(token::KEYWORD, "compiler_variable", 0, 0,"");
     std::string dummy_name = "_return_dummy";
     auto node_return_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), dummy_name, VarType::Mutable, tok);
     node_return_dummy->type = Unknown;

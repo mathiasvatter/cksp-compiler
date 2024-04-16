@@ -91,5 +91,28 @@ public:
         }
     };
 
-
+protected:
+	/// puts nested statement list in one, returns new vector to replace node->statements with
+	inline static std::vector<std::unique_ptr<PreNodeAST>> cleanup_node_chunk(PreNodeChunk* node) {
+		std::vector<std::unique_ptr<PreNodeAST>> temp;
+		for(auto & i : node->chunk) {
+			if(auto node_statement = safe_cast<PreNodeStatement>(i.get(), PreNodeType::STATEMENT)) {
+				if(auto node_chunk = safe_cast<PreNodeChunk>(node_statement->statement.get(), PreNodeType::CHUNK)) {
+					// Fügen Sie die inneren Statements zum temporären Vector hinzu
+					auto &inner_chunk = node_chunk->chunk;
+					temp.insert(temp.end(),
+								std::make_move_iterator(inner_chunk.begin()),
+								std::make_move_iterator(inner_chunk.end())
+					);
+					// Markieren Sie das aktuelle Element zur Löschung
+					i = nullptr;
+					continue; // Überspringen Sie das erhöhen des Indexes
+				}
+			}
+			// Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht gelöscht werden soll
+			temp.push_back(std::move(i));
+		}
+		// Ersetzen Sie die alte Liste durch die neue
+		return std::move(temp);
+	}
 };

@@ -39,8 +39,8 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_variables(const std::stri
 //    tokenizer.set_input(data);
     m_tokens = tokenizer.tokenize();
     m_pos = 0;
-    while(peek(m_tokens).type != END_TOKEN) {
-        if(peek(m_tokens).type == KEYWORD) {
+    while(peek(m_tokens).type != token::END_TOKEN) {
+        if(peek(m_tokens).type == token::KEYWORD) {
             if(contains(VAR_IDENT, peek(m_tokens).val[0])) {
                 auto node_variable = std::move(parse_builtin_variable());
                 m_builtin_variables.insert({node_variable->name, std::move(node_variable)});
@@ -65,8 +65,8 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::stri
 //    tokenizer.set_input(data);
     m_tokens = tokenizer.tokenize();
     m_pos = 0;
-    while(peek(m_tokens).type != END_TOKEN) {
-        if(peek(m_tokens).type == KEYWORD || peek(m_tokens).type == SET_CONDITION || peek(m_tokens).type == RESET_CONDITION) {
+    while(peek(m_tokens).type != token::END_TOKEN) {
+        if(peek(m_tokens).type == token::KEYWORD || peek(m_tokens).type == token::SET_CONDITION || peek(m_tokens).type == token::RESET_CONDITION) {
             auto result_function = parse_builtin_function();
             if(result_function.is_error()) {
                 return Result<SuccessTag>(result_function.get_error());
@@ -88,8 +88,8 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_widgets(const std::string
 //    tokenizer.set_input(data);
 	m_tokens = tokenizer.tokenize();
 	m_pos = 0;
-	while(peek(m_tokens).type != END_TOKEN) {
-		if(peek(m_tokens).type == UI_CONTROL) {
+	while(peek(m_tokens).type != token::END_TOKEN) {
+		if(peek(m_tokens).type == token::UI_CONTROL) {
 			auto result_ui_control = parse_builtin_ui_control();
 			if(result_ui_control.is_error()) {
 				return Result<SuccessTag>(result_ui_control.get_error());
@@ -161,7 +161,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_
     }
 
     ASTType return_type = Void;
-    if(peek(m_tokens).type == TYPE) {
+    if(peek(m_tokens).type == token::TYPE) {
         consume(m_tokens); // consume :
         return_type = get_type_annotation(consume(m_tokens));
     }
@@ -177,16 +177,16 @@ Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_
 Result<std::unique_ptr<NodeUIControl>> PreprocessorBuiltins::parse_builtin_ui_control() {
 	Token tok = consume(m_tokens);
 	std::string ui_control_type = tok.val; // consume ui_control identifier
-	if(peek(m_tokens).type != KEYWORD) {
+	if(peek(m_tokens).type != token::KEYWORD) {
 		return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::PreprocessorError,
 		"Failed loading builtins. Found unknown <engine_widget> syntax.", peek(m_tokens).line, "<Keyword>", peek(m_tokens).val, peek(m_tokens).file));
 	}
 	std::unique_ptr<NodeAST> node_var;
-	if(peek(m_tokens, 1).type == OPEN_BRACKET) {
+	if(peek(m_tokens, 1).type == token::OPEN_BRACKET) {
 		node_var = std::move(parse_builtin_array());
 		consume(m_tokens); // consume open bracket
-		if(peek(m_tokens).type == KEYWORD) consume(m_tokens);
-		if(peek(m_tokens).type == CLOSED_BRACKET) consume(m_tokens);
+		if(peek(m_tokens).type == token::KEYWORD) consume(m_tokens);
+		if(peek(m_tokens).type == token::CLOSED_BRACKET) consume(m_tokens);
 	} else {
 		node_var = parse_builtin_variable();
 	}
@@ -246,16 +246,16 @@ VarType PreprocessorBuiltins::get_var_type_annotation(const std::string& keyword
 Result<std::pair<std::vector<ASTType>, std::vector<VarType>>> PreprocessorBuiltins::parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args) {
     std::vector<ASTType> arg_types;
     std::vector<VarType> arg_var_types;
-    while(peek(m_tokens).type != CLOSED_PARENTH) {
-        if(peek(m_tokens).type == CLOSED_PARENTH) break;
-        if(peek(m_tokens).type == KEYWORD or peek(m_tokens).type == TO) {
+    while(peek(m_tokens).type != token::CLOSED_PARENTH) {
+        if(peek(m_tokens).type == token::CLOSED_PARENTH) break;
+        if(peek(m_tokens).type == token::KEYWORD or peek(m_tokens).type == token::TO) {
             Token tok = peek(m_tokens);
             auto arg = parse_builtin_variable();
             func_args->params.push_back(std::move(arg));
             arg_var_types.push_back(get_var_type_annotation(tok.val));
-            if(peek(m_tokens).type == TYPE) {
+            if(peek(m_tokens).type == token::TYPE) {
                 consume(m_tokens); // consume semicolon
-                if(peek(m_tokens).type != KEYWORD) {
+                if(peek(m_tokens).type != token::KEYWORD) {
                     return Result<std::pair<std::vector<ASTType>, std::vector<VarType>>>(CompileError(ErrorType::PreprocessorError,
                       "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
                 }
@@ -266,7 +266,7 @@ Result<std::pair<std::vector<ASTType>, std::vector<VarType>>> PreprocessorBuilti
             return Result<std::pair<std::vector<ASTType>, std::vector<VarType>>>(CompileError(ErrorType::PreprocessorError,
         "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
         }
-        if(peek(m_tokens).type == COMMA) consume(m_tokens); // consume comma
+        if(peek(m_tokens).type == token::COMMA) consume(m_tokens); // consume comma
     }
     auto result_pair = std::pair(arg_types, arg_var_types);
     return Result<std::pair<std::vector<ASTType>, std::vector<VarType>>>(result_pair);

@@ -49,13 +49,13 @@ void PreASTCombine::visit(PreNodeList& node) {
 	// create tokens for open parenthesis, closed parenthesis and comma
 	auto reference_token = m_tokens.back();
 	auto open_parenthesis = reference_token;
-	open_parenthesis.type = OPEN_PARENTH;
+	open_parenthesis.type = token::OPEN_PARENTH;
 	open_parenthesis.val = "(";
 	auto closed_parenthesis = reference_token;
-	closed_parenthesis.type = CLOSED_PARENTH;
+	closed_parenthesis.type = token::CLOSED_PARENTH;
 	closed_parenthesis.val = ")";
 	auto comma = reference_token;
-	comma.type = COMMA;
+	comma.type = token::COMMA;
 	comma.val = ",";
 
 	m_tokens.push_back(open_parenthesis);

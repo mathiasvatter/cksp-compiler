@@ -19,7 +19,7 @@ Result<SuccessTag> PreprocessorImport::process_imports() {
 	auto result = process_import_statements(m_tokens, m_current_file);
 	if(result.is_error())
 		return Result<SuccessTag>(result.get_error());
-	m_tokens.emplace_back(END_TOKEN, "", 0, 0,m_current_file);
+	m_tokens.emplace_back(token::END_TOKEN, "", 0, 0,m_current_file);
 	return Result<SuccessTag>(result.unwrap());
 }
 
@@ -98,12 +98,12 @@ Result<SuccessTag> PreprocessorImport::evaluate_import_nckp(std::vector<Token>& 
 Result<std::unique_ptr<NodeImport>> PreprocessorImport::parse_import_nckp(std::vector<Token>& tokens) {
     size_t begin = m_pos;
     consume(tokens);
-    if(peek(tokens).type != OPEN_PARENTH) {
+    if(peek(tokens).type != token::OPEN_PARENTH) {
         return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
         "Incorrect import_nckp Syntax.",peek(tokens).line,"(",peek(tokens).val, peek(tokens).file));
     }
     consume(tokens);
-    if(peek(tokens).type !=STRING) {
+    if(peek(tokens).type != token::STRING) {
         return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::PreprocessorError,
         "Not a filepath",peek(tokens).line,"path",peek(tokens).val, peek(tokens).file));
     }
@@ -111,7 +111,7 @@ Result<std::unique_ptr<NodeImport>> PreprocessorImport::parse_import_nckp(std::v
     // erase ""
     filepath.erase(0,1);
     filepath.pop_back();
-    if(peek(tokens).type != CLOSED_PARENTH) {
+    if(peek(tokens).type != token::CLOSED_PARENTH) {
         return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
         "Incorrect import_nckp Syntax.",peek(tokens).line,")",peek(tokens).val, peek(tokens).file));
     }

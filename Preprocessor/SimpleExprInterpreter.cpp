@@ -41,19 +41,19 @@ Result<int> SimpleExprInterpreter::evaluate_int_expression(std::unique_ptr<PreNo
         auto rightValueStmt = evaluate_int_expression(binaryExprNode->right);
         if (rightValueStmt.is_error()) return Result<int>(rightValueStmt.get_error());
         int rightValue = rightValueStmt.unwrap();
-        if (binaryExprNode->op.type == ADD) {
+        if (binaryExprNode->op.type == token::ADD) {
             return Result<int>(leftValue + rightValue);
-        } else if (binaryExprNode->op.type == SUB) {
+        } else if (binaryExprNode->op.type == token::SUB) {
             return Result<int>(leftValue - rightValue);
-        } else if (binaryExprNode->op.type == MULT) {
+        } else if (binaryExprNode->op.type == token::MULT) {
             return Result<int>(leftValue * rightValue);
-        } else if (binaryExprNode->op.type == DIV) {
+        } else if (binaryExprNode->op.type == token::DIV) {
             if (rightValue == 0) {
                 return Result<int>(CompileError(ErrorType::PreprocessorError, "Divison by zero." + preprocessor_error,
                 binaryExprNode->op.line, "", std::to_string(rightValue), binaryExprNode->op.file));
             }
             return Result<int>(leftValue / rightValue);
-        } else if (binaryExprNode->op.type == MODULO) {
+        } else if (binaryExprNode->op.type == token::MODULO) {
             return Result<int>(leftValue % rightValue);
         }
         // Add other binary operations here if needed
@@ -95,7 +95,7 @@ Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::parse_binary_expr(con
 
 Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::_parse_primary_expr(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, PreNodeAST *parent) {
 	if (auto node_parenth = dynamic_cast<PreNodeOther*>(peek(nodes))) {
-		if(node_parenth->other.type == OPEN_PARENTH)
+		if(node_parenth->other.type == token::OPEN_PARENTH)
 			return _parse_parenth_expr(nodes, parent);
 		else if(is_unary_operator(node_parenth->other.type))
 			return parse_unary_expr(nodes, parent);

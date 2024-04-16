@@ -110,7 +110,7 @@ inline static token get_token_type(const std::vector<Keyword>& vec, const std::s
     if (it != vec.end()) {
         return it->type;
     }
-    return INVALID;
+    return token::INVALID;
 }
 
 inline static std::string get_token_value(const std::vector<Keyword>& vec, const token& tok) {
