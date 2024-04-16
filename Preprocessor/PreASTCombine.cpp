@@ -25,12 +25,12 @@ void PreASTCombine::visit(PreNodeProgram& node) {
     for(auto & n : node.program) {
         n->accept(*this);
     }
-};
+}
 
 void PreASTCombine::visit(PreNodeUnaryExpr& node) {
     m_tokens.push_back(std::move(node.op));
     node.operand->accept(*this);
-};
+}
 
 void PreASTCombine::visit(PreNodeBinaryExpr& node) {
     node.left->accept(*this);

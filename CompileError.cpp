@@ -208,6 +208,9 @@ std::string CompileError::url_encode(const std::string &value) {
     return encoded.str();
 }
 
+void CompileError::set_message(const std::string &message) {
+	CompileError::m_message = message;
+}
 
 std::string exec(const char *cmd) {
     std::array<char, 128> buffer{};

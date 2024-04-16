@@ -14,6 +14,7 @@ void PreASTDesugar::visit(PreNodeProgram& node) {
         m_macro_lookup.insert({{def->header->name->keyword.val, (int)def->header->args->params.size()}, def.get()});
 		m_macro_string_lookup.insert({def->header->name->keyword.val, def.get()});
     }
+//	std::cout <<"desugar" << std::endl;
 
 //    for(auto & def : node.macro_definitions) {
 //        def->accept(*this);
@@ -178,15 +179,16 @@ void PreASTDesugar::visit(PreNodeMacroHeader& node) {
 }
 
 void PreASTDesugar::visit(PreNodeIterateMacro& node) {
+//	std::cout <<"PreNodeIterateMacro" << std::endl;
     if(node.macro_call->params.size()>1) {
         CompileError(ErrorType::PreprocessorError,"Found incorrect <iterate_macro> syntax.", -1, "", "", "").print();
         exit(EXIT_FAILURE);
     }
-    if(node.parent->parent != nullptr)
-        if(dynamic_cast<PreNodeIterateMacro*>(node.parent->parent->parent) or dynamic_cast<PreNodeLiterateMacro*>(node.parent->parent->parent)) {
-            CompileError(ErrorType::PreprocessorError,"Found nested <iterate_macro>.", -1, "", "", "").print();
-            exit(EXIT_FAILURE);
-        }
+//    if(node.parent->parent != nullptr && node.parent->parent->parent != nullptr)
+//        if(dynamic_cast<PreNodeIterateMacro*>(node.parent->parent->parent) or dynamic_cast<PreNodeLiterateMacro*>(node.parent->parent->parent)) {
+//            CompileError(ErrorType::PreprocessorError,"Found nested <iterate_macro>.", -1, "", "", "").print();
+//            exit(EXIT_FAILURE);
+//        }
     node.macro_call->params[0]->chunk.push_back(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, 0,""),nullptr));
 
 //    node.macro_call->accept(*this);
@@ -253,13 +255,14 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
 }
 
 void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
+//	std::cout <<"PreNodeLiterateMacro" << std::endl;
     if(node.macro_call->params.size()>1) {
         CompileError(ErrorType::PreprocessorError,"Found incorrect <literate_macro> syntax.", -1, "", "", "").exit();
     }
-    if(node.parent->parent != nullptr)
-        if(dynamic_cast<PreNodeIterateMacro*>(node.parent->parent->parent) or dynamic_cast<PreNodeLiterateMacro*>(node.parent->parent->parent)) {
-            CompileError(ErrorType::PreprocessorError,"Found nested <literate_macro>.", -1, "", "", "").exit();
-        }
+//    if(node.parent->parent && node.parent->parent->parent)
+//        if(dynamic_cast<PreNodeIterateMacro*>(node.parent->parent->parent) or dynamic_cast<PreNodeLiterateMacro*>(node.parent->parent->parent)) {
+//            CompileError(ErrorType::PreprocessorError,"Found nested <literate_macro>.", -1, "", "", "").exit();
+//        }
     node.macro_call->params[0]->chunk.push_back(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, 0, ""),nullptr));
 
 	node.literate_tokens->accept(*this);
@@ -303,25 +306,13 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar
 	for(int i= 0; i<definition->args->params.size(); i++) {
 		auto &var = definition->args->params[i]->chunk[0];
 		if(definition->args->params[i]->chunk.size() > 1) {
-			CompileError(ErrorType::SyntaxError,
-			 "Unable to substitute <macro> arguments. Found wrong number of substitution tokens in <macro-header>", definition->name->keyword.line, "", definition->get_string(),definition->name->keyword.file).exit();
+			auto err_msg = "Unable to substitute <macro> arguments. Found wrong number of substitution tokens in <macro-header>. Only <keywords> or <numbers> can be substituted.";
+			auto error = CompileError(ErrorType::SyntaxError, "", definition->name->keyword.line, "", definition->get_string(),definition->name->keyword.file);
+			error.set_message(err_msg);
+			error.exit();
 		}
 		std::pair<std::string, std::unique_ptr<PreNodeChunk>> pair;
-		if(auto node_statement = dynamic_cast<PreNodeStatement*>(var.get())) {
-			if (auto node_keyword = dynamic_cast<PreNodeKeyword *>(node_statement->statement.get())) {
-				pair.first = node_keyword->keyword.val;
-			} else if (auto node_number = dynamic_cast<PreNodeNumber *>(node_statement->statement.get())) {
-				pair.first = node_number->number.val;
-			} else if (auto node_int = dynamic_cast<PreNodeInt *>(node_statement->statement.get())) {
-				pair.first = node_int->number.val;
-			} else {
-				CompileError(ErrorType::SyntaxError,
-				 "Unable to substitute <macro> arguments. Only <keywords> can be substituted.",definition->name->keyword.line, "<keyword>", "", definition->name->keyword.file).exit();
-			}
-		} else {
-			CompileError(ErrorType::SyntaxError,
-			 "Unable to substitute <macro> arguments. Only <keywords> can be substituted.",definition->name->keyword.line, "<keyword>", "", definition->name->keyword.file).exit();
-		}
+		pair.first = var->get_string();
 		pair.second = std::move(call->args->params[i]);
 		substitution_vector.push_back(std::move(pair));
 	}
@@ -343,13 +334,6 @@ std::unique_ptr<PreNodeMacroDefinition> PreASTDesugar::get_macro_definition(PreN
 		return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
 	}
 
-//    for(auto & macro_def : m_main_ptr->macro_definitions) {
-//        if(macro_def->header->name->keyword.val == macro_header->name->keyword.val) {
-//			auto copy = macro_def->clone();
-//			copy->update_parents(nullptr);
-//			return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
-//		}
-//    }
     return nullptr;
 }
 
