@@ -1,0 +1,74 @@
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering cksp
+									Note object with Array
+--------------------------------------------------------------------------------------------}
+
+struct Note
+	declare pitch: int
+	declare velocities[10]: [int]
+
+	function __init__(self, p: int, v: [int])
+		self.pitch := p
+		self.velocities := v
+	end function
+
+	function __repr__(self)
+		return "Note {Pitch: " & self.pitch & "}"
+	end function
+end struct
+
+declare new_note: Note := new Note(69, (10,110,127))
+message("New Note: "&new_note)
+play_note(new_note.pitch, new_note.velocities[0], new_note.samplestart, 0)
+
+declare many_notes[127]: [Note]
+
+// dynamic allocating of Note objects
+for idx, val in midi_notes
+	many_notes[idx] := new Note(val, (110, 127), 50000)
+end for
+
+//Destruction??!?!?!?!
+
+{-------------------------------------------------------------------------------------------
+										Post Lowering
+--------------------------------------------------------------------------------------------}
+
+declare const MAX_STRUCTS := 1000000 // allgemeine constante für structs
+
+declare %Note.allocation[MAX_STRUCTS/10] := (0)
+declare %Note.pitch[MAX_STRUCTS/10]
+declare %Note.velocity[MAX_STRUCTS/10, 10]
+declare $Note.free_idx := 0 // Zeiger auf den nächsten freien index
+
+function Note.__init__(p: int, v: [int])
+	Note.free_idx := search(Note.allocation, 0)
+	if Note.free_idx = -1
+		message("Error: No more free space available to allocate objects of type 'note'")		
+	end if
+	Note.allocation[Note.free_idx] := 1
+	Note.pitch[Note.free_idx] := p
+	Note.velocity[Note.free_idx, i] := v
+	Note.samplestart[Note.free_idx] := s
+	return Note.free_idx
+end function
+
+// overwritten repr function
+function Note.__repr__(object_id)
+	return "Note {Pitch: " & self.pitch & "}"
+end function
+
+function Note.delete(object_id)
+	Note.allocation[object_id] := 0
+end function
+
+declare $new_note := Note.__init__(69, 127, 50000)
+message("New Note: "& Note.__repr__(new_note))
+play_note(Note.pitch[new_note], Note.velocity[new_note], Note.velocity[new_note], 0)
+
+declare %many_notes[127]
+
+for idx := 0 to num_elements(midi_notes)-1
+	many_notes[idx] := Note.__init__(midi_notes[idx], 127, 50000)
+end for
