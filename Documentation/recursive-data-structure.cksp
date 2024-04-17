@@ -1,0 +1,38 @@
+
+
+
+
+
+
+declare maxSize = 100
+declare list[maxSize]        // Speichert Elemente und ihre Verweise
+declare listValue[maxSize]   // Wert des Elements
+declare listNext[maxSize]    // Verweis auf den Index des nächsten Elements
+declare freeIndex = 0        // Zeigt auf den ersten freien Platz im Array
+
+function initializeList()
+    for i from 0 to maxSize-1
+        listNext[i] = i+1   // Jedes Element verweist zunächst auf das nächste
+    listNext[maxSize-1] = -1 // Das Ende der Liste zeigt auf -1 (kein Nachfolger)
+
+function cons(value, headIndex)
+    if freeIndex == -1
+        return -1 // Kein Speicherplatz verfügbar
+    newIndex = freeIndex
+    freeIndex = listNext[freeIndex]
+    listValue[newIndex] = value
+    listNext[newIndex] = headIndex
+    return newIndex
+
+function nil()
+    return -1  // -1 repräsentiert `nil` in dieser Implementierung
+
+
+
+initializeList()
+head = nil()             // Erstelle eine leere Liste
+head = cons(1, head)     // Füge 1 zur Liste hinzu
+head = cons(2, head)   
+
+
+
