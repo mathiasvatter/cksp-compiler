@@ -1,28 +1,28 @@
 // set properties functions
-set_bounds(control, x, y, width, height)
-set_button_properties(button, text, picture, text_alignment, font_type, textpos_y)
-set_knob_properties(knob, text, default_value)
-set_label_properties(label, text, picture, text_alignment, font_type, textpos_y)
-set_level_meter_properties(level_meter, bg_color, off_color, on_color, overload_color)
-set_menu_properties(menu, picture, font_type, text_alignment, textpos_y)
-set_slider_properties(slider, default_value, picture, mouse_behaviour)
-set_switch_properties(switch, text, picture, text_alignment, font_type, textpos_y)
-set_table_properties(table, bar_color, zero_line_color)
-set_text_edit_properties(textedit, text, picture, text_alignment, font_type, textpos_y)
-set_value_edit_properties(valueedit, text, font_type, textpos_y, show_arrows)
-set_waveform_properties(waveform, bar_color, zero_line_color, bg_color, bg_alpha, wave_color, wave_cursor_color, slicemarkers_color, wf_vis_mode)
-set_wavetable2d_properties(wavetable, wt_zone, bg_color, bg_alpha, wave_color, wave_alpha, wave_end_color, wave_end_alpha)
-set_wavetable3d_properties(wavetable, wt_zone, bg_color, bg_alpha, wt_color, wt_alpha, wt_end_color, wt_end_alpha, parallax_x, parallax_y)
+set_bounds(control: int, x: int, y: int, width: int, height: int)
+set_button_properties(button: int, text: any, picture: string, text_alignment: int, font_type: int, textpos_y: int)
+set_knob_properties(knob: int, text: any, default_value: int)
+set_label_properties(label: int, text: any, picture: string, text_alignment: int, font_type: int, textpos_y: int)
+set_level_meter_properties(level_meter: int, bg_color: int, off_color: int, on_color: int, overload_color: int)
+set_menu_properties(menu: int, picture: string, font_type: int, text_alignment: int, textpos_y: int)
+set_slider_properties(slider: int, default_value: int, picture: string, mouse_behaviour: int)
+set_switch_properties(switch: int, text: any, picture: string, text_alignment: int, font_type: int, textpos_y: int)
+set_table_properties(table: int, bar_color: int, zero_line_color: int)
+set_text_edit_properties(textedit: int, text: any, picture: string, text_alignment: int, font_type: int, textpos_y: int)
+set_value_edit_properties(value_edit: int, text: any, font_type: int, textpos_y: int, show_arrows: int)
+set_waveform_properties(waveform: int, bar_color: int, zero_line_color: int, bg_color: int, bg_alpha: int, wave_color: int, wave_cursor_color: int, slicemarkers_color: int, wf_vis_mode: int)
+set_wavetable2d_properties(wavetable: int, wt_zone: int, bg_color: int, bg_alpha: int, wave_color: int, wave_alpha: int, wave_end_color: int, wave_end_alpha: int)
+set_wavetable3d_properties(wavetable: int, wt_zone: int, bg_color: int, bg_alpha: int, wt_color: int, wt_alpha: int, wt_end_color: int, wt_end_alpha: int, parallax_x: int, parallax_y: int)
 
 // builtin functions
 END_USE_CODE
-RESET_CONDITION(unknown)
-SET_CONDITION(unknown)
-USE_CODE_IF(unknown)
-USE_CODE_IF_NOT(unknown)
+RESET_CONDITION(condition)
+SET_CONDITION(condition)
+USE_CODE_IF(condition)
+USE_CODE_IF_NOT(condition)
 _get_engine_par(parameter: int, group: int, slot: int, generic: int): int
-_get_engine_par_disp(parameter: int, group: int, slot: int, generic: int):string
-_get_folder(path_variable: string):string
+_get_engine_par_disp(parameter: int, group: int, slot: int, generic: int): string
+_get_folder(path_variable: string): string
 _load_ir_sample(filename: string, slot: int, generic: int): int
 _num_slices(group_idx: int): int
 _pgs_create_key(keyid: any, size: int)
@@ -39,20 +39,20 @@ _slice_length(group_idx: int, slice_idx: int): int
 _slice_loop_count(group_idx: int, loop_idx: int): int
 _slice_start(group_idx: int, slice_idx: int): int
 _will_never_terminate(event_id: int)
-abs(value: number):number
-acos(value: real):real
+abs(value: number): number
+acos(value: real): real
 add_menu_item(variable: int, text: any, number: int)
 add_text_line(variable: int, text: string)
 allow_group(group_idx: int)
-array_equal(array: int, array: int):boolean
-asin(value: real):real
-atan(value: real):real
+array_equal(array: int, array: int): boolean
+asin(value: real): real
+atan(value: real): real
 attach_level_meter(ui_id: int, group_idx: int, slot_idx: int, channel_idx: int, bus_idx: int)
 attach_zone(waveform: int, zone_id: int, parameter: int)
 by_marks(bitmark: int): int
 by_track(track_idx: int): int
 cc_delivery_request(controller_number: int)
-ceil(value: real):real
+ceil(value: real): real
 change_listener_par(signaltype: int, parameter: int)
 change_note(event_id: int, new_note_number: int)
 change_pan(event_id: int, panorama: int, relative_bit: int)
@@ -84,26 +84,26 @@ fade_out(event_id: int, fade_time: int, stop_voice: int)
 // deprecated
 find_group(group_name: string): int
 find_mod(group_idx: int, mod_name: string): int
-find_target(group_idx: int, mod_idx: int, targetname): int
+find_target(group_idx: int, mod_idx: int, target_name: string): int
 
-find_zone(samplename: string): int
-floor(realvalue):real
-fs_get_filename(int, returnparameter):string
-fs_navigate(int, direction)
-get_control_par(ui_id: number, control_par: int): int
-get_control_par_arr(ui_id: number, control_par: int, index: int): int
-get_control_par_real_arr(ui_id: number, control_par: int, index: int):real
-get_control_par_str(ui_id: number, control_par: int):string
-get_control_par_str_arr(ui_id: number, control_par: int, index: int):string
-get_engine_par(ui_id: number, int, int, int): int
-get_engine_par_disp(ui_id: number, int, int, int):string
-get_engine_par_disp_m(ui_id: number, int, slot, int):string
-get_engine_par_m(parameter, int, slot, int): int
+find_zone(sample_name: string): int
+floor(value: real): real
+fs_get_filename(ui_id: int, return_parameter: int): string
+fs_navigate(ui_id: int, direction: int)
+get_control_par(ui_id: int, control_par: int): int
+get_control_par_arr(ui_id: int, control_par: int, index: int): int
+get_control_par_real_arr(ui_id: int, control_par: int, index: int): real
+get_control_par_str(ui_id: int, control_par: int): string
+get_control_par_str_arr(ui_id: int, control_par: int, index: int): string
+get_engine_par(parameter: int, group: int, slot: int, generic: int): int
+get_engine_par_disp(paramter: int, group: int, slot: int, generic: int): string
+get_engine_par_disp_m(parameter: int, group: int, slot: int, generic: int): string
+get_engine_par_m(parameter: int, group: int, slot: int, generic: int): int
 get_event_ids(array: int)
 get_event_mark(event_id: int, bitmark: int): int
 get_event_par(event_id: int, parameter: int): int
 get_event_par_arr(event_id: int, parameter: int, group_idx: int): int
-get_folder(path_variable: int):string
+get_folder(path_variable: int): string
 get_font_id(filepath: string): int
 get_group_idx(groupname: string): int
 get_group_par(group_idx: int, parameter: int): int
@@ -114,50 +114,50 @@ get_key_type(note_number: int): int
 get_keyrange_max_note(note_number: int): int
 get_keyrange_min_note(note_number: int): int
 get_keyrange_name(note_number: int): int
-get_loop_par(zoneid: int, loopid: int, parameter: int): int
-get_menu_item_str(uiid: int, index: int):string
-get_menu_item_value(uiid: int, index: int): int
-get_menu_item_visibility(uiid: int, index: int): int
-get_mod_idx(group_idx: int, modname: string): int
+get_loop_par(zone_id: int, loop_id: int, parameter: int): int
+get_menu_item_str(ui_id: int, index: int): string
+get_menu_item_value(ui_id: int, index: int): int
+get_menu_item_visibility(ui_id: int, index: int): int
+get_mod_idx(group_idx: int, mod_name: string): int
 get_num_zones(): int
 get_purge_state(group_idx: int): int
-get_sample(zone_id: int,returnparameter: int):string
+get_sample(zone_id: int, return_parameter: int): string
 get_sample_length(zone_id: int): int
-get_target_idx(group_idx, mod_idx: int, targetname: string): int
+get_target_idx(group_idx, mod_idx: int, target_name: string): int
 get_ui_id(variable: number): int
 get_ui_wf_property(waveform: int, property: int, index: int): int
 get_voice_limit(voice_type: int): int
 get_zone_id(zone_idx: int): int
 get_zone_par(zone_id: int, parameter): int
 get_zone_status(zone_id: int): int
-group_name(group_idx):string
-guiidx_to_slotidx(instrguiidx): int
-hide_part(variable, value)
+group_name(group_idx: int): string
+// guiidx_to_slotidx(instr_gui_idx: int): int
+hide_part(variable: any, value: int)
 ignore_controller
-ignore_event(event_id)
+ignore_event(event_id: int)
 ignore_midi
-import_nckp(filepath: string):string
-in_range(value: number, value: number, value: number):bool
+import_nckp(filepath: string): string
+in_range(value: number, value: number, value: number): bool
 inc(expression: int)
 int(value: real): int
 int_to_real(value: int): real
 is_zone_empty(zone_id: int): int
 load_array(array: any, int): int
 load_array_str(array: any, path: string): int
-load_ir_sample(filename: string, slot: int, int): int
-load_ir_sample_m(filename: string, outputidx: int, slot: int, int): int
+load_ir_sample(filename: string, slot: int, generic: int): int
+load_ir_sample_m(filename: string, output_idx: int, slot: int, generic: int): int
 load_native_ui(filepath: string)
 load_midi_file(filepath: string): int
-load_patch(filepath: string, instrslotidx: int)
-load_performance_view(filename: string):string
-log(value: real):real
-log2(value: real):real
-log10(value: real):real
+load_patch(filepath: string, instr_slot_idx: int)
+load_performance_view(filename: string): string
+log(value: real): real
+log2(value: real): real
+log10(value: real): real
 lsb(value: int): int
-make_instr_persistent(variable)
+make_instr_persistent(variable: any)
 make_perfview
-make_persistent(variable)
-message(variableortext: any)
+make_persistent(variable: any)
+message(variable_or_string: any)
 mf_copy_export_area(zone_id: int)
 mf_get_buffer_size(): int
 mf_get_byte_one(): int
@@ -168,120 +168,120 @@ mf_get_event_par(event_id: int, parameter: int): int
 mf_get_first(track_idx: int)
 mf_get_id(): int
 mf_get_last(track_idx: int)
-mf_get_last_filename():string
+mf_get_last_filename(): string
 mf_get_length(): int
-mf_get_mark(event_id, mark): int
+mf_get_mark(event_id: int, mark: int): int
 mf_get_next(track_idx: int)
-mf_get_next_at(track_idx: int, pos)
+mf_get_next_at(track_idx: int, pos: int)
 mf_get_note_length(): int
 mf_get_num_tracks(): int
 mf_get_pos(): int
 mf_get_prev(track_idx: int)
 mf_get_prev_at(track_idx: int, pos: int)
 mf_get_track_idx(): int
-mf_insert_event(track, pos, command, byte1, byte2): int
-mf_insert_file(filepath: string, trackoffset: int, positionoffset: int, mode: int): int
+mf_insert_event(track: int, pos: int, command: int, byte1: int, byte2: int): int
+mf_insert_file(path: string, track_offset: int, position_offset: int, mode: int): int
 mf_remove_event(event_id: int)
 mf_reset(): int
-mf_set_buffer_size(size: int): int
-mf_set_byte_one(value)
-mf_set_byte_two(value)
-mf_set_channel(value)
-mf_set_command(command)
-mf_set_event_par(event_id, parameter, value)
-mf_set_export_area(name, startpos, endpos, starttrack, endtrack): int
-mf_set_note_length(value)
-mf_set_num_export_areas(value)
-mf_set_length(value)
-mf_set_mark(event_id, mark, status)
-mf_set_pos(pos)
-move_control(variable, xgridunit, ygridunit)
-move_control_px(variable, xpospx, ypospx)
-ms_to_ticks(microseconds): int
-msb(value): int
-note_off(event_id)
-num_elements(anyarrayvariable): int
-num_slices(group_idx): int
-num_slices_zone(zone_id): int
-output_channel_name(outputidx): int
-pgs_create_key(keyid, size)
-pgs_create_str_key(keyid)
-pgs_get_key_val(keyid, index): int
-pgs_get_str_key_val(keyid):string
-pgs_key_exists(keyid):boolean
-pgs_set_key_val(keyid, index, value)
-pgs_set_str_key_val(keyid, text)
-pgs_str_key_exists(keyid):boolean
+mf_set_buffer_size(num_events: int): int
+mf_set_byte_one(value: any)
+mf_set_byte_two(value: any)
+mf_set_channel(value: any)
+mf_set_command(command: any)
+mf_set_event_par(event_id: int, parameter: int, value: int)
+mf_set_export_area(name: any, startpos: int, endpos: int, start_track: int, end_track: int)
+mf_set_note_length(value: any)
+mf_set_num_export_areas(value: any)
+mf_set_length(value: any)
+mf_set_mark(event_id: int, mark: int, status: int)
+mf_set_pos(pos: int)
+move_control(variable: any, x_position: int, y_position: int)
+move_control_px(variable: any, x_pos_px: int, y_pos_px: int)
+ms_to_ticks(microseconds: int): int
+msb(value: int): int
+note_off(event_id: int)
+num_elements(array_variable: any): int
+num_slices(group_idx: int): int
+num_slices_zone(zone_id: int): int
+output_channel_name(output_idx: int): int
+pgs_create_key(key_id: any, size: int)
+pgs_create_str_key(key_id: any)
+pgs_get_key_val(key_id: any, index: int): int
+pgs_get_str_key_val(key_id: any): string
+pgs_key_exists(key_id: any): boolean
+pgs_set_key_val(key_id: any, index: int, value: int)
+pgs_set_str_key_val(key_id: any, text: string)
+pgs_str_key_exists(key_id: any): boolean
 play_note(note_number: int, velocity: int, sampleoffset: int, duration: int): int
-pow(value: real, value: real):real
-purge_group(group_idx, mode): int
+pow(value: real, value: real): real
+purge_group(group_idx: int, mode: int): int
 random(min: int, max: int): int
 read_persistent_var(variable: any)
-real(value: int):real
+real(value: int): real
 real_to_int(value: real): int
-redirect_midi(event_id: int, instrslotidx: int, instrbankslotidx: int)
-redirect_output(event_id: int, outputtype: int, outputidx: int)
-remove_keyrange(keynumber: int)
+redirect_midi(event_id: int, instr_slot_idx: int, instr_bank_slot_idx: int)
+redirect_output(event_id: int, output_type: int, output_idx: int)
+remove_keyrange(key_number: int)
 reset_engine
 reset_ksp_timer
 reset_rls_trig_counter(note: int)
-round(value: real):real
+round(value: real): real
 save_array(array: any, mode: int): int
 save_array_str(array: any, filepath: string): int
 save_midi_file(filepath: string): int
-search(intarray: int, value: int): int
-search(intarray: int, value: int, from: int, to: int): int
+search(array: int, value: int): int
+search(array: int, value: int, from: int, to: int): int
 set_control_help(variable: number, text: string)
-set_control_par(number, int, int)
-set_control_par_arr(number, int, int, int)
-set_control_par_real_arr(number, int, real, int)
-set_control_par_str(number, int, any)
-set_control_par_str_arr(number, int, any, int)
+set_control_par(ui_id: number, control_parameter: int, value: int)
+set_control_par_arr(ui_id: number, control_parameter: int, value: int, index: int)
+set_control_par_real_arr(ui_id: number, control_parameter: int, value: real, index: int)
+set_control_par_str(ui_id: number, control_parameter: int, text: any)
+set_control_par_str_arr(ui_id: number, control_parameter: int, value: any, index: int)
 set_controller(cc_num: int, value: int)
 set_engine_par(parameter: int, value: int, group: int, slot: int, generic: int): int
-set_engine_par_m(int, int, int, int, int): int
+set_engine_par_m(parameter: int, value: int, group: int, slot: int, generic: int): int
 set_event_mark(event_id: int, bitmark: int)
 set_event_par(event_id: int, parameter: int, value: int)
 set_event_par_arr(event_id: int, parameter: int, value: int, group_idx: int)
-set_group_dyn_par_name(groupdynpar: int, name: string)
-set_key_color(note_number: int, keycolorconstant: int)
-set_key_name(keynumber: int, keyname: string)
-set_key_pressed(keynumber: int, value: int)
+set_group_dyn_par_name(group_dyn_par: int, name: string)
+set_key_color(note_number: int, key_color_constant: int)
+set_key_name(key_number: int, key_name: string)
+set_key_pressed(key_number: int, value: int)
 set_key_pressed_support(value: int)
-set_key_type(note_number: int, keytypeconstant: int)
-set_keyrange(keynumber1, keynumber2, rangename)
-set_knob_defval(knobvariable, value)
-set_knob_label(knobvariable, text: string)
-set_knob_unit(knobvariable, unit: int)
-set_listener(signaltype: int, parameter: int)
-set_loop_par(zone_id: int, loopid: int, parameter: int, value: int): int
+set_key_type(note_number: int, key_type_constant: int)
+set_keyrange(key_number1: int, key_number2: int, range_name: string)
+set_knob_defval(knob_variable: int, value: int)
+set_knob_label(knob_variable: int, text: string)
+set_knob_unit(knob_variable: int, unit: int)
+set_listener(signal_type: int, parameter: int)
+set_loop_par(zone_id: int, loop_id: int, parameter: int, value: int): int
 set_menu_item_str(menu_id: int, index: int, text: string)
 set_menu_item_value(menu_id: int, index: int, value)
 set_menu_item_visibility(menu_id: int, index: int, visibility: int)
-set_midi(channel, command, byte1, byte2)
-set_nrpn(address, value)
-set_num_user_zones(size)
-set_rpn(address, value)
-set_sample(zone_id, filepath): int
-set_script_title(text)
-set_skin_offset(value)
-set_snapshot_type(snapshottype)
-set_table_steps_shown(intarray: int, numsteps: int)
-set_text(variable: number, text: string)
-set_ui_color(hexvalue: int)
+set_midi(channel: int, command: int, byte_1: int, byte_2: int)
+set_nrpn(address: int, value: int)
+set_num_user_zones(size: int)
+set_rpn(address: int, value: int)
+set_sample(zone_id: int, filepath: string): int
+set_script_title(text: string)
+set_skin_offset(value: int)
+set_snapshot_type(snapshot_type: int)
+set_table_steps_shown(array: int, num_steps: int)
+set_text(variable: int, text: string)
+set_ui_color(hex_value: int)
 set_ui_height(height: int)
 set_ui_height_px(value: int)
 set_ui_wf_property(waveform: int, property: int, index: int, value: int)
 set_ui_width_px(value: int)
-set_voice_limit(voicetype: int, value: int)
+set_voice_limit(voice_type: int, value: int)
 set_zone_par(zone_id: int, parameter: int, value: int): int
-set_map_editor_event_color(hexvalue: int)
+set_map_editor_event_color(hex_value: int)
 sgn(value: number): int
-sh_left(int, int): int
-sh_right(int, int): int
+sh_left(expression: int, shift_bits: int): int
+sh_right(expression: int, shift_bits: int): int
 show_library_tab
 signbit(value: number): int
-sin(value: real):real
+sin(value: real): real
 slice_idx_loop_end(group_idx: int, loop_idx: int): int
 slice_idx_loop_start(group_idx: int, loop_idx: int): int
 slice_length(group_idx: int, slice_idx: int): int
@@ -289,9 +289,9 @@ slice_loop_count(group_idx: int, loop_idx: int): int
 slice_start(group_idx: int, slice_idx: int): int
 sort(array: number, direction: int)
 sort(array: number, direction: int, from: int, to: int)
-sqrt(value: real):real
+sqrt(value: real): real
 stop_wait(callback_id: int, parameter: int)
-tan(value: real):real
+tan(value: real): real
 ticks_to_ms(ticks: int): int
 unload_slot(instr_slot_idx: int)
 wait(wait_time: int)
@@ -305,14 +305,14 @@ zone_slice_idx_loop_start(zone_id: int, loop_idx: int): int
 zone_slice_length(zone_id: int, slice_idx: int): int
 zone_slice_loop_count(zone_id: int, loop_idx: int): int
 zone_slice_start(zone_id: int, slice_idx: int): int
-int_to_real(value: int):real
-real(value: int):real
-real_to_int(value: real):int
-int(value: real):int
+int_to_real(value: int): real
+real(value: int): real
+real_to_int(value: real): int
+int(value: real): int
 continue
 
 // nks 2 builtin functions
 set_nks_nav_par(group_idx: int,index: int,param_id: int)
 get_nks_nav_par(group_idx: int, index: int): int
-set_nks_nav_name(group_idx: int,index: int,name: string)
+set_nks_nav_name(group_idx: int,index: int, name: string)
 get_nks_nav_name(group_idx: int, index: int): string
