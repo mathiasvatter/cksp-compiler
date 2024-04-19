@@ -55,8 +55,8 @@ void NCKPTranslator::visit(JSONObject &object) {
 	}
 }
 
-std::vector<std::unique_ptr<NodeAST>> NCKPTranslator::collect_ui_variables() {
-	std::vector<std::unique_ptr<NodeAST>> ui_variables;
+std::vector<std::unique_ptr<DataStructure>> NCKPTranslator::collect_ui_variables() {
+	std::vector<std::unique_ptr<DataStructure>> ui_variables;
 	for(auto &ui_pair : m_ui_controls) {
 		auto it = UI_CONTROL_INDEX.find(ui_pair.second);
 		if(it == UI_CONTROL_INDEX.end()) {
@@ -68,10 +68,10 @@ std::vector<std::unique_ptr<NodeAST>> NCKPTranslator::collect_ui_variables() {
 		auto node_ui_control = std::unique_ptr<NodeUIControl>(static_cast<NodeUIControl*>(node_ast.release()));
 		if(auto node_variable = cast_node<NodeVariable>(node_ui_control->control_var.get())) {
 			node_variable->name = ui_var;
-            node_variable->var_type = UI_Control;
+            node_variable->data_type = UI_Control;
 		} else if(auto node_array  = cast_node<NodeArray>(node_ui_control->control_var.get())) {
 			node_array->name = ui_var;
-            node_array->var_type = UI_Control;
+            node_array->data_type = UI_Control;
 		}
 		auto num_params = node_ui_control->params->params.size();
 		node_ui_control->params->params.clear();

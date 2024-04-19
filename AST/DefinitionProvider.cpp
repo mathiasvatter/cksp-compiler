@@ -1,0 +1,199 @@
+//
+// Created by Mathias Vatter on 05.04.24.
+//
+
+#include "DefinitionProvider.h"
+
+DefinitionProvider::DefinitionProvider(
+        const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
+        const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
+        const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
+        const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
+        const std::vector<std::unique_ptr<DataStructure>> &m_external_variables)
+        : m_builtin_variables(m_builtin_variables),
+        m_builtin_functions(m_builtin_functions),
+        m_builtin_arrays(m_builtin_arrays),
+        m_builtin_widgets(m_builtin_widgets),
+        m_external_variables(m_external_variables) {
+    for(auto& var : m_external_variables) {
+        m_declared_data_structures.back().insert({var->name, var.get()});
+    }
+
+}
+
+DataStructure* DefinitionProvider::get_declaration(DataStructure* var) {
+
+    // get builtin declaration if it exists
+    DataStructure *node_builtin_declaration = nullptr;
+    if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
+    if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var->name);
+
+    auto compile_error = CompileError(ErrorType::Variable, "",var->tok.line, "", var->name, var->tok.file);
+    // is declaration and is builtin -> compile error
+    if (!var->is_reference && node_builtin_declaration) {
+        compile_error.m_message = "Variable shadows builtin variable. Try renaming the variable.";
+        compile_error.exit();
+    }
+
+    // if declaration
+    if (!var->is_reference) {
+        if (get_declared_data_structure(var->name)) {
+            compile_error.m_message = "Data Structure has already been declared.";
+            compile_error.print();
+        } else {
+            m_declared_data_structures.back().insert({var->name, var});
+        }
+        // if reference
+    } else {
+        if (node_builtin_declaration) {
+            return node_builtin_declaration;
+        } else if (auto node_declaration = get_declared_data_structure(var->name)) {
+            return node_declaration;
+        }
+    }
+    return nullptr;
+}
+
+
+std::unique_ptr<DataStructure> DefinitionProvider::build_data_structure(std::unique_ptr<NodeVariable> var, DataStructure* declaration) {
+    // if declaration is of data type array -> exchange with array node
+    if(var->data_type != declaration->data_type) {
+        if(declaration->data_type == Array) {
+            auto node_array = make_array(var->name, 0, var->tok, var->parent);
+            node_array->sizes->params.clear();
+        }
+
+    }
+    match_data_structure()
+
+
+}
+
+void DefinitionProvider::match_data_structure(DataStructure* reference, DataStructure* declaration) {
+    // get declaration to declaration
+    reference->declaration = declaration;
+    // mark is used
+    reference->is_used = true;
+    reference->is_engine = declaration-> is_engine;
+    reference->persistence = declaration->persistence;
+    reference->is_local = declaration->is_local;
+    reference->is_global = declaration->is_global;
+    reference->is_compiler_return = declaration->is_compiler_return;
+}
+
+
+std::unique_ptr<DataStructure> DefinitionProvider::build_data_structure(std::unique_ptr<NodeArray> var, DataStructure* declaration) {
+
+}
+
+
+NodeVariable* DefinitionProvider::get_builtin_variable(const std::string& var) {
+    auto it = m_builtin_variables.find(var);
+    if(it != m_builtin_variables.end()) {
+        return it->second.get();
+    }
+    return nullptr;
+}
+
+NodeArray* DefinitionProvider::get_builtin_array(const std::string& arr) {
+    auto it = m_builtin_arrays.find(arr);
+    if(it != m_builtin_arrays.end()) {
+        return it->second.get();
+    }
+    return nullptr;
+}
+
+NodeUIControl* DefinitionProvider::get_builtin_widget(const std::string &ui_control) {
+    auto it = m_builtin_widgets.find(ui_control);
+    if(it != m_builtin_widgets.end()) {
+        return it->second.get();
+    }
+    return nullptr;
+}
+
+NodeFunctionHeader* DefinitionProvider::get_builtin_function(const std::string &function, int params) {
+    auto it = m_builtin_functions.find({function, params});
+    if(it != m_builtin_functions.end()) {
+        return it->second.get();
+    }
+    return nullptr;
+}
+
+NodeVariable *DefinitionProvider::get_declared_variable(const std::string& var) {
+    for (auto rit = m_declared_variables.rbegin(); rit != m_declared_variables.rend(); ++rit) {
+        auto it = rit->find(var);
+        if (it != rit->end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
+    return nullptr;
+}
+
+NodeArray *DefinitionProvider::get_declared_array(const std::string& arr) {
+    for (auto rit = m_declared_arrays.rbegin(); rit != m_declared_arrays.rend(); ++rit) {
+        auto it = rit->find(arr);
+        if (it != rit->end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
+    return nullptr;
+}
+
+DataStructure *DefinitionProvider::get_declared_data_structure(const std::string& data) {
+    std::string var_without_identifier = data;
+    if (data[0] == '_' && data[1] != '_') {
+        var_without_identifier = var_without_identifier.erase(0,1);
+    } else if (data.ends_with(".raw")) {
+        var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
+    }
+    for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
+        auto it = rit->find(var_without_identifier);
+        if (it != rit->end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
+    return nullptr;
+}
+
+NodeArray *DefinitionProvider::get_raw_declared_array(const std::string& var) {
+    std::string var_without_identifier = var;
+    if (var[0] == '_' && var[1] != '_') {
+        var_without_identifier = var_without_identifier.erase(0,1);
+    } else if (var.ends_with(".raw")) {
+        var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
+    }
+    return get_declared_array(var_without_identifier);
+}
+
+NodeUIControl *DefinitionProvider::get_declared_control(NodeUIControl *ctr) {
+    for (auto rit = m_declared_controls.rbegin(); rit != m_declared_controls.rend(); ++rit) {
+        auto it = rit->find(ctr->get_string());
+        if (it != rit->end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
+    return nullptr;
+}
+
+bool DefinitionProvider::add_scope() {
+    m_declared_variables.emplace_back();
+    m_declared_arrays.emplace_back();
+    m_declared_controls.emplace_back();
+    m_declared_data_structures.emplace_back();
+    return true;
+}
+
+bool DefinitionProvider::remove_scope() {
+    if(m_declared_data_structures.empty() || m_declared_variables.empty() || m_declared_arrays.empty() || m_declared_controls.empty()) {
+        return false;
+    }
+    m_declared_variables.pop_back();
+    m_declared_arrays.pop_back();
+    m_declared_controls.pop_back();
+    m_declared_data_structures.pop_back();
+    return true;
+}

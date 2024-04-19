@@ -18,18 +18,18 @@ void ASTPrinter::visit(NodeString &node) {
 
 void ASTPrinter::visit(NodeVariable &node) {
     if(node.persistence)
-        std::cout << "read ";
-    if(node.var_type == VarType::Polyphonic)
+        std::cout << " read ";
+    if(node.data_type == DataType::Polyphonic)
         std::cout << " polyphonic ";
-    else if(node.var_type == VarType::Const)
+    else if(node.data_type == DataType::Const)
         std::cout << " const ";
-    std::cout << "(var)" << node.name;
+    std::cout << node.name;
 }
 
 void ASTPrinter::visit(NodeArray &node) {
     if(node.persistence)
         std::cout << "read ";
-    std::cout << "(arr)" << node.name;
+    std::cout << node.name;
     std::cout << "[";
     node.sizes->accept(*this);
     std::cout << "].at(";
@@ -46,7 +46,9 @@ void ASTPrinter::visit(NodeUIControl &node) {
 
 void ASTPrinter::visit(NodeDeclareStatement &node) {
     std::cout << "declare ";
-    node.to_be_declared->accept(*this);
+    for(auto const &decl : node.to_be_declared) {
+        decl->accept(*this);
+    }
     if(node.assignee != nullptr) {
         std::cout << ":= ";
         node.assignee->accept(*this);
@@ -107,11 +109,11 @@ void ASTPrinter::visit(NodeAssignStatement &node) {
 }
 
 void ASTPrinter::visit(NodeSingleAssignStatement &node) {
-    std::cout << "VariableAssign(";
+    std::cout << "";
     node.array_variable->accept(*this);
     std::cout << ":= ";
     node.assignee->accept(*this);
-    std::cout << ")";
+    std::cout << "";
 }
 
 void ASTPrinter::visit(NodeConstStatement &node) {
@@ -139,9 +141,9 @@ void ASTPrinter::visit(NodeFamilyStatement &node) {
 }
 
 void ASTPrinter::visit(NodeStatement &node) {
-    std::cout << "Stmt(" ;
+//    std::cout << "Stmt(" ;
     node.statement->accept(*this);
-    std::cout << ")" << std::endl;
+    std::cout << std::endl;
 }
 
 void ASTPrinter::visit(NodeIfStatement &node) {
@@ -188,9 +190,9 @@ void ASTPrinter::visit(NodeSelectStatement &node) {
 }
 
 void ASTPrinter::visit(NodeCallback &node) {
-    std::cout << "Callback(" << node.begin_callback << ")" << std::endl;
+    std::cout << node.begin_callback << std::endl;
     node.statements->accept(*this);
-    std::cout << "End_callback(" << node.end_callback << ")"<< std::endl;
+    std::cout << node.end_callback << std::endl;
 }
 
 void ASTPrinter::visit(NodeFunctionHeader &node) {

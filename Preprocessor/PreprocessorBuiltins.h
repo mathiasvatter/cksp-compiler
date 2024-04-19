@@ -19,7 +19,7 @@ public:
     std::unique_ptr<NodeArray> parse_builtin_array();
     Result<std::unique_ptr<NodeFunctionHeader>> parse_builtin_function();
 	Result<std::unique_ptr<NodeUIControl>> parse_builtin_ui_control();
-    Result<std::pair<std::vector<ASTType>, std::vector<VarType>>> parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args);
+    Result<std::pair<std::vector<ASTType>, std::vector<DataType>>> parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args);
 
     [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &get_builtin_variables() const;
     [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &get_builtin_arrays() const;
@@ -45,7 +45,7 @@ private:
 
     static ASTType get_identifier_type(char identifier);
     static ASTType get_type_annotation(const Token& tok);
-    static VarType get_var_type_annotation(const std::string& keyword);
+    static DataType get_var_type_annotation(const std::string& keyword);
     static bool is_property_function(const std::string& fun_name);
 };
 

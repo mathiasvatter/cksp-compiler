@@ -139,7 +139,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_
     Token func_name = consume(m_tokens); // consume function name
     std::unique_ptr<NodeParamList> func_args = std::unique_ptr<NodeParamList>(new NodeParamList({}, func_name));
     std::vector<ASTType> arg_types;
-    std::vector<VarType> arg_var_types;
+    std::vector<DataType> arg_var_types;
     bool has_forced_parenth = false;
     if (peek(m_tokens).type == token::OPEN_PARENTH) {
         has_forced_parenth = true;
@@ -181,7 +181,7 @@ Result<std::unique_ptr<NodeUIControl>> PreprocessorBuiltins::parse_builtin_ui_co
 		return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::PreprocessorError,
 		"Failed loading builtins. Found unknown <engine_widget> syntax.", peek(m_tokens).line, "<Keyword>", peek(m_tokens).val, peek(m_tokens).file));
 	}
-	std::unique_ptr<NodeAST> node_var;
+	std::unique_ptr<DataStructure> node_var;
 	if(peek(m_tokens, 1).type == token::OPEN_BRACKET) {
 		node_var = std::move(parse_builtin_array());
 		consume(m_tokens); // consume open bracket
@@ -192,7 +192,7 @@ Result<std::unique_ptr<NodeUIControl>> PreprocessorBuiltins::parse_builtin_ui_co
 	}
 	std::unique_ptr<NodeParamList> params = std::unique_ptr<NodeParamList>(new NodeParamList({}, tok));
 	std::vector<ASTType> arg_types;
-	std::vector<VarType> arg_var_types;
+	std::vector<DataType> arg_var_types;
 	if (peek(m_tokens).type == token::OPEN_PARENTH) {
 		consume(m_tokens); // consume (
 		if(peek(m_tokens).type != token::CLOSED_PARENTH) {
@@ -236,16 +236,16 @@ ASTType PreprocessorBuiltins::get_type_annotation(const Token& tok) {
     return type;
 }
 
-VarType PreprocessorBuiltins::get_var_type_annotation(const std::string& keyword) {
+DataType PreprocessorBuiltins::get_var_type_annotation(const std::string& keyword) {
     if(keyword.find("array") != std::string::npos) {
         return Array;
     }
     return Mutable;
 }
 
-Result<std::pair<std::vector<ASTType>, std::vector<VarType>>> PreprocessorBuiltins::parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args) {
+Result<std::pair<std::vector<ASTType>, std::vector<DataType>>> PreprocessorBuiltins::parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args) {
     std::vector<ASTType> arg_types;
-    std::vector<VarType> arg_var_types;
+    std::vector<DataType> arg_var_types;
     while(peek(m_tokens).type != token::CLOSED_PARENTH) {
         if(peek(m_tokens).type == token::CLOSED_PARENTH) break;
         if(peek(m_tokens).type == token::KEYWORD or peek(m_tokens).type == token::TO) {
@@ -256,20 +256,20 @@ Result<std::pair<std::vector<ASTType>, std::vector<VarType>>> PreprocessorBuilti
             if(peek(m_tokens).type == token::TYPE) {
                 consume(m_tokens); // consume semicolon
                 if(peek(m_tokens).type != token::KEYWORD) {
-                    return Result<std::pair<std::vector<ASTType>, std::vector<VarType>>>(CompileError(ErrorType::PreprocessorError,
+                    return Result<std::pair<std::vector<ASTType>, std::vector<DataType>>>(CompileError(ErrorType::PreprocessorError,
                       "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
                 }
                 tok = consume(m_tokens);
             }
             arg_types.push_back(get_type_annotation(tok));
         } else {
-            return Result<std::pair<std::vector<ASTType>, std::vector<VarType>>>(CompileError(ErrorType::PreprocessorError,
-        "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
+            return Result<std::pair<std::vector<ASTType>, std::vector<DataType>>>(CompileError(ErrorType::PreprocessorError,
+                                                                                               "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
         }
         if(peek(m_tokens).type == token::COMMA) consume(m_tokens); // consume comma
     }
     auto result_pair = std::pair(arg_types, arg_var_types);
-    return Result<std::pair<std::vector<ASTType>, std::vector<VarType>>>(result_pair);
+    return Result<std::pair<std::vector<ASTType>, std::vector<DataType>>>(result_pair);
 }
 
 const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &PreprocessorBuiltins::get_builtin_variables() const {

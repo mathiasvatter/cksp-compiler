@@ -25,7 +25,7 @@ public:
     static std::unique_ptr<NodeInt> make_int(int32_t value, NodeAST* parent);
     std::unique_ptr<NodeParamList> make_init_array_list(const std::vector<int32_t>& values, NodeAST* parent);
     std::unique_ptr<NodeStatement> make_declare_array(const std::string& name, int32_t size, const std::vector<int32_t>& values, NodeAST* parent);
-    std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, VarType type, NodeAST* parent);
+    std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, DataType type, NodeAST* parent);
     std::unique_ptr<NodeStatementList> array_initialization(NodeArray* array, NodeParamList* list);
     std::unique_ptr<NodeStatementList> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeStatementList> body, NodeAST* parent);
     static std::unique_ptr<NodeArray> make_array(const std::string& name, int32_t size, const Token& tok, NodeAST* parent);
@@ -70,7 +70,9 @@ public:
 		node.right->accept(*this);
 	};
     virtual void visit(NodeDeclareStatement& node) {
-        node.to_be_declared ->accept(*this);
+        for(auto const &decl : node.to_be_declared) {
+            decl->accept(*this);
+        }
 		if(node.assignee)
         	node.assignee -> accept(*this);
 	};
