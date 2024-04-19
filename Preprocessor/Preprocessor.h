@@ -7,7 +7,7 @@
 #include <utility>
 
 #include "../AST/AST.h"
-#include "../Parser.h"
+#include "../Parser/Parser.h"
 #include "../Processor/Processor.h"
 
 /// Bundles all preprocessor related classes and steps in one class

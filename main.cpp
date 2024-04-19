@@ -1,7 +1,7 @@
 #include <iostream>
 #include <filesystem>
 
-#include "Parser.h"
+#include "Parser/Parser.h"
 #include "Preprocessor/Preprocessor.h"
 #include "AST/ASTVisitor.h"
 #include "AST/ASTDesugar.h"
