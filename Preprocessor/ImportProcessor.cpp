@@ -7,8 +7,8 @@
 #include <utility>
 #include "../JSON/JSONParser.h"
 #include "../JSON/JSONVisitor.h"
-#include "../FileHandler.h"
-#include "../PathHandler.h"
+#include "../misc/FileHandler.h"
+#include "../misc/PathHandler.h"
 
 ImportProcessor::ImportProcessor(std::vector<Token> tokens, std::string current_file, DefinitionProvider* definition_provider)
         : Processor(std::move(tokens)), m_def_provider(definition_provider), m_current_file(std::move(current_file)) {

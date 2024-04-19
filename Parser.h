@@ -9,7 +9,7 @@
 #include "Tokenizer/Tokenizer.h"
 #include "AST/AST.h"
 #include "Tokenizer/Tokens.h"
-#include "Result.h"
+#include "misc/Result.h"
 
 
 // Hilfsfunktion, die das Result-Objekt zurückgibt, wenn kein Fehler vorliegt.

@@ -16,9 +16,9 @@
 #include <fstream>
 #include <sstream>
 
-#include "../Result.h"
+#include "../misc/Result.h"
 #include "Tokens.h"
-#include "../FileHandler.h"
+#include "../misc/FileHandler.h"
 
 /*
  * Token struct that gets line numbers, the token type and its value
