@@ -104,8 +104,10 @@ Result<std::string> PathHandler::resolve_overlap(const std::string &base_path, c
 
 	// Überprüfen, ob keine Übereinstimmung gefunden wurde
 	if (baseParts.empty() || relativeParts.empty() || baseParts.back() != relativeParts.front()) {
-		return Result<std::string>(CompileError(ErrorType::FileError,
-												"Could not resolve paths.", -1, "valid path", "", ""));
+		auto error = CompileError(ErrorType::FileError,
+		"Could not resolve paths.", m_current_token.line, "valid path", "", m_current_file);
+		error.m_got = base.string() + ", " + relative.string();
+		return Result<std::string>(error);
 	}
 
 	baseParts.pop_back(); //erase common bit
@@ -117,5 +119,42 @@ Result<std::string> PathHandler::resolve_overlap(const std::string &base_path, c
 		mergedPath /= part;
 	}
 	return Result<std::string>(mergedPath.string());
+}
+
+Result<std::string> PathHandler::resolve_import_path(const std::string &import_path) {
+	auto absolute_path = resolve_path(import_path);
+	if(absolute_path.is_error()) {
+		return Result<std::string>(absolute_path.get_error());
+	}
+	auto valid_path = check_valid_path(absolute_path.unwrap());
+	if(valid_path.is_error()) {
+		return Result<std::string>(valid_path.get_error());
+	}
+	return Result<std::string>(valid_path.unwrap());
+}
+
+Result<std::vector<std::string>> PathHandler::get_directory_files(const std::string &directory_path) {
+	std::vector<std::string> file_paths;
+	std::filesystem::path dir_path(directory_path);
+	auto error = CompileError(ErrorType::FileError,
+							  "", m_current_token.line, "valid path", dir_path.string(), m_current_file);
+	// Überprüfen, ob der gegebene Pfad tatsächlich ein Verzeichnis ist
+	if (!std::filesystem::is_directory(dir_path)) {
+		error.m_message = "Given path is not a directory";
+		return Result<std::vector<std::string>>(error);
+	}
+
+	// Durchlaufen aller Dateien im Verzeichnis und Unterverzeichnissen
+	for (const auto& entry : std::filesystem::recursive_directory_iterator(dir_path)) {
+		if (!entry.is_directory()) {
+			std::filesystem::path file_path = entry.path();
+			// Filtern der Dateien, die die Endungen .ksp oder .cksp haben
+			if (file_path.extension() == ".ksp" || file_path.extension() == ".cksp") {
+				file_paths.push_back(file_path.string());
+			}
+		}
+	}
+
+	return Result<std::vector<std::string>>(file_paths);
 }
 

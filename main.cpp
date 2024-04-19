@@ -13,7 +13,7 @@
 #include "Generator/ASTGenerator.h"
 #include "AST/ASTDesugarStructs.h"
 #include "Preprocessor/ImportProcessor.h"
-#include "FileHandler.h"
+#include "misc/FileHandler.h"
 #include "CommandLineOptions.h"
 #include "BuiltinsProcessing/DefinitionProvider.h"
 

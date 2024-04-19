@@ -3,7 +3,7 @@
 //
 
 #include "PreASTPragma.h"
-#include "../../PathHandler.h"
+#include "../../misc/PathHandler.h"
 
 void PreASTPragma::visit(PreNodeProgram& node) {
     for(auto & n : node.program) {

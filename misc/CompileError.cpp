@@ -3,7 +3,7 @@
 //
 
 #include "CompileError.h"
-#include "Tokenizer/Tokenizer.h"
+#include "../Tokenizer/Tokenizer.h"
 
 #include <utility>
 #include <format>

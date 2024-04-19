@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "AST/AST.h"
+#include "../AST/AST.h"
 
 
 class PathHandler {
@@ -33,17 +33,13 @@ public:
 	 */
 	Result<std::string> generate_output_file(const std::string& absolute_path);;
 
-	Result<std::string> resolve_import_path(const std::string& import_path) {
-		auto absolute_path = resolve_path(import_path);
-		if(absolute_path.is_error()) {
-			return Result<std::string>(absolute_path.get_error());
-		}
-		auto valid_path = check_valid_path(absolute_path.unwrap());
-		if(valid_path.is_error()) {
-			return Result<std::string>(valid_path.get_error());
-		}
-		return Result<std::string>(valid_path.unwrap());
-	};
+	/**
+	 * @brief Resolves the import path to an absolute path.
+	 *
+	 * @param import_path The path provided in the import statement.
+	 * @return A Result object containing the resolved path as a string if successful, or a CompileError if unsuccessful.
+	 */
+	Result<std::string> resolve_import_path(const std::string& import_path);;
 
 	/**
 	 * @brief Returns the absolute path of a given path in combination with the current file.
@@ -67,6 +63,14 @@ public:
 	 * @return A Result object containing the resolved path as a string if successful, or a CompileError if unsuccessful.
 	 */
 	Result<std::string> resolve_overlap(const std::string& base_path, const std::string& relative_path);
+
+	/**
+	 * @brief Returns a vector of all files in a given directory.
+	 *
+	 * @param directory_path The path of the directory.
+	 * @return A Result object containing the vector of file paths if successful, or a CompileError if unsuccessful.
+	 */
+	Result<std::vector<std::string>> get_directory_files(const std::string& directory_path);
 
 };
 
