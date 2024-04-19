@@ -44,7 +44,6 @@ void ASTTypeCasting::visit(NodeParamList& node) {
         CompileError(ErrorType::TypeError,"Found different types in declaration.", node.tok.line, "", "", node.tok.file).print();
         exit(EXIT_FAILURE);
     }
-
 }
 
 void ASTTypeCasting::visit(NodeUIControl& node) {
@@ -100,7 +99,8 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
         } else if(node.to_be_declared->type == Unknown) {
             node.to_be_declared->type = node.assignee->type;
         } else if(node.to_be_declared->type != Unknown and node.assignee->type != node.to_be_declared->type) {
-            CompileError(ErrorType::TypeError, "Found incorrect variable type in declaration.", node.tok.line, "", "",
+            CompileError(ErrorType::TypeError, "Found incorrect variable type in declaration.", node.tok.line,
+                         type_to_string(node.to_be_declared->type), type_to_string(node.assignee->type),
                          node.tok.file).print();
 //            exit(EXIT_FAILURE);
         }
@@ -149,7 +149,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 
 	auto node_callback_id = cast_node<NodeCallback>(node.parent);
 	if(node_callback_id) {
-		if(node.var_type != UI_Control) {
+		if(node.data_type != UI_Control) {
             CompileError(ErrorType::TypeError,
                          "Variable needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line,
                          "<UI_Control>", node.get_string(), node.tok.file).print();
@@ -202,7 +202,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
 //    }
 
 	auto node_callback_id = cast_node<NodeCallback>(node.parent);
-	if(node_callback_id and node.var_type != UI_Control) {
+	if(node_callback_id and node.data_type != UI_Control) {
 		CompileError(ErrorType::TypeError,"Array needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line, "<UI_Control>", node.get_string(), node.tok.file).exit();
 	}
 
@@ -224,7 +224,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
     if(node.indexes->type != Integer and node.indexes->type != Unknown)
         err.exit();
 
-    if(node.var_type == UI_Control and node.indexes->params.empty()) {
+    if(node.data_type == UI_Control and node.indexes->params.empty()) {
         auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
         if(node_control_function and contains(node_control_function->name, "control_par")) {
             auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(

@@ -5,6 +5,7 @@
 
 #include "AST.h"
 #include "ASTVisitor.h"
+#include "ASTHandler.h"
 
 // ************* NodeAST Base Class ***************
 void NodeAST::accept(ASTVisitor &visitor) {
@@ -14,6 +15,18 @@ void NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 		newNode->parent = parent;
 		parent->replace_child(this, std::move(newNode));
 	}
+}
+
+// ************* DataStructure ***************
+void DataStructure::accept(ASTVisitor &visitor) {
+}
+DataStructure::DataStructure(const DataStructure& other)
+        : NodeAST(other),
+          is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
+          is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
+          data_type(other.data_type), name(other.name), declaration(other.declaration) {}
+std::unique_ptr<NodeAST> DataStructure::clone() const {
+    return std::make_unique<DataStructure>(*this);
 }
 
 // ************* NodeDeadCode ***************
@@ -53,10 +66,7 @@ void NodeVariable::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeVariable::NodeVariable(const NodeVariable& other)
-        : NodeAST(other),
-          is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
-          is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
-          var_type(other.var_type), name(other.name), declaration(other.declaration) {}
+        : DataStructure(other) {}
 std::unique_ptr<NodeAST> NodeVariable::clone() const {
     return std::make_unique<NodeVariable>(*this);
 }
@@ -85,13 +95,15 @@ void NodeArray::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeArray::NodeArray(const NodeArray& other)
-        : NodeAST(other), is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
-          is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
-          var_type(other.var_type), name(other.name),
-          sizes(clone_unique(other.sizes)), indexes(clone_unique(other.indexes)),
-          declaration(other.declaration), dimensions(other.dimensions) {}
+        : DataStructure(other), show_brackets(other.show_brackets), sizes(clone_unique(other.sizes)),
+          indexes(clone_unique(other.indexes)), dimensions(other.dimensions) {}
 std::unique_ptr<NodeAST> NodeArray::clone() const {
     return std::make_unique<NodeArray>(*this);
+}
+
+ASTHandler *NodeArray::get_handler() const {
+    static ArrayHandler handler;
+    return &handler;
 }
 
 // ************* NodeNDArray ***************
@@ -101,7 +113,7 @@ void NodeNDArray::accept(ASTVisitor &visitor) {
 NodeNDArray::NodeNDArray(const NodeNDArray& other)
 	: NodeAST(other), is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
 	  is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
-	  var_type(other.var_type), name(other.name),
+	  show_brackets(other.show_brackets), var_type(other.var_type), name(other.name),
 	  sizes(clone_unique(other.sizes)), indexes(clone_unique(other.indexes)),
 	  declaration(other.declaration), dimensions(other.dimensions) {}
 std::unique_ptr<NodeAST> NodeNDArray::clone() const {
@@ -113,9 +125,9 @@ void NodeUIControl::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeUIControl::NodeUIControl(const NodeUIControl& other)
-        : NodeAST(other), ui_control_type(other.ui_control_type),
+        : DataStructure(other), ui_control_type(other.ui_control_type),
           control_var(clone_unique(other.control_var)), params(clone_unique(other.params)),
-		  arg_ast_types(other.arg_ast_types), arg_var_types(other.arg_var_types) {}
+          sizes(clone_unique(other.sizes)), arg_ast_types(other.arg_ast_types), arg_var_types(other.arg_var_types) {}
 std::unique_ptr<NodeAST> NodeUIControl::clone() const {
     return std::make_unique<NodeUIControl>(*this);
 }
@@ -188,7 +200,7 @@ void NodeDeclareStatement::accept(ASTVisitor &visitor) {
 }
 NodeDeclareStatement::NodeDeclareStatement(const NodeDeclareStatement& other)
         : NodeAST(other),
-          to_be_declared(clone_unique(other.to_be_declared)), assignee(clone_unique(other.assignee)) {}
+          to_be_declared(clone_vector(other.to_be_declared)), assignee(clone_unique(other.assignee)) {}
 std::unique_ptr<NodeAST> NodeDeclareStatement::clone() const {
     return std::make_unique<NodeDeclareStatement>(*this);
 }
@@ -209,6 +221,11 @@ void NodeSingleDeclareStatement::replace_child(NodeAST* oldChild, std::unique_pt
     } else if (assignee.get() == oldChild) {
         assignee = std::move(newChild);
     }
+}
+
+ASTHandler *NodeSingleDeclareStatement::get_handler() const {
+    static SingleDeclareStatementHandler handler;
+    return &handler;
 }
 
 // ************* NodeReturnStatement ***************

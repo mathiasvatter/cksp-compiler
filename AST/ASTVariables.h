@@ -7,21 +7,21 @@
 
 #include "ASTVisitor.h"
 
-// user-defined hash functions for comparison and unordered_map
-struct StringHash {
-	size_t operator()(const std::string& key) const {
-		std::string lower_key;
-		std::transform(key.begin(), key.end(), std::back_inserter(lower_key), [](unsigned char c){ return std::tolower(c); });
-		return std::hash<std::string>()(key);
-	}
-};
-
-struct StringEqual {
-	bool operator()(const std::string& a, const std::string& b) const {
-		return string_compare(a, b);
-//		return a == b;
-	}
-};
+//// user-defined hash functions for comparison and unordered_map
+//struct StringHash {
+//	size_t operator()(const std::string& key) const {
+//		std::string lower_key;
+//		std::transform(key.begin(), key.end(), std::back_inserter(lower_key), [](unsigned char c){ return std::tolower(c); });
+//		return std::hash<std::string>()(key);
+//	}
+//};
+//
+//struct StringEqual {
+//	bool operator()(const std::string& a, const std::string& b) const {
+//		return string_compare(a, b);
+////		return a == b;
+//	}
+//};
 
 
 class ASTVariables : public ASTVisitor {

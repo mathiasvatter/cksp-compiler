@@ -68,7 +68,6 @@ public:
 
 	void set_message(const std::string &message);
 
-private:
     ErrorType m_type;
     std::string m_message;
 	std::string m_expected;

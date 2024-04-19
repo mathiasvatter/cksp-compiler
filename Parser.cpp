@@ -147,16 +147,22 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_number(NodeAST* parent) {
     CompileError(ErrorType::ParseError, "Unknown number type.",  "INT, REAL, HEXADECIMAL, BINARY", value));
 }
 
-Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent, VarType var_type) {
-    auto var_name = consume();
-    auto node_variable = std::make_unique<NodeVariable>(is_persistent, var_name.val, var_type, var_name);
+Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent, DataType var_type) {
+    auto var_token = consume();
+    std::string var_name = var_token.val;
+    ASTType type = infer_type_from_identifier(var_name);
+    auto node_variable = std::make_unique<NodeVariable>(is_persistent, var_name, var_type, var_token);
+    node_variable->type = type;
     node_variable->parent = parent;
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
 
-Result<std::unique_ptr<NodeArray>> Parser::parse_array(NodeAST* parent, std::optional<Token> is_persistent, VarType var_type) {
+Result<std::unique_ptr<NodeArray>> Parser::parse_array(NodeAST* parent, std::optional<Token> is_persistent, DataType var_type) {
     auto arr_token = consume();
-    auto node_array = std::make_unique<NodeArray>(arr_token);
+    std::string arr_name = arr_token.val;
+    ASTType type = infer_type_from_identifier(arr_name);
+    auto node_array = std::make_unique<NodeArray>(arr_name, arr_token);
+    node_array -> type = type;
     std::unique_ptr<NodeParamList> indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, arr_token));;
     indexes->parent = node_array.get();
 	std::unique_ptr<NodeParamList> sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, arr_token));
@@ -183,10 +189,10 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_array(NodeAST* parent, std::opt
     node_array->parent = parent;
     node_array->persistence = std::move(is_persistent);
     node_array->is_local = false;
-    node_array->var_type = var_type;
-    node_array->name = arr_token.val;
+    node_array->data_type = var_type;
     node_array->sizes = std::move(sizes);
     node_array->indexes = std::move(indexes);
+    node_array->dimensions = node_array->indexes->params.size();
     return Result<std::unique_ptr<NodeArray>>(std::move(node_array));
 }
 
@@ -793,21 +799,21 @@ Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement(No
             if (parsed_ui_control.is_error()) {
                 return Result<std::unique_ptr<NodeDeclareStatement>>(parsed_ui_control.get_error());
             }
-            to_be_declared->params.push_back(std::move(parsed_ui_control.unwrap()));
+            to_be_declared.push_back(std::move(parsed_ui_control.unwrap()));
         // array
         } else if (is_array_declaration()) {
             auto parsed_arr = parse_declare_array(node_declare_statement.get());
             if(parsed_arr.is_error()) {
                 return Result<std::unique_ptr<NodeDeclareStatement>>(parsed_arr.get_error());
             }
-            to_be_declared->params.push_back(std::move(parsed_arr.unwrap()));
+            to_be_declared.push_back(std::move(parsed_arr.unwrap()));
         // variable
         } else if(is_variable_declaration()) {
             auto parsed_var = parse_declare_variable(node_declare_statement.get());
             if (parsed_var.is_error()) {
                 return Result<std::unique_ptr<NodeDeclareStatement>>(parsed_var.get_error());
             }
-            to_be_declared->params.push_back(std::move(parsed_var.unwrap()));
+            to_be_declared.push_back(std::move(parsed_var.unwrap()));
         } else {
             return Result<std::unique_ptr<NodeDeclareStatement>>(CompileError(ErrorType::ParseError,
         "Incorrect syntax in declare statement.","<ui_control>, <variable>, <array>",peek()));
@@ -912,12 +918,12 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
 		is_global = peek().type == token::GLOBAL;
         consume();
     }
-    VarType var_type = VarType::Mutable;
+    DataType var_type = DataType::Mutable;
     if(peek().type == token::CONST || peek().type == token::POLYPHONIC) {
         if(peek().type == token::CONST)
-            var_type = VarType::Const;
+            var_type = DataType::Const;
         else if (peek().type == token::POLYPHONIC)
-            var_type = VarType::Polyphonic;
+            var_type = DataType::Polyphonic;
         consume();
     }
     if(peek().type != token::KEYWORD) {
@@ -931,6 +937,7 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
 	auto node_variable = std::move(parsed_var.unwrap());
 	node_variable->is_local = is_local;
 	node_variable->is_global = is_global;
+    node_variable->is_reference = false;
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
 
@@ -946,7 +953,7 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_declare_array(NodeAST* parent) 
 		is_global = peek().type == token::GLOBAL;
         consume();
     }
-    VarType var_type = VarType::Array;
+    DataType var_type = DataType::Array;
     if(peek().type != token::KEYWORD) {
         return Result<std::unique_ptr<NodeArray>>(CompileError(ErrorType::SyntaxError,
          "Found unknown array declaration syntax.", "array keyword", peek()));
@@ -959,6 +966,7 @@ Result<std::unique_ptr<NodeArray>> Parser::parse_declare_array(NodeAST* parent) 
     std::swap(node_array->indexes, node_array->sizes);
 	node_array->is_local = is_local;
 	node_array->is_global = is_global;
+    node_array->is_reference = false;
     return Result<std::unique_ptr<NodeArray>>(std::move(node_array));
 }
 
@@ -968,7 +976,7 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
         consume();
     }
     auto node_ui_control = std::make_unique<NodeUIControl>(get_tok());
-    VarType var_type = VarType::UI_Control;
+    DataType var_type = DataType::UI_Control;
     if(peek().type != token::UI_CONTROL) {
         return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::SyntaxError,
    "Found unknown ui_control declaration syntax.", "valid ui_control type", peek()));
@@ -978,7 +986,9 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
         return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::SyntaxError,
    "Found unknown ui_control declaration syntax.", "array or variable keyword", peek()));
     }
-    std::unique_ptr<NodeAST> control_var;
+    std::unique_ptr<DataStructure> control_var;
+    // check if it has second Brackets -> ui_control array
+    std::unique_ptr<NodeParamList> control_array_sizes;
     if(peek(1).type == token::OPEN_BRACKET) {
         auto parsed_arr = parse_array(node_ui_control.get(), persistence, var_type);
         if(parsed_arr.is_error()) {
@@ -986,6 +996,24 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
         }
         auto array = std::move(parsed_arr.unwrap());
         std::swap(array->indexes, array->sizes);
+
+        // is ui_control array
+        if(peek().type == token::OPEN_BRACKET) {
+            consume(); // consume [
+            auto sizes = parse_param_list(node_ui_control.get());
+            if(sizes.is_error()) {
+                return Result<std::unique_ptr<NodeUIControl>>(sizes.get_error());
+            }
+            control_array_sizes = std::move(sizes.unwrap());
+            if(peek().type != token::CLOSED_BRACKET) {
+                return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::SyntaxError,
+                "Expected closing bracket after ui_control array size.", "]", peek()));
+            }
+            consume(); // consume ]
+        } else {
+            control_array_sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
+        }
+
         control_var = std::move(array);
     } else {
         auto parsed_var = parse_variable(node_ui_control.get(), persistence, var_type);
@@ -994,6 +1022,7 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
         }
         control_var = std::move(parsed_var.unwrap());
     }
+    control_var -> is_reference = false;
     std::unique_ptr<NodeParamList> control_params;
     if(peek().type == token::OPEN_PARENTH) {
         auto param_list = parse_param_list(node_ui_control.get());
@@ -1008,7 +1037,8 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
     node_ui_control->ui_control_type = std::move(ui_control_type);
     node_ui_control->control_var = std::move(control_var);
     node_ui_control->params = std::move(control_params);
-//    auto result = std::make_unique<NodeUIControl>(std::move(ui_control_type), std::move(control_var), std::move(control_params), get_tok());
+    node_ui_control->sizes = std::move(control_array_sizes);
+    node_ui_control->is_reference = false;
     return Result<std::unique_ptr<NodeUIControl>>(std::move(node_ui_control));
 }
 
@@ -1337,7 +1367,9 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
         return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
      "Found unknown <list> syntax.", "valid <keyword>", peek()));
     }
-    Token name = consume(); // consume keyword
+    Token name_tok = consume(); // consume keyword
+    std::string name = name_tok.val;
+    ASTType list_type = infer_type_from_identifier(name);
     if(peek().type != token::OPEN_BRACKET) {
         return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
      "Found unknown <list> syntax.", "[", peek()));
@@ -1373,7 +1405,8 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
     }
     consume(); // consume end_list
     node_list_block->parent = parent;
-    node_list_block->name = name.val;
+    node_list_block->name = name;
+    node_list_block->type = list_type;
     node_list_block->size = size;
     node_list_block->body = std::move(stmts);
     return Result<std::unique_ptr<NodeAST>>(std::move(node_list_block));

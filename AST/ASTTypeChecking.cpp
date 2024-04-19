@@ -185,7 +185,7 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
 
         // replace variable declaration with declaration and assignment when assignment is not single int or single real or variable ist not const
         // replace instead when assignment is of type string, NodeBinaryExpr, NodeFunctionCall, etc.
-        if(node_declare_variable and not(node_int or node_real or node_declare_variable->var_type == Const)) {
+        if(node_declare_variable and not(node_int or node_real or node_declare_variable->data_type == Const)) {
             auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
             auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(), std::move(node.assignee), node.tok);
             node_statement_list->statements.push_back(statement_wrapper(node.clone(),node_statement_list.get()));
@@ -195,7 +195,7 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
             node.replace_with(std::move(node_statement_list));
             return;
             // add assignment to declaration if variable is declared and assigned to a string
-//        } else if (node_declare_variable and node_declare_variable->var_type != Const and (node.assignee->type == String || node.assignee->type == Unknown)) {
+//        } else if (node_declare_variable and node_declare_variable->data_type != Const and (node.assignee->type == String || node.assignee->type == Unknown)) {
 //            auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
 //            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(),std::move(node.assignee), node.tok);
 //            auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node.to_be_declared),nullptr, node.tok);
