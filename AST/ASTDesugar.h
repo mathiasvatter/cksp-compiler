@@ -5,15 +5,13 @@
 #pragma once
 
 #include "ASTVisitor.h"
+#include "DefinitionProvider.h"
 #include <type_traits>
 
 
 class ASTDesugar : public ASTVisitor {
 public:
-    ASTDesugar(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
-               const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
-               const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &m_property_functions,
-               const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets);
+    explicit ASTDesugar(DefinitionProvider* definition_provider);
 
     /// check if init callback exists
     void visit(NodeProgram& node) override;
@@ -45,34 +43,35 @@ public:
 	std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> get_function_inlines();
 
 private:
+	DefinitionProvider* m_definition_provider;
 
     NodeAST* m_current_node_replaced = nullptr;
 
-    const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash>& m_builtin_functions;
-    NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
-    NodeFunctionHeader* get_builtin_function(const std::string &function, int params);
+//    const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash>& builtin_functions;
+//    NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
+//    NodeFunctionHeader* get_builtin_function(const std::string &function, int params);
     std::unique_ptr<NodeFunctionCall> wrap_in_get_ui_id(std::unique_ptr<NodeAST> variable);
 
-    const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>>& m_builtin_widgets;
-	NodeUIControl* get_builtin_widget(const std::string &ui_control);
+//    const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>>& builtin_widgets;
+//	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
     void declare_dummy_return_variable();
     void declare_compiler_variables();
 
-    const std::unordered_map<std::string, std::unique_ptr<NodeVariable>>& m_builtin_variables;
+//    const std::unordered_map<std::string, std::unique_ptr<NodeVariable>>& builtin_variables;
     std::unique_ptr<NodeVariable> shorthand_to_control_param(const std::string& shorthand);
     // returns either string (for get/set_control_par_str) or integer (for get/set_control_par)
     static ASTType get_control_function_type(const std::string& control_param);
 
-    const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>>& m_property_functions;
-    NodeFunctionHeader* get_property_function(NodeFunctionHeader* function);
+//    const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>>& property_functions;
+//    NodeFunctionHeader* get_property_function(NodeFunctionHeader* function);
     std::unique_ptr<NodeStatementList> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header);
 
     NodeProgram* m_program = nullptr;
     NodeCallback* m_init_callback = nullptr;
     NodeCallback* m_current_callback = nullptr;
     int m_current_callback_idx = 0;
-    NodeAST* m_return_dummy_declaration = nullptr;
+	DataStructure* m_return_dummy_declaration = nullptr;
 
 	bool evaluating_functions = false;
 
@@ -102,7 +101,7 @@ private:
     /// gets resettet when out of init
     std::stack<std::string> m_local_variables;
     std::set<std::string> m_local_already_declared_vars;
-    NodeAST* m_local_var_dummy_declaration;
+	DataStructure* m_local_var_dummy_declaration = nullptr;
     std::unique_ptr<NodeAST> get_local_variable_substitute(const std::string& name);
 
     std::vector<std::unique_ptr<NodeStatement>> add_read_functions(const Token& persistence, NodeAST* var, NodeAST* parent);

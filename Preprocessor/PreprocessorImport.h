@@ -21,7 +21,7 @@ private:
     std::vector<std::unique_ptr<NodeImport>> m_import_statements;
 
     const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
-//    std::vector<std::unique_ptr<NodeAST>> m_external_variables;
+//    std::vector<std::unique_ptr<NodeAST>> external_variables;
 
     // Imports
 	Result<SuccessTag> process_import_statements(std::vector<Token>& tokens, const std::string& current_file);

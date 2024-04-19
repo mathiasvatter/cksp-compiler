@@ -174,7 +174,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
         }
     }
 
-	if(node.var_type == UI_Control) {
+	if(node.data_type == UI_Control) {
 		auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
 		if(node_control_function and contains(node_control_function->name, "control_par")) {
 			auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(
@@ -454,12 +454,12 @@ NodeUIControl* ASTTypeCasting::get_builtin_widget(const std::string &ui_control)
 }
 
 NodeFunctionHeader* ASTTypeCasting::get_builtin_function(const std::string &function, int params) {
-//    auto it = std::find_if(m_builtin_functions.begin(), m_builtin_functions.end(),
+//    auto it = std::find_if(builtin_functions.begin(), builtin_functions.end(),
 //                           [&](const std::unique_ptr<NodeFunctionHeader> &func) {
 //                               return (func->name == function);
 //                           });
-//    if(it != m_builtin_functions.end()) {
-//        return m_builtin_functions[std::distance(m_builtin_functions.begin(), it)].get();
+//    if(it != builtin_functions.end()) {
+//        return builtin_functions[std::distance(builtin_functions.begin(), it)].get();
 //    }
     auto it = m_builtin_functions.find({function, params});
     if(it != m_builtin_functions.end()) {

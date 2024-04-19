@@ -7,14 +7,16 @@
 DefinitionProvider::DefinitionProvider(
         const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
         const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
+		const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>>& m_property_functions,
         const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
         const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
         const std::vector<std::unique_ptr<DataStructure>> &m_external_variables)
-        : m_builtin_variables(m_builtin_variables),
-        m_builtin_functions(m_builtin_functions),
-        m_builtin_arrays(m_builtin_arrays),
-        m_builtin_widgets(m_builtin_widgets),
-        m_external_variables(m_external_variables) {
+        : builtin_variables(m_builtin_variables),
+		  builtin_functions(m_builtin_functions),
+		  property_functions(m_property_functions), // property functions
+        builtin_arrays(m_builtin_arrays),
+		  builtin_widgets(m_builtin_widgets),
+		  external_variables(m_external_variables) {
     for(auto& var : m_external_variables) {
         m_declared_data_structures.back().insert({var->name, var.get()});
     }
@@ -55,19 +57,19 @@ DataStructure* DefinitionProvider::get_declaration(DataStructure* var) {
 }
 
 
-std::unique_ptr<DataStructure> DefinitionProvider::build_data_structure(std::unique_ptr<NodeVariable> var, DataStructure* declaration) {
-    // if declaration is of data type array -> exchange with array node
-    if(var->data_type != declaration->data_type) {
-        if(declaration->data_type == Array) {
-            auto node_array = make_array(var->name, 0, var->tok, var->parent);
-            node_array->sizes->params.clear();
-        }
-
-    }
-    match_data_structure()
-
-
-}
+//std::unique_ptr<DataStructure> DefinitionProvider::build_data_structure(std::unique_ptr<NodeVariable> var, DataStructure* declaration) {
+//    // if declaration is of data type array -> exchange with array node
+//    if(var->data_type != declaration->data_type) {
+//        if(declaration->data_type == Array) {
+//            auto node_array = make_array(var->name, 0, var->tok, var->parent);
+//            node_array->sizes->params.clear();
+//        }
+//
+//    }
+//    match_data_structure()
+//
+//
+//}
 
 void DefinitionProvider::match_data_structure(DataStructure* reference, DataStructure* declaration) {
     // get declaration to declaration
@@ -82,41 +84,57 @@ void DefinitionProvider::match_data_structure(DataStructure* reference, DataStru
 }
 
 
-std::unique_ptr<DataStructure> DefinitionProvider::build_data_structure(std::unique_ptr<NodeArray> var, DataStructure* declaration) {
-
-}
+//std::unique_ptr<DataStructure> DefinitionProvider::build_data_structure(std::unique_ptr<NodeArray> var, DataStructure* declaration) {
+//
+//}
 
 
 NodeVariable* DefinitionProvider::get_builtin_variable(const std::string& var) {
-    auto it = m_builtin_variables.find(var);
-    if(it != m_builtin_variables.end()) {
+    auto it = builtin_variables.find(var);
+    if(it != builtin_variables.end()) {
         return it->second.get();
     }
     return nullptr;
 }
 
 NodeArray* DefinitionProvider::get_builtin_array(const std::string& arr) {
-    auto it = m_builtin_arrays.find(arr);
-    if(it != m_builtin_arrays.end()) {
+    auto it = builtin_arrays.find(arr);
+    if(it != builtin_arrays.end()) {
         return it->second.get();
     }
     return nullptr;
 }
 
 NodeUIControl* DefinitionProvider::get_builtin_widget(const std::string &ui_control) {
-    auto it = m_builtin_widgets.find(ui_control);
-    if(it != m_builtin_widgets.end()) {
+    auto it = builtin_widgets.find(ui_control);
+    if(it != builtin_widgets.end()) {
         return it->second.get();
     }
     return nullptr;
 }
 
 NodeFunctionHeader* DefinitionProvider::get_builtin_function(const std::string &function, int params) {
-    auto it = m_builtin_functions.find({function, params});
-    if(it != m_builtin_functions.end()) {
+    auto it = builtin_functions.find({function, params});
+    if(it != builtin_functions.end()) {
         return it->second.get();
     }
     return nullptr;
+}
+
+NodeFunctionHeader* DefinitionProvider::get_builtin_function(NodeFunctionHeader *function) {
+	auto it = builtin_functions.find({function->name, (int)function->args->params.size()});
+	if(it != builtin_functions.end()) {
+		return it->second.get();
+	}
+	return nullptr;
+}
+
+NodeFunctionHeader* DefinitionProvider::get_property_function(NodeFunctionHeader *function) {
+	auto it = property_functions.find(function->name);
+	if(it != property_functions.end()) {
+		return it->second.get();
+	}
+	return nullptr;
 }
 
 NodeVariable *DefinitionProvider::get_declared_variable(const std::string& var) {

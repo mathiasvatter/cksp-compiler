@@ -30,7 +30,7 @@ public:
                  const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
                  const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
                  const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
-                 const std::vector<std::unique_ptr<NodeAST>> &m_external_variables,
+                 const std::vector<std::unique_ptr<DataStructure>> &m_external_variables,
                  std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines);
 
     void visit(NodeProgram& node) override;
@@ -64,7 +64,7 @@ private:
     const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
 	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
-    const std::vector<std::unique_ptr<NodeAST>> &m_external_variables;
+    const std::vector<std::unique_ptr<DataStructure>> &m_external_variables;
 
     /// declared variables
     std::unordered_map<std::string, NodeVariable*, StringHash, StringEqual> m_declared_variables;

@@ -15,6 +15,7 @@
 #include "Preprocessor/PreprocessorImport.h"
 #include "FileHandler.h"
 #include "CommandLineOptions.h"
+#include "AST/DefinitionProvider.h"
 
 int main(int argc, char* argv[]) {
 
@@ -94,16 +95,17 @@ int main(int argc, char* argv[]) {
 	if (ast_result.is_error()) {
 		ast_result.get_error().exit();
 	}
-
 	auto ast = std::move(ast_result.unwrap());
 
     auto parsing_time = std::chrono::high_resolution_clock::now();
     auto parsing_duration = std::chrono::duration_cast<std::chrono::milliseconds>(parsing_time-preprocessor_time);
 
+	DefinitionProvider definition_provider(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets(), imports.get_external_variables());
+
     ASTDesugarStructs desugar1;
     ast->accept(desugar1);
 
-	ASTDesugar desugar(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions(), builtins.get_builtin_widgets());
+	ASTDesugar desugar(&definition_provider);
 	ast->accept(desugar);
 
     auto desugaring_time = std::chrono::high_resolution_clock::now();

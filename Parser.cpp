@@ -785,8 +785,8 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement(NodeAST* parent) {
     auto node_declare_statement = std::make_unique<NodeDeclareStatement>(get_tok());
     if(peek().type == token::DECLARE) consume(); //consume declare
-    std::unique_ptr<NodeParamList> to_be_declared = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
-    to_be_declared->parent = node_declare_statement.get();
+    std::vector<std::unique_ptr<DataStructure>> to_be_declared;
+//    to_be_declared->parent = node_declare_statement.get();
     if(not(peek().type == token::KEYWORD or peek().type == token::UI_CONTROL or get_persistent_keyword(peek())
 		or peek().type == token::CONST or peek().type == token::POLYPHONIC or peek().type== token::LOCAL or peek().type== token::GLOBAL))
         return Result<std::unique_ptr<NodeDeclareStatement>>(CompileError(ErrorType::ParseError,
