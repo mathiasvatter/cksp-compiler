@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.23)
-project(CKSP_Compiler VERSION 0.0.1)
+project(CKSP_Compiler VERSION 0.0.5)
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -43,25 +43,25 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         Tokenizer/Tokens.h
         Tokenizer/Tokenizer.h
         Tokenizer/Tokenizer.cpp
-        Parser.h
-        Parser.cpp
-        CompileError.cpp
-        CompileError.h
-        Result.h
+        Parser/Parser.h
+        Parser/Parser.cpp
+        misc/CompileError.cpp
+        misc/CompileError.h
+        misc/Result.h
         Preprocessor/Preprocessor.cpp
         Preprocessor/Preprocessor.h
         Preprocessor/ImportProcessor.cpp
         Preprocessor/ImportProcessor.h
         Preprocessor/PreprocessorConditions.cpp
         Preprocessor/PreprocessorConditions.h
-        Preprocessor/PreAST.h
-        Preprocessor/PreAST.cpp
-        Preprocessor/PreASTVisitor.h
-        Preprocessor/PreASTVisitor.cpp
+        Preprocessor/PreAST/PreAST.h
+        Preprocessor/PreAST/PreAST.cpp
+        Preprocessor/PreAST/PreASTVisitor.h
+        Preprocessor/PreAST/PreASTVisitor.cpp
         Preprocessor/PreprocessorParser.cpp
         Preprocessor/PreprocessorParser.h
-        Preprocessor/PreASTDesugar.cpp
-        Preprocessor/PreASTDesugar.h
+        Preprocessor/PreAST/PreASTDesugar.cpp
+        Preprocessor/PreAST/PreASTDesugar.h
         AST/AST.h
         AST/AST.cpp
         AST/ASTVisitor.h
@@ -70,14 +70,14 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         AST/ASTPrinter.cpp
         AST/ASTTypeCasting.cpp
         AST/ASTVisitor.cpp
-        Preprocessor/SimpleExprInterpreter.cpp
-        Preprocessor/SimpleExprInterpreter.h
-        Preprocessor/PreASTCombine.cpp
-        Preprocessor/PreASTCombine.h
-        Preprocessor/PreASTIncrementer.cpp
-        Preprocessor/PreASTIncrementer.h
-        Preprocessor/BuiltinsProcessor.cpp
-        Preprocessor/BuiltinsProcessor.h
+        ExprInterpreter/SimpleExprInterpreter.cpp
+        ExprInterpreter/SimpleExprInterpreter.h
+        Preprocessor/PreAST/PreASTCombine.cpp
+        Preprocessor/PreAST/PreASTCombine.h
+        Preprocessor/PreAST/PreASTIncrementer.cpp
+        Preprocessor/PreAST/PreASTIncrementer.h
+        BuiltinsProcessing/BuiltinsProcessor.cpp
+        BuiltinsProcessing/BuiltinsProcessor.h
         Generator/ASTGenerator.cpp
         Generator/ASTGenerator.h
         AST/ASTTypeChecking.cpp
@@ -86,4 +86,24 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         AST/ASTVariables.h
         ${GENERATED_HEADERS}
         generated/version.h
+        JSON/JSONParser.h
+        JSON/JSONParser.cpp
+        JSON/JSONVisitor.h
+        JSON/JSONVisitor.cpp
+        AST/ASTDesugarStructs.cpp
+        AST/ASTDesugarStructs.h
+        Preprocessor/PreAST/PreASTDefines.cpp
+        Preprocessor/PreAST/PreASTDefines.h
+        Preprocessor/PreAST/PreASTPragma.cpp
+        Preprocessor/PreAST/PreASTPragma.h
+        misc/FileHandler.cpp
+        misc/FileHandler.h
+        CommandLineOptions.cpp
+        CommandLineOptions.h
+        BuiltinsProcessing/DefinitionProvider.h
+        BuiltinsProcessing/DefinitionProvider.cpp
+        Processor/Processor.cpp
+        Processor/Processor.h
+        misc/PathHandler.cpp
+        misc/PathHandler.h
 )
