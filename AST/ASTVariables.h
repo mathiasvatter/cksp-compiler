@@ -6,7 +6,7 @@
 
 
 #include "ASTVisitor.h"
-#include "DefinitionProvider.h"
+#include "../BuiltinsProcessing/DefinitionProvider.h"
 
 class ASTVariables : public ASTVisitor {
 public:

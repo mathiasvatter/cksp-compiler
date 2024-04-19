@@ -16,6 +16,7 @@ public:
 	explicit Processor(std::vector<Token> tokens);;
 	explicit Processor() = default;
 
+	virtual void process() {};
 	/// returns the tokens vector by moving it
 	std::vector<Token> get_token_vector();
 

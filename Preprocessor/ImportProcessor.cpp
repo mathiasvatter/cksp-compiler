@@ -8,6 +8,7 @@
 #include "../JSON/JSONParser.h"
 #include "../JSON/JSONVisitor.h"
 #include "../FileHandler.h"
+#include "../PathHandler.h"
 
 ImportProcessor::ImportProcessor(std::vector<Token> tokens, std::string current_file, DefinitionProvider* definition_provider)
         : Processor(std::move(tokens)), m_def_provider(definition_provider), m_current_file(std::move(current_file)) {
@@ -51,13 +52,14 @@ Result<SuccessTag> ImportProcessor::process_import_statements(std::vector<Token>
 
 Result<SuccessTag> ImportProcessor::evaluate_import(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file) {
     auto alias = import_stmt->alias;
-    auto path = resolve_path(import_stmt->filepath, peek(tokens), current_file);
+	PathHandler path_handler(peek(tokens), current_file);
+
+    auto path = path_handler.resolve_import_path(import_stmt->filepath);
     if(path.is_error()) {
-        path.get_error().print();
+		return Result<SuccessTag>(path.get_error());
     } else {
         if (m_imported_files.find(path.unwrap()) == m_imported_files.end()) {  // Überprüfe auf zirkuläre Abhängigkeiten
             m_imported_files.insert(path.unwrap());
-//            std::cout << path.unwrap() << std::endl;
             FileHandler file_handler(path.unwrap());
             Tokenizer tokenizer(file_handler.get_output(), path.unwrap(), file_handler.get_file_type());
             auto new_tokens = tokenizer.tokenize();
@@ -78,21 +80,21 @@ Result<SuccessTag> ImportProcessor::evaluate_import(std::vector<Token>& tokens, 
 }
 
 Result<SuccessTag> ImportProcessor::evaluate_import_nckp(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file) {
-    auto path = resolve_path(import_stmt->filepath, peek(tokens), current_file);
+	PathHandler path_handler(peek(tokens), current_file);
+	// try to resolve current_file and import_path into absolute path
+	auto path = path_handler.resolve_import_path(import_stmt->filepath);
     if(path.is_error()) {
-        path.get_error().print();
-    } else {
-//        std::cout << path.unwrap() << std::endl;
-        FileHandler file_handler(path.unwrap());
-        Tokenizer tokenizer(file_handler.get_output(), path.unwrap(), file_handler.get_file_type());
-        auto nckp_tokens = tokenizer.tokenize();
-        JSONParser parser(std::move(nckp_tokens));
-        auto ast = parser.parse_json();
-        NCKPTranslator translator(m_def_provider);
-        ast->accept(translator);
-        auto ui_variables = translator.collect_ui_variables();
-        m_def_provider->set_external_variables(std::move(ui_variables));
-    }
+		return Result<SuccessTag>(path.get_error());
+	}
+	FileHandler file_handler(path.unwrap());
+	Tokenizer tokenizer(file_handler.get_output(), path.unwrap(), file_handler.get_file_type());
+	auto nckp_tokens = tokenizer.tokenize();
+	JSONParser parser(std::move(nckp_tokens));
+	auto ast = parser.parse_json();
+	NCKPTranslator translator(m_def_provider);
+	ast->accept(translator);
+	auto ui_variables = translator.collect_ui_variables();
+	m_def_provider->set_external_variables(std::move(ui_variables));
     return Result<SuccessTag>(SuccessTag{});
 }
 

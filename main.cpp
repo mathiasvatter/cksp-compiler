@@ -7,7 +7,7 @@
 #include "AST/ASTDesugar.h"
 #include "AST/ASTPrinter.h"
 #include "AST/ASTTypeCasting.h"
-#include "Preprocessor/PreprocessorBuiltins.h"
+#include "BuiltinsProcessing/BuiltinsProcessor.h"
 #include "AST/ASTTypeChecking.h"
 #include "AST/ASTVariables.h"
 #include "Generator/ASTGenerator.h"
@@ -15,7 +15,7 @@
 #include "Preprocessor/ImportProcessor.h"
 #include "FileHandler.h"
 #include "CommandLineOptions.h"
-#include "AST/DefinitionProvider.h"
+#include "BuiltinsProcessing/DefinitionProvider.h"
 
 int main(int argc, char* argv[]) {
 
@@ -50,8 +50,8 @@ int main(int argc, char* argv[]) {
 	Tokenizer tokenizer(file_handler.get_output(), input_filename);
     auto tokens = tokenizer.tokenize();
 
-    PreprocessorBuiltins builtins(&definition_provider);
-    builtins.process_builtins();
+    BuiltinsProcessor builtins(&definition_provider);
+    builtins.process();
 
     ImportProcessor imports(tokens, input_filename, &definition_provider);
     auto import_result = imports.process_imports();

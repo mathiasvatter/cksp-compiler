@@ -5,7 +5,7 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "DefinitionProvider.h"
+#include "../BuiltinsProcessing/DefinitionProvider.h"
 
 /// check all user variable definitions -> get pointers
 /// check all function definitions -> get pointers
