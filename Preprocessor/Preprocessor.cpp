@@ -21,7 +21,7 @@ Preprocessor::Preprocessor(std::vector<Token> tokens, std::string current_file)
 void Preprocessor::process() {
 	Result<SuccessTag> result = Result<SuccessTag>(SuccessTag{});
 
-//    PreprocessorImport imports(m_tokens, m_current_file, m_builtin_widgets);
+//    PreprocessorImport imports(m_tokens, m_current_file, builtin_widgets);
 //	result = imports.process_imports();
 //	if(result.is_error()) {
 //		result.get_error().print();
@@ -130,7 +130,7 @@ std::string Preprocessor::token_vector_to_string(const std::vector<Token>& token
     return output;
 }
 
-const std::vector<std::unique_ptr<NodeAST>> &Preprocessor::get_external_variables() const {
+const std::vector<std::unique_ptr<DataStructure>> &Preprocessor::get_external_variables() const {
     return m_external_variables;
 }
 

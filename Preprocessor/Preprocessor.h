@@ -16,7 +16,7 @@ public:
 	~Preprocessor() = default;
     std::vector<Token> get_tokens();
     void process();
-    const std::vector<std::unique_ptr<NodeAST>> &get_external_variables() const;
+    const std::vector<std::unique_ptr<DataStructure>> &get_external_variables() const;
     const std::string &get_output_path() const;
 
 protected:
@@ -24,7 +24,7 @@ protected:
     std::string m_output_path;
 
     // gets filled by import preprocessor
-    std::vector<std::unique_ptr<NodeAST>> m_external_variables;
+    std::vector<std::unique_ptr<DataStructure>> m_external_variables;
 
     void remove_tokens(std::vector<Token>& tok, size_t start, size_t end);
 	static size_t search(const std::vector<std::string>& vec, const std::string& str);

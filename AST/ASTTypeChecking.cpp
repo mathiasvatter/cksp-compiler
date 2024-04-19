@@ -214,7 +214,7 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
 				for (auto &param : node_param_list->params) {
 					auto node_var = cast_node<NodeVariable>(param.get());
 					auto node_arr = cast_node<NodeArray>(param.get());
-					if ((node_var and node_var->var_type != Const and !node_var->is_engine) or node_arr) {
+					if ((node_var and node_var->data_type != Const and !node_var->is_engine) or node_arr) {
 						has_var = true;
 						break;
 					}

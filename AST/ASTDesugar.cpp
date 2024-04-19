@@ -6,12 +6,8 @@
 #include "ASTDesugar.h"
 #include "../Preprocessor/SimpleExprInterpreter.h"
 
-ASTDesugar::ASTDesugar(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
-                       const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
-                       const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &m_property_functions,
-                       const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
-: m_builtin_functions(m_builtin_functions), m_builtin_variables(m_builtin_variables), m_property_functions(m_property_functions), m_builtin_widgets(m_builtin_widgets) {
-}
+ASTDesugar::ASTDesugar(DefinitionProvider* definition_provider) : m_definition_provider(definition_provider) {}
+
 
 void ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
@@ -363,7 +359,7 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
         } else {
             m_program->function_definitions.push_back(std::move(node_function_def));
         }
-    } else if (auto builtin_func = get_builtin_function(node.function.get())) {
+    } else if (auto builtin_func = m_definition_provider->get_builtin_function(node.function.get())) {
         node.function->type = builtin_func->type;
         node.function->has_forced_parenth = builtin_func->has_forced_parenth;
         node.function->arg_ast_types = builtin_func->arg_ast_types;
@@ -378,18 +374,8 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
                         CompileError(ErrorType::SyntaxError,"<"+builtin_func->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks. Not in a called function.", node.tok.line, "", "<"+m_current_function->header->name+"> in <"+m_current_callback->begin_callback+">", node.tok.file).print();
             }
         }
-        // add missing get_ui_id as first parameter if control_par function is used
-//        if (node.function->name.contains("control_par")) {
-//            if(auto get_ui_id = cast_node<NodeFunctionCall>(node.function->args->params[0].get())) {
-//                if(get_ui_id->function->name != "get_ui_id") {
-//                    node.function->args->params[0] = wrap_in_get_ui_id(std::move(node.function->args->params[0]));
-//                }
-//            } else {
-//                node.function->args->params[0] = wrap_in_get_ui_id(std::move(node.function->args->params[0]));
-//            }
-//        }
 
-    } else if (auto property_func = get_property_function(node.function.get())) {
+    } else if (auto property_func = m_definition_provider->get_property_function(node.function.get())) {
         if(node.function->args->params.size() < 2)
             CompileError(ErrorType::SyntaxError,"Found Property Function with insufficient amount of arguments.", node.tok.line, "At least 2 arguments", std::to_string(node.function->args->params.size()), node.tok.file).exit();
         auto node_statement_list = inline_property_function(property_func, std::move(node.function));
@@ -551,7 +537,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
             }
         }
         // not empty ->array size is dimension
-		if(node_array->var_type != List) node_array->dimensions = node_array->sizes->params.size();
+		if(node_array->data_type != List) node_array->dimensions = node_array->sizes->params.size();
         // multidimensional array
         if (node_array->dimensions > 1) {
 //            node_array->name = "_"+node_array->name;
@@ -649,7 +635,7 @@ std::vector<std::unique_ptr<NodeStatement>> ASTDesugar::add_read_functions(const
     for(auto &pers : persistences) {
         if(persistence.type == pers.first) {
             for(auto &pers_func : pers.second) {
-                auto node_function = get_builtin_function(pers_func,1)->clone();
+                auto node_function = m_definition_provider->get_builtin_function(pers_func,1)->clone();
                 auto make_persistent = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(node_function.release()));
                 make_persistent->args->params.clear();
                 make_persistent->args->params.push_back(var->clone());
@@ -705,11 +691,11 @@ void ASTDesugar::visit(NodeGetControlStatement& node) {
     }
     ASTType control_function_type = get_control_function_type(node.control_param);
     if(control_function_type == String) control_function += "_str";
-    auto node_control_function = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(get_builtin_function(control_function, function_args)->clone().release()));
+    auto node_control_function = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(m_definition_provider->get_builtin_function(control_function, function_args)->clone().release()));
     node_control_function->update_token_data(node.tok);
     node_control_function->args->params.clear();
     // if it is a variable and not builtin -> wrap it in get_ui_id()
-    if(is_instance_of<NodeVariable>(node.ui_id.get()) and m_builtin_variables.find(node.ui_id->get_string()) == m_builtin_variables.end()) {
+    if(is_instance_of<NodeVariable>(node.ui_id.get()) and m_definition_provider->builtin_variables.find(node.ui_id->get_string()) == m_definition_provider->builtin_variables.end()) {
 //        auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(get_builtin_function("get_ui_id",1)->clone().release()));
 //        node_get_ui_id->args->params.clear();
 //        node_get_ui_id->args->params.push_back(std::move(node.ui_id));
@@ -738,7 +724,7 @@ void ASTDesugar::visit(NodeGetControlStatement& node) {
 
 std::unique_ptr<NodeFunctionCall> ASTDesugar::wrap_in_get_ui_id(std::unique_ptr<NodeAST> variable) {
     auto parent_tok = variable->parent->tok;
-    auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(get_builtin_function("get_ui_id",1)->clone().release()));
+    auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(m_definition_provider->get_builtin_function("get_ui_id",1)->clone().release()));
     node_get_ui_id->args->params.clear();
     node_get_ui_id->args->params.push_back(std::move(variable));
     return std::make_unique<NodeFunctionCall>(false, std::move(node_get_ui_id), parent_tok);
@@ -789,7 +775,7 @@ void ASTDesugar::visit(NodeStatementList& node) {
 }
 
 void ASTDesugar::visit(NodeUIControl &node) {
-	auto engine_widget = get_builtin_widget(node.ui_control_type);
+	auto engine_widget = m_definition_provider->get_builtin_widget(node.ui_control_type);
 	if(!engine_widget) {
 		CompileError(ErrorType::SyntaxError, "Did not recognize engine widget.", node.tok.line, "valid widget type", node.ui_control_type, node.tok.file).exit();
 	}
@@ -847,7 +833,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 //		node_iterator_var->accept(*this);
 		auto node_while_body = std::make_unique<NodeStatementList>(node.tok);
 
-		auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(get_builtin_function("get_ui_id",1)->clone().release()));
+		auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(m_definition_provider->get_builtin_function("get_ui_id",1)->clone().release()));
 		node_get_ui_id->args->params.clear();
 		node_get_ui_id->args->params.push_back(std::make_unique<NodeVariable>(node_array->persistence, new_control_name, UI_Control, node.tok));
 
@@ -930,7 +916,7 @@ void ASTDesugar::declare_dummy_return_variable() {
     node_return_dummy->is_engine = true;
     auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_return_dummy), nullptr, tok);
     node_var_declaration->to_be_declared->parent = node_var_declaration.get();
-    m_return_dummy_declaration = node_var_declaration->to_be_declared.get();
+    m_return_dummy_declaration = static_cast<DataStructure*>(node_var_declaration->to_be_declared.get());
     m_local_declare_statements.push_back(statement_wrapper(std::move(node_var_declaration), m_init_callback));
 
     std::string local_var_dummy_name = "_local_dummy_";
@@ -939,7 +925,7 @@ void ASTDesugar::declare_dummy_return_variable() {
     node_local_var_dummy->is_engine = true;
     auto node_local_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_local_var_dummy), nullptr, tok);
     node_local_var_declaration->to_be_declared->parent = node_local_var_declaration.get();
-    m_local_var_dummy_declaration = node_local_var_declaration->to_be_declared.get();
+    m_local_var_dummy_declaration = static_cast<DataStructure*>(node_local_var_declaration->to_be_declared.get());
     m_local_declare_statements.push_back(statement_wrapper(std::move(node_local_var_declaration), m_init_callback));
 
 
@@ -962,52 +948,7 @@ NodeFunctionDefinition* ASTDesugar::get_function_definition(NodeFunctionHeader *
     return nullptr;
 }
 
-NodeFunctionHeader* ASTDesugar::get_builtin_function(NodeFunctionHeader *function) {
-//    auto it = std::find_if(m_builtin_functions.begin(), m_builtin_functions.end(),
-//                           [&](const std::unique_ptr<NodeFunctionHeader> &func) {
-//                               return (func->name == function->name and
-//                                       func->arg_ast_types.size() == function->args->params.size());
-//                           });
-//    if(it != m_builtin_functions.end()) {
-//        return m_builtin_functions[std::distance(m_builtin_functions.begin(), it)].get();
-//    }
-    auto it = m_builtin_functions.find({function->name, (int)function->args->params.size()});
-    if(it != m_builtin_functions.end()) {
-        return it->second.get();
-    }
-    return nullptr;
-}
 
-NodeFunctionHeader* ASTDesugar::get_builtin_function(const std::string &function, int params) {
-//    auto it = std::find_if(m_builtin_functions.begin(), m_builtin_functions.end(),
-//                           [&](const std::unique_ptr<NodeFunctionHeader> &func) {
-//                               return (func->name == function);
-//                           });
-//    if(it != m_builtin_functions.end()) {
-//        return m_builtin_functions[std::distance(m_builtin_functions.begin(), it)].get();
-//    }
-    auto it = m_builtin_functions.find({function, params});
-    if(it != m_builtin_functions.end()) {
-        return it->second.get();
-    }
-    return nullptr;
-}
-
-NodeFunctionHeader* ASTDesugar::get_property_function(NodeFunctionHeader *function) {
-    auto it = m_property_functions.find(function->name);
-    if(it != m_property_functions.end()) {
-        return it->second.get();
-    }
-    return nullptr;
-}
-
-NodeUIControl* ASTDesugar::get_builtin_widget(const std::string &ui_control) {
-	auto it = m_builtin_widgets.find(ui_control);
-	if(it != m_builtin_widgets.end()) {
-        return it->second.get();
-	}
-	return nullptr;
-}
 
 ASTType ASTDesugar::get_control_function_type(const std::string& control_param) {
     std::string control_par = to_lower(control_param);
@@ -1034,10 +975,11 @@ std::unique_ptr<NodeVariable> ASTDesugar::shorthand_to_control_param(const std::
     if(control_par == "x") control_par = "pos_x";
     if(control_par == "y") control_par = "pos_y";
     if(control_par == "default") control_par += "_value";
-    auto it = m_builtin_variables.find(to_upper(control_par));
-    if(it == m_builtin_variables.end()) it = m_builtin_variables.find(to_upper("control_par_"+control_par));
+	auto &builtin_vars = m_definition_provider->builtin_variables;
+    auto it = builtin_vars.find(to_upper(control_par));
+    if(it == builtin_vars.end()) it = builtin_vars.find(to_upper("control_par_"+control_par));
 
-    if(it != m_builtin_variables.end()) {
+    if(it != builtin_vars.end()) {
         return std::unique_ptr<NodeVariable>(static_cast<NodeVariable*>(it->second->clone().release()));
     }
     return nullptr;
