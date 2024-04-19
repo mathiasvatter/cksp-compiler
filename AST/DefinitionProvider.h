@@ -15,33 +15,41 @@ enum Definition {
 
 class DefinitionProvider {
 public:
+	/// Collects all definitions of builtin variables, arrays, functions, widgets and external variables and
+	/// provides them to the ASTVisitors including dedicated methods to search for the definitions
     DefinitionProvider(
-            const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
-            const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
-			const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>>& m_property_functions,
-            const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
-            const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
-            const std::vector<std::unique_ptr<DataStructure>> &m_external_variables);
-
+			std::unordered_map<std::string, std::unique_ptr<NodeVariable>> m_builtin_variables,
+			std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> m_builtin_functions,
+			std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> m_property_functions,
+			std::unordered_map<std::string, std::unique_ptr<NodeArray>> m_builtin_arrays,
+			std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> m_builtin_widgets,
+			std::vector<std::unique_ptr<DataStructure>> m_external_variables);
+	explicit DefinitionProvider() = default;
 
     /// external variables from eg nckp file
-    const std::vector<std::unique_ptr<DataStructure>> &external_variables;
-    /// builtin engine variables
-    const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &builtin_variables;
+	std::vector<std::unique_ptr<DataStructure>> external_variables{};
+	void set_external_variables(std::vector<std::unique_ptr<DataStructure>> external_variables);
+	/// builtin engine variables
+	std::unordered_map<std::string, std::unique_ptr<NodeVariable>> builtin_variables{};
     NodeVariable* get_builtin_variable(const std::string& var);
+	void set_builtin_variables(std::unordered_map<std::string, std::unique_ptr<NodeVariable>> builtin_variables);
     /// builtin engine arrays
-    const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &builtin_arrays;
+	std::unordered_map<std::string, std::unique_ptr<NodeArray>> builtin_arrays{};
     NodeArray* get_builtin_array(const std::string& arr);
+	void set_builtin_arrays(std::unordered_map<std::string, std::unique_ptr<NodeArray>> builtin_arrays);
     /// builtin engine widgets
-    const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &builtin_widgets;
+	std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> builtin_widgets{};
     NodeUIControl* get_builtin_widget(const std::string &ui_control);
+	void set_builtin_widgets(std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> builtin_widgets);
     /// builtin engine functions
-    const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &builtin_functions;
+	std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> builtin_functions{};
     NodeFunctionHeader* get_builtin_function(const std::string &function, int params);
     NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
+	void set_builtin_functions(std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> builtin_functions);
 	/// predefined property functions like set_label_properties etc
-	const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &property_functions;
+	std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> property_functions{};
 	NodeFunctionHeader* get_property_function(NodeFunctionHeader* function);
+	void set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> property_functions);
 
 private:
 	bool add_scope();

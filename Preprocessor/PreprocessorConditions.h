@@ -6,9 +6,9 @@
 
 #include "Preprocessor.h"
 
-class PreprocessorConditions : public Preprocessor {
+class PreprocessorConditions : public Processor {
 public:
-    PreprocessorConditions(std::vector<Token> tokens, const std::string &currentFile);
+    PreprocessorConditions(std::vector<Token> tokens);
     Result<SuccessTag> process_conditions();
 
 private:

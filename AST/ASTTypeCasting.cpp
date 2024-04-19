@@ -5,11 +5,8 @@
 #include "ASTTypeCasting.h"
 #include "ASTDesugar.h"
 
-ASTTypeCasting::ASTTypeCasting(const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
-                               const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions)
-: m_builtin_widgets(m_builtin_widgets), m_builtin_functions(m_builtin_functions) {
+ASTTypeCasting::ASTTypeCasting(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {}
 
-}
 
 void ASTTypeCasting::visit(NodeProgram& node) {
     for(auto & callback : node.callbacks) {
@@ -47,7 +44,7 @@ void ASTTypeCasting::visit(NodeParamList& node) {
 }
 
 void ASTTypeCasting::visit(NodeUIControl& node) {
-	auto engine_widget = get_builtin_widget(node.ui_control_type);
+	auto engine_widget = m_def_provider->get_builtin_widget(node.ui_control_type);
 	if(node.control_var->type == Unknown) {
 		node.control_var->type = engine_widget->control_var->type;
 	} else if (node.control_var->type != engine_widget->control_var->type) {
@@ -178,7 +175,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 		auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
 		if(node_control_function and contains(node_control_function->name, "control_par")) {
 			auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(
-				static_cast<NodeFunctionHeader *>(get_builtin_function("get_ui_id", 1)->clone().release()));
+				static_cast<NodeFunctionHeader *>(m_def_provider->get_builtin_function("get_ui_id", 1)->clone().release()));
 			node_get_ui_id->args->params.clear();
 			node_get_ui_id->args->params.push_back(node.clone());
 			node_get_ui_id->update_parents(node.parent);
@@ -228,7 +225,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
         auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
         if(node_control_function and contains(node_control_function->name, "control_par")) {
             auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(
-                    static_cast<NodeFunctionHeader *>(get_builtin_function("get_ui_id", 1)->clone().release()));
+                    static_cast<NodeFunctionHeader *>(m_def_provider->get_builtin_function("get_ui_id", 1)->clone().release()));
             node_get_ui_id->args->params.clear();
             node_get_ui_id->args->params.push_back(node.clone());
             node_get_ui_id->update_parents(node.parent);
@@ -238,30 +235,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
 
 }
 
-//std::unique_ptr<NodeAST> ASTTypeCasting::calculate_index_expression(
-//        const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok) {
-//
-//    // Basisfall: letztes Element in der Berechnung
-//    if (dimension == indices.size() - 1) {
-//        return indices[dimension]->clone();
-//    }
-//
-//    // Produkt der Größen der nachfolgenden Dimensionen
-//    std::unique_ptr<NodeAST> size_product = sizes[dimension + 1]->clone();
-//    for (size_t i = dimension + 2; i < sizes.size(); ++i) {
-//        size_product = std::make_unique<NodeBinaryExpr>("*", std::move(size_product), sizes[i]->clone(), tok);
-//    }
-//
-//    // Berechnung des aktuellen Teils der Formel
-//    std::unique_ptr<NodeAST> current_part = std::make_unique<NodeBinaryExpr>(
-//            "*", indices[dimension]->clone(), std::move(size_product), tok);
-//
-//    // Rekursiver Aufruf für den nächsten Teil der Formel
-//    std::unique_ptr<NodeAST> next_part = calculate_index_expression(sizes, indices, dimension + 1, tok);
-//
-//    // Kombinieren des aktuellen Teils mit dem nächsten Teil
-//    return std::make_unique<NodeBinaryExpr>("+", std::move(current_part), std::move(next_part), tok);
-//}
+
 
 void ASTTypeCasting::visit(NodeInt& node) {
     node.type = Integer;
@@ -442,30 +416,6 @@ void ASTTypeCasting::visit(NodeStatementList& node) {
 	}
     // Ersetzen Sie die alte Liste durch die neue
     node.statements = std::move(cleanup_node_statement_list(&node));
-}
-
-
-NodeUIControl* ASTTypeCasting::get_builtin_widget(const std::string &ui_control) {
-	auto it = m_builtin_widgets.find(ui_control);
-	if(it != m_builtin_widgets.end()) {
-        return it->second.get();
-	}
-	return nullptr;
-}
-
-NodeFunctionHeader* ASTTypeCasting::get_builtin_function(const std::string &function, int params) {
-//    auto it = std::find_if(builtin_functions.begin(), builtin_functions.end(),
-//                           [&](const std::unique_ptr<NodeFunctionHeader> &func) {
-//                               return (func->name == function);
-//                           });
-//    if(it != builtin_functions.end()) {
-//        return builtin_functions[std::distance(builtin_functions.begin(), it)].get();
-//    }
-    auto it = m_builtin_functions.find({function, params});
-    if(it != m_builtin_functions.end()) {
-        return it->second.get();
-    }
-    return nullptr;
 }
 
 

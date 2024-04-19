@@ -50,8 +50,8 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         Result.h
         Preprocessor/Preprocessor.cpp
         Preprocessor/Preprocessor.h
-        Preprocessor/PreprocessorImport.cpp
-        Preprocessor/PreprocessorImport.h
+        Preprocessor/ImportProcessor.cpp
+        Preprocessor/ImportProcessor.h
         Preprocessor/PreprocessorConditions.cpp
         Preprocessor/PreprocessorConditions.h
         Preprocessor/PreAST.h

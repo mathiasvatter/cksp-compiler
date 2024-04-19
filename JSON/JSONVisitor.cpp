@@ -4,8 +4,8 @@
 
 #include "JSONVisitor.h"
 
-NCKPTranslator::NCKPTranslator(const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
-	: m_builtin_widgets(m_builtin_widgets) {}
+NCKPTranslator::NCKPTranslator(DefinitionProvider* definition_provider)
+	: m_def_provider(definition_provider) {}
 
 void NCKPTranslator::visit(JSONBool &boolean) {
 
@@ -64,7 +64,7 @@ std::vector<std::unique_ptr<DataStructure>> NCKPTranslator::collect_ui_variables
 		}
 		std::string ui_control = it->second;
 		std::string ui_var = ui_pair.first;
-		auto node_ast = m_builtin_widgets.find(ui_control)->second->clone();
+		auto node_ast = m_def_provider->builtin_widgets.find(ui_control)->second->clone();
 		auto node_ui_control = std::unique_ptr<NodeUIControl>(static_cast<NodeUIControl*>(node_ast.release()));
 		if(auto node_variable = cast_node<NodeVariable>(node_ui_control->control_var.get())) {
 			node_variable->name = ui_var;

@@ -4,8 +4,7 @@
 
 #include "PreprocessorParser.h"
 
-PreprocessorParser::PreprocessorParser(std::vector<Token> tokens) : Parser(
-        std::move(tokens)) {
+PreprocessorParser::PreprocessorParser(std::vector<Token> tokens) : Processor(std::move(tokens)) {
     m_pos = 0;
     m_curr_token = m_tokens.at(0).type;
 }
@@ -653,10 +652,6 @@ Result<std::unique_ptr<PreNodeIncrementer>> PreprocessorParser::parse_incremente
     node_incrementer->iterator_step = std::move(list->params[2]);
     node_incrementer->iterator_step->parent = node_incrementer.get();
     return Result<std::unique_ptr<PreNodeIncrementer>>(std::move(node_incrementer));
-}
-
-bool PreprocessorParser::is_empty_line() {
-    return peek().type == token::LINEBRK and peek(-1).type == token::LINEBRK;
 }
 
 Result<std::unique_ptr<PreNodePragma>> PreprocessorParser::parse_pragma(PreNodeAST* parent) {

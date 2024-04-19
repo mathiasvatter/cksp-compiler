@@ -6,22 +6,15 @@
 #include "../JSON/JSONParser.h"
 #include "../JSON/JSONVisitor.h"
 
-ASTVariables::ASTVariables(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
-                           const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
-                           const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
-                           const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
-                           const std::vector<std::unique_ptr<DataStructure>> &m_external_variables,
-                           std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines)
-        : m_builtin_functions(m_builtin_functions), m_builtin_variables(m_builtin_variables),
-		m_builtin_arrays(m_builtin_arrays), m_builtin_widgets(m_builtin_widgets),
-        m_function_inlines(std::move(m_function_inlines)), m_external_variables(m_external_variables) {}
+ASTVariables::ASTVariables(DefinitionProvider* definition_provider, std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines)
+        : m_def_provider(definition_provider), m_function_inlines(std::move(m_function_inlines)) {}
 
 
 void ASTVariables::visit(NodeProgram& node) {
-    for(auto & external_var : m_external_variables) {
+    for(auto & external_var : m_def_provider->external_variables) {
         external_var->accept(*this);
     }
-    for(auto & builtin_array : m_builtin_arrays) {
+    for(auto & builtin_array : m_def_provider->builtin_arrays) {
         m_declared_arrays.insert({builtin_array.first, builtin_array.second.get()});
     }
     for(auto & callback : node.callbacks) {
@@ -59,7 +52,7 @@ void ASTVariables::visit(NodeStatement& node) {
 
 void ASTVariables::visit(NodeUIControl& node) {
 
-	auto engine_widget = get_builtin_widget(node.ui_control_type);
+	auto engine_widget = m_def_provider->get_builtin_widget(node.ui_control_type);
 	if(!engine_widget) {
 		CompileError(ErrorType::SyntaxError, "Did not recognize engine widget.", node.tok.line, "valid widget type", node.ui_control_type, node.tok.file).exit();
 	}
@@ -85,7 +78,7 @@ void ASTVariables::visit(NodeUIControl& node) {
 }
 
 void ASTVariables::visit(NodeArray& node) {
-	auto node_builtin_array = get_builtin_array(&node);
+	auto node_builtin_array = m_def_provider->get_builtin_array(node.name);
 	auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
     if(node_declare_statement and node_declare_statement->to_be_declared.get() != &node) node_declare_statement = nullptr;
 	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
@@ -102,7 +95,6 @@ void ASTVariables::visit(NodeArray& node) {
 	} else if (node_ui_control) {
 		if(get_declared_control(node_ui_control)) {
 			CompileError(ErrorType::SyntaxError,"Control Widget Array has already been declared.", node.tok.line, "", node.name, node.tok.file).exit();
-//			exit(EXIT_FAILURE);
 		} else {
 			m_declared_controls[node_ui_control->get_string()] = node_ui_control;
 			m_declared_arrays[node.name] = &node;
@@ -193,7 +185,7 @@ void ASTVariables::visit(NodeVariable& node) {
 
     auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
     if(node_declare_statement and node_declare_statement->to_be_declared.get() != &node) node_declare_statement = nullptr;
-	auto node_builtin_variable = get_builtin_variable(&node);
+	auto node_builtin_variable = m_def_provider->get_builtin_variable(node.name);
 	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
     auto node_param_list = cast_node<NodeParamList>(node.parent);
 	if(node_builtin_variable && (node_declare_statement || node_ui_control) ){
@@ -292,41 +284,6 @@ void ASTVariables::visit(NodeStatementList& node) {
     }
     // Ersetzen Sie die alte Liste durch die neue
     node.statements = std::move(cleanup_node_statement_list(&node));
-}
-
-//NodeFunctionHeader* ASTVariables::get_builtin_function(const std::string &function) {
-//    auto it = std::find_if(builtin_functions.begin(), builtin_functions.end(),
-//                           [&](const std::unique_ptr<NodeFunctionHeader> &func) {
-//                               return (func->name == function);
-//                           });
-//    if(it != builtin_functions.end()) {
-//        return builtin_functions[std::distance(builtin_functions.begin(), it)].get();
-//    }
-//    return nullptr;
-//}
-
-NodeVariable* ASTVariables::get_builtin_variable(NodeVariable *var) {
-    auto it = m_builtin_variables.find(var->name);
-    if(it != m_builtin_variables.end()) {
-        return it->second.get();
-    }
-    return nullptr;
-}
-
-NodeArray* ASTVariables::get_builtin_array(NodeArray *arr) {
-    auto it = m_builtin_arrays.find(arr->name);
-    if(it != m_builtin_arrays.end()) {
-        return it->second.get();
-    }
-    return nullptr;
-}
-
-NodeUIControl* ASTVariables::get_builtin_widget(const std::string &ui_control) {
-	auto it = m_builtin_widgets.find(ui_control);
-	if(it != m_builtin_widgets.end()) {
-        return it->second.get();
-	}
-	return nullptr;
 }
 
 NodeVariable *ASTVariables::get_declared_variable(const std::string& var) {

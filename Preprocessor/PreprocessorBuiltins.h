@@ -4,11 +4,12 @@
 
 #pragma once
 
-#include "Preprocessor.h"
+#include "../Processor/Processor.h"
+#include "../AST/DefinitionProvider.h"
 
-class PreprocessorBuiltins : public Preprocessor {
+class PreprocessorBuiltins : public Processor {
 public:
-	explicit PreprocessorBuiltins();
+	explicit PreprocessorBuiltins(DefinitionProvider* definition_provider);
     Result<SuccessTag> parse_builtin_variables(const std::string &file);
     Result<SuccessTag> parse_builtin_functions(const std::string &file);
 	Result<SuccessTag> parse_builtin_widgets(const std::string &file);
@@ -21,17 +22,17 @@ public:
 	Result<std::unique_ptr<NodeUIControl>> parse_builtin_ui_control();
     Result<std::pair<std::vector<ASTType>, std::vector<DataType>>> parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args);
 
-    [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &get_builtin_variables() const;
-    [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &get_builtin_arrays() const;
-    [[nodiscard]] const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &get_builtin_functions() const;
-    [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &get_property_functions() const;
-	[[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &get_builtin_widgets() const;
+//    [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &get_builtin_variables() const;
+//    [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &get_builtin_arrays() const;
+//    [[nodiscard]] const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &get_builtin_functions() const;
+//    [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &get_property_functions() const;
+//	[[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &get_builtin_widgets() const;
 
 
 private:
+	DefinitionProvider* m_def_provider;
     std::unordered_map<std::string, std::unique_ptr<NodeVariable>> m_builtin_variables;
     std::unordered_map<std::string, std::unique_ptr<NodeArray>> m_builtin_arrays;
-//    std::vector<std::unique_ptr<NodeFunctionHeader>> builtin_functions;
     std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> m_builtin_functions;
 
     std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> m_property_functions;

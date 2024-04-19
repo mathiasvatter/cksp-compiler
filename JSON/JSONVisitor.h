@@ -5,6 +5,7 @@
 #pragma once
 
 #include "JSONParser.h"
+#include "../AST/DefinitionProvider.h"
 
 class JSONVisitor {
 public:
@@ -38,7 +39,7 @@ inline std::map<int, std::string> UI_CONTROL_INDEX = {
 
 class NCKPTranslator : public JSONVisitor {
 public:
-	explicit NCKPTranslator(const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets);
+	explicit NCKPTranslator(DefinitionProvider* definition_provider);
 	void visit(JSONObject& object) override;
     void visit(JSONArray& array) override;
     void visit(JSONString& str) override;
@@ -48,12 +49,14 @@ public:
 
     std::vector<std::unique_ptr<DataStructure>> collect_ui_variables();
 private:
+	DefinitionProvider* m_def_provider;
+
 	std::stack<std::pair<std::string, JSONValue*>> m_panel_prefixes;
 	JSONValue* m_current_object = nullptr;
 	JSONValue* m_current_panel_object = nullptr;
     std::string m_current_property;
     int m_current_control_idx;
     std::unordered_map<std::string, int> m_ui_controls;
-	const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
+//	const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
 //    std::vector<std::unique_ptr<NodeUIControl>> m_ui_variables;
 };

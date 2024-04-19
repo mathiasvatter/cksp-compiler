@@ -4,23 +4,24 @@
 
 #include "DefinitionProvider.h"
 
+#include <utility>
+
 DefinitionProvider::DefinitionProvider(
-        const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
-        const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
-		const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>>& m_property_functions,
-        const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
-        const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
-        const std::vector<std::unique_ptr<DataStructure>> &m_external_variables)
-        : builtin_variables(m_builtin_variables),
-		  builtin_functions(m_builtin_functions),
-		  property_functions(m_property_functions), // property functions
-        builtin_arrays(m_builtin_arrays),
-		  builtin_widgets(m_builtin_widgets),
-		  external_variables(m_external_variables) {
+		std::unordered_map<std::string, std::unique_ptr<NodeVariable>> m_builtin_variables,
+		std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> m_builtin_functions,
+		std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> m_property_functions,
+		std::unordered_map<std::string, std::unique_ptr<NodeArray>> m_builtin_arrays,
+		std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> m_builtin_widgets,
+		std::vector<std::unique_ptr<DataStructure>> m_external_variables)
+        : builtin_variables(std::move(m_builtin_variables)),
+		  builtin_functions(std::move(m_builtin_functions)),
+		  property_functions(std::move(m_property_functions)), // property functions
+		  builtin_arrays(std::move(m_builtin_arrays)),
+		  builtin_widgets(std::move(m_builtin_widgets)),
+		  external_variables(std::move(m_external_variables)) {
     for(auto& var : m_external_variables) {
         m_declared_data_structures.back().insert({var->name, var.get()});
     }
-
 }
 
 DataStructure* DefinitionProvider::get_declaration(DataStructure* var) {
@@ -214,4 +215,28 @@ bool DefinitionProvider::remove_scope() {
     m_declared_controls.pop_back();
     m_declared_data_structures.pop_back();
     return true;
+}
+
+void DefinitionProvider::set_external_variables(std::vector<std::unique_ptr<DataStructure>> external_variables) {
+	DefinitionProvider::external_variables = std::move(external_variables);
+}
+
+void DefinitionProvider::set_builtin_variables(std::unordered_map<std::string, std::unique_ptr<NodeVariable>> builtin_variables) {
+	DefinitionProvider::builtin_variables = std::move(builtin_variables);
+}
+
+void DefinitionProvider::set_builtin_arrays(std::unordered_map<std::string, std::unique_ptr<NodeArray>> builtin_arrays) {
+	DefinitionProvider::builtin_arrays = std::move(builtin_arrays);
+}
+
+void DefinitionProvider::set_builtin_widgets(std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> builtin_widgets) {
+	DefinitionProvider::builtin_widgets = std::move(builtin_widgets);
+}
+
+void DefinitionProvider::set_builtin_functions(std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> builtin_functions) {
+	DefinitionProvider::builtin_functions = std::move(builtin_functions);
+}
+
+void DefinitionProvider::set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> property_functions) {
+	DefinitionProvider::property_functions = std::move(property_functions);
 }
