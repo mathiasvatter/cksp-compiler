@@ -5,7 +5,7 @@
 #pragma once
 
 #include "PreASTVisitor.h"
-#include "PreprocessorImport.h"
+#include "ImportProcessor.h"
 
 class PreASTPragma : public PreASTVisitor {
 public:

@@ -5,12 +5,11 @@
 #pragma once
 
 #include "ASTVisitor.h"
+#include "DefinitionProvider.h"
 
 class ASTTypeCasting : public ASTVisitor {
 public:
-    explicit ASTTypeCasting(
-            const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
-            const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions);
+    explicit ASTTypeCasting(DefinitionProvider* definition_provider);
 
     void visit(NodeProgram& node) override;
     void visit(NodeSingleDeclareStatement& node) override;
@@ -30,16 +29,8 @@ public:
 //	void visit(NodeStatement& node) override;
 
 private:
-
-    const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
-	NodeUIControl* get_builtin_widget(const std::string &ui_control);
-
-    const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions;
-    NodeFunctionHeader* get_builtin_function(const std::string &function, int params);
-
+	DefinitionProvider* m_def_provider;
     std::unordered_map<int, ASTType> m_return_variables;
-
-//    std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok);
 
 };
 

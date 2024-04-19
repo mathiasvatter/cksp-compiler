@@ -7,12 +7,9 @@
 #include "engine_variables.h"
 #include "engine_functions.h"
 
-PreprocessorBuiltins::PreprocessorBuiltins()
-: Preprocessor(std::vector<Token>{}, (std::string)"") {
+PreprocessorBuiltins::PreprocessorBuiltins(DefinitionProvider* definition_provider)
+: Processor(), m_def_provider(definition_provider) {
     m_pos = 0;
-//    m_builtin_variables_file = builtin_vars;
-//    m_builtin_functions_file = builtin_functions;
-//	m_builtin_widgets_file = builtin_widgets;
     m_builtin_variables_file = "engine_variables.h";
     m_builtin_functions_file = "engine_functions.h";
 	m_builtin_widgets_file = "engine_widgets.h";
@@ -30,6 +27,12 @@ void PreprocessorBuiltins::process_builtins() {
 	auto builtin_widgets = parse_builtin_widgets(m_builtin_widgets_file);
 	if(builtin_widgets.is_error())
 		builtin_widgets.get_error().exit();
+
+	m_def_provider->set_builtin_variables(std::move(m_builtin_variables));
+	m_def_provider->set_builtin_arrays(std::move(m_builtin_arrays));
+	m_def_provider->set_builtin_functions(std::move(m_builtin_functions));
+	m_def_provider->set_builtin_widgets(std::move(m_builtin_widgets));
+	m_def_provider->set_property_functions(std::move(m_property_functions));
 }
 
 
@@ -272,25 +275,25 @@ Result<std::pair<std::vector<ASTType>, std::vector<DataType>>> PreprocessorBuilt
     return Result<std::pair<std::vector<ASTType>, std::vector<DataType>>>(result_pair);
 }
 
-const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &PreprocessorBuiltins::get_builtin_variables() const {
-    return m_builtin_variables;
-}
-
-const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &PreprocessorBuiltins::get_builtin_arrays() const {
-    return m_builtin_arrays;
-}
-
-const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &PreprocessorBuiltins::get_builtin_functions() const {
-    return m_builtin_functions;
-}
-
-const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &PreprocessorBuiltins::get_property_functions() const {
-    return m_property_functions;
-}
-
-const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &PreprocessorBuiltins::get_builtin_widgets() const {
-	return m_builtin_widgets;
-}
+//const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &PreprocessorBuiltins::get_builtin_variables() const {
+//    return m_builtin_variables;
+//}
+//
+//const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &PreprocessorBuiltins::get_builtin_arrays() const {
+//    return m_builtin_arrays;
+//}
+//
+//const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &PreprocessorBuiltins::get_builtin_functions() const {
+//    return m_builtin_functions;
+//}
+//
+//const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &PreprocessorBuiltins::get_property_functions() const {
+//    return m_property_functions;
+//}
+//
+//const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &PreprocessorBuiltins::get_builtin_widgets() const {
+//	return m_builtin_widgets;
+//}
 
 bool PreprocessorBuiltins::is_property_function(const std::string &fun_name) {
     return contains(fun_name, "_properties") || contains(fun_name, "set_bounds");

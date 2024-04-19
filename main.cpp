@@ -12,7 +12,7 @@
 #include "AST/ASTVariables.h"
 #include "Generator/ASTGenerator.h"
 #include "AST/ASTDesugarStructs.h"
-#include "Preprocessor/PreprocessorImport.h"
+#include "Preprocessor/ImportProcessor.h"
 #include "FileHandler.h"
 #include "CommandLineOptions.h"
 #include "AST/DefinitionProvider.h"
@@ -44,23 +44,16 @@ int main(int argc, char* argv[]) {
     // Startzeitpunkt speichern
     auto start_time = std::chrono::high_resolution_clock::now();
 
-//    if(output_filename.empty())
-//        std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << standard_output_path << std::endl;
-//    else
-//        std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << output_filename << std::endl;
-//    std::cout << std::endl;
+	DefinitionProvider definition_provider;
+
     FileHandler file_handler(input_filename);
 	Tokenizer tokenizer(file_handler.get_output(), input_filename);
     auto tokens = tokenizer.tokenize();
-//    for(auto& tok: tokens) {
-////        if(tok.type != token::COMMENT or tok.type != token::LINEBRK)
-//            std::cout << tok << std::endl;
-//    }
 
-    PreprocessorBuiltins builtins;
+    PreprocessorBuiltins builtins(&definition_provider);
     builtins.process_builtins();
 
-    PreprocessorImport imports(tokens, input_filename, builtins.get_builtin_widgets());
+    ImportProcessor imports(tokens, input_filename, &definition_provider);
     auto import_result = imports.process_imports();
     if(import_result.is_error()) {
         import_result.get_error().print();
@@ -68,14 +61,14 @@ int main(int argc, char* argv[]) {
         CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",input_filename).print();
         exit(EXIT_FAILURE);
     }
-    tokens = std::move(imports.get_tokens());
+    tokens = std::move(imports.get_token_vector());
 
     auto import_time = std::chrono::high_resolution_clock::now();
     auto import_duration = std::chrono::duration_cast<std::chrono::milliseconds>(import_time-start_time);
 
-    Preprocessor preprocessor(tokens, input_filename);
+    Preprocessor preprocessor(tokens);
     preprocessor.process();
-    auto preprocessed_tokens = preprocessor.get_tokens();
+    auto preprocessed_tokens = preprocessor.get_token_vector();
 
     // ---------- output path -----------
     if(output_filename.empty() && !preprocessor.get_output_path().empty())
@@ -100,8 +93,6 @@ int main(int argc, char* argv[]) {
     auto parsing_time = std::chrono::high_resolution_clock::now();
     auto parsing_duration = std::chrono::duration_cast<std::chrono::milliseconds>(parsing_time-preprocessor_time);
 
-	DefinitionProvider definition_provider(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_property_functions(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets(), imports.get_external_variables());
-
     ASTDesugarStructs desugar1;
     ast->accept(desugar1);
 
@@ -111,10 +102,10 @@ int main(int argc, char* argv[]) {
     auto desugaring_time = std::chrono::high_resolution_clock::now();
     auto desugaring_duration = std::chrono::duration_cast<std::chrono::milliseconds>(desugaring_time-parsing_time);
 
-    ASTVariables variables(builtins.get_builtin_variables(), builtins.get_builtin_functions(), builtins.get_builtin_arrays(), builtins.get_builtin_widgets(), imports.get_external_variables(), desugar.get_function_inlines());
+    ASTVariables variables(&definition_provider, desugar.get_function_inlines());
     ast->accept(variables);
 
-	ASTTypeCasting typecast(builtins.get_builtin_widgets(), builtins.get_builtin_functions());
+	ASTTypeCasting typecast(&definition_provider);
 	ast->accept(typecast);
 
     ASTTypeChecking type_check;
@@ -126,7 +117,6 @@ int main(int argc, char* argv[]) {
 	ASTGenerator generator;
 	ast->accept(generator);
 //	generator.print();
-//	generator.generate(std::filesystem::path(curr_path.parent_path() / "test.txt").string());
     generator.generate(output_filename);
 
 

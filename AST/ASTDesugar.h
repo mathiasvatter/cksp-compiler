@@ -43,28 +43,19 @@ public:
 	std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> get_function_inlines();
 
 private:
-	DefinitionProvider* m_definition_provider;
+	DefinitionProvider* m_def_provider;
 
     NodeAST* m_current_node_replaced = nullptr;
 
-//    const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash>& builtin_functions;
-//    NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
-//    NodeFunctionHeader* get_builtin_function(const std::string &function, int params);
     std::unique_ptr<NodeFunctionCall> wrap_in_get_ui_id(std::unique_ptr<NodeAST> variable);
-
-//    const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>>& builtin_widgets;
-//	NodeUIControl* get_builtin_widget(const std::string &ui_control);
 
     void declare_dummy_return_variable();
     void declare_compiler_variables();
 
-//    const std::unordered_map<std::string, std::unique_ptr<NodeVariable>>& builtin_variables;
     std::unique_ptr<NodeVariable> shorthand_to_control_param(const std::string& shorthand);
     // returns either string (for get/set_control_par_str) or integer (for get/set_control_par)
     static ASTType get_control_function_type(const std::string& control_param);
 
-//    const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>>& property_functions;
-//    NodeFunctionHeader* get_property_function(NodeFunctionHeader* function);
     std::unique_ptr<NodeStatementList> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header);
 
     NodeProgram* m_program = nullptr;

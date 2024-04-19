@@ -6,32 +6,11 @@
 
 
 #include "ASTVisitor.h"
-
-//// user-defined hash functions for comparison and unordered_map
-//struct StringHash {
-//	size_t operator()(const std::string& key) const {
-//		std::string lower_key;
-//		std::transform(key.begin(), key.end(), std::back_inserter(lower_key), [](unsigned char c){ return std::tolower(c); });
-//		return std::hash<std::string>()(key);
-//	}
-//};
-//
-//struct StringEqual {
-//	bool operator()(const std::string& a, const std::string& b) const {
-//		return string_compare(a, b);
-////		return a == b;
-//	}
-//};
-
+#include "DefinitionProvider.h"
 
 class ASTVariables : public ASTVisitor {
 public:
-    ASTVariables(const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables,
-                 const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &m_builtin_functions,
-                 const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays,
-                 const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets,
-                 const std::vector<std::unique_ptr<DataStructure>> &m_external_variables,
-                 std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines);
+    ASTVariables(DefinitionProvider* definition_provider, std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines);
 
     void visit(NodeProgram& node) override;
     void visit(NodeCallback& node) override;
@@ -49,22 +28,8 @@ public:
     void visit(NodeParamList& node) override;
 
 private:
-
+	DefinitionProvider* m_def_provider;
     std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines;
-
-	/// builtin engine functions
-    const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash>& m_builtin_functions;
-    /// builtin engine variables
-    const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &m_builtin_variables;
-    NodeVariable* get_builtin_variable(NodeVariable* var);
-    /// builtin engine arrays
-    const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &m_builtin_arrays;
-    NodeArray* get_builtin_array(NodeArray* arr);
-	/// builtin engine widgets
-    const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
-	NodeUIControl* get_builtin_widget(const std::string &ui_control);
-
-    const std::vector<std::unique_ptr<DataStructure>> &m_external_variables;
 
     /// declared variables
     std::unordered_map<std::string, NodeVariable*, StringHash, StringEqual> m_declared_variables;

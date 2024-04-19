@@ -4,8 +4,8 @@
 
 #include "PreprocessorConditions.h"
 
-PreprocessorConditions::PreprocessorConditions(std::vector<Token> tokens, const std::string &currentFile) :
-        Preprocessor(std::move(tokens), currentFile) {
+PreprocessorConditions::PreprocessorConditions(std::vector<Token> tokens) :
+        Processor(std::move(tokens)) {
     m_pos = 0;
     m_curr_token = m_tokens.at(0).type;
 }

@@ -2,19 +2,20 @@
 // Created by Mathias Vatter on 11.10.23.
 //
 
-#include "PreprocessorImport.h"
+#include "ImportProcessor.h"
+
+#include <utility>
 #include "../JSON/JSONParser.h"
 #include "../JSON/JSONVisitor.h"
 #include "../FileHandler.h"
 
-PreprocessorImport::PreprocessorImport(std::vector<Token> tokens, std::string current_file,
-               const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
-        : Preprocessor(std::move(tokens), std::move(current_file)), m_builtin_widgets(m_builtin_widgets) {
+ImportProcessor::ImportProcessor(std::vector<Token> tokens, std::string current_file, DefinitionProvider* definition_provider)
+        : Processor(std::move(tokens)), m_def_provider(definition_provider), m_current_file(std::move(current_file)) {
     m_pos = 0;
     m_curr_token = m_tokens.at(0).type;
 }
 
-Result<SuccessTag> PreprocessorImport::process_imports() {
+Result<SuccessTag> ImportProcessor::process_imports() {
 	m_imported_files.insert(m_current_file);
 	auto result = process_import_statements(m_tokens, m_current_file);
 	if(result.is_error())
@@ -24,7 +25,7 @@ Result<SuccessTag> PreprocessorImport::process_imports() {
 }
 
 
-Result<SuccessTag> PreprocessorImport::process_import_statements(std::vector<Token>& tokens, const std::string& current_file) {
+Result<SuccessTag> ImportProcessor::process_import_statements(std::vector<Token>& tokens, const std::string& current_file) {
     m_pos = 0;
     while (peek(tokens).type != token::END_TOKEN) {
         if(peek(tokens).type == token::IMPORT) {
@@ -48,7 +49,7 @@ Result<SuccessTag> PreprocessorImport::process_import_statements(std::vector<Tok
 }
 
 
-Result<SuccessTag> PreprocessorImport::evaluate_import(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file) {
+Result<SuccessTag> ImportProcessor::evaluate_import(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file) {
     auto alias = import_stmt->alias;
     auto path = resolve_path(import_stmt->filepath, peek(tokens), current_file);
     if(path.is_error()) {
@@ -76,7 +77,7 @@ Result<SuccessTag> PreprocessorImport::evaluate_import(std::vector<Token>& token
 	return Result<SuccessTag>(SuccessTag{});
 }
 
-Result<SuccessTag> PreprocessorImport::evaluate_import_nckp(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file) {
+Result<SuccessTag> ImportProcessor::evaluate_import_nckp(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file) {
     auto path = resolve_path(import_stmt->filepath, peek(tokens), current_file);
     if(path.is_error()) {
         path.get_error().print();
@@ -87,15 +88,15 @@ Result<SuccessTag> PreprocessorImport::evaluate_import_nckp(std::vector<Token>& 
         auto nckp_tokens = tokenizer.tokenize();
         JSONParser parser(std::move(nckp_tokens));
         auto ast = parser.parse_json();
-        NCKPTranslator translator(m_builtin_widgets);
+        NCKPTranslator translator(m_def_provider);
         ast->accept(translator);
         auto ui_variables = translator.collect_ui_variables();
-        m_external_variables = std::move(ui_variables);
+        m_def_provider->set_external_variables(std::move(ui_variables));
     }
     return Result<SuccessTag>(SuccessTag{});
 }
 
-Result<std::unique_ptr<NodeImport>> PreprocessorImport::parse_import_nckp(std::vector<Token>& tokens) {
+Result<std::unique_ptr<NodeImport>> ImportProcessor::parse_import_nckp(std::vector<Token>& tokens) {
     size_t begin = m_pos;
     consume(tokens);
     if(peek(tokens).type != token::OPEN_PARENTH) {
@@ -125,7 +126,7 @@ Result<std::unique_ptr<NodeImport>> PreprocessorImport::parse_import_nckp(std::v
     return Result<std::unique_ptr<NodeImport>>(std::move(return_value));
 }
 
-Result<std::unique_ptr<NodeImport>> PreprocessorImport::parse_import(std::vector<Token>& tokens) {
+Result<std::unique_ptr<NodeImport>> ImportProcessor::parse_import(std::vector<Token>& tokens) {
     //consume import token IMPORT
     size_t begin = m_pos;
     consume(tokens);
