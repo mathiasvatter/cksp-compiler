@@ -6,10 +6,10 @@
 
 #include <unordered_map>
 
-#include "Tokenizer/Tokenizer.h"
-#include "AST/AST.h"
-#include "Tokenizer/Tokens.h"
-#include "misc/Result.h"
+#include "../Tokenizer/Tokenizer.h"
+#include "../AST/AST.h"
+#include "../Tokenizer/Tokens.h"
+#include "../misc/Result.h"
 
 
 // Hilfsfunktion, die das Result-Objekt zurückgibt, wenn kein Fehler vorliegt.

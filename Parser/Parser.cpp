@@ -3,7 +3,7 @@
 //
 
 #include "Parser.h"
-#include "AST/ASTVisitor.h"
+#include "../AST/ASTVisitor.h"
 
 #include <filesystem>
 #include <utility>
