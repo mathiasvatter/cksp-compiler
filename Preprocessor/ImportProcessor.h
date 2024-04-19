@@ -3,10 +3,9 @@
 //
 
 #pragma once
-//#include "Preprocessor.h"
 #include "../Processor/Processor.h"
 #include "../AST/AST.h"
-#include "../AST/DefinitionProvider.h"
+#include "../BuiltinsProcessing/DefinitionProvider.h"
 #include <unordered_set>
 
 Result<std::string> resolve_path(const std::string& import_path, const Token& token, const std::string& curr_file);

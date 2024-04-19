@@ -5,7 +5,7 @@
 #pragma once
 
 #include "Preprocessor.h"
-#include "PreAST.h"
+#include "PreAST/PreAST.h"
 
 
 class PreprocessorParser : public Processor {

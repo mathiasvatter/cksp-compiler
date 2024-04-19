@@ -6,8 +6,8 @@
 
 #include <utility>
 
-#include "../Tokenizer/Tokenizer.h"
-#include "../AST/AST.h"
+#include "../../Tokenizer/Tokenizer.h"
+#include "../../AST/AST.h"
 
 enum class PreNodeType {
 	NUMBER,

@@ -8,11 +8,11 @@
 
 #include "CommandLineOptions.h"
 #include "version.h"
-#include "Readme.h"
+#include "help.h"
 
 CommandLineOptions::CommandLineOptions(int argc, char **argv) {
 
-    std::string help = R"(
+    std::string cli_help = R"(
 Usage: cksp [options] <input-file>
 
 Options:
@@ -21,15 +21,15 @@ Options:
  -v, --version                 Display version number
 
 )";
-    std::string data(reinterpret_cast<char*>(Readme), Readme_len);
-    help += data;
+    std::string data(reinterpret_cast<char*>(help), help_len);
+	cli_help += data;
     std::string version = "cksp version "+COMPILER_VERSION+"\n";
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
 
         if (arg == "-h" || arg == "--help") {
-            std::cout << help;
+            std::cout << cli_help;
             exit(0);
         } else if (arg == "-o") {
             if (i + 1 < argc) {
@@ -48,7 +48,7 @@ Options:
 
     if (m_input_file.empty()) {
         std::cerr << "Error: No input file provided.\n";
-        std::cout << help;
+        std::cout << cli_help;
         exit(1);
     }
     if (std::filesystem::path(m_input_file).is_relative()) {

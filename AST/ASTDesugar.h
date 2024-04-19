@@ -5,7 +5,7 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "DefinitionProvider.h"
+#include "../BuiltinsProcessing/DefinitionProvider.h"
 #include <type_traits>
 
 

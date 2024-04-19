@@ -2,12 +2,12 @@
 // Created by Mathias Vatter on 18.11.23.
 //
 
-#include "PreprocessorBuiltins.h"
+#include "BuiltinsProcessor.h"
 #include "engine_widgets.h"
 #include "engine_variables.h"
 #include "engine_functions.h"
 
-PreprocessorBuiltins::PreprocessorBuiltins(DefinitionProvider* definition_provider)
+BuiltinsProcessor::BuiltinsProcessor(DefinitionProvider* definition_provider)
 : Processor(), m_def_provider(definition_provider) {
     m_pos = 0;
     m_builtin_variables_file = "engine_variables.h";
@@ -15,7 +15,7 @@ PreprocessorBuiltins::PreprocessorBuiltins(DefinitionProvider* definition_provid
 	m_builtin_widgets_file = "engine_widgets.h";
 }
 
-void PreprocessorBuiltins::process_builtins() {
+void BuiltinsProcessor::process() {
     auto builtin_vars = parse_builtin_variables(m_builtin_variables_file);
     if(builtin_vars.is_error())
         builtin_vars.get_error().exit();
@@ -36,10 +36,9 @@ void PreprocessorBuiltins::process_builtins() {
 }
 
 
-Result<SuccessTag> PreprocessorBuiltins::parse_builtin_variables(const std::string &file) {
+Result<SuccessTag> BuiltinsProcessor::parse_builtin_variables(const std::string &file) {
     std::string data(reinterpret_cast<char*>(engine_variables), engine_variables_len);
     Tokenizer tokenizer(data, file);
-//    tokenizer.set_input(data);
     m_tokens = tokenizer.tokenize();
     m_pos = 0;
     while(peek(m_tokens).type != token::END_TOKEN) {
@@ -62,10 +61,9 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_variables(const std::stri
     return Result<SuccessTag>(SuccessTag{});
 }
 
-Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::string &file) {
+Result<SuccessTag> BuiltinsProcessor::parse_builtin_functions(const std::string &file) {
     std::string data(reinterpret_cast<char*>(engine_functions), engine_functions_len);
     Tokenizer tokenizer(data, file);
-//    tokenizer.set_input(data);
     m_tokens = tokenizer.tokenize();
     m_pos = 0;
     while(peek(m_tokens).type != token::END_TOKEN) {
@@ -85,10 +83,9 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_functions(const std::stri
     return Result<SuccessTag>(SuccessTag{});
 }
 
-Result<SuccessTag> PreprocessorBuiltins::parse_builtin_widgets(const std::string &file) {
+Result<SuccessTag> BuiltinsProcessor::parse_builtin_widgets(const std::string &file) {
     std::string data(reinterpret_cast<char*>(engine_widgets), engine_widgets_len);
 	Tokenizer tokenizer(data, file);
-//    tokenizer.set_input(data);
 	m_tokens = tokenizer.tokenize();
 	m_pos = 0;
 	while(peek(m_tokens).type != token::END_TOKEN) {
@@ -104,7 +101,7 @@ Result<SuccessTag> PreprocessorBuiltins::parse_builtin_widgets(const std::string
 }
 
 
-std::unique_ptr<NodeVariable> PreprocessorBuiltins::parse_builtin_variable() {
+std::unique_ptr<NodeVariable> BuiltinsProcessor::parse_builtin_variable() {
     Token name = consume(m_tokens); // consume variable name token
     // cut away identifier
     std::string var_name = name.val;
@@ -118,7 +115,7 @@ std::unique_ptr<NodeVariable> PreprocessorBuiltins::parse_builtin_variable() {
     return std::move(node_variable);
 }
 
-std::unique_ptr<NodeArray> PreprocessorBuiltins::parse_builtin_array() {
+std::unique_ptr<NodeArray> BuiltinsProcessor::parse_builtin_array() {
     Token name = consume(m_tokens); // consume array name token
     std::string arr_name = name.val;
     ASTType type = get_identifier_type(arr_name[0]);
@@ -133,12 +130,12 @@ std::unique_ptr<NodeArray> PreprocessorBuiltins::parse_builtin_array() {
     return std::move(node_array);
 }
 
-ASTType PreprocessorBuiltins::get_identifier_type(char identifier) {
+ASTType BuiltinsProcessor::get_identifier_type(char identifier) {
     token token_type = *get_token_type(TYPES, std::string(1, identifier));
     return token_to_type(token_type);
 }
 
-Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_function() {
+Result<std::unique_ptr<NodeFunctionHeader>> BuiltinsProcessor::parse_builtin_function() {
     Token func_name = consume(m_tokens); // consume function name
     std::unique_ptr<NodeParamList> func_args = std::unique_ptr<NodeParamList>(new NodeParamList({}, func_name));
     std::vector<ASTType> arg_types;
@@ -177,7 +174,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> PreprocessorBuiltins::parse_builtin_
     return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(node_function));
 }
 
-Result<std::unique_ptr<NodeUIControl>> PreprocessorBuiltins::parse_builtin_ui_control() {
+Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_control() {
 	Token tok = consume(m_tokens);
 	std::string ui_control_type = tok.val; // consume ui_control identifier
 	if(peek(m_tokens).type != token::KEYWORD) {
@@ -222,7 +219,7 @@ Result<std::unique_ptr<NodeUIControl>> PreprocessorBuiltins::parse_builtin_ui_co
 	return Result<std::unique_ptr<NodeUIControl>>(std::move(node_ui_control));
 }
 
-ASTType PreprocessorBuiltins::get_type_annotation(const Token& tok) {
+ASTType BuiltinsProcessor::get_type_annotation(const Token& tok) {
 //    Token token_type = tok; // get type token
     ASTType type = Any;
     if(tok.val.find("int") != std::string::npos) {
@@ -239,14 +236,14 @@ ASTType PreprocessorBuiltins::get_type_annotation(const Token& tok) {
     return type;
 }
 
-DataType PreprocessorBuiltins::get_var_type_annotation(const std::string& keyword) {
+DataType BuiltinsProcessor::get_var_type_annotation(const std::string& keyword) {
     if(keyword.find("array") != std::string::npos) {
         return Array;
     }
     return Mutable;
 }
 
-Result<std::pair<std::vector<ASTType>, std::vector<DataType>>> PreprocessorBuiltins::parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args) {
+Result<std::pair<std::vector<ASTType>, std::vector<DataType>>> BuiltinsProcessor::parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args) {
     std::vector<ASTType> arg_types;
     std::vector<DataType> arg_var_types;
     while(peek(m_tokens).type != token::CLOSED_PARENTH) {
@@ -275,27 +272,7 @@ Result<std::pair<std::vector<ASTType>, std::vector<DataType>>> PreprocessorBuilt
     return Result<std::pair<std::vector<ASTType>, std::vector<DataType>>>(result_pair);
 }
 
-//const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &PreprocessorBuiltins::get_builtin_variables() const {
-//    return m_builtin_variables;
-//}
-//
-//const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &PreprocessorBuiltins::get_builtin_arrays() const {
-//    return m_builtin_arrays;
-//}
-//
-//const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &PreprocessorBuiltins::get_builtin_functions() const {
-//    return m_builtin_functions;
-//}
-//
-//const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &PreprocessorBuiltins::get_property_functions() const {
-//    return m_property_functions;
-//}
-//
-//const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &PreprocessorBuiltins::get_builtin_widgets() const {
-//	return m_builtin_widgets;
-//}
-
-bool PreprocessorBuiltins::is_property_function(const std::string &fun_name) {
+bool BuiltinsProcessor::is_property_function(const std::string &fun_name) {
     return contains(fun_name, "_properties") || contains(fun_name, "set_bounds");
 }
 

@@ -19,6 +19,7 @@ public:
 	/// main function to process the tokens
     void process();
     const std::string &get_output_path() const;
+	std::vector<Token> get_token_vector();
 
 private:
 	std::vector<Token> m_tokens{};

@@ -6,11 +6,11 @@
 #include "Preprocessor.h"
 #include "PreprocessorConditions.h"
 #include "PreprocessorParser.h"
-#include "PreASTDesugar.h"
-#include "PreASTCombine.h"
-#include "PreASTIncrementer.h"
-#include "PreASTDefines.h"
-#include "PreASTPragma.h"
+#include "PreAST/PreASTDesugar.h"
+#include "PreAST/PreASTCombine.h"
+#include "PreAST/PreASTIncrementer.h"
+#include "PreAST/PreASTDefines.h"
+#include "PreAST/PreASTPragma.h"
 
 Preprocessor::Preprocessor(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {}
 
@@ -22,8 +22,7 @@ void Preprocessor::process() {
 	if(result.is_error()) {
 		result.get_error().print();
 		auto err_msg = "Preprocessor failed while processing conditions.";
-		CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",result.get_error().m_file_name).print();
-		exit(EXIT_FAILURE);
+		CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",result.get_error().m_file_name).exit();
 	}
 	m_tokens = std::move(conditions.get_token_vector());
 
@@ -32,8 +31,7 @@ void Preprocessor::process() {
     if(result_parse.is_error()) {
         result_parse.get_error().print();
         auto err_msg = "Preprocessor failed.";
-        CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",result_parse.get_error().m_file_name).print();
-        exit(EXIT_FAILURE);
+        CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",result_parse.get_error().m_file_name).exit();
     }
     auto pre_ast = std::move(result_parse.unwrap());
     PreASTPragma pragma;
@@ -59,6 +57,9 @@ const std::string &Preprocessor::get_output_path() const {
     return m_output_path;
 }
 
+std::vector<Token> Preprocessor::get_token_vector() {
+	return std::move(m_tokens);
+}
 
 
 

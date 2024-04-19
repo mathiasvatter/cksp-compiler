@@ -3,7 +3,7 @@
 //
 
 #include "PreASTPragma.h"
-
+#include "../../PathHandler.h"
 
 void PreASTPragma::visit(PreNodeProgram& node) {
     for(auto & n : node.program) {
@@ -26,13 +26,16 @@ void PreASTPragma::visit(PreNodePragma& node) {
         argument.pop_back();
 
         if(option == "output_path") {
-            auto output_path = resolve_path(argument, token, current_file);
+			PathHandler path_handler(token, current_file);
+            auto output_path = path_handler.resolve_path(argument);
             if (output_path.is_error()) {
                 output_path.get_error().exit();
             }
-            if (std::filesystem::path(output_path.unwrap()).extension() == ".txt") {
-                m_output_path = output_path.unwrap();
-            }
+			auto valid_output_path = path_handler.generate_output_file(output_path.unwrap());
+			if(valid_output_path.is_error()) {
+				valid_output_path.get_error().exit();
+			}
+			m_output_path = valid_output_path.unwrap();
         }
     }
 

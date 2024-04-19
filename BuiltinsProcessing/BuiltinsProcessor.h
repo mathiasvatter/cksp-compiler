@@ -5,29 +5,24 @@
 #pragma once
 
 #include "../Processor/Processor.h"
-#include "../AST/DefinitionProvider.h"
+#include "DefinitionProvider.h"
 
-class PreprocessorBuiltins : public Processor {
+class BuiltinsProcessor : public Processor {
 public:
-	explicit PreprocessorBuiltins(DefinitionProvider* definition_provider);
+	explicit BuiltinsProcessor(DefinitionProvider* definition_provider);
+
+	/// main function to process the tokens and parse the builtins
+    void process() override;
+
     Result<SuccessTag> parse_builtin_variables(const std::string &file);
     Result<SuccessTag> parse_builtin_functions(const std::string &file);
 	Result<SuccessTag> parse_builtin_widgets(const std::string &file);
-
-    void process_builtins();
 
     std::unique_ptr<NodeVariable> parse_builtin_variable();
     std::unique_ptr<NodeArray> parse_builtin_array();
     Result<std::unique_ptr<NodeFunctionHeader>> parse_builtin_function();
 	Result<std::unique_ptr<NodeUIControl>> parse_builtin_ui_control();
     Result<std::pair<std::vector<ASTType>, std::vector<DataType>>> parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args);
-
-//    [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeVariable>> &get_builtin_variables() const;
-//    [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeArray>> &get_builtin_arrays() const;
-//    [[nodiscard]] const std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> &get_builtin_functions() const;
-//    [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> &get_property_functions() const;
-//	[[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &get_builtin_widgets() const;
-
 
 private:
 	DefinitionProvider* m_def_provider;
@@ -37,7 +32,6 @@ private:
 
     std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> m_property_functions;
     std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> m_builtin_widgets;
-
 
     std::string m_builtin_variables_file;
     std::string m_builtin_functions_file;

@@ -76,8 +76,8 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         Preprocessor/PreASTCombine.h
         Preprocessor/PreASTIncrementer.cpp
         Preprocessor/PreASTIncrementer.h
-        Preprocessor/PreprocessorBuiltins.cpp
-        Preprocessor/PreprocessorBuiltins.h
+        Preprocessor/BuiltinsProcessor.cpp
+        Preprocessor/BuiltinsProcessor.h
         Generator/ASTGenerator.cpp
         Generator/ASTGenerator.h
         AST/ASTTypeChecking.cpp

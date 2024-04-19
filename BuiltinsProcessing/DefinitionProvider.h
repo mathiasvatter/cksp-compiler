@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ASTVisitor.h"
+#include "../AST/ASTVisitor.h"
 
 enum Definition {
     Reference,

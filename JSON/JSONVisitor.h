@@ -5,7 +5,7 @@
 #pragma once
 
 #include "JSONParser.h"
-#include "../AST/DefinitionProvider.h"
+#include "../BuiltinsProcessing/DefinitionProvider.h"
 
 class JSONVisitor {
 public:
