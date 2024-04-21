@@ -6,7 +6,7 @@
 
 #include "../AST/ASTVisitor.h"
 
-enum Definition {
+enum class Definition {
     Reference,
     Declaration,
     Builtin
@@ -29,29 +29,34 @@ public:
     /// external variables from eg nckp file
 	std::vector<std::unique_ptr<DataStructure>> external_variables{};
 	void set_external_variables(std::vector<std::unique_ptr<DataStructure>> external_variables);
+    void add_external_variable(std::unique_ptr<DataStructure> external_variable);
 	/// builtin engine variables
 	std::unordered_map<std::string, std::unique_ptr<NodeVariable>> builtin_variables{};
     NodeVariable* get_builtin_variable(const std::string& var);
 	void set_builtin_variables(std::unordered_map<std::string, std::unique_ptr<NodeVariable>> builtin_variables);
+    void add_builtin_variable(std::unique_ptr<NodeVariable> builtin_variable);
     /// builtin engine arrays
 	std::unordered_map<std::string, std::unique_ptr<NodeArray>> builtin_arrays{};
     NodeArray* get_builtin_array(const std::string& arr);
 	void set_builtin_arrays(std::unordered_map<std::string, std::unique_ptr<NodeArray>> builtin_arrays);
+    void add_builtin_array(std::unique_ptr<NodeArray> builtin_array);
     /// builtin engine widgets
 	std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> builtin_widgets{};
     NodeUIControl* get_builtin_widget(const std::string &ui_control);
 	void set_builtin_widgets(std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> builtin_widgets);
+    void add_builtin_widget(std::unique_ptr<NodeUIControl> builtin_widget);
     /// builtin engine functions
 	std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> builtin_functions{};
     NodeFunctionHeader* get_builtin_function(const std::string &function, int params);
     NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
 	void set_builtin_functions(std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> builtin_functions);
+    void add_builtin_function(std::unique_ptr<NodeFunctionHeader> builtin_function);
 	/// predefined property functions like set_label_properties etc
 	std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> property_functions{};
 	NodeFunctionHeader* get_property_function(NodeFunctionHeader* function);
 	void set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> property_functions);
+    void add_property_function(std::unique_ptr<NodeFunctionHeader> property_function);
 
-private:
 	bool add_scope();
 	bool remove_scope();
 
@@ -59,7 +64,8 @@ private:
 //    std::unique_ptr<DataStructure> build_data_structure(std::unique_ptr<NodeVariable> var, DataStructure* declaration);
 //    std::unique_ptr<DataStructure> build_data_structure(std::unique_ptr<NodeArray> var, DataStructure* declaration);
 
-	/// returns the definition of a data structure, if it exists
+	/// returns the definition of a data structure, if it exists. If datastructure itself is
+	/// definition -> returns itself
 	DataStructure* get_declaration(DataStructure* var);
 
 	/// declared variables

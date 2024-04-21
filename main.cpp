@@ -3,7 +3,6 @@
 
 #include "Parser/Parser.h"
 #include "Preprocessor/Preprocessor.h"
-#include "AST/ASTVisitor.h"
 #include "AST/ASTDesugar.h"
 #include "AST/ASTPrinter.h"
 #include "AST/ASTTypeCasting.h"
@@ -16,6 +15,7 @@
 #include "misc/FileHandler.h"
 #include "CommandLineOptions.h"
 #include "BuiltinsProcessing/DefinitionProvider.h"
+#include "AST/ASTLowering.h"
 
 int main(int argc, char* argv[]) {
 
@@ -95,6 +95,9 @@ int main(int argc, char* argv[]) {
 
     ASTDesugarStructs desugar1;
     ast->accept(desugar1);
+
+    ASTLowering lowering(&definition_provider);
+    ast->accept(lowering);
 
 	ASTDesugar desugar(&definition_provider);
 	ast->accept(desugar);

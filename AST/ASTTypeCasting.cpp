@@ -45,7 +45,7 @@ void ASTTypeCasting::visit(NodeParamList& node) {
 
 void ASTTypeCasting::visit(NodeUIControl& node) {
 	auto engine_widget = m_def_provider->get_builtin_widget(node.ui_control_type);
-	if(node.control_var->type == Unknown) {
+	if(node.control_var->type == ASTType::Unknown) {
 		node.control_var->type = engine_widget->control_var->type;
 	} else if (node.control_var->type != engine_widget->control_var->type) {
 		CompileError(ErrorType::TypeError,"Found different types in engine widget declaration.", node.tok.line, "", "", node.tok.file).print();
@@ -57,19 +57,19 @@ void ASTTypeCasting::visit(NodeUIControl& node) {
 	auto err = CompileError(ErrorType::TypeError,"Found wrong type in engine widget arguments.", node.tok.line, "", "", node.tok.file);
 	if(!node.arg_ast_types.empty()) {
 		for (int i = 0; i < node.params->params.size(); i++) {
-			if (node.arg_ast_types[i] == Number
-				and (node.params->params[i]->type == Integer or node.params->params[i]->type == Real)) {
+			if (node.arg_ast_types[i] == ASTType::Number
+				and (node.params->params[i]->type == ASTType::Integer or node.params->params[i]->type == ASTType::Real)) {
 				node.arg_ast_types[i] = node.params->params[i]->type;
-			} else if (node.arg_ast_types[i] != Any and node.params->params[i]->type == Unknown) {
+			} else if (node.arg_ast_types[i] != ASTType::Any and node.params->params[i]->type == ASTType::Unknown) {
 				node.params->params[i]->type = node.arg_ast_types[i];
-			} else if (node.arg_ast_types[i] == Any) {
+			} else if (node.arg_ast_types[i] == ASTType::Any) {
 				node.arg_ast_types[i] = node.params->params[i]->type;
 			} else if (node.params->params[i]->type != node.arg_ast_types[i]) {
 				err.exit();
 			}
 
 			auto node_array = cast_node<NodeArray>(node.params->params[i].get());
-			if(node.arg_var_types[i] == Array) {
+			if(node.arg_var_types[i] == DataType::Array) {
 				if(!node_array) {
 					CompileError(ErrorType::TypeError,"Found wrong type in engine widget arguments. Argument needs to be of type <Array>.", node.tok.line, "<Array>", node.params->params[i]->get_string(), node.tok.file).exit();
 				}
@@ -89,13 +89,13 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
     if(node.assignee) {
         node.assignee->accept(*this);
 
-        if(node.assignee->type == Unknown and node.to_be_declared->type != Unknown) {
+        if(node.assignee->type == ASTType::Unknown and node.to_be_declared->type != ASTType::Unknown) {
             node.assignee->type = node.to_be_declared->type;
-        } else if(node.to_be_declared->type == String and node.assignee->type == Integer) {
+        } else if(node.to_be_declared->type == ASTType::String and node.assignee->type == ASTType::Integer) {
             node.to_be_declared->type = node.to_be_declared->type;
-        } else if(node.to_be_declared->type == Unknown) {
+        } else if(node.to_be_declared->type == ASTType::Unknown) {
             node.to_be_declared->type = node.assignee->type;
-        } else if(node.to_be_declared->type != Unknown and node.assignee->type != node.to_be_declared->type) {
+        } else if(node.to_be_declared->type != ASTType::Unknown and node.assignee->type != node.to_be_declared->type) {
             CompileError(ErrorType::TypeError, "Found incorrect variable type in declaration.", node.tok.line,
                          type_to_string(node.to_be_declared->type), type_to_string(node.assignee->type),
                          node.tok.file).print();
@@ -115,13 +115,13 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
 void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
     node.assignee->accept(*this);
     node.array_variable->accept(*this);
-    if(node.array_variable->type == Unknown) {
+    if(node.array_variable->type == ASTType::Unknown) {
         node.array_variable->type = node.assignee->type;
-    } else if(node.assignee->type == Unknown and node.array_variable->type != Unknown) {
+    } else if(node.assignee->type == ASTType::Unknown and node.array_variable->type != ASTType::Unknown) {
         node.assignee->type = node.array_variable->type;
-    } else if(node.array_variable->type == String and node.assignee->type == Integer) {
+    } else if(node.array_variable->type == ASTType::String and node.assignee->type == ASTType::Integer) {
         node.array_variable->type = node.array_variable->type;
-    } else if (node.array_variable->type != Unknown and node.array_variable->type != node.assignee->type) {
+    } else if (node.array_variable->type != ASTType::Unknown and node.array_variable->type != node.assignee->type) {
         CompileError(ErrorType::TypeError, "Found incorrect variable type in assignment.", node.tok.line, "", "",
                      node.tok.file).print();
         exit(EXIT_FAILURE);
@@ -146,7 +146,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 
 	auto node_callback_id = cast_node<NodeCallback>(node.parent);
 	if(node_callback_id) {
-		if(node.data_type != UI_Control) {
+		if(node.data_type != DataType::UI_Control) {
             CompileError(ErrorType::TypeError,
                          "Variable needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line,
                          "<UI_Control>", node.get_string(), node.tok.file).print();
@@ -162,16 +162,16 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 	}
 
     if(!node_declaration and !node_ui_control and !node.is_compiler_return and !node.is_local) {
-		if(node.declaration->type != Unknown and node.type != Unknown and node.declaration->type != node.type) {
+		if(node.declaration->type != ASTType::Unknown and node.type != ASTType::Unknown and node.declaration->type != node.type) {
 			CompileError(ErrorType::TypeError,"Found variables of same name and different types.", node.tok.line, type_to_string(node.declaration->type), type_to_string(node.type), node.tok.file).exit();
-		} else if (node.declaration->type != Unknown) {
+		} else if (node.declaration->type != ASTType::Unknown) {
             node.type = node.declaration->type;
-        } else if (node.declaration->type == Unknown) {
+        } else if (node.declaration->type == ASTType::Unknown) {
             node.declaration->type = node.type;
         }
     }
 
-	if(node.data_type == UI_Control) {
+	if(node.data_type == DataType::UI_Control) {
 		auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
 		if(node_control_function and contains(node_control_function->name, "control_par")) {
 			auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(
@@ -199,29 +199,29 @@ void ASTTypeCasting::visit(NodeArray& node) {
 //    }
 
 	auto node_callback_id = cast_node<NodeCallback>(node.parent);
-	if(node_callback_id and node.data_type != UI_Control) {
+	if(node_callback_id and node.data_type != DataType::UI_Control) {
 		CompileError(ErrorType::TypeError,"Array needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line, "<UI_Control>", node.get_string(), node.tok.file).exit();
 	}
 
 
     if(!node_declaration and !node_ui_control) {
-		if(node.declaration->type != Unknown and node.type != Unknown and node.declaration->type != node.type) {
+		if(node.declaration->type != ASTType::Unknown and node.type != ASTType::Unknown and node.declaration->type != node.type) {
 			CompileError(ErrorType::TypeError,"Found arrays of same name and different types.", node.tok.line, type_to_string(node.declaration->type), type_to_string(node.type), node.tok.file).exit();
-		} else if (node.declaration->type != Unknown) {
+		} else if (node.declaration->type != ASTType::Unknown) {
 			node.type = node.declaration->type;
-		} else if (node.declaration->type == Unknown) {
+		} else if (node.declaration->type == ASTType::Unknown) {
 			node.declaration->type = node.type;
 		}
     }
     auto err = CompileError(ErrorType::TypeError,"Found incorrect type in array brackets.", node.tok.line, "Integer", "", node.tok.file);
     node.sizes->accept(*this);
-    if(node.sizes->type != Integer and node.sizes->type != Unknown)
+    if(node.sizes->type != ASTType::Integer and node.sizes->type != ASTType::Unknown)
         err.exit();
     node.indexes->accept(*this);
-    if(node.indexes->type != Integer and node.indexes->type != Unknown)
+    if(node.indexes->type != ASTType::Integer and node.indexes->type != ASTType::Unknown)
         err.exit();
 
-    if(node.data_type == UI_Control and node.indexes->params.empty()) {
+    if(node.data_type == DataType::UI_Control and node.indexes->params.empty()) {
         auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
         if(node_control_function and contains(node_control_function->name, "control_par")) {
             auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(
@@ -238,15 +238,15 @@ void ASTTypeCasting::visit(NodeArray& node) {
 
 
 void ASTTypeCasting::visit(NodeInt& node) {
-    node.type = Integer;
+    node.type = ASTType::Integer;
 }
 
 void ASTTypeCasting::visit(NodeReal& node) {
-    node.type = Real;
+    node.type = ASTType::Real;
 }
 
 void ASTTypeCasting::visit(NodeString& node) {
-    node.type = String;
+    node.type = ASTType::String;
 }
 
 void ASTTypeCasting::visit(NodeBinaryExpr& node) {
@@ -259,35 +259,35 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
     std::pair<ASTType, ASTType> types(node.left->type, node.right->type);
 
     auto err = CompileError(ErrorType::TypeError,"Found operands of different types in <binary_expression>.", node.tok.line, "", "", node.tok.file);
-    bool left_unknown = node.left->type == Unknown;
-    bool right_unknown = node.right->type == Unknown;
-    bool int_and_unknown = node.left->type == Integer and node.right->type == Unknown or node.left->type == Unknown and node.right->type == Integer;
-    bool real_and_unknown = node.left->type == Real and node.right->type == Unknown or node.left->type == Unknown and node.right->type == Real;
-    bool string_and_unknown = node.left->type == String and node.right->type == Unknown or node.left->type == Unknown and node.right->type == String;
-    bool comp_and_unknown = node.left->type == Comparison and node.right->type == Unknown or node.left->type == Unknown and node.right->type == Comparison;
-    bool bool_and_unknown = node.left->type == Boolean and node.right->type == Unknown or node.left->type == Unknown and node.right->type == Boolean;
-    bool one_bool = node.left->type == Boolean or node.right->type == Boolean;
-    bool one_comp = node.left->type == Comparison or node.right->type == Comparison;
-    bool both_integers = node.left->type == Integer and node.right->type == Integer;
-    bool both_unknown = node.left->type == Unknown and node.right->type == Unknown;
-    bool both_reals = node.left->type == Real and node.right->type == Real;
-    bool both_comps = node.left->type == Comparison and node.right->type == Comparison;
-    bool both_bools = node.left->type == Boolean and node.right->type == Boolean;
+    bool left_unknown = node.left->type == ASTType::Unknown;
+    bool right_unknown = node.right->type == ASTType::Unknown;
+    bool int_and_unknown = node.left->type == ASTType::Integer and node.right->type == ASTType::Unknown or node.left->type == ASTType::Unknown and node.right->type == ASTType::Integer;
+    bool real_and_unknown = node.left->type == ASTType::Real and node.right->type == ASTType::Unknown or node.left->type == ASTType::Unknown and node.right->type == ASTType::Real;
+    bool string_and_unknown = node.left->type == ASTType::String and node.right->type == ASTType::Unknown or node.left->type == ASTType::Unknown and node.right->type == ASTType::String;
+    bool comp_and_unknown = node.left->type == ASTType::Comparison and node.right->type == ASTType::Unknown or node.left->type == ASTType::Unknown and node.right->type == ASTType::Comparison;
+    bool bool_and_unknown = node.left->type == ASTType::Boolean and node.right->type == ASTType::Unknown or node.left->type == ASTType::Unknown and node.right->type == ASTType::Boolean;
+    bool one_bool = node.left->type == ASTType::Boolean or node.right->type == ASTType::Boolean;
+    bool one_comp = node.left->type == ASTType::Comparison or node.right->type == ASTType::Comparison;
+    bool both_integers = node.left->type == ASTType::Integer and node.right->type == ASTType::Integer;
+    bool both_unknown = node.left->type == ASTType::Unknown and node.right->type == ASTType::Unknown;
+    bool both_reals = node.left->type == ASTType::Real and node.right->type == ASTType::Real;
+    bool both_comps = node.left->type == ASTType::Comparison and node.right->type == ASTType::Comparison;
+    bool both_bools = node.left->type == ASTType::Boolean and node.right->type == ASTType::Boolean;
     // is string
     if(get_token_type(STRING_OPERATOR, node.op)) {
-        node.type = String;
+        node.type = ASTType::String;
     } else if (get_token_type(MATH_OPERATORS, node.op)) {
         // can only be int op int || float op float
         if(both_integers) {
-            node.type = Integer;
+            node.type = ASTType::Integer;
         } else if (both_reals) {
-            node.type = Real;
+            node.type = ASTType::Real;
         } else if (int_and_unknown or both_unknown) {
-            node.type = Integer; node.right->type = Integer; node.left->type = Integer;
+            node.type = ASTType::Integer; node.right->type = ASTType::Integer; node.left->type = ASTType::Integer;
         } else if (real_and_unknown) {
-            node.type = Real;
-            node.right->type = Real;
-            node.left->type = Real;
+            node.type = ASTType::Real;
+            node.right->type = ASTType::Real;
+            node.left->type = ASTType::Real;
 //        } else if (both_unknown) {
 //            node.type = Unknown;
         } else {
@@ -296,26 +296,26 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
         }
     } else if (get_token_type(BITWISE_OPERATORS, node.op)) {
         if(both_integers) {
-            node.type = Integer;
+            node.type = ASTType::Integer;
         } else if (int_and_unknown) {
-            node.type = Integer;
-            node.right->type = Integer;
-            node.left->type = Integer;
+            node.type = ASTType::Integer;
+            node.right->type = ASTType::Integer;
+            node.left->type = ASTType::Integer;
         } else if (both_unknown) {
-            node.type = Unknown;
+            node.type = ASTType::Unknown;
         } else {
             // error, bitwise operators can only be used in between integer values.
             err.exit();
         }
     } else if (get_token_type(BOOL_OPERATORS, node.op)) {
         if(both_comps) {
-            node.type = Boolean;
+            node.type = ASTType::Boolean;
         } else if (both_bools) {
-            node.type = Boolean;
+            node.type = ASTType::Boolean;
         } else if(one_bool and one_comp) {
-            node.type = Boolean;
+            node.type = ASTType::Boolean;
         } else if (both_unknown) {
-            node.type = Boolean;
+            node.type = ASTType::Boolean;
         } else {
             // error, only comparisons can be bound together with bool operators
             err.exit();
@@ -323,17 +323,17 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
     } else if (get_token_type(COMPARISON_OPERATORS, node.op)) {
         // can only be int op int || float op float
         if(both_integers) {
-            node.type = Comparison;
+            node.type = ASTType::Comparison;
         } else if (both_reals) {
-            node.type = Comparison;
+            node.type = ASTType::Comparison;
         } else if (int_and_unknown) {
-            node.type = Comparison; node.right->type = Integer; node.left->type = Integer;
+            node.type = ASTType::Comparison; node.right->type = ASTType::Integer; node.left->type = ASTType::Integer;
         } else if (real_and_unknown) {
-            node.type = Comparison;
-            node.right->type = Real;
-            node.left->type = Real;
+            node.type = ASTType::Comparison;
+            node.right->type = ASTType::Real;
+            node.left->type = ASTType::Real;
         } else if(both_unknown) {
-            node.type = Comparison;
+            node.type = ASTType::Comparison;
         } else {
             // only int op int || real op real can be strung together by comparison operator
             err.exit();
@@ -347,16 +347,16 @@ void ASTTypeCasting::visit(NodeUnaryExpr& node) {
     node.operand->accept(*this);
     auto err = CompileError(ErrorType::TypeError,"Found different types in <unary_expression>.", node.tok.line, "", "", node.tok.file);
     if(node.op.type == token::SUB or node.op.type == token::BIT_NOT) {
-        if(node.operand->type == Integer or node.operand->type == Real) {
+        if(node.operand->type == ASTType::Integer or node.operand->type == ASTType::Real) {
             node.type = node.operand->type;
         } else {
             err.exit();
         }
     } else if(node.op.type == token::BOOL_NOT) {
-        if(node.operand->type == Boolean or node.operand->type == Comparison) {
-            node.type = Boolean;
+        if(node.operand->type == ASTType::Boolean or node.operand->type == ASTType::Comparison) {
+            node.type = ASTType::Boolean;
         // e.g. not -1...
-        } else if(node.operand->type == Integer) {
+        } else if(node.operand->type == ASTType::Integer) {
             node.type = node.operand->type;
         } else {
             err.exit();
@@ -379,19 +379,19 @@ void ASTTypeCasting::visit(NodeFunctionHeader& node) {
 									type_to_string(node.arg_ast_types[i]),
 									type_to_string(node.args->params[i]->type), node.tok.file);
 
-			if (node.arg_ast_types[i] == Number
-				and (node.args->params[i]->type == Integer or node.args->params[i]->type == Real)) {
+			if (node.arg_ast_types[i] == ASTType::Number
+				and (node.args->params[i]->type == ASTType::Integer or node.args->params[i]->type == ASTType::Real)) {
 				node.arg_ast_types[i] = node.args->params[i]->type;
-			} else if (node.arg_ast_types[i] != Any and node.arg_ast_types[i] != Number and node.args->params[i]->type == Unknown) {
+			} else if (node.arg_ast_types[i] != ASTType::Any and node.arg_ast_types[i] != ASTType::Number and node.args->params[i]->type == ASTType::Unknown) {
 				node.args->params[i]->type = node.arg_ast_types[i];
-			} else if (node.arg_ast_types[i] == Any || node.arg_ast_types[i] == Unknown || node.arg_ast_types[i] == Number) {
+			} else if (node.arg_ast_types[i] == ASTType::Any || node.arg_ast_types[i] == ASTType::Unknown || node.arg_ast_types[i] == ASTType::Number) {
 				node.arg_ast_types[i] = node.args->params[i]->type;
 			} else if (node.args->params[i]->type != node.arg_ast_types[i]) {
 				err.exit();
 			}
 
 			auto node_array = cast_node<NodeArray>(node.args->params[i].get());
-			if(node.arg_var_types[i] == Array) {
+			if(node.arg_var_types[i] == DataType::Array) {
 				if (!node_array) {
 					CompileError(ErrorType::TypeError,
 					 "Found wrong type in function arguments. Argument needs to be of type <Array>.",node.tok.line,"<Array>",node.args->params[i]->get_string(),node.tok.file).exit();
@@ -402,7 +402,7 @@ void ASTTypeCasting::visit(NodeFunctionHeader& node) {
 		}
 	}
     // eg abs(number):number if arg is int-> abs is int
-    if(node.type == Number) {
+    if(node.type == ASTType::Number) {
         node.type =node.args->type;
     }
 
@@ -410,7 +410,7 @@ void ASTTypeCasting::visit(NodeFunctionHeader& node) {
 
 }
 
-void ASTTypeCasting::visit(NodeStatementList& node) {
+void ASTTypeCasting::visit(NodeBody& node) {
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
 	}

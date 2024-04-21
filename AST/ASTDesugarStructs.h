@@ -31,10 +31,10 @@ class ASTDesugarStructs: public ASTVisitor {
     void visit(NodeFamilyStatement& node) override;
     /// alter for loops to while loops
     void visit(NodeForStatement& node) override;
-	void visit(NodeRangedForStatement& node) override;
+	void visit(NodeForEachStatement& node) override;
 
     void visit(NodeListStatement& node) override;
-    void visit(NodeStatementList& node) override;
+    void visit(NodeBody& node) override;
     /// Ingest type definition character and add family/const prefixes
     void visit(NodeArray& node) override;
     /// Ingest type definition character and add family/const prefixes

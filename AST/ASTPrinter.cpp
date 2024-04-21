@@ -80,11 +80,11 @@ void ASTPrinter::visit(NodeParamList &node) {
 
 void ASTPrinter::visit(NodeBinaryExpr &node) {
     std::string expression_type = "BinaryExpr(";
-    if(node.type == Comparison)
+    if(node.type == ASTType::Comparison)
         expression_type = "ComparisonExpr(";
-    else if (node.type == Boolean)
+    else if (node.type == ASTType::Boolean)
         expression_type = "BooleanExpr(";
-    else if (node.type ==String)
+    else if (node.type == ASTType::String)
         expression_type = "StringExpr(";
     std::cout << expression_type;
     node.left->accept(*this);
@@ -228,12 +228,12 @@ void ASTPrinter::visit(NodeGetControlStatement &node) {
     std::cout << " -> " << node.control_param;
 }
 
-void ASTPrinter::visit(NodeSetControlStatement &node) {
-    node.get_control ->accept(*this);
-    std::cout << " := ";
-    node.assignee -> accept(*this);
-    std::cout << std::endl;
-}
+//void ASTPrinter::visit(NodeSetControlStatement &node) {
+//    node.get_control ->accept(*this);
+//    std::cout << " := ";
+//    node.assignee -> accept(*this);
+//    std::cout << std::endl;
+//}
 
 void ASTPrinter::visit(NodeProgram &node) {
     std::cout << "Callbacks: " << std::endl;

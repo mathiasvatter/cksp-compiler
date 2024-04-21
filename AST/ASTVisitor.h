@@ -26,24 +26,24 @@ public:
     std::unique_ptr<NodeParamList> make_init_array_list(const std::vector<int32_t>& values, NodeAST* parent);
     std::unique_ptr<NodeStatement> make_declare_array(const std::string& name, int32_t size, const std::vector<int32_t>& values, NodeAST* parent);
     std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, DataType type, NodeAST* parent);
-    std::unique_ptr<NodeStatementList> array_initialization(NodeArray* array, NodeParamList* list);
-    std::unique_ptr<NodeStatementList> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeStatementList> body, NodeAST* parent);
+    std::unique_ptr<NodeBody> array_initialization(NodeArray* array, NodeParamList* list);
+    std::unique_ptr<NodeBody> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent);
     static std::unique_ptr<NodeArray> make_array(const std::string& name, int32_t size, const Token& tok, NodeAST* parent);
-    void add_vector_to_statement_list(std::unique_ptr<NodeStatementList> &list, std::vector<std::unique_ptr<NodeStatement>> stmts);
+    void add_vector_to_statement_list(std::unique_ptr<NodeBody> &list, std::vector<std::unique_ptr<NodeStatement>> stmts);
     /// puts nested statement list in one, returns new vector to replace node->statements with
-    static std::vector<std::unique_ptr<NodeStatement>> cleanup_node_statement_list(NodeStatementList* node);
+    static std::vector<std::unique_ptr<NodeStatement>> cleanup_node_statement_list(NodeBody* node);
 
     std::set<std::string> m_restricted_builtin_functions = {"save_array", "save_array_str", "load_array", "load_array_str"};
-    std::unordered_map<std::string, ASTType> m_compiler_variables = {{"_list_it",Integer}, {"_ui_array_it", Integer},
-                                                                     {"_string_it", Integer},
-                                                                     {"_iterator", Integer}};
-    std::unordered_map<ASTType, std::string> m_return_arrays = {{Integer, "_return_vars_int"}, {Real, "_return_vars_real"}, {String, "_return_vars_str"}};
-    std::unordered_map<ASTType, std::string> m_local_var_arrays = {{Integer, "_loc_var_int"}, {Real, "_loc_var_real"}, {String, "_loc_var_str"}};
+    std::unordered_map<std::string, ASTType> m_compiler_variables = {{"_list_it",ASTType::Integer}, {"_ui_array_it", ASTType::Integer},
+                                                                     {"_string_it", ASTType::Integer},
+                                                                     {"_iterator", ASTType::Integer}};
+    std::unordered_map<ASTType, std::string> m_return_arrays = {{ASTType::Integer, "_return_vars_int"}, {ASTType::Real, "_return_vars_real"}, {ASTType::String, "_return_vars_str"}};
+    std::unordered_map<ASTType, std::string> m_local_var_arrays = {{ASTType::Integer, "_loc_var_int"}, {ASTType::Real, "_loc_var_real"}, {ASTType::String, "_loc_var_str"}};
 
     virtual void visit(NodeDeadCode& node) {};
-	virtual void visit(NodeInt& node) {node.type = Integer;};
-    virtual void visit(NodeReal& node) {node.type = Real;};
-    virtual void visit(NodeString& node) {node.type = String;};
+	virtual void visit(NodeInt& node) {node.type = ASTType::Integer;};
+    virtual void visit(NodeReal& node) {node.type = ASTType::Real;};
+    virtual void visit(NodeString& node) {node.type = ASTType::String;};
     virtual void visit(NodeVariable& node) {};
     virtual void visit(NodeParamList& node) {
 		for(auto & param : node.params) {
@@ -97,10 +97,10 @@ public:
     virtual void visit(NodeGetControlStatement& node) {
 		node.ui_id->accept(*this);
 	};
-    virtual void visit(NodeSetControlStatement& node) {
-		node.get_control->accept(*this);
-		node.assignee->accept(*this);
-	};
+//    virtual void visit(NodeSetControlStatement& node) {
+//		node.get_control->accept(*this);
+//		node.assignee->accept(*this);
+//	};
     virtual void visit(NodeConstStatement& node) {
 		for(auto &constant : node.constants) {
 			constant->accept(*this);
@@ -134,7 +134,7 @@ public:
 		node.iterator_end->accept(*this);
         node.statements->accept(*this);
 	};
-    virtual void visit(NodeRangedForStatement& node) {
+    virtual void visit(NodeForEachStatement& node) {
         node.keys->accept(*this);
         node.range->accept(*this);
         node.statements->accept(*this);
@@ -176,7 +176,7 @@ public:
 			function_definition->accept(*this);
 		}
 	};
-    virtual void visit(NodeStatementList& node) {
+    virtual void visit(NodeBody& node) {
         for(auto & stmt : node.statements) {
             stmt->accept(*this);
         }

@@ -35,7 +35,7 @@ public:
 	void visit(NodeSelectStatement& node) override;
 
 //    void visit(NodeListStatement& node) override;
-    void visit(NodeStatementList& node) override;
+    void visit(NodeBody& node) override;
     void visit(NodeStatement& node) override;
     void visit(NodeArray& node) override;
     void visit(NodeVariable& node) override;
@@ -56,7 +56,7 @@ private:
     // returns either string (for get/set_control_par_str) or integer (for get/set_control_par)
     static ASTType get_control_function_type(const std::string& control_param);
 
-    std::unique_ptr<NodeStatementList> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header);
+    std::unique_ptr<NodeBody> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header);
 
     NodeProgram* m_program = nullptr;
     NodeCallback* m_init_callback = nullptr;

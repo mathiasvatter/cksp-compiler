@@ -9,49 +9,10 @@
 #include <utility>
 
 
-Parser::Parser(std::vector<Token> tokens): m_tokens(std::move(tokens)) {
-	m_pos = 0;
-    if(!m_tokens.empty())
-	    m_curr_token = m_tokens.at(0).type;
-}
+Parser::Parser(std::vector<Token> tokens): Processor(std::move(tokens)) {}
 
 Result<std::unique_ptr<NodeProgram>> Parser::parse() {
 	return parse_program();
-
-}
-
-Token& Parser::get_tok() {
-    return m_tokens.at(m_pos);
-}
-
-size_t Parser::get_current_pos() const {
-    return m_pos;
-}
-
-void Parser::set_current_pos(size_t mPos) {
-    m_pos = mPos;
-}
-
-Token Parser::peek(int ahead) {
-	if (m_tokens.size() < m_pos+ahead) {
-        auto err_msg = "Reached the end of the m_tokens. Wrong Syntax discovered.";
-        CompileError(ErrorType::ParseError, err_msg,  "end token",m_tokens.at(m_pos)).exit();
-    }
-	m_curr_token = m_tokens.at(m_pos).type;
-    m_curr_token_value = m_tokens.at(m_pos).val;
-	return m_tokens.at(m_pos+ahead);
-
-}
-
-Token Parser::consume() {
-    if (m_pos < m_tokens.size()) {
-		m_curr_token = m_tokens.at(m_pos + 1).type;
-		m_curr_token_value = m_tokens.at(m_pos).val;
-        return m_tokens.at(m_pos++);
-    }
-    auto err_msg = "Reached the end of the m_tokens. Wrong Syntax discovered.";
-    CompileError(ErrorType::ParseError, err_msg, "end token",m_tokens.at(m_pos)).exit();
-	exit(EXIT_FAILURE);
 }
 
 void Parser::_skip_linebreaks() {
@@ -527,7 +488,7 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
 
 Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
     auto node_callback = std::make_unique<NodeCallback>(get_tok());
-    auto node_statement_list = std::make_unique<NodeStatementList>(get_tok());
+    auto node_statement_list = std::make_unique<NodeBody>(get_tok());
     node_statement_list->parent = node_callback.get();
     std::string begin_callback = consume().val;
     std::unique_ptr<NodeAST> callback_id;
@@ -724,7 +685,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     auto node_function_definition = std::make_unique<NodeFunctionDefinition>(get_tok());
     std::unique_ptr<NodeFunctionHeader> func_header;
     std::optional<std::unique_ptr<NodeParamList>> func_return_var;
-    auto func_body = std::make_unique<NodeStatementList>(get_tok());
+    auto func_body = std::make_unique<NodeBody>(get_tok());
     func_body->parent = node_function_definition.get();
     bool func_override = false;
     if (peek().type != token::KEYWORD) {
@@ -1059,7 +1020,7 @@ Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement(NodeAST* par
     }
 	consume(); // consume linebreak
 	_skip_linebreaks();
-	auto if_statements = std::make_unique<NodeStatementList>(get_tok());
+	auto if_statements = std::make_unique<NodeBody>(get_tok());
 	if_statements->parent = node_if_statement.get();
 //    std::vector<std::unique_ptr<NodeStatement>> if_stmts = {};
     while (peek().type != token::END_IF && peek().type != token::ELSE) {
@@ -1072,7 +1033,7 @@ Result<std::unique_ptr<NodeIfStatement>> Parser::parse_if_statement(NodeAST* par
             if_statements->statements.push_back(std::move(stmt.unwrap()));
     }
     bool no_end_if = false;
-	auto else_statements = std::make_unique<NodeStatementList>(get_tok());
+	auto else_statements = std::make_unique<NodeBody>(get_tok());
 	else_statements->parent = node_if_statement.get();
 //    std::vector<std::unique_ptr<NodeStatement>> else_stmts = {};
     if(peek().type == token::ELSE) {
@@ -1146,7 +1107,7 @@ Result<std::unique_ptr<NodeForStatement>> Parser::parse_for_statement(NodeAST* p
          "Missing linebreak in <for-loop>", "linebreak", peek()));
     }
     consume(); //consume linebreak
-    auto node_statement_list = std::make_unique<NodeStatementList>(get_tok());
+    auto node_statement_list = std::make_unique<NodeBody>(get_tok());
     node_statement_list->parent = node_for_statement.get();
     while (peek().type != token::END_FOR) {
         _skip_linebreaks();
@@ -1186,34 +1147,34 @@ bool Parser::is_ranged_for_loop() {
     return false;
 }
 
-Result<std::unique_ptr<NodeRangedForStatement>> Parser::parse_ranged_for_statement(NodeAST* parent) {
-    auto node_for_statement = std::make_unique<NodeRangedForStatement>(get_tok());
+Result<std::unique_ptr<NodeForEachStatement>> Parser::parse_ranged_for_statement(NodeAST* parent) {
+    auto node_for_statement = std::make_unique<NodeForEachStatement>(get_tok());
     //consume for
     consume();
     auto key_value_result = parse_param_list(node_for_statement.get());
     if(key_value_result.is_error())
-        Result<std::unique_ptr<NodeRangedForStatement>>(key_value_result.get_error());
+        Result<std::unique_ptr<NodeForEachStatement>>(key_value_result.get_error());
     if(peek().type != token::IN)
-        return Result<std::unique_ptr<NodeRangedForStatement>>(CompileError(ErrorType::SyntaxError,
-          "Incorrect Syntax for range-based <for-loop>.", "in", peek()));
+        return Result<std::unique_ptr<NodeForEachStatement>>(CompileError(ErrorType::SyntaxError,
+                                                                          "Incorrect Syntax for range-based <for-loop>.", "in", peek()));
     Token to = consume(); //consume in
     auto expression_stmt = parse_binary_expr(node_for_statement.get());
     if(expression_stmt.is_error()) {
-        return Result<std::unique_ptr<NodeRangedForStatement>>(expression_stmt.get_error());
+        return Result<std::unique_ptr<NodeForEachStatement>>(expression_stmt.get_error());
     }
     if(peek().type != token::LINEBRK) {
-        return Result<std::unique_ptr<NodeRangedForStatement>>(CompileError(ErrorType::SyntaxError,
-          "Missing linebreak in <for-loop>", "linebreak", peek()));
+        return Result<std::unique_ptr<NodeForEachStatement>>(CompileError(ErrorType::SyntaxError,
+                                                                          "Missing linebreak in <for-loop>", "linebreak", peek()));
     }
     consume(); //consume linebreak
-    auto node_statement_list = std::make_unique<NodeStatementList>(get_tok());
+    auto node_statement_list = std::make_unique<NodeBody>(get_tok());
     node_statement_list->parent = node_for_statement.get();
     while (peek().type != token::END_FOR) {
         _skip_linebreaks();
         if(peek().type == token::END_FOR) break;
         auto stmt = parse_statement(node_statement_list.get());
         if (stmt.is_error()) {
-            return Result<std::unique_ptr<NodeRangedForStatement>>(stmt.get_error());
+            return Result<std::unique_ptr<NodeForEachStatement>>(stmt.get_error());
         }
         if(stmt.unwrap()->statement)
             node_statement_list->statements.push_back(std::move(stmt.unwrap()));
@@ -1223,7 +1184,7 @@ Result<std::unique_ptr<NodeRangedForStatement>> Parser::parse_ranged_for_stateme
     node_for_statement->range = std::move(expression_stmt.unwrap());
     node_for_statement->statements = std::move(node_statement_list);
     node_for_statement->parent = parent;
-    return Result<std::unique_ptr<NodeRangedForStatement>>(std::move(node_for_statement));
+    return Result<std::unique_ptr<NodeForEachStatement>>(std::move(node_for_statement));
 }
 
 
@@ -1244,7 +1205,7 @@ Result<std::unique_ptr<NodeWhileStatement>> Parser::parse_while_statement(NodeAS
          "Expected linebreak after while-condition.", "linebreak", peek()));
     }
     consume(); //consume linebreak
-    auto node_statement_list = std::make_unique<NodeStatementList>(get_tok());
+    auto node_statement_list = std::make_unique<NodeBody>(get_tok());
     node_statement_list->parent = node_while_statement.get();
     while (peek().type != token::END_WHILE) {
         auto stmt = parse_statement(node_statement_list.get());
@@ -1276,7 +1237,7 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement(Node
 		return Result<std::unique_ptr<NodeSelectStatement>>(CompileError(ErrorType::SyntaxError,
 		 "Expected cases in select-expression.", "case <expression>", peek()));
 	}
-    std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeStatementList>>> cases;
+    std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> cases;
 	while (peek().type != token::END_SELECT) {
 		_skip_linebreaks();
 		if(peek().type == token::CASE) {
@@ -1308,7 +1269,7 @@ Result<std::unique_ptr<NodeSelectStatement>> Parser::parse_select_statement(Node
 				 "Expected linebreak after case.", "linebreak", peek()));
 			}
 			consume(); //consume linebreak
-            auto stmts = std::make_unique<NodeStatementList>(get_tok());
+            auto stmts = std::make_unique<NodeBody>(get_tok());
             stmts->parent = node_select_statement.get();
 			while(peek().type != token::END_SELECT && peek().type != token::CASE) {
 				auto stmt = parse_statement(node_select_statement.get());

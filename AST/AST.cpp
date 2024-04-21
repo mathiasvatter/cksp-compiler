@@ -8,8 +8,11 @@
 #include "ASTHandler.h"
 
 // ************* NodeAST Base Class ***************
-void NodeAST::accept(ASTVisitor &visitor) {
-}
+void NodeAST::accept(ASTVisitor &visitor) {}
+
+NodeAST::NodeAST(const NodeAST& other) : parent(other.parent), node_type(other.node_type),
+    tok(other.tok), type(other.type) {}
+
 void NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 	if (parent) {
 		newNode->parent = parent;
@@ -217,16 +220,25 @@ std::unique_ptr<NodeAST> NodeSingleDeclareStatement::clone() const {
 }
 void NodeSingleDeclareStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (to_be_declared.get() == oldChild) {
-        to_be_declared = std::move(newChild);
+        if(auto new_data_structure = cast_node<DataStructure>(newChild.get())) {
+            newChild.release();
+            to_be_declared = std::unique_ptr<DataStructure>(new_data_structure);
+        } else {
+            // TODO: Error handling when NodeDeadCode
+//            CompileError(ErrorType::SyntaxError,"Variable has not been declared. If it was declared as local variable it may be out of scope.", node.tok.line, "", node.name, node.tok.file).exit();
+//            std::cout << "Error: " << newChild->get_string() << std::endl;
+//            CompileError(ErrorType::TypeError, "Cannot replace to be declared with non data structure", oldChild->tok.line, "", newChild->get_string(), oldChild->tok.file).print();
+            to_be_declared = std::move(newChild);
+        }
     } else if (assignee.get() == oldChild) {
         assignee = std::move(newChild);
     }
 }
 
-ASTHandler *NodeSingleDeclareStatement::get_handler() const {
-    static SingleDeclareStatementHandler handler;
-    return &handler;
-}
+//ASTHandler *NodeSingleDeclareStatement::get_handler() const {
+//    static SingleDeclareStatementHandler handler;
+//    return &handler;
+//}
 
 // ************* NodeReturnStatement ***************
 void NodeReturnStatement::accept(ASTVisitor &visitor) {
@@ -258,16 +270,6 @@ void NodeGetControlStatement::replace_child(NodeAST* oldChild, std::unique_ptr<N
 	if (ui_id.get() == oldChild) {
 		ui_id = std::move(newChild);
 	}
-}
-
-// ************* NodeSetControlStatement ***************
-void NodeSetControlStatement::accept(ASTVisitor &visitor) {
-    visitor.visit(*this);
-}
-NodeSetControlStatement::NodeSetControlStatement(const NodeSetControlStatement& other)
-        : NodeAST(other), get_control(clone_unique(other.get_control)), assignee(clone_unique(other.assignee)) {}
-std::unique_ptr<NodeAST> NodeSetControlStatement::clone() const {
-    return std::make_unique<NodeSetControlStatement>(*this);
 }
 
 // ************* NodeStatement ***************
@@ -325,15 +327,15 @@ std::unique_ptr<NodeAST> NodeListStatement::clone() const {
     return std::make_unique<NodeListStatement>(*this);
 }
 
-// ************* NodeStatementList ***************
-void NodeStatementList::accept(ASTVisitor &visitor) {
+// ************* NodeBody ***************
+void NodeBody::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeStatementList::NodeStatementList(const NodeStatementList& other) : NodeAST(other), scope(other.scope) {
+NodeBody::NodeBody(const NodeBody& other) : NodeAST(other), scope(other.scope) {
     statements = clone_vector(other.statements);
 }
-std::unique_ptr<NodeAST> NodeStatementList::clone() const {
-    return std::make_unique<NodeStatementList>(*this);
+std::unique_ptr<NodeAST> NodeBody::clone() const {
+    return std::make_unique<NodeBody>(*this);
 }
 
 // ************* NodeIfStatement ***************
@@ -367,17 +369,17 @@ void NodeForStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST>
     }
 }
 
-// ************* NodeRangedForStatement ***************
-void NodeRangedForStatement::accept(ASTVisitor &visitor) {
+// ************* NodeForEachStatement ***************
+void NodeForEachStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeRangedForStatement::NodeRangedForStatement(const NodeRangedForStatement& other)
+NodeForEachStatement::NodeForEachStatement(const NodeForEachStatement& other)
         : NodeAST(other), keys(clone_unique(other.keys)), range(clone_unique(other.range)),
         statements(clone_unique(other.statements)) {}
-std::unique_ptr<NodeAST> NodeRangedForStatement::clone() const {
-    return std::make_unique<NodeRangedForStatement>(*this);
+std::unique_ptr<NodeAST> NodeForEachStatement::clone() const {
+    return std::make_unique<NodeForEachStatement>(*this);
 }
-void NodeRangedForStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+void NodeForEachStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (range.get() == oldChild) {
         range = std::move(newChild);
     }
@@ -408,9 +410,9 @@ static std::map< std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_
     return cloned_map;
 }
 
-static std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeStatementList>>> clone_cases(
-        const std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeStatementList>>>& original) {
-    std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeStatementList>>> cloned_cases;
+static std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> clone_cases(
+        const std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>>& original) {
+    std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> cloned_cases;
     cloned_cases.reserve(original.size());
     for (auto& pair : original) {
         cloned_cases.emplace_back(clone_vector(pair.first), clone_unique(pair.second));

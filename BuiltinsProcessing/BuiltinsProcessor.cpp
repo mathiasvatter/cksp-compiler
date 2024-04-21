@@ -108,7 +108,7 @@ std::unique_ptr<NodeVariable> BuiltinsProcessor::parse_builtin_variable() {
     ASTType type = get_identifier_type(var_name[0]);
     if(get_token_type(TYPES, std::string(1, var_name[0])))
         var_name = var_name.erase(0,1);
-    auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name, Mutable, name);
+    auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name, DataType::Mutable, name);
     node_variable->type = type;
     node_variable->is_local = false;
     node_variable->is_engine = true;
@@ -123,7 +123,7 @@ std::unique_ptr<NodeArray> BuiltinsProcessor::parse_builtin_array() {
         arr_name = arr_name.erase(0,1);
     std::unique_ptr<NodeParamList> size = std::unique_ptr<NodeParamList>(new NodeParamList({}, name));;
     std::unique_ptr<NodeParamList> index = std::unique_ptr<NodeParamList>(new NodeParamList({}, name));;
-    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), arr_name, Array, std::move(size), std::move(index), name);
+    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), arr_name, DataType::Array, std::move(size), std::move(index), name);
     node_array->type = type;
     node_array->is_local = false;
     node_array->is_engine = true;
@@ -160,7 +160,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> BuiltinsProcessor::parse_builtin_fun
         }
     }
 
-    ASTType return_type = Void;
+    ASTType return_type = ASTType::Void;
     if(peek(m_tokens).type == token::TYPE) {
         consume(m_tokens); // consume :
         return_type = get_type_annotation(consume(m_tokens));
@@ -221,26 +221,26 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 
 ASTType BuiltinsProcessor::get_type_annotation(const Token& tok) {
 //    Token token_type = tok; // get type token
-    ASTType type = Any;
+    ASTType type = ASTType::Any;
     if(tok.val.find("int") != std::string::npos) {
-        type = Integer;
+        type = ASTType::Integer;
     } else if (tok.val.find("real") != std::string::npos) {
-        type = Real;
+        type = ASTType::Real;
     } else if (tok.val.find("string") != std::string::npos) {
-        type = String;
+        type = ASTType::String;
     } else if(tok.val.find("number") != std::string::npos) {
-        type = Number;
+        type = ASTType::Number;
     } else if(tok.val.find("bool") != std::string::npos) {
-        type = Boolean;
+        type = ASTType::Boolean;
     }
     return type;
 }
 
 DataType BuiltinsProcessor::get_var_type_annotation(const std::string& keyword) {
     if(keyword.find("array") != std::string::npos) {
-        return Array;
+        return DataType::Array;
     }
-    return Mutable;
+    return DataType::Mutable;
 }
 
 Result<std::pair<std::vector<ASTType>, std::vector<DataType>>> BuiltinsProcessor::parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args) {

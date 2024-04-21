@@ -62,7 +62,7 @@ public:
 
 	void visit(NodeGetControlStatement& node) override;
 
-	void visit(NodeSetControlStatement& node) override;
+//	void visit(NodeSetControlStatement& node) override;
 
 
 };
