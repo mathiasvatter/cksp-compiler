@@ -44,20 +44,21 @@ public:
         // handle multidimensional arrays
         if(node.dimensions > 1) {
             // dynamic cast to check if parent is of type NodeSingleDeclareStatement
+            std::unique_ptr<NodeAST> node_expression = nullptr;
             if (!node.is_reference) {
-                auto node_expression = create_right_nested_binary_expr(node.sizes->params, 0, "*", node.tok);
-                node_expression->parent = node.sizes.get();
-                node.indexes->params.clear();
-                node.indexes->params.push_back(std::move(node_expression));
+                node_expression = create_right_nested_binary_expr(node.sizes->params, 0, "*", node.tok);
+//                node_expression->parent = node.sizes.get();
+//                node.indexes->params.clear();
+//                node.indexes->params.push_back(std::move(node_expression));
+//                node.indexes->update_parents(&node);
             } else {
                 // convert indexes of multidimensional array
-                if (!node.indexes->params.empty()) {
-                    auto node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0,node.tok);
-                    node.indexes->params.clear();
-                    node.indexes->params.push_back(std::move(node_expression));
-                    node.indexes->update_parents(&node);
-                }
+                node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0,node.tok);
             }
+            node.indexes->params.clear();
+            node.indexes->params.push_back(std::move(node_expression));
+            node.indexes->update_parents(&node);
+            node.name = "_" + node.name;
             return std::move(node.clone());
         }
         return nullptr;

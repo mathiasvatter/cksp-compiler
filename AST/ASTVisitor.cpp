@@ -93,9 +93,10 @@ std::unique_ptr<NodeArray> ASTVisitor::make_array(const std::string &name, int32
     node_sizes->params.push_back(std::move(node_int));
     auto node_indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, tok));
     auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), name, DataType::Array, std::move(node_sizes), std::move(node_indexes), tok);
-    node_array->indexes->parent = node_array.get();
-    node_array->sizes->parent = node_array.get();
-    node_array->parent = parent;
+//    node_array->indexes->parent = node_array.get();
+//    node_array->sizes->parent = node_array.get();
+    node_array->update_parents(parent);
+//    node_array->parent = parent;
     return std::move(node_array);
 }
 

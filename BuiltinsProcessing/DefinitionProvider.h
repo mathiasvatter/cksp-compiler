@@ -78,7 +78,7 @@ public:
     NodeArray* get_declared_array(const std::string& arr);
 
     /// declared everything
-    std::vector<std::unordered_map<std::string, DataStructure*, StringHash, StringEqual>> m_declared_data_structures;
+    std::vector<std::unordered_map<std::string, std::unique_ptr<DataStructure>, StringHash, StringEqual>> m_declared_data_structures;
     DataStructure* get_declared_data_structure(const std::string& data);
 
 

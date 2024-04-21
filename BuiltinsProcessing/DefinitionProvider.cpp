@@ -20,14 +20,12 @@ DefinitionProvider::DefinitionProvider(
 		  builtin_widgets(std::move(m_builtin_widgets)),
 		  external_variables(std::move(m_external_variables)) {
     for(auto& var : m_external_variables) {
-        m_declared_data_structures.back().insert({var->name, var.get()});
+        m_declared_data_structures.back().insert({var->name, clone_as<DataStructure>(var.get())});
     }
 }
 
 DataStructure* DefinitionProvider::get_declaration(DataStructure* var) {
-    if(var->name == "modes") {
 
-    }
     // get builtin declaration if it exists
     DataStructure *node_builtin_declaration = nullptr;
     if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
@@ -46,23 +44,14 @@ DataStructure* DefinitionProvider::get_declaration(DataStructure* var) {
             compile_error.m_message = "Data Structure has already been declared.";
             compile_error.print();
         } else {
-            m_declared_data_structures.back().insert({var->name, var});
-            if(var->name == "") {
-
-            }
+            m_declared_data_structures.back().insert({var->name, clone_as<DataStructure>(var)});
             return var;
         }
     // if var reference
     } else {
         if (node_builtin_declaration) {
-            if(node_builtin_declaration->name == "") {
-
-            }
             return node_builtin_declaration;
         } else if (auto node_declaration = get_declared_data_structure(var->name)) {
-            if(node_declaration->name == "") {
-
-            }
             return node_declaration;
         }
     }
@@ -182,10 +171,7 @@ DataStructure *DefinitionProvider::get_declared_data_structure(const std::string
     for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
         auto it = rit->find(data);
         if (it != rit->end()) {
-            if(it->second->name == "") {
-
-            }
-            return it->second;
+            return it->second.get();
         }
         return nullptr;
     }
