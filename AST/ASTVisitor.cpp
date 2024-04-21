@@ -51,7 +51,7 @@ std::unique_ptr<NodeBinaryExpr>ASTVisitor::make_binary_expr(ASTType type, const 
 
 std::unique_ptr<NodeStatement> ASTVisitor::make_declare_variable(const std::string& name, int32_t value, DataType type, NodeAST* parent) {
     auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), name, type, parent->tok);
-    node_variable->type = Integer;
+    node_variable->type = ASTType::Integer;
     auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), make_int(value, parent), parent->tok);
     node_declare_statement->assignee->parent = node_declare_statement.get();
     node_declare_statement->to_be_declared->parent = node_declare_statement.get();
@@ -62,18 +62,18 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_declare_array(const std::string&
     auto sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, parent->tok));
     sizes->params.push_back(make_int(size, parent));
     auto indexes  = std::unique_ptr<NodeParamList>(new NodeParamList({}, parent->tok));
-    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), name, Array, std::move(sizes), std::move(indexes), parent->tok);
+    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), name, DataType::Array, std::move(sizes), std::move(indexes), parent->tok);
     node_array->sizes->parent = node_array.get();
     node_array->indexes->parent = node_array.get();
-    node_array->type = Integer;
+    node_array->type = ASTType::Integer;
     auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), make_init_array_list(values, parent), parent->tok);
     node_declare_statement->to_be_declared->parent = node_declare_statement.get();
     node_declare_statement->assignee->parent = node_declare_statement.get();
     return statement_wrapper(std::move(node_declare_statement), parent);
 }
 
-std::unique_ptr<NodeStatementList> ASTVisitor::array_initialization(NodeArray* array, NodeParamList* list) {
-    auto node_statement_list = std::make_unique<NodeStatementList>(array->tok);
+std::unique_ptr<NodeBody> ASTVisitor::array_initialization(NodeArray* array, NodeParamList* list) {
+    auto node_statement_list = std::make_unique<NodeBody>(array->tok);
     auto node_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(array->clone().release()));
     for(int i = 0; i<list->params.size(); i++) {
         auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(list->params[i]->tok);
@@ -99,8 +99,8 @@ std::unique_ptr<NodeArray> ASTVisitor::make_array(const std::string &name, int32
     return std::move(node_array);
 }
 
-std::unique_ptr<NodeStatementList> ASTVisitor::make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeStatementList> body, NodeAST* parent) {
-    auto node_statement_list = std::make_unique<NodeStatementList>(var->tok);
+std::unique_ptr<NodeBody> ASTVisitor::make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent) {
+    auto node_statement_list = std::make_unique<NodeBody>(var->tok);
 
     auto node_assignment = std::make_unique<NodeSingleAssignStatement>(var->clone(), make_int(from, var), var->tok);
     node_statement_list->statements.push_back(statement_wrapper(std::move(node_assignment), node_statement_list.get()));
@@ -115,16 +115,16 @@ std::unique_ptr<NodeStatementList> ASTVisitor::make_while_loop(NodeAST* var, int
     return std::move(node_statement_list);
 }
 
-void ASTVisitor::add_vector_to_statement_list(std::unique_ptr<NodeStatementList> &list, std::vector<std::unique_ptr<NodeStatement>> stmts) {
+void ASTVisitor::add_vector_to_statement_list(std::unique_ptr<NodeBody> &list, std::vector<std::unique_ptr<NodeStatement>> stmts) {
     list->statements.insert(list->statements.end(),std::make_move_iterator(stmts.begin()),std::make_move_iterator(stmts.end()));
 }
 
-std::vector<std::unique_ptr<NodeStatement>> ASTVisitor::cleanup_node_statement_list(NodeStatementList* node) {
+std::vector<std::unique_ptr<NodeStatement>> ASTVisitor::cleanup_node_statement_list(NodeBody* node) {
     std::vector<std::unique_ptr<NodeStatement>> temp;
     for(int i = 0; i < node->statements.size(); ++i) {
-        if(auto node_statement_list = cast_node<NodeStatementList>(node->statements[i]->statement.get())) {
-            // Übertragen Sie die function_inlines vom aktuellen NodeStatementList-Element
-            // auf das erste Element der inneren NodeStatementList
+        if(auto node_statement_list = cast_node<NodeBody>(node->statements[i]->statement.get())) {
+            // Übertragen Sie die function_inlines vom aktuellen NodeBody-Element
+            // auf das erste Element der inneren NodeBody
             auto& inner_statements = node_statement_list->statements;
             if (!inner_statements.empty()) {
                 inner_statements[0]->function_inlines.insert(
@@ -143,7 +143,7 @@ std::vector<std::unique_ptr<NodeStatement>> ASTVisitor::cleanup_node_statement_l
                     std::make_move_iterator(inner_statements.begin()),
                     std::make_move_iterator(inner_statements.end())
             );
-            // Überspringen Sie das Hinzufügen des aktuellen NodeStatementList-Elements zu `temp`
+            // Überspringen Sie das Hinzufügen des aktuellen NodeBody-Elements zu `temp`
             continue;
         }
         // Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht speziell behandelt wird

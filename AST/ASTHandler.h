@@ -10,16 +10,11 @@
 /// e.g. Lists to arrays, multidimensional arrays to arrays
 class ASTHandler {
 public:
-    virtual void check_syntax(NodeAST& node) {};
-    virtual void perform_desugaring(NodeAST& node) {};
-    virtual std::unique_ptr<NodeAST> perform_lowering(NodeAST& node) {return nullptr;};
+    ASTHandler() = default;
+    ~ASTHandler() = default;
 
-    virtual std::unique_ptr<NodeAST> perform_lowering(NodeSingleDeclareStatement& node) {return nullptr;};
     virtual std::unique_ptr<NodeAST> perform_lowering(NodeArray& node) {return nullptr;};
-    virtual std::unique_ptr<NodeAST> perform_lowering(NodeListStatement& node) {return nullptr;};
-
-
-    virtual ~ASTHandler() = default;
+    virtual std::unique_ptr<NodeBody> add_members(NodeArray& node) {return nullptr;};
 
 protected:
     inline std::unique_ptr<NodeArray> make_array(const std::string &name, int32_t size, const Token& tok, NodeAST *parent) {
@@ -41,30 +36,10 @@ protected:
     }
 };
 
-class SingleDeclareStatementHandler : public ASTHandler {
-public:
-    std::unique_ptr<NodeAST> perform_lowering(NodeSingleDeclareStatement& node) override {
-        auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
-        if(auto* node_array = dynamic_cast<NodeArray*>(node.to_be_declared.get())) {
-            if(node_array->dimensions > 1) {
-                for (int i = 0; i < node_array->sizes->params.size(); i++) {
-                    auto node_var = std::make_unique<NodeVariable>(std::optional<Token>(),node_array->name + ".SIZE_D" + std::to_string(i + 1),Const, node.tok);
-                    auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_var),node_array->sizes->params[i]->clone(),node.tok);
-                    auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
-                    node_statement_list->statements.push_back(std::move(node_statement));
-                }
-                auto node_arr = node_array->get_handler()->perform_lowering(*node_array);
-                node.to_be_declared = std::move(node_arr);
-                node_statement_list->statements.push_back(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
-                return node_statement_list;
-            }
-        }
-        return std::move(node.clone());
-    }
-};
 
 class ArrayHandler : public ASTHandler {
 public:
+    /// Lowering of multidimensional arrays to arrays
     std::unique_ptr<NodeAST> perform_lowering(NodeArray& node) override {
         // handle multidimensional arrays
         if(node.dimensions > 1) {
@@ -83,24 +58,25 @@ public:
                     node.indexes->update_parents(&node);
                 }
             }
+            return std::move(node.clone());
         }
-//        if(node.data_type == List) {
-//            if(node.indexes->params.size() != 2) {
-//                CompileError(ErrorType::SyntaxError,"Got wrong amount of indexes for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).print();
-//                exit(EXIT_FAILURE);
-//            }
-//            auto node_position_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(
-//                                                                          get_declared_array(node.name+".pos")->clone().release()));
-//            node_position_array->indexes->params.clear();
-//            node_position_array->indexes->params.push_back(std::move(node.indexes->params[0]));
-//
-//            auto node_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_position_array), std::move(node.indexes->params[1]), &node, node.tok);
-//            node.indexes->params.clear();
-//            node.indexes->params.push_back(std::move(node_expression));
-//            node.indexes->update_parents(&node);
-//            node.name = "_"+node.name;
-//        }
-        return std::move(node.clone());
+        return nullptr;
+    }
+    /// returns a statement list with the declarations of the size constants of the array
+    virtual std::unique_ptr<NodeBody> add_members(NodeArray& node) override {
+        if(node.dimensions == 1) {
+            return nullptr;
+        }
+//        auto node_array = cast_node<NodeArray>(node.to_be_declared.get());
+        auto node_statement_list = std::make_unique<NodeBody>(node.tok);
+        for (int i = 0; i < node.sizes->params.size(); i++) {
+            auto node_var = std::make_unique<NodeVariable>(std::optional<Token>(),node.name + ".SIZE_D" + std::to_string(i + 1),DataType::Const, node.tok);
+            auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_var),node.sizes->params[i]->clone(),node.tok);
+            auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
+            node_statement->update_parents(node_statement_list.get());
+            node_statement_list->statements.push_back(std::move(node_statement));
+        }
+        return node_statement_list;
     }
 private:
     std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok) {
@@ -139,10 +115,10 @@ private:
     }
 };
 
-class ListHandler : public ASTHandler {
-public:
-    std::unique_ptr<NodeAST> perform_lowering(NodeListStatement& node) override {
-//        auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+//class ListHandler : public ASTHandler {
+//public:
+//    std::unique_ptr<NodeAST> perform_lowering(NodeListStatement& node) override {
+//        auto node_statement_list = std::make_unique<NodeBody>(node.tok);
 //        auto node_main_array = make_array(node.name, node.size, node.tok, node_statement_list.get());
 //        // accept first to get rid of array identifier
 //        node_main_array->accept(*this);
@@ -209,7 +185,7 @@ public:
 //            node_const_declaration->assignee = make_int(sizes[i], node_const_declaration.get());
 //            node_statement_list->statements.push_back(statement_wrapper(std::move(node_const_declaration), node_statement_list.get()));
 //
-//            auto node_while_body = std::make_unique<NodeStatementList>(node.tok);
+//            auto node_while_body = std::make_unique<NodeBody>(node.tok);
 //            auto node_expression = make_binary_expr(ASTType::Integer, "+", node_iterator_var->clone(), make_int(positions[i], &node),nullptr, node.tok);
 //            node_main_array->indexes->params.clear();
 //            node_main_array->indexes->params.push_back(std::move(node_expression));
@@ -225,6 +201,6 @@ public:
 //        node_statement_list->update_parents(node.parent);
 //        node_statement_list->accept(*this);
 //        node.replace_with(std::move(node_statement_list));
-    }
-};
+//    }
+//};
 

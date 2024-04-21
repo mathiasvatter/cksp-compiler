@@ -33,8 +33,9 @@ protected:
 	Token peek(int ahead = 0);
 	Token consume();
 
-
 	const Token& get_tok(const std::vector<Token>& tok) const;
+    const Token& get_tok() const;
+
 	void remove_tokens(std::vector<Token>& tok, size_t start, size_t end);
 };
 

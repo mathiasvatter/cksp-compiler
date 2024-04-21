@@ -19,6 +19,10 @@ Token Processor::peek(const std::vector<Token> &tok, int ahead) {
 	return tok.at(m_pos+ahead);
 }
 
+Token Processor::peek(int ahead) {
+	return peek(m_tokens, ahead);
+}
+
 Token Processor::consume(const std::vector<Token> &tok) {
 	if (m_pos >= tok.size()) {
 		auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
@@ -29,20 +33,20 @@ Token Processor::consume(const std::vector<Token> &tok) {
 	return tok.at(m_pos++);
 }
 
-Token Processor::peek(int ahead) {
-	return peek(m_tokens, ahead);
-}
-
 Token Processor::consume() {
 	return consume(m_tokens);
 }
 
-std::vector<Token> Processor::get_token_vector() {
-	return std::move(m_tokens);
-}
-
 const Token &Processor::get_tok(const std::vector<Token> &tok) const {
 	return tok.at(m_pos);
+}
+
+const Token &Processor::get_tok() const {
+    return m_tokens.at(m_pos);
+}
+
+std::vector<Token> Processor::get_token_vector() {
+	return std::move(m_tokens);
 }
 
 void Processor::remove_tokens(std::vector<Token> &tok, size_t start, size_t end) {

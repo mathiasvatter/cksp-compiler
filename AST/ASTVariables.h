@@ -21,7 +21,7 @@ public:
 
     void visit(NodeStatement& node) override;
 
-    void visit(NodeStatementList& node) override;
+    void visit(NodeBody& node) override;
 	void visit(NodeUIControl& node) override;
     void visit(NodeArray& node) override;
     void visit(NodeVariable& node) override;

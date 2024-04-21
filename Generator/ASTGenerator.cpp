@@ -122,12 +122,12 @@ void ASTGenerator::visit(NodeParamList &node) {
 
 void ASTGenerator::visit(NodeBinaryExpr &node) {
     auto is_nested_bin_expr = is_instance_of<NodeBinaryExpr>(node.parent) || is_instance_of<NodeUnaryExpr>(node.parent);
-    if(is_nested_bin_expr and node.type != String) os << "(";
+    if(is_nested_bin_expr and node.type != ASTType::String) os << "(";
 
     node.left->accept(*this);
     os << " " << node.op << " ";
     node.right->accept(*this);
-    if(is_nested_bin_expr and node.type != String) os << ")";
+    if(is_nested_bin_expr and node.type != ASTType::String) os << ")";
 
 }
 
@@ -150,7 +150,7 @@ void ASTGenerator::visit(NodeStatement &node) {
 	}
 }
 
-void ASTGenerator::visit(NodeStatementList& node) {
+void ASTGenerator::visit(NodeBody& node) {
 	m_scope_count++;
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
@@ -232,13 +232,6 @@ void ASTGenerator::visit(NodeFunctionDefinition &node) {
 void ASTGenerator::visit(NodeGetControlStatement &node) {
     node.ui_id ->accept(*this);
     os << " -> " << node.control_param;
-}
-
-void ASTGenerator::visit(NodeSetControlStatement &node) {
-    node.get_control ->accept(*this);
-    os << " := ";
-    node.assignee -> accept(*this);
-    os << std::endl;
 }
 
 std::string ASTGenerator::get_compiled_date_time() {

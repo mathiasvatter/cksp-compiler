@@ -23,7 +23,7 @@ public:
 //    void visit(NodeUnaryExpr& node) override;
 //    void visit(NodeFunctionCall& node) override;
 //    void visit(NodeFunctionHeader& node) override;
-	void visit(NodeStatementList& node) override;
+	void visit(NodeBody& node) override;
 //	void visit(NodeStatement& node) override;
 
 
@@ -34,7 +34,7 @@ private:
     int m_max_returns_in_current_callback = 0;
     int m_current_return_idx = 0;
     static int extract_last_number(const std::string& str, NodeAST* var);
-    std::unique_ptr<NodeStatementList> declare_return_vars();
+    std::unique_ptr<NodeBody> declare_return_vars();
 
 };
 

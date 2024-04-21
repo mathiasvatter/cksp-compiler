@@ -6,10 +6,11 @@
 
 #include <unordered_map>
 
-#include "../Tokenizer/Tokenizer.h"
+//#include "../Tokenizer/Tokenizer.h"
 #include "../AST/AST.h"
-#include "../Tokenizer/Tokens.h"
+//#include "../Tokenizer/Tokens.h"
 #include "../misc/Result.h"
+#include "../Processor/Processor.h"
 
 
 // Hilfsfunktion, die das Result-Objekt zurückgibt, wenn kein Fehler vorliegt.
@@ -55,24 +56,14 @@ inline static int _get_binop_precedence(token tok) {
 }
 
 
-class Parser {
+class Parser: public Processor {
 
 public:
     explicit Parser(std::vector<Token> tokens);
-    [[nodiscard]] size_t get_current_pos() const;
-    void set_current_pos(size_t mPos);
-
     Result<std::unique_ptr<NodeProgram>> parse();
 
 protected:
-	size_t m_pos;
-    std::vector<Token> m_tokens;
-	token m_curr_token;
-    std::string m_curr_token_value;
 
-	[[nodiscard]] Token peek(int ahead = 0);
-	Token consume();
-    Token& get_tok();
 	void _skip_linebreaks();
 
     static std::optional<Token> get_persistent_keyword(const Token& tok);
@@ -120,7 +111,7 @@ protected:
     Result<std::unique_ptr<NodeIfStatement>> parse_if_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeForStatement>> parse_for_statement(NodeAST* parent);
     bool is_ranged_for_loop();
-    Result<std::unique_ptr<NodeRangedForStatement>> parse_ranged_for_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeForEachStatement>> parse_ranged_for_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeWhileStatement>> parse_while_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeSelectStatement>> parse_select_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeGetControlStatement>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent);

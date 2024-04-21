@@ -36,7 +36,7 @@ public:
     void visit(NodeUnaryExpr& node) override;
     void visit(NodeSingleAssignStatement& node) override;
     void visit(NodeStatement& node) override;
-	void visit(NodeStatementList& node) override;
+	void visit(NodeBody& node) override;
     void visit(NodeIfStatement& node) override;
     void visit(NodeWhileStatement& node) override;
     void visit(NodeSelectStatement& node) override;
@@ -45,7 +45,6 @@ public:
     void visit(NodeFunctionCall& node) override;
     void visit(NodeFunctionDefinition& node) override;
     void visit(NodeGetControlStatement& node) override;
-    void visit(NodeSetControlStatement& node) override;
 
     std::ostringstream os;
 
@@ -53,8 +52,8 @@ public:
 	void generate(const std::string& path) const;
 	void print() const;
 
-	std::unordered_map<ASTType, std::string> array_identifier = {{String, "!"}, {Integer, "%"}, {Real, "?"}, {Unknown, ""}};
-	std::unordered_map<ASTType, std::string> variable_identifier = {{String, "@"}, {Integer, "$"}, {Real, "~"}, {Unknown, ""}};
+	std::unordered_map<ASTType, std::string> array_identifier = {{ASTType::String, "!"}, {ASTType::Integer, "%"}, {ASTType::Real, "?"}, {ASTType::Unknown, ""}};
+	std::unordered_map<ASTType, std::string> variable_identifier = {{ASTType::String, "@"}, {ASTType::Integer, "$"}, {ASTType::Real, "~"}, {ASTType::Unknown, ""}};
 
 private:
 	std::string m_indent = "  ";

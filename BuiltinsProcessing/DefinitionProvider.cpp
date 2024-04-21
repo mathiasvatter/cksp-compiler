@@ -25,7 +25,9 @@ DefinitionProvider::DefinitionProvider(
 }
 
 DataStructure* DefinitionProvider::get_declaration(DataStructure* var) {
+    if(var->name == "modes") {
 
+    }
     // get builtin declaration if it exists
     DataStructure *node_builtin_declaration = nullptr;
     if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
@@ -38,19 +40,29 @@ DataStructure* DefinitionProvider::get_declaration(DataStructure* var) {
         compile_error.exit();
     }
 
-    // if declaration
+    // if input var is declaration
     if (!var->is_reference) {
         if (get_declared_data_structure(var->name)) {
             compile_error.m_message = "Data Structure has already been declared.";
             compile_error.print();
         } else {
             m_declared_data_structures.back().insert({var->name, var});
+            if(var->name == "") {
+
+            }
+            return var;
         }
-        // if reference
+    // if var reference
     } else {
         if (node_builtin_declaration) {
+            if(node_builtin_declaration->name == "") {
+
+            }
             return node_builtin_declaration;
         } else if (auto node_declaration = get_declared_data_structure(var->name)) {
+            if(node_declaration->name == "") {
+
+            }
             return node_declaration;
         }
     }
@@ -168,8 +180,11 @@ DataStructure *DefinitionProvider::get_declared_data_structure(const std::string
         var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
     }
     for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
-        auto it = rit->find(var_without_identifier);
+        auto it = rit->find(data);
         if (it != rit->end()) {
+            if(it->second->name == "") {
+
+            }
             return it->second;
         }
         return nullptr;
@@ -239,4 +254,28 @@ void DefinitionProvider::set_builtin_functions(std::unordered_map<StringIntKey, 
 
 void DefinitionProvider::set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> property_functions) {
 	DefinitionProvider::property_functions = std::move(property_functions);
+}
+
+void DefinitionProvider::add_external_variable(std::unique_ptr<DataStructure> external_variable) {
+    external_variables.push_back(std::move(external_variable));
+}
+
+void DefinitionProvider::add_builtin_variable(std::unique_ptr<NodeVariable> builtin_variable) {
+    builtin_variables.insert({builtin_variable->name, std::move(builtin_variable)});
+}
+
+void DefinitionProvider::add_builtin_array(std::unique_ptr<NodeArray> builtin_array) {
+    builtin_arrays.insert({builtin_array->name, std::move(builtin_array)});
+}
+
+void DefinitionProvider::add_builtin_widget(std::unique_ptr<NodeUIControl> builtin_widget) {
+    builtin_widgets.insert({builtin_widget->name, std::move(builtin_widget)});
+}
+
+void DefinitionProvider::add_builtin_function(std::unique_ptr<NodeFunctionHeader> builtin_function) {
+    builtin_functions.insert({{builtin_function->name, (int)builtin_function->args->params.size()}, std::move(builtin_function)});
+}
+
+void DefinitionProvider::add_property_function(std::unique_ptr<NodeFunctionHeader> property_function) {
+    property_functions.insert({property_function->name, std::move(property_function)});
 }

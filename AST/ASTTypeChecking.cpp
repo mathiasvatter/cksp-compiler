@@ -21,9 +21,9 @@ void ASTTypeChecking::visit(NodeProgram& node) {
                                                    std::make_move_iterator(node_return_vars->statements.end()));
 }
 
-std::unique_ptr<NodeStatementList> ASTTypeChecking::declare_return_vars() {
+std::unique_ptr<NodeBody> ASTTypeChecking::declare_return_vars() {
     Token tok = Token(token::KEYWORD, "compiler_variable", 0,0, "");
-    auto node_statement_list = std::make_unique<NodeStatementList>(tok);
+    auto node_statement_list = std::make_unique<NodeBody>(tok);
     for(auto &arr_name : m_return_arrays) {
         auto node_array = make_array(arr_name.second, m_current_return_idx+1, tok, nullptr);
         node_array -> type = arr_name.first;
@@ -70,22 +70,22 @@ void ASTTypeChecking::visit(NodeVariable& node) {
         }
     }
     // only print error if it is in a declaration
-    if(node.type == Unknown) {
+    if(node.type == ASTType::Unknown) {
         if(node_declaration or node_ui_control) {
             CompileError(ErrorType::TypeError,"Could not infer variable type. Automatically casted as <Integer>. Consider using a variable identifier.", "", node.tok).print();
-			node.type = Integer;
+			node.type = ASTType::Integer;
 		} else {
 			node.type = node.declaration->type;
 		}
     }
-	if(node.type == Unknown or node.type == Number or node.type == Any) {
+	if(node.type == ASTType::Unknown or node.type == ASTType::Number or node.type == ASTType::Any) {
         // no return_var information printed pls
         if(!node.is_compiler_return and !node.is_local and !node.is_engine)
 		    CompileError(ErrorType::TypeError,"Could not infer variable type. Variable is Unknown/Number/Any", "valid type", node.tok).print();
 	}
 
     if(node.is_compiler_return) {
-        if(node.type == Unknown) node.type = Integer;
+        if(node.type == ASTType::Unknown) node.type = ASTType::Integer;
         auto return_var_name = m_return_arrays.find(node.type)->second;
         auto node_return_var = make_array(return_var_name, 0, node.tok, node.parent);
         auto callback_index = extract_last_number(node.name, &node);
@@ -96,7 +96,7 @@ void ASTTypeChecking::visit(NodeVariable& node) {
         node.replace_with(std::move(node_return_var));
     }
     if(node.is_local) {
-        if(node.type == Unknown) node.type = Integer;
+        if(node.type == ASTType::Unknown) node.type = ASTType::Integer;
         auto local_var_name = m_local_var_arrays.find(node.type)->second;
         auto node_local_variable = make_array(local_var_name, 0, node.tok, node.parent);
         auto idx = extract_last_number(node.name, &node);
@@ -142,17 +142,17 @@ void ASTTypeChecking::visit(NodeArray& node) {
     }
 
     // only print error if it is in a declaration
-    if(node.type == Unknown) {
+    if(node.type == ASTType::Unknown) {
 //        auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
 //        auto node_ui_control = cast_node<NodeUIControl>(node.parent);
         if(node_declaration or node_ui_control) {
             CompileError(ErrorType::TypeError,"Could not infer array type. Automatically casted as <Integer>. Consider using a variable identifier.", "", node.tok).print();
-			node.type = Integer;
+			node.type = ASTType::Integer;
         } else {
 			node.type = node.declaration->type;
 		}
     }
-	if(node.type == Unknown or node.type == Number or node.type == Any) {
+	if(node.type == ASTType::Unknown or node.type == ASTType::Number or node.type == ASTType::Any) {
 		CompileError(ErrorType::TypeError,"Could not infer array type. Variable is Unknown/Number/Any", "valid type", node.tok).print();
 	}
 
@@ -185,8 +185,8 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
 
         // replace variable declaration with declaration and assignment when assignment is not single int or single real or variable ist not const
         // replace instead when assignment is of type string, NodeBinaryExpr, NodeFunctionCall, etc.
-        if(node_declare_variable and not(node_int or node_real or node_declare_variable->data_type == Const)) {
-            auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+        if(node_declare_variable and not(node_int or node_real or node_declare_variable->data_type == DataType::Const)) {
+            auto node_statement_list = std::make_unique<NodeBody>(node.tok);
             auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(), std::move(node.assignee), node.tok);
             node_statement_list->statements.push_back(statement_wrapper(node.clone(),node_statement_list.get()));
             node_statement_list->statements.push_back(statement_wrapper(std::move(node_assignment), node_statement_list.get()));
@@ -196,7 +196,7 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
             return;
             // add assignment to declaration if variable is declared and assigned to a string
 //        } else if (node_declare_variable and node_declare_variable->data_type != Const and (node.assignee->type == String || node.assignee->type == Unknown)) {
-//            auto node_statement_list = std::make_unique<NodeStatementList>(node.tok);
+//            auto node_statement_list = std::make_unique<NodeBody>(node.tok);
 //            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(),std::move(node.assignee), node.tok);
 //            auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node.to_be_declared),nullptr, node.tok);
 //            node_statement_list->statements.push_back(statement_wrapper(std::move(node_declaration), node_statement_list.get()));
@@ -214,13 +214,13 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
 				for (auto &param : node_param_list->params) {
 					auto node_var = cast_node<NodeVariable>(param.get());
 					auto node_arr = cast_node<NodeArray>(param.get());
-					if ((node_var and node_var->data_type != Const and !node_var->is_engine) or node_arr) {
+					if ((node_var and node_var->data_type != DataType::Const and !node_var->is_engine) or node_arr) {
 						has_var = true;
 						break;
 					}
 				}
 			}
-            if (node_param_list and (has_var || node.assignee->type == String || node.assignee->type == Unknown)) {
+            if (node_param_list and (has_var || node.assignee->type == ASTType::String || node.assignee->type == ASTType::Unknown)) {
                 auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement *>(node.clone().release()));
                 auto node_statement_list = array_initialization(node_declare_array, node_param_list);
                 // remove list assignment from declare_statement
@@ -236,7 +236,7 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
 
 }
 
-void ASTTypeChecking::visit(NodeStatementList& node) {
+void ASTTypeChecking::visit(NodeBody& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
