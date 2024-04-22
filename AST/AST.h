@@ -321,26 +321,19 @@ struct NodeArray : DataStructure {
     ASTHandler* get_handler() const override;
 };
 
-struct NodeNDArray : NodeAST {
-	bool is_used = false;
-	bool is_engine = false;
-	std::optional<Token> persistence;
-    bool is_reference = false;
-	bool is_local = false;
-	bool is_global = false;
-	bool is_compiler_return = false;
+struct NodeNDArray : DataStructure {
 	int dimensions = 1;
     bool show_brackets = true;
-	DataType var_type = DataType::Array;
-	std::string name;
 	std::unique_ptr<NodeParamList> sizes = nullptr;
 	std::unique_ptr<NodeParamList> indexes = nullptr;
-	NodeAST* declaration = nullptr;
-	inline explicit NodeNDArray(Token tok) : NodeAST(tok, NodeType::NDArray) {}
+	inline explicit NodeNDArray(std::string name, Token tok) : DataStructure(name, tok, NodeType::NDArray) {}
 	inline NodeNDArray(std::optional<Token> is_persistent, std::string name, DataType var_type, std::unique_ptr<NodeParamList> sizes,
-                       std::unique_ptr<NodeParamList> indexes, Token tok)
-		: NodeAST(tok, NodeType::NDArray), persistence(is_persistent), name(std::move(name)), var_type(var_type),
-		  sizes(std::move(sizes)), indexes(std::move(indexes)) {}
+		std::unique_ptr<NodeParamList> indexes, Token tok)
+	: DataStructure(std::move(name), tok, NodeType::NDArray),
+	sizes(std::move(sizes)), indexes(std::move(indexes)) {
+		persistence = std::move(is_persistent);
+		this->data_type = var_type;
+	}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
 	NodeNDArray(const NodeNDArray& other);
@@ -358,6 +351,7 @@ struct NodeNDArray : NodeAST {
 		if(sizes) sizes -> update_token_data(token);
 		if(indexes) indexes ->update_token_data(token);
 	}
+	ASTHandler* get_handler() const override;
 };
 
 struct NodeUIControl : DataStructure {

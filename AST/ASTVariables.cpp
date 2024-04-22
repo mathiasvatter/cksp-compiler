@@ -34,18 +34,18 @@ void ASTVariables::visit(NodeCallback& node) {
 
 void ASTVariables::visit(NodeStatement& node) {
     if(!node.function_inlines.empty()) {
-        auto node_statement_list = std::make_unique<NodeBody>(node.function_inlines[0]->tok);
-        node_statement_list->parent = &node;
+        auto node_body = std::make_unique<NodeBody>(node.function_inlines[0]->tok);
+        node_body->parent = &node;
         for(auto & func : node.function_inlines) {
             auto it = m_function_inlines.find(func);
             if(!is_instance_of<NodeBody>(it->first)) {
 
             }
-            node_statement_list->statements.push_back(std::move(it->second));
+            node_body->statements.push_back(std::move(it->second));
         }
-        node_statement_list->statements.push_back(statement_wrapper(std::move(node.statement), &node));
-        node_statement_list->accept(*this);
-        node.statement = std::move(node_statement_list);
+        node_body->statements.push_back(statement_wrapper(std::move(node.statement), &node));
+        node_body->accept(*this);
+        node.statement = std::move(node_body);
     } else
         node.statement->accept(*this);
 }
@@ -283,7 +283,7 @@ void ASTVariables::visit(NodeBody& node) {
         stmt->accept(*this);
     }
     // Ersetzen Sie die alte Liste durch die neue
-    node.statements = std::move(cleanup_node_statement_list(&node));
+    node.statements = std::move(cleanup_node_body(&node));
 }
 
 NodeVariable *ASTVariables::get_declared_variable(const std::string& var) {

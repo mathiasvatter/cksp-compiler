@@ -115,8 +115,8 @@ private:
 //class ListHandler : public ASTHandler {
 //public:
 //    std::unique_ptr<NodeAST> perform_lowering(NodeListStatement& node) override {
-//        auto node_statement_list = std::make_unique<NodeBody>(node.tok);
-//        auto node_main_array = make_array(node.name, node.size, node.tok, node_statement_list.get());
+//        auto node_body = std::make_unique<NodeBody>(node.tok);
+//        auto node_main_array = make_array(node.name, node.size, node.tok, node_body.get());
 //        // accept first to get rid of array identifier
 //        node_main_array->accept(*this);
 //        std::string name_wo_ident = node_main_array->name;
@@ -131,8 +131,8 @@ private:
 //        auto node_declare_main_array = std::make_unique<NodeSingleDeclareStatement>(node_main_array->clone(), nullptr, node.tok);
 //        auto main_size = (int32_t)node.body.size();
 //        auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(std::make_unique<NodeVariable>(std::optional<Token>(), name_wo_ident+".SIZE", DataType::Const, node.tok), make_int(main_size,&node), node.tok);
-//        node_statement_list->statements.push_back(statement_wrapper(std::move(node_declare_main_array), node_statement_list.get()));
-//        node_statement_list->statements.push_back(statement_wrapper(std::move(node_declare_main_const), node_statement_list.get()));
+//        node_body->statements.push_back(statement_wrapper(std::move(node_declare_main_array), node_body.get()));
+//        node_body->statements.push_back(statement_wrapper(std::move(node_declare_main_const), node_body.get()));
 //
 //
 //        if(max_dimension == 1) {
@@ -140,10 +140,10 @@ private:
 //            for(int i = 1; i<node.body.size(); i++) {
 //                node.body[0]->params.push_back(std::move(node.body[i]->params[0]));
 //            }
-//            add_vector_to_statement_list(node_statement_list, std::move(array_initialization(node_main_array.get(), node.body[0].get())->statements));
-//            node_statement_list->update_parents(node.parent);
-//            node_statement_list->accept(*this);
-//            node.replace_with(std::move(node_statement_list));
+//            add_vector_to_statement_list(node_body, std::move(array_initialization(node_main_array.get(), node.body[0].get())->statements));
+//            node_body->update_parents(node.parent);
+//            node_body->accept(*this);
+//            node.replace_with(std::move(node_body));
 //            return;
 //        }
 //
@@ -165,8 +165,8 @@ private:
 //        }
 //        auto node_sizes_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_sizes_array), std::move(node_sizes), node.tok);
 //        auto node_positions_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_positions_array), std::move(node_positions), node.tok);
-//        node_statement_list->statements.push_back(statement_wrapper(std::move(node_sizes_declaration), node_statement_list.get()));
-//        node_statement_list->statements.push_back(statement_wrapper(std::move(node_positions_declaration), node_statement_list.get()));
+//        node_body->statements.push_back(statement_wrapper(std::move(node_sizes_declaration), node_body.get()));
+//        node_body->statements.push_back(statement_wrapper(std::move(node_positions_declaration), node_body.get()));
 //
 //        auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", DataType::Mutable, node.tok);
 //        for(int i = 0; i<node.body.size(); i++) {
@@ -174,13 +174,13 @@ private:
 //            auto node_array = make_array(name_wo_ident+std::to_string(i), sizes[i], node.tok, node_array_declaration.get());
 //            node_array_declaration->to_be_declared = node_array->clone();
 //            node_array_declaration->assignee = std::move(node.body[i]);
-//            node_statement_list->statements.push_back(statement_wrapper(std::move(node_array_declaration), node_statement_list.get()));
+//            node_body->statements.push_back(statement_wrapper(std::move(node_array_declaration), node_body.get()));
 //
 //            auto node_const_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
 //            auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), name_wo_ident+std::to_string(i)+".SIZE", DataType::Const, node.tok);
 //            node_const_declaration->to_be_declared = std::move(node_variable);
 //            node_const_declaration->assignee = make_int(sizes[i], node_const_declaration.get());
-//            node_statement_list->statements.push_back(statement_wrapper(std::move(node_const_declaration), node_statement_list.get()));
+//            node_body->statements.push_back(statement_wrapper(std::move(node_const_declaration), node_body.get()));
 //
 //            auto node_while_body = std::make_unique<NodeBody>(node.tok);
 //            auto node_expression = make_binary_expr(ASTType::Integer, "+", node_iterator_var->clone(), make_int(positions[i], &node),nullptr, node.tok);
@@ -192,12 +192,12 @@ private:
 //            node_main_array_copy->name = "_"+node_main_array_copy->name;
 //            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(node_main_array_copy), std::move(node_array), node.tok);
 //            node_while_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_while_body.get()));
-//            auto node_while_loop = make_while_loop(node_iterator_var.get(), 0, sizes[i], std::move(node_while_body), node_statement_list.get());
-//            node_statement_list->statements.push_back(statement_wrapper(std::move(node_while_loop), node_statement_list.get()));
+//            auto node_while_loop = make_while_loop(node_iterator_var.get(), 0, sizes[i], std::move(node_while_body), node_body.get());
+//            node_body->statements.push_back(statement_wrapper(std::move(node_while_loop), node_body.get()));
 //        }
-//        node_statement_list->update_parents(node.parent);
-//        node_statement_list->accept(*this);
-//        node.replace_with(std::move(node_statement_list));
+//        node_body->update_parents(node.parent);
+//        node_body->accept(*this);
+//        node.replace_with(std::move(node_body));
 //    }
 //};
 
