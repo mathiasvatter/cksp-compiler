@@ -23,7 +23,7 @@ void ASTTypeChecking::visit(NodeProgram& node) {
 
 std::unique_ptr<NodeBody> ASTTypeChecking::declare_return_vars() {
     Token tok = Token(token::KEYWORD, "compiler_variable", 0,0, "");
-    auto node_statement_list = std::make_unique<NodeBody>(tok);
+    auto node_body = std::make_unique<NodeBody>(tok);
     for(auto &arr_name : m_return_arrays) {
         auto node_array = make_array(arr_name.second, m_current_return_idx+1, tok, nullptr);
         node_array -> type = arr_name.first;
@@ -33,9 +33,9 @@ std::unique_ptr<NodeBody> ASTTypeChecking::declare_return_vars() {
         auto node_arr_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), nullptr, tok);
         node_arr_declaration->to_be_declared->parent = node_arr_declaration.get();
         node_arr_declaration->accept(*this);
-        node_statement_list->statements.push_back(statement_wrapper(std::move(node_arr_declaration), node_statement_list.get()));
+        node_body->statements.push_back(statement_wrapper(std::move(node_arr_declaration), node_body.get()));
     }
-    return std::move(node_statement_list);
+    return std::move(node_body);
 }
 
 
@@ -186,24 +186,24 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
         // replace variable declaration with declaration and assignment when assignment is not single int or single real or variable ist not const
         // replace instead when assignment is of type string, NodeBinaryExpr, NodeFunctionCall, etc.
         if(node_declare_variable and not(node_int or node_real or node_declare_variable->data_type == DataType::Const)) {
-            auto node_statement_list = std::make_unique<NodeBody>(node.tok);
+            auto node_body = std::make_unique<NodeBody>(node.tok);
             auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(), std::move(node.assignee), node.tok);
-            node_statement_list->statements.push_back(statement_wrapper(node.clone(),node_statement_list.get()));
-            node_statement_list->statements.push_back(statement_wrapper(std::move(node_assignment), node_statement_list.get()));
-            node_statement_list->update_parents(node.parent);
-            node_statement_list->accept(*this);
-            node.replace_with(std::move(node_statement_list));
+            node_body->statements.push_back(statement_wrapper(node.clone(),node_body.get()));
+            node_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_body.get()));
+            node_body->update_parents(node.parent);
+            node_body->accept(*this);
+            node.replace_with(std::move(node_body));
             return;
             // add assignment to declaration if variable is declared and assigned to a string
 //        } else if (node_declare_variable and node_declare_variable->data_type != Const and (node.assignee->type == String || node.assignee->type == Unknown)) {
-//            auto node_statement_list = std::make_unique<NodeBody>(node.tok);
+//            auto node_body = std::make_unique<NodeBody>(node.tok);
 //            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(),std::move(node.assignee), node.tok);
 //            auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node.to_be_declared),nullptr, node.tok);
-//            node_statement_list->statements.push_back(statement_wrapper(std::move(node_declaration), node_statement_list.get()));
-//            node_statement_list->statements.push_back(statement_wrapper(std::move(node_assignment), node_statement_list.get()));
-//            node_statement_list->update_parents(node.parent);
-//            node_statement_list->accept(*this);
-//            node.replace_with(std::move(node_statement_list));
+//            node_body->statements.push_back(statement_wrapper(std::move(node_declaration), node_body.get()));
+//            node_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_body.get()));
+//            node_body->update_parents(node.parent);
+//            node_body->accept(*this);
+//            node.replace_with(std::move(node_body));
 //            return;
             // initialize string array in a special way
         } else if (node_declare_array) {
@@ -222,13 +222,13 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
 			}
             if (node_param_list and (has_var || node.assignee->type == ASTType::String || node.assignee->type == ASTType::Unknown)) {
                 auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement *>(node.clone().release()));
-                auto node_statement_list = array_initialization(node_declare_array, node_param_list);
+                auto node_body = array_initialization(node_declare_array, node_param_list);
                 // remove list assignment from declare_statement
                 node_declare_statement->assignee.release();
-                node_statement_list->statements.insert(node_statement_list->statements.begin(),statement_wrapper(std::move(node_declare_statement),node_statement_list.get()));
-                node_statement_list->update_parents(node.parent);
-                node_statement_list->accept(*this);
-                node.replace_with(std::move(node_statement_list));
+                node_body->statements.insert(node_body->statements.begin(),statement_wrapper(std::move(node_declare_statement),node_body.get()));
+                node_body->update_parents(node.parent);
+                node_body->accept(*this);
+                node.replace_with(std::move(node_body));
                 return;
             }
         }
@@ -241,5 +241,5 @@ void ASTTypeChecking::visit(NodeBody& node) {
         stmt->accept(*this);
     }
     // Ersetzen Sie die alte Liste durch die neue
-    node.statements = std::move(cleanup_node_statement_list(&node));
+    node.statements = std::move(cleanup_node_body(&node));
 }

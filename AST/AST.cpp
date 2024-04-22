@@ -114,13 +114,15 @@ void NodeNDArray::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeNDArray::NodeNDArray(const NodeNDArray& other)
-	: NodeAST(other), is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
-	  is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
-	  show_brackets(other.show_brackets), var_type(other.var_type), name(other.name),
-	  sizes(clone_unique(other.sizes)), indexes(clone_unique(other.indexes)),
-	  declaration(other.declaration), dimensions(other.dimensions) {}
+	: DataStructure(other), show_brackets(other.show_brackets), sizes(clone_unique(other.sizes)),
+	  indexes(clone_unique(other.indexes)), dimensions(other.dimensions) {}
 std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 	return std::make_unique<NodeNDArray>(*this);
+}
+
+ASTHandler *NodeNDArray::get_handler() const {
+	static ArrayHandler handler;
+	return &handler;
 }
 
 // ************* NodeUIControl ***************

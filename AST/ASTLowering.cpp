@@ -40,7 +40,7 @@ void ASTLowering::visit(NodeBody &node) {
     }
     if(node.scope) m_def_provider->remove_scope();
 
-    if(!node.scope) node.statements = std::move(cleanup_node_statement_list(&node));
+    if(!node.scope) node.statements = std::move(cleanup_node_body(&node));
 }
 
 void ASTLowering::visit(NodeArray &node) {

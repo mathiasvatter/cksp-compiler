@@ -73,7 +73,7 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_declare_array(const std::string&
 }
 
 std::unique_ptr<NodeBody> ASTVisitor::array_initialization(NodeArray* array, NodeParamList* list) {
-    auto node_statement_list = std::make_unique<NodeBody>(array->tok);
+    auto node_body = std::make_unique<NodeBody>(array->tok);
     auto node_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(array->clone().release()));
     for(int i = 0; i<list->params.size(); i++) {
         auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(list->params[i]->tok);
@@ -81,10 +81,10 @@ std::unique_ptr<NodeBody> ASTVisitor::array_initialization(NodeArray* array, Nod
         node_array->indexes->params.push_back(make_int((int32_t)i, node_array->indexes.get()));
         node_assign_statement->array_variable = node_array->clone();
         node_assign_statement->assignee = std::move(list->params[i]);
-        node_assign_statement->update_parents(node_statement_list.get());
-        node_statement_list->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_statement_list.get()));
+        node_assign_statement->update_parents(node_body.get());
+        node_body->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_body.get()));
     }
-    return std::move(node_statement_list);
+    return std::move(node_body);
 }
 
 std::unique_ptr<NodeArray> ASTVisitor::make_array(const std::string &name, int32_t size, const Token& tok, NodeAST *parent) {
@@ -101,32 +101,32 @@ std::unique_ptr<NodeArray> ASTVisitor::make_array(const std::string &name, int32
 }
 
 std::unique_ptr<NodeBody> ASTVisitor::make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent) {
-    auto node_statement_list = std::make_unique<NodeBody>(var->tok);
+    auto node_body = std::make_unique<NodeBody>(var->tok);
 
     auto node_assignment = std::make_unique<NodeSingleAssignStatement>(var->clone(), make_int(from, var), var->tok);
-    node_statement_list->statements.push_back(statement_wrapper(std::move(node_assignment), node_statement_list.get()));
+    node_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_body.get()));
     auto node_comparison = make_binary_expr(ASTType::Comparison, "<", var->clone(), make_int(to, var), nullptr, var->tok);
     std::vector<std::unique_ptr<NodeAST>> func_args;
     func_args.push_back(var->clone());
     auto node_increment = make_function_call("inc", std::move(func_args), nullptr, var->tok);
     body->statements.push_back(std::move(node_increment));
     auto node_while = std::make_unique<NodeWhileStatement>(std::move(node_comparison), std::move(body), var->tok);
-    node_statement_list->statements.push_back(statement_wrapper(std::move(node_while), node_statement_list.get()));
-    node_statement_list->update_parents(parent);
-    return std::move(node_statement_list);
+    node_body->statements.push_back(statement_wrapper(std::move(node_while), node_body.get()));
+    node_body->update_parents(parent);
+    return std::move(node_body);
 }
 
 void ASTVisitor::add_vector_to_statement_list(std::unique_ptr<NodeBody> &list, std::vector<std::unique_ptr<NodeStatement>> stmts) {
     list->statements.insert(list->statements.end(),std::make_move_iterator(stmts.begin()),std::make_move_iterator(stmts.end()));
 }
 
-std::vector<std::unique_ptr<NodeStatement>> ASTVisitor::cleanup_node_statement_list(NodeBody* node) {
+std::vector<std::unique_ptr<NodeStatement>> ASTVisitor::cleanup_node_body(NodeBody* node) {
     std::vector<std::unique_ptr<NodeStatement>> temp;
     for(int i = 0; i < node->statements.size(); ++i) {
-        if(auto node_statement_list = cast_node<NodeBody>(node->statements[i]->statement.get())) {
+        if(auto node_body = cast_node<NodeBody>(node->statements[i]->statement.get())) {
             // Übertragen Sie die function_inlines vom aktuellen NodeBody-Element
             // auf das erste Element der inneren NodeBody
-            auto& inner_statements = node_statement_list->statements;
+            auto& inner_statements = node_body->statements;
             if (!inner_statements.empty()) {
                 inner_statements[0]->function_inlines.insert(
                         inner_statements[0]->function_inlines.end(),

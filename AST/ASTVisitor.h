@@ -31,7 +31,7 @@ public:
     static std::unique_ptr<NodeArray> make_array(const std::string& name, int32_t size, const Token& tok, NodeAST* parent);
     void add_vector_to_statement_list(std::unique_ptr<NodeBody> &list, std::vector<std::unique_ptr<NodeStatement>> stmts);
     /// puts nested statement list in one, returns new vector to replace node->statements with
-    static std::vector<std::unique_ptr<NodeStatement>> cleanup_node_statement_list(NodeBody* node);
+    static std::vector<std::unique_ptr<NodeStatement>> cleanup_node_body(NodeBody* node);
 
     std::set<std::string> m_restricted_builtin_functions = {"save_array", "save_array_str", "load_array", "load_array_str"};
     std::unordered_map<std::string, ASTType> m_compiler_variables = {{"_list_it",ASTType::Integer}, {"_ui_array_it", ASTType::Integer},

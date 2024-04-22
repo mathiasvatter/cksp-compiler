@@ -378,9 +378,9 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
     } else if (auto property_func = m_def_provider->get_property_function(node.function.get())) {
         if(node.function->args->params.size() < 2)
             CompileError(ErrorType::SyntaxError,"Found Property Function with insufficient amount of arguments.", node.tok.line, "At least 2 arguments", std::to_string(node.function->args->params.size()), node.tok.file).exit();
-        auto node_statement_list = inline_property_function(property_func, std::move(node.function));
-        node_statement_list->accept(*this);
-        node.replace_with(std::move(node_statement_list));
+        auto node_body = inline_property_function(property_func, std::move(node.function));
+        node_body->accept(*this);
+        node.replace_with(std::move(node_body));
         return;
     } else {
         CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).exit();
@@ -393,14 +393,14 @@ void ASTDesugar::visit(NodeStatement& node) {
 }
 
 std::unique_ptr<NodeBody> ASTDesugar::inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
-    auto node_statement_list = std::make_unique<NodeBody>(function_header->tok);
+    auto node_body = std::make_unique<NodeBody>(function_header->tok);
     for(int i = 1; i<function_header->args->params.size(); i++) {
         auto node_get_control = std::make_unique<NodeGetControlStatement>(function_header->args->params[0]->clone(), property_function->args->params[i]->get_string(), function_header->tok);
         auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(node_get_control), std::move(function_header->args->params[i]), function_header->tok);
-        node_statement_list->statements.push_back(statement_wrapper(std::move(node_assignment), node_statement_list.get()));
+        node_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_body.get()));
     }
-    node_statement_list->update_parents(function_header->parent);
-    return std::move(node_statement_list);
+    node_body->update_parents(function_header->parent);
+    return std::move(node_body);
 }
 
 
@@ -510,7 +510,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
         node.assignee -> accept(*this);
 
     // add make_persistent and read_persistent_var
-    auto node_statement_list = std::make_unique<NodeBody>(node.tok);
+    auto node_body = std::make_unique<NodeBody>(node.tok);
 
     // see if assignee is param_list
     NodeParamList* param_list = nullptr;
@@ -547,7 +547,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
                 auto node_var = std::make_unique<NodeVariable>(std::optional<Token>(), node_array->name+".SIZE_D"+std::to_string(i+1), DataType::Const, node.tok);
                 auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_var), node_array->sizes->params[i]->clone(), node.tok);
                 auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
-                node_statement_list->statements.push_back(std::move(node_statement));
+                node_body->statements.push_back(std::move(node_statement));
             }
             node_array->indexes->params.clear();
             node_array->indexes->params.push_back(std::move(node_expression));
@@ -568,7 +568,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 			node_array_copy->indexes->params.clear();
 			to_be_declared_ptr = node_array_copy.get();
 		}
-        add_vector_to_statement_list(node_statement_list, add_read_functions(persistence.value(), to_be_declared_ptr, node_statement_list.get()));
+        add_vector_to_statement_list(node_body, add_read_functions(persistence.value(), to_be_declared_ptr, node_body.get()));
     }
 
     // special treatment if declaration is inside function -> move to init_callback
@@ -594,9 +594,9 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
             if (!local_array_already_declared) {
                 auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node.to_be_declared),
                                                                                      std::move(assignee), node.tok);
-                node_statement_list->statements.insert(node_statement_list->statements.begin(),
+                node_body->statements.insert(node_body->statements.begin(),
                                                        statement_wrapper(std::move(node_declaration), m_init_callback));
-                auto statement = statement_wrapper(std::move(node_statement_list), m_init_callback);
+                auto statement = statement_wrapper(std::move(node_body), m_init_callback);
                 statement->update_parents(m_init_callback);
                 m_local_declare_statements.push_back(std::move(statement));
                 m_local_already_declared_vars.insert(var_name_hash);
@@ -604,9 +604,9 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
         }
         node.replace_with(std::move(stmt));
     } else {
-        node_statement_list->statements.insert(node_statement_list->statements.begin(), statement_wrapper(node.clone(), node_statement_list.get()));
-        node_statement_list->update_parents(node.parent);
-        node.replace_with(std::move(node_statement_list));
+        node_body->statements.insert(node_body->statements.begin(), statement_wrapper(node.clone(), node_body.get()));
+        node_body->update_parents(node.parent);
+        node.replace_with(std::move(node_body));
     }
 
 }
@@ -771,7 +771,7 @@ void ASTDesugar::visit(NodeBody& node) {
 	if(node.scope) m_variable_scope_stack.pop_back();
 
     // Ersetzen Sie die alte Liste durch die neue
-    if(!node.scope) node.statements = std::move(cleanup_node_statement_list(&node));
+    if(!node.scope) node.statements = std::move(cleanup_node_body(&node));
 }
 
 void ASTDesugar::visit(NodeUIControl &node) {
@@ -792,7 +792,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 	if(node_variable) persistence = node_variable->persistence;
 
 	// add make_persistent and read_persistent_var
-	auto node_statement_list = std::make_unique<NodeBody>(node.tok);
+	auto node_body = std::make_unique<NodeBody>(node.tok);
 	// is UI Array
 	if(node_array and !node_widget_array) {
 		if(node_array->sizes->params.empty()) {
@@ -811,7 +811,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
         auto node_ui_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(node_array->clone().release()));
 		auto node_ui_array_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_ui_array), nullptr, node.tok);
 		node_ui_array_declaration->to_be_declared->type = engine_widget->control_var->type;
-		node_statement_list->statements.push_back(statement_wrapper(node_ui_array_declaration->clone(), node_statement_list.get()));
+		node_body->statements.push_back(statement_wrapper(node_ui_array_declaration->clone(), node_body.get()));
         std::string new_control_name;
 		for(int i = 0; i<array_size.unwrap(); i++) {
 			new_control_name = node_array->name+std::to_string(i);
@@ -822,8 +822,8 @@ void ASTDesugar::visit(NodeUIControl &node) {
 			new_node_ui_control->control_var = clone_as<NodeVariable>(node_control_var.get());
 			auto new_node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(new_node_ui_control),
 																					 nullptr, node.tok);
-			node_statement_list->statements.push_back(statement_wrapper(std::move(new_node_declaration), node_statement_list.get()));
-			if(persistence) add_vector_to_statement_list(node_statement_list, add_read_functions(persistence.value(), node_control_var.get(), node_statement_list.get()));
+			node_body->statements.push_back(statement_wrapper(std::move(new_node_declaration), node_body.get()));
+			if(persistence) add_vector_to_statement_list(node_body, add_read_functions(persistence.value(), node_control_var.get(), node_body.get()));
 		}
         // reinstantiate control name for while loop after
 		new_control_name = node_array->name+std::to_string(0);
@@ -846,26 +846,26 @@ void ASTDesugar::visit(NodeUIControl &node) {
 		if(node_array->dimensions>1) node_raw_array_copy->name = "_"+node_raw_array_copy->name;
 		auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(node_raw_array_copy), std::move(node_while_body_expression), node.tok);
 		node_while_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_while_body.get()));
-		auto node_while_loop = make_while_loop(node_iterator_var.get(), 0, array_size.unwrap(), std::move(node_while_body), node_statement_list.get());
-		node_statement_list->statements.push_back(statement_wrapper(std::move(node_while_loop), node_statement_list.get()));
-		node_statement_list->update_parents(node.parent);
-		node_statement_list->accept(*this);
+		auto node_while_loop = make_while_loop(node_iterator_var.get(), 0, array_size.unwrap(), std::move(node_while_body), node_body.get());
+		node_body->statements.push_back(statement_wrapper(std::move(node_while_loop), node_body.get()));
+		node_body->update_parents(node.parent);
+		node_body->accept(*this);
 
 	} else {
 		if(persistence) {
-			add_vector_to_statement_list(node_statement_list, add_read_functions(persistence.value(), node.control_var.get(), node_statement_list.get()));
+			add_vector_to_statement_list(node_body, add_read_functions(persistence.value(), node.control_var.get(), node_body.get()));
 		}
 		// split declare statement into declare + assign statement
 		auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement*>(node.parent->clone().release()));
 		if(node_declare_statement->assignee) {
 			auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(std::move(node.control_var), std::move(node_declare_statement->assignee), node.tok);
-			node_statement_list->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_statement_list.get()));
+			node_body->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_body.get()));
 		}
-		node_statement_list->statements.insert(node_statement_list->statements.begin(), statement_wrapper(std::move(node_declare_statement), node_statement_list.get()));
-		node_statement_list->update_parents(node.parent->parent);
+		node_body->statements.insert(node_body->statements.begin(), statement_wrapper(std::move(node_declare_statement), node_body.get()));
+		node_body->update_parents(node.parent->parent);
 	}
     m_current_node_replaced = node.parent;
-	node.parent->replace_with(std::move(node_statement_list));
+	node.parent->replace_with(std::move(node_body));
 }
 
 

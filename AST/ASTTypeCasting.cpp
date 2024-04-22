@@ -415,7 +415,7 @@ void ASTTypeCasting::visit(NodeBody& node) {
 		stmt->accept(*this);
 	}
     // Ersetzen Sie die alte Liste durch die neue
-    node.statements = std::move(cleanup_node_statement_list(&node));
+    node.statements = std::move(cleanup_node_body(&node));
 }
 
 
