@@ -4,7 +4,7 @@
 #include <functional>
 
 #include "ASTDesugar.h"
-#include "../ExprInterpreter/SimpleExprInterpreter.h"
+#include "../Interpreter/SimpleExprInterpreter.h"
 
 ASTDesugar::ASTDesugar(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {}
 

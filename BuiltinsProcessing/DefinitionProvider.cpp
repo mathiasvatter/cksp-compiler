@@ -259,7 +259,7 @@ void DefinitionProvider::add_builtin_widget(std::unique_ptr<NodeUIControl> built
 }
 
 void DefinitionProvider::add_builtin_function(std::unique_ptr<NodeFunctionHeader> builtin_function) {
-    builtin_functions.insert({{builtin_function->name, (int)builtin_function->args->params.size()}, std::move(builtin_function)});
+    builtin_functions[{builtin_function->name, (int)builtin_function->args->params.size()}] = std::move(builtin_function);
 }
 
 void DefinitionProvider::add_property_function(std::unique_ptr<NodeFunctionHeader> property_function) {

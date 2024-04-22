@@ -69,15 +69,15 @@ public:
             return nullptr;
         }
 //        auto node_array = cast_node<NodeArray>(node.to_be_declared.get());
-        auto node_statement_list = std::make_unique<NodeBody>(node.tok);
+        auto node_body = std::make_unique<NodeBody>(node.tok);
         for (int i = 0; i < node.sizes->params.size(); i++) {
             auto node_var = std::make_unique<NodeVariable>(std::optional<Token>(),node.name + ".SIZE_D" + std::to_string(i + 1),DataType::Const, node.tok);
             auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_var),node.sizes->params[i]->clone(),node.tok);
             auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
-            node_statement->update_parents(node_statement_list.get());
-            node_statement_list->statements.push_back(std::move(node_statement));
+            node_statement->update_parents(node_body.get());
+            node_body->statements.push_back(std::move(node_statement));
         }
-        return node_statement_list;
+        return node_body;
     }
 private:
     std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok) {
@@ -90,20 +90,16 @@ private:
         // Kombiniere das aktuelle Element mit der rechten Seite in einer NodeBinaryExpr.
         return std::make_unique<NodeBinaryExpr>(op, nodes[index]->clone(), std::move(right), tok);
     }
-    std::unique_ptr<NodeAST> calculate_index_expression(
-            const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok) {
-
+    std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok) {
         // Basisfall: letztes Element in der Berechnung
         if (dimension == indices.size() - 1) {
             return indices[dimension]->clone();
         }
-
         // Produkt der Größen der nachfolgenden Dimensionen
         std::unique_ptr<NodeAST> size_product = sizes[dimension + 1]->clone();
         for (size_t i = dimension + 2; i < sizes.size(); ++i) {
             size_product = std::make_unique<NodeBinaryExpr>("*", std::move(size_product), sizes[i]->clone(), tok);
         }
-
         // Berechnung des aktuellen Teils der Formel
         std::unique_ptr<NodeAST> current_part = std::make_unique<NodeBinaryExpr>(
                 "*", indices[dimension]->clone(), std::move(size_product), tok);
