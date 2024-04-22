@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "AST.h"
+#include "../AST/AST.h"
 
 /// Lowering of data structures to simpler data structures
 /// e.g. Lists to arrays, multidimensional arrays to arrays
@@ -13,8 +13,10 @@ public:
     ASTHandler() = default;
     ~ASTHandler() = default;
 
-    virtual std::unique_ptr<NodeAST> perform_lowering(NodeArray& node) {return nullptr;};
-    virtual std::unique_ptr<NodeBody> add_members(NodeArray& node) {return nullptr;};
+    virtual std::unique_ptr<NodeAST> perform_lowering(NodeNDArray& node) {return nullptr;};
+	virtual std::unique_ptr<NodeAST> perform_lowering(NodeUIControl& node) {return nullptr;};
+    virtual std::unique_ptr<NodeBody> add_members_pre_lowering(DataStructure& node) {return nullptr;};
+	virtual std::unique_ptr<NodeBody> add_members_post_lowering(DataStructure& node) {return nullptr;};
 
 protected:
     inline std::unique_ptr<NodeArray> make_array(const std::string &name, int32_t size, const Token& tok, NodeAST *parent) {
@@ -29,88 +31,57 @@ protected:
         return std::move(node_array);
     }
 
-    inline std::unique_ptr<NodeInt> make_int(int32_t value, NodeAST* parent) {
+    static inline std::unique_ptr<NodeInt> make_int(int32_t value, NodeAST* parent) {
         auto node_int = std::make_unique<NodeInt>(value, parent->tok);
         node_int->parent = parent;
         return node_int;
     }
+	template<typename T>std::unique_ptr<NodeStatement> statement_wrapper(std::unique_ptr<T> node, NodeAST* parent) {
+		auto node_statement = std::make_unique<NodeStatement>(std::move(node), node->tok);
+		node_statement->statement->parent = node_statement.get();
+		node_statement->parent = parent;
+		return node_statement;
+	}
+	static inline std::unique_ptr<NodeFunctionCall> make_function_call(const std::string& name, std::vector<std::unique_ptr<NodeAST>> args, NodeAST* parent, Token tok) {
+		auto func_args = std::unique_ptr<NodeParamList>(new NodeParamList(std::move(args), tok));
+		// make function header
+		auto func = std::make_unique<NodeFunctionHeader>(name, std::move(func_args), tok);
+		// make function call out of header
+		auto func_call = std::make_unique<NodeFunctionCall>(false, std::move(func), tok);
+		func_call->function->parent = func_call.get();
+		func_call->update_parents(parent);
+		return func_call;
+	}
+	inline static std::unique_ptr<NodeBinaryExpr> make_binary_expr(ASTType type, const std::string& op, std::unique_ptr<NodeAST> lhs, std::unique_ptr<NodeAST> rhs, NodeAST* parent, Token tok) {
+		auto binary_expression = std::make_unique<NodeBinaryExpr>(op, std::move(lhs), std::move(rhs), tok);
+		binary_expression->type = type;
+		binary_expression->parent = parent;
+		binary_expression->left->parent = binary_expression.get();
+		binary_expression->right->parent = binary_expression.get();
+		return binary_expression;
+	}
+
+	inline std::unique_ptr<NodeBody> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent) {
+		auto node_body = std::make_unique<NodeBody>(var->tok);
+		auto node_assignment = std::make_unique<NodeSingleAssignStatement>(var->clone(), make_int(from, var), var->tok);
+		node_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_body.get()));
+		auto node_comparison = make_binary_expr(ASTType::Comparison, "<", var->clone(), make_int(to, var), nullptr, var->tok);
+		std::vector<std::unique_ptr<NodeAST>> func_args;
+		func_args.push_back(var->clone());
+		auto node_increment = make_function_call("inc", std::move(func_args), nullptr, var->tok);
+		node_body->statements.push_back(statement_wrapper(std::move(node_increment), node_body.get()));
+		auto node_while = std::make_unique<NodeWhileStatement>(std::move(node_comparison), std::move(body), var->tok);
+		node_body->statements.push_back(statement_wrapper(std::move(node_while), node_body.get()));
+		node_body->update_parents(parent);
+		return std::move(node_body);
+	}
+
+
 };
 
 
-class ArrayHandler : public ASTHandler {
-public:
-    /// Lowering of multidimensional arrays to arrays
-    std::unique_ptr<NodeAST> perform_lowering(NodeArray& node) override {
-        // handle multidimensional arrays
-        if(node.dimensions > 1) {
-            // dynamic cast to check if parent is of type NodeSingleDeclareStatement
-            std::unique_ptr<NodeAST> node_expression = nullptr;
-            if (!node.is_reference) {
-                node_expression = create_right_nested_binary_expr(node.sizes->params, 0, "*", node.tok);
-//                node_expression->parent = node.sizes.get();
-//                node.indexes->params.clear();
-//                node.indexes->params.push_back(std::move(node_expression));
-//                node.indexes->update_parents(&node);
-            } else {
-                // convert indexes of multidimensional array
-                node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0,node.tok);
-            }
-            node.indexes->params.clear();
-            node.indexes->params.push_back(std::move(node_expression));
-            node.indexes->update_parents(&node);
-            node.name = "_" + node.name;
-            return std::move(node.clone());
-        }
-        return nullptr;
-    }
-    /// returns a statement list with the declarations of the size constants of the array
-    virtual std::unique_ptr<NodeBody> add_members(NodeArray& node) override {
-        if(node.dimensions == 1) {
-            return nullptr;
-        }
-//        auto node_array = cast_node<NodeArray>(node.to_be_declared.get());
-        auto node_body = std::make_unique<NodeBody>(node.tok);
-        for (int i = 0; i < node.sizes->params.size(); i++) {
-            auto node_var = std::make_unique<NodeVariable>(std::optional<Token>(),node.name + ".SIZE_D" + std::to_string(i + 1),DataType::Const, node.tok);
-            auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_var),node.sizes->params[i]->clone(),node.tok);
-            auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
-            node_statement->update_parents(node_body.get());
-            node_body->statements.push_back(std::move(node_statement));
-        }
-        return node_body;
-    }
-private:
-    std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok) {
-        // Basisfall: Wenn nur ein Element übrig ist, gib dieses zurück.
-        if (index >= nodes.size() - 1) {
-            return nodes[index]->clone();
-        }
-        // Erstelle die rechte Seite der Expression rekursiv.
-        auto right = create_right_nested_binary_expr(nodes, index + 1, op, tok);
-        // Kombiniere das aktuelle Element mit der rechten Seite in einer NodeBinaryExpr.
-        return std::make_unique<NodeBinaryExpr>(op, nodes[index]->clone(), std::move(right), tok);
-    }
-    std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok) {
-        // Basisfall: letztes Element in der Berechnung
-        if (dimension == indices.size() - 1) {
-            return indices[dimension]->clone();
-        }
-        // Produkt der Größen der nachfolgenden Dimensionen
-        std::unique_ptr<NodeAST> size_product = sizes[dimension + 1]->clone();
-        for (size_t i = dimension + 2; i < sizes.size(); ++i) {
-            size_product = std::make_unique<NodeBinaryExpr>("*", std::move(size_product), sizes[i]->clone(), tok);
-        }
-        // Berechnung des aktuellen Teils der Formel
-        std::unique_ptr<NodeAST> current_part = std::make_unique<NodeBinaryExpr>(
-                "*", indices[dimension]->clone(), std::move(size_product), tok);
 
-        // Rekursiver Aufruf für den nächsten Teil der Formel
-        std::unique_ptr<NodeAST> next_part = calculate_index_expression(sizes, indices, dimension + 1, tok);
 
-        // Kombinieren des aktuellen Teils mit dem nächsten Teil
-        return std::make_unique<NodeBinaryExpr>("+", std::move(current_part), std::move(next_part), tok);
-    }
-};
 
 //class ListHandler : public ASTHandler {
 //public:

@@ -90,7 +90,10 @@ void ASTVariables::visit(NodeArray& node) {
             CompileError(ErrorType::SyntaxError,"Array has already been declared.", node.tok.line, "", node.name, node.tok.file).print();
 //			exit(EXIT_FAILURE);
         } else {
+			bool has_compiler_identifier = node.name[0] == '_' && node.name[1] != '_' && !node.is_engine && !node.is_local; //&& m_return_arrays.find(node.name) == m_return_arrays.end();
+			if (has_compiler_identifier) node.name = node.name.erase(0,1);
             m_declared_arrays[node.name] = &node;
+			if (has_compiler_identifier) node.name = "_"+node.name;
         }
 	} else if (node_ui_control) {
 		if(get_declared_control(node_ui_control)) {

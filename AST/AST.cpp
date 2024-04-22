@@ -5,7 +5,9 @@
 
 #include "AST.h"
 #include "ASTVisitor.h"
-#include "ASTHandler.h"
+#include "../Lowering/ASTHandler.h"
+#include "../Lowering/NDArrayHandler.h"
+#include "../Lowering/UIControlArrayHandler.h"
 
 // ************* NodeAST Base Class ***************
 void NodeAST::accept(ASTVisitor &visitor) {}
@@ -104,11 +106,6 @@ std::unique_ptr<NodeAST> NodeArray::clone() const {
     return std::make_unique<NodeArray>(*this);
 }
 
-ASTHandler *NodeArray::get_handler() const {
-    static ArrayHandler handler;
-    return &handler;
-}
-
 // ************* NodeNDArray ***************
 void NodeNDArray::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
@@ -121,7 +118,7 @@ std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 }
 
 ASTHandler *NodeNDArray::get_handler() const {
-	static ArrayHandler handler;
+	static NDArrayHandler handler;
 	return &handler;
 }
 
@@ -135,6 +132,11 @@ NodeUIControl::NodeUIControl(const NodeUIControl& other)
           sizes(clone_unique(other.sizes)), arg_ast_types(other.arg_ast_types), arg_var_types(other.arg_var_types) {}
 std::unique_ptr<NodeAST> NodeUIControl::clone() const {
     return std::make_unique<NodeUIControl>(*this);
+}
+
+ASTHandler *NodeUIControl::get_handler() const {
+	static UIControlArrayHandler handler;
+	return &handler;
 }
 
 // ************* NodeUnaryExpr ***************
@@ -237,10 +239,9 @@ void NodeSingleDeclareStatement::replace_child(NodeAST* oldChild, std::unique_pt
     }
 }
 
-//ASTHandler *NodeSingleDeclareStatement::get_handler() const {
-//    static SingleDeclareStatementHandler handler;
-//    return &handler;
-//}
+ASTHandler *NodeSingleDeclareStatement::get_handler() const {
+	return this->to_be_declared->get_handler();
+}
 
 // ************* NodeReturnStatement ***************
 void NodeReturnStatement::accept(ASTVisitor &visitor) {
