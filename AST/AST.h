@@ -318,7 +318,6 @@ struct NodeArray : DataStructure {
         if(sizes) sizes -> update_token_data(token);
         if(indexes) indexes ->update_token_data(token);
     }
-    ASTHandler* get_handler() const override;
 };
 
 struct NodeNDArray : DataStructure {
@@ -381,6 +380,8 @@ struct NodeUIControl : DataStructure {
         control_var -> update_token_data(token);
         params -> update_token_data(token);
     }
+	ASTHandler* get_handler() const override;
+
 };
 
 struct NodeUnaryExpr : NodeAST {
@@ -545,7 +546,7 @@ struct NodeSingleDeclareStatement : NodeAST {
         to_be_declared -> update_token_data(token);
         if(assignee) assignee -> update_token_data(token);
     }
-//    ASTHandler* get_handler() const override;
+    ASTHandler* get_handler() const override;
 };
 
 struct NodeReturnStatement : NodeAST {
