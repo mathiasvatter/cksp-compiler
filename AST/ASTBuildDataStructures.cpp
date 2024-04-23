@@ -2,11 +2,11 @@
 // Created by Mathias Vatter on 23.04.24.
 //
 
-#include "ASTDataStructures.h"
+#include "ASTBuildDataStructures.h"
 
-ASTDataStructures::ASTDataStructures(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
+ASTBuildDataStructures::ASTBuildDataStructures(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
-void ASTDataStructures::visit(NodeBody &node) {
+void ASTBuildDataStructures::visit(NodeBody &node) {
 	if(node.scope) m_def_provider->add_scope();
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
@@ -14,7 +14,7 @@ void ASTDataStructures::visit(NodeBody &node) {
 	if(node.scope) m_def_provider->remove_scope();
 }
 
-void ASTDataStructures::visit(NodeArray &node) {
+void ASTBuildDataStructures::visit(NodeArray &node) {
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
 		return;
@@ -33,7 +33,7 @@ void ASTDataStructures::visit(NodeArray &node) {
 
 }
 
-void ASTDataStructures::visit(NodeNDArray& node) {
+void ASTBuildDataStructures::visit(NodeNDArray& node) {
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
 		CompileError(ErrorType::Variable, "Array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
@@ -54,7 +54,7 @@ void ASTDataStructures::visit(NodeNDArray& node) {
 
 // get declaration of engine widget into declaration
 // if ui control array -> get size(s) into size member
-void ASTDataStructures::visit(NodeUIControl &node) {
+void ASTBuildDataStructures::visit(NodeUIControl &node) {
 	auto engine_widget = m_def_provider->get_builtin_widget(node.ui_control_type);
 	auto error = CompileError(ErrorType::SyntaxError, "", node.tok.line, "", node.ui_control_type, node.tok.file);
 	if(!engine_widget) {
@@ -71,7 +71,7 @@ void ASTDataStructures::visit(NodeUIControl &node) {
 }
 
 
-void ASTDataStructures::visit(NodeVariable &node) {
+void ASTBuildDataStructures::visit(NodeVariable &node) {
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	// return if no declaration found or node itself is declaration
 	if(!node_declaration) {

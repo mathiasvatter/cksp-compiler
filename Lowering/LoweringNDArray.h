@@ -7,7 +7,7 @@
 #include "ASTLowering.h"
 
 /// entry points: NodeSingleDeclareStatement
-class NDArrayLowering : public ASTLowering {
+class LoweringNDArray : public ASTLowering {
 public:
 	/// returns a statement list with the declarations of the size constants of the array
 	void visit(NodeSingleDeclareStatement &node) override {

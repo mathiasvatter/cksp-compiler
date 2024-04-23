@@ -8,7 +8,7 @@
 #include "../Interpreter/SimpleExprInterpreter.h"
 
 /// called bei NodeUIControl and NodeSingleDeclareStatement
-class UIControlArrayLowering : public ASTLowering {
+class LoweringUIControlArray : public ASTLowering {
 private:
 	std::unique_ptr<NodeAST> m_ui_array_size = nullptr;
 	std::unique_ptr<NodeUIControl> m_ui_control_array = nullptr;
