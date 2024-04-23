@@ -173,7 +173,6 @@ DataStructure *DefinitionProvider::get_declared_data_structure(const std::string
         if (it != rit->end()) {
             return it->second.get();
         }
-        return nullptr;
     }
     return nullptr;
 }

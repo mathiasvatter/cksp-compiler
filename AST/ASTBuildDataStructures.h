@@ -2,8 +2,6 @@
 // Created by Mathias Vatter on 23.04.24.
 //
 
-#pragma  once
-
 #pragma once
 
 #include "ASTVisitor.h"
@@ -12,9 +10,9 @@
 
 /// complete ASTNodes like arrays, ui controls, etc., fill in declaration information by
 /// tracking data structure definitions with DefinitionProvider
-class ASTDataStructures: public ASTVisitor {
+class ASTBuildDataStructures: public ASTVisitor {
 public:
-	explicit ASTDataStructures(DefinitionProvider* definition_provider);
+	explicit ASTBuildDataStructures(DefinitionProvider* definition_provider);
 	void visit(NodeBody& node) override;
 	void visit(NodeUIControl& node) override;
 	void visit(NodeArray& node) override;

@@ -6,8 +6,8 @@
 #include "AST.h"
 #include "ASTVisitor.h"
 #include "../Lowering/ASTLowering.h"
-#include "../Lowering/NDArrayLowering.h"
-#include "../Lowering/UIControlArrayLowering.h"
+#include "../Lowering/LoweringNDArray.h"
+#include "../Lowering/LoweringUIControlArray.h"
 
 // ************* NodeAST Base Class ***************
 void NodeAST::accept(ASTVisitor &visitor) {}
@@ -118,7 +118,7 @@ std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 }
 
 ASTVisitor* NodeNDArray::get_lowering() const {
-	static NDArrayLowering handler;
+	static LoweringNDArray handler;
 	return &handler;
 }
 
@@ -145,7 +145,7 @@ void NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 }
 
 ASTVisitor* NodeUIControl::get_lowering() const {
-	static UIControlArrayLowering handler;
+	static LoweringUIControlArray handler;
 	return &handler;
 }
 
