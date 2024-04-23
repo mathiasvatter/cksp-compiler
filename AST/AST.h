@@ -138,9 +138,9 @@ struct NodeAST {
     virtual void update_token_data(const Token& token) {
         tok.line = token.line; tok.file = token.file;
     }
-    [[nodiscard]] virtual class ASTHandler* get_handler() const {
-        return nullptr;
-    }
+	[[nodiscard]] virtual ASTVisitor* get_lowering() const {
+		return nullptr;
+	}
     NodeType get_node_type() const { return node_type; }
 };
 
@@ -350,7 +350,7 @@ struct NodeNDArray : DataStructure {
 		if(sizes) sizes -> update_token_data(token);
 		if(indexes) indexes ->update_token_data(token);
 	}
-	ASTHandler* get_handler() const override;
+	ASTVisitor* get_lowering() const override;
 };
 
 struct NodeUIControl : DataStructure {
@@ -381,7 +381,7 @@ struct NodeUIControl : DataStructure {
         control_var -> update_token_data(token);
         params -> update_token_data(token);
     }
-	ASTHandler* get_handler() const override;
+	ASTVisitor* get_lowering() const override;
 
 };
 
@@ -547,7 +547,8 @@ struct NodeSingleDeclareStatement : NodeAST {
         to_be_declared -> update_token_data(token);
         if(assignee) assignee -> update_token_data(token);
     }
-    ASTHandler* get_handler() const override;
+	ASTVisitor* get_lowering() const override;
+
 };
 
 struct NodeReturnStatement : NodeAST {

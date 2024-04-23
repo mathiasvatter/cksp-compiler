@@ -15,7 +15,7 @@
 #include "misc/FileHandler.h"
 #include "CommandLineOptions.h"
 #include "BuiltinsProcessing/DefinitionProvider.h"
-#include "AST/ASTLowering.h"
+#include "AST/ASTCollectLowerings.h"
 #include "AST/ASTDataStructures.h"
 
 int main(int argc, char* argv[]) {
@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
 	ASTDataStructures data_structures(&definition_provider);
 	ast->accept(data_structures);
 
-    ASTLowering lowering(&definition_provider);
+    ASTCollectLowerings lowering(&definition_provider);
     ast->accept(lowering);
 
 	ASTDesugar desugar(&definition_provider);

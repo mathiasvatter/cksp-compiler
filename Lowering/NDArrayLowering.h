@@ -4,13 +4,29 @@
 
 #pragma once
 
-#include "ASTHandler.h"
+#include "ASTLowering.h"
 
-/// called by NodeNDArray and NodeSingleDeclareStatement
-class NDArrayHandler : public ASTHandler {
+/// entry points: NodeSingleDeclareStatement
+class NDArrayLowering : public ASTLowering {
 public:
+	/// returns a statement list with the declarations of the size constants of the array
+	void visit(NodeSingleDeclareStatement &node) override {
+		if(auto node_ndarray = cast_node<NodeNDArray>(node.to_be_declared.get())) {
+			auto node_body = std::make_unique<NodeBody>(node.tok);
+			for (int i = 0; i < node_ndarray->dimensions; i++) {
+				auto node_var = std::make_unique<NodeVariable>(std::optional<Token>(), node_ndarray->name + ".SIZE_D" + std::to_string(i + 1), DataType::Const, node.tok);
+				auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_var), node_ndarray->sizes->params[i]->clone(), node.tok);
+				auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
+				node_statement->update_parents(node_body.get());
+				node_body->statements.push_back(std::move(node_statement));
+			}
+			node.to_be_declared->accept(*this);
+			node_body->statements.push_back(statement_wrapper(node.clone(), node_body.get()));
+			node.replace_with(std::move(node_body));
+		}
+	}
 	/// Lowering of multidimensional arrays to arrays
-	std::unique_ptr<NodeAST> perform_lowering(NodeNDArray& node) override {
+	void visit(NodeNDArray& node) override {
 		// dynamic cast to check if parent is of type NodeSingleDeclareStatement
 		std::unique_ptr<NodeAST> node_expression = nullptr;
 		if (!node.is_reference) {
@@ -36,23 +52,9 @@ public:
 		node_lowered_array->is_local = node.is_local;
 		node_lowered_array->data_type = node.data_type;
 		node_lowered_array->declaration = node.declaration;
-		return node_lowered_array;
+		node.replace_with(std::move(node_lowered_array));
 	}
-	/// returns a statement list with the declarations of the size constants of the array
-	virtual std::unique_ptr<NodeBody> add_members_pre_lowering(DataStructure& node) override {
-		if(auto node_ndarray = cast_node<NodeNDArray>(&node)) {
-			auto node_body = std::make_unique<NodeBody>(node.tok);
-			for (int i = 0; i < node_ndarray->dimensions; i++) {
-				auto node_var = std::make_unique<NodeVariable>(std::optional<Token>(), node.name + ".SIZE_D" + std::to_string(i + 1), DataType::Const, node.tok);
-				auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_var), node_ndarray->sizes->params[i]->clone(), node.tok);
-				auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
-				node_statement->update_parents(node_body.get());
-				node_body->statements.push_back(std::move(node_statement));
-			}
-			return node_body;
-		}
-		return nullptr;
-	}
+
 private:
 	std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok) {
 		// Basisfall: Wenn nur ein Element übrig ist, gib dieses zurück.

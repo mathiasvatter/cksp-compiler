@@ -5,9 +5,9 @@
 
 #include "AST.h"
 #include "ASTVisitor.h"
-#include "../Lowering/ASTHandler.h"
-#include "../Lowering/NDArrayHandler.h"
-#include "../Lowering/UIControlArrayHandler.h"
+#include "../Lowering/ASTLowering.h"
+#include "../Lowering/NDArrayLowering.h"
+#include "../Lowering/UIControlArrayLowering.h"
 
 // ************* NodeAST Base Class ***************
 void NodeAST::accept(ASTVisitor &visitor) {}
@@ -117,8 +117,8 @@ std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 	return std::make_unique<NodeNDArray>(*this);
 }
 
-ASTHandler *NodeNDArray::get_handler() const {
-	static NDArrayHandler handler;
+ASTVisitor* NodeNDArray::get_lowering() const {
+	static NDArrayLowering handler;
 	return &handler;
 }
 
@@ -144,10 +144,11 @@ void NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 	}
 }
 
-ASTHandler *NodeUIControl::get_handler() const {
-	static UIControlArrayHandler handler;
+ASTVisitor* NodeUIControl::get_lowering() const {
+	static UIControlArrayLowering handler;
 	return &handler;
 }
+
 
 // ************* NodeUnaryExpr ***************
 void NodeUnaryExpr::accept(ASTVisitor &visitor) {
@@ -249,8 +250,8 @@ void NodeSingleDeclareStatement::replace_child(NodeAST* oldChild, std::unique_pt
     }
 }
 
-ASTHandler *NodeSingleDeclareStatement::get_handler() const {
-	return this->to_be_declared->get_handler();
+ASTVisitor* NodeSingleDeclareStatement::get_lowering() const {
+	return this->to_be_declared->get_lowering();
 }
 
 // ************* NodeReturnStatement ***************
