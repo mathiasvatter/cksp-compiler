@@ -210,6 +210,7 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 			"Failed loading builtins. Found unknown <engine_widget> parameter syntax.", peek(m_tokens).line, ")", peek(m_tokens).val, peek(m_tokens).file));
 		}
 	}
+	node_var->data_type = DataType::UI_Control;
 	auto node_ui_control = std::make_unique<NodeUIControl>(ui_control_type, std::move(node_var), std::move(params), tok);
 	node_ui_control->control_var->parent = node_ui_control.get();
 	node_ui_control->params->parent = node_ui_control.get();

@@ -8,73 +8,12 @@
 
 /// Lowering of data structures to simpler data structures
 /// e.g. Lists to arrays, multidimensional arrays to arrays
-class ASTHandler {
+class ASTLowering: public ASTVisitor {
 public:
-    ASTHandler() = default;
-    ~ASTHandler() = default;
-
-    virtual std::unique_ptr<NodeAST> perform_lowering(NodeNDArray& node) {return nullptr;};
-	virtual std::unique_ptr<NodeAST> perform_lowering(NodeUIControl& node) {return nullptr;};
-    virtual std::unique_ptr<NodeBody> add_members_pre_lowering(DataStructure& node) {return nullptr;};
-	virtual std::unique_ptr<NodeBody> add_members_post_lowering(DataStructure& node) {return nullptr;};
+    ASTLowering() = default;
+    ~ASTLowering() = default;
 
 protected:
-    inline std::unique_ptr<NodeArray> make_array(const std::string &name, int32_t size, const Token& tok, NodeAST *parent) {
-        auto node_sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, tok));
-        auto node_int = make_int(size, node_sizes.get());
-        node_sizes->params.push_back(std::move(node_int));
-        auto node_indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, tok));
-        auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), name, DataType::Array, std::move(node_sizes), std::move(node_indexes), tok);
-        node_array->indexes->parent = node_array.get();
-        node_array->sizes->parent = node_array.get();
-        node_array->parent = parent;
-        return std::move(node_array);
-    }
-
-    static inline std::unique_ptr<NodeInt> make_int(int32_t value, NodeAST* parent) {
-        auto node_int = std::make_unique<NodeInt>(value, parent->tok);
-        node_int->parent = parent;
-        return node_int;
-    }
-	template<typename T>std::unique_ptr<NodeStatement> statement_wrapper(std::unique_ptr<T> node, NodeAST* parent) {
-		auto node_statement = std::make_unique<NodeStatement>(std::move(node), node->tok);
-		node_statement->statement->parent = node_statement.get();
-		node_statement->parent = parent;
-		return node_statement;
-	}
-	static inline std::unique_ptr<NodeFunctionCall> make_function_call(const std::string& name, std::vector<std::unique_ptr<NodeAST>> args, NodeAST* parent, Token tok) {
-		auto func_args = std::unique_ptr<NodeParamList>(new NodeParamList(std::move(args), tok));
-		// make function header
-		auto func = std::make_unique<NodeFunctionHeader>(name, std::move(func_args), tok);
-		// make function call out of header
-		auto func_call = std::make_unique<NodeFunctionCall>(false, std::move(func), tok);
-		func_call->function->parent = func_call.get();
-		func_call->update_parents(parent);
-		return func_call;
-	}
-	inline static std::unique_ptr<NodeBinaryExpr> make_binary_expr(ASTType type, const std::string& op, std::unique_ptr<NodeAST> lhs, std::unique_ptr<NodeAST> rhs, NodeAST* parent, Token tok) {
-		auto binary_expression = std::make_unique<NodeBinaryExpr>(op, std::move(lhs), std::move(rhs), tok);
-		binary_expression->type = type;
-		binary_expression->parent = parent;
-		binary_expression->left->parent = binary_expression.get();
-		binary_expression->right->parent = binary_expression.get();
-		return binary_expression;
-	}
-
-	inline std::unique_ptr<NodeBody> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent) {
-		auto node_body = std::make_unique<NodeBody>(var->tok);
-		auto node_assignment = std::make_unique<NodeSingleAssignStatement>(var->clone(), make_int(from, var), var->tok);
-		node_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_body.get()));
-		auto node_comparison = make_binary_expr(ASTType::Comparison, "<", var->clone(), make_int(to, var), nullptr, var->tok);
-		std::vector<std::unique_ptr<NodeAST>> func_args;
-		func_args.push_back(var->clone());
-		auto node_increment = make_function_call("inc", std::move(func_args), nullptr, var->tok);
-		node_body->statements.push_back(statement_wrapper(std::move(node_increment), node_body.get()));
-		auto node_while = std::make_unique<NodeWhileStatement>(std::move(node_comparison), std::move(body), var->tok);
-		node_body->statements.push_back(statement_wrapper(std::move(node_while), node_body.get()));
-		node_body->update_parents(parent);
-		return std::move(node_body);
-	}
 
 
 };
@@ -83,7 +22,7 @@ protected:
 
 
 
-//class ListHandler : public ASTHandler {
+//class ListHandler : public ASTLowering {
 //public:
 //    std::unique_ptr<NodeAST> perform_lowering(NodeListStatement& node) override {
 //        auto node_body = std::make_unique<NodeBody>(node.tok);

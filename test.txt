@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Tue Apr 23 13:55:30 2024 }
+{ Compiled with cksp version 0.0.5 on Tue Apr 23 18:02:51 2024 }
 on init
   declare ?_return_vars_real[3]
   declare !_return_vars_str[3]
@@ -15,7 +15,7 @@ on init
   declare $i
   declare const $mutli_array__SIZE_D1 := 4
   declare const $mutli_array__SIZE_D2 := 5
-  declare %_mutli_array[20] := (0)
+  declare %_mutli_array[4 * 5] := (0)
   message(%_mutli_array[6])
   declare const $lbl_lbl__SIZE_D1 := 4
   declare const $lbl_lbl__SIZE_D2 := 2
@@ -29,9 +29,9 @@ on init
   declare ui_label $_lbl_lbl6 (1, 1)
   declare ui_label $_lbl_lbl7 (1, 1)
   $_iterator := 0
-  inc($_iterator)
   while($_iterator < 8) 
-    %_lbl_lbl[$_iterator] := $_lbl_lbl0 + $_iterator
+    %_lbl_lbl[$_iterator] := get_ui_id($_lbl_lbl0) + $_iterator
+    inc($_iterator)
   end while
 end on
 on release
