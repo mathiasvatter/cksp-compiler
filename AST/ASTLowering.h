@@ -14,23 +14,12 @@ public:
     explicit ASTLowering(DefinitionProvider* definition_provider);
 
     void visit(NodeSingleDeclareStatement& node) override;
-//    void visit(NodeSingleAssignStatement& node) override;
-//    void visit(NodeParamList& node) override;
-
-//    void visit(NodeGetControlStatement& node) override;
-
-//    void visit(NodeForStatement& node) override;
-//    void visit(NodeWhileStatement& node) override;
-//    void visit(NodeIfStatement& node) override;
-//    void visit(NodeSelectStatement& node) override;
-
-//    void visit(NodeListStatement& node) override;
     void visit(NodeBody& node) override;
 //    void visit(NodeStatement& node) override;
     void visit(NodeUIControl& node) override;
-    void visit(NodeArray& node) override;
+//    void visit(NodeArray& node) override;
 	void visit(NodeNDArray& node) override;
-    void visit(NodeVariable& node) override;
+//    void visit(NodeVariable& node) override;
 
 private:
     DefinitionProvider* m_def_provider;

@@ -16,6 +16,7 @@
 #include "CommandLineOptions.h"
 #include "BuiltinsProcessing/DefinitionProvider.h"
 #include "AST/ASTLowering.h"
+#include "AST/ASTDataStructures.h"
 
 int main(int argc, char* argv[]) {
 
@@ -27,7 +28,7 @@ int main(int argc, char* argv[]) {
 
     input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
-    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -95,6 +96,9 @@ int main(int argc, char* argv[]) {
 
     ASTDesugarStructs desugar1;
     ast->accept(desugar1);
+
+	ASTDataStructures data_structures(&definition_provider);
+	ast->accept(data_structures);
 
     ASTLowering lowering(&definition_provider);
     ast->accept(lowering);

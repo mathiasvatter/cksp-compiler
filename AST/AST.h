@@ -364,6 +364,7 @@ struct NodeUIControl : DataStructure {
     inline NodeUIControl(std::string uiControlType, std::unique_ptr<DataStructure> controlVar, std::unique_ptr<NodeParamList> params, Token tok)
                 : DataStructure("", tok, NodeType::UIControl), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {}
     void accept(ASTVisitor& visitor) override;
+	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Copy Constructor
     NodeUIControl(const NodeUIControl& other);
     // Clone Method
@@ -653,6 +654,7 @@ struct NodeBody : NodeAST {
             stmt->update_token_data(token);
         }
     }
+	void append_body(std::unique_ptr<NodeBody> new_body);
 };
 
 struct NodeConstStatement : NodeAST {
