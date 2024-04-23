@@ -1,14 +1,38 @@
-{ Compiled with cksp version 0.0.5 on Mon Apr 22 14:50:46 2024 }
+{ Compiled with cksp version 0.0.5 on Tue Apr 23 13:55:30 2024 }
 on init
   declare ?_return_vars_real[3]
   declare !_return_vars_str[3]
   declare %_return_vars_int[3]
+  declare $_return_dummy
+  declare $_local_dummy_
   declare ?_loc_var_real[1]
   declare !_loc_var_str[1]
   declare %_loc_var_int[1]
+  declare $_iterator
+  declare $_string_it
+  declare $_ui_array_it
+  declare $_list_it
   declare $i
-  declare %_mutli_array[1] := (0)
+  declare const $mutli_array__SIZE_D1 := 4
+  declare const $mutli_array__SIZE_D2 := 5
+  declare %_mutli_array[20] := (0)
   message(%_mutli_array[6])
+  declare const $lbl_lbl__SIZE_D1 := 4
+  declare const $lbl_lbl__SIZE_D2 := 2
+  declare %_lbl_lbl[8]
+  declare ui_label $_lbl_lbl0 (1, 1)
+  declare ui_label $_lbl_lbl1 (1, 1)
+  declare ui_label $_lbl_lbl2 (1, 1)
+  declare ui_label $_lbl_lbl3 (1, 1)
+  declare ui_label $_lbl_lbl4 (1, 1)
+  declare ui_label $_lbl_lbl5 (1, 1)
+  declare ui_label $_lbl_lbl6 (1, 1)
+  declare ui_label $_lbl_lbl7 (1, 1)
+  $_iterator := 0
+  inc($_iterator)
+  while($_iterator < 8) 
+    %_lbl_lbl[$_iterator] := $_lbl_lbl0 + $_iterator
+  end while
 end on
 on release
 end on

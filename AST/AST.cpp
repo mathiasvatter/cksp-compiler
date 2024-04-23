@@ -28,7 +28,7 @@ void DataStructure::accept(ASTVisitor &visitor) {
 DataStructure::DataStructure(const DataStructure& other)
         : NodeAST(other),
           is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
-          is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
+          is_local(other.is_local), is_reference(other.is_reference), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
           data_type(other.data_type), name(other.name), declaration(other.declaration) {}
 std::unique_ptr<NodeAST> DataStructure::clone() const {
     return std::make_unique<DataStructure>(*this);
@@ -132,6 +132,16 @@ NodeUIControl::NodeUIControl(const NodeUIControl& other)
           sizes(clone_unique(other.sizes)), arg_ast_types(other.arg_ast_types), arg_var_types(other.arg_var_types) {}
 std::unique_ptr<NodeAST> NodeUIControl::clone() const {
     return std::make_unique<NodeUIControl>(*this);
+}
+void NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (control_var.get() == oldChild) {
+		if(auto new_data_structure = cast_node<DataStructure>(newChild.get())) {
+			newChild.release();
+			control_var = std::unique_ptr<DataStructure>(new_data_structure);
+//		} else {
+//			control_var = std::move(newChild);
+		}
+	}
 }
 
 ASTHandler *NodeUIControl::get_handler() const {
@@ -339,6 +349,11 @@ NodeBody::NodeBody(const NodeBody& other) : NodeAST(other), scope(other.scope) {
 }
 std::unique_ptr<NodeAST> NodeBody::clone() const {
     return std::make_unique<NodeBody>(*this);
+}
+
+void NodeBody::append_body(std::unique_ptr<NodeBody> new_body) {
+	if(!new_body) return;
+	statements.insert(statements.end(), std::make_move_iterator(new_body->statements.begin()), std::make_move_iterator(new_body->statements.end()));
 }
 
 // ************* NodeIfStatement ***************

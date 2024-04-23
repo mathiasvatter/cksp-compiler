@@ -10,7 +10,7 @@
 /// called bei NodeUIControl and NodeSingleDeclareStatement
 class UIControlArrayHandler : public ASTHandler {
 private:
-	std::unique_ptr<NodeUIControl> m_ui_control_array;
+	std::unique_ptr<NodeUIControl> m_ui_control_array = nullptr;
 public:
 	std::unique_ptr<NodeAST> perform_lowering(NodeUIControl& node) override {
 		auto node_native_declaration = cast_node<NodeUIControl>(node.declaration);
@@ -33,7 +33,7 @@ public:
 	std::unique_ptr<NodeBody> add_members_pre_lowering(DataStructure& node) override {
 		if(auto node_ui_control = cast_node<NodeUIControl>(&node)) {
 			if(auto handler = node_ui_control->control_var->get_handler()) {
-				return handler->add_members_pre_lowering(*node_ui_control);
+				return handler->add_members_pre_lowering(*node_ui_control->control_var);
 			}
 		}
 		return nullptr;
@@ -60,6 +60,7 @@ public:
  * end while
  */
 	std::unique_ptr<NodeBody> add_members_post_lowering(DataStructure& node) override {
+		if(!m_ui_control_array) return nullptr;
 		auto node_body = std::make_unique<NodeBody>(node.tok);
 		// calculate array size
 		SimpleInterpreter eval;
@@ -69,11 +70,10 @@ public:
 		}
 		int array_size = array_size_res.unwrap();
 		std::string new_control_name = m_ui_control_array->control_var->name;
-		auto new_ui_control_template = clone_as<NodeUIControl>(m_ui_control_array->declaration->);
+		auto new_ui_control_template = clone_as<NodeUIControl>(m_ui_control_array->declaration);
 		for (int i = 0; i < array_size; i++) {
-			new_control_name += std::to_string(i);
 			auto new_ui_control = clone_as<NodeUIControl>(m_ui_control_array->declaration);
-			new_ui_control->control_var->name = new_control_name;
+			new_ui_control->control_var->name = new_control_name + std::to_string(i);
 			new_ui_control->params = clone_as<NodeParamList>(m_ui_control_array->params.get());
 			auto new_node_declaration =
 				std::make_unique<NodeSingleDeclareStatement>(std::move(new_ui_control), nullptr, node.tok);
@@ -86,17 +86,19 @@ public:
 			std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", DataType::Mutable, node.tok);
 		auto node_while_body = std::make_unique<NodeBody>(node.tok);
 
-		auto node_ui_control_var = std::move(new_ui_control_template.control_var);
+		auto node_ui_control_var = std::move(new_ui_control_template->control_var);
 		if (auto node_ui_control_var_array = cast_node<NodeArray>(node_ui_control_var.get())) {
 			node_ui_control_var_array->show_brackets = false;
 		}
 		node_ui_control_var->name = new_control_name;
-
-		auto node_get_ui_id = make_function_call("get_ui_id", {node_ui_control_var}, nullptr, node.tok);
+		std::vector<std::unique_ptr<NodeAST>> func_args;
+		func_args.push_back(std::move(node_ui_control_var));
+		auto node_get_ui_id = make_function_call("get_ui_id", std::move(func_args), nullptr, node.tok);
 
 		auto node_while_body_expression = make_binary_expr(ASTType::Integer,"+",std::move(node_get_ui_id),node_iterator_var->clone(),nullptr,node.tok);
 
 		auto node_raw_array_copy = clone_as<NodeArray>(m_ui_control_array->control_var.get());
+		node_raw_array_copy->is_reference = true;
 		node_raw_array_copy->indexes->params.clear();
 		node_raw_array_copy->indexes->params.push_back(node_iterator_var->clone());
 		auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(node_raw_array_copy),
