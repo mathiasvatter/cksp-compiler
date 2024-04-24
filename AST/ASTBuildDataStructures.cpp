@@ -15,6 +15,8 @@ void ASTBuildDataStructures::visit(NodeBody &node) {
 }
 
 void ASTBuildDataStructures::visit(NodeArray &node) {
+    node.type = infer_type_from_identifier(node.name);
+
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
 		return;
@@ -34,6 +36,8 @@ void ASTBuildDataStructures::visit(NodeArray &node) {
 }
 
 void ASTBuildDataStructures::visit(NodeNDArray& node) {
+    node.type = infer_type_from_identifier(node.name);
+
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
 		CompileError(ErrorType::Variable, "Array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
@@ -72,6 +76,8 @@ void ASTBuildDataStructures::visit(NodeUIControl &node) {
 
 
 void ASTBuildDataStructures::visit(NodeVariable &node) {
+    node.type = infer_type_from_identifier(node.name);
+
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	// return if no declaration found or node itself is declaration
 	if(!node_declaration) {

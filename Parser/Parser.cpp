@@ -157,17 +157,13 @@ Result<std::unique_ptr<DataStructure>> Parser::parse_array(NodeAST *parent, bool
 		auto node = std::make_unique<NodeNDArray>(arr_name, arr_token);
 		node->dimensions = std::max(indexes->params.size(), sizes->params.size());
 		node->sizes = std::move(sizes);
-//		node->sizes->parent = node_array.get();
 		node->indexes = std::move(indexes);
-//		node->indexes->parent = node_array.get();
 		node_array = std::move(node);
 	} else {
 		auto node = std::make_unique<NodeArray>(arr_name, arr_token);
 		node->dimensions = std::max(indexes->params.size(), sizes->params.size());
 		node->sizes = std::move(sizes);
-//		node->sizes->parent = node_array.get();
 		node->indexes = std::move(indexes);
-//		node->indexes->parent = node_array.get();
 		node_array = std::move(node);
 	}
 
@@ -1386,7 +1382,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
-    auto node_list_block = std::make_unique<NodeListStatement>(get_tok());
+    auto node_list_block = std::make_unique<NodeListStruct>(get_tok());
     Token construct = consume(); //consume list
     if(peek().type != token::KEYWORD) {
         return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,

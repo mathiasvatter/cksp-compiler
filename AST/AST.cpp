@@ -331,14 +331,14 @@ std::unique_ptr<NodeAST> NodeFamilyStatement::clone() const {
     return std::make_unique<NodeFamilyStatement>(*this);
 }
 
-// ************* NodeListStatement ***************
-void NodeListStatement::accept(ASTVisitor &visitor) {
+// ************* NodeListStruct ***************
+void NodeListStruct::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeListStatement::NodeListStatement(const NodeListStatement& other)
-        : NodeAST(other), name(other.name), size(other.size), body(clone_vector(other.body)) {}
-std::unique_ptr<NodeAST> NodeListStatement::clone() const {
-    return std::make_unique<NodeListStatement>(*this);
+NodeListStruct::NodeListStruct(const NodeListStruct& other)
+        : DataStructure(other), size(other.size), body(clone_vector(other.body)) {}
+std::unique_ptr<NodeAST> NodeListStruct::clone() const {
+    return std::make_unique<NodeListStruct>(*this);
 }
 
 // ************* NodeBody ***************
