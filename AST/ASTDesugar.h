@@ -34,7 +34,7 @@ public:
     void visit(NodeIfStatement& node) override;
 	void visit(NodeSelectStatement& node) override;
 
-//    void visit(NodeListStatement& node) override;
+//    void visit(NodeListStruct& node) override;
     void visit(NodeBody& node) override;
     void visit(NodeStatement& node) override;
     void visit(NodeArray& node) override;

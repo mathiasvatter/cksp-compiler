@@ -385,6 +385,31 @@ struct NodeUIControl : DataStructure {
 
 };
 
+struct NodeListStruct : DataStructure {
+//    std::string name;
+    int32_t size = 0;
+    std::vector<std::unique_ptr<NodeParamList>> body;
+    inline explicit NodeListStruct(Token tok) : DataStructure("", tok, NodeType::ListStatement) {}
+    inline NodeListStruct(std::string name, int32_t size, std::vector<std::unique_ptr<NodeParamList>> body, Token tok)
+            : DataStructure(std::move(name), tok, NodeType::ListStatement), size(size), body(std::move(body)) {}
+    void accept(ASTVisitor& visitor) override;
+    // Kopierkonstruktor
+    NodeListStruct(const NodeListStruct& other);
+    // Clone Methode
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        for (auto & b : body) {
+            b->update_parents(this);
+        }
+    }
+    std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+        for(auto &b : body) {
+            b->update_token_data(token);
+        }
+    }
+};
+
 struct NodeUnaryExpr : NodeAST {
     Token op;
     std::unique_ptr<NodeAST> operand;
@@ -729,31 +754,6 @@ struct NodeFamilyStatement : NodeAST {
     void update_token_data(const Token& token) override {
         for(auto &m : members) {
             m->update_token_data(token);
-        }
-    }
-};
-
-struct NodeListStatement : NodeAST {
-    std::string name;
-    int32_t size = 0;
-    std::vector<std::unique_ptr<NodeParamList>> body;
-    inline explicit NodeListStatement(Token tok) : NodeAST(tok, NodeType::ListStatement) {}
-    inline NodeListStatement(std::string name, int32_t size, std::vector<std::unique_ptr<NodeParamList>> body, Token tok)
-    : NodeAST(tok, NodeType::ListStatement), name(std::move(name)), size(size), body(std::move(body)) {}
-    void accept(ASTVisitor& visitor) override;
-    // Kopierkonstruktor
-    NodeListStatement(const NodeListStatement& other);
-    // Clone Methode
-    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    void update_parents(NodeAST* new_parent) override {
-        for (auto & b : body) {
-            b->update_parents(this);
-        }
-    }
-    std::string get_string() override { return ""; }
-    void update_token_data(const Token& token) override {
-        for(auto &b : body) {
-            b->update_token_data(token);
         }
     }
 };

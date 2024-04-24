@@ -284,7 +284,7 @@ void ASTDesugarStructs::visit(NodeVariable& node) {
     }
 }
 
-void ASTDesugarStructs::visit(NodeListStatement &node) {
+void ASTDesugarStructs::visit(NodeListStruct &node) {
     auto node_body = std::make_unique<NodeBody>(node.tok);
     auto node_main_array = make_array(node.name, node.size, node.tok, node_body.get());
 	node_main_array->dimensions = 1;

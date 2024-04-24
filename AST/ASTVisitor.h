@@ -116,7 +116,7 @@ public:
 			member->accept(*this);
 		}
 	};
-    virtual void visit(NodeListStatement& node) {
+    virtual void visit(NodeListStruct& node) {
         for(auto & b : node.body) {
             b->accept(*this);
         }
