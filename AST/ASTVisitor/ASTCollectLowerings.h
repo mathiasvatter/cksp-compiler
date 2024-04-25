@@ -5,9 +5,9 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "AST.h"
-#include "../BuiltinsProcessing/DefinitionProvider.h"
-#include "../Lowering/ASTLowering.h"
+#include "../ASTNodes/AST.h"
+#include "../../BuiltinsProcessing/DefinitionProvider.h"
+#include "../../Lowering/ASTLowering.h"
 
 class ASTCollectLowerings: public ASTVisitor {
 public:

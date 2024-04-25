@@ -5,7 +5,7 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "../BuiltinsProcessing/DefinitionProvider.h"
+#include "../../BuiltinsProcessing/DefinitionProvider.h"
 
 class ASTTypeCasting : public ASTVisitor {
 public:

@@ -5,7 +5,7 @@
 #pragma once
 
 #include <sstream>
-#include "../AST/ASTVisitor.h"
+#include "../AST/ASTVisitor/ASTVisitor.h"
 
 
 inline std::string sanitize_dots(const std::string& str) {

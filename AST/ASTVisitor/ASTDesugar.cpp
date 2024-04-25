@@ -4,8 +4,8 @@
 #include <functional>
 
 #include "ASTDesugar.h"
-#include "../Interpreter/SimpleExprInterpreter.h"
-#include "../Interpreter/ConstantFolding.h"
+#include "../../Interpreter/SimpleExprInterpreter.h"
+#include "../../Interpreter/ConstantFolding.h"
 
 ASTDesugar::ASTDesugar(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {}
 
@@ -840,7 +840,7 @@ void ASTDesugar::declare_dummy_return_variable() {
 	node_return_dummy->is_reference = false;
     auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_return_dummy), nullptr, tok);
     node_var_declaration->to_be_declared->parent = node_var_declaration.get();
-    m_return_dummy_declaration = static_cast<DataStructure*>(node_var_declaration->to_be_declared.get());
+    m_return_dummy_declaration = static_cast<NodeDataStructure*>(node_var_declaration->to_be_declared.get());
     m_local_declare_statements.push_back(statement_wrapper(std::move(node_var_declaration), m_init_callback));
 
     std::string local_var_dummy_name = "_local_dummy_";
@@ -850,7 +850,7 @@ void ASTDesugar::declare_dummy_return_variable() {
 	node_local_var_dummy->is_reference = false;
     auto node_local_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_local_var_dummy), nullptr, tok);
     node_local_var_declaration->to_be_declared->parent = node_local_var_declaration.get();
-    m_local_var_dummy_declaration = static_cast<DataStructure*>(node_local_var_declaration->to_be_declared.get());
+    m_local_var_dummy_declaration = static_cast<NodeDataStructure*>(node_local_var_declaration->to_be_declared.get());
     m_local_declare_statements.push_back(statement_wrapper(std::move(node_local_var_declaration), m_init_callback));
 
 

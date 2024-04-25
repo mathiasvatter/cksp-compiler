@@ -3,8 +3,8 @@
 //
 
 #include "ASTVariables.h"
-#include "../JSON/JSONParser.h"
-#include "../JSON/JSONVisitor.h"
+#include "../../JSON/JSONParser.h"
+#include "../../JSON/JSONVisitor.h"
 
 ASTVariables::ASTVariables(DefinitionProvider* definition_provider, std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines)
         : m_def_provider(definition_provider), m_function_inlines(std::move(m_function_inlines)) {}

@@ -12,7 +12,7 @@ DefinitionProvider::DefinitionProvider(
 		std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> m_property_functions,
 		std::unordered_map<std::string, std::unique_ptr<NodeArray>> m_builtin_arrays,
 		std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> m_builtin_widgets,
-		std::vector<std::unique_ptr<DataStructure>> m_external_variables)
+		std::vector<std::unique_ptr<NodeDataStructure>> m_external_variables)
         : builtin_variables(std::move(m_builtin_variables)),
 		  builtin_functions(std::move(m_builtin_functions)),
 		  property_functions(std::move(m_property_functions)), // property functions
@@ -20,14 +20,14 @@ DefinitionProvider::DefinitionProvider(
 		  builtin_widgets(std::move(m_builtin_widgets)),
 		  external_variables(std::move(m_external_variables)) {
     for(auto& var : m_external_variables) {
-        m_declared_data_structures.back().insert({var->name, clone_as<DataStructure>(var.get())});
+        m_declared_data_structures.back().insert({var->name, clone_as<NodeDataStructure>(var.get())});
     }
 }
 
-DataStructure* DefinitionProvider::get_declaration(DataStructure* var) {
+NodeDataStructure* DefinitionProvider::get_declaration(NodeDataStructure* var) {
 
     // get builtin declaration if it exists
-    DataStructure *node_builtin_declaration = nullptr;
+    NodeDataStructure *node_builtin_declaration = nullptr;
     if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
     if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var->name);
 
@@ -44,7 +44,7 @@ DataStructure* DefinitionProvider::get_declaration(DataStructure* var) {
             compile_error.m_message = "Data Structure has already been declared.";
             compile_error.print();
         } else {
-            m_declared_data_structures.back().insert({var->name, clone_as<DataStructure>(var)});
+            m_declared_data_structures.back().insert({var->name, clone_as<NodeDataStructure>(var)});
             return var;
         }
     // if var reference
@@ -59,7 +59,7 @@ DataStructure* DefinitionProvider::get_declaration(DataStructure* var) {
 }
 
 
-//std::unique_ptr<DataStructure> DefinitionProvider::build_data_structure(std::unique_ptr<NodeVariable> var, DataStructure* declaration) {
+//std::unique_ptr<NodeDataStructure> DefinitionProvider::build_data_structure(std::unique_ptr<NodeVariable> var, NodeDataStructure* declaration) {
 //    // if declaration is of data type array -> exchange with array node
 //    if(var->data_type != declaration->data_type) {
 //        if(declaration->data_type == Array) {
@@ -73,7 +73,7 @@ DataStructure* DefinitionProvider::get_declaration(DataStructure* var) {
 //
 //}
 
-void DefinitionProvider::match_data_structure(DataStructure* reference, DataStructure* declaration) {
+void DefinitionProvider::match_data_structure(NodeDataStructure* reference, NodeDataStructure* declaration) {
     // get declaration to declaration
     reference->declaration = declaration;
     // mark is used
@@ -86,7 +86,7 @@ void DefinitionProvider::match_data_structure(DataStructure* reference, DataStru
 }
 
 
-//std::unique_ptr<DataStructure> DefinitionProvider::build_data_structure(std::unique_ptr<NodeArray> var, DataStructure* declaration) {
+//std::unique_ptr<NodeDataStructure> DefinitionProvider::build_data_structure(std::unique_ptr<NodeArray> var, NodeDataStructure* declaration) {
 //
 //}
 
@@ -161,7 +161,7 @@ NodeArray *DefinitionProvider::get_declared_array(const std::string& arr) {
     return nullptr;
 }
 
-DataStructure *DefinitionProvider::get_declared_data_structure(const std::string& data) {
+NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::string& data) {
     std::string var_without_identifier = data;
     if (data[0] == '_' && data[1] != '_') {
         var_without_identifier = var_without_identifier.erase(0,1);
@@ -217,7 +217,7 @@ bool DefinitionProvider::remove_scope() {
     return true;
 }
 
-void DefinitionProvider::set_external_variables(std::vector<std::unique_ptr<DataStructure>> external_variables) {
+void DefinitionProvider::set_external_variables(std::vector<std::unique_ptr<NodeDataStructure>> external_variables) {
 	DefinitionProvider::external_variables = std::move(external_variables);
 }
 
@@ -241,7 +241,7 @@ void DefinitionProvider::set_property_functions(std::unordered_map<std::string, 
 	DefinitionProvider::property_functions = std::move(property_functions);
 }
 
-void DefinitionProvider::add_external_variable(std::unique_ptr<DataStructure> external_variable) {
+void DefinitionProvider::add_external_variable(std::unique_ptr<NodeDataStructure> external_variable) {
     external_variables.push_back(std::move(external_variable));
 }
 

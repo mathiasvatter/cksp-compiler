@@ -56,6 +56,17 @@ void ASTBuildDataStructures::visit(NodeNDArray& node) {
 	}
 }
 
+void ASTBuildDataStructures::visit(NodeListStructReference& node) {
+	node.type = infer_type_from_identifier(node.name);
+
+	auto node_declaration = m_def_provider->get_declaration(&node);
+	if(!node_declaration) {
+		CompileError(ErrorType::Variable, "Array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+		return;
+	}
+
+}
+
 // get declaration of engine widget into declaration
 // if ui control array -> get size(s) into size member
 void ASTBuildDataStructures::visit(NodeUIControl &node) {

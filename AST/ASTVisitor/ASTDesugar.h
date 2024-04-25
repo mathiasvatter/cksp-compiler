@@ -5,7 +5,7 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "../BuiltinsProcessing/DefinitionProvider.h"
+#include "../../BuiltinsProcessing/DefinitionProvider.h"
 #include <type_traits>
 
 
@@ -62,7 +62,7 @@ private:
     NodeCallback* m_init_callback = nullptr;
     NodeCallback* m_current_callback = nullptr;
     int m_current_callback_idx = 0;
-	DataStructure* m_return_dummy_declaration = nullptr;
+	NodeDataStructure* m_return_dummy_declaration = nullptr;
 
 	bool evaluating_functions = false;
 
@@ -92,7 +92,7 @@ private:
     /// gets resettet when out of init
     std::stack<std::string> m_local_variables;
     std::set<std::string> m_local_already_declared_vars;
-	DataStructure* m_local_var_dummy_declaration = nullptr;
+	NodeDataStructure* m_local_var_dummy_declaration = nullptr;
     std::unique_ptr<NodeAST> get_local_variable_substitute(const std::string& name);
 
     std::vector<std::unique_ptr<NodeStatement>> add_read_functions(const Token& persistence, NodeAST* var, NodeAST* parent);

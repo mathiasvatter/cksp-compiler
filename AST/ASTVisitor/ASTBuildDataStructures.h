@@ -5,8 +5,8 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "AST.h"
-#include "../BuiltinsProcessing/DefinitionProvider.h"
+#include "../ASTNodes/AST.h"
+#include "../../BuiltinsProcessing/DefinitionProvider.h"
 
 /// complete ASTNodes like arrays, ui controls, etc., fill in declaration information by
 /// tracking data structure definitions with DefinitionProvider
@@ -17,6 +17,7 @@ public:
 	void visit(NodeUIControl& node) override;
 	void visit(NodeArray& node) override;
 	void visit(NodeNDArray& node) override;
+	void visit(NodeListStructReference& node) override;
 	void visit(NodeVariable& node) override;
 
 private:
