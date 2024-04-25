@@ -18,6 +18,9 @@ public:
 	/// lower ndArray when they are a reference
 	void visit(NodeNDArray& node) override;
 
+	void visit(NodeListStructReference& node) override;
+	void visit(NodeListStruct& node) override;
+
 private:
     DefinitionProvider* m_def_provider;
 };

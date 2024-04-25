@@ -24,6 +24,14 @@ void ASTBuildDataStructures::visit(NodeArray &node) {
 
 	m_def_provider->match_data_structure(node_declaration, &node);
 
+	// check if it is NodeListStructReference
+	if(node_declaration->get_node_type() == NodeType::ListStructReference) {
+		auto node_list_reference = std::make_unique<NodeListStructReference>(node.name, std::move(node.indexes), node.tok);
+		node_list_reference->declaration = node_declaration;
+		node.replace_with(std::move(node_list_reference));
+		return;
+	}
+
 	// match array specific information
 	if(node_declaration != &node and node.is_reference) {
 		if(auto node_array = cast_node<NodeArray>(node_declaration)) {
@@ -46,6 +54,15 @@ void ASTBuildDataStructures::visit(NodeNDArray& node) {
 
 	m_def_provider->match_data_structure(node_declaration, &node);
 
+	// check if it is NodeListStructReference
+	if(node_declaration->get_node_type() == NodeType::ListStruct) {
+		auto node_list_reference = std::make_unique<NodeListStructReference>(node.name, std::move(node.indexes), node.tok);
+		node_list_reference->declaration = node_declaration;
+		node_list_reference->accept(*this);
+		node.replace_with(std::move(node_list_reference));
+		return;
+	}
+
 	// match array specific information
 	if(node_declaration != &node and node.is_reference) {
 		if(auto node_array = cast_node<NodeNDArray>(node_declaration)) {
@@ -54,17 +71,6 @@ void ASTBuildDataStructures::visit(NodeNDArray& node) {
 			node.sizes->update_parents(&node);
 		}
 	}
-}
-
-void ASTBuildDataStructures::visit(NodeListStructReference& node) {
-	node.type = infer_type_from_identifier(node.name);
-
-	auto node_declaration = m_def_provider->get_declaration(&node);
-	if(!node_declaration) {
-		CompileError(ErrorType::Variable, "Array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
-		return;
-	}
-
 }
 
 // get declaration of engine widget into declaration
@@ -103,7 +109,29 @@ void ASTBuildDataStructures::visit(NodeVariable &node) {
 		node.replace_with(std::move(node_array));
 		return;
 	}
+}
+
+void ASTBuildDataStructures::visit(NodeListStruct& node) {
+	node.type = infer_type_from_identifier(node.name);
+
+	m_def_provider->set_declaration(&node);
+//	// return if no declaration found or node itself is declaration
+//	if(!node_declaration) {
+//		return;
+//	}
+//	m_def_provider->match_data_structure(node_declaration, &node);
+}
+
+void ASTBuildDataStructures::visit(NodeListStructReference& node) {
+	node.type = infer_type_from_identifier(node.name);
+
+	auto node_declaration = m_def_provider->get_declaration(&node);
+	if(!node_declaration) {
+		CompileError(ErrorType::Variable, "List has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+		return;
+	}
 
 }
+
 
 

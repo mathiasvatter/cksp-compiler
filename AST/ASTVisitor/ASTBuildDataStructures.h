@@ -17,7 +17,10 @@ public:
 	void visit(NodeUIControl& node) override;
 	void visit(NodeArray& node) override;
 	void visit(NodeNDArray& node) override;
+	/// List Struct and Reference
+	void visit(NodeListStruct& node) override;
 	void visit(NodeListStructReference& node) override;
+	/// Variable
 	void visit(NodeVariable& node) override;
 
 private:

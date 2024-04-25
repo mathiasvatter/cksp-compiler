@@ -22,6 +22,7 @@ public:
 			}
 			node.to_be_declared->accept(*this);
 			node_body->statements.push_back(statement_wrapper(node.clone(), node_body.get()));
+			node_body->update_parents(node.parent);
 			node.replace_with(std::move(node_body));
 		}
 	}
