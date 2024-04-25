@@ -192,12 +192,12 @@ void NodeSingleDeclareStatement::replace_child(NodeAST* oldChild, std::unique_pt
         if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.get())) {
             newChild.release();
             to_be_declared = std::unique_ptr<NodeDataStructure>(new_data_structure);
-        } else {
-            // TODO: Error handling when NodeDeadCode
-//            CompileError(ErrorType::SyntaxError,"Variable has not been declared. If it was declared as local variable it may be out of scope.", node.tok.line, "", node.name, node.tok.file).exit();
-//            std::cout << "Error: " << newChild->get_string() << std::endl;
-//            CompileError(ErrorType::TypeError, "Cannot replace to be declared with non data structure", oldChild->tok.line, "", newChild->get_string(), oldChild->tok.file).print();
-            to_be_declared = std::move(newChild);
+//        } else {
+//            // TODO: Error handling when NodeDeadCode
+////            CompileError(ErrorType::SyntaxError,"Variable has not been declared. If it was declared as local variable it may be out of scope.", node.tok.line, "", node.name, node.tok.file).exit();
+////            std::cout << "Error: " << newChild->get_string() << std::endl;
+////            CompileError(ErrorType::TypeError, "Cannot replace to be declared with non data structure", oldChild->tok.line, "", newChild->get_string(), oldChild->tok.file).print();
+//            to_be_declared = std::move(newChild);
         }
     } else if (assignee.get() == oldChild) {
         assignee = std::move(newChild);

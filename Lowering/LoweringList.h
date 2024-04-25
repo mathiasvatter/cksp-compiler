@@ -12,6 +12,42 @@ public:
 
 	};
 
+	void visit(NodeListStructReference& node) override {
+		// list references can only have one or two (jagged lists) indexes
+		if(node.indexes->params.size() != 2 && node.indexes->params.size() != 1) {
+			CompileError(ErrorType::SyntaxError,"Got wrong amount of indexes for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).exit();
+		}
+
+		auto lowered_list_reference = make_array(node.name, 0, node.tok, nullptr);
+		// no heavy lowering needed if list is simple one dimensional array
+		if(node.indexes->params.size() == 1) {
+			lowered_list_reference->indexes = std::move(node.indexes);
+			lowered_list_reference->indexes->parent = lowered_list_reference.get();
+			node.replace_with(std::move(lowered_list_reference));
+			return;
+		}
+
+		/**
+		 * pre lowering:
+		 * all_fx_texts[0,1]
+		 *
+		 * post lowering:
+		 * _all_fx_texts[all_fx_texts.pos[0]+1]
+		 */
+		auto node_position_array = make_array(node.name+".pos", 0, node.tok, nullptr);
+		node_position_array->indexes->params.clear();
+		node_position_array->indexes->params.push_back(std::move(node.indexes->params[0]));
+		node_position_array->indexes->update_parents(node_position_array.get());
+
+		auto node_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_position_array), std::move(node.indexes->params[1]), &node, node.tok);
+
+		lowered_list_reference->indexes->params.clear();
+		lowered_list_reference->indexes->params.push_back(std::move(node_expression));
+		lowered_list_reference->indexes->update_parents(lowered_list_reference.get());
+		lowered_list_reference->name = "_"+lowered_list_reference->name;
+		node.replace_with(std::move(lowered_list_reference));
+	}
+
 	void visit(NodeListStruct &node) override {
         auto node_body = std::make_unique<NodeBody>(node.tok);
         auto node_main_array = make_array(node.name, node.size, node.tok, node_body.get());
@@ -25,7 +61,8 @@ public:
         }
         if(max_dimension>1) node_main_array->data_type = DataType::List;
 
-        auto node_declare_main_array = std::make_unique<NodeSingleDeclareStatement>(node_main_array->clone(), nullptr, node.tok);
+        auto node_declare_main_array = std::make_unique<NodeSingleDeclareStatement>(clone_as<NodeDataStructure>(node_main_array.get()), nullptr, node.tok);
+		node_declare_main_array->to_be_declared->is_reference = false;
         auto main_size = (int32_t)node.body.size();
         auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(std::make_unique<NodeVariable>(std::optional<Token>(), name_wo_ident+".SIZE", DataType::Const, node.tok), make_int(main_size,&node), node.tok);
         node_body->statements.push_back(statement_wrapper(std::move(node_declare_main_array), node_body.get()));
@@ -69,7 +106,8 @@ public:
         for(int i = 0; i<node.body.size(); i++) {
             auto node_array_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
             auto node_array = make_array(name_wo_ident+std::to_string(i), sizes[i], node.tok, node_array_declaration.get());
-            node_array_declaration->to_be_declared = node_array->clone();
+            node_array_declaration->to_be_declared = clone_as<NodeDataStructure>(node_array.get());
+			node_array_declaration->to_be_declared->is_reference = false;
             node_array_declaration->assignee = std::move(node.body[i]);
             node_body->statements.push_back(statement_wrapper(std::move(node_array_declaration), node_body.get()));
 

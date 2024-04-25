@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Tue Apr 23 18:34:01 2024 }
+{ Compiled with cksp version 0.0.5 on Thu Apr 25 19:12:17 2024 }
 on init
   declare ?_return_vars_real[3]
   declare !_return_vars_str[3]
@@ -12,25 +12,82 @@ on init
   declare $_string_it
   declare $_ui_array_it
   declare $_list_it
-  declare $i
-  declare $ii
-  declare const $root_notes__SIZE_D1 := 2
-  declare const $root_notes__SIZE_D2 := 11
-  declare !_root_notes[2 * 11]
-  $i := 0
-  while($i <= 1) 
-    $ii := 0
-    while($ii <= 10) 
-      !_root_notes[($i * 11) + $ii] := 0
-      if($ii < 10)
-        if($i = 0)
-          !_root_notes[($i * 11) + $ii] := 0
-        end if
-      end if
-      inc($ii)
-    end while
-    inc($i)
+  declare !all_fx_texts[25]
+  declare const $all_fx_texts__SIZE := 5
+  declare %all_fx_texts__sizes[] := (5, 5, 5, 5, 5)
+  declare %all_fx_texts__pos[] := (0, 5, 10, 15, 20)
+  declare !all_fx_texts0[5]
+  !all_fx_texts0[5] := "Low Pass -12dB"
+  !all_fx_texts0[5] := "Cutoff"
+  !all_fx_texts0[5] := "Hz"
+  !all_fx_texts0[5] := "Reso"
+  !all_fx_texts0[5] := "%"
+  declare const $all_fx_texts0__SIZE := 5
+  $_iterator := 0
+  while($_iterator < 5) 
+    !_all_fx_texts[$_iterator] := !all_fx_texts0[$_iterator]
+    inc($_iterator)
   end while
+  declare !all_fx_texts1[5]
+  !all_fx_texts1[5] := "Low Pass -24dB"
+  !all_fx_texts1[5] := "Cutoff"
+  !all_fx_texts1[5] := "Hz"
+  !all_fx_texts1[5] := "Reso"
+  !all_fx_texts1[5] := "%"
+  declare const $all_fx_texts1__SIZE := 5
+  $_iterator := 0
+  while($_iterator < 5) 
+    !_all_fx_texts[$_iterator + 5] := !all_fx_texts1[$_iterator]
+    inc($_iterator)
+  end while
+  declare !all_fx_texts2[5]
+  !all_fx_texts2[5] := "Low Pass Vintage"
+  !all_fx_texts2[5] := "Cutoff"
+  !all_fx_texts2[5] := "Hz"
+  !all_fx_texts2[5] := "Reso"
+  !all_fx_texts2[5] := "%"
+  declare const $all_fx_texts2__SIZE := 5
+  $_iterator := 0
+  while($_iterator < 5) 
+    !_all_fx_texts[$_iterator + 10] := !all_fx_texts2[$_iterator]
+    inc($_iterator)
+  end while
+  declare !all_fx_texts3[5]
+  !all_fx_texts3[5] := "High Pass -12dB"
+  !all_fx_texts3[5] := "Cutoff"
+  !all_fx_texts3[5] := "Hz"
+  !all_fx_texts3[5] := "Reso"
+  !all_fx_texts3[5] := "%"
+  declare const $all_fx_texts3__SIZE := 5
+  $_iterator := 0
+  while($_iterator < 5) 
+    !_all_fx_texts[$_iterator + 15] := !all_fx_texts3[$_iterator]
+    inc($_iterator)
+  end while
+  declare !all_fx_texts4[5]
+  !all_fx_texts4[5] := "High Pass -24dB"
+  !all_fx_texts4[5] := "Cutoff"
+  !all_fx_texts4[5] := "Hz"
+  !all_fx_texts4[5] := "Reso"
+  !all_fx_texts4[5] := "%"
+  declare const $all_fx_texts4__SIZE := 5
+  $_iterator := 0
+  while($_iterator < 5) 
+    !_all_fx_texts[$_iterator + 20] := !all_fx_texts4[$_iterator]
+    inc($_iterator)
+  end while
+  declare !mnu_item_text[3]
+  declare const $mnu_item_text__SIZE := 3
+  !mnu_item_text[0] := "Oscillator"
+  !mnu_item_text[1] := "Filter"
+  !mnu_item_text[2] := "LFO"
+  declare const $SEQ_PARAMETERS__SIZE_D1 := 1
+  declare const $SEQ_PARAMETERS__SIZE_D2 := 4
+  declare const $SEQ_PARAMETERS__SIZE_D3 := 56
+  declare %_SEQ_PARAMETERS[224] := (0)
+  message(%_SEQ_PARAMETERS[337])
+  message(!_all_fx_texts[%all_fx_texts__pos[0] + 1])
+  message(!mnu_item_text[0])
 end on
 on release
 end on

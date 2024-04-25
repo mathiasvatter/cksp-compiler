@@ -67,6 +67,10 @@ public:
 	/// returns the definition of a data structure, if it exists. If datastructure itself is
 	/// definition -> returns itself
 	NodeDataStructure* get_declaration(NodeDataStructure* var);
+	/// only called by references -> only gets declaration does not add existing declarations to map
+	NodeDataStructure* get_declaration(NodeReference* var);
+	/// adds existing declaration to declaration map for look up
+	NodeDataStructure* set_declaration(NodeDataStructure* var);
 
 	/// declared variables
     std::vector<std::unordered_map<std::string, NodeVariable*, StringHash, StringEqual>> m_declared_variables;

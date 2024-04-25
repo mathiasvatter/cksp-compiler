@@ -46,7 +46,8 @@ public:
 	virtual void visit(NodeInt& node) {node.type = ASTType::Integer;};
     virtual void visit(NodeReal& node) {node.type = ASTType::Real;};
     virtual void visit(NodeString& node) {node.type = ASTType::String;};
-    virtual void visit(NodeVariable& node) {};
+	virtual void visit(NodeVariable& node) {};
+	virtual void visit(NodeVariableReference& node) {};
     virtual void visit(NodeParamList& node) {
 		for(auto & param : node.params) {
 			param->accept(*this);

@@ -31,6 +31,7 @@ struct NodeArray : NodeDataStructure {
 		  sizes(std::move(sizes)), indexes(std::move(indexes)) {
 		persistence = std::move(is_persistent);
 		this->data_type = var_type;
+		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
@@ -42,6 +43,10 @@ struct NodeArray : NodeDataStructure {
 		if (sizes) sizes->update_parents(this);
 		if (indexes) indexes->update_parents(this);
 	}
+	void set_child_parents() override {
+		if (sizes) sizes->parent = this;
+		if (indexes) indexes->parent = this;
+	};
 	void update_token_data(const Token& token) override {
 		if(sizes) sizes -> update_token_data(token);
 		if(indexes) indexes ->update_token_data(token);
@@ -60,6 +65,7 @@ struct NodeNDArray : NodeDataStructure {
 		  sizes(std::move(sizes)), indexes(std::move(indexes)) {
 		persistence = std::move(is_persistent);
 		this->data_type = var_type;
+		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
@@ -71,6 +77,10 @@ struct NodeNDArray : NodeDataStructure {
 		if (sizes) sizes->update_parents(this);
 		if (indexes) indexes->update_parents(this);
 	}
+	void set_child_parents() override {
+		if (sizes) sizes->parent = this;
+		if (indexes) indexes->parent = this;
+	};
 	std::string get_string() override {
 		return name;
 	}
@@ -90,7 +100,9 @@ struct NodeUIControl : NodeDataStructure {
 	std::vector<DataType> arg_var_types;
 	inline explicit NodeUIControl(Token tok) : NodeDataStructure("", tok, NodeType::UIControl) {}
 	inline NodeUIControl(std::string uiControlType, std::unique_ptr<NodeDataStructure> controlVar, std::unique_ptr<NodeParamList> params, Token tok)
-		: NodeDataStructure("", tok, NodeType::UIControl), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {}
+		: NodeDataStructure("", tok, NodeType::UIControl), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {
+		set_child_parents();
+	}
 	void accept(ASTVisitor& visitor) override;
 	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	// Copy Constructor
@@ -102,6 +114,10 @@ struct NodeUIControl : NodeDataStructure {
 		control_var->update_parents(this);
 		if (params) params->update_parents(this);
 	}
+	void set_child_parents() override {
+		control_var->parent = this;
+		if (params) params->parent = this;
+	};
 	std::string get_string() override {
 		return control_var->get_string();
 	}
@@ -114,12 +130,13 @@ struct NodeUIControl : NodeDataStructure {
 };
 
 struct NodeListStruct : NodeDataStructure {
-//    std::string name;
 	int32_t size = 0;
 	std::vector<std::unique_ptr<NodeParamList>> body;
 	inline explicit NodeListStruct(Token tok) : NodeDataStructure("", tok, NodeType::ListStruct) {}
 	inline NodeListStruct(std::string name, int32_t size, std::vector<std::unique_ptr<NodeParamList>> body, Token tok)
-		: NodeDataStructure(std::move(name), tok, NodeType::ListStruct), size(size), body(std::move(body)) {}
+		: NodeDataStructure(std::move(name), tok, NodeType::ListStruct), size(size), body(std::move(body)) {
+		set_child_parents();
+	}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
 	NodeListStruct(const NodeListStruct& other);
@@ -130,10 +147,17 @@ struct NodeListStruct : NodeDataStructure {
 			b->update_parents(this);
 		}
 	}
+	void set_child_parents() override {
+		for (auto & b : body) {
+			if(b) b->parent = this;
+		}
+	};
 	std::string get_string() override { return ""; }
 	void update_token_data(const Token& token) override {
 		for(auto &b : body) {
 			b->update_token_data(token);
 		}
 	}
+	ASTVisitor* get_lowering() const override;
+
 };

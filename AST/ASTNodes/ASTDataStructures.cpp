@@ -6,6 +6,7 @@
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Lowering/LoweringUIControlArray.h"
 #include "../../Lowering/LoweringNDArray.h"
+#include "../../Lowering/LoweringList.h"
 
 // ************* NodeVariable ***************
 void NodeVariable::accept(ASTVisitor &visitor) {
@@ -40,8 +41,8 @@ std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 }
 
 ASTVisitor* NodeNDArray::get_lowering() const {
-	static LoweringNDArray handler;
-	return &handler;
+	static LoweringNDArray lowering;
+	return &lowering;
 }
 
 // ************* NodeUIControl ***************
@@ -67,16 +68,22 @@ void NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 }
 
 ASTVisitor* NodeUIControl::get_lowering() const {
-	static LoweringUIControlArray handler;
-	return &handler;
+	static LoweringUIControlArray lowering;
+	return &lowering;
 }
 
 // ************* NodeListStruct ***************
 void NodeListStruct::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
+
 NodeListStruct::NodeListStruct(const NodeListStruct& other)
 	: NodeDataStructure(other), size(other.size), body(clone_vector(other.body)) {}
 std::unique_ptr<NodeAST> NodeListStruct::clone() const {
 	return std::make_unique<NodeListStruct>(*this);
+}
+
+ASTVisitor* NodeListStruct::get_lowering() const {
+	static LoweringList lowering;
+	return &lowering;
 }

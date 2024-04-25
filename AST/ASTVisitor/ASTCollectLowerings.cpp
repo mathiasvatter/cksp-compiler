@@ -19,5 +19,17 @@ void ASTCollectLowerings::visit(NodeNDArray& node) {
 	}
 }
 
+void ASTCollectLowerings::visit(NodeListStructReference& node) {
+	if(auto lowering = node.get_lowering()) {
+		node.accept(*lowering);
+	}
+}
+
+void ASTCollectLowerings::visit(NodeListStruct& node) {
+	if(auto lowering = node.get_lowering()) {
+		node.accept(*lowering);
+	}
+}
+
 
 

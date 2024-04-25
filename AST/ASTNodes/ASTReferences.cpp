@@ -4,6 +4,7 @@
 
 #include "ASTReferences.h"
 #include "../ASTVisitor/ASTVisitor.h"
+#include "../../Lowering/LoweringList.h"
 
 // ************* NodeVariableReference ***************
 void NodeVariableReference::accept(ASTVisitor &visitor) {
@@ -47,8 +48,13 @@ void NodeListStructReference::accept(ASTVisitor &visitor) {
 }
 
 NodeListStructReference::NodeListStructReference(const NodeListStructReference& other)
-	: NodeReference(other), indexes(clone_unique(other.indexes)) {}
+	: NodeReference(other), indexes(clone_unique(other.indexes)), sizes(other.sizes), pos(other.pos) {}
 
 std::unique_ptr<NodeAST> NodeListStructReference::clone() const {
 	return std::make_unique<NodeListStructReference>(*this);
+}
+
+ASTVisitor* NodeListStructReference::get_lowering() const {
+	static LoweringList lowering;
+	return &lowering;
 }
