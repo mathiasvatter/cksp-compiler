@@ -1,0 +1,116 @@
+{#pragma save_compiled_source resources/scripts/main.txt}
+
+
+{-------------------------------------------------------------------------------------------
+							List example pre Lowering
+--------------------------------------------------------------------------------------------}
+
+on init
+
+	// As Declaration 1
+	list !all_fx_texts[,]
+		"Low Pass -12dB",		0,		 "Hz","Reso","%"	
+		"Low Pass -24dB",		"Cutoff","Hz","Reso","%"	
+		"Low Pass Vintage",		"Cutoff","Hz","Reso","%"	
+		"High Pass -12dB",		"Cutoff","Hz","Reso","%"	
+		"High Pass -24dB",		"Cutoff","Hz","Reso","%"	
+	end list
+
+	list !mnu_item_text[]
+	    "Oscillator"
+	    "Filter"  
+	    "LFO"
+	end list
+
+	// As Declaration 2
+	declare list new_list[]
+	list_add(all_fx_texts, "sdfljk")
+	list_add(all_fx_texts, "ssdfdfljk")
+
+
+	// As Reference
+	message(all_fx_texts[0,1])
+	message(!mnu_item_text[0])
+
+
+end on
+
+{-------------------------------------------------------------------------------------------
+						List example post Lowering
+--------------------------------------------------------------------------------------------}
+
+on init
+	declare !_all_fx_texts[27]
+	declare const $all_fx_texts__SIZE := 7
+	declare %all_fx_texts__sizes[7] := (5, 5, 5, 5, 5, 1, 1)
+	declare %all_fx_texts__pos[7] := (0, 5, 10, 15, 20, 25, 26)
+	declare !all_fx_texts0[5]
+	!all_fx_texts0[0] := "Low Pass -12dB"
+	!all_fx_texts0[1] := 0
+	!all_fx_texts0[2] := "Hz"
+	!all_fx_texts0[3] := "Reso"
+	!all_fx_texts0[4] := "%"
+	declare const $all_fx_texts0__SIZE := 5
+	$list_it := 0
+	while ($list_it<5)
+		!_all_fx_texts[$list_it+0] := !all_fx_texts0[$list_it]
+		inc($list_it)
+	end while
+	declare !all_fx_texts1[5]
+	!all_fx_texts1[0] := "Low Pass -24dB"
+	!all_fx_texts1[1] := "Cutoff"
+	!all_fx_texts1[2] := "Hz"
+	!all_fx_texts1[3] := "Reso"
+	!all_fx_texts1[4] := "%"
+	declare const $all_fx_texts1__SIZE := 5
+	$list_it := 0
+	while ($list_it<5)
+		!_all_fx_texts[$list_it+5] := !all_fx_texts1[$list_it]
+		inc($list_it)
+	end while
+	declare !all_fx_texts2[5]
+	!all_fx_texts2[0] := "Low Pass Vintage"
+	!all_fx_texts2[1] := "Cutoff"
+	!all_fx_texts2[2] := "Hz"
+	!all_fx_texts2[3] := "Reso"
+	!all_fx_texts2[4] := "%"
+	declare const $all_fx_texts2__SIZE := 5
+	$list_it := 0
+	while ($list_it<5)
+		!_all_fx_texts[$list_it+10] := !all_fx_texts2[$list_it]
+		inc($list_it)
+	end while
+	declare !all_fx_texts3[5]
+	!all_fx_texts3[0] := "High Pass -12dB"
+	!all_fx_texts3[1] := "Cutoff"
+	!all_fx_texts3[2] := "Hz"
+	!all_fx_texts3[3] := "Reso"
+	!all_fx_texts3[4] := "%"
+	declare const $all_fx_texts3__SIZE := 5
+	$list_it := 0
+	while ($list_it<5)
+		!_all_fx_texts[$list_it+15] := !all_fx_texts3[$list_it]
+		inc($list_it)
+	end while
+	declare !all_fx_texts4[5]
+	!all_fx_texts4[0] := "High Pass -24dB"
+	!all_fx_texts4[1] := "Cutoff"
+	!all_fx_texts4[2] := "Hz"
+	!all_fx_texts4[3] := "Reso"
+	!all_fx_texts4[4] := "%"
+	declare const $all_fx_texts4__SIZE := 5
+	$list_it := 0
+	while ($list_it<5)
+		!_all_fx_texts[$list_it+20] := !all_fx_texts4[$list_it]
+		inc($list_it)
+	end while
+	declare !mnu_item_text[3]
+	declare const $mnu_item_text__SIZE := 3
+	!mnu_item_text[0] := "Oscillator"
+	!mnu_item_text[1] := "Filter"
+	!mnu_item_text[2] := "LFO"
+	message(!_all_fx_texts[%all_fx_texts__pos[0]+1])
+	message(!mnu_item_text[0])
+	!_all_fx_texts[25] := "sdfljk"
+	!_all_fx_texts[26] := "ssdfdfljk"
+end on
