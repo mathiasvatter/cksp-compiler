@@ -3,20 +3,20 @@
 
 #include "Parser/Parser.h"
 #include "Preprocessor/Preprocessor.h"
-#include "AST/ASTDesugar.h"
-#include "AST/ASTPrinter.h"
-#include "AST/ASTTypeCasting.h"
+#include "AST/ASTVisitor/ASTDesugar.h"
+#include "AST/ASTVisitor/ASTPrinter.h"
+#include "AST/ASTVisitor/ASTTypeCasting.h"
 #include "BuiltinsProcessing/BuiltinsProcessor.h"
-#include "AST/ASTTypeChecking.h"
-#include "AST/ASTVariables.h"
+#include "AST/ASTVisitor/ASTTypeChecking.h"
+#include "AST/ASTVisitor/ASTVariables.h"
 #include "Generator/ASTGenerator.h"
-#include "AST/ASTDesugarStructs.h"
+#include "AST/ASTVisitor/ASTDesugarStructs.h"
 #include "Preprocessor/ImportProcessor.h"
 #include "misc/FileHandler.h"
 #include "CommandLineOptions.h"
 #include "BuiltinsProcessing/DefinitionProvider.h"
-#include "AST/ASTCollectLowerings.h"
-#include "AST/ASTBuildDataStructures.h"
+#include "AST/ASTVisitor/ASTCollectLowerings.h"
+#include "AST/ASTVisitor/ASTBuildDataStructures.h"
 
 int main(int argc, char* argv[]) {
 

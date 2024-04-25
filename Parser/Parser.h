@@ -6,12 +6,10 @@
 
 #include <unordered_map>
 
-//#include "../Tokenizer/Tokenizer.h"
-#include "../AST/AST.h"
-//#include "../Tokenizer/Tokens.h"
+#include "../AST/ASTNodes/AST.h"
+#include "../AST/ASTNodes/ASTDataStructures.h"
 #include "../misc/Result.h"
 #include "../Processor/Processor.h"
-
 
 // Hilfsfunktion, die das Result-Objekt zurückgibt, wenn kein Fehler vorliegt.
 template<typename T> Result<T> handle_error(Result<T> result) {
@@ -75,7 +73,7 @@ protected:
     Result<std::unique_ptr<NodeAST>> parse_number(NodeAST* parent);
     Result<std::unique_ptr<NodeString>> parse_string(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent=std::optional<Token>(), DataType var_type=DataType::Mutable);
-    Result<std::unique_ptr<DataStructure>> parse_array(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent = std::optional<Token>(), DataType var_type = DataType::Array);
+    Result<std::unique_ptr<NodeDataStructure>> parse_array(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent = std::optional<Token>(), DataType var_type = DataType::Array);
     Result<std::unique_ptr<NodeNDArray>> parse_ndarray(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent = std::optional<Token>(), DataType var_type = DataType::NDArray);
 
     Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent);
@@ -99,7 +97,7 @@ protected:
     Result<std::unique_ptr<NodeSingleAssignStatement>> parse_single_assign_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAssignStatement>> parse_into_assign_statement(std::unique_ptr<NodeParamList> array_variable, NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
-    Result<std::unique_ptr<DataStructure>> parse_declare_array(NodeAST* parent);
+    Result<std::unique_ptr<NodeDataStructure>> parse_declare_array(NodeAST* parent);
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);
     Result<std::unique_ptr<NodeDeclareStatement>> parse_declare_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_const_statement(NodeAST* parent);

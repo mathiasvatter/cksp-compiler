@@ -3,7 +3,7 @@
 //
 
 #include "Parser.h"
-#include "../AST/ASTVisitor.h"
+#include "../AST/ASTVisitor/ASTVisitor.h"
 
 #include <filesystem>
 #include <utility>
@@ -118,11 +118,11 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, co
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
 
-Result<std::unique_ptr<DataStructure>> Parser::parse_array(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent, DataType var_type) {
+Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent, DataType var_type) {
     auto arr_token = consume();
     std::string arr_name = arr_token.val;
     ASTType type = infer_type_from_identifier(arr_name);
-	std::unique_ptr<DataStructure> node_array = nullptr;
+	std::unique_ptr<NodeDataStructure> node_array = nullptr;
 //    auto node_array = std::make_unique<NodeArray>(arr_name, arr_token);
 //    node_array -> type = type;
 //	auto node_ndarray = std::make_unique<NodeNDArray>(arr_name, arr_token);
@@ -137,17 +137,17 @@ Result<std::unique_ptr<DataStructure>> Parser::parse_array(NodeAST *parent, bool
         if (peek().type != token::CLOSED_BRACKET) {
             auto index_params = parse_param_list(node_array.get());
             if (index_params.is_error()) {
-                return Result<std::unique_ptr<DataStructure>>(index_params.get_error());
+                return Result<std::unique_ptr<NodeDataStructure>>(index_params.get_error());
             }
             indexes = std::move(index_params.unwrap());
         }
         if(peek().type != token::CLOSED_BRACKET)
-            return Result<std::unique_ptr<DataStructure>>(CompileError(ErrorType::SyntaxError,
-           "Found unknown Array Syntax.", "]", peek()));
+            return Result<std::unique_ptr<NodeDataStructure>>(CompileError(ErrorType::SyntaxError,
+																		   "Found unknown Array Syntax.", "]", peek()));
         consume(); // consume ]
     } else {
-        return Result<std::unique_ptr<DataStructure>>(CompileError(ErrorType::SyntaxError,
-         "Found unknown Array Syntax.", "[", peek()));
+        return Result<std::unique_ptr<NodeDataStructure>>(CompileError(ErrorType::SyntaxError,
+																	   "Found unknown Array Syntax.", "[", peek()));
     }
 	if(!is_reference) std::swap(sizes,indexes);
 
@@ -173,7 +173,7 @@ Result<std::unique_ptr<DataStructure>> Parser::parse_array(NodeAST *parent, bool
 	node_array->persistence = std::move(is_persistent);
 	node_array->is_local = false;
 	node_array->data_type = var_type;
-	return Result<std::unique_ptr<DataStructure>>(std::move(node_array));
+	return Result<std::unique_ptr<NodeDataStructure>>(std::move(node_array));
 }
 
 Result<std::unique_ptr<NodeNDArray>> Parser::parse_ndarray(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent, DataType var_type) {
@@ -806,7 +806,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 Result<std::unique_ptr<NodeDeclareStatement>> Parser::parse_declare_statement(NodeAST* parent) {
     auto node_declare_statement = std::make_unique<NodeDeclareStatement>(get_tok());
     if(peek().type == token::DECLARE) consume(); //consume declare
-    std::vector<std::unique_ptr<DataStructure>> to_be_declared;
+    std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared;
 //    to_be_declared->parent = node_declare_statement.get();
     if(not(peek().type == token::KEYWORD or peek().type == token::UI_CONTROL or get_persistent_keyword(peek())
 		or peek().type == token::CONST or peek().type == token::POLYPHONIC or peek().type== token::LOCAL or peek().type== token::GLOBAL))
@@ -962,7 +962,7 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
 
-Result<std::unique_ptr<DataStructure>> Parser::parse_declare_array(NodeAST* parent) {
+Result<std::unique_ptr<NodeDataStructure>> Parser::parse_declare_array(NodeAST* parent) {
     auto persistence = get_persistent_keyword(peek());
     if(persistence) {
         consume();
@@ -976,19 +976,19 @@ Result<std::unique_ptr<DataStructure>> Parser::parse_declare_array(NodeAST* pare
     }
     DataType var_type = DataType::Array;
     if(peek().type != token::KEYWORD) {
-        return Result<std::unique_ptr<DataStructure>>(CompileError(ErrorType::SyntaxError,
-         "Found unknown array declaration syntax.", "array keyword", peek()));
+        return Result<std::unique_ptr<NodeDataStructure>>(CompileError(ErrorType::SyntaxError,
+																	   "Found unknown array declaration syntax.", "array keyword", peek()));
     }
     auto parsed_arr = parse_array(parent, false, persistence, var_type);
     if(parsed_arr.is_error()) {
-        return Result<std::unique_ptr<DataStructure>>(parsed_arr.get_error());
+        return Result<std::unique_ptr<NodeDataStructure>>(parsed_arr.get_error());
     }
     auto node_array = std::move(parsed_arr.unwrap());
 //    std::swap(node_array->indexes, node_array->sizes);
 	node_array->is_local = is_local;
 	node_array->is_global = is_global;
     node_array->is_reference = false;
-    return Result<std::unique_ptr<DataStructure>>(std::move(node_array));
+    return Result<std::unique_ptr<NodeDataStructure>>(std::move(node_array));
 }
 
 Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST* parent) {
@@ -1007,7 +1007,7 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
         return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::SyntaxError,
    "Found unknown ui_control declaration syntax.", "array or variable keyword", peek()));
     }
-    std::unique_ptr<DataStructure> control_var;
+    std::unique_ptr<NodeDataStructure> control_var;
     // check if it has second Brackets -> ui_control array
     std::unique_ptr<NodeParamList> control_array_sizes;
     if(peek(1).type == token::OPEN_BRACKET) {

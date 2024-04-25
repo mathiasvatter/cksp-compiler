@@ -12,8 +12,8 @@
 #include <chrono>
 
 
-#include "../Tokenizer/Tokens.h"
-#include "../Tokenizer/Tokenizer.h"
+#include "../../Tokenizer/Tokens.h"
+#include "../../Tokenizer/Tokenizer.h"
 
 enum class ASTType {
     Integer,
@@ -82,8 +82,11 @@ inline ASTType infer_type_from_identifier(std::string& var_name) {
 
 enum class NodeType {
     Variable,
+	VariableReference,
     Array,
+	ArrayReference,
     NDArray,
+	NDArrayReference,
     UIControl,
     UnaryExpr,
     BinaryExpr,
@@ -103,7 +106,8 @@ enum class NodeType {
     ConstStatement,
     StructStatement,
     FamilyStatement,
-    ListStatement,
+    ListStruct,
+	ListStructReference,
     IfStatement,
     ForStatement,
     ForEachStatement,
@@ -201,6 +205,45 @@ struct NodeInt : NodeAST {
     }
 };
 
+struct NodeDataStructure : NodeAST {
+	bool is_used = false;
+	bool is_engine = false;
+	std::optional<Token> persistence;
+	bool is_reference = true;
+	bool is_local = false;
+	bool is_global = false;
+	bool is_compiler_return = false;
+	DataType data_type;
+	std::string name;
+	NodeDataStructure* declaration = nullptr; // index in declaration array
+	inline explicit NodeDataStructure(std::string name, Token tok, NodeType node_type) : NodeAST(tok, node_type), name(std::move(name)) {}
+	void accept(ASTVisitor& visitor) override;
+	// Kopierkonstruktor
+	NodeDataStructure(const NodeDataStructure& other);
+	// Clone Methode
+	std::unique_ptr<NodeAST> clone() const override;
+	std::string get_string() override {
+		return name;
+	}
+};
+
+struct NodeReference : NodeAST {
+	std::string name;
+	NodeDataStructure* declaration = nullptr;
+	inline explicit NodeReference(Token tok) : NodeAST(tok, NodeType::UnaryExpr) {}
+	inline NodeReference(std::string name, NodeType node_type, Token tok)
+		: NodeAST(tok, node_type), name(std::move(name)) {}
+	void accept(ASTVisitor& visitor) override;
+	// Kopierkonstruktor
+	NodeReference(const NodeReference& other);
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {}
+	std::string get_string() override {
+		return name;
+	}
+};
+
 struct NodeReal : NodeAST {
     double value;
     inline explicit NodeReal(double value, Token tok) : NodeAST(tok, NodeType::Real), value(value) {type = ASTType::Real;}
@@ -225,41 +268,6 @@ struct NodeString : NodeAST {
     std::string get_string() override {
         return value;
     }
-};
-
-struct DataStructure : NodeAST {
-    bool is_used = false;
-    bool is_engine = false;
-    std::optional<Token> persistence;
-    bool is_reference = true;
-    bool is_local = false;
-    bool is_global = false;
-    bool is_compiler_return = false;
-    DataType data_type;
-    std::string name;
-    DataStructure* declaration = nullptr; // index in declaration array
-    inline explicit DataStructure(std::string name, Token tok, NodeType node_type) : NodeAST(tok, node_type), name(std::move(name)) {}
-    void accept(ASTVisitor& visitor) override;
-    // Kopierkonstruktor
-    DataStructure(const DataStructure& other);
-    // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
-    std::string get_string() override {
-        return name;
-    }
-};
-
-struct NodeVariable: DataStructure {
-	inline NodeVariable(std::optional<Token> is_persistent, std::string name, DataType type, Token tok)
-        : DataStructure(name, tok, NodeType::Variable) {
-        persistence = std::move(is_persistent);
-        data_type = type;
-    }
-	void accept(ASTVisitor& visitor) override;
-    // Kopierkonstruktor
-    NodeVariable(const NodeVariable& other);
-    // Clone Methode
-    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 };
 
 struct NodeParamList: NodeAST {
@@ -287,125 +295,6 @@ struct NodeParamList: NodeAST {
     void update_token_data(const Token& token) override {
         for(auto &p : params) {
             p->update_token_data(token);
-        }
-    }
-};
-
-struct NodeArray : DataStructure {
-    int dimensions = 1;
-    bool show_brackets = true;
-    std::unique_ptr<NodeParamList> sizes = nullptr;
-    std::unique_ptr<NodeParamList> indexes = nullptr;
-    inline explicit NodeArray(std::string name, Token tok) : DataStructure(name, tok, NodeType::Array) {}
-    inline NodeArray(std::optional<Token> is_persistent, std::string name, DataType var_type, std::unique_ptr<NodeParamList> sizes,
-                     std::unique_ptr<NodeParamList> indexes, Token tok)
-              : DataStructure(std::move(name), tok, NodeType::Array),
-                sizes(std::move(sizes)), indexes(std::move(indexes)) {
-        persistence = std::move(is_persistent);
-        this->data_type = var_type;
-    }
-    void accept(ASTVisitor& visitor) override;
-    // Kopierkonstruktor
-    NodeArray(const NodeArray& other);
-    // Clone Methode
-    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    void update_parents(NodeAST* new_parent) override {
-        parent = new_parent;
-        if (sizes) sizes->update_parents(this);
-        if (indexes) indexes->update_parents(this);
-    }
-    void update_token_data(const Token& token) override {
-        if(sizes) sizes -> update_token_data(token);
-        if(indexes) indexes ->update_token_data(token);
-    }
-};
-
-struct NodeNDArray : DataStructure {
-	int dimensions = 1;
-    bool show_brackets = true;
-	std::unique_ptr<NodeParamList> sizes = nullptr;
-	std::unique_ptr<NodeParamList> indexes = nullptr;
-	inline explicit NodeNDArray(std::string name, Token tok) : DataStructure(name, tok, NodeType::NDArray) {}
-	inline NodeNDArray(std::optional<Token> is_persistent, std::string name, DataType var_type, std::unique_ptr<NodeParamList> sizes,
-		std::unique_ptr<NodeParamList> indexes, Token tok)
-	: DataStructure(std::move(name), tok, NodeType::NDArray),
-	sizes(std::move(sizes)), indexes(std::move(indexes)) {
-		persistence = std::move(is_persistent);
-		this->data_type = var_type;
-	}
-	void accept(ASTVisitor& visitor) override;
-	// Kopierkonstruktor
-	NodeNDArray(const NodeNDArray& other);
-	// Clone Methode
-	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-	void update_parents(NodeAST* new_parent) override {
-		parent = new_parent;
-		if (sizes) sizes->update_parents(this);
-		if (indexes) indexes->update_parents(this);
-	}
-	std::string get_string() override {
-		return name;
-	}
-	void update_token_data(const Token& token) override {
-		if(sizes) sizes -> update_token_data(token);
-		if(indexes) indexes ->update_token_data(token);
-	}
-	ASTVisitor* get_lowering() const override;
-};
-
-struct NodeUIControl : DataStructure {
-    std::string ui_control_type;
-    std::unique_ptr<DataStructure> control_var; //Array or Variable
-    std::unique_ptr<NodeParamList> params;
-    std::unique_ptr<NodeParamList> sizes; // if it is ui_control array
-	std::vector<ASTType> arg_ast_types;
-	std::vector<DataType> arg_var_types;
-    inline explicit NodeUIControl(Token tok) : DataStructure("", tok, NodeType::UIControl) {}
-    inline NodeUIControl(std::string uiControlType, std::unique_ptr<DataStructure> controlVar, std::unique_ptr<NodeParamList> params, Token tok)
-                : DataStructure("", tok, NodeType::UIControl), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {}
-    void accept(ASTVisitor& visitor) override;
-	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
-    // Copy Constructor
-    NodeUIControl(const NodeUIControl& other);
-    // Clone Method
-    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    void update_parents(NodeAST* new_parent) override {
-        parent = new_parent;
-        control_var->update_parents(this);
-        if (params) params->update_parents(this);
-    }
-    std::string get_string() override {
-        return control_var->get_string();
-    }
-    void update_token_data(const Token& token) override {
-        control_var -> update_token_data(token);
-        params -> update_token_data(token);
-    }
-	ASTVisitor* get_lowering() const override;
-
-};
-
-struct NodeListStruct : DataStructure {
-//    std::string name;
-    int32_t size = 0;
-    std::vector<std::unique_ptr<NodeParamList>> body;
-    inline explicit NodeListStruct(Token tok) : DataStructure("", tok, NodeType::ListStatement) {}
-    inline NodeListStruct(std::string name, int32_t size, std::vector<std::unique_ptr<NodeParamList>> body, Token tok)
-            : DataStructure(std::move(name), tok, NodeType::ListStatement), size(size), body(std::move(body)) {}
-    void accept(ASTVisitor& visitor) override;
-    // Kopierkonstruktor
-    NodeListStruct(const NodeListStruct& other);
-    // Clone Methode
-    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    void update_parents(NodeAST* new_parent) override {
-        for (auto & b : body) {
-            b->update_parents(this);
-        }
-    }
-    std::string get_string() override { return ""; }
-    void update_token_data(const Token& token) override {
-        for(auto &b : body) {
-            b->update_token_data(token);
         }
     }
 };
@@ -513,23 +402,18 @@ struct NodeSingleAssignStatement : NodeAST {
 };
 
 struct NodeDeclareStatement : NodeAST {
-	std::vector<std::unique_ptr<DataStructure>> to_be_declared;
+	std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared;
 	std::unique_ptr<NodeParamList> assignee;
     inline explicit NodeDeclareStatement(Token tok) : NodeAST(tok, NodeType::DeclareStatement) {}
-	inline NodeDeclareStatement(std::vector<std::unique_ptr<DataStructure>> to_be_declared, std::unique_ptr<NodeParamList> assignee, Token tok)
+	inline NodeDeclareStatement(std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared, std::unique_ptr<NodeParamList> assignee, Token tok)
     : NodeAST(tok, NodeType::DeclareStatement), to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {}
 	void accept(ASTVisitor& visitor) override;
     // Copy Constructor
     NodeDeclareStatement(const NodeDeclareStatement& other);
     // Clone Method
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    void update_parents(NodeAST* new_parent) override {
-        parent = new_parent;
-        for(auto const &decl : to_be_declared) {
-            decl->update_parents(this);
-        }
-        if(assignee) assignee->update_parents(this);
-    }
+    void update_parents(NodeAST* new_parent) override;
+
     std::string get_string() override {
         std::string str = "declare ";
         for(auto & decl : to_be_declared) {

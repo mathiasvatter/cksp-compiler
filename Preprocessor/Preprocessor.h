@@ -6,7 +6,7 @@
 #include <unordered_set>
 #include <utility>
 
-#include "../AST/AST.h"
+#include "../AST/ASTNodes/AST.h"
 #include "../Parser/Parser.h"
 #include "../Processor/Processor.h"
 

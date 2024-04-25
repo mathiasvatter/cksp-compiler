@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "../AST/AST.h"
-#include "../AST/ASTVisitor.h"
+#include "../AST/ASTNodes/AST.h"
+#include "../AST/ASTVisitor/ASTVisitor.h"
 
 /// Lowering of data structures to simpler data structures
 /// e.g. Lists to arrays, multidimensional arrays to arrays

@@ -9,7 +9,9 @@
 #include <set>
 #include <unordered_set>
 
-#include "AST.h"
+#include "../ASTNodes/AST.h"
+#include "../ASTNodes/ASTDataStructures.h"
+#include "../ASTNodes/ASTReferences.h"
 
 class ASTVisitor {
 public:
@@ -54,8 +56,14 @@ public:
 		node.sizes->accept(*this);
 		node.indexes->accept(*this);
 	};
+	virtual void visit(NodeArrayReference& node) {
+		node.index->accept(*this);
+	};
 	virtual void visit(NodeNDArray& node) {
 		node.sizes->accept(*this);
+		node.indexes->accept(*this);
+	};
+	virtual void visit(NodeNDArrayReference& node) {
 		node.indexes->accept(*this);
 	};
     virtual void visit(NodeUIControl& node){
@@ -121,6 +129,9 @@ public:
             b->accept(*this);
         }
     };
+	virtual void visit(NodeListStructReference& node) {
+		node.indexes->accept(*this);
+	};
     virtual void visit(NodeStatement& node) {
 		node.statement->accept(*this);
 	};

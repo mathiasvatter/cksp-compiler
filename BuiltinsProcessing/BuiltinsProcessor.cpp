@@ -181,7 +181,7 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 		return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::PreprocessorError,
 		"Failed loading builtins. Found unknown <engine_widget> syntax.", peek(m_tokens).line, "<Keyword>", peek(m_tokens).val, peek(m_tokens).file));
 	}
-	std::unique_ptr<DataStructure> node_var;
+	std::unique_ptr<NodeDataStructure> node_var;
 	if(peek(m_tokens, 1).type == token::OPEN_BRACKET) {
 		node_var = std::move(parse_builtin_array());
 		consume(m_tokens); // consume open bracket

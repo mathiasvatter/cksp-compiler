@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../AST/AST.h"
+#include "../AST/ASTNodes/AST.h"
 
 
 class PathHandler {

@@ -4,7 +4,7 @@
 
 #pragma once
 #include "../Processor/Processor.h"
-#include "../AST/AST.h"
+#include "../AST/ASTNodes/AST.h"
 #include "../BuiltinsProcessing/DefinitionProvider.h"
 #include <unordered_set>
 
@@ -16,7 +16,7 @@ public:
     ImportProcessor(std::vector<Token> tokens, std::string current_file, DefinitionProvider* definition_provider);
 
 	Result<SuccessTag> process_imports();
-//	[[nodiscard]] const std::vector<std::unique_ptr<DataStructure>> &get_external_variables() const;
+//	[[nodiscard]] const std::vector<std::unique_ptr<NodeDataStructure>> &get_external_variables() const;
 
 private:
 	std::string m_current_file;
@@ -27,7 +27,7 @@ private:
 
 	DefinitionProvider* m_def_provider;
 //    const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
-//    std::vector<std::unique_ptr<DataStructure>> m_external_variables;
+//    std::vector<std::unique_ptr<NodeDataStructure>> m_external_variables;
 
     // Imports
 	Result<SuccessTag> process_import_statements(std::vector<Token>& tokens, const std::string& current_file);

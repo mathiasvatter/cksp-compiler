@@ -47,7 +47,7 @@ public:
     void visit(JSONFloat& num) override;
     void visit(JSONBool& boolean) override;
 
-    std::vector<std::unique_ptr<DataStructure>> collect_ui_variables();
+    std::vector<std::unique_ptr<NodeDataStructure>> collect_ui_variables();
 private:
 	DefinitionProvider* m_def_provider;
 
