@@ -101,6 +101,7 @@ public:
 		for (int i = 0; i < array_size; i++) {
 			auto new_ui_control = clone_as<NodeUIControl>(ui_control.declaration);
 			new_ui_control->control_var->name = new_control_name + std::to_string(i);
+            new_ui_control->control_var->is_reference = false;
 			new_ui_control->params = clone_as<NodeParamList>(ui_control.params.get());
 			auto new_node_declaration =
 				std::make_unique<NodeSingleDeclareStatement>(std::move(new_ui_control), nullptr, ui_control.tok);
