@@ -31,5 +31,22 @@ void ASTCollectLowerings::visit(NodeListStruct& node) {
 	}
 }
 
+void ASTCollectLowerings::visit(NodeConstStatement &node) {
+    if(auto lowering = node.get_lowering()) {
+        node.accept(*lowering);
+    }
+    node.replace_with(std::move(node.constants));
+}
+
+void ASTCollectLowerings::visit(NodeFamilyStatement &node) {
+
+    if(auto lowering = node.get_lowering()) {
+        node.accept(*lowering);
+    }
+    node.members->accept(*this);
+    node.replace_with(std::move(node.members));
+}
+
+
 
 

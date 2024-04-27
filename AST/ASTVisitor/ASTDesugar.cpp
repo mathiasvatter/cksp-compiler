@@ -1,7 +1,6 @@
 //
 // Created by Mathias Vatter on 27.10.23.
 //
-#include <functional>
 
 #include "ASTDesugar.h"
 #include "../../Interpreter/SimpleExprInterpreter.h"
@@ -71,11 +70,6 @@ void ASTDesugar::visit(NodeCallback& node) {
 //    m_variable_scope_stack.pop_back();
 }
 
-void ASTDesugar::visit(NodeBinaryExpr& node) {
-	ConstantFolding constant_folding;
-	node.accept(constant_folding);
-}
-
 void ASTDesugar::visit(NodeArray& node) {
 
     node.sizes->accept(*this);
@@ -124,6 +118,14 @@ void ASTDesugar::visit(NodeFunctionHeader& node) {
             return;
         }
     }
+}
+
+void ASTDesugar::visit(NodeBinaryExpr& node) {
+    node.left->accept(*this);
+    node.right->accept(*this);
+
+    ConstantFolding constant_folding;
+    node.accept(constant_folding);
 }
 
 void ASTDesugar::visit(NodeVariable& node) {
@@ -751,6 +753,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 		if(node_array->dimensions>1) new_control_name = "_"+new_control_name;
 
 		auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", DataType::Mutable, node.tok);
+        node_iterator_var->is_engine = true;
 //		node_iterator_var->accept(*this);
 		auto node_while_body = std::make_unique<NodeBody>(node.tok);
 

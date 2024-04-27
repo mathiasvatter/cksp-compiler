@@ -109,7 +109,7 @@ protected:
     Result<std::unique_ptr<NodeIfStatement>> parse_if_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeForStatement>> parse_for_statement(NodeAST* parent);
     bool is_ranged_for_loop();
-    Result<std::unique_ptr<NodeForEachStatement>> parse_ranged_for_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeForEachStatement>> parse_for_each_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeWhileStatement>> parse_while_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeSelectStatement>> parse_select_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeGetControlStatement>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent);

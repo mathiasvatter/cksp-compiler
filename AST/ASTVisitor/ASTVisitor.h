@@ -106,14 +106,9 @@ public:
     virtual void visit(NodeGetControlStatement& node) {
 		node.ui_id->accept(*this);
 	};
-//    virtual void visit(NodeSetControlStatement& node) {
-//		node.get_control->accept(*this);
-//		node.assignee->accept(*this);
-//	};
+
     virtual void visit(NodeConstStatement& node) {
-		for(auto &constant : node.constants) {
-			constant->accept(*this);
-		}
+        node.constants->accept(*this);
 	};
     virtual void visit(NodeStructStatement& node) {
 		for(auto & member : node.members) {
@@ -121,9 +116,7 @@ public:
 		}
 	};
     virtual void visit(NodeFamilyStatement& node) {
-		for(auto & member : node.members) {
-			member->accept(*this);
-		}
+        node.members->accept(*this);
 	};
     virtual void visit(NodeListStruct& node) {
         for(auto & b : node.body) {

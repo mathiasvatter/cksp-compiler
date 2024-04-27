@@ -111,6 +111,7 @@ public:
 
 		auto node_iterator_var =
 			std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", DataType::Mutable, ui_control.tok);
+        node_iterator_var->is_engine = true;
 		auto node_while_body = std::make_unique<NodeBody>(ui_control.tok);
 
 		auto node_ui_control_var = std::move(new_ui_control_template->control_var);

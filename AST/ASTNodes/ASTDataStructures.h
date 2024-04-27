@@ -161,3 +161,78 @@ struct NodeListStruct : NodeDataStructure {
 	ASTVisitor* get_lowering() const override;
 
 };
+
+struct NodeConstStatement : NodeDataStructure {
+//    std::string prefix;
+    std::unique_ptr<NodeBody> constants;
+    inline explicit NodeConstStatement(Token tok) : NodeDataStructure("", tok, NodeType::ConstStatement) {}
+    inline NodeConstStatement(std::string name, std::unique_ptr<NodeBody> constants, Token tok)
+            : NodeDataStructure(std::move(name), tok, NodeType::ConstStatement), constants(std::move(constants)) {
+        this->set_child_parents();
+    }
+    void accept(ASTVisitor& visitor) override;
+    // Kopierkonstruktor
+    NodeConstStatement(const NodeConstStatement& other);
+    // Clone Methode
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        parent = new_parent;
+//        for (auto & c : constants) {
+//            c->update_parents(this);
+//        }
+        constants ->update_parents(this);
+    }
+    void set_child_parents() override {
+//		for(auto& c : constants) {
+//			if(c) c->parent = this;
+//		}
+        constants->parent = this;
+    };
+    std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+//        for(auto &c : constants) {
+//            c->update_token_data(token);
+//        }
+        constants->update_token_data(token);
+    }
+    ASTVisitor* get_lowering() const override;
+
+};
+
+struct NodeFamilyStatement : NodeAST {
+    std::string prefix;
+    std::unique_ptr<NodeBody> members;
+    inline explicit NodeFamilyStatement(Token tok) : NodeAST(tok, NodeType::FamilyStatement) {}
+    inline NodeFamilyStatement(std::string prefix, std::unique_ptr<NodeBody> members, Token tok)
+            : NodeAST(tok, NodeType::FamilyStatement), prefix(std::move(prefix)), members(std::move(members)) {
+        set_child_parents();
+    }
+    void accept(ASTVisitor& visitor) override;
+    // Kopierkonstruktor
+    NodeFamilyStatement(const NodeFamilyStatement& other);
+    // Clone Methode
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        parent = new_parent;
+//        for (auto & member : members) {
+//            member->update_parents(this);
+//        }
+        members->update_parents(this);
+    }
+    void set_child_parents() override {
+//        for(auto& m : this->members) {
+//            if(m) m->parent = this;
+//        }
+        members->parent = this;
+    };
+    std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+//        for(auto &m : members) {
+//            m->update_token_data(token);
+//        }
+        members->update_token_data(token);
+    }
+
+    ASTVisitor* get_lowering() const override;
+
+};

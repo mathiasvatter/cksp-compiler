@@ -5,6 +5,7 @@
 #include "ASTVariables.h"
 #include "../../JSON/JSONParser.h"
 #include "../../JSON/JSONVisitor.h"
+#include "../../Interpreter/ConstantFolding.h"
 
 ASTVariables::ASTVariables(DefinitionProvider* definition_provider, std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines)
         : m_def_provider(definition_provider), m_function_inlines(std::move(m_function_inlines)) {}
@@ -180,6 +181,7 @@ void ASTVariables::visit(NodeArray& node) {
 }
 
 void ASTVariables::visit(NodeVariable& node) {
+
     // handle return_vars -> do not check if they have been declared
     if(node.is_compiler_return or node.is_local) {
         node.is_used = true;

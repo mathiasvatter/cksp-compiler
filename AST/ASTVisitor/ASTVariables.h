@@ -19,6 +19,7 @@ public:
     void visit(NodeSingleDeclareStatement& node) override;
     void visit(NodeSingleAssignStatement& node) override;
 
+//    void visit(NodeBinaryExpr& node) override;
     void visit(NodeStatement& node) override;
 
     void visit(NodeBody& node) override;

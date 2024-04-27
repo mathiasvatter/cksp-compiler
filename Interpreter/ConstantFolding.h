@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <functional>
 #include "../AST/ASTVisitor/ASTVisitor.h"
 
 class ConstantFolding : public ASTVisitor {
