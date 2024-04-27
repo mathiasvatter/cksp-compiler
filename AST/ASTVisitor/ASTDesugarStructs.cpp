@@ -50,82 +50,76 @@ void ASTDesugarStructs::visit(NodeBody& node) {
     node.statements = std::move(cleanup_node_body(&node));
 }
 
-void ASTDesugarStructs::visit(NodeConstStatement& node) {
-    std::string pref = node.prefix;
-    if(!m_const_prefixes.empty()) pref = m_const_prefixes.top() + "." + node.prefix;
-    m_const_prefixes.push(pref);
-    auto node_body = std::make_unique<NodeBody>(node.tok);
-    std::vector<std::unique_ptr<NodeAST>> const_indexes;
-    std::unique_ptr<NodeAST> iter = make_int(0, node_body.get());
-    std::unique_ptr<NodeAST> pre = make_int(0, node_body.get());
-    for(int i = 0; i<node.constants.size(); i++){
-        node.constants[i]->accept(*this);
-        // check constants and give them values
-        auto stmt_list = cast_node<NodeBody>(node.constants[i]->statement.get());
-        for(auto &stmt : stmt_list->statements) {
-            auto node_stmt = cast_node<NodeStatement>(stmt.get());
-            auto declare_stmt = cast_node<NodeSingleDeclareStatement>(node_stmt->statement.get());
-            if(!declare_stmt->assignee) {
-				declare_stmt->assignee = make_binary_expr(ASTType::Integer, "+", pre->clone(), iter->clone(), nullptr, node.tok);
-				declare_stmt->assignee->update_parents(declare_stmt);
-			} else {
-//                auto node_int = cast_node<NodeInt>(declare_stmt->assignee.get());
-//                if(!node_int) {
-//                    CompileError(ErrorType::SyntaxError,
-//                                 "Found incorrect <const block> syntax. Only integers can be assigned in <const blocks>.", node.tok.line,"", "", node.tok.file).print();
-//                    exit(EXIT_FAILURE);
-//                }
-                pre = declare_stmt->assignee->clone();
-                iter = make_int(0, node_body.get());
-            }
-            auto var = cast_node<NodeVariable>(declare_stmt->to_be_declared.get());
-            if (!var) {
-                CompileError(ErrorType::SyntaxError,
-                             "Found incorrect <const block> syntax. Only variables allowed in <const blocks>.", node.tok.line,"", "", node.tok.file).print();
-                exit(EXIT_FAILURE);
-            }
-            if (var->data_type != DataType::Mutable) {
-                CompileError(ErrorType::SyntaxError,
-                             "Warning: Found incorrect const block syntax. No other variable types allowed in const blocks. Casted variable type to <const>.",node.tok.line, "", "", node.tok.file).print();
-            }
-            var->type = ASTType::Integer;
-            var->data_type = DataType::Const;
-        }
+//void ASTDesugarStructs::visit(NodeConstStatement& node) {
+//    std::string pref = node.prefix;
+//    if(!m_const_prefixes.empty()) pref = m_const_prefixes.top() + "." + node.prefix;
+//    m_const_prefixes.push(pref);
+//    auto node_body = std::make_unique<NodeBody>(node.tok);
+//    std::vector<std::unique_ptr<NodeAST>> const_indexes;
+//    std::unique_ptr<NodeAST> iter = make_int(0, node_body.get());
+//    std::unique_ptr<NodeAST> pre = make_int(0, node_body.get());
+//    for(int i = 0; i<node.constants.size(); i++){
+//        node.constants[i]->accept(*this);
+//        // check constants and give them values
+//        auto stmt_list = cast_node<NodeBody>(node.constants[i]->statement.get());
+//        for(auto &stmt : stmt_list->statements) {
+//            auto node_stmt = cast_node<NodeStatement>(stmt.get());
+//            auto declare_stmt = cast_node<NodeSingleDeclareStatement>(node_stmt->statement.get());
+//            // if there is no assignee -> create one incrementally
+//            if(!declare_stmt->assignee) {
+//				declare_stmt->assignee = std::make_unique<NodeBinaryExpr>("+", pre->clone(), iter->clone(), node.tok);
+//				declare_stmt->assignee->update_parents(declare_stmt);
+//			} else {
+//                pre = declare_stmt->assignee->clone();
+//                iter = make_int(0, node_body.get());
+//            }
+//            auto var = cast_node<NodeVariable>(declare_stmt->to_be_declared.get());
+//            if (!var) {
+//                CompileError(ErrorType::SyntaxError,
+//                             "Found incorrect <const block> syntax. Only variables allowed in <const blocks>.", node.tok.line,"", "", node.tok.file).exit();
+//            }
+//            if (var->data_type != DataType::Mutable) {
+//                CompileError(ErrorType::SyntaxError,
+//                             "Warning: Found incorrect const block syntax. No other variable types allowed in const blocks. Casted variable type to <const>.",node.tok.line, "", "", node.tok.file).print();
+//            }
+//            var->type = ASTType::Integer;
+//            var->data_type = DataType::Const;
+//        }
+//
+//        const_indexes.push_back(std::make_unique<NodeBinaryExpr>("+", pre->clone(), iter->clone(), node.tok));
+//        node.constants[i] -> parent = node_body.get();
+//        node_body->statements.push_back(std::move(node.constants[i]));
+//        iter = make_binary_expr(ASTType::Integer, "+", iter->clone(), make_int(1, node_body.get()), nullptr, node.tok);;
+//    }
+//	auto node_array = make_array(node.prefix, node.constants.size(), node.tok, node_body.get());
+//	auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), nullptr, node.tok);
+//	node_declare_statement->assignee = std::unique_ptr<NodeParamList>(new NodeParamList(std::move(const_indexes), node.tok));
+//	auto array = statement_wrapper(std::move(node_declare_statement), nullptr);
+////    auto array = make_declare_array(node.prefix, node.constants.size(), {}, node_body.get());
+//	array->update_parents(node_body.get());
+//    node_body->statements.push_back(std::move(array));
+//    auto constant = make_declare_variable(node.prefix+".SIZE", node.constants.size(), DataType::Const, node_body.get());
+//    node_body->statements.push_back(std::move(constant));
+//    node_body->parent = node.parent;
+////    node_body->accept(*this);
+//    node.replace_with(std::move(node_body));
+//    m_const_prefixes.pop();
+//}
 
-        const_indexes.push_back(make_binary_expr(ASTType::Integer, "+", pre->clone(), iter->clone(), nullptr, node.tok));
-        node.constants[i] -> parent = node_body.get();
-        node_body->statements.push_back(std::move(node.constants[i]));
-        iter = make_binary_expr(ASTType::Integer, "+", iter->clone(), make_int(1, node_body.get()), nullptr, node.tok);;
-    }
-	auto node_array = make_array(node.prefix, node.constants.size(), node.tok, node_body.get());
-	auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), nullptr, node.tok);
-	node_declare_statement->assignee = std::unique_ptr<NodeParamList>(new NodeParamList(std::move(const_indexes), node.tok));
-	auto array = statement_wrapper(std::move(node_declare_statement), nullptr);
-//    auto array = make_declare_array(node.prefix, node.constants.size(), {}, node_body.get());
-	array->update_parents(node_body.get());
-    node_body->statements.push_back(std::move(array));
-    auto constant = make_declare_variable(node.prefix+".SIZE", node.constants.size(), DataType::Const, node_body.get());
-    node_body->statements.push_back(std::move(constant));
-    node_body->parent = node.parent;
+//void ASTDesugarStructs::visit(NodeFamilyStatement& node) {
+//    std::string pref = node.prefix;
+//    if(!m_family_prefixes.empty()) pref = m_family_prefixes.top() + "." + node.prefix;
+//    m_family_prefixes.push(pref);
+//    auto node_body = std::make_unique<NodeBody>(node.tok);
+//    for(auto &member : node.members) {
+//        member->parent = node_body.get();
+//        node_body->statements.push_back(std::move(member));
+//    }
+//    node_body->parent = node.parent;
 //    node_body->accept(*this);
-    node.replace_with(std::move(node_body));
-    m_const_prefixes.pop();
-}
-
-void ASTDesugarStructs::visit(NodeFamilyStatement& node) {
-    std::string pref = node.prefix;
-    if(!m_family_prefixes.empty()) pref = m_family_prefixes.top() + "." + node.prefix;
-    m_family_prefixes.push(pref);
-    auto node_body = std::make_unique<NodeBody>(node.tok);
-    for(auto &member : node.members) {
-        member->parent = node_body.get();
-        node_body->statements.push_back(std::move(member));
-    }
-    node_body->parent = node.parent;
-    node_body->accept(*this);
-    node.replace_with(std::move(node_body));
-    m_family_prefixes.pop();
-}
+//    node.replace_with(std::move(node_body));
+//    m_family_prefixes.pop();
+//}
 
 void ASTDesugarStructs::visit(NodeDeclareStatement& node) {
     if(node.to_be_declared.size() < node.assignee->params.size()) {
@@ -234,17 +228,17 @@ void ASTDesugarStructs::visit(NodeArray& node) {
 //	}
 
     // add prefixes
-    if(!m_family_prefixes.empty()) {
-//        auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
-//        if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
-        auto node_ui_control = cast_node<NodeUIControl>(node.parent);
-        if(is_to_be_declared(&node) || node_ui_control) {
-            node.name = m_family_prefixes.top() + "." + node.name;
-        }
-    }
-    if(!m_const_prefixes.empty() and is_to_be_declared(&node)) {
-        node.name = m_const_prefixes.top() + "." + node.name;
-    }
+//    if(!m_family_prefixes.empty()) {
+////        auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
+////        if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
+//        auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+//        if(is_to_be_declared(&node) || node_ui_control) {
+//            node.name = m_family_prefixes.top() + "." + node.name;
+//        }
+//    }
+//    if(!m_const_prefixes.empty() and is_to_be_declared(&node)) {
+//        node.name = m_const_prefixes.top() + "." + node.name;
+//    }
 
 }
 
@@ -270,107 +264,19 @@ void ASTDesugarStructs::visit(NodeVariable& node) {
 	}
 
     // add prefixes
-    if(!m_family_prefixes.empty()) {
-        // add prefixes only if parent is declare statement and node is to_be_declared and not assigned
-//        auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
-//        if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
-        auto node_ui_control = cast_node<NodeUIControl>(node.parent);
-        if(is_to_be_declared(&node) || node_ui_control){
-            node.name = m_family_prefixes.top() + "." + node.name;
-        }
-    }
-    if(!m_const_prefixes.empty() and is_to_be_declared(&node)) {
-        node.name = m_const_prefixes.top() + "." + node.name;
-    }
-}
-
-//void ASTDesugarStructs::visit(NodeListStruct &node) {
-//    auto node_body = std::make_unique<NodeBody>(node.tok);
-//    auto node_main_array = make_array(node.name, node.size, node.tok, node_body.get());
-//	node_main_array->dimensions = 1;
-//    // accept first to get rid of array identifier
-//    node_main_array->accept(*this);
-//    std::string name_wo_ident = node_main_array->name;
-////    node_main_array->name = "_"+node_main_array->name;
-//    //check dimension -> if only 1 then treat as an array
-//    int max_dimension = 0;
-//    for(auto & param : node.body) {
-//        max_dimension = std::max(max_dimension, (int)param->params.size());
-//    }
-//    if(max_dimension>1) node_main_array->data_type = DataType::List;
-//
-//
-//    auto node_declare_main_array = std::make_unique<NodeSingleDeclareStatement>(clone_as<NodeArray>(node_main_array.get()), nullptr, node.tok);
-//    auto main_size = (int32_t)node.body.size();
-//    auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(std::make_unique<NodeVariable>(std::optional<Token>(), name_wo_ident+".SIZE", DataType::Const, node.tok), make_int(main_size, &node), node.tok);
-//    node_body->statements.push_back(statement_wrapper(std::move(node_declare_main_array), node_body.get()));
-//    node_body->statements.push_back(statement_wrapper(std::move(node_declare_main_const), node_body.get()));
-//
-//
-//    if(max_dimension == 1) {
-//        // bring all one sized param lists into the first
-//        for(int i = 1; i<node.body.size(); i++) {
-//            node.body[0]->params.push_back(std::move(node.body[i]->params[0]));
+//    if(!m_family_prefixes.empty()) {
+//        // add prefixes only if parent is declare statement and node is to_be_declared and not assigned
+////        auto node_declare_statement = cast_node<NodeSingleDeclareStatement>(node.parent);
+////        if(node_declare_statement and &node != node_declare_statement->to_be_declared.get()) node_declare_statement = nullptr;
+//        auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+//        if(is_to_be_declared(&node) || node_ui_control){
+//            node.name = m_family_prefixes.top() + "." + node.name;
 //        }
-//        add_vector_to_statement_list(node_body, std::move(array_initialization(node_main_array.get(), node.body[0].get())->statements));
-//        node_body->update_parents(node.parent);
-//        node_body->accept(*this);
-//        node.replace_with(std::move(node_body));
-//        return;
 //    }
-//	node_main_array->dimensions = 2;
-//    auto node_sizes_array = make_array(name_wo_ident+".sizes", main_size, node.tok, nullptr);
-//    auto node_positions_array = make_array(name_wo_ident+".pos", main_size, node.tok, nullptr);
-//    std::vector<int32_t> sizes(node.body.size());
-//    std::vector<int32_t> positions(node.body.size());
-//    auto node_sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.tok));
-//    auto node_positions = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.tok));
-//    positions[0] = 0;
-//    for(int i = 0; i<node.body.size(); i++) {
-//        sizes[i] = static_cast<int32_t>(node.body[i]->params.size());
-//        if(i>0) positions[i] = positions[i - 1] + sizes[i - 1];
-////        std::cout << sizes[i] << ", " << positions[i] << std::endl;
-//        auto node_size = make_int(sizes[i], node_sizes.get());
-//        node_sizes->params.push_back(std::move(node_size));
-//        auto node_position = make_int(positions[i], node_positions.get());
-//        node_positions->params.push_back(std::move(node_position));
+//    if(!m_const_prefixes.empty() and is_to_be_declared(&node)) {
+//        node.name = m_const_prefixes.top() + "." + node.name;
 //    }
-//    auto node_sizes_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_sizes_array), std::move(node_sizes), node.tok);
-//    auto node_positions_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_positions_array), std::move(node_positions), node.tok);
-//    node_body->statements.push_back(statement_wrapper(std::move(node_sizes_declaration), node_body.get()));
-//    node_body->statements.push_back(statement_wrapper(std::move(node_positions_declaration), node_body.get()));
-//
-//    auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", DataType::Mutable, node.tok);
-//    for(int i = 0; i<node.body.size(); i++) {
-//        auto node_array_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
-//        auto node_array = make_array(name_wo_ident+std::to_string(i), sizes[i], node.tok, node_array_declaration.get());
-//        node_array_declaration->to_be_declared = clone_as<NodeArray>(node_array.get());
-//        node_array_declaration->assignee = std::move(node.body[i]);
-//        node_body->statements.push_back(statement_wrapper(std::move(node_array_declaration), node_body.get()));
-//
-//        auto node_const_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
-//        auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), name_wo_ident+std::to_string(i)+".SIZE", DataType::Const, node.tok);
-//        node_const_declaration->to_be_declared = std::move(node_variable);
-//        node_const_declaration->assignee = make_int(sizes[i], node_const_declaration.get());
-//        node_body->statements.push_back(statement_wrapper(std::move(node_const_declaration), node_body.get()));
-//
-//        auto node_while_body = std::make_unique<NodeBody>(node.tok);
-//        auto node_expression = make_binary_expr(ASTType::Integer, "+", node_iterator_var->clone(), make_int(positions[i], &node),nullptr, node.tok);
-//        node_main_array->indexes->params.clear();
-//        node_main_array->indexes->params.push_back(std::move(node_expression));
-//
-//        node_array->indexes->params.push_back(node_iterator_var->clone());
-//        auto node_main_array_copy = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(node_main_array->clone().release()));
-//        node_main_array_copy->name = "_"+node_main_array_copy->name;
-//        auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(node_main_array_copy), std::move(node_array), node.tok);
-//        node_while_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_while_body.get()));
-//        auto node_while_loop = make_while_loop(node_iterator_var.get(), 0, sizes[i], std::move(node_while_body), node_body.get());
-//        node_body->statements.push_back(statement_wrapper(std::move(node_while_loop), node_body.get()));
-//    }
-//    node_body->update_parents(node.parent);
-//    node_body->accept(*this);
-//    node.replace_with(std::move(node_body));
-//}
+}
 
 void ASTDesugarStructs::visit(NodeForEachStatement& node) {
 	// check if keys are either variable or array objects

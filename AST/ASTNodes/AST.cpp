@@ -255,16 +255,6 @@ void NodeStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 	}
 }
 
-// ************* NodeConstStatement ***************
-void NodeConstStatement::accept(ASTVisitor &visitor) {
-    visitor.visit(*this);
-}
-NodeConstStatement::NodeConstStatement(const NodeConstStatement& other)
-        : NodeAST(other), prefix(other.prefix), constants(clone_vector<NodeStatement>(other.constants)) {}
-std::unique_ptr<NodeAST> NodeConstStatement::clone() const {
-    return std::make_unique<NodeConstStatement>(*this);
-}
-
 // ************* NodeStructStatement ***************
 void NodeStructStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
@@ -274,18 +264,6 @@ NodeStructStatement::NodeStructStatement(const NodeStructStatement& other)
 std::unique_ptr<NodeAST> NodeStructStatement::clone() const {
     return std::make_unique<NodeStructStatement>(*this);
 }
-
-// ************* NodeFamilyStatement ***************
-void NodeFamilyStatement::accept(ASTVisitor &visitor) {
-    visitor.visit(*this);
-}
-NodeFamilyStatement::NodeFamilyStatement(const NodeFamilyStatement& other)
-        : NodeAST(other), prefix(other.prefix), members(clone_vector<NodeStatement>(other.members)) {}
-std::unique_ptr<NodeAST> NodeFamilyStatement::clone() const {
-    return std::make_unique<NodeFamilyStatement>(*this);
-}
-
-
 
 // ************* NodeBody ***************
 void NodeBody::accept(ASTVisitor &visitor) {

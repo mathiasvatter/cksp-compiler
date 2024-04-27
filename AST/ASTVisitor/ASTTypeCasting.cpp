@@ -161,7 +161,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 		}
 	}
 
-    if(!node_declaration and !node_ui_control and !node.is_compiler_return and !node.is_local) {
+    if(!node_declaration and !node_ui_control and !node.is_compiler_return and !node.is_local and !node.is_engine) {
 		if(node.declaration->type != ASTType::Unknown and node.type != ASTType::Unknown and node.declaration->type != node.type) {
 			CompileError(ErrorType::TypeError,"Found variables of same name and different types.", node.tok.line, type_to_string(node.declaration->type), type_to_string(node.type), node.tok.file).exit();
 		} else if (node.declaration->type != ASTType::Unknown) {

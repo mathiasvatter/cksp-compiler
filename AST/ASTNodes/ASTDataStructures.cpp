@@ -7,6 +7,8 @@
 #include "../../Lowering/LoweringUIControlArray.h"
 #include "../../Lowering/LoweringNDArray.h"
 #include "../../Lowering/LoweringList.h"
+#include "../../Lowering/LoweringConstStruct.h"
+#include "../../Lowering/LoweringFamilyStruct.h"
 
 // ************* NodeVariable ***************
 void NodeVariable::accept(ASTVisitor &visitor) {
@@ -86,4 +88,36 @@ std::unique_ptr<NodeAST> NodeListStruct::clone() const {
 ASTVisitor* NodeListStruct::get_lowering() const {
 	static LoweringList lowering;
 	return &lowering;
+}
+
+// ************* NodeConstStatement ***************
+void NodeConstStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+NodeConstStatement::NodeConstStatement(const NodeConstStatement& other)
+        : NodeDataStructure(other), constants(clone_unique(other.constants)) {}
+
+std::unique_ptr<NodeAST> NodeConstStatement::clone() const {
+    return std::make_unique<NodeConstStatement>(*this);
+}
+
+ASTVisitor* NodeConstStatement::get_lowering() const {
+    static LoweringConstStruct lowering;
+    return &lowering;
+}
+
+// ************* NodeFamilyStatement ***************
+void NodeFamilyStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+NodeFamilyStatement::NodeFamilyStatement(const NodeFamilyStatement& other)
+        : NodeAST(other), prefix(other.prefix), members(clone_unique(other.members)) {}
+
+std::unique_ptr<NodeAST> NodeFamilyStatement::clone() const {
+    return std::make_unique<NodeFamilyStatement>(*this);
+}
+
+ASTVisitor* NodeFamilyStatement::get_lowering() const {
+    static LoweringFamilyStruct lowering;
+    return &lowering;
 }

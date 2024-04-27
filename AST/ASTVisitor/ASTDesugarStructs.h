@@ -25,10 +25,6 @@ class ASTDesugarStructs: public ASTVisitor {
     /// turn into single assign statements
     void visit(NodeAssignStatement& node) override;
 
-    /// replace const block with single declare statements
-    void visit(NodeConstStatement& node) override;
-    /// replace family block with single declare statements
-    void visit(NodeFamilyStatement& node) override;
     /// alter for loops to while loops
     void visit(NodeForStatement& node) override;
 	void visit(NodeForEachStatement& node) override;
@@ -42,8 +38,8 @@ class ASTDesugarStructs: public ASTVisitor {
 
 private:
     NodeProgram* m_program = nullptr;
-    std::stack<std::string> m_family_prefixes;
-    std::stack<std::string> m_const_prefixes;
+//    std::stack<std::string> m_family_prefixes;
+//    std::stack<std::string> m_const_prefixes;
 
 	std::vector<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_key_value_scope_stack;
 	std::unique_ptr<NodeAST> get_key_value_substitute(const std::string& name);

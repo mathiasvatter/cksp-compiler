@@ -117,10 +117,9 @@ void ASTPrinter::visit(NodeSingleAssignStatement &node) {
 }
 
 void ASTPrinter::visit(NodeConstStatement &node) {
-    std::cout << "Const(" << node.prefix << std::endl;
-    for(auto &stmt: node.constants) {
-        stmt->accept(*this);
-    }
+    std::cout << "Const(" << node.name << std::endl;
+
+    node.constants->accept(*this);
     std::cout << ")";
 }
 
@@ -134,9 +133,7 @@ void ASTPrinter::visit(NodeStructStatement &node) {
 
 void ASTPrinter::visit(NodeFamilyStatement &node) {
     std::cout << "Family(" << node.prefix << std::endl;
-    for(auto &stmt: node.members) {
-        stmt->accept(*this);
-    }
+    node.members->accept(*this);
     std::cout << ")";
 }
 
