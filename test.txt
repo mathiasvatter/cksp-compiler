@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Sat Apr 27 20:39:20 2024 }
+{ Compiled with cksp version 0.0.5 on Sat Apr 27 21:03:46 2024 }
 on init
   declare ?_return_vars_real[5]
   declare !_return_vars_str[5]
@@ -32,6 +32,7 @@ on init
   declare const $bumms__sdf__drei := 2
   declare %bumms__sdf[] := (0, 1, 2)
   declare const $bumms__sdf__SIZE := 4
+  message($bumms__sdf__eins)
   select(3)
   case 1 to 45
     message("d")
@@ -101,12 +102,30 @@ on init
     %_test__lbl_multi[$_iterator] := get_ui_id($_test__lbl_multi0) + $_iterator
     inc($_iterator)
   end while
+  declare %test__tbl_table[12]
+  declare ui_table %test__tbl_table0[] (100, 100, 100)
+  declare ui_table %test__tbl_table1[] (100, 100, 100)
+  declare ui_table %test__tbl_table2[] (100, 100, 100)
+  declare ui_table %test__tbl_table3[] (100, 100, 100)
+  declare ui_table %test__tbl_table4[] (100, 100, 100)
+  declare ui_table %test__tbl_table5[] (100, 100, 100)
+  declare ui_table %test__tbl_table6[] (100, 100, 100)
+  declare ui_table %test__tbl_table7[] (100, 100, 100)
+  declare ui_table %test__tbl_table8[] (100, 100, 100)
+  declare ui_table %test__tbl_table9[] (100, 100, 100)
+  declare ui_table %test__tbl_table10[] (100, 100, 100)
+  declare ui_table %test__tbl_table11[] (100, 100, 100)
+  $_iterator := 0
+  while($_iterator < 12) 
+    %test__tbl_table[$_iterator] := get_ui_id(%test__tbl_table0) + $_iterator
+    inc($_iterator)
+  end while
   declare $bit
-  $bit := .not. (.not. (($bit .and. .not. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (- 0 .and. sh_left(1, 0)))) .and. .not. ((- 0 .and. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (- 0 .and. sh_left(1, 0)))))
+  $bit := .not. (.not. (($bit .and. .not. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (0 .and. sh_left(1, 0)))) .and. .not. ((0 .and. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (0 .and. sh_left(1, 0)))))
   !_loc_var_str[0] := "["
   $lib__i := 0
   while($lib__i <= 31) 
-    !_loc_var_str[0] := %_loc_var_int[0] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(- 1, 32), 0), 31 - $lib__i) .and. 1)
+    !_loc_var_str[0] := %_loc_var_int[0] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(-1, 32), 0), 31 - $lib__i) .and. 1)
     if($lib__i < 31)
       !_loc_var_str[0] := %_loc_var_int[0] & ", "
     end if
@@ -177,7 +196,7 @@ on init
   message("9: " & 9)
   message("10: " & 10)
   declare const $pups_2 := 7
-  message("** Script " & "'" & "MAIN" & "'" & " Compile " & "20:39:20" & " " & "04/27/24" & " **")
+  message("** Script " & "'" & "MAIN" & "'" & " Compile " & "21:03:46" & " " & "04/27/24" & " **")
   set_script_title("MAIN")
   declare const $UI_HEIGHT := 352
   declare const $UI_WIDTH := 785
@@ -189,14 +208,14 @@ on init
   declare %array2[10]
   declare $i
   declare $j
-  $bit := (- sh_right(abs(0) - 1, 31) * ((- sh_right(abs(0) - 1, 31) * sh_right(- 1, 32)) + ($bit .or. sh_left(.not. sh_left(- 1, 32), 0)))) + (- sh_right(abs(1) - 1, 31) * (- sh_right(0, 31) * ($bit .and. .not. sh_left(.not. sh_left(- 1, 32), 0))))
-  $bit := .not. (.not. (($bit .and. .not. sh_left(1, 28)) .and. .not. (($bit .and. .not. sh_left(1, 28)) .and. (- 0 .and. sh_left(1, 28)))) .and. .not. ((- 0 .and. sh_left(1, 28)) .and. .not. (($bit .and. .not. sh_left(1, 28)) .and. (- 0 .and. sh_left(1, 28)))))
-  $bit := .not. (.not. (($bit .and. .not. sh_left(1, 16)) .and. .not. (($bit .and. .not. sh_left(1, 16)) .and. (- 0 .and. sh_left(1, 16)))) .and. .not. ((- 0 .and. sh_left(1, 16)) .and. .not. (($bit .and. .not. sh_left(1, 16)) .and. (- 0 .and. sh_left(1, 16)))))
-  $bit := .not. (.not. (($bit .and. .not. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (- 0 .and. sh_left(1, 0)))) .and. .not. ((- 0 .and. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (- 0 .and. sh_left(1, 0)))))
+  $bit := (- sh_right(abs(0) - 1, 31) * ((- sh_right(abs(0) - 1, 31) * sh_right(-1, 32)) + ($bit .or. sh_left(.not. sh_left(-1, 32), 0)))) + (- sh_right(abs(1) - 1, 31) * (- sh_right(0, 31) * ($bit .and. .not. sh_left(.not. sh_left(-1, 32), 0))))
+  $bit := .not. (.not. (($bit .and. .not. sh_left(1, 28)) .and. .not. (($bit .and. .not. sh_left(1, 28)) .and. (0 .and. sh_left(1, 28)))) .and. .not. ((0 .and. sh_left(1, 28)) .and. .not. (($bit .and. .not. sh_left(1, 28)) .and. (0 .and. sh_left(1, 28)))))
+  $bit := .not. (.not. (($bit .and. .not. sh_left(1, 16)) .and. .not. (($bit .and. .not. sh_left(1, 16)) .and. (0 .and. sh_left(1, 16)))) .and. .not. ((0 .and. sh_left(1, 16)) .and. .not. (($bit .and. .not. sh_left(1, 16)) .and. (0 .and. sh_left(1, 16)))))
+  $bit := .not. (.not. (($bit .and. .not. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (0 .and. sh_left(1, 0)))) .and. .not. ((0 .and. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (0 .and. sh_left(1, 0)))))
   !_loc_var_str[1] := "["
   $lib__i := 0
   while($lib__i <= 31) 
-    !_loc_var_str[1] := %_loc_var_int[1] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(- 1, 32), 0), 31 - $lib__i) .and. 1)
+    !_loc_var_str[1] := %_loc_var_int[1] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(-1, 32), 0), 31 - $lib__i) .and. 1)
     if($lib__i < 31)
       !_loc_var_str[1] := %_loc_var_int[1] & ", "
     end if
@@ -274,7 +293,7 @@ on ui_control($_btn_bums0)
   !_loc_var_str[0] := "["
   $lib__i := 0
   while($lib__i <= 31) 
-    !_loc_var_str[0] := %_loc_var_int[0] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(- 1, 32), 0), 31 - $lib__i) .and. 1)
+    !_loc_var_str[0] := %_loc_var_int[0] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(-1, 32), 0), 31 - $lib__i) .and. 1)
     if($lib__i < 31)
       !_loc_var_str[0] := %_loc_var_int[0] & ", "
     end if
@@ -297,7 +316,7 @@ on ui_control($_btn_bums1)
   !_loc_var_str[4] := "["
   $lib__i := 0
   while($lib__i <= 31) 
-    !_loc_var_str[4] := %_loc_var_int[4] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(- 1, 32), 0), 31 - $lib__i) .and. 1)
+    !_loc_var_str[4] := %_loc_var_int[4] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(-1, 32), 0), 31 - $lib__i) .and. 1)
     if($lib__i < 31)
       !_loc_var_str[4] := %_loc_var_int[4] & ", "
     end if

@@ -9,6 +9,27 @@
 
 class ConstantFolding : public ASTVisitor {
 public:
+
+    void inline visit(NodeUnaryExpr& node) override {
+        node.operand->accept(*this);
+        auto int_node = cast_node<NodeInt>(node.operand.get());
+        auto real_node = cast_node<NodeReal>(node.operand.get());
+        if (int_node) {
+            if (node.op.type == token::SUB) {
+                auto new_node = std::make_unique<NodeInt>(-int_node->value, node.tok);
+                new_node->parent = node.parent;
+                node.replace_with(std::move(new_node));
+            }
+        }
+        if (real_node) {
+            if (node.op.type == token::SUB) {
+                auto new_node = std::make_unique<NodeReal>(-real_node->value, node.tok);
+                new_node->parent = node.parent;
+                node.replace_with(std::move(new_node));
+            }
+        }
+    }
+
 	void inline visit(NodeBinaryExpr& node) override {
 		node.left->accept(*this);
 		node.right->accept(*this);
