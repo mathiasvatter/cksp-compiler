@@ -1015,6 +1015,7 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
                 "Expected closing bracket after ui_control array size.", "]", peek()));
             }
             consume(); // consume ]
+
         } else {
             control_array_sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, get_tok()));
         }
