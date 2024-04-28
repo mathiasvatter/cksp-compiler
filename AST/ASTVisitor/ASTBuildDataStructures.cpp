@@ -86,9 +86,21 @@ void ASTBuildDataStructures::visit(NodeUIControl &node) {
 	}
 	node.declaration = engine_widget;
 
-	// in case of nd array it will get lowered here:
 	node.control_var->accept(*this);
 	node.params->accept(*this);
+
+    // swap ui_control array param list with node.sizes if not empty
+    // to get the ui_control array size in to node.sizes
+//    if(!node.sizes->params.empty()) {
+//        if(auto node_array = cast_node<NodeArray>(node.control_var.get())) {
+//            std::swap(node.sizes, node_array->sizes);
+//            node_array->set_child_parents();
+//        } else if (auto node_array = cast_node<NodeNDArray>(node.control_var.get())) {
+//            std::swap(node.sizes, node_array->sizes);
+//            node_array->set_child_parents();
+//        }
+//        node.set_child_parents();
+//    }
 }
 
 

@@ -10,15 +10,18 @@
 /// called bei NodeUIControl and NodeSingleDeclareStatement
 class LoweringUIControlArray : public ASTLowering {
 private:
+    // size of e.g. ui_table array
+    std::unique_ptr<NodeParamList> m_ui_control_var_size = nullptr;
+    // size of the ui array -> number of ui_controls that need to be declared
 	std::unique_ptr<NodeAST> m_ui_array_size = nullptr;
 	std::unique_ptr<NodeUIControl> m_ui_control_array = nullptr;
 public:
+
 	void visit(NodeSingleDeclareStatement &node) override {
 		auto node_ui_control = cast_node<NodeUIControl>(node.to_be_declared.get());
 		if(node_ui_control) {
 			if(!is_ui_control_array(node_ui_control)) return;
 			m_ui_control_array = clone_as<NodeUIControl>(node_ui_control);
-			m_ui_control_array->update_parents(nullptr);
 			if(m_ui_control_array->control_var->get_node_type() == NodeType::NDArray) {
 				// get correct size for ui control array by lowering ndarray
 				m_ui_control_array->control_var->accept(*this);
@@ -55,8 +58,10 @@ public:
 		if(node.sizes->params.empty()) error.exit();
 
 		m_ui_array_size = node.sizes->params[0]->clone();
-//		m_ui_control_array->sizes = clone_as<NodeParamList>(node.sizes.get());
-//		m_ui_control_array->sizes->parent = m_ui_control_array.get();
+        // real array of ui control is saved in m_ui_control_array->sizes
+        if(!m_ui_control_array->sizes->params.empty()) {
+            m_ui_control_var_size = clone_as<NodeParamList>(m_ui_control_array->sizes.get());
+        }
 	}
 
 	void visit(NodeNDArray &node) override {
@@ -98,8 +103,14 @@ public:
 		int array_size = array_size_res.unwrap();
 		std::string new_control_name = ui_control.control_var->name;
 		auto new_ui_control_template = clone_as<NodeUIControl>(ui_control.declaration);
+        new_ui_control_template->is_reference = false;
+        // if is ui_table array -> set sizes to ui_table array sizes
+        if(auto node_array = cast_node<NodeArray>(new_ui_control_template->control_var.get())) {
+            node_array->sizes = clone_as<NodeParamList>(m_ui_control_var_size.get());
+            node_array->set_child_parents();
+        }
 		for (int i = 0; i < array_size; i++) {
-			auto new_ui_control = clone_as<NodeUIControl>(ui_control.declaration);
+			auto new_ui_control = clone_as<NodeUIControl>(new_ui_control_template.get());
 			new_ui_control->control_var->name = new_control_name + std::to_string(i);
             new_ui_control->control_var->is_reference = false;
 			new_ui_control->params = clone_as<NodeParamList>(ui_control.params.get());
