@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Sun Apr 28 16:39:32 2024 }
+{ Compiled with cksp version 0.0.5 on Sun Apr 28 17:46:02 2024 }
 on init
   declare ?_return_vars_real[5]
   declare !_return_vars_str[5]
@@ -27,12 +27,6 @@ on init
     inc($_iterator)
   end while
   set_control_par_str(get_ui_id(%var_repl_repl), $CONTROL_PAR_HELP, "Listen to this ensemble separately")
-  declare const $bumms__sdf__eins := 0
-  declare const $bumms__sdf__zwei := 1
-  declare const $bumms__sdf__drei := 2
-  declare %bumms__sdf[] := (0, 1, 2)
-  declare const $bumms__sdf__SIZE := 4
-  message($bumms__sdf__eins)
   select(3)
   case 1 to 45
     message("d")
@@ -196,7 +190,7 @@ on init
   message("9: " & 9)
   message("10: " & 10)
   declare const $pups_2 := 7
-  message("** Script " & "'" & "MAIN" & "'" & " Compile " & "16:39:32" & " " & "04/28/24" & " **")
+  message("** Script " & "'" & "MAIN" & "'" & " Compile " & "17:46:02" & " " & "04/28/24" & " **")
   set_script_title("MAIN")
   declare const $UI_HEIGHT := 352
   declare const $UI_WIDTH := 785

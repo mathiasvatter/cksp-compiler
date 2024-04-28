@@ -5,6 +5,7 @@
 
 #include "AST.h"
 #include "../ASTVisitor/ASTVisitor.h"
+#include "../../Desugaring/DesugarDeclareAssign.h"
 
 // ************* NodeAST Base Class ***************
 void NodeAST::accept(ASTVisitor &visitor) {}
@@ -139,6 +140,11 @@ std::unique_ptr<NodeAST> NodeAssignStatement::clone() const {
     return std::make_unique<NodeAssignStatement>(*this);
 }
 
+ASTDesugaring* NodeAssignStatement::get_desugaring() const {
+    static DesugarDeclareAssign desugaring;
+    return &desugaring;
+}
+
 // ************* NodeSingleAssignStatement ***************
 void NodeSingleAssignStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
@@ -174,6 +180,11 @@ void NodeDeclareStatement::update_parents(NodeAST* new_parent)  {
 		decl->update_parents(this);
 	}
 	if(assignee) assignee->update_parents(this);
+}
+
+ASTDesugaring* NodeDeclareStatement::get_desugaring() const {
+    static DesugarDeclareAssign desugaring;
+    return &desugaring;
 }
 
 

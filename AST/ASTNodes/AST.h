@@ -14,6 +14,7 @@
 
 #include "ASTHelper.h"
 
+class ASTDesugaring;
 struct NodeAST {
     Token tok;
     ASTType type;
@@ -39,6 +40,9 @@ struct NodeAST {
 	[[nodiscard]] virtual ASTVisitor* get_lowering() const {
 		return nullptr;
 	}
+    [[nodiscard]] virtual ASTDesugaring* get_desugaring() const {
+        return nullptr;
+    }
     NodeType get_node_type() const { return node_type; }
 };
 
@@ -263,6 +267,8 @@ struct NodeAssignStatement: NodeAST {
         array_variable -> update_token_data(token);
         assignee -> update_token_data(token);
     }
+
+    ASTDesugaring* get_desugaring() const override;
 };
 
 struct NodeSingleAssignStatement : NodeAST {
@@ -330,6 +336,7 @@ struct NodeDeclareStatement : NodeAST {
         }
         assignee -> update_token_data(token);
     }
+    ASTDesugaring* get_desugaring() const override;
 };
 
 struct NodeSingleDeclareStatement : NodeAST {

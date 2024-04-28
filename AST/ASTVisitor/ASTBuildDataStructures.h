@@ -10,9 +10,18 @@
 
 /// complete ASTNodes like arrays, ui controls, etc., fill in declaration information by
 /// tracking data structure definitions with DefinitionProvider
+/// set scopes for body nodes
+/// add scope to the following:
+// if-statement
+// select-statement
+// while-statement
+// function definition
+// callback
 class ASTBuildDataStructures: public ASTVisitor {
 public:
 	explicit ASTBuildDataStructures(DefinitionProvider* definition_provider);
+
+    void visit(NodeProgram& node) override;
 	void visit(NodeBody& node) override;
 	void visit(NodeUIControl& node) override;
 	void visit(NodeArray& node) override;
@@ -24,7 +33,8 @@ public:
 	void visit(NodeVariable& node) override;
 
 private:
-	DefinitionProvider* m_def_provider;
+    NodeProgram* m_program = nullptr;
+	DefinitionProvider* m_def_provider = nullptr;
 
     static inline ASTType infer_type_from_identifier(std::string& var_name) {
         ASTType type = ASTType::Unknown;
