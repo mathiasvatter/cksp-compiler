@@ -6,7 +6,21 @@
 
 ASTBuildDataStructures::ASTBuildDataStructures(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
+void ASTBuildDataStructures::visit(NodeProgram& node) {
+    m_program = &node;
+    for(auto & callback : node.callbacks) {
+        callback->accept(*this);
+    }
+    for(auto & function_definition : node.function_definitions) {
+        function_definition->accept(*this);
+    }
+}
+
 void ASTBuildDataStructures::visit(NodeBody &node) {
+    if(node.parent->get_node_type() != NodeType::Body) {
+        node.scope = true;
+    }
+    // add scope for body
 	if(node.scope) m_def_provider->add_scope();
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);

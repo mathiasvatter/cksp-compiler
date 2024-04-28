@@ -38,7 +38,7 @@ public:
         }
     };
 
-    void visit(NodeFamilyStatement& node) {
+    void visit(NodeFamilyStatement& node) override {
         std::string pref = node.prefix;
         if(!m_family_prefixes.empty()) pref = m_family_prefixes.top() + "." + node.prefix;
         m_family_prefixes.push(pref);
