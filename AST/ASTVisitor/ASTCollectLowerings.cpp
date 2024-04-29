@@ -39,7 +39,6 @@ void ASTCollectLowerings::visit(NodeConstStatement &node) {
 }
 
 void ASTCollectLowerings::visit(NodeFamilyStatement &node) {
-
     if(auto lowering = node.get_lowering()) {
         node.accept(*lowering);
     }

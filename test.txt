@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Sun Apr 28 17:46:02 2024 }
+{ Compiled with cksp version 0.0.5 on Mon Apr 29 12:05:37 2024 }
 on init
   declare ?_return_vars_real[5]
   declare !_return_vars_str[5]
@@ -37,9 +37,20 @@ on init
   declare $lib__ii
   declare ui_panel $__table 
   set_control_par(get_ui_id($__table), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+  declare %array[10] := (3, 4, 6, 8, 10, 15, 200, 1000, 1001, 3000)
   $lib__i := 0
   while($lib__i <= 1) 
-    message("df")
+    $lib__ii := 0
+    while($lib__ii <= 4) 
+      declare ~archi := 4.500000000000000
+      %_loc_var_int[0] := 0
+      while(%_loc_var_int[0] <= (num_elements(%array) - 1)) 
+        message(%array[%_loc_var_int[0]])
+        inc(%_loc_var_int[0])
+      end while
+      message("df")
+      inc($lib__ii)
+    end while
     inc($lib__i)
   end while
   declare const $test__lbl_multi__SIZE_D1 := 23
@@ -116,17 +127,17 @@ on init
   end while
   declare $bit
   $bit := .not. (.not. (($bit .and. .not. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (0 .and. sh_left(1, 0)))) .and. .not. ((0 .and. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (0 .and. sh_left(1, 0)))))
-  !_loc_var_str[0] := "["
+  !_loc_var_str[1] := "["
   $lib__i := 0
   while($lib__i <= 31) 
-    !_loc_var_str[0] := %_loc_var_int[0] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(-1, 32), 0), 31 - $lib__i) .and. 1)
+    !_loc_var_str[1] := %_loc_var_int[1] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(-1, 32), 0), 31 - $lib__i) .and. 1)
     if($lib__i < 31)
-      !_loc_var_str[0] := %_loc_var_int[0] & ", "
+      !_loc_var_str[1] := %_loc_var_int[1] & ", "
     end if
     inc($lib__i)
   end while
-  !_loc_var_str[0] := %_loc_var_int[0] & "]"
-  message(%_loc_var_int[0])
+  !_loc_var_str[1] := %_loc_var_int[1] & "]"
+  message(%_loc_var_int[1])
   declare $s := 2
   declare const $arr__SIZE_D1 := 128
   declare const $arr__SIZE_D2 := 2
@@ -190,14 +201,13 @@ on init
   message("9: " & 9)
   message("10: " & 10)
   declare const $pups_2 := 7
-  message("** Script " & "'" & "MAIN" & "'" & " Compile " & "17:46:02" & " " & "04/28/24" & " **")
+  message("** Script " & "'" & "MAIN" & "'" & " Compile " & "12:05:37" & " " & "04/29/24" & " **")
   set_script_title("MAIN")
   declare const $UI_HEIGHT := 352
   declare const $UI_WIDTH := 785
   set_ui_height_px($UI_HEIGHT)
   set_ui_width_px($UI_WIDTH)
   set_snapshot_type(0)
-  declare %array[10] := (3, 4, 6, 8, 10, 15, 200, 1000, 1001, 3000)
   declare $idx
   declare %array2[10]
   declare $i
@@ -206,17 +216,17 @@ on init
   $bit := .not. (.not. (($bit .and. .not. sh_left(1, 28)) .and. .not. (($bit .and. .not. sh_left(1, 28)) .and. (0 .and. sh_left(1, 28)))) .and. .not. ((0 .and. sh_left(1, 28)) .and. .not. (($bit .and. .not. sh_left(1, 28)) .and. (0 .and. sh_left(1, 28)))))
   $bit := .not. (.not. (($bit .and. .not. sh_left(1, 16)) .and. .not. (($bit .and. .not. sh_left(1, 16)) .and. (0 .and. sh_left(1, 16)))) .and. .not. ((0 .and. sh_left(1, 16)) .and. .not. (($bit .and. .not. sh_left(1, 16)) .and. (0 .and. sh_left(1, 16)))))
   $bit := .not. (.not. (($bit .and. .not. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (0 .and. sh_left(1, 0)))) .and. .not. ((0 .and. sh_left(1, 0)) .and. .not. (($bit .and. .not. sh_left(1, 0)) .and. (0 .and. sh_left(1, 0)))))
-  !_loc_var_str[1] := "["
+  !_loc_var_str[2] := "["
   $lib__i := 0
   while($lib__i <= 31) 
-    !_loc_var_str[1] := %_loc_var_int[1] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(-1, 32), 0), 31 - $lib__i) .and. 1)
+    !_loc_var_str[2] := %_loc_var_int[2] & (sh_right((- sh_right(abs(0) - 1, 31) * $bit) + sh_left(sh_right($bit, 0) .and. .not. sh_left(-1, 32), 0), 31 - $lib__i) .and. 1)
     if($lib__i < 31)
-      !_loc_var_str[1] := %_loc_var_int[1] & ", "
+      !_loc_var_str[2] := %_loc_var_int[2] & ", "
     end if
     inc($lib__i)
   end while
-  !_loc_var_str[1] := %_loc_var_int[1] & "]"
-  message(%_loc_var_int[1])
+  !_loc_var_str[2] := %_loc_var_int[2] & "]"
+  message(%_loc_var_int[2])
   declare ui_menu $table_tbl 
   set_control_par(get_ui_id($table_tbl), $CONTROL_PAR_PARENT_PANEL, get_ui_id($__table))
   $lib__i := 0
