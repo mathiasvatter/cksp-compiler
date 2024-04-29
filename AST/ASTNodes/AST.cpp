@@ -6,6 +6,8 @@
 #include "AST.h"
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Desugaring/DesugarDeclareAssign.h"
+#include "../../Desugaring/DesugarForStatement.h"
+#include "../../Desugaring/DesugarForEachStatement.h"
 
 // ************* NodeAST Base Class ***************
 void NodeAST::accept(ASTVisitor &visitor) {}
@@ -323,6 +325,11 @@ void NodeForStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST>
     }
 }
 
+ASTDesugaring* NodeForStatement::get_desugaring() const {
+    static DesugarForStatement desugaring;
+    return &desugaring;
+}
+
 // ************* NodeForEachStatement ***************
 void NodeForEachStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
@@ -337,6 +344,11 @@ void NodeForEachStatement::replace_child(NodeAST* oldChild, std::unique_ptr<Node
     if (range.get() == oldChild) {
         range = std::move(newChild);
     }
+}
+
+ASTDesugaring* NodeForEachStatement::get_desugaring() const {
+    static DesugarForEachStatement desugaring;
+    return &desugaring;
 }
 
 // ************* NodeWhileStatement ***************

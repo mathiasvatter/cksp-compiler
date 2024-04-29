@@ -6,6 +6,11 @@
 
 #include "../AST/ASTVisitor/ASTVisitor.h"
 
+/**
+ * Desugaring is the process of rewriting syntactic sugar
+ * constructs into more basic constructs.
+ *
+ */
 class ASTDesugaring : public ASTVisitor {
 public:
     ASTDesugaring() =default;

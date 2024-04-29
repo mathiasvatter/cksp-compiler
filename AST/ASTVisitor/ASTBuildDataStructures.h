@@ -8,15 +8,16 @@
 #include "../ASTNodes/AST.h"
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
 
-/// complete ASTNodes like arrays, ui controls, etc., fill in declaration information by
-/// tracking data structure definitions with DefinitionProvider
-/// set scopes for body nodes
-/// add scope to the following:
-// if-statement
-// select-statement
-// while-statement
-// function definition
-// callback
+/**
+ * This class completes ASTNodes like arrays, UI controls, etc., by filling in declaration information.
+ * It tracks data structure definitions with DefinitionProvider and sets scopes for body nodes.
+ * It adds scope to the following:
+ * - if-statement
+ * - select-statement
+ * - while-statement
+ * - function definition
+ * - callback
+ */
 class ASTBuildDataStructures: public ASTVisitor {
 public:
 	explicit ASTBuildDataStructures(DefinitionProvider* definition_provider);

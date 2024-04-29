@@ -609,6 +609,7 @@ struct NodeForStatement : NodeAST {
         if(step) step ->update_token_data(token);
         statements->update_token_data(token);
     }
+    ASTDesugaring* get_desugaring() const override;
 };
 
 struct NodeForEachStatement : NodeAST {
@@ -641,6 +642,7 @@ struct NodeForEachStatement : NodeAST {
         range -> update_token_data(token);
         statements->update_token_data(token);
     }
+    ASTDesugaring* get_desugaring() const override;
 };
 
 struct NodeWhileStatement : NodeAST {
