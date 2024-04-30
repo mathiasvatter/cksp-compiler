@@ -21,6 +21,7 @@ declare that_list: List := List(39, List(40, List(41, this_list)))
 message(that_list.next.value)
 
 
+
 {-------------------------------------------------------------------------------------------
                                         Post Lowering
 --------------------------------------------------------------------------------------------}
@@ -59,6 +60,73 @@ end function
 function nil() -> result
     result := -1  // -1 repräsentiert `nil` in dieser Implementierung
 end function
+
+
+{-------------------------------------------------------------------------------------------
+                                Pre Lowering recursive functions
+--------------------------------------------------------------------------------------------}
+
+function map(ls, func)
+    if ls = nil()
+        return nil()
+    else
+        new_next := map(ls.next, func)  // Rekursiver Aufruf
+        return List(func(ls.value), new_next)
+    end function
+end function
+
+function map_in_place(ls, func)
+    if ls # nil()
+        ls.value = func(ls.value)
+        map_in_place(ls.next, func)  // Rekursiver Aufruf
+    end if
+end function
+
+function double(x)
+    return x * 2
+end function
+
+message(map(that_list, double))
+
+map_in_place(that_list, double)
+
+{-------------------------------------------------------------------------------------------
+                                Post Lowering recursive functions
+--------------------------------------------------------------------------------------------}
+
+// inlining of map call
+// Funktion zum Verdoppeln jedes Listenelements
+function map(ls, func)
+    current_pointer := ls  // Beginne mit that_list
+    if(current_pointer = -1)
+        return -1
+    else
+        new_next := -1
+        while (current_pointer # -1)
+            new_next := List.__init__(func(%List.value[current_pointer]), new_next)
+            current_pointer := %List.next[current_pointer]  // Gehe zum nächsten Element -> recursive call
+            // look for the return statement -> bind to recursive assignment -> 
+            // new_next := List(func(ls.value), new_next)
+        end while
+        return new_next
+    end if
+end function
+message(map(that_list, double))
+
+
+function map_in_place(ls, func)
+    current_pointer := ls
+    if(current_pointer # -1)
+        while(current_pointer # -1)
+            List.value[current_pointer] := double(List.value[current_pointer])
+            current_pointer := List.next[current_pointer]
+        end while
+    end if
+end function
+
+
+
+
 
 
 
