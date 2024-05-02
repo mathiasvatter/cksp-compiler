@@ -6,12 +6,13 @@
 - rename local variables to get lexical scoping
 - turn local variables into global array
 
-## 2. Data Structure declaration and dynamic allocation
+## 2. Rekursive Data Structure declaration and dynamic allocation
 - Allow declaration of structs by lowering them to arrays
 - Allow dynamic allocation by tracking them in a global array
+- Allow recursive data structures by using pointers to the next index of the global struct array
 - Add nil to reference an uninitialized struct
 - Add type 'object' to reference any struct
-- Add methods to structs (__init__, __repr__, ...)
+- Add methods to structs (`__init__`, `__repr__`, ...)
 
 ```c
 struct List
@@ -63,39 +64,8 @@ function nil() -> result
 end function
 ```
 
-## 3. Recursive Data Structures
-- Allow recursive data structures by using pointers to the next index of the global struct array
+## 3. Allow recursive Functions (Defunctionalize the Continuation)
+- Transform recursive Functions into continuation passing style
+- Defunctionalize by turning functions into data structures
 - Allow recursive functions on these data structures by lowering them to loops
-
-```c
-function map(ls, func)
-    if ls = nil()
-        return nil()
-    else
-        new_next := map(ls.next, func)  // Rekursiver Aufruf
-        return List(func(ls.value), new_next)
-    end function
-end function
-
-function double(x)
-    return x * 2
-end function
-```
-Gets lowered to:
-```c
-function map(ls, func)
-    current_pointer := ls  // Beginne mit that_list
-    if(current_pointer = -1)
-        return -1
-    else
-        new_next := -1
-        while (current_pointer # -1)
-            new_next := List.__init__(func(%List.value[current_pointer]), new_next)
-            current_pointer := %List.next[current_pointer]  // Gehe zum nächsten Element -> recursive call
-            // look for the return statement -> bind to recursive assignment -> 
-            // new_next := List(func(ls.value), new_next)
-        end while
-        return new_next
-    end if
-end function
-```
+- <https://www.pathsensitive.com/2019/07/the-best-refactoring-youve-never-heard.html>
