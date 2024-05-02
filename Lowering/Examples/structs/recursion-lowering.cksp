@@ -1,0 +1,123 @@
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering
+--------------------------------------------------------------------------------------------}
+
+struct Tree
+	declare value: int
+	declare left: Tree
+	declare right: Tree
+
+	function __init__(self, value: int, left: Tree, right: Tree)
+		self.value := value
+		self.left := left
+		self.right := right
+	end function
+end struct
+
+
+function print_tree(tree: Tree)
+	if tree # nil
+		print_tree(tree.left)
+		message(tree.value)
+		print_tree(tree.right)
+	end if
+end function
+
+{-------------------------------------------------------------------------------------------
+								Step 1: CPS Convertion
+--------------------------------------------------------------------------------------------}
+// add function as new parameter
+function print_tree(tree: Tree, cont: function)
+	if tree # nil
+		print_tree(tree.left, continuation(tree, cont))
+	else
+		cont()
+	end if
+end function
+
+function continuation(tree: Tree, cont: function)
+	message(tree.value)
+	print_tree(tree.right, cont)
+end function
+
+{-------------------------------------------------------------------------------------------
+							Step 2: Defunctionalize the continuation
+--------------------------------------------------------------------------------------------}
+
+// declare continuation data type
+struct Cont
+	declare tree: Tree
+	declare next: Cont
+
+	function __init__(self, tree: Tree, next: Cont)
+		self.tree := tree
+		self.next := next
+	end function
+end struct
+
+function print_tree(tree: Tree, c: Cont)
+	if tree # nil
+		print_tree(tree.left, new Cont(tree, c))
+	else
+		apply(c)
+	end if
+end function
+
+function apply(c: Cont)
+	if c # nil
+		message(c.tree.value)
+		print_tree(c.tree.right, c.next)
+	end if
+end function
+
+{-------------------------------------------------------------------------------------------
+							Step 3: Inlining of apply -> tail recursion
+--------------------------------------------------------------------------------------------}
+
+// declare continuation data type
+struct Cont
+	declare tree: Tree
+	declare next: Cont
+
+	function __init__(self, tree: Tree, next: Cont)
+		self.tree := tree
+		self.next := next
+	end function
+end struct
+
+function print_tree(tree: Tree, c: Cont)
+	if tree # nil
+		print_tree(tree.left, new Cont(tree, c))
+	else
+		if c # nil
+			message(c.tree.value)
+			print_tree(c.tree.right, c.next)
+		end if
+	end if
+end function
+
+{-------------------------------------------------------------------------------------------
+							Step 4: Make tail recursion iterative
+--------------------------------------------------------------------------------------------}
+
+function print_tree(tree: Tree, c: Cont)
+	while(1)
+		if tree # nil
+			c := new Cont(tree, c)
+			tree := tree.left
+		else
+			if c # nil
+				message(c.tree.value)
+				tree := c.tree.right
+				c := c.next
+			else
+				continue
+			end if
+		end if
+	end while
+end function
+
+
+
+
