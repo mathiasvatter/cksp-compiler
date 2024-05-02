@@ -39,18 +39,25 @@ end function
 								Step 1: CPS Convertion
 --------------------------------------------------------------------------------------------}
 
-function sum_values(tree: Tree, cont: function) 
-    if tree # nil
-        sum_values(tree.left, continuation_left(tree, cont))
+function sum_values_cps(tree: Tree, cont: function) -> int
+    if tree # nil then
+        sum_values_cps(tree.left, lambda left_sum:
+            sum_values_cps(tree.right, lambda right_sum:
+                cont(tree.value + left_sum + right_sum)))
     else
         cont(0)
     end if
 end function
 
-function continuation_left(tree: Tree, cont: function)
-    return sum_values(tree.right, continuation_right(tree, cont))
-end function
+struct Cons
+    declare tree_left: Tree
+    declare tree_right: Tree
+    declare tree: Tree
+    declare 
 
-function continuation_right(tree: Tree, cont: function, left_sum: int)
-    return cont(tree.value + left_sum + sum_values(tree.right))
-end function
+
+end struct
+
+
+end struct
+
