@@ -34,7 +34,7 @@ on init
     declare %List.allocation[MAX_STRUCTS] := (0)
     declare %List.value[MAX_STRUCTS]             // Wert des Elements
     declare %List.next[MAX_STRUCTS] := (-1)      // Verweis auf den Index des nächsten Elements
-    declare %List.free_idx := 0                  // Zeigt auf den ersten freien Platz im Array
+    declare $List.free_idx := 0                  // Zeigt auf den ersten freien Platz im Array
 
     declare $this_list := -1 // nil
     $this_list := List.__init__(42, -1)
