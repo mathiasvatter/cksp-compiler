@@ -29,12 +29,10 @@ public:
 
     void visit(NodeGetControlStatement& node) override;
 
-//    void visit(NodeForStatement& node) override;
     void visit(NodeWhileStatement& node) override;
     void visit(NodeIfStatement& node) override;
 	void visit(NodeSelectStatement& node) override;
 
-//    void visit(NodeListStruct& node) override;
     void visit(NodeBody& node) override;
     void visit(NodeStatement& node) override;
     void visit(NodeArray& node) override;

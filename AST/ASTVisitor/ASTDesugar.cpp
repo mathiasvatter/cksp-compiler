@@ -4,7 +4,7 @@
 
 #include "ASTDesugar.h"
 #include "../../Interpreter/SimpleExprInterpreter.h"
-#include "../../Interpreter/ConstantFolding.h"
+#include "../../Optimization/ConstantFolding.h"
 
 ASTDesugar::ASTDesugar(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {}
 
