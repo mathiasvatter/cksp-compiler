@@ -25,6 +25,9 @@ DefinitionProvider::DefinitionProvider(
 }
 
 NodeDataStructure* DefinitionProvider::get_declaration(NodeDataStructure* var) {
+	if(var->name == "SEQ_PARAMETERS")  {
+
+	}
     // get builtin declaration if it exists
     NodeDataStructure *node_builtin_declaration = nullptr;
     if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
@@ -44,7 +47,7 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeDataStructure* var) {
             compile_error.print();
         } else {
             m_declared_data_structures.back().insert({var->name, clone_as<NodeDataStructure>(var)});
-            return var;
+//            return var;
         }
     // if var reference
     } else {
@@ -92,7 +95,7 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var) {
 		compile_error.print();
 	} else {
 		m_declared_data_structures.back().insert({var->name, clone_as<NodeDataStructure>(var)});
-		return var;
+//		return var;
 	}
 	return nullptr;
 }
@@ -237,7 +240,7 @@ NodeUIControl *DefinitionProvider::get_declared_control(NodeUIControl *ctr) {
     return nullptr;
 }
 
-bool DefinitionProvider::add_scope() {
+bool DefinitionProvider::add_scope(NodeBody* body) {
     m_declared_variables.emplace_back();
     m_declared_arrays.emplace_back();
     m_declared_controls.emplace_back();
@@ -245,10 +248,21 @@ bool DefinitionProvider::add_scope() {
     return true;
 }
 
-bool DefinitionProvider::remove_scope() {
+bool DefinitionProvider::remove_scope(NodeBody* body) {
     if(m_declared_data_structures.empty() || m_declared_variables.empty() || m_declared_arrays.empty() || m_declared_controls.empty()) {
         return false;
     }
+	// do not remove global scope if parent of body is on init callback
+	if(body->parent->get_node_type() == NodeType::Callback) {
+		if(auto node_callback = cast_node<NodeCallback>(body->parent)){
+			if(node_callback->begin_callback == "on init") {
+				return false;
+			}
+		}
+	}
+	if(m_declared_data_structures.size() == 1) {
+
+	}
     m_declared_variables.pop_back();
     m_declared_arrays.pop_back();
     m_declared_controls.pop_back();

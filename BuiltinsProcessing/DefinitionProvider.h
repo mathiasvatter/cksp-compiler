@@ -57,8 +57,8 @@ public:
 	void set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> property_functions);
     void add_property_function(std::unique_ptr<NodeFunctionHeader> property_function);
 
-	bool add_scope();
-	bool remove_scope();
+	bool add_scope(NodeBody* body);
+	bool remove_scope(NodeBody* body);
 
 	void match_data_structure(NodeDataStructure* reference, NodeDataStructure* declaration);
 //    std::unique_ptr<NodeDataStructure> build_data_structure(std::unique_ptr<NodeVariable> var, NodeDataStructure* declaration);
@@ -83,6 +83,7 @@ public:
 
     /// declared everything
     std::vector<std::unordered_map<std::string, std::unique_ptr<NodeDataStructure>, StringHash, StringEqual>> m_declared_data_structures;
+
     NodeDataStructure* get_declared_data_structure(const std::string& data);
 
 

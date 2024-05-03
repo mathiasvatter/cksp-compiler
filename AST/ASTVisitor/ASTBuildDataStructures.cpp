@@ -17,15 +17,17 @@ void ASTBuildDataStructures::visit(NodeProgram& node) {
 }
 
 void ASTBuildDataStructures::visit(NodeBody &node) {
-    if(node.parent->get_node_type() != NodeType::Body) {
+    if(node.parent->get_node_type() != NodeType::Body and !is_instance_of<NodeDataStructure>(node.parent)) {
         node.scope = true;
     }
     // add scope for body
-	if(node.scope) m_def_provider->add_scope();
+	if(node.scope) m_def_provider->add_scope(&node);
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
 	}
-	if(node.scope) m_def_provider->remove_scope();
+	if(node.scope) {
+		m_def_provider->remove_scope(&node);
+	}
 }
 
 void ASTBuildDataStructures::visit(NodeArray &node) {
@@ -61,10 +63,11 @@ void ASTBuildDataStructures::visit(NodeNDArray& node) {
     node.type = infer_type_from_identifier(node.name);
 
 	auto node_declaration = m_def_provider->get_declaration(&node);
-	if(!node_declaration) {
+	if(!node_declaration and node.is_reference) {
 		CompileError(ErrorType::Variable, "Array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return;
 	}
+	if(!node_declaration) return;
 
 	m_def_provider->match_data_structure(node_declaration, &node);
 
