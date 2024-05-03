@@ -8,6 +8,9 @@ ASTBuildDataStructures::ASTBuildDataStructures(DefinitionProvider *definition_pr
 
 void ASTBuildDataStructures::visit(NodeProgram& node) {
     m_program = &node;
+	check_unique_callbacks(node);
+	m_init_callback = move_on_init_callback(node);
+
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }
@@ -16,29 +19,44 @@ void ASTBuildDataStructures::visit(NodeProgram& node) {
     }
 }
 
+void ASTBuildDataStructures::visit(NodeCallback& node) {
+	if(&node == m_init_callback) {
+		m_is_init_callback = true;
+	}
+	if(node.callback_id) node.callback_id->accept(*this);
+	node.statements->accept(*this);
+	m_is_init_callback = false;
+}
+
+
 void ASTBuildDataStructures::visit(NodeBody &node) {
     if(node.parent->get_node_type() != NodeType::Body and !is_instance_of<NodeDataStructure>(node.parent)) {
         node.scope = true;
     }
+
+
     // add scope for body
-	if(node.scope) m_def_provider->add_scope(&node);
+	if(node.scope) m_def_provider->add_scope();
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
 	}
 	if(node.scope) {
-		m_def_provider->remove_scope(&node);
+		m_def_provider->remove_scope();
 	}
 }
 
 void ASTBuildDataStructures::visit(NodeArray &node) {
+	node.sizes->accept(*this);
+	node.indexes->accept(*this);
+
     node.type = infer_type_from_identifier(node.name);
 
-	auto node_declaration = m_def_provider->get_declaration(&node);
+	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
 	if(!node_declaration) {
 		return;
 	}
 
-	m_def_provider->match_data_structure(node_declaration, &node);
+	m_def_provider->match_data_structure(&node, node_declaration);
 
 	// check if it is NodeListStructReference
 	if(node_declaration->get_node_type() == NodeType::ListStructReference) {
@@ -60,16 +78,21 @@ void ASTBuildDataStructures::visit(NodeArray &node) {
 }
 
 void ASTBuildDataStructures::visit(NodeNDArray& node) {
+	node.sizes->accept(*this);
+	node.indexes->accept(*this);
+
     node.type = infer_type_from_identifier(node.name);
 
-	auto node_declaration = m_def_provider->get_declaration(&node);
+	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
 	if(!node_declaration and node.is_reference) {
-		CompileError(ErrorType::Variable, "Array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+		CompileError(ErrorType::Variable, "Multidimensional array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return;
 	}
-	if(!node_declaration) return;
+	if(!node_declaration and !node.is_reference) {
+		return;
+	}
 
-	m_def_provider->match_data_structure(node_declaration, &node);
+	m_def_provider->match_data_structure(&node, node_declaration);
 
 	// check if it is NodeListStructReference
 	if(node_declaration->get_node_type() == NodeType::ListStruct) {
@@ -106,30 +129,24 @@ void ASTBuildDataStructures::visit(NodeUIControl &node) {
 	node.control_var->accept(*this);
 	node.params->accept(*this);
 
-    // swap ui_control array param list with node.sizes if not empty
-    // to get the ui_control array size in to node.sizes
-//    if(!node.sizes->params.empty()) {
-//        if(auto node_array = cast_node<NodeArray>(node.control_var.get())) {
-//            std::swap(node.sizes, node_array->sizes);
-//            node_array->set_child_parents();
-//        } else if (auto node_array = cast_node<NodeNDArray>(node.control_var.get())) {
-//            std::swap(node.sizes, node_array->sizes);
-//            node_array->set_child_parents();
-//        }
-//        node.set_child_parents();
-//    }
 }
 
 
 void ASTBuildDataStructures::visit(NodeVariable &node) {
     node.type = infer_type_from_identifier(node.name);
 
-	auto node_declaration = m_def_provider->get_declaration(&node);
+	if(node.name == "motion_id_start") {
+
+	}
+
+	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
 	// return if no declaration found or node itself is declaration
 	if(!node_declaration) {
 		return;
 	}
-	m_def_provider->match_data_structure(node_declaration, &node);
+
+	m_def_provider->match_data_structure(&node, node_declaration);
+
 	// replace variable with array if incorrectly recognized by parser
 	if(node_declaration->get_node_type() == NodeType::Array) {
 		auto node_array = make_array(node.name, 0, node.tok, node.parent);
@@ -143,7 +160,7 @@ void ASTBuildDataStructures::visit(NodeVariable &node) {
 void ASTBuildDataStructures::visit(NodeListStruct& node) {
 	node.type = infer_type_from_identifier(node.name);
 
-	m_def_provider->set_declaration(&node);
+	m_def_provider->set_declaration(&node, m_is_init_callback);
 //	// return if no declaration found or node itself is declaration
 //	if(!node_declaration) {
 //		return;
@@ -160,6 +177,40 @@ void ASTBuildDataStructures::visit(NodeListStructReference& node) {
 		return;
 	}
 
+}
+
+NodeCallback* ASTBuildDataStructures::move_on_init_callback(NodeProgram& node) {
+	// Finden des ersten (und einzigen) on init Callbacks
+	auto it = std::find_if(node.callbacks.begin(), node.callbacks.end(), [](const std::unique_ptr<NodeCallback>& callback) {
+	  return callback->begin_callback == "on init";
+	});
+	// Move the callback to the first position
+	if (it != node.callbacks.end()) {
+		std::rotate(node.callbacks.begin(), it, std::next(it));
+	}
+	return it->get(); // Return the pointer to the init callback
+}
+
+bool ASTBuildDataStructures::check_unique_callbacks(NodeProgram& node) {
+	auto error = CompileError(ErrorType::SyntaxError, "", -1, "", "", node.tok.file);
+	std::unordered_map<std::string, int> callback_counts;
+	// Zähle jede Callback-Bezeichnung, außer "on ui_control"
+	for (const auto& callback : node.callbacks) {
+		if (callback->begin_callback != "on ui_control") {
+			callback_counts[callback->begin_callback]++;
+		}
+	}
+	// Überprüfe die Anzahl jeder Bezeichnung, sollte genau 1 sein
+	for (const auto& count : callback_counts) {
+		if (count.second > 1) {
+			error.m_message = "Unable to compile. Multiple <" + count.first + "> callbacks found.";
+			error.m_expected = '1';
+			error.m_got = std::to_string(count.second);
+			error.exit();
+			return false;
+		}
+	}
+	return true;
 }
 
 
