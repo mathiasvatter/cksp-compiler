@@ -24,7 +24,7 @@ public:
 			std::unordered_map<std::string, std::unique_ptr<NodeArray>> m_builtin_arrays,
 			std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> m_builtin_widgets,
 			std::vector<std::unique_ptr<NodeDataStructure>> m_external_variables);
-	explicit DefinitionProvider() = default;
+	explicit DefinitionProvider();
 
     /// external variables from eg nckp file
 	std::vector<std::unique_ptr<NodeDataStructure>> external_variables{};
@@ -57,8 +57,8 @@ public:
 	void set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> property_functions);
     void add_property_function(std::unique_ptr<NodeFunctionHeader> property_function);
 
-	bool add_scope(NodeBody* body);
-	bool remove_scope(NodeBody* body);
+	bool add_scope();
+	bool remove_scope();
 
 	void match_data_structure(NodeDataStructure* reference, NodeDataStructure* declaration);
 //    std::unique_ptr<NodeDataStructure> build_data_structure(std::unique_ptr<NodeVariable> var, NodeDataStructure* declaration);
@@ -66,11 +66,11 @@ public:
 
 	/// returns the definition of a data structure, if it exists. If datastructure itself is
 	/// definition -> returns itself
-	NodeDataStructure* get_declaration(NodeDataStructure* var);
+	NodeDataStructure *get_declaration(NodeDataStructure *var, bool global_scope);
 	/// only called by references -> only gets declaration does not add existing declarations to map
 	NodeDataStructure* get_declaration(NodeReference* var);
 	/// adds existing declaration to declaration map for look up
-	NodeDataStructure* set_declaration(NodeDataStructure* var);
+	NodeDataStructure* set_declaration(NodeDataStructure* var, bool global_scope);
 
 	/// declared variables
     std::vector<std::unordered_map<std::string, NodeVariable*, StringHash, StringEqual>> m_declared_variables;
@@ -83,8 +83,10 @@ public:
 
     /// declared everything
     std::vector<std::unordered_map<std::string, std::unique_ptr<NodeDataStructure>, StringHash, StringEqual>> m_declared_data_structures;
-
+	/// returns data structure declaration searching all scopes
     NodeDataStructure* get_declared_data_structure(const std::string& data);
+	/// only returns data structure declaration in current scope or global_scope
+	NodeDataStructure* get_scoped_data_structure(const std::string& data);
 
 
     /// declared ui_controls

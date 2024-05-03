@@ -19,15 +19,20 @@ DefinitionProvider::DefinitionProvider(
 		  builtin_arrays(std::move(m_builtin_arrays)),
 		  builtin_widgets(std::move(m_builtin_widgets)),
 		  external_variables(std::move(m_external_variables)) {
-    for(auto& var : m_external_variables) {
+    for(auto& var : external_variables) {
         m_declared_data_structures.back().insert({var->name, clone_as<NodeDataStructure>(var.get())});
     }
+	// add default scope to work as global scope
+	this->add_scope();
 }
 
-NodeDataStructure* DefinitionProvider::get_declaration(NodeDataStructure* var) {
-	if(var->name == "SEQ_PARAMETERS")  {
+DefinitionProvider::DefinitionProvider() {
+	// add default scope to work as global scope
+	this->add_scope();
+}
 
-	}
+
+NodeDataStructure * DefinitionProvider::get_declaration(NodeDataStructure *var, bool global_scope) {
     // get builtin declaration if it exists
     NodeDataStructure *node_builtin_declaration = nullptr;
     if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
@@ -42,11 +47,16 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeDataStructure* var) {
 
     // if input var is declaration
     if (!var->is_reference) {
-        if (get_declared_data_structure(var->name)) {
-            compile_error.m_message = "Data Structure has already been declared.";
+        if (get_scoped_data_structure(var->name)) {
+            compile_error.m_message = "Data Structure has already been declared in this scope.";
             compile_error.print();
         } else {
-            m_declared_data_structures.back().insert({var->name, clone_as<NodeDataStructure>(var)});
+			auto cloned_node = clone_as<NodeDataStructure>(var);
+			if(global_scope) {
+				m_declared_data_structures.at(0).insert({var->name, std::move(cloned_node)});
+			} else {
+            	m_declared_data_structures.back().insert({var->name, std::move(cloned_node)});
+			}
 //            return var;
         }
     // if var reference
@@ -76,7 +86,7 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 	return nullptr;
 }
 
-NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var) {
+NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, bool global_scope) {
 	// get builtin declaration if it exists
 	NodeDataStructure *node_builtin_declaration = nullptr;
 	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
@@ -90,11 +100,16 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var) {
 	}
 
 	// input var is declaration
-	if (get_declared_data_structure(var->name)) {
-		compile_error.m_message = "Data Structure has already been declared.";
+	if (get_scoped_data_structure(var->name)) {
+		compile_error.m_message = "Data Structure has already been declared in this scope.";
 		compile_error.print();
 	} else {
-		m_declared_data_structures.back().insert({var->name, clone_as<NodeDataStructure>(var)});
+		auto cloned_node = clone_as<NodeDataStructure>(var);
+		if(global_scope) {
+			m_declared_data_structures.at(0).insert({var->name, std::move(cloned_node)});
+		} else {
+			m_declared_data_structures.back().insert({var->name, std::move(cloned_node)});
+		}
 //		return var;
 	}
 	return nullptr;
@@ -219,6 +234,20 @@ NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::st
     return nullptr;
 }
 
+NodeDataStructure *DefinitionProvider::get_scoped_data_structure(const std::string& data) {
+	std::string var_without_identifier = data;
+	if (data[0] == '_' && data[1] != '_') {
+		var_without_identifier = var_without_identifier.erase(0,1);
+	} else if (data.ends_with(".raw")) {
+		var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
+	}
+	auto it = m_declared_data_structures.back().find(data);
+	if (it != m_declared_data_structures.back().end()) {
+		return it->second.get();
+	}
+	return nullptr;
+}
+
 NodeArray *DefinitionProvider::get_raw_declared_array(const std::string& var) {
     std::string var_without_identifier = var;
     if (var[0] == '_' && var[1] != '_') {
@@ -240,7 +269,7 @@ NodeUIControl *DefinitionProvider::get_declared_control(NodeUIControl *ctr) {
     return nullptr;
 }
 
-bool DefinitionProvider::add_scope(NodeBody* body) {
+bool DefinitionProvider::add_scope() {
     m_declared_variables.emplace_back();
     m_declared_arrays.emplace_back();
     m_declared_controls.emplace_back();
@@ -248,18 +277,10 @@ bool DefinitionProvider::add_scope(NodeBody* body) {
     return true;
 }
 
-bool DefinitionProvider::remove_scope(NodeBody* body) {
+bool DefinitionProvider::remove_scope() {
     if(m_declared_data_structures.empty() || m_declared_variables.empty() || m_declared_arrays.empty() || m_declared_controls.empty()) {
         return false;
     }
-	// do not remove global scope if parent of body is on init callback
-	if(body->parent->get_node_type() == NodeType::Callback) {
-		if(auto node_callback = cast_node<NodeCallback>(body->parent)){
-			if(node_callback->begin_callback == "on init") {
-				return false;
-			}
-		}
-	}
 	if(m_declared_data_structures.size() == 1) {
 
 	}

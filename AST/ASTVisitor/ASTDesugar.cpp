@@ -17,18 +17,18 @@ void ASTDesugar::visit(NodeProgram& node) {
 
     m_function_definitions = std::move(node.function_definitions);
 
-    // check for init callback; get pointer to init callback
-	auto it = std::find_if(node.callbacks.begin(), node.callbacks.end(), [](const std::unique_ptr<NodeCallback>& callback) {
-	  return callback->begin_callback == "on init";
-	});
-	if (it == node.callbacks.end()) {
-		// Fehlerbehandlung, wenn kein init_callback gefunden wurde
-        CompileError(ErrorType::SyntaxError, "Unable to compile. Missing <init callback>.", -1, "", "", node.tok.file).exit();
-	} else {
-		// Verschieben Sie den gefundenen Callback an die vorderste Stelle
-		std::rotate(node.callbacks.begin(), it, std::next(it));
-		m_init_callback = node.callbacks[0].get();
-	}
+//    // check for init callback; get pointer to init callback
+//	auto it = std::find_if(node.callbacks.begin(), node.callbacks.end(), [](const std::unique_ptr<NodeCallback>& callback) {
+//	  return callback->begin_callback == "on init";
+//	});
+//	if (it == node.callbacks.end()) {
+//		// Fehlerbehandlung, wenn kein init_callback gefunden wurde
+//        CompileError(ErrorType::SyntaxError, "Unable to compile. Missing <init callback>.", -1, "", "", node.tok.file).exit();
+//	} else {
+//		// Verschieben Sie den gefundenen Callback an die vorderste Stelle
+//		std::rotate(node.callbacks.begin(), it, std::next(it));
+//	}
+	m_init_callback = node.callbacks[0].get();
     declare_dummy_return_variable();
     for(auto & callback : node.callbacks) {
         callback->accept(*this);

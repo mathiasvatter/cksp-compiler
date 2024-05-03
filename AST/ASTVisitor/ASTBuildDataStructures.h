@@ -23,6 +23,8 @@ public:
 	explicit ASTBuildDataStructures(DefinitionProvider* definition_provider);
 
     void visit(NodeProgram& node) override;
+	void visit(NodeCallback& node) override;
+
 	void visit(NodeBody& node) override;
 	void visit(NodeUIControl& node) override;
 	void visit(NodeArray& node) override;
@@ -35,6 +37,8 @@ public:
 
 private:
     NodeProgram* m_program = nullptr;
+	NodeCallback* m_init_callback = nullptr;
+	bool m_is_init_callback = false;
 	DefinitionProvider* m_def_provider = nullptr;
 
     static inline ASTType infer_type_from_identifier(std::string& var_name) {
@@ -47,5 +51,11 @@ private:
         }
         return type;
     }
+
+	/// Checks for existence and uniqueness of "on init" callback
+	/// If found, returns pointer to the callback node
+	static NodeCallback* move_on_init_callback(NodeProgram& node);
+	/// Checks for uniqueness of all callbacks except "on ui_control"
+	static bool check_unique_callbacks(NodeProgram& node);
 };
 

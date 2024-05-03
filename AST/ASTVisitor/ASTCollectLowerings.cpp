@@ -14,6 +14,9 @@ void ASTCollectLowerings::visit(NodeSingleDeclareStatement &node) {
 
 
 void ASTCollectLowerings::visit(NodeNDArray& node) {
+	if(node.name == "chords") {
+
+	}
 	if(auto lowering = node.get_lowering()) {
 		node.accept(*lowering);
 	}

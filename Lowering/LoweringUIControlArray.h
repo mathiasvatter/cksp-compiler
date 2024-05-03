@@ -49,7 +49,7 @@ public:
 		auto node_native_declaration = cast_node<NodeUIControl>(node->declaration);
 		if(!node_native_declaration) return false;
 		if(node->control_var->get_node_type() == NodeType::NDArray) return true;
-		if(node->control_var->get_node_type() == NodeType::Array and node_native_declaration->get_node_type() != NodeType::Array) return true;
+		if(node->control_var->get_node_type() == NodeType::Array and node_native_declaration->control_var->get_node_type() != NodeType::Array) return true;
 		return false;
 	}
 
