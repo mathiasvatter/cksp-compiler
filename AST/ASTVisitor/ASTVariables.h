@@ -16,17 +16,17 @@ public:
     void visit(NodeCallback& node) override;
     void visit(NodeFunctionCall& node) override;
 
-    void visit(NodeSingleDeclareStatement& node) override;
-    void visit(NodeSingleAssignStatement& node) override;
+//    void visit(NodeSingleDeclareStatement& node) override;
+//    void visit(NodeSingleAssignStatement& node) override;
 
 //    void visit(NodeBinaryExpr& node) override;
     void visit(NodeStatement& node) override;
 
-    void visit(NodeBody& node) override;
+//    void visit(NodeBody& node) override;
 	void visit(NodeUIControl& node) override;
     void visit(NodeArray& node) override;
     void visit(NodeVariable& node) override;
-    void visit(NodeParamList& node) override;
+//    void visit(NodeParamList& node) override;
 
 private:
 	DefinitionProvider* m_def_provider;

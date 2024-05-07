@@ -111,9 +111,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_number(NodeAST* parent) {
 Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent, DataType var_type) {
     auto var_token = consume();
     std::string var_name = var_token.val;
-    ASTType type = infer_type_from_identifier(var_name);
     auto node_variable = std::make_unique<NodeVariable>(is_persistent, var_name, var_type, var_token);
-    node_variable->type = type;
     node_variable->parent = parent;
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
@@ -121,7 +119,6 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, co
 Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent, DataType var_type) {
     auto arr_token = consume();
     std::string arr_name = arr_token.val;
-    ASTType type = infer_type_from_identifier(arr_name);
 	std::unique_ptr<NodeDataStructure> node_array = nullptr;
     std::unique_ptr<NodeParamList> indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, arr_token));;
     indexes->parent = node_array.get();
@@ -163,7 +160,6 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 		node_array = std::move(node);
 	}
 
-	node_array->type = type;
 	node_array->is_reference = is_reference;
 	node_array->parent = parent;
 	node_array->persistence = std::move(is_persistent);
@@ -175,9 +171,7 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 Result<std::unique_ptr<NodeNDArray>> Parser::parse_ndarray(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent, DataType var_type) {
 	auto arr_token = consume();
 	std::string arr_name = arr_token.val;
-	ASTType type = infer_type_from_identifier(arr_name);
 	auto node_array = std::make_unique<NodeNDArray>(arr_name, arr_token);
-	node_array -> type = type;
 	std::unique_ptr<NodeParamList> indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, arr_token));;
 	indexes->parent = node_array.get();
 	std::unique_ptr<NodeParamList> sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, arr_token));
@@ -1372,7 +1366,6 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
     }
     Token name_tok = consume(); // consume keyword
     std::string name = name_tok.val;
-    ASTType list_type = infer_type_from_identifier(name);
     if(peek().type != token::OPEN_BRACKET) {
         return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
      "Found unknown <list> syntax.", "[", peek()));
@@ -1408,7 +1401,6 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
     }
     consume(); // consume end_list
     node_list_block->name = name;
-    node_list_block->type = list_type;
     node_list_block->size = size;
     node_list_block->body = std::move(stmts);
     node_list_block->parent = parent;

@@ -59,17 +59,18 @@ public:
 
 	bool add_scope();
 	bool remove_scope();
+	/// removes all scopes and initializes again
+	bool refresh_scopes();
 
 	void match_data_structure(NodeDataStructure* reference, NodeDataStructure* declaration);
-//    std::unique_ptr<NodeDataStructure> build_data_structure(std::unique_ptr<NodeVariable> var, NodeDataStructure* declaration);
-//    std::unique_ptr<NodeDataStructure> build_data_structure(std::unique_ptr<NodeArray> var, NodeDataStructure* declaration);
 
 	/// returns the definition of a data structure, if it exists. If datastructure itself is
-	/// definition -> returns itself
-	NodeDataStructure *get_declaration(NodeDataStructure *var, bool global_scope);
+	/// definition -> return nullptr. If datastructure is reference -> return declaration. If global_scope is true,
+	/// adds declaration to global scope.
+	NodeDataStructure* get_declaration(NodeDataStructure *var, bool global_scope);
 	/// only called by references -> only gets declaration does not add existing declarations to map
 	NodeDataStructure* get_declaration(NodeReference* var);
-	/// adds existing declaration to declaration map for look up
+	/// adds existing declaration to declaration map for look up. Always returns nullptr.
 	NodeDataStructure* set_declaration(NodeDataStructure* var, bool global_scope);
 
 	/// declared variables
@@ -82,7 +83,7 @@ public:
     NodeArray* get_declared_array(const std::string& arr);
 
     /// declared everything
-    std::vector<std::unordered_map<std::string, std::unique_ptr<NodeDataStructure>, StringHash, StringEqual>> m_declared_data_structures;
+    std::vector<std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual>> m_declared_data_structures;
 	/// returns data structure declaration searching all scopes
     NodeDataStructure* get_declared_data_structure(const std::string& data);
 	/// only returns data structure declaration in current scope or global_scope

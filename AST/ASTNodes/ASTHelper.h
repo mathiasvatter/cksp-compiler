@@ -59,16 +59,16 @@ enum class DataType {
 	UI_Control,
 };
 
-inline ASTType infer_type_from_identifier(std::string& var_name) {
-	ASTType type = ASTType::Unknown;
-	if(contains(VAR_IDENT, var_name[0]) || contains(ARRAY_IDENT, var_name[0])) {
-		std::string identifier(1, var_name[0]);
-		var_name = var_name.erase(0,1);
-		token token_type = *get_token_type(TYPES, identifier);
-		type = token_to_type(token_type);
-	}
-	return type;
-}
+//inline ASTType infer_type_from_identifier(std::string& var_name) {
+//	ASTType type = ASTType::Unknown;
+//	if(contains(VAR_IDENT, var_name[0]) || contains(ARRAY_IDENT, var_name[0])) {
+//		std::string identifier(1, var_name[0]);
+//		var_name = var_name.erase(0,1);
+//		token token_type = *get_token_type(TYPES, identifier);
+//		type = token_to_type(token_type);
+//	}
+//	return type;
+//}
 
 enum class NodeType {
 	Variable,

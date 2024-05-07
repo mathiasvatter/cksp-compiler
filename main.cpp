@@ -17,6 +17,7 @@
 #include "BuiltinsProcessing/DefinitionProvider.h"
 #include "AST/ASTVisitor/ASTCollectLowerings.h"
 #include "AST/ASTVisitor/ASTBuildDataStructures.h"
+#include "AST/ASTVisitor/ASTVariableChecking.h"
 
 int main(int argc, char* argv[]) {
 
@@ -28,7 +29,7 @@ int main(int argc, char* argv[]) {
 
     input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
-    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -109,8 +110,11 @@ int main(int argc, char* argv[]) {
     auto desugaring_time = std::chrono::high_resolution_clock::now();
     auto desugaring_duration = std::chrono::duration_cast<std::chrono::milliseconds>(desugaring_time-parsing_time);
 
-    ASTVariables variables(&definition_provider, desugar.get_function_inlines());
-    ast->accept(variables);
+//    ASTVariables variables(&definition_provider, desugar.get_function_inlines());
+//    ast->accept(variables);
+
+	ASTVariableChecking variable_checking(&definition_provider, desugar.get_function_inlines());
+	ast->accept(variable_checking);
 
 	ASTTypeCasting typecast(&definition_provider);
 	ast->accept(typecast);

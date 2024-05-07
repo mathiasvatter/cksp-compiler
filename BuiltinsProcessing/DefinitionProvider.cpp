@@ -19,20 +19,23 @@ DefinitionProvider::DefinitionProvider(
 		  builtin_arrays(std::move(m_builtin_arrays)),
 		  builtin_widgets(std::move(m_builtin_widgets)),
 		  external_variables(std::move(m_external_variables)) {
-    for(auto& var : external_variables) {
-        m_declared_data_structures.back().insert({var->name, clone_as<NodeDataStructure>(var.get())});
-    }
 	// add default scope to work as global scope
 	this->add_scope();
+    for(auto& var : external_variables) {
+        m_declared_data_structures.back().insert({var->name, var.get()});
+    }
 }
 
 DefinitionProvider::DefinitionProvider() {
 	// add default scope to work as global scope
 	this->add_scope();
+	for(auto& var : external_variables) {
+		m_declared_data_structures.back().insert({var->name, var.get()});
+	}
 }
 
 
-NodeDataStructure * DefinitionProvider::get_declaration(NodeDataStructure *var, bool global_scope) {
+NodeDataStructure* DefinitionProvider::get_declaration(NodeDataStructure *var, bool global_scope) {
     // get builtin declaration if it exists
     NodeDataStructure *node_builtin_declaration = nullptr;
     if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
@@ -51,21 +54,20 @@ NodeDataStructure * DefinitionProvider::get_declaration(NodeDataStructure *var, 
             compile_error.m_message = "Data Structure has already been declared in this scope.";
             compile_error.print();
         } else {
-			auto cloned_node = clone_as<NodeDataStructure>(var);
+//			auto cloned_node = clone_as<NodeDataStructure>(var);
 			if(global_scope) {
-				m_declared_data_structures.at(0).insert({var->name, std::move(cloned_node)});
+				m_declared_data_structures.at(0).insert({var->name, var});
 			} else {
-            	m_declared_data_structures.back().insert({var->name, std::move(cloned_node)});
+            	m_declared_data_structures.back().insert({var->name, var});
 			}
-//            return var;
         }
-    // if var reference
+    // if input var reference
     } else {
         if (node_builtin_declaration) {
             return node_builtin_declaration;
         } else if (auto node_declaration = get_declared_data_structure(var->name)) {
             return node_declaration;
-        }
+		}
     }
     return nullptr;
 }
@@ -104,11 +106,11 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 		compile_error.m_message = "Data Structure has already been declared in this scope.";
 		compile_error.print();
 	} else {
-		auto cloned_node = clone_as<NodeDataStructure>(var);
+//		auto cloned_node = clone_as<NodeDataStructure>(var);
 		if(global_scope) {
-			m_declared_data_structures.at(0).insert({var->name, std::move(cloned_node)});
+			m_declared_data_structures.at(0).insert({var->name, var});
 		} else {
-			m_declared_data_structures.back().insert({var->name, std::move(cloned_node)});
+			m_declared_data_structures.back().insert({var->name, var});
 		}
 //		return var;
 	}
@@ -140,6 +142,8 @@ void DefinitionProvider::match_data_structure(NodeDataStructure* reference, Node
     reference->is_local = declaration->is_local;
     reference->is_global = declaration->is_global;
     reference->is_compiler_return = declaration->is_compiler_return;
+	reference->type = declaration->type;
+	reference->data_type = declaration->data_type;
 }
 
 
@@ -228,7 +232,7 @@ NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::st
     for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
         auto it = rit->find(data);
         if (it != rit->end()) {
-            return it->second.get();
+            return it->second;
         }
     }
     return nullptr;
@@ -243,7 +247,7 @@ NodeDataStructure *DefinitionProvider::get_scoped_data_structure(const std::stri
 	}
 	auto it = m_declared_data_structures.back().find(data);
 	if (it != m_declared_data_structures.back().end()) {
-		return it->second.get();
+		return it->second;
 	}
 	return nullptr;
 }
@@ -281,14 +285,24 @@ bool DefinitionProvider::remove_scope() {
     if(m_declared_data_structures.empty() || m_declared_variables.empty() || m_declared_arrays.empty() || m_declared_controls.empty()) {
         return false;
     }
-	if(m_declared_data_structures.size() == 1) {
-
-	}
     m_declared_variables.pop_back();
     m_declared_arrays.pop_back();
     m_declared_controls.pop_back();
     m_declared_data_structures.pop_back();
     return true;
+}
+
+bool DefinitionProvider::refresh_scopes() {
+	m_declared_variables.clear();
+	m_declared_arrays.clear();
+	m_declared_controls.clear();
+	m_declared_data_structures.clear();
+	// add global scope
+	add_scope();
+	for(auto& var : external_variables) {
+		m_declared_data_structures.back().insert({var->name, var.get()});
+	}
+	return true;
 }
 
 void DefinitionProvider::set_external_variables(std::vector<std::unique_ptr<NodeDataStructure>> external_variables) {
