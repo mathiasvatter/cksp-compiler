@@ -137,6 +137,7 @@ void DefinitionProvider::match_data_structure(NodeDataStructure* reference, Node
     reference->declaration = declaration;
     // mark is used
     reference->is_used = true;
+	declaration->is_used = true;
     reference->is_engine = declaration-> is_engine;
     reference->persistence = declaration->persistence;
     reference->is_local = declaration->is_local;

@@ -164,11 +164,3 @@ void ASTVariableChecking::visit(NodeFunctionCall &node) {
 //        node.type = param->type;
 //    }
 //}
-
-std::unique_ptr<NodeFunctionCall> ASTVariableChecking::wrap_in_get_ui_id(std::unique_ptr<NodeAST> variable) {
-	auto parent_tok = variable->parent->tok;
-	auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(m_def_provider->get_builtin_function("get_ui_id", 1)->clone().release()));
-	node_get_ui_id->args->params.clear();
-	node_get_ui_id->args->params.push_back(std::move(variable));
-	return std::make_unique<NodeFunctionCall>(false, std::move(node_get_ui_id), parent_tok);
-}

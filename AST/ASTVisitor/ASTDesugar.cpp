@@ -3,8 +3,8 @@
 //
 
 #include "ASTDesugar.h"
-#include "../../Interpreter/SimpleExprInterpreter.h"
-#include "../../Optimization/ConstantFolding.h"
+//#include "../../Interpreter/SimpleExprInterpreter.h"
+//#include "../../Optimization/ConstantFolding.h"
 
 ASTDesugar::ASTDesugar(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {}
 
@@ -111,8 +111,8 @@ void ASTDesugar::visit(NodeBinaryExpr& node) {
     node.left->accept(*this);
     node.right->accept(*this);
 
-    ConstantFolding constant_folding;
-    node.accept(constant_folding);
+//    ConstantFolding constant_folding;
+//    node.accept(constant_folding);
 }
 
 void ASTDesugar::visit(NodeVariable& node) {
@@ -693,78 +693,19 @@ void ASTDesugar::visit(NodeUIControl &node) {
 
 	// add make_persistent and read_persistent_var
 	auto node_body = std::make_unique<NodeBody>(node.tok);
-	// is UI Array
-//	if(node_array and !node_widget_array) {
-//		if(node_array->sizes->params.empty()) {
-//			CompileError(ErrorType::SyntaxError,"Unable to infer array size.", node.tok.line, "initializer list", "",node.tok.file).exit();
-//		}
-//		node_array->dimensions = node_array->sizes->params.size();
-//        node_array->persistence = std::optional<Token>();
-//		// multidimensional array
-//		auto node_expression = create_right_nested_binary_expr(node_array->sizes->params, 0, "*", node_array->tok);
-//		// calculate array size
-//		SimpleInterpreter eval;
-//		auto array_size = eval.evaluate_int_expression(node_expression);
-//		if(array_size.is_error()) {
-//			array_size.get_error().exit();
-//		}
-//        auto node_ui_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(node_array->clone().release()));
-//		auto node_ui_array_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_ui_array), nullptr, node.tok);
-//		node_ui_array_declaration->to_be_declared->type = engine_widget->control_var->type;
-//		node_body->statements.push_back(statement_wrapper(node_ui_array_declaration->clone(), node_body.get()));
-//        std::string new_control_name;
-//		for(int i = 0; i<array_size.unwrap(); i++) {
-//			new_control_name = node_array->name+std::to_string(i);
-//			if(node_array->dimensions>1) new_control_name = "_"+new_control_name;
-//			auto node_control_var = std::make_unique<NodeVariable>(std::optional<Token>(), new_control_name, DataType::UI_Control, node.tok);
-//            node_control_var->is_used = true;
-//			auto new_node_ui_control = std::unique_ptr<NodeUIControl>(static_cast<NodeUIControl*>(node.clone().release()));
-//			new_node_ui_control->control_var = clone_as<NodeVariable>(node_control_var.get());
-//			auto new_node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(new_node_ui_control),
-//																					 nullptr, node.tok);
-//			node_body->statements.push_back(statement_wrapper(std::move(new_node_declaration), node_body.get()));
-//			if(persistence) add_vector_to_statement_list(node_body, add_read_functions(persistence.value(), node_control_var.get(), node_body.get()));
-//		}
-//        // reinstantiate control name for while loop after
-//		new_control_name = node_array->name+std::to_string(0);
-//		if(node_array->dimensions>1) new_control_name = "_"+new_control_name;
-//
-//		auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", DataType::Mutable, node.tok);
-//        node_iterator_var->is_engine = true;
-////		node_iterator_var->accept(*this);
-//		auto node_while_body = std::make_unique<NodeBody>(node.tok);
-//
-//		auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(m_def_provider->get_builtin_function("get_ui_id", 1)->clone().release()));
-//		node_get_ui_id->args->params.clear();
-//		node_get_ui_id->args->params.push_back(std::make_unique<NodeVariable>(node_array->persistence, new_control_name, DataType::UI_Control, node.tok));
-//
-//		auto node_while_body_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_get_ui_id), node_iterator_var->clone(),nullptr, node.tok);
-//
-//		auto node_raw_array_copy = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(node_array->clone().release()));
-//		node_raw_array_copy->indexes->params.clear();
-//		node_raw_array_copy->indexes->params.push_back(node_iterator_var->clone());
-//		// only access raw array if multidimensional
-//		if(node_array->dimensions>1) node_raw_array_copy->name = "_"+node_raw_array_copy->name;
-//		auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(node_raw_array_copy), std::move(node_while_body_expression), node.tok);
-//		node_while_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_while_body.get()));
-//		auto node_while_loop = make_while_loop(node_iterator_var.get(), 0, array_size.unwrap(), std::move(node_while_body), node_body.get());
-//		node_body->statements.push_back(statement_wrapper(std::move(node_while_loop), node_body.get()));
-//		node_body->update_parents(node.parent);
-//		node_body->accept(*this);
 
-//	} else {
-		if(persistence) {
-			add_vector_to_statement_list(node_body, add_read_functions(persistence.value(), node.control_var.get(), node_body.get()));
-		}
-		// split declare statement into declare + assign statement
-		auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement*>(node.parent->clone().release()));
-		if(node_declare_statement->assignee) {
-			auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(std::move(node.control_var), std::move(node_declare_statement->assignee), node.tok);
-			node_body->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_body.get()));
-		}
-		node_body->statements.insert(node_body->statements.begin(), statement_wrapper(std::move(node_declare_statement), node_body.get()));
-		node_body->update_parents(node.parent->parent);
-//	}
+	if(persistence) {
+		add_vector_to_statement_list(node_body, add_read_functions(persistence.value(), node.control_var.get(), node_body.get()));
+	}
+	// split declare statement into declare + assign statement
+	auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement*>(node.parent->clone().release()));
+	if(node_declare_statement->assignee) {
+		auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(std::move(node.control_var), std::move(node_declare_statement->assignee), node.tok);
+		node_body->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_body.get()));
+	}
+	node_body->statements.insert(node_body->statements.begin(), statement_wrapper(std::move(node_declare_statement), node_body.get()));
+	node_body->update_parents(node.parent->parent);
+
     m_current_node_replaced = node.parent;
 	node.parent->replace_with(std::move(node_body));
 }
