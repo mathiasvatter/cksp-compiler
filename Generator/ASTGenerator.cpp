@@ -57,10 +57,12 @@ void ASTGenerator::visit(NodeString &node) {
 }
 
 void ASTGenerator::visit(NodeVariable &node) {
-    if(node.data_type == DataType::Polyphonic)
-        os << "polyphonic ";
-    else if(node.data_type == DataType::Const)
-        os << "const ";
+	if(!node.is_reference) {
+		if (node.data_type == DataType::Polyphonic)
+			os << "polyphonic ";
+		else if (node.data_type == DataType::Const)
+			os << "const ";
+	}
 	os << variable_identifier.find(node.type)->second;
     os << sanitize_dots(node.name);
 }

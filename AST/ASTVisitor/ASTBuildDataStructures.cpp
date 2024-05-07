@@ -20,11 +20,11 @@ void ASTBuildDataStructures::visit(NodeProgram& node) {
 }
 
 void ASTBuildDataStructures::visit(NodeCallback& node) {
-	if(&node == m_init_callback) {
-		m_is_init_callback = true;
-	}
+	if(&node == m_init_callback) m_is_init_callback = true;
+
 	if(node.callback_id) node.callback_id->accept(*this);
 	node.statements->accept(*this);
+
 	m_is_init_callback = false;
 }
 
@@ -34,15 +34,12 @@ void ASTBuildDataStructures::visit(NodeBody &node) {
         node.scope = true;
     }
 
-
     // add scope for body
 	if(node.scope) m_def_provider->add_scope();
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
 	}
-	if(node.scope) {
-		m_def_provider->remove_scope();
-	}
+	if(node.scope) m_def_provider->remove_scope();
 }
 
 void ASTBuildDataStructures::visit(NodeArray &node) {
@@ -67,7 +64,7 @@ void ASTBuildDataStructures::visit(NodeArray &node) {
 	}
 
 	// match array specific information
-	if(node_declaration != &node and node.is_reference) {
+	if(node.is_reference) {
 		if(auto node_array = cast_node<NodeArray>(node_declaration)) {
 			node.dimensions = node_array->dimensions;
 			node.sizes = clone_as<NodeParamList>(node_array->sizes.get());
@@ -104,7 +101,7 @@ void ASTBuildDataStructures::visit(NodeNDArray& node) {
 	}
 
 	// match array specific information
-	if(node_declaration != &node and node.is_reference) {
+	if(node.is_reference) {
 		if(auto node_array = cast_node<NodeNDArray>(node_declaration)) {
 			node.dimensions = node_array->dimensions;
 			node.sizes = clone_as<NodeParamList>(node_array->sizes.get());
@@ -135,37 +132,30 @@ void ASTBuildDataStructures::visit(NodeUIControl &node) {
 void ASTBuildDataStructures::visit(NodeVariable &node) {
     node.type = infer_type_from_identifier(node.name);
 
-	if(node.name == "motion_id_start") {
-
-	}
-
-	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
-	// return if no declaration found or node itself is declaration
-	if(!node_declaration) {
-		return;
-	}
-
-	m_def_provider->match_data_structure(&node, node_declaration);
-
-	// replace variable with array if incorrectly recognized by parser
-	if(node_declaration->get_node_type() == NodeType::Array) {
-		auto node_array = make_array(node.name, 0, node.tok, node.parent);
-		node_array->sizes->params.clear();
-		node_array->show_brackets = false;
-		node.replace_with(std::move(node_array));
-		return;
-	}
+//	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
+//	// return if no declaration found or node itself is declaration
+//	if(!node_declaration) {
+//		return;
+//	}
+//
+//	m_def_provider->match_data_structure(&node, node_declaration);
+//
+//	// replace variable with array if incorrectly recognized by parser
+//	if(node_declaration->get_node_type() == NodeType::Array) {
+//		auto node_array = make_array(node.name, 0, node.tok, node.parent);
+//		node_array->sizes->params.clear();
+//		node_array->show_brackets = false;
+//		node_array->accept(*this);
+//		node.replace_with(std::move(node_array));
+//		return;
+//	}
 }
 
 void ASTBuildDataStructures::visit(NodeListStruct& node) {
 	node.type = infer_type_from_identifier(node.name);
 
 	m_def_provider->set_declaration(&node, m_is_init_callback);
-//	// return if no declaration found or node itself is declaration
-//	if(!node_declaration) {
-//		return;
-//	}
-//	m_def_provider->match_data_structure(node_declaration, &node);
+
 }
 
 void ASTBuildDataStructures::visit(NodeListStructReference& node) {

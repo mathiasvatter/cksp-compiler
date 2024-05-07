@@ -15,12 +15,16 @@ private:
     // size of the ui array -> number of ui_controls that need to be declared
 	std::unique_ptr<NodeAST> m_ui_array_size = nullptr;
 	std::unique_ptr<NodeUIControl> m_ui_control_array = nullptr;
+	std::optional<Token> m_persistence;
 public:
 
 	void visit(NodeSingleDeclareStatement &node) override {
 		auto node_ui_control = cast_node<NodeUIControl>(node.to_be_declared.get());
 		if(node_ui_control) {
 			if(!is_ui_control_array(node_ui_control)) return;
+			// move persistence information to not get a persistent array
+			m_persistence = node_ui_control->control_var->persistence;
+			node_ui_control->control_var->persistence = std::nullopt;
 			m_ui_control_array = clone_as<NodeUIControl>(node_ui_control);
 			if(m_ui_control_array->control_var->get_node_type() == NodeType::NDArray) {
 				// get correct size for ui control array by lowering ndarray
@@ -56,7 +60,6 @@ public:
 	void visit(NodeArray &node) override {
 		auto error = CompileError(ErrorType::SyntaxError, "Unable to infer array size. Size of UI Control Array has to be determined at compile time.", node.tok.line, "initializer list", "", node.tok.file);
 		if(node.sizes->params.empty()) error.exit();
-
 		m_ui_array_size = node.sizes->params[0]->clone();
         // real array of ui control is saved in m_ui_control_array->sizes
         if(!m_ui_control_array->sizes->params.empty()) {
@@ -113,6 +116,7 @@ public:
 			auto new_ui_control = clone_as<NodeUIControl>(new_ui_control_template.get());
 			new_ui_control->control_var->name = new_control_name + std::to_string(i);
             new_ui_control->control_var->is_reference = false;
+			new_ui_control->control_var->persistence = m_persistence;
 			new_ui_control->params = clone_as<NodeParamList>(ui_control.params.get());
 			auto new_node_declaration =
 				std::make_unique<NodeSingleDeclareStatement>(std::move(new_ui_control), nullptr, ui_control.tok);

@@ -141,20 +141,24 @@ void ASTTypeChecking::visit(NodeArray& node) {
 //            return;
 //        }
 //    }
-
+	auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
     // only print error if it is in a declaration
     if(node.type == ASTType::Unknown) {
 //        auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
 //        auto node_ui_control = cast_node<NodeUIControl>(node.parent);
         if(node_declaration or node_ui_control) {
-            CompileError(ErrorType::TypeError,"Could not infer array type. Automatically casted as <Integer>. Consider using a variable identifier.", "", node.tok).print();
+			error.m_message = "Could not infer array type. Automatically casted as <Integer>. Consider using a variable identifier.";
+			error.m_got = node.name;
+			error.print();
 			node.type = ASTType::Integer;
         } else {
 			node.type = node.declaration->type;
 		}
     }
 	if(node.type == ASTType::Unknown or node.type == ASTType::Number or node.type == ASTType::Any) {
-		CompileError(ErrorType::TypeError,"Could not infer array type. Variable is Unknown/Number/Any", "valid type", node.tok).print();
+		error.m_message = "Could not infer Array type. Array is Unknown/Number/Any";
+		error.m_got = node.name;
+		error.print();
 	}
 
     node.indexes->accept(*this);

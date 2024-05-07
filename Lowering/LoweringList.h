@@ -51,6 +51,7 @@ public:
 	void visit(NodeListStruct &node) override {
         auto node_body = std::make_unique<NodeBody>(node.tok);
         auto node_main_array = make_array(node.name, node.size, node.tok, node_body.get());
+		node_main_array->type = node.type;
         // accept first to get rid of array identifier
         std::string name_wo_ident = node_main_array->name;
 //    node_main_array->name = "_"+node_main_array->name;
@@ -65,6 +66,8 @@ public:
 		node_declare_main_array->to_be_declared->is_reference = false;
         auto main_size = (int32_t)node.body.size();
         auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(std::make_unique<NodeVariable>(std::optional<Token>(), name_wo_ident+".SIZE", DataType::Const, node.tok), make_int(main_size,&node), node.tok);
+		// add "_" to main array name if dimension is > 1
+		if(max_dimension>1) node_declare_main_array->to_be_declared->name = "_"+node_declare_main_array->to_be_declared->name;
         node_body->statements.push_back(statement_wrapper(std::move(node_declare_main_array), node_body.get()));
         node_body->statements.push_back(statement_wrapper(std::move(node_declare_main_const), node_body.get()));
 
@@ -103,6 +106,7 @@ public:
         node_body->statements.push_back(statement_wrapper(std::move(node_positions_declaration), node_body.get()));
 
         auto node_iterator_var = std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", DataType::Mutable, node.tok);
+		node_iterator_var->is_engine = true;
         for(int i = 0; i<node.body.size(); i++) {
             auto node_array_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
             auto node_array = make_array(name_wo_ident+std::to_string(i), sizes[i], node.tok, node_array_declaration.get());
@@ -113,6 +117,7 @@ public:
 
             auto node_const_declaration = std::make_unique<NodeSingleDeclareStatement>(node.tok);
             auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), name_wo_ident+std::to_string(i)+".SIZE", DataType::Const, node.tok);
+			node_variable->is_reference = false;
             node_const_declaration->to_be_declared = std::move(node_variable);
             node_const_declaration->assignee = make_int(sizes[i], node_const_declaration.get());
             node_body->statements.push_back(statement_wrapper(std::move(node_const_declaration), node_body.get()));

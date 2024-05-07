@@ -346,6 +346,7 @@ struct NodeSingleDeclareStatement : NodeAST {
     NodeSingleDeclareStatement(std::unique_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
     : NodeAST(tok, NodeType::SingleDeclareStatement), to_be_declared(std::move(arrayVariable)), assignee(std::move(assignee)) {
 		set_child_parents();
+		to_be_declared->is_reference = false;
 	}
     void accept(ASTVisitor& visitor) override;
     void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;

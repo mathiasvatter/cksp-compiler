@@ -181,7 +181,9 @@ void ASTVariables::visit(NodeArray& node) {
 }
 
 void ASTVariables::visit(NodeVariable& node) {
+	if(node.name == "motion_id_start") {
 
+	}
     // handle return_vars -> do not check if they have been declared
     if(node.is_compiler_return or node.is_local) {
         node.is_used = true;
@@ -263,33 +265,33 @@ void ASTVariables::visit(NodeFunctionCall &node) {
 	}
 }
 
-void ASTVariables::visit(NodeSingleDeclareStatement& node) {
-    if(node.assignee) {
-        node.assignee->accept(*this);
-    }
-    node.to_be_declared ->accept(*this);
-
-}
-
-void ASTVariables::visit(NodeParamList &node) {
-    for(const auto & param : node.params) {
-        param->accept(*this);
-        node.type = param->type;
-    }
-}
-
-void ASTVariables::visit(NodeSingleAssignStatement &node) {
-    node.array_variable->accept(*this);
-    node.assignee->accept(*this);
-}
-
-void ASTVariables::visit(NodeBody& node) {
-    for(auto & stmt : node.statements) {
-        stmt->accept(*this);
-    }
-    // Ersetzen Sie die alte Liste durch die neue
-    node.statements = std::move(cleanup_node_body(&node));
-}
+//void ASTVariables::visit(NodeSingleDeclareStatement& node) {
+//    if(node.assignee) {
+//        node.assignee->accept(*this);
+//    }
+//    node.to_be_declared ->accept(*this);
+//
+//}
+//
+//void ASTVariables::visit(NodeParamList &node) {
+//    for(const auto & param : node.params) {
+//        param->accept(*this);
+//        node.type = param->type;
+//    }
+//}
+//
+//void ASTVariables::visit(NodeSingleAssignStatement &node) {
+//    node.array_variable->accept(*this);
+//    node.assignee->accept(*this);
+//}
+//
+//void ASTVariables::visit(NodeBody& node) {
+//    for(auto & stmt : node.statements) {
+//        stmt->accept(*this);
+//    }
+//    // Ersetzen Sie die alte Liste durch die neue
+//    node.statements = std::move(cleanup_node_body(&node));
+//}
 
 NodeVariable *ASTVariables::get_declared_variable(const std::string& var) {
     auto it = m_declared_variables.find(var);

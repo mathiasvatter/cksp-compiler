@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Fri May 03 12:11:50 2024 }
+{ Compiled with cksp version 0.0.5 on Tue May 07 17:58:31 2024 }
 on init
   declare ?_return_vars_real[3]
   declare !_return_vars_str[3]
@@ -12,10 +12,10 @@ on init
   declare $_string_it
   declare $_ui_array_it
   declare $_list_it
-  declare !all_fx_texts[25]
+  declare !_all_fx_texts[25]
   declare const $all_fx_texts__SIZE := 5
-  declare %all_fx_texts__sizes[] := (5, 5, 5, 5, 5)
-  declare %all_fx_texts__pos[] := (0, 5, 10, 15, 20)
+  declare %all_fx_texts__sizes[5] := (5, 5, 5, 5, 5)
+  declare %all_fx_texts__pos[5] := (0, 5, 10, 15, 20)
   declare !all_fx_texts0[5]
   !all_fx_texts0[5] := "Low Pass -12dB"
   !all_fx_texts0[5] := "Cutoff"
@@ -81,10 +81,37 @@ on init
   !mnu_item_text[0] := "Oscillator"
   !mnu_item_text[1] := "Filter"
   !mnu_item_text[2] := "LFO"
+  message($all_fx_texts__SIZE)
   declare const $SEQ_PARAMETERS__SIZE_D1 := 1
   declare const $SEQ_PARAMETERS__SIZE_D2 := 4
   declare const $SEQ_PARAMETERS__SIZE_D3 := 56
   declare %_SEQ_PARAMETERS[224] := (0)
+  declare const $lbl_bummens__SIZE_D1 := 3
+  declare const $lbl_bummens__SIZE_D2 := 2
+  declare %_lbl_bummens[6]
+  declare ui_label $_lbl_bummens0 (1, 1)
+  make_persistent($_lbl_bummens0)
+  read_persistent_var($_lbl_bummens0)
+  declare ui_label $_lbl_bummens1 (1, 1)
+  make_persistent($_lbl_bummens1)
+  read_persistent_var($_lbl_bummens1)
+  declare ui_label $_lbl_bummens2 (1, 1)
+  make_persistent($_lbl_bummens2)
+  read_persistent_var($_lbl_bummens2)
+  declare ui_label $_lbl_bummens3 (1, 1)
+  make_persistent($_lbl_bummens3)
+  read_persistent_var($_lbl_bummens3)
+  declare ui_label $_lbl_bummens4 (1, 1)
+  make_persistent($_lbl_bummens4)
+  read_persistent_var($_lbl_bummens4)
+  declare ui_label $_lbl_bummens5 (1, 1)
+  make_persistent($_lbl_bummens5)
+  read_persistent_var($_lbl_bummens5)
+  $_iterator := 0
+  while($_iterator < 6) 
+    %_lbl_bummens[$_iterator] := get_ui_id($_lbl_bummens0) + $_iterator
+    inc($_iterator)
+  end while
   message(%_SEQ_PARAMETERS[337])
   message(!_all_fx_texts[%all_fx_texts__pos[0] + 1])
   message(!mnu_item_text[0])

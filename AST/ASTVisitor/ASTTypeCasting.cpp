@@ -102,7 +102,7 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
 //            exit(EXIT_FAILURE);
         }
         // a second time to get the new types to the declaration pointer!
-        node.to_be_declared->accept(*this);
+//        node.to_be_declared->accept(*this);
 
     }
 
@@ -133,24 +133,16 @@ void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
 
 void ASTTypeCasting::visit(NodeVariable& node) {
 
-    auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
-    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
-    auto node_ui_control = cast_node<NodeUIControl>(node.parent);
-
-//    if(node_declaration || node_ui_control) {
-//        if(!node.is_used) {
-//            node.parent->replace_with(std::make_unique<NodeDeadCode>(node.tok));
-//            return;
-//        }
-//    }
+//    auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
+//    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
+//    auto node_ui_control = cast_node<NodeUIControl>(node.parent);
 
 	auto node_callback_id = cast_node<NodeCallback>(node.parent);
 	if(node_callback_id) {
 		if(node.data_type != DataType::UI_Control) {
             CompileError(ErrorType::TypeError,
                          "Variable needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line,
-                         "<UI_Control>", node.get_string(), node.tok.file).print();
-            exit(EXIT_FAILURE);
+                         "<UI_Control>", node.get_string(), node.tok.file).exit();
         } else {
 			if(node.declaration->parent) {
 				auto ui_control_declaration = cast_node<NodeUIControl>(node.declaration->parent);
@@ -161,7 +153,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 		}
 	}
 
-    if(!node_declaration and !node_ui_control and !node.is_compiler_return and !node.is_local and !node.is_engine) {
+    if(node.is_reference and !node.is_compiler_return and !node.is_local and !node.is_engine) {
 		if(node.declaration->type != ASTType::Unknown and node.type != ASTType::Unknown and node.declaration->type != node.type) {
 			CompileError(ErrorType::TypeError,"Found variables of same name and different types.", node.tok.line, type_to_string(node.declaration->type), type_to_string(node.type), node.tok.file).exit();
 		} else if (node.declaration->type != ASTType::Unknown) {
@@ -187,16 +179,9 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 
 void ASTTypeCasting::visit(NodeArray& node) {
 
-    auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
-    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
-    auto node_ui_control = cast_node<NodeUIControl>(node.parent);
-
-//    if(node_declaration || node_ui_control) {
-//        if(!node.is_used) {
-//            node.parent->replace_with(std::make_unique<NodeDeadCode>(node.tok));
-//            return;
-//        }
-//    }
+//    auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
+//    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
+//    auto node_ui_control = cast_node<NodeUIControl>(node.parent);
 
 	auto node_callback_id = cast_node<NodeCallback>(node.parent);
 	if(node_callback_id and node.data_type != DataType::UI_Control) {
@@ -204,7 +189,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
 	}
 
 
-    if(!node_declaration and !node_ui_control) {
+    if(node.is_reference) {
 		if(node.declaration->type != ASTType::Unknown and node.type != ASTType::Unknown and node.declaration->type != node.type) {
 			CompileError(ErrorType::TypeError,"Found arrays of same name and different types.", node.tok.line, type_to_string(node.declaration->type), type_to_string(node.type), node.tok.file).exit();
 		} else if (node.declaration->type != ASTType::Unknown) {
