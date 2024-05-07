@@ -35,8 +35,6 @@ private:
 	DefinitionProvider* m_def_provider = nullptr;
 	std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines;
 
-	std::unique_ptr<NodeFunctionCall> wrap_in_get_ui_id(std::unique_ptr<NodeAST> variable);
-
 	/// declared variables
 	int m_variables_declared = 0;
 	/// declared arrays

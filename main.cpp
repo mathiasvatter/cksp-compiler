@@ -18,6 +18,7 @@
 #include "AST/ASTVisitor/ASTCollectLowerings.h"
 #include "AST/ASTVisitor/ASTBuildDataStructures.h"
 #include "AST/ASTVisitor/ASTVariableChecking.h"
+#include "AST/ASTVisitor/ASTOptimizations.h"
 
 int main(int argc, char* argv[]) {
 
@@ -29,7 +30,7 @@ int main(int argc, char* argv[]) {
 
     input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
-//    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+    input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -115,6 +116,9 @@ int main(int argc, char* argv[]) {
 
 	ASTVariableChecking variable_checking(&definition_provider, desugar.get_function_inlines());
 	ast->accept(variable_checking);
+
+	ASTOptimizations optimizations;
+	ast->accept(optimizations);
 
 	ASTTypeCasting typecast(&definition_provider);
 	ast->accept(typecast);
