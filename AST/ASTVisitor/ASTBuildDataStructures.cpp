@@ -43,8 +43,8 @@ void ASTBuildDataStructures::visit(NodeBody &node) {
 }
 
 void ASTBuildDataStructures::visit(NodeArray &node) {
-	node.sizes->accept(*this);
-	node.indexes->accept(*this);
+	node.size->accept(*this);
+	node.index->accept(*this);
 
     node.type = infer_type_from_identifier(node.name);
 
@@ -57,7 +57,7 @@ void ASTBuildDataStructures::visit(NodeArray &node) {
 
 	// check if it is NodeListStructReference
 	if(node_declaration->get_node_type() == NodeType::ListStructReference) {
-		auto node_list_reference = std::make_unique<NodeListStructReference>(node.name, std::move(node.indexes), node.tok);
+		auto node_list_reference = std::make_unique<NodeListStructReference>(node.name, std::move(node.index), node.tok);
 		node_list_reference->declaration = node_declaration;
 		node.replace_with(std::move(node_list_reference));
 		return;
@@ -66,9 +66,8 @@ void ASTBuildDataStructures::visit(NodeArray &node) {
 	// match array specific information
 	if(node.is_reference) {
 		if(auto node_array = cast_node<NodeArray>(node_declaration)) {
-			node.dimensions = node_array->dimensions;
-			node.sizes = clone_as<NodeParamList>(node_array->sizes.get());
-			node.sizes->update_parents(&node);
+			node.size = clone_as<NodeParamList>(node_array->size.get());
+			node.size->update_parents(&node);
 		}
 	}
 
@@ -143,7 +142,7 @@ void ASTBuildDataStructures::visit(NodeVariable &node) {
 //	// replace variable with array if incorrectly recognized by parser
 //	if(node_declaration->get_node_type() == NodeType::Array) {
 //		auto node_array = make_array(node.name, 0, node.tok, node.parent);
-//		node_array->sizes->params.clear();
+//		node_array->size->params.clear();
 //		node_array->show_brackets = false;
 //		node_array->accept(*this);
 //		node.replace_with(std::move(node_array));

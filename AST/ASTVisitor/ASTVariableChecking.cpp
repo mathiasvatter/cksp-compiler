@@ -91,8 +91,8 @@ void ASTVariableChecking::visit(NodeBody &node) {
 }
 
 void ASTVariableChecking::visit(NodeArray& node) {
-	node.sizes->accept(*this);
-	node.indexes->accept(*this);
+	node.size->accept(*this);
+	node.index->accept(*this);
 
 	auto compile_error = CompileError(ErrorType::Variable, "","", node.tok);
 	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
@@ -107,11 +107,10 @@ void ASTVariableChecking::visit(NodeArray& node) {
 		m_def_provider->match_data_structure(&node, node_declaration);
 
 	// match array specific information
-	if(node.is_reference and node.sizes->params.empty()) {
+	if(node.is_reference and node.size->params.empty()) {
 		if(auto node_array = cast_node<NodeArray>(node_declaration)) {
-			node.dimensions = node_array->dimensions;
-			node.sizes = clone_as<NodeParamList>(node_array->sizes.get());
-			node.sizes->update_parents(&node);
+			node.size = clone_as<NodeParamList>(node_array->size.get());
+			node.size->update_parents(&node);
 		}
 	}
 }
@@ -138,7 +137,7 @@ void ASTVariableChecking::visit(NodeVariable& node) {
 	// replace variable with array if incorrectly recognized by parser
 	if(node.is_reference and node_declaration->get_node_type() == NodeType::Array) {
 		auto node_array = make_array(node.name, 0, node.tok, node.parent);
-		node_array->sizes->params.clear();
+		node_array->size->params.clear();
 		node_array->show_brackets = false;
 		node_array->accept(*this);
 		node.replace_with(std::move(node_array));

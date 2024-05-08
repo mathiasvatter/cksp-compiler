@@ -75,21 +75,21 @@ void ASTGenerator::visit(NodeArray &node) {
 	os << array_identifier.find(node.type)->second;
 //    if(node.dimensions>1) os << "_";
     os << sanitize_dots(node.name);
-//	if(node_declaration or node_ui_control or !node.indexes->params.empty())
+//	if(node_declaration or node_ui_control or !node.index->params.empty())
 //    	os << "[";
 //	if(node_declaration || node_ui_control)
 //		if(node.dimensions> 1)
-//			node.indexes->accept(*this);
+//			node.index->accept(*this);
 //		else
-//    		node.sizes->accept(*this);
+//    		node.size->accept(*this);
 //	else
-//    	node.indexes->accept(*this);
-//	if(node_declaration or node_ui_control or !node.indexes->params.empty())
+//    	node.index->accept(*this);
+//	if(node_declaration or node_ui_control or !node.index->params.empty())
 //	    os << "]";
 	if(node.show_brackets) {
 		os << "[";
-		if(!node.is_reference) node.sizes->accept(*this);
-		if(node.is_reference) node.indexes->accept(*this);
+		if(!node.is_reference) node.size->accept(*this);
+		if(node.is_reference) node.index->accept(*this);
 		os << "]";
 	}
 }

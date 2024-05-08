@@ -13,16 +13,16 @@ public:
 	};
 
 	void visit(NodeListStructReference& node) override {
-		// list references can only have one or two (jagged lists) indexes
+		// list references can only have one or two (jagged lists) index
 		if(node.indexes->params.size() != 2 && node.indexes->params.size() != 1) {
-			CompileError(ErrorType::SyntaxError,"Got wrong amount of indexes for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).exit();
+			CompileError(ErrorType::SyntaxError,"Got wrong amount of index for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).exit();
 		}
 
 		auto lowered_list_reference = make_array(node.name, 0, node.tok, nullptr);
 		// no heavy lowering needed if list is simple one dimensional array
 		if(node.indexes->params.size() == 1) {
-			lowered_list_reference->indexes = std::move(node.indexes);
-			lowered_list_reference->indexes->parent = lowered_list_reference.get();
+			lowered_list_reference->index = std::move(node.indexes);
+			lowered_list_reference->index->parent = lowered_list_reference.get();
 			node.replace_with(std::move(lowered_list_reference));
 			return;
 		}
@@ -35,15 +35,15 @@ public:
 		 * _all_fx_texts[all_fx_texts.pos[0]+1]
 		 */
 		auto node_position_array = make_array(node.name+".pos", 0, node.tok, nullptr);
-		node_position_array->indexes->params.clear();
-		node_position_array->indexes->params.push_back(std::move(node.indexes->params[0]));
-		node_position_array->indexes->update_parents(node_position_array.get());
+		node_position_array->index->params.clear();
+		node_position_array->index->params.push_back(std::move(node.indexes->params[0]));
+		node_position_array->index->update_parents(node_position_array.get());
 
 		auto node_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_position_array), std::move(node.indexes->params[1]), &node, node.tok);
 
-		lowered_list_reference->indexes->params.clear();
-		lowered_list_reference->indexes->params.push_back(std::move(node_expression));
-		lowered_list_reference->indexes->update_parents(lowered_list_reference.get());
+		lowered_list_reference->index->params.clear();
+		lowered_list_reference->index->params.push_back(std::move(node_expression));
+		lowered_list_reference->index->update_parents(lowered_list_reference.get());
 		lowered_list_reference->name = "_"+lowered_list_reference->name;
 		node.replace_with(std::move(lowered_list_reference));
 	}
@@ -94,7 +94,7 @@ public:
         for(int i = 0; i<node.body.size(); i++) {
             sizes[i] = static_cast<int32_t>(node.body[i]->params.size());
             if(i>0) positions[i] = positions[i - 1] + sizes[i - 1];
-//        std::cout << sizes[i] << ", " << positions[i] << std::endl;
+//        std::cout << size[i] << ", " << positions[i] << std::endl;
             auto node_size = make_int(sizes[i], node_sizes.get());
             node_sizes->params.push_back(std::move(node_size));
             auto node_position = make_int(positions[i], node_positions.get());
@@ -124,10 +124,10 @@ public:
 
             auto node_while_body = std::make_unique<NodeBody>(node.tok);
             auto node_expression = make_binary_expr(ASTType::Integer, "+", node_iterator_var->clone(), make_int(positions[i], &node),nullptr, node.tok);
-            node_main_array->indexes->params.clear();
-            node_main_array->indexes->params.push_back(std::move(node_expression));
+            node_main_array->index->params.clear();
+            node_main_array->index->params.push_back(std::move(node_expression));
 
-            node_array->indexes->params.push_back(node_iterator_var->clone());
+            node_array->index->params.push_back(node_iterator_var->clone());
             auto node_main_array_copy = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(node_main_array->clone().release()));
             node_main_array_copy->name = "_"+node_main_array_copy->name;
             auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(node_main_array_copy), std::move(node_array), node.tok);

@@ -25,8 +25,8 @@ void NodeArray::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeArray::NodeArray(const NodeArray& other)
-	: NodeDataStructure(other), show_brackets(other.show_brackets), sizes(clone_unique(other.sizes)),
-	  indexes(clone_unique(other.indexes)), dimensions(other.dimensions) {}
+	: NodeDataStructure(other), show_brackets(other.show_brackets), size(clone_unique(other.size)),
+	  index(clone_unique(other.index)) {}
 std::unique_ptr<NodeAST> NodeArray::clone() const {
 	return std::make_unique<NodeArray>(*this);
 }

@@ -54,7 +54,6 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeDataStructure *var, b
             compile_error.m_message = "Data Structure has already been declared in this scope.";
             compile_error.print();
         } else {
-//			auto cloned_node = clone_as<NodeDataStructure>(var);
 			if(global_scope) {
 				m_declared_data_structures.at(0).insert({var->name, var});
 			} else {
@@ -106,31 +105,15 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 		compile_error.m_message = "Data Structure has already been declared in this scope.";
 		compile_error.print();
 	} else {
-//		auto cloned_node = clone_as<NodeDataStructure>(var);
 		if(global_scope) {
 			m_declared_data_structures.at(0).insert({var->name, var});
 		} else {
 			m_declared_data_structures.back().insert({var->name, var});
 		}
-//		return var;
 	}
 	return nullptr;
 }
 
-
-//std::unique_ptr<NodeDataStructure> DefinitionProvider::build_data_structure(std::unique_ptr<NodeVariable> var, NodeDataStructure* declaration) {
-//    // if declaration is of data type array -> exchange with array node
-//    if(var->data_type != declaration->data_type) {
-//        if(declaration->data_type == Array) {
-//            auto node_array = make_array(var->name, 0, var->tok, var->parent);
-//            node_array->sizes->params.clear();
-//        }
-//
-//    }
-//    match_data_structure()
-//
-//
-//}
 
 void DefinitionProvider::match_data_structure(NodeDataStructure* reference, NodeDataStructure* declaration) {
     // get declaration to declaration
@@ -146,11 +129,6 @@ void DefinitionProvider::match_data_structure(NodeDataStructure* reference, Node
 	reference->type = declaration->type;
 	reference->data_type = declaration->data_type;
 }
-
-
-//std::unique_ptr<NodeDataStructure> DefinitionProvider::build_data_structure(std::unique_ptr<NodeArray> var, NodeDataStructure* declaration) {
-//
-//}
 
 
 NodeVariable* DefinitionProvider::get_builtin_variable(const std::string& var) {

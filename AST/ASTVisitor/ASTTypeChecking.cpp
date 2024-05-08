@@ -91,8 +91,8 @@ void ASTTypeChecking::visit(NodeVariable& node) {
         auto node_return_var = make_array(return_var_name, 0, node.tok, node.parent);
         auto callback_index = extract_last_number(node.name, &node);
         m_max_returns_in_current_callback = std::max(callback_index, m_max_returns_in_current_callback);
-        node_return_var->indexes->params.push_back(make_int(m_current_return_idx+callback_index, node_return_var.get()));
-        node_return_var->sizes->params.clear();
+        node_return_var->index->params.push_back(make_int(m_current_return_idx+callback_index, node_return_var.get()));
+        node_return_var->size->params.clear();
         node_return_var->type = node.type;
         node.replace_with(std::move(node_return_var));
     }
@@ -101,8 +101,8 @@ void ASTTypeChecking::visit(NodeVariable& node) {
         auto local_var_name = m_local_var_arrays.find(node.type)->second;
         auto node_local_variable = make_array(local_var_name, 0, node.tok, node.parent);
         auto idx = extract_last_number(node.name, &node);
-        node_local_variable->indexes->params.push_back(make_int(idx, node_local_variable.get()));
-        node_local_variable->sizes->params.clear();
+        node_local_variable->index->params.push_back(make_int(idx, node_local_variable.get()));
+        node_local_variable->size->params.clear();
         node_local_variable->type = node.type;
         node.replace_with(std::move(node_local_variable));
 
@@ -161,8 +161,8 @@ void ASTTypeChecking::visit(NodeArray& node) {
 		error.print();
 	}
 
-    node.indexes->accept(*this);
-    node.sizes->accept(*this);
+    node.index->accept(*this);
+    node.size->accept(*this);
 }
 
 void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
