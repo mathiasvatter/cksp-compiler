@@ -88,8 +88,8 @@ void ASTGenerator::visit(NodeArray &node) {
 //	    os << "]";
 	if(node.show_brackets) {
 		os << "[";
-		if(!node.is_reference) node.size->accept(*this);
-		if(node.is_reference) node.index->accept(*this);
+		if(!node.is_reference and node.size) node.size->accept(*this);
+		if(node.is_reference and node.index) node.index->accept(*this);
 		os << "]";
 	}
 }

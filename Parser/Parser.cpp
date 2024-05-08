@@ -154,9 +154,10 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 		node_array = std::move(node);
 	} else {
 		auto node = std::make_unique<NodeArray>(arr_name, arr_token);
-		node->size = std::move(sizes);
-		node->index = std::move(indexes);
+		if(!sizes->params.empty()) node->size = std::move(sizes->params[0]);
+		if(!indexes->params.empty()) node->index = std::move(indexes->params[0]);
 		node_array = std::move(node);
+		node_array->set_child_parents();
 	}
 
 	node_array->is_reference = is_reference;

@@ -37,12 +37,11 @@ public:
 			node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0,node.tok);
 		}
 		auto node_lowered_array = make_array(node.name, 1, node.tok, node.parent);
-		node_lowered_array->index->params.clear();
-		node_lowered_array->size->params.clear();
-		if(node.is_reference) node_lowered_array->index->params.push_back(std::move(node_expression));
-		if(!node.is_reference) node_lowered_array->size->params.push_back(std::move(node_expression));
-		node_lowered_array->index->update_parents(node_lowered_array.get());
-		node_lowered_array->size->update_parents(node_lowered_array.get());
+		node_lowered_array->index = nullptr;
+		node_lowered_array->size = nullptr;
+		if(node.is_reference) node_lowered_array->index = std::move(node_expression);
+		if(!node.is_reference) node_lowered_array->size = std::move(node_expression);
+		node_lowered_array->update_parents(node.parent);
 
 		node_lowered_array->name = "_" + node_lowered_array->name;
 		node_lowered_array->type = node.type;

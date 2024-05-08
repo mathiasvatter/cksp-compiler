@@ -54,8 +54,8 @@ public:
 		}
 	};
 	virtual void visit(NodeArray& node) {
-		node.size->accept(*this);
-		node.index->accept(*this);
+		if(node.size) node.size->accept(*this);
+		if(node.index) node.index->accept(*this);
 	};
 	virtual void visit(NodeArrayReference& node) {
 		node.index->accept(*this);

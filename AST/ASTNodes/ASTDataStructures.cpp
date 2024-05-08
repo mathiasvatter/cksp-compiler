@@ -30,6 +30,13 @@ NodeArray::NodeArray(const NodeArray& other)
 std::unique_ptr<NodeAST> NodeArray::clone() const {
 	return std::make_unique<NodeArray>(*this);
 }
+void NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (size.get() == oldChild) {
+		size = std::move(newChild);
+	} else if (index.get() == oldChild) {
+		index = std::move(newChild);
+	}
+}
 
 // ************* NodeNDArray ***************
 void NodeNDArray::accept(ASTVisitor &visitor) {

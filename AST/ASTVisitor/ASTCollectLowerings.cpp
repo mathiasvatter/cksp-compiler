@@ -7,6 +7,7 @@
 ASTCollectLowerings::ASTCollectLowerings(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
 void ASTCollectLowerings::visit(NodeSingleDeclareStatement &node) {
+	if(node.assignee) node.assignee->accept(*this);
 	if(auto lowering = node.get_lowering()) {
 		node.accept(*lowering);
 	}
@@ -14,15 +15,15 @@ void ASTCollectLowerings::visit(NodeSingleDeclareStatement &node) {
 
 
 void ASTCollectLowerings::visit(NodeNDArray& node) {
-	if(node.name == "chords") {
-
-	}
+	if(node.is_reference) node.indexes->accept(*this);
+	if(!node.is_reference) node.sizes->accept(*this);
 	if(auto lowering = node.get_lowering()) {
 		node.accept(*lowering);
 	}
 }
 
 void ASTCollectLowerings::visit(NodeListStructReference& node) {
+	node.indexes->accept(*this);
 	if(auto lowering = node.get_lowering()) {
 		node.accept(*lowering);
 	}
@@ -42,10 +43,10 @@ void ASTCollectLowerings::visit(NodeConstStatement &node) {
 }
 
 void ASTCollectLowerings::visit(NodeFamilyStatement &node) {
+    node.members->accept(*this);
     if(auto lowering = node.get_lowering()) {
         node.accept(*lowering);
     }
-    node.members->accept(*this);
     node.replace_with(std::move(node.members));
 }
 

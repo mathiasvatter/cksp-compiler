@@ -199,14 +199,18 @@ void ASTTypeCasting::visit(NodeArray& node) {
 		}
     }
     auto err = CompileError(ErrorType::TypeError,"Found incorrect type in array brackets.", node.tok.line, "Integer", "", node.tok.file);
-    node.size->accept(*this);
-    if(node.size->type != ASTType::Integer and node.size->type != ASTType::Unknown)
-        err.exit();
-    node.index->accept(*this);
-    if(node.index->type != ASTType::Integer and node.index->type != ASTType::Unknown)
-        err.exit();
+    if(node.size) {
+		node.size->accept(*this);
+		if(node.size->type != ASTType::Integer and node.size->type != ASTType::Unknown)
+			err.exit();
+	}
+    if(node.index) {
+		node.index->accept(*this);
+		if(node.index->type != ASTType::Integer and node.index->type != ASTType::Unknown)
+			err.exit();
+	}
 
-    if(node.data_type == DataType::UI_Control and node.index->params.empty()) {
+    if(node.data_type == DataType::UI_Control and !node.index) {
         auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
         if(node_control_function and contains(node_control_function->name, "control_par")) {
             auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(

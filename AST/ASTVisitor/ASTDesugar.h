@@ -35,7 +35,8 @@ public:
 
     void visit(NodeBody& node) override;
     void visit(NodeStatement& node) override;
-    void visit(NodeArray& node) override;
+	void visit(NodeArray& node) override;
+	void visit(NodeNDArray& node) override;
     void visit(NodeVariable& node) override;
 
 	std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> get_function_inlines();

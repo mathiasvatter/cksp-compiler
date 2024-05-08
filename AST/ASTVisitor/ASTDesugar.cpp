@@ -55,11 +55,15 @@ void ASTDesugar::visit(NodeCallback& node) {
     m_current_callback_idx++;
 
 }
+void ASTDesugar::visit(NodeNDArray& node) {
+	node.sizes->accept(*this);
+	node.indexes->accept(*this);
+};
 
 void ASTDesugar::visit(NodeArray& node) {
 
-    node.size->accept(*this);
-    node.index->accept(*this);
+    if(node.size) node.size->accept(*this);
+    if(node.index) node.index->accept(*this);
 
     // local variable substitution
     // do local variable substitution only if parent is not declare statement because scope
@@ -119,7 +123,7 @@ void ASTDesugar::visit(NodeVariable& node) {
 
     // local variable substitution
     // do local variable substitution only if parent is not declare statement because scope
-    if(!m_variable_scope_stack.empty() and !is_to_be_declared(&node)) {
+    if(!m_variable_scope_stack.empty() and node.is_reference) {
         if(auto substitute = get_local_variable_substitute(node.name)) {
             substitute->update_parents(node.parent);
             if(substitute->type == ASTType::Unknown)
@@ -438,15 +442,15 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 
     if(node_array) {
         // array size is empty -> try to infer from assignee
-        if(node_array->size->params.empty()) {
+        if(!node_array->size) {
             // no assignee -> no array size -> not able to infer
             if(!node.assignee) {
                 CompileError(ErrorType::SyntaxError,"Unable to infer array size.", node.tok.line, "initializer list", "",node.tok.file).exit();
             }
             // if size is empty -> get it from declaration
             if(param_list) {
-                auto node_int = make_int((int32_t) param_list->params.size(), node_array->size.get());
-                node_array->size->params.push_back(std::move(node_int));
+                auto node_int = make_int((int32_t) param_list->params.size(), node_array);
+                node_array->size = std::move(node_int);
             }
         }
 
@@ -463,7 +467,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 		std::unique_ptr<NodeArray> node_array_copy;
 		if(node_array) {
 			node_array_copy = std::unique_ptr<NodeArray>(static_cast<NodeArray *>(node.to_be_declared->clone().release()));
-			node_array_copy->index->params.clear();
+			node_array_copy->index = nullptr;
 			to_be_declared_ptr = node_array_copy.get();
 		}
         add_vector_to_statement_list(node_body, add_read_functions(persistence.value(), to_be_declared_ptr, node_body.get()));
@@ -474,7 +478,9 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
         std::unique_ptr<NodeAST> stmt;
         std::unique_ptr<NodeAST> assignee = nullptr;
         if (node.assignee and !is_const and !node_array) {
-            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(),
+			auto cloned_var = clone_as<NodeVariable>(node.to_be_declared.get());
+			cloned_var->is_reference = true;
+            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(cloned_var),
                                                                                node.assignee->clone(), node.tok);
             node_assignment->update_parents(node.parent);
             node_assignment->accept(*this);

@@ -30,7 +30,7 @@ private:
 public:
 
     void visit(NodeVariable& node) override {
-        if(!m_const_prefixes.empty() and is_to_be_declared(&node)) {
+        if(!m_const_prefixes.empty() and !node.is_reference) {
             node.name = m_const_prefixes.top() + "." + node.name;
         }
     };
