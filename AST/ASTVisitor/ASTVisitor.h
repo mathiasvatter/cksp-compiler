@@ -47,7 +47,7 @@ public:
     virtual void visit(NodeReal& node) {node.type = ASTType::Real;};
     virtual void visit(NodeString& node) {node.type = ASTType::String;};
 	virtual void visit(NodeVariable& node) {};
-	virtual void visit(NodeVariableReference& node) {};
+	virtual void visit(NodeVariableRef& node) {};
     virtual void visit(NodeParamList& node) {
 		for(auto & param : node.params) {
 			param->accept(*this);
@@ -57,14 +57,14 @@ public:
 		if(node.size) node.size->accept(*this);
 		if(node.index) node.index->accept(*this);
 	};
-	virtual void visit(NodeArrayReference& node) {
+	virtual void visit(NodeArrayRef& node) {
 		node.index->accept(*this);
 	};
 	virtual void visit(NodeNDArray& node) {
 		node.sizes->accept(*this);
 		node.indexes->accept(*this);
 	};
-	virtual void visit(NodeNDArrayReference& node) {
+	virtual void visit(NodeNDArrayRef& node) {
 		node.indexes->accept(*this);
 	};
     virtual void visit(NodeUIControl& node){
@@ -123,7 +123,7 @@ public:
             b->accept(*this);
         }
     };
-	virtual void visit(NodeListStructReference& node) {
+	virtual void visit(NodeListStructRef& node) {
 		node.indexes->accept(*this);
 	};
     virtual void visit(NodeStatement& node) {

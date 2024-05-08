@@ -12,7 +12,7 @@ public:
 
 	};
 
-	void visit(NodeListStructReference& node) override {
+	void visit(NodeListStructRef& node) override {
 		// list references can only have one or two (jagged lists) index
 		if(node.indexes->params.size() != 2 && node.indexes->params.size() != 1) {
 			CompileError(ErrorType::SyntaxError,"Got wrong amount of index for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).exit();

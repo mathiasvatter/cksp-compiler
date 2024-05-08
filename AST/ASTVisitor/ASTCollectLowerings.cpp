@@ -22,7 +22,7 @@ void ASTCollectLowerings::visit(NodeNDArray& node) {
 	}
 }
 
-void ASTCollectLowerings::visit(NodeListStructReference& node) {
+void ASTCollectLowerings::visit(NodeListStructRef& node) {
 	node.indexes->accept(*this);
 	if(auto lowering = node.get_lowering()) {
 		node.accept(*lowering);

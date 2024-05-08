@@ -9,6 +9,7 @@
 #include "../../Lowering/LoweringList.h"
 #include "../../Lowering/LoweringConstStruct.h"
 #include "../../Lowering/LoweringFamilyStruct.h"
+#include "../../Lowering/LoweringArray.h"
 
 // ************* NodeVariable ***************
 void NodeVariable::accept(ASTVisitor &visitor) {
@@ -36,6 +37,11 @@ void NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChi
 	} else if (index.get() == oldChild) {
 		index = std::move(newChild);
 	}
+}
+
+ASTVisitor* NodeArray::get_lowering() const {
+	static LoweringArray lowering;
+	return &lowering;
 }
 
 // ************* NodeNDArray ***************

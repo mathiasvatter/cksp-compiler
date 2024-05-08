@@ -77,8 +77,6 @@ std::unique_ptr<NodeAST> NodeString::clone() const {
     return std::make_unique<NodeString>(*this);
 }
 
-
-
 // ************* NodeParamList ***************
 void NodeParamList::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
