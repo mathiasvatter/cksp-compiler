@@ -28,6 +28,7 @@ private:
     std::unique_ptr<NodeAST> m_iter = nullptr;
 
 public:
+	explicit LoweringConstStruct(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
 
     void visit(NodeVariable& node) override {
         if(!m_const_prefixes.empty() and !node.is_reference) {

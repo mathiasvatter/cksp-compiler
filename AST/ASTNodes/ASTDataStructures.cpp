@@ -39,8 +39,8 @@ void NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChi
 	}
 }
 
-ASTVisitor* NodeArray::get_lowering() const {
-	static LoweringArray lowering;
+ASTVisitor* NodeArray::get_lowering(DefinitionProvider* def_provider) const {
+	static LoweringArray lowering(def_provider);
 	return &lowering;
 }
 
@@ -55,8 +55,8 @@ std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 	return std::make_unique<NodeNDArray>(*this);
 }
 
-ASTVisitor* NodeNDArray::get_lowering() const {
-	static LoweringNDArray lowering;
+ASTVisitor* NodeNDArray::get_lowering(DefinitionProvider* def_provider) const {
+	static LoweringNDArray lowering(def_provider);
 	return &lowering;
 }
 
@@ -82,8 +82,8 @@ void NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 	}
 }
 
-ASTVisitor* NodeUIControl::get_lowering() const {
-	static LoweringUIControlArray lowering;
+ASTVisitor* NodeUIControl::get_lowering(DefinitionProvider* def_provider) const {
+	static LoweringUIControlArray lowering(def_provider);
 	return &lowering;
 }
 
@@ -98,8 +98,8 @@ std::unique_ptr<NodeAST> NodeListStruct::clone() const {
 	return std::make_unique<NodeListStruct>(*this);
 }
 
-ASTVisitor* NodeListStruct::get_lowering() const {
-	static LoweringList lowering;
+ASTVisitor* NodeListStruct::get_lowering(DefinitionProvider* def_provider) const {
+	static LoweringList lowering(def_provider);
 	return &lowering;
 }
 
@@ -114,8 +114,8 @@ std::unique_ptr<NodeAST> NodeConstStatement::clone() const {
     return std::make_unique<NodeConstStatement>(*this);
 }
 
-ASTVisitor* NodeConstStatement::get_lowering() const {
-    static LoweringConstStruct lowering;
+ASTVisitor* NodeConstStatement::get_lowering(DefinitionProvider* def_provider) const {
+    static LoweringConstStruct lowering(def_provider);
     return &lowering;
 }
 
@@ -130,7 +130,7 @@ std::unique_ptr<NodeAST> NodeFamilyStatement::clone() const {
     return std::make_unique<NodeFamilyStatement>(*this);
 }
 
-ASTVisitor* NodeFamilyStatement::get_lowering() const {
-    static LoweringFamilyStruct lowering;
+ASTVisitor* NodeFamilyStatement::get_lowering(DefinitionProvider* def_provider) const {
+    static LoweringFamilyStruct lowering(def_provider);
     return &lowering;
 }

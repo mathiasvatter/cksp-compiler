@@ -8,6 +8,7 @@
 #include "../../Desugaring/DesugarDeclareAssign.h"
 #include "../../Desugaring/DesugarForStatement.h"
 #include "../../Desugaring/DesugarForEachStatement.h"
+#include "../../Lowering/LoweringGetControl.h"
 
 // ************* NodeAST Base Class ***************
 void NodeAST::accept(ASTVisitor &visitor) {}
@@ -163,6 +164,10 @@ void NodeSingleAssignStatement::replace_child(NodeAST* oldChild, std::unique_ptr
     }
 }
 
+ASTVisitor* NodeSingleAssignStatement::get_lowering(DefinitionProvider* def_provider) const {
+	return this->array_variable->get_lowering(def_provider);
+}
+
 // ************* NodeDeclareStatement ***************
 void NodeDeclareStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
@@ -215,8 +220,8 @@ void NodeSingleDeclareStatement::replace_child(NodeAST* oldChild, std::unique_pt
     }
 }
 
-ASTVisitor* NodeSingleDeclareStatement::get_lowering() const {
-	return this->to_be_declared->get_lowering();
+ASTVisitor* NodeSingleDeclareStatement::get_lowering(DefinitionProvider* def_provider) const {
+	return this->to_be_declared->get_lowering(def_provider);
 }
 
 // ************* NodeReturnStatement ***************
@@ -249,6 +254,10 @@ void NodeGetControlStatement::replace_child(NodeAST* oldChild, std::unique_ptr<N
 	if (ui_id.get() == oldChild) {
 		ui_id = std::move(newChild);
 	}
+}
+ASTVisitor* NodeGetControlStatement::get_lowering(DefinitionProvider* def_provider) const {
+	static LoweringGetControl lowering(def_provider);
+	return &lowering;
 }
 
 // ************* NodeStatement ***************
@@ -450,6 +459,10 @@ NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
         : NodeAST(other), is_call(other.is_call), function(clone_unique(other.function)) {}
 std::unique_ptr<NodeAST> NodeFunctionCall::clone() const {
     return std::make_unique<NodeFunctionCall>(*this);
+}
+ASTVisitor* NodeFunctionCall::get_lowering(DefinitionProvider* def_provider) const {
+	static LoweringGetControl lowering(def_provider);
+	return &lowering;
 }
 
 // ************* NodeFunctionDefinition ***************

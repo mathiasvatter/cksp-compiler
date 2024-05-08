@@ -17,6 +17,7 @@ private:
 	std::unique_ptr<NodeUIControl> m_ui_control_array = nullptr;
 	std::optional<Token> m_persistence;
 public:
+	explicit LoweringUIControlArray(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
 
 	void visit(NodeSingleDeclareStatement &node) override {
 		auto node_ui_control = cast_node<NodeUIControl>(node.to_be_declared.get());
@@ -39,7 +40,7 @@ public:
 		auto node_array_declaration = statement_wrapper(std::make_unique<NodeSingleDeclareStatement>(std::move(node_ui_control->control_var), nullptr, node.tok),nullptr);
 		node_array_declaration->update_parents(node.parent);
 		// lowering of ndarray, turn DeclareStatement into NodeBody
-		if(auto lowering = node_array_declaration->statement->get_lowering()) {
+		if(auto lowering = node_array_declaration->statement->get_lowering(m_def_provider)) {
 			node_array_declaration->statement->accept(*lowering);
 		}
 
@@ -68,7 +69,7 @@ public:
 	}
 
 	void visit(NodeNDArray &node) override {
-		if(auto lowering = node.get_lowering()) {
+		if(auto lowering = node.get_lowering(m_def_provider)) {
 			node.accept(*lowering);
 		}
 	}
@@ -116,6 +117,7 @@ public:
 			auto new_ui_control = clone_as<NodeUIControl>(new_ui_control_template.get());
 			new_ui_control->control_var->name = new_control_name + std::to_string(i);
             new_ui_control->control_var->is_reference = false;
+//			new_ui_control->control_var->data_type = DataType::UI_Control;
 			new_ui_control->control_var->persistence = m_persistence;
 			new_ui_control->params = clone_as<NodeParamList>(ui_control.params.get());
 			auto new_node_declaration =
@@ -143,7 +145,6 @@ public:
 
 		auto node_raw_array_copy = clone_as<NodeArray>(ui_control.control_var.get());
 		node_raw_array_copy->is_reference = true;
-//		node_raw_array_copy->index->params.clear();
 		node_raw_array_copy->index = node_iterator_var->clone();
 		auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(node_raw_array_copy),
 																		   std::move(node_while_body_expression),

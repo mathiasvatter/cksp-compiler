@@ -89,7 +89,7 @@ struct NodeListStructRef : NodeReference {
 	void set_child_parents() override {
 		if(indexes) indexes->parent = this;
 	};
-	ASTVisitor* get_lowering() const override;
+	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
 
 };
 

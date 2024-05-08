@@ -46,14 +46,14 @@ private:
 
     NodeAST* m_current_node_replaced = nullptr;
 
-    std::unique_ptr<NodeFunctionCall> wrap_in_get_ui_id(std::unique_ptr<NodeAST> variable);
+//    std::unique_ptr<NodeFunctionCall> wrap_in_get_ui_id(std::unique_ptr<NodeAST> variable);
 
     void declare_dummy_return_variable();
     void declare_compiler_variables();
 
-    std::unique_ptr<NodeVariable> shorthand_to_control_param(const std::string& shorthand);
+//    std::unique_ptr<NodeVariable> shorthand_to_control_param(const std::string& shorthand);
     // returns either string (for get/set_control_par_str) or integer (for get/set_control_par)
-    static ASTType get_control_function_type(const std::string& control_param);
+//    static ASTType get_control_function_type(const std::string& control_param);
 
     std::unique_ptr<NodeBody> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header);
 
@@ -95,8 +95,6 @@ private:
     std::unique_ptr<NodeAST> get_local_variable_substitute(const std::string& name);
 
     std::vector<std::unique_ptr<NodeStatement>> add_read_functions(const Token& persistence, NodeDataStructure* var, NodeAST* parent);
-    /// multidimensional array method for getting the size at declaration time
-    std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok);
 
     bool in_function();
 };

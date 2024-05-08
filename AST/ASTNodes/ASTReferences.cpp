@@ -59,7 +59,7 @@ std::unique_ptr<NodeAST> NodeListStructRef::clone() const {
 	return std::make_unique<NodeListStructRef>(*this);
 }
 
-ASTVisitor* NodeListStructRef::get_lowering() const {
-	static LoweringList lowering;
+ASTVisitor* NodeListStructRef::get_lowering(DefinitionProvider* def_provider) const {
+	static LoweringList lowering(def_provider);
 	return &lowering;
 }

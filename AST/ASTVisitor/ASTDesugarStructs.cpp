@@ -60,12 +60,10 @@ void ASTDesugarStructs::visit(NodeForStatement& node) {
     }
 }
 
-std::unique_ptr<NodeAST> ASTDesugarStructs::get_key_value_substitute(const std::string& name) {
-	for (auto rit = m_key_value_scope_stack.rbegin(); rit != m_key_value_scope_stack.rend(); ++rit) {
-		auto it = rit->find(name);
-		if(it != rit->end()) {
-			return it->second->clone();
-		}
-	}
-	return nullptr;
+void ASTDesugarStructs::visit(NodeFamilyStatement &node) {
+    node.members->accept(*this);
+    if(auto lowering = node.get_lowering(nullptr)) {
+        node.accept(*lowering);
+    }
+    node.replace_with(std::move(node.members));
 }

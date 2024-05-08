@@ -74,7 +74,6 @@ protected:
     Result<std::unique_ptr<NodeString>> parse_string(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent=std::optional<Token>(), DataType var_type=DataType::Mutable);
     Result<std::unique_ptr<NodeDataStructure>> parse_array(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent = std::optional<Token>(), DataType var_type = DataType::Array);
-    Result<std::unique_ptr<NodeNDArray>> parse_ndarray(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent = std::optional<Token>(), DataType var_type = DataType::NDArray);
 
     Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent);
 	Result<SuccessTag> _parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent);

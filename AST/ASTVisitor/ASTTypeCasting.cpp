@@ -210,7 +210,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
 			err.exit();
 	}
 
-    if(node.data_type == DataType::UI_Control and !node.index) {
+    if(node.data_type == DataType::UI_Control and node.index) {
         auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
         if(node_control_function and contains(node_control_function->name, "control_par")) {
             auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(
