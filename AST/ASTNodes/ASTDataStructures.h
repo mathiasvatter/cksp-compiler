@@ -51,6 +51,8 @@ struct NodeArray : NodeDataStructure {
 		if(size) size -> update_token_data(token);
 		if(index) index ->update_token_data(token);
 	}
+	ASTVisitor* get_lowering() const override;
+
 };
 
 struct NodeNDArray : NodeDataStructure {

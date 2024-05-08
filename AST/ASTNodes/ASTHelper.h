@@ -72,11 +72,11 @@ enum class DataType {
 
 enum class NodeType {
 	Variable,
-	VariableReference,
+	VariableRef,
 	Array,
-	ArrayReference,
+	ArrayRef,
 	NDArray,
-	NDArrayReference,
+	NDArrayRef,
 	UIControl,
 	UnaryExpr,
 	BinaryExpr,
@@ -97,7 +97,7 @@ enum class NodeType {
 	StructStatement,
 	FamilyStatement,
 	ListStruct,
-	ListStructReference,
+	ListStructRef,
 	IfStatement,
 	ForStatement,
 	ForEachStatement,

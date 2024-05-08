@@ -31,7 +31,7 @@ public:
 	void visit(NodeNDArray& node) override;
 	/// List Struct and Reference
 	void visit(NodeListStruct& node) override;
-	void visit(NodeListStructReference& node) override;
+	void visit(NodeListStructRef& node) override;
 	/// Variable
 	void visit(NodeVariable& node) override;
 

@@ -8,12 +8,12 @@
 
 #include "AST.h"
 
-struct NodeVariableReference : NodeReference {
-	inline NodeVariableReference(std::string name, Token tok)
-		: NodeReference(std::move(name), NodeType::VariableReference, tok) {}
+struct NodeVariableRef : NodeReference {
+	inline NodeVariableRef(std::string name, Token tok)
+		: NodeReference(std::move(name), NodeType::VariableRef, tok) {}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
-	NodeVariableReference(const NodeVariableReference& other);
+	NodeVariableRef(const NodeVariableRef& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {}
@@ -22,17 +22,18 @@ struct NodeVariableReference : NodeReference {
 	}
 };
 
-struct NodeArrayReference : NodeReference {
+struct NodeArrayRef : NodeReference {
 	std::unique_ptr<NodeAST> index;
-	inline NodeArrayReference(std::string name, Token tok)
-		: NodeReference(std::move(name), NodeType::ArrayReference, tok) {
+	inline NodeArrayRef(std::string name, Token tok)
+		: NodeReference(std::move(name), NodeType::ArrayRef, tok) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
-	NodeArrayReference(const NodeArrayReference& other);
+	NodeArrayRef(const NodeArrayRef& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	void update_parents(NodeAST* new_parent) override {
 		if(index) index ->update_parents(this);
 	}
@@ -44,15 +45,15 @@ struct NodeArrayReference : NodeReference {
 	}
 };
 
-struct NodeNDArrayReference : NodeReference {
+struct NodeNDArrayRef : NodeReference {
 	std::unique_ptr<NodeParamList> indexes;
-	inline NodeNDArrayReference(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
-		: NodeReference(std::move(name), NodeType::NDArrayReference, tok), indexes(std::move(indexes)) {
+	inline NodeNDArrayRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
+		: NodeReference(std::move(name), NodeType::NDArrayRef, tok), indexes(std::move(indexes)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
-	NodeNDArrayReference(const NodeNDArrayReference& other);
+	NodeNDArrayRef(const NodeNDArrayRef& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {
@@ -66,17 +67,17 @@ struct NodeNDArrayReference : NodeReference {
 	}
 };
 
-struct NodeListStructReference : NodeReference {
+struct NodeListStructRef : NodeReference {
 	NodeParamList* sizes = nullptr; // param list of size of the lists in the list
 	NodeParamList* pos = nullptr; // param list of positions in the list
 	std::unique_ptr<NodeParamList> indexes;
-	NodeListStructReference(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
-		: NodeReference(std::move(name), NodeType::ListStructReference, tok), indexes(std::move(indexes)) {
+	NodeListStructRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
+		: NodeReference(std::move(name), NodeType::ListStructRef, tok), indexes(std::move(indexes)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
-	NodeListStructReference(const NodeListStructReference& other);
+	NodeListStructRef(const NodeListStructRef& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {

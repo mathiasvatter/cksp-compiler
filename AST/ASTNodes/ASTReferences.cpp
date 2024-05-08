@@ -6,55 +6,60 @@
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Lowering/LoweringList.h"
 
-// ************* NodeVariableReference ***************
-void NodeVariableReference::accept(ASTVisitor &visitor) {
+// ************* NodeVariableRef ***************
+void NodeVariableRef::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-NodeVariableReference::NodeVariableReference(const NodeVariableReference& other)
+NodeVariableRef::NodeVariableRef(const NodeVariableRef& other)
 	: NodeReference(other) {}
 
-std::unique_ptr<NodeAST> NodeVariableReference::clone() const {
-	return std::make_unique<NodeVariableReference>(*this);
+std::unique_ptr<NodeAST> NodeVariableRef::clone() const {
+	return std::make_unique<NodeVariableRef>(*this);
 }
 
-// ************* NodeArrayReference ***************
-void NodeArrayReference::accept(ASTVisitor &visitor) {
+// ************* NodeArrayRef ***************
+void NodeArrayRef::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-NodeArrayReference::NodeArrayReference(const NodeArrayReference& other)
+NodeArrayRef::NodeArrayRef(const NodeArrayRef& other)
 	: NodeReference(other), index(clone_unique(other.index)) {}
 
-std::unique_ptr<NodeAST> NodeArrayReference::clone() const {
-	return std::make_unique<NodeArrayReference>(*this);
+std::unique_ptr<NodeAST> NodeArrayRef::clone() const {
+	return std::make_unique<NodeArrayRef>(*this);
+}
+void NodeArrayRef::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (index.get() == oldChild) {
+		index = std::move(newChild);
+	}
 }
 
-// ************* NodeNDArrayReference ***************
-void NodeNDArrayReference::accept(ASTVisitor &visitor) {
+// ************* NodeNDArrayRef ***************
+void NodeNDArrayRef::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-NodeNDArrayReference::NodeNDArrayReference(const NodeNDArrayReference& other)
+NodeNDArrayRef::NodeNDArrayRef(const NodeNDArrayRef& other)
 	: NodeReference(other), indexes(clone_unique(other.indexes)) {}
 
-std::unique_ptr<NodeAST> NodeNDArrayReference::clone() const {
-	return std::make_unique<NodeNDArrayReference>(*this);
+std::unique_ptr<NodeAST> NodeNDArrayRef::clone() const {
+	return std::make_unique<NodeNDArrayRef>(*this);
 }
 
-// ************* NodeListStructReference ***************
-void NodeListStructReference::accept(ASTVisitor &visitor) {
+// ************* NodeListStructRef ***************
+void NodeListStructRef::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-NodeListStructReference::NodeListStructReference(const NodeListStructReference& other)
+NodeListStructRef::NodeListStructRef(const NodeListStructRef& other)
 	: NodeReference(other), indexes(clone_unique(other.indexes)), sizes(other.sizes), pos(other.pos) {}
 
-std::unique_ptr<NodeAST> NodeListStructReference::clone() const {
-	return std::make_unique<NodeListStructReference>(*this);
+std::unique_ptr<NodeAST> NodeListStructRef::clone() const {
+	return std::make_unique<NodeListStructRef>(*this);
 }
 
-ASTVisitor* NodeListStructReference::get_lowering() const {
+ASTVisitor* NodeListStructRef::get_lowering() const {
 	static LoweringList lowering;
 	return &lowering;
 }

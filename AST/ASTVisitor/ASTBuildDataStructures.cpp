@@ -55,11 +55,11 @@ void ASTBuildDataStructures::visit(NodeArray &node) {
 
 	m_def_provider->match_data_structure(&node, node_declaration);
 
-	// check if it is NodeListStructReference
-	if(node_declaration->get_node_type() == NodeType::ListStructReference) {
+	// check if it is NodeListStructRef
+	if(node_declaration->get_node_type() == NodeType::ListStructRef) {
 		std::unique_ptr<NodeParamList> indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.tok));
 		indexes->params.push_back(std::move(node.index));
-		auto node_list_reference = std::make_unique<NodeListStructReference>(node.name, std::move(indexes), node.tok);
+		auto node_list_reference = std::make_unique<NodeListStructRef>(node.name, std::move(indexes), node.tok);
 		node_list_reference->declaration = node_declaration;
 		node_list_reference->update_parents(node.parent);
 		node.replace_with(std::move(node_list_reference));
@@ -94,9 +94,9 @@ void ASTBuildDataStructures::visit(NodeNDArray& node) {
 
 	m_def_provider->match_data_structure(&node, node_declaration);
 
-	// check if it is NodeListStructReference
+	// check if it is NodeListStructRef
 	if(node_declaration->get_node_type() == NodeType::ListStruct) {
-		auto node_list_reference = std::make_unique<NodeListStructReference>(node.name, std::move(node.indexes), node.tok);
+		auto node_list_reference = std::make_unique<NodeListStructRef>(node.name, std::move(node.indexes), node.tok);
 		node_list_reference->declaration = node_declaration;
 		node_list_reference->accept(*this);
 		node.replace_with(std::move(node_list_reference));
@@ -161,7 +161,7 @@ void ASTBuildDataStructures::visit(NodeListStruct& node) {
 
 }
 
-void ASTBuildDataStructures::visit(NodeListStructReference& node) {
+void ASTBuildDataStructures::visit(NodeListStructRef& node) {
 	node.indexes->accept(*this);
 
 	node.type = infer_type_from_identifier(node.name);
