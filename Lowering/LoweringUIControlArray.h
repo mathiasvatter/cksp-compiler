@@ -59,8 +59,8 @@ public:
 
 	void visit(NodeArray &node) override {
 		auto error = CompileError(ErrorType::SyntaxError, "Unable to infer array size. Size of UI Control Array has to be determined at compile time.", node.tok.line, "initializer list", "", node.tok.file);
-		if(node.size->params.empty()) error.exit();
-		m_ui_array_size = node.size->params[0]->clone();
+		if(!node.size) error.exit();
+		m_ui_array_size = node.size->clone();
         // real array of ui control is saved in m_ui_control_array->size
         if(!m_ui_control_array->sizes->params.empty()) {
             m_ui_control_var_size = clone_as<NodeParamList>(m_ui_control_array->sizes.get());
@@ -143,8 +143,8 @@ public:
 
 		auto node_raw_array_copy = clone_as<NodeArray>(ui_control.control_var.get());
 		node_raw_array_copy->is_reference = true;
-		node_raw_array_copy->index->params.clear();
-		node_raw_array_copy->index->params.push_back(node_iterator_var->clone());
+//		node_raw_array_copy->index->params.clear();
+		node_raw_array_copy->index = node_iterator_var->clone();
 		auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(node_raw_array_copy),
 																		   std::move(node_while_body_expression),
 																		   ui_control.tok);

@@ -43,8 +43,8 @@ void ASTBuildDataStructures::visit(NodeBody &node) {
 }
 
 void ASTBuildDataStructures::visit(NodeArray &node) {
-	node.size->accept(*this);
-	node.index->accept(*this);
+	if(node.size) node.size->accept(*this);
+	if(node.index) node.index->accept(*this);
 
     node.type = infer_type_from_identifier(node.name);
 
@@ -57,8 +57,11 @@ void ASTBuildDataStructures::visit(NodeArray &node) {
 
 	// check if it is NodeListStructReference
 	if(node_declaration->get_node_type() == NodeType::ListStructReference) {
-		auto node_list_reference = std::make_unique<NodeListStructReference>(node.name, std::move(node.index), node.tok);
+		std::unique_ptr<NodeParamList> indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.tok));
+		indexes->params.push_back(std::move(node.index));
+		auto node_list_reference = std::make_unique<NodeListStructReference>(node.name, std::move(indexes), node.tok);
 		node_list_reference->declaration = node_declaration;
+		node_list_reference->update_parents(node.parent);
 		node.replace_with(std::move(node_list_reference));
 		return;
 	}
@@ -66,7 +69,8 @@ void ASTBuildDataStructures::visit(NodeArray &node) {
 	// match array specific information
 	if(node.is_reference) {
 		if(auto node_array = cast_node<NodeArray>(node_declaration)) {
-			node.size = clone_as<NodeParamList>(node_array->size.get());
+			if(!node_array->size) return;
+			node.size = node_array->size->clone();
 			node.size->update_parents(&node);
 		}
 	}
@@ -158,6 +162,8 @@ void ASTBuildDataStructures::visit(NodeListStruct& node) {
 }
 
 void ASTBuildDataStructures::visit(NodeListStructReference& node) {
+	node.indexes->accept(*this);
+
 	node.type = infer_type_from_identifier(node.name);
 
 	auto node_declaration = m_def_provider->get_declaration(&node);

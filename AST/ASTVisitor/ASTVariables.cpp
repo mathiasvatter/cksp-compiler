@@ -129,7 +129,7 @@ void ASTVariables::visit(NodeArray& node) {
             // get var type from declaration because of List
             if(node_declaration->data_type == DataType::List or node_declaration->data_type == DataType::UI_Control) node.data_type = node_declaration->data_type;
             // only copy size from declaration if there is an index (passing arrays only by keyword)
-            if(!node.index->params.empty()) {
+            if(node.index) {
                 node.size = std::unique_ptr<NodeParamList>(
                         static_cast<NodeParamList *>(node_declaration->size->clone().release()));
                 node.size->update_parents(&node);
@@ -144,23 +144,23 @@ void ASTVariables::visit(NodeArray& node) {
 //            }
 
             // convert index of list
-            if(node.data_type == DataType::List) {
-
-                if(node.index->params.size() != 2) {
-                    CompileError(ErrorType::SyntaxError, "Got wrong amount of index for <list>.", node.tok.line, "2", std::to_string(node.index->params.size()), node.tok.file).print();
-                    exit(EXIT_FAILURE);
-                }
-                auto node_position_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(
-                                                                              get_declared_array(node.name+".pos")->clone().release()));
-                node_position_array->index->params.clear();
-                node_position_array->index->params.push_back(std::move(node.index->params[0]));
-
-                auto node_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_position_array), std::move(node.index->params[1]), &node, node.tok);
-                node.index->params.clear();
-                node.index->params.push_back(std::move(node_expression));
-                node.index->update_parents(&node);
-                node.name = "_"+node.name;
-            }
+//            if(node.data_type == DataType::List) {
+//
+//                if(node.index->params.size() != 2) {
+//                    CompileError(ErrorType::SyntaxError, "Got wrong amount of index for <list>.", node.tok.line, "2", std::to_string(node.index->params.size()), node.tok.file).print();
+//                    exit(EXIT_FAILURE);
+//                }
+//                auto node_position_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(
+//                                                                              get_declared_array(node.name+".pos")->clone().release()));
+//                node_position_array->index->params.clear();
+//                node_position_array->index->params.push_back(std::move(node.index->params[0]));
+//
+//                auto node_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_position_array), std::move(node.index->params[1]), &node, node.tok);
+//                node.index->params.clear();
+//                node.index->params.push_back(std::move(node_expression));
+//                node.index->update_parents(&node);
+//                node.name = "_"+node.name;
+//            }
 
         } else if(node_builtin_array) {
             node.declaration = node_builtin_array;
@@ -236,7 +236,7 @@ void ASTVariables::visit(NodeVariable& node) {
         // can only be array if parent is param_list or callback
         } else if((node_param_list || cast_node<NodeCallback>(node.parent)) && node_first_array_declaration) {
             auto node_array = make_array(node.name, 0, node.tok, node.parent);
-            node_array->size->params.clear();
+            node_array->size = nullptr;
             node_array->type = node.type;
             node_array->declaration = node_first_array_declaration;
             node_array->accept(*this);

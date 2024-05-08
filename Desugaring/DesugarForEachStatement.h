@@ -87,8 +87,8 @@ public:
         auto node_num_elements = make_function_call("num_elements", std::move(args), &node, node.tok);
         auto node_end_range = make_binary_expr(ASTType::Integer, "-", std::move(node_num_elements->statement), make_int(1, &node), &node, node.tok);
         auto node_value_array = make_array(node.range->get_string(), 1, node.tok, &node);
-        node_value_array->size->params.clear();
-        node_value_array->index->params.push_back(std::move(node.keys->params[0]));
+        node_value_array->size = nullptr;
+        node_value_array->index = std::move(node.keys->params[0]);
         m_key_value_scope_stack.emplace_back();
         m_key_value_scope_stack.back().insert({node.keys->params[1]->get_string(), std::move(node_value_array)});
 

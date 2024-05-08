@@ -21,11 +21,11 @@ struct NodeVariable: NodeDataStructure {
 
 struct NodeArray : NodeDataStructure {
 	bool show_brackets = true;
-	std::unique_ptr<NodeParamList> size = nullptr;
-	std::unique_ptr<NodeParamList> index = nullptr;
+	std::unique_ptr<NodeAST> size = nullptr;
+	std::unique_ptr<NodeAST> index = nullptr;
 	inline explicit NodeArray(std::string name, Token tok) : NodeDataStructure(name, tok, NodeType::Array) {}
-	inline NodeArray(std::optional<Token> is_persistent, std::string name, DataType var_type, std::unique_ptr<NodeParamList> size,
-					 std::unique_ptr<NodeParamList> index, Token tok)
+	inline NodeArray(std::optional<Token> is_persistent, std::string name, DataType var_type, std::unique_ptr<NodeAST> size,
+					 std::unique_ptr<NodeAST> index, Token tok)
 		: NodeDataStructure(std::move(name), tok, NodeType::Array),
 		  size(std::move(size)), index(std::move(index)) {
 		persistence = std::move(is_persistent);
@@ -37,6 +37,7 @@ struct NodeArray : NodeDataStructure {
 	NodeArray(const NodeArray& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
 		if (size) size->update_parents(this);
