@@ -51,7 +51,7 @@ struct NodeArray : NodeDataStructure {
 		if(size) size -> update_token_data(token);
 		if(index) index ->update_token_data(token);
 	}
-	ASTVisitor* get_lowering() const override;
+	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
 
 };
 
@@ -90,7 +90,7 @@ struct NodeNDArray : NodeDataStructure {
 		if(sizes) sizes -> update_token_data(token);
 		if(indexes) indexes ->update_token_data(token);
 	}
-	ASTVisitor* get_lowering() const override;
+	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
 };
 
 struct NodeUIControl : NodeDataStructure {
@@ -127,7 +127,7 @@ struct NodeUIControl : NodeDataStructure {
 		control_var -> update_token_data(token);
 		params -> update_token_data(token);
 	}
-	ASTVisitor* get_lowering() const override;
+	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
 
 };
 
@@ -160,7 +160,7 @@ struct NodeListStruct : NodeDataStructure {
 			b->update_token_data(token);
 		}
 	}
-	ASTVisitor* get_lowering() const override;
+	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
 
 };
 
@@ -179,25 +179,16 @@ struct NodeConstStatement : NodeDataStructure {
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
-//        for (auto & c : constants) {
-//            c->update_parents(this);
-//        }
         constants ->update_parents(this);
     }
     void set_child_parents() override {
-//		for(auto& c : constants) {
-//			if(c) c->parent = this;
-//		}
         constants->parent = this;
     };
     std::string get_string() override { return ""; }
     void update_token_data(const Token& token) override {
-//        for(auto &c : constants) {
-//            c->update_token_data(token);
-//        }
         constants->update_token_data(token);
     }
-    ASTVisitor* get_lowering() const override;
+    ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
 
 };
 
@@ -216,25 +207,16 @@ struct NodeFamilyStatement : NodeAST {
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
-//        for (auto & member : members) {
-//            member->update_parents(this);
-//        }
         members->update_parents(this);
     }
     void set_child_parents() override {
-//        for(auto& m : this->members) {
-//            if(m) m->parent = this;
-//        }
         members->parent = this;
     };
     std::string get_string() override { return ""; }
     void update_token_data(const Token& token) override {
-//        for(auto &m : members) {
-//            m->update_token_data(token);
-//        }
         members->update_token_data(token);
     }
 
-    ASTVisitor* get_lowering() const override;
+    ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
 
 };

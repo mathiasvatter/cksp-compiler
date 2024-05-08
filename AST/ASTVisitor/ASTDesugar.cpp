@@ -440,21 +440,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
         node.assignee = std::move(node_param_list);
     }
 
-    if(node_array) {
-        // array size is empty -> try to infer from assignee
-        if(!node_array->size) {
-            // no assignee -> no array size -> not able to infer
-            if(!node.assignee) {
-                CompileError(ErrorType::SyntaxError,"Unable to infer array size.", node.tok.line, "initializer list", "",node.tok.file).exit();
-            }
-            // if size is empty -> get it from declaration
-            if(param_list) {
-                auto node_int = make_int((int32_t) param_list->params.size(), node_array);
-                node_array->size = std::move(node_int);
-            }
-        }
-
-    } else if(node_variable) {
+    if(node_variable) {
         // a list of values is assigned to a declared variable
         if(param_list and param_list->params.size() > 1) {
             CompileError(ErrorType::SyntaxError,"Unable to assign a list of values to variable.", node.tok.line, "single value", "list of values",node.tok.file).exit();
@@ -519,18 +505,6 @@ bool ASTDesugar::in_function() {
     return !m_function_call_stack.empty() || evaluating_functions;
 }
 
-
-std::unique_ptr<NodeAST> ASTDesugar::create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, const std::string& op, const Token& tok) {
-    // Basisfall: Wenn nur ein Element übrig ist, gib dieses zurück.
-    if (index >= nodes.size() - 1) {
-        return nodes[index]->clone();
-    }
-    // Erstelle die rechte Seite der Expression rekursiv.
-    auto right = create_right_nested_binary_expr(nodes, index + 1, op, tok);
-    // Kombiniere das aktuelle Element mit der rechten Seite in einer NodeBinaryExpr.
-    return std::make_unique<NodeBinaryExpr>(op, nodes[index]->clone(), std::move(right), tok);
-}
-
 std::vector<std::unique_ptr<NodeStatement>> ASTDesugar::add_read_functions(const Token& persistence, NodeDataStructure* var, NodeAST* parent) {
     std::vector<std::unique_ptr<NodeStatement>> statements;
 
@@ -581,60 +555,60 @@ void ASTDesugar::visit(NodeParamList& node) {
 void ASTDesugar::visit(NodeGetControlStatement& node) {
     node.ui_id ->accept(*this);
 
-    auto node_assign_statement = cast_node<NodeSingleAssignStatement>(node.parent);
-    std::string control_function = "get_control_par";
-    int function_args = 2;
-    if(node_assign_statement && node_assign_statement->array_variable.get() == &node) {
-        control_function = "set_control_par";
-        function_args = 3;
-    }
-
-    auto control_param = shorthand_to_control_param(node.control_param);
-    if(!control_param) {
-        CompileError(ErrorType::SyntaxError,
-                     "Did not recognize control parameter.", node.tok.line, "valid $CONTROL_PAR", node.control_param, node.tok.file).print();
-        exit(EXIT_FAILURE);
-    }
-    ASTType control_function_type = get_control_function_type(node.control_param);
-    if(control_function_type == ASTType::String) control_function += "_str";
-    auto node_control_function = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(m_def_provider->get_builtin_function(control_function, function_args)->clone().release()));
-    node_control_function->update_token_data(node.tok);
-    node_control_function->args->params.clear();
-    // if it is a variable and not builtin -> wrap it in get_ui_id()
-    if(is_instance_of<NodeVariable>(node.ui_id.get()) and m_def_provider->builtin_variables.find(node.ui_id->get_string()) == m_def_provider->builtin_variables.end()) {
-//        auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(get_builtin_function("get_ui_id",1)->clone().release()));
-//        node_get_ui_id->args->params.clear();
-//        node_get_ui_id->args->params.push_back(std::move(node.ui_id));
-//        node_control_function->args->params.push_back(std::make_unique<NodeFunctionCall>(false, std::move(node_get_ui_id), node.tok));
-        node_control_function->args->params.push_back(wrap_in_get_ui_id(std::move(node.ui_id)));
-    } else {
-        node_control_function->args->params.push_back(std::move(node.ui_id));
-    }
-    node_control_function->args->params.push_back(std::move(control_param));
-    // in case it is an assignment
-    if(node_assign_statement && node_assign_statement->array_variable.get() == &node) {
-        node_assign_statement->assignee->parent = node_control_function->args.get();
-        node_control_function->args->params.push_back(std::move(node_assign_statement->assignee));
-        node_control_function->args->params[node_control_function->args->params.size()-1]->accept(*this);
-    }
-    auto node_control_function_call = std::make_unique<NodeFunctionCall>(false, std::move(node_control_function), node.tok);
-    node_control_function_call->update_parents(node.parent);
-    // if it is in an assignment statement and this node is the left side, replace the parent of this node too
-    if(node_assign_statement && node_assign_statement->array_variable.get() == &node) {
-        m_current_node_replaced = node.parent;
-        node.parent->replace_with(std::move(node_control_function_call));
-    } else {
-        node.replace_with(std::move(node_control_function_call));
-    }
+//    auto node_assign_statement = cast_node<NodeSingleAssignStatement>(node.parent);
+//    std::string control_function = "get_control_par";
+//    int function_args = 2;
+//    if(node_assign_statement && node_assign_statement->array_variable.get() == &node) {
+//        control_function = "set_control_par";
+//        function_args = 3;
+//    }
+//
+//    auto control_param = shorthand_to_control_param(node.control_param);
+//    if(!control_param) {
+//        CompileError(ErrorType::SyntaxError,
+//                     "Did not recognize control parameter.", node.tok.line, "valid $CONTROL_PAR", node.control_param, node.tok.file).print();
+//        exit(EXIT_FAILURE);
+//    }
+//    ASTType control_function_type = get_control_function_type(node.control_param);
+//    if(control_function_type == ASTType::String) control_function += "_str";
+//    auto node_control_function = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(m_def_provider->get_builtin_function(control_function, function_args)->clone().release()));
+//    node_control_function->update_token_data(node.tok);
+//    node_control_function->args->params.clear();
+//    // if it is a variable and not builtin -> wrap it in get_ui_id()
+//    if(is_instance_of<NodeVariable>(node.ui_id.get()) and m_def_provider->builtin_variables.find(node.ui_id->get_string()) == m_def_provider->builtin_variables.end()) {
+////        auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(get_builtin_function("get_ui_id",1)->clone().release()));
+////        node_get_ui_id->args->params.clear();
+////        node_get_ui_id->args->params.push_back(std::move(node.ui_id));
+////        node_control_function->args->params.push_back(std::make_unique<NodeFunctionCall>(false, std::move(node_get_ui_id), node.tok));
+//        node_control_function->args->params.push_back(wrap_in_get_ui_id(std::move(node.ui_id)));
+//    } else {
+//        node_control_function->args->params.push_back(std::move(node.ui_id));
+//    }
+//    node_control_function->args->params.push_back(std::move(control_param));
+//    // in case it is an assignment
+//    if(node_assign_statement && node_assign_statement->array_variable.get() == &node) {
+//        node_assign_statement->assignee->parent = node_control_function->args.get();
+//        node_control_function->args->params.push_back(std::move(node_assign_statement->assignee));
+//        node_control_function->args->params[node_control_function->args->params.size()-1]->accept(*this);
+//    }
+//    auto node_control_function_call = std::make_unique<NodeFunctionCall>(false, std::move(node_control_function), node.tok);
+//    node_control_function_call->update_parents(node.parent);
+//    // if it is in an assignment statement and this node is the left side, replace the parent of this node too
+//    if(node_assign_statement && node_assign_statement->array_variable.get() == &node) {
+//        m_current_node_replaced = node.parent;
+//        node.parent->replace_with(std::move(node_control_function_call));
+//    } else {
+//        node.replace_with(std::move(node_control_function_call));
+//    }
 }
 
-std::unique_ptr<NodeFunctionCall> ASTDesugar::wrap_in_get_ui_id(std::unique_ptr<NodeAST> variable) {
-    auto parent_tok = variable->parent->tok;
-    auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(m_def_provider->get_builtin_function("get_ui_id", 1)->clone().release()));
-    node_get_ui_id->args->params.clear();
-    node_get_ui_id->args->params.push_back(std::move(variable));
-    return std::make_unique<NodeFunctionCall>(false, std::move(node_get_ui_id), parent_tok);
-}
+//std::unique_ptr<NodeFunctionCall> ASTDesugar::wrap_in_get_ui_id(std::unique_ptr<NodeAST> variable) {
+//    auto parent_tok = variable->parent->tok;
+//    auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(m_def_provider->get_builtin_function("get_ui_id", 1)->clone().release()));
+//    node_get_ui_id->args->params.clear();
+//    node_get_ui_id->args->params.push_back(std::move(variable));
+//    return std::make_unique<NodeFunctionCall>(false, std::move(node_get_ui_id), parent_tok);
+//}
 
 
 void ASTDesugar::visit(NodeWhileStatement& node) {
@@ -794,41 +768,41 @@ NodeFunctionDefinition* ASTDesugar::get_function_definition(NodeFunctionHeader *
 }
 
 
-
-ASTType ASTDesugar::get_control_function_type(const std::string& control_param) {
-    std::string control_par = to_lower(control_param);
-    std::vector<std::string> str_substrings{"name", "path", "picture", "help", "identifier", "label", "text"};
-    std::vector<std::string> int_substrings{"state", "alignment", "pos", "shifting"};
-    ASTType type = ASTType::Integer;
-    for (auto const &substring : str_substrings) {
-        if(contains(control_par, substring)) {
-            type = ASTType::String;
-            break;
-        }
-    }
-    for (auto const &substring : int_substrings) {
-        if(contains(control_par, substring)) {
-            type = ASTType::Integer;
-            break;
-        }
-    }
-    return type;
-}
-
-std::unique_ptr<NodeVariable> ASTDesugar::shorthand_to_control_param(const std::string& shorthand) {
-    std::string control_par = to_lower(shorthand);
-    if(control_par == "x") control_par = "pos_x";
-    if(control_par == "y") control_par = "pos_y";
-    if(control_par == "default") control_par += "_value";
-	auto &builtin_vars = m_def_provider->builtin_variables;
-    auto it = builtin_vars.find(to_upper(control_par));
-    if(it == builtin_vars.end()) it = builtin_vars.find(to_upper("control_par_"+control_par));
-
-    if(it != builtin_vars.end()) {
-        return std::unique_ptr<NodeVariable>(static_cast<NodeVariable*>(it->second->clone().release()));
-    }
-    return nullptr;
-}
+//
+//ASTType ASTDesugar::get_control_function_type(const std::string& control_param) {
+//    std::string control_par = to_lower(control_param);
+//    std::vector<std::string> str_substrings{"name", "path", "picture", "help", "identifier", "label", "text"};
+//    std::vector<std::string> int_substrings{"state", "alignment", "pos", "shifting"};
+//    ASTType type = ASTType::Integer;
+//    for (auto const &substring : str_substrings) {
+//        if(contains(control_par, substring)) {
+//            type = ASTType::String;
+//            break;
+//        }
+//    }
+//    for (auto const &substring : int_substrings) {
+//        if(contains(control_par, substring)) {
+//            type = ASTType::Integer;
+//            break;
+//        }
+//    }
+//    return type;
+//}
+//
+//std::unique_ptr<NodeVariable> ASTDesugar::shorthand_to_control_param(const std::string& shorthand) {
+//    std::string control_par = to_lower(shorthand);
+//    if(control_par == "x") control_par = "pos_x";
+//    if(control_par == "y") control_par = "pos_y";
+//    if(control_par == "default") control_par += "_value";
+//	auto &builtin_vars = m_def_provider->builtin_variables;
+//    auto it = builtin_vars.find(to_upper(control_par));
+//    if(it == builtin_vars.end()) it = builtin_vars.find(to_upper("control_par_"+control_par));
+//
+//    if(it != builtin_vars.end()) {
+//        return std::unique_ptr<NodeVariable>(static_cast<NodeVariable*>(it->second->clone().release()));
+//    }
+//    return nullptr;
+//}
 
 std::unique_ptr<NodeAST> ASTDesugar::get_local_variable_substitute(const std::string& name) {
     for (auto rit = m_variable_scope_stack.rbegin(); rit != m_variable_scope_stack.rend(); ++rit) {

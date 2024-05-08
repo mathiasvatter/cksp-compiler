@@ -8,6 +8,8 @@
 
 class LoweringList : public ASTLowering {
 public:
+	explicit LoweringList(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
+
 	void visit(NodeSingleDeclareStatement &node) override {
 
 	};

@@ -111,14 +111,17 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_number(NodeAST* parent) {
 Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent, DataType var_type) {
     auto var_token = consume();
     std::string var_name = var_token.val;
+	auto type = infer_type_from_identifier(var_name);
     auto node_variable = std::make_unique<NodeVariable>(is_persistent, var_name, var_type, var_token);
     node_variable->parent = parent;
+	node_variable->type = type;
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
 
 Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent, DataType var_type) {
     auto arr_token = consume();
     std::string arr_name = arr_token.val;
+	auto type = infer_type_from_identifier(arr_name);
 	std::unique_ptr<NodeDataStructure> node_array = nullptr;
     std::unique_ptr<NodeParamList> indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, arr_token));;
     indexes->parent = node_array.get();
@@ -165,48 +168,9 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 	node_array->persistence = std::move(is_persistent);
 	node_array->is_local = false;
 	node_array->data_type = var_type;
+	node_array->type = type;
 	return Result<std::unique_ptr<NodeDataStructure>>(std::move(node_array));
 }
-
-Result<std::unique_ptr<NodeNDArray>> Parser::parse_ndarray(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent, DataType var_type) {
-	auto arr_token = consume();
-	std::string arr_name = arr_token.val;
-	auto node_array = std::make_unique<NodeNDArray>(arr_name, arr_token);
-	std::unique_ptr<NodeParamList> indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, arr_token));;
-	indexes->parent = node_array.get();
-	std::unique_ptr<NodeParamList> sizes = std::unique_ptr<NodeParamList>(new NodeParamList({}, arr_token));
-	sizes->parent = node_array.get();
-	if(peek().type == token::OPEN_BRACKET) {
-		consume(); // consume [
-		// if it is an empty array initialization
-		if (peek().type != token::CLOSED_BRACKET) {
-			auto index_params = parse_param_list(node_array.get());
-			if (index_params.is_error()) {
-				return Result<std::unique_ptr<NodeNDArray>>(index_params.get_error());
-			}
-			indexes = std::move(index_params.unwrap());
-		}
-		if(peek().type != token::CLOSED_BRACKET)
-			return Result<std::unique_ptr<NodeNDArray>>(CompileError(ErrorType::SyntaxError,
-																	   "Found unknown Array Syntax.", "]", peek()));
-		consume(); // consume ]
-	} else {
-		return Result<std::unique_ptr<NodeNDArray>>(CompileError(ErrorType::SyntaxError,
-																   "Found unknown Array Syntax.", "[", peek()));
-	}
-	node_array->dimensions = indexes->params.size();
-	node_array->is_reference = is_reference;
-	node_array->parent = parent;
-	node_array->persistence = std::move(is_persistent);
-	node_array->is_local = false;
-	node_array->data_type = var_type;
-	node_array->sizes = std::move(sizes);
-	node_array->indexes = std::move(indexes);
-	if(!is_reference) std::swap(node_array->sizes, node_array->indexes);
-	return Result<std::unique_ptr<NodeNDArray>>(std::move(node_array));
-}
-
-
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_expression(NodeAST* parent) {
     auto lhs = parse_string_expr(parent);
@@ -1366,6 +1330,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
     }
     Token name_tok = consume(); // consume keyword
     std::string name = name_tok.val;
+	auto type = infer_type_from_identifier(name);
     if(peek().type != token::OPEN_BRACKET) {
         return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
      "Found unknown <list> syntax.", "[", peek()));
@@ -1404,6 +1369,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
     node_list_block->size = size;
     node_list_block->body = std::move(stmts);
     node_list_block->parent = parent;
+	node_list_block->type = type;
     return Result<std::unique_ptr<NodeAST>>(std::move(node_list_block));
 }
 

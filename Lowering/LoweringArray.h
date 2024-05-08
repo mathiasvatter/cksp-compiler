@@ -21,7 +21,8 @@ class LoweringArray : public ASTLowering {
 private:
 	bool size_is_constant = false;
 public:
-	LoweringArray() = default;
+	explicit LoweringArray(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
+
 	/// Determining array size at compile time
 	void visit(NodeArray& node) override {
 		// only check lowering if array is not a reference

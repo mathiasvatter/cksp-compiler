@@ -14,6 +14,7 @@ private:
     std::stack <std::string> m_family_prefixes;
 
 public:
+	explicit LoweringFamilyStruct(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
 
     void visit(NodeSingleDeclareStatement& node) override {
         if(!m_family_prefixes.empty()) {

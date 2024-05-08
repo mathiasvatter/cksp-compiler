@@ -37,7 +37,7 @@ struct NodeAST {
     virtual void update_token_data(const Token& token) {
         tok.line = token.line; tok.file = token.file;
     }
-	[[nodiscard]] virtual ASTVisitor* get_lowering() const {
+	[[nodiscard]] virtual ASTVisitor* get_lowering(class DefinitionProvider* def_provider) const {
 		return nullptr;
 	}
     [[nodiscard]] virtual ASTDesugaring* get_desugaring() const {
@@ -301,6 +301,8 @@ struct NodeSingleAssignStatement : NodeAST {
         array_variable -> update_token_data(token);
         assignee -> update_token_data(token);
     }
+	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+
 };
 
 struct NodeDeclareStatement : NodeAST {
@@ -373,7 +375,7 @@ struct NodeSingleDeclareStatement : NodeAST {
         to_be_declared -> update_token_data(token);
         if(assignee) assignee -> update_token_data(token);
     }
-	ASTVisitor* get_lowering() const override;
+	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
 
 };
 
@@ -437,6 +439,8 @@ struct NodeGetControlStatement : NodeAST {
     void update_token_data(const Token& token) override {
         ui_id -> update_token_data(token);
     }
+	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+
 };
 
 struct NodeBody;
@@ -852,6 +856,8 @@ struct NodeFunctionCall : NodeAST {
     void update_token_data(const Token& token) override {
         function -> update_token_data(token);
     }
+	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+
 };
 
 struct NodeProgram : NodeAST {

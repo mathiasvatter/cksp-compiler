@@ -7,6 +7,16 @@
 #include "ASTVisitor.h"
 #include "../../Desugaring/ASTDesugaring.h"
 
+/**
+ * @brief Desugar into simpler constructs
+ *
+ * This visitor desugars the following statements:
+ * - NodeDeclareStatement: desugar into single declare statements
+ * - NodeAssignStatement: desugar into single assign statements
+ * - NodeForEachStatement: desugar for each loops to for loops
+ * - NodeForStatement: alter for loops to while loops
+ * Additionally, it desugars NodeFamilyStatement into single declare statements.
+ */
 class ASTDesugarStructs: public ASTVisitor {
     void visit(NodeProgram& node) override;
 
@@ -22,10 +32,11 @@ class ASTDesugarStructs: public ASTVisitor {
 
     void visit(NodeBody& node) override;
 
+	/// desugar into single declare statements
+	void visit(NodeFamilyStatement& node) override;
+
 private:
     NodeProgram* m_program = nullptr;
 
-	std::vector<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_key_value_scope_stack;
-	std::unique_ptr<NodeAST> get_key_value_substitute(const std::string& name);
 };
 

@@ -12,6 +12,7 @@
 #include "../ASTNodes/AST.h"
 #include "../ASTNodes/ASTDataStructures.h"
 #include "../ASTNodes/ASTReferences.h"
+#include "../../BuiltinsProcessing/DefinitionProvider.h"
 
 class ASTVisitor {
 public:

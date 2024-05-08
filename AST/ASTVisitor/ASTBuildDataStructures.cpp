@@ -46,8 +46,6 @@ void ASTBuildDataStructures::visit(NodeArray &node) {
 	if(node.size) node.size->accept(*this);
 	if(node.index) node.index->accept(*this);
 
-    node.type = infer_type_from_identifier(node.name);
-
 	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
 	if(!node_declaration) {
 		return;
@@ -80,8 +78,6 @@ void ASTBuildDataStructures::visit(NodeArray &node) {
 void ASTBuildDataStructures::visit(NodeNDArray& node) {
 	node.sizes->accept(*this);
 	node.indexes->accept(*this);
-
-    node.type = infer_type_from_identifier(node.name);
 
 	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
 	if(!node_declaration and node.is_reference) {
@@ -133,38 +129,31 @@ void ASTBuildDataStructures::visit(NodeUIControl &node) {
 
 
 void ASTBuildDataStructures::visit(NodeVariable &node) {
-    node.type = infer_type_from_identifier(node.name);
+	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
+	// return if no declaration found or node itself is declaration
+	if(!node_declaration) {
+		return;
+	}
 
-//	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
-//	// return if no declaration found or node itself is declaration
-//	if(!node_declaration) {
-//		return;
-//	}
-//
-//	m_def_provider->match_data_structure(&node, node_declaration);
-//
-//	// replace variable with array if incorrectly recognized by parser
-//	if(node_declaration->get_node_type() == NodeType::Array) {
-//		auto node_array = make_array(node.name, 0, node.tok, node.parent);
-//		node_array->size->params.clear();
-//		node_array->show_brackets = false;
-//		node_array->accept(*this);
-//		node.replace_with(std::move(node_array));
-//		return;
-//	}
+	m_def_provider->match_data_structure(&node, node_declaration);
+
+	// replace variable with array if incorrectly recognized by parser
+	if(node_declaration->get_node_type() == NodeType::Array) {
+		auto node_array = make_array(node.name, 0, node.tok, node.parent);
+		node_array->size = nullptr;
+		node_array->show_brackets = false;
+		node_array->accept(*this);
+		node.replace_with(std::move(node_array));
+		return;
+	}
 }
 
 void ASTBuildDataStructures::visit(NodeListStruct& node) {
-	node.type = infer_type_from_identifier(node.name);
-
 	m_def_provider->set_declaration(&node, m_is_init_callback);
-
 }
 
 void ASTBuildDataStructures::visit(NodeListStructRef& node) {
 	node.indexes->accept(*this);
-
-	node.type = infer_type_from_identifier(node.name);
 
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {

@@ -15,11 +15,17 @@ public:
 
 	/// lower ndarray when declaration or ui_control array or determine size of array in declaration
     void visit(NodeSingleDeclareStatement& node) override;
+	/// lower get_control statements to set_control_par
+	void visit(NodeSingleAssignStatement& node) override;
+	/// lower get_control statements to get_control_par
+	void visit(NodeGetControlStatement& node) override;
+	/// lower property functions to get_control_par
+	void visit(NodeFunctionCall& node) override;
 	/// lower ndArray when they are a reference
 	void visit(NodeNDArray& node) override;
 
     void visit(NodeConstStatement& node) override;
-    void visit(NodeFamilyStatement& node) override;
+//    void visit(NodeFamilyStatement& node) override;
 
 	void visit(NodeListStructRef& node) override;
 	void visit(NodeListStruct& node) override;

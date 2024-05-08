@@ -9,6 +9,8 @@
 /// entry points: NodeSingleDeclareStatement
 class LoweringNDArray : public ASTLowering {
 public:
+	explicit LoweringNDArray(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
+
 	/// returns a statement list with the declarations of the size constants of the array
 	void visit(NodeSingleDeclareStatement &node) override {
 		if(auto node_ndarray = cast_node<NodeNDArray>(node.to_be_declared.get())) {
