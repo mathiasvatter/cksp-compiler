@@ -154,9 +154,8 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 		node_array = std::move(node);
 	} else {
 		auto node = std::make_unique<NodeArray>(arr_name, arr_token);
-		node->dimensions = std::max(indexes->params.size(), sizes->params.size());
-		node->sizes = std::move(sizes);
-		node->indexes = std::move(indexes);
+		node->size = std::move(sizes);
+		node->index = std::move(indexes);
 		node_array = std::move(node);
 	}
 

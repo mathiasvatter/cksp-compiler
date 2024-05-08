@@ -33,18 +33,17 @@ public:
 		if (!node.is_reference) {
 			node_expression = create_right_nested_binary_expr(node.sizes->params, 0, "*", node.tok);
 		} else {
-			// convert indexes of multidimensional array
+			// convert index of multidimensional array
 			node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0,node.tok);
 		}
 		auto node_lowered_array = make_array(node.name, 1, node.tok, node.parent);
-		node_lowered_array->indexes->params.clear();
-		node_lowered_array->sizes->params.clear();
-		if(node.is_reference) node_lowered_array->indexes->params.push_back(std::move(node_expression));
-		if(!node.is_reference) node_lowered_array->sizes->params.push_back(std::move(node_expression));
-		node_lowered_array->indexes->update_parents(node_lowered_array.get());
-		node_lowered_array->sizes->update_parents(node_lowered_array.get());
+		node_lowered_array->index->params.clear();
+		node_lowered_array->size->params.clear();
+		if(node.is_reference) node_lowered_array->index->params.push_back(std::move(node_expression));
+		if(!node.is_reference) node_lowered_array->size->params.push_back(std::move(node_expression));
+		node_lowered_array->index->update_parents(node_lowered_array.get());
+		node_lowered_array->size->update_parents(node_lowered_array.get());
 
-		node_lowered_array->dimensions = 1;
 		node_lowered_array->name = "_" + node_lowered_array->name;
 		node_lowered_array->type = node.type;
 		node_lowered_array->is_reference = node.is_reference;

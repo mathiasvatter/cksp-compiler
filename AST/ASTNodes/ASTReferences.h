@@ -67,7 +67,7 @@ struct NodeNDArrayReference : NodeReference {
 };
 
 struct NodeListStructReference : NodeReference {
-	NodeParamList* sizes = nullptr; // param list of sizes of the lists in the list
+	NodeParamList* sizes = nullptr; // param list of size of the lists in the list
 	NodeParamList* pos = nullptr; // param list of positions in the list
 	std::unique_ptr<NodeParamList> indexes;
 	NodeListStructReference(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)

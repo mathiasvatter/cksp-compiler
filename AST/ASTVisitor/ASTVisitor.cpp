@@ -63,8 +63,8 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_declare_array(const std::string&
     sizes->params.push_back(make_int(size, parent));
     auto indexes  = std::unique_ptr<NodeParamList>(new NodeParamList({}, parent->tok));
     auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), name, DataType::Array, std::move(sizes), std::move(indexes), parent->tok);
-    node_array->sizes->parent = node_array.get();
-    node_array->indexes->parent = node_array.get();
+    node_array->size->parent = node_array.get();
+    node_array->index->parent = node_array.get();
     node_array->type = ASTType::Integer;
     auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), make_init_array_list(values, parent), parent->tok);
     node_declare_statement->to_be_declared->parent = node_declare_statement.get();
@@ -77,8 +77,8 @@ std::unique_ptr<NodeBody> ASTVisitor::array_initialization(NodeArray* array, Nod
     auto node_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(array->clone().release()));
     for(int i = 0; i<list->params.size(); i++) {
         auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(list->params[i]->tok);
-        node_array->indexes->params.clear();
-        node_array->indexes->params.push_back(make_int((int32_t)i, node_array->indexes.get()));
+        node_array->index->params.clear();
+        node_array->index->params.push_back(make_int((int32_t)i, node_array->index.get()));
         node_assign_statement->array_variable = node_array->clone();
         node_assign_statement->assignee = std::move(list->params[i]);
         node_assign_statement->update_parents(node_body.get());
@@ -93,8 +93,8 @@ std::unique_ptr<NodeArray> ASTVisitor::make_array(const std::string &name, int32
     node_sizes->params.push_back(std::move(node_int));
     auto node_indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, tok));
     auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), name, DataType::Array, std::move(node_sizes), std::move(node_indexes), tok);
-//    node_array->indexes->parent = node_array.get();
-//    node_array->sizes->parent = node_array.get();
+//    node_array->index->parent = node_array.get();
+//    node_array->size->parent = node_array.get();
     node_array->update_parents(parent);
 //    node_array->parent = parent;
     return std::move(node_array);

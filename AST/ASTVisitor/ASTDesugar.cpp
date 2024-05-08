@@ -58,8 +58,8 @@ void ASTDesugar::visit(NodeCallback& node) {
 
 void ASTDesugar::visit(NodeArray& node) {
 
-    node.sizes->accept(*this);
-    node.indexes->accept(*this);
+    node.size->accept(*this);
+    node.index->accept(*this);
 
     // local variable substitution
     // do local variable substitution only if parent is not declare statement because scope
@@ -438,15 +438,15 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 
     if(node_array) {
         // array size is empty -> try to infer from assignee
-        if(node_array->sizes->params.empty()) {
+        if(node_array->size->params.empty()) {
             // no assignee -> no array size -> not able to infer
             if(!node.assignee) {
                 CompileError(ErrorType::SyntaxError,"Unable to infer array size.", node.tok.line, "initializer list", "",node.tok.file).exit();
             }
             // if size is empty -> get it from declaration
             if(param_list) {
-                auto node_int = make_int((int32_t) param_list->params.size(), node_array->sizes.get());
-                node_array->sizes->params.push_back(std::move(node_int));
+                auto node_int = make_int((int32_t) param_list->params.size(), node_array->size.get());
+                node_array->size->params.push_back(std::move(node_int));
             }
         }
 
@@ -459,11 +459,11 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 
     if(persistence) {
 		NodeDataStructure* to_be_declared_ptr = node.to_be_declared.get();
-		// clear indexes if it is array because of: make_persistent_var(arr[124]) <-
+		// clear index if it is array because of: make_persistent_var(arr[124]) <-
 		std::unique_ptr<NodeArray> node_array_copy;
 		if(node_array) {
 			node_array_copy = std::unique_ptr<NodeArray>(static_cast<NodeArray *>(node.to_be_declared->clone().release()));
-			node_array_copy->indexes->params.clear();
+			node_array_copy->index->params.clear();
 			to_be_declared_ptr = node_array_copy.get();
 		}
         add_vector_to_statement_list(node_body, add_read_functions(persistence.value(), to_be_declared_ptr, node_body.get()));

@@ -6,17 +6,20 @@
 
 #include "../AST/ASTVisitor/ASTVisitor.h"
 
-enum class Definition {
-    Reference,
-    Declaration,
-    Builtin
-};
-
-
+/**
+ * @class DefinitionProvider
+ *
+ * @brief Collects all definitions of builtin variables, arrays, functions, widgets and external variables as well as
+ * declared data structures and provides them to the ASTVisitors including dedicated methods to search for the
+ * definitions.
+ *
+ * This class is responsible for providing definitions for builtin ksp definitions as well as
+ * keeping track of declared variables, arrays, data structures and controls by adding them to the respective maps/scopes
+ * and returning their declaration when needed. It also provides methods to search for declared variables, arrays,
+ * data structures and controls.
+ */
 class DefinitionProvider {
 public:
-	/// Collects all definitions of builtin variables, arrays, functions, widgets and external variables and
-	/// provides them to the ASTVisitors including dedicated methods to search for the definitions
     DefinitionProvider(
 			std::unordered_map<std::string, std::unique_ptr<NodeVariable>> m_builtin_variables,
 			std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> m_builtin_functions,
@@ -61,7 +64,7 @@ public:
 	bool remove_scope();
 	/// removes all scopes and initializes again
 	bool refresh_scopes();
-
+	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(NodeDataStructure* reference, NodeDataStructure* declaration);
 
 	/// returns the definition of a data structure, if it exists. If datastructure itself is

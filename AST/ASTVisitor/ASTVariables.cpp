@@ -119,7 +119,7 @@ void ASTVariables::visit(NodeArray& node) {
 //				CompileError(ErrorType::SyntaxError,"Found wrong amount of dimensions in array "+node.name+".", node.tok.line, std::to_string(node_declaration->dimensions), std::to_string(node.dimensions), node.tok.file).exit();
 //			}
 
-            node.dimensions = node_declaration->dimensions;
+//            node.dimensions = node_declaration->dimensions;
 
             // rename declaration when List
             if(node_declaration->data_type == DataType::List) {
@@ -128,37 +128,37 @@ void ASTVariables::visit(NodeArray& node) {
             }
             // get var type from declaration because of List
             if(node_declaration->data_type == DataType::List or node_declaration->data_type == DataType::UI_Control) node.data_type = node_declaration->data_type;
-            // only copy sizes from declaration if there is an index (passing arrays only by keyword)
-            if(!node.indexes->params.empty()) {
-                node.sizes = std::unique_ptr<NodeParamList>(
-                        static_cast<NodeParamList *>(node_declaration->sizes->clone().release()));
-                node.sizes->update_parents(&node);
+            // only copy size from declaration if there is an index (passing arrays only by keyword)
+            if(!node.index->params.empty()) {
+                node.size = std::unique_ptr<NodeParamList>(
+                        static_cast<NodeParamList *>(node_declaration->size->clone().release()));
+                node.size->update_parents(&node);
             }
 
-            // convert indexes of multidimensional array
-            if(node.dimensions > 1 and !node.indexes->params.empty()) {
-                auto node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0, node.tok);
-                node.indexes->params.clear();
-                node.indexes->params.push_back(std::move(node_expression));
-                node.indexes->update_parents(&node);
-            }
+            // convert index of multidimensional array
+//            if(node.dimensions > 1 and !node.index->params.empty()) {
+//                auto node_expression = calculate_index_expression(node.size->params, node.index->params, 0, node.tok);
+//                node.index->params.clear();
+//                node.index->params.push_back(std::move(node_expression));
+//                node.index->update_parents(&node);
+//            }
 
-            // convert indexes of list
+            // convert index of list
             if(node.data_type == DataType::List) {
 
-                if(node.indexes->params.size() != 2) {
-                    CompileError(ErrorType::SyntaxError,"Got wrong amount of indexes for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).print();
+                if(node.index->params.size() != 2) {
+                    CompileError(ErrorType::SyntaxError, "Got wrong amount of index for <list>.", node.tok.line, "2", std::to_string(node.index->params.size()), node.tok.file).print();
                     exit(EXIT_FAILURE);
                 }
                 auto node_position_array = std::unique_ptr<NodeArray>(static_cast<NodeArray*>(
                                                                               get_declared_array(node.name+".pos")->clone().release()));
-                node_position_array->indexes->params.clear();
-                node_position_array->indexes->params.push_back(std::move(node.indexes->params[0]));
+                node_position_array->index->params.clear();
+                node_position_array->index->params.push_back(std::move(node.index->params[0]));
 
-                auto node_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_position_array), std::move(node.indexes->params[1]), &node, node.tok);
-                node.indexes->params.clear();
-                node.indexes->params.push_back(std::move(node_expression));
-                node.indexes->update_parents(&node);
+                auto node_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_position_array), std::move(node.index->params[1]), &node, node.tok);
+                node.index->params.clear();
+                node.index->params.push_back(std::move(node_expression));
+                node.index->update_parents(&node);
                 node.name = "_"+node.name;
             }
 
@@ -167,7 +167,7 @@ void ASTVariables::visit(NodeArray& node) {
             node.type = node.declaration->type;
         } else if (node_declaration and has_compiler_identifier) {
             node.declaration = node_declaration;
-            node.dimensions = 1;
+//            node.dimensions = 1;
             node.data_type = DataType::Array;
             node.type = node.declaration->type;
             node.name = "_"+node.name;
@@ -176,8 +176,8 @@ void ASTVariables::visit(NodeArray& node) {
 //            exit(EXIT_FAILURE);
         }
     }
-    node.sizes->accept(*this);
-    node.indexes->accept(*this);
+    node.size->accept(*this);
+    node.index->accept(*this);
 }
 
 void ASTVariables::visit(NodeVariable& node) {
@@ -236,7 +236,7 @@ void ASTVariables::visit(NodeVariable& node) {
         // can only be array if parent is param_list or callback
         } else if((node_param_list || cast_node<NodeCallback>(node.parent)) && node_first_array_declaration) {
             auto node_array = make_array(node.name, 0, node.tok, node.parent);
-            node_array->sizes->params.clear();
+            node_array->size->params.clear();
             node_array->type = node.type;
             node_array->declaration = node_first_array_declaration;
             node_array->accept(*this);

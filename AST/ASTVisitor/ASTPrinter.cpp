@@ -31,9 +31,9 @@ void ASTPrinter::visit(NodeArray &node) {
         std::cout << "read ";
     std::cout << node.name;
     std::cout << "[";
-    node.sizes->accept(*this);
+    node.size->accept(*this);
     std::cout << "].at(";
-    node.indexes->accept(*this);
+    node.index->accept(*this);
     std::cout << ")";
 }
 

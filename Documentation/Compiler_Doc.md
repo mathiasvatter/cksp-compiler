@@ -8,7 +8,7 @@
    - const block -> variable declarations
    - mark scopes?
 
-   - find variables that are arrays by name -> get sizes
+   - find variables that are arrays by name -> get size
 2. Definition Checker
    - user defined Variable/Array scope checker -> definition pointer
    - builtin constant checker -> definition pointer
