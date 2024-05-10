@@ -53,26 +53,12 @@ std::unique_ptr<T> clone_as(NodeAST* node) {
 	return std::unique_ptr<T>(static_cast<T*>(cloned_ptr.release()));
 }
 
-
 struct NodeDeadCode : NodeAST {
     explicit NodeDeadCode(const Token tok) : NodeAST(tok, NodeType::DeadCode) {};
     void accept(ASTVisitor& visitor) override;
     NodeDeadCode(const NodeDeadCode& other) : NodeAST(other) {}
     std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {return "";}
-};
-
-struct NodeInt : NodeAST {
-	int32_t value;
-	inline explicit NodeInt(int32_t v, const Token tok) : NodeAST(tok, NodeType::Int), value(v) {type = ASTType::Integer;}
-	void accept(ASTVisitor& visitor) override;
-    // Kopierkonstruktor
-    NodeInt(const NodeInt& other) : NodeAST(other), value(other.value) {}
-    // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
-    std::string get_string() override {
-        return std::to_string(value);
-    }
 };
 
 struct NodeDataStructure : NodeAST {
@@ -86,7 +72,7 @@ struct NodeDataStructure : NodeAST {
 	DataType data_type;
 	std::string name;
 	NodeDataStructure* declaration = nullptr; // index in declaration array
-	inline explicit NodeDataStructure(std::string name, Token tok, NodeType node_type) : NodeAST(tok, node_type), name(std::move(name)) {}
+	inline explicit NodeDataStructure(std::string name, Token tok, NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
 	NodeDataStructure(const NodeDataStructure& other);
@@ -100,7 +86,7 @@ struct NodeDataStructure : NodeAST {
 struct NodeReference : NodeAST {
 	std::string name;
 	NodeDataStructure* declaration = nullptr;
-	inline explicit NodeReference(Token tok) : NodeAST(tok, NodeType::UnaryExpr) {}
+	inline explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::UnaryExpr) {}
 	inline NodeReference(std::string name, NodeType node_type, Token tok)
 		: NodeAST(tok, node_type), name(std::move(name)) {}
 	void accept(ASTVisitor& visitor) override;
@@ -114,9 +100,22 @@ struct NodeReference : NodeAST {
 	}
 };
 
+struct NodeInt : NodeAST {
+	int32_t value;
+	inline explicit NodeInt(int32_t v, Token tok) : NodeAST(std::move(tok), NodeType::Int), value(v) {type = ASTType::Integer;}
+	void accept(ASTVisitor& visitor) override;
+	// Kopierkonstruktor
+	NodeInt(const NodeInt& other) : NodeAST(other), value(other.value) {}
+	// Clone Methode
+	std::unique_ptr<NodeAST> clone() const override;
+	std::string get_string() override {
+		return std::to_string(value);
+	}
+};
+
 struct NodeReal : NodeAST {
     double value;
-    inline explicit NodeReal(double value, Token tok) : NodeAST(tok, NodeType::Real), value(value) {type = ASTType::Real;}
+    inline explicit NodeReal(double value, Token tok) : NodeAST(std::move(tok), NodeType::Real), value(value) {type = ASTType::Real;}
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
     NodeReal(const NodeReal& other) : NodeAST(other), value(other.value) {}
@@ -129,7 +128,7 @@ struct NodeReal : NodeAST {
 
 struct NodeString : NodeAST {
     std::string value;
-    inline explicit NodeString(std::string value, Token tok) : NodeAST(tok, NodeType::String), value(std::move(value)) {type = ASTType::String;}
+    inline explicit NodeString(std::string value, Token tok) : NodeAST(std::move(tok), NodeType::String), value(std::move(value)) {type = ASTType::String;}
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
     NodeString(const NodeString& other) : NodeAST(other), value(other.value) {}
@@ -142,7 +141,7 @@ struct NodeString : NodeAST {
 
 struct NodeParamList: NodeAST {
     std::vector<std::unique_ptr<NodeAST>> params;
-    inline explicit NodeParamList(std::vector<std::unique_ptr<NodeAST>> params, Token tok) : NodeAST(tok, NodeType::ParamList), params(std::move(params)) {
+    inline explicit NodeParamList(std::vector<std::unique_ptr<NodeAST>> params, Token tok) : NodeAST(std::move(tok), NodeType::ParamList), params(std::move(params)) {
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;
@@ -179,8 +178,8 @@ struct NodeParamList: NodeAST {
 struct NodeUnaryExpr : NodeAST {
     token op;
     std::unique_ptr<NodeAST> operand;
-    inline explicit NodeUnaryExpr(Token tok) : NodeAST(tok, NodeType::UnaryExpr) {}
-    inline NodeUnaryExpr(token op, std::unique_ptr<NodeAST> operand, Token tok) : NodeAST(tok, NodeType::UnaryExpr), operand(std::move(operand)), op(std::move(op)) {
+    inline explicit NodeUnaryExpr(Token tok) : NodeAST(std::move(tok), NodeType::UnaryExpr) {}
+    inline NodeUnaryExpr(token op, std::unique_ptr<NodeAST> operand, Token tok) : NodeAST(std::move(tok), NodeType::UnaryExpr), operand(std::move(operand)), op(std::move(op)) {
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;
@@ -208,9 +207,9 @@ struct NodeBinaryExpr: NodeAST {
 	std::unique_ptr<NodeAST> left, right;
 	token op;
     bool has_forced_parenth = false;
-    inline explicit NodeBinaryExpr(Token tok) : NodeAST(tok, NodeType::BinaryExpr) {}
+    inline explicit NodeBinaryExpr(Token tok) : NodeAST(std::move(tok), NodeType::BinaryExpr) {}
     inline NodeBinaryExpr(token op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right, Token tok)
-    	: NodeAST(tok, NodeType::BinaryExpr), op(op), left(std::move(left)), right(std::move(right)) {
+    	: NodeAST(std::move(tok), NodeType::BinaryExpr), op(op), left(std::move(left)), right(std::move(right)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
@@ -240,9 +239,9 @@ struct NodeBinaryExpr: NodeAST {
 struct NodeAssignStatement: NodeAST {
     std::unique_ptr<NodeParamList> array_variable;
     std::unique_ptr<NodeParamList> assignee;
-    inline explicit NodeAssignStatement(Token tok) : NodeAST(tok, NodeType::AssignStatement) {}
+    inline explicit NodeAssignStatement(Token tok) : NodeAST(std::move(tok), NodeType::AssignStatement) {}
     inline NodeAssignStatement(std::unique_ptr<NodeParamList> array_variable, std::unique_ptr<NodeParamList> assignee, Token tok)
-    : NodeAST(tok, NodeType::AssignStatement), array_variable(std::move(array_variable)), assignee(std::move(assignee)) {
+    : NodeAST(std::move(tok), NodeType::AssignStatement), array_variable(std::move(array_variable)), assignee(std::move(assignee)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
@@ -273,9 +272,9 @@ struct NodeAssignStatement: NodeAST {
 struct NodeSingleAssignStatement : NodeAST {
     std::unique_ptr<NodeAST> array_variable;
     std::unique_ptr<NodeAST> assignee;
-    inline explicit NodeSingleAssignStatement(Token tok) : NodeAST(tok, NodeType::SingleAssignStatement) {}
+    inline explicit NodeSingleAssignStatement(Token tok) : NodeAST(std::move(tok), NodeType::SingleAssignStatement) {}
     NodeSingleAssignStatement(std::unique_ptr<NodeAST> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
-            : NodeAST(tok, NodeType::SingleAssignStatement), array_variable(std::move(arrayVariable)), assignee(std::move(assignee)) {
+            : NodeAST(std::move(tok), NodeType::SingleAssignStatement), array_variable(std::move(arrayVariable)), assignee(std::move(assignee)) {
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;
@@ -307,9 +306,9 @@ struct NodeSingleAssignStatement : NodeAST {
 struct NodeDeclareStatement : NodeAST {
 	std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared;
 	std::unique_ptr<NodeParamList> assignee;
-    inline explicit NodeDeclareStatement(Token tok) : NodeAST(tok, NodeType::DeclareStatement) {}
+    inline explicit NodeDeclareStatement(Token tok) : NodeAST(std::move(tok), NodeType::DeclareStatement) {}
 	inline NodeDeclareStatement(std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared, std::unique_ptr<NodeParamList> assignee, Token tok)
-    	: NodeAST(tok, NodeType::DeclareStatement), to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {
+    	: NodeAST(std::move(tok), NodeType::DeclareStatement), to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
@@ -343,9 +342,9 @@ struct NodeDeclareStatement : NodeAST {
 struct NodeSingleDeclareStatement : NodeAST {
     std::unique_ptr<NodeDataStructure> to_be_declared;
     std::unique_ptr<NodeAST> assignee;
-    inline explicit NodeSingleDeclareStatement(Token tok) : NodeAST(tok, NodeType::SingleDeclareStatement) {}
+    inline explicit NodeSingleDeclareStatement(Token tok) : NodeAST(std::move(tok), NodeType::SingleDeclareStatement) {}
     NodeSingleDeclareStatement(std::unique_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
-    : NodeAST(tok, NodeType::SingleDeclareStatement), to_be_declared(std::move(arrayVariable)), assignee(std::move(assignee)) {
+    : NodeAST(std::move(tok), NodeType::SingleDeclareStatement), to_be_declared(std::move(arrayVariable)), assignee(std::move(assignee)) {
 		set_child_parents();
 		to_be_declared->is_reference = false;
 	}
@@ -380,9 +379,9 @@ struct NodeSingleDeclareStatement : NodeAST {
 
 struct NodeReturnStatement : NodeAST {
 	std::vector<std::unique_ptr<NodeAST>> return_variables;
-	inline explicit NodeReturnStatement(Token tok) : NodeAST(tok, NodeType::ReturnStatement) {}
+	inline explicit NodeReturnStatement(Token tok) : NodeAST(std::move(tok), NodeType::ReturnStatement) {}
 	NodeReturnStatement(std::vector<std::unique_ptr<NodeAST>> return_variables, Token tok)
-		: NodeAST(tok, NodeType::ReturnStatement), return_variables(std::move(return_variables)) {
+		: NodeAST(std::move(tok), NodeType::ReturnStatement), return_variables(std::move(return_variables)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
@@ -415,8 +414,8 @@ struct NodeReturnStatement : NodeAST {
 struct NodeGetControlStatement : NodeAST {
     std::unique_ptr<NodeAST> ui_id; //array or variable
     std::string control_param;
-    inline NodeGetControlStatement(std::unique_ptr<NodeAST> uiId, std::string controlParam, Token tok)
-        : NodeAST(tok, NodeType::GetControlStatement), ui_id(std::move(uiId)), control_param(std::move(controlParam)) {
+    inline NodeGetControlStatement(std::unique_ptr<NodeAST> ui_id, std::string controlParam, Token tok)
+        : NodeAST(std::move(tok), NodeType::GetControlStatement), ui_id(std::move(ui_id)), control_param(std::move(controlParam)) {
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;
@@ -448,8 +447,8 @@ struct NodeBody;
 struct NodeStatement: NodeAST {
     std::unique_ptr<NodeAST> statement;
     std::vector<NodeAST*> function_inlines = {};
-    inline explicit NodeStatement(Token tok) : NodeAST(tok, NodeType::Statement) {}
-    inline NodeStatement(std::unique_ptr<NodeAST> statement, Token tok) : NodeAST(tok, NodeType::Statement), statement(std::move(statement)) {
+    inline explicit NodeStatement(Token tok) : NodeAST(std::move(tok), NodeType::Statement) {}
+    inline NodeStatement(std::unique_ptr<NodeAST> statement, Token tok) : NodeAST(std::move(tok), NodeType::Statement), statement(std::move(statement)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
@@ -477,9 +476,9 @@ struct NodeStatement: NodeAST {
 struct NodeBody : NodeAST {
 	bool scope = false;
     std::vector<std::unique_ptr<NodeStatement>> statements;
-    inline explicit NodeBody(Token tok) : NodeAST(tok, NodeType::Body) {}
+    inline explicit NodeBody(Token tok) : NodeAST(std::move(tok), NodeType::Body) {}
     inline NodeBody(std::vector<std::unique_ptr<NodeStatement>> statements, Token tok)
-            : NodeAST(tok, NodeType::Body), statements(std::move(statements)) {
+            : NodeAST(std::move(tok), NodeType::Body), statements(std::move(statements)) {
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;
@@ -516,9 +515,9 @@ struct NodeBody : NodeAST {
 struct NodeStructStatement : NodeAST {
     std::string prefix;
     std::vector<std::unique_ptr<NodeStatement>> members;
-    inline explicit NodeStructStatement(Token tok) : NodeAST(tok, NodeType::StructStatement) {}
+    inline explicit NodeStructStatement(Token tok) : NodeAST(std::move(tok), NodeType::StructStatement) {}
     inline NodeStructStatement(std::string prefix, std::vector<std::unique_ptr<NodeStatement>> members, Token tok)
-    : NodeAST(tok, NodeType::StructStatement), prefix(std::move(prefix)), members(std::move(members)) {
+    : NodeAST(std::move(tok), NodeType::StructStatement), prefix(std::move(prefix)), members(std::move(members)) {
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;
@@ -549,9 +548,9 @@ struct NodeIfStatement: NodeAST {
     std::unique_ptr<NodeAST> condition;
     std::unique_ptr<NodeBody> statements;
 	std::unique_ptr<NodeBody> else_statements;
-    inline explicit NodeIfStatement(Token tok) : NodeAST(tok, NodeType::IfStatement) {}
+    inline explicit NodeIfStatement(Token tok) : NodeAST(std::move(tok), NodeType::IfStatement) {}
     inline NodeIfStatement(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeBody> statements, std::unique_ptr<NodeBody> elseStatements, Token tok)
-    : NodeAST(tok, NodeType::IfStatement), condition(std::move(condition)), statements(std::move(statements)), else_statements(std::move(elseStatements)) {
+    : NodeAST(std::move(tok), NodeType::IfStatement), condition(std::move(condition)), statements(std::move(statements)), else_statements(std::move(elseStatements)) {
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;
@@ -583,9 +582,9 @@ struct NodeForStatement : NodeAST {
     std::unique_ptr<NodeAST> iterator_end;
     std::unique_ptr<NodeAST> step = nullptr;
     std::unique_ptr<NodeBody> statements;
-    inline explicit NodeForStatement(Token tok) : NodeAST(tok, NodeType::ForStatement) {}
+    inline explicit NodeForStatement(Token tok) : NodeAST(std::move(tok), NodeType::ForStatement) {}
     inline NodeForStatement(std::unique_ptr<NodeSingleAssignStatement> iterator, Token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeBody> statements, Token tok)
-    : NodeAST(tok, NodeType::ForStatement), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), statements(std::move(statements)) {
+    : NodeAST(std::move(tok), NodeType::ForStatement), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), statements(std::move(statements)) {
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;
@@ -620,9 +619,9 @@ struct NodeForEachStatement : NodeAST {
     std::unique_ptr<NodeParamList> keys;
     std::unique_ptr<NodeAST> range;
     std::unique_ptr<NodeBody> statements;
-    inline explicit NodeForEachStatement(Token tok) : NodeAST(tok, NodeType::ForEachStatement) {}
+    inline explicit NodeForEachStatement(Token tok) : NodeAST(std::move(tok), NodeType::ForEachStatement) {}
     inline NodeForEachStatement(std::unique_ptr<NodeParamList> keys, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeBody> statements, Token tok)
-    : NodeAST(tok, NodeType::ForEachStatement), keys(std::move(keys)), range(std::move(range)), statements(std::move(statements)) {
+    : NodeAST(std::move(tok), NodeType::ForEachStatement), keys(std::move(keys)), range(std::move(range)), statements(std::move(statements)) {
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;
@@ -652,9 +651,9 @@ struct NodeForEachStatement : NodeAST {
 struct NodeWhileStatement : NodeAST {
     std::unique_ptr<NodeAST> condition;
     std::unique_ptr<NodeBody> statements;
-    inline explicit NodeWhileStatement(Token tok) : NodeAST(tok, NodeType::WhileStatement) {}
+    inline explicit NodeWhileStatement(Token tok) : NodeAST(std::move(tok), NodeType::WhileStatement) {}
     inline NodeWhileStatement(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeBody> statements, Token tok)
-    	: NodeAST(tok, NodeType::WhileStatement), condition(std::move(condition)), statements(std::move(statements)) {
+    	: NodeAST(std::move(tok), NodeType::WhileStatement), condition(std::move(condition)), statements(std::move(statements)) {
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;
@@ -680,9 +679,9 @@ struct NodeWhileStatement : NodeAST {
 struct NodeSelectStatement : NodeAST {
 	std::unique_ptr<NodeAST> expression;
     std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> cases;
-    inline explicit NodeSelectStatement(Token tok) : NodeAST(tok, NodeType::SelectStatement) {}
+    inline explicit NodeSelectStatement(Token tok) : NodeAST(std::move(tok), NodeType::SelectStatement) {}
 	inline NodeSelectStatement(std::unique_ptr<NodeAST> expression, std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> cases, Token tok)
-    : NodeAST(tok, NodeType::SelectStatement), expression(std::move(expression)), cases(std::move(cases)) {
+    : NodeAST(std::move(tok), NodeType::SelectStatement), expression(std::move(expression)), cases(std::move(cases)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
@@ -725,9 +724,9 @@ struct NodeCallback: NodeAST {
     std::unique_ptr<NodeAST> callback_id = nullptr;
     std::unique_ptr<NodeBody> statements;
     std::string end_callback;
-    inline explicit NodeCallback(Token tok) : NodeAST(tok, NodeType::Callback) {}
+    inline explicit NodeCallback(Token tok) : NodeAST(std::move(tok), NodeType::Callback) {}
 	inline NodeCallback(std::string begin_callback, std::unique_ptr<NodeBody> statements, std::string end_callback, Token tok)
-     : NodeAST(tok, NodeType::Callback), begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {
+     : NodeAST(std::move(tok), NodeType::Callback), begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
@@ -754,7 +753,7 @@ struct NodeImport : NodeAST {
     std::string filepath;
     std::string alias;
     inline explicit NodeImport(std::string filepath, std::string alias, Token tok)
-        : NodeAST(tok, NodeType::Import), filepath(std::move(filepath)), alias(std::move(alias)) {}
+        : NodeAST(std::move(tok), NodeType::Import), filepath(std::move(filepath)), alias(std::move(alias)) {}
     void accept(ASTVisitor& visitor) override;
     NodeImport(const NodeImport& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
@@ -769,9 +768,9 @@ struct NodeFunctionHeader: NodeAST {
     std::unique_ptr<NodeParamList> args;
     std::vector<ASTType> arg_ast_types;
     std::vector<DataType> arg_var_types;
-    inline explicit NodeFunctionHeader(Token tok) : NodeAST(tok, NodeType::FunctionHeader) {}
+    inline explicit NodeFunctionHeader(Token tok) : NodeAST(std::move(tok), NodeType::FunctionHeader) {}
     inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeParamList> args, Token tok)
-    : NodeAST(tok, NodeType::FunctionHeader), name(std::move(name)), args(std::move(args)) {
+    : NodeAST(std::move(tok), NodeType::FunctionHeader), name(std::move(name)), args(std::move(args)) {
 		set_child_parents();
 	};
     void accept(ASTVisitor& visitor) override;
@@ -801,11 +800,11 @@ struct NodeFunctionDefinition: NodeAST {
     std::optional<std::unique_ptr<NodeParamList>> return_variable;
     bool override = false;
     std::unique_ptr<NodeBody> body;
-    inline explicit NodeFunctionDefinition(Token tok) : NodeAST(tok, NodeType::FunctionDefinition) {}
+    inline explicit NodeFunctionDefinition(Token tok) : NodeAST(std::move(tok), NodeType::FunctionDefinition) {}
     inline NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
                                   std::optional<std::unique_ptr<NodeParamList>> returnVariable, bool override,
                                   std::unique_ptr<NodeBody> body, Token tok)
-	   : NodeAST(tok, NodeType::FunctionDefinition), header(std::move(header)), return_variable(std::move(returnVariable)), override(override),body(std::move(body)) {
+	   : NodeAST(std::move(tok), NodeType::FunctionDefinition), header(std::move(header)), return_variable(std::move(returnVariable)), override(override),body(std::move(body)) {
 		set_child_parents();
 	};
     void accept(ASTVisitor& visitor) override;
@@ -834,9 +833,9 @@ struct NodeFunctionCall : NodeAST {
     bool is_call = false;
     std::unique_ptr<NodeFunctionHeader> function;
     NodeFunctionDefinition* definition = nullptr;
-    inline explicit NodeFunctionCall(Token tok) : NodeAST(tok, NodeType::FunctionCall) {}
+    inline explicit NodeFunctionCall(Token tok) : NodeAST(std::move(tok), NodeType::FunctionCall) {}
     inline NodeFunctionCall(bool isCall, std::unique_ptr<NodeFunctionHeader> function, Token tok)
-            : NodeAST(tok, NodeType::FunctionCall), is_call(isCall), function(std::move(function)) {
+            : NodeAST(std::move(tok), NodeType::FunctionCall), is_call(isCall), function(std::move(function)) {
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;
@@ -862,10 +861,10 @@ struct NodeFunctionCall : NodeAST {
 struct NodeProgram : NodeAST {
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
-    inline explicit NodeProgram(Token tok) : NodeAST(tok, NodeType::Program) {}
+    inline explicit NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {}
     inline NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 					   std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok)
-                       : NodeAST(tok, NodeType::Program), callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)) {
+                       : NodeAST(std::move(tok), NodeType::Program), callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)) {
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;
