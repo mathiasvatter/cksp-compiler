@@ -46,14 +46,9 @@ private:
 
     NodeAST* m_current_node_replaced = nullptr;
 
-//    std::unique_ptr<NodeFunctionCall> wrap_in_get_ui_id(std::unique_ptr<NodeAST> variable);
-
     void declare_dummy_return_variable();
     void declare_compiler_variables();
 
-//    std::unique_ptr<NodeVariable> shorthand_to_control_param(const std::string& shorthand);
-    // returns either string (for get/set_control_par_str) or integer (for get/set_control_par)
-//    static ASTType get_control_function_type(const std::string& control_param);
 
     std::unique_ptr<NodeBody> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header);
 

@@ -23,10 +23,21 @@ void ASTCollectLowerings::visit(NodeSingleAssignStatement& node) {
 
 void ASTCollectLowerings::visit(NodeGetControlStatement& node) {
 	node.ui_id->accept(*this);
-	// go back to the parent if it is a single assign statement
+
+	/**
+	 * checks if the parent of the current node is a single assignment statement.
+	 * If the array_variable of the assignment is the get_control statement, then it is a set_control statement.
+	 * E.g. if it would be
+	 * 	int_buffer := mnu_output[i+1]->x, this block of code would need to handle it.
+	 * However, in the case of:
+	 * 	mnu_output[i+1]->x := int_buffer, the NodeSingleAssignStatement lowering would handle it.
+	 */
 	if(node.parent->get_node_type() == NodeType::SingleAssignStatement) {
-		return;
+		if(auto node_assign_stmt = cast_node<NodeSingleAssignStatement>(node.parent)) {
+			if(node_assign_stmt->array_variable.get() == &node) return;
+		}
 	}
+
 	if(auto lowering = node.get_lowering(m_def_provider)) {
 		node.accept(*lowering);
 	}
