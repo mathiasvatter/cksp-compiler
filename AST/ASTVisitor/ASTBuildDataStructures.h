@@ -35,11 +35,13 @@ public:
 	/// Variable
 	void visit(NodeVariable& node) override;
 
+	/// TODO: Visit Function Calls and connect to function definitions to check scoping? Not needed really
 private:
     NodeProgram* m_program = nullptr;
 	NodeCallback* m_init_callback = nullptr;
 	bool m_is_init_callback = false;
 	DefinitionProvider* m_def_provider = nullptr;
+
 
 //    static inline ASTType infer_type_from_identifier(std::string& var_name) {
 //        ASTType type = ASTType::Unknown;

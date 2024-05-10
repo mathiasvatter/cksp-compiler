@@ -161,13 +161,17 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 
 	// if it is multidimensional array
 	if(indexes->params.size() > 1 || sizes->params.size() > 1) {
-		auto node = std::make_unique<NodeNDArray>(arr_name, arr_token);
+		auto node = std::make_unique<NodeNDArray>(
+			std::move(is_persistent),
+			arr_name, var_type,
+			std::move(sizes),
+			std::move(indexes), arr_token);
 		node->dimensions = std::max(indexes->params.size(), sizes->params.size());
-		node->sizes = std::move(sizes);
-		node->indexes = std::move(indexes);
 		node_array = std::move(node);
 	} else {
 		auto node = std::make_unique<NodeArray>(arr_name, arr_token);
+		node->persistence = std::move(is_persistent);
+		node->data_type = var_type;
 		if(!sizes->params.empty()) node->size = std::move(sizes->params[0]);
 		if(!indexes->params.empty()) node->index = std::move(indexes->params[0]);
 		node_array = std::move(node);
@@ -176,9 +180,6 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 
 	node_array->is_reference = is_reference;
 	node_array->parent = parent;
-	node_array->persistence = std::move(is_persistent);
-	node_array->is_local = false;
-	node_array->data_type = var_type;
 	node_array->type = type;
 	return Result<std::unique_ptr<NodeDataStructure>>(std::move(node_array));
 }

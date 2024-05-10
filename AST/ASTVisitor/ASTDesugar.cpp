@@ -280,13 +280,13 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
             }
         }
 
-    } else if (auto property_func = m_def_provider->get_property_function(node.function.get())) {
-        if(node.function->args->params.size() < 2)
-            CompileError(ErrorType::SyntaxError,"Found Property Function with insufficient amount of arguments.", node.tok.line, "At least 2 arguments", std::to_string(node.function->args->params.size()), node.tok.file).exit();
-        auto node_body = inline_property_function(property_func, std::move(node.function));
-        node_body->accept(*this);
-        node.replace_with(std::move(node_body));
-        return;
+//    } else if (auto property_func = m_def_provider->get_property_function(node.function.get())) {
+//        if(node.function->args->params.size() < 2)
+//            CompileError(ErrorType::SyntaxError,"Found Property Function with insufficient amount of arguments.", node.tok.line, "At least 2 arguments", std::to_string(node.function->args->params.size()), node.tok.file).exit();
+//        auto node_body = inline_property_function(property_func, std::move(node.function));
+//        node_body->accept(*this);
+//        node.replace_with(std::move(node_body));
+//        return;
     } else {
         CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).exit();
     }
