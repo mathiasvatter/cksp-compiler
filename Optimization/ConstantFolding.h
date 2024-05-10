@@ -12,32 +12,45 @@ public:
 
     void inline visit(NodeUnaryExpr& node) override {
         node.operand->accept(*this);
-        auto int_node = cast_node<NodeInt>(node.operand.get());
-        auto real_node = cast_node<NodeReal>(node.operand.get());
-        if (int_node) {
-            if (node.op.type == token::SUB) {
-                auto new_node = std::make_unique<NodeInt>(-int_node->value, node.tok);
-                new_node->parent = node.parent;
-                node.replace_with(std::move(new_node));
-            }
-        }
-        if (real_node) {
-            if (node.op.type == token::SUB) {
-                auto new_node = std::make_unique<NodeReal>(-real_node->value, node.tok);
-                new_node->parent = node.parent;
-                node.replace_with(std::move(new_node));
-            }
-        }
+
+		switch (node.operand->get_node_type()) {
+			case NodeType::Int: {
+				if (auto int_node = cast_node<NodeInt>(node.operand.get())) {
+					if (node.op.type == token::SUB) {
+						auto new_node = std::make_unique<NodeInt>(-int_node->value, node.tok);
+						new_node->parent = node.parent;
+						node.replace_with(std::move(new_node));
+					}
+				}
+				break;
+			}
+			case NodeType::Real: {
+				if (auto real_node = cast_node<NodeReal>(node.operand.get())) {
+					if (node.op.type == token::SUB) {
+						auto new_node = std::make_unique<NodeReal>(-real_node->value, node.tok);
+						new_node->parent = node.parent;
+						node.replace_with(std::move(new_node));
+					}
+				}
+				break;
+			}
+			default: return;
+		}
     }
 
 	void inline visit(NodeBinaryExpr& node) override {
 		node.left->accept(*this);
 		node.right->accept(*this);
 
-		auto right_int = cast_node<NodeInt>(node.right.get());
-		auto left_int = cast_node<NodeInt>(node.left.get());
-		auto right_real = cast_node<NodeReal>(node.right.get());
-		auto left_real = cast_node<NodeReal>(node.left.get());
+		NodeInt* right_int = nullptr;
+		NodeInt* left_int = nullptr;
+		NodeReal* right_real = nullptr;
+		NodeReal* left_real = nullptr;
+
+		if(node.right->get_node_type() == NodeType::Int) right_int = cast_node<NodeInt>(node.right.get());
+		if(node.right->get_node_type() == NodeType::Int) left_int = cast_node<NodeInt>(node.left.get());
+		if(node.right->get_node_type() == NodeType::Real) right_real = cast_node<NodeReal>(node.right.get());
+		if(node.right->get_node_type() == NodeType::Real) left_real = cast_node<NodeReal>(node.left.get());
 
 		if(get_token_type(MATH_OPERATORS, node.op) or get_token_type(BITWISE_OPERATORS, node.op)) {
 

@@ -12,7 +12,7 @@
 /**
  * @class ASTCollectLowerings
  *
- * @brief This class is responsible for lowering various AST nodes to a more primitive form.
+ * @brief This class is responsible for lowering various data structure AST nodes to a more primitive form.
  *
  * It inherits from the ASTVisitor class and overrides its visit methods to provide custom behavior for each node type.
  * The lowering process is necessary for certain operations that are not directly supported by the target language.
@@ -27,7 +27,8 @@
  * - NodeListStructRef: Lower list struct references to array references.
  * - NodeListStruct: Lower list structs to arrays and while loops.
  *
- * @param definition_provider A pointer to a DefinitionProvider object. This object is used to resolve definitions of variables, arrays, etc.
+ * @param definition_provider A pointer to a DefinitionProvider object. This object is used to resolve definitions of
+ * variables, arrays, etc.
  */
 class ASTCollectLowerings: public ASTVisitor {
 public:
