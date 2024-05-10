@@ -209,7 +209,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_string_expr_rhs(std::unique_ptr<
         if (rhs.is_error()) {
             return Result<std::unique_ptr<NodeAST>>(rhs.get_error());
         }
-		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(string_op.val, std::move(lhs), std::move(rhs.unwrap()), get_tok());
+		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(string_op.type, std::move(lhs), std::move(rhs.unwrap()), get_tok());
         lhs = std::move(node_binary_expr);
         lhs->type = ASTType::String;
     }
@@ -283,7 +283,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_unary_expr(NodeAST* parent) {
     if(expr.is_error()) {
         return Result<std::unique_ptr<NodeAST>>(expr.get_error());
     }
-    node_unary_expr->op = unary_op;
+    node_unary_expr->op = unary_op.type;
     node_unary_expr->operand = std::move(expr.unwrap());
     node_unary_expr->set_child_parents();
     node_unary_expr->parent = parent;
@@ -311,7 +311,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, 
             }
         }
         ASTType type = ASTType::Unknown;
-		if (bin_op.type == token::COMPARISON) {
+		if (contains(COMPARISON_TOKENS, bin_op.type)) {
             // Check if rhs is NodeComparisonExpr because comparisons in comparisons are not allowed
             if (lhs->type == ASTType::Comparison) {
                 return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
@@ -322,10 +322,8 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, 
 			type = ASTType::Boolean;
 		}
 
-		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(bin_op.val, std::move(lhs), std::move(rhs.unwrap()), get_tok());
+		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(bin_op.type, std::move(lhs), std::move(rhs.unwrap()), get_tok());
         node_binary_expr->parent = parent;
-//		node_binary_expr->left->parent = node_binary_expr.get();
-//		node_binary_expr->right->parent = node_binary_expr.get();
         lhs = std::move(node_binary_expr);
         lhs->type = type;
     }

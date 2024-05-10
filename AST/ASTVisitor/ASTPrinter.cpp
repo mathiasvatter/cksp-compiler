@@ -95,7 +95,7 @@ void ASTPrinter::visit(NodeBinaryExpr &node) {
 
 void ASTPrinter::visit(NodeUnaryExpr &node) {
     std::cout << "UnaryExpr(";
-    std::cout << node.op.val << " ";
+    std::cout << node.op << " ";
     node.operand->accept(*this);
     std::cout << ")" ;
 }

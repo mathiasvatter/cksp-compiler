@@ -61,6 +61,9 @@ inline static bool contains(const std::vector<Keyword>& vec, const std::string& 
 inline static bool contains(const std::string& string, const std::string& substring) {
 	return string.find(substring) != std::string::npos;
 }
+inline static bool contains(const std::set<token>& token_set, const token& tok) {
+	return token_set.find(tok) != token_set.end();
+}
 
 inline static long count_char(const std::string& str, char c) {
 	return std::count(str.begin(), str.end(), c);

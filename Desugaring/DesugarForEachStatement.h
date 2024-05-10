@@ -85,7 +85,7 @@ public:
         std::vector<std::unique_ptr<NodeAST>> args;
         args.push_back(node.range->clone());
         auto node_num_elements = make_function_call("num_elements", std::move(args), &node, node.tok);
-        auto node_end_range = make_binary_expr(ASTType::Integer, "-", std::move(node_num_elements->statement), make_int(1, &node), &node, node.tok);
+        auto node_end_range = make_binary_expr(ASTType::Integer, token::SUB, std::move(node_num_elements->statement), make_int(1, &node), &node, node.tok);
         auto node_value_array = make_array(node.range->get_string(), 1, node.tok, &node);
         node_value_array->size = nullptr;
         node_value_array->index = std::move(node.keys->params[0]);

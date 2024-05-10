@@ -46,7 +46,7 @@ public:
             node.statements->statements.push_back(std::move(inc_statement));
         } else {
             auto assign_var2 = function_var->clone();
-            auto inc_expression = make_binary_expr(ASTType::Integer, "+", std::move(function_var), std::move(node.step), &node, node.tok);
+            auto inc_expression = make_binary_expr(ASTType::Integer, token::ADD, std::move(function_var), std::move(node.step), &node, node.tok);
             auto node_inc_statement = std::make_unique<NodeSingleAssignStatement>(std::move(assign_var2), std::move(inc_expression), node.tok);
             auto node_statement = statement_wrapper(std::move(node_inc_statement), node_while_statement.get());
             node_statement->update_parents(&node);
@@ -54,8 +54,8 @@ public:
         }
 
         // handle while condition
-        std::string comparison_op = "<=";
-        if(node.to.type == token::DOWNTO) comparison_op = ">=";
+        token comparison_op = token::LESS_EQUAL;
+        if(node.to.type == token::DOWNTO) comparison_op = token::GREATER_EQUAL;
         // make comparison expression
         auto comparison = make_binary_expr(ASTType::Comparison, comparison_op, std::move(iterator_var), std::move(node.iterator_end), node_while_statement.get(), node.tok);
 

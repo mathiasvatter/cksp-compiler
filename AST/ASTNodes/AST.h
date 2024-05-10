@@ -177,10 +177,10 @@ struct NodeParamList: NodeAST {
 };
 
 struct NodeUnaryExpr : NodeAST {
-    Token op;
+    token op;
     std::unique_ptr<NodeAST> operand;
     inline explicit NodeUnaryExpr(Token tok) : NodeAST(tok, NodeType::UnaryExpr) {}
-    inline NodeUnaryExpr(Token op, std::unique_ptr<NodeAST> operand, Token tok) : NodeAST(tok, NodeType::UnaryExpr), operand(std::move(operand)), op(std::move(op)) {
+    inline NodeUnaryExpr(token op, std::unique_ptr<NodeAST> operand, Token tok) : NodeAST(tok, NodeType::UnaryExpr), operand(std::move(operand)), op(std::move(op)) {
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;
@@ -197,21 +197,20 @@ struct NodeUnaryExpr : NodeAST {
 		if(operand) operand->parent = this;
 	};
     std::string get_string() override {
-        return op.val + operand->get_string();
+        return tokenStrings[(int)op] + operand->get_string();
     }
     void update_token_data(const Token& token) override {
         operand -> update_token_data(token);
-        op.line = token.line; op.file = token.file;
     }
 };
 
 struct NodeBinaryExpr: NodeAST {
 	std::unique_ptr<NodeAST> left, right;
-	std::string op;
+	token op;
     bool has_forced_parenth = false;
     inline explicit NodeBinaryExpr(Token tok) : NodeAST(tok, NodeType::BinaryExpr) {}
-    inline NodeBinaryExpr(std::string op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right, Token tok)
-    	: NodeAST(tok, NodeType::BinaryExpr), op(std::move(op)), left(std::move(left)), right(std::move(right)) {
+    inline NodeBinaryExpr(token op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right, Token tok)
+    	: NodeAST(tok, NodeType::BinaryExpr), op(op), left(std::move(left)), right(std::move(right)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
@@ -230,7 +229,7 @@ struct NodeBinaryExpr: NodeAST {
 		if(right) right->parent = this;
 	};
     std::string get_string() override {
-        return left->get_string() + "op.val" + right->get_string();
+        return left->get_string() + tokenStrings[(int)op] + right->get_string();
     }
     void update_token_data(const Token& token) override {
         left -> update_token_data(token);
@@ -764,7 +763,7 @@ struct NodeImport : NodeAST {
 };
 
 struct NodeFunctionHeader: NodeAST {
-    bool is_engine = false;
+    bool is_builtin = false;
     bool has_forced_parenth = false;
     std::string name;
     std::unique_ptr<NodeParamList> args;
@@ -832,7 +831,7 @@ struct NodeFunctionDefinition: NodeAST {
 
 
 struct NodeFunctionCall : NodeAST {
-    bool is_call=false;
+    bool is_call = false;
     std::unique_ptr<NodeFunctionHeader> function;
     NodeFunctionDefinition* definition = nullptr;
     inline explicit NodeFunctionCall(Token tok) : NodeAST(tok, NodeType::FunctionCall) {}

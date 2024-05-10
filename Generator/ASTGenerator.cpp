@@ -118,13 +118,11 @@ void ASTGenerator::visit(NodeSingleDeclareStatement &node) {
 
 void ASTGenerator::visit(NodeParamList &node) {
     if (!node.params.empty()) {
-//        if(node.params.size() > 1) os << "(";
         for (int i = 0; i < node.params.size() - 1; i++) {
             node.params[i]->accept(*this);
             os << ", ";
         }
         node.params[node.params.size() - 1]->accept(*this);
-//		if(node.params.size() > 1) os << ")";
     }
 }
 
@@ -133,14 +131,14 @@ void ASTGenerator::visit(NodeBinaryExpr &node) {
     if(is_nested_bin_expr and node.type != ASTType::String) os << "(";
 
     node.left->accept(*this);
-    os << " " << node.op << " ";
+    os << " " << GENERATE_ALL_OPERATORS[node.op] << " ";
     node.right->accept(*this);
     if(is_nested_bin_expr and node.type != ASTType::String) os << ")";
 
 }
 
 void ASTGenerator::visit(NodeUnaryExpr &node) {
-    os << node.op.val << " ";
+    os << GENERATE_ALL_OPERATORS[node.op] << " ";
     node.operand->accept(*this);
 }
 
