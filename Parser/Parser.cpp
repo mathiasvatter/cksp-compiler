@@ -268,7 +268,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
     } else if (peek().type == token::INT || peek().type == token::FLOAT || peek().type == token::HEXADECIMAL || peek().type == token::BINARY) {
         return parse_number(parent);
     // unary operators bool_not, bit_not, sub
-    } else if (is_unary_operator(peek().type)){
+    } else if (contains(UNARY_TOKENS, peek().type)){
         return parse_unary_expr(parent);
     } else {
         return Result<std::unique_ptr<NodeAST>>(

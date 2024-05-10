@@ -97,7 +97,7 @@ Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::_parse_primary_expr(c
 	if (auto node_parenth = dynamic_cast<PreNodeOther*>(peek(nodes))) {
 		if(node_parenth->other.type == token::OPEN_PARENTH)
 			return _parse_parenth_expr(nodes, parent);
-		else if(is_unary_operator(node_parenth->other.type))
+		else if(contains(UNARY_TOKENS, node_parenth->other.type))
 			return parse_unary_expr(nodes, parent);
 	} else if (auto node_statement = dynamic_cast<PreNodeStatement*>(peek(nodes))) {
 		if (auto node_int = dynamic_cast<PreNodeInt*>(node_statement->statement.get())) {
