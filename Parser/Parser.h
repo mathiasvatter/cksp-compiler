@@ -10,6 +10,7 @@
 #include "../AST/ASTNodes/ASTDataStructures.h"
 #include "../misc/Result.h"
 #include "../Processor/Processor.h"
+#include "../AST/ASTNodes/ASTReferences.h"
 
 // Hilfsfunktion, die das Result-Objekt zurückgibt, wenn kein Fehler vorliegt.
 template<typename T> Result<T> handle_error(Result<T> result) {
@@ -70,7 +71,9 @@ protected:
     Result<std::unique_ptr<NodeAST>> parse_number(NodeAST* parent);
     Result<std::unique_ptr<NodeString>> parse_string(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent=std::optional<Token>(), DataType var_type=DataType::Mutable);
+	Result<std::unique_ptr<NodeVariableRef>> parse_variable_ref(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_array(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent = std::optional<Token>(), DataType var_type = DataType::Array);
+	Result<std::unique_ptr<NodeReference>> parse_array_ref(NodeAST *parent);
 
     Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent);
 	Result<SuccessTag> _parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent);
