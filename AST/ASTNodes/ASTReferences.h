@@ -10,7 +10,7 @@
 
 struct NodeVariableRef : NodeReference {
 	inline NodeVariableRef(std::string name, Token tok)
-		: NodeReference(std::move(name), NodeType::VariableRef, tok) {}
+		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok)) {}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
 	NodeVariableRef(const NodeVariableRef& other);
@@ -25,7 +25,7 @@ struct NodeVariableRef : NodeReference {
 struct NodeArrayRef : NodeReference {
 	std::unique_ptr<NodeAST> index;
 	inline NodeArrayRef(std::string name, std::unique_ptr<NodeAST> index, Token tok)
-		: NodeReference(std::move(name), NodeType::ArrayRef, tok), index(std::move(index)) {
+		: NodeReference(std::move(name), NodeType::ArrayRef, std::move(tok)), index(std::move(index)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
@@ -48,7 +48,7 @@ struct NodeArrayRef : NodeReference {
 struct NodeNDArrayRef : NodeReference {
 	std::unique_ptr<NodeParamList> indexes;
 	inline NodeNDArrayRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
-		: NodeReference(std::move(name), NodeType::NDArrayRef, tok), indexes(std::move(indexes)) {
+		: NodeReference(std::move(name), NodeType::NDArrayRef, std::move(tok)), indexes(std::move(indexes)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
@@ -72,7 +72,7 @@ struct NodeListStructRef : NodeReference {
 	NodeParamList* pos = nullptr; // param list of positions in the list
 	std::unique_ptr<NodeParamList> indexes;
 	NodeListStructRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
-		: NodeReference(std::move(name), NodeType::ListStructRef, tok), indexes(std::move(indexes)) {
+		: NodeReference(std::move(name), NodeType::ListStructRef, std::move(tok)), indexes(std::move(indexes)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
