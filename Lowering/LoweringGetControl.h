@@ -12,6 +12,7 @@ public:
 	explicit LoweringGetControl(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
 
 	void visit(NodeSingleAssignStatement &node) override {
+		node.assignee->accept(*this);
 		// check if assignee is a NodeGetControlStatement
 		if(node.array_variable->get_node_type() != NodeType::GetControlStatement) return;
 
@@ -56,7 +57,9 @@ private:
 				std::move(function_header->args->params[i]),
 				function_header->tok
 				);
-			node_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_body.get()));
+			node_body->statements.push_back(
+				std::make_unique<NodeStatement>(std::move(node_assignment), node_body->tok)
+			);
 		}
 		node_body->update_parents(function_header->parent);
 		return std::move(node_body);

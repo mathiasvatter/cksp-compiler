@@ -9,6 +9,26 @@
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
 #include "../../Lowering/ASTLowering.h"
 
+/**
+ * @class ASTCollectLowerings
+ *
+ * @brief This class is responsible for lowering various AST nodes to a more primitive form.
+ *
+ * It inherits from the ASTVisitor class and overrides its visit methods to provide custom behavior for each node type.
+ * The lowering process is necessary for certain operations that are not directly supported by the target language.
+ *
+ * The following AST nodes are being lowered by this class:
+ * - NodeSingleDeclareStatement: Lower ndarray when declaration or ui_control array or determine size of array in declaration.
+ * - NodeSingleAssignStatement: Lower get_control statements to set_control_par.
+ * - NodeGetControlStatement: Lower get_control statements to get_control_par.
+ * - NodeFunctionCall: Lower property functions to get_control_par.
+ * - NodeNDArray: Lower ndArray when they are a reference.
+ * - NodeConstStatement: Lower const block to single declare statements.
+ * - NodeListStructRef: Lower list struct references to array references.
+ * - NodeListStruct: Lower list structs to arrays and while loops.
+ *
+ * @param definition_provider A pointer to a DefinitionProvider object. This object is used to resolve definitions of variables, arrays, etc.
+ */
 class ASTCollectLowerings: public ASTVisitor {
 public:
     explicit ASTCollectLowerings(DefinitionProvider* definition_provider);
@@ -23,11 +43,13 @@ public:
 	void visit(NodeFunctionCall& node) override;
 	/// lower ndArray when they are a reference
 	void visit(NodeNDArray& node) override;
-
+	/// lower const block to single declare statements
     void visit(NodeConstStatement& node) override;
 //    void visit(NodeFamilyStatement& node) override;
 
+	/// lower list struct references to array references
 	void visit(NodeListStructRef& node) override;
+	/// lower list structs to arrays and while loops
 	void visit(NodeListStruct& node) override;
 
 private:
