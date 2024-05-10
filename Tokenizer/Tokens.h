@@ -29,14 +29,14 @@
 	XX(END_CALLBACK, "end callback") \
 	XX(ASSIGN, "assignment")     \
 	XX(ARROW, "arrow")     \
-	XX(SUB, "sub") \
-	XX(ADD, "add") \
-    XX(DIV, "div")      \
-	XX(MULT, "mult")        \
-	XX(MODULO, "modulo")        \
-	XX(STRING_OP, "add_string")        \
-	XX(BIT_AND, "bit_and")        \
-	XX(BIT_OR, "bit_or")        \
+	XX(SUB, "-") \
+	XX(ADD, "+") \
+    XX(DIV, "/")      \
+	XX(MULT, "*")        \
+	XX(MODULO, "mod")        \
+	XX(STRING_OP, "&")        \
+	XX(BIT_AND, ".and.")        \
+	XX(BIT_OR, ".or.")        \
 	XX(BIT_XOR, "bit_xor")        \
 	XX(BIT_NOT, "bit_not")        \
     XX(OPEN_PARENTH, "open_parenth")\
@@ -178,6 +178,7 @@ inline std::set<std::string> RESTRICTED_CALLBACKS = {"init", "persistence_change
 
 inline std::set<std::string> BUILTIN_CONDITIONS = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG"};
 
+/// string->Token operator maps
 inline std::unordered_map<std::string, token> BITWISE_OPERATORS = {{".and.", token::BIT_AND}, {".or.", token::BIT_OR}, {".not.", token::BIT_NOT}, {".xor.", token::BIT_XOR}};
 inline std::unordered_map<std::string, token> BOOL_OPERATORS = {{"and", token::BOOL_AND}, {"or", token::BOOL_OR}, {"not", token::BOOL_NOT}, {"xor", token::BOOL_XOR}};
 inline std::unordered_map<std::string, token> MATH_OPERATORS = {{"-", token::SUB}, {"+", token::ADD}, {"/", token::DIV}, {"*", token::MULT}, {"mod", token::MODULO}};
@@ -191,3 +192,37 @@ inline const std::unordered_map<std::string, token> ALL_OPERATORS = []{
     return ops;
 }();
 
+// Hilfsfunktion zum Extrahieren der Tokens aus Maps
+inline std::set<token> extract_tokens_from_map(const std::unordered_map<std::string, token>& map) {
+	std::set<token> tokens;
+	for (const auto& pair : map) {
+		tokens.insert(pair.second);
+	}
+	return tokens;
+}
+
+/// Token sets for token operator types
+inline const std::set<token> BITWISE_TOKENS = extract_tokens_from_map(BITWISE_OPERATORS);
+inline const std::set<token> BOOL_TOKENS = extract_tokens_from_map(BOOL_OPERATORS);
+inline const std::set<token> MATH_TOKENS = extract_tokens_from_map(MATH_OPERATORS);
+inline const std::set<token> UNARY_TOKENS = extract_tokens_from_map(UNARY_OPERATORS);
+inline const std::set<token> COMPARISON_TOKENS = extract_tokens_from_map(COMPARISON_OPERATORS);
+inline const std::set<token> STRING_TOKENS = extract_tokens_from_map(STRING_OPERATOR);
+
+/// Token->string maps reversed for generating vanilla KSP Code
+inline static std::unordered_map<token, std::string> GENERATE_BITWISE_OPERATORS = {{token::BIT_AND, ".and."}, {token::BIT_OR, ".or."}, {token::BIT_NOT, ".not."}, {token::BIT_XOR, ".xor."}};
+inline static std::unordered_map<token, std::string> GENERATE_BOOL_OPERATORS = {{token::BOOL_AND, "and"}, {token::BOOL_OR, "or"}, {token::BOOL_NOT, "not"}, {token::BOOL_XOR, "xor"}};
+inline static std::unordered_map<token, std::string> GENERATE_MATH_OPERATORS = {{token::SUB, "-"}, {token::ADD, "+"}, {token::DIV, "/"}, {token::MULT, "*"}, {token::MODULO, "mod"}};
+inline static std::unordered_map<token, std::string> GENERATE_UNARY_OPERATORS = {{token::SUB, "-"}, {token::BIT_NOT, ".not."}, {token::BOOL_NOT, "not"}};
+inline static std::unordered_map<token, std::string> GENERATE_COMPARISON_OPERATORS = {{token::LESS_THAN, "<"}, {token::GREATER_THAN, ">"}, {token::EQUAL, "="}, {token::LESS_EQUAL, "<="}, {token::GREATER_EQUAL, ">="}, {token::NOT_EQUAL, "#"}};
+inline static std::unordered_map<token, std::string> GENERATE_STRING_OPERATOR = {{token::STRING_OP, "&"}};
+inline static std::unordered_map<token, std::string> GENERATE_ALL_OPERATORS = []{
+	std::unordered_map<token, std::string> ops;
+	ops.insert(GENERATE_BITWISE_OPERATORS.begin(), GENERATE_BITWISE_OPERATORS.end());
+	ops.insert(GENERATE_BOOL_OPERATORS.begin(), GENERATE_BOOL_OPERATORS.end());
+	ops.insert(GENERATE_MATH_OPERATORS.begin(), GENERATE_MATH_OPERATORS.end());
+	ops.insert(GENERATE_UNARY_OPERATORS.begin(), GENERATE_UNARY_OPERATORS.end());
+	ops.insert(GENERATE_COMPARISON_OPERATORS.begin(), GENERATE_COMPARISON_OPERATORS.end());
+	ops.insert(GENERATE_STRING_OPERATOR.begin(), GENERATE_STRING_OPERATOR.end());
+	return ops;
+}();

@@ -39,7 +39,7 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_function_call(const std::string&
     return function_call;
 }
 
-std::unique_ptr<NodeBinaryExpr>ASTVisitor::make_binary_expr(ASTType type, const std::string& op, std::unique_ptr<NodeAST> lhs, std::unique_ptr<NodeAST> rhs, NodeAST* parent, Token tok) {
+std::unique_ptr<NodeBinaryExpr>ASTVisitor::make_binary_expr(ASTType type, token op, std::unique_ptr<NodeAST> lhs, std::unique_ptr<NodeAST> rhs, NodeAST* parent, Token tok) {
     // make comparison expression
     auto comparison = std::make_unique<NodeBinaryExpr>(op, std::move(lhs), std::move(rhs), tok);
     comparison->type = type;
@@ -93,7 +93,7 @@ std::unique_ptr<NodeBody> ASTVisitor::make_while_loop(NodeAST* var, int32_t from
 
     auto node_assignment = std::make_unique<NodeSingleAssignStatement>(var->clone(), make_int(from, var), var->tok);
     node_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_body.get()));
-    auto node_comparison = make_binary_expr(ASTType::Comparison, "<", var->clone(), make_int(to, var), nullptr, var->tok);
+    auto node_comparison = make_binary_expr(ASTType::Comparison, token::LESS_THAN, var->clone(), make_int(to, var), nullptr, var->tok);
     std::vector<std::unique_ptr<NodeAST>> func_args;
     func_args.push_back(var->clone());
     auto node_increment = make_function_call("inc", std::move(func_args), nullptr, var->tok);

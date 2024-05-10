@@ -44,7 +44,7 @@ public:
         node.to_be_declared->accept(*this);
         // has no value -> create one
         if(!node.assignee) {
-            node.assignee = std::make_unique<NodeBinaryExpr>("+", m_pre->clone(), m_iter->clone(), node.tok);
+            node.assignee = std::make_unique<NodeBinaryExpr>(token::ADD, m_pre->clone(), m_iter->clone(), node.tok);
         } else {
             m_pre = node.assignee->clone();
             m_iter = make_int(0, node.parent);
@@ -61,8 +61,8 @@ public:
         m_pre = make_int(0, node.parent);
         for(int i = 0; i<node.constants->statements.size(); i++){
             node.constants->statements[i]->accept(*this);
-            const_indexes.push_back(std::make_unique<NodeBinaryExpr>("+", m_pre->clone(), m_iter->clone(), node.tok));
-            m_iter = make_binary_expr(ASTType::Integer, "+", m_iter->clone(), make_int(1, node.parent), nullptr, node.tok);;
+            const_indexes.push_back(std::make_unique<NodeBinaryExpr>(token::ADD, m_pre->clone(), m_iter->clone(), node.tok));
+            m_iter = make_binary_expr(ASTType::Integer, token::ADD, m_iter->clone(), make_int(1, node.parent), nullptr, node.tok);;
         }
         auto node_array = make_array(node.name, node.constants->statements.size(), node.tok, node.constants.get());
         auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), nullptr, node.tok);

@@ -268,6 +268,7 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
         node.function->has_forced_parenth = builtin_func->has_forced_parenth;
         node.function->arg_ast_types = builtin_func->arg_ast_types;
         node.function->arg_var_types = builtin_func->arg_var_types;
+		node.function->is_builtin = builtin_func->is_builtin;
 
         if(m_restricted_builtin_functions.find(builtin_func->name) != m_restricted_builtin_functions.end()) {
             if(!contains(RESTRICTED_CALLBACKS, remove_substring(m_current_callback->begin_callback, "on "))) {
@@ -632,7 +633,7 @@ void ASTDesugar::declare_compiler_variables() {
 //        auto node_array = make_array(arr_name.second, m_current_callback_idx, tok, m_init_callback);
 //        node_array -> type = arr_name.first;
 //        node_array-> is_used = true;
-//        node_array->is_engine = true;
+//        node_array->is_builtin = true;
 //        node_array->is_global = true;
 //        auto node_arr_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), nullptr, tok);
 //        node_arr_declaration->to_be_declared->parent = node_arr_declaration.get();

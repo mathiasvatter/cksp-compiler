@@ -49,30 +49,17 @@ void ASTTypeChecking::visit(NodeCallback &node) {
 
 void ASTTypeChecking::visit(NodeUIControl& node) {
     node.control_var->accept(*this);
-    // unused variable declarations being replaced with node_dead_end, replace also parent
-//    if(cast_node<NodeDeadCode>(node.control_var.get())) {
-////    if(&node == m_current_node_replaced) {
-//        m_current_node_replaced = node.parent;
-//        node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
-//        return;
-//    }
     node.params->accept(*this);
 }
 
 void ASTTypeChecking::visit(NodeVariable& node) {
-    auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
-    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
-    auto node_ui_control = cast_node<NodeUIControl>(node.parent);
-//    if(node_declaration || node_ui_control) {
-//        if(!node.is_used) {
-//            m_current_node_replaced = node.parent;
-//            node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
-//            return;
-//        }
-//    }
+//    auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
+//    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
+    auto node_ui_control = node.parent->get_node_type() == NodeType::UIControl;
+
     // only print error if it is in a declaration
     if(node.type == ASTType::Unknown) {
-        if(node_declaration or node_ui_control) {
+        if(!node.is_reference or node_ui_control) {
             CompileError(ErrorType::TypeError,"Could not infer variable type. Automatically casted as <Integer>. Consider using a variable identifier.", "", node.tok).print();
 			node.type = ASTType::Integer;
 		} else {
@@ -112,7 +99,6 @@ void ASTTypeChecking::visit(NodeVariable& node) {
 int ASTTypeChecking::extract_last_number(const std::string& str, NodeAST* var) {
     int lastNumberEnd = str.size();
     int lastNumberStart = -1;
-
     // Durchlaufen des Strings von hinten
     for (int i = str.size() - 1; i >= 0; --i) {
         if (str[i] == '_') {
@@ -122,7 +108,6 @@ int ASTTypeChecking::extract_last_number(const std::string& str, NodeAST* var) {
             }
         }
     }
-
     auto str_last = str.substr(lastNumberStart, lastNumberEnd - lastNumberStart);
     int last = std::stoi(str_last);
 
@@ -130,23 +115,16 @@ int ASTTypeChecking::extract_last_number(const std::string& str, NodeAST* var) {
 }
 
 void ASTTypeChecking::visit(NodeArray& node) {
-    auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
-    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
-    auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+//    auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
+//    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
+    auto node_ui_control = node.parent->get_node_type() == NodeType::UIControl;
 
-//    if(node_declaration || node_ui_control) {
-//        if(!node.is_used) {
-//            m_current_node_replaced = node.parent;
-//            node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
-//            return;
-//        }
-//    }
 	auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
     // only print error if it is in a declaration
     if(node.type == ASTType::Unknown) {
 //        auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
 //        auto node_ui_control = cast_node<NodeUIControl>(node.parent);
-        if(node_declaration or node_ui_control) {
+        if(!node.is_reference or node_ui_control) {
 			error.m_message = "Could not infer array type. Automatically casted as <Integer>. Consider using a variable identifier.";
 			error.m_got = node.name;
 			error.print();
@@ -168,29 +146,21 @@ void ASTTypeChecking::visit(NodeArray& node) {
 void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
     node.to_be_declared->accept(*this);
 
-    // unused variable declarations being replaced with node_dead_end
-//    if(cast_node<NodeDeadCode>(node.to_be_declared.get())) {
-////    if(&node == m_current_node_replaced) {
-//        m_current_node_replaced = nullptr;
-//        node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
-//        return;
-//    }
-
     if(node.assignee) {
         node.assignee->accept(*this);
 
-        auto node_int = cast_node<NodeInt>(node.assignee.get());
-        auto node_real = cast_node<NodeReal>(node.assignee.get());
+        auto node_int = node.assignee->get_node_type() == NodeType::Int;
+        auto node_real = node.assignee->get_node_type() == NodeType::Real;
 
 //        auto node_variable = cast_node<NodeVariable>(node.assignee.get());
 //        auto node_array = cast_node<NodeArray>(node.assignee.get());
 //        auto node_function = cast_node<NodeFunctionCall>(node.assignee.get());
-        auto node_declare_variable = cast_node<NodeVariable>(node.to_be_declared.get());
-        auto node_declare_array = cast_node<NodeArray>(node.to_be_declared.get());
+        auto node_declare_variable = node.to_be_declared->get_node_type() == NodeType::Variable;
+        auto node_declare_array = node.to_be_declared->get_node_type() == NodeType::Array;
 
         // replace variable declaration with declaration and assignment when assignment is not single int or single real or variable ist not const
         // replace instead when assignment is of type string, NodeBinaryExpr, NodeFunctionCall, etc.
-        if(node_declare_variable and not(node_int or node_real or node_declare_variable->data_type == DataType::Const)) {
+        if(node_declare_variable and not(node_int or node_real or node.to_be_declared->data_type == DataType::Const)) {
             auto node_body = std::make_unique<NodeBody>(node.tok);
             auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->clone(), std::move(node.assignee), node.tok);
             node_body->statements.push_back(statement_wrapper(node.clone(),node_body.get()));
@@ -226,8 +196,8 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
 				}
 			}
             if (node_param_list and (has_var || node.assignee->type == ASTType::String || node.assignee->type == ASTType::Unknown)) {
-                auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement *>(node.clone().release()));
-                auto node_body = array_initialization(node_declare_array, node_param_list);
+                auto node_declare_statement = clone_as<NodeSingleDeclareStatement>(&node);
+                auto node_body = array_initialization(static_cast<NodeArray*>(node.to_be_declared.get()), node_param_list);
                 // remove list assignment from declare_statement
                 node_declare_statement->assignee.release();
                 node_body->statements.insert(node_body->statements.begin(),statement_wrapper(std::move(node_declare_statement),node_body.get()));

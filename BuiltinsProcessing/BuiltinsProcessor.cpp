@@ -167,7 +167,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> BuiltinsProcessor::parse_builtin_fun
     }
     auto node_function = std::make_unique<NodeFunctionHeader>(func_name.val, std::move(func_args), func_name);
     node_function->type = return_type;
-    node_function->is_engine = true;
+    node_function->is_builtin = true;
     node_function->has_forced_parenth = has_forced_parenth;
     node_function->arg_var_types = arg_var_types;
     node_function->arg_ast_types = arg_types;

@@ -141,7 +141,7 @@ public:
 		func_args.push_back(std::move(node_ui_control_var));
 		auto node_get_ui_id = std::move(make_function_call("get_ui_id", std::move(func_args), nullptr, ui_control.tok)->statement);
 
-		auto node_while_body_expression = make_binary_expr(ASTType::Integer,"+",std::move(node_get_ui_id),node_iterator_var->clone(),nullptr,ui_control.tok);
+		auto node_while_body_expression = make_binary_expr(ASTType::Integer,token::ADD,std::move(node_get_ui_id),node_iterator_var->clone(),nullptr,ui_control.tok);
 
 		auto node_raw_array_copy = clone_as<NodeArray>(ui_control.control_var.get());
 		node_raw_array_copy->is_reference = true;

@@ -384,13 +384,14 @@ void Tokenizer::get_comparison_operators() {
     } else if (peek() == '=') {
         tok = token::EQUAL;
     } else if (peek() == '#') {
+		tok = token::NOT_EQUAL;
         // NOT
     } else {
 		auto err_msg = "Unknown comparison operator.";
 		CompileError(ErrorType::TokenError, err_msg, m_line, "<, >, =", m_buffer, m_current_file).exit();
 	}
 	consume();
-    m_tokens.emplace_back(token::COMPARISON, m_buffer, m_line, m_line_pos-m_buffer.length(), m_current_file);
+    m_tokens.emplace_back(tok, m_buffer, m_line, m_line_pos-m_buffer.length(), m_current_file);
     skip_whitespace();
 }
 

@@ -19,8 +19,8 @@ void ASTTypeCasting::visit(NodeProgram& node) {
 
 void ASTTypeCasting::visit(NodeParamList& node) {
     // infer type only if every member has same type (array declaration, assignment)
-    auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
-    auto node_assignment = cast_node<NodeSingleAssignStatement>(node.parent);
+    auto node_declaration = node.parent->get_node_type() == NodeType::SingleDeclareStatement;
+    auto node_assignment = node.parent->get_node_type() == NodeType::SingleAssignStatement;
 
     std::vector<ASTType> types;
     for(int i = 0; i<node.params.size(); i++) {
@@ -68,7 +68,7 @@ void ASTTypeCasting::visit(NodeUIControl& node) {
 				err.exit();
 			}
 
-			auto node_array = cast_node<NodeArray>(node.params->params[i].get());
+			auto node_array = node.params->params[i]->get_node_type() == NodeType::Array;
 			if(node.arg_var_types[i] == DataType::Array) {
 				if(!node_array) {
 					CompileError(ErrorType::TypeError,"Found wrong type in engine widget arguments. Argument needs to be of type <Array>.", node.tok.line, "<Array>", node.params->params[i]->get_string(), node.tok.file).exit();
@@ -137,7 +137,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 //    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
 //    auto node_ui_control = cast_node<NodeUIControl>(node.parent);
 
-	auto node_callback_id = cast_node<NodeCallback>(node.parent);
+	auto node_callback_id = node.parent->get_node_type() == NodeType::Callback;
 	if(node_callback_id) {
 		if(node.data_type != DataType::UI_Control) {
             CompileError(ErrorType::TypeError,
@@ -183,7 +183,7 @@ void ASTTypeCasting::visit(NodeArray& node) {
 //    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
 //    auto node_ui_control = cast_node<NodeUIControl>(node.parent);
 
-	auto node_callback_id = cast_node<NodeCallback>(node.parent);
+	auto node_callback_id = node.parent->get_node_type() == NodeType::Callback;
 	if(node_callback_id and node.data_type != DataType::UI_Control) {
 		CompileError(ErrorType::TypeError,"Array needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line, "<UI_Control>", node.get_string(), node.tok.file).exit();
 	}
@@ -247,7 +247,7 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
 //    }
     std::pair<ASTType, ASTType> types(node.left->type, node.right->type);
 
-    auto err = CompileError(ErrorType::TypeError,"Found operands of different types in <binary_expression>.", node.tok.line, "", "", node.tok.file);
+    auto err = CompileError(ErrorType::TypeError,"Found operands of different types in <binary_expression>.", "", node.tok);
     bool left_unknown = node.left->type == ASTType::Unknown;
     bool right_unknown = node.right->type == ASTType::Unknown;
     bool int_and_unknown = node.left->type == ASTType::Integer and node.right->type == ASTType::Unknown or node.left->type == ASTType::Unknown and node.right->type == ASTType::Integer;
@@ -263,9 +263,9 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
     bool both_comps = node.left->type == ASTType::Comparison and node.right->type == ASTType::Comparison;
     bool both_bools = node.left->type == ASTType::Boolean and node.right->type == ASTType::Boolean;
     // is string
-    if(get_token_type(STRING_OPERATOR, node.op)) {
+    if(contains(STRING_TOKENS, node.op)) {
         node.type = ASTType::String;
-    } else if (get_token_type(MATH_OPERATORS, node.op)) {
+    } else if (contains(MATH_TOKENS, node.op)) {
         // can only be int op int || float op float
         if(both_integers) {
             node.type = ASTType::Integer;
@@ -280,10 +280,10 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
 //        } else if (both_unknown) {
 //            node.type = Unknown;
         } else {
-            // please use real() and int() to use Real and Integer numbers in a single expression
+            err.m_message += "Please use real() and int() to use <Real> and <Integer> numbers in a single expression.";
             err.exit();
         }
-    } else if (get_token_type(BITWISE_OPERATORS, node.op)) {
+    } else if (contains(BITWISE_TOKENS, node.op)) {
         if(both_integers) {
             node.type = ASTType::Integer;
         } else if (int_and_unknown) {
@@ -293,10 +293,10 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
         } else if (both_unknown) {
             node.type = ASTType::Unknown;
         } else {
-            // error, bitwise operators can only be used in between integer values.
+            err.m_message += "<Bitwise Operators> can only be used in between integer values.";
             err.exit();
         }
-    } else if (get_token_type(BOOL_OPERATORS, node.op)) {
+    } else if (contains(BOOL_TOKENS, node.op)) {
         if(both_comps) {
             node.type = ASTType::Boolean;
         } else if (both_bools) {
@@ -306,10 +306,10 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
         } else if (both_unknown) {
             node.type = ASTType::Boolean;
         } else {
-            // error, only comparisons can be bound together with bool operators
+            err.m_message += "Only <Comparisons> can be bound together with <Bool Operators>.";
             err.exit();
         }
-    } else if (get_token_type(COMPARISON_OPERATORS, node.op)) {
+    } else if (contains(COMPARISON_TOKENS, node.op)) {
         // can only be int op int || float op float
         if(both_integers) {
             node.type = ASTType::Comparison;
@@ -335,13 +335,13 @@ void ASTTypeCasting::visit(NodeBinaryExpr& node) {
 void ASTTypeCasting::visit(NodeUnaryExpr& node) {
     node.operand->accept(*this);
     auto err = CompileError(ErrorType::TypeError,"Found different types in <unary_expression>.", node.tok.line, "", "", node.tok.file);
-    if(node.op.type == token::SUB or node.op.type == token::BIT_NOT) {
+    if(node.op == token::SUB or node.op == token::BIT_NOT) {
         if(node.operand->type == ASTType::Integer or node.operand->type == ASTType::Real) {
             node.type = node.operand->type;
         } else {
             err.exit();
         }
-    } else if(node.op.type == token::BOOL_NOT) {
+    } else if(node.op == token::BOOL_NOT) {
         if(node.operand->type == ASTType::Boolean or node.operand->type == ASTType::Comparison) {
             node.type = ASTType::Boolean;
         // e.g. not -1...
@@ -379,7 +379,7 @@ void ASTTypeCasting::visit(NodeFunctionHeader& node) {
 				err.exit();
 			}
 
-			auto node_array = cast_node<NodeArray>(node.args->params[i].get());
+			auto node_array = node.args->params[i]->get_node_type() == NodeType::Array;
 			if(node.arg_var_types[i] == DataType::Array) {
 				if (!node_array) {
 					CompileError(ErrorType::TypeError,

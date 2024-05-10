@@ -41,7 +41,7 @@ public:
 		node_position_array->index = std::move(node.indexes->params[0]);
 		node_position_array->index->update_parents(node_position_array.get());
 
-		auto node_expression = make_binary_expr(ASTType::Integer, "+", std::move(node_position_array), std::move(node.indexes->params[1]), &node, node.tok);
+		auto node_expression = make_binary_expr(ASTType::Integer, token::ADD, std::move(node_position_array), std::move(node.indexes->params[1]), &node, node.tok);
 
 //		lowered_list_reference->index->params.clear();
 		lowered_list_reference->index = std::move(node_expression);
@@ -125,7 +125,7 @@ public:
             node_body->statements.push_back(statement_wrapper(std::move(node_const_declaration), node_body.get()));
 
             auto node_while_body = std::make_unique<NodeBody>(node.tok);
-            auto node_expression = make_binary_expr(ASTType::Integer, "+", node_iterator_var->clone(), make_int(positions[i], &node),nullptr, node.tok);
+            auto node_expression = make_binary_expr(ASTType::Integer, token::ADD, node_iterator_var->clone(), make_int(positions[i], &node),nullptr, node.tok);
 //            node_main_array->index->params.clear();
             node_main_array->index = std::move(node_expression);
 

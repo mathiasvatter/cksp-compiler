@@ -171,13 +171,13 @@ Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>&
         auto operandValueStmt = evaluate_int_expression(unaryExprNode->operand);
         if (operandValueStmt.is_error()) return Result<int>(operandValueStmt.get_error());
         int operandValue = operandValueStmt.unwrap();
-        if (unaryExprNode->op.type == token::SUB) { // Assuming SUB represents the '-' unary operator
+        if (unaryExprNode->op == token::SUB) { // Assuming SUB represents the '-' unary operator
             return Result<int>(-operandValue);
         }
         // Add other unary operations here if needed
         return Result<int>(CompileError(ErrorType::PreprocessorError,
                                         "Unsupported unary operation. " + preprocessor_error,
-                                        root->tok.line, "-", unaryExprNode->op.val, root->tok.file));
+                                        root->tok.line, "-", tokenStrings[(int)unaryExprNode->op], root->tok.file));
     } else if (auto binaryExprNode = dynamic_cast<NodeBinaryExpr *>(root.get())) {
         auto leftValueStmt = evaluate_int_expression(binaryExprNode->left);
         if (leftValueStmt.is_error()) return Result<int>(leftValueStmt.get_error());
@@ -185,25 +185,25 @@ Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>&
         auto rightValueStmt = evaluate_int_expression(binaryExprNode->right);
         if (rightValueStmt.is_error()) return Result<int>(rightValueStmt.get_error());
         int rightValue = rightValueStmt.unwrap();
-        if (binaryExprNode->op == "+") {
+        if (binaryExprNode->op == token::ADD) {
             return Result<int>(leftValue + rightValue);
-        } else if (binaryExprNode->op == "-") {
+        } else if (binaryExprNode->op == token::SUB) {
             return Result<int>(leftValue - rightValue);
-        } else if (binaryExprNode->op == "*") {
+        } else if (binaryExprNode->op == token::MULT) {
             return Result<int>(leftValue * rightValue);
-        } else if (binaryExprNode->op == "/") {
+        } else if (binaryExprNode->op == token::DIV) {
             if (rightValue == 0) {
                 return Result<int>(CompileError(ErrorType::PreprocessorError, "Divison by zero. " + preprocessor_error,
                                                 root->tok.line, "", std::to_string(rightValue), root->tok.file));
             }
             return Result<int>(leftValue / rightValue);
-        } else if (binaryExprNode->op == "mod") {
+        } else if (binaryExprNode->op == token::MODULO) {
             return Result<int>(leftValue % rightValue);
         }
         // Add other binary operations here if needed
         return Result<int>(
                 CompileError(ErrorType::PreprocessorError, "Unsupported binary operation. " + preprocessor_error,
-                             root->tok.line, "*, /, -, +, mod", binaryExprNode->op, root->tok.file));
+                             root->tok.line, "*, /, -, +, mod", tokenStrings[(int)binaryExprNode->op], root->tok.file));
     }
     return Result<int>(CompileError(ErrorType::PreprocessorError,
                                     "Unknown expression statement. No variables allowed. " + preprocessor_error,
