@@ -24,8 +24,8 @@ struct NodeVariableRef : NodeReference {
 
 struct NodeArrayRef : NodeReference {
 	std::unique_ptr<NodeAST> index;
-	inline NodeArrayRef(std::string name, Token tok)
-		: NodeReference(std::move(name), NodeType::ArrayRef, tok) {
+	inline NodeArrayRef(std::string name, std::unique_ptr<NodeAST> index, Token tok)
+		: NodeReference(std::move(name), NodeType::ArrayRef, tok), index(std::move(index)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;

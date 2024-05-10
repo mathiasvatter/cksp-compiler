@@ -118,7 +118,18 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, co
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
 
+Result<std::unique_ptr<NodeVariableRef>> Parser::parse_variable_ref(NodeAST* parent) {
+	auto var_token = consume();
+	std::string var_name = var_token.val;
+	auto type = infer_type_from_identifier(var_name);
+	auto node_variable_ref = std::make_unique<NodeVariableRef>(var_name, var_token);
+	node_variable_ref->parent = parent;
+	node_variable_ref->type = type;
+	return Result<std::unique_ptr<NodeVariableRef>>(std::move(node_variable_ref));
+}
+
 Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, bool is_reference, std::optional<Token> is_persistent, DataType var_type) {
+	auto error = CompileError(ErrorType::SyntaxError,"Found unknown Array Syntax.", "", peek());
     auto arr_token = consume();
     std::string arr_name = arr_token.val;
 	auto type = infer_type_from_identifier(arr_name);
@@ -137,16 +148,16 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
             }
             indexes = std::move(index_params.unwrap());
         }
-        if(peek().type != token::CLOSED_BRACKET)
-            return Result<std::unique_ptr<NodeDataStructure>>(CompileError(ErrorType::SyntaxError,
-																		   "Found unknown Array Syntax.", "]", peek()));
+        if(peek().type != token::CLOSED_BRACKET) {
+			error.m_expected = "]";
+			return Result<std::unique_ptr<NodeDataStructure>>(error);
+		}
         consume(); // consume ]
     } else {
-        return Result<std::unique_ptr<NodeDataStructure>>(CompileError(ErrorType::SyntaxError,
-																	   "Found unknown Array Syntax.", "[", peek()));
+		error.m_expected = "[";
+        return Result<std::unique_ptr<NodeDataStructure>>(error);
     }
 	if(!is_reference) std::swap(sizes,indexes);
-
 
 	// if it is multidimensional array
 	if(indexes->params.size() > 1 || sizes->params.size() > 1) {
@@ -171,6 +182,49 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 	node_array->type = type;
 	return Result<std::unique_ptr<NodeDataStructure>>(std::move(node_array));
 }
+
+Result<std::unique_ptr<NodeReference>> Parser::parse_array_ref(NodeAST *parent) {
+	auto error = CompileError(ErrorType::SyntaxError,"Found unknown Array Reference Syntax.", "", peek());
+	auto arr_token = consume();
+	std::string arr_name = arr_token.val;
+	auto type = infer_type_from_identifier(arr_name);
+	std::unique_ptr<NodeReference> node_array_ref = nullptr;
+	std::unique_ptr<NodeParamList> indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, arr_token));;
+	indexes->parent = node_array_ref.get();
+	if(peek().type == token::OPEN_BRACKET) {
+		consume(); // consume [
+		// if it is an empty array initialization
+		if (peek().type == token::CLOSED_BRACKET) {
+			error.m_message += "Empty Array Reference Initialization is not allowed.";
+			return Result<std::unique_ptr<NodeReference>>(error);
+		}
+		auto index_params = parse_param_list(node_array_ref.get());
+		if (index_params.is_error()) {
+			return Result<std::unique_ptr<NodeReference>>(index_params.get_error());
+		}
+		indexes = std::move(index_params.unwrap());
+		if(peek().type != token::CLOSED_BRACKET) {
+			error.m_expected = "]";
+			return Result<std::unique_ptr<NodeReference>>(error);
+		}
+		consume(); // consume ]
+	} else {
+		error.m_expected = "[";
+		return Result<std::unique_ptr<NodeReference>>(error);
+	}
+	// if it is multidimensional array reference
+	if(indexes->params.size() > 1) {
+		auto node = std::make_unique<NodeNDArrayRef>(arr_name, std::move(indexes), arr_token);
+		node_array_ref = std::move(node);
+	} else {
+		auto node = std::make_unique<NodeArrayRef>(arr_name, std::move(indexes->params[0]),arr_token);
+		node_array_ref = std::move(node);
+	}
+	node_array_ref->parent = parent;
+	node_array_ref->type = type;
+	return Result<std::unique_ptr<NodeReference>>(std::move(node_array_ref));
+}
+
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_expression(NodeAST* parent) {
     auto lhs = parse_string_expr(parent);
