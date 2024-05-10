@@ -19,7 +19,7 @@ template<typename T> Result<T> handle_error(Result<T> result) {
 	return result; // Return the success result directly
 }
 
-inline static std::map<token, int> BinaryOpPrecendence = {
+inline static std::map<token, int> operator_precedence = {
         {token::BOOL_XOR, 1},
         {token::BOOL_OR, 1},
         {token::BOOL_AND, 2},
@@ -42,12 +42,8 @@ inline static std::map<token, int> BinaryOpPrecendence = {
         {token::MODULO, 13}
 };
 
-inline static bool is_unary_operator(token op) {
-    return op == token::SUB || op == token::BIT_NOT || op == token::BOOL_NOT;
-}
-
 inline static int _get_binop_precedence(token tok) {
-	int precedence = BinaryOpPrecendence[tok];
+	int precedence = operator_precedence[tok];
 	if (precedence <= 0) {
 		return -1;
 	}

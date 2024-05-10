@@ -57,7 +57,7 @@ std::unique_ptr<T> clone_as(NodeAST* node) {
 struct NodeDeadCode : NodeAST {
     explicit NodeDeadCode(const Token tok) : NodeAST(tok, NodeType::DeadCode) {};
     void accept(ASTVisitor& visitor) override;
-    NodeDeadCode(const NodeDeadCode& other) : NodeAST(other.tok) {}
+    NodeDeadCode(const NodeDeadCode& other) : NodeAST(other) {}
     std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {return "";}
 };
@@ -67,7 +67,7 @@ struct NodeInt : NodeAST {
 	inline explicit NodeInt(int32_t v, const Token tok) : NodeAST(tok, NodeType::Int), value(v) {type = ASTType::Integer;}
 	void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
-    NodeInt(const NodeInt& other) : NodeAST(other.tok), value(other.value) {}
+    NodeInt(const NodeInt& other) : NodeAST(other), value(other.value) {}
     // Clone Methode
     std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {
@@ -119,7 +119,7 @@ struct NodeReal : NodeAST {
     inline explicit NodeReal(double value, Token tok) : NodeAST(tok, NodeType::Real), value(value) {type = ASTType::Real;}
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
-    NodeReal(const NodeReal& other) : NodeAST(other.tok), value(other.value) {}
+    NodeReal(const NodeReal& other) : NodeAST(other), value(other.value) {}
     // Clone Methode
     std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {
@@ -132,7 +132,7 @@ struct NodeString : NodeAST {
     inline explicit NodeString(std::string value, Token tok) : NodeAST(tok, NodeType::String), value(std::move(value)) {type = ASTType::String;}
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
-    NodeString(const NodeString& other) : NodeAST(other.tok), value(other.value) {}
+    NodeString(const NodeString& other) : NodeAST(other), value(other.value) {}
     // Clone Methode
     std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {
