@@ -30,7 +30,7 @@ void Preprocessor::process() {
     auto result_parse = parser.parse_program(nullptr);
     if(result_parse.is_error()) {
         result_parse.get_error().print();
-        auto err_msg = "Preprocessor failed.";
+        auto err_msg = "Preprocessor parsing failed.";
         CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",result_parse.get_error().m_file_name).exit();
     }
     auto pre_ast = std::move(result_parse.unwrap());

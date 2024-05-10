@@ -25,9 +25,7 @@ void ASTDesugar::visit(NodeProgram& node) {
     for(auto & function : m_function_definitions) {
         if(function->is_used and function->header->args->params.empty() and !function->return_variable.has_value()) {
             m_functions_in_use.insert({function->header->name, function.get()});
-//            m_variable_scope_stack.emplace_back();
             function->body->accept(*this);
-//            m_variable_scope_stack.pop_back();
             m_functions_in_use.erase(function->header->name);
         }
     }
@@ -54,8 +52,7 @@ void ASTDesugar::visit(NodeCallback& node) {
 
 }
 void ASTDesugar::visit(NodeNDArray& node) {
-	node.sizes->accept(*this);
-	node.indexes->accept(*this);
+	CompileError(ErrorType::SyntaxError, "Found <nd array>. This data structure should not exist anymore after lowering.", node.tok.line, "", "", node.tok.file).exit();
 };
 
 void ASTDesugar::visit(NodeArray& node) {
@@ -109,13 +106,6 @@ void ASTDesugar::visit(NodeFunctionHeader& node) {
     }
 }
 
-void ASTDesugar::visit(NodeBinaryExpr& node) {
-    node.left->accept(*this);
-    node.right->accept(*this);
-
-//    ConstantFolding constant_folding;
-//    node.accept(constant_folding);
-}
 
 void ASTDesugar::visit(NodeVariable& node) {
 
@@ -299,11 +289,6 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
     } else {
         CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).exit();
     }
-}
-
-void ASTDesugar::visit(NodeStatement& node) {
-//    m_current_function_inline_statement = &node;
-    node.statement->accept(*this);
 }
 
 std::unique_ptr<NodeBody> ASTDesugar::inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
@@ -558,20 +543,14 @@ void ASTDesugar::visit(NodeGetControlStatement& node) {
 void ASTDesugar::visit(NodeWhileStatement& node) {
     m_current_function_inline_statement = node.parent;
     node.condition->accept(*this);
-//	m_variable_scope_stack.emplace_back();
     node.statements->accept(*this);
-//	m_variable_scope_stack.pop_back();
 }
 
 void ASTDesugar::visit(NodeIfStatement& node) {
     m_current_function_inline_statement = node.parent;
     node.condition->accept(*this);
-//	m_variable_scope_stack.emplace_back();
     node.statements->accept(*this);
-//	m_variable_scope_stack.pop_back();
-//	m_variable_scope_stack.emplace_back();
     node.else_statements->accept(*this);
-//	m_variable_scope_stack.pop_back();
 }
 
 void ASTDesugar::visit(NodeSelectStatement& node) {
@@ -594,7 +573,6 @@ void ASTDesugar::visit(NodeBody& node) {
     }
 	if(node.scope) m_variable_scope_stack.pop_back();
 
-    // Ersetzen Sie die alte Liste durch die neue
     if(!node.scope) node.statements = std::move(cleanup_node_body(&node));
 }
 

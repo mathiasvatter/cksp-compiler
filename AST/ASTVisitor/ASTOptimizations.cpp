@@ -3,13 +3,8 @@
 //
 
 #include "ASTOptimizations.h"
-#include "../../Optimization/ConstantFolding.h"
 
 void ASTOptimizations::visit(NodeBinaryExpr& node) {
-//	node.left->accept(*this);
-//	node.right->accept(*this);
-
-	ConstantFolding constant_folding;
 	node.accept(constant_folding);
 }
 

@@ -13,31 +13,32 @@ class ASTDesugar : public ASTVisitor {
 public:
     explicit ASTDesugar(DefinitionProvider* definition_provider);
 
-    /// check if init callback exists
+    /// check for used functions
     void visit(NodeProgram& node) override;
+
     void visit(NodeCallback& node) override;
-	/// do constant folding for int and reals
-	void visit(NodeBinaryExpr& node) override;
     /// initiating substitution
     void visit(NodeFunctionCall& node) override;
-    void visit(NodeFunctionHeader& node) override;
-//    void visit(NodeFunctionDefinition& node) override;
+
 	void visit(NodeUIControl& node) override;
     void visit(NodeSingleDeclareStatement& node) override;
     void visit(NodeSingleAssignStatement& node) override;
     void visit(NodeParamList& node) override;
 
+	/// throw error if these still exist after lowering
     void visit(NodeGetControlStatement& node) override;
+	void visit(NodeNDArray& node) override;
 
+	/// emplace back local variable scope
+    void visit(NodeBody& node) override;
+	void visit(NodeSelectStatement& node) override;
     void visit(NodeWhileStatement& node) override;
     void visit(NodeIfStatement& node) override;
-	void visit(NodeSelectStatement& node) override;
 
-    void visit(NodeBody& node) override;
-    void visit(NodeStatement& node) override;
+	/// do substitution
 	void visit(NodeArray& node) override;
-	void visit(NodeNDArray& node) override;
     void visit(NodeVariable& node) override;
+    void visit(NodeFunctionHeader& node) override;
 
 	std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> get_function_inlines();
 

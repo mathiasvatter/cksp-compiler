@@ -24,7 +24,7 @@ void ASTCollectLowerings::visit(NodeSingleAssignStatement& node) {
 void ASTCollectLowerings::visit(NodeGetControlStatement& node) {
 	node.ui_id->accept(*this);
 
-	/**
+	/*
 	 * checks if the parent of the current node is a single assignment statement.
 	 * If the array_variable of the assignment is the get_control statement, then it is a set_control statement.
 	 * E.g. if it would be

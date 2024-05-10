@@ -5,13 +5,16 @@
 #pragma once
 
 #include "ASTVisitor.h"
+#include "../../Optimization/ConstantFolding.h"
 
 /** @brief Class for AST Optimizations
  * Removing of unused variables, arrays, etc.
  * Constant Folding
  */
 class ASTOptimizations : public ASTVisitor {
-
+private:
+	ConstantFolding constant_folding;
+public:
 	/// do constant folding for int and reals
 	void visit(NodeBinaryExpr& node) override;
 	/// remove unused variables
