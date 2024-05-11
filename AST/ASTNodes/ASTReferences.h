@@ -46,7 +46,8 @@ struct NodeArrayRef : NodeReference {
 };
 
 struct NodeNDArrayRef : NodeReference {
-	std::unique_ptr<NodeParamList> indexes;
+	std::unique_ptr<NodeParamList> indexes = nullptr;
+    std::unique_ptr<NodeParamList> sizes = nullptr;
 	inline NodeNDArrayRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
 		: NodeReference(std::move(name), NodeType::NDArrayRef, std::move(tok)), indexes(std::move(indexes)) {
 		set_child_parents();

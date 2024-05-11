@@ -27,13 +27,19 @@ public:
 
 	void visit(NodeBody& node) override;
 	void visit(NodeUIControl& node) override;
+
 	void visit(NodeArray& node) override;
+    void visit(NodeArrayRef& node) override;
+
 	void visit(NodeNDArray& node) override;
+    void visit(NodeNDArrayRef& node) override;
+
 	/// List Struct and Reference
 	void visit(NodeListStruct& node) override;
 	void visit(NodeListStructRef& node) override;
 	/// Variable
 	void visit(NodeVariable& node) override;
+    void visit(NodeVariableRef& node) override;
 
 	/// TODO: Visit Function Calls and connect to function definitions to check scoping? Not needed really
 private:

@@ -130,6 +130,14 @@ void DefinitionProvider::match_data_structure(NodeDataStructure* reference, Node
 	reference->data_type = declaration->data_type;
 }
 
+void DefinitionProvider::match_data_structure(NodeReference* reference, NodeDataStructure* declaration) {
+    // get declaration to declaration
+    reference->declaration = declaration;
+    declaration->is_used = true;
+    reference->is_engine = declaration-> is_engine;
+    reference->type = declaration->type;
+}
+
 
 NodeVariable* DefinitionProvider::get_builtin_variable(const std::string& var) {
     auto it = builtin_variables.find(var);
