@@ -166,7 +166,7 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 			arr_name, var_type,
 			std::move(sizes),
 			std::move(indexes), arr_token);
-		node->dimensions = std::max(indexes->params.size(), sizes->params.size());
+		node->dimensions = std::max(node->indexes->params.size(), node->sizes->params.size());
 		node_array = std::move(node);
 	} else {
 		auto node = std::make_unique<NodeArray>(arr_name, arr_token);
