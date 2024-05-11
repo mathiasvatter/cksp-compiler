@@ -19,6 +19,7 @@ struct NodeVariable: NodeDataStructure {
 	NodeVariable(const NodeVariable& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+    std::unique_ptr<NodeReference> to_reference() override;
 };
 
 struct NodeArray : NodeDataStructure {
@@ -54,7 +55,7 @@ struct NodeArray : NodeDataStructure {
 		if(index) index ->update_token_data(token);
 	}
 	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
-
+    std::unique_ptr<NodeReference> to_reference() override;
 };
 
 struct NodeNDArray : NodeDataStructure {
@@ -93,6 +94,7 @@ struct NodeNDArray : NodeDataStructure {
 		if(indexes) indexes ->update_token_data(token);
 	}
 	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+    std::unique_ptr<NodeReference> to_reference() override;
 };
 
 struct NodeUIControl : NodeDataStructure {

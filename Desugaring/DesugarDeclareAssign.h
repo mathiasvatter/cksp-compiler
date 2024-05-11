@@ -31,7 +31,7 @@ public:
         for(auto &assignee : node.assignee->params) {
             values.push_back(std::move(assignee));
         }
-        // in case there is someting assigned
+        // in case there is something assigned
         if(!node.assignee->params.empty()) {
             // there were more variables given than values -> repeat the last value
             while (values.size() < declare_statements.size()) {
@@ -46,17 +46,12 @@ public:
             if (!node.assignee->params.empty()) {
                 auto &val = values[i];
                 stmt->assignee = std::move(val);
-//                stmt->assignee->parent = stmt.get();
             }
             stmt->set_child_parents();
             node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(stmt), node.tok));
         }
-//        node_body->parent = node.parent;
-//        node_body->update_parents(node.parent);
         node_body->set_child_parents();
-//        node_body->accept(*this);
         replacement_node = std::move(node_body);
-//        node.replace_with(std::move(node_body));
     }
 
     void inline visit(NodeAssignStatement &node) override {
@@ -92,12 +87,8 @@ public:
             stmt->set_child_parents();
             node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(stmt), node.tok));
         }
-//        node_body->parent = node.parent;
-//        node_body->update_parents(node.parent);
-//        node_body->accept(*this);
         node_body->set_child_parents();
         replacement_node = std::move(node_body);
-//        node.replace_with(std::move(node_body));
     }
 
 

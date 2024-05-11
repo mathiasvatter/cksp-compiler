@@ -36,6 +36,10 @@ std::unique_ptr<NodeAST> NodeDataStructure::clone() const {
 	return std::make_unique<NodeDataStructure>(*this);
 }
 
+std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
+    return std::make_unique<NodeReference>(name, node_type, tok);
+}
+
 // ************* NodeReference ***************
 void NodeReference::accept(ASTVisitor &visitor) {}
 

@@ -21,6 +21,11 @@ std::unique_ptr<NodeAST> NodeVariable::clone() const {
 	return std::make_unique<NodeVariable>(*this);
 }
 
+std::unique_ptr<NodeReference> NodeVariable::to_reference() {
+    return std::make_unique<NodeVariableRef>(name, tok);
+}
+
+
 // ************* NodeArray ***************
 void NodeArray::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
@@ -44,6 +49,10 @@ ASTVisitor* NodeArray::get_lowering(DefinitionProvider* def_provider) const {
 	return &lowering;
 }
 
+std::unique_ptr<NodeReference> NodeArray::to_reference() {
+    return std::make_unique<NodeArrayRef>(name, std::move(index), tok);
+}
+
 // ************* NodeNDArray ***************
 void NodeNDArray::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
@@ -58,6 +67,10 @@ std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 ASTVisitor* NodeNDArray::get_lowering(DefinitionProvider* def_provider) const {
 	static LoweringNDArray lowering(def_provider);
 	return &lowering;
+}
+
+std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
+    return std::make_unique<NodeNDArrayRef>(name, std::move(indexes), tok);
 }
 
 // ************* NodeUIControl ***************
