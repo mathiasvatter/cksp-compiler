@@ -44,69 +44,60 @@ void ASTBuildDataStructures::visit(NodeBody &node) {
 
 void ASTBuildDataStructures::visit(NodeArray &node) {
 	if(node.size) node.size->accept(*this);
-	if(node.index) node.index->accept(*this);
+//	if(node.index) node.index->accept(*this);
+	m_def_provider->set_declaration(&node, m_is_init_callback);
+}
 
-	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
-	if(!node_declaration) {
-		return;
-	}
+void ASTBuildDataStructures::visit(NodeArrayRef &node) {
+    if(node.index) node.index->accept(*this);
 
-	m_def_provider->match_data_structure(&node, node_declaration);
+    auto node_declaration = m_def_provider->get_declaration(&node);
+    // maybe declaration comes after lowering, do not throw error
+    if(!node_declaration) return;
 
-	// check if it is NodeListStructRef
-	if(node_declaration->get_node_type() == NodeType::ListStructRef) {
-		std::unique_ptr<NodeParamList> indexes = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.tok));
-		indexes->params.push_back(std::move(node.index));
-		auto node_list_reference = std::make_unique<NodeListStructRef>(node.name, std::move(indexes), node.tok);
-		node_list_reference->declaration = node_declaration;
-		node_list_reference->update_parents(node.parent);
-		node.replace_with(std::move(node_list_reference));
-		return;
-	}
-
-	// match array specific information
-	if(node.is_reference) {
-		if(auto node_array = cast_node<NodeArray>(node_declaration)) {
-			if(!node_array->size) return;
-			node.size = node_array->size->clone();
-			node.size->update_parents(&node);
-		}
-	}
-
+    m_def_provider->match_data_structure(&node, node_declaration);
+    // check if it is NodeListStructRef
+    if(node_declaration->get_node_type() == NodeType::ListStructRef) {
+        std::unique_ptr<NodeParamList> indexes = std::make_unique<NodeParamList>(node.tok);
+        indexes->params.push_back(std::move(node.index));
+        auto node_list_reference = std::make_unique<NodeListStructRef>(node.name, std::move(indexes), node.tok);
+        node_list_reference->declaration = node_declaration;
+        node.replace_with(std::move(node_list_reference));
+        return;
+    }
 }
 
 void ASTBuildDataStructures::visit(NodeNDArray& node) {
 	node.sizes->accept(*this);
-	node.indexes->accept(*this);
+//	node.indexes->accept(*this);
+	m_def_provider->set_declaration(&node, m_is_init_callback);
+}
 
-	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
-	if(!node_declaration and node.is_reference) {
-		CompileError(ErrorType::Variable, "Multidimensional array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
-		return;
-	}
-	if(!node_declaration and !node.is_reference) {
-		return;
-	}
+void ASTBuildDataStructures::visit(NodeNDArrayRef& node) {
+    node.indexes->accept(*this);
 
-	m_def_provider->match_data_structure(&node, node_declaration);
+    auto node_declaration = m_def_provider->get_declaration(&node);
+    if(!node_declaration) {
+        CompileError(ErrorType::Variable, "Multidimensional array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+        return;
+    }
 
-	// check if it is NodeListStructRef
-	if(node_declaration->get_node_type() == NodeType::ListStruct) {
-		auto node_list_reference = std::make_unique<NodeListStructRef>(node.name, std::move(node.indexes), node.tok);
-		node_list_reference->declaration = node_declaration;
-		node_list_reference->accept(*this);
-		node.replace_with(std::move(node_list_reference));
-		return;
-	}
+    m_def_provider->match_data_structure(&node, node_declaration);
+    // check if it is NodeListStructRef
+    if(node_declaration->get_node_type() == NodeType::ListStruct) {
+        auto node_list_reference = std::make_unique<NodeListStructRef>(node.name, std::move(node.indexes), node.tok);
+        node_list_reference->declaration = node_declaration;
+        node_list_reference->accept(*this);
+        node.replace_with(std::move(node_list_reference));
+        return;
+    }
 
-	// match array specific information
-	if(node.is_reference) {
-		if(auto node_array = cast_node<NodeNDArray>(node_declaration)) {
-			node.dimensions = node_array->dimensions;
-			node.sizes = clone_as<NodeParamList>(node_array->sizes.get());
-			node.sizes->update_parents(&node);
-		}
-	}
+    if(auto node_array = cast_node<NodeNDArray>(node_declaration)) {
+        node.sizes = clone_as<NodeParamList>(node_array->sizes.get());
+        node.sizes->update_parents(&node);
+    } else {
+        CompileError(ErrorType::Variable, "Incorrectly recognized as <ndarray>: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+    }
 }
 
 // get declaration of engine widget into declaration
@@ -124,28 +115,28 @@ void ASTBuildDataStructures::visit(NodeUIControl &node) {
 
 	node.control_var->accept(*this);
 	node.params->accept(*this);
-
 }
 
 
 void ASTBuildDataStructures::visit(NodeVariable &node) {
-	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
-	// return if no declaration found or node itself is declaration
-	if(!node_declaration) {
-		return;
-	}
+	m_def_provider->set_declaration(&node, m_is_init_callback);
+}
 
-	m_def_provider->match_data_structure(&node, node_declaration);
+void ASTBuildDataStructures::visit(NodeVariableRef &node) {
+    auto node_declaration = m_def_provider->get_declaration(&node);
+    // return if no declaration found it might come after lowering
+    if(!node_declaration) {
+        return;
+    }
 
-	// replace variable with array if incorrectly recognized by parser
-	if(node_declaration->get_node_type() == NodeType::Array) {
-		auto node_array = make_array(node.name, 0, node.tok, node.parent);
-		node_array->size = nullptr;
-		node_array->show_brackets = false;
-		node_array->accept(*this);
-		node.replace_with(std::move(node_array));
-		return;
-	}
+    m_def_provider->match_data_structure(&node, node_declaration);
+    // replace variable with array if incorrectly recognized by parser
+    if(node_declaration->get_node_type() == NodeType::Array) {
+        auto node_array = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
+        node_array->accept(*this);
+        node.replace_with(std::move(node_array));
+        return;
+    }
 }
 
 void ASTBuildDataStructures::visit(NodeListStruct& node) {

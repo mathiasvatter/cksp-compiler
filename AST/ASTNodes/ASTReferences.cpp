@@ -41,7 +41,7 @@ void NodeNDArrayRef::accept(ASTVisitor &visitor) {
 }
 
 NodeNDArrayRef::NodeNDArrayRef(const NodeNDArrayRef& other)
-	: NodeReference(other), indexes(clone_unique(other.indexes)) {}
+	: NodeReference(other), indexes(clone_unique(other.indexes)), sizes(clone_unique(other.sizes)) {}
 
 std::unique_ptr<NodeAST> NodeNDArrayRef::clone() const {
 	return std::make_unique<NodeNDArrayRef>(*this);

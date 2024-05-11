@@ -44,7 +44,7 @@ std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
 void NodeReference::accept(ASTVisitor &visitor) {}
 
 NodeReference::NodeReference(const NodeReference& other)
-	: NodeAST(other), name(other.name), declaration(other.declaration) {}
+	: NodeAST(other), name(other.name), declaration(other.declaration), is_engine(other.is_engine) {}
 
 std::unique_ptr<NodeAST> NodeReference::clone() const {
 	return std::make_unique<NodeReference>(*this);

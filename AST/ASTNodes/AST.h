@@ -64,6 +64,7 @@ struct NodeDeadCode : NodeAST {
 struct NodeReference : NodeAST {
     std::string name;
     class NodeDataStructure* declaration = nullptr;
+    bool is_engine = false;
     inline explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::UnaryExpr) {}
     inline NodeReference(std::string name, NodeType node_type, Token tok)
             : NodeAST(tok, node_type), name(std::move(name)) {}
