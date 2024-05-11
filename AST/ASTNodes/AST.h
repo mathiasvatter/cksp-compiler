@@ -61,6 +61,23 @@ struct NodeDeadCode : NodeAST {
     std::string get_string() override {return "";}
 };
 
+struct NodeReference : NodeAST {
+    std::string name;
+    class NodeDataStructure* declaration = nullptr;
+    inline explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::UnaryExpr) {}
+    inline NodeReference(std::string name, NodeType node_type, Token tok)
+            : NodeAST(tok, node_type), name(std::move(name)) {}
+    void accept(ASTVisitor& visitor) override;
+    // Kopierkonstruktor
+    NodeReference(const NodeReference& other);
+    // Clone Methode
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {}
+    std::string get_string() override {
+        return name;
+    }
+};
+
 struct NodeDataStructure : NodeAST {
 	bool is_used = false;
 	bool is_engine = false;
@@ -77,27 +94,11 @@ struct NodeDataStructure : NodeAST {
 	// Kopierkonstruktor
 	NodeDataStructure(const NodeDataStructure& other);
 	// Clone Methode
-	std::unique_ptr<NodeAST> clone() const override;
-	std::string get_string() override {
-		return name;
-	}
-};
-
-struct NodeReference : NodeAST {
-	std::string name;
-	NodeDataStructure* declaration = nullptr;
-	inline explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::UnaryExpr) {}
-	inline NodeReference(std::string name, NodeType node_type, Token tok)
-		: NodeAST(tok, node_type), name(std::move(name)) {}
-	void accept(ASTVisitor& visitor) override;
-	// Kopierkonstruktor
-	NodeReference(const NodeReference& other);
-	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-	void update_parents(NodeAST* new_parent) override {}
 	std::string get_string() override {
 		return name;
 	}
+    virtual std::unique_ptr<NodeReference> to_reference();
 };
 
 struct NodeInt : NodeAST {

@@ -55,9 +55,9 @@ public:
     void inline visit(NodeForEachStatement& node) override {
         auto error = CompileError(ErrorType::SyntaxError, "", node.tok.line, "", "", node.tok.file);
         error.m_message = "Found incorrect for-each-loop syntax.";
-        // check if keys are either variable or array objects
+        // check if keys are variable references
         for(auto &var : node.keys->params) {
-            if(!is_instance_of<NodeVariable>(var.get())) {
+            if(var->get_node_type() != NodeType::VariableRef) {
                 error.m_message = "Found incorrect key in ranged-for-loop syntax.";
                 error.m_expected = "<variable>";
                 error.m_got = var->get_string();
@@ -69,40 +69,60 @@ public:
             error.m_got = node.keys->params[0]->get_string();
             error.exit();
         }
-        if(!is_instance_of<NodeVariable>(node.range.get())) {
-            error.m_expected = "<array_variable>";
+        // range has to be an array that was parsed as variable ref
+        if(node.range->get_node_type() != NodeType::VariableRef) {
+            error.m_expected = "<array>";
             error.m_got = node.range->get_string();
             error.exit();
         }
-
-        auto node_key_variable = static_cast<NodeVariable*>(node.keys->params[0].get());
+        auto node_key_ref = static_cast<NodeVariableRef*>(node.keys->params[0].get());
+        auto node_key_variable = std::make_unique<NodeVariable>(std::nullopt, node_key_ref->name, DataType::Mutable, node.tok);
         node_key_variable->is_local = true;
         node_key_variable->type = ASTType::Integer;
-        auto node_key_declaration = std::make_unique<NodeSingleDeclareStatement>(clone_as<NodeVariable>(node_key_variable),nullptr, node.tok);
+
+        auto node_key_declaration = std::make_unique<NodeSingleDeclareStatement>(
+                std::move(node_key_variable),
+                nullptr, node.tok);
         node_key_declaration->to_be_declared->is_reference = false;
-        auto node_key_iterator = std::make_unique<NodeSingleAssignStatement>(node.keys->params[0]->clone(), make_int(0, &node), node.tok);
+        auto node_key_iterator = std::make_unique<NodeSingleAssignStatement>(
+                node.keys->params[0]->clone(),
+                std::make_unique<NodeInt>(0, node.tok), node.tok);
         Token token_to = Token(token::TO, "to", node.tok.line, node.tok.pos, node.tok.file);
-        std::vector<std::unique_ptr<NodeAST>> args;
-        args.push_back(node.range->clone());
-        auto node_num_elements = make_function_call("num_elements", std::move(args), &node, node.tok);
-        auto node_end_range = make_binary_expr(ASTType::Integer, token::SUB, std::move(node_num_elements->statement), make_int(1, &node), &node, node.tok);
-        auto node_value_array = make_array(node.range->get_string(), 1, node.tok, &node);
-        node_value_array->size = nullptr;
-        node_value_array->index = std::move(node.keys->params[0]);
+        auto args = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.tok));
+        args->params.push_back(node.range->clone());
+
+        auto node_num_elements = std::make_unique<NodeFunctionCall>(
+                false,
+                std::make_unique<NodeFunctionHeader>("num_elements", std::move(args), node.tok),
+                        node.tok
+                    );
+        auto node_end_range = std::make_unique<NodeBinaryExpr>(
+                token::SUB,
+                std::move(node_num_elements),
+                std::make_unique<NodeInt>(1, node.tok),
+                node.tok
+        );
+        node_end_range->type = ASTType::Integer;
+
+        // add key-value pair to scope stack of array with <key> as index that needs to be substituted for <value>
+        auto node_value_array = std::make_unique<NodeArrayRef>(node.range->get_string(), std::move(node.keys->params[0]), node.tok);
         m_key_value_scope_stack.emplace_back();
         m_key_value_scope_stack.back().insert({node.keys->params[1]->get_string(), std::move(node_value_array)});
 
-        auto node_for_statement = std::make_unique<NodeForStatement>(std::move(node_key_iterator), token_to, std::move(node_end_range), std::move(node.statements), node.tok);
+        auto node_for_statement = std::make_unique<NodeForStatement>(
+                std::move(node_key_iterator),
+                token_to,
+                std::move(node_end_range),
+                std::move(node.statements), node.tok);
         auto node_scope = std::make_unique<NodeBody>(node.tok);
-        node_scope->statements.push_back(statement_wrapper(std::move(node_key_declaration), node_scope.get()));
-        node_scope->statements.push_back(statement_wrapper(std::move(node_for_statement), node_scope.get()));
+        node_scope->statements.push_back(std::make_unique<NodeStatement>(std::move(node_key_declaration), node.tok));
+        node_scope->statements.push_back(std::make_unique<NodeStatement>(std::move(node_for_statement), node.tok));
         node_scope->scope = true;
-        node_scope->update_parents(node.parent);
+        node_scope->set_child_parents();
         node_scope->accept(*this);
 
         m_key_value_scope_stack.pop_back();
         replacement_node = std::move(node_scope);
-//        node.replace_with(std::move(node_scope));
     }
 
 };

@@ -292,7 +292,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
 			}
 			return Result<std::unique_ptr<NodeAST>>(var_function.get_error());
 		} else if(peek(1).type == token::OPEN_BRACKET) {
-            auto var_array = parse_array(parent, true);
+            auto var_array = parse_array_ref(parent);
             if (var_array.is_error()) {
                 return Result<std::unique_ptr<NodeAST>>(var_array.get_error());
             }
@@ -305,7 +305,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
             return Result<std::unique_ptr<NodeAST>>(std::move(stmt));
         } else {
             // is variable
-            auto var = parse_variable(parent);
+            auto var = parse_variable_ref(parent);
             if (var.is_error()) {
                 return Result<std::unique_ptr<NodeAST>>(var.get_error());
             }
