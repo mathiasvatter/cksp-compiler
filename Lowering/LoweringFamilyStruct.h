@@ -7,11 +7,12 @@
 #include "ASTLowering.h"
 
 /**
- * Prepending family prefixes to all Datastructs in Family Block
+ * Prepending family prefixes to all Datastructs in Family Block, namely:
+ * - Variables, NDArrays, Arrays, Lists, Constblocks, UIControls
  */
 class LoweringFamilyStruct : public ASTLowering {
 private:
-    std::stack <std::string> m_family_prefixes;
+    std::stack<std::string> m_family_prefixes;
 
 public:
 	explicit LoweringFamilyStruct(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}

@@ -7,8 +7,7 @@
 #include "ASTDesugaring.h"
 
 /**
- * This class is responsible for desugaring for each loops into for loops
- * in the AST.
+ * @brief This class is responsible for desugaring for each loops into for loops in the AST.
  * In this case, a for each loop is rewritten as a for loop.
  *
  * The transformation is as follows:
@@ -39,9 +38,9 @@ private:
     }
 
 public:
-    void inline visit(NodeVariable& node) override {
+    void inline visit(NodeVariableRef& node) override {
         // range-based for-loop substitution
-        if(!m_key_value_scope_stack.empty() and node.is_reference) {
+        if(!m_key_value_scope_stack.empty()) {
             if(auto substitute = get_key_value_substitute(node.name)) {
                 substitute->update_parents(node.parent);
                 if(substitute->type == ASTType::Unknown)
@@ -88,7 +87,8 @@ public:
                 node.keys->params[0]->clone(),
                 std::make_unique<NodeInt>(0, node.tok), node.tok);
         Token token_to = Token(token::TO, "to", node.tok.line, node.tok.pos, node.tok.file);
-        auto args = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.tok));
+//        auto args = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.tok));
+        auto args = std::make_unique<NodeParamList>(node.tok);
         args->params.push_back(node.range->clone());
 
         auto node_num_elements = std::make_unique<NodeFunctionCall>(

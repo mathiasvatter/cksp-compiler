@@ -141,7 +141,10 @@ struct NodeString : NodeAST {
 };
 
 struct NodeParamList: NodeAST {
-    std::vector<std::unique_ptr<NodeAST>> params;
+    std::vector<std::unique_ptr<NodeAST>> params = {};
+    inline explicit NodeParamList(Token tok) : NodeAST(std::move(tok), NodeType::ParamList) {
+        set_child_parents();
+    }
     inline explicit NodeParamList(std::vector<std::unique_ptr<NodeAST>> params, Token tok) : NodeAST(std::move(tok), NodeType::ParamList), params(std::move(params)) {
 		set_child_parents();
 	}
