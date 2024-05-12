@@ -49,17 +49,6 @@ private:
 	DefinitionProvider* m_def_provider = nullptr;
 
 
-//    static inline ASTType infer_type_from_identifier(std::string& var_name) {
-//        ASTType type = ASTType::Unknown;
-//        if(contains(VAR_IDENT, var_name[0]) || contains(ARRAY_IDENT, var_name[0])) {
-//            std::string identifier(1, var_name[0]);
-//            var_name = var_name.erase(0,1);
-//            token token_type = *get_token_type(TYPES, identifier);
-//            type = token_to_type(token_type);
-//        }
-//        return type;
-//    }
-
 	/// Checks for existence and uniqueness of "on init" callback
 	/// If found, returns pointer to the callback node
 	static NodeCallback* move_on_init_callback(NodeProgram& node);

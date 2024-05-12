@@ -13,48 +13,59 @@ public:
 
 	/// returns a statement list with the declarations of the size constants of the array
 	void visit(NodeSingleDeclareStatement &node) override {
-		if(auto node_ndarray = cast_node<NodeNDArray>(node.to_be_declared.get())) {
-			auto node_body = std::make_unique<NodeBody>(node.tok);
-			for (int i = 0; i < node_ndarray->dimensions; i++) {
-				auto node_var = std::make_unique<NodeVariable>(std::optional<Token>(), node_ndarray->name + ".SIZE_D" + std::to_string(i + 1), DataType::Const, node.tok);
-				auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_var), node_ndarray->sizes->params[i]->clone(), node.tok);
-				auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
-				node_statement->update_parents(node_body.get());
-				node_body->statements.push_back(std::move(node_statement));
-			}
-			node.to_be_declared->accept(*this);
-			node_body->statements.push_back(statement_wrapper(node.clone(), node_body.get()));
-			node_body->update_parents(node.parent);
-			node.replace_with(std::move(node_body));
-		}
+        if(node.to_be_declared->get_node_type() == NodeType::NDArray) {
+            if (auto node_ndarray = cast_node<NodeNDArray>(node.to_be_declared.get())) {
+                auto node_body = std::make_unique<NodeBody>(node.tok);
+                for (int i = 0; i < node_ndarray->dimensions; i++) {
+                    auto node_var = std::make_unique<NodeVariable>(
+                            std::optional<Token>(),
+                           node_ndarray->name + ".SIZE_D" +
+                           std::to_string(i + 1),
+                           DataType::Const, node.tok);
+                    auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(
+                            std::move(node_var),
+                         node_ndarray->sizes->params[i]->clone(), node.tok);
+                    auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
+                    node_statement->update_parents(node_body.get());
+                    node_body->statements.push_back(std::move(node_statement));
+                }
+                node.to_be_declared->accept(*this);
+                node_body->statements.push_back(std::make_unique<NodeStatement>(node.clone(), node.tok));
+                node_body->update_parents(node.parent);
+                node.replace_with(std::move(node_body));
+            }
+        }
 	}
-	/// Lowering of multidimensional arrays to arrays
+	/// Lowering of multidimensional arrays to arrays -> declaration
 	void visit(NodeNDArray& node) override {
-		// dynamic cast to check if parent is of type NodeSingleDeclareStatement
-		std::unique_ptr<NodeAST> node_expression = nullptr;
-		if (!node.is_reference) {
-			node_expression = create_right_nested_binary_expr(node.sizes->params, 0, token::MULT, node.tok);
-		} else {
-			// convert index of multidimensional array
-			node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0,node.tok);
-		}
-		auto node_lowered_array = make_array(node.name, 1, node.tok, node.parent);
-		node_lowered_array->index = nullptr;
-		node_lowered_array->size = nullptr;
-		if(node.is_reference) node_lowered_array->index = std::move(node_expression);
-		if(!node.is_reference) node_lowered_array->size = std::move(node_expression);
-		node_lowered_array->update_parents(node.parent);
-
+		auto node_expression = create_right_nested_binary_expr(node.sizes->params, 0, token::MULT, node.tok);
+        auto node_lowered_array = std::make_unique<NodeArray>(
+                node.persistence,
+                node.name,
+                std::move(node_expression), node.tok);
 		node_lowered_array->name = "_" + node_lowered_array->name;
 		node_lowered_array->type = node.type;
 		node_lowered_array->is_reference = node.is_reference;
 		node_lowered_array->parent = node.parent;
-		node_lowered_array->persistence = node.persistence;
 		node_lowered_array->is_local = node.is_local;
 		node_lowered_array->data_type = node.data_type;
 		node_lowered_array->declaration = node.declaration;
 		node.replace_with(std::move(node_lowered_array));
 	}
+
+    /// Lowering of multidimensional arrays to arrays when reference
+    void visit(NodeNDArrayRef& node) override {
+        // convert index of multidimensional array
+        auto node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0,node.tok);
+        auto node_lowered_array = std::make_unique<NodeArrayRef>(
+                node.name,
+                std::move(node_expression), node.tok);
+        node_lowered_array->name = "_" + node_lowered_array->name;
+        node_lowered_array->type = node.type;
+        node_lowered_array->parent = node.parent;
+        node_lowered_array->declaration = node.declaration;
+        node.replace_with(std::move(node_lowered_array));
+    }
 
 private:
 	std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, token op, const Token& tok) {

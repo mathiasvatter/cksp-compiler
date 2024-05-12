@@ -35,6 +35,13 @@ struct NodeArray : NodeDataStructure {
 		this->data_type = var_type;
 		set_child_parents();
 	}
+    inline NodeArray(std::optional<Token> is_persistent, std::string name, std::unique_ptr<NodeAST> size, Token tok)
+            : NodeDataStructure(std::move(name), std::move(tok), NodeType::Array),
+              size(std::move(size)), index(nullptr) {
+        persistence = std::move(is_persistent);
+        this->data_type = DataType::Array;
+        set_child_parents();
+    }
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
 	NodeArray(const NodeArray& other);
