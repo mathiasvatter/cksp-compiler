@@ -183,8 +183,10 @@ public:
                     std::move(node_array_ref), node.tok
                     );
             node_while_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
+            node_while_body->set_child_parents();
             auto node_while_loop = make_while_loop(node_iterator_var.get(), 0, sizes[i], std::move(node_while_body), node_body.get());
             node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_while_loop), node.tok));
+            node_body->set_child_parents();
         }
 //        node_body->update_parents(node.parent);
         node_body->accept(*this);
