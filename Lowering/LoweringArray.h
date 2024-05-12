@@ -23,10 +23,8 @@ private:
 public:
 	explicit LoweringArray(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
 
-	/// Determining array size at compile time
+	/// Determining array size at compile time -> not of references!
 	void visit(NodeArray& node) override {
-		// only check lowering if array is not a reference
-		if (node.is_reference) return;
 
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 		auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);

@@ -34,7 +34,7 @@ class ASTCollectLowerings: public ASTVisitor {
 public:
     explicit ASTCollectLowerings(DefinitionProvider* definition_provider);
 
-	/// lower ndarray when declaration or ui_control array or determine size of array in declaration
+	/// lower ndarray when declaration or ui_control array
     void visit(NodeSingleDeclareStatement& node) override;
 	/// lower get_control statements to set_control_par
 	void visit(NodeSingleAssignStatement& node) override;
@@ -42,8 +42,10 @@ public:
 	void visit(NodeGetControlStatement& node) override;
 	/// lower property functions to get_control_par
 	void visit(NodeFunctionCall& node) override;
+    /// determine size of array in declaration if possible
+    void visit(NodeArray& node) override;
 	/// lower ndArray when they are a reference
-	void visit(NodeNDArray& node) override;
+	void visit(NodeNDArrayRef& node) override;
 	/// lower const block to single declare statements
     void visit(NodeConstStatement& node) override;
 //    void visit(NodeFamilyStatement& node) override;

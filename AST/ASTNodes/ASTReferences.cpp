@@ -5,6 +5,8 @@
 #include "ASTReferences.h"
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Lowering/LoweringList.h"
+#include "../../Lowering/LoweringNDArray.h"
+#include "../../Lowering/LoweringArray.h"
 
 // ************* NodeVariableRef ***************
 void NodeVariableRef::accept(ASTVisitor &visitor) {
@@ -35,6 +37,11 @@ void NodeArrayRef::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> new
 	}
 }
 
+ASTVisitor* NodeArrayRef::get_lowering(DefinitionProvider* def_provider) const {
+    static LoweringArray lowering(def_provider);
+    return &lowering;
+}
+
 // ************* NodeNDArrayRef ***************
 void NodeNDArrayRef::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
@@ -45,6 +52,11 @@ NodeNDArrayRef::NodeNDArrayRef(const NodeNDArrayRef& other)
 
 std::unique_ptr<NodeAST> NodeNDArrayRef::clone() const {
 	return std::make_unique<NodeNDArrayRef>(*this);
+}
+
+ASTVisitor* NodeNDArrayRef::get_lowering(DefinitionProvider* def_provider) const {
+    static LoweringNDArray lowering(def_provider);
+    return &lowering;
 }
 
 // ************* NodeListStructRef ***************
