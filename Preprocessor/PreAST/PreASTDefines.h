@@ -42,8 +42,8 @@ private:
 
 	std::vector<std::string> m_define_call_stack;
 
-	std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> m_builtin_defines;
-	static std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> get_builtin_defines();
+	std::unordered_map<std::string, std::unique_ptr<PreNodeAST>> m_builtin_defines;
+	static std::unordered_map<std::string, std::unique_ptr<PreNodeAST>> get_builtin_defines();
 	std::unique_ptr<PreNodeAST> get_builtin_define(const std::string& keyword);
 
 };
