@@ -75,12 +75,9 @@ void PreASTDefines::visit(PreNodeKeyword& node) {
 //}
 
 std::unique_ptr<PreNodeAST> PreASTDefines::get_builtin_define(const std::string& keyword) {
-	auto it = std::find_if(m_builtin_defines.begin(), m_builtin_defines.end(),
-						   [&](const std::pair<std::string, std::unique_ptr<PreNodeAST>> &pair) {
-							 return pair.first == keyword;
-						   });
+	auto it = m_builtin_defines.find(keyword);
 	if(it != m_builtin_defines.end()) {
-		return m_builtin_defines[std::distance(m_builtin_defines.begin(), it)].second->clone();
+		return it->second->clone();
 	}
 	return nullptr;
 }
@@ -183,7 +180,7 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDefines::ge
 	return substitution_vector;
 }
 
-std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> PreASTDefines::get_builtin_defines() {
+std::unordered_map<std::string, std::unique_ptr<PreNodeAST>> PreASTDefines::get_builtin_defines() {
 	auto now = std::chrono::system_clock::now();
 	// Umwandlung in time_t für einfacheren Zugriff auf Kalenderdaten
 	std::time_t now_c = std::chrono::system_clock::to_time_t(now);
@@ -215,20 +212,20 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> PreASTDefines::
 	ss << std::put_time(local_time, "%X");
 	std::string locale_time = ss.str();
 
-	std::vector<std::pair<std::string, std::unique_ptr<PreNodeAST>>> builtins;
-	builtins.emplace_back("__SEC__", std::make_unique<PreNodeInt>(local_time->tm_sec, Token(token::INT, std::to_string(local_time->tm_sec), 0, 0, ""), nullptr));
-	builtins.emplace_back("__MIN__", std::make_unique<PreNodeInt>(local_time->tm_min, Token(token::INT, std::to_string(local_time->tm_min), 0, 0, ""), nullptr));
-	builtins.emplace_back("__HOUR__", std::make_unique<PreNodeInt>(local_time->tm_hour, Token(token::INT, std::to_string(local_time->tm_hour), 0, 0, ""), nullptr));
-	builtins.emplace_back("__HOUR12__", std::make_unique<PreNodeInt>(local_time->tm_hour % 12, Token(token::INT, std::to_string(local_time->tm_hour % 12), 0, 0, ""), nullptr));
-	builtins.emplace_back("__AMPM__", std::make_unique<PreNodeKeyword>(Token(token::STRING, (local_time->tm_hour >= 12 ? "\"PM\"" : "\"AM\""), 0, 0, ""), nullptr));
-	builtins.emplace_back("__DAY__", std::make_unique<PreNodeInt>(local_time->tm_mday, Token(token::INT, std::to_string(local_time->tm_mday), 0, 0, ""), nullptr));
-	builtins.emplace_back("__MONTH__", std::make_unique<PreNodeInt>(local_time->tm_mon + 1, Token(token::INT, std::to_string(local_time->tm_mon + 1), 0, 0, ""), nullptr));
-	builtins.emplace_back("__YEAR__", std::make_unique<PreNodeInt>(local_time->tm_year + 1900, Token(token::INT, std::to_string(local_time->tm_year + 1900), 0, 0, ""), nullptr));
-	builtins.emplace_back("__YEAR2__", std::make_unique<PreNodeInt>(local_time->tm_year % 100, Token(token::INT, std::to_string(local_time->tm_year % 100), 0, 0, ""), nullptr));
-	builtins.emplace_back("__LOCALE_MONTH__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+locale_month+"\"", 0, 0, ""), nullptr));
-	builtins.emplace_back("__LOCALE_MONTH_ABBR__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+locale_month_abbr+"\"", 0, 0, ""), nullptr));
-	builtins.emplace_back("__LOCALE_DATE__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+locale_date+"\"", 0, 0, ""), nullptr));
-	builtins.emplace_back("__LOCALE_TIME__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+locale_time+"\"", 0, 0, ""), nullptr));
-	builtins.emplace_back("__CKSP_VER__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+COMPILER_VERSION+"\"", 0, 0, ""), nullptr));
+	std::unordered_map<std::string, std::unique_ptr<PreNodeAST>> builtins;
+	builtins.insert({"__SEC__", std::make_unique<PreNodeInt>(local_time->tm_sec, Token(token::INT, std::to_string(local_time->tm_sec), 0, 0, ""), nullptr)});
+	builtins.insert({"__MIN__", std::make_unique<PreNodeInt>(local_time->tm_min, Token(token::INT, std::to_string(local_time->tm_min), 0, 0, ""), nullptr)});
+	builtins.insert({"__HOUR__", std::make_unique<PreNodeInt>(local_time->tm_hour, Token(token::INT, std::to_string(local_time->tm_hour), 0, 0, ""), nullptr)});
+	builtins.insert({"__HOUR12__", std::make_unique<PreNodeInt>(local_time->tm_hour % 12, Token(token::INT, std::to_string(local_time->tm_hour % 12), 0, 0, ""), nullptr)});
+	builtins.insert({"__AMPM__", std::make_unique<PreNodeKeyword>(Token(token::STRING, (local_time->tm_hour >= 12 ? "\"PM\"" : "\"AM\""), 0, 0, ""), nullptr)});
+	builtins.insert({"__DAY__", std::make_unique<PreNodeInt>(local_time->tm_mday, Token(token::INT, std::to_string(local_time->tm_mday), 0, 0, ""), nullptr)});
+	builtins.insert({"__MONTH__", std::make_unique<PreNodeInt>(local_time->tm_mon + 1, Token(token::INT, std::to_string(local_time->tm_mon + 1), 0, 0, ""), nullptr)});
+	builtins.insert({"__YEAR__", std::make_unique<PreNodeInt>(local_time->tm_year + 1900, Token(token::INT, std::to_string(local_time->tm_year + 1900), 0, 0, ""), nullptr)});
+	builtins.insert({"__YEAR2__", std::make_unique<PreNodeInt>(local_time->tm_year % 100, Token(token::INT, std::to_string(local_time->tm_year % 100), 0, 0, ""), nullptr)});
+	builtins.insert({"__LOCALE_MONTH__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+locale_month+"\"", 0, 0, ""), nullptr)});
+	builtins.insert({"__LOCALE_MONTH_ABBR__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+locale_month_abbr+"\"", 0, 0, ""), nullptr)});
+	builtins.insert({"__LOCALE_DATE__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+locale_date+"\"", 0, 0, ""), nullptr)});
+	builtins.insert({"__LOCALE_TIME__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+locale_time+"\"", 0, 0, ""), nullptr)});
+	builtins.insert({"__CKSP_VER__", std::make_unique<PreNodeKeyword>(Token(token::STRING, "\""+COMPILER_VERSION+"\"", 0, 0, ""), nullptr)});
 	return builtins;
 }
