@@ -131,15 +131,10 @@ void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
     node.assignee->accept(*this);
 }
 
-void ASTTypeCasting::visit(NodeVariable& node) {
+void ASTTypeCasting::visit(NodeVariableRef& node) {
 
-//    auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
-//    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
-//    auto node_ui_control = cast_node<NodeUIControl>(node.parent);
-
-	auto node_callback_id = node.parent->get_node_type() == NodeType::Callback;
-	if(node_callback_id) {
-		if(node.data_type != DataType::UI_Control) {
+	if(node.parent->get_node_type() == NodeType::Callback) {
+		if(node.declaration->data_type != DataType::UI_Control) {
             CompileError(ErrorType::TypeError,
                          "Variable needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line,
                          "<UI_Control>", node.get_string(), node.tok.file).exit();
@@ -153,7 +148,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 		}
 	}
 
-    if(node.is_reference and !node.is_compiler_return and !node.is_local and !node.is_engine) {
+    if(!node.is_compiler_return and !node.is_local and !node.is_engine) {
 		if(node.declaration->type != ASTType::Unknown and node.type != ASTType::Unknown and node.declaration->type != node.type) {
 			CompileError(ErrorType::TypeError,"Found variables of same name and different types.", node.tok.line, type_to_string(node.declaration->type), type_to_string(node.type), node.tok.file).exit();
 		} else if (node.declaration->type != ASTType::Unknown) {
@@ -163,7 +158,7 @@ void ASTTypeCasting::visit(NodeVariable& node) {
         }
     }
 
-	if(node.data_type == DataType::UI_Control) {
+	if(node.declaration->data_type == DataType::UI_Control) {
 		auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
 		if(node_control_function and contains(node_control_function->name, "control_par")) {
 			auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(
@@ -177,40 +172,37 @@ void ASTTypeCasting::visit(NodeVariable& node) {
 
 }
 
-void ASTTypeCasting::visit(NodeArray& node) {
+void ASTTypeCasting::visit(NodeVariable& node) {
 
-//    auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
-//    if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
-//    auto node_ui_control = cast_node<NodeUIControl>(node.parent);
+}
+
+void ASTTypeCasting::visit(NodeArrayRef& node) {
 
 	auto node_callback_id = node.parent->get_node_type() == NodeType::Callback;
-	if(node_callback_id and node.data_type != DataType::UI_Control) {
+	if(node_callback_id and node.declaration->data_type != DataType::UI_Control) {
 		CompileError(ErrorType::TypeError,"Array needs to be of type <UI_Control> to be referenced in <UI_Callback>.", node.tok.line, "<UI_Control>", node.get_string(), node.tok.file).exit();
 	}
 
 
-    if(node.is_reference) {
-		if(node.declaration->type != ASTType::Unknown and node.type != ASTType::Unknown and node.declaration->type != node.type) {
-			CompileError(ErrorType::TypeError,"Found arrays of same name and different types.", node.tok.line, type_to_string(node.declaration->type), type_to_string(node.type), node.tok.file).exit();
-		} else if (node.declaration->type != ASTType::Unknown) {
-			node.type = node.declaration->type;
-		} else if (node.declaration->type == ASTType::Unknown) {
-			node.declaration->type = node.type;
-		}
+    if(node.declaration->type != ASTType::Unknown and node.type != ASTType::Unknown and node.declaration->type != node.type) {
+        CompileError(ErrorType::TypeError,"Found arrays of same name and different types.", node.tok.line, type_to_string(node.declaration->type), type_to_string(node.type), node.tok.file).exit();
+    } else if (node.declaration->type != ASTType::Unknown) {
+        node.type = node.declaration->type;
+    } else if (node.declaration->type == ASTType::Unknown) {
+        node.declaration->type = node.type;
     }
+
     auto err = CompileError(ErrorType::TypeError,"Found incorrect type in array brackets.", node.tok.line, "Integer", "", node.tok.file);
-    if(node.size) {
-		node.size->accept(*this);
-		if(node.size->type != ASTType::Integer and node.size->type != ASTType::Unknown)
-			err.exit();
-	}
     if(node.index) {
 		node.index->accept(*this);
-		if(node.index->type != ASTType::Integer and node.index->type != ASTType::Unknown)
-			err.exit();
+		if(node.index->type != ASTType::Integer and node.index->type != ASTType::Unknown) {
+            err.m_got = type_to_string(node.index->type);
+            err.exit();
+        }
 	}
 
-    if(node.data_type == DataType::UI_Control and node.index) {
+    // move into get_ui_id function when in control_par function
+    if(node.declaration->data_type == DataType::UI_Control and node.index) {
         auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
         if(node_control_function and contains(node_control_function->name, "control_par")) {
             auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(
@@ -221,10 +213,18 @@ void ASTTypeCasting::visit(NodeArray& node) {
             node.replace_with(std::move(node_get_ui_id));
         }
     }
-
 }
 
-
+void ASTTypeCasting::visit(NodeArray& node) {
+    auto err = CompileError(ErrorType::TypeError,"Found incorrect type in array brackets.", node.tok.line, "Integer", "", node.tok.file);
+    if(node.size) {
+        node.size->accept(*this);
+        if(node.size->type != ASTType::Integer and node.size->type != ASTType::Unknown) {
+            err.m_got = type_to_string(node.size->type);
+            err.exit();
+        }
+    }
+}
 
 void ASTTypeCasting::visit(NodeInt& node) {
     node.type = ASTType::Integer;
@@ -379,7 +379,7 @@ void ASTTypeCasting::visit(NodeFunctionHeader& node) {
 				err.exit();
 			}
 
-			auto node_array = node.args->params[i]->get_node_type() == NodeType::Array;
+			auto node_array = node.args->params[i]->get_node_type() == NodeType::ArrayRef;
 			if(node.arg_var_types[i] == DataType::Array) {
 				if (!node_array) {
 					CompileError(ErrorType::TypeError,

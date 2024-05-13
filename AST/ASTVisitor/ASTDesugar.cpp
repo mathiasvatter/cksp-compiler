@@ -70,8 +70,8 @@ void ASTDesugar::visit(NodeArrayRef& node) {
     // function args substitution
     if(!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.name)) {
-			if (auto substitute_data_structure = cast_node<NodeDataStructure>(substitute.get())) {
-				node.name = substitute_data_structure->name;
+			if (auto substitute_ref = cast_node<NodeReference>(substitute.get())) {
+				node.name = substitute_ref->name;
 			} else {
 //				substitute->update_parents(node.parent);
 				node.replace_with(std::move(substitute));
@@ -99,12 +99,12 @@ void ASTDesugar::visit(NodeFunctionHeader& node) {
     // substitution
     if (!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.name)) {
-            if(auto substitute_data_structure = cast_node<NodeDataStructure>(substitute.get())) {
-                node.name = substitute_data_structure->name;
+            if(auto substitute_ref = cast_node<NodeReference>(substitute.get())) {
+                node.name = substitute_ref->name;
                 return;
             } else {
                 auto error = CompileError(ErrorType::SyntaxError, "Cannot substitute Function name with <non-datastructure>", "", node.tok);
-                error.m_expected = "<datastructure>";
+                error.m_expected = "<Reference>";
                 error.m_got = substitute->get_string();
                 error.exit();
             }
@@ -285,11 +285,11 @@ std::unordered_map<std::string, std::unique_ptr<NodeAST>> ASTDesugar::get_substi
     for(int i= 0; i<definition->args->params.size(); i++) {
         auto &var = definition->args->params[i];
         std::pair<std::string, std::unique_ptr<NodeAST>> pair;
-        if(auto node_data_structure = cast_node<NodeDataStructure>(var.get())) {
-            pair.first = node_data_structure->name;
+        if(auto node_reference = cast_node<NodeReference>(var.get())) {
+            pair.first = node_reference->name;
         } else {
             CompileError(ErrorType::SyntaxError,
-             "Unable to substitute function arguments. Only <keywords> can be substituted.", definition->tok.line, "<keyword>", var->tok.val,definition->tok.file).print();
+             "Found incorrect parameter definitions in <function header>. Unable to substitute function arguments. Only <keywords> can be substituted.", definition->tok.line, "<keyword>", var->tok.val,definition->tok.file).print();
             exit(EXIT_FAILURE);
         }
         pair.second = std::move(call->args->params[i]);
