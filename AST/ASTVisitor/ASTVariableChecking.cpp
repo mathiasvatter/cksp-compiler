@@ -140,6 +140,7 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 void ASTVariableChecking::visit(NodeVariable& node) {
     // handle return_vars -> do not check if they have been declared
     if(node.is_compiler_return or node.is_local) {
+        node.is_used = true;
         return;
     }
     m_def_provider->set_declaration(&node, m_is_init_callback);
