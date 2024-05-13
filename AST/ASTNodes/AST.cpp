@@ -310,6 +310,14 @@ void NodeBody::append_body(std::unique_ptr<NodeBody> new_body) {
 	statements.insert(statements.end(), std::make_move_iterator(new_body->statements.begin()), std::make_move_iterator(new_body->statements.end()));
 }
 
+void NodeBody::prepend_body(std::unique_ptr<NodeBody> new_body) {
+    if(!new_body) return;
+    for(auto &stmt : new_body->statements) {
+        stmt->parent = this;
+    }
+    statements.insert(statements.begin(), std::make_move_iterator(new_body->statements.begin()), std::make_move_iterator(new_body->statements.end()));
+}
+
 // ************* NodeIfStatement ***************
 void NodeIfStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);

@@ -57,41 +57,37 @@ void ASTGenerator::visit(NodeString &node) {
 }
 
 void ASTGenerator::visit(NodeVariable &node) {
-	if(!node.is_reference) {
-		if (node.data_type == DataType::Polyphonic)
-			os << "polyphonic ";
-		else if (node.data_type == DataType::Const)
-			os << "const ";
-	}
+    if (node.data_type == DataType::Polyphonic)
+        os << "polyphonic ";
+    else if (node.data_type == DataType::Const)
+        os << "const ";
 	os << variable_identifier.find(node.type)->second;
     os << sanitize_dots(node.name);
 }
 
-void ASTGenerator::visit(NodeArray &node) {
-	auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
-	if(node_declaration and node_declaration->to_be_declared.get() != &node) node_declaration = nullptr;
-	auto node_ui_control = cast_node<NodeUIControl>(node.parent);
-
-	os << array_identifier.find(node.type)->second;
-//    if(node.dimensions>1) os << "_";
+void ASTGenerator::visit(NodeVariableRef &node) {
+    os << variable_identifier.find(node.type)->second;
     os << sanitize_dots(node.name);
-//	if(node_declaration or node_ui_control or !node.index->params.empty())
-//    	os << "[";
-//	if(node_declaration || node_ui_control)
-//		if(node.dimensions> 1)
-//			node.index->accept(*this);
-//		else
-//    		node.size->accept(*this);
-//	else
-//    	node.index->accept(*this);
-//	if(node_declaration or node_ui_control or !node.index->params.empty())
-//	    os << "]";
-	if(node.show_brackets) {
+}
+
+void ASTGenerator::visit(NodeArrayRef &node) {
+	os << array_identifier.find(node.type)->second;
+    os << sanitize_dots(node.name);
+	if(node.index) {
 		os << "[";
-		if(!node.is_reference and node.size) node.size->accept(*this);
-		if(node.is_reference and node.index) node.index->accept(*this);
+		node.index->accept(*this);
 		os << "]";
 	}
+}
+
+void ASTGenerator::visit(NodeArray &node) {
+    os << array_identifier.find(node.type)->second;
+    os << sanitize_dots(node.name);
+    if(node.size) {
+        os << "[";
+        node.size->accept(*this);
+        os << "]";
+    }
 }
 
 void ASTGenerator::visit(NodeUIControl &node) {
@@ -127,7 +123,7 @@ void ASTGenerator::visit(NodeParamList &node) {
 }
 
 void ASTGenerator::visit(NodeBinaryExpr &node) {
-    auto is_nested_bin_expr = is_instance_of<NodeBinaryExpr>(node.parent) || is_instance_of<NodeUnaryExpr>(node.parent);
+    auto is_nested_bin_expr = node.parent->get_node_type() == NodeType::BinaryExpr || node.parent->get_node_type() == NodeType::UnaryExpr;
     if(is_nested_bin_expr and node.type != ASTType::String) os << "(";
 
     node.left->accept(*this);
@@ -149,7 +145,7 @@ void ASTGenerator::visit(NodeSingleAssignStatement &node) {
 }
 
 void ASTGenerator::visit(NodeStatement &node) {
-	if(!is_instance_of<NodeDeadCode>(node.statement.get())) {
+	if(node.statement->get_node_type() != NodeType::DeadCode) {
 		os << get_indent();
 		node.statement->accept(*this);
 		os << std::endl;

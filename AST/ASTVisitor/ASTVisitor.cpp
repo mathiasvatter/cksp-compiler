@@ -70,14 +70,17 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_declare_array(const std::string&
 std::unique_ptr<NodeBody> ASTVisitor::array_initialization(NodeArray* array, NodeParamList* list) {
     auto node_body = std::make_unique<NodeBody>(array->tok);
     auto node_array = clone_as<NodeArray>(array);
-	node_array->is_reference = true;
+//	node_array->is_reference = true;
     for(int i = 0; i<list->params.size(); i++) {
-        auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(list->params[i]->tok);
-        node_array->index = make_int((int32_t)i, node_array.get());
-        node_assign_statement->array_variable = node_array->clone();
-        node_assign_statement->assignee = std::move(list->params[i]);
-        node_assign_statement->update_parents(node_body.get());
-        node_body->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_body.get()));
+        auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(
+                std::make_unique<NodeArrayRef>(
+                        node_array->name,
+                        std::make_unique<NodeInt>((int32_t)i, node_array->tok),
+                        node_array->tok),
+                std::move(list->params[i]),
+                list->params[i]->tok);
+//        node_assign_statement->update_parents(node_body.get());
+        node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_assign_statement), array->tok));
     }
     return std::move(node_body);
 }

@@ -515,6 +515,8 @@ struct NodeBody : NodeAST {
         }
     }
 	void append_body(std::unique_ptr<NodeBody> new_body);
+    void prepend_body(std::unique_ptr<NodeBody> new_body);
+
 };
 
 
