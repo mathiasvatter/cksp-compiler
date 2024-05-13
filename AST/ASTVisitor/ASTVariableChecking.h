@@ -20,13 +20,16 @@ public:
 	void visit(NodeUIControl& node) override;
 	/// Scoping
 	void visit(NodeBody& node) override;
-	/// Check if correctly declared
+	/// Check if correctly declared and save declaration
 	void visit(NodeArray& node) override;
+    /// get declaration
+    void visit(NodeArrayRef& node) override;
 	/// Check if correctly declared. Replace with Array when no brackets are used
 	void visit(NodeVariable& node) override;
+    /// get declaration
+    void visit(NodeVariableRef& node) override;
 	/// handle get_ui_id specific checks. Replace variable parameter when in get_ui_id and not ui_control
 	void visit(NodeFunctionCall& node) override;
-//	void visit(NodeParamList& node) override;
 
 private:
 	NodeProgram* m_program = nullptr;

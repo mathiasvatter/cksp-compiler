@@ -90,66 +90,65 @@ void ASTVariableChecking::visit(NodeBody &node) {
 	if(node.scope) m_def_provider->remove_scope();
 }
 
-void ASTVariableChecking::visit(NodeArray& node) {
-	if(node.size) node.size->accept(*this);
+void ASTVariableChecking::visit(NodeArrayRef& node) {
 	if(node.index) node.index->accept(*this);
 
 	auto compile_error = CompileError(ErrorType::Variable, "","", node.tok);
-	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
-	if(!node_declaration and node.is_reference) {
+	auto node_declaration = m_def_provider->get_declaration(&node);
+	if(!node_declaration) {
 		compile_error.m_message = "<Array> has not been declared: " + node.name;
 		compile_error.m_expected = "Valid declaration";
 		compile_error.m_got = node.name;
 		compile_error.exit();
 	}
 
-	if(node.is_reference)
-		m_def_provider->match_data_structure(&node, node_declaration);
-
-	// match array specific information
-	if(node.is_reference and !node.size) {
-		if(auto node_array = cast_node<NodeArray>(node_declaration)) {
-			if(!node_array->size) return;
-			node.size = node_array->size->clone();
-			node.size->update_parents(&node);
-		}
-	}
+    m_def_provider->match_data_structure(&node, node_declaration);
 }
 
-void ASTVariableChecking::visit(NodeVariable& node) {
+void ASTVariableChecking::visit(NodeArray& node) {
+	if(node.size) node.size->accept(*this);
+
+    m_def_provider->set_declaration(&node, m_is_init_callback);
+}
+
+void ASTVariableChecking::visit(NodeVariableRef& node) {
 	// handle return_vars -> do not check if they have been declared
 	if(node.is_compiler_return or node.is_local) {
-		node.is_used = true;
 		return;
 	}
 
 	auto compile_error = CompileError(ErrorType::Variable, "","", node.tok);
-	auto node_declaration = m_def_provider->get_declaration(&node, m_is_init_callback);
-	if(!node_declaration and node.is_reference) {
+	auto node_declaration = m_def_provider->get_declaration(&node);
+	if(!node_declaration) {
 		compile_error.m_message = "<Variable> has not been declared: " + node.name;
 		compile_error.m_expected = "Valid declaration";
 		compile_error.m_got = node.name;
 		compile_error.exit();
 	}
 
-	if(node.is_reference)
-		m_def_provider->match_data_structure(&node, node_declaration);
+    m_def_provider->match_data_structure(&node, node_declaration);
 
 	// replace variable with array if incorrectly recognized by parser
-	if(node.is_reference and node_declaration->get_node_type() == NodeType::Array) {
-		auto node_array = make_array(node.name, 0, node.tok, node.parent);
-		node_array->size = nullptr;
-		node_array->show_brackets = false;
+	if(node_declaration->get_node_type() == NodeType::Array) {
+		auto node_array = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
 		node_array->accept(*this);
 		node.replace_with(std::move(node_array));
 		return;
 	}
 }
 
+void ASTVariableChecking::visit(NodeVariable& node) {
+    // handle return_vars -> do not check if they have been declared
+    if(node.is_compiler_return or node.is_local) {
+        return;
+    }
+    m_def_provider->set_declaration(&node, m_is_init_callback);
+}
+
 void ASTVariableChecking::visit(NodeFunctionCall &node) {
 	node.function->accept(*this);
 	// replace node variable when in get_ui_id and not ui_control
-	if(node.function->name == "get_ui_id" and !node.function->args->params.empty()) {
+	if(!node.function->args->params.empty() and node.function->name == "get_ui_id") {
 		if(auto node_variable = cast_node<NodeVariable>(node.function->args->params[0].get())) {
 			if(node_variable->data_type != DataType::UI_Control) {
 				node.replace_with(std::move(node.function->args->params[0]));
@@ -158,9 +157,3 @@ void ASTVariableChecking::visit(NodeFunctionCall &node) {
 	}
 }
 
-//void ASTVariableChecking::visit(NodeParamList &node) {
-//    for(const auto & param : node.params) {
-//        param->accept(*this);
-//        node.type = param->type;
-//    }
-//}
