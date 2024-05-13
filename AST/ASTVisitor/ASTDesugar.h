@@ -36,7 +36,10 @@ public:
     void visit(NodeIfStatement& node) override;
 
 	/// do substitution
+    void visit(NodeArrayRef& node) override;
 	void visit(NodeArray& node) override;
+    /// do substitution
+    void visit(NodeVariableRef& node) override;
     void visit(NodeVariable& node) override;
     void visit(NodeFunctionHeader& node) override;
 
@@ -50,8 +53,9 @@ private:
     void declare_dummy_return_variable();
     void declare_compiler_variables();
 
-
-    std::unique_ptr<NodeBody> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header);
+    std::map<token, std::vector<std::string>> m_persistences = {{token::READ, {"make_persistent", "read_persistent_var"}},
+                                                              {token::PERS, {"make_persistent"}},
+                                                              {token::INSTPERS, {"make_instr_persistent"}}};
 
     NodeProgram* m_program = nullptr;
     NodeCallback* m_init_callback = nullptr;
@@ -80,15 +84,15 @@ private:
     std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> m_function_inlines;
 
     int local_var_counter = 0;
-    std::vector<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_variable_scope_stack;
-    std::vector<std::unique_ptr<NodeStatement>> m_local_declare_statements;
-	std::vector<std::unique_ptr<NodeStatement>> m_compiler_variable_declare_statements;
+    std::vector<std::unordered_map<std::string, std::unique_ptr<NodeDataStructure>>> m_variable_scope_stack;
+    std::unique_ptr<NodeBody> m_local_declare_statements = nullptr;
+	std::unique_ptr<NodeBody> m_compiler_variable_declare_statements = nullptr;
     /// holds the size of the local variables and their real names + _ + size is idx
     /// gets resettet when out of init
     std::stack<std::string> m_local_variables;
     std::set<std::string> m_local_already_declared_vars;
 	NodeDataStructure* m_local_var_dummy_declaration = nullptr;
-    std::unique_ptr<NodeAST> get_local_variable_substitute(const std::string& name);
+    std::unique_ptr<NodeDataStructure> get_local_variable_substitute(const std::string& name);
 
     std::vector<std::unique_ptr<NodeStatement>> add_read_functions(const Token& persistence, NodeDataStructure* var, NodeAST* parent);
 

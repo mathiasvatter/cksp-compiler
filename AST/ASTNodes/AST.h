@@ -65,6 +65,8 @@ struct NodeReference : NodeAST {
     std::string name;
     class NodeDataStructure* declaration = nullptr;
     bool is_engine = false;
+    bool is_local = false;
+    bool is_compiler_return = false;
     inline explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::UnaryExpr) {}
     inline NodeReference(std::string name, NodeType node_type, Token tok)
             : NodeAST(tok, node_type), name(std::move(name)) {}
