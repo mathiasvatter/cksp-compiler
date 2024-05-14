@@ -113,7 +113,9 @@ protected:
 	Result<std::unique_ptr<NodeSelectStatement>> parse_select_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeGetControlStatement>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent);
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition(NodeAST* parent);
-    Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header(NodeAST* parent);
+    /// function args are no references -> replace with references
+    Result<std::unique_ptr<NodeParamList>> parse_function_args(NodeAST* parent, bool is_definition);
+    Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header(NodeAST* parent, bool is_definition);
     Result<std::unique_ptr<NodeFunctionCall>> parse_function_call(NodeAST* parent);
     Result<std::unique_ptr<NodeCallback>> parse_callback(NodeAST* parent);
 
