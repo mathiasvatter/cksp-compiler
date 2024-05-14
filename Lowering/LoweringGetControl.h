@@ -84,7 +84,7 @@ private:
 			false,
 			std::make_unique<NodeFunctionHeader>(
 				control_function,
-				std::unique_ptr<NodeParamList>(new NodeParamList({}, node->tok)),
+				std::make_unique<NodeParamList>(node->tok),
 				node->tok
 			),
 			node->tok
@@ -94,24 +94,28 @@ private:
 			false,
 			std::make_unique<NodeFunctionHeader>(
 				"get_ui_id",
-				std::unique_ptr<NodeParamList>(new NodeParamList({}, node->tok)),
+				std::make_unique<NodeParamList>(node->tok),
 				node->tok
 			),
 			node->tok
 		);
 
-		if(auto node_data = cast_node<NodeDataStructure>(node->ui_id.get())) {
+		if(auto node_reference = cast_node<NodeReference>(node->ui_id.get())) {
 			// do not wrap in get_ui_id when it is a ui_control array
-			if(node_data->get_node_type() == NodeType::Array and node_data->data_type != DataType::UI_Control) {
+            auto node_declaration = m_def_provider->get_declaration(node_reference);
+            if(node_declaration) {
+                m_def_provider->match_data_structure(node_reference, node_declaration);
+            }
+			if(node_declaration and node_reference->declaration->data_type != DataType::UI_Control) {
 				node_control_function->function->args->params.push_back(std::move(node->ui_id));
-			} else {//if(node_data->data_type == DataType::UI_Control) {
+			} else if(node_declaration and node_reference->declaration->data_type == DataType::UI_Control) {
 				node_get_ui_id->function->args->params.push_back(std::move(node->ui_id));
 				node_control_function->function->args->params.push_back(std::move(node_get_ui_id));
-//			} else {
-//				error.m_message = "Expected UI Control or UI Control Array in <control statement>.";
-//				error.m_got = node_data->name;
-//				error.m_expected = "UI Control or UI Control Array";
-//				error.exit();
+			} else {
+				error.m_message = "Expected UI Control or UI Control Array in <control statement>.";
+				error.m_got = node_reference->name;
+				error.m_expected = "UI Control or UI Control Array";
+				error.exit();
 			}
 			node_control_function->function->args->params.push_back(std::move(control_par));
 			return node_control_function;
@@ -119,7 +123,7 @@ private:
 		return nullptr;
 	}
 
-	inline std::unique_ptr<NodeVariable> shorthand_to_control_param(const std::string& shorthand) {
+	inline std::unique_ptr<NodeReference> shorthand_to_control_param(const std::string& shorthand) {
 		std::string control_par = to_lower(shorthand);
 		if(control_par == "x") control_par = "pos_x";
 		if(control_par == "y") control_par = "pos_y";
@@ -129,7 +133,7 @@ private:
 		if(it == builtin_vars.end()) it = builtin_vars.find(to_upper("control_par_"+control_par));
 
 		if(it != builtin_vars.end()) {
-			return clone_as<NodeVariable>(it->second.get());
+			return clone_as<NodeVariable>(it->second.get())->to_reference();
 		}
 		return nullptr;
 	}

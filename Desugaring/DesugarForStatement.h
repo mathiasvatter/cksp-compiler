@@ -52,12 +52,12 @@ public:
             // i := i + step
             auto inc_expression = std::make_unique<NodeBinaryExpr>(
                     token::ADD,
-                    std::move(function_var),
+                    function_var->clone(),
                     std::move(node.step), node.tok
                     );
             inc_expression->type = ASTType::Integer;
             auto node_inc_statement = std::make_unique<NodeSingleAssignStatement>(
-                    std::move(function_var->clone()),
+                    std::move(function_var),
                     std::move(inc_expression), node.tok);
             node.statements->statements.push_back(std::make_unique<NodeStatement>(std::move(node_inc_statement), node.tok));
         }
