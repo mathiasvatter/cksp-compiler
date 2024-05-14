@@ -181,7 +181,7 @@ struct NodeConstStatement : NodeDataStructure {
     inline explicit NodeConstStatement(Token tok) : NodeDataStructure("", std::move(tok), NodeType::ConstStatement) {}
     inline NodeConstStatement(std::string name, std::unique_ptr<NodeBody> constants, Token tok)
             : NodeDataStructure(std::move(name), std::move(tok), NodeType::ConstStatement), constants(std::move(constants)) {
-        this->set_child_parents();
+        set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor

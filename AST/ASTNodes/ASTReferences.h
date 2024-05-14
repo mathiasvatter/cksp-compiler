@@ -10,13 +10,13 @@
 
 struct NodeVariableRef : NodeReference {
 	inline NodeVariableRef(std::string name, Token tok)
-		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok)) {}
+		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok)) {
+	}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
 	NodeVariableRef(const NodeVariableRef& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-	void update_parents(NodeAST* new_parent) override {}
 	std::string get_string() override {
 		return name;
 	}

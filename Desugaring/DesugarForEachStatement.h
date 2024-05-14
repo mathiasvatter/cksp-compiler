@@ -87,20 +87,21 @@ public:
                 node.keys->params[0]->clone(),
                 std::make_unique<NodeInt>(0, node.tok), node.tok);
         Token token_to = Token(token::TO, "to", node.tok.line, node.tok.pos, node.tok.file);
-//        auto args = std::unique_ptr<NodeParamList>(new NodeParamList({}, node.tok));
-        auto args = std::make_unique<NodeParamList>(node.tok);
-        args->params.push_back(node.range->clone());
 
         auto node_num_elements = std::make_unique<NodeFunctionCall>(
-                false,
-                std::make_unique<NodeFunctionHeader>("num_elements", std::move(args), node.tok),
-                        node.tok
-                    );
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"num_elements",
+				std::make_unique<NodeParamList>(node.tok, node.range->clone()),
+				node.tok
+				),
+			node.tok
+		);
         auto node_end_range = std::make_unique<NodeBinaryExpr>(
-                token::SUB,
-                std::move(node_num_elements),
-                std::make_unique<NodeInt>(1, node.tok),
-                node.tok
+			token::SUB,
+			std::move(node_num_elements),
+			std::make_unique<NodeInt>(1, node.tok),
+			node.tok
         );
         node_end_range->type = ASTType::Integer;
 

@@ -129,7 +129,7 @@ void ASTDesugar::visit(NodeVariableRef& node) {
 	// function args substitution
 	if(!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.name)) {
-//			substitute->update_parents(node.parent);
+			substitute->update_parents(node.parent);
 			node.replace_with(std::move(substitute));
 			return;
 		// for namespaces and methods
@@ -504,8 +504,13 @@ void ASTDesugar::visit(NodeParamList& node) {
     // in case it is a double param_list [[0,1,2,3]] move params up to parent
     if(auto node_param_list = cast_node<NodeParamList>(node.parent)) {
         if(node_param_list->params.size() == 1) {
-            node_param_list->params.insert(node_param_list->params.begin(),std::make_move_iterator(node.params.begin()),std::make_move_iterator(node.params.end()));
+            node_param_list->params.insert(
+				node_param_list->params.begin(),
+				std::make_move_iterator(node.params.begin()),
+				std::make_move_iterator(node.params.end())
+				);
             node_param_list->params.pop_back();
+			node_param_list->set_child_parents();
         }
     }
 }

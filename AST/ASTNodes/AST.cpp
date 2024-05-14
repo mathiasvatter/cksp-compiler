@@ -46,7 +46,7 @@ void NodeReference::accept(ASTVisitor &visitor) {}
 NodeReference::NodeReference(const NodeReference& other)
 	: NodeAST(other), name(other.name), declaration(other.declaration),
     is_engine(other.is_engine), is_local(other.is_local),
-    is_compiler_return(other.is_compiler_return) {}
+    is_compiler_return(other.is_compiler_return), data_type(other.data_type) {}
 
 std::unique_ptr<NodeAST> NodeReference::clone() const {
 	return std::make_unique<NodeReference>(*this);

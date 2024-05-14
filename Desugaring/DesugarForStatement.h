@@ -38,13 +38,13 @@ public:
             std::string function_name = "inc";
             if (node.to.type == token::DOWNTO) function_name = "dec";
 
-            auto args = std::make_unique<NodeParamList>(node.tok);
-            args->params.push_back(std::move(function_var));
             auto node_inc = std::make_unique<NodeFunctionCall>(
                     false,
                     std::make_unique<NodeFunctionHeader>(
-                            "function_name",
-                            std::move(args), node.tok),
+                            function_name,
+							std::make_unique<NodeParamList>(node.tok, std::move(function_var)),
+							node.tok
+						),
                     node.tok
             );
             node.statements->statements.push_back(std::make_unique<NodeStatement>(std::move(node_inc), node.tok));
