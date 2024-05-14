@@ -35,9 +35,9 @@ void ASTDesugar::visit(NodeProgram& node) {
 
     // add local variables from function bodies to beginning of m_init_callback
     m_compiler_variable_declare_statements->set_child_parents();
-    m_init_callback->statements->append_body(std::move(m_compiler_variable_declare_statements));
+    m_init_callback->statements->prepend_body(std::move(m_compiler_variable_declare_statements));
     m_local_declare_statements->set_child_parents();
-    m_init_callback->statements->append_body(std::move(m_local_declare_statements));
+    m_init_callback->statements->prepend_body(std::move(m_local_declare_statements));
 }
 
 void ASTDesugar::visit(NodeCallback& node) {
@@ -57,6 +57,9 @@ void ASTDesugar::visit(NodeNDArray& node) {
 }
 
 void ASTDesugar::visit(NodeArrayRef& node) {
+    if(node.name == "float_mask2") {
+
+    }
 //    if(node.size) node.size->accept(*this);
     if(node.index) node.index->accept(*this);
 
@@ -92,6 +95,7 @@ void ASTDesugar::visit(NodeArrayRef& node) {
             node.name = new_name;
 		}
     }
+
 }
 
 void ASTDesugar::visit(NodeFunctionHeader& node) {
@@ -285,11 +289,11 @@ std::unordered_map<std::string, std::unique_ptr<NodeAST>> ASTDesugar::get_substi
     for(int i= 0; i<definition->args->params.size(); i++) {
         auto &var = definition->args->params[i];
         std::pair<std::string, std::unique_ptr<NodeAST>> pair;
-        if(auto node_reference = cast_node<NodeReference>(var.get())) {
-            pair.first = node_reference->name;
+        if(auto node_data_structure = cast_node<NodeDataStructure>(var.get())) {
+            pair.first = node_data_structure->name;
         } else {
             CompileError(ErrorType::SyntaxError,
-             "Found incorrect parameter definitions in <function header>. Unable to substitute function arguments. Only <keywords> can be substituted.", definition->tok.line, "<keyword>", var->tok.val,definition->tok.file).print();
+             "Found incorrect parameter definitions in <function header>. Unable to substitute function arguments. Only <data structures> can be substituted.", definition->tok.line, "<keyword>", var->tok.val,definition->tok.file).print();
             exit(EXIT_FAILURE);
         }
         pair.second = std::move(call->args->params[i]);

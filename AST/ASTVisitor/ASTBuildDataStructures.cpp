@@ -42,6 +42,15 @@ void ASTBuildDataStructures::visit(NodeBody &node) {
 	if(node.scope) m_def_provider->remove_scope();
 }
 
+void ASTBuildDataStructures::visit(NodeFunctionDefinition &node) {
+    m_def_provider->add_scope();
+    node.header ->accept(*this);
+    if (node.return_variable.has_value())
+        node.return_variable.value()->accept(*this);
+    node.body->accept(*this);
+    m_def_provider->remove_scope();
+}
+
 void ASTBuildDataStructures::visit(NodeArray &node) {
 	if(node.size) node.size->accept(*this);
 //	if(node.index) node.index->accept(*this);

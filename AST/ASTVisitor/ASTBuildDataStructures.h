@@ -41,6 +41,9 @@ public:
 	void visit(NodeVariable& node) override;
     void visit(NodeVariableRef& node) override;
 
+    /// add function parameters to scope
+    void visit(NodeFunctionDefinition& node) override;
+
 	/// TODO: Visit Function Calls and connect to function definitions to check scoping? Not needed really
 private:
     NodeProgram* m_program = nullptr;
