@@ -114,7 +114,7 @@ public:
         std::vector<int32_t> sizes(node.body.size());
         std::vector<int32_t> positions(node.body.size());
         auto node_sizes = std::make_unique<NodeParamList>(node.tok);
-        auto node_positions = std::make_unique<NodeParamList>(node.tok));
+        auto node_positions = std::make_unique<NodeParamList>(node.tok);
         positions[0] = 0;
         for(int i = 0; i<node.body.size(); i++) {
             sizes[i] = static_cast<int32_t>(node.body[i]->params.size());

@@ -59,14 +59,14 @@ public:
 		if(node.index) node.index->accept(*this);
 	};
 	virtual void visit(NodeArrayRef& node) {
-		node.index->accept(*this);
+		if(node.index) node.index->accept(*this);
 	};
 	virtual void visit(NodeNDArray& node) {
 		node.sizes->accept(*this);
 		node.indexes->accept(*this);
 	};
 	virtual void visit(NodeNDArrayRef& node) {
-		node.indexes->accept(*this);
+		if(node.indexes) node.indexes->accept(*this);
 	};
     virtual void visit(NodeUIControl& node){
 		node.control_var->accept(*this);
