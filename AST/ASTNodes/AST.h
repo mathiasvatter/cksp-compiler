@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <memory>
 #include <optional>
 #include <variant>
 #include <list>
@@ -67,6 +68,7 @@ struct NodeReference : NodeAST {
     bool is_engine = false;
     bool is_local = false;
     bool is_compiler_return = false;
+	DataType data_type = DataType::Mutable;
     inline explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::UnaryExpr) {}
     inline NodeReference(std::string name, NodeType node_type, Token tok)
             : NodeAST(tok, node_type), name(std::move(name)) {}
@@ -75,7 +77,7 @@ struct NodeReference : NodeAST {
     NodeReference(const NodeReference& other);
     // Clone Methode
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    void update_parents(NodeAST* new_parent) override {}
+//    void update_parents(NodeAST* new_parent) override {}
     std::string get_string() override {
         return name;
     }
@@ -144,14 +146,21 @@ struct NodeString : NodeAST {
 };
 
 struct NodeParamList: NodeAST {
-    std::vector<std::unique_ptr<NodeAST>> params = {};
+    std::vector<std::unique_ptr<NodeAST>> params;
     inline explicit NodeParamList(Token tok) : NodeAST(std::move(tok), NodeType::ParamList) {
         set_child_parents();
     }
     inline explicit NodeParamList(std::vector<std::unique_ptr<NodeAST>> params, Token tok) : NodeAST(std::move(tok), NodeType::ParamList), params(std::move(params)) {
 		set_child_parents();
 	}
-    void accept(ASTVisitor& visitor) override;
+	// Variadischer Template-Konstruktor
+	template<typename... Args>
+	explicit NodeParamList(Token tok, Args&&... args) : NodeAST(std::move(tok), NodeType::ParamList) {
+		(params.push_back(std::move(args)), ...);
+		set_child_parents();
+	}
+
+	void accept(ASTVisitor& visitor) override;
 	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Kopierkonstruktor
     NodeParamList(const NodeParamList& other);

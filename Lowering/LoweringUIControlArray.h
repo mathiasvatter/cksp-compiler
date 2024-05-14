@@ -6,6 +6,7 @@
 
 #include "ASTLowering.h"
 #include "../Interpreter/SimpleExprInterpreter.h"
+#include <vector>
 
 /// called bei NodeUIControl and NodeSingleDeclareStatement
 class LoweringUIControlArray : public ASTLowering {
@@ -46,7 +47,7 @@ public:
 
 		body_post_lowering->statements.push_back(std::move(node_array_declaration));
 		body_post_lowering->append_body(create_ui_controls(*m_ui_control_array, std::move(m_ui_array_size)));
-		body_post_lowering->update_parents(node.parent);
+//		body_post_lowering->update_parents(node.parent);
 		node.replace_with(std::move(body_post_lowering));
 	}
 
@@ -114,46 +115,78 @@ public:
             node_array->set_child_parents();
         }
 		for (int i = 0; i < array_size; i++) {
-			auto new_ui_control = clone_as<NodeUIControl>(new_ui_control_template.get());
+			auto new_ui_control = std::make_unique<NodeUIControl>(
+				new_ui_control_template->ui_control_type,
+				clone_as<NodeDataStructure>(new_ui_control_template->control_var.get()),
+				clone_as<NodeParamList>(ui_control.params.get()),
+				ui_control.tok
+				);
 			new_ui_control->control_var->name = new_control_name + std::to_string(i);
             new_ui_control->control_var->is_reference = false;
-//			new_ui_control->control_var->data_type = DataType::UI_Control;
+			new_ui_control->control_var->data_type = DataType::UI_Control;
 			new_ui_control->control_var->persistence = m_persistence;
-			new_ui_control->params = clone_as<NodeParamList>(ui_control.params.get());
-			auto new_node_declaration =
-				std::make_unique<NodeSingleDeclareStatement>(std::move(new_ui_control), nullptr, ui_control.tok);
-			node_body->statements.push_back(statement_wrapper(std::move(new_node_declaration), node_body.get()));
+
+			auto new_node_declaration = std::make_unique<NodeSingleDeclareStatement>(
+					std::move(new_ui_control),
+					nullptr, ui_control.tok
+					);
+			node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(new_node_declaration), ui_control.tok));
 		}
 		// reinstantiate control name for while loop after
 		new_control_name = ui_control.control_var->name + std::to_string(0);
 
-		auto node_iterator_var =
-			std::make_unique<NodeVariable>(std::optional<Token>(), "_iterator", DataType::Mutable, ui_control.tok);
-        node_iterator_var->is_engine = true;
+		/*
+		 * _iterator := 0
+		 * while (_iterator<=7)
+		 * %_lbl_lbl[_iterator] := get_ui_id($_lbl_lbl0)+_iterator
+		 * inc(_iterator)
+		 * end while
+		 */
+		auto node_iterator_var_ref = std::make_unique<NodeVariableRef>("_iterator", ui_control.tok);
+        node_iterator_var_ref->is_engine = true;
 		auto node_while_body = std::make_unique<NodeBody>(ui_control.tok);
 
-		auto node_ui_control_var = std::move(new_ui_control_template->control_var);
-		if (auto node_ui_control_var_array = cast_node<NodeArray>(node_ui_control_var.get())) {
-			node_ui_control_var_array->show_brackets = false;
-		}
-		node_ui_control_var->name = new_control_name;
-		std::vector<std::unique_ptr<NodeAST>> func_args;
-		func_args.push_back(std::move(node_ui_control_var));
-		auto node_get_ui_id = std::move(make_function_call("get_ui_id", std::move(func_args), nullptr, ui_control.tok)->statement);
+		// this is the $_lbl_lbl0 from the above example
+		auto node_ui_control_var_ref = new_ui_control_template->control_var->to_reference();
+		node_ui_control_var_ref->name = new_control_name;
+		auto node_get_ui_id = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"get_ui_id",
+				std::make_unique<NodeParamList>(
+					ui_control.tok,
+					std::move(node_ui_control_var_ref)
+					),
+				ui_control.tok
+				),
+				ui_control.tok
+			);
 
-		auto node_while_body_expression = make_binary_expr(ASTType::Integer,token::ADD,std::move(node_get_ui_id),node_iterator_var->clone(),nullptr,ui_control.tok);
+		auto node_while_body_expression = std::make_unique<NodeBinaryExpr>(
+			token::ADD,
+			std::move(node_get_ui_id),
+			node_iterator_var_ref->clone(), ui_control.tok
+		);
+		node_while_body_expression->type = ASTType::Integer;
 
-		auto node_raw_array_copy = clone_as<NodeArray>(ui_control.control_var.get());
-		node_raw_array_copy->is_reference = true;
-		node_raw_array_copy->index = node_iterator_var->clone();
-		auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(node_raw_array_copy),
-																		   std::move(node_while_body_expression),
-																		   ui_control.tok);
-		node_while_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_while_body.get()));
-		auto node_while_loop =
-			make_while_loop(node_iterator_var.get(), 0, array_size, std::move(node_while_body), node_body.get());
-		node_body->statements.push_back(statement_wrapper(std::move(node_while_loop), node_body.get()));
-		node_body->update_parents(ui_control.parent);
+		// %_lbl_lbl[_iterator] := get_ui_id($_lbl_lbl0)+_iterator in above example
+		auto node_assignment = std::make_unique<NodeSingleAssignStatement>(
+			std::make_unique<NodeArrayRef>(
+				ui_control.control_var->name,
+				node_iterator_var_ref->clone(), ui_control.tok
+			),
+			std::move(node_while_body_expression),
+		   	ui_control.tok
+		);
+
+		node_while_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_assignment), ui_control.tok));
+		auto node_while_loop = make_while_loop(
+			node_iterator_var_ref.get(),
+			0,
+			array_size,
+			std::move(node_while_body), node_body.get());
+		node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_while_loop), ui_control.tok));
+//		node_body->update_parents(ui_control.parent);
 		return node_body;
 	}
 };

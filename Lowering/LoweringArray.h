@@ -44,7 +44,7 @@ public:
 				error.exit();
 			}
 			if (auto param_list = cast_node<NodeParamList>(node_declaration->assignee.get())) {
-				node.size = make_int((int32_t) param_list->params.size(), &node);
+				node.size = std::make_unique<NodeInt>((int32_t) param_list->params.size(), node.tok);
 			}
 		// array has size -> check if it is a constant
 		} else {

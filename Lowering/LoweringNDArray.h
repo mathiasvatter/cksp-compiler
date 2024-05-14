@@ -64,6 +64,7 @@ public:
         node_lowered_array->type = node.type;
         node_lowered_array->parent = node.parent;
         node_lowered_array->declaration = node.declaration;
+		node_lowered_array->update_parents(node.parent);
         node.replace_with(std::move(node_lowered_array));
     }
 

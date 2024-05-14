@@ -44,8 +44,6 @@ std::unique_ptr<NodeBinaryExpr>ASTVisitor::make_binary_expr(ASTType type, token 
     auto comparison = std::make_unique<NodeBinaryExpr>(op, std::move(lhs), std::move(rhs), tok);
     comparison->type = type;
     comparison->parent = parent;
-    comparison->left->parent = comparison.get();
-    comparison->right->parent = comparison.get();
     return comparison;
 }
 
@@ -94,17 +92,36 @@ std::unique_ptr<NodeArray> ASTVisitor::make_array(const std::string &name, int32
 
 std::unique_ptr<NodeBody> ASTVisitor::make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent) {
     auto node_body = std::make_unique<NodeBody>(var->tok);
-
-    auto node_assignment = std::make_unique<NodeSingleAssignStatement>(var->clone(), make_int(from, var), var->tok);
-    node_body->statements.push_back(statement_wrapper(std::move(node_assignment), node_body.get()));
-    auto node_comparison = make_binary_expr(ASTType::Comparison, token::LESS_THAN, var->clone(), make_int(to, var), nullptr, var->tok);
-    std::vector<std::unique_ptr<NodeAST>> func_args;
-    func_args.push_back(var->clone());
-    auto node_increment = make_function_call("inc", std::move(func_args), nullptr, var->tok);
+    auto node_assignment = std::make_unique<NodeSingleAssignStatement>(
+		var->clone(),
+		std::make_unique<NodeInt>(from, var->tok), var->tok
+		);
+    node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_assignment), var->tok));
+    auto node_comparison = std::make_unique<NodeBinaryExpr>(
+		token::LESS_THAN,
+		var->clone(),
+		std::make_unique<NodeInt>(to, var->tok), var->tok
+	);
+	node_comparison->type = ASTType::Comparison;
+	auto node_increment = std::make_unique<NodeStatement>(
+		std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"inc",
+				std::make_unique<NodeParamList>(var->tok,var->clone()),
+				var->tok
+			),
+			var->tok
+		),
+		var->tok
+	);
     body->statements.push_back(std::move(node_increment));
-    auto node_while = std::make_unique<NodeWhileStatement>(std::move(node_comparison), std::move(body), var->tok);
-    node_body->statements.push_back(statement_wrapper(std::move(node_while), node_body.get()));
-    node_body->update_parents(parent);
+    auto node_while = std::make_unique<NodeWhileStatement>(
+		std::move(node_comparison),
+		std::move(body), var->tok
+	);
+    node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_while), var->tok));
+//    node_body->update_parents(parent);
     return std::move(node_body);
 }
 

@@ -22,7 +22,8 @@ public:
 		auto new_node = lowering(control_function, get_control_statement);
 		// add assignee as third parameter to set_control_par
 		new_node->function->args->params.push_back(std::move(node.assignee));
-		new_node->update_parents(node.parent);
+		new_node->function->args->set_child_parents();
+//		new_node->update_parents(node.parent);
 		node.replace_with(std::move(new_node));
 	};
 
@@ -106,10 +107,12 @@ private:
             if(node_declaration) {
                 m_def_provider->match_data_structure(node_reference, node_declaration);
             }
-			if(node_declaration and node_reference->declaration->data_type != DataType::UI_Control) {
+
+			if(node_reference->data_type != DataType::UI_Control) {
 				node_control_function->function->args->params.push_back(std::move(node->ui_id));
-			} else if(node_declaration and node_reference->declaration->data_type == DataType::UI_Control) {
+			} else if(node_reference->data_type == DataType::UI_Control) {
 				node_get_ui_id->function->args->params.push_back(std::move(node->ui_id));
+				node_get_ui_id->function->args->set_child_parents();
 				node_control_function->function->args->params.push_back(std::move(node_get_ui_id));
 			} else {
 				error.m_message = "Expected UI Control or UI Control Array in <control statement>.";
@@ -118,6 +121,7 @@ private:
 				error.exit();
 			}
 			node_control_function->function->args->params.push_back(std::move(control_par));
+			node_control_function->function->args->set_child_parents();
 			return node_control_function;
 		}
 		return nullptr;

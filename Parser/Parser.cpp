@@ -221,6 +221,7 @@ Result<std::unique_ptr<NodeReference>> Parser::parse_array_ref(NodeAST *parent) 
 		auto node = std::make_unique<NodeArrayRef>(arr_name, std::move(indexes->params[0]),arr_token);
 		node_array_ref = std::move(node);
 	}
+//	node_array_ref->update_parents(parent);
 	node_array_ref->parent = parent;
 	node_array_ref->type = type;
 	return Result<std::unique_ptr<NodeReference>>(std::move(node_array_ref));

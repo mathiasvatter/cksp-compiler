@@ -136,6 +136,7 @@ void DefinitionProvider::match_data_structure(NodeReference* reference, NodeData
     declaration->is_used = true;
     reference->is_engine = declaration-> is_engine;
     reference->type = declaration->type;
+	reference->data_type = declaration->data_type;
 }
 
 
