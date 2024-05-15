@@ -59,9 +59,11 @@ public:
 	void visit(NodeListStruct &node) override {
         auto node_body = std::make_unique<NodeBody>(node.tok);
         auto node_main_array = std::make_unique<NodeArray>(
-                std::nullopt,
-                node.name,
-                nullptr, node.tok);
+			std::nullopt,
+			node.name,
+			std::make_unique<NodeInt>(node.size,node.tok),
+			node.tok
+		);
 		node_main_array->type = node.type;
         std::string name_wo_ident = node_main_array->name;
 
@@ -73,10 +75,12 @@ public:
         if(max_dimension>1) node_main_array->data_type = DataType::List;
 
         auto node_declare_main_array = std::make_unique<NodeSingleDeclareStatement>(
-                clone_as<NodeDataStructure>(node_main_array.get()),
-                        nullptr, node.tok);
-//		node_declare_main_array->to_be_declared->is_reference = false;
+			clone_as<NodeDataStructure>(node_main_array.get()),
+			nullptr,
+			node.tok
+		);
         auto main_size = (int32_t)node.body.size();
+//		node_declare_main_array->to_be_declared->is_reference = false;
         auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(
                 std::make_unique<NodeVariable>(
                         std::nullopt,

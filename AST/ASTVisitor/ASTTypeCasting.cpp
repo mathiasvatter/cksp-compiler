@@ -201,7 +201,7 @@ void ASTTypeCasting::visit(NodeArrayRef& node) {
 	}
 
     // move into get_ui_id function when in control_par function
-    if(node.declaration->data_type == DataType::UI_Control and node.index) {
+    if(node.declaration->data_type == DataType::UI_Control) {
         auto node_control_function = cast_node<NodeFunctionHeader>(node.parent->parent);
         if(node_control_function and contains(node_control_function->name, "control_par")) {
             auto node_get_ui_id = std::unique_ptr<NodeFunctionHeader>(
