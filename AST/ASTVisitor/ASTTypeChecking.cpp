@@ -163,8 +163,6 @@ void ASTTypeChecking::visit(NodeArrayRef& node) {
 }
 
 void ASTTypeChecking::visit(NodeArray& node) {
-    auto node_ui_control = node.parent->get_node_type() == NodeType::UIControl;
-
     auto error = CompileError(ErrorType::SyntaxError, "Could not infer Array type.", "", node.tok);
     // only print error if it is in a declaration
     if(node.type == ASTType::Unknown) {
@@ -179,7 +177,6 @@ void ASTTypeChecking::visit(NodeArray& node) {
         error.print();
     }
 
-//    if(node.index) node.index->accept(*this);
     if(node.size) node.size->accept(*this);
 }
 
@@ -243,7 +240,6 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
                 auto node_declare_statement_body = std::make_unique<NodeBody>(node.tok);
                 node_declare_statement_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_declare_statement), node.tok));
                 node_body->prepend_body(std::move(node_declare_statement_body));
-//                node_body->update_parents(node.parent);
                 node_body->accept(*this);
                 node.replace_with(std::move(node_body));
                 return;
