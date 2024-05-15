@@ -38,16 +38,21 @@ public:
 
 		std::unique_ptr<NodeBody> body_post_lowering = std::make_unique<NodeBody>(node.tok);
 
-		auto node_array_declaration = statement_wrapper(std::make_unique<NodeSingleDeclareStatement>(std::move(node_ui_control->control_var), nullptr, node.tok),nullptr);
-		node_array_declaration->update_parents(node.parent);
+		auto node_array_declaration = std::make_unique<NodeSingleDeclareStatement>(
+			std::move(node_ui_control->control_var),
+			nullptr, node.tok
+		);
+		// not data typ ui_control anymore
+		node_array_declaration->to_be_declared->data_type = DataType::Array;
+		// wrap in statement to make use of replace_child
+		auto node_statement = std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok);
 		// lowering of ndarray, turn DeclareStatement into NodeBody
-		if(auto lowering = node_array_declaration->statement->get_lowering(m_def_provider)) {
-			node_array_declaration->statement->accept(*lowering);
+		if(auto lowering = node_statement->statement->get_lowering(m_def_provider)) {
+			node_statement->statement->accept(*lowering);
 		}
 
-		body_post_lowering->statements.push_back(std::move(node_array_declaration));
+		body_post_lowering->statements.push_back(std::move(node_statement));
 		body_post_lowering->append_body(create_ui_controls(*m_ui_control_array, std::move(m_ui_array_size)));
-//		body_post_lowering->update_parents(node.parent);
 		node.replace_with(std::move(body_post_lowering));
 	}
 

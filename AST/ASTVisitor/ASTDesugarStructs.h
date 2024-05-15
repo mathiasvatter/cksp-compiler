@@ -35,6 +35,9 @@ class ASTDesugarStructs: public ASTVisitor {
 	/// desugar into single declare statements
 	void visit(NodeFamilyStatement& node) override;
 
+	/// desugar nested ParamLists [[1,2,3,4]]
+	void visit(NodeParamList& node) override;
+
 private:
     NodeProgram* m_program = nullptr;
 
