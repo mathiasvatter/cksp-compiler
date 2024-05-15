@@ -69,7 +69,7 @@ struct NodeReference : NodeAST {
     bool is_local = false;
     bool is_compiler_return = false;
 	DataType data_type = DataType::Mutable;
-    inline explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::UnaryExpr) {}
+    inline explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::DeadCode) {}
     inline NodeReference(std::string name, NodeType node_type, Token tok)
             : NodeAST(tok, node_type), name(std::move(name)) {}
     void accept(ASTVisitor& visitor) override;
@@ -77,10 +77,10 @@ struct NodeReference : NodeAST {
     NodeReference(const NodeReference& other);
     // Clone Methode
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-//    void update_parents(NodeAST* new_parent) override {}
     std::string get_string() override {
         return name;
     }
+	void match_data_structure(NodeDataStructure* data_structure);
 };
 
 struct NodeDataStructure : NodeAST {

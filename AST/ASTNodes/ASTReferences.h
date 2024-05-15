@@ -35,6 +35,7 @@ struct NodeArrayRef : NodeReference {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
 		if(index) index ->update_parents(this);
 	}
 	void set_child_parents() override {
@@ -59,6 +60,7 @@ struct NodeNDArrayRef : NodeReference {
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
 		if(indexes) indexes ->update_parents(this);
 	}
 	void set_child_parents() override {
@@ -85,6 +87,7 @@ struct NodeListStructRef : NodeReference {
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
 		if(indexes) indexes->update_parents(this);
 	}
 	std::string get_string() override {

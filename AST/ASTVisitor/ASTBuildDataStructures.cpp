@@ -74,6 +74,7 @@ void ASTBuildDataStructures::visit(NodeArrayRef &node) {
         node.replace_with(std::move(node_list_reference));
         return;
     }
+
 }
 
 void ASTBuildDataStructures::visit(NodeNDArray& node) {

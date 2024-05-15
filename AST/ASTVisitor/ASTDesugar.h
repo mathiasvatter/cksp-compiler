@@ -84,7 +84,7 @@ private:
     std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> m_function_inlines;
 
     int local_var_counter = 0;
-    std::vector<std::unordered_map<std::string, std::unique_ptr<NodeDataStructure>>> m_variable_scope_stack;
+    std::vector<std::unordered_map<std::string, std::unique_ptr<NodeReference>>> m_variable_scope_stack;
     std::unique_ptr<NodeBody> m_local_declare_statements = nullptr;
 	std::unique_ptr<NodeBody> m_compiler_variable_declare_statements = nullptr;
     /// holds the size of the local variables and their real names + _ + size is idx
@@ -92,7 +92,7 @@ private:
     std::stack<std::string> m_local_variables;
     std::set<std::string> m_local_already_declared_vars;
 	NodeDataStructure* m_local_var_dummy_declaration = nullptr;
-    std::unique_ptr<NodeDataStructure> get_local_variable_substitute(const std::string& name);
+    std::unique_ptr<NodeReference> get_local_variable_substitute(const std::string& name);
 
     std::vector<std::unique_ptr<NodeStatement>> add_read_functions(const Token& persistence, NodeDataStructure* var, NodeAST* parent);
 

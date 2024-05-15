@@ -57,16 +57,13 @@ void ASTDesugar::visit(NodeNDArray& node) {
 }
 
 void ASTDesugar::visit(NodeArrayRef& node) {
-    if(node.name == "float_mask2") {
-
-    }
 //    if(node.size) node.size->accept(*this);
     if(node.index) node.index->accept(*this);
 
     // local variable substitution
     if(!m_variable_scope_stack.empty()) {
         if(auto substitute = get_local_variable_substitute(node.name)) {
-            node.name = substitute->get_string();
+            node.name = substitute->name;
             node.is_local = true;
         }
     }
@@ -74,6 +71,9 @@ void ASTDesugar::visit(NodeArrayRef& node) {
     if(!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.name)) {
 			if (auto substitute_ref = cast_node<NodeReference>(substitute.get())) {
+				if(substitute_ref->node_type != NodeType::ArrayRef) {
+//					CompileError(ErrorType::SyntaxError, "Cannot substitute Array with Variable.", node.tok.line, "", "", node.tok.file).exit();
+				}
 				node.name = substitute_ref->name;
 			} else {
 //				substitute->update_parents(node.parent);
@@ -83,6 +83,7 @@ void ASTDesugar::visit(NodeArrayRef& node) {
 		// for namespaces and methods
 		} else {
             auto namespaces = get_namespaces(node.name);
+			if(namespaces.size() == 1) return;
             std::string new_name;
             if (auto subst = get_substitute(namespaces.at(0))) {
                 new_name += subst->get_string();
@@ -116,7 +117,6 @@ void ASTDesugar::visit(NodeFunctionHeader& node) {
     }
 }
 
-
 void ASTDesugar::visit(NodeVariableRef& node) {
     // local variable substitution
     // do local variable substitution
@@ -133,12 +133,20 @@ void ASTDesugar::visit(NodeVariableRef& node) {
 	// function args substitution
 	if(!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.name)) {
-			substitute->update_parents(node.parent);
-			node.replace_with(std::move(substitute));
-			return;
+//			if (auto substitute_ref = cast_node<NodeReference>(substitute.get())) {
+//				if (substitute_ref->node_type != NodeType::VariableRef) {
+//					CompileError(ErrorType::SyntaxError,"Cannot substitute Variable with Array.",node.tok.line,"","",node.tok.file).exit();
+//				}
+//				node.name = substitute_ref->name;
+//			} else {
+//				substitute->update_parents(node.parent);
+				node.replace_with(std::move(substitute));
+				return;
+//			}
 		// for namespaces and methods
 		} else {
             auto namespaces = get_namespaces(node.name);
+			if(namespaces.size() == 1) return;
             std::string new_name;
             if (auto subst = get_substitute(namespaces.at(0))) {
                 new_name += subst->get_string();
@@ -194,7 +202,6 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 //        node_function_def->update_parents(nullptr);
 		m_function_call_stack.push(node.function->name);
         m_functions_in_use.insert({node.function->name, function_def});
-//        m_variable_scope_stack.emplace_back();
 		node_function_def->parent = node.parent;
 		if (!node.function->args->params.empty()) {
 			auto substitution_map = get_substitution_map(node_function_def->header.get(), node.function.get());
@@ -203,7 +210,6 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 		node_function_def->body->update_token_data(node.tok);
 		node_function_def->body->accept(*this);
 		if (!node.function->args->params.empty()) m_substitution_stack.pop();
-//        m_variable_scope_stack.pop_back();
         m_functions_in_use.erase(node.function->name);
 		m_function_call_stack.pop();
         function_def->call.erase(&node);
@@ -353,17 +359,19 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 
 		node.to_be_declared ->accept(*this);
         auto new_name = "_"+node.to_be_declared->get_string()+"_"+std::to_string(m_local_variables.size());
-		std::unique_ptr<NodeDataStructure> node_substitute;
+		std::unique_ptr<NodeReference> node_substitute;
 		if(node_array) {
-			auto node_local_array = std::unique_ptr<NodeArray>(static_cast<NodeArray *>(node.to_be_declared->clone().release()));
-            node_local_array->is_local = true;
+			auto node_local_array = node.to_be_declared->to_reference();
+//			auto node_local_array = std::unique_ptr<NodeArray>(static_cast<NodeArray *>(node.to_be_declared->clone().release()));
+//            node_local_array->is_local = true;
 			node_local_array->name = new_name;
 			node_substitute = std::move(node_local_array);
 		} else if(node_variable) {
-			auto node_local_var = std::unique_ptr<NodeVariable>(static_cast<NodeVariable *>(node.to_be_declared->clone().release()));
-            node_local_var->is_local = true;
+			auto node_local_var = node.to_be_declared->to_reference();
+//			auto node_local_var = std::unique_ptr<NodeVariable>(static_cast<NodeVariable *>(node.to_be_declared->clone().release()));
+//            node_local_var->is_local = true;
 			node_local_var->name = "_local_dummy_"+std::to_string(m_local_variables.size());
-			node_local_var->is_reference = true;
+//			node_local_var->is_reference = true;
             node_local_var->declaration = m_local_var_dummy_declaration;
 			node_substitute = std::move(node_local_var);
 		}
@@ -428,11 +436,10 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
         std::unique_ptr<NodeAST> stmt;
         std::unique_ptr<NodeAST> assignee = nullptr;
         if (node.assignee and !is_const and !node_array) {
-			auto cloned_var = clone_as<NodeVariable>(node.to_be_declared.get());
-			cloned_var->is_reference = true;
-            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(std::move(cloned_var),
-                                                                               node.assignee->clone(), node.tok);
-            node_assignment->update_parents(node.parent);
+//			auto cloned_var = clone_as<NodeVariable>(node.to_be_declared.get());
+//			cloned_var->is_reference = true;
+            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->to_reference(),
+                                                                               std::move(node.assignee), node.tok);
             node_assignment->accept(*this);
             stmt = std::move(node_assignment);
         } else {
@@ -446,8 +453,10 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
             auto it = m_local_already_declared_vars.find(var_name_hash);
             bool local_array_already_declared = it != m_local_already_declared_vars.end();
             if (!local_array_already_declared) {
-                auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node.to_be_declared),
-                                                                                     std::move(assignee), node.tok);
+                auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(
+					std::move(node.to_be_declared),
+					std::move(assignee), node.tok
+				);
                 node_body->statements.insert(node_body->statements.begin(),
                                                        statement_wrapper(std::move(node_declaration), m_init_callback));
                 auto statement = statement_wrapper(std::move(node_body), m_init_callback);
@@ -660,7 +669,6 @@ void ASTDesugar::declare_dummy_return_variable() {
     m_local_var_dummy_declaration = static_cast<NodeDataStructure*>(node_local_var_declaration->to_be_declared.get());
     m_local_declare_statements->statements.push_back(std::make_unique<NodeStatement>(std::move(node_local_var_declaration), tok));
 
-
 }
 
 NodeFunctionDefinition* ASTDesugar::get_function_definition(NodeFunctionHeader *function_header) {
@@ -669,15 +677,14 @@ NodeFunctionDefinition* ASTDesugar::get_function_definition(NodeFunctionHeader *
         it->second->is_used = true;
         return it->second;
     }
-
     return nullptr;
 }
 
-std::unique_ptr<NodeDataStructure> ASTDesugar::get_local_variable_substitute(const std::string& name) {
+std::unique_ptr<NodeReference> ASTDesugar::get_local_variable_substitute(const std::string& name) {
     for (auto rit = m_variable_scope_stack.rbegin(); rit != m_variable_scope_stack.rend(); ++rit) {
         auto it = rit->find(name);
         if(it != rit->end()) {
-            return clone_as<NodeDataStructure>(it->second.get());
+            return clone_as<NodeReference>(it->second.get());
         }
     }
     return nullptr;

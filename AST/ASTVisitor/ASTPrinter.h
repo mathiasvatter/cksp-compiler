@@ -17,8 +17,10 @@ public:
 	void visit(NodeString& node) override;
 
 	void visit(NodeVariable& node) override;
+	void visit(NodeVariableRef& node) override;
 
 	void visit(NodeArray& node) override;
+	void visit(NodeArrayRef& node) override;
 
 	void visit(NodeUIControl& node) override;
 

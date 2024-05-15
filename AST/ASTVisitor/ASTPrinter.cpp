@@ -26,51 +26,64 @@ void ASTPrinter::visit(NodeVariable &node) {
     std::cout << node.name;
 }
 
+void ASTPrinter::visit(NodeVariableRef &node) {
+	std::cout << node.name;
+}
+
 void ASTPrinter::visit(NodeArray &node) {
-    if(node.persistence)
-        std::cout << "read ";
-    std::cout << node.name;
-    std::cout << "[";
-    node.size->accept(*this);
-    std::cout << "].at(";
-    node.index->accept(*this);
-    std::cout << ")";
+	if (node.persistence)
+		std::cout << "read ";
+	std::cout << node.name;
+	if(node.size) {
+		std::cout << "[";
+		node.size->accept(*this);
+		std::cout << "]";
+	}
+}
+
+void ASTPrinter::visit(NodeArrayRef &node) {
+	std::cout << node.name;
+	if(node.index) {
+		std::cout << "[";
+		node.index->accept(*this);
+		std::cout << "]";
+	}
 }
 
 void ASTPrinter::visit(NodeUIControl &node) {
-    std::cout << node.ui_control_type << " ";
-    node.control_var->accept(*this);
-    std::cout << " ";
-    node.params -> accept(*this);
+	std::cout << node.ui_control_type << " ";
+	node.control_var->accept(*this);
+	std::cout << " ";
+	node.params -> accept(*this);
 }
 
 void ASTPrinter::visit(NodeDeclareStatement &node) {
-    std::cout << "declare ";
-    for(auto const &decl : node.to_be_declared) {
-        decl->accept(*this);
-    }
-    if(node.assignee != nullptr) {
-        std::cout << ":= ";
-        node.assignee->accept(*this);
-    }
-    std::cout << "";
+	std::cout << "declare ";
+	for(auto const &decl : node.to_be_declared) {
+		decl->accept(*this);
+	}
+	if(node.assignee) {
+		std::cout << ":= ";
+		node.assignee->accept(*this);
+	}
+	std::cout << "";
 }
 
 void ASTPrinter::visit(NodeSingleDeclareStatement &node) {
-    std::cout << "declare ";
-    node.to_be_declared->accept(*this);
-    if(node.assignee != nullptr) {
-        std::cout << ":= ";
-        node.assignee->accept(*this);
-    }
-    std::cout << "";
+	std::cout << "declare ";
+	node.to_be_declared->accept(*this);
+	if(node.assignee) {
+		std::cout << ":= ";
+		node.assignee->accept(*this);
+	}
+	std::cout << "";
 }
 
 void ASTPrinter::visit(NodeParamList &node) {
-    if (!node.params.empty()) {
-        if (node.params.size() > 1) std::cout << "[";
-        for (int i = 0; i < node.params.size() - 1; i++) {
-            node.params[i]->accept(*this);
+	if (!node.params.empty()) {
+		if (node.params.size() > 1) std::cout << "[";
+		for (int i = 0; i < node.params.size() - 1; i++) {
+			node.params[i]->accept(*this);
             std::cout << ", ";
         }
         node.params[node.params.size() - 1]->accept(*this);
@@ -79,25 +92,14 @@ void ASTPrinter::visit(NodeParamList &node) {
 }
 
 void ASTPrinter::visit(NodeBinaryExpr &node) {
-    std::string expression_type = "BinaryExpr(";
-    if(node.type == ASTType::Comparison)
-        expression_type = "ComparisonExpr(";
-    else if (node.type == ASTType::Boolean)
-        expression_type = "BooleanExpr(";
-    else if (node.type == ASTType::String)
-        expression_type = "StringExpr(";
-    std::cout << expression_type;
     node.left->accept(*this);
     std::cout << " " << node.op << " ";
     node.right->accept(*this);
-    std::cout << ")" ;
 }
 
 void ASTPrinter::visit(NodeUnaryExpr &node) {
-    std::cout << "UnaryExpr(";
     std::cout << node.op << " ";
     node.operand->accept(*this);
-    std::cout << ")" ;
 }
 
 void ASTPrinter::visit(NodeAssignStatement &node) {
@@ -138,7 +140,6 @@ void ASTPrinter::visit(NodeFamilyStatement &node) {
 }
 
 void ASTPrinter::visit(NodeStatement &node) {
-//    std::cout << "Stmt(" ;
     node.statement->accept(*this);
     std::cout << std::endl;
 }

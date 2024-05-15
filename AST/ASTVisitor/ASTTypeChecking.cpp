@@ -200,7 +200,7 @@ void ASTTypeChecking::visit(NodeSingleDeclareStatement &node) {
         if(node_declare_variable and not(node_int or node_real or node.to_be_declared->data_type == DataType::Const)) {
             auto node_body = std::make_unique<NodeBody>(node.tok);
             auto node_assignment = std::make_unique<NodeSingleAssignStatement>(
-                    clone_as<NodeDataStructure>(node.to_be_declared.get())->to_reference(),
+                    node.to_be_declared->to_reference(),
                     std::move(node.assignee), node.tok
                     );
             node_body->statements.push_back(std::make_unique<NodeStatement>(node.clone(), node.tok));

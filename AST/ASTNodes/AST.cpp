@@ -37,7 +37,9 @@ std::unique_ptr<NodeAST> NodeDataStructure::clone() const {
 }
 
 std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
-    return std::make_unique<NodeReference>(name, node_type, tok);
+	auto ref = std::make_unique<NodeReference>(name, node_type, tok);
+	ref->match_data_structure(this);
+	return ref;
 }
 
 // ************* NodeReference ***************
@@ -50,6 +52,14 @@ NodeReference::NodeReference(const NodeReference& other)
 
 std::unique_ptr<NodeAST> NodeReference::clone() const {
 	return std::make_unique<NodeReference>(*this);
+}
+
+void NodeReference::match_data_structure(NodeDataStructure* data_structure) {
+	declaration = data_structure;
+	is_engine = data_structure->is_engine;
+	is_local = data_structure->is_local;
+	is_compiler_return = data_structure->is_compiler_return;
+	data_type = data_structure->data_type;
 }
 
 // ************* NodeDeadCode ***************

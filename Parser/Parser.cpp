@@ -706,6 +706,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
     node_function_header->args = std::move(func_args.unwrap());
     node_function_header->set_child_parents();
     node_function_header->parent = parent;
+//	node_function_header->update_parents(parent);
     return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(node_function_header));
 }
 
