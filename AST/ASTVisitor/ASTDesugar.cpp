@@ -176,8 +176,8 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 
     // substitution start
     if (auto function_def = get_function_definition(node.function.get())) {
-        if(evaluating_functions and m_current_callback != m_init_callback and function_def->header->args->params.empty() and !function_def->return_variable.has_value())
-            m_function_call_order.push_back(function_def);
+//        if(evaluating_functions and m_current_callback != m_init_callback and function_def->header->args->params.empty() and !function_def->return_variable.has_value())
+//            m_function_call_order.push_back(function_def);
 		if(node.is_call and function_def->return_variable.has_value()) {
 			CompileError(ErrorType::SyntaxError, "Found incorrect use of return variable when using <call>.", node.tok.line, "", "", node.tok.file).exit();
 		}
