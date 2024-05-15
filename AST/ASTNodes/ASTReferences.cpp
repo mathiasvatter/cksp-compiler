@@ -14,7 +14,9 @@ void NodeVariableRef::accept(ASTVisitor &visitor) {
 }
 
 NodeVariableRef::NodeVariableRef(const NodeVariableRef& other)
-	: NodeReference(other) {}
+	: NodeReference(other) {
+	set_child_parents();
+}
 
 std::unique_ptr<NodeAST> NodeVariableRef::clone() const {
 	return std::make_unique<NodeVariableRef>(*this);
@@ -26,7 +28,9 @@ void NodeArrayRef::accept(ASTVisitor &visitor) {
 }
 
 NodeArrayRef::NodeArrayRef(const NodeArrayRef& other)
-	: NodeReference(other), index(clone_unique(other.index)) {}
+	: NodeReference(other), index(clone_unique(other.index)) {
+	set_child_parents();
+}
 
 std::unique_ptr<NodeAST> NodeArrayRef::clone() const {
 	return std::make_unique<NodeArrayRef>(*this);
@@ -48,7 +52,10 @@ void NodeNDArrayRef::accept(ASTVisitor &visitor) {
 }
 
 NodeNDArrayRef::NodeNDArrayRef(const NodeNDArrayRef& other)
-	: NodeReference(other), indexes(clone_unique(other.indexes)), sizes(clone_unique(other.sizes)) {}
+	: NodeReference(other), indexes(clone_unique(other.indexes)),
+	sizes(clone_unique(other.sizes)) {
+	set_child_parents();
+}
 
 std::unique_ptr<NodeAST> NodeNDArrayRef::clone() const {
 	return std::make_unique<NodeNDArrayRef>(*this);
@@ -65,7 +72,10 @@ void NodeListStructRef::accept(ASTVisitor &visitor) {
 }
 
 NodeListStructRef::NodeListStructRef(const NodeListStructRef& other)
-	: NodeReference(other), indexes(clone_unique(other.indexes)), sizes(other.sizes), pos(other.pos) {}
+	: NodeReference(other), indexes(clone_unique(other.indexes)), sizes(other.sizes),
+	pos(other.pos) {
+	set_child_parents();
+}
 
 std::unique_ptr<NodeAST> NodeListStructRef::clone() const {
 	return std::make_unique<NodeListStructRef>(*this);

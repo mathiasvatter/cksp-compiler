@@ -31,7 +31,7 @@ public:
                 }
                 node.to_be_declared->accept(*this);
                 node_body->statements.push_back(std::make_unique<NodeStatement>(node.clone(), node.tok));
-                node_body->update_parents(node.parent);
+//                node_body->update_parents(node.parent);
                 node.replace_with(std::move(node_body));
             }
         }

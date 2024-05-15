@@ -12,10 +12,10 @@
 #include <list>
 #include <chrono>
 
-
 #include "ASTHelper.h"
 
 class ASTDesugaring;
+
 struct NodeAST {
     Token tok;
     ASTType type;
@@ -44,13 +44,13 @@ struct NodeAST {
     [[nodiscard]] virtual ASTDesugaring* get_desugaring() const {
         return nullptr;
     }
-    NodeType get_node_type() const { return node_type; }
+    [[nodiscard]] NodeType get_node_type() const { return node_type; }
 };
 
 template<typename T>
 std::unique_ptr<T> clone_as(NodeAST* node) {
 	auto cloned_ptr = node->clone(); // Nutzt die clone()-Methode der NodeAST Klasse
-    cloned_ptr->update_parents(node->parent);
+//    cloned_ptr->update_parents(node->parent);
 	return std::unique_ptr<T>(static_cast<T*>(cloned_ptr.release()));
 }
 
