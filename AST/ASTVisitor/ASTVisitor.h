@@ -100,6 +100,7 @@ public:
 		node.assignee -> accept(*this);
     };
 	virtual void visit(NodeReturnStatement& node) {
+		CompileError(ErrorType::SyntaxError, "<return> node not yet implemented.", "", node.tok).exit();
 		for(auto &ret : node.return_variables) {
 			ret->accept(*this);
 		}

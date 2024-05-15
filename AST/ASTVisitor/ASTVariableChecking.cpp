@@ -91,9 +91,6 @@ void ASTVariableChecking::visit(NodeBody &node) {
 }
 
 void ASTVariableChecking::visit(NodeArrayRef& node) {
-    if(node.name == "float_mask2") {
-
-    }
 	if(node.index) node.index->accept(*this);
 
 	auto compile_error = CompileError(ErrorType::Variable, "","", node.tok);

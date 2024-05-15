@@ -156,6 +156,7 @@ struct NodeListStruct : NodeDataStructure {
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
 		for (auto & b : body) {
 			b->update_parents(this);
 		}

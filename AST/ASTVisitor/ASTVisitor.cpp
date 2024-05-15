@@ -67,17 +67,18 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_declare_array(const std::string&
 
 std::unique_ptr<NodeBody> ASTVisitor::array_initialization(NodeArray* array, NodeParamList* list) {
     auto node_body = std::make_unique<NodeBody>(array->tok);
-    auto node_array = clone_as<NodeArray>(array);
+//    auto node_array = clone_as<NodeArray>(array);
 //	node_array->is_reference = true;
     for(int i = 0; i<list->params.size(); i++) {
+		auto array_ref = std::make_unique<NodeArrayRef>(
+			array->name,
+			std::make_unique<NodeInt>((int32_t)i, array->tok),
+			array->tok);
+		array_ref->match_data_structure(array);
         auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(
-                std::make_unique<NodeArrayRef>(
-                        node_array->name,
-                        std::make_unique<NodeInt>((int32_t)i, node_array->tok),
-                        node_array->tok),
+                std::move(array_ref),
                 std::move(list->params[i]),
                 list->params[i]->tok);
-//        node_assign_statement->update_parents(node_body.get());
         node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_assign_statement), array->tok));
     }
     return std::move(node_body);

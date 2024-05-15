@@ -22,7 +22,9 @@ std::unique_ptr<NodeAST> NodeVariable::clone() const {
 }
 
 std::unique_ptr<NodeReference> NodeVariable::to_reference() {
-    return std::make_unique<NodeVariableRef>(name, tok);
+    auto ref = std::make_unique<NodeVariableRef>(name, tok);
+	ref->match_data_structure(this);
+	return ref;
 }
 
 
@@ -50,7 +52,9 @@ ASTVisitor* NodeArray::get_lowering(DefinitionProvider* def_provider) const {
 }
 
 std::unique_ptr<NodeReference> NodeArray::to_reference() {
-    return std::make_unique<NodeArrayRef>(name, std::move(index), tok);
+    auto ref = std::make_unique<NodeArrayRef>(name, std::move(index), tok);
+	ref->match_data_structure(this);
+	return ref;
 }
 
 // ************* NodeNDArray ***************
@@ -70,7 +74,9 @@ ASTVisitor* NodeNDArray::get_lowering(DefinitionProvider* def_provider) const {
 }
 
 std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
-    return std::make_unique<NodeNDArrayRef>(name, std::move(indexes), tok);
+    auto ref = std::make_unique<NodeNDArrayRef>(name, std::move(indexes), tok);
+	ref->match_data_structure(this);
+	return ref;
 }
 
 // ************* NodeUIControl ***************

@@ -132,7 +132,6 @@ void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
 }
 
 void ASTTypeCasting::visit(NodeVariableRef& node) {
-
 	if(node.parent->get_node_type() == NodeType::Callback) {
 		if(node.declaration->data_type != DataType::UI_Control) {
             CompileError(ErrorType::TypeError,
