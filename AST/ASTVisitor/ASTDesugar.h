@@ -80,7 +80,7 @@ private:
     std::stack<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_substitution_stack;
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
     NodeFunctionDefinition* get_function_definition(NodeFunctionHeader* function_header);
-    std::vector<NodeFunctionDefinition*> m_function_call_order;
+//    std::vector<NodeFunctionDefinition*> m_function_call_order;
     std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> m_function_inlines;
 
     int local_var_counter = 0;
