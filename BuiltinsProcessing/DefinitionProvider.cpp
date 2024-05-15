@@ -34,43 +34,6 @@ DefinitionProvider::DefinitionProvider() {
 	}
 }
 
-
-NodeDataStructure* DefinitionProvider::get_declaration(NodeDataStructure *var, bool global_scope) {
-    // get builtin declaration if it exists
-    NodeDataStructure *node_builtin_declaration = nullptr;
-    if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
-    if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var->name);
-
-    auto compile_error = CompileError(ErrorType::Variable, "",var->tok.line, "", var->name, var->tok.file);
-    // is declaration and is builtin -> compile error
-    if (!var->is_reference && node_builtin_declaration) {
-        compile_error.m_message = "Variable shadows builtin variable. Try renaming the variable.";
-        compile_error.exit();
-    }
-
-    // if input var is declaration
-    if (!var->is_reference) {
-        if (get_scoped_data_structure(var->name)) {
-            compile_error.m_message = "Data Structure has already been declared in this scope.";
-            compile_error.print();
-        } else {
-			if(global_scope) {
-				m_declared_data_structures.at(0).insert({var->name, var});
-			} else {
-            	m_declared_data_structures.back().insert({var->name, var});
-			}
-        }
-    // if input var reference
-    } else {
-        if (node_builtin_declaration) {
-            return node_builtin_declaration;
-        } else if (auto node_declaration = get_declared_data_structure(var->name)) {
-            return node_declaration;
-		}
-    }
-    return nullptr;
-}
-
 NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 	// get builtin declaration if it exists
 	NodeDataStructure *node_builtin_declaration = nullptr;
@@ -115,20 +78,18 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 }
 
 
-void DefinitionProvider::match_data_structure(NodeDataStructure* reference, NodeDataStructure* declaration) {
-    // get declaration to declaration
-    reference->declaration = declaration;
-    // mark is used
-    reference->is_used = true;
-	declaration->is_used = true;
-    reference->is_engine = declaration-> is_engine;
-    reference->persistence = declaration->persistence;
-    reference->is_local = declaration->is_local;
-    reference->is_global = declaration->is_global;
-    reference->is_compiler_return = declaration->is_compiler_return;
-	reference->type = declaration->type;
-	reference->data_type = declaration->data_type;
-}
+//void DefinitionProvider::match_data_structure(NodeDataStructure* reference, NodeDataStructure* declaration) {
+//    // mark is used
+//    reference->is_used = true;
+//	declaration->is_used = true;
+//    reference->is_engine = declaration-> is_engine;
+//    reference->persistence = declaration->persistence;
+//    reference->is_local = declaration->is_local;
+//    reference->is_global = declaration->is_global;
+//    reference->is_compiler_return = declaration->is_compiler_return;
+//	reference->type = declaration->type;
+//	reference->data_type = declaration->data_type;
+//}
 
 void DefinitionProvider::match_data_structure(NodeReference* reference, NodeDataStructure* declaration) {
     // get declaration to declaration

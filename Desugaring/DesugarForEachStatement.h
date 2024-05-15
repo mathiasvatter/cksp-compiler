@@ -82,7 +82,6 @@ public:
         auto node_key_declaration = std::make_unique<NodeSingleDeclareStatement>(
                 std::move(node_key_variable),
                 nullptr, node.tok);
-        node_key_declaration->to_be_declared->is_reference = false;
         auto node_key_iterator = std::make_unique<NodeSingleAssignStatement>(
                 node.keys->params[0]->clone(),
                 std::make_unique<NodeInt>(0, node.tok), node.tok);

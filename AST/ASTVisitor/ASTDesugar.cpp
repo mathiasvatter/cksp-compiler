@@ -424,8 +424,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 		// clear index if it is array because of: make_persistent_var(arr[124]) <-
 		std::unique_ptr<NodeArray> node_array_copy;
 		if(node_array) {
-			node_array_copy = std::unique_ptr<NodeArray>(static_cast<NodeArray *>(node.to_be_declared->clone().release()));
-			node_array_copy->index = nullptr;
+			node_array_copy = clone_as<NodeArray>(node.to_be_declared.get());
 			to_be_declared_ptr = node_array_copy.get();
 		}
         add_vector_to_statement_list(node_body, add_read_functions(persistence.value(), to_be_declared_ptr, node_body.get()));
@@ -487,8 +486,7 @@ std::vector<std::unique_ptr<NodeStatement>> ASTDesugar::add_read_functions(const
                 auto node_function = m_def_provider->get_builtin_function(pers_func, 1)->clone();
                 auto make_persistent = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(node_function.release()));
                 make_persistent->args->params.clear();
-				auto node_var = clone_as<NodeDataStructure>(var);
-				node_var->is_reference = true;
+				auto node_var = var->to_reference();
                 make_persistent->args->params.push_back(std::move(node_var));
                 statements.push_back(std::make_unique<NodeStatement>(std::move(make_persistent), var->tok));
             }
@@ -615,7 +613,6 @@ void ASTDesugar::declare_compiler_variables() {
         node_variable->type = var_name.second;
         node_variable->is_engine = true;
         node_variable->is_global = true;
-		node_variable->is_reference = false;
         auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), nullptr, tok);
         node_var_declaration->to_be_declared->parent = node_var_declaration.get();
         node_var_declaration->accept(*this);
@@ -638,7 +635,6 @@ void ASTDesugar::declare_compiler_variables() {
         node_array-> is_used = true;
         node_array->is_engine = true;
         node_array->is_global = true;
-		node_array->is_reference = false;
         auto node_arr_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), nullptr, tok);
         node_arr_declaration->to_be_declared->parent = node_arr_declaration.get();
         node_arr_declaration->accept(*this);
@@ -653,7 +649,6 @@ void ASTDesugar::declare_dummy_return_variable() {
     auto node_return_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), dummy_name, DataType::Mutable, tok);
     node_return_dummy->type = ASTType::Unknown;
     node_return_dummy->is_engine = true;
-	node_return_dummy->is_reference = false;
     auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_return_dummy), nullptr, tok);
     node_var_declaration->to_be_declared->parent = node_var_declaration.get();
     m_return_dummy_declaration = static_cast<NodeDataStructure*>(node_var_declaration->to_be_declared.get());
@@ -663,7 +658,6 @@ void ASTDesugar::declare_dummy_return_variable() {
     auto node_local_var_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), local_var_dummy_name, DataType::Mutable, tok);
     node_local_var_dummy->type = ASTType::Unknown;
     node_local_var_dummy->is_engine = true;
-	node_local_var_dummy->is_reference = false;
     auto node_local_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_local_var_dummy), nullptr, tok);
     node_local_var_declaration->to_be_declared->parent = node_local_var_declaration.get();
     m_local_var_dummy_declaration = static_cast<NodeDataStructure*>(node_local_var_declaration->to_be_declared.get());

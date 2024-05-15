@@ -29,14 +29,12 @@ std::unique_ptr<NodeReference> NodeVariable::to_reference() {
 	return ref;
 }
 
-
 // ************* NodeArray ***************
 void NodeArray::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeArray::NodeArray(const NodeArray& other)
-	: NodeDataStructure(other), show_brackets(other.show_brackets), size(clone_unique(other.size)),
-	  index(clone_unique(other.index)) {
+	: NodeDataStructure(other), show_brackets(other.show_brackets), size(clone_unique(other.size)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeArray::clone() const {
@@ -45,8 +43,6 @@ std::unique_ptr<NodeAST> NodeArray::clone() const {
 void NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (size.get() == oldChild) {
 		size = std::move(newChild);
-	} else if (index.get() == oldChild) {
-		index = std::move(newChild);
 	}
 }
 
@@ -56,7 +52,7 @@ ASTVisitor* NodeArray::get_lowering(DefinitionProvider* def_provider) const {
 }
 
 std::unique_ptr<NodeReference> NodeArray::to_reference() {
-    auto ref = std::make_unique<NodeArrayRef>(name, std::move(index), tok);
+    auto ref = std::make_unique<NodeArrayRef>(name, nullptr, tok);
 	ref->match_data_structure(this);
 	return ref;
 }
@@ -67,7 +63,7 @@ void NodeNDArray::accept(ASTVisitor &visitor) {
 }
 NodeNDArray::NodeNDArray(const NodeNDArray& other)
 	: NodeDataStructure(other), show_brackets(other.show_brackets), sizes(clone_unique(other.sizes)),
-	  indexes(clone_unique(other.indexes)), dimensions(other.dimensions) {
+	dimensions(other.dimensions) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeNDArray::clone() const {
@@ -80,7 +76,7 @@ ASTVisitor* NodeNDArray::get_lowering(DefinitionProvider* def_provider) const {
 }
 
 std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
-    auto ref = std::make_unique<NodeNDArrayRef>(name, std::move(indexes), tok);
+    auto ref = std::make_unique<NodeNDArrayRef>(name, nullptr, tok);
 	ref->match_data_structure(this);
 	return ref;
 }
@@ -93,7 +89,7 @@ NodeUIControl::NodeUIControl(const NodeUIControl& other)
 	: NodeDataStructure(other), ui_control_type(other.ui_control_type),
 	  control_var(clone_unique(other.control_var)), params(clone_unique(other.params)),
 	  sizes(clone_unique(other.sizes)), arg_ast_types(other.arg_ast_types),
-	  arg_var_types(other.arg_var_types) {
+	  arg_var_types(other.arg_var_types), declaration(other.declaration) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeUIControl::clone() const {

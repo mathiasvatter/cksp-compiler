@@ -108,7 +108,6 @@ public:
 		int array_size = array_size_res.unwrap();
 		std::string new_control_name = ui_control.control_var->name;
 		auto new_ui_control_template = clone_as<NodeUIControl>(ui_control.declaration);
-        new_ui_control_template->is_reference = false;
         // if is ui_table array -> set size to ui_table array size
         if(auto node_array = cast_node<NodeArray>(new_ui_control_template->control_var.get())) {
             node_array->size = clone_as<NodeParamList>(m_ui_control_var_size.get());
@@ -122,7 +121,6 @@ public:
 				ui_control.tok
 				);
 			new_ui_control->control_var->name = new_control_name + std::to_string(i);
-            new_ui_control->control_var->is_reference = false;
 			new_ui_control->control_var->data_type = DataType::UI_Control;
 			new_ui_control->control_var->persistence = m_persistence;
 

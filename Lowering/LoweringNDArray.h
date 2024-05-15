@@ -31,7 +31,6 @@ public:
                 }
                 node.to_be_declared->accept(*this);
                 node_body->statements.push_back(std::make_unique<NodeStatement>(node.clone(), node.tok));
-//                node_body->update_parents(node.parent);
                 node.replace_with(std::move(node_body));
             }
         }
@@ -45,11 +44,9 @@ public:
                 std::move(node_expression), node.tok);
 		node_lowered_array->name = "_" + node_lowered_array->name;
 		node_lowered_array->type = node.type;
-		node_lowered_array->is_reference = node.is_reference;
 		node_lowered_array->parent = node.parent;
 		node_lowered_array->is_local = node.is_local;
 		node_lowered_array->data_type = node.data_type;
-		node_lowered_array->declaration = node.declaration;
 		node.replace_with(std::move(node_lowered_array));
 	}
 

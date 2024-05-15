@@ -29,8 +29,8 @@ void NodeDataStructure::accept(ASTVisitor &visitor) {}
 NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
 	  is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
-	  is_local(other.is_local), is_reference(other.is_reference), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
-	  data_type(other.data_type), name(other.name), declaration(other.declaration) {
+	  is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
+	  data_type(other.data_type), name(other.name) {
 	set_child_parents();
 }
 
