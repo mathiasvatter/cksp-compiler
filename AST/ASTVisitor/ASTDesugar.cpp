@@ -512,18 +512,6 @@ void ASTDesugar::visit(NodeParamList& node) {
     for(auto & param : node.params) {
         param->accept(*this);
     }
-    // in case it is a double param_list [[0,1,2,3]] move params up to parent
-    if(auto node_param_list = cast_node<NodeParamList>(node.parent)) {
-        if(node_param_list->params.size() == 1) {
-            node_param_list->params.insert(
-				node_param_list->params.begin(),
-				std::make_move_iterator(node.params.begin()),
-				std::make_move_iterator(node.params.end())
-				);
-            node_param_list->params.pop_back();
-			node_param_list->set_child_parents();
-        }
-    }
 }
 
 void ASTDesugar::visit(NodeGetControlStatement& node) {

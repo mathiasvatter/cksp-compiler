@@ -3,6 +3,8 @@
 //
 
 #include "BuiltinsProcessor.h"
+
+#include <memory>
 #include "engine_widgets.h"
 #include "engine_variables.h"
 #include "engine_functions.h"
@@ -121,8 +123,12 @@ std::unique_ptr<NodeArray> BuiltinsProcessor::parse_builtin_array() {
     ASTType type = get_identifier_type(arr_name[0]);
     if(get_token_type(TYPES, std::string(1, arr_name[0])))
         arr_name = arr_name.erase(0,1);
-    std::unique_ptr<NodeParamList> size = std::unique_ptr<NodeParamList>(new NodeParamList({}, name));;
-    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), arr_name, DataType::Array, std::move(size), name);
+    auto node_array = std::make_unique<NodeArray>(
+		std::nullopt,
+		arr_name,
+		DataType::Array,
+		std::make_unique<NodeParamList>(name), name
+	);
     node_array->type = type;
     node_array->is_local = false;
     node_array->is_engine = true;
@@ -136,7 +142,7 @@ ASTType BuiltinsProcessor::get_identifier_type(char identifier) {
 
 Result<std::unique_ptr<NodeFunctionHeader>> BuiltinsProcessor::parse_builtin_function() {
     Token func_name = consume(m_tokens); // consume function name
-    std::unique_ptr<NodeParamList> func_args = std::unique_ptr<NodeParamList>(new NodeParamList({}, func_name));
+    std::unique_ptr<NodeParamList> func_args = std::make_unique<NodeParamList>(func_name);
     std::vector<ASTType> arg_types;
     std::vector<DataType> arg_var_types;
     bool has_forced_parenth = false;
@@ -189,7 +195,7 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 	} else {
 		node_var = parse_builtin_variable();
 	}
-	std::unique_ptr<NodeParamList> params = std::unique_ptr<NodeParamList>(new NodeParamList({}, tok));
+	std::unique_ptr<NodeParamList> params = std::make_unique<NodeParamList>(tok);
 	std::vector<ASTType> arg_types;
 	std::vector<DataType> arg_var_types;
 	if (peek(m_tokens).type == token::OPEN_PARENTH) {
