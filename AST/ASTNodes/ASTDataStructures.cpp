@@ -16,7 +16,9 @@ void NodeVariable::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeVariable::NodeVariable(const NodeVariable& other)
-	: NodeDataStructure(other) {}
+	: NodeDataStructure(other) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeVariable::clone() const {
 	return std::make_unique<NodeVariable>(*this);
 }
@@ -34,7 +36,9 @@ void NodeArray::accept(ASTVisitor &visitor) {
 }
 NodeArray::NodeArray(const NodeArray& other)
 	: NodeDataStructure(other), show_brackets(other.show_brackets), size(clone_unique(other.size)),
-	  index(clone_unique(other.index)) {}
+	  index(clone_unique(other.index)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeArray::clone() const {
 	return std::make_unique<NodeArray>(*this);
 }
@@ -63,7 +67,9 @@ void NodeNDArray::accept(ASTVisitor &visitor) {
 }
 NodeNDArray::NodeNDArray(const NodeNDArray& other)
 	: NodeDataStructure(other), show_brackets(other.show_brackets), sizes(clone_unique(other.sizes)),
-	  indexes(clone_unique(other.indexes)), dimensions(other.dimensions) {}
+	  indexes(clone_unique(other.indexes)), dimensions(other.dimensions) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 	return std::make_unique<NodeNDArray>(*this);
 }
@@ -86,7 +92,10 @@ void NodeUIControl::accept(ASTVisitor &visitor) {
 NodeUIControl::NodeUIControl(const NodeUIControl& other)
 	: NodeDataStructure(other), ui_control_type(other.ui_control_type),
 	  control_var(clone_unique(other.control_var)), params(clone_unique(other.params)),
-	  sizes(clone_unique(other.sizes)), arg_ast_types(other.arg_ast_types), arg_var_types(other.arg_var_types) {}
+	  sizes(clone_unique(other.sizes)), arg_ast_types(other.arg_ast_types),
+	  arg_var_types(other.arg_var_types) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeUIControl::clone() const {
 	return std::make_unique<NodeUIControl>(*this);
 }
@@ -112,7 +121,9 @@ void NodeListStruct::accept(ASTVisitor &visitor) {
 }
 
 NodeListStruct::NodeListStruct(const NodeListStruct& other)
-	: NodeDataStructure(other), size(other.size), body(clone_vector(other.body)) {}
+	: NodeDataStructure(other), size(other.size), body(clone_vector(other.body)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeListStruct::clone() const {
 	return std::make_unique<NodeListStruct>(*this);
 }
@@ -127,7 +138,9 @@ void NodeConstStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeConstStatement::NodeConstStatement(const NodeConstStatement& other)
-        : NodeDataStructure(other), constants(clone_unique(other.constants)) {}
+        : NodeDataStructure(other), constants(clone_unique(other.constants)) {
+	set_child_parents();
+}
 
 std::unique_ptr<NodeAST> NodeConstStatement::clone() const {
     return std::make_unique<NodeConstStatement>(*this);
@@ -143,7 +156,9 @@ void NodeFamilyStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeFamilyStatement::NodeFamilyStatement(const NodeFamilyStatement& other)
-        : NodeAST(other), prefix(other.prefix), members(clone_unique(other.members)) {}
+        : NodeAST(other), prefix(other.prefix), members(clone_unique(other.members)) {
+	set_child_parents();
+}
 
 std::unique_ptr<NodeAST> NodeFamilyStatement::clone() const {
     return std::make_unique<NodeFamilyStatement>(*this);

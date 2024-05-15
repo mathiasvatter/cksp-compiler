@@ -30,7 +30,9 @@ NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
 	  is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
 	  is_local(other.is_local), is_reference(other.is_reference), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
-	  data_type(other.data_type), name(other.name), declaration(other.declaration) {}
+	  data_type(other.data_type), name(other.name), declaration(other.declaration) {
+	set_child_parents();
+}
 
 std::unique_ptr<NodeAST> NodeDataStructure::clone() const {
 	return std::make_unique<NodeDataStructure>(*this);
@@ -48,7 +50,9 @@ void NodeReference::accept(ASTVisitor &visitor) {}
 NodeReference::NodeReference(const NodeReference& other)
 	: NodeAST(other), name(other.name), declaration(other.declaration),
     is_engine(other.is_engine), is_local(other.is_local),
-    is_compiler_return(other.is_compiler_return), data_type(other.data_type) {}
+    is_compiler_return(other.is_compiler_return), data_type(other.data_type) {
+	set_child_parents();
+}
 
 std::unique_ptr<NodeAST> NodeReference::clone() const {
 	return std::make_unique<NodeReference>(*this);
@@ -100,6 +104,7 @@ void NodeParamList::accept(ASTVisitor &visitor) {
 }
 NodeParamList::NodeParamList(const NodeParamList& other) : NodeAST(other) {
     params = clone_vector(other.params);
+	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeParamList::clone() const {
     return std::make_unique<NodeParamList>(*this);
@@ -118,7 +123,9 @@ void NodeUnaryExpr::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeUnaryExpr::NodeUnaryExpr(const NodeUnaryExpr& other)
-        : NodeAST(other), op(other.op), operand(clone_unique(other.operand)) {}
+        : NodeAST(other), op(other.op), operand(clone_unique(other.operand)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeUnaryExpr::clone() const {
     return std::make_unique<NodeUnaryExpr>(*this);
 }
@@ -134,7 +141,9 @@ void NodeBinaryExpr::accept(ASTVisitor &visitor) {
 }
 NodeBinaryExpr::NodeBinaryExpr(const NodeBinaryExpr& other)
         : NodeAST(other), op(other.op), has_forced_parenth(other.has_forced_parenth),
-          left(clone_unique(other.left)), right(clone_unique(other.right)) {}
+          left(clone_unique(other.left)), right(clone_unique(other.right)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeBinaryExpr::clone() const {
     return std::make_unique<NodeBinaryExpr>(*this);
 }
@@ -151,8 +160,10 @@ void NodeAssignStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeAssignStatement::NodeAssignStatement(const NodeAssignStatement& other)
-        : NodeAST(other),
-          array_variable(clone_unique(other.array_variable)), assignee(clone_unique(other.assignee)) {}
+        : NodeAST(other), array_variable(clone_unique(other.array_variable)),
+		assignee(clone_unique(other.assignee)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeAssignStatement::clone() const {
     return std::make_unique<NodeAssignStatement>(*this);
 }
@@ -167,8 +178,10 @@ void NodeSingleAssignStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeSingleAssignStatement::NodeSingleAssignStatement(const NodeSingleAssignStatement& other)
-        : NodeAST(other),
-          array_variable(clone_unique(other.array_variable)), assignee(clone_unique(other.assignee)) {}
+        : NodeAST(other), array_variable(clone_unique(other.array_variable)),
+		assignee(clone_unique(other.assignee)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeSingleAssignStatement::clone() const {
     return std::make_unique<NodeSingleAssignStatement>(*this);
 }
@@ -189,8 +202,10 @@ void NodeDeclareStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeDeclareStatement::NodeDeclareStatement(const NodeDeclareStatement& other)
-        : NodeAST(other),
-          to_be_declared(clone_vector(other.to_be_declared)), assignee(clone_unique(other.assignee)) {}
+        : NodeAST(other), to_be_declared(clone_vector(other.to_be_declared)),
+		assignee(clone_unique(other.assignee)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeDeclareStatement::clone() const {
     return std::make_unique<NodeDeclareStatement>(*this);
 }
@@ -214,8 +229,10 @@ void NodeSingleDeclareStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeSingleDeclareStatement::NodeSingleDeclareStatement(const NodeSingleDeclareStatement& other)
-        : NodeAST(other),
-          to_be_declared(clone_unique(other.to_be_declared)), assignee(clone_unique(other.assignee)) {}
+        : NodeAST(other), to_be_declared(clone_unique(other.to_be_declared)),
+		assignee(clone_unique(other.assignee)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeSingleDeclareStatement::clone() const {
     return std::make_unique<NodeSingleDeclareStatement>(*this);
 }
@@ -224,12 +241,6 @@ void NodeSingleDeclareStatement::replace_child(NodeAST* oldChild, std::unique_pt
         if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.get())) {
             newChild.release();
             to_be_declared = std::unique_ptr<NodeDataStructure>(new_data_structure);
-//        } else {
-//            // TODO: Error handling when NodeDeadCode
-////            CompileError(ErrorType::SyntaxError,"Variable has not been declared. If it was declared as local variable it may be out of scope.", node.tok.line, "", node.name, node.tok.file).exit();
-////            std::cout << "Error: " << newChild->get_string() << std::endl;
-////            CompileError(ErrorType::TypeError, "Cannot replace to be declared with non data structure", oldChild->tok.line, "", newChild->get_string(), oldChild->tok.file).print();
-//            to_be_declared = std::move(newChild);
         }
     } else if (assignee.get() == oldChild) {
         assignee = std::move(newChild);
@@ -245,7 +256,9 @@ void NodeReturnStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeReturnStatement::NodeReturnStatement(const NodeReturnStatement& other)
-	: NodeAST(other), return_variables(clone_vector(other.return_variables)) {}
+	: NodeAST(other), return_variables(clone_vector(other.return_variables)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeReturnStatement::clone() const {
 	return std::make_unique<NodeReturnStatement>(*this);
 }
@@ -262,7 +275,9 @@ void NodeGetControlStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeGetControlStatement::NodeGetControlStatement(const NodeGetControlStatement& other)
-        : NodeAST(other), ui_id(clone_unique(other.ui_id)), control_param(other.control_param) {}
+        : NodeAST(other), ui_id(clone_unique(other.ui_id)), control_param(other.control_param) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeGetControlStatement::clone() const {
     return std::make_unique<NodeGetControlStatement>(*this);
 }
@@ -281,7 +296,10 @@ void NodeStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeStatement::NodeStatement(const NodeStatement& other)
-        : NodeAST(other), statement(clone_unique(other.statement)), function_inlines(other.function_inlines){}
+        : NodeAST(other), statement(clone_unique(other.statement)),
+		function_inlines(other.function_inlines) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeStatement::clone() const {
     return std::make_unique<NodeStatement>(*this);
 }
@@ -296,7 +314,10 @@ void NodeStructStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeStructStatement::NodeStructStatement(const NodeStructStatement& other)
-        : NodeAST(other), prefix(other.prefix), members(clone_vector<NodeStatement>(other.members)) {}
+        : NodeAST(other), prefix(other.prefix),
+		members(clone_vector<NodeStatement>(other.members)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeStructStatement::clone() const {
     return std::make_unique<NodeStructStatement>(*this);
 }
@@ -307,6 +328,7 @@ void NodeBody::accept(ASTVisitor &visitor) {
 }
 NodeBody::NodeBody(const NodeBody& other) : NodeAST(other), scope(other.scope) {
     statements = clone_vector(other.statements);
+	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeBody::clone() const {
     return std::make_unique<NodeBody>(*this);
@@ -333,7 +355,11 @@ void NodeIfStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeIfStatement::NodeIfStatement(const NodeIfStatement& other)
-        : NodeAST(other), condition(clone_unique(other.condition)), statements(clone_unique(other.statements)), else_statements(clone_unique(other.else_statements)) {}
+        : NodeAST(other), condition(clone_unique(other.condition)),
+		statements(clone_unique(other.statements)),
+		else_statements(clone_unique(other.else_statements)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeIfStatement::clone() const {
     return std::make_unique<NodeIfStatement>(*this);
 }
@@ -349,7 +375,9 @@ void NodeForStatement::accept(ASTVisitor &visitor) {
 }
 NodeForStatement::NodeForStatement(const NodeForStatement& other)
         : NodeAST(other), iterator(clone_unique(other.iterator)), to(other.to), iterator_end(clone_unique(other.iterator_end)),
-        step(clone_unique(other.step)), statements(clone_unique(other.statements)) {}
+        step(clone_unique(other.step)), statements(clone_unique(other.statements)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeForStatement::clone() const {
     return std::make_unique<NodeForStatement>(*this);
 }
@@ -370,7 +398,9 @@ void NodeForEachStatement::accept(ASTVisitor &visitor) {
 }
 NodeForEachStatement::NodeForEachStatement(const NodeForEachStatement& other)
         : NodeAST(other), keys(clone_unique(other.keys)), range(clone_unique(other.range)),
-        statements(clone_unique(other.statements)) {}
+        statements(clone_unique(other.statements)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeForEachStatement::clone() const {
     return std::make_unique<NodeForEachStatement>(*this);
 }
@@ -390,7 +420,10 @@ void NodeWhileStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeWhileStatement::NodeWhileStatement(const NodeWhileStatement& other)
-        : NodeAST(other), condition(clone_unique(other.condition)), statements(clone_unique(other.statements)) {}
+        : NodeAST(other), condition(clone_unique(other.condition)),
+		statements(clone_unique(other.statements)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeWhileStatement::clone() const {
     return std::make_unique<NodeWhileStatement>(*this);
 }
@@ -425,7 +458,10 @@ void NodeSelectStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeSelectStatement::NodeSelectStatement(const NodeSelectStatement& other)
-        : NodeAST(other), expression(clone_unique(other.expression)), cases(clone_cases(other.cases)) {}
+        : NodeAST(other), expression(clone_unique(other.expression)),
+		cases(clone_cases(other.cases)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeSelectStatement::clone() const {
     return std::make_unique<NodeSelectStatement>(*this);
 }
@@ -446,7 +482,11 @@ void NodeCallback::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeCallback::NodeCallback(const NodeCallback& other)
-        : NodeAST(other), begin_callback(other.begin_callback), callback_id(clone_unique(other.callback_id)), statements(clone_unique(other.statements)), end_callback(other.end_callback) {}
+        : NodeAST(other), begin_callback(other.begin_callback),
+		callback_id(clone_unique(other.callback_id)), statements(clone_unique(other.statements)),
+		end_callback(other.end_callback) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST>  NodeCallback::clone() const {
     return std::make_unique<NodeCallback>(*this);
 }
@@ -460,7 +500,8 @@ void NodeCallback::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> new
 void NodeImport::accept(ASTVisitor& visitor) {
     visitor.visit(*this);
 }
-NodeImport::NodeImport(const NodeImport& other) : NodeAST(other), filepath(other.filepath), alias(other.alias) {}
+NodeImport::NodeImport(const NodeImport& other) : NodeAST(other), filepath(other.filepath),
+		alias(other.alias) {}
 std::unique_ptr<NodeAST> NodeImport::clone() const {
     return std::make_unique<NodeImport>(*this);
 }
@@ -473,6 +514,7 @@ NodeFunctionHeader::NodeFunctionHeader(const NodeFunctionHeader& other)
         : NodeAST(other), name(other.name), is_builtin(other.is_builtin),
 		  has_forced_parenth(other.has_forced_parenth), args(clone_unique(other.args)),
 		  arg_ast_types(other.arg_ast_types), arg_var_types(other.arg_var_types) {
+	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeFunctionHeader::clone() const {
     return std::make_unique<NodeFunctionHeader>(*this);
@@ -483,7 +525,9 @@ void NodeFunctionCall::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
-        : NodeAST(other), is_call(other.is_call), function(clone_unique(other.function)) {}
+        : NodeAST(other), is_call(other.is_call), function(clone_unique(other.function)) {
+	set_child_parents();
+}
 std::unique_ptr<NodeAST> NodeFunctionCall::clone() const {
     return std::make_unique<NodeFunctionCall>(*this);
 }
@@ -503,6 +547,7 @@ NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& oth
     if (other.return_variable) {
         return_variable = std::make_optional(clone_unique(other.return_variable.value()));
     }
+	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeFunctionDefinition::clone() const {
     return std::make_unique<NodeFunctionDefinition>(*this);
@@ -515,6 +560,7 @@ void NodeProgram::accept(ASTVisitor& visitor) {
 NodeProgram::NodeProgram(const NodeProgram& other) : NodeAST(other) {
     callbacks = clone_vector<NodeCallback>(other.callbacks);
     function_definitions = clone_vector<NodeFunctionDefinition>(other.function_definitions);
+	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeProgram::clone() const {
     return std::make_unique<NodeProgram>(*this);
