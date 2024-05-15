@@ -122,8 +122,7 @@ std::unique_ptr<NodeArray> BuiltinsProcessor::parse_builtin_array() {
     if(get_token_type(TYPES, std::string(1, arr_name[0])))
         arr_name = arr_name.erase(0,1);
     std::unique_ptr<NodeParamList> size = std::unique_ptr<NodeParamList>(new NodeParamList({}, name));;
-    std::unique_ptr<NodeParamList> index = std::unique_ptr<NodeParamList>(new NodeParamList({}, name));;
-    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), arr_name, DataType::Array, std::move(size), std::move(index), name);
+    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), arr_name, DataType::Array, std::move(size), name);
     node_array->type = type;
     node_array->is_local = false;
     node_array->is_engine = true;

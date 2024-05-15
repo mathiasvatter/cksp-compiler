@@ -65,13 +65,12 @@ public:
 	/// removes all scopes and initializes again
 	bool refresh_scopes();
 	/// Completes the data structure of reference by copying missing parameters of declaration
-	void match_data_structure(NodeDataStructure* reference, NodeDataStructure* declaration);
+//	void match_data_structure(NodeDataStructure* reference, NodeDataStructure* declaration);
     void match_data_structure(NodeReference* reference, NodeDataStructure* declaration);
 
 	/// returns the definition of a data structure, if it exists. If datastructure itself is
 	/// definition -> return nullptr. If datastructure is reference -> return declaration. If global_scope is true,
 	/// adds declaration to global scope.
-	NodeDataStructure* get_declaration(NodeDataStructure *var, bool global_scope);
 	/// only called by references -> only gets declaration does not add existing declarations to map
 	NodeDataStructure* get_declaration(NodeReference* var);
 	/// adds existing declaration to declaration map for look up. Always returns nullptr.

@@ -31,7 +31,7 @@ public:
 	explicit LoweringConstStruct(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
 
     void visit(NodeVariable& node) override {
-        if(!m_const_prefixes.empty() and !node.is_reference) {
+        if(!m_const_prefixes.empty()) {
             node.name = m_const_prefixes.top() + "." + node.name;
         }
     };

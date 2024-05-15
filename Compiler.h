@@ -14,7 +14,6 @@
 #include "AST/ASTVisitor/ASTTypeCasting.h"
 #include "BuiltinsProcessing/BuiltinsProcessor.h"
 #include "AST/ASTVisitor/ASTTypeChecking.h"
-#include "AST/ASTVisitor/ASTVariables.h"
 #include "Generator/ASTGenerator.h"
 #include "AST/ASTVisitor/ASTDesugarStructs.h"
 #include "Preprocessor/ImportProcessor.h"

@@ -57,7 +57,7 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_declare_variable(const std::stri
 }
 
 std::unique_ptr<NodeStatement> ASTVisitor::make_declare_array(const std::string& name, int32_t size, const std::vector<int32_t>& values, NodeAST* parent) {
-    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), name, DataType::Array, make_int(size, parent), nullptr, parent->tok);
+    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), name, DataType::Array, make_int(size, parent), parent->tok);
     node_array->type = ASTType::Integer;
     auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), make_init_array_list(values, parent), parent->tok);
     node_declare_statement->to_be_declared->parent = node_declare_statement.get();
@@ -85,7 +85,7 @@ std::unique_ptr<NodeBody> ASTVisitor::array_initialization(NodeArray* array, Nod
 }
 
 std::unique_ptr<NodeArray> ASTVisitor::make_array(const std::string &name, int32_t size, const Token& tok, NodeAST *parent) {
-    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), name, DataType::Array, nullptr, nullptr, tok);
+    auto node_array = std::make_unique<NodeArray>(std::optional<Token>(), name, DataType::Array, nullptr, tok);
     node_array->size = make_int(size, node_array.get());
     node_array->update_parents(parent);
     return std::move(node_array);

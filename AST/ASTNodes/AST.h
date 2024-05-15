@@ -87,13 +87,11 @@ struct NodeDataStructure : NodeAST {
 	bool is_used = false;
 	bool is_engine = false;
 	std::optional<Token> persistence;
-	bool is_reference = true;
 	bool is_local = false;
 	bool is_global = false;
 	bool is_compiler_return = false;
 	DataType data_type;
 	std::string name;
-	NodeDataStructure* declaration = nullptr; // index in declaration array
 	inline explicit NodeDataStructure(std::string name, Token tok, NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
@@ -362,7 +360,6 @@ struct NodeSingleDeclareStatement : NodeAST {
     NodeSingleDeclareStatement(std::unique_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
     : NodeAST(std::move(tok), NodeType::SingleDeclareStatement), to_be_declared(std::move(arrayVariable)), assignee(std::move(assignee)) {
 		set_child_parents();
-		to_be_declared->is_reference = false;
 	}
     void accept(ASTVisitor& visitor) override;
     void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
