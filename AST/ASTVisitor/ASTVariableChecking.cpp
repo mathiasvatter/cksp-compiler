@@ -102,7 +102,7 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 		compile_error.exit();
 	}
 
-    m_def_provider->match_data_structure(&node, node_declaration);
+    node.match_data_structure(node_declaration);
 }
 
 void ASTVariableChecking::visit(NodeArray& node) {
@@ -126,7 +126,7 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 		compile_error.exit();
 	}
 
-    m_def_provider->match_data_structure(&node, node_declaration);
+    node.match_data_structure(node_declaration);
 
 	// replace variable with array if incorrectly recognized by parser
 	if(node_declaration->get_node_type() == NodeType::Array) {

@@ -119,6 +119,8 @@ protected:
     Result<std::unique_ptr<NodeCallback>> parse_callback(NodeAST* parent);
 
 	Result<std::unique_ptr<NodeProgram>> parse_program();
+	std::vector<std::unique_ptr<NodeCallback>> m_callbacks;
+	int m_init_callback_idx = -1;
     std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_function_definitions;
     void mark_function_as_used(const std::string& func_name, int num_args);
 

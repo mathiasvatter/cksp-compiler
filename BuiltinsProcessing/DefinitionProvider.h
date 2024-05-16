@@ -61,12 +61,9 @@ public:
     void add_property_function(std::unique_ptr<NodeFunctionHeader> property_function);
 
 	bool add_scope();
-	bool remove_scope();
+	std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual> remove_scope();
 	/// removes all scopes and initializes again
 	bool refresh_scopes();
-	/// Completes the data structure of reference by copying missing parameters of declaration
-//	void match_data_structure(NodeDataStructure* reference, NodeDataStructure* declaration);
-    void match_data_structure(NodeReference* reference, NodeDataStructure* declaration);
 
 	/// returns the definition of a data structure, if it exists. If datastructure itself is
 	/// definition -> return nullptr. If datastructure is reference -> return declaration. If global_scope is true,
