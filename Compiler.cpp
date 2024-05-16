@@ -99,21 +99,26 @@ void Compiler::compile() {
 	ast->accept(lowering);
 
 	compile_time.stop("Lowering Time");
-	compile_time.start("Local Variables and Inlining");
-
-
-	compile_time.stop("Local Variables and Inlining");
-	compile_time.start("Variable Checking Time");
+	compile_time.start("Variable Checking 1");
 
 	ASTVariableChecking variable_checking(&m_definition_provider);
-	ast->accept(variable_checking);
+//	ast->accept(variable_checking);
+
+	compile_time.stop("Variable Checking 1");
+    compile_time.start("Function Inlining");
 
 	ASTDesugar desugar(&m_definition_provider);
 	ast->accept(desugar);
-	compile_time.stop("Variable Checking Time");
+
+    compile_time.stop("Function Inlining");
+	compile_time.start("Variable Checking 2");
+
+    ast->accept(variable_checking);
+
+	compile_time.stop("Variable Checking 2");
 	compile_time.start("Optimization Time");
 
-	ASTOptimizations optimizations(desugar.get_function_inlines());
+	ASTOptimizations optimizations;
 	ast->accept(optimizations);
 
 	compile_time.stop("Optimization Time");

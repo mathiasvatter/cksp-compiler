@@ -22,6 +22,7 @@ class ASTDesugarStructs: public ASTVisitor {
 
     /// desugar into single declare statements
     void visit(NodeDeclareStatement& node) override;
+    void visit(NodeSingleDeclareStatement& node) override;
     /// desugar into single assign statements
     void visit(NodeAssignStatement& node) override;
 
@@ -41,5 +42,8 @@ class ASTDesugarStructs: public ASTVisitor {
 private:
     NodeProgram* m_program = nullptr;
 
+    std::unique_ptr<NodeBody> m_global_variable_declarations = std::make_unique<NodeBody>(Token());
+    /// declare necessary compiler variables for iterating etc.
+    std::unique_ptr<NodeBody> declare_compiler_variables();
 };
 

@@ -10,6 +10,8 @@
 
 /**
  * This class completes ASTNodes like arrays, UI controls, etc., by filling in declaration information.
+ * It also checks for uniqueness of callback names and existence of "on init" callback.
+ * It adds globally declared data structures to the start of the program.
  * It tracks data structure definitions with DefinitionProvider and sets scopes for body nodes.
  * It adds scope to the following:
  * - if-statement
@@ -27,6 +29,8 @@ public:
 
 	void visit(NodeBody& node) override;
 	void visit(NodeUIControl& node) override;
+
+    void visit(NodeSingleDeclareStatement& node) override;
 
 	void visit(NodeArray& node) override;
     void visit(NodeArrayRef& node) override;
@@ -48,6 +52,7 @@ public:
 private:
     NodeProgram* m_program = nullptr;
 	NodeCallback* m_init_callback = nullptr;
+    NodeBody* m_current_body = nullptr;
 	bool m_is_init_callback = false;
 	DefinitionProvider* m_def_provider = nullptr;
 
@@ -57,5 +62,7 @@ private:
 	static NodeCallback* move_on_init_callback(NodeProgram& node);
 	/// Checks for uniqueness of all callbacks except "on ui_control"
 	static bool check_unique_callbacks(NodeProgram& node);
+
+
 };
 

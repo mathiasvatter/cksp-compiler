@@ -30,6 +30,7 @@ void ASTBuildDataStructures::visit(NodeCallback& node) {
 
 
 void ASTBuildDataStructures::visit(NodeBody &node) {
+    m_current_body = &node;
     if(node.parent->get_node_type() != NodeType::Body and !is_instance_of<NodeDataStructure>(node.parent)) {
         node.scope = true;
     }
@@ -51,10 +52,18 @@ void ASTBuildDataStructures::visit(NodeFunctionDefinition &node) {
     m_def_provider->remove_scope();
 }
 
+void ASTBuildDataStructures::visit(NodeSingleDeclareStatement& node) {
+    if(m_current_body->scope and m_current_body->parent != m_init_callback and !node.to_be_declared->is_global) {
+        node.to_be_declared->is_local = true;
+    }
+
+    node.to_be_declared->accept(*this);
+    if(node.assignee) node.assignee->accept(*this);
+}
+
 void ASTBuildDataStructures::visit(NodeArray &node) {
 	if(node.size) node.size->accept(*this);
-//	if(node.index) node.index->accept(*this);
-	m_def_provider->set_declaration(&node, m_is_init_callback);
+	m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
 }
 
 void ASTBuildDataStructures::visit(NodeArrayRef &node) {
@@ -79,8 +88,7 @@ void ASTBuildDataStructures::visit(NodeArrayRef &node) {
 
 void ASTBuildDataStructures::visit(NodeNDArray& node) {
 	node.sizes->accept(*this);
-//	node.indexes->accept(*this);
-	m_def_provider->set_declaration(&node, m_is_init_callback);
+	m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
 }
 
 void ASTBuildDataStructures::visit(NodeNDArrayRef& node) {
@@ -129,7 +137,7 @@ void ASTBuildDataStructures::visit(NodeUIControl &node) {
 
 
 void ASTBuildDataStructures::visit(NodeVariable &node) {
-	m_def_provider->set_declaration(&node, m_is_init_callback);
+	m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
 }
 
 void ASTBuildDataStructures::visit(NodeVariableRef &node) {
@@ -150,7 +158,7 @@ void ASTBuildDataStructures::visit(NodeVariableRef &node) {
 }
 
 void ASTBuildDataStructures::visit(NodeListStruct& node) {
-	m_def_provider->set_declaration(&node, m_is_init_callback);
+	m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
 }
 
 void ASTBuildDataStructures::visit(NodeListStructRef& node) {

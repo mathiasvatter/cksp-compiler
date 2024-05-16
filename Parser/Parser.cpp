@@ -798,11 +798,17 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
             m_tokens[m_pos].type = token::KEYWORD;
         }
         if (peek().type == token::KEYWORD) {
-            auto return_var = parse_param_list(node_function_definition.get());
-            if (return_var.is_error()) {
-                Result<std::unique_ptr<NodeFunctionDefinition>>(return_var.get_error());
+            auto return_vars = parse_declare_statement(node_function_definition.get());
+            if (return_vars.is_error()) {
+                Result<std::unique_ptr<NodeFunctionDefinition>>(return_vars.get_error());
             }
-            func_return_var = std::move(return_var.unwrap());
+            auto return_var = std::move(return_vars.unwrap()->to_be_declared);
+            auto return_var_list = std::make_unique<NodeParamList>(get_tok());
+            for(auto & var : return_var) {
+                var->parent = return_var_list.get();
+                return_var_list->params.push_back(std::move(var));
+            }
+            func_return_var = std::move(return_var_list);
         } else {
 			error.m_message = "Missing return variable after ->";
 			error.m_expected = "<return variable>";
