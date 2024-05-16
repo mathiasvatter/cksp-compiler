@@ -4,12 +4,11 @@
 
 #include "ASTVariableChecking.h"
 
-ASTVariableChecking::ASTVariableChecking(DefinitionProvider* definition_provider, std::unordered_map<NodeAST *, std::unique_ptr<NodeStatement>> m_function_inlines)
-	: m_def_provider(definition_provider), m_function_inlines(std::move(m_function_inlines)) {}
-
+ASTVariableChecking::ASTVariableChecking(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {}
 
 void ASTVariableChecking::visit(NodeProgram& node) {
 	m_init_callback = node.callbacks[0].get();
+    m_init_callback->statements->prepend_body(declare_compiler_variables());
 	// erase all previously saved scopes
 	m_def_provider->refresh_scopes();
 	for(auto & callback : node.callbacks) {
@@ -27,22 +26,6 @@ void ASTVariableChecking::visit(NodeCallback& node) {
 	node.statements->accept(*this);
 
 	m_is_init_callback = false;
-}
-
-void ASTVariableChecking::visit(NodeStatement& node) {
-	if(!node.function_inlines.empty()) {
-		auto node_body = std::make_unique<NodeBody>(node.function_inlines[0]->tok);
-		node_body->parent = &node;
-		for(auto & func : node.function_inlines) {
-			auto it = m_function_inlines.find(func);
-			node_body->statements.push_back(std::move(it->second));
-		}
-		node_body->statements.push_back(statement_wrapper(std::move(node.statement), &node));
-		node_body->accept(*this);
-		node.statement = std::move(node_body);
-	} else {
-		node.statement->accept(*this);
-	}
 }
 
 void ASTVariableChecking::visit(NodeUIControl& node) {
@@ -83,6 +66,7 @@ void ASTVariableChecking::visit(NodeUIControl& node) {
 }
 
 void ASTVariableChecking::visit(NodeBody &node) {
+    m_current_body = &node;
 	if(node.scope) m_def_provider->add_scope();
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
@@ -90,17 +74,20 @@ void ASTVariableChecking::visit(NodeBody &node) {
 	if(node.scope) m_def_provider->remove_scope();
 }
 
+void ASTVariableChecking::visit(NodeSingleDeclareStatement& node) {
+    if(m_current_body->scope and m_current_body->parent != m_init_callback and !node.to_be_declared->is_global) {
+        node.to_be_declared->is_local = true;
+    }
+
+    node.to_be_declared->accept(*this);
+    if(node.assignee) node.assignee->accept(*this);
+}
+
 void ASTVariableChecking::visit(NodeArrayRef& node) {
 	if(node.index) node.index->accept(*this);
 
-	auto compile_error = CompileError(ErrorType::Variable, "","", node.tok);
 	auto node_declaration = m_def_provider->get_declaration(&node);
-	if(!node_declaration) {
-		compile_error.m_message = "<Array> has not been declared: " + node.name;
-		compile_error.m_expected = "Valid declaration";
-		compile_error.m_got = node.name;
-		compile_error.exit();
-	}
+	if(!node_declaration) throw_declaration_error(&node).exit();
 
     node.match_data_structure(node_declaration);
 }
@@ -108,23 +95,17 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 void ASTVariableChecking::visit(NodeArray& node) {
 	if(node.size) node.size->accept(*this);
 
-    m_def_provider->set_declaration(&node, m_is_init_callback);
+    m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
 }
 
 void ASTVariableChecking::visit(NodeVariableRef& node) {
 	// handle return_vars -> do not check if they have been declared
-	if(node.is_compiler_return or node.is_local) {
-		return;
-	}
+//	if(node.is_compiler_return or node.is_local) {
+//		return;
+//	}
 
-	auto compile_error = CompileError(ErrorType::Variable, "","", node.tok);
 	auto node_declaration = m_def_provider->get_declaration(&node);
-	if(!node_declaration) {
-		compile_error.m_message = "<Variable> has not been declared: " + node.name;
-		compile_error.m_expected = "Valid declaration";
-		compile_error.m_got = node.name;
-		compile_error.exit();
-	}
+	if(!node_declaration) throw_declaration_error(&node).exit();
 
     node.match_data_structure(node_declaration);
 
@@ -139,11 +120,11 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 
 void ASTVariableChecking::visit(NodeVariable& node) {
     // handle return_vars -> do not check if they have been declared
-    if(node.is_compiler_return or node.is_local) {
-        node.is_used = true;
-        return;
-    }
-    m_def_provider->set_declaration(&node, m_is_init_callback);
+//    if(node.is_compiler_return or node.is_local) {
+//        node.is_used = true;
+//        return;
+//    }
+    m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
 }
 
 void ASTVariableChecking::visit(NodeFunctionCall &node) {
@@ -157,4 +138,22 @@ void ASTVariableChecking::visit(NodeFunctionCall &node) {
 		}
 	}
 }
+
+
+std::unique_ptr<NodeBody> ASTVariableChecking::declare_compiler_variables() {
+    Token tok = Token(token::KEYWORD, "compiler_variable", 0, 0,"");
+    auto node_body = std::make_unique<NodeBody>(tok);
+    for(auto & var_name: m_compiler_variables) {
+        auto node_variable = std::make_unique<NodeVariable>(std::nullopt, var_name.first, DataType::Mutable, tok);
+        node_variable->type = var_name.second;
+        node_variable->is_engine = true;
+        node_variable->is_global = true;
+        auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), nullptr, tok);
+//        node_var_declaration->to_be_declared->parent = node_var_declaration.get();
+//        node_var_declaration->accept(*this);
+        node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_var_declaration), tok));
+    }
+    return node_body;
+}
+
 

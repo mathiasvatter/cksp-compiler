@@ -6,7 +6,7 @@
 
 ASTDesugar::ASTDesugar(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {
     m_local_declare_statements = std::make_unique<NodeBody>(Token());
-    m_compiler_variable_declare_statements = std::make_unique<NodeBody>(Token());
+//    m_compiler_variable_declare_statements = std::make_unique<NodeBody>(Token());
 }
 
 void ASTDesugar::visit(NodeProgram& node) {
@@ -17,12 +17,12 @@ void ASTDesugar::visit(NodeProgram& node) {
 
     m_function_definitions = std::move(node.function_definitions);
 	m_init_callback = node.callbacks[0].get();
-    declare_dummy_return_variable();
+    declare_dummy_variables();
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }
     // declare after callback visiting because of size of m_local_variables
-    declare_compiler_variables();
+    declare_local_var_arrays();
 	evaluating_functions = true;
     for(auto & function : m_function_definitions) {
         if(function->is_used and function->header->args->params.empty() and !function->return_variable.has_value()) {
@@ -34,8 +34,8 @@ void ASTDesugar::visit(NodeProgram& node) {
 	evaluating_functions = false;
 
     // add local variables from function bodies to beginning of m_init_callback
-    m_compiler_variable_declare_statements->set_child_parents();
-    m_init_callback->statements->prepend_body(std::move(m_compiler_variable_declare_statements));
+//    m_compiler_variable_declare_statements->set_child_parents();
+//    m_init_callback->statements->prepend_body(std::move(m_compiler_variable_declare_statements));
     m_local_declare_statements->set_child_parents();
     m_init_callback->statements->prepend_body(std::move(m_local_declare_statements));
 }
@@ -591,32 +591,8 @@ void ASTDesugar::visit(NodeUIControl &node) {
 	node.parent->replace_with(std::move(node_body));
 }
 
-
-
-void ASTDesugar::declare_compiler_variables() {
-//    m_current_callback = m_init_callback;
+void ASTDesugar::declare_local_var_arrays() {
     Token tok = Token(token::KEYWORD, "compiler_variable", 0, 0,"");
-    for(auto & var_name: m_compiler_variables) {
-        auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name.first, DataType::Mutable, tok);
-        node_variable->type = var_name.second;
-        node_variable->is_engine = true;
-        node_variable->is_global = true;
-        auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), nullptr, tok);
-        node_var_declaration->to_be_declared->parent = node_var_declaration.get();
-        node_var_declaration->accept(*this);
-		m_compiler_variable_declare_statements->statements.push_back(std::make_unique<NodeStatement>(std::move(node_var_declaration), tok));
-    }
-//    for(auto &arr_name : m_return_arrays) {
-//        auto node_array = make_array(arr_name.second, m_current_callback_idx, tok, m_init_callback);
-//        node_array -> type = arr_name.first;
-//        node_array-> is_used = true;
-//        node_array->is_builtin = true;
-//        node_array->is_global = true;
-//        auto node_arr_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), nullptr, tok);
-//        node_arr_declaration->to_be_declared->parent = node_arr_declaration.get();
-//        node_arr_declaration->accept(*this);
-//        m_local_declare_statements.push_back(statement_wrapper(std::move(node_arr_declaration), m_init_callback->statements.get()));
-//    }
     for(auto &arr_name : m_local_var_arrays) {
         auto node_array = make_array(arr_name.second, std::max(1,(int)m_local_variables.size()), tok, m_init_callback);
         node_array -> type = arr_name.first;
@@ -630,7 +606,7 @@ void ASTDesugar::declare_compiler_variables() {
     }
 }
 
-void ASTDesugar::declare_dummy_return_variable() {
+void ASTDesugar::declare_dummy_variables() {
     m_current_callback = m_init_callback;
     Token tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
     std::string dummy_name = "_return_dummy";

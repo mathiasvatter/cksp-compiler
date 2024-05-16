@@ -4,6 +4,24 @@
 
 #include "ASTOptimizations.h"
 
+ASTOptimizations::ASTOptimizations(std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> m_function_inlines) : m_function_inlines(std::move(m_function_inlines)) {}
+
+void ASTOptimizations::visit(NodeStatement& node) {
+    if(!node.function_inlines.empty()) {
+        auto node_body = std::make_unique<NodeBody>(node.function_inlines[0]->tok);
+        node_body->parent = &node;
+        for(auto & func : node.function_inlines) {
+            auto it = m_function_inlines.find(func);
+            node_body->statements.push_back(std::move(it->second));
+        }
+        node_body->statements.push_back(statement_wrapper(std::move(node.statement), &node));
+        node_body->accept(*this);
+        node.statement = std::move(node_body);
+    } else {
+        node.statement->accept(*this);
+    }
+}
+
 void ASTOptimizations::visit(NodeBinaryExpr& node) {
 	node.accept(constant_folding);
 }
