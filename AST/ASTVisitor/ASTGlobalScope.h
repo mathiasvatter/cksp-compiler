@@ -5,13 +5,16 @@
 #pragma once
 
 #include "ASTVisitor.h"
+#include "../../misc/Gensym.h"
 
 class ASTGlobalScope : public ASTVisitor {
 public:
 	explicit ASTGlobalScope(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {}
 
 	void inline visit(NodeProgram& node) override {
+		m_def_provider->refresh_scopes();
 		m_program = &node;
+		m_init_callback = node.callbacks[0].get();
 		for(auto & def : node.function_definitions) {
 			m_function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
 		}
@@ -21,8 +24,29 @@ public:
 
 	}
 
+	void inline visit(NodeCallback& node) {
+		if(&node == m_init_callback) m_is_init_callback = true;
+
+		if(node.callback_id) node.callback_id->accept(*this);
+		node.statements->accept(*this);
+
+		m_is_init_callback = false;
+	}
+
+	void inline visit(NodeBody &node) {
+		m_current_body = &node;
+		if(node.scope) m_def_provider->add_scope();
+		for(auto & stmt : node.statements) {
+			stmt->accept(*this);
+		}
+		if(node.scope) {
+			auto passive_vars = m_def_provider->remove_scope();
+			add_passive_vars(passive_vars);
+		}
+	}
+
 	void inline visit(NodeFunctionCall& node) override {
-		if(!node.definition) {
+		if(!node.definition and !node.function->is_builtin) {
 			if (auto function_def = get_function_definition(node.function.get())) {
 				node.definition = function_def;
 				m_current_function = function_def;
@@ -32,16 +56,6 @@ public:
 				node.function->arg_ast_types = builtin_func->arg_ast_types;
 				node.function->arg_var_types = builtin_func->arg_var_types;
 				node.function->is_builtin = builtin_func->is_builtin;
-
-				if(m_restricted_builtin_functions.find(builtin_func->name) != m_restricted_builtin_functions.end()) {
-					if(!contains(RESTRICTED_CALLBACKS, remove_substring(m_current_callback->begin_callback, "on "))) {
-						CompileError(ErrorType::SyntaxError,"<"+builtin_func->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks.", node.tok.line, "", "<"+m_current_callback->begin_callback+">", node.tok.file).print();
-					} else {
-						if(m_current_function)
-							if(m_current_function->call.find(&node) != m_current_function->call.end())
-								CompileError(ErrorType::SyntaxError,"<"+builtin_func->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks. Not in a called function.", node.tok.line, "", "<"+m_current_function->header->name+"> in <"+m_current_callback->begin_callback+">", node.tok.file).print();
-					}
-				}
 			} else {
 				CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).exit();
 			}
@@ -49,15 +63,74 @@ public:
 		node.definition->accept(*this);
 	}
 
+	void inline visit(NodeSingleDeclareStatement& node) {
+		if(m_current_body->scope and m_current_body->parent != m_init_callback) {
+			node.to_be_declared->is_local = true;
+		}
+		node.to_be_declared->accept(*this);
+		if(node.assignee) node.assignee->accept(*this);
+	}
+
+	void inline visit(NodeArrayRef& node) {
+		if(node.index) node.index->accept(*this);
+
+		auto node_declaration = m_def_provider->get_declaration(&node);
+		if(!node_declaration) throw_declaration_error(&node).exit();
+
+		node.match_data_structure(node_declaration);
+		node.name = node_declaration->name;
+	}
+
+	void inline visit(NodeArray& node) {
+		if(node.size) node.size->accept(*this);
+
+		m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
+
+	}
+
+	void inline visit(NodeVariableRef& node) {
+		auto node_declaration = m_def_provider->get_declaration(&node);
+		if(!node_declaration) throw_declaration_error(&node).exit();
+
+		node.match_data_structure(node_declaration);
+		node.name = node_declaration->name;
+
+		// replace variable with array if incorrectly recognized by parser
+		if(node_declaration->get_node_type() == NodeType::Array) {
+			auto node_array = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
+			node_array->accept(*this);
+			node.replace_with(std::move(node_array));
+			return;
+		}
+	}
+
+	void inline visit(NodeVariable& node) {
+		m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
+
+	}
+
 private:
+	std::string loc_var_prefix = "loc_";
+	Gensym m_gensym;
 	DefinitionProvider* m_def_provider = nullptr;
 	NodeProgram* m_program = nullptr;
+	NodeCallback* m_init_callback = nullptr;
+	NodeBody* m_current_body = nullptr;
+	bool m_is_init_callback = false;
 	NodeFunctionDefinition* m_current_function = nullptr;
 
-	std::stack<std::unique_ptr<NodeDataStructure>> m_passive_vars;
+	std::vector<NodeDataStructure*> m_passive_vars;
+	int m_passive_var_idx = 0;
+	std::vector<NodeDataStructure*> m_all_data_structures;
+	std::vector<NodeReference*> m_all_references;
 
 	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> m_function_lookup;
 
+	inline void add_passive_vars(const std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual>& map2) {
+		for(auto & var : map2) {
+			m_passive_vars.push_back(var.second);
+		}
+	};
 
 	inline NodeFunctionDefinition* get_function_definition(NodeFunctionHeader *function_header) {
 		auto it = m_function_lookup.find({function_header->name, (int)function_header->args->params.size()});
@@ -66,5 +139,34 @@ private:
 			return it->second;
 		}
 		return nullptr;
+	};
+
+	static inline CompileError throw_declaration_error(NodeReference* node) {
+		auto compile_error = CompileError(ErrorType::Variable, "","", node->tok);
+		std::string type = "<Variable>";
+		if(node->get_node_type() == NodeType::Array) type = "<Array>";
+		compile_error.m_message = type+" has not been declared: " + node->name+".";
+		compile_error.m_expected = "Valid declaration";
+		compile_error.m_got = node->name;
+		return compile_error;
+	};
+
+	static inline CompileError throw_declaration_type_error(NodeReference* node) {
+		auto compile_error = CompileError(ErrorType::Variable, "","", node->tok);
+		if(!node->declaration) throw_declaration_error(node).exit();
+		if(node->declaration->get_node_type() == NodeType::Array && node->get_node_type() == NodeType::Variable) {
+			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Array>: " + node->name+".";
+			compile_error.m_expected = "<Array>";
+			compile_error.m_got = "<Variable>";
+			compile_error.exit();
+		}
+		if(node->declaration->get_node_type() == NodeType::Variable && node->get_node_type() == NodeType::Array) {
+			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Variable>: " + node->name+".";
+			compile_error.m_expected = "<Variable>";
+			compile_error.m_got = "<Array>";
+			compile_error.exit();
+		}
+		return compile_error;
 	}
+
 };

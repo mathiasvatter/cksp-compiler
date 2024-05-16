@@ -105,7 +105,7 @@ private:
 			// do not wrap in get_ui_id when it is a ui_control array
             auto node_declaration = m_def_provider->get_declaration(node_reference);
             if(node_declaration) {
-                m_def_provider->match_data_structure(node_reference, node_declaration);
+                node_reference->match_data_structure(node_declaration);
             }
 
 			if(node_reference->data_type != DataType::UI_Control) {

@@ -547,6 +547,9 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
     auto node_callback = std::make_unique<NodeCallback>(get_tok());
     auto node_body = std::make_unique<NodeBody>(get_tok());
     std::string begin_callback = consume().val;
+	if(begin_callback == "on init") {
+		m_init_callback_idx = m_callbacks.size();
+	}
     std::unique_ptr<NodeAST> callback_id;
     if(begin_callback == "on ui_control") {
         if (peek().type != token::OPEN_PARENTH) {
@@ -596,22 +599,22 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
 }
 
 Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
-    std::vector<std::unique_ptr<NodeCallback>> callbacks;
     auto node_program = std::make_unique<NodeProgram>(get_tok());
+	int init_callback_idx = 0;
     while (peek().type != token::END_TOKEN) {
         _skip_linebreaks();
         if (peek().type == token::BEGIN_CALLBACK) {
             auto callback = parse_callback(node_program.get());
             if (callback.is_error())
                 return Result<std::unique_ptr<NodeProgram>>(callback.get_error());
-			callbacks.push_back(std::move(callback.unwrap()));
+			m_callbacks.push_back(std::move(callback.unwrap()));
         } else if (peek().type == token::FUNCTION) {
             auto function = parse_function_definition(node_program.get());
             if (function.is_error())
                 return Result<std::unique_ptr<NodeProgram>>(function.get_error());
             auto node_function = std::move(function.unwrap());
             auto hash_value = StringIntKey{node_function->header->name, (int)node_function->header->args->params.size()};
-            auto it = m_function_definitions.find({node_function->header->name, (int)node_function->header->args->params.size()});
+            auto it = m_function_definitions.find(hash_value);
             // if function already defined
             if(it != m_function_definitions.end()) {
                 if(node_function->override) {
@@ -633,7 +636,8 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
             return Result<std::unique_ptr<NodeProgram>>(l.get_error());
         _skip_linebreaks();
     }
-    node_program->callbacks = std::move(callbacks);
+    node_program->callbacks = std::move(m_callbacks);
+	if(m_init_callback_idx != -1) node_program->init_callback = node_program->callbacks[m_init_callback_idx].get();
     for(auto & func_def : m_function_definitions) {
         node_program->function_definitions.push_back(std::move(func_def.second));
     }

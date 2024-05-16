@@ -78,29 +78,6 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 }
 
 
-//void DefinitionProvider::match_data_structure(NodeDataStructure* reference, NodeDataStructure* declaration) {
-//    // mark is used
-//    reference->is_used = true;
-//	declaration->is_used = true;
-//    reference->is_engine = declaration-> is_engine;
-//    reference->persistence = declaration->persistence;
-//    reference->is_local = declaration->is_local;
-//    reference->is_global = declaration->is_global;
-//    reference->is_compiler_return = declaration->is_compiler_return;
-//	reference->type = declaration->type;
-//	reference->data_type = declaration->data_type;
-//}
-
-void DefinitionProvider::match_data_structure(NodeReference* reference, NodeDataStructure* declaration) {
-    // get declaration to declaration
-    reference->declaration = declaration;
-    declaration->is_used = true;
-    reference->is_engine = declaration-> is_engine;
-    reference->type = declaration->type;
-	reference->data_type = declaration->data_type;
-}
-
-
 NodeVariable* DefinitionProvider::get_builtin_variable(const std::string& var) {
     auto it = builtin_variables.find(var);
     if(it != builtin_variables.end()) {
@@ -172,12 +149,12 @@ NodeArray *DefinitionProvider::get_declared_array(const std::string& arr) {
 }
 
 NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::string& data) {
-    std::string var_without_identifier = data;
-    if (data[0] == '_' && data[1] != '_') {
-        var_without_identifier = var_without_identifier.erase(0,1);
-    } else if (data.ends_with(".raw")) {
-        var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
-    }
+//    std::string var_without_identifier = data;
+//    if (data[0] == '_' && data[1] != '_') {
+//        var_without_identifier = var_without_identifier.erase(0,1);
+//    } else if (data.ends_with(".raw")) {
+//        var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
+//    }
     for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
         auto it = rit->find(data);
         if (it != rit->end()) {
@@ -188,12 +165,12 @@ NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::st
 }
 
 NodeDataStructure *DefinitionProvider::get_scoped_data_structure(const std::string& data) {
-	std::string var_without_identifier = data;
-	if (data[0] == '_' && data[1] != '_') {
-		var_without_identifier = var_without_identifier.erase(0,1);
-	} else if (data.ends_with(".raw")) {
-		var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
-	}
+//	std::string var_without_identifier = data;
+//	if (data[0] == '_' && data[1] != '_') {
+//		var_without_identifier = var_without_identifier.erase(0,1);
+//	} else if (data.ends_with(".raw")) {
+//		var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
+//	}
 	auto it = m_declared_data_structures.back().find(data);
 	if (it != m_declared_data_structures.back().end()) {
 		return it->second;
@@ -223,22 +200,19 @@ NodeUIControl *DefinitionProvider::get_declared_control(NodeUIControl *ctr) {
 }
 
 bool DefinitionProvider::add_scope() {
-    m_declared_variables.emplace_back();
-    m_declared_arrays.emplace_back();
-    m_declared_controls.emplace_back();
     m_declared_data_structures.emplace_back();
     return true;
 }
 
-bool DefinitionProvider::remove_scope() {
-    if(m_declared_data_structures.empty() || m_declared_variables.empty() || m_declared_arrays.empty() || m_declared_controls.empty()) {
-        return false;
-    }
-    m_declared_variables.pop_back();
-    m_declared_arrays.pop_back();
-    m_declared_controls.pop_back();
+std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual> DefinitionProvider::remove_scope() {
+	auto compile_error = CompileError(ErrorType::SyntaxError, "",-1, "","","");
+    if(m_declared_data_structures.empty()) {
+		compile_error.m_message = "Tried to remove global scope.";
+		compile_error.exit();
+	}
+	auto passive_scope = m_declared_data_structures.back();
     m_declared_data_structures.pop_back();
-    return true;
+    return passive_scope;
 }
 
 bool DefinitionProvider::refresh_scopes() {

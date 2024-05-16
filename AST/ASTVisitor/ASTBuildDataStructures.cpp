@@ -64,7 +64,7 @@ void ASTBuildDataStructures::visit(NodeArrayRef &node) {
     // maybe declaration comes after lowering, do not throw error
     if(!node_declaration) return;
 
-    m_def_provider->match_data_structure(&node, node_declaration);
+    node.match_data_structure(node_declaration);
     // check if it is NodeListStructRef
     if(node_declaration->get_node_type() == NodeType::ListStructRef) {
         std::unique_ptr<NodeParamList> indexes = std::make_unique<NodeParamList>(node.tok);
@@ -92,7 +92,7 @@ void ASTBuildDataStructures::visit(NodeNDArrayRef& node) {
         return;
     }
 
-    m_def_provider->match_data_structure(&node, node_declaration);
+   	node.match_data_structure(node_declaration);
     // check if it is NodeListStructRef
     if(node_declaration->get_node_type() == NodeType::ListStruct) {
         auto node_list_reference = std::make_unique<NodeListStructRef>(node.name, std::move(node.indexes), node.tok);
@@ -139,7 +139,7 @@ void ASTBuildDataStructures::visit(NodeVariableRef &node) {
         return;
     }
 
-    m_def_provider->match_data_structure(&node, node_declaration);
+	node.match_data_structure(node_declaration);
     // replace variable with array if incorrectly recognized by parser
     if(node_declaration->get_node_type() == NodeType::Array) {
         auto node_array = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);

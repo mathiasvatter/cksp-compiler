@@ -80,6 +80,7 @@ struct NodeReference : NodeAST {
     std::string get_string() override {
         return name;
     }
+	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(NodeDataStructure* data_structure);
 };
 
@@ -805,6 +806,7 @@ struct NodeFunctionHeader: NodeAST {
         tok.line = token.line; tok.file = token.file;
         args -> update_token_data(token);
     }
+
 };
 
 struct NodeFunctionDefinition: NodeAST {
@@ -874,6 +876,7 @@ struct NodeFunctionCall : NodeAST {
 };
 
 struct NodeProgram : NodeAST {
+	NodeCallback* init_callback = nullptr;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
     inline explicit NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {}
