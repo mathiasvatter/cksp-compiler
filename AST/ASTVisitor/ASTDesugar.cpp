@@ -38,6 +38,9 @@ void ASTDesugar::visit(NodeProgram& node) {
 //    m_init_callback->statements->prepend_body(std::move(m_compiler_variable_declare_statements));
     m_local_declare_statements->set_child_parents();
     m_init_callback->statements->prepend_body(std::move(m_local_declare_statements));
+
+    ASTFunctionInlining function_inlining(std::move(m_function_inlines));
+    node.accept(function_inlining);
 }
 
 void ASTDesugar::visit(NodeCallback& node) {

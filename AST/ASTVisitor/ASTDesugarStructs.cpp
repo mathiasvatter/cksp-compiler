@@ -12,6 +12,8 @@ void ASTDesugarStructs::visit(NodeProgram& node) {
     for(auto & function_definition : node.function_definitions) {
         function_definition->accept(*this);
     }
+    m_program->init_callback->statements->prepend_body(declare_compiler_variables());
+    m_program->init_callback->statements->prepend_body(std::move(m_global_variable_declarations));
 }
 
 void ASTDesugarStructs::visit(NodeBody& node) {
@@ -27,6 +29,24 @@ void ASTDesugarStructs::visit(NodeDeclareStatement& node) {
         node.accept(*desugaring);
         desugaring->replacement_node->accept(*this);
         node.replace_with(std::move(desugaring->replacement_node));
+    }
+}
+
+void ASTDesugarStructs::visit(NodeSingleDeclareStatement& node) {
+    node.to_be_declared->accept(*this);
+    if(node.assignee) node.assignee->accept(*this);
+
+    if(node.to_be_declared->is_global) {
+        m_global_variable_declarations->statements.push_back(std::make_unique<NodeStatement>(node.clone(), node.tok));
+        if(node.assignee) {
+            auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(
+                    std::move(node.to_be_declared),
+                    std::move(node.assignee), node.tok
+                );
+            node.replace_with(std::move(node_assign_statement));
+        } else {
+            node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+        }
     }
 }
 
@@ -84,4 +104,20 @@ void ASTDesugarStructs::visit(NodeParamList &node) {
 			node_param_list->set_child_parents();
 		}
 	}
+}
+
+std::unique_ptr<NodeBody> ASTDesugarStructs::declare_compiler_variables() {
+    Token tok = Token(token::KEYWORD, "compiler_variable", 0, 0,"");
+    auto node_body = std::make_unique<NodeBody>(tok);
+    for(auto & var_name: m_compiler_variables) {
+        auto node_variable = std::make_unique<NodeVariable>(std::nullopt, var_name.first, DataType::Mutable, tok);
+        node_variable->type = var_name.second;
+        node_variable->is_engine = true;
+        node_variable->is_global = true;
+        auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), nullptr, tok);
+//        node_var_declaration->to_be_declared->parent = node_var_declaration.get();
+//        node_var_declaration->accept(*this);
+        node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_var_declaration), tok));
+    }
+    return node_body;
 }

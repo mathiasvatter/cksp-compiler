@@ -8,7 +8,9 @@ ASTVariableChecking::ASTVariableChecking(DefinitionProvider* definition_provider
 
 void ASTVariableChecking::visit(NodeProgram& node) {
 	m_init_callback = node.callbacks[0].get();
-    m_init_callback->statements->prepend_body(declare_compiler_variables());
+    for(auto & def : node.function_definitions) {
+        m_function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
+    }
 	// erase all previously saved scopes
 	m_def_provider->refresh_scopes();
 	for(auto & callback : node.callbacks) {
@@ -105,7 +107,8 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 //	}
 
 	auto node_declaration = m_def_provider->get_declaration(&node);
-	if(!node_declaration) throw_declaration_error(&node).exit();
+	if(!node_declaration)
+        throw_declaration_error(&node).exit();
 
     node.match_data_structure(node_declaration);
 
@@ -119,6 +122,9 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 }
 
 void ASTVariableChecking::visit(NodeVariable& node) {
+    if(node.name == "btn_chord_page_enter") {
+
+    }
     // handle return_vars -> do not check if they have been declared
 //    if(node.is_compiler_return or node.is_local) {
 //        node.is_used = true;
@@ -129,31 +135,40 @@ void ASTVariableChecking::visit(NodeVariable& node) {
 
 void ASTVariableChecking::visit(NodeFunctionCall &node) {
 	node.function->accept(*this);
-	// replace node variable when in get_ui_id and not ui_control
-	if(!node.function->args->params.empty() and node.function->name == "get_ui_id") {
-		if(auto node_variable = cast_node<NodeVariable>(node.function->args->params[0].get())) {
-			if(node_variable->data_type != DataType::UI_Control) {
-				node.replace_with(std::move(node.function->args->params[0]));
-			}
-		}
-	}
+
+//    if(!node.definition and !node.function->is_builtin) {
+//        if (auto function_def = get_function_definition(node.function.get())) {
+//            node.definition = function_def;
+//		    node.definition->accept(*this);
+//        } else if (auto builtin_func = m_def_provider->get_builtin_function(node.function.get())) {
+//            node.function->type = builtin_func->type;
+//            node.function->has_forced_parenth = builtin_func->has_forced_parenth;
+//            node.function->arg_ast_types = builtin_func->arg_ast_types;
+//            node.function->arg_var_types = builtin_func->arg_var_types;
+//            node.function->is_builtin = builtin_func->is_builtin;
+//
+//        } else {
+//            CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).exit();
+//        }
+//    }
+
+    // replace node variable when in get_ui_id and not ui_control
+    if(node.function->is_builtin and !node.function->args->params.empty() and node.function->name == "get_ui_id") {
+        if(auto node_variable = cast_node<NodeVariableRef>(node.function->args->params[0].get())) {
+            if(node_variable->data_type != DataType::UI_Control) {
+                node.replace_with(std::move(node.function->args->params[0]));
+            }
+        }
+    }
 }
 
-
-std::unique_ptr<NodeBody> ASTVariableChecking::declare_compiler_variables() {
-    Token tok = Token(token::KEYWORD, "compiler_variable", 0, 0,"");
-    auto node_body = std::make_unique<NodeBody>(tok);
-    for(auto & var_name: m_compiler_variables) {
-        auto node_variable = std::make_unique<NodeVariable>(std::nullopt, var_name.first, DataType::Mutable, tok);
-        node_variable->type = var_name.second;
-        node_variable->is_engine = true;
-        node_variable->is_global = true;
-        auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), nullptr, tok);
-//        node_var_declaration->to_be_declared->parent = node_var_declaration.get();
-//        node_var_declaration->accept(*this);
-        node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_var_declaration), tok));
-    }
-    return node_body;
+void ASTVariableChecking::visit(NodeFunctionDefinition &node) {
+    m_def_provider->add_scope();
+    node.header ->accept(*this);
+    if (node.return_variable.has_value())
+        node.return_variable.value()->accept(*this);
+    node.body->accept(*this);
+    m_def_provider->remove_scope();
 }
 
 
