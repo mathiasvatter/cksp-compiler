@@ -64,6 +64,8 @@ public:
 	std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual> remove_scope();
 	/// removes all scopes and initializes again
 	bool refresh_scopes();
+    /// removes variable from current scope by their name value
+    NodeDataStructure* remove_from_current_scope(const std::string& name);
 
 	/// returns the definition of a data structure, if it exists. If datastructure itself is
 	/// definition -> return nullptr. If datastructure is reference -> return declaration. If global_scope is true,

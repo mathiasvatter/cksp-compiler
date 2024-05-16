@@ -41,7 +41,10 @@ public:
 		}
 		if(node.scope) {
 			auto passive_vars = m_def_provider->remove_scope();
+            // add free memory vars which dynamic extent has ended to passive_vars vector
 			add_passive_vars(passive_vars);
+            // set back passive_var index since scope has ended
+            m_passive_var_idx = 0;
 		}
 	}
 
@@ -60,15 +63,17 @@ public:
 				CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).exit();
 			}
 		}
-		node.definition->accept(*this);
+//		node.definition->accept(*this);
 	}
 
 	void inline visit(NodeSingleDeclareStatement& node) {
 		if(m_current_body->scope and m_current_body->parent != m_init_callback) {
 			node.to_be_declared->is_local = true;
 		}
+
 		node.to_be_declared->accept(*this);
 		if(node.assignee) node.assignee->accept(*this);
+
 	}
 
 	void inline visit(NodeArrayRef& node) {
@@ -85,7 +90,6 @@ public:
 		if(node.size) node.size->accept(*this);
 
 		m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
-
 	}
 
 	void inline visit(NodeVariableRef& node) {
@@ -107,6 +111,14 @@ public:
 	void inline visit(NodeVariable& node) {
 		m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
 
+        if(node.is_local) {
+            if(auto free_passive_var = get_free_passive_var()) {
+                m_passive_vars_replace.insert({&node, free_passive_var});
+                m_def_provider->remove_from_current_scope(node.name);
+                node.name = free_passive_var->name;
+                return;
+            }
+        }
 	}
 
 private:
@@ -119,18 +131,55 @@ private:
 	bool m_is_init_callback = false;
 	NodeFunctionDefinition* m_current_function = nullptr;
 
+    /// vector for all variables which dynamic extend has ended
 	std::vector<NodeDataStructure*> m_passive_vars;
-	int m_passive_var_idx = 0;
-	std::vector<NodeDataStructure*> m_all_data_structures;
-	std::vector<NodeReference*> m_all_references;
-
-	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> m_function_lookup;
-
 	inline void add_passive_vars(const std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual>& map2) {
 		for(auto & var : map2) {
 			m_passive_vars.push_back(var.second);
 		}
 	};
+	int m_passive_var_idx = 0;
+    /// get next free passive_var
+    inline NodeDataStructure* get_free_passive_var() {
+        if(m_passive_var_idx < m_passive_vars.size()) {
+            return m_passive_vars[m_passive_var_idx++];
+        }
+        return nullptr;
+    }
+    /// search for new declaration to reference if declaration is replaced by passive_var
+    inline NodeDataStructure* get_new_declaration(NodeReference *node) {
+        if(!node->declaration) throw_declaration_error(node).exit();
+        auto it = m_passive_vars_replace.find(node->declaration);
+        if(it != m_passive_vars_replace.end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
+    /// map for old datastructures (as keys) that get replaced by new datastructures (passive_vars) (as values)
+    std::unordered_map<NodeDataStructure*, NodeDataStructure*> m_passive_vars_replace;
+	std::vector<NodeDataStructure*> m_all_data_structures;
+	std::vector<NodeReference*> m_all_references;
+
+    /// method for replacing local variable declarations with passive_var references in assignment
+    void inline replace_declaration_with_passive_var(NodeSingleDeclareStatement* node, NodeDataStructure* free_passive_var) {
+        // change declare statement to assign statement and replace declaration with reference to passive_var
+        auto passive_var_ref = free_passive_var->to_reference();
+        std::unique_ptr<NodeAST> node_assignee = nullptr;
+        if(!node->assignee) {
+            node_assignee = std::make_unique<NodeInt>(0, node->tok);
+        } else {
+            node_assignee = std::move(node->assignee);
+        }
+        auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(
+                std::move(passive_var_ref),
+                std::move(node_assignee),
+                node->tok
+        );
+        node->replace_with(std::move(node_assign_statement));
+    };
+
+	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> m_function_lookup;
+
 
 	inline NodeFunctionDefinition* get_function_definition(NodeFunctionHeader *function_header) {
 		auto it = m_function_lookup.find({function_header->name, (int)function_header->args->params.size()});

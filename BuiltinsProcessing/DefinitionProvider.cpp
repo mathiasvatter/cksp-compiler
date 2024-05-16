@@ -34,6 +34,46 @@ DefinitionProvider::DefinitionProvider() {
 	}
 }
 
+bool DefinitionProvider::add_scope() {
+    m_declared_data_structures.emplace_back();
+    return true;
+}
+
+std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual> DefinitionProvider::remove_scope() {
+    auto compile_error = CompileError(ErrorType::SyntaxError, "",-1, "","","");
+    if(m_declared_data_structures.empty()) {
+        compile_error.m_message = "Tried to remove global scope.";
+        compile_error.exit();
+    }
+    auto passive_scope = m_declared_data_structures.back();
+    m_declared_data_structures.pop_back();
+    return passive_scope;
+}
+
+bool DefinitionProvider::refresh_scopes() {
+    m_declared_variables.clear();
+    m_declared_arrays.clear();
+    m_declared_controls.clear();
+    m_declared_data_structures.clear();
+    // add global scope
+    add_scope();
+    for(auto& var : external_variables) {
+        m_declared_data_structures.back().insert({var->name, var.get()});
+    }
+    return true;
+}
+
+NodeDataStructure* DefinitionProvider::remove_from_current_scope(const std::string& name) {
+    auto it = m_declared_data_structures.back().find(name);
+    if(it != m_declared_data_structures.back().end()) {
+        auto var = it->second;
+        m_declared_data_structures.back().erase(it);
+        return var;
+    }
+    return nullptr;
+}
+
+
 NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 	// get builtin declaration if it exists
 	NodeDataStructure *node_builtin_declaration = nullptr;
@@ -197,35 +237,6 @@ NodeUIControl *DefinitionProvider::get_declared_control(NodeUIControl *ctr) {
         return nullptr;
     }
     return nullptr;
-}
-
-bool DefinitionProvider::add_scope() {
-    m_declared_data_structures.emplace_back();
-    return true;
-}
-
-std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual> DefinitionProvider::remove_scope() {
-	auto compile_error = CompileError(ErrorType::SyntaxError, "",-1, "","","");
-    if(m_declared_data_structures.empty()) {
-		compile_error.m_message = "Tried to remove global scope.";
-		compile_error.exit();
-	}
-	auto passive_scope = m_declared_data_structures.back();
-    m_declared_data_structures.pop_back();
-    return passive_scope;
-}
-
-bool DefinitionProvider::refresh_scopes() {
-	m_declared_variables.clear();
-	m_declared_arrays.clear();
-	m_declared_controls.clear();
-	m_declared_data_structures.clear();
-	// add global scope
-	add_scope();
-	for(auto& var : external_variables) {
-		m_declared_data_structures.back().insert({var->name, var.get()});
-	}
-	return true;
 }
 
 void DefinitionProvider::set_external_variables(std::vector<std::unique_ptr<NodeDataStructure>> external_variables) {
