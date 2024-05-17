@@ -107,9 +107,6 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 		return;
 	}
 
-	if(node.name == "sli_comp_threshold") {
-
-	}
 
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration)
@@ -117,6 +114,9 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 
     node.match_data_structure(node_declaration);
 
+	if(node.name != node_declaration->name) {
+
+	}
 	// replace variable with array if incorrectly recognized by parser
 	if(node_declaration->get_node_type() == NodeType::Array) {
 		auto node_array = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
