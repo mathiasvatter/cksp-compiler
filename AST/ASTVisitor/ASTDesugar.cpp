@@ -59,26 +59,21 @@ void ASTDesugar::visit(NodeNDArray& node) {
 }
 
 void ASTDesugar::visit(NodeArrayRef& node) {
-//    if(node.size) node.size->accept(*this);
     if(node.index) node.index->accept(*this);
 
     // local variable substitution
-    if(!m_variable_scope_stack.empty()) {
-        if(auto substitute = get_local_variable_substitute(node.name)) {
-            node.name = substitute->name;
-            node.is_local = true;
-        }
-    }
+//    if(!m_variable_scope_stack.empty()) {
+//        if(auto substitute = get_local_variable_substitute(node.name)) {
+//            node.name = substitute->name;
+//            node.is_local = true;
+//        }
+//    }
     // function args substitution
     if(!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.name)) {
 			if (auto substitute_ref = cast_node<NodeReference>(substitute.get())) {
-				if(substitute_ref->node_type != NodeType::ArrayRef) {
-//					CompileError(ErrorType::SyntaxError, "Cannot substitute Array with Variable.", node.tok.line, "", "", node.tok.file).exit();
-				}
 				node.name = substitute_ref->name;
 			} else {
-//				substitute->update_parents(node.parent);
 				node.replace_with(std::move(substitute));
 				return;
 			}
@@ -122,29 +117,20 @@ void ASTDesugar::visit(NodeFunctionHeader& node) {
 void ASTDesugar::visit(NodeVariableRef& node) {
     // local variable substitution
     // do local variable substitution
-    if(!m_variable_scope_stack.empty()) {
-        if(auto substitute = get_local_variable_substitute(node.name)) {
-//            substitute->update_parents(node.parent);
-            if(substitute->type == ASTType::Unknown)
-                substitute->type = node.type;
-            node.replace_with(std::move(substitute));
-            return;
-        }
-    }
+//    if(!m_variable_scope_stack.empty()) {
+//        if(auto substitute = get_local_variable_substitute(node.name)) {
+//            if(substitute->type == ASTType::Unknown)
+//                substitute->type = node.type;
+//            node.replace_with(std::move(substitute));
+//            return;
+//        }
+//    }
 
 	// function args substitution
 	if(!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.name)) {
-//			if (auto substitute_ref = cast_node<NodeReference>(substitute.get())) {
-//				if (substitute_ref->node_type != NodeType::VariableRef) {
-//					CompileError(ErrorType::SyntaxError,"Cannot substitute Variable with Array.",node.tok.line,"","",node.tok.file).exit();
-//				}
-//				node.name = substitute_ref->name;
-//			} else {
-//				substitute->update_parents(node.parent);
-				node.replace_with(std::move(substitute));
-				return;
-//			}
+            node.replace_with(std::move(substitute));
+            return;
 		// for namespaces and methods
 		} else {
             auto namespaces = get_namespaces(node.name);
@@ -536,39 +522,34 @@ void ASTDesugar::visit(NodeBody& node) {
 }
 
 void ASTDesugar::visit(NodeUIControl &node) {
-//	auto engine_widget = m_def_provider->get_builtin_widget(node.ui_control_type);
-//	if(!engine_widget) {
-//		CompileError(ErrorType::SyntaxError, "Did not recognize engine widget.", node.tok.line, "valid widget type", node.ui_control_type, node.tok.file).exit();
-//	}
 
 	node.control_var->accept(*this);
 	node.params->accept(*this);
 
-//	auto node_widget_array = cast_node<NodeArray>(engine_widget->control_var.get());
-	// check if persistence
-	std::optional<Token> persistence;
-	auto node_array = cast_node<NodeArray>(node.control_var.get());
-	if(node_array) persistence = node_array->persistence;
-	auto node_variable = cast_node<NodeVariable>(node.control_var.get());
-	if(node_variable) persistence = node_variable->persistence;
-
-	// add make_persistent and read_persistent_var
-	auto node_body = std::make_unique<NodeBody>(node.tok);
-
-	if(persistence) {
-		add_vector_to_statement_list(node_body, add_read_functions(persistence.value(), node.control_var.get(), node_body.get()));
-	}
-	// split declare statement into declare + assign statement
-	auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement*>(node.parent->clone().release()));
-	if(node_declare_statement->assignee) {
-		auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(std::move(node.control_var), std::move(node_declare_statement->assignee), node.tok);
-		node_body->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_body.get()));
-	}
-	node_body->statements.insert(node_body->statements.begin(), statement_wrapper(std::move(node_declare_statement), node_body.get()));
-	node_body->update_parents(node.parent->parent);
-
-    m_current_node_replaced = node.parent;
-	node.parent->replace_with(std::move(node_body));
+//	// check if persistence
+//	std::optional<Token> persistence;
+//	auto node_array = cast_node<NodeArray>(node.control_var.get());
+//	if(node_array) persistence = node_array->persistence;
+//	auto node_variable = cast_node<NodeVariable>(node.control_var.get());
+//	if(node_variable) persistence = node_variable->persistence;
+//
+//	// add make_persistent and read_persistent_var
+//	auto node_body = std::make_unique<NodeBody>(node.tok);
+//
+//	if(persistence) {
+//		add_vector_to_statement_list(node_body, add_read_functions(persistence.value(), node.control_var.get(), node_body.get()));
+//	}
+//	// split declare statement into declare + assign statement
+//	auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement*>(node.parent->clone().release()));
+//	if(node_declare_statement->assignee) {
+//		auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(std::move(node.control_var), std::move(node_declare_statement->assignee), node.tok);
+//		node_body->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_body.get()));
+//	}
+//	node_body->statements.insert(node_body->statements.begin(), statement_wrapper(std::move(node_declare_statement), node_body.get()));
+//	node_body->update_parents(node.parent->parent);
+//
+//    m_current_node_replaced = node.parent;
+//	node.parent->replace_with(std::move(node_body));
 }
 
 void ASTDesugar::declare_local_var_arrays() {

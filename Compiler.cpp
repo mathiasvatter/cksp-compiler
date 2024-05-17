@@ -113,6 +113,7 @@ void Compiler::compile() {
     compile_time.stop("Function Inlining");
 	compile_time.start("Variable Checking 2");
 
+//    ASTVariableChecking variable_checking2(&m_definition_provider);
     ast->accept(variable_checking);
 
 	compile_time.stop("Variable Checking 2");
