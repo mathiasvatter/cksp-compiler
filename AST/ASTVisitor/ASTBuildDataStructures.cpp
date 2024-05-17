@@ -9,7 +9,7 @@ ASTBuildDataStructures::ASTBuildDataStructures(DefinitionProvider *definition_pr
 void ASTBuildDataStructures::visit(NodeProgram& node) {
     m_program = &node;
 	check_unique_callbacks(node);
-	m_init_callback = move_on_init_callback(node);
+	node.init_callback = move_on_init_callback(node);
 
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
@@ -20,7 +20,8 @@ void ASTBuildDataStructures::visit(NodeProgram& node) {
 }
 
 void ASTBuildDataStructures::visit(NodeCallback& node) {
-	if(&node == m_init_callback) m_is_init_callback = true;
+	m_current_callback = &node;
+	if(&node == m_program->init_callback) m_is_init_callback = true;
 
 	if(node.callback_id) node.callback_id->accept(*this);
 	node.statements->accept(*this);
@@ -53,7 +54,7 @@ void ASTBuildDataStructures::visit(NodeFunctionDefinition &node) {
 }
 
 void ASTBuildDataStructures::visit(NodeSingleDeclareStatement& node) {
-    if(m_current_body->scope and m_current_body->parent != m_init_callback and !node.to_be_declared->is_global) {
+    if(m_current_body->scope and m_current_callback != m_program->init_callback and !node.to_be_declared->is_global and node.to_be_declared->get_node_type() != NodeType::UIControl) {
         node.to_be_declared->is_local = true;
     }
 
@@ -174,8 +175,8 @@ void ASTBuildDataStructures::visit(NodeListStructRef& node) {
 
 NodeCallback* ASTBuildDataStructures::move_on_init_callback(NodeProgram& node) {
 	// Finden des ersten (und einzigen) on init Callbacks
-	auto it = std::find_if(node.callbacks.begin(), node.callbacks.end(), [](const std::unique_ptr<NodeCallback>& callback) {
-	  return callback->begin_callback == "on init";
+	auto it = std::find_if(node.callbacks.begin(), node.callbacks.end(), [&](const std::unique_ptr<NodeCallback>& callback) {
+	  return callback.get() == node.init_callback;
 	});
 	// Move the callback to the first position
 	if (it != node.callbacks.end()) {
