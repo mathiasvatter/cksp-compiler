@@ -12,20 +12,18 @@ public:
 	explicit ASTGlobalScope(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {}
 
 	void inline visit(NodeProgram& node) override {
-		m_def_provider->refresh_scopes();
 		m_program = &node;
-		m_init_callback = node.callbacks[0].get();
+		m_def_provider->refresh_scopes();
 		for(auto & def : node.function_definitions) {
 			m_function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
 		}
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-
 	}
 
-	void inline visit(NodeCallback& node) {
-		if(&node == m_init_callback) m_is_init_callback = true;
+	void inline visit(NodeCallback& node) override {
+		if(&node == m_program->init_callback) m_is_init_callback = true;
 
 		if(node.callback_id) node.callback_id->accept(*this);
 		node.statements->accept(*this);
@@ -33,7 +31,7 @@ public:
 		m_is_init_callback = false;
 	}
 
-	void inline visit(NodeBody &node) {
+	void inline visit(NodeBody &node) override {
 		m_current_body = &node;
 		if(node.scope) m_def_provider->add_scope();
 		for(auto & stmt : node.statements) {
@@ -66,8 +64,8 @@ public:
 //		node.definition->accept(*this);
 	}
 
-	void inline visit(NodeSingleDeclareStatement& node) {
-		if(m_current_body->scope and m_current_body->parent != m_init_callback) {
+	void inline visit(NodeSingleDeclareStatement& node) override {
+		if(m_current_body->scope and m_current_body->parent != m_program->init_callback) {
 			node.to_be_declared->is_local = true;
 		}
 
@@ -76,7 +74,7 @@ public:
 
 	}
 
-	void inline visit(NodeArrayRef& node) {
+	void inline visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
 
 		auto node_declaration = m_def_provider->get_declaration(&node);
@@ -86,13 +84,13 @@ public:
 		node.name = node_declaration->name;
 	}
 
-	void inline visit(NodeArray& node) {
+	void inline visit(NodeArray& node) override {
 		if(node.size) node.size->accept(*this);
 
 		m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
 	}
 
-	void inline visit(NodeVariableRef& node) {
+	void inline visit(NodeVariableRef& node) override {
 		auto node_declaration = m_def_provider->get_declaration(&node);
 		if(!node_declaration) throw_declaration_error(&node).exit();
 
@@ -108,7 +106,7 @@ public:
 		}
 	}
 
-	void inline visit(NodeVariable& node) {
+	void inline visit(NodeVariable& node) override {
 		m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
 
         if(node.is_local) {
@@ -126,7 +124,6 @@ private:
 	Gensym m_gensym;
 	DefinitionProvider* m_def_provider = nullptr;
 	NodeProgram* m_program = nullptr;
-	NodeCallback* m_init_callback = nullptr;
 	NodeBody* m_current_body = nullptr;
 	bool m_is_init_callback = false;
 	NodeFunctionDefinition* m_current_function = nullptr;

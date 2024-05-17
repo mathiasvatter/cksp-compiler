@@ -58,7 +58,6 @@ private:
                                                               {token::INSTPERS, {"make_instr_persistent"}}};
 
     NodeProgram* m_program = nullptr;
-    NodeCallback* m_init_callback = nullptr;
     NodeCallback* m_current_callback = nullptr;
     int m_current_callback_idx = 0;
 	NodeDataStructure* m_return_dummy_declaration = nullptr;
@@ -102,6 +101,7 @@ private:
 class ASTFunctionInlining : public ASTVisitor {
 public:
     explicit ASTFunctionInlining(std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> function_inlines) : m_function_inlines(std::move(function_inlines)) {}
+	~ASTFunctionInlining() = default;
 
     inline void visit(NodeStatement& node) {
         if(!node.function_inlines.empty()) {

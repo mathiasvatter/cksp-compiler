@@ -7,7 +7,7 @@
 ASTVariableChecking::ASTVariableChecking(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {}
 
 void ASTVariableChecking::visit(NodeProgram& node) {
-	m_init_callback = node.callbacks[0].get();
+	m_program = &node;
     for(auto & def : node.function_definitions) {
         m_function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
     }
@@ -16,13 +16,14 @@ void ASTVariableChecking::visit(NodeProgram& node) {
 	for(auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
-	for(auto & function_definition : node.function_definitions) {
-		function_definition->accept(*this);
-	}
+//	for(auto & function_definition : node.function_definitions) {
+//		function_definition->accept(*this);
+//	}
 }
 
 void ASTVariableChecking::visit(NodeCallback& node) {
-	if(&node == m_init_callback) m_is_init_callback = true;
+	m_current_callback = &node;
+	if(&node == m_program->init_callback) m_is_init_callback = true;
 
 	if(node.callback_id) node.callback_id->accept(*this);
 	node.statements->accept(*this);
@@ -77,9 +78,9 @@ void ASTVariableChecking::visit(NodeBody &node) {
 }
 
 void ASTVariableChecking::visit(NodeSingleDeclareStatement& node) {
-    if(m_current_body->scope and m_current_body->parent != m_init_callback and !node.to_be_declared->is_global) {
-        node.to_be_declared->is_local = true;
-    }
+	if(m_current_body->scope and m_current_callback != m_program->init_callback and !node.to_be_declared->is_global and node.to_be_declared->get_node_type() != NodeType::UIControl) {
+		node.to_be_declared->is_local = true;
+	}
 
     node.to_be_declared->accept(*this);
     if(node.assignee) node.assignee->accept(*this);
@@ -102,9 +103,13 @@ void ASTVariableChecking::visit(NodeArray& node) {
 
 void ASTVariableChecking::visit(NodeVariableRef& node) {
 	// handle return_vars -> do not check if they have been declared
-//	if(node.is_compiler_return or node.is_local) {
-//		return;
-//	}
+	if(node.is_compiler_return) {
+		return;
+	}
+
+	if(node.name == "sli_comp_threshold") {
+
+	}
 
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration)
@@ -122,35 +127,32 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 }
 
 void ASTVariableChecking::visit(NodeVariable& node) {
-    if(node.name == "btn_chord_page_enter") {
-
-    }
     // handle return_vars -> do not check if they have been declared
-//    if(node.is_compiler_return or node.is_local) {
-//        node.is_used = true;
-//        return;
-//    }
+    if(node.is_compiler_return) {
+        node.is_used = true;
+        return;
+    }
     m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
 }
 
 void ASTVariableChecking::visit(NodeFunctionCall &node) {
 	node.function->accept(*this);
 
-//    if(!node.definition and !node.function->is_builtin) {
-//        if (auto function_def = get_function_definition(node.function.get())) {
-//            node.definition = function_def;
-//		    node.definition->accept(*this);
-//        } else if (auto builtin_func = m_def_provider->get_builtin_function(node.function.get())) {
-//            node.function->type = builtin_func->type;
-//            node.function->has_forced_parenth = builtin_func->has_forced_parenth;
-//            node.function->arg_ast_types = builtin_func->arg_ast_types;
-//            node.function->arg_var_types = builtin_func->arg_var_types;
-//            node.function->is_builtin = builtin_func->is_builtin;
-//
-//        } else {
-//            CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).exit();
-//        }
-//    }
+    if(!node.definition and !node.function->is_builtin) {
+        if (auto function_def = get_function_definition(node.function.get())) {
+            node.definition = function_def;
+		    node.definition->accept(*this);
+        } else if (auto builtin_func = m_def_provider->get_builtin_function(node.function.get())) {
+            node.function->type = builtin_func->type;
+            node.function->has_forced_parenth = builtin_func->has_forced_parenth;
+            node.function->arg_ast_types = builtin_func->arg_ast_types;
+            node.function->arg_var_types = builtin_func->arg_var_types;
+            node.function->is_builtin = builtin_func->is_builtin;
+
+        } else {
+            CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).exit();
+        }
+    }
 
     // replace node variable when in get_ui_id and not ui_control
     if(node.function->is_builtin and !node.function->args->params.empty() and node.function->name == "get_ui_id") {

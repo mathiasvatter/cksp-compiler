@@ -32,11 +32,9 @@ std::unique_ptr<NodeBody> ASTTypeChecking::declare_return_vars() {
         node_array-> is_used = true;
         node_array->is_engine = true;
         node_array->is_global = true;
-//		node_array->is_reference = false;
         auto node_arr_declaration = std::make_unique<NodeSingleDeclareStatement>(
                 std::move(node_array),
                 nullptr, tok);
-//        node_arr_declaration->to_be_declared->parent = node_arr_declaration.get();
         node_arr_declaration->accept(*this);
         node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_arr_declaration), tok));
     }
@@ -64,7 +62,7 @@ void ASTTypeChecking::visit(NodeVariableRef& node) {
     }
 	if(node.type == ASTType::Unknown or node.type == ASTType::Number or node.type == ASTType::Any) {
         // no return_var information printed pls
-        if(!node.is_compiler_return and !node.is_local and !node.is_engine) {
+        if(!node.is_compiler_return and !node.is_engine) {
             error.m_message += " Variable "+node.name+" is "+type_to_string(node.type)+".";
             error.m_got = type_to_string(node.type)+" Type.";
             error.print();
@@ -85,17 +83,17 @@ void ASTTypeChecking::visit(NodeVariableRef& node) {
         node.replace_with(std::move(node_return_var));
     }
     // replace local vars with array ref
-    if(node.is_local) {
-        if(node.type == ASTType::Unknown) node.type = ASTType::Integer;
-        auto local_var_name = m_local_var_arrays.find(node.type)->second;
-        auto idx = extract_last_number(node.name, &node);
-        auto node_local_variable = std::make_unique<NodeArrayRef>(
-                local_var_name,
-                std::make_unique<NodeInt>(idx, node.tok), node.tok
-                );
-        node_local_variable->type = node.type;
-        node.replace_with(std::move(node_local_variable));
-    }
+//    if(node.is_local) {
+//        if(node.type == ASTType::Unknown) node.type = ASTType::Integer;
+//        auto local_var_name = m_local_var_arrays.find(node.type)->second;
+//        auto idx = extract_last_number(node.name, &node);
+//        auto node_local_variable = std::make_unique<NodeArrayRef>(
+//                local_var_name,
+//                std::make_unique<NodeInt>(idx, node.tok), node.tok
+//                );
+//        node_local_variable->type = node.type;
+//        node.replace_with(std::move(node_local_variable));
+//    }
 }
 
 void ASTTypeChecking::visit(NodeVariable& node) {
@@ -109,7 +107,7 @@ void ASTTypeChecking::visit(NodeVariable& node) {
     }
     if(node.type == ASTType::Unknown or node.type == ASTType::Number or node.type == ASTType::Any) {
         // no return_var information printed pls
-        if(!node.is_compiler_return and !node.is_local and !node.is_engine) {
+        if(!node.is_compiler_return and !node.is_engine) {
             error.m_message += " Variable is Unknown/Number/Any";
             error.m_got = type_to_string(node.type);
             error.print();
@@ -122,11 +120,11 @@ void ASTTypeChecking::visit(NodeVariable& node) {
         error.exit();
     }
 
-    if(node.is_local) {
-        error.m_message = "Local variable should be a variable reference. Found declared variable.";
-        error.m_expected = "";
-        error.exit();
-    }
+//    if(node.is_local) {
+//        error.m_message = "Local variable should be a variable reference. Found declared variable.";
+//        error.m_expected = "";
+//        error.exit();
+//    }
 }
 
 int ASTTypeChecking::extract_last_number(const std::string& str, NodeAST* var) {
