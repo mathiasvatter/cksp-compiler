@@ -167,7 +167,7 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 		if(node.is_call and function_def->return_variable.has_value()) {
 			CompileError(ErrorType::SyntaxError, "Found incorrect use of return variable when using <call>.", node.tok.line, "", "", node.tok.file).exit();
 		}
-        function_def->call.insert(&node);
+        function_def->call_sites.insert(&node);
         m_current_function = function_def;
         // inline if current call is <on init>
         if(m_current_callback != m_program->init_callback) {
@@ -197,7 +197,7 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 		if (!node.function->args->params.empty()) m_substitution_stack.pop();
         m_functions_in_use.erase(node.function->name);
 		m_function_call_stack.pop();
-        function_def->call.erase(&node);
+        function_def->call_sites.erase(&node);
         // has return variable
         if(node_function_def->return_variable.has_value()) {
             if(node.parent->parent->get_node_type() == NodeType::Body) {
@@ -265,7 +265,7 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
                 CompileError(ErrorType::SyntaxError,"<"+builtin_func->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks.", node.tok.line, "", "<"+m_current_callback->begin_callback+">", node.tok.file).print();
             } else {
                 if(m_current_function)
-                    if(m_current_function->call.find(&node) != m_current_function->call.end())
+                    if(m_current_function->call_sites.find(&node) != m_current_function->call_sites.end())
                         CompileError(ErrorType::SyntaxError,"<"+builtin_func->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks. Not in a called function.", node.tok.line, "", "<"+m_current_function->header->name+"> in <"+m_current_callback->begin_callback+">", node.tok.file).print();
             }
         }

@@ -3,6 +3,7 @@
 //
 
 #include "Compiler.h"
+#include "AST/ASTVisitor/ASTGlobalScope.h"
 
 
 Compiler::Compiler(CompilerConfig* config)
@@ -19,7 +20,7 @@ void Compiler::compile() {
 
 	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
-	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -37,7 +38,7 @@ void Compiler::compile() {
 //    auto start_time = std::chrono::high_resolution_clock::now();
 	Timer compile_time;
 	compile_time.start("Total Time");
-	compile_time.start("Import Time");
+	compile_time.start("Import");
 
 	FileHandler file_handler(input_filename);
 	Tokenizer tokenizer(file_handler.get_output(), input_filename);
@@ -53,8 +54,8 @@ void Compiler::compile() {
 	}
 	tokens = std::move(imports.get_token_vector());
 
-	compile_time.stop("Import Time");
-	compile_time.start("Preprocessor Time");
+	compile_time.stop("Import");
+	compile_time.start("Preprocessor");
 
 	Preprocessor preprocessor(tokens);
 	preprocessor.process();
@@ -70,8 +71,8 @@ void Compiler::compile() {
 	std::cout << std::endl;
 	std::filesystem::path curr_path = __FILE__;
 
-	compile_time.stop("Preprocessor Time");
-	compile_time.start("Parsing Time");
+	compile_time.stop("Preprocessor");
+	compile_time.start("Parsing");
 
 	Parser parser(std::move(preprocessed_tokens));
 	auto ast_result = parser.parse();
@@ -80,50 +81,55 @@ void Compiler::compile() {
 	}
 	auto ast = std::move(ast_result.unwrap());
 
-	compile_time.stop("Parsing Time");
-	compile_time.start("Desugaring Time");
+	compile_time.stop("Parsing");
+	compile_time.start("Desugaring");
 
 	ASTDesugarStructs desugar1;
 	ast->accept(desugar1);
 
-	compile_time.stop("Desugaring Time");
+	compile_time.stop("Desugaring");
 	compile_time.start("Build Data Structures");
 
 	ASTBuildDataStructures data_structures(&m_definition_provider);
 	ast->accept(data_structures);
 
 	compile_time.stop("Build Data Structures");
-	compile_time.start("Lowering Time");
+	compile_time.start("Lowering");
 
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
 
-	compile_time.stop("Lowering Time");
-	compile_time.start("Variable Checking 1");
+	compile_time.stop("Lowering");
+	compile_time.start("Global Scope");
 
 	ASTVariableChecking variable_checking(&m_definition_provider);
-	ast->accept(variable_checking);
+//	ast->accept(variable_checking);
+    ASTGlobalScope global_scope(&m_definition_provider);
+    ast->accept(global_scope);
 
-	compile_time.stop("Variable Checking 1");
+//    ASTPrinter printer;
+//    ast->accept(printer);
+
+	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");
 
 	ASTDesugar desugar(&m_definition_provider);
 	ast->accept(desugar);
 
     compile_time.stop("Function Inlining");
-	compile_time.start("Variable Checking 2");
+	compile_time.start("Variable Checking");
 
 //    ASTVariableChecking variable_checking2(&m_definition_provider);
     ast->accept(variable_checking);
 
-	compile_time.stop("Variable Checking 2");
-	compile_time.start("Optimization Time");
+	compile_time.stop("Variable Checking");
+	compile_time.start("Optimization");
 
 	ASTOptimizations optimizations;
 	ast->accept(optimizations);
 
-	compile_time.stop("Optimization Time");
-	compile_time.start("Typechecking Time");
+	compile_time.stop("Optimization");
+	compile_time.start("Typechecking");
 
 	ASTTypeCasting typecast(&m_definition_provider);
 	ast->accept(typecast);
@@ -131,8 +137,8 @@ void Compiler::compile() {
 	ASTTypeChecking type_check;
 	ast->accept(type_check);
 
-	compile_time.stop("Typechecking Time");
-	compile_time.start("Generator Time");
+	compile_time.stop("Typechecking");
+	compile_time.start("Generator");
 
 //	ASTPrinter printer;
 //	ast->accept(printer);
@@ -142,7 +148,7 @@ void Compiler::compile() {
 //	generator.print();
 	generator.generate(output_filename);
 
-	compile_time.stop("Generator Time");
+	compile_time.stop("Generator");
 	compile_time.stop("Total Time");
 
 	std::cout << compile_time.report() << std::endl;
