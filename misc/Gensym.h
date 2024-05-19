@@ -25,7 +25,7 @@ public:
 	}
 
 	inline std::string fresh(const std::string &var_name) {
-		std::string new_name = var_name;
+		std::string new_name = var_name + std::to_string(m_counter++);
 		while(m_names.find(new_name) != m_names.end()) {
 			new_name = var_name + std::to_string(m_counter);
 			m_counter++;

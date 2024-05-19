@@ -13,12 +13,14 @@
 #include <chrono>
 
 #include "ASTHelper.h"
+#include "../Type.h"
 
 class ASTDesugaring;
 
 struct NodeAST {
     Token tok;
     ASTType type;
+    std::unique_ptr<Type> ty = std::make_unique<BasicType>();
     NodeType node_type;
     NodeAST* parent = nullptr;
     inline explicit NodeAST(const Token tok=Token(), NodeType node_type=NodeType::DeadCode) : tok(tok),
@@ -812,7 +814,8 @@ struct NodeFunctionHeader: NodeAST {
 struct NodeFunctionDefinition: NodeAST {
     bool is_used = false;
     bool is_compiled = false;
-    std::set<class NodeFunctionCall*> call = {};
+    std::set<class NodeFunctionCall*> call_sites = {};
+    std::set<NodeCallback*> callback_sites = {};
     std::unique_ptr<NodeFunctionHeader> header;
     std::optional<std::unique_ptr<NodeParamList>> return_variable;
     bool override = false;

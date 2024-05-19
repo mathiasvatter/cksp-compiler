@@ -140,18 +140,23 @@ void ASTPrinter::visit(NodeFamilyStatement &node) {
 }
 
 void ASTPrinter::visit(NodeStatement &node) {
-    node.statement->accept(*this);
-    std::cout << std::endl;
+    if(node.statement->get_node_type() != NodeType::DeadCode) {
+        std::cout << get_indent();
+        node.statement->accept(*this);
+        std::cout << std::endl;
+    }
 }
 
 void ASTPrinter::visit(NodeIfStatement &node) {
-    std::cout << "if " ;
+    std::cout << "if(" ;
     node.condition->accept(*this);
-    std::cout << std::endl;
-	node.statements->accept(*this);
-    std::cout << "else" << std::endl;
-	node.else_statements->accept(*this);
-    std::cout << "end if";
+    std::cout << ")" << std::endl;
+    node.statements->accept(*this);
+    if (!node.else_statements->statements.empty()) {
+        std::cout << get_indent() << "else" << std::endl;
+        node.else_statements->accept(*this);
+    }
+    std::cout << get_indent() << "end if";
 }
 
 void ASTPrinter::visit(NodeWhileStatement &node) {
@@ -159,7 +164,7 @@ void ASTPrinter::visit(NodeWhileStatement &node) {
     node.condition->accept(*this);
     std::cout << ") " << std::endl;
     node.statements->accept(*this);
-    std::cout << "end while";
+    std::cout << get_indent() << "end while";
 }
 
 void ASTPrinter::visit(NodeForStatement &node) {
@@ -169,22 +174,24 @@ void ASTPrinter::visit(NodeForStatement &node) {
     node.iterator_end->accept(*this);
     std::cout << std::endl;
     node.statements->accept(*this);
-    std::cout << "end for";
+    std::cout << get_indent() << "end for";
 }
 
 void ASTPrinter::visit(NodeSelectStatement &node) {
-    std::cout << "select " ;
+    std::cout << "select(" ;
     node.expression->accept(*this);
-    std::cout << std::endl;
+    std::cout << ")" << std::endl;
     for(const auto &cas: node.cases) {
-        std::cout << "case ";
-        for(auto &stmt: cas.first) {
-            stmt->accept(*this);
+        std::cout << get_indent() << "case ";
+        cas.first[0]->accept(*this);
+        if(cas.first.size() == 2) {
+            std::cout << " to ";
+            cas.first[1]->accept(*this);
         }
         std::cout << std::endl;
         cas.second->accept(*this);
     }
-    std::cout << "end select";
+    std::cout << get_indent() << "end select";
 }
 
 void ASTPrinter::visit(NodeCallback &node) {
@@ -226,12 +233,13 @@ void ASTPrinter::visit(NodeGetControlStatement &node) {
     std::cout << " -> " << node.control_param;
 }
 
-//void ASTPrinter::visit(NodeSetControlStatement &node) {
-//    node.get_control ->accept(*this);
-//    std::cout << " := ";
-//    node.assignee -> accept(*this);
-//    std::cout << std::endl;
-//}
+void ASTPrinter::visit(NodeBody &node) {
+    m_scope_count++;
+    for(auto & stmt : node.statements) {
+        stmt->accept(*this);
+    }
+    m_scope_count--;
+}
 
 void ASTPrinter::visit(NodeProgram &node) {
     std::cout << "Callbacks: " << std::endl;

@@ -14,7 +14,7 @@
 void NodeAST::accept(ASTVisitor &visitor) {}
 
 NodeAST::NodeAST(const NodeAST& other) : parent(other.parent), node_type(other.node_type),
-    tok(other.tok), type(other.type) {}
+    tok(other.tok), type(other.type), ty(clone_unique(other.ty)) {}
 
 void NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 	if (parent) {
@@ -544,8 +544,8 @@ void NodeFunctionDefinition::accept(ASTVisitor &visitor) {
 }
 NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& other)
         : NodeAST(other), is_used(other.is_used), is_compiled(other.is_compiled),
-        header(clone_unique(other.header)), override(other.override),
-          call(other.call), body(clone_unique(other.body)) {
+          header(clone_unique(other.header)), override(other.override),
+          call_sites(other.call_sites), callback_sites(other.callback_sites), body(clone_unique(other.body)) {
     if (other.return_variable) {
         return_variable = std::make_optional(clone_unique(other.return_variable.value()));
     }
