@@ -484,8 +484,9 @@ void NodeCallback::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodeCallback::NodeCallback(const NodeCallback& other)
-        : NodeAST(other), begin_callback(other.begin_callback),
-		callback_id(clone_unique(other.callback_id)), statements(clone_unique(other.statements)),
+        : NodeAST(other), is_thread_safe(other.is_thread_safe), begin_callback(other.begin_callback),
+		callback_id(clone_unique(other.callback_id)),
+		statements(clone_unique(other.statements)),
 		end_callback(other.end_callback) {
 	set_child_parents();
 }
@@ -513,7 +514,7 @@ void NodeFunctionHeader::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeFunctionHeader::NodeFunctionHeader(const NodeFunctionHeader& other)
-        : NodeAST(other), name(other.name), is_builtin(other.is_builtin),
+        : NodeAST(other), is_thread_safe(other.is_thread_safe), name(other.name), is_builtin(other.is_builtin),
 		  has_forced_parenth(other.has_forced_parenth), args(clone_unique(other.args)),
 		  arg_ast_types(other.arg_ast_types), arg_var_types(other.arg_var_types) {
 	set_child_parents();
@@ -543,7 +544,7 @@ void NodeFunctionDefinition::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& other)
-        : NodeAST(other), is_used(other.is_used), is_compiled(other.is_compiled),
+        : NodeAST(other), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
           header(clone_unique(other.header)), override(other.override),
           call_sites(other.call_sites), callback_sites(other.callback_sites), body(clone_unique(other.body)) {
     if (other.return_variable) {
@@ -562,6 +563,7 @@ void NodeProgram::accept(ASTVisitor& visitor) {
 NodeProgram::NodeProgram(const NodeProgram& other) : NodeAST(other), init_callback(other.init_callback) {
     callbacks = clone_vector<NodeCallback>(other.callbacks);
     function_definitions = clone_vector<NodeFunctionDefinition>(other.function_definitions);
+	function_lookup = other.function_lookup;
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeProgram::clone() const {

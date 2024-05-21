@@ -4,7 +4,7 @@
 
 #include "Compiler.h"
 #include "AST/ASTVisitor/ASTGlobalScope.h"
-
+#include "AST/ASTVisitor/ASTLambdaLifting.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -102,13 +102,14 @@ void Compiler::compile() {
 	compile_time.stop("Lowering");
 	compile_time.start("Global Scope");
 
-	ASTVariableChecking variable_checking(&m_definition_provider);
-//	ast->accept(variable_checking);
     ASTGlobalScope global_scope(&m_definition_provider);
+	ASTLambdaLifting lambda_lifting(&m_definition_provider);
     ast->accept(global_scope);
 
-//    ASTPrinter printer;
-//    ast->accept(printer);
+    ASTPrinter printer;
+    ast->accept(printer);
+	ast->accept(lambda_lifting);
+	ast->accept(global_scope);
 
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");
@@ -119,7 +120,7 @@ void Compiler::compile() {
     compile_time.stop("Function Inlining");
 	compile_time.start("Variable Checking");
 
-//    ASTVariableChecking variable_checking2(&m_definition_provider);
+	ASTVariableChecking variable_checking(&m_definition_provider);
     ast->accept(variable_checking);
 
 	compile_time.stop("Variable Checking");

@@ -22,7 +22,7 @@ public:
         node_statement->parent = parent;
         return node_statement;
     }
-	static bool is_to_be_declared(NodeAST* node);
+//	static bool is_to_be_declared(NodeAST* node);
     static std::unique_ptr<NodeStatement> make_function_call(const std::string& name, std::vector<std::unique_ptr<NodeAST>> args, NodeAST* parent, Token tok);
     static std::unique_ptr<NodeBinaryExpr> make_binary_expr(ASTType type, token op, std::unique_ptr<NodeAST> lhs, std::unique_ptr<NodeAST> rhs, NodeAST* parent, Token tok);
     static std::unique_ptr<NodeInt> make_int(int32_t value, NodeAST* parent);

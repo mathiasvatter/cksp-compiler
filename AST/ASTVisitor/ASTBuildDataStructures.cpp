@@ -10,13 +10,18 @@ void ASTBuildDataStructures::visit(NodeProgram& node) {
     m_program = &node;
 	check_unique_callbacks(node);
 	node.init_callback = move_on_init_callback(node);
-
+	m_def_provider->refresh_scopes();
+	for(auto & def : node.function_definitions) {
+		m_function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
+	}
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }
     for(auto & function_definition : node.function_definitions) {
-        function_definition->accept(*this);
-    }
+		if(!function_definition->is_used) {
+			function_definition->accept(*this);
+		}
+	}
 }
 
 void ASTBuildDataStructures::visit(NodeCallback& node) {
@@ -27,6 +32,7 @@ void ASTBuildDataStructures::visit(NodeCallback& node) {
 	node.statements->accept(*this);
 
 	m_is_init_callback = false;
+	m_current_callback = nullptr;
 }
 
 
@@ -49,8 +55,39 @@ void ASTBuildDataStructures::visit(NodeFunctionDefinition &node) {
     node.header ->accept(*this);
     if (node.return_variable.has_value())
         node.return_variable.value()->accept(*this);
+	node.body->scope = false;
     node.body->accept(*this);
     m_def_provider->remove_scope();
+}
+
+void ASTBuildDataStructures::visit(NodeFunctionCall& node) {
+	node.function->accept(*this);
+
+	if(!node.definition and !node.function->is_builtin) {
+		if (auto function_def = get_function_definition(node.function.get())) {
+			node.definition = function_def;
+//			function_def->call_sites.emplace(&node);
+//			function_def->callback_sites.emplace(m_current_callback);
+			m_function_call_stack.push(function_def);
+			node.definition->accept(*this);
+			m_function_call_stack.pop();
+		} else if (auto builtin_func = m_def_provider->get_builtin_function(node.function.get())) {
+			node.function->type = builtin_func->type;
+			node.function->has_forced_parenth = builtin_func->has_forced_parenth;
+			node.function->arg_ast_types = builtin_func->arg_ast_types;
+			node.function->arg_var_types = builtin_func->arg_var_types;
+			node.function->is_builtin = builtin_func->is_builtin;
+			node.function->is_thread_safe = builtin_func->is_thread_safe;
+		} else {
+			CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).exit();
+		}
+	}
+
+	if(!m_function_call_stack.empty()) {
+		m_function_call_stack.top()->header->is_thread_safe &= node.function->is_thread_safe;
+	}
+	if(m_current_callback) m_current_callback->is_thread_safe &= node.function->is_thread_safe;
+	if(m_current_callback) node.function->is_thread_safe &= m_current_callback->is_thread_safe;
 }
 
 void ASTBuildDataStructures::visit(NodeSingleDeclareStatement& node) {

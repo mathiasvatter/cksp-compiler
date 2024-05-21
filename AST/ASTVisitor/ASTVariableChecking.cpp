@@ -138,7 +138,7 @@ void ASTVariableChecking::visit(NodeVariable& node) {
 void ASTVariableChecking::visit(NodeFunctionCall &node) {
 	node.function->accept(*this);
 
-    if(!node.definition and !node.function->is_builtin) {
+    if(!node.function->is_builtin or !node.definition) {
         if (auto function_def = get_function_definition(node.function.get())) {
             node.definition = function_def;
 		    node.definition->accept(*this);

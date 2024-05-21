@@ -45,6 +45,8 @@ public:
 	void visit(NodeVariable& node) override;
     void visit(NodeVariableRef& node) override;
 
+	/// provide and search for function definition; handle is_thread_safe flag
+	void visit(NodeFunctionCall& node) override;
     /// add function parameters to scope
     void visit(NodeFunctionDefinition& node) override;
 
@@ -52,10 +54,21 @@ public:
 private:
     NodeProgram* m_program = nullptr;
 	NodeCallback* m_current_callback = nullptr;
+	/// holds the current function definition that is being visited on top
+	std::stack<NodeFunctionDefinition*> m_function_call_stack;
     NodeBody* m_current_body = nullptr;
 	bool m_is_init_callback = false;
 	DefinitionProvider* m_def_provider = nullptr;
 
+	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> m_function_lookup;
+	inline NodeFunctionDefinition* get_function_definition(NodeFunctionHeader *function_header) {
+		auto it = m_function_lookup.find({function_header->name, (int)function_header->args->params.size()});
+		if(it != m_function_lookup.end()) {
+			it->second->is_used = true;
+			return it->second;
+		}
+		return nullptr;
+	};
 
 	/// Checks for existence and uniqueness of "on init" callback
 	/// If found, returns pointer to the callback node
