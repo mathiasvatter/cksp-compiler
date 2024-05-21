@@ -37,6 +37,7 @@ private:
     std::string m_builtin_functions_file;
 	std::string m_builtin_widgets_file;
 
+	std::set<std::string> m_thread_unsafe_functions = {"wait", "wait_ticks", "wait_async"};
 
     static ASTType get_identifier_type(char identifier);
     static ASTType get_type_annotation(const Token& tok);

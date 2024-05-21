@@ -738,6 +738,7 @@ struct NodeSelectStatement : NodeAST {
 };
 
 struct NodeCallback: NodeAST {
+	bool is_thread_safe = true;
     std::string begin_callback;
     std::unique_ptr<NodeAST> callback_id = nullptr;
     std::unique_ptr<NodeBody> statements;
@@ -780,6 +781,7 @@ struct NodeImport : NodeAST {
 };
 
 struct NodeFunctionHeader: NodeAST {
+	bool is_thread_safe = true;
     bool is_builtin = false;
     bool has_forced_parenth = false;
     std::string name;
@@ -814,6 +816,7 @@ struct NodeFunctionHeader: NodeAST {
 struct NodeFunctionDefinition: NodeAST {
     bool is_used = false;
     bool is_compiled = false;
+	bool visited = false;
     std::set<class NodeFunctionCall*> call_sites = {};
     std::set<NodeCallback*> callback_sites = {};
     std::unique_ptr<NodeFunctionHeader> header;
@@ -882,6 +885,7 @@ struct NodeProgram : NodeAST {
 	NodeCallback* init_callback = nullptr;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
+	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> function_lookup;
     inline explicit NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {}
     inline NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 					   std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok)

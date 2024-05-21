@@ -171,6 +171,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> BuiltinsProcessor::parse_builtin_fun
         return_type = get_type_annotation(consume(m_tokens));
     }
     auto node_function = std::make_unique<NodeFunctionHeader>(func_name.val, std::move(func_args), func_name);
+	node_function->is_thread_safe = m_thread_unsafe_functions.find(node_function->name) == m_thread_unsafe_functions.end();
     node_function->type = return_type;
     node_function->is_builtin = true;
     node_function->has_forced_parenth = has_forced_parenth;
