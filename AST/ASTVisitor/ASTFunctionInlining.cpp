@@ -34,6 +34,8 @@ void ASTFunctionInlining::visit(NodeProgram& node) {
     m_local_declare_statements->set_child_parents();
     m_program->init_callback->statements->prepend_body(std::move(m_local_declare_statements));
 
+	m_program->function_definitions = std::move(m_function_definitions);
+
     static FunctionInliningHelper function_inlining(std::move(m_function_inlines));
     node.accept(function_inlining);
 }
@@ -262,7 +264,7 @@ void ASTFunctionInlining::visit(NodeFunctionCall& node) {
 				node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
 			}
 		} else {
-			m_program->function_definitions.push_back(std::move(node_function_def));
+			m_function_definitions.push_back(std::move(node_function_def));
 		}
 	}
 }
@@ -572,14 +574,14 @@ void ASTFunctionInlining::declare_dummy_variables() {
     m_return_dummy_declaration = static_cast<NodeDataStructure*>(node_var_declaration->to_be_declared.get());
     m_local_declare_statements->statements.push_back(std::make_unique<NodeStatement>(std::move(node_var_declaration), tok));
 
-    std::string local_var_dummy_name = "_local_dummy_";
-    auto node_local_var_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), local_var_dummy_name, DataType::Mutable, tok);
-    node_local_var_dummy->type = ASTType::Unknown;
-    node_local_var_dummy->is_engine = true;
-    auto node_local_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_local_var_dummy), nullptr, tok);
-    node_local_var_declaration->to_be_declared->parent = node_local_var_declaration.get();
-    m_local_var_dummy_declaration = static_cast<NodeDataStructure*>(node_local_var_declaration->to_be_declared.get());
-    m_local_declare_statements->statements.push_back(std::make_unique<NodeStatement>(std::move(node_local_var_declaration), tok));
+//    std::string local_var_dummy_name = "_local_dummy_";
+//    auto node_local_var_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), local_var_dummy_name, DataType::Mutable, tok);
+//    node_local_var_dummy->type = ASTType::Unknown;
+//    node_local_var_dummy->is_engine = true;
+//    auto node_local_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_local_var_dummy), nullptr, tok);
+//    node_local_var_declaration->to_be_declared->parent = node_local_var_declaration.get();
+//    m_local_var_dummy_declaration = static_cast<NodeDataStructure*>(node_local_var_declaration->to_be_declared.get());
+//    m_local_declare_statements->statements.push_back(std::make_unique<NodeStatement>(std::move(node_local_var_declaration), tok));
 
 }
 

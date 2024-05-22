@@ -66,6 +66,19 @@ public:
 	bool refresh_scopes();
     /// removes variable from current scope by their name value
     NodeDataStructure* remove_from_current_scope(const std::string& name);
+	/// copies last scope in current scope
+	inline bool copy_last_scope() {
+		auto compile_error = CompileError(ErrorType::InternalError, "",-1, "","","");
+		if(m_declared_data_structures.size() < 2) {
+			compile_error.m_message = "Tried to copy last scope, but there is no last scope to copy.";
+			compile_error.exit();
+			return false;
+		}
+		for(auto &data_struct : m_declared_data_structures.at(m_declared_data_structures.size()-2)) {
+			m_declared_data_structures.back().emplace(data_struct);
+		}
+		return true;
+	}
 
 	/// returns the definition of a data structure, if it exists. If datastructure itself is
 	/// definition -> return nullptr. If datastructure is reference -> return declaration. If global_scope is true,

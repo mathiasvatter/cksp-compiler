@@ -103,16 +103,15 @@ void Compiler::compile() {
 	compile_time.stop("Lowering");
 	compile_time.start("Global Scope");
 
-    ASTGlobalScope global_scope(&m_definition_provider);
-    ast->accept(global_scope);
-
 	ASTLambdaLifting lambda_lifting(&m_definition_provider);
 	ast->accept(lambda_lifting);
-	ASTGlobalScope global_scope2(&m_definition_provider);
-	ast->accept(global_scope2);
+
+	ASTGlobalScope global_scope(&m_definition_provider);
+	ast->accept(global_scope);
 
     ASTPrinter printer;
     ast->accept(printer);
+
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");
 

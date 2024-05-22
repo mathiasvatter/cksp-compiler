@@ -13,10 +13,17 @@ public:
 
 	inline void visit(NodeProgram& node) override {
 		m_program = &node;
-		for(auto & def : node.function_definitions) {
-			def->visited = false;
+		for(auto & def : node.function_definitions) def->visited = false;
+
+		ASTGlobalScope global_scope(m_def_provider);
+		global_scope.set_program_ptr(m_program);
+		for (auto & def : node.function_definitions) {
+			global_scope.clear_passive_vars();
+			def->accept(global_scope);
 		}
-		node.update_function_lookup();
+		global_scope.rename_local_vars();
+		for(auto & def : node.function_definitions) def->visited = false;
+
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 			// create node body with local variable declarations for every callback and prepend it to the callback

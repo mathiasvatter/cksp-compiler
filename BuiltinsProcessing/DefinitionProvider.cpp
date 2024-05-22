@@ -40,7 +40,7 @@ bool DefinitionProvider::add_scope() {
 }
 
 std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual> DefinitionProvider::remove_scope() {
-    auto compile_error = CompileError(ErrorType::SyntaxError, "",-1, "","","");
+    auto compile_error = CompileError(ErrorType::InternalError, "",-1, "","","");
     if(m_declared_data_structures.empty()) {
         compile_error.m_message = "Tried to remove global scope.";
         compile_error.exit();
@@ -106,7 +106,7 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 	// input var is declaration
 	if (get_scoped_data_structure(var->name)) {
 		compile_error.m_message = "Data Structure has already been declared in this scope.";
-		compile_error.print();
+		compile_error.exit();
 	} else {
 		if(global_scope) {
 			m_declared_data_structures.at(0).insert({var->name, var});

@@ -21,12 +21,12 @@ public:
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-		for(auto & function_definition : node.function_definitions) {
-			if(!function_definition->visited) {
-				m_passive_vars.clear();
-				function_definition->accept(*this);
-			}
-		}
+//		for(auto & function_definition : node.function_definitions) {
+//			if(!function_definition->visited) {
+//				m_passive_vars.clear();
+//				function_definition->accept(*this);
+//			}
+//		}
 
 		rename_local_vars();
 
@@ -183,6 +183,16 @@ public:
 			if(m_current_callback) m_all_local_callback_vars.push_back(&node);
 			m_all_local_vars.push_back(&node);
 		}
+	}
+
+	bool clear_passive_vars() {
+		m_passive_vars.clear();
+		return true;
+	}
+
+	bool set_program_ptr(NodeProgram* program) {
+		m_program = program;
+		return true;
 	}
 
 private:

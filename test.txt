@@ -1,21 +1,19 @@
-{ Compiled with cksp version 0.0.5 on Wed May 22 15:37:05 2024 }
+{ Compiled with cksp version 0.0.5 on Wed May 22 16:45:36 2024 }
 on init
   declare ?_return_vars_real[6]
   declare !_return_vars_str[6]
   declare %_return_vars_int[6]
   declare $_return_dummy
-  declare $_local_dummy_
   declare ?_loc_var_real[1]
   declare !_loc_var_str[1]
   declare %_loc_var_int[1]
-  declare $loc_8
-  declare $loc_9
-  declare $loc_0
-  declare $loc_1
-  declare $loc_2
-  declare $loc_3
   declare $loc_4
   declare $loc_5
+  declare $loc_6
+  declare $loc_7
+  declare $loc_8
+  declare $loc_9
+  declare $loc_10
   declare $_iterator
   declare $_string_it
   declare $_ui_array_it
@@ -25,36 +23,41 @@ on init
   declare $i
   set_listener($NI_SIGNAL_TIMER_MS, 1000000)
 end on
-function scoped_func2($loc_6)
+on ui_control($sli_1)
+  $loc_4 := 0
+  $loc_5 := 0
   $loc_6 := 0
-  message($loc_6)
-end function
-function scoped_func1($loc_6, $loc_7)
+  $loc_7 := 0
   $loc_7 := 0
   message($loc_7)
-  scoped_func2(loc_6)
-end function
-on ui_control($sli_1)
-  $loc_8 := 0
-  $loc_9 := 0
-  $loc_9 := 0
-  message($loc_9)
-  $loc_8 := 0
-  message($loc_8)
+  $loc_4 := 0
+  message($loc_4)
+  if($loc_4 = 1)
+    $loc_5 := 0
+    $loc_6 := 0
+    message($loc_5 & $loc_6)
+  end if
   message($NI_UI_ID)
   $i := 0
   while($i <= 4) 
     message($i)
-    $loc_9 := 0
-    message($loc_9)
-    $loc_8 := 0
-    message($loc_8)
+    $loc_7 := 0
+    message($loc_7)
+    $loc_4 := 0
+    message($loc_4)
+    if($loc_4 = 1)
+      $loc_5 := 0
+      $loc_6 := 0
+      message($loc_5 & $loc_6)
+    end if
     inc($i)
   end while
 end on
 on ui_control($sli_2)
-  $loc_8 := 0
-  $loc_9 := 0
+  $loc_4 := 0
+  $loc_6 := 0
+  $loc_5 := 0
+  $loc_7 := 0
   message($NI_UI_ID)
   $i := 5
   while($i <= 9) 
@@ -62,35 +65,45 @@ on ui_control($sli_2)
     inc($i)
   end while
   if($i = 10)
-    $loc_0 := 0
-    if($loc_0 = 9)
-      $loc_1 := 0
-      $loc_2 := 0
+    $loc_4 := 0
+    if($loc_4 = 9)
+      $loc_6 := 0
+      $loc_5 := 0
     end if
-    if($loc_0 = 8)
-      $loc_1 := 0
-      message($loc_1)
-      $loc_9 := 0
-      message($loc_9)
-      $loc_8 := 0
-      message($loc_8)
-      $loc_2 := 0
+    if($loc_4 = 8)
+      $loc_4 := 0
+      message($loc_4)
+      $loc_7 := 0
+      message($loc_7)
+      $loc_4 := 0
+      message($loc_4)
+      if($loc_4 = 1)
+        $loc_6 := 0
+        $loc_5 := 0
+        message($loc_6 & $loc_5)
+      end if
+      $loc_6 := 0
     end if
-    $loc_9 := 0
-    message($loc_9)
-    $loc_8 := 0
-    message($loc_8)
+    $loc_7 := 0
+    message($loc_7)
+    $loc_4 := 0
+    message($loc_4)
+    if($loc_4 = 1)
+      $loc_6 := 0
+      $loc_5 := 0
+      message($loc_6 & $loc_5)
+    end if
   end if
   if($i = 7)
-    $loc_1 := 0
+    $loc_4 := 0
   end if
 end on
 on listener
   if($i = 10)
-    $loc_3 := 0
-    if($loc_3 = 9)
-      $loc_4 := 0
-      $loc_5 := 0
+    $loc_8 := 0
+    if($loc_8 = 9)
+      $loc_9 := 0
+      $loc_10 := 0
     end if
   end if
   wait(10)
@@ -102,11 +115,18 @@ on listener
   end while
 end on
 on release
-  $loc_8 := 0
-  $loc_9 := 0
-  $loc_9 := 0
-  message($loc_9)
-  $loc_8 := 0
-  message($loc_8)
+  $loc_4 := 0
+  $loc_6 := 0
+  $loc_5 := 0
+  $loc_7 := 0
+  $loc_7 := 0
+  message($loc_7)
+  $loc_4 := 0
+  message($loc_4)
+  if($loc_4 = 1)
+    $loc_6 := 0
+    $loc_5 := 0
+    message($loc_6 & $loc_5)
+  end if
 end on
 
