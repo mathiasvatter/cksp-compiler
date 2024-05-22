@@ -68,7 +68,7 @@ private:
     std::stack<std::string> m_const_prefixes;
 
     NodeAST* m_current_function_inline_statement = nullptr;
-//    std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
+    std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
 //    std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> m_function_lookup;
 
     NodeFunctionDefinition* m_current_function = nullptr;

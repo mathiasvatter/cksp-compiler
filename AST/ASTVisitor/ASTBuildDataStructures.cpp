@@ -40,6 +40,10 @@ void ASTBuildDataStructures::visit(NodeBody &node) {
 
     // add scope for body
 	if(node.scope) m_def_provider->add_scope();
+	// if body is in function definition, copy over last scope of header variables
+	if(node.parent->get_node_type() == NodeType::FunctionDefinition) {
+		m_def_provider->copy_last_scope();
+	}
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
 	}
@@ -51,7 +55,6 @@ void ASTBuildDataStructures::visit(NodeFunctionDefinition &node) {
     node.header ->accept(*this);
     if (node.return_variable.has_value())
         node.return_variable.value()->accept(*this);
-//	node.body->scope = false;
     node.body->accept(*this);
     m_def_provider->remove_scope();
 }
