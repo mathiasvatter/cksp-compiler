@@ -52,7 +52,6 @@ struct NodeAST {
 template<typename T>
 std::unique_ptr<T> clone_as(NodeAST* node) {
 	auto cloned_ptr = node->clone(); // Nutzt die clone()-Methode der NodeAST Klasse
-//    cloned_ptr->update_parents(node->parent);
 	return std::unique_ptr<T>(static_cast<T*>(cloned_ptr.release()));
 }
 
@@ -114,7 +113,7 @@ struct NodeInt : NodeAST {
 	// Kopierkonstruktor
 	NodeInt(const NodeInt& other) : NodeAST(other), value(other.value) {}
 	// Clone Methode
-	std::unique_ptr<NodeAST> clone() const override;
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	std::string get_string() override {
 		return std::to_string(value);
 	}
@@ -127,7 +126,7 @@ struct NodeReal : NodeAST {
     // Kopierkonstruktor
     NodeReal(const NodeReal& other) : NodeAST(other), value(other.value) {}
     // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {
         return std::to_string(value);
     }
@@ -140,7 +139,7 @@ struct NodeString : NodeAST {
     // Kopierkonstruktor
     NodeString(const NodeString& other) : NodeAST(other), value(other.value) {}
     // Clone Methode
-    std::unique_ptr<NodeAST> clone() const override;
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {
         return value;
     }
@@ -283,7 +282,7 @@ struct NodeAssignStatement: NodeAST {
         assignee -> update_token_data(token);
     }
 
-    ASTDesugaring* get_desugaring() const override;
+    [[nodiscard]] ASTDesugaring* get_desugaring() const override;
 };
 
 struct NodeSingleAssignStatement : NodeAST {
@@ -317,7 +316,6 @@ struct NodeSingleAssignStatement : NodeAST {
         assignee -> update_token_data(token);
     }
 	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
-
 };
 
 struct NodeDeclareStatement : NodeAST {
