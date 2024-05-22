@@ -77,9 +77,7 @@ void ASTVariableChecking::visit(NodeBody &node) {
 }
 
 void ASTVariableChecking::visit(NodeSingleDeclareStatement& node) {
-	if(m_current_body->scope and m_current_callback != m_program->init_callback and !node.to_be_declared->is_global and node.to_be_declared->get_node_type() != NodeType::UIControl) {
-		node.to_be_declared->is_local = true;
-	}
+	node.to_be_declared->determine_locality(m_program, m_current_body, m_current_callback);
 
     node.to_be_declared->accept(*this);
     if(node.assignee) node.assignee->accept(*this);

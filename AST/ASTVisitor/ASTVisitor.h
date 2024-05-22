@@ -16,9 +16,8 @@
 
 class ASTVisitor {
 protected:
-    std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, DataType type, NodeAST* parent);
-    std::unique_ptr<NodeBody> array_initialization(NodeArray* array, NodeParamList* list);
-    static std::unique_ptr<NodeBody> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent);
+	NodeProgram* m_program = nullptr;
+	NodeCallback* m_current_callback = nullptr;
 
     std::set<std::string> m_restricted_builtin_functions = {"save_array", "save_array_str", "load_array", "load_array_str"};
     std::unordered_map<std::string, ASTType> m_compiler_variables = {{"_list_it",ASTType::Integer}, {"_ui_array_it", ASTType::Integer},
@@ -26,7 +25,12 @@ protected:
                                                                      {"_iterator", ASTType::Integer}};
     std::unordered_map<ASTType, std::string> m_return_arrays = {{ASTType::Integer, "_return_vars_int"}, {ASTType::Real, "_return_vars_real"}, {ASTType::String, "_return_vars_str"}};
     std::unordered_map<ASTType, std::string> m_local_var_arrays = {{ASTType::Integer, "_loc_var_int"}, {ASTType::Real, "_loc_var_real"}, {ASTType::String, "_loc_var_str"}};
-	
+
+
+    std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, DataType type, NodeAST* parent);
+    std::unique_ptr<NodeBody> array_initialization(NodeArray* array, NodeParamList* list);
+    static std::unique_ptr<NodeBody> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent);
+
 public:
     virtual void visit(NodeDeadCode& node) {};
 	virtual void visit(NodeInt& node) {node.type = ASTType::Integer;};

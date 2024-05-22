@@ -23,7 +23,6 @@ public:
 		// add assignee as third parameter to set_control_par
 		new_node->function->args->params.push_back(std::move(node.assignee));
 		new_node->function->args->set_child_parents();
-//		new_node->update_parents(node.parent);
 		node.replace_with(std::move(new_node));
 	};
 

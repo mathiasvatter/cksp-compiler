@@ -44,6 +44,12 @@ std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
 	return ref;
 }
 
+bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBody* current_body, NodeCallback* current_callback) {
+	is_local = current_body->scope and current_callback != program->init_callback and !is_global and get_node_type() != NodeType::UIControl;
+	return is_local;
+}
+
+
 // ************* NodeReference ***************
 void NodeReference::accept(ASTVisitor &visitor) {}
 

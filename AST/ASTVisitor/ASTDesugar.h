@@ -40,7 +40,7 @@ class ASTDesugar: public ASTVisitor {
 	void visit(NodeParamList& node) override;
 
 private:
-    NodeProgram* m_program = nullptr;
+//    NodeProgram* m_program = nullptr;
 
     std::unique_ptr<NodeBody> m_global_variable_declarations = std::make_unique<NodeBody>(Token());
     /// declare necessary compiler variables for iterating etc.

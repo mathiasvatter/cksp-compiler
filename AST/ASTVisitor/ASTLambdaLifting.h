@@ -99,7 +99,7 @@ public:
 
 private:
 	DefinitionProvider* m_def_provider;
-	NodeProgram* m_program = nullptr;
+//	NodeProgram* m_program = nullptr;
 	NodeCallback* m_current_callback = nullptr;
 	std::stack<NodeFunctionDefinition*> m_function_call_stack;
 	/// map for local variable declarations per function definition to be added to the next/above function
