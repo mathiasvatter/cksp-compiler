@@ -90,8 +90,8 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         JSON/JSONParser.cpp
         JSON/JSONVisitor.h
         JSON/JSONVisitor.cpp
-        AST/ASTDesugarStructs.cpp
-        AST/ASTDesugarStructs.h
+        AST/ASTDesugar.cpp
+        AST/ASTDesugar.h
         Preprocessor/PreAST/PreASTDefines.cpp
         Preprocessor/PreAST/PreASTDefines.h
         Preprocessor/PreAST/PreASTPragma.cpp

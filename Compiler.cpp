@@ -85,7 +85,7 @@ void Compiler::compile() {
 	compile_time.stop("Parsing");
 	compile_time.start("Desugaring");
 
-	ASTDesugarStructs desugar1;
+	ASTDesugar desugar1;
 	ast->accept(desugar1);
 
 	compile_time.stop("Desugaring");

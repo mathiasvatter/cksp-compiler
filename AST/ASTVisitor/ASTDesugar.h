@@ -17,7 +17,7 @@
  * - NodeForStatement: alter for loops to while loops
  * Additionally, it desugars NodeFamilyStatement into single declare statements.
  */
-class ASTDesugarStructs: public ASTVisitor {
+class ASTDesugar: public ASTVisitor {
     void visit(NodeProgram& node) override;
 
     /// desugar into single declare statements
