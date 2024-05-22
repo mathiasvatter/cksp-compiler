@@ -8,9 +8,8 @@ ASTVariableChecking::ASTVariableChecking(DefinitionProvider* definition_provider
 
 void ASTVariableChecking::visit(NodeProgram& node) {
 	m_program = &node;
-    for(auto & def : node.function_definitions) {
-        m_function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
-    }
+	// update function lookup map because of altered param counts after lambda lifting
+    node.update_function_lookup();
 	// erase all previously saved scopes
 	m_def_provider->refresh_scopes();
 	for(auto & callback : node.callbacks) {
@@ -114,9 +113,6 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 
     node.match_data_structure(node_declaration);
 
-	if(node.name != node_declaration->name) {
-
-	}
 	// replace variable with array if incorrectly recognized by parser
 	if(node_declaration->get_node_type() == NodeType::Array) {
 		auto node_array = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
@@ -138,21 +134,7 @@ void ASTVariableChecking::visit(NodeVariable& node) {
 void ASTVariableChecking::visit(NodeFunctionCall &node) {
 	node.function->accept(*this);
 
-    if(!node.function->is_builtin or !node.definition) {
-        if (auto function_def = get_function_definition(node.function.get())) {
-            node.definition = function_def;
-		    node.definition->accept(*this);
-        } else if (auto builtin_func = m_def_provider->get_builtin_function(node.function.get())) {
-            node.function->type = builtin_func->type;
-            node.function->has_forced_parenth = builtin_func->has_forced_parenth;
-            node.function->arg_ast_types = builtin_func->arg_ast_types;
-            node.function->arg_var_types = builtin_func->arg_var_types;
-            node.function->is_builtin = builtin_func->is_builtin;
-
-        } else {
-            CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).exit();
-        }
-    }
+    node.get_definition(m_program);
 
     // replace node variable when in get_ui_id and not ui_control
     if(node.function->is_builtin and !node.function->args->params.empty() and node.function->name == "get_ui_id") {

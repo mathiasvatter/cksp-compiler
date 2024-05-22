@@ -253,6 +253,20 @@ ASTVisitor* NodeSingleDeclareStatement::get_lowering(DefinitionProvider* def_pro
 	return this->to_be_declared->get_lowering(def_provider);
 }
 
+std::unique_ptr<NodeSingleAssignStatement> NodeSingleDeclareStatement::to_assign_stmt(NodeDataStructure* var) {
+	// if var provided -> turn to reference else turn to_be_declared to reference
+	auto node_array_var = var ? var->to_reference() : to_be_declared->to_reference();
+	// if declare stmt has assignee -> clone it else create new NodeInt with value 0
+	auto node_assignee = assignee ? assignee->clone() : std::make_unique<NodeInt>(0, tok);
+	auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(
+		std::move(node_array_var),
+		std::move(node_assignee),
+		tok
+	);
+	return node_assign_statement;
+}
+
+
 // ************* NodeReturnStatement ***************
 void NodeReturnStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
@@ -539,6 +553,47 @@ ASTVisitor* NodeFunctionCall::get_lowering(DefinitionProvider* def_provider) con
 	return &lowering;
 }
 
+NodeFunctionDefinition* NodeFunctionCall::find_definition(struct NodeProgram *program) {
+	auto it = program->function_lookup.find({function->name, (int)function->args->params.size()});
+	if(it != program->function_lookup.end()) {
+		it->second->is_used = true;
+		definition = it->second;
+		definition->call_sites.emplace(this);
+		return it->second;
+	}
+	return nullptr;
+}
+
+NodeFunctionHeader* NodeFunctionCall::find_builtin_definition(NodeProgram *program) {
+	if(!program->def_provider) {
+		CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
+	}
+	if(auto builtin_func = program->def_provider->get_builtin_function(function.get())) {
+		function->type = builtin_func->type;
+		function->has_forced_parenth = builtin_func->has_forced_parenth;
+		function->arg_ast_types = builtin_func->arg_ast_types;
+		function->arg_var_types = builtin_func->arg_var_types;
+		function->is_builtin = builtin_func->is_builtin;
+		function->is_thread_safe = builtin_func->is_thread_safe;
+		return builtin_func;
+	}
+	return nullptr;
+}
+
+bool NodeFunctionCall::get_definition(NodeProgram* program) {
+	if (definition or function->is_builtin) {
+		return true;
+	}
+	if (find_builtin_definition(program)) {
+		return true;
+	} else if (find_definition(program)) {
+		return true;
+	} else {
+		CompileError(ErrorType::SyntaxError,"Function has not been declared.", tok.line, "", function->name, tok.file).exit();
+	}
+	return false;
+}
+
 // ************* NodeFunctionDefinition ***************
 void NodeFunctionDefinition::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
@@ -568,6 +623,14 @@ NodeProgram::NodeProgram(const NodeProgram& other) : NodeAST(other), init_callba
 }
 std::unique_ptr<NodeAST> NodeProgram::clone() const {
     return std::make_unique<NodeProgram>(*this);
+}
+
+void NodeProgram::update_function_lookup() {
+	function_lookup.clear();
+	for(auto & def : function_definitions) {
+//		def->visited = false;
+		function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
+	}
 }
 
 

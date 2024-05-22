@@ -80,6 +80,7 @@ void Compiler::compile() {
 		ast_result.get_error().exit();
 	}
 	auto ast = std::move(ast_result.unwrap());
+	ast->def_provider = &m_definition_provider;
 
 	compile_time.stop("Parsing");
 	compile_time.start("Desugaring");
@@ -103,18 +104,19 @@ void Compiler::compile() {
 	compile_time.start("Global Scope");
 
     ASTGlobalScope global_scope(&m_definition_provider);
-	ASTLambdaLifting lambda_lifting(&m_definition_provider);
     ast->accept(global_scope);
+
+	ASTLambdaLifting lambda_lifting(&m_definition_provider);
+	ast->accept(lambda_lifting);
+	ASTGlobalScope global_scope2(&m_definition_provider);
+	ast->accept(global_scope2);
 
     ASTPrinter printer;
     ast->accept(printer);
-	ast->accept(lambda_lifting);
-	ast->accept(global_scope);
-
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");
 
-	ASTDesugar desugar(&m_definition_provider);
+	ASTFunctionInlining desugar(&m_definition_provider);
 	ast->accept(desugar);
 
     compile_time.stop("Function Inlining");

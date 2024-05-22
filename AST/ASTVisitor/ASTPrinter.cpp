@@ -81,13 +81,13 @@ void ASTPrinter::visit(NodeSingleDeclareStatement &node) {
 
 void ASTPrinter::visit(NodeParamList &node) {
 	if (!node.params.empty()) {
-		if (node.params.size() > 1) std::cout << "[";
+//		if (node.params.size() > 1) std::cout << "[";
 		for (int i = 0; i < node.params.size() - 1; i++) {
 			node.params[i]->accept(*this);
             std::cout << ", ";
         }
         node.params[node.params.size() - 1]->accept(*this);
-        if(node.params.size() > 1) std::cout << "]";
+//        if(node.params.size() > 1) std::cout << "]";
     }
 }
 
@@ -195,9 +195,15 @@ void ASTPrinter::visit(NodeSelectStatement &node) {
 }
 
 void ASTPrinter::visit(NodeCallback &node) {
-    std::cout << node.begin_callback << std::endl;
-    node.statements->accept(*this);
-    std::cout << node.end_callback << std::endl;
+	std::cout << node.begin_callback;
+	if(node.callback_id) {
+		std::cout << "(";
+		node.callback_id->accept(*this);
+		std::cout << ")";
+	}
+	std::cout << std::endl;
+	node.statements->accept(*this);
+	std::cout << node.end_callback << std::endl;
 }
 
 void ASTPrinter::visit(NodeFunctionHeader &node) {

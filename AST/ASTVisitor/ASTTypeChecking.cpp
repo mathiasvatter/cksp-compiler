@@ -55,19 +55,12 @@ void ASTTypeChecking::visit(NodeUIControl& node) {
 }
 
 void ASTTypeChecking::visit(NodeVariableRef& node) {
-    auto error = CompileError(ErrorType::TypeError,"Could not infer variable type.", "valid type", node.tok);
-    // only print error if it is in a declaration
+    // only print error if it is no reference
+
     if(node.type == ASTType::Unknown) {
         node.type = node.declaration->type;
     }
-	if(node.type == ASTType::Unknown or node.type == ASTType::Number or node.type == ASTType::Any) {
-        // no return_var information printed pls
-        if(!node.is_compiler_return and !node.is_engine) {
-            error.m_message += " Variable "+node.name+" is "+type_to_string(node.type)+".";
-            error.m_got = type_to_string(node.type)+" Type.";
-            error.print();
-        }
-	}
+
 
     // replace variable ref with array ref if it is a compiler return
     if(node.is_compiler_return) {

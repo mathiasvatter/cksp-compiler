@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Tue May 21 18:56:28 2024 }
+{ Compiled with cksp version 0.0.5 on Wed May 22 15:37:05 2024 }
 on init
   declare ?_return_vars_real[6]
   declare !_return_vars_str[6]
@@ -8,6 +8,8 @@ on init
   declare ?_loc_var_real[1]
   declare !_loc_var_str[1]
   declare %_loc_var_int[1]
+  declare $loc_8
+  declare $loc_9
   declare $loc_0
   declare $loc_1
   declare $loc_2
@@ -18,56 +20,41 @@ on init
   declare $_string_it
   declare $_ui_array_it
   declare $_list_it
-  declare %array[3] := (1, 2, 3)
-  declare const $btn_bummens__SIZE_D1 := 3
-  declare const $btn_bummens__SIZE_D2 := 2
-  declare %_btn_bummens[6]
-  declare ui_button $_btn_bummens0 
-  declare ui_button $_btn_bummens1 
-  declare ui_button $_btn_bummens2 
-  declare ui_button $_btn_bummens3 
-  declare ui_button $_btn_bummens4 
-  declare ui_button $_btn_bummens5 
-  $_iterator := 0
-  while($_iterator < 6) 
-    %_btn_bummens[$_iterator] := get_ui_id($_btn_bummens0) + $_iterator
-    inc($_iterator)
-  end while
-  declare ui_slider $sli_1 (0, 1000000)
-  declare $sli_1_uid
-  $sli_1_uid := get_ui_id($sli_1)
-  declare ui_slider $sli_2 (0, 1000000)
-  declare $sli_2_uid
-  $sli_2_uid := get_ui_id($sli_2)
-  declare $ui_id := 0
-  if(1 < 4)
-    message(1240)
-  end if
-  declare %preset__array[5]
-  declare const $preset__arrayCopy__SIZE_D1 := 2
-  declare const $preset__arrayCopy__SIZE_D2 := 2
-  declare %_preset__arrayCopy[4]
-  message(%_preset__arrayCopy[3])
+  declare ui_slider $sli_1 (0, 1000)
+  declare ui_slider $sli_2 (0, 1000)
   declare $i
   set_listener($NI_SIGNAL_TIMER_MS, 1000000)
 end on
-function scoped_func
-  declare $loc_6
-  message(2)
+function scoped_func2($loc_6)
+  $loc_6 := 0
+  message($loc_6)
+end function
+function scoped_func1($loc_6, $loc_7)
+  $loc_7 := 0
+  message($loc_7)
+  scoped_func2(loc_6)
 end function
 on ui_control($sli_1)
-  declare $loc_6
-  message(2)
+  $loc_8 := 0
+  $loc_9 := 0
+  $loc_9 := 0
+  message($loc_9)
+  $loc_8 := 0
+  message($loc_8)
   message($NI_UI_ID)
   $i := 0
   while($i <= 4) 
     message($i)
-    declare $loc_6
-    message(2)
+    $loc_9 := 0
+    message($loc_9)
+    $loc_8 := 0
+    message($loc_8)
     inc($i)
   end while
 end on
 on ui_control($sli_2)
+  $loc_8 := 0
+  $loc_9 := 0
   message($NI_UI_ID)
   $i := 5
   while($i <= 9) 
@@ -83,12 +70,16 @@ on ui_control($sli_2)
     if($loc_0 = 8)
       $loc_1 := 0
       message($loc_1)
-      declare $loc_6
-      message(2)
+      $loc_9 := 0
+      message($loc_9)
+      $loc_8 := 0
+      message($loc_8)
       $loc_2 := 0
     end if
-    declare $loc_6
-    message(2)
+    $loc_9 := 0
+    message($loc_9)
+    $loc_8 := 0
+    message($loc_8)
   end if
   if($i = 7)
     $loc_1 := 0
@@ -111,6 +102,11 @@ on listener
   end while
 end on
 on release
-  call scoped_func
+  $loc_8 := 0
+  $loc_9 := 0
+  $loc_9 := 0
+  message($loc_9)
+  $loc_8 := 0
+  message($loc_8)
 end on
 

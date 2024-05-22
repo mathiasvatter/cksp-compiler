@@ -2,20 +2,16 @@
 // Created by Mathias Vatter on 27.10.23.
 //
 
-#include "ASTDesugar.h"
+#include "ASTFunctionInlining.h"
 
-ASTDesugar::ASTDesugar(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {
+ASTFunctionInlining::ASTFunctionInlining(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {
     m_local_declare_statements = std::make_unique<NodeBody>(Token());
 //    m_compiler_variable_declare_statements = std::make_unique<NodeBody>(Token());
 }
 
-void ASTDesugar::visit(NodeProgram& node) {
+void ASTFunctionInlining::visit(NodeProgram& node) {
     m_program = &node;
-    for(auto & def : node.function_definitions) {
-        m_function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
-    }
-
-    m_function_definitions = std::move(node.function_definitions);
+	node.update_function_lookup();
     declare_dummy_variables();
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
@@ -23,7 +19,7 @@ void ASTDesugar::visit(NodeProgram& node) {
     // declare after callback visiting because of size of m_local_variables
     declare_local_var_arrays();
 	evaluating_functions = true;
-    for(auto & function : m_function_definitions) {
+    for(auto & function : node.function_definitions) {
         if(function->is_used and function->header->args->params.empty() and !function->return_variable.has_value()) {
             m_functions_in_use.insert({function->header->name, function.get()});
             function->body->accept(*this);
@@ -38,11 +34,11 @@ void ASTDesugar::visit(NodeProgram& node) {
     m_local_declare_statements->set_child_parents();
     m_program->init_callback->statements->prepend_body(std::move(m_local_declare_statements));
 
-    static ASTFunctionInlining function_inlining(std::move(m_function_inlines));
+    static FunctionInliningHelper function_inlining(std::move(m_function_inlines));
     node.accept(function_inlining);
 }
 
-void ASTDesugar::visit(NodeCallback& node) {
+void ASTFunctionInlining::visit(NodeCallback& node) {
     // empty the local var stack after init, because the idx can be reused now
     if(m_current_callback == m_program->init_callback) {
         m_local_variables = std::stack<std::string>();
@@ -54,11 +50,11 @@ void ASTDesugar::visit(NodeCallback& node) {
     m_current_callback_idx++;
 
 }
-void ASTDesugar::visit(NodeNDArray& node) {
+void ASTFunctionInlining::visit(NodeNDArray& node) {
 	CompileError(ErrorType::SyntaxError, "Found <nd array>. This data structure should not exist anymore after lowering.", node.tok.line, "", "", node.tok.file).exit();
 }
 
-void ASTDesugar::visit(NodeArrayRef& node) {
+void ASTFunctionInlining::visit(NodeArrayRef& node) {
     if(node.index) node.index->accept(*this);
 
     // local variable substitution
@@ -96,7 +92,7 @@ void ASTDesugar::visit(NodeArrayRef& node) {
 
 }
 
-void ASTDesugar::visit(NodeFunctionHeader& node) {
+void ASTFunctionInlining::visit(NodeFunctionHeader& node) {
     node.args->accept(*this);
     // substitution
     if (!m_substitution_stack.empty()) {
@@ -114,7 +110,7 @@ void ASTDesugar::visit(NodeFunctionHeader& node) {
     }
 }
 
-void ASTDesugar::visit(NodeVariableRef& node) {
+void ASTFunctionInlining::visit(NodeVariableRef& node) {
     // local variable substitution
     // do local variable substitution
 //    if(!m_variable_scope_stack.empty()) {
@@ -149,7 +145,7 @@ void ASTDesugar::visit(NodeVariableRef& node) {
 	}
 }
 
-void ASTDesugar::visit(NodeFunctionCall& node) {
+void ASTFunctionInlining::visit(NodeFunctionCall& node) {
     if(node.is_call and !node.function->args->params.empty()) {
         CompileError(ErrorType::SyntaxError,
          "Found incorrect amount of function arguments when using <call>.", node.tok.line, "0", std::to_string(node.function->args->params.size()), node.tok.file).exit();
@@ -163,30 +159,45 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
     node.function->accept(*this);
 
     // substitution start
-    if (auto function_def = get_function_definition(node.function.get())) {
+    node.get_definition(m_program);
+
+	if(node.function->is_builtin) {
+		if(m_restricted_builtin_functions.find(node.function->name) != m_restricted_builtin_functions.end()) {
+			if(!contains(RESTRICTED_CALLBACKS, remove_substring(m_current_callback->begin_callback, "on "))) {
+				CompileError(ErrorType::SyntaxError,"<"+node.function->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks.", node.tok.line, "", "<"+m_current_callback->begin_callback+">", node.tok.file).print();
+			} else {
+				if(m_current_function)
+					if(m_current_function->call_sites.find(&node) != m_current_function->call_sites.end())
+						CompileError(ErrorType::SyntaxError,"<"+node.function->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks. Not in a called function.", node.tok.line, "", "<"+m_current_function->header->name+"> in <"+m_current_callback->begin_callback+">", node.tok.file).print();
+			}
+		}
+	}
+
+	if(node.definition) {
+		auto function_def = node.definition;
 		if(node.is_call and function_def->return_variable.has_value()) {
 			CompileError(ErrorType::SyntaxError, "Found incorrect use of return variable when using <call>.", node.tok.line, "", "", node.tok.file).exit();
 		}
-        function_def->call_sites.insert(&node);
-        m_current_function = function_def;
-        // inline if current call is <on init>
-        if(m_current_callback != m_program->init_callback) {
-            if (node.is_call) {
-                if(function_def->is_compiled) {
-                    return;
-                } else {
-                    function_def->is_compiled = true;
-                }
-            }
+		function_def->call_sites.insert(&node);
+		m_current_function = function_def;
+		// inline if current call is <on init>
+		if(m_current_callback != m_program->init_callback) {
+			if (node.is_call) {
+				if(function_def->is_compiled) {
+					return;
+				} else {
+					function_def->is_compiled = true;
+				}
+			}
 
-        } else if(node.is_call){
-            CompileError(ErrorType::SyntaxError, "The usage of <call> keyword is not allowed in the <on init> callback. Automatically removed <call> and inlined function. Consider not using the <call> keyword.", node.tok.line, "", "<call>", node.tok.file).print();
-            node.is_call = false;
-        }
+		} else if(node.is_call){
+			CompileError(ErrorType::SyntaxError, "The usage of <call> keyword is not allowed in the <on init> callback. Automatically removed <call> and inlined function. Consider not using the <call> keyword.", node.tok.line, "", "<call>", node.tok.file).print();
+			node.is_call = false;
+		}
 
-        auto node_function_def = clone_as<NodeFunctionDefinition>(function_def);
+		auto node_function_def = clone_as<NodeFunctionDefinition>(function_def);
 		m_function_call_stack.push(node.function->name);
-        m_functions_in_use.insert({node.function->name, function_def});
+		m_functions_in_use.insert({node.function->name, function_def});
 		node_function_def->parent = node.parent;
 		if (!node.function->args->params.empty()) {
 			auto substitution_map = get_substitution_map(node_function_def->header.get(), node.function.get());
@@ -195,87 +206,69 @@ void ASTDesugar::visit(NodeFunctionCall& node) {
 		node_function_def->body->update_token_data(node.tok);
 		node_function_def->body->accept(*this);
 		if (!node.function->args->params.empty()) m_substitution_stack.pop();
-        m_functions_in_use.erase(node.function->name);
+		m_functions_in_use.erase(node.function->name);
 		m_function_call_stack.pop();
-        function_def->call_sites.erase(&node);
-        // has return variable
-        if(node_function_def->return_variable.has_value()) {
-            if(node.parent->parent->get_node_type() == NodeType::Body) {
-                CompileError(ErrorType::SyntaxError,"Function returns a value. Move function into assign statement.", node.tok.line, node_function_def->return_variable.value()->get_string(), "<assignment>", node.tok.file).exit();
-            }
-            if (!node_function_def->body->statements.empty()) {
-                auto node_assignment = cast_node<NodeSingleAssignStatement>(node_function_def->body->statements[0]->statement.get());
-                // strict inlining method only if function body is assign statement
-                if (node_function_def->body->statements.size() == 1 and node_assignment) {
-                    if (node_assignment->array_variable->get_string() == node_function_def->return_variable.value()->get_string()) {
-                        node.replace_with(std::move(node_assignment->assignee));
-                        return;
-                    } else {
-                        CompileError(ErrorType::SyntaxError,
-                                     "Given return variable of function could not be found in function body.",
-                                     node.tok.line, node_function_def->return_variable.value()->get_string(),
-                                     node_assignment->array_variable->get_string(), node.tok.file).exit();
-                    }
-                // new inlining method
-                } else {
-                    std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_map;
-                    auto node_return_var_name =
-                            "_return_var_" + std::to_string(nearest_statement->function_inlines.size());
-                    auto node_return_var = std::make_unique<NodeVariableRef>(node_return_var_name, node.tok);
-                    node_return_var->declaration = m_return_dummy_declaration;
-                    node_return_var->is_compiler_return = true;
-                    node_return_var->parent = node.parent;
-                    substitution_map.insert({node_function_def->return_variable.value()->get_string(),
-                                             node_return_var->clone()});
-                    auto node_parent_parent = node.parent->parent;
-                    node.replace_with(std::move(node_return_var));
-                    m_substitution_stack.push(std::move(substitution_map));
-                    node_function_def->body->accept(*this);
-                    m_substitution_stack.pop();
-                    node_function_def->body->parent = node_parent_parent;
-                    auto node_statement = std::make_unique<NodeStatement>(std::move(node_function_def->body), node.tok);
-                    auto ptr = node_statement->statement.get();
-                    m_function_inlines.insert({ptr, std::move(node_statement)});
-                    nearest_statement->function_inlines.push_back(ptr);
-                    m_current_function_inline_statement = old_function_inline_statement;
-                    return;
-                }
-            }
-        }
-        // inline replacement if not call
-        if(!node.is_call) {
-            // Only replace if function has actually statements
-            if (!node_function_def->body->statements.empty()) {
-                node.replace_with(std::move(node_function_def->body));
-            } else {
-                node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
-            }
-        } else {
-            m_program->function_definitions.push_back(std::move(node_function_def));
-        }
-    } else if (auto builtin_func = m_def_provider->get_builtin_function(node.function.get())) {
-        node.function->type = builtin_func->type;
-        node.function->has_forced_parenth = builtin_func->has_forced_parenth;
-        node.function->arg_ast_types = builtin_func->arg_ast_types;
-        node.function->arg_var_types = builtin_func->arg_var_types;
-		node.function->is_builtin = builtin_func->is_builtin;
-
-        if(m_restricted_builtin_functions.find(builtin_func->name) != m_restricted_builtin_functions.end()) {
-            if(!contains(RESTRICTED_CALLBACKS, remove_substring(m_current_callback->begin_callback, "on "))) {
-                CompileError(ErrorType::SyntaxError,"<"+builtin_func->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks.", node.tok.line, "", "<"+m_current_callback->begin_callback+">", node.tok.file).print();
-            } else {
-                if(m_current_function)
-                    if(m_current_function->call_sites.find(&node) != m_current_function->call_sites.end())
-                        CompileError(ErrorType::SyntaxError,"<"+builtin_func->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks. Not in a called function.", node.tok.line, "", "<"+m_current_function->header->name+"> in <"+m_current_callback->begin_callback+">", node.tok.file).print();
-            }
-        }
-    } else {
-        CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).exit();
-    }
+		function_def->call_sites.erase(&node);
+		// has return variable
+		if(node_function_def->return_variable.has_value()) {
+			if(node.parent->parent->get_node_type() == NodeType::Body) {
+				CompileError(ErrorType::SyntaxError,"Function returns a value. Move function into assign statement.", node.tok.line, node_function_def->return_variable.value()->get_string(), "<assignment>", node.tok.file).exit();
+			}
+			if (!node_function_def->body->statements.empty()) {
+				auto node_assignment = cast_node<NodeSingleAssignStatement>(node_function_def->body->statements[0]->statement.get());
+				// strict inlining method only if function body is assign statement
+				if (node_function_def->body->statements.size() == 1 and node_assignment) {
+					if (node_assignment->array_variable->get_string() == node_function_def->return_variable.value()->get_string()) {
+						node.replace_with(std::move(node_assignment->assignee));
+						return;
+					} else {
+						CompileError(ErrorType::SyntaxError,
+									 "Given return variable of function could not be found in function body.",
+									 node.tok.line, node_function_def->return_variable.value()->get_string(),
+									 node_assignment->array_variable->get_string(), node.tok.file).exit();
+					}
+					// new inlining method
+				} else {
+					std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_map;
+					auto node_return_var_name =
+						"_return_var_" + std::to_string(nearest_statement->function_inlines.size());
+					auto node_return_var = std::make_unique<NodeVariableRef>(node_return_var_name, node.tok);
+					node_return_var->declaration = m_return_dummy_declaration;
+					node_return_var->is_compiler_return = true;
+					node_return_var->parent = node.parent;
+					substitution_map.insert({node_function_def->return_variable.value()->get_string(),
+											 node_return_var->clone()});
+					auto node_parent_parent = node.parent->parent;
+					node.replace_with(std::move(node_return_var));
+					m_substitution_stack.push(std::move(substitution_map));
+					node_function_def->body->accept(*this);
+					m_substitution_stack.pop();
+					node_function_def->body->parent = node_parent_parent;
+					auto node_statement = std::make_unique<NodeStatement>(std::move(node_function_def->body), node.tok);
+					auto ptr = node_statement->statement.get();
+					m_function_inlines.insert({ptr, std::move(node_statement)});
+					nearest_statement->function_inlines.push_back(ptr);
+					m_current_function_inline_statement = old_function_inline_statement;
+					return;
+				}
+			}
+		}
+		// inline replacement if not call
+		if(!node.is_call) {
+			// Only replace if function has actually statements
+			if (!node_function_def->body->statements.empty()) {
+				node.replace_with(std::move(node_function_def->body));
+			} else {
+				node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+			}
+		} else {
+			m_program->function_definitions.push_back(std::move(node_function_def));
+		}
+	}
 }
 
 
-std::unordered_map<std::string, std::unique_ptr<NodeAST>> ASTDesugar::get_substitution_map(NodeFunctionHeader* definition, NodeFunctionHeader* call) {
+std::unordered_map<std::string, std::unique_ptr<NodeAST>> ASTFunctionInlining::get_substitution_map(NodeFunctionHeader* definition, NodeFunctionHeader* call) {
     std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_vector;
     for(int i= 0; i<definition->args->params.size(); i++) {
         auto &var = definition->args->params[i];
@@ -293,7 +286,7 @@ std::unordered_map<std::string, std::unique_ptr<NodeAST>> ASTDesugar::get_substi
     return substitution_vector;
 }
 
-std::unique_ptr<NodeAST> ASTDesugar::get_substitute(const std::string& name) {
+std::unique_ptr<NodeAST> ASTFunctionInlining::get_substitute(const std::string& name) {
     const auto & map = m_substitution_stack.top();
     auto it = map.find(name);
     if(it != map.end()) {
@@ -304,14 +297,14 @@ std::unique_ptr<NodeAST> ASTDesugar::get_substitute(const std::string& name) {
     return nullptr;
 }
 
-void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
+void ASTFunctionInlining::visit(NodeSingleDeclareStatement& node) {
 	m_current_function_inline_statement = node.parent;
 	node.to_be_declared ->accept(*this);
 	if(node.assignee)
 		node.assignee -> accept(*this);
 }
 
-//void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
+//void ASTFunctionInlining::visit(NodeSingleDeclareStatement& node) {
 //    m_current_function_inline_statement = node.parent;
 //
 //    auto node_data_struct = node.to_be_declared.get();
@@ -439,11 +432,11 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 //
 //}
 
-bool ASTDesugar::in_function() {
+bool ASTFunctionInlining::in_function() {
     return !m_function_call_stack.empty() || evaluating_functions;
 }
 
-std::vector<std::unique_ptr<NodeStatement>> ASTDesugar::add_read_functions(const Token& persistence, NodeDataStructure* var, NodeAST* parent) {
+std::vector<std::unique_ptr<NodeStatement>> ASTFunctionInlining::add_read_functions(const Token& persistence, NodeDataStructure* var, NodeAST* parent) {
     std::vector<std::unique_ptr<NodeStatement>> statements;
 
     for(auto &pers : m_persistences) {
@@ -461,7 +454,7 @@ std::vector<std::unique_ptr<NodeStatement>> ASTDesugar::add_read_functions(const
     return std::move(statements);
 }
 
-void ASTDesugar::visit(NodeSingleAssignStatement& node) {
+void ASTFunctionInlining::visit(NodeSingleAssignStatement& node) {
     m_current_function_inline_statement = node.parent;
     node.array_variable ->accept(*this);
 
@@ -474,31 +467,31 @@ void ASTDesugar::visit(NodeSingleAssignStatement& node) {
     node.assignee -> accept(*this);
 }
 
-void ASTDesugar::visit(NodeParamList& node) {
+void ASTFunctionInlining::visit(NodeParamList& node) {
     for(auto & param : node.params) {
         param->accept(*this);
     }
 }
 
-void ASTDesugar::visit(NodeGetControlStatement& node) {
+void ASTFunctionInlining::visit(NodeGetControlStatement& node) {
 	CompileError(ErrorType::SyntaxError, "Found <get_control_par> statement. This statement should not exist anymore after lowering.", node.tok.line, "", "", node.tok.file).exit();
 }
 
 
-void ASTDesugar::visit(NodeWhileStatement& node) {
+void ASTFunctionInlining::visit(NodeWhileStatement& node) {
     m_current_function_inline_statement = node.parent;
     node.condition->accept(*this);
     node.statements->accept(*this);
 }
 
-void ASTDesugar::visit(NodeIfStatement& node) {
+void ASTFunctionInlining::visit(NodeIfStatement& node) {
     m_current_function_inline_statement = node.parent;
     node.condition->accept(*this);
     node.statements->accept(*this);
     node.else_statements->accept(*this);
 }
 
-void ASTDesugar::visit(NodeSelectStatement& node) {
+void ASTFunctionInlining::visit(NodeSelectStatement& node) {
 	m_current_function_inline_statement = node.parent;
 	node.expression->accept(*this);
 	m_variable_scope_stack.emplace_back();
@@ -511,7 +504,7 @@ void ASTDesugar::visit(NodeSelectStatement& node) {
 	m_variable_scope_stack.pop_back();
 }
 
-void ASTDesugar::visit(NodeBody& node) {
+void ASTFunctionInlining::visit(NodeBody& node) {
 	if(node.scope) m_variable_scope_stack.emplace_back();
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
@@ -521,7 +514,7 @@ void ASTDesugar::visit(NodeBody& node) {
     if(!node.scope) node.statements = std::move(cleanup_node_body(&node));
 }
 
-void ASTDesugar::visit(NodeUIControl &node) {
+void ASTFunctionInlining::visit(NodeUIControl &node) {
 
 	node.control_var->accept(*this);
 	node.params->accept(*this);
@@ -552,7 +545,7 @@ void ASTDesugar::visit(NodeUIControl &node) {
 //	node.parent->replace_with(std::move(node_body));
 }
 
-void ASTDesugar::declare_local_var_arrays() {
+void ASTFunctionInlining::declare_local_var_arrays() {
     Token tok = Token(token::KEYWORD, "compiler_variable", 0, 0,"");
     for(auto &arr_name : m_local_var_arrays) {
         auto node_array = make_array(arr_name.second, std::max(1,(int)m_local_variables.size()), tok, m_program->init_callback);
@@ -567,7 +560,7 @@ void ASTDesugar::declare_local_var_arrays() {
     }
 }
 
-void ASTDesugar::declare_dummy_variables() {
+void ASTFunctionInlining::declare_dummy_variables() {
     m_current_callback = m_program->init_callback;
     Token tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
     std::string dummy_name = "_return_dummy";
@@ -590,16 +583,16 @@ void ASTDesugar::declare_dummy_variables() {
 
 }
 
-NodeFunctionDefinition* ASTDesugar::get_function_definition(NodeFunctionHeader *function_header) {
-    auto it = m_function_lookup.find({function_header->name, (int)function_header->args->params.size()});
-    if(it != m_function_lookup.end()) {
-        it->second->is_used = true;
-        return it->second;
-    }
-    return nullptr;
-}
+//NodeFunctionDefinition* ASTFunctionInlining::get_function_definition(NodeFunctionHeader *function_header) {
+//    auto it = m_function_lookup.find({function_header->name, (int)function_header->args->params.size()});
+//    if(it != m_function_lookup.end()) {
+//        it->second->is_used = true;
+//        return it->second;
+//    }
+//    return nullptr;
+//}
 
-std::unique_ptr<NodeReference> ASTDesugar::get_local_variable_substitute(const std::string& name) {
+std::unique_ptr<NodeReference> ASTFunctionInlining::get_local_variable_substitute(const std::string& name) {
     for (auto rit = m_variable_scope_stack.rbegin(); rit != m_variable_scope_stack.rend(); ++rit) {
         auto it = rit->find(name);
         if(it != rit->end()) {
@@ -609,7 +602,7 @@ std::unique_ptr<NodeReference> ASTDesugar::get_local_variable_substitute(const s
     return nullptr;
 }
 
-std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> ASTDesugar::get_function_inlines() {
+std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> ASTFunctionInlining::get_function_inlines() {
     return std::move(m_function_inlines);
 }
 

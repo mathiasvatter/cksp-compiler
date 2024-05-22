@@ -15,18 +15,17 @@ public:
 		m_program = &node;
 		for(auto & def : node.function_definitions) {
 			def->visited = false;
-			m_function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
 		}
+		node.update_function_lookup();
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
+			// create node body with local variable declarations for every callback and prepend it to the callback
 			auto node_body = std::make_unique<NodeBody>(callback->tok);
 			for(auto &decl : m_declares_per_callback[callback.get()]) {
-				if(decl) node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(decl), callback->tok));
+				node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(decl.second), callback->tok));
 			}
 			callback->statements->prepend_body(std::move(node_body));
 		}
-
-
 	}
 
 	void inline visit(NodeCallback& node) override {
@@ -41,40 +40,36 @@ public:
 	void inline visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 
+		node.get_definition(m_program);
+
 		if(node.definition and not node.definition->visited) {
 			// extra arguments in definition
 			// get declare statements of local variables
 
 			node.definition->accept(*this);
-			for (auto &declaration : m_local_var_declarations[node.definition]) {
+			for (auto &decl : m_local_var_declarations[node.definition]) {
 				// add local declarations of function definition to parameters
-				node.definition->header->args->params.push_back(declaration->to_be_declared->clone());
+				node.definition->header->args->params.push_back(decl.second->to_be_declared->clone());
 				for (auto &call_site : node.definition->call_sites) {
 					// add references to those local variables in the function call
-					call_site->function->args->params.push_back(declaration->to_be_declared->to_reference());
+					call_site->function->args->params.push_back(decl.second->to_be_declared->to_reference());
 					call_site->function->args->params.back()->parent = call_site->function->args.get();
 				}
-
 			}
 			node.definition->header->args->set_child_parents();
 		}
-		if(node.definition) {
-			// add declaration statements to the body of the current function or callback if function stack is empty
-			if(m_function_call_stack.empty()) {
-				m_declares_per_callback[m_current_callback].insert(
-					m_declares_per_callback[m_current_callback].begin(),
-					std::make_move_iterator(m_local_var_declarations[node.definition].begin()),
-					std::make_move_iterator(m_local_var_declarations[node.definition].end())
-				);
 
-			} else {
-				m_local_var_declarations[m_function_call_stack.top()].insert(
-					m_local_var_declarations[m_function_call_stack.top()].begin(),
-				 	std::make_move_iterator(m_local_var_declarations[node.definition].begin()),
-				 	std::make_move_iterator(m_local_var_declarations[node.definition].end())
-				 );
+		if(node.definition) {
+			// add declaration statements to the body of the current/above function or callback if function stack is empty
+			auto& next_declares = m_function_call_stack.empty() ? m_declares_per_callback[m_current_callback] : m_local_var_declarations[m_function_call_stack.top()];
+			for (auto &decl : m_local_var_declarations[node.definition]) {
+				next_declares.emplace(decl.first,clone_as<NodeSingleDeclareStatement>(decl.second.get()));
 			}
 
+			// remove call flag when function call got parameters
+			if(!node.function->args->params.empty()) {
+				node.is_call = false;
+			}
 		}
 	}
 
@@ -88,9 +83,10 @@ public:
 	void inline visit(NodeSingleDeclareStatement& node) override {
 		if(node.assignee) node.assignee->accept(*this);
 
+		// return if not in function
 		if(m_function_call_stack.empty()) return;
-		m_local_var_declarations[m_function_call_stack.top()].push_back(clone_as<NodeSingleDeclareStatement>(&node));
-		node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+		m_local_var_declarations[m_function_call_stack.top()].emplace(node.to_be_declared->name, clone_as<NodeSingleDeclareStatement>(&node));
+		node.replace_with(node.to_assign_stmt());
 	}
 
 
@@ -99,8 +95,9 @@ private:
 	NodeProgram* m_program = nullptr;
 	NodeCallback* m_current_callback = nullptr;
 	std::stack<NodeFunctionDefinition*> m_function_call_stack;
-	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> m_function_lookup;
-	std::unordered_map<NodeFunctionDefinition*, std::vector<std::unique_ptr<NodeSingleDeclareStatement>>> m_local_var_declarations;
+	/// map for local variable declarations per function definition to be added to the next/above function
+	std::unordered_map<NodeFunctionDefinition*, std::map<std::string, std::unique_ptr<NodeSingleDeclareStatement>>> m_local_var_declarations;
+	/// map for local variable declarations per function definition to be added to the next/above callback when no function is above
+	std::unordered_map<NodeCallback*, std::map<std::string, std::unique_ptr<NodeSingleDeclareStatement>>> m_declares_per_callback;
 
-	std::unordered_map<NodeCallback*, std::vector<std::unique_ptr<NodeSingleDeclareStatement>>> m_declares_per_callback;
 };

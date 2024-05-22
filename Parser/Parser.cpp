@@ -641,6 +641,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
     for(auto & func_def : m_function_definitions) {
         node_program->function_definitions.push_back(std::move(func_def.second));
     }
+	node_program->update_function_lookup();
     return Result<std::unique_ptr<NodeProgram>>(std::move(node_program));
 }
 
