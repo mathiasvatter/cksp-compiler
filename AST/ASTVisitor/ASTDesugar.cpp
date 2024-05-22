@@ -2,9 +2,9 @@
 // Created by Mathias Vatter on 21.01.24.
 //
 
-#include "ASTDesugarStructs.h"
+#include "ASTDesugar.h"
 
-void ASTDesugarStructs::visit(NodeProgram& node) {
+void ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
@@ -16,14 +16,14 @@ void ASTDesugarStructs::visit(NodeProgram& node) {
     m_program->init_callback->statements->prepend_body(std::move(m_global_variable_declarations));
 }
 
-void ASTDesugarStructs::visit(NodeBody& node) {
+void ASTDesugar::visit(NodeBody& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
     node.cleanup_body();
 }
 
-void ASTDesugarStructs::visit(NodeDeclareStatement& node) {
+void ASTDesugar::visit(NodeDeclareStatement& node) {
     if(auto desugaring = node.get_desugaring()) {
         node.accept(*desugaring);
         desugaring->replacement_node->accept(*this);
@@ -31,7 +31,7 @@ void ASTDesugarStructs::visit(NodeDeclareStatement& node) {
     }
 }
 
-void ASTDesugarStructs::visit(NodeSingleDeclareStatement& node) {
+void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     node.to_be_declared->accept(*this);
     if(node.assignee) node.assignee->accept(*this);
 
@@ -49,7 +49,7 @@ void ASTDesugarStructs::visit(NodeSingleDeclareStatement& node) {
     }
 }
 
-void ASTDesugarStructs::visit(NodeAssignStatement &node) {
+void ASTDesugar::visit(NodeAssignStatement &node) {
     if(auto desugaring = node.get_desugaring()) {
         node.accept(*desugaring);
         desugaring->replacement_node->accept(*this);
@@ -57,7 +57,7 @@ void ASTDesugarStructs::visit(NodeAssignStatement &node) {
     }
 }
 
-void ASTDesugarStructs::visit(NodeForEachStatement& node) {
+void ASTDesugar::visit(NodeForEachStatement& node) {
     node.statements->accept(*this);
     if(auto desugaring = node.get_desugaring()) {
         node.accept(*desugaring);
@@ -69,7 +69,7 @@ void ASTDesugarStructs::visit(NodeForEachStatement& node) {
     }
 }
 
-void ASTDesugarStructs::visit(NodeForStatement& node) {
+void ASTDesugar::visit(NodeForStatement& node) {
     node.statements->accept(*this);
     if(auto desugaring = node.get_desugaring()) {
         node.accept(*desugaring);
@@ -79,7 +79,7 @@ void ASTDesugarStructs::visit(NodeForStatement& node) {
     }
 }
 
-void ASTDesugarStructs::visit(NodeFamilyStatement &node) {
+void ASTDesugar::visit(NodeFamilyStatement &node) {
     node.members->accept(*this);
     if(auto lowering = node.get_lowering(nullptr)) {
         node.accept(*lowering);
@@ -87,7 +87,7 @@ void ASTDesugarStructs::visit(NodeFamilyStatement &node) {
     node.replace_with(std::move(node.members));
 }
 
-void ASTDesugarStructs::visit(NodeParamList &node) {
+void ASTDesugar::visit(NodeParamList &node) {
 	for(auto & param : node.params) {
 		param->accept(*this);
 	}
@@ -105,7 +105,7 @@ void ASTDesugarStructs::visit(NodeParamList &node) {
 	}
 }
 
-std::unique_ptr<NodeBody> ASTDesugarStructs::declare_compiler_variables() {
+std::unique_ptr<NodeBody> ASTDesugar::declare_compiler_variables() {
     Token tok = Token(token::KEYWORD, "compiler_variable", 0, 0,"");
     auto node_body = std::make_unique<NodeBody>(tok);
     for(auto & var_name: m_compiler_variables) {

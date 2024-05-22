@@ -15,7 +15,7 @@
 #include "BuiltinsProcessing/BuiltinsProcessor.h"
 #include "AST/ASTVisitor/ASTTypeChecking.h"
 #include "Generator/ASTGenerator.h"
-#include "AST/ASTVisitor/ASTDesugarStructs.h"
+#include "AST/ASTVisitor/ASTDesugar.h"
 #include "Preprocessor/ImportProcessor.h"
 #include "misc/FileHandler.h"
 #include "misc/CommandLineOptions.h"
