@@ -15,26 +15,10 @@
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
 
 class ASTVisitor {
-public:
-    template<typename T>std::unique_ptr<NodeStatement> statement_wrapper(std::unique_ptr<T> node, NodeAST* parent) {
-        auto node_statement = std::make_unique<NodeStatement>(std::move(node), node->tok);
-        node_statement->statement->parent = node_statement.get();
-        node_statement->parent = parent;
-        return node_statement;
-    }
-//	static bool is_to_be_declared(NodeAST* node);
-    static std::unique_ptr<NodeStatement> make_function_call(const std::string& name, std::vector<std::unique_ptr<NodeAST>> args, NodeAST* parent, Token tok);
-    static std::unique_ptr<NodeBinaryExpr> make_binary_expr(ASTType type, token op, std::unique_ptr<NodeAST> lhs, std::unique_ptr<NodeAST> rhs, NodeAST* parent, Token tok);
-    static std::unique_ptr<NodeInt> make_int(int32_t value, NodeAST* parent);
-    std::unique_ptr<NodeParamList> make_init_array_list(const std::vector<int32_t>& values, NodeAST* parent);
-    std::unique_ptr<NodeStatement> make_declare_array(const std::string& name, int32_t size, const std::vector<int32_t>& values, NodeAST* parent);
+protected:
     std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, DataType type, NodeAST* parent);
     std::unique_ptr<NodeBody> array_initialization(NodeArray* array, NodeParamList* list);
     static std::unique_ptr<NodeBody> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent);
-    static std::unique_ptr<NodeArray> make_array(const std::string& name, int32_t size, const Token& tok, NodeAST* parent);
-    void add_vector_to_statement_list(std::unique_ptr<NodeBody> &list, std::vector<std::unique_ptr<NodeStatement>> stmts);
-    /// puts nested statement list in one, returns new vector to replace node->statements with
-    static std::vector<std::unique_ptr<NodeStatement>> cleanup_node_body(NodeBody* node);
 
     std::set<std::string> m_restricted_builtin_functions = {"save_array", "save_array_str", "load_array", "load_array_str"};
     std::unordered_map<std::string, ASTType> m_compiler_variables = {{"_list_it",ASTType::Integer}, {"_ui_array_it", ASTType::Integer},
@@ -42,7 +26,8 @@ public:
                                                                      {"_iterator", ASTType::Integer}};
     std::unordered_map<ASTType, std::string> m_return_arrays = {{ASTType::Integer, "_return_vars_int"}, {ASTType::Real, "_return_vars_real"}, {ASTType::String, "_return_vars_str"}};
     std::unordered_map<ASTType, std::string> m_local_var_arrays = {{ASTType::Integer, "_loc_var_int"}, {ASTType::Real, "_loc_var_real"}, {ASTType::String, "_loc_var_str"}};
-
+	
+public:
     virtual void visit(NodeDeadCode& node) {};
 	virtual void visit(NodeInt& node) {node.type = ASTType::Integer;};
     virtual void visit(NodeReal& node) {node.type = ASTType::Real;};

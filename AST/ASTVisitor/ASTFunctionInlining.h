@@ -110,7 +110,7 @@ public:
                 auto it = m_function_inlines.find(func);
                 node_body->statements.push_back(std::move(it->second));
             }
-            node_body->statements.push_back(statement_wrapper(std::move(node.statement), &node));
+            node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node.statement), node.tok));
             node_body->accept(*this);
             node.statement = std::move(node_body);
         } else {

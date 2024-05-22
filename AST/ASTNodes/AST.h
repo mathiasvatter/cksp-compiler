@@ -527,7 +527,10 @@ struct NodeBody : NodeAST {
     }
 	void append_body(std::unique_ptr<NodeBody> new_body);
     void prepend_body(std::unique_ptr<NodeBody> new_body);
-
+	/// adds a node statement to internal vector and sets parent pointer
+	void add_stmt(std::unique_ptr<NodeStatement> stmt);
+	/// puts nested statement list in current one
+	void cleanup_body();
 };
 
 

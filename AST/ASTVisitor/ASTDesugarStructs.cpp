@@ -20,8 +20,7 @@ void ASTDesugarStructs::visit(NodeBody& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
-    // Ersetzen Sie die alte Liste durch die neue
-    node.statements = std::move(cleanup_node_body(&node));
+    node.cleanup_body();
 }
 
 void ASTDesugarStructs::visit(NodeDeclareStatement& node) {
