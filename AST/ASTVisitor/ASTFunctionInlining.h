@@ -57,7 +57,7 @@ private:
                                                               {token::PERS, {"make_persistent"}},
                                                               {token::INSTPERS, {"make_instr_persistent"}}};
 
-    NodeProgram* m_program = nullptr;
+//    NodeProgram* m_program = nullptr;
     NodeCallback* m_current_callback = nullptr;
     int m_current_callback_idx = 0;
 	NodeDataStructure* m_return_dummy_declaration = nullptr;

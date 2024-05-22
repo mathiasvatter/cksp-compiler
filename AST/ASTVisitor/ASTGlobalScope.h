@@ -108,7 +108,7 @@ public:
 	}
 
 	void inline visit(NodeSingleDeclareStatement& node) override {
-		node.to_be_declared->is_local = is_local_var(node.to_be_declared.get(), m_current_body, m_current_callback, m_program->init_callback);
+		node.to_be_declared->determine_locality(m_program, m_current_body, m_current_callback);
 
 		if(node.assignee) node.assignee->accept(*this);
 
@@ -199,16 +199,12 @@ private:
 	std::string loc_var_prefix = "loc_";
 	Gensym m_gensym;
 	DefinitionProvider* m_def_provider = nullptr;
-	NodeProgram* m_program = nullptr;
+//	NodeProgram* m_program = nullptr;
 	NodeBody* m_current_body = nullptr;
 	NodeCallback* m_current_callback = nullptr;
 	NodeFunctionDefinition* m_current_function = nullptr;
 	/// holds the current function definition that is being visited on top
 	std::stack<NodeFunctionDefinition*> m_function_call_stack = {};
-
-	static bool inline is_local_var(NodeDataStructure* node, NodeBody* current_body, NodeCallback* current_callback, NodeCallback* init_callback) {
-		return current_body->scope and current_callback != init_callback and !node->is_global and node->get_node_type() != NodeType::UIControl;
-	};
 
 	bool inline is_thread_safe_env() {
 		return (m_current_callback and m_current_callback->is_thread_safe) or (m_current_function and m_current_function->header->is_thread_safe);

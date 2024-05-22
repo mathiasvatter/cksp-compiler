@@ -104,6 +104,8 @@ struct NodeDataStructure : NodeAST {
 		return name;
 	}
     virtual std::unique_ptr<NodeReference> to_reference();
+	/// determines if current data structure is local variable and sets is_local flag
+	bool determine_locality(class NodeProgram* program, class NodeBody* current_body, class NodeCallback* current_callback);
 };
 
 struct NodeInt : NodeAST {
