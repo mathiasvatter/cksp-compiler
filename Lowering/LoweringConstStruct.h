@@ -7,7 +7,7 @@
 #include "ASTLowering.h"
 
 /**
- * This class is responsible for lowering the const statement.
+ * @brief This class is responsible for lowering the const statement.
  * Example:
  * pre lowering:
  *  const fafa
@@ -67,35 +67,33 @@ public:
         for(int i = 0; i<node.constants->statements.size(); i++){
             node.constants->statements[i]->accept(*this);
             const_indexes.push_back(std::make_unique<NodeBinaryExpr>(
-                    token::ADD,
-                    m_pre->clone(),
-                    m_iter->clone(), node.tok));
+				token::ADD,
+				m_pre->clone(),
+				m_iter->clone(), node.tok)
+			);
             m_iter = std::make_unique<NodeBinaryExpr>(
-                    token::ADD,
-                    m_iter->clone(),
-                    std::make_unique<NodeInt>(1, node.tok),
-                    node.tok
-                    );
+				token::ADD,
+				m_iter->clone(),
+				std::make_unique<NodeInt>(1, node.tok),
+				node.tok
+			);
         }
         auto node_array = std::make_unique<NodeArray>(
-                std::nullopt,
-                node.name,
-                std::make_unique<NodeInt>(node.constants->statements.size(), node.tok),
-                node.tok
-                );
+			std::nullopt,
+			node.name,
+			std::make_unique<NodeInt>(node.constants->statements.size(), node.tok),
+			node.tok
+		);
         auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(
-                std::move(node_array),
-                std::unique_ptr<NodeParamList>(new NodeParamList(std::move(const_indexes), node.tok)),
-                node.tok
-                );
+			std::move(node_array),
+			std::make_unique<NodeParamList>(std::move(const_indexes), node.tok),
+			node.tok
+		);
         auto array = std::make_unique<NodeStatement>(std::move(node_declare_statement), node.tok);
-//        array->update_parents(node.constants.get());
-        node.constants->statements.push_back(std::move(array));
+        node.constants->add_stmt(std::move(array));
         auto constant = make_declare_variable(node.name+".SIZE", node.constants->statements.size(), DataType::Const, node.constants.get());
-        node.constants->statements.push_back(std::move(constant));
-        node.constants->set_child_parents();
-//        node.constants->update_parents(node.parent);
-//        node.replace_with(std::move(node.constants));
+        node.constants->add_stmt(std::move(constant));
+//        node.constants->set_child_parents();
         m_const_prefixes.pop();
     }
 };

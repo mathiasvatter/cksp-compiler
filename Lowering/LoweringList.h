@@ -80,7 +80,6 @@ public:
 			node.tok
 		);
         auto main_size = (int32_t)node.body.size();
-//		node_declare_main_array->to_be_declared->is_reference = false;
         auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(
                 std::make_unique<NodeVariable>(
                         std::nullopt,
@@ -89,8 +88,8 @@ public:
                 std::make_unique<NodeInt>(main_size,node.tok), node.tok);
 		// add "_" to main array name if dimension is > 1
 		if(max_dimension>1) node_declare_main_array->to_be_declared->name = "_"+node_declare_main_array->to_be_declared->name;
-        node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_declare_main_array), node.tok));
-        node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_declare_main_const), node.tok));
+        node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_main_array), node.tok));
+        node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_main_const), node.tok));
 
 
         if(max_dimension == 1) {
@@ -98,8 +97,7 @@ public:
             for(int i = 1; i<node.body.size(); i++) {
                 node.body[0]->params.push_back(std::move(node.body[i]->params[0]));
             }
-            add_vector_to_statement_list(node_body, std::move(array_initialization(node_main_array.get(), node.body[0].get())->statements));
-            node_body->update_parents(node.parent);
+			node_body->append_body(array_initialization(node_main_array.get(), node.body[0].get()));
             node_body->accept(*this);
             node.replace_with(std::move(node_body));
             return;
@@ -134,8 +132,8 @@ public:
                 std::move(node_positions_array),
                 std::move(node_positions), node.tok
                 );
-        node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_sizes_declaration), node.tok));
-        node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_positions_declaration), node.tok));
+        node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_sizes_declaration), node.tok));
+        node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_positions_declaration), node.tok));
 
         auto node_iterator_var = std::make_unique<NodeVariableRef>(
                         "_iterator", node.tok
@@ -152,7 +150,7 @@ public:
                     std::move(node.body[i]),
                     node.tok
                     );
-            node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok));
+            node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok));
 
             auto node_variable = std::make_unique<NodeVariable>(
                     std::nullopt,
@@ -163,7 +161,7 @@ public:
                     std::move(node_variable),
                     std::make_unique<NodeInt>(sizes[i], node.tok),
                     node.tok);
-            node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_const_declaration), node.tok));
+            node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_const_declaration), node.tok));
 
             auto node_while_body = std::make_unique<NodeBody>(node.tok);
             auto node_expression = std::make_unique<NodeBinaryExpr>(
@@ -189,10 +187,9 @@ public:
             node_while_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
             node_while_body->set_child_parents();
             auto node_while_loop = make_while_loop(node_iterator_var.get(), 0, sizes[i], std::move(node_while_body), node_body.get());
-            node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_while_loop), node.tok));
-            node_body->set_child_parents();
+            node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while_loop), node.tok));
+//            node_body->set_child_parents();
         }
-//        node_body->update_parents(node.parent);
         node_body->accept(*this);
         node.replace_with(std::move(node_body));
 	};

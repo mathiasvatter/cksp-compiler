@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Wed May 22 16:45:36 2024 }
+{ Compiled with cksp version 0.0.5 on Wed May 22 17:23:18 2024 }
 on init
   declare ?_return_vars_real[6]
   declare !_return_vars_str[6]
@@ -18,6 +18,11 @@ on init
   declare $_string_it
   declare $_ui_array_it
   declare $_list_it
+  declare !blabla[3]
+  declare const $blabla__SIZE := 3
+  !blabla[0] := "eins"
+  !blabla[1] := "zwei"
+  !blabla[2] := "drei"
   declare ui_slider $sli_1 (0, 1000)
   declare ui_slider $sli_2 (0, 1000)
   declare $i

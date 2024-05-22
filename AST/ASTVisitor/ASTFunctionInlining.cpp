@@ -513,7 +513,7 @@ void ASTFunctionInlining::visit(NodeBody& node) {
     }
 	if(node.scope) m_variable_scope_stack.pop_back();
 
-    if(!node.scope) node.statements = std::move(cleanup_node_body(&node));
+    if(!node.scope) node.cleanup_body();
 }
 
 void ASTFunctionInlining::visit(NodeUIControl &node) {
@@ -550,12 +550,20 @@ void ASTFunctionInlining::visit(NodeUIControl &node) {
 void ASTFunctionInlining::declare_local_var_arrays() {
     Token tok = Token(token::KEYWORD, "compiler_variable", 0, 0,"");
     for(auto &arr_name : m_local_var_arrays) {
-        auto node_array = make_array(arr_name.second, std::max(1,(int)m_local_variables.size()), tok, m_program->init_callback);
-        node_array -> type = arr_name.first;
-        node_array-> is_used = true;
+		auto node_array = std::make_unique<NodeArray>(
+			std::nullopt,
+			arr_name.second,
+			DataType::Array,
+			std::make_unique<NodeInt>(std::max(1,(int)m_local_variables.size()), tok),
+			tok);
+
+        node_array->type = arr_name.first;
+        node_array->is_used = true;
         node_array->is_engine = true;
         node_array->is_global = true;
-        auto node_arr_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_array), nullptr, tok);
+        auto node_arr_declaration = std::make_unique<NodeSingleDeclareStatement>(
+			std::move(node_array),
+			nullptr, tok);
         node_arr_declaration->to_be_declared->parent = node_arr_declaration.get();
         node_arr_declaration->accept(*this);
         m_local_declare_statements->statements.push_back(std::make_unique<NodeStatement>(std::move(node_arr_declaration), tok));

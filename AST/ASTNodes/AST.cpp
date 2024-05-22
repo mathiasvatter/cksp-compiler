@@ -366,6 +366,46 @@ void NodeBody::prepend_body(std::unique_ptr<NodeBody> new_body) {
     statements.insert(statements.begin(), std::make_move_iterator(new_body->statements.begin()), std::make_move_iterator(new_body->statements.end()));
 }
 
+void NodeBody::add_stmt(std::unique_ptr<NodeStatement> stmt) {
+	stmt->parent = this;
+	statements.push_back(std::move(stmt));
+}
+
+void NodeBody::cleanup_body() {
+	std::vector<std::unique_ptr<NodeStatement>> temp;
+	for(auto & statement : statements) {
+		if(statement->statement->get_node_type() == NodeType::Body) {
+			// Übertragen Sie die function_inlines vom aktuellen NodeBody-Element
+			// auf das erste Element der inneren NodeBody
+			auto& inner_statements = static_cast<NodeBody*>(statement->statement.get())->statements;
+			if (!inner_statements.empty()) {
+				inner_statements[0]->function_inlines.insert(
+					inner_statements[0]->function_inlines.end(),
+					std::make_move_iterator(statement->function_inlines.begin()),
+					std::make_move_iterator(statement->function_inlines.end())
+				);
+			}
+			// Aktualisieren Sie das parent-Attribut für jedes innere Statement
+			for (auto& stmt : inner_statements) {
+				stmt->parent = this;
+			}
+			// Fügen Sie die inneren Statements zum temporären Vector hinzu
+			temp.insert(
+				temp.end(),
+				std::make_move_iterator(inner_statements.begin()),
+				std::make_move_iterator(inner_statements.end())
+			);
+			// Überspringen Sie das Hinzufügen des aktuellen NodeBody-Elements zu `temp`
+			continue;
+		}
+		// Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht speziell behandelt wird
+		temp.push_back(std::move(statement));
+	}
+	// Ersetzen Sie die alte Liste durch die neue
+	statements = std::move(temp);
+}
+
+
 // ************* NodeIfStatement ***************
 void NodeIfStatement::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
