@@ -3,7 +3,7 @@
 //
 
 #include "ASTTypeCasting.h"
-#include "ASTDesugar.h"
+#include "ASTFunctionInlining.h"
 
 ASTTypeCasting::ASTTypeCasting(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {}
 

@@ -390,7 +390,9 @@ struct NodeSingleDeclareStatement : NodeAST {
         if(assignee) assignee -> update_token_data(token);
     }
 	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
-
+	/// returns new assign statement with the declared variable and assignee or neutral element. Can optionally take new
+	/// variable to make reference of
+	[[nodiscard]] std::unique_ptr<NodeSingleAssignStatement> to_assign_stmt(NodeDataStructure* var=nullptr);
 };
 
 struct NodeReturnStatement : NodeAST {
@@ -878,11 +880,17 @@ struct NodeFunctionCall : NodeAST {
         function -> update_token_data(token);
     }
 	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
-
+	/// attempts to get and set the definition pointer of the function call and updates the call sites of the definition
+	NodeFunctionDefinition* find_definition(class NodeProgram *program);
+	/// attempts to get and match metadata from builtin function to this
+	NodeFunctionHeader* find_builtin_definition(NodeProgram *program);
+	/// gets and sets definition ptr or matches builtin func metadata -> throws error if not found
+	bool get_definition(NodeProgram* program);
 };
 
 struct NodeProgram : NodeAST {
 	NodeCallback* init_callback = nullptr;
+	DefinitionProvider* def_provider = nullptr;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
 	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> function_lookup;
@@ -898,21 +906,17 @@ struct NodeProgram : NodeAST {
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
-        for(auto & c : callbacks)
-            c->update_parents(this);
-        for(auto & f : function_definitions)
-            f->update_parents(this);
+        for(auto & c : callbacks) c->update_parents(this);
+        for(auto & f : function_definitions) f->update_parents(this);
     }
 	void set_child_parents() override {
-		for(auto& c : callbacks) {
-			c->parent = this;
-		}
-		for(auto& f : function_definitions) {
-			f->parent = this;
-		}
+		for(auto& c : callbacks) c->parent = this;
+		for(auto& f : function_definitions) f->parent = this;
 	};
     std::string get_string() override {return "";}
     void update_token_data(const Token& token) override {}
+	/// update function lookup table and falsify visited flag
+	void update_function_lookup();
 };
 
 

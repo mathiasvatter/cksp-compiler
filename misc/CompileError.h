@@ -50,7 +50,8 @@ enum class ErrorType {
 	TokenError,
     ParseError,
     PreprocessorError,
-	MathError
+	MathError,
+	InternalError
 	// TODO weitere Fehlerarten
 };
 
@@ -95,6 +96,7 @@ public:
             case ErrorType::PreprocessorError: return "PreprocessorError";
 			case ErrorType::MathError: return "MathError";
             case ErrorType::FileError: return "FileError";
+			case ErrorType::InternalError: return "InternalError";
             // TODO weitere Fehlerarten
             default: return "UnknownError";
         }

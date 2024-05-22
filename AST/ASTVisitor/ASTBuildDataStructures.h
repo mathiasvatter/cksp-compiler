@@ -60,16 +60,6 @@ private:
 	bool m_is_init_callback = false;
 	DefinitionProvider* m_def_provider = nullptr;
 
-	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> m_function_lookup;
-	inline NodeFunctionDefinition* get_function_definition(NodeFunctionHeader *function_header) {
-		auto it = m_function_lookup.find({function_header->name, (int)function_header->args->params.size()});
-		if(it != m_function_lookup.end()) {
-			it->second->is_used = true;
-			return it->second;
-		}
-		return nullptr;
-	};
-
 	/// Checks for existence and uniqueness of "on init" callback
 	/// If found, returns pointer to the callback node
 	static NodeCallback* move_on_init_callback(NodeProgram& node);

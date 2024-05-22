@@ -13,12 +13,10 @@ public:
 
 	void inline visit(NodeProgram& node) override {
 		m_program = &node;
+		// update because of potentially altered param counts after lambda lifting
+		node.update_function_lookup();
 		m_def_provider->refresh_scopes();
 		m_passive_vars.clear();
-		for(auto & def : node.function_definitions) {
-//			def->visited = false;
-			m_function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
-		}
 
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
@@ -30,26 +28,32 @@ public:
 			}
 		}
 
-        // rename local passive_vars with gensym and add to global scope
-        for(auto & local_var : m_all_local_vars) {
-            local_var->name = m_gensym.fresh(loc_var_prefix);
-            m_def_provider->set_declaration(local_var, false);
-        }
-        // rename all local references with their new passive_var names
-        for(auto & local_ref : m_all_local_references) {
-            local_ref->name = local_ref->declaration->name;
-        }
+		rename_local_vars();
+
         // move all passive_vars declarations to global scope
         auto local_declare_statement = std::make_unique<NodeBody>(node.tok);
         for(auto & local_var : m_all_local_callback_vars) {
-            auto node_declare_statement = local_var->parent;
-            auto node_assign_statement = assign_statement_from_declaration(static_cast<NodeSingleDeclareStatement*>(node_declare_statement), local_var);
+            auto node_declare_statement = static_cast<NodeSingleDeclareStatement*>(local_var->parent);
+            auto node_assign_statement = node_declare_statement->to_assign_stmt();
             local_declare_statement->statements.push_back(std::make_unique<NodeStatement>(
                     clone_as<NodeSingleDeclareStatement>(node_declare_statement), node.tok)
                     );
             node_declare_statement->replace_with(std::move(node_assign_statement));
         }
         node.init_callback->statements->prepend_body(std::move(local_declare_statement));
+	}
+
+	inline bool rename_local_vars() {
+		// rename local passive_vars with gensym and add to global scope
+		for(auto & local_var : m_all_local_vars) {
+			local_var->name = m_gensym.fresh(loc_var_prefix);
+			m_def_provider->set_declaration(local_var, false);
+		}
+		// rename all local references with their new passive_var names
+		for(auto & local_ref : m_all_local_references) {
+			if(local_ref->is_local) local_ref->name = local_ref->declaration->name;
+		}
+		return true;
 	}
 
 	void inline visit(NodeCallback& node) override {
@@ -63,7 +67,10 @@ public:
 
 	void inline visit(NodeBody &node) override {
 		m_current_body = &node;
-		if(node.scope) m_def_provider->add_scope();
+		if(node.scope) {
+			m_def_provider->add_scope();
+			m_passive_vars_replace.emplace_back();
+		}
 		for(auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
@@ -77,42 +84,22 @@ public:
 			// set back passive_var index since scope has ended
 			m_passive_var_idx = 0;
 			// clear passive_var replace map
-			m_passive_vars_replace.clear();
+			m_passive_vars_replace.pop_back();
 		}
 	}
 
 	void inline visit(NodeFunctionCall& node) override {
         node.function->accept(*this);
 
+		node.get_definition(m_program);
 
-		if(!node.function->is_builtin or !node.definition) {
-			if (auto function_def = get_function_definition(node.function.get())) {
-				node.definition = function_def;
-			} else if (auto builtin_func = m_def_provider->get_builtin_function(node.function.get())) {
-				node.function->type = builtin_func->type;
-				node.function->has_forced_parenth = builtin_func->has_forced_parenth;
-				node.function->arg_ast_types = builtin_func->arg_ast_types;
-				node.function->arg_var_types = builtin_func->arg_var_types;
-				node.function->is_builtin = builtin_func->is_builtin;
-				node.function->is_thread_safe = builtin_func->is_thread_safe;
-			} else {
-				CompileError(ErrorType::SyntaxError,"Function has not been declared.", node.tok.line, "", node.function->name, node.tok.file).exit();
-			}
-		}
-
-		// only in second pass -> visit function definition
-		if(node.definition) {
-			node.definition->call_sites.emplace(&node);
-			node.definition->callback_sites.emplace(m_current_callback);
-			if(!node.definition->visited and !m_function_call_stack.empty())
-				node.definition->accept(*this);
-		}
-
+		// do not visit definition -> because passive var allocation is separate between callbacks and functions
 	}
 
 	void inline visit(NodeFunctionDefinition& node) override {
 		m_function_call_stack.push(&node);
 		m_current_function = m_function_call_stack.top();
+		node.header->accept(*this);
 		node.body->accept(*this);
 		node.visited = true;
 		m_function_call_stack.pop();
@@ -121,26 +108,15 @@ public:
 	}
 
 	void inline visit(NodeSingleDeclareStatement& node) override {
-		if(is_local_var(node.to_be_declared.get(), m_current_body, m_current_callback, m_program->init_callback)) {
-			node.to_be_declared->is_local = true;
-		}
+		node.to_be_declared->is_local = is_local_var(node.to_be_declared.get(), m_current_body, m_current_callback, m_program->init_callback);
 
 		if(node.assignee) node.assignee->accept(*this);
 
 		if(node.to_be_declared->is_local) {
-			// do lambda lifting when in function and add var to arguments
-//			if(m_current_function) {
-////				m_all_local_function_vars.push_back(node.to_be_declared.get());
-//				m_current_function->header->args->params.push_back(node.to_be_declared->clone());
-//				m_passive_vars_replace.insert({node.to_be_declared->name, static_cast<NodeDataStructure*>(m_current_function->header->args->params.back().get())});
-//				auto node_assign_statement = assign_statement_from_declaration(&node, node.to_be_declared.get());
-//
-//			}
-
 			if(is_thread_safe_env()) {
 				if (auto free_passive_var = get_free_passive_var()) {
-					m_passive_vars_replace.insert({node.to_be_declared->name, free_passive_var});
-					auto node_assign_statement = assign_statement_from_declaration(&node, free_passive_var);
+					m_passive_vars_replace.back().insert({node.to_be_declared->name, free_passive_var});
+					auto node_assign_statement = node.to_assign_stmt(free_passive_var);
 					m_all_local_references.push_back(static_cast<NodeReference *>(node_assign_statement->array_variable.get()));
 					node.replace_with(std::move(node_assign_statement));
 					return;
@@ -165,6 +141,8 @@ public:
 		if(node.size) node.size->accept(*this);
 
 		m_def_provider->set_declaration(&node, !node.is_local);
+		m_gensym.ingest(node.name);
+
 		if(node.is_local) {
 			if(m_current_callback) m_all_local_callback_vars.push_back(&node);
 			m_all_local_vars.push_back(&node);
@@ -200,6 +178,7 @@ public:
 
 	void inline visit(NodeVariable& node) override {
 		m_def_provider->set_declaration(&node, !node.is_local);
+		m_gensym.ingest(node.name);
 		if(node.is_local) {
 			if(m_current_callback) m_all_local_callback_vars.push_back(&node);
 			m_all_local_vars.push_back(&node);
@@ -215,8 +194,7 @@ private:
 	NodeCallback* m_current_callback = nullptr;
 	NodeFunctionDefinition* m_current_function = nullptr;
 	/// holds the current function definition that is being visited on top
-	std::stack<NodeFunctionDefinition*> m_function_call_stack;
-
+	std::stack<NodeFunctionDefinition*> m_function_call_stack = {};
 
 	static bool inline is_local_var(NodeDataStructure* node, NodeBody* current_body, NodeCallback* current_callback, NodeCallback* init_callback) {
 		return current_body->scope and current_callback != init_callback and !node->is_global and node->get_node_type() != NodeType::UIControl;
@@ -227,11 +205,11 @@ private:
 	};
 
 	/// vector for all local vars in callbacks
-	std::vector<NodeDataStructure*> m_all_local_callback_vars;
+	std::vector<NodeDataStructure*> m_all_local_callback_vars = {};
 	/// vector for all local vars in functions -> do not get moved into on init
-	std::vector<NodeDataStructure*> m_all_local_vars;
+	std::vector<NodeDataStructure*> m_all_local_vars = {};
 	/// vector for all variables which dynamic extend has ended
-	std::vector<NodeDataStructure*> m_passive_vars;
+	std::vector<NodeDataStructure*> m_passive_vars = {};
 	inline void add_passive_vars(const std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual>& map2) {
 		for(auto & var : map2) {
             m_passive_vars.push_back(var.second);
@@ -247,14 +225,16 @@ private:
     }
     /// search for new declaration to reference if declaration is replaced by passive_var
     inline NodeDataStructure* get_new_declaration(const std::string& ref_name) {
-        auto it = m_passive_vars_replace.find(ref_name);
-        if(it != m_passive_vars_replace.end()) {
-            return it->second;
-        }
+		for (auto rit = m_passive_vars_replace.rbegin(); rit != m_passive_vars_replace.rend(); ++rit) {
+			auto it = rit->find(ref_name);
+			if (it != rit->end()) {
+				return it->second;
+			}
+		}
         return nullptr;
     }
     /// map for old datastructure name (as keys) that get replaced by new datastructures (passive_vars) (as values)
-    std::unordered_map<std::string, NodeDataStructure*> m_passive_vars_replace;
+    std::vector<std::unordered_map<std::string, NodeDataStructure*>> m_passive_vars_replace;
     /// vector for all local references that have been replaced by passive_var references
 	std::vector<NodeReference*> m_all_local_references;
 
@@ -275,16 +255,6 @@ private:
         );
         return node_assign_statement;
     };
-
-	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> m_function_lookup;
-	inline NodeFunctionDefinition* get_function_definition(NodeFunctionHeader *function_header) {
-		auto it = m_function_lookup.find({function_header->name, (int)function_header->args->params.size()});
-		if(it != m_function_lookup.end()) {
-			it->second->is_used = true;
-			return it->second;
-		}
-		return nullptr;
-	};
 
 	static inline CompileError throw_declaration_error(NodeReference* node) {
 		auto compile_error = CompileError(ErrorType::Variable, "","", node->tok);

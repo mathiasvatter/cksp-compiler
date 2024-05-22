@@ -9,9 +9,9 @@
 #include <type_traits>
 
 
-class ASTDesugar : public ASTVisitor {
+class ASTFunctionInlining : public ASTVisitor {
 public:
-    explicit ASTDesugar(DefinitionProvider* definition_provider);
+    explicit ASTFunctionInlining(DefinitionProvider* definition_provider);
 
     /// check for used functions
     void visit(NodeProgram& node) override;
@@ -68,8 +68,8 @@ private:
     std::stack<std::string> m_const_prefixes;
 
     NodeAST* m_current_function_inline_statement = nullptr;
-    std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
-    std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> m_function_lookup;
+//    std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
+//    std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> m_function_lookup;
 
     NodeFunctionDefinition* m_current_function = nullptr;
     std::unordered_map<std::string, NodeFunctionDefinition*> m_functions_in_use;
@@ -78,8 +78,7 @@ private:
     /// returns substitute for current node.name, or nullptr if there is no substitute
     std::stack<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_substitution_stack;
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
-    NodeFunctionDefinition* get_function_definition(NodeFunctionHeader* function_header);
-//    std::vector<NodeFunctionDefinition*> m_function_call_order;
+//    NodeFunctionDefinition* get_function_definition(NodeFunctionHeader* function_header);
     std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> m_function_inlines;
 
     int local_var_counter = 0;
@@ -98,10 +97,10 @@ private:
     bool in_function();
 };
 
-class ASTFunctionInlining : public ASTVisitor {
+class FunctionInliningHelper : public ASTVisitor {
 public:
-    explicit ASTFunctionInlining(std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> function_inlines) : m_function_inlines(std::move(function_inlines)) {}
-	~ASTFunctionInlining() = default;
+    explicit FunctionInliningHelper(std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> function_inlines) : m_function_inlines(std::move(function_inlines)) {}
+	~FunctionInliningHelper() = default;
 
     inline void visit(NodeStatement& node) {
         if(!node.function_inlines.empty()) {
