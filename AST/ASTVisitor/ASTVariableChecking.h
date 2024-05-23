@@ -39,31 +39,4 @@ private:
 	bool m_is_init_callback = false;
 	DefinitionProvider* m_def_provider = nullptr;
 
-    static inline CompileError throw_declaration_error(NodeReference* node) {
-        auto compile_error = CompileError(ErrorType::Variable, "","", node->tok);
-        std::string type = "<Variable>";
-        if(node->get_node_type() == NodeType::Array) type = "<Array>";
-        compile_error.m_message = type+" has not been declared: " + node->name+".";
-        compile_error.m_expected = "Valid declaration";
-        compile_error.m_got = node->name;
-        return compile_error;
-    };
-
-    static inline CompileError throw_declaration_type_error(NodeReference* node) {
-        auto compile_error = CompileError(ErrorType::Variable, "","", node->tok);
-        if(!node->declaration) throw_declaration_error(node).exit();
-        if(node->declaration->get_node_type() == NodeType::Array && node->get_node_type() == NodeType::Variable) {
-            compile_error.m_message = "Incorrect Reference type. Reference was declared as <Array>: " + node->name+".";
-            compile_error.m_expected = "<Array>";
-            compile_error.m_got = "<Variable>";
-            compile_error.exit();
-        }
-        if(node->declaration->get_node_type() == NodeType::Variable && node->get_node_type() == NodeType::Array) {
-            compile_error.m_message = "Incorrect Reference type. Reference was declared as <Variable>: " + node->name+".";
-            compile_error.m_expected = "<Variable>";
-            compile_error.m_got = "<Array>";
-            compile_error.exit();
-        }
-        return compile_error;
-    }
 };

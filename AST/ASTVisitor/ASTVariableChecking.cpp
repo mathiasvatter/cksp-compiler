@@ -87,7 +87,7 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 	if(node.index) node.index->accept(*this);
 
 	auto node_declaration = m_def_provider->get_declaration(&node);
-	if(!node_declaration) throw_declaration_error(&node).exit();
+	if(!node_declaration) m_def_provider->throw_declaration_error(&node).exit();
 
     node.match_data_structure(node_declaration);
 }
@@ -103,11 +103,9 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 	if(node.is_compiler_return) {
 		return;
 	}
-
-
+	
 	auto node_declaration = m_def_provider->get_declaration(&node);
-	if(!node_declaration)
-        throw_declaration_error(&node).exit();
+	if(!node_declaration) m_def_provider -> throw_declaration_error(&node).exit();
 
     node.match_data_structure(node_declaration);
 
