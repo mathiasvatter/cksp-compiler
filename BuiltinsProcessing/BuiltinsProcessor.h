@@ -22,7 +22,7 @@ public:
     std::unique_ptr<NodeArray> parse_builtin_array();
     Result<std::unique_ptr<NodeFunctionHeader>> parse_builtin_function();
 	Result<std::unique_ptr<NodeUIControl>> parse_builtin_ui_control();
-    Result<std::pair<std::vector<ASTType>, std::vector<DataType>>> parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args);
+    Result<std::tuple<std::vector<Type*>, std::vector<ASTType>, std::vector<DataType>>> parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args);
 
 private:
 	DefinitionProvider* m_def_provider;

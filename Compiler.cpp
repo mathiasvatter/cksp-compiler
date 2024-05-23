@@ -27,6 +27,7 @@ void Compiler::compile() {
 //    input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
 //    input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
 //    input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
+//	input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
 //    input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
@@ -100,6 +101,9 @@ void Compiler::compile() {
 
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
+
+	ASTVariableChecking variable_checking1(&m_definition_provider);
+	ast->accept(variable_checking1);
 
 	compile_time.stop("Lowering");
 	compile_time.start("Global Scope");

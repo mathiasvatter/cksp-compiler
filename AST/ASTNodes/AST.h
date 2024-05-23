@@ -13,14 +13,14 @@
 #include <chrono>
 
 #include "ASTHelper.h"
-#include "../TypeRegistry.h"
+#include "../Types.h"
 
 class ASTDesugaring;
 
 struct NodeAST {
     Token tok;
     ASTType type;
-    const Type* ty = nullptr;
+	Type* ty = nullptr;
     NodeType node_type;
     NodeAST* parent = nullptr;
     inline explicit NodeAST(const Token tok=Token(), NodeType node_type=NodeType::DeadCode) : tok(tok),
@@ -793,6 +793,7 @@ struct NodeFunctionHeader: NodeAST {
     std::unique_ptr<NodeParamList> args;
     std::vector<ASTType> arg_ast_types;
     std::vector<DataType> arg_var_types;
+	std::vector<Type*> arg_types;
     inline explicit NodeFunctionHeader(Token tok) : NodeAST(std::move(tok), NodeType::FunctionHeader) {}
     inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeParamList> args, Token tok)
     : NodeAST(std::move(tok), NodeType::FunctionHeader), name(std::move(name)), args(std::move(args)) {

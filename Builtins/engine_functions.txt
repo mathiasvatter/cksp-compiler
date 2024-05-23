@@ -27,7 +27,7 @@ _load_ir_sample(filename: string, slot: int, generic: int): int
 _num_slices(group_idx: int): int
 _pgs_create_key(keyid: any, size: int)
 _pgs_get_key_val(keyid: any, index: int): int
-_pgs_key_exists(keyid: any):boolean
+_pgs_key_exists(keyid: any):bool
 _pgs_set_key_val(keyid: any, index: int, value: int)
 _read_persistent_var(variable: any)
 _reset_rls_trig_counter(note: int)
@@ -44,7 +44,7 @@ acos(value: real): real
 add_menu_item(variable: int, text: any, number: int)
 add_text_line(variable: int, text: string)
 allow_group(group_idx: int)
-array_equal(array: int, array: int): boolean
+array_equal(array: int, array: int): bool
 asin(value: real): real
 atan(value: real): real
 attach_level_meter(ui_id: int, group_idx: int, slot_idx: int, channel_idx: int, bus_idx: int)
@@ -208,10 +208,10 @@ pgs_create_key(key_id: any, size: int)
 pgs_create_str_key(key_id: any)
 pgs_get_key_val(key_id: any, index: int): int
 pgs_get_str_key_val(key_id: any): string
-pgs_key_exists(key_id: any): boolean
+pgs_key_exists(key_id: any): bool
 pgs_set_key_val(key_id: any, index: int, value: int)
 pgs_set_str_key_val(key_id: any, text: string)
-pgs_str_key_exists(key_id: any): boolean
+pgs_str_key_exists(key_id: any): bool
 play_note(note_number: int, velocity: int, sampleoffset: int, duration: int): int
 pow(value: real, value: real): real
 purge_group(group_idx: int, mode: int): int
