@@ -86,8 +86,8 @@ void Compiler::compile() {
 	compile_time.stop("Parsing");
 	compile_time.start("Desugaring");
 
-	ASTDesugar desugar1;
-	ast->accept(desugar1);
+	ASTDesugar desugar;
+	ast->accept(desugar);
 
 	compile_time.stop("Desugaring");
 	compile_time.start("Build Data Structures");
@@ -116,8 +116,8 @@ void Compiler::compile() {
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");
 
-	ASTFunctionInlining desugar(&m_definition_provider);
-	ast->accept(desugar);
+	ASTFunctionInlining func_inlining(&m_definition_provider);
+	ast->accept(func_inlining);
 
     compile_time.stop("Function Inlining");
 	compile_time.start("Variable Checking");

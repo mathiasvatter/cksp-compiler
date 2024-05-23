@@ -103,7 +103,7 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 	if(node.is_compiler_return) {
 		return;
 	}
-	
+
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) m_def_provider -> throw_declaration_error(&node).exit();
 
