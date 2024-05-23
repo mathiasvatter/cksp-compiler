@@ -14,7 +14,7 @@
 void NodeAST::accept(ASTVisitor &visitor) {}
 
 NodeAST::NodeAST(const NodeAST& other) : parent(other.parent), node_type(other.node_type),
-    tok(other.tok), type(other.type), ty(clone_unique(other.ty)) {}
+    tok(other.tok), type(other.type), ty(other.ty) {}
 
 void NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 	if (parent) {

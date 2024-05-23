@@ -18,11 +18,11 @@ void ASTPrinter::visit(NodeString &node) {
 
 void ASTPrinter::visit(NodeVariable &node) {
     if(node.persistence)
-        std::cout << " read ";
+        std::cout << "read ";
     if(node.data_type == DataType::Polyphonic)
-        std::cout << " polyphonic ";
+        std::cout << "polyphonic ";
     else if(node.data_type == DataType::Const)
-        std::cout << " const ";
+        std::cout << "const ";
     std::cout << node.name;
 }
 
@@ -92,14 +92,19 @@ void ASTPrinter::visit(NodeParamList &node) {
 }
 
 void ASTPrinter::visit(NodeBinaryExpr &node) {
-    node.left->accept(*this);
-    std::cout << " " << node.op << " ";
-    node.right->accept(*this);
+	auto is_nested_bin_expr = node.parent->get_node_type() == NodeType::BinaryExpr || node.parent->get_node_type() == NodeType::UnaryExpr;
+	if(is_nested_bin_expr and node.type != ASTType::String) std::cout << "(";
+
+	node.left->accept(*this);
+	std::cout << " " << GENERATE_ALL_OPERATORS[node.op] << " ";
+	node.right->accept(*this);
+	if(is_nested_bin_expr and node.type != ASTType::String) std::cout << ")";
+
 }
 
 void ASTPrinter::visit(NodeUnaryExpr &node) {
-    std::cout << node.op << " ";
-    node.operand->accept(*this);
+	std::cout << GENERATE_ALL_OPERATORS[node.op] << " ";
+	node.operand->accept(*this);
 }
 
 void ASTPrinter::visit(NodeAssignStatement &node) {
@@ -141,7 +146,7 @@ void ASTPrinter::visit(NodeFamilyStatement &node) {
 
 void ASTPrinter::visit(NodeStatement &node) {
     if(node.statement->get_node_type() != NodeType::DeadCode) {
-        std::cout << get_indent();
+        if(node.statement->get_node_type() != NodeType::Body) std::cout << get_indent();
         node.statement->accept(*this);
         std::cout << std::endl;
     }
@@ -240,21 +245,21 @@ void ASTPrinter::visit(NodeGetControlStatement &node) {
 }
 
 void ASTPrinter::visit(NodeBody &node) {
-    m_scope_count++;
+    if(node.scope) m_scope_count++;
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
-    m_scope_count--;
+    if(node.scope) m_scope_count--;
 }
 
 void ASTPrinter::visit(NodeProgram &node) {
-    std::cout << "Callbacks: " << std::endl;
     for(auto& callback: node.callbacks) {
         callback->accept(*this);
+		std::cout << std::endl;
     }
-    std::cout << "Functions:" << std::endl;
     for(auto & function : node.function_definitions) {
         function->accept(*this);
+		std::cout << std::endl;
     }
 
     std::cout << std::endl;

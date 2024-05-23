@@ -74,6 +74,7 @@ void Compiler::compile() {
 	compile_time.stop("Preprocessor");
 	compile_time.start("Parsing");
 
+
 	Parser parser(std::move(preprocessed_tokens));
 	auto ast_result = parser.parse();
 	if (ast_result.is_error()) {
@@ -106,11 +107,11 @@ void Compiler::compile() {
 	ASTLambdaLifting lambda_lifting(&m_definition_provider);
 	ast->accept(lambda_lifting);
 
-	ASTGlobalScope global_scope(&m_definition_provider);
-	ast->accept(global_scope);
-
     ASTPrinter printer;
     ast->accept(printer);
+
+	ASTGlobalScope global_scope(&m_definition_provider);
+	ast->accept(global_scope);
 
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");

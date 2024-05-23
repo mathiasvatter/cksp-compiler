@@ -13,14 +13,14 @@
 #include <chrono>
 
 #include "ASTHelper.h"
-#include "../Type.h"
+#include "../TypeRegistry.h"
 
 class ASTDesugaring;
 
 struct NodeAST {
     Token tok;
     ASTType type;
-    std::unique_ptr<Type> ty = std::make_unique<BasicType>();
+    const Type* ty = nullptr;
     NodeType node_type;
     NodeAST* parent = nullptr;
     inline explicit NodeAST(const Token tok=Token(), NodeType node_type=NodeType::DeadCode) : tok(tok),
