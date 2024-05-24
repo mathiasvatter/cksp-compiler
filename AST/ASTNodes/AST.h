@@ -23,8 +23,7 @@ struct NodeAST {
 	Type* ty = nullptr;
     NodeType node_type;
     NodeAST* parent = nullptr;
-    inline explicit NodeAST(const Token tok=Token(), NodeType node_type=NodeType::DeadCode) : tok(tok),
-        type(ASTType::Unknown), node_type(node_type) {}
+	NodeAST(const Token tok=Token(), NodeType node_type=NodeType::DeadCode);
 	virtual ~NodeAST() = default;
     NodeAST(const NodeAST& other);
     [[nodiscard]] virtual std::unique_ptr<NodeAST> clone() const = 0;

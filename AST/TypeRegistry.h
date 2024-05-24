@@ -36,7 +36,7 @@ public:
 		if (it != type_annotations.end()) {
 			return it->second;
 		}
-		return nullptr;
+		return Unknown;
 	}
 
 	inline static Type* get_type_from_identifier(char identifier) {
@@ -44,7 +44,7 @@ public:
 		if (it != type_identifiers.end()) {
 			return it->second;
 		}
-		return nullptr;
+		return Unknown;
 	}
 
 	inline static void add_object_type(const std::string& name) {
@@ -87,6 +87,8 @@ public:
 	inline static CompositeType* ArrayOfBool = ArrayOfBoolType.get();
 	inline static std::unique_ptr<CompositeType> ArrayOfStringType = std::make_unique<CompositeType>(CompositeType::Array, String);
 	inline static CompositeType* ArrayOfString = ArrayOfStringType.get();
+	inline static std::unique_ptr<CompositeType> ArrayOfUnknownType = std::make_unique<CompositeType>(CompositeType::Array, Unknown);
+	inline static CompositeType* ArrayOfUnknown = ArrayOfUnknownType.get();
 
 	inline static std::unique_ptr<CompositeType> ListOfIntType = std::make_unique<CompositeType>(CompositeType::List, IntegerType.get());
 	inline static std::unique_ptr<CompositeType> ListOfRealType = std::make_unique<CompositeType>(CompositeType::List, RealType.get());
@@ -108,6 +110,7 @@ private:
 		{"real[]", ArrayOfReal},
 		{"string[]", ArrayOfString},
 		{"bool[]", ArrayOfBool},
+		{"[]", ArrayOfUnknown}
 	};
 	inline static std::unordered_map<char, Type*> type_identifiers = {
 		{'$', Integer},
