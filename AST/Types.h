@@ -31,9 +31,10 @@ public:
     [[nodiscard]] virtual std::string to_string() const = 0;
     [[nodiscard]] virtual TypeKind get_type_kind() const = 0;
 	[[nodiscard]] virtual std::string get_type_kind_name() const {return type_kind_names[(int)get_type_kind()];}
+	[[nodiscard]] virtual Type* get_element_type() const {return nullptr;}
     [[nodiscard]] virtual Kind get_kind() const { return m_kind; }
-    [[nodiscard]] virtual bool is_compatible(const Type& other) const {
-        return m_kind == other.get_kind() && get_type_kind() == other.get_type_kind();
+    [[nodiscard]] virtual bool is_compatible(const Type* other) const {
+        return m_kind == other->get_kind() && get_type_kind() == other->get_type_kind();
     }
 protected:
     Kind m_kind = Kind::Unknown;
@@ -52,26 +53,30 @@ public:
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Basic;
     }
-	[[nodiscard]] bool is_compatible(const Type& other) const override {
+	[[nodiscard]] bool is_compatible(const Type* other) const override {
+		// unknown is compatible with everything
+		bool unknown = m_kind == Kind::Unknown || other->get_kind() == Kind::Unknown;
+		if(unknown) return true;
+
 		// number, integer, real are compatible with each other
 		bool numbers = (m_kind == Kind::Number || m_kind == Kind::Integer || m_kind == Kind::Real) and
-			(other.get_kind() == Kind::Number || other.get_kind() == Kind::Integer || other.get_kind() == Kind::Real);
+			(other->get_kind() == Kind::Number || other->get_kind() == Kind::Integer || other->get_kind() == Kind::Real);
 		if(numbers) return true;
 
 		// any is compatible with any other type
-		bool any = m_kind == Kind::Any || other.get_kind() == Kind::Any;
+		bool any = m_kind == Kind::Any || other->get_kind() == Kind::Any;
 		if(any) return true;
 
 		// string is compatible with string
-		bool strings = m_kind == Kind::String && other.get_kind() == Kind::String;
+		bool strings = m_kind == Kind::String && other->get_kind() == Kind::String;
 		if(strings) return true;
 
 		// string is also compatible with float or int or number
-		bool string_number = m_kind == Kind::String && (other.get_kind() == Kind::Number || other.get_kind() == Kind::Integer || other.get_kind() == Kind::Real);
+		bool string_number = m_kind == Kind::String && (other->get_kind() == Kind::Number || other->get_kind() == Kind::Integer || other->get_kind() == Kind::Real);
 		if(string_number) return true;
 
 		// boolean is compatible with boolean
-		bool booleans = m_kind == Kind::Boolean && other.get_kind() == Kind::Boolean;
+		bool booleans = m_kind == Kind::Boolean && other->get_kind() == Kind::Boolean;
 		if(booleans) return true;
 		return false;
 	}
@@ -81,7 +86,7 @@ class CompositeType : public Type {
 public:
     enum Kind {Array, List};
 	inline static std::string kind_names[] = {"Array", "List"};
-    CompositeType(CompositeType::Kind compound_kind, const Type* element_type): Type(element_type->get_kind()), m_compound_kind(compound_kind), m_element_type(element_type) {}
+    CompositeType(CompositeType::Kind compound_kind, Type* element_type): Type(element_type->get_kind()), m_compound_kind(compound_kind), m_element_type(element_type) {}
     CompositeType(const CompositeType& other)
             : Type(other.get_kind()), m_compound_kind(other.m_compound_kind), m_element_type(other.m_element_type) {}
 
@@ -94,12 +99,13 @@ public:
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Composite;
     }
-	[[nodiscard]] bool is_compatible(const Type& other) const override {
-		return get_type_kind() == other.get_type_kind() and m_element_type->is_compatible(other);
+	[[nodiscard]] bool is_compatible(const Type* other) const override {
+		return get_type_kind() == other->get_type_kind() and m_element_type->is_compatible(other);
 	}
+	[[nodiscard]] Type* get_element_type() const override {return m_element_type;}
 private:
     Kind m_compound_kind;
-    const Type* m_element_type;
+	Type* m_element_type;
 };
 
 class ObjectType : public Type {
@@ -115,8 +121,8 @@ public:
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Object;
     }
-	[[nodiscard]] bool is_compatible(const Type& other) const override {
-		return get_type_kind() == other.get_type_kind() && m_name == other.to_string();
+	[[nodiscard]] bool is_compatible(const Type* other) const override {
+		return get_type_kind() == other->get_type_kind() && m_name == other->to_string();
 	}
 private:
     std::string m_name;

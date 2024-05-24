@@ -5,6 +5,7 @@
 #include "Compiler.h"
 #include "AST/ASTVisitor/ASTGlobalScope.h"
 #include "AST/ASTVisitor/ASTLambdaLifting.h"
+#include "AST/ASTVisitor/TypeCasting.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -96,6 +97,9 @@ void Compiler::compile() {
 	ASTBuildDataStructures data_structures(&m_definition_provider);
 	ast->accept(data_structures);
 
+	TypeCasting type_casting(&m_definition_provider);
+	ast->accept(type_casting);
+
 	compile_time.stop("Build Data Structures");
 	compile_time.start("Lowering");
 
@@ -111,11 +115,12 @@ void Compiler::compile() {
 	ASTLambdaLifting lambda_lifting(&m_definition_provider);
 	ast->accept(lambda_lifting);
 
-    ASTPrinter printer;
-    ast->accept(printer);
 
 	ASTGlobalScope global_scope(&m_definition_provider);
 	ast->accept(global_scope);
+
+    ASTPrinter printer;
+    ast->accept(printer);
 
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");

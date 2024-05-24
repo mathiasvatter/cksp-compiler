@@ -11,6 +11,11 @@
 #include "../../Lowering/LoweringGetControl.h"
 
 // ************* NodeAST Base Class ***************
+NodeAST::NodeAST(const Token tok, NodeType node_type) : tok(tok),
+	type(ASTType::Unknown), node_type(node_type) {
+	ty = TypeRegistry::Unknown;
+}
+
 void NodeAST::accept(ASTVisitor &visitor) {}
 
 NodeAST::NodeAST(const NodeAST& other) : parent(other.parent), node_type(other.node_type),

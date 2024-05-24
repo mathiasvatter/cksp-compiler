@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Thu May 23 12:21:34 2024 }
+{ Compiled with cksp version 0.0.5 on Fri May 24 12:08:36 2024 }
 on init
   declare ?_return_vars_real[5]
   declare !_return_vars_str[5]
@@ -23,6 +23,7 @@ on init
   declare ui_slider $sli_1 (0, 1000)
   declare ui_slider $sli_2 (0, 1000)
   declare $i
+  declare %array[3] := $i
   set_listener($NI_SIGNAL_TIMER_MS, 1000000)
 end on
 on ui_control($sli_1)
