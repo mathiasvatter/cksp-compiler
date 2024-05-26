@@ -8,8 +8,8 @@
 
 DefinitionProvider::DefinitionProvider(
 		std::unordered_map<std::string, std::unique_ptr<NodeVariable>> m_builtin_variables,
-		std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> m_builtin_functions,
-		std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> m_property_functions,
+		std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions,
+		std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> m_property_functions,
 		std::unordered_map<std::string, std::unique_ptr<NodeArray>> m_builtin_arrays,
 		std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> m_builtin_widgets,
 		std::vector<std::unique_ptr<NodeDataStructure>> m_external_variables)
@@ -104,8 +104,9 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 	}
 
 	// input var is declaration
-	if (get_scoped_data_structure(var->name)) {
+	if (get_scoped_data_structure(var->name, global_scope)) {
 		compile_error.m_message = "Data Structure has already been declared in this scope.";
+        if(global_scope) compile_error.m_message += " Variables declared in the <init> callback are always considered global, no local scopes are created.";
 		compile_error.exit();
 	} else {
 		if(global_scope) {
@@ -142,7 +143,7 @@ NodeUIControl* DefinitionProvider::get_builtin_widget(const std::string &ui_cont
     return nullptr;
 }
 
-NodeFunctionHeader* DefinitionProvider::get_builtin_function(const std::string &function, int params) {
+NodeFunctionDefinition* DefinitionProvider::get_builtin_function(const std::string &function, int params) {
     auto it = builtin_functions.find({function, params});
     if(it != builtin_functions.end()) {
         return it->second.get();
@@ -150,7 +151,7 @@ NodeFunctionHeader* DefinitionProvider::get_builtin_function(const std::string &
     return nullptr;
 }
 
-NodeFunctionHeader* DefinitionProvider::get_builtin_function(NodeFunctionHeader *function) {
+NodeFunctionDefinition* DefinitionProvider::get_builtin_function(NodeFunctionHeader *function) {
 	auto it = builtin_functions.find({function->name, (int)function->args->params.size()});
 	if(it != builtin_functions.end()) {
 		return it->second.get();
@@ -158,7 +159,7 @@ NodeFunctionHeader* DefinitionProvider::get_builtin_function(NodeFunctionHeader 
 	return nullptr;
 }
 
-NodeFunctionHeader* DefinitionProvider::get_property_function(NodeFunctionHeader *function) {
+NodeFunctionDefinition* DefinitionProvider::get_property_function(NodeFunctionHeader *function) {
 	auto it = property_functions.find(function->name);
 	if(it != property_functions.end()) {
 		return it->second.get();
@@ -204,15 +205,16 @@ NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::st
     return nullptr;
 }
 
-NodeDataStructure *DefinitionProvider::get_scoped_data_structure(const std::string& data) {
+NodeDataStructure *DefinitionProvider::get_scoped_data_structure(const std::string& data, bool global_scope) {
 //	std::string var_without_identifier = data;
 //	if (data[0] == '_' && data[1] != '_') {
 //		var_without_identifier = var_without_identifier.erase(0,1);
 //	} else if (data.ends_with(".raw")) {
 //		var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
 //	}
-	auto it = m_declared_data_structures.back().find(data);
-	if (it != m_declared_data_structures.back().end()) {
+    auto& map = global_scope ? m_declared_data_structures.at(0) : m_declared_data_structures.back();
+	auto it = map.find(data);
+	if (it != map.end()) {
 		return it->second;
 	}
 	return nullptr;
@@ -255,11 +257,11 @@ void DefinitionProvider::set_builtin_widgets(std::unordered_map<std::string, std
 	DefinitionProvider::builtin_widgets = std::move(builtin_widgets);
 }
 
-void DefinitionProvider::set_builtin_functions(std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> builtin_functions) {
+void DefinitionProvider::set_builtin_functions(std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions) {
 	DefinitionProvider::builtin_functions = std::move(builtin_functions);
 }
 
-void DefinitionProvider::set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> property_functions) {
+void DefinitionProvider::set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions) {
 	DefinitionProvider::property_functions = std::move(property_functions);
 }
 
@@ -279,10 +281,10 @@ void DefinitionProvider::add_builtin_widget(std::unique_ptr<NodeUIControl> built
     builtin_widgets.insert({builtin_widget->name, std::move(builtin_widget)});
 }
 
-void DefinitionProvider::add_builtin_function(std::unique_ptr<NodeFunctionHeader> builtin_function) {
-    builtin_functions[{builtin_function->name, (int)builtin_function->args->params.size()}] = std::move(builtin_function);
+void DefinitionProvider::add_builtin_function(std::unique_ptr<NodeFunctionDefinition> builtin_function) {
+    builtin_functions[{builtin_function->header->name, (int)builtin_function->header->args->params.size()}] = std::move(builtin_function);
 }
 
-void DefinitionProvider::add_property_function(std::unique_ptr<NodeFunctionHeader> property_function) {
-    property_functions.insert({property_function->name, std::move(property_function)});
+void DefinitionProvider::add_property_function(std::unique_ptr<NodeFunctionDefinition> property_function) {
+    property_functions.insert({property_function->header->name, std::move(property_function)});
 }

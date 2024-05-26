@@ -102,7 +102,7 @@ struct NodeUIControl : NodeDataStructure {
 	std::vector<ASTType> arg_ast_types;
 	std::vector<DataType> arg_var_types;
 	std::vector<Type*> arg_types;
-	NodeDataStructure* declaration = nullptr;
+    NodeUIControl* declaration = nullptr;
 	inline explicit NodeUIControl(Token tok) : NodeDataStructure("", std::move(tok), NodeType::UIControl) {}
 	inline NodeUIControl(std::string uiControlType, std::unique_ptr<NodeDataStructure> controlVar, std::unique_ptr<NodeParamList> params, Token tok)
 		: NodeDataStructure("", std::move(tok), NodeType::UIControl), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {

@@ -95,7 +95,24 @@ public:
 	inline static std::unique_ptr<CompositeType> ListOfBoolType = std::make_unique<CompositeType>(CompositeType::List, BooleanType.get());
 	inline static std::unique_ptr<CompositeType> ListOfStringType = std::make_unique<CompositeType>(CompositeType::List, StringType.get());
 
-
+    inline static CompositeType* get_composite_type(int comp_type, Type* element_type) {
+        switch (comp_type) {
+            case CompositeType::Array:
+                if (element_type == Integer) return ArrayOfInt;
+                if (element_type == Real) return ArrayOfReal;
+                if (element_type == Boolean) return ArrayOfBool;
+                if (element_type == String) return ArrayOfString;
+                return ArrayOfUnknown;
+            case CompositeType::List:
+                if (element_type == Integer) return ListOfIntType.get();
+                if (element_type == Real) return ListOfRealType.get();
+                if (element_type == Boolean) return ListOfBoolType.get();
+                if (element_type == String) return ListOfStringType.get();
+                return nullptr;
+            default: return nullptr;
+        }
+        return nullptr;
+    }
 
 private:
 	static std::unordered_map<std::string, std::unique_ptr<ObjectType>> object_types;

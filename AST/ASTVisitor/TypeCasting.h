@@ -19,28 +19,34 @@ public:
 	void visit(NodeReal& node) override;
 
 	void visit(NodeSingleDeclareStatement& node) override;
-//	void visit(NodeSingleAssignStatement& node) override;
-//	void visit(NodeUIControl& node) override;
-//	void visit(NodeParamList& node) override;
+	void visit(NodeSingleAssignStatement& node) override;
+	void visit(NodeUIControl& node) override;
+
+    /// check if every member has same type only if in assign or declare statement
+	void visit(NodeParamList& node) override;
 	void visit(NodeVariableRef& node) override;
 	void visit(NodeVariable& node) override;
 	void visit(NodeArray& node) override;
 	void visit(NodeArrayRef& node) override;
+
 //	void visit(NodeBinaryExpr& node) override;
 //	void visit(NodeUnaryExpr& node) override;
-//	void visit(NodeFunctionCall& node) override;
-//	void visit(NodeFunctionHeader& node) override;
+	void visit(NodeFunctionCall& node) override;
 //	void visit(NodeBody& node) override;
 
 private:
 	DefinitionProvider* m_def_provider;
 
+    static inline CompileError throw_type_error(NodeAST* node1, NodeAST* node2) {
+        auto error = CompileError(ErrorType::TypeError,"", "", node1->tok);
+        error.m_message = "Type mismatch: " + node1->ty->to_string() + " and " + node2->ty->to_string();
+        return error;
+    }
 	/// tries to match the type of node 1 to the type of node2 after checking type compatibility
 	static inline Type* match_type(NodeAST* node1, NodeAST* node2) {
 		auto error = CompileError(ErrorType::TypeError,"", "", node1->tok);
 		if(!node1->ty->is_compatible(node2->ty)) {
-			error.m_message = "Type mismatch: " + node1->ty->to_string() + " and " + node2->ty->to_string();
-			error.exit();
+            throw_type_error(node1, node2).exit();
 		}
 		// get element types if composite type (element typ not nullptr):
 		auto node_1 = node1->ty->get_element_type() ? node1->ty->get_element_type() : node1->ty;

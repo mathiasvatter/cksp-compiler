@@ -22,8 +22,8 @@ class DefinitionProvider {
 public:
     DefinitionProvider(
 			std::unordered_map<std::string, std::unique_ptr<NodeVariable>> m_builtin_variables,
-			std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> m_builtin_functions,
-			std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> m_property_functions,
+			std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions,
+			std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> m_property_functions,
 			std::unordered_map<std::string, std::unique_ptr<NodeArray>> m_builtin_arrays,
 			std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> m_builtin_widgets,
 			std::vector<std::unique_ptr<NodeDataStructure>> m_external_variables);
@@ -49,16 +49,16 @@ public:
 	void set_builtin_widgets(std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> builtin_widgets);
     void add_builtin_widget(std::unique_ptr<NodeUIControl> builtin_widget);
     /// builtin engine functions
-	std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> builtin_functions{};
-    NodeFunctionHeader* get_builtin_function(const std::string &function, int params);
-    NodeFunctionHeader* get_builtin_function(NodeFunctionHeader* function);
-	void set_builtin_functions(std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> builtin_functions);
-    void add_builtin_function(std::unique_ptr<NodeFunctionHeader> builtin_function);
+	std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions{};
+    NodeFunctionDefinition* get_builtin_function(const std::string &function, int params);
+    NodeFunctionDefinition* get_builtin_function(NodeFunctionHeader* function);
+	void set_builtin_functions(std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
+    void add_builtin_function(std::unique_ptr<NodeFunctionDefinition> builtin_function);
 	/// predefined property functions like set_label_properties etc
-	std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> property_functions{};
-	NodeFunctionHeader* get_property_function(NodeFunctionHeader* function);
-	void set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> property_functions);
-    void add_property_function(std::unique_ptr<NodeFunctionHeader> property_function);
+	std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions{};
+    NodeFunctionDefinition* get_property_function(NodeFunctionHeader* function);
+	void set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions);
+    void add_property_function(std::unique_ptr<NodeFunctionDefinition> property_function);
 
 	bool add_scope();
 	std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual> remove_scope();
@@ -102,7 +102,7 @@ public:
 	/// returns data structure declaration searching all scopes
     NodeDataStructure* get_declared_data_structure(const std::string& data);
 	/// only returns data structure declaration in current scope or global_scope
-	NodeDataStructure* get_scoped_data_structure(const std::string& data);
+	NodeDataStructure* get_scoped_data_structure(const std::string& data, bool global_scope);
 
 
     /// declared ui_controls

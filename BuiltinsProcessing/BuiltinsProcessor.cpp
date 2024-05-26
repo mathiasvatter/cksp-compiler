@@ -74,11 +74,11 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_functions(const std::string 
             if(result_function.is_error()) {
                 return Result<SuccessTag>(result_function.get_error());
             }
-            if(is_property_function(result_function.unwrap()->name)) {
-                m_property_functions.insert({result_function.unwrap()->name, std::move(result_function.unwrap())});
+            if(is_property_function(result_function.unwrap()->header->name)) {
+                m_property_functions.insert({result_function.unwrap()->header->name, std::move(result_function.unwrap())});
             } else {
                 auto node_function = std::move(result_function.unwrap());
-                m_builtin_functions[{node_function->name, (int)node_function->args->params.size()}] = std::move(node_function);
+                m_builtin_functions[{node_function->header->name, (int)node_function->header->args->params.size()}] = std::move(node_function);
             }
         } else consume(m_tokens);
     }
@@ -144,7 +144,7 @@ ASTType BuiltinsProcessor::get_identifier_type(char identifier) {
     return token_to_type(token_type);
 }
 
-Result<std::unique_ptr<NodeFunctionHeader>> BuiltinsProcessor::parse_builtin_function() {
+Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin_function() {
     Token func_name = consume(m_tokens); // consume function name
     std::unique_ptr<NodeParamList> func_args = std::make_unique<NodeParamList>(func_name);
     std::vector<ASTType> arg_types;
@@ -155,18 +155,20 @@ Result<std::unique_ptr<NodeFunctionHeader>> BuiltinsProcessor::parse_builtin_fun
         has_forced_parenth = true;
         consume(m_tokens); // consume (
         if(peek(m_tokens).type != token::CLOSED_PARENTH) {
-            auto arg_tuple = parse_builtin_args_list(func_args);
-            if (arg_tuple.is_error()) {
-                Result<std::unique_ptr<NodeFunctionHeader>>(arg_tuple.get_error());
+            auto param_list = parse_builtin_args_list();
+            if (param_list.is_error()) {
+                Result<std::unique_ptr<NodeFunctionDefinition>>(param_list.get_error());
             }
-            arg_types = std::get<1>(arg_tuple.unwrap());
-            arg_var_types = std::get<2>(arg_tuple.unwrap());
-			types = std::get<0>(arg_tuple.unwrap());
+            func_args = std::move(param_list.unwrap());
+            for(int i = 0; i<func_args->params.size(); i++) {
+                arg_types.push_back(func_args->params[i]->type);
+                types.push_back(func_args->params[i]->ty);
+            }
         }
         if (peek(m_tokens).type == token::CLOSED_PARENTH) {
             consume(m_tokens);
         } else {
-            return Result<std::unique_ptr<NodeFunctionHeader>>(CompileError(ErrorType::PreprocessorError,
+            return Result<std::unique_ptr<NodeFunctionDefinition>>(CompileError(ErrorType::PreprocessorError,
            "Failed loading builtins. Found unknown <function_header> syntax.", peek(m_tokens).line, ")", peek(m_tokens).val, peek(m_tokens).file));
         }
     }
@@ -178,16 +180,27 @@ Result<std::unique_ptr<NodeFunctionHeader>> BuiltinsProcessor::parse_builtin_fun
 		ret_type = TypeRegistry::get_type_from_annotation(peek(m_tokens).val);
         return_type = get_type_annotation(consume(m_tokens));
     }
-    auto node_function = std::make_unique<NodeFunctionHeader>(func_name.val, std::move(func_args), func_name);
-	node_function->is_thread_safe = m_thread_unsafe_functions.find(node_function->name) == m_thread_unsafe_functions.end();
-	node_function->ty = ret_type;
-    node_function->type = return_type;
-    node_function->is_builtin = true;
-    node_function->has_forced_parenth = has_forced_parenth;
-    node_function->arg_var_types = arg_var_types;
-    node_function->arg_ast_types = arg_types;
-	node_function->arg_types = types;
-    return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(node_function));
+    auto node_function_header = std::make_unique<NodeFunctionHeader>(
+            func_name.val, std::move(func_args), func_name
+        );
+	node_function_header->is_thread_safe = m_thread_unsafe_functions.find(node_function_header->name) == m_thread_unsafe_functions.end();
+	node_function_header->ty = ret_type;
+    node_function_header->type = return_type;
+    node_function_header->is_builtin = true;
+    node_function_header->has_forced_parenth = has_forced_parenth;
+    node_function_header->arg_var_types = arg_var_types;
+    node_function_header->arg_ast_types = arg_types;
+	node_function_header->arg_types = types;
+
+    auto node_function = std::make_unique<NodeFunctionDefinition>(
+            std::move(node_function_header),
+            std::nullopt,
+            false,
+            std::make_unique<NodeBody>(func_name),
+            func_name
+            );
+    node_function->ty = ret_type;
+    return Result<std::unique_ptr<NodeFunctionDefinition>>(std::move(node_function));
 }
 
 Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_control() {
@@ -213,13 +226,15 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 	if (peek(m_tokens).type == token::OPEN_PARENTH) {
 		consume(m_tokens); // consume (
 		if(peek(m_tokens).type != token::CLOSED_PARENTH) {
-			auto arg_tuple = parse_builtin_args_list(params);
-			if (arg_tuple.is_error()) {
-				Result<std::unique_ptr<NodeFunctionHeader>>(arg_tuple.get_error());
+			auto param_list = parse_builtin_args_list();
+			if (param_list.is_error()) {
+				Result<std::unique_ptr<NodeFunctionHeader>>(param_list.get_error());
 			}
-			arg_types = std::get<1>(arg_tuple.unwrap());
-			arg_var_types = std::get<2>(arg_tuple.unwrap());
-			types = std::get<0>(arg_tuple.unwrap());
+            params = std::move(param_list.unwrap());
+            for(int i = 0; i<params->params.size(); i++) {
+                arg_types.push_back(params->params[i]->type);
+                types.push_back(params->params[i]->ty);
+            }
 		}
 		if (peek(m_tokens).type == token::CLOSED_PARENTH) {
 			consume(m_tokens);
@@ -264,21 +279,23 @@ DataType BuiltinsProcessor::get_var_type_annotation(const std::string& keyword) 
     return DataType::Mutable;
 }
 
-Result<std::tuple<std::vector<Type*>, std::vector<ASTType>, std::vector<DataType>>> BuiltinsProcessor::parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args) {
+Result<std::unique_ptr<NodeParamList>> BuiltinsProcessor::parse_builtin_args_list() {
     std::vector<ASTType> arg_types;
     std::vector<DataType> arg_var_types;
 	std::vector<Type*> types;
+    auto func_args = std::make_unique<NodeParamList>(peek(m_tokens));
     while(peek(m_tokens).type != token::CLOSED_PARENTH) {
         if(peek(m_tokens).type == token::CLOSED_PARENTH) break;
         if(peek(m_tokens).type == token::KEYWORD or peek(m_tokens).type == token::TO) {
             Token tok = peek(m_tokens);
             auto arg = parse_builtin_variable();
+            arg->parent = func_args.get();
             func_args->params.push_back(std::move(arg));
             arg_var_types.push_back(get_var_type_annotation(tok.val));
             if(peek(m_tokens).type == token::TYPE) {
                 consume(m_tokens); // consume semicolon
                 if(peek(m_tokens).type != token::KEYWORD) {
-                    return Result<std::tuple<std::vector<Type*>, std::vector<ASTType>, std::vector<DataType>>>(CompileError(ErrorType::PreprocessorError,
+                    return Result<std::unique_ptr<NodeParamList>>(CompileError(ErrorType::PreprocessorError,
                       "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
                 }
                 tok = consume(m_tokens);
@@ -286,13 +303,13 @@ Result<std::tuple<std::vector<Type*>, std::vector<ASTType>, std::vector<DataType
 			types.push_back(TypeRegistry::get_type_from_annotation(tok.val));
             arg_types.push_back(get_type_annotation(tok));
         } else {
-            return Result<std::tuple<std::vector<Type*>, std::vector<ASTType>, std::vector<DataType>>>(CompileError(ErrorType::PreprocessorError,
+            return Result<std::unique_ptr<NodeParamList>>(CompileError(ErrorType::PreprocessorError,
                                                                                                "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
         }
         if(peek(m_tokens).type == token::COMMA) consume(m_tokens); // consume comma
     }
     auto result_pair = std::tuple(types, arg_types, arg_var_types);
-    return Result<std::tuple<std::vector<Type*>, std::vector<ASTType>, std::vector<DataType>>>(result_pair);
+    return Result<std::unique_ptr<NodeParamList>>(std::move(func_args));
 }
 
 bool BuiltinsProcessor::is_property_function(const std::string &fun_name) {

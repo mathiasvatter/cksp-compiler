@@ -615,24 +615,25 @@ NodeFunctionDefinition* NodeFunctionCall::find_definition(struct NodeProgram *pr
 	return nullptr;
 }
 
-NodeFunctionHeader* NodeFunctionCall::find_builtin_definition(NodeProgram *program) {
+NodeFunctionDefinition* NodeFunctionCall::find_builtin_definition(NodeProgram *program) {
 	if(!program->def_provider) {
 		CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
 	}
 	if(auto builtin_func = program->def_provider->get_builtin_function(function.get())) {
 		function->type = builtin_func->type;
-		function->has_forced_parenth = builtin_func->has_forced_parenth;
-		function->arg_ast_types = builtin_func->arg_ast_types;
-		function->arg_var_types = builtin_func->arg_var_types;
-		function->is_builtin = builtin_func->is_builtin;
-		function->is_thread_safe = builtin_func->is_thread_safe;
+		function->has_forced_parenth = builtin_func->header->has_forced_parenth;
+		function->arg_ast_types = builtin_func->header->arg_ast_types;
+		function->arg_var_types = builtin_func->header->arg_var_types;
+		function->is_builtin = builtin_func->header->is_builtin;
+		function->is_thread_safe = builtin_func->header->is_thread_safe;
+        definition = builtin_func;
 		return builtin_func;
 	}
 	return nullptr;
 }
 
 bool NodeFunctionCall::get_definition(NodeProgram* program) {
-	if (definition or function->is_builtin) {
+	if (definition) {
 		return true;
 	}
 	if (find_builtin_definition(program)) {

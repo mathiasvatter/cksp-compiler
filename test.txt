@@ -1,144 +1,43 @@
-{ Compiled with cksp version 0.0.5 on Fri May 24 12:08:36 2024 }
+{ Compiled with cksp version 0.0.5 on Sun May 26 20:01:55 2024 }
 on init
-  declare ?_return_vars_real[5]
-  declare !_return_vars_str[5]
-  declare %_return_vars_int[5]
+  declare ?_return_vars_real[4]
+  declare !_return_vars_str[4]
+  declare %_return_vars_int[4]
   declare $_return_dummy
   declare ?_loc_var_real[1]
   declare !_loc_var_str[1]
   declare %_loc_var_int[1]
-  declare $loc_4
-  declare $loc_5
-  declare $loc_6
-  declare $loc_7
+  declare $loc_1
+  declare $loc_2
+  declare $loc_3
+  declare $loc_4 := 5
   declare $_iterator
   declare $_string_it
   declare $_ui_array_it
   declare $_list_it
-  declare !blabla[3]
-  declare const $blabla__SIZE := 3
-  !blabla[0] := "eins"
-  !blabla[1] := "zwei"
-  !blabla[2] := "drei"
-  declare ui_slider $sli_1 (0, 1000)
-  declare ui_slider $sli_2 (0, 1000)
   declare $i
-  declare %array[3] := $i
-  set_listener($NI_SIGNAL_TIMER_MS, 1000000)
+  declare %array[3] := (0)
+  declare ui_slider $sli_slisli (0, 1000)
 end on
-on ui_control($sli_1)
-  $loc_4 := 0
-  $loc_5 := 0
-  $loc_6 := 0
-  $loc_7 := 0
-  $loc_7 := 0
-  message($loc_7)
-  $loc_4 := 0
-  message($loc_4)
-  if($loc_4 = 1)
-    $loc_5 := 0
-    $loc_6 := 0
-    message($loc_5 & $loc_6)
+on note
+  $loc_1 := 0
+  if(1 = 1)
+    $loc_2 := 0
+    if(2 = 2)
+      $loc_3 := 0
+      $loc_4 := 5
+      $loc_3 := 3
+    end if
+    if($loc_2 = 3)
+      $loc_3 := 0
+      $loc_4 := 9
+    end if
+    $loc_1 := 0
   end if
-  if($loc_4 = 2)
-    $loc_5 := 0
-    $loc_6 := 0
-    message($loc_5 & $loc_6)
-  end if
-  message($NI_UI_ID)
-  $i := 0
-  while($i <= 4) 
-    message($i)
-    $loc_7 := 0
-    message($loc_7)
-    $loc_4 := 0
-    message($loc_4)
-    if($loc_4 = 1)
-      $loc_5 := 0
-      $loc_6 := 0
-      message($loc_5 & $loc_6)
-    end if
-    if($loc_4 = 2)
-      $loc_5 := 0
-      $loc_6 := 0
-      message($loc_5 & $loc_6)
-    end if
-    inc($i)
-  end while
-end on
-on ui_control($sli_2)
-  $loc_4 := 0
-  $loc_6 := 0
-  $loc_5 := 0
-  $loc_7 := 0
-  message($NI_UI_ID)
-  $i := 5
-  while($i <= 9) 
-    message($i)
-    inc($i)
-  end while
-  if($i = 10)
-    $loc_4 := 0
-    if($loc_4 = 9)
-      $loc_6 := 0
-      $loc_5 := 0
-    end if
-    if($loc_4 = 8)
-      $loc_4 := 0
-      message($loc_4)
-      $loc_7 := 0
-      message($loc_7)
-      $loc_4 := 0
-      message($loc_4)
-      if($loc_4 = 1)
-        $loc_6 := 0
-        $loc_5 := 0
-        message($loc_6 & $loc_5)
-      end if
-      if($loc_4 = 2)
-        $loc_6 := 0
-        $loc_5 := 0
-        message($loc_6 & $loc_5)
-      end if
-      $loc_6 := 0
-    end if
-    $loc_7 := 0
-    message($loc_7)
-    $loc_4 := 0
-    message($loc_4)
-    if($loc_4 = 1)
-      $loc_6 := 0
-      $loc_5 := 0
-      message($loc_6 & $loc_5)
-    end if
-    if($loc_4 = 2)
-      $loc_6 := 0
-      $loc_5 := 0
-      message($loc_6 & $loc_5)
-    end if
-  end if
-  if($i = 7)
-    $loc_4 := 0
+  if($i = 1)
+    $loc_3 := 0
   end if
 end on
 on release
-  $loc_4 := 0
-  $loc_6 := 0
-  $loc_5 := 0
-  $loc_7 := 0
-  $loc_7 := 0
-  message($loc_7)
-  $loc_4 := 0
-  message($loc_4)
-  if($loc_4 = 1)
-    $loc_6 := 0
-    $loc_5 := 0
-    message($loc_6 & $loc_5)
-  end if
-  if($loc_4 = 2)
-    $loc_6 := 0
-    $loc_5 := 0
-    message($loc_6 & $loc_5)
-  end if
 end on
 
