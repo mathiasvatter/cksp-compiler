@@ -115,7 +115,6 @@ void Compiler::compile() {
 	ASTLambdaLifting lambda_lifting(&m_definition_provider);
 	ast->accept(lambda_lifting);
 
-
 	ASTGlobalScope global_scope(&m_definition_provider);
 	ast->accept(global_scope);
 

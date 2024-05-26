@@ -886,7 +886,7 @@ struct NodeFunctionCall : NodeAST {
 	/// attempts to get and set the definition pointer of the function call and updates the call sites of the definition
 	NodeFunctionDefinition* find_definition(class NodeProgram *program);
 	/// attempts to get and match metadata from builtin function to this
-	NodeFunctionHeader* find_builtin_definition(NodeProgram *program);
+    NodeFunctionDefinition* find_builtin_definition(NodeProgram *program);
 	/// gets and sets definition ptr or matches builtin func metadata -> throws error if not found
 	bool get_definition(NodeProgram* program);
 };

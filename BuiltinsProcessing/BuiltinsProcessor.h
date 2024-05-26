@@ -20,17 +20,17 @@ public:
 
     std::unique_ptr<NodeVariable> parse_builtin_variable();
     std::unique_ptr<NodeArray> parse_builtin_array();
-    Result<std::unique_ptr<NodeFunctionHeader>> parse_builtin_function();
+    Result<std::unique_ptr<NodeFunctionDefinition>> parse_builtin_function();
 	Result<std::unique_ptr<NodeUIControl>> parse_builtin_ui_control();
-    Result<std::tuple<std::vector<Type*>, std::vector<ASTType>, std::vector<DataType>>> parse_builtin_args_list(std::unique_ptr<NodeParamList>& func_args);
+    Result<std::unique_ptr<NodeParamList>> parse_builtin_args_list();
 
 private:
 	DefinitionProvider* m_def_provider;
     std::unordered_map<std::string, std::unique_ptr<NodeVariable>> m_builtin_variables;
     std::unordered_map<std::string, std::unique_ptr<NodeArray>> m_builtin_arrays;
-    std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionHeader>, StringIntKeyHash> m_builtin_functions;
+    std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions;
 
-    std::unordered_map<std::string, std::unique_ptr<NodeFunctionHeader>> m_property_functions;
+    std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> m_property_functions;
     std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> m_builtin_widgets;
 
     std::string m_builtin_variables_file;
