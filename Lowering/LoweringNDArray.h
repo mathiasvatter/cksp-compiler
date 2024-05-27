@@ -52,6 +52,11 @@ public:
 
     /// Lowering of multidimensional arrays to arrays when reference
     void visit(NodeNDArrayRef& node) override {
+        auto error = CompileError(ErrorType::Variable, "", "", node.tok);
+        if(node.indexes->params.size() != node.sizes->params.size()) {
+            error.m_message = "Number of indices does not match number of dimensions: " + node.name;
+            error.exit();
+        }
         // convert index of multidimensional array
         auto node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0,node.tok);
         auto node_lowered_array = std::make_unique<NodeArrayRef>(
