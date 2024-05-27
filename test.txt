@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Mon May 27 16:40:21 2024 }
+{ Compiled with cksp version 0.0.5 on Mon May 27 17:33:29 2024 }
 on init
   declare ?_return_vars_real[4]
   declare !_return_vars_str[4]
@@ -25,7 +25,7 @@ on init
 end on
 on note
   $loc_1 := 0
-  if(1 = 1)
+  if($i = 1)
     $loc_2 := 0
     if((2 = 2) and (3 < 4))
       $loc_3 := 0

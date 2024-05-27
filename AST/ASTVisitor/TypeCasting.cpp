@@ -17,25 +17,31 @@ void TypeCasting::visit(NodeProgram& node) {
     for(auto & ref : m_references) {
         match_reference_declaration(ref);
     }
+    for(auto & decl : m_declarations) {
+        if(decl->assignee) {
+            match_type(decl->to_be_declared.get(), decl->assignee.get());
+            match_type(decl->assignee.get(), decl->to_be_declared.get());
+        }
+    }
+    for(auto & ref : m_references) {
+        match_reference_declaration(ref);
+    }
 }
 
 void TypeCasting::visit(NodeInt& node) {
-	node.ty = TypeRegistry::Integer;
+    node.ty = TypeRegistry::Integer;
 }
 
 void TypeCasting::visit(NodeReal& node) {
-	node.ty = TypeRegistry::Real;
+    node.ty = TypeRegistry::Real;
 }
 
 void TypeCasting::visit(NodeString& node) {
-	node.ty = TypeRegistry::String;
+    node.ty = TypeRegistry::String;
 }
 
 void TypeCasting::visit(NodeVariableRef& node) {
-	// try to match type from variable to reference
-	match_type(&node, node.declaration);
-	// try to match type from reference to variable
-	match_type(node.declaration, &node);
+    match_reference_declaration(&node);
     m_references.push_back(&node);
 }
 
@@ -123,6 +129,7 @@ void TypeCasting::visit(NodeSingleDeclareStatement& node) {
         match_type(node.to_be_declared.get(), node.assignee.get());
 		match_type(node.assignee.get(), node.to_be_declared.get());
 	}
+    m_declarations.push_back(&node);
 }
 
 void TypeCasting::visit(NodeUIControl& node) {
@@ -172,6 +179,7 @@ void TypeCasting::visit(NodeBinaryExpr& node) {
     if(contains(STRING_TOKENS, node.op)) {
         node.ty = TypeRegistry::String;
         is_compatible = node.ty->is_compatible(node.left->ty) and node.ty->is_compatible(node.right->ty);
+        if(is_compatible) return;
     } else if (contains(MATH_TOKENS, node.op)) {
         // can only be int op int || float op float
         is_compatible = node.left->ty->is_compatible(TypeRegistry::Integer) and node.right->ty->is_compatible(TypeRegistry::Integer);
