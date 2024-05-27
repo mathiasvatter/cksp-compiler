@@ -47,8 +47,9 @@ public:
 		return Unknown;
 	}
 
-	inline static void add_object_type(const std::string& name) {
+	inline static ObjectType* add_object_type(const std::string& name) {
 		object_types[name] = std::make_unique<ObjectType>(name);
+        return object_types[name].get();
 	}
 
 	inline static ObjectType* get_object_type(const std::string& name) {
@@ -59,11 +60,28 @@ public:
 		return nullptr;
 	}
 
-	// Standardtypen
+    inline static CompositeType* get_composite_type(CompositeType::Kind comp_type, Type* element_type, int dimensions=1) {
+        auto hash_val = std::to_string(comp_type)+element_type->to_string()+std::to_string(dimensions);
+        auto it = composite_types.find(hash_val);
+        if (it != composite_types.end()) {
+            return it->second.get();
+        }
+        return nullptr;
+    }
+    inline static CompositeType* add_composite_type(CompositeType::Kind comp_type, Type* element_type, int dimensions=1) {
+        auto hash_val = std::to_string(comp_type)+element_type->to_string()+std::to_string(dimensions);
+        composite_types[hash_val] = std::make_unique<CompositeType>(comp_type, element_type, dimensions);
+        return composite_types[hash_val].get();
+    }
+
+
+    // Standardtypen
 	inline static std::unique_ptr<BasicType> IntegerType = std::make_unique<BasicType>(Kind::Integer);
 	inline static BasicType* Integer = IntegerType.get();
 	inline static std::unique_ptr<BasicType> BooleanType = std::make_unique<BasicType>(Kind::Boolean);
 	inline static BasicType* Boolean = BooleanType.get();
+    inline static std::unique_ptr<BasicType> ComparisonType = std::make_unique<BasicType>(Kind::Comparison);
+    inline static BasicType* Comparison = ComparisonType.get();
 	inline static std::unique_ptr<BasicType> StringType = std::make_unique<BasicType>(Kind::String);
 	inline static BasicType* String = StringType.get();
 	inline static std::unique_ptr<BasicType> RealType = std::make_unique<BasicType>(Kind::Real);
@@ -95,27 +113,10 @@ public:
 	inline static std::unique_ptr<CompositeType> ListOfBoolType = std::make_unique<CompositeType>(CompositeType::List, BooleanType.get());
 	inline static std::unique_ptr<CompositeType> ListOfStringType = std::make_unique<CompositeType>(CompositeType::List, StringType.get());
 
-    inline static CompositeType* get_composite_type(int comp_type, Type* element_type) {
-        switch (comp_type) {
-            case CompositeType::Array:
-                if (element_type == Integer) return ArrayOfInt;
-                if (element_type == Real) return ArrayOfReal;
-                if (element_type == Boolean) return ArrayOfBool;
-                if (element_type == String) return ArrayOfString;
-                return ArrayOfUnknown;
-            case CompositeType::List:
-                if (element_type == Integer) return ListOfIntType.get();
-                if (element_type == Real) return ListOfRealType.get();
-                if (element_type == Boolean) return ListOfBoolType.get();
-                if (element_type == String) return ListOfStringType.get();
-                return nullptr;
-            default: return nullptr;
-        }
-        return nullptr;
-    }
-
 private:
-	static std::unordered_map<std::string, std::unique_ptr<ObjectType>> object_types;
+	inline static std::unordered_map<std::string, std::unique_ptr<ObjectType>> object_types;
+    inline static std::unordered_map<std::string, std::unique_ptr<CompositeType>> composite_types;
+
 	inline static std::unordered_map<std::string, Type*> type_annotations = {
 		{"int", Integer},
 		{"real", Real},

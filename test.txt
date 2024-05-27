@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Sun May 26 20:01:55 2024 }
+{ Compiled with cksp version 0.0.5 on Mon May 27 16:40:21 2024 }
 on init
   declare ?_return_vars_real[4]
   declare !_return_vars_str[4]
@@ -15,7 +15,11 @@ on init
   declare $_string_it
   declare $_ui_array_it
   declare $_list_it
+  declare const $marray__SIZE_D1 := 1
+  declare const $marray__SIZE_D2 := 2
+  declare %_marray[2]
   declare $i
+  $i := %_marray[1]
   declare %array[3] := (0)
   declare ui_slider $sli_slisli (0, 1000)
 end on
@@ -23,7 +27,7 @@ on note
   $loc_1 := 0
   if(1 = 1)
     $loc_2 := 0
-    if(2 = 2)
+    if((2 = 2) and (3 < 4))
       $loc_3 := 0
       $loc_4 := 5
       $loc_3 := 3

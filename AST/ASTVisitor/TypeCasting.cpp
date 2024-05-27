@@ -13,6 +13,10 @@ void TypeCasting::visit(NodeProgram& node) {
 	for(auto & function_definition : node.function_definitions) {
 		function_definition->accept(*this);
 	}
+
+    for(auto & ref : m_references) {
+        match_reference_declaration(ref);
+    }
 }
 
 void TypeCasting::visit(NodeInt& node) {
@@ -32,6 +36,7 @@ void TypeCasting::visit(NodeVariableRef& node) {
 	match_type(&node, node.declaration);
 	// try to match type from reference to variable
 	match_type(node.declaration, &node);
+    m_references.push_back(&node);
 }
 
 void TypeCasting::visit(NodeVariable& node) {
@@ -40,25 +45,47 @@ void TypeCasting::visit(NodeVariable& node) {
 void TypeCasting::visit(NodeArray& node) {
 	// if array is unknown type -> set to array of unknown
 	if(node.ty == TypeRegistry::Unknown) {
-		node.ty = TypeRegistry::ArrayOfUnknown;
+		node.ty = TypeRegistry::add_composite_type(CompositeType::Array, TypeRegistry::Unknown, 1);
 	}
 }
 
 void TypeCasting::visit(NodeArrayRef& node) {
-
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
 		if(node.ty == TypeRegistry::Unknown) {
-			node.ty = TypeRegistry::ArrayOfUnknown;
+			node.ty = TypeRegistry::get_composite_type(CompositeType::Array, TypeRegistry::Unknown, 1);
+            if(!node.ty) throw_composite_error(&node).exit();
 		}
 	} else {
 		// handed over as array element -> set to element type
-		node.ty = node.ty->get_element_type();
+		if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
 	}
-	// try to match type from variable to reference
-	match_type(&node, node.declaration);
-	// try to match type from reference to variable
-	match_type(node.declaration, &node);
+    match_reference_declaration(&node);
+    m_references.push_back(&node);
+
+}
+
+void TypeCasting::visit(NodeNDArray& node) {
+    node.sizes->accept(*this);
+    // if array is unknown type -> set to array of unknown
+    if(node.ty == TypeRegistry::Unknown) {
+        node.ty = TypeRegistry::add_composite_type(CompositeType::Array, TypeRegistry::Unknown, node.dimensions);
+    }
+}
+
+void TypeCasting::visit(NodeNDArrayRef& node) {
+    // if handed over without index -> as whole array structure type
+    if(!node.indexes) {
+        if(node.ty == TypeRegistry::Unknown) {
+            node.ty = TypeRegistry::get_composite_type(CompositeType::Array, TypeRegistry::Unknown, node.sizes->params.size());
+            if(!node.ty) throw_composite_error(&node).exit();
+        }
+    } else {
+        // handed over as array element -> set to element type
+        if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
+    }
+    match_reference_declaration(&node);
+    m_references.push_back(&node);
 }
 
 void TypeCasting::visit(NodeParamList& node) {
@@ -81,7 +108,7 @@ void TypeCasting::visit(NodeParamList& node) {
 
     // if param list in array declaration or assignment return composite type
     if(all_same and !types.empty()) {
-        node.ty = TypeRegistry::get_composite_type(CompositeType::Array, node.params[0]->ty);
+        node.ty = TypeRegistry::add_composite_type(CompositeType::Array, node.params[0]->ty, 0);
     }
     if(!all_same) {
         size_t position = std::distance(types.begin(), it);
@@ -93,7 +120,7 @@ void TypeCasting::visit(NodeSingleDeclareStatement& node) {
 	node.to_be_declared->accept(*this);
 	if(node.assignee) {
 		node.assignee->accept(*this);
-		match_type(node.to_be_declared.get(), node.assignee.get());
+        match_type(node.to_be_declared.get(), node.assignee.get());
 		match_type(node.assignee.get(), node.to_be_declared.get());
 	}
 }
@@ -127,4 +154,81 @@ void TypeCasting::visit(NodeFunctionCall& node) {
     node.function->accept(*this);
 
     node.ty = node.definition->ty;
+}
+
+void TypeCasting::visit(NodeBinaryExpr& node) {
+    node.left->accept(*this);
+    node.right->accept(*this);
+
+    bool is_compatible = node.left->ty->is_compatible(node.ty) || node.right->ty->is_compatible(node.ty);
+    auto error = throw_type_error(node.left.get(), node.right.get());
+    if(!is_compatible) error.exit();
+
+    node.left->ty = specialize_type(node.left->ty, node.right->ty);
+    node.right->ty = specialize_type(node.right->ty, node.left->ty);
+
+    // check type of this node by looking at operator and node.left and node.right
+    // is string
+    if(contains(STRING_TOKENS, node.op)) {
+        node.ty = TypeRegistry::String;
+        is_compatible = node.ty->is_compatible(node.left->ty) and node.ty->is_compatible(node.right->ty);
+    } else if (contains(MATH_TOKENS, node.op)) {
+        // can only be int op int || float op float
+        is_compatible = node.left->ty->is_compatible(TypeRegistry::Integer) and node.right->ty->is_compatible(TypeRegistry::Integer);
+        if(is_compatible) node.ty = TypeRegistry::Integer;
+        is_compatible |= node.left->ty->is_compatible(TypeRegistry::Real) and node.right->ty->is_compatible(TypeRegistry::Real);
+        if(is_compatible and node.ty != TypeRegistry::Integer) node.ty = TypeRegistry::Real;
+        error.m_message += "Please use real() and int() to use <Real> and <Integer> numbers in a single expression.";
+    } else if (contains(BITWISE_TOKENS, node.op)) {
+        node.ty = TypeRegistry::Integer;
+        is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);
+        error.m_message += "<Bitwise Operators> can only be used in between <Integer> values.";
+    } else if (contains(BOOL_TOKENS, node.op)) {
+        node.ty = TypeRegistry::Boolean;
+        is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);
+        error.m_message += "<Bool Operators> can only be used in between <Boolean> or <Comparison> values.";
+
+    } else if (contains(COMPARISON_TOKENS, node.op)) {
+        node.ty = TypeRegistry::Comparison;
+        is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);
+        error.m_message += "<Comparison Operators> can only be used in between <Integer> or <Real> values.";
+
+    } else {
+        error.exit();
+    }
+
+    if(!is_compatible) error.exit();
+    node.left->ty = specialize_type(node.left->ty, node.ty);
+    node.right->ty = specialize_type(node.right->ty, node.ty);
+
+}
+
+void TypeCasting::visit(NodeUnaryExpr& node) {
+    node.operand->accept(*this);
+
+    bool is_compatible = node.ty->is_compatible(node.operand->ty) && node.operand->ty->is_compatible(node.ty);
+    auto error = throw_type_error(node.operand.get(), &node);
+    if(!is_compatible) error.exit();
+
+    if(node.op == token::SUB) {
+        // can only be int or float
+        is_compatible = node.operand->ty->is_compatible(TypeRegistry::Integer);
+        if(is_compatible) node.ty = TypeRegistry::Integer;
+        is_compatible |= node.operand->ty->is_compatible(TypeRegistry::Real);
+        if(is_compatible and node.ty != TypeRegistry::Integer) node.ty = TypeRegistry::Real;
+        error.m_message += "Please use real() and int() to use <Real> and <Integer> numbers in a single expression.";
+    } else if (node.op == token::BIT_NOT) {
+        node.ty = TypeRegistry::Integer;
+        is_compatible = node.operand->ty->is_compatible(node.ty);
+    } else if(node.op == token::BOOL_NOT) {
+        node.ty = TypeRegistry::Boolean;
+        is_compatible = node.operand->ty->is_compatible(node.ty);
+        error.m_message += "<Bool Operators> can only be used in between <Boolean> or <Comparison> values.";
+    } else {
+        error.exit();
+    }
+
+    if(!is_compatible) error.exit();
+    node.operand->ty = specialize_type(node.operand->ty, node.ty);
+
 }
