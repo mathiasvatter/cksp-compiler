@@ -264,9 +264,3 @@ private:
 
 };
 
-struct PassiveVar {
-    std::string name;
-    NodeDataStructure* declaration;
-    NodeType node_type;
-    ASTType type;
-};

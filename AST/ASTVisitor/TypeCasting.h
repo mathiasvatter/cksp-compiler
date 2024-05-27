@@ -40,6 +40,8 @@ public:
 private:
 	DefinitionProvider* m_def_provider;
     std::vector<NodeReference*> m_references;
+    std::vector<NodeSingleAssignStatement*> m_assignments;
+    std::vector<NodeSingleDeclareStatement*> m_declarations;
 
     /// error if composite type was not added to the type registry
     static inline CompileError throw_composite_error(NodeReference* node) {
@@ -69,19 +71,21 @@ private:
     /// tries to match the types of reference and declaration by also checking for element typ
     /// in case declaration is a composite type
     static inline Type* match_reference_declaration(NodeReference* node) {
-        auto declaration_type = node->declaration->ty->get_element_type() ? node->declaration->ty->get_element_type() : node->declaration->ty;
-        auto reference_type = node->ty->get_element_type() ? node->ty->get_element_type() : node->ty;
+        Type* declaration_type = node->declaration->ty->get_element_type() ? node->declaration->ty->get_element_type() : node->declaration->ty;
+        Type* reference_type = node->ty->get_element_type() ? node->ty->get_element_type() : node->ty;
         if(!reference_type->is_compatible(declaration_type)) {
             throw_type_error(node, node->declaration).exit();
         }
         // match type from declaration to reference
-        reference_type = specialize_type(reference_type, declaration_type);
+        node->ty = specialize_type(reference_type, declaration_type);
 
+        declaration_type = node->declaration->ty->get_element_type() ? node->declaration->ty->get_element_type() : node->declaration->ty;
+        reference_type = node->ty->get_element_type() ? node->ty->get_element_type() : node->ty;
         if(!declaration_type->is_compatible(reference_type)) {
             throw_type_error(node->declaration, node).exit();
         }
         // match type from reference to declaration
-        declaration_type = specialize_type(declaration_type, reference_type);
+        node->declaration->ty = specialize_type(declaration_type, reference_type);
         return node->ty;
     }
 
