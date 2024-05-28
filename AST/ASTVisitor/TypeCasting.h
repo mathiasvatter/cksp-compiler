@@ -71,21 +71,22 @@ private:
     /// tries to match the types of reference and declaration by also checking for element typ
     /// in case declaration is a composite type
     static inline Type* match_reference_declaration(NodeReference* node) {
-        Type* declaration_type = node->declaration->ty->get_element_type() ? node->declaration->ty->get_element_type() : node->declaration->ty;
-        Type* reference_type = node->ty->get_element_type() ? node->ty->get_element_type() : node->ty;
+        Type* declaration_type = node->declaration->ty->get_element_type();
+        Type* reference_type = node->ty->get_element_type();
         if(!reference_type->is_compatible(declaration_type)) {
             throw_type_error(node, node->declaration).exit();
         }
-        // match type from declaration to reference
-        node->ty = specialize_type(reference_type, declaration_type);
 
-        declaration_type = node->declaration->ty->get_element_type() ? node->declaration->ty->get_element_type() : node->declaration->ty;
-        reference_type = node->ty->get_element_type() ? node->ty->get_element_type() : node->ty;
+        // match type from declaration to reference
+		TypeRegistry::set_element_type(node->ty, specialize_type(reference_type, declaration_type));
+
+        declaration_type = node->declaration->ty->get_element_type();
+        reference_type = node->ty->get_element_type();
         if(!declaration_type->is_compatible(reference_type)) {
             throw_type_error(node->declaration, node).exit();
         }
         // match type from reference to declaration
-        node->declaration->ty = specialize_type(declaration_type, reference_type);
+        TypeRegistry::set_element_type(node->declaration->ty, specialize_type(declaration_type, reference_type));
         return node->ty;
     }
 
