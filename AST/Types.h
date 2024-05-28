@@ -13,6 +13,8 @@ inline static std::string type_kind_names[] = {"Basic", "Composite", "Object"};
 enum class TypeKind {Basic, Composite, Object};
 inline static std::string kind_names[] = {"Integer", "Boolean", "String", "Real", "Unknown", "Object", "Any", "Void", "Number", "Comparison"};
 enum class Kind {Integer, Boolean, String, Real, Unknown, Object, Any, Void, Number, Comparison};
+inline static std::string compound_kind_names[] = {"Array", "List"};
+enum class CompoundKind {Array, List};
 
 /**
  * @class Type
@@ -33,7 +35,7 @@ public:
 	[[nodiscard]] virtual std::string get_type_kind_name() const {return type_kind_names[(int)get_type_kind()];}
 	[[nodiscard]] virtual Type* get_element_type() const {return nullptr;}
     [[nodiscard]] virtual int get_dimensions() const {return 0;}
-    [[nodiscard]] virtual Kind get_kind() const { return m_kind; }
+	[[nodiscard]] virtual Kind get_kind() const { return m_kind; }
     [[nodiscard]] virtual bool is_compatible(const Type* other) const {
         return m_kind == other->get_kind() && get_type_kind() == other->get_type_kind();
     }
@@ -54,6 +56,9 @@ public:
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Basic;
     }
+	[[nodiscard]] Type* get_element_type() const override {
+		return const_cast<BasicType*>(this);
+	}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		// unknown is compatible with everything
 		bool unknown = m_kind == Kind::Unknown || other->get_kind() == Kind::Unknown;
@@ -96,9 +101,7 @@ public:
 
 class CompositeType : public Type {
 public:
-    enum Kind {Array, List};
-	inline static std::string kind_names[] = {"Array", "List"};
-    CompositeType(CompositeType::Kind compound_kind, Type* element_type, int dimensions=1)
+    CompositeType(CompoundKind compound_kind, Type* element_type, int dimensions=1)
         : Type(element_type->get_kind()), m_compound_kind(compound_kind),
         m_element_type(element_type), m_dimensions(dimensions) {}
     CompositeType(const CompositeType& other)
@@ -108,7 +111,7 @@ public:
         return std::make_unique<CompositeType>(m_compound_kind, m_element_type);
     }
     [[nodiscard]] std::string to_string() const override {
-        std::string output = kind_names[(int)m_compound_kind];
+        std::string output = compound_kind_names[(int)m_compound_kind];
         for(int i = 0; i < m_dimensions; i++) {
             output += "["+ m_element_type->to_string() +"]";
         }
@@ -119,11 +122,13 @@ public:
     }
     [[nodiscard]] int get_dimensions() const override {return m_dimensions;}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
-		return get_type_kind() == other->get_type_kind() and (m_dimensions == other->get_dimensions() || other->get_dimensions() == 0) and m_element_type->is_compatible(other);
+		return get_type_kind() == other->get_type_kind() and (m_dimensions == other->get_dimensions() || other->get_dimensions() == 0 || m_dimensions == 0) and m_element_type->is_compatible(other);
 	}
 	[[nodiscard]] Type* get_element_type() const override {return m_element_type;}
+	[[nodiscard]] CompoundKind get_compound_type() const {return m_compound_kind;}
+
 private:
-    Kind m_compound_kind;
+	CompoundKind m_compound_kind;
 	Type* m_element_type;
     int m_dimensions;
 };

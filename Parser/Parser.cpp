@@ -22,6 +22,42 @@ void Parser::_skip_linebreaks() {
     }
 }
 
+Result<Type*> Parser::parse_type_annotation() {
+	Type* type = TypeRegistry::Unknown;
+	if(peek().type == token::TYPE) {
+		consume(); // consume semicolon
+		auto error = CompileError(ErrorType::ParseError,"", "", get_tok());
+		if(peek().type != token::KEYWORD) {
+			error.m_message = "Found incorrect Type annotation syntax.";
+			return Result<Type*>(error);
+		}
+		auto type_token = consume(m_tokens);
+		int dimensions = 0;
+		while (peek().type == token::OPEN_BRACKET) {
+			consume(); // consume the open bracket [
+			if (peek().type != token::CLOSED_BRACKET) {
+				error.m_message = "Expected closed bracket in Type annotation syntax.";
+				error.m_expected = type_token.val + "[]";
+				return Result<Type*>(error);
+			}
+			consume(); // consume the closed bracket
+			dimensions++;
+		}
+		type = TypeRegistry::get_type_from_annotation(type_token.val);
+		if(!type) {
+			error.m_message = "Unknown Type annotation.";
+			error.m_expected = "valid type annotation";
+			return Result<Type*>(error);
+		}
+		// if composite type
+		if(dimensions>0) {
+			type = TypeRegistry::add_composite_type(CompoundKind::Array, type, dimensions);
+		}
+	}
+	return Result<Type*>(type);
+}
+
+
 std::string Parser::sanitize_binary(const std::string& input) {
     if (input.empty()) {
         return input;
@@ -994,9 +1030,14 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
     if(parsed_var.is_error()) {
         return Result<std::unique_ptr<NodeVariable>>(parsed_var.get_error());
     }
+	auto type = parse_type_annotation();
+	if(type.is_error()) {
+		return Result<std::unique_ptr<NodeVariable>>(type.get_error());
+	}
     auto node_variable = std::move(parsed_var.unwrap());
     node_variable->is_local = is_local;
     node_variable->is_global = is_global;
+	node_variable->ty = type.unwrap();
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
 
@@ -1021,9 +1062,14 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_declare_array(NodeAST* 
     if(parsed_arr.is_error()) {
         return Result<std::unique_ptr<NodeDataStructure>>(parsed_arr.get_error());
     }
+	auto type = parse_type_annotation();
+	if(type.is_error()) {
+		return Result<std::unique_ptr<NodeDataStructure>>(type.get_error());
+	}
     auto node_array = std::move(parsed_arr.unwrap());
     node_array->is_local = is_local;
     node_array->is_global = is_global;
+	node_array->ty = type.unwrap();
     return Result<std::unique_ptr<NodeDataStructure>>(std::move(node_array));
 }
 
@@ -1077,6 +1123,11 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
         }
         control_var = std::move(parsed_var.unwrap());
     }
+	auto type = parse_type_annotation();
+	if(type.is_error()) {
+		return Result<std::unique_ptr<NodeUIControl>>(type.get_error());
+	}
+	control_var->ty = type.unwrap();
     std::unique_ptr<NodeParamList> control_params;
     if(peek().type == token::OPEN_PARENTH) {
         auto param_list = parse_param_list(node_ui_control.get());
@@ -1440,6 +1491,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 		return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
 															 "Expected linebreak.", "linebreak", peek()));
 	}
+
 	consume(); // consume linebreak
 	std::vector<std::unique_ptr<NodeParamList>> stmts;
 	int32_t size = 0;

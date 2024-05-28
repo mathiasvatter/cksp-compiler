@@ -51,7 +51,7 @@ void TypeCasting::visit(NodeVariable& node) {
 void TypeCasting::visit(NodeArray& node) {
 	// if array is unknown type -> set to array of unknown
 	if(node.ty == TypeRegistry::Unknown) {
-		node.ty = TypeRegistry::add_composite_type(CompositeType::Array, TypeRegistry::Unknown, 1);
+		node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Unknown, 1);
 	}
 }
 
@@ -59,7 +59,7 @@ void TypeCasting::visit(NodeArrayRef& node) {
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
 		if(node.ty == TypeRegistry::Unknown) {
-			node.ty = TypeRegistry::get_composite_type(CompositeType::Array, TypeRegistry::Unknown, 1);
+			node.ty = TypeRegistry::get_composite_type(CompoundKind::Array, TypeRegistry::Unknown, 1);
             if(!node.ty) throw_composite_error(&node).exit();
 		}
 	} else {
@@ -75,7 +75,7 @@ void TypeCasting::visit(NodeNDArray& node) {
     node.sizes->accept(*this);
     // if array is unknown type -> set to array of unknown
     if(node.ty == TypeRegistry::Unknown) {
-        node.ty = TypeRegistry::add_composite_type(CompositeType::Array, TypeRegistry::Unknown, node.dimensions);
+        node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions);
     }
 }
 
@@ -83,7 +83,7 @@ void TypeCasting::visit(NodeNDArrayRef& node) {
     // if handed over without index -> as whole array structure type
     if(!node.indexes) {
         if(node.ty == TypeRegistry::Unknown) {
-            node.ty = TypeRegistry::get_composite_type(CompositeType::Array, TypeRegistry::Unknown, node.sizes->params.size());
+            node.ty = TypeRegistry::get_composite_type(CompoundKind::Array, TypeRegistry::Unknown, node.sizes->params.size());
             if(!node.ty) throw_composite_error(&node).exit();
         }
     } else {
@@ -114,7 +114,7 @@ void TypeCasting::visit(NodeParamList& node) {
 
     // if param list in array declaration or assignment return composite type
     if(all_same and !types.empty()) {
-        node.ty = TypeRegistry::add_composite_type(CompositeType::Array, node.params[0]->ty, 0);
+        node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.params[0]->ty, 0);
     }
     if(!all_same) {
         size_t position = std::distance(types.begin(), it);
