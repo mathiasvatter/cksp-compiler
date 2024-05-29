@@ -26,6 +26,8 @@ public:
     static Type* get_type_from_identifier(char identifier);
     /// returns the identifier from the type (Integer -> $, Real -> ~, ...)
     static char get_identifier_from_type(Type* ty);
+    /// returns the neutral element from the type (Integer -> 0, Real -> 0.0, ...)
+    static std::unique_ptr<NodeAST> get_neutral_element_from_type(Type* ty);
     /// adds a new object type to the registry
     static ObjectType* add_object_type(const std::string& name);
     /// returns the object type from the name, if no object type with the name exists, nullptr is returned
@@ -35,7 +37,6 @@ public:
     static CompositeType* get_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1);
     /// adds a new composite type to the registry
     static CompositeType* add_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1);
-
 	/// attempts to set the element type of ty to element_type if ty is Composite Type and elemen_type is Basic Type
     static Type* set_element_type(Type* ty, Type* element_type);
 
@@ -94,4 +95,17 @@ private:
 	};
     inline static std::unordered_map<Type*, char> type_to_identifier = invert_map(identifier_to_type);
 
+    inline static std::unordered_map<Type*, std::unique_ptr<NodeAST>> type_to_neutral_element = {
+        {Integer, std::make_unique<NodeInt>(0, Token())},
+        {Real, std::make_unique<NodeReal>(0.0, Token())},
+        {String, std::make_unique<NodeString>("\"\"", Token())},
+//        {Boolean, "false"},
+//        {ArrayOfInt, "{}"},
+//        {ArrayOfReal, "{}"},
+//        {ArrayOfBool, "{}"},
+//        {ArrayOfString, "{}"},
+//        {Unknown, "unknown"},
+//        {Any, "any"},
+//        {Number, "0"}
+    };
 };
