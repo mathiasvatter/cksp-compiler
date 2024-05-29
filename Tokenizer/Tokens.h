@@ -138,6 +138,15 @@ struct Keyword {
 	std::string value;
 };
 
+template <typename K, typename V>
+std::unordered_map<V, K> invert_map(const std::unordered_map<K, V>& map) {
+    std::unordered_map<V, K> inverted_map;
+    for (const auto& pair : map) {
+        inverted_map[pair.second] = pair.first;
+    }
+    return inverted_map;
+}
+
 inline int MAX_CALLBACK_LINES = 4990;
 inline int MAX_UI_CONTROLS = 999;
 inline int MAX_ARRAY_ELEMENTS = 1000000;
