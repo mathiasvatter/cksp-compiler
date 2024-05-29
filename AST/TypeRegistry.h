@@ -11,82 +11,36 @@
  * @class TypeRegistry
  * @brief This class is used to manage and access different types in cksp.
  *
- * The TypeRegistry class provides methods to add and get object types, and also provides predefined basic and composite types.
+ * The TypeRegistry class provides methods to add and get object types, and also
+ * provides predefined basic and composite types.
  */
 class TypeRegistry {
+private:
+    inline static std::unordered_map<std::string, std::unique_ptr<ObjectType>> object_types;
+    inline static std::unordered_map<std::string, std::unique_ptr<CompositeType>> composite_types;
+
 public:
-
-	/// tries to infer the type by specializing given type from Number to Integer
-	static inline Type* infer_type(NodeDataStructure* node) {
-		Type* ty = node->ty;
-		if(ty == Number || ty == Unknown || ty == Any) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
-			error.m_message = "Failed to infer <"+ty->get_type_kind_name()+"> type.";
-			error.m_message += " Automatically casted "+node->name+" as <Integer>. Consider using a variable identifier.";
-			error.m_got = ty->to_string();
-			error.print();
-			node->ty = Integer;
-			return Integer;
-		}
-		return ty;
-	}
-
-	inline static Type* get_type_from_annotation(const std::string& name) {
-
-		auto it = type_annotations.find(name);
-		if (it != type_annotations.end()) {
-			return it->second;
-		}
-		return Unknown;
-	}
-
-	inline static Type* get_type_from_identifier(char identifier) {
-		auto it = type_identifiers.find(identifier);
-		if (it != type_identifiers.end()) {
-			return it->second;
-		}
-		return Unknown;
-	}
-
-	inline static ObjectType* add_object_type(const std::string& name) {
-		object_types[name] = std::make_unique<ObjectType>(name);
-        return object_types[name].get();
-	}
-
-	inline static ObjectType* get_object_type(const std::string& name) {
-		auto it = object_types.find(name);
-		if (it != object_types.end()) {
-			return it->second.get();
-		}
-		return nullptr;
-	}
-
-    inline static CompositeType* get_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1) {
-        auto hash_val = std::to_string((int)comp_type)+element_type->to_string()+std::to_string(dimensions);
-        auto it = composite_types.find(hash_val);
-        if (it != composite_types.end()) {
-            return it->second.get();
-        }
-        return nullptr;
-    }
-    inline static CompositeType* add_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1) {
-        auto hash_val = std::to_string((int)comp_type)+element_type->to_string()+std::to_string(dimensions);
-        composite_types[hash_val] = std::make_unique<CompositeType>(comp_type, element_type, dimensions);
-        return composite_types[hash_val].get();
-    }
+    /// returns the type from the annotation name (int, bool, string[], ...)
+    static Type* get_type_from_annotation(const std::string& name);
+    /// returns the type from the identifier ($, ~, @, ...)
+    static Type* get_type_from_identifier(char identifier);
+    /// returns the identifier from the type (Integer -> $, Real -> ~, ...)
+    static char get_identifier_from_type(Type* ty);
+    /// adds a new object type to the registry
+    static ObjectType* add_object_type(const std::string& name);
+    /// returns the object type from the name, if no object type with the name exists, nullptr is returned
+    static ObjectType* get_object_type(const std::string& name);
+    /// returns pointer to the composite type in registry by looking at the element type and dimensions
+    /// returns nullptr if no composite type with the given element type and dimensions exists
+    static CompositeType* get_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1);
+    /// adds a new composite type to the registry
+    static CompositeType* add_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1);
 
 	/// attempts to set the element type of ty to element_type if ty is Composite Type and elemen_type is Basic Type
-	inline static Type* set_element_type(Type* ty, Type* element_type) {
-		if(ty->get_type_kind() == TypeKind::Composite and element_type->get_type_kind() == TypeKind::Basic) {
-			ty = get_composite_type(static_cast<CompositeType*>(ty)->get_compound_type(), element_type, ty->get_dimensions());
-			return ty;
-		}
-		if(ty->get_type_kind() == TypeKind::Basic and element_type->get_type_kind() == TypeKind::Basic) {
-			ty = element_type;
-			return ty;
-		}
-		return nullptr;
-	}
+    static Type* set_element_type(Type* ty, Type* element_type);
+
+    /// tries to infer the type by specializing given type from Number to Integer
+    static Type* infer_type(NodeDataStructure* node);
 
     // Standardtypen
 	inline static std::unique_ptr<BasicType> IntegerType = std::make_unique<BasicType>(Kind::Integer);
@@ -110,27 +64,14 @@ public:
 	inline static BasicType* Number = NumberType.get();
 
 	// Composite-Typen
-	inline static std::unique_ptr<CompositeType> ArrayOfIntType = std::make_unique<CompositeType>(CompoundKind::Array, Integer);
-	inline static CompositeType* ArrayOfInt = ArrayOfIntType.get();
-	inline static std::unique_ptr<CompositeType> ArrayOfRealType = std::make_unique<CompositeType>(CompoundKind::Array, Real);
-	inline static CompositeType* ArrayOfReal = ArrayOfRealType.get();
-	inline static std::unique_ptr<CompositeType> ArrayOfBoolType = std::make_unique<CompositeType>(CompoundKind::Array, Boolean);
-	inline static CompositeType* ArrayOfBool = ArrayOfBoolType.get();
-	inline static std::unique_ptr<CompositeType> ArrayOfStringType = std::make_unique<CompositeType>(CompoundKind::Array, String);
-	inline static CompositeType* ArrayOfString = ArrayOfStringType.get();
-	inline static std::unique_ptr<CompositeType> ArrayOfUnknownType = std::make_unique<CompositeType>(CompoundKind::Array, Unknown);
-	inline static CompositeType* ArrayOfUnknown = ArrayOfUnknownType.get();
-
-	inline static std::unique_ptr<CompositeType> ListOfIntType = std::make_unique<CompositeType>(CompoundKind::List, IntegerType.get());
-	inline static std::unique_ptr<CompositeType> ListOfRealType = std::make_unique<CompositeType>(CompoundKind::List, RealType.get());
-	inline static std::unique_ptr<CompositeType> ListOfBoolType = std::make_unique<CompositeType>(CompoundKind::List, BooleanType.get());
-	inline static std::unique_ptr<CompositeType> ListOfStringType = std::make_unique<CompositeType>(CompoundKind::List, StringType.get());
+	inline static CompositeType* ArrayOfInt = add_composite_type(CompoundKind::Array, Integer, 1);
+	inline static CompositeType* ArrayOfReal = add_composite_type(CompoundKind::Array, Real, 1);
+	inline static CompositeType* ArrayOfBool = add_composite_type(CompoundKind::Array, Boolean, 1);
+	inline static CompositeType* ArrayOfString = add_composite_type(CompoundKind::Array, String, 1);
+	inline static CompositeType* ArrayOfUnknown = add_composite_type(CompoundKind::Array, Unknown, 1);
 
 private:
-	inline static std::unordered_map<std::string, std::unique_ptr<ObjectType>> object_types;
-    inline static std::unordered_map<std::string, std::unique_ptr<CompositeType>> composite_types;
-
-	inline static std::unordered_map<std::string, Type*> type_annotations = {
+	inline static std::unordered_map<std::string, Type*> annotation_to_type = {
 		{"int", Integer},
 		{"real", Real},
 		{"string", String},
@@ -143,7 +84,7 @@ private:
 		{"bool[]", ArrayOfBool},
 		{"[]", ArrayOfUnknown}
 	};
-	inline static std::unordered_map<char, Type*> type_identifiers = {
+	inline static std::unordered_map<char, Type*> identifier_to_type = {
 		{'$', Integer},
 		{'~', Real},
 		{'@', String},
@@ -151,5 +92,6 @@ private:
 		{'?', ArrayOfReal},
 		{'!', ArrayOfString},
 	};
+    inline static std::unordered_map<Type*, char> type_to_identifier = invert_map(identifier_to_type);
 
 };

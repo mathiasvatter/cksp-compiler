@@ -61,17 +61,17 @@ void ASTGenerator::visit(NodeVariable &node) {
         os << "polyphonic ";
     else if (node.data_type == DataType::Const)
         os << "const ";
-	os << variable_identifier.find(node.type)->second;
+	os << TypeRegistry::get_identifier_from_type(node.ty);
     os << sanitize_dots(node.name);
 }
 
 void ASTGenerator::visit(NodeVariableRef &node) {
-    os << variable_identifier.find(node.type)->second;
+    os << TypeRegistry::get_identifier_from_type(node.ty);
     os << sanitize_dots(node.name);
 }
 
 void ASTGenerator::visit(NodeArrayRef &node) {
-	os << array_identifier.find(node.type)->second;
+    os << TypeRegistry::get_identifier_from_type(node.ty);
     os << sanitize_dots(node.name);
 	if(node.index) {
 		os << "[";
@@ -81,7 +81,7 @@ void ASTGenerator::visit(NodeArrayRef &node) {
 }
 
 void ASTGenerator::visit(NodeArray &node) {
-    os << array_identifier.find(node.type)->second;
+    os << TypeRegistry::get_identifier_from_type(node.ty);
     os << sanitize_dots(node.name);
     if(node.size) {
         os << "[";
