@@ -27,6 +27,17 @@ void NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 		parent->replace_child(this, std::move(newNode));
 	}
 }
+Type* NodeAST::set_element_type(Type *element_type) {
+	if(ty->get_type_kind() == TypeKind::Composite and element_type->get_type_kind() == TypeKind::Basic) {
+		ty = TypeRegistry::get_composite_type(static_cast<CompositeType*>(ty)->get_compound_type(), element_type, ty->get_dimensions());
+		return ty;
+	}
+	if(ty->get_type_kind() == TypeKind::Basic and element_type->get_type_kind() == TypeKind::Basic) {
+		ty = element_type;
+		return ty;
+	}
+	return nullptr;
+}
 
 // ************* NodeDataStructure ***************
 void NodeDataStructure::accept(ASTVisitor &visitor) {}
@@ -54,6 +65,19 @@ bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBody* curre
 	return is_local;
 }
 
+Type* NodeDataStructure::cast_type() {
+	Type* type = ty->get_element_type();
+	if(type == TypeRegistry::Number || type == TypeRegistry::Unknown || type == TypeRegistry::Any) {
+		this->set_element_type(TypeRegistry::Integer);
+		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+		error.m_message = "Failed to infer <"+ty->get_type_kind_name()+"> type.";
+		error.m_message += " Automatically casted "+name+" as <"+ty->to_string()+">. Consider using a variable identifier.";
+		error.m_got = ty->to_string();
+		error.print();
+	}
+	return ty;
+}
+
 
 // ************* NodeReference ***************
 void NodeReference::accept(ASTVisitor &visitor) {}
@@ -77,6 +101,7 @@ void NodeReference::match_data_structure(NodeDataStructure* data_structure) {
 	is_compiler_return = data_structure->is_compiler_return;
 	data_type = data_structure->data_type;
 	type = data_structure->type;
+	ty = data_structure->ty;
 }
 
 // ************* NodeDeadCode ***************
@@ -268,7 +293,7 @@ std::unique_ptr<NodeSingleAssignStatement> NodeSingleDeclareStatement::to_assign
 	// if var provided -> turn to reference else turn to_be_declared to reference
 	auto node_array_var = var ? var->to_reference() : to_be_declared->to_reference();
 	// if declare stmt has assignee -> clone it else create new NodeInt with value 0
-	auto node_assignee = assignee ? assignee->clone() : std::make_unique<NodeInt>(0, tok);
+	auto node_assignee = assignee ? assignee->clone() : TypeRegistry::get_neutral_element_from_type(to_be_declared->ty);
 	auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(
 		std::move(node_array_var),
 		std::move(node_assignee),

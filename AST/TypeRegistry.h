@@ -37,11 +37,6 @@ public:
     static CompositeType* get_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1);
     /// adds a new composite type to the registry
     static CompositeType* add_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1);
-	/// attempts to set the element type of ty to element_type if ty is Composite Type and elemen_type is Basic Type
-    static Type* set_element_type(Type* ty, Type* element_type);
-
-    /// tries to infer the type by specializing given type from Number to Integer
-    static Type* infer_type(NodeDataStructure* node);
 
     // Standardtypen
 	inline static std::unique_ptr<BasicType> IntegerType = std::make_unique<BasicType>(Kind::Integer);
@@ -95,17 +90,4 @@ private:
 	};
     inline static std::unordered_map<Type*, char> type_to_identifier = invert_map(identifier_to_type);
 
-    inline static std::unordered_map<Type*, std::unique_ptr<NodeAST>> type_to_neutral_element = {
-        {Integer, std::make_unique<NodeInt>(0, Token())},
-        {Real, std::make_unique<NodeReal>(0.0, Token())},
-        {String, std::make_unique<NodeString>("\"\"", Token())},
-//        {Boolean, "false"},
-//        {ArrayOfInt, "{}"},
-//        {ArrayOfReal, "{}"},
-//        {ArrayOfBool, "{}"},
-//        {ArrayOfString, "{}"},
-//        {Unknown, "unknown"},
-//        {Any, "any"},
-//        {Number, "0"}
-    };
 };

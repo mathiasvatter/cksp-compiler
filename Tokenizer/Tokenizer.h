@@ -30,7 +30,7 @@ struct Token {
     size_t pos;
     std::string file;
 
-    Token() : type(token::INVALID), val(""), line(0), pos(0), file("") {}
+    Token() : type(token::INVALID), val(""), line(-1), pos(0), file("") {}
     Token(token type, std::string val, size_t line, size_t pos, const std::string &file);
     friend std::ostream& operator<<(std::ostream& os, const Token& tok);
 	bool operator==(const Token &other) const {

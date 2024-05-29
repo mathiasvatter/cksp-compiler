@@ -106,11 +106,11 @@ void ASTDesugar::visit(NodeParamList &node) {
 }
 
 std::unique_ptr<NodeBody> ASTDesugar::declare_compiler_variables() {
-    Token tok = Token(token::KEYWORD, "compiler_variable", 0, 0,"");
+    Token tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
     auto node_body = std::make_unique<NodeBody>(tok);
     for(auto & var_name: m_compiler_variables) {
         auto node_variable = std::make_unique<NodeVariable>(std::nullopt, var_name.first, DataType::Mutable, tok);
-        node_variable->type = var_name.second;
+        node_variable->ty = var_name.second;
         node_variable->is_engine = true;
         node_variable->is_global = true;
         auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), nullptr, tok);
