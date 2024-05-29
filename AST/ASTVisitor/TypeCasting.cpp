@@ -22,6 +22,8 @@ void TypeCasting::visit(NodeProgram& node) {
             match_type(decl->to_be_declared.get(), decl->assignee.get());
             match_type(decl->assignee.get(), decl->to_be_declared.get());
         }
+		// cast as Integer if still unknown
+		decl->to_be_declared->cast_type();
     }
     for(auto & ref : m_references) {
         match_reference_declaration(ref);
@@ -206,8 +208,8 @@ void TypeCasting::visit(NodeBinaryExpr& node) {
     }
 
     if(!is_compatible) error.exit();
-    node.left->ty = specialize_type(node.left->ty, node.ty);
-    node.right->ty = specialize_type(node.right->ty, node.ty);
+    node.left->set_element_type(specialize_type(node.left->ty, node.ty));
+    node.right->set_element_type(specialize_type(node.right->ty, node.ty));
 
 }
 

@@ -30,11 +30,16 @@ char TypeRegistry::get_identifier_from_type(Type *ty) {
 }
 
 std::unique_ptr<NodeAST> TypeRegistry::get_neutral_element_from_type(Type* ty) {
-    auto it = type_to_neutral_element.find(ty);
-    if (it != type_to_neutral_element.end()) {
-        return it->second->clone();
-    }
-    return nullptr;
+	if (ty == Integer) {
+		return std::make_unique<NodeInt>(0, Token());
+	} else if (ty == Real) {
+		return std::make_unique<NodeReal>(0.0, Token());
+	} else if (ty == String) {
+		return std::make_unique<NodeString>("\"\"", Token());
+	} else if (ty == Boolean) {
+		return std::make_unique<NodeString>("false", Token());
+	}
+	return nullptr;
 }
 
 
@@ -64,30 +69,4 @@ CompositeType *TypeRegistry::add_composite_type(CompoundKind comp_type, Type *el
     auto hash_val = std::to_string((int)comp_type)+element_type->to_string()+std::to_string(dimensions);
     composite_types[hash_val] = std::make_unique<CompositeType>(comp_type, element_type, dimensions);
     return composite_types[hash_val].get();
-}
-
-Type *TypeRegistry::set_element_type(Type *ty, Type *element_type) {
-    if(ty->get_type_kind() == TypeKind::Composite and element_type->get_type_kind() == TypeKind::Basic) {
-        ty = get_composite_type(static_cast<CompositeType*>(ty)->get_compound_type(), element_type, ty->get_dimensions());
-        return ty;
-    }
-    if(ty->get_type_kind() == TypeKind::Basic and element_type->get_type_kind() == TypeKind::Basic) {
-        ty = element_type;
-        return ty;
-    }
-    return nullptr;
-}
-
-Type *TypeRegistry::infer_type(NodeDataStructure *node) {
-    Type* ty = node->ty;
-    if(ty == Number || ty == Unknown || ty == Any) {
-        auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
-        error.m_message = "Failed to infer <"+ty->get_type_kind_name()+"> type.";
-        error.m_message += " Automatically casted "+node->name+" as <Integer>. Consider using a variable identifier.";
-        error.m_got = ty->to_string();
-        error.print();
-        node->ty = Integer;
-        return Integer;
-    }
-    return ty;
 }

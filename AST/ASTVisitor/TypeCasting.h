@@ -78,7 +78,7 @@ private:
         }
 
         // match type from declaration to reference
-		TypeRegistry::set_element_type(node->ty, specialize_type(reference_type, declaration_type));
+		node->set_element_type(specialize_type(reference_type, declaration_type));
 
         declaration_type = node->declaration->ty->get_element_type();
         reference_type = node->ty->get_element_type();
@@ -86,7 +86,7 @@ private:
             throw_type_error(node->declaration, node).exit();
         }
         // match type from reference to declaration
-        TypeRegistry::set_element_type(node->declaration->ty, specialize_type(declaration_type, reference_type));
+        node->declaration->set_element_type(specialize_type(declaration_type, reference_type));
         return node->ty;
     }
 

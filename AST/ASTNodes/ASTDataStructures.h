@@ -131,6 +131,11 @@ struct NodeUIControl : NodeDataStructure {
 		params -> update_token_data(token);
 	}
 	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+	Type* cast_type() override {
+		control_var->cast_type();
+		ty = control_var->ty;
+		return ty;
+	}
 
 };
 

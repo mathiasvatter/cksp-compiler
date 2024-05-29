@@ -46,6 +46,9 @@ struct NodeAST {
         return nullptr;
     }
     [[nodiscard]] NodeType get_node_type() const { return node_type; }
+	/// attempts to set the element type of this node to element_type if node has Composite Type
+	/// and elemen_type is Basic Type
+	Type* set_element_type(Type *element_type);
 };
 
 template<typename T>
@@ -105,6 +108,8 @@ struct NodeDataStructure : NodeAST {
     virtual std::unique_ptr<NodeReference> to_reference();
 	/// determines if current data structure is local variable and sets is_local flag
 	bool determine_locality(class NodeProgram* program, class NodeBody* current_body, class NodeCallback* current_callback);
+	/// tries to infer the type by specializing given type from Number to Integer
+	virtual Type* cast_type();
 };
 
 struct NodeInt : NodeAST {
