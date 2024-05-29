@@ -29,6 +29,15 @@ char TypeRegistry::get_identifier_from_type(Type *ty) {
     return ' ';
 }
 
+std::unique_ptr<NodeAST> TypeRegistry::get_neutral_element_from_type(Type* ty) {
+    auto it = type_to_neutral_element.find(ty);
+    if (it != type_to_neutral_element.end()) {
+        return it->second->clone();
+    }
+    return nullptr;
+}
+
+
 ObjectType *TypeRegistry::add_object_type(const std::string &name) {
     object_types[name] = std::make_unique<ObjectType>(name);
     return object_types[name].get();

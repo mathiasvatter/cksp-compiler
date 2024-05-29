@@ -16,7 +16,7 @@ public:
 		// update because of potentially altered param counts after lambda lifting
 		node.update_function_lookup();
 		m_def_provider->refresh_scopes();
-		m_passive_vars.clear();
+        clear_passive_vars();
 
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
@@ -82,7 +82,9 @@ public:
 				add_passive_vars(passive_vars);
 			}
 			// set back passive_var index since scope has ended
-			m_passive_var_idx = 0;
+			for(auto & idx : m_passive_vars_idx) {
+                idx.second = 0;
+            }
 			// clear passive_var replace map
 			m_passive_vars_replace.pop_back();
 		}
@@ -114,7 +116,7 @@ public:
 
 		if(node.to_be_declared->is_local) {
 			if(is_thread_safe_env()) {
-				if (auto free_passive_var = get_free_passive_var()) {
+				if (auto free_passive_var = get_free_passive_var(node.to_be_declared->ty)) {
 					m_passive_vars_replace.back().insert({node.to_be_declared->name, free_passive_var});
 					auto node_assign_statement = node.to_assign_stmt(free_passive_var);
 					m_all_local_references.push_back(static_cast<NodeReference *>(node_assign_statement->array_variable.get()));
@@ -186,7 +188,8 @@ public:
 	}
 
 	bool clear_passive_vars() {
-		m_passive_vars.clear();
+        m_passive_vars_map.clear();
+//		m_passive_vars.clear();
 		return true;
 	}
 
@@ -199,7 +202,6 @@ private:
 	std::string loc_var_prefix = "loc_";
 	Gensym m_gensym;
 	DefinitionProvider* m_def_provider = nullptr;
-//	NodeProgram* m_program = nullptr;
 	NodeBody* m_current_body = nullptr;
 	NodeCallback* m_current_callback = nullptr;
 	NodeFunctionDefinition* m_current_function = nullptr;
@@ -215,18 +217,27 @@ private:
 	/// vector for all local vars in functions -> do not get moved into on init
 	std::vector<NodeDataStructure*> m_all_local_vars = {};
 	/// vector for all variables which dynamic extend has ended
-	std::vector<NodeDataStructure*> m_passive_vars = {};
+//	std::vector<NodeDataStructure*> m_passive_vars = {};
+    /// hash values are the types
+    std::unordered_map<std::string, std::vector<NodeDataStructure*>> m_passive_vars_map;
+    std::unordered_map<std::string, int> m_passive_vars_idx;
 	inline void add_passive_vars(const std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual>& map2) {
 		for(auto & var : map2) {
-            m_passive_vars.push_back(var.second);
+//            m_passive_vars.push_back(var.second);
+            m_passive_vars_map[var.second->ty->to_string()].push_back(var.second);
 		}
 	};
-	int m_passive_var_idx = 0;
-    /// get next free passive_var
-    inline NodeDataStructure* get_free_passive_var() {
-        if(m_passive_var_idx < m_passive_vars.size()) {
-            return m_passive_vars[m_passive_var_idx++];
+//	int m_passive_var_idx = 0;
+    /// get next free passive_var for given type
+    inline NodeDataStructure* get_free_passive_var(Type* ty) {
+        auto &vec = m_passive_vars_map[ty->to_string()];
+        auto &idx = m_passive_vars_idx[ty->to_string()];
+        if(idx < vec.size()) {
+            return vec[idx++];
         }
+//        if(m_passive_var_idx < m_passive_vars.size()) {
+//            return m_passive_vars[m_passive_var_idx++];
+//        }
         return nullptr;
     }
     /// search for new declaration to reference if declaration is replaced by passive_var
@@ -243,24 +254,6 @@ private:
     std::vector<std::unordered_map<std::string, NodeDataStructure*>> m_passive_vars_replace;
     /// vector for all local references that have been replaced by passive_var references
 	std::vector<NodeReference*> m_all_local_references;
-
-    /// method for replacing local variable declarations with passive_var references in assignment
-    std::unique_ptr<NodeSingleAssignStatement> inline assign_statement_from_declaration(NodeSingleDeclareStatement* node, NodeDataStructure* free_passive_var) {
-        // change declare statement to assign statement and replace declaration with reference to passive_var
-        auto passive_var_ref = free_passive_var->to_reference();
-        std::unique_ptr<NodeAST> node_assignee = nullptr;
-        if(!node->assignee) {
-            node_assignee = std::make_unique<NodeInt>(0, node->tok);
-        } else {
-            node_assignee = std::move(node->assignee);
-        }
-        auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(
-                std::move(passive_var_ref),
-                std::move(node_assignee),
-                node->tok
-        );
-        return node_assign_statement;
-    };
 
 };
 
