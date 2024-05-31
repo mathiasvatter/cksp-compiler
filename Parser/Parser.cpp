@@ -708,8 +708,9 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
             // because of array declarations like: declare array[3] := (0)
             bool is_parse_error = exprResult.is_error();
             bool is_binary_expr = is_parse_error;
+            std::unique_ptr<NodeAST> expr;
             if(!is_parse_error) {
-                auto expr = std::move(exprResult.unwrap());
+                expr = std::move(exprResult.unwrap());
                 is_binary_expr = expr->get_node_type() == NodeType::BinaryExpr;
                 if(expr->get_node_type() == NodeType::UnaryExpr) {
                     auto unary_expr = static_cast<NodeUnaryExpr*>(expr.get());
@@ -717,7 +718,7 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
                 }
             }
             if (!is_parse_error and is_binary_expr) {
-                params.push_back(std::move(exprResult.unwrap()));
+                params.push_back(std::move(expr));
             } else {
                 m_pos = backup_pos; // set back token index
                 consume(); // consume (
