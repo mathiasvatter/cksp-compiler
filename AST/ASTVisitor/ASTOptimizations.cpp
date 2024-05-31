@@ -20,3 +20,10 @@ void ASTOptimizations::visit(NodeSingleDeclareStatement& node) {
 	node.to_be_declared->accept(*this);
 	if(node.assignee) node.assignee->accept(*this);
 }
+
+void ASTOptimizations::visit(NodeBody& node) {
+    for(auto& statement : node.statements) {
+        statement->accept(*this);
+    }
+    node.cleanup_body();
+}

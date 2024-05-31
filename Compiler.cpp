@@ -9,6 +9,9 @@
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
+    // initialize standard types and registry
+    TypeRegistry::initialize();
+
 	// process builtins and save them in the definition provider class
 	BuiltinsProcessor builtins(&m_definition_provider);
 	builtins.process();
@@ -140,15 +143,15 @@ void Compiler::compile() {
 	ast->accept(optimizations);
 
 	compile_time.stop("Optimization");
-	compile_time.start("Typechecking");
-
-	ASTTypeCasting typecast(&m_definition_provider);
-	ast->accept(typecast);
-
-	ASTTypeChecking type_check;
-	ast->accept(type_check);
-
-	compile_time.stop("Typechecking");
+//	compile_time.start("Typechecking");
+//
+//	ASTTypeCasting typecast(&m_definition_provider);
+//	ast->accept(typecast);
+//
+//	ASTTypeChecking type_check;
+//	ast->accept(type_check);
+//
+//	compile_time.stop("Typechecking");
 	compile_time.start("Generator");
 
 //	ASTPrinter printer;

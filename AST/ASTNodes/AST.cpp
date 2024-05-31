@@ -29,7 +29,12 @@ void NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 }
 Type* NodeAST::set_element_type(Type *element_type) {
 	if(ty->get_type_kind() == TypeKind::Composite and element_type->get_type_kind() == TypeKind::Basic) {
-		ty = TypeRegistry::get_composite_type(static_cast<CompositeType*>(ty)->get_compound_type(), element_type, ty->get_dimensions());
+		auto new_comp_type = TypeRegistry::get_composite_type(static_cast<CompositeType*>(ty)->get_compound_type(), element_type, ty->get_dimensions());
+        // if composite type does not yet exist -> create it without throwing error
+        if(!new_comp_type) {
+            new_comp_type = TypeRegistry::add_composite_type(static_cast<CompositeType*>(ty)->get_compound_type(), element_type, ty->get_dimensions());
+        }
+        ty = new_comp_type;
 		return ty;
 	}
 	if(ty->get_type_kind() == TypeKind::Basic and element_type->get_type_kind() == TypeKind::Basic) {

@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "AST.h"
+#include "../TypeRegistry.h"
 
 struct NodeVariable: NodeDataStructure {
 	inline NodeVariable(std::optional<Token> is_persistent, std::string name, DataType type, Token tok)

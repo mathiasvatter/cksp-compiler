@@ -96,6 +96,41 @@ void TypeCasting::visit(NodeNDArrayRef& node) {
     m_references.push_back(&node);
 }
 
+void TypeCasting::visit(NodeListStruct& node) {
+    // check if all types are the same and try to infer list type from it
+    std::vector<Type*> types;
+    for(auto & b : node.body) {
+        b->accept(*this);
+        types.push_back(b->ty);
+    }
+    // Use Sie std::adjacent_find to check if all types are the same
+    auto it = std::adjacent_find(types.begin(), types.end(),
+                                 [](const Type* a, const Type* b) { return a != b; });
+    bool all_same = (it == types.end()); // true, if all types equal
+    if(all_same and !types.empty()) {
+        node.ty = TypeRegistry::add_composite_type(CompoundKind::List, node.body[0]->ty, node.size);
+    }
+    if(!all_same) {
+        size_t position = std::distance(types.begin(), it);
+        throw_type_error(&node, node.body[position].get()).exit();
+    }
+}
+
+void TypeCasting::visit(NodeListStructRef& node) {
+    // if handed over without index -> as whole list structure type
+    if(!node.indexes) {
+        if(node.ty == TypeRegistry::Unknown) {
+            node.ty = TypeRegistry::get_composite_type(CompoundKind::List, TypeRegistry::Unknown, node.sizes->params.size());
+            if(!node.ty) throw_composite_error(&node).exit();
+        }
+    } else {
+        // handed over as list element -> set to element type
+        if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
+    }
+    match_reference_declaration(&node);
+    m_references.push_back(&node);
+}
+
 void TypeCasting::visit(NodeParamList& node) {
     std::vector<Type*> types;
     for(const auto & param : node.params) {
@@ -135,7 +170,7 @@ void TypeCasting::visit(NodeSingleDeclareStatement& node) {
 }
 
 void TypeCasting::visit(NodeUIControl& node) {
-    match_type(node.control_var.get(), node.declaration);
+    match_type(node.control_var.get(), node.declaration->control_var.get());
     node.control_var->accept(*this);
 
     for(int i = 0; i < node.params->params.size(); i++) {
