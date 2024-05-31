@@ -15,11 +15,10 @@
  * provides predefined basic and composite types.
  */
 class TypeRegistry {
-private:
-    inline static std::unordered_map<std::string, std::unique_ptr<ObjectType>> object_types;
-    inline static std::unordered_map<std::string, std::unique_ptr<CompositeType>> composite_types;
-
 public:
+    /// Initialisierungsmethode
+    static void initialize();
+
     /// returns the type from the annotation name (int, bool, string[], ...)
     static Type* get_type_from_annotation(const std::string& name);
     /// returns the type from the identifier ($, ~, @, ...)
@@ -38,56 +37,38 @@ public:
     /// adds a new composite type to the registry
     static CompositeType* add_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1);
 
-    // Standardtypen
-	inline static std::unique_ptr<BasicType> IntegerType = std::make_unique<BasicType>(Kind::Integer);
-	inline static BasicType* Integer = IntegerType.get();
-	inline static std::unique_ptr<BasicType> BooleanType = std::make_unique<BasicType>(Kind::Boolean);
-	inline static BasicType* Boolean = BooleanType.get();
-    inline static std::unique_ptr<BasicType> ComparisonType = std::make_unique<BasicType>(Kind::Comparison);
-    inline static BasicType* Comparison = ComparisonType.get();
-	inline static std::unique_ptr<BasicType> StringType = std::make_unique<BasicType>(Kind::String);
-	inline static BasicType* String = StringType.get();
-	inline static std::unique_ptr<BasicType> RealType = std::make_unique<BasicType>(Kind::Real);
-	inline static BasicType* Real = RealType.get();
-	inline static std::unique_ptr<BasicType> VoidType = std::make_unique<BasicType>(Kind::Void);
-	inline static BasicType* Void = VoidType.get();
-	// allgemein typen
-	inline static std::unique_ptr<BasicType> AnyType = std::make_unique<BasicType>(Kind::Any);
-	inline static BasicType* Any = AnyType.get();
-	inline static std::unique_ptr<BasicType> UnknownType = std::make_unique<BasicType>(Kind::Unknown);
-	inline static BasicType* Unknown = UnknownType.get();
-	inline static std::unique_ptr<BasicType> NumberType = std::make_unique<BasicType>(Kind::Number);
-	inline static BasicType* Number = NumberType.get();
+    // Deklaration der Standardtypen
+    static inline std::unique_ptr<BasicType> IntegerType;
+    static inline BasicType* Integer;
+    static inline std::unique_ptr<BasicType> BooleanType;
+    static inline BasicType* Boolean;
+    static inline std::unique_ptr<BasicType> ComparisonType;
+    static inline BasicType* Comparison;
+    static inline std::unique_ptr<BasicType> StringType;
+    static inline BasicType* String;
+    static inline std::unique_ptr<BasicType> RealType;
+    static inline BasicType* Real;
+    static inline std::unique_ptr<BasicType> VoidType;
+    static inline BasicType* Void;
+    static inline std::unique_ptr<BasicType> AnyType;
+    static inline BasicType* Any;
+    static inline std::unique_ptr<BasicType> UnknownType;
+    static inline BasicType* Unknown;
+    static inline std::unique_ptr<BasicType> NumberType;
+    static inline BasicType* Number;
 
-	// Composite-Typen
-	inline static CompositeType* ArrayOfInt = add_composite_type(CompoundKind::Array, Integer, 1);
-	inline static CompositeType* ArrayOfReal = add_composite_type(CompoundKind::Array, Real, 1);
-	inline static CompositeType* ArrayOfBool = add_composite_type(CompoundKind::Array, Boolean, 1);
-	inline static CompositeType* ArrayOfString = add_composite_type(CompoundKind::Array, String, 1);
-	inline static CompositeType* ArrayOfUnknown = add_composite_type(CompoundKind::Array, Unknown, 1);
+    // Deklaration der Composite-Typen
+    static inline CompositeType* ArrayOfInt;
+    static inline CompositeType* ArrayOfReal;
+    static inline CompositeType* ArrayOfBool;
+    static inline CompositeType* ArrayOfString;
+    static inline CompositeType* ArrayOfUnknown;
 
 private:
-	inline static std::unordered_map<std::string, Type*> annotation_to_type = {
-		{"int", Integer},
-		{"real", Real},
-		{"string", String},
-		{"bool", Boolean},
-		{"void", Void},
-		{"any", Any},
-		{"int[]", ArrayOfInt},
-		{"real[]", ArrayOfReal},
-		{"string[]", ArrayOfString},
-		{"bool[]", ArrayOfBool},
-		{"[]", ArrayOfUnknown}
-	};
-	inline static std::unordered_map<char, Type*> identifier_to_type = {
-		{'$', Integer},
-		{'~', Real},
-		{'@', String},
-		{'%', ArrayOfInt},
-		{'?', ArrayOfReal},
-		{'!', ArrayOfString},
-	};
-    inline static std::unordered_map<Type*, char> type_to_identifier = invert_map(identifier_to_type);
+    static inline std::unordered_map<std::string, std::unique_ptr<ObjectType>> object_types;
+    static inline std::unordered_map<std::string, std::unique_ptr<CompositeType>> composite_types;
 
+    static inline std::unordered_map<std::string, Type*> annotation_to_type;
+    static inline std::unordered_map<char, Type*> identifier_to_type;
+    static inline std::unordered_map<Type*, char> type_to_identifier;
 };

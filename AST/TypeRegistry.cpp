@@ -3,7 +3,61 @@
 //
 #include "TypeRegistry.h"
 
+// Implementierung der Initialisierungsmethode
+void TypeRegistry::initialize() {
+    // Initialisierung der Standardtypen
+    IntegerType = std::make_unique<BasicType>(Kind::Integer);
+    Integer = IntegerType.get();
+    BooleanType = std::make_unique<BasicType>(Kind::Boolean);
+    Boolean = BooleanType.get();
+    ComparisonType = std::make_unique<BasicType>(Kind::Comparison);
+    Comparison = ComparisonType.get();
+    StringType = std::make_unique<BasicType>(Kind::String);
+    String = StringType.get();
+    RealType = std::make_unique<BasicType>(Kind::Real);
+    Real = RealType.get();
+    VoidType = std::make_unique<BasicType>(Kind::Void);
+    Void = VoidType.get();
+    AnyType = std::make_unique<BasicType>(Kind::Any);
+    Any = AnyType.get();
+    UnknownType = std::make_unique<BasicType>(Kind::Unknown);
+    Unknown = UnknownType.get();
+    NumberType = std::make_unique<BasicType>(Kind::Number);
+    Number = NumberType.get();
 
+    // Initialisierung der Composite-Typen
+    ArrayOfInt = add_composite_type(CompoundKind::Array, Integer, 1);
+    ArrayOfReal = add_composite_type(CompoundKind::Array, Real, 1);
+    ArrayOfBool = add_composite_type(CompoundKind::Array, Boolean, 1);
+    ArrayOfString = add_composite_type(CompoundKind::Array, String, 1);
+    ArrayOfUnknown = add_composite_type(CompoundKind::Array, Unknown, 1);
+
+    // Initialisierung der Maps
+    annotation_to_type = {
+            {"int", Integer},
+            {"real", Real},
+            {"string", String},
+            {"bool", Boolean},
+            {"void", Void},
+            {"any", Any},
+            {"int[]", ArrayOfInt},
+            {"real[]", ArrayOfReal},
+            {"string[]", ArrayOfString},
+            {"bool[]", ArrayOfBool},
+            {"[]", ArrayOfUnknown}
+    };
+
+    identifier_to_type = {
+            {'$', Integer},
+            {'~', Real},
+            {'@', String},
+            {'%', ArrayOfInt},
+            {'?', ArrayOfReal},
+            {'!', ArrayOfString},
+    };
+
+    type_to_identifier = invert_map(identifier_to_type);
+}
 
 Type *TypeRegistry::get_type_from_annotation(const std::string &name) {
     auto it = annotation_to_type.find(name);

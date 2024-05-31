@@ -32,6 +32,9 @@ public:
     void visit(NodeNDArray& node) override;
     void visit(NodeNDArrayRef& node) override;
 
+    void visit(NodeListStruct& node) override;
+    void visit(NodeListStructRef& node) override;
+
 	void visit(NodeBinaryExpr& node) override;
 	void visit(NodeUnaryExpr& node) override;
 	void visit(NodeFunctionCall& node) override;
@@ -63,9 +66,8 @@ private:
 		}
 
 		// specialize types:
-        auto specialized_type = specialize_type(node1->ty, node2->ty);
-        node1->ty = specialized_type;
-        return specialized_type;
+        node1->set_element_type(specialize_type(node1->ty, node2->ty));
+        return node1->ty;
 	}
 
     /// tries to match the types of reference and declaration by also checking for element typ
@@ -93,26 +95,26 @@ private:
     /// tries to find the most specialized type for type1 by looking at type2
     static inline Type* specialize_type(Type* type1, Type* type2) {
         // get element types if composite type (element typ not nullptr):
-        auto node_1 = type1->get_element_type() ? type1->get_element_type() : type1;
-        auto node_2 = type2->get_element_type() ? type2->get_element_type() : type2;
+        auto node_1 = type1->get_element_type();
+        auto node_2 = type2->get_element_type();
 
         // specialize types:
         // if node 2 is unknown, return type of node1
-        if(node_2 == TypeRegistry::Unknown) return type1;
+        if(node_2 == TypeRegistry::Unknown) return node_1;
         // if node 1 is unknown, return type of node2
-        if(node_1 == TypeRegistry::Unknown) return type2;
+        if(node_1 == TypeRegistry::Unknown) return node_2;
 
         // if node 1 is any, node2 has to be more specialized, return node_2
-        if(node_1 == TypeRegistry::Any) return type2;
+        if(node_1 == TypeRegistry::Any) return node_2;
         // if node 2 is any, node1 has to be more specialized, return node_1
-        if(node_2 == TypeRegistry::Any) return type1;
+        if(node_2 == TypeRegistry::Any) return node_1;
 
         // if node 1 is number, node 2 has to be number, int or real, return node2
-        if(node_1 == TypeRegistry::Number) return type2;
+        if(node_1 == TypeRegistry::Number) return node_2;
         // if node 2 is number, it is the other way around
-        if(node_2 == TypeRegistry::Number) return type1;
+        if(node_2 == TypeRegistry::Number) return node_1;
 
         // in all other cases, node_1 is already specialized
-        return type1;
+        return node_1;
     }
 };
