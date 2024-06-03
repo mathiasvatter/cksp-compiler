@@ -107,7 +107,7 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 	if (get_scoped_data_structure(var->name, global_scope)) {
 		compile_error.m_message = "Data Structure has already been declared in this scope.";
         if(global_scope) compile_error.m_message += " Variables declared in the <init> callback are always considered global, no local scopes are created.";
-		compile_error.exit();
+		compile_error.print();
 	} else {
 		if(global_scope) {
 			m_declared_data_structures.at(0).insert({var->name, var});
