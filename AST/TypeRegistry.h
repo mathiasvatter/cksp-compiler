@@ -27,14 +27,14 @@ public:
     static char get_identifier_from_type(Type* ty);
     /// returns the neutral element from the type (Integer -> 0, Real -> 0.0, ...)
     static std::unique_ptr<NodeAST> get_neutral_element_from_type(Type* ty);
-    /// adds a new object type to the registry
+    /// adds a new object type to the registry, if object type already exists, the existing type is returned
     static ObjectType* add_object_type(const std::string& name);
     /// returns the object type from the name, if no object type with the name exists, nullptr is returned
     static ObjectType* get_object_type(const std::string& name);
     /// returns pointer to the composite type in registry by looking at the element type and dimensions
     /// returns nullptr if no composite type with the given element type and dimensions exists
     static CompositeType* get_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1);
-    /// adds a new composite type to the registry
+    /// adds a new composite type to the registry, if composite type already exists, the existing type is returned
     static CompositeType* add_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1);
 
     // Deklaration der Standardtypen

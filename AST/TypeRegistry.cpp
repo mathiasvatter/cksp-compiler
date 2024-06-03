@@ -98,6 +98,9 @@ std::unique_ptr<NodeAST> TypeRegistry::get_neutral_element_from_type(Type* ty) {
 
 
 ObjectType *TypeRegistry::add_object_type(const std::string &name) {
+    if(auto obj_ty = get_object_type(name)) {
+        return obj_ty;
+    }
     object_types[name] = std::make_unique<ObjectType>(name);
     return object_types[name].get();
 }
@@ -121,6 +124,9 @@ CompositeType *TypeRegistry::get_composite_type(CompoundKind comp_type, Type *el
 
 CompositeType *TypeRegistry::add_composite_type(CompoundKind comp_type, Type *element_type, int dimensions) {
     auto hash_val = std::to_string((int)comp_type)+element_type->to_string()+std::to_string(dimensions);
+    if(auto comp_ty = get_composite_type(comp_type, element_type, dimensions)) {
+        return comp_ty;
+    }
     composite_types[hash_val] = std::make_unique<CompositeType>(comp_type, element_type, dimensions);
     return composite_types[hash_val].get();
 }

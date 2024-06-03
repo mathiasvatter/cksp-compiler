@@ -75,7 +75,7 @@ public:
             error.exit();
         }
         auto node_key_ref = static_cast<NodeVariableRef*>(node.keys->params[0].get());
-        auto node_key_variable = std::make_unique<NodeVariable>(std::nullopt, node_key_ref->name, DataType::Mutable, node.tok);
+        auto node_key_variable = std::make_unique<NodeVariable>(std::nullopt, node_key_ref->name, TypeRegistry::Integer, DataType::Mutable, node.tok);
         node_key_variable->is_local = true;
         node_key_variable->type = ASTType::Integer;
 

@@ -34,10 +34,8 @@ public:
 	};
 
 	void visit(NodeFunctionCall &node) override {
-		if(auto property_func = m_def_provider->get_property_function(node.function.get())) {
-			if(node.function->args->params.size() < 2)
-				CompileError(ErrorType::SyntaxError,"Found Property Function with insufficient amount of arguments.", node.tok.line, "At least 2 arguments", std::to_string(node.function->args->params.size()), node.tok.file).exit();
-			auto node_body = inline_property_function(property_func->header.get(), std::move(node.function));
+		if(node.kind == NodeFunctionCall::Kind::Property) {
+			auto node_body = inline_property_function(node.definition->header.get(), std::move(node.function));
 			node_body->accept(*this);
 			node.replace_with(std::move(node_body));
 		}
@@ -77,8 +75,8 @@ private:
 		}
 
 		// determine if _str needs to be added to control function name
-		ASTType control_function_type = get_control_function_type(node->control_param);
-		if(control_function_type == ASTType::String) control_function += "_str";
+		Type* control_function_type = get_control_function_type(node->control_param);
+		if(control_function_type == TypeRegistry::String) control_function += "_str";
 
 		auto node_control_function = std::make_unique<NodeFunctionCall>(
 			false,
@@ -89,6 +87,8 @@ private:
 			),
 			node->tok
 		);
+        node_control_function->function->ty = control_function_type;
+        node_control_function->kind = NodeFunctionCall::Kind::Builtin;
 
 		auto node_get_ui_id = std::make_unique<NodeFunctionCall>(
 			false,
@@ -99,6 +99,8 @@ private:
 			),
 			node->tok
 		);
+        node_get_ui_id->function->ty = TypeRegistry::Integer;
+        node_get_ui_id->kind = NodeFunctionCall::Kind::Builtin;
 
 		if(auto node_reference = cast_node<NodeReference>(node->ui_id.get())) {
 			// do not wrap in get_ui_id when it is a ui_control array
@@ -141,20 +143,20 @@ private:
 		return nullptr;
 	}
 
-	static inline ASTType get_control_function_type(const std::string& control_param) {
+	static inline Type* get_control_function_type(const std::string& control_param) {
 		std::string control_par = to_lower(control_param);
 		static const std::unordered_set<std::string> str_substrings{"name", "path", "picture", "help", "identifier", "label", "text"};
 		static const std::unordered_set<std::string> int_substrings{"state", "alignment", "pos", "shifting"};
-		ASTType type = ASTType::Integer;
+		Type* type = TypeRegistry::Integer;
 		for (auto const &substring : str_substrings) {
 			if(contains(control_par, substring)) {
-				type = ASTType::String;
+				type = TypeRegistry::String;
 				break;
 			}
 		}
 		for (auto const &substring : int_substrings) {
 			if(contains(control_par, substring)) {
-				type = ASTType::Integer;
+				type = TypeRegistry::Integer;
 				break;
 			}
 		}

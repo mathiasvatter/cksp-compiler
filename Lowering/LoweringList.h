@@ -61,10 +61,10 @@ public:
         auto node_main_array = std::make_unique<NodeArray>(
 			std::nullopt,
 			node.name,
+            TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1),
 			std::make_unique<NodeInt>(node.size,node.tok),
 			node.tok
 		);
-		node_main_array->type = node.type;
         std::string name_wo_ident = node_main_array->name;
 
         //check dimension -> if only 1 then treat as an array
@@ -84,6 +84,7 @@ public:
                 std::make_unique<NodeVariable>(
                         std::nullopt,
                         name_wo_ident+".SIZE",
+                        TypeRegistry::Integer,
                         DataType::Const, node.tok),
                 std::make_unique<NodeInt>(main_size,node.tok), node.tok);
 		// add "_" to main array name if dimension is > 1
@@ -106,11 +107,13 @@ public:
         auto node_sizes_array = std::make_unique<NodeArray>(
                 std::nullopt,
                 name_wo_ident+".sizes",
+                TypeRegistry::ArrayOfInt,
                 std::make_unique<NodeInt>(main_size, node.tok), node.tok
                 );
         auto node_positions_array = std::make_unique<NodeArray>(
                 std::nullopt,
                 name_wo_ident+".pos",
+                TypeRegistry::ArrayOfInt,
                 std::make_unique<NodeInt>(main_size, node.tok), node.tok
                 );
         std::vector<int32_t> sizes(node.body.size());
@@ -143,6 +146,7 @@ public:
             auto node_array = std::make_unique<NodeArray>(
                     std::nullopt,
                     name_wo_ident+std::to_string(i),
+                    TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1),
                     std::make_unique<NodeInt>(sizes[i], node.tok), node.tok
                     );
             auto node_array_declaration = std::make_unique<NodeSingleDeclareStatement>(
@@ -155,6 +159,7 @@ public:
             auto node_variable = std::make_unique<NodeVariable>(
                     std::nullopt,
                     name_wo_ident+std::to_string(i)+".SIZE",
+                    TypeRegistry::Integer,
                     DataType::Const, node.tok
                     );
             auto node_const_declaration = std::make_unique<NodeSingleDeclareStatement>(

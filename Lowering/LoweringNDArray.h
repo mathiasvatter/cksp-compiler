@@ -19,12 +19,12 @@ public:
                 for (int i = 0; i < node_ndarray->dimensions; i++) {
                     auto node_var = std::make_unique<NodeVariable>(
                             std::optional<Token>(),
-                           node_ndarray->name + ".SIZE_D" +
-                           std::to_string(i + 1),
-                           DataType::Const, node.tok);
+                            node_ndarray->name + ".SIZE_D" + std::to_string(i + 1),
+                            TypeRegistry::Integer,
+                            DataType::Const, node.tok);
                     auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(
                             std::move(node_var),
-                         node_ndarray->sizes->params[i]->clone(), node.tok);
+                            node_ndarray->sizes->params[i]->clone(), node.tok);
                     auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
                     node_statement->update_parents(node_body.get());
                     node_body->statements.push_back(std::move(node_statement));
@@ -41,6 +41,7 @@ public:
         auto node_lowered_array = std::make_unique<NodeArray>(
                 node.persistence,
                 node.name,
+                TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1),
                 std::move(node_expression), node.tok);
 		node_lowered_array->name = "_" + node_lowered_array->name;
 		node_lowered_array->type = node.type;

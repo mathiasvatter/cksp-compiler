@@ -162,8 +162,14 @@ void ASTFunctionInlining::visit(NodeFunctionCall& node) {
 
     // substitution start
     node.get_definition(m_program);
+    if(node.kind == NodeFunctionCall::Kind::Property) {
+        CompileError(ErrorType::InternalError,"Found undefined property function.", "", node.tok).exit();
+    }
+    if(!node.definition or node.kind == NodeFunctionCall::Kind::Undefined) {
+        CompileError(ErrorType::InternalError,"Missing definition pointer in <Function Call>.", "", node.tok).exit();
+    }
 
-	if(node.function->is_builtin) {
+	if(node.kind == NodeFunctionCall::Kind::Builtin) {
 		if(m_restricted_builtin_functions.find(node.function->name) != m_restricted_builtin_functions.end()) {
 			if(!contains(RESTRICTED_CALLBACKS, remove_substring(m_current_callback->begin_callback, "on "))) {
 				CompileError(ErrorType::SyntaxError,"<"+node.function->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks.", node.tok.line, "", "<"+m_current_callback->begin_callback+">", node.tok.file).print();
@@ -175,7 +181,7 @@ void ASTFunctionInlining::visit(NodeFunctionCall& node) {
 		}
 	}
 
-	if(node.definition) {
+	if(node.kind == NodeFunctionCall::Kind::UserDefined) {
 		auto function_def = node.definition;
 		if(node.is_call and function_def->return_variable.has_value()) {
 			CompileError(ErrorType::SyntaxError, "Found incorrect use of return variable when using <call>.", node.tok.line, "", "", node.tok.file).exit();
@@ -553,11 +559,11 @@ void ASTFunctionInlining::declare_local_var_arrays() {
 		auto node_array = std::make_unique<NodeArray>(
 			std::nullopt,
 			arr_name.second,
+            arr_name.first,
 			DataType::Array,
 			std::make_unique<NodeInt>(std::max(1,(int)m_local_variables.size()), tok),
 			tok);
 
-        node_array->type = arr_name.first;
         node_array->is_used = true;
         node_array->is_engine = true;
         node_array->is_global = true;
@@ -574,7 +580,7 @@ void ASTFunctionInlining::declare_dummy_variables() {
     m_current_callback = m_program->init_callback;
     Token tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
     std::string dummy_name = "_return_dummy";
-    auto node_return_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), dummy_name, DataType::Mutable, tok);
+    auto node_return_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), dummy_name, TypeRegistry::Integer, DataType::Mutable, tok);
     node_return_dummy->type = ASTType::Unknown;
     node_return_dummy->is_engine = true;
     auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_return_dummy), nullptr, tok);

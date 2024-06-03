@@ -103,17 +103,8 @@ void TypeCasting::visit(NodeListStruct& node) {
         b->accept(*this);
         types.push_back(b->ty);
     }
-    // Use Sie std::adjacent_find to check if all types are the same
-    auto it = std::adjacent_find(types.begin(), types.end(),
-                                 [](const Type* a, const Type* b) { return a != b; });
-    bool all_same = (it == types.end()); // true, if all types equal
-    if(all_same and !types.empty()) {
-        node.ty = TypeRegistry::add_composite_type(CompoundKind::List, node.body[0]->ty, node.size);
-    }
-    if(!all_same) {
-        size_t position = std::distance(types.begin(), it);
-        throw_type_error(&node, node.body[position].get()).exit();
-    }
+    node.ty = infer_initialization_types(types, &node);
+
 }
 
 void TypeCasting::visit(NodeListStructRef& node) {
@@ -140,23 +131,10 @@ void TypeCasting::visit(NodeParamList& node) {
     // enforce same type for every member only if in array declaration, assignment
     auto node_declaration = node.parent->get_node_type() == NodeType::SingleDeclareStatement;
     auto node_assignment = node.parent->get_node_type() == NodeType::SingleAssignStatement;
+
     if(!node_declaration and !node_assignment) return;
 
-    // Use Sie std::adjacent_find to check if all types are the same
-    auto it = std::adjacent_find(types.begin(), types.end(),
-                                 [](const Type* a, const Type* b) { return a != b; });
-    bool all_same = (it == types.end()); // true, if all types equal
-
-    // TODO when uninitialized "UNKNOWN" var is in-> error, when initialized variable but not const -> different generation
-
-    // if param list in array declaration or assignment return composite type
-    if(all_same and !types.empty()) {
-        node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.params[0]->ty, 0);
-    }
-    if(!all_same) {
-        size_t position = std::distance(types.begin(), it);
-        throw_type_error(&node, node.params[position].get()).exit();
-    }
+    node.ty = infer_initialization_types(types, &node);
 }
 
 void TypeCasting::visit(NodeSingleDeclareStatement& node) {

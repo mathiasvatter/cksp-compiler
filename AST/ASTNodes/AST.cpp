@@ -29,12 +29,8 @@ void NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 }
 Type* NodeAST::set_element_type(Type *element_type) {
 	if(ty->get_type_kind() == TypeKind::Composite and element_type->get_type_kind() == TypeKind::Basic) {
-		auto new_comp_type = TypeRegistry::get_composite_type(static_cast<CompositeType*>(ty)->get_compound_type(), element_type, ty->get_dimensions());
         // if composite type does not yet exist -> create it without throwing error
-        if(!new_comp_type) {
-            new_comp_type = TypeRegistry::add_composite_type(static_cast<CompositeType*>(ty)->get_compound_type(), element_type, ty->get_dimensions());
-        }
-        ty = new_comp_type;
+        ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(ty)->get_compound_type(), element_type, ty->get_dimensions());
 		return ty;
 	}
 	if(ty->get_type_kind() == TypeKind::Basic and element_type->get_type_kind() == TypeKind::Basic) {
@@ -623,7 +619,8 @@ void NodeFunctionCall::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
-        : NodeAST(other), is_call(other.is_call), function(clone_unique(other.function)) {
+        : NodeAST(other), is_call(other.is_call), kind(other.kind),
+        function(clone_unique(other.function)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeFunctionCall::clone() const {
@@ -640,6 +637,7 @@ NodeFunctionDefinition* NodeFunctionCall::find_definition(struct NodeProgram *pr
 		it->second->is_used = true;
 		definition = it->second;
 		definition->call_sites.emplace(this);
+        kind = Kind::UserDefined;
 		return it->second;
 	}
 	return nullptr;
@@ -657,9 +655,32 @@ NodeFunctionDefinition* NodeFunctionCall::find_builtin_definition(NodeProgram *p
 		function->is_builtin = builtin_func->header->is_builtin;
 		function->is_thread_safe = builtin_func->header->is_thread_safe;
         definition = builtin_func;
+        kind = Kind::Builtin;
 		return builtin_func;
 	}
 	return nullptr;
+}
+
+NodeFunctionDefinition* NodeFunctionCall::find_property_definition(NodeProgram *program) {
+    if(!program->def_provider) {
+        CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
+    }
+    if(auto property_func = program->def_provider->get_property_function(function.get())) {
+        if(function->args->params.size() < 2) {
+            CompileError(
+                    ErrorType::SyntaxError,
+                    "Found Property Function with insufficient amount of arguments.",
+                    tok.line, "At least 2 arguments",
+                    std::to_string(function->args->params.size()),
+                    tok.file
+                    ).exit();
+        }
+        function->type = property_func->type;
+        definition = property_func;
+        kind = Kind::Property;
+        return property_func;
+    }
+    return nullptr;
 }
 
 bool NodeFunctionCall::get_definition(NodeProgram* program) {
@@ -669,7 +690,9 @@ bool NodeFunctionCall::get_definition(NodeProgram* program) {
 	if (find_builtin_definition(program)) {
 		return true;
 	} else if (find_definition(program)) {
-		return true;
+        return true;
+    } else if (find_property_definition(program)) {
+        return true;
 	} else {
 		CompileError(ErrorType::SyntaxError,"Function has not been declared.", tok.line, "", function->name, tok.file).exit();
 	}

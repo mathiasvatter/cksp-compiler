@@ -49,6 +49,14 @@ public:
 
 		node.get_definition(m_program);
 
+        if(node.kind == NodeFunctionCall::Kind::Property) {
+            CompileError(ErrorType::InternalError,
+                         "Found undefined <property function>.", "", node.tok).exit();
+        } else if (node.kind == NodeFunctionCall::Kind::Builtin) {
+            // no lambda lifting for builtin function pls
+            return;
+        }
+
 		if(node.definition and not node.definition->visited) {
 			// extra arguments in definition
 			// get declare statements of local variables

@@ -111,9 +111,8 @@ std::unique_ptr<NodeVariable> BuiltinsProcessor::parse_builtin_variable() {
 	Type* ty = TypeRegistry::get_type_from_identifier(var_name[0]);
     if(get_token_type(TYPES, std::string(1, var_name[0])))
         var_name = var_name.erase(0,1);
-    auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name, DataType::Mutable, name);
+    auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name, ty, DataType::Mutable, name);
     node_variable->type = type;
-	node_variable->ty = ty;
     node_variable->is_local = false;
     node_variable->is_engine = true;
     return std::move(node_variable);
@@ -129,11 +128,11 @@ std::unique_ptr<NodeArray> BuiltinsProcessor::parse_builtin_array() {
     auto node_array = std::make_unique<NodeArray>(
 		std::nullopt,
 		arr_name,
+        ty,
 		DataType::Array,
 		std::make_unique<NodeParamList>(name), name
 	);
     node_array->type = type;
-	node_array->ty = ty;
     node_array->is_local = false;
     node_array->is_engine = true;
     return std::move(node_array);
