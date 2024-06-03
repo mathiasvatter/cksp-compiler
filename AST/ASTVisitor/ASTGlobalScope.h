@@ -101,8 +101,12 @@ public:
 	void inline visit(NodeFunctionDefinition& node) override {
 		m_function_call_stack.push(&node);
 		m_current_function = m_function_call_stack.top();
+		m_def_provider->add_scope();
 		node.header->accept(*this);
+		if (node.return_variable.has_value())
+			node.return_variable.value()->accept(*this);
 		node.body->accept(*this);
+		m_def_provider->remove_scope();
 		node.visited = true;
 		m_function_call_stack.pop();
 		m_current_function = nullptr;
@@ -140,6 +144,8 @@ public:
 	}
 
 	void inline visit(NodeArray& node) override {
+		node.determine_locality(m_program, m_current_body, m_current_callback);
+
 		if(node.size) node.size->accept(*this);
 
 		m_def_provider->set_declaration(&node, !node.is_local);
@@ -179,6 +185,8 @@ public:
 	}
 
 	void inline visit(NodeVariable& node) override {
+		node.determine_locality(m_program, m_current_body, m_current_callback);
+
 		m_def_provider->set_declaration(&node, !node.is_local);
 		m_gensym.ingest(node.name);
 		if(node.is_local) {

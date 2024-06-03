@@ -28,6 +28,7 @@ void ASTVariableChecking::visit(NodeCallback& node) {
 	node.statements->accept(*this);
 
 	m_is_init_callback = false;
+	m_current_callback = nullptr;
 }
 
 void ASTVariableChecking::visit(NodeUIControl& node) {
@@ -93,9 +94,11 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 }
 
 void ASTVariableChecking::visit(NodeArray& node) {
+	node.determine_locality(m_program, m_current_body, m_current_callback);
+
 	if(node.size) node.size->accept(*this);
 
-    m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
+    m_def_provider->set_declaration(&node, !node.is_local);
 }
 
 void ASTVariableChecking::visit(NodeVariableRef& node) {
@@ -119,12 +122,14 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 }
 
 void ASTVariableChecking::visit(NodeVariable& node) {
+	node.determine_locality(m_program, m_current_body, m_current_callback);
+
     // handle return_vars -> do not check if they have been declared
-    if(node.is_compiler_return) {
-        node.is_used = true;
-        return;
-    }
-    m_def_provider->set_declaration(&node, m_is_init_callback || !node.is_local);
+//    if(node.is_compiler_return) {
+//        node.is_used = true;
+//        return;
+//    }
+    m_def_provider->set_declaration(&node, !node.is_local);
 }
 
 void ASTVariableChecking::visit(NodeFunctionCall &node) {

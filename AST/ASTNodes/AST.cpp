@@ -62,7 +62,8 @@ std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
 }
 
 bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBody* current_body, NodeCallback* current_callback) {
-	is_local = current_body->scope and current_callback != program->init_callback and !is_global and get_node_type() != NodeType::UIControl;
+	bool global_scope = current_callback == program->init_callback or is_global or get_node_type() == NodeType::UIControl;
+	is_local = current_body->scope and not global_scope;
 	return is_local;
 }
 
