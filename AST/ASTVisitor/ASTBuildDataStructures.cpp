@@ -79,6 +79,8 @@ void ASTBuildDataStructures::visit(NodeSingleDeclareStatement& node) {
 }
 
 void ASTBuildDataStructures::visit(NodeArray &node) {
+	node.determine_locality(m_program, m_current_body, m_current_callback);
+
 	if(node.size) node.size->accept(*this);
 	m_def_provider->set_declaration(&node, !node.is_local);
 }
@@ -104,6 +106,8 @@ void ASTBuildDataStructures::visit(NodeArrayRef &node) {
 }
 
 void ASTBuildDataStructures::visit(NodeNDArray& node) {
+	node.determine_locality(m_program, m_current_body, m_current_callback);
+
 	node.sizes->accept(*this);
 	m_def_provider->set_declaration(&node, !node.is_local);
 }
@@ -154,6 +158,8 @@ void ASTBuildDataStructures::visit(NodeUIControl &node) {
 
 
 void ASTBuildDataStructures::visit(NodeVariable &node) {
+	node.determine_locality(m_program, m_current_body, m_current_callback);
+
 	m_def_provider->set_declaration(&node, !node.is_local);
 }
 
@@ -175,6 +181,8 @@ void ASTBuildDataStructures::visit(NodeVariableRef &node) {
 }
 
 void ASTBuildDataStructures::visit(NodeListStruct& node) {
+	node.determine_locality(m_program, m_current_body, m_current_callback);
+
 	m_def_provider->set_declaration(&node, !node.is_local);
 }
 
