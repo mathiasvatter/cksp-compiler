@@ -6,7 +6,10 @@
 
 
 std::unique_ptr<NodeStatement> ASTVisitor::make_declare_variable(const std::string& name, int32_t value, DataType type, NodeAST* parent) {
-    auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), name, type, parent->tok);
+    auto node_variable = std::make_unique<NodeVariable>(
+            std::optional<Token>(),
+            name,
+            TypeRegistry::Unknown, type, parent->tok);
     node_variable->type = ASTType::Integer;
     auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(
 		std::move(node_variable),

@@ -58,6 +58,35 @@ private:
         error.m_message = "Type mismatch: " + node1->ty->to_string() + " and " + node2->ty->to_string();
         return error;
     }
+
+    /// check types of initializations and try to infer overall element type
+    static Type* infer_initialization_types(std::vector<Type*> &type_list, NodeAST* node) {
+        std::set<Type*> types(type_list.begin(), type_list.end());
+        auto error = CompileError(ErrorType::TypeError, "", "", node->tok);
+        if(types.empty()) CompileError(ErrorType::InternalError, "Found no types in list", "", node->tok).exit();
+        // all types in param list are the same -> set new param list node type
+        if(types.size() == 1) {
+            auto ty = *types.begin();
+            if(ty->get_type_kind() == TypeKind::Composite) {
+                error.m_message = "Composite types are not allowed in an initialization.";
+                error.exit();
+            }
+            return TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type(), 0);
+        // two types in param list -> only allowed if types are int|real and string
+        } else if (types.size() == 2) {
+            auto it = types.find(TypeRegistry::String);
+            if(it == types.end()) {
+                if(types.find(TypeRegistry::Integer) == types.end() and types.find(TypeRegistry::Real) == types.end()) {
+                    return TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::String, 0);
+                } else {
+                    error.m_message = "Only <String> and <Integer> or <Real> types are allowed in an initialization.";
+                    error.exit();
+                }
+            }
+        }
+        return nullptr;
+    }
+
 	/// tries to match the type of node 1 to the type of node2 after checking type compatibility
 	static inline Type* match_type(NodeAST* node1, NodeAST* node2) {
 //		auto error = CompileError(ErrorType::TypeError,"", "", node1->tok);

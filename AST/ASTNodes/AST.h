@@ -96,7 +96,9 @@ struct NodeDataStructure : NodeAST {
 	bool is_compiler_return = false;
 	DataType data_type;
 	std::string name;
-	inline explicit NodeDataStructure(std::string name, Token tok, NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {}
+	inline explicit NodeDataStructure(std::string name, Type* ty, Token tok, NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {
+        this->ty = ty;
+    }
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
 	NodeDataStructure(const NodeDataStructure& other);
@@ -863,6 +865,8 @@ struct NodeFunctionDefinition: NodeAST {
 
 
 struct NodeFunctionCall : NodeAST {
+    enum Kind{Property, Builtin, UserDefined, Undefined};
+    Kind kind = Undefined;
     bool is_call = false;
     std::unique_ptr<NodeFunctionHeader> function;
     NodeFunctionDefinition* definition = nullptr;
@@ -892,6 +896,8 @@ struct NodeFunctionCall : NodeAST {
 	NodeFunctionDefinition* find_definition(class NodeProgram *program);
 	/// attempts to get and match metadata from builtin function to this
     NodeFunctionDefinition* find_builtin_definition(NodeProgram *program);
+    /// attempts to get property function that and set definition pointer + error handling
+    NodeFunctionDefinition* find_property_definition(NodeProgram *program);
 	/// gets and sets definition ptr or matches builtin func metadata -> throws error if not found
 	bool get_definition(NodeProgram* program);
 };

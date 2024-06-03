@@ -150,9 +150,8 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, co
     std::string var_name = var_token.val;
 	auto ty = TypeRegistry::get_type_from_identifier(var_name[0]);
 	auto type = infer_type_from_identifier(var_name);
-    auto node_variable = std::make_unique<NodeVariable>(is_persistent, var_name, var_type, var_token);
+    auto node_variable = std::make_unique<NodeVariable>(is_persistent, var_name, ty, var_type, var_token);
     node_variable->parent = parent;
-	node_variable->ty = ty;
 	node_variable->type = type;
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
@@ -202,7 +201,7 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 	if(sizes->params.size() > 1) {
 		auto node = std::make_unique<NodeNDArray>(
 			std::move(is_persistent),
-			arr_name, var_type,
+			arr_name, ty, var_type,
 			std::move(sizes), arr_token
 		);
 		node->dimensions = node->sizes->params.size();
@@ -211,13 +210,13 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 		auto node = std::make_unique<NodeArray>(arr_name, arr_token);
 		node->persistence = std::move(is_persistent);
 		node->data_type = var_type;
+        node->ty = ty;
 		if(!sizes->params.empty()) node->size = std::move(sizes->params[0]);
 		node_array = std::move(node);
 		node_array->set_child_parents();
 	}
 
 	node_array->parent = parent;
-	node_array->ty = ty;
 	node_array->type = type;
 	return Result<std::unique_ptr<NodeDataStructure>>(std::move(node_array));
 }

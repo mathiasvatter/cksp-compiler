@@ -26,9 +26,9 @@ std::unique_ptr<NodeBody> ASTTypeChecking::declare_return_vars() {
         auto node_array = std::make_unique<NodeArray>(
                 std::nullopt,
                 arr_name.second,
+                arr_name.first,
                 std::make_unique<NodeInt>(m_current_return_idx+1, tok), tok
                 );
-        node_array -> type = arr_name.first;
         node_array-> is_used = true;
         node_array->is_engine = true;
         node_array->is_global = true;
@@ -64,8 +64,8 @@ void ASTTypeChecking::visit(NodeVariableRef& node) {
 
     // replace variable ref with array ref if it is a compiler return
     if(node.is_compiler_return) {
-        if(node.type == ASTType::Unknown) node.type = ASTType::Integer;
-        auto return_var_name = m_return_arrays.find(node.type)->second;
+        if(node.ty == TypeRegistry::Unknown) node.ty = TypeRegistry::Integer;
+        auto return_var_name = m_return_arrays.find(node.ty)->second;
         auto callback_index = extract_last_number(node.name, &node);
         m_max_returns_in_current_callback = std::max(callback_index, m_max_returns_in_current_callback);
         auto node_return_var = std::make_unique<NodeArrayRef>(

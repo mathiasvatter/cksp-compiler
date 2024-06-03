@@ -81,6 +81,7 @@ public:
         auto node_array = std::make_unique<NodeArray>(
 			std::nullopt,
 			node.name,
+            TypeRegistry::ArrayOfInt,
 			std::make_unique<NodeInt>(node.constants->statements.size(), node.tok),
 			node.tok
 		);
