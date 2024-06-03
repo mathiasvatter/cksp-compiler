@@ -71,13 +71,13 @@ private:
                 error.m_message = "Composite types are not allowed in an initialization.";
                 error.exit();
             }
-            return TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type(), 0);
+            return ty;
         // two types in param list -> only allowed if types are int|real and string
         } else if (types.size() == 2) {
             auto it = types.find(TypeRegistry::String);
-            if(it == types.end()) {
-                if(types.find(TypeRegistry::Integer) == types.end() and types.find(TypeRegistry::Real) == types.end()) {
-                    return TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::String, 0);
+            if(it != types.end()) {
+                if(types.find(TypeRegistry::Integer) != types.end() or types.find(TypeRegistry::Real) != types.end()) {
+                    return TypeRegistry::String;
                 } else {
                     error.m_message = "Only <String> and <Integer> or <Real> types are allowed in an initialization.";
                     error.exit();

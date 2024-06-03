@@ -100,10 +100,13 @@ void Compiler::compile() {
 	ASTBuildDataStructures data_structures(&m_definition_provider);
 	ast->accept(data_structures);
 
+	compile_time.stop("Build Data Structures");
+	compile_time.start("Type Checking");
+
 	TypeCasting type_casting(&m_definition_provider);
 	ast->accept(type_casting);
 
-	compile_time.stop("Build Data Structures");
+	compile_time.stop("Type Checking");
 	compile_time.start("Lowering");
 
 	ASTCollectLowerings lowering(&m_definition_provider);

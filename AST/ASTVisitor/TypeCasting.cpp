@@ -97,13 +97,17 @@ void TypeCasting::visit(NodeNDArrayRef& node) {
 }
 
 void TypeCasting::visit(NodeListStruct& node) {
+	// if list is unknown type -> set to list of unknown
+	if(node.ty == TypeRegistry::Unknown) {
+		node.ty = TypeRegistry::add_composite_type(CompoundKind::List, TypeRegistry::Unknown, node.size);
+	}
     // check if all types are the same and try to infer list type from it
     std::vector<Type*> types;
     for(auto & b : node.body) {
         b->accept(*this);
         types.push_back(b->ty);
     }
-    node.ty = infer_initialization_types(types, &node);
+    node.set_element_type(infer_initialization_types(types, &node));
 
 }
 
@@ -128,11 +132,11 @@ void TypeCasting::visit(NodeParamList& node) {
         param->accept(*this);
         types.push_back(param->ty);
     }
-    // enforce same type for every member only if in array declaration, assignment
+    // enforce same type for every member only if in array declaration, assignment, liststruct
     auto node_declaration = node.parent->get_node_type() == NodeType::SingleDeclareStatement;
     auto node_assignment = node.parent->get_node_type() == NodeType::SingleAssignStatement;
-
-    if(!node_declaration and !node_assignment) return;
+	auto node_list_struct = node.parent->get_node_type() == NodeType::ListStruct;
+    if(!node_declaration and !node_assignment and !node_list_struct) return;
 
     node.ty = infer_initialization_types(types, &node);
 }
@@ -141,6 +145,10 @@ void TypeCasting::visit(NodeSingleDeclareStatement& node) {
 	node.to_be_declared->accept(*this);
 	if(node.assignee) {
 		node.assignee->accept(*this);
+		// cast node assignee to composite type if to_be_declared is composite type
+		if(node.assignee ->get_node_type() == NodeType::ParamList and node.to_be_declared->ty->get_type_kind() == TypeKind::Composite) {
+			node.assignee->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.to_be_declared->ty)->get_compound_type(), node.assignee->ty->get_element_type(), node.to_be_declared->ty->get_dimensions());
+		}
         match_type(node.to_be_declared.get(), node.assignee.get());
 		match_type(node.assignee.get(), node.to_be_declared.get());
 	}
@@ -158,9 +166,12 @@ void TypeCasting::visit(NodeUIControl& node) {
 }
 
 void TypeCasting::visit(NodeSingleAssignStatement& node) {
-    node.assignee->accept(*this);
     node.array_variable->accept(*this);
-
+    node.assignee->accept(*this);
+	// cast node assignee to composite type if to_be_declared is composite type
+	if(node.assignee ->get_node_type() == NodeType::ParamList and node.array_variable->ty->get_type_kind() == TypeKind::Composite) {
+		node.assignee->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.array_variable->ty)->get_compound_type(), node.assignee->ty->get_element_type(), node.array_variable->ty->get_dimensions());
+	}
     match_type(node.array_variable.get(), node.assignee.get());
     match_type(node.assignee.get(), node.array_variable.get());
 

@@ -69,11 +69,11 @@ bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBody* curre
 Type* NodeDataStructure::cast_type() {
 	Type* type = ty->get_element_type();
 	if(type == TypeRegistry::Number || type == TypeRegistry::Unknown || type == TypeRegistry::Any) {
-		this->set_element_type(TypeRegistry::Integer);
 		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+		error.m_got = ty->to_string();
+		this->set_element_type(TypeRegistry::Integer);
 		error.m_message = "Failed to infer <"+ty->get_type_kind_name()+"> type.";
 		error.m_message += " Automatically casted "+name+" as <"+ty->to_string()+">. Consider using a variable identifier.";
-		error.m_got = ty->to_string();
 		error.print();
 	}
 	return ty;
