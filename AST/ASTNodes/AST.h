@@ -898,8 +898,8 @@ struct NodeFunctionCall : NodeAST {
     NodeFunctionDefinition* find_builtin_definition(NodeProgram *program);
     /// attempts to get property function that and set definition pointer + error handling
     NodeFunctionDefinition* find_property_definition(NodeProgram *program);
-	/// gets and sets definition ptr or matches builtin func metadata -> throws error if not found
-	bool get_definition(NodeProgram* program);
+	/// gets and sets definition ptr or matches builtin func metadata -> throws error if not found when fail set to true
+	bool get_definition(NodeProgram* program, bool fail=false);
 };
 
 struct NodeProgram : NodeAST {

@@ -1,21 +1,89 @@
-{ Compiled with cksp version 0.0.5 on Mon Jun 03 19:08:28 2024 }
+{ Compiled with cksp version 0.0.5 on Tue Jun 04 17:16:49 2024 }
 on init
   declare $_return_dummy
-  declare ?_loc_var_real[1]
   declare !_loc_var_str[1]
+  declare ?_loc_var_real[1]
   declare %_loc_var_int[1]
-  declare $loc_3
   declare $loc_4
   declare $loc_5
-  declare @loc_6 := "heinz"
+  declare $loc_6
+  declare @loc_7 := "sdlkj"
   declare $loc_0
   declare $loc_1
   declare $loc_2
+  declare @loc_3 := "sdlkj"
   declare $g
   declare $_iterator
   declare $_string_it
   declare $_ui_array_it
   declare $_list_it
+  declare %_all_fx_settings[132]
+  declare const $all_fx_settings__SIZE := 9
+  declare %all_fx_settings__sizes[9] := (20, 26, 18, 16, 10, 10, 16, 14, 2)
+  declare %all_fx_settings__pos[9] := (0, 20, 46, 64, 80, 90, 100, 116, 130)
+  declare %all_fx_settings0[20] := ($EFFECT_TYPE_CHORAL, 3, $ENGINE_PAR_CHORAL_RATE, 410000, $ENGINE_PAR_CHORAL_AMOUNT, 694000, $ENGINE_PAR_CHORAL_MIX, 1000000, $ENGINE_PAR_CHORAL_FEEDBACK, 43000, $ENGINE_PAR_CHORAL_VOICES, 400000, $ENGINE_PAR_CHORAL_DELAY, 360000, $ENGINE_PAR_CHORAL_WIDTH, 820000, $ENGINE_PAR_CHORAL_MODE, $NI_CHORAL_MODE_SYNTH, $ENGINE_PAR_CHORAL_SCATTER, 1)
+  declare const $all_fx_settings0__SIZE := 20
+  $_iterator := 0
+  while($_iterator < 20) 
+    %_all_fx_settings[$_iterator] := %all_fx_settings0[$_iterator]
+    inc($_iterator)
+  end while
+  declare %all_fx_settings1[26] := ($EFFECT_TYPE_FLAIR, 3, $ENGINE_PAR_FLAIR_RATE, 600000, $ENGINE_PAR_FLAIR_AMOUNT, 408000, $ENGINE_PAR_FLAIR_MIX, 1000000, $ENGINE_PAR_FLAIR_RATE_UNIT, 0, $ENGINE_PAR_FLAIR_FEEDBACK, 331000, $ENGINE_PAR_FLAIR_PITCH, 36, $ENGINE_PAR_FLAIR_VOICES, 550000, $ENGINE_PAR_FLAIR_WIDTH, 1000000, $ENGINE_PAR_FLAIR_DAMPING, 473000, $ENGINE_PAR_FLAIR_DETUNE, 39000, $ENGINE_PAR_FLAIR_CHORD, 17, $ENGINE_PAR_FLAIR_INVERT_PHASE, 1)
+  declare const $all_fx_settings1__SIZE := 26
+  $_iterator := 0
+  while($_iterator < 26) 
+    %_all_fx_settings[$_iterator + 20] := %all_fx_settings1[$_iterator]
+    inc($_iterator)
+  end while
+  declare %all_fx_settings2[18] := ($EFFECT_TYPE_PHASIS, 3, $ENGINE_PAR_PHASIS_RATE, 390000, $ENGINE_PAR_PHASIS_AMOUNT, 800000, $ENGINE_PAR_PHASIS_MIX, 700000, $ENGINE_PAR_PHASIS_RATE_UNIT, 0, $ENGINE_PAR_PHASIS_FEEDBACK, 680000, $ENGINE_PAR_PHASIS_NOTCHES, 4, $ENGINE_PAR_PHASIS_CENTER, 650000, $ENGINE_PAR_PHASIS_INVERT_MOD_MIX, 1)
+  declare const $all_fx_settings2__SIZE := 18
+  $_iterator := 0
+  while($_iterator < 18) 
+    %_all_fx_settings[$_iterator + 46] := %all_fx_settings2[$_iterator]
+    inc($_iterator)
+  end while
+  declare %all_fx_settings3[16] := ($EFFECT_TYPE_WOWFLUTTER, 4, $ENGINE_PAR_WOWFLUTTER_SCRAPE, 200000, $ENGINE_PAR_WOWFLUTTER_WOW, 200000, $ENGINE_PAR_WOWFLUTTER_FLUTTER, 300000, $ENGINE_PAR_WOWFLUTTER_MIX, 300000, $ENGINE_PAR_WOWFLUTTER_AGE, 0, $ENGINE_PAR_WOWFLUTTER_STEREO, 100000, $ENGINE_PAR_WOWFLUTTER_SATURATION, 100000)
+  declare const $all_fx_settings3__SIZE := 16
+  $_iterator := 0
+  while($_iterator < 16) 
+    %_all_fx_settings[$_iterator + 64] := %all_fx_settings3[$_iterator]
+    inc($_iterator)
+  end while
+  declare %all_fx_settings4[10] := ($EFFECT_TYPE_VIBRATO_CHORUS, 4, $ENGINE_PAR_VC_RATE, 600000, $ENGINE_PAR_VC_BLEND, 0, $ENGINE_PAR_VC_WIDTH, 0, $ENGINE_PAR_VC_MIX, 1000000)
+  declare const $all_fx_settings4__SIZE := 10
+  $_iterator := 0
+  while($_iterator < 10) 
+    %_all_fx_settings[$_iterator + 80] := %all_fx_settings4[$_iterator]
+    inc($_iterator)
+  end while
+  declare %all_fx_settings5[10] := ($EFFECT_TYPE_PLATEREVERB, 3, $ENGINE_PAR_PR_PREDELAY, 0, $ENGINE_PAR_PR_DECAY, 500000, $ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, 397000, $ENGINE_PAR_PR_LOWSHELF, 300000)
+  declare const $all_fx_settings5__SIZE := 10
+  $_iterator := 0
+  while($_iterator < 10) 
+    %_all_fx_settings[$_iterator + 90] := %all_fx_settings5[$_iterator]
+    inc($_iterator)
+  end while
+  declare %all_fx_settings6[16] := ($EFFECT_TYPE_REVERB2, 3, $ENGINE_PAR_RV2_TIME, 400000, $ENGINE_PAR_RV2_DAMPING, 500000, $ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, 397000, $ENGINE_PAR_RV2_SIZE, 500000, $ENGINE_PAR_RV2_LOWSHELF, 240000, $ENGINE_PAR_RV2_PREDELAY, 90420, $ENGINE_PAR_RV2_TYPE, $NI_REVERB2_TYPE_HALL)
+  declare const $all_fx_settings6__SIZE := 16
+  $_iterator := 0
+  while($_iterator < 16) 
+    %_all_fx_settings[$_iterator + 100] := %all_fx_settings6[$_iterator]
+    inc($_iterator)
+  end while
+  declare %all_fx_settings7[14] := ($EFFECT_TYPE_RAUM, 4, $ENGINE_PAR_RAUM_DECAY, 400000, $ENGINE_PAR_RAUM_MOD, 500000, $ENGINE_PAR_RAUM_DAMPING, 0, $ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, 397000, $ENGINE_PAR_RAUM_PREDELAY, 90420, $ENGINE_PAR_RAUM_TYPE, $NI_RAUM_TYPE_AIRY)
+  declare const $all_fx_settings7__SIZE := 14
+  $_iterator := 0
+  while($_iterator < 14) 
+    %_all_fx_settings[$_iterator + 116] := %all_fx_settings7[$_iterator]
+    inc($_iterator)
+  end while
+  declare %all_fx_settings8[2] := ($EFFECT_TYPE_NONE, 0)
+  declare const $all_fx_settings8__SIZE := 2
+  $_iterator := 0
+  while($_iterator < 2) 
+    %_all_fx_settings[$_iterator + 130] := %all_fx_settings8[$_iterator]
+    inc($_iterator)
+  end while
   declare !_all_fx_texts[25]
   declare const $all_fx_texts__SIZE := 5
   declare %all_fx_texts__sizes[5] := (5, 5, 5, 5, 5)
@@ -56,16 +124,25 @@ on init
     inc($_iterator)
   end while
   declare ui_slider $sli_1 (0, 1000)
-  declare ui_slider $sli_2 (0, 1000)
+  declare ui_slider $sli_2 (0, 2)
+  declare ui_menu $mnu 
   declare const $mult_array__SIZE_D1 := 1
   declare const $mult_array__SIZE_D2 := 2
   declare %_mult_array[2]
   declare $i := %_mult_array[0]
+  declare $ii := %_mult_array[0]
   declare $s
-  declare %array[3] := (0)
-  %array[1] := $i
+  declare !array[3] := (0)
+  !array[1] := $i
+  declare !motion__source__names[2] := ("Modwheel", "LFO")
+  $i := 0
+  while($i <= 3) 
+    add_menu_item($mnu, !motion__source__names[$i], $i)
+    inc($i)
+  end while
   set_listener($NI_SIGNAL_TIMER_MS, 1000000)
-  message($g)
+  @loc_3 := "sdlkj"
+  message($g & @loc_3)
   $loc_0 := 0
   message($loc_0)
   if($loc_0 = 1)
@@ -78,7 +155,8 @@ on init
     $loc_2 := 0
     message($loc_1 & $loc_2)
   end if
-  message($g)
+  @loc_3 := "sdlkj"
+  message($g & @loc_3)
   $loc_0 := 0
   message($loc_0)
   if($loc_0 = 1)
@@ -91,51 +169,59 @@ on init
     $loc_2 := 0
     message($loc_1 & $loc_2)
   end if
+  $i := 0
+  while($i <= (num_elements(%_mult_array) - 1)) 
+    %_mult_array[$i] := 0
+    inc($i)
+  end while
 end on
 on persistence_changed
-  $s := 1
 end on
 on ui_control($sli_1)
-  $loc_3 := 0
   $loc_4 := 0
   $loc_5 := 0
-  message($g)
-  $loc_3 := 0
-  message($loc_3)
-  if($loc_3 = 1)
-    $loc_4 := 0
+  $loc_6 := 0
+  @loc_7 := "sdlkj"
+  @loc_7 := "sdlkj"
+  message($g & @loc_7)
+  $loc_4 := 0
+  message($loc_4)
+  if($loc_4 = 1)
     $loc_5 := 0
-    message($loc_4 & $loc_5)
+    $loc_6 := 0
+    message($loc_5 & $loc_6)
   end if
-  if($loc_3 = 2)
-    $loc_4 := 0
+  if($loc_4 = 2)
     $loc_5 := 0
-    message($loc_4 & $loc_5)
+    $loc_6 := 0
+    message($loc_5 & $loc_6)
   end if
   message($NI_UI_ID)
   $i := 0
   while($i <= 4) 
     message($i)
-    message($g)
-    $loc_3 := 0
-    message($loc_3)
-    if($loc_3 = 1)
-      $loc_4 := 0
+    @loc_7 := "sdlkj"
+    message($g & @loc_7)
+    $loc_4 := 0
+    message($loc_4)
+    if($loc_4 = 1)
       $loc_5 := 0
-      message($loc_4 & $loc_5)
+      $loc_6 := 0
+      message($loc_5 & $loc_6)
     end if
-    if($loc_3 = 2)
-      $loc_4 := 0
+    if($loc_4 = 2)
       $loc_5 := 0
-      message($loc_4 & $loc_5)
+      $loc_6 := 0
+      message($loc_5 & $loc_6)
     end if
     inc($i)
   end while
 end on
 on ui_control($sli_2)
-  $loc_3 := 0
-  $loc_5 := 0
   $loc_4 := 0
+  $loc_6 := 0
+  $loc_5 := 0
+  @loc_7 := "sdlkj"
   message($NI_UI_ID)
   $i := 5
   while($i <= 9) 
@@ -143,63 +229,67 @@ on ui_control($sli_2)
     inc($i)
   end while
   if($i = 10)
-    $loc_3 := 0
-    if(%array[$loc_3] = 9)
-      $loc_5 := 0
-      @loc_6 := "heinz"
+    $loc_4 := 0
+    if($loc_4 = 9)
+      $loc_6 := 0
+      @loc_7 := "heinz"
     end if
-    if($loc_3 = 8)
-      $loc_3 := 0
-      message($loc_3)
-      message($g)
-      $loc_3 := 0
-      message($loc_3)
-      if($loc_3 = 1)
-        $loc_5 := 0
-        $loc_4 := 0
-        message($loc_5 & $loc_4)
-      end if
-      if($loc_3 = 2)
-        $loc_5 := 0
-        $loc_4 := 0
-        message($loc_5 & $loc_4)
-      end if
-      $loc_5 := 0
-    end if
-    message($g)
-    $loc_3 := 0
-    message($loc_3)
-    if($loc_3 = 1)
-      $loc_5 := 0
+    if($loc_4 = 8)
       $loc_4 := 0
-      message($loc_5 & $loc_4)
-    end if
-    if($loc_3 = 2)
-      $loc_5 := 0
+      message($loc_4)
+      @loc_7 := "sdlkj"
+      message($g & @loc_7)
       $loc_4 := 0
-      message($loc_5 & $loc_4)
+      message($loc_4)
+      if($loc_4 = 1)
+        $loc_6 := 0
+        $loc_5 := 0
+        message($loc_6 & $loc_5)
+      end if
+      if($loc_4 = 2)
+        $loc_6 := 0
+        $loc_5 := 0
+        message($loc_6 & $loc_5)
+      end if
+      $loc_6 := 0
+    end if
+    @loc_7 := "sdlkj"
+    message($g & @loc_7)
+    $loc_4 := 0
+    message($loc_4)
+    if($loc_4 = 1)
+      $loc_6 := 0
+      $loc_5 := 0
+      message($loc_6 & $loc_5)
+    end if
+    if($loc_4 = 2)
+      $loc_6 := 0
+      $loc_5 := 0
+      message($loc_6 & $loc_5)
     end if
   end if
   if($i = 7)
-    $loc_3 := 0
+    $loc_4 := 0
   end if
 end on
 on release
-  $loc_3 := 0
-  $loc_5 := 0
   $loc_4 := 0
-  message($g)
-  $loc_3 := 0
-  message($loc_3)
-  if($loc_3 = 1)
+  $loc_6 := 0
+  $loc_5 := 0
+  @loc_7 := "sdlkj"
+  @loc_7 := "sdlkj"
+  message($g & @loc_7)
+  $loc_4 := 0
+  message($loc_4)
+  if($loc_4 = 1)
+    $loc_6 := 0
     $loc_5 := 0
-    $loc_4 := 0
-    message($loc_5 & $loc_4)
+    message($loc_6 & $loc_5)
   end if
-  if($loc_3 = 2)
+  if($loc_4 = 2)
+    $loc_6 := 0
     $loc_5 := 0
-    $loc_4 := 0
-    message($loc_5 & $loc_4)
+    message($loc_6 & $loc_5)
   end if
 end on
 

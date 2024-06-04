@@ -19,8 +19,9 @@ void TypeCasting::visit(NodeProgram& node) {
     }
     for(auto & decl : m_declarations) {
         if(decl->assignee) {
-            match_type(decl->to_be_declared.get(), decl->assignee.get());
-            match_type(decl->assignee.get(), decl->to_be_declared.get());
+			match_assignment_types(decl->to_be_declared.get(), decl->assignee.get());
+//            match_type(decl->to_be_declared.get(), decl->assignee.get());
+//            match_type(decl->assignee.get(), decl->to_be_declared.get());
         }
 		// cast as Integer if still unknown
 		decl->to_be_declared->cast_type();
@@ -58,6 +59,9 @@ void TypeCasting::visit(NodeArray& node) {
 }
 
 void TypeCasting::visit(NodeArrayRef& node) {
+	if(node.name == "preset_new" and !node.index) {
+
+	}
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
 		if(node.ty == TypeRegistry::Unknown) {
@@ -143,14 +147,16 @@ void TypeCasting::visit(NodeParamList& node) {
 
 void TypeCasting::visit(NodeSingleDeclareStatement& node) {
 	node.to_be_declared->accept(*this);
+
 	if(node.assignee) {
 		node.assignee->accept(*this);
 		// cast node assignee to composite type if to_be_declared is composite type
 		if(node.assignee ->get_node_type() == NodeType::ParamList and node.to_be_declared->ty->get_type_kind() == TypeKind::Composite) {
 			node.assignee->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.to_be_declared->ty)->get_compound_type(), node.assignee->ty->get_element_type(), node.to_be_declared->ty->get_dimensions());
 		}
-        match_type(node.to_be_declared.get(), node.assignee.get());
-		match_type(node.assignee.get(), node.to_be_declared.get());
+		match_assignment_types(node.to_be_declared.get(), node.assignee.get());
+//        match_type(node.to_be_declared.get(), node.assignee.get());
+//		match_type(node.assignee.get(), node.to_be_declared.get());
 	}
     m_declarations.push_back(&node);
 }
@@ -172,8 +178,9 @@ void TypeCasting::visit(NodeSingleAssignStatement& node) {
 	if(node.assignee ->get_node_type() == NodeType::ParamList and node.array_variable->ty->get_type_kind() == TypeKind::Composite) {
 		node.assignee->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.array_variable->ty)->get_compound_type(), node.assignee->ty->get_element_type(), node.array_variable->ty->get_dimensions());
 	}
-    match_type(node.array_variable.get(), node.assignee.get());
-    match_type(node.assignee.get(), node.array_variable.get());
+	match_assignment_types(node.array_variable.get(), node.assignee.get());
+//    match_type(node.array_variable.get(), node.assignee.get());
+//    match_type(node.assignee.get(), node.array_variable.get());
 
     // a second time to get the new types to the declaration pointer!
     node.array_variable->accept(*this);
@@ -181,6 +188,10 @@ void TypeCasting::visit(NodeSingleAssignStatement& node) {
 }
 
 void TypeCasting::visit(NodeFunctionCall& node) {
+	node.get_definition(m_program);
+	if(!node.definition) return;
+
+	node.function->accept(*this);
     for(int i = 0; i < node.function->args->params.size(); i++) {
         match_type(node.function->args->params[i].get(), node.definition->header->args->params[i].get());
     }
@@ -197,16 +208,19 @@ void TypeCasting::visit(NodeBinaryExpr& node) {
     auto error = throw_type_error(node.left.get(), node.right.get());
     if(!is_compatible) error.exit();
 
+	// do not infer type if together in string
+	if(contains(STRING_TOKENS, node.op)) {
+		node.ty = TypeRegistry::String;
+		is_compatible = node.ty->is_compatible(node.left->ty) and node.ty->is_compatible(node.right->ty);
+        if(is_compatible) return;
+		return;
+	}
+
     node.left->ty = specialize_type(node.left->ty, node.right->ty);
     node.right->ty = specialize_type(node.right->ty, node.left->ty);
 
     // check type of this node by looking at operator and node.left and node.right
-    // is string
-    if(contains(STRING_TOKENS, node.op)) {
-        node.ty = TypeRegistry::String;
-        is_compatible = node.ty->is_compatible(node.left->ty) and node.ty->is_compatible(node.right->ty);
-        if(is_compatible) return;
-    } else if (contains(MATH_TOKENS, node.op)) {
+    if (contains(MATH_TOKENS, node.op)) {
         // can only be int op int || float op float
         is_compatible = node.left->ty->is_compatible(TypeRegistry::Integer) and node.right->ty->is_compatible(TypeRegistry::Integer);
         if(is_compatible) node.ty = TypeRegistry::Integer;

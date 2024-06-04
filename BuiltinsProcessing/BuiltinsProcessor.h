@@ -18,8 +18,8 @@ public:
     Result<SuccessTag> parse_builtin_functions(const std::string &file);
 	Result<SuccessTag> parse_builtin_widgets(const std::string &file);
 
-    std::unique_ptr<NodeVariable> parse_builtin_variable();
-    std::unique_ptr<NodeArray> parse_builtin_array();
+    Result<std::unique_ptr<NodeVariable>> parse_builtin_variable();
+    Result<std::unique_ptr<NodeArray>> parse_builtin_array();
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_builtin_function();
 	Result<std::unique_ptr<NodeUIControl>> parse_builtin_ui_control();
     Result<std::unique_ptr<NodeParamList>> parse_builtin_args_list();

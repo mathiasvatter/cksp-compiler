@@ -39,6 +39,9 @@ public:
     [[nodiscard]] virtual bool is_compatible(const Type* other) const {
         return m_kind == other->get_kind() && get_type_kind() == other->get_type_kind();
     }
+	virtual bool is_assignable_from(const Type* other) const {
+		return is_compatible(other);
+	}
 protected:
     Kind m_kind = Kind::Unknown;
 };
@@ -58,6 +61,12 @@ public:
     }
 	[[nodiscard]] Type* get_element_type() const override {
 		return const_cast<BasicType*>(this);
+	}
+	bool is_assignable_from(const Type* other) const override {
+		// string is also compatible with float or int or number
+		bool string_number = m_kind == Kind::String && (other->get_kind() == Kind::Number || other->get_kind() == Kind::Integer || other->get_kind() == Kind::Real);
+		if(string_number) return true;
+		return is_compatible(other);
 	}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		// unknown is compatible with everything
@@ -122,7 +131,9 @@ public:
     }
     [[nodiscard]] int get_dimensions() const override {return m_dimensions;}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
-		return get_type_kind() == other->get_type_kind() and (m_dimensions == other->get_dimensions() || other->get_dimensions() == 0 || m_dimensions == 0) and m_element_type->is_compatible(other);
+		bool is_unknown = other->get_kind() == Kind::Unknown and other->get_type_kind() == TypeKind::Basic;
+		bool is_any = other->get_kind() == Kind::Any and other->get_type_kind() == TypeKind::Basic;
+		return is_unknown or is_any or (get_type_kind() == other->get_type_kind() and m_dimensions == other->get_dimensions() and m_element_type->is_compatible(other));
 	}
 	[[nodiscard]] Type* get_element_type() const override {return m_element_type;}
 	[[nodiscard]] CompoundKind get_compound_type() const {return m_compound_kind;}

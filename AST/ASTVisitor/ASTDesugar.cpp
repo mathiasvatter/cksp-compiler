@@ -36,10 +36,19 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     if(node.assignee) node.assignee->accept(*this);
 
     if(node.to_be_declared->is_global) {
-        m_global_variable_declarations->statements.push_back(std::make_unique<NodeStatement>(node.clone(), node.tok));
+        m_global_variable_declarations->statements.push_back(
+			std::make_unique<NodeStatement>(
+				std::make_unique<NodeSingleDeclareStatement>(
+					clone_as<NodeDataStructure>(node.to_be_declared.get()),
+					nullptr,
+					node.tok
+				),
+				node.tok
+			)
+		);
         if(node.assignee) {
             auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(
-                    std::move(node.to_be_declared),
+                    node.to_be_declared->to_reference(),
                     std::move(node.assignee), node.tok
                 );
             node.replace_with(std::move(node_assign_statement));
