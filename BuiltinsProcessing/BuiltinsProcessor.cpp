@@ -46,13 +46,25 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_variables(const std::string 
     while(peek(m_tokens).type != token::END_TOKEN) {
         if(peek(m_tokens).type == token::KEYWORD) {
             if(contains(VAR_IDENT, peek(m_tokens).val[0])) {
-                auto node_variable = std::move(parse_builtin_variable());
+				auto node_variable_res = parse_builtin_variable();
+				if(node_variable_res.is_error()) {
+					return Result<SuccessTag>(node_variable_res.get_error());
+				}
+                auto node_variable = std::move(node_variable_res.unwrap());
                 m_builtin_variables.insert({node_variable->name, std::move(node_variable)});
             } else if(contains(ARRAY_IDENT, peek(m_tokens).val[0])) {
-                auto node_array = std::move(parse_builtin_array());
+				auto node_array_res = parse_builtin_array();
+				if(node_array_res.is_error()) {
+					return Result<SuccessTag>(node_array_res.get_error());
+				}
+				auto node_array = std::move(node_array_res.unwrap());
                 m_builtin_arrays.insert({node_array->name, std::move(node_array)});
             } else if(contains(BUILTIN_CONDITIONS, peek(m_tokens).val)) {
-				auto node_variable = std::move(parse_builtin_variable());
+				auto node_variable_res = parse_builtin_variable();
+				if(node_variable_res.is_error()) {
+					return Result<SuccessTag>(node_variable_res.get_error());
+				}
+				auto node_variable = std::move(node_variable_res.unwrap());
 				m_builtin_variables.insert({node_variable->name, std::move(node_variable)});
 			} else {
                 return Result<SuccessTag>(CompileError(ErrorType::PreprocessorError,
@@ -103,39 +115,48 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_widgets(const std::string &f
 }
 
 
-std::unique_ptr<NodeVariable> BuiltinsProcessor::parse_builtin_variable() {
+Result<std::unique_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable() {
     Token name = consume(m_tokens); // consume variable name token
     // cut away identifier
     std::string var_name = name.val;
-    ASTType type = get_identifier_type(var_name[0]);
+//    ASTType type = get_identifier_type(var_name[0]);
 	Type* ty = TypeRegistry::get_type_from_identifier(var_name[0]);
     if(get_token_type(TYPES, std::string(1, var_name[0])))
         var_name = var_name.erase(0,1);
-    auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name, ty, DataType::Mutable, name);
-    node_variable->type = type;
+
+	auto type_annotation = parse_type_annotation(ty);
+	if(type_annotation.is_error()) {
+		return Result<std::unique_ptr<NodeVariable>>(type_annotation.get_error());
+	}
+    auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name, type_annotation.unwrap(), DataType::Mutable, name);
+//    node_variable->type = type;
     node_variable->is_local = false;
     node_variable->is_engine = true;
-    return std::move(node_variable);
+    return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
 
-std::unique_ptr<NodeArray> BuiltinsProcessor::parse_builtin_array() {
+Result<std::unique_ptr<NodeArray>> BuiltinsProcessor::parse_builtin_array() {
     Token name = consume(m_tokens); // consume array name token
     std::string arr_name = name.val;
-    ASTType type = get_identifier_type(arr_name[0]);
+//    ASTType type = get_identifier_type(arr_name[0]);
 	Type* ty = TypeRegistry::get_type_from_identifier(arr_name[0]);
     if(get_token_type(TYPES, std::string(1, arr_name[0])))
         arr_name = arr_name.erase(0,1);
+	auto type_annotation = parse_type_annotation(ty);
+	if(type_annotation.is_error()) {
+		return Result<std::unique_ptr<NodeArray>>(type_annotation.get_error());
+	}
     auto node_array = std::make_unique<NodeArray>(
 		std::nullopt,
 		arr_name,
-        ty,
+		type_annotation.unwrap(),
 		DataType::Array,
 		std::make_unique<NodeParamList>(name), name
 	);
-    node_array->type = type;
+//    node_array->type = type;
     node_array->is_local = false;
     node_array->is_engine = true;
-    return std::move(node_array);
+    return Result<std::unique_ptr<NodeArray>>(std::move(node_array));
 }
 
 ASTType BuiltinsProcessor::get_identifier_type(char identifier) {
@@ -211,12 +232,20 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 	}
 	std::unique_ptr<NodeDataStructure> node_var;
 	if(peek(m_tokens, 1).type == token::OPEN_BRACKET) {
-		node_var = std::move(parse_builtin_array());
+		auto node_var_res = parse_builtin_array();
+		if(node_var_res.is_error()) {
+			return Result<std::unique_ptr<NodeUIControl>>(node_var_res.get_error());
+		}
+		node_var = std::move(node_var_res.unwrap());
 		consume(m_tokens); // consume open bracket
 		if(peek(m_tokens).type == token::KEYWORD) consume(m_tokens);
 		if(peek(m_tokens).type == token::CLOSED_BRACKET) consume(m_tokens);
 	} else {
-		node_var = parse_builtin_variable();
+		auto node_var_res = parse_builtin_variable();
+		if(node_var_res.is_error()) {
+			return Result<std::unique_ptr<NodeUIControl>>(node_var_res.get_error());
+		}
+		node_var = std::move(node_var_res.unwrap());
 	}
 	std::unique_ptr<NodeParamList> params = std::make_unique<NodeParamList>(tok);
 	std::vector<ASTType> arg_types;
@@ -279,35 +308,43 @@ DataType BuiltinsProcessor::get_var_type_annotation(const std::string& keyword) 
 }
 
 Result<std::unique_ptr<NodeParamList>> BuiltinsProcessor::parse_builtin_args_list() {
-    std::vector<ASTType> arg_types;
-    std::vector<DataType> arg_var_types;
+//    std::vector<ASTType> arg_types;
+//    std::vector<DataType> arg_var_types;
 	std::vector<Type*> types;
     auto func_args = std::make_unique<NodeParamList>(peek(m_tokens));
     while(peek(m_tokens).type != token::CLOSED_PARENTH) {
         if(peek(m_tokens).type == token::CLOSED_PARENTH) break;
         if(peek(m_tokens).type == token::KEYWORD or peek(m_tokens).type == token::TO) {
             Token tok = peek(m_tokens);
-            auto arg = parse_builtin_variable();
+			auto node_arg_res = parse_builtin_variable();
+			if(node_arg_res.is_error()) {
+				return Result<std::unique_ptr<NodeParamList>>(node_arg_res.get_error());
+			}
+			auto arg = std::move(node_arg_res.unwrap());
             arg->parent = func_args.get();
+			types.push_back(arg->ty);
             func_args->params.push_back(std::move(arg));
-            arg_var_types.push_back(get_var_type_annotation(tok.val));
-            if(peek(m_tokens).type == token::TYPE) {
-                consume(m_tokens); // consume semicolon
-                if(peek(m_tokens).type != token::KEYWORD) {
-                    return Result<std::unique_ptr<NodeParamList>>(CompileError(ErrorType::PreprocessorError,
-                      "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
-                }
-                tok = consume(m_tokens);
-            }
-			types.push_back(TypeRegistry::get_type_from_annotation(tok.val));
-            arg_types.push_back(get_type_annotation(tok));
+//            arg_var_types.push_back(get_var_type_annotation(tok.val));
+//            if(peek(m_tokens).type == token::TYPE) {
+//                consume(m_tokens); // consume semicolon
+//                if(peek(m_tokens).type != token::KEYWORD) {
+//                    return Result<std::unique_ptr<NodeParamList>>(CompileError(ErrorType::PreprocessorError,
+//                      "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
+//                }
+//                tok = consume(m_tokens);
+//            }
+//			auto ty = parse_type_annotation();
+//			if(ty.is_error()) {
+//				return Result<std::unique_ptr<NodeParamList>>(ty.get_error());
+//			}
+//            arg_types.push_back(get_type_annotation(tok));
         } else {
             return Result<std::unique_ptr<NodeParamList>>(CompileError(ErrorType::PreprocessorError,
                                                                                                "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
         }
         if(peek(m_tokens).type == token::COMMA) consume(m_tokens); // consume comma
     }
-    auto result_pair = std::tuple(types, arg_types, arg_var_types);
+//    auto result_pair = std::tuple(types, arg_types, arg_var_types);
     return Result<std::unique_ptr<NodeParamList>>(std::move(func_args));
 }
 

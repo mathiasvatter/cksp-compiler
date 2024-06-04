@@ -15,6 +15,7 @@ public:
 		m_program = &node;
 		for(auto & def : node.function_definitions) def->visited = false;
 
+		// first pass to analyze dynamic extend within function definitions and replace with passive_vars
 		ASTGlobalScope global_scope(m_def_provider);
 		global_scope.set_program_ptr(m_program);
 		for (auto & def : node.function_definitions) {

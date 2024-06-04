@@ -79,6 +79,10 @@ void ASTBuildDataStructures::visit(NodeSingleDeclareStatement& node) {
 }
 
 void ASTBuildDataStructures::visit(NodeArray &node) {
+	if(node.parent->get_node_type() == NodeType::ParamList and node.name == "array") {
+
+	}
+
 	node.determine_locality(m_program, m_current_body, m_current_callback);
 
 	if(node.size) node.size->accept(*this);
@@ -102,6 +106,20 @@ void ASTBuildDataStructures::visit(NodeArrayRef &node) {
         node.replace_with(std::move(node_list_reference));
         return;
     }
+	// if is in function definition and param is incorrectly recognized as Variable -> change to Array
+	if(node_declaration->get_node_type() == NodeType::Variable) {
+		auto node_array = std::make_unique<NodeArray>(
+			std::nullopt,
+			node.name,
+			node.ty,
+			DataType::Array,
+			nullptr, node.tok);
+		node_array->parent = node_declaration->parent;
+		m_def_provider->remove_from_current_scope(node.name);
+		node_array->accept(*this);
+		node_declaration->replace_with(std::move(node_array));
+		return;
+	}
 
 }
 
@@ -182,6 +200,10 @@ void ASTBuildDataStructures::visit(NodeVariableRef &node) {
 
 void ASTBuildDataStructures::visit(NodeListStruct& node) {
 	node.determine_locality(m_program, m_current_body, m_current_callback);
+
+	for(auto &params : node.body) {
+		params->accept(*this);
+	}
 
 	m_def_provider->set_declaration(&node, !node.is_local);
 }

@@ -151,7 +151,7 @@ public:
 		m_def_provider->set_declaration(&node, !node.is_local);
 		m_gensym.ingest(node.name);
 
-		if(node.is_local) {
+		if(node.is_local and !is_function_param(&node)) {
 			if(m_current_callback) m_all_local_callback_vars.push_back(&node);
 			m_all_local_vars.push_back(&node);
 		}
@@ -189,7 +189,7 @@ public:
 
 		m_def_provider->set_declaration(&node, !node.is_local);
 		m_gensym.ingest(node.name);
-		if(node.is_local) {
+		if(node.is_local and !is_function_param(&node)) {
 			if(m_current_callback) m_all_local_callback_vars.push_back(&node);
 			m_all_local_vars.push_back(&node);
 		}
@@ -197,7 +197,6 @@ public:
 
 	bool clear_passive_vars() {
         m_passive_vars_map.clear();
-//		m_passive_vars.clear();
 		return true;
 	}
 
@@ -219,6 +218,11 @@ private:
 	bool inline is_thread_safe_env() {
 		return (m_current_callback and m_current_callback->is_thread_safe) or (m_current_function and m_current_function->header->is_thread_safe);
 	};
+
+	/// determines if given var is a function parameter -> do not replace them with passive_vars
+	bool inline is_function_param(NodeDataStructure* param) {
+		return (param->parent->get_node_type() == NodeType::ParamList or param->parent->get_node_type() == NodeType::FunctionDefinition) and !m_current_callback;
+	}
 
 	/// vector for all local vars in callbacks
 	std::vector<NodeDataStructure*> m_all_local_callback_vars = {};

@@ -62,8 +62,9 @@ std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
 }
 
 bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBody* current_body, NodeCallback* current_callback) {
+//	bool func_params = this->parent->get_node_type() == NodeType::ParamList and !current_callback;
 	bool global_scope = current_callback == program->init_callback or is_global or get_node_type() == NodeType::UIControl;
-	is_local = current_body->scope and not global_scope;
+	is_local = current_body->scope and !global_scope;
 	return is_local;
 }
 
@@ -684,7 +685,7 @@ NodeFunctionDefinition* NodeFunctionCall::find_property_definition(NodeProgram *
     return nullptr;
 }
 
-bool NodeFunctionCall::get_definition(NodeProgram* program) {
+bool NodeFunctionCall::get_definition(NodeProgram* program, bool fail) {
 	if (definition) {
 		return true;
 	}
@@ -694,7 +695,7 @@ bool NodeFunctionCall::get_definition(NodeProgram* program) {
         return true;
     } else if (find_property_definition(program)) {
         return true;
-	} else {
+	} else if(fail) {
 		CompileError(ErrorType::SyntaxError,"Function has not been declared.", tok.line, "", function->name, tok.file).exit();
 	}
 	return false;

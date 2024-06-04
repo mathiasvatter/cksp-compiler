@@ -6,6 +6,7 @@
 
 #include "../Tokenizer/Tokenizer.h"
 #include "../Tokenizer/Tokens.h"
+#include "../AST/Types.h"
 
 /// Base Class for all parsing related classes like:
 /// - Parser
@@ -37,5 +38,9 @@ protected:
     const Token& get_tok() const;
 
 	void remove_tokens(std::vector<Token>& tok, size_t start, size_t end);
+
+	Result<Type*> parse_type_annotation(Type* ty = nullptr);
+
+
 };
 

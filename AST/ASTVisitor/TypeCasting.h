@@ -55,7 +55,7 @@ private:
 
     static inline CompileError throw_type_error(NodeAST* node1, NodeAST* node2) {
         auto error = CompileError(ErrorType::TypeError,"", "", node1->tok);
-        error.m_message = "Type mismatch: " + node1->ty->to_string() + " and " + node2->ty->to_string();
+        error.m_message = "Type mismatch: " + node1->ty->to_string() + " and " + node2->ty->to_string()+". ";
         return error;
     }
 
@@ -84,12 +84,13 @@ private:
                 }
             }
         }
+		error.m_message = "Unable to infer type from initialization.";
+		error.exit();
         return nullptr;
     }
 
 	/// tries to match the type of node 1 to the type of node2 after checking type compatibility
 	static inline Type* match_type(NodeAST* node1, NodeAST* node2) {
-//		auto error = CompileError(ErrorType::TypeError,"", "", node1->tok);
 		if(!node1->ty->is_compatible(node2->ty)) {
             throw_type_error(node1, node2).exit();
 		}
@@ -99,9 +100,22 @@ private:
         return node1->ty;
 	}
 
+	/// tries to match the types of l_value and r_value after checking type compatibility, skipping
+	/// compatibility check of r_value to l_value because of string and integer
+	static inline Type* match_assignment_types(NodeAST* l_value, NodeAST* r_value) {
+		auto l_value_ty = match_type(l_value, r_value);
+		if(l_value_ty == TypeRegistry::String) return l_value_ty;
+		// specialize types:
+		r_value->set_element_type(specialize_type(r_value->ty, l_value->ty));
+		return r_value->ty;
+	}
+
     /// tries to match the types of reference and declaration by also checking for element typ
     /// in case declaration is a composite type
     static inline Type* match_reference_declaration(NodeReference* node) {
+		// before lowering, the declaration is not necessarily set, check before:
+		if(!node->declaration) return node->ty;
+
         Type* declaration_type = node->declaration->ty->get_element_type();
         Type* reference_type = node->ty->get_element_type();
         if(!reference_type->is_compatible(declaration_type)) {
