@@ -110,9 +110,9 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 		compile_error.print();
 	} else {
 		if(global_scope) {
-			m_declared_data_structures.at(0).insert({var->name, var});
+			m_declared_data_structures.at(0).insert({sanitize_name(var->name), var});
 		} else {
-			m_declared_data_structures.back().insert({var->name, var});
+			m_declared_data_structures.back().insert({sanitize_name(var->name), var});
 		}
 	}
 	return nullptr;
@@ -190,14 +190,8 @@ NodeArray *DefinitionProvider::get_declared_array(const std::string& arr) {
 }
 
 NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::string& data) {
-//    std::string var_without_identifier = data;
-//    if (data[0] == '_' && data[1] != '_') {
-//        var_without_identifier = var_without_identifier.erase(0,1);
-//    } else if (data.ends_with(".raw")) {
-//        var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
-//    }
     for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
-        auto it = rit->find(data);
+        auto it = rit->find(sanitize_name(data));
         if (it != rit->end()) {
             return it->second;
         }
@@ -206,28 +200,22 @@ NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::st
 }
 
 NodeDataStructure *DefinitionProvider::get_scoped_data_structure(const std::string& data, bool global_scope) {
-//	std::string var_without_identifier = data;
-//	if (data[0] == '_' && data[1] != '_') {
-//		var_without_identifier = var_without_identifier.erase(0,1);
-//	} else if (data.ends_with(".raw")) {
-//		var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
-//	}
     auto& map = global_scope ? m_declared_data_structures.at(0) : m_declared_data_structures.back();
-	auto it = map.find(data);
+	auto it = map.find(sanitize_name(data));
 	if (it != map.end()) {
 		return it->second;
 	}
 	return nullptr;
 }
 
-NodeArray *DefinitionProvider::get_raw_declared_array(const std::string& var) {
-    std::string var_without_identifier = var;
-    if (var[0] == '_' && var[1] != '_') {
-        var_without_identifier = var_without_identifier.erase(0,1);
-    } else if (var.ends_with(".raw")) {
-        var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
-    }
-    return get_declared_array(var_without_identifier);
+std::string DefinitionProvider::sanitize_name(const std::string& name) {
+	std::string var_without_identifier = name;
+	if (name[0] == '_' && name[1] != '_') {
+		var_without_identifier = var_without_identifier.erase(0,1);
+	} else if (name.ends_with(".raw")) {
+		var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
+	}
+	return var_without_identifier;
 }
 
 NodeUIControl *DefinitionProvider::get_declared_control(NodeUIControl *ctr) {

@@ -109,7 +109,9 @@ struct NodeDataStructure : NodeAST {
 	}
     virtual std::unique_ptr<NodeReference> to_reference();
 	/// determines if current data structure is local variable and sets is_local flag
-	bool determine_locality(class NodeProgram* program, class NodeBody* current_body, class NodeCallback* current_callback);
+	bool determine_locality(class NodeProgram* program, class NodeBody* current_body);
+	/// determines if current data structure is a parameter in a function definition
+	bool is_function_param();
 	/// tries to infer the type by specializing given type from Number to Integer
 	virtual Type* cast_type();
 };
@@ -904,6 +906,9 @@ struct NodeFunctionCall : NodeAST {
 
 struct NodeProgram : NodeAST {
 	NodeCallback* init_callback = nullptr;
+	NodeCallback* current_callback = nullptr;
+	/// holds the current function definition that is being processed
+	std::stack<NodeFunctionDefinition*> function_call_stack{};
 	DefinitionProvider* def_provider = nullptr;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;

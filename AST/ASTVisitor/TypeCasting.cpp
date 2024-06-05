@@ -7,11 +7,12 @@
 void TypeCasting::visit(NodeProgram& node) {
 	m_program = &node;
 
-	for(auto & callback : node.callbacks) {
-		callback->accept(*this);
-	}
+	// get all types of function params first
 	for(auto & function_definition : node.function_definitions) {
 		function_definition->accept(*this);
+	}
+	for(auto & callback : node.callbacks) {
+		callback->accept(*this);
 	}
 
     for(auto & ref : m_references) {
@@ -59,9 +60,6 @@ void TypeCasting::visit(NodeArray& node) {
 }
 
 void TypeCasting::visit(NodeArrayRef& node) {
-	if(node.name == "preset_new" and !node.index) {
-
-	}
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
 		if(node.ty == TypeRegistry::Unknown) {
