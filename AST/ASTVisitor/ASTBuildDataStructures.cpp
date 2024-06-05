@@ -138,14 +138,16 @@ void ASTBuildDataStructures::visit(NodeArrayRef &node) {
 		auto node_array = std::make_unique<NodeArray>(
 			std::nullopt,
 			node.name,
-			node.ty,
+			TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(),1),
 			DataType::Array,
-			std::make_unique<NodeInt>(1, node.tok),
-			node.tok);
+			std::make_unique<NodeInt>(1, node_declaration->tok),
+			node_declaration->tok);
 		node_array->parent = node_declaration->parent;
 		m_def_provider->remove_from_current_scope(node.name);
-		node_array->accept(*this);
-		node_declaration->replace_with(std::move(node_array));
+		auto new_decl = node_declaration->replace_with(std::move(node_array));
+		node.declaration = static_cast<NodeDataStructure*>(new_decl);
+		// visit new node to get declaration into def_provider
+		new_decl->accept(*this);
 		return;
 	}
 

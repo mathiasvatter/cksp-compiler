@@ -33,7 +33,7 @@ struct NodeArrayRef : NodeReference {
 	NodeArrayRef(const NodeArrayRef& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
 		if(index) index ->update_parents(this);

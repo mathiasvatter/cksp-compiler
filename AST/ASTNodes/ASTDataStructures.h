@@ -46,7 +46,7 @@ struct NodeArray : NodeDataStructure {
 	NodeArray(const NodeArray& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
 		if (size) size->update_parents(this);
@@ -110,7 +110,7 @@ struct NodeUIControl : NodeDataStructure {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
-	void replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	// Copy Constructor
 	NodeUIControl(const NodeUIControl& other);
 	// Clone Method

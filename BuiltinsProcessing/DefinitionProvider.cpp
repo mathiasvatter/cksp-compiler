@@ -63,6 +63,14 @@ bool DefinitionProvider::refresh_scopes() {
     return true;
 }
 
+bool DefinitionProvider::clear_all_references() {
+	for(auto& var : m_all_data_structures) {
+		var->references.clear();
+	}
+	return true;
+}
+
+
 NodeDataStructure* DefinitionProvider::remove_from_current_scope(const std::string& name) {
     auto it = m_declared_data_structures.back().find(name);
     if(it != m_declared_data_structures.back().end()) {
@@ -91,6 +99,8 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 	if (node_builtin_declaration) {
 		return node_builtin_declaration;
 	} else if (auto node_declaration = get_declared_data_structure(var_name)) {
+		// add reference to declaration vector
+		node_declaration->references.insert(var);
 		return node_declaration;
 	}
 	return nullptr;
@@ -123,6 +133,7 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
         if(global_scope) compile_error.m_message += " Variables declared in the <init> callback are always considered global, no local scopes are created.";
 		compile_error.print();
 	} else {
+		m_all_data_structures.push_back(var);
 		if(global_scope) {
 			m_declared_data_structures.at(0).insert({var_name, var});
 		} else {

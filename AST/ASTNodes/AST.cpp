@@ -21,12 +21,14 @@ void NodeAST::accept(ASTVisitor &visitor) {}
 NodeAST::NodeAST(const NodeAST& other) : parent(other.parent), node_type(other.node_type),
     tok(other.tok), type(other.type), ty(other.ty) {}
 
-void NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
+NodeAST * NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 	if (parent) {
 		newNode->parent = parent;
-		parent->replace_child(this, std::move(newNode));
+		return parent->replace_child(this, std::move(newNode));
 	}
+	return nullptr;
 }
+
 Type* NodeAST::set_element_type(Type *element_type) {
 	if(ty->get_type_kind() == TypeKind::Composite and element_type->get_type_kind() == TypeKind::Basic) {
         // if composite type does not yet exist -> create it without throwing error
@@ -47,7 +49,7 @@ NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
 	  is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
 	  is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
-	  data_type(other.data_type), name(other.name) {
+	  data_type(other.data_type), name(other.name), references(other.references) {
 	set_child_parents();
 }
 
@@ -157,13 +159,14 @@ NodeParamList::NodeParamList(const NodeParamList& other) : NodeAST(other) {
 std::unique_ptr<NodeAST> NodeParamList::clone() const {
     return std::make_unique<NodeParamList>(*this);
 }
-void NodeParamList::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeParamList::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     for (auto& param : params) {
         if (param.get() == oldChild) {
             param = std::move(newChild);
-            return;
+            return param.get();
         }
     }
+	return nullptr;
 }
 
 // ************* NodeUnaryExpr ***************
@@ -177,10 +180,12 @@ NodeUnaryExpr::NodeUnaryExpr(const NodeUnaryExpr& other)
 std::unique_ptr<NodeAST> NodeUnaryExpr::clone() const {
     return std::make_unique<NodeUnaryExpr>(*this);
 }
-void NodeUnaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeUnaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (operand.get() == oldChild) {
         operand = std::move(newChild);
+		return operand.get();
     }
+	return nullptr;
 }
 
 // ************* NodeBinaryExpr ***************
@@ -195,12 +200,15 @@ NodeBinaryExpr::NodeBinaryExpr(const NodeBinaryExpr& other)
 std::unique_ptr<NodeAST> NodeBinaryExpr::clone() const {
     return std::make_unique<NodeBinaryExpr>(*this);
 }
-void NodeBinaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeBinaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (left.get() == oldChild) {
         left = std::move(newChild);
+		return left.get();
     } else if (right.get() == oldChild) {
         right = std::move(newChild);
+		return right.get();
     }
+	return nullptr;
 }
 
 // ************* NodeAssignStatement ***************
@@ -233,12 +241,15 @@ NodeSingleAssignStatement::NodeSingleAssignStatement(const NodeSingleAssignState
 std::unique_ptr<NodeAST> NodeSingleAssignStatement::clone() const {
     return std::make_unique<NodeSingleAssignStatement>(*this);
 }
-void NodeSingleAssignStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeSingleAssignStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (array_variable.get() == oldChild) {
         array_variable = std::move(newChild);
+		return array_variable.get();
     } else if (assignee.get() == oldChild) {
         assignee = std::move(newChild);
+		return assignee.get();
     }
+	return nullptr;
 }
 
 ASTVisitor* NodeSingleAssignStatement::get_lowering(DefinitionProvider* def_provider) const {
@@ -284,15 +295,18 @@ NodeSingleDeclareStatement::NodeSingleDeclareStatement(const NodeSingleDeclareSt
 std::unique_ptr<NodeAST> NodeSingleDeclareStatement::clone() const {
     return std::make_unique<NodeSingleDeclareStatement>(*this);
 }
-void NodeSingleDeclareStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeSingleDeclareStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (to_be_declared.get() == oldChild) {
         if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.get())) {
             newChild.release();
             to_be_declared = std::unique_ptr<NodeDataStructure>(new_data_structure);
+			return to_be_declared.get();
         }
     } else if (assignee.get() == oldChild) {
         assignee = std::move(newChild);
+		return assignee.get();
     }
+	return nullptr;
 }
 
 ASTVisitor* NodeSingleDeclareStatement::get_lowering(DefinitionProvider* def_provider) const {
@@ -324,12 +338,14 @@ NodeReturnStatement::NodeReturnStatement(const NodeReturnStatement& other)
 std::unique_ptr<NodeAST> NodeReturnStatement::clone() const {
 	return std::make_unique<NodeReturnStatement>(*this);
 }
-void NodeReturnStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeReturnStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	for(auto &ret : return_variables) {
 		if (ret.get() == oldChild) {
 			ret = std::move(newChild);
+			return ret.get();
 		}
 	}
+	return nullptr;
 }
 
 // ************* NodeGetControlStatement ***************
@@ -343,11 +359,14 @@ NodeGetControlStatement::NodeGetControlStatement(const NodeGetControlStatement& 
 std::unique_ptr<NodeAST> NodeGetControlStatement::clone() const {
     return std::make_unique<NodeGetControlStatement>(*this);
 }
-void NodeGetControlStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeGetControlStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (ui_id.get() == oldChild) {
 		ui_id = std::move(newChild);
+		return ui_id.get();
 	}
+	return nullptr;
 }
+
 ASTVisitor* NodeGetControlStatement::get_lowering(DefinitionProvider* def_provider) const {
 	static LoweringGetControl lowering(def_provider);
 	return &lowering;
@@ -365,10 +384,12 @@ NodeStatement::NodeStatement(const NodeStatement& other)
 std::unique_ptr<NodeAST> NodeStatement::clone() const {
     return std::make_unique<NodeStatement>(*this);
 }
-void NodeStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (statement.get() == oldChild) {
 		statement = std::move(newChild);
+		return statement.get();
 	}
+	return nullptr;
 }
 
 // ************* NodeStructStatement ***************
@@ -465,10 +486,12 @@ NodeIfStatement::NodeIfStatement(const NodeIfStatement& other)
 std::unique_ptr<NodeAST> NodeIfStatement::clone() const {
     return std::make_unique<NodeIfStatement>(*this);
 }
-void NodeIfStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeIfStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (condition.get() == oldChild) {
 		condition = std::move(newChild);
+		return condition.get();
 	}
+	return nullptr;
 }
 
 // ************* NodeForStatement ***************
@@ -483,10 +506,12 @@ NodeForStatement::NodeForStatement(const NodeForStatement& other)
 std::unique_ptr<NodeAST> NodeForStatement::clone() const {
     return std::make_unique<NodeForStatement>(*this);
 }
-void NodeForStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeForStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (iterator_end.get() == oldChild) {
         iterator_end = std::move(newChild);
+		return iterator_end.get();
     }
+	return nullptr;
 }
 
 ASTDesugaring* NodeForStatement::get_desugaring() const {
@@ -506,10 +531,12 @@ NodeForEachStatement::NodeForEachStatement(const NodeForEachStatement& other)
 std::unique_ptr<NodeAST> NodeForEachStatement::clone() const {
     return std::make_unique<NodeForEachStatement>(*this);
 }
-void NodeForEachStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeForEachStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (range.get() == oldChild) {
         range = std::move(newChild);
+		return range.get();
     }
+	return nullptr;
 }
 
 ASTDesugaring* NodeForEachStatement::get_desugaring() const {
@@ -529,10 +556,12 @@ NodeWhileStatement::NodeWhileStatement(const NodeWhileStatement& other)
 std::unique_ptr<NodeAST> NodeWhileStatement::clone() const {
     return std::make_unique<NodeWhileStatement>(*this);
 }
-void NodeWhileStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeWhileStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (condition.get() == oldChild) {
 		condition = std::move(newChild);
+		return condition.get();
 	}
+	return nullptr;
 }
 
 // ************* Helper to clone map with unique_ptr keys and vector of unique_ptr values ***************
@@ -567,16 +596,19 @@ NodeSelectStatement::NodeSelectStatement(const NodeSelectStatement& other)
 std::unique_ptr<NodeAST> NodeSelectStatement::clone() const {
     return std::make_unique<NodeSelectStatement>(*this);
 }
-void NodeSelectStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeSelectStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (expression.get() == oldChild) {
 		expression = std::move(newChild);
+		return expression.get();
 	} else {
         for ( auto & cas : cases) {
             if(cas.first[0].get() == oldChild) {
                 cas.first[0] = std::move(newChild);
+				return cas.first[0].get();
             }
         }
     }
+	return nullptr;
 }
 
 // ************* NodeCallback ***************
@@ -593,10 +625,12 @@ NodeCallback::NodeCallback(const NodeCallback& other)
 std::unique_ptr<NodeAST>  NodeCallback::clone() const {
     return std::make_unique<NodeCallback>(*this);
 }
-void NodeCallback::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeCallback::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (callback_id.get() == oldChild) {
         callback_id = std::move(newChild);
+		return callback_id.get();
     }
+	return nullptr;
 }
 
 // ************* NodeImport ***************

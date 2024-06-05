@@ -40,10 +40,12 @@ NodeArray::NodeArray(const NodeArray& other)
 std::unique_ptr<NodeAST> NodeArray::clone() const {
 	return std::make_unique<NodeArray>(*this);
 }
-void NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (size.get() == oldChild) {
 		size = std::move(newChild);
+		return size.get();
 	}
+	return nullptr;
 }
 
 ASTVisitor* NodeArray::get_lowering(DefinitionProvider* def_provider) const {
@@ -95,15 +97,15 @@ NodeUIControl::NodeUIControl(const NodeUIControl& other)
 std::unique_ptr<NodeAST> NodeUIControl::clone() const {
 	return std::make_unique<NodeUIControl>(*this);
 }
-void NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (control_var.get() == oldChild) {
 		if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.get())) {
 			newChild.release();
 			control_var = std::unique_ptr<NodeDataStructure>(new_data_structure);
-//		} else {
-//			control_var = std::move(newChild);
+			return control_var.get();
 		}
 	}
+	return nullptr;
 }
 
 ASTVisitor* NodeUIControl::get_lowering(DefinitionProvider* def_provider) const {
