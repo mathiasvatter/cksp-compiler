@@ -18,7 +18,7 @@
 class ASTVisitor {
 protected:
 	NodeProgram* m_program = nullptr;
-	NodeCallback* m_current_callback = nullptr;
+//	NodeCallback* m_current_callback = nullptr;
 
     std::set<std::string> m_restricted_builtin_functions = {"save_array", "save_array_str", "load_array", "load_array_str"};
     std::unordered_map<std::string, Type*> m_compiler_variables = {{"_list_it",TypeRegistry::Integer}, {"_ui_array_it", TypeRegistry::Integer},

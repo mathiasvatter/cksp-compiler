@@ -50,14 +50,9 @@ public:
     /// add function parameters to scope
     void visit(NodeFunctionDefinition& node) override;
 
-	/// TODO: Visit Function Calls and connect to function definitions to check scoping? Not needed really
 private:
     NodeProgram* m_program = nullptr;
-	NodeCallback* m_current_callback = nullptr;
-	/// holds the current function definition that is being visited on top
-	std::stack<NodeFunctionDefinition*> m_function_call_stack;
     NodeBody* m_current_body = nullptr;
-	bool m_is_init_callback = false;
 	DefinitionProvider* m_def_provider = nullptr;
 
 	/// Checks for existence and uniqueness of "on init" callback
@@ -66,6 +61,19 @@ private:
 	/// Checks for uniqueness of all callbacks except "on ui_control"
 	static bool check_unique_callbacks(NodeProgram& node);
 
+	/// updates the node types of parameters at call sites regarding the function definition
+	/// e.g. args can be incorrectly detected as variable refs at call sites, but they are arrays in the definition
+	static void update_func_call_node_types(NodeFunctionCall* func_call);
 
+	/// Returns Function Definition from parameter
+	inline NodeFunctionDefinition* get_function_definition_from_param(NodeDataStructure* param) {
+		if(!param->is_function_param()) return nullptr;
+		if(param->parent->get_node_type() != NodeType::ParamList) return nullptr;
+		if(param->parent->parent->get_node_type() != NodeType::FunctionHeader) return nullptr;
+		if(param->parent->parent->parent->get_node_type() == NodeType::FunctionDefinition) {
+			return static_cast<NodeFunctionDefinition*>(param->parent->parent->parent);
+		}
+		return nullptr;
+	}
 };
 

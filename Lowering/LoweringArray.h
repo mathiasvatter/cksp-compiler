@@ -28,7 +28,7 @@ public:
 
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 		auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
-		if (!node_declaration) {
+		if (!node_declaration and !node.is_function_param()) {
 			error.m_message = "Array is not a reference even though it is not part of a declaration.";
 			error.m_got = node.name;
 			error.exit();

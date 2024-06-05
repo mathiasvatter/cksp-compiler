@@ -21,14 +21,12 @@ void ASTVariableChecking::visit(NodeProgram& node) {
 }
 
 void ASTVariableChecking::visit(NodeCallback& node) {
-	m_current_callback = &node;
-	if(&node == m_program->init_callback) m_is_init_callback = true;
+	m_program->current_callback = &node;
 
 	if(node.callback_id) node.callback_id->accept(*this);
 	node.statements->accept(*this);
 
-	m_is_init_callback = false;
-	m_current_callback = nullptr;
+	m_program->current_callback = nullptr;
 }
 
 void ASTVariableChecking::visit(NodeUIControl& node) {
@@ -78,7 +76,7 @@ void ASTVariableChecking::visit(NodeBody &node) {
 }
 
 void ASTVariableChecking::visit(NodeSingleDeclareStatement& node) {
-	node.to_be_declared->determine_locality(m_program, m_current_body, m_current_callback);
+	node.to_be_declared->determine_locality(m_program, m_current_body);
 
     node.to_be_declared->accept(*this);
     if(node.assignee) node.assignee->accept(*this);
@@ -94,7 +92,7 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 }
 
 void ASTVariableChecking::visit(NodeArray& node) {
-	node.determine_locality(m_program, m_current_body, m_current_callback);
+	node.determine_locality(m_program, m_current_body);
 
 	if(node.size) node.size->accept(*this);
 
@@ -122,7 +120,7 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 }
 
 void ASTVariableChecking::visit(NodeVariable& node) {
-	node.determine_locality(m_program, m_current_body, m_current_callback);
+	node.determine_locality(m_program, m_current_body);
 
     // handle return_vars -> do not check if they have been declared
 //    if(node.is_compiler_return) {
@@ -148,12 +146,14 @@ void ASTVariableChecking::visit(NodeFunctionCall &node) {
 }
 
 void ASTVariableChecking::visit(NodeFunctionDefinition &node) {
+	m_program->function_call_stack.push(&node);
     m_def_provider->add_scope();
     node.header ->accept(*this);
     if (node.return_variable.has_value())
         node.return_variable.value()->accept(*this);
     node.body->accept(*this);
     m_def_provider->remove_scope();
+	m_program->function_call_stack.pop();
 }
 
 

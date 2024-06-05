@@ -34,9 +34,7 @@ public:
 
 private:
 	NodeProgram* m_program = nullptr;
-	NodeCallback* m_current_callback = nullptr;
     NodeBody* m_current_body = nullptr;
-	bool m_is_init_callback = false;
 	DefinitionProvider* m_def_provider = nullptr;
 
 };

@@ -37,12 +37,12 @@ public:
 	}
 
 	void inline visit(NodeCallback& node) override {
-		m_current_callback = &node;
+		m_program->current_callback = &node;
 
 		if(node.callback_id) node.callback_id->accept(*this);
 		node.statements->accept(*this);
 
-		m_current_callback = nullptr;
+		m_program->current_callback = nullptr;
 	}
 
 	void inline visit(NodeFunctionCall& node) override {
@@ -77,7 +77,7 @@ public:
 
 		if(node.definition) {
 			// add declaration statements to the body of the current/above function or callback if function stack is empty
-			auto& next_declares = m_function_call_stack.empty() ? m_declares_per_callback[m_current_callback] : m_local_var_declarations[m_function_call_stack.top()];
+			auto& next_declares = m_program->function_call_stack.empty() ? m_declares_per_callback[m_program->current_callback] : m_local_var_declarations[m_program->function_call_stack.top()];
 			for (auto &decl : m_local_var_declarations[node.definition]) {
 				next_declares.emplace(decl.first,clone_as<NodeSingleDeclareStatement>(decl.second.get()));
 			}
@@ -90,27 +90,24 @@ public:
 	}
 
 	void inline visit(NodeFunctionDefinition& node) override {
-		m_function_call_stack.push(&node);
+		m_program->function_call_stack.push(&node);
 		node.body->accept(*this);
 		node.visited = true;
-		m_function_call_stack.pop();
+		m_program->function_call_stack.pop();
 	}
 
 	void inline visit(NodeSingleDeclareStatement& node) override {
 		if(node.assignee) node.assignee->accept(*this);
 
 		// return if not in function
-		if(m_function_call_stack.empty()) return;
-		m_local_var_declarations[m_function_call_stack.top()].emplace(node.to_be_declared->name, clone_as<NodeSingleDeclareStatement>(&node));
+		if(m_program->function_call_stack.empty()) return;
+		m_local_var_declarations[m_program->function_call_stack.top()].emplace(node.to_be_declared->name, clone_as<NodeSingleDeclareStatement>(&node));
 		node.replace_with(node.to_assign_stmt());
 	}
 
 
 private:
 	DefinitionProvider* m_def_provider;
-//	NodeProgram* m_program = nullptr;
-	NodeCallback* m_current_callback = nullptr;
-	std::stack<NodeFunctionDefinition*> m_function_call_stack;
 	/// map for local variable declarations per function definition to be added to the next/above function
 	std::unordered_map<NodeFunctionDefinition*, std::map<std::string, std::unique_ptr<NodeSingleDeclareStatement>>> m_local_var_declarations;
 	/// map for local variable declarations per function definition to be added to the next/above callback when no function is above

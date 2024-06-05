@@ -61,11 +61,18 @@ std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
 	return ref;
 }
 
-bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBody* current_body, NodeCallback* current_callback) {
-//	bool func_params = this->parent->get_node_type() == NodeType::ParamList and !current_callback;
-	bool global_scope = current_callback == program->init_callback or is_global or get_node_type() == NodeType::UIControl;
-	is_local = current_body->scope and !global_scope;
+bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBody* current_body) {
+	// not init_callback if var is set to local
+	bool init_callback = (program->current_callback == program->init_callback and program->function_call_stack.empty() and !is_local) or is_global or get_node_type() == NodeType::UIControl;
+	is_local = current_body->scope and !init_callback;
 	return is_local;
+}
+
+bool NodeDataStructure::is_function_param() {
+	bool func_param = this->parent->get_node_type() == NodeType::ParamList and
+		(this->parent->parent->get_node_type() == NodeType::FunctionHeader or
+		this->parent->parent->get_node_type() == NodeType::FunctionDefinition);
+	return func_param;
 }
 
 Type* NodeDataStructure::cast_type() {

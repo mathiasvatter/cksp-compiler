@@ -12,23 +12,25 @@ void ASTBuildDataStructures::visit(NodeProgram& node) {
 	node.init_callback = move_on_init_callback(node);
 	m_def_provider->refresh_scopes();
 
+	// most func defs will be visited when called, replacing the var ref params with arrays
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }
-    for(auto & function_definition : node.function_definitions) {
-		function_definition->accept(*this);
+	// visit func defs that are not called. because of replacing incorrectly node params with array
+    for(auto & func_def : node.function_definitions) {
+		if(!func_def->visited) func_def->accept(*this);
+		// reset visited flag
+		func_def->visited = false;
 	}
 }
 
 void ASTBuildDataStructures::visit(NodeCallback& node) {
-	m_current_callback = &node;
-	if(&node == m_program->init_callback) m_is_init_callback = true;
+	m_program->current_callback = &node;
 
 	if(node.callback_id) node.callback_id->accept(*this);
 	node.statements->accept(*this);
 
-	m_is_init_callback = false;
-	m_current_callback = nullptr;
+	m_program->current_callback = nullptr;
 }
 
 
@@ -51,12 +53,15 @@ void ASTBuildDataStructures::visit(NodeBody &node) {
 }
 
 void ASTBuildDataStructures::visit(NodeFunctionDefinition &node) {
+	node.visited = true;
+	m_program->function_call_stack.push(&node);
     m_def_provider->add_scope();
     node.header ->accept(*this);
     if (node.return_variable.has_value())
         node.return_variable.value()->accept(*this);
     node.body->accept(*this);
     m_def_provider->remove_scope();
+	m_program->function_call_stack.pop();
 }
 
 void ASTBuildDataStructures::visit(NodeFunctionCall& node) {
@@ -64,26 +69,48 @@ void ASTBuildDataStructures::visit(NodeFunctionCall& node) {
 
 	node.get_definition(m_program);
 
-	if(!m_function_call_stack.empty()) {
-		m_function_call_stack.top()->header->is_thread_safe &= node.function->is_thread_safe;
+	if(node.kind == NodeFunctionCall::UserDefined and node.definition) {
+		if(!node.definition->visited) node.definition->accept(*this);
 	}
-	if(m_current_callback) m_current_callback->is_thread_safe &= node.function->is_thread_safe;
-	if(m_current_callback) node.function->is_thread_safe &= m_current_callback->is_thread_safe;
+
+	if(!m_program->function_call_stack.empty()) {
+		m_program->function_call_stack.top()->header->is_thread_safe &= node.function->is_thread_safe;
+	}
+	if(m_program->current_callback) m_program->current_callback->is_thread_safe &= node.function->is_thread_safe;
+	if(m_program->current_callback) node.function->is_thread_safe &= m_program->current_callback->is_thread_safe;
+
+	// if definition parameters of this function have different node types as the call site -> update
+	update_func_call_node_types(&node);
+}
+
+void ASTBuildDataStructures::update_func_call_node_types(NodeFunctionCall* func_call) {
+	if(func_call->kind == NodeFunctionCall::Kind::UserDefined and func_call->definition) {
+		for(int i=0; i<func_call->function->args->params.size(); i++) {
+			auto & arg = func_call->function->args->params.at(i);
+			auto & param = func_call->definition->header->args->params.at(i);
+			if(arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::Array) {
+				auto node_var_ref = static_cast<NodeVariableRef*>(arg.get());
+				auto node_array_ref = std::make_unique<NodeArrayRef>(
+					node_var_ref->name,
+					nullptr,
+					node_var_ref->tok);
+				if(node_var_ref->declaration)
+					node_array_ref->match_data_structure(node_var_ref->declaration);
+				node_var_ref->replace_with(std::move(node_array_ref));
+			}
+		}
+	}
 }
 
 void ASTBuildDataStructures::visit(NodeSingleDeclareStatement& node) {
-	node.to_be_declared->determine_locality(m_program, m_current_body, m_current_callback);
+	node.to_be_declared->determine_locality(m_program, m_current_body);
 
     node.to_be_declared->accept(*this);
     if(node.assignee) node.assignee->accept(*this);
 }
 
 void ASTBuildDataStructures::visit(NodeArray &node) {
-	if(node.parent->get_node_type() == NodeType::ParamList and node.name == "array") {
-
-	}
-
-	node.determine_locality(m_program, m_current_body, m_current_callback);
+	node.determine_locality(m_program, m_current_body);
 
 	if(node.size) node.size->accept(*this);
 	m_def_provider->set_declaration(&node, !node.is_local);
@@ -107,13 +134,14 @@ void ASTBuildDataStructures::visit(NodeArrayRef &node) {
         return;
     }
 	// if is in function definition and param is incorrectly recognized as Variable -> change to Array
-	if(node_declaration->get_node_type() == NodeType::Variable) {
+	if(node_declaration->get_node_type() == NodeType::Variable and node_declaration->is_function_param()) {
 		auto node_array = std::make_unique<NodeArray>(
 			std::nullopt,
 			node.name,
 			node.ty,
 			DataType::Array,
-			nullptr, node.tok);
+			std::make_unique<NodeInt>(1, node.tok),
+			node.tok);
 		node_array->parent = node_declaration->parent;
 		m_def_provider->remove_from_current_scope(node.name);
 		node_array->accept(*this);
@@ -124,7 +152,7 @@ void ASTBuildDataStructures::visit(NodeArrayRef &node) {
 }
 
 void ASTBuildDataStructures::visit(NodeNDArray& node) {
-	node.determine_locality(m_program, m_current_body, m_current_callback);
+	node.determine_locality(m_program, m_current_body);
 
 	node.sizes->accept(*this);
 	m_def_provider->set_declaration(&node, !node.is_local);
@@ -176,7 +204,7 @@ void ASTBuildDataStructures::visit(NodeUIControl &node) {
 
 
 void ASTBuildDataStructures::visit(NodeVariable &node) {
-	node.determine_locality(m_program, m_current_body, m_current_callback);
+	node.determine_locality(m_program, m_current_body);
 
 	m_def_provider->set_declaration(&node, !node.is_local);
 }
@@ -199,7 +227,7 @@ void ASTBuildDataStructures::visit(NodeVariableRef &node) {
 }
 
 void ASTBuildDataStructures::visit(NodeListStruct& node) {
-	node.determine_locality(m_program, m_current_body, m_current_callback);
+	node.determine_locality(m_program, m_current_body);
 
 	for(auto &params : node.body) {
 		params->accept(*this);
