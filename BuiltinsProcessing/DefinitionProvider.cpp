@@ -75,26 +75,37 @@ NodeDataStructure* DefinitionProvider::remove_from_current_scope(const std::stri
 
 
 NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
+	// sanitize name if array
+	std::string var_name = var->name;
+	if(var->get_node_type() == NodeType::ArrayRef) {
+		var_name = sanitize_name(var->name);
+	}
+
 	// get builtin declaration if it exists
 	NodeDataStructure *node_builtin_declaration = nullptr;
-	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
-	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var->name);
+	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var_name);
+	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var_name);
 
 	auto compile_error = CompileError(ErrorType::Variable, "",var->tok.line, "", var->name, var->tok.file);
 
 	if (node_builtin_declaration) {
 		return node_builtin_declaration;
-	} else if (auto node_declaration = get_declared_data_structure(var->name)) {
+	} else if (auto node_declaration = get_declared_data_structure(var_name)) {
 		return node_declaration;
 	}
 	return nullptr;
 }
 
 NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, bool global_scope) {
+	// sanitize name if array
+	std::string var_name = var->name;
+	if(var->get_node_type() == NodeType::Array) {
+		var_name = sanitize_name(var->name);
+	}
 	// get builtin declaration if it exists
 	NodeDataStructure *node_builtin_declaration = nullptr;
-	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
-	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var->name);
+	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var_name);
+	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var_name);
 
 	auto compile_error = CompileError(ErrorType::Variable, "",var->tok.line, "", var->name, var->tok.file);
 	// is declaration and is builtin -> compile error
@@ -106,13 +117,16 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 	// input var is declaration
 	if (get_scoped_data_structure(var->name, global_scope)) {
 		compile_error.m_message = "Data Structure has already been declared in this scope.";
+		if(var_name != var->name) {
+			compile_error.m_message += " The '_' in front of arrays is reserved for referencing 'raw' versions of <ND Arrays>.";
+		}
         if(global_scope) compile_error.m_message += " Variables declared in the <init> callback are always considered global, no local scopes are created.";
 		compile_error.print();
 	} else {
 		if(global_scope) {
-			m_declared_data_structures.at(0).insert({sanitize_name(var->name), var});
+			m_declared_data_structures.at(0).insert({var_name, var});
 		} else {
-			m_declared_data_structures.back().insert({sanitize_name(var->name), var});
+			m_declared_data_structures.back().insert({var_name, var});
 		}
 	}
 	return nullptr;
@@ -191,7 +205,7 @@ NodeArray *DefinitionProvider::get_declared_array(const std::string& arr) {
 
 NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::string& data) {
     for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
-        auto it = rit->find(sanitize_name(data));
+        auto it = rit->find(data);
         if (it != rit->end()) {
             return it->second;
         }
@@ -201,7 +215,7 @@ NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::st
 
 NodeDataStructure *DefinitionProvider::get_scoped_data_structure(const std::string& data, bool global_scope) {
     auto& map = global_scope ? m_declared_data_structures.at(0) : m_declared_data_structures.back();
-	auto it = map.find(sanitize_name(data));
+	auto it = map.find(data);
 	if (it != map.end()) {
 		return it->second;
 	}

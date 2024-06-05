@@ -21,12 +21,6 @@ public:
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-//		for(auto & function_definition : node.function_definitions) {
-//			if(!function_definition->visited) {
-//				m_passive_vars.clear();
-//				function_definition->accept(*this);
-//			}
-//		}
 
 		rename_local_vars();
 
