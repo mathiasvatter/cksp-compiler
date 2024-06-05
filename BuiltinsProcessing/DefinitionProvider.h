@@ -97,6 +97,8 @@ public:
     std::vector<std::unordered_map<std::string, NodeArray*, StringHash, StringEqual>> m_declared_arrays;
     NodeArray* get_declared_array(const std::string& arr);
 
+	std::vector<NodeDataStructure*> m_all_data_structures;
+	bool clear_all_references();
     /// declared everything
     std::vector<std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual>> m_declared_data_structures;
 	/// returns data structure declaration searching all scopes

@@ -35,10 +35,12 @@ NodeArrayRef::NodeArrayRef(const NodeArrayRef& other)
 std::unique_ptr<NodeAST> NodeArrayRef::clone() const {
 	return std::make_unique<NodeArrayRef>(*this);
 }
-void NodeArrayRef::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeArrayRef::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (index.get() == oldChild) {
 		index = std::move(newChild);
+		return index.get();
 	}
+	return nullptr;
 }
 
 ASTVisitor* NodeArrayRef::get_lowering(DefinitionProvider* def_provider) const {
