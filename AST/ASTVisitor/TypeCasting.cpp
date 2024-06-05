@@ -188,7 +188,9 @@ void TypeCasting::visit(NodeSingleAssignStatement& node) {
 void TypeCasting::visit(NodeFunctionCall& node) {
 	node.get_definition(m_program);
 	if(!node.definition) return;
+	if(node.function->name == "array.reset") {
 
+	}
 	node.function->accept(*this);
     for(int i = 0; i < node.function->args->params.size(); i++) {
         match_type(node.function->args->params[i].get(), node.definition->header->args->params[i].get());

@@ -88,7 +88,7 @@ public:
 	/// adds existing declaration to declaration map for look up. Always returns nullptr.
 	NodeDataStructure* set_declaration(NodeDataStructure* var, bool global_scope);
 	// when is variable = raw array? if variable has _ in front and is array and was declared without _
-	std::string sanitize_name(const std::string& name);
+	static std::string sanitize_name(const std::string& name);
 
 	/// declared variables
     std::vector<std::unordered_map<std::string, NodeVariable*, StringHash, StringEqual>> m_declared_variables;
