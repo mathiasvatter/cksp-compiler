@@ -63,10 +63,12 @@ bool DefinitionProvider::refresh_scopes() {
     return true;
 }
 
-bool DefinitionProvider::clear_all_references() {
+bool DefinitionProvider::clear_all_reference_sets() {
 	for(auto& var : m_all_data_structures) {
 		var->references.clear();
 	}
+	m_all_data_structures.clear();
+	m_all_references.clear();
 	return true;
 }
 
@@ -99,6 +101,7 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 	if (node_builtin_declaration) {
 		return node_builtin_declaration;
 	} else if (auto node_declaration = get_declared_data_structure(var_name)) {
+		m_all_references.push_back(var);
 		// add reference to declaration vector
 		node_declaration->references.insert(var);
 		return node_declaration;

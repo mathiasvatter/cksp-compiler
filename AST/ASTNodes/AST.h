@@ -115,6 +115,8 @@ struct NodeDataStructure : NodeAST {
 	bool is_function_param();
 	/// tries to infer the type by specializing given type from Number to Integer
 	virtual Type* cast_type();
+	/// returns fitting reference node type for the data structures
+	virtual NodeType get_ref_node_type() {return NodeType::DeadCode;}
 };
 
 struct NodeInt : NodeAST {

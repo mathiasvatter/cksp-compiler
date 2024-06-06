@@ -9,7 +9,7 @@
 
 class ASTVariableChecking : public ASTVisitor {
 public:
-	explicit ASTVariableChecking(DefinitionProvider* definition_provider);
+	explicit ASTVariableChecking(DefinitionProvider* definition_provider, bool fail=false);
 
 	void visit(NodeProgram& node) override;
 	/// check if on init callback currently
@@ -28,11 +28,18 @@ public:
 	void visit(NodeVariable& node) override;
     /// get declaration
     void visit(NodeVariableRef& node) override;
+	void visit(NodeNDArray& node) override;
+	void visit(NodeNDArrayRef& node) override;
+	void visit(NodeListStruct& node) override;
+	void visit(NodeListStructRef& node) override;
 	/// handle get_ui_id specific checks. Replace variable parameter when in get_ui_id and not ui_control
 	void visit(NodeFunctionCall& node) override;
     void visit(NodeFunctionDefinition& node) override;
 
 private:
+	// boolean to continue after not finding declaration or fail
+	bool fail = false;
+
 	NodeProgram* m_program = nullptr;
     NodeBody* m_current_body = nullptr;
 	DefinitionProvider* m_def_provider = nullptr;

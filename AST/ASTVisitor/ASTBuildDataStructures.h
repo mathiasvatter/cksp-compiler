@@ -64,6 +64,10 @@ private:
 	/// updates the node types of parameters at call sites regarding the function definition
 	/// e.g. args can be incorrectly detected as variable refs at call sites, but they are arrays in the definition
 	static void update_func_call_node_types(NodeFunctionCall* func_call);
+	/// updates incorrectly detected function params (eg arrays detected as variables)
+	void replace_incorrectly_detected_data_struct(NodeDataStructure* data_struct);
+	void replace_incorrectly_detected_reference(NodeReference* reference);
+
 
 	/// Returns Function Definition from parameter
 	inline NodeFunctionDefinition* get_function_definition_from_param(NodeDataStructure* param) {
