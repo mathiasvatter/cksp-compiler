@@ -122,6 +122,7 @@ protected:
 	std::vector<std::unique_ptr<NodeCallback>> m_callbacks;
 	int m_init_callback_idx = -1;
     std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_function_definitions;
+	std::vector<NodeDataStructure*> m_all_data_structures;
     void mark_function_as_used(const std::string& func_name, int num_args);
 
 	Result<SuccessTag> consume_linebreak(const std::string& construct);

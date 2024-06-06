@@ -188,14 +188,11 @@ void TypeCasting::visit(NodeSingleAssignStatement& node) {
 void TypeCasting::visit(NodeFunctionCall& node) {
 	node.get_definition(m_program);
 	if(!node.definition) return;
-	if(node.function->name == "array.reset") {
-
-	}
 	node.function->accept(*this);
     for(int i = 0; i < node.function->args->params.size(); i++) {
         match_type(node.function->args->params[i].get(), node.definition->header->args->params[i].get());
     }
-    node.function->accept(*this);
+//    node.function->accept(*this);
 
     node.ty = node.definition->ty;
 }
@@ -211,8 +208,8 @@ void TypeCasting::visit(NodeBinaryExpr& node) {
 	// do not infer type if together in string
 	if(contains(STRING_TOKENS, node.op)) {
 		node.ty = TypeRegistry::String;
-		is_compatible = node.ty->is_compatible(node.left->ty) and node.ty->is_compatible(node.right->ty);
-        if(is_compatible) return;
+//		is_compatible = node.ty->is_compatible(node.left->ty) and node.ty->is_compatible(node.right->ty);
+//        if(is_compatible) return;
 		return;
 	}
 

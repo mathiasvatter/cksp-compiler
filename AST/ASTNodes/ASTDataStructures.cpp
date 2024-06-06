@@ -29,6 +29,18 @@ std::unique_ptr<NodeReference> NodeVariable::to_reference() {
 	return ref;
 }
 
+std::unique_ptr<class NodeArray> NodeVariable::to_array() {
+	return std::make_unique<NodeArray>(persistence, name, ty, DataType::Array, std::make_unique<NodeInt>(1, tok), tok);
+}
+
+std::unique_ptr<class NodeNDArray> NodeVariable::to_ndarray() {
+	return std::make_unique<NodeNDArray>(persistence, name, ty, DataType::NDArray, nullptr, tok);
+}
+
+std::unique_ptr<class NodeListStruct> NodeVariable::to_list() {
+	return std::make_unique<NodeListStruct>(tok);
+}
+
 // ************* NodeArray ***************
 void NodeArray::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);

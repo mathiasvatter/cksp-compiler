@@ -24,7 +24,7 @@ void Compiler::compile() {
 
 	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
-//	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -115,7 +115,7 @@ void Compiler::compile() {
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
 
-	ASTVariableChecking variable_checking1(&m_definition_provider);
+	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
 
 	compile_time.stop("Lowering");
@@ -139,7 +139,7 @@ void Compiler::compile() {
     compile_time.stop("Function Inlining");
 	compile_time.start("Variable Checking");
 
-	ASTVariableChecking variable_checking2(&m_definition_provider);
+	ASTVariableChecking variable_checking2(&m_definition_provider, true);
     ast->accept(variable_checking2);
 
 	compile_time.stop("Variable Checking");

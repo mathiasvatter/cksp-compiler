@@ -28,9 +28,6 @@ public:
 	void visit(NodeCallback& node) override;
 
 	void visit(NodeBody& node) override;
-	void visit(NodeUIControl& node) override;
-
-    void visit(NodeSingleDeclareStatement& node) override;
 
 	void visit(NodeArray& node) override;
     void visit(NodeArrayRef& node) override;
@@ -52,7 +49,6 @@ public:
 
 private:
     NodeProgram* m_program = nullptr;
-    NodeBody* m_current_body = nullptr;
 	DefinitionProvider* m_def_provider = nullptr;
 
 	/// Checks for existence and uniqueness of "on init" callback
@@ -63,21 +59,11 @@ private:
 
 	/// updates the node types of parameters at call sites regarding the function definition
 	/// e.g. args can be incorrectly detected as variable refs at call sites, but they are arrays in the definition
-	static void update_func_call_node_types(NodeFunctionCall* func_call);
+	void update_func_call_node_types(NodeFunctionCall* func_call);
 	/// updates incorrectly detected function params (eg arrays detected as variables)
 	void replace_incorrectly_detected_data_struct(NodeDataStructure* data_struct);
+	/// updated incorrectly detected references of function params
 	void replace_incorrectly_detected_reference(NodeReference* reference);
 
-
-	/// Returns Function Definition from parameter
-	inline NodeFunctionDefinition* get_function_definition_from_param(NodeDataStructure* param) {
-		if(!param->is_function_param()) return nullptr;
-		if(param->parent->get_node_type() != NodeType::ParamList) return nullptr;
-		if(param->parent->parent->get_node_type() != NodeType::FunctionHeader) return nullptr;
-		if(param->parent->parent->parent->get_node_type() == NodeType::FunctionDefinition) {
-			return static_cast<NodeFunctionDefinition*>(param->parent->parent->parent);
-		}
-		return nullptr;
-	}
 };
 

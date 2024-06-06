@@ -55,6 +55,10 @@ bool DefinitionProvider::refresh_scopes() {
     m_declared_arrays.clear();
     m_declared_controls.clear();
     m_declared_data_structures.clear();
+
+	m_all_references.clear();
+	m_all_data_structures.clear();
+	m_references_per_data_structure.clear();
     // add global scope
     add_scope();
     for(auto& var : external_variables) {
@@ -63,14 +67,14 @@ bool DefinitionProvider::refresh_scopes() {
     return true;
 }
 
-bool DefinitionProvider::clear_all_reference_sets() {
-	for(auto& var : m_all_data_structures) {
-		var->references.clear();
-	}
-	m_all_data_structures.clear();
-	m_all_references.clear();
-	return true;
-}
+//bool DefinitionProvider::clear_all_reference_sets() {
+//	for(auto& var : m_all_data_structures) {
+//		var->references.clear();
+//	}
+//	m_all_data_structures.clear();
+//	m_all_references.clear();
+//	return true;
+//}
 
 
 NodeDataStructure* DefinitionProvider::remove_from_current_scope(const std::string& name) {
@@ -85,40 +89,34 @@ NodeDataStructure* DefinitionProvider::remove_from_current_scope(const std::stri
 
 
 NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
-	// sanitize name if array
-	std::string var_name = var->name;
-	if(var->get_node_type() == NodeType::ArrayRef) {
-		var_name = sanitize_name(var->name);
-	}
-
 	// get builtin declaration if it exists
 	NodeDataStructure *node_builtin_declaration = nullptr;
-	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var_name);
-	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var_name);
+	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
+	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var->name);
 
 	auto compile_error = CompileError(ErrorType::Variable, "",var->tok.line, "", var->name, var->tok.file);
-
 	if (node_builtin_declaration) {
 		return node_builtin_declaration;
-	} else if (auto node_declaration = get_declared_data_structure(var_name)) {
+	}
+
+	// sanitize name if array
+	std::string sanitized = sanitize_name(var->name);
+	// try not sanitized name first
+	auto node_declaration = get_declared_data_structure(var->name);
+	if(!node_declaration) node_declaration = get_declared_data_structure(sanitized);
+	if (node_declaration) {
 		m_all_references.push_back(var);
-		// add reference to declaration vector
-		node_declaration->references.insert(var);
+		m_references_per_data_structure[node_declaration].insert(var);
 		return node_declaration;
 	}
 	return nullptr;
 }
 
 NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, bool global_scope) {
-	// sanitize name if array
-	std::string var_name = var->name;
-	if(var->get_node_type() == NodeType::Array) {
-		var_name = sanitize_name(var->name);
-	}
 	// get builtin declaration if it exists
 	NodeDataStructure *node_builtin_declaration = nullptr;
-	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var_name);
-	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var_name);
+	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
+	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var->name);
 
 	auto compile_error = CompileError(ErrorType::Variable, "",var->tok.line, "", var->name, var->tok.file);
 	// is declaration and is builtin -> compile error
@@ -130,17 +128,14 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 	// input var is declaration
 	if (get_scoped_data_structure(var->name, global_scope)) {
 		compile_error.m_message = "Data Structure has already been declared in this scope.";
-		if(var_name != var->name) {
-			compile_error.m_message += " The '_' in front of arrays is reserved for referencing 'raw' versions of <ND Arrays>.";
-		}
         if(global_scope) compile_error.m_message += " Variables declared in the <init> callback are always considered global, no local scopes are created.";
 		compile_error.print();
 	} else {
 		m_all_data_structures.push_back(var);
 		if(global_scope) {
-			m_declared_data_structures.at(0).insert({var_name, var});
+			m_declared_data_structures.at(0).insert({var->name, var});
 		} else {
-			m_declared_data_structures.back().insert({var_name, var});
+			m_declared_data_structures.back().insert({var->name, var});
 		}
 	}
 	return nullptr;
