@@ -97,6 +97,17 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_functions(const std::string 
     return Result<SuccessTag>(SuccessTag{});
 }
 
+void BuiltinsProcessor::apply_annotation_information(NodeDataStructure* node) {
+	if(node->ty->get_type_kind() == TypeKind::Composite and node->get_node_type() == NodeType::Variable) {
+		auto node_var = static_cast<NodeVariable*>(node);
+		auto comp_type = static_cast<CompositeType*>(node->ty);
+		if(comp_type->get_compound_type() == CompoundKind::Array) {
+			auto node_array = static_cast<NodeVariable*>(node)->to_array();
+			node_var->replace_with(std::move(node_array));
+		}
+	}
+}
+
 Result<SuccessTag> BuiltinsProcessor::parse_builtin_widgets(const std::string &file) {
     std::string data(reinterpret_cast<char*>(engine_widgets), engine_widgets_len);
 	Tokenizer tokenizer(data, file);
@@ -192,6 +203,9 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
            "Failed loading builtins. Found unknown <function_header> syntax.", peek(m_tokens).line, ")", peek(m_tokens).val, peek(m_tokens).file));
         }
     }
+	for(auto & arg : func_args->params) {
+		apply_annotation_information(static_cast<NodeDataStructure*>(arg.get()));
+	}
 
 	Type* ret_type = TypeRegistry::Void;
     ASTType return_type = ASTType::Void;
@@ -308,8 +322,6 @@ DataType BuiltinsProcessor::get_var_type_annotation(const std::string& keyword) 
 }
 
 Result<std::unique_ptr<NodeParamList>> BuiltinsProcessor::parse_builtin_args_list() {
-//    std::vector<ASTType> arg_types;
-//    std::vector<DataType> arg_var_types;
 	std::vector<Type*> types;
     auto func_args = std::make_unique<NodeParamList>(peek(m_tokens));
     while(peek(m_tokens).type != token::CLOSED_PARENTH) {
@@ -324,27 +336,12 @@ Result<std::unique_ptr<NodeParamList>> BuiltinsProcessor::parse_builtin_args_lis
             arg->parent = func_args.get();
 			types.push_back(arg->ty);
             func_args->params.push_back(std::move(arg));
-//            arg_var_types.push_back(get_var_type_annotation(tok.val));
-//            if(peek(m_tokens).type == token::TYPE) {
-//                consume(m_tokens); // consume semicolon
-//                if(peek(m_tokens).type != token::KEYWORD) {
-//                    return Result<std::unique_ptr<NodeParamList>>(CompileError(ErrorType::PreprocessorError,
-//                      "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
-//                }
-//                tok = consume(m_tokens);
-//            }
-//			auto ty = parse_type_annotation();
-//			if(ty.is_error()) {
-//				return Result<std::unique_ptr<NodeParamList>>(ty.get_error());
-//			}
-//            arg_types.push_back(get_type_annotation(tok));
         } else {
             return Result<std::unique_ptr<NodeParamList>>(CompileError(ErrorType::PreprocessorError,
                                                                                                "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
         }
         if(peek(m_tokens).type == token::COMMA) consume(m_tokens); // consume comma
     }
-//    auto result_pair = std::tuple(types, arg_types, arg_var_types);
     return Result<std::unique_ptr<NodeParamList>>(std::move(func_args));
 }
 

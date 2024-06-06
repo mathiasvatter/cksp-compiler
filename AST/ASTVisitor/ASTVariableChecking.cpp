@@ -13,6 +13,7 @@ void ASTVariableChecking::visit(NodeProgram& node) {
     node.update_function_lookup();
 	// erase all previously saved scopes
 	m_def_provider->refresh_scopes();
+
 	for(auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
@@ -21,7 +22,6 @@ void ASTVariableChecking::visit(NodeProgram& node) {
 		// reset visited flag
 		func_def->visited = false;
 	}
-	m_def_provider->clear_all_reference_sets();
 }
 
 void ASTVariableChecking::visit(NodeCallback& node) {
@@ -45,6 +45,9 @@ void ASTVariableChecking::visit(NodeUIControl& node) {
 
 	node.control_var->accept(*this);
 	node.params->accept(*this);
+
+	// if fail is set to false, return early. the rest is determined after lowering
+	if(!fail) return;
 
 	auto node_type = node.control_var->get_node_type();
 	auto engine_widget_type = engine_widget->control_var->get_node_type();
@@ -151,19 +154,11 @@ void ASTVariableChecking::visit(NodeNDArray& node) {
 void ASTVariableChecking::visit(NodeNDArrayRef& node) {
 	node.indexes->accept(*this);
 	auto node_declaration = m_def_provider->get_declaration(&node);
-	if(!node_declaration and !fail) return;
 	if(!node_declaration) {
 		CompileError(ErrorType::Variable, "Multidimensional array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return;
 	}
 	node.match_data_structure(node_declaration);
-
-	if(auto node_array = cast_node<NodeNDArray>(node_declaration)) {
-		node.sizes = clone_as<NodeParamList>(node_array->sizes.get());
-		node.sizes->update_parents(&node);
-	} else {
-		CompileError(ErrorType::Variable, "Incorrectly recognized as <ndarray>: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
-	}
 }
 
 void ASTVariableChecking::visit(NodeVariable& node) {
@@ -174,7 +169,8 @@ void ASTVariableChecking::visit(NodeVariable& node) {
 		node.is_used = true;
 		return;
 	}
-	m_def_provider->set_declaration(&node, !node.is_local);
+	auto new_node = apply_type_annotations(&node);
+	m_def_provider->set_declaration(new_node, !node.is_local);
 }
 
 void ASTVariableChecking::visit(NodeVariableRef& node) {
@@ -207,6 +203,20 @@ void ASTVariableChecking::visit(NodeListStructRef& node) {
 		CompileError(ErrorType::Variable, "List has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return;
 	}
+}
+
+NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure* node) {
+	if(node->ty == TypeRegistry::Unknown) return node;
+	if(node->ty->get_type_kind() == TypeKind::Composite and node->get_node_type() == NodeType::Variable) {
+		auto node_var = static_cast<NodeVariable*>(node);
+		auto comp_type = static_cast<CompositeType*>(node->ty);
+		if(comp_type->get_compound_type() == CompoundKind::Array) {
+			auto node_array = static_cast<NodeVariable*>(node)->to_array();
+			node_array->is_local = node->is_local;
+			return static_cast<NodeDataStructure*>(node_var->replace_with(std::move(node_array)));
+		}
+	}
+	return node;
 }
 
 

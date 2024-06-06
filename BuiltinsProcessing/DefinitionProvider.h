@@ -105,8 +105,20 @@ public:
 	const std::vector<NodeDataStructure *> &get_all_data_structures() const {
 		return m_all_data_structures;
 	}
+	std::unordered_map<NodeDataStructure*, std::set<NodeReference*>> m_references_per_data_structure;
+	const std::set<NodeReference*> &get_references(NodeDataStructure* data_struct) {
+		return m_references_per_data_structure[data_struct];
+	}
+	bool set_references(NodeDataStructure* data_struct, std::set<NodeReference*> references) {
+		m_references_per_data_structure[data_struct] = references;
+		return true;
+	}
+	bool add_reference(NodeDataStructure* data_struct, NodeReference* reference) {
+		m_references_per_data_structure[data_struct].insert(reference);
+		return true;
+	}
 	/// clears all reference sets in all data structures
-	bool clear_all_reference_sets();
+//	bool clear_all_reference_sets();
     /// declared everything
     std::vector<std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual>> m_declared_data_structures;
 	/// returns data structure declaration searching all scopes

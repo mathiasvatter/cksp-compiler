@@ -39,6 +39,8 @@ private:
 
 	std::set<std::string> m_thread_unsafe_functions = {"wait", "wait_ticks", "wait_async"};
 
+	void apply_annotation_information(NodeDataStructure* node);
+
     static ASTType get_identifier_type(char identifier);
     static ASTType get_type_annotation(const Token& tok);
     static DataType get_var_type_annotation(const std::string& keyword);

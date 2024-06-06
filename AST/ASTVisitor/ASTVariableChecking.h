@@ -44,4 +44,7 @@ private:
     NodeBody* m_current_body = nullptr;
 	DefinitionProvider* m_def_provider = nullptr;
 
+	/// apply type annotations given before parse time and replace node types accordingly
+	/// returns the new datastructure pointer if replaced, or the old one if not
+	NodeDataStructure* apply_type_annotations(NodeDataStructure* node);
 };

@@ -22,6 +22,9 @@ struct NodeVariable: NodeDataStructure {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::VariableRef;}
+	std::unique_ptr<class NodeArray> to_array();
+	std::unique_ptr<class NodeNDArray> to_ndarray();
+	std::unique_ptr<class NodeListStruct> to_list();
 };
 
 struct NodeArray : NodeDataStructure {
