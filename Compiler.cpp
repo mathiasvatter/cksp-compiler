@@ -24,7 +24,7 @@ void Compiler::compile() {
 
 	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
-	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -97,6 +97,9 @@ void Compiler::compile() {
 	compile_time.stop("Desugaring");
 	compile_time.start("Build Data Structures");
 
+	ASTVariableChecking variable_checking0(&m_definition_provider, false);
+	ast->accept(variable_checking0);
+
 	ASTBuildDataStructures data_structures(&m_definition_provider);
 	ast->accept(data_structures);
 
@@ -136,8 +139,8 @@ void Compiler::compile() {
     compile_time.stop("Function Inlining");
 	compile_time.start("Variable Checking");
 
-	ASTVariableChecking variable_checking(&m_definition_provider);
-    ast->accept(variable_checking);
+	ASTVariableChecking variable_checking2(&m_definition_provider);
+    ast->accept(variable_checking2);
 
 	compile_time.stop("Variable Checking");
 	compile_time.start("Optimization");

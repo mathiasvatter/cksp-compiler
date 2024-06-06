@@ -4,7 +4,8 @@
 
 #include "ASTVariableChecking.h"
 
-ASTVariableChecking::ASTVariableChecking(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {}
+ASTVariableChecking::ASTVariableChecking(DefinitionProvider* definition_provider, bool fail)
+	: m_def_provider(definition_provider), fail(fail) {}
 
 void ASTVariableChecking::visit(NodeProgram& node) {
 	m_program = &node;
@@ -15,9 +16,12 @@ void ASTVariableChecking::visit(NodeProgram& node) {
 	for(auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
-//	for(auto & function_definition : node.function_definitions) {
-//		function_definition->accept(*this);
-//	}
+	for(auto & func_def : node.function_definitions) {
+		if(!func_def->visited) func_def->accept(*this);
+		// reset visited flag
+		func_def->visited = false;
+	}
+	m_def_provider->clear_all_reference_sets();
 }
 
 void ASTVariableChecking::visit(NodeCallback& node) {
@@ -68,11 +72,50 @@ void ASTVariableChecking::visit(NodeUIControl& node) {
 
 void ASTVariableChecking::visit(NodeBody &node) {
     m_current_body = &node;
+	if(node.parent->get_node_type() != NodeType::Statement and !is_instance_of<NodeDataStructure>(node.parent)) {
+		node.scope = true;
+	}
+
 	if(node.scope) m_def_provider->add_scope();
+	// if body is in function definition, copy over last scope of header variables
+	if(node.parent->get_node_type() == NodeType::FunctionDefinition) {
+		m_def_provider->copy_last_scope();
+	}
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
 	}
 	if(node.scope) m_def_provider->remove_scope();
+}
+
+void ASTVariableChecking::visit(NodeFunctionDefinition &node) {
+	node.visited = true;
+	m_program->function_call_stack.push(&node);
+	m_def_provider->add_scope();
+	node.header ->accept(*this);
+	if (node.return_variable.has_value())
+		node.return_variable.value()->accept(*this);
+	node.body->accept(*this);
+	m_def_provider->remove_scope();
+	m_program->function_call_stack.pop();
+}
+
+void ASTVariableChecking::visit(NodeFunctionCall &node) {
+	node.function->accept(*this);
+
+	node.get_definition(m_program);
+
+	if(node.kind == NodeFunctionCall::UserDefined and node.definition) {
+		if(!node.definition->visited) node.definition->accept(*this);
+	}
+
+//	// replace node variable when in get_ui_id and not ui_control
+//	if(node.function->is_builtin and !node.function->args->params.empty() and node.function->name == "get_ui_id") {
+//		if(auto node_variable = cast_node<NodeVariableRef>(node.function->args->params[0].get())) {
+//			if(node_variable->data_type != DataType::UI_Control) {
+//				node.replace_with(std::move(node.function->args->params[0]));
+//			}
+//		}
+//	}
 }
 
 void ASTVariableChecking::visit(NodeSingleDeclareStatement& node) {
@@ -82,21 +125,56 @@ void ASTVariableChecking::visit(NodeSingleDeclareStatement& node) {
     if(node.assignee) node.assignee->accept(*this);
 }
 
+void ASTVariableChecking::visit(NodeArray& node) {
+	node.determine_locality(m_program, m_current_body);
+	if(node.size) node.size->accept(*this);
+	m_def_provider->set_declaration(&node, !node.is_local);
+}
+
 void ASTVariableChecking::visit(NodeArrayRef& node) {
 	if(node.index) node.index->accept(*this);
 
 	auto node_declaration = m_def_provider->get_declaration(&node);
+	// maybe declaration comes after lowering, do not throw error
+	if(!node_declaration and !fail) return;
 	if(!node_declaration) m_def_provider->throw_declaration_error(&node).exit();
 
     node.match_data_structure(node_declaration);
 }
 
-void ASTVariableChecking::visit(NodeArray& node) {
+void ASTVariableChecking::visit(NodeNDArray& node) {
+	node.determine_locality(m_program, m_current_body);
+	node.sizes->accept(*this);
+	m_def_provider->set_declaration(&node, !node.is_local);
+}
+
+void ASTVariableChecking::visit(NodeNDArrayRef& node) {
+	node.indexes->accept(*this);
+	auto node_declaration = m_def_provider->get_declaration(&node);
+	if(!node_declaration and !fail) return;
+	if(!node_declaration) {
+		CompileError(ErrorType::Variable, "Multidimensional array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+		return;
+	}
+	node.match_data_structure(node_declaration);
+
+	if(auto node_array = cast_node<NodeNDArray>(node_declaration)) {
+		node.sizes = clone_as<NodeParamList>(node_array->sizes.get());
+		node.sizes->update_parents(&node);
+	} else {
+		CompileError(ErrorType::Variable, "Incorrectly recognized as <ndarray>: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+	}
+}
+
+void ASTVariableChecking::visit(NodeVariable& node) {
 	node.determine_locality(m_program, m_current_body);
 
-	if(node.size) node.size->accept(*this);
-
-    m_def_provider->set_declaration(&node, !node.is_local);
+	// handle return_vars -> do not check if they have been declared
+	if(node.is_compiler_return) {
+		node.is_used = true;
+		return;
+	}
+	m_def_provider->set_declaration(&node, !node.is_local);
 }
 
 void ASTVariableChecking::visit(NodeVariableRef& node) {
@@ -106,54 +184,30 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 	}
 
 	auto node_declaration = m_def_provider->get_declaration(&node);
+	if(!node_declaration and !fail) return;
 	if(!node_declaration) m_def_provider -> throw_declaration_error(&node).exit();
 
     node.match_data_structure(node_declaration);
+}
 
-	// replace variable with array if incorrectly recognized by parser
-	if(node_declaration->get_node_type() == NodeType::Array) {
-		auto node_array = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
-		node_array->accept(*this);
-		node.replace_with(std::move(node_array));
+void ASTVariableChecking::visit(NodeListStruct& node) {
+	node.determine_locality(m_program, m_current_body);
+	for(auto &params : node.body) {
+		params->accept(*this);
+	}
+	m_def_provider->set_declaration(&node, !node.is_local);
+}
+
+void ASTVariableChecking::visit(NodeListStructRef& node) {
+	node.indexes->accept(*this);
+
+	auto node_declaration = m_def_provider->get_declaration(&node);
+	if(!node_declaration and !fail) return;
+	if(!node_declaration) {
+		CompileError(ErrorType::Variable, "List has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return;
 	}
 }
 
-void ASTVariableChecking::visit(NodeVariable& node) {
-	node.determine_locality(m_program, m_current_body);
-
-    // handle return_vars -> do not check if they have been declared
-//    if(node.is_compiler_return) {
-//        node.is_used = true;
-//        return;
-//    }
-    m_def_provider->set_declaration(&node, !node.is_local);
-}
-
-void ASTVariableChecking::visit(NodeFunctionCall &node) {
-	node.function->accept(*this);
-
-    node.get_definition(m_program);
-
-    // replace node variable when in get_ui_id and not ui_control
-    if(node.function->is_builtin and !node.function->args->params.empty() and node.function->name == "get_ui_id") {
-        if(auto node_variable = cast_node<NodeVariableRef>(node.function->args->params[0].get())) {
-            if(node_variable->data_type != DataType::UI_Control) {
-                node.replace_with(std::move(node.function->args->params[0]));
-            }
-        }
-    }
-}
-
-void ASTVariableChecking::visit(NodeFunctionDefinition &node) {
-	m_program->function_call_stack.push(&node);
-    m_def_provider->add_scope();
-    node.header ->accept(*this);
-    if (node.return_variable.has_value())
-        node.return_variable.value()->accept(*this);
-    node.body->accept(*this);
-    m_def_provider->remove_scope();
-	m_program->function_call_stack.pop();
-}
 
 

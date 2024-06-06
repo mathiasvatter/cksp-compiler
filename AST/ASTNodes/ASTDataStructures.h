@@ -21,6 +21,7 @@ struct NodeVariable: NodeDataStructure {
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::unique_ptr<NodeReference> to_reference() override;
+	NodeType get_ref_node_type() override {return NodeType::VariableRef;}
 };
 
 struct NodeArray : NodeDataStructure {
@@ -59,6 +60,7 @@ struct NodeArray : NodeDataStructure {
 	}
 	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
     std::unique_ptr<NodeReference> to_reference() override;
+	NodeType get_ref_node_type() override {return NodeType::ArrayRef;}
 };
 
 struct NodeNDArray : NodeDataStructure {
@@ -93,6 +95,7 @@ struct NodeNDArray : NodeDataStructure {
 	}
 	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
     std::unique_ptr<NodeReference> to_reference() override;
+	NodeType get_ref_node_type() override {return NodeType::NDArrayRef;}
 };
 
 struct NodeUIControl : NodeDataStructure {
@@ -137,7 +140,6 @@ struct NodeUIControl : NodeDataStructure {
 		ty = control_var->ty;
 		return ty;
 	}
-
 };
 
 struct NodeListStruct : NodeDataStructure {
@@ -171,7 +173,7 @@ struct NodeListStruct : NodeDataStructure {
 		}
 	}
 	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
-
+	NodeType get_ref_node_type() override {return NodeType::ListStructRef;}
 };
 
 struct NodeConstStatement : NodeDataStructure {

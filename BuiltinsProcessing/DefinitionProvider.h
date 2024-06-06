@@ -97,8 +97,16 @@ public:
     std::vector<std::unordered_map<std::string, NodeArray*, StringHash, StringEqual>> m_declared_arrays;
     NodeArray* get_declared_array(const std::string& arr);
 
+	std::vector<NodeReference*> m_all_references;
+	const std::vector<NodeReference *> &get_all_references() const {
+		return m_all_references;
+	}
 	std::vector<NodeDataStructure*> m_all_data_structures;
-	bool clear_all_references();
+	const std::vector<NodeDataStructure *> &get_all_data_structures() const {
+		return m_all_data_structures;
+	}
+	/// clears all reference sets in all data structures
+	bool clear_all_reference_sets();
     /// declared everything
     std::vector<std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual>> m_declared_data_structures;
 	/// returns data structure declaration searching all scopes
