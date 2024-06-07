@@ -14,8 +14,10 @@ void ASTVariableChecking::visit(NodeProgram& node) {
 	// erase all previously saved scopes
 	m_def_provider->refresh_scopes();
 
+	// most func defs will be visited when called, keeping local scopes in mind
+	m_program->init_callback->accept(*this);
 	for(auto & callback : node.callbacks) {
-		callback->accept(*this);
+		if(callback.get() != m_program->init_callback) callback->accept(*this);
 	}
 	for(auto & func_def : node.function_definitions) {
 		if(!func_def->visited) func_def->accept(*this);
@@ -129,9 +131,12 @@ void ASTVariableChecking::visit(NodeSingleDeclareStatement& node) {
 }
 
 void ASTVariableChecking::visit(NodeArray& node) {
+	check_annotation_with_expected(&node, TypeRegistry::ArrayOfUnknown);
+
 	node.determine_locality(m_program, m_current_body);
 	if(node.size) node.size->accept(*this);
-	m_def_provider->set_declaration(&node, !node.is_local);
+	auto new_node = apply_type_annotations(&node);
+	m_def_provider->set_declaration(new_node, !new_node->is_local);
 }
 
 void ASTVariableChecking::visit(NodeArrayRef& node) {
@@ -140,15 +145,17 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	// maybe declaration comes after lowering, do not throw error
 	if(!node_declaration and !fail) return;
-	if(!node_declaration) m_def_provider->throw_declaration_error(&node).exit();
+	if(!node_declaration) DefinitionProvider::throw_declaration_error(&node).exit();
 
     node.match_data_structure(node_declaration);
 }
 
 void ASTVariableChecking::visit(NodeNDArray& node) {
+	check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions).get());
 	node.determine_locality(m_program, m_current_body);
 	node.sizes->accept(*this);
-	m_def_provider->set_declaration(&node, !node.is_local);
+	auto new_node = apply_type_annotations(&node);
+	m_def_provider->set_declaration(new_node, !new_node->is_local);
 }
 
 void ASTVariableChecking::visit(NodeNDArrayRef& node) {
@@ -162,6 +169,7 @@ void ASTVariableChecking::visit(NodeNDArrayRef& node) {
 }
 
 void ASTVariableChecking::visit(NodeVariable& node) {
+	check_annotation_with_expected(&node, TypeRegistry::Unknown);
 	node.determine_locality(m_program, m_current_body);
 
 	// handle return_vars -> do not check if they have been declared
@@ -170,7 +178,7 @@ void ASTVariableChecking::visit(NodeVariable& node) {
 		return;
 	}
 	auto new_node = apply_type_annotations(&node);
-	m_def_provider->set_declaration(new_node, !node.is_local);
+	m_def_provider->set_declaration(new_node, !new_node->is_local);
 }
 
 void ASTVariableChecking::visit(NodeVariableRef& node) {
@@ -181,22 +189,24 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration and !fail) return;
-	if(!node_declaration) m_def_provider -> throw_declaration_error(&node).exit();
+	if(!node_declaration)
+		DefinitionProvider::throw_declaration_error(&node).exit();
 
     node.match_data_structure(node_declaration);
 }
 
 void ASTVariableChecking::visit(NodeListStruct& node) {
+	check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::List, TypeRegistry::Unknown, 1).get());
 	node.determine_locality(m_program, m_current_body);
 	for(auto &params : node.body) {
 		params->accept(*this);
 	}
-	m_def_provider->set_declaration(&node, !node.is_local);
+	auto new_node = apply_type_annotations(&node);
+	m_def_provider->set_declaration(new_node, !new_node->is_local);
 }
 
 void ASTVariableChecking::visit(NodeListStructRef& node) {
 	node.indexes->accept(*this);
-
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration and !fail) return;
 	if(!node_declaration) {
@@ -205,15 +215,44 @@ void ASTVariableChecking::visit(NodeListStructRef& node) {
 	}
 }
 
+void ASTVariableChecking::visit(NodeConstStatement& node) {
+//	for(auto & constants : node.constants->statements) {
+//		if(constants->statement->get_node_type() == NodeType::SingleDeclareStatement) {
+//			auto decl = static_cast<NodeSingleDeclareStatement*>(constants->statement.get());
+//			decl->to_be_declared
+//
+//		}
+//	}
+}
+
 NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure* node) {
 	if(node->ty == TypeRegistry::Unknown) return node;
-	if(node->ty->get_type_kind() == TypeKind::Composite and node->get_node_type() == NodeType::Variable) {
-		auto node_var = static_cast<NodeVariable*>(node);
+	if(node->ty->get_type_kind() == TypeKind::Composite) {
+		auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
+		error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
+		error.m_got = node->ty->to_string();
 		auto comp_type = static_cast<CompositeType*>(node->ty);
-		if(comp_type->get_compound_type() == CompoundKind::Array) {
-			auto node_array = static_cast<NodeVariable*>(node)->to_array();
+		// if var is annotated as array, replace with array
+		if(comp_type->get_compound_type() == CompoundKind::Array and node->get_node_type() != NodeType::Array and comp_type->get_dimensions() == 1) {
+			auto node_array = node->to_array();
+			if(!node_array) error.exit();
 			node_array->is_local = node->is_local;
-			return static_cast<NodeDataStructure*>(node_var->replace_with(std::move(node_array)));
+			return static_cast<NodeDataStructure*>(node->replace_with(std::move(node_array)));
+		} else if(comp_type->get_compound_type() == CompoundKind::Array and node->get_node_type() != NodeType::NDArray and comp_type->get_dimensions() > 1) {
+			auto node_ndarray = node->to_ndarray();
+			if(!node_ndarray) error.exit();
+			node_ndarray->is_local = node->is_local;
+			return static_cast<NodeDataStructure*>(node->replace_with(std::move(node_ndarray)));
+		}
+	} else if (node->ty->get_type_kind() == TypeKind::Basic) {
+		auto syntax_error = CompileError(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
+		// if var is annotated as variable but recognized as array by parser -> throw error
+		if(node->get_node_type() != NodeType::Variable) {
+			syntax_error.m_message += " Variable was annotated as <Variable> but recognized as <Array>: "+node->name+".";
+			syntax_error.m_expected = "<Variable> Syntax";
+			syntax_error.m_got = "<Array> Syntax";
+			syntax_error.exit();
+			return nullptr;
 		}
 	}
 	return node;

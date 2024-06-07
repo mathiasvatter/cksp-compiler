@@ -36,6 +36,8 @@ public:
 	void visit(NodeFunctionCall& node) override;
     void visit(NodeFunctionDefinition& node) override;
 
+	void visit(NodeConstStatement& node) override;
+
 private:
 	// boolean to continue after not finding declaration or fail
 	bool fail = false;
@@ -47,4 +49,19 @@ private:
 	/// apply type annotations given before parse time and replace node types accordingly
 	/// returns the new datastructure pointer if replaced, or the old one if not
 	NodeDataStructure* apply_type_annotations(NodeDataStructure* node);
+
+	/// check if data structure annotations fit with the detected node type if not in func arguments
+	static inline Type* check_annotation_with_expected(NodeDataStructure* node, Type* expected) {
+		// skip function parameters
+		if(node->is_function_param()) return node->ty;
+		if(node->ty == TypeRegistry::Unknown) return node->ty;
+		if(!node->ty->is_same_type(expected)) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
+			error.m_message = "Type Annotation of "+node->name+" does not match expected type kind.";
+			error.m_expected =  "<"+expected->get_type_kind_name()+"> Type";
+			error.m_got = "<"+node->ty->get_type_kind_name()+"> Type";
+			error.exit();
+		}
+		return nullptr;
+	}
 };

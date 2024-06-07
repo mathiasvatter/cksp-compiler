@@ -99,6 +99,7 @@ public:
 	}
 
 	void inline visit(NodeFunctionDefinition& node) override {
+		node.visited = true;
 		m_program->function_call_stack.push(&node);
 		m_def_provider->add_scope();
 		node.header->accept(*this);
@@ -106,7 +107,6 @@ public:
 			node.return_variable.value()->accept(*this);
 		node.body->accept(*this);
 		m_def_provider->remove_scope();
-		node.visited = true;
 		m_program->function_call_stack.pop();
 	}
 

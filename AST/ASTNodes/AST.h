@@ -94,7 +94,6 @@ struct NodeDataStructure : NodeAST {
 	bool is_local = false;
 	bool is_global = false;
 	bool is_compiler_return = false;
-	std::set<NodeReference*> references;
 	DataType data_type;
 	std::string name;
 	inline explicit NodeDataStructure(std::string name, Type* ty, Token tok, NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {
@@ -117,6 +116,12 @@ struct NodeDataStructure : NodeAST {
 	virtual Type* cast_type();
 	/// returns fitting reference node type for the data structures
 	virtual NodeType get_ref_node_type() {return NodeType::DeadCode;}
+
+	/// methods to change node type. Everything possible is copied over, even the type;
+	virtual std::unique_ptr<class NodeVariable> to_variable() {return nullptr;}
+	virtual std::unique_ptr<class NodeArray> to_array() {return nullptr;}
+	virtual std::unique_ptr<class NodeNDArray> to_ndarray() {return nullptr;}
+	virtual std::unique_ptr<class NodeListStruct> to_list() {return nullptr;}
 };
 
 struct NodeInt : NodeAST {

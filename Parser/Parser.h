@@ -126,9 +126,9 @@ protected:
     void mark_function_as_used(const std::string& func_name, int num_args);
 
 	Result<SuccessTag> consume_linebreak(const std::string& construct);
+
 private:
     bool is_variable_declaration();
     bool is_array_declaration();
-
 };
 

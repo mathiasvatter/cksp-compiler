@@ -49,7 +49,7 @@ NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
 	  is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
 	  is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
-	  data_type(other.data_type), name(other.name), references(other.references) {
+	  data_type(other.data_type), name(other.name) {
 	set_child_parents();
 }
 
@@ -66,7 +66,7 @@ std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
 bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBody* current_body) {
 	// not init_callback if var is set to local
 	bool init_callback = (program->current_callback == program->init_callback and program->function_call_stack.empty() and !is_local) or is_global or get_node_type() == NodeType::UIControl;
-	is_local = current_body->scope and !init_callback;
+	is_local = (current_body->scope or is_function_param()) and !init_callback;
 	return is_local;
 }
 
@@ -80,7 +80,7 @@ bool NodeDataStructure::is_function_param() {
 
 Type* NodeDataStructure::cast_type() {
 	Type* type = ty->get_element_type();
-	if(type == TypeRegistry::Number || type == TypeRegistry::Unknown || type == TypeRegistry::Any) {
+	if(type == TypeRegistry::Number || type == TypeRegistry::Unknown || type == TypeRegistry::Any || type == TypeRegistry::Comparison) {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
 		error.m_got = ty->to_string();
 		this->set_element_type(TypeRegistry::Integer);

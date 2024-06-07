@@ -42,6 +42,9 @@ public:
 	virtual bool is_assignable_from(const Type* other) const {
 		return is_compatible(other);
 	}
+	virtual bool is_same_type(const Type* other) const {
+		return get_type_kind() == other->get_type_kind();
+	}
 protected:
     Kind m_kind = Kind::Unknown;
 };
@@ -137,7 +140,9 @@ public:
 	}
 	[[nodiscard]] Type* get_element_type() const override {return m_element_type;}
 	[[nodiscard]] CompoundKind get_compound_type() const {return m_compound_kind;}
-
+	bool is_same_type(const Type* other) const override {
+		return get_type_kind() == other->get_type_kind() && m_compound_kind == static_cast<const CompositeType*>(other)->get_compound_type() && m_dimensions == other->get_dimensions();
+	}
 private:
 	CompoundKind m_compound_kind;
 	Type* m_element_type;
