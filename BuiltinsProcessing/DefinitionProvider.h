@@ -117,8 +117,6 @@ public:
 		m_references_per_data_structure[data_struct].insert(reference);
 		return true;
 	}
-	/// clears all reference sets in all data structures
-//	bool clear_all_reference_sets();
     /// declared everything
     std::vector<std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual>> m_declared_data_structures;
 	/// returns data structure declaration searching all scopes

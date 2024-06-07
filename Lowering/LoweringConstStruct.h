@@ -31,6 +31,7 @@ public:
 	explicit LoweringConstStruct(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
 
     void visit(NodeVariable& node) override {
+		if(node.ty == TypeRegistry::Unknown) node.ty = TypeRegistry::Integer;
         if(!m_const_prefixes.empty()) {
             node.name = m_const_prefixes.top() + "." + node.name;
         }
@@ -38,8 +39,9 @@ public:
 
     void visit(NodeSingleDeclareStatement& node) override {
         if (node.to_be_declared->get_node_type() != NodeType::Variable) {
-            CompileError(ErrorType::SyntaxError,
-                         "Found incorrect <const block> syntax. Only variables allowed in <const blocks>.", node.tok.line,"", "", node.tok.file).exit();
+            auto error = CompileError(ErrorType::SyntaxError,"", "", node.to_be_declared->tok);
+			error.m_message = "Found incorrect <Constant Block> syntax. <Constant Blocks> can only contain <Variables>.";
+			error.exit();
         }
         node.to_be_declared->accept(*this);
         // has no value -> create one
@@ -94,7 +96,6 @@ public:
         node.constants->add_stmt(std::move(array));
         auto constant = make_declare_variable(node.name+".SIZE", node.constants->statements.size(), DataType::Const, node.constants.get());
         node.constants->add_stmt(std::move(constant));
-//        node.constants->set_child_parents();
         m_const_prefixes.pop();
     }
 };

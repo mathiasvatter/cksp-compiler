@@ -11,7 +11,6 @@ void ASTBuildDataStructures::visit(NodeProgram& node) {
 	check_unique_callbacks(node);
 	node.init_callback = move_on_init_callback(node);
 
-	// most func defs will be visited when called, keeping local scopes in mind
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }

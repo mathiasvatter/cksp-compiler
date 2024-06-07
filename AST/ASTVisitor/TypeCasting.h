@@ -38,6 +38,9 @@ public:
 	void visit(NodeBinaryExpr& node) override;
 	void visit(NodeUnaryExpr& node) override;
 	void visit(NodeFunctionCall& node) override;
+
+	void visit(NodeConstStatement& node) override;
+
 //	void visit(NodeBody& node) override;
 
 private:
@@ -142,6 +145,10 @@ private:
         auto node_2 = type2->get_element_type();
 
         // specialize types:
+		// comparison is never the most specialized type
+		if(node_2 == TypeRegistry::Comparison) return node_1;
+		if(node_1 == TypeRegistry::Comparison) return node_2;
+
         // if node 2 is unknown, return type of node1
         if(node_2 == TypeRegistry::Unknown) return node_1;
         // if node 1 is unknown, return type of node2

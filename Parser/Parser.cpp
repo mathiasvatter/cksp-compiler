@@ -173,6 +173,11 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 			std::move(sizes), arr_token
 		);
 		node->dimensions = node->sizes->params.size();
+		// provide type dimensions here because eg '!' can be used for nd-arrays but are usually for 1 dimension only
+		if(ty->get_type_kind() == TypeKind::Composite) {
+			auto nd_type = static_cast<CompositeType*>(ty);
+			node->ty = TypeRegistry::add_composite_type(nd_type->get_compound_type(), nd_type->get_element_type(), node->dimensions);
+		}
 		node_array = std::move(node);
 	} else {
 		auto node = std::make_unique<NodeArray>(arr_name, arr_token);
@@ -1442,9 +1447,14 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 	Token name_tok = consume(); // consume keyword
 	std::string name = name_tok.val;
 	auto ty = TypeRegistry::get_type_from_identifier(name[0]);
-	if(ty != TypeRegistry::Unknown) name = name.erase(0,1);
+	if(ty != TypeRegistry::Unknown) {
+		name = name.erase(0,1);
+		if(ty->get_type_kind() == TypeKind::Composite) {
+			auto comp_ty = static_cast<CompositeType*>(ty);
+			ty = TypeRegistry::add_composite_type(CompoundKind::List, comp_ty->get_element_type(), comp_ty->get_dimensions());
+		}
+	}
 
-//	auto type = infer_type_from_identifier(name);
 	if(peek().type != token::OPEN_BRACKET) {
 		return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
 															 "Found unknown <list> syntax.", "[", peek()));
@@ -1488,8 +1498,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 	node_list_block->size = size;
 	node_list_block->body = std::move(stmts);
 	node_list_block->parent = parent;
-	node_list_block->ty = ty;
-//	node_list_block->type = type;
+	node_list_block->ty = type.unwrap();
 	return Result<std::unique_ptr<NodeAST>>(std::move(node_list_block));
 }
 

@@ -33,7 +33,7 @@ void ASTCollectLowerings::visit(NodeGetControlStatement& node) {
 	 * 	mnu_output[i+1]->x := int_buffer, the NodeSingleAssignStatement lowering would handle it.
 	 */
 	if(node.parent->get_node_type() == NodeType::SingleAssignStatement) {
-		if(auto node_assign_stmt = cast_node<NodeSingleAssignStatement>(node.parent)) {
+		if(auto node_assign_stmt = static_cast<NodeSingleAssignStatement*>(node.parent)) {
 			if(node_assign_stmt->array_variable.get() == &node) return;
 		}
 	}

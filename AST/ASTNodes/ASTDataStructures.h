@@ -22,9 +22,9 @@ struct NodeVariable: NodeDataStructure {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::VariableRef;}
-	std::unique_ptr<class NodeArray> to_array();
-	std::unique_ptr<class NodeNDArray> to_ndarray();
-	std::unique_ptr<class NodeListStruct> to_list();
+	std::unique_ptr<class NodeArray> to_array() override;
+	std::unique_ptr<class NodeNDArray> to_ndarray() override ;
+	std::unique_ptr<class NodeListStruct> to_list() override ;
 };
 
 struct NodeArray : NodeDataStructure {
@@ -64,6 +64,15 @@ struct NodeArray : NodeDataStructure {
 	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::ArrayRef;}
+	std::unique_ptr<NodeVariable> to_variable() override {
+		return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+	}
+	std::unique_ptr<class NodeNDArray> to_ndarray() override {
+		return std::make_unique<NodeNDArray>(persistence, name, ty, DataType::NDArray, nullptr, tok);
+	}
+	std::unique_ptr<class NodeListStruct> to_list() override {
+		return std::make_unique<NodeListStruct>(tok);
+	}
 };
 
 struct NodeNDArray : NodeDataStructure {
@@ -99,6 +108,15 @@ struct NodeNDArray : NodeDataStructure {
 	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::NDArrayRef;}
+	std::unique_ptr<NodeVariable> to_variable() override {
+		return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+	}
+	std::unique_ptr<NodeArray> to_array() override {
+		return std::make_unique<NodeArray>(persistence, name, ty, DataType::Array, nullptr, tok);
+	}
+	std::unique_ptr<NodeListStruct> to_list() override {
+		return std::make_unique<NodeListStruct>(tok);
+	}
 };
 
 struct NodeUIControl : NodeDataStructure {
@@ -177,6 +195,15 @@ struct NodeListStruct : NodeDataStructure {
 	}
 	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
 	NodeType get_ref_node_type() override {return NodeType::ListStructRef;}
+	std::unique_ptr<NodeVariable> to_variable() override {
+		return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+	}
+	std::unique_ptr<NodeArray> to_array() override {
+		return std::make_unique<NodeArray>(persistence, name, ty, DataType::Array, nullptr, tok);
+	}
+	std::unique_ptr<NodeNDArray> to_ndarray() override {
+		return std::make_unique<NodeNDArray>(persistence, name, ty, DataType::NDArray, nullptr, tok);
+	}
 };
 
 struct NodeConstStatement : NodeDataStructure {
