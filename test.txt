@@ -1,8 +1,8 @@
-{ Compiled with cksp version 0.0.5 on Sat Jun 08 15:08:53 2024 }
+{ Compiled with cksp version 0.0.5 on Sat Jun 08 17:44:59 2024 }
 on init
   declare $_return_dummy
-  declare !_loc_var_str[1]
   declare ?_loc_var_real[1]
+  declare !_loc_var_str[1]
   declare %_loc_var_int[1]
   declare $loc_6
   declare $loc_7
@@ -22,6 +22,10 @@ on init
   declare $_string_it
   declare $_ui_array_it
   declare $_list_it
+  declare $pupsi__schmusi__i
+  declare $pupsi__schmusi__z
+  declare $pupsi__schmusi__r
+  declare %pupsi__array[3]
   declare ui_slider $sli_1 (0, 1000)
   declare ui_slider $sli_2 (0, 2)
   get_control_par(get_ui_id($sli_1), $CONTROL_PAR_DEFAULT_VALUE) := 500

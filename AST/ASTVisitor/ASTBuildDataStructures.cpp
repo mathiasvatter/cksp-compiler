@@ -158,7 +158,7 @@ void ASTBuildDataStructures::replace_incorrectly_detected_data_struct(NodeDataSt
 			data_struct->name,
 			data_struct->ty,
 			DataType::Array,
-			std::make_unique<NodeInt>(1, data_struct->tok),
+            nullptr,
 			data_struct->tok);
 		auto new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_array)));
 		m_def_provider->set_references(new_data_struct, references);

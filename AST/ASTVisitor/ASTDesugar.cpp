@@ -90,8 +90,8 @@ void ASTDesugar::visit(NodeForStatement& node) {
 
 void ASTDesugar::visit(NodeFamilyStatement &node) {
     node.members->accept(*this);
-    if(auto lowering = node.get_lowering(nullptr)) {
-        node.accept(*lowering);
+    if(auto desugaring = node.get_desugaring()) {
+        node.accept(*desugaring);
     }
     node.replace_with(std::move(node.members));
 }

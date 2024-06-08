@@ -48,9 +48,8 @@ public:
                 stmt->assignee = std::move(val);
             }
             stmt->set_child_parents();
-            node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(stmt), node.tok));
+            node_body->add_stmt(std::make_unique<NodeStatement>(std::move(stmt), node.tok));
         }
-        node_body->set_child_parents();
         replacement_node = std::move(node_body);
     }
 
@@ -85,9 +84,8 @@ public:
             auto &val = values[i];
             stmt->assignee = std::move(val);
             stmt->set_child_parents();
-            node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(stmt), node.tok));
+            node_body->add_stmt(std::make_unique<NodeStatement>(std::move(stmt), node.tok));
         }
-        node_body->set_child_parents();
         replacement_node = std::move(node_body);
     }
 

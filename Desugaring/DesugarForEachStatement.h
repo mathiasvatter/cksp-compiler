@@ -43,8 +43,6 @@ public:
         if(!m_key_value_scope_stack.empty()) {
             if(auto substitute = get_key_value_substitute(node.name)) {
                 substitute->update_parents(node.parent);
-                if(substitute->type == ASTType::Unknown)
-                    substitute->type = node.type;
                 node.replace_with(std::move(substitute));
                 return;
             }
@@ -58,7 +56,7 @@ public:
         for(auto &var : node.keys->params) {
             if(var->get_node_type() != NodeType::VariableRef) {
                 error.m_message = "Found incorrect key in ranged-for-loop syntax.";
-                error.m_expected = "<variable>";
+                error.m_expected = "<Variable>";
                 error.m_got = var->get_string();
                 error.exit();
             }
@@ -70,14 +68,14 @@ public:
         }
         // range has to be an array that was parsed as variable ref
         if(node.range->get_node_type() != NodeType::VariableRef) {
-            error.m_expected = "<array>";
+            error.m_expected = "<Array>";
             error.m_got = node.range->get_string();
             error.exit();
         }
         auto node_key_ref = static_cast<NodeVariableRef*>(node.keys->params[0].get());
         auto node_key_variable = std::make_unique<NodeVariable>(std::nullopt, node_key_ref->name, TypeRegistry::Integer, DataType::Mutable, node.tok);
         node_key_variable->is_local = true;
-        node_key_variable->type = ASTType::Integer;
+        node_key_variable->ty = TypeRegistry::Integer;
 
         auto node_key_declaration = std::make_unique<NodeSingleDeclareStatement>(
                 std::move(node_key_variable),
@@ -102,7 +100,7 @@ public:
 			std::make_unique<NodeInt>(1, node.tok),
 			node.tok
         );
-        node_end_range->type = ASTType::Integer;
+        node_end_range->ty = TypeRegistry::Integer;
 
         // add key-value pair to scope stack of array with <key> as index that needs to be substituted for <value>
         auto node_value_array = std::make_unique<NodeArrayRef>(node.range->get_string(), std::move(node.keys->params[0]), node.tok);
@@ -114,12 +112,12 @@ public:
                 token_to,
                 std::move(node_end_range),
                 std::move(node.statements), node.tok);
+        node_for_statement->statements->accept(*this);
         auto node_scope = std::make_unique<NodeBody>(node.tok);
-        node_scope->statements.push_back(std::make_unique<NodeStatement>(std::move(node_key_declaration), node.tok));
-        node_scope->statements.push_back(std::make_unique<NodeStatement>(std::move(node_for_statement), node.tok));
+        node_scope->add_stmt(std::make_unique<NodeStatement>(std::move(node_key_declaration), node.tok));
+        node_scope->add_stmt(std::make_unique<NodeStatement>(std::move(node_for_statement), node.tok));
         node_scope->scope = true;
-        node_scope->set_child_parents();
-        node_scope->accept(*this);
+//        node_scope->accept(*this);
 
         m_key_value_scope_stack.pop_back();
         replacement_node = std::move(node_scope);
