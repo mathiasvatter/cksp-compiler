@@ -134,8 +134,20 @@ public:
 	void inline visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
 
+        // add all references in local scope to vector for later passive_var replacement
+        m_all_local_references.push_back(&node);
+
+        if(!m_passive_vars_replace.empty()) {
+            // search if declaration was local var and has been replaced by passive_var -> replace declaration and reference name
+            if(auto new_declaration = get_new_declaration(node.name)) {
+                node.match_data_structure(new_declaration);
+                node.name = new_declaration->name;
+                return;
+            }
+        }
+
 		auto node_declaration = m_def_provider->get_declaration(&node);
-		if(!node_declaration) m_def_provider-> throw_declaration_error(&node).exit();
+		if(!node_declaration) DefinitionProvider::throw_declaration_error(&node).exit();
 
 		node.match_data_structure(node_declaration);
 	}

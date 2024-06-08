@@ -102,7 +102,15 @@ std::unique_ptr<NodeAST> TypeRegistry::get_neutral_element_from_type(Type* ty) {
 		return std::make_unique<NodeString>("\"\"", Token());
 	} else if (ty == Boolean) {
 		return std::make_unique<NodeString>("false", Token());
-	}
+	} else if (ty == ArrayOfInt) {
+        return std::make_unique<NodeParamList>(Token(), std::make_unique<NodeInt>(0, Token()));
+    } else if (ty == ArrayOfReal) {
+        return std::make_unique<NodeParamList>(Token(), std::make_unique<NodeReal>(0.0, Token()));
+    } else if (ty == ArrayOfString) {
+        return std::make_unique<NodeParamList>(Token(), std::make_unique<NodeInt>(0, Token()));
+    } else if (ty == ArrayOfBool) {
+        return std::make_unique<NodeParamList>(Token(), std::make_unique<NodeString>("false", Token()));
+    }
 	return nullptr;
 }
 
