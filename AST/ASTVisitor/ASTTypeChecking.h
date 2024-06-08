@@ -10,7 +10,7 @@ class ASTTypeChecking : public ASTVisitor {
 public:
     void visit(NodeProgram& node) override;
     void visit(NodeCallback& node) override;
-    void visit(NodeSingleDeclareStatement& node) override;
+    void visit(NodeSingleDeclaration& node) override;
     void visit(NodeUIControl& node) override;
 
     void visit(NodeVariable& node) override;

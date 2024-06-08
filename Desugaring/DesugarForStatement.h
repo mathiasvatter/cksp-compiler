@@ -56,7 +56,7 @@ public:
                     std::move(node.step), node.tok
                     );
             inc_expression->type = ASTType::Integer;
-            auto node_inc_statement = std::make_unique<NodeSingleAssignStatement>(
+            auto node_inc_statement = std::make_unique<NodeSingleAssignment>(
                     std::move(function_var),
                     std::move(inc_expression), node.tok);
             node.statements->add_stmt(std::make_unique<NodeStatement>(std::move(node_inc_statement), node.tok));
@@ -78,7 +78,7 @@ public:
                 std::move(node.statements), node.tok
                 );
 
-        auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(
+        auto node_assign_statement = std::make_unique<NodeSingleAssignment>(
                 std::move(assign_var),
                 std::move(node.iterator->assignee),
                 node.tok

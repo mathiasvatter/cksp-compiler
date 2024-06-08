@@ -83,7 +83,7 @@ void ASTTypeCasting::visit(NodeUIControl& node) {
 }
 
 
-void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
+void ASTTypeCasting::visit(NodeSingleDeclaration& node) {
     node.to_be_declared ->accept(*this);
 
     if(node.assignee) {
@@ -112,7 +112,7 @@ void ASTTypeCasting::visit(NodeSingleDeclareStatement& node) {
 
 }
 
-void ASTTypeCasting::visit(NodeSingleAssignStatement& node) {
+void ASTTypeCasting::visit(NodeSingleAssignment& node) {
     node.assignee->accept(*this);
     node.array_variable->accept(*this);
     if(node.array_variable->type == ASTType::Unknown) {

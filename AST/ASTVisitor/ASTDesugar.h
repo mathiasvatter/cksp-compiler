@@ -11,20 +11,20 @@
  * @brief Desugar into simpler constructs
  *
  * This visitor desugars the following statements:
- * - NodeDeclareStatement: desugar into single declare statements
- * - NodeAssignStatement: desugar into single assign statements
+ * - NodeDeclaration: desugar into single declare statements
+ * - NodeAssignment: desugar into single assign statements
  * - NodeForEachStatement: desugar for each loops to for loops
  * - NodeForStatement: alter for loops to while loops
- * Additionally, it desugars NodeFamilyStatement into single declare statements.
+ * Additionally, it desugars NodeFamily into single declare statements.
  */
 class ASTDesugar: public ASTVisitor {
     void visit(NodeProgram& node) override;
 
     /// desugar into single declare statements
-    void visit(NodeDeclareStatement& node) override;
-    void visit(NodeSingleDeclareStatement& node) override;
+    void visit(NodeDeclaration& node) override;
+    void visit(NodeSingleDeclaration& node) override;
     /// desugar into single assign statements
-    void visit(NodeAssignStatement& node) override;
+    void visit(NodeAssignment& node) override;
 
     /// desugar for each loops to for loops
 	void visit(NodeForEachStatement& node) override;
@@ -34,7 +34,7 @@ class ASTDesugar: public ASTVisitor {
     void visit(NodeBody& node) override;
 
 	/// desugar into single declare statements
-	void visit(NodeFamilyStatement& node) override;
+	void visit(NodeFamily& node) override;
 
 	/// desugar nested ParamLists [[1,2,3,4]]
 	void visit(NodeParamList& node) override;

@@ -20,7 +20,7 @@ public:
 	/// do constant folding for int and reals
 	void visit(NodeBinaryExpr& node) override;
 	/// remove unused variables
-	void visit(NodeSingleDeclareStatement& node) override;
+	void visit(NodeSingleDeclaration& node) override;
     /// do node body cleanup
     void visit(NodeBody& node) override;
 };

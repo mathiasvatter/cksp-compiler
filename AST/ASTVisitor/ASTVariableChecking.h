@@ -19,7 +19,7 @@ public:
 	/// Scoping
 	void visit(NodeBody& node) override;
     /// decide if declaration is local or global
-    void visit(NodeSingleDeclareStatement& node) override;
+    void visit(NodeSingleDeclaration& node) override;
 	/// Check if correctly declared and save declaration
 	void visit(NodeArray& node) override;
     /// get declaration

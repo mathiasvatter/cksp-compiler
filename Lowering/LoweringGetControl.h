@@ -11,12 +11,12 @@ class LoweringGetControl : public ASTLowering {
 public:
 	explicit LoweringGetControl(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
 
-	void visit(NodeSingleAssignStatement &node) override {
+	void visit(NodeSingleAssignment &node) override {
 		node.assignee->accept(*this);
-		// check if assignee is a NodeGetControlStatement
+		// check if assignee is a NodeGetControl
 		if(node.array_variable->get_node_type() != NodeType::GetControlStatement) return;
 
-		auto get_control_statement = cast_node<NodeGetControlStatement>(node.array_variable.get());
+		auto get_control_statement = cast_node<NodeGetControl>(node.array_variable.get());
 		std::string control_function = "set_control_par";
 
 		auto new_node = lowering(control_function, get_control_statement);
@@ -26,7 +26,7 @@ public:
 		node.replace_with(std::move(new_node));
 	};
 
-	void visit(NodeGetControlStatement &node) override {
+	void visit(NodeGetControl &node) override {
 		std::string control_function = "get_control_par";
 		auto new_node = lowering(control_function, &node);
 		new_node->update_parents(node.parent);
@@ -34,7 +34,7 @@ public:
 	};
 
 private:
-	inline std::unique_ptr<NodeFunctionCall> lowering(std::string control_function, NodeGetControlStatement* node) {
+	inline std::unique_ptr<NodeFunctionCall> lowering(std::string control_function, NodeGetControl* node) {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 		// get control_param from shorthand
 		auto control_par = shorthand_to_control_param(node->control_param);

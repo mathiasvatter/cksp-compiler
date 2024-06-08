@@ -6,14 +6,14 @@
 
 ASTCollectLowerings::ASTCollectLowerings(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
-void ASTCollectLowerings::visit(NodeSingleDeclareStatement &node) {
+void ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 	if(node.assignee) node.assignee->accept(*this);
 	if(auto lowering = node.get_lowering(m_def_provider)) {
 		node.accept(*lowering);
 	}
 }
 
-void ASTCollectLowerings::visit(NodeSingleAssignStatement& node) {
+void ASTCollectLowerings::visit(NodeSingleAssignment& node) {
 	node.array_variable->accept(*this);
 	if(node.assignee) node.assignee->accept(*this);
 	if(auto lowering = node.get_lowering(m_def_provider)) {
@@ -21,7 +21,7 @@ void ASTCollectLowerings::visit(NodeSingleAssignStatement& node) {
 	}
 }
 
-void ASTCollectLowerings::visit(NodeGetControlStatement& node) {
+void ASTCollectLowerings::visit(NodeGetControl& node) {
 	node.ui_id->accept(*this);
 
 	/*
@@ -30,10 +30,10 @@ void ASTCollectLowerings::visit(NodeGetControlStatement& node) {
 	 * E.g. if it would be
 	 * 	int_buffer := mnu_output[i+1]->x, this block of code would need to handle it.
 	 * However, in the case of:
-	 * 	mnu_output[i+1]->x := int_buffer, the NodeSingleAssignStatement lowering would handle it.
+	 * 	mnu_output[i+1]->x := int_buffer, the NodeSingleAssignment lowering would handle it.
 	 */
 	if(node.parent->get_node_type() == NodeType::SingleAssignStatement) {
-		if(auto node_assign_stmt = static_cast<NodeSingleAssignStatement*>(node.parent)) {
+		if(auto node_assign_stmt = static_cast<NodeSingleAssignment*>(node.parent)) {
 			if(node_assign_stmt->array_variable.get() == &node) return;
 		}
 	}
@@ -84,7 +84,7 @@ void ASTCollectLowerings::visit(NodeConstStatement &node) {
     node.replace_with(std::move(node.constants));
 }
 
-//void ASTCollectLowerings::visit(NodeFamilyStatement &node) {
+//void ASTCollectLowerings::visit(NodeFamily &node) {
 //    node.members->accept(*this);
 //    if(auto lowering = node.get_lowering()) {
 //        node.accept(*lowering);

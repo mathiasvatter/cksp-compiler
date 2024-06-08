@@ -17,16 +17,16 @@ public:
 	void visit(NodeArray& node) override;
 	void visit(NodeArrayRef& node) override;
 	void visit(NodeUIControl& node) override;
-	void visit(NodeDeclareStatement& node) override;
-    void visit(NodeSingleDeclareStatement& node) override;
+	void visit(NodeDeclaration& node) override;
+    void visit(NodeSingleDeclaration& node) override;
 	void visit(NodeParamList& node) override;
 	void visit(NodeBinaryExpr& node) override;
 	void visit(NodeUnaryExpr& node) override;
-	void visit(NodeAssignStatement& node) override;
-    void visit(NodeSingleAssignStatement& node) override;
+	void visit(NodeAssignment& node) override;
+    void visit(NodeSingleAssignment& node) override;
 	void visit(NodeConstStatement& node) override;
-	void visit(NodeStructStatement& node) override;
-	void visit(NodeFamilyStatement& node) override;
+	void visit(NodeStruct& node) override;
+	void visit(NodeFamily& node) override;
     void visit(NodeStatement& node) override;
     void visit(NodeBody& node) override;
 	void visit(NodeIfStatement& node) override;
@@ -37,7 +37,7 @@ public:
 	void visit(NodeFunctionHeader& node) override;
 	void visit(NodeFunctionCall& node) override;
 	void visit(NodeFunctionDefinition& node) override;
-	void visit(NodeGetControlStatement& node) override;
+	void visit(NodeGetControl& node) override;
 
     inline void generate(const std::string& path) const {
         std::ofstream outFile(path);

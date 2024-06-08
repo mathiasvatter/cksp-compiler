@@ -116,7 +116,7 @@ void ASTVariableChecking::visit(NodeFunctionCall &node) {
 
 }
 
-void ASTVariableChecking::visit(NodeSingleDeclareStatement& node) {
+void ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 	node.to_be_declared->determine_locality(m_program, m_current_body);
 
     node.to_be_declared->accept(*this);
@@ -211,7 +211,7 @@ void ASTVariableChecking::visit(NodeListStructRef& node) {
 void ASTVariableChecking::visit(NodeConstStatement& node) {
 //	for(auto & constants : node.constants->statements) {
 //		if(constants->statement->get_node_type() == NodeType::SingleDeclareStatement) {
-//			auto decl = static_cast<NodeSingleDeclareStatement*>(constants->statement.get());
+//			auto decl = static_cast<NodeSingleDeclaration*>(constants->statement.get());
 //			decl->to_be_declared
 //
 //		}

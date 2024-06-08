@@ -99,7 +99,7 @@ void ASTGenerator::visit(NodeUIControl &node) {
 	if(!node.params->params.empty()) os << ")";
 }
 
-void ASTGenerator::visit(NodeSingleDeclareStatement &node) {
+void ASTGenerator::visit(NodeSingleDeclaration &node) {
     os << "declare ";
     node.to_be_declared->accept(*this);
     if(node.assignee != nullptr) {
@@ -137,7 +137,7 @@ void ASTGenerator::visit(NodeUnaryExpr &node) {
     node.operand->accept(*this);
 }
 
-void ASTGenerator::visit(NodeSingleAssignStatement &node) {
+void ASTGenerator::visit(NodeSingleAssignment &node) {
     node.array_variable->accept(*this);
     os << " := ";
     node.assignee->accept(*this);
@@ -230,7 +230,7 @@ void ASTGenerator::visit(NodeFunctionDefinition &node) {
     os << "end function" << std::endl;
 }
 
-void ASTGenerator::visit(NodeGetControlStatement &node) {
+void ASTGenerator::visit(NodeGetControl &node) {
     node.ui_id ->accept(*this);
     os << " -> " << node.control_param;
 }

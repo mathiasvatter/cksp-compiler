@@ -63,7 +63,7 @@ void ASTPrinter::visit(NodeUIControl &node) {
     if(!node.params->params.empty()) os << ")";
 }
 
-void ASTPrinter::visit(NodeDeclareStatement &node) {
+void ASTPrinter::visit(NodeDeclaration &node) {
 	os << "declare ";
 	for(auto const &decl : node.to_be_declared) {
 		decl->accept(*this);
@@ -75,7 +75,7 @@ void ASTPrinter::visit(NodeDeclareStatement &node) {
 	os << "";
 }
 
-void ASTPrinter::visit(NodeSingleDeclareStatement &node) {
+void ASTPrinter::visit(NodeSingleDeclaration &node) {
 	os << "declare ";
 	node.to_be_declared->accept(*this);
 	if(node.assignee) {
@@ -113,14 +113,14 @@ void ASTPrinter::visit(NodeUnaryExpr &node) {
 	node.operand->accept(*this);
 }
 
-void ASTPrinter::visit(NodeAssignStatement &node) {
+void ASTPrinter::visit(NodeAssignment &node) {
     os << "";
     node.array_variable->accept(*this);
     os << " := ";
     node.assignee->accept(*this);
 }
 
-void ASTPrinter::visit(NodeSingleAssignStatement &node) {
+void ASTPrinter::visit(NodeSingleAssignment &node) {
     os << "";
     node.array_variable->accept(*this);
     os << " := ";
@@ -137,7 +137,7 @@ void ASTPrinter::visit(NodeConstStatement &node) {
     os << "end const";
 }
 
-void ASTPrinter::visit(NodeStructStatement &node) {
+void ASTPrinter::visit(NodeStruct &node) {
     os << "struct " << node.prefix << std::endl;
     for(auto &stmt: node.members) {
         stmt->accept(*this);
@@ -145,7 +145,7 @@ void ASTPrinter::visit(NodeStructStatement &node) {
     os << "end struct";
 }
 
-void ASTPrinter::visit(NodeFamilyStatement &node) {
+void ASTPrinter::visit(NodeFamily &node) {
     os << "family " << node.prefix << std::endl;
     node.members->accept(*this);
     os << "end family";
@@ -246,7 +246,7 @@ void ASTPrinter::visit(NodeFunctionDefinition &node) {
     os << "end function" << std::endl;
 }
 
-void ASTPrinter::visit(NodeGetControlStatement &node) {
+void ASTPrinter::visit(NodeGetControl &node) {
     node.ui_id ->accept(*this);
     os << " -> " << node.control_param;
 }

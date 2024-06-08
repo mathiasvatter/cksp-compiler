@@ -37,7 +37,7 @@ public:
         }
     };
 
-    void visit(NodeSingleDeclareStatement& node) override {
+    void visit(NodeSingleDeclaration& node) override {
         if (node.to_be_declared->get_node_type() != NodeType::Variable) {
             auto error = CompileError(ErrorType::SyntaxError,"", "", node.to_be_declared->tok);
 			error.m_message = "Found incorrect <Constant Block> syntax. <Constant Blocks> can only contain <Variables>.";
@@ -87,7 +87,7 @@ public:
 			std::make_unique<NodeInt>(node.constants->statements.size(), node.tok),
 			node.tok
 		);
-        auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(
+        auto node_declare_statement = std::make_unique<NodeSingleDeclaration>(
 			std::move(node_array),
 			std::make_unique<NodeParamList>(std::move(const_indexes), node.tok),
 			node.tok

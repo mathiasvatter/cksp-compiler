@@ -23,7 +23,7 @@ void ASTDesugar::visit(NodeBody& node) {
     node.cleanup_body();
 }
 
-void ASTDesugar::visit(NodeDeclareStatement& node) {
+void ASTDesugar::visit(NodeDeclaration& node) {
     if(auto desugaring = node.get_desugaring()) {
         node.accept(*desugaring);
         desugaring->replacement_node->accept(*this);
@@ -31,14 +31,14 @@ void ASTDesugar::visit(NodeDeclareStatement& node) {
     }
 }
 
-void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
+void ASTDesugar::visit(NodeSingleDeclaration& node) {
     node.to_be_declared->accept(*this);
     if(node.assignee) node.assignee->accept(*this);
 
     if(node.to_be_declared->is_global) {
         m_global_variable_declarations->statements.push_back(
 			std::make_unique<NodeStatement>(
-				std::make_unique<NodeSingleDeclareStatement>(
+				std::make_unique<NodeSingleDeclaration>(
 					clone_as<NodeDataStructure>(node.to_be_declared.get()),
 					nullptr,
 					node.tok
@@ -47,7 +47,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
 			)
 		);
         if(node.assignee) {
-            auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(
+            auto node_assign_statement = std::make_unique<NodeSingleAssignment>(
                     node.to_be_declared->to_reference(),
                     std::move(node.assignee), node.tok
                 );
@@ -58,7 +58,7 @@ void ASTDesugar::visit(NodeSingleDeclareStatement& node) {
     }
 }
 
-void ASTDesugar::visit(NodeAssignStatement &node) {
+void ASTDesugar::visit(NodeAssignment &node) {
     if(auto desugaring = node.get_desugaring()) {
         node.accept(*desugaring);
         desugaring->replacement_node->accept(*this);
@@ -88,7 +88,7 @@ void ASTDesugar::visit(NodeForStatement& node) {
     }
 }
 
-void ASTDesugar::visit(NodeFamilyStatement &node) {
+void ASTDesugar::visit(NodeFamily &node) {
     node.members->accept(*this);
     if(auto desugaring = node.get_desugaring()) {
         node.accept(*desugaring);
@@ -125,7 +125,7 @@ std::unique_ptr<NodeBody> ASTDesugar::declare_compiler_variables() {
                 DataType::Mutable, tok);
         node_variable->is_engine = true;
         node_variable->is_global = true;
-        auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_variable), nullptr, tok);
+        auto node_var_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_variable), nullptr, tok);
         node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_var_declaration), tok));
     }
     return node_body;

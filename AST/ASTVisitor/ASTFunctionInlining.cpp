@@ -223,7 +223,7 @@ void ASTFunctionInlining::visit(NodeFunctionCall& node) {
 				CompileError(ErrorType::SyntaxError,"Function returns a value. Move function into assign statement.", node.tok.line, node_function_def->return_variable.value()->get_string(), "<assignment>", node.tok.file).exit();
 			}
 			if (!node_function_def->body->statements.empty()) {
-				auto node_assignment = cast_node<NodeSingleAssignStatement>(node_function_def->body->statements[0]->statement.get());
+				auto node_assignment = cast_node<NodeSingleAssignment>(node_function_def->body->statements[0]->statement.get());
 				// strict inlining method only if function body is assign statement
 				if (node_function_def->body->statements.size() == 1 and node_assignment) {
 					if (node_assignment->array_variable->get_string() == node_function_def->return_variable.value()->get_string()) {
@@ -305,14 +305,14 @@ std::unique_ptr<NodeAST> ASTFunctionInlining::get_substitute(const std::string& 
     return nullptr;
 }
 
-void ASTFunctionInlining::visit(NodeSingleDeclareStatement& node) {
+void ASTFunctionInlining::visit(NodeSingleDeclaration& node) {
 	m_current_function_inline_statement = node.parent;
 	node.to_be_declared ->accept(*this);
 	if(node.assignee)
 		node.assignee -> accept(*this);
 }
 
-//void ASTFunctionInlining::visit(NodeSingleDeclareStatement& node) {
+//void ASTFunctionInlining::visit(NodeSingleDeclaration& node) {
 //    m_current_function_inline_statement = node.parent;
 //
 //    auto node_data_struct = node.to_be_declared.get();
@@ -404,7 +404,7 @@ void ASTFunctionInlining::visit(NodeSingleDeclareStatement& node) {
 //        if (node.assignee and !is_const and !node_array) {
 ////			auto cloned_var = clone_as<NodeVariable>(node.to_be_declared.get());
 ////			cloned_var->is_reference = true;
-//            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(node.to_be_declared->to_reference(),
+//            auto node_assignment = std::make_unique<NodeSingleAssignment>(node.to_be_declared->to_reference(),
 //                                                                               std::move(node.assignee), node.tok);
 //            node_assignment->accept(*this);
 //            stmt = std::move(node_assignment);
@@ -419,7 +419,7 @@ void ASTFunctionInlining::visit(NodeSingleDeclareStatement& node) {
 //            auto it = m_local_already_declared_vars.find(var_name_hash);
 //            bool local_array_already_declared = it != m_local_already_declared_vars.end();
 //            if (!local_array_already_declared) {
-//                auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(
+//                auto node_declaration = std::make_unique<NodeSingleDeclaration>(
 //					std::move(node.to_be_declared),
 //					std::move(assignee), node.tok
 //				);
@@ -462,7 +462,7 @@ std::vector<std::unique_ptr<NodeStatement>> ASTFunctionInlining::add_read_functi
     return std::move(statements);
 }
 
-void ASTFunctionInlining::visit(NodeSingleAssignStatement& node) {
+void ASTFunctionInlining::visit(NodeSingleAssignment& node) {
     m_current_function_inline_statement = node.parent;
     node.array_variable ->accept(*this);
 
@@ -481,7 +481,7 @@ void ASTFunctionInlining::visit(NodeParamList& node) {
     }
 }
 
-void ASTFunctionInlining::visit(NodeGetControlStatement& node) {
+void ASTFunctionInlining::visit(NodeGetControl& node) {
 	CompileError(ErrorType::SyntaxError, "Found <get_control_par> statement. This statement should not exist anymore after lowering.", node.tok.line, "", "", node.tok.file).exit();
 }
 
@@ -541,9 +541,9 @@ void ASTFunctionInlining::visit(NodeUIControl &node) {
 //		add_vector_to_statement_list(node_body, add_read_functions(persistence.value(), node.control_var.get(), node_body.get()));
 //	}
 //	// split declare statement into declare + assign statement
-//	auto node_declare_statement = std::unique_ptr<NodeSingleDeclareStatement>(static_cast<NodeSingleDeclareStatement*>(node.parent->clone().release()));
+//	auto node_declare_statement = std::unique_ptr<NodeSingleDeclaration>(static_cast<NodeSingleDeclaration*>(node.parent->clone().release()));
 //	if(node_declare_statement->assignee) {
-//		auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(std::move(node.control_var), std::move(node_declare_statement->assignee), node.tok);
+//		auto node_assign_statement = std::make_unique<NodeSingleAssignment>(std::move(node.control_var), std::move(node_declare_statement->assignee), node.tok);
 //		node_body->statements.push_back(statement_wrapper(std::move(node_assign_statement), node_body.get()));
 //	}
 //	node_body->statements.insert(node_body->statements.begin(), statement_wrapper(std::move(node_declare_statement), node_body.get()));
@@ -567,7 +567,7 @@ void ASTFunctionInlining::declare_local_var_arrays() {
         node_array->is_used = true;
         node_array->is_engine = true;
         node_array->is_global = true;
-        auto node_arr_declaration = std::make_unique<NodeSingleDeclareStatement>(
+        auto node_arr_declaration = std::make_unique<NodeSingleDeclaration>(
 			std::move(node_array),
 			nullptr, tok);
         node_arr_declaration->to_be_declared->parent = node_arr_declaration.get();
@@ -583,7 +583,7 @@ void ASTFunctionInlining::declare_dummy_variables() {
     auto node_return_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), dummy_name, TypeRegistry::Integer, DataType::Mutable, tok);
     node_return_dummy->type = ASTType::Unknown;
     node_return_dummy->is_engine = true;
-    auto node_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_return_dummy), nullptr, tok);
+    auto node_var_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_return_dummy), nullptr, tok);
     node_var_declaration->to_be_declared->parent = node_var_declaration.get();
     m_return_dummy_declaration = static_cast<NodeDataStructure*>(node_var_declaration->to_be_declared.get());
     m_local_declare_statements->statements.push_back(std::make_unique<NodeStatement>(std::move(node_var_declaration), tok));
@@ -592,7 +592,7 @@ void ASTFunctionInlining::declare_dummy_variables() {
 //    auto node_local_var_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), local_var_dummy_name, DataType::Mutable, tok);
 //    node_local_var_dummy->type = ASTType::Unknown;
 //    node_local_var_dummy->is_engine = true;
-//    auto node_local_var_declaration = std::make_unique<NodeSingleDeclareStatement>(std::move(node_local_var_dummy), nullptr, tok);
+//    auto node_local_var_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_local_var_dummy), nullptr, tok);
 //    node_local_var_declaration->to_be_declared->parent = node_local_var_declaration.get();
 //    m_local_var_dummy_declaration = static_cast<NodeDataStructure*>(node_local_var_declaration->to_be_declared.get());
 //    m_local_declare_statements->statements.push_back(std::make_unique<NodeStatement>(std::move(node_local_var_declaration), tok));

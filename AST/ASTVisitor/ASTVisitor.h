@@ -68,45 +68,45 @@ public:
 		node.left->accept(*this);
 		node.right->accept(*this);
 	};
-    virtual void visit(NodeDeclareStatement& node) {
+    virtual void visit(NodeDeclaration& node) {
         for(auto const &decl : node.to_be_declared) {
             decl->accept(*this);
         }
 		if(node.assignee)
         	node.assignee -> accept(*this);
 	};
-    virtual void visit(NodeSingleDeclareStatement& node) {
+    virtual void visit(NodeSingleDeclaration& node) {
         node.to_be_declared ->accept(*this);
 		if(node.assignee)
         	node.assignee -> accept(*this);
     };
-    virtual void visit(NodeAssignStatement& node) {
+    virtual void visit(NodeAssignment& node) {
 		node.array_variable->accept(*this);
 		node.assignee->accept(*this);
 	};
-    virtual void visit(NodeSingleAssignStatement& node) {
+    virtual void visit(NodeSingleAssignment& node) {
         node.array_variable ->accept(*this);
 		node.assignee -> accept(*this);
     };
-	virtual void visit(NodeReturnStatement& node) {
+	virtual void visit(NodeReturn& node) {
 		CompileError(ErrorType::SyntaxError, "<return> node not yet implemented.", "", node.tok).exit();
 		for(auto &ret : node.return_variables) {
 			ret->accept(*this);
 		}
 	};
-    virtual void visit(NodeGetControlStatement& node) {
+    virtual void visit(NodeGetControl& node) {
 		node.ui_id->accept(*this);
 	};
 
     virtual void visit(NodeConstStatement& node) {
         node.constants->accept(*this);
 	};
-    virtual void visit(NodeStructStatement& node) {
+    virtual void visit(NodeStruct& node) {
 		for(auto & member : node.members) {
 			member->accept(*this);
 		}
 	};
-    virtual void visit(NodeFamilyStatement& node) {
+    virtual void visit(NodeFamily& node) {
         node.members->accept(*this);
 	};
     virtual void visit(NodeListStruct& node) {

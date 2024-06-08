@@ -10,7 +10,7 @@ class LoweringList : public ASTLowering {
 public:
 	explicit LoweringList(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
 
-	void visit(NodeSingleDeclareStatement &node) override {
+	void visit(NodeSingleDeclaration &node) override {
 
 	};
 
@@ -74,13 +74,13 @@ public:
         }
         if(max_dimension>1) node_main_array->data_type = DataType::List;
 
-        auto node_declare_main_array = std::make_unique<NodeSingleDeclareStatement>(
+        auto node_declare_main_array = std::make_unique<NodeSingleDeclaration>(
 			clone_as<NodeDataStructure>(node_main_array.get()),
 			nullptr,
 			node.tok
 		);
         auto main_size = (int32_t)node.body.size();
-        auto node_declare_main_const = std::make_unique<NodeSingleDeclareStatement>(
+        auto node_declare_main_const = std::make_unique<NodeSingleDeclaration>(
                 std::make_unique<NodeVariable>(
                         std::nullopt,
                         name_wo_ident+".SIZE",
@@ -127,11 +127,11 @@ public:
             node_sizes->params.push_back(std::make_unique<NodeInt>(sizes[i], node.tok));
             node_positions->params.push_back(std::make_unique<NodeInt>(positions[i], node.tok));
         }
-        auto node_sizes_declaration = std::make_unique<NodeSingleDeclareStatement>(
+        auto node_sizes_declaration = std::make_unique<NodeSingleDeclaration>(
                 std::move(node_sizes_array),
                 std::move(node_sizes), node.tok
                 );
-        auto node_positions_declaration = std::make_unique<NodeSingleDeclareStatement>(
+        auto node_positions_declaration = std::make_unique<NodeSingleDeclaration>(
                 std::move(node_positions_array),
                 std::move(node_positions), node.tok
                 );
@@ -149,7 +149,7 @@ public:
                     TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1),
                     std::make_unique<NodeInt>(sizes[i], node.tok), node.tok
                     );
-            auto node_array_declaration = std::make_unique<NodeSingleDeclareStatement>(
+            auto node_array_declaration = std::make_unique<NodeSingleDeclaration>(
                     clone_as<NodeDataStructure>(node_array.get()),
                     std::move(node.body[i]),
                     node.tok
@@ -162,7 +162,7 @@ public:
                     TypeRegistry::Integer,
                     DataType::Const, node.tok
                     );
-            auto node_const_declaration = std::make_unique<NodeSingleDeclareStatement>(
+            auto node_const_declaration = std::make_unique<NodeSingleDeclaration>(
                     std::move(node_variable),
                     std::make_unique<NodeInt>(sizes[i], node.tok),
                     node.tok);
@@ -185,7 +185,7 @@ public:
                     "_"+node_main_array->name,
                     std::move(node_expression), node.tok
                     );
-            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(
+            auto node_assignment = std::make_unique<NodeSingleAssignment>(
                     std::move(node_main_array_ref),
                     std::move(node_array_ref), node.tok
                     );

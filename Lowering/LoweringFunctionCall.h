@@ -46,7 +46,7 @@ public:
 	}
 
     /// lowering of get control statements from property functions
-    void visit(NodeGetControlStatement &node) override {
+    void visit(NodeGetControl &node) override {
         if(auto lowering = node.get_lowering(m_def_provider)) {
             lowering->visit(node);
         }
@@ -80,12 +80,12 @@ private:
     inline std::unique_ptr<NodeBody> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
         auto node_body = std::make_unique<NodeBody>(function_header->tok);
         for(int i = 1; i<function_header->args->params.size(); i++) {
-            auto node_get_control = std::make_unique<NodeGetControlStatement>(
+            auto node_get_control = std::make_unique<NodeGetControl>(
                     function_header->args->params[0]->clone(),
                     property_function->args->params[i]->get_string(),
                     function_header->tok
             );
-            auto node_assignment = std::make_unique<NodeSingleAssignStatement>(
+            auto node_assignment = std::make_unique<NodeSingleAssignment>(
                     std::move(node_get_control),
                     std::move(function_header->args->params[i]),
                     function_header->tok

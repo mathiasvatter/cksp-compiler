@@ -21,12 +21,12 @@ public:
     void visit(NodeFunctionCall& node) override;
 
 	void visit(NodeUIControl& node) override;
-    void visit(NodeSingleDeclareStatement& node) override;
-    void visit(NodeSingleAssignStatement& node) override;
+    void visit(NodeSingleDeclaration& node) override;
+    void visit(NodeSingleAssignment& node) override;
     void visit(NodeParamList& node) override;
 
 	/// throw error if these still exist after lowering
-    void visit(NodeGetControlStatement& node) override;
+    void visit(NodeGetControl& node) override;
 	void visit(NodeNDArray& node) override;
 
 	/// emplace back local variable scope

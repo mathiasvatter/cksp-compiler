@@ -10,7 +10,7 @@ void ASTOptimizations::visit(NodeBinaryExpr& node) {
 	node.accept(constant_folding);
 }
 
-void ASTOptimizations::visit(NodeSingleDeclareStatement& node) {
+void ASTOptimizations::visit(NodeSingleDeclaration& node) {
 	// remove unused variables -> do not remove UIControls
 //	if(!node.to_be_declared->is_used and node.to_be_declared->get_node_type() != NodeType::UIControl) {
 //		node.replace_with(std::make_unique<NodeDeadCode>(node.tok));

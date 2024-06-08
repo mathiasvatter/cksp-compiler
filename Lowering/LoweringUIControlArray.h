@@ -8,7 +8,7 @@
 #include "../Interpreter/SimpleExprInterpreter.h"
 #include <vector>
 
-/// called bei NodeUIControl and NodeSingleDeclareStatement
+/// called bei NodeUIControl and NodeSingleDeclaration
 class LoweringUIControlArray : public ASTLowering {
 private:
     // size of e.g. ui_table array
@@ -20,7 +20,7 @@ private:
 public:
 	explicit LoweringUIControlArray(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
 
-	void visit(NodeSingleDeclareStatement &node) override {
+	void visit(NodeSingleDeclaration &node) override {
 		auto node_ui_control = cast_node<NodeUIControl>(node.to_be_declared.get());
 		if(node_ui_control) {
 			if(!is_ui_control_array(node_ui_control)) return;
@@ -38,7 +38,7 @@ public:
 
 		std::unique_ptr<NodeBody> body_post_lowering = std::make_unique<NodeBody>(node.tok);
 
-		auto node_array_declaration = std::make_unique<NodeSingleDeclareStatement>(
+		auto node_array_declaration = std::make_unique<NodeSingleDeclaration>(
 			std::move(node_ui_control->control_var),
 			nullptr, node.tok
 		);
@@ -129,7 +129,7 @@ public:
 			new_ui_control->control_var->data_type = DataType::UI_Control;
 			new_ui_control->control_var->persistence = m_persistence;
 
-			auto new_node_declaration = std::make_unique<NodeSingleDeclareStatement>(
+			auto new_node_declaration = std::make_unique<NodeSingleDeclaration>(
 					std::move(new_ui_control),
 					nullptr, ui_control.tok
 					);
@@ -173,7 +173,7 @@ public:
 		node_while_body_expression->type = ASTType::Integer;
 
 		// %_lbl_lbl[_iterator] := get_ui_id($_lbl_lbl0)+_iterator in above example
-		auto node_assignment = std::make_unique<NodeSingleAssignStatement>(
+		auto node_assignment = std::make_unique<NodeSingleAssignment>(
 			std::make_unique<NodeArrayRef>(
 				ui_control.control_var->name,
 				node_iterator_var_ref->clone(), ui_control.tok
