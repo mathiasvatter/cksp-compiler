@@ -117,10 +117,10 @@ void ASTVariableChecking::visit(NodeFunctionCall &node) {
 }
 
 void ASTVariableChecking::visit(NodeSingleDeclaration& node) {
-	node.to_be_declared->determine_locality(m_program, m_current_body);
+	node.variable->determine_locality(m_program, m_current_body);
 
-    node.to_be_declared->accept(*this);
-    if(node.assignee) node.assignee->accept(*this);
+    node.variable->accept(*this);
+    if(node.value) node.value->accept(*this);
 }
 
 void ASTVariableChecking::visit(NodeArray& node) {
@@ -212,7 +212,7 @@ void ASTVariableChecking::visit(NodeConstStatement& node) {
 //	for(auto & constants : node.constants->statements) {
 //		if(constants->statement->get_node_type() == NodeType::SingleDeclareStatement) {
 //			auto decl = static_cast<NodeSingleDeclaration*>(constants->statement.get());
-//			decl->to_be_declared
+//			decl->variable
 //
 //		}
 //	}

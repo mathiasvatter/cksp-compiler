@@ -65,10 +65,10 @@ public:
 			node.definition->accept(*this);
 			for (auto &decl : m_local_var_declarations[node.definition]) {
 				// add local declarations of function definition to parameters
-				node.definition->header->args->params.push_back(decl.second->to_be_declared->clone());
+				node.definition->header->args->params.push_back(decl.second->variable->clone());
 				for (auto &call_site : node.definition->call_sites) {
 					// add references to those local variables in the function call
-					call_site->function->args->params.push_back(decl.second->to_be_declared->to_reference());
+					call_site->function->args->params.push_back(decl.second->variable->to_reference());
 					call_site->function->args->params.back()->parent = call_site->function->args.get();
 				}
 			}
@@ -97,16 +97,16 @@ public:
 	}
 
 	void inline visit(NodeSingleDeclaration& node) override {
-		if(node.assignee) node.assignee->accept(*this);
+		if(node.value) node.value->accept(*this);
 
 		// return if not in function
 		if(m_program->function_call_stack.empty()) return;
         // visit declaration node because array as function param needs to have <no brackets>
-        node.to_be_declared->accept(*this);
+        node.variable->accept(*this);
 		m_local_var_declarations[m_program->function_call_stack.top()].emplace(
-                        node.to_be_declared->name,
+                        node.variable->name,
                        std::make_unique<NodeSingleDeclaration>(
-                            clone_as<NodeDataStructure>(node.to_be_declared.get()),
+                            clone_as<NodeDataStructure>(node.variable.get()),
                             nullptr, node.tok
                        )
                    );

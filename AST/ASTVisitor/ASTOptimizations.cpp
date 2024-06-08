@@ -12,13 +12,13 @@ void ASTOptimizations::visit(NodeBinaryExpr& node) {
 
 void ASTOptimizations::visit(NodeSingleDeclaration& node) {
 	// remove unused variables -> do not remove UIControls
-//	if(!node.to_be_declared->is_used and node.to_be_declared->get_node_type() != NodeType::UIControl) {
+//	if(!node.variable->is_used and node.variable->get_node_type() != NodeType::UIControl) {
 //		node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
 //		return;
 //	}
 
-	node.to_be_declared->accept(*this);
-	if(node.assignee) node.assignee->accept(*this);
+	node.variable->accept(*this);
+	if(node.value) node.value->accept(*this);
 }
 
 void ASTOptimizations::visit(NodeBody& node) {

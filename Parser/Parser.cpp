@@ -413,16 +413,16 @@ Result<std::unique_ptr<NodeSingleAssignment>> Parser::parse_single_assign_statem
     if(node_assign_statement_res.is_error())
         Result<std::unique_ptr<NodeSingleAssignment>>(node_assign_statement_res.get_error());
     auto node_assign_statement = std::move(node_assign_statement_res.unwrap());
-    if(node_assign_statement->array_variable->params.size() != 1) {
+    if(node_assign_statement->l_value->params.size() != 1) {
         return Result<std::unique_ptr<NodeSingleAssignment>>(CompileError(ErrorType::ParseError,
-                                                                          "Incorrect Syntax in <Single Assign Statement>.", peek().line, "One Assignment", std::to_string(node_assign_statement->array_variable->params.size()), peek().file));
+                                                                          "Incorrect Syntax in <Single Assign Statement>.", peek().line, "One Assignment", std::to_string(node_assign_statement->l_value->params.size()), peek().file));
     }
-    if(node_assign_statement->assignee->params.size() != 1) {
+    if(node_assign_statement->r_value->params.size() != 1) {
         return Result<std::unique_ptr<NodeSingleAssignment>>(CompileError(ErrorType::ParseError,
-                                                                          "Incorrect Syntax in <Single Assign Statement>.", peek().line, "One Assignment", std::to_string(node_assign_statement->assignee->params.size()), peek().file));
+                                                                          "Incorrect Syntax in <Single Assign Statement>.", peek().line, "One Assignment", std::to_string(node_assign_statement->r_value->params.size()), peek().file));
     }
     auto node_single_assign_statement = std::make_unique<NodeSingleAssignment>(
-            std::move(node_assign_statement->array_variable->params[0]), std::move(node_assign_statement->assignee->params[0]), get_tok());
+            std::move(node_assign_statement->l_value->params[0]), std::move(node_assign_statement->r_value->params[0]), get_tok());
     return Result<std::unique_ptr<NodeSingleAssignment>>(std::move(node_single_assign_statement));
 }
 
@@ -443,8 +443,8 @@ Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* 
     if(assignee.is_error()) {
         return Result<std::unique_ptr<NodeAssignment>>(assignee.get_error());
     }
-    node_assign_statement->array_variable = std::move(vars);
-    node_assign_statement->assignee = std::move(assignee.unwrap());
+    node_assign_statement->l_value = std::move(vars);
+    node_assign_statement->r_value = std::move(assignee.unwrap());
     node_assign_statement->set_child_parents();
     node_assign_statement->parent = parent;
     return Result<std::unique_ptr<NodeAssignment>>(std::move(node_assign_statement));
@@ -752,12 +752,12 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_function_args(NodeAST* pare
                     return Result<std::unique_ptr<NodeParamList>>(func_param_result.get_error());
                 }
                 auto func_params = std::move(func_param_result.unwrap());
-                if(!func_params->assignee->params.empty()) {
+                if(!func_params->value->params.empty()) {
                     error.m_message = "Found incorrect syntax in <function definition> parameters.";
                     error.m_got = ":=";
                     error.exit();
                 }
-                for(auto & param : func_params->to_be_declared) {
+                for(auto & param : func_params->variable) {
                     if(param->get_node_type() == NodeType::UIControl) {
                         error.m_message = "Found incorrect data type in <function definition> parameters.";
                         error.m_got = "ui_control";
@@ -832,7 +832,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
             if (return_vars.is_error()) {
                 Result<std::unique_ptr<NodeFunctionDefinition>>(return_vars.get_error());
             }
-            auto return_var = std::move(return_vars.unwrap()->to_be_declared);
+            auto return_var = std::move(return_vars.unwrap()->variable);
             auto return_var_list = std::make_unique<NodeParamList>(get_tok());
             for(auto & var : return_var) {
                 var->parent = return_var_list.get();
@@ -926,8 +926,8 @@ Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST
         assignees = std::make_unique<NodeParamList>(get_tok());
     }
 
-    node_declare_statement->to_be_declared = std::move(to_be_declared);
-    node_declare_statement->assignee = std::move(assignees);
+    node_declare_statement->variable = std::move(to_be_declared);
+    node_declare_statement->value = std::move(assignees);
     node_declare_statement->set_child_parents();
     node_declare_statement->parent = parent;
     return Result<std::unique_ptr<NodeDeclaration>>(std::move(node_declare_statement));

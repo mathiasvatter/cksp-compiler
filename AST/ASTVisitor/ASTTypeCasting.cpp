@@ -84,51 +84,51 @@ void ASTTypeCasting::visit(NodeUIControl& node) {
 
 
 void ASTTypeCasting::visit(NodeSingleDeclaration& node) {
-    node.to_be_declared ->accept(*this);
+    node.variable ->accept(*this);
 
-    if(node.assignee) {
-        node.assignee->accept(*this);
+    if(node.value) {
+        node.value->accept(*this);
 
-        if(node.assignee->type == ASTType::Unknown and node.to_be_declared->type != ASTType::Unknown) {
-            node.assignee->type = node.to_be_declared->type;
-        } else if(node.to_be_declared->type == ASTType::String and node.assignee->type == ASTType::Integer) {
-            node.to_be_declared->type = node.to_be_declared->type;
-        } else if(node.to_be_declared->type == ASTType::Unknown) {
-            node.to_be_declared->type = node.assignee->type;
-        } else if(node.to_be_declared->type != ASTType::Unknown and node.assignee->type != node.to_be_declared->type) {
+        if(node.value->type == ASTType::Unknown and node.variable->type != ASTType::Unknown) {
+            node.value->type = node.variable->type;
+        } else if(node.variable->type == ASTType::String and node.value->type == ASTType::Integer) {
+            node.variable->type = node.variable->type;
+        } else if(node.variable->type == ASTType::Unknown) {
+            node.variable->type = node.value->type;
+        } else if(node.variable->type != ASTType::Unknown and node.value->type != node.variable->type) {
             CompileError(ErrorType::TypeError, "Found incorrect variable type in declaration.", node.tok.line,
-                         type_to_string(node.to_be_declared->type), type_to_string(node.assignee->type),
+                         type_to_string(node.variable->type), type_to_string(node.value->type),
                          node.tok.file).print();
 //            exit(EXIT_FAILURE);
         }
         // a second time to get the new types to the declaration pointer!
-//        node.to_be_declared->accept(*this);
+//        node.variable->accept(*this);
 
     }
 
-    if(node.assignee) {
-        node.assignee->accept(*this);
+    if(node.value) {
+        node.value->accept(*this);
     }
 
 }
 
 void ASTTypeCasting::visit(NodeSingleAssignment& node) {
-    node.assignee->accept(*this);
-    node.array_variable->accept(*this);
-    if(node.array_variable->type == ASTType::Unknown) {
-        node.array_variable->type = node.assignee->type;
-    } else if(node.assignee->type == ASTType::Unknown and node.array_variable->type != ASTType::Unknown) {
-        node.assignee->type = node.array_variable->type;
-    } else if(node.array_variable->type == ASTType::String and node.assignee->type == ASTType::Integer) {
-        node.array_variable->type = node.array_variable->type;
-    } else if (node.array_variable->type != ASTType::Unknown and node.array_variable->type != node.assignee->type) {
+    node.r_value->accept(*this);
+    node.l_value->accept(*this);
+    if(node.l_value->type == ASTType::Unknown) {
+        node.l_value->type = node.r_value->type;
+    } else if(node.r_value->type == ASTType::Unknown and node.l_value->type != ASTType::Unknown) {
+        node.r_value->type = node.l_value->type;
+    } else if(node.l_value->type == ASTType::String and node.r_value->type == ASTType::Integer) {
+        node.l_value->type = node.l_value->type;
+    } else if (node.l_value->type != ASTType::Unknown and node.l_value->type != node.r_value->type) {
         CompileError(ErrorType::TypeError, "Found incorrect variable type in assignment.", node.tok.line, "", "",
                      node.tok.file).print();
         exit(EXIT_FAILURE);
     }
     // a second time to get the new types to the declaration pointer!
-    node.array_variable->accept(*this);
-    node.assignee->accept(*this);
+    node.l_value->accept(*this);
+    node.r_value->accept(*this);
 }
 
 void ASTTypeCasting::visit(NodeVariableRef& node) {

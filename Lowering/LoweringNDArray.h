@@ -13,8 +13,8 @@ public:
 
 	/// returns a statement list with the declarations of the size constants of the array
 	void visit(NodeSingleDeclaration &node) override {
-        if(node.to_be_declared->get_node_type() == NodeType::NDArray) {
-            if (auto node_ndarray = cast_node<NodeNDArray>(node.to_be_declared.get())) {
+        if(node.variable->get_node_type() == NodeType::NDArray) {
+            if (auto node_ndarray = cast_node<NodeNDArray>(node.variable.get())) {
                 auto node_body = std::make_unique<NodeBody>(node.tok);
                 for (int i = 0; i < node_ndarray->dimensions; i++) {
                     auto node_var = std::make_unique<NodeVariable>(
@@ -29,7 +29,7 @@ public:
                     node_statement->update_parents(node_body.get());
                     node_body->statements.push_back(std::move(node_statement));
                 }
-                node.to_be_declared->accept(*this);
+                node.variable->accept(*this);
                 node_body->statements.push_back(std::make_unique<NodeStatement>(node.clone(), node.tok));
                 node.replace_with(std::move(node_body));
             }

@@ -37,11 +37,11 @@ struct NodeStatement: NodeInstruction {
 };
 
 struct NodeAssignment: NodeInstruction {
-    std::unique_ptr<NodeParamList> array_variable;
-    std::unique_ptr<NodeParamList> assignee;
+    std::unique_ptr<NodeParamList> l_value;
+    std::unique_ptr<NodeParamList> r_value;
     inline explicit NodeAssignment(Token tok) : NodeInstruction(NodeType::AssignStatement, std::move(tok)) {}
     inline NodeAssignment(std::unique_ptr<NodeParamList> array_variable, std::unique_ptr<NodeParamList> assignee, Token tok)
-            : NodeInstruction(NodeType::AssignStatement, std::move(tok)), array_variable(std::move(array_variable)), assignee(std::move(assignee)) {
+            : NodeInstruction(NodeType::AssignStatement, std::move(tok)), l_value(std::move(array_variable)), r_value(std::move(assignee)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
@@ -51,30 +51,30 @@ struct NodeAssignment: NodeInstruction {
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
-        array_variable->update_parents(this);
-        assignee->update_parents(this);
+        l_value->update_parents(this);
+        r_value->update_parents(this);
     }
     void set_child_parents() override {
-        if(array_variable) array_variable->parent = this;
-        if(assignee) assignee->parent = this;
+        if(l_value) l_value->parent = this;
+        if(r_value) r_value->parent = this;
     };
     std::string get_string() override {
-        return array_variable->get_string() + " := " + assignee->get_string();
+        return l_value->get_string() + " := " + r_value->get_string();
     }
     void update_token_data(const Token& token) override {
-        array_variable -> update_token_data(token);
-        assignee -> update_token_data(token);
+        l_value -> update_token_data(token);
+        r_value -> update_token_data(token);
     }
 
     [[nodiscard]] ASTDesugaring* get_desugaring() const override;
 };
 
 struct NodeSingleAssignment : NodeInstruction {
-    std::unique_ptr<NodeAST> array_variable;
-    std::unique_ptr<NodeAST> assignee;
+    std::unique_ptr<NodeAST> l_value;
+    std::unique_ptr<NodeAST> r_value;
     inline explicit NodeSingleAssignment(Token tok) : NodeInstruction(NodeType::SingleAssignStatement, std::move(tok)) {}
     NodeSingleAssignment(std::unique_ptr<NodeAST> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
-            : NodeInstruction(NodeType::SingleAssignStatement, std::move(tok)), array_variable(std::move(arrayVariable)), assignee(std::move(assignee)) {
+            : NodeInstruction(NodeType::SingleAssignStatement, std::move(tok)), l_value(std::move(arrayVariable)), r_value(std::move(assignee)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
@@ -85,29 +85,29 @@ struct NodeSingleAssignment : NodeInstruction {
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
-        array_variable->update_parents(this);
-        assignee->update_parents(this);
+        l_value->update_parents(this);
+        r_value->update_parents(this);
     }
     void set_child_parents() override {
-        if(array_variable) array_variable->parent = this;
-        if(assignee) assignee->parent = this;
+        if(l_value) l_value->parent = this;
+        if(r_value) r_value->parent = this;
     };
     std::string get_string() override {
-        return array_variable->get_string() + " := " + assignee->get_string();
+        return l_value->get_string() + " := " + r_value->get_string();
     }
     void update_token_data(const Token& token) override {
-        array_variable -> update_token_data(token);
-        assignee -> update_token_data(token);
+        l_value -> update_token_data(token);
+        r_value -> update_token_data(token);
     }
     ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
 };
 
 struct NodeDeclaration : NodeInstruction {
-    std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared;
-    std::unique_ptr<NodeParamList> assignee;
+    std::vector<std::unique_ptr<NodeDataStructure>> variable;
+    std::unique_ptr<NodeParamList> value;
     inline explicit NodeDeclaration(Token tok) : NodeInstruction(NodeType::DeclareStatement, std::move(tok)) {}
     inline NodeDeclaration(std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared, std::unique_ptr<NodeParamList> assignee, Token tok)
-            : NodeInstruction(NodeType::DeclareStatement, std::move(tok)), to_be_declared(std::move(to_be_declared)), assignee(std::move(assignee)) {
+            : NodeInstruction(NodeType::DeclareStatement, std::move(tok)), variable(std::move(to_be_declared)), value(std::move(assignee)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
@@ -117,33 +117,33 @@ struct NodeDeclaration : NodeInstruction {
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override;
     void set_child_parents() override {
-        for(auto& decl : to_be_declared) {
+        for(auto& decl : variable) {
             if(decl) decl->parent = this;
         }
-        if(assignee) assignee->parent = this;
+        if(value) value->parent = this;
     };
     std::string get_string() override {
         std::string str = "declare ";
-        for(auto & decl : to_be_declared) {
+        for(auto & decl : variable) {
             str += decl->get_string() + ", ";
         }
-        return str.erase(str.size() - 2) + assignee->get_string();
+        return str.erase(str.size() - 2) + value->get_string();
     }
     void update_token_data(const Token& token) override {
-        for(auto const &decl : to_be_declared) {
+        for(auto const &decl : variable) {
             decl->update_token_data(token);
         }
-        assignee -> update_token_data(token);
+        value -> update_token_data(token);
     }
     ASTDesugaring* get_desugaring() const override;
 };
 
 struct NodeSingleDeclaration : NodeInstruction {
-    std::unique_ptr<NodeDataStructure> to_be_declared;
-    std::unique_ptr<NodeAST> assignee;
+    std::unique_ptr<NodeDataStructure> variable;
+    std::unique_ptr<NodeAST> value;
     inline explicit NodeSingleDeclaration(Token tok) : NodeInstruction(NodeType::SingleDeclareStatement, std::move(tok)) {}
     NodeSingleDeclaration(std::unique_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
-            : NodeInstruction(NodeType::SingleDeclareStatement, std::move(tok)), to_be_declared(std::move(arrayVariable)), assignee(std::move(assignee)) {
+            : NodeInstruction(NodeType::SingleDeclareStatement, std::move(tok)), variable(std::move(arrayVariable)), value(std::move(assignee)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
@@ -154,25 +154,25 @@ struct NodeSingleDeclaration : NodeInstruction {
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
-        to_be_declared->update_parents(this);
-        if(assignee) assignee->update_parents(this);
+        variable->update_parents(this);
+        if(value) value->update_parents(this);
     }
     void set_child_parents() override {
-        if(to_be_declared) to_be_declared->parent = this;
-        if(assignee) assignee->parent = this;
+        if(variable) variable->parent = this;
+        if(value) value->parent = this;
     };
     std::string get_string() override {
-        auto string = to_be_declared->get_string();
-        if(assignee)
-            string += " := " + assignee->get_string();
+        auto string = variable->get_string();
+        if(value)
+            string += " := " + value->get_string();
         return string;
     }
     void update_token_data(const Token& token) override {
-        to_be_declared -> update_token_data(token);
-        if(assignee) assignee -> update_token_data(token);
+        variable -> update_token_data(token);
+        if(value) value -> update_token_data(token);
     }
     ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
-    /// returns new assign statement with the declared variable and assignee or neutral element. Can optionally take new
+    /// returns new assign statement with the declared variable and r_value or neutral element. Can optionally take new
     /// variable to make reference of
     [[nodiscard]] std::unique_ptr<NodeSingleAssignment> to_assign_stmt(NodeDataStructure* var=nullptr);
 };

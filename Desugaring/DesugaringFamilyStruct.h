@@ -23,10 +23,10 @@ public:
 //    void visit(NodeSingleDeclaration& node) override {
 //        if(!m_family_prefixes.empty()) {
 //            // Ui control data structures need to go one level deeper
-//            if(node.to_be_declared->get_node_type() != NodeType::UIControl) {
-//                node.to_be_declared->name = m_family_prefixes.top() + "." + node.to_be_declared->name;
+//            if(node.variable->get_node_type() != NodeType::UIControl) {
+//                node.variable->name = m_family_prefixes.top() + "." + node.variable->name;
 //            } else {
-//                node.to_be_declared ->accept(*this);
+//                node.variable ->accept(*this);
 //            }
 //        }
 //    };

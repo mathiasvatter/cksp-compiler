@@ -19,11 +19,11 @@ void TypeCasting::visit(NodeProgram& node) {
         match_reference_declaration(ref);
     }
     for(auto & decl : m_declarations) {
-        if(decl->assignee) {
-			match_assignment_types(decl->to_be_declared.get(), decl->assignee.get());
+        if(decl->value) {
+			match_assignment_types(decl->variable.get(), decl->value.get());
         }
 		// cast as Integer if still unknown
-		if(cast) decl->to_be_declared->cast_type();
+		if(cast) decl->variable->cast_type();
     }
     for(auto & ref : m_references) {
         match_reference_declaration(ref);
@@ -46,10 +46,10 @@ void TypeCasting::visit(NodeConstStatement& node) {
 	node.ty = TypeRegistry::Integer;
 	for(auto & constant : node.constants->statements) {
 		if(auto decl = cast_node<NodeSingleDeclaration>(constant->statement.get())) {
-			if(decl->to_be_declared->ty == TypeRegistry::Unknown || decl->to_be_declared->ty == TypeRegistry::Integer) {
-				decl->to_be_declared->ty = TypeRegistry::Integer;
+			if(decl->variable->ty == TypeRegistry::Unknown || decl->variable->ty == TypeRegistry::Integer) {
+				decl->variable->ty = TypeRegistry::Integer;
 			} else {
-				auto error = throw_type_error(decl->to_be_declared.get(), &node);
+				auto error = throw_type_error(decl->variable.get(), &node);
 				error.m_message += "Constant Blocks can only contain <Integer> Variables.";
 				error.exit();
 			}
@@ -165,17 +165,17 @@ void TypeCasting::visit(NodeParamList& node) {
 }
 
 void TypeCasting::visit(NodeSingleDeclaration& node) {
-	node.to_be_declared->accept(*this);
+	node.variable->accept(*this);
 
-	if(node.assignee) {
-		node.assignee->accept(*this);
-		// cast node assignee to composite type if to_be_declared is composite type
-		if(node.assignee ->get_node_type() == NodeType::ParamList and node.to_be_declared->ty->get_type_kind() == TypeKind::Composite) {
-			node.assignee->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.to_be_declared->ty)->get_compound_type(), node.assignee->ty->get_element_type(), node.to_be_declared->ty->get_dimensions());
+	if(node.value) {
+		node.value->accept(*this);
+		// cast node r_value to composite type if variable is composite type
+		if(node.value ->get_node_type() == NodeType::ParamList and node.variable->ty->get_type_kind() == TypeKind::Composite) {
+			node.value->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.variable->ty)->get_compound_type(), node.value->ty->get_element_type(), node.variable->ty->get_dimensions());
 		}
-		match_assignment_types(node.to_be_declared.get(), node.assignee.get());
-//        match_type(node.to_be_declared.get(), node.assignee.get());
-//		match_type(node.assignee.get(), node.to_be_declared.get());
+		match_assignment_types(node.variable.get(), node.value.get());
+//        match_type(node.variable.get(), node.r_value.get());
+//		match_type(node.r_value.get(), node.variable.get());
 	}
     m_declarations.push_back(&node);
 }
@@ -202,19 +202,19 @@ void TypeCasting::visit(NodeUIControl& node) {
 }
 
 void TypeCasting::visit(NodeSingleAssignment& node) {
-	node.array_variable->accept(*this);
-	node.assignee->accept(*this);
-	// cast node assignee to composite type if to_be_declared is composite type
-	if(node.assignee ->get_node_type() == NodeType::ParamList and node.array_variable->ty->get_type_kind() == TypeKind::Composite) {
-		node.assignee->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.array_variable->ty)->get_compound_type(), node.assignee->ty->get_element_type(), node.array_variable->ty->get_dimensions());
+	node.l_value->accept(*this);
+	node.r_value->accept(*this);
+	// cast node r_value to composite type if variable is composite type
+	if(node.r_value ->get_node_type() == NodeType::ParamList and node.l_value->ty->get_type_kind() == TypeKind::Composite) {
+		node.r_value->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.l_value->ty)->get_compound_type(), node.r_value->ty->get_element_type(), node.l_value->ty->get_dimensions());
 	}
-	match_assignment_types(node.array_variable.get(), node.assignee.get());
-//    match_type(node.array_variable.get(), node.assignee.get());
-//    match_type(node.assignee.get(), node.array_variable.get());
+	match_assignment_types(node.l_value.get(), node.r_value.get());
+//    match_type(node.l_value.get(), node.r_value.get());
+//    match_type(node.r_value.get(), node.l_value.get());
 
 	// a second time to get the new types to the declaration pointer!
-	node.array_variable->accept(*this);
-	node.assignee->accept(*this);
+	node.l_value->accept(*this);
+	node.r_value->accept(*this);
 }
 
 void TypeCasting::visit(NodeFunctionCall& node) {

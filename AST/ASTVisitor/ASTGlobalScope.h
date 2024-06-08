@@ -33,7 +33,7 @@ public:
             local_declare_statement->statements.push_back(
 				std::make_unique<NodeStatement>(
 					std::make_unique<NodeSingleDeclaration>(
-						clone_as<NodeDataStructure>(node_declare_statement->to_be_declared.get()),
+						clone_as<NodeDataStructure>(node_declare_statement->variable.get()),
 						    nullptr, node.tok
 						),
 					node.tok)
@@ -111,23 +111,23 @@ public:
 	}
 
 	void inline visit(NodeSingleDeclaration& node) override {
-		node.to_be_declared->determine_locality(m_program, m_current_body);
+		node.variable->determine_locality(m_program, m_current_body);
 
-		if(node.assignee) node.assignee->accept(*this);
+		if(node.value) node.value->accept(*this);
 
-		if(node.to_be_declared->is_local) {
+		if(node.variable->is_local) {
 			if(is_thread_safe_env()) {
-				if (auto free_passive_var = get_free_passive_var(node.to_be_declared->ty)) {
-					m_passive_vars_replace.back().insert({node.to_be_declared->name, free_passive_var});
+				if (auto free_passive_var = get_free_passive_var(node.variable->ty)) {
+					m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
 					auto node_assign_statement = node.to_assign_stmt(free_passive_var);
-					m_all_local_references.push_back(static_cast<NodeReference *>(node_assign_statement->array_variable.get()));
+					m_all_local_references.push_back(static_cast<NodeReference *>(node_assign_statement->l_value.get()));
 					node.replace_with(std::move(node_assign_statement));
 					return;
 				}
 			}
 		}
 		// only add var to local scope if it is not replaced by passive_var
-		node.to_be_declared->accept(*this);
+		node.variable->accept(*this);
 
 	}
 

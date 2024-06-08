@@ -12,16 +12,16 @@ public:
 	explicit LoweringGetControl(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
 
 	void visit(NodeSingleAssignment &node) override {
-		node.assignee->accept(*this);
-		// check if assignee is a NodeGetControl
-		if(node.array_variable->get_node_type() != NodeType::GetControlStatement) return;
+		node.r_value->accept(*this);
+		// check if r_value is a NodeGetControl
+		if(node.l_value->get_node_type() != NodeType::GetControlStatement) return;
 
-		auto get_control_statement = cast_node<NodeGetControl>(node.array_variable.get());
+		auto get_control_statement = cast_node<NodeGetControl>(node.l_value.get());
 		std::string control_function = "set_control_par";
 
 		auto new_node = lowering(control_function, get_control_statement);
-		// add assignee as third parameter to set_control_par
-		new_node->function->args->params.push_back(std::move(node.assignee));
+		// add r_value as third parameter to set_control_par
+		new_node->function->args->params.push_back(std::move(node.r_value));
 		new_node->function->args->set_child_parents();
 		node.replace_with(std::move(new_node));
 	};
