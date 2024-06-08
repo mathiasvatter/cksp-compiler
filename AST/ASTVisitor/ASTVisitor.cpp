@@ -15,8 +15,8 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_declare_variable(const std::stri
 		std::move(node_variable),
 		std::make_unique<NodeInt>(value, parent->tok),
 		parent->tok);
-    node_declare_statement->assignee->parent = node_declare_statement.get();
-    node_declare_statement->to_be_declared->parent = node_declare_statement.get();
+    node_declare_statement->value->parent = node_declare_statement.get();
+    node_declare_statement->variable->parent = node_declare_statement.get();
     return std::make_unique<NodeStatement>(std::move(node_declare_statement), parent->tok);
 }
 

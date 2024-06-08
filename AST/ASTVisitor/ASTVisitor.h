@@ -69,24 +69,24 @@ public:
 		node.right->accept(*this);
 	};
     virtual void visit(NodeDeclaration& node) {
-        for(auto const &decl : node.to_be_declared) {
+        for(auto const &decl : node.variable) {
             decl->accept(*this);
         }
-		if(node.assignee)
-        	node.assignee -> accept(*this);
+		if(node.value)
+        	node.value -> accept(*this);
 	};
     virtual void visit(NodeSingleDeclaration& node) {
-        node.to_be_declared ->accept(*this);
-		if(node.assignee)
-        	node.assignee -> accept(*this);
+        node.variable ->accept(*this);
+		if(node.value)
+        	node.value -> accept(*this);
     };
     virtual void visit(NodeAssignment& node) {
-		node.array_variable->accept(*this);
-		node.assignee->accept(*this);
+		node.l_value->accept(*this);
+		node.r_value->accept(*this);
 	};
     virtual void visit(NodeSingleAssignment& node) {
-        node.array_variable ->accept(*this);
-		node.assignee -> accept(*this);
+        node.l_value ->accept(*this);
+		node.r_value -> accept(*this);
     };
 	virtual void visit(NodeReturn& node) {
 		CompileError(ErrorType::SyntaxError, "<return> node not yet implemented.", "", node.tok).exit();

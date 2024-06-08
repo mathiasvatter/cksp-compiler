@@ -21,7 +21,7 @@ public:
 	explicit LoweringUIControlArray(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
 
 	void visit(NodeSingleDeclaration &node) override {
-		auto node_ui_control = cast_node<NodeUIControl>(node.to_be_declared.get());
+		auto node_ui_control = cast_node<NodeUIControl>(node.variable.get());
 		if(node_ui_control) {
 			if(!is_ui_control_array(node_ui_control)) return;
 			// move persistence information to not get a persistent array
@@ -43,7 +43,7 @@ public:
 			nullptr, node.tok
 		);
 		// not data typ ui_control anymore
-		node_array_declaration->to_be_declared->data_type = DataType::Array;
+		node_array_declaration->variable->data_type = DataType::Array;
 		// wrap in statement to make use of replace_child
 		auto node_statement = std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok);
 		// lowering of ndarray, turn DeclareStatement into NodeBody

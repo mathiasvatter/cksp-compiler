@@ -38,24 +38,24 @@ public:
     };
 
     void visit(NodeSingleDeclaration& node) override {
-        if (node.to_be_declared->get_node_type() != NodeType::Variable) {
-            auto error = CompileError(ErrorType::SyntaxError,"", "", node.to_be_declared->tok);
+        if (node.variable->get_node_type() != NodeType::Variable) {
+            auto error = CompileError(ErrorType::SyntaxError,"", "", node.variable->tok);
 			error.m_message = "Found incorrect <Constant Block> syntax. <Constant Blocks> can only contain <Variables>.";
 			error.exit();
         }
-        node.to_be_declared->accept(*this);
+        node.variable->accept(*this);
         // has no value -> create one
-        if(!node.assignee) {
-            node.assignee = std::make_unique<NodeBinaryExpr>(
+        if(!node.value) {
+            node.value = std::make_unique<NodeBinaryExpr>(
                     token::ADD,
                     m_pre->clone(),
                     m_iter->clone(), node.tok
                     );
         } else {
-            m_pre = node.assignee->clone();
+            m_pre = node.value->clone();
             m_iter = std::make_unique<NodeInt>(0, node.tok);
         }
-        node.to_be_declared->data_type = DataType::Const;
+        node.variable->data_type = DataType::Const;
         node.set_child_parents();
     };
 

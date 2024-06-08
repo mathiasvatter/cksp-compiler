@@ -88,7 +88,7 @@ public:
                         DataType::Const, node.tok),
                 std::make_unique<NodeInt>(main_size,node.tok), node.tok);
 		// add "_" to main array name if dimension is > 1
-		if(max_dimension>1) node_declare_main_array->to_be_declared->name = "_"+node_declare_main_array->to_be_declared->name;
+		if(max_dimension>1) node_declare_main_array->variable->name = "_" + node_declare_main_array->variable->name;
         node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_main_array), node.tok));
         node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_main_const), node.tok));
 

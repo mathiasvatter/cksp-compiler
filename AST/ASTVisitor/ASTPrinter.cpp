@@ -65,24 +65,24 @@ void ASTPrinter::visit(NodeUIControl &node) {
 
 void ASTPrinter::visit(NodeDeclaration &node) {
 	os << "declare ";
-	for(auto const &decl : node.to_be_declared) {
+	for(auto const &decl : node.variable) {
 		decl->accept(*this);
 	}
-	if(node.assignee) {
+	if(node.value) {
 		os << " := ";
-		node.assignee->accept(*this);
+		node.value->accept(*this);
 	}
 	os << "";
 }
 
 void ASTPrinter::visit(NodeSingleDeclaration &node) {
 	os << "declare ";
-	node.to_be_declared->accept(*this);
-	if(node.assignee) {
+	node.variable->accept(*this);
+	if(node.value) {
         os << " := ";
-        auto node_param_list = node.assignee->get_node_type() == NodeType::ParamList;
+        auto node_param_list = node.value->get_node_type() == NodeType::ParamList;
         if(node_param_list) os << "(";
-        node.assignee->accept(*this);
+        node.value->accept(*this);
         if(node_param_list) os << ")";
 	}
 	os << "";
@@ -115,18 +115,18 @@ void ASTPrinter::visit(NodeUnaryExpr &node) {
 
 void ASTPrinter::visit(NodeAssignment &node) {
     os << "";
-    node.array_variable->accept(*this);
+    node.l_value->accept(*this);
     os << " := ";
-    node.assignee->accept(*this);
+    node.r_value->accept(*this);
 }
 
 void ASTPrinter::visit(NodeSingleAssignment &node) {
     os << "";
-    node.array_variable->accept(*this);
+    node.l_value->accept(*this);
     os << " := ";
-    auto node_param_list = node.assignee->get_node_type() == NodeType::ParamList;
+    auto node_param_list = node.r_value->get_node_type() == NodeType::ParamList;
     if(node_param_list) os << "(";
-    node.assignee->accept(*this);
+    node.r_value->accept(*this);
     if(node_param_list) os << ")";
 }
 

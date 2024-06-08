@@ -101,12 +101,12 @@ void ASTGenerator::visit(NodeUIControl &node) {
 
 void ASTGenerator::visit(NodeSingleDeclaration &node) {
     os << "declare ";
-    node.to_be_declared->accept(*this);
-    if(node.assignee != nullptr) {
+    node.variable->accept(*this);
+    if(node.value != nullptr) {
         os << " := ";
-        auto node_param_list = node.assignee->get_node_type() == NodeType::ParamList;
+        auto node_param_list = node.value->get_node_type() == NodeType::ParamList;
         if(node_param_list) os << "(";
-        node.assignee->accept(*this);
+        node.value->accept(*this);
         if(node_param_list) os << ")";
     }
     os << "";
@@ -138,9 +138,9 @@ void ASTGenerator::visit(NodeUnaryExpr &node) {
 }
 
 void ASTGenerator::visit(NodeSingleAssignment &node) {
-    node.array_variable->accept(*this);
+    node.l_value->accept(*this);
     os << " := ";
-    node.assignee->accept(*this);
+    node.r_value->accept(*this);
 }
 
 void ASTGenerator::visit(NodeStatement &node) {
