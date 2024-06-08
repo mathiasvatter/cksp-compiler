@@ -6,13 +6,13 @@
 
 #include "ASTLowering.h"
 
-/// entry points: NodeSingleDeclareStatement
+/// entry points: NodeSingleDeclaration
 class LoweringNDArray : public ASTLowering {
 public:
 	explicit LoweringNDArray(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
 
 	/// returns a statement list with the declarations of the size constants of the array
-	void visit(NodeSingleDeclareStatement &node) override {
+	void visit(NodeSingleDeclaration &node) override {
         if(node.to_be_declared->get_node_type() == NodeType::NDArray) {
             if (auto node_ndarray = cast_node<NodeNDArray>(node.to_be_declared.get())) {
                 auto node_body = std::make_unique<NodeBody>(node.tok);
@@ -22,7 +22,7 @@ public:
                             node_ndarray->name + ".SIZE_D" + std::to_string(i + 1),
                             TypeRegistry::Integer,
                             DataType::Const, node.tok);
-                    auto node_declaration = std::make_unique<NodeSingleDeclareStatement>(
+                    auto node_declaration = std::make_unique<NodeSingleDeclaration>(
                             std::move(node_var),
                             node_ndarray->sizes->params[i]->clone(), node.tok);
                     auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);

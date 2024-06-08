@@ -91,13 +91,13 @@ protected:
 		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr(NodeAST* parent);
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr(NodeAST* parent);
-    Result<std::unique_ptr<NodeAssignStatement>> parse_assign_statement(NodeAST* parent);
-	Result<std::unique_ptr<NodeReturnStatement>> parse_return_statement(NodeAST* parent);
-    Result<std::unique_ptr<NodeSingleAssignStatement>> parse_single_assign_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeAssignment>> parse_assign_statement(NodeAST* parent);
+	Result<std::unique_ptr<NodeReturn>> parse_return_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeSingleAssignment>> parse_single_assign_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_declare_array(NodeAST* parent);
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);
-    Result<std::unique_ptr<NodeDeclareStatement>> parse_declare_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeDeclaration>> parse_declare_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_const_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_list_block(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_family_statement(NodeAST* parent);
@@ -110,7 +110,7 @@ protected:
     Result<std::unique_ptr<NodeForEachStatement>> parse_for_each_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeWhileStatement>> parse_while_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeSelectStatement>> parse_select_statement(NodeAST* parent);
-    Result<std::unique_ptr<NodeGetControlStatement>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent);
+    Result<std::unique_ptr<NodeGetControl>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent);
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition(NodeAST* parent);
     /// function args are no references -> replace with references
     Result<std::unique_ptr<NodeParamList>> parse_function_args(NodeAST* parent, bool is_definition);

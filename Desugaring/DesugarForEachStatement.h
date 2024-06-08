@@ -77,10 +77,10 @@ public:
         node_key_variable->is_local = true;
         node_key_variable->ty = TypeRegistry::Integer;
 
-        auto node_key_declaration = std::make_unique<NodeSingleDeclareStatement>(
+        auto node_key_declaration = std::make_unique<NodeSingleDeclaration>(
                 std::move(node_key_variable),
                 nullptr, node.tok);
-        auto node_key_iterator = std::make_unique<NodeSingleAssignStatement>(
+        auto node_key_iterator = std::make_unique<NodeSingleAssignment>(
                 node.keys->params[0]->clone(),
                 std::make_unique<NodeInt>(0, node.tok), node.tok);
         Token token_to = Token(token::TO, "to", node.tok.line, node.tok.pos, node.tok.file);

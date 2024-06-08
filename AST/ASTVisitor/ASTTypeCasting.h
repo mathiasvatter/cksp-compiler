@@ -12,10 +12,10 @@ public:
     explicit ASTTypeCasting(DefinitionProvider* definition_provider);
 
     void visit(NodeProgram& node) override;
-    void visit(NodeSingleDeclareStatement& node) override;
+    void visit(NodeSingleDeclaration& node) override;
     void visit(NodeUIControl& node) override;
     void visit(NodeParamList& node) override;
-    void visit(NodeSingleAssignStatement& node) override;
+    void visit(NodeSingleAssignment& node) override;
     void visit(NodeVariableRef& node) override;
     void visit(NodeVariable& node) override;
     void visit(NodeArray& node) override;

@@ -18,9 +18,9 @@
  * The lowering process is necessary for certain operations that are not directly supported by the target language.
  *
  * The following AST nodes are being lowered by this class:
- * - NodeSingleDeclareStatement: Lower ndarray when declaration or ui_control array or determine size of array in declaration.
- * - NodeSingleAssignStatement: Lower get_control statements to set_control_par.
- * - NodeGetControlStatement: Lower get_control statements to get_control_par.
+ * - NodeSingleDeclaration: Lower ndarray when declaration or ui_control array or determine size of array in declaration.
+ * - NodeSingleAssignment: Lower get_control statements to set_control_par.
+ * - NodeGetControl: Lower get_control statements to get_control_par.
  * - NodeFunctionCall: Lower property functions to get_control_par.
  * - NodeNDArray: Lower ndArray when they are a reference.
  * - NodeConstStatement: Lower const block to single declare statements.
@@ -35,11 +35,11 @@ public:
     explicit ASTCollectLowerings(DefinitionProvider* definition_provider);
 
 	/// lower ndarray when declaration or ui_control array
-    void visit(NodeSingleDeclareStatement& node) override;
+    void visit(NodeSingleDeclaration& node) override;
 	/// lower get_control statements to set_control_par
-	void visit(NodeSingleAssignStatement& node) override;
+	void visit(NodeSingleAssignment& node) override;
 	/// lower get_control statements to get_control_par
-	void visit(NodeGetControlStatement& node) override;
+	void visit(NodeGetControl& node) override;
 	/// lower property functions to get_control_par
 	void visit(NodeFunctionCall& node) override;
     /// determine size of array in declaration if possible
@@ -48,7 +48,7 @@ public:
 	void visit(NodeNDArrayRef& node) override;
 	/// lower const block to single declare statements
     void visit(NodeConstStatement& node) override;
-//    void visit(NodeFamilyStatement& node) override;
+//    void visit(NodeFamily& node) override;
 
 	/// lower list struct references to array references
 	void visit(NodeListStructRef& node) override;

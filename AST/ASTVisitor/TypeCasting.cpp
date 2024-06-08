@@ -45,7 +45,7 @@ void TypeCasting::visit(NodeString& node) {
 void TypeCasting::visit(NodeConstStatement& node) {
 	node.ty = TypeRegistry::Integer;
 	for(auto & constant : node.constants->statements) {
-		if(auto decl = cast_node<NodeSingleDeclareStatement>(constant->statement.get())) {
+		if(auto decl = cast_node<NodeSingleDeclaration>(constant->statement.get())) {
 			if(decl->to_be_declared->ty == TypeRegistry::Unknown || decl->to_be_declared->ty == TypeRegistry::Integer) {
 				decl->to_be_declared->ty = TypeRegistry::Integer;
 			} else {
@@ -164,7 +164,7 @@ void TypeCasting::visit(NodeParamList& node) {
     node.ty = infer_initialization_types(types, &node);
 }
 
-void TypeCasting::visit(NodeSingleDeclareStatement& node) {
+void TypeCasting::visit(NodeSingleDeclaration& node) {
 	node.to_be_declared->accept(*this);
 
 	if(node.assignee) {
@@ -201,7 +201,7 @@ void TypeCasting::visit(NodeUIControl& node) {
 	node.params->accept(*this);
 }
 
-void TypeCasting::visit(NodeSingleAssignStatement& node) {
+void TypeCasting::visit(NodeSingleAssignment& node) {
 	node.array_variable->accept(*this);
 	node.assignee->accept(*this);
 	// cast node assignee to composite type if to_be_declared is composite type

@@ -28,11 +28,11 @@ public:
         auto local_declare_statement = std::make_unique<NodeBody>(node.tok);
         for(auto & local_var : m_all_local_callback_vars) {
 			local_var->is_local = false;
-            auto node_declare_statement = static_cast<NodeSingleDeclareStatement*>(local_var->parent);
+            auto node_declare_statement = static_cast<NodeSingleDeclaration*>(local_var->parent);
             auto node_assign_statement = node_declare_statement->to_assign_stmt();
             local_declare_statement->statements.push_back(
 				std::make_unique<NodeStatement>(
-					std::make_unique<NodeSingleDeclareStatement>(
+					std::make_unique<NodeSingleDeclaration>(
 						clone_as<NodeDataStructure>(node_declare_statement->to_be_declared.get()),
 						    nullptr, node.tok
 						),
@@ -110,7 +110,7 @@ public:
 		m_program->function_call_stack.pop();
 	}
 
-	void inline visit(NodeSingleDeclareStatement& node) override {
+	void inline visit(NodeSingleDeclaration& node) override {
 		node.to_be_declared->determine_locality(m_program, m_current_body);
 
 		if(node.assignee) node.assignee->accept(*this);

@@ -28,7 +28,7 @@ public:
 		}
 		if(node.is_function_param()) return;
 
-		auto node_declaration = cast_node<NodeSingleDeclareStatement>(node.parent);
+		auto node_declaration = cast_node<NodeSingleDeclaration>(node.parent);
 		// infer size from assignee param list
 		if (!node.size) {
 			// in case it is ui_control array and size is not determined

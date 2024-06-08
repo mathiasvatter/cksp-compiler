@@ -30,37 +30,37 @@ NodeAST * NodeStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
     return nullptr;
 }
 
-// ************* NodeAssignStatement ***************
-void NodeAssignStatement::accept(ASTVisitor &visitor) {
+// ************* NodeAssignment ***************
+void NodeAssignment::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeAssignStatement::NodeAssignStatement(const NodeAssignStatement& other)
+NodeAssignment::NodeAssignment(const NodeAssignment& other)
         : NodeInstruction(other), array_variable(clone_unique(other.array_variable)),
           assignee(clone_unique(other.assignee)) {
     set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeAssignStatement::clone() const {
-    return std::make_unique<NodeAssignStatement>(*this);
+std::unique_ptr<NodeAST> NodeAssignment::clone() const {
+    return std::make_unique<NodeAssignment>(*this);
 }
 
-ASTDesugaring* NodeAssignStatement::get_desugaring() const {
+ASTDesugaring* NodeAssignment::get_desugaring() const {
     static DesugarDeclareAssign desugaring;
     return &desugaring;
 }
 
-// ************* NodeSingleAssignStatement ***************
-void NodeSingleAssignStatement::accept(ASTVisitor &visitor) {
+// ************* NodeSingleAssignment ***************
+void NodeSingleAssignment::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeSingleAssignStatement::NodeSingleAssignStatement(const NodeSingleAssignStatement& other)
+NodeSingleAssignment::NodeSingleAssignment(const NodeSingleAssignment& other)
         : NodeInstruction(other), array_variable(clone_unique(other.array_variable)),
           assignee(clone_unique(other.assignee)) {
     set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeSingleAssignStatement::clone() const {
-    return std::make_unique<NodeSingleAssignStatement>(*this);
+std::unique_ptr<NodeAST> NodeSingleAssignment::clone() const {
+    return std::make_unique<NodeSingleAssignment>(*this);
 }
-NodeAST * NodeSingleAssignStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeSingleAssignment::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (array_variable.get() == oldChild) {
         array_variable = std::move(newChild);
         return array_variable.get();
@@ -71,24 +71,24 @@ NodeAST * NodeSingleAssignStatement::replace_child(NodeAST* oldChild, std::uniqu
     return nullptr;
 }
 
-ASTVisitor* NodeSingleAssignStatement::get_lowering(DefinitionProvider* def_provider) const {
+ASTVisitor* NodeSingleAssignment::get_lowering(DefinitionProvider* def_provider) const {
     return this->array_variable->get_lowering(def_provider);
 }
 
-// ************* NodeDeclareStatement ***************
-void NodeDeclareStatement::accept(ASTVisitor &visitor) {
+// ************* NodeDeclaration ***************
+void NodeDeclaration::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeDeclareStatement::NodeDeclareStatement(const NodeDeclareStatement& other)
+NodeDeclaration::NodeDeclaration(const NodeDeclaration& other)
         : NodeInstruction(other), to_be_declared(clone_vector(other.to_be_declared)),
           assignee(clone_unique(other.assignee)) {
     set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeDeclareStatement::clone() const {
-    return std::make_unique<NodeDeclareStatement>(*this);
+std::unique_ptr<NodeAST> NodeDeclaration::clone() const {
+    return std::make_unique<NodeDeclaration>(*this);
 }
 
-void NodeDeclareStatement::update_parents(NodeAST* new_parent)  {
+void NodeDeclaration::update_parents(NodeAST* new_parent)  {
     parent = new_parent;
     for(auto const &decl : to_be_declared) {
         decl->update_parents(this);
@@ -96,24 +96,24 @@ void NodeDeclareStatement::update_parents(NodeAST* new_parent)  {
     if(assignee) assignee->update_parents(this);
 }
 
-ASTDesugaring* NodeDeclareStatement::get_desugaring() const {
+ASTDesugaring* NodeDeclaration::get_desugaring() const {
     static DesugarDeclareAssign desugaring;
     return &desugaring;
 }
 
-// ************* NodeSingleDeclareStatement ***************
-void NodeSingleDeclareStatement::accept(ASTVisitor &visitor) {
+// ************* NodeSingleDeclaration ***************
+void NodeSingleDeclaration::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeSingleDeclareStatement::NodeSingleDeclareStatement(const NodeSingleDeclareStatement& other)
+NodeSingleDeclaration::NodeSingleDeclaration(const NodeSingleDeclaration& other)
         : NodeInstruction(other), to_be_declared(clone_unique(other.to_be_declared)),
           assignee(clone_unique(other.assignee)) {
     set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeSingleDeclareStatement::clone() const {
-    return std::make_unique<NodeSingleDeclareStatement>(*this);
+std::unique_ptr<NodeAST> NodeSingleDeclaration::clone() const {
+    return std::make_unique<NodeSingleDeclaration>(*this);
 }
-NodeAST * NodeSingleDeclareStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (to_be_declared.get() == oldChild) {
         if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.get())) {
             newChild.release();
@@ -127,16 +127,16 @@ NodeAST * NodeSingleDeclareStatement::replace_child(NodeAST* oldChild, std::uniq
     return nullptr;
 }
 
-ASTVisitor* NodeSingleDeclareStatement::get_lowering(DefinitionProvider* def_provider) const {
+ASTVisitor* NodeSingleDeclaration::get_lowering(DefinitionProvider* def_provider) const {
     return this->to_be_declared->get_lowering(def_provider);
 }
 
-std::unique_ptr<NodeSingleAssignStatement> NodeSingleDeclareStatement::to_assign_stmt(NodeDataStructure* var) {
+std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(NodeDataStructure* var) {
     // if var provided -> turn to reference else turn to_be_declared to reference
     auto node_array_var = var ? var->to_reference() : to_be_declared->to_reference();
     // if declare stmt has assignee -> clone it else create new NodeInt with value 0
     auto node_assignee = assignee ? assignee->clone() : TypeRegistry::get_neutral_element_from_type(to_be_declared->ty);
-    auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(
+    auto node_assign_statement = std::make_unique<NodeSingleAssignment>(
             std::move(node_array_var),
             std::move(node_assignee),
             tok
@@ -144,18 +144,18 @@ std::unique_ptr<NodeSingleAssignStatement> NodeSingleDeclareStatement::to_assign
     return node_assign_statement;
 }
 
-// ************* NodeReturnStatement ***************
-void NodeReturnStatement::accept(ASTVisitor &visitor) {
+// ************* NodeReturn ***************
+void NodeReturn::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeReturnStatement::NodeReturnStatement(const NodeReturnStatement& other)
+NodeReturn::NodeReturn(const NodeReturn& other)
         : NodeInstruction(other), return_variables(clone_vector(other.return_variables)) {
     set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeReturnStatement::clone() const {
-    return std::make_unique<NodeReturnStatement>(*this);
+std::unique_ptr<NodeAST> NodeReturn::clone() const {
+    return std::make_unique<NodeReturn>(*this);
 }
-NodeAST * NodeReturnStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeReturn::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     for(auto &ret : return_variables) {
         if (ret.get() == oldChild) {
             ret = std::move(newChild);
@@ -165,18 +165,18 @@ NodeAST * NodeReturnStatement::replace_child(NodeAST* oldChild, std::unique_ptr<
     return nullptr;
 }
 
-// ************* NodeGetControlStatement ***************
-void NodeGetControlStatement::accept(ASTVisitor &visitor) {
+// ************* NodeGetControl ***************
+void NodeGetControl::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeGetControlStatement::NodeGetControlStatement(const NodeGetControlStatement& other)
+NodeGetControl::NodeGetControl(const NodeGetControl& other)
         : NodeInstruction(other), ui_id(clone_unique(other.ui_id)), control_param(other.control_param) {
     set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeGetControlStatement::clone() const {
-    return std::make_unique<NodeGetControlStatement>(*this);
+std::unique_ptr<NodeAST> NodeGetControl::clone() const {
+    return std::make_unique<NodeGetControl>(*this);
 }
-NodeAST * NodeGetControlStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeGetControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (ui_id.get() == oldChild) {
         ui_id = std::move(newChild);
         return ui_id.get();
@@ -184,7 +184,7 @@ NodeAST * NodeGetControlStatement::replace_child(NodeAST* oldChild, std::unique_
     return nullptr;
 }
 
-ASTVisitor* NodeGetControlStatement::get_lowering(DefinitionProvider* def_provider) const {
+ASTVisitor* NodeGetControl::get_lowering(DefinitionProvider* def_provider) const {
     static LoweringGetControl lowering(def_provider);
     return &lowering;
 }
@@ -256,33 +256,33 @@ void NodeBody::cleanup_body() {
     statements = std::move(temp);
 }
 
-// ************* NodeStructStatement ***************
-void NodeStructStatement::accept(ASTVisitor &visitor) {
+// ************* NodeStruct ***************
+void NodeStruct::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeStructStatement::NodeStructStatement(const NodeStructStatement& other)
+NodeStruct::NodeStruct(const NodeStruct& other)
         : NodeInstruction(other), prefix(other.prefix),
           members(clone_vector<NodeStatement>(other.members)) {
     set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeStructStatement::clone() const {
-    return std::make_unique<NodeStructStatement>(*this);
+std::unique_ptr<NodeAST> NodeStruct::clone() const {
+    return std::make_unique<NodeStruct>(*this);
 }
 
-// ************* NodeFamilyStatement ***************
-void NodeFamilyStatement::accept(ASTVisitor &visitor) {
+// ************* NodeFamily ***************
+void NodeFamily::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeFamilyStatement::NodeFamilyStatement(const NodeFamilyStatement& other)
+NodeFamily::NodeFamily(const NodeFamily& other)
         : NodeInstruction(other), prefix(other.prefix), members(clone_unique(other.members)) {
     set_child_parents();
 }
 
-std::unique_ptr<NodeAST> NodeFamilyStatement::clone() const {
-    return std::make_unique<NodeFamilyStatement>(*this);
+std::unique_ptr<NodeAST> NodeFamily::clone() const {
+    return std::make_unique<NodeFamily>(*this);
 }
 
-ASTDesugaring* NodeFamilyStatement::get_desugaring() const {
+ASTDesugaring* NodeFamily::get_desugaring() const {
     static DesugaringFamilyStruct desugaring;
     return &desugaring;
 }

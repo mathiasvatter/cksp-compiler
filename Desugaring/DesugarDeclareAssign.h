@@ -11,7 +11,7 @@
  */
 class DesugarDeclareAssign : public ASTDesugaring {
 public:
-    void inline visit(NodeDeclareStatement& node) override {
+    void inline visit(NodeDeclaration& node) override {
         // error handling
         if(node.to_be_declared.size() < node.assignee->params.size()) {
             auto error = CompileError(ErrorType::SyntaxError,
@@ -22,9 +22,9 @@ public:
             error.exit();
         }
 
-        std::vector<std::unique_ptr<NodeSingleDeclareStatement>> declare_statements;
+        std::vector<std::unique_ptr<NodeSingleDeclaration>> declare_statements;
         for(auto &declaration : node.to_be_declared) {
-            auto node_single_declare_stmt = std::make_unique<NodeSingleDeclareStatement>(std::move(declaration), nullptr, node.tok);
+            auto node_single_declare_stmt = std::make_unique<NodeSingleDeclaration>(std::move(declaration), nullptr, node.tok);
             declare_statements.push_back(std::move(node_single_declare_stmt));
         }
         std::vector<std::unique_ptr<NodeAST>> values;
@@ -53,7 +53,7 @@ public:
         replacement_node = std::move(node_body);
     }
 
-    void inline visit(NodeAssignStatement &node) override {
+    void inline visit(NodeAssignment &node) override {
         // error handling
         if(node.array_variable->params.size() < node.assignee->params.size()) {
             auto error = CompileError(ErrorType::SyntaxError,
@@ -64,9 +64,9 @@ public:
             error.exit();
         }
 
-        std::vector<std::unique_ptr<NodeSingleAssignStatement>> assign_statements;
+        std::vector<std::unique_ptr<NodeSingleAssignment>> assign_statements;
         for(auto &arr_var : node.array_variable->params) {
-            auto node_single_assign_stmt = std::make_unique<NodeSingleAssignStatement>(std::move(arr_var), nullptr, node.tok);
+            auto node_single_assign_stmt = std::make_unique<NodeSingleAssignment>(std::move(arr_var), nullptr, node.tok);
             assign_statements.push_back(std::move(node_single_assign_stmt));
         }
         std::vector<std::unique_ptr<NodeAST>> values;

@@ -11,7 +11,7 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_declare_variable(const std::stri
             name,
             TypeRegistry::Unknown, type, parent->tok);
     node_variable->type = ASTType::Integer;
-    auto node_declare_statement = std::make_unique<NodeSingleDeclareStatement>(
+    auto node_declare_statement = std::make_unique<NodeSingleDeclaration>(
 		std::move(node_variable),
 		std::make_unique<NodeInt>(value, parent->tok),
 		parent->tok);
@@ -29,7 +29,7 @@ std::unique_ptr<NodeBody> ASTVisitor::array_initialization(NodeArray* array, Nod
 			std::make_unique<NodeInt>((int32_t)i, array->tok),
 			array->tok);
 		array_ref->match_data_structure(array);
-        auto node_assign_statement = std::make_unique<NodeSingleAssignStatement>(
+        auto node_assign_statement = std::make_unique<NodeSingleAssignment>(
                 std::move(array_ref),
                 std::move(list->params[i]),
                 list->params[i]->tok);
@@ -40,7 +40,7 @@ std::unique_ptr<NodeBody> ASTVisitor::array_initialization(NodeArray* array, Nod
 
 std::unique_ptr<NodeBody> ASTVisitor::make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent) {
     auto node_body = std::make_unique<NodeBody>(var->tok);
-    auto node_assignment = std::make_unique<NodeSingleAssignStatement>(
+    auto node_assignment = std::make_unique<NodeSingleAssignment>(
 		var->clone(),
 		std::make_unique<NodeInt>(from, var->tok), var->tok
 		);

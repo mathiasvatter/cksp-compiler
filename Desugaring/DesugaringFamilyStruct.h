@@ -20,7 +20,7 @@ private:
         return name;
     }
 public:
-//    void visit(NodeSingleDeclareStatement& node) override {
+//    void visit(NodeSingleDeclaration& node) override {
 //        if(!m_family_prefixes.empty()) {
 //            // Ui control data structures need to go one level deeper
 //            if(node.to_be_declared->get_node_type() != NodeType::UIControl) {
@@ -75,7 +75,7 @@ public:
 //        }
 //    };
 
-    void visit(NodeFamilyStatement& node) override {
+    void visit(NodeFamily& node) override {
         std::string pref = node.prefix;
         if(!m_family_prefixes.empty()) pref = m_family_prefixes.top() + "." + node.prefix;
         m_family_prefixes.push(pref);
