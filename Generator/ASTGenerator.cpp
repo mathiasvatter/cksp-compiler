@@ -104,7 +104,7 @@ void ASTGenerator::visit(NodeSingleDeclareStatement &node) {
     node.to_be_declared->accept(*this);
     if(node.assignee != nullptr) {
         os << " := ";
-        auto node_param_list = cast_node<NodeParamList>(node.assignee.get());
+        auto node_param_list = node.assignee->get_node_type() == NodeType::ParamList;
         if(node_param_list) os << "(";
         node.assignee->accept(*this);
         if(node_param_list) os << ")";

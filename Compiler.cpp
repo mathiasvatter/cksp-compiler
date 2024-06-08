@@ -24,7 +24,7 @@ void Compiler::compile() {
 
 	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
-	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -129,6 +129,10 @@ void Compiler::compile() {
 
     ASTPrinter printer;
     ast->accept(printer);
+    std::filesystem::path current_file_path(__FILE__);
+    std::filesystem::path current_dir = current_file_path.parent_path();
+    std::filesystem::path printer_output = current_dir / "printed.txt";
+    printer.generate(printer_output.string());
 
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");

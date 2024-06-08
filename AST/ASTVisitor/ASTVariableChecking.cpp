@@ -76,6 +76,7 @@ void ASTVariableChecking::visit(NodeUIControl& node) {
 }
 
 void ASTVariableChecking::visit(NodeBody &node) {
+    node.cleanup_body();
     m_current_body = &node;
 	if(node.parent->get_node_type() != NodeType::Statement and !is_instance_of<NodeDataStructure>(node.parent)) {
 		node.scope = true;
@@ -113,14 +114,6 @@ void ASTVariableChecking::visit(NodeFunctionCall &node) {
 		if(!node.definition->visited) node.definition->accept(*this);
 	}
 
-//	// replace node variable when in get_ui_id and not ui_control
-//	if(node.function->is_builtin and !node.function->args->params.empty() and node.function->name == "get_ui_id") {
-//		if(auto node_variable = cast_node<NodeVariableRef>(node.function->args->params[0].get())) {
-//			if(node_variable->data_type != DataType::UI_Control) {
-//				node.replace_with(std::move(node.function->args->params[0]));
-//			}
-//		}
-//	}
 }
 
 void ASTVariableChecking::visit(NodeSingleDeclareStatement& node) {

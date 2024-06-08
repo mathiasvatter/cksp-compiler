@@ -39,7 +39,21 @@ public:
 	void visit(NodeFunctionDefinition& node) override;
 	void visit(NodeGetControlStatement& node) override;
 
+    inline void generate(const std::string& path) const {
+        std::ofstream outFile(path);
+        if (outFile) {
+            outFile << os.str();
+        } else {
+            // Fehlerbehandlung, falls die Datei nicht geöffnet werden kann
+            std::cerr << "Fehler beim Öffnen der Datei: " << path << std::endl;
+        }
+    }
+
+    inline void print() const {
+        std::cout << os.str();
+    }
 private:
+    std::ostringstream os;
     std::string m_indent = "\t";
     int m_scope_count = 0;
     inline std::string get_indent() {

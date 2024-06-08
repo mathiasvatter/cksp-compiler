@@ -21,6 +21,8 @@ public:
 
     /// returns the type from the annotation name (int, bool, string[], ...)
     static Type* get_type_from_annotation(const std::string& name);
+    /// returns the annotation from the type (Integer -> int, Real -> real, ...)
+    static std::string get_annotation_from_type(Type* ty);
     /// returns the type from the identifier ($, ~, @, ...)
     static Type* get_type_from_identifier(char identifier);
     /// returns the identifier from the type (Integer -> $, Real -> ~, ...)
@@ -69,6 +71,7 @@ private:
     static inline std::unordered_map<std::string, std::unique_ptr<CompositeType>> composite_types;
 
     static inline std::unordered_map<std::string, Type*> annotation_to_type;
+    static inline std::unordered_map<Type*, std::string> type_to_annotation;
     static inline std::unordered_map<char, Type*> identifier_to_type;
     static inline std::unordered_map<Type*, char> type_to_identifier;
 };
