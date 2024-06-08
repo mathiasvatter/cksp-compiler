@@ -11,6 +11,7 @@
 
 #include "../TypeRegistry.h"
 #include "../ASTNodes/AST.h"
+#include "../ASTNodes/ASTInstructions.h"
 #include "../ASTNodes/ASTDataStructures.h"
 #include "../ASTNodes/ASTReferences.h"
 #include "../../BuiltinsProcessing/DefinitionProvider.h"

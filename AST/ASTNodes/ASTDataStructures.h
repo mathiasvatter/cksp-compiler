@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "AST.h"
+#include "ASTInstructions.h"
 #include "../TypeRegistry.h"
 
 struct NodeVariable: NodeDataStructure {
