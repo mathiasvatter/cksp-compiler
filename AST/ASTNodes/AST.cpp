@@ -10,6 +10,27 @@
 #include "../../Desugaring/DesugarForEachStatement.h"
 #include "../../Lowering/LoweringGetControl.h"
 #include "../../Lowering/LoweringFunctionCall.h"
+#include "../../Desugaring/DesugaringFamilyStruct.h"
+
+// ************* Helper to clone map with unique_ptr keys and vector of unique_ptr values ***************
+static std::map< std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> clone_map(
+        const std::map<std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>>& original) {
+    std::map<std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> cloned_map;
+    for (const auto& pair : original) {
+        cloned_map[clone_vector(pair.first)] = clone_vector(pair.second);
+    }
+    return cloned_map;
+}
+
+static std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> clone_cases(
+        const std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>>& original) {
+    std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> cloned_cases;
+    cloned_cases.reserve(original.size());
+    for (auto& pair : original) {
+        cloned_cases.emplace_back(clone_vector(pair.first), clone_unique(pair.second));
+    }
+    return cloned_cases;
+}
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(const Token tok, NodeType node_type) : tok(tok),
@@ -375,6 +396,24 @@ ASTVisitor* NodeGetControlStatement::get_lowering(DefinitionProvider* def_provid
 	return &lowering;
 }
 
+// ************* NodeFamilyStatement ***************
+void NodeFamilyStatement::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+NodeFamilyStatement::NodeFamilyStatement(const NodeFamilyStatement& other)
+        : NodeAST(other), prefix(other.prefix), members(clone_unique(other.members)) {
+    set_child_parents();
+}
+
+std::unique_ptr<NodeAST> NodeFamilyStatement::clone() const {
+    return std::make_unique<NodeFamilyStatement>(*this);
+}
+
+ASTDesugaring* NodeFamilyStatement::get_desugaring() const {
+    static DesugaringFamilyStruct desugaring;
+    return &desugaring;
+}
+
 // ************* NodeStatement ***************
 void NodeStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
@@ -565,26 +604,6 @@ NodeAST * NodeWhileStatement::replace_child(NodeAST* oldChild, std::unique_ptr<N
 		return condition.get();
 	}
 	return nullptr;
-}
-
-// ************* Helper to clone map with unique_ptr keys and vector of unique_ptr values ***************
-static std::map< std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> clone_map(
-        const std::map<std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>>& original) {
-    std::map<std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> cloned_map;
-    for (const auto& pair : original) {
-        cloned_map[clone_vector(pair.first)] = clone_vector(pair.second);
-    }
-    return cloned_map;
-}
-
-static std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> clone_cases(
-        const std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>>& original) {
-    std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> cloned_cases;
-    cloned_cases.reserve(original.size());
-    for (auto& pair : original) {
-        cloned_cases.emplace_back(clone_vector(pair.first), clone_unique(pair.second));
-    }
-    return cloned_cases;
 }
 
 // ************* NodeSelectStatement ***************

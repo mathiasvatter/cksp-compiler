@@ -49,6 +49,7 @@ public:
             auto node_get_ui_id = clone_as<NodeFunctionCall>(get_ui_id.get());
             node_get_ui_id->function->ty = TypeRegistry::Integer;
             node_get_ui_id->kind = NodeFunctionCall::Kind::Builtin;
+            node_get_ui_id->update_token_data(node.tok);
             node_get_ui_id->function->args->params.push_back(std::move(node.clone()));
             node_get_ui_id->function->args->set_child_parents();
             node.replace_with(std::move(node_get_ui_id));
@@ -60,6 +61,7 @@ public:
             auto node_get_ui_id = clone_as<NodeFunctionCall>(get_ui_id.get());
             node_get_ui_id->function->ty = TypeRegistry::Integer;
             node_get_ui_id->kind = NodeFunctionCall::Kind::Builtin;
+            node_get_ui_id->update_token_data(node.tok);
             node_get_ui_id->function->args->params.push_back(std::move(node.clone()));
             node_get_ui_id->function->args->set_child_parents();
             node.replace_with(std::move(node_get_ui_id));

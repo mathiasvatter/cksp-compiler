@@ -47,7 +47,7 @@ public:
 						),
                     node.tok
             );
-            node.statements->statements.push_back(std::make_unique<NodeStatement>(std::move(node_inc), node.tok));
+            node.statements->add_stmt(std::make_unique<NodeStatement>(std::move(node_inc), node.tok));
         } else {
             // i := i + step
             auto inc_expression = std::make_unique<NodeBinaryExpr>(
@@ -59,7 +59,7 @@ public:
             auto node_inc_statement = std::make_unique<NodeSingleAssignStatement>(
                     std::move(function_var),
                     std::move(inc_expression), node.tok);
-            node.statements->statements.push_back(std::make_unique<NodeStatement>(std::move(node_inc_statement), node.tok));
+            node.statements->add_stmt(std::make_unique<NodeStatement>(std::move(node_inc_statement), node.tok));
         }
 
         // handle while condition
@@ -85,8 +85,8 @@ public:
                 );
 
         auto node_body = std::make_unique<NodeBody>(node.tok);
-        node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_assign_statement), node.tok));
-        node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_while_statement), node.tok));
+        node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign_statement), node.tok));
+        node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while_statement), node.tok));
         replacement_node = std::move(node_body);
     }
 };

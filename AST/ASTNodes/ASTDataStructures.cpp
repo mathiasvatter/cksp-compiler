@@ -8,7 +8,6 @@
 #include "../../Lowering/LoweringNDArray.h"
 #include "../../Lowering/LoweringList.h"
 #include "../../Lowering/LoweringConstStruct.h"
-#include "../../Lowering/LoweringFamilyStruct.h"
 #include "../../Lowering/LoweringArray.h"
 
 // ************* NodeVariable ***************
@@ -186,23 +185,5 @@ std::unique_ptr<NodeAST> NodeConstStatement::clone() const {
 
 ASTVisitor* NodeConstStatement::get_lowering(DefinitionProvider* def_provider) const {
     static LoweringConstStruct lowering(def_provider);
-    return &lowering;
-}
-
-// ************* NodeFamilyStatement ***************
-void NodeFamilyStatement::accept(ASTVisitor &visitor) {
-    visitor.visit(*this);
-}
-NodeFamilyStatement::NodeFamilyStatement(const NodeFamilyStatement& other)
-        : NodeAST(other), prefix(other.prefix), members(clone_unique(other.members)) {
-	set_child_parents();
-}
-
-std::unique_ptr<NodeAST> NodeFamilyStatement::clone() const {
-    return std::make_unique<NodeFamilyStatement>(*this);
-}
-
-ASTVisitor* NodeFamilyStatement::get_lowering(DefinitionProvider* def_provider) const {
-    static LoweringFamilyStruct lowering(def_provider);
     return &lowering;
 }

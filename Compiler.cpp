@@ -114,6 +114,12 @@ void Compiler::compile() {
 
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
+    ASTPrinter printer;
+    ast->accept(printer);
+    std::filesystem::path current_file_path(__FILE__);
+    std::filesystem::path current_dir = current_file_path.parent_path();
+    std::filesystem::path printer_output = current_dir / "printed.txt";
+    printer.generate(printer_output.string());
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
@@ -127,12 +133,6 @@ void Compiler::compile() {
 	ASTGlobalScope global_scope(&m_definition_provider);
 	ast->accept(global_scope);
 
-    ASTPrinter printer;
-    ast->accept(printer);
-    std::filesystem::path current_file_path(__FILE__);
-    std::filesystem::path current_dir = current_file_path.parent_path();
-    std::filesystem::path printer_output = current_dir / "printed.txt";
-    printer.generate(printer_output.string());
 
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");

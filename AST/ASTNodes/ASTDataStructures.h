@@ -219,32 +219,3 @@ struct NodeConstStatement : NodeDataStructure {
     ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
 
 };
-
-struct NodeFamilyStatement : NodeAST {
-    std::string prefix;
-    std::unique_ptr<NodeBody> members;
-    inline explicit NodeFamilyStatement(Token tok) : NodeAST(std::move(tok), NodeType::FamilyStatement) {}
-    inline NodeFamilyStatement(std::string prefix, std::unique_ptr<NodeBody> members, Token tok)
-            : NodeAST(std::move(tok), NodeType::FamilyStatement), prefix(std::move(prefix)), members(std::move(members)) {
-        set_child_parents();
-    }
-    void accept(ASTVisitor& visitor) override;
-    // Kopierkonstruktor
-    NodeFamilyStatement(const NodeFamilyStatement& other);
-    // Clone Methode
-    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    void update_parents(NodeAST* new_parent) override {
-        parent = new_parent;
-        members->update_parents(this);
-    }
-    void set_child_parents() override {
-        members->parent = this;
-    };
-    std::string get_string() override { return ""; }
-    void update_token_data(const Token& token) override {
-        members->update_token_data(token);
-    }
-
-    ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
-
-};
