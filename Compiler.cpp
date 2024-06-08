@@ -106,7 +106,7 @@ void Compiler::compile() {
 	compile_time.stop("Build Data Structures");
 	compile_time.start("Type Checking");
 
-	TypeCasting type_casting(&m_definition_provider);
+	TypeCasting type_casting(&m_definition_provider, true);
 	ast->accept(type_casting);
 
 	compile_time.stop("Type Checking");
@@ -120,6 +120,9 @@ void Compiler::compile() {
 
 	compile_time.stop("Lowering");
 	compile_time.start("Global Scope");
+
+//    TypeCasting type_casting1(&m_definition_provider, true);
+//    ast->accept(type_casting1);
 
 	ASTLambdaLifting lambda_lifting(&m_definition_provider);
 	ast->accept(lambda_lifting);

@@ -9,7 +9,7 @@
 
 class TypeCasting : public ASTVisitor {
 public:
-	explicit TypeCasting(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {};
+	explicit TypeCasting(DefinitionProvider* definition_provider, bool cast=false) : m_def_provider(definition_provider), cast(cast) {};
 
 	void visit(NodeProgram& node) override;
 
@@ -44,6 +44,7 @@ public:
 //	void visit(NodeBody& node) override;
 
 private:
+    bool cast = false;
 	DefinitionProvider* m_def_provider;
     std::vector<NodeReference*> m_references;
     std::vector<NodeSingleAssignStatement*> m_assignments;
