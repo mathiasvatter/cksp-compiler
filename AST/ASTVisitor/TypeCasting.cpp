@@ -23,7 +23,7 @@ void TypeCasting::visit(NodeProgram& node) {
 			match_assignment_types(decl->to_be_declared.get(), decl->assignee.get());
         }
 		// cast as Integer if still unknown
-		decl->to_be_declared->cast_type();
+		if(cast) decl->to_be_declared->cast_type();
     }
     for(auto & ref : m_references) {
         match_reference_declaration(ref);
