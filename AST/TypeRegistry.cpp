@@ -57,6 +57,7 @@ void TypeRegistry::initialize() {
     };
 
     type_to_identifier = invert_map(identifier_to_type);
+    type_to_annotation = invert_map(annotation_to_type);
 }
 
 Type *TypeRegistry::get_type_from_annotation(const std::string &name) {
@@ -66,6 +67,15 @@ Type *TypeRegistry::get_type_from_annotation(const std::string &name) {
     }
     return Unknown;
 }
+
+std::string TypeRegistry::get_annotation_from_type(Type* ty) {
+    auto it = type_to_annotation.find(ty);
+    if (it != type_to_annotation.end()) {
+        return it->second;
+    }
+    return "";
+}
+
 
 Type *TypeRegistry::get_type_from_identifier(char identifier) {
     auto it = identifier_to_type.find(identifier);

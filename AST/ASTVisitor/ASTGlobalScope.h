@@ -168,17 +168,10 @@ public:
 		}
 
 		auto node_declaration = m_def_provider->get_declaration(&node);
-		if(!node_declaration) m_def_provider->throw_declaration_error(&node).exit();
+		if(!node_declaration) DefinitionProvider::throw_declaration_error(&node).exit();
 
 		node.match_data_structure(node_declaration);
 
-		// replace variable with array if incorrectly recognized by parser
-		if(node_declaration->get_node_type() == NodeType::Array) {
-			auto node_array = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
-			node_array->accept(*this);
-			node.replace_with(std::move(node_array));
-			return;
-		}
 	}
 
 	void inline visit(NodeVariable& node) override {

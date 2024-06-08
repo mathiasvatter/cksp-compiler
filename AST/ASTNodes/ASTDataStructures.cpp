@@ -71,6 +71,14 @@ std::unique_ptr<NodeReference> NodeArray::to_reference() {
 	return ref;
 }
 
+std::unique_ptr<NodeNDArray> NodeArray::to_ndarray() {
+    return std::make_unique<NodeNDArray>(persistence, name, ty, DataType::NDArray, nullptr, tok);
+}
+
+std::unique_ptr<NodeListStruct> NodeArray::to_list() {
+    return std::make_unique<NodeListStruct>(tok);
+}
+
 // ************* NodeNDArray ***************
 void NodeNDArray::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
@@ -93,6 +101,14 @@ std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
     auto ref = std::make_unique<NodeNDArrayRef>(name, nullptr, tok);
 	ref->match_data_structure(this);
 	return ref;
+}
+
+std::unique_ptr<NodeArray> NodeNDArray::to_array() {
+    return std::make_unique<NodeArray>(persistence, name, ty, DataType::Array, nullptr, tok);
+}
+
+std::unique_ptr<NodeListStruct> NodeNDArray::to_list() {
+    return std::make_unique<NodeListStruct>(tok);
 }
 
 // ************* NodeUIControl ***************
@@ -141,6 +157,18 @@ std::unique_ptr<NodeAST> NodeListStruct::clone() const {
 ASTVisitor* NodeListStruct::get_lowering(DefinitionProvider* def_provider) const {
 	static LoweringList lowering(def_provider);
 	return &lowering;
+}
+
+std::unique_ptr<NodeVariable> NodeListStruct::to_variable() {
+    return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+}
+
+std::unique_ptr<NodeArray> NodeListStruct::to_array() {
+    return std::make_unique<NodeArray>(persistence, name, ty, DataType::Array, nullptr, tok);
+}
+
+std::unique_ptr<NodeNDArray> NodeListStruct::to_ndarray() {
+    return std::make_unique<NodeNDArray>(persistence, name, ty, DataType::NDArray, nullptr, tok);
 }
 
 // ************* NodeConstStatement ***************

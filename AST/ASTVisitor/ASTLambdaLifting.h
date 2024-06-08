@@ -101,7 +101,13 @@ public:
 
 		// return if not in function
 		if(m_program->function_call_stack.empty()) return;
-		m_local_var_declarations[m_program->function_call_stack.top()].emplace(node.to_be_declared->name, clone_as<NodeSingleDeclareStatement>(&node));
+		m_local_var_declarations[m_program->function_call_stack.top()].emplace(
+                        node.to_be_declared->name,
+                       std::make_unique<NodeSingleDeclareStatement>(
+                            clone_as<NodeDataStructure>(node.to_be_declared.get()),
+                            nullptr, node.tok
+                       )
+                   );
 		node.replace_with(node.to_assign_stmt());
 	}
 

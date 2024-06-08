@@ -33,36 +33,7 @@ public:
 		node.replace_with(std::move(new_node));
 	};
 
-	void visit(NodeFunctionCall &node) override {
-		if(node.kind == NodeFunctionCall::Kind::Property) {
-			auto node_body = inline_property_function(node.definition->header.get(), std::move(node.function));
-			node_body->accept(*this);
-			node.replace_with(std::move(node_body));
-		}
-	};
-
 private:
-	inline std::unique_ptr<NodeBody> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
-		auto node_body = std::make_unique<NodeBody>(function_header->tok);
-		for(int i = 1; i<function_header->args->params.size(); i++) {
-			auto node_get_control = std::make_unique<NodeGetControlStatement>(
-				function_header->args->params[0]->clone(),
-				property_function->args->params[i]->get_string(),
-				function_header->tok
-				);
-			auto node_assignment = std::make_unique<NodeSingleAssignStatement>(
-				std::move(node_get_control),
-				std::move(function_header->args->params[i]),
-				function_header->tok
-				);
-			node_body->statements.push_back(
-				std::make_unique<NodeStatement>(std::move(node_assignment), node_body->tok)
-			);
-		}
-		node_body->update_parents(function_header->parent);
-		return std::move(node_body);
-	}
-
 	inline std::unique_ptr<NodeFunctionCall> lowering(std::string control_function, NodeGetControlStatement* node) {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 		// get control_param from shorthand
@@ -90,18 +61,6 @@ private:
         node_control_function->function->ty = control_function_type;
         node_control_function->kind = NodeFunctionCall::Kind::Builtin;
 
-		auto node_get_ui_id = std::make_unique<NodeFunctionCall>(
-			false,
-			std::make_unique<NodeFunctionHeader>(
-				"get_ui_id",
-				std::make_unique<NodeParamList>(node->tok),
-				node->tok
-			),
-			node->tok
-		);
-        node_get_ui_id->function->ty = TypeRegistry::Integer;
-        node_get_ui_id->kind = NodeFunctionCall::Kind::Builtin;
-
 		if(auto node_reference = cast_node<NodeReference>(node->ui_id.get())) {
 			// do not wrap in get_ui_id when it is a ui_control array
             auto node_declaration = m_def_provider->get_declaration(node_reference);
@@ -109,20 +68,13 @@ private:
                 node_reference->match_data_structure(node_declaration);
             }
 
-			if(node_reference->data_type != DataType::UI_Control) {
-				node_control_function->function->args->params.push_back(std::move(node->ui_id));
-			} else if(node_reference->data_type == DataType::UI_Control) {
-				node_get_ui_id->function->args->params.push_back(std::move(node->ui_id));
-				node_get_ui_id->function->args->set_child_parents();
-				node_control_function->function->args->params.push_back(std::move(node_get_ui_id));
-			} else {
-				error.m_message = "Expected UI Control or UI Control Array in <control statement>.";
-				error.m_got = node_reference->name;
-				error.m_expected = "UI Control or UI Control Array";
-				error.exit();
-			}
+            node_control_function->function->args->params.push_back(std::move(node->ui_id));
 			node_control_function->function->args->params.push_back(std::move(control_par));
 			node_control_function->function->args->set_child_parents();
+            // check if var needs is ui control and needs to wrapped in get_ui_id
+            if(auto lowering = node_control_function->get_lowering(m_def_provider)) {
+                lowering->visit(*node_control_function);
+            }
 			return node_control_function;
 		}
 		return nullptr;

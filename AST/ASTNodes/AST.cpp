@@ -9,6 +9,7 @@
 #include "../../Desugaring/DesugarForStatement.h"
 #include "../../Desugaring/DesugarForEachStatement.h"
 #include "../../Lowering/LoweringGetControl.h"
+#include "../../Lowering/LoweringFunctionCall.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(const Token tok, NodeType node_type) : tok(tok),
@@ -72,6 +73,7 @@ bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBody* curre
 
 bool NodeDataStructure::is_function_param() {
 	if(!this->parent) return false;
+    if(!this->parent->parent) return false;
 	bool func_param = this->parent->get_node_type() == NodeType::ParamList and
 		(this->parent->parent->get_node_type() == NodeType::FunctionHeader or
 		this->parent->parent->get_node_type() == NodeType::FunctionDefinition);
@@ -671,7 +673,7 @@ std::unique_ptr<NodeAST> NodeFunctionCall::clone() const {
     return std::make_unique<NodeFunctionCall>(*this);
 }
 ASTVisitor* NodeFunctionCall::get_lowering(DefinitionProvider* def_provider) const {
-	static LoweringGetControl lowering(def_provider);
+	static LoweringFunctionCall lowering(def_provider);
 	return &lowering;
 }
 

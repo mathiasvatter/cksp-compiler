@@ -85,6 +85,14 @@ struct NodeReference : NodeAST {
     }
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(NodeDataStructure* data_structure);
+    /// Determines if current reference is function argument
+    bool is_func_arg() {
+        if(!this->parent) return false;
+        if(!this->parent->parent) return false;
+        bool func_arg = this->parent->get_node_type() == NodeType::ParamList and
+                          this->parent->parent->get_node_type() == NodeType::FunctionHeader;
+        return func_arg;
+    }
 };
 
 struct NodeDataStructure : NodeAST {
