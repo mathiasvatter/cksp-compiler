@@ -32,8 +32,16 @@ public:
             return;
         }
         if(node.kind == NodeFunctionCall::Kind::Builtin) {
+            // get_ui_id lowering
             node.function->accept(*this);
             return;
+        }
+        // message overloaded is not recognized as builtin
+        if(node.kind == NodeFunctionCall::Kind::Undefined) {
+            if(node.function->args->params.size() == 1) return;
+            if(node.function->name != "message") return;
+            // lowering of message parameters when separated by comma
+            node.function->args = inline_message_parameters(node.function->args);
         }
 	}
 
@@ -87,5 +95,32 @@ private:
             );
         }
         return std::move(node_body);
+    }
+
+    inline std::unique_ptr<NodeParamList> inline_message_parameters(std::unique_ptr<NodeParamList>& params) {
+        // it is already only one parameter
+        if (params->params.size() == 1) return std::move(params);
+
+        auto new_param = std::make_unique<NodeParamList>(params->tok);
+
+        // initialize node_expr with last param
+        auto node_expr = std::move(params->params.back());
+        params->params.pop_back();
+
+        // Durchlaufe die restlichen Parameter in umgekehrter Reihenfolge
+        for (int i = params->params.size() - 1; i >= 0; --i) {
+            node_expr = std::make_unique<NodeBinaryExpr>(
+                    token::STRING_OP,
+                    std::move(params->params[i]),
+                    std::move(node_expr),
+                    params->tok
+            );
+            node_expr->ty = TypeRegistry::String;
+        }
+        node_expr->parent = params->parent;
+        // Füge das endgültige node_expr der neuen Parameterliste hinzu
+        new_param->params.push_back(std::move(node_expr));
+
+        return new_param;
     }
 };
