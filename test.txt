@@ -1,11 +1,11 @@
-{ Compiled with cksp version 0.0.5 on Sat Jun 08 20:30:33 2024 }
+{ Compiled with cksp version 0.0.5 on Sat Jun 08 22:19:45 2024 }
 on init
   declare $_return_dummy
   declare !_loc_var_str[1]
   declare ?_loc_var_real[1]
   declare %_loc_var_int[1]
   declare $loc_7
-  declare %loc_8[5]
+  declare %loc_8
   declare $loc_9
   declare $loc_10
   declare @loc_11
@@ -67,6 +67,7 @@ on init
   declare $s
   declare %array[3] := (0)
   %array[1] := $i
+  message("Array value: " & %array[0] & $s & $i & $ii)
   declare const $filter__SUBTRACTIVE := 0
   declare const $filter__ADDITIVE := 1
   declare const $filter__TOGGLE := 2

@@ -124,13 +124,12 @@ void ASTGenerator::visit(NodeParamList &node) {
 
 void ASTGenerator::visit(NodeBinaryExpr &node) {
     auto is_nested_bin_expr = node.parent->get_node_type() == NodeType::BinaryExpr || node.parent->get_node_type() == NodeType::UnaryExpr;
-    if(is_nested_bin_expr and node.type != ASTType::String) os << "(";
+    if(is_nested_bin_expr and node.ty != TypeRegistry::String) os << "(";
 
     node.left->accept(*this);
     os << " " << GENERATE_ALL_OPERATORS[node.op] << " ";
     node.right->accept(*this);
-    if(is_nested_bin_expr and node.type != ASTType::String) os << ")";
-
+    if(is_nested_bin_expr and node.ty != TypeRegistry::String) os << ")";
 }
 
 void ASTGenerator::visit(NodeUnaryExpr &node) {

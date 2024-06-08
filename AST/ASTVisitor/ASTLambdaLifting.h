@@ -101,6 +101,8 @@ public:
 
 		// return if not in function
 		if(m_program->function_call_stack.empty()) return;
+        // visit declaration node because array as function param needs to have <no brackets>
+        node.to_be_declared->accept(*this);
 		m_local_var_declarations[m_program->function_call_stack.top()].emplace(
                         node.to_be_declared->name,
                        std::make_unique<NodeSingleDeclareStatement>(
@@ -110,6 +112,11 @@ public:
                    );
 		node.replace_with(node.to_assign_stmt());
 	}
+
+    void inline visit(NodeArray& node) override {
+        node.size = nullptr;
+        node.show_brackets = false;
+    }
 
 
 private:

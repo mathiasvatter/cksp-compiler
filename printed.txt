@@ -1,13 +1,13 @@
 on init
 	declare loc_7 : int
-	declare loc_8[5] : int[]
+	declare loc_8 : int[]
 	declare loc_9 : int
 	declare loc_10 : int
 	declare loc_11 : string
 	declare loc_12 : int
 	declare loc_13 : string
 	loc_7 := 0
-	loc_8 := 0
+	loc_8 := (0)
 	loc_9 := 0
 	loc_10 := 0
 	loc_11 := ""
@@ -62,6 +62,7 @@ on init
 	declare s : int
 	declare array[3] : int[] := (0)
 	array[1] := i
+	message("Array value: " & array[0] & s & i & ii)
 	declare const filter.SUBTRACTIVE : int := 0 + 0
 	declare const filter.ADDITIVE : int := 0 + (0 + 1)
 	declare const filter.TOGGLE : int := 0 + ((0 + 1) + 1)
@@ -86,7 +87,7 @@ end on
 
 on ui_control(sli_1)
 	loc_9 := 0
-	loc_8 := 0
+	loc_8 := (0)
 	loc_12 := 0
 	loc_10 := 0
 	loc_11 := ""
@@ -102,7 +103,7 @@ end on
 
 on ui_control(sli_2)
 	loc_9 := 0
-	loc_8 := 0
+	loc_8 := (0)
 	loc_12 := 0
 	loc_10 := 0
 	loc_11 := ""
@@ -133,18 +134,18 @@ end on
 
 on release
 	loc_9 := 0
-	loc_8 := 0
+	loc_8 := (0)
 	loc_12 := 0
 	loc_10 := 0
 	loc_11 := ""
 	scoped_func1(loc_9, loc_8, loc_12, loc_10, loc_11)
 end on
 
-function scoped_func2(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int)
+function scoped_func2(loc_0 : int, loc_1 : int[], loc_2 : int, loc_3 : int)
 	loc_0 := 0
 	message(loc_0)
 	if(loc_0 = 1)
-		loc_1 := 1, 2, 3, 4
+		loc_1 := (1, 2, 3, 4)
 		loc_2 := 0
 		loc_3 := 0
 		message(loc_2 & loc_3 & loc_1[3])
@@ -156,7 +157,7 @@ function scoped_func2(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int)
 	end if
 end function
 
-function scoped_func1(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int, loc_4 : string)
+function scoped_func1(loc_0 : int, loc_1 : int[], loc_2 : int, loc_3 : int, loc_4 : string)
 	loc_4 := "sdlkj"
 	message(g & loc_4 & _mult_array[(0 * size) + 0])
 	scoped_func2(loc_0, loc_1, loc_2, loc_3)

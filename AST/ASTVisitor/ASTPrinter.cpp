@@ -99,14 +99,13 @@ void ASTPrinter::visit(NodeParamList &node) {
 }
 
 void ASTPrinter::visit(NodeBinaryExpr &node) {
-	auto is_nested_bin_expr = node.parent->get_node_type() == NodeType::BinaryExpr || node.parent->get_node_type() == NodeType::UnaryExpr;
-	if(is_nested_bin_expr and node.type != ASTType::String) os << "(";
+    auto is_nested_bin_expr = node.parent->get_node_type() == NodeType::BinaryExpr || node.parent->get_node_type() == NodeType::UnaryExpr;
+    if(is_nested_bin_expr and node.ty != TypeRegistry::String) os << "(";
 
-	node.left->accept(*this);
-	os << " " << GENERATE_ALL_OPERATORS[node.op] << " ";
-	node.right->accept(*this);
-	if(is_nested_bin_expr and node.type != ASTType::String) os << ")";
-
+    node.left->accept(*this);
+    os << " " << GENERATE_ALL_OPERATORS[node.op] << " ";
+    node.right->accept(*this);
+    if(is_nested_bin_expr and node.ty != TypeRegistry::String) os << ")";
 }
 
 void ASTPrinter::visit(NodeUnaryExpr &node) {
@@ -119,15 +118,16 @@ void ASTPrinter::visit(NodeAssignStatement &node) {
     node.array_variable->accept(*this);
     os << " := ";
     node.assignee->accept(*this);
-    os << "";
 }
 
 void ASTPrinter::visit(NodeSingleAssignStatement &node) {
     os << "";
     node.array_variable->accept(*this);
     os << " := ";
+    auto node_param_list = node.assignee->get_node_type() == NodeType::ParamList;
+    if(node_param_list) os << "(";
     node.assignee->accept(*this);
-    os << "";
+    if(node_param_list) os << ")";
 }
 
 void ASTPrinter::visit(NodeConstStatement &node) {
