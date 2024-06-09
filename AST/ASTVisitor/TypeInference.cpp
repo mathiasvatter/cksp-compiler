@@ -2,9 +2,9 @@
 // Created by Mathias Vatter on 23.05.24.
 //
 
-#include "TypeCasting.h"
+#include "TypeInference.h"
 
-void TypeCasting::visit(NodeProgram& node) {
+void TypeInference::visit(NodeProgram& node) {
 	m_program = &node;
 
 	// get all types of function params first
@@ -14,35 +14,39 @@ void TypeCasting::visit(NodeProgram& node) {
 	for(auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
+//    infer_data_structure_types(m_def_provider, false);
+}
 
-    for(auto & ref : m_references) {
+void TypeInference::infer_data_structure_types(DefinitionProvider* def_provider, bool cast) {
+    for(auto & ref : def_provider->get_all_references()) {
         match_reference_declaration(ref);
     }
-    for(auto & decl : m_declarations) {
+    for(auto & decl : def_provider->get_all_declarations()) {
         if(decl->value) {
-			match_assignment_types(decl->variable.get(), decl->value.get());
+            match_assignment_types(decl->variable.get(), decl->value.get());
         }
-		// cast as Integer if still unknown
-		if(cast) decl->variable->cast_type();
+        // cast as Integer if still unknown
+        if(cast) decl->variable->cast_type();
     }
-    for(auto & ref : m_references) {
+    for(auto & ref : def_provider->get_all_references()) {
         match_reference_declaration(ref);
     }
 }
 
-void TypeCasting::visit(NodeInt& node) {
+
+void TypeInference::visit(NodeInt& node) {
     node.ty = TypeRegistry::Integer;
 }
 
-void TypeCasting::visit(NodeReal& node) {
+void TypeInference::visit(NodeReal& node) {
     node.ty = TypeRegistry::Real;
 }
 
-void TypeCasting::visit(NodeString& node) {
+void TypeInference::visit(NodeString& node) {
     node.ty = TypeRegistry::String;
 }
 
-void TypeCasting::visit(NodeConstStatement& node) {
+void TypeInference::visit(NodeConstStatement& node) {
 	node.ty = TypeRegistry::Integer;
 	for(auto & constant : node.constants->statements) {
 		if(auto decl = cast_node<NodeSingleDeclaration>(constant->statement.get())) {
@@ -62,22 +66,22 @@ void TypeCasting::visit(NodeConstStatement& node) {
 }
 
 
-void TypeCasting::visit(NodeVariableRef& node) {
+void TypeInference::visit(NodeVariableRef& node) {
     match_reference_declaration(&node);
     m_references.push_back(&node);
 }
 
-void TypeCasting::visit(NodeVariable& node) {
+void TypeInference::visit(NodeVariable& node) {
 }
 
-void TypeCasting::visit(NodeArray& node) {
+void TypeInference::visit(NodeArray& node) {
 	// if array is unknown type -> set to array of unknown
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Unknown, 1);
 	}
 }
 
-void TypeCasting::visit(NodeArrayRef& node) {
+void TypeInference::visit(NodeArrayRef& node) {
 	if(node.declaration) node.declaration->accept(*this);
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
@@ -94,7 +98,7 @@ void TypeCasting::visit(NodeArrayRef& node) {
 
 }
 
-void TypeCasting::visit(NodeNDArray& node) {
+void TypeInference::visit(NodeNDArray& node) {
     node.sizes->accept(*this);
     // if array is unknown type -> set to array of unknown
     if(node.ty == TypeRegistry::Unknown) {
@@ -102,7 +106,7 @@ void TypeCasting::visit(NodeNDArray& node) {
     }
 }
 
-void TypeCasting::visit(NodeNDArrayRef& node) {
+void TypeInference::visit(NodeNDArrayRef& node) {
 	if(node.declaration) node.declaration->accept(*this);
     // if handed over without index -> as whole array structure type
     if(!node.indexes) {
@@ -118,7 +122,7 @@ void TypeCasting::visit(NodeNDArrayRef& node) {
     m_references.push_back(&node);
 }
 
-void TypeCasting::visit(NodeListStruct& node) {
+void TypeInference::visit(NodeListStruct& node) {
 	// if list is unknown type -> set to list of unknown
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::add_composite_type(CompoundKind::List, TypeRegistry::Unknown, node.size);
@@ -134,7 +138,7 @@ void TypeCasting::visit(NodeListStruct& node) {
 
 }
 
-void TypeCasting::visit(NodeListStructRef& node) {
+void TypeInference::visit(NodeListStructRef& node) {
     // if handed over without index -> as whole list structure type
     if(!node.indexes) {
         if(node.ty == TypeRegistry::Unknown) {
@@ -149,7 +153,7 @@ void TypeCasting::visit(NodeListStructRef& node) {
     m_references.push_back(&node);
 }
 
-void TypeCasting::visit(NodeParamList& node) {
+void TypeInference::visit(NodeParamList& node) {
     std::vector<Type*> types;
     for(const auto & param : node.params) {
         param->accept(*this);
@@ -164,7 +168,7 @@ void TypeCasting::visit(NodeParamList& node) {
     node.ty = infer_initialization_types(types, &node);
 }
 
-void TypeCasting::visit(NodeSingleDeclaration& node) {
+void TypeInference::visit(NodeSingleDeclaration& node) {
 	node.variable->accept(*this);
 
 	if(node.value) {
@@ -180,7 +184,7 @@ void TypeCasting::visit(NodeSingleDeclaration& node) {
     m_declarations.push_back(&node);
 }
 
-void TypeCasting::visit(NodeUIControl& node) {
+void TypeInference::visit(NodeUIControl& node) {
 	// check if type is same as provided as builtin
 	if(node.ty != TypeRegistry::Unknown and node.ty->get_element_type() != node.declaration->control_var->ty->get_element_type()) {
 		auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
@@ -201,7 +205,7 @@ void TypeCasting::visit(NodeUIControl& node) {
 	node.params->accept(*this);
 }
 
-void TypeCasting::visit(NodeSingleAssignment& node) {
+void TypeInference::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
 	// cast node r_value to composite type if variable is composite type
@@ -217,7 +221,7 @@ void TypeCasting::visit(NodeSingleAssignment& node) {
 	node.r_value->accept(*this);
 }
 
-void TypeCasting::visit(NodeFunctionCall& node) {
+void TypeInference::visit(NodeFunctionCall& node) {
 	node.get_definition(m_program);
 	if(!node.definition) return;
 	node.function->accept(*this);
@@ -229,7 +233,7 @@ void TypeCasting::visit(NodeFunctionCall& node) {
 	node.ty = node.definition->ty;
 }
 
-void TypeCasting::visit(NodeBinaryExpr& node) {
+void TypeInference::visit(NodeBinaryExpr& node) {
 	node.left->accept(*this);
 	node.right->accept(*this);
 
@@ -280,7 +284,7 @@ void TypeCasting::visit(NodeBinaryExpr& node) {
 
 }
 
-void TypeCasting::visit(NodeUnaryExpr& node) {
+void TypeInference::visit(NodeUnaryExpr& node) {
 	node.operand->accept(*this);
 
 	bool is_compatible = node.ty->is_compatible(node.operand->ty) && node.operand->ty->is_compatible(node.ty);
