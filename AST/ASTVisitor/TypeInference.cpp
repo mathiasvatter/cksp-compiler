@@ -14,10 +14,9 @@ void TypeInference::visit(NodeProgram& node) {
 	for(auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
-//    infer_data_structure_types(m_def_provider, false);
 }
 
-void TypeInference::infer_data_structure_types(DefinitionProvider* def_provider, bool cast) {
+void TypeInference::cast_data_structure_types(DefinitionProvider* def_provider, bool cast) {
     for(auto & ref : def_provider->get_all_references()) {
         match_reference_declaration(ref);
     }
@@ -82,6 +81,9 @@ void TypeInference::visit(NodeArray& node) {
 }
 
 void TypeInference::visit(NodeArrayRef& node) {
+    if(node.name == "clicktime")  {
+
+    }
 	if(node.declaration) node.declaration->accept(*this);
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
@@ -178,8 +180,6 @@ void TypeInference::visit(NodeSingleDeclaration& node) {
 			node.value->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.variable->ty)->get_compound_type(), node.value->ty->get_element_type(), node.variable->ty->get_dimensions());
 		}
 		match_assignment_types(node.variable.get(), node.value.get());
-//        match_type(node.variable.get(), node.r_value.get());
-//		match_type(node.r_value.get(), node.variable.get());
 	}
     m_declarations.push_back(&node);
 }
@@ -213,8 +213,6 @@ void TypeInference::visit(NodeSingleAssignment& node) {
 		node.r_value->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.l_value->ty)->get_compound_type(), node.r_value->ty->get_element_type(), node.l_value->ty->get_dimensions());
 	}
 	match_assignment_types(node.l_value.get(), node.r_value.get());
-//    match_type(node.l_value.get(), node.r_value.get());
-//    match_type(node.r_value.get(), node.l_value.get());
 
 	// a second time to get the new types to the declaration pointer!
 	node.l_value->accept(*this);
@@ -233,13 +231,21 @@ void TypeInference::visit(NodeFunctionCall& node) {
 	node.ty = node.definition->ty;
 }
 
+void TypeInference::visit(NodeFunctionDefinition& node) {
+    node.header->accept(*this);
+    if(node.return_variable.has_value()) node.return_variable.value()->accept(*this);
+
+    node.body->accept(*this);
+    // get possible return type of node.definition by looking at the return param
+    if(node.return_variable.has_value())
+        for(auto & return_var : node.return_variable.value()->params)
+            match_type(&node, return_var.get());
+
+}
+
 void TypeInference::visit(NodeBinaryExpr& node) {
 	node.left->accept(*this);
 	node.right->accept(*this);
-
-	bool is_compatible = node.left->ty->is_compatible(node.ty) || node.right->ty->is_compatible(node.ty);
-	auto error = throw_type_error(node.left.get(), node.right.get());
-	if(!is_compatible) error.exit();
 
 	// do not infer type if together in string
 	if(contains(STRING_TOKENS, node.op)) {
@@ -248,6 +254,12 @@ void TypeInference::visit(NodeBinaryExpr& node) {
 //        if(is_compatible) return;
 		return;
 	}
+
+	bool is_compatible = true; //node.left->ty->is_compatible(node.ty) || node.right->ty->is_compatible(node.ty);
+	auto error = throw_type_error(node.left.get(), node.right.get());
+	if(!is_compatible)
+        error.exit();
+
 
 	node.left->ty = specialize_type(node.left->ty, node.right->ty);
 	node.right->ty = specialize_type(node.right->ty, node.left->ty);
@@ -278,7 +290,8 @@ void TypeInference::visit(NodeBinaryExpr& node) {
 		error.exit();
 	}
 
-	if(!is_compatible) error.exit();
+	if(!is_compatible)
+        error.exit();
 	node.left->set_element_type(specialize_type(node.left->ty, node.ty));
 	node.right->set_element_type(specialize_type(node.right->ty, node.ty));
 

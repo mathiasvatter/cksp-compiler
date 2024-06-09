@@ -108,7 +108,6 @@ void Compiler::compile() {
 
 	TypeInference infer_types(&m_definition_provider);
 	ast->accept(infer_types);
-    TypeInference::infer_data_structure_types(&m_definition_provider, true);
 
 	compile_time.stop("Type Checking");
 	compile_time.start("Lowering");
@@ -118,9 +117,8 @@ void Compiler::compile() {
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
-//    TypeInference infer_types1(&m_definition_provider);
-//    ast->accept(infer_types1);
-//    TypeInference::infer_data_structure_types(&m_definition_provider, true);
+    ast->accept(infer_types);
+    TypeInference::cast_data_structure_types(&m_definition_provider, true);
 
 	compile_time.stop("Lowering");
 	compile_time.start("Global Scope");
