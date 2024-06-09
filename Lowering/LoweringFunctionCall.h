@@ -130,10 +130,10 @@ private:
             );
             node_expr->ty = TypeRegistry::String;
         }
-        node_expr->parent = params->parent;
+        node_expr->parent = new_param.get();
         // Füge das endgültige node_expr der neuen Parameterliste hinzu
         new_param->params.push_back(std::move(node_expr));
-
+        new_param->parent = params->parent;
         return new_param;
     }
 };

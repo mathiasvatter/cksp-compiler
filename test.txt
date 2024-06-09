@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Sun Jun 09 09:44:20 2024 }
+{ Compiled with cksp version 0.0.5 on Sun Jun 09 12:55:37 2024 }
 on init
   declare $_return_dummy
   declare !_loc_var_str[1]
@@ -72,7 +72,7 @@ on init
   declare const $filter__ADDITIVE := 1
   declare const $filter__TOGGLE := 2
   declare %filter[3] := (0, 1, 2)
-  declare const  filter__SIZE := 4
+  declare const $filter__SIZE := 4
   declare %filtermethodPerCategory[4] := ($filter__SUBTRACTIVE, $filter__SUBTRACTIVE, $filter__SUBTRACTIVE, $filter__TOGGLE, $filter__SUBTRACTIVE)
   if((%filtermethodPerCategory[$ii] = $filter__TOGGLE) or (%filtermethodPerCategory[$ii] = $filter__ADDITIVE))
     %array[0] := 0
@@ -114,6 +114,7 @@ on init
     inc($i)
   end while
   declare %floatmask[2] := (1)
+  %clicktime[0] := sh_right(%floatmask[0], 30) .and. 1
   @loc_13 := "["
   $i := 0
   while($i <= 63) 

@@ -44,7 +44,7 @@ public:
                 TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1),
                 std::move(node_expression), node.tok);
 		node_lowered_array->name = "_" + node_lowered_array->name;
-		node_lowered_array->type = node.type;
+		node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
 		node_lowered_array->parent = node.parent;
 		node_lowered_array->is_local = node.is_local;
 		node_lowered_array->data_type = node.data_type;
@@ -67,7 +67,7 @@ public:
                 node.name,
                 std::move(node_expression), node.tok);
         node_lowered_array->name = "_" + node_lowered_array->name;
-        node_lowered_array->type = node.type;
+        node_lowered_array->ty = node.ty;
         node_lowered_array->parent = node.parent;
         node_lowered_array->declaration = node.declaration;
 		node_lowered_array->update_parents(node.parent);

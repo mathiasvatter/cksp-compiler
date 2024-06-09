@@ -137,8 +137,10 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	// maybe declaration comes after lowering, do not throw error
-	if(!node_declaration and !fail) return;
-	if(!node_declaration) DefinitionProvider::throw_declaration_error(&node).exit();
+	if(!node_declaration) {
+        if(!fail) return;
+	    DefinitionProvider::throw_declaration_error(&node).exit();
+    }
 
     node.match_data_structure(node_declaration);
 }
@@ -179,11 +181,11 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 	if(node.is_compiler_return) {
 		return;
 	}
-
 	auto node_declaration = m_def_provider->get_declaration(&node);
-	if(!node_declaration and !fail) return;
-	if(!node_declaration)
-		DefinitionProvider::throw_declaration_error(&node).exit();
+    if(!node_declaration) {
+        if(!fail) return;
+        DefinitionProvider::throw_declaration_error(&node).exit();
+    }
 
     node.match_data_structure(node_declaration);
 }
@@ -201,7 +203,6 @@ void ASTVariableChecking::visit(NodeListStruct& node) {
 void ASTVariableChecking::visit(NodeListStructRef& node) {
 	node.indexes->accept(*this);
 	auto node_declaration = m_def_provider->get_declaration(&node);
-	if(!node_declaration and !fail) return;
 	if(!node_declaration) {
 		CompileError(ErrorType::Variable, "List has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return;

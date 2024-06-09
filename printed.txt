@@ -67,7 +67,7 @@ on init
 	declare const filter.ADDITIVE : int := 0 + (0 + 1)
 	declare const filter.TOGGLE : int := 0 + ((0 + 1) + 1)
 	declare filter[3] : int[] := (0 + 0, 0 + (0 + 1), 0 + ((0 + 1) + 1))
-	declare const filter.SIZE := 4
+	declare const filter.SIZE : int := 4
 	declare filtermethodPerCategory[4] : int[] := (filter.SUBTRACTIVE, filter.SUBTRACTIVE, filter.SUBTRACTIVE, filter.TOGGLE, filter.SUBTRACTIVE)
 	if((filtermethodPerCategory[ii] = filter.TOGGLE) or (filtermethodPerCategory[ii] = filter.ADDITIVE))
 		array[0] := 0
@@ -77,6 +77,7 @@ on init
 	scoped_func1(loc_7, loc_8, loc_9, loc_10, loc_11)
 	array.clear(_mult_array)
 	declare floatmask[2] : int[] := (1)
+	clicktime[0] := floatmask.get(floatmask, 1)
 	floatmask.print(floatmask, loc_13)
 	motion.add_fader(get_ui_id(get_ui_id(sli_1)), loc_12)
 	motion.add_fader(get_ui_id(get_ui_id(sli_2)), loc_12)
@@ -175,7 +176,7 @@ function array.map(array, func) -> return
 	end while
 end function
 
-function motion.add_fader(ui_id, loc_5 : int)
+function motion.add_fader(ui_id : int, loc_5 : int)
 	loc_5 := get_control_par(ui_id, CONTROL_PAR_PARENT_PANEL)
 	message(loc_5)
 end function

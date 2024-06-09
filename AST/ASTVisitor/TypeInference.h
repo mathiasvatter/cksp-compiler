@@ -37,13 +37,14 @@ public:
 
 	void visit(NodeBinaryExpr& node) override;
 	void visit(NodeUnaryExpr& node) override;
-	void visit(NodeFunctionCall& node) override;
+    void visit(NodeFunctionCall& node) override;
+    void visit(NodeFunctionDefinition& node) override;
 
 	void visit(NodeConstStatement& node) override;
 
     /// iterates through all references and declarations and tries to match the types
     /// with cast set to true -> will cast types of data structures if no type could be infered
-    static void infer_data_structure_types(DefinitionProvider* def_provider, bool cast=false);
+    static void cast_data_structure_types(DefinitionProvider* def_provider, bool cast= false);
 
 private:
 	DefinitionProvider* m_def_provider;
