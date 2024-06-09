@@ -1,10 +1,64 @@
 
 # Bachelor topics
 
-## 1. Global Scope to Lexical Scope
+## 1. Lexical Scope to Global Scope
 - Checking of scopes and variable shadowing
-- rename local variables to get lexical scoping
-- turn local variables into global array
+- rename local variables to get global scoping
+- reuse variables depending on their dynamic extend
+- do lambda lifting in functions
+- (turn local variables into global array)
+
+### Vorgehen:
+1. Variablen und Scopes tracken
+2. Dynamischen Extend von Variablen/Arrays innerhalb verschiedener Scopes in den Funktionen tracken und mit typisierten Variablen austauschen, deren dynamic extend bereits abgelaufen ist.
+3. Alle lokalen Variablen mit Gensym umbenennen.
+4. Lambda Lifting mit allen Funktionen durchführen.
+5. Punkt 2 und 3 mit allen Callbacks ausführen.
+
+### Beispiel:
+#### Vorher:
+```c
+function scoped_func2()
+	declare i: int
+	message(i)
+	if(i = 1)
+		declare loc_array[5] := (1,2,3,4)
+		declare j: int, k: int
+		message(j & k & loc_array[3])
+	end if
+	if(i = 2)
+		declare h: int, g: int
+		message(h & g)
+	end if
+end function
+```
+####Nachher:
+```c
+function scoped_func2(loc_0 : int, loc_1 : int[], loc_2 : int, loc_3 : int)
+	loc_0 := 0
+	message(loc_0)
+	if(loc_0 = 1)
+		loc_1 := (1, 2, 3, 4)
+		loc_2 := 0
+		loc_3 := 0
+		message(loc_2 & loc_3 & loc_1[3])
+	end if
+	if(loc_0 = 2)
+		loc_2 := 0
+		loc_3 := 0
+		message(loc_2 & loc_3)
+	end if
+end function
+```
+
+### Herausforderungen:
+- Lambda Lifting bringt Overhead an Funktionsparametern mit sich -> Funktionen die vorher gecallt wurden 
+(komplett ohne Parameter) müssen jetzt inlined werden, was wiederum zu mehr Overhead und längerem Code führt.
+__Lösung?:__ Globaler Stack, der alle Funktionsparameter vorher übergibt und nachher wieder ausgibt.
+- Durch Lambda Lifting und das mehrfache Auslagern von Declarations (in Callbacks und dann in den init Callback) kommt
+es zu vielen unnötigen Assignments.
+__Lösung?:__ Optimierung der Assignments durch Code-Flow Analyse und Dead Code Elimination.
+
 
 ## 2. Rekursive Data Structure declaration and dynamic allocation
 - Allow declaration of structs by lowering them to arrays
