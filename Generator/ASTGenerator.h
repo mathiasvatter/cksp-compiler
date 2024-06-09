@@ -54,9 +54,6 @@ public:
 	void generate(const std::string& path) const;
 	void print() const;
 
-	std::unordered_map<ASTType, std::string> array_identifier = {{ASTType::String, "!"}, {ASTType::Integer, "%"}, {ASTType::Real, "?"}, {ASTType::Unknown, ""}};
-	std::unordered_map<ASTType, std::string> variable_identifier = {{ASTType::String, "@"}, {ASTType::Integer, "$"}, {ASTType::Real, "~"}, {ASTType::Unknown, ""}};
-
 private:
 	std::string m_indent = "  ";
 	int m_scope_count = 0;

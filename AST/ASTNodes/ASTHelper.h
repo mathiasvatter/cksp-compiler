@@ -7,47 +7,6 @@
 #include "../../Tokenizer/Tokens.h"
 #include "../../Tokenizer/Tokenizer.h"
 
-enum class ASTType {
-	Integer,
-	Real,
-	Number,
-	Boolean,
-	Comparison,
-	String,
-	Unknown,
-	Any,
-	Void,
-};
-
-inline std::string type_to_string(ASTType type) {
-	switch (type) {
-		case ASTType::Integer: return "Integer";
-		case ASTType::Real: return "Real";
-		case ASTType::String: return "String";
-		case ASTType::Any: return "Any";
-		case ASTType::Unknown: return "Unknown";
-		default: return "Invalid";
-	}
-}
-
-inline ASTType token_to_type(token tok) {
-	switch (tok) {
-		case token::INT: return ASTType::Integer;
-		case token::FLOAT: return ASTType::Real;
-		case token::STRING: return ASTType::String;
-		default: return ASTType::Unknown;
-	}
-};
-
-inline token type_to_token(ASTType type) {
-	switch (type) {
-		case ASTType::Integer: return token::INT;
-		case ASTType::Real: return token::FLOAT;
-		case ASTType::String: return token::STRING;
-		default: return token::INT;
-	}
-};
-
 enum class DataType {
 	Const,
 	Polyphonic,
@@ -59,16 +18,13 @@ enum class DataType {
 	UI_Control,
 };
 
-inline ASTType infer_type_from_identifier(std::string& var_name) {
-	ASTType type = ASTType::Unknown;
-	if(contains(VAR_IDENT, var_name[0]) || contains(ARRAY_IDENT, var_name[0])) {
-		std::string identifier(1, var_name[0]);
-		var_name = var_name.erase(0,1);
-		token token_type = *get_token_type(TYPES, identifier);
-		type = token_to_type(token_type);
-	}
-	return type;
-}
+enum class NodeStructureType {
+    AST,
+    DataStructure,
+    Reference,
+    Instruction,
+    Expression
+};
 
 enum class NodeType {
 	Variable,

@@ -170,16 +170,9 @@ Result<std::unique_ptr<NodeArray>> BuiltinsProcessor::parse_builtin_array() {
     return Result<std::unique_ptr<NodeArray>>(std::move(node_array));
 }
 
-ASTType BuiltinsProcessor::get_identifier_type(char identifier) {
-    token token_type = *get_token_type(TYPES, std::string(1, identifier));
-    return token_to_type(token_type);
-}
-
 Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin_function() {
     Token func_name = consume(m_tokens); // consume function name
     std::unique_ptr<NodeParamList> func_args = std::make_unique<NodeParamList>(func_name);
-    std::vector<ASTType> arg_types;
-    std::vector<DataType> arg_var_types;
 	std::vector<Type*> types;
     bool has_forced_parenth = false;
     if (peek(m_tokens).type == token::OPEN_PARENTH) {
@@ -191,9 +184,8 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
                 Result<std::unique_ptr<NodeFunctionDefinition>>(param_list.get_error());
             }
             func_args = std::move(param_list.unwrap());
-            for(int i = 0; i<func_args->params.size(); i++) {
-                arg_types.push_back(func_args->params[i]->type);
-                types.push_back(func_args->params[i]->ty);
+            for(const auto & param : func_args->params) {
+                types.push_back(param->ty);
             }
         }
         if (peek(m_tokens).type == token::CLOSED_PARENTH) {
@@ -208,22 +200,17 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
 	}
 
 	Type* ret_type = TypeRegistry::Void;
-    ASTType return_type = ASTType::Void;
     if(peek(m_tokens).type == token::TYPE) {
         consume(m_tokens); // consume :
 		ret_type = TypeRegistry::get_type_from_annotation(peek(m_tokens).val);
-        return_type = get_type_annotation(consume(m_tokens));
     }
     auto node_function_header = std::make_unique<NodeFunctionHeader>(
             func_name.val, std::move(func_args), func_name
         );
 	node_function_header->is_thread_safe = m_thread_unsafe_functions.find(node_function_header->name) == m_thread_unsafe_functions.end();
 	node_function_header->ty = ret_type;
-    node_function_header->type = return_type;
     node_function_header->is_builtin = true;
     node_function_header->has_forced_parenth = has_forced_parenth;
-    node_function_header->arg_var_types = arg_var_types;
-    node_function_header->arg_ast_types = arg_types;
 	node_function_header->arg_types = types;
 
     auto node_function = std::make_unique<NodeFunctionDefinition>(
@@ -262,8 +249,6 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 		node_var = std::move(node_var_res.unwrap());
 	}
 	std::unique_ptr<NodeParamList> params = std::make_unique<NodeParamList>(tok);
-	std::vector<ASTType> arg_types;
-	std::vector<DataType> arg_var_types;
 	std::vector<Type*> types;
 	if (peek(m_tokens).type == token::OPEN_PARENTH) {
 		consume(m_tokens); // consume (
@@ -273,9 +258,8 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 				Result<std::unique_ptr<NodeFunctionHeader>>(param_list.get_error());
 			}
             params = std::move(param_list.unwrap());
-            for(int i = 0; i<params->params.size(); i++) {
-                arg_types.push_back(params->params[i]->type);
-                types.push_back(params->params[i]->ty);
+            for(const auto & param : params->params) {
+                types.push_back(param->ty);
             }
 		}
 		if (peek(m_tokens).type == token::CLOSED_PARENTH) {
@@ -287,31 +271,9 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 	}
 	node_var->data_type = DataType::UI_Control;
 	auto node_ui_control = std::make_unique<NodeUIControl>(ui_control_type, std::move(node_var), std::move(params), tok);
-	node_ui_control->control_var->parent = node_ui_control.get();
-	node_ui_control->params->parent = node_ui_control.get();
-	node_ui_control->arg_var_types = std::move(arg_var_types);
-	node_ui_control->arg_ast_types = std::move(arg_types);
 	node_ui_control->arg_types = types;
-	node_ui_control->type = node_ui_control->control_var->type;
 	node_ui_control->ty = node_ui_control->control_var->ty;
 	return Result<std::unique_ptr<NodeUIControl>>(std::move(node_ui_control));
-}
-
-ASTType BuiltinsProcessor::get_type_annotation(const Token& tok) {
-//    Token token_type = tok; // get type token
-    ASTType type = ASTType::Any;
-    if(tok.val.find("int") != std::string::npos) {
-        type = ASTType::Integer;
-    } else if (tok.val.find("real") != std::string::npos) {
-        type = ASTType::Real;
-    } else if (tok.val.find("string") != std::string::npos) {
-        type = ASTType::String;
-    } else if(tok.val.find("number") != std::string::npos) {
-        type = ASTType::Number;
-    } else if(tok.val.find("bool") != std::string::npos) {
-        type = ASTType::Boolean;
-    }
-    return type;
 }
 
 DataType BuiltinsProcessor::get_var_type_annotation(const std::string& keyword) {

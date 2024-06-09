@@ -55,7 +55,7 @@ public:
                     function_var->clone(),
                     std::move(node.step), node.tok
                     );
-            inc_expression->type = ASTType::Integer;
+            inc_expression->ty = TypeRegistry::Integer;
             auto node_inc_statement = std::make_unique<NodeSingleAssignment>(
                     std::move(function_var),
                     std::move(inc_expression), node.tok);
@@ -71,7 +71,7 @@ public:
                 std::move(iterator_var),
                 std::move(node.iterator_end), node.tok
                 );
-        comparison->type = ASTType::Comparison;
+        comparison->ty = TypeRegistry::Comparison;
 
         auto node_while_statement = std::make_unique<NodeWhile>(
                 std::move(comparison),

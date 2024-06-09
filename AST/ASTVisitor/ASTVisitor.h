@@ -35,9 +35,9 @@ protected:
 
 public:
     virtual void visit(NodeDeadCode& node) {};
-	virtual void visit(NodeInt& node) {node.type = ASTType::Integer;};
-    virtual void visit(NodeReal& node) {node.type = ASTType::Real;};
-    virtual void visit(NodeString& node) {node.type = ASTType::String;};
+	virtual void visit(NodeInt& node) {node.ty = TypeRegistry::Integer;};
+    virtual void visit(NodeReal& node) {node.ty = TypeRegistry::Real;};
+    virtual void visit(NodeString& node) {node.ty = TypeRegistry::String;};
 	virtual void visit(NodeVariable& node) {};
 	virtual void visit(NodeVariableRef& node) {};
     virtual void visit(NodeParamList& node) {

@@ -279,7 +279,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_string_expr_rhs(std::unique_ptr<
         }
 		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(string_op.type, std::move(lhs), std::move(rhs.unwrap()), get_tok());
         lhs = std::move(node_binary_expr);
-        lhs->type = ASTType::String;
+        lhs->ty = TypeRegistry::String;
     }
 }
 
@@ -378,22 +378,22 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(int precedence, 
                 return Result<std::unique_ptr<NodeAST>>(rhs.get_error());
             }
         }
-        ASTType type = ASTType::Unknown;
+        Type* type = TypeRegistry::Unknown;
 		if (contains(COMPARISON_TOKENS, bin_op.type)) {
             // Check if rhs is NodeComparisonExpr because comparisons in comparisons are not allowed
-            if (lhs->type == ASTType::Comparison) {
+            if (lhs->ty == TypeRegistry::Comparison) {
                 return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
                  "Nested Comparisons are not allowed.", "valid expression operator", bin_op));
             }
-            type = ASTType::Comparison;
+            type = TypeRegistry::Comparison;
 		} else if (bin_op.type == token::BOOL_AND || bin_op.type == token::BOOL_OR){
-			type = ASTType::Boolean;
+			type = TypeRegistry::Boolean;
 		}
 
 		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(bin_op.type, std::move(lhs), std::move(rhs.unwrap()), get_tok());
         node_binary_expr->parent = parent;
         lhs = std::move(node_binary_expr);
-        lhs->type = type;
+        lhs->ty = type;
     }
 }
 
@@ -1310,7 +1310,7 @@ Result<std::unique_ptr<NodeWhile>> Parser::parse_while_statement(NodeAST* parent
         return Result<std::unique_ptr<NodeWhile>>(condition_result.get_error());
     }
     auto condition = std::move(condition_result.unwrap());
-    if(not(condition->type == ASTType::Boolean || condition->type == ASTType::Comparison)) {
+    if(not(condition->ty == TypeRegistry::Boolean || condition->ty == TypeRegistry::Comparison)) {
         return Result<std::unique_ptr<NodeWhile>>(CompileError(ErrorType::SyntaxError,
                                                                "While Statement needs condition.", peek().line, "condition", condition->get_string(), peek().file));
     }

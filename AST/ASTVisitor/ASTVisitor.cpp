@@ -10,7 +10,7 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_declare_variable(const std::stri
             std::optional<Token>(),
             name,
             TypeRegistry::Unknown, type, parent->tok);
-    node_variable->type = ASTType::Integer;
+    node_variable->ty = TypeRegistry::Integer;
     auto node_declare_statement = std::make_unique<NodeSingleDeclaration>(
 		std::move(node_variable),
 		std::make_unique<NodeInt>(value, parent->tok),
@@ -50,7 +50,6 @@ std::unique_ptr<NodeBody> ASTVisitor::make_while_loop(NodeAST* var, int32_t from
 		var->clone(),
 		std::make_unique<NodeInt>(to, var->tok), var->tok
 	);
-	node_comparison->type = ASTType::Comparison;
 	auto node_increment = std::make_unique<NodeStatement>(
 		std::make_unique<NodeFunctionCall>(
 			false,
