@@ -6,6 +6,7 @@
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Desugaring/DesugarDeclareAssign.h"
 #include "../../Lowering/LoweringGetControl.h"
+#include "../../Lowering/LoweringFunctionCall.h"
 #include "../../Desugaring/DesugaringFamilyStruct.h"
 #include "../../Desugaring/DesugarForStatement.h"
 #include "../../Desugaring/DesugarForEachStatement.h"
@@ -28,6 +29,91 @@ NodeAST * NodeStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
         return statement.get();
     }
     return nullptr;
+}
+
+// ************* NodeFunctionCall ***************
+void NodeFunctionCall::accept(ASTVisitor &visitor) {
+    visitor.visit(*this);
+}
+NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
+        : NodeInstruction(other), is_call(other.is_call), kind(other.kind),
+          function(clone_unique(other.function)) {
+    set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeFunctionCall::clone() const {
+    return std::make_unique<NodeFunctionCall>(*this);
+}
+ASTVisitor* NodeFunctionCall::get_lowering(DefinitionProvider* def_provider) const {
+    static LoweringFunctionCall lowering(def_provider);
+    return &lowering;
+}
+
+NodeFunctionDefinition* NodeFunctionCall::find_definition(struct NodeProgram *program) {
+    auto it = program->function_lookup.find({function->name, (int)function->args->params.size()});
+    if(it != program->function_lookup.end()) {
+        it->second->is_used = true;
+        definition = it->second;
+        definition->call_sites.emplace(this);
+        kind = Kind::UserDefined;
+        return it->second;
+    }
+    return nullptr;
+}
+
+NodeFunctionDefinition* NodeFunctionCall::find_builtin_definition(NodeProgram *program) {
+    if(!program->def_provider) {
+        CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
+    }
+    if(auto builtin_func = program->def_provider->get_builtin_function(function.get())) {
+        function->type = builtin_func->type;
+        function->has_forced_parenth = builtin_func->header->has_forced_parenth;
+        function->arg_ast_types = builtin_func->header->arg_ast_types;
+        function->arg_var_types = builtin_func->header->arg_var_types;
+        function->is_builtin = builtin_func->header->is_builtin;
+        function->is_thread_safe = builtin_func->header->is_thread_safe;
+        definition = builtin_func;
+        kind = Kind::Builtin;
+        return builtin_func;
+    }
+    return nullptr;
+}
+
+NodeFunctionDefinition* NodeFunctionCall::find_property_definition(NodeProgram *program) {
+    if(!program->def_provider) {
+        CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
+    }
+    if(auto property_func = program->def_provider->get_property_function(function.get())) {
+        if(function->args->params.size() < 2) {
+            CompileError(
+                    ErrorType::SyntaxError,
+                    "Found Property Function with insufficient amount of arguments.",
+                    tok.line, "At least 2 arguments",
+                    std::to_string(function->args->params.size()),
+                    tok.file
+            ).exit();
+        }
+        function->type = property_func->type;
+        definition = property_func;
+        kind = Kind::Property;
+        return property_func;
+    }
+    return nullptr;
+}
+
+bool NodeFunctionCall::get_definition(NodeProgram* program, bool fail) {
+    if (definition) {
+        return true;
+    }
+    if (find_builtin_definition(program)) {
+        return true;
+    } else if (find_definition(program)) {
+        return true;
+    } else if (find_property_definition(program)) {
+        return true;
+    } else if(fail) {
+        CompileError(ErrorType::SyntaxError,"Function has not been declared.", tok.line, "", function->name, tok.file).exit();
+    }
+    return false;
 }
 
 // ************* NodeAssignment ***************
