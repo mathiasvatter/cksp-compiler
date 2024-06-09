@@ -14,12 +14,12 @@
 
 #include "ASTHelper.h"
 #include "../Types.h"
+#include "../TypeRegistry.h"
 
 class ASTDesugaring;
 
 struct NodeAST {
     Token tok;
-    ASTType type;
 	Type* ty = nullptr;
     NodeType node_type;
     NodeAST* parent = nullptr;
@@ -156,7 +156,7 @@ struct NodeExpression : NodeAST {
 
 struct NodeInt : NodeAST {
 	int32_t value;
-	inline explicit NodeInt(int32_t v, Token tok) : NodeAST(std::move(tok), NodeType::Int), value(v) {type = ASTType::Integer;}
+	inline explicit NodeInt(int32_t v, Token tok) : NodeAST(std::move(tok), NodeType::Int), value(v) {}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
 	NodeInt(const NodeInt& other) : NodeAST(other), value(other.value) {}
@@ -169,7 +169,7 @@ struct NodeInt : NodeAST {
 
 struct NodeReal : NodeAST {
     double value;
-    inline explicit NodeReal(double value, Token tok) : NodeAST(std::move(tok), NodeType::Real), value(value) {type = ASTType::Real;}
+    inline explicit NodeReal(double value, Token tok) : NodeAST(std::move(tok), NodeType::Real), value(value) {}
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
     NodeReal(const NodeReal& other) : NodeAST(other), value(other.value) {}
@@ -182,7 +182,7 @@ struct NodeReal : NodeAST {
 
 struct NodeString : NodeAST {
     std::string value;
-    inline explicit NodeString(std::string value, Token tok) : NodeAST(std::move(tok), NodeType::String), value(std::move(value)) {type = ASTType::String;}
+    inline explicit NodeString(std::string value, Token tok) : NodeAST(std::move(tok), NodeType::String), value(std::move(value)) {}
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
     NodeString(const NodeString& other) : NodeAST(other), value(other.value) {}
@@ -337,8 +337,6 @@ struct NodeFunctionHeader: NodeAST {
     bool has_forced_parenth = false;
     std::string name;
     std::unique_ptr<NodeParamList> args;
-    std::vector<ASTType> arg_ast_types;
-    std::vector<DataType> arg_var_types;
 	std::vector<Type*> arg_types;
     inline explicit NodeFunctionHeader(Token tok) : NodeAST(std::move(tok), NodeType::FunctionHeader) {}
     inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeParamList> args, Token tok)

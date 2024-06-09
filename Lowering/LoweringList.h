@@ -48,7 +48,7 @@ public:
                 token::ADD,
                 std::move(node_position_array),
                 std::move(node.indexes->params[1]), node.tok);
-        node_expression->type = ASTType::Integer;
+        node_expression->ty = TypeRegistry::Integer;
 
 		lowered_list_reference->index = std::move(node_expression);
 		lowered_list_reference->index->parent = lowered_list_reference.get();
@@ -175,7 +175,7 @@ public:
                     std::make_unique<NodeInt>(positions[i], node.tok),
                     node.tok
                     );
-            node_expression->type = ASTType::Integer;
+            node_expression->ty = TypeRegistry::Integer;
 
             auto node_array_ref = std::make_unique<NodeArrayRef>(
                     node_array->name,

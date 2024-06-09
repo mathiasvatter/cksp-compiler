@@ -41,8 +41,6 @@ private:
 
 	void apply_annotation_information(NodeDataStructure* node);
 
-    static ASTType get_identifier_type(char identifier);
-    static ASTType get_type_annotation(const Token& tok);
     static DataType get_var_type_annotation(const std::string& keyword);
     static bool is_property_function(const std::string& fun_name);
 };

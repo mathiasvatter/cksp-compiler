@@ -65,10 +65,8 @@ NodeFunctionDefinition* NodeFunctionCall::find_builtin_definition(NodeProgram *p
         CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
     if(auto builtin_func = program->def_provider->get_builtin_function(function.get())) {
-        function->type = builtin_func->type;
+        function->ty = builtin_func->ty;
         function->has_forced_parenth = builtin_func->header->has_forced_parenth;
-        function->arg_ast_types = builtin_func->header->arg_ast_types;
-        function->arg_var_types = builtin_func->header->arg_var_types;
         function->is_builtin = builtin_func->header->is_builtin;
         function->is_thread_safe = builtin_func->header->is_thread_safe;
         definition = builtin_func;
@@ -92,7 +90,7 @@ NodeFunctionDefinition* NodeFunctionCall::find_property_definition(NodeProgram *
                     tok.file
             ).exit();
         }
-        function->type = property_func->type;
+        function->ty = property_func->ty;
         definition = property_func;
         kind = Kind::Property;
         return property_func;

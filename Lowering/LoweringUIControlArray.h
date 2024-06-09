@@ -170,7 +170,7 @@ public:
 			std::move(node_get_ui_id),
 			node_iterator_var_ref->clone(), ui_control.tok
 		);
-		node_while_body_expression->type = ASTType::Integer;
+		node_while_body_expression->ty = TypeRegistry::Integer;
 
 		// %_lbl_lbl[_iterator] := get_ui_id($_lbl_lbl0)+_iterator in above example
 		auto node_assignment = std::make_unique<NodeSingleAssignment>(

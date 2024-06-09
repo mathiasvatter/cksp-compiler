@@ -18,6 +18,8 @@ public:
 	void visit(NodeString& node) override;
 	void visit(NodeReal& node) override;
 
+    void visit(NodeCallback& node) override;
+
 	void visit(NodeSingleDeclaration& node) override;
 	void visit(NodeSingleAssignment& node) override;
 	void visit(NodeUIControl& node) override;

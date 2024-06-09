@@ -6,23 +6,15 @@
 #include "AST.h"
 #include "ASTInstructions.h"
 #include "../ASTVisitor/ASTVisitor.h"
-#include "../../Desugaring/DesugarDeclareAssign.h"
-#include "../../Desugaring/DesugarForStatement.h"
-#include "../../Desugaring/DesugarForEachStatement.h"
-#include "../../Lowering/LoweringGetControl.h"
-#include "../../Lowering/LoweringFunctionCall.h"
-#include "../../Desugaring/DesugaringFamilyStruct.h"
 
 // ************* NodeAST Base Class ***************
-NodeAST::NodeAST(const Token tok, NodeType node_type) : tok(tok),
-	type(ASTType::Unknown), node_type(node_type) {
-	ty = TypeRegistry::Unknown;
-}
+NodeAST::NodeAST(Token tok, NodeType node_type) : tok(tok),
+	node_type(node_type), ty(TypeRegistry::Unknown) {}
 
 void NodeAST::accept(ASTVisitor &visitor) {}
 
 NodeAST::NodeAST(const NodeAST& other) : parent(other.parent), node_type(other.node_type),
-    tok(other.tok), type(other.type), ty(other.ty) {}
+    tok(other.tok), ty(other.ty) {}
 
 NodeAST * NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 	if (parent) {
@@ -117,7 +109,6 @@ void NodeReference::match_data_structure(NodeDataStructure* data_structure) {
 	is_local = data_structure->is_local;
 	is_compiler_return = data_structure->is_compiler_return;
 	data_type = data_structure->data_type;
-	type = data_structure->type;
 	ty = data_structure->ty;
 }
 
@@ -291,8 +282,7 @@ void NodeFunctionHeader::accept(ASTVisitor &visitor) {
 }
 NodeFunctionHeader::NodeFunctionHeader(const NodeFunctionHeader& other)
         : NodeAST(other), is_thread_safe(other.is_thread_safe), name(other.name), is_builtin(other.is_builtin),
-		  has_forced_parenth(other.has_forced_parenth), args(clone_unique(other.args)),
-		  arg_ast_types(other.arg_ast_types), arg_var_types(other.arg_var_types) {
+		  has_forced_parenth(other.has_forced_parenth), args(clone_unique(other.args)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeFunctionHeader::clone() const {

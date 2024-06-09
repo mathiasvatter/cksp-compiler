@@ -32,6 +32,11 @@ void TypeInference::cast_data_structure_types(DefinitionProvider* def_provider, 
     }
 }
 
+void TypeInference::visit(NodeCallback& node) {
+    if(node.callback_id) node.callback_id->accept(*this);
+    node.statements->accept(*this);
+}
+
 
 void TypeInference::visit(NodeInt& node) {
     node.ty = TypeRegistry::Integer;
@@ -68,6 +73,24 @@ void TypeInference::visit(NodeConstStatement& node) {
 void TypeInference::visit(NodeVariableRef& node) {
     match_reference_declaration(&node);
     m_references.push_back(&node);
+
+    // check if callback id reference is ui_control
+    if(node.parent->get_node_type() == NodeType::Callback) {
+        auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+        if(node.data_type != DataType::UI_Control) {
+            error.m_message = "<Variable> needs to be of type <UI Control> to be referenced in <UI Callback>.";
+            error.exit();
+        } else {
+            // var ref is ui control -> check if it is ui_label
+            if(node.declaration and node.declaration->parent and node.declaration->parent->get_node_type() == NodeType::UIControl) {
+                auto ui_control = static_cast<NodeUIControl*>(node.declaration->parent);
+                if(ui_control->name == "ui_label") {
+                    error.m_message = "<UI Label> cannot be referenced in <UI Callback>.";
+                    error.exit();
+                }
+            }
+        }
+    }
 }
 
 void TypeInference::visit(NodeVariable& node) {
@@ -78,12 +101,14 @@ void TypeInference::visit(NodeArray& node) {
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Unknown, 1);
 	}
+    if(node.size) {
+        node.size->accept(*this);
+        node.size->ty = specialize_type(node.size->ty, TypeRegistry::Integer);
+    }
+
 }
 
 void TypeInference::visit(NodeArrayRef& node) {
-    if(node.name == "clicktime")  {
-
-    }
 	if(node.declaration) node.declaration->accept(*this);
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
@@ -98,6 +123,14 @@ void TypeInference::visit(NodeArrayRef& node) {
     match_reference_declaration(&node);
     m_references.push_back(&node);
 
+    // check if callback id reference is ui_control
+    if(node.parent->get_node_type() == NodeType::Callback) {
+        auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+        if (node.data_type != DataType::UI_Control) {
+            error.m_message = "<Array> needs to be of type <UI Control> to be referenced in <UI Callback>.";
+            error.exit();
+        }
+    }
 }
 
 void TypeInference::visit(NodeNDArray& node) {

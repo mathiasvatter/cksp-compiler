@@ -581,7 +581,7 @@ void ASTFunctionInlining::declare_dummy_variables() {
     Token tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
     std::string dummy_name = "_return_dummy";
     auto node_return_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), dummy_name, TypeRegistry::Integer, DataType::Mutable, tok);
-    node_return_dummy->type = ASTType::Unknown;
+    node_return_dummy->ty = TypeRegistry::Unknown;
     node_return_dummy->is_engine = true;
     auto node_var_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_return_dummy), nullptr, tok);
     node_var_declaration->variable->parent = node_var_declaration.get();
