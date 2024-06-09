@@ -62,7 +62,7 @@ on init
 	declare s : int
 	declare array[3] : int[] := (0)
 	array[1] := i
-	message("Array value: " & array[0] & s & i & ii)
+	message("Array value: " & ", " & array[0] & ", " & s & ", " & i & ", " & ii)
 	declare const filter.SUBTRACTIVE : int := 0 + 0
 	declare const filter.ADDITIVE : int := 0 + (0 + 1)
 	declare const filter.TOGGLE : int := 0 + ((0 + 1) + 1)

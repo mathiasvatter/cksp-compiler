@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "../AST/ASTVisitor/ASTVisitor.h"
 
 /**
@@ -28,37 +30,6 @@ public:
 			std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> m_builtin_widgets,
 			std::vector<std::unique_ptr<NodeDataStructure>> m_external_variables);
 	explicit DefinitionProvider();
-
-    /// external variables from eg nckp file
-	std::vector<std::unique_ptr<NodeDataStructure>> external_variables{};
-	void set_external_variables(std::vector<std::unique_ptr<NodeDataStructure>> external_variables);
-    void add_external_variable(std::unique_ptr<NodeDataStructure> external_variable);
-	/// builtin engine variables
-	std::unordered_map<std::string, std::unique_ptr<NodeVariable>> builtin_variables{};
-    NodeVariable* get_builtin_variable(const std::string& var);
-	void set_builtin_variables(std::unordered_map<std::string, std::unique_ptr<NodeVariable>> builtin_variables);
-    void add_builtin_variable(std::unique_ptr<NodeVariable> builtin_variable);
-    /// builtin engine arrays
-	std::unordered_map<std::string, std::unique_ptr<NodeArray>> builtin_arrays{};
-    NodeArray* get_builtin_array(const std::string& arr);
-	void set_builtin_arrays(std::unordered_map<std::string, std::unique_ptr<NodeArray>> builtin_arrays);
-    void add_builtin_array(std::unique_ptr<NodeArray> builtin_array);
-    /// builtin engine widgets
-	std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> builtin_widgets{};
-    NodeUIControl* get_builtin_widget(const std::string &ui_control);
-	void set_builtin_widgets(std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> builtin_widgets);
-    void add_builtin_widget(std::unique_ptr<NodeUIControl> builtin_widget);
-    /// builtin engine functions
-	std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions{};
-    NodeFunctionDefinition* get_builtin_function(const std::string &function, int params);
-    NodeFunctionDefinition* get_builtin_function(NodeFunctionHeader* function);
-	void set_builtin_functions(std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
-    void add_builtin_function(std::unique_ptr<NodeFunctionDefinition> builtin_function);
-	/// predefined property functions like set_label_properties etc
-	std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions{};
-    NodeFunctionDefinition* get_property_function(NodeFunctionHeader* function);
-	void set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions);
-    void add_property_function(std::unique_ptr<NodeFunctionDefinition> property_function);
 
 	bool add_scope();
 	std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual> remove_scope();
@@ -90,44 +61,36 @@ public:
 	// when is variable = raw array? if variable has _ in front and is array and was declared without _
 	static std::string sanitize_name(const std::string& name);
 
-	/// declared variables
-    std::vector<std::unordered_map<std::string, NodeVariable*, StringHash, StringEqual>> m_declared_variables;
-    NodeVariable* get_declared_variable(const std::string& var);
-    /// declared arrays
-    std::vector<std::unordered_map<std::string, NodeArray*, StringHash, StringEqual>> m_declared_arrays;
-    NodeArray* get_declared_array(const std::string& arr);
-
 	std::vector<NodeReference*> m_all_references;
-	const std::vector<NodeReference *> &get_all_references() const {
+	[[nodiscard]] const std::vector<NodeReference *> &get_all_references() {
 		return m_all_references;
 	}
 	std::vector<NodeDataStructure*> m_all_data_structures;
-	const std::vector<NodeDataStructure *> &get_all_data_structures() const {
+	[[nodiscard]] const std::vector<NodeDataStructure *> &get_all_data_structures() {
 		return m_all_data_structures;
 	}
+    std::vector<NodeSingleDeclaration*> m_all_declarations;
+    [[nodiscard]] const std::vector<NodeSingleDeclaration *> &get_all_declarations() {
+        return m_all_declarations;
+    }
 	std::unordered_map<NodeDataStructure*, std::set<NodeReference*>> m_references_per_data_structure;
 	const std::set<NodeReference*> &get_references(NodeDataStructure* data_struct) {
 		return m_references_per_data_structure[data_struct];
 	}
 	bool set_references(NodeDataStructure* data_struct, std::set<NodeReference*> references) {
-		m_references_per_data_structure[data_struct] = references;
+		m_references_per_data_structure[data_struct] = std::move(references);
 		return true;
 	}
 	bool add_reference(NodeDataStructure* data_struct, NodeReference* reference) {
 		m_references_per_data_structure[data_struct].insert(reference);
 		return true;
 	}
-    /// declared everything
+    /// dynamic vector containing every data structure; scoped
     std::vector<std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual>> m_declared_data_structures;
 	/// returns data structure declaration searching all scopes
     NodeDataStructure* get_declared_data_structure(const std::string& data);
 	/// only returns data structure declaration in current scope or global_scope
 	NodeDataStructure* get_scoped_data_structure(const std::string& data, bool global_scope);
-
-
-    /// declared ui_controls
-    std::vector<std::unordered_map<std::string, NodeUIControl*, StringHash, StringEqual>> m_declared_controls;
-    NodeUIControl* get_declared_control(NodeUIControl* arr);
 
 	/// variable error handling
 	static inline CompileError throw_declaration_error(NodeReference* node) {
@@ -157,6 +120,39 @@ public:
 		}
 		return compile_error;
 	}
+
+
+
+    /// external variables from eg nckp file
+    std::vector<std::unique_ptr<NodeDataStructure>> external_variables{};
+    void set_external_variables(std::vector<std::unique_ptr<NodeDataStructure>> external_variables);
+    void add_external_variable(std::unique_ptr<NodeDataStructure> external_variable);
+    /// builtin engine variables
+    std::unordered_map<std::string, std::unique_ptr<NodeVariable>> builtin_variables{};
+    NodeVariable* get_builtin_variable(const std::string& var);
+    void set_builtin_variables(std::unordered_map<std::string, std::unique_ptr<NodeVariable>> builtin_variables);
+    void add_builtin_variable(std::unique_ptr<NodeVariable> builtin_variable);
+    /// builtin engine arrays
+    std::unordered_map<std::string, std::unique_ptr<NodeArray>> builtin_arrays{};
+    NodeArray* get_builtin_array(const std::string& arr);
+    void set_builtin_arrays(std::unordered_map<std::string, std::unique_ptr<NodeArray>> builtin_arrays);
+    void add_builtin_array(std::unique_ptr<NodeArray> builtin_array);
+    /// builtin engine widgets
+    std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> builtin_widgets{};
+    NodeUIControl* get_builtin_widget(const std::string &ui_control);
+    void set_builtin_widgets(std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> builtin_widgets);
+    void add_builtin_widget(std::unique_ptr<NodeUIControl> builtin_widget);
+    /// builtin engine functions
+    std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions{};
+    NodeFunctionDefinition* get_builtin_function(const std::string &function, int params);
+    NodeFunctionDefinition* get_builtin_function(NodeFunctionHeader* function);
+    void set_builtin_functions(std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
+    void add_builtin_function(std::unique_ptr<NodeFunctionDefinition> builtin_function);
+    /// predefined property functions like set_label_properties etc
+    std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions{};
+    NodeFunctionDefinition* get_property_function(NodeFunctionHeader* function);
+    void set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions);
+    void add_property_function(std::unique_ptr<NodeFunctionDefinition> property_function);
 };
 
 

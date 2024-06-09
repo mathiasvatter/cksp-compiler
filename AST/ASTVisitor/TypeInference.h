@@ -7,9 +7,9 @@
 #include "ASTVisitor.h"
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
 
-class TypeCasting : public ASTVisitor {
+class TypeInference : public ASTVisitor {
 public:
-	explicit TypeCasting(DefinitionProvider* definition_provider, bool cast=false) : m_def_provider(definition_provider), cast(cast) {};
+	explicit TypeInference(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {};
 
 	void visit(NodeProgram& node) override;
 
@@ -41,10 +41,11 @@ public:
 
 	void visit(NodeConstStatement& node) override;
 
-//	void visit(NodeBody& node) override;
+    /// iterates through all references and declarations and tries to match the types
+    /// with cast set to true -> will cast types of data structures if no type could be infered
+    static void infer_data_structure_types(DefinitionProvider* def_provider, bool cast=false);
 
 private:
-    bool cast = false;
 	DefinitionProvider* m_def_provider;
     std::vector<NodeReference*> m_references;
     std::vector<NodeSingleAssignment*> m_assignments;

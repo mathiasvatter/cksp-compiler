@@ -109,9 +109,22 @@ private:
 
         // Durchlaufe die restlichen Parameter in umgekehrter Reihenfolge
         for (int i = params->params.size() - 1; i >= 0; --i) {
-            node_expr = std::make_unique<NodeBinaryExpr>(
+            // Erstelle einen neuen NodeString für das Komma
+            auto comma_node = std::make_unique<NodeString>("\", \"", params->tok);
+
+            // Erstelle einen neuen NodeBinaryExpr mit dem aktuellen Parameter und dem bisherigen Ausdruck
+            auto combined_expr = std::make_unique<NodeBinaryExpr>(
                     token::STRING_OP,
                     std::move(params->params[i]),
+                    std::move(comma_node),
+                    params->tok
+            );
+            combined_expr->ty = TypeRegistry::String;
+
+            // Hänge den bisherigen Ausdruck an den neuen NodeBinaryExpr an
+            node_expr = std::make_unique<NodeBinaryExpr>(
+                    token::STRING_OP,
+                    std::move(combined_expr),
                     std::move(node_expr),
                     params->tok
             );

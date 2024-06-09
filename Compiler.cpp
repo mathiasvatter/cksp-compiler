@@ -5,7 +5,7 @@
 #include "Compiler.h"
 #include "AST/ASTVisitor/ASTGlobalScope.h"
 #include "AST/ASTVisitor/ASTLambdaLifting.h"
-#include "AST/ASTVisitor/TypeCasting.h"
+#include "AST/ASTVisitor/TypeInference.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -106,8 +106,9 @@ void Compiler::compile() {
 	compile_time.stop("Build Data Structures");
 	compile_time.start("Type Checking");
 
-	TypeCasting type_casting(&m_definition_provider, true);
-	ast->accept(type_casting);
+	TypeInference infer_types(&m_definition_provider);
+	ast->accept(infer_types);
+    TypeInference::infer_data_structure_types(&m_definition_provider, true);
 
 	compile_time.stop("Type Checking");
 	compile_time.start("Lowering");
@@ -117,12 +118,12 @@ void Compiler::compile() {
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
+//    TypeInference infer_types1(&m_definition_provider);
+//    ast->accept(infer_types1);
+//    TypeInference::infer_data_structure_types(&m_definition_provider, true);
 
 	compile_time.stop("Lowering");
 	compile_time.start("Global Scope");
-
-//    TypeCasting type_casting1(&m_definition_provider, true);
-//    ast->accept(type_casting1);
 
 	ASTLambdaLifting lambda_lifting(&m_definition_provider);
 	ast->accept(lambda_lifting);

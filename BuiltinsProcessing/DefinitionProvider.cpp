@@ -51,13 +51,11 @@ std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual> Def
 }
 
 bool DefinitionProvider::refresh_scopes() {
-    m_declared_variables.clear();
-    m_declared_arrays.clear();
-    m_declared_controls.clear();
     m_declared_data_structures.clear();
 
 	m_all_references.clear();
 	m_all_data_structures.clear();
+    m_all_declarations.clear();
 	m_references_per_data_structure.clear();
     // add global scope
     add_scope();
@@ -132,6 +130,10 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 		compile_error.print();
 	} else {
 		m_all_data_structures.push_back(var);
+        if(var->parent and !var->is_function_param()) {
+            if(var->parent->get_node_type() == NodeType::SingleDeclareStatement)
+                m_all_declarations.push_back(static_cast<NodeSingleDeclaration*>(var->parent));
+        }
 		if(global_scope) {
 			m_declared_data_structures.at(0).insert({var->name, var});
 		} else {
@@ -140,6 +142,19 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 	}
 	return nullptr;
 }
+
+std::string DefinitionProvider::sanitize_name(const std::string& name) {
+    std::string var_without_identifier = name;
+    if (name[0] == '_' && name[1] != '_') {
+        var_without_identifier = var_without_identifier.erase(0,1);
+    } else if (name.ends_with(".raw")) {
+        var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
+    }
+    return var_without_identifier;
+}
+
+
+// ******************* getter and setter *******************
 
 
 NodeVariable* DefinitionProvider::get_builtin_variable(const std::string& var) {
@@ -190,28 +205,6 @@ NodeFunctionDefinition* DefinitionProvider::get_property_function(NodeFunctionHe
 	return nullptr;
 }
 
-NodeVariable *DefinitionProvider::get_declared_variable(const std::string& var) {
-    for (auto rit = m_declared_variables.rbegin(); rit != m_declared_variables.rend(); ++rit) {
-        auto it = rit->find(var);
-        if (it != rit->end()) {
-            return it->second;
-        }
-        return nullptr;
-    }
-    return nullptr;
-}
-
-NodeArray *DefinitionProvider::get_declared_array(const std::string& arr) {
-    for (auto rit = m_declared_arrays.rbegin(); rit != m_declared_arrays.rend(); ++rit) {
-        auto it = rit->find(arr);
-        if (it != rit->end()) {
-            return it->second;
-        }
-        return nullptr;
-    }
-    return nullptr;
-}
-
 NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::string& data) {
     for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
         auto it = rit->find(data);
@@ -229,27 +222,6 @@ NodeDataStructure *DefinitionProvider::get_scoped_data_structure(const std::stri
 		return it->second;
 	}
 	return nullptr;
-}
-
-std::string DefinitionProvider::sanitize_name(const std::string& name) {
-	std::string var_without_identifier = name;
-	if (name[0] == '_' && name[1] != '_') {
-		var_without_identifier = var_without_identifier.erase(0,1);
-	} else if (name.ends_with(".raw")) {
-		var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
-	}
-	return var_without_identifier;
-}
-
-NodeUIControl *DefinitionProvider::get_declared_control(NodeUIControl *ctr) {
-    for (auto rit = m_declared_controls.rbegin(); rit != m_declared_controls.rend(); ++rit) {
-        auto it = rit->find(ctr->get_string());
-        if (it != rit->end()) {
-            return it->second;
-        }
-        return nullptr;
-    }
-    return nullptr;
 }
 
 void DefinitionProvider::set_external_variables(std::vector<std::unique_ptr<NodeDataStructure>> external_variables) {
