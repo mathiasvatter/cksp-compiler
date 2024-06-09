@@ -36,6 +36,44 @@ struct NodeStatement: NodeInstruction {
     }
 };
 
+struct NodeFunctionCall : NodeInstruction {
+    enum Kind{Property, Builtin, UserDefined, Undefined};
+    Kind kind = Undefined;
+    bool is_call = false;
+    std::unique_ptr<NodeFunctionHeader> function;
+    NodeFunctionDefinition* definition = nullptr;
+    inline explicit NodeFunctionCall(Token tok) : NodeInstruction(NodeType::FunctionCall, std::move(tok)) {}
+    inline NodeFunctionCall(bool isCall, std::unique_ptr<NodeFunctionHeader> function, Token tok)
+            : NodeInstruction(NodeType::FunctionCall, std::move(tok)), is_call(isCall), function(std::move(function)) {
+        set_child_parents();
+    }
+    void accept(ASTVisitor& visitor) override;
+    NodeFunctionCall(const NodeFunctionCall& other);
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        parent = new_parent;
+        function->update_parents(this);
+    }
+    void set_child_parents() override {
+        function->parent = this;
+    };
+    std::string get_string() override {
+        return function->get_string();
+    }
+    void update_token_data(const Token& token) override {
+        function -> update_token_data(token);
+    }
+    ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+    /// attempts to get and set the definition pointer of the function call and updates the call sites of the definition
+    NodeFunctionDefinition* find_definition(class NodeProgram *program);
+    /// attempts to get and match metadata from builtin function to this
+    NodeFunctionDefinition* find_builtin_definition(NodeProgram *program);
+    /// attempts to get property function that and set definition pointer + error handling
+    NodeFunctionDefinition* find_property_definition(NodeProgram *program);
+    /// gets and sets definition ptr or matches builtin func metadata -> throws error if not found when fail set to true
+    bool get_definition(NodeProgram* program, bool fail=false);
+};
+
 struct NodeAssignment: NodeInstruction {
     std::unique_ptr<NodeParamList> l_value;
     std::unique_ptr<NodeParamList> r_value;
