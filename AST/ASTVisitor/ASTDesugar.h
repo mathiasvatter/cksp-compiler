@@ -13,8 +13,8 @@
  * This visitor desugars the following statements:
  * - NodeDeclaration: desugar into single declare statements
  * - NodeAssignment: desugar into single assign statements
- * - NodeForEachStatement: desugar for each loops to for loops
- * - NodeForStatement: alter for loops to while loops
+ * - NodeForEach: desugar for each loops to for loops
+ * - NodeFor: alter for loops to while loops
  * Additionally, it desugars NodeFamily into single declare statements.
  */
 class ASTDesugar: public ASTVisitor {
@@ -27,9 +27,9 @@ class ASTDesugar: public ASTVisitor {
     void visit(NodeAssignment& node) override;
 
     /// desugar for each loops to for loops
-	void visit(NodeForEachStatement& node) override;
+	void visit(NodeForEach& node) override;
     /// alter for loops to while loops
-    void visit(NodeForStatement& node) override;
+    void visit(NodeFor& node) override;
 
     void visit(NodeBody& node) override;
 

@@ -124,7 +124,7 @@ void TypeInference::visit(NodeNDArrayRef& node) {
     m_references.push_back(&node);
 }
 
-void TypeInference::visit(NodeListStruct& node) {
+void TypeInference::visit(NodeList& node) {
 	// if list is unknown type -> set to list of unknown
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::add_composite_type(CompoundKind::List, TypeRegistry::Unknown, node.size);
@@ -140,7 +140,7 @@ void TypeInference::visit(NodeListStruct& node) {
 
 }
 
-void TypeInference::visit(NodeListStructRef& node) {
+void TypeInference::visit(NodeListRef& node) {
     // if handed over without index -> as whole list structure type
     if(!node.indexes) {
         if(node.ty == TypeRegistry::Unknown) {
@@ -162,9 +162,9 @@ void TypeInference::visit(NodeParamList& node) {
         types.push_back(param->ty);
     }
     // enforce same type for every member only if in array declaration, assignment, liststruct
-    auto node_declaration = node.parent->get_node_type() == NodeType::SingleDeclareStatement;
-    auto node_assignment = node.parent->get_node_type() == NodeType::SingleAssignStatement;
-	auto node_list_struct = node.parent->get_node_type() == NodeType::ListStruct;
+    auto node_declaration = node.parent->get_node_type() == NodeType::SingleDeclaration;
+    auto node_assignment = node.parent->get_node_type() == NodeType::SingleAssignment;
+	auto node_list_struct = node.parent->get_node_type() == NodeType::List;
     if(!node_declaration and !node_assignment and !node_list_struct) return;
 
     node.ty = infer_initialization_types(types, &node);

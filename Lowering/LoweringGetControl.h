@@ -14,7 +14,7 @@ public:
 	void visit(NodeSingleAssignment &node) override {
 		node.r_value->accept(*this);
 		// check if r_value is a NodeGetControl
-		if(node.l_value->get_node_type() != NodeType::GetControlStatement) return;
+		if(node.l_value->get_node_type() != NodeType::GetControl) return;
 
 		auto get_control_statement = cast_node<NodeGetControl>(node.l_value.get());
 		std::string control_function = "set_control_par";

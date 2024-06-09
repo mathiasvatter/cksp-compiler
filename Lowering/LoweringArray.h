@@ -20,7 +20,7 @@ public:
 	/// Determining array size at compile time -> not of references!
 	void visit(NodeArray& node) override {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-		if (node.parent->get_node_type() != NodeType::SingleDeclareStatement and
+		if (node.parent->get_node_type() != NodeType::SingleDeclaration and
 			node.parent->get_node_type() != NodeType::UIControl and !node.is_function_param()) {
 			error.m_message = "Array is not a reference even though it is not part of a declaration.";
 			error.m_got = node.name;

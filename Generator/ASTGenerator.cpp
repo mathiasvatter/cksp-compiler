@@ -159,27 +159,27 @@ void ASTGenerator::visit(NodeBody& node) {
 	m_scope_count--;
 }
 
-void ASTGenerator::visit(NodeIfStatement &node) {
+void ASTGenerator::visit(NodeIf &node) {
     os << "if(" ;
     node.condition->accept(*this);
     os << ")" << std::endl;
-	node.statements->accept(*this);
-	if (!node.else_statements->statements.empty()) {
+	node.if_body->accept(*this);
+	if (!node.else_body->statements.empty()) {
     	os << get_indent() << "else" << std::endl;
-		node.else_statements->accept(*this);
+		node.else_body->accept(*this);
 	}
     os << get_indent() << "end if";
 }
 
-void ASTGenerator::visit(NodeWhileStatement &node) {
+void ASTGenerator::visit(NodeWhile &node) {
     os << "while(" ;
     node.condition->accept(*this);
     os << ") " << std::endl;
-    node.statements->accept(*this);
+    node.body->accept(*this);
     os << get_indent() << "end while";
 }
 
-void ASTGenerator::visit(NodeSelectStatement &node) {
+void ASTGenerator::visit(NodeSelect &node) {
     os << "select(" ;
     node.expression->accept(*this);
     os << ")" << std::endl;

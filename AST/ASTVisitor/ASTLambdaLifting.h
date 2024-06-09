@@ -30,7 +30,7 @@ public:
 			// create node body with local variable declarations for every callback and prepend it to the callback
 			auto node_body = std::make_unique<NodeBody>(callback->tok);
 			for(auto &decl : m_declares_per_callback[callback.get()]) {
-				node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(decl.second), callback->tok));
+				node_body->add_stmt(std::make_unique<NodeStatement>(std::move(decl.second), callback->tok));
 			}
 			callback->statements->prepend_body(std::move(node_body));
 		}

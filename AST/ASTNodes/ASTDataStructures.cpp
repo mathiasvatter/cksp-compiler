@@ -36,8 +36,8 @@ std::unique_ptr<class NodeNDArray> NodeVariable::to_ndarray() {
 	return std::make_unique<NodeNDArray>(persistence, name, ty, DataType::NDArray, nullptr, tok);
 }
 
-std::unique_ptr<class NodeListStruct> NodeVariable::to_list() {
-	return std::make_unique<NodeListStruct>(tok);
+std::unique_ptr<class NodeList> NodeVariable::to_list() {
+	return std::make_unique<NodeList>(tok);
 }
 
 // ************* NodeArray ***************
@@ -74,8 +74,8 @@ std::unique_ptr<NodeNDArray> NodeArray::to_ndarray() {
     return std::make_unique<NodeNDArray>(persistence, name, ty, DataType::NDArray, nullptr, tok);
 }
 
-std::unique_ptr<NodeListStruct> NodeArray::to_list() {
-    return std::make_unique<NodeListStruct>(tok);
+std::unique_ptr<NodeList> NodeArray::to_list() {
+    return std::make_unique<NodeList>(tok);
 }
 
 // ************* NodeNDArray ***************
@@ -106,8 +106,8 @@ std::unique_ptr<NodeArray> NodeNDArray::to_array() {
     return std::make_unique<NodeArray>(persistence, name, ty, DataType::Array, nullptr, tok);
 }
 
-std::unique_ptr<NodeListStruct> NodeNDArray::to_list() {
-    return std::make_unique<NodeListStruct>(tok);
+std::unique_ptr<NodeList> NodeNDArray::to_list() {
+    return std::make_unique<NodeList>(tok);
 }
 
 // ************* NodeUIControl ***************
@@ -140,33 +140,33 @@ ASTVisitor* NodeUIControl::get_lowering(DefinitionProvider* def_provider) const 
 	return &lowering;
 }
 
-// ************* NodeListStruct ***************
-void NodeListStruct::accept(ASTVisitor &visitor) {
+// ************* NodeList ***************
+void NodeList::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-NodeListStruct::NodeListStruct(const NodeListStruct& other)
+NodeList::NodeList(const NodeList& other)
 	: NodeDataStructure(other), size(other.size), body(clone_vector(other.body)) {
 	set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeListStruct::clone() const {
-	return std::make_unique<NodeListStruct>(*this);
+std::unique_ptr<NodeAST> NodeList::clone() const {
+	return std::make_unique<NodeList>(*this);
 }
 
-ASTVisitor* NodeListStruct::get_lowering(DefinitionProvider* def_provider) const {
+ASTVisitor* NodeList::get_lowering(DefinitionProvider* def_provider) const {
 	static LoweringList lowering(def_provider);
 	return &lowering;
 }
 
-std::unique_ptr<NodeVariable> NodeListStruct::to_variable() {
+std::unique_ptr<NodeVariable> NodeList::to_variable() {
     return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
 }
 
-std::unique_ptr<NodeArray> NodeListStruct::to_array() {
+std::unique_ptr<NodeArray> NodeList::to_array() {
     return std::make_unique<NodeArray>(persistence, name, ty, DataType::Array, nullptr, tok);
 }
 
-std::unique_ptr<NodeNDArray> NodeListStruct::to_ndarray() {
+std::unique_ptr<NodeNDArray> NodeList::to_ndarray() {
     return std::make_unique<NodeNDArray>(persistence, name, ty, DataType::NDArray, nullptr, tok);
 }
 

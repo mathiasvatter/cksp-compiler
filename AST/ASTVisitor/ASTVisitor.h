@@ -109,37 +109,37 @@ public:
     virtual void visit(NodeFamily& node) {
         node.members->accept(*this);
 	};
-    virtual void visit(NodeListStruct& node) {
+    virtual void visit(NodeList& node) {
         for(auto & b : node.body) {
             b->accept(*this);
         }
     };
-	virtual void visit(NodeListStructRef& node) {
+	virtual void visit(NodeListRef& node) {
 		node.indexes->accept(*this);
 	};
     virtual void visit(NodeStatement& node) {
 		node.statement->accept(*this);
 	};
-    virtual void visit(NodeIfStatement& node) {
+    virtual void visit(NodeIf& node) {
 		node.condition->accept(*this);
-		node.statements->accept(*this);
-		node.else_statements->accept(*this);
+		node.if_body->accept(*this);
+		node.else_body->accept(*this);
 	};
-    virtual void visit(NodeForStatement& node) {
+    virtual void visit(NodeFor& node) {
 		node.iterator->accept(*this);
 		node.iterator_end->accept(*this);
-        node.statements->accept(*this);
+        node.body->accept(*this);
 	};
-    virtual void visit(NodeForEachStatement& node) {
+    virtual void visit(NodeForEach& node) {
         node.keys->accept(*this);
         node.range->accept(*this);
-        node.statements->accept(*this);
+        node.body->accept(*this);
     };
-	virtual void visit(NodeWhileStatement& node) {
+	virtual void visit(NodeWhile& node) {
 		node.condition->accept(*this);
-        node.statements->accept(*this);
+        node.body->accept(*this);
 	};
-	virtual void visit(NodeSelectStatement& node) {
+	virtual void visit(NodeSelect& node) {
 		node.expression->accept(*this);
 		for(const auto &cas: node.cases) {
             for(auto &c: cas.first) {

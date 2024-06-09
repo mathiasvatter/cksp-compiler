@@ -25,7 +25,7 @@ struct NodeVariable: NodeDataStructure {
 	NodeType get_ref_node_type() override {return NodeType::VariableRef;}
 	std::unique_ptr<class NodeArray> to_array() override;
 	std::unique_ptr<class NodeNDArray> to_ndarray() override ;
-	std::unique_ptr<class NodeListStruct> to_list() override ;
+	std::unique_ptr<class NodeList> to_list() override ;
 };
 
 struct NodeArray : NodeDataStructure {
@@ -69,7 +69,7 @@ struct NodeArray : NodeDataStructure {
 		return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
 	}
 	std::unique_ptr<class NodeNDArray> to_ndarray() override;
-	std::unique_ptr<class NodeListStruct> to_list() override;
+	std::unique_ptr<class NodeList> to_list() override;
 };
 
 struct NodeNDArray : NodeDataStructure {
@@ -109,7 +109,7 @@ struct NodeNDArray : NodeDataStructure {
 		return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
 	}
 	std::unique_ptr<NodeArray> to_array() override;
-	std::unique_ptr<NodeListStruct> to_list() override;
+	std::unique_ptr<NodeList> to_list() override;
 };
 
 struct NodeUIControl : NodeDataStructure {
@@ -156,17 +156,17 @@ struct NodeUIControl : NodeDataStructure {
 	}
 };
 
-struct NodeListStruct : NodeDataStructure {
+struct NodeList : NodeDataStructure {
 	int32_t size = 0;
 	std::vector<std::unique_ptr<NodeParamList>> body;
-	inline explicit NodeListStruct(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::ListStruct) {}
-	inline NodeListStruct(std::string name, Type* ty, int32_t size, std::vector<std::unique_ptr<NodeParamList>> body, Token tok)
-		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::ListStruct), size(size), body(std::move(body)) {
+	inline explicit NodeList(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::List) {}
+	inline NodeList(std::string name, Type* ty, int32_t size, std::vector<std::unique_ptr<NodeParamList>> body, Token tok)
+		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::List), size(size), body(std::move(body)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
-	NodeListStruct(const NodeListStruct& other);
+	NodeList(const NodeList& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {
@@ -187,7 +187,7 @@ struct NodeListStruct : NodeDataStructure {
 		}
 	}
 	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
-	NodeType get_ref_node_type() override {return NodeType::ListStructRef;}
+	NodeType get_ref_node_type() override {return NodeType::ListRef;}
 	std::unique_ptr<NodeVariable> to_variable() override;
 	std::unique_ptr<NodeArray> to_array() override;
 	std::unique_ptr<NodeNDArray> to_ndarray() override;
@@ -196,9 +196,9 @@ struct NodeListStruct : NodeDataStructure {
 struct NodeConstStatement : NodeDataStructure {
 //    std::string prefix;
     std::unique_ptr<NodeBody> constants;
-    inline explicit NodeConstStatement(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::ConstStatement) {}
+    inline explicit NodeConstStatement(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::Const) {}
     inline NodeConstStatement(std::string name, std::unique_ptr<NodeBody> constants, Token tok)
-            : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::ConstStatement), constants(std::move(constants)) {
+            : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::Const), constants(std::move(constants)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;

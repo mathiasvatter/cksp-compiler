@@ -287,20 +287,20 @@ ASTDesugaring* NodeFamily::get_desugaring() const {
     return &desugaring;
 }
 
-// ************* NodeIfStatement ***************
-void NodeIfStatement::accept(ASTVisitor &visitor) {
+// ************* NodeIf ***************
+void NodeIf::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeIfStatement::NodeIfStatement(const NodeIfStatement& other)
+NodeIf::NodeIf(const NodeIf& other)
         : NodeInstruction(other), condition(clone_unique(other.condition)),
-          statements(clone_unique(other.statements)),
-          else_statements(clone_unique(other.else_statements)) {
+          if_body(clone_unique(other.if_body)),
+          else_body(clone_unique(other.else_body)) {
     set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeIfStatement::clone() const {
-    return std::make_unique<NodeIfStatement>(*this);
+std::unique_ptr<NodeAST> NodeIf::clone() const {
+    return std::make_unique<NodeIf>(*this);
 }
-NodeAST * NodeIfStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeIf::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (condition.get() == oldChild) {
         condition = std::move(newChild);
         return condition.get();
@@ -308,19 +308,19 @@ NodeAST * NodeIfStatement::replace_child(NodeAST* oldChild, std::unique_ptr<Node
     return nullptr;
 }
 
-// ************* NodeForStatement ***************
-void NodeForStatement::accept(ASTVisitor &visitor) {
+// ************* NodeFor ***************
+void NodeFor::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeForStatement::NodeForStatement(const NodeForStatement& other)
+NodeFor::NodeFor(const NodeFor& other)
         : NodeInstruction(other), iterator(clone_unique(other.iterator)), to(other.to), iterator_end(clone_unique(other.iterator_end)),
-          step(clone_unique(other.step)), statements(clone_unique(other.statements)) {
+          step(clone_unique(other.step)), body(clone_unique(other.body)) {
     set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeForStatement::clone() const {
-    return std::make_unique<NodeForStatement>(*this);
+std::unique_ptr<NodeAST> NodeFor::clone() const {
+    return std::make_unique<NodeFor>(*this);
 }
-NodeAST * NodeForStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeFor::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (iterator_end.get() == oldChild) {
         iterator_end = std::move(newChild);
         return iterator_end.get();
@@ -328,24 +328,24 @@ NodeAST * NodeForStatement::replace_child(NodeAST* oldChild, std::unique_ptr<Nod
     return nullptr;
 }
 
-ASTDesugaring* NodeForStatement::get_desugaring() const {
+ASTDesugaring* NodeFor::get_desugaring() const {
     static DesugarForStatement desugaring;
     return &desugaring;
 }
 
-// ************* NodeForEachStatement ***************
-void NodeForEachStatement::accept(ASTVisitor &visitor) {
+// ************* NodeForEach ***************
+void NodeForEach::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeForEachStatement::NodeForEachStatement(const NodeForEachStatement& other)
+NodeForEach::NodeForEach(const NodeForEach& other)
         : NodeInstruction(other), keys(clone_unique(other.keys)), range(clone_unique(other.range)),
-          statements(clone_unique(other.statements)) {
+          body(clone_unique(other.body)) {
     set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeForEachStatement::clone() const {
-    return std::make_unique<NodeForEachStatement>(*this);
+std::unique_ptr<NodeAST> NodeForEach::clone() const {
+    return std::make_unique<NodeForEach>(*this);
 }
-NodeAST * NodeForEachStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeForEach::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (range.get() == oldChild) {
         range = std::move(newChild);
         return range.get();
@@ -353,24 +353,24 @@ NodeAST * NodeForEachStatement::replace_child(NodeAST* oldChild, std::unique_ptr
     return nullptr;
 }
 
-ASTDesugaring* NodeForEachStatement::get_desugaring() const {
+ASTDesugaring* NodeForEach::get_desugaring() const {
     static DesugarForEachStatement desugaring;
     return &desugaring;
 }
 
-// ************* NodeWhileStatement ***************
-void NodeWhileStatement::accept(ASTVisitor &visitor) {
+// ************* NodeWhile ***************
+void NodeWhile::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeWhileStatement::NodeWhileStatement(const NodeWhileStatement& other)
+NodeWhile::NodeWhile(const NodeWhile& other)
         : NodeInstruction(other), condition(clone_unique(other.condition)),
-          statements(clone_unique(other.statements)) {
+          body(clone_unique(other.body)) {
     set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeWhileStatement::clone() const {
-    return std::make_unique<NodeWhileStatement>(*this);
+std::unique_ptr<NodeAST> NodeWhile::clone() const {
+    return std::make_unique<NodeWhile>(*this);
 }
-NodeAST * NodeWhileStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeWhile::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (condition.get() == oldChild) {
         condition = std::move(newChild);
         return condition.get();
@@ -398,19 +398,19 @@ static std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_
     return cloned_cases;
 }
 
-// ************* NodeSelectStatement ***************
-void NodeSelectStatement::accept(ASTVisitor &visitor) {
+// ************* NodeSelect ***************
+void NodeSelect::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeSelectStatement::NodeSelectStatement(const NodeSelectStatement& other)
+NodeSelect::NodeSelect(const NodeSelect& other)
         : NodeInstruction(other), expression(clone_unique(other.expression)),
           cases(clone_cases(other.cases)) {
     set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeSelectStatement::clone() const {
-    return std::make_unique<NodeSelectStatement>(*this);
+std::unique_ptr<NodeAST> NodeSelect::clone() const {
+    return std::make_unique<NodeSelect>(*this);
 }
-NodeAST * NodeSelectStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeSelect::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (expression.get() == oldChild) {
         expression = std::move(newChild);
         return expression.get();

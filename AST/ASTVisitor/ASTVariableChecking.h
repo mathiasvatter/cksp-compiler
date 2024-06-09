@@ -30,8 +30,8 @@ public:
     void visit(NodeVariableRef& node) override;
 	void visit(NodeNDArray& node) override;
 	void visit(NodeNDArrayRef& node) override;
-	void visit(NodeListStruct& node) override;
-	void visit(NodeListStructRef& node) override;
+	void visit(NodeList& node) override;
+	void visit(NodeListRef& node) override;
 	/// handle get_ui_id specific checks. Replace variable parameter when in get_ui_id and not ui_control
 	void visit(NodeFunctionCall& node) override;
     void visit(NodeFunctionDefinition& node) override;
