@@ -1,259 +1,147 @@
-{ Compiled with cksp version 0.0.5 on Sun Jun 09 15:14:55 2024 }
+{ Compiled with cksp version 0.0.5 on Sun Jun 09 19:10:38 2024 }
 on init
   declare  _return_dummy
   declare !_loc_var_str[1]
   declare ?_loc_var_real[1]
   declare %_loc_var_int[1]
-  declare $loc_7
-  declare %loc_8
-  declare $loc_9
-  declare $loc_10
-  declare @loc_11
-  declare $loc_12
-  declare @loc_13
-  $loc_7 := 0
-  %loc_8 := 0
+  declare $loc_8
+  declare const $loc_9
+  declare const $loc_10
+  declare %loc_11
+  declare %loc_12
+  declare $loc_13
+  declare $loc_14
+  declare @loc_15
+  declare $loc_16
+  $loc_8 := 0
   $loc_9 := 0
   $loc_10 := 0
-  @loc_11 := ""
-  $loc_12 := 0
-  @loc_13 := ""
-  declare %clicktime[3]
+  %loc_11 := 0
+  %loc_12 := 0
+  $loc_13 := 0
+  $loc_14 := 0
+  @loc_15 := ""
   declare $g
   declare $_iterator
   declare $_string_it
   declare $_ui_array_it
   declare $_list_it
-  declare $pupsi__schmusi__i
-  declare $pupsi__schmusi__z
-  declare $pupsi__schmusi__r
-  declare %pupsi__array[3]
-  declare ui_slider $sli_1 (0, 1000)
-  declare ui_slider $sli_2 (0, 2)
-  get_control_par(get_ui_id($sli_1), $CONTROL_PAR_DEFAULT_VALUE) := 500
-  get_control_par_str(get_ui_id($sli_1), $CONTROL_PAR_PICTURE) := "halo"
-  get_control_par(get_ui_id($sli_1), $CONTROL_PAR_MOUSE_BEHAVIOUR) := 300
-  declare %mnu[5]
-  declare ui_menu $mnu0 
-  declare ui_menu $mnu1 
-  declare ui_menu $mnu2 
-  declare ui_menu $mnu3 
-  declare ui_menu $mnu4 
-  $_iterator := 0
-  while($_iterator < 5) 
-    %mnu[$_iterator] := get_ui_id($mnu0) + $_iterator
-    inc($_iterator)
-  end while
-  declare const $lbl_sdf__SIZE_D1 := 3
-  declare const $lbl_sdf__SIZE_D2 := 1
-  declare %_lbl_sdf[3]
-  declare ui_label $_lbl_sdf0 (1, 1)
-  declare ui_label $_lbl_sdf1 (1, 1)
-  declare ui_label $_lbl_sdf2 (1, 1)
-  $_iterator := 0
-  while($_iterator < 3) 
-    %_lbl_sdf[$_iterator] := get_ui_id($_lbl_sdf0) + $_iterator
-    inc($_iterator)
-  end while
-  declare const $multi__SIZE_D1 := 1
-  declare const $multi__SIZE_D2 := 2
-  declare !_multi[2]
-  declare const $size := 1
-  declare const $mult_array__SIZE_D1 := 1
-  declare const $mult_array__SIZE_D2 := $size
-  declare %_mult_array[1 * $size] := (0)
-  declare $i := %_mult_array[0 * $size]
-  declare $ii := %_mult_array[0 * $size]
-  declare $s
-  declare %array[3] := (0)
-  %array[1] := $i
-  message("Array value: " & ", " & %array[0] & ", " & $s & ", " & $i & ", " & $ii)
-  declare const $filter__SUBTRACTIVE := 0
-  declare const $filter__ADDITIVE := 1
-  declare const $filter__TOGGLE := 2
-  declare %filter[3] := (0, 1, 2)
-  declare const $filter__SIZE := 4
-  declare %filtermethodPerCategory[4] := ($filter__SUBTRACTIVE, $filter__SUBTRACTIVE, $filter__SUBTRACTIVE, $filter__TOGGLE, $filter__SUBTRACTIVE)
-  if((%filtermethodPerCategory[$ii] = $filter__TOGGLE) or (%filtermethodPerCategory[$ii] = $filter__ADDITIVE))
-    %array[0] := 0
+  @loc_15 := "sdlkj"
+  message($g & @loc_15)
+  $loc_8 := 0
+  $loc_9 := 2
+  $loc_10 := 3
+  %loc_11 := 0
+  message($loc_8)
+  if($loc_8 = 1)
+    %loc_12 := 1, 2, 3, 4
+    $loc_13 := 0
+    $loc_14 := 0
+    message($loc_13 & $loc_14 & %loc_12[3])
   end if
-  set_listener($NI_SIGNAL_TIMER_MS, 1000000)
-  @loc_11 := "sdlkj"
-  message($g & @loc_11 & %_mult_array[0 * $size])
-  $loc_7 := 0
-  message($loc_7)
-  if($loc_7 = 1)
-    %loc_8 := 1, 2, 3, 4
-    $loc_9 := 0
-    $loc_10 := 0
-    message($loc_9 & $loc_10 & %loc_8[3])
+  if($loc_8 = 2)
+    $loc_13 := 0
+    $loc_14 := 0
+    message($loc_13 & $loc_14)
   end if
-  if($loc_7 = 2)
-    $loc_9 := 0
-    $loc_10 := 0
-    message($loc_9 & $loc_10)
+  @loc_15 := "sdlkj"
+  message($g & @loc_15)
+  $loc_8 := 0
+  $loc_9 := 2
+  $loc_10 := 3
+  %loc_11 := 0
+  message($loc_8)
+  if($loc_8 = 1)
+    %loc_12 := 1, 2, 3, 4
+    $loc_13 := 0
+    $loc_14 := 0
+    message($loc_13 & $loc_14 & %loc_12[3])
   end if
-  @loc_11 := "sdlkj"
-  message($g & @loc_11 & %_mult_array[0 * $size])
-  $loc_7 := 0
-  message($loc_7)
-  if($loc_7 = 1)
-    %loc_8 := 1, 2, 3, 4
-    $loc_9 := 0
-    $loc_10 := 0
-    message($loc_9 & $loc_10 & %loc_8[3])
+  if($loc_8 = 2)
+    $loc_13 := 0
+    $loc_14 := 0
+    message($loc_13 & $loc_14)
   end if
-  if($loc_7 = 2)
-    $loc_9 := 0
-    $loc_10 := 0
-    message($loc_9 & $loc_10)
-  end if
-  $i := 0
-  while($i <= (num_elements(%_mult_array) - 1)) 
-    %_mult_array[$i] := 0
-    inc($i)
-  end while
-  declare %floatmask[2] := (1)
-  %clicktime[0] := sh_right(%floatmask[0], 30) .and. 1
-  @loc_13 := "["
-  $i := 0
-  while($i <= 63) 
-    @loc_13 := @loc_13 & (sh_right(%floatmask[$i / 32], (31 - $i) mod 32) .and. 1)
-    if($i < 63)
-      @loc_13 := @loc_13 & ", "
-    end if
-    inc($i)
-  end while
-  @loc_13 := @loc_13 & "]"
-  message(@loc_13)
-  $loc_12 := get_control_par(get_ui_id(get_ui_id($sli_1)), $CONTROL_PAR_PARENT_PANEL)
-  message($loc_12)
-  $loc_12 := get_control_par(get_ui_id(get_ui_id($sli_2)), $CONTROL_PAR_PARENT_PANEL)
-  message($loc_12)
 end on
 on persistence_changed
-end on
-on ui_control($sli_1)
-  $loc_9 := 0
-  %loc_8 := 0
-  $loc_12 := 0
   $loc_10 := 0
-  @loc_11 := ""
-  @loc_11 := "sdlkj"
-  message($g & @loc_11 & %_mult_array[0 * $size])
   $loc_9 := 0
-  message($loc_9)
-  if($loc_9 = 1)
-    %loc_8 := 1, 2, 3, 4
-    $loc_12 := 0
-    $loc_10 := 0
-    message($loc_12 & $loc_10 & %loc_8[3])
+  $loc_13 := 0
+  %loc_11 := 0
+  %loc_12 := 0
+  $loc_8 := 0
+  $loc_14 := 0
+  @loc_15 := ""
+  $loc_16 := 0
+  @loc_15 := "sdlkj"
+  message($g & @loc_15)
+  $loc_10 := 0
+  $loc_9 := 2
+  $loc_13 := 3
+  %loc_11 := 0
+  message($loc_10)
+  if($loc_10 = 1)
+    %loc_12 := 1, 2, 3, 4
+    $loc_8 := 0
+    $loc_14 := 0
+    message($loc_8 & $loc_14 & %loc_12[3])
   end if
-  if($loc_9 = 2)
-    $loc_12 := 0
-    $loc_10 := 0
-    message($loc_12 & $loc_10)
+  if($loc_10 = 2)
+    $loc_8 := 0
+    $loc_14 := 0
+    message($loc_8 & $loc_14)
   end if
   message($NI_UI_ID)
-  $i := 0
-  while($i <= 4) 
-    message($i)
-    @loc_11 := "sdlkj"
-    message($g & @loc_11 & %_mult_array[0 * $size])
-    $loc_9 := 0
-    message($loc_9)
-    if($loc_9 = 1)
-      %loc_8 := 1, 2, 3, 4
-      $loc_12 := 0
-      $loc_10 := 0
-      message($loc_12 & $loc_10 & %loc_8[3])
+  $loc_16 := 0
+  while($loc_16 <= 4) 
+    message($loc_16)
+    @loc_15 := "sdlkj"
+    message($g & @loc_15)
+    $loc_10 := 0
+    $loc_9 := 2
+    $loc_13 := 3
+    %loc_11 := 0
+    message($loc_10)
+    if($loc_10 = 1)
+      %loc_12 := 1, 2, 3, 4
+      $loc_8 := 0
+      $loc_14 := 0
+      message($loc_8 & $loc_14 & %loc_12[3])
     end if
-    if($loc_9 = 2)
-      $loc_12 := 0
-      $loc_10 := 0
-      message($loc_12 & $loc_10)
+    if($loc_10 = 2)
+      $loc_8 := 0
+      $loc_14 := 0
+      message($loc_8 & $loc_14)
     end if
-    inc($i)
+    inc($loc_16)
   end while
-end on
-on ui_control($sli_2)
-  $loc_9 := 0
-  %loc_8 := 0
-  $loc_12 := 0
-  $loc_10 := 0
-  @loc_11 := ""
-  message($NI_UI_ID)
-  $i := 5
-  while($i <= 9) 
-    message($i)
-    inc($i)
-  end while
-  if($i = 10)
-    $loc_9 := 0
-    if($loc_9 = 9)
-      $loc_12 := 0
-      @loc_11 := "heinz"
-    end if
-    if($loc_9 = 8)
-      $loc_9 := 0
-      message($loc_9)
-      @loc_11 := "sdlkj"
-      message($g & @loc_11 & %_mult_array[0 * $size])
-      $loc_9 := 0
-      message($loc_9)
-      if($loc_9 = 1)
-        %loc_8 := 1, 2, 3, 4
-        $loc_12 := 0
-        $loc_10 := 0
-        message($loc_12 & $loc_10 & %loc_8[3])
-      end if
-      if($loc_9 = 2)
-        $loc_12 := 0
-        $loc_10 := 0
-        message($loc_12 & $loc_10)
-      end if
-      $loc_12 := 0
-    end if
-    @loc_11 := "sdlkj"
-    message($g & @loc_11 & %_mult_array[0 * $size])
-    $loc_9 := 0
-    message($loc_9)
-    if($loc_9 = 1)
-      %loc_8 := 1, 2, 3, 4
-      $loc_12 := 0
-      $loc_10 := 0
-      message($loc_12 & $loc_10 & %loc_8[3])
-    end if
-    if($loc_9 = 2)
-      $loc_12 := 0
-      $loc_10 := 0
-      message($loc_12 & $loc_10)
-    end if
-  end if
-  if($i = 7)
-    $loc_9 := 0
-  end if
 end on
 on release
-  $loc_9 := 0
-  %loc_8 := 0
-  $loc_12 := 0
   $loc_10 := 0
-  @loc_11 := ""
-  @loc_11 := "sdlkj"
-  message($g & @loc_11 & %_mult_array[0 * $size])
   $loc_9 := 0
-  message($loc_9)
-  if($loc_9 = 1)
-    %loc_8 := 1, 2, 3, 4
-    $loc_12 := 0
-    $loc_10 := 0
-    message($loc_12 & $loc_10 & %loc_8[3])
+  $loc_13 := 0
+  %loc_11 := 0
+  %loc_12 := 0
+  $loc_8 := 0
+  $loc_14 := 0
+  @loc_15 := ""
+  @loc_15 := "sdlkj"
+  message($g & @loc_15)
+  $loc_10 := 0
+  $loc_9 := 2
+  $loc_13 := 3
+  %loc_11 := 0
+  message($loc_10)
+  if($loc_10 = 1)
+    %loc_12 := 1, 2, 3, 4
+    $loc_8 := 0
+    $loc_14 := 0
+    message($loc_8 & $loc_14 & %loc_12[3])
   end if
-  if($loc_9 = 2)
-    $loc_12 := 0
-    $loc_10 := 0
-    message($loc_12 & $loc_10)
+  if($loc_10 = 2)
+    $loc_8 := 0
+    $loc_14 := 0
+    message($loc_8 & $loc_14)
   end if
 end on
 

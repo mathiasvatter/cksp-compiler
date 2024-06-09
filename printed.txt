@@ -1,206 +1,85 @@
 on init
-	declare loc_7 : int
-	declare loc_8 : int[]
-	declare loc_9 : int
-	declare loc_10 : int
-	declare loc_11 : string
-	declare loc_12 : int
-	declare loc_13 : string
-	loc_7 := 0
-	loc_8 := (0)
+	declare loc_8 : int
+	declare const loc_9 : int
+	declare const loc_10 : int
+	declare loc_11 : int[]
+	declare loc_12 : int[]
+	declare loc_13 : int
+	declare loc_14 : int
+	declare loc_15 : string
+	declare loc_16 : int
+	loc_8 := 0
 	loc_9 := 0
 	loc_10 := 0
-	loc_11 := ""
-	loc_12 := 0
-	loc_13 := ""
-	declare clicktime[3] : int[]
+	loc_11 := (0)
+	loc_12 := (0)
+	loc_13 := 0
+	loc_14 := 0
+	loc_15 := ""
 	declare g : int
 	declare _iterator : int
 	declare _string_it : int
 	declare _ui_array_it : int
 	declare _list_it : int
-	declare pupsi.schmusi.i : int
-	declare pupsi.schmusi.z : int
-	declare pupsi.schmusi.r : int
-	declare pupsi.array[3] : int[]
-	declare ui_slider read sli_1 : int (0, 1000)
-	declare ui_slider sli_2 : int (0, 2)
-	get_control_par(get_ui_id(sli_1), CONTROL_PAR_DEFAULT_VALUE) := 500
-	get_control_par_str(get_ui_id(sli_1), CONTROL_PAR_PICTURE) := "halo"
-	get_control_par(get_ui_id(sli_1), CONTROL_PAR_MOUSE_BEHAVIOUR) := 300
-	declare mnu[5] : int[]
-	declare ui_menu mnu0 : int 
-	declare ui_menu mnu1 : int 
-	declare ui_menu mnu2 : int 
-	declare ui_menu mnu3 : int 
-	declare ui_menu mnu4 : int 
-	_iterator := 0
-	while(_iterator < 5) 
-		mnu[_iterator] := get_ui_id(mnu0) + _iterator
-		inc(_iterator)
-	end while
-	declare const lbl_sdf.SIZE_D1 : int := 3
-	declare const lbl_sdf.SIZE_D2 : int := 1
-	declare _lbl_sdf[3 * 1] : int[]
-	declare ui_label _lbl_sdf0 : int (1, 1)
-	declare ui_label _lbl_sdf1 : int (1, 1)
-	declare ui_label _lbl_sdf2 : int (1, 1)
-	_iterator := 0
-	while(_iterator < 3) 
-		_lbl_sdf[_iterator] := get_ui_id(_lbl_sdf0) + _iterator
-		inc(_iterator)
-	end while
-	declare const multi.SIZE_D1 : int := 1
-	declare const multi.SIZE_D2 : int := 2
-	declare read _multi[1 * 2] : string[]
-	declare const size : int := 1
-	declare const mult_array.SIZE_D1 : int := 1
-	declare const mult_array.SIZE_D2 : int := size
-	declare _mult_array[1 * size] : int[] := (0)
-	declare i : int := _mult_array[(0 * size) + 0]
-	declare ii : int := _mult_array[(0 * size) + 0]
-	declare s : int
-	declare array[3] : int[] := (0)
-	array[1] := i
-	message("Array value: " & ", " & array[0] & ", " & s & ", " & i & ", " & ii)
-	declare const filter.SUBTRACTIVE : int := 0 + 0
-	declare const filter.ADDITIVE : int := 0 + (0 + 1)
-	declare const filter.TOGGLE : int := 0 + ((0 + 1) + 1)
-	declare filter[3] : int[] := (0 + 0, 0 + (0 + 1), 0 + ((0 + 1) + 1))
-	declare const filter.SIZE : int := 4
-	declare filtermethodPerCategory[4] : int[] := (filter.SUBTRACTIVE, filter.SUBTRACTIVE, filter.SUBTRACTIVE, filter.TOGGLE, filter.SUBTRACTIVE)
-	if((filtermethodPerCategory[ii] = filter.TOGGLE) or (filtermethodPerCategory[ii] = filter.ADDITIVE))
-		array[0] := 0
-	end if
-	set_listener(NI_SIGNAL_TIMER_MS, 1000000)
-	scoped_func1(loc_7, loc_8, loc_9, loc_10, loc_11)
-	scoped_func1(loc_7, loc_8, loc_9, loc_10, loc_11)
-	array.clear(_mult_array)
-	declare floatmask[2] : int[] := (1)
-	clicktime[0] := floatmask.get(floatmask, 1)
-	floatmask.print(floatmask, loc_13)
-	motion.add_fader(get_ui_id(get_ui_id(sli_1)), loc_12)
-	motion.add_fader(get_ui_id(get_ui_id(sli_2)), loc_12)
+	scoped_func1(loc_8, loc_9, loc_10, loc_11, loc_12, loc_13, loc_14, loc_15)
+	scoped_func1(loc_8, loc_9, loc_10, loc_11, loc_12, loc_13, loc_14, loc_15)
 end on
 
 on persistence_changed
-end on
-
-on ui_control(sli_1)
-	loc_9 := 0
-	loc_8 := (0)
-	loc_12 := 0
 	loc_10 := 0
-	loc_11 := ""
-	scoped_func1(loc_9, loc_8, loc_12, loc_10, loc_11)
-	message(NI_UI_ID)
-	i := 0
-	while(i <= (5 - 1)) 
-		message(i)
-		scoped_func1(loc_9, loc_8, loc_12, loc_10, loc_11)
-		inc(i)
-	end while
-end on
-
-on ui_control(sli_2)
 	loc_9 := 0
-	loc_8 := (0)
-	loc_12 := 0
-	loc_10 := 0
-	loc_11 := ""
+	loc_13 := 0
+	loc_11 := (0)
+	loc_12 := (0)
+	loc_8 := 0
+	loc_14 := 0
+	loc_15 := ""
+	loc_16 := 0
+	scoped_func1(loc_10, loc_9, loc_13, loc_11, loc_12, loc_8, loc_14, loc_15)
 	message(NI_UI_ID)
-	i := 5
-	while(i <= (10 - 1)) 
-		message(i)
-		inc(i)
+	loc_16 := 0
+	while(loc_16 <= (5 - 1)) 
+		message(loc_16)
+		scoped_func1(loc_10, loc_9, loc_13, loc_11, loc_12, loc_8, loc_14, loc_15)
+		inc(loc_16)
 	end while
-	if(i = 10)
-		loc_9 := 0
-		if(loc_9 = 9)
-			loc_12 := 0
-			loc_11 := "heinz"
-		end if
-		if(loc_9 = 8)
-			loc_9 := 0
-			message(loc_9)
-			scoped_func1(loc_9, loc_8, loc_12, loc_10, loc_11)
-			loc_12 := 0
-		end if
-		scoped_func1(loc_9, loc_8, loc_12, loc_10, loc_11)
-	end if
-	if(i = 7)
-		loc_9 := 0
-	end if
 end on
 
 on release
-	loc_9 := 0
-	loc_8 := (0)
-	loc_12 := 0
 	loc_10 := 0
-	loc_11 := ""
-	scoped_func1(loc_9, loc_8, loc_12, loc_10, loc_11)
+	loc_9 := 0
+	loc_13 := 0
+	loc_11 := (0)
+	loc_12 := (0)
+	loc_8 := 0
+	loc_14 := 0
+	loc_15 := ""
+	scoped_func1(loc_10, loc_9, loc_13, loc_11, loc_12, loc_8, loc_14, loc_15)
 end on
 
-function scoped_func2(loc_0 : int, loc_1 : int[], loc_2 : int, loc_3 : int)
+function scoped_func2(loc_0 : int, const loc_1 : int, const loc_2 : int, loc_3 : int[], loc_4 : int[], loc_5 : int, loc_6 : int)
 	loc_0 := 0
+	loc_1 := 2
+	loc_2 := 3
+	loc_3 := (0)
 	message(loc_0)
 	if(loc_0 = 1)
-		loc_1 := (1, 2, 3, 4)
-		loc_2 := 0
-		loc_3 := 0
-		message(loc_2 & loc_3 & loc_1[3])
+		loc_4 := (1, 2, 3, 4)
+		loc_5 := 0
+		loc_6 := 0
+		message(loc_5 & loc_6 & loc_4[3])
 	end if
 	if(loc_0 = 2)
-		loc_2 := 0
-		loc_3 := 0
-		message(loc_2 & loc_3)
+		loc_5 := 0
+		loc_6 := 0
+		message(loc_5 & loc_6)
 	end if
 end function
 
-function scoped_func1(loc_0 : int, loc_1 : int[], loc_2 : int, loc_3 : int, loc_4 : string)
-	loc_4 := "sdlkj"
-	message(g & loc_4 & _mult_array[(0 * size) + 0])
-	scoped_func2(loc_0, loc_1, loc_2, loc_3)
-end function
-
-function floatmask.get(float_mask[1] : int[], idx : int) -> return : int
-	return := sh_right(float_mask[idx / 32], (31 - idx) mod 32) .and. 1
-end function
-
-function array.map(array, func) -> return
-	i := 0
-	while(i <= (num_elements(array) - 1)) 
-		array[i] := func(array[i])
-		inc(i)
-	end while
-end function
-
-function motion.add_fader(ui_id : int, loc_5 : int)
-	loc_5 := get_control_par(ui_id, CONTROL_PAR_PARENT_PANEL)
-	message(loc_5)
-end function
-
-function floatmask.print(float_mask : int[], loc_6 : string)
-	loc_6 := "["
-	i := 0
-	while(i <= (64 - 1)) 
-		loc_6 := loc_6 & floatmask.get(float_mask, i)
-		if(i < (64 - 1))
-			loc_6 := loc_6 & ", "
-		end if
-		inc(i)
-	end while
-	loc_6 := loc_6 & "]"
-	message(loc_6)
-end function
-
-function array.clear(array : int[])
-	i := 0
-	while(i <= (num_elements(array) - 1)) 
-		array[i] := 0
-		inc(i)
-	end while
+function scoped_func1(loc_0 : int, const loc_1 : int, const loc_2 : int, loc_3 : int[], loc_4 : int[], loc_5 : int, loc_6 : int, loc_7 : string)
+	loc_7 := "sdlkj"
+	message(g & loc_7)
+	scoped_func2(loc_0, loc_1, loc_2, loc_3, loc_4, loc_5, loc_6)
 end function
 
 

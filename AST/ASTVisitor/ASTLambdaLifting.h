@@ -126,4 +126,64 @@ private:
 	/// map for local variable declarations per function definition to be added to the next/above callback when no function is above
 	std::unordered_map<NodeCallback*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_callback;
 
+    /**
+     * function array_init(array: [], iter: int)
+	 *  while(iter < num_elements(array))
+	 *      array[iter] := {neutral_element}
+	 *  end while
+     * end function
+     */
+    std::unique_ptr<NodeFunctionDefinition> get_array_initialization_function(Type* neutral_element) {
+        auto node_array = std::make_unique<NodeArray>(std::nullopt, "array", TypeRegistry::ArrayOfUnknown, DataType::Array, nullptr, Token());
+        auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, Token());
+        auto node_iterator_ref = node_iterator->to_reference();
+        auto node_array_ref = std::make_unique<NodeArrayRef>("array", node_iterator->to_reference(), Token());
+        auto node_function_def = std::make_unique<NodeFunctionDefinition>(
+                std::make_unique<NodeFunctionHeader>(
+                        "array_init",
+                        std::make_unique<NodeParamList>(
+                                Token(),
+                                node_array->clone(),
+                                node_iterator->clone()
+                            ),
+                        Token()
+                    ),
+                std::nullopt,
+                false,
+                std::make_unique<NodeBody>(Token()),
+                Token()
+            );
+
+        // get declaration pointer right
+        node_array_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->args->params[0].get()));
+        node_iterator_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->args->params[1].get()));
+
+        auto node_body = std::make_unique<NodeBody>(Token());
+        auto node_assignment = std::make_unique<NodeSingleAssignment>(
+                node_array_ref->clone(),
+                TypeRegistry::get_neutral_element_from_type(neutral_element),
+                Token()
+            );
+        node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), Token()));
+
+        auto new_while = std::make_unique<NodeWhile>(
+                std::make_unique<NodeBinaryExpr>(
+                        token::LESS_THAN,
+                        node_iterator_ref->clone(),
+                        std::make_unique<NodeFunctionCall>(
+                                false,
+                                std::make_unique<NodeFunctionHeader>(
+                                        "num_elements",
+                                        std::make_unique<NodeParamList>(Token(),node_array_ref->clone()),Token()),
+                                        Token()
+                                ),
+                        Token()
+                    ),
+                std::move(node_body),
+                Token()
+            );
+        node_function_def->body->add_stmt(std::make_unique<NodeStatement>(std::move(new_while), Token()));
+        return node_function_def;
+    }
+
 };
