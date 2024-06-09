@@ -486,20 +486,20 @@ void ASTFunctionInlining::visit(NodeGetControl& node) {
 }
 
 
-void ASTFunctionInlining::visit(NodeWhileStatement& node) {
+void ASTFunctionInlining::visit(NodeWhile& node) {
     m_current_function_inline_statement = node.parent;
     node.condition->accept(*this);
-    node.statements->accept(*this);
+    node.body->accept(*this);
 }
 
-void ASTFunctionInlining::visit(NodeIfStatement& node) {
+void ASTFunctionInlining::visit(NodeIf& node) {
     m_current_function_inline_statement = node.parent;
     node.condition->accept(*this);
-    node.statements->accept(*this);
-    node.else_statements->accept(*this);
+    node.if_body->accept(*this);
+    node.else_body->accept(*this);
 }
 
-void ASTFunctionInlining::visit(NodeSelectStatement& node) {
+void ASTFunctionInlining::visit(NodeSelect& node) {
 	m_current_function_inline_statement = node.parent;
 	node.expression->accept(*this);
 	m_variable_scope_stack.emplace_back();

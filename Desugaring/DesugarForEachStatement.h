@@ -49,7 +49,7 @@ public:
         }
     }
 
-    void inline visit(NodeForEachStatement& node) override {
+    void inline visit(NodeForEach& node) override {
         auto error = CompileError(ErrorType::SyntaxError, "", node.tok.line, "", "", node.tok.file);
         error.m_message = "Found incorrect for-each-loop syntax.";
         // check if keys are variable references
@@ -107,12 +107,12 @@ public:
         m_key_value_scope_stack.emplace_back();
         m_key_value_scope_stack.back().insert({node.keys->params[1]->get_string(), std::move(node_value_array)});
 
-        auto node_for_statement = std::make_unique<NodeForStatement>(
+        auto node_for_statement = std::make_unique<NodeFor>(
                 std::move(node_key_iterator),
                 token_to,
                 std::move(node_end_range),
-                std::move(node.statements), node.tok);
-        node_for_statement->statements->accept(*this);
+                std::move(node.body), node.tok);
+        node_for_statement->body->accept(*this);
         auto node_scope = std::make_unique<NodeBody>(node.tok);
         node_scope->add_stmt(std::make_unique<NodeStatement>(std::move(node_key_declaration), node.tok));
         node_scope->add_stmt(std::make_unique<NodeStatement>(std::move(node_for_statement), node.tok));

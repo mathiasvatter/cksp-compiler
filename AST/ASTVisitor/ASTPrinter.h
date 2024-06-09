@@ -29,10 +29,10 @@ public:
 	void visit(NodeFamily& node) override;
     void visit(NodeStatement& node) override;
     void visit(NodeBody& node) override;
-	void visit(NodeIfStatement& node) override;
-	void visit(NodeWhileStatement& node) override;
-	void visit(NodeForStatement& node) override;
-	void visit(NodeSelectStatement& node) override;
+	void visit(NodeIf& node) override;
+	void visit(NodeWhile& node) override;
+	void visit(NodeFor& node) override;
+	void visit(NodeSelect& node) override;
 	void visit(NodeCallback& node) override;
 	void visit(NodeFunctionHeader& node) override;
 	void visit(NodeFunctionCall& node) override;

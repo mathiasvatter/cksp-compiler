@@ -32,8 +32,8 @@ public:
     void visit(NodeNDArray& node) override;
     void visit(NodeNDArrayRef& node) override;
 
-    void visit(NodeListStruct& node) override;
-    void visit(NodeListStructRef& node) override;
+    void visit(NodeList& node) override;
+    void visit(NodeListRef& node) override;
 
 	void visit(NodeBinaryExpr& node) override;
 	void visit(NodeUnaryExpr& node) override;

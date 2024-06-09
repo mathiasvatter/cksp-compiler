@@ -31,9 +31,9 @@ public:
 
 	/// emplace back local variable scope
     void visit(NodeBody& node) override;
-	void visit(NodeSelectStatement& node) override;
-    void visit(NodeWhileStatement& node) override;
-    void visit(NodeIfStatement& node) override;
+	void visit(NodeSelect& node) override;
+    void visit(NodeWhile& node) override;
+    void visit(NodeIf& node) override;
 
 	/// do substitution
     void visit(NodeArrayRef& node) override;
@@ -102,7 +102,7 @@ public:
     explicit FunctionInliningHelper(std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> function_inlines) : m_function_inlines(std::move(function_inlines)) {}
 	~FunctionInliningHelper() = default;
 
-    inline void visit(NodeStatement& node) {
+    inline void visit(NodeStatement& node) override {
         if(!node.function_inlines.empty()) {
             auto node_body = std::make_unique<NodeBody>(node.function_inlines[0]->tok);
             node_body->parent = &node;

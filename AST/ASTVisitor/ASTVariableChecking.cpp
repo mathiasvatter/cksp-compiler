@@ -190,7 +190,7 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
     node.match_data_structure(node_declaration);
 }
 
-void ASTVariableChecking::visit(NodeListStruct& node) {
+void ASTVariableChecking::visit(NodeList& node) {
 	check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::List, TypeRegistry::Unknown, 1).get());
 	node.determine_locality(m_program, m_current_body);
 	for(auto &params : node.body) {
@@ -200,7 +200,7 @@ void ASTVariableChecking::visit(NodeListStruct& node) {
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
 }
 
-void ASTVariableChecking::visit(NodeListStructRef& node) {
+void ASTVariableChecking::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
@@ -211,7 +211,7 @@ void ASTVariableChecking::visit(NodeListStructRef& node) {
 
 void ASTVariableChecking::visit(NodeConstStatement& node) {
 //	for(auto & constants : node.constants->statements) {
-//		if(constants->statement->get_node_type() == NodeType::SingleDeclareStatement) {
+//		if(constants->statement->get_node_type() == NodeType::SingleDeclaration) {
 //			auto decl = static_cast<NodeSingleDeclaration*>(constants->statement.get());
 //			decl->variable
 //

@@ -32,7 +32,7 @@ void ASTCollectLowerings::visit(NodeGetControl& node) {
 	 * However, in the case of:
 	 * 	mnu_output[i+1]->x := int_buffer, the NodeSingleAssignment lowering would handle it.
 	 */
-	if(node.parent->get_node_type() == NodeType::SingleAssignStatement) {
+	if(node.parent->get_node_type() == NodeType::SingleAssignment) {
 		if(auto node_assign_stmt = static_cast<NodeSingleAssignment*>(node.parent)) {
 			if(node_assign_stmt->l_value.get() == &node) return;
 		}
@@ -64,14 +64,14 @@ void ASTCollectLowerings::visit(NodeNDArrayRef& node) {
 	}
 }
 
-void ASTCollectLowerings::visit(NodeListStructRef& node) {
+void ASTCollectLowerings::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
 	if(auto lowering = node.get_lowering(m_def_provider)) {
 		node.accept(*lowering);
 	}
 }
 
-void ASTCollectLowerings::visit(NodeListStruct& node) {
+void ASTCollectLowerings::visit(NodeList& node) {
 	if(auto lowering = node.get_lowering(m_def_provider)) {
 		node.accept(*lowering);
 	}

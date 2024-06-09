@@ -46,7 +46,7 @@ public:
 		node_array_declaration->variable->data_type = DataType::Array;
 		// wrap in statement to make use of replace_child
 		auto node_statement = std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok);
-		// lowering of ndarray, turn DeclareStatement into NodeBody
+		// lowering of ndarray, turn Declaration into NodeBody
 		if(auto lowering = node_statement->statement->get_lowering(m_def_provider)) {
 			node_statement->statement->accept(*lowering);
 		}

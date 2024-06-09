@@ -129,7 +129,7 @@ struct NodeDataStructure : NodeAST {
 	virtual std::unique_ptr<class NodeVariable> to_variable() {return nullptr;}
 	virtual std::unique_ptr<class NodeArray> to_array() {return nullptr;}
 	virtual std::unique_ptr<class NodeNDArray> to_ndarray() {return nullptr;}
-	virtual std::unique_ptr<class NodeListStruct> to_list() {return nullptr;}
+	virtual std::unique_ptr<class NodeList> to_list() {return nullptr;}
 };
 
 struct NodeInstruction : NodeAST {

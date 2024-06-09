@@ -39,9 +39,9 @@ struct NodeStatement: NodeInstruction {
 struct NodeAssignment: NodeInstruction {
     std::unique_ptr<NodeParamList> l_value;
     std::unique_ptr<NodeParamList> r_value;
-    inline explicit NodeAssignment(Token tok) : NodeInstruction(NodeType::AssignStatement, std::move(tok)) {}
+    inline explicit NodeAssignment(Token tok) : NodeInstruction(NodeType::Assignment, std::move(tok)) {}
     inline NodeAssignment(std::unique_ptr<NodeParamList> array_variable, std::unique_ptr<NodeParamList> assignee, Token tok)
-            : NodeInstruction(NodeType::AssignStatement, std::move(tok)), l_value(std::move(array_variable)), r_value(std::move(assignee)) {
+            : NodeInstruction(NodeType::Assignment, std::move(tok)), l_value(std::move(array_variable)), r_value(std::move(assignee)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
@@ -72,9 +72,9 @@ struct NodeAssignment: NodeInstruction {
 struct NodeSingleAssignment : NodeInstruction {
     std::unique_ptr<NodeAST> l_value;
     std::unique_ptr<NodeAST> r_value;
-    inline explicit NodeSingleAssignment(Token tok) : NodeInstruction(NodeType::SingleAssignStatement, std::move(tok)) {}
+    inline explicit NodeSingleAssignment(Token tok) : NodeInstruction(NodeType::SingleAssignment, std::move(tok)) {}
     NodeSingleAssignment(std::unique_ptr<NodeAST> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
-            : NodeInstruction(NodeType::SingleAssignStatement, std::move(tok)), l_value(std::move(arrayVariable)), r_value(std::move(assignee)) {
+            : NodeInstruction(NodeType::SingleAssignment, std::move(tok)), l_value(std::move(arrayVariable)), r_value(std::move(assignee)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
@@ -105,9 +105,9 @@ struct NodeSingleAssignment : NodeInstruction {
 struct NodeDeclaration : NodeInstruction {
     std::vector<std::unique_ptr<NodeDataStructure>> variable;
     std::unique_ptr<NodeParamList> value;
-    inline explicit NodeDeclaration(Token tok) : NodeInstruction(NodeType::DeclareStatement, std::move(tok)) {}
+    inline explicit NodeDeclaration(Token tok) : NodeInstruction(NodeType::Declaration, std::move(tok)) {}
     inline NodeDeclaration(std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared, std::unique_ptr<NodeParamList> assignee, Token tok)
-            : NodeInstruction(NodeType::DeclareStatement, std::move(tok)), variable(std::move(to_be_declared)), value(std::move(assignee)) {
+            : NodeInstruction(NodeType::Declaration, std::move(tok)), variable(std::move(to_be_declared)), value(std::move(assignee)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
@@ -141,9 +141,9 @@ struct NodeDeclaration : NodeInstruction {
 struct NodeSingleDeclaration : NodeInstruction {
     std::unique_ptr<NodeDataStructure> variable;
     std::unique_ptr<NodeAST> value;
-    inline explicit NodeSingleDeclaration(Token tok) : NodeInstruction(NodeType::SingleDeclareStatement, std::move(tok)) {}
+    inline explicit NodeSingleDeclaration(Token tok) : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)) {}
     NodeSingleDeclaration(std::unique_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
-            : NodeInstruction(NodeType::SingleDeclareStatement, std::move(tok)), variable(std::move(arrayVariable)), value(std::move(assignee)) {
+            : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)), variable(std::move(arrayVariable)), value(std::move(assignee)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
@@ -179,9 +179,9 @@ struct NodeSingleDeclaration : NodeInstruction {
 
 struct NodeReturn : NodeInstruction {
     std::vector<std::unique_ptr<NodeAST>> return_variables;
-    inline explicit NodeReturn(Token tok) : NodeInstruction(NodeType::ReturnStatement, std::move(tok)) {}
+    inline explicit NodeReturn(Token tok) : NodeInstruction(NodeType::Return, std::move(tok)) {}
     NodeReturn(std::vector<std::unique_ptr<NodeAST>> return_variables, Token tok)
-            : NodeInstruction(NodeType::ReturnStatement, std::move(tok)), return_variables(std::move(return_variables)) {
+            : NodeInstruction(NodeType::Return, std::move(tok)), return_variables(std::move(return_variables)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
@@ -215,7 +215,7 @@ struct NodeGetControl : NodeInstruction {
     std::unique_ptr<NodeAST> ui_id; //array or variable
     std::string control_param;
     inline NodeGetControl(std::unique_ptr<NodeAST> ui_id, std::string controlParam, Token tok)
-            : NodeInstruction(NodeType::GetControlStatement, std::move(tok)), ui_id(std::move(ui_id)), control_param(std::move(controlParam)) {
+            : NodeInstruction(NodeType::GetControl, std::move(tok)), ui_id(std::move(ui_id)), control_param(std::move(controlParam)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
@@ -285,9 +285,9 @@ struct NodeBody : NodeInstruction {
 struct NodeStruct : NodeInstruction {
     std::string prefix;
     std::vector<std::unique_ptr<NodeStatement>> members;
-    inline explicit NodeStruct(Token tok) : NodeInstruction(NodeType::StructStatement, std::move(tok)) {}
+    inline explicit NodeStruct(Token tok) : NodeInstruction(NodeType::Struct, std::move(tok)) {}
     inline NodeStruct(std::string prefix, std::vector<std::unique_ptr<NodeStatement>> members, Token tok)
-            : NodeInstruction(NodeType::StructStatement, std::move(tok)), prefix(std::move(prefix)), members(std::move(members)) {
+            : NodeInstruction(NodeType::Struct, std::move(tok)), prefix(std::move(prefix)), members(std::move(members)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
@@ -317,9 +317,9 @@ struct NodeStruct : NodeInstruction {
 struct NodeFamily : NodeInstruction {
     std::string prefix;
     std::unique_ptr<NodeBody> members;
-    inline explicit NodeFamily(Token tok) : NodeInstruction(NodeType::FamilyStatement, std::move(tok)) {}
+    inline explicit NodeFamily(Token tok) : NodeInstruction(NodeType::Family, std::move(tok)) {}
     inline NodeFamily(std::string prefix, std::unique_ptr<NodeBody> members, Token tok)
-            : NodeInstruction(NodeType::FamilyStatement, std::move(tok)), prefix(std::move(prefix)), members(std::move(members)) {
+            : NodeInstruction(NodeType::Family, std::move(tok)), prefix(std::move(prefix)), members(std::move(members)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
@@ -342,65 +342,65 @@ struct NodeFamily : NodeInstruction {
     ASTDesugaring* get_desugaring() const override;
 };
 
-struct NodeIfStatement: NodeInstruction {
+struct NodeIf: NodeInstruction {
     std::unique_ptr<NodeAST> condition;
-    std::unique_ptr<NodeBody> statements;
-    std::unique_ptr<NodeBody> else_statements;
-    inline explicit NodeIfStatement(Token tok) : NodeInstruction(NodeType::IfStatement, std::move(tok)) {}
-    inline NodeIfStatement(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeBody> statements, std::unique_ptr<NodeBody> elseStatements, Token tok)
-            : NodeInstruction(NodeType::IfStatement, std::move(tok)), condition(std::move(condition)), statements(std::move(statements)), else_statements(std::move(elseStatements)) {
+    std::unique_ptr<NodeBody> if_body;
+    std::unique_ptr<NodeBody> else_body;
+    inline explicit NodeIf(Token tok) : NodeInstruction(NodeType::If, std::move(tok)) {}
+    inline NodeIf(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeBody> statements, std::unique_ptr<NodeBody> elseStatements, Token tok)
+            : NodeInstruction(NodeType::If, std::move(tok)), condition(std::move(condition)), if_body(std::move(statements)), else_body(std::move(elseStatements)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
     NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
-    NodeIfStatement(const NodeIfStatement& other);
+    NodeIf(const NodeIf& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         condition->update_parents(this);
-        statements->update_parents(this);
-        else_statements->update_parents(this);
+        if_body->update_parents(this);
+        else_body->update_parents(this);
     }
     void set_child_parents() override {
         condition->parent = this;
-        statements->parent = this;
-        else_statements->parent = this;
+        if_body->parent = this;
+        else_body->parent = this;
     };
     std::string get_string() override { return ""; }
     void update_token_data(const Token& token) override {
         condition -> update_token_data(token);
-        statements->update_token_data(token);
-        else_statements->update_token_data(token);
+        if_body->update_token_data(token);
+        else_body->update_token_data(token);
     }
 };
 
-struct NodeForStatement : NodeInstruction {
+struct NodeFor : NodeInstruction {
     std::unique_ptr<NodeSingleAssignment> iterator;
     Token to;
     std::unique_ptr<NodeAST> iterator_end;
     std::unique_ptr<NodeAST> step = nullptr;
-    std::unique_ptr<NodeBody> statements;
-    inline explicit NodeForStatement(Token tok) : NodeInstruction(NodeType::ForStatement, std::move(tok)) {}
-    inline NodeForStatement(std::unique_ptr<NodeSingleAssignment> iterator, Token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeBody> statements, Token tok)
-            : NodeInstruction(NodeType::ForStatement, std::move(tok)), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), statements(std::move(statements)) {
+    std::unique_ptr<NodeBody> body;
+    inline explicit NodeFor(Token tok) : NodeInstruction(NodeType::For, std::move(tok)) {}
+    inline NodeFor(std::unique_ptr<NodeSingleAssignment> iterator, Token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeBody> statements, Token tok)
+            : NodeInstruction(NodeType::For, std::move(tok)), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), body(std::move(statements)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
     NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
-    NodeForStatement(const NodeForStatement& other);
+    NodeFor(const NodeFor& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         iterator->update_parents(this);
         iterator_end->update_parents(this);
         if (step) step ->update_parents(this);
-        statements->update_parents(this);
+        body->update_parents(this);
     }
     void set_child_parents() override {
         iterator->parent = this;
         iterator_end->parent = this;
         if(step) step->parent = this;
-        statements->parent = this;
+        body->parent = this;
     };
     std::string get_string() override { return ""; }
     void update_token_data(const Token& token) override {
@@ -408,82 +408,82 @@ struct NodeForStatement : NodeInstruction {
         to.line = token.line; to.file = token.file;
         iterator_end -> update_token_data(token);
         if(step) step ->update_token_data(token);
-        statements->update_token_data(token);
+        body->update_token_data(token);
     }
     ASTDesugaring* get_desugaring() const override;
 };
 
-struct NodeForEachStatement : NodeInstruction {
+struct NodeForEach : NodeInstruction {
     std::unique_ptr<NodeParamList> keys;
     std::unique_ptr<NodeAST> range;
-    std::unique_ptr<NodeBody> statements;
-    inline explicit NodeForEachStatement(Token tok) : NodeInstruction(NodeType::ForEachStatement, std::move(tok)) {}
-    inline NodeForEachStatement(std::unique_ptr<NodeParamList> keys, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeBody> statements, Token tok)
-            : NodeInstruction(NodeType::ForEachStatement, std::move(tok)), keys(std::move(keys)), range(std::move(range)), statements(std::move(statements)) {
+    std::unique_ptr<NodeBody> body;
+    inline explicit NodeForEach(Token tok) : NodeInstruction(NodeType::ForEach, std::move(tok)) {}
+    inline NodeForEach(std::unique_ptr<NodeParamList> keys, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeBody> statements, Token tok)
+            : NodeInstruction(NodeType::ForEach, std::move(tok)), keys(std::move(keys)), range(std::move(range)), body(std::move(statements)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
     NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
-    NodeForEachStatement(const NodeForEachStatement& other);
+    NodeForEach(const NodeForEach& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         keys->update_parents(this);
         range->update_parents(this);
-        statements->update_parents(this);
+        body->update_parents(this);
     }
     void set_child_parents() override {
         keys->parent = this;
         range->parent = this;
-        statements->parent = this;
+        body->parent = this;
     };
     std::string get_string() override { return ""; }
     void update_token_data(const Token& token) override {
         keys -> update_token_data(token);
         range -> update_token_data(token);
-        statements->update_token_data(token);
+        body->update_token_data(token);
     }
     ASTDesugaring* get_desugaring() const override;
 };
 
-struct NodeWhileStatement : NodeInstruction {
+struct NodeWhile : NodeInstruction {
     std::unique_ptr<NodeAST> condition;
-    std::unique_ptr<NodeBody> statements;
-    inline explicit NodeWhileStatement(Token tok) : NodeInstruction(NodeType::WhileStatement, std::move(tok)) {}
-    inline NodeWhileStatement(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeBody> statements, Token tok)
-            : NodeInstruction(NodeType::WhileStatement, std::move(tok)), condition(std::move(condition)), statements(std::move(statements)) {
+    std::unique_ptr<NodeBody> body;
+    inline explicit NodeWhile(Token tok) : NodeInstruction(NodeType::While, std::move(tok)) {}
+    inline NodeWhile(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeBody> statements, Token tok)
+            : NodeInstruction(NodeType::While, std::move(tok)), condition(std::move(condition)), body(std::move(statements)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
     NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
-    NodeWhileStatement(const NodeWhileStatement& other);
+    NodeWhile(const NodeWhile& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
         condition->update_parents(this);
-        statements->update_parents(this);
+        body->update_parents(this);
     }
     void set_child_parents() override {
         condition->parent = this;
-        statements->parent = this;
+        body->parent = this;
     };
     std::string get_string() override { return ""; }
     void update_token_data(const Token& token) override {
         condition -> update_token_data(token);
-        statements->update_token_data(token);
+        body->update_token_data(token);
     }
 };
 
-struct NodeSelectStatement : NodeInstruction {
+struct NodeSelect : NodeInstruction {
     std::unique_ptr<NodeAST> expression;
     std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> cases;
-    inline explicit NodeSelectStatement(Token tok) : NodeInstruction(NodeType::SelectStatement, std::move(tok)) {}
-    inline NodeSelectStatement(std::unique_ptr<NodeAST> expression, std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> cases, Token tok)
-            : NodeInstruction(NodeType::SelectStatement, std::move(tok)), expression(std::move(expression)), cases(std::move(cases)) {
+    inline explicit NodeSelect(Token tok) : NodeInstruction(NodeType::Select, std::move(tok)) {}
+    inline NodeSelect(std::unique_ptr<NodeAST> expression, std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> cases, Token tok)
+            : NodeInstruction(NodeType::Select, std::move(tok)), expression(std::move(expression)), cases(std::move(cases)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
-    NodeSelectStatement(const NodeSelectStatement& other);
+    NodeSelect(const NodeSelect& other);
     NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {

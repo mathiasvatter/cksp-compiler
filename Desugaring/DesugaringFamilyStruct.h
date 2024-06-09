@@ -53,13 +53,13 @@ public:
 //        if(node.indexes) node.indexes->accept(*this);
 //        node.name = add_family_prefix(node.name);
 //    };
-    void visit(NodeListStruct& node) override {
+    void visit(NodeList& node) override {
         for(auto &b : node.body) {
             b->accept(*this);
         }
         node.name = add_family_prefix(node.name);
     };
-//    void visit(NodeListStructRef& node) override {
+//    void visit(NodeListRef& node) override {
 //        node.name = add_family_prefix(node.name);
 //        if(node.indexes) node.indexes->accept(*this);
 //    };

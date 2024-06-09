@@ -24,8 +24,8 @@
  * - NodeFunctionCall: Lower property functions to get_control_par.
  * - NodeNDArray: Lower ndArray when they are a reference.
  * - NodeConstStatement: Lower const block to single declare statements.
- * - NodeListStructRef: Lower list struct references to array references.
- * - NodeListStruct: Lower list structs to arrays and while loops.
+ * - NodeListRef: Lower list struct references to array references.
+ * - NodeList: Lower list structs to arrays and while loops.
  *
  * @param definition_provider A pointer to a DefinitionProvider object. This object is used to resolve definitions of
  * variables, arrays, etc.
@@ -51,9 +51,9 @@ public:
 //    void visit(NodeFamily& node) override;
 
 	/// lower list struct references to array references
-	void visit(NodeListStructRef& node) override;
+	void visit(NodeListRef& node) override;
 	/// lower list structs to arrays and while loops
-	void visit(NodeListStruct& node) override;
+	void visit(NodeList& node) override;
 
 private:
     DefinitionProvider* m_def_provider;

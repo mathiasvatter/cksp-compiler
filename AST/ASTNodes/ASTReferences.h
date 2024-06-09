@@ -73,17 +73,17 @@ struct NodeNDArrayRef : NodeReference {
 
 };
 
-struct NodeListStructRef : NodeReference {
+struct NodeListRef : NodeReference {
 	NodeParamList* sizes = nullptr; // param list of size of the lists in the list
 	NodeParamList* pos = nullptr; // param list of positions in the list
 	std::unique_ptr<NodeParamList> indexes;
-	NodeListStructRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
-		: NodeReference(std::move(name), NodeType::ListStructRef, std::move(tok)), indexes(std::move(indexes)) {
+	NodeListRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
+		: NodeReference(std::move(name), NodeType::ListRef, std::move(tok)), indexes(std::move(indexes)) {
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
-	NodeListStructRef(const NodeListStructRef& other);
+	NodeListRef(const NodeListRef& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {

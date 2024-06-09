@@ -104,12 +104,12 @@ protected:
 
 	/// combines all possible statement types
     Result<std::unique_ptr<NodeStatement>> parse_statement(NodeAST* parent);
-    Result<std::unique_ptr<NodeIfStatement>> parse_if_statement(NodeAST* parent);
-    Result<std::unique_ptr<NodeForStatement>> parse_for_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeIf>> parse_if_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeFor>> parse_for_statement(NodeAST* parent);
     bool is_ranged_for_loop();
-    Result<std::unique_ptr<NodeForEachStatement>> parse_for_each_statement(NodeAST* parent);
-    Result<std::unique_ptr<NodeWhileStatement>> parse_while_statement(NodeAST* parent);
-	Result<std::unique_ptr<NodeSelectStatement>> parse_select_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeForEach>> parse_for_each_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeWhile>> parse_while_statement(NodeAST* parent);
+	Result<std::unique_ptr<NodeSelect>> parse_select_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeGetControl>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent);
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition(NodeAST* parent);
     /// function args are no references -> replace with references

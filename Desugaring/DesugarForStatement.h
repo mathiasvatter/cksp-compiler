@@ -27,7 +27,7 @@
  */
 class DesugarForStatement : public ASTDesugaring {
 public:
-    void inline visit(NodeForStatement& node) override {
+    void inline visit(NodeFor& node) override {
         // function arg
         std::unique_ptr<NodeAST> iterator_var = node.iterator->l_value->clone();
         std::unique_ptr<NodeAST> assign_var = iterator_var->clone();
@@ -47,7 +47,7 @@ public:
 						),
                     node.tok
             );
-            node.statements->add_stmt(std::make_unique<NodeStatement>(std::move(node_inc), node.tok));
+            node.body->add_stmt(std::make_unique<NodeStatement>(std::move(node_inc), node.tok));
         } else {
             // i := i + step
             auto inc_expression = std::make_unique<NodeBinaryExpr>(
@@ -59,7 +59,7 @@ public:
             auto node_inc_statement = std::make_unique<NodeSingleAssignment>(
                     std::move(function_var),
                     std::move(inc_expression), node.tok);
-            node.statements->add_stmt(std::make_unique<NodeStatement>(std::move(node_inc_statement), node.tok));
+            node.body->add_stmt(std::make_unique<NodeStatement>(std::move(node_inc_statement), node.tok));
         }
 
         // handle while condition
@@ -73,9 +73,9 @@ public:
                 );
         comparison->type = ASTType::Comparison;
 
-        auto node_while_statement = std::make_unique<NodeWhileStatement>(
+        auto node_while_statement = std::make_unique<NodeWhile>(
                 std::move(comparison),
-                std::move(node.statements), node.tok
+                std::move(node.body), node.tok
                 );
 
         auto node_assign_statement = std::make_unique<NodeSingleAssignment>(

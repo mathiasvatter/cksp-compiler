@@ -14,7 +14,7 @@ public:
 
 	};
 
-	void visit(NodeListStructRef& node) override {
+	void visit(NodeListRef& node) override {
 		// list references can only have one or two (jagged lists) index
 		if(node.indexes->params.size() != 2 && node.indexes->params.size() != 1) {
 			CompileError(ErrorType::SyntaxError,"Got wrong amount of index for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).exit();
@@ -56,7 +56,7 @@ public:
 		node.replace_with(std::move(lowered_list_reference));
 	}
 
-	void visit(NodeListStruct &node) override {
+	void visit(NodeList &node) override {
         auto node_body = std::make_unique<NodeBody>(node.tok);
         auto node_main_array = std::make_unique<NodeArray>(
 			std::nullopt,

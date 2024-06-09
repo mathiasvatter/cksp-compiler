@@ -159,37 +159,37 @@ void ASTPrinter::visit(NodeStatement &node) {
     }
 }
 
-void ASTPrinter::visit(NodeIfStatement &node) {
+void ASTPrinter::visit(NodeIf &node) {
     os << "if(" ;
     node.condition->accept(*this);
     os << ")" << std::endl;
-    node.statements->accept(*this);
-    if (!node.else_statements->statements.empty()) {
+    node.if_body->accept(*this);
+    if (!node.else_body->statements.empty()) {
         os << get_indent() << "else" << std::endl;
-        node.else_statements->accept(*this);
+        node.else_body->accept(*this);
     }
     os << get_indent() << "end if";
 }
 
-void ASTPrinter::visit(NodeWhileStatement &node) {
+void ASTPrinter::visit(NodeWhile &node) {
     os << "while(" ;
     node.condition->accept(*this);
     os << ") " << std::endl;
-    node.statements->accept(*this);
+    node.body->accept(*this);
     os << get_indent() << "end while";
 }
 
-void ASTPrinter::visit(NodeForStatement &node) {
+void ASTPrinter::visit(NodeFor &node) {
     os << "for " ;
     node.iterator->accept(*this);
     os << " " << node.to.val << " ";
     node.iterator_end->accept(*this);
     os << std::endl;
-    node.statements->accept(*this);
+    node.body->accept(*this);
     os << get_indent() << "end for";
 }
 
-void ASTPrinter::visit(NodeSelectStatement &node) {
+void ASTPrinter::visit(NodeSelect &node) {
     os << "select(" ;
     node.expression->accept(*this);
     os << ")" << std::endl;

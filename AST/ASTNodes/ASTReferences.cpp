@@ -68,22 +68,22 @@ ASTVisitor* NodeNDArrayRef::get_lowering(DefinitionProvider* def_provider) const
     return &lowering;
 }
 
-// ************* NodeListStructRef ***************
-void NodeListStructRef::accept(ASTVisitor &visitor) {
+// ************* NodeListRef ***************
+void NodeListRef::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-NodeListStructRef::NodeListStructRef(const NodeListStructRef& other)
+NodeListRef::NodeListRef(const NodeListRef& other)
 	: NodeReference(other), indexes(clone_unique(other.indexes)), sizes(other.sizes),
 	pos(other.pos) {
 	set_child_parents();
 }
 
-std::unique_ptr<NodeAST> NodeListStructRef::clone() const {
-	return std::make_unique<NodeListStructRef>(*this);
+std::unique_ptr<NodeAST> NodeListRef::clone() const {
+	return std::make_unique<NodeListRef>(*this);
 }
 
-ASTVisitor* NodeListStructRef::get_lowering(DefinitionProvider* def_provider) const {
+ASTVisitor* NodeListRef::get_lowering(DefinitionProvider* def_provider) const {
 	static LoweringList lowering(def_provider);
 	return &lowering;
 }

@@ -66,8 +66,8 @@ void ASTDesugar::visit(NodeAssignment &node) {
     }
 }
 
-void ASTDesugar::visit(NodeForEachStatement& node) {
-    node.statements->accept(*this);
+void ASTDesugar::visit(NodeForEach& node) {
+    node.body->accept(*this);
     if(auto desugaring = node.get_desugaring()) {
         node.accept(*desugaring);
         // move replacement to this visitor in case of nested for loops
@@ -78,8 +78,8 @@ void ASTDesugar::visit(NodeForEachStatement& node) {
     }
 }
 
-void ASTDesugar::visit(NodeForStatement& node) {
-    node.statements->accept(*this);
+void ASTDesugar::visit(NodeFor& node) {
+    node.body->accept(*this);
     if(auto desugaring = node.get_desugaring()) {
         node.accept(*desugaring);
         // move replacement to this visitor in case of nested for loops

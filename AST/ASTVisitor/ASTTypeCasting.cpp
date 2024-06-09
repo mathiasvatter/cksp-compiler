@@ -19,8 +19,8 @@ void ASTTypeCasting::visit(NodeProgram& node) {
 
 void ASTTypeCasting::visit(NodeParamList& node) {
     // infer type only if every member has same type (array declaration, assignment)
-    auto node_declaration = node.parent->get_node_type() == NodeType::SingleDeclareStatement;
-    auto node_assignment = node.parent->get_node_type() == NodeType::SingleAssignStatement;
+    auto node_declaration = node.parent->get_node_type() == NodeType::SingleDeclaration;
+    auto node_assignment = node.parent->get_node_type() == NodeType::SingleAssignment;
 
     std::vector<ASTType> types;
     for(int i = 0; i<node.params.size(); i++) {

@@ -131,7 +131,7 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 	} else {
 		m_all_data_structures.push_back(var);
         if(var->parent and !var->is_function_param()) {
-            if(var->parent->get_node_type() == NodeType::SingleDeclareStatement)
+            if(var->parent->get_node_type() == NodeType::SingleDeclaration)
                 m_all_declarations.push_back(static_cast<NodeSingleDeclaration*>(var->parent));
         }
 		if(global_scope) {

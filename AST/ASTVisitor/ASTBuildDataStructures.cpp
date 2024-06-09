@@ -103,14 +103,14 @@ void ASTBuildDataStructures::visit(NodeVariableRef &node) {
 	replace_incorrectly_detected_data_struct(node.declaration);
 }
 
-void ASTBuildDataStructures::visit(NodeListStruct& node) {
+void ASTBuildDataStructures::visit(NodeList& node) {
 	for(auto &params : node.body) {
 		params->accept(*this);
 	}
 	replace_incorrectly_detected_data_struct(&node);
 }
 
-void ASTBuildDataStructures::visit(NodeListStructRef& node) {
+void ASTBuildDataStructures::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
 	replace_incorrectly_detected_reference(&node);
 	replace_incorrectly_detected_data_struct(node.declaration);
@@ -180,16 +180,16 @@ void ASTBuildDataStructures::replace_incorrectly_detected_reference(NodeReferenc
 			reference->name,
 			nullptr,
 			reference->tok);
-		// check if it is NodeListStructRef
-	} else if(reference->get_node_type() == NodeType::ArrayRef and reference->declaration->get_node_type() == NodeType::ListStruct) {
+		// check if it is NodeListRef
+	} else if(reference->get_node_type() == NodeType::ArrayRef and reference->declaration->get_node_type() == NodeType::List) {
 		auto node_array_ref = static_cast<NodeArrayRef*>(reference);
-		node_replacement = std::make_unique<NodeListStructRef>(
+		node_replacement = std::make_unique<NodeListRef>(
 			reference->name,
 			std::make_unique<NodeParamList>(reference->tok, std::move(node_array_ref->index)),
 			reference->tok);
-	} else if(reference->get_node_type() == NodeType::NDArrayRef and reference->declaration->get_node_type() == NodeType::ListStruct) {
+	} else if(reference->get_node_type() == NodeType::NDArrayRef and reference->declaration->get_node_type() == NodeType::List) {
 		auto node_nd_array_ref = static_cast<NodeNDArrayRef*>(reference);
-		node_replacement = std::make_unique<NodeListStructRef>(
+		node_replacement = std::make_unique<NodeListRef>(
 			reference->name,
 			std::move(node_nd_array_ref->indexes),
 			reference->tok);
