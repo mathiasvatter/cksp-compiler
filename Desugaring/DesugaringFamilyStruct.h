@@ -20,6 +20,8 @@ private:
         return name;
     }
 public:
+	explicit DesugaringFamilyStruct(NodeProgram* program) : ASTDesugaring(program) {};
+
 //    void visit(NodeSingleDeclaration& node) override {
 //        if(!m_family_prefixes.empty()) {
 //            // Ui control data structures need to go one level deeper

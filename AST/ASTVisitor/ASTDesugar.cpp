@@ -25,7 +25,7 @@ void ASTDesugar::visit(NodeBody& node) {
 }
 
 void ASTDesugar::visit(NodeDeclaration& node) {
-    if(auto desugaring = node.get_desugaring()) {
+    if(auto desugaring = node.get_desugaring(m_program)) {
         node.accept(*desugaring);
         desugaring->replacement_node->accept(*this);
         node.replace_with(std::move(desugaring->replacement_node));
@@ -60,7 +60,7 @@ void ASTDesugar::visit(NodeSingleDeclaration& node) {
 }
 
 void ASTDesugar::visit(NodeAssignment &node) {
-    if(auto desugaring = node.get_desugaring()) {
+    if(auto desugaring = node.get_desugaring(m_program)) {
         node.accept(*desugaring);
         desugaring->replacement_node->accept(*this);
         node.replace_with(std::move(desugaring->replacement_node));
@@ -69,7 +69,7 @@ void ASTDesugar::visit(NodeAssignment &node) {
 
 void ASTDesugar::visit(NodeForEach& node) {
     node.body->accept(*this);
-    if(auto desugaring = node.get_desugaring()) {
+    if(auto desugaring = node.get_desugaring(m_program)) {
         node.accept(*desugaring);
         // move replacement to this visitor in case of nested for loops
         auto replacement = std::move(desugaring->replacement_node);
@@ -81,7 +81,7 @@ void ASTDesugar::visit(NodeForEach& node) {
 
 void ASTDesugar::visit(NodeFor& node) {
     node.body->accept(*this);
-    if(auto desugaring = node.get_desugaring()) {
+    if(auto desugaring = node.get_desugaring(m_program)) {
         node.accept(*desugaring);
         // move replacement to this visitor in case of nested for loops
         auto replacement = std::move(desugaring->replacement_node);
@@ -91,7 +91,7 @@ void ASTDesugar::visit(NodeFor& node) {
 
 void ASTDesugar::visit(NodeFamily &node) {
     node.members->accept(*this);
-    if(auto desugaring = node.get_desugaring()) {
+    if(auto desugaring = node.get_desugaring(m_program)) {
         node.accept(*desugaring);
     }
     node.replace_with(std::move(node.members));

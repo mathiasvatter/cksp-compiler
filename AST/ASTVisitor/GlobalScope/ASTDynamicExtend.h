@@ -1,22 +1,24 @@
 //
-// Created by Mathias Vatter on 15.05.24.
+// Created by Mathias Vatter on 10.06.24.
 //
 
 #pragma once
 
-#include "ASTVisitor.h"
-#include "../../misc/Gensym.h"
+#include "ASTGlobalScope.h"
+#include "../../../Desugaring/ASTDesugaring.h"
 
-class ASTGlobalScope : public ASTVisitor {
+class ASTDynamicExtend : public ASTGlobalScope {
 public:
-	explicit ASTGlobalScope(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {}
+	explicit ASTDynamicExtend(DefinitionProvider *definition_provider, NodeProgram* program) : ASTGlobalScope(definition_provider) {
+		m_program = program;
+	}
 
 	void inline visit(NodeProgram& node) override {
 		m_program = &node;
 		// update because of potentially altered param counts after lambda lifting
 		node.update_function_lookup();
 		m_def_provider->refresh_scopes();
-        clear_passive_vars();
+		clear_passive_vars();
 
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
@@ -24,23 +26,23 @@ public:
 
 		rename_local_vars();
 
-        // move all passive_vars declarations to global scope
-        auto local_declare_statement = std::make_unique<NodeBody>(node.tok);
-        for(auto & local_var : m_all_local_callback_vars) {
+		// move all passive_vars declarations to global scope
+		auto local_declare_statement = std::make_unique<NodeBody>(node.tok);
+		for(auto & local_var : m_all_local_callback_vars) {
 			local_var->is_local = false;
-            auto node_declare_statement = static_cast<NodeSingleDeclaration*>(local_var->parent);
-            auto node_assign_statement = node_declare_statement->to_assign_stmt();
-            local_declare_statement->statements.push_back(
+			auto node_declare_statement = static_cast<NodeSingleDeclaration*>(local_var->parent);
+			auto node_assign_statement = node_declare_statement->to_assign_stmt();
+			local_declare_statement->statements.push_back(
 				std::make_unique<NodeStatement>(
 					std::make_unique<NodeSingleDeclaration>(
 						clone_as<NodeDataStructure>(node_declare_statement->variable.get()),
-						    nullptr, node.tok
-						),
+						nullptr, node.tok
+					),
 					node.tok)
-				);
-            node_declare_statement->replace_with(std::move(node_assign_statement));
-        }
-        node.init_callback->statements->prepend_body(std::move(local_declare_statement));
+			);
+			node_declare_statement->replace_with(std::move(node_assign_statement));
+		}
+		node.init_callback->statements->prepend_body(std::move(local_declare_statement));
 	}
 
 	inline bool rename_local_vars() {
@@ -53,11 +55,13 @@ public:
 		for(auto & local_ref : m_all_local_references) {
 			if(local_ref->is_local) local_ref->name = local_ref->declaration->name;
 		}
+		m_all_local_vars.clear();
+		m_all_local_references.clear();
 		return true;
 	}
 
 	void inline visit(NodeCallback& node) override {
-        m_program->current_callback = &node;
+		m_program->current_callback = &node;
 
 		if(node.callback_id) node.callback_id->accept(*this);
 		node.statements->accept(*this);
@@ -83,8 +87,8 @@ public:
 			}
 			// set back passive_var index since scope has ended
 			for(auto & idx : m_passive_vars_idx) {
-                idx.second = 0;
-            }
+				idx.second = 0;
+			}
 			// clear passive_var replace map
 			m_passive_vars_replace.pop_back();
 		}
@@ -92,7 +96,7 @@ public:
 	}
 
 	void inline visit(NodeFunctionCall& node) override {
-        node.function->accept(*this);
+		node.function->accept(*this);
 
 		node.get_definition(m_program);
 
@@ -100,7 +104,8 @@ public:
 	}
 
 	void inline visit(NodeFunctionDefinition& node) override {
-		node.visited = true;
+		// start every function definition with a clean slate
+		clear_passive_vars();
 		m_program->function_call_stack.push(&node);
 		m_def_provider->add_scope();
 		node.header->accept(*this);
@@ -109,6 +114,19 @@ public:
 		node.body->accept(*this);
 		m_def_provider->remove_scope();
 		m_program->function_call_stack.pop();
+	}
+
+	void inline visit(NodeSingleAssignment& node) override {
+		if(auto desugar = node.get_desugaring(m_program)) {
+			node.accept(*desugar);
+			if(auto replacement = std::move(desugar->replacement_node)) {
+				replacement->accept(*this);
+				node.replace_with(std::move(replacement));
+			} else {
+				node.l_value ->accept(*this);
+				node.r_value->accept(*this);
+			}
+		}
 	}
 
 	void inline visit(NodeSingleDeclaration& node) override {
@@ -120,10 +138,20 @@ public:
 			if(is_thread_safe_env()) {
 				if (auto free_passive_var = get_free_passive_var(node.variable->ty)) {
 					m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
-					auto node_assign_statement = node.to_assign_stmt(free_passive_var);
-					m_all_local_references.push_back(static_cast<NodeReference *>(node_assign_statement->l_value.get()));
-					node.replace_with(std::move(node_assign_statement));
-					return;
+					auto node_assignment = node.to_assign_stmt();
+					if(auto desugar = node_assignment->get_desugaring(m_program)) {
+						node_assignment->accept(*desugar);
+						// if replacement is not nullptr it was array assignment
+						if(auto replacement = std::move(desugar->replacement_node)) {
+							replacement->accept(*this);
+							node.replace_with(std::move(replacement));
+						// else accept here and replace old ref by name with new declaration free_passive_var
+						} else {
+							node_assignment->accept(*this);
+							node.replace_with(std::move(node_assignment));
+						}
+						return;
+					}
 				}
 			}
 		}
@@ -135,17 +163,17 @@ public:
 	void inline visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
 
-        // add all references in local scope to vector for later passive_var replacement
-        m_all_local_references.push_back(&node);
+		// add all references in local scope to vector for later passive_var replacement
+		m_all_local_references.push_back(&node);
 
-        if(!m_passive_vars_replace.empty()) {
-            // search if declaration was local var and has been replaced by passive_var -> replace declaration and reference name
-            if(auto new_declaration = get_new_declaration(node.name)) {
-                node.match_data_structure(new_declaration);
-                node.name = new_declaration->name;
-                return;
-            }
-        }
+		if(!m_passive_vars_replace.empty()) {
+			// search if declaration was local var and has been replaced by passive_var -> replace declaration and reference name
+			if(auto new_declaration = get_new_declaration(node.name)) {
+				node.match_data_structure(new_declaration);
+				node.name = new_declaration->name;
+				return;
+			}
+		}
 
 		auto node_declaration = m_def_provider->get_declaration(&node);
 		if(!node_declaration) DefinitionProvider::throw_declaration_error(&node).exit();
@@ -200,63 +228,56 @@ public:
 	}
 
 	bool clear_passive_vars() {
-        m_passive_vars_map.clear();
+		m_passive_vars_map.clear();
 		return true;
 	}
 
-	bool set_program_ptr(NodeProgram* program) {
-		m_program = program;
-		return true;
-	}
+
 
 private:
 	std::string loc_var_prefix = "loc_";
 	Gensym m_gensym;
-	DefinitionProvider* m_def_provider = nullptr;
 	NodeBody* m_current_body = nullptr;
-	/// holds the current function definition that is being visited on top
-//	std::stack<NodeFunctionDefinition*> m_function_call_stack = {};
 
 	bool inline is_thread_safe_env() {
 		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or
-		(!m_program->function_call_stack.empty() and m_program->function_call_stack.top()->header->is_thread_safe);
+			(!m_program->function_call_stack.empty() and m_program->function_call_stack.top()->header->is_thread_safe);
 	};
 
 	/// vector for all local vars in callbacks
 	std::vector<NodeDataStructure*> m_all_local_callback_vars = {};
 	/// vector for all local vars in functions -> do not get moved into on init
 	std::vector<NodeDataStructure*> m_all_local_vars = {};
-    /// hash values are the types
-    std::unordered_map<std::string, std::vector<NodeDataStructure*>> m_passive_vars_map;
-    std::unordered_map<std::string, int> m_passive_vars_idx;
+	/// hash values are the types
+	std::unordered_map<std::string, std::vector<NodeDataStructure*>> m_passive_vars_map;
+	std::unordered_map<std::string, int> m_passive_vars_idx;
 	inline void add_passive_vars(const std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual>& map2) {
 		for(auto & var : map2) {
-            m_passive_vars_map[var.second->ty->to_string()].push_back(var.second);
+			m_passive_vars_map[var.second->ty->to_string()].push_back(var.second);
 		}
 	};
-    /// get next free passive_var for given type
-    inline NodeDataStructure* get_free_passive_var(Type* ty) {
-        auto &vec = m_passive_vars_map[ty->to_string()];
-        auto &idx = m_passive_vars_idx[ty->to_string()];
-        if(idx < vec.size()) {
-            return vec[idx++];
-        }
-        return nullptr;
-    }
-    /// search for new declaration to reference if declaration is replaced by passive_var
-    inline NodeDataStructure* get_new_declaration(const std::string& ref_name) {
+	/// get next free passive_var for given type
+	inline NodeDataStructure* get_free_passive_var(Type* ty) {
+		auto &vec = m_passive_vars_map[ty->to_string()];
+		auto &idx = m_passive_vars_idx[ty->to_string()];
+		if(idx < vec.size()) {
+			return vec[idx++];
+		}
+		return nullptr;
+	}
+	/// search for new declaration to reference if declaration is replaced by passive_var
+	inline NodeDataStructure* get_new_declaration(const std::string& ref_name) {
 		for (auto rit = m_passive_vars_replace.rbegin(); rit != m_passive_vars_replace.rend(); ++rit) {
 			auto it = rit->find(ref_name);
 			if (it != rit->end()) {
 				return it->second;
 			}
 		}
-        return nullptr;
-    }
-    /// map for old datastructure name (as keys) that get replaced by new datastructures (passive_vars) (as values)
-    std::vector<std::unordered_map<std::string, NodeDataStructure*>> m_passive_vars_replace;
-    /// vector for all local references that have been replaced by passive_var references
+		return nullptr;
+	}
+	/// map for old datastructure name (as keys) that get replaced by new datastructures (passive_vars) (as values)
+	std::vector<std::unordered_map<std::string, NodeDataStructure*>> m_passive_vars_replace;
+	/// vector for all local references that have been replaced by passive_var references
 	std::vector<NodeReference*> m_all_local_references;
 
 };
-

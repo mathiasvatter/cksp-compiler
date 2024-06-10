@@ -1,43 +1,56 @@
 on init
-	declare loc_5 : int[]
-	declare loc_6 : int
-	declare loc_7 : int
+	declare loc_7 : int[]
 	declare loc_8 : int
-	declare loc_9 : string
+	declare loc_9 : int
+	declare loc_10 : int
+	declare loc_11 : string
+	declare loc_12 : int[]
+	declare loc_13 : int
 	declare clicktime[3] : int[]
 	declare g : int
 	declare _iterator : int
 	declare const mult_array.SIZE_D1 : int := 3
 	declare const mult_array.SIZE_D2 : int := 2
 	declare _mult_array[3 * 2] : int[] := (1, 2, 2, 34)
-	loc_5 := (0)
-	loc_6 := 0
-	loc_7 := 0
+	loc_7 := (0)
 	loc_8 := 0
-	loc_9 := ""
-	scoped_func1(loc_5, loc_6, loc_7, loc_8, loc_9)
-	loc_5 := (0)
-	loc_7 := 0
-	loc_6 := 0
+	loc_9 := 0
+	loc_10 := 0
+	loc_11 := ""
+	loc_12 := (0)
+	loc_13 := 0
+	scoped_func1(loc_7, loc_8, loc_9, loc_10, loc_11, loc_12, loc_13)
+	loc_9 := 0
+	array.init.Integer(loc_12, loc_9)
+	loc_9 := 0
 	loc_8 := 0
-	loc_9 := ""
-	scoped_func1(loc_5, loc_7, loc_6, loc_8, loc_9)
+	loc_10 := 0
+	loc_11 := ""
+	loc_13 := 0
+	array.init.Integer(loc_12, loc_13)
+	loc_9 := 0
+	scoped_func1(loc_12, loc_9, loc_8, loc_10, loc_11, loc_12, loc_9)
 end on
 
 on persistence_changed
 end on
 
 on release
-	loc_5 := (0)
-	loc_7 := 0
-	loc_6 := 0
+	loc_9 := 0
+	array.init.Integer(loc_12, loc_9)
+	loc_9 := 0
 	loc_8 := 0
-	loc_9 := ""
-	scoped_func1(loc_5, loc_7, loc_6, loc_8, loc_9)
+	loc_10 := 0
+	loc_11 := ""
+	loc_13 := 0
+	array.init.Integer(loc_12, loc_13)
+	loc_9 := 0
+	scoped_func1(loc_12, loc_9, loc_8, loc_10, loc_11, loc_12, loc_9)
 end on
 
 function scoped_func2(loc_0 : int[], loc_1 : int, loc_2 : int, loc_3 : int)
-	loc_0 := (1, 2)
+	loc_0[0] := 1
+	loc_0[1] := 2
 	loc_1 := 0
 	message(loc_1)
 	if(loc_1 = 1)
@@ -52,10 +65,22 @@ function scoped_func2(loc_0 : int[], loc_1 : int, loc_2 : int, loc_3 : int)
 	end if
 end function
 
-function scoped_func1(loc_0 : int[], loc_1 : int, loc_2 : int, loc_3 : int, loc_4 : string)
+function scoped_func1(loc_0 : int[], loc_1 : int, loc_2 : int, loc_3 : int, loc_4 : string, loc_5 : int[], loc_6 : int)
 	loc_4 := "sdlkj"
 	message(g & loc_4)
 	scoped_func2(loc_0, loc_1, loc_2, loc_3)
+	loc_5[0] := 3
+	loc_5[1] := 4
+	loc_6 := 0
+	array.init.Integer(loc_5, loc_6)
+end function
+
+function array.init.Integer(array : int, _iter : int)
+	_iter := 0
+	while(_iter < num_elements(array[_iter])) 
+		array[_iter] := 0
+		inc(_iter)
+	end while
 end function
 
 

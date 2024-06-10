@@ -11,6 +11,8 @@
  */
 class DesugarDeclareAssign : public ASTDesugaring {
 public:
+	explicit DesugarDeclareAssign(NodeProgram* program) : ASTDesugaring(program) {};
+
     void inline visit(NodeDeclaration& node) override {
         // error handling
         if(node.variable.size() < node.value->params.size()) {

@@ -27,6 +27,8 @@
  */
 class DesugarForStatement : public ASTDesugaring {
 public:
+	explicit DesugarForStatement(NodeProgram* program) : ASTDesugaring(program) {};
+
     void inline visit(NodeFor& node) override {
         // function arg
         std::unique_ptr<NodeAST> iterator_var = node.iterator->l_value->clone();
