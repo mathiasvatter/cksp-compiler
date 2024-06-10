@@ -3,8 +3,8 @@
 //
 
 #include "Compiler.h"
-#include "AST/ASTVisitor/ASTGlobalScope.h"
-#include "AST/ASTVisitor/ASTLambdaLifting.h"
+#include "AST/ASTVisitor/GlobalScope/ASTGlobalScope.h"
+#include "AST/ASTVisitor/GlobalScope/ASTLambdaLifting.h"
 #include "AST/ASTVisitor/TypeInference.h"
 
 Compiler::Compiler(CompilerConfig* config)
@@ -122,9 +122,6 @@ void Compiler::compile() {
 
 	compile_time.stop("Lowering");
 	compile_time.start("Global Scope");
-
-	ASTLambdaLifting lambda_lifting(&m_definition_provider);
-	ast->accept(lambda_lifting);
 
 	ASTGlobalScope global_scope(&m_definition_provider);
 	ast->accept(global_scope);

@@ -104,7 +104,7 @@ struct NodeAssignment: NodeInstruction {
         r_value -> update_token_data(token);
     }
 
-    [[nodiscard]] ASTDesugaring* get_desugaring() const override;
+    [[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 };
 
 struct NodeSingleAssignment : NodeInstruction {
@@ -138,6 +138,8 @@ struct NodeSingleAssignment : NodeInstruction {
         r_value -> update_token_data(token);
     }
     ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+
 };
 
 struct NodeDeclaration : NodeInstruction {
@@ -173,7 +175,7 @@ struct NodeDeclaration : NodeInstruction {
         }
         value -> update_token_data(token);
     }
-    ASTDesugaring* get_desugaring() const override;
+    [[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 };
 
 struct NodeSingleDeclaration : NodeInstruction {
@@ -382,7 +384,7 @@ struct NodeFamily : NodeInstruction {
         members->update_token_data(token);
     }
 
-    ASTDesugaring* get_desugaring() const override;
+    [[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 };
 
 struct NodeIf: NodeInstruction {
@@ -453,7 +455,7 @@ struct NodeFor : NodeInstruction {
         if(step) step ->update_token_data(token);
         body->update_token_data(token);
     }
-    ASTDesugaring* get_desugaring() const override;
+    ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 };
 
 struct NodeForEach : NodeInstruction {
@@ -486,7 +488,7 @@ struct NodeForEach : NodeInstruction {
         range -> update_token_data(token);
         body->update_token_data(token);
     }
-    ASTDesugaring* get_desugaring() const override;
+    ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 };
 
 struct NodeWhile : NodeInstruction {

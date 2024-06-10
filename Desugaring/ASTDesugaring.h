@@ -13,7 +13,7 @@
  */
 class ASTDesugaring : public ASTVisitor {
 public:
-    ASTDesugaring() =default;
+    explicit ASTDesugaring(NodeProgram* program) {m_program = program;};
     ~ASTDesugaring() =default;
 
     std::unique_ptr<NodeAST> replacement_node;

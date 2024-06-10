@@ -38,6 +38,8 @@ private:
     }
 
 public:
+	explicit DesugarForEachStatement(NodeProgram* program) : ASTDesugaring(program) {};
+
     void inline visit(NodeVariableRef& node) override {
         // range-based for-loop substitution
         if(!m_key_value_scope_stack.empty()) {

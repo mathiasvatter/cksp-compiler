@@ -42,7 +42,7 @@ struct NodeAST {
 	[[nodiscard]] virtual ASTVisitor* get_lowering(class DefinitionProvider* def_provider) const {
 		return nullptr;
 	}
-    [[nodiscard]] virtual ASTDesugaring* get_desugaring() const {
+    [[nodiscard]] virtual ASTDesugaring *get_desugaring(class NodeProgram *program) const {
         return nullptr;
     }
     [[nodiscard]] NodeType get_node_type() const { return node_type; }

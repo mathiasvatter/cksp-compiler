@@ -10,6 +10,8 @@
 #include "../../Desugaring/DesugaringFamilyStruct.h"
 #include "../../Desugaring/DesugarForStatement.h"
 #include "../../Desugaring/DesugarForEachStatement.h"
+#include "../ASTVisitor/GlobalScope/ASTGlobalScope.h"
+#include "../../Desugaring/DesugarSingleAssign.h"
 
 // ************* NodeStatement ***************
 void NodeStatement::accept(ASTVisitor &visitor) {
@@ -127,8 +129,8 @@ std::unique_ptr<NodeAST> NodeAssignment::clone() const {
     return std::make_unique<NodeAssignment>(*this);
 }
 
-ASTDesugaring* NodeAssignment::get_desugaring() const {
-    static DesugarDeclareAssign desugaring;
+ASTDesugaring * NodeAssignment::get_desugaring(NodeProgram *program) const {
+    static DesugarDeclareAssign desugaring(program);
     return &desugaring;
 }
 
@@ -159,6 +161,11 @@ ASTVisitor* NodeSingleAssignment::get_lowering(DefinitionProvider* def_provider)
     return this->l_value->get_lowering(def_provider);
 }
 
+ASTDesugaring * NodeSingleAssignment::get_desugaring(NodeProgram *program) const {
+	static DesugarSingleAssign desugaring(program);
+	return &desugaring;
+}
+
 // ************* NodeDeclaration ***************
 void NodeDeclaration::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
@@ -180,8 +187,8 @@ void NodeDeclaration::update_parents(NodeAST* new_parent)  {
     if(value) value->update_parents(this);
 }
 
-ASTDesugaring* NodeDeclaration::get_desugaring() const {
-    static DesugarDeclareAssign desugaring;
+ASTDesugaring * NodeDeclaration::get_desugaring(NodeProgram *program) const {
+    static DesugarDeclareAssign desugaring(program);
     return &desugaring;
 }
 
@@ -366,8 +373,8 @@ std::unique_ptr<NodeAST> NodeFamily::clone() const {
     return std::make_unique<NodeFamily>(*this);
 }
 
-ASTDesugaring* NodeFamily::get_desugaring() const {
-    static DesugaringFamilyStruct desugaring;
+ASTDesugaring * NodeFamily::get_desugaring(NodeProgram *program) const {
+    static DesugaringFamilyStruct desugaring(program);
     return &desugaring;
 }
 
@@ -412,8 +419,8 @@ NodeAST * NodeFor::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> new
     return nullptr;
 }
 
-ASTDesugaring* NodeFor::get_desugaring() const {
-    static DesugarForStatement desugaring;
+ASTDesugaring * NodeFor::get_desugaring(NodeProgram *program) const {
+    static DesugarForStatement desugaring(program);
     return &desugaring;
 }
 
@@ -437,8 +444,8 @@ NodeAST * NodeForEach::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST>
     return nullptr;
 }
 
-ASTDesugaring* NodeForEach::get_desugaring() const {
-    static DesugarForEachStatement desugaring;
+ASTDesugaring * NodeForEach::get_desugaring(NodeProgram *program) const {
+    static DesugarForEachStatement desugaring(program);
     return &desugaring;
 }
 
