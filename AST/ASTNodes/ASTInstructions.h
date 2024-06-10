@@ -316,6 +316,11 @@ struct NodeBody : NodeInstruction {
     void prepend_body(std::unique_ptr<NodeBody> new_body);
     /// adds a node statement to internal vector and sets parent pointer
     void add_stmt(std::unique_ptr<NodeStatement> stmt);
+	/// prepends a node statement to internal vector and sets parent pointer
+	void prepend_stmt(std::unique_ptr<NodeStatement> stmt) {
+		stmt->parent = this;
+		statements.insert(statements.begin(), std::move(stmt));
+	}
     /// puts nested statement list in current one
     void cleanup_body();
 };

@@ -88,6 +88,7 @@ public:
 			// clear passive_var replace map
 			m_passive_vars_replace.pop_back();
 		}
+		node.cleanup_body();
 	}
 
 	void inline visit(NodeFunctionCall& node) override {

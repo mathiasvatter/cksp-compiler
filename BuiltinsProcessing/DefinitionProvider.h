@@ -61,15 +61,31 @@ public:
 	// when is variable = raw array? if variable has _ in front and is array and was declared without _
 	static std::string sanitize_name(const std::string& name);
 
+	/// clears all static pointer vectors
+	bool refresh_data_vectors() {
+		m_all_declarations.clear();
+		m_all_references.clear();
+		m_all_declarations.clear();
+		return true;
+	}
 	std::vector<NodeReference*> m_all_references;
+	void add_to_references(NodeReference* reference) {
+		m_all_references.push_back(reference);
+	}
 	[[nodiscard]] const std::vector<NodeReference *> &get_all_references() {
 		return m_all_references;
 	}
 	std::vector<NodeDataStructure*> m_all_data_structures;
+	void add_to_data_structures(NodeDataStructure* data_struct) {
+		m_all_data_structures.push_back(data_struct);
+	}
 	[[nodiscard]] const std::vector<NodeDataStructure *> &get_all_data_structures() {
 		return m_all_data_structures;
 	}
     std::vector<NodeSingleDeclaration*> m_all_declarations;
+	void add_to_declarations(NodeSingleDeclaration* decl) {
+		m_all_declarations.push_back(decl);
+	}
     [[nodiscard]] const std::vector<NodeSingleDeclaration *> &get_all_declarations() {
         return m_all_declarations;
     }

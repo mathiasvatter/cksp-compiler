@@ -13,6 +13,7 @@ void ASTVariableChecking::visit(NodeProgram& node) {
     node.update_function_lookup();
 	// erase all previously saved scopes
 	m_def_provider->refresh_scopes();
+	m_def_provider->refresh_data_vectors();
 
 	// most func defs will be visited when called, keeping local scopes in mind
 	m_program->init_callback->accept(*this);
@@ -121,6 +122,7 @@ void ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 
     node.variable->accept(*this);
     if(node.value) node.value->accept(*this);
+	m_def_provider->add_to_declarations(&node);
 }
 
 void ASTVariableChecking::visit(NodeArray& node) {
@@ -130,6 +132,7 @@ void ASTVariableChecking::visit(NodeArray& node) {
 	if(node.size) node.size->accept(*this);
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
+	m_def_provider->add_to_data_structures(new_node);
 }
 
 void ASTVariableChecking::visit(NodeArrayRef& node) {
@@ -143,6 +146,7 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
     }
 
     node.match_data_structure(node_declaration);
+	m_def_provider->add_to_references(&node);
 }
 
 void ASTVariableChecking::visit(NodeNDArray& node) {
@@ -151,6 +155,7 @@ void ASTVariableChecking::visit(NodeNDArray& node) {
 	node.sizes->accept(*this);
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
+	m_def_provider->add_to_data_structures(new_node);
 }
 
 void ASTVariableChecking::visit(NodeNDArrayRef& node) {
@@ -161,6 +166,7 @@ void ASTVariableChecking::visit(NodeNDArrayRef& node) {
 		return;
 	}
 	node.match_data_structure(node_declaration);
+	m_def_provider->add_to_references(&node);
 }
 
 void ASTVariableChecking::visit(NodeVariable& node) {
@@ -174,6 +180,7 @@ void ASTVariableChecking::visit(NodeVariable& node) {
 	}
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
+	m_def_provider->add_to_data_structures(new_node);
 }
 
 void ASTVariableChecking::visit(NodeVariableRef& node) {
@@ -188,6 +195,7 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
     }
 
     node.match_data_structure(node_declaration);
+	m_def_provider->add_to_references(&node);
 }
 
 void ASTVariableChecking::visit(NodeList& node) {
@@ -198,6 +206,7 @@ void ASTVariableChecking::visit(NodeList& node) {
 	}
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
+	m_def_provider->add_to_data_structures(new_node);
 }
 
 void ASTVariableChecking::visit(NodeListRef& node) {
@@ -207,6 +216,7 @@ void ASTVariableChecking::visit(NodeListRef& node) {
 		CompileError(ErrorType::Variable, "List has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return;
 	}
+	m_def_provider->add_to_references(&node);
 }
 
 void ASTVariableChecking::visit(NodeConstStatement& node) {

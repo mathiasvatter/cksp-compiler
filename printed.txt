@@ -1,85 +1,61 @@
 on init
+	declare loc_5 : int[]
+	declare loc_6 : int
+	declare loc_7 : int
 	declare loc_8 : int
-	declare const loc_9 : int
-	declare const loc_10 : int
-	declare loc_11 : int[]
-	declare loc_12 : int[]
-	declare loc_13 : int
-	declare loc_14 : int
-	declare loc_15 : string
-	declare loc_16 : int
-	loc_8 := 0
-	loc_9 := 0
-	loc_10 := 0
-	loc_11 := (0)
-	loc_12 := (0)
-	loc_13 := 0
-	loc_14 := 0
-	loc_15 := ""
+	declare loc_9 : string
+	declare clicktime[3] : int[]
 	declare g : int
 	declare _iterator : int
-	declare _string_it : int
-	declare _ui_array_it : int
-	declare _list_it : int
-	scoped_func1(loc_8, loc_9, loc_10, loc_11, loc_12, loc_13, loc_14, loc_15)
-	scoped_func1(loc_8, loc_9, loc_10, loc_11, loc_12, loc_13, loc_14, loc_15)
+	declare const mult_array.SIZE_D1 : int := 3
+	declare const mult_array.SIZE_D2 : int := 2
+	declare _mult_array[3 * 2] : int[] := (1, 2, 2, 34)
+	loc_5 := (0)
+	loc_6 := 0
+	loc_7 := 0
+	loc_8 := 0
+	loc_9 := ""
+	scoped_func1(loc_5, loc_6, loc_7, loc_8, loc_9)
+	loc_5 := (0)
+	loc_7 := 0
+	loc_6 := 0
+	loc_8 := 0
+	loc_9 := ""
+	scoped_func1(loc_5, loc_7, loc_6, loc_8, loc_9)
 end on
 
 on persistence_changed
-	loc_10 := 0
-	loc_9 := 0
-	loc_13 := 0
-	loc_11 := (0)
-	loc_12 := (0)
-	loc_8 := 0
-	loc_14 := 0
-	loc_15 := ""
-	loc_16 := 0
-	scoped_func1(loc_10, loc_9, loc_13, loc_11, loc_12, loc_8, loc_14, loc_15)
-	message(NI_UI_ID)
-	loc_16 := 0
-	while(loc_16 <= (5 - 1)) 
-		message(loc_16)
-		scoped_func1(loc_10, loc_9, loc_13, loc_11, loc_12, loc_8, loc_14, loc_15)
-		inc(loc_16)
-	end while
 end on
 
 on release
-	loc_10 := 0
-	loc_9 := 0
-	loc_13 := 0
-	loc_11 := (0)
-	loc_12 := (0)
+	loc_5 := (0)
+	loc_7 := 0
+	loc_6 := 0
 	loc_8 := 0
-	loc_14 := 0
-	loc_15 := ""
-	scoped_func1(loc_10, loc_9, loc_13, loc_11, loc_12, loc_8, loc_14, loc_15)
+	loc_9 := ""
+	scoped_func1(loc_5, loc_7, loc_6, loc_8, loc_9)
 end on
 
-function scoped_func2(loc_0 : int, const loc_1 : int, const loc_2 : int, loc_3 : int[], loc_4 : int[], loc_5 : int, loc_6 : int)
-	loc_0 := 0
-	loc_1 := 2
-	loc_2 := 3
-	loc_3 := (0)
-	message(loc_0)
-	if(loc_0 = 1)
-		loc_4 := (1, 2, 3, 4)
-		loc_5 := 0
-		loc_6 := 0
-		message(loc_5 & loc_6 & loc_4[3])
+function scoped_func2(loc_0 : int[], loc_1 : int, loc_2 : int, loc_3 : int)
+	loc_0 := (1, 2)
+	loc_1 := 0
+	message(loc_1)
+	if(loc_1 = 1)
+		loc_2 := 0
+		loc_3 := 0
+		message(loc_2 & loc_3)
 	end if
-	if(loc_0 = 2)
-		loc_5 := 0
-		loc_6 := 0
-		message(loc_5 & loc_6)
+	if(loc_1 = 2)
+		loc_2 := 0
+		loc_3 := 0
+		message(loc_2 & loc_3)
 	end if
 end function
 
-function scoped_func1(loc_0 : int, const loc_1 : int, const loc_2 : int, loc_3 : int[], loc_4 : int[], loc_5 : int, loc_6 : int, loc_7 : string)
-	loc_7 := "sdlkj"
-	message(g & loc_7)
-	scoped_func2(loc_0, loc_1, loc_2, loc_3, loc_4, loc_5, loc_6)
+function scoped_func1(loc_0 : int[], loc_1 : int, loc_2 : int, loc_3 : int, loc_4 : string)
+	loc_4 := "sdlkj"
+	message(g & loc_4)
+	scoped_func2(loc_0, loc_1, loc_2, loc_3)
 end function
 
 
