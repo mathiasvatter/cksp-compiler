@@ -50,9 +50,6 @@ public:
 
 private:
 	DefinitionProvider* m_def_provider;
-    std::vector<NodeReference*> m_references;
-    std::vector<NodeSingleAssignment*> m_assignments;
-    std::vector<NodeSingleDeclaration*> m_declarations;
 
     /// error if composite type was not added to the type registry
     static inline CompileError throw_composite_error(NodeReference* node) {

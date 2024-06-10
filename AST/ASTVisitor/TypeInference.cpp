@@ -6,7 +6,7 @@
 
 void TypeInference::visit(NodeProgram& node) {
 	m_program = &node;
-
+	m_def_provider->refresh_data_vectors();
 	// get all types of function params first
 	for(auto & function_definition : node.function_definitions) {
 		function_definition->accept(*this);
@@ -20,6 +20,7 @@ void TypeInference::cast_data_structure_types(DefinitionProvider* def_provider, 
     for(auto & ref : def_provider->get_all_references()) {
         match_reference_declaration(ref);
     }
+
     for(auto & decl : def_provider->get_all_declarations()) {
         if(decl->value) {
             match_assignment_types(decl->variable.get(), decl->value.get());
@@ -72,7 +73,6 @@ void TypeInference::visit(NodeConstStatement& node) {
 
 void TypeInference::visit(NodeVariableRef& node) {
     match_reference_declaration(&node);
-    m_references.push_back(&node);
 
     // check if callback id reference is ui_control
     if(node.parent->get_node_type() == NodeType::Callback) {
@@ -91,9 +91,11 @@ void TypeInference::visit(NodeVariableRef& node) {
             }
         }
     }
+	m_def_provider->add_to_references(&node);
 }
 
 void TypeInference::visit(NodeVariable& node) {
+	m_def_provider->add_to_data_structures(&node);
 }
 
 void TypeInference::visit(NodeArray& node) {
@@ -105,7 +107,7 @@ void TypeInference::visit(NodeArray& node) {
         node.size->accept(*this);
         node.size->ty = specialize_type(node.size->ty, TypeRegistry::Integer);
     }
-
+	m_def_provider->add_to_data_structures(&node);
 }
 
 void TypeInference::visit(NodeArrayRef& node) {
@@ -121,7 +123,6 @@ void TypeInference::visit(NodeArrayRef& node) {
 		if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
 	}
     match_reference_declaration(&node);
-    m_references.push_back(&node);
 
     // check if callback id reference is ui_control
     if(node.parent->get_node_type() == NodeType::Callback) {
@@ -131,6 +132,7 @@ void TypeInference::visit(NodeArrayRef& node) {
             error.exit();
         }
     }
+	m_def_provider->add_to_references(&node);
 }
 
 void TypeInference::visit(NodeNDArray& node) {
@@ -139,6 +141,7 @@ void TypeInference::visit(NodeNDArray& node) {
     if(node.ty == TypeRegistry::Unknown) {
         node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions);
     }
+	m_def_provider->add_to_data_structures(&node);
 }
 
 void TypeInference::visit(NodeNDArrayRef& node) {
@@ -154,7 +157,7 @@ void TypeInference::visit(NodeNDArrayRef& node) {
         if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
     }
     match_reference_declaration(&node);
-    m_references.push_back(&node);
+	m_def_provider->add_to_references(&node);
 }
 
 void TypeInference::visit(NodeList& node) {
@@ -170,7 +173,7 @@ void TypeInference::visit(NodeList& node) {
         types.push_back(b->ty);
     }
     node.set_element_type(infer_initialization_types(types, &node));
-
+	m_def_provider->add_to_data_structures(&node);
 }
 
 void TypeInference::visit(NodeListRef& node) {
@@ -185,7 +188,7 @@ void TypeInference::visit(NodeListRef& node) {
         if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
     }
     match_reference_declaration(&node);
-    m_references.push_back(&node);
+	m_def_provider->add_to_references(&node);
 }
 
 void TypeInference::visit(NodeParamList& node) {
@@ -214,7 +217,7 @@ void TypeInference::visit(NodeSingleDeclaration& node) {
 		}
 		match_assignment_types(node.variable.get(), node.value.get());
 	}
-    m_declarations.push_back(&node);
+	m_def_provider->add_to_declarations(&node);
 }
 
 void TypeInference::visit(NodeUIControl& node) {
@@ -259,7 +262,6 @@ void TypeInference::visit(NodeFunctionCall& node) {
 	for(int i = 0; i < node.function->args->params.size(); i++) {
 		match_type(node.function->args->params[i].get(), node.definition->header->args->params[i].get());
 	}
-//    node.function->accept(*this);
 
 	node.ty = node.definition->ty;
 }
@@ -290,8 +292,8 @@ void TypeInference::visit(NodeBinaryExpr& node) {
 
 	bool is_compatible = true; //node.left->ty->is_compatible(node.ty) || node.right->ty->is_compatible(node.ty);
 	auto error = throw_type_error(node.left.get(), node.right.get());
-	if(!is_compatible)
-        error.exit();
+//	if(!is_compatible)
+//        error.exit();
 
 
 	node.left->ty = specialize_type(node.left->ty, node.right->ty);

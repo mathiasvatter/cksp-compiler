@@ -11,8 +11,9 @@
 ### Vorgehen:
 1. Variablen und Scopes tracken
 2. Dynamischen Extend von Variablen/Arrays innerhalb verschiedener Scopes in den Funktionen tracken und mit typisierten Variablen austauschen, deren dynamic extend bereits abgelaufen ist.
+    Declarationen werden durch Assignments mit neutralen Elementen ersetzt.
 3. Alle lokalen Variablen mit Gensym umbenennen.
-4. Lambda Lifting mit allen Funktionen durchführen.
+4. Lambda Lifting mit allen Funktionen durchführen, bis alle Variablen in Callbacks sind.
 5. Punkt 2 und 3 mit allen Callbacks ausführen.
 
 ### Beispiel:
@@ -32,13 +33,13 @@ function scoped_func2()
 	end if
 end function
 ```
-####Nachher:
+#### Nachher:
 ```c
 function scoped_func2(loc_0 : int, loc_1 : int[], loc_2 : int, loc_3 : int)
 	loc_0 := 0
 	message(loc_0)
 	if(loc_0 = 1)
-		loc_1 := (1, 2, 3, 4)
+		loc_1 := (1, 2, 3, 4) // <- so direkt in KSP nicht möglich
 		loc_2 := 0
 		loc_3 := 0
 		message(loc_2 & loc_3 & loc_1[3])
@@ -52,13 +53,16 @@ end function
 ```
 
 ### Herausforderungen:
-- Lambda Lifting bringt Overhead an Funktionsparametern mit sich -> Funktionen die vorher gecallt wurden 
-(komplett ohne Parameter) müssen jetzt inlined werden, was wiederum zu mehr Overhead und längerem Code führt.
+- Lambda Lifting bringt Overhead an Funktionsparametern mit sich -> Funktionen die vorher gecallt werden konnten 
+(also keine Parameter hatten) und nicht inlined werden mussten, müssen jetzt inlined werden, was wiederum zu mehr Overhead und längerem Code führt.
 __Lösung?:__ Globaler Stack, der alle Funktionsparameter vorher übergibt und nachher wieder ausgibt.
 - Durch Lambda Lifting und das mehrfache Auslagern von Declarations (in Callbacks und dann in den init Callback) kommt
 es zu vielen unnötigen Assignments.
 __Lösung?:__ Optimierung der Assignments durch Code-Flow Analyse und Dead Code Elimination.
-
+- Arrays müssen bei Wiederverwendung neu initialisiert werden, was aber in KSP nicht direkt supported ist
+__Lösung?:__ Erstelle Funktion (bereits lambda lifted), die dort eingesetzt wird, wo Arrays initialisiert werden.
+- Array sizes sind nicht unbedingt bekannt, die Wiederverwendung von Arrays hängt derzeit nur an Typ und Dimension.
+__Lösung?:__ Wiederverwendung von Arrays auch anhand der Größe (womöglich vorher constant propagation machen?)
 
 ## 2. Rekursive Data Structure declaration and dynamic allocation
 - Allow declaration of structs by lowering them to arrays

@@ -52,10 +52,6 @@ std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual> Def
 
 bool DefinitionProvider::refresh_scopes() {
     m_declared_data_structures.clear();
-
-	m_all_references.clear();
-	m_all_data_structures.clear();
-    m_all_declarations.clear();
 	m_references_per_data_structure.clear();
     // add global scope
     add_scope();
@@ -103,7 +99,6 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 	auto node_declaration = get_declared_data_structure(var->name);
 	if(!node_declaration) node_declaration = get_declared_data_structure(sanitized);
 	if (node_declaration) {
-		m_all_references.push_back(var);
 		m_references_per_data_structure[node_declaration].insert(var);
 		return node_declaration;
 	}
@@ -129,11 +124,6 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
         if(global_scope) compile_error.m_message += " Variables declared in the <init> callback are always considered global, no local scopes are created.";
 		compile_error.print();
 	} else {
-		m_all_data_structures.push_back(var);
-        if(var->parent and !var->is_function_param()) {
-            if(var->parent->get_node_type() == NodeType::SingleDeclaration)
-                m_all_declarations.push_back(static_cast<NodeSingleDeclaration*>(var->parent));
-        }
 		if(global_scope) {
 			m_declared_data_structures.at(0).insert({var->name, var});
 		} else {

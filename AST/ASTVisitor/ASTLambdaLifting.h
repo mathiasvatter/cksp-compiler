@@ -27,12 +27,12 @@ public:
 
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
-			// create node body with local variable declarations for every callback and prepend it to the callback
-			auto node_body = std::make_unique<NodeBody>(callback->tok);
-			for(auto &decl : m_declares_per_callback[callback.get()]) {
-				node_body->add_stmt(std::make_unique<NodeStatement>(std::move(decl.second), callback->tok));
-			}
-			callback->statements->prepend_body(std::move(node_body));
+		}
+	}
+
+	void inline visit(NodeBody& node) override {
+		for(auto & stmt : node.statements) {
+			stmt->accept(*this);
 		}
 	}
 
@@ -87,6 +87,18 @@ public:
 				node.is_call = false;
 			}
 		}
+
+		if(m_program->function_call_stack.empty() and !m_declares_per_callback[m_program->current_callback].empty()) {
+			// if in callback, put the declarations right above the function call
+			auto node_body = std::make_unique<NodeBody>(node.tok);
+			node_body->scope = true;
+			for(auto &decl : m_declares_per_callback[m_program->current_callback]) {
+				node_body->add_stmt(std::make_unique<NodeStatement>(clone_as<NodeSingleDeclaration>(decl.second.get()), node.tok));
+			}
+			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
+			node.replace_with(std::move(node_body));
+			return;
+		}
 	}
 
 	void inline visit(NodeFunctionDefinition& node) override {
@@ -140,7 +152,7 @@ private:
         auto node_array_ref = std::make_unique<NodeArrayRef>("array", node_iterator->to_reference(), Token());
         auto node_function_def = std::make_unique<NodeFunctionDefinition>(
                 std::make_unique<NodeFunctionHeader>(
-                        "array_init",
+                        "array.init."+neutral_element->to_string(),
                         std::make_unique<NodeParamList>(
                                 Token(),
                                 node_array->clone(),
@@ -164,6 +176,13 @@ private:
                 TypeRegistry::get_neutral_element_from_type(neutral_element),
                 Token()
             );
+		auto node_inc = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"inc",
+				std::make_unique<NodeParamList>(Token(),node_iterator_ref->clone()),Token()),
+			Token()
+			);
         node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), Token()));
 
         auto new_while = std::make_unique<NodeWhile>(
