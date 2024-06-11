@@ -72,7 +72,7 @@ public:
         for(auto & param : node.body) {
             max_dimension = std::max(max_dimension, (int)param->params.size());
         }
-        if(max_dimension>1) node_main_array->data_type = DataType::List;
+        if(max_dimension>1) node_main_array->data_type = DataType::Mutable;
 
         auto node_declare_main_array = std::make_unique<NodeSingleDeclaration>(
 			clone_as<NodeDataStructure>(node_main_array.get()),

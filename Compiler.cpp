@@ -126,12 +126,12 @@ void Compiler::compile() {
 	ASTGlobalScope global_scope(&m_definition_provider);
 	ast->accept(global_scope);
 
-    ASTPrinter printer;
-    ast->accept(printer);
-    std::filesystem::path current_file_path(__FILE__);
-    std::filesystem::path current_dir = current_file_path.parent_path();
-    std::filesystem::path printer_output = current_dir / "printed.txt";
-    printer.generate(printer_output.string());
+//    ASTPrinter printer;
+//    ast->accept(printer);
+//    std::filesystem::path current_file_path(__FILE__);
+//    std::filesystem::path current_dir = current_file_path.parent_path();
+//    std::filesystem::path printer_output = current_dir / "printed.txt";
+//    printer.generate(printer_output.string());
 
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");
@@ -152,23 +152,11 @@ void Compiler::compile() {
 	ast->accept(optimizations);
 
 	compile_time.stop("Optimization");
-//	compile_time.start("Typechecking");
-//
-//	ASTTypeCasting typecast(&m_definition_provider);
-//	ast->accept(typecast);
-//
-//	ASTTypeChecking type_check;
-//	ast->accept(type_check);
-//
-//	compile_time.stop("Typechecking");
 	compile_time.start("Generator");
 
-//	ASTPrinter printer;
-//	ast->accept(printer);
 
 	ASTGenerator generator;
 	ast->accept(generator);
-//	generator.print();
 	generator.generate(output_filename);
 
 	compile_time.stop("Generator");

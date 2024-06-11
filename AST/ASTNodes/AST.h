@@ -398,26 +398,18 @@ struct NodeProgram : NodeAST {
 	DefinitionProvider* def_provider = nullptr;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
+	std::unique_ptr<NodeBody> global_declarations;
 	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> function_lookup;
-    inline explicit NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {}
-    inline NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
-					   std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok)
-                       : NodeAST(std::move(tok), NodeType::Program), callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)) {
-		set_child_parents();
-	}
+	explicit NodeProgram(Token tok);
+	NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
+					   std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok);
+	~NodeProgram() =default;
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
     NodeProgram(const NodeProgram& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    void update_parents(NodeAST* new_parent) override {
-        parent = new_parent;
-        for(auto & c : callbacks) c->update_parents(this);
-        for(auto & f : function_definitions) f->update_parents(this);
-    }
-	void set_child_parents() override {
-		for(auto& c : callbacks) c->parent = this;
-		for(auto& f : function_definitions) f->parent = this;
-	};
+    void update_parents(NodeAST* new_parent) override;
+	void set_child_parents() override;;
     std::string get_string() override {return "";}
     void update_token_data(const Token& token) override {}
 	/// update function lookup table and falsify visited flag

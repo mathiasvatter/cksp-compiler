@@ -12,9 +12,11 @@ void ASTDesugar::visit(NodeProgram& node) {
     for(auto & function_definition : node.function_definitions) {
         function_definition->accept(*this);
     }
-	m_program->init_callback->statements->prepend_body(declare_compiler_variables());
+	m_program->global_declarations->append_body(declare_compiler_variables());
+	m_program->global_declarations->append_body(std::move(m_global_variable_declarations));
+//	m_program->init_callback->statements->prepend_body(declare_compiler_variables());
 //    m_program->init_callback->statements->prepend_stmt(std::make_unique<NodeStatement>(declare_compiler_variables(), Token()));
-    m_program->init_callback->statements->prepend_body(std::move(m_global_variable_declarations));
+//    m_program->init_callback->statements->prepend_body(std::move(m_global_variable_declarations));
 }
 
 void ASTDesugar::visit(NodeBody& node) {
@@ -118,7 +120,7 @@ void ASTDesugar::visit(NodeParamList &node) {
 std::unique_ptr<NodeBody> ASTDesugar::declare_compiler_variables() {
     Token tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
     auto node_body = std::make_unique<NodeBody>(tok);
-	node_body->scope = true;
+//	node_body->scope = true;
     for(auto & var_name: m_compiler_variables) {
         auto node_variable = std::make_unique<NodeVariable>(
                 std::nullopt,

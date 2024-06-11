@@ -53,7 +53,7 @@ public:
     };
 
     void visit(NodeVariableRef &node) override {
-        if(node.data_type == DataType::UI_Control and node.is_func_arg()) {
+        if(node.data_type == DataType::UIControl and node.is_func_arg()) {
             auto node_get_ui_id = clone_as<NodeFunctionCall>(get_ui_id.get());
             node_get_ui_id->function->ty = TypeRegistry::Integer;
             node_get_ui_id->kind = NodeFunctionCall::Kind::Builtin;
@@ -65,7 +65,7 @@ public:
     }
 
     void visit(NodeArrayRef &node) override {
-        if(node.data_type == DataType::UI_Control and node.is_func_arg()) {
+        if(node.data_type == DataType::UIControl and node.is_func_arg()) {
             auto node_get_ui_id = clone_as<NodeFunctionCall>(get_ui_id.get());
             node_get_ui_id->function->ty = TypeRegistry::Integer;
             node_get_ui_id->kind = NodeFunctionCall::Kind::Builtin;

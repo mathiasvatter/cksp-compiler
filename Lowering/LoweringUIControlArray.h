@@ -43,7 +43,7 @@ public:
 			nullptr, node.tok
 		);
 		// not data typ ui_control anymore
-		node_array_declaration->variable->data_type = DataType::Array;
+		node_array_declaration->variable->data_type = DataType::Mutable;
 		// wrap in statement to make use of replace_child
 		auto node_statement = std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok);
 		// lowering of ndarray, turn Declaration into NodeBody
@@ -126,7 +126,7 @@ public:
 				ui_control.tok
 				);
 			new_ui_control->control_var->name = new_control_name + std::to_string(i);
-			new_ui_control->control_var->data_type = DataType::UI_Control;
+			new_ui_control->control_var->data_type = DataType::UIControl;
 			new_ui_control->control_var->persistence = m_persistence;
 
 			auto new_node_declaration = std::make_unique<NodeSingleDeclaration>(

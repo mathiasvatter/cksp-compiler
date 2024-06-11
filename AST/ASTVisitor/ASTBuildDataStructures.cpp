@@ -11,6 +11,7 @@ void ASTBuildDataStructures::visit(NodeProgram& node) {
 	check_unique_callbacks(node);
 	node.init_callback = move_on_init_callback(node);
 
+	m_program->global_declarations->accept(*this);
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }
@@ -157,7 +158,6 @@ void ASTBuildDataStructures::replace_incorrectly_detected_data_struct(NodeDataSt
 			std::nullopt,
 			data_struct->name,
 			data_struct->ty,
-			DataType::Array,
             nullptr,
 			data_struct->tok);
 		auto new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_array)));
