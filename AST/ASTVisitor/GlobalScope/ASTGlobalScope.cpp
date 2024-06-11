@@ -5,12 +5,18 @@
 #include "ASTGlobalScope.h"
 #include "ASTDynamicExtend.h"
 #include "ASTLambdaLifting.h"
+#include "../ASTPrinter.h"
+#include "../../../Desugaring/DesugarSingleAssign.h"
 
 void ASTGlobalScope::visit(NodeProgram &node) {
 	m_program = &node;
 
+	DesugarSingleAssign desugar_single_assign(m_program);
+	node.accept(desugar_single_assign);
+
 	// first pass to analyze dynamic extend within function definitions and replace with passive_vars
 	ASTDynamicExtend dyn_extend(m_def_provider, m_program);
+	m_program->global_declarations->accept(dyn_extend);
 	for (auto & def : node.function_definitions) {
 		def->accept(dyn_extend);
 	}
@@ -22,4 +28,14 @@ void ASTGlobalScope::visit(NodeProgram &node) {
 
 	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 	node.accept(dyn_extend);
+
+	m_program->init_callback->statements->prepend_body(std::move(m_program->global_declarations));
+	m_program->global_declarations = std::make_unique<NodeBody>(node.tok);
+	m_program->global_declarations->parent = m_program;
+
+	ASTPrinter printer;
+	node.accept(printer);
+	printer.generate("/Users/Mathias/Scripting/ksp-compiler/printed.txt");
 }
+
+

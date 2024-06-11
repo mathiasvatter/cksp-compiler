@@ -161,10 +161,8 @@ Result<std::unique_ptr<NodeArray>> BuiltinsProcessor::parse_builtin_array() {
 		std::nullopt,
 		arr_name,
 		type_annotation.unwrap(),
-		DataType::Array,
 		std::make_unique<NodeParamList>(name), name
 	);
-//    node_array->type = type;
     node_array->is_local = false;
     node_array->is_engine = true;
     return Result<std::unique_ptr<NodeArray>>(std::move(node_array));
@@ -269,7 +267,7 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 			"Failed loading builtins. Found unknown <engine_widget> parameter syntax.", peek(m_tokens).line, ")", peek(m_tokens).val, peek(m_tokens).file));
 		}
 	}
-	node_var->data_type = DataType::UI_Control;
+	node_var->data_type = DataType::UIControl;
 	auto node_ui_control = std::make_unique<NodeUIControl>(ui_control_type, std::move(node_var), std::move(params), tok);
 	node_ui_control->arg_types = types;
 	node_ui_control->ty = node_ui_control->control_var->ty;
@@ -278,7 +276,7 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 
 DataType BuiltinsProcessor::get_var_type_annotation(const std::string& keyword) {
     if(keyword.find("array") != std::string::npos) {
-        return DataType::Array;
+        return DataType::Mutable;
     }
     return DataType::Mutable;
 }

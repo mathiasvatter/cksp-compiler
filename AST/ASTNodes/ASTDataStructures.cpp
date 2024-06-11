@@ -30,11 +30,11 @@ std::unique_ptr<NodeReference> NodeVariable::to_reference() {
 }
 
 std::unique_ptr<class NodeArray> NodeVariable::to_array() {
-	return std::make_unique<NodeArray>(persistence, name, ty, DataType::Array, std::make_unique<NodeInt>(1, tok), tok);
+	return std::make_unique<NodeArray>(persistence, name, ty, std::make_unique<NodeInt>(1, tok), tok);
 }
 
 std::unique_ptr<class NodeNDArray> NodeVariable::to_ndarray() {
-	return std::make_unique<NodeNDArray>(persistence, name, ty, DataType::NDArray, nullptr, tok);
+	return std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
 }
 
 std::unique_ptr<class NodeList> NodeVariable::to_list() {
@@ -73,7 +73,7 @@ std::unique_ptr<NodeReference> NodeArray::to_reference() {
 }
 
 std::unique_ptr<NodeNDArray> NodeArray::to_ndarray() {
-    return std::make_unique<NodeNDArray>(persistence, name, ty, DataType::NDArray, nullptr, tok);
+    return std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
 }
 
 std::unique_ptr<NodeList> NodeArray::to_list() {
@@ -106,7 +106,7 @@ std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
 }
 
 std::unique_ptr<NodeArray> NodeNDArray::to_array() {
-    return std::make_unique<NodeArray>(persistence, name, ty, DataType::Array, nullptr, tok);
+    return std::make_unique<NodeArray>(persistence, name, ty, nullptr, tok);
 }
 
 std::unique_ptr<NodeList> NodeNDArray::to_list() {
@@ -165,11 +165,11 @@ std::unique_ptr<NodeVariable> NodeList::to_variable() {
 }
 
 std::unique_ptr<NodeArray> NodeList::to_array() {
-    return std::make_unique<NodeArray>(persistence, name, ty, DataType::Array, nullptr, tok);
+    return std::make_unique<NodeArray>(persistence, name, ty, nullptr, tok);
 }
 
 std::unique_ptr<NodeNDArray> NodeList::to_ndarray() {
-    return std::make_unique<NodeNDArray>(persistence, name, ty, DataType::NDArray, nullptr, tok);
+    return std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
 }
 
 // ************* NodeConstStatement ***************

@@ -68,10 +68,10 @@ std::vector<std::unique_ptr<NodeDataStructure>> NCKPTranslator::collect_ui_varia
 		auto node_ui_control = std::unique_ptr<NodeUIControl>(static_cast<NodeUIControl*>(node_ast.release()));
 		if(auto node_variable = cast_node<NodeVariable>(node_ui_control->control_var.get())) {
 			node_variable->name = ui_var;
-            node_variable->data_type = DataType::UI_Control;
+            node_variable->data_type = DataType::UIControl;
 		} else if(auto node_array  = cast_node<NodeArray>(node_ui_control->control_var.get())) {
 			node_array->name = ui_var;
-            node_array->data_type = DataType::UI_Control;
+            node_array->data_type = DataType::UIControl;
 		}
 		auto num_params = node_ui_control->params->params.size();
 		node_ui_control->params->params.clear();

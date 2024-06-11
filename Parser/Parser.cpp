@@ -127,11 +127,9 @@ Result<std::unique_ptr<NodeVariableRef>> Parser::parse_variable_ref(NodeAST* par
 	std::string var_name = var_token.val;
 	auto ty = TypeRegistry::get_type_from_identifier(var_name[0]);
 	if(ty != TypeRegistry::Unknown) var_name = var_name.erase(0,1);
-//	auto type = infer_type_from_identifier(var_name);
 	auto node_variable_ref = std::make_unique<NodeVariableRef>(var_name, var_token);
 	node_variable_ref->parent = parent;
 	node_variable_ref->ty = ty;
-//	node_variable_ref->type = type;
 	return Result<std::unique_ptr<NodeVariableRef>>(std::move(node_variable_ref));
 }
 
@@ -141,7 +139,6 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
     std::string arr_name = arr_token.val;
 	auto ty = TypeRegistry::get_type_from_identifier(arr_name[0]);
 	if(ty != TypeRegistry::Unknown) arr_name = arr_name.erase(0,1);
-//	auto type = infer_type_from_identifier(arr_name);
 	std::unique_ptr<NodeDataStructure> node_array = nullptr;
 	std::unique_ptr<NodeParamList> sizes = std::make_unique<NodeParamList>(arr_token);
     sizes->parent = node_array.get();
@@ -169,7 +166,7 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 	if(sizes->params.size() > 1) {
 		auto node = std::make_unique<NodeNDArray>(
 			std::move(is_persistent),
-			arr_name, ty, var_type,
+			arr_name, ty,
 			std::move(sizes), arr_token
 		);
 		node->dimensions = node->sizes->params.size();
@@ -1027,7 +1024,7 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_declare_array(NodeAST* 
         is_global = peek().type == token::GLOBAL;
         consume();
     }
-    DataType var_type = DataType::Array;
+    DataType var_type = DataType::Mutable;
     if(peek().type != token::KEYWORD) {
         return Result<std::unique_ptr<NodeDataStructure>>(CompileError(ErrorType::SyntaxError,
                                                                        "Found unknown array declaration syntax.", "array keyword", peek()));
@@ -1053,7 +1050,7 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
         consume();
     }
     auto node_ui_control = std::make_unique<NodeUIControl>(get_tok());
-    DataType var_type = DataType::UI_Control;
+    DataType var_type = DataType::UIControl;
     if(peek().type != token::UI_CONTROL) {
         return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::SyntaxError,
                                                                    "Found unknown ui_control declaration syntax.", "valid ui_control type", peek()));

@@ -1,138 +1,120 @@
-{ Compiled with cksp version 0.0.5 on Mon Jun 10 20:33:56 2024 }
+{ Compiled with cksp version 0.0.5 on Tue Jun 11 19:48:04 2024 }
 on init
   declare  _return_dummy
   declare !_loc_var_str[1]
   declare ?_loc_var_real[1]
   declare %_loc_var_int[1]
-  declare %loc_7
-  declare $loc_8
-  declare $loc_9
-  declare $loc_10
-  declare @loc_11
-  declare %loc_12
-  declare $loc_13
+  declare $_iterator
   declare %clicktime[3]
   declare $g
-  declare $_iterator
   declare const $mult_array__SIZE_D1 := 3
   declare const $mult_array__SIZE_D2 := 2
   declare %_mult_array[6] := (1, 2, 2, 34)
-  %loc_7 := 0
-  $loc_8 := 0
-  $loc_9 := 0
-  $loc_10 := 0
-  @loc_11 := ""
-  %loc_12 := 0
-  $loc_13 := 0
-  @loc_11 := "sdlkj"
-  message($g & @loc_11)
-  %loc_7[0] := 1
-  %loc_7[1] := 2
+  declare @loc_6
+  declare %loc_7
+  declare $loc_8
+  declare %loc_9
+  declare $loc_10
+  declare $loc_11
+  @loc_6 := "sdlkj"
+  message($g & @loc_6)
   $loc_8 := 0
   message($loc_8)
   if($loc_8 = 1)
-    $loc_9 := 0
     $loc_10 := 0
-    message($loc_9 & $loc_10)
+    while($loc_10 < num_elements(%loc_9)) 
+      %loc_9[$loc_10] := 1
+      inc($loc_10)
+    end while
+    $loc_10 := 0
+    $loc_11 := 0
+    message($loc_10 & $loc_11)
   end if
   if($loc_8 = 2)
-    $loc_9 := 0
     $loc_10 := 0
-    message($loc_9 & $loc_10)
+    $loc_11 := 0
+    message($loc_10 & $loc_11)
   end if
-  %loc_12[0] := 3
-  %loc_12[1] := 4
-  $loc_13 := 0
-  $loc_13 := 0
-  while($loc_13 < num_elements(%loc_12[$loc_13])) 
-    %loc_12[$loc_13] := 0
-    inc($loc_13)
-  end while
-  $loc_9 := 0
-  $loc_9 := 0
-  while($loc_9 < num_elements(%loc_12[$loc_9])) 
-    %loc_12[$loc_9] := 0
-    inc($loc_9)
-  end while
-  $loc_9 := 0
+  %loc_7[0] := 3
+  %loc_7[1] := 4
+  @loc_6 := ""
   $loc_8 := 0
+  $loc_11 := 0
   $loc_10 := 0
-  @loc_11 := ""
-  $loc_13 := 0
-  $loc_13 := 0
-  while($loc_13 < num_elements(%loc_12[$loc_13])) 
-    %loc_12[$loc_13] := 0
-    inc($loc_13)
-  end while
-  $loc_9 := 0
-  @loc_11 := "sdlkj"
-  message($g & @loc_11)
-  %loc_12[0] := 1
-  %loc_12[1] := 2
-  $loc_9 := 0
-  message($loc_9)
-  if($loc_9 = 1)
-    $loc_8 := 0
+  @loc_6 := "sdlkj"
+  message($g & @loc_6)
+  $loc_8 := 0
+  message($loc_8)
+  if($loc_8 = 1)
+    $loc_11 := 0
+    while($loc_11 < num_elements(%loc_9)) 
+      %loc_9[$loc_11] := 1
+      inc($loc_11)
+    end while
+    $loc_11 := 0
     $loc_10 := 0
-    message($loc_8 & $loc_10)
+    message($loc_11 & $loc_10)
   end if
-  if($loc_9 = 2)
-    $loc_8 := 0
+  if($loc_8 = 2)
+    $loc_11 := 0
     $loc_10 := 0
-    message($loc_8 & $loc_10)
+    message($loc_11 & $loc_10)
   end if
-  %loc_12[0] := 3
-  %loc_12[1] := 4
-  $loc_9 := 0
-  $loc_9 := 0
-  while($loc_9 < num_elements(%loc_12[$loc_9])) 
-    %loc_12[$loc_9] := 0
-    inc($loc_9)
-  end while
+  %loc_7[0] := 3
+  %loc_7[1] := 4
 end on
 on persistence_changed
+  $loc_8 := 0
+  while($loc_8 < num_elements(%loc_7)) 
+    %loc_7[$loc_8] := 0
+    inc($loc_8)
+  end while
+  $loc_8 := 0
+  $loc_11 := 0
+  $loc_10 := 0
+  $loc_8 := 0
+  message($loc_8)
+  if($loc_8 = 1)
+    $loc_11 := 0
+    while($loc_11 < num_elements(%loc_7)) 
+      %loc_7[$loc_11] := 1
+      inc($loc_11)
+    end while
+    $loc_11 := 0
+    $loc_10 := 0
+    message($loc_11 & $loc_10)
+  end if
+  if($loc_8 = 2)
+    $loc_11 := 0
+    $loc_10 := 0
+    message($loc_11 & $loc_10)
+  end if
 end on
 on release
-  $loc_9 := 0
-  $loc_9 := 0
-  while($loc_9 < num_elements(%loc_12[$loc_9])) 
-    %loc_12[$loc_9] := 0
-    inc($loc_9)
-  end while
-  $loc_9 := 0
+  @loc_6 := ""
   $loc_8 := 0
+  $loc_11 := 0
   $loc_10 := 0
-  @loc_11 := ""
-  $loc_13 := 0
-  $loc_13 := 0
-  while($loc_13 < num_elements(%loc_12[$loc_13])) 
-    %loc_12[$loc_13] := 0
-    inc($loc_13)
-  end while
-  $loc_9 := 0
-  @loc_11 := "sdlkj"
-  message($g & @loc_11)
-  %loc_12[0] := 1
-  %loc_12[1] := 2
-  $loc_9 := 0
-  message($loc_9)
-  if($loc_9 = 1)
-    $loc_8 := 0
+  @loc_6 := "sdlkj"
+  message($g & @loc_6)
+  $loc_8 := 0
+  message($loc_8)
+  if($loc_8 = 1)
+    $loc_11 := 0
+    while($loc_11 < num_elements(%loc_9)) 
+      %loc_9[$loc_11] := 1
+      inc($loc_11)
+    end while
+    $loc_11 := 0
     $loc_10 := 0
-    message($loc_8 & $loc_10)
+    message($loc_11 & $loc_10)
   end if
-  if($loc_9 = 2)
-    $loc_8 := 0
+  if($loc_8 = 2)
+    $loc_11 := 0
     $loc_10 := 0
-    message($loc_8 & $loc_10)
+    message($loc_11 & $loc_10)
   end if
-  %loc_12[0] := 3
-  %loc_12[1] := 4
-  $loc_9 := 0
-  $loc_9 := 0
-  while($loc_9 < num_elements(%loc_12[$loc_9])) 
-    %loc_12[$loc_9] := 0
-    inc($loc_9)
-  end while
+  %loc_7[0] := 3
+  %loc_7[1] := 4
 end on
 

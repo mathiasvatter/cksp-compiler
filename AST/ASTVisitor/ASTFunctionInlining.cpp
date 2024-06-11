@@ -560,7 +560,6 @@ void ASTFunctionInlining::declare_local_var_arrays() {
 			std::nullopt,
 			arr_name.second,
             arr_name.first,
-			DataType::Array,
 			std::make_unique<NodeInt>(std::max(1,(int)m_local_variables.size()), tok),
 			tok);
 

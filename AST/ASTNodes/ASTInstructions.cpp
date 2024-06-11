@@ -319,7 +319,9 @@ void NodeBody::cleanup_body() {
         if(statement->statement->get_node_type() == NodeType::Body) {
             // Übertragen Sie die function_inlines vom aktuellen NodeBody-Element
             // auf das erste Element der inneren NodeBody
-            auto& inner_statements = static_cast<NodeBody*>(statement->statement.get())->statements;
+			auto node_innner_body = static_cast<NodeBody*>(statement->statement.get());
+//			if(node_innner_body->scope) continue;
+            auto& inner_statements = node_innner_body->statements;
             if (!inner_statements.empty()) {
                 inner_statements[0]->function_inlines.insert(
                         inner_statements[0]->function_inlines.end(),

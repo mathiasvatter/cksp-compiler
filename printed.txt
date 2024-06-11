@@ -1,84 +1,76 @@
 on init
-	declare loc_7 : int[]
-	declare loc_8 : int
-	declare loc_9 : int
-	declare loc_10 : int
-	declare loc_11 : string
-	declare loc_12 : int[]
-	declare loc_13 : int
+	declare _iterator : int
 	declare clicktime[3] : int[]
 	declare g : int
-	declare _iterator : int
 	declare const mult_array.SIZE_D1 : int := 3
 	declare const mult_array.SIZE_D2 : int := 2
 	declare _mult_array[3 * 2] : int[] := (1, 2, 2, 34)
-	loc_7 := (0)
+	declare loc_6 : string
+	declare loc_7 : int[]
+	declare loc_8 : int
+	declare loc_9 : int[]
+	declare loc_10 : int
+	declare loc_11 : int
+	scoped_func1(loc_6, loc_7, loc_8, loc_9, loc_10, loc_11)
+	loc_6 := ""
 	loc_8 := 0
-	loc_9 := 0
+	loc_11 := 0
 	loc_10 := 0
-	loc_11 := ""
-	loc_12 := (0)
-	loc_13 := 0
-	scoped_func1(loc_7, loc_8, loc_9, loc_10, loc_11, loc_12, loc_13)
-	loc_9 := 0
-	array.init.Integer(loc_12, loc_9)
-	loc_9 := 0
-	loc_8 := 0
-	loc_10 := 0
-	loc_11 := ""
-	loc_13 := 0
-	array.init.Integer(loc_12, loc_13)
-	loc_9 := 0
-	scoped_func1(loc_12, loc_9, loc_8, loc_10, loc_11, loc_12, loc_9)
+	scoped_func1(loc_6, loc_7, loc_8, loc_9, loc_11, loc_10)
 end on
 
 on persistence_changed
+	loc_8 := 0
+	array.init.Integer(loc_7, loc_8, 0)
+	loc_8 := 0
+	loc_11 := 0
+	loc_10 := 0
+	scoped_func2(loc_8, loc_7, loc_11, loc_10)
 end on
 
 on release
-	loc_9 := 0
-	array.init.Integer(loc_12, loc_9)
-	loc_9 := 0
+	loc_6 := ""
 	loc_8 := 0
+	loc_11 := 0
 	loc_10 := 0
-	loc_11 := ""
-	loc_13 := 0
-	array.init.Integer(loc_12, loc_13)
-	loc_9 := 0
-	scoped_func1(loc_12, loc_9, loc_8, loc_10, loc_11, loc_12, loc_9)
+	scoped_func1(loc_6, loc_7, loc_8, loc_9, loc_11, loc_10)
 end on
 
-function scoped_func2(loc_0 : int[], loc_1 : int, loc_2 : int, loc_3 : int)
-	loc_0[0] := 1
-	loc_0[1] := 2
-	loc_1 := 0
-	message(loc_1)
-	if(loc_1 = 1)
-		loc_2 := 0
-		loc_3 := 0
-		message(loc_2 & loc_3)
-	end if
-	if(loc_1 = 2)
-		loc_2 := 0
-		loc_3 := 0
-		message(loc_2 & loc_3)
+function scoped_func1(loc_0 : string, loc_1 : int[], loc_2 : int, loc_3 : int[], loc_4 : int, loc_5 : int)
+	loc_0 := "sdlkj"
+	message(g & loc_0)
+	scoped_func2(loc_2, loc_3, loc_4, loc_5)
+	loc_1[0] := 3
+	loc_1[1] := 4
+end function
+
+function only_free_vars()
+	message(g)
+	if(g = 0)
+		message(clicktime[0])
 	end if
 end function
 
-function scoped_func1(loc_0 : int[], loc_1 : int, loc_2 : int, loc_3 : int, loc_4 : string, loc_5 : int[], loc_6 : int)
-	loc_4 := "sdlkj"
-	message(g & loc_4)
-	scoped_func2(loc_0, loc_1, loc_2, loc_3)
-	loc_5[0] := 3
-	loc_5[1] := 4
-	loc_6 := 0
-	array.init.Integer(loc_5, loc_6)
+function scoped_func2(loc_2 : int, loc_3 : int[], loc_4 : int, loc_5 : int)
+	loc_2 := 0
+	message(loc_2)
+	if(loc_2 = 1)
+		loc_4 := 0
+		array.init.Integer(loc_3, loc_4, 1)
+		loc_4 := 0
+		loc_5 := 0
+		message(loc_4 & loc_5)
+	end if
+	if(loc_2 = 2)
+		loc_4 := 0
+		loc_5 := 0
+		message(loc_4 & loc_5)
+	end if
 end function
 
-function array.init.Integer(array : int, _iter : int)
-	_iter := 0
-	while(_iter < num_elements(array[_iter])) 
-		array[_iter] := 0
+function array.init.Integer(array : int, _iter : int, value : int)
+	while(_iter < num_elements(array)) 
+		array[_iter] := value
 		inc(_iter)
 	end while
 end function

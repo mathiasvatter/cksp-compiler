@@ -333,17 +333,45 @@ void NodeFunctionDefinition::set_child_parents() {
 
 
 // ************* NodeProgramm ***************
+NodeProgram::NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {
+	global_declarations = std::make_unique<NodeBody>(Token());
+	set_child_parents();
+}
+
+NodeProgram::NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
+						 std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions,
+						 Token tok)
+	: NodeAST(std::move(tok), NodeType::Program), callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)) {
+	global_declarations = std::make_unique<NodeBody>(Token());
+	set_child_parents();
+}
+
 void NodeProgram::accept(ASTVisitor& visitor) {
     visitor.visit(*this);
 }
+
 NodeProgram::NodeProgram(const NodeProgram& other) : NodeAST(other), init_callback(other.init_callback) {
     callbacks = clone_vector<NodeCallback>(other.callbacks);
     function_definitions = clone_vector<NodeFunctionDefinition>(other.function_definitions);
 	function_lookup = other.function_lookup;
 	set_child_parents();
 }
+
 std::unique_ptr<NodeAST> NodeProgram::clone() const {
     return std::make_unique<NodeProgram>(*this);
+}
+
+void NodeProgram::set_child_parents() {
+	global_declarations->parent = this;
+	for(auto& c : callbacks) c->parent = this;
+	for(auto& f : function_definitions) f->parent = this;
+}
+
+void NodeProgram::update_parents(NodeAST *new_parent) {
+	parent = new_parent;
+	global_declarations->update_parents(this);
+	for(auto & c : callbacks) c->update_parents(this);
+	for(auto & f : function_definitions) f->update_parents(this);
 }
 
 void NodeProgram::update_function_lookup() {
@@ -352,6 +380,11 @@ void NodeProgram::update_function_lookup() {
 		function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
 	}
 }
+
+
+
+
+
 
 
 

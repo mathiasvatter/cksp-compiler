@@ -108,6 +108,12 @@ public:
 
 		// return if not in function
 		if(m_program->function_call_stack.empty()) return;
+		if(node.variable->data_type == DataType::Const) {
+			m_program->global_declarations->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
+			node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+			return;
+		}
+
         // visit declaration node because array as function param needs to have <no brackets>
         node.variable->accept(*this);
 		m_local_var_declarations[m_program->function_call_stack.top()].emplace(
@@ -118,18 +124,10 @@ public:
                        )
                    );
 
-		auto node_assignment = node.to_assign_stmt();
-		if(auto desugar = node_assignment->get_desugaring(m_program)) {
-			node_assignment->accept(*desugar);
-			if(auto replacement = std::move(desugar->replacement_node)) {
-				replacement->accept(*this);
-				node.replace_with(std::move(replacement));
-				return;
-			}
-			node.replace_with(std::move(node_assignment));
-			return;
-		}
-//		node.replace_with(node.to_assign_stmt());
+
+//		auto node_assignment = node.to_assign_stmt();
+//		node.replace_with(std::move(node_assignment));
+		node.replace_with(to_assign_statement(node));
 
 	}
 

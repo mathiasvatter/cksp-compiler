@@ -11,6 +11,7 @@ void TypeInference::visit(NodeProgram& node) {
 	for(auto & function_definition : node.function_definitions) {
 		function_definition->accept(*this);
 	}
+	m_program->global_declarations->accept(*this);
 	for(auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
@@ -77,7 +78,7 @@ void TypeInference::visit(NodeVariableRef& node) {
     // check if callback id reference is ui_control
     if(node.parent->get_node_type() == NodeType::Callback) {
         auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
-        if(node.data_type != DataType::UI_Control) {
+        if(node.data_type != DataType::UIControl) {
             error.m_message = "<Variable> needs to be of type <UI Control> to be referenced in <UI Callback>.";
             error.exit();
         } else {
@@ -127,7 +128,7 @@ void TypeInference::visit(NodeArrayRef& node) {
     // check if callback id reference is ui_control
     if(node.parent->get_node_type() == NodeType::Callback) {
         auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
-        if (node.data_type != DataType::UI_Control) {
+        if (node.data_type != DataType::UIControl) {
             error.m_message = "<Array> needs to be of type <UI Control> to be referenced in <UI Callback>.";
             error.exit();
         }

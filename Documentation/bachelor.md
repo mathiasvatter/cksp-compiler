@@ -5,64 +5,105 @@
 - Checking of scopes and variable shadowing
 - rename local variables to get global scoping
 - reuse variables depending on their dynamic extend
-- do lambda lifting in functions
-- (turn local variables into global array)
+- do parameter promotion (lambda lifting?) in functions
+- (turn local variables into global array?)
 
 ### Vorgehen:
-1. Variablen und Scopes tracken
-2. Dynamischen Extend von Variablen/Arrays innerhalb verschiedener Scopes in den Funktionen tracken und mit typisierten Variablen austauschen, deren dynamic extend bereits abgelaufen ist.
-    Declarationen werden durch Assignments mit neutralen Elementen ersetzt.
-3. Alle lokalen Variablen mit Gensym umbenennen.
-4. Lambda Lifting mit allen Funktionen durchführen, bis alle Variablen in Callbacks sind.
-5. Punkt 2 und 3 mit allen Callbacks ausführen.
+#### Nur in Funktionsdefinitionen:
+  1. Variablen und Scopes tracken
+      - Nehme einen Stack aus Maps an Variablen, pro Scope wird eine neue Map eingesetzt, die mit Variablen/Arrays gefüllt wird
+      - jede Variable Reference erhält einen Pointer auf ihr deklaration in der Map 
+  2. Dynamischen Extend von Variablen/Arrays innerhalb verschiedener Scopes in den Funktionen tracken und mit typisierten Variablen austauschen, 
+  deren dynamic extend bereits abgelaufen ist. Declarationen werden durch Assignments mit neutralen Elementen ersetzt.
+      - Erstelle eine Map aus "passive variables" mit Hashwerten aus Variablen Typen (und Array sizes). Sobald ein Scope verlassen wird, werden die Variablen (deren dynamic extend nun abgelaufen ist)
+      in die Map eingetragen.
+      - Bei jeder neuen Deklaration wird geprüft, ob eine Variable mit gleichem Typ bereits in der Map ist. Falls ja, wird die Variable durch eine Referenz auf die Map ersetzt.
+      - Ersetzte Deklarationen werden durch Assignments (mit neutralen Elementen) ersetzt.
+  3. Alle lokalen Variablen mit Gensym umbenennen.
+      - Tracke alle Variablen und Referenzen in Listen und benenne sie mit Gensym um, damit kein Variable Capturing stattfindet,
+     wenn eine der freien "passiven Variablen" gleich heißt wie eine Variable im Scope.
+     
+#### Beispiel:
 
-### Beispiel:
-#### Vorher:
+__Pre Function Definition:__
 ```c
 function scoped_func2()
-	declare i: int
-	message(i)
-	if(i = 1)
-		declare loc_array[5] := (1,2,3,4)
-		declare j: int, k: int
-		message(j & k & loc_array[3])
-	end if
-	if(i = 2)
-		declare h: int, g: int
-		message(h & g)
-	end if
+    declare i: int
+    message(i)
+    if(i = 1)
+        declare arr[5] := (1,2,3,4) // <- turns into passive var as soon as scope is left
+        declare j: int // <- turns into passive var as soon as scope is left
+        declare k: int // <- turns into passive var as soon as scope is left
+        message(j & k & arr[3])
+    end if
+    if(i = 2)
+        declare h: int // <- will be replaced by passive var
+        declare g: int // <- will be replaced by passive var
+        message(h & g)
+    end if
 end function
 ```
-#### Nachher:
+__Post Function Definition:__
 ```c
 function scoped_func2(loc_0 : int, loc_1 : int[], loc_2 : int, loc_3 : int)
-	loc_0 := 0
-	message(loc_0)
-	if(loc_0 = 1)
-		loc_1 := (1, 2, 3, 4) // <- so direkt in KSP nicht möglich
-		loc_2 := 0
-		loc_3 := 0
-		message(loc_2 & loc_3 & loc_1[3])
-	end if
-	if(loc_0 = 2)
-		loc_2 := 0
-		loc_3 := 0
-		message(loc_2 & loc_3)
-	end if
+    loc_0 := 0
+    message(loc_0)
+    if(loc_0 = 1)
+        loc_1 := (1, 2, 3, 4) // <- so direkt in KSP nicht möglich
+        loc_2 := 0
+        loc_3 := 0
+        message(loc_2 & loc_3 & loc_1[3])
+    end if
+    if(loc_0 = 2)
+        loc_2 := 0
+        loc_3 := 0
+        message(loc_2 & loc_3)
+    end if
 end function
 ```
+#### Nur in Callbacks:
+   4. Parameter Promotion/(Lambda Lifting?) mit allen Funktionen durchführen, bis alle Variablen in Callbacks sind.
+      - Führe die ersten drei Schritte zunächst nur mit den Funktionsdefinitionen durch.
+      - Besuche nun jeden Function Call bis zum letzten nested call, füge die lokalen Deklarationen als neue Parameter und in eine Map mit pointer auf die nächst höhere Funktionsdefinitionen ein.
+      - Wiederhole dieses Vorgehen bis der Function Call Stack leer ist und füge die Deklarationen in den Callback ein.
+      
+#### Beispiel:
+
+__Pre Parameter Promotion:__
+```c
+on persistence_changed // <- callback
+	declare array[3] := (1,2,5)
+	scoped_func2()
+end on
+```
+__Post Parameter Promotion:__
+```c
+on persistence_changed
+    declare array[3] := (1,2,5)
+	declare loc_1: int
+	declare loc_2: int[]
+	declare loc_3: int
+	scoped_func2(loc_1, loc_2, loc_3)
+end on
+```
+   5. Punkt 2 und 3 mit allen Callbacks ausführen, ohne die Funktionen zu besuchen.
+      - Führe die Schritte durch und ersetze die Deklarationen in den Callbacks durch passive Variablen.
+      - Füge alle Deklarationen in den init Callback ein.
+      - Umbenennung mit Gensym.
+
 
 ### Herausforderungen:
 - Lambda Lifting bringt Overhead an Funktionsparametern mit sich -> Funktionen die vorher gecallt werden konnten 
 (also keine Parameter hatten) und nicht inlined werden mussten, müssen jetzt inlined werden, was wiederum zu mehr Overhead und längerem Code führt.
-__Lösung?:__ Globaler Stack, der alle Funktionsparameter vorher übergibt und nachher wieder ausgibt.
-- Durch Lambda Lifting und das mehrfache Auslagern von Declarations (in Callbacks und dann in den init Callback) kommt
-es zu vielen unnötigen Assignments.
-__Lösung?:__ Optimierung der Assignments durch Code-Flow Analyse und Dead Code Elimination.
+   * __Lösung?:__ Globaler Stack, der alle Funktionsparameter vorher übergibt und nachher wieder ausgibt.
 - Arrays müssen bei Wiederverwendung neu initialisiert werden, was aber in KSP nicht direkt supported ist
-__Lösung?:__ Erstelle Funktion (bereits lambda lifted), die dort eingesetzt wird, wo Arrays initialisiert werden.
+  * __Lösung:__ Erstelle Funktion (bereits parameter promoted), die dort eingesetzt wird, wo Arrays initialisiert 
+    werden, mit dem Array Typ im Namen.
+  * 
 - Array sizes sind nicht unbedingt bekannt, die Wiederverwendung von Arrays hängt derzeit nur an Typ und Dimension.
-__Lösung?:__ Wiederverwendung von Arrays auch anhand der Größe (womöglich vorher constant propagation machen?)
+  * __Lösung?:__ Wiederverwendung von Arrays auch anhand der Größe (womöglich vorher constant propagation machen?)
+
+
 
 ## 2. Rekursive Data Structure declaration and dynamic allocation
 - Allow declaration of structs by lowering them to arrays

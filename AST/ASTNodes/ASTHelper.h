@@ -10,13 +10,23 @@
 enum class DataType {
 	Const,
 	Polyphonic,
-	Array,
-	NDArray,
-	List,
 	Mutable,
-	Define,
-	UI_Control,
+	UIControl,
 };
+
+inline std::string data_type_to_string(DataType type) {
+	switch (type) {
+	case DataType::Const:
+		return "const";
+	case DataType::Polyphonic:
+		return "polyphonic";
+	case DataType::Mutable:
+		return "mutable";
+	case DataType::UIControl:
+		return "ui_control";
+	}
+	return "unknown";
+}
 
 enum class NodeStructureType {
     AST,

@@ -32,18 +32,11 @@ struct NodeArray : NodeDataStructure {
 	bool show_brackets = true;
 	std::unique_ptr<NodeAST> size = nullptr;
 	inline NodeArray(std::string name, Token tok) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::Array) {}
-	inline NodeArray(std::optional<Token> is_persistent, std::string name, Type* ty, DataType var_type, std::unique_ptr<NodeAST> size, Token tok)
-		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::Array),
-		  size(std::move(size)) {
-		persistence = std::move(is_persistent);
-		this->data_type = var_type;
-		set_child_parents();
-	}
     inline NodeArray(std::optional<Token> is_persistent, std::string name, Type* ty, std::unique_ptr<NodeAST> size, Token tok)
             : NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::Array),
               size(std::move(size)) {
         persistence = std::move(is_persistent);
-        this->data_type = DataType::Array;
+        this->data_type = DataType::Mutable;
         set_child_parents();
     }
 	void accept(ASTVisitor& visitor) override;
@@ -77,11 +70,11 @@ struct NodeNDArray : NodeDataStructure {
 	bool show_brackets = true;
 	std::unique_ptr<NodeParamList> sizes = nullptr;
 	inline explicit NodeNDArray(std::string name, Token tok) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, tok, NodeType::NDArray) {}
-	inline NodeNDArray(std::optional<Token> is_persistent, std::string name, Type* ty, DataType var_type, std::unique_ptr<NodeParamList> sizes, Token tok)
-		: NodeDataStructure(std::move(name), ty, tok, NodeType::NDArray),
+	inline NodeNDArray(std::optional<Token> is_persistent, std::string name, Type *ty, std::unique_ptr<NodeParamList> sizes, Token tok)
+		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::NDArray),
 		  sizes(std::move(sizes)) {
 		persistence = std::move(is_persistent);
-		this->data_type = var_type;
+		this->data_type = DataType::Mutable;
 		set_child_parents();
 	}
 	void accept(ASTVisitor& visitor) override;
