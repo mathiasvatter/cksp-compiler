@@ -9,7 +9,7 @@
 /// entry points: NodeSingleDeclaration
 class LoweringNDArray : public ASTLowering {
 public:
-	explicit LoweringNDArray(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
+	explicit LoweringNDArray(NodeProgram* program) : ASTLowering(program) {}
 
 	/// returns a statement list with the declarations of the size constants of the array
 	void visit(NodeSingleDeclaration &node) override {
@@ -48,7 +48,7 @@ public:
 		node_lowered_array->parent = node.parent;
 		node_lowered_array->is_local = node.is_local;
 		node_lowered_array->data_type = node.data_type;
-		if(auto lowering = node_lowered_array->get_lowering(m_def_provider)) {
+		if(auto lowering = node_lowered_array->get_lowering(m_program)) {
 			node_lowered_array->accept(*lowering);
 		}
 		node.replace_with(std::move(node_lowered_array));

@@ -21,23 +21,6 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_declare_variable(const std::stri
 }
 
 
-std::unique_ptr<NodeBody> ASTVisitor::array_initialization(NodeArray* array, NodeParamList* list) {
-    auto node_body = std::make_unique<NodeBody>(array->tok);
-    for(int i = 0; i<list->params.size(); i++) {
-		auto array_ref = std::make_unique<NodeArrayRef>(
-			array->name,
-			std::make_unique<NodeInt>((int32_t)i, array->tok),
-			array->tok);
-		array_ref->match_data_structure(array);
-        auto node_assign_statement = std::make_unique<NodeSingleAssignment>(
-                std::move(array_ref),
-                std::move(list->params[i]),
-                list->params[i]->tok);
-        node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_assign_statement), array->tok));
-    }
-    return std::move(node_body);
-}
-
 std::unique_ptr<NodeBody> ASTVisitor::make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent) {
     auto node_body = std::make_unique<NodeBody>(var->tok);
     auto node_assignment = std::make_unique<NodeSingleAssignment>(

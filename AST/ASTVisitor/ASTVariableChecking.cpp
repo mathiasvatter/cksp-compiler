@@ -31,7 +31,10 @@ void ASTVariableChecking::visit(NodeProgram& node) {
 void ASTVariableChecking::visit(NodeCallback& node) {
 	m_program->current_callback = &node;
 
-	if(node.callback_id) node.callback_id->accept(*this);
+	if(node.callback_id) {
+		node.callback_id->accept(*this);
+		if(fail) check_callback_id_data_type(node.callback_id.get());
+	}
 	node.statements->accept(*this);
 
 	m_program->current_callback = nullptr;

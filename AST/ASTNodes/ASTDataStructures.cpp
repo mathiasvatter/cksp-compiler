@@ -60,8 +60,8 @@ NodeAST * NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
 	return nullptr;
 }
 
-ASTVisitor* NodeArray::get_lowering(DefinitionProvider* def_provider) const {
-	static LoweringArray lowering(def_provider);
+ASTVisitor* NodeArray::get_lowering(NodeProgram *program) const {
+	static LoweringArray lowering(program);
 	return &lowering;
 }
 
@@ -93,8 +93,8 @@ std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 	return std::make_unique<NodeNDArray>(*this);
 }
 
-ASTVisitor* NodeNDArray::get_lowering(DefinitionProvider* def_provider) const {
-	static LoweringNDArray lowering(def_provider);
+ASTVisitor* NodeNDArray::get_lowering(NodeProgram *program) const {
+	static LoweringNDArray lowering(program);
 	return &lowering;
 }
 
@@ -137,8 +137,8 @@ NodeAST * NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 	return nullptr;
 }
 
-ASTVisitor* NodeUIControl::get_lowering(DefinitionProvider* def_provider) const {
-	static LoweringUIControlArray lowering(def_provider);
+ASTVisitor* NodeUIControl::get_lowering(NodeProgram *program) const {
+	static LoweringUIControlArray lowering(program);
 	return &lowering;
 }
 
@@ -155,8 +155,8 @@ std::unique_ptr<NodeAST> NodeList::clone() const {
 	return std::make_unique<NodeList>(*this);
 }
 
-ASTVisitor* NodeList::get_lowering(DefinitionProvider* def_provider) const {
-	static LoweringList lowering(def_provider);
+ASTVisitor* NodeList::get_lowering(NodeProgram *program) const {
+	static LoweringList lowering(program);
 	return &lowering;
 }
 
@@ -185,7 +185,7 @@ std::unique_ptr<NodeAST> NodeConstStatement::clone() const {
     return std::make_unique<NodeConstStatement>(*this);
 }
 
-ASTVisitor* NodeConstStatement::get_lowering(DefinitionProvider* def_provider) const {
-    static LoweringConstStruct lowering(def_provider);
+ASTVisitor* NodeConstStatement::get_lowering(NodeProgram *program) const {
+    static LoweringConstStruct lowering(program);
     return &lowering;
 }

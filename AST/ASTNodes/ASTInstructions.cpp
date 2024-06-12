@@ -45,8 +45,8 @@ NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
 std::unique_ptr<NodeAST> NodeFunctionCall::clone() const {
     return std::make_unique<NodeFunctionCall>(*this);
 }
-ASTVisitor* NodeFunctionCall::get_lowering(DefinitionProvider* def_provider) const {
-    static LoweringFunctionCall lowering(def_provider);
+ASTVisitor* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
+    static LoweringFunctionCall lowering(program);
     return &lowering;
 }
 
@@ -157,8 +157,8 @@ NodeAST * NodeSingleAssignment::replace_child(NodeAST* oldChild, std::unique_ptr
     return nullptr;
 }
 
-ASTVisitor* NodeSingleAssignment::get_lowering(DefinitionProvider* def_provider) const {
-    return this->l_value->get_lowering(def_provider);
+ASTVisitor* NodeSingleAssignment::get_lowering(struct NodeProgram *program) const {
+    return this->l_value->get_lowering(program);
 }
 
 ASTDesugaring * NodeSingleAssignment::get_desugaring(NodeProgram *program) const {
@@ -198,7 +198,7 @@ void NodeSingleDeclaration::accept(ASTVisitor &visitor) {
 }
 NodeSingleDeclaration::NodeSingleDeclaration(const NodeSingleDeclaration& other)
         : NodeInstruction(other), variable(clone_unique(other.variable)),
-          value(clone_unique(other.value)) {
+          value(clone_unique(other.value)), is_promoted(other.is_promoted) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleDeclaration::clone() const {
@@ -218,8 +218,8 @@ NodeAST * NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_pt
     return nullptr;
 }
 
-ASTVisitor* NodeSingleDeclaration::get_lowering(DefinitionProvider* def_provider) const {
-    return this->variable->get_lowering(def_provider);
+ASTVisitor* NodeSingleDeclaration::get_lowering(struct NodeProgram *program) const {
+    return this->variable->get_lowering(program);
 }
 
 std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(NodeDataStructure* var) {
@@ -275,8 +275,8 @@ NodeAST * NodeGetControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeA
     return nullptr;
 }
 
-ASTVisitor* NodeGetControl::get_lowering(DefinitionProvider* def_provider) const {
-    static LoweringGetControl lowering(def_provider);
+ASTVisitor* NodeGetControl::get_lowering(struct NodeProgram *program) const {
+    static LoweringGetControl lowering(program);
     return &lowering;
 }
 
@@ -308,9 +308,10 @@ void NodeBody::prepend_body(std::unique_ptr<NodeBody> new_body) {
     statements.insert(statements.begin(), std::make_move_iterator(new_body->statements.begin()), std::make_move_iterator(new_body->statements.end()));
 }
 
-void NodeBody::add_stmt(std::unique_ptr<NodeStatement> stmt) {
+NodeStatement* NodeBody::add_stmt(std::unique_ptr<NodeStatement> stmt) {
     stmt->parent = this;
     statements.push_back(std::move(stmt));
+	return statements.back().get();
 }
 
 void NodeBody::cleanup_body() {

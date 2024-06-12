@@ -443,24 +443,24 @@ void ASTFunctionInlining::visit(NodeSingleDeclaration& node) {
 bool ASTFunctionInlining::in_function() {
     return !m_function_call_stack.empty() || evaluating_functions;
 }
-
-std::vector<std::unique_ptr<NodeStatement>> ASTFunctionInlining::add_read_functions(const Token& persistence, NodeDataStructure* var, NodeAST* parent) {
-    std::vector<std::unique_ptr<NodeStatement>> statements;
-
-    for(auto &pers : m_persistences) {
-        if(persistence.type == pers.first) {
-            for(auto &pers_func : pers.second) {
-                auto node_function = m_def_provider->get_builtin_function(pers_func, 1)->clone();
-                auto make_persistent = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(node_function.release()));
-                make_persistent->args->params.clear();
-				auto node_var = var->to_reference();
-                make_persistent->args->params.push_back(std::move(node_var));
-                statements.push_back(std::make_unique<NodeStatement>(std::move(make_persistent), var->tok));
-            }
-        }
-    }
-    return std::move(statements);
-}
+//
+//std::vector<std::unique_ptr<NodeStatement>> ASTFunctionInlining::add_read_functions(const Token& persistence, NodeDataStructure* var, NodeAST* parent) {
+//    std::vector<std::unique_ptr<NodeStatement>> statements;
+//
+//    for(auto &pers : m_persistences) {
+//        if(persistence.type == pers.first) {
+//            for(auto &pers_func : pers.second) {
+//                auto node_function = m_def_provider->get_builtin_function(pers_func, 1)->clone();
+//                auto make_persistent = std::unique_ptr<NodeFunctionHeader>(static_cast<NodeFunctionHeader*>(node_function.release()));
+//                make_persistent->args->params.clear();
+//				auto node_var = var->to_reference();
+//                make_persistent->args->params.push_back(std::move(node_var));
+//                statements.push_back(std::make_unique<NodeStatement>(std::move(make_persistent), var->tok));
+//            }
+//        }
+//    }
+//    return std::move(statements);
+//}
 
 void ASTFunctionInlining::visit(NodeSingleAssignment& node) {
     m_current_function_inline_statement = node.parent;

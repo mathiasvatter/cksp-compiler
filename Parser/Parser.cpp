@@ -187,7 +187,6 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 	}
 
 	node_array->parent = parent;
-//	node_array->type = type;
 	return Result<std::unique_ptr<NodeDataStructure>>(std::move(node_array));
 }
 
@@ -197,7 +196,6 @@ Result<std::unique_ptr<NodeReference>> Parser::parse_array_ref(NodeAST *parent) 
 	std::string arr_name = arr_token.val;
 	auto ty = TypeRegistry::get_type_from_identifier(arr_name[0]);
 	if(ty != TypeRegistry::Unknown) arr_name = arr_name.erase(0,1);
-//	auto type = infer_type_from_identifier(arr_name);
 	std::unique_ptr<NodeReference> node_array_ref = nullptr;
 	std::unique_ptr<NodeParamList> indexes = std::make_unique<NodeParamList>(arr_token);;
 	indexes->parent = node_array_ref.get();
@@ -232,7 +230,6 @@ Result<std::unique_ptr<NodeReference>> Parser::parse_array_ref(NodeAST *parent) 
 	}
 	node_array_ref->parent = parent;
 	node_array_ref->ty = ty;
-//	node_array_ref->type = type;
 	return Result<std::unique_ptr<NodeReference>>(std::move(node_array_ref));
 }
 
@@ -702,6 +699,7 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
                 if (peek().type == token::CLOSED_PARENTH) consume(); // consume )
             }
         } else {
+//			_skip_linebreaks();
             auto exprResult = parse_expression(parent);
             if (!exprResult.is_error()) {
                 params.push_back(std::move(exprResult.unwrap()));
@@ -717,6 +715,7 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
         if (peek().type != token::COMMA) break;
         end_backup_pos = m_pos;
         consume(); // consume comma
+//		_skip_linebreaks();
     }
     return Result<SuccessTag>(SuccessTag{});
 }

@@ -13,8 +13,9 @@
 class ASTLowering: public ASTVisitor {
 protected:
 	DefinitionProvider* m_def_provider;
+	NodeProgram* m_program = nullptr;
 public:
-    explicit ASTLowering(DefinitionProvider* def_provider) : m_def_provider(def_provider) {}
+    explicit ASTLowering(NodeProgram* program) : m_program(program), m_def_provider(program->def_provider) {}
     ~ASTLowering() = default;
 
 };

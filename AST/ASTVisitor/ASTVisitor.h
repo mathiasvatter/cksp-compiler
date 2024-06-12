@@ -26,8 +26,7 @@ protected:
     std::unordered_map<Type*, std::string> m_local_var_arrays = {{TypeRegistry::ArrayOfInt, "_loc_var_int"}, {TypeRegistry::ArrayOfReal, "_loc_var_real"}, {TypeRegistry::ArrayOfString, "_loc_var_str"}};
 
 
-    std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, DataType type, NodeAST* parent);
-    std::unique_ptr<NodeBody> array_initialization(NodeArray* array, NodeParamList* list);
+    static std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, DataType type, NodeAST* parent);
     static std::unique_ptr<NodeBody> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent);
 
 
@@ -163,6 +162,8 @@ public:
         node.body->accept(*this);
 	};
     virtual void visit(NodeProgram& node) {
+		m_program = &node;
+		m_program->global_declarations->accept(*this);
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}

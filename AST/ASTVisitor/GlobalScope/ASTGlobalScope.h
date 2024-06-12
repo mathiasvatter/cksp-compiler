@@ -11,7 +11,11 @@
 class ASTGlobalScope : public ASTVisitor {
 protected:
 	DefinitionProvider* m_def_provider;
+	/// removes array declarations
 	static inline std::unique_ptr<NodeAST> to_assign_statement(NodeSingleDeclaration& node) {
+		if(node.is_promoted) {
+			return std::make_unique<NodeDeadCode>(node.tok);
+		}
 		auto node_assignment = node.to_assign_stmt();
 		if (node_assignment->l_value->get_node_type() == NodeType::ArrayRef) {
 			auto node_array_ref = static_cast<NodeArrayRef *>(node_assignment->l_value.get());
@@ -26,6 +30,5 @@ public:
 	explicit ASTGlobalScope(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
 	void visit(NodeProgram& node) override;
-
 
 };

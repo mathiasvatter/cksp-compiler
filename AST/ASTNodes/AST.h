@@ -39,10 +39,10 @@ struct NodeAST {
     virtual void update_token_data(const Token& token) {
         tok.line = token.line; tok.file = token.file;
     }
-	[[nodiscard]] virtual ASTVisitor* get_lowering(class DefinitionProvider* def_provider) const {
+	[[nodiscard]] virtual ASTVisitor* get_lowering(struct NodeProgram *program) const {
 		return nullptr;
 	}
-    [[nodiscard]] virtual ASTDesugaring *get_desugaring(class NodeProgram *program) const {
+    [[nodiscard]] virtual ASTDesugaring *get_desugaring(NodeProgram *program) const {
         return nullptr;
     }
     [[nodiscard]] NodeType get_node_type() const { return node_type; }
@@ -395,7 +395,7 @@ struct NodeProgram : NodeAST {
 	NodeCallback* current_callback = nullptr;
 	/// holds the current function definition that is being processed
 	std::stack<NodeFunctionDefinition*> function_call_stack{};
-	DefinitionProvider* def_provider = nullptr;
+	class DefinitionProvider* def_provider = nullptr;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
 	std::unique_ptr<NodeBody> global_declarations;

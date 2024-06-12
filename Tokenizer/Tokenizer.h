@@ -44,13 +44,13 @@ struct Token {
 inline static bool contains(std::vector<char> &vec, char c) {
     return std::any_of(vec.begin(), vec.end(), [&](const auto& ch) {return ch == c;});
 };
-inline static bool contains(std::set<char> &vec, char c) {
+inline static bool contains(std::unordered_set<char> &vec, char c) {
     return vec.find(c) != vec.end();
 };
 inline static bool contains(const std::vector<std::string>& vec, const std::string& value) {
     return std::find(vec.begin(), vec.end(), value) != vec.end();
 };
-inline static bool contains(const std::set<std::string>& vec, const std::string& value) {
+inline static bool contains(const std::unordered_set<std::string>& vec, const std::string& value) {
     return vec.find(value) != vec.end();
 };
 inline static bool contains(const std::vector<Keyword>& vec, const std::string& value) {
@@ -61,7 +61,7 @@ inline static bool contains(const std::vector<Keyword>& vec, const std::string& 
 inline static bool contains(const std::string& string, const std::string& substring) {
 	return string.find(substring) != std::string::npos;
 }
-inline static bool contains(const std::set<token>& token_set, const token& tok) {
+inline static bool contains(const std::unordered_set<token>& token_set, const token& tok) {
 	return token_set.find(tok) != token_set.end();
 }
 

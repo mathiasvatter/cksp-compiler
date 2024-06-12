@@ -20,7 +20,7 @@ private:
 
 
 public:
-	explicit LoweringFunctionCall(DefinitionProvider *def_provider) : ASTLowering(def_provider) {}
+	explicit LoweringFunctionCall(NodeProgram *program) : ASTLowering(program) {}
 
     /// Determining if function is property function -> inline property function
 	/// Determining if function parameter needs to be wrapped in get_ui_id because of ui control
@@ -47,7 +47,7 @@ public:
 
     /// lowering of get control statements from property functions
     void visit(NodeGetControl &node) override {
-        if(auto lowering = node.get_lowering(m_def_provider)) {
+        if(auto lowering = node.get_lowering(m_program)) {
             lowering->visit(node);
         }
     };

@@ -8,7 +8,7 @@
 
 class LoweringList : public ASTLowering {
 public:
-	explicit LoweringList(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
+	explicit LoweringList(NodeProgram* program) : ASTLowering(program) {}
 
 	void visit(NodeSingleDeclaration &node) override {
 
@@ -98,7 +98,12 @@ public:
             for(int i = 1; i<node.body.size(); i++) {
                 node.body[0]->params.push_back(std::move(node.body[i]->params[0]));
             }
-			node_body->append_body(array_initialization(node_main_array.get(), node.body[0].get()));
+			auto node_assignment = std::make_unique<NodeSingleAssignment>(
+				node_main_array->to_reference(),
+				std::move(node.body[0]),
+				node.tok
+				);
+			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
             node_body->accept(*this);
             node.replace_with(std::move(node_body));
             return;
@@ -193,7 +198,6 @@ public:
             node_while_body->set_child_parents();
             auto node_while_loop = make_while_loop(node_iterator_var.get(), 0, sizes[i], std::move(node_while_body), node_body.get());
             node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while_loop), node.tok));
-//            node_body->set_child_parents();
         }
         node_body->accept(*this);
         node.replace_with(std::move(node_body));

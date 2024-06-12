@@ -16,7 +16,6 @@ void ASTGlobalScope::visit(NodeProgram &node) {
 
 	// first pass to analyze dynamic extend within function definitions and replace with passive_vars
 	ASTDynamicExtend dyn_extend(m_def_provider, m_program);
-	m_program->global_declarations->accept(dyn_extend);
 	for (auto & def : node.function_definitions) {
 		def->accept(dyn_extend);
 	}

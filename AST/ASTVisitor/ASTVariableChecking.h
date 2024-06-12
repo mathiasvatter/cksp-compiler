@@ -64,4 +64,30 @@ private:
 		}
 		return nullptr;
 	}
+
+	/// checks if given callback id is of type ui_control
+	static bool check_callback_id_data_type(NodeAST* callback_id) {
+		std::string id_node_type = "<Array>";
+		if(callback_id->get_node_type() == NodeType::VariableRef) {
+			id_node_type = "<Variable>";
+		}
+		auto node_reference = static_cast<NodeReference*>(callback_id);
+
+		// check if callback id reference is ui_control
+		auto error = CompileError(ErrorType::TypeError, "", "", callback_id->tok);
+		if(node_reference->data_type != DataType::UIControl) {
+			error.m_message = id_node_type+" needs to be of type <UI Control> to be referenced in <UI Callback>.";
+			error.exit();
+		} else {
+			// var ref is ui control -> check if it is ui_label
+			if(node_reference->declaration and node_reference->declaration->parent and node_reference->declaration->parent->get_node_type() == NodeType::UIControl) {
+				auto ui_control = static_cast<NodeUIControl*>(node_reference->declaration->parent);
+				if(ui_control->name == "ui_label") {
+					error.m_message = "<UI Label> cannot be referenced in <UI Callback>.";
+					error.exit();
+				}
+			}
+		}
+		return true;
+	}
 };

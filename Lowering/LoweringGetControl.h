@@ -9,7 +9,7 @@
 class LoweringGetControl : public ASTLowering {
 
 public:
-	explicit LoweringGetControl(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
+	explicit LoweringGetControl(NodeProgram* program) : ASTLowering(program) {}
 
 	void visit(NodeSingleAssignment &node) override {
 		node.r_value->accept(*this);
@@ -72,7 +72,7 @@ private:
 			node_control_function->function->args->params.push_back(std::move(control_par));
 			node_control_function->function->args->set_child_parents();
             // check if var needs is ui control and needs to wrapped in get_ui_id
-            if(auto lowering = node_control_function->get_lowering(m_def_provider)) {
+            if(auto lowering = node_control_function->get_lowering(m_program)) {
                 lowering->visit(*node_control_function);
             }
 			return node_control_function;

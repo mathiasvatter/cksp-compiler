@@ -15,11 +15,13 @@ private:
 		}
 		node.cleanup_body();
 	}
+
 	inline void visit(NodeCallback& node) override {
 		m_program->current_callback = &node;
 		node.statements->accept(*this);
 		m_program->current_callback = nullptr;
 	}
+
 	inline void visit(NodeSingleAssignment& node) override {
 		if(node.l_value->get_node_type() == NodeType::ArrayRef) {
 			auto node_array_ref = static_cast<NodeArrayRef*>(node.l_value.get());
@@ -44,29 +46,23 @@ private:
 			auto param_list = static_cast<NodeParamList*>(node.r_value.get());
 			if(param_list->params.size() == 1) {
 				DesugarSingleAssign::add_array_init_function_def(m_program, node.l_value->ty->get_element_type());
-				replacement_node = get_array_init_function_call(node_array_ref, param_list->params[0].get());
+				node.replace_with(get_array_init_function_call(node_array_ref, param_list->params[0].get()));
 			} else {
-				auto node_body = std::make_unique<NodeBody>(node.tok);
-				for(int i = 0; i<param_list->params.size(); i++) {
-					node_array_ref->index = std::make_unique<NodeInt>((int32_t)i, node.tok);
-					auto &param = param_list->params[i];
-					auto node_assign = std::make_unique<NodeSingleAssignment>(
-						node_array_ref->clone(),
-						param->clone(),
-						param->tok
-					);
-					node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign), param->tok));
-				}
-				replacement_node = std::move(node_body);
+				node.replace_with(get_array_init_from_list(node_array_ref, param_list));
 			}
 		}
 	}
 
 	inline void visit(NodeSingleDeclaration& node) override {
-		if(!node.variable->is_local) return;
-		if(m_program->current_callback == m_program->init_callback) return;
+		// normally, no rewrites of array initializations need to be done in init callback
+		// unless array type is string!
+		if(node.variable->ty->get_element_type() != TypeRegistry::String) {
+			if (m_program->current_callback == m_program->init_callback) return;
+			if (!node.variable->is_local) return;
+		}
+		std::unique_ptr<NodeBody> node_body = nullptr;
 		if(node.variable->get_node_type() == NodeType::Array) {
-			auto node_body = std::make_unique<NodeBody>(node.tok);
+			node_body = std::make_unique<NodeBody>(node.tok);
 			auto node_array = static_cast<NodeArray*>(node.variable.get());
 			auto node_array_ref = node_array->to_reference();
 			// if lhs is arrayref and has no index, check if array is initialized with a list of values
@@ -95,25 +91,63 @@ private:
 						node.tok));
 				} else {
 					auto array_ref = static_cast<NodeArrayRef*>(node_array_ref.get());
-					for (int i = 0; i < param_list->params.size(); i++) {
-						array_ref->index = std::make_unique<NodeInt>((int32_t) i, node.tok);
-						auto &param = param_list->params[i];
-						auto node_assign = std::make_unique<NodeSingleAssignment>(
-							node_array_ref->clone(),
-							param->clone(),
-							param->tok
-						);
-						node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign), param->tok));
-					}
+					node_body = get_array_init_from_list(array_ref, param_list);
 				}
 			}
-			node_body->prepend_stmt(std::make_unique<NodeStatement>(node.clone(), node.tok));
-			node.replace_with(std::move(node_body));
+			node_body->prepend_stmt(std::make_unique<NodeStatement>(
+									std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok),
+									node.tok
+									)
+								);
 		}
+		// if node_body is set, replace node with node_body
+		if(node_body) node.replace_with(std::move(node_body));
 	}
 
 public:
 	explicit DesugarSingleAssign(NodeProgram* program) : ASTDesugaring(program) {};
+
+	static std::unique_ptr<NodeBody> add_read_functions(const Token& persistence, NodeDataStructure* var) {
+		auto node_body = std::make_unique<NodeBody>(var->tok);
+
+		auto it = PERSISTENCE_TOKENS.find(persistence.type);
+		if(it == PERSISTENCE_TOKENS.end()) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", var->tok);
+			error.m_message = "Persistence keyword not recognized.";
+			error.exit();
+		}
+		for(auto &pers_func : it->second) {
+			auto make_persistent = std::make_unique<NodeFunctionCall>(
+				false,
+				std::make_unique<NodeFunctionHeader>(
+					pers_func,
+					std::make_unique<NodeParamList>(var->tok, var->to_reference()),
+					var->tok
+				),
+				var->tok
+			);
+			make_persistent->kind = NodeFunctionCall::Kind::Builtin;
+			make_persistent->ty = TypeRegistry::Void;
+			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(make_persistent), var->tok));
+		}
+		return node_body;
+	}
+
+	static std::unique_ptr<NodeBody> get_array_init_from_list(NodeArrayRef* array_ref, NodeParamList* param_list) {
+		auto node_body = std::make_unique<NodeBody>(array_ref->tok);
+		for(int i = 0; i<param_list->params.size(); i++) {
+			array_ref->index = std::make_unique<NodeInt>((int32_t)i, array_ref->tok);
+			auto &param = param_list->params[i];
+			auto node_assign = std::make_unique<NodeSingleAssignment>(
+				array_ref->clone(),
+				param->clone(),
+				param->tok
+			);
+			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign), param->tok));
+		}
+		return node_body;
+	}
+
 
 	static inline std::unique_ptr<NodeBody> get_array_init_function_call(NodeReference* array_ref, NodeAST* value) {
 		std::string func_name = "array.init."+array_ref->declaration->ty->get_element_type()->to_string();

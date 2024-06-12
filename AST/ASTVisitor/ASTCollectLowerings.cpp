@@ -8,7 +8,7 @@ ASTCollectLowerings::ASTCollectLowerings(DefinitionProvider *definition_provider
 
 void ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 	if(node.value) node.value->accept(*this);
-	if(auto lowering = node.get_lowering(m_def_provider)) {
+	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
 	}
 }
@@ -16,7 +16,7 @@ void ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 void ASTCollectLowerings::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	if(node.r_value) node.r_value->accept(*this);
-	if(auto lowering = node.get_lowering(m_def_provider)) {
+	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
 	}
 }
@@ -38,47 +38,47 @@ void ASTCollectLowerings::visit(NodeGetControl& node) {
 		}
 	}
 
-	if(auto lowering = node.get_lowering(m_def_provider)) {
+	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
 	}
 }
 
 void ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
-	if(auto lowering = node.get_lowering(m_def_provider)) {
+	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
 	}
 }
 
 void ASTCollectLowerings::visit(NodeArray& node) {
     if(node.size) node.size->accept(*this);
-    if(auto lowering = node.get_lowering(m_def_provider)) {
+    if(auto lowering = node.get_lowering(m_program)) {
         node.accept(*lowering);
     }
 }
 
 void ASTCollectLowerings::visit(NodeNDArrayRef& node) {
 	node.indexes->accept(*this);
-	if(auto lowering = node.get_lowering(m_def_provider)) {
+	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
 	}
 }
 
 void ASTCollectLowerings::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
-	if(auto lowering = node.get_lowering(m_def_provider)) {
+	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
 	}
 }
 
 void ASTCollectLowerings::visit(NodeList& node) {
-	if(auto lowering = node.get_lowering(m_def_provider)) {
+	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
 	}
 }
 
 void ASTCollectLowerings::visit(NodeConstStatement &node) {
-    if(auto lowering = node.get_lowering(m_def_provider)) {
+    if(auto lowering = node.get_lowering(m_program)) {
         node.accept(*lowering);
     }
     node.replace_with(std::move(node.constants));

@@ -55,7 +55,7 @@ struct NodeArray : NodeDataStructure {
 	void update_token_data(const Token& token) override {
 		if(size) size->update_token_data(token);
 	}
-	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+	ASTVisitor* get_lowering(NodeProgram *program) const override;
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::ArrayRef;}
 	std::unique_ptr<NodeVariable> to_variable() override {
@@ -95,7 +95,7 @@ struct NodeNDArray : NodeDataStructure {
 	void update_token_data(const Token& token) override {
 		if(sizes) sizes->update_token_data(token);
 	}
-	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+	ASTVisitor* get_lowering(NodeProgram *program) const override;
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::NDArrayRef;}
 	std::unique_ptr<NodeVariable> to_variable() override {
@@ -139,7 +139,7 @@ struct NodeUIControl : NodeDataStructure {
 		control_var -> update_token_data(token);
 		params -> update_token_data(token);
 	}
-	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+	ASTVisitor* get_lowering(NodeProgram *program) const override;
 	Type* cast_type() override {
 		control_var->cast_type();
 		ty = control_var->ty;
@@ -177,7 +177,7 @@ struct NodeList : NodeDataStructure {
 			b->update_token_data(token);
 		}
 	}
-	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+	ASTVisitor* get_lowering(NodeProgram *program) const override;
 	NodeType get_ref_node_type() override {return NodeType::ListRef;}
 	std::unique_ptr<NodeVariable> to_variable() override;
 	std::unique_ptr<NodeArray> to_array() override;
@@ -208,6 +208,6 @@ struct NodeConstStatement : NodeDataStructure {
     void update_token_data(const Token& token) override {
         constants->update_token_data(token);
     }
-    ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+    ASTVisitor* get_lowering(NodeProgram *program) const override;
 
 };
