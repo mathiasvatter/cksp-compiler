@@ -9,19 +9,23 @@
 - (turn local variables into global array?)
 
 ### Vorgehen:
+#### In Funktionsdefinitionen und Callbacks:
+
+1. Variablen und Scopes tracken
+    - Nehme einen Stack aus Maps an Variablen, pro Scope wird eine neue Map eingesetzt, die mit Variablen/Arrays gefüllt wird
+    - jede Variable Reference erhält einen Pointer auf ihr deklaration in der Map
+
 #### Nur in Funktionsdefinitionen:
-  1. Variablen und Scopes tracken
-      - Nehme einen Stack aus Maps an Variablen, pro Scope wird eine neue Map eingesetzt, die mit Variablen/Arrays gefüllt wird
-      - jede Variable Reference erhält einen Pointer auf ihr deklaration in der Map 
-  2. Dynamischen Extend von Variablen/Arrays innerhalb verschiedener Scopes in den Funktionen tracken und mit typisierten Variablen austauschen, 
-  deren dynamic extend bereits abgelaufen ist. Deklarationen werden durch Assignments mit neutralen Elementen ersetzt.
-      - Erstelle eine Map aus "passive variables" mit Hashwerten aus Variablen Typen (und Array sizes). Sobald ein Scope verlassen wird, werden die Variablen (deren dynamic extend nun abgelaufen ist)
-      in die Map eingetragen.
-      - Bei jeder neuen Deklaration wird geprüft, ob eine Variable mit gleichem Typ bereits in der Map ist. Falls ja, wird die Variable durch eine Referenz auf die Map ersetzt.
-      - Ersetzte Deklarationen werden durch Assignments (mit neutralen Elementen) ersetzt.
-  3. Alle lokalen Variablen mit Gensym umbenennen.
-      - Tracke alle Variablen und Referenzen in Listen und benenne sie mit Gensym um, damit kein Variable Capturing stattfindet,
-     wenn eine der freien "passiven Variablen" gleich heißt wie eine Variable im Scope.
+
+2. Dynamischen Extend von Variablen/Arrays innerhalb verschiedener Scopes in den Funktionen tracken und mit typisierten Variablen austauschen, 
+deren dynamic extend bereits abgelaufen ist. Deklarationen werden durch Assignments mit neutralen Elementen ersetzt.
+    - Erstelle eine Map aus "passive variables" mit Hashwerten aus Variablen Typen (und Array sizes). Sobald ein Scope verlassen wird, werden die Variablen (deren dynamic extend nun abgelaufen ist)
+    in die Map eingetragen.
+    - Bei jeder neuen Deklaration wird geprüft, ob eine Variable mit gleichem Typ bereits in der Map ist. Falls ja, wird die Variable durch eine Referenz auf die Map ersetzt.
+    - Ersetzte Deklarationen werden durch Assignments (mit neutralen Elementen) ersetzt.
+3. Alle lokalen Variablen mit Gensym umbenennen.
+    - Tracke alle Variablen und Referenzen in Listen und benenne sie mit Gensym um, damit kein Variable Capturing stattfindet,
+   wenn eine der freien "passiven Variablen" gleich heißt wie eine Variable im Scope.
      
 #### Beispiel:
 
@@ -43,6 +47,7 @@ function scoped_func2()
     end if
 end function
 ```
+
 __Post Function Definition:__
 ```c
 function scoped_func2(loc_0 : int, loc_1 : int[], loc_2 : int, loc_3 : int)
@@ -72,18 +77,19 @@ end function
 __Pre Parameter Promotion:__
 ```c
 on persistence_changed // <- callback
-	declare array[3] := (1,2,5)
-	scoped_func2()
+    declare array[3] := (1,2,5)
+    scoped_func2()
 end on
 ```
+
 __Post Parameter Promotion:__
 ```c
 on persistence_changed
     declare array[3] := (1,2,5)
-	declare loc_1: int
-	declare loc_2: int[]
-	declare loc_3: int
-	scoped_func2(loc_1, loc_2, loc_3)
+    declare loc_1: int
+    declare loc_2: int[]
+    declare loc_3: int
+    scoped_func2(loc_1, loc_2, loc_3)
 end on
 ```
    5. Punkt 2 und 3 mit allen Callbacks ausführen, ohne die Funktionen zu besuchen.
@@ -153,23 +159,23 @@ message(that_list.next.value)
 Gets lowered to:
 ```c
 declare const MAX_STRUCTS := 1000000
-declare @object.warning := "Memory Error: No more free space available to allocate objects of type"
+declare object.warning: string := "Memory Error: No more free space available to allocate objects of type"
 
-declare %List.allocation[MAX_STRUCTS] := (0)
-declare %List.value[MAX_STRUCTS]             // Wert des Elements
-declare %List.next[MAX_STRUCTS] := (-1)      // Verweis auf den Index des nächsten Elements
-declare %List.free_idx := 0                  // Zeigt auf den ersten freien Platz im Array
+declare List.allocation[MAX_STRUCTS]: int[] := (0)
+declare List.value[MAX_STRUCTS]: int[]             // Wert des Elements
+declare List.next[MAX_STRUCTS]: int[] := (-1 )     // Verweis auf den Index des nächsten Elements
+declare List.free_idx: int[] := 0                  // Zeigt auf den ersten freien Platz im Array
 
-declare $this_list := -1 // nil
-$this_list := List.__init__(42, -1)
+declare this_list: int := -1 // nil
+this_list := List.__init__(42, -1)
 
-declare $that_list := List.__init__(39, List.__init__(40, List.__init__(41, this_list)))
-message(%List.value[%List.next[$that_list]])
+declare that_list: int := List.__init__(39, List.__init__(40, List.__init__(41, this_list)))
+message(List.value[List.next[that_list]])
 
-function List.__init__(value, next) -> result
+function List.__init__(value: int, next: List) -> result
     List.free_idx := search(List.allocation, 0)
     if List.free_idx = -1
-        message(@object.warning & "'List'")        
+        message(object.warning & "'List'")        
     end if
     List.allocation[List.free_idx] := 1
     List.value[List.free_idx] := value

@@ -50,14 +50,8 @@ private:
 
     NodeAST* m_current_node_replaced = nullptr;
 
-    void declare_dummy_variables();
-    void declare_local_var_arrays();
+    std::unique_ptr<NodeBody> declare_dummy_variables();
 
-//    std::map<token, std::vector<std::string>> m_persistences = {{token::READ, {"make_persistent", "read_persistent_var"}},
-//                                                              {token::PERS, {"make_persistent"}},
-//                                                              {token::INSTPERS, {"make_instr_persistent"}}};
-
-//    NodeProgram* m_program = nullptr;
     NodeCallback* m_current_callback = nullptr;
     int m_current_callback_idx = 0;
 	NodeDataStructure* m_return_dummy_declaration = nullptr;
@@ -69,7 +63,6 @@ private:
 
     NodeAST* m_current_function_inline_statement = nullptr;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
-//    std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> m_function_lookup;
 
     NodeFunctionDefinition* m_current_function = nullptr;
     std::unordered_map<std::string, NodeFunctionDefinition*> m_functions_in_use;
@@ -78,21 +71,7 @@ private:
     /// returns substitute for current node.name, or nullptr if there is no substitute
     std::stack<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_substitution_stack;
     std::unique_ptr<NodeAST> get_substitute(const std::string& name);
-//    NodeFunctionDefinition* get_function_definition(NodeFunctionHeader* function_header);
     std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> m_function_inlines;
-
-    int local_var_counter = 0;
-    std::vector<std::unordered_map<std::string, std::unique_ptr<NodeReference>>> m_variable_scope_stack;
-    std::unique_ptr<NodeBody> m_local_declare_statements = nullptr;
-//	std::unique_ptr<NodeBody> m_compiler_variable_declare_statements = nullptr;
-    /// holds the size of the local variables and their real names + _ + size is idx
-    /// gets resettet when out of init
-    std::stack<std::string> m_local_variables;
-    std::set<std::string> m_local_already_declared_vars;
-	NodeDataStructure* m_local_var_dummy_declaration = nullptr;
-    std::unique_ptr<NodeReference> get_local_variable_substitute(const std::string& name);
-
-//    std::vector<std::unique_ptr<NodeStatement>> add_read_functions(const Token& persistence, NodeDataStructure* var, NodeAST* parent);
 
     bool in_function();
 };

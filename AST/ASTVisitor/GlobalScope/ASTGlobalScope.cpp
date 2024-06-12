@@ -9,6 +9,8 @@
 #include "../../../Desugaring/DesugarSingleAssign.h"
 
 void ASTGlobalScope::visit(NodeProgram &node) {
+	ASTPrinter printer;
+
 	m_program = &node;
 
 	DesugarSingleAssign desugar_single_assign(m_program);
@@ -32,7 +34,6 @@ void ASTGlobalScope::visit(NodeProgram &node) {
 	m_program->global_declarations = std::make_unique<NodeBody>(node.tok);
 	m_program->global_declarations->parent = m_program;
 
-	ASTPrinter printer;
 	node.accept(printer);
 	printer.generate("/Users/Mathias/Scripting/ksp-compiler/printed.txt");
 }

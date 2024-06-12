@@ -1,31 +1,24 @@
 on init
-	declare _iterator : int
-	declare loc_14[3] : int[]
-	declare loc_7 : int
-	declare loc_8[5] : int[]
-	declare loc_9 : int
-	declare loc_10 : int
-	declare loc_11 : string
-	declare loc_12 : int
-	declare loc_13[4] : int[]
-	scoped_func1(loc_7, loc_8, loc_9, loc_10, loc_11, loc_12, loc_13)
-	scoped_func1(loc_9, loc_8, loc_12, loc_10, loc_11, loc_7, loc_13)
+	scoped_func1()
+	scoped_func1()
 end on
 
 on persistence_changed
-	loc_9 := 0
-	array.init.Integer(loc_14, loc_9, 0)
-	scoped_func1(loc_9, loc_8, loc_12, loc_10, loc_11, loc_7, loc_13)
+	declare array[5] : int[]
+	declare _iter : int
+	array.init.Integer(array, _iter, 0)
+	scoped_func1()
 end on
 
-function scoped_func2(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int)
-	loc_0 := 0
+function scoped_func2()
+	declare loc_0 : int
 	message(loc_0)
 	if(loc_0 = 1)
-		loc_2 := 0
+		declare loc_1[5] : int[]
+		declare loc_2 : int
 		array.init.Integer(loc_1, loc_2, 1)
 		loc_2 := 0
-		loc_3 := 0
+		declare loc_3 : int
 		message(loc_2 & loc_3 & loc_1[4])
 	end if
 	if(loc_0 = 2)
@@ -35,13 +28,13 @@ function scoped_func2(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int)
 	end if
 end function
 
-function scoped_func1(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int, loc_4 : string, loc_5 : int, loc_6[4] : int[])
-	loc_4 := "sdlkj"
-	loc_5 := 0
-	message(loc_4 & ", " & loc_5)
-	scoped_func2(loc_0, loc_1, loc_2, loc_3)
-	loc_6[0] := 3
-	loc_6[1] := 4
+function scoped_func1()
+	declare loc_4 : string := "sdlkj"
+	message(loc_4)
+	scoped_func2()
+	declare loc_5[4] : int[]
+	loc_5[0] := 3
+	loc_5[1] := 4
 end function
 
 function array.init.Integer(array : int, _iter : int, value : int)
