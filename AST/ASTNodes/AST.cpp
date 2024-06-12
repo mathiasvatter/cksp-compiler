@@ -81,7 +81,8 @@ Type* NodeDataStructure::cast_type() {
 		error.m_got = ty->to_string();
 		this->set_element_type(TypeRegistry::Integer);
 		error.m_message = "Failed to infer <"+ty->get_type_kind_name()+"> type.";
-		error.m_message += " Automatically casted "+name+" as <"+ty->to_string()+">. Consider using a variable identifier.";
+		error.m_message += " Automatically casted '"+name+"' as <"+ty->to_string()+">. Consider using type annotations (like <"+name+": "
+			+TypeRegistry::get_annotation_from_type(this->ty)+">) to improve readability.";
 		error.print();
 	}
 	return ty;

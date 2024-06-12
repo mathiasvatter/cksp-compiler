@@ -18,7 +18,7 @@ private:
 	std::unique_ptr<NodeUIControl> m_ui_control_array = nullptr;
 	std::optional<Token> m_persistence;
 public:
-	explicit LoweringUIControlArray(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
+	explicit LoweringUIControlArray(NodeProgram* program) : ASTLowering(program) {}
 
 	void visit(NodeSingleDeclaration &node) override {
 		auto node_ui_control = cast_node<NodeUIControl>(node.variable.get());
@@ -47,7 +47,7 @@ public:
 		// wrap in statement to make use of replace_child
 		auto node_statement = std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok);
 		// lowering of ndarray, turn Declaration into NodeBody
-		if(auto lowering = node_statement->statement->get_lowering(m_def_provider)) {
+		if(auto lowering = node_statement->statement->get_lowering(m_program)) {
 			node_statement->statement->accept(*lowering);
 		}
 
@@ -75,7 +75,7 @@ public:
 	}
 
 	void visit(NodeNDArray &node) override {
-		if(auto lowering = node.get_lowering(m_def_provider)) {
+		if(auto lowering = node.get_lowering(m_program)) {
 			node.accept(*lowering);
 		}
 	}
@@ -98,8 +98,8 @@ public:
  * declare ui_label $_lbl_lbl7(1,1)
  * $preproc_i := 0
  * while ($preproc_i<=7)
- * %_lbl_lbl[$preproc_i] := get_ui_id($_lbl_lbl0)+$preproc_i
- * inc($preproc_i)
+ * 	%_lbl_lbl[$preproc_i] := get_ui_id($_lbl_lbl0)+$preproc_i
+ * 	inc($preproc_i)
  * end while
  */
 	std::unique_ptr<NodeBody> create_ui_controls(NodeUIControl& ui_control, std::unique_ptr<NodeAST> size) {
@@ -133,7 +133,7 @@ public:
 					std::move(new_ui_control),
 					nullptr, ui_control.tok
 					);
-			node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(new_node_declaration), ui_control.tok));
+			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(new_node_declaration), ui_control.tok));
 		}
 		// reinstantiate control name for while loop after
 		new_control_name = ui_control.control_var->name + std::to_string(0);
@@ -141,9 +141,11 @@ public:
 		/*
 		 * _iterator := 0
 		 * while (_iterator<=7)
-		 * %_lbl_lbl[_iterator] := get_ui_id($_lbl_lbl0)+_iterator
-		 * inc(_iterator)
+		 * 	%_lbl_lbl[_iterator] := get_ui_id($_lbl_lbl0)+_iterator
+		 * 	inc(_iterator)
 		 * end while
+		 * -> or now with array assignments:
+		 * %_lbl_lbl := (get_ui_id($_lbl_lbl0)+inc)
 		 */
 		auto node_iterator_var_ref = std::make_unique<NodeVariableRef>("_iterator", ui_control.tok);
         node_iterator_var_ref->is_engine = true;
@@ -189,7 +191,6 @@ public:
 			array_size,
 			std::move(node_while_body), node_body.get());
 		node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_while_loop), ui_control.tok));
-//		node_body->update_parents(ui_control.parent);
 		return node_body;
 	}
 };

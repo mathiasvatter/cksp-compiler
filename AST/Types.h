@@ -117,7 +117,8 @@ public:
         : Type(element_type->get_kind()), m_compound_kind(compound_kind),
         m_element_type(element_type), m_dimensions(dimensions) {}
     CompositeType(const CompositeType& other)
-            : Type(other.get_kind()), m_compound_kind(other.m_compound_kind), m_element_type(other.m_element_type) {}
+            : Type(other.get_kind()), m_compound_kind(other.m_compound_kind), m_element_type(other.m_element_type),
+			m_dimensions(other.m_dimensions) {}
 
     [[nodiscard]] std::unique_ptr<Type> clone() const override {
         return std::make_unique<CompositeType>(m_compound_kind, m_element_type);

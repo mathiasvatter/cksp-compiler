@@ -74,24 +74,6 @@ void TypeInference::visit(NodeConstStatement& node) {
 
 void TypeInference::visit(NodeVariableRef& node) {
     match_reference_declaration(&node);
-
-    // check if callback id reference is ui_control
-    if(node.parent->get_node_type() == NodeType::Callback) {
-        auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
-        if(node.data_type != DataType::UIControl) {
-            error.m_message = "<Variable> needs to be of type <UI Control> to be referenced in <UI Callback>.";
-            error.exit();
-        } else {
-            // var ref is ui control -> check if it is ui_label
-            if(node.declaration and node.declaration->parent and node.declaration->parent->get_node_type() == NodeType::UIControl) {
-                auto ui_control = static_cast<NodeUIControl*>(node.declaration->parent);
-                if(ui_control->name == "ui_label") {
-                    error.m_message = "<UI Label> cannot be referenced in <UI Callback>.";
-                    error.exit();
-                }
-            }
-        }
-    }
 	m_def_provider->add_to_references(&node);
 }
 
@@ -124,15 +106,6 @@ void TypeInference::visit(NodeArrayRef& node) {
 		if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
 	}
     match_reference_declaration(&node);
-
-    // check if callback id reference is ui_control
-    if(node.parent->get_node_type() == NodeType::Callback) {
-        auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
-        if (node.data_type != DataType::UIControl) {
-            error.m_message = "<Array> needs to be of type <UI Control> to be referenced in <UI Callback>.";
-            error.exit();
-        }
-    }
 	m_def_provider->add_to_references(&node);
 }
 
@@ -286,15 +259,11 @@ void TypeInference::visit(NodeBinaryExpr& node) {
 	// do not infer type if together in string
 	if(contains(STRING_TOKENS, node.op)) {
 		node.ty = TypeRegistry::String;
-//		is_compatible = node.ty->is_compatible(node.left->ty) and node.ty->is_compatible(node.right->ty);
-//        if(is_compatible) return;
 		return;
 	}
 
-	bool is_compatible = true; //node.left->ty->is_compatible(node.ty) || node.right->ty->is_compatible(node.ty);
+	bool is_compatible = true;
 	auto error = throw_type_error(node.left.get(), node.right.get());
-//	if(!is_compatible)
-//        error.exit();
 
 
 	node.left->ty = specialize_type(node.left->ty, node.right->ty);

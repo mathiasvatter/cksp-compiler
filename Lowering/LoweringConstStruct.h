@@ -28,7 +28,7 @@ private:
     std::unique_ptr<NodeAST> m_iter = nullptr;
 
 public:
-	explicit LoweringConstStruct(DefinitionProvider* def_provider) : ASTLowering(def_provider) {}
+	explicit LoweringConstStruct(NodeProgram* program) : ASTLowering(program) {}
 
     void visit(NodeVariable& node) override {
 		if(node.ty == TypeRegistry::Unknown) node.ty = TypeRegistry::Integer;

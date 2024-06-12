@@ -6,6 +6,8 @@
 #include <iostream>
 //#include <utility>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 #include <set>
 
 #include "version.h"
@@ -151,14 +153,14 @@ inline int MAX_CALLBACK_LINES = 4990;
 inline int MAX_UI_CONTROLS = 999;
 inline int MAX_ARRAY_ELEMENTS = 1000000;
 
-inline std::set<char> BINARY_OPERATORS = {'-', '+', '/', '*', '&'};
-inline std::set<char> PARENTH = {'(',')', '[', ']'};
-inline std::set<char> VAR_IDENT = {'$', '~', '@'};
-inline std::set<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
+inline std::unordered_set<char> BINARY_OPERATORS = {'-', '+', '/', '*', '&'};
+inline std::unordered_set<char> PARENTH = {'(',')', '[', ']'};
+inline std::unordered_set<char> VAR_IDENT = {'$', '~', '@'};
+inline std::unordered_set<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
 inline std::unordered_map<std::string, token> TYPES = {{"$", token::INT}, {"~", token::FLOAT}, {"@", token::STRING}, {"%", token::INT}, {"?", token::FLOAT}, {"!", token::STRING}};
-inline std::set<char> COMMENT_START = {'{', '/'};
-inline std::set<char> COMPARISON_OPERATORS_START = {'<', '>', '=', '#'};
-inline std::set<std::string> UI_CONTROLS = {"ui_label", "ui_button", "ui_switch", "ui_slider", "ui_menu",
+inline std::unordered_set<char> COMMENT_START = {'{', '/'};
+inline std::unordered_set<char> COMPARISON_OPERATORS_START = {'<', '>', '=', '#'};
+inline std::unordered_set<std::string> UI_CONTROLS = {"ui_label", "ui_button", "ui_switch", "ui_slider", "ui_menu",
 										   "ui_value_edit", "ui_waveform", "ui_wavetable",
 										   "ui_knob", "ui_table", "ui_xy",
 										   "ui_text_edit", "ui_level_meter", "ui_file_selector",
@@ -180,12 +182,16 @@ inline std::unordered_map<std::string, token> END_STATEMENTS = {{"end function",
 inline std::unordered_map<std::string, token> STATEMENTS = {{"function", token::FUNCTION}, {"for", token::FOR}, {"while", token::WHILE}, {"if", token::IF},
                                           {"select", token::SELECT}, {"const", token::CONST}, {"list", token::LIST}, {"family", token::FAMILY},
                                           {"struct", token::STRUCT}, {"macro", token::MACRO}, {"taskfunc", token::TASKFUNC}};
-inline std::set<std::string> CALLBACKS = {"init", "note", "release", "midi_in", "controller",
+inline std::unordered_set<std::string> CALLBACKS = {"init", "note", "release", "midi_in", "controller",
 											 "rpn", "nrpn", "ui_update", "_pgs_changed", "pgs_changed",
 											 "poly_at", "listener", "async_complete", "persistence_changed", "ui_control", "ui_controls"};
-inline std::set<std::string> RESTRICTED_CALLBACKS = {"init", "persistence_changed", "ui_control", "pgs_changed", "async_complete"};
+inline std::unordered_set<std::string> RESTRICTED_CALLBACKS = {"init", "persistence_changed", "ui_control", "pgs_changed", "async_complete"};
 
-inline std::set<std::string> BUILTIN_CONDITIONS = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG"};
+inline std::unordered_set<std::string> BUILTIN_CONDITIONS = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG"};
+
+inline std::unordered_map<token, std::vector<std::string>> PERSISTENCE_TOKENS = {{token::READ, {"make_persistent", "read_persistent_var"}},
+															{token::PERS, {"make_persistent"}},
+															{token::INSTPERS, {"make_instr_persistent"}}};
 
 /// string->Token operator maps
 inline std::unordered_map<std::string, token> BITWISE_OPERATORS = {{".and.", token::BIT_AND}, {".or.", token::BIT_OR}, {".not.", token::BIT_NOT}, {".xor.", token::BIT_XOR}};
@@ -202,8 +208,8 @@ inline const std::unordered_map<std::string, token> ALL_OPERATORS = []{
 }();
 
 // Hilfsfunktion zum Extrahieren der Tokens aus Maps
-inline std::set<token> extract_tokens_from_map(const std::unordered_map<std::string, token>& map) {
-	std::set<token> tokens;
+inline std::unordered_set<token> extract_tokens_from_map(const std::unordered_map<std::string, token>& map) {
+	std::unordered_set<token> tokens;
 	for (const auto& pair : map) {
 		tokens.insert(pair.second);
 	}
@@ -211,12 +217,12 @@ inline std::set<token> extract_tokens_from_map(const std::unordered_map<std::str
 }
 
 /// Token sets for token operator types
-inline const std::set<token> BITWISE_TOKENS = extract_tokens_from_map(BITWISE_OPERATORS);
-inline const std::set<token> BOOL_TOKENS = extract_tokens_from_map(BOOL_OPERATORS);
-inline const std::set<token> MATH_TOKENS = extract_tokens_from_map(MATH_OPERATORS);
-inline const std::set<token> UNARY_TOKENS = extract_tokens_from_map(UNARY_OPERATORS);
-inline const std::set<token> COMPARISON_TOKENS = extract_tokens_from_map(COMPARISON_OPERATORS);
-inline const std::set<token> STRING_TOKENS = extract_tokens_from_map(STRING_OPERATOR);
+inline const std::unordered_set<token> BITWISE_TOKENS = extract_tokens_from_map(BITWISE_OPERATORS);
+inline const std::unordered_set<token> BOOL_TOKENS = extract_tokens_from_map(BOOL_OPERATORS);
+inline const std::unordered_set<token> MATH_TOKENS = extract_tokens_from_map(MATH_OPERATORS);
+inline const std::unordered_set<token> UNARY_TOKENS = extract_tokens_from_map(UNARY_OPERATORS);
+inline const std::unordered_set<token> COMPARISON_TOKENS = extract_tokens_from_map(COMPARISON_OPERATORS);
+inline const std::unordered_set<token> STRING_TOKENS = extract_tokens_from_map(STRING_OPERATOR);
 
 /// Token->string maps reversed for generating vanilla KSP Code
 inline static std::unordered_map<token, std::string> GENERATE_BITWISE_OPERATORS = {{token::BIT_AND, ".and."}, {token::BIT_OR, ".or."}, {token::BIT_NOT, ".not."}, {token::BIT_XOR, ".xor."}};

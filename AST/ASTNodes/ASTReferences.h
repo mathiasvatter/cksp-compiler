@@ -44,7 +44,7 @@ struct NodeArrayRef : NodeReference {
 	std::string get_string() override {
 		return name;
 	}
-    ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+    ASTVisitor* get_lowering(NodeProgram *program) const override;
 };
 
 struct NodeNDArrayRef : NodeReference {
@@ -69,7 +69,7 @@ struct NodeNDArrayRef : NodeReference {
 	std::string get_string() override {
 		return name;
 	}
-    ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+    ASTVisitor* get_lowering(NodeProgram *program) const override;
 
 };
 
@@ -96,7 +96,7 @@ struct NodeListRef : NodeReference {
 	void set_child_parents() override {
 		if(indexes) indexes->parent = this;
 	};
-	ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+	ASTVisitor* get_lowering(NodeProgram *program) const override;
 
 };
 

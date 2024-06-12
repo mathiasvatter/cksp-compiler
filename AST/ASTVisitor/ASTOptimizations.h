@@ -13,7 +13,6 @@
  */
 class ASTOptimizations : public ASTVisitor {
 private:
-	ConstantFolding constant_folding;
 
 public:
     ASTOptimizations() = default;

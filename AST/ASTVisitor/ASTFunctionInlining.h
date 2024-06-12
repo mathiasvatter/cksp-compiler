@@ -53,9 +53,9 @@ private:
     void declare_dummy_variables();
     void declare_local_var_arrays();
 
-    std::map<token, std::vector<std::string>> m_persistences = {{token::READ, {"make_persistent", "read_persistent_var"}},
-                                                              {token::PERS, {"make_persistent"}},
-                                                              {token::INSTPERS, {"make_instr_persistent"}}};
+//    std::map<token, std::vector<std::string>> m_persistences = {{token::READ, {"make_persistent", "read_persistent_var"}},
+//                                                              {token::PERS, {"make_persistent"}},
+//                                                              {token::INSTPERS, {"make_instr_persistent"}}};
 
 //    NodeProgram* m_program = nullptr;
     NodeCallback* m_current_callback = nullptr;
@@ -92,7 +92,7 @@ private:
 	NodeDataStructure* m_local_var_dummy_declaration = nullptr;
     std::unique_ptr<NodeReference> get_local_variable_substitute(const std::string& name);
 
-    std::vector<std::unique_ptr<NodeStatement>> add_read_functions(const Token& persistence, NodeDataStructure* var, NodeAST* parent);
+//    std::vector<std::unique_ptr<NodeStatement>> add_read_functions(const Token& persistence, NodeDataStructure* var, NodeAST* parent);
 
     bool in_function();
 };

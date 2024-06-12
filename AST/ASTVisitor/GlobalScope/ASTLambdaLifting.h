@@ -13,6 +13,7 @@ private:
 	/// map for local variable declarations per function definition to be added to the next/above callback when no function is above
 	std::unordered_map<NodeCallback*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_callback;
 
+
 public:
 	explicit ASTLambdaLifting(DefinitionProvider* definition_provider) : ASTGlobalScope(definition_provider) {}
 	~ASTLambdaLifting() = default;
@@ -70,6 +71,9 @@ public:
 			node.definition->header->args->set_child_parents();
 		}
 
+		// do declaration insertion only if there are local declarations in function
+		if(m_local_var_declarations[node.definition].empty()) return;
+
 		if(node.definition) {
 			// add declaration statements to the body of the current/above function or callback if function stack is empty
 			auto& next_declares = m_program->function_call_stack.empty() ? m_declares_per_callback[m_program->current_callback] : m_local_var_declarations[m_program->function_call_stack.top()];
@@ -88,8 +92,10 @@ public:
 			auto node_body = std::make_unique<NodeBody>(node.tok);
 			node_body->scope = true;
 			for(auto &decl : m_declares_per_callback[m_program->current_callback]) {
+				decl.second->is_promoted = true;
 				node_body->add_stmt(std::make_unique<NodeStatement>(clone_as<NodeSingleDeclaration>(decl.second.get()), node.tok));
 			}
+			m_declares_per_callback[m_program->current_callback].clear();
 			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
 			node.replace_with(std::move(node_body));
 			return;
@@ -132,7 +138,7 @@ public:
 	}
 
     void inline visit(NodeArray& node) override {
-        node.size = nullptr;
+//        node.size = nullptr;
         node.show_brackets = false;
     }
 

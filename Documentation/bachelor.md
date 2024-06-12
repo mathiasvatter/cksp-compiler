@@ -14,7 +14,7 @@
       - Nehme einen Stack aus Maps an Variablen, pro Scope wird eine neue Map eingesetzt, die mit Variablen/Arrays gefüllt wird
       - jede Variable Reference erhält einen Pointer auf ihr deklaration in der Map 
   2. Dynamischen Extend von Variablen/Arrays innerhalb verschiedener Scopes in den Funktionen tracken und mit typisierten Variablen austauschen, 
-  deren dynamic extend bereits abgelaufen ist. Declarationen werden durch Assignments mit neutralen Elementen ersetzt.
+  deren dynamic extend bereits abgelaufen ist. Deklarationen werden durch Assignments mit neutralen Elementen ersetzt.
       - Erstelle eine Map aus "passive variables" mit Hashwerten aus Variablen Typen (und Array sizes). Sobald ein Scope verlassen wird, werden die Variablen (deren dynamic extend nun abgelaufen ist)
       in die Map eingetragen.
       - Bei jeder neuen Deklaration wird geprüft, ob eine Variable mit gleichem Typ bereits in der Map ist. Falls ja, wird die Variable durch eine Referenz auf die Map ersetzt.
@@ -93,15 +93,34 @@ end on
 
 
 ### Herausforderungen:
-- Lambda Lifting bringt Overhead an Funktionsparametern mit sich -> Funktionen die vorher gecallt werden konnten 
+- Array sizes sind nicht unbedingt bekannt, die Wiederverwendung von Arrays hängt derzeit nur an Typ und Dimension.
+    * __Lösung:__ Füge zum Hash Wert in der Map der passiven Variablen nicht nur den Typ, sondern auch Größe und 
+      andere Faktoren hinzu, die die Wiederverwendung von Arrays beeinflussen (persistence, const).
+    * __Problem:__ Größe kann auch Expression sein oder Konstante (womöglich vorher constant propagation machen?)
+- __TO-DO__: Lambda Lifting bringt Overhead an Funktionsparametern mit sich -> Funktionen die vorher gecallt werden konnten 
 (also keine Parameter hatten) und nicht inlined werden mussten, müssen jetzt inlined werden, was wiederum zu mehr Overhead und längerem Code führt.
    * __Lösung?:__ Globaler Stack, der alle Funktionsparameter vorher übergibt und nachher wieder ausgibt.
 - Arrays müssen bei Wiederverwendung neu initialisiert werden, was aber in KSP nicht direkt supported ist
-  * __Lösung:__ Erstelle Funktion (bereits parameter promoted), die dort eingesetzt wird, wo Arrays initialisiert 
-    werden, mit dem Array Typ im Namen.
-  * 
-- Array sizes sind nicht unbedingt bekannt, die Wiederverwendung von Arrays hängt derzeit nur an Typ und Dimension.
-  * __Lösung?:__ Wiederverwendung von Arrays auch anhand der Größe (womöglich vorher constant propagation machen?)
+  * __Lösung:__ Mache Array Assignment Lowering. Erstelle Funktion (bereits parameter promoted), die dort eingesetzt 
+    wird, wo Arrays initialisiert werden, mit dem Array Typ im Namen. Mache diesen Prozess bereits vor der Umwandlung in global Scope, damit der iterator des while loops direkt durch passive Variablen ersetzt werden kann.
+  
+__Pre Array Assignment Lowering:__
+```c
+arr := (0)
+```
+__Post Array Assignment Lowering:__
+```c
+// call
+declare local _iter : int
+array.init.Integer(arr, _iter, 0)
+// function definition
+function array.init.Integer(array : int, _iter : int, value : int)
+	while(_iter < num_elements(array)) 
+		array[_iter] := value
+		inc(_iter)
+	end while
+end function
+```
 
 
 

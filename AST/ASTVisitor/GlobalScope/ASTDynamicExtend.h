@@ -122,19 +122,6 @@ public:
 		m_program->function_call_stack.pop();
 	}
 
-//	void inline visit(NodeSingleAssignment& node) override {
-//		if(auto desugar = node.get_desugaring(m_program)) {
-//			node.accept(*desugar);
-//			if(auto replacement = std::move(desugar->replacement_node)) {
-//				replacement->accept(*this);
-//				node.replace_with(std::move(replacement));
-//			} else {
-//				node.l_value ->accept(*this);
-//				node.r_value->accept(*this);
-//			}
-//		}
-//	}
-
 	void inline visit(NodeSingleDeclaration& node) override {
 		node.variable->determine_locality(m_program, m_current_body);
 
@@ -143,6 +130,7 @@ public:
 		if(m_current_body != m_program->global_declarations.get()) {
 			if (node.variable->is_local and node.variable->data_type == DataType::Const) {
 				node.variable->is_local = false;
+				node.variable->is_global = true;
 				auto node_global_const = clone_as<NodeSingleDeclaration>(&node);
 				m_def_provider->set_declaration(node_global_const->variable.get(), !node.variable->is_local);
 				m_program->global_declarations->add_stmt(
@@ -156,23 +144,22 @@ public:
 			}
 		} else {
 			node.variable->is_local = false;
+			node.variable->is_global = true;
 			m_def_provider->set_declaration(node.variable.get(), !node.variable->is_local);
 			return;
 		}
 
 		if(node.variable->is_local) {
-			if(is_thread_safe_env()) {
-				if (auto free_passive_var = get_free_passive_var(node.variable->ty)) {
+//			if(is_thread_safe_env()) {
+				if (auto free_passive_var = get_free_passive_var(node.variable.get())) {
 					m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
-//					auto node_assignment = node.to_assign_stmt();
-//					node_assignment->accept(*this);
-//					node.replace_with(std::move(node_assignment));
 					auto replacement = to_assign_statement(node);
+					// visit replacement (assign statement) to replace local var with passive_var
 					replacement->accept(*this);
 					node.replace_with(std::move(replacement));
 					return;
 				}
-			}
+//			}
 		}
 		// only add var to local scope if it is not replaced by passive_var
 		node.variable->accept(*this);
@@ -267,22 +254,24 @@ private:
 	inline void add_passive_vars(const std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual>& map2) {
 		for(auto & var : map2) {
 			if(var.second->data_type == DataType::Mutable)
-				m_passive_vars_map[var.second->ty->to_string()].push_back(var.second);
+				m_passive_vars_map[get_passive_var_hash(var.second)].push_back(var.second);
 		}
 	};
-	inline std::string get_passive_var_hash(NodeDataStructure* data) {
+	static inline std::string get_passive_var_hash(NodeDataStructure* data) {
 		auto hash = data->ty->to_string();
 		// add size if it is array
 		if(data->get_node_type() == NodeType::Array) {
 			auto array = static_cast<NodeArray*>(data);
-			hash += array->size->get_string();
+			if(array->size) hash += array->size->get_string();
 		}
+		if(data->persistence.has_value()) hash += data->persistence.value().val;
 		return hash;
 	}
 	/// get next free passive_var for given type
-	inline NodeDataStructure* get_free_passive_var(Type* ty) {
-		auto &vec = m_passive_vars_map[ty->to_string()];
-		auto &idx = m_passive_vars_idx[ty->to_string()];
+	inline NodeDataStructure* get_free_passive_var(NodeDataStructure* data) {
+		auto hash = get_passive_var_hash(data);
+		auto &vec = m_passive_vars_map[hash];
+		auto &idx = m_passive_vars_idx[hash];
 		if(idx < vec.size()) {
 			return vec[idx++];
 		}

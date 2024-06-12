@@ -63,7 +63,7 @@ struct NodeFunctionCall : NodeInstruction {
     void update_token_data(const Token& token) override {
         function -> update_token_data(token);
     }
-    ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+    ASTVisitor* get_lowering(struct NodeProgram *program) const override;
     /// attempts to get and set the definition pointer of the function call and updates the call sites of the definition
     NodeFunctionDefinition* find_definition(class NodeProgram *program);
     /// attempts to get and match metadata from builtin function to this
@@ -137,7 +137,7 @@ struct NodeSingleAssignment : NodeInstruction {
         l_value -> update_token_data(token);
         r_value -> update_token_data(token);
     }
-    ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+    ASTVisitor* get_lowering(struct NodeProgram *program) const override;
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 
 };
@@ -181,6 +181,7 @@ struct NodeDeclaration : NodeInstruction {
 struct NodeSingleDeclaration : NodeInstruction {
     std::unique_ptr<NodeDataStructure> variable;
     std::unique_ptr<NodeAST> value;
+	bool is_promoted = false;
     inline explicit NodeSingleDeclaration(Token tok) : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)) {}
     NodeSingleDeclaration(std::unique_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
             : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)), variable(std::move(arrayVariable)), value(std::move(assignee)) {
@@ -211,7 +212,7 @@ struct NodeSingleDeclaration : NodeInstruction {
         variable -> update_token_data(token);
         if(value) value -> update_token_data(token);
     }
-    ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+    ASTVisitor* get_lowering(struct NodeProgram *program) const override;
     /// returns new assign statement with the declared variable and r_value or neutral element. Can optionally take new
     /// variable to make reference of
     [[nodiscard]] std::unique_ptr<NodeSingleAssignment> to_assign_stmt(NodeDataStructure* var=nullptr);
@@ -277,7 +278,7 @@ struct NodeGetControl : NodeInstruction {
     void update_token_data(const Token& token) override {
         ui_id -> update_token_data(token);
     }
-    ASTVisitor* get_lowering(DefinitionProvider* def_provider) const override;
+    ASTVisitor* get_lowering(struct NodeProgram *program) const override;
 };
 
 struct NodeBody : NodeInstruction {
@@ -316,8 +317,8 @@ struct NodeBody : NodeInstruction {
     }
     void append_body(std::unique_ptr<NodeBody> new_body);
     void prepend_body(std::unique_ptr<NodeBody> new_body);
-    /// adds a node statement to internal vector and sets parent pointer
-    void add_stmt(std::unique_ptr<NodeStatement> stmt);
+    /// adds a node statement to internal vector and sets parent pointer, returns pointer to moved object
+	NodeStatement* add_stmt(std::unique_ptr<NodeStatement> stmt);
 	/// prepends a node statement to internal vector and sets parent pointer
 	void prepend_stmt(std::unique_ptr<NodeStatement> stmt) {
 		stmt->parent = this;
