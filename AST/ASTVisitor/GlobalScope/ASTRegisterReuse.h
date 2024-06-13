@@ -7,9 +7,9 @@
 #include "ASTGlobalScope.h"
 #include "../../../Desugaring/ASTDesugaring.h"
 
-class ASTDynamicExtend : public ASTGlobalScope {
+class ASTRegisterReuse : public ASTGlobalScope {
 public:
-	explicit ASTDynamicExtend(DefinitionProvider *definition_provider, NodeProgram* program) : ASTGlobalScope(definition_provider) {
+	explicit ASTRegisterReuse(DefinitionProvider *definition_provider, NodeProgram* program) : ASTGlobalScope(definition_provider) {
 		m_program = program;
 	}
 

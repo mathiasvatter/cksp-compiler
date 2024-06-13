@@ -4,7 +4,7 @@
 
 #include "Compiler.h"
 #include "AST/ASTVisitor/GlobalScope/ASTGlobalScope.h"
-#include "AST/ASTVisitor/GlobalScope/ASTLambdaLifting.h"
+#include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "AST/ASTVisitor/TypeInference.h"
 
 Compiler::Compiler(CompilerConfig* config)
