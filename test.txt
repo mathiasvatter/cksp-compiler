@@ -1,7 +1,5 @@
-{ Compiled with cksp version 0.0.5 on Wed Jun 12 19:12:08 2024 }
+{ Compiled with cksp version 0.0.5 on Thu Jun 13 12:40:48 2024 }
 on init
-  declare %loc_12[5]
-  declare $loc_13
   declare $loc_6
   declare %loc_7[5]
   declare $loc_8
@@ -59,22 +57,22 @@ on persistence_changed
   end while
   @loc_10 := "sdlkj"
   message(@loc_10)
-  $loc_9 := 0
-  message($loc_9)
-  if($loc_9 = 1)
-    $loc_6 := 0
-    while($loc_6 < num_elements(%loc_12)) 
-      %loc_12[$loc_6] := 1
-      inc($loc_6)
+  $loc_8 := 0
+  message($loc_8)
+  if($loc_8 = 1)
+    $loc_9 := 0
+    while($loc_9 < num_elements(%loc_7)) 
+      %loc_7[$loc_9] := 1
+      inc($loc_9)
     end while
+    $loc_9 := 0
     $loc_6 := 0
-    $loc_13 := 0
-    message($loc_6 & $loc_13 & %loc_12[4])
+    message($loc_9 & $loc_6 & %loc_7[4])
   end if
-  if($loc_9 = 2)
+  if($loc_8 = 2)
+    $loc_9 := 0
     $loc_6 := 0
-    $loc_13 := 0
-    message($loc_6 & $loc_13)
+    message($loc_9 & $loc_6)
   end if
   %loc_11[0] := 3
   %loc_11[1] := 4

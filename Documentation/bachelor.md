@@ -188,6 +188,10 @@ function nil() -> result
 end function
 ```
 
+### Vorgehen:
+1. Tokenizer erweitern. Reserviere folgende keywords: struct, end struct, new, delete, nil.
+2. Parser erweitern. Erstelle neue ASTDataStructures Subclass ASTStruct
+
 ## 3. Allow recursive Functions (Defunctionalize the Continuation)
 - Transform recursive Functions into continuation passing style
 - Defunctionalize by turning functions into data structures

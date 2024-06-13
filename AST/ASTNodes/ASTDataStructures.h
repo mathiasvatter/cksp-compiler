@@ -185,7 +185,6 @@ struct NodeList : NodeDataStructure {
 };
 
 struct NodeConstStatement : NodeDataStructure {
-//    std::string prefix;
     std::unique_ptr<NodeBody> constants;
     inline explicit NodeConstStatement(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::Const) {}
     inline NodeConstStatement(std::string name, std::unique_ptr<NodeBody> constants, Token tok)
@@ -210,4 +209,39 @@ struct NodeConstStatement : NodeDataStructure {
     }
     ASTVisitor* get_lowering(NodeProgram *program) const override;
 
+};
+
+struct NodeStruct : NodeDataStructure {
+	std::unique_ptr<NodeBody> members;
+	std::vector<std::unique_ptr<NodeFunctionDefinition>> methods;
+	inline explicit NodeStruct(const std::string& name, Token tok) : NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct) {}
+	inline NodeStruct(const std::string& name, std::unique_ptr<NodeBody> members, std::vector<std::unique_ptr<NodeFunctionDefinition>> methods, Token tok)
+		: NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct), members(std::move(members)), methods(std::move(methods)) {
+		set_child_parents();
+	}
+	void accept(ASTVisitor& visitor) override;
+	// Kopierkonstruktor
+	NodeStruct(const NodeStruct& other);
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		members->update_parents(this);
+		for (auto & m : methods) {
+			m->update_parents(this);
+		}
+	}
+	void set_child_parents() override {
+		members->set_child_parents();
+		for(auto& m : methods) {
+			if(m) m->parent = this;
+		}
+	};
+	std::string get_string() override { return ""; }
+	void update_token_data(const Token& token) override {
+		members->update_token_data(token);
+		for(auto& m : methods) {
+			if(m) m->update_token_data(token);
+		}
+	}
 };

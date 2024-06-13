@@ -189,3 +189,17 @@ ASTVisitor* NodeConstStatement::get_lowering(NodeProgram *program) const {
     static LoweringConstStruct lowering(program);
     return &lowering;
 }
+
+
+// ************* NodeStruct ***************
+void NodeStruct::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+NodeStruct::NodeStruct(const NodeStruct& other)
+	: NodeDataStructure(other), members(clone_unique(other.members)),
+	  methods(clone_vector<NodeFunctionDefinition>(other.methods)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeStruct::clone() const {
+	return std::make_unique<NodeStruct>(*this);
+}
