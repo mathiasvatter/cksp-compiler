@@ -213,9 +213,9 @@ struct NodeConstStatement : NodeDataStructure {
 
 struct NodeStruct : NodeDataStructure {
 	std::unique_ptr<NodeBlock> members;
-	std::unordered_map<std::string, NodeDataStructure*> members_map;
+	std::unordered_map<std::string, NodeDataStructure*> member_table;
 	std::vector<std::unique_ptr<NodeFunctionDefinition>> methods;
-	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> methods_map;
+	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> method_table;
 	inline explicit NodeStruct(const std::string& name, Token tok) : NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct) {}
 	inline NodeStruct(const std::string& name, std::unique_ptr<NodeBlock> members, std::vector<std::unique_ptr<NodeFunctionDefinition>> methods, Token tok)
 		: NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct), members(std::move(members)), methods(std::move(methods)) {
@@ -244,6 +244,29 @@ struct NodeStruct : NodeDataStructure {
 		members->update_token_data(token);
 		for(auto& m : methods) {
 			if(m) m->update_token_data(token);
+		}
+	}
+	void update_member_table() {
+		member_table.clear();
+		for(auto& member : members->statements) {
+			if(member->statement->get_node_type() == NodeType::Declaration) {
+				auto declaration = static_cast<NodeDeclaration*>(member->statement.get());
+				for(auto & var : declaration->variable) {
+					member_table[var->name] = var.get();
+				}
+			} else if(member->statement->get_node_type() == NodeType::SingleDeclaration) {
+				auto declaration = static_cast<NodeSingleDeclaration*>(member->statement.get());
+				member_table[declaration->variable->name] = declaration->variable.get();
+			} else {
+				auto error = CompileError(ErrorType::Variable, "<Struct> member must be a declaration", "", tok);
+				error.exit();
+			}
+		}
+	}
+	void update_method_table() {
+		method_table.clear();
+		for(auto& method : methods) {
+			method_table.insert({{method->header->name, (int)method->header->args->params.size()}, method.get()});
 		}
 	}
 };

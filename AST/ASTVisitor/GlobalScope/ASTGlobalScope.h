@@ -7,7 +7,42 @@
 #include "../ASTVisitor.h"
 #include "../../../misc/Gensym.h"
 
-
+/**
+ * @class ASTGlobalScope
+ * @brief Optimizes the AST by handling the dynamic extension of variables, renaming local variables,
+ * promoting parameters, and optimizing callbacks.
+ *
+ * This class performs the transformation from local scope to global scope by utilizing register reuse and parameter
+ * promotion. The main steps are:
+ *
+ * 1. Analyzing the dynamic extend of variables/arrays within different scopes in functions and replacing them with
+ *    variables whose dynamic extend has expired. Declarations are replaced by assignments with neutral elements.
+ *     - Creates a map of "passive variables" with hash values based on variable types (and array sizes). Once a scope is exited, variables whose dynamic extension has expired are added to the map.
+ *     - For each new declaration, it checks if a variable with the same type already exists in the map. If so, the variable is replaced by a reference to the map.
+ *     - Replaced declarations are substituted by assignments with neutral elements.
+ * 2. Renaming all local variables using Gensym to prevent variable capturing.
+ *     - Tracks all variables and references in lists and renames them using Gensym to avoid variable capturing when a free "passive variable" has the same name as a variable in the scope.
+ * 3. Promoting parameters (Lambda Lifting) for all functions until all variables are in callbacks.
+ *     - Initially performs the first three steps only with function definitions.
+ *     - Visits each function call up to the last nested call, adds local declarations as new parameters, and maps pointers to the next higher function definitions.
+ *     - Repeats this process until the function call stack is empty and inserts the declarations into the callback.
+ * 4. Executing steps 1 and 2 for all callbacks without visiting functions.
+ *     - Replaces the declarations in the callbacks with passive variables.
+ *     - Adds all declarations to the init callback.
+ *     - Renames with Gensym.
+ *
+ * @note The first class called by this process is ASTRegisterReuse, followed by ASTParameterPromotion.
+ *
+ * @section Challenges and solutions:
+ * - Array sizes are not always known, and array reuse currently depends only on type and dimension.
+ *     * Solution: Add not only the type but also size and other factors affecting array reuse (persistence, const) to the hash value in the map of passive variables.
+ *     * Problem: Size can also be an expression or a constant (consider constant propagation beforehand).
+ * - TODO: Lambda Lifting increases the overhead of function parameters, which may require previously callable functions (without parameters) to be inlined, leading to more overhead and longer code.
+ *     * Solution?: A global stack that passes all function parameters beforehand and retrieves them afterward.
+ * - Arrays need to be reinitialized when reused, which is not directly supported in KSP.
+ *     * Solution: Perform Array Assignment Lowering. Create a function (already parameter promoted) used where arrays are initialized, with the array type in the name. Perform this process before converting to the global scope, so the iterator of the while loop can be directly replaced by passive variables.
+ *
+ */
 class ASTGlobalScope : public ASTVisitor {
 protected:
 	DefinitionProvider* m_def_provider;

@@ -619,24 +619,31 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
                 return Result<std::unique_ptr<NodeProgram>>(callback.get_error());
 			m_callbacks.push_back(std::move(callback.unwrap()));
         } else if (peek().type == token::FUNCTION) {
-            auto function = parse_function_definition(node_program.get());
-            if (function.is_error())
-                return Result<std::unique_ptr<NodeProgram>>(function.get_error());
-            auto node_function = std::move(function.unwrap());
-            auto hash_value = StringIntKey{node_function->header->name, (int)node_function->header->args->params.size()};
-            auto it = m_function_definitions.find(hash_value);
-            // if function already defined
-            if(it != m_function_definitions.end()) {
-                if(node_function->override) {
-                    m_function_definitions[hash_value] = std::move(node_function);
-                } else if(!it->second->override){
-                    return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::SyntaxError,
-                        "Function has already been defined.","",node_function->header->tok));
-                }
-            } else {
-                m_function_definitions[hash_value] = std::move(node_function);
-            }
-
+			auto function = parse_function_definition(node_program.get());
+			if (function.is_error())
+				return Result<std::unique_ptr<NodeProgram>>(function.get_error());
+			auto node_function = std::move(function.unwrap());
+			auto hash_value =
+				StringIntKey{node_function->header->name, (int) node_function->header->args->params.size()};
+			auto it = m_function_definitions.find(hash_value);
+			// if function already defined
+			if (it != m_function_definitions.end()) {
+				if (node_function->override) {
+					m_function_definitions[hash_value] = std::move(node_function);
+				} else if (!it->second->override) {
+					return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::SyntaxError,
+																			 "Function has already been defined.",
+																			 "",
+																			 node_function->header->tok));
+				}
+			} else {
+				m_function_definitions[hash_value] = std::move(node_function);
+			}
+		} else if(peek().type == token::STRUCT) {
+			auto struct_def = parse_struct(node_program.get());
+			if(struct_def.is_error())
+				return Result<std::unique_ptr<NodeProgram>>(struct_def.get_error());
+			node_program->struct_definitions.push_back(std::move(struct_def.unwrap()));
         } else {
             return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::ParseError,
              "Found unknown construct.", "<callback>, <function_definition>", peek()));
@@ -652,6 +659,9 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
         node_program->function_definitions.push_back(std::move(func_def.second));
     }
 	node_program->update_function_lookup();
+	node_program->update_struct_lookup();
+	node_program->check_unique_callbacks();
+	node_program->init_callback = node_program->move_on_init_callback();
     return Result<std::unique_ptr<NodeProgram>>(std::move(node_program));
 }
 
@@ -1415,24 +1425,68 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 	auto l = consume_linebreak("<family statement>");
 	if(l.is_error())
 		return Result<std::unique_ptr<NodeAST>>(l.get_error());
-	auto node_body = std::make_unique<NodeBlock>(construct);
-//	std::vector<std::unique_ptr<NodeStatement>> stmts;
+	auto node_block = std::make_unique<NodeBlock>(construct);
 	while(peek().type != token::END_FAMILY) {
 		_skip_linebreaks();
 		auto declare_stmt = parse_statement(nullptr);
 		if(declare_stmt.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(declare_stmt.get_error());
 		}
-		declare_stmt.unwrap() -> parent = node_body.get();
+		declare_stmt.unwrap() -> parent = node_block.get();
 		if(declare_stmt.unwrap()->statement)
-			node_body->statements.push_back(std::move(declare_stmt.unwrap()));
+			node_block->statements.push_back(std::move(declare_stmt.unwrap()));
 	}
 	consume(); // consume end family
 	node_family_statement->prefix = prefix.val;
-	node_family_statement->members = std::move(node_body);
+	node_family_statement->members = std::move(node_block);
 	node_family_statement->set_child_parents();
 	node_family_statement -> parent = parent;
 	return Result<std::unique_ptr<NodeAST>>(std::move(node_family_statement));
+}
+
+Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
+	Token construct = consume(); //consume struct
+	token end_construct = token::END_STRUCT;
+	if(peek().type != token::KEYWORD) {
+		return Result<std::unique_ptr<NodeStruct>>(CompileError(ErrorType::SyntaxError,
+															 "Found unknown <struct> syntax.", "valid <struct> name", peek()));
+	}
+	auto name = consume(); //consume name
+	auto l = consume_linebreak("<struct>");
+	if(l.is_error())
+		return Result<std::unique_ptr<NodeStruct>>(l.get_error());
+	auto node_member_block = std::make_unique<NodeBlock>(construct);
+	std::vector<std::unique_ptr<NodeFunctionDefinition>> node_methods;
+	while(peek().type != end_construct) {
+		_skip_linebreaks();
+		if(peek().type == token::DECLARE) {
+			auto declare_stmt = parse_declare_statement(node_member_block.get());
+			if(declare_stmt.is_error()) {
+				return Result<std::unique_ptr<NodeStruct>>(declare_stmt.get_error());
+			}
+			node_member_block->add_stmt(std::make_unique<NodeStatement>(std::move(declare_stmt.unwrap()), construct));
+		} else if (peek().type == token::FUNCTION) {
+			auto func = parse_function_definition(node_member_block.get());
+			if(func.is_error()) {
+				return Result<std::unique_ptr<NodeStruct>>(func.get_error());
+			}
+			node_methods.push_back(std::move(func.unwrap()));
+		} else {
+			return Result<std::unique_ptr<NodeStruct>>(CompileError(ErrorType::SyntaxError,
+							 "Found unknown <struct> syntax.", "valid <struct> member or method", peek()));
+		}
+		_skip_linebreaks();
+	}
+	consume(); // consume end struct
+	auto node_struct = std::make_unique<NodeStruct>(
+		name.val,
+		std::move(node_member_block),
+		std::move(node_methods),
+		get_tok());
+	node_struct -> parent = parent;
+	node_struct->update_member_table();
+	node_struct->update_method_table();
+	return Result<std::unique_ptr<NodeStruct>>(std::move(node_struct));
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {

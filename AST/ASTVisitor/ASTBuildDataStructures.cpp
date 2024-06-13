@@ -8,8 +8,6 @@ ASTBuildDataStructures::ASTBuildDataStructures(DefinitionProvider *definition_pr
 
 void ASTBuildDataStructures::visit(NodeProgram& node) {
     m_program = &node;
-	check_unique_callbacks(node);
-	node.init_callback = move_on_init_callback(node);
 
 	m_program->global_declarations->accept(*this);
     for(auto & callback : node.callbacks) {
@@ -202,38 +200,6 @@ void ASTBuildDataStructures::replace_incorrectly_detected_reference(NodeReferenc
 	}
 }
 
-NodeCallback* ASTBuildDataStructures::move_on_init_callback(NodeProgram& node) {
-	// Finden des ersten (und einzigen) on init Callbacks
-	auto it = std::find_if(node.callbacks.begin(), node.callbacks.end(), [&](const std::unique_ptr<NodeCallback>& callback) {
-	  return callback.get() == node.init_callback;
-	});
-	// Move the callback to the first position
-	if (it != node.callbacks.end()) {
-		std::rotate(node.callbacks.begin(), it, std::next(it));
-	}
-	return it->get(); // Return the pointer to the init callback
-}
 
-bool ASTBuildDataStructures::check_unique_callbacks(NodeProgram& node) {
-	auto error = CompileError(ErrorType::SyntaxError, "", -1, "", "", node.tok.file);
-	std::unordered_map<std::string, int> callback_counts;
-	// Zähle jede Callback-Bezeichnung, außer "on ui_control"
-	for (const auto& callback : node.callbacks) {
-		if (callback->begin_callback != "on ui_control") {
-			callback_counts[callback->begin_callback]++;
-		}
-	}
-	// Überprüfe die Anzahl jeder Bezeichnung, sollte genau 1 sein
-	for (const auto& count : callback_counts) {
-		if (count.second > 1) {
-			error.m_message = "Unable to compile. Multiple <" + count.first + "> callbacks found.";
-			error.m_expected = '1';
-			error.m_got = std::to_string(count.second);
-			error.exit();
-			return false;
-		}
-	}
-	return true;
-}
 
 

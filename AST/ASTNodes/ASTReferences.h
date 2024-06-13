@@ -100,3 +100,17 @@ struct NodeListRef : NodeReference {
 
 };
 
+struct NodeStructRef : NodeReference {
+	inline NodeStructRef(std::string name, Token tok)
+		: NodeReference(std::move(name), NodeType::StructRef, std::move(tok)) {
+	}
+	void accept(ASTVisitor& visitor) override;
+	// Kopierkonstruktor
+	NodeStructRef(const NodeStructRef& other);
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	std::string get_string() override {
+		return name;
+	}
+};
+

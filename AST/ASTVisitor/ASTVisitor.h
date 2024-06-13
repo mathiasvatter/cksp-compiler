@@ -37,6 +37,7 @@ public:
     virtual void visit(NodeString& node) {node.ty = TypeRegistry::String;};
 	virtual void visit(NodeVariable& node) {};
 	virtual void visit(NodeVariableRef& node) {};
+	virtual void visit(NodeStructRef& node) {};
     virtual void visit(NodeParamList& node) {
 		for(auto & param : node.params) {
 			param->accept(*this);
@@ -165,6 +166,9 @@ public:
     virtual void visit(NodeProgram& node) {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
+		for(auto & struct_def : node.struct_definitions) {
+			struct_def->accept(*this);
+		}
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}

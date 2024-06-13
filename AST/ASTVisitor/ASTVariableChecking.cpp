@@ -82,7 +82,7 @@ void ASTVariableChecking::visit(NodeUIControl& node) {
 
 void ASTVariableChecking::visit(NodeBlock &node) {
     node.cleanup_body();
-    m_current_body = &node;
+	m_current_block = &node;
 	if(node.parent->get_node_type() != NodeType::Statement and !is_instance_of<NodeDataStructure>(node.parent)) {
 		node.scope = true;
 	}
@@ -122,7 +122,7 @@ void ASTVariableChecking::visit(NodeFunctionCall &node) {
 }
 
 void ASTVariableChecking::visit(NodeSingleDeclaration& node) {
-	node.variable->determine_locality(m_program, m_current_body);
+	node.variable->determine_locality(m_program, m_current_block);
 
     node.variable->accept(*this);
     if(node.value) node.value->accept(*this);
@@ -132,7 +132,7 @@ void ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 void ASTVariableChecking::visit(NodeArray& node) {
 	check_annotation_with_expected(&node, TypeRegistry::ArrayOfUnknown);
 
-	node.determine_locality(m_program, m_current_body);
+	node.determine_locality(m_program, m_current_block);
 	if(node.size) node.size->accept(*this);
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
@@ -155,7 +155,7 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 
 void ASTVariableChecking::visit(NodeNDArray& node) {
 	check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions).get());
-	node.determine_locality(m_program, m_current_body);
+	node.determine_locality(m_program, m_current_block);
 	node.sizes->accept(*this);
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
@@ -175,7 +175,7 @@ void ASTVariableChecking::visit(NodeNDArrayRef& node) {
 
 void ASTVariableChecking::visit(NodeVariable& node) {
 	check_annotation_with_expected(&node, TypeRegistry::Unknown);
-	node.determine_locality(m_program, m_current_body);
+	node.determine_locality(m_program, m_current_block);
 
 	// handle return_vars -> do not check if they have been declared
 	if(node.is_compiler_return) {
@@ -204,7 +204,7 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 
 void ASTVariableChecking::visit(NodeList& node) {
 	check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::List, TypeRegistry::Unknown, 1).get());
-	node.determine_locality(m_program, m_current_body);
+	node.determine_locality(m_program, m_current_block);
 	for(auto &params : node.body) {
 		params->accept(*this);
 	}

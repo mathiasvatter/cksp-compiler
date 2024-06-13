@@ -61,6 +61,7 @@ enum class NodeType {
 	Body,
 	Const,
 	Struct,
+	StructRef,
 	Family,
 	List,
 	ListRef,
