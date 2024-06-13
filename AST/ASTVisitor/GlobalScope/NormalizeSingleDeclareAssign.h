@@ -4,10 +4,21 @@
 
 #pragma once
 
-#include "../Desugaring/ASTDesugaring.h"
+#include "../ASTVisitor.h"
 
-/// class for lowering assign statements especially for array assignments -> get init function and replace with function call
-class DesugarSingleAssign : public ASTDesugaring {
+/**
+ * @class NormalizeSingleDeclareAssign
+ * @brief This class is used for lowering single assign and declare statements considering special needs of vanilla ksp
+ * syntax.
+ *
+ * It respects specific vanilla ksp rules for array initialization and assignment.
+ * @SingleAssignment: if array ref is assigned a list of values, a function call to array.init.{type} or a
+ * series of single index assignments is generated, the function definition is added.
+ * @SingleDeclaration: if array is declared with an initializer list and of type string, a series of single index
+ * assignments is generated.
+ * Inherits from the ASTVisitor class.
+ */
+class NormalizeSingleDeclareAssign : public ASTVisitor {
 private:
 	inline void visit(NodeBlock& node) override {
 		for(auto &stmt : node.statements) {
@@ -45,7 +56,7 @@ private:
 			// if param list has only one value:
 			auto param_list = static_cast<NodeParamList*>(node.r_value.get());
 			if(param_list->params.size() == 1) {
-				DesugarSingleAssign::add_array_init_function_def(m_program, node.l_value->ty->get_element_type());
+				NormalizeSingleDeclareAssign::add_array_init_function_def(m_program, node.l_value->ty->get_element_type());
 				node.replace_with(get_array_init_function_call(node_array_ref, param_list->params[0].get()));
 			} else {
 				node.replace_with(get_array_init_from_list(node_array_ref, param_list));
@@ -77,7 +88,7 @@ private:
 			}
 
 			if(!node.value) {
-				DesugarSingleAssign::add_array_init_function_def(m_program, node.variable->ty->get_element_type());
+				NormalizeSingleDeclareAssign::add_array_init_function_def(m_program, node.variable->ty->get_element_type());
 				node_body->add_stmt(std::make_unique<NodeStatement>(
 					get_array_init_function_call(node_array_ref.get(), TypeRegistry::get_neutral_element_from_type(node.variable->ty->get_element_type()).get()),
 					node.tok));
@@ -85,7 +96,7 @@ private:
 				// if param list has only one value:
 				auto param_list = static_cast<NodeParamList *>(node.value.get());
 				if (param_list->params.size() == 1) {
-					DesugarSingleAssign::add_array_init_function_def(m_program, node.variable->ty->get_element_type());
+					NormalizeSingleDeclareAssign::add_array_init_function_def(m_program, node.variable->ty->get_element_type());
 					node_body->add_stmt(std::make_unique<NodeStatement>(
 						get_array_init_function_call(node_array_ref.get(), param_list->params[0].get()),
 						node.tok));
@@ -105,7 +116,9 @@ private:
 	}
 
 public:
-	explicit DesugarSingleAssign(NodeProgram* program) : ASTDesugaring(program) {};
+	explicit NormalizeSingleDeclareAssign(NodeProgram* program) {
+		m_program = program;
+	};
 
 	static std::unique_ptr<NodeBlock> add_read_functions(const Token& persistence, NodeDataStructure* var) {
 		auto node_body = std::make_unique<NodeBlock>(var->tok);

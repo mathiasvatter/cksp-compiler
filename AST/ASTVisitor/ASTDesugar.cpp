@@ -6,6 +6,9 @@
 
 void ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
+	for(auto & struct_def : node.struct_definitions) {
+		struct_def->accept(*this);
+	}
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }
@@ -14,9 +17,6 @@ void ASTDesugar::visit(NodeProgram& node) {
     }
 	m_program->global_declarations->append_body(declare_compiler_variables());
 	m_program->global_declarations->append_body(std::move(m_global_variable_declarations));
-//	m_program->init_callback->statements->prepend_body(declare_compiler_variables());
-//    m_program->init_callback->statements->prepend_stmt(std::make_unique<NodeStatement>(declare_compiler_variables(), Token()));
-//    m_program->init_callback->statements->prepend_body(std::move(m_global_variable_declarations));
 }
 
 void ASTDesugar::visit(NodeBlock& node) {

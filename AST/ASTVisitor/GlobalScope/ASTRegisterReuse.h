@@ -7,6 +7,19 @@
 #include "ASTGlobalScope.h"
 #include "../../../Desugaring/ASTDesugaring.h"
 
+/**
+ * @brief Handles the dynamic extension of variables/arrays within different scopes in functions and callbacks and
+ * replaces them with typed variables whose dynamic extension has expired.
+ * Declarations are replaced by assignments with neutral elements, or (when promoted by neighbor class ParameterPromotion) removed.
+ *
+ * - Creates a map of "passive variables" with hash values based on variable types (and array sizes).
+ * 	 Once a scope is exited, variables whose dynamic extension has expired are added to the map.
+ * - For each new declaration, it checks if a variable with the same type already exists in the map.
+ *   If so, the variable is replaced by a reference to the map.
+ * - Replaced declarations are substituted by assignments with neutral elements or already assigned values.
+ * - Tracks all variables and references in lists and renames them using Gensym to avoid variable capturing when a free
+ *   "passive variable" has the same name as a variable in the scope.
+ */
 class ASTRegisterReuse : public ASTGlobalScope {
 public:
 	explicit ASTRegisterReuse(DefinitionProvider *definition_provider, NodeProgram* program) : ASTGlobalScope(definition_provider) {

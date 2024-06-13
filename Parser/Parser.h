@@ -101,6 +101,7 @@ protected:
     Result<std::unique_ptr<NodeAST>> parse_const_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_list_block(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_family_statement(NodeAST* parent);
+	Result<std::unique_ptr<NodeStruct>> parse_struct(NodeAST* parent);
 
 	/// combines all possible statement types
     Result<std::unique_ptr<NodeStatement>> parse_statement(NodeAST* parent);

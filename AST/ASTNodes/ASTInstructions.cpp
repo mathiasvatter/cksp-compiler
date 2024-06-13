@@ -11,7 +11,7 @@
 #include "../../Desugaring/DesugarForStatement.h"
 #include "../../Desugaring/DesugarForEachStatement.h"
 #include "../ASTVisitor/GlobalScope/ASTGlobalScope.h"
-#include "../../Desugaring/DesugarSingleAssign.h"
+#include "../ASTVisitor/GlobalScope/NormalizeSingleDeclareAssign.h"
 
 // ************* NodeStatement ***************
 void NodeStatement::accept(ASTVisitor &visitor) {
@@ -159,11 +159,6 @@ NodeAST * NodeSingleAssignment::replace_child(NodeAST* oldChild, std::unique_ptr
 
 ASTVisitor* NodeSingleAssignment::get_lowering(struct NodeProgram *program) const {
     return this->l_value->get_lowering(program);
-}
-
-ASTDesugaring * NodeSingleAssignment::get_desugaring(NodeProgram *program) const {
-	static DesugarSingleAssign desugaring(program);
-	return &desugaring;
 }
 
 // ************* NodeDeclaration ***************

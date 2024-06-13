@@ -138,7 +138,6 @@ struct NodeSingleAssignment : NodeInstruction {
         r_value -> update_token_data(token);
     }
     ASTVisitor* get_lowering(struct NodeProgram *program) const override;
-	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 
 };
 

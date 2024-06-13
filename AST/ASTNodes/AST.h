@@ -414,8 +414,15 @@ struct NodeProgram : NodeAST {
 	void set_child_parents() override;;
     std::string get_string() override {return "";}
     void update_token_data(const Token& token) override {}
-	/// update function lookup table and falsify visited flag
+	/// update function lookup table
 	void update_function_lookup();
+	void update_struct_lookup();
+	/// Checks for uniqueness of all callbacks except "on ui_control"
+	bool check_unique_callbacks();
+	/// Checks for existence and uniqueness of "on init" callback
+	/// If found, returns pointer to the callback node
+	NodeCallback* move_on_init_callback();
+
 };
 
 

@@ -384,9 +384,46 @@ void NodeProgram::update_function_lookup() {
 	}
 }
 
+void NodeProgram::update_struct_lookup() {
+	struct_lookup.clear();
+	for(auto & def : struct_definitions) {
+		struct_lookup.insert({def->name, def.get()});
+	}
+}
 
+bool NodeProgram::check_unique_callbacks() {
+	auto error = CompileError(ErrorType::SyntaxError, "", -1, "", "", tok.file);
+	std::unordered_map<std::string, int> callback_counts;
+	// Zähle jede Callback-Bezeichnung, außer "on ui_control"
+	for (const auto& callback : callbacks) {
+		if (callback->begin_callback != "on ui_control") {
+			callback_counts[callback->begin_callback]++;
+		}
+	}
+	// Überprüfe die Anzahl jeder Bezeichnung, sollte genau 1 sein
+	for (const auto& count : callback_counts) {
+		if (count.second > 1) {
+			error.m_message = "Unable to compile. Multiple <" + count.first + "> callbacks found.";
+			error.m_expected = '1';
+			error.m_got = std::to_string(count.second);
+			error.exit();
+			return false;
+		}
+	}
+	return true;
+}
 
-
+NodeCallback* NodeProgram::move_on_init_callback() {
+	// Finden des ersten (und einzigen) on init Callbacks
+	auto it = std::find_if(callbacks.begin(), callbacks.end(), [&](const std::unique_ptr<NodeCallback>& callback) {
+	  return callback.get() == init_callback;
+	});
+	// Move the callback to the first position
+	if (it != callbacks.end()) {
+		std::rotate(callbacks.begin(), it, std::next(it));
+	}
+	return it->get(); // Return the pointer to the init callback
+}
 
 
 

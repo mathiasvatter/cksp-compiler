@@ -6,14 +6,14 @@
 #include "ASTRegisterReuse.h"
 #include "ASTParameterPromotion.h"
 #include "../ASTPrinter.h"
-#include "../../../Desugaring/DesugarSingleAssign.h"
+#include "NormalizeSingleDeclareAssign.h"
 
 void ASTGlobalScope::visit(NodeProgram &node) {
 	ASTPrinter printer;
 
 	m_program = &node;
 
-	DesugarSingleAssign desugar_single_assign(m_program);
+	NormalizeSingleDeclareAssign desugar_single_assign(m_program);
 	node.accept(desugar_single_assign);
 
 	// first pass to analyze dynamic extend within function definitions and replace with passive_vars

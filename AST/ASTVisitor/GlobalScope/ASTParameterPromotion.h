@@ -6,13 +6,20 @@
 
 #include "ASTGlobalScope.h"
 
+/**
+ * @brief Promotes parameters (Lambda Lifting?) for all functions until all variables are in callbacks.
+ *
+ * - Visits each function call up to the last nested call, adds local declarations as new parameters,
+ *   and maps pointers to the next higher function definitions.
+ * - Repeats this process until the function call stack is empty and inserts the declarations into the callback.
+ * - these declarations in callbacks are marked as promoted, to be removed later
+ */
 class ASTParameterPromotion : public ASTGlobalScope {
 private:
 	/// map for local variable declarations per function definition to be added to the next/above function
 	std::unordered_map<NodeFunctionDefinition*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_local_var_declarations;
 	/// map for local variable declarations per function definition to be added to the next/above callback when no function is above
 	std::unordered_map<NodeCallback*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_callback;
-
 
 public:
 	explicit ASTParameterPromotion(DefinitionProvider* definition_provider) : ASTGlobalScope(definition_provider) {}

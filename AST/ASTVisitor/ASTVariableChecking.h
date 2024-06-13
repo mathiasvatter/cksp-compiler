@@ -43,7 +43,7 @@ private:
 	bool fail = false;
 
 	NodeProgram* m_program = nullptr;
-    NodeBlock* m_current_body = nullptr;
+    NodeBlock* m_current_block = nullptr;
 	DefinitionProvider* m_def_provider = nullptr;
 
 	/// apply type annotations given before parse time and replace node types accordingly

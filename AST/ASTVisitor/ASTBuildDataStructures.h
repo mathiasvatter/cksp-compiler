@@ -51,12 +51,6 @@ private:
     NodeProgram* m_program = nullptr;
 	DefinitionProvider* m_def_provider = nullptr;
 
-	/// Checks for existence and uniqueness of "on init" callback
-	/// If found, returns pointer to the callback node
-	static NodeCallback* move_on_init_callback(NodeProgram& node);
-	/// Checks for uniqueness of all callbacks except "on ui_control"
-	static bool check_unique_callbacks(NodeProgram& node);
-
 	/// updates the node types of parameters at call sites regarding the function definition
 	/// e.g. args can be incorrectly detected as variable refs at call sites, but they are arrays in the definition
 	void update_func_call_node_types(NodeFunctionCall* func_call);
