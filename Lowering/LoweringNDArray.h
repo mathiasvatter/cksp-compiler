@@ -15,7 +15,7 @@ public:
 	void visit(NodeSingleDeclaration &node) override {
         if(node.variable->get_node_type() == NodeType::NDArray) {
             if (auto node_ndarray = cast_node<NodeNDArray>(node.variable.get())) {
-                auto node_body = std::make_unique<NodeBody>(node.tok);
+                auto node_body = std::make_unique<NodeBlock>(node.tok);
                 for (int i = 0; i < node_ndarray->dimensions; i++) {
                     auto node_var = std::make_unique<NodeVariable>(
                             std::optional<Token>(),

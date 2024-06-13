@@ -215,7 +215,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
             std::move(node_function_header),
             std::nullopt,
             false,
-            std::make_unique<NodeBody>(func_name),
+            std::make_unique<NodeBlock>(func_name),
             func_name
             );
     node_function->ty = ret_type;

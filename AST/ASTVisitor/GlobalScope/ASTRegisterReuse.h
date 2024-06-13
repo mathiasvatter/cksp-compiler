@@ -28,7 +28,7 @@ public:
 		rename_local_vars();
 
 		// move all passive_vars declarations to global scope
-		auto local_declare_statements = std::make_unique<NodeBody>(node.tok);
+		auto local_declare_statements = std::make_unique<NodeBlock>(node.tok);
 		for(auto & callback : m_all_callback_decl) {
 			// do not replace with assign statements if in init callback already
 			for(auto & local_decl : callback.second) {
@@ -75,7 +75,7 @@ public:
 		m_program->current_callback = nullptr;
 	}
 
-	void inline visit(NodeBody &node) override {
+	void inline visit(NodeBlock &node) override {
 		m_current_body = &node;
 		if(node.scope) {
 			m_def_provider->add_scope();
@@ -237,7 +237,7 @@ public:
 private:
 	std::string loc_var_prefix = "loc_";
 	Gensym m_gensym;
-	NodeBody* m_current_body = nullptr;
+	NodeBlock* m_current_body = nullptr;
 
 	bool inline is_thread_safe_env() {
 		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or

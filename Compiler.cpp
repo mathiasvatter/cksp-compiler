@@ -4,7 +4,6 @@
 
 #include "Compiler.h"
 #include "AST/ASTVisitor/GlobalScope/ASTGlobalScope.h"
-#include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "AST/ASTVisitor/TypeInference.h"
 
 Compiler::Compiler(CompilerConfig* config)
@@ -24,7 +23,7 @@ void Compiler::compile() {
 
 	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
-	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";

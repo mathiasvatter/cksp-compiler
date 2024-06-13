@@ -26,7 +26,7 @@ public:
 		}
 	}
 
-	void inline visit(NodeBody& node) override {
+	void inline visit(NodeBlock& node) override {
 		for(auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
@@ -89,7 +89,7 @@ public:
 
 		if(m_program->function_call_stack.empty() and !m_declares_per_callback[m_program->current_callback].empty()) {
 			// if in callback, put the declarations right above the function call
-			auto node_body = std::make_unique<NodeBody>(node.tok);
+			auto node_body = std::make_unique<NodeBlock>(node.tok);
 			node_body->scope = true;
 			for(auto &decl : m_declares_per_callback[m_program->current_callback]) {
 				decl.second->is_promoted = true;

@@ -22,7 +22,7 @@ void ASTOptimizations::visit(NodeSingleDeclaration& node) {
 	if(node.value) node.value->accept(*this);
 }
 
-void ASTOptimizations::visit(NodeBody& node) {
+void ASTOptimizations::visit(NodeBlock& node) {
     for(auto& statement : node.statements) {
         statement->accept(*this);
     }

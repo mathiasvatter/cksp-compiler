@@ -9,7 +9,7 @@
 /// class for lowering assign statements especially for array assignments -> get init function and replace with function call
 class DesugarSingleAssign : public ASTDesugaring {
 private:
-	inline void visit(NodeBody& node) override {
+	inline void visit(NodeBlock& node) override {
 		for(auto &stmt : node.statements) {
 			stmt->accept(*this);
 		}
@@ -60,9 +60,9 @@ private:
 			if (m_program->current_callback == m_program->init_callback) return;
 			if (!node.variable->is_local) return;
 		}
-		std::unique_ptr<NodeBody> node_body = nullptr;
+		std::unique_ptr<NodeBlock> node_body = nullptr;
 		if(node.variable->get_node_type() == NodeType::Array) {
-			node_body = std::make_unique<NodeBody>(node.tok);
+			node_body = std::make_unique<NodeBlock>(node.tok);
 			auto node_array = static_cast<NodeArray*>(node.variable.get());
 			auto node_array_ref = node_array->to_reference();
 			// if lhs is arrayref and has no index, check if array is initialized with a list of values
@@ -107,8 +107,8 @@ private:
 public:
 	explicit DesugarSingleAssign(NodeProgram* program) : ASTDesugaring(program) {};
 
-	static std::unique_ptr<NodeBody> add_read_functions(const Token& persistence, NodeDataStructure* var) {
-		auto node_body = std::make_unique<NodeBody>(var->tok);
+	static std::unique_ptr<NodeBlock> add_read_functions(const Token& persistence, NodeDataStructure* var) {
+		auto node_body = std::make_unique<NodeBlock>(var->tok);
 
 		auto it = PERSISTENCE_TOKENS.find(persistence.type);
 		if(it == PERSISTENCE_TOKENS.end()) {
@@ -133,8 +133,8 @@ public:
 		return node_body;
 	}
 
-	static std::unique_ptr<NodeBody> get_array_init_from_list(NodeArrayRef* array_ref, NodeParamList* param_list) {
-		auto node_body = std::make_unique<NodeBody>(array_ref->tok);
+	static std::unique_ptr<NodeBlock> get_array_init_from_list(NodeArrayRef* array_ref, NodeParamList* param_list) {
+		auto node_body = std::make_unique<NodeBlock>(array_ref->tok);
 		for(int i = 0; i<param_list->params.size(); i++) {
 			array_ref->index = std::make_unique<NodeInt>((int32_t)i, array_ref->tok);
 			auto &param = param_list->params[i];
@@ -149,13 +149,13 @@ public:
 	}
 
 
-	static inline std::unique_ptr<NodeBody> get_array_init_function_call(NodeReference* array_ref, NodeAST* value) {
+	static inline std::unique_ptr<NodeBlock> get_array_init_function_call(NodeReference* array_ref, NodeAST* value) {
 		std::string func_name = "array.init."+array_ref->declaration->ty->get_element_type()->to_string();
 		auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
 		node_iterator->is_local = true;
 		auto node_iterator_ref = node_iterator->to_reference();
 		node_iterator_ref->match_data_structure(node_iterator.get());
-		auto node_body = std::make_unique<NodeBody>(array_ref->tok);
+		auto node_body = std::make_unique<NodeBlock>(array_ref->tok);
 		node_body->scope = true;
 
 		std::unique_ptr<NodeAST> rhs_value = nullptr;
@@ -225,7 +225,7 @@ public:
 			),
 			std::nullopt,
 			false,
-			std::make_unique<NodeBody>(Token()),
+			std::make_unique<NodeBlock>(Token()),
 			Token()
 		);
 		node_function_def->body->scope = true;
@@ -235,7 +235,7 @@ public:
 		node_iterator_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->args->params[1].get()));
 		node_value_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->args->params[2].get()));
 
-		auto node_while_body = std::make_unique<NodeBody>(Token());
+		auto node_while_body = std::make_unique<NodeBlock>(Token());
 		node_while_body->scope = true;
 		auto node_assignment = std::make_unique<NodeSingleAssignment>(
 			node_array_ref->clone(),

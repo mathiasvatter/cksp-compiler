@@ -555,7 +555,7 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
 
 Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
     auto node_callback = std::make_unique<NodeCallback>(get_tok());
-    auto node_body = std::make_unique<NodeBody>(get_tok());
+    auto node_body = std::make_unique<NodeBlock>(get_tok());
     std::string begin_callback = consume().val;
 	if(begin_callback == "on init") {
 		m_init_callback_idx = m_callbacks.size();
@@ -668,6 +668,7 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent)
 Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent) {
     size_t end_backup_pos; // in case of declaration list and ui_slider sliddd(0,1), <-
     while (true) {
+//		_skip_linebreaks();
         if (peek().type == token::OPEN_PARENTH) {
             size_t backup_pos = m_pos; // backup token index
             auto exprResult = parse_expression(parent);
@@ -699,7 +700,6 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
                 if (peek().type == token::CLOSED_PARENTH) consume(); // consume )
             }
         } else {
-//			_skip_linebreaks();
             auto exprResult = parse_expression(parent);
             if (!exprResult.is_error()) {
                 params.push_back(std::move(exprResult.unwrap()));
@@ -712,6 +712,7 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
                 return Result<SuccessTag>(exprResult.get_error());
             }
         }
+//		_skip_linebreaks();
         if (peek().type != token::COMMA) break;
         end_backup_pos = m_pos;
         consume(); // consume comma
@@ -771,6 +772,7 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_function_args(NodeAST* pare
                 func_args->set_child_parents();
             }
         }
+//		_skip_linebreaks();
         if (peek().type == token::CLOSED_PARENTH) {
             consume();
         }
@@ -805,7 +807,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     auto node_function_definition = std::make_unique<NodeFunctionDefinition>(get_tok());
     std::unique_ptr<NodeFunctionHeader> func_header;
     std::optional<std::unique_ptr<NodeParamList>> func_return_var;
-    auto func_body = std::make_unique<NodeBody>(get_tok());
+    auto func_body = std::make_unique<NodeBlock>(get_tok());
     bool func_override = false;
     if (peek().type != token::KEYWORD) {
         error.m_message = "Missing function name.";
@@ -1133,7 +1135,7 @@ Result<std::unique_ptr<NodeIf>> Parser::parse_if_statement(NodeAST* parent) {
     }
     consume(); // consume linebreak
     _skip_linebreaks();
-    auto if_statements = std::make_unique<NodeBody>(get_tok());
+    auto if_statements = std::make_unique<NodeBlock>(get_tok());
     while (peek().type != token::END_IF && peek().type != token::ELSE) {
         if(peek().type == token::END_IF or peek().type == token::ELSE) break;
         auto stmt = parse_statement(node_if_statement.get());
@@ -1144,7 +1146,7 @@ Result<std::unique_ptr<NodeIf>> Parser::parse_if_statement(NodeAST* parent) {
             if_statements->statements.push_back(std::move(stmt.unwrap()));
     }
     bool no_end_if = false;
-    auto else_statements = std::make_unique<NodeBody>(get_tok());
+    auto else_statements = std::make_unique<NodeBlock>(get_tok());
     else_statements->parent = node_if_statement.get();
     if(peek().type == token::ELSE) {
         consume();
@@ -1217,7 +1219,7 @@ Result<std::unique_ptr<NodeFor>> Parser::parse_for_statement(NodeAST* parent) {
                                                              "Missing linebreak in <for-loop>", "linebreak", peek()));
     }
     consume(); //consume linebreak
-    auto node_body = std::make_unique<NodeBody>(get_tok());
+    auto node_body = std::make_unique<NodeBlock>(get_tok());
     while (peek().type != token::END_FOR) {
         _skip_linebreaks();
         if(peek().type == token::END_FOR) break;
@@ -1277,7 +1279,7 @@ Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* p
                                                                  "Missing linebreak in <for-loop>", "linebreak", peek()));
     }
     consume(); //consume linebreak
-    auto node_body = std::make_unique<NodeBody>(get_tok());
+    auto node_body = std::make_unique<NodeBlock>(get_tok());
     while (peek().type != token::END_FOR) {
         _skip_linebreaks();
         if(peek().type == token::END_FOR) break;
@@ -1315,7 +1317,7 @@ Result<std::unique_ptr<NodeWhile>> Parser::parse_while_statement(NodeAST* parent
                                                                "Expected linebreak after while-condition.", "linebreak", peek()));
     }
     consume(); //consume linebreak
-    auto node_body = std::make_unique<NodeBody>(get_tok());
+    auto node_body = std::make_unique<NodeBlock>(get_tok());
     while (peek().type != token::END_WHILE) {
         auto stmt = parse_statement(node_body.get());
         if (stmt.is_error()) {
@@ -1346,7 +1348,7 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
         return Result<std::unique_ptr<NodeSelect>>(CompileError(ErrorType::SyntaxError,
                                                                 "Expected cases in select-expression.", "case <expression>", peek()));
     }
-    std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> cases;
+    std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBlock>>> cases;
     while (peek().type != token::END_SELECT) {
         _skip_linebreaks();
         if(peek().type == token::CASE) {
@@ -1378,7 +1380,7 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
                                                                         "Expected linebreak after case.", "linebreak", peek()));
 			}
 			consume(); //consume linebreak
-			auto stmts = std::make_unique<NodeBody>(get_tok());
+			auto stmts = std::make_unique<NodeBlock>(get_tok());
 //            stmts->parent = node_select_statement.get();
 			while(peek().type != token::END_SELECT && peek().type != token::CASE) {
 				auto stmt = parse_statement(node_select_statement.get());
@@ -1413,7 +1415,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 	auto l = consume_linebreak("<family statement>");
 	if(l.is_error())
 		return Result<std::unique_ptr<NodeAST>>(l.get_error());
-	auto node_body = std::make_unique<NodeBody>(construct);
+	auto node_body = std::make_unique<NodeBlock>(construct);
 //	std::vector<std::unique_ptr<NodeStatement>> stmts;
 	while(peek().type != token::END_FAMILY) {
 		_skip_linebreaks();
@@ -1515,7 +1517,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) 
 	}
 	consume(); // consume linebreak
 
-	auto node_body = std::make_unique<NodeBody>(construct);
+	auto node_body = std::make_unique<NodeBlock>(construct);
 	while(peek().type != end_construct) {
 		_skip_linebreaks();
 		if(peek().type == end_construct) break;

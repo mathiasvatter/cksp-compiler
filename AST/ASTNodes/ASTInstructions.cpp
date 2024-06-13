@@ -280,19 +280,19 @@ ASTVisitor* NodeGetControl::get_lowering(struct NodeProgram *program) const {
     return &lowering;
 }
 
-// ************* NodeBody ***************
-void NodeBody::accept(ASTVisitor &visitor) {
+// ************* NodeBlock ***************
+void NodeBlock::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeBody::NodeBody(const NodeBody& other) : NodeInstruction(other), scope(other.scope) {
+NodeBlock::NodeBlock(const NodeBlock& other) : NodeInstruction(other), scope(other.scope) {
     statements = clone_vector(other.statements);
     set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeBody::clone() const {
-    return std::make_unique<NodeBody>(*this);
+std::unique_ptr<NodeAST> NodeBlock::clone() const {
+    return std::make_unique<NodeBlock>(*this);
 }
 
-void NodeBody::append_body(std::unique_ptr<NodeBody> new_body) {
+void NodeBlock::append_body(std::unique_ptr<NodeBlock> new_body) {
     if(!new_body) return;
     for(auto &stmt : new_body->statements) {
         stmt->parent = this;
@@ -300,7 +300,7 @@ void NodeBody::append_body(std::unique_ptr<NodeBody> new_body) {
     statements.insert(statements.end(), std::make_move_iterator(new_body->statements.begin()), std::make_move_iterator(new_body->statements.end()));
 }
 
-void NodeBody::prepend_body(std::unique_ptr<NodeBody> new_body) {
+void NodeBlock::prepend_body(std::unique_ptr<NodeBlock> new_body) {
     if(!new_body) return;
     for(auto &stmt : new_body->statements) {
         stmt->parent = this;
@@ -308,19 +308,19 @@ void NodeBody::prepend_body(std::unique_ptr<NodeBody> new_body) {
     statements.insert(statements.begin(), std::make_move_iterator(new_body->statements.begin()), std::make_move_iterator(new_body->statements.end()));
 }
 
-NodeStatement* NodeBody::add_stmt(std::unique_ptr<NodeStatement> stmt) {
+NodeStatement* NodeBlock::add_stmt(std::unique_ptr<NodeStatement> stmt) {
     stmt->parent = this;
     statements.push_back(std::move(stmt));
 	return statements.back().get();
 }
 
-void NodeBody::cleanup_body() {
+void NodeBlock::cleanup_body() {
     std::vector<std::unique_ptr<NodeStatement>> temp;
     for(auto & statement : statements) {
         if(statement->statement->get_node_type() == NodeType::Body) {
-            // Übertragen Sie die function_inlines vom aktuellen NodeBody-Element
-            // auf das erste Element der inneren NodeBody
-			auto node_innner_body = static_cast<NodeBody*>(statement->statement.get());
+            // Übertragen Sie die function_inlines vom aktuellen NodeBlock-Element
+            // auf das erste Element der inneren NodeBlock
+			auto node_innner_body = static_cast<NodeBlock*>(statement->statement.get());
 //			if(node_innner_body->scope) continue;
             auto& inner_statements = node_innner_body->statements;
             if (!inner_statements.empty()) {
@@ -340,7 +340,7 @@ void NodeBody::cleanup_body() {
                     std::make_move_iterator(inner_statements.begin()),
                     std::make_move_iterator(inner_statements.end())
             );
-            // Überspringen Sie das Hinzufügen des aktuellen NodeBody-Elements zu `temp`
+            // Überspringen Sie das Hinzufügen des aktuellen NodeBlock-Elements zu `temp`
             continue;
         }
         // Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht speziell behandelt wird
@@ -469,9 +469,9 @@ static std::map< std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_
     return cloned_map;
 }
 
-static std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> clone_cases(
-        const std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>>& original) {
-    std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBody>>> cloned_cases;
+static std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBlock>>> clone_cases(
+        const std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBlock>>>& original) {
+    std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBlock>>> cloned_cases;
     cloned_cases.reserve(original.size());
     for (auto& pair : original) {
         cloned_cases.emplace_back(clone_vector(pair.first), clone_unique(pair.second));

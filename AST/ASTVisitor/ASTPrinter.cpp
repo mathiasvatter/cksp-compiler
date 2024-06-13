@@ -138,9 +138,10 @@ void ASTPrinter::visit(NodeConstStatement &node) {
 }
 
 void ASTPrinter::visit(NodeStruct &node) {
-    os << "struct " << node.prefix << std::endl;
-    for(auto &stmt: node.members) {
-        stmt->accept(*this);
+	os << "struct " << node.name << std::endl;
+	node.members->accept(*this);
+    for(auto &m: node.methods) {
+        m->accept(*this);
     }
     os << "end struct";
 }
@@ -251,7 +252,7 @@ void ASTPrinter::visit(NodeGetControl &node) {
     os << " -> " << node.control_param;
 }
 
-void ASTPrinter::visit(NodeBody &node) {
+void ASTPrinter::visit(NodeBlock &node) {
     node.cleanup_body();
     if(node.scope) m_scope_count++;
     for(auto & stmt : node.statements) {

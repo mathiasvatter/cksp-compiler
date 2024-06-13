@@ -31,7 +31,7 @@ class ASTDesugar: public ASTVisitor {
     /// alter for loops to while loops
     void visit(NodeFor& node) override;
 
-    void visit(NodeBody& node) override;
+    void visit(NodeBlock& node) override;
 
 	/// desugar into single declare statements
 	void visit(NodeFamily& node) override;
@@ -42,8 +42,8 @@ class ASTDesugar: public ASTVisitor {
 private:
 //    NodeProgram* m_program = nullptr;
 
-    std::unique_ptr<NodeBody> m_global_variable_declarations = std::make_unique<NodeBody>(Token());
+    std::unique_ptr<NodeBlock> m_global_variable_declarations = std::make_unique<NodeBlock>(Token());
     /// declare necessary compiler variables for iterating etc.
-    std::unique_ptr<NodeBody> declare_compiler_variables();
+    std::unique_ptr<NodeBlock> declare_compiler_variables();
 };
 

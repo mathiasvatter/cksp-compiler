@@ -332,7 +332,7 @@ void ASTFunctionInlining::visit(NodeSelect& node) {
 	}
 }
 
-void ASTFunctionInlining::visit(NodeBody& node) {
+void ASTFunctionInlining::visit(NodeBlock& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
@@ -344,8 +344,8 @@ void ASTFunctionInlining::visit(NodeUIControl &node) {
 	node.params->accept(*this);
 }
 
-std::unique_ptr<NodeBody> ASTFunctionInlining::declare_dummy_variables() {
-	auto node_body = std::make_unique<NodeBody>(Token());
+std::unique_ptr<NodeBlock> ASTFunctionInlining::declare_dummy_variables() {
+	auto node_body = std::make_unique<NodeBlock>(Token());
     Token tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
     std::string dummy_name = "_return_dummy";
     auto node_return_dummy = std::make_unique<NodeVariable>(std::optional<Token>(), dummy_name, TypeRegistry::Integer, DataType::Mutable, tok);

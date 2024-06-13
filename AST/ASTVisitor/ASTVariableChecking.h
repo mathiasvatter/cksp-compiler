@@ -17,7 +17,7 @@ public:
 	/// Check for correct variable types and parameter number
 	void visit(NodeUIControl& node) override;
 	/// Scoping
-	void visit(NodeBody& node) override;
+	void visit(NodeBlock& node) override;
     /// decide if declaration is local or global
     void visit(NodeSingleDeclaration& node) override;
 	/// Check if correctly declared and save declaration
@@ -43,7 +43,7 @@ private:
 	bool fail = false;
 
 	NodeProgram* m_program = nullptr;
-    NodeBody* m_current_body = nullptr;
+    NodeBlock* m_current_body = nullptr;
 	DefinitionProvider* m_def_provider = nullptr;
 
 	/// apply type annotations given before parse time and replace node types accordingly

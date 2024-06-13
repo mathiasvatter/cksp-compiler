@@ -57,7 +57,7 @@ public:
 	}
 
 	void visit(NodeList &node) override {
-        auto node_body = std::make_unique<NodeBody>(node.tok);
+        auto node_body = std::make_unique<NodeBlock>(node.tok);
         auto node_main_array = std::make_unique<NodeArray>(
 			std::nullopt,
 			node.name,
@@ -173,7 +173,7 @@ public:
                     node.tok);
             node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_const_declaration), node.tok));
 
-            auto node_while_body = std::make_unique<NodeBody>(node.tok);
+            auto node_while_body = std::make_unique<NodeBlock>(node.tok);
             auto node_expression = std::make_unique<NodeBinaryExpr>(
                     token::ADD,
                     node_iterator_var->clone(),

@@ -117,7 +117,7 @@ struct NodeDataStructure : NodeAST {
 	}
     virtual std::unique_ptr<NodeReference> to_reference();
 	/// determines if current data structure is local variable and sets is_local flag
-	bool determine_locality(class NodeProgram* program, class NodeBody* current_body);
+	bool determine_locality(class NodeProgram* program, struct NodeBlock* current_block);
 	/// determines if current data structure is a parameter in a function definition
 	bool is_function_param();
 	/// tries to infer the type by specializing given type from Number to Integer
@@ -304,10 +304,10 @@ struct NodeCallback: NodeAST {
 	bool is_thread_safe = true;
     std::string begin_callback;
     std::unique_ptr<NodeAST> callback_id = nullptr;
-    std::unique_ptr<NodeBody> statements;
+    std::unique_ptr<NodeBlock> statements;
     std::string end_callback;
     explicit NodeCallback(Token tok);
-	NodeCallback(std::string begin_callback, std::unique_ptr<NodeBody> statements, std::string end_callback, Token tok);
+	NodeCallback(std::string begin_callback, std::unique_ptr<NodeBlock> statements, std::string end_callback, Token tok);
     ~NodeCallback();
 	void accept(ASTVisitor& visitor) override;
     NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
@@ -372,11 +372,11 @@ struct NodeFunctionDefinition: NodeAST {
     std::unique_ptr<NodeFunctionHeader> header;
     std::optional<std::unique_ptr<NodeParamList>> return_variable;
     bool override = false;
-    std::unique_ptr<NodeBody> body;
+    std::unique_ptr<NodeBlock> body;
     explicit NodeFunctionDefinition(Token tok);
     NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
                                   std::optional<std::unique_ptr<NodeParamList>> returnVariable, bool override,
-                                  std::unique_ptr<NodeBody> body, Token tok);
+                                  std::unique_ptr<NodeBlock> body, Token tok);
     ~NodeFunctionDefinition();
     void accept(ASTVisitor& visitor) override;
     NodeFunctionDefinition(const NodeFunctionDefinition& other);
@@ -398,8 +398,10 @@ struct NodeProgram : NodeAST {
 	class DefinitionProvider* def_provider = nullptr;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
-	std::unique_ptr<NodeBody> global_declarations;
 	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> function_lookup;
+	std::vector<std::unique_ptr<struct NodeStruct>> struct_definitions;
+	std::unordered_map<std::string, NodeStruct*> struct_lookup;
+	std::unique_ptr<NodeBlock> global_declarations;
 	explicit NodeProgram(Token tok);
 	NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 					   std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok);

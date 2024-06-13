@@ -21,8 +21,8 @@ std::unique_ptr<NodeStatement> ASTVisitor::make_declare_variable(const std::stri
 }
 
 
-std::unique_ptr<NodeBody> ASTVisitor::make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent) {
-    auto node_body = std::make_unique<NodeBody>(var->tok);
+std::unique_ptr<NodeBlock> ASTVisitor::make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent) {
+    auto node_body = std::make_unique<NodeBlock>(var->tok);
     auto node_assignment = std::make_unique<NodeSingleAssignment>(
 		var->clone(),
 		std::make_unique<NodeInt>(from, var->tok), var->tok

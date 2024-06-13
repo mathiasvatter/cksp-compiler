@@ -40,7 +40,7 @@ public:
                 values.push_back(values.back()->clone());
             }
         }
-        auto node_body = std::make_unique<NodeBody>(node.tok);
+        auto node_body = std::make_unique<NodeBlock>(node.tok);
         // get variable and their values together and put them in to NodeStatement
         for(int i = 0; i<declare_statements.size(); i++) {
             auto &stmt = declare_statements[i];
@@ -80,7 +80,7 @@ public:
             values.push_back(values.back()->clone());
         }
 
-        auto node_body = std::make_unique<NodeBody>(node.tok);
+        auto node_body = std::make_unique<NodeBlock>(node.tok);
         for(int i = 0; i<assign_statements.size(); i++) {
             auto &stmt = assign_statements[i];
             auto &val = values[i];
