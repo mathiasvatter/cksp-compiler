@@ -6,7 +6,7 @@
 
 #include "ASTGlobalScope.h"
 
-class ASTLambdaLifting : public ASTGlobalScope {
+class ASTParameterPromotion : public ASTGlobalScope {
 private:
 	/// map for local variable declarations per function definition to be added to the next/above function
 	std::unordered_map<NodeFunctionDefinition*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_local_var_declarations;
@@ -15,8 +15,8 @@ private:
 
 
 public:
-	explicit ASTLambdaLifting(DefinitionProvider* definition_provider) : ASTGlobalScope(definition_provider) {}
-	~ASTLambdaLifting() = default;
+	explicit ASTParameterPromotion(DefinitionProvider* definition_provider) : ASTGlobalScope(definition_provider) {}
+	~ASTParameterPromotion() = default;
 
 	inline void visit(NodeProgram& node) override {
 		m_program = &node;

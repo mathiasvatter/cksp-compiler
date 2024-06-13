@@ -3,8 +3,8 @@
 //
 
 #include "ASTGlobalScope.h"
-#include "ASTDynamicExtend.h"
-#include "ASTLambdaLifting.h"
+#include "ASTRegisterReuse.h"
+#include "ASTParameterPromotion.h"
 #include "../ASTPrinter.h"
 #include "../../../Desugaring/DesugarSingleAssign.h"
 
@@ -17,14 +17,14 @@ void ASTGlobalScope::visit(NodeProgram &node) {
 	node.accept(desugar_single_assign);
 
 	// first pass to analyze dynamic extend within function definitions and replace with passive_vars
-	ASTDynamicExtend dyn_extend(m_def_provider, m_program);
+	ASTRegisterReuse dyn_extend(m_def_provider, m_program);
 	for (auto & def : node.function_definitions) {
 		def->accept(dyn_extend);
 	}
 	// rename local variables in function definitions
 	dyn_extend.rename_local_vars();
 
-	ASTLambdaLifting lambda_lifting(m_def_provider);
+	ASTParameterPromotion lambda_lifting(m_def_provider);
 	node.accept(lambda_lifting);
 
 	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
