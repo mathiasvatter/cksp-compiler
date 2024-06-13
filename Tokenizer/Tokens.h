@@ -71,6 +71,7 @@
     XX(FAMILY, "family") \
     XX(STRUCT, "struct") \
     XX(TASKFUNC, "taskfunc") \
+    XX(COMPONENT, "component") \
     XX(MACRO, "macro") \
     XX(END_FUNCTION, "end function") \
     XX(END_FOR, "end for") \
@@ -82,6 +83,7 @@
     XX(END_FAMILY, "end family") \
     XX(END_STRUCT, "end struct") \
     XX(END_TASKFUNC, "end taskfunc") \
+    XX(END_COMPONENT, "end component") \
     XX(END_MACRO, "end macro") \
     XX(TO, "to") \
     XX(IN, "in") \
@@ -112,6 +114,11 @@
     XX(END_INC, "end_inc") \
     XX(UI_CONTROL, "ui_control")\
     XX(RETURN, "return")\
+    XX(FALSE, "false")\
+    XX(TRUE, "true")\
+    XX(NEW, "new")\
+    XX(DELETE, "delete")\
+    XX(NIL, "nil")\
 	XX(PRAGMA, "pragma")
 
 #define ENUM(name, str) name,
@@ -174,14 +181,18 @@ inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{"#pragma",
 inline std::unordered_map<std::string, token> STATEMENT_SYNTAX = {{"to", token::TO}, {"downto", token::DOWNTO}, {"step", token::STEP}, {"else", token::ELSE},
 																  {"case", token::CASE}, {"in", token::IN}, {"default", token::DEFAULT}};
 inline std::unordered_map<std::string, token> FUNCTION_SYNTAX = {{"override", token::OVERRIDE}, {"call", token::CALL}, {"return", token::RETURN}};
+inline std::unordered_map<std::string, token> OBJECT_SYNTAX = {{"new", token::NEW}, /*{"delete", token::DELETE},*/ {"nil", token::NIL}};
+inline std::unordered_map<std::string, token> BOOLEAN_SYNTAX = {{"false", token::FALSE}, {"true", token::TRUE}};
+
+
 // control statements that also have an end
 inline std::unordered_map<std::string, token> END_STATEMENTS = {{"end function", token::END_FUNCTION}, {"end for", token::END_FOR}, {"end while", token::END_WHILE},
 											  {"end if", token::END_IF}, {"end select", token::END_SELECT}, {"end const", token::END_CONST},
                                               {"end list", token::END_LIST}, {"end family", token::END_FAMILY}, {"end struct", token::END_STRUCT},
-											  {"end macro", token::END_MACRO}, {"end taskfunc", token::END_TASKFUNC}};
+											  {"end macro", token::END_MACRO}, {"end taskfunc", token::END_TASKFUNC}, {"end component", token::END_COMPONENT}};
 inline std::unordered_map<std::string, token> STATEMENTS = {{"function", token::FUNCTION}, {"for", token::FOR}, {"while", token::WHILE}, {"if", token::IF},
                                           {"select", token::SELECT}, {"const", token::CONST}, {"list", token::LIST}, {"family", token::FAMILY},
-                                          {"struct", token::STRUCT}, {"macro", token::MACRO}, {"taskfunc", token::TASKFUNC}};
+                                          {"struct", token::STRUCT}, {"macro", token::MACRO}, {"taskfunc", token::TASKFUNC}, {"component", token::COMPONENT}};
 inline std::unordered_set<std::string> CALLBACKS = {"init", "note", "release", "midi_in", "controller",
 											 "rpn", "nrpn", "ui_update", "_pgs_changed", "pgs_changed",
 											 "poly_at", "listener", "async_complete", "persistence_changed", "ui_control", "ui_controls"};

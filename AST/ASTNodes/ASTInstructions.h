@@ -328,38 +328,6 @@ struct NodeBody : NodeInstruction {
     void cleanup_body();
 };
 
-struct NodeStruct : NodeInstruction {
-    std::string prefix;
-    std::vector<std::unique_ptr<NodeStatement>> members;
-    inline explicit NodeStruct(Token tok) : NodeInstruction(NodeType::Struct, std::move(tok)) {}
-    inline NodeStruct(std::string prefix, std::vector<std::unique_ptr<NodeStatement>> members, Token tok)
-            : NodeInstruction(NodeType::Struct, std::move(tok)), prefix(std::move(prefix)), members(std::move(members)) {
-        set_child_parents();
-    }
-    void accept(ASTVisitor& visitor) override;
-    // Kopierkonstruktor
-    NodeStruct(const NodeStruct& other);
-    // Clone Methode
-    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    void update_parents(NodeAST* new_parent) override {
-        parent = new_parent;
-        for (auto & member : members) {
-            member->update_parents(this);
-        }
-    }
-    void set_child_parents() override {
-        for(auto& m : members) {
-            if(m) m->parent = this;
-        }
-    };
-    std::string get_string() override { return ""; }
-    void update_token_data(const Token& token) override {
-        for(auto &m : members) {
-            m->update_token_data(token);
-        }
-    }
-};
-
 struct NodeFamily : NodeInstruction {
     std::string prefix;
     std::unique_ptr<NodeBody> members;

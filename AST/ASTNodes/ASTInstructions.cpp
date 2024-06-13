@@ -350,19 +350,6 @@ void NodeBody::cleanup_body() {
     statements = std::move(temp);
 }
 
-// ************* NodeStruct ***************
-void NodeStruct::accept(ASTVisitor &visitor) {
-    visitor.visit(*this);
-}
-NodeStruct::NodeStruct(const NodeStruct& other)
-        : NodeInstruction(other), prefix(other.prefix),
-          members(clone_vector<NodeStatement>(other.members)) {
-    set_child_parents();
-}
-std::unique_ptr<NodeAST> NodeStruct::clone() const {
-    return std::make_unique<NodeStruct>(*this);
-}
-
 // ************* NodeFamily ***************
 void NodeFamily::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
