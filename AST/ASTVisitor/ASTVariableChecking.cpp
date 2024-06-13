@@ -80,7 +80,7 @@ void ASTVariableChecking::visit(NodeUIControl& node) {
 	}
 }
 
-void ASTVariableChecking::visit(NodeBody &node) {
+void ASTVariableChecking::visit(NodeBlock &node) {
     node.cleanup_body();
     m_current_body = &node;
 	if(node.parent->get_node_type() != NodeType::Statement and !is_instance_of<NodeDataStructure>(node.parent)) {

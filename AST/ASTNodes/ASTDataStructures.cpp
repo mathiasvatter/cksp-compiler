@@ -197,7 +197,8 @@ void NodeStruct::accept(ASTVisitor &visitor) {
 }
 NodeStruct::NodeStruct(const NodeStruct& other)
 	: NodeDataStructure(other), members(clone_unique(other.members)),
-	  methods(clone_vector<NodeFunctionDefinition>(other.methods)) {
+	  methods(clone_vector<NodeFunctionDefinition>(other.methods)),
+	  members_map(other.members_map), methods_map(other.methods_map) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeStruct::clone() const {

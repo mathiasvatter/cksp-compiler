@@ -21,5 +21,5 @@ public:
 	/// remove unused variables
 	void visit(NodeSingleDeclaration& node) override;
     /// do node body cleanup
-    void visit(NodeBody& node) override;
+    void visit(NodeBlock& node) override;
 };

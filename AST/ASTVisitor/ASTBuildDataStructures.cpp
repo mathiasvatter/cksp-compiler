@@ -33,7 +33,7 @@ void ASTBuildDataStructures::visit(NodeCallback& node) {
 }
 
 
-void ASTBuildDataStructures::visit(NodeBody &node) {
+void ASTBuildDataStructures::visit(NodeBlock &node) {
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
 	}

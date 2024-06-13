@@ -27,7 +27,7 @@ protected:
 
 
     static std::unique_ptr<NodeStatement> make_declare_variable(const std::string& name, int32_t value, DataType type, NodeAST* parent);
-    static std::unique_ptr<NodeBody> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBody> body, NodeAST* parent);
+    static std::unique_ptr<NodeBlock> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent);
 
 
 public:
@@ -99,8 +99,9 @@ public:
         node.constants->accept(*this);
 	};
     virtual void visit(NodeStruct& node) {
-		for(auto & member : node.members) {
-			member->accept(*this);
+		node.members->accept(*this);
+		for(auto & m: node.methods) {
+			m->accept(*this);
 		}
 	};
     virtual void visit(NodeFamily& node) {
@@ -171,7 +172,7 @@ public:
 			function_definition->accept(*this);
 		}
 	};
-    virtual void visit(NodeBody& node) {
+    virtual void visit(NodeBlock& node) {
         for(auto & stmt : node.statements) {
             stmt->accept(*this);
         }

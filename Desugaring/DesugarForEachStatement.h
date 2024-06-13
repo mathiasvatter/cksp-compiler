@@ -115,7 +115,7 @@ public:
                 std::move(node_end_range),
                 std::move(node.body), node.tok);
         node_for_statement->body->accept(*this);
-        auto node_scope = std::make_unique<NodeBody>(node.tok);
+        auto node_scope = std::make_unique<NodeBlock>(node.tok);
         node_scope->add_stmt(std::make_unique<NodeStatement>(std::move(node_key_declaration), node.tok));
         node_scope->add_stmt(std::make_unique<NodeStatement>(std::move(node_for_statement), node.tok));
         node_scope->scope = true;

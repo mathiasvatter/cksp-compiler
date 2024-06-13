@@ -27,7 +27,7 @@ public:
     void visit(NodeProgram& node) override;
 	void visit(NodeCallback& node) override;
 
-	void visit(NodeBody& node) override;
+	void visit(NodeBlock& node) override;
 
 	void visit(NodeArray& node) override;
     void visit(NodeArrayRef& node) override;

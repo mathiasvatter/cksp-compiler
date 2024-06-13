@@ -58,10 +58,10 @@ std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
 	return ref;
 }
 
-bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBody* current_body) {
+bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBlock* current_block) {
 	// not init_callback if var is set to local
 	bool init_callback = (program->current_callback == program->init_callback and program->function_call_stack.empty() and !is_local) or is_global or get_node_type() == NodeType::UIControl;
-	is_local = (current_body->scope or is_function_param()) and !init_callback;
+	is_local = (current_block->scope or is_function_param()) and !init_callback;
 	return is_local;
 }
 
@@ -224,7 +224,7 @@ NodeAST * NodeBinaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeA
 
 // ************* NodeCallback ***************
 NodeCallback::NodeCallback(Token tok) : NodeAST(std::move(tok), NodeType::Callback) {}
-NodeCallback::NodeCallback(std::string begin_callback, std::unique_ptr<NodeBody> statements, std::string end_callback, Token tok)
+NodeCallback::NodeCallback(std::string begin_callback, std::unique_ptr<NodeBlock> statements, std::string end_callback, Token tok)
 : NodeAST(std::move(tok), NodeType::Callback), begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {
     set_child_parents();
 }
@@ -293,8 +293,8 @@ std::unique_ptr<NodeAST> NodeFunctionHeader::clone() const {
 // ************* NodeFunctionDefinition ***************
 NodeFunctionDefinition::NodeFunctionDefinition(Token tok) : NodeAST(std::move(tok), NodeType::FunctionDefinition) {}
 NodeFunctionDefinition::NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
-                                               std::optional<std::unique_ptr<NodeParamList>> returnVariable,
-                                               bool override, std::unique_ptr<NodeBody> body, Token tok)
+											   std::optional<std::unique_ptr<NodeParamList>> returnVariable,
+											   bool override, std::unique_ptr<NodeBlock> body, Token tok)
         : NodeAST(std::move(tok), NodeType::FunctionDefinition), header(std::move(header)), return_variable(std::move(returnVariable)), override(override),body(std::move(body)) {
     set_child_parents();
 }
@@ -335,7 +335,7 @@ void NodeFunctionDefinition::set_child_parents() {
 
 // ************* NodeProgramm ***************
 NodeProgram::NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {
-	global_declarations = std::make_unique<NodeBody>(Token());
+	global_declarations = std::make_unique<NodeBlock>(Token());
 	set_child_parents();
 }
 
@@ -343,7 +343,7 @@ NodeProgram::NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 						 std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions,
 						 Token tok)
 	: NodeAST(std::move(tok), NodeType::Program), callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)) {
-	global_declarations = std::make_unique<NodeBody>(Token());
+	global_declarations = std::make_unique<NodeBlock>(Token());
 	set_child_parents();
 }
 
@@ -354,6 +354,8 @@ void NodeProgram::accept(ASTVisitor& visitor) {
 NodeProgram::NodeProgram(const NodeProgram& other) : NodeAST(other), init_callback(other.init_callback) {
     callbacks = clone_vector<NodeCallback>(other.callbacks);
     function_definitions = clone_vector<NodeFunctionDefinition>(other.function_definitions);
+	global_declarations = std::make_unique<NodeBlock>(*other.global_declarations);
+	struct_definitions = clone_vector<NodeStruct>(other.struct_definitions);
 	function_lookup = other.function_lookup;
 	set_child_parents();
 }

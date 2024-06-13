@@ -86,7 +86,7 @@ public:
                 node.tok
                 );
 
-        auto node_body = std::make_unique<NodeBody>(node.tok);
+        auto node_body = std::make_unique<NodeBlock>(node.tok);
         node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign_statement), node.tok));
         node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while_statement), node.tok));
         replacement_node = std::move(node_body);

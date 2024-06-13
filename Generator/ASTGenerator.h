@@ -38,7 +38,7 @@ public:
     void visit(NodeUnaryExpr& node) override;
     void visit(NodeSingleAssignment& node) override;
     void visit(NodeStatement& node) override;
-	void visit(NodeBody& node) override;
+	void visit(NodeBlock& node) override;
     void visit(NodeIf& node) override;
     void visit(NodeWhile& node) override;
     void visit(NodeSelect& node) override;

@@ -30,7 +30,7 @@ public:
 	void visit(NodeNDArray& node) override;
 
 	/// emplace back local variable scope
-    void visit(NodeBody& node) override;
+    void visit(NodeBlock& node) override;
 	void visit(NodeSelect& node) override;
     void visit(NodeWhile& node) override;
     void visit(NodeIf& node) override;
@@ -50,7 +50,7 @@ private:
 
     NodeAST* m_current_node_replaced = nullptr;
 
-    std::unique_ptr<NodeBody> declare_dummy_variables();
+    std::unique_ptr<NodeBlock> declare_dummy_variables();
 
     NodeCallback* m_current_callback = nullptr;
     int m_current_callback_idx = 0;
@@ -83,7 +83,7 @@ public:
 
     inline void visit(NodeStatement& node) override {
         if(!node.function_inlines.empty()) {
-            auto node_body = std::make_unique<NodeBody>(node.function_inlines[0]->tok);
+            auto node_body = std::make_unique<NodeBlock>(node.function_inlines[0]->tok);
             node_body->parent = &node;
             for(auto & func : node.function_inlines) {
                 auto it = m_function_inlines.find(func);

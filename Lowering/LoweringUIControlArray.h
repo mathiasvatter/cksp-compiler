@@ -36,7 +36,7 @@ public:
 
 		} else return;
 
-		std::unique_ptr<NodeBody> body_post_lowering = std::make_unique<NodeBody>(node.tok);
+		std::unique_ptr<NodeBlock> body_post_lowering = std::make_unique<NodeBlock>(node.tok);
 
 		auto node_array_declaration = std::make_unique<NodeSingleDeclaration>(
 			std::move(node_ui_control->control_var),
@@ -46,7 +46,7 @@ public:
 		node_array_declaration->variable->data_type = DataType::Mutable;
 		// wrap in statement to make use of replace_child
 		auto node_statement = std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok);
-		// lowering of ndarray, turn Declaration into NodeBody
+		// lowering of ndarray, turn Declaration into NodeBlock
 		if(auto lowering = node_statement->statement->get_lowering(m_program)) {
 			node_statement->statement->accept(*lowering);
 		}
@@ -102,8 +102,8 @@ public:
  * 	inc($preproc_i)
  * end while
  */
-	std::unique_ptr<NodeBody> create_ui_controls(NodeUIControl& ui_control, std::unique_ptr<NodeAST> size) {
-		auto node_body = std::make_unique<NodeBody>(ui_control.tok);
+	std::unique_ptr<NodeBlock> create_ui_controls(NodeUIControl& ui_control, std::unique_ptr<NodeAST> size) {
+		auto node_body = std::make_unique<NodeBlock>(ui_control.tok);
 		// calculate array size
 		SimpleInterpreter eval;
 		auto array_size_res = eval.evaluate_int_expression(size);
@@ -149,7 +149,7 @@ public:
 		 */
 		auto node_iterator_var_ref = std::make_unique<NodeVariableRef>("_iterator", ui_control.tok);
         node_iterator_var_ref->is_engine = true;
-		auto node_while_body = std::make_unique<NodeBody>(ui_control.tok);
+		auto node_while_body = std::make_unique<NodeBlock>(ui_control.tok);
 
 		// this is the $_lbl_lbl0 from the above example
 		auto node_ui_control_var_ref = new_ui_control_template->control_var->to_reference();

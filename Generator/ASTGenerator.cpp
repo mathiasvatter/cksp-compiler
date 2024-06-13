@@ -151,7 +151,7 @@ void ASTGenerator::visit(NodeStatement &node) {
 	}
 }
 
-void ASTGenerator::visit(NodeBody& node) {
+void ASTGenerator::visit(NodeBlock& node) {
 	m_scope_count++;
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);

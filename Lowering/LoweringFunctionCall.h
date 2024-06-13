@@ -77,8 +77,8 @@ public:
     }
 
 private:
-    inline std::unique_ptr<NodeBody> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
-        auto node_body = std::make_unique<NodeBody>(function_header->tok);
+    inline std::unique_ptr<NodeBlock> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
+        auto node_body = std::make_unique<NodeBlock>(function_header->tok);
         for(int i = 1; i<function_header->args->params.size(); i++) {
             auto node_get_control = std::make_unique<NodeGetControl>(
                     function_header->args->params[0]->clone(),

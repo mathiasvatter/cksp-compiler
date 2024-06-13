@@ -185,9 +185,9 @@ struct NodeList : NodeDataStructure {
 };
 
 struct NodeConstStatement : NodeDataStructure {
-    std::unique_ptr<NodeBody> constants;
+    std::unique_ptr<NodeBlock> constants;
     inline explicit NodeConstStatement(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::Const) {}
-    inline NodeConstStatement(std::string name, std::unique_ptr<NodeBody> constants, Token tok)
+    inline NodeConstStatement(std::string name, std::unique_ptr<NodeBlock> constants, Token tok)
             : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::Const), constants(std::move(constants)) {
         set_child_parents();
     }
@@ -212,10 +212,12 @@ struct NodeConstStatement : NodeDataStructure {
 };
 
 struct NodeStruct : NodeDataStructure {
-	std::unique_ptr<NodeBody> members;
+	std::unique_ptr<NodeBlock> members;
+	std::unordered_map<std::string, NodeDataStructure*> members_map;
 	std::vector<std::unique_ptr<NodeFunctionDefinition>> methods;
+	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> methods_map;
 	inline explicit NodeStruct(const std::string& name, Token tok) : NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct) {}
-	inline NodeStruct(const std::string& name, std::unique_ptr<NodeBody> members, std::vector<std::unique_ptr<NodeFunctionDefinition>> methods, Token tok)
+	inline NodeStruct(const std::string& name, std::unique_ptr<NodeBlock> members, std::vector<std::unique_ptr<NodeFunctionDefinition>> methods, Token tok)
 		: NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct), members(std::move(members)), methods(std::move(methods)) {
 		set_child_parents();
 	}
