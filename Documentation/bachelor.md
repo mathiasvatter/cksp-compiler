@@ -30,7 +30,7 @@ deren dynamic extend bereits abgelaufen ist. Deklarationen werden durch Assignme
 #### Beispiel:
 
 __Pre Function Definition:__
-```c
+```
 function scoped_func2()
     declare i: int
     message(i)
@@ -49,7 +49,7 @@ end function
 ```
 
 __Post Function Definition:__
-```c
+```
 function scoped_func2(loc_0 : int, loc_1 : int[], loc_2 : int, loc_3 : int)
     loc_0 := 0
     message(loc_0)
@@ -75,7 +75,7 @@ end function
 #### Beispiel:
 
 __Pre Parameter Promotion:__
-```c
+```
 on persistence_changed // <- callback
     declare array[3] := (1,2,5)
     scoped_func2()
@@ -83,7 +83,7 @@ end on
 ```
 
 __Post Parameter Promotion:__
-```c
+```
 on persistence_changed
     declare array[3] := (1,2,5)
     declare loc_1: int
@@ -111,11 +111,11 @@ end on
     wird, wo Arrays initialisiert werden, mit dem Array Typ im Namen. Mache diesen Prozess bereits vor der Umwandlung in global Scope, damit der iterator des while loops direkt durch passive Variablen ersetzt werden kann.
   
 __Pre Array Assignment Lowering:__
-```c
+```
 arr := (0)
 ```
 __Post Array Assignment Lowering:__
-```c
+```
 // call
 declare local _iter : int
 array.init.Integer(arr, _iter, 0)
@@ -138,7 +138,7 @@ end function
 - Add type 'object' to reference any struct
 - Add methods to structs (`__init__`, `__repr__`, ...)
 
-```c
+```
 struct List
     declare value: int
     declare next: List := nil
@@ -157,7 +157,7 @@ declare that_list: List := List(39, List(40, List(41, this_list)))
 message(that_list.next.value)
 ```
 Gets lowered to:
-```c
+```
 declare const MAX_STRUCTS := 1000000
 declare object.warning: string := "Memory Error: No more free space available to allocate objects of type"
 
