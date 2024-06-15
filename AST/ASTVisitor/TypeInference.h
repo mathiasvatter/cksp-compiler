@@ -17,6 +17,7 @@ public:
 	void visit(NodeInt& node) override;
 	void visit(NodeString& node) override;
 	void visit(NodeReal& node) override;
+	void visit(NodeNil& node) override;
 
     void visit(NodeCallback& node) override;
 

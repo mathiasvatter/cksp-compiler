@@ -44,12 +44,16 @@ void TypeInference::visit(NodeInt& node) {
     node.ty = TypeRegistry::Integer;
 }
 
+void TypeInference::visit(NodeString& node) {
+    node.ty = TypeRegistry::String;
+}
+
 void TypeInference::visit(NodeReal& node) {
     node.ty = TypeRegistry::Real;
 }
 
-void TypeInference::visit(NodeString& node) {
-    node.ty = TypeRegistry::String;
+void TypeInference::visit(NodeNil& node) {
+	node.ty = TypeRegistry::Nil;
 }
 
 void TypeInference::visit(NodeConstStatement& node) {

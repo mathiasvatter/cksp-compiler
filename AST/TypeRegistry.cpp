@@ -32,12 +32,15 @@ void TypeRegistry::initialize() {
     ArrayOfString = add_composite_type(CompoundKind::Array, String, 1);
     ArrayOfUnknown = add_composite_type(CompoundKind::Array, Unknown, 1);
 
+	Nil = add_object_type("nil");
+
     // Initialisierung der Maps
     annotation_to_type = {
             {"int", Integer},
             {"real", Real},
             {"string", String},
             {"bool", Boolean},
+			{"number", Number},
             {"void", Void},
             {"any", Any},
             {"int[]", ArrayOfInt},
@@ -73,7 +76,7 @@ std::string TypeRegistry::get_annotation_from_type(Type* ty) {
     if (it != type_to_annotation.end()) {
         return it->second;
     }
-    return "";
+    return ty->to_string();
 }
 
 

@@ -1,141 +1,60 @@
+struct List
+	declare value : int
+	declare next : Unknown := nil
+
+	function __init__(self : Unknown, value : int, next : Unknown)
+		if(1 = 1)
+			message(2)
+		end if
+	end function
+end struct
+
 on init
-	declare g : int
-	declare const multiarray.SIZE_D1 : int := 2
-	declare const multiarray.SIZE_D2 : int := 3
-	declare loc_8 : int
-	declare _all_fx_texts[25] : string[]
-	declare const all_fx_texts.SIZE : int := 5
-	declare all_fx_texts.sizes[5] : int[] := (5, 5, 5, 5, 5)
-	declare all_fx_texts.pos[5] : int[] := (0, 5, 10, 15, 20)
-	declare all_fx_texts0[5] : string[]
-	all_fx_texts0[0] := "Low Pass -12dB"
-	all_fx_texts0[1] := 0
-	all_fx_texts0[2] := "Hz"
-	all_fx_texts0[3] := "Reso"
-	all_fx_texts0[4] := "%"
-	declare const all_fx_texts0.SIZE : int := 5
-	loc_8 := 0
-	while(loc_8 < 5) 
-		_all_fx_texts[loc_8 + 0] := all_fx_texts0[loc_8]
-		inc(loc_8)
-	end while
-	declare all_fx_texts1[5] : string[]
-	all_fx_texts1[0] := "Low Pass -24dB"
-	all_fx_texts1[1] := "Cutoff"
-	all_fx_texts1[2] := "Hz"
-	all_fx_texts1[3] := "Reso"
-	all_fx_texts1[4] := "%"
-	declare const all_fx_texts1.SIZE : int := 5
-	loc_8 := 0
-	while(loc_8 < 5) 
-		_all_fx_texts[loc_8 + 5] := all_fx_texts1[loc_8]
-		inc(loc_8)
-	end while
-	declare all_fx_texts2[5] : string[]
-	all_fx_texts2[0] := "Low Pass Vintage"
-	all_fx_texts2[1] := "Cutoff"
-	all_fx_texts2[2] := "Hz"
-	all_fx_texts2[3] := "Reso"
-	all_fx_texts2[4] := "%"
-	declare const all_fx_texts2.SIZE : int := 5
-	loc_8 := 0
-	while(loc_8 < 5) 
-		_all_fx_texts[loc_8 + 10] := all_fx_texts2[loc_8]
-		inc(loc_8)
-	end while
-	declare all_fx_texts3[5] : string[]
-	all_fx_texts3[0] := "High Pass -12dB"
-	all_fx_texts3[1] := "Cutoff"
-	all_fx_texts3[2] := "Hz"
-	all_fx_texts3[3] := "Reso"
-	all_fx_texts3[4] := "%"
-	declare const all_fx_texts3.SIZE : int := 5
-	loc_8 := 0
-	while(loc_8 < 5) 
-		_all_fx_texts[loc_8 + 15] := all_fx_texts3[loc_8]
-		inc(loc_8)
-	end while
-	declare all_fx_texts4[5] : string[]
-	all_fx_texts4[0] := "High Pass -24dB"
-	all_fx_texts4[1] := "Cutoff"
-	all_fx_texts4[2] := "Hz"
-	all_fx_texts4[3] := "Reso"
-	all_fx_texts4[4] := "%"
-	declare const all_fx_texts4.SIZE : int := 5
-	loc_8 := 0
-	while(loc_8 < 5) 
-		_all_fx_texts[loc_8 + 20] := all_fx_texts4[loc_8]
-		inc(loc_8)
-	end while
+	declare loc_6 : int
+	declare loc_7 : int
+	declare loc_8[5] : int[]
 	declare loc_9 : int
-	declare loc_10[2 * 3] : int[]
-	declare loc_11 : int
-	declare loc_12[5] : int[]
-	declare loc_13[3] : int[]
-	declare loc_14 : int
-	declare loc_15 : int
-	declare loc_16 : string
-	scoped_func1(loc_9, loc_10, loc_11, loc_12, loc_13, loc_14, loc_15, loc_16)
-	scoped_func1(loc_11, loc_10, loc_14, loc_12, loc_13, loc_9, loc_15, loc_16)
+	declare loc_10 : int
+	declare loc_11 : string
+	declare loc_12[4] : int[]
+	scoped_func1(loc_7, loc_8, loc_9, loc_10, loc_11, loc_12)
+	scoped_func1(loc_9, loc_8, loc_10, loc_7, loc_11, loc_12)
 end on
 
 on persistence_changed
-	loc_11 := 0
-	scoped_func1(loc_14, loc_10, loc_9, loc_12, loc_13, loc_15, loc_8, loc_16)
-	message(NI_UI_ID)
-	loc_11 := 0
-	while(loc_11 <= (5 - 1)) 
-		message(loc_11)
-		scoped_func1(loc_11, loc_10, loc_14, loc_12, loc_13, loc_9, loc_15, loc_16)
-		inc(loc_11)
-	end while
+	loc_9 := 0
+	array.init.Integer(loc_8, loc_9, 0)
+	scoped_func1(loc_9, loc_8, loc_10, loc_7, loc_11, loc_12)
 end on
 
-on release
-	scoped_func1(loc_11, loc_10, loc_14, loc_12, loc_13, loc_9, loc_15, loc_16)
-end on
-
-function scoped_func2(loc_0 : int, loc_1[2 * 3] : int[], loc_2 : int, loc_3[5] : int[], loc_4[3] : int[], loc_5 : int, loc_6 : int)
+function scoped_func2(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int)
 	loc_0 := 0
-	loc_2 := 0
-	array.init.Integer(loc_1, loc_2, 0)
 	message(loc_0)
 	if(loc_0 = 1)
-		loc_3[0] := 1
-		loc_3[1] := 2
-		loc_3[2] := 3
-		loc_3[3] := 4
 		loc_2 := 0
-		array.copy.Integer(loc_4, loc_1, loc_2)
+		array.init.Integer(loc_1, loc_2, 1)
 		loc_2 := 0
-		array.copy.Integer(loc_3, loc_4, loc_2)
-		loc_5 := 0
-		loc_6 := 0
-		message(loc_5 & loc_6 & loc_3[3])
+		loc_3 := 0
+		message(loc_2 & loc_3 & loc_1[4])
 	end if
 	if(loc_0 = 2)
 		loc_2 := 0
-		loc_5 := 0
-		message(loc_2 & loc_5)
+		loc_3 := 0
+		message(loc_2 & loc_3)
 	end if
 end function
 
-function scoped_func1(loc_0 : int, loc_1[2 * 3] : int[], loc_2 : int, loc_3[5] : int[], loc_4[3] : int[], loc_5 : int, loc_6 : int, loc_7 : string)
-	loc_7 := "sdlkj"
-	message(g & loc_7)
-	scoped_func2(loc_0, loc_1, loc_2, loc_3, loc_4, loc_5, loc_6)
+function scoped_func1(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int, loc_4 : string, loc_5[4] : int[])
+	loc_4 := "sdlkj"
+	message(loc_4)
+	scoped_func2(loc_0, loc_1, loc_2, loc_3)
+	loc_5[0] := 3
+	loc_5[1] := 4
 end function
 
 function array.init.Integer(array : int[], _iter : int, value : int)
 	while(_iter < num_elements(array)) 
 		array[_iter] := value
-		inc(_iter)
-	end while
-end function
-
-function array.copy.Integer(dest : int[], src : int[], _iter : int)
-	while(_iter < num_elements(src)) 
-		dest[_iter] := src[_iter]
 		inc(_iter)
 	end while
 end function

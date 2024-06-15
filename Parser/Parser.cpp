@@ -77,6 +77,13 @@ Result<std::unique_ptr<NodeString>> Parser::parse_string(NodeAST* parent) {
     return Result<std::unique_ptr<NodeString>>(std::move(node_string));
 }
 
+Result<std::unique_ptr<NodeAST>> Parser::parse_nil(NodeAST* parent) {
+	auto nil = consume(); // consume 'nil'
+	auto node_nil = std::make_unique<NodeNil>(nil);
+	node_nil->parent = parent;
+	return Result<std::unique_ptr<NodeAST>>(std::move(node_nil));
+}
+
 Result<std::unique_ptr<NodeAST>> Parser::parse_number(NodeAST* parent) {
     auto value = consume(); // consume int/float/hexa/binary
     std::unique_ptr<NodeAST> number_node = nullptr;
@@ -330,8 +337,10 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
     } else if (peek().type == token::INT || peek().type == token::FLOAT || peek().type == token::HEXADECIMAL || peek().type == token::BINARY) {
         return parse_number(parent);
     // unary operators bool_not, bit_not, sub
-    } else if (contains(UNARY_TOKENS, peek().type)){
-        return parse_unary_expr(parent);
+    } else if (contains(UNARY_TOKENS, peek().type)) {
+		return parse_unary_expr(parent);
+	} else if (peek().type == token::NIL) {
+		return parse_nil(parent);
     } else {
         return Result<std::unique_ptr<NodeAST>>(
     CompileError(ErrorType::ParseError,"Found unknown expression token.", "keyword, integer, parenthesis", peek()));

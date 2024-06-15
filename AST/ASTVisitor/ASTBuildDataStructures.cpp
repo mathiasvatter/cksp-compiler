@@ -10,6 +10,9 @@ void ASTBuildDataStructures::visit(NodeProgram& node) {
     m_program = &node;
 
 	m_program->global_declarations->accept(*this);
+	for(auto & s : node.struct_definitions) {
+		s->accept(*this);
+	}
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }

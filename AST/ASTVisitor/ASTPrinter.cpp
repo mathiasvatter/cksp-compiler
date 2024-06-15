@@ -16,6 +16,10 @@ void ASTPrinter::visit(NodeString &node) {
     os << node.value;
 }
 
+void ASTPrinter::visit(NodeNil &node) {
+	os << node.value;
+}
+
 void ASTPrinter::visit(NodeVariable &node) {
     if(node.persistence)
         os << "read ";
@@ -139,11 +143,14 @@ void ASTPrinter::visit(NodeConstStatement &node) {
 
 void ASTPrinter::visit(NodeStruct &node) {
 	os << "struct " << node.name << std::endl;
+	m_scope_count++;
 	node.members->accept(*this);
+	os << std::endl;
     for(auto &m: node.methods) {
         m->accept(*this);
     }
-    os << "end struct";
+	m_scope_count--;
+    os << "end struct" << std::endl;
 }
 
 void ASTPrinter::visit(NodeFamily &node) {
@@ -233,7 +240,7 @@ void ASTPrinter::visit(NodeFunctionCall &node) {
 }
 
 void ASTPrinter::visit(NodeFunctionDefinition &node) {
-    os << "function ";
+    os << get_indent() << "function ";
     node.header ->accept(*this);
     if (node.return_variable.has_value()) {
         os << " -> ";
@@ -244,7 +251,7 @@ void ASTPrinter::visit(NodeFunctionDefinition &node) {
     }
     os << "\n";
     node.body->accept(*this);
-    os << "end function" << std::endl;
+    os << get_indent() <<  "end function" << std::endl;
 }
 
 void ASTPrinter::visit(NodeGetControl &node) {
@@ -262,6 +269,11 @@ void ASTPrinter::visit(NodeBlock &node) {
 }
 
 void ASTPrinter::visit(NodeProgram &node) {
+	node.global_declarations->accept(*this);
+	for(auto& s : node.struct_definitions) {
+		s->accept(*this);
+		os << std::endl;
+	}
     for(auto& callback: node.callbacks) {
         callback->accept(*this);
 		os << std::endl;

@@ -208,6 +208,19 @@ struct NodeString : NodeAST {
     }
 };
 
+struct NodeNil : NodeAST {
+	std::string value = "nil";
+	inline explicit NodeNil(Token tok) : NodeAST(std::move(tok), NodeType::String) {}
+	void accept(ASTVisitor& visitor) override;
+	// Kopierkonstruktor
+	NodeNil(const NodeNil& other) : NodeAST(other), value(other.value) {}
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	std::string get_string() override {
+		return value;
+	}
+};
+
 struct NodeParamList: NodeAST {
     std::vector<std::unique_ptr<NodeAST>> params;
     inline explicit NodeParamList(Token tok) : NodeAST(std::move(tok), NodeType::ParamList) {

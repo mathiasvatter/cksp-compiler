@@ -1,246 +1,80 @@
-{ Compiled with cksp version 0.0.5 on Sat Jun 15 22:13:56 2024 }
+{ Compiled with cksp version 0.0.5 on Sat Jun 15 23:33:09 2024 }
 on init
-  declare $g
-  declare $loc_8
-  declare !_all_fx_texts[25]
-  declare !all_fx_texts0[5]
-  !all_fx_texts0[0] := "Low Pass -12dB"
-  !all_fx_texts0[1] := 0
-  !all_fx_texts0[2] := "Hz"
-  !all_fx_texts0[3] := "Reso"
-  !all_fx_texts0[4] := "%"
-  $loc_8 := 0
-  while($loc_8 < 5) 
-    !_all_fx_texts[$loc_8] := !all_fx_texts0[$loc_8]
-    inc($loc_8)
-  end while
-  declare !all_fx_texts1[5]
-  !all_fx_texts1[0] := "Low Pass -24dB"
-  !all_fx_texts1[1] := "Cutoff"
-  !all_fx_texts1[2] := "Hz"
-  !all_fx_texts1[3] := "Reso"
-  !all_fx_texts1[4] := "%"
-  $loc_8 := 0
-  while($loc_8 < 5) 
-    !_all_fx_texts[$loc_8 + 5] := !all_fx_texts1[$loc_8]
-    inc($loc_8)
-  end while
-  declare !all_fx_texts2[5]
-  !all_fx_texts2[0] := "Low Pass Vintage"
-  !all_fx_texts2[1] := "Cutoff"
-  !all_fx_texts2[2] := "Hz"
-  !all_fx_texts2[3] := "Reso"
-  !all_fx_texts2[4] := "%"
-  $loc_8 := 0
-  while($loc_8 < 5) 
-    !_all_fx_texts[$loc_8 + 10] := !all_fx_texts2[$loc_8]
-    inc($loc_8)
-  end while
-  declare !all_fx_texts3[5]
-  !all_fx_texts3[0] := "High Pass -12dB"
-  !all_fx_texts3[1] := "Cutoff"
-  !all_fx_texts3[2] := "Hz"
-  !all_fx_texts3[3] := "Reso"
-  !all_fx_texts3[4] := "%"
-  $loc_8 := 0
-  while($loc_8 < 5) 
-    !_all_fx_texts[$loc_8 + 15] := !all_fx_texts3[$loc_8]
-    inc($loc_8)
-  end while
-  declare !all_fx_texts4[5]
-  !all_fx_texts4[0] := "High Pass -24dB"
-  !all_fx_texts4[1] := "Cutoff"
-  !all_fx_texts4[2] := "Hz"
-  !all_fx_texts4[3] := "Reso"
-  !all_fx_texts4[4] := "%"
-  $loc_8 := 0
-  while($loc_8 < 5) 
-    !_all_fx_texts[$loc_8 + 20] := !all_fx_texts4[$loc_8]
-    inc($loc_8)
-  end while
+  declare $loc_7
+  declare %loc_8[5]
   declare $loc_9
-  declare %loc_10[6]
-  declare $loc_11
-  declare %loc_12[5]
-  declare %loc_13[3]
-  declare $loc_14
-  declare $loc_15
-  declare @loc_16
-  @loc_16 := "sdlkj"
-  message($g & @loc_16)
+  declare $loc_10
+  declare @loc_11
+  declare %loc_12[4]
+  @loc_11 := "sdlkj"
+  message(@loc_11)
+  $loc_7 := 0
+  message($loc_7)
+  if($loc_7 = 1)
+    $loc_9 := 0
+    while($loc_9 < num_elements(%loc_8)) 
+      %loc_8[$loc_9] := 1
+      inc($loc_9)
+    end while
+    $loc_9 := 0
+    $loc_10 := 0
+    message($loc_9 & $loc_10 & %loc_8[4])
+  end if
+  if($loc_7 = 2)
+    $loc_9 := 0
+    $loc_10 := 0
+    message($loc_9 & $loc_10)
+  end if
+  %loc_12[0] := 3
+  %loc_12[1] := 4
+  @loc_11 := "sdlkj"
+  message(@loc_11)
   $loc_9 := 0
-  $loc_11 := 0
-  while($loc_11 < num_elements(%loc_10)) 
-    %loc_10[$loc_11] := 0
-    inc($loc_11)
-  end while
   message($loc_9)
   if($loc_9 = 1)
-    %loc_12[0] := 1
-    %loc_12[1] := 2
-    %loc_12[2] := 3
-    %loc_12[3] := 4
-    $loc_11 := 0
-    while($loc_11 < num_elements(%loc_10)) 
-      %loc_13[$loc_11] := %loc_10[$loc_11]
-      inc($loc_11)
+    $loc_10 := 0
+    while($loc_10 < num_elements(%loc_8)) 
+      %loc_8[$loc_10] := 1
+      inc($loc_10)
     end while
-    $loc_11 := 0
-    while($loc_11 < num_elements(%loc_13)) 
-      %loc_12[$loc_11] := %loc_13[$loc_11]
-      inc($loc_11)
-    end while
-    $loc_14 := 0
-    $loc_15 := 0
-    message($loc_14 & $loc_15 & %loc_12[3])
+    $loc_10 := 0
+    $loc_7 := 0
+    message($loc_10 & $loc_7 & %loc_8[4])
   end if
   if($loc_9 = 2)
-    $loc_11 := 0
-    $loc_14 := 0
-    message($loc_11 & $loc_14)
+    $loc_10 := 0
+    $loc_7 := 0
+    message($loc_10 & $loc_7)
   end if
-  @loc_16 := "sdlkj"
-  message($g & @loc_16)
-  $loc_11 := 0
-  $loc_14 := 0
-  while($loc_14 < num_elements(%loc_10)) 
-    %loc_10[$loc_14] := 0
-    inc($loc_14)
-  end while
-  message($loc_11)
-  if($loc_11 = 1)
-    %loc_12[0] := 1
-    %loc_12[1] := 2
-    %loc_12[2] := 3
-    %loc_12[3] := 4
-    $loc_14 := 0
-    while($loc_14 < num_elements(%loc_10)) 
-      %loc_13[$loc_14] := %loc_10[$loc_14]
-      inc($loc_14)
-    end while
-    $loc_14 := 0
-    while($loc_14 < num_elements(%loc_13)) 
-      %loc_12[$loc_14] := %loc_13[$loc_14]
-      inc($loc_14)
-    end while
-    $loc_9 := 0
-    $loc_15 := 0
-    message($loc_9 & $loc_15 & %loc_12[3])
-  end if
-  if($loc_11 = 2)
-    $loc_14 := 0
-    $loc_9 := 0
-    message($loc_14 & $loc_9)
-  end if
+  %loc_12[0] := 3
+  %loc_12[1] := 4
 end on
 on persistence_changed
-  $loc_11 := 0
-  @loc_16 := "sdlkj"
-  message($g & @loc_16)
-  $loc_14 := 0
   $loc_9 := 0
-  while($loc_9 < num_elements(%loc_10)) 
-    %loc_10[$loc_9] := 0
+  while($loc_9 < num_elements(%loc_8)) 
+    %loc_8[$loc_9] := 0
     inc($loc_9)
   end while
-  message($loc_14)
-  if($loc_14 = 1)
-    %loc_12[0] := 1
-    %loc_12[1] := 2
-    %loc_12[2] := 3
-    %loc_12[3] := 4
-    $loc_9 := 0
-    while($loc_9 < num_elements(%loc_10)) 
-      %loc_13[$loc_9] := %loc_10[$loc_9]
-      inc($loc_9)
+  @loc_11 := "sdlkj"
+  message(@loc_11)
+  $loc_9 := 0
+  message($loc_9)
+  if($loc_9 = 1)
+    $loc_10 := 0
+    while($loc_10 < num_elements(%loc_8)) 
+      %loc_8[$loc_10] := 1
+      inc($loc_10)
     end while
-    $loc_9 := 0
-    while($loc_9 < num_elements(%loc_13)) 
-      %loc_12[$loc_9] := %loc_13[$loc_9]
-      inc($loc_9)
-    end while
-    $loc_15 := 0
-    $loc_8 := 0
-    message($loc_15 & $loc_8 & %loc_12[3])
+    $loc_10 := 0
+    $loc_7 := 0
+    message($loc_10 & $loc_7 & %loc_8[4])
   end if
-  if($loc_14 = 2)
-    $loc_9 := 0
-    $loc_15 := 0
-    message($loc_9 & $loc_15)
+  if($loc_9 = 2)
+    $loc_10 := 0
+    $loc_7 := 0
+    message($loc_10 & $loc_7)
   end if
-  message($NI_UI_ID)
-  $loc_11 := 0
-  while($loc_11 <= 4) 
-    message($loc_11)
-    @loc_16 := "sdlkj"
-    message($g & @loc_16)
-    $loc_11 := 0
-    $loc_14 := 0
-    while($loc_14 < num_elements(%loc_10)) 
-      %loc_10[$loc_14] := 0
-      inc($loc_14)
-    end while
-    message($loc_11)
-    if($loc_11 = 1)
-      %loc_12[0] := 1
-      %loc_12[1] := 2
-      %loc_12[2] := 3
-      %loc_12[3] := 4
-      $loc_14 := 0
-      while($loc_14 < num_elements(%loc_10)) 
-        %loc_13[$loc_14] := %loc_10[$loc_14]
-        inc($loc_14)
-      end while
-      $loc_14 := 0
-      while($loc_14 < num_elements(%loc_13)) 
-        %loc_12[$loc_14] := %loc_13[$loc_14]
-        inc($loc_14)
-      end while
-      $loc_9 := 0
-      $loc_15 := 0
-      message($loc_9 & $loc_15 & %loc_12[3])
-    end if
-    if($loc_11 = 2)
-      $loc_14 := 0
-      $loc_9 := 0
-      message($loc_14 & $loc_9)
-    end if
-    inc($loc_11)
-  end while
-end on
-on release
-  @loc_16 := "sdlkj"
-  message($g & @loc_16)
-  $loc_11 := 0
-  $loc_14 := 0
-  while($loc_14 < num_elements(%loc_10)) 
-    %loc_10[$loc_14] := 0
-    inc($loc_14)
-  end while
-  message($loc_11)
-  if($loc_11 = 1)
-    %loc_12[0] := 1
-    %loc_12[1] := 2
-    %loc_12[2] := 3
-    %loc_12[3] := 4
-    $loc_14 := 0
-    while($loc_14 < num_elements(%loc_10)) 
-      %loc_13[$loc_14] := %loc_10[$loc_14]
-      inc($loc_14)
-    end while
-    $loc_14 := 0
-    while($loc_14 < num_elements(%loc_13)) 
-      %loc_12[$loc_14] := %loc_13[$loc_14]
-      inc($loc_14)
-    end while
-    $loc_9 := 0
-    $loc_15 := 0
-    message($loc_9 & $loc_15 & %loc_12[3])
-  end if
-  if($loc_11 = 2)
-    $loc_14 := 0
-    $loc_9 := 0
-    message($loc_14 & $loc_9)
-  end if
+  %loc_12[0] := 3
+  %loc_12[1] := 4
 end on
 
