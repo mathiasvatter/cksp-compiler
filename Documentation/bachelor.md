@@ -1,5 +1,5 @@
 
-# Bachelor topics
+# Bachelor Compilerbau
 
 ## 1. Lexical Scope to Global Scope
 - Checking of scopes and variable shadowing
@@ -8,31 +8,49 @@
 - do parameter promotion (lambda lifting?) in functions
 - (turn local variables into global array?)
 
+### Control Flow in vanilla KSP
+
+- nicht viele offizielle Quellen. Inoffizielle, aber gängige Quelle: Task Module von 'Big Bob'.
+- KSP besteht aus verschiedenen Callbacks, die in beliebiger Reihenfolge (beeinflusst du User Input) auftreten können (außer der 'on init' Callback, dieser wird ganz zu Anfang ausgeführt und enthält alle Variablen Deklarationen).
+- Ein Callback wird immer komplett durchlaufen, bevor der nächste ausgeführt wird, Variablen, die in mehreren Callbacks referenziert werden, behalten also ihre Werte während eines Callback Durchlaufs, müssten bei Mehrfachverwendung also nur zu Beginn initialisiert werden.
+- Es gibt Ausnahmen: wird die `wait` Funktion, oder eine andere asynchrone Builtin Funktion in einer Funktion oder Callback ausgeführt, kann währenddessen ein anderer Callback ausgeführt werden -> es kann zu race conditions zwischen mehrmals verwendeten Variablen kommen.
+
+```
+// callback
+on init // gets evaluated first
+    /* 
+     * control flow statements and expressions
+     */
+end on
+
+// callback
+on persistence_changed
+    /* 
+     * control flow statements and expressions
+     */
+end on
+```
+
 ### Vorgehen:
-#### In Funktionsdefinitionen und Callbacks:
 
-1. Variablen und Scopes tracken
-    - Nehme einen Stack aus Maps an Variablen, pro Scope wird eine neue Map eingesetzt, die mit Variablen/Arrays gefüllt wird
-    - jede Variable Reference erhält einen Pointer auf ihr deklaration in der Map
+#### 1. Variablen und Scopes tracken (Callbacks und Funktionsdefinitionen)
+- Nehme einen Stack aus Maps an Variablen, pro Scope wird eine neue Map in den Stack eingesetzt, die in Deklarationen mit Variablen/Arrays gefüllt wird.
+- Wird ein Scope verlassen, wird die oberste Map gelöscht.
+- jede Variable Reference erhält einen Pointer auf ihre Deklaration in der Map
 
-#### Nur in Funktionsdefinitionen:
+#### 2. Wiederverwendung von Variablen/Arrays sobald Scope abgelaufen ist. Deklarationen werden durch Assignments ersetzt. (Funktionen)
+- Erstelle eine Map aus "**passive variables**" mit Hashwerten aus Variablen Typen (und Array sizes). Sobald ein Scope verlassen wird, werden die Variablen (deren dynamic extend nun abgelaufen ist) in die Map eingetragen.
+- Bei jeder neuen Deklaration wird geprüft, ob eine Variable mit gleichem Typ bereits in der Map aus passiven Variablen ist. Falls ja, wird die Variable durch eine Referenz auf die Variable aus der Map ersetzt.
+- Ersetzte Deklarationen werden durch Assignments (mit neutralen Elementen oder den bereits zugewiesenen values) ersetzt.
 
-2. Dynamischen Extend von Variablen/Arrays innerhalb verschiedener Scopes in den Funktionen tracken und mit typisierten Variablen austauschen, 
-deren dynamic extend bereits abgelaufen ist. Deklarationen werden durch Assignments mit neutralen Elementen ersetzt.
-    - Erstelle eine Map aus "passive variables" mit Hashwerten aus Variablen Typen (und Array sizes). Sobald ein Scope verlassen wird, werden die Variablen (deren dynamic extend nun abgelaufen ist)
-    in die Map eingetragen.
-    - Bei jeder neuen Deklaration wird geprüft, ob eine Variable mit gleichem Typ bereits in der Map ist. Falls ja, wird die Variable durch eine Referenz auf die Map ersetzt.
-    - Ersetzte Deklarationen werden durch Assignments (mit neutralen Elementen) ersetzt.
-3. Alle lokalen Variablen mit Gensym umbenennen.
-    - Tracke alle Variablen und Referenzen in Listen und benenne sie mit Gensym um, damit kein Variable Capturing stattfindet,
-   wenn eine der freien "passiven Variablen" gleich heißt wie eine Variable im Scope.
+#### 3. Alle lokalen Variablen mit Gensym umbenennen. (Funktionen)
+- Tracke alle Variablen und Referenzen in Listen und benenne sie mit Gensym um, damit kein Variable Capturing stattfindet, falls eine der freien "passiven Variablen" gleich heißt wie eine Variable im Scope.
      
 #### Beispiel:
-
-__Pre Function Definition:__
+__Pre Register Reuse:__
 ```
 function scoped_func2()
-    declare i: int
+    declare i: int // <- ist das ganze scope über sichtbar, wird nie zu passiver Variable
     message(i)
     if(i = 1)
         declare arr[5] := (1,2,3,4) // <- turns into passive var as soon as scope is left
@@ -47,8 +65,7 @@ function scoped_func2()
     end if
 end function
 ```
-
-__Post Function Definition:__
+__Post Register Reuse:__
 ```
 function scoped_func2(loc_0 : int, loc_1 : int[], loc_2 : int, loc_3 : int)
     loc_0 := 0
@@ -66,22 +83,20 @@ function scoped_func2(loc_0 : int, loc_1 : int[], loc_2 : int, loc_3 : int)
     end if
 end function
 ```
-#### Nur in Callbacks:
-   4. Parameter Promotion/(Lambda Lifting?) mit allen Funktionen durchführen, bis alle Variablen in Callbacks sind.
-      - Führe die ersten drei Schritte zunächst nur mit den Funktionsdefinitionen durch.
-      - Besuche nun jeden Function Call bis zum letzten nested call, füge die lokalen Deklarationen als neue Parameter und in eine Map mit pointer auf die nächst höhere Funktionsdefinitionen ein.
-      - Wiederhole dieses Vorgehen bis der Function Call Stack leer ist und füge die Deklarationen in den Callback ein.
+#### 4. Parameter Promotion/(Lambda Lifting?) mit allen Funktionen durchführen, bis alle Variablen in Callbacks sind.
+- Führe die ersten drei Schritte zunächst nur mit den Funktionsdefinitionen durch.
+- Besuche nun jeden Function Call bis zum letzten nested call, füge die lokalen Deklarationen als neue Parameter und in eine Map mit pointer auf die nächst höhere Funktionsdefinitionen ein.
+- Wiederhole dieses Vorgehen bis der Function Call Stack leer ist und füge die Deklarationen in den entsprechenden Callback ein. Nach Einfügen der Deklarationen in den Callback wird die entsprechende Map geleert, sodass bei mehrmaligem Aufrufen der gleichen Funktion nicht die gleichen Variablen mehrfach deklariert werden
       
 #### Beispiel:
-
 __Pre Parameter Promotion:__
 ```
 on persistence_changed // <- callback
     declare array[3] := (1,2,5)
     scoped_func2()
+    scoped_func2()
 end on
 ```
-
 __Post Parameter Promotion:__
 ```
 on persistence_changed
@@ -90,22 +105,26 @@ on persistence_changed
     declare loc_2: int[]
     declare loc_3: int
     scoped_func2(loc_1, loc_2, loc_3)
+    scoped_func2(loc_1, loc_2, loc_3)
 end on
 ```
-   5. Punkt 2 und 3 mit allen Callbacks ausführen, ohne die Funktionen zu besuchen.
-      - Führe die Schritte durch und ersetze die Deklarationen in den Callbacks durch passive Variablen.
-      - Füge alle Deklarationen in den init Callback ein.
-      - Umbenennung mit Gensym.
+#### 5. Wiederhole Punkt 2 und 3 ausschließlich mit Callbacks.
+- Führe die Schritte durch und ersetze die Deklarationen in den Callbacks durch passive Variablen.
+- Speichere die restlichen Deklarationen in einer Liste
+- Füge alle Deklarationen in den init Callback ein.
+- Umbenennung mit Gensym.
 
 
 ### Herausforderungen:
-- Array sizes sind nicht unbedingt bekannt, die Wiederverwendung von Arrays hängt derzeit nur an Typ und Dimension.
+- Array sizes sind nicht unbedingt bekannt, die Wiederverwendung von Arrays hängt derzeit nur an Typ und Dimension -> können nicht sehr effizient reused werden.
     * __Lösung:__ Füge zum Hash Wert in der Map der passiven Variablen nicht nur den Typ, sondern auch Größe und 
       andere Faktoren hinzu, die die Wiederverwendung von Arrays beeinflussen (persistence, const).
     * __Problem:__ Größe kann auch Expression sein oder Konstante (womöglich vorher constant propagation machen?)
 - __TO-DO__: Lambda Lifting bringt Overhead an Funktionsparametern mit sich -> Funktionen die vorher gecallt werden konnten 
 (also keine Parameter hatten) und nicht inlined werden mussten, müssen jetzt inlined werden, was wiederum zu mehr Overhead und längerem Code führt.
    * __Lösung?:__ Globaler Stack, der alle Funktionsparameter vorher übergibt und nachher wieder ausgibt.
+- Wenn ein asynchroner Befehl in einem Callback (außer 'on init') oder einer Funktion vorkommt (und damit auch im Callback), ist dieser nicht mehr 'threadsafe' und die gesamte beschriebene register usage Optimierung kann nicht mehr vorgenommen werden.
+    * __Lösung:__ Wie bereits bei den Funktionsparameter, könnte ein globaler Stack helfen, der bei jeder asynchronen instruction eine Kopie des derzeitigen Environments macht.
 - Arrays müssen bei Wiederverwendung neu initialisiert werden, was aber in KSP nicht direkt supported ist
   * __Lösung:__ Mache Array Assignment Lowering. Erstelle Funktion (bereits parameter promoted), die dort eingesetzt 
     wird, wo Arrays initialisiert werden, mit dem Array Typ im Namen. Mache diesen Prozess bereits vor der Umwandlung in global Scope, damit der iterator des while loops direkt durch passive Variablen ersetzt werden kann.
@@ -116,7 +135,7 @@ arr := (0)
 ```
 __Post Array Assignment Lowering:__
 ```
-// call
+// function call
 declare local _iter : int
 array.init.Integer(arr, _iter, 0)
 // function definition
