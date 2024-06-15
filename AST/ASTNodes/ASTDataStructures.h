@@ -234,7 +234,7 @@ struct NodeStruct : NodeDataStructure {
 		}
 	}
 	void set_child_parents() override {
-		members->set_child_parents();
+		members->parent = this;
 		for(auto& m : methods) {
 			if(m) m->parent = this;
 		}

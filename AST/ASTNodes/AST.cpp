@@ -159,6 +159,14 @@ std::unique_ptr<NodeAST> NodeString::clone() const {
     return std::make_unique<NodeString>(*this);
 }
 
+// ************* NodeNil ***************
+void NodeNil::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+std::unique_ptr<NodeAST> NodeNil::clone() const {
+	return std::make_unique<NodeNil>(*this);
+}
+
 // ************* NodeParamList ***************
 void NodeParamList::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
@@ -367,6 +375,7 @@ std::unique_ptr<NodeAST> NodeProgram::clone() const {
 
 void NodeProgram::set_child_parents() {
 	global_declarations->parent = this;
+	for(auto& s : struct_definitions) s->parent = this;
 	for(auto& c : callbacks) c->parent = this;
 	for(auto& f : function_definitions) f->parent = this;
 }
@@ -374,6 +383,7 @@ void NodeProgram::set_child_parents() {
 void NodeProgram::update_parents(NodeAST *new_parent) {
 	parent = new_parent;
 	global_declarations->update_parents(this);
+	for(auto& s : struct_definitions) s->update_parents(this);
 	for(auto & c : callbacks) c->update_parents(this);
 	for(auto & f : function_definitions) f->update_parents(this);
 }

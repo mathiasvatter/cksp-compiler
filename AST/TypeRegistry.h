@@ -66,6 +66,8 @@ public:
     static inline CompositeType* ArrayOfString;
     static inline CompositeType* ArrayOfUnknown;
 
+	static inline ObjectType* Nil;
+
 private:
     static inline std::unordered_map<std::string, std::unique_ptr<ObjectType>> object_types;
     static inline std::unordered_map<std::string, std::unique_ptr<CompositeType>> composite_types;

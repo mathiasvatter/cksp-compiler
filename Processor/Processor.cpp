@@ -85,6 +85,10 @@ Result<Type*> Processor::parse_type_annotation(Type* ty) {
 			dimensions++;
 		}
 		type = TypeRegistry::get_type_from_annotation(type_token.val);
+		// check if type object if type still unknown
+		if(type == TypeRegistry::Unknown) {
+			type = TypeRegistry::add_object_type(type_token.val);
+		}
 		if(!type) {
 			error.m_message = "Unknown Type annotation.";
 			error.m_expected = "valid type annotation";

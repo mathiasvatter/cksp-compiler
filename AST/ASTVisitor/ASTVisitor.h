@@ -35,6 +35,7 @@ public:
 	virtual void visit(NodeInt& node) {node.ty = TypeRegistry::Integer;};
     virtual void visit(NodeReal& node) {node.ty = TypeRegistry::Real;};
     virtual void visit(NodeString& node) {node.ty = TypeRegistry::String;};
+	virtual void visit(NodeNil& node) {node.ty = TypeRegistry::Nil;};
 	virtual void visit(NodeVariable& node) {};
 	virtual void visit(NodeVariableRef& node) {};
 	virtual void visit(NodeStructRef& node) {};

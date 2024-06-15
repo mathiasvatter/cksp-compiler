@@ -8,7 +8,6 @@
 
 #include "../Tokenizer/Tokens.h"
 
-
 inline static std::string type_kind_names[] = {"Basic", "Composite", "Object"};
 enum class TypeKind {Basic, Composite, Object};
 inline static std::string kind_names[] = {"Integer", "Boolean", "String", "Real", "Unknown", "Object", "Any", "Void", "Number", "Comparison"};
@@ -164,7 +163,7 @@ public:
         return TypeKind::Object;
     }
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
-		return get_type_kind() == other->get_type_kind() && m_name == other->to_string();
+		return get_type_kind() == other->get_type_kind() && (m_name == other->to_string() or other->to_string() == "nil");
 	}
 private:
     std::string m_name;
