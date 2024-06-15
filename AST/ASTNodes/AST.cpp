@@ -354,6 +354,7 @@ void NodeProgram::accept(ASTVisitor& visitor) {
 NodeProgram::NodeProgram(const NodeProgram& other) : NodeAST(other), init_callback(other.init_callback) {
     callbacks = clone_vector<NodeCallback>(other.callbacks);
     function_definitions = clone_vector<NodeFunctionDefinition>(other.function_definitions);
+	additional_function_definitions = clone_vector<NodeFunctionDefinition>(other.additional_function_definitions);
 	global_declarations = std::make_unique<NodeBlock>(*other.global_declarations);
 	struct_definitions = clone_vector<NodeStruct>(other.struct_definitions);
 	function_lookup = other.function_lookup;
@@ -380,6 +381,9 @@ void NodeProgram::update_parents(NodeAST *new_parent) {
 void NodeProgram::update_function_lookup() {
 	function_lookup.clear();
 	for(auto & def : function_definitions) {
+		function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
+	}
+	for(auto & def : additional_function_definitions) {
 		function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
 	}
 }

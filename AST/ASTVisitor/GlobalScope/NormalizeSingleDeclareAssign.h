@@ -36,8 +36,8 @@ private:
 	inline void visit(NodeSingleAssignment& node) override {
 		if(node.l_value->get_node_type() == NodeType::ArrayRef) {
 			auto node_array_ref = static_cast<NodeArrayRef*>(node.l_value.get());
-			// if lhs is arrayref and has no index, check if array is initialized with a list of values
-			if(!node_array_ref->index and node.r_value->get_node_type() != NodeType::ParamList) {
+			// if lhs is arrayref and has no index, check if array is initialized with a list of values or array copy
+			if(!node_array_ref->index and not(node.r_value->get_node_type() == NodeType::ParamList or node.r_value->get_node_type() == NodeType::ArrayRef)) {
 				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 				error.m_message = "<Array> can only be assigned with a list of values.";
 				error.m_expected = "<ParamList>";
@@ -53,13 +53,21 @@ private:
 				return;
 			}
 
-			// if param list has only one value:
-			auto param_list = static_cast<NodeParamList*>(node.r_value.get());
-			if(param_list->params.size() == 1) {
-				NormalizeSingleDeclareAssign::add_array_init_function_def(m_program, node.l_value->ty->get_element_type());
-				node.replace_with(get_array_init_function_call(node_array_ref, param_list->params[0].get()));
-			} else {
-				node.replace_with(get_array_init_from_list(node_array_ref, param_list));
+			if(node.r_value->get_node_type() == NodeType::ParamList) {
+				// if param list has only one value:
+				auto param_list = static_cast<NodeParamList *>(node.r_value.get());
+				if (param_list->params.size() == 1) {
+					NormalizeSingleDeclareAssign::add_array_init_function_def(m_program,
+																			  node.l_value->ty->get_element_type());
+					node.replace_with(get_array_init_function_call(node_array_ref, param_list->params[0].get()));
+				} else {
+					node.replace_with(get_array_init_from_list(node_array_ref, param_list));
+				}
+			} else if(node.r_value->get_node_type() == NodeType::ArrayRef) {
+				auto node_val_array_ref = static_cast<NodeArrayRef*>(node.r_value.get());
+				NormalizeSingleDeclareAssign::add_array_copy_function_def(m_program,
+																		  node.l_value->ty->get_element_type());
+				node.replace_with(get_array_copy_function_call(node_array_ref, node_val_array_ref));
 			}
 		}
 	}
@@ -70,6 +78,15 @@ private:
 		if(node.variable->ty->get_element_type() != TypeRegistry::String) {
 			if (m_program->current_callback == m_program->init_callback) return;
 			if (!node.variable->is_local) return;
+		} else {
+			// check if assignment is only neutral string element and init callback -> skip
+			if (m_program->current_callback == m_program->init_callback) {
+				if (node.value and node.value->get_node_type() == NodeType::String) {
+					auto node_string = static_cast<NodeString*>(node.value.get());
+					if (node_string->value.empty()) return;
+				// if string is assigned to nothing -> skip too
+				} else if (!node.value) return;
+			}
 		}
 		std::unique_ptr<NodeBlock> node_body = nullptr;
 		if(node.variable->get_node_type() == NodeType::Array) {
@@ -78,7 +95,7 @@ private:
 			auto node_array_ref = node_array->to_reference();
 			// if lhs is arrayref and has no index, check if array is initialized with a list of values
 			if(node.value) {
-				if (node.value->get_node_type() != NodeType::ParamList) {
+				if (not(node.value->get_node_type() == NodeType::ParamList or node.value->get_node_type() == NodeType::ArrayRef)) {
 					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 					error.m_message = "<Array> can only be declared with a list of values.";
 					error.m_expected = "<ParamList>";
@@ -93,16 +110,28 @@ private:
 					get_array_init_function_call(node_array_ref.get(), TypeRegistry::get_neutral_element_from_type(node.variable->ty->get_element_type()).get()),
 					node.tok));
 			} else {
-				// if param list has only one value:
-				auto param_list = static_cast<NodeParamList *>(node.value.get());
-				if (param_list->params.size() == 1) {
-					NormalizeSingleDeclareAssign::add_array_init_function_def(m_program, node.variable->ty->get_element_type());
+				// declare local array: [] := (1) or (1,2,3,45)
+				if (node.value->get_node_type() == NodeType::ParamList) {
+					// if param list has only one value:
+					auto param_list = static_cast<NodeParamList *>(node.value.get());
+					if (param_list->params.size() == 1) {
+						NormalizeSingleDeclareAssign::add_array_init_function_def(m_program,
+																				  node.variable->ty->get_element_type());
+						node_body->add_stmt(std::make_unique<NodeStatement>(
+							get_array_init_function_call(node_array_ref.get(), param_list->params[0].get()),
+							node.tok));
+					} else {
+						auto array_ref = static_cast<NodeArrayRef *>(node_array_ref.get());
+						node_body = get_array_init_from_list(array_ref, param_list);
+					}
+				// copy assignment array to array
+				} else if (node.value->get_node_type() == NodeType::ArrayRef) {
+					auto node_val_array_ref = static_cast<NodeArrayRef*>(node.value.get());
+					NormalizeSingleDeclareAssign::add_array_copy_function_def(m_program,
+																			  node.variable->ty->get_element_type());
 					node_body->add_stmt(std::make_unique<NodeStatement>(
-						get_array_init_function_call(node_array_ref.get(), param_list->params[0].get()),
+						get_array_copy_function_call(node_array_ref.get(), node_val_array_ref),
 						node.tok));
-				} else {
-					auto array_ref = static_cast<NodeArrayRef*>(node_array_ref.get());
-					node_body = get_array_init_from_list(array_ref, param_list);
 				}
 			}
 			node_body->prepend_stmt(std::make_unique<NodeStatement>(
@@ -203,6 +232,7 @@ public:
 		return node_body;
 	}
 
+
 	/**
 	 * function array_init(array: [], iter: int, value: {type})
 	 *  while(iter < num_elements(array))
@@ -219,7 +249,7 @@ public:
 			return false;
 		}
 
-		auto node_array = std::make_unique<NodeArray>(std::nullopt, "array", type, nullptr, Token());
+		auto node_array = std::make_unique<NodeArray>(std::nullopt, "array", TypeRegistry::add_composite_type(CompoundKind::Array, type), nullptr, Token());
 		auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, Token());
 		auto node_value = std::make_unique<NodeVariable>(std::nullopt, "value", type, DataType::Mutable, Token());
 		auto node_iterator_ref = node_iterator->to_reference();
@@ -284,14 +314,130 @@ public:
 			std::move(node_while_body),
 			Token()
 		);
-//		node_function_def->body->add_stmt(std::make_unique<NodeStatement>(
-//			std::make_unique<NodeSingleAssignment>(
-//				node_iterator_ref->clone(),
-//				std::make_unique<NodeInt>(0, Token()),
-//				Token()),
-//			Token()));
 		node_function_def->body->add_stmt(std::make_unique<NodeStatement>(std::move(new_while), Token()));
-		program->function_definitions.push_back(std::move(node_function_def));
+		program->additional_function_definitions.push_back(std::move(node_function_def));
+		// update function lookup so that the new function can be found
+		program->update_function_lookup();
+		return true;
+	}
+
+	static inline std::unique_ptr<NodeBlock> get_array_copy_function_call(NodeReference* array_dest, NodeReference* array_src) {
+		std::string func_name = "array.copy."+array_dest->declaration->ty->get_element_type()->to_string();
+		auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, array_dest->tok);
+		node_iterator->is_local = true;
+		auto node_iterator_ref = node_iterator->to_reference();
+		node_iterator_ref->match_data_structure(node_iterator.get());
+		auto node_body = std::make_unique<NodeBlock>(array_dest->tok);
+		node_body->scope = true;
+
+
+		auto node_function_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				func_name,
+				std::make_unique<NodeParamList>(
+					array_dest->tok,
+					array_dest->clone(),
+					array_src->clone(),
+					std::move(node_iterator_ref)
+				),
+				array_dest->tok
+			),
+			array_dest->tok
+		);
+		node_body->add_stmt(std::make_unique<NodeStatement>(
+			std::make_unique<NodeSingleDeclaration>(
+				std::move(node_iterator),
+				nullptr, array_dest->tok
+			),
+			array_dest->tok)
+		);
+		node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_function_call), array_dest->tok));
+		return node_body;
+	}
+
+	/**
+	 * function array_copy(dest: [], src: [], _iter: int)
+	 *  while(iter < num_elements(src))
+	 *      dest[iter] := src[iter]
+	 *      inc(iter)
+	 *  end while
+	 * end function
+	 */
+	static inline bool add_array_copy_function_def(NodeProgram* program, Type* type) {
+		std::string func_name = "array.copy." + type->to_string();
+		// check if function with this type already exists
+		auto it = program->function_lookup.find({func_name, 3});
+		if(it != program->function_lookup.end()) {
+			return false;
+		}
+
+		auto node_dest = std::make_unique<NodeArray>(std::nullopt, "dest", TypeRegistry::add_composite_type(CompoundKind::Array, type), nullptr, Token());
+		auto node_src = std::make_unique<NodeArray>(std::nullopt, "src", TypeRegistry::add_composite_type(CompoundKind::Array, type), nullptr, Token());
+		auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, Token());
+		auto node_iterator_ref = node_iterator->to_reference();
+		auto node_dest_ref = std::make_unique<NodeArrayRef>("dest", node_iterator->to_reference(), Token());
+		auto node_src_ref = std::make_unique<NodeArrayRef>("src", node_iterator->to_reference(), Token());
+		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
+			std::make_unique<NodeFunctionHeader>(
+				func_name,
+				std::make_unique<NodeParamList>(
+					Token(),
+					node_dest->clone(),
+					node_src->clone(),
+					node_iterator->clone()
+				),
+				Token()
+			),
+			std::nullopt,
+			false,
+			std::make_unique<NodeBlock>(Token()),
+			Token()
+		);
+		node_function_def->body->scope = true;
+
+		// get declaration pointer right
+		node_dest_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->args->params[0].get()));
+		node_src_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->args->params[1].get()));
+		node_iterator_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->args->params[2].get()));
+
+		auto node_while_body = std::make_unique<NodeBlock>(Token());
+		node_while_body->scope = true;
+		auto node_assignment = std::make_unique<NodeSingleAssignment>(
+			node_dest_ref->clone(),
+			node_src_ref->clone(),
+			Token()
+		);
+		auto node_inc = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"inc",
+				std::make_unique<NodeParamList>(Token(), node_iterator_ref->clone()), Token()),
+			Token()
+		);
+
+		node_while_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), Token()));
+		node_while_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_inc), Token()));
+
+		// delete index of node_array_ref for its last usage in num_elements
+		node_src_ref->index = nullptr;
+		auto new_while = std::make_unique<NodeWhile>(
+			std::make_unique<NodeBinaryExpr>(
+				token::LESS_THAN,
+				node_iterator_ref->clone(),
+				std::make_unique<NodeFunctionHeader>(
+					"num_elements",
+					std::make_unique<NodeParamList>(Token(),std::move(node_src_ref)),
+					Token()
+					),
+				Token()
+			),
+			std::move(node_while_body),
+			Token()
+		);
+
+		node_function_def->body->add_stmt(std::make_unique<NodeStatement>(std::move(new_while), Token()));
+		program->additional_function_definitions.push_back(std::move(node_function_def));
 		// update function lookup so that the new function can be found
 		program->update_function_lookup();
 		return true;

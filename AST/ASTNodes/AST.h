@@ -93,6 +93,21 @@ struct NodeReference : NodeAST {
                           this->parent->parent->get_node_type() == NodeType::FunctionHeader;
         return func_arg;
     }
+	/// checks if reference is raw version of multi-dimensional array
+	bool is_raw_array() {
+		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw");
+	}
+	/// when is variable = raw array? if variable has _ in front and is array and was declared without _
+	/// returns sanitized name of reference
+	[[nodiscard]] std::string sanitize_name() {
+		std::string var_without_identifier = name;
+		if (name[0] == '_' && name[1] != '_') {
+			var_without_identifier = var_without_identifier.erase(0,1);
+		} else if (name.ends_with(".raw")) {
+			var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
+		}
+		return var_without_identifier;
+	}
 };
 
 struct NodeDataStructure : NodeAST {
@@ -398,6 +413,7 @@ struct NodeProgram : NodeAST {
 	class DefinitionProvider* def_provider = nullptr;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
+	std::vector<std::unique_ptr<NodeFunctionDefinition>> additional_function_definitions;
 	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> function_lookup;
 	std::vector<std::unique_ptr<struct NodeStruct>> struct_definitions;
 	std::unordered_map<std::string, NodeStruct*> struct_lookup;
@@ -422,7 +438,13 @@ struct NodeProgram : NodeAST {
 	/// Checks for existence and uniqueness of "on init" callback
 	/// If found, returns pointer to the callback node
 	NodeCallback* move_on_init_callback();
-
+	/// merges vector of additional function definitions into the main function definitions vector
+	inline void merge_function_definitions() {
+		function_definitions.insert(function_definitions.end(), std::make_move_iterator(additional_function_definitions.begin()),
+									std::make_move_iterator(additional_function_definitions.end()));
+		additional_function_definitions.clear();
+		update_function_lookup();
+	}
 };
 
 

@@ -81,7 +81,7 @@ void ASTBuildDataStructures::visit(NodeNDArray& node) {
 }
 
 void ASTBuildDataStructures::visit(NodeNDArrayRef& node) {
-    node.indexes->accept(*this);
+    if(node.indexes) node.indexes->accept(*this);
 
 	if(auto node_array = cast_node<NodeNDArray>(node.declaration)) {
 		node.sizes = clone_as<NodeParamList>(node_array->sizes.get());
@@ -178,6 +178,19 @@ void ASTBuildDataStructures::replace_incorrectly_detected_reference(NodeReferenc
 			reference->name,
 			nullptr,
 			reference->tok);
+	} else if(reference->get_node_type() == NodeType::VariableRef and reference->declaration->get_node_type() == NodeType::NDArray) {
+		// check if raw array is wanted -> then it is ArrayRef
+		if(reference->is_raw_array()) {
+			node_replacement = std::make_unique<NodeArrayRef>(
+				reference->name,
+				nullptr,
+				reference->tok);
+		} else {
+			node_replacement = std::make_unique<NodeNDArrayRef>(
+				reference->name,
+				nullptr,
+				reference->tok);
+		}
 		// check if it is NodeListRef
 	} else if(reference->get_node_type() == NodeType::ArrayRef and reference->declaration->get_node_type() == NodeType::List) {
 		auto node_array_ref = static_cast<NodeArrayRef*>(reference);
@@ -196,6 +209,7 @@ void ASTBuildDataStructures::replace_incorrectly_detected_reference(NodeReferenc
 	if(node_replacement) {
 		node_replacement->match_data_structure(reference->declaration);
 		auto new_ref = static_cast<NodeReference*>(reference->replace_with(std::move(node_replacement)));
+		new_ref->accept(*this);
 		m_def_provider->add_reference(new_ref->declaration, new_ref);
 	}
 }
