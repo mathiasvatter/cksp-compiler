@@ -144,7 +144,7 @@ public:
         node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_positions_declaration), node.tok));
 
         auto node_iterator_var = std::make_unique<NodeVariableRef>(
-                        "_iterator", node.tok
+                        "_iter", node.tok
                         );
 		node_iterator_var->is_engine = true;
         for(int i = 0; i<node.body.size(); i++) {

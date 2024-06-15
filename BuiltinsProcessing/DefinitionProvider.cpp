@@ -94,7 +94,7 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 	}
 
 	// sanitize name if array
-	std::string sanitized = sanitize_name(var->name);
+	std::string sanitized = var->sanitize_name();
 	// try not sanitized name first
 	auto node_declaration = get_declared_data_structure(var->name);
 	if(!node_declaration) node_declaration = get_declared_data_structure(sanitized);
@@ -131,16 +131,6 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 		}
 	}
 	return nullptr;
-}
-
-std::string DefinitionProvider::sanitize_name(const std::string& name) {
-    std::string var_without_identifier = name;
-    if (name[0] == '_' && name[1] != '_') {
-        var_without_identifier = var_without_identifier.erase(0,1);
-    } else if (name.ends_with(".raw")) {
-        var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
-    }
-    return var_without_identifier;
 }
 
 

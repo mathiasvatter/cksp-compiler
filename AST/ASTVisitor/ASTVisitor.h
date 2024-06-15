@@ -21,7 +21,7 @@ protected:
 	NodeProgram* m_program = nullptr;
 
     std::set<std::string> m_restricted_builtin_functions = {"save_array", "save_array_str", "load_array", "load_array_str"};
-    std::unordered_map<std::string, Type*> m_compiler_variables = {{"_iterator", TypeRegistry::Integer}};
+    std::unordered_map<std::string, Type*> m_compiler_variables = {{"_iter", TypeRegistry::Integer}};
     std::unordered_map<Type*, std::string> m_return_arrays = {{TypeRegistry::ArrayOfInt, "_return_vars_int"}, {TypeRegistry::ArrayOfReal, "_return_vars_real"}, {TypeRegistry::ArrayOfString, "_return_vars_str"}};
     std::unordered_map<Type*, std::string> m_local_var_arrays = {{TypeRegistry::ArrayOfInt, "_loc_var_int"}, {TypeRegistry::ArrayOfReal, "_loc_var_real"}, {TypeRegistry::ArrayOfString, "_loc_var_str"}};
 
@@ -175,6 +175,7 @@ public:
 		for(auto & function_definition : node.function_definitions) {
 			function_definition->accept(*this);
 		}
+		node.merge_function_definitions();
 	};
     virtual void visit(NodeBlock& node) {
         for(auto & stmt : node.statements) {
