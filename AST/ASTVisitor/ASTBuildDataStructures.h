@@ -35,6 +35,9 @@ public:
 	void visit(NodeNDArray& node) override;
     void visit(NodeNDArrayRef& node) override;
 
+	void visit(NodePointer& node) override;
+	void visit(NodePointerRef& node) override;
+
 	/// List Struct and Reference
 	void visit(NodeList& node) override;
 	void visit(NodeListRef& node) override;

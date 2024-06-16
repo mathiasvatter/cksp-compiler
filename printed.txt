@@ -11,6 +11,9 @@ end struct
 
 on init
 	declare loc_6 : int
+	declare this_list : List := nil
+	this_list := List(42, nil)
+	declare lists[5] : Array[List] := (nil)
 	declare const colorz.a : int := 0 + 0
 	declare const colorz.b : int := 0 + (0 + 1)
 	declare colorz[2] : int[] := (0 + 0, 0 + (0 + 1))

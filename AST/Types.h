@@ -136,7 +136,7 @@ public:
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		bool is_unknown = other->get_kind() == Kind::Unknown and other->get_type_kind() == TypeKind::Basic;
 		bool is_any = other->get_kind() == Kind::Any and other->get_type_kind() == TypeKind::Basic;
-		return is_unknown or is_any or (get_type_kind() == other->get_type_kind() and m_dimensions == other->get_dimensions() and m_element_type->is_compatible(other));
+		return is_unknown or is_any or (get_type_kind() == other->get_type_kind() and m_dimensions == other->get_dimensions() and m_element_type->is_compatible(other->get_element_type()));
 	}
 	[[nodiscard]] Type* get_element_type() const override {return m_element_type;}
 	[[nodiscard]] CompoundKind get_compound_type() const {return m_compound_kind;}
@@ -162,8 +162,9 @@ public:
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Object;
     }
+	[[nodiscard]] Type* get_element_type() const override {return (Type *) this;}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
-		return get_type_kind() == other->get_type_kind() && (m_name == other->to_string() or other->to_string() == "nil");
+		return get_type_kind() == other->get_type_kind() && (m_name == other->to_string() or other->to_string() == "nil" or m_name == "nil");
 	}
 	bool is_same_type(const Type* other) const override {
 		return get_type_kind() == other->get_type_kind() or (other->get_kind() == Kind::Unknown and other->get_type_kind() == TypeKind::Basic);

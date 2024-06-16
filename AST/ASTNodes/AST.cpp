@@ -25,14 +25,22 @@ NodeAST * NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 }
 
 Type* NodeAST::set_element_type(Type *element_type) {
-	if(ty->get_type_kind() == TypeKind::Composite and element_type->get_type_kind() == TypeKind::Basic) {
+	if(ty->get_type_kind() == TypeKind::Composite and (element_type->get_type_kind() == TypeKind::Basic or element_type->get_type_kind() == TypeKind::Object)) {
         // if composite type does not yet exist -> create it without throwing error
         ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(ty)->get_compound_type(), element_type, ty->get_dimensions());
 		return ty;
-	}
-	if(ty->get_type_kind() == TypeKind::Basic and element_type->get_type_kind() == TypeKind::Basic) {
+	} else if(ty->get_type_kind() == TypeKind::Basic and element_type->get_type_kind() == TypeKind::Basic) {
 		ty = element_type;
 		return ty;
+	} else if (element_type->get_type_kind() == TypeKind::Object and TypeRegistry::get_object_type(element_type->to_string())) {
+		ty = element_type;
+		return ty;
+	} else {
+		auto error = CompileError(ErrorType::TypeError, "", "", tok);
+		error.m_message = "Failed to set element type. Object of type <"+element_type->to_string()+"> has not been defined.";
+		error.m_expected = "valid <Object> type";
+		error.m_got = element_type->to_string();
+		error.exit();
 	}
 	return nullptr;
 }

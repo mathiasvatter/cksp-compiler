@@ -35,6 +35,9 @@ public:
     void visit(NodeNDArray& node) override;
     void visit(NodeNDArrayRef& node) override;
 
+	void visit(NodePointer& node) override;
+	void visit(NodePointerRef& node) override;
+
     void visit(NodeList& node) override;
     void visit(NodeListRef& node) override;
 
@@ -156,6 +159,11 @@ private:
         if(node_2 == TypeRegistry::Unknown) return node_1;
         // if node 1 is unknown, return type of node2
         if(node_1 == TypeRegistry::Unknown) return node_2;
+
+		// if node 2 is unknown, return type of node1
+		if(node_2 == TypeRegistry::Nil) return node_1;
+		// if node 1 is unknown, return type of node2
+		if(node_1 == TypeRegistry::Nil) return node_2;
 
         // if node 1 is any, node2 has to be more specialized, return node_2
         if(node_1 == TypeRegistry::Any) return node_2;

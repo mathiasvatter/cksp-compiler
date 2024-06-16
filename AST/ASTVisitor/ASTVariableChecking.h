@@ -30,6 +30,8 @@ public:
     void visit(NodeVariableRef& node) override;
 	void visit(NodeNDArray& node) override;
 	void visit(NodeNDArrayRef& node) override;
+	void visit(NodePointer& node) override;
+	void visit(NodePointerRef& node) override;
 	void visit(NodeList& node) override;
 	void visit(NodeListRef& node) override;
 	/// handle get_ui_id specific checks. Replace variable parameter when in get_ui_id and not ui_control
@@ -38,6 +40,9 @@ public:
 
 	void visit(NodeConstStatement& node) override;
 
+	/// apply type annotations given before parse time and replace node types accordingly
+	/// returns the new datastructure pointer if replaced, or the old one if not
+	static NodeDataStructure* apply_type_annotations(NodeDataStructure* node);
 private:
 	// boolean to continue after not finding declaration or fail
 	bool fail = false;
@@ -46,9 +51,6 @@ private:
     NodeBlock* m_current_block = nullptr;
 	DefinitionProvider* m_def_provider = nullptr;
 
-	/// apply type annotations given before parse time and replace node types accordingly
-	/// returns the new datastructure pointer if replaced, or the old one if not
-	static NodeDataStructure* apply_type_annotations(NodeDataStructure* node);
 
 	/// check if data structure annotations fit with the detected node type if not in func arguments
 	static inline Type* check_annotation_with_expected(NodeDataStructure* node, Type* expected) {

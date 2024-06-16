@@ -101,8 +101,10 @@ struct NodeListRef : NodeReference {
 };
 
 struct NodePointerRef : NodeReference {
+	std::vector<std::string> ptr_chain;
 	inline NodePointerRef(std::string name, Token tok)
 		: NodeReference(std::move(name), NodeType::PointerRef, std::move(tok)) {
+		update_ptr_chain();
 	}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
@@ -111,6 +113,19 @@ struct NodePointerRef : NodeReference {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	std::string get_string() override {
 		return name;
+	}
+	void update_ptr_chain() {
+		ptr_chain.clear();
+		std::istringstream iss(name);
+		std::string ns;
+		while (std::getline(iss, ns, '.')) {
+			ptr_chain.push_back(ns);
+		}
+	}
+	std::string get_object_name() {
+		if(ptr_chain.empty())
+			return "";
+		return ptr_chain.at(0);
 	}
 };
 

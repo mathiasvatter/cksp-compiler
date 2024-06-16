@@ -205,6 +205,35 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 	m_def_provider->add_to_references(&node);
 }
 
+void ASTVariableChecking::visit(NodePointer& node) {
+	check_annotation_with_expected(&node, TypeRegistry::Unknown);
+	node.determine_locality(m_program, m_current_block);
+
+	// handle return_vars -> do not check if they have been declared
+	if(node.is_compiler_return) {
+		node.is_used = true;
+		return;
+	}
+	auto new_node = apply_type_annotations(&node);
+	m_def_provider->set_declaration(new_node, !new_node->is_local);
+	m_def_provider->add_to_data_structures(new_node);
+}
+
+void ASTVariableChecking::visit(NodePointerRef& node) {
+	// handle return_vars -> do not check if they have been declared
+	if(node.is_compiler_return) {
+		return;
+	}
+	auto node_declaration = m_def_provider->get_declaration(&node);
+	if(!node_declaration) {
+		if(!fail) return;
+		DefinitionProvider::throw_declaration_error(&node).exit();
+	}
+
+	node.match_data_structure(node_declaration);
+	m_def_provider->add_to_references(&node);
+}
+
 void ASTVariableChecking::visit(NodeList& node) {
 	check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::List, TypeRegistry::Unknown, 1).get());
 	node.determine_locality(m_program, m_current_block);
@@ -266,7 +295,7 @@ NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure
 			return nullptr;
 		}
 	// var was annotated as object
-	} else if (node->ty->get_type_kind() == TypeKind::Object) {
+	} else if (node->ty->get_type_kind() == TypeKind::Object and node->get_node_type() != NodeType::Pointer) {
 		// throw error when node was not recognized as variable by parser
 		auto syntax_error = CompileError(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
 		if(node->get_node_type() != NodeType::Variable) {

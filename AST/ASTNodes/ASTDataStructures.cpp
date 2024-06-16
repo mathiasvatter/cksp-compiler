@@ -50,7 +50,7 @@ void NodePointer::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodePointer::NodePointer(const NodePointer& other)
-	: NodeDataStructure(other) {
+	: NodeDataStructure(other), ptr_chain(other.ptr_chain) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodePointer::clone() const {
