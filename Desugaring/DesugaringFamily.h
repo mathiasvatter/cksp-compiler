@@ -10,7 +10,7 @@
  * Prepending family prefixes to all Datastructs in Family Block, namely:
  * - Variables, NDArrays, Arrays, Lists, Constblocks, UIControls
  */
-class DesugaringFamilyStruct : public ASTDesugaring {
+class DesugaringFamily : public ASTDesugaring {
 private:
     std::stack<std::string> m_family_prefixes;
     std::string add_family_prefix(const std::string& name) {
@@ -20,7 +20,7 @@ private:
         return name;
     }
 public:
-	explicit DesugaringFamilyStruct(NodeProgram* program) : ASTDesugaring(program) {};
+	explicit DesugaringFamily(NodeProgram* program) : ASTDesugaring(program) {};
 
 //    void visit(NodeSingleDeclaration& node) override {
 //        if(!m_family_prefixes.empty()) {

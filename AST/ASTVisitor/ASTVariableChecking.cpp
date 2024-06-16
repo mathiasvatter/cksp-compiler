@@ -238,10 +238,10 @@ void ASTVariableChecking::visit(NodeConstStatement& node) {
 
 NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure* node) {
 	if(node->ty == TypeRegistry::Unknown) return node;
+	auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
+	error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
+	error.m_got = node->ty->to_string();
 	if(node->ty->get_type_kind() == TypeKind::Composite) {
-		auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
-		error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
-		error.m_got = node->ty->to_string();
 		auto comp_type = static_cast<CompositeType*>(node->ty);
 		// if var is annotated as array, replace with array
 		if(comp_type->get_compound_type() == CompoundKind::Array and node->get_node_type() != NodeType::Array and comp_type->get_dimensions() == 1) {
@@ -258,12 +258,28 @@ NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure
 	} else if (node->ty->get_type_kind() == TypeKind::Basic) {
 		auto syntax_error = CompileError(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
 		// if var is annotated as variable but recognized as array by parser -> throw error
-		if(node->get_node_type() != NodeType::Variable) {
+		if(node->get_node_type() == NodeType::Array or node->get_node_type() == NodeType::NDArray) {
 			syntax_error.m_message += " Variable was annotated as <Variable> but recognized as <Array>: "+node->name+".";
 			syntax_error.m_expected = "<Variable> Syntax";
 			syntax_error.m_got = "<Array> Syntax";
 			syntax_error.exit();
 			return nullptr;
+		}
+	// var was annotated as object
+	} else if (node->ty->get_type_kind() == TypeKind::Object) {
+		// throw error when node was not recognized as variable by parser
+		auto syntax_error = CompileError(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
+		if(node->get_node_type() != NodeType::Variable) {
+			syntax_error.m_message += " Variable was annotated as <Object> but recognized as <Array>: "+node->name+".";
+			syntax_error.m_expected = "<Object> Syntax";
+			syntax_error.m_got = "<Array> Syntax";
+			syntax_error.exit();
+			return nullptr;
+		} else {
+			auto node_pointer = node->to_pointer();
+			if(!node_pointer) error.exit();
+			node_pointer->is_local = node->is_local;
+			return static_cast<NodeDataStructure*>(node->replace_with(std::move(node_pointer)));
 		}
 	}
 	return node;

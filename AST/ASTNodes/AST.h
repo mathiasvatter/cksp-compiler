@@ -142,6 +142,7 @@ struct NodeDataStructure : NodeAST {
 
 	/// methods to change node type. Everything possible is copied over, even the type;
 	virtual std::unique_ptr<class NodeVariable> to_variable() {return nullptr;}
+	virtual std::unique_ptr<class NodePointer> to_pointer() {return nullptr;}
 	virtual std::unique_ptr<class NodeArray> to_array() {return nullptr;}
 	virtual std::unique_ptr<class NodeNDArray> to_ndarray() {return nullptr;}
 	virtual std::unique_ptr<class NodeList> to_list() {return nullptr;}

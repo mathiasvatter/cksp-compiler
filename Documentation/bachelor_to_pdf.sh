@@ -74,13 +74,13 @@ pandoc "$md_file" \
 
 % Importiere die CKSP Syntax-Highlighting Datei
 \input{/Users/mathias/My Drive (mathias.vatter@gmail.com)/Informatik Bachelor/08_Achtes_Semester/Bachelor/Paper/_cksp_syntax_latex/cksp_syntax.tex}
-\definecolor{code_bg}{RGB}{250,250,250}
+\definecolor{code_bg}{RGB}{245,245,245}
 
 \lstset{
   language=CKSP,
   style=basicCKSP,
   % basicstyle=\sffamily,
-  basicstyle=\ttfamily\small,
+  basicstyle=\ttfamily\footnotesize,
   % numbers=left,
   % numberstyle=\tiny\color{gray},
   stepnumber=1,
@@ -92,8 +92,7 @@ pandoc "$md_file" \
   captionpos=b,
   backgroundcolor=\color{code_bg},
   breaklines=true,
- % frame=tb, %single,                               % Einzelner Rahmen um Codeblöcke
-%   frame=topline,bottomline,                   % Nur obere und untere Linie
+  frame=tb, %single,                               % Einzelner Rahmen um Codeblöcke
   framesep=3mm,                               % Abstand des Rahmens zum Code
   framerule=0.5pt,                              % Dicke der Rahmenlinie
 %   xleftmargin=2mm,                            % Linker Innenabstand

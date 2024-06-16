@@ -7,7 +7,7 @@
 #include "../../Desugaring/DesugarDeclareAssign.h"
 #include "../../Lowering/LoweringGetControl.h"
 #include "../../Lowering/LoweringFunctionCall.h"
-#include "../../Desugaring/DesugaringFamilyStruct.h"
+#include "../../Desugaring/DesugaringFamily.h"
 #include "../../Desugaring/DesugarForStatement.h"
 #include "../../Desugaring/DesugarForEachStatement.h"
 #include "../ASTVisitor/GlobalScope/ASTGlobalScope.h"
@@ -359,7 +359,7 @@ std::unique_ptr<NodeAST> NodeFamily::clone() const {
 }
 
 ASTDesugaring * NodeFamily::get_desugaring(NodeProgram *program) const {
-    static DesugaringFamilyStruct desugaring(program);
+    static DesugaringFamily desugaring(program);
     return &desugaring;
 }
 

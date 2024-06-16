@@ -89,16 +89,16 @@ ASTVisitor* NodeListRef::get_lowering(NodeProgram *program) const {
 }
 
 
-// ************* NodeStructRef ***************
-void NodeStructRef::accept(ASTVisitor &visitor) {
+// ************* NodePointerRef ***************
+void NodePointerRef::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-NodeStructRef::NodeStructRef(const NodeStructRef& other)
+NodePointerRef::NodePointerRef(const NodePointerRef& other)
 	: NodeReference(other) {
 	set_child_parents();
 }
 
-std::unique_ptr<NodeAST> NodeStructRef::clone() const {
-	return std::make_unique<NodeStructRef>(*this);
+std::unique_ptr<NodeAST> NodePointerRef::clone() const {
+	return std::make_unique<NodePointerRef>(*this);
 }

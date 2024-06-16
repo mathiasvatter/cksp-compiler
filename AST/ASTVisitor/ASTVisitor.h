@@ -38,7 +38,8 @@ public:
 	virtual void visit(NodeNil& node) {node.ty = TypeRegistry::Nil;};
 	virtual void visit(NodeVariable& node) {};
 	virtual void visit(NodeVariableRef& node) {};
-	virtual void visit(NodeStructRef& node) {};
+	virtual void visit(NodePointerRef& node) {};
+	virtual void visit(NodePointer& node) {};
     virtual void visit(NodeParamList& node) {
 		for(auto & param : node.params) {
 			param->accept(*this);

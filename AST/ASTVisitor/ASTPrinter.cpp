@@ -21,8 +21,8 @@ void ASTPrinter::visit(NodeNil &node) {
 }
 
 void ASTPrinter::visit(NodeVariable &node) {
-    if(node.persistence)
-        os << "read ";
+    if(node.persistence.has_value())
+        os << node.persistence.value().val << " ";
     if(node.data_type == DataType::Polyphonic)
         os << "polyphonic ";
     else if(node.data_type == DataType::Const)
@@ -36,9 +36,21 @@ void ASTPrinter::visit(NodeVariableRef &node) {
 	os << node.name;
 }
 
+void ASTPrinter::visit(NodePointer &node) {
+	if(node.persistence.has_value())
+		os << node.persistence.value().val << " ";
+	os << node.name;
+	auto type = TypeRegistry::get_annotation_from_type(node.ty);
+	if(!type.empty()) os << " : " << type;
+}
+
+void ASTPrinter::visit(NodePointerRef &node) {
+	os << node.name;
+}
+
 void ASTPrinter::visit(NodeArray &node) {
-	if (node.persistence)
-		os << "read ";
+	if(node.persistence.has_value())
+		os << node.persistence.value().val << " ";
 	os << node.name;
 	if(node.size) {
 		os << "[";

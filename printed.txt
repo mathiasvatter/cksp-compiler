@@ -1,8 +1,8 @@
 struct List
 	declare value : int
-	declare next : Unknown := nil
+	declare next : List := nil
 
-	function __init__(self : Unknown, value : int, next : Unknown)
+	function __init__(self : Unknown, value : int, next : List)
 		if(1 = 1)
 			message(2)
 		end if
@@ -11,6 +11,10 @@ end struct
 
 on init
 	declare loc_6 : int
+	declare const colorz.a : int := 0 + 0
+	declare const colorz.b : int := 0 + (0 + 1)
+	declare colorz[2] : int[] := (0 + 0, 0 + (0 + 1))
+	declare const colorz.SIZE : int := 3
 	declare loc_7 : int
 	declare loc_8[5] : int[]
 	declare loc_9 : int
