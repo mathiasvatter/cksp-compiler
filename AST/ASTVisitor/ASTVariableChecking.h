@@ -48,7 +48,7 @@ private:
 
 	/// apply type annotations given before parse time and replace node types accordingly
 	/// returns the new datastructure pointer if replaced, or the old one if not
-	NodeDataStructure* apply_type_annotations(NodeDataStructure* node);
+	static NodeDataStructure* apply_type_annotations(NodeDataStructure* node);
 
 	/// check if data structure annotations fit with the detected node type if not in func arguments
 	static inline Type* check_annotation_with_expected(NodeDataStructure* node, Type* expected) {

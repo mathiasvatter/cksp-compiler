@@ -43,6 +43,8 @@ enum class NodeType {
 	ArrayRef,
 	NDArray,
 	NDArrayRef,
+	Pointer,
+	PointerRef,
 	UIControl,
 	UnaryExpr,
 	BinaryExpr,

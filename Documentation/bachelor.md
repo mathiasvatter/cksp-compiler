@@ -210,8 +210,10 @@ end function
 ### Vorgehen:
 1. Tokenizer erweitern. Reserviere folgende keywords: struct, end struct, new, delete, nil.
 2. Parser erweitern. Erstelle neue ASTDataStructures Subclass ASTStruct. Erstelle parsing rules für structs.
-3. Lowering der Structs in Arrays. Erstelle für jede struct Deklaration ein Array, das die Werte der Structs enthält. Erstelle für jede struct Deklaration ein Array, das die Verweise auf die nächsten Elemente enthält.
-4. 
+3. Erstelle Parsing rules für NodeNil
+4. Erst desugaring und "namespace apply", damit Referenz und Deklaration Zuweisung innerhalb der Struct Hierarchie funktioniert.
+5. Lowering der Structs in Arrays. Erstelle für jede struct Deklaration ein Array, das die Werte der Structs enthält. Erstelle für jede struct Deklaration ein Array, das die Verweise auf die nächsten Elemente enthält.
+6. 
 
 ## 3. Allow recursive Functions (Defunctionalize the Continuation)
 - Transform recursive Functions into continuation passing style

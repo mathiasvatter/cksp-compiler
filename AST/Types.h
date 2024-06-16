@@ -165,6 +165,9 @@ public:
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		return get_type_kind() == other->get_type_kind() && (m_name == other->to_string() or other->to_string() == "nil");
 	}
+	bool is_same_type(const Type* other) const override {
+		return get_type_kind() == other->get_type_kind() or (other->get_kind() == Kind::Unknown and other->get_type_kind() == TypeKind::Basic);
+	}
 private:
     std::string m_name;
 };

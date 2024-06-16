@@ -33,6 +33,10 @@ std::unique_ptr<class NodeArray> NodeVariable::to_array() {
 	return std::make_unique<NodeArray>(persistence, name, ty, std::make_unique<NodeInt>(1, tok), tok);
 }
 
+std::unique_ptr<class NodePointer> NodeVariable::to_pointer() {
+	return std::make_unique<NodePointer>(persistence, name, ty, tok);
+}
+
 std::unique_ptr<class NodeNDArray> NodeVariable::to_ndarray() {
 	return std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
 }
@@ -40,6 +44,26 @@ std::unique_ptr<class NodeNDArray> NodeVariable::to_ndarray() {
 std::unique_ptr<class NodeList> NodeVariable::to_list() {
 	return std::make_unique<NodeList>(tok);
 }
+
+// ************* NodePointer ***************
+void NodePointer::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+NodePointer::NodePointer(const NodePointer& other)
+	: NodeDataStructure(other) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodePointer::clone() const {
+	return std::make_unique<NodePointer>(*this);
+}
+
+std::unique_ptr<NodeReference> NodePointer::to_reference() {
+	auto ref = std::make_unique<NodePointerRef>(name, tok);
+	ref->parent = parent;
+	ref->match_data_structure(this);
+	return ref;
+}
+
 
 // ************* NodeArray ***************
 void NodeArray::accept(ASTVisitor &visitor) {

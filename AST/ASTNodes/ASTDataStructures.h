@@ -24,8 +24,24 @@ struct NodeVariable: NodeDataStructure {
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::VariableRef;}
 	std::unique_ptr<class NodeArray> to_array() override;
+	std::unique_ptr<class NodePointer> to_pointer() override;
 	std::unique_ptr<class NodeNDArray> to_ndarray() override ;
 	std::unique_ptr<class NodeList> to_list() override ;
+};
+
+struct NodePointer: NodeDataStructure {
+	inline NodePointer(std::optional<Token> is_persistent, std::string name, Type* ty, Token tok)
+		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::Pointer) {
+		persistence = std::move(is_persistent);
+		data_type = DataType::Mutable;
+	}
+	void accept(ASTVisitor& visitor) override;
+	// Kopierkonstruktor
+	NodePointer(const NodePointer& other);
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	std::unique_ptr<NodeReference> to_reference() override;
+	NodeType get_ref_node_type() override {return NodeType::VariableRef;}
 };
 
 struct NodeArray : NodeDataStructure {
