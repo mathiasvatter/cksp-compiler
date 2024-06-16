@@ -105,6 +105,16 @@ void ASTBuildDataStructures::visit(NodeVariableRef &node) {
 	replace_incorrectly_detected_data_struct(node.declaration);
 }
 
+void ASTBuildDataStructures::visit(NodePointer &node) {
+	replace_incorrectly_detected_data_struct(&node);
+}
+
+void ASTBuildDataStructures::visit(NodePointerRef &node) {
+	node.update_ptr_chain();
+	replace_incorrectly_detected_reference(&node);
+	replace_incorrectly_detected_data_struct(node.declaration);
+}
+
 void ASTBuildDataStructures::visit(NodeList& node) {
 	for(auto &params : node.body) {
 		params->accept(*this);
@@ -167,6 +177,19 @@ void ASTBuildDataStructures::replace_incorrectly_detected_data_struct(NodeDataSt
 		for(auto & ref : references) {
 			ref->declaration = new_data_struct;
 		}
+	// if some references were detected as pointer references -> change data_struct type
+	} else if(reference_node_types.find(NodeType::PointerRef) != reference_node_types.end()) {
+		auto node_pointer = std::make_unique<NodePointer>(
+			std::nullopt,
+			data_struct->name,
+			data_struct->ty,
+			data_struct->tok);
+		auto new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_pointer)));
+		m_def_provider->set_references(new_data_struct, references);
+		// update all reference declaration pointers
+		for(auto & ref : references) {
+			ref->declaration = new_data_struct;
+		}
 	}
 }
 
@@ -206,6 +229,11 @@ void ASTBuildDataStructures::replace_incorrectly_detected_reference(NodeReferenc
 		node_replacement = std::make_unique<NodeListRef>(
 			reference->name,
 			std::move(node_nd_array_ref->indexes),
+			reference->tok);
+	// reference detected as variable ref but declaration is pointer
+	} else if (reference->get_node_type() == NodeType::VariableRef and reference->declaration->get_node_type() == NodeType::Pointer) {
+		node_replacement = std::make_unique<NodePointerRef>(
+			reference->name,
 			reference->tok);
 	}
 

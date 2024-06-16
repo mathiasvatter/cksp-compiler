@@ -3,6 +3,7 @@
 //
 
 #include "TypeInference.h"
+#include "ASTVariableChecking.h"
 
 void TypeInference::visit(NodeProgram& node) {
 	m_program = &node;
@@ -75,13 +76,41 @@ void TypeInference::visit(NodeConstStatement& node) {
 	}
 }
 
-
 void TypeInference::visit(NodeVariableRef& node) {
+	if(node.declaration) {
+		// manual replacement of node type if declaration is a pointer
+		// 	declare this_list := nil
+		//	this_list := List(42, nil)
+		if(node.declaration->get_node_type() == NodeType::Pointer) {
+			auto pointer_ref = std::make_unique<NodePointerRef>(node.name, node.tok);
+			pointer_ref->match_data_structure(node.declaration);
+			pointer_ref->accept(*this);
+			node.replace_with(std::move(pointer_ref));
+			return;
+		}
+	}
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
 }
 
 void TypeInference::visit(NodeVariable& node) {
+	// because of pointer node -> apply type annotations again
+	auto new_node = ASTVariableChecking::apply_type_annotations(&node);
+	m_def_provider->add_to_data_structures(new_node);
+}
+
+void TypeInference::visit(NodePointerRef& node) {
+	if(node.ty == TypeRegistry::Unknown) {
+		node.ty = TypeRegistry::Nil;
+	}
+	match_reference_declaration(&node);
+	m_def_provider->add_to_references(&node);
+}
+
+void TypeInference::visit(NodePointer& node) {
+	if(node.ty == TypeRegistry::Unknown) {
+		node.ty = TypeRegistry::Nil;
+	}
 	m_def_provider->add_to_data_structures(&node);
 }
 
@@ -235,7 +264,15 @@ void TypeInference::visit(NodeSingleAssignment& node) {
 
 void TypeInference::visit(NodeFunctionCall& node) {
 	node.get_definition(m_program);
-	if(!node.definition) return;
+	if(!node.definition) {
+		// if definition pre lowering not found -> could be struct __init__ func
+		// this_list := List(42, nil)
+		if(auto obj_type = TypeRegistry::get_object_type(node.function->name)) {
+			node.ty = obj_type;
+			return;
+		}
+		return;
+	}
 	node.function->accept(*this);
 	for(int i = 0; i < node.function->args->params.size(); i++) {
 		match_type(node.function->args->params[i].get(), node.definition->header->args->params[i].get());
