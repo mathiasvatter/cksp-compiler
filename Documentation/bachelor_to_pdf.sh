@@ -73,7 +73,7 @@ pandoc "$md_file" \
 
 
 % Importiere die CKSP Syntax-Highlighting Datei
-\input{/Users/mathias/My Drive (mathias.vatter@gmail.com)/Informatik Bachelor/08_Achtes_Semester/Bachelor/Paper/_cksp_syntax_latex/cksp_syntax.tex}
+\input{/Users/Mathias/Scripting/ksp-compiler/Documentation/_cksp_syntax_latex/cksp_syntax.ext}
 \definecolor{code_bg}{RGB}{245,245,245}
 
 \lstset{
