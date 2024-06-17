@@ -215,7 +215,6 @@ void TypeInference::visit(NodeParamList& node) {
 
 void TypeInference::visit(NodeSingleDeclaration& node) {
 	node.variable->accept(*this);
-
 	if(node.value) {
 		node.value->accept(*this);
 		// cast node r_value to composite type if variable is composite type
@@ -225,6 +224,23 @@ void TypeInference::visit(NodeSingleDeclaration& node) {
 		match_assignment_types(node.variable.get(), node.value.get());
 	}
 	m_def_provider->add_to_declarations(&node);
+
+	// if declaration is pointer -> always initialize with nil!
+	if(node.variable->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+		if(!node.value) {
+			auto nil = std::make_unique<NodeNil>(node.tok);
+			nil->parent = &node;
+			nil->accept(*this);
+			if(node.variable->get_node_type() == NodeType::Variable) {
+				node.value = std::move(nil);
+			// pack into param list if declaration is array type
+			} else {
+				auto param_list = std::make_unique<NodeParamList>(node.tok, std::move(nil));
+				param_list->parent = &node;
+				node.value = std::move(param_list);
+			}
+		}
+	}
 }
 
 void TypeInference::visit(NodeUIControl& node) {

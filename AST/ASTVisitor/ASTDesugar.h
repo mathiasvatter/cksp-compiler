@@ -39,8 +39,10 @@ class ASTDesugar: public ASTVisitor {
 	/// desugar nested ParamLists [[1,2,3,4]]
 	void visit(NodeParamList& node) override;
 
+	/// add namespaces
+	void visit(NodeStruct& node) override;
+
 private:
-//    NodeProgram* m_program = nullptr;
 
     std::unique_ptr<NodeBlock> m_global_variable_declarations = std::make_unique<NodeBlock>(Token());
     /// declare necessary compiler variables for iterating etc.

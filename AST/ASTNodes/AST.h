@@ -135,6 +135,8 @@ struct NodeDataStructure : NodeAST {
 	bool determine_locality(class NodeProgram* program, struct NodeBlock* current_block);
 	/// determines if current data structure is a parameter in a function definition
 	bool is_function_param();
+	/// determines if current data structure is member of a struct
+	bool is_member();
 	/// tries to infer the type by specializing given type from Number to Integer
 	virtual Type* cast_type();
 	/// returns fitting reference node type for the data structures
@@ -143,7 +145,7 @@ struct NodeDataStructure : NodeAST {
 	/// methods to change node type. Everything possible is copied over, even the type;
 	virtual std::unique_ptr<class NodeVariable> to_variable() {return nullptr;}
 	virtual std::unique_ptr<class NodePointer> to_pointer() {return nullptr;}
-	virtual std::unique_ptr<class NodeArray> to_array() {return nullptr;}
+	virtual std::unique_ptr<class NodeArray> to_array(NodeAST* size=nullptr) {return nullptr;}
 	virtual std::unique_ptr<class NodeNDArray> to_ndarray() {return nullptr;}
 	virtual std::unique_ptr<class NodeList> to_list() {return nullptr;}
 };
@@ -459,6 +461,7 @@ struct NodeProgram : NodeAST {
 		additional_function_definitions.clear();
 		update_function_lookup();
 	}
+	static std::unique_ptr<NodeBlock> declare_compiler_variables();
 };
 
 

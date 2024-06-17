@@ -312,7 +312,7 @@ NodeStatement* NodeBlock::add_stmt(std::unique_ptr<NodeStatement> stmt) {
 void NodeBlock::cleanup_body() {
     std::vector<std::unique_ptr<NodeStatement>> temp;
     for(auto & statement : statements) {
-        if(statement->statement->get_node_type() == NodeType::Body) {
+        if(statement->statement->get_node_type() == NodeType::Block) {
             // Übertragen Sie die function_inlines vom aktuellen NodeBlock-Element
             // auf das erste Element der inneren NodeBlock
 			auto node_innner_body = static_cast<NodeBlock*>(statement->statement.get());

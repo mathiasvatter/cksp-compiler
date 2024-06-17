@@ -173,7 +173,7 @@ void ASTPrinter::visit(NodeFamily &node) {
 
 void ASTPrinter::visit(NodeStatement &node) {
     if(node.statement->get_node_type() != NodeType::DeadCode) {
-        if(node.statement->get_node_type() != NodeType::Body) os << get_indent();
+        if(node.statement->get_node_type() != NodeType::Block) os << get_indent();
         node.statement->accept(*this);
         os << std::endl;
     }

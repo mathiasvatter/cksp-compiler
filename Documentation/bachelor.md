@@ -177,33 +177,31 @@ message(that_list.next.value)
 ```
 Gets lowered to:
 ```
+
 declare const MAX_STRUCTS := 1000000
 declare object.warning: string := "Memory Error: No more free space available to allocate objects of type"
 
+declare const List.MAX_STRUCTS := MAX_STRUCTS // can alternate if mutlidimensional array is needed
 declare List.allocation[MAX_STRUCTS]: int[] := (0)
 declare List.value[MAX_STRUCTS]: int[]             // Wert des Elements
-declare List.next[MAX_STRUCTS]: int[] := (-1 )     // Verweis auf den Index des nächsten Elements
-declare List.free_idx: int[] := 0                  // Zeigt auf den ersten freien Platz im Array
+declare List.next[MAX_STRUCTS]: List[] := (nil)      // Verweis auf den Index des nächsten Elements
+declare List.free_idx: int := 0                  // Zeigt auf den ersten freien Platz im Array
 
-declare this_list: int := -1 // nil
-this_list := List.__init__(42, -1)
+declare $this_list := nil // nil
+$this_list := List.__init__(42, nil)
 
-declare that_list: int := List.__init__(39, List.__init__(40, List.__init__(41, this_list)))
-message(List.value[List.next[that_list]])
+declare $that_list := List.__init__(39, List.__init__(40, List.__init__(41, this_list)))
+message(%List.value[%List.next[$that_list]])
 
-function List.__init__(value: int, next: List) -> result
+function List.__init__(value, next) -> result
     List.free_idx := search(List.allocation, 0)
     if List.free_idx = -1
-        message(object.warning & "'List'")        
+        message(@object.warning & "'List'")        
     end if
     List.allocation[List.free_idx] := 1
     List.value[List.free_idx] := value
     List.next[List.free_idx] := next
     result := List.free_idx
-end function
-
-function nil() -> result
-    result := -1  // -1 repräsentiert `nil` in dieser Implementierung
 end function
 ```
 
@@ -212,8 +210,33 @@ end function
 2. Parser erweitern. Erstelle neue ASTDataStructures Subclass ASTStruct. Erstelle parsing rules für structs.
 3. Erstelle Parsing rules für NodeNil
 4. Erst desugaring und "namespace apply", damit Referenz und Deklaration Zuweisung innerhalb der Struct Hierarchie funktioniert.
+5. 
+__Pre-desugaring__:
+```
+struct List
+    declare value: int
+    declare next: List := nil
+
+    function __init__(self, value: int, next: List)
+        self.value := value
+        self.next := next
+    end function
+end struct
+```
+__Post-desugaring__:
+```
+struct List
+	declare List.value: int
+	declare List.next: List := nil
+
+	function List.__init__(value: int, next: List)
+		List.value := value
+		List.next := next
+	end function
+end struct
+```
 5. Lowering der Structs in Arrays. Erstelle für jede struct Deklaration ein Array, das die Werte der Structs enthält. Erstelle für jede struct Deklaration ein Array, das die Verweise auf die nächsten Elemente enthält.
-6. 
+Wenn das struct bereits ein oder mehrere Arrays enthält, wird ein multidimensionales array erstellt, dessen neue Dimension die maximale Größe aus den bisherigen Arrays ist.
 
 ## 3. Allow recursive Functions (Defunctionalize the Continuation)
 - Transform recursive Functions into continuation passing style

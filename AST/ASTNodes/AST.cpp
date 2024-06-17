@@ -96,6 +96,21 @@ Type* NodeDataStructure::cast_type() {
 	return ty;
 }
 
+bool NodeDataStructure::is_member() {
+	if(this->parent and this->parent->get_node_type() == NodeType::SingleDeclaration) {
+		auto decl = this->parent;
+		if(decl->parent and decl->parent->get_node_type() == NodeType::Statement) {
+			auto stmt = decl->parent;
+			if(stmt->parent and stmt->parent->get_node_type() == NodeType::Block) {
+				auto body = stmt->parent;
+				if(body->parent and body->parent->get_node_type() == NodeType::Struct) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
 
 // ************* NodeReference ***************
 void NodeReference::accept(ASTVisitor &visitor) {}
@@ -445,6 +460,26 @@ NodeCallback* NodeProgram::move_on_init_callback() {
 		std::rotate(callbacks.begin(), it, std::next(it));
 	}
 	return it->get(); // Return the pointer to the init callback
+}
+
+std::unique_ptr<NodeBlock> NodeProgram::declare_compiler_variables() {
+	std::unordered_map<std::string, Type*> compiler_variables = {{"_iter", TypeRegistry::Integer}};
+	Token tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
+	auto node_body = std::make_unique<NodeBlock>(tok);
+//	node_body->scope = true;
+	for(auto & var_name: compiler_variables) {
+		auto node_variable = std::make_unique<NodeVariable>(
+			std::nullopt,
+			var_name.first,
+			var_name.second,
+			DataType::Mutable, tok);
+		node_variable->is_engine = true;
+//        node_variable->is_global = true;
+		node_variable->is_local = true;
+		auto node_var_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_variable), nullptr, tok);
+		node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_var_declaration), tok));
+	}
+	return node_body;
 }
 
 

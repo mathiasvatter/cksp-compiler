@@ -21,14 +21,14 @@
  * declare const $fafa__ffifi := 1
  */
 
-class LoweringConstStruct : public ASTLowering {
+class LoweringConst : public ASTLowering {
 private:
     std::stack<std::string> m_const_prefixes;
     std::unique_ptr<NodeAST> m_pre = nullptr;
     std::unique_ptr<NodeAST> m_iter = nullptr;
 
 public:
-	explicit LoweringConstStruct(NodeProgram* program) : ASTLowering(program) {}
+	explicit LoweringConst(NodeProgram* program) : ASTLowering(program) {}
 
     void visit(NodeVariable& node) override {
 		if(node.ty == TypeRegistry::Unknown) node.ty = TypeRegistry::Integer;
