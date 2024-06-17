@@ -9,7 +9,7 @@ struct Note
 	declare velocities[10]: int[]
 	declare play_pos[11]: int[]
 
-	function __init__(self, p: int, v: [int])
+	function __init__(self, p: int, v: int[])
 		self.pitch := p
 		self.velocities := v
 		self.play_pos := (0)
@@ -24,7 +24,7 @@ declare new_note: Note := new Note(69, (10,110,127))
 message("New Note: "&new_note)
 play_note(new_note.pitch, new_note.velocities[0], new_note.samplestart, 0)
 
-declare many_notes[127]: [Note]
+declare many_notes[127]: Note[]
 
 // dynamic allocating of Note objects
 for idx, val in midi_notes
