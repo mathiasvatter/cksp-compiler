@@ -60,7 +60,7 @@ enum class NodeType {
 	String,
 	DeadCode,
 	Statement,
-	Body,
+	Block,
 	Const,
 	Struct,
 	StructRef,

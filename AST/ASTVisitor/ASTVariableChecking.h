@@ -39,6 +39,7 @@ public:
     void visit(NodeFunctionDefinition& node) override;
 
 	void visit(NodeConstStatement& node) override;
+	void visit(NodeStruct& node) override;
 
 	/// apply type annotations given before parse time and replace node types accordingly
 	/// returns the new datastructure pointer if replaced, or the old one if not

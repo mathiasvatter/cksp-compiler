@@ -39,7 +39,7 @@ private:
 
 	std::set<std::string> m_thread_unsafe_functions = {"wait", "wait_ticks", "wait_async"};
 
-	void apply_annotation_information(NodeDataStructure* node);
+	static void apply_annotation_information(NodeDataStructure* node);
 
     static DataType get_var_type_annotation(const std::string& keyword);
     static bool is_property_function(const std::string& fun_name);

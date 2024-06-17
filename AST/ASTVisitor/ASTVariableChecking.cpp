@@ -86,9 +86,10 @@ void ASTVariableChecking::visit(NodeUIControl& node) {
 void ASTVariableChecking::visit(NodeBlock &node) {
     node.cleanup_body();
 	m_current_block = &node;
-	if(node.parent->get_node_type() != NodeType::Statement and !is_instance_of<NodeDataStructure>(node.parent)) {
-		node.scope = true;
-	}
+//	if(node.parent->get_node_type() != NodeType::Statement and !is_instance_of<NodeDataStructure>(node.parent)) {
+//		node.scope = true;
+//	}
+	node.determine_scope();
 
 	if(node.scope) m_def_provider->add_scope();
 	// if body is in function definition, copy over last scope of header variables
@@ -264,6 +265,16 @@ void ASTVariableChecking::visit(NodeConstStatement& node) {
 //		}
 //	}
 }
+
+void ASTVariableChecking::visit(NodeStruct& node) {
+	m_def_provider->add_scope();
+	node.members->accept(*this);
+	for(auto & m : node.methods) {
+		m->accept(*this);
+	}
+	m_def_provider->remove_scope();
+}
+
 
 NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure* node) {
 	if(node->ty == TypeRegistry::Unknown) return node;

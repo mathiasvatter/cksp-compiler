@@ -15,7 +15,8 @@ void ASTDesugar::visit(NodeProgram& node) {
     for(auto & function_definition : node.function_definitions) {
         function_definition->accept(*this);
     }
-	m_program->init_callback->statements->prepend_body(declare_compiler_variables());
+	m_program->init_callback->statements->prepend_body(NodeStruct::declare_struct_constants());
+	m_program->init_callback->statements->prepend_body(NodeProgram::declare_compiler_variables());
 //	m_program->global_declarations->append_body(declare_compiler_variables());
 	m_program->global_declarations->append_body(std::move(m_global_variable_declarations));
 }
@@ -107,21 +108,14 @@ void ASTDesugar::visit(NodeParamList &node) {
 	}
 }
 
-std::unique_ptr<NodeBlock> ASTDesugar::declare_compiler_variables() {
-    Token tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
-    auto node_body = std::make_unique<NodeBlock>(tok);
-//	node_body->scope = true;
-    for(auto & var_name: m_compiler_variables) {
-        auto node_variable = std::make_unique<NodeVariable>(
-                std::nullopt,
-                var_name.first,
-                var_name.second,
-                DataType::Mutable, tok);
-        node_variable->is_engine = true;
-//        node_variable->is_global = true;
-		node_variable->is_local = true;
-        auto node_var_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_variable), nullptr, tok);
-        node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_var_declaration), tok));
-    }
-    return node_body;
+void ASTDesugar::visit(NodeStruct& node) {
+	node.members->accept(*this);
+	for(auto & m: node.methods) {
+		m->accept(*this);
+	}
+	if(auto desugaring = node.get_desugaring(m_program)) {
+		node.accept(*desugaring);
+	}
 }
+
+

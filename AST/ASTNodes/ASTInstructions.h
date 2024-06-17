@@ -283,9 +283,9 @@ struct NodeGetControl : NodeInstruction {
 struct NodeBlock : NodeInstruction {
     bool scope = false;
     std::vector<std::unique_ptr<NodeStatement>> statements;
-    inline explicit NodeBlock(Token tok) : NodeInstruction(NodeType::Body, std::move(tok)) {}
+    inline explicit NodeBlock(Token tok) : NodeInstruction(NodeType::Block, std::move(tok)) {}
     inline NodeBlock(std::vector<std::unique_ptr<NodeStatement>> statements, Token tok)
-            : NodeInstruction(NodeType::Body, std::move(tok)), statements(std::move(statements)) {
+            : NodeInstruction(NodeType::Block, std::move(tok)), statements(std::move(statements)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
@@ -325,6 +325,15 @@ struct NodeBlock : NodeInstruction {
 	}
     /// puts nested statement list in current one
     void cleanup_body();
+	/// returns true if the block is a scope block and sets node.scope
+	inline bool determine_scope() {
+		scope = false;
+		if(parent->get_node_type() != NodeType::Statement and !is_instance_of<NodeDataStructure>(parent)) {
+			scope = true;
+			return scope;
+		}
+		return false;
+	}
 };
 
 struct NodeFamily : NodeInstruction {

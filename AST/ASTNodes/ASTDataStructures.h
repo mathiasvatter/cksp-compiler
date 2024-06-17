@@ -23,7 +23,7 @@ struct NodeVariable: NodeDataStructure {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::VariableRef;}
-	std::unique_ptr<class NodeArray> to_array() override;
+	std::unique_ptr<class NodeArray> to_array(NodeAST* size=nullptr) override;
 	std::unique_ptr<class NodePointer> to_pointer() override;
 	std::unique_ptr<class NodeNDArray> to_ndarray() override ;
 	std::unique_ptr<class NodeList> to_list() override ;
@@ -126,7 +126,7 @@ struct NodeNDArray : NodeDataStructure {
 	std::unique_ptr<NodeVariable> to_variable() override {
 		return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
 	}
-	std::unique_ptr<NodeArray> to_array() override;
+	std::unique_ptr<NodeArray> to_array(NodeAST* size=nullptr) override;
 	std::unique_ptr<NodeList> to_list() override;
 };
 
@@ -205,7 +205,7 @@ struct NodeList : NodeDataStructure {
 	ASTVisitor* get_lowering(NodeProgram *program) const override;
 	NodeType get_ref_node_type() override {return NodeType::ListRef;}
 	std::unique_ptr<NodeVariable> to_variable() override;
-	std::unique_ptr<NodeArray> to_array() override;
+	std::unique_ptr<NodeArray> to_array(NodeAST* size=nullptr) override;
 	std::unique_ptr<NodeNDArray> to_ndarray() override;
 };
 
@@ -241,6 +241,8 @@ struct NodeStruct : NodeDataStructure {
 	std::unordered_map<std::string, NodeDataStructure*> member_table;
 	std::vector<std::unique_ptr<NodeFunctionDefinition>> methods;
 	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> method_table;
+	std::unordered_set<NodeType> member_node_types;
+	static std::unordered_set<NodeType> allowed_member_node_types;
 	inline explicit NodeStruct(const std::string& name, Token tok) : NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct) {}
 	inline NodeStruct(const std::string& name, std::unique_ptr<NodeBlock> members, std::vector<std::unique_ptr<NodeFunctionDefinition>> methods, Token tok)
 		: NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct), members(std::move(members)), methods(std::move(methods)) {
@@ -271,6 +273,8 @@ struct NodeStruct : NodeDataStructure {
 			if(m) m->update_token_data(token);
 		}
 	}
+	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+
 	void update_member_table() {
 		member_table.clear();
 		for(auto& member : members->statements) {
@@ -293,5 +297,26 @@ struct NodeStruct : NodeDataStructure {
 		for(auto& method : methods) {
 			method_table.insert({{method->header->name, (int)method->header->args->params.size()}, method.get()});
 		}
+	}
+
+	static NodeVariable* max_structs_var;
+	static std::unique_ptr<NodeBlock> declare_struct_constants() {
+		auto node_block = std::make_unique<NodeBlock>(Token());
+		auto node_max_structs = std::make_unique<NodeVariable>(std::nullopt, "MAX_STRUCTS", TypeRegistry::Integer,  DataType::Const, Token());
+		auto node_declare_max_structs = std::make_unique<NodeSingleDeclaration>(
+			std::move(node_max_structs),
+			std::make_unique<NodeInt>(1000000, Token()),
+			Token()
+		);
+		max_structs_var = static_cast<NodeVariable*>(node_declare_max_structs->variable.get());
+		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_max_structs), Token()));
+		auto node_mem_warning = std::make_unique<NodeVariable>(std::nullopt, "MEM_WARNING", TypeRegistry::String,  DataType::Const, Token());
+		auto node_declare_mem_warning = std::make_unique<NodeSingleDeclaration>(
+			std::move(node_mem_warning),
+			std::make_unique<NodeString>("\"Memory Error: No more free space available to allocate objects of type\"", Token()),
+			Token()
+		);
+		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_mem_warning), Token()));
+		return node_block;
 	}
 };

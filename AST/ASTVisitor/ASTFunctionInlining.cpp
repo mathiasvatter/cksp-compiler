@@ -187,7 +187,7 @@ void ASTFunctionInlining::visit(NodeFunctionCall& node) {
 		function_def->call_sites.erase(&node);
 		// has return variable
 		if(node_function_def->return_variable.has_value()) {
-			if(node.parent->parent->get_node_type() == NodeType::Body) {
+			if(node.parent->parent->get_node_type() == NodeType::Block) {
 				CompileError(ErrorType::SyntaxError,"Function returns a value. Move function into assign statement.", node.tok.line, node_function_def->return_variable.value()->get_string(), "<assignment>", node.tok.file).exit();
 			}
 			if (!node_function_def->body->statements.empty()) {

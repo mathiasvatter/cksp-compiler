@@ -6,11 +6,13 @@
 
 struct Note
 	declare pitch: int
-	declare velocities[10]: [int]
+	declare velocities[10]: int[]
+	declare play_pos[11]: int[]
 
 	function __init__(self, p: int, v: [int])
 		self.pitch := p
 		self.velocities := v
+		self.play_pos := (0)
 	end function
 
 	function __repr__(self)
