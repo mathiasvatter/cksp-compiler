@@ -324,7 +324,7 @@ std::unique_ptr<NodeAST> NodeFunctionHeader::clone() const {
 // ************* NodeFunctionDefinition ***************
 NodeFunctionDefinition::NodeFunctionDefinition(Token tok) : NodeAST(std::move(tok), NodeType::FunctionDefinition) {}
 NodeFunctionDefinition::NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
-											   std::optional<std::unique_ptr<NodeVariable>> returnVariable,
+											   std::optional<std::unique_ptr<NodeParamList>> returnVariable,
 											   bool override, std::unique_ptr<NodeBlock> body, Token tok)
         : NodeAST(std::move(tok), NodeType::FunctionDefinition), header(std::move(header)), return_variable(std::move(returnVariable)), override(override),body(std::move(body)) {
     set_child_parents();

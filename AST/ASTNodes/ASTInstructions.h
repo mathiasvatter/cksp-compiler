@@ -37,9 +37,10 @@ struct NodeStatement: NodeInstruction {
 };
 
 struct NodeFunctionCall : NodeInstruction {
-    enum Kind{Property, Builtin, UserDefined, Undefined};
+    enum Kind{Property, Builtin, UserDefined, Undefined, Method};
     Kind kind = Undefined;
     bool is_call = false;
+	bool is_new = false;
     std::unique_ptr<NodeFunctionHeader> function;
     NodeFunctionDefinition* definition = nullptr;
     inline explicit NodeFunctionCall(Token tok) : NodeInstruction(NodeType::FunctionCall, std::move(tok)) {}
@@ -249,6 +250,44 @@ struct NodeReturn : NodeInstruction {
             ret->update_token_data(token);
         }
     }
+};
+
+struct NodeDelete : NodeInstruction {
+	std::vector<std::unique_ptr<NodeAST>> delete_pointer;
+	inline explicit NodeDelete(Token tok) : NodeInstruction(NodeType::Return, std::move(tok)) {}
+	NodeDelete(std::vector<std::unique_ptr<NodeAST>> delete_pointer, Token tok)
+		: NodeInstruction(NodeType::Return, std::move(tok)), delete_pointer(std::move(delete_pointer)) {
+		set_child_parents();
+	}
+	void accept(ASTVisitor& visitor) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	// Copy Constructor
+	NodeDelete(const NodeDelete& other);
+	// Clone Method
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		for(auto &del : delete_pointer) {
+			del->update_parents(this);
+		}
+	}
+	void set_child_parents() override {
+		for(auto& del : delete_pointer) {
+			if(del) del->parent = this;
+		}
+	};
+	std::string get_string() override {
+		std::string del = "delete ";
+		for(auto &d : delete_pointer) {
+			del += d->get_string() + ", ";
+		}
+		return del;
+	}
+	void update_token_data(const Token& token) override {
+		for(auto &del : delete_pointer) {
+			del->update_token_data(token);
+		}
+	}
 };
 
 struct NodeGetControl : NodeInstruction {

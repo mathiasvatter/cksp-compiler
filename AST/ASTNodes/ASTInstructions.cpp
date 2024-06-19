@@ -38,7 +38,7 @@ void NodeFunctionCall::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
 NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
-        : NodeInstruction(other), is_call(other.is_call), kind(other.kind),
+        : NodeInstruction(other), is_call(other.is_call), is_new(other.is_new), kind(other.kind),
           function(clone_unique(other.function)) {
     set_child_parents();
 }
@@ -249,6 +249,27 @@ NodeAST * NodeReturn::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> 
         }
     }
     return nullptr;
+}
+
+// ************* NodeDelete ***************
+void NodeDelete::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+NodeDelete::NodeDelete(const NodeDelete& other)
+	: NodeInstruction(other), delete_pointer(clone_vector(other.delete_pointer)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeDelete::clone() const {
+	return std::make_unique<NodeDelete>(*this);
+}
+NodeAST * NodeDelete::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	for(auto &del : delete_pointer) {
+		if (del.get() == oldChild) {
+			del = std::move(newChild);
+			return del.get();
+		}
+	}
+	return nullptr;
 }
 
 // ************* NodeGetControl ***************

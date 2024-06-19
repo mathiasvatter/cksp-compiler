@@ -406,7 +406,7 @@ struct NodeFunctionDefinition: NodeAST {
     std::unique_ptr<NodeBlock> body;
     explicit NodeFunctionDefinition(Token tok);
     NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
-						   std::optional<std::unique_ptr<struct NodeVariable>> returnVariable, bool override,
+						   std::optional<std::unique_ptr<NodeParamList>> returnVariable, bool override,
 						   std::unique_ptr<NodeBlock> body, Token tok);
     ~NodeFunctionDefinition();
     void accept(ASTVisitor& visitor) override;
