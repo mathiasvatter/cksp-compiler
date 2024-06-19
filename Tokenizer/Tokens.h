@@ -181,7 +181,7 @@ inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{"#pragma",
 inline std::unordered_map<std::string, token> STATEMENT_SYNTAX = {{"to", token::TO}, {"downto", token::DOWNTO}, {"step", token::STEP}, {"else", token::ELSE},
 																  {"case", token::CASE}, {"in", token::IN}, {"default", token::DEFAULT}};
 inline std::unordered_map<std::string, token> FUNCTION_SYNTAX = {{"override", token::OVERRIDE}, {"call", token::CALL}, {"return", token::RETURN}};
-inline std::unordered_map<std::string, token> OBJECT_SYNTAX = {{"new", token::NEW}, /*{"delete", token::DELETE},*/ {"nil", token::NIL}};
+inline std::unordered_map<std::string, token> OBJECT_SYNTAX = {{"new", token::NEW}, {"delete", token::DELETE}, {"nil", token::NIL}};
 inline std::unordered_map<std::string, token> BOOLEAN_SYNTAX = {{"false", token::FALSE}, {"true", token::TRUE}};
 
 

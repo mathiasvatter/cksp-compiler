@@ -1,0 +1,27 @@
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering
+--------------------------------------------------------------------------------------------}
+
+function return_sth()
+    return 1
+end function
+
+function return_sth_more()
+    declare x: int := 43
+    return 1, x
+end function
+
+{-------------------------------------------------------------------------------------------
+                                        Post Lowering
+--------------------------------------------------------------------------------------------}
+
+function return_sth() -> result_0
+    result_0 := 1
+end function
+
+function return_sth_more() -> result_0, result_1
+    declare x: int := 43
+    result_0 := 1
+    result_1 := x
+end function

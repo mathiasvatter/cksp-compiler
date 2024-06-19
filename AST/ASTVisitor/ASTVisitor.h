@@ -88,9 +88,15 @@ public:
 		node.r_value -> accept(*this);
     };
 	virtual void visit(NodeReturn& node) {
-		CompileError(ErrorType::SyntaxError, "<return> node not yet implemented.", "", node.tok).exit();
+		CompileError(ErrorType::InternalError, "<Return> node not yet implemented.", "", node.tok).exit();
 		for(auto &ret : node.return_variables) {
 			ret->accept(*this);
+		}
+	};
+	virtual void visit(NodeDelete& node) {
+		CompileError(ErrorType::InternalError, "<Delete> node not yet implemented.", "", node.tok).exit();
+		for(auto &del : node.delete_pointer) {
+			del->accept(*this);
 		}
 	};
     virtual void visit(NodeGetControl& node) {

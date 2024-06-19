@@ -291,6 +291,18 @@ void Tokenizer::get_keyword_or_num() {
             CompileError(ErrorType::TokenError, err_msg, m_line, "valid variable", m_buffer, m_current_file).print();
             exit(EXIT_FAILURE);
         }
+		while (peek() == '.') {
+			consume();
+			if (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+				while(std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+					consume();
+				}
+			} else {
+				auto err_msg = "Found unknown keyword.";
+				CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).print();
+				exit(EXIT_FAILURE);
+			}
+		}
         token tok;
         if (is_hexadecimal(m_buffer)) {
             m_tokens.emplace_back(token::HEXADECIMAL, m_buffer, m_line, m_line_pos-m_buffer.length(), m_current_file);
@@ -334,18 +346,6 @@ void Tokenizer::get_keyword_or_num() {
 		} else if (auto type = get_token_type(OBJECT_SYNTAX, m_buffer)) {
 			m_tokens.emplace_back(*type, m_buffer, m_line, m_line_pos-m_buffer.length(), m_current_file);
         } else {
-            while (peek() == '.') {
-                consume();
-                if (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-                    while(std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-                        consume();
-                    }
-                } else {
-                    auto err_msg = "Found unknown keyword.";
-                    CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).print();
-                    exit(EXIT_FAILURE);
-                }
-            }
             m_tokens.emplace_back(token::KEYWORD, m_buffer, m_line, m_line_pos-m_buffer.length(), m_current_file);
         }
         // see if char after keyword is dot

@@ -1,5 +1,5 @@
 // set properties functions
-set_bounds(control, x: int, y: int, width: int, height: int)
+set_bounds(control: any, x: int, y: int, width: int, height: int)
 set_button_properties(button: int, text: any, picture: string, text_alignment: int, font_type: int, textpos_y: int)
 set_knob_properties(knob: int, text: any, default_value: int)
 set_label_properties(label: int, text: any, picture: string, text_alignment: int, font_type: int, textpos_y: int)
@@ -7,7 +7,7 @@ set_level_meter_properties(level_meter: int, bg_color: int, off_color: int, on_c
 set_menu_properties(menu: int, picture: string, font_type: int, text_alignment: int, textpos_y: int)
 set_slider_properties(slider: int, default_value: int, picture: string, mouse_behaviour: int)
 set_switch_properties(switch: int, text: any, picture: string, text_alignment: int, font_type: int, textpos_y: int)
-set_table_properties(table: int, bar_color: int, zero_line_color: int)
+set_table_properties(table: int[], bar_color: int, zero_line_color: int)
 set_text_edit_properties(textedit: int, text: any, picture: string, text_alignment: int, font_type: int, textpos_y: int)
 set_value_edit_properties(value_edit: int, text: any, font_type: int, textpos_y: int, show_arrows: int)
 set_waveform_properties(waveform: int, bar_color: int, zero_line_color: int, bg_color: int, bg_alpha: int, wave_color: int, wave_cursor_color: int, slicemarkers_color: int, wf_vis_mode: int)
@@ -124,7 +124,7 @@ get_purge_state(group_idx: int): int
 get_sample(zone_id: int, return_parameter: int): string
 get_sample_length(zone_id: int): int
 get_target_idx(group_idx, mod_idx: int, target_name: string): int
-get_ui_id(variable: number): int
+get_ui_id(variable: any): int
 get_ui_wf_property(waveform: int, property: int, index: int): int
 get_voice_limit(voice_type: int): int
 get_zone_id(zone_idx: int): int
@@ -231,12 +231,12 @@ save_array_str(array: any[], filepath: string): int
 save_midi_file(filepath: string): int
 search(array: int[], value: int): int
 search(array: int[], value: int, from: int, to: int): int
-set_control_help(variable: number, text: string)
-set_control_par(ui_id: number, control_parameter: int, value: int)
-set_control_par_arr(ui_id: number, control_parameter: int, value: int, index: int)
-set_control_par_real_arr(ui_id: number, control_parameter: int, value: real, index: int)
-set_control_par_str(ui_id: number, control_parameter: int, text: any)
-set_control_par_str_arr(ui_id: number, control_parameter: int, value: any, index: int)
+set_control_help(variable: any, text: string)
+set_control_par(ui_id: any, control_parameter: int, value: int)
+set_control_par_arr(ui_id: any, control_parameter: int, value: int, index: int)
+set_control_par_real_arr(ui_id: any, control_parameter: int, value: real, index: int)
+set_control_par_str(ui_id: any, control_parameter: int, text: any)
+set_control_par_str_arr(ui_id: any, control_parameter: int, value: any, index: int)
 set_controller(cc_num: int, value: int)
 set_engine_par(parameter: int, value: int, group: int, slot: int, generic: int): int
 set_engine_par_m(parameter: int, value: int, group: int, slot: int, generic: int): int

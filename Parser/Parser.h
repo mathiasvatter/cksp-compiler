@@ -73,6 +73,8 @@ protected:
     Result<std::unique_ptr<NodeString>> parse_string(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent=std::optional<Token>(), DataType var_type=DataType::Mutable);
 	Result<std::unique_ptr<NodeVariableRef>> parse_variable_ref(NodeAST* parent);
+	Result<std::unique_ptr<NodePointer>> parse_pointer(NodeAST* parent, const std::optional<Token>& is_persistent=std::optional<Token>());
+	Result<std::unique_ptr<NodePointerRef>> parse_pointer_ref(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_array(NodeAST *parent, std::optional<Token> is_persistent = std::optional<Token>(), DataType var_type = DataType::Mutable);
 	Result<std::unique_ptr<NodeReference>> parse_array_ref(NodeAST *parent);
 
@@ -94,6 +96,8 @@ protected:
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr(NodeAST* parent);
     Result<std::unique_ptr<NodeAssignment>> parse_assign_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeReturn>> parse_return_statement(NodeAST* parent);
+	Result<std::unique_ptr<NodeDelete>> parse_delete_statement(NodeAST* parent);
+
     Result<std::unique_ptr<NodeSingleAssignment>> parse_single_assign_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_declare_array(NodeAST* parent);
