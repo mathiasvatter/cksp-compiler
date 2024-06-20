@@ -285,7 +285,7 @@ NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure
 		auto comp_type = static_cast<CompositeType*>(node->ty);
 		// if var is annotated as array, replace with array
 		if(comp_type->get_compound_type() == CompoundKind::Array and node->get_node_type() != NodeType::Array and comp_type->get_dimensions() == 1) {
-			auto node_array = node->to_array();
+			auto node_array = node->to_array(nullptr);
 			if(!node_array) error.exit();
 			node_array->is_local = node->is_local;
 			return static_cast<NodeDataStructure*>(node->replace_with(std::move(node_array)));

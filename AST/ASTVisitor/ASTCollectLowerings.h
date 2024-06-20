@@ -34,6 +34,8 @@ class ASTCollectLowerings: public ASTVisitor {
 public:
     explicit ASTCollectLowerings(DefinitionProvider* definition_provider);
 
+	/// lower struct members to array members
+	void visit(NodeStruct& node) override;
 	/// lower ndarray when declaration or ui_control array
     void visit(NodeSingleDeclaration& node) override;
 	/// lower get_control statements to set_control_par

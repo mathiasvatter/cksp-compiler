@@ -15,7 +15,7 @@ void ASTDesugar::visit(NodeProgram& node) {
     for(auto & function_definition : node.function_definitions) {
         function_definition->accept(*this);
     }
-	m_program->init_callback->statements->prepend_body(NodeStruct::declare_struct_constants());
+	m_program->global_declarations->prepend_body(NodeStruct::declare_struct_constants());
 	m_program->init_callback->statements->prepend_body(NodeProgram::declare_compiler_variables());
 //	m_program->global_declarations->append_body(declare_compiler_variables());
 	m_program->global_declarations->append_body(std::move(m_global_variable_declarations));
