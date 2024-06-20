@@ -10,6 +10,7 @@
 #include "../../Lowering/LoweringConst.h"
 #include "../../Lowering/LoweringArray.h"
 #include "../../Desugaring/DesugarStruct.h"
+#include "../../Lowering/LoweringStruct.h"
 
 // ************* NodeVariable ***************
 void NodeVariable::accept(ASTVisitor &visitor) {
@@ -30,19 +31,19 @@ std::unique_ptr<NodeReference> NodeVariable::to_reference() {
 	return ref;
 }
 
-std::unique_ptr<class NodeArray> NodeVariable::to_array(NodeAST* size) {
+std::unique_ptr<NodeArray> NodeVariable::to_array(NodeAST* size) {
 	return std::make_unique<NodeArray>(persistence, name, ty, size ? size->clone() : nullptr, tok);
 }
 
-std::unique_ptr<class NodePointer> NodeVariable::to_pointer() {
+std::unique_ptr<NodePointer> NodeVariable::to_pointer() {
 	return std::make_unique<NodePointer>(persistence, name, ty, tok);
 }
 
-std::unique_ptr<class NodeNDArray> NodeVariable::to_ndarray() {
+std::unique_ptr<NodeNDArray> NodeVariable::to_ndarray() {
 	return std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
 }
 
-std::unique_ptr<class NodeList> NodeVariable::to_list() {
+std::unique_ptr<NodeList> NodeVariable::to_list() {
 	return std::make_unique<NodeList>(tok);
 }
 
@@ -63,6 +64,14 @@ std::unique_ptr<NodeReference> NodePointer::to_reference() {
 	ref->parent = parent;
 	ref->match_data_structure(this);
 	return ref;
+}
+
+std::unique_ptr<NodeArray> NodePointer::to_array(NodeAST* size) {
+	return std::make_unique<NodeArray>(persistence, name, ty, size ? size->clone() : nullptr, tok);
+}
+
+std::unique_ptr<NodeVariable> NodePointer::to_variable() {
+	return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
 }
 
 
@@ -98,7 +107,7 @@ std::unique_ptr<NodeReference> NodeArray::to_reference() {
 }
 
 std::unique_ptr<NodeNDArray> NodeArray::to_ndarray() {
-    return std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
+    return std::make_unique<NodeNDArray>(persistence, name, ty, std::make_unique<NodeParamList>(tok, size->clone()), tok);
 }
 
 std::unique_ptr<NodeList> NodeArray::to_list() {
@@ -224,16 +233,21 @@ NodeStruct::NodeStruct(const NodeStruct& other)
 	: NodeDataStructure(other), members(clone_unique(other.members)),
 	  methods(clone_vector<NodeFunctionDefinition>(other.methods)),
 	  member_table(other.member_table), method_table(other.method_table),
-	  member_node_types(other.member_node_types) {
+	  member_node_types(other.member_node_types), max_individual_struts_var(other.max_individual_struts_var) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeStruct::clone() const {
 	return std::make_unique<NodeStruct>(*this);
 }
-NodeVariable* NodeStruct::max_structs_var =nullptr;
 std::unordered_set<NodeType> NodeStruct::allowed_member_node_types =
-	{NodeType::Variable, NodeType::Pointer, NodeType::NDArray};
+	{NodeType::Variable, NodeType::Pointer, NodeType::NDArray, NodeType::Array};
+
 ASTDesugaring *NodeStruct::get_desugaring(NodeProgram *program) const {
 	static DesugarStruct desugaring(program);
 	return &desugaring;
+}
+
+ASTVisitor *NodeStruct::get_lowering(NodeProgram *program) const {
+	static LoweringStruct lowering(program);
+	return &lowering;
 }

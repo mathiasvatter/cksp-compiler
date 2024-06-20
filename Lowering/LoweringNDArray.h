@@ -37,7 +37,7 @@ public:
 	}
 	/// Lowering of multidimensional arrays to arrays -> declaration
 	void visit(NodeNDArray& node) override {
-		auto node_expression = create_right_nested_binary_expr(node.sizes->params, 0, token::MULT, node.tok);
+		auto node_expression = NodeBinaryExpr::create_right_nested_binary_expr(node.sizes->params, 0, token::MULT);
         auto node_lowered_array = std::make_unique<NodeArray>(
                 node.persistence,
                 node.name,
@@ -75,17 +75,8 @@ public:
     }
 
 private:
-	std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, token op, const Token& tok) {
-		// Basisfall: Wenn nur ein Element übrig ist, gib dieses zurück.
-		if (index >= nodes.size() - 1) {
-			return nodes[index]->clone();
-		}
-		// Erstelle die rechte Seite der Expression rekursiv.
-		auto right = create_right_nested_binary_expr(nodes, index + 1, op, tok);
-		// Kombiniere das aktuelle Element mit der rechten Seite in einer NodeBinaryExpr.
-		return std::make_unique<NodeBinaryExpr>(op, nodes[index]->clone(), std::move(right), tok);
-	}
-	std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok) {
+
+	static std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok) {
 		// Basisfall: letztes Element in der Berechnung
 		if (dimension == indices.size() - 1) {
 			return indices[dimension]->clone();

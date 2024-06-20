@@ -6,6 +6,18 @@
 
 ASTCollectLowerings::ASTCollectLowerings(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
+
+void ASTCollectLowerings::visit(NodeStruct& node) {
+	if(auto lowering = node.get_lowering(m_program)) {
+		node.accept(*lowering);
+	}
+	node.members->accept(*this);
+	for(auto &m : node.methods) {
+		m->accept(*this);
+	}
+}
+
+
 void ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 	if(node.value) node.value->accept(*this);
 	if(auto lowering = node.get_lowering(m_program)) {

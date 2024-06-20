@@ -7,7 +7,7 @@
 struct Note
 	declare pitch: int
 	declare velocities[10]: int[]
-	declare play_pos[11]: int[]
+	declare play_pos[11, 12]: int[]
 
 	function __init__(self, p: int, v: int[])
 		self.pitch := p
@@ -39,10 +39,12 @@ end for
 
 declare const MAX_STRUCTS := 1000000 // allgemeine constante für structs
 
-declare %Note.allocation[MAX_STRUCTS/10] := (0)
-declare %Note.pitch[MAX_STRUCTS/10]
-declare %Note.velocity[MAX_STRUCTS/10, 10]
-declare $Note.free_idx := 0 // Zeiger auf den nächsten freien index
+declare const Node.MAX_STRUCTS: int := MAX_STRUCTS/_max(10, 11*12)
+declare Note.allocation[Node.MAX_STRUCTS] int[] := (0)
+declare Note.pitch[Node.MAX_STRUCTS]: int[]
+declare Note.velocity[Node.MAX_STRUCTS, 10]: int[]
+declare Note.play_pos[Node.MAX_STRUCTS, 11, 12]: int[]
+declare Note.free_idx: int := 0 // Zeiger auf den nächsten freien index
 
 function Note.__init__(p: int, v: [int])
 	Note.free_idx := search(Note.allocation, 0)

@@ -102,7 +102,7 @@ void BuiltinsProcessor::apply_annotation_information(NodeDataStructure* node) {
 		auto node_var = static_cast<NodeVariable*>(node);
 		auto comp_type = static_cast<CompositeType*>(node->ty);
 		if(comp_type->get_compound_type() == CompoundKind::Array) {
-			auto node_array = static_cast<NodeVariable*>(node)->to_array();
+			auto node_array = static_cast<NodeVariable*>(node)->to_array(nullptr);
 			node_var->replace_with(std::move(node_array));
 		}
 	}

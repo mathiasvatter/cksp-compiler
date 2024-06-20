@@ -145,7 +145,7 @@ struct NodeDataStructure : NodeAST {
 	/// methods to change node type. Everything possible is copied over, even the type;
 	virtual std::unique_ptr<class NodeVariable> to_variable() {return nullptr;}
 	virtual std::unique_ptr<class NodePointer> to_pointer() {return nullptr;}
-	virtual std::unique_ptr<class NodeArray> to_array(NodeAST* size=nullptr) {return nullptr;}
+	virtual std::unique_ptr<class NodeArray> to_array(NodeAST* size) {return nullptr;}
 	virtual std::unique_ptr<class NodeNDArray> to_ndarray() {return nullptr;}
 	virtual std::unique_ptr<class NodeList> to_list() {return nullptr;}
 };
@@ -329,6 +329,16 @@ struct NodeBinaryExpr: NodeAST {
         left -> update_token_data(token);
         right -> update_token_data(token);
     }
+	static std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, token op) {
+		// Basisfall: Wenn nur ein Element übrig ist, gib dieses zurück.
+		if (index >= nodes.size() - 1) {
+			return nodes[index]->clone();
+		}
+		// Erstelle die rechte Seite der Expression rekursiv.
+		auto right = create_right_nested_binary_expr(nodes, index + 1, op);
+		// Kombiniere das aktuelle Element mit der rechten Seite in einer NodeBinaryExpr.
+		return std::make_unique<NodeBinaryExpr>(op, nodes[index]->clone(), std::move(right), Token());
+	}
 };
 
 struct NodeCallback: NodeAST {
