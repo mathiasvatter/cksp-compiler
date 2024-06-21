@@ -64,6 +64,7 @@ public:
 		m_all_declarations.clear();
 		m_all_references.clear();
 		m_all_declarations.clear();
+		m_references_per_data_structure.clear();
 		return true;
 	}
 	std::vector<NodeReference*> m_all_references;
@@ -97,6 +98,10 @@ public:
 	}
 	bool add_reference(NodeDataStructure* data_struct, NodeReference* reference) {
 		m_references_per_data_structure[data_struct].insert(reference);
+		return true;
+	}
+	bool remove_reference(NodeDataStructure* data_struct, NodeReference* reference) {
+		m_references_per_data_structure[data_struct].erase(reference);
 		return true;
 	}
     /// dynamic vector containing every data structure; scoped

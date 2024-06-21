@@ -136,6 +136,11 @@ void NodeReference::match_data_structure(NodeDataStructure* data_structure) {
 	ty = data_structure->ty;
 }
 
+bool NodeReference::is_member_ref() {
+	return declaration->is_member();
+}
+
+
 // ************* NodeInstruction ***************
 void NodeInstruction::accept(ASTVisitor &visitor) {}
 
