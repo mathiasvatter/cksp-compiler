@@ -13,6 +13,9 @@ void TypeInference::visit(NodeProgram& node) {
 		function_definition->accept(*this);
 	}
 	m_program->global_declarations->accept(*this);
+	for(auto & s : node.struct_definitions) {
+		s->accept(*this);
+	}
 	for(auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
@@ -91,6 +94,7 @@ void TypeInference::visit(NodeVariableRef& node) {
 	}
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
+	m_def_provider->add_reference(node.declaration, &node);
 }
 
 void TypeInference::visit(NodeVariable& node) {
@@ -105,6 +109,7 @@ void TypeInference::visit(NodePointerRef& node) {
 	}
 	match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
+	m_def_provider->add_reference(node.declaration, &node);
 }
 
 void TypeInference::visit(NodePointer& node) {
@@ -140,6 +145,7 @@ void TypeInference::visit(NodeArrayRef& node) {
 	}
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
+	m_def_provider->add_reference(node.declaration, &node);
 }
 
 void TypeInference::visit(NodeNDArray& node) {
@@ -165,6 +171,7 @@ void TypeInference::visit(NodeNDArrayRef& node) {
     }
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
+	m_def_provider->add_reference(node.declaration, &node);
 }
 
 void TypeInference::visit(NodeList& node) {
@@ -196,6 +203,7 @@ void TypeInference::visit(NodeListRef& node) {
     }
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
+	m_def_provider->add_reference(node.declaration, &node);
 }
 
 void TypeInference::visit(NodeParamList& node) {

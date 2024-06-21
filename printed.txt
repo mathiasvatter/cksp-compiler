@@ -1,23 +1,11 @@
-struct List
-	declare const List.MAX_STRUCTS : int := MAX_STRUCTS
-	declare List.free_idx : int := 0
-	declare List.allocation[List.MAX_STRUCTS] : int[]
-	declare List.value[List.MAX_STRUCTS] : int[]
-	declare List.next[List.MAX_STRUCTS] : Array[List] := (nil)
-
-	function List.__init__(value : int, next : List)
-		List.value := value
-		List.next := next
-	end function
-	function List.some_method(ficki : Unknown)
-		message(ficki)
-	end function
-end struct
-
 on init
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
 	declare loc_6 : int
+	declare const multi.SIZE_D1 : int := 3
+	declare const multi.SIZE_D2 : int := 4
+	declare _multi[3 * 4] : int[]
+	message(_multi[(1 * 4) + 2])
 	declare this_list : List := nil
 	this_list := List(42, nil)
 	declare lists[5] : Array[List] := (nil)

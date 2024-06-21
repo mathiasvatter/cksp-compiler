@@ -83,6 +83,10 @@ struct NodeReference : NodeAST {
     std::string get_string() override {
         return name;
     }
+	virtual std::unique_ptr<struct NodeArrayRef> to_array_ref(NodeAST* index) {return nullptr;}
+	virtual std::unique_ptr<struct NodeVariableRef> to_variable_ref() {return nullptr;}
+	virtual std::unique_ptr<struct NodePointerRef> to_pointer_ref() {return nullptr;}
+	virtual std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() {return nullptr;}
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(NodeDataStructure* data_structure);
     /// Determines if current reference is function argument
@@ -93,6 +97,8 @@ struct NodeReference : NodeAST {
                           this->parent->parent->get_node_type() == NodeType::FunctionHeader;
         return func_arg;
     }
+	/// determines if reference is reference to struct member
+	bool is_member_ref();
 	/// checks if reference is raw version of multi-dimensional array
 	bool is_raw_array() {
 		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw");
