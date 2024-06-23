@@ -66,7 +66,7 @@ public:
 //			error.m_got = node_declaration->value->get_string();
 //			error.exit();
 //		}
-
+		lowered_node = &node;
 	}
 
 	void visit(NodeVariableRef& node) override {

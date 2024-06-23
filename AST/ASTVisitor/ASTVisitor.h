@@ -31,6 +31,7 @@ protected:
 
 public:
     virtual void visit(NodeDeadCode& node) {};
+	virtual void visit(NodeWildcard& node) {node.ty = TypeRegistry::Integer;};
 	virtual void visit(NodeInt& node) {node.ty = TypeRegistry::Integer;};
     virtual void visit(NodeReal& node) {node.ty = TypeRegistry::Real;};
     virtual void visit(NodeString& node) {node.ty = TypeRegistry::String;};
@@ -103,7 +104,7 @@ public:
 		node.ui_id->accept(*this);
 	};
 
-    virtual void visit(NodeConstStatement& node) {
+    virtual void visit(NodeConstBlock& node) {
         node.constants->accept(*this);
 	};
     virtual void visit(NodeStruct& node) {

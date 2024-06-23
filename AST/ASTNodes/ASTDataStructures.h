@@ -83,7 +83,7 @@ struct NodeArray : NodeDataStructure {
 	void update_token_data(const Token& token) override {
 		if(size) size->update_token_data(token);
 	}
-	ASTVisitor* get_lowering(NodeProgram *program) const override;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::ArrayRef;}
 	std::unique_ptr<NodeVariable> to_variable() override {
@@ -123,7 +123,7 @@ struct NodeNDArray : NodeDataStructure {
 	void update_token_data(const Token& token) override {
 		if(sizes) sizes->update_token_data(token);
 	}
-	ASTVisitor* get_lowering(NodeProgram *program) const override;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::NDArrayRef;}
 	std::unique_ptr<NodeVariable> to_variable() override {
@@ -167,7 +167,7 @@ struct NodeUIControl : NodeDataStructure {
 		control_var -> update_token_data(token);
 		params -> update_token_data(token);
 	}
-	ASTVisitor* get_lowering(NodeProgram *program) const override;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
 	Type* cast_type() override {
 		control_var->cast_type();
 		ty = control_var->ty;
@@ -205,23 +205,23 @@ struct NodeList : NodeDataStructure {
 			b->update_token_data(token);
 		}
 	}
-	ASTVisitor* get_lowering(NodeProgram *program) const override;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
 	NodeType get_ref_node_type() override {return NodeType::ListRef;}
 	std::unique_ptr<NodeVariable> to_variable() override;
 	std::unique_ptr<NodeArray> to_array(NodeAST* size) override;
 	std::unique_ptr<NodeNDArray> to_ndarray() override;
 };
 
-struct NodeConstStatement : NodeDataStructure {
+struct NodeConstBlock : NodeDataStructure {
     std::unique_ptr<NodeBlock> constants;
-    inline explicit NodeConstStatement(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::Const) {}
-    inline NodeConstStatement(std::string name, std::unique_ptr<NodeBlock> constants, Token tok)
+    inline explicit NodeConstBlock(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::Const) {}
+    inline NodeConstBlock(std::string name, std::unique_ptr<NodeBlock> constants, Token tok)
             : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::Const), constants(std::move(constants)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
-    NodeConstStatement(const NodeConstStatement& other);
+    NodeConstBlock(const NodeConstBlock& other);
     // Clone Methode
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
@@ -235,7 +235,7 @@ struct NodeConstStatement : NodeDataStructure {
     void update_token_data(const Token& token) override {
         constants->update_token_data(token);
     }
-    ASTVisitor* get_lowering(NodeProgram *program) const override;
+    ASTLowering* get_lowering(NodeProgram *program) const override;
 
 };
 
@@ -280,7 +280,7 @@ struct NodeStruct : NodeDataStructure {
 		}
 	}
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
-	ASTVisitor* get_lowering(NodeProgram *program) const override;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
 
 	void update_member_table() {
 		member_table.clear();

@@ -39,7 +39,7 @@ struct NodeAST {
     virtual void update_token_data(const Token& token) {
         tok.line = token.line; tok.file = token.file;
     }
-	[[nodiscard]] virtual ASTVisitor* get_lowering(struct NodeProgram *program) const {
+	[[nodiscard]] virtual class ASTLowering * get_lowering(struct NodeProgram *program) const {
 		return nullptr;
 	}
     [[nodiscard]] virtual ASTDesugaring *get_desugaring(NodeProgram *program) const {
@@ -176,6 +176,20 @@ struct NodeExpression : NodeAST {
     std::string get_string() override {
         return "";
     }
+};
+
+struct NodeWildcard : NodeAST {
+	std::string value;
+	inline explicit NodeWildcard(std::string v, Token tok) : NodeAST(std::move(tok), NodeType::Wildcard), value(v) {}
+	void accept(ASTVisitor& visitor) override;
+	// Kopierkonstruktor
+	NodeWildcard(const NodeWildcard& other) : NodeAST(other), value(other.value) {}
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	std::string get_string() override {
+		return value;
+	}
+	bool check_semantic();
 };
 
 struct NodeInt : NodeAST {

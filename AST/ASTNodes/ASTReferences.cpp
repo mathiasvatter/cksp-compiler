@@ -48,7 +48,7 @@ NodeAST * NodeArrayRef::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST
 	return nullptr;
 }
 
-ASTVisitor* NodeArrayRef::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeArrayRef::get_lowering(NodeProgram *program) const {
     static LoweringArray lowering(program);
     return &lowering;
 }
@@ -72,7 +72,7 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::clone() const {
 	return std::make_unique<NodeNDArrayRef>(*this);
 }
 
-ASTVisitor* NodeNDArrayRef::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeNDArrayRef::get_lowering(NodeProgram *program) const {
     static LoweringNDArray lowering(program);
     return &lowering;
 }
@@ -92,7 +92,7 @@ std::unique_ptr<NodeAST> NodeListRef::clone() const {
 	return std::make_unique<NodeListRef>(*this);
 }
 
-ASTVisitor* NodeListRef::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeListRef::get_lowering(NodeProgram *program) const {
 	static LoweringList lowering(program);
 	return &lowering;
 }
