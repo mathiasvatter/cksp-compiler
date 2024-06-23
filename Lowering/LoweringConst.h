@@ -59,7 +59,7 @@ public:
         node.set_child_parents();
     };
 
-    void visit(NodeConstStatement& node) override {
+    void visit(NodeConstBlock& node) override {
         std::string pref = node.name;
         if(!m_const_prefixes.empty()) pref = m_const_prefixes.top() + "." + node.name;
         m_const_prefixes.push(pref);
@@ -97,5 +97,6 @@ public:
         auto constant = make_declare_variable(node.name+".SIZE", node.constants->statements.size(), DataType::Const, node.constants.get());
         node.constants->add_stmt(std::move(constant));
         m_const_prefixes.pop();
+		lowered_node = &node;
     }
 };

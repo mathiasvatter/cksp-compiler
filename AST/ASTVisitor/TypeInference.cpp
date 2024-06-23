@@ -60,7 +60,7 @@ void TypeInference::visit(NodeNil& node) {
 	node.ty = TypeRegistry::Nil;
 }
 
-void TypeInference::visit(NodeConstStatement& node) {
+void TypeInference::visit(NodeConstBlock& node) {
 	node.ty = TypeRegistry::Integer;
 	for(auto & constant : node.constants->statements) {
 		if(auto decl = cast_node<NodeSingleDeclaration>(constant->statement.get())) {

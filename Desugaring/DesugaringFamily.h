@@ -66,7 +66,7 @@ public:
 //        if(node.indexes) node.indexes->accept(*this);
 //    };
 
-    void visit(NodeConstStatement& node) override {
+    void visit(NodeConstBlock& node) override {
         node.name = add_family_prefix(node.name);
         node.constants->accept(*this);
     };

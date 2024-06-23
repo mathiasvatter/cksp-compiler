@@ -38,7 +38,7 @@ public:
 	void visit(NodeFunctionCall& node) override;
     void visit(NodeFunctionDefinition& node) override;
 
-	void visit(NodeConstStatement& node) override;
+	void visit(NodeConstBlock& node) override;
 	void visit(NodeStruct& node) override;
 
 	/// apply type annotations given before parse time and replace node types accordingly

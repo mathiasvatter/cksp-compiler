@@ -1,13 +1,17 @@
-{ Compiled with cksp version 0.0.5 on Wed Jun 19 16:31:34 2024 }
+{ Compiled with cksp version 0.0.5 on Sun Jun 23 19:58:33 2024 }
 on init
-  declare ui_xy ?xy_fxRack[6] 
-  get_control_par(get_ui_id(?xy_fxRack), $CONTROL_PAR_POS_X) := 30
-  get_control_par(get_ui_id(?xy_fxRack), $CONTROL_PAR_POS_Y) := 30
-  get_control_par(get_ui_id(?xy_fxRack), $CONTROL_PAR_WIDTH) := 30
-  get_control_par(get_ui_id(?xy_fxRack), $CONTROL_PAR_HEIGHT) := 140
-  set_control_par_str_arr(get_ui_id(?xy_fxRack), $CONTROL_PAR_CURSOR_PICTURE, "fx_handle", 0)
-  set_control_par_str_arr(get_ui_id(?xy_fxRack), $CONTROL_PAR_CURSOR_PICTURE, "fx_handle", 2)
-  set_control_par_str_arr(get_ui_id(?xy_fxRack), $CONTROL_PAR_CURSOR_PICTURE, "fx_handle", 4)
+  declare $loc_6
+  declare ui_slider $sli (1, 500)
+  set_control_par_str(get_ui_id(get_ui_id(get_ui_id($sli))), $CONTROL_PAR_TEXT, "sdfkj")
+  declare @a
+  @a := get_control_par_str(get_ui_id($sli), $CONTROL_PAR_TEXT) * 3
+  declare const $ndarray__SIZE_D2 := 4
+  declare %_ndarray[16]
+  declare $loc_7 := 0
+  while($loc_6 < $ndarray__SIZE_D2) 
+    %_ndarray[0 + $loc_6] := 0
+    inc($loc_6)
+  end while
   declare $loc_8
   declare %loc_9[5]
   declare $loc_10

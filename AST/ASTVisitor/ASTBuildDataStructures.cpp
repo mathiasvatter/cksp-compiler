@@ -25,6 +25,14 @@ void ASTBuildDataStructures::visit(NodeProgram& node) {
 
 }
 
+void ASTBuildDataStructures::visit(NodeWildcard& node) {
+	if(!node.check_semantic()) {
+		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+		error.m_message = "Wildcard is not allowed in this context";
+		error.exit();
+	}
+}
+
 
 void ASTBuildDataStructures::visit(NodeCallback& node) {
 	m_program->current_callback = &node;
