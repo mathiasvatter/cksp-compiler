@@ -21,6 +21,7 @@ public:
 	explicit LoweringUIControlArray(NodeProgram* program) : ASTLowering(program) {}
 
 	void visit(NodeSingleDeclaration &node) override {
+		lowered_node = &node;
 		auto node_ui_control = cast_node<NodeUIControl>(node.variable.get());
 		if(node_ui_control) {
 			if(!is_ui_control_array(node_ui_control)) return;
@@ -53,7 +54,7 @@ public:
 
 		body_post_lowering->statements.push_back(std::move(node_statement));
 		body_post_lowering->append_body(create_ui_controls(*m_ui_control_array, std::move(m_ui_array_size)));
-		node.replace_with(std::move(body_post_lowering));
+		lowered_node = node.replace_with(std::move(body_post_lowering));
 	}
 
 	bool is_ui_control_array(NodeUIControl* node) {

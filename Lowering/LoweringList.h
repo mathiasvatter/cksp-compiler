@@ -28,7 +28,7 @@ public:
 		if(node.indexes->params.size() == 1) {
 			lowered_list_reference->index = std::move(node.indexes);
 			lowered_list_reference->index->parent = lowered_list_reference.get();
-			node.replace_with(std::move(lowered_list_reference));
+			lowered_node = node.replace_with(std::move(lowered_list_reference));
 			return;
 		}
 
@@ -53,7 +53,7 @@ public:
 		lowered_list_reference->index = std::move(node_expression);
 		lowered_list_reference->index->parent = lowered_list_reference.get();
 		lowered_list_reference->name = "_"+lowered_list_reference->name;
-		node.replace_with(std::move(lowered_list_reference));
+		lowered_node = node.replace_with(std::move(lowered_list_reference));
 	}
 
 	void visit(NodeList &node) override {
@@ -105,7 +105,7 @@ public:
 				);
 			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
             node_body->accept(*this);
-            node.replace_with(std::move(node_body));
+            lowered_node = node.replace_with(std::move(node_body));
             return;
         }
 
@@ -200,7 +200,7 @@ public:
             node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while_loop), node.tok));
         }
         node_body->accept(*this);
-        node.replace_with(std::move(node_body));
+        lowered_node = node.replace_with(std::move(node_body));
 	};
 
 };

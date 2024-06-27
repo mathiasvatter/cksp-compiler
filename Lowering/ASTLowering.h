@@ -15,6 +15,8 @@ protected:
 	DefinitionProvider* m_def_provider;
 	NodeProgram* m_program = nullptr;
 public:
+	NodeAST* lowered_node = nullptr;
+
     explicit ASTLowering(NodeProgram* program) : m_program(program), m_def_provider(program->def_provider) {}
     ~ASTLowering() = default;
 

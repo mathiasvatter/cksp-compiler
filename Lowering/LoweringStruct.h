@@ -9,8 +9,6 @@
 class LoweringStruct : public ASTLowering {
 private:
 	NodeStruct* m_current_struct = nullptr;
-	NodeVariable* m_free_idx_var = nullptr;
-	NodeArray* m_allocation_var = nullptr;
 	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX_STRUCTS", Token());
 public:
 	explicit LoweringStruct(NodeProgram *program) : ASTLowering(program) {}
@@ -67,7 +65,7 @@ public:
 			std::make_unique<NodeInt>(0, Token()),
 			Token()
 		);
-		m_free_idx_var = static_cast<NodeVariable*>(free_idx_decl->variable.get());
+		m_current_struct->free_idx_var = static_cast<NodeVariable*>(free_idx_decl->variable.get());
 		auto allocation_var = std::make_unique<NodeArray>(
 			std::nullopt,
 			m_current_struct->name+".allocation",
@@ -80,7 +78,7 @@ public:
 			nullptr,
 			Token()
 		);
-		m_allocation_var = static_cast<NodeArray*>(allocation_decl->variable.get());
+		m_current_struct->allocation_var = static_cast<NodeArray*>(allocation_decl->variable.get());
 		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(max_structs_decl), Token()));
 		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(free_idx_decl), Token()));
 		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(allocation_decl), Token()));
@@ -111,7 +109,9 @@ public:
 		if(node.is_member()) {
 			auto node_array = node.to_array(m_current_struct->max_individual_struts_var->to_reference().get());
 			node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
-			node.replace_with(std::move(node_array));
+			auto old_node = &node;
+			auto new_node = node.replace_with(std::move(node_array));
+			update_reference_declarations(new_node, old_node);
 		}
 	}
 	inline void visit(NodePointer& node) override {
@@ -119,7 +119,9 @@ public:
 		if(node.is_member()) {
 			auto node_array = node.to_array(m_current_struct->max_individual_struts_var->to_reference().get());
 			node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
-			node.replace_with(std::move(node_array));
+			auto old_node = &node;
+			auto new_node = node.replace_with(std::move(node_array));
+			update_reference_declarations(new_node, old_node);
 		}
 	}
 	inline void visit(NodeArray& node) override {
@@ -134,7 +136,19 @@ public:
 			node_ndarray->sizes->set_child_parents();
 			node_ndarray->dimensions = node_ndarray->sizes->params.size();
 			node_ndarray->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node_ndarray->dimensions);
-			node.replace_with(std::move(node_ndarray));
+			// turn all references into nd array references
+//			auto references = m_def_provider->get_references(&node);
+//			for(auto & ref : references) {
+//				auto node_ndarray_ref = ref->to_ndarray_ref();
+//				if(!node_ndarray_ref) {
+//					auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
+//					error.m_message = "Got wrong node type for reference in struct.";
+//				}
+//				ref->replace_with(std::move(node_ndarray_ref));
+//			}
+			auto old_node = &node;
+			auto new_node = node.replace_with(std::move(node_ndarray));
+			update_reference_declarations(new_node, old_node);
 		}
 	}
 	inline void visit(NodeNDArray& node) override {
@@ -147,7 +161,41 @@ public:
 		}
 	}
 
+	inline void visit(NodeVariableRef& node) override {
+		// if member reference, turn into array reference with struct.free_idx as index
+		if(node.is_member_ref()) {
+			auto node_array_ref = node.to_array_ref(m_current_struct->free_idx_var->to_reference().get());
+			auto old_node = &node;
+			auto new_node = node.replace_with(std::move(node_array_ref));
+			update_reference_declaration(new_node, old_node);
+		}
+	}
+	inline void visit(NodeArrayRef& node) override {
+		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
+		if(node.is_member_ref()) {
+			auto node_ndarray_ref = node.to_ndarray_ref();
+//			if(node_ndarray_ref->indexes)
+			auto old_node = &node;
+			auto new_node = node.replace_with(std::move(node_ndarray_ref));
+			update_reference_declaration(new_node, old_node);
+		}
+	}
+
 private:
+	/// to be used on references
+	inline void update_reference_declaration(NodeAST* new_node, NodeReference* old_node) {
+		auto node_ref = static_cast<NodeReference*>(new_node);
+		node_ref->match_data_structure(node_ref->declaration);
+		m_def_provider->remove_reference(node_ref->declaration, old_node);
+		m_def_provider->add_reference(node_ref->declaration, node_ref);
+	}
+	/// to be used on datastructures
+	inline void update_reference_declarations(NodeAST* new_node, NodeDataStructure* old_node) {
+		m_def_provider->set_references(static_cast<NodeDataStructure*>(new_node), m_def_provider->get_references(old_node));
+		for(auto & ref : m_def_provider->get_references(old_node)) {
+			ref->declaration = static_cast<NodeDataStructure*>(new_node);
+		}
+	}
 	/// uses the member table to determine the size max size of struct allocations
 	/// declare const Node.MAX_STRUCTS: int := MAX_STRUCTS/_max(10, 11*12)
 	/// returns either MAX_STRUCTS or binary_expr with biggest array member size

@@ -26,10 +26,12 @@ void ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 }
 
 void ASTCollectLowerings::visit(NodeSingleAssignment& node) {
-	node.l_value->accept(*this);
-	if(node.r_value) node.r_value->accept(*this);
 	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
+		lowering->lowered_node->accept(*this);
+	} else {
+		node.l_value->accept(*this);
+		if(node.r_value) node.r_value->accept(*this);
 	}
 }
 
@@ -70,7 +72,7 @@ void ASTCollectLowerings::visit(NodeArray& node) {
 }
 
 void ASTCollectLowerings::visit(NodeNDArrayRef& node) {
-	node.indexes->accept(*this);
+	if(node.indexes) node.indexes->accept(*this);
 	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
 	}
@@ -89,7 +91,7 @@ void ASTCollectLowerings::visit(NodeList& node) {
 	}
 }
 
-void ASTCollectLowerings::visit(NodeConstStatement &node) {
+void ASTCollectLowerings::visit(NodeConstBlock &node) {
     if(auto lowering = node.get_lowering(m_program)) {
         node.accept(*lowering);
     }

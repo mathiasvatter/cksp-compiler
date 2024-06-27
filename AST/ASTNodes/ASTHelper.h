@@ -55,6 +55,7 @@ enum class NodeType {
 	Return,
 	GetControl,
 	ParamList,
+	Wildcard,
 	Int,
 	Real,
 	String,

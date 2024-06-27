@@ -146,7 +146,7 @@ void ASTPrinter::visit(NodeSingleAssignment &node) {
     if(node_param_list) os << ")";
 }
 
-void ASTPrinter::visit(NodeConstStatement &node) {
+void ASTPrinter::visit(NodeConstBlock &node) {
     os << "const " << node.name << std::endl;
 
     node.constants->accept(*this);

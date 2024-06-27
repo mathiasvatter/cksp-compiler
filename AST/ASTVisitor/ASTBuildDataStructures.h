@@ -49,6 +49,7 @@ public:
 	void visit(NodeFunctionCall& node) override;
     /// add function parameters to scope
     void visit(NodeFunctionDefinition& node) override;
+	void visit(NodeWildcard& node) override;
 
 private:
     NodeProgram* m_program = nullptr;

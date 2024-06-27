@@ -84,6 +84,13 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_nil(NodeAST* parent) {
 	return Result<std::unique_ptr<NodeAST>>(std::move(node_nil));
 }
 
+Result<std::unique_ptr<NodeAST>> Parser::parse_wildcard(NodeAST* parent) {
+	auto wildcard = consume();
+	auto node_wildcard = std::make_unique<NodeWildcard>(wildcard.val, wildcard);
+	node_wildcard->parent = parent;
+	return Result<std::unique_ptr<NodeAST>>(std::move(node_wildcard));
+}
+
 Result<std::unique_ptr<NodeAST>> Parser::parse_number(NodeAST* parent) {
     auto value = consume(); // consume int/float/hexa/binary
     std::unique_ptr<NodeAST> number_node = nullptr;
@@ -377,6 +384,8 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
 			return Result<std::unique_ptr<NodeAST>>(std::move(var_method.unwrap()));
 		}
 		return Result<std::unique_ptr<NodeAST>>(var_method.get_error());
+	} else if(peek().type == token::MULT) {
+		return parse_wildcard(parent);
     } else {
         return Result<std::unique_ptr<NodeAST>>(
     CompileError(ErrorType::ParseError,"Found unknown expression token.", "keyword, integer, parenthesis", peek()));
@@ -1640,7 +1649,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) {
-	auto node_const_statement = std::make_unique<NodeConstStatement>(get_tok());
+	auto node_const_statement = std::make_unique<NodeConstBlock>(get_tok());
 	Token construct = consume(); //consume family, struct, const
 	token end_construct = token::END_CONST;
 	if(peek().type != token::KEYWORD) {

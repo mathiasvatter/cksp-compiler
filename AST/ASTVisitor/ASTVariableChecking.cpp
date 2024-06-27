@@ -256,7 +256,7 @@ void ASTVariableChecking::visit(NodeListRef& node) {
 	m_def_provider->add_to_references(&node);
 }
 
-void ASTVariableChecking::visit(NodeConstStatement& node) {
+void ASTVariableChecking::visit(NodeConstBlock& node) {
 //	for(auto & constants : node.constants->statements) {
 //		if(constants->statement->get_node_type() == NodeType::SingleDeclaration) {
 //			auto decl = static_cast<NodeSingleDeclaration*>(constants->statement.get());

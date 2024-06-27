@@ -23,14 +23,14 @@ public:
 		// add r_value as third parameter to set_control_par
 		new_node->function->args->params.push_back(std::move(node.r_value));
 		new_node->function->args->set_child_parents();
-		node.replace_with(std::move(new_node));
+		lowered_node = node.replace_with(std::move(new_node));
 	};
 
 	void visit(NodeGetControl &node) override {
 		std::string control_function = "get_control_par";
 		auto new_node = lowering(control_function, &node);
 		new_node->update_parents(node.parent);
-		node.replace_with(std::move(new_node));
+		lowered_node = node.replace_with(std::move(new_node));
 	};
 
 private:

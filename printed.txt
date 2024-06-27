@@ -1,44 +1,37 @@
-struct List
-	declare const List.MAX_STRUCTS : int := MAX_STRUCTS
-	declare List.free_idx : int := 0
-	declare List.allocation[List.MAX_STRUCTS] : int[]
-	declare List.value[List.MAX_STRUCTS] : int[]
-	declare List.next[List.MAX_STRUCTS] : Array[List] := (nil)
-
-	function List.__init__(value : int, next : List)
-		List.value := value
-		List.next := next
-	end function
-	function List.some_method(ficki : Unknown)
-		message(ficki)
-	end function
-end struct
-
 on init
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
 	declare loc_6 : int
-	declare this_list : List := nil
-	this_list := List(42, nil)
-	declare lists[5] : Array[List] := (nil)
+	declare ui_slider sli : int (1, 500)
+	set_control_par_str(get_ui_id(get_ui_id(get_ui_id(sli))), CONTROL_PAR_TEXT, "sdfkj")
+	declare a : string
+	a := get_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT) * 3
+	declare const ndarray.SIZE_D1 : int := 4
+	declare const ndarray.SIZE_D2 : int := 4
+	declare _ndarray[4 * 4] : int[]
+	declare loc_7 : int := 0
+	while(loc_6 < ndarray.SIZE_D2) 
+		_ndarray[(0 * 4) + loc_6] := 0
+		inc(loc_6)
+	end while
 	declare const colorz.a : int := 0 + 0
 	declare const colorz.b : int := 0 + (0 + 1)
 	declare colorz[2] : int[] := (0 + 0, 0 + (0 + 1))
 	declare const colorz.SIZE : int := 3
-	declare loc_7 : int
-	declare loc_8[5] : int[]
-	declare loc_9 : int
+	declare loc_8 : int
+	declare loc_9[5] : int[]
 	declare loc_10 : int
-	declare loc_11 : string
-	declare loc_12[4] : int[]
-	scoped_func1(loc_7, loc_8, loc_9, loc_10, loc_11, loc_12)
-	scoped_func1(loc_9, loc_8, loc_10, loc_7, loc_11, loc_12)
+	declare loc_11 : int
+	declare loc_12 : string
+	declare loc_13[4] : int[]
+	scoped_func1(loc_8, loc_9, loc_10, loc_11, loc_12, loc_13)
+	scoped_func1(loc_10, loc_9, loc_11, loc_8, loc_12, loc_13)
 end on
 
 on persistence_changed
-	loc_9 := 0
-	array.init.Integer(loc_8, loc_9, 0)
-	scoped_func1(loc_9, loc_8, loc_10, loc_7, loc_11, loc_12)
+	loc_10 := 0
+	array.init.Integer(loc_9, loc_10, 0)
+	scoped_func1(loc_10, loc_9, loc_11, loc_8, loc_12, loc_13)
 end on
 
 function scoped_func2(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int)
