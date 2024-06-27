@@ -95,8 +95,8 @@ pandoc "$md_file" \
   frame=tb, %single,                               % Einzelner Rahmen um Codeblöcke
   framesep=3mm,                               % Abstand des Rahmens zum Code
   framerule=0.5pt,                              % Dicke der Rahmenlinie
-%   xleftmargin=2mm,                            % Linker Innenabstand
-%   xrightmargin=2mm,                           % Rechter Innenabstand
+  % framexleftmargin=2mm,                            % Linker Innenabstand
+  % framexrightmargin=2mm,                           % Rechter Innenabstand
   aboveskip=1em,                              % Abstand über dem Codeblock
   belowskip=1em                               % Abstand unter dem Codeblock
 }
