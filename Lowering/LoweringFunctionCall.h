@@ -25,10 +25,11 @@ public:
     /// Determining if function is property function -> inline property function
 	/// Determining if function parameter needs to be wrapped in get_ui_id because of ui control
 	void visit(NodeFunctionCall &node) override {
+		lowered_node = &node;
         if(node.kind == NodeFunctionCall::Kind::Property) {
             auto node_body = inline_property_function(node.definition->header.get(), std::move(node.function));
             node_body->accept(*this);
-            node.replace_with(std::move(node_body));
+            lowered_node = node.replace_with(std::move(node_body));
             return;
         }
         if(node.kind == NodeFunctionCall::Kind::Builtin) {

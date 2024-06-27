@@ -22,6 +22,11 @@ std::unique_ptr<NodeAST> NodeVariableRef::clone() const {
 	return std::make_unique<NodeVariableRef>(*this);
 }
 
+std::unique_ptr<struct NodeArrayRef> NodeVariableRef::to_array_ref(NodeAST* index) {
+	return std::make_unique<NodeArrayRef>(name, index ? index->clone() : nullptr, tok);
+}
+
+
 // ************* NodeArrayRef ***************
 void NodeArrayRef::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
@@ -43,9 +48,13 @@ NodeAST * NodeArrayRef::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST
 	return nullptr;
 }
 
-ASTVisitor* NodeArrayRef::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeArrayRef::get_lowering(NodeProgram *program) const {
     static LoweringArray lowering(program);
     return &lowering;
+}
+
+std::unique_ptr<NodeNDArrayRef> NodeArrayRef::to_ndarray_ref() {
+	return std::make_unique<NodeNDArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, index->clone()) : nullptr, tok);
 }
 
 // ************* NodeNDArrayRef ***************
@@ -63,7 +72,7 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::clone() const {
 	return std::make_unique<NodeNDArrayRef>(*this);
 }
 
-ASTVisitor* NodeNDArrayRef::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeNDArrayRef::get_lowering(NodeProgram *program) const {
     static LoweringNDArray lowering(program);
     return &lowering;
 }
@@ -83,7 +92,7 @@ std::unique_ptr<NodeAST> NodeListRef::clone() const {
 	return std::make_unique<NodeListRef>(*this);
 }
 
-ASTVisitor* NodeListRef::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeListRef::get_lowering(NodeProgram *program) const {
 	static LoweringList lowering(program);
 	return &lowering;
 }

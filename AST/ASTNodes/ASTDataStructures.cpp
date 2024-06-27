@@ -94,7 +94,7 @@ NodeAST * NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
 	return nullptr;
 }
 
-ASTVisitor* NodeArray::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeArray::get_lowering(NodeProgram *program) const {
 	static LoweringArray lowering(program);
 	return &lowering;
 }
@@ -127,7 +127,7 @@ std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 	return std::make_unique<NodeNDArray>(*this);
 }
 
-ASTVisitor* NodeNDArray::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeNDArray::get_lowering(NodeProgram *program) const {
 	static LoweringNDArray lowering(program);
 	return &lowering;
 }
@@ -171,7 +171,7 @@ NodeAST * NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 	return nullptr;
 }
 
-ASTVisitor* NodeUIControl::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeUIControl::get_lowering(NodeProgram *program) const {
 	static LoweringUIControlArray lowering(program);
 	return &lowering;
 }
@@ -189,7 +189,7 @@ std::unique_ptr<NodeAST> NodeList::clone() const {
 	return std::make_unique<NodeList>(*this);
 }
 
-ASTVisitor* NodeList::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeList::get_lowering(NodeProgram *program) const {
 	static LoweringList lowering(program);
 	return &lowering;
 }
@@ -206,20 +206,20 @@ std::unique_ptr<NodeNDArray> NodeList::to_ndarray() {
     return std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
 }
 
-// ************* NodeConstStatement ***************
-void NodeConstStatement::accept(ASTVisitor &visitor) {
+// ************* NodeConstBlock ***************
+void NodeConstBlock::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeConstStatement::NodeConstStatement(const NodeConstStatement& other)
+NodeConstBlock::NodeConstBlock(const NodeConstBlock& other)
         : NodeDataStructure(other), constants(clone_unique(other.constants)) {
 	set_child_parents();
 }
 
-std::unique_ptr<NodeAST> NodeConstStatement::clone() const {
-    return std::make_unique<NodeConstStatement>(*this);
+std::unique_ptr<NodeAST> NodeConstBlock::clone() const {
+    return std::make_unique<NodeConstBlock>(*this);
 }
 
-ASTVisitor* NodeConstStatement::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeConstBlock::get_lowering(NodeProgram *program) const {
     static LoweringConst lowering(program);
     return &lowering;
 }
@@ -247,7 +247,7 @@ ASTDesugaring *NodeStruct::get_desugaring(NodeProgram *program) const {
 	return &desugaring;
 }
 
-ASTVisitor *NodeStruct::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeStruct::get_lowering(NodeProgram *program) const {
 	static LoweringStruct lowering(program);
 	return &lowering;
 }

@@ -4,6 +4,7 @@
 
 #include "ASTInstructions.h"
 #include "../ASTVisitor/ASTVisitor.h"
+#include "../../Lowering/ASTLowering.h"
 #include "../../Desugaring/DesugarDeclareAssign.h"
 #include "../../Lowering/LoweringGetControl.h"
 #include "../../Lowering/LoweringFunctionCall.h"
@@ -45,7 +46,7 @@ NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
 std::unique_ptr<NodeAST> NodeFunctionCall::clone() const {
     return std::make_unique<NodeFunctionCall>(*this);
 }
-ASTVisitor* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
+ASTLowering* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
     static LoweringFunctionCall lowering(program);
     return &lowering;
 }
@@ -157,7 +158,7 @@ NodeAST * NodeSingleAssignment::replace_child(NodeAST* oldChild, std::unique_ptr
     return nullptr;
 }
 
-ASTVisitor* NodeSingleAssignment::get_lowering(struct NodeProgram *program) const {
+ASTLowering* NodeSingleAssignment::get_lowering(struct NodeProgram *program) const {
     return this->l_value->get_lowering(program);
 }
 
@@ -213,7 +214,7 @@ NodeAST * NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_pt
     return nullptr;
 }
 
-ASTVisitor* NodeSingleDeclaration::get_lowering(struct NodeProgram *program) const {
+ASTLowering* NodeSingleDeclaration::get_lowering(struct NodeProgram *program) const {
     return this->variable->get_lowering(program);
 }
 
@@ -291,7 +292,7 @@ NodeAST * NodeGetControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeA
     return nullptr;
 }
 
-ASTVisitor* NodeGetControl::get_lowering(struct NodeProgram *program) const {
+ASTLowering* NodeGetControl::get_lowering(struct NodeProgram *program) const {
     static LoweringGetControl lowering(program);
     return &lowering;
 }

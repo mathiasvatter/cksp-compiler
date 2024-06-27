@@ -67,6 +67,7 @@ protected:
     /// convert eg 0bFFFh into 0xbFFF
     static std::string sanitize_hex(const std::string& input);
 
+	Result<std::unique_ptr<NodeAST>> parse_wildcard(NodeAST* parent);
     Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base, NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_number(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_nil(NodeAST* parent);

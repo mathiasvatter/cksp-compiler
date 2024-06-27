@@ -39,7 +39,7 @@ struct NodeAST {
     virtual void update_token_data(const Token& token) {
         tok.line = token.line; tok.file = token.file;
     }
-	[[nodiscard]] virtual ASTVisitor* get_lowering(struct NodeProgram *program) const {
+	[[nodiscard]] virtual class ASTLowering * get_lowering(struct NodeProgram *program) const {
 		return nullptr;
 	}
     [[nodiscard]] virtual ASTDesugaring *get_desugaring(NodeProgram *program) const {
@@ -83,6 +83,10 @@ struct NodeReference : NodeAST {
     std::string get_string() override {
         return name;
     }
+	virtual std::unique_ptr<struct NodeArrayRef> to_array_ref(NodeAST* index) {return nullptr;}
+	virtual std::unique_ptr<struct NodeVariableRef> to_variable_ref() {return nullptr;}
+	virtual std::unique_ptr<struct NodePointerRef> to_pointer_ref() {return nullptr;}
+	virtual std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() {return nullptr;}
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(NodeDataStructure* data_structure);
     /// Determines if current reference is function argument
@@ -93,6 +97,8 @@ struct NodeReference : NodeAST {
                           this->parent->parent->get_node_type() == NodeType::FunctionHeader;
         return func_arg;
     }
+	/// determines if reference is reference to struct member
+	bool is_member_ref();
 	/// checks if reference is raw version of multi-dimensional array
 	bool is_raw_array() {
 		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw");
@@ -170,6 +176,20 @@ struct NodeExpression : NodeAST {
     std::string get_string() override {
         return "";
     }
+};
+
+struct NodeWildcard : NodeAST {
+	std::string value;
+	inline explicit NodeWildcard(std::string v, Token tok) : NodeAST(std::move(tok), NodeType::Wildcard), value(v) {}
+	void accept(ASTVisitor& visitor) override;
+	// Kopierkonstruktor
+	NodeWildcard(const NodeWildcard& other) : NodeAST(other), value(other.value) {}
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	std::string get_string() override {
+		return value;
+	}
+	bool check_semantic();
 };
 
 struct NodeInt : NodeAST {

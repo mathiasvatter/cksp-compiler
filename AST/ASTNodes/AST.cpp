@@ -136,6 +136,11 @@ void NodeReference::match_data_structure(NodeDataStructure* data_structure) {
 	ty = data_structure->ty;
 }
 
+bool NodeReference::is_member_ref() {
+	return declaration->is_member();
+}
+
+
 // ************* NodeInstruction ***************
 void NodeInstruction::accept(ASTVisitor &visitor) {}
 
@@ -156,6 +161,27 @@ void NodeDeadCode::accept(ASTVisitor &visitor) {
 }
 std::unique_ptr<NodeAST> NodeDeadCode::clone() const {
     return std::make_unique<NodeDeadCode>(*this);
+}
+
+// ************* NodeWildcard ***************
+void NodeWildcard::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+std::unique_ptr<NodeAST> NodeWildcard::clone() const {
+	return std::make_unique<NodeWildcard>(*this);
+}
+
+bool NodeWildcard::check_semantic() {
+	bool check_parents = parent->get_node_type() == NodeType::ParamList and parent->parent->get_node_type() == NodeType::NDArrayRef
+		and parent->parent->parent->get_node_type() == NodeType::SingleAssignment;
+	if(check_parents) {
+		auto assign_stmt = static_cast<NodeSingleAssignment*>(parent->parent->parent);
+		auto nd_array_ref = static_cast<NodeNDArrayRef*>(parent->parent);
+		if(assign_stmt->l_value.get() == nd_array_ref) {
+			return true;
+		}
+	}
+	return false;
 }
 
 // ************* NodeInt ***************

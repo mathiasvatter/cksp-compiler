@@ -46,7 +46,8 @@ public:
     void visit(NodeFunctionCall& node) override;
     void visit(NodeFunctionDefinition& node) override;
 
-	void visit(NodeConstStatement& node) override;
+	void visit(NodeConstBlock& node) override;
+//	void visit(NodeStruct& node) override;
 
     /// iterates through all references and declarations and tries to match the types
     /// with cast set to true -> will cast types of data structures if no type could be infered

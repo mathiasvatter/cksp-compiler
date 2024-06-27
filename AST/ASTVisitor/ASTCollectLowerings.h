@@ -23,7 +23,7 @@
  * - NodeGetControl: Lower get_control statements to get_control_par.
  * - NodeFunctionCall: Lower property functions to get_control_par.
  * - NodeNDArray: Lower ndArray when they are a reference.
- * - NodeConstStatement: Lower const block to single declare statements.
+ * - NodeConstBlock: Lower const block to single declare statements.
  * - NodeListRef: Lower list struct references to array references.
  * - NodeList: Lower list structs to arrays and while loops.
  *
@@ -49,7 +49,7 @@ public:
 	/// lower ndArray when they are a reference
 	void visit(NodeNDArrayRef& node) override;
 	/// lower const block to single declare statements
-    void visit(NodeConstStatement& node) override;
+    void visit(NodeConstBlock& node) override;
 //    void visit(NodeFamily& node) override;
 
 	/// lower list struct references to array references
