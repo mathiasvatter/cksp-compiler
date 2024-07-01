@@ -167,7 +167,7 @@ void ASTVariableChecking::visit(NodeNDArray& node) {
 }
 
 void ASTVariableChecking::visit(NodeNDArrayRef& node) {
-	node.indexes->accept(*this);
+	if(node.indexes) node.indexes->accept(*this);
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
 		CompileError(ErrorType::Variable, "Multidimensional array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
