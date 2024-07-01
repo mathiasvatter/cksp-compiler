@@ -3,14 +3,14 @@
 // 	declare values[10]: int[]
 // 	declare next: List := nil
 
-// 	function __init__(self, value: int[], next: List)
-// 		self.values := value
-// 		self.next := next
-// 	end function
+// 	// function __init__(self, value: int[], next: List)
+// 	// 	self.values := value
+// 	// 	self.next := next
+// 	// end function
 	
-// 	function some_method(self, ficki) 
-// 		message(ficki)	
-// 	end function
+// 	// function some_method(self, ficki) 
+// 	// 	message(ficki)	
+// 	// end function
 // end struct
 
 on init
@@ -25,7 +25,7 @@ on init
 	sli->text := "sdfkj"
 	declare a: string
 	a := sli->text * 3
-	declare nda[4,4]
+	declare nda[2,4] := ((1,2,3,4),(5,6,7,8))
 	nda[0, *] := (0)
 	nda[*, 3] := (1,2,6)
 	// message(ndarray[0,0,0])

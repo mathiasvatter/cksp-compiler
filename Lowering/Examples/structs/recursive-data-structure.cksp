@@ -34,9 +34,9 @@ on init
     declare object.warning: string := "Memory Error: No more free space available to allocate objects of type"
 
     declare const List.MAX_STRUCTS := MAX_STRUCTS // can alternate if mutlidimensional array is needed
-    declare List.allocation[MAX_STRUCTS]: int[] := (0)
-    declare List.value[MAX_STRUCTS]: int[]             // Wert des Elements
-    declare List.next[MAX_STRUCTS]: List[] := (nil)      // Verweis auf den Index des nächsten Elements
+    declare List.allocation[List.MAX_STRUCTS]: int[] := (0)
+    declare List.value[List.MAX_STRUCTS]: int[]             // Wert des Elements
+    declare List.next[List.MAX_STRUCTS]: List[] := (nil)      // Verweis auf den Index des nächsten Elements
     declare List.free_idx: int := 0                  // Zeigt auf den ersten freien Platz im Array
 
     declare $this_list := nil // nil

@@ -6,9 +6,9 @@ on init
 	set_control_par_str(get_ui_id(get_ui_id(get_ui_id(sli))), CONTROL_PAR_TEXT, "sdfkj")
 	declare a : string
 	a := get_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT) * 3
-	declare const nda.SIZE_D1 : int := 4
+	declare const nda.SIZE_D1 : int := 2
 	declare const nda.SIZE_D2 : int := 4
-	declare _nda[4 * 4] : int[]
+	declare _nda[2 * 4] : int[] := (1, 2, 3, 4, 5, 6, 7, 8)
 	declare loc_8 : int
 	ndarray.init.Integer.2.2(_nda, 0, loc_8)
 	_nda[(0 * 4) + 3] := 1
