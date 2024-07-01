@@ -9,10 +9,10 @@ struct Note
 	declare velocities[10]: int[]
 	declare play_pos[11, 12]: int[]
 
-	function __init__(self, p: int, v: int[])
+	function __init__(self, p: int, v: int[], pp: int[][])
 		self.pitch := p
 		self.velocities := v
-		self.play_pos := (0)
+		self.play_pos := pp
 	end function
 
 	function __repr__(self)
@@ -22,7 +22,7 @@ end struct
 
 declare new_note: Note := new Note(69, (10,110,127))
 message("New Note: "&new_note)
-play_note(new_note.pitch, new_note.velocities[0], new_note.samplestart, 0)
+play_note(new_note.pitch, new_note.velocities[0], new_note.play_pos[1,2], 0)
 
 declare many_notes[127]: Note[]
 
@@ -42,19 +42,19 @@ declare const MAX_STRUCTS := 1000000 // allgemeine constante für structs
 declare const Node.MAX_STRUCTS: int := MAX_STRUCTS/_max(10, 11*12)
 declare Note.allocation[Node.MAX_STRUCTS] int[] := (0)
 declare Note.pitch[Node.MAX_STRUCTS]: int[]
-declare Note.velocity[Node.MAX_STRUCTS, 10]: int[]
+declare Note.velocities[Node.MAX_STRUCTS, 10]: int[]
 declare Note.play_pos[Node.MAX_STRUCTS, 11, 12]: int[]
 declare Note.free_idx: int := 0 // Zeiger auf den nächsten freien index
 
-function Note.__init__(p: int, v: [int])
+function Note.__init__(p: int, v: int[])
 	Note.free_idx := search(Note.allocation, 0)
 	if Note.free_idx = -1
 		message("Error: No more free space available to allocate objects of type 'note'")		
 	end if
 	Note.allocation[Note.free_idx] := 1
 	Note.pitch[Note.free_idx] := p
-	Note.velocity[Note.free_idx, i] := v
-	Note.samplestart[Note.free_idx] := s
+	Note.velocities[Note.free_idx, *] := v
+	Note.play_pos[Note.free_idx, *, *] := s
 	return Note.free_idx
 end function
 
@@ -69,7 +69,7 @@ end function
 
 declare $new_note := Note.__init__(69, 127, 50000)
 message("New Note: "& Note.__repr__(new_note))
-play_note(Note.pitch[new_note], Note.velocity[new_note], Note.velocity[new_note], 0)
+play_note(Note.pitch[new_note], Note.velocities[new_note], Note.velocities[new_note], 0)
 
 declare %many_notes[127]
 
