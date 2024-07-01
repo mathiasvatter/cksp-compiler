@@ -83,6 +83,11 @@ NodeDataStructure* DefinitionProvider::remove_from_current_scope(const std::stri
 
 
 NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
+	// if reference is compiler, return dummy declaration pointer
+	if(auto dummy_decl = get_compiler_declaration(var)) {
+		return dummy_decl;
+	}
+
 	// get builtin declaration if it exists
 	NodeDataStructure *node_builtin_declaration = nullptr;
 	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);

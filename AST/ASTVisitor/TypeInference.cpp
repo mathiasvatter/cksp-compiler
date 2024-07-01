@@ -149,7 +149,7 @@ void TypeInference::visit(NodeArrayRef& node) {
 }
 
 void TypeInference::visit(NodeNDArray& node) {
-    node.sizes->accept(*this);
+    if(node.sizes) node.sizes->accept(*this);
     // if array is unknown type -> set to array of unknown
     if(node.ty == TypeRegistry::Unknown) {
         node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions);

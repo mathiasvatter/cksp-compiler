@@ -46,6 +46,8 @@ public:
 	void visit(NodeFunctionCall& node) override;
     /// determine size of array in declaration if possible
     void visit(NodeArray& node) override;
+	/// lower ndarray when in function params
+	void visit(NodeNDArray& node) override;
 	/// lower ndArray when they are a reference
 	void visit(NodeNDArrayRef& node) override;
 	/// lower const block to single declare statements

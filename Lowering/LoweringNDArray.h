@@ -65,7 +65,8 @@ public:
 	}
 	/// Lowering of multidimensional arrays to arrays -> declaration
 	void visit(NodeNDArray& node) override {
-		auto node_expression = NodeBinaryExpr::create_right_nested_binary_expr(node.sizes->params, 0, token::MULT);
+		std::unique_ptr<NodeAST> node_expression = nullptr;
+		if(node.sizes) node_expression = NodeBinaryExpr::create_right_nested_binary_expr(node.sizes->params, 0, token::MULT);
         auto node_lowered_array = std::make_unique<NodeArray>(
                 node.persistence,
                 node.name,
@@ -85,13 +86,24 @@ public:
     /// Lowering of multidimensional arrays to arrays when reference
     void visit(NodeNDArrayRef& node) override {
         auto error = CompileError(ErrorType::Variable, "", "", node.tok);
-        if(node.indexes and node.indexes->params.size() != node.sizes->params.size()) {
+        if(node.indexes and node.sizes and node.indexes->params.size() != node.sizes->params.size()) {
             error.m_message = "Number of indices does not match number of dimensions: " + node.name;
             error.exit();
         }
         // convert index of multidimensional array
         std::unique_ptr<NodeAST> node_expression = nullptr;
 		if(node.indexes) {
+			// if no sizes -> ndarray is func param
+			if(!node.sizes) {
+				auto sizes = std::make_unique<NodeParamList>(node.tok);
+				for(int i = 0; i<node.indexes->params.size(); i++) {
+					auto size_const = std::make_unique<NodeVariableRef>(node.name + ".SIZE_D" + std::to_string(i+1), node.tok);
+					size_const->kind = NodeReference::Compiler;
+					sizes->add_param(std::move(size_const));
+				}
+				node.sizes = std::move(sizes);
+				node.sizes->parent = &node;
+			}
 			node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0,node.tok);
 		}
         auto node_lowered_array = std::make_unique<NodeArrayRef>(
@@ -132,13 +144,16 @@ private:
 	 * Pre Lowering:
 	 * ndarray[2, *] := (0)        // ndarray := ((1,2,3), (0,0,0), (7,8,9))
 	 * Post Lowering:
-	 * declare local _iter: int := 0
-	 * while (_iter < ndarray.SIZE_D2)
-	 *  ndarray[2, _iter] := 0
-	 *  inc(_iter)
-	 * end while
+	 * // function ndarray.init.<type>.<num_dimensions>.<dimension>()
+	 * function ndarray.init.Integer.2.1(ndarray: int[][], value: type)
+	 * 	declare local _iter: int := 0
+	 * 		while (_iter < ndarray.SIZE_D2)
+	 * 			ndarray[2, _iter] := 0
+	 * 			inc(_iter)
+	 * 		end while
+	 * end function
 	 */
-	std::unique_ptr<NodeBlock> get_ndarray_init_loop(NodeNDArrayRef* node, NodeAST* value) {
+	static inline bool get_ndarray_init_loop(NodeProgram* program, Type* type) {
 		// get wildcard dimension
 		int wildcard_dim = -1;
 		int num_wildcards = 0;
@@ -165,6 +180,13 @@ private:
 			error.exit();
 		}
 		node_nd_array_ref->indexes->set_child_parents();
+
+		std::string func_name = "ndarray.init." + node->ty->get_element_type()->to_string() + "." + std::to_string(node->sizes->params.size()) + "." + std::to_string(wildcard_dim),
+		// check if function with this type already exists
+		auto it = program->function_lookup.find({func_name, 3});
+		if(it != program->function_lookup.end()) {
+			return false;
+		}
 
 		auto node_while_body = std::make_unique<NodeBlock>(Token());
 		node_while_body->scope = true;
@@ -202,9 +224,23 @@ private:
 		);
 		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_decl), Token()));
 		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_while), Token()));
+
+		// make function definition
+		auto node_function = std::make_unique<NodeFunctionDefinition>(
+			std::make_unique<NodeFunctionHeader>(
+				func_name,
+				std::make_unique<NodeParamList>(Token(), node->clone(), value->clone()),
+				Token()
+				),
+				std::nullopt,
+				false,
+				std::move(node_block),
+				Token()
+			);
+
 		// lower nd arrays to arrays
-		node_block->accept(*this);
-		return node_block;
+		node_function->accept(*this);
+		return node_function;
 	}
 };
 

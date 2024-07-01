@@ -35,6 +35,9 @@ for idx, val in midi_notes
 	delete many_notes[idx] //?????
 end for
 
+function func_with_object(note: Note)
+	note.play()
+end function
 
 //Destruction??!?!?!?!
 
@@ -69,7 +72,7 @@ function Note.__repr__(object_id)
 	return __pointer[signbit(object_id)] & ": Note Object"
 end function
 
-function Note.play(object_id)
+function Note.play(object_id: int)
 	return play_note(Note.pitch[object_id], Note.velocity[object_id], Note.velocity[object_id], 0)
 end function
 
@@ -91,7 +94,9 @@ for idx := 0 to num_elements(midi_notes)-1
 	play_note(Note.pitch[many_notes[idx]], Note.velocity[many_notes[idx]], Note.velocity[many_notes[idx]], 0)
 end for
 
-
+function func_with_object(note: int)
+	Note.play(note)
+end function
 
 
 

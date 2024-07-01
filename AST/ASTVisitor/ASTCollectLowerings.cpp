@@ -71,6 +71,13 @@ void ASTCollectLowerings::visit(NodeArray& node) {
     }
 }
 
+void ASTCollectLowerings::visit(NodeNDArray& node) {
+	if(node.sizes) node.sizes->accept(*this);
+	if(auto lowering = node.get_lowering(m_program)) {
+		node.accept(*lowering);
+	}
+}
+
 void ASTCollectLowerings::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
 	if(auto lowering = node.get_lowering(m_program)) {

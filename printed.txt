@@ -6,32 +6,27 @@ on init
 	set_control_par_str(get_ui_id(get_ui_id(get_ui_id(sli))), CONTROL_PAR_TEXT, "sdfkj")
 	declare a : string
 	a := get_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT) * 3
-	declare const ndarray.SIZE_D1 : int := 4
-	declare const ndarray.SIZE_D2 : int := 4
-	declare _ndarray[4 * 4] : int[]
-	declare loc_7 : int := 0
-	while(loc_6 < ndarray.SIZE_D2) 
-		_ndarray[(0 * 4) + loc_6] := 0
-		inc(loc_6)
-	end while
+	declare const nda.SIZE_D1 : int := 4
+	declare const nda.SIZE_D2 : int := 4
+	declare _nda[4 * 4] : int[]
 	declare const colorz.a : int := 0 + 0
 	declare const colorz.b : int := 0 + (0 + 1)
 	declare colorz[2] : int[] := (0 + 0, 0 + (0 + 1))
 	declare const colorz.SIZE : int := 3
-	declare loc_8 : int
-	declare loc_9[5] : int[]
+	declare loc_7 : int
+	declare loc_8[5] : int[]
+	declare loc_9 : int
 	declare loc_10 : int
-	declare loc_11 : int
-	declare loc_12 : string
-	declare loc_13[4] : int[]
-	scoped_func1(loc_8, loc_9, loc_10, loc_11, loc_12, loc_13)
-	scoped_func1(loc_10, loc_9, loc_11, loc_8, loc_12, loc_13)
+	declare loc_11 : string
+	declare loc_12[4] : int[]
+	scoped_func1(loc_7, loc_8, loc_9, loc_10, loc_11, loc_12)
+	scoped_func1(loc_9, loc_8, loc_10, loc_7, loc_11, loc_12)
 end on
 
 on persistence_changed
-	loc_10 := 0
-	array.init.Integer(loc_9, loc_10, 0)
-	scoped_func1(loc_10, loc_9, loc_11, loc_8, loc_12, loc_13)
+	loc_9 := 0
+	array.init.Integer(loc_8, loc_9, 0)
+	scoped_func1(loc_9, loc_8, loc_10, loc_7, loc_11, loc_12)
 end on
 
 function scoped_func2(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int)
@@ -57,6 +52,10 @@ function scoped_func1(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int, l
 	scoped_func2(loc_0, loc_1, loc_2, loc_3)
 	loc_5[0] := 3
 	loc_5[1] := 4
+end function
+
+function ndarray_func(_ndarray : int[])
+	message(_ndarray[(0 * ndarray.SIZE_D2) + 0])
 end function
 
 function array.init.Integer(array : int[], _iter : int, value : int)

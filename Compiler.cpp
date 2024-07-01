@@ -21,7 +21,7 @@ void Compiler::compile() {
 	std::string output_filename = m_config->output_filename;
    	std::string standard_output_path = m_config->standard_output_file;
 
-	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
+//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
@@ -107,6 +107,7 @@ void Compiler::compile() {
 
 	TypeInference infer_types(&m_definition_provider);
 	ast->accept(infer_types);
+	TypeInference::cast_data_structure_types(&m_definition_provider, true);
 
 	compile_time.stop("Type Checking");
 	compile_time.start("Lowering");

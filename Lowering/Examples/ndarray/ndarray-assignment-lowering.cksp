@@ -22,12 +22,15 @@ declare const ndarray.SIZE_D2 := 3
 declare _ndarray[3 * 3]: int[] := (1,2,3,4,5,6,7,8,9) // ndarray := ((1,2,3), (4,5,6), (7,8,9))
 
 // ndarray[2, *] := (0)        // ndarray := ((1,2,3), (0,0,0), (7,8,9))
-declare local _iter: int := 0
-while (_iter < ndarray.SIZE_D2)
-    ndarray[2, _iter] := 0
-    inc(_iter)
-end while
 
+// function ndarray.init.<type>.<num_dimensions>.<dimension>()
+function ndarray.init.Integer.2.1(ndarray: int[][], value: type)
+    declare local _iter: int := 0
+    while (_iter < ndarray.SIZE_D2)
+        ndarray[2, _iter] := 0
+        inc(_iter)
+    end while
+end function
 
 // ndarray[2, *] := (2,3,4)    // ndarray := ((1,2,3), (2,3,4), (7,8,9)) 
 ndarray[2, 0] := 2
