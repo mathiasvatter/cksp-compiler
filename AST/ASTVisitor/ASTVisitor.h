@@ -52,7 +52,7 @@ public:
 		if(node.index) node.index->accept(*this);
 	};
 	virtual void visit(NodeNDArray& node) {
-		node.sizes->accept(*this);
+		if(node.sizes) node.sizes->accept(*this);
 	};
 	virtual void visit(NodeNDArrayRef& node) {
 		if(node.indexes) node.indexes->accept(*this);

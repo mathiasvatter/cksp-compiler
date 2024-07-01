@@ -118,7 +118,8 @@ void NodeReference::accept(ASTVisitor &visitor) {}
 NodeReference::NodeReference(const NodeReference& other)
 	: NodeAST(other), name(other.name), declaration(other.declaration),
     is_engine(other.is_engine), is_local(other.is_local),
-    is_compiler_return(other.is_compiler_return), data_type(other.data_type) {
+    is_compiler_return(other.is_compiler_return), data_type(other.data_type),
+	kind(other.kind) {
 	set_child_parents();
 }
 

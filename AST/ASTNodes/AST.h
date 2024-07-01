@@ -71,6 +71,8 @@ struct NodeReference : NodeAST {
     bool is_engine = false;
     bool is_local = false;
     bool is_compiler_return = false;
+	enum Kind{Builtin, Compiler, User};
+	Kind kind = User;
 	DataType data_type = DataType::Mutable;
     inline explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::DeadCode) {}
     inline NodeReference(std::string name, NodeType node_type, Token tok)
@@ -288,6 +290,10 @@ struct NodeParamList: NodeAST {
             p->update_token_data(token);
         }
     }
+	void add_param(std::unique_ptr<NodeAST> param) {
+		param->parent = this;
+		params.push_back(std::move(param));
+	}
 };
 
 struct NodeUnaryExpr : NodeAST {

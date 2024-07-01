@@ -87,7 +87,7 @@ void ASTBuildDataStructures::visit(NodeArrayRef &node) {
 }
 
 void ASTBuildDataStructures::visit(NodeNDArray& node) {
-	node.sizes->accept(*this);
+	if(node.sizes) node.sizes->accept(*this);
 	replace_incorrectly_detected_data_struct(&node);
 }
 
@@ -95,12 +95,21 @@ void ASTBuildDataStructures::visit(NodeNDArrayRef& node) {
     if(node.indexes) node.indexes->accept(*this);
 
 	if(auto node_array = cast_node<NodeNDArray>(node.declaration)) {
-		node.sizes = clone_as<NodeParamList>(node_array->sizes.get());
-		node.sizes->update_parents(&node);
+		// has no size if function definition parameter
+		if(node.sizes) {
+			node.sizes = clone_as<NodeParamList>(node_array->sizes.get());
+			node.sizes->update_parents(&node);
+		}
 	} else {
 		replace_incorrectly_detected_reference(&node);
 		replace_incorrectly_detected_data_struct(node.declaration);
 //		CompileError(ErrorType::Variable, "Incorrectly recognized as <ndarray>: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+	}
+	// check if indices have same size as dimensions of declaration
+	if(node.indexes and node.indexes->params.size() != static_cast<NodeNDArray*>(node.declaration)->dimensions) {
+		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+		error.m_message = "Number of indices does not match number of dimensions: " + node.name;
+		error.exit();
 	}
 }
 

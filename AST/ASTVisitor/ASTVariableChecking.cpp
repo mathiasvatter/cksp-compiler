@@ -160,7 +160,7 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 void ASTVariableChecking::visit(NodeNDArray& node) {
 	check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions).get());
 	node.determine_locality(m_program, m_current_block);
-	node.sizes->accept(*this);
+	if(node.sizes) node.sizes->accept(*this);
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node);
@@ -292,6 +292,7 @@ NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure
 		} else if(comp_type->get_compound_type() == CompoundKind::Array and node->get_node_type() != NodeType::NDArray and comp_type->get_dimensions() > 1) {
 			auto node_ndarray = node->to_ndarray();
 			if(!node_ndarray) error.exit();
+			node_ndarray->dimensions = comp_type->get_dimensions();
 			node_ndarray->is_local = node->is_local;
 			return static_cast<NodeDataStructure*>(node->replace_with(std::move(node_ndarray)));
 		}

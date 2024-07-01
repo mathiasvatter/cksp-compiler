@@ -51,6 +51,19 @@ public:
 		return true;
 	}
 
+	/// returns a static global dummy datastructure that can be used for declarations of compiler vars
+	static NodeDataStructure* get_compiler_declaration(NodeReference* var) {
+		if(var->kind != NodeReference::Kind::Compiler) return nullptr;
+		auto static comp_var = std::make_unique<NodeVariable>(
+			std::nullopt,
+			"compiler_dummy",
+			TypeRegistry::Unknown,
+			DataType::Mutable,
+			Token()
+			);
+		return comp_var.get();
+	}
+
 	/// returns the definition of a data structure, if it exists. If datastructure itself is
 	/// definition -> return nullptr. If datastructure is reference -> return declaration. If global_scope is true,
 	/// adds declaration to global scope.
