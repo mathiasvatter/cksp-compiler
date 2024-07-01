@@ -96,7 +96,7 @@ void ASTBuildDataStructures::visit(NodeNDArrayRef& node) {
 
 	if(auto node_array = cast_node<NodeNDArray>(node.declaration)) {
 		// has no size if function definition parameter
-		if(node.sizes) {
+		if(node_array->sizes) {
 			node.sizes = clone_as<NodeParamList>(node_array->sizes.get());
 			node.sizes->update_parents(&node);
 		}

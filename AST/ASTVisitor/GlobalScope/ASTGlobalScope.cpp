@@ -9,7 +9,6 @@
 #include "NormalizeSingleDeclareAssign.h"
 
 void ASTGlobalScope::visit(NodeProgram &node) {
-	ASTPrinter printer;
 
 	m_program = &node;
 
@@ -34,8 +33,9 @@ void ASTGlobalScope::visit(NodeProgram &node) {
 	m_program->global_declarations = std::make_unique<NodeBlock>(node.tok);
 	m_program->global_declarations->parent = m_program;
 
-	node.accept(printer);
-	printer.generate("/Users/Mathias/Scripting/ksp-compiler/printed.txt");
+//	ASTPrinter printer;
+//	node.accept(printer);
+//	printer.generate("/Users/Mathias/Scripting/ksp-compiler/printed.txt");
 }
 
 
