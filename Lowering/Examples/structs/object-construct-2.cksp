@@ -46,7 +46,7 @@ declare Note.velocities[Node.MAX_STRUCTS, 10]: int[]
 declare Note.play_pos[Node.MAX_STRUCTS, 11, 12]: int[]
 declare Note.free_idx: int := 0 // Zeiger auf den nächsten freien index
 
-function Note.__init__(p: int, v: int[])
+function Note.__init__(p: int, v: int[], pp: int[][])
 	Note.free_idx := search(Note.allocation, 0)
 	if Note.free_idx = -1
 		message("Error: No more free space available to allocate objects of type 'note'")		
@@ -54,7 +54,7 @@ function Note.__init__(p: int, v: int[])
 	Note.allocation[Note.free_idx] := 1
 	Note.pitch[Note.free_idx] := p
 	Note.velocities[Note.free_idx, *] := v
-	Note.play_pos[Note.free_idx, *, *] := s
+	Note.play_pos[Note.free_idx, *, *] := pp
 	return Note.free_idx
 end function
 

@@ -1302,7 +1302,7 @@ Result<std::unique_ptr<NodeFor>> Parser::parse_for_statement(NodeAST* parent) {
         return Result<std::unique_ptr<NodeFor>>(CompileError(ErrorType::SyntaxError,
                                                              "Incorrect <for-loop> Syntax.", "to/downto", peek()));
     }
-    Token to = consume(); //consume to or downto
+    token to = consume().type; //consume to or downto
     auto expression_stmt = parse_binary_expr(node_for_statement.get());
     if(expression_stmt.is_error()) {
         return Result<std::unique_ptr<NodeFor>>(expression_stmt.get_error());

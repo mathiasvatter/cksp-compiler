@@ -437,12 +437,12 @@ struct NodeIf: NodeInstruction {
 
 struct NodeFor : NodeInstruction {
     std::unique_ptr<NodeSingleAssignment> iterator;
-    Token to;
+    token to;
     std::unique_ptr<NodeAST> iterator_end;
     std::unique_ptr<NodeAST> step = nullptr;
     std::unique_ptr<NodeBlock> body;
     inline explicit NodeFor(Token tok) : NodeInstruction(NodeType::For, std::move(tok)) {}
-    inline NodeFor(std::unique_ptr<NodeSingleAssignment> iterator, Token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeBlock> statements, Token tok)
+    inline NodeFor(std::unique_ptr<NodeSingleAssignment> iterator, token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeBlock> statements, Token tok)
             : NodeInstruction(NodeType::For, std::move(tok)), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), body(std::move(statements)) {
         set_child_parents();
     }
@@ -466,7 +466,6 @@ struct NodeFor : NodeInstruction {
     std::string get_string() override { return ""; }
     void update_token_data(const Token& token) override {
         iterator -> update_token_data(token);
-        to.line = token.line; to.file = token.file;
         iterator_end -> update_token_data(token);
         if(step) step ->update_token_data(token);
         body->update_token_data(token);

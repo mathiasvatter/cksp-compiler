@@ -17,8 +17,12 @@ public:
 		if(node.l_value->get_node_type() != NodeType::GetControl) return;
 
 		auto get_control_statement = cast_node<NodeGetControl>(node.l_value.get());
-		std::string control_function = "set_control_par";
+		// lower in case of array or nd array
+		if(auto lowering = get_control_statement->ui_id->get_lowering(m_program)) {
+			get_control_statement->ui_id->accept(*lowering);
+		}
 
+		std::string control_function = "set_control_par";
 		auto new_node = lowering(control_function, get_control_statement);
 		// add r_value as third parameter to set_control_par
 		new_node->function->args->params.push_back(std::move(node.r_value));
@@ -27,6 +31,10 @@ public:
 	};
 
 	void visit(NodeGetControl &node) override {
+		// lower in case of array or nd array
+		if(auto lowering = node.ui_id->get_lowering(m_program)) {
+			node.ui_id->accept(*lowering);
+		}
 		std::string control_function = "get_control_par";
 		auto new_node = lowering(control_function, &node);
 		new_node->update_parents(node.parent);

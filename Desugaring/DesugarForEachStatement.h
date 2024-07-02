@@ -85,7 +85,6 @@ public:
         auto node_key_iterator = std::make_unique<NodeSingleAssignment>(
                 node.keys->params[0]->clone(),
                 std::make_unique<NodeInt>(0, node.tok), node.tok);
-        Token token_to = Token(token::TO, "to", node.tok.line, node.tok.pos, node.tok.file);
 
         auto node_num_elements = std::make_unique<NodeFunctionCall>(
 			false,
@@ -111,7 +110,7 @@ public:
 
         auto node_for_statement = std::make_unique<NodeFor>(
                 std::move(node_key_iterator),
-                token_to,
+                token::TO,
                 std::move(node_end_range),
                 std::move(node.body), node.tok);
         node_for_statement->body->accept(*this);
