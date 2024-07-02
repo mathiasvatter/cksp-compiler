@@ -202,7 +202,7 @@ void ASTPrinter::visit(NodeWhile &node) {
 void ASTPrinter::visit(NodeFor &node) {
     os << "for " ;
     node.iterator->accept(*this);
-    os << " " << node.to.val << " ";
+    os << " " << node.to << " ";
     node.iterator_end->accept(*this);
     os << std::endl;
     node.body->accept(*this);

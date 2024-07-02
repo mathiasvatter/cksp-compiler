@@ -17,7 +17,6 @@ void ASTCollectLowerings::visit(NodeStruct& node) {
 	}
 }
 
-
 void ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 	if(node.value) node.value->accept(*this);
 	if(auto lowering = node.get_lowering(m_program)) {
@@ -28,7 +27,6 @@ void ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 void ASTCollectLowerings::visit(NodeSingleAssignment& node) {
 	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
-//		lowering->lowered_node->accept(*this);
 	} else {
 		node.l_value->accept(*this);
 		if(node.r_value) node.r_value->accept(*this);

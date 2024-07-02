@@ -148,7 +148,7 @@ public:
 		 * -> or now with array assignments:
 		 * %_lbl_lbl := (get_ui_id($_lbl_lbl0)+inc)
 		 */
-		auto node_iterator_var_ref = std::make_unique<NodeVariableRef>("_iterator", ui_control.tok);
+		auto node_iterator_var_ref = std::make_unique<NodeVariableRef>("_iter", ui_control.tok);
         node_iterator_var_ref->is_engine = true;
 		auto node_while_body = std::make_unique<NodeBlock>(ui_control.tok);
 

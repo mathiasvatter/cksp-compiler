@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTLowering.h"
+#include "../Desugaring/ASTDesugaring.h"
 
 /// entry points: NodeSingleDeclaration
 class LoweringNDArray : public ASTLowering {
@@ -137,6 +138,16 @@ public:
         lowered_node = node.replace_with(std::move(node_lowered_array));
     }
 
+	void visit(NodeFor& node) override {
+		node.body->accept(*this);
+		if(auto desugaring = node.get_desugaring(m_program)) {
+			node.accept(*desugaring);
+			// move replacement to this visitor in case of nested for loops
+			auto replacement = std::move(desugaring->replacement_node);
+			node.replace_with(std::move(replacement));
+		}
+	}
+
 private:
 
 	static std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok) {
@@ -196,7 +207,7 @@ private:
 			error.m_message = "Wildcards have to be right aligned in index list.";
 			error.exit();
 		}
-		return std::pair(wildcard_start, wildcard_end);
+		return {wildcard_start, wildcard_end};
 	}
 
 	/// ndarray.init.<type>.<num_dimensions>.<dimension>(ndarray: type[][], value: type)
@@ -255,46 +266,31 @@ private:
 			}
 		}
 		node_nd_array_ref->indexes->set_child_parents();
-
-		auto node_while_body = std::make_unique<NodeBlock>(Token());
-		node_while_body->scope = true;
+		// create for loop
+		auto node_for_body = std::make_unique<NodeBlock>(Token());
+		node_for_body->scope = true;
 		auto node_assignment = std::make_unique<NodeSingleAssignment>(
 			node_nd_array_ref->clone(),
 			std::move(node_value_ref),
 			Token()
 		);
-		auto node_inc = std::make_unique<NodeFunctionCall>(
-			false,
-			std::make_unique<NodeFunctionHeader>(
-				"inc",
-				std::make_unique<NodeParamList>(Token(), node_iterator_ref->clone()), Token()),
-			Token()
-		);
-
-		node_while_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), Token()));
-		node_while_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_inc), Token()));
+		node_for_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), Token()));
 
 		auto node_dim_const = std::make_unique<NodeVariableRef>(node_nd_array_ref->name + ".SIZE_D" + std::to_string(wildcard_dims.first+1), Token());
 		node_dim_const->kind = NodeReference::Compiler;
-		auto node_while = std::make_unique<NodeWhile>(
-			std::make_unique<NodeBinaryExpr>(
-				token::LESS_THAN,
-				node_iterator_ref->clone(),
-				std::move(node_dim_const),
-				Token()
-			),
-			std::move(node_while_body),
+		auto node_for = std::make_unique<NodeFor>(
+			std::make_unique<NodeSingleAssignment>(node_iterator_ref->clone(), std::make_unique<NodeInt>(0, Token()), Token()),
+			token::TO,
+			std::move(node_dim_const),
+			std::move(node_for_body),
 			Token()
 		);
+
 		auto node_block = std::make_unique<NodeBlock>( Token());
 		node_block->scope = true;
-		auto node_decl = std::make_unique<NodeSingleDeclaration>(
-			std::move(node_iterator),
-			std::make_unique<NodeInt>(0, Token()),
-			Token()
-		);
+		auto node_decl = std::make_unique<NodeSingleDeclaration>(std::move(node_iterator), nullptr, Token());
 		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_decl), Token()));
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_while), Token()));
+		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_for), Token()));
 
 		auto node_ndarray = std::make_unique<NodeNDArray>(std::nullopt,
 														"ndarray",

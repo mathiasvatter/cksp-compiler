@@ -81,7 +81,8 @@ end function
 
 function ndarray.init.Integer.2.1.1(_ndarray : int[], value : int, loc_6 : int)
 	loc_6 := 0
-	while(loc_6 < ndarray.SIZE_D2) 
+	loc_6 := 0
+	while(loc_6 <= ndarray.SIZE_D2) 
 		_ndarray[(0 * ndarray.SIZE_D2) + loc_6] := value
 		inc(loc_6)
 	end while

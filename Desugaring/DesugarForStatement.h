@@ -38,7 +38,7 @@ public:
         if(!node.step) {
             // function call
             std::string function_name = "inc";
-            if (node.to.type == token::DOWNTO) function_name = "dec";
+            if (node.to == token::DOWNTO) function_name = "dec";
 
             auto node_inc = std::make_unique<NodeFunctionCall>(
                     false,
@@ -66,7 +66,7 @@ public:
 
         // handle while condition
         token comparison_op = token::LESS_EQUAL;
-        if(node.to.type == token::DOWNTO) comparison_op = token::GREATER_EQUAL;
+        if(node.to == token::DOWNTO) comparison_op = token::GREATER_EQUAL;
         // make comparison expression
         auto comparison = std::make_unique<NodeBinaryExpr>(
                 comparison_op,

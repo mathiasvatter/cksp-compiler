@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Tue Jul 02 15:32:47 2024 }
+{ Compiled with cksp version 0.0.5 on Tue Jul 02 17:15:14 2024 }
 on init
   declare ui_slider $sli (1, 500)
   set_control_par_str(get_ui_id($sli), $CONTROL_PAR_TEXT, "sdfkj")
@@ -15,7 +15,8 @@ on init
   %_nda[7] := 8
   declare $loc_8
   $loc_8 := 0
-  while($loc_8 < $ndarray__SIZE_D2) 
+  $loc_8 := 0
+  while($loc_8 <= $ndarray__SIZE_D2) 
     %_nda[(0 * $ndarray__SIZE_D2) + $loc_8] := 0
     inc($loc_8)
   end while

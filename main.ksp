@@ -20,7 +20,6 @@ on init
 
 	// declare lists[5]: List[] := (nil)
 
-
 	declare ui_slider sli(1,500)
 	sli->text := "sdfkj"
 	declare a: string
@@ -29,6 +28,7 @@ on init
 	nda := ((1,2,3,4),(5,6,7,8))
 	nda[0, *] := (0)
 	nda[*, 3] := (1,2,6)
+	
 	// message(ndarray[0,0,0])
 	
 	declare nda2[4,5,5]
