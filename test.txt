@@ -1,10 +1,18 @@
-{ Compiled with cksp version 0.0.5 on Mon Jul 01 21:44:50 2024 }
+{ Compiled with cksp version 0.0.5 on Tue Jul 02 15:32:47 2024 }
 on init
   declare ui_slider $sli (1, 500)
-  set_control_par_str(get_ui_id(get_ui_id(get_ui_id($sli))), $CONTROL_PAR_TEXT, "sdfkj")
+  set_control_par_str(get_ui_id($sli), $CONTROL_PAR_TEXT, "sdfkj")
   declare @a
   @a := get_control_par_str(get_ui_id($sli), $CONTROL_PAR_TEXT) * 3
   declare %_nda[8] := (1, 2, 3, 4, 5, 6, 7, 8)
+  %_nda[0] := 1
+  %_nda[1] := 2
+  %_nda[2] := 3
+  %_nda[3] := 4
+  %_nda[4] := 5
+  %_nda[5] := 6
+  %_nda[6] := 7
+  %_nda[7] := 8
   declare $loc_8
   $loc_8 := 0
   while($loc_8 < $ndarray__SIZE_D2) 
@@ -14,6 +22,12 @@ on init
   %_nda[3] := 1
   %_nda[7] := 2
   %_nda[11] := 6
+  declare %_nda2[100]
+  %_nda2[25] := 2
+  %_nda2[26] := 3
+  %_nda2[27] := 4
+  %_nda2[28] := 5
+  %_nda2[29] := 6
   declare %loc_9[5]
   declare $loc_10
   declare $loc_11

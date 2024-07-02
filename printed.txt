@@ -3,17 +3,34 @@ on init
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
 	declare loc_7 : int
 	declare ui_slider sli : int (1, 500)
-	set_control_par_str(get_ui_id(get_ui_id(get_ui_id(sli))), CONTROL_PAR_TEXT, "sdfkj")
+	set_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT, "sdfkj")
 	declare a : string
 	a := get_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT) * 3
 	declare const nda.SIZE_D1 : int := 2
 	declare const nda.SIZE_D2 : int := 4
 	declare _nda[2 * 4] : int[] := (1, 2, 3, 4, 5, 6, 7, 8)
+	_nda[0] := 1
+	_nda[1] := 2
+	_nda[2] := 3
+	_nda[3] := 4
+	_nda[4] := 5
+	_nda[5] := 6
+	_nda[6] := 7
+	_nda[7] := 8
 	declare loc_8 : int
-	ndarray.init.Integer.2.2(_nda, 0, loc_8)
+	ndarray.init.Integer.2.1.1(_nda, 0, loc_8)
 	_nda[(0 * 4) + 3] := 1
 	_nda[(1 * 4) + 3] := 2
 	_nda[(2 * 4) + 3] := 6
+	declare const nda2.SIZE_D1 : int := 4
+	declare const nda2.SIZE_D2 : int := 5
+	declare const nda2.SIZE_D3 : int := 5
+	declare _nda2[4 * (5 * 5)] : int[]
+	_nda2[(1 * (5 * 5)) + 0] := 2
+	_nda2[(1 * (5 * 5)) + 1] := 3
+	_nda2[(1 * (5 * 5)) + 2] := 4
+	_nda2[(1 * (5 * 5)) + 3] := 5
+	_nda2[(1 * (5 * 5)) + 4] := 6
 	declare const colorz.a : int := 0 + 0
 	declare const colorz.b : int := 0 + (0 + 1)
 	declare colorz[2] : int[] := (0 + 0, 0 + (0 + 1))
@@ -62,7 +79,7 @@ function ndarray_func(_ndarray : int[])
 	message(_ndarray[(0 * ndarray.SIZE_D2) + 0])
 end function
 
-function ndarray.init.Integer.2.2(_ndarray : int[], value : int, loc_6 : int)
+function ndarray.init.Integer.2.1.1(_ndarray : int[], value : int, loc_6 : int)
 	loc_6 := 0
 	while(loc_6 < ndarray.SIZE_D2) 
 		_ndarray[(0 * ndarray.SIZE_D2) + loc_6] := value
