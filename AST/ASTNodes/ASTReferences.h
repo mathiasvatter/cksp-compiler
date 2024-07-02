@@ -73,6 +73,7 @@ struct NodeNDArrayRef : NodeReference {
 		return name;
 	}
     ASTLowering* get_lowering(NodeProgram *program) const override;
+	std::unique_ptr<NodeArrayRef> to_array_ref(NodeAST* index) override;
 
 };
 

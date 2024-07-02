@@ -77,6 +77,10 @@ ASTLowering* NodeNDArrayRef::get_lowering(NodeProgram *program) const {
     return &lowering;
 }
 
+std::unique_ptr<NodeArrayRef> NodeNDArrayRef::to_array_ref(NodeAST* index) {
+	return std::make_unique<NodeArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, index->clone()) : nullptr, tok);
+}
+
 // ************* NodeListRef ***************
 void NodeListRef::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);

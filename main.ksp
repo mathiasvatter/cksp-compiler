@@ -26,9 +26,14 @@ on init
 	declare a: string
 	a := sli->text * 3
 	declare nda[2,4] := ((1,2,3,4),(5,6,7,8))
+	nda := ((1,2,3,4),(5,6,7,8))
 	nda[0, *] := (0)
 	nda[*, 3] := (1,2,6)
 	// message(ndarray[0,0,0])
+	
+	declare nda2[4,5,5]
+	nda2[1,*,*] := (2,3,4,5,6)
+
 
 	const colorz
 		a

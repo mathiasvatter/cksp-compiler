@@ -294,6 +294,24 @@ struct NodeParamList: NodeAST {
 		param->parent = this;
 		params.push_back(std::move(param));
 	}
+	// Funktion zum Abflachen der Parameterliste
+	void flatten_params() {
+		std::vector<std::unique_ptr<NodeAST>> flat_list;
+		// Rekursive Funktion, um die Parameterliste abzuflachen
+		std::function<void(std::vector<std::unique_ptr<NodeAST>>)> flatten = [&](std::vector<std::unique_ptr<NodeAST>> current_node) {
+		  for (auto& param : current_node) {
+			  if (param->get_node_type() == NodeType::ParamList) {
+				  flatten(std::move(static_cast<NodeParamList*>(param.get())->params));
+			  } else {
+				  // Wenn es kein NodeParamList ist, fügen wir es direkt zur Liste hinzu
+				  param->parent = this;
+				  flat_list.push_back(std::move(param));
+			  }
+		  }
+		};
+		flatten(std::move(params));
+		params = std::move(flat_list);
+	}
 };
 
 struct NodeUnaryExpr : NodeAST {
