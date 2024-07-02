@@ -17,6 +17,7 @@ declare ndarray2[3, 3, 3]
 ndarray2[0, *, *] := ((1,2,3), (1,2,3))
 ndarray2 := (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)
 
+ndarray_init(((1,2,3),(1,2,3)))
 function ndarray_assign(v: int[][])
     ndarray := v
 end function
@@ -56,11 +57,10 @@ ndarray[2, 2] := 6
 ndarray.init.Integer.2.1(ndarray, -1)
 // function ndarray.init.<type>.<num_dimensions>.<dimension>(ndarray: type[][], value: type)
 function ndarray.init.Integer.2.1(ndarray: int[][], value: type)
-    declare local _iter: int := 0
-    while (_iter < ndarray.SIZE_D1)
-        ndarray[_iter, 2] := 0
-        inc(_iter)
-    end while
+    declare local _iter: int
+    for _iter := 0 to ndarray.SIZE_D1-1
+        ndarray[_iter, 2] := value
+    end for
 end function
 
 
@@ -74,3 +74,20 @@ _ndarray2[0*3*3 + 1] := 2
 _ndarray2[0*3*3 + 2] := 3
 _ndarray2[1*3*3 + 3] := 1 //...
 
+
+declare local _ndarray_[2,3] := ((1,2,3),(1,2,3))
+ndarray_init(_ndarray_)
+
+function ndarray_assign(v: int[][])
+    ndarray.copy.Integer.2.2(ndarray, v)
+end function
+
+// function ndarray.copy.<type>.<num_dimensions>.<num_wildcards>(ndarray: type[][], v: type[][])
+function ndarray.copy.Integer.2.2(ndarray: int[][], v: int[][])
+    declare local _iter1: int, local _iter2: int
+    for _iter1 := 0 to ndarray.SIZE_D1
+        for _iter2 := 0 to ndarray.SIZE_D2
+            ndarray[_iter1, _iter2] := v[_iter1, _iter2]
+        end for
+    end for
+end function
