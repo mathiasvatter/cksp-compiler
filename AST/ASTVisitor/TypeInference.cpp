@@ -166,8 +166,14 @@ void TypeInference::visit(NodeNDArrayRef& node) {
             if(!node.ty) throw_composite_error(&node).exit();
         }
     } else {
+		auto num_wildcards = node.num_wildcards();
+		// not handed over as array element
+		if(num_wildcards > 0) {
+			node.ty = TypeRegistry::get_composite_type(CompoundKind::Array, node.ty->get_element_type(), num_wildcards);
         // handed over as array element -> set to element type
-        if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
+		} else {
+        	if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
+		}
     }
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);

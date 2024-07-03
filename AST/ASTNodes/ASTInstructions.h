@@ -322,11 +322,17 @@ struct NodeGetControl : NodeInstruction {
 struct NodeBlock : NodeInstruction {
     bool scope = false;
     std::vector<std::unique_ptr<NodeStatement>> statements;
-    inline explicit NodeBlock(Token tok) : NodeInstruction(NodeType::Block, std::move(tok)) {}
+    inline explicit NodeBlock(Token tok, bool scope=false) : NodeInstruction(NodeType::Block, std::move(tok)), scope(scope) {}
     inline NodeBlock(std::vector<std::unique_ptr<NodeStatement>> statements, Token tok)
             : NodeInstruction(NodeType::Block, std::move(tok)), statements(std::move(statements)) {
         set_child_parents();
     }
+	// Variadischer Template-Konstruktor
+	template<typename... Statements>
+	inline explicit NodeBlock(Token tok, Statements&&... statements) : NodeInstruction(NodeType::Block, std::move(tok)) {
+		(statements.push_back(std::move(statements)), ...);
+		set_child_parents();
+	}
     void accept(ASTVisitor& visitor) override;
     NodeBlock(const NodeBlock& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
@@ -373,6 +379,9 @@ struct NodeBlock : NodeInstruction {
 		}
 		return false;
 	}
+	void wrap_in_loop_nest(std::vector<std::unique_ptr<NodeDataStructure>> iterators,
+						   std::vector<std::unique_ptr<NodeAST>> lower_bounds,
+						   std::vector<std::unique_ptr<NodeAST>> upper_bounds);
 };
 
 struct NodeFamily : NodeInstruction {

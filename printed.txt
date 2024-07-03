@@ -1,7 +1,7 @@
 on init
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
-	declare loc_7 : int
+	declare loc_9 : int
 	declare ui_slider sli : int (1, 500)
 	set_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT, "sdfkj")
 	declare a : string
@@ -17,8 +17,8 @@ on init
 	_nda[5] := 6
 	_nda[6] := 7
 	_nda[7] := 8
-	declare loc_8 : int
-	ndarray.init.Integer.2.1.1(_nda, 0, loc_8)
+	declare loc_10 : int
+	ndarray.init.Integer.2.1.1(_nda, 0, loc_10)
 	_nda[(0 * 4) + 3] := 1
 	_nda[(1 * 4) + 3] := 2
 	_nda[(2 * 4) + 3] := 6
@@ -31,23 +31,26 @@ on init
 	_nda2[(1 * (5 * 5)) + 2] := 4
 	_nda2[(1 * (5 * 5)) + 3] := 5
 	_nda2[(1 * (5 * 5)) + 4] := 6
+	declare loc_11 : int
+	ndarray.init.Integer.3.1.2(_nda2, 0, loc_10, loc_11)
+	declare arr[4] : int[]
+	_nda[(0 * 4) + ] := arr
 	declare const colorz.a : int := 0 + 0
 	declare const colorz.b : int := 0 + (0 + 1)
 	declare colorz[2] : int[] := (0 + 0, 0 + (0 + 1))
 	declare const colorz.SIZE : int := 3
-	declare loc_9[5] : int[]
-	declare loc_10 : int
-	declare loc_11 : int
-	declare loc_12 : string
-	declare loc_13[4] : int[]
-	scoped_func1(loc_8, loc_9, loc_10, loc_11, loc_12, loc_13)
-	scoped_func1(loc_8, loc_9, loc_11, loc_10, loc_12, loc_13)
+	declare loc_12[5] : int[]
+	declare loc_13 : int
+	declare loc_14 : string
+	declare loc_15[4] : int[]
+	scoped_func1(loc_10, loc_12, loc_11, loc_13, loc_14, loc_15)
+	scoped_func1(loc_10, loc_12, loc_11, loc_13, loc_14, loc_15)
 end on
 
 on persistence_changed
-	loc_8 := 0
-	array.init.Integer(loc_9, loc_8, 0)
-	scoped_func1(loc_8, loc_9, loc_11, loc_10, loc_12, loc_13)
+	loc_10 := 0
+	array.init.Integer(loc_12, loc_10, 0)
+	scoped_func1(loc_10, loc_12, loc_11, loc_13, loc_14, loc_15)
 end on
 
 function scoped_func2(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int)
@@ -82,9 +85,23 @@ end function
 function ndarray.init.Integer.2.1.1(_ndarray : int[], value : int, loc_6 : int)
 	loc_6 := 0
 	loc_6 := 0
-	while(loc_6 <= ndarray.SIZE_D2) 
+	while(loc_6 <= (ndarray.SIZE_D1 - 1)) 
 		_ndarray[(0 * ndarray.SIZE_D2) + loc_6] := value
 		inc(loc_6)
+	end while
+end function
+
+function ndarray.init.Integer.3.1.2(_ndarray : int[], value : int, loc_7 : int, loc_8 : int)
+	loc_7 := 0
+	loc_8 := 0
+	loc_8 := 0
+	while(loc_8 <= (ndarray.SIZE_D1 - 1)) 
+		loc_7 := 0
+		while(loc_7 <= (ndarray.SIZE_D2 - 1)) 
+			_ndarray[(1 * (ndarray.SIZE_D2 * ndarray.SIZE_D3)) + ((loc_8 * ndarray.SIZE_D3) + loc_7)] := value
+			inc(loc_7)
+		end while
+		inc(loc_8)
 	end while
 end function
 
