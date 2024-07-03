@@ -33,7 +33,10 @@ on init
 	
 	declare nda2[4,5,5]
 	nda2[1,*,*] := (2,3,4,5,6)
+	nda2[1,*,*] := (0)
 
+	declare arr[4]
+	nda[0, *] := arr
 
 	const colorz
 		a

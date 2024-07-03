@@ -75,6 +75,13 @@ struct NodeNDArrayRef : NodeReference {
     ASTLowering* get_lowering(NodeProgram *program) const override;
 	std::unique_ptr<NodeArrayRef> to_array_ref(NodeAST* index) override;
 
+	inline int num_wildcards() const {
+		int count = 0;
+		if(indexes) {
+			for(auto & idx: indexes->params) if(idx->get_node_type() == NodeType::Wildcard) count++;
+		}
+		return count;
+	}
 };
 
 struct NodeListRef : NodeReference {

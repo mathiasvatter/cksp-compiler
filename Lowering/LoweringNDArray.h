@@ -36,12 +36,27 @@ public:
 			// case ndarray[2, *] := (0)
 			if(param_list->params.size() == 1) {
 				add_ndarray_init_function_def(m_program, nd_array_ref, wildcard_dims);
-				lowered_node = node.replace_with(get_ndarray_init_function_call(nd_array_ref, param_list->params.at(0).get(), wildcard_dims));
+				lowered_node = node.replace_with(get_ndarray_function_call(nd_array_ref,
+																		   param_list->params.at(0).get(),
+																		   wildcard_dims, "init"));
 				lowered_node->accept(*this);
 				return;
 			// ndarray[2, *] := (2,3,4)
 			} else if (param_list->params.size() > 1) {
 				lowered_node = node.replace_with(get_array_init_from_list(nd_array_ref, param_list, wildcard_dims));
+				lowered_node->accept(*this);
+				return;
+			}
+		// copying ndarrays to part of ndarrays -> copying over ndarrays where both have no indexes is handled by lowering array
+		// nd1[5, *, *]: int[][] := nd2: int[][]
+		} else if(node.l_value->get_node_type() == NodeType::NDArrayRef and node.r_value->get_node_type() == NodeType::NDArrayRef) {
+			auto nd_array_ref = static_cast<NodeNDArrayRef *>(node.l_value.get());
+			auto nd_array_copy = static_cast<NodeNDArrayRef *>(node.r_value.get());
+			if(nd_array_ref->num_wildcards() > 0) {
+				// get wildcard dimensions
+				auto wildcard_dims = get_wildcard_dimensions(nd_array_ref);
+				add_ndarray_copy_function_def(m_program, nd_array_ref, wildcard_dims);
+				lowered_node = node.replace_with(get_ndarray_function_call(nd_array_ref, nd_array_copy, wildcard_dims, "copy"));
 				lowered_node->accept(*this);
 				return;
 			}
@@ -210,9 +225,9 @@ private:
 		return {wildcard_start, wildcard_end};
 	}
 
-	/// ndarray.init.<type>.<num_dimensions>.<dimension>(ndarray: type[][], value: type)
-	static inline std::unique_ptr<NodeFunctionCall> get_ndarray_init_function_call(NodeNDArrayRef* node, NodeAST* value, std::pair<int,int> wildcard_dims) {
-		std::string func_name = "ndarray.init." + node->ty->get_element_type()->to_string() + "." + std::to_string(node->sizes->params.size()) + "." + std::to_string(wildcard_dims.first) + "." + std::to_string(wildcard_dims.second);
+	/// ndarray.<init|copy>.<type>.<num_dimensions>.<dimension>(ndarray: type[][], value: type)
+	static inline std::unique_ptr<NodeFunctionCall> get_ndarray_function_call(NodeNDArrayRef* node, NodeAST* value, std::pair<int, int> wildcard_dims, std::string instruction) {
+		std::string func_name = "ndarray."+instruction+"." + node->ty->get_element_type()->to_string() + "." + std::to_string(node->sizes->params.size()) + "." + std::to_string(wildcard_dims.first) + "." + std::to_string(wildcard_dims.second);
 		// node ref without indexes
 		auto node_ndarray_ref = clone_as<NodeNDArrayRef>(node);
 		node_ndarray_ref->indexes = nullptr;
@@ -236,79 +251,160 @@ private:
 	 * Pre Lowering:
 	 * ndarray[2, *] := (0)        // ndarray := ((1,2,3), (0,0,0), (7,8,9))
 	 * Post Lowering:
-	 * // function ndarray.init.<type>.<num_dimensions>.<dimension>()
-	 * function ndarray.init.Integer.2.1(ndarray: int[][], value: type)
-	 * 	declare local _iter: int := 0
-	 * 		while (_iter < ndarray.SIZE_D2)
-	 * 			ndarray[2, _iter] := 0
-	 * 			inc(_iter)
-	 * 		end while
+ 	 * // function ndarray.init.<type>.<num_dimensions>.<start_dim>.<end_dim>(ndarray: type[][], value: type)
+	 * function ndarray.init.Integer.2.1.1(ndarray: int[][], value: type)
+	 * 	declare local _iter: int
+	 * 	for _iter := 0 to ndarray.SIZE_D1-1
+	 * 		ndarray[_iter, 2] := value
+	 * 	end for
 	 * end function
 	 */
 	inline bool add_ndarray_init_function_def(NodeProgram* program, NodeNDArrayRef* node, std::pair<int, int> wildcard_dims) {
 		std::string func_name = "ndarray.init." + node->ty->get_element_type()->to_string() + "." + std::to_string(node->sizes->params.size()) + "." + std::to_string(wildcard_dims.first) + "." + std::to_string(wildcard_dims.second);
 		// check if function with this type already exists
-		auto it = program->function_lookup.find({func_name, 3});
-		if(it != program->function_lookup.end()) {
+		if(program->function_lookup.find({func_name, 2}) != program->function_lookup.end()) {
 			return false;
 		}
 		auto node_nd_array_ref = clone_as<NodeNDArrayRef>(node);
 		node_nd_array_ref->name = "ndarray";
 		node_nd_array_ref->sizes = nullptr;
-		auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, Token());
-		node_iterator->is_local = true;
-		auto node_value = std::make_unique<NodeVariable>(std::nullopt, "value", node->ty->get_element_type(), DataType::Mutable, Token());
-		auto node_value_ref = node_value->to_reference();
-		auto node_iterator_ref = node_iterator->to_reference();
-		for(auto & idx : node_nd_array_ref->indexes->params) {
-			if(idx->get_node_type() == NodeType::Wildcard) {
-				idx = std::move(node_iterator_ref->clone());
+		// holds all iterators per wildcard
+		std::vector<std::unique_ptr<NodeDataStructure>> iterators; int count = 1;
+		std::vector<std::unique_ptr<NodeAST>> lower_bounds;
+		std::vector<std::unique_ptr<NodeAST>> upper_bounds;
+		for(auto & param : node_nd_array_ref->indexes->params) {
+			if(param->get_node_type() == NodeType::Wildcard) {
+				auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter"+std::to_string(count), TypeRegistry::Integer, DataType::Mutable, Token());
+				node_iterator->is_local = true;
+				param = node_iterator->to_reference();
+				iterators.push_back(std::move(node_iterator));
+				auto node_upper_bound = std::make_unique<NodeVariableRef>(node_nd_array_ref->name + ".SIZE_D" + std::to_string(count), Token());
+				node_upper_bound->kind = NodeReference::Compiler;
+				upper_bounds.push_back(std::move(node_upper_bound));
+				lower_bounds.push_back(std::make_unique<NodeInt>(0, Token()));
+				count++;
 			}
 		}
 		node_nd_array_ref->indexes->set_child_parents();
+
+		auto node_value = std::make_unique<NodeVariable>(std::nullopt, "value", node->ty->get_element_type(), DataType::Mutable, Token());
+		auto node_value_ref = node_value->to_reference();
 		// create for loop
-		auto node_for_body = std::make_unique<NodeBlock>(Token());
-		node_for_body->scope = true;
+		auto node_body = std::make_unique<NodeBlock>(Token(), true);
 		auto node_assignment = std::make_unique<NodeSingleAssignment>(
 			node_nd_array_ref->clone(),
 			std::move(node_value_ref),
 			Token()
 		);
-		node_for_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), Token()));
-
-		auto node_dim_const = std::make_unique<NodeVariableRef>(node_nd_array_ref->name + ".SIZE_D" + std::to_string(wildcard_dims.first+1), Token());
-		node_dim_const->kind = NodeReference::Compiler;
-		auto node_for = std::make_unique<NodeFor>(
-			std::make_unique<NodeSingleAssignment>(node_iterator_ref->clone(), std::make_unique<NodeInt>(0, Token()), Token()),
-			token::TO,
-			std::move(node_dim_const),
-			std::move(node_for_body),
-			Token()
-		);
-
-		auto node_block = std::make_unique<NodeBlock>( Token());
-		node_block->scope = true;
-		auto node_decl = std::make_unique<NodeSingleDeclaration>(std::move(node_iterator), nullptr, Token());
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_decl), Token()));
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_for), Token()));
-
+		node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), Token()));
+		node_body->wrap_in_loop_nest(std::move(iterators), std::move(lower_bounds), std::move(upper_bounds));
 		auto node_ndarray = std::make_unique<NodeNDArray>(std::nullopt,
-														"ndarray",
-														TypeRegistry::add_composite_type(CompoundKind::Array, node->ty->get_element_type(), (int)node->sizes->params.size()),
-														nullptr, Token()
-													);
+														  "ndarray",
+														  TypeRegistry::add_composite_type(CompoundKind::Array, node->ty->get_element_type(), (int)node->sizes->params.size()),
+														  nullptr, Token()
+		);
 		// make function definition
 		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
 				std::make_unique<NodeParamList>(Token(), std::move(node_ndarray), std::move(node_value)),
 				Token()
-				),
-				std::nullopt,
-				false,
-				std::move(node_block),
+			),
+			std::nullopt,
+			false,
+			std::move(node_body),
+			Token()
+		);
+
+		// lower nd arrays to arrays
+		node_function_def->accept(*this);
+		program->additional_function_definitions.push_back(std::move(node_function_def));
+		// update function lookup so that the new function can be found
+		program->update_function_lookup();
+		return true;
+	}
+
+
+	/**
+	 * Pre Lowering:
+	 * ndarray[2, *] := v        // ndarray := ((1,2,3), (0,0,0), (7,8,9))
+	 * Post Lowering:
+ 	 * // function ndarray.copy.<type>.<num_dimensions>.<start_dim>.<end_dim>(ndarray: type[][], v: type[][])
+	 * function ndarray.copy.Integer.2.1.2(ndarray: int[][], to_copy: int[][])
+	 * 	declare local _iter1: int, local _iter2: int
+	 * 	for _iter1 := 0 to ndarray.SIZE_D1-1
+	 * 		for _iter2 := 0 to ndarray.SIZE_D2-1
+	 * 			ndarray[_iter1, _iter2] := to_copy[_iter1, _iter2]
+	 * 		end for
+	 * 	end for
+	 * end function
+	 */
+	inline bool add_ndarray_copy_function_def(NodeProgram* program, NodeNDArrayRef* node, std::pair<int, int> wildcard_dims) {
+		std::string func_name = "ndarray.copy." + node->ty->get_element_type()->to_string() + "." + std::to_string(node->sizes->params.size()) + "." + std::to_string(wildcard_dims.first) + "." + std::to_string(wildcard_dims.second);
+		// check if function with this type already exists
+		if(program->function_lookup.find({func_name, 2}) != program->function_lookup.end()) {
+			return false;
+		}
+		auto node_nd_array_ref = clone_as<NodeNDArrayRef>(node);
+		node_nd_array_ref->name = "ndarray"; node_nd_array_ref->sizes = nullptr;
+		// holds all iterators per wildcard
+		std::vector<std::unique_ptr<NodeDataStructure>> iterators; int count = 1;
+		std::vector<std::unique_ptr<NodeAST>> lower_bounds;
+		std::vector<std::unique_ptr<NodeAST>> upper_bounds;
+		for(auto & param : node_nd_array_ref->indexes->params) {
+			if(param->get_node_type() == NodeType::Wildcard) {
+				auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter"+std::to_string(count), TypeRegistry::Integer, DataType::Mutable, Token());
+				node_iterator->is_local = true;
+				param = node_iterator->to_reference();
+				iterators.push_back(std::move(node_iterator));
+				auto node_upper_bound = std::make_unique<NodeVariableRef>(node_nd_array_ref->name + ".SIZE_D" + std::to_string(count), Token());
+				node_upper_bound->kind = NodeReference::Compiler;
+				upper_bounds.push_back(std::move(node_upper_bound));
+				lower_bounds.push_back(std::make_unique<NodeInt>(0, Token()));
+				count++;
+			}
+		}
+		node_nd_array_ref->indexes->set_child_parents();
+
+		auto node_nd_array_copy = std::make_unique<NodeNDArray>(std::nullopt,
+														  "to_copy",
+														  TypeRegistry::add_composite_type(CompoundKind::Array, node->ty->get_element_type(), (int)iterators.size()),
+														  nullptr, Token()
+		);
+		auto node_nd_array_copy_ref = node_nd_array_copy->to_reference();
+		auto to_copy_ref = static_cast<NodeNDArrayRef*>(node_nd_array_copy_ref.get());
+		// get indexes of to_copy -> to_copy[_iter1, _iter2]
+		to_copy_ref->indexes = std::make_unique<NodeParamList>(to_copy_ref->tok);
+		for(auto & iterator : iterators) {
+			to_copy_ref->indexes->add_param(iterator->to_reference());
+		}
+
+		// create for loop
+		auto node_body = std::make_unique<NodeBlock>(Token(), true);
+		auto node_assignment = std::make_unique<NodeSingleAssignment>(
+			node_nd_array_ref->clone(),
+			std::move(node_nd_array_copy_ref),
+			Token()
+		);
+		node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), Token()));
+		node_body->wrap_in_loop_nest(std::move(iterators), std::move(lower_bounds), std::move(upper_bounds));
+		auto node_ndarray = std::make_unique<NodeNDArray>(std::nullopt,
+														  "ndarray",
+														  TypeRegistry::add_composite_type(CompoundKind::Array, node->ty->get_element_type(), (int)node->sizes->params.size()),
+														  nullptr, Token()
+											);
+		// make function definition
+		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
+			std::make_unique<NodeFunctionHeader>(
+				func_name,
+				std::make_unique<NodeParamList>(Token(), std::move(node_ndarray), std::move(node_nd_array_copy)),
 				Token()
-			);
+			),
+			std::nullopt,
+			false,
+			std::move(node_body),
+			Token()
+		);
 
 		// lower nd arrays to arrays
 		node_function_def->accept(*this);
