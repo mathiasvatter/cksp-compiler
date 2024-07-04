@@ -499,8 +499,13 @@ Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* 
 }
 
 Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* parent) {
-	consume(); // consume return keyword
+	auto ret_tok = consume(); // consume return keyword
+	auto error = CompileError(ErrorType::SyntaxError, "", "", ret_tok);
 	auto node_return_statement = std::make_unique<NodeReturn>(get_tok());
+	if(peek().type == token::ASSIGN) {
+		error.m_message = "The <return> keyword is reserved for <Return> Statement within function definitions. Consider using a different name.";
+		error.exit();
+	}
 	while(peek().type != token::LINEBRK) {
 		auto expr_result = parse_expression(node_return_statement.get());
 		if(expr_result.is_error()) {
@@ -509,6 +514,11 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 		node_return_statement->return_variables.push_back(std::move(expr_result.unwrap()));
 		if(peek().type == token::COMMA) consume();
 	}
+	if(!m_current_function_def) {
+		error.m_message = "Found <Return> Statement outside of function definition.";
+		error.exit();
+	}
+	m_current_function_def->num_return_params = node_return_statement->return_variables.size();
     node_return_statement->set_child_parents();
 	node_return_statement->parent = parent;
 	return Result<std::unique_ptr<NodeReturn>>(std::move(node_return_statement));
@@ -535,7 +545,7 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
     _skip_linebreaks();
     std::unique_ptr<NodeAST> stmt;
     // assign statement
-    if (peek().type == token::KEYWORD || peek().type == token::RETURN || peek().type == token::DECLARE
+    if (peek().type == token::KEYWORD || peek().type == token::DECLARE
 		|| peek().type == token::CALL || peek().type == token::SET_CONDITION || peek().type == token::RESET_CONDITION) {
         if (peek().type == token::DECLARE) {
             auto declare_stmt = parse_declare_statement(node_statement.get());
@@ -908,8 +918,9 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     auto error = CompileError(ErrorType::ParseError,"", "", peek());
     consume(); //consume "function"
     auto node_function_definition = std::make_unique<NodeFunctionDefinition>(get_tok());
+	m_current_function_def = node_function_definition.get();
     std::unique_ptr<NodeFunctionHeader> func_header;
-    std::optional<std::unique_ptr<NodeParamList>> func_return_var;
+    std::optional<std::unique_ptr<NodeDataStructure>> func_return_var;
     auto func_body = std::make_unique<NodeBlock>(get_tok());
     bool func_override = false;
     if (peek().type != token::KEYWORD) {
@@ -934,12 +945,12 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
                 Result<std::unique_ptr<NodeFunctionDefinition>>(return_vars.get_error());
             }
             auto return_var = std::move(return_vars.unwrap()->variable);
-            auto return_var_list = std::make_unique<NodeParamList>(get_tok());
-            for(auto & var : return_var) {
-                var->parent = return_var_list.get();
-                return_var_list->params.push_back(std::move(var));
-            }
-            func_return_var = std::move(return_var_list);
+			if(return_var.size() > 1) {
+				error.m_message = "Only on return variable allowed. Use <Return> Statement to return multiple values.";
+				error.exit();
+			}
+			m_current_function_def->num_return_params = 1;
+            func_return_var = std::move(return_var[0]);
         } else {
             error.m_message = "Missing return variable after ->";
             error.m_expected = "<return variable>";
@@ -973,6 +984,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     node_function_definition->body = std::move(func_body);
     node_function_definition->set_child_parents();
     node_function_definition->parent = parent;
+	m_current_function_def = nullptr;
     return Result<std::unique_ptr<NodeFunctionDefinition>>(std::move(node_function_definition));
 }
 

@@ -290,7 +290,7 @@ private:
 				),
 				Token()
 			),
-			std::optional(std::make_unique<NodeParamList>(Token(),  std::move(result))),
+			std::optional(std::move(result)),
 			false,
 			std::make_unique<NodeBlock>(Token()),
 			Token()

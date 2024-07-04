@@ -452,15 +452,16 @@ struct NodeFunctionDefinition: NodeAST {
     bool is_used = false;
     bool is_compiled = false;
 	bool visited = false;
+	int num_return_params = 0;
     std::set<class NodeFunctionCall*> call_sites = {};
     std::set<NodeCallback*> callback_sites = {};
     std::unique_ptr<NodeFunctionHeader> header;
-    std::optional<std::unique_ptr<NodeParamList>> return_variable;
+    std::optional<std::unique_ptr<NodeDataStructure>> return_variable;
     bool override = false;
     std::unique_ptr<NodeBlock> body;
     explicit NodeFunctionDefinition(Token tok);
     NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
-						   std::optional<std::unique_ptr<NodeParamList>> returnVariable, bool override,
+						   std::optional<std::unique_ptr<NodeDataStructure>> returnVariable, bool override,
 						   std::unique_ptr<NodeBlock> body, Token tok);
     ~NodeFunctionDefinition();
     void accept(ASTVisitor& visitor) override;
@@ -473,6 +474,8 @@ struct NodeFunctionDefinition: NodeAST {
         header -> update_token_data(token);
         if(return_variable.has_value()) return_variable.value()->update_token_data(token);
     }
+	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
+	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 };
 
 struct NodeProgram : NodeAST {

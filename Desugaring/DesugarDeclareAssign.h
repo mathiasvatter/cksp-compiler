@@ -16,13 +16,48 @@ public:
     void inline visit(NodeDeclaration& node) override {
         // error handling
         if(node.variable.size() < node.value->params.size()) {
-            auto error = CompileError(ErrorType::SyntaxError,
-                         "", node.tok.line, "", "", node.tok.file);
-            error.m_message = "Found incorrect declare statement syntax. There are more values to assign than to be declared.";
+            auto error = CompileError(ErrorType::SyntaxError,"", node.tok.line, "", "", node.tok.file);
+			error.m_message = "Found incorrect declare statement syntax. There are more values to assign than to be declared.";
             error.m_expected = node.variable.size();
             error.m_got = node.value->params.size();
             error.exit();
         }
+
+		// only permissible if value is function call with multiple return values
+		// declare a, b, c := f(), 0 -> declare a := f(b) + declare b + declare c := 0
+		int num_values = 0;
+		std::vector<std::unique_ptr<NodeSingleDeclaration>> extra_declare_statements;
+		for (int i=0; i<node.value->params.size(); i++) {
+			auto &val = node.value->params[i];
+			if(val->get_node_type() == NodeType::FunctionCall) {
+				auto func_call = static_cast<NodeFunctionCall*>(val.get());
+				func_call->get_definition(m_program);
+				int num_return_params = func_call->definition ? func_call->definition->num_return_params : 1;
+				num_values += num_return_params-1;
+				if(num_return_params > 1 and i+num_values < node.variable.size()) {
+					for (int ii = 1; ii < num_return_params; ii++) {
+						func_call->function->args->add_param(node.variable[i + ii]->to_reference());
+						auto node_single_declare_stmt =
+							std::make_unique<NodeSingleDeclaration>(std::move(node.variable[i + ii]),
+																	nullptr,
+																	node.tok);
+						extra_declare_statements.push_back(std::move(node_single_declare_stmt));
+						node.variable[i + ii] = nullptr;
+					}
+				} else if (i+num_values > node.variable.size()) {
+					auto error = CompileError(ErrorType::SyntaxError,"", node.tok.line, "", "", node.tok.file);
+					error.m_message = "Found incorrect declare statement syntax. Called Function returns more values than variables declared.";
+					error.exit();
+				}
+				i += num_values;
+			} else num_values++;
+		}
+		// delete all nullptr from variables vector
+		node.variable.erase(std::remove(node.variable.begin(), node.variable.end(), nullptr), node.variable.end());
+		auto node_extra_body = std::make_unique<NodeBlock>(node.tok);
+		for(auto &stmt : extra_declare_statements) {
+			node_extra_body->add_stmt(std::make_unique<NodeStatement>(std::move(stmt), stmt->tok));
+		}
 
         std::vector<std::unique_ptr<NodeSingleDeclaration>> declare_statements;
         for(auto &declaration : node.variable) {
@@ -52,6 +87,7 @@ public:
             stmt->set_child_parents();
             node_body->add_stmt(std::make_unique<NodeStatement>(std::move(stmt), node.tok));
         }
+		node_body->prepend_body(std::move(node_extra_body));
         replacement_node = std::move(node_body);
     }
 

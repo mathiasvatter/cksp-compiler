@@ -24,7 +24,7 @@ private:
 		for(auto &stmt : node.statements) {
 			stmt->accept(*this);
 		}
-		node.cleanup_body();
+		node.flatten_body();
 	}
 
 	inline void visit(NodeCallback& node) override {

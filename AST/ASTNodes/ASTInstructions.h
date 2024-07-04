@@ -369,7 +369,7 @@ struct NodeBlock : NodeInstruction {
 		statements.insert(statements.begin(), std::move(stmt));
 	}
     /// puts nested statement list in current one
-    void cleanup_body();
+    void flatten_body();
 	/// returns true if the block is a scope block and sets node.scope
 	inline bool determine_scope() {
 		scope = false;

@@ -331,7 +331,7 @@ NodeStatement* NodeBlock::add_stmt(std::unique_ptr<NodeStatement> stmt) {
 	return statements.back().get();
 }
 
-void NodeBlock::cleanup_body() {
+void NodeBlock::flatten_body() {
     std::vector<std::unique_ptr<NodeStatement>> temp;
     for(auto & statement : statements) {
         if(statement->statement->get_node_type() == NodeType::Block) {

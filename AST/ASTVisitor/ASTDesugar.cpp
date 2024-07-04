@@ -25,7 +25,15 @@ void ASTDesugar::visit(NodeBlock& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
-    node.cleanup_body();
+	node.flatten_body();
+}
+
+void ASTDesugar::visit(NodeFunctionDefinition& node) {
+	node.header->accept(*this);
+	node.body->accept(*this);
+	if(auto desugaring = node.get_desugaring(m_program)) {
+		node.accept(*desugaring);
+	}
 }
 
 void ASTDesugar::visit(NodeDeclaration& node) {

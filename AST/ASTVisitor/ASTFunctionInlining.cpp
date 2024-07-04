@@ -336,7 +336,7 @@ void ASTFunctionInlining::visit(NodeBlock& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
-    if(!node.scope) node.cleanup_body();
+    if(!node.scope) node.flatten_body();
 }
 
 void ASTFunctionInlining::visit(NodeUIControl &node) {

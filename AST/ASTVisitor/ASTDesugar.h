@@ -19,7 +19,7 @@
  */
 class ASTDesugar: public ASTVisitor {
     void visit(NodeProgram& node) override;
-
+	void visit(NodeFunctionDefinition& node) override;
     /// desugar into single declare statements
     void visit(NodeDeclaration& node) override;
     void visit(NodeSingleDeclaration& node) override;

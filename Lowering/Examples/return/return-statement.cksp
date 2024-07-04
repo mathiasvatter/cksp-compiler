@@ -3,10 +3,14 @@
 										Pre Lowering
 --------------------------------------------------------------------------------------------}
 
+declare get_sth: int := return_sth();
 function return_sth()
     return 1
 end function
 
+
+declare get_sth: int, get_sth_more: int := return_sth_more();
+// when multiple return variables -> they are promoted to parameters
 function return_sth_more()
     declare x: int := 43
     return 1, x
@@ -16,12 +20,16 @@ end function
                                         Post Lowering
 --------------------------------------------------------------------------------------------}
 
-function return_sth() -> result_0
-    result_0 := 1
-end function
+declare get_sth: int := 1
+// function return_sth()
+//     get_sth := 1
+// end function
 
-function return_sth_more() -> result_0, result_1
+
+
+declare get_sth: int := return_sth_more(get_sth_more);
+function return_sth_more(p: int)
     declare x: int := 43
-    result_0 := 1
-    result_1 := x
+    p := x
+    return 1
 end function
