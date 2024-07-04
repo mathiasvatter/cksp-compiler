@@ -318,9 +318,7 @@ void TypeInference::visit(NodeFunctionDefinition& node) {
     node.body->accept(*this);
     // get possible return type of node.definition by looking at the return param
     if(node.return_variable.has_value())
-        for(auto & return_var : node.return_variable.value()->params)
-            match_type(&node, return_var.get());
-
+		match_type(&node, node.return_variable.value().get());
 }
 
 void TypeInference::visit(NodeBinaryExpr& node) {

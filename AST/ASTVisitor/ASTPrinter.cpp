@@ -20,6 +20,13 @@ void ASTPrinter::visit(NodeNil &node) {
 	os << node.value;
 }
 
+void ASTPrinter::visit(NodeReturn& node) {
+	os << "return ";
+	for(auto &ret : node.return_variables) {
+		ret->accept(*this);
+	}
+};
+
 void ASTPrinter::visit(NodeVariable &node) {
     if(node.persistence.has_value())
         os << node.persistence.value().val << " ";
@@ -272,7 +279,7 @@ void ASTPrinter::visit(NodeGetControl &node) {
 }
 
 void ASTPrinter::visit(NodeBlock &node) {
-    node.cleanup_body();
+	node.flatten_body();
     if(node.scope) m_scope_count++;
     for(auto & stmt : node.statements) {
         stmt->accept(*this);

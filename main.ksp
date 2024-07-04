@@ -54,8 +54,13 @@ on init
 
 	scoped_func1()
 	scoped_func1()
-
+	declare b : int, c[5] := ret_sth()
 end on
+
+function ret_sth()
+	declare b[5] := (0)
+	return 1, b
+end function
 
 function ndarray_func(ndarray: int[][])
 	message(ndarray[0,0])

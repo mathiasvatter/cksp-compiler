@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Wed Jul 03 18:07:59 2024 }
+{ Compiled with cksp version 0.0.5 on Thu Jul 04 18:18:32 2024 }
 on init
   declare ui_slider $sli (1, 500)
   set_control_par_str(get_ui_id($sli), $CONTROL_PAR_TEXT, "sdfkj")
@@ -89,6 +89,7 @@ on init
   end if
   %loc_15[0] := 3
   %loc_15[1] := 4
+  declare $c
 end on
 on persistence_changed
   $loc_10 := 0

@@ -45,6 +45,8 @@ on init
 	declare loc_15[4] : int[]
 	scoped_func1(loc_10, loc_12, loc_11, loc_13, loc_14, loc_15)
 	scoped_func1(loc_10, loc_12, loc_11, loc_13, loc_14, loc_15)
+	declare c : int
+	declare b : int := ret_sth(c)
 end on
 
 on persistence_changed
@@ -70,6 +72,10 @@ function scoped_func2(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int)
 	end if
 end function
 
+function ndarray_func(_ndarray : int[])
+	message(_ndarray[(0 * ndarray.SIZE_D2) + 0])
+end function
+
 function scoped_func1(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int, loc_4 : string, loc_5[4] : int[])
 	loc_4 := "sdlkj"
 	message(loc_4)
@@ -78,8 +84,9 @@ function scoped_func1(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int, l
 	loc_5[1] := 4
 end function
 
-function ndarray_func(_ndarray : int[])
-	message(_ndarray[(0 * ndarray.SIZE_D2) + 0])
+function ret_sth(ret0 : int)
+	ret0 := 2
+	return 1
 end function
 
 function ndarray.init.Integer.2.1.1(_ndarray : int[], value : int, loc_6 : int)

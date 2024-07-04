@@ -6,6 +6,7 @@
 #include "AST.h"
 #include "ASTInstructions.h"
 #include "../ASTVisitor/ASTVisitor.h"
+#include "../../Desugaring/DesugarFunctionDef.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(tok),
@@ -351,7 +352,7 @@ std::unique_ptr<NodeAST> NodeFunctionHeader::clone() const {
 // ************* NodeFunctionDefinition ***************
 NodeFunctionDefinition::NodeFunctionDefinition(Token tok) : NodeAST(std::move(tok), NodeType::FunctionDefinition) {}
 NodeFunctionDefinition::NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
-											   std::optional<std::unique_ptr<NodeParamList>> returnVariable,
+											   std::optional<std::unique_ptr<NodeDataStructure>> returnVariable,
 											   bool override, std::unique_ptr<NodeBlock> body, Token tok)
         : NodeAST(std::move(tok), NodeType::FunctionDefinition), header(std::move(header)), return_variable(std::move(returnVariable)), override(override),body(std::move(body)) {
     set_child_parents();
@@ -389,6 +390,14 @@ void NodeFunctionDefinition::set_child_parents() {
     if(return_variable.has_value()) return_variable.value()->parent = this;
 }
 
+ASTDesugaring *NodeFunctionDefinition::get_desugaring(NodeProgram *program) const {
+	static DesugarFunctionDef desugaring(program);
+	return &desugaring;
+}
+
+ASTLowering *NodeFunctionDefinition::get_lowering(NodeProgram *program) const {
+	return nullptr;
+}
 
 
 // ************* NodeProgramm ***************
