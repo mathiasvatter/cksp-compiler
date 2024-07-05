@@ -19,7 +19,7 @@
 #include "misc/CommandLineOptions.h"
 #include "BuiltinsProcessing/DefinitionProvider.h"
 #include "AST/ASTVisitor/ASTCollectLowerings.h"
-#include "AST/ASTVisitor/ASTBuildDataStructures.h"
+#include "AST/ASTVisitor/ASTSemanticAnalysis.h"
 #include "AST/ASTVisitor/ASTVariableChecking.h"
 #include "AST/ASTVisitor/ASTOptimizations.h"
 #include "misc/Timer.h"

@@ -19,10 +19,12 @@
  * - while-statement
  * - function definition
  * - callback
+ * Changes node types of function parameters at call sites regarding the function definition.
+ * Changes node types of incorrectly detected data structures and references.
  */
-class ASTBuildDataStructures: public ASTVisitor {
+class ASTSemanticAnalysis: public ASTVisitor {
 public:
-	explicit ASTBuildDataStructures(DefinitionProvider* definition_provider);
+	explicit ASTSemanticAnalysis(DefinitionProvider* definition_provider);
 
     void visit(NodeProgram& node) override;
 	void visit(NodeCallback& node) override;

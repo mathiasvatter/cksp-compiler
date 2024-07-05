@@ -54,7 +54,7 @@ on init
 
 	scoped_func1()
 	scoped_func1()
-	declare b : int, c[5] := ret_sth()
+	declare b : int, c[6] := ret_sth()
 end on
 
 function ret_sth()
