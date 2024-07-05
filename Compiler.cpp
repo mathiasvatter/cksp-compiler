@@ -99,7 +99,7 @@ void Compiler::compile() {
 	ASTVariableChecking variable_checking0(&m_definition_provider, false);
 	ast->accept(variable_checking0);
 
-	ASTBuildDataStructures data_structures(&m_definition_provider);
+	ASTSemanticAnalysis data_structures(&m_definition_provider);
 	ast->accept(data_structures);
 
 	compile_time.stop("Build Data Structures");
@@ -122,16 +122,16 @@ void Compiler::compile() {
 
 	compile_time.stop("Lowering");
 	compile_time.start("Global Scope");
-
-	ASTGlobalScope global_scope(&m_definition_provider);
-	ast->accept(global_scope);
-
     ASTPrinter printer;
     ast->accept(printer);
     std::filesystem::path current_file_path(__FILE__);
     std::filesystem::path current_dir = current_file_path.parent_path();
     std::filesystem::path printer_output = current_dir / "printed.txt";
     printer.generate(printer_output.string());
+
+	ASTGlobalScope global_scope(&m_definition_provider);
+	ast->accept(global_scope);
+
 
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");

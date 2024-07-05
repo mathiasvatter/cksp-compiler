@@ -40,14 +40,20 @@ public:
 		node.r_value->accept(*this);
 	};
 
-	static inline CompileError throw_shadow_error(NodeReference *ref) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", ref->tok);
-		error.m_message = "Variable Reference shadows return variable.";
-		return error;
+	inline bool throw_shadow_error(NodeReference *ref) {
+		if(m_functions_visited.top()->return_variable.has_value()) {
+			if(ref->name == m_functions_visited.top()->return_variable.value()->name) {
+				auto error = CompileError(ErrorType::SyntaxError, "", "", ref->tok);
+				error.m_message = "Variable Reference shadows return variable.";
+				error.print();
+				return true;
+			}
+		}
+		return false;
 	}
 
 	void inline visit(NodeVariableRef &node) override {
-		throw_shadow_error(&node).print();
+		throw_shadow_error(&node);
 		m_gensym.ingest(node.name);
 	}
 
@@ -56,7 +62,7 @@ public:
 	}
 
 	void inline visit(NodeArrayRef &node) override {
-		throw_shadow_error(&node).print();
+		throw_shadow_error(&node);
 		m_gensym.ingest(node.name);
 	}
 
@@ -65,7 +71,7 @@ public:
 	}
 
 	void inline visit(NodeNDArrayRef &node) override {
-		throw_shadow_error(&node).print();
+		throw_shadow_error(&node);
 		m_gensym.ingest(node.name);
 	}
 
@@ -95,7 +101,7 @@ public:
 					std::nullopt,
 					m_gensym.fresh("ret"),
 					TypeRegistry::Unknown,
-					DataType::Mutable, node.tok
+					DataType::Return, node.return_variables[i]->tok
 				);
 				auto new_param_ref = new_param->to_reference();
 				m_functions_visited.top()->header->args->add_param(std::move(new_param));

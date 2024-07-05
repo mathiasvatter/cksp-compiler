@@ -72,7 +72,7 @@ public:
 	}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		// unknown is compatible with everything
-		bool unknown = m_kind == Kind::Unknown || other->get_kind() == Kind::Unknown;
+		bool unknown = (m_kind == Kind::Unknown || other->get_kind() == Kind::Unknown) and other->get_type_kind() == TypeKind::Basic;
 		if(unknown) return true;
 
 		// number, integer, real are compatible with each other
@@ -81,7 +81,7 @@ public:
 		if(numbers) return true;
 
 		// any is compatible with any other type
-		bool any = m_kind == Kind::Any || other->get_kind() == Kind::Any;
+		bool any = (m_kind == Kind::Any || other->get_kind() == Kind::Any) and other->get_type_kind() == TypeKind::Basic;
 		if(any) return true;
 
 		// string is compatible with string

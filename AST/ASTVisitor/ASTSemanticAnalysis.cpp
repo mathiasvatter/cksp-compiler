@@ -2,11 +2,11 @@
 // Created by Mathias Vatter on 23.04.24.
 //
 
-#include "ASTBuildDataStructures.h"
+#include "ASTSemanticAnalysis.h"
 
-ASTBuildDataStructures::ASTBuildDataStructures(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
+ASTSemanticAnalysis::ASTSemanticAnalysis(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
-void ASTBuildDataStructures::visit(NodeProgram& node) {
+void ASTSemanticAnalysis::visit(NodeProgram& node) {
     m_program = &node;
 
 	m_program->global_declarations->accept(*this);
@@ -25,7 +25,7 @@ void ASTBuildDataStructures::visit(NodeProgram& node) {
 
 }
 
-void ASTBuildDataStructures::visit(NodeWildcard& node) {
+void ASTSemanticAnalysis::visit(NodeWildcard& node) {
 	if(!node.check_semantic()) {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 		error.m_message = "Wildcard is not allowed in this context";
@@ -34,7 +34,7 @@ void ASTBuildDataStructures::visit(NodeWildcard& node) {
 }
 
 
-void ASTBuildDataStructures::visit(NodeCallback& node) {
+void ASTSemanticAnalysis::visit(NodeCallback& node) {
 	m_program->current_callback = &node;
 	if(node.callback_id) node.callback_id->accept(*this);
 	node.statements->accept(*this);
@@ -42,13 +42,13 @@ void ASTBuildDataStructures::visit(NodeCallback& node) {
 }
 
 
-void ASTBuildDataStructures::visit(NodeBlock &node) {
+void ASTSemanticAnalysis::visit(NodeBlock &node) {
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
 	}
 }
 
-void ASTBuildDataStructures::visit(NodeFunctionDefinition &node) {
+void ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
 	node.visited = true;
     node.header ->accept(*this);
     if (node.return_variable.has_value())
@@ -56,7 +56,7 @@ void ASTBuildDataStructures::visit(NodeFunctionDefinition &node) {
     node.body->accept(*this);
 }
 
-void ASTBuildDataStructures::visit(NodeFunctionCall& node) {
+void ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
 
 	node.get_definition(m_program);
@@ -75,23 +75,23 @@ void ASTBuildDataStructures::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
 }
 
-void ASTBuildDataStructures::visit(NodeArray &node) {
+void ASTSemanticAnalysis::visit(NodeArray &node) {
 	if(node.size) node.size->accept(*this);
 	replace_incorrectly_detected_data_struct(&node);
 }
 
-void ASTBuildDataStructures::visit(NodeArrayRef &node) {
+void ASTSemanticAnalysis::visit(NodeArrayRef &node) {
     if(node.index) node.index->accept(*this);
 	replace_incorrectly_detected_reference(&node);
 	replace_incorrectly_detected_data_struct(node.declaration);
 }
 
-void ASTBuildDataStructures::visit(NodeNDArray& node) {
+void ASTSemanticAnalysis::visit(NodeNDArray& node) {
 	if(node.sizes) node.sizes->accept(*this);
 	replace_incorrectly_detected_data_struct(&node);
 }
 
-void ASTBuildDataStructures::visit(NodeNDArrayRef& node) {
+void ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
     if(node.indexes) node.indexes->accept(*this);
 
 	if(auto node_array = cast_node<NodeNDArray>(node.declaration)) {
@@ -113,39 +113,39 @@ void ASTBuildDataStructures::visit(NodeNDArrayRef& node) {
 	}
 }
 
-void ASTBuildDataStructures::visit(NodeVariable &node) {
+void ASTSemanticAnalysis::visit(NodeVariable &node) {
 	replace_incorrectly_detected_data_struct(&node);
 }
 
-void ASTBuildDataStructures::visit(NodeVariableRef &node) {
+void ASTSemanticAnalysis::visit(NodeVariableRef &node) {
 	replace_incorrectly_detected_reference(&node);
 	replace_incorrectly_detected_data_struct(node.declaration);
 }
 
-void ASTBuildDataStructures::visit(NodePointer &node) {
+void ASTSemanticAnalysis::visit(NodePointer &node) {
 	replace_incorrectly_detected_data_struct(&node);
 }
 
-void ASTBuildDataStructures::visit(NodePointerRef &node) {
+void ASTSemanticAnalysis::visit(NodePointerRef &node) {
 	node.update_ptr_chain();
 	replace_incorrectly_detected_reference(&node);
 	replace_incorrectly_detected_data_struct(node.declaration);
 }
 
-void ASTBuildDataStructures::visit(NodeList& node) {
+void ASTSemanticAnalysis::visit(NodeList& node) {
 	for(auto &params : node.body) {
 		params->accept(*this);
 	}
 	replace_incorrectly_detected_data_struct(&node);
 }
 
-void ASTBuildDataStructures::visit(NodeListRef& node) {
+void ASTSemanticAnalysis::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
 	replace_incorrectly_detected_reference(&node);
 	replace_incorrectly_detected_data_struct(node.declaration);
 }
 
-void ASTBuildDataStructures::update_func_call_node_types(NodeFunctionCall* func_call) {
+void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_call) {
 	if(func_call->kind == NodeFunctionCall::Kind::UserDefined and func_call->definition) {
 		for(int i=0; i<func_call->function->args->params.size(); i++) {
 			auto & arg = func_call->function->args->params.at(i);
@@ -160,12 +160,41 @@ void ASTBuildDataStructures::update_func_call_node_types(NodeFunctionCall* func_
 				node_array_ref->match_data_structure(node_var_ref->declaration);
 				auto new_ref = static_cast<NodeReference*>(node_var_ref->replace_with(std::move(node_array_ref)));
 				m_def_provider->add_reference(new_ref->declaration, new_ref);
+			// problem when desugaring return stmts with multiple return variables -> all get to be variables
+			} else if (arg->get_node_type() == NodeType::ArrayRef and param->get_node_type() == NodeType::Variable) {
+				auto node_ret_var = static_cast<NodeVariable*>(param.get());
+				// only permissible if return variable
+				if(node_ret_var->data_type == DataType::Return) {
+					auto node_array = node_ret_var->to_array(nullptr);
+					auto new_declaration = static_cast<NodeDataStructure*>(node_ret_var->replace_with(std::move(node_array)));
+					std::set<NodeReference*> new_references;
+					for(auto & ref : m_def_provider->get_references(node_ret_var)) {
+						auto new_ref = static_cast<NodeReference*>(ref->replace_with(ref->to_array_ref(nullptr)));
+						new_ref->declaration = new_declaration;
+						new_references.emplace(new_ref);
+					}
+					m_def_provider->set_references(new_declaration, new_references);
+				}
+			} else if (arg->get_node_type() == NodeType::NDArrayRef and param->get_node_type() == NodeType::Variable) {
+				auto node_ret_var = static_cast<NodeVariable*>(param.get());
+				// only permissible if return variable
+				if(node_ret_var->data_type == DataType::Return) {
+					auto node_ndarray = node_ret_var->to_ndarray();
+					auto new_declaration = static_cast<NodeDataStructure*>(node_ret_var->replace_with(std::move(node_ndarray)));
+					std::set<NodeReference*> new_references;
+					for(auto & ref : m_def_provider->get_references(node_ret_var)) {
+						auto new_ref = static_cast<NodeReference*>(ref->replace_with(ref->to_array_ref(nullptr)));
+						new_ref->declaration = new_declaration;
+						new_references.emplace(new_ref);
+					}
+					m_def_provider->set_references(new_declaration, new_references);
+				}
 			}
 		}
 	}
 }
 
-void ASTBuildDataStructures::replace_incorrectly_detected_data_struct(NodeDataStructure* data_struct) {
+void ASTSemanticAnalysis::replace_incorrectly_detected_data_struct(NodeDataStructure* data_struct) {
 	// if data struct is provided from declaration pointer
 	if(!data_struct or data_struct->is_engine) return;
 	// only replace function parameters
@@ -210,7 +239,7 @@ void ASTBuildDataStructures::replace_incorrectly_detected_data_struct(NodeDataSt
 	}
 }
 
-void ASTBuildDataStructures::replace_incorrectly_detected_reference(NodeReference* reference) {
+void ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeReference* reference) {
 	if(!reference->declaration) return;
 	if(reference->get_node_type() == reference->declaration->get_ref_node_type()) return;
 

@@ -12,6 +12,7 @@ enum class DataType {
 	Polyphonic,
 	Mutable,
 	UIControl,
+	Return,
 };
 
 inline std::string data_type_to_string(DataType type) {
@@ -24,6 +25,8 @@ inline std::string data_type_to_string(DataType type) {
 		return "mutable";
 	case DataType::UIControl:
 		return "ui_control";
+	default:
+		return "unknown";
 	}
 	return "unknown";
 }
