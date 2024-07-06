@@ -45,6 +45,7 @@ public:
 	void visit(NodeUnaryExpr& node) override;
     void visit(NodeFunctionCall& node) override;
     void visit(NodeFunctionDefinition& node) override;
+	void visit(NodeReturn& node) override;
 
 	void visit(NodeConstBlock& node) override;
 //	void visit(NodeStruct& node) override;

@@ -167,6 +167,7 @@ void ASTPrinter::visit(NodeStruct &node) {
 	os << std::endl;
     for(auto &m: node.methods) {
         m->accept(*this);
+		os << std::endl;
     }
 	m_scope_count--;
     os << "end struct" << std::endl;

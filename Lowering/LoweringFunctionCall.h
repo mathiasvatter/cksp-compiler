@@ -24,6 +24,7 @@ public:
 
     /// Determining if function is property function -> inline property function
 	/// Determining if function parameter needs to be wrapped in get_ui_id because of ui control
+	/// Determining if function call is method constructor -> rename
 	void visit(NodeFunctionCall &node) override {
 		lowered_node = &node;
         if(node.kind == NodeFunctionCall::Kind::Property) {
@@ -38,7 +39,16 @@ public:
             return;
         }
         // message overloaded is not recognized as builtin
+		// constructor method renaming
         if(node.kind == NodeFunctionCall::Kind::Undefined) {
+
+			if(node.is_constructor(m_program)) {
+				node.function->name += ".__init__";
+				node.get_definition(m_program);
+				return;
+			}
+
+
             if(node.function->args->params.size() == 1) return;
             if(node.function->name != "message") return;
             // lowering of message parameters when separated by comma

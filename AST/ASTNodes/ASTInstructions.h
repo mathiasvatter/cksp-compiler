@@ -71,8 +71,27 @@ struct NodeFunctionCall : NodeInstruction {
     NodeFunctionDefinition* find_builtin_definition(NodeProgram *program);
     /// attempts to get property function that and set definition pointer + error handling
     NodeFunctionDefinition* find_property_definition(NodeProgram *program);
+	NodeFunctionDefinition* find_method_definition(NodeProgram *program);
     /// gets and sets definition ptr or matches builtin func metadata -> throws error if not found when fail set to true
     bool get_definition(NodeProgram* program, bool fail=false);
+
+	inline bool is_constructor(NodeProgram* program) {
+		if(kind != Undefined) return false;
+		auto it = program->struct_lookup.find(function->name);
+		if(it != program->struct_lookup.end()) {
+			kind = Method;
+			return true;
+		}
+		return false;
+	}
+	std::string get_object_name() {
+		size_t pos = function->name.find('.');
+		if (pos != std::string::npos) {
+			return function->name.substr(0, pos);
+		}
+		return "";
+	}
+
 };
 
 struct NodeAssignment: NodeInstruction {
@@ -220,6 +239,7 @@ struct NodeSingleDeclaration : NodeInstruction {
 
 struct NodeReturn : NodeInstruction {
     std::vector<std::unique_ptr<NodeAST>> return_variables;
+	NodeFunctionDefinition* definition = nullptr;
     inline explicit NodeReturn(Token tok) : NodeInstruction(NodeType::Return, std::move(tok)) {}
     NodeReturn(std::vector<std::unique_ptr<NodeAST>> return_variables, Token tok)
             : NodeInstruction(NodeType::Return, std::move(tok)), return_variables(std::move(return_variables)) {

@@ -18,9 +18,14 @@ public:
 
 		////// check for existing init method
 		bool has_init_method = false;
-		for(auto & m: node.methods) if (m->header->name == node.name+".__init__") has_init_method = true;
+		bool has_repr_method = false;
+		for(auto & m: node.methods) {
+			if (m->header->name == node.name+".__init__") has_init_method = true;
+			if (m->header->name == node.name+".__repr__") has_repr_method = true;
+		}
 		// automatically generate init method if none provided by user
 		if(!has_init_method) node.generate_empty_init_method();
+		if(!has_repr_method) node.generate_repr_method();
 
 		// check if all member node types are allowed
 		for(auto & m: node.member_table) {

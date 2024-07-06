@@ -321,6 +321,16 @@ void TypeInference::visit(NodeFunctionDefinition& node) {
 		match_type(&node, node.return_variable.value().get());
 }
 
+void TypeInference::visit(NodeReturn& node) {
+	for(auto &ret : node.return_variables) {
+		ret->accept(*this);
+	}
+	if(node.return_variables.size() ==1 ) {
+		if(node.definition) match_type(node.definition, node.return_variables[0].get());
+	}
+}
+
+
 void TypeInference::visit(NodeBinaryExpr& node) {
 	node.left->accept(*this);
 	node.right->accept(*this);

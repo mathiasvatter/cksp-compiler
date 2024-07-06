@@ -19,10 +19,17 @@ struct List
 		List.next[List.free_idx] := next
 		return List.free_idx[List.free_idx]
 	end function
+
+	function List.__repr__(object_id : List)
+		return object_id
+	end function
+
 end struct
 
 on init
 	declare _iter : int
+	declare this_list : List := nil
+	this_list := List.__init__(42, nil)
 	declare ui_slider sli : int (1, 500)
 	set_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT, "sdfkj")
 	declare a : string

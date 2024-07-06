@@ -72,7 +72,7 @@ public:
 	}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		// unknown is compatible with everything
-		bool unknown = (m_kind == Kind::Unknown || other->get_kind() == Kind::Unknown) and other->get_type_kind() == TypeKind::Basic;
+		bool unknown = (m_kind == Kind::Unknown || other->get_kind() == Kind::Unknown) and (other->get_type_kind() == TypeKind::Basic or other->get_type_kind() == TypeKind::Object);
 		if(unknown) return true;
 
 		// number, integer, real are compatible with each other
@@ -81,7 +81,7 @@ public:
 		if(numbers) return true;
 
 		// any is compatible with any other type
-		bool any = (m_kind == Kind::Any || other->get_kind() == Kind::Any) and other->get_type_kind() == TypeKind::Basic;
+		bool any = (m_kind == Kind::Any || other->get_kind() == Kind::Any) and (other->get_type_kind() == TypeKind::Basic or other->get_type_kind() == TypeKind::Object);
 		if(any) return true;
 
 		// string is compatible with string
@@ -164,7 +164,8 @@ public:
     }
 	[[nodiscard]] Type* get_element_type() const override {return (Type *) this;}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
-		return get_type_kind() == other->get_type_kind() && (m_name == other->to_string() or other->to_string() == "nil" or m_name == "nil");
+		bool is_object_type = get_type_kind() == other->get_type_kind() && (m_name == other->to_string() or other->to_string() == "nil" or m_name == "nil");
+		return is_object_type or other->get_kind() == Kind::Unknown;
 	}
 	bool is_same_type(const Type* other) const override {
 		return get_type_kind() == other->get_type_kind() or (other->get_kind() == Kind::Unknown and other->get_type_kind() == TypeKind::Basic);

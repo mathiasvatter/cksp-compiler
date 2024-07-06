@@ -536,6 +536,7 @@ void NodeProgram::inline_structs() {
 		obj->inline_struct(this);
 	}
 	struct_definitions.clear();
+	update_struct_lookup();
 }
 
 
