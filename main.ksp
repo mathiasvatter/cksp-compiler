@@ -15,8 +15,8 @@ end struct
 
 on init
 
-	// declare this_list := nil
-	// this_list := List(42, nil)
+	declare this_list := nil
+	this_list := List(42, nil)
 
 	// declare lists[5]: List[] := (nil)
 

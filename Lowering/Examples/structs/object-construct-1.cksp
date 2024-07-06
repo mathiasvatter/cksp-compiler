@@ -45,7 +45,6 @@ end function
 										Post Lowering
 --------------------------------------------------------------------------------------------}
 
-declare __pointer[2] := (0, "Nil")
 declare const MAX_STRUCTS := 1000000 // allgemeine constante für structs
 
 declare %Note.allocation[MAX_STRUCTS] := (0)
@@ -68,8 +67,7 @@ end function
 
 // standard str function if not overwritten
 function Note.__repr__(object_id)
-	__pointer[0] := object_id
-	return __pointer[signbit(object_id)] & ": Note Object"
+	return "Note Object: "& object_id
 end function
 
 function Note.play(object_id: int)

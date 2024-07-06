@@ -519,6 +519,7 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 		error.exit();
 	}
 	m_current_function_def->num_return_params = node_return_statement->return_variables.size();
+	node_return_statement->definition = m_current_function_def;
     node_return_statement->set_child_parents();
 	node_return_statement->parent = parent;
 	return Result<std::unique_ptr<NodeReturn>>(std::move(node_return_statement));

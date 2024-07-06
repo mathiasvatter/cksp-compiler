@@ -358,15 +358,54 @@ struct NodeStruct : NodeDataStructure {
 		return method_table.find({this->name+".__init__", (int)num_params})->second;
 	}
 
+	/**
+	 * generates a __repr__ method for a struct
+	 * @param obj
+	 * // standard str function if not overwritten
+	 * function Note.__repr__(object_id)
+	 * 	 return "<struct> Object: "& object_id
+	 * end function
+	 */
+	inline NodeFunctionDefinition* generate_repr_method() {
+		auto node_param = std::make_unique<NodePointer>(std::nullopt, "object_id", TypeRegistry::get_object_type(this->name), this->tok);
+		auto node_body = std::make_unique<NodeBlock>(
+			this->tok,
+			std::make_unique<NodeStatement>(
+				std::make_unique<NodeReturn>(this->tok, node_param->to_reference()), this->tok
+			)
+		);
+		node_body->scope = true;
+		auto function_def = std::make_unique<NodeFunctionDefinition>(
+			std::make_unique<NodeFunctionHeader>(
+				this->name+".__repr__",
+				std::make_unique<NodeParamList>(this->tok, std::move(node_param)),
+				this->tok
+			),
+			std::nullopt,
+			false,
+			std::move(node_body),
+			this->tok
+		);
+		this->methods.push_back(std::move(function_def));
+		this->update_method_table();
+		return method_table.find({this->name+".__repr__", 1})->second;
+	}
+
 	inline void inline_struct(NodeProgram* program) {
 		// add struct methods to program functions
 		for(auto & m: methods) {
-			program->additional_function_definitions.push_back(std::move(m));
+			program->function_definitions.push_back(std::move(m));
+			auto new_func_ptr = program->function_definitions.back().get();
+			for(auto & callsite : new_func_ptr->call_sites) {
+				callsite->definition = new_func_ptr;
+			}
 		}
-		program->merge_function_definitions();
+		program->update_function_lookup();
 		methods.clear();
+		this->update_method_table();
 
 		program->init_callback->statements->prepend_body(std::move(members));
-		members = nullptr;
+		members = std::make_unique<NodeBlock>(Token());
+		this->update_member_table();
 	}
 };
