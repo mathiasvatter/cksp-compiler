@@ -84,21 +84,21 @@ public:
 	void add_to_references(NodeReference* reference) {
 		m_all_references.push_back(reference);
 	}
-	[[nodiscard]] const std::vector<NodeReference *> &get_all_references() {
+	[[nodiscard]] const std::vector<NodeReference *> &get_all_references() const {
 		return m_all_references;
 	}
 	std::vector<NodeDataStructure*> m_all_data_structures;
 	void add_to_data_structures(NodeDataStructure* data_struct) {
 		m_all_data_structures.push_back(data_struct);
 	}
-	[[nodiscard]] const std::vector<NodeDataStructure *> &get_all_data_structures() {
+	[[nodiscard]] const std::vector<NodeDataStructure *> &get_all_data_structures() const {
 		return m_all_data_structures;
 	}
     std::vector<NodeSingleDeclaration*> m_all_declarations;
 	void add_to_declarations(NodeSingleDeclaration* decl) {
 		m_all_declarations.push_back(decl);
 	}
-    [[nodiscard]] const std::vector<NodeSingleDeclaration *> &get_all_declarations() {
+    [[nodiscard]] const std::vector<NodeSingleDeclaration *> &get_all_declarations() const {
         return m_all_declarations;
     }
 	std::unordered_map<NodeDataStructure*, std::set<NodeReference*>> m_references_per_data_structure;

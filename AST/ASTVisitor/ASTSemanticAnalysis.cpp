@@ -94,17 +94,12 @@ void ASTSemanticAnalysis::visit(NodeNDArray& node) {
 void ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
     if(node.indexes) node.indexes->accept(*this);
 
-	if(auto node_array = cast_node<NodeNDArray>(node.declaration)) {
-		// has no size if function definition parameter
-		if(node_array->sizes) {
-			node.sizes = clone_as<NodeParamList>(node_array->sizes.get());
-			node.sizes->update_parents(&node);
-		}
-	} else {
+	if(!node.determine_sizes()) {
 		replace_incorrectly_detected_reference(&node);
 		replace_incorrectly_detected_data_struct(node.declaration);
 //		CompileError(ErrorType::Variable, "Incorrectly recognized as <ndarray>: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 	}
+
 	// check if indices have same size as dimensions of declaration
 	if(node.indexes and node.indexes->params.size() != static_cast<NodeNDArray*>(node.declaration)->dimensions) {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);

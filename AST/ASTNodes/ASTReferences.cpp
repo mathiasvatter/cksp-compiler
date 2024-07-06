@@ -81,6 +81,17 @@ std::unique_ptr<NodeArrayRef> NodeNDArrayRef::to_array_ref(NodeAST* index) {
 	return std::make_unique<NodeArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, index->clone()) : nullptr, tok);
 }
 
+bool NodeNDArrayRef::determine_sizes() {
+	if(!declaration) return false;
+	if(declaration->get_node_type() != NodeType::NDArray) return false;
+	auto node_ndarray = static_cast<NodeNDArray*>(declaration);
+	// has no size if function definition parameter
+	if(!node_ndarray->sizes) return false;
+	sizes = clone_as<NodeParamList>(node_ndarray->sizes.get());
+	sizes->parent = this;
+	return true;
+}
+
 // ************* NodeListRef ***************
 void NodeListRef::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
@@ -114,4 +125,8 @@ NodePointerRef::NodePointerRef(const NodePointerRef& other)
 
 std::unique_ptr<NodeAST> NodePointerRef::clone() const {
 	return std::make_unique<NodePointerRef>(*this);
+}
+
+std::unique_ptr<NodeArrayRef> NodePointerRef::to_array_ref(NodeAST* index) {
+	return std::make_unique<NodeArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, index->clone()) : nullptr, tok);
 }

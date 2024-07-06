@@ -1,5 +1,26 @@
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
+struct List
+	declare const List.MAX_STRUCTS : int := MAX_STRUCTS / 10
+	declare List.free_idx : int := 0
+	declare List.allocation[List.MAX_STRUCTS] : int[]
+	declare const List.values.SIZE_D1 : int := List.MAX_STRUCTS
+	declare const List.values.SIZE_D2 : int := 10
+	declare _List.values[List.MAX_STRUCTS * 10] : int[]
+	declare List.next[List.MAX_STRUCTS] : Array[List] := (nil)
+
+	function List.__init__(value : int[], next : List)
+		List.free_idx[List.free_idx] := search(List.free_idx, , 0)
+		if(List.free_idx[List.free_idx] = -1)
+			message("Error: No more free space available to allocate objects of type 'List'")
+		end if
+		_List.allocation[(List.free_idx * List.allocation.SIZE_D2) + List.free_idx] := 1
+		ndarray.copy.Integer.dim2.from1.to1(_List.values, value, List.free_idx)
+		List.next[List.free_idx] := next
+		return List.free_idx[List.free_idx]
+	end function
+end struct
+
 on init
 	declare _iter : int
 	declare ui_slider sli : int (1, 500)
@@ -10,7 +31,7 @@ on init
 	declare const nda.SIZE_D2 : int := 4
 	declare _nda[2 * 4] : int[] := (1, 2, 3, 4, 5, 6, 7, 8)
 	_nda := (1, 2, 3, 4, 5, 6, 7, 8)
-	ndarray.init.Integer.2.1.1(_nda, 0)
+	ndarray.init.Integer.dim2.from1.to1(_nda, 0, 0)
 	_nda[(0 * 4) + 3] := 1
 	_nda[(1 * 4) + 3] := 2
 	_nda[(2 * 4) + 3] := 6
@@ -23,9 +44,9 @@ on init
 	_nda2[(1 * (5 * 5)) + 2] := 4
 	_nda2[(1 * (5 * 5)) + 3] := 5
 	_nda2[(1 * (5 * 5)) + 4] := 6
-	ndarray.init.Integer.3.1.2(_nda2, 0)
+	ndarray.init.Integer.dim3.from1.to2(_nda2, 0, 1)
 	declare arr[4] : int[]
-	_nda[(0 * 4) + ] := arr
+	ndarray.copy.Integer.dim2.from1.to1(_nda, arr, 0)
 	declare const colorz.a : int := 0 + 0
 	declare const colorz.b : int := 0 + (0 + 1)
 	declare colorz[2] : int[] := (0 + 0, 0 + (0 + 1))
@@ -74,23 +95,36 @@ function ret_sth(ret0 : int[])
 	return 1
 end function
 
-function ndarray.init.Integer.2.1.1(_ndarray : int[], value : int)
+function _max(a : int, b : int) -> result : int
+	result := ((a + b) + abs(a - b)) / 2
+end function
+
+function ndarray.copy.Integer.dim2.from1.to1(_ndarray : int[], _to_copy : int[], param1 : int)
 	declare _iter1 : int
 	_iter1 := 0
 	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
-		_ndarray[(0 * ndarray.SIZE_D2) + _iter1] := value
+		_ndarray[(param1 * ndarray.SIZE_D2) + _iter1] := _to_copy[_iter1]
 		inc(_iter1)
 	end while
 end function
 
-function ndarray.init.Integer.3.1.2(_ndarray : int[], value : int)
+function ndarray.init.Integer.dim2.from1.to1(_ndarray : int[], value : int, param1 : int)
+	declare _iter1 : int
+	_iter1 := 0
+	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
+		_ndarray[(param1 * ndarray.SIZE_D2) + _iter1] := value
+		inc(_iter1)
+	end while
+end function
+
+function ndarray.init.Integer.dim3.from1.to2(_ndarray : int[], value : int, param1 : int)
 	declare _iter2 : int
 	declare _iter1 : int
 	_iter1 := 0
 	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
 		_iter2 := 0
 		while(_iter2 <= (ndarray.SIZE_D2 - 1)) 
-			_ndarray[(1 * (ndarray.SIZE_D2 * ndarray.SIZE_D3)) + ((_iter1 * ndarray.SIZE_D3) + _iter2)] := value
+			_ndarray[(param1 * (ndarray.SIZE_D2 * ndarray.SIZE_D3)) + ((_iter1 * ndarray.SIZE_D3) + _iter2)] := value
 			inc(_iter2)
 		end while
 		inc(_iter1)

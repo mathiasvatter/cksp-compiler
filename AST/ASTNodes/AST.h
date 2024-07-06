@@ -11,6 +11,7 @@
 #include <variant>
 #include <list>
 #include <chrono>
+#include <functional>
 
 #include "ASTHelper.h"
 #include "../Types.h"
@@ -49,6 +50,7 @@ struct NodeAST {
 	/// attempts to set the element type of this node to element_type if node has Composite Type
 	/// and elemen_type is Basic Type
 	Type* set_element_type(Type *element_type);
+	void debug_print();
 };
 
 template<typename T>
@@ -294,6 +296,10 @@ struct NodeParamList: NodeAST {
 		param->parent = this;
 		params.push_back(std::move(param));
 	}
+	void prepend_param(std::unique_ptr<NodeAST> param) {
+		param->parent = this;
+		params.insert(params.begin(), std::move(param));
+	}
 	// Funktion zum Abflachen der Parameterliste
 	void flatten_params() {
 		std::vector<std::unique_ptr<NodeAST>> flat_list;
@@ -476,6 +482,11 @@ struct NodeFunctionDefinition: NodeAST {
     }
 	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+	bool is_method() {
+		bool has_params = header->args->params.size() > 0 and header->args->params[0]->get_string() == "self";
+		bool within_struct = parent and parent->get_node_type() == NodeType::Struct;
+		return has_params and within_struct;
+	}
 };
 
 struct NodeProgram : NodeAST {
@@ -519,6 +530,8 @@ struct NodeProgram : NodeAST {
 		update_function_lookup();
 	}
 	static std::unique_ptr<NodeBlock> declare_compiler_variables();
+	void inline_global_variables();
+	void inline_structs();
 };
 
 

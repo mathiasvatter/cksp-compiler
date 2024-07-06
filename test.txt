@@ -1,5 +1,11 @@
-{ Compiled with cksp version 0.0.5 on Fri Jul 05 17:29:25 2024 }
+{ Compiled with cksp version 0.0.5 on Sat Jul 06 18:35:54 2024 }
 on init
+  declare const $MAX_STRUCTS := 1000000
+  declare const $List__MAX_STRUCTS := $MAX_STRUCTS / 10
+  declare $List__free_idx := 0
+  declare %List__allocation[$List__MAX_STRUCTS]
+  declare %_List__values[$List__MAX_STRUCTS * 10]
+  declare  List__next[$List__MAX_STRUCTS] := ()
   declare ui_slider $sli (1, 500)
   set_control_par_str(get_ui_id($sli), $CONTROL_PAR_TEXT, "sdfkj")
   declare @a
@@ -13,12 +19,12 @@ on init
   %_nda[5] := 6
   %_nda[6] := 7
   %_nda[7] := 8
-  declare $loc_12
-  $loc_12 := 0
-  $loc_12 := 0
-  while($loc_12 <= ($ndarray__SIZE_D1 - 1)) 
-    %_nda[(0 * $ndarray__SIZE_D2) + $loc_12] := 0
-    inc($loc_12)
+  declare $loc_13
+  $loc_13 := 0
+  $loc_13 := 0
+  while($loc_13 <= ($ndarray__SIZE_D1 - 1)) 
+    %_nda[(0 * $ndarray__SIZE_D2) + $loc_13] := 0
+    inc($loc_13)
   end while
   %_nda[3] := 1
   %_nda[7] := 2
@@ -29,94 +35,99 @@ on init
   %_nda2[27] := 4
   %_nda2[28] := 5
   %_nda2[29] := 6
-  declare $loc_13
+  declare $loc_14
   $loc_13 := 0
-  $loc_12 := 0
-  $loc_12 := 0
-  while($loc_12 <= ($ndarray__SIZE_D1 - 1)) 
+  $loc_14 := 0
+  $loc_14 := 0
+  while($loc_14 <= ($ndarray__SIZE_D1 - 1)) 
     $loc_13 := 0
     while($loc_13 <= ($ndarray__SIZE_D2 - 1)) 
-      %_nda2[(1 * ($ndarray__SIZE_D2 * $ndarray__SIZE_D3)) + (($loc_12 * $ndarray__SIZE_D3) + $loc_13)] := 0
+      %_nda2[(1 * ($ndarray__SIZE_D2 * $ndarray__SIZE_D3)) + (($loc_14 * $ndarray__SIZE_D3) + $loc_13)] := 0
       inc($loc_13)
     end while
-    inc($loc_12)
+    inc($loc_14)
   end while
   declare %arr[4]
-  %_nda[0 + ] := %arr
-  declare %loc_14[5]
-  declare $loc_15
-  declare @loc_16
-  declare %loc_17[4]
-  @loc_16 := "sdlkj"
-  message(@loc_16)
-  $loc_12 := 0
-  message($loc_12)
-  if($loc_12 = 1)
-    $loc_13 := 0
-    while($loc_13 < num_elements(%loc_14)) 
-      %loc_14[$loc_13] := 1
-      inc($loc_13)
+  $loc_13 := 0
+  $loc_13 := 0
+  while($loc_13 <= ($ndarray__SIZE_D1 - 1)) 
+    %_nda[(0 * $ndarray__SIZE_D2) + $loc_13] := %arr[$loc_13]
+    inc($loc_13)
+  end while
+  declare %loc_15[5]
+  declare $loc_16
+  declare @loc_17
+  declare %loc_18[4]
+  @loc_17 := "sdlkj"
+  message(@loc_17)
+  $loc_13 := 0
+  message($loc_13)
+  if($loc_13 = 1)
+    $loc_14 := 0
+    while($loc_14 < num_elements(%loc_15)) 
+      %loc_15[$loc_14] := 1
+      inc($loc_14)
     end while
-    $loc_13 := 0
-    $loc_15 := 0
-    message($loc_13 & $loc_15 & %loc_14[4])
+    $loc_14 := 0
+    $loc_16 := 0
+    message($loc_14 & $loc_16 & %loc_15[4])
   end if
-  if($loc_12 = 2)
-    $loc_13 := 0
-    $loc_15 := 0
-    message($loc_13 & $loc_15)
+  if($loc_13 = 2)
+    $loc_14 := 0
+    $loc_16 := 0
+    message($loc_14 & $loc_16)
   end if
-  %loc_17[0] := 3
-  %loc_17[1] := 4
-  @loc_16 := "sdlkj"
-  message(@loc_16)
-  $loc_12 := 0
-  message($loc_12)
-  if($loc_12 = 1)
-    $loc_13 := 0
-    while($loc_13 < num_elements(%loc_14)) 
-      %loc_14[$loc_13] := 1
-      inc($loc_13)
+  %loc_18[0] := 3
+  %loc_18[1] := 4
+  @loc_17 := "sdlkj"
+  message(@loc_17)
+  $loc_13 := 0
+  message($loc_13)
+  if($loc_13 = 1)
+    $loc_14 := 0
+    while($loc_14 < num_elements(%loc_15)) 
+      %loc_15[$loc_14] := 1
+      inc($loc_14)
     end while
-    $loc_13 := 0
-    $loc_15 := 0
-    message($loc_13 & $loc_15 & %loc_14[4])
+    $loc_14 := 0
+    $loc_16 := 0
+    message($loc_14 & $loc_16 & %loc_15[4])
   end if
-  if($loc_12 = 2)
-    $loc_13 := 0
-    $loc_15 := 0
-    message($loc_13 & $loc_15)
+  if($loc_13 = 2)
+    $loc_14 := 0
+    $loc_16 := 0
+    message($loc_14 & $loc_16)
   end if
-  %loc_17[0] := 3
-  %loc_17[1] := 4
+  %loc_18[0] := 3
+  %loc_18[1] := 4
   declare %c[6]
 end on
 on persistence_changed
-  $loc_12 := 0
-  while($loc_12 < num_elements(%loc_14)) 
-    %loc_14[$loc_12] := 0
-    inc($loc_12)
+  $loc_13 := 0
+  while($loc_13 < num_elements(%loc_15)) 
+    %loc_15[$loc_13] := 0
+    inc($loc_13)
   end while
-  @loc_16 := "sdlkj"
-  message(@loc_16)
-  $loc_12 := 0
-  message($loc_12)
-  if($loc_12 = 1)
-    $loc_13 := 0
-    while($loc_13 < num_elements(%loc_14)) 
-      %loc_14[$loc_13] := 1
-      inc($loc_13)
+  @loc_17 := "sdlkj"
+  message(@loc_17)
+  $loc_13 := 0
+  message($loc_13)
+  if($loc_13 = 1)
+    $loc_14 := 0
+    while($loc_14 < num_elements(%loc_15)) 
+      %loc_15[$loc_14] := 1
+      inc($loc_14)
     end while
-    $loc_13 := 0
-    $loc_15 := 0
-    message($loc_13 & $loc_15 & %loc_14[4])
+    $loc_14 := 0
+    $loc_16 := 0
+    message($loc_14 & $loc_16 & %loc_15[4])
   end if
-  if($loc_12 = 2)
-    $loc_13 := 0
-    $loc_15 := 0
-    message($loc_13 & $loc_15)
+  if($loc_13 = 2)
+    $loc_14 := 0
+    $loc_16 := 0
+    message($loc_14 & $loc_16)
   end if
-  %loc_17[0] := 3
-  %loc_17[1] := 4
+  %loc_18[0] := 3
+  %loc_18[1] := 4
 end on
 

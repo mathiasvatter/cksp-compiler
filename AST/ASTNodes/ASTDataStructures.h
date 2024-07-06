@@ -306,7 +306,6 @@ struct NodeStruct : NodeDataStructure {
 		}
 	}
 
-//	NodeVariable* max_structs_var;
 	static std::unique_ptr<NodeBlock> declare_struct_constants() {
 		auto node_block = std::make_unique<NodeBlock>(Token());
 		auto node_max_structs = std::make_unique<NodeVariable>(std::nullopt, "MAX_STRUCTS", TypeRegistry::Integer,  DataType::Const, Token());
@@ -316,7 +315,6 @@ struct NodeStruct : NodeDataStructure {
 			std::make_unique<NodeInt>(1000000, Token()),
 			Token()
 		);
-//		max_structs_var = static_cast<NodeVariable*>(node_declare_max_structs->variable.get());
 		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_max_structs), Token()));
 		auto node_mem_warning = std::make_unique<NodeVariable>(std::nullopt, "MEM_WARNING", TypeRegistry::String,  DataType::Const, Token());
 		node_mem_warning->is_global = true;
@@ -327,5 +325,48 @@ struct NodeStruct : NodeDataStructure {
 		);
 		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_mem_warning), Token()));
 		return node_block;
+	}
+	/// generated init method only needs assignment if it has pointer -> nil
+	inline NodeFunctionDefinition* generate_empty_init_method() {
+		auto param_list = std::make_unique<NodeParamList>(this->tok);
+		auto node_block = std::make_unique<NodeBlock>(this->tok);
+//		for(auto & mem : this->member_table) {
+//			std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
+//			auto member_ref = mem.second->to_reference();
+//			member_ref->name = this->name + "." + member_ref->name;
+//			assignment = std::make_unique<NodeSingleAssignment>(
+//				std::move(member_ref),
+//				TypeRegistry::get_neutral_element_from_type(mem.second->ty),
+//				mem.second->tok
+//			);
+//			node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
+//		}
+		auto num_params = param_list->params.size();
+		auto function_def = std::make_unique<NodeFunctionDefinition>(
+			std::make_unique<NodeFunctionHeader>(
+				this->name+".__init__",
+				std::move(param_list),
+				this->tok
+			),
+			std::nullopt,
+			false,
+			std::move(node_block),
+			this->tok
+		);
+		this->methods.push_back(std::move(function_def));
+		this->update_method_table();
+		return method_table.find({this->name+".__init__", (int)num_params})->second;
+	}
+
+	inline void inline_struct(NodeProgram* program) {
+		// add struct methods to program functions
+		for(auto & m: methods) {
+			program->additional_function_definitions.push_back(std::move(m));
+		}
+		program->merge_function_definitions();
+		methods.clear();
+
+		program->init_callback->statements->prepend_body(std::move(members));
+		members = nullptr;
 	}
 };
