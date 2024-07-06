@@ -113,7 +113,9 @@ std::unique_ptr<NodeAST> TypeRegistry::get_neutral_element_from_type(Type* ty) {
         return std::make_unique<NodeParamList>(Token(), std::make_unique<NodeInt>(0, Token()));
     } else if (ty == ArrayOfBool) {
         return std::make_unique<NodeParamList>(Token(), std::make_unique<NodeString>("false", Token()));
-    }
+    } else if (ty->get_type_kind() == TypeKind::Object) {
+		return std::make_unique<NodeNil>(Token());
+	}
 	return nullptr;
 }
 

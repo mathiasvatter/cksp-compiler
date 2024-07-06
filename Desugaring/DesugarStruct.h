@@ -8,25 +8,27 @@
 
 /**
  * @brief Desugaring of struct objects. Applies namespaces for easier reference/declaration finding.
+ * Additionally, checks methods for self keyword, removes it, replaces 'self.' with the struct prefix.
+ * Adds __init__ function if not already defined.
  * desugaring example:
  * struct List
-    declare value: int
-    declare next: List := nil
-
-    function __init__(self, value: int, next: List)
-        self.value := value
-        self.next := next
-    end function
-end struct
+ *  declare value: int
+ *  declare next: List := nil
+ *
+ *  function __init__(self, value: int, next: List)
+ *      self.value := value
+ *      self.next := next
+ *  end function
+ * end struct
  * post desugaring:
  * struct List
-	declare List.value: int
-	declare List.next: List := nil
-
-	function List.__init__(value: int, next: List)
-		List.value := value
-		List.next := next
-	end function
+ *	declare List.value: int
+ *	declare List.next: List := nil
+ *
+ *	function List.__init__(value: int, next: List)
+ *		List.value := value
+ *		List.next := next
+ *	end function
  */
 class DesugarStruct : public ASTDesugaring {
 private:
@@ -60,27 +62,18 @@ public:
 		node.update_method_table();
 	}
 
-	inline void visit(NodeFunctionHeader& node) override {
-		node.args->accept(*this);
-		// check if function definition -> because then it has to contain self as first param
-		if(node.parent->get_node_type() == NodeType::FunctionDefinition) {
+	inline void visit(NodeFunctionDefinition& node) override {
+		if(!node.is_method()) {
 			auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
 			error.m_message = "Method definition must contain <self> as first parameter.";
-			if(node.args->params.empty()) {
-				error.exit();
-			} else {
-				auto &first_param = node.args->params[0];
-				if(first_param->get_string() != "self") {
-					error.m_got = first_param->get_string();
-					error.exit();
-				} else {
-					// remove self from args
-					node.args->params.erase(node.args->params.begin());
-				}
-			}
-			// if func definition, add struct prefix
-			node.name = add_struct_prefix(node.name);
+			error.exit();
 		}
+		node.header->accept(*this);
+		node.header->name = add_struct_prefix(node.header->name);
+		// delete "self" keyword
+		node.header->args->params.erase(node.header->args->params.begin());
+
+		node.body->accept(*this);
 	}
 
 	inline void visit(NodeSingleDeclaration& node) override {
@@ -108,4 +101,7 @@ public:
 		node.name = replace_self_struct_prefix(node.name);
 		node.indexes->accept(*this);
 	};
+
+private:
+
 };

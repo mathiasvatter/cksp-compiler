@@ -225,6 +225,12 @@ struct NodeReturn : NodeInstruction {
             : NodeInstruction(NodeType::Return, std::move(tok)), return_variables(std::move(return_variables)) {
         set_child_parents();
     }
+	// Variadischer Template-Konstruktor
+	template<typename... Params>
+	explicit NodeReturn(Token tok, Params&&... params) : NodeInstruction(NodeType::Return, std::move(tok)) {
+		(return_variables.push_back(std::move(params)), ...);
+		set_child_parents();
+	}
     void accept(ASTVisitor& visitor) override;
     NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Copy Constructor
@@ -328,9 +334,9 @@ struct NodeBlock : NodeInstruction {
         set_child_parents();
     }
 	// Variadischer Template-Konstruktor
-	template<typename... Statements>
-	inline explicit NodeBlock(Token tok, Statements&&... statements) : NodeInstruction(NodeType::Block, std::move(tok)) {
-		(statements.push_back(std::move(statements)), ...);
+	template<typename... Stmts>
+	inline explicit NodeBlock(Token tok, Stmts&&... stmts) : NodeInstruction(NodeType::Block, std::move(tok)) {
+		(statements.push_back(std::move(stmts)), ...);
 		set_child_parents();
 	}
     void accept(ASTVisitor& visitor) override;

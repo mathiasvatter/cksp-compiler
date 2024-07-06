@@ -75,13 +75,15 @@ struct NodeNDArrayRef : NodeReference {
     ASTLowering* get_lowering(NodeProgram *program) const override;
 	std::unique_ptr<NodeArrayRef> to_array_ref(NodeAST* index) override;
 
-	inline int num_wildcards() const {
+	[[nodiscard]] inline int num_wildcards() const {
 		int count = 0;
 		if(indexes) {
 			for(auto & idx: indexes->params) if(idx->get_node_type() == NodeType::Wildcard) count++;
 		}
 		return count;
 	}
+	/// clones sizes list from declaration if it is a NDArray
+	bool determine_sizes();
 };
 
 struct NodeListRef : NodeReference {
@@ -138,5 +140,7 @@ struct NodePointerRef : NodeReference {
 			return "";
 		return ptr_chain.at(0);
 	}
+	std::unique_ptr<NodeArrayRef> to_array_ref(NodeAST* index) override;
+
 };
 

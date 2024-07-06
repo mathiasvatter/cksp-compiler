@@ -29,13 +29,6 @@ void ASTGlobalScope::visit(NodeProgram &node) {
 	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 	node.accept(dyn_extend);
 
-	m_program->init_callback->statements->prepend_body(std::move(m_program->global_declarations));
-	m_program->global_declarations = std::make_unique<NodeBlock>(node.tok);
-	m_program->global_declarations->parent = m_program;
-
-//	ASTPrinter printer;
-//	node.accept(printer);
-//	printer.generate("/Users/Mathias/Scripting/ksp-compiler/printed.txt");
 }
 
 

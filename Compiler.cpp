@@ -115,6 +115,7 @@ void Compiler::compile() {
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
 
+	ast->debug_print();
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
     ast->accept(infer_types);
@@ -122,12 +123,9 @@ void Compiler::compile() {
 
 	compile_time.stop("Lowering");
 	compile_time.start("Global Scope");
-    ASTPrinter printer;
-    ast->accept(printer);
-    std::filesystem::path current_file_path(__FILE__);
-    std::filesystem::path current_dir = current_file_path.parent_path();
-    std::filesystem::path printer_output = current_dir / "printed.txt";
-    printer.generate(printer_output.string());
+
+
+	ast->inline_structs();
 
 	ASTGlobalScope global_scope(&m_definition_provider);
 	ast->accept(global_scope);
@@ -144,6 +142,7 @@ void Compiler::compile() {
 
 	ASTVariableChecking variable_checking2(&m_definition_provider, true);
     ast->accept(variable_checking2);
+	ast->inline_global_variables();
 
 	compile_time.stop("Variable Checking");
 	compile_time.start("Optimization");

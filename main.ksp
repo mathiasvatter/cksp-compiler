@@ -1,17 +1,17 @@
 
-// struct List
-// 	declare values[10]: int[]
-// 	declare next: List := nil
+struct List
+	declare values[10]: int[]
+	declare next: List := nil
 
-// 	// function __init__(self, value: int[], next: List)
-// 	// 	self.values := value
-// 	// 	self.next := next
-// 	// end function
+	function __init__(self, value: int[], next: List)
+		self.values := value
+		self.next := next
+	end function
 	
-// 	// function some_method(self, ficki) 
-// 	// 	message(ficki)	
-// 	// end function
-// end struct
+	// function some_method(self, ficki) 
+	// 	message(ficki)	
+	// end function
+end struct
 
 on init
 

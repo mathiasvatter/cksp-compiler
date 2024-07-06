@@ -16,6 +16,12 @@ public:
 	void visit(NodeStruct& node) override {
 		m_current_struct = &node;
 
+		////// check for existing init method
+		bool has_init_method = false;
+		for(auto & m: node.methods) if (m->header->name == node.name+".__init__") has_init_method = true;
+		// automatically generate init method if none provided by user
+		if(!has_init_method) node.generate_empty_init_method();
+
 		// check if all member node types are allowed
 		for(auto & m: node.member_table) {
 			if(NodeStruct::allowed_member_node_types.find(m.second->get_node_type()) == NodeStruct::allowed_member_node_types.end()) {
@@ -109,9 +115,7 @@ public:
 		if(node.is_member()) {
 			auto node_array = node.to_array(m_current_struct->max_individual_struts_var->to_reference().get());
 			node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
-			auto old_node = &node;
-			auto new_node = node.replace_with(std::move(node_array));
-			update_reference_declarations(new_node, old_node);
+			safe_replace_datastructure(std::move(node_array), &node);
 		}
 	}
 	inline void visit(NodePointer& node) override {
@@ -119,9 +123,7 @@ public:
 		if(node.is_member()) {
 			auto node_array = node.to_array(m_current_struct->max_individual_struts_var->to_reference().get());
 			node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
-			auto old_node = &node;
-			auto new_node = node.replace_with(std::move(node_array));
-			update_reference_declarations(new_node, old_node);
+			safe_replace_datastructure(std::move(node_array), &node);
 		}
 	}
 	inline void visit(NodeArray& node) override {
@@ -132,30 +134,16 @@ public:
 		 */
 		if(node.is_member()) {
 			auto node_ndarray = node.to_ndarray();
-			node_ndarray->sizes->params.insert(node_ndarray->sizes->params.begin(), m_current_struct->max_individual_struts_var->to_reference());
-			node_ndarray->sizes->set_child_parents();
+			node_ndarray->sizes->prepend_param(m_current_struct->max_individual_struts_var->to_reference());
 			node_ndarray->dimensions = node_ndarray->sizes->params.size();
 			node_ndarray->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node_ndarray->dimensions);
-			// turn all references into nd array references
-//			auto references = m_def_provider->get_references(&node);
-//			for(auto & ref : references) {
-//				auto node_ndarray_ref = ref->to_ndarray_ref();
-//				if(!node_ndarray_ref) {
-//					auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
-//					error.m_message = "Got wrong node type for reference in struct.";
-//				}
-//				ref->replace_with(std::move(node_ndarray_ref));
-//			}
-			auto old_node = &node;
-			auto new_node = node.replace_with(std::move(node_ndarray));
-			update_reference_declarations(new_node, old_node);
+			safe_replace_datastructure(std::move(node_ndarray), &node);
 		}
 	}
 	inline void visit(NodeNDArray& node) override {
 		// if member, turn into multi-dimensional array
 		if(node.is_member()) {
-			node.sizes->params.insert(node.sizes->params.begin(), m_current_struct->max_individual_struts_var->to_reference());
-			node.sizes->set_child_parents();
+			node.sizes->prepend_param(m_current_struct->max_individual_struts_var->to_reference());
 			node.dimensions = node.sizes->params.size();
 			node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node.dimensions);
 		}
@@ -165,35 +153,71 @@ public:
 		// if member reference, turn into array reference with struct.free_idx as index
 		if(node.is_member_ref()) {
 			auto node_array_ref = node.to_array_ref(m_current_struct->free_idx_var->to_reference().get());
-			auto old_node = &node;
-			auto new_node = node.replace_with(std::move(node_array_ref));
-			update_reference_declaration(new_node, old_node);
+			safe_replace_reference(std::move(node_array_ref), &node);
 		}
 	}
 	inline void visit(NodeArrayRef& node) override {
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(node.is_member_ref()) {
+			// if array has no indexes -> wildcard
+			if(!node.index) {
+				node.index = std::make_unique<NodeWildcard>("*", node.tok);
+			}
 			auto node_ndarray_ref = node.to_ndarray_ref();
-//			if(node_ndarray_ref->indexes)
-			auto old_node = &node;
-			auto new_node = node.replace_with(std::move(node_ndarray_ref));
-			update_reference_declaration(new_node, old_node);
+			node_ndarray_ref->indexes->prepend_param(m_current_struct->free_idx_var->to_reference());
+			node_ndarray_ref->declaration = node.declaration;
+			node_ndarray_ref->determine_sizes();
+			safe_replace_reference(std::move(node_ndarray_ref), &node);
 		}
+	}
+
+	inline void visit(NodePointerRef& node) override {
+		if(node.is_member_ref()) {
+			auto node_array_ref = node.to_array_ref(m_current_struct->free_idx_var->to_reference().get());
+			safe_replace_reference(std::move(node_array_ref), &node);
+		}
+	}
+
+	inline void visit(NodeNDArrayRef& node) override {
+		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
+		if(node.is_member_ref()) {
+			node.determine_sizes();
+			// if array has no indexes -> everything should be copied -> wildcards for every index of size
+			if (!node.indexes) {
+				node.indexes = std::make_unique<NodeParamList>(node.tok);
+				for (int i = 1; i < node.sizes->params.size(); i++) {
+					node.indexes->add_param(std::make_unique<NodeWildcard>("*", node.tok));
+				}
+			}
+			node.indexes->prepend_param(m_current_struct->free_idx_var->to_reference());
+		}
+	}
+
+
+	inline void visit(NodeFunctionDefinition& node) override {
+		// lower init function
+		if(node.header->name == m_current_struct->name+".__init__") {
+			lower_init_method(&node);
+		}
+		node.header->accept(*this);
+		node.body->accept(*this);
 	}
 
 private:
 	/// to be used on references
-	inline void update_reference_declaration(NodeAST* new_node, NodeReference* old_node) {
-		auto node_ref = static_cast<NodeReference*>(new_node);
-		node_ref->match_data_structure(node_ref->declaration);
-		m_def_provider->remove_reference(node_ref->declaration, old_node);
-		m_def_provider->add_reference(node_ref->declaration, node_ref);
+	inline void safe_replace_reference(std::unique_ptr<NodeReference> new_node, NodeReference* old_node) {
+		new_node->match_data_structure(old_node->declaration);
+		m_def_provider->remove_reference(new_node->declaration, old_node);
+		auto new_ref = static_cast<NodeReference*>(old_node->replace_with(std::move(new_node)));
+		m_def_provider->add_reference(new_ref->declaration, new_ref);
 	}
 	/// to be used on datastructures
-	inline void update_reference_declarations(NodeAST* new_node, NodeDataStructure* old_node) {
-		m_def_provider->set_references(static_cast<NodeDataStructure*>(new_node), m_def_provider->get_references(old_node));
-		for(auto & ref : m_def_provider->get_references(old_node)) {
-			ref->declaration = static_cast<NodeDataStructure*>(new_node);
+	inline void safe_replace_datastructure(std::unique_ptr<NodeDataStructure> new_node, NodeDataStructure* old_node) {
+		auto references = m_def_provider->get_references(old_node);
+		auto new_ref = static_cast<NodeDataStructure*>(old_node->replace_with(std::move(new_node)));
+		m_def_provider->set_references(new_ref, references);
+		for(auto & ref : references) {
+			ref->declaration = new_ref;
 		}
 	}
 	/// uses the member table to determine the size max size of struct allocations
@@ -345,6 +369,81 @@ private:
 		program->update_function_lookup();
 
 		return true;
+	}
+
+	/**
+	 * Lower init function by adding:
+	 *  struct.free_idx := search(struct.allocation, 0)
+	 * 	if struct.free_idx = -1
+	 * 		message("Error: No more free space available to allocate objects of type 'note'")
+	 * 	end if
+	 * 	struct.allocation[struct.free_idx] := 1
+	 * 	...
+	 * 	return struct.free_idx
+	 */
+	inline void lower_init_method(NodeFunctionDefinition* init) {
+		auto node_block = std::make_unique<NodeBlock>(init->tok);
+		auto node_search_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"search",
+				std::make_unique<NodeParamList>(
+					init->tok,
+					m_current_struct->allocation_var->to_reference(),
+					std::make_unique<NodeInt>(0, init->tok)
+				),
+				init->tok
+			),
+			init->tok
+		);
+		node_search_call->kind = NodeFunctionCall::Kind::Builtin;
+		auto node_assign_search = std::make_unique<NodeSingleAssignment>(
+			m_current_struct->free_idx_var->to_reference(),
+			std::move(node_search_call),
+			init->tok
+		);
+		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign_search), init->tok));
+
+		auto node_error_message = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"message",
+				std::make_unique<NodeParamList>(
+					init->tok,
+					std::make_unique<NodeString>(
+						"\"Error: No more free space available to allocate objects of type '"+ m_current_struct->name + "'\"",
+						init->tok)
+				),
+				init->tok
+			),
+			init->tok
+		);
+		node_error_message->kind = NodeFunctionCall::Kind::Builtin;
+		auto node_if_stmt = std::make_unique<NodeIf>(
+			std::make_unique<NodeBinaryExpr>(token::EQUAL,
+											 m_current_struct->free_idx_var->to_reference()->clone(),
+											 std::make_unique<NodeInt>(-1, init->tok),
+											 init->tok),
+			std::make_unique<NodeBlock>(init->tok,
+										std::make_unique<NodeStatement>(std::move(node_error_message), init->tok)),
+			std::make_unique<NodeBlock>(init->tok),
+			init->tok
+		);
+		node_if_stmt->if_body->scope = true;
+		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_if_stmt), init->tok));
+
+		auto node_allocation = m_current_struct->allocation_var->to_reference();
+		static_cast<NodeArrayRef *>(node_allocation.get())->index = m_current_struct->free_idx_var->to_reference();
+		auto node_assign_allocation = std::make_unique<NodeSingleAssignment>(
+			std::move(node_allocation),
+			std::make_unique<NodeInt>(1, init->tok),
+			init->tok
+		);
+		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign_allocation), init->tok));
+		init->body->prepend_body(std::move(node_block));
+		init->body->add_stmt(std::make_unique<NodeStatement>(
+			std::make_unique<NodeReturn>(init->tok, m_current_struct->free_idx_var->to_reference()), init->tok)
+		);
 	}
 
 

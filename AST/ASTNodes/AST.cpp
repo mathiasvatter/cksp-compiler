@@ -7,6 +7,7 @@
 #include "ASTInstructions.h"
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Desugaring/DesugarFunctionDef.h"
+#include "../ASTVisitor/ASTPrinter.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(tok),
@@ -44,6 +45,12 @@ Type* NodeAST::set_element_type(Type *element_type) {
 		error.exit();
 	}
 	return nullptr;
+}
+
+void NodeAST::debug_print() {
+	static ASTPrinter printer;
+	this->accept(printer);
+	printer.generate(PRINTER_OUTPUT);
 }
 
 // ************* NodeDataStructure ***************
@@ -517,6 +524,21 @@ std::unique_ptr<NodeBlock> NodeProgram::declare_compiler_variables() {
 	}
 	return node_body;
 }
+
+void NodeProgram::inline_global_variables() {
+	init_callback->statements->prepend_body(std::move(global_declarations));
+	global_declarations = std::make_unique<NodeBlock>(tok);
+	global_declarations->parent = this;
+}
+
+void NodeProgram::inline_structs() {
+	for(auto & obj : struct_definitions) {
+		obj->inline_struct(this);
+	}
+	struct_definitions.clear();
+}
+
+
 
 
 
