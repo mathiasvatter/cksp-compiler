@@ -16,7 +16,7 @@ public:
 	void visit(NodeStruct& node) override {
 		m_current_struct = &node;
 
-		////// check for existing init method
+		////// check for existing init and repr methods -> generate if not present
 		bool has_init_method = false;
 		bool has_repr_method = false;
 		for(auto & m: node.methods) {

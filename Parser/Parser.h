@@ -78,6 +78,7 @@ protected:
 	Result<std::unique_ptr<NodePointerRef>> parse_pointer_ref(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_array(NodeAST *parent, std::optional<Token> is_persistent = std::optional<Token>(), DataType var_type = DataType::Mutable);
 	Result<std::unique_ptr<NodeReference>> parse_array_ref(NodeAST *parent);
+	Result<std::unique_ptr<NodeAST>> parse_reference_chain(NodeAST *parent);
 
     Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent);
 	Result<SuccessTag> _parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent);
