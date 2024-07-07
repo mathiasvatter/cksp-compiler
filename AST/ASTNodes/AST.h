@@ -102,7 +102,7 @@ struct NodeReference : NodeAST {
         return func_arg;
     }
 	/// determines if reference is reference to struct member
-	bool is_member_ref();
+	bool is_member_ref() const;
 	/// checks if reference is raw version of multi-dimensional array
 	bool is_raw_array() {
 		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw");
@@ -118,6 +118,25 @@ struct NodeReference : NodeAST {
 		}
 		return var_without_identifier;
 	}
+
+	std::vector<std::string> get_ptr_chain() {
+		std::vector<std::string> ptr_chain;
+		std::istringstream iss(name);
+		std::string ns;
+		while (std::getline(iss, ns, '.')) {
+			ptr_chain.push_back(ns);
+		}
+		return ptr_chain;
+	}
+	std::string get_methods_string() {
+		size_t pos = name.find('.');
+		if (pos != std::string::npos) {
+			return name.substr(pos + 1);
+		}
+		return "";
+	}
+	[[nodiscard]] bool is_valid_object_type(NodeProgram* program);
+	[[nodiscard]] bool is_valid_ptr_chain(NodeProgram* program, const std::string& obj);
 };
 
 struct NodeDataStructure : NodeAST {

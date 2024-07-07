@@ -38,13 +38,27 @@ public:
             node.function->accept(*this);
             return;
         }
+
+		if(node.kind == NodeFunctionCall::Kind::UserDefined) {
+			if(node.get_method_name() == "__init__") {
+				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+				error.m_message = "Do not call constructor method directly.";
+				error.exit();
+			}
+		}
+
         // message overloaded is not recognized as builtin
 		// constructor method renaming
         if(node.kind == NodeFunctionCall::Kind::Undefined) {
 
+			// check for constructor method
 			if(node.is_constructor(m_program)) {
 				node.function->name += ".__init__";
-				node.get_definition(m_program);
+				if(!node.find_method_definition(m_program)) {
+					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+					error.m_message = "Constructor method "+node.get_object_name()+" not found.";
+					error.exit();
+				}
 				return;
 			}
 

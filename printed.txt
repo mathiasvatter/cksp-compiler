@@ -30,6 +30,7 @@ on init
 	declare _iter : int
 	declare this_list : List := nil
 	this_list := List.__init__(42, nil)
+	declare lists[5] : Array[List] := (nil)
 	declare ui_slider sli : int (1, 500)
 	set_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT, "sdfkj")
 	declare a : string

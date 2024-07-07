@@ -145,9 +145,29 @@ void NodeReference::match_data_structure(NodeDataStructure* data_structure) {
 	ty = data_structure->ty;
 }
 
-bool NodeReference::is_member_ref() {
+bool NodeReference::is_member_ref() const {
 	return declaration->is_member();
 }
+
+bool NodeReference::is_valid_object_type(NodeProgram *program) {
+	if(ty->get_type_kind() != TypeKind::Object) return false;
+	auto obj = ty->to_string();
+	if(program->struct_lookup.find(obj) == program->struct_lookup.end()) return true;
+	return false;
+}
+
+bool NodeReference::is_valid_ptr_chain(NodeProgram* program, const std::string& obj) {
+
+	auto ptr_chain = get_ptr_chain();
+	if(ptr_chain.empty()) return false;
+	if(ptr_chain.size() < 2) return false;
+
+	for(int i = 1 ; i<ptr_chain.size(); i++) {
+
+	}
+
+}
+
 
 
 // ************* NodeInstruction ***************

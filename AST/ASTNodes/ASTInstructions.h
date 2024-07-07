@@ -84,10 +84,17 @@ struct NodeFunctionCall : NodeInstruction {
 		}
 		return false;
 	}
-	std::string get_object_name() {
+	[[nodiscard]] std::string get_object_name() const {
 		size_t pos = function->name.find('.');
 		if (pos != std::string::npos) {
 			return function->name.substr(0, pos);
+		}
+		return "";
+	}
+	std::string get_method_name() const {
+		size_t pos = function->name.rfind('.');
+		if (pos != std::string::npos) {
+			return function->name.substr(pos + 1);
 		}
 		return "";
 	}

@@ -255,6 +255,7 @@ bool Tokenizer::is_keyword_or_num() const {
             ARRAY_IDENT, peek());
     bool is_macro = peek() == '#' and (std::isalnum(peek(1)) || peek(1) == '_' || contains(VAR_IDENT, peek(1)) || contains(
             ARRAY_IDENT, peek(1)));
+//	bool is_method_chain = peek() == '.' and (std::isalnum(peek(1)) || peek(1) == '_');
     return is_keyword_or_num or is_macro;
 }
 
@@ -434,13 +435,25 @@ void Tokenizer::get_bitwise_operator() {
     while(std::isalpha(peek())) {
 		consume();
     }
-	consume();
-    if (auto tok = get_token_type(BITWISE_OPERATORS, m_buffer)) {
-//        tok = get_token_type(BITWISE_OPERATORS, m_buffer);
+	auto tok = get_token_type(BITWISE_OPERATORS, m_buffer+".");
+//	if(peek() == '.') consume();
+    if (tok and peek() == '.') {
+		consume();
         m_tokens.emplace_back(*tok, m_buffer, m_line, m_line_pos-m_buffer.length(), m_current_file);
     } else {
-		auto err_msg = "Found unknown keyword. Keywords starting with dots are not allowed.";
-		CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
+		// method chaining
+		if (std::isalnum(peek()) || peek() == '_' || peek() == '#' || is_space(peek())) {
+			while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+				consume();
+			}
+			m_tokens.emplace_back(token::DOT, ".", m_line, m_line_pos-m_buffer.length(), m_current_file);
+			m_tokens.emplace_back(token::KEYWORD, m_buffer.erase(0,1), m_line, m_line_pos-m_buffer.length()+1, m_current_file);
+//		} else {
+//			auto err_msg = "Found unknown keyword.";
+//			CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
+		}
+
+
     }
     skip_whitespace();
 }

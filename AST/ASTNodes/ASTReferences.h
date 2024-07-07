@@ -124,9 +124,6 @@ struct NodePointerRef : NodeReference {
 	NodePointerRef(const NodePointerRef& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-	std::string get_string() override {
-		return name;
-	}
 	void update_ptr_chain() {
 		ptr_chain.clear();
 		std::istringstream iss(name);
@@ -141,6 +138,33 @@ struct NodePointerRef : NodeReference {
 		return ptr_chain.at(0);
 	}
 	std::unique_ptr<NodeArrayRef> to_array_ref(NodeAST* index) override;
+	std::unique_ptr<NodeVariableRef> to_variable_ref() override;
 
+};
+
+struct NodeMethodChain : NodeReference {
+	std::vector<std::unique_ptr<NodeAST>> chain;
+	inline NodeMethodChain(std::vector<std::unique_ptr<NodeAST>> method_chain, Token tok)
+		: NodeReference("", NodeType::MethodChain, std::move(tok)), chain(std::move(method_chain)) {
+		set_child_parents();
+	}
+	inline NodeMethodChain(Token tok)
+		: NodeReference("", NodeType::MethodChain, std::move(tok)) {}
+	void accept(ASTVisitor& visitor) override;
+	// Kopierkonstruktor
+	NodeMethodChain(const NodeMethodChain& other);
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		for(auto & c: chain) c->update_parents(this);
+	}
+	void set_child_parents() override {
+		for(auto & c: chain) c->parent = this;
+	};
+	void add_method(std::unique_ptr<NodeAST> m) {
+		m->parent = this;
+		chain.push_back(std::move(m));
+	}
 };
 

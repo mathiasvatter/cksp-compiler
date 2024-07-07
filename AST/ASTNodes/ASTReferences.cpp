@@ -130,3 +130,21 @@ std::unique_ptr<NodeAST> NodePointerRef::clone() const {
 std::unique_ptr<NodeArrayRef> NodePointerRef::to_array_ref(NodeAST* index) {
 	return std::make_unique<NodeArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, index->clone()) : nullptr, tok);
 }
+
+std::unique_ptr<NodeVariableRef> NodePointerRef::to_variable_ref() {
+	return std::make_unique<NodeVariableRef>(name, tok);
+}
+
+// ************* NodeMethodChain ***************
+void NodeMethodChain::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+
+NodeMethodChain::NodeMethodChain(const NodeMethodChain& other)
+	: NodeReference(other), chain(clone_vector(other.chain)) {
+	set_child_parents();
+}
+
+std::unique_ptr<NodeAST> NodeMethodChain::clone() const {
+	return std::make_unique<NodeMethodChain>(*this);
+}

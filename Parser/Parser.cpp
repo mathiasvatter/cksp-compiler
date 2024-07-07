@@ -329,45 +329,70 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_binary_expr(NodeAST* parent) {
     return Result<std::unique_ptr<NodeAST>>(lhs.get_error());
 }
 
+Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) {
+	auto chain = std::make_unique<NodeMethodChain>(peek());
+	while(peek().type == token::KEYWORD) {
+		std::unique_ptr<NodeAST> stmt = nullptr;
+		if (peek().type == token::KEYWORD) {
+			// is function
+			if (peek(1).type == token::OPEN_PARENTH) {
+				auto var_function = parse_function_call(parent);
+				if (var_function.is_error()) {
+					return Result<std::unique_ptr<NodeAST>>(var_function.get_error());
+				}
+				stmt = std::move(var_function.unwrap());
+			} else if (peek(1).type == token::OPEN_BRACKET) {
+				auto var_array = parse_array_ref(parent);
+				if (var_array.is_error()) {
+					return Result<std::unique_ptr<NodeAST>>(var_array.get_error());
+				}
+				if (peek().type == token::ARROW) {
+					auto get_control = parse_get_control_statement(std::move(var_array.unwrap()), parent);
+					if (get_control.is_error())
+						return Result<std::unique_ptr<NodeAST>>(get_control.get_error());
+					stmt = std::move(get_control.unwrap());
+				} else {
+					stmt = std::move(var_array.unwrap());
+				}
+			} else {
+				// is variable
+				auto var = parse_variable_ref(parent);
+				if (var.is_error()) {
+					return Result<std::unique_ptr<NodeAST>>(var.get_error());
+				}
+				if (peek().type == token::ARROW) {
+					auto get_control = parse_get_control_statement(std::move(var.unwrap()), parent);
+					if (get_control.is_error())
+						return Result<std::unique_ptr<NodeAST>>(get_control.get_error());
+					stmt = std::move(std::move(get_control.unwrap()));
+				} else {
+					stmt = std::move(std::move(var.unwrap()));
+				}
+			}
+		}
+		chain->add_method(std::move(stmt));
+		if(peek().type == token::DOT) {
+			consume();
+		} else {
+			break;
+		}
+	}
+	if(chain->chain.size() == 1) {
+		chain->chain[0]->parent = parent;
+		return Result<std::unique_ptr<NodeAST>>(std::move(chain->chain[0]));
+	} else {
+		chain->parent = parent;
+		return Result<std::unique_ptr<NodeAST>>(std::move(chain));
+	}
+}
+
+
 Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
 	if(peek().type == token::RETURN) {
 		m_tokens[m_pos].type = token::KEYWORD;
 	}
-    if (peek().type == token::KEYWORD) {
-        std::unique_ptr<NodeAST> stmt = nullptr;
-        // is function
-		if (peek(1).type == token::OPEN_PARENTH) {
-			auto var_function = parse_function_call(parent);
-			if (!var_function.is_error()) {
-				return Result<std::unique_ptr<NodeAST>>(std::move(var_function.unwrap()));
-			}
-			return Result<std::unique_ptr<NodeAST>>(var_function.get_error());
-		} else if(peek(1).type == token::OPEN_BRACKET) {
-            auto var_array = parse_array_ref(parent);
-            if (var_array.is_error()) {
-                return Result<std::unique_ptr<NodeAST>>(var_array.get_error());
-            }
-            if(peek().type == token::ARROW) {
-                auto get_control = parse_get_control_statement(std::move(var_array.unwrap()), parent);
-                if (get_control.is_error())
-                    return Result<std::unique_ptr<NodeAST>>(get_control.get_error());
-                stmt = std::move(std::move(get_control.unwrap()));
-            } else stmt = std::move(std::move(var_array.unwrap()));
-            return Result<std::unique_ptr<NodeAST>>(std::move(stmt));
-        } else {
-            // is variable
-            auto var = parse_variable_ref(parent);
-            if (var.is_error()) {
-                return Result<std::unique_ptr<NodeAST>>(var.get_error());
-            }
-            if(peek().type == token::ARROW) {
-                auto get_control = parse_get_control_statement(std::move(var.unwrap()), parent);
-                if (get_control.is_error())
-                    return Result<std::unique_ptr<NodeAST>>(get_control.get_error());
-                stmt = std::move(std::move(get_control.unwrap()));
-            } else stmt = std::move(std::move(var.unwrap()));
-            return Result<std::unique_ptr<NodeAST>>(std::move(stmt));
-        }
+    if(peek().type == token::KEYWORD) {
+		return parse_reference_chain(parent);
     // is expression in brackets
     } else if (peek().type == token::OPEN_PARENTH) {
         return _parse_parenth_expr(parent);

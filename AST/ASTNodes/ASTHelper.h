@@ -50,6 +50,7 @@ enum class NodeType {
 	NDArrayRef,
 	Pointer,
 	PointerRef,
+	MethodChain,
 	UIControl,
 	UnaryExpr,
 	BinaryExpr,

@@ -57,6 +57,11 @@ public:
 	virtual void visit(NodeNDArrayRef& node) {
 		if(node.indexes) node.indexes->accept(*this);
 	};
+	virtual void visit(NodeMethodChain& node) {
+		for(auto & method : node.chain) {
+			method->accept(*this);
+		}
+	}
     virtual void visit(NodeUIControl& node){
 		node.control_var->accept(*this);
 		node.params->accept(*this);
