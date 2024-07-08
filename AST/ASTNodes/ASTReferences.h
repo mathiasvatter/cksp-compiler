@@ -148,7 +148,7 @@ struct NodeMethodChain : NodeReference {
 		: NodeReference("", NodeType::MethodChain, std::move(tok)), chain(std::move(method_chain)) {
 		set_child_parents();
 	}
-	inline NodeMethodChain(Token tok)
+	inline explicit NodeMethodChain(Token tok)
 		: NodeReference("", NodeType::MethodChain, std::move(tok)) {}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor

@@ -9,7 +9,7 @@ struct List
 	declare _List.values[List.MAX_STRUCTS * 10] : int[]
 	declare List.next[List.MAX_STRUCTS] : Array[List] := (nil)
 
-	function List.__init__(value : int[], next : List)
+	function List.__init__(value : int[], next : List) : Unknown
 		List.free_idx[List.free_idx] := search(List.free_idx, , 0)
 		if(List.free_idx[List.free_idx] = -1)
 			message("Error: No more free space available to allocate objects of type 'List'")
@@ -20,7 +20,7 @@ struct List
 		return List.free_idx[List.free_idx]
 	end function
 
-	function List.__repr__(object_id : List)
+	function List.__repr__(object_id : List) : Unknown
 		return object_id
 	end function
 
@@ -30,7 +30,6 @@ on init
 	declare _iter : int
 	declare this_list : List := nil
 	this_list := List.__init__(42, nil)
-	declare lists[5] : Array[List] := (nil)
 	declare ui_slider sli : int (1, 500)
 	set_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT, "sdfkj")
 	declare a : string
@@ -70,7 +69,7 @@ on persistence_changed
 	scoped_func1()
 end on
 
-function scoped_func2()
+function scoped_func2() : Unknown
 	declare i : int
 	message(i)
 	if(i = 1)
@@ -86,28 +85,28 @@ function scoped_func2()
 	end if
 end function
 
-function ndarray_func(_ndarray : int[])
+function ndarray_func(_ndarray : int[]) : Unknown
 	message(_ndarray[(0 * ndarray.SIZE_D2) + 0])
 end function
 
-function scoped_func1()
+function scoped_func1() : Unknown
 	declare text : string := "sdlkj"
 	message(text)
 	scoped_func2()
 	declare array[4] : int[] := (3, 4)
 end function
 
-function ret_sth(ret0 : int[])
+function ret_sth(ret0 : int[]) : Unknown
 	declare b[5] : int[] := (0)
 	ret0 := b
 	return 1
 end function
 
-function _max(a : int, b : int) -> result : int
+function _max(a : int, b : int) : Unknown -> result : int
 	result := ((a + b) + abs(a - b)) / 2
 end function
 
-function ndarray.copy.Integer.dim2.from1.to1(_ndarray : int[], _to_copy : int[], param1 : int)
+function ndarray.copy.Integer.dim2.from1.to1(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
 	declare _iter1 : int
 	_iter1 := 0
 	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
@@ -116,7 +115,7 @@ function ndarray.copy.Integer.dim2.from1.to1(_ndarray : int[], _to_copy : int[],
 	end while
 end function
 
-function ndarray.init.Integer.dim2.from1.to1(_ndarray : int[], value : int, param1 : int)
+function ndarray.init.Integer.dim2.from1.to1(_ndarray : int[], value : int, param1 : int) : Unknown
 	declare _iter1 : int
 	_iter1 := 0
 	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
@@ -125,7 +124,7 @@ function ndarray.init.Integer.dim2.from1.to1(_ndarray : int[], value : int, para
 	end while
 end function
 
-function ndarray.init.Integer.dim3.from1.to2(_ndarray : int[], value : int, param1 : int)
+function ndarray.init.Integer.dim3.from1.to2(_ndarray : int[], value : int, param1 : int) : Unknown
 	declare _iter2 : int
 	declare _iter1 : int
 	_iter1 := 0

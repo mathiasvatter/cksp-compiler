@@ -84,6 +84,9 @@ public:
 		bool any = (m_kind == Kind::Any || other->get_kind() == Kind::Any) and (other->get_type_kind() == TypeKind::Basic or other->get_type_kind() == TypeKind::Object);
 		if(any) return true;
 
+		bool voids = m_kind == Kind::Void && other->get_kind() == Kind::Void;
+		if(voids) return true;
+
 		// string is compatible with string
 		bool strings = m_kind == Kind::String && other->get_kind() == Kind::String;
 		if(strings) return true;
