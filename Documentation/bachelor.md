@@ -196,7 +196,7 @@ message(%List.value[%List.next[$that_list]])
 function List.__init__(value, next) -> result
     List.free_idx := search(List.allocation, 0)
     if List.free_idx = -1
-        message(@object.warning & "'List'")        
+        message(object.warning & "'List'")        
     end if
     List.allocation[List.free_idx] := 1
     List.value[List.free_idx] := value
@@ -206,11 +206,11 @@ end function
 ```
 
 ### Vorgehen:
-1. Tokenizer erweitern. Reserviere folgende keywords: struct, end struct, new, delete, nil.
-2. Parser erweitern. Erstelle neue ASTDataStructures Subclass ASTStruct. Erstelle parsing rules für structs.
+1. Tokenizer erweitern. Reserviere folgende keywords: struct, end struct, new, delete, nil. Tokenizer erweitern im Umgang mit "." (`token::DOT`), gefolgt von `token::KEYWORD` für method chaining.
+2. Parser erweitern. Erstelle neue ASTDataStructures Subclass ASTStruct. Erstelle parsing rules für structs. Erstelle ASTDataStructure Pointer, sowie ASTReference PointerRef und MethodChain mit vektor für chained methods und members, inklusive parsing rules.
 3. Erstelle Parsing rules für NodeNil
 4. Erst desugaring und "namespace apply", damit Referenz und Deklaration Zuweisung innerhalb der Struct Hierarchie funktioniert.
-5. 
+
 __Pre-desugaring__:
 ```
 struct List
@@ -237,6 +237,7 @@ end struct
 ```
 5. Lowering der Structs in Arrays. Erstelle für jede struct Deklaration ein Array, das die Werte der Structs enthält. Erstelle für jede struct Deklaration ein Array, das die Verweise auf die nächsten Elemente enthält.
 Wenn das struct bereits ein oder mehrere Arrays enthält, wird ein multidimensionales array erstellt, dessen neue Dimension die maximale Größe aus den bisherigen Arrays ist.
+6. Erweitere Typsystem mit dynamischen Typen für Objekte.
 
 ## 3. Allow recursive Functions (Defunctionalize the Continuation)
 - Transform recursive Functions into continuation passing style
