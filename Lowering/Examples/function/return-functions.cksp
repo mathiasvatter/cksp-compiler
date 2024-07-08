@@ -1,0 +1,36 @@
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering
+--------------------------------------------------------------------------------------------}
+declare arr[]: int[] := (1, 1, 0)
+if array_true(arr) = 1
+    message("true")
+end if
+
+function array_true(array: int[])
+    declare t := 0
+    for _, val in array
+        t := t .and. val
+    end for
+    return t
+end function
+
+{-------------------------------------------------------------------------------------------
+                                        Post Lowering
+--------------------------------------------------------------------------------------------}
+
+declare arr[]: int[] := (1, 1, 0)
+// pull function that cannot be inlined out of conditional statement
+// applies to functions with return values that are not in assign/declare statements
+declare ret0: int := array_true(arr) 
+if ret0 = 1
+    message("true")
+end if
+
+function array_true(array: int[])
+    declare t := 0
+    for _, val in array
+        t := t .and. val
+    end for
+    return t
+end function
