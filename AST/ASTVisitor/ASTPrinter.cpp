@@ -262,6 +262,8 @@ void ASTPrinter::visit(NodeFunctionCall &node) {
 void ASTPrinter::visit(NodeFunctionDefinition &node) {
     os << get_indent() << "function ";
     node.header ->accept(*this);
+	auto type = TypeRegistry::get_annotation_from_type(node.ty);
+	if(!type.empty()) os << " : " << type;
     if (node.return_variable.has_value()) {
         os << " -> ";
         node.return_variable.value()->accept(*this);

@@ -17,7 +17,7 @@ on init
 
 	declare this_list := nil
 	this_list := List(42, nil)
-	declare lists[5]: List[] := (nil)
+	// declare lists[5]: List[] := (nil)
 	// message(lists[0].next.next)
 
 	// declare lists[5]: List[] := (nil)

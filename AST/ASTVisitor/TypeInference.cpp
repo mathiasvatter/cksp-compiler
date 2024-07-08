@@ -308,7 +308,8 @@ void TypeInference::visit(NodeFunctionCall& node) {
 		match_type(node.function->args->params[i].get(), node.definition->header->args->params[i].get());
 	}
 
-	node.ty = node.definition->ty;
+	match_type(&node, node.definition);
+	match_type(node.definition, &node);
 }
 
 void TypeInference::visit(NodeFunctionDefinition& node) {
@@ -325,7 +326,7 @@ void TypeInference::visit(NodeReturn& node) {
 	for(auto &ret : node.return_variables) {
 		ret->accept(*this);
 	}
-	if(node.return_variables.size() ==1 ) {
+	if(node.return_variables.size() >=1 ) {
 		if(node.definition) match_type(node.definition, node.return_variables[0].get());
 	}
 }
