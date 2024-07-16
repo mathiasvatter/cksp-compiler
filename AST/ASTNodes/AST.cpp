@@ -156,18 +156,25 @@ bool NodeReference::is_valid_object_type(NodeProgram *program) {
 	return false;
 }
 
-bool NodeReference::is_valid_ptr_chain(NodeProgram* program, const std::string& obj) {
-
-	auto ptr_chain = get_ptr_chain();
-	if(ptr_chain.empty()) return false;
-	if(ptr_chain.size() < 2) return false;
-
-	for(int i = 1 ; i<ptr_chain.size(); i++) {
-
+NodeStruct *NodeReference::get_object_ptr(NodeProgram* program, const std::string& obj) {
+	auto it = program->struct_lookup.find(obj);
+	if(it != program->struct_lookup.end()) {
+		return it->second;
 	}
-
+	return nullptr;
 }
-
+//
+//bool NodeReference::is_valid_ptr_chain(NodeProgram* program, const std::string& obj) {
+//
+//	auto ptr_chain = get_ptr_chain();
+//	if(ptr_chain.empty()) return false;
+//	if(ptr_chain.size() < 2) return false;
+//
+//	for(int i = 1 ; i<ptr_chain.size(); i++) {
+//
+//	}
+//
+//}
 
 
 // ************* NodeInstruction ***************

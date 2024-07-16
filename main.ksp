@@ -1,16 +1,13 @@
 
 struct List
-	declare values[10]: int[]
+	declare value: int
 	declare next: List := nil
 
-	function __init__(self, value: int[], next: List)
-		self.values := value
+	function __init__(self, value: int, next: List)
+		self.value := value
 		self.next := next
 	end function
-	
-	// function some_method(self, ficki) 
-	// 	message(ficki)	
-	// end function
+
 end struct
 
 on init
@@ -18,7 +15,7 @@ on init
 	declare this_list := nil
 	this_list := List(42, nil)
 	// declare lists[5]: List[] := (nil)
-	// message(lists[0].next.next)
+	message(this_list.next.next)
 
 	// declare lists[5]: List[] := (nil)
 
@@ -27,9 +24,12 @@ on init
 	declare a: string
 	a := sli->text * 3
 	declare nda[2,4] := ((1,2,3,4),(5,6,7,8))
+	message(nda)
 	nda := ((1,2,3,4),(5,6,7,8))
 	nda[0, *] := (0)
 	nda[*, 3] := (1,2,6)
+
+	message(nda.SIZE_D1)
 	
 	// message(ndarray[0,0,0])
 	

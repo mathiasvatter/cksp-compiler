@@ -108,8 +108,8 @@ NodeFunctionDefinition* NodeFunctionCall::find_method_definition(NodeProgram *pr
 	auto obj = get_object_name();
 	if(obj.empty()) return nullptr;
 	auto strct = program->struct_lookup.find(obj);
-	if(strct == program->struct_lookup.end()) return nullptr;
-	if(strct->second->method_table.empty()) return nullptr;
+//	if(strct == program->struct_lookup.end()) return nullptr;
+//	if(strct->second->method_table.empty()) return nullptr;
 	auto func = strct->second->method_table.find({this->function->name, (int)this->function->args->params.size()});
 	if(func == strct->second->method_table.end()) return nullptr;
 
@@ -118,6 +118,21 @@ NodeFunctionDefinition* NodeFunctionCall::find_method_definition(NodeProgram *pr
 	definition->call_sites.emplace(this);
 	kind = Kind::Method;
 	return func->second;
+}
+
+
+NodeFunctionDefinition *NodeFunctionCall::find_constructor_definition(NodeProgram *program) {
+	auto it = program->struct_lookup.find(function->name);
+	if(it != program->struct_lookup.end()) {
+		auto constructor = it->second->constructor;
+		if(!constructor) return nullptr;
+		function->ty = constructor->ty;
+		definition = constructor;
+		definition->call_sites.emplace(this);
+		kind = Kind::Constructor;
+		return it->second->constructor;
+	}
+	return nullptr;
 }
 
 
@@ -133,10 +148,27 @@ bool NodeFunctionCall::get_definition(NodeProgram* program, bool fail) {
 		return true;
 	} else if(find_method_definition(program)) {
 		return true;
+	} else if(find_constructor_definition(program)) {
+		return true;
     } else if(fail) {
         CompileError(ErrorType::SyntaxError,"Function has not been declared.", tok.line, "", function->name, tok.file).exit();
     }
     return false;
+}
+
+std::unique_ptr<NodeMethodChain> NodeFunctionCall::to_method_chain() {
+	auto variable_ref = std::make_unique<NodeVariableRef>(function->name, function->tok);
+	auto ptr_strings = variable_ref->get_ptr_chain();
+	auto method_chain = std::make_unique<NodeMethodChain>(tok);
+	auto func_call = clone_as<NodeFunctionCall>(this);
+	func_call->function->name = ptr_strings.back();
+	ptr_strings.pop_back();
+	for(auto &str : ptr_strings) {
+		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
+	}
+	method_chain->add_method(std::move(func_call));
+	method_chain->parent = this->parent;
+	return method_chain;
 }
 
 // ************* NodeAssignment ***************

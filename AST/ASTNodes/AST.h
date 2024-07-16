@@ -51,6 +51,8 @@ struct NodeAST {
 	/// and elemen_type is Basic Type
 	Type* set_element_type(Type *element_type);
 	void debug_print();
+	virtual std::unique_ptr<struct NodeMethodChain> to_method_chain() {return nullptr;}
+
 };
 
 template<typename T>
@@ -91,6 +93,8 @@ struct NodeReference : NodeAST {
 	virtual std::unique_ptr<struct NodeVariableRef> to_variable_ref() {return nullptr;}
 	virtual std::unique_ptr<struct NodePointerRef> to_pointer_ref() {return nullptr;}
 	virtual std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() {return nullptr;}
+	std::unique_ptr<NodeMethodChain> to_method_chain() override {return nullptr;}
+
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(NodeDataStructure* data_structure);
     /// Determines if current reference is function argument
@@ -128,15 +132,13 @@ struct NodeReference : NodeAST {
 		}
 		return ptr_chain;
 	}
-	std::string get_methods_string() {
-		size_t pos = name.find('.');
-		if (pos != std::string::npos) {
-			return name.substr(pos + 1);
-		}
-		return "";
+	inline bool is_ptr_chain_candidate() {
+		return name.find('.') != std::string::npos;
 	}
+
 	[[nodiscard]] bool is_valid_object_type(NodeProgram* program);
-	[[nodiscard]] bool is_valid_ptr_chain(NodeProgram* program, const std::string& obj);
+	struct NodeStruct* get_object_ptr(NodeProgram* program, const std::string& obj);
+//	[[nodiscard]] bool is_valid_ptr_chain(NodeProgram* program, const std::string& obj);
 };
 
 struct NodeDataStructure : NodeAST {

@@ -42,6 +42,7 @@ public:
 	void visit(NodeFunctionCall& node) override;
 	void visit(NodeFunctionDefinition& node) override;
 	void visit(NodeGetControl& node) override;
+	void visit(NodeMethodChain& node) override;
 
 	static void debug_print(NodeAST* node) {
 		static ASTPrinter printer;

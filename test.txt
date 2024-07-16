@@ -1,16 +1,20 @@
-{ Compiled with cksp version 0.0.5 on Sat Jul 06 21:33:02 2024 }
+{ Compiled with cksp version 0.0.5 on Tue Jul 16 18:39:28 2024 }
 on init
   declare const $MAX_STRUCTS := 1000000
-  declare const $List__MAX_STRUCTS := $MAX_STRUCTS / 10
+  declare const $List__MAX_STRUCTS := $MAX_STRUCTS
   declare $List__free_idx := 0
   declare %List__allocation[$List__MAX_STRUCTS]
-  declare %_List__values[$List__MAX_STRUCTS * 10]
+  declare %List__value[$List__MAX_STRUCTS]
   declare  List__next[$List__MAX_STRUCTS] := ()
+  declare  := 
+   := List(42, )
   declare ui_slider $sli (1, 500)
   set_control_par_str(get_ui_id($sli), $CONTROL_PAR_TEXT, "sdfkj")
   declare @a
   @a := get_control_par_str(get_ui_id($sli), $CONTROL_PAR_TEXT) * 3
+  declare const $nda__SIZE_D1 := 2
   declare %_nda[8] := (1, 2, 3, 4, 5, 6, 7, 8)
+  message(%_nda)
   %_nda[0] := 1
   %_nda[1] := 2
   %_nda[2] := 3
@@ -29,6 +33,7 @@ on init
   %_nda[3] := 1
   %_nda[7] := 2
   %_nda[11] := 6
+  message($_nda__SIZE_D1)
   declare %_nda2[100]
   %_nda2[25] := 2
   %_nda2[26] := 3
@@ -36,16 +41,16 @@ on init
   %_nda2[28] := 5
   %_nda2[29] := 6
   declare $loc_14
+  $loc_14 := 0
   $loc_13 := 0
-  $loc_14 := 0
-  $loc_14 := 0
-  while($loc_14 <= ($ndarray__SIZE_D1 - 1)) 
-    $loc_13 := 0
-    while($loc_13 <= ($ndarray__SIZE_D2 - 1)) 
-      %_nda2[(1 * ($ndarray__SIZE_D2 * $ndarray__SIZE_D3)) + (($loc_14 * $ndarray__SIZE_D3) + $loc_13)] := 0
-      inc($loc_13)
+  $loc_13 := 0
+  while($loc_13 <= ($ndarray__SIZE_D1 - 1)) 
+    $loc_14 := 0
+    while($loc_14 <= ($ndarray__SIZE_D2 - 1)) 
+      %_nda2[(1 * ($ndarray__SIZE_D2 * $ndarray__SIZE_D3)) + (($loc_13 * $ndarray__SIZE_D3) + $loc_14)] := 0
+      inc($loc_14)
     end while
-    inc($loc_14)
+    inc($loc_13)
   end while
   declare %arr[4]
   $loc_13 := 0

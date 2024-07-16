@@ -51,16 +51,16 @@ public:
 		// constructor method renaming
         if(node.kind == NodeFunctionCall::Kind::Undefined) {
 
-			// check for constructor method
-			if(node.is_constructor(m_program)) {
-				node.function->name += ".__init__";
-				if(!node.find_method_definition(m_program)) {
-					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-					error.m_message = "Constructor method "+node.get_object_name()+" not found.";
-					error.exit();
-				}
-				return;
-			}
+//			// check for constructor method
+//			if(node.is_constructor(m_program)) {
+//				node.function->name += ".__init__";
+//				if(!node.find_method_definition(m_program)) {
+//					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+//					error.m_message = "Constructor method "+node.get_object_name()+" not found.";
+//					error.exit();
+//				}
+//				return;
+//			}
 
 
             if(node.function->args->params.size() == 1) return;
