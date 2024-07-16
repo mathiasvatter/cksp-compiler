@@ -59,11 +59,21 @@ void ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
 void ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
 
-	node.get_definition(m_program);
+	// to method chain if function call is not defined
+	if(!node.get_definition(m_program)) {
+//		if(node.function->name.rfind('.') != std::string::npos) {
+//			auto method_chain = node.to_method_chain();
+//			method_chain->accept(*this);
+//			node.replace_with(std::move(method_chain));
+//			return;
+//		}
+	}
+
 
 	if(node.kind == NodeFunctionCall::UserDefined and node.definition) {
 		if(!node.definition->visited) node.definition->accept(*this);
 	}
+
 	if(!m_program->function_call_stack.empty()) {
 		m_program->function_call_stack.top()->header->is_thread_safe &= node.function->is_thread_safe;
 	}
@@ -122,7 +132,7 @@ void ASTSemanticAnalysis::visit(NodePointer &node) {
 }
 
 void ASTSemanticAnalysis::visit(NodePointerRef &node) {
-	node.update_ptr_chain();
+//	node.update_ptr_chain();
 	replace_incorrectly_detected_reference(&node);
 	replace_incorrectly_detected_data_struct(node.declaration);
 }

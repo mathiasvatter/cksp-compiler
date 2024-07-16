@@ -7,7 +7,10 @@
 
 void TypeInference::visit(NodeProgram& node) {
 	m_program = &node;
-	m_def_provider->refresh_data_vectors();
+//	m_def_provider->refresh_data_vectors();
+	m_def_provider->m_all_declarations.clear();
+	m_def_provider->m_all_references.clear();
+	m_def_provider->m_all_declarations.clear();
 	// get all types of function params first
 	for(auto & function_definition : node.function_definitions) {
 		function_definition->accept(*this);
@@ -99,8 +102,18 @@ void TypeInference::visit(NodeVariableRef& node) {
 
 void TypeInference::visit(NodeVariable& node) {
 	// because of pointer node -> apply type annotations again
-	auto new_node = ASTVariableChecking::apply_type_annotations(&node);
-	m_def_provider->add_to_data_structures(new_node);
+	if(node.ty->get_type_kind() == TypeKind::Object) {
+		auto ptr = node.to_pointer();
+		auto references = m_def_provider->get_references(&node);
+		auto new_node = static_cast<NodeDataStructure*>(node.replace_with(std::move(ptr)));
+		for(auto ref : references) {
+			ref->declaration = new_node;
+		}
+		m_def_provider->add_to_data_structures(new_node);
+		return;
+	}
+//	auto new_node = ASTVariableChecking::apply_type_annotations(&node);
+	m_def_provider->add_to_data_structures(&node);
 }
 
 void TypeInference::visit(NodePointerRef& node) {
@@ -212,6 +225,50 @@ void TypeInference::visit(NodeListRef& node) {
 	m_def_provider->add_reference(node.declaration, &node);
 }
 
+void TypeInference::visit(NodeMethodChain& node) {
+	auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+	for(int i = 0; i<node.chain.size(); i++) {
+		auto& ptr = node.chain[i];
+		if(i == 0) {
+			ptr->accept(*this);
+		} else {
+			auto prev = i-1;
+			auto prev_type = node.chain[prev]->ty;
+			if(prev_type->get_type_kind() != TypeKind::Object) {
+				error.m_message = "Method chaining can only be used on <Object> types.";
+				error.exit();
+			}
+			auto prev_obj = prev_type->to_string();
+			if(ptr->get_node_type() == NodeType::FunctionCall) {
+				auto func_call = static_cast<NodeFunctionCall*>(ptr.get());
+				func_call->function->name = prev_obj+"."+func_call->function->name;
+				ptr->accept(*this);
+				if(!func_call->definition) {
+					error.m_message = "Method "+func_call->function->name+" does not exist.";
+					error.exit();
+				}
+			} else {
+				auto reference = cast_node<NodeReference>(ptr.get());
+				auto strct = reference->get_object_ptr(m_program, prev_obj);
+				if(!strct) {
+					error.m_message = "Struct "+prev_obj+" does not exist.";
+					error.exit();
+				}
+				auto node_declaration = strct->get_member(prev_obj+"."+reference->name);
+				if(!node_declaration) {
+					error.m_message = "Member "+reference->name+" does not exist in "+prev_obj+".";
+					error.exit();
+				}
+				reference->declaration = node_declaration;
+				reference->accept(*this);
+			}
+		}
+
+	}
+
+}
+
+
 void TypeInference::visit(NodeParamList& node) {
     std::vector<Type*> types;
     for(const auto & param : node.params) {
@@ -236,6 +293,7 @@ void TypeInference::visit(NodeSingleDeclaration& node) {
 			node.value->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.variable->ty)->get_compound_type(), node.value->ty->get_element_type(), node.variable->ty->get_dimensions());
 		}
 		match_assignment_types(node.variable.get(), node.value.get());
+		node.variable->accept(*this);
 	}
 	m_def_provider->add_to_declarations(&node);
 

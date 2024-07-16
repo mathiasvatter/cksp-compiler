@@ -121,6 +121,18 @@ void ASTPrinter::visit(NodeParamList &node) {
     }
 }
 
+void ASTPrinter::visit(NodeMethodChain &node) {
+	for (int i = 0; i < node.chain.size() - 1; i++) {
+		node.chain[i]->accept(*this);
+		auto type = TypeRegistry::get_annotation_from_type(node.chain[i]->ty);
+		if(!type.empty()) os << "{" << type << "}";
+		os << ".";
+	}
+	node.chain[node.chain.size() - 1]->accept(*this);
+	auto type = TypeRegistry::get_annotation_from_type(node.chain[node.chain.size() - 1]->ty);
+	if(!type.empty()) os << "{" << type << "}";
+}
+
 void ASTPrinter::visit(NodeBinaryExpr &node) {
     auto is_nested_bin_expr = node.parent->get_node_type() == NodeType::BinaryExpr || node.parent->get_node_type() == NodeType::UnaryExpr;
     if(is_nested_bin_expr and node.ty != TypeRegistry::String) os << "(";

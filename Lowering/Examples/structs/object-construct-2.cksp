@@ -39,7 +39,7 @@ end for
 
 declare const MAX_STRUCTS := 1000000 // allgemeine constante für structs
 
-declare const Node.MAX_STRUCTS: int := MAX_STRUCTS/_max(10, 11*12)
+declare const Note.MAX_STRUCTS: int := MAX_STRUCTS/_max(10, 11*12)
 declare Note.allocation[Node.MAX_STRUCTS] int[] := (0)
 declare Note.pitch[Node.MAX_STRUCTS]: int[]
 declare Note.velocities[Node.MAX_STRUCTS, 10]: int[]

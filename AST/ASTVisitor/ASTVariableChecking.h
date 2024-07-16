@@ -38,6 +38,8 @@ public:
 	void visit(NodeFunctionCall& node) override;
     void visit(NodeFunctionDefinition& node) override;
 
+	void visit(NodeMethodChain& node) override;
+
 	void visit(NodeConstBlock& node) override;
 	void visit(NodeStruct& node) override;
 
@@ -52,6 +54,26 @@ private:
     NodeBlock* m_current_block = nullptr;
 	DefinitionProvider* m_def_provider = nullptr;
 
+	/// node can be NodeFunctionCall or NodeReference
+	/// transformation when first object is clearly a reference this_list.next.next()
+	/// tries to get declaration of first object and if there is one, replaces it with method chain
+	std::unique_ptr<NodeMethodChain> try_method_chain_transform(const std::string& name, NodeAST* node) {
+		// find object ptr name
+		size_t pos = name.find('.');
+		if (pos == std::string::npos) {
+			return nullptr;
+		}
+		auto ptr_name = name.substr(0, pos);
+		auto node_declaration = m_def_provider->get_declared_data_structure(ptr_name);
+		if(!node_declaration) return nullptr;
+
+		auto method_chain = node->to_method_chain();
+		if(!method_chain) return nullptr;
+		auto object = static_cast<NodeReference*>(method_chain->chain[0].get());
+		object->declaration = node_declaration;
+		method_chain->declaration = node_declaration;
+		return method_chain;
+	}
 
 	/// check if data structure annotations fit with the detected node type if not in func arguments
 	static inline Type* check_annotation_with_expected(NodeDataStructure* node, Type* expected) {

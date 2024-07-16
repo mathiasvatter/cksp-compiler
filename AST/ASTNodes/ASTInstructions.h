@@ -37,7 +37,7 @@ struct NodeStatement: NodeInstruction {
 };
 
 struct NodeFunctionCall : NodeInstruction {
-    enum Kind{Property, Builtin, UserDefined, Undefined, Method};
+    enum Kind{Property, Builtin, UserDefined, Undefined, Method, Constructor};
     Kind kind = Undefined;
     bool is_call = false;
 	bool is_new = false;
@@ -72,18 +72,12 @@ struct NodeFunctionCall : NodeInstruction {
     /// attempts to get property function that and set definition pointer + error handling
     NodeFunctionDefinition* find_property_definition(NodeProgram *program);
 	NodeFunctionDefinition* find_method_definition(NodeProgram *program);
+	NodeFunctionDefinition* find_constructor_definition(NodeProgram* program);
     /// gets and sets definition ptr or matches builtin func metadata -> throws error if not found when fail set to true
     bool get_definition(NodeProgram* program, bool fail=false);
+	std::unique_ptr<struct NodeMethodChain> to_method_chain() override;
 
-	inline bool is_constructor(NodeProgram* program) {
-		if(kind != Undefined) return false;
-		auto it = program->struct_lookup.find(function->name);
-		if(it != program->struct_lookup.end()) {
-			kind = Method;
-			return true;
-		}
-		return false;
-	}
+
 	[[nodiscard]] std::string get_object_name() const {
 		size_t pos = function->name.find('.');
 		if (pos != std::string::npos) {
@@ -91,7 +85,7 @@ struct NodeFunctionCall : NodeInstruction {
 		}
 		return "";
 	}
-	std::string get_method_name() const {
+	[[nodiscard]] std::string get_method_name() const {
 		size_t pos = function->name.rfind('.');
 		if (pos != std::string::npos) {
 			return function->name.substr(pos + 1);

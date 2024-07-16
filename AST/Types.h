@@ -75,17 +75,20 @@ public:
 		bool unknown = (m_kind == Kind::Unknown || other->get_kind() == Kind::Unknown) and (other->get_type_kind() == TypeKind::Basic or other->get_type_kind() == TypeKind::Object);
 		if(unknown) return true;
 
-		// number, integer, real are compatible with each other
-		bool numbers = (m_kind == Kind::Number || m_kind == Kind::Integer || m_kind == Kind::Real) and
-			(other->get_kind() == Kind::Number || other->get_kind() == Kind::Integer || other->get_kind() == Kind::Real);
-		if(numbers) return true;
-
 		// any is compatible with any other type
 		bool any = (m_kind == Kind::Any || other->get_kind() == Kind::Any) and (other->get_type_kind() == TypeKind::Basic or other->get_type_kind() == TypeKind::Object);
 		if(any) return true;
 
 		bool voids = m_kind == Kind::Void && other->get_kind() == Kind::Void;
 		if(voids) return true;
+
+		bool type_kind = this->get_type_kind() == other->get_type_kind();
+		if(!type_kind) return false;
+
+		// number, integer, real are compatible with each other
+		bool numbers = (m_kind == Kind::Number || m_kind == Kind::Integer || m_kind == Kind::Real) and
+			(other->get_kind() == Kind::Number || other->get_kind() == Kind::Integer || other->get_kind() == Kind::Real);
+		if(numbers) return true;
 
 		// string is compatible with string
 		bool strings = m_kind == Kind::String && other->get_kind() == Kind::String;

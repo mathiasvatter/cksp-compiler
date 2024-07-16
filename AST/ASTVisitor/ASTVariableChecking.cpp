@@ -114,10 +114,22 @@ void ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 	m_program->function_call_stack.pop();
 }
 
+void ASTVariableChecking::visit(NodeMethodChain& node) {
+	node.chain[0]->accept(*this);
+
+	node.flatten();
+}
+
 void ASTVariableChecking::visit(NodeFunctionCall &node) {
 	node.function->accept(*this);
 
 	node.get_definition(m_program);
+	if(auto method_chain = try_method_chain_transform(node.function->name, &node)) {
+		method_chain->match_data_structure(method_chain->declaration);
+		method_chain->accept(*this);
+		node.replace_with(std::move(method_chain));
+		return;
+	}
 
 	if(node.kind == NodeFunctionCall::UserDefined and node.definition) {
 		if(!node.definition->visited) node.definition->accept(*this);
@@ -149,7 +161,13 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	// maybe declaration comes after lowering, do not throw error
 	if(!node_declaration) {
-        if(!fail) return;
+		if(auto method_chain = try_method_chain_transform(node.name, &node)) {
+			method_chain->match_data_structure(method_chain->declaration);
+			method_chain->accept(*this);
+			node.replace_with(std::move(method_chain));
+			return;
+		}
+//        if(!fail) return;
 	    DefinitionProvider::throw_declaration_error(&node).exit();
     }
 
@@ -170,6 +188,12 @@ void ASTVariableChecking::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
+		if(auto method_chain = try_method_chain_transform(node.name, &node)) {
+			method_chain->match_data_structure(method_chain->declaration);
+			method_chain->accept(*this);
+			node.replace_with(std::move(method_chain));
+			return;
+		}
 		CompileError(ErrorType::Variable, "Multidimensional array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return;
 	}
@@ -198,8 +222,19 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 	}
 	auto node_declaration = m_def_provider->get_declaration(&node);
     if(!node_declaration) {
-        if(!fail) return;
-        DefinitionProvider::throw_declaration_error(&node).exit();
+		if(auto method_chain = try_method_chain_transform(node.name, &node)) {
+			// check if its maybe a nd_Array size constant like nda.SIZE_D1
+			node_declaration = method_chain->declaration;
+			node.declaration = node_declaration;
+			if(!node.is_ndarray_constant()) {
+				method_chain->match_data_structure(method_chain->declaration);
+				method_chain->accept(*this);
+				node.replace_with(std::move(method_chain));
+				return;
+			}
+		} else {
+			DefinitionProvider::throw_declaration_error(&node).exit();
+		}
     }
 
     node.match_data_structure(node_declaration);
@@ -227,7 +262,14 @@ void ASTVariableChecking::visit(NodePointerRef& node) {
 	}
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
-		if(!fail) return;
+		if(auto method_chain = try_method_chain_transform(node.name, &node)) {
+			method_chain->match_data_structure(method_chain->declaration);
+			method_chain->accept(*this);
+			node.replace_with(std::move(method_chain));
+			return;
+		}
+		// if fail is set to false, return early. the rest is determined after lowering
+//		if(!fail) return;
 		DefinitionProvider::throw_declaration_error(&node).exit();
 	}
 

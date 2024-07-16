@@ -240,9 +240,13 @@ struct NodeConstBlock : NodeDataStructure {
 };
 
 struct NodeStruct : NodeDataStructure {
+	std::unique_ptr<NodeVariable> node_self = std::make_unique<NodeVariable>(std::nullopt, "self", TypeRegistry::add_object_type(this->name), DataType::Mutable, this->tok);
 	std::unique_ptr<NodeBlock> members;
-	std::unordered_map<std::string, NodeDataStructure*> member_table;
+	std::map<std::string, NodeDataStructure*> member_table;
+	std::set<std::string> member_set;
+	NodeFunctionDefinition* constructor = nullptr;
 	std::vector<std::unique_ptr<NodeFunctionDefinition>> methods;
+	std::set<std::string> method_set;
 	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> method_table;
 	std::unordered_set<NodeType> member_node_types;
 	NodeVariable* max_individual_struts_var = nullptr;
@@ -306,6 +310,31 @@ struct NodeStruct : NodeDataStructure {
 		}
 	}
 
+	void update_lookup_sets() {
+		method_set.clear();
+		for(auto& method : methods) {
+			method_set.emplace(method->header->name);
+		}
+		member_set.clear();
+		for(auto& member : member_table) {
+			method_set.emplace(member.first);
+		}
+	}
+
+	bool is_member_name(const std::string& member_name) {
+		return member_set.find(member_name) != member_set.end();
+	}
+	bool is_method_name(const std::string& method_name) {
+		return method_set.find(method_name) != method_set.end();
+	}
+	NodeDataStructure* get_member(const std::string& ref_name) {
+		auto member = member_table.find(ref_name);
+		if(member != member_table.end()) {
+			return member->second;
+		}
+		return nullptr;
+	}
+
 	static std::unique_ptr<NodeBlock> declare_struct_constants() {
 		auto node_block = std::make_unique<NodeBlock>(Token());
 		auto node_max_structs = std::make_unique<NodeVariable>(std::nullopt, "MAX_STRUCTS", TypeRegistry::Integer,  DataType::Const, Token());
@@ -329,22 +358,24 @@ struct NodeStruct : NodeDataStructure {
 	/// generated init method only needs assignment if it has pointer -> nil
 	inline NodeFunctionDefinition* generate_empty_init_method() {
 		auto param_list = std::make_unique<NodeParamList>(this->tok);
+		param_list->add_param(node_self->clone());
 		auto node_block = std::make_unique<NodeBlock>(this->tok);
-//		for(auto & mem : this->member_table) {
-//			std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
-//			auto member_ref = mem.second->to_reference();
-//			member_ref->name = this->name + "." + member_ref->name;
-//			assignment = std::make_unique<NodeSingleAssignment>(
-//				std::move(member_ref),
-//				TypeRegistry::get_neutral_element_from_type(mem.second->ty),
-//				mem.second->tok
-//			);
-//			node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
-//		}
+		for(auto & mem : this->member_table) {
+			std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
+			auto member_ref = mem.second->to_reference();
+			param_list->add_param(mem.second->clone());
+			member_ref->name = "self." + member_ref->name;
+			assignment = std::make_unique<NodeSingleAssignment>(
+				std::move(member_ref),
+				mem.second->to_reference(),
+				mem.second->tok
+			);
+			node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
+		}
 		auto num_params = param_list->params.size();
 		auto function_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
-				this->name+".__init__",
+				"__init__",
 				std::move(param_list),
 				this->tok
 			),
@@ -353,32 +384,37 @@ struct NodeStruct : NodeDataStructure {
 			std::move(node_block),
 			this->tok
 		);
+		function_def->ty = TypeRegistry::add_object_type(this->name);
+		function_def->parent = this;
 		this->methods.push_back(std::move(function_def));
+		this->constructor = methods.back().get();
 		this->update_method_table();
-		return method_table.find({this->name+".__init__", (int)num_params})->second;
+		return method_table.find({"__init__", (int)num_params})->second;
 	}
 
 	/**
 	 * generates a __repr__ method for a struct
 	 * @param obj
 	 * // standard str function if not overwritten
-	 * function Note.__repr__(object_id)
-	 * 	 return "<struct> Object: "& object_id
+	 * function __repr__(self)
+	 * 	 return "<struct> Object: "& self
 	 * end function
 	 */
 	inline NodeFunctionDefinition* generate_repr_method() {
-		auto node_param = std::make_unique<NodePointer>(std::nullopt, "object_id", TypeRegistry::get_object_type(this->name), this->tok);
+		auto self_ref = node_self->to_reference();
+		self_ref->declaration = node_self.get();
+		self_ref->kind = NodeReference::Kind::Compiler;
 		auto node_body = std::make_unique<NodeBlock>(
 			this->tok,
 			std::make_unique<NodeStatement>(
-				std::make_unique<NodeReturn>(this->tok, node_param->to_reference()), this->tok
+				std::make_unique<NodeReturn>(this->tok, std::move(self_ref)), this->tok
 			)
 		);
 		node_body->scope = true;
 		auto function_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
-				this->name+".__repr__",
-				std::make_unique<NodeParamList>(this->tok, std::move(node_param)),
+				"__repr__",
+				std::make_unique<NodeParamList>(this->tok, node_self->clone()),
 				this->tok
 			),
 			std::nullopt,
@@ -386,9 +422,11 @@ struct NodeStruct : NodeDataStructure {
 			std::move(node_body),
 			this->tok
 		);
+		function_def->parent = this;
+		function_def->ty = TypeRegistry::String;
 		this->methods.push_back(std::move(function_def));
 		this->update_method_table();
-		return method_table.find({this->name+".__repr__", 1})->second;
+		return method_table.find({"__repr__", 1})->second;
 	}
 
 	inline void inline_struct(NodeProgram* program) {

@@ -47,6 +47,8 @@ public:
     void visit(NodeFunctionDefinition& node) override;
 	void visit(NodeReturn& node) override;
 
+	void visit(NodeMethodChain& node) override;
+
 	void visit(NodeConstBlock& node) override;
 //	void visit(NodeStruct& node) override;
 

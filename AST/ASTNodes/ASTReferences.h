@@ -21,7 +21,11 @@ struct NodeVariableRef : NodeReference {
 		return name;
 	}
 	std::unique_ptr<struct NodeArrayRef> to_array_ref(NodeAST* index) override;
+	/// this_list.next.next
+	std::unique_ptr<struct NodeMethodChain> to_method_chain() override;
+	std::unique_ptr<struct NodePointerRef> to_pointer_ref() override;
 
+	bool is_ndarray_constant();
 };
 
 struct NodeArrayRef : NodeReference {
@@ -48,6 +52,8 @@ struct NodeArrayRef : NodeReference {
 	}
     ASTLowering* get_lowering(NodeProgram *program) const override;
 	std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() override;
+	/// this_list.next.value[6]
+	std::unique_ptr<struct NodeMethodChain> to_method_chain() override;
 };
 
 struct NodeNDArrayRef : NodeReference {
@@ -74,6 +80,8 @@ struct NodeNDArrayRef : NodeReference {
 	}
     ASTLowering* get_lowering(NodeProgram *program) const override;
 	std::unique_ptr<NodeArrayRef> to_array_ref(NodeAST* index) override;
+	/// this_list.next.value[6,4]
+	std::unique_ptr<struct NodeMethodChain> to_method_chain() override;
 
 	[[nodiscard]] inline int num_wildcards() const {
 		int count = 0;
@@ -117,25 +125,26 @@ struct NodePointerRef : NodeReference {
 	std::vector<std::string> ptr_chain;
 	inline NodePointerRef(std::string name, Token tok)
 		: NodeReference(std::move(name), NodeType::PointerRef, std::move(tok)) {
-		update_ptr_chain();
+//		update_ptr_chain();
 	}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
 	NodePointerRef(const NodePointerRef& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-	void update_ptr_chain() {
-		ptr_chain.clear();
-		std::istringstream iss(name);
-		std::string ns;
-		while (std::getline(iss, ns, '.')) {
-			ptr_chain.push_back(ns);
-		}
-	}
+//	void update_ptr_chain() {
+//		ptr_chain.clear();
+//		std::istringstream iss(name);
+//		std::string ns;
+//		while (std::getline(iss, ns, '.')) {
+//			ptr_chain.push_back(ns);
+//		}
+//	}
 	std::string get_object_name() {
-		if(ptr_chain.empty())
-			return "";
-		return ptr_chain.at(0);
+//		if(ptr_chain.empty())
+//			return "";
+//		return ptr_chain.at(0);
+		return ty->to_string();
 	}
 	std::unique_ptr<NodeArrayRef> to_array_ref(NodeAST* index) override;
 	std::unique_ptr<NodeVariableRef> to_variable_ref() override;
@@ -153,6 +162,7 @@ struct NodeMethodChain : NodeReference {
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
 	NodeMethodChain(const NodeMethodChain& other);
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {
@@ -165,6 +175,24 @@ struct NodeMethodChain : NodeReference {
 	void add_method(std::unique_ptr<NodeAST> m) {
 		m->parent = this;
 		chain.push_back(std::move(m));
+	}
+
+	void flatten() {
+		std::vector<std::unique_ptr<NodeAST>> flat_list;
+		// Rekursive Funktion, um die Parameterliste abzuflachen
+		std::function<void(std::vector<std::unique_ptr<NodeAST>>)> flatten = [&](std::vector<std::unique_ptr<NodeAST>> current_node) {
+		  for (auto& ptr : current_node) {
+			  if (ptr->get_node_type() == NodeType::MethodChain) {
+				  flatten(std::move(static_cast<NodeMethodChain*>(ptr.get())->chain));
+			  } else {
+				  // Wenn es kein NodeParamList ist, fügen wir es direkt zur Liste hinzu
+				  ptr->parent = this;
+				  flat_list.push_back(std::move(ptr));
+			  }
+		  }
+		};
+		flatten(std::move(chain));
+		chain = std::move(flat_list);
 	}
 };
 

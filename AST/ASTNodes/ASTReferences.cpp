@@ -2,6 +2,8 @@
 // Created by Mathias Vatter on 25.04.24.
 //
 
+#include <regex>
+
 #include "ASTReferences.h"
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Lowering/LoweringList.h"
@@ -22,10 +24,44 @@ std::unique_ptr<NodeAST> NodeVariableRef::clone() const {
 	return std::make_unique<NodeVariableRef>(*this);
 }
 
-std::unique_ptr<struct NodeArrayRef> NodeVariableRef::to_array_ref(NodeAST* index) {
+std::unique_ptr<NodeArrayRef> NodeVariableRef::to_array_ref(NodeAST* index) {
 	return std::make_unique<NodeArrayRef>(name, index ? index->clone() : nullptr, tok);
 }
 
+std::unique_ptr<NodePointerRef> NodeVariableRef::to_pointer_ref() {
+	return std::make_unique<NodePointerRef>(name, tok);
+}
+
+
+std::unique_ptr<NodeMethodChain> NodeVariableRef::to_method_chain() {
+	// split into variable references
+	auto ptr_strings = this->get_ptr_chain();
+	auto method_chain = std::make_unique<NodeMethodChain>(tok);
+	for(auto &str : ptr_strings) {
+		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
+	}
+	method_chain->parent = this->parent;
+	return method_chain;
+}
+
+bool NodeVariableRef::is_ndarray_constant() {
+	if(declaration and declaration->get_node_type() == NodeType::NDArray) {
+		auto ndarray= static_cast<NodeNDArray*>(declaration);
+		std::string string_pattern = "^" + ndarray->name + R"(.SIZE_D(\d+)$)";
+		std::regex pattern(string_pattern);
+		std::smatch match;
+		// Überprüfen, ob der String dem Muster entspricht
+		if (std::regex_match(name, match, pattern)) {
+			// Extrahiere die Zahl aus dem Match
+			int number = std::stoi(match[1].str());
+
+			// Überprüfe, ob die Zahl innerhalb der Grenzen liegt
+			return number >= 1 && number <= ndarray->dimensions;
+		}
+		return false;
+	}
+	return false;
+}
 
 // ************* NodeArrayRef ***************
 void NodeArrayRef::accept(ASTVisitor &visitor) {
@@ -55,6 +91,20 @@ ASTLowering* NodeArrayRef::get_lowering(NodeProgram *program) const {
 
 std::unique_ptr<NodeNDArrayRef> NodeArrayRef::to_ndarray_ref() {
 	return std::make_unique<NodeNDArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, index->clone()) : nullptr, tok);
+}
+
+std::unique_ptr<NodeMethodChain> NodeArrayRef::to_method_chain() {
+	auto ptr_strings = this->get_ptr_chain();
+	auto method_chain = std::make_unique<NodeMethodChain>(tok);
+	auto array_ref = clone_as<NodeArrayRef>(this);
+	array_ref->name = ptr_strings.back();
+	ptr_strings.pop_back();
+	for(auto &str : ptr_strings) {
+		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
+	}
+	method_chain->add_method(std::move(array_ref));
+	method_chain->parent = this->parent;
+	return method_chain;
 }
 
 // ************* NodeNDArrayRef ***************
@@ -90,6 +140,20 @@ bool NodeNDArrayRef::determine_sizes() {
 	sizes = clone_as<NodeParamList>(node_ndarray->sizes.get());
 	sizes->parent = this;
 	return true;
+}
+
+std::unique_ptr<NodeMethodChain> NodeNDArrayRef::to_method_chain() {
+	auto ptr_strings = this->get_ptr_chain();
+	auto method_chain = std::make_unique<NodeMethodChain>(tok);
+	auto array_ref = clone_as<NodeNDArrayRef>(this);
+	array_ref->name = ptr_strings.back();
+	ptr_strings.pop_back();
+	for(auto &str : ptr_strings) {
+		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
+	}
+	method_chain->add_method(std::move(array_ref));
+	method_chain->parent = this->parent;
+	return method_chain;
 }
 
 // ************* NodeListRef ***************
@@ -147,4 +211,14 @@ NodeMethodChain::NodeMethodChain(const NodeMethodChain& other)
 
 std::unique_ptr<NodeAST> NodeMethodChain::clone() const {
 	return std::make_unique<NodeMethodChain>(*this);
+}
+
+NodeAST * NodeMethodChain::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	for (auto& c : chain) {
+		if (c.get() == oldChild) {
+			c = std::move(newChild);
+			return c.get();
+		}
+	}
+	return nullptr;
 }

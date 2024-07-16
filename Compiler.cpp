@@ -96,7 +96,7 @@ void Compiler::compile() {
 	compile_time.stop("Desugaring");
 	compile_time.start("Build Data Structures");
 
-	ASTVariableChecking variable_checking0(&m_definition_provider, false);
+	ASTVariableChecking variable_checking0(&m_definition_provider, true);
 	ast->accept(variable_checking0);
 
 	ASTSemanticAnalysis data_structures(&m_definition_provider);
