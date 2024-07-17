@@ -92,8 +92,12 @@ void ASTSemanticAnalysis::visit(NodeArray &node) {
 
 void ASTSemanticAnalysis::visit(NodeArrayRef &node) {
     if(node.index) node.index->accept(*this);
-	replace_incorrectly_detected_reference(&node);
-	replace_incorrectly_detected_data_struct(node.declaration);
+	NodeReference* new_node = &node;
+	if(auto repl = replace_incorrectly_detected_reference(m_def_provider, &node)) {
+		new_node = repl;
+		new_node->accept(*this);
+	}
+	replace_incorrectly_detected_data_struct(new_node->declaration);
 }
 
 void ASTSemanticAnalysis::visit(NodeNDArray& node) {
@@ -105,8 +109,12 @@ void ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
     if(node.indexes) node.indexes->accept(*this);
 
 	if(!node.determine_sizes()) {
-		replace_incorrectly_detected_reference(&node);
-		replace_incorrectly_detected_data_struct(node.declaration);
+		NodeReference* new_node = &node;
+		if(auto repl = replace_incorrectly_detected_reference(m_def_provider, &node)) {
+			new_node = repl;
+			new_node->accept(*this);
+		}
+		replace_incorrectly_detected_data_struct(new_node->declaration);
 //		CompileError(ErrorType::Variable, "Incorrectly recognized as <ndarray>: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 	}
 
@@ -123,8 +131,12 @@ void ASTSemanticAnalysis::visit(NodeVariable &node) {
 }
 
 void ASTSemanticAnalysis::visit(NodeVariableRef &node) {
-	replace_incorrectly_detected_reference(&node);
-	replace_incorrectly_detected_data_struct(node.declaration);
+	NodeReference* new_node = &node;
+	if(auto repl = replace_incorrectly_detected_reference(m_def_provider, &node)) {
+		new_node = repl;
+		new_node->accept(*this);
+	}
+	replace_incorrectly_detected_data_struct(new_node->declaration);
 }
 
 void ASTSemanticAnalysis::visit(NodePointer &node) {
@@ -132,9 +144,12 @@ void ASTSemanticAnalysis::visit(NodePointer &node) {
 }
 
 void ASTSemanticAnalysis::visit(NodePointerRef &node) {
-//	node.update_ptr_chain();
-	replace_incorrectly_detected_reference(&node);
-	replace_incorrectly_detected_data_struct(node.declaration);
+	NodeReference* new_node = &node;
+	if(auto repl = replace_incorrectly_detected_reference(m_def_provider, &node)) {
+		new_node = repl;
+		new_node->accept(*this);
+	}
+	replace_incorrectly_detected_data_struct(new_node->declaration);
 }
 
 void ASTSemanticAnalysis::visit(NodeList& node) {
@@ -146,8 +161,12 @@ void ASTSemanticAnalysis::visit(NodeList& node) {
 
 void ASTSemanticAnalysis::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
-	replace_incorrectly_detected_reference(&node);
-	replace_incorrectly_detected_data_struct(node.declaration);
+	NodeReference* new_node = &node;
+	if(auto repl = replace_incorrectly_detected_reference(m_def_provider, &node)) {
+		new_node = repl;
+		new_node->accept(*this);
+	}
+	replace_incorrectly_detected_data_struct(new_node->declaration);
 }
 
 void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_call) {
@@ -251,9 +270,9 @@ void ASTSemanticAnalysis::replace_incorrectly_detected_data_struct(NodeDataStruc
 //	}
 }
 
-void ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeReference* reference) {
-	if(!reference->declaration) return;
-	if(reference->get_node_type() == reference->declaration->get_ref_node_type()) return;
+NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(DefinitionProvider* def_provider, NodeReference* reference) {
+	if(!reference->declaration) return nullptr;
+	if(reference->get_node_type() == reference->declaration->get_ref_node_type()) return nullptr;
 
 	std::unique_ptr<NodeReference> node_replacement = nullptr;
 	// if reference is variable ref but declaration is detected as array -> change ref to array ref
@@ -297,10 +316,13 @@ void ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeReference* 
 
 	if(node_replacement) {
 		node_replacement->match_data_structure(reference->declaration);
+		def_provider->remove_reference(reference->declaration, reference);
 		auto new_ref = static_cast<NodeReference*>(reference->replace_with(std::move(node_replacement)));
-		new_ref->accept(*this);
-		m_def_provider->add_reference(new_ref->declaration, new_ref);
+//		new_ref->accept(*this);
+		def_provider->add_reference(new_ref->declaration, new_ref);
+		return new_ref;
 	}
+	return nullptr;
 }
 
 

@@ -17,7 +17,7 @@ public:
 		if(node.l_value->get_node_type() == NodeType::NDArrayRef and node.r_value->get_node_type() == NodeType::ParamList) {
 			auto nd_array_ref = static_cast<NodeNDArrayRef*>(node.l_value.get());
 			auto param_list = static_cast<NodeParamList*>(node.r_value.get());
-			param_list->flatten_params();
+			param_list->flatten();
 			// nda := ((1,2,3,4),(5,6,7,8))
 			if(!nd_array_ref->indexes) {
 				// lower left side to array to utilize array lowering later on

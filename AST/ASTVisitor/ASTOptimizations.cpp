@@ -26,5 +26,5 @@ void ASTOptimizations::visit(NodeBlock& node) {
     for(auto& statement : node.statements) {
         statement->accept(*this);
     }
-	node.flatten_body();
+	node.flatten();
 }

@@ -96,10 +96,7 @@ void ASTCollectLowerings::visit(NodeList& node) {
 	}
 }
 
-void ASTCollectLowerings::visit(NodeConstBlock &node) {
-    if(auto lowering = node.get_lowering(m_program)) {
-        node.accept(*lowering);
-    }
+void ASTCollectLowerings::visit(NodeConst &node) {
     node.replace_with(std::move(node.constants));
 }
 

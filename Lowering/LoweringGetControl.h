@@ -45,7 +45,7 @@ private:
 	inline std::unique_ptr<NodeFunctionCall> lowering(std::string control_function, NodeGetControl* node) {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 		// get control_param from shorthand
-		auto control_par = shorthand_to_control_param(node->control_param);
+		auto control_par = shorthand_to_control_param(m_def_provider, node->control_param);
 		if(!control_par) {
 			error.m_message = "Unknown control parameter: " + node->control_param;
 			error.m_got = node->control_param;
@@ -88,17 +88,13 @@ private:
 		return nullptr;
 	}
 
-	inline std::unique_ptr<NodeReference> shorthand_to_control_param(const std::string& shorthand) {
+	static inline std::unique_ptr<NodeReference> shorthand_to_control_param(DefinitionProvider* def_provider, const std::string& shorthand) {
 		std::string control_par = to_lower(shorthand);
 		if(control_par == "x") control_par = "pos_x";
 		if(control_par == "y") control_par = "pos_y";
 		if(control_par == "default") control_par += "_value";
-		auto &builtin_vars = m_def_provider->builtin_variables;
-		auto it = builtin_vars.find(to_upper(control_par));
-		if(it == builtin_vars.end()) it = builtin_vars.find(to_upper("control_par_"+control_par));
-
-		if(it != builtin_vars.end()) {
-			return clone_as<NodeVariable>(it->second.get())->to_reference();
+		if(auto builtin_var = def_provider->get_builtin_variable(to_upper("control_par_"+control_par))) {
+			return builtin_var->to_reference();
 		}
 		return nullptr;
 	}

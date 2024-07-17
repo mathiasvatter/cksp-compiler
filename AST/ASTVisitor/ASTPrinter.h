@@ -28,7 +28,7 @@ public:
 	void visit(NodeUnaryExpr& node) override;
 	void visit(NodeAssignment& node) override;
     void visit(NodeSingleAssignment& node) override;
-	void visit(NodeConstBlock& node) override;
+	void visit(NodeConst& node) override;
 	void visit(NodeStruct& node) override;
 	void visit(NodeFamily& node) override;
     void visit(NodeStatement& node) override;
