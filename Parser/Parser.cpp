@@ -1688,7 +1688,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) {
-	auto node_const_statement = std::make_unique<NodeConstBlock>(get_tok());
+	auto node_const_statement = std::make_unique<NodeConst>(get_tok());
 	Token construct = consume(); //consume family, struct, const
 	token end_construct = token::END_CONST;
 	if(peek().type != token::KEYWORD) {

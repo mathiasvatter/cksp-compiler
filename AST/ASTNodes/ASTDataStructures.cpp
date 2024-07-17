@@ -7,7 +7,7 @@
 #include "../../Lowering/LoweringUIControlArray.h"
 #include "../../Lowering/LoweringNDArray.h"
 #include "../../Lowering/LoweringList.h"
-#include "../../Lowering/LoweringConst.h"
+#include "../../Desugaring/DesugaringConst.h"
 #include "../../Lowering/LoweringArray.h"
 #include "../../Desugaring/DesugarStruct.h"
 #include "../../Lowering/LoweringStruct.h"
@@ -206,22 +206,22 @@ std::unique_ptr<NodeNDArray> NodeList::to_ndarray() {
     return std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
 }
 
-// ************* NodeConstBlock ***************
-void NodeConstBlock::accept(ASTVisitor &visitor) {
+// ************* NodeConst ***************
+void NodeConst::accept(ASTVisitor &visitor) {
     visitor.visit(*this);
 }
-NodeConstBlock::NodeConstBlock(const NodeConstBlock& other)
+NodeConst::NodeConst(const NodeConst& other)
         : NodeDataStructure(other), constants(clone_unique(other.constants)) {
 	set_child_parents();
 }
 
-std::unique_ptr<NodeAST> NodeConstBlock::clone() const {
-    return std::make_unique<NodeConstBlock>(*this);
+std::unique_ptr<NodeAST> NodeConst::clone() const {
+    return std::make_unique<NodeConst>(*this);
 }
 
-ASTLowering* NodeConstBlock::get_lowering(NodeProgram *program) const {
-    static LoweringConst lowering(program);
-    return &lowering;
+ASTDesugaring * NodeConst::get_desugaring(NodeProgram *program) const {
+	static DesugaringConst desugaring(program);
+	return &desugaring;
 }
 
 

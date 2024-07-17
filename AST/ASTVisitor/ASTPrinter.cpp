@@ -165,7 +165,7 @@ void ASTPrinter::visit(NodeSingleAssignment &node) {
     if(node_param_list) os << ")";
 }
 
-void ASTPrinter::visit(NodeConstBlock &node) {
+void ASTPrinter::visit(NodeConst &node) {
     os << "const " << node.name << std::endl;
 
     node.constants->accept(*this);
@@ -294,7 +294,7 @@ void ASTPrinter::visit(NodeGetControl &node) {
 }
 
 void ASTPrinter::visit(NodeBlock &node) {
-	node.flatten_body();
+	node.flatten();
     if(node.scope) m_scope_count++;
     for(auto & stmt : node.statements) {
         stmt->accept(*this);

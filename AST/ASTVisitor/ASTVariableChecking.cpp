@@ -84,7 +84,7 @@ void ASTVariableChecking::visit(NodeUIControl& node) {
 }
 
 void ASTVariableChecking::visit(NodeBlock &node) {
-	node.flatten_body();
+	node.flatten();
 	m_current_block = &node;
 
 	node.determine_scope();
@@ -114,7 +114,6 @@ void ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 
 void ASTVariableChecking::visit(NodeMethodChain& node) {
 	node.chain[0]->accept(*this);
-
 	node.flatten();
 }
 
@@ -123,7 +122,7 @@ void ASTVariableChecking::visit(NodeFunctionCall &node) {
 
 	node.get_definition(m_program);
 	if(auto method_chain = try_method_chain_transform(node.function->name, &node)) {
-		method_chain->match_data_structure(method_chain->declaration);
+//		method_chain->match_data_structure(method_chain->declaration);
 		method_chain->accept(*this);
 		node.replace_with(std::move(method_chain));
 		return;
@@ -160,7 +159,7 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 	// maybe declaration comes after lowering, do not throw error
 	if(!node_declaration) {
 		if(auto method_chain = try_method_chain_transform(node.name, &node)) {
-			method_chain->match_data_structure(method_chain->declaration);
+//			method_chain->match_data_structure(method_chain->declaration);
 			method_chain->accept(*this);
 			node.replace_with(std::move(method_chain));
 			return;
@@ -187,7 +186,7 @@ void ASTVariableChecking::visit(NodeNDArrayRef& node) {
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
 		if(auto method_chain = try_method_chain_transform(node.name, &node)) {
-			method_chain->match_data_structure(method_chain->declaration);
+//			method_chain->match_data_structure(method_chain->declaration);
 			method_chain->accept(*this);
 			node.replace_with(std::move(method_chain));
 			return;
@@ -225,7 +224,7 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 			node_declaration = method_chain->declaration;
 			node.declaration = node_declaration;
 			if(!node.is_ndarray_constant()) {
-				method_chain->match_data_structure(method_chain->declaration);
+//				method_chain->match_data_structure(method_chain->declaration);
 				method_chain->accept(*this);
 				node.replace_with(std::move(method_chain));
 				return;
@@ -261,7 +260,7 @@ void ASTVariableChecking::visit(NodePointerRef& node) {
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
 		if(auto method_chain = try_method_chain_transform(node.name, &node)) {
-			method_chain->match_data_structure(method_chain->declaration);
+//			method_chain->match_data_structure(method_chain->declaration);
 			method_chain->accept(*this);
 			node.replace_with(std::move(method_chain));
 			return;
@@ -296,14 +295,10 @@ void ASTVariableChecking::visit(NodeListRef& node) {
 	m_def_provider->add_to_references(&node);
 }
 
-void ASTVariableChecking::visit(NodeConstBlock& node) {
-//	for(auto & constants : node.constants->statements) {
-//		if(constants->statement->get_node_type() == NodeType::SingleDeclaration) {
-//			auto decl = static_cast<NodeSingleDeclaration*>(constants->statement.get());
-//			decl->variable
-//
-//		}
-//	}
+void ASTVariableChecking::visit(NodeConst& node) {
+	for(auto& stmt : node.constants->statements) {
+		stmt->accept(*this);
+	}
 }
 
 void ASTVariableChecking::visit(NodeStruct& node) {

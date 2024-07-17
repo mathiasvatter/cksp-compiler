@@ -94,7 +94,6 @@ public:
 		node.r_value -> accept(*this);
     };
 	virtual void visit(NodeReturn& node) {
-//		CompileError(ErrorType::InternalError, "<Return> node not yet implemented.", "", node.tok).exit();
 		for(auto &ret : node.return_variables) {
 			ret->accept(*this);
 		}
@@ -109,7 +108,7 @@ public:
 		node.ui_id->accept(*this);
 	};
 
-    virtual void visit(NodeConstBlock& node) {
+    virtual void visit(NodeConst& node) {
         node.constants->accept(*this);
 	};
     virtual void visit(NodeStruct& node) {

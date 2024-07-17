@@ -35,6 +35,8 @@ class ASTDesugar: public ASTVisitor {
 
 	/// desugar into single declare statements
 	void visit(NodeFamily& node) override;
+	/// desugar const block to single declare statements
+	void visit(NodeConst& node) override;
 
 	/// desugar nested ParamLists [[1,2,3,4]]
 	void visit(NodeParamList& node) override;

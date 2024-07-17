@@ -49,7 +49,7 @@ public:
 
 	void visit(NodeMethodChain& node) override;
 
-	void visit(NodeConstBlock& node) override;
+	void visit(NodeConst& node) override;
 	void visit(NodeStruct& node) override;
 
     /// iterates through all references and declarations and tries to match the types

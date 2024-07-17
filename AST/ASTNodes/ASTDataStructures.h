@@ -212,16 +212,16 @@ struct NodeList : NodeDataStructure {
 	std::unique_ptr<NodeNDArray> to_ndarray() override;
 };
 
-struct NodeConstBlock : NodeDataStructure {
+struct NodeConst : NodeDataStructure {
     std::unique_ptr<NodeBlock> constants;
-    inline explicit NodeConstBlock(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::Const) {}
-    inline NodeConstBlock(std::string name, std::unique_ptr<NodeBlock> constants, Token tok)
+    inline explicit NodeConst(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::Const) {}
+    inline NodeConst(std::string name, std::unique_ptr<NodeBlock> constants, Token tok)
             : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::Const), constants(std::move(constants)) {
         set_child_parents();
     }
     void accept(ASTVisitor& visitor) override;
     // Kopierkonstruktor
-    NodeConstBlock(const NodeConstBlock& other);
+    NodeConst(const NodeConst& other);
     // Clone Methode
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
@@ -235,7 +235,7 @@ struct NodeConstBlock : NodeDataStructure {
     void update_token_data(const Token& token) override {
         constants->update_token_data(token);
     }
-    ASTLowering* get_lowering(NodeProgram *program) const override;
+	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 
 };
 

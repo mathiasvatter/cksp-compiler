@@ -40,7 +40,7 @@ public:
 
 	void visit(NodeMethodChain& node) override;
 
-	void visit(NodeConstBlock& node) override;
+	void visit(NodeConst& node) override;
 	void visit(NodeStruct& node) override;
 
 	/// apply type annotations given before parse time and replace node types accordingly

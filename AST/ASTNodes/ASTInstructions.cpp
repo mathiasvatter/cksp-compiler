@@ -385,7 +385,7 @@ NodeStatement* NodeBlock::add_stmt(std::unique_ptr<NodeStatement> stmt) {
 	return statements.back().get();
 }
 
-void NodeBlock::flatten_body() {
+void NodeBlock::flatten() {
     std::vector<std::unique_ptr<NodeStatement>> temp;
     for(auto & statement : statements) {
         if(statement->statement->get_node_type() == NodeType::Block) {
@@ -402,7 +402,13 @@ void NodeBlock::flatten_body() {
                 );
             }
             // Aktualisieren Sie das parent-Attribut für jedes innere Statement
-            for (auto& stmt : inner_statements) {
+            for (int i=0; i<inner_statements.size(); i++) {
+				auto& stmt = inner_statements[i];
+				if(stmt->statement->get_node_type() == NodeType::DeadCode) {
+					inner_statements.erase(inner_statements.begin() + i);
+					i--;
+					continue;
+				}
                 stmt->parent = this;
             }
             // Fügen Sie die inneren Statements zum temporären Vector hinzu

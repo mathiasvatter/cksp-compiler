@@ -1,9 +1,9 @@
 
 struct List
 	declare value: int
-	declare next: List := nil
+	declare next
 
-	function __init__(self, value: int, next: List)
+	function __init__(self, value: int, next)
 		self.value := value
 		self.next := next
 	end function
@@ -12,12 +12,11 @@ end struct
 
 on init
 	const color
-		a
-		b
+		a, b, c, d, e, f
 	end const
 	message(color.a)
-	declare this_list := nil
-	this_list := List(42, nil)
+	declare this_list: List := nil
+	this_list := List(42, nil).next
 	declare lists[5]: List[] := (nil)
 	message(lists[0].next.value)
 	message(this_list.next.value)

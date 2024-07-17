@@ -322,7 +322,7 @@ struct NodeParamList: NodeAST {
 		params.insert(params.begin(), std::move(param));
 	}
 	// Funktion zum Abflachen der Parameterliste
-	void flatten_params() {
+	void flatten() {
 		std::vector<std::unique_ptr<NodeAST>> flat_list;
 		// Rekursive Funktion, um die Parameterliste abzuflachen
 		std::function<void(std::vector<std::unique_ptr<NodeAST>>)> flatten = [&](std::vector<std::unique_ptr<NodeAST>> current_node) {

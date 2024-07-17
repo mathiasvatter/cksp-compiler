@@ -5,9 +5,9 @@ struct List
 	declare List.free_idx : int := 0
 	declare List.allocation[List.MAX_STRUCTS] : int[]
 	declare List.value[List.MAX_STRUCTS] : int[]
-	declare List.next[List.MAX_STRUCTS] : Array[List] := (nil)
+	declare List.next[List.MAX_STRUCTS] : Array[List]
 
-	function List.__init__(value : int, next : List) : List
+	function List.__init__(value : int, next : Unknown) : List
 		List.free_idx[List.free_idx] := search(List.free_idx, , 0)
 		if(List.free_idx[List.free_idx] = -1)
 			message("Error: No more free space available to allocate objects of type 'List'")
@@ -26,8 +26,17 @@ end struct
 
 on init
 	declare _iter : int
+	declare const color.a : int := 0 + 0
+	declare const color.b : int := 0 + (0 + 1)
+	declare const color.c : int := 0 + ((0 + 1) + 1)
+	declare const color.d : int := 0 + (((0 + 1) + 1) + 1)
+	declare const color.e : int := 0 + ((((0 + 1) + 1) + 1) + 1)
+	declare const color.f : int := 0 + (((((0 + 1) + 1) + 1) + 1) + 1)
+	declare color[6] : int[] := (0 + 0, 0 + (0 + 1), 0 + ((0 + 1) + 1), 0 + (((0 + 1) + 1) + 1), 0 + ((((0 + 1) + 1) + 1) + 1), 0 + (((((0 + 1) + 1) + 1) + 1) + 1))
+	declare const color.SIZE : int := 7
+	message(color.a)
 	declare this_list : List := nil
-	this_list := List(42, nil)
+	this_list := List(42, nil){List}.next{List}
 	declare lists[5] : Array[List] := (nil)
 	message(lists[0]{List}.next{List}.value{int})
 	message(this_list{List}.next{List}.value{int})

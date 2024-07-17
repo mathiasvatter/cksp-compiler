@@ -25,7 +25,7 @@ void ASTDesugar::visit(NodeBlock& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
-	node.flatten_body();
+	node.flatten();
 }
 
 void ASTDesugar::visit(NodeFunctionDefinition& node) {
@@ -96,6 +96,14 @@ void ASTDesugar::visit(NodeFamily &node) {
         node.accept(*desugaring);
     }
     node.replace_with(std::move(node.members));
+}
+
+void ASTDesugar::visit(NodeConst &node) {
+	node.constants->accept(*this);
+	if(auto desugaring = node.get_desugaring(m_program)) {
+		node.accept(*desugaring);
+	}
+//	node.replace_with(std::move(node.constants));
 }
 
 void ASTDesugar::visit(NodeParamList &node) {

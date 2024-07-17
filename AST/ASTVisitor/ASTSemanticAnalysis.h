@@ -53,9 +53,6 @@ public:
     void visit(NodeFunctionDefinition& node) override;
 	void visit(NodeWildcard& node) override;
 
-private:
-    NodeProgram* m_program = nullptr;
-	DefinitionProvider* m_def_provider = nullptr;
 
 	/// updates the node types of parameters at call sites regarding the function definition
 	/// e.g. args can be incorrectly detected as variable refs at call sites, but they are arrays in the definition
@@ -63,7 +60,10 @@ private:
 	/// updates incorrectly detected function params (eg arrays detected as variables)
 	void replace_incorrectly_detected_data_struct(NodeDataStructure* data_struct);
 	/// updated incorrectly detected references of function params
-	void replace_incorrectly_detected_reference(NodeReference* reference);
+	static NodeReference* replace_incorrectly_detected_reference(DefinitionProvider* def_provider, NodeReference* reference);
+private:
+    NodeProgram* m_program = nullptr;
+	DefinitionProvider* m_def_provider = nullptr;
 
 };
 

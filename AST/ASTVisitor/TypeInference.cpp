@@ -4,6 +4,7 @@
 
 #include "TypeInference.h"
 #include "ASTVariableChecking.h"
+#include "ASTSemanticAnalysis.h"
 
 void TypeInference::visit(NodeProgram& node) {
 	m_program = &node;
@@ -25,20 +26,31 @@ void TypeInference::visit(NodeProgram& node) {
 }
 
 void TypeInference::cast_data_structure_types(DefinitionProvider* def_provider, bool cast) {
-    for(auto & ref : def_provider->get_all_references()) {
-        match_reference_declaration(ref);
-    }
+//    for(auto & ref : def_provider->get_all_references()) {
+//        match_reference_declaration(ref);
+//    }
+	for(auto& refs : def_provider->m_references_per_data_structure) {
+		for(auto & ref : refs.second) {
+			match_reference_declaration(ref);
+		}
+	}
 
     for(auto & decl : def_provider->get_all_declarations()) {
-        if(decl->value) {
-            match_assignment_types(decl->variable.get(), decl->value.get());
-        }
-        // cast as Integer if still unknown
-        if(cast) decl->variable->cast_type();
-    }
-    for(auto & ref : def_provider->get_all_references()) {
-        match_reference_declaration(ref);
-    }
+		if (decl->value) {
+			match_assignment_types(decl->variable.get(), decl->value.get());
+		}
+		// cast as Integer if still unknown
+		if (cast) decl->variable->cast_type();
+	}
+
+//    for(auto & ref : def_provider->get_all_references()) {
+//        match_reference_declaration(ref);
+//    }
+	for(auto& refs : def_provider->m_references_per_data_structure) {
+		for(auto & ref : refs.second) {
+			match_reference_declaration(ref);
+		}
+	}
 }
 
 void TypeInference::visit(NodeCallback& node) {
@@ -63,13 +75,15 @@ void TypeInference::visit(NodeNil& node) {
 	node.ty = TypeRegistry::Nil;
 }
 
-void TypeInference::visit(NodeConstBlock& node) {
+void TypeInference::visit(NodeConst& node) {
 	node.ty = TypeRegistry::Integer;
 	for(auto & constant : node.constants->statements) {
-		if(auto decl = cast_node<NodeSingleDeclaration>(constant->statement.get())) {
+		constant->accept(*this);
+		if(constant->statement->get_node_type() == NodeType::SingleDeclaration) {
+			auto decl = static_cast<NodeSingleDeclaration*>(constant->statement.get());
 			if(decl->variable->ty == TypeRegistry::Unknown || decl->variable->ty == TypeRegistry::Integer) {
 				decl->variable->ty = TypeRegistry::Integer;
-			} else {
+			} else if(decl->variable->ty != TypeRegistry::ArrayOfInt) {
 				auto error = throw_type_error(decl->variable.get(), &node);
 				error.m_message += "Constant Blocks can only contain <Integer> Variables.";
 				error.exit();
@@ -87,12 +101,15 @@ void TypeInference::visit(NodeVariableRef& node) {
 		// manual replacement of node type if declaration is a pointer
 		// 	declare this_list := nil
 		//	this_list := List(42, nil)
-		if(node.declaration->get_node_type() == NodeType::Pointer) {
+		if(node.declaration->get_node_type() == NodeType::Pointer or node.declaration->ty->get_type_kind() == TypeKind::Object
+		or node.ty->get_type_kind() == TypeKind::Object) {
 			auto pointer_ref = std::make_unique<NodePointerRef>(node.name, node.tok);
 			pointer_ref->match_data_structure(node.declaration);
-			pointer_ref->accept(*this);
+			match_type(pointer_ref.get(), &node);
 			m_def_provider->remove_reference(node.declaration, &node);
-			node.replace_with(std::move(pointer_ref));
+			auto new_node = static_cast<NodeReference*>(node.replace_with(std::move(pointer_ref)));
+			//m_def_provider->add_reference(node.declaration, new_node);
+			new_node->accept(*this);
 			return;
 		}
 	}
@@ -121,6 +138,22 @@ void TypeInference::visit(NodeVariable& node) {
 }
 
 void TypeInference::visit(NodePointerRef& node) {
+	// replace declaration node with Pointer if it is Variable
+	if(node.declaration->get_node_type() == NodeType::Variable) {
+		auto node_var = static_cast<NodeVariable*>(node.declaration);
+		auto ptr = node_var->to_pointer();
+		auto references = m_def_provider->get_references(node.declaration);
+		auto new_node = static_cast<NodeDataStructure*>(node.declaration->replace_with(std::move(ptr)));
+		for(auto ref : references) {
+			ref->declaration = new_node;
+			ASTSemanticAnalysis::replace_incorrectly_detected_reference(m_def_provider, ref);
+		}
+		new_node->accept(*this);
+		if(auto strct = new_node->is_member()) {
+			strct->update_member_table();
+		}
+	}
+
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::Nil;
 	}
@@ -239,9 +272,9 @@ void TypeInference::visit(NodeStruct& node) {
 };
 
 void TypeInference::visit(NodeMethodChain& node) {
-	auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 	for(int i = 0; i<node.chain.size(); i++) {
 		auto& ptr = node.chain[i];
+		auto error = CompileError(ErrorType::SyntaxError, "", "", ptr->tok);
 		if(i == 0) {
 			ptr->accept(*this);
 		} else {
@@ -264,7 +297,11 @@ void TypeInference::visit(NodeMethodChain& node) {
 				auto reference = cast_node<NodeReference>(ptr.get());
 				auto strct = reference->get_object_ptr(m_program, prev_obj);
 				if(!strct) {
-					error.m_message = "Struct "+prev_obj+" does not exist.";
+					if(prev_type == TypeRegistry::Nil) {
+						error.m_message = "Method chaining can not be used on <Nil> types.";
+					} else {
+						error.m_message = "Struct "+prev_obj+" does not exist.";
+					}
 					error.exit();
 				}
 				auto node_declaration = strct->get_member(prev_obj+"."+reference->name);
@@ -273,11 +310,27 @@ void TypeInference::visit(NodeMethodChain& node) {
 					error.exit();
 				}
 				reference->declaration = node_declaration;
+
+				// if declaration of this reference is unknown and it is not the end of the chain,
+				// we can assume that it is also an object. we can check if the next reference is also in this struct
+				// and then cast this reference to the object of the last
+				if(reference->ty == TypeRegistry::Unknown and i+1 < node.chain.size()) {
+					auto& next = node.chain[i+1];
+					if(auto next_ref = cast_node<NodeReference>(next.get())) {
+						// next reference is also in this object
+						auto next_obj = strct->get_member(prev_obj+"."+next_ref->name);
+						if(next_obj) {
+							reference->ty = prev_type;
+						}
+					}
+				}
+
 				reference->accept(*this);
 			}
 		}
 
 	}
+	match_type(&node, node.chain.back().get());
 
 }
 
