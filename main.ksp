@@ -11,11 +11,16 @@ struct List
 end struct
 
 on init
-
+	const color
+		a
+		b
+	end const
+	message(color.a)
 	declare this_list := nil
 	this_list := List(42, nil)
-	// declare lists[5]: List[] := (nil)
-	message(this_list.next.next)
+	declare lists[5]: List[] := (nil)
+	message(lists[0].next.value)
+	message(this_list.next.value)
 
 	// declare lists[5]: List[] := (nil)
 

@@ -166,8 +166,8 @@ struct NodeDataStructure : NodeAST {
 	bool determine_locality(class NodeProgram* program, struct NodeBlock* current_block);
 	/// determines if current data structure is a parameter in a function definition
 	bool is_function_param();
-	/// determines if current data structure is member of a struct
-	bool is_member();
+	/// determines if current data structure is member of a struct, if yes returns pointer to struct
+	NodeStruct* is_member();
 	/// tries to infer the type by specializing given type from Number to Integer
 	virtual Type* cast_type();
 	/// returns fitting reference node type for the data structures

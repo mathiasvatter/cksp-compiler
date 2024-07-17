@@ -11,13 +11,13 @@ void TypeInference::visit(NodeProgram& node) {
 	m_def_provider->m_all_declarations.clear();
 	m_def_provider->m_all_references.clear();
 	m_def_provider->m_all_declarations.clear();
-	// get all types of function params first
-	for(auto & function_definition : node.function_definitions) {
-		function_definition->accept(*this);
-	}
 	m_program->global_declarations->accept(*this);
 	for(auto & s : node.struct_definitions) {
 		s->accept(*this);
+	}
+	// get all types of function params first
+	for(auto & function_definition : node.function_definitions) {
+		function_definition->accept(*this);
 	}
 	for(auto & callback : node.callbacks) {
 		callback->accept(*this);
@@ -91,6 +91,7 @@ void TypeInference::visit(NodeVariableRef& node) {
 			auto pointer_ref = std::make_unique<NodePointerRef>(node.name, node.tok);
 			pointer_ref->match_data_structure(node.declaration);
 			pointer_ref->accept(*this);
+			m_def_provider->remove_reference(node.declaration, &node);
 			node.replace_with(std::move(pointer_ref));
 			return;
 		}
@@ -110,6 +111,9 @@ void TypeInference::visit(NodeVariable& node) {
 			ref->declaration = new_node;
 		}
 		m_def_provider->add_to_data_structures(new_node);
+		if(auto strct = node.is_member()) {
+			strct->update_member_table();
+		}
 		return;
 	}
 //	auto new_node = ASTVariableChecking::apply_type_annotations(&node);
@@ -224,6 +228,15 @@ void TypeInference::visit(NodeListRef& node) {
 	m_def_provider->add_to_references(&node);
 	m_def_provider->add_reference(node.declaration, &node);
 }
+
+void TypeInference::visit(NodeStruct& node) {
+	node.members->accept(*this);
+	for(auto & m: node.methods) {
+		m->accept(*this);
+	}
+	node.update_member_table();
+	node.update_method_table();
+};
 
 void TypeInference::visit(NodeMethodChain& node) {
 	auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
