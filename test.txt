@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Tue Jul 16 18:39:28 2024 }
+{ Compiled with cksp version 0.0.5 on Wed Jul 17 11:42:37 2024 }
 on init
   declare const $MAX_STRUCTS := 1000000
   declare const $List__MAX_STRUCTS := $MAX_STRUCTS
@@ -8,6 +8,7 @@ on init
   declare  List__next[$List__MAX_STRUCTS] := ()
   declare  := 
    := List(42, )
+  message()
   declare ui_slider $sli (1, 500)
   set_control_par_str(get_ui_id($sli), $CONTROL_PAR_TEXT, "sdfkj")
   declare @a

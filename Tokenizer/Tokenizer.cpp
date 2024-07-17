@@ -442,7 +442,7 @@ void Tokenizer::get_bitwise_operator() {
         m_tokens.emplace_back(*tok, m_buffer, m_line, m_line_pos-m_buffer.length(), m_current_file);
     } else {
 		// method chaining
-		if (std::isalnum(peek()) || peek() == '_' || peek() == '#' || is_space(peek())) {
+//		if (std::isalnum(peek()) || peek() == '_' || peek() == '#' || is_space(peek())) {
 			while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
 				consume();
 			}
@@ -451,7 +451,7 @@ void Tokenizer::get_bitwise_operator() {
 //		} else {
 //			auto err_msg = "Found unknown keyword.";
 //			CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
-		}
+//		}
 
 
     }

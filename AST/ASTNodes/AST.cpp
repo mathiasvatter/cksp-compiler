@@ -104,7 +104,7 @@ Type* NodeDataStructure::cast_type() {
 	return ty;
 }
 
-bool NodeDataStructure::is_member() {
+NodeStruct* NodeDataStructure::is_member() {
 	if(this->parent and this->parent->get_node_type() == NodeType::SingleDeclaration) {
 		auto decl = this->parent;
 		if(decl->parent and decl->parent->get_node_type() == NodeType::Statement) {
@@ -112,12 +112,12 @@ bool NodeDataStructure::is_member() {
 			if(stmt->parent and stmt->parent->get_node_type() == NodeType::Block) {
 				auto body = stmt->parent;
 				if(body->parent and body->parent->get_node_type() == NodeType::Struct) {
-					return true;
+					return static_cast<NodeStruct*>(body->parent);
 				}
 			}
 		}
 	}
-	return false;
+	return nullptr;
 }
 
 // ************* NodeReference ***************

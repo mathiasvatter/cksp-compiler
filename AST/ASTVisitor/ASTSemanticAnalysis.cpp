@@ -214,6 +214,7 @@ void ASTSemanticAnalysis::replace_incorrectly_detected_data_struct(NodeDataStruc
 	// if reference node types are same as data struct -> return
 	if(reference_node_types.empty()) return;
 
+	NodeDataStructure* new_data_struct = nullptr;
 	// if some of the references were detected as Array References -> change data_struct type
 	if(reference_node_types.find(NodeType::ArrayRef) != reference_node_types.end()) {
 		auto node_array = std::make_unique<NodeArray>(
@@ -222,7 +223,7 @@ void ASTSemanticAnalysis::replace_incorrectly_detected_data_struct(NodeDataStruc
 			data_struct->ty,
             nullptr,
 			data_struct->tok);
-		auto new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_array)));
+		new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_array)));
 		m_def_provider->set_references(new_data_struct, references);
 		// update all reference declaration pointers
 		for(auto & ref : references) {
@@ -235,13 +236,19 @@ void ASTSemanticAnalysis::replace_incorrectly_detected_data_struct(NodeDataStruc
 			data_struct->name,
 			data_struct->ty,
 			data_struct->tok);
-		auto new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_pointer)));
+		new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_pointer)));
 		m_def_provider->set_references(new_data_struct, references);
 		// update all reference declaration pointers
 		for(auto & ref : references) {
 			ref->declaration = new_data_struct;
 		}
 	}
+	// update member table of struct if member being replaced
+//	if(new_data_struct) {
+//		if (auto strct = new_data_struct->is_member()) {
+//			strct->update_member_table();
+//		}
+//	}
 }
 
 void ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeReference* reference) {
