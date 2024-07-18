@@ -130,6 +130,10 @@ end on
   * __Lösung:__ Mache Array Assignment Lowering. Erstelle Funktion (bereits parameter promoted), die dort eingesetzt 
     wird, wo Arrays initialisiert werden, mit dem Array Typ im Namen. Mache diesen Prozess bereits vor der Umwandlung in global Scope, damit der iterator des while loops direkt durch passive Variablen ersetzt werden kann.
   
+- debugging lookup table 
+compilation of functionial programming to array language
+funktionale programmierfeatures repräsentieren in eingeschränkter umgebung
+
 __Pre Array Assignment Lowering:__
 ```
 arr := (0)
