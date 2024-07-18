@@ -14,20 +14,41 @@ public:
 	explicit LoweringPointer(NodeProgram *program) : ASTLowering(program) {}
 
 	inline void visit(NodePointer& node) override {
-		auto node_var = node.to_variable();
-		node_var->ty = TypeRegistry::Integer;
-		node.replace_with(std::move(node_var));
+//		auto node_var = node.to_variable();
+//		node_var->ty = TypeRegistry::Integer;
+//		node.replace_with(std::move(node_var));
+		node.lower_type();
 	}
+
 	inline void visit(NodePointerRef& node) override {
-		if(!node.is_valid_object_type(m_program)) {
-			auto error = CompileError(ErrorType::TypeError, "Pointer reference must be a valid object type.", "", node.tok);
+		if(node.ty == TypeRegistry::Unknown || node.ty->get_type_kind() != TypeKind::Object) {
+			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+			error.m_message = "Unknown type for pointer reference. Pointer references have to be typed or of type <Object>.";
+			error.m_got = node.ty->to_string();
 			error.exit();
 		}
-		auto obj = node.ty->to_string();
-		auto obj_index = node.to_variable_ref();
-		auto array_ref = node.to_array_ref(obj_index.get());
-		array_ref->ty = TypeRegistry::ArrayOfInt;
 
+		// check if parent string -> call __repr__ method
+		auto obj_name = node.ty->to_string();
+		static auto func_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				obj_name+".__repr__",
+				 std::make_unique<NodeParamList>(node.tok, node.clone()),
+				 node.tok
+			 	),
+			node.tok
+			);
+		node.lower_type();
+
+		bool is_string = false;
+		is_string |= node.parent->ty == TypeRegistry::String;
+		is_string |= node.is_func_arg() and static_cast<NodeFunctionHeader*>(node.parent->parent)->name == "message";
+//		is_string |= node.parent->get_node_type() == NodeType::Return
+		if(is_string) {
+			node.replace_with(std::move(func_call));
+			return;
+		}
 
 	}
 };

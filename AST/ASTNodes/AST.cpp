@@ -8,6 +8,7 @@
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Desugaring/DesugarFunctionDef.h"
 #include "../ASTVisitor/ASTPrinter.h"
+#include "../../Lowering/LoweringFunctionDef.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(tok),
@@ -35,6 +36,9 @@ Type* NodeAST::set_element_type(Type *element_type) {
 		ty = element_type;
 		return ty;
 	} else if (element_type->get_type_kind() == TypeKind::Object and TypeRegistry::get_object_type(element_type->to_string())) {
+		ty = element_type;
+		return ty;
+	} else if (ty->get_type_kind() == TypeKind::Object and element_type->get_type_kind() == TypeKind::Basic) {
 		ty = element_type;
 		return ty;
 	} else {
@@ -120,6 +124,12 @@ NodeStruct* NodeDataStructure::is_member() {
 	return nullptr;
 }
 
+void NodeDataStructure::lower_type() {
+	if(ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+		set_element_type(TypeRegistry::Integer);
+	}
+}
+
 // ************* NodeReference ***************
 void NodeReference::accept(ASTVisitor &visitor) {}
 
@@ -163,19 +173,12 @@ NodeStruct *NodeReference::get_object_ptr(NodeProgram* program, const std::strin
 	}
 	return nullptr;
 }
-//
-//bool NodeReference::is_valid_ptr_chain(NodeProgram* program, const std::string& obj) {
-//
-//	auto ptr_chain = get_ptr_chain();
-//	if(ptr_chain.empty()) return false;
-//	if(ptr_chain.size() < 2) return false;
-//
-//	for(int i = 1 ; i<ptr_chain.size(); i++) {
-//
-//	}
-//
-//}
 
+void NodeReference::lower_type() {
+	if(ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+		set_element_type(TypeRegistry::Integer);
+	}
+}
 
 // ************* NodeInstruction ***************
 void NodeInstruction::accept(ASTVisitor &visitor) {}
@@ -430,7 +433,8 @@ ASTDesugaring *NodeFunctionDefinition::get_desugaring(NodeProgram *program) cons
 }
 
 ASTLowering *NodeFunctionDefinition::get_lowering(NodeProgram *program) const {
-	return nullptr;
+	static LoweringFunctionDef lowering(program);
+	return &lowering;
 }
 
 

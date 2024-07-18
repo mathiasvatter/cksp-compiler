@@ -156,10 +156,10 @@ bool NodeFunctionCall::get_definition(NodeProgram* program, bool fail) {
     return false;
 }
 
-std::unique_ptr<NodeMethodChain> NodeFunctionCall::to_method_chain() {
+std::unique_ptr<NodeAccessChain> NodeFunctionCall::to_method_chain() {
 	auto variable_ref = std::make_unique<NodeVariableRef>(function->name, function->tok);
 	auto ptr_strings = variable_ref->get_ptr_chain();
-	auto method_chain = std::make_unique<NodeMethodChain>(tok);
+	auto method_chain = std::make_unique<NodeAccessChain>(tok);
 	auto func_call = clone_as<NodeFunctionCall>(this);
 	func_call->function->name = ptr_strings.back();
 	ptr_strings.pop_back();
@@ -349,6 +349,37 @@ NodeAST * NodeGetControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeA
 ASTLowering* NodeGetControl::get_lowering(struct NodeProgram *program) const {
     static LoweringGetControl lowering(program);
     return &lowering;
+}
+
+std::unique_ptr<NodeReference> NodeGetControl::get_full_control_param(DefinitionProvider *def_provider) {
+	std::string control_par = to_lower(control_param);
+	if(control_par == "x") control_par = "pos_x";
+	if(control_par == "y") control_par = "pos_y";
+	if(control_par == "default") control_par += "_value";
+	if(auto builtin_var = def_provider->get_builtin_variable(to_upper("control_par_"+control_par))) {
+		return builtin_var->to_reference();
+	}
+	return nullptr;
+}
+
+Type *NodeGetControl::get_control_type() {
+	std::string control_par = to_lower(control_param);
+	static const std::unordered_set<std::string> str_substrings{"name", "path", "picture", "help", "identifier", "label", "text"};
+	static const std::unordered_set<std::string> int_substrings{"state", "alignment", "pos", "shifting"};
+	Type* type = TypeRegistry::Integer;
+	for (auto const &substring : str_substrings) {
+		if(contains(control_par, substring)) {
+			type = TypeRegistry::String;
+			break;
+		}
+	}
+	for (auto const &substring : int_substrings) {
+		if(contains(control_par, substring)) {
+			type = TypeRegistry::Integer;
+			break;
+		}
+	}
+	return type;
 }
 
 // ************* NodeBlock ***************

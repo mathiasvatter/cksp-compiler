@@ -57,7 +57,7 @@ public:
 	virtual void visit(NodeNDArrayRef& node) {
 		if(node.indexes) node.indexes->accept(*this);
 	};
-	virtual void visit(NodeMethodChain& node) {
+	virtual void visit(NodeAccessChain& node) {
 		for(auto & method : node.chain) {
 			method->accept(*this);
 		}

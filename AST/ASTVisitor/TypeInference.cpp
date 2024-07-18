@@ -26,12 +26,16 @@ void TypeInference::visit(NodeProgram& node) {
 }
 
 void TypeInference::cast_data_structure_types(DefinitionProvider* def_provider, bool cast) {
-//    for(auto & ref : def_provider->get_all_references()) {
-//        match_reference_declaration(ref);
-//    }
 	for(auto& refs : def_provider->m_references_per_data_structure) {
 		for(auto & ref : refs.second) {
 			match_reference_declaration(ref);
+		}
+	}
+
+	for(auto& ass : def_provider->get_all_assignments()) {
+		if(ass->l_value->ty->get_element_type() == TypeRegistry::Unknown ||
+		ass->r_value->ty->get_element_type() == TypeRegistry::Unknown) {
+			match_assignment_types(ass->l_value.get(), ass->r_value.get());
 		}
 	}
 
@@ -43,9 +47,6 @@ void TypeInference::cast_data_structure_types(DefinitionProvider* def_provider, 
 		if (cast) decl->variable->cast_type();
 	}
 
-//    for(auto & ref : def_provider->get_all_references()) {
-//        match_reference_declaration(ref);
-//    }
 	for(auto& refs : def_provider->m_references_per_data_structure) {
 		for(auto & ref : refs.second) {
 			match_reference_declaration(ref);
@@ -271,7 +272,7 @@ void TypeInference::visit(NodeStruct& node) {
 	node.update_method_table();
 };
 
-void TypeInference::visit(NodeMethodChain& node) {
+void TypeInference::visit(NodeAccessChain& node) {
 	for(int i = 0; i<node.chain.size(); i++) {
 		auto& ptr = node.chain[i];
 		auto error = CompileError(ErrorType::SyntaxError, "", "", ptr->tok);
@@ -341,11 +342,12 @@ void TypeInference::visit(NodeParamList& node) {
         param->accept(*this);
         types.push_back(param->ty);
     }
-    // enforce same type for every member only if in array declaration, assignment, liststruct
+    // enforce same type for every member only if in array declaration, assignment, liststruct, return stmt
     auto node_declaration = node.parent->get_node_type() == NodeType::SingleDeclaration;
     auto node_assignment = node.parent->get_node_type() == NodeType::SingleAssignment;
 	auto node_list_struct = node.parent->get_node_type() == NodeType::List;
-    if(!node_declaration and !node_assignment and !node_list_struct) return;
+	auto node_return = node.parent->get_node_type() == NodeType::Return;
+    if(!node_declaration and !node_assignment and !node_list_struct and !node_return) return;
 
     node.ty = infer_initialization_types(types, &node);
 }
@@ -402,6 +404,11 @@ void TypeInference::visit(NodeUIControl& node) {
 	node.params->accept(*this);
 }
 
+void TypeInference::visit(NodeGetControl& node) {
+	node.ui_id->accept(*this);
+	node.ty = node.get_control_type();
+};
+
 void TypeInference::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
@@ -414,6 +421,8 @@ void TypeInference::visit(NodeSingleAssignment& node) {
 	// a second time to get the new types to the declaration pointer!
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
+
+	m_def_provider->add_to_assignments(&node);
 }
 
 void TypeInference::visit(NodeFunctionCall& node) {
@@ -450,7 +459,7 @@ void TypeInference::visit(NodeReturn& node) {
 	for(auto &ret : node.return_variables) {
 		ret->accept(*this);
 	}
-	if(node.return_variables.size() >=1 ) {
+	if(!node.return_variables.empty() ) {
 		if(node.definition) match_type(node.definition, node.return_variables[0].get());
 	}
 }
@@ -477,6 +486,10 @@ void TypeInference::visit(NodeBinaryExpr& node) {
 	if (contains(MATH_TOKENS, node.op)) {
 		// can only be int op int || float op float
 		is_compatible = node.left->ty->is_compatible(TypeRegistry::Integer) and node.right->ty->is_compatible(TypeRegistry::Integer);
+		if(node.left->ty->get_element_type() == TypeRegistry::String || node.right->ty->get_element_type() == TypeRegistry::String) {
+			error.m_message += "<Mathematical Operators> can only be used in between <Integer> or <Real> values.";
+			error.exit();
+		}
 		if(is_compatible) node.ty = TypeRegistry::Integer;
 		is_compatible |= node.left->ty->is_compatible(TypeRegistry::Real) and node.right->ty->is_compatible(TypeRegistry::Real);
 		if(is_compatible and node.ty != TypeRegistry::Integer) node.ty = TypeRegistry::Real;
