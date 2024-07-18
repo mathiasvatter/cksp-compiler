@@ -150,6 +150,7 @@ void TypeInference::visit(NodePointerRef& node) {
 			ASTSemanticAnalysis::replace_incorrectly_detected_reference(m_def_provider, ref);
 		}
 		new_node->accept(*this);
+		node.declaration = new_node;
 		if(auto strct = new_node->is_member()) {
 			strct->update_member_table();
 		}

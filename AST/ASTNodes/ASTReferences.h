@@ -150,10 +150,13 @@ struct NodePointerRef : NodeReference {
 	std::unique_ptr<NodeVariableRef> to_variable_ref() override;
 
 	ASTLowering* get_lowering(NodeProgram *program) const override;
+
+	bool is_string_repr();
 };
 
 struct NodeAccessChain : NodeReference {
 	std::vector<std::unique_ptr<NodeAST>> chain;
+	std::vector<Type*> types;
 	inline NodeAccessChain(std::vector<std::unique_ptr<NodeAST>> method_chain, Token tok)
 		: NodeReference("", NodeType::AccessChain, std::move(tok)), chain(std::move(method_chain)) {
 		set_child_parents();
@@ -177,7 +180,11 @@ struct NodeAccessChain : NodeReference {
 		m->parent = this;
 		chain.push_back(std::move(m));
 	}
-
+	void update_types() {
+		for(const auto& c: chain) {
+			types.push_back(c->ty);
+		}
+	}
 	void flatten() {
 		std::vector<std::unique_ptr<NodeAST>> flat_list;
 		// Rekursive Funktion, um die Parameterliste abzuflachen
