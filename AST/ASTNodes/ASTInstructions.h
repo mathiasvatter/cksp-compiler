@@ -75,7 +75,7 @@ struct NodeFunctionCall : NodeInstruction {
 	NodeFunctionDefinition* find_constructor_definition(NodeProgram* program);
     /// gets and sets definition ptr or matches builtin func metadata -> throws error if not found when fail set to true
     bool get_definition(NodeProgram* program, bool fail=false);
-	std::unique_ptr<struct NodeMethodChain> to_method_chain() override;
+	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
 
 
 	[[nodiscard]] std::string get_object_name() const {
@@ -344,6 +344,9 @@ struct NodeGetControl : NodeInstruction {
         ui_id -> update_token_data(token);
     }
     ASTLowering* get_lowering(struct NodeProgram *program) const override;
+
+	std::unique_ptr<NodeReference> get_full_control_param(DefinitionProvider* def_provider);
+	Type* get_control_type();
 };
 
 struct NodeBlock : NodeInstruction {

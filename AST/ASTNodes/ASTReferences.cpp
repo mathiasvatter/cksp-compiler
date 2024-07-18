@@ -9,6 +9,8 @@
 #include "../../Lowering/LoweringList.h"
 #include "../../Lowering/LoweringNDArray.h"
 #include "../../Lowering/LoweringArray.h"
+#include "../../Lowering/LoweringPointer.h"
+#include "../../Lowering/LoweringAccessChain.h"
 
 // ************* NodeVariableRef ***************
 void NodeVariableRef::accept(ASTVisitor &visitor) {
@@ -33,10 +35,10 @@ std::unique_ptr<NodePointerRef> NodeVariableRef::to_pointer_ref() {
 }
 
 
-std::unique_ptr<NodeMethodChain> NodeVariableRef::to_method_chain() {
+std::unique_ptr<NodeAccessChain> NodeVariableRef::to_method_chain() {
 	// split into variable references
 	auto ptr_strings = this->get_ptr_chain();
-	auto method_chain = std::make_unique<NodeMethodChain>(tok);
+	auto method_chain = std::make_unique<NodeAccessChain>(tok);
 	for(auto &str : ptr_strings) {
 		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
 	}
@@ -93,9 +95,9 @@ std::unique_ptr<NodeNDArrayRef> NodeArrayRef::to_ndarray_ref() {
 	return std::make_unique<NodeNDArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, index->clone()) : nullptr, tok);
 }
 
-std::unique_ptr<NodeMethodChain> NodeArrayRef::to_method_chain() {
+std::unique_ptr<NodeAccessChain> NodeArrayRef::to_method_chain() {
 	auto ptr_strings = this->get_ptr_chain();
-	auto method_chain = std::make_unique<NodeMethodChain>(tok);
+	auto method_chain = std::make_unique<NodeAccessChain>(tok);
 	auto array_ref = clone_as<NodeArrayRef>(this);
 	array_ref->name = ptr_strings.back();
 	ptr_strings.pop_back();
@@ -142,9 +144,9 @@ bool NodeNDArrayRef::determine_sizes() {
 	return true;
 }
 
-std::unique_ptr<NodeMethodChain> NodeNDArrayRef::to_method_chain() {
+std::unique_ptr<NodeAccessChain> NodeNDArrayRef::to_method_chain() {
 	auto ptr_strings = this->get_ptr_chain();
-	auto method_chain = std::make_unique<NodeMethodChain>(tok);
+	auto method_chain = std::make_unique<NodeAccessChain>(tok);
 	auto array_ref = clone_as<NodeNDArrayRef>(this);
 	array_ref->name = ptr_strings.back();
 	ptr_strings.pop_back();
@@ -199,21 +201,26 @@ std::unique_ptr<NodeVariableRef> NodePointerRef::to_variable_ref() {
 	return std::make_unique<NodeVariableRef>(name, tok);
 }
 
-// ************* NodeMethodChain ***************
-void NodeMethodChain::accept(ASTVisitor &visitor) {
+ASTLowering* NodePointerRef::get_lowering(NodeProgram *program) const {
+	static LoweringPointer lowering(program);
+	return &lowering;
+}
+
+// ************* NodeAccessChain ***************
+void NodeAccessChain::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-NodeMethodChain::NodeMethodChain(const NodeMethodChain& other)
+NodeAccessChain::NodeAccessChain(const NodeAccessChain& other)
 	: NodeReference(other), chain(clone_vector(other.chain)) {
 	set_child_parents();
 }
 
-std::unique_ptr<NodeAST> NodeMethodChain::clone() const {
-	return std::make_unique<NodeMethodChain>(*this);
+std::unique_ptr<NodeAST> NodeAccessChain::clone() const {
+	return std::make_unique<NodeAccessChain>(*this);
 }
 
-NodeAST * NodeMethodChain::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST * NodeAccessChain::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	for (auto& c : chain) {
 		if (c.get() == oldChild) {
 			c = std::move(newChild);
@@ -221,4 +228,9 @@ NodeAST * NodeMethodChain::replace_child(NodeAST* oldChild, std::unique_ptr<Node
 		}
 	}
 	return nullptr;
+}
+
+ASTLowering* NodeAccessChain::get_lowering(NodeProgram *program) const {
+	static LoweringAccessChain lowering(program);
+	return &lowering;
 }

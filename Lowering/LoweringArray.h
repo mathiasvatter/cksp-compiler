@@ -60,12 +60,6 @@ public:
 			}
 		}
 
-		// check if assigned to sth then assignment has to be param list
-//		if(node_declaration and node_declaration->value and node_declaration->value->get_node_type() != NodeType::ParamList) {
-//			error.m_message = "Array has to be initialized with a list of values.";
-//			error.m_got = node_declaration->value->get_string();
-//			error.exit();
-//		}
 		lowered_node = &node;
 	}
 

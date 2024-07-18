@@ -171,10 +171,10 @@ public:
 	[[nodiscard]] Type* get_element_type() const override {return (Type *) this;}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		bool is_object_type = get_type_kind() == other->get_type_kind() && (m_name == other->to_string() or other->to_string() == "nil" or m_name == "nil");
-		return is_object_type or other->get_kind() == Kind::Unknown;
+		return is_object_type or other->get_kind() == Kind::Unknown or other->get_kind() == Kind::Any;
 	}
 	bool is_same_type(const Type* other) const override {
-		return get_type_kind() == other->get_type_kind() or (other->get_kind() == Kind::Unknown and other->get_type_kind() == TypeKind::Basic);
+		return get_type_kind() == other->get_type_kind() or ((other->get_kind() == Kind::Unknown or other->get_kind() == Kind::Any) and other->get_type_kind() == TypeKind::Basic);
 	}
 private:
     std::string m_name;

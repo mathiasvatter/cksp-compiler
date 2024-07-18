@@ -45,7 +45,7 @@ private:
 	inline std::unique_ptr<NodeFunctionCall> lowering(std::string control_function, NodeGetControl* node) {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 		// get control_param from shorthand
-		auto control_par = shorthand_to_control_param(m_def_provider, node->control_param);
+		auto control_par = node->get_full_control_param(m_def_provider);
 		if(!control_par) {
 			error.m_message = "Unknown control parameter: " + node->control_param;
 			error.m_got = node->control_param;
@@ -54,8 +54,7 @@ private:
 		}
 
 		// determine if _str needs to be added to control function name
-		Type* control_function_type = get_control_function_type(node->control_param);
-		if(control_function_type == TypeRegistry::String) control_function += "_str";
+		if(node->ty == TypeRegistry::String) control_function += "_str";
 
 		auto node_control_function = std::make_unique<NodeFunctionCall>(
 			false,
@@ -66,7 +65,7 @@ private:
 			),
 			node->tok
 		);
-        node_control_function->function->ty = control_function_type;
+        node_control_function->function->ty = node->ty;
         node_control_function->kind = NodeFunctionCall::Kind::Builtin;
 
 		if(auto node_reference = cast_node<NodeReference>(node->ui_id.get())) {
@@ -86,37 +85,6 @@ private:
 			return node_control_function;
 		}
 		return nullptr;
-	}
-
-	static inline std::unique_ptr<NodeReference> shorthand_to_control_param(DefinitionProvider* def_provider, const std::string& shorthand) {
-		std::string control_par = to_lower(shorthand);
-		if(control_par == "x") control_par = "pos_x";
-		if(control_par == "y") control_par = "pos_y";
-		if(control_par == "default") control_par += "_value";
-		if(auto builtin_var = def_provider->get_builtin_variable(to_upper("control_par_"+control_par))) {
-			return builtin_var->to_reference();
-		}
-		return nullptr;
-	}
-
-	static inline Type* get_control_function_type(const std::string& control_param) {
-		std::string control_par = to_lower(control_param);
-		static const std::unordered_set<std::string> str_substrings{"name", "path", "picture", "help", "identifier", "label", "text"};
-		static const std::unordered_set<std::string> int_substrings{"state", "alignment", "pos", "shifting"};
-		Type* type = TypeRegistry::Integer;
-		for (auto const &substring : str_substrings) {
-			if(contains(control_par, substring)) {
-				type = TypeRegistry::String;
-				break;
-			}
-		}
-		for (auto const &substring : int_substrings) {
-			if(contains(control_par, substring)) {
-				type = TypeRegistry::Integer;
-				break;
-			}
-		}
-		return type;
 	}
 
 };
