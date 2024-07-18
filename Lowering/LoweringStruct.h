@@ -189,12 +189,15 @@ public:
 
 
 	inline void visit(NodeFunctionDefinition& node) override {
+		node.header->accept(*this);
+		node.body->accept(*this);
 		// lower init function
 		if(node.header->name == m_current_struct->name+".__init__") {
 			lower_init_method(&node);
+		} else if(node.header->name == m_current_struct->name+".__repr__") {
+			node.header->args->add_param(m_current_struct->node_self->clone());
 		}
-		node.header->accept(*this);
-		node.body->accept(*this);
+
 	}
 
 private:
@@ -259,7 +262,7 @@ private:
 	}
 
 	/// creates a nested call to max(a, b) from many sizes
-	inline std::unique_ptr<NodeFunctionCall> find_max_array_size(const std::vector<std::unique_ptr<NodeAST>> &sizes) {
+	static inline std::unique_ptr<NodeFunctionCall> find_max_array_size(const std::vector<std::unique_ptr<NodeAST>> &sizes) {
 		if (sizes.empty()) {
 			auto error = CompileError(ErrorType::InternalError, "", "", Token());
 			error.m_message = "No sizes given for struct.";
@@ -415,7 +418,7 @@ private:
 		node_error_message->kind = NodeFunctionCall::Kind::Builtin;
 		auto node_if_stmt = std::make_unique<NodeIf>(
 			std::make_unique<NodeBinaryExpr>(token::EQUAL,
-											 m_current_struct->free_idx_var->to_reference()->clone(),
+											 m_current_struct->free_idx_var->to_reference(),
 											 std::make_unique<NodeInt>(-1, init->tok),
 											 init->tok),
 			std::make_unique<NodeBlock>(init->tok,

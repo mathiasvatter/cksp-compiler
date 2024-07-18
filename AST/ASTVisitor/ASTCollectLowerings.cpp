@@ -17,6 +17,16 @@ void ASTCollectLowerings::visit(NodeStruct& node) {
 	}
 }
 
+void ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
+	node.header ->accept(*this);
+	if (node.return_variable.has_value())
+		node.return_variable.value()->accept(*this);
+	node.body->accept(*this);
+	if(auto lowering = node.get_lowering(m_program)) {
+		node.accept(*lowering);
+	}
+};
+
 void ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 	if(node.value) node.value->accept(*this);
 	if(auto lowering = node.get_lowering(m_program)) {
@@ -95,6 +105,22 @@ void ASTCollectLowerings::visit(NodeList& node) {
 		node.accept(*lowering);
 	}
 }
+
+void ASTCollectLowerings::visit(NodePointerRef& node) {
+	if(auto lowering = node.get_lowering(m_program)) {
+		node.accept(*lowering);
+	}
+}
+
+void ASTCollectLowerings::visit(NodeAccessChain& node) {
+	if(auto lowering = node.get_lowering(m_program)) {
+		node.accept(*lowering);
+	}
+	for(auto & method : node.chain) {
+		method->accept(*this);
+	}
+}
+
 
 void ASTCollectLowerings::visit(NodeConst &node) {
     node.replace_with(std::move(node.constants));

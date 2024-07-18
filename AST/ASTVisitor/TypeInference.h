@@ -24,6 +24,7 @@ public:
 	void visit(NodeSingleDeclaration& node) override;
 	void visit(NodeSingleAssignment& node) override;
 	void visit(NodeUIControl& node) override;
+	void visit(NodeGetControl& node) override;
 
     /// check if every member has same type only if in assign or declare statement
 	void visit(NodeParamList& node) override;
@@ -47,7 +48,7 @@ public:
     void visit(NodeFunctionDefinition& node) override;
 	void visit(NodeReturn& node) override;
 
-	void visit(NodeMethodChain& node) override;
+	void visit(NodeAccessChain& node) override;
 
 	void visit(NodeConst& node) override;
 	void visit(NodeStruct& node) override;

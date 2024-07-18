@@ -36,6 +36,7 @@ public:
 
 	/// lower struct members to array members
 	void visit(NodeStruct& node) override;
+	void visit(NodeFunctionDefinition& node) override;
 	/// lower ndarray when declaration or ui_control array
     void visit(NodeSingleDeclaration& node) override;
 	/// lower get_control statements to set_control_par
@@ -58,6 +59,11 @@ public:
 	void visit(NodeListRef& node) override;
 	/// lower list structs to arrays and while loops
 	void visit(NodeList& node) override;
+
+	/// lower pointer reference types and replace with __repr__ if in string surrounding
+	void visit(NodePointerRef& node) override;
+	/// lower access chain to nested array_ref structure
+	void visit(NodeAccessChain& node) override;
 
 private:
     DefinitionProvider* m_def_provider;

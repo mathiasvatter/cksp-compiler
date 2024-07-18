@@ -330,7 +330,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_binary_expr(NodeAST* parent) {
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) {
-	auto chain = std::make_unique<NodeMethodChain>(peek());
+	auto chain = std::make_unique<NodeAccessChain>(peek());
 	while(peek().type == token::KEYWORD) {
 		std::unique_ptr<NodeAST> stmt = nullptr;
 		if (peek().type == token::KEYWORD) {
@@ -531,14 +531,11 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 		error.m_message = "The <return> keyword is reserved for <Return> Statement within function definitions. Consider using a different name.";
 		error.exit();
 	}
-	while(peek().type != token::LINEBRK) {
-		auto expr_result = parse_expression(node_return_statement.get());
-		if(expr_result.is_error()) {
-			return Result<std::unique_ptr<NodeReturn>>(expr_result.get_error());
-		}
-		node_return_statement->return_variables.push_back(std::move(expr_result.unwrap()));
-		if(peek().type == token::COMMA) consume();
+	auto return_params = parse_param_list(node_return_statement.get());
+	if(return_params.is_error()) {
+		return Result<std::unique_ptr<NodeReturn>>(return_params.get_error());
 	}
+	node_return_statement->return_variables = std::move(return_params.unwrap()->params);
 	if(!m_current_function_def) {
 		error.m_message = "Found <Return> Statement outside of function definition.";
 		error.exit();

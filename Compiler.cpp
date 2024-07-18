@@ -108,12 +108,15 @@ void Compiler::compile() {
 	TypeInference infer_types(&m_definition_provider);
 	ast->accept(infer_types);
 	TypeInference::cast_data_structure_types(&m_definition_provider, true);
+//	ast->accept(infer_types);
 
 	compile_time.stop("Type Checking");
 	compile_time.start("Lowering");
 
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
+
+	ast->debug_print();
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);

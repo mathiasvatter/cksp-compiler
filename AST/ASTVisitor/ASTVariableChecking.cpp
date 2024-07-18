@@ -112,7 +112,7 @@ void ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 	m_program->function_call_stack.pop();
 }
 
-void ASTVariableChecking::visit(NodeMethodChain& node) {
+void ASTVariableChecking::visit(NodeAccessChain& node) {
 	node.chain[0]->accept(*this);
 	node.flatten();
 }

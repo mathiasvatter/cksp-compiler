@@ -321,12 +321,6 @@ struct NodeStruct : NodeDataStructure {
 		}
 	}
 
-	bool is_member_name(const std::string& member_name) {
-		return member_set.find(member_name) != member_set.end();
-	}
-	bool is_method_name(const std::string& method_name) {
-		return method_set.find(method_name) != method_set.end();
-	}
 	NodeDataStructure* get_member(const std::string& ref_name) {
 		auto member = member_table.find(ref_name);
 		if(member != member_table.end()) {
@@ -335,62 +329,9 @@ struct NodeStruct : NodeDataStructure {
 		return nullptr;
 	}
 
-	static std::unique_ptr<NodeBlock> declare_struct_constants() {
-		auto node_block = std::make_unique<NodeBlock>(Token());
-		auto node_max_structs = std::make_unique<NodeVariable>(std::nullopt, "MAX_STRUCTS", TypeRegistry::Integer,  DataType::Const, Token());
-		node_max_structs->is_global = true;
-		auto node_declare_max_structs = std::make_unique<NodeSingleDeclaration>(
-			std::move(node_max_structs),
-			std::make_unique<NodeInt>(1000000, Token()),
-			Token()
-		);
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_max_structs), Token()));
-		auto node_mem_warning = std::make_unique<NodeVariable>(std::nullopt, "MEM_WARNING", TypeRegistry::String,  DataType::Const, Token());
-		node_mem_warning->is_global = true;
-		auto node_declare_mem_warning = std::make_unique<NodeSingleDeclaration>(
-			std::move(node_mem_warning),
-			std::make_unique<NodeString>("\"Memory Error: No more free space available to allocate objects of type\"", Token()),
-			Token()
-		);
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_mem_warning), Token()));
-		return node_block;
-	}
+	static std::unique_ptr<NodeBlock> declare_struct_constants();
 	/// generated init method only needs assignment if it has pointer -> nil
-	inline NodeFunctionDefinition* generate_empty_init_method() {
-		auto param_list = std::make_unique<NodeParamList>(this->tok);
-		param_list->add_param(node_self->clone());
-		auto node_block = std::make_unique<NodeBlock>(this->tok);
-		for(auto & mem : this->member_table) {
-			std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
-			auto member_ref = mem.second->to_reference();
-			param_list->add_param(mem.second->clone());
-			member_ref->name = "self." + member_ref->name;
-			assignment = std::make_unique<NodeSingleAssignment>(
-				std::move(member_ref),
-				mem.second->to_reference(),
-				mem.second->tok
-			);
-			node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
-		}
-		auto num_params = param_list->params.size();
-		auto function_def = std::make_unique<NodeFunctionDefinition>(
-			std::make_unique<NodeFunctionHeader>(
-				"__init__",
-				std::move(param_list),
-				this->tok
-			),
-			std::nullopt,
-			false,
-			std::move(node_block),
-			this->tok
-		);
-		function_def->ty = TypeRegistry::add_object_type(this->name);
-		function_def->parent = this;
-		this->methods.push_back(std::move(function_def));
-		this->constructor = methods.back().get();
-		this->update_method_table();
-		return method_table.find({"__init__", (int)num_params})->second;
-	}
+	NodeFunctionDefinition* generate_init_method();
 
 	/**
 	 * generates a __repr__ method for a struct
@@ -400,50 +341,6 @@ struct NodeStruct : NodeDataStructure {
 	 * 	 return "<struct> Object: "& self
 	 * end function
 	 */
-	inline NodeFunctionDefinition* generate_repr_method() {
-		auto self_ref = node_self->to_reference();
-		self_ref->declaration = node_self.get();
-		self_ref->kind = NodeReference::Kind::Compiler;
-		auto node_body = std::make_unique<NodeBlock>(
-			this->tok,
-			std::make_unique<NodeStatement>(
-				std::make_unique<NodeReturn>(this->tok, std::move(self_ref)), this->tok
-			)
-		);
-		node_body->scope = true;
-		auto function_def = std::make_unique<NodeFunctionDefinition>(
-			std::make_unique<NodeFunctionHeader>(
-				"__repr__",
-				std::make_unique<NodeParamList>(this->tok, node_self->clone()),
-				this->tok
-			),
-			std::nullopt,
-			false,
-			std::move(node_body),
-			this->tok
-		);
-		function_def->parent = this;
-		function_def->ty = TypeRegistry::String;
-		this->methods.push_back(std::move(function_def));
-		this->update_method_table();
-		return method_table.find({"__repr__", 1})->second;
-	}
-
-	inline void inline_struct(NodeProgram* program) {
-		// add struct methods to program functions
-		for(auto & m: methods) {
-			program->function_definitions.push_back(std::move(m));
-			auto new_func_ptr = program->function_definitions.back().get();
-			for(auto & callsite : new_func_ptr->call_sites) {
-				callsite->definition = new_func_ptr;
-			}
-		}
-		program->update_function_lookup();
-		methods.clear();
-		this->update_method_table();
-
-		program->init_callback->statements->prepend_body(std::move(members));
-		members = std::make_unique<NodeBlock>(Token());
-		this->update_member_table();
-	}
+	NodeFunctionDefinition* generate_repr_method();
+	void inline_struct(NodeProgram* program);
 };
