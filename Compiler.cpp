@@ -115,7 +115,6 @@ void Compiler::compile() {
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
 
-	ast->debug_print();
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
     ast->accept(infer_types);
@@ -130,6 +129,7 @@ void Compiler::compile() {
 	ASTGlobalScope global_scope(&m_definition_provider);
 	ast->accept(global_scope);
 
+//	ast->debug_print();
 
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");

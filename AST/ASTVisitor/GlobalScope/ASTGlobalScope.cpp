@@ -29,6 +29,7 @@ void ASTGlobalScope::visit(NodeProgram &node) {
 	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 	node.accept(dyn_extend);
 
+	node.debug_print();
 }
 
 
