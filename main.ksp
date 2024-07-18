@@ -1,49 +1,113 @@
 
-on init
-	
-    declare normal_var
+struct List
+	declare value: int
+	declare next
 
+	function __init__(self, value: int, next)
+		self.value := value
+		self.next := next
+	end function
+
+end struct
+
+on init
+	const color
+		a, b, c, d, e, f
+	end const
+	message(color.a)
+	declare this_list: List := nil
+	this_list := List(42, nil).next
+	declare lists[5]: List[] := (nil)
+	message(lists[0].next.value)
+	message(this_list.next.value)
+	message(this_list)
+
+	// declare lists[5]: List[] := (nil)
+
+	declare ui_slider sli(1,500)
+	sli->text := "sdfkj"
+	declare a: string
+	a := sli->text & 3
+	declare nda[2,4] := ((1,2,3,4),(5,6,7,8))
+	message(nda)
+	nda := ((1,2,3,4),(5,6,7,8))
+	nda[0, *] := (0)
+	nda[*, 3] := (1,2,6)
+
+	message(nda.SIZE_D1)
+	
+	// message(ndarray[0,0,0])
+	
+	declare nda2[4,5,5]
+	nda2[1,*,*] := (2,3,4,5,6)
+	nda2[1,*,*] := (0)
+
+	declare arr[4]
+	nda[0, *] := arr
+
+	const colorz
+		a
+		b
+	end const
+
+	// 	// As Declaration 1
+	// list !all_fx_texts[,]
+	// 	"Low Pass -12dB",		0,		 "Hz","Reso","%"	
+	// 	"Low Pass -24dB",		"Cutoff","Hz","Reso","%"	
+	// 	"Low Pass Vintage",		"Cutoff","Hz","Reso","%"	
+	// 	"High Pass -12dB",		"Cutoff","Hz","Reso","%"	
+	// 	"High Pass -24dB",		"Cutoff","Hz","Reso","%"	
+	// end list
+	
 	scoped_func1()
 	scoped_func1()
+	declare b : int, c[6] := ret_sth()
 end on
+
+function ret_sth()
+	declare b[5] := (0)
+	return 1, (1,2,3,4)
+end function
+
+function ndarray_func(ndarray: int[][])
+	message(ndarray[0,0])
+end function
 
 on persistence_changed
 	declare array[5]
 	scoped_func1()
 end on
 
-on listener
-	declare a, b, c
-	a := 1
-	wait(1)
-end on
-
-{*******************************************************************************************************************
-											* functions *
-*******************************************************************************************************************}
-
 function scoped_func1()
 	declare text := "sdlkj"
 	message(text)
-	declare array[5] := (3,4)
-	declare i: int := 0
 	scoped_func2()
+	declare array[4] := (3,4)
 end function
 
 function scoped_func2()
 	declare i: int
 	message(i)
-	// message(array[3])
 	if(i = 1)
 		declare arr[5]: int[] := (1)
 		declare j: int, k: int
 		message(j & k & arr[4])
 	end if
 	if(i = 2)
-		declare arr2[5]: int[] := (1)
 		declare h: int, g: int
 		message(h & g)
 	end if
 end function
+
+
+
+{*******************************************************************************************************************
+											* UI CALLBACKS *
+*******************************************************************************************************************}
+
+
+{*******************************************************************************************************************
+												* MACROS *
+*******************************************************************************************************************}
 
 

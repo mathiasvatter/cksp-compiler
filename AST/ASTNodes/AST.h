@@ -51,7 +51,7 @@ struct NodeAST {
 	/// and elemen_type is Basic Type
 	Type* set_element_type(Type *element_type);
 	void debug_print();
-	virtual std::unique_ptr<struct NodeMethodChain> to_method_chain() {return nullptr;}
+	virtual std::unique_ptr<struct NodeAccessChain> to_method_chain() {return nullptr;}
 
 };
 
@@ -93,7 +93,7 @@ struct NodeReference : NodeAST {
 	virtual std::unique_ptr<struct NodeVariableRef> to_variable_ref() {return nullptr;}
 	virtual std::unique_ptr<struct NodePointerRef> to_pointer_ref() {return nullptr;}
 	virtual std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() {return nullptr;}
-	std::unique_ptr<NodeMethodChain> to_method_chain() override {return nullptr;}
+	std::unique_ptr<NodeAccessChain> to_method_chain() override {return nullptr;}
 
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(NodeDataStructure* data_structure);
@@ -138,7 +138,8 @@ struct NodeReference : NodeAST {
 
 	[[nodiscard]] bool is_valid_object_type(NodeProgram* program);
 	struct NodeStruct* get_object_ptr(NodeProgram* program, const std::string& obj);
-//	[[nodiscard]] bool is_valid_ptr_chain(NodeProgram* program, const std::string& obj);
+	/// lower type from object to int if applicable
+	void lower_type();
 };
 
 struct NodeDataStructure : NodeAST {
@@ -179,6 +180,8 @@ struct NodeDataStructure : NodeAST {
 	virtual std::unique_ptr<class NodeArray> to_array(NodeAST* size) {return nullptr;}
 	virtual std::unique_ptr<class NodeNDArray> to_ndarray() {return nullptr;}
 	virtual std::unique_ptr<class NodeList> to_list() {return nullptr;}
+	/// lower type from object to int if applicable
+	void lower_type();
 };
 
 struct NodeInstruction : NodeAST {

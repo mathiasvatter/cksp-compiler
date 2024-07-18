@@ -62,7 +62,7 @@ public:
 			if (m->header->name == "__repr__") has_repr_method = true;
 		}
 		// automatically generate init method if none provided by user
-		if(!has_init_method) node.generate_empty_init_method();
+		if(!has_init_method) node.generate_init_method();
 		if(!has_repr_method) node.generate_repr_method();
 
 		node.members->accept(*this);
@@ -95,6 +95,20 @@ public:
 			}
 			node.num_return_params = 1;
 			node.ty = TypeRegistry::add_object_type(m_structs.top()->name);
+		}
+		if(node.header->name == "__repr__") {
+			if(node.num_return_params > 1) {
+				auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
+				error.m_message = "Repr method cannot have more than one return value.";
+				error.exit();
+			}
+			if(node.header->args->params.size() > 1) {
+				auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
+				error.m_message = "Repr method cannot have more than one argument.";
+				error.exit();
+			}
+			node.num_return_params = 1;
+			node.ty = TypeRegistry::String;
 		}
 		node.header->accept(*this);
 		node.header->name = add_struct_prefix(node.header->name);

@@ -77,6 +77,7 @@ public:
 		m_all_declarations.clear();
 		m_all_references.clear();
 		m_all_declarations.clear();
+		m_all_assignments.clear();
 		m_references_per_data_structure.clear();
 		return true;
 	}
@@ -94,6 +95,7 @@ public:
 	[[nodiscard]] const std::vector<NodeDataStructure *> &get_all_data_structures() const {
 		return m_all_data_structures;
 	}
+	/// All declaration statements
     std::vector<NodeSingleDeclaration*> m_all_declarations;
 	void add_to_declarations(NodeSingleDeclaration* decl) {
 		m_all_declarations.push_back(decl);
@@ -101,6 +103,15 @@ public:
     [[nodiscard]] const std::vector<NodeSingleDeclaration *> &get_all_declarations() const {
         return m_all_declarations;
     }
+	/// All assignments statements
+	std::vector<NodeSingleAssignment*> m_all_assignments;
+	void add_to_assignments(NodeSingleAssignment* ass) {
+		m_all_assignments.push_back(ass);
+	}
+	[[nodiscard]] const std::vector<NodeSingleAssignment *> &get_all_assignments() const {
+		return m_all_assignments;
+	}
+
 	std::unordered_map<NodeDataStructure*, std::set<NodeReference*>> m_references_per_data_structure;
 	const std::set<NodeReference*> &get_references(NodeDataStructure* data_struct) {
 		return m_references_per_data_structure[data_struct];

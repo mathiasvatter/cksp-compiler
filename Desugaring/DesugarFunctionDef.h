@@ -11,8 +11,8 @@
 /// when encountering return statement with multiple return values -> parameter promotion
 class DesugarFunctionDef : public ASTDesugaring {
 private:
-	std::stack<NodeFunctionDefinition*> m_functions_visited;
 	Gensym m_gensym;
+	std::stack<NodeFunctionDefinition*> m_functions_visited;
 public:
 	explicit DesugarFunctionDef(NodeProgram *program) : ASTDesugaring(program) {};
 
@@ -79,40 +79,26 @@ public:
 		m_gensym.ingest(node.name);
 	}
 
+	// add dummy variable for every return parameter >1 to function header
 	void inline visit(NodeReturn &node) override {
-		if(m_functions_visited.top()->return_variable.has_value()) {
+		if (m_functions_visited.top()->return_variable.has_value()) {
 			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 			error.m_message = "No Return Statement allowed in <FunctionDefinition> using deprecated return syntax.";
 			error.exit();
 		}
-		if(node.return_variables.size() != m_functions_visited.top()->num_return_params) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "Return Statement has incorrect number of return values.";
-			error.m_expected = m_functions_visited.top()->num_return_params;
-			error.m_got = node.return_variables.size();
-			error.exit();
-		}
-
 		// parameter promotion when multiple return values present
 		if(node.return_variables.size() > 1) {
-			auto block_replace = std::make_unique<NodeBlock>(Token());
 			for(int i = 1; i<node.return_variables.size(); i++) {
 				auto new_param = std::make_unique<NodeVariable>(
 					std::nullopt,
-					m_gensym.fresh("ret"),
+					m_gensym.fresh("return"),
 					TypeRegistry::Unknown,
 					DataType::Return, node.return_variables[i]->tok
 				);
-				auto new_param_ref = new_param->to_reference();
 				m_functions_visited.top()->header->args->add_param(std::move(new_param));
-				auto node_assignment = std::make_unique<NodeSingleAssignment>(std::move(new_param_ref), std::move(node.return_variables[i]), node.tok);
-				block_replace->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
 			}
-			node.return_variables.erase(std::remove(node.return_variables.begin(), node.return_variables.end(), nullptr), node.return_variables.end());
-			block_replace->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
-			node.replace_with(std::move(block_replace));
 		}
 
-	}
+	};
 
 };

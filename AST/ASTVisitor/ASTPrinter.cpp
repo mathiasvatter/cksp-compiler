@@ -121,7 +121,7 @@ void ASTPrinter::visit(NodeParamList &node) {
     }
 }
 
-void ASTPrinter::visit(NodeMethodChain &node) {
+void ASTPrinter::visit(NodeAccessChain &node) {
 	for (int i = 0; i < node.chain.size() - 1; i++) {
 		node.chain[i]->accept(*this);
 		auto type = TypeRegistry::get_annotation_from_type(node.chain[i]->ty);

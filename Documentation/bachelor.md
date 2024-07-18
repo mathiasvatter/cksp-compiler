@@ -208,7 +208,7 @@ end function
 
 ### Vorgehen:
 1. Tokenizer erweitern. Reserviere folgende keywords: struct, end struct, new, delete, nil. Tokenizer erweitern im Umgang mit "." (`token::DOT`), gefolgt von `token::KEYWORD` für method chaining.
-2. Parser erweitern. Erstelle neue ASTDataStructures Subclass ASTStruct. Erstelle parsing rules für structs. Erstelle ASTDataStructure Pointer, sowie ASTReference PointerRef und MethodChain mit vektor für chained methods und members, inklusive parsing rules.
+2. Parser erweitern. Erstelle neue ASTDataStructures Subclass ASTStruct. Erstelle parsing rules für structs. Erstelle ASTDataStructure Pointer, sowie ASTReference PointerRef und AccessChain mit vektor für chained methods und members, inklusive parsing rules.
 3. Erstelle Parsing rules für NodeNil
 4. Erst desugaring und "namespace apply", damit Referenz und Deklaration Zuweisung innerhalb der Struct Hierarchie funktioniert.
 
