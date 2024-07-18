@@ -41,11 +41,7 @@ public:
 			);
 		node.lower_type();
 
-		bool is_string = false;
-		is_string |= node.parent->ty == TypeRegistry::String;
-		is_string |= node.is_func_arg() and static_cast<NodeFunctionHeader*>(node.parent->parent)->name == "message";
-//		is_string |= node.parent->get_node_type() == NodeType::Return
-		if(is_string) {
+		if(node.is_string_repr()) {
 			node.replace_with(std::move(func_call));
 			return;
 		}

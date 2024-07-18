@@ -38,8 +38,8 @@ on init
 	declare this_list : List := nil
 	this_list := List(42, nil){List}.next{int}
 	declare lists[5] : Array[List] := (nil)
-	message(lists[0]{List}.List.next{int[]}.value{int})
-	message(List.this_list{int[]}.List.next{int[]}.value{int})
+	message(lists[0]{List}.List.next{int[]}.List.value{int[]})
+	message(this_list{int}.List.next{int[]}.List.value{int[]})
 	message(List.__repr__(this_list))
 	declare ui_slider sli : int (1, 500)
 	set_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT, "sdfkj")
