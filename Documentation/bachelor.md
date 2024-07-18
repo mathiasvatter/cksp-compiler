@@ -125,6 +125,7 @@ end on
    * __Lösung?:__ Globaler Stack, der alle Funktionsparameter vorher übergibt und nachher wieder ausgibt.
 - Wenn ein asynchroner Befehl in einem Callback (außer 'on init') oder einer Funktion vorkommt (und damit auch im Callback), ist dieser nicht mehr 'threadsafe' und die gesamte beschriebene register usage Optimierung kann nicht mehr vorgenommen werden.
     * __Lösung:__ Wie bereits bei den Funktionsparameter, könnte ein globaler Stack helfen, der bei jeder asynchronen instruction eine Kopie des derzeitigen Environments macht.
+- Nach Parameter Promotion könnten die parameter mit den lokalen variablen der übergeordneten Funktion verglichen werden, um noch mehr Reuse zu ermöglichen.
 - Arrays müssen bei Wiederverwendung neu initialisiert werden, was aber in KSP nicht direkt supported ist
   * __Lösung:__ Mache Array Assignment Lowering. Erstelle Funktion (bereits parameter promoted), die dort eingesetzt 
     wird, wo Arrays initialisiert werden, mit dem Array Typ im Namen. Mache diesen Prozess bereits vor der Umwandlung in global Scope, damit der iterator des while loops direkt durch passive Variablen ersetzt werden kann.

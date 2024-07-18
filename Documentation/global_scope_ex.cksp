@@ -2,6 +2,7 @@
 on init
 	
     declare normal_var
+	
 
 	scoped_func1()
 	scoped_func1()
@@ -26,21 +27,18 @@ function scoped_func1()
 	declare text := "sdlkj"
 	message(text)
 	declare array[5] := (3,4)
-	declare i: int := 0
 	scoped_func2()
 end function
 
 function scoped_func2()
 	declare i: int
 	message(i)
-	// message(array[3])
 	if(i = 1)
 		declare arr[5]: int[] := (1)
 		declare j: int, k: int
 		message(j & k & arr[4])
 	end if
 	if(i = 2)
-		declare arr2[5]: int[] := (1)
 		declare h: int, g: int
 		message(h & g)
 	end if

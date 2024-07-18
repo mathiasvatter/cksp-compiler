@@ -163,7 +163,7 @@ public:
 		}
 
 		if(node.variable->is_local) {
-//			if(is_thread_safe_env()) {
+			if(is_thread_safe_env()) {
 				if (auto free_passive_var = get_free_passive_var(node.variable.get())) {
 					m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
 					auto replacement = to_assign_statement(node);
@@ -172,7 +172,7 @@ public:
 					node.replace_with(std::move(replacement));
 					return;
 				}
-//			}
+			}
 		}
 		// only add var to local scope if it is not replaced by passive_var
 		node.variable->accept(*this);
