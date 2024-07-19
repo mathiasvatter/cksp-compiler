@@ -120,12 +120,13 @@ void ASTVariableChecking::visit(NodeAccessChain& node) {
 void ASTVariableChecking::visit(NodeFunctionCall &node) {
 	node.function->accept(*this);
 
-	node.get_definition(m_program);
-	if(auto method_chain = try_method_chain_transform(node.function->name, &node)) {
-//		method_chain->match_data_structure(method_chain->declaration);
-		method_chain->accept(*this);
-		node.replace_with(std::move(method_chain));
-		return;
+	if(!node.get_definition(m_program)) {
+		if (auto access_chain = try_access_chain_transform(node.function->name, &node)) {
+//		access_chain->match_data_structure(access_chain->declaration);
+			access_chain->accept(*this);
+			node.replace_with(std::move(access_chain));
+			return;
+		}
 	}
 
 	if(node.kind == NodeFunctionCall::UserDefined and node.definition) {
@@ -158,10 +159,10 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	// maybe declaration comes after lowering, do not throw error
 	if(!node_declaration) {
-		if(auto method_chain = try_method_chain_transform(node.name, &node)) {
-//			method_chain->match_data_structure(method_chain->declaration);
-			method_chain->accept(*this);
-			node.replace_with(std::move(method_chain));
+		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
+//			access_chain->match_data_structure(access_chain->declaration);
+			access_chain->accept(*this);
+			node.replace_with(std::move(access_chain));
 			return;
 		}
 //        if(!fail) return;
@@ -185,10 +186,10 @@ void ASTVariableChecking::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
-		if(auto method_chain = try_method_chain_transform(node.name, &node)) {
-//			method_chain->match_data_structure(method_chain->declaration);
-			method_chain->accept(*this);
-			node.replace_with(std::move(method_chain));
+		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
+//			access_chain->match_data_structure(access_chain->declaration);
+			access_chain->accept(*this);
+			node.replace_with(std::move(access_chain));
 			return;
 		}
 		CompileError(ErrorType::Variable, "Multidimensional array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
@@ -219,14 +220,14 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 	}
 	auto node_declaration = m_def_provider->get_declaration(&node);
     if(!node_declaration) {
-		if(auto method_chain = try_method_chain_transform(node.name, &node)) {
+		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			// check if its maybe a nd_Array size constant like nda.SIZE_D1
-			node_declaration = method_chain->declaration;
+			node_declaration = access_chain->declaration;
 			node.declaration = node_declaration;
 			if(!node.is_ndarray_constant()) {
-//				method_chain->match_data_structure(method_chain->declaration);
-				method_chain->accept(*this);
-				node.replace_with(std::move(method_chain));
+//				access_chain->match_data_structure(access_chain->declaration);
+				access_chain->accept(*this);
+				node.replace_with(std::move(access_chain));
 				return;
 			}
 		} else {
@@ -259,10 +260,10 @@ void ASTVariableChecking::visit(NodePointerRef& node) {
 	}
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
-		if(auto method_chain = try_method_chain_transform(node.name, &node)) {
-//			method_chain->match_data_structure(method_chain->declaration);
-			method_chain->accept(*this);
-			node.replace_with(std::move(method_chain));
+		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
+//			access_chain->match_data_structure(access_chain->declaration);
+			access_chain->accept(*this);
+			node.replace_with(std::move(access_chain));
 			return;
 		}
 		// if fail is set to false, return early. the rest is determined after lowering
