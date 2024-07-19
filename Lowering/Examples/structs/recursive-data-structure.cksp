@@ -13,6 +13,10 @@ struct List
         self.value := value
         self.next := next
     end function
+
+    function get_next_next_value(self)
+        return self.next.next.value
+    end function
 end struct
 
 declare this_list: List // := nil

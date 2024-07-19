@@ -57,7 +57,7 @@ private:
 	/// node can be NodeFunctionCall or NodeReference
 	/// transformation when first object is clearly a reference this_list.next.next()
 	/// tries to get declaration of first object and if there is one, replaces it with method chain
-	std::unique_ptr<NodeAccessChain> try_method_chain_transform(const std::string& name, NodeAST* node) {
+	std::unique_ptr<NodeAccessChain> try_access_chain_transform(const std::string& name, NodeAST* node) {
 		// find object ptr name
 		size_t pos = name.find('.');
 		if (pos == std::string::npos) {
