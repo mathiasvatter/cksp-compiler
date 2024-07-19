@@ -29,6 +29,8 @@ public:
 
 		// add compiler struct vars
 		auto struct_vars = add_compiler_struct_vars();
+		// remove "self" from member declarations
+		node.members->statements.erase(node.members->statements.begin());
 		node.members->accept(*this);
 		m_current_struct = &node;
 		node.members->prepend_body(std::move(struct_vars));
@@ -83,6 +85,13 @@ public:
 		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(free_idx_decl), Token()));
 		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(allocation_decl), Token()));
 		return node_block;
+	}
+
+	inline void visit(NodeAccessChain& node) override {
+		if(auto lowering = node.get_lowering(m_program)) {
+			node.accept(*lowering);
+		}
+		node.replace_with(std::move(node.chain.back()));
 	}
 
 	inline void visit(NodeSingleDeclaration& node) override {
@@ -167,6 +176,10 @@ public:
 
 	inline void visit(NodePointerRef& node) override {
 		if(node.is_member_ref()) {
+			// do not replace self pointer
+//			if(node.name == "self") {
+//				return;
+//			}
 			auto node_array_ref = node.to_array_ref(m_current_struct->free_idx_var->to_reference().get());
 			safe_replace_reference(std::move(node_array_ref), &node);
 		}
@@ -194,8 +207,8 @@ public:
 		// lower init function
 		if(node.header->name == m_current_struct->name+".__init__") {
 			lower_init_method(&node);
-		} else if(node.header->name == m_current_struct->name+".__repr__") {
-			node.header->args->add_param(m_current_struct->node_self->clone());
+		} else {
+			node.header->args->prepend_param(m_current_struct->node_self->clone());
 		}
 
 	}

@@ -46,6 +46,11 @@ end function
 --------------------------------------------------------------------------------------------}
 
 declare const MAX_STRUCTS := 1000000 // allgemeine constante für structs
+declare nil[2] := ("", "nil")
+function Nil.__repr__(self)
+	nil[1] := self
+	return nil[signbit(self)]
+end function
 
 declare %Note.allocation[MAX_STRUCTS] := (0)
 declare %Note.pitch[MAX_STRUCTS] // default values if given := 10 
