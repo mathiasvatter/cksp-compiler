@@ -2,6 +2,7 @@
 // Created by Mathias Vatter on 27.05.24.
 //
 #include "TypeRegistry.h"
+#include "ASTNodes/ASTReferences.h"
 
 // Implementierung der Initialisierungsmethode
 void TypeRegistry::initialize() {

@@ -9,6 +9,7 @@
 #include "../../Desugaring/DesugarFunctionDef.h"
 #include "../ASTVisitor/ASTPrinter.h"
 #include "../../Lowering/LoweringFunctionDef.h"
+#include "../../Lowering/LoweringNil.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(tok),
@@ -64,7 +65,7 @@ NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
 	  is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
 	  is_local(other.is_local), is_global(other.is_global), is_compiler_return(other.is_compiler_return),
-	  data_type(other.data_type), name(other.name) {
+	  data_type(other.data_type), name(other.name), has_obj_assigned(other.has_obj_assigned) {
 	set_child_parents();
 }
 
@@ -245,14 +246,6 @@ void NodeString::accept(ASTVisitor &visitor) {
 }
 std::unique_ptr<NodeAST> NodeString::clone() const {
     return std::make_unique<NodeString>(*this);
-}
-
-// ************* NodeNil ***************
-void NodeNil::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
-}
-std::unique_ptr<NodeAST> NodeNil::clone() const {
-	return std::make_unique<NodeNil>(*this);
 }
 
 // ************* NodeParamList ***************

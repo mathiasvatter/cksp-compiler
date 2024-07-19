@@ -3,8 +3,33 @@
 //
 
 #include "ASTCollectLowerings.h"
+#include "ASTLowerTypes.h"
 
 ASTCollectLowerings::ASTCollectLowerings(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
+
+void ASTCollectLowerings::visit(NodeProgram& node) {
+	m_program = &node;
+	m_program->global_declarations->accept(*this);
+	for(auto & struct_def : node.struct_definitions) {
+		struct_def->accept(*this);
+	}
+	for(auto & callback : node.callbacks) {
+		callback->accept(*this);
+	}
+	for(auto & function_definition : node.function_definitions) {
+		function_definition->accept(*this);
+	}
+	node.merge_function_definitions();
+
+	ASTLowerTypes lowering_types(m_def_provider);
+	node.accept(lowering_types);
+}
+
+void ASTCollectLowerings::visit(NodeNil& node) {
+	if(auto lowering = node.get_lowering(m_program)) {
+		node.accept(*lowering);
+	}
+}
 
 
 void ASTCollectLowerings::visit(NodeStruct& node) {
@@ -35,11 +60,12 @@ void ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 }
 
 void ASTCollectLowerings::visit(NodeSingleAssignment& node) {
+	if(node.r_value) node.r_value->accept(*this);
 	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
 	} else {
 		node.l_value->accept(*this);
-		if(node.r_value) node.r_value->accept(*this);
+//		if(node.r_value) node.r_value->accept(*this);
 	}
 }
 
@@ -54,12 +80,14 @@ void ASTCollectLowerings::visit(NodeGetControl& node) {
 	 * However, in the case of:
 	 * 	mnu_output[i+1]->x := int_buffer, the NodeSingleAssignment lowering would handle it.
 	 */
+	// is set control
 	if(node.parent->get_node_type() == NodeType::SingleAssignment) {
 		if(auto node_assign_stmt = static_cast<NodeSingleAssignment*>(node.parent)) {
 			if(node_assign_stmt->l_value.get() == &node) return;
 		}
 	}
 
+	// only handles get control
 	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
 	}
@@ -116,9 +144,8 @@ void ASTCollectLowerings::visit(NodeAccessChain& node) {
 	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
 	}
-	for(auto & method : node.chain) {
-		method->accept(*this);
-	}
+	node.chain.back()->accept(*this);
+	node.replace_with(std::move(node.chain.back()));
 }
 
 

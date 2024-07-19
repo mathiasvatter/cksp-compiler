@@ -11,6 +11,7 @@
 #include "../../Lowering/LoweringArray.h"
 #include "../../Lowering/LoweringPointer.h"
 #include "../../Lowering/LoweringAccessChain.h"
+#include "../../Lowering/LoweringNil.h"
 
 // ************* NodeVariableRef ***************
 void NodeVariableRef::accept(ASTVisitor &visitor) {
@@ -215,6 +216,31 @@ bool NodePointerRef::is_string_repr() {
 	// is within return statement
 	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->definition->ty == TypeRegistry::String;
 	return is_string;
+}
+
+std::unique_ptr<NodeFunctionCall> NodePointerRef::get_repr_call() {
+	return std::make_unique<NodeFunctionCall>(
+		false,
+		std::make_unique<NodeFunctionHeader>(
+			ty->to_string() + ".__repr__",
+			std::make_unique<NodeParamList>(tok, this->to_variable_ref()),
+			tok
+		),
+		tok
+	);
+}
+
+// ************* NodeNil ***************
+void NodeNil::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+std::unique_ptr<NodeAST> NodeNil::clone() const {
+	return std::make_unique<NodeNil>(*this);
+}
+
+ASTLowering* NodeNil::get_lowering(NodeProgram *program) const {
+	static LoweringNil lowering(program);
+	return &lowering;
 }
 
 // ************* NodeAccessChain ***************

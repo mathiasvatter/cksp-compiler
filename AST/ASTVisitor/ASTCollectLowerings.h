@@ -33,6 +33,7 @@
 class ASTCollectLowerings: public ASTVisitor {
 public:
     explicit ASTCollectLowerings(DefinitionProvider* definition_provider);
+	void visit(NodeProgram& node) override;
 
 	/// lower struct members to array members
 	void visit(NodeStruct& node) override;
@@ -64,6 +65,8 @@ public:
 	void visit(NodePointerRef& node) override;
 	/// lower access chain to nested array_ref structure
 	void visit(NodeAccessChain& node) override;
+	/// lower nil to -1
+	void visit(NodeNil& node) override;
 
 private:
     DefinitionProvider* m_def_provider;
