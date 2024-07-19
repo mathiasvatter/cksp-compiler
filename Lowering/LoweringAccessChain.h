@@ -77,9 +77,9 @@ public:
 		if(!node.index) node.index = std::make_unique<NodeWildcard>("*", node.tok);
 		auto node_ndarray_ref = node.to_ndarray_ref();
 		node_ndarray_ref->name = prev_type->to_string()+"."+node.name;
-		node_ndarray_ref->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node_ndarray_ref->sizes->params.size());
 		node_ndarray_ref->declaration = node.declaration;
 		node_ndarray_ref->determine_sizes();
+		node_ndarray_ref->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node_ndarray_ref->sizes->params.size());
 		node.replace_with(std::move(node_ndarray_ref));
 	}
 

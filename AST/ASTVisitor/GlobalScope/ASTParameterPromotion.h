@@ -19,8 +19,9 @@ private:
 	/// map for local variable declarations per function definition to be added to the next/above function
 	std::unordered_map<NodeFunctionDefinition*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_local_var_declarations;
 	/// map for local variable declarations per function definition to be added to the next/above callback when no function is above
+	/// TODO: unordered_map per statement to insert declarations right above the function call even when nested function calls
 	std::unordered_map<NodeCallback*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_callback;
-
+	NodeStatement* m_last_stmt = nullptr;
 public:
 	explicit ASTParameterPromotion(DefinitionProvider* definition_provider) : ASTGlobalScope(definition_provider) {}
 	~ASTParameterPromotion() = default;
@@ -37,6 +38,11 @@ public:
 		for(auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
+	}
+
+	void inline visit(NodeStatement& node) override {
+		m_last_stmt = &node;
+		node.statement->accept(*this);
 	}
 
 	void inline visit(NodeCallback& node) override {
@@ -104,7 +110,9 @@ public:
 			}
 			m_declares_per_callback[m_program->current_callback].clear();
 			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
+//			node_body->add_stmt(clone_as<NodeStatement>(m_last_stmt));
 			node.replace_with(std::move(node_body));
+//			m_last_stmt->replace_with(std::move(node_body));
 			return;
 		}
 	}

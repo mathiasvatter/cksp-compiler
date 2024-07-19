@@ -9,7 +9,6 @@
 #include "../../Desugaring/DesugarFunctionDef.h"
 #include "../ASTVisitor/ASTPrinter.h"
 #include "../../Lowering/LoweringFunctionDef.h"
-#include "../../Lowering/LoweringNil.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(tok),
@@ -82,7 +81,7 @@ std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
 bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBlock* current_block) {
 	// not init_callback if var is set to local
 	bool init_callback = (program->current_callback == program->init_callback and program->function_call_stack.empty() and !is_local) or is_global or get_node_type() == NodeType::UIControl;
-	is_local = (current_block->scope or is_function_param()) and !init_callback;
+	is_local = ((current_block and current_block->scope) or is_function_param()) and !init_callback;
 	return is_local;
 }
 
