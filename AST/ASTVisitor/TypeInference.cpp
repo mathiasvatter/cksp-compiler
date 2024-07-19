@@ -372,14 +372,18 @@ void TypeInference::visit(NodeSingleDeclaration& node) {
 			auto nil = std::make_unique<NodeNil>(node.tok);
 			nil->parent = &node;
 			nil->accept(*this);
-			if(node.variable->get_node_type() == NodeType::Variable) {
+			if(node.variable->get_node_type() == NodeType::Pointer) {
 				node.value = std::move(nil);
 			// pack into param list if declaration is array type
 			} else {
 				auto param_list = std::make_unique<NodeParamList>(node.tok, std::move(nil));
 				param_list->parent = &node;
+				param_list->accept(*this);
 				node.value = std::move(param_list);
 			}
+		}
+		if(node.value->ty->get_element_type() == TypeRegistry::Nil) {
+			node.variable->has_obj_assigned = false;
 		}
 	}
 }
@@ -422,6 +426,13 @@ void TypeInference::visit(NodeSingleAssignment& node) {
 	// a second time to get the new types to the declaration pointer!
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
+
+	// check if object assigned and set flag
+	if(node.l_value->ty->get_type_kind() == TypeKind::Object) {
+		if(auto ref = cast_node<NodeReference>(node.l_value.get())) {
+			ref->declaration->has_obj_assigned = node.r_value->ty->get_element_type() != TypeRegistry::Nil;
+		}
+	}
 
 	m_def_provider->add_to_assignments(&node);
 }

@@ -65,6 +65,7 @@ enum class NodeType {
 	Int,
 	Real,
 	String,
+	Nil,
 	DeadCode,
 	Statement,
 	Block,

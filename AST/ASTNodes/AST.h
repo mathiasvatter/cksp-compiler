@@ -149,6 +149,7 @@ struct NodeDataStructure : NodeAST {
 	bool is_local = false;
 	bool is_global = false;
 	bool is_compiler_return = false;
+	bool has_obj_assigned = false;
 	DataType data_type;
 	std::string name;
 	inline NodeDataStructure(std::string name, Type* ty, Token tok, NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {
@@ -257,19 +258,6 @@ struct NodeString : NodeAST {
     std::string get_string() override {
         return value;
     }
-};
-
-struct NodeNil : NodeAST {
-	std::string value = "nil";
-	inline explicit NodeNil(Token tok) : NodeAST(std::move(tok), NodeType::String) {}
-	void accept(ASTVisitor& visitor) override;
-	// Kopierkonstruktor
-	NodeNil(const NodeNil& other) : NodeAST(other), value(other.value) {}
-	// Clone Methode
-	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-	std::string get_string() override {
-		return value;
-	}
 };
 
 struct NodeParamList: NodeAST {

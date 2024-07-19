@@ -5,9 +5,9 @@ struct List
 	declare List.free_idx : int := 0
 	declare List.allocation[List.MAX_STRUCTS] : int[]
 	declare List.value[List.MAX_STRUCTS] : int[]
-	declare List.next[List.MAX_STRUCTS] : Array[List]
+	declare List.next[List.MAX_STRUCTS] : int[]
 
-	function List.__init__(value : int, next : List) : List
+	function List.__init__(value : int, next : int) : int
 		List.free_idx := search(List.allocation, 0)
 		if(List.free_idx = -1)
 			message("Error: No more free space available to allocate objects of type 'List'")
@@ -18,7 +18,7 @@ struct List
 		return List.free_idx
 	end function
 
-	function List.__repr__(self : List) : string
+	function List.__repr__(self : int) : string
 		return "<List> Object: " & self
 	end function
 
@@ -35,11 +35,12 @@ on init
 	declare color[6] : int[] := (0 + 0, 0 + (0 + 1), 0 + ((0 + 1) + 1), 0 + (((0 + 1) + 1) + 1), 0 + ((((0 + 1) + 1) + 1) + 1), 0 + (((((0 + 1) + 1) + 1) + 1) + 1))
 	declare const color.SIZE : int := 7
 	message(color.a)
-	declare this_list : List := nil
-	this_list := List(42, nil){List}.next{int}
-	declare lists[5] : Array[List] := (nil)
-	message(lists[0]{List}.List.next{int[]}.List.value{int[]})
-	message(this_list{int}.List.next{int[]}.List.value{int[]})
+	declare this_list : int := - 1
+	message(List.__repr__(this_list))
+	this_list := List.next[List(42, - 1)]
+	declare lists[5] : int[] := (- 1)
+	message(List.value[List.next[lists[0]]])
+	message(List.value[List.next[this_list]])
 	message(List.__repr__(this_list))
 	declare ui_slider sli : int (1, 500)
 	set_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT, "sdfkj")
@@ -144,6 +145,181 @@ function ndarray.copy.Integer.dim2.from1.to1(_ndarray : int[], _to_copy : int[],
 	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
 		_ndarray[(param1 * ndarray.SIZE_D2) + _iter1] := _to_copy[_iter1]
 		inc(_iter1)
+	end while
+end function
+
+
+	declare const MAX_STRUCTS : int := 1000000
+	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
+on init
+	declare const List.MAX_STRUCTS : int := MAX_STRUCTS
+	declare List.free_idx : int := 0
+	declare List.allocation[List.MAX_STRUCTS] : int[]
+	declare List.value[List.MAX_STRUCTS] : int[]
+	declare List.next[List.MAX_STRUCTS] : int[]
+	declare loc_12 : int
+	declare const color.a : int := 0 + 0
+	declare const color.b : int := 0 + (0 + 1)
+	declare const color.c : int := 0 + ((0 + 1) + 1)
+	declare const color.d : int := 0 + (((0 + 1) + 1) + 1)
+	declare const color.e : int := 0 + ((((0 + 1) + 1) + 1) + 1)
+	declare const color.f : int := 0 + (((((0 + 1) + 1) + 1) + 1) + 1)
+	declare color[6] : int[] := (0 + 0, 0 + (0 + 1), 0 + ((0 + 1) + 1), 0 + (((0 + 1) + 1) + 1), 0 + ((((0 + 1) + 1) + 1) + 1), 0 + (((((0 + 1) + 1) + 1) + 1) + 1))
+	declare const color.SIZE : int := 7
+	message(color.a)
+	declare this_list : int := - 1
+	message(List.__repr__(this_list))
+	this_list := List.next[List(42, - 1)]
+	declare lists[5] : int[] := (- 1)
+	message(List.value[List.next[lists[0]]])
+	message(List.value[List.next[this_list]])
+	message(List.__repr__(this_list))
+	declare ui_slider sli : int (1, 500)
+	set_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT, "sdfkj")
+	declare a : string
+	a := get_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT) & 3
+	declare const nda.SIZE_D1 : int := 2
+	declare const nda.SIZE_D2 : int := 4
+	declare _nda[2 * 4] : int[] := (1, 2, 3, 4, 5, 6, 7, 8)
+	message(_nda)
+	_nda[0] := 1
+	_nda[1] := 2
+	_nda[2] := 3
+	_nda[3] := 4
+	_nda[4] := 5
+	_nda[5] := 6
+	_nda[6] := 7
+	_nda[7] := 8
+	declare loc_13 : int
+	ndarray.init.Integer.dim2.from1.to1(_nda, 0, 0, loc_13)
+	_nda[(0 * 4) + 3] := 1
+	_nda[(1 * 4) + 3] := 2
+	_nda[(2 * 4) + 3] := 6
+	message(_nda.SIZE_D1)
+	declare const nda2.SIZE_D1 : int := 4
+	declare const nda2.SIZE_D2 : int := 5
+	declare const nda2.SIZE_D3 : int := 5
+	declare _nda2[4 * (5 * 5)] : int[]
+	_nda2[(1 * (5 * 5)) + 0] := 2
+	_nda2[(1 * (5 * 5)) + 1] := 3
+	_nda2[(1 * (5 * 5)) + 2] := 4
+	_nda2[(1 * (5 * 5)) + 3] := 5
+	_nda2[(1 * (5 * 5)) + 4] := 6
+	declare loc_14 : int
+	ndarray.init.Integer.dim3.from1.to2(_nda2, 0, 1, loc_13, loc_14)
+	declare arr[4] : int[]
+	ndarray.copy.Integer.dim2.from1.to1(_nda, arr, 0, loc_13)
+	declare const colorz.a : int := 0 + 0
+	declare const colorz.b : int := 0 + (0 + 1)
+	declare colorz[2] : int[] := (0 + 0, 0 + (0 + 1))
+	declare const colorz.SIZE : int := 3
+	declare loc_15[5] : int[]
+	declare loc_16 : int
+	declare loc_17 : string
+	declare loc_18[4] : int[]
+	scoped_func1(loc_13, loc_15, loc_14, loc_16, loc_17, loc_18)
+	scoped_func1(loc_13, loc_15, loc_14, loc_16, loc_17, loc_18)
+	declare c[6] : int[]
+	declare b : int := 		ret_sth(c, loc_15, loc_13)
+
+end on
+
+on persistence_changed
+	loc_13 := 0
+	array.init.Integer(loc_15, loc_13, 0)
+	scoped_func1(loc_13, loc_15, loc_14, loc_16, loc_17, loc_18)
+end on
+
+function scoped_func2(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int) : Unknown
+	loc_0 := 0
+	message(loc_0)
+	if(loc_0 = 1)
+		loc_2 := 0
+		array.init.Integer(loc_1, loc_2, 1)
+		loc_2 := 0
+		loc_3 := 0
+		message(loc_2 & loc_3 & loc_1[4])
+	end if
+	if(loc_0 = 2)
+		loc_2 := 0
+		loc_3 := 0
+		message(loc_2 & loc_3)
+	end if
+end function
+
+function ndarray_func(_ndarray : int[]) : Unknown
+	message(_ndarray[(0 * ndarray.SIZE_D2) + 0])
+end function
+
+function scoped_func1(loc_0 : int, loc_1[5] : int[], loc_2 : int, loc_3 : int, loc_4 : string, loc_5[4] : int[]) : Unknown
+	loc_4 := "sdlkj"
+	message(loc_4)
+	scoped_func2(loc_0, loc_1, loc_2, loc_3)
+	loc_5[0] := 3
+	loc_5[1] := 4
+end function
+
+function ret_sth(return0 : int[], loc_6[5] : int[], loc_7 : int) : int
+	loc_7 := 0
+	array.init.Integer(loc_6, loc_7, 0)
+	return0[0] := 1
+	return0[1] := 2
+	return0[2] := 3
+	return0[3] := 4
+	return 1
+end function
+
+function ndarray.init.Integer.dim2.from1.to1(_ndarray : int[], value : int, param1 : int, loc_8 : int) : Unknown
+	loc_8 := 0
+	loc_8 := 0
+	while(loc_8 <= (ndarray.SIZE_D1 - 1)) 
+		_ndarray[(param1 * ndarray.SIZE_D2) + loc_8] := value
+		inc(loc_8)
+	end while
+end function
+
+function ndarray.init.Integer.dim3.from1.to2(_ndarray : int[], value : int, param1 : int, loc_10 : int, loc_9 : int) : Unknown
+	loc_9 := 0
+	loc_10 := 0
+	loc_10 := 0
+	while(loc_10 <= (ndarray.SIZE_D1 - 1)) 
+		loc_9 := 0
+		while(loc_9 <= (ndarray.SIZE_D2 - 1)) 
+			_ndarray[(param1 * (ndarray.SIZE_D2 * ndarray.SIZE_D3)) + ((loc_10 * ndarray.SIZE_D3) + loc_9)] := value
+			inc(loc_9)
+		end while
+		inc(loc_10)
+	end while
+end function
+
+function ndarray.copy.Integer.dim2.from1.to1(_ndarray : int[], _to_copy : int[], param1 : int, loc_11 : int) : Unknown
+	loc_11 := 0
+	loc_11 := 0
+	while(loc_11 <= (ndarray.SIZE_D1 - 1)) 
+		_ndarray[(param1 * ndarray.SIZE_D2) + loc_11] := _to_copy[loc_11]
+		inc(loc_11)
+	end while
+end function
+
+function List.__init__(value : int, next : int) : int
+	List.free_idx := search(List.allocation, 0)
+	if(List.free_idx = -1)
+		message("Error: No more free space available to allocate objects of type 'List'")
+	end if
+	List.allocation[List.free_idx] := 1
+	List.value[List.free_idx] := value
+	List.next[List.free_idx] := next
+	return List.free_idx
+end function
+
+function List.__repr__(self : int) : string
+	return "<List> Object: " & self
+end function
+
+function array.init.Integer(array : int[], _iter : int, value : int) : Unknown
+	while(_iter < num_elements(array)) 
+		array[_iter] := value
+		inc(_iter)
 	end while
 end function
 

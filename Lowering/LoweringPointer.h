@@ -9,40 +9,45 @@
 class LoweringPointer : public ASTLowering {
 private:
 
-
 public:
 	explicit LoweringPointer(NodeProgram *program) : ASTLowering(program) {}
 
+//	inline void visit(NodeSingleDeclaration& node) override {
+//		// if declaration is pointer -> always initialize with nil!
+//		if(node.variable->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+//			if(!node.value) {
+//				auto nil = std::make_unique<NodeNil>(node.tok);
+//				nil->parent = &node;
+//				if(node.variable->get_node_type() == NodeType::Variable) {
+//					node.value = std::move(nil);
+//					// pack into param list if declaration is array type
+//				} else {
+//					auto param_list = std::make_unique<NodeParamList>(node.tok, std::move(nil));
+//					param_list->parent = &node;
+//					node.value = std::move(param_list);
+//				}
+//			}
+//		}
+//	}
+
 	inline void visit(NodePointer& node) override {
-//		auto node_var = node.to_variable();
-//		node_var->ty = TypeRegistry::Integer;
-//		node.replace_with(std::move(node_var));
-		node.lower_type();
+		auto node_var = node.to_variable();
+		node_var->ty = node.ty;
+		node.replace_with(std::move(node_var));
+//		node.lower_type();
 	}
 
 	inline void visit(NodePointerRef& node) override {
-		if(node.ty == TypeRegistry::Unknown || node.ty->get_type_kind() != TypeKind::Object) {
-			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
-			error.m_message = "Unknown type for pointer reference. Pointer references have to be typed or of type <Object>.";
-			error.m_got = node.ty->to_string();
-			error.exit();
-		}
-
 		// check if parent string -> call __repr__ method
-		auto obj_name = node.ty->to_string();
-		static auto func_call = std::make_unique<NodeFunctionCall>(
-			false,
-			std::make_unique<NodeFunctionHeader>(
-				obj_name+".__repr__",
-				 std::make_unique<NodeParamList>(node.tok, node.clone()),
-				 node.tok
-			 	),
-			node.tok
-			);
-		node.lower_type();
-
+		if(node.ty == TypeRegistry::Nil) {
+			auto new_node = node.replace_with(std::make_unique<NodeNil>(node.tok));
+			if(auto lowering = new_node->get_lowering(m_program)) {
+				new_node->accept(*lowering);
+			}
+			return;
+		}
 		if(node.is_string_repr()) {
-			node.replace_with(std::move(func_call));
+			node.replace_with(node.get_repr_call());
 			return;
 		}
 

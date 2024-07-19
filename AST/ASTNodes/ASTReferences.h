@@ -125,33 +125,30 @@ struct NodePointerRef : NodeReference {
 	std::vector<std::string> ptr_chain;
 	inline NodePointerRef(std::string name, Token tok)
 		: NodeReference(std::move(name), NodeType::PointerRef, std::move(tok)) {
-//		update_ptr_chain();
 	}
 	void accept(ASTVisitor& visitor) override;
 	// Kopierkonstruktor
 	NodePointerRef(const NodePointerRef& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-//	void update_ptr_chain() {
-//		ptr_chain.clear();
-//		std::istringstream iss(name);
-//		std::string ns;
-//		while (std::getline(iss, ns, '.')) {
-//			ptr_chain.push_back(ns);
-//		}
-//	}
-	std::string get_object_name() {
-//		if(ptr_chain.empty())
-//			return "";
-//		return ptr_chain.at(0);
-		return ty->to_string();
-	}
+
 	std::unique_ptr<NodeArrayRef> to_array_ref(NodeAST* index) override;
 	std::unique_ptr<NodeVariableRef> to_variable_ref() override;
 
 	ASTLowering* get_lowering(NodeProgram *program) const override;
 
 	bool is_string_repr();
+	std::unique_ptr<NodeFunctionCall> get_repr_call();
+};
+
+struct NodeNil : NodePointerRef {
+	inline explicit NodeNil(Token tok) : NodePointerRef(std::move("nil"), std::move(tok)) {node_type = NodeType::Nil;}
+	void accept(ASTVisitor& visitor) override;
+	// Kopierkonstruktor
+	NodeNil(const NodeNil& other) : NodePointerRef(other) {}
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
 };
 
 struct NodeAccessChain : NodeReference {

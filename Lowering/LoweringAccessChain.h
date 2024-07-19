@@ -17,6 +17,8 @@ class LoweringAccessChain : public ASTLowering {
 private:
 	NodeAST* start_pointer = nullptr;
 	Type* prev_type = nullptr;
+	/// saves for each chain node its replacement slot, that the next is going into
+	std::map<NodeAST*, NodeAST*> node_replacement_slot;
 public:
 	explicit LoweringAccessChain(NodeProgram *program) : ASTLowering(program) {}
 
@@ -31,6 +33,24 @@ public:
 			prev_type = node.types[i];
 		}
 
+		// create array nest
+		// this_list{int}.List.next{int[]}.List.value{int[]}
+		// -> List.value[List.next[this_list]]
+		for(int i=1; i<node.chain.size(); i++) {
+			auto& prev_node = node.chain[i-1];
+			auto& curr_node = node.chain[i];
+			if(curr_node->get_node_type() == NodeType::ArrayRef) {
+				auto node_array_ref = static_cast<NodeArrayRef*>(curr_node.get());
+				node_array_ref->index = std::move(prev_node);
+			} else if(curr_node->get_node_type() == NodeType::NDArrayRef) {
+				auto node_ndarray_ref = static_cast<NodeNDArrayRef*>(curr_node.get());
+				node_ndarray_ref->indexes->prepend_param(std::move(prev_node));
+			} else if(curr_node->get_node_type() == NodeType::FunctionCall) {
+				auto node_func_call = static_cast<NodeFunctionCall*>(curr_node.get());
+				node_func_call->function->args->prepend_param(std::move(prev_node));
+			}
+		}
+		lowered_node = node.chain.back().get();
 	}
 
 	/// every pointer ref in access chain is replaced by array_ref with name "<obj_type>.<name>"
@@ -41,7 +61,7 @@ public:
 			error.m_got = node.ty->to_string();
 			error.exit();
 		}
-		node.lower_type();
+//		node.lower_type();
 		if(&node == start_pointer) return;
 		node.name = prev_type->to_string() + "." + node.name;
 		auto node_array = node.to_array_ref(nullptr);
@@ -51,7 +71,7 @@ public:
 
 	// increase dimensions -> to ndarray_ref
 	inline void visit(NodeArrayRef& node) override {
-		node.lower_type();
+//		node.lower_type();
 		if(&node == start_pointer) return;
 		// no index -> array -> List.array[sth, *]
 		if(!node.index) node.index = std::make_unique<NodeWildcard>("*", node.tok);
@@ -64,7 +84,7 @@ public:
 	}
 
 	inline void visit(NodeNDArrayRef& node) override {
-		node.lower_type();
+//		node.lower_type();
 		if(&node == start_pointer) return;
 		node.determine_sizes();
 		// if array has no indexes -> everything should be copied -> wildcards for every index of size
@@ -78,7 +98,7 @@ public:
 	}
 
 	inline void visit(NodeVariableRef& node) override {
-		node.lower_type();
+//		node.lower_type();
 		if(&node == start_pointer) return;
 		auto node_array_ref = node.to_array_ref(nullptr);
 		node_array_ref->name = prev_type->to_string()+"."+node.name;
@@ -88,9 +108,9 @@ public:
 	}
 
 	inline void visit(NodeFunctionCall& node) override {
-		if(node.ty->get_element_type()->get_type_kind() == TypeKind::Object) {
-			node.set_element_type(TypeRegistry::Integer);
-		}
+//		if(node.ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+//			node.set_element_type(TypeRegistry::Integer);
+//		}
 		if(&node == start_pointer) return;
 		node.function->name = prev_type->to_string()+"."+node.function->name;
 	}

@@ -11,6 +11,7 @@
 #include "../../Lowering/LoweringArray.h"
 #include "../../Desugaring/DesugarStruct.h"
 #include "../../Lowering/LoweringStruct.h"
+#include "../../Lowering/LoweringPointer.h"
 
 // ************* NodeVariable ***************
 void NodeVariable::accept(ASTVisitor &visitor) {
@@ -52,7 +53,7 @@ void NodePointer::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 NodePointer::NodePointer(const NodePointer& other)
-	: NodeDataStructure(other), ptr_chain(other.ptr_chain) {
+	: NodeDataStructure(other) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodePointer::clone() const {
@@ -64,6 +65,11 @@ std::unique_ptr<NodeReference> NodePointer::to_reference() {
 	ref->parent = parent;
 	ref->match_data_structure(this);
 	return ref;
+}
+
+ASTLowering* NodePointer::get_lowering(NodeProgram *program) const {
+	static LoweringPointer lowering(program);
+	return &lowering;
 }
 
 std::unique_ptr<NodeArray> NodePointer::to_array(NodeAST* size) {
@@ -362,3 +368,5 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	members = std::make_unique<NodeBlock>(Token());
 	this->update_member_table();
 }
+
+

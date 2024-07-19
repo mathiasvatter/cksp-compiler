@@ -30,7 +30,6 @@ struct NodeVariable: NodeDataStructure {
 };
 
 struct NodePointer: NodeDataStructure {
-	std::vector<std::string> ptr_chain;
 	inline NodePointer(std::optional<Token> is_persistent, std::string name, Type* ty, Token tok)
 		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::Pointer) {
 		persistence = std::move(is_persistent);
@@ -43,17 +42,10 @@ struct NodePointer: NodeDataStructure {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::PointerRef;}
-	void update_ptr_chain() {
-		ptr_chain.clear();
-		std::istringstream iss(name);
-		std::string ns;
-		while (std::getline(iss, ns, '.')) {
-			ptr_chain.push_back(ns);
-		}
-	}
+
+	ASTLowering* get_lowering(NodeProgram *program) const override;
 	std::unique_ptr<NodeArray> to_array(NodeAST* size) override;
 	std::unique_ptr<NodeVariable> to_variable() override;
-
 };
 
 struct NodeArray : NodeDataStructure {

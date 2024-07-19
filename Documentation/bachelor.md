@@ -1,5 +1,11 @@
 
-# Bachelor Compilerbau
+# Implementing Functional Programming Concepts in a Domain-Specific Scripting Language: A Compiler for KSP
+
+## Thema Brainstorming:
+- Compiling Functional Programming Features: Functions, Recursion, and Recursive Data Structures into the Kontakt Script Processor (KSP)
+- compilation of functionial programming features to a domain-specific script language array language
+funktionale programmierfeatures repräsentieren in eingeschränkter umgebung
+- Implementing Functional Programming Concepts in a Domain-Specific Scripting Language: A Compiler for KSP
 
 ## 1. Lexical Scope to Global Scope
 - Checking of scopes and variable shadowing
@@ -131,8 +137,7 @@ end on
     wird, wo Arrays initialisiert werden, mit dem Array Typ im Namen. Mache diesen Prozess bereits vor der Umwandlung in global Scope, damit der iterator des while loops direkt durch passive Variablen ersetzt werden kann.
   
 - debugging lookup table 
-compilation of functionial programming to array language
-funktionale programmierfeatures repräsentieren in eingeschränkter umgebung
+
 
 __Pre Array Assignment Lowering:__
 ```

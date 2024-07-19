@@ -17,7 +17,7 @@ void ASTPrinter::visit(NodeString &node) {
 }
 
 void ASTPrinter::visit(NodeNil &node) {
-	os << node.value;
+	os << node.name;
 }
 
 void ASTPrinter::visit(NodeReturn& node) {

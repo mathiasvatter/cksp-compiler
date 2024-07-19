@@ -66,16 +66,16 @@ function Note.__init__(p: int, v: int, s: int)
 end function
 
 // standard str function if not overwritten
-function Note.__repr__(object_id)
-	return "Note Object: "& object_id
+function Note.__repr__(self)
+	return "Note Object: "& self
 end function
 
-function Note.play(object_id: int)
-	return play_note(Note.pitch[object_id], Note.velocity[object_id], Note.velocity[object_id], 0)
+function Note.play(self: int)
+	return play_note(Note.pitch[self], Note.velocity[self], Note.velocity[self], 0)
 end function
 
-function Note.delete(object_id)
-	Note.allocation[object_id] := 0
+function Note.__del__(self)
+	Note.allocation[self] := 0
 end function
 
 declare $new_note := Note.__init__(69, 127, 50000)
