@@ -20,7 +20,8 @@ private:
 	std::unordered_map<NodeFunctionDefinition*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_local_var_declarations;
 	/// map for local variable declarations per function definition to be added to the next/above callback when no function is above
 	/// TODO: unordered_map per statement to insert declarations right above the function call even when nested function calls
-	std::unordered_map<NodeCallback*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_callback;
+//	std::unordered_map<NodeCallback*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_callback;
+	std::unordered_map<NodeStatement*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_stmt;
 	NodeStatement* m_last_stmt = nullptr;
 public:
 	explicit ASTParameterPromotion(DefinitionProvider* definition_provider) : ASTGlobalScope(definition_provider) {}
@@ -32,6 +33,20 @@ public:
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
+
+		for(auto & stmt : m_declares_per_stmt) {
+			// if in callback, put the declarations right above the function call
+			auto node_body = std::make_unique<NodeBlock>(node.tok);
+			node_body->scope = true;
+			for(auto &decl : stmt.second) {
+				decl.second->is_promoted = true;
+				node_body->add_stmt(std::make_unique<NodeStatement>(clone_as<NodeSingleDeclaration>(decl.second.get()), node.tok));
+			}
+//			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
+			node_body->add_stmt(clone_as<NodeStatement>(stmt.first));
+			stmt.first->statement->replace_with(std::move(node_body));
+//			m_last_stmt->replace_with(std::move(node_body));
+		}
 	}
 
 	void inline visit(NodeBlock& node) override {
@@ -41,7 +56,8 @@ public:
 	}
 
 	void inline visit(NodeStatement& node) override {
-		m_last_stmt = &node;
+		if(m_program->function_call_stack.empty())
+			m_last_stmt = &node;
 		node.statement->accept(*this);
 	}
 
@@ -89,7 +105,7 @@ public:
 
 		if(node.definition) {
 			// add declaration statements to the body of the current/above function or callback if function stack is empty
-			auto& next_declares = m_program->function_call_stack.empty() ? m_declares_per_callback[m_program->current_callback] : m_local_var_declarations[m_program->function_call_stack.top()];
+			auto& next_declares = m_program->function_call_stack.empty() ? m_declares_per_stmt[m_last_stmt] : m_local_var_declarations[m_program->function_call_stack.top()];
 			for (auto &decl : m_local_var_declarations[node.definition]) {
 				next_declares.emplace(decl.first,clone_as<NodeSingleDeclaration>(decl.second.get()));
 			}
@@ -100,21 +116,21 @@ public:
 			}
 		}
 
-		if(m_program->function_call_stack.empty() and !m_declares_per_callback[m_program->current_callback].empty()) {
-			// if in callback, put the declarations right above the function call
-			auto node_body = std::make_unique<NodeBlock>(node.tok);
-			node_body->scope = true;
-			for(auto &decl : m_declares_per_callback[m_program->current_callback]) {
-				decl.second->is_promoted = true;
-				node_body->add_stmt(std::make_unique<NodeStatement>(clone_as<NodeSingleDeclaration>(decl.second.get()), node.tok));
-			}
-			m_declares_per_callback[m_program->current_callback].clear();
-			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
+//		if(m_program->function_call_stack.empty() and !m_declares_per_stmt[m_last_stmt].empty()) {
+//			// if in callback, put the declarations right above the function call
+//			auto node_body = std::make_unique<NodeBlock>(node.tok);
+//			node_body->scope = true;
+//			for(auto &decl : m_declares_per_stmt[m_last_stmt]) {
+//				decl.second->is_promoted = true;
+//				node_body->add_stmt(std::make_unique<NodeStatement>(clone_as<NodeSingleDeclaration>(decl.second.get()), node.tok));
+//			}
+//			m_declares_per_stmt[m_last_stmt].clear();
+////			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
 //			node_body->add_stmt(clone_as<NodeStatement>(m_last_stmt));
-			node.replace_with(std::move(node_body));
-//			m_last_stmt->replace_with(std::move(node_body));
-			return;
-		}
+//			node.replace_with(std::move(node_body));
+////			m_last_stmt->replace_with(std::move(node_body));
+//			return;
+//		}
 	}
 
 	void inline visit(NodeFunctionDefinition& node) override {

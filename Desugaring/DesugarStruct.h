@@ -97,6 +97,9 @@ public:
 		}
 		node.update_member_table();
 		node.update_method_table();
+
+		m_structs.pop();
+		members.clear();
 	}
 
 	inline void visit(NodeFunctionDefinition& node) override {
