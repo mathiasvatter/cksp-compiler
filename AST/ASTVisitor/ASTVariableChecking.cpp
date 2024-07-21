@@ -155,7 +155,9 @@ void ASTVariableChecking::visit(NodeArray& node) {
 
 void ASTVariableChecking::visit(NodeArrayRef& node) {
 	if(node.index) node.index->accept(*this);
+	if(node.name == "_Note.play_pos") {
 
+	}
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	// maybe declaration comes after lowering, do not throw error
 	if(!node_declaration) {

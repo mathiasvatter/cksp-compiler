@@ -108,6 +108,9 @@ void ASTCollectLowerings::visit(NodeArray& node) {
 }
 
 void ASTCollectLowerings::visit(NodeNDArray& node) {
+	if(node.parent->get_node_type() == NodeType::SingleAssignment) {
+		return;
+	}
 	if(node.sizes) node.sizes->accept(*this);
 	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
