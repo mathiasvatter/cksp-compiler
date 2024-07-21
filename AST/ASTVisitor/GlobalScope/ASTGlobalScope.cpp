@@ -16,19 +16,19 @@ void ASTGlobalScope::visit(NodeProgram &node) {
 	node.accept(desugar_single_assign);
 
 	// first pass to analyze dynamic extend within function definitions and replace with passive_vars
-	ASTRegisterReuse dyn_extend(m_def_provider, m_program);
+	ASTRegisterReuse regsiter_reuse(m_def_provider, m_program);
 	for (auto & def : node.function_definitions) {
-		def->accept(dyn_extend);
+		def->accept(regsiter_reuse);
 	}
 	// rename local variables in function definitions
-	dyn_extend.rename_local_vars();
+	regsiter_reuse.rename_local_vars();
 	node.debug_print();
 
-	ASTParameterPromotion lambda_lifting(m_def_provider);
-	node.accept(lambda_lifting);
+	ASTParameterPromotion param_promotion(m_def_provider);
+	node.accept(param_promotion);
 
 	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
-	node.accept(dyn_extend);
+	node.accept(regsiter_reuse);
 
 }
 
