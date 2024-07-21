@@ -118,6 +118,8 @@ void Compiler::compile() {
 
 //	ast->debug_print();
 
+	// inline here so inlined struct vars get their declaration for register reuse later on
+	ast->inline_structs();
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
     ast->accept(infer_types);
@@ -126,13 +128,10 @@ void Compiler::compile() {
 	compile_time.stop("Lowering");
 	compile_time.start("Global Scope");
 
-
-	ast->inline_structs();
-
 	ASTGlobalScope global_scope(&m_definition_provider);
 	ast->accept(global_scope);
 
-	ast->debug_print();
+//	ast->debug_print();
 
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");

@@ -13,6 +13,23 @@ struct List
     end function
 end struct
 
+struct Note
+	declare pitch: int
+	declare velocities[10]: int[]
+	declare play_pos[11, 12]: int[][]
+
+	function __init__(self, p: int, v: int[], pp: int[][])
+		self.pitch := p
+		self.velocities := v
+		self.play_pos := pp
+	end function
+
+	function __repr__(self)
+		return "Note {Pitch: " & self.pitch & "}"
+	end function
+
+end struct
+
 on init
 	const color
 		a, b, c, d, e, f

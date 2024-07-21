@@ -22,6 +22,7 @@ void ASTGlobalScope::visit(NodeProgram &node) {
 	}
 	// rename local variables in function definitions
 	dyn_extend.rename_local_vars();
+	node.debug_print();
 
 	ASTParameterPromotion lambda_lifting(m_def_provider);
 	node.accept(lambda_lifting);
@@ -29,7 +30,6 @@ void ASTGlobalScope::visit(NodeProgram &node) {
 	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 	node.accept(dyn_extend);
 
-//	node.debug_print();
 }
 
 

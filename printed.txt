@@ -1,12 +1,23 @@
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
 on init
+	declare const Note.MAX_STRUCTS : int := MAX_STRUCTS / _max(11 * 12, 10)
+	declare Note.free_idx : int := 0
+	declare Note.allocation[Note.MAX_STRUCTS] : int[]
+	declare Note.pitch[Note.MAX_STRUCTS] : int[]
+	declare const Note.velocities.SIZE_D1 : int := Note.MAX_STRUCTS
+	declare const Note.velocities.SIZE_D2 : int := 10
+	declare _Note.velocities[Note.MAX_STRUCTS * 10] : int[]
+	declare const Note.play_pos.SIZE_D1 : int := Note.MAX_STRUCTS
+	declare const Note.play_pos.SIZE_D2 : int := 11
+	declare const Note.play_pos.SIZE_D3 : int := 12
+	declare _Note.play_pos[Note.MAX_STRUCTS * (11 * 12)] : int[]
 	declare const List.MAX_STRUCTS : int := MAX_STRUCTS
 	declare List.free_idx : int := 0
 	declare List.allocation[List.MAX_STRUCTS] : int[]
 	declare List.value[List.MAX_STRUCTS] : int[]
 	declare List.next[List.MAX_STRUCTS] : int[]
-	declare loc_14 : int
+	declare _iter : int
 	declare const color.a : int := 0 + 0
 	declare const color.b : int := 0 + (0 + 1)
 	declare const color.c : int := 0 + ((0 + 1) + 1)
@@ -39,8 +50,7 @@ on init
 	_nda[5] := 6
 	_nda[6] := 7
 	_nda[7] := 8
-	declare loc_15 : int
-	ndarray.init.Integer.dim2.from1.to1(_nda, 0, 0, loc_15)
+	ndarray.init.Integer.dim2.from1.to1(_nda, 0, 0)
 	_nda[(0 * 4) + 3] := 1
 	_nda[(1 * 4) + 3] := 2
 	_nda[(2 * 4) + 3] := 6
@@ -54,40 +64,34 @@ on init
 	_nda2[(1 * (5 * 5)) + 2] := 4
 	_nda2[(1 * (5 * 5)) + 3] := 5
 	_nda2[(1 * (5 * 5)) + 4] := 6
-	declare loc_16 : int
-	ndarray.init.Integer.dim3.from1.to2(_nda2, 0, 1, loc_15, loc_16)
+	ndarray.init.Integer.dim3.from1.to2(_nda2, 0, 1)
 	declare arr[4] : int[]
-	ndarray.copy.Integer.dim2.from1.to1(_nda, arr, 0, loc_15)
+	ndarray.copy.Integer.dim2.from1.to1(_nda, arr, 0)
 	declare const colorz.a : int := 0 + 0
 	declare const colorz.b : int := 0 + (0 + 1)
 	declare colorz[2] : int[] := (0 + 0, 0 + (0 + 1))
 	declare const colorz.SIZE : int := 3
-	declare loc_17 : string
-	declare loc_18[4] : int[]
-	declare loc_19[5] : int[]
-	declare loc_20 : int
-	scoped_func1(loc_17, loc_18, loc_15, loc_19, loc_16, loc_20)
-	scoped_func1(loc_17, loc_18, loc_15, loc_19, loc_16, loc_20)
+	scoped_func1()
+	scoped_func1()
 	declare c[6] : int[]
-	declare b : int := 		ret_sth(c, loc_19, loc_15)
-
+	declare b : int := ret_sth(c)
 end on
 
 on persistence_changed
-	loc_15 := 0
-	array.init.Integer(loc_19, loc_15, 0)
-	scoped_func1(loc_17, loc_18, loc_15, loc_19, loc_16, loc_20)
-	furz2(		furz(1, loc_16)
-, loc_15)
+	declare array[5] : int[]
+	declare _iter : int
+	array.init.Integer(array, _iter, 0)
+	scoped_func1()
+	furz2(furz(1))
 end on
 
-function furz(z : int, loc_0 : int) : int
-	loc_0 := 0
+function furz(z : int) : int
+	declare loc_0 : int
 	return z + loc_0
 end function
 
-function furz2(z : int, loc_1 : int) : int
-	loc_1 := 0
+function furz2(z : int) : int
+	declare loc_1 : int
 	return z + loc_1
 end function
 
@@ -95,22 +99,24 @@ function ndarray_func(_ndarray : int[]) : Unknown
 	message(_ndarray[(0 * ndarray.SIZE_D2) + 0])
 end function
 
-function scoped_func1(loc_2 : string, loc_3[4] : int[], loc_4 : int, loc_5[5] : int[], loc_6 : int, loc_7 : int) : Unknown
-	loc_2 := "sdlkj"
+function scoped_func1() : Unknown
+	declare loc_2 : string := "sdlkj"
 	message(loc_2)
-	scoped_func2(loc_4, loc_5, loc_6, loc_7)
+	scoped_func2()
+	declare loc_3[4] : int[]
 	loc_3[0] := 3
 	loc_3[1] := 4
 end function
 
-function scoped_func2(loc_4 : int, loc_5[5] : int[], loc_6 : int, loc_7 : int) : Unknown
-	loc_4 := 0
+function scoped_func2() : Unknown
+	declare loc_4 : int
 	message(loc_4)
 	if(loc_4 = 1)
-		loc_6 := 0
+		declare loc_5[5] : int[]
+		declare loc_6 : int
 		array.init.Integer(loc_5, loc_6, 1)
 		loc_6 := 0
-		loc_7 := 0
+		declare loc_7 : int
 		message(loc_6 & loc_7 & loc_5[4])
 	end if
 	if(loc_4 = 2)
@@ -120,8 +126,9 @@ function scoped_func2(loc_4 : int, loc_5[5] : int[], loc_6 : int, loc_7 : int) :
 	end if
 end function
 
-function ret_sth(return0 : int[], loc_8[5] : int[], loc_9 : int) : int
-	loc_9 := 0
+function ret_sth(return0 : int[]) : int
+	declare loc_8[5] : int[]
+	declare loc_9 : int
 	array.init.Integer(loc_8, loc_9, 0)
 	return0[0] := 1
 	return0[1] := 2
@@ -130,35 +137,53 @@ function ret_sth(return0 : int[], loc_8[5] : int[], loc_9 : int) : int
 	return 1
 end function
 
-function ndarray.init.Integer.dim2.from1.to1(_ndarray : int[], value : int, param1 : int, loc_10 : int) : Unknown
-	loc_10 := 0
+function _max(a : int, b : int) : int -> result : int
+	result := ((a + b) + abs(a - b)) / 2
+end function
+
+function ndarray.copy.Integer.dim2.from1.to1(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
+	declare loc_10 : int
 	loc_10 := 0
 	while(loc_10 <= (ndarray.SIZE_D1 - 1)) 
-		_ndarray[(param1 * ndarray.SIZE_D2) + loc_10] := value
+		_ndarray[(param1 * ndarray.SIZE_D2) + loc_10] := _to_copy[loc_10]
 		inc(loc_10)
 	end while
 end function
 
-function ndarray.init.Integer.dim3.from1.to2(_ndarray : int[], value : int, param1 : int, loc_11 : int, loc_12 : int) : Unknown
-	loc_11 := 0
-	loc_12 := 0
+function ndarray.copy.Integer.dim3.from1.to2(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
+	declare loc_11 : int
+	declare loc_12 : int
 	loc_12 := 0
 	while(loc_12 <= (ndarray.SIZE_D1 - 1)) 
 		loc_11 := 0
 		while(loc_11 <= (ndarray.SIZE_D2 - 1)) 
-			_ndarray[(param1 * (ndarray.SIZE_D2 * ndarray.SIZE_D3)) + ((loc_12 * ndarray.SIZE_D3) + loc_11)] := value
+			_ndarray[(param1 * (ndarray.SIZE_D2 * ndarray.SIZE_D3)) + ((loc_12 * ndarray.SIZE_D3) + loc_11)] := _to_copy[(loc_12 * to_copy.SIZE_D2) + loc_11]
 			inc(loc_11)
 		end while
 		inc(loc_12)
 	end while
 end function
 
-function ndarray.copy.Integer.dim2.from1.to1(_ndarray : int[], _to_copy : int[], param1 : int, loc_13 : int) : Unknown
-	loc_13 := 0
+function ndarray.init.Integer.dim2.from1.to1(_ndarray : int[], value : int, param1 : int) : Unknown
+	declare loc_13 : int
 	loc_13 := 0
 	while(loc_13 <= (ndarray.SIZE_D1 - 1)) 
-		_ndarray[(param1 * ndarray.SIZE_D2) + loc_13] := _to_copy[loc_13]
+		_ndarray[(param1 * ndarray.SIZE_D2) + loc_13] := value
 		inc(loc_13)
+	end while
+end function
+
+function ndarray.init.Integer.dim3.from1.to2(_ndarray : int[], value : int, param1 : int) : Unknown
+	declare loc_14 : int
+	declare loc_15 : int
+	loc_15 := 0
+	while(loc_15 <= (ndarray.SIZE_D1 - 1)) 
+		loc_14 := 0
+		while(loc_14 <= (ndarray.SIZE_D2 - 1)) 
+			_ndarray[(param1 * (ndarray.SIZE_D2 * ndarray.SIZE_D3)) + ((loc_15 * ndarray.SIZE_D3) + loc_14)] := value
+			inc(loc_14)
+		end while
+		inc(loc_15)
 	end while
 end function
 
@@ -179,6 +204,22 @@ end function
 
 function List.__repr__(self : int) : string
 	return "<List> Object: " & self
+end function
+
+function Note.__init__(p : int, v : int[], _pp : int[]) : int
+	Note.free_idx := search(Note.allocation, 0)
+	if(Note.free_idx = -1)
+		message("Error: No more free space available to allocate objects of type 'Note'")
+	end if
+	Note.allocation[Note.free_idx] := 1
+	Note.pitch[Note.free_idx] := p
+	ndarray.copy.Integer.dim2.from1.to1(_Note.velocities, v, Note.free_idx)
+	ndarray.copy.Integer.dim3.from1.to2(_Note.play_pos, _pp, Note.free_idx)
+	return Note.free_idx
+end function
+
+function Note.__repr__(self : int) : string
+	return "Note {Pitch: " & Note.pitch[Note.free_idx] & "}"
 end function
 
 function array.init.Integer(array : int[], _iter : int, value : int) : Unknown
