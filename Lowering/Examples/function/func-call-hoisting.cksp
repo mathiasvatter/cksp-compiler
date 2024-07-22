@@ -3,10 +3,14 @@
 										Pre Lowering
 --------------------------------------------------------------------------------------------}
 declare arr[]: int[] := (1, 1, 0)
-if array_true(arr) = 1
-    message("true")
-end if
+print_if_true(array_true(arr))
 
+// function definitions
+function print_if_true(bool: int)
+    if bool = 1
+        message("true")
+    end if
+end function
 function array_true(array: int[])
     declare t := 0
     for _, val in array
@@ -15,6 +19,7 @@ function array_true(array: int[])
     return t
 end function
 
+
 {-------------------------------------------------------------------------------------------
                                         Post Lowering
 --------------------------------------------------------------------------------------------}
@@ -22,11 +27,15 @@ end function
 declare arr[]: int[] := (1, 1, 0)
 // pull function that cannot be inlined out of conditional statement
 // applies to functions with return values that are not in assign/declare statements
-declare ret0: int := array_true(arr) 
-if ret0 = 1
-    message("true")
-end if
+declare ret0: int := array_true(arr)
+print_if_true(ret0)
 
+// function definitions
+function print_if_true(bool: int)
+    if bool = 1
+        message("true")
+    end if
+end function
 function array_true(array: int[])
     declare t := 0
     for _, val in array
