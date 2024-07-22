@@ -13,6 +13,7 @@ public:
 	void visit(NodeReal& node) override;
 	void visit(NodeString& node) override;
 	void visit(NodeNil& node) override;
+	void visit(NodeWildcard& node) override;
 	void visit(NodeReturn& node) override;
 	void visit(NodeVariable& node) override;
 	void visit(NodeVariableRef& node) override;
@@ -20,6 +21,8 @@ public:
 	void visit(NodePointerRef& node) override;
 	void visit(NodeArray& node) override;
 	void visit(NodeArrayRef& node) override;
+	void visit(NodeNDArray& node) override;
+	void visit(NodeNDArrayRef& node) override;
 	void visit(NodeUIControl& node) override;
 	void visit(NodeDeclaration& node) override;
     void visit(NodeSingleDeclaration& node) override;

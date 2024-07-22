@@ -32,6 +32,7 @@ public:
 			error.m_got = node.return_variables.size();
 			error.exit();
 		}
+		m_functions_visited.top()->return_param = node.return_variables[0].get();
 
 		// parameter promotion when multiple return values present
 		// replace parameter placeholders instantiated in Desugaring with copies of return values when references

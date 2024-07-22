@@ -72,11 +72,11 @@ public:
 	}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		// unknown is compatible with everything
-		bool unknown = (m_kind == Kind::Unknown || other->get_kind() == Kind::Unknown) and (other->get_type_kind() == TypeKind::Basic or other->get_type_kind() == TypeKind::Object);
+		bool unknown = m_kind == Kind::Unknown || other->get_kind() == Kind::Unknown;
 		if(unknown) return true;
 
 		// any is compatible with any other type
-		bool any = (m_kind == Kind::Any || other->get_kind() == Kind::Any) and (other->get_type_kind() == TypeKind::Basic or other->get_type_kind() == TypeKind::Object);
+		bool any = (m_kind == Kind::Any || other->get_kind() == Kind::Any); //and (other->get_type_kind() == TypeKind::Basic or other->get_type_kind() == TypeKind::Object);
 		if(any) return true;
 
 		bool voids = m_kind == Kind::Void && other->get_kind() == Kind::Void;

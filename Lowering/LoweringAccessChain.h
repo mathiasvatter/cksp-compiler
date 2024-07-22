@@ -108,11 +108,9 @@ public:
 	}
 
 	inline void visit(NodeFunctionCall& node) override {
-//		if(node.ty->get_element_type()->get_type_kind() == TypeKind::Object) {
-//			node.set_element_type(TypeRegistry::Integer);
-//		}
 		if(&node == start_pointer) return;
 		node.function->name = prev_type->to_string()+"."+node.function->name;
+		node.get_definition(m_program);
 	}
 
 };

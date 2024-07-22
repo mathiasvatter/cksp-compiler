@@ -106,7 +106,7 @@ struct NodeReference : NodeAST {
         return func_arg;
     }
 	/// determines if reference is reference to struct member
-	bool is_member_ref() const;
+	[[nodiscard]] bool is_member_ref() const;
 	/// checks if reference is raw version of multi-dimensional array
 	bool is_raw_array() {
 		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw");
@@ -471,6 +471,7 @@ struct NodeFunctionDefinition: NodeAST {
     bool is_compiled = false;
 	bool visited = false;
 	int num_return_params = 0;
+	NodeAST* return_param = nullptr;
     std::set<class NodeFunctionCall*> call_sites = {};
     std::set<NodeCallback*> callback_sites = {};
     std::unique_ptr<NodeFunctionHeader> header;
@@ -481,7 +482,7 @@ struct NodeFunctionDefinition: NodeAST {
     NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
 						   std::optional<std::unique_ptr<NodeDataStructure>> returnVariable, bool override,
 						   std::unique_ptr<NodeBlock> body, Token tok);
-    ~NodeFunctionDefinition();
+    ~NodeFunctionDefinition() override;
     void accept(ASTVisitor& visitor) override;
     NodeFunctionDefinition(const NodeFunctionDefinition& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;

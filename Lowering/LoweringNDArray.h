@@ -14,9 +14,23 @@ public:
 
 	void visit(NodeSingleAssignment &node) override {
 		lowered_node = &node;
-		if(node.l_value->get_node_type() == NodeType::NDArrayRef and node.r_value->get_node_type() == NodeType::ParamList) {
+
+		NodeAST* r_value = node.r_value.get();
+		NodeAST* assigned_node = node.r_value.get();
+		if(node.r_value->get_node_type() == NodeType::FunctionCall) {
+			auto function_call = static_cast<NodeFunctionCall*>(node.r_value.get());
+			if(!function_call->definition) {
+				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+				error.m_message = "Call to undefined function, when assigning to <NDArray>: " + function_call->function->name;
+				error.exit();
+			}
+			assigned_node = function_call;
+			r_value = function_call->definition->return_param;
+		}
+
+		if(node.l_value->get_node_type() == NodeType::NDArrayRef and r_value->get_node_type() == NodeType::ParamList) {
 			auto nd_array_ref = static_cast<NodeNDArrayRef*>(node.l_value.get());
-			auto param_list = static_cast<NodeParamList*>(node.r_value.get());
+			auto param_list = static_cast<NodeParamList*>(r_value);
 			param_list->flatten();
 			// nda := ((1,2,3,4),(5,6,7,8))
 			if(!nd_array_ref->indexes) {
@@ -99,12 +113,10 @@ public:
                     auto node_declaration = std::make_unique<NodeSingleDeclaration>(
                             std::move(node_var),
                             node_ndarray->sizes->params[i]->clone(), node.tok);
-                    auto node_statement = std::make_unique<NodeStatement>(std::move(node_declaration), node.tok);
-                    node_statement->update_parents(node_body.get());
-                    node_body->statements.push_back(std::move(node_statement));
+                    node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declaration), node.tok));
                 }
                 node.variable->accept(*this);
-                node_body->statements.push_back(std::make_unique<NodeStatement>(node.clone(), node.tok));
+                node_body->add_stmt(std::make_unique<NodeStatement>(node.clone(), node.tok));
                 lowered_node = node.replace_with(std::move(node_body));
 				return;
             }

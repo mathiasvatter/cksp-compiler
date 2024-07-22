@@ -28,6 +28,14 @@ struct Note
 		return "Note {Pitch: " & self.pitch & "}"
 	end function
 
+	function play(self)
+		return play_note(self.pitch, self.velocities[0], self.play_pos[1,2], 0)
+	end function
+
+	function get_velocities(self)
+		return self.velocities
+	end function
+
 end struct
 
 on init
@@ -43,6 +51,8 @@ on init
 	message(this_list.next.value)
 	message(this_list)
 
+	declare new_note: Note := nil
+	declare velo: int := new_note.get_velocities()
 	// declare lists[5]: List[] := (nil)
 
 	declare ui_slider sli(1,500)

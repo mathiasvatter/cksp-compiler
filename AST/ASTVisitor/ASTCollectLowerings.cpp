@@ -25,6 +25,13 @@ void ASTCollectLowerings::visit(NodeProgram& node) {
 	node.accept(lowering_types);
 }
 
+void ASTCollectLowerings::visit(NodeBlock& node) {
+	for(auto & stmt : node.statements) {
+		stmt->accept(*this);
+	}
+	node.flatten();
+}
+
 void ASTCollectLowerings::visit(NodeNil& node) {
 	if(auto lowering = node.get_lowering(m_program)) {
 		node.accept(*lowering);
