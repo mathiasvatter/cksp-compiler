@@ -281,6 +281,7 @@ void TypeInference::visit(NodeAccessChain& node) {
 			ptr->accept(*this);
 		} else {
 			auto prev = i-1;
+			auto prev_ptr = node.chain[prev].get();
 			auto prev_type = node.chain[prev]->ty;
 			if(prev_type->get_type_kind() != TypeKind::Object) {
 				error.m_message = "Method chaining can only be used on <Object> types.";
@@ -288,19 +289,21 @@ void TypeInference::visit(NodeAccessChain& node) {
 			}
 			auto prev_obj = prev_type->to_string();
 			if(ptr->get_node_type() == NodeType::FunctionCall) {
-				auto func_call = static_cast<NodeFunctionCall*>(ptr.get());
-				func_call->function->name = prev_obj+"."+func_call->function->name;
+//				auto func_call = static_cast<NodeFunctionCall*>(ptr.get());
+//				func_call->function->name = prev_obj+"."+func_call->function->name;
 				ptr->accept(*this);
-				if(!func_call->definition) {
-					error.m_message = "Method "+func_call->function->name+" does not exist.";
-					error.exit();
-				}
+//				if(!func_call->definition) {
+//					error.m_message = "Method "+func_call->function->name+" does not exist.";
+//					error.exit();
+//				}
 			} else {
 				auto reference = cast_node<NodeReference>(ptr.get());
 				auto strct = reference->get_object_ptr(m_program, prev_obj);
 				if(!strct) {
 					if(prev_type == TypeRegistry::Nil) {
 						error.m_message = "Method chaining can not be used on <Nil> types.";
+					} else if(prev_ptr->get_node_type() == NodeType::FunctionCall) {
+						error.m_message = prev_ptr->get_string()+" does not return <Object> type.";
 					} else {
 						error.m_message = "Struct "+prev_obj+" does not exist.";
 					}

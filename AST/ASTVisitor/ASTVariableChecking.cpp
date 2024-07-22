@@ -25,7 +25,7 @@ void ASTVariableChecking::visit(NodeProgram& node) {
 		if(callback.get() != m_program->init_callback) callback->accept(*this);
 	}
 	for(auto & func_def : node.function_definitions) {
-		if(!func_def->visited) func_def->accept(*this);
+		func_def->accept(*this);
 		// reset visited flag
 		func_def->visited = false;
 	}
@@ -101,7 +101,7 @@ void ASTVariableChecking::visit(NodeBlock &node) {
 }
 
 void ASTVariableChecking::visit(NodeFunctionDefinition &node) {
-	node.visited = true;
+//	node.visited = true;
 	m_program->function_call_stack.push(&node);
 	m_def_provider->add_scope();
 	node.header ->accept(*this);
@@ -155,9 +155,7 @@ void ASTVariableChecking::visit(NodeArray& node) {
 
 void ASTVariableChecking::visit(NodeArrayRef& node) {
 	if(node.index) node.index->accept(*this);
-	if(node.name == "_Note.play_pos") {
 
-	}
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	// maybe declaration comes after lowering, do not throw error
 	if(!node_declaration) {

@@ -20,6 +20,10 @@ void ASTPrinter::visit(NodeNil &node) {
 	os << node.name;
 }
 
+void ASTPrinter::visit(NodeWildcard &node) {
+	os << node.value;
+}
+
 void ASTPrinter::visit(NodeReturn& node) {
 	os << "return ";
 	for(auto &ret : node.return_variables) {
@@ -76,6 +80,30 @@ void ASTPrinter::visit(NodeArrayRef &node) {
 		os << "]";
 	}
 }
+
+void ASTPrinter::visit(NodeNDArray &node) {
+	if(node.persistence.has_value())
+		os << node.persistence.value().val << " ";
+	os << node.name;
+	if(node.sizes) {
+		os << "[";
+		node.sizes->accept(*this);
+		os << "]";
+	}
+	auto type = TypeRegistry::get_annotation_from_type(node.ty);
+	if(!type.empty()) os << " : " << type;
+}
+
+void ASTPrinter::visit(NodeNDArrayRef &node) {
+	os << node.name;
+	if(node.indexes) {
+		os << "[";
+		node.indexes->accept(*this);
+		os << "]";
+	}
+}
+
+
 
 void ASTPrinter::visit(NodeUIControl &node) {
 	os << node.ui_control_type << " ";

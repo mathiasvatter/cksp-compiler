@@ -16,6 +16,12 @@ function return_sth_more()
     return 1, x
 end function
 
+declare array[3] := return_array()
+function return_array()
+    declare arr[]: int[] := (1, 1, 0)
+    return arr
+end function
+
 {-------------------------------------------------------------------------------------------
                                         Post Lowering
 --------------------------------------------------------------------------------------------}

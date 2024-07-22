@@ -8,8 +8,19 @@
 
 class LoweringStruct : public ASTLowering {
 private:
+	NodeFunctionDefinition* m_current_func = nullptr;
 	NodeStruct* m_current_struct = nullptr;
 	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX_STRUCTS", Token());
+	inline bool in_constructor() {
+		return m_current_func and m_current_struct and m_current_func == m_current_struct->constructor;
+	}
+	/// returns free_idx as reference if in constructor, self as reference if not
+	inline std::unique_ptr<NodeReference> get_index_ref() {
+		if(in_constructor()) {
+			return m_current_struct->free_idx_var->to_reference();
+		}
+		return m_current_struct->node_self->to_reference();
+	}
 public:
 	explicit LoweringStruct(NodeProgram *program) : ASTLowering(program) {}
 
@@ -37,6 +48,9 @@ public:
 		for(auto & m: node.methods) {
 			m->accept(*this);
 		}
+
+		m_current_struct = nullptr;
+		m_current_func = nullptr;
 	}
 
 	std::unique_ptr<NodeBlock> add_compiler_struct_vars() {
@@ -149,13 +163,14 @@ public:
 			node.sizes->prepend_param(m_current_struct->max_individual_struts_var->to_reference());
 			node.dimensions = node.sizes->params.size();
 			node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node.dimensions);
+			node.is_local = false;
 		}
 	}
 
 	inline void visit(NodeVariableRef& node) override {
-		// if member reference, turn into array reference with struct.free_idx as index
+		// if member reference, turn into array reference with (struct.free_idx as index if in constructor, self as index if not)
 		if(node.is_member_ref()) {
-			auto node_array_ref = node.to_array_ref(m_current_struct->free_idx_var->to_reference().get());
+			auto node_array_ref = node.to_array_ref(get_index_ref().get());
 			safe_replace_reference(std::move(node_array_ref), &node);
 		}
 	}
@@ -167,7 +182,7 @@ public:
 				node.index = std::make_unique<NodeWildcard>("*", node.tok);
 			}
 			auto node_ndarray_ref = node.to_ndarray_ref();
-			node_ndarray_ref->indexes->prepend_param(m_current_struct->free_idx_var->to_reference());
+			node_ndarray_ref->indexes->prepend_param(get_index_ref());
 			node_ndarray_ref->declaration = node.declaration;
 			node_ndarray_ref->determine_sizes();
 			safe_replace_reference(std::move(node_ndarray_ref), &node);
@@ -176,11 +191,7 @@ public:
 
 	inline void visit(NodePointerRef& node) override {
 		if(node.is_member_ref()) {
-			// do not replace self pointer
-//			if(node.name == "self") {
-//				return;
-//			}
-			auto node_array_ref = node.to_array_ref(m_current_struct->free_idx_var->to_reference().get());
+			auto node_array_ref = node.to_array_ref(get_index_ref().get());
 			safe_replace_reference(std::move(node_array_ref), &node);
 		}
 	}
@@ -196,12 +207,13 @@ public:
 					node.indexes->add_param(std::make_unique<NodeWildcard>("*", node.tok));
 				}
 			}
-			node.indexes->prepend_param(m_current_struct->free_idx_var->to_reference());
+			node.indexes->prepend_param(get_index_ref());
 		}
 	}
 
 
 	inline void visit(NodeFunctionDefinition& node) override {
+		m_current_func = &node;
 		node.header->accept(*this);
 		node.body->accept(*this);
 		// lower init function
@@ -305,13 +317,10 @@ private:
 		// Erstellung der Parameter a und b
 		auto node_a = std::make_unique<NodeVariable>(std::nullopt, "a", TypeRegistry::Integer, DataType::Mutable, Token());
 		auto node_b = std::make_unique<NodeVariable>(std::nullopt, "b", TypeRegistry::Integer, DataType::Mutable, Token());
-		// return variable
-		auto result = std::make_unique<NodeVariable>(std::nullopt, "result", TypeRegistry::Integer, DataType::Mutable, Token());
 
 		// Referenzen auf die Parameter
 		auto node_a_ref = node_a->to_reference();
 		auto node_b_ref = node_b->to_reference();
-		auto node_result_ref = result->to_reference();
 
 		// Aufbau der Funktionsdefinition
 		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
@@ -324,12 +333,14 @@ private:
 				),
 				Token()
 			),
-			std::optional(std::move(result)),
+			std::nullopt,
 			false,
 			std::make_unique<NodeBlock>(Token()),
 			Token()
 		);
 		node_function_def->body->scope = true;
+		node_function_def->num_return_params = 1;
+		node_function_def->ty = TypeRegistry::Integer;
 
 		// abs(a - b)
 		auto node_abs_func = std::make_unique<NodeFunctionCall>(
@@ -364,10 +375,9 @@ private:
 		// result := (a + b + abs(a - b)) // 2
 		node_function_def->body->add_stmt(
 			std::make_unique<NodeStatement>(
-				std::make_unique<NodeSingleAssignment>(
-					node_result_ref->clone(),
-					std::move(max_expression),
-					Token()
+				std::make_unique<NodeReturn>(
+					Token(),
+					std::move(max_expression)
 				),
 				Token()
 			));

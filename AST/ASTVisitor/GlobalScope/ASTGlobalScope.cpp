@@ -22,7 +22,7 @@ void ASTGlobalScope::visit(NodeProgram &node) {
 	}
 	// rename local variables in function definitions
 	regsiter_reuse.rename_local_vars();
-	node.debug_print();
+//	node.debug_print();
 
 	ASTParameterPromotion param_promotion(m_def_provider);
 	node.accept(param_promotion);

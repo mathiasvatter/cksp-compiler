@@ -108,8 +108,8 @@ NodeFunctionDefinition* NodeFunctionCall::find_method_definition(NodeProgram *pr
 	auto obj = get_object_name();
 	if(obj.empty()) return nullptr;
 	auto strct = program->struct_lookup.find(obj);
-//	if(strct == program->struct_lookup.end()) return nullptr;
-//	if(strct->second->method_table.empty()) return nullptr;
+	if(strct == program->struct_lookup.end()) return nullptr;
+	if(strct->second->method_table.empty()) return nullptr;
 	auto func = strct->second->method_table.find({this->function->name, (int)this->function->args->params.size()});
 	if(func == strct->second->method_table.end()) return nullptr;
 
@@ -146,8 +146,8 @@ bool NodeFunctionCall::get_definition(NodeProgram* program, bool fail) {
         return true;
     } else if (find_property_definition(program)) {
 		return true;
-	} else if(find_method_definition(program)) {
-		return true;
+//	} else if(find_method_definition(program)) {
+//		return true;
 	} else if(find_constructor_definition(program)) {
 		return true;
     } else if(fail) {

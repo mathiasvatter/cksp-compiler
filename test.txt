@@ -1,8 +1,8 @@
-{ Compiled with cksp version 0.0.5 on Sun Jul 21 16:55:04 2024 }
+{ Compiled with cksp version 0.0.5 on Mon Jul 22 16:06:26 2024 }
 on init
   declare const $MAX_STRUCTS := 1000000
-  declare %loc_23[5]
-  declare const $Note__MAX_STRUCTS := $MAX_STRUCTS / 132
+  declare const $Note__MAX_STRUCTS := $MAX_STRUCTS /     132
+
   declare $Note__free_idx := 0
   declare %Note__allocation[$Note__MAX_STRUCTS]
   declare %Note__pitch[$Note__MAX_STRUCTS]
@@ -13,7 +13,6 @@ on init
   declare %List__allocation[$List__MAX_STRUCTS]
   declare %List__value[$List__MAX_STRUCTS]
   declare %List__next[$List__MAX_STRUCTS]
-  declare $loc_16
   declare const $color__a := 0
   message($color__a)
   declare  := - 1
@@ -25,6 +24,7 @@ on init
   message(%List__value[%List__next[]])
   message(    "<List> Object: " & 
 )
+  declare  := - 1
   declare ui_slider $sli (1, 500)
   set_control_par_str(get_ui_id($sli), $CONTROL_PAR_TEXT, "sdfkj")
   declare @a
@@ -132,22 +132,22 @@ on persistence_changed
   end while
   @loc_19 := "sdlkj"
   message(@loc_19)
-  $loc_18 := 0
-  message($loc_18)
-  if($loc_18 = 1)
-    $loc_22 := 0
-    while($loc_22 < num_elements(%loc_23)) 
-      %loc_23[$loc_22] := 1
-      inc($loc_22)
+  $loc_17 := 0
+  message($loc_17)
+  if($loc_17 = 1)
+    $loc_18 := 0
+    while($loc_18 < num_elements(%loc_21)) 
+      %loc_21[$loc_18] := 1
+      inc($loc_18)
     end while
+    $loc_18 := 0
     $loc_22 := 0
-    $loc_16 := 0
-    message($loc_22 & $loc_16 & %loc_23[4])
+    message($loc_18 & $loc_22 & %loc_21[4])
   end if
-  if($loc_18 = 2)
+  if($loc_17 = 2)
+    $loc_18 := 0
     $loc_22 := 0
-    $loc_16 := 0
-    message($loc_22 & $loc_16)
+    message($loc_18 & $loc_22)
   end if
   %loc_20[0] := 3
   %loc_20[1] := 4
