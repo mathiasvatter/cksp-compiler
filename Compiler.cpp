@@ -125,6 +125,8 @@ void Compiler::compile() {
     ast->accept(infer_types);
     TypeInference::cast_data_structure_types(&m_definition_provider, true);
 
+	// Data Structure Lowering of NDArrays and Array assignments
+
 	compile_time.stop("Lowering");
 	compile_time.start("Global Scope");
 

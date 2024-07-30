@@ -98,6 +98,9 @@ public:
 			ret->accept(*this);
 		}
 	};
+	virtual void visit(NodeSingleReturn& node) {
+		node.return_variable->accept(*this);
+	};
 	virtual void visit(NodeDelete& node) {
 		CompileError(ErrorType::InternalError, "<Delete> node not yet implemented.", "", node.tok).exit();
 		for(auto &del : node.delete_pointer) {

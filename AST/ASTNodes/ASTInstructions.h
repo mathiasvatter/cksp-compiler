@@ -269,14 +269,41 @@ struct NodeReturn : NodeInstruction {
             if(ret) ret->parent = this;
         }
     };
-    std::string get_string() override {
-        return "";
-    }
     void update_token_data(const Token& token) override {
         for(auto &ret : return_variables) {
             ret->update_token_data(token);
         }
     }
+	void add_return_param(std::unique_ptr<NodeAST> param) {
+		param->parent = this;
+		return_variables.push_back(std::move(param));
+	}
+};
+
+struct NodeSingleReturn : NodeInstruction {
+	std::unique_ptr<NodeAST> return_variable;
+	NodeFunctionDefinition* definition = nullptr;
+	inline explicit NodeSingleReturn(Token tok) : NodeInstruction(NodeType::SingleReturn, std::move(tok)) {}
+	NodeSingleReturn(std::unique_ptr<NodeAST> return_variable, Token tok)
+		: NodeInstruction(NodeType::SingleReturn, std::move(tok)), return_variable(std::move(return_variable)) {
+		set_child_parents();
+	}
+	void accept(ASTVisitor& visitor) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	// Copy Constructor
+	NodeSingleReturn(const NodeSingleReturn& other);
+	// Clone Method
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		return_variable->update_parents(this);
+	}
+	void set_child_parents() override {
+		return_variable->parent = this;
+	};
+	void update_token_data(const Token& token) override {
+		return_variable->update_token_data(token);
+	}
 };
 
 struct NodeDelete : NodeInstruction {

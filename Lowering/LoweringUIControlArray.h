@@ -57,7 +57,7 @@ public:
 		lowered_node = node.replace_with(std::move(body_post_lowering));
 	}
 
-	bool is_ui_control_array(NodeUIControl* node) {
+	static bool is_ui_control_array(NodeUIControl* node) {
 		auto node_native_declaration = cast_node<NodeUIControl>(node->declaration);
 		if(!node_native_declaration) return false;
 		if(node->control_var->get_node_type() == NodeType::NDArray) return true;

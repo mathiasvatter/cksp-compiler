@@ -46,6 +46,8 @@ struct NodeAST {
     [[nodiscard]] virtual ASTDesugaring *get_desugaring(NodeProgram *program) const {
         return nullptr;
     }
+	[[nodiscard]] virtual NodeAST* desugar() {return nullptr;}
+	[[nodiscard]] virtual NodeAST* lower() {return nullptr;}
     [[nodiscard]] NodeType get_node_type() const { return node_type; }
 	/// attempts to set the element type of this node to element_type if node has Composite Type
 	/// and elemen_type is Basic Type
