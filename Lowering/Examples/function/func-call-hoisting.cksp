@@ -1,16 +1,17 @@
+/**
+* This example demonstrates the hoisting of function calls out of conditional statements.
+*/
 
 {-------------------------------------------------------------------------------------------
 										Pre Lowering
 --------------------------------------------------------------------------------------------}
 declare arr[]: int[] := (1, 1, 0)
-print_if_true(array_true(arr))
+declare arr2[]: int[] := (1, 1, 1)
+if array_true(arr) = TRUE and array_true(arr2) = TRUE
+    message("true")
+end if
 
 // function definitions
-function print_if_true(bool: int)
-    if bool = 1
-        message("true")
-    end if
-end function
 function array_true(array: int[])
     declare t := 0
     for _, val in array
@@ -24,18 +25,19 @@ end function
                                         Post Lowering
 --------------------------------------------------------------------------------------------}
 
-declare arr[]: int[] := (1, 1, 0)
+declare arr[3]: int[] := (1, 1, 0)
+declare arr2[3]: int[] := (1, 1, 1)
 // pull function that cannot be inlined out of conditional statement
 // applies to functions with return values that are not in assign/declare statements
 declare ret0: int := array_true(arr)
-print_if_true(ret0)
-
-// function definitions
-function print_if_true(bool: int)
-    if bool = 1
+if ret0 = 1
+    ret0 := array_true(arr2) = TRUE
+    if ret0 = 1
         message("true")
     end if
-end function
+end if
+
+// function definitions
 function array_true(array: int[])
     declare t := 0
     for _, val in array

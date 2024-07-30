@@ -59,6 +59,7 @@ enum class NodeType {
 	Declaration,
 	SingleDeclaration,
 	Return,
+	SingleReturn,
 	GetControl,
 	ParamList,
 	Wildcard,

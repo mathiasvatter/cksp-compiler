@@ -306,6 +306,25 @@ NodeAST * NodeReturn::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> 
     return nullptr;
 }
 
+// ************* NodeSingleReturn ***************
+void NodeSingleReturn::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+NodeSingleReturn::NodeSingleReturn(const NodeSingleReturn& other)
+	: NodeInstruction(other), return_variable(clone_unique(other.return_variable)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeSingleReturn::clone() const {
+	return std::make_unique<NodeSingleReturn>(*this);
+}
+NodeAST * NodeSingleReturn::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if(return_variable.get() == oldChild) {
+		return_variable = std::move(newChild);
+		return return_variable.get();
+	}
+	return nullptr;
+}
+
 // ************* NodeDelete ***************
 void NodeDelete::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
