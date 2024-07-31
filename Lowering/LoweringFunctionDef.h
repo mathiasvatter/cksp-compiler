@@ -15,16 +15,17 @@ private:
 public:
 	explicit LoweringFunctionDef(NodeProgram *program) : ASTLowering(program) {}
 
-	void inline visit(NodeFunctionDefinition &node) override {
+	inline NodeAST* visit(NodeFunctionDefinition &node) override {
 		m_functions_visited.push(&node);
 		if(node.return_variable.has_value()) {
 			node.num_return_params = 1;
 		}
 		node.body->accept(*this);
 		m_functions_visited.pop();
+		return &node;
 	};
 
-	void inline visit(NodeReturn &node) override {
+	inline NodeAST* visit(NodeReturn &node) override {
 		if(node.return_variables.size() != m_functions_visited.top()->num_return_params) {
 			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 			error.m_message = "Return Statement has incorrect number of return values.";
@@ -88,9 +89,9 @@ public:
 				block_replace->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
 			}
 			block_replace->add_stmt(std::make_unique<NodeStatement>(std::move(node_single_return), node.tok));
-			node.replace_with(std::move(block_replace));
+			return node.replace_with(std::move(block_replace));
 		} else {
-			node.replace_with(std::move(node_single_return));
+			return node.replace_with(std::move(node_single_return));
 		}
 
 	}

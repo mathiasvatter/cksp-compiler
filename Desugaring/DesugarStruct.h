@@ -70,7 +70,7 @@ private:
 public:
 	explicit DesugarStruct(NodeProgram *program) : ASTDesugaring(program) {};
 
-	inline void visit(NodeStruct& node) override {
+	inline NodeAST* visit(NodeStruct& node) override {
 		node.name = add_struct_prefix(node.name);
 		m_structs.push(&node);
 
@@ -100,9 +100,10 @@ public:
 
 		m_structs.pop();
 		members.clear();
+		return &node;
 	}
 
-	inline void visit(NodeFunctionDefinition& node) override {
+	inline NodeAST* visit(NodeFunctionDefinition& node) override {
 		if(!node.is_method()) {
 			auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
 			error.m_message = "Method definition must contain <self> as first parameter.";
@@ -145,9 +146,10 @@ public:
 		node.header->args->params.erase(node.header->args->params.begin());
 
 		node.body->accept(*this);
+		return &node;
 	}
 
-	inline void visit(NodeSingleDeclaration& node) override {
+	inline NodeAST* visit(NodeSingleDeclaration& node) override {
 		if(node.variable->is_member()) {
 			node.variable->name = add_struct_prefix(node.variable->name);
 			add_to_members(node.variable.get());
@@ -158,47 +160,54 @@ public:
 			}
 		}
 		if(node.value) node.value->accept(*this);
+		return &node;
 	}
 
-	void visit(NodeVariableRef& node) override {
+	NodeAST* visit(NodeVariableRef& node) override {
 		node.name = replace_self_struct_prefix(node.name);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
-			node.replace_with(std::move(access_chain));
+			return node.replace_with(std::move(access_chain));
 		}
+		return &node;
 	};
-	void visit(NodePointerRef& node) override {
+	NodeAST * visit(NodePointerRef& node) override {
 		node.name = replace_self_struct_prefix(node.name);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
-			node.replace_with(std::move(access_chain));
+			return node.replace_with(std::move(access_chain));
 		}
+		return &node;
 	};
-	void visit(NodeArrayRef& node) override {
+	NodeAST * visit(NodeArrayRef& node) override {
 		node.name = replace_self_struct_prefix(node.name);
 		if(node.index) node.index->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
-			node.replace_with(std::move(access_chain));
+			return node.replace_with(std::move(access_chain));
 		}
+		return &node;
 	};
-	void visit(NodeNDArrayRef& node) override {
+	NodeAST * visit(NodeNDArrayRef& node) override {
 		node.name = replace_self_struct_prefix(node.name);
 		if(node.indexes) node.indexes->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
-			node.replace_with(std::move(access_chain));
+			return node.replace_with(std::move(access_chain));
 		}
+		return &node;
 	};
-	void visit(NodeListRef& node) override {
+	NodeAST * visit(NodeListRef& node) override {
 		node.name = replace_self_struct_prefix(node.name);
 		node.indexes->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
-			node.replace_with(std::move(access_chain));
+			return node.replace_with(std::move(access_chain));
 		}
+		return &node;
 	};
-	void visit(NodeFunctionCall& node) override {
+	NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->name = replace_self_struct_prefix(node.function->name);
 		node.function->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.function->name, &node)) {
-			node.replace_with(std::move(access_chain));
+			return node.replace_with(std::move(access_chain));
 		}
+		return &node;
 	};
 
 };

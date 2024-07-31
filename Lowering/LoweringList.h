@@ -10,11 +10,11 @@ class LoweringList : public ASTLowering {
 public:
 	explicit LoweringList(NodeProgram* program) : ASTLowering(program) {}
 
-	void visit(NodeSingleDeclaration &node) override {
-
+	NodeAST * visit(NodeSingleDeclaration &node) override {
+		return &node;
 	};
 
-	void visit(NodeListRef& node) override {
+	NodeAST * visit(NodeListRef& node) override {
 		// list references can only have one or two (jagged lists) index
 		if(node.indexes->params.size() != 2 && node.indexes->params.size() != 1) {
 			CompileError(ErrorType::SyntaxError,"Got wrong amount of index for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).exit();
@@ -28,8 +28,7 @@ public:
 		if(node.indexes->params.size() == 1) {
 			lowered_list_reference->index = std::move(node.indexes);
 			lowered_list_reference->index->parent = lowered_list_reference.get();
-			lowered_node = node.replace_with(std::move(lowered_list_reference));
-			return;
+			return node.replace_with(std::move(lowered_list_reference));
 		}
 
 		/**
@@ -53,10 +52,10 @@ public:
 		lowered_list_reference->index = std::move(node_expression);
 		lowered_list_reference->index->parent = lowered_list_reference.get();
 		lowered_list_reference->name = "_"+lowered_list_reference->name;
-		lowered_node = node.replace_with(std::move(lowered_list_reference));
+		return node.replace_with(std::move(lowered_list_reference));
 	}
 
-	void visit(NodeList &node) override {
+	NodeAST * visit(NodeList &node) override {
         auto node_body = std::make_unique<NodeBlock>(node.tok);
         auto node_main_array = std::make_unique<NodeArray>(
 			std::nullopt,
@@ -105,8 +104,7 @@ public:
 				);
 			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
             node_body->accept(*this);
-            lowered_node = node.replace_with(std::move(node_body));
-            return;
+            return node.replace_with(std::move(node_body));
         }
 
         auto node_sizes_array = std::make_unique<NodeArray>(
@@ -200,7 +198,7 @@ public:
             node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while_loop), node.tok));
         }
         node_body->accept(*this);
-        lowered_node = node.replace_with(std::move(node_body));
+        return node.replace_with(std::move(node_body));
 	};
 
 };

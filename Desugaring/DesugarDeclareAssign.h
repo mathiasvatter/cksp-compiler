@@ -13,7 +13,7 @@ class DesugarDeclareAssign : public ASTDesugaring {
 public:
 	explicit DesugarDeclareAssign(NodeProgram* program) : ASTDesugaring(program) {};
 
-    void inline visit(NodeDeclaration& node) override {
+	inline NodeAST* visit(NodeDeclaration& node) override {
         // error handling
         if(node.variable.size() < node.value->params.size()) {
             auto error = CompileError(ErrorType::SyntaxError,"", node.tok.line, "", "", node.tok.file);
@@ -59,7 +59,7 @@ public:
             node_body->add_stmt(std::make_unique<NodeStatement>(std::move(stmt), node.tok));
         }
 
-        replacement_node = std::move(node_body);
+        return node.replace_with(std::move(node_body));
     }
 
 	inline bool handle_multiple_func_returns(std::unique_ptr<NodeBlock>& node_body, std::vector<std::unique_ptr<NodeAST>>& l_values,
@@ -100,7 +100,7 @@ public:
 		return true;
 	}
 
-    void inline visit(NodeAssignment &node) override {
+    inline NodeAST* visit(NodeAssignment &node) override {
         // error handling
         if(node.l_value->params.size() < node.r_value->params.size()) {
             auto error = CompileError(ErrorType::SyntaxError,
@@ -135,7 +135,7 @@ public:
             stmt->set_child_parents();
             node_body->add_stmt(std::make_unique<NodeStatement>(std::move(stmt), node.tok));
         }
-        replacement_node = std::move(node_body);
+        return node.replace_with(std::move(node_body));
     }
 
 

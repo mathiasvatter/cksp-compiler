@@ -22,7 +22,7 @@ private:
 public:
 	explicit LoweringAccessChain(NodeProgram *program) : ASTLowering(program) {}
 
-	inline void visit(NodeAccessChain& node) override {
+	inline NodeAST * visit(NodeAccessChain& node) override {
 		node.update_types();
 		// if first element is pointer do not accept
 //		auto start = node.chain[0]->get_node_type() == NodeType::FunctionCall ? 0 : 1;
@@ -50,11 +50,11 @@ public:
 				node_func_call->function->args->prepend_param(std::move(prev_node));
 			}
 		}
-		lowered_node = node.chain.back().get();
+		return &node;
 	}
 
 	/// every pointer ref in access chain is replaced by array_ref with name "<obj_type>.<name>"
-	inline void visit(NodePointerRef& node) override {
+	inline NodeAST * visit(NodePointerRef& node) override {
 		if(node.ty == TypeRegistry::Unknown || node.ty->get_type_kind() != TypeKind::Object) {
 			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
 			error.m_message = "Unknown type for pointer reference. Pointer references have to be typed or of type <Object>.";
@@ -62,17 +62,17 @@ public:
 			error.exit();
 		}
 //		node.lower_type();
-		if(&node == start_pointer) return;
+		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string() + "." + node.name;
 		auto node_array = node.to_array_ref(nullptr);
 		node_array->ty = TypeRegistry::ArrayOfInt;
-		node.replace_with(std::move(node_array));
+		return node.replace_with(std::move(node_array));
 	}
 
 	// increase dimensions -> to ndarray_ref
-	inline void visit(NodeArrayRef& node) override {
+	inline NodeAST * visit(NodeArrayRef& node) override {
 //		node.lower_type();
-		if(&node == start_pointer) return;
+		if(&node == start_pointer) return &node;
 		// no index -> array -> List.array[sth, *]
 		if(!node.index) node.index = std::make_unique<NodeWildcard>("*", node.tok);
 		auto node_ndarray_ref = node.to_ndarray_ref();
@@ -80,12 +80,12 @@ public:
 		node_ndarray_ref->declaration = node.declaration;
 		node_ndarray_ref->determine_sizes();
 		node_ndarray_ref->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node_ndarray_ref->sizes->params.size());
-		node.replace_with(std::move(node_ndarray_ref));
+		return node.replace_with(std::move(node_ndarray_ref));
 	}
 
-	inline void visit(NodeNDArrayRef& node) override {
+	inline NodeAST * visit(NodeNDArrayRef& node) override {
 //		node.lower_type();
-		if(&node == start_pointer) return;
+		if(&node == start_pointer) return &node;
 		node.determine_sizes();
 		// if array has no indexes -> everything should be copied -> wildcards for every index of size
 		if (!node.indexes) {
@@ -95,22 +95,24 @@ public:
 			}
 		}
 		node.name = prev_type->to_string()+"."+node.name;
+		return &node;
 	}
 
-	inline void visit(NodeVariableRef& node) override {
+	inline NodeAST * visit(NodeVariableRef& node) override {
 //		node.lower_type();
-		if(&node == start_pointer) return;
+		if(&node == start_pointer) return &node;
 		auto node_array_ref = node.to_array_ref(nullptr);
 		node_array_ref->name = prev_type->to_string()+"."+node.name;
 		node_array_ref->ty = node.ty;
 		node_array_ref->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
-		node.replace_with(std::move(node_array_ref));
+		return node.replace_with(std::move(node_array_ref));
 	}
 
-	inline void visit(NodeFunctionCall& node) override {
-		if(&node == start_pointer) return;
+	inline NodeAST * visit(NodeFunctionCall& node) override {
+		if(&node == start_pointer) return &node;;
 		node.function->name = prev_type->to_string()+"."+node.function->name;
 		node.get_definition(m_program);
+		return &node;
 	}
 
 };

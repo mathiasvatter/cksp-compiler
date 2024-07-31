@@ -24,7 +24,7 @@ private:
 public:
 	explicit LoweringStruct(NodeProgram *program) : ASTLowering(program) {}
 
-	void visit(NodeStruct& node) override {
+	NodeAST * visit(NodeStruct& node) override {
 		m_current_struct = &node;
 
 		// check if all member node types are allowed
@@ -51,6 +51,7 @@ public:
 
 		m_current_struct = nullptr;
 		m_current_func = nullptr;
+		return &node;
 	}
 
 	std::unique_ptr<NodeBlock> add_compiler_struct_vars() {
@@ -101,14 +102,14 @@ public:
 		return node_block;
 	}
 
-	inline void visit(NodeAccessChain& node) override {
+	inline NodeAST * visit(NodeAccessChain& node) override {
 		if(auto lowering = node.get_lowering(m_program)) {
 			node.accept(*lowering);
 		}
-		node.replace_with(std::move(node.chain.back()));
+		return node.replace_with(std::move(node.chain.back()));
 	}
 
-	inline void visit(NodeSingleDeclaration& node) override {
+	inline NodeAST * visit(NodeSingleDeclaration& node) override {
 		// turn member into array if it is a member
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
@@ -116,7 +117,7 @@ public:
 		// turn node.value into param list if is member and has been turned into array
 		if(node.variable->is_member() and node.value) {
 			if(node.variable->get_node_type() != NodeType::Array and node.variable->get_node_type() != NodeType::NDArray) {
-				return;
+				return &node;
 			}
 			if(node.value->get_node_type() != NodeType::ParamList) {
 				auto param_list = std::make_unique<NodeParamList>(node.tok);
@@ -125,25 +126,28 @@ public:
 				node.value = std::move(param_list);
 			}
 		}
+		return &node;
 	}
 
-	inline void visit(NodeVariable& node) override {
+	inline NodeAST * visit(NodeVariable& node) override {
 		// if member, turn into array
 		if(node.is_member()) {
 			auto node_array = node.to_array(m_current_struct->max_individual_struts_var->to_reference().get());
 			node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
-			safe_replace_datastructure(std::move(node_array), &node);
+			return safe_replace_datastructure(std::move(node_array), &node);
 		}
+		return &node;
 	}
-	inline void visit(NodePointer& node) override {
+	inline NodeAST * visit(NodePointer& node) override {
 		// if member, turn into array of pointers
 		if(node.is_member()) {
 			auto node_array = node.to_array(m_current_struct->max_individual_struts_var->to_reference().get());
 			node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
-			safe_replace_datastructure(std::move(node_array), &node);
+			return safe_replace_datastructure(std::move(node_array), &node);
 		}
+		return &node;
 	}
-	inline void visit(NodeArray& node) override {
+	inline NodeAST * visit(NodeArray& node) override {
 		// if member, turn into multi-dimensional array
 		/*
 		 * 	declare velocities[10]: [int]
@@ -154,10 +158,11 @@ public:
 			node_ndarray->sizes->prepend_param(m_current_struct->max_individual_struts_var->to_reference());
 			node_ndarray->dimensions = node_ndarray->sizes->params.size();
 			node_ndarray->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node_ndarray->dimensions);
-			safe_replace_datastructure(std::move(node_ndarray), &node);
+			return safe_replace_datastructure(std::move(node_ndarray), &node);
 		}
+		return &node;
 	}
-	inline void visit(NodeNDArray& node) override {
+	inline NodeAST * visit(NodeNDArray& node) override {
 		// if member, turn into multi-dimensional array
 		if(node.is_member()) {
 			node.sizes->prepend_param(m_current_struct->max_individual_struts_var->to_reference());
@@ -165,16 +170,18 @@ public:
 			node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node.dimensions);
 			node.is_local = false;
 		}
+		return &node;
 	}
 
-	inline void visit(NodeVariableRef& node) override {
+	inline NodeAST * visit(NodeVariableRef& node) override {
 		// if member reference, turn into array reference with (struct.free_idx as index if in constructor, self as index if not)
 		if(node.is_member_ref()) {
 			auto node_array_ref = node.to_array_ref(get_index_ref().get());
-			safe_replace_reference(std::move(node_array_ref), &node);
+			return safe_replace_reference(std::move(node_array_ref), &node);
 		}
+		return &node;
 	}
-	inline void visit(NodeArrayRef& node) override {
+	inline NodeAST * visit(NodeArrayRef& node) override {
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(node.is_member_ref()) {
 			// if array has no indexes -> wildcard
@@ -185,18 +192,20 @@ public:
 			node_ndarray_ref->indexes->prepend_param(get_index_ref());
 			node_ndarray_ref->declaration = node.declaration;
 			node_ndarray_ref->determine_sizes();
-			safe_replace_reference(std::move(node_ndarray_ref), &node);
+			return safe_replace_reference(std::move(node_ndarray_ref), &node);
 		}
+		return &node;
 	}
 
-	inline void visit(NodePointerRef& node) override {
+	inline NodeAST * visit(NodePointerRef& node) override {
 		if(node.is_member_ref()) {
 			auto node_array_ref = node.to_array_ref(get_index_ref().get());
-			safe_replace_reference(std::move(node_array_ref), &node);
+			return safe_replace_reference(std::move(node_array_ref), &node);
 		}
+		return &node;
 	}
 
-	inline void visit(NodeNDArrayRef& node) override {
+	inline NodeAST * visit(NodeNDArrayRef& node) override {
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(node.is_member_ref()) {
 			node.determine_sizes();
@@ -209,10 +218,11 @@ public:
 			}
 			node.indexes->prepend_param(get_index_ref());
 		}
+		return &node;
 	}
 
 
-	inline void visit(NodeFunctionDefinition& node) override {
+	inline NodeAST * visit(NodeFunctionDefinition& node) override {
 		m_current_func = &node;
 		node.header->accept(*this);
 		node.body->accept(*this);
@@ -222,25 +232,27 @@ public:
 		} else {
 			node.header->args->prepend_param(m_current_struct->node_self->clone());
 		}
-
+		return &node;
 	}
 
 private:
 	/// to be used on references
-	inline void safe_replace_reference(std::unique_ptr<NodeReference> new_node, NodeReference* old_node) {
+	inline NodeReference* safe_replace_reference(std::unique_ptr<NodeReference> new_node, NodeReference* old_node) {
 		new_node->match_data_structure(old_node->declaration);
 		m_def_provider->remove_reference(new_node->declaration, old_node);
 		auto new_ref = static_cast<NodeReference*>(old_node->replace_with(std::move(new_node)));
 		m_def_provider->add_reference(new_ref->declaration, new_ref);
+		return new_ref;
 	}
 	/// to be used on datastructures
-	inline void safe_replace_datastructure(std::unique_ptr<NodeDataStructure> new_node, NodeDataStructure* old_node) {
+	inline NodeDataStructure* safe_replace_datastructure(std::unique_ptr<NodeDataStructure> new_node, NodeDataStructure* old_node) {
 		auto references = m_def_provider->get_references(old_node);
-		auto new_ref = static_cast<NodeDataStructure*>(old_node->replace_with(std::move(new_node)));
-		m_def_provider->set_references(new_ref, references);
+		auto new_data_struct = static_cast<NodeDataStructure*>(old_node->replace_with(std::move(new_node)));
+		m_def_provider->set_references(new_data_struct, references);
 		for(auto & ref : references) {
-			ref->declaration = new_ref;
+			ref->declaration = new_data_struct;
 		}
+		return new_data_struct;
 	}
 	/// uses the member table to determine the size max size of struct allocations
 	/// declare const Node.MAX_STRUCTS: int := MAX_STRUCTS/_max(10, 11*12)

@@ -33,7 +33,7 @@ private:
 
 public:
 
-	inline void visit(NodeProgram& node) override {
+	inline NodeAST * visit(NodeProgram& node) override {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
@@ -58,12 +58,12 @@ public:
 		}
 	};
 
-	inline void visit(NodeStatement& node) override {
+	inline NodeAST * visit(NodeStatement& node) override {
 		m_last_stmt = &node;
 		node.statement->accept(*this);
 	}
 
-	inline void visit(NodeFunctionCall& node) override {
+	inline NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		node.get_definition(m_program, true);
 		if(is_hoistable(&node, m_last_stmt)) {

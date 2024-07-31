@@ -14,8 +14,8 @@
 #include "../../Lowering/LoweringNil.h"
 
 // ************* NodeVariableRef ***************
-void NodeVariableRef::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodeVariableRef::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 
 NodeVariableRef::NodeVariableRef(const NodeVariableRef& other)
@@ -67,8 +67,8 @@ bool NodeVariableRef::is_ndarray_constant() {
 }
 
 // ************* NodeArrayRef ***************
-void NodeArrayRef::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodeArrayRef::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 
 NodeArrayRef::NodeArrayRef(const NodeArrayRef& other)
@@ -79,7 +79,7 @@ NodeArrayRef::NodeArrayRef(const NodeArrayRef& other)
 std::unique_ptr<NodeAST> NodeArrayRef::clone() const {
 	return std::make_unique<NodeArrayRef>(*this);
 }
-NodeAST * NodeArrayRef::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST *NodeArrayRef::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (index.get() == oldChild) {
 		index = std::move(newChild);
 		return index.get();
@@ -111,8 +111,8 @@ std::unique_ptr<NodeAccessChain> NodeArrayRef::to_method_chain() {
 }
 
 // ************* NodeNDArrayRef ***************
-void NodeNDArrayRef::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodeNDArrayRef::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 
 NodeNDArrayRef::NodeNDArrayRef(const NodeNDArrayRef& other)
@@ -160,8 +160,8 @@ std::unique_ptr<NodeAccessChain> NodeNDArrayRef::to_method_chain() {
 }
 
 // ************* NodeListRef ***************
-void NodeListRef::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodeListRef::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 
 NodeListRef::NodeListRef(const NodeListRef& other)
@@ -181,8 +181,8 @@ ASTLowering* NodeListRef::get_lowering(NodeProgram *program) const {
 
 
 // ************* NodePointerRef ***************
-void NodePointerRef::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodePointerRef::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 
 NodePointerRef::NodePointerRef(const NodePointerRef& other)
@@ -231,8 +231,8 @@ std::unique_ptr<NodeFunctionCall> NodePointerRef::get_repr_call() {
 }
 
 // ************* NodeNil ***************
-void NodeNil::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodeNil::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 std::unique_ptr<NodeAST> NodeNil::clone() const {
 	return std::make_unique<NodeNil>(*this);
@@ -244,8 +244,8 @@ ASTLowering* NodeNil::get_lowering(NodeProgram *program) const {
 }
 
 // ************* NodeAccessChain ***************
-void NodeAccessChain::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodeAccessChain::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 
 NodeAccessChain::NodeAccessChain(const NodeAccessChain& other)
@@ -257,7 +257,7 @@ std::unique_ptr<NodeAST> NodeAccessChain::clone() const {
 	return std::make_unique<NodeAccessChain>(*this);
 }
 
-NodeAST * NodeAccessChain::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST *NodeAccessChain::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	for (auto& c : chain) {
 		if (c.get() == oldChild) {
 			c = std::move(newChild);

@@ -26,7 +26,7 @@ public:
 		m_program = program;
 	}
 
-	void inline visit(NodeProgram& node) override {
+	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		// update because of potentially altered param counts after lambda lifting
 		node.update_function_lookup();
@@ -62,6 +62,7 @@ public:
 			}
 		}
 		node.init_callback->statements->prepend_body(std::move(local_declare_statements));
+		return &node;
 	}
 
 	inline bool rename_local_vars() {
@@ -79,16 +80,17 @@ public:
 		return true;
 	}
 
-	void inline visit(NodeCallback& node) override {
+	inline NodeAST* visit(NodeCallback& node) override {
 		m_program->current_callback = &node;
 
 		if(node.callback_id) node.callback_id->accept(*this);
 		node.statements->accept(*this);
 
 		m_program->current_callback = nullptr;
+		return &node;
 	}
 
-	void inline visit(NodeBlock &node) override {
+	inline NodeAST* visit(NodeBlock &node) override {
 		m_current_body = &node;
 		if(node.scope) {
 			m_def_provider->add_scope();
@@ -112,17 +114,18 @@ public:
 			m_passive_vars_replace.pop_back();
 		}
 		node.flatten();
+		return &node;
 	}
 
-	void inline visit(NodeFunctionCall& node) override {
+	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 
 		node.get_definition(m_program);
-
 		// do not visit definition -> because passive var allocation is separate between callbacks and functions
+		return &node;
 	}
 
-	void inline visit(NodeFunctionDefinition& node) override {
+	inline NodeAST* visit(NodeFunctionDefinition& node) override {
 		// start every function definition with a clean slate
 		clear_passive_vars();
 		m_program->function_call_stack.push(&node);
@@ -133,9 +136,10 @@ public:
 		node.body->accept(*this);
 		m_def_provider->remove_scope();
 		m_program->function_call_stack.pop();
+		return &node;
 	}
 
-	void inline visit(NodeSingleDeclaration& node) override {
+	inline NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->determine_locality(m_program, m_current_body);
 
 		if(node.value) node.value->accept(*this);
@@ -152,14 +156,13 @@ public:
 						node.tok
 					)
 				);
-				node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
-				return;
+				return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
 			}
 		} else {
 			node.variable->is_local = false;
 			node.variable->is_global = true;
 			m_def_provider->set_declaration(node.variable.get(), !node.variable->is_local);
-			return;
+			return &node;
 		}
 
 		if(node.variable->is_local) {
@@ -169,8 +172,7 @@ public:
 					auto replacement = to_assign_statement(node);
 					// visit replacement (assign statement) to replace local var with passive_var
 					replacement->accept(*this);
-					node.replace_with(std::move(replacement));
-					return;
+					return node.replace_with(std::move(replacement));
 				}
 			}
 		}
@@ -181,9 +183,10 @@ public:
 			if(m_program->current_callback) m_all_callback_decl[m_program->current_callback].push_back(&node);
 			m_all_local_vars.push_back(node.variable.get());
 		}
+		return &node;
 	}
 
-	void inline visit(NodeArrayRef& node) override {
+	inline NodeAST* visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
 
 		// add all references in local scope to vector for later passive_var replacement
@@ -194,7 +197,7 @@ public:
 			if(auto new_declaration = get_new_declaration(node.name)) {
 				node.match_data_structure(new_declaration);
 				node.name = new_declaration->name;
-				return;
+				return &node;
 			}
 		}
 
@@ -202,18 +205,20 @@ public:
 		if(!node_declaration) DefinitionProvider::throw_declaration_error(&node).exit();
 
 		node.match_data_structure(node_declaration);
+		return &node;
 	}
 
-	void inline visit(NodeArray& node) override {
+	NodeAST inline * visit(NodeArray& node) override {
 		node.determine_locality(m_program, m_current_body);
 
 		if(node.size) node.size->accept(*this);
 
 		m_def_provider->set_declaration(&node, !node.is_local);
 		m_gensym.ingest(node.name);
+		return &node;
 	}
 
-	void inline visit(NodeVariableRef& node) override {
+	NodeAST inline * visit(NodeVariableRef& node) override {
 		// add all references in local scope to vector for later passive_var replacement
 		m_all_local_references.push_back(&node);
 
@@ -222,7 +227,7 @@ public:
 			if(auto new_declaration = get_new_declaration(node.name)) {
 				node.match_data_structure(new_declaration);
 				node.name = new_declaration->name;
-				return;
+				return &node;
 			}
 		}
 
@@ -230,14 +235,14 @@ public:
 		if(!node_declaration) DefinitionProvider::throw_declaration_error(&node).exit();
 
 		node.match_data_structure(node_declaration);
-
+		return &node;
 	}
 
-	void inline visit(NodeVariable& node) override {
+	inline NodeAST* visit(NodeVariable& node) override {
 		node.determine_locality(m_program, m_current_body);
-
 		m_def_provider->set_declaration(&node, !node.is_local);
 		m_gensym.ingest(node.name);
+		return &node;
 	}
 
 	bool clear_passive_vars() {

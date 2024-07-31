@@ -17,9 +17,9 @@ private:
 	}
 
 public:
-	void inline visit(NodeFunctionCall& node) override {
+	inline NodeAST* visit(NodeFunctionCall& node) override {
 		// return immediately if the function is not a builtin function to save time
-		if(!node.function->is_builtin) return;
+		if(!node.function->is_builtin) return &node;
 
 		node.function->args->accept(*this);
 
@@ -36,12 +36,10 @@ public:
 				if (int_functions.find(node.function->name) != int_functions.end()) {
 					result = int_functions[node.function->name](int_node->value);
 					auto new_node = std::make_unique<NodeInt>(result, node.tok);
-					node.replace_with(std::move(new_node));
-					return;
+					return node.replace_with(std::move(new_node));
 				} else if(node.function->name == "real") {
 					auto new_node = std::make_unique<NodeReal>(static_cast<double>(int_node->value), node.tok);
-					node.replace_with(std::move(new_node));
-					return;
+					return node.replace_with(std::move(new_node));
 				}
 			} else if (node.function->args->params[0]->get_node_type() == NodeType::Real) {
 				double result = 0;
@@ -59,19 +57,17 @@ public:
 				if (real_functions.find(node.function->name) != real_functions.end()) {
 					result = real_functions[node.function->name](real_node->value);
 					auto new_node = std::make_unique<NodeReal>(result, node.tok);
-					node.replace_with(std::move(new_node));
-					return;
+					return node.replace_with(std::move(new_node));
 				} else if (node.function->name == "int") {
 					auto new_node = std::make_unique<NodeInt>(static_cast<int32_t>(real_node->value), node.tok);
-					node.replace_with(std::move(new_node));
-					return;
+					return node.replace_with(std::move(new_node));
 				}
 			}
 		}
-
+		return &node;
 	};
 
-    void inline visit(NodeUnaryExpr& node) override {
+    NodeAST* visit(NodeUnaryExpr& node) override {
         node.operand->accept(*this);
 
 		switch (node.operand->get_node_type()) {
@@ -80,7 +76,7 @@ public:
 					if (node.op == token::SUB) {
 						auto new_node = std::make_unique<NodeInt>(-int_node->value, node.tok);
 						new_node->parent = node.parent;
-						node.replace_with(std::move(new_node));
+						return node.replace_with(std::move(new_node));
 					}
 				}
 				break;
@@ -90,16 +86,17 @@ public:
 					if (node.op == token::SUB) {
 						auto new_node = std::make_unique<NodeReal>(-real_node->value, node.tok);
 						new_node->parent = node.parent;
-						node.replace_with(std::move(new_node));
+						return node.replace_with(std::move(new_node));
 					}
 				}
 				break;
 			}
-			default: return;
+			default: return &node;
 		}
+		return &node;
     }
 
-	void inline visit(NodeBinaryExpr& node) override {
+	inline NodeAST* visit(NodeBinaryExpr& node) override {
 		node.left->accept(*this);
 		node.right->accept(*this);
 
@@ -134,8 +131,7 @@ public:
 					if (int_operations.find(node.op) != int_operations.end()) {
 						result = int_operations[node.op](left_int->value, right_int->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
-						node.replace_with(std::move(new_node));
-						return;
+						return node.replace_with(std::move(new_node));
 					}
 				// division by zero
 				} else if (is_zero(right_int) and node.op == token::DIV) {
@@ -144,16 +140,13 @@ public:
 				// multiplication with neutral element
 				} else if (node.op == token::MULT && (is_zero(left_int) || is_zero(right_int))) {
 					auto new_node = std::make_unique<NodeInt>(0, node.tok);
-					node.replace_with(std::move(new_node));
-					return;
+					return node.replace_with(std::move(new_node));
 				// 0 + var
 				} else if (node.op == token::ADD and is_zero(left_int)) {
-					node.replace_with(std::move(node.right));
-					return;
+					return node.replace_with(std::move(node.right));
 				// var + 0
 				} else if (node.op == token::ADD and is_zero(right_int)) {
-					node.replace_with(std::move(node.left));
-					return;
+					return node.replace_with(std::move(node.left));
 				}
 			}
 		} else if (right_real or left_real) {
@@ -176,12 +169,12 @@ public:
 					if (real_operations.find(node.op) != real_operations.end()) {
 						result = real_operations[node.op](left_real->value, right_real->value);
 						auto new_node = std::make_unique<NodeReal>(result, node.tok);
-						node.replace_with(std::move(new_node));
-						return;
+						return node.replace_with(std::move(new_node));
 					}
 				}
 			}
 		}
+		return &node;
 	}
 };
 

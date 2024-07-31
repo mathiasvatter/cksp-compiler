@@ -27,7 +27,7 @@ public:
 	explicit ASTParameterPromotion(DefinitionProvider* definition_provider) : ASTGlobalScope(definition_provider) {}
 	~ASTParameterPromotion() = default;
 
-	inline void visit(NodeProgram& node) override {
+	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		for(auto& def : node.function_definitions) def->visited = false;
 		for(auto & callback : node.callbacks) {
@@ -47,30 +47,33 @@ public:
 			stmt.first->statement->replace_with(std::move(node_body));
 //			m_last_stmt->replace_with(std::move(node_body));
 		}
+		return &node;
 	}
 
-	void inline visit(NodeBlock& node) override {
+	inline NodeAST* visit(NodeBlock& node) override {
 		for(auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
+		return &node;
 	}
 
-	void inline visit(NodeStatement& node) override {
-		if(m_program->function_call_stack.empty())
-			m_last_stmt = &node;
+	inline NodeAST * visit(NodeStatement& node) override {
+		if(m_program->function_call_stack.empty()) m_last_stmt = &node;
 		node.statement->accept(*this);
+		return &node;
 	}
 
-	void inline visit(NodeCallback& node) override {
+	inline NodeAST* visit(NodeCallback& node) override {
 		m_program->current_callback = &node;
 
 		if(node.callback_id) node.callback_id->accept(*this);
 		node.statements->accept(*this);
 
 		m_program->current_callback = nullptr;
+		return &node;
 	}
 
-	void inline visit(NodeFunctionCall& node) override {
+	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 
 		node.get_definition(m_program);
@@ -80,7 +83,7 @@ public:
                          "Found undefined <property function>.", "", node.tok).exit();
         } else if (node.kind == NodeFunctionCall::Kind::Builtin) {
             // no lambda lifting for builtin function pls
-            return;
+            return &node;
         }
 
 		if(node.definition and not node.definition->visited) {
@@ -101,7 +104,7 @@ public:
 		}
 
 		// do declaration insertion only if there are local declarations in function
-		if(m_local_var_declarations[node.definition].empty()) return;
+		if(m_local_var_declarations[node.definition].empty()) return &node;;
 
 		if(node.definition) {
 			// add declaration statements to the body of the current/above function or callback if function stack is empty
@@ -131,24 +134,26 @@ public:
 ////			m_last_stmt->replace_with(std::move(node_body));
 //			return;
 //		}
+		return &node;
 	}
 
-	void inline visit(NodeFunctionDefinition& node) override {
+	inline NodeAST* visit(NodeFunctionDefinition& node) override {
 		m_program->function_call_stack.push(&node);
 		node.body->accept(*this);
 		node.visited = true;
 		m_program->function_call_stack.pop();
+		return &node;
 	}
 
-	void inline visit(NodeSingleDeclaration& node) override {
+	inline NodeAST* visit(NodeSingleDeclaration& node) override {
 		if(node.value) node.value->accept(*this);
 
 		// return if not in function
-		if(m_program->function_call_stack.empty()) return;
+		if(m_program->function_call_stack.empty()) return &node;;
 		if(node.variable->data_type == DataType::Const) {
 			m_program->global_declarations->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
 			node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
-			return;
+			return &node;;
 		}
 
         // visit declaration node because array as function param needs to have <no brackets>
@@ -164,13 +169,13 @@ public:
 
 //		auto node_assignment = node.to_assign_stmt();
 //		node.replace_with(std::move(node_assignment));
-		node.replace_with(to_assign_statement(node));
-
+		return node.replace_with(to_assign_statement(node));
 	}
 
-    void inline visit(NodeArray& node) override {
+    inline NodeAST* visit(NodeArray& node) override {
 //        node.size = nullptr;
         node.show_brackets = false;
+		return &node;
     }
 
 };

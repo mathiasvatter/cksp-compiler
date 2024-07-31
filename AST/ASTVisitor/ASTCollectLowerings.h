@@ -33,45 +33,45 @@
 class ASTCollectLowerings: public ASTVisitor {
 public:
     explicit ASTCollectLowerings(DefinitionProvider* definition_provider);
-	void visit(NodeProgram& node) override;
+	NodeAST * visit(NodeProgram& node) override;
 
 	/// do not visit return statements -> wait for them to get lowered to assign statements
 //	void visit(NodeReturn& node) override;
 
 	/// flatten blocks
-	void visit(NodeBlock& node) override;
+	NodeAST * visit(NodeBlock& node) override;
 	/// lower struct members to array members
-	void visit(NodeStruct& node) override;
-	void visit(NodeFunctionDefinition& node) override;
+	NodeAST * visit(NodeStruct& node) override;
+	NodeAST * visit(NodeFunctionDefinition& node) override;
 	/// lower ndarray when declaration or ui_control array
-    void visit(NodeSingleDeclaration& node) override;
+	NodeAST * visit(NodeSingleDeclaration& node) override;
 	/// lower get_control statements to set_control_par
-	void visit(NodeSingleAssignment& node) override;
+	NodeAST * visit(NodeSingleAssignment& node) override;
 	/// lower get_control statements to get_control_par
-	void visit(NodeGetControl& node) override;
+	NodeAST * visit(NodeGetControl& node) override;
 	/// lower property functions to get_control_par
-	void visit(NodeFunctionCall& node) override;
+	NodeAST * visit(NodeFunctionCall& node) override;
     /// determine size of array in declaration if possible
-    void visit(NodeArray& node) override;
+	NodeAST * visit(NodeArray& node) override;
 	/// lower ndarray when in function params
-	void visit(NodeNDArray& node) override;
+	NodeAST * visit(NodeNDArray& node) override;
 	/// lower ndArray when they are a reference
-	void visit(NodeNDArrayRef& node) override;
+	NodeAST * visit(NodeNDArrayRef& node) override;
 	/// move node block of const out of const construct
-    void visit(NodeConst& node) override;
+	NodeAST * visit(NodeConst& node) override;
 //    void visit(NodeFamily& node) override;
 
 	/// lower list struct references to array references
-	void visit(NodeListRef& node) override;
+	NodeAST * visit(NodeListRef& node) override;
 	/// lower list structs to arrays and while loops
-	void visit(NodeList& node) override;
+	NodeAST * visit(NodeList& node) override;
 
 	/// lower pointer reference types and replace with __repr__ if in string surrounding
-	void visit(NodePointerRef& node) override;
+	NodeAST * visit(NodePointerRef& node) override;
 	/// lower access chain to nested array_ref structure
-	void visit(NodeAccessChain& node) override;
+	NodeAST * visit(NodeAccessChain& node) override;
 	/// lower nil to -1
-	void visit(NodeNil& node) override;
+	NodeAST * visit(NodeNil& node) override;
 
 private:
     DefinitionProvider* m_def_provider;

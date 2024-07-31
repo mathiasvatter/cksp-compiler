@@ -14,8 +14,8 @@
 #include "../../Lowering/LoweringPointer.h"
 
 // ************* NodeVariable ***************
-void NodeVariable::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodeVariable::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 NodeVariable::NodeVariable(const NodeVariable& other)
 	: NodeDataStructure(other) {
@@ -49,8 +49,8 @@ std::unique_ptr<NodeList> NodeVariable::to_list() {
 }
 
 // ************* NodePointer ***************
-void NodePointer::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodePointer::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 NodePointer::NodePointer(const NodePointer& other)
 	: NodeDataStructure(other) {
@@ -82,8 +82,8 @@ std::unique_ptr<NodeVariable> NodePointer::to_variable() {
 
 
 // ************* NodeArray ***************
-void NodeArray::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodeArray::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 NodeArray::NodeArray(const NodeArray& other)
 	: NodeDataStructure(other), show_brackets(other.show_brackets), size(clone_unique(other.size)) {
@@ -92,7 +92,7 @@ NodeArray::NodeArray(const NodeArray& other)
 std::unique_ptr<NodeAST> NodeArray::clone() const {
 	return std::make_unique<NodeArray>(*this);
 }
-NodeAST * NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST *NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (size.get() == oldChild) {
 		size = std::move(newChild);
 		return size.get();
@@ -121,8 +121,8 @@ std::unique_ptr<NodeList> NodeArray::to_list() {
 }
 
 // ************* NodeNDArray ***************
-void NodeNDArray::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodeNDArray::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 NodeNDArray::NodeNDArray(const NodeNDArray& other)
 	: NodeDataStructure(other), show_brackets(other.show_brackets), sizes(clone_unique(other.sizes)),
@@ -154,8 +154,8 @@ std::unique_ptr<NodeList> NodeNDArray::to_list() {
 }
 
 // ************* NodeUIControl ***************
-void NodeUIControl::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodeUIControl::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 NodeUIControl::NodeUIControl(const NodeUIControl& other)
 	: NodeDataStructure(other), ui_control_type(other.ui_control_type),
@@ -166,7 +166,7 @@ NodeUIControl::NodeUIControl(const NodeUIControl& other)
 std::unique_ptr<NodeAST> NodeUIControl::clone() const {
 	return std::make_unique<NodeUIControl>(*this);
 }
-NodeAST * NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST *NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (control_var.get() == oldChild) {
 		if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.get())) {
 			newChild.release();
@@ -183,8 +183,8 @@ ASTLowering* NodeUIControl::get_lowering(NodeProgram *program) const {
 }
 
 // ************* NodeList ***************
-void NodeList::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodeList::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 
 NodeList::NodeList(const NodeList& other)
@@ -213,8 +213,8 @@ std::unique_ptr<NodeNDArray> NodeList::to_ndarray() {
 }
 
 // ************* NodeConst ***************
-void NodeConst::accept(ASTVisitor &visitor) {
-    visitor.visit(*this);
+NodeAST *NodeConst::accept(struct ASTVisitor &visitor) {
+    return visitor.visit(*this);
 }
 NodeConst::NodeConst(const NodeConst& other)
         : NodeDataStructure(other), constants(clone_unique(other.constants)) {
@@ -232,8 +232,8 @@ ASTDesugaring * NodeConst::get_desugaring(NodeProgram *program) const {
 
 
 // ************* NodeStruct ***************
-void NodeStruct::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
+NodeAST *NodeStruct::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 NodeStruct::NodeStruct(const NodeStruct& other)
 	: NodeDataStructure(other), members(clone_unique(other.members)),

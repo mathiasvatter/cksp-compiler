@@ -7,7 +7,7 @@
 ASTFunctionInlining::ASTFunctionInlining(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {
 }
 
-void ASTFunctionInlining::visit(NodeProgram& node) {
+NodeAST * ASTFunctionInlining::visit(NodeProgram& node) {
     m_program = &node;
 	node.update_function_lookup();
     for(auto & callback : node.callbacks) {
@@ -26,23 +26,24 @@ void ASTFunctionInlining::visit(NodeProgram& node) {
 	m_program->function_definitions = std::move(m_function_definitions);
 
     static FunctionInliningHelper function_inlining(std::move(m_function_inlines));
-    node.accept(function_inlining);
+    return node.accept(function_inlining);
 }
 
-void ASTFunctionInlining::visit(NodeCallback& node) {
+NodeAST * ASTFunctionInlining::visit(NodeCallback& node) {
     // empty the local var stack after init, because the idx can be reused now
     m_current_callback = &node;
     if(node.callback_id)
         node.callback_id->accept(*this);
     node.statements->accept(*this);
     m_current_callback_idx++;
-
+	return &node;
 }
-void ASTFunctionInlining::visit(NodeNDArray& node) {
+NodeAST * ASTFunctionInlining::visit(NodeNDArray& node) {
 	CompileError(ErrorType::SyntaxError, "Found <nd array>. This data structure should not exist anymore after lowering.", node.tok.line, "", "", node.tok.file).exit();
+	return &node;
 }
 
-void ASTFunctionInlining::visit(NodeArrayRef& node) {
+NodeAST * ASTFunctionInlining::visit(NodeArrayRef& node) {
     if(node.index) node.index->accept(*this);
 
     // function args substitution
@@ -52,12 +53,12 @@ void ASTFunctionInlining::visit(NodeArrayRef& node) {
 				node.name = substitute_ref->name;
 			} else {
 				node.replace_with(std::move(substitute));
-				return;
+				return &node;
 			}
 		// for namespaces and methods
 		} else {
             auto namespaces = get_namespaces(node.name);
-			if(namespaces.size() == 1) return;
+			if(namespaces.size() == 1) return &node;;
             std::string new_name;
             if (auto subst = get_substitute(namespaces.at(0))) {
                 new_name += subst->get_string();
@@ -70,17 +71,17 @@ void ASTFunctionInlining::visit(NodeArrayRef& node) {
             node.name = new_name;
 		}
     }
-
+	return &node;
 }
 
-void ASTFunctionInlining::visit(NodeFunctionHeader& node) {
+NodeAST * ASTFunctionInlining::visit(NodeFunctionHeader& node) {
     node.args->accept(*this);
     // substitution
     if (!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.name)) {
             if(auto substitute_ref = cast_node<NodeReference>(substitute.get())) {
                 node.name = substitute_ref->name;
-                return;
+				return &node;;
             } else {
                 auto error = CompileError(ErrorType::SyntaxError, "Cannot substitute Function name with <non-datastructure>", "", node.tok);
                 error.m_expected = "<Reference>";
@@ -89,18 +90,19 @@ void ASTFunctionInlining::visit(NodeFunctionHeader& node) {
             }
         }
     }
+	return &node;
 }
 
-void ASTFunctionInlining::visit(NodeVariableRef& node) {
+NodeAST * ASTFunctionInlining::visit(NodeVariableRef& node) {
 	// function args substitution
 	if(!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.name)) {
             node.replace_with(std::move(substitute));
-            return;
+			return &node;;
 		// for namespaces and methods
 		} else {
             auto namespaces = get_namespaces(node.name);
-			if(namespaces.size() == 1) return;
+			if(namespaces.size() == 1) return &node;;
             std::string new_name;
             if (auto subst = get_substitute(namespaces.at(0))) {
                 new_name += subst->get_string();
@@ -113,9 +115,10 @@ void ASTFunctionInlining::visit(NodeVariableRef& node) {
             node.name = new_name;
 		}
 	}
+	return &node;
 }
 
-void ASTFunctionInlining::visit(NodeFunctionCall& node) {
+NodeAST * ASTFunctionInlining::visit(NodeFunctionCall& node) {
     if(node.is_call and !node.function->args->params.empty()) {
         CompileError(ErrorType::SyntaxError,
          "Found incorrect amount of function arguments when using <call>.", node.tok.line, "0", std::to_string(node.function->args->params.size()), node.tok.file).exit();
@@ -160,7 +163,7 @@ void ASTFunctionInlining::visit(NodeFunctionCall& node) {
 		if(m_current_callback != m_program->init_callback) {
 			if (node.is_call) {
 				if(function_def->is_compiled) {
-					return;
+					return &node;
 				} else {
 					function_def->is_compiled = true;
 				}
@@ -195,8 +198,7 @@ void ASTFunctionInlining::visit(NodeFunctionCall& node) {
 				// strict inlining method only if function body is assign statement
 				if (node_function_def->body->statements.size() == 1 and node_assignment) {
 					if (node_assignment->l_value->get_string() == node_function_def->return_variable.value()->get_string()) {
-						node.replace_with(std::move(node_assignment->r_value));
-						return;
+						return node.replace_with(std::move(node_assignment->r_value));
 					} else {
 						CompileError(ErrorType::SyntaxError,
                                      "Given return variable of function could not be found in function body.",
@@ -225,7 +227,7 @@ void ASTFunctionInlining::visit(NodeFunctionCall& node) {
 					m_function_inlines.insert({ptr, std::move(node_statement)});
 					nearest_statement->function_inlines.push_back(ptr);
 					m_current_function_inline_statement = old_function_inline_statement;
-					return;
+					return &node;
 				}
 			}
 		}
@@ -233,14 +235,15 @@ void ASTFunctionInlining::visit(NodeFunctionCall& node) {
 		if(!node.is_call) {
 			// Only replace if function has actually statements
 			if (!node_function_def->body->statements.empty()) {
-				node.replace_with(std::move(node_function_def->body));
+				return node.replace_with(std::move(node_function_def->body));
 			} else {
-				node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+				return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
 			}
 		} else {
 			m_function_definitions.push_back(std::move(node_function_def));
 		}
 	}
+	return &node;
 }
 
 
@@ -273,55 +276,59 @@ std::unique_ptr<NodeAST> ASTFunctionInlining::get_substitute(const std::string& 
     return nullptr;
 }
 
-void ASTFunctionInlining::visit(NodeSingleDeclaration& node) {
+NodeAST * ASTFunctionInlining::visit(NodeSingleDeclaration& node) {
 	m_current_function_inline_statement = node.parent;
 	node.variable ->accept(*this);
-	if(node.value)
-		node.value -> accept(*this);
+	if(node.value) node.value -> accept(*this);
+	return &node;
 }
 
 bool ASTFunctionInlining::in_function() {
     return !m_function_call_stack.empty() || evaluating_functions;
 }
 
-void ASTFunctionInlining::visit(NodeSingleAssignment& node) {
+NodeAST * ASTFunctionInlining::visit(NodeSingleAssignment& node) {
     m_current_function_inline_statement = node.parent;
     node.l_value ->accept(*this);
 
     // needed to add check, because if node.l_value is getControlStatement, this whole node will be replaced
     if(&node == m_current_node_replaced) {
         m_current_node_replaced = nullptr;
-        return;
+		return &node;
     }
-
     node.r_value -> accept(*this);
+	return &node;
 }
 
-void ASTFunctionInlining::visit(NodeParamList& node) {
+NodeAST * ASTFunctionInlining::visit(NodeParamList& node) {
     for(auto & param : node.params) {
         param->accept(*this);
     }
+	return &node;
 }
 
-void ASTFunctionInlining::visit(NodeGetControl& node) {
+NodeAST * ASTFunctionInlining::visit(NodeGetControl& node) {
 	CompileError(ErrorType::SyntaxError, "Found <get_control_par> statement. This statement should not exist anymore after lowering.", node.tok.line, "", "", node.tok.file).exit();
+	return &node;
 }
 
 
-void ASTFunctionInlining::visit(NodeWhile& node) {
+NodeAST * ASTFunctionInlining::visit(NodeWhile& node) {
     m_current_function_inline_statement = node.parent;
     node.condition->accept(*this);
     node.body->accept(*this);
+	return &node;
 }
 
-void ASTFunctionInlining::visit(NodeIf& node) {
+NodeAST * ASTFunctionInlining::visit(NodeIf& node) {
     m_current_function_inline_statement = node.parent;
     node.condition->accept(*this);
     node.if_body->accept(*this);
     node.else_body->accept(*this);
+	return &node;
 }
 
-void ASTFunctionInlining::visit(NodeSelect& node) {
+NodeAST * ASTFunctionInlining::visit(NodeSelect& node) {
 	m_current_function_inline_statement = node.parent;
 	node.expression->accept(*this);
 	for(const auto &cas: node.cases) {
@@ -330,18 +337,21 @@ void ASTFunctionInlining::visit(NodeSelect& node) {
 		}
 		cas.second->accept(*this);
 	}
+	return &node;
 }
 
-void ASTFunctionInlining::visit(NodeBlock& node) {
+NodeAST * ASTFunctionInlining::visit(NodeBlock& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
     if(!node.scope) node.flatten();
+	return &node;
 }
 
-void ASTFunctionInlining::visit(NodeUIControl &node) {
+NodeAST * ASTFunctionInlining::visit(NodeUIControl &node) {
 	node.control_var->accept(*this);
 	node.params->accept(*this);
+	return &node;
 }
 
 std::unique_ptr<NodeBlock> ASTFunctionInlining::declare_dummy_variables() {

@@ -26,39 +26,39 @@ class ASTSemanticAnalysis: public ASTVisitor {
 public:
 	explicit ASTSemanticAnalysis(DefinitionProvider* definition_provider);
 
-    void visit(NodeProgram& node) override;
-	void visit(NodeCallback& node) override;
+    NodeAST * visit(NodeProgram& node) override;
+	NodeAST * visit(NodeCallback& node) override;
 
-	void visit(NodeBlock& node) override;
+	NodeAST * visit(NodeBlock& node) override;
 
-	void visit(NodeArray& node) override;
-    void visit(NodeArrayRef& node) override;
+	NodeAST * visit(NodeArray& node) override;
+    NodeAST * visit(NodeArrayRef& node) override;
 
-	void visit(NodeNDArray& node) override;
-    void visit(NodeNDArrayRef& node) override;
+	NodeAST * visit(NodeNDArray& node) override;
+    NodeAST * visit(NodeNDArrayRef& node) override;
 
-	void visit(NodePointer& node) override;
-	void visit(NodePointerRef& node) override;
+	NodeAST * visit(NodePointer& node) override;
+	NodeAST * visit(NodePointerRef& node) override;
 
 	/// List Struct and Reference
-	void visit(NodeList& node) override;
-	void visit(NodeListRef& node) override;
+	NodeAST * visit(NodeList& node) override;
+	NodeAST * visit(NodeListRef& node) override;
 	/// Variable
-	void visit(NodeVariable& node) override;
-    void visit(NodeVariableRef& node) override;
+	NodeAST * visit(NodeVariable& node) override;
+    NodeAST * visit(NodeVariableRef& node) override;
 
 	/// provide and search for function definition; handle is_thread_safe flag
-	void visit(NodeFunctionCall& node) override;
+	NodeAST * visit(NodeFunctionCall& node) override;
     /// add function parameters to scope
-    void visit(NodeFunctionDefinition& node) override;
-	void visit(NodeWildcard& node) override;
+	NodeAST * visit(NodeFunctionDefinition& node) override;
+	NodeAST * visit(NodeWildcard& node) override;
 
 
 	/// updates the node types of parameters at call sites regarding the function definition
 	/// e.g. args can be incorrectly detected as variable refs at call sites, but they are arrays in the definition
 	void update_func_call_node_types(NodeFunctionCall* func_call);
 	/// updates incorrectly detected function params (eg arrays detected as variables)
-	void replace_incorrectly_detected_data_struct(NodeDataStructure* data_struct);
+	NodeDataStructure* replace_incorrectly_detected_data_struct(NodeDataStructure* data_struct);
 	/// updated incorrectly detected references of function params
 	static NodeReference* replace_incorrectly_detected_reference(DefinitionProvider* def_provider, NodeReference* reference);
 private:

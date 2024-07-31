@@ -14,34 +14,34 @@ public:
     explicit ASTFunctionInlining(DefinitionProvider* definition_provider);
 
     /// check for used functions
-    void visit(NodeProgram& node) override;
+	NodeAST * visit(NodeProgram& node) override;
 
-    void visit(NodeCallback& node) override;
+    NodeAST * visit(NodeCallback& node) override;
     /// initiating substitution
-    void visit(NodeFunctionCall& node) override;
+	NodeAST * visit(NodeFunctionCall& node) override;
 
-	void visit(NodeUIControl& node) override;
-    void visit(NodeSingleDeclaration& node) override;
-    void visit(NodeSingleAssignment& node) override;
-    void visit(NodeParamList& node) override;
+	NodeAST * visit(NodeUIControl& node) override;
+    NodeAST * visit(NodeSingleDeclaration& node) override;
+    NodeAST * visit(NodeSingleAssignment& node) override;
+    NodeAST * visit(NodeParamList& node) override;
 
 	/// throw error if these still exist after lowering
-    void visit(NodeGetControl& node) override;
-	void visit(NodeNDArray& node) override;
+	NodeAST * visit(NodeGetControl& node) override;
+	NodeAST * visit(NodeNDArray& node) override;
 
 	/// emplace back local variable scope
-    void visit(NodeBlock& node) override;
-	void visit(NodeSelect& node) override;
-    void visit(NodeWhile& node) override;
-    void visit(NodeIf& node) override;
+	NodeAST * visit(NodeBlock& node) override;
+	NodeAST * visit(NodeSelect& node) override;
+    NodeAST * visit(NodeWhile& node) override;
+    NodeAST * visit(NodeIf& node) override;
 
 	/// do substitution
-    void visit(NodeArrayRef& node) override;
+	NodeAST * visit(NodeArrayRef& node) override;
 //	void visit(NodeArray& node) override;
     /// do substitution
-    void visit(NodeVariableRef& node) override;
+	NodeAST * visit(NodeVariableRef& node) override;
 //    void visit(NodeVariable& node) override;
-    void visit(NodeFunctionHeader& node) override;
+	NodeAST * visit(NodeFunctionHeader& node) override;
 
 	std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> get_function_inlines();
 
@@ -81,7 +81,7 @@ public:
     explicit FunctionInliningHelper(std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> function_inlines) : m_function_inlines(std::move(function_inlines)) {}
 	~FunctionInliningHelper() = default;
 
-    inline void visit(NodeStatement& node) override {
+    inline NodeAST * visit(NodeStatement& node) override {
         if(!node.function_inlines.empty()) {
             auto node_body = std::make_unique<NodeBlock>(node.function_inlines[0]->tok);
             node_body->parent = &node;
@@ -95,6 +95,7 @@ public:
         } else {
             node.statement->accept(*this);
         }
+		return &node;
     }
 
 private:

@@ -12,49 +12,50 @@ class ASTLowerTypes: public ASTVisitor {
 public:
 	explicit ASTLowerTypes(DefinitionProvider *definition_provider) {};
 
-	inline void visit(NodeVariable& node) override {
-		node.lower_type();
+	inline NodeAST * visit(NodeVariable& node) override {
+		return node.lower_type();
 	}
-	inline void visit(NodeVariableRef& node) override {
-		node.lower_type();
+	inline NodeAST * visit(NodeVariableRef& node) override {
+		return node.lower_type();
 	}
-	inline void visit(NodePointer& node) override {
-		node.lower_type();
+	inline NodeAST * visit(NodePointer& node) override {
+		return node.lower_type();
 	}
-	inline void visit(NodePointerRef& node) override {
-		node.lower_type();
+	inline NodeAST * visit(NodePointerRef& node) override {
+		return node.lower_type();
 	}
-	inline void visit(NodeArray& node) override {
-		node.lower_type();
+	inline NodeAST * visit(NodeArray& node) override {
+		return node.lower_type();
 	}
-	inline void visit(NodeArrayRef& node) override {
-		node.lower_type();
+	inline NodeAST * visit(NodeArrayRef& node) override {
+		return node.lower_type();
 	}
-	inline void visit(NodeNDArray& node) override {
-		node.lower_type();
+	inline NodeAST * visit(NodeNDArray& node) override {
+		return node.lower_type();
 	}
-	inline void visit(NodeNDArrayRef& node) override {
-		node.lower_type();
+	inline NodeAST * visit(NodeNDArrayRef& node) override {
+		return node.lower_type();
 	}
-	inline void visit(NodeList& node) override {
-		node.lower_type();
+	inline NodeAST * visit(NodeList& node) override {
+		return node.lower_type();
 	}
-	inline void visit(NodeListRef& node) override {
-		node.lower_type();
+	inline NodeAST * visit(NodeListRef& node) override {
+		return node.lower_type();
 	}
-	inline void visit(NodeFunctionDefinition& node) override {
+	inline NodeAST * visit(NodeFunctionDefinition& node) override {
 		if(node.ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 			node.set_element_type(TypeRegistry::Integer);
 		}
 		node.header->accept(*this);
 		node.body->accept(*this);
+		return &node;
 	}
-	inline void visit(NodeFunctionCall& node) override {
+	inline NodeAST * visit(NodeFunctionCall& node) override {
 		if(node.ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 			node.set_element_type(TypeRegistry::Integer);
 		}
 		node.function->accept(*this);
+		return &node;
 	}
-
 
 };

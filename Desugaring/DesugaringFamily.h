@@ -33,42 +33,47 @@ public:
 //        }
 //    };
 
-    void visit(NodeVariable& node) override {
+    NodeAST * visit(NodeVariable& node) override {
         node.name = add_family_prefix(node.name);
+		return &node;
     };
 //    void visit(NodeVariableRef& node) override {
 //        node.name = add_family_prefix(node.name);
 //    };
-    void visit(NodeArray& node) override {
+	NodeAST * visit(NodeArray& node) override {
         if(node.size) node.size->accept(*this);
         node.name = add_family_prefix(node.name);
+		return &node;
     };
 //    void visit(NodeArrayRef& node) override {
 //        if(node.index) node.index->accept(*this);
 //        node.name = add_family_prefix(node.name);
 //    };
-    void visit(NodeNDArray& node) override {
+	NodeAST * visit(NodeNDArray& node) override {
         if(node.sizes) node.sizes->accept(*this);
         node.name = add_family_prefix(node.name);
+		return &node;
     };
 //    void visit(NodeNDArrayRef& node) override {
 //        if(node.indexes) node.indexes->accept(*this);
 //        node.name = add_family_prefix(node.name);
 //    };
-    void visit(NodeList& node) override {
+	NodeAST * visit(NodeList& node) override {
         for(auto &b : node.body) {
             b->accept(*this);
         }
         node.name = add_family_prefix(node.name);
+		return &node;
     };
 //    void visit(NodeListRef& node) override {
 //        node.name = add_family_prefix(node.name);
 //        if(node.indexes) node.indexes->accept(*this);
 //    };
 
-    void visit(NodeConst& node) override {
+    NodeAST * visit(NodeConst& node) override {
         node.name = add_family_prefix(node.name);
         node.constants->accept(*this);
+		return &node;
     };
 //
 //    void visit(NodeUIControl& node) override {
@@ -77,12 +82,12 @@ public:
 //        }
 //    };
 
-    void visit(NodeFamily& node) override {
+    NodeAST * visit(NodeFamily& node) override {
         std::string pref = node.prefix;
         if(!m_family_prefixes.empty()) pref = m_family_prefixes.top() + "." + node.prefix;
         m_family_prefixes.push(pref);
         node.members->accept(*this);
-//        node.replace_with(std::move(node.members));
         m_family_prefixes.pop();
+        return node.replace_with(std::move(node.members));
     };
 };

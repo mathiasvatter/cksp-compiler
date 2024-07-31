@@ -8,7 +8,7 @@
 #include "../ASTPrinter.h"
 #include "NormalizeSingleDeclareAssign.h"
 
-void ASTGlobalScope::visit(NodeProgram &node) {
+NodeAST * ASTGlobalScope::visit(NodeProgram &node) {
 
 	m_program = &node;
 
@@ -16,19 +16,19 @@ void ASTGlobalScope::visit(NodeProgram &node) {
 	node.accept(desugar_single_assign);
 
 	// first pass to analyze dynamic extend within function definitions and replace with passive_vars
-	ASTRegisterReuse regsiter_reuse(m_def_provider, m_program);
+	ASTRegisterReuse register_reuse(m_def_provider, m_program);
 	for (auto & def : node.function_definitions) {
-		def->accept(regsiter_reuse);
+		def->accept(register_reuse);
 	}
 	// rename local variables in function definitions
-	regsiter_reuse.rename_local_vars();
+	register_reuse.rename_local_vars();
 //	node.debug_print();
 
 	ASTParameterPromotion param_promotion(m_def_provider);
 	node.accept(param_promotion);
 
 	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
-	node.accept(regsiter_reuse);
+	node.accept(register_reuse);
 
 }
 
