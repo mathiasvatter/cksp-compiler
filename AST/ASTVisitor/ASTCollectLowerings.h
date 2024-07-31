@@ -35,6 +35,9 @@ public:
     explicit ASTCollectLowerings(DefinitionProvider* definition_provider);
 	void visit(NodeProgram& node) override;
 
+	/// do not visit return statements -> wait for them to get lowered to assign statements
+//	void visit(NodeReturn& node) override;
+
 	/// flatten blocks
 	void visit(NodeBlock& node) override;
 	/// lower struct members to array members

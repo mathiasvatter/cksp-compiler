@@ -32,7 +32,8 @@ public:
 			error.m_got = node.return_variables.size();
 			error.exit();
 		}
-		m_functions_visited.top()->return_param = node.return_variables[0].get();
+		auto node_single_return = std::make_unique<NodeSingleReturn>(std::move(node.return_variables[0]), node.tok);
+		m_functions_visited.top()->return_param = node_single_return->return_variable.get();
 
 		// parameter promotion when multiple return values present
 		// replace parameter placeholders instantiated in Desugaring with copies of return values when references
@@ -86,9 +87,10 @@ public:
 				auto node_assignment = std::make_unique<NodeSingleAssignment>(std::move(new_param_ref), std::move(node.return_variables[i]), node.tok);
 				block_replace->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
 			}
-			node.return_variables.erase(std::remove(node.return_variables.begin(), node.return_variables.end(), nullptr), node.return_variables.end());
-			block_replace->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
+			block_replace->add_stmt(std::make_unique<NodeStatement>(std::move(node_single_return), node.tok));
 			node.replace_with(std::move(block_replace));
+		} else {
+			node.replace_with(std::move(node_single_return));
 		}
 
 	}

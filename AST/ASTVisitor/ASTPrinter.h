@@ -15,6 +15,7 @@ public:
 	void visit(NodeNil& node) override;
 	void visit(NodeWildcard& node) override;
 	void visit(NodeReturn& node) override;
+	void visit(NodeSingleReturn& node) override;
 	void visit(NodeVariable& node) override;
 	void visit(NodeVariableRef& node) override;
 	void visit(NodePointer& node) override;

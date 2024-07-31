@@ -25,11 +25,17 @@ void ASTPrinter::visit(NodeWildcard &node) {
 }
 
 void ASTPrinter::visit(NodeReturn& node) {
-	os << "return ";
+	os << "return (";
 	for(auto &ret : node.return_variables) {
 		ret->accept(*this);
 	}
-};
+	os << ")";
+}
+
+void ASTPrinter::visit(NodeSingleReturn& node) {
+	os << "return ";
+	node.return_variable->accept(*this);
+}
 
 void ASTPrinter::visit(NodeVariable &node) {
     if(node.persistence.has_value())
