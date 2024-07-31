@@ -11,37 +11,37 @@ class ASTVariableChecking : public ASTVisitor {
 public:
 	explicit ASTVariableChecking(DefinitionProvider* definition_provider, bool fail=false);
 
-	void visit(NodeProgram& node) override;
+	NodeAST * visit(NodeProgram& node) override;
 	/// check if on init callback currently
-	void visit(NodeCallback& node) override;
+	NodeAST * visit(NodeCallback& node) override;
 	/// Check for correct variable types and parameter number
-	void visit(NodeUIControl& node) override;
+	NodeAST * visit(NodeUIControl& node) override;
 	/// Scoping
-	void visit(NodeBlock& node) override;
+	NodeAST * visit(NodeBlock& node) override;
     /// decide if declaration is local or global
-    void visit(NodeSingleDeclaration& node) override;
+	NodeAST * visit(NodeSingleDeclaration& node) override;
 	/// Check if correctly declared and save declaration
-	void visit(NodeArray& node) override;
+	NodeAST * visit(NodeArray& node) override;
     /// get declaration
-    void visit(NodeArrayRef& node) override;
+	NodeAST * visit(NodeArrayRef& node) override;
 	/// Check if correctly declared. Replace with Array when no brackets are used
-	void visit(NodeVariable& node) override;
+	NodeAST * visit(NodeVariable& node) override;
     /// get declaration
-    void visit(NodeVariableRef& node) override;
-	void visit(NodeNDArray& node) override;
-	void visit(NodeNDArrayRef& node) override;
-	void visit(NodePointer& node) override;
-	void visit(NodePointerRef& node) override;
-	void visit(NodeList& node) override;
-	void visit(NodeListRef& node) override;
+	NodeAST * visit(NodeVariableRef& node) override;
+	NodeAST * visit(NodeNDArray& node) override;
+	NodeAST * visit(NodeNDArrayRef& node) override;
+	NodeAST * visit(NodePointer& node) override;
+	NodeAST * visit(NodePointerRef& node) override;
+	NodeAST * visit(NodeList& node) override;
+	NodeAST * visit(NodeListRef& node) override;
 	/// handle get_ui_id specific checks. Replace variable parameter when in get_ui_id and not ui_control
-	void visit(NodeFunctionCall& node) override;
-    void visit(NodeFunctionDefinition& node) override;
+	NodeAST * visit(NodeFunctionCall& node) override;
+    NodeAST * visit(NodeFunctionDefinition& node) override;
 
-	void visit(NodeAccessChain& node) override;
+	NodeAST * visit(NodeAccessChain& node) override;
 
-	void visit(NodeConst& node) override;
-	void visit(NodeStruct& node) override;
+	NodeAST * visit(NodeConst& node) override;
+	NodeAST * visit(NodeStruct& node) override;
 
 	/// apply type annotations given before parse time and replace node types accordingly
 	/// returns the new datastructure pointer if replaced, or the old one if not

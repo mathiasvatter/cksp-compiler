@@ -17,9 +17,9 @@ private:
 public:
     ASTOptimizations() = default;
 	/// do constant folding for int and reals
-	void visit(NodeBinaryExpr& node) override;
+	NodeAST * visit(NodeBinaryExpr& node) override;
 	/// remove unused variables
-	void visit(NodeSingleDeclaration& node) override;
+	NodeAST * visit(NodeSingleDeclaration& node) override;
     /// do node body cleanup
-    void visit(NodeBlock& node) override;
+	NodeAST * visit(NodeBlock& node) override;
 };

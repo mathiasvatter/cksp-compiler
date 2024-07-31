@@ -6,25 +6,27 @@
 
 
 
-void ASTOptimizations::visit(NodeBinaryExpr& node) {
+NodeAST * ASTOptimizations::visit(NodeBinaryExpr& node) {
 	static ConstantFolding constant_folding;
 	node.accept(constant_folding);
+	return &node;
 }
 
-void ASTOptimizations::visit(NodeSingleDeclaration& node) {
+NodeAST * ASTOptimizations::visit(NodeSingleDeclaration& node) {
 	// remove unused variables -> do not remove UIControls
 	if(!node.variable->is_used and node.variable->get_node_type() != NodeType::UIControl) {
-		node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
-		return;
+		return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
 	}
 
 	node.variable->accept(*this);
 	if(node.value) node.value->accept(*this);
+	return &node;
 }
 
-void ASTOptimizations::visit(NodeBlock& node) {
+NodeAST * ASTOptimizations::visit(NodeBlock& node) {
     for(auto& statement : node.statements) {
         statement->accept(*this);
     }
 	node.flatten();
+	return &node;
 }

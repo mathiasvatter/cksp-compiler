@@ -20,20 +20,22 @@
  */
 class NormalizeSingleDeclareAssign : public ASTVisitor {
 private:
-	inline void visit(NodeBlock& node) override {
+	inline NodeAST * visit(NodeBlock& node) override {
 		for(auto &stmt : node.statements) {
 			stmt->accept(*this);
 		}
 		node.flatten();
+		return &node;
 	}
 
-	inline void visit(NodeCallback& node) override {
+	inline NodeAST * visit(NodeCallback& node) override {
 		m_program->current_callback = &node;
 		node.statements->accept(*this);
 		m_program->current_callback = nullptr;
+		return &node;
 	}
 
-	inline void visit(NodeSingleAssignment& node) override {
+	inline NodeAST * visit(NodeSingleAssignment& node) override {
 		if(node.l_value->get_node_type() == NodeType::ArrayRef) {
 			auto node_array_ref = static_cast<NodeArrayRef*>(node.l_value.get());
 			// if lhs is arrayref and has no index, check if array is initialized with a list of values or array copy
@@ -50,42 +52,41 @@ private:
 				error.m_got = "<ParamList>";
 				error.exit();
 			} else if (node_array_ref->index) {
-				return;
+				return &node;
 			}
 
 			if(node.r_value->get_node_type() == NodeType::ParamList) {
 				// if param list has only one value:
 				auto param_list = static_cast<NodeParamList *>(node.r_value.get());
 				if (param_list->params.size() == 1) {
-					NormalizeSingleDeclareAssign::add_array_init_function_def(m_program,
-																			  node.l_value->ty->get_element_type());
-					node.replace_with(get_array_init_function_call(node_array_ref, param_list->params[0].get()));
+					NormalizeSingleDeclareAssign::add_array_init_function_def(m_program,node.l_value->ty->get_element_type());
+					return node.replace_with(get_array_init_function_call(node_array_ref, param_list->params[0].get()));
 				} else {
-					node.replace_with(get_array_init_from_list(node_array_ref, param_list));
+					return node.replace_with(get_array_init_from_list(node_array_ref, param_list));
 				}
 			} else if(node.r_value->get_node_type() == NodeType::ArrayRef) {
 				auto node_val_array_ref = static_cast<NodeArrayRef*>(node.r_value.get());
-				NormalizeSingleDeclareAssign::add_array_copy_function_def(m_program,
-																		  node.l_value->ty->get_element_type());
-				node.replace_with(get_array_copy_function_call(node_array_ref, node_val_array_ref));
+				NormalizeSingleDeclareAssign::add_array_copy_function_def(m_program,node.l_value->ty->get_element_type());
+				return node.replace_with(get_array_copy_function_call(node_array_ref, node_val_array_ref));
 			}
 		}
+		return &node;
 	}
 
-	inline void visit(NodeSingleDeclaration& node) override {
+	inline NodeAST * visit(NodeSingleDeclaration& node) override {
 		// normally, no rewrites of array initializations need to be done in init callback
 		// unless array type is string!
 		if(node.variable->ty->get_element_type() != TypeRegistry::String) {
-			if (m_program->current_callback == m_program->init_callback) return;
-			if (!node.variable->is_local) return;
+			if (m_program->current_callback == m_program->init_callback) return &node;
+			if (!node.variable->is_local) return &node;
 		} else {
 			// check if assignment is only neutral string element and init callback -> skip
 			if (m_program->current_callback == m_program->init_callback) {
 				if (node.value and node.value->get_node_type() == NodeType::String) {
 					auto node_string = static_cast<NodeString*>(node.value.get());
-					if (node_string->value.empty()) return;
+					if (node_string->value.empty()) return &node;
 				// if string is assigned to nothing -> skip too
-				} else if (!node.value) return;
+				} else if (!node.value) return &node;
 			}
 		}
 		std::unique_ptr<NodeBlock> node_body = nullptr;
@@ -141,7 +142,10 @@ private:
 								);
 		}
 		// if node_body is set, replace node with node_body
-		if(node_body) node.replace_with(std::move(node_body));
+		if(node_body) {
+			return node.replace_with(std::move(node_body));
+		}
+		return &node;
 	}
 
 public:

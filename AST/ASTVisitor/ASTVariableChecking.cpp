@@ -7,7 +7,7 @@
 ASTVariableChecking::ASTVariableChecking(DefinitionProvider* definition_provider, bool fail)
 	: m_def_provider(definition_provider), fail(fail) {}
 
-void ASTVariableChecking::visit(NodeProgram& node) {
+NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_program = &node;
 	// update function lookup map because of altered param counts after lambda lifting
     node.update_function_lookup();
@@ -29,9 +29,10 @@ void ASTVariableChecking::visit(NodeProgram& node) {
 		// reset visited flag
 		func_def->visited = false;
 	}
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodeCallback& node) {
+NodeAST* ASTVariableChecking::visit(NodeCallback& node) {
 	m_program->current_callback = &node;
 
 	if(node.callback_id) {
@@ -41,9 +42,10 @@ void ASTVariableChecking::visit(NodeCallback& node) {
 	node.statements->accept(*this);
 
 	m_program->current_callback = nullptr;
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodeUIControl& node) {
+NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
 	auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 	auto engine_widget = m_def_provider->get_builtin_widget(node.ui_control_type);
 	if(!engine_widget) {
@@ -57,7 +59,7 @@ void ASTVariableChecking::visit(NodeUIControl& node) {
 	node.params->accept(*this);
 
 	// if fail is set to false, return early. the rest is determined after lowering
-	if(!fail) return;
+	if(!fail) return &node;
 
 	auto node_type = node.control_var->get_node_type();
 	auto engine_widget_type = engine_widget->control_var->get_node_type();
@@ -81,9 +83,10 @@ void ASTVariableChecking::visit(NodeUIControl& node) {
 		error.m_got = std::to_string(node.params->params.size());
 		error.exit();
 	}
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodeBlock &node) {
+NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 	node.flatten();
 	m_current_block = &node;
 
@@ -98,9 +101,10 @@ void ASTVariableChecking::visit(NodeBlock &node) {
 		stmt->accept(*this);
 	}
 	if(node.scope) m_def_provider->remove_scope();
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodeFunctionDefinition &node) {
+NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 //	node.visited = true;
 	m_program->function_call_stack.push(&node);
 	m_def_provider->add_scope();
@@ -110,14 +114,16 @@ void ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 	node.body->accept(*this);
 	m_def_provider->remove_scope();
 	m_program->function_call_stack.pop();
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodeAccessChain& node) {
+NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
 	node.chain[0]->accept(*this);
 	node.flatten();
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodeFunctionCall &node) {
+NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 	node.function->accept(*this);
 
 	if(!node.get_definition(m_program)) {
@@ -125,25 +131,26 @@ void ASTVariableChecking::visit(NodeFunctionCall &node) {
 //		access_chain->match_data_structure(access_chain->declaration);
 			access_chain->accept(*this);
 			node.replace_with(std::move(access_chain));
-			return;
+			return &node;
 		}
 	}
 
 	if(node.kind == NodeFunctionCall::UserDefined and node.definition) {
 		if(!node.definition->visited) node.definition->accept(*this);
 	}
-
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodeSingleDeclaration& node) {
+NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 	node.variable->determine_locality(m_program, m_current_block);
 
     node.variable->accept(*this);
     if(node.value) node.value->accept(*this);
 	m_def_provider->add_to_declarations(&node);
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodeArray& node) {
+NodeAST* ASTVariableChecking::visit(NodeArray& node) {
 	check_annotation_with_expected(&node, TypeRegistry::ArrayOfUnknown);
 
 	node.determine_locality(m_program, m_current_block);
@@ -151,9 +158,10 @@ void ASTVariableChecking::visit(NodeArray& node) {
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node);
+	return new_node;
 }
 
-void ASTVariableChecking::visit(NodeArrayRef& node) {
+NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 	if(node.index) node.index->accept(*this);
 
 	auto node_declaration = m_def_provider->get_declaration(&node);
@@ -162,8 +170,7 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 //			access_chain->match_data_structure(access_chain->declaration);
 			access_chain->accept(*this);
-			node.replace_with(std::move(access_chain));
-			return;
+			return node.replace_with(std::move(access_chain));
 		}
 //        if(!fail) return;
 	    DefinitionProvider::throw_declaration_error(&node).exit();
@@ -171,52 +178,55 @@ void ASTVariableChecking::visit(NodeArrayRef& node) {
 
     node.match_data_structure(node_declaration);
 	m_def_provider->add_to_references(&node);
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodeNDArray& node) {
+NodeAST* ASTVariableChecking::visit(NodeNDArray& node) {
 	check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions).get());
 	node.determine_locality(m_program, m_current_block);
 	if(node.sizes) node.sizes->accept(*this);
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node);
+	return new_node;
 }
 
-void ASTVariableChecking::visit(NodeNDArrayRef& node) {
+NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 //			access_chain->match_data_structure(access_chain->declaration);
 			access_chain->accept(*this);
-			node.replace_with(std::move(access_chain));
-			return;
+			return node.replace_with(std::move(access_chain));
 		}
 		CompileError(ErrorType::Variable, "Multidimensional array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
-		return;
+		return &node;
 	}
 	node.match_data_structure(node_declaration);
 	m_def_provider->add_to_references(&node);
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodeVariable& node) {
+NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 	check_annotation_with_expected(&node, TypeRegistry::Unknown);
 	node.determine_locality(m_program, m_current_block);
 
 	// handle return_vars -> do not check if they have been declared
 	if(node.is_compiler_return) {
 		node.is_used = true;
-		return;
+		return &node;
 	}
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node);
+	return new_node;
 }
 
-void ASTVariableChecking::visit(NodeVariableRef& node) {
+NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 	// handle return_vars -> do not check if they have been declared
 	if(node.is_compiler_return) {
-		return;
+		return &node;
 	}
 	auto node_declaration = m_def_provider->get_declaration(&node);
     if(!node_declaration) {
@@ -227,8 +237,7 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 			if(!node.is_ndarray_constant()) {
 //				access_chain->match_data_structure(access_chain->declaration);
 				access_chain->accept(*this);
-				node.replace_with(std::move(access_chain));
-				return;
+				return node.replace_with(std::move(access_chain));
 			}
 		} else {
 			DefinitionProvider::throw_declaration_error(&node).exit();
@@ -237,34 +246,34 @@ void ASTVariableChecking::visit(NodeVariableRef& node) {
 
     node.match_data_structure(node_declaration);
 	m_def_provider->add_to_references(&node);
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodePointer& node) {
+NodeAST* ASTVariableChecking::visit(NodePointer& node) {
 	check_annotation_with_expected(&node, TypeRegistry::Unknown);
 	node.determine_locality(m_program, m_current_block);
 
 	// handle return_vars -> do not check if they have been declared
 	if(node.is_compiler_return) {
 		node.is_used = true;
-		return;
+		return &node;
 	}
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node);
+	return new_node;
 }
 
-void ASTVariableChecking::visit(NodePointerRef& node) {
+NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
 	// handle return_vars -> do not check if they have been declared
 	if(node.is_compiler_return) {
-		return;
+		return &node;
 	}
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
-//			access_chain->match_data_structure(access_chain->declaration);
 			access_chain->accept(*this);
-			node.replace_with(std::move(access_chain));
-			return;
+			return node.replace_with(std::move(access_chain));
 		}
 		// if fail is set to false, return early. the rest is determined after lowering
 //		if(!fail) return;
@@ -273,9 +282,10 @@ void ASTVariableChecking::visit(NodePointerRef& node) {
 
 	node.match_data_structure(node_declaration);
 	m_def_provider->add_to_references(&node);
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodeList& node) {
+NodeAST* ASTVariableChecking::visit(NodeList& node) {
 	check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::List, TypeRegistry::Unknown, 1).get());
 	node.determine_locality(m_program, m_current_block);
 	for(auto &params : node.body) {
@@ -284,31 +294,35 @@ void ASTVariableChecking::visit(NodeList& node) {
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node);
+	return new_node;
 }
 
-void ASTVariableChecking::visit(NodeListRef& node) {
+NodeAST* ASTVariableChecking::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
 		CompileError(ErrorType::Variable, "List has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
-		return;
+		return &node;
 	}
 	m_def_provider->add_to_references(&node);
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodeConst& node) {
+NodeAST* ASTVariableChecking::visit(NodeConst& node) {
 	for(auto& stmt : node.constants->statements) {
 		stmt->accept(*this);
 	}
+	return &node;
 }
 
-void ASTVariableChecking::visit(NodeStruct& node) {
+NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 	m_def_provider->add_scope();
 	node.members->accept(*this);
 	for(auto & m : node.methods) {
 		m->accept(*this);
 	}
 	m_def_provider->remove_scope();
+	return &node;
 }
 
 

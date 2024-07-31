@@ -18,31 +18,31 @@
  * Additionally, it desugars NodeFamily into single declare statements.
  */
 class ASTDesugar: public ASTVisitor {
-    void visit(NodeProgram& node) override;
-	void visit(NodeFunctionDefinition& node) override;
+    NodeAST * visit(NodeProgram& node) override;
+	NodeAST * visit(NodeFunctionDefinition& node) override;
     /// desugar into single declare statements
-    void visit(NodeDeclaration& node) override;
-    void visit(NodeSingleDeclaration& node) override;
+	NodeAST * visit(NodeDeclaration& node) override;
+    NodeAST * visit(NodeSingleDeclaration& node) override;
     /// desugar into single assign statements
-    void visit(NodeAssignment& node) override;
+	NodeAST * visit(NodeAssignment& node) override;
 
     /// desugar for each loops to for loops
-	void visit(NodeForEach& node) override;
+	NodeAST * visit(NodeForEach& node) override;
     /// alter for loops to while loops
-    void visit(NodeFor& node) override;
+	NodeAST * visit(NodeFor& node) override;
 
-    void visit(NodeBlock& node) override;
+    NodeAST * visit(NodeBlock& node) override;
 
 	/// desugar into single declare statements
-	void visit(NodeFamily& node) override;
+	NodeAST * visit(NodeFamily& node) override;
 	/// desugar const block to single declare statements
-	void visit(NodeConst& node) override;
+	NodeAST * visit(NodeConst& node) override;
 
 	/// desugar nested ParamLists [[1,2,3,4]]
-	void visit(NodeParamList& node) override;
+	NodeAST * visit(NodeParamList& node) override;
 
 	/// add namespaces
-	void visit(NodeStruct& node) override;
+	NodeAST * visit(NodeStruct& node) override;
 
 private:
 

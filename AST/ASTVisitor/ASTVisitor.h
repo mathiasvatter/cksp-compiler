@@ -30,130 +30,178 @@ protected:
 
 
 public:
-    virtual void visit(NodeDeadCode& node) {};
-	virtual void visit(NodeWildcard& node) {node.ty = TypeRegistry::Integer;};
-	virtual void visit(NodeInt& node) {node.ty = TypeRegistry::Integer;};
-    virtual void visit(NodeReal& node) {node.ty = TypeRegistry::Real;};
-    virtual void visit(NodeString& node) {node.ty = TypeRegistry::String;};
-	virtual void visit(NodeNil& node) {node.ty = TypeRegistry::Nil;};
-	virtual void visit(NodeVariable& node) {};
-	virtual void visit(NodeVariableRef& node) {};
-	virtual void visit(NodePointerRef& node) {};
-	virtual void visit(NodePointer& node) {};
-    virtual void visit(NodeParamList& node) {
+    virtual NodeAST* visit(NodeDeadCode& node) {return &node;};
+	virtual NodeAST* visit(NodeWildcard& node) {
+//		node.ty = TypeRegistry::Integer;
+		return &node;
+	};
+	virtual NodeAST* visit(NodeInt& node) {
+//		node.ty = TypeRegistry::Integer;
+		return &node;
+	};
+    virtual NodeAST* visit(NodeReal& node) {
+//		node.ty = TypeRegistry::Real;
+		return &node;
+	};
+    virtual NodeAST* visit(NodeString& node) {
+		node.ty = TypeRegistry::String;
+		return &node;
+	};
+	virtual NodeAST* visit(NodeNil& node) {
+		node.ty = TypeRegistry::Nil;
+		return &node;
+	};
+	virtual NodeAST* visit(NodeVariable& node) {
+		return &node;
+	};
+	virtual NodeAST* visit(NodeVariableRef& node) {
+		return &node;
+	};
+	virtual NodeAST* visit(NodePointerRef& node) {
+		return &node;
+	};
+	virtual NodeAST* visit(NodePointer& node) {
+		return &node;
+	};
+    virtual NodeAST* visit(NodeParamList& node) {
 		for(auto & param : node.params) {
 			param->accept(*this);
 		}
+		return &node;
 	};
-	virtual void visit(NodeArray& node) {
+	virtual NodeAST* visit(NodeArray& node) {
 		if(node.size) node.size->accept(*this);
+		return &node;
 	};
-	virtual void visit(NodeArrayRef& node) {
+	virtual NodeAST* visit(NodeArrayRef& node) {
 		if(node.index) node.index->accept(*this);
+		return &node;
 	};
-	virtual void visit(NodeNDArray& node) {
+	virtual NodeAST* visit(NodeNDArray& node) {
 		if(node.sizes) node.sizes->accept(*this);
+		return &node;
 	};
-	virtual void visit(NodeNDArrayRef& node) {
+	virtual NodeAST* visit(NodeNDArrayRef& node) {
 		if(node.indexes) node.indexes->accept(*this);
+		return &node;
 	};
-	virtual void visit(NodeAccessChain& node) {
+	virtual NodeAST* visit(NodeAccessChain& node) {
 		for(auto & method : node.chain) {
 			method->accept(*this);
 		}
+		return &node;
 	}
-    virtual void visit(NodeUIControl& node){
+    virtual NodeAST* visit(NodeUIControl& node){
 		node.control_var->accept(*this);
 		node.params->accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeUnaryExpr& node) {
+    virtual NodeAST* visit(NodeUnaryExpr& node) {
 		node.operand->accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeBinaryExpr& node) {
+    virtual NodeAST* visit(NodeBinaryExpr& node) {
 		node.left->accept(*this);
 		node.right->accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeDeclaration& node) {
+    virtual NodeAST* visit(NodeDeclaration& node) {
         for(auto const &decl : node.variable) {
             decl->accept(*this);
         }
-		if(node.value)
-        	node.value -> accept(*this);
+		if(node.value) node.value -> accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeSingleDeclaration& node) {
+    virtual NodeAST* visit(NodeSingleDeclaration& node) {
         node.variable ->accept(*this);
-		if(node.value)
-        	node.value -> accept(*this);
+		if(node.value) node.value -> accept(*this);
+		return &node;
     };
-    virtual void visit(NodeAssignment& node) {
+    virtual NodeAST* visit(NodeAssignment& node) {
 		node.l_value->accept(*this);
 		node.r_value->accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeSingleAssignment& node) {
+    virtual NodeAST* visit(NodeSingleAssignment& node) {
         node.l_value ->accept(*this);
 		node.r_value -> accept(*this);
+		return &node;
     };
-	virtual void visit(NodeReturn& node) {
+	virtual NodeAST* visit(NodeReturn& node) {
 		for(auto &ret : node.return_variables) {
 			ret->accept(*this);
 		}
+		return &node;
 	};
-	virtual void visit(NodeSingleReturn& node) {
+	virtual NodeAST* visit(NodeSingleReturn& node) {
 		node.return_variable->accept(*this);
+		return &node;
 	};
-	virtual void visit(NodeDelete& node) {
+	virtual NodeAST* visit(NodeDelete& node) {
 		CompileError(ErrorType::InternalError, "<Delete> node not yet implemented.", "", node.tok).exit();
 		for(auto &del : node.delete_pointer) {
 			del->accept(*this);
 		}
+		return &node;
 	};
-    virtual void visit(NodeGetControl& node) {
+    virtual NodeAST* visit(NodeGetControl& node) {
 		node.ui_id->accept(*this);
+		return &node;
 	};
 
-    virtual void visit(NodeConst& node) {
+    virtual NodeAST* visit(NodeConst& node) {
         node.constants->accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeStruct& node) {
+    virtual NodeAST* visit(NodeStruct& node) {
 		node.members->accept(*this);
 		for(auto & m: node.methods) {
 			m->accept(*this);
 		}
+		return &node;
 	};
-    virtual void visit(NodeFamily& node) {
+    virtual NodeAST* visit(NodeFamily& node) {
         node.members->accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeList& node) {
+    virtual NodeAST* visit(NodeList& node) {
         for(auto & b : node.body) {
             b->accept(*this);
         }
+		return &node;
     };
-	virtual void visit(NodeListRef& node) {
+	virtual NodeAST* visit(NodeListRef& node) {
 		node.indexes->accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeStatement& node) {
+    virtual NodeAST* visit(NodeStatement& node) {
 		node.statement->accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeIf& node) {
+    virtual NodeAST* visit(NodeIf& node) {
 		node.condition->accept(*this);
 		node.if_body->accept(*this);
 		node.else_body->accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeFor& node) {
+    virtual NodeAST* visit(NodeFor& node) {
 		node.iterator->accept(*this);
 		node.iterator_end->accept(*this);
         node.body->accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeForEach& node) {
+    virtual NodeAST* visit(NodeForEach& node) {
         node.keys->accept(*this);
         node.range->accept(*this);
         node.body->accept(*this);
+		return &node;
     };
-	virtual void visit(NodeWhile& node) {
+	virtual NodeAST* visit(NodeWhile& node) {
 		node.condition->accept(*this);
         node.body->accept(*this);
+		return &node;
 	};
-	virtual void visit(NodeSelect& node) {
+	virtual NodeAST* visit(NodeSelect& node) {
 		node.expression->accept(*this);
 		for(const auto &cas: node.cases) {
             for(auto &c: cas.first) {
@@ -161,24 +209,29 @@ public:
             }
             cas.second->accept(*this);
 		}
+		return &node;
 	};
-	virtual void visit(NodeCallback& node) {
+	virtual NodeAST* visit(NodeCallback& node) {
 		if(node.callback_id) node.callback_id->accept(*this);
 		node.statements->accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeFunctionHeader& node) {
+    virtual NodeAST* visit(NodeFunctionHeader& node) {
 		node.args->accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeFunctionCall& node) {
+    virtual NodeAST* visit(NodeFunctionCall& node) {
 		node.function->accept(*this);
+		return &node;
 	};
-	virtual void visit(NodeFunctionDefinition& node) {
+	virtual NodeAST* visit(NodeFunctionDefinition& node) {
 		node.header ->accept(*this);
 		if (node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);
         node.body->accept(*this);
+		return &node;
 	};
-    virtual void visit(NodeProgram& node) {
+    virtual NodeAST* visit(NodeProgram& node) {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
@@ -191,13 +244,16 @@ public:
 			function_definition->accept(*this);
 		}
 		node.merge_function_definitions();
+		return &node;
 	};
-    virtual void visit(NodeBlock& node) {
+    virtual NodeAST* visit(NodeBlock& node) {
         for(auto & stmt : node.statements) {
             stmt->accept(*this);
         }
+		return &node;
     };
-    virtual void visit(NodeImport& node) {
+    virtual NodeAST* visit(NodeImport& node) {
+		return &node;
     };
 };
 

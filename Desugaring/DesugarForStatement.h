@@ -29,7 +29,7 @@ class DesugarForStatement : public ASTDesugaring {
 public:
 	explicit DesugarForStatement(NodeProgram* program) : ASTDesugaring(program) {};
 
-    void inline visit(NodeFor& node) override {
+    inline NodeAST* visit(NodeFor& node) override {
         // function arg
         std::unique_ptr<NodeAST> iterator_var = node.iterator->l_value->clone();
         std::unique_ptr<NodeAST> assign_var = iterator_var->clone();
@@ -89,6 +89,6 @@ public:
         auto node_body = std::make_unique<NodeBlock>(node.tok);
         node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign_statement), node.tok));
         node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while_statement), node.tok));
-        replacement_node = std::move(node_body);
+        return node.replace_with(std::move(node_body));
     }
 };

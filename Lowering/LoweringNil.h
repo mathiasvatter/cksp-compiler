@@ -12,7 +12,7 @@ private:
 public:
 	explicit LoweringNil(NodeProgram *program) : ASTLowering(program) {}
 
-	inline void visit(NodeNil &node) override {
+	inline NodeAST * visit(NodeNil &node) override {
 		std::unique_ptr<NodeAST> node_repl = nullptr;
 		if(node.is_string_repr()) {
 			node_repl = std::make_unique<NodeString>("\"nil\"", node.tok);
@@ -24,7 +24,7 @@ public:
 				  node.tok
 			  );
 		}
-		node.replace_with(std::move(node_repl));
+		return node.replace_with(std::move(node_repl));
 	}
 
 };

@@ -4,7 +4,7 @@
 
 #include "ASTDesugar.h"
 
-void ASTDesugar::visit(NodeProgram& node) {
+NodeAST* ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
 	for(auto & struct_def : node.struct_definitions) {
 		struct_def->accept(*this);
@@ -19,32 +19,35 @@ void ASTDesugar::visit(NodeProgram& node) {
 	m_program->init_callback->statements->prepend_body(NodeProgram::declare_compiler_variables());
 //	m_program->global_declarations->append_body(declare_compiler_variables());
 	m_program->global_declarations->append_body(std::move(m_global_variable_declarations));
+	return &node;
 }
 
-void ASTDesugar::visit(NodeBlock& node) {
+NodeAST* ASTDesugar::visit(NodeBlock& node) {
     for(auto & stmt : node.statements) {
         stmt->accept(*this);
     }
 	node.flatten();
+	return &node;
 }
 
-void ASTDesugar::visit(NodeFunctionDefinition& node) {
+NodeAST* ASTDesugar::visit(NodeFunctionDefinition& node) {
 	node.header->accept(*this);
 	node.body->accept(*this);
 	if(auto desugaring = node.get_desugaring(m_program)) {
-		node.accept(*desugaring);
+		return node.accept(*desugaring);
 	}
+	return &node;
 }
 
-void ASTDesugar::visit(NodeDeclaration& node) {
+NodeAST* ASTDesugar::visit(NodeDeclaration& node) {
     if(auto desugaring = node.get_desugaring(m_program)) {
-        node.accept(*desugaring);
-        desugaring->replacement_node->accept(*this);
-        node.replace_with(std::move(desugaring->replacement_node));
+        auto desugared = node.accept(*desugaring);
+        return desugared->accept(*this);
     }
+	return &node;
 }
 
-void ASTDesugar::visit(NodeSingleDeclaration& node) {
+NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
     node.variable->accept(*this);
     if(node.value) node.value->accept(*this);
 
@@ -55,58 +58,56 @@ void ASTDesugar::visit(NodeSingleDeclaration& node) {
 				node.tok
 			)
 		);
-		node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
-		return;
+		return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
     }
+	return &node;
 }
 
-void ASTDesugar::visit(NodeAssignment &node) {
+NodeAST* ASTDesugar::visit(NodeAssignment &node) {
     if(auto desugaring = node.get_desugaring(m_program)) {
-        node.accept(*desugaring);
-        desugaring->replacement_node->accept(*this);
-        node.replace_with(std::move(desugaring->replacement_node));
+        auto desugared = node.accept(*desugaring);
+        return desugared->accept(*this);
     }
+	return &node;
 }
 
-void ASTDesugar::visit(NodeForEach& node) {
+NodeAST* ASTDesugar::visit(NodeForEach& node) {
     node.body->accept(*this);
     if(auto desugaring = node.get_desugaring(m_program)) {
-        node.accept(*desugaring);
+		auto desugared = node.accept(*desugaring);
         // move replacement to this visitor in case of nested for loops
-        auto replacement = std::move(desugaring->replacement_node);
         // accept again to desugar resulting for loops
-        replacement->accept(*this);
-        node.replace_with(std::move(replacement));
+        return desugared->accept(*this);
     }
+	return &node;
 }
 
-void ASTDesugar::visit(NodeFor& node) {
+NodeAST* ASTDesugar::visit(NodeFor& node) {
     node.body->accept(*this);
     if(auto desugaring = node.get_desugaring(m_program)) {
-        node.accept(*desugaring);
+        return node.accept(*desugaring);
         // move replacement to this visitor in case of nested for loops
-        auto replacement = std::move(desugaring->replacement_node);
-        node.replace_with(std::move(replacement));
     }
+	return &node;
 }
 
-void ASTDesugar::visit(NodeFamily &node) {
+NodeAST* ASTDesugar::visit(NodeFamily &node) {
     node.members->accept(*this);
     if(auto desugaring = node.get_desugaring(m_program)) {
-        node.accept(*desugaring);
+        return node.accept(*desugaring);
     }
-    node.replace_with(std::move(node.members));
+	return &node;
 }
 
-void ASTDesugar::visit(NodeConst &node) {
+NodeAST* ASTDesugar::visit(NodeConst &node) {
 	node.constants->accept(*this);
 	if(auto desugaring = node.get_desugaring(m_program)) {
-		node.accept(*desugaring);
+		return node.accept(*desugaring);
 	}
-//	node.replace_with(std::move(node.constants));
+	return &node;
 }
 
-void ASTDesugar::visit(NodeParamList &node) {
+NodeAST* ASTDesugar::visit(NodeParamList &node) {
 	for(auto & param : node.params) {
 		param->accept(*this);
 	}
@@ -122,16 +123,18 @@ void ASTDesugar::visit(NodeParamList &node) {
 			node_param_list->set_child_parents();
 		}
 	}
+	return &node;
 }
 
-void ASTDesugar::visit(NodeStruct& node) {
+NodeAST* ASTDesugar::visit(NodeStruct& node) {
 	node.members->accept(*this);
 	for(auto & m: node.methods) {
 		m->accept(*this);
 	}
 	if(auto desugaring = node.get_desugaring(m_program)) {
-		node.accept(*desugaring);
+		return node.accept(*desugaring);
 	}
+	return &node;
 }
 
 

@@ -11,10 +11,10 @@ class LoweringGetControl : public ASTLowering {
 public:
 	explicit LoweringGetControl(NodeProgram* program) : ASTLowering(program) {}
 
-	void visit(NodeSingleAssignment &node) override {
+	NodeAST * visit(NodeSingleAssignment &node) override {
 		node.r_value->accept(*this);
 		// check if r_value is a NodeGetControl
-		if(node.l_value->get_node_type() != NodeType::GetControl) return;
+		if(node.l_value->get_node_type() != NodeType::GetControl) return &node;
 
 		auto get_control_statement = cast_node<NodeGetControl>(node.l_value.get());
 		// lower in case of array or nd array
@@ -27,10 +27,10 @@ public:
 		// add r_value as third parameter to set_control_par
 		new_node->function->args->params.push_back(std::move(node.r_value));
 		new_node->function->args->set_child_parents();
-		lowered_node = node.replace_with(std::move(new_node));
+		return node.replace_with(std::move(new_node));
 	};
 
-	void visit(NodeGetControl &node) override {
+	NodeAST * visit(NodeGetControl &node) override {
 		// lower in case of array or nd array
 		if(auto lowering = node.ui_id->get_lowering(m_program)) {
 			node.ui_id->accept(*lowering);
@@ -38,7 +38,7 @@ public:
 		std::string control_function = "get_control_par";
 		auto new_node = lowering(control_function, &node);
 		new_node->update_parents(node.parent);
-		lowered_node = node.replace_with(std::move(new_node));
+		return node.replace_with(std::move(new_node));
 	};
 
 private:

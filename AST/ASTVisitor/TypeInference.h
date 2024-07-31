@@ -11,47 +11,47 @@ class TypeInference : public ASTVisitor {
 public:
 	explicit TypeInference(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {};
 
-	void visit(NodeProgram& node) override;
+	NodeAST * visit(NodeProgram& node) override;
 
 	/// Type casting with Base Types
-	void visit(NodeInt& node) override;
-	void visit(NodeString& node) override;
-	void visit(NodeReal& node) override;
-	void visit(NodeNil& node) override;
+	NodeAST * visit(NodeInt& node) override;
+	NodeAST * visit(NodeString& node) override;
+	NodeAST * visit(NodeReal& node) override;
+	NodeAST * visit(NodeNil& node) override;
 
-    void visit(NodeCallback& node) override;
+    NodeAST * visit(NodeCallback& node) override;
 
-	void visit(NodeSingleDeclaration& node) override;
-	void visit(NodeSingleAssignment& node) override;
-	void visit(NodeUIControl& node) override;
-	void visit(NodeGetControl& node) override;
+	NodeAST * visit(NodeSingleDeclaration& node) override;
+	NodeAST * visit(NodeSingleAssignment& node) override;
+	NodeAST * visit(NodeUIControl& node) override;
+	NodeAST * visit(NodeGetControl& node) override;
 
     /// check if every member has same type only if in assign or declare statement
-	void visit(NodeParamList& node) override;
-	void visit(NodeVariableRef& node) override;
-	void visit(NodeVariable& node) override;
-	void visit(NodeArray& node) override;
-	void visit(NodeArrayRef& node) override;
+	NodeAST * visit(NodeParamList& node) override;
+	NodeAST * visit(NodeVariableRef& node) override;
+	NodeAST * visit(NodeVariable& node) override;
+	NodeAST * visit(NodeArray& node) override;
+	NodeAST * visit(NodeArrayRef& node) override;
 
-    void visit(NodeNDArray& node) override;
-    void visit(NodeNDArrayRef& node) override;
+    NodeAST * visit(NodeNDArray& node) override;
+    NodeAST * visit(NodeNDArrayRef& node) override;
 
-	void visit(NodePointer& node) override;
-	void visit(NodePointerRef& node) override;
+	NodeAST * visit(NodePointer& node) override;
+	NodeAST * visit(NodePointerRef& node) override;
 
-    void visit(NodeList& node) override;
-    void visit(NodeListRef& node) override;
+    NodeAST * visit(NodeList& node) override;
+    NodeAST * visit(NodeListRef& node) override;
 
-	void visit(NodeBinaryExpr& node) override;
-	void visit(NodeUnaryExpr& node) override;
-    void visit(NodeFunctionCall& node) override;
-    void visit(NodeFunctionDefinition& node) override;
-	void visit(NodeReturn& node) override;
+	NodeAST * visit(NodeBinaryExpr& node) override;
+	NodeAST * visit(NodeUnaryExpr& node) override;
+    NodeAST * visit(NodeFunctionCall& node) override;
+    NodeAST * visit(NodeFunctionDefinition& node) override;
+	NodeAST * visit(NodeReturn& node) override;
 
-	void visit(NodeAccessChain& node) override;
+	NodeAST * visit(NodeAccessChain& node) override;
 
-	void visit(NodeConst& node) override;
-	void visit(NodeStruct& node) override;
+	NodeAST * visit(NodeConst& node) override;
+	NodeAST * visit(NodeStruct& node) override;
 
     /// iterates through all references and declarations and tries to match the types
     /// with cast set to true -> will cast types of data structures if no type could be infered

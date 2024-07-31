@@ -7,7 +7,7 @@
 
 ASTCollectLowerings::ASTCollectLowerings(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
-void ASTCollectLowerings::visit(NodeProgram& node) {
+NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	m_program = &node;
 	m_program->global_declarations->accept(*this);
 	for(auto & struct_def : node.struct_definitions) {
@@ -23,64 +23,60 @@ void ASTCollectLowerings::visit(NodeProgram& node) {
 
 	ASTLowerTypes lowering_types(m_def_provider);
 	node.accept(lowering_types);
+	return &node;
 }
 
 //void ASTCollectLowerings::visit(NodeReturn& node) {
 //}
 
 
-void ASTCollectLowerings::visit(NodeBlock& node) {
+NodeAST * ASTCollectLowerings::visit(NodeBlock& node) {
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
 	}
 	node.flatten();
+	return &node;
 }
 
-void ASTCollectLowerings::visit(NodeNil& node) {
-	if(auto lowering = node.get_lowering(m_program)) {
-		node.accept(*lowering);
-	}
+NodeAST * ASTCollectLowerings::visit(NodeNil& node) {
+	return node.lower(m_program);
 }
 
 
-void ASTCollectLowerings::visit(NodeStruct& node) {
-	if(auto lowering = node.get_lowering(m_program)) {
-		node.accept(*lowering);
-	}
+NodeAST * ASTCollectLowerings::visit(NodeStruct& node) {
+	node.lower(m_program);
 	node.members->accept(*this);
 	for(auto &m : node.methods) {
 		m->accept(*this);
 	}
+	return &node;
 }
 
-void ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
+NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
 	node.header ->accept(*this);
 	if (node.return_variable.has_value())
 		node.return_variable.value()->accept(*this);
 	node.body->accept(*this);
-	if(auto lowering = node.get_lowering(m_program)) {
-		node.accept(*lowering);
-	}
-};
-
-void ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
-	if(node.value) node.value->accept(*this);
-	if(auto lowering = node.get_lowering(m_program)) {
-		node.accept(*lowering);
-	}
+	return node.lower(m_program);
 }
 
-void ASTCollectLowerings::visit(NodeSingleAssignment& node) {
+NodeAST * ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
+	if(node.value) node.value->accept(*this);
+	return node.lower(m_program);
+}
+
+NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
 	if(node.r_value) node.r_value->accept(*this);
 	if(auto lowering = node.get_lowering(m_program)) {
-		node.accept(*lowering);
+		return node.accept(*lowering);
 	} else {
 		node.l_value->accept(*this);
 //		if(node.r_value) node.r_value->accept(*this);
+		return &node;
 	}
 }
 
-void ASTCollectLowerings::visit(NodeGetControl& node) {
+NodeAST * ASTCollectLowerings::visit(NodeGetControl& node) {
 	node.ui_id->accept(*this);
 
 	/*
@@ -94,77 +90,59 @@ void ASTCollectLowerings::visit(NodeGetControl& node) {
 	// is set control
 	if(node.parent->get_node_type() == NodeType::SingleAssignment) {
 		if(auto node_assign_stmt = static_cast<NodeSingleAssignment*>(node.parent)) {
-			if(node_assign_stmt->l_value.get() == &node) return;
+			if(node_assign_stmt->l_value.get() == &node) return &node;;
 		}
 	}
 
 	// only handles get control
-	if(auto lowering = node.get_lowering(m_program)) {
-		node.accept(*lowering);
-	}
+	return node.lower(m_program);
 }
 
-void ASTCollectLowerings::visit(NodeFunctionCall& node) {
+NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
-	if(auto lowering = node.get_lowering(m_program)) {
-		node.accept(*lowering);
-	}
+	return node.lower(m_program);
 }
 
-void ASTCollectLowerings::visit(NodeArray& node) {
+NodeAST * ASTCollectLowerings::visit(NodeArray& node) {
     if(node.size) node.size->accept(*this);
-    if(auto lowering = node.get_lowering(m_program)) {
-        node.accept(*lowering);
-    }
+	return node.lower(m_program);
 }
 
-void ASTCollectLowerings::visit(NodeNDArray& node) {
+NodeAST * ASTCollectLowerings::visit(NodeNDArray& node) {
 	if(node.parent->get_node_type() == NodeType::SingleAssignment) {
-		return;
+		return &node;
 	}
 	if(node.sizes) node.sizes->accept(*this);
-	if(auto lowering = node.get_lowering(m_program)) {
-		node.accept(*lowering);
-	}
+	return node.lower(m_program);
 }
 
-void ASTCollectLowerings::visit(NodeNDArrayRef& node) {
+NodeAST * ASTCollectLowerings::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
-	if(auto lowering = node.get_lowering(m_program)) {
-		node.accept(*lowering);
-	}
+	return node.lower(m_program);
 }
 
-void ASTCollectLowerings::visit(NodeListRef& node) {
+NodeAST * ASTCollectLowerings::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
-	if(auto lowering = node.get_lowering(m_program)) {
-		node.accept(*lowering);
-	}
+	return node.lower(m_program);
 }
 
-void ASTCollectLowerings::visit(NodeList& node) {
-	if(auto lowering = node.get_lowering(m_program)) {
-		node.accept(*lowering);
-	}
+NodeAST * ASTCollectLowerings::visit(NodeList& node) {
+	return node.lower(m_program);
 }
 
-void ASTCollectLowerings::visit(NodePointerRef& node) {
-	if(auto lowering = node.get_lowering(m_program)) {
-		node.accept(*lowering);
-	}
+NodeAST * ASTCollectLowerings::visit(NodePointerRef& node) {
+	return node.lower(m_program);
 }
 
-void ASTCollectLowerings::visit(NodeAccessChain& node) {
-	if(auto lowering = node.get_lowering(m_program)) {
-		node.accept(*lowering);
-	}
+NodeAST * ASTCollectLowerings::visit(NodeAccessChain& node) {
+	node.lower(m_program);
 	node.chain.back()->accept(*this);
-	node.replace_with(std::move(node.chain.back()));
+	return node.replace_with(std::move(node.chain.back()));
 }
 
 
-void ASTCollectLowerings::visit(NodeConst &node) {
-    node.replace_with(std::move(node.constants));
+NodeAST * ASTCollectLowerings::visit(NodeConst &node) {
+    return node.replace_with(std::move(node.constants));
 }
 
 //void ASTCollectLowerings::visit(NodeFamily &node) {

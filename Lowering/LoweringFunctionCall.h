@@ -25,18 +25,17 @@ public:
     /// Determining if function is property function -> inline property function
 	/// Determining if function parameter needs to be wrapped in get_ui_id because of ui control
 	/// Determining if function call is method constructor -> rename
-	void visit(NodeFunctionCall &node) override {
+	NodeAST * visit(NodeFunctionCall &node) override {
 		lowered_node = &node;
         if(node.kind == NodeFunctionCall::Kind::Property) {
             auto node_body = inline_property_function(node.definition->header.get(), std::move(node.function));
             node_body->accept(*this);
-            lowered_node = node.replace_with(std::move(node_body));
-            return;
+            return node.replace_with(std::move(node_body));
         }
         if(node.kind == NodeFunctionCall::Kind::Builtin) {
             // get_ui_id lowering
             node.function->accept(*this);
-            return;
+			return &node;
         }
 
 		if(node.kind == NodeFunctionCall::Kind::UserDefined) {
@@ -63,21 +62,23 @@ public:
 //			}
 
 
-            if(node.function->args->params.size() == 1) return;
-            if(node.function->name != "message") return;
+            if(node.function->args->params.size() == 1) return &node;
+            if(node.function->name != "message") return &node;
             // lowering of message parameters when separated by comma
             node.function->args = inline_message_parameters(node.function->args);
         }
+		return &node;
 	}
 
     /// lowering of get control statements from property functions
-    void visit(NodeGetControl &node) override {
+	NodeAST * visit(NodeGetControl &node) override {
         if(auto lowering = node.get_lowering(m_program)) {
-            lowering->visit(node);
+            return node.accept(*lowering);
         }
+		return &node;
     };
 
-    void visit(NodeVariableRef &node) override {
+    NodeAST * visit(NodeVariableRef &node) override {
         if(node.data_type == DataType::UIControl and node.is_func_arg()) {
             auto node_get_ui_id = clone_as<NodeFunctionCall>(get_ui_id.get());
             node_get_ui_id->function->ty = TypeRegistry::Integer;
@@ -85,11 +86,12 @@ public:
             node_get_ui_id->update_token_data(node.tok);
             node_get_ui_id->function->args->params.push_back(std::move(node.clone()));
             node_get_ui_id->function->args->set_child_parents();
-            node.replace_with(std::move(node_get_ui_id));
+            return node.replace_with(std::move(node_get_ui_id));
         }
+		return &node;
     }
 
-    void visit(NodeArrayRef &node) override {
+    NodeAST * visit(NodeArrayRef &node) override {
         if(node.data_type == DataType::UIControl and node.is_func_arg()) {
             auto node_get_ui_id = clone_as<NodeFunctionCall>(get_ui_id.get());
             node_get_ui_id->function->ty = TypeRegistry::Integer;
@@ -97,8 +99,9 @@ public:
             node_get_ui_id->update_token_data(node.tok);
             node_get_ui_id->function->args->params.push_back(std::move(node.clone()));
             node_get_ui_id->function->args->set_child_parents();
-            node.replace_with(std::move(node_get_ui_id));
+            return node.replace_with(std::move(node_get_ui_id));
         }
+		return &node;
     }
 
 private:

@@ -20,11 +20,11 @@ private:
 public:
 	explicit LoweringUIControlArray(NodeProgram* program) : ASTLowering(program) {}
 
-	void visit(NodeSingleDeclaration &node) override {
+	NodeAST * visit(NodeSingleDeclaration &node) override {
 		lowered_node = &node;
 		auto node_ui_control = cast_node<NodeUIControl>(node.variable.get());
 		if(node_ui_control) {
-			if(!is_ui_control_array(node_ui_control)) return;
+			if(!is_ui_control_array(node_ui_control)) return &node;
 			// move persistence information to not get a persistent array
 			m_persistence = node_ui_control->control_var->persistence;
 			node_ui_control->control_var->persistence = std::nullopt;
@@ -35,7 +35,7 @@ public:
 			}
 			m_ui_control_array->control_var->accept(*this);
 
-		} else return;
+		} else return &node;
 
 		std::unique_ptr<NodeBlock> body_post_lowering = std::make_unique<NodeBlock>(node.tok);
 
@@ -54,7 +54,7 @@ public:
 
 		body_post_lowering->statements.push_back(std::move(node_statement));
 		body_post_lowering->append_body(create_ui_controls(*m_ui_control_array, std::move(m_ui_array_size)));
-		lowered_node = node.replace_with(std::move(body_post_lowering));
+		return node.replace_with(std::move(body_post_lowering));
 	}
 
 	static bool is_ui_control_array(NodeUIControl* node) {
@@ -65,7 +65,7 @@ public:
 		return false;
 	}
 
-	void visit(NodeArray &node) override {
+	NodeAST * visit(NodeArray &node) override {
 		auto error = CompileError(ErrorType::SyntaxError, "Unable to infer array size. Size of UI Control Array has to be determined at compile time.", node.tok.line, "initializer list", "", node.tok.file);
 		if(!node.size) error.exit();
 		m_ui_array_size = node.size->clone();
@@ -73,12 +73,14 @@ public:
         if(!m_ui_control_array->sizes->params.empty()) {
             m_ui_control_var_size = clone_as<NodeParamList>(m_ui_control_array->sizes.get());
         }
+		return &node;
 	}
 
-	void visit(NodeNDArray &node) override {
+	NodeAST * visit(NodeNDArray &node) override {
 		if(auto lowering = node.get_lowering(m_program)) {
-			node.accept(*lowering);
+			return node.accept(*lowering);
 		}
+		return &node;
 	}
 
 

@@ -40,18 +40,18 @@ private:
 public:
 	explicit DesugarForEachStatement(NodeProgram* program) : ASTDesugaring(program) {};
 
-    void inline visit(NodeVariableRef& node) override {
+    inline NodeAST* visit(NodeVariableRef& node) override {
         // range-based for-loop substitution
         if(!m_key_value_scope_stack.empty()) {
             if(auto substitute = get_key_value_substitute(node.name)) {
                 substitute->update_parents(node.parent);
-                node.replace_with(std::move(substitute));
-                return;
+                return node.replace_with(std::move(substitute));
             }
         }
+		return &node;
     }
 
-    void inline visit(NodeForEach& node) override {
+	inline NodeAST* visit(NodeForEach& node) override {
         auto error = CompileError(ErrorType::SyntaxError, "", node.tok.line, "", "", node.tok.file);
         error.m_message = "Found incorrect for-each-loop syntax.";
         // check if keys are variable references
@@ -118,10 +118,9 @@ public:
         node_scope->add_stmt(std::make_unique<NodeStatement>(std::move(node_key_declaration), node.tok));
         node_scope->add_stmt(std::make_unique<NodeStatement>(std::move(node_for_statement), node.tok));
         node_scope->scope = true;
-//        node_scope->accept(*this);
 
         m_key_value_scope_stack.pop_back();
-        replacement_node = std::move(node_scope);
+        return node.replace_with(std::move(node_scope));
     }
 
 };

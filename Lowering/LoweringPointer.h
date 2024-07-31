@@ -30,26 +30,25 @@ public:
 //		}
 //	}
 
-	inline void visit(NodePointer& node) override {
+	inline NodeAST * visit(NodePointer& node) override {
 		auto node_var = node.to_variable();
 		node_var->ty = node.ty;
-		node.replace_with(std::move(node_var));
+		return node.replace_with(std::move(node_var));
 //		node.lower_type();
 	}
 
-	inline void visit(NodePointerRef& node) override {
+	inline NodeAST * visit(NodePointerRef& node) override {
 		// check if parent string -> call __repr__ method
 		if(node.ty == TypeRegistry::Nil) {
 			auto new_node = node.replace_with(std::make_unique<NodeNil>(node.tok));
 			if(auto lowering = new_node->get_lowering(m_program)) {
-				new_node->accept(*lowering);
+				return new_node->accept(*lowering);
 			}
-			return;
+			return new_node;
 		}
 		if(node.is_string_repr()) {
-			node.replace_with(node.get_repr_call());
-			return;
+			return node.replace_with(node.get_repr_call());
 		}
-
+		return &node;
 	}
 };

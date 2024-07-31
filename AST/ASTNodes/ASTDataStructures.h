@@ -16,7 +16,7 @@ struct NodeVariable: NodeDataStructure {
 		persistence = std::move(is_persistent);
 		data_type = type;
 	}
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeVariable(const NodeVariable& other);
 	// Clone Methode
@@ -35,7 +35,7 @@ struct NodePointer: NodeDataStructure {
 		persistence = std::move(is_persistent);
 		data_type = DataType::Mutable;
 	}
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodePointer(const NodePointer& other);
 	// Clone Methode
@@ -59,7 +59,7 @@ struct NodeArray : NodeDataStructure {
         this->data_type = DataType::Mutable;
         set_child_parents();
     }
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeArray(const NodeArray& other);
 	// Clone Methode
@@ -97,7 +97,7 @@ struct NodeNDArray : NodeDataStructure {
 		this->data_type = DataType::Mutable;
 		set_child_parents();
 	}
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeNDArray(const NodeNDArray& other);
 	// Clone Methode
@@ -137,7 +137,7 @@ struct NodeUIControl : NodeDataStructure {
 		: NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::UIControl), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {
 		set_child_parents();
 	}
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	// Copy Constructor
 	NodeUIControl(const NodeUIControl& other);
@@ -175,7 +175,7 @@ struct NodeList : NodeDataStructure {
 		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::List), size(size), body(std::move(body)) {
 		set_child_parents();
 	}
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeList(const NodeList& other);
 	// Clone Methode
@@ -211,7 +211,7 @@ struct NodeConst : NodeDataStructure {
             : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::Const), constants(std::move(constants)) {
         set_child_parents();
     }
-    void accept(ASTVisitor& visitor) override;
+    NodeAST * accept(struct ASTVisitor &visitor) override;
     // Kopierkonstruktor
     NodeConst(const NodeConst& other);
     // Clone Methode
@@ -250,7 +250,7 @@ struct NodeStruct : NodeDataStructure {
 		: NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct), members(std::move(members)), methods(std::move(methods)) {
 		set_child_parents();
 	}
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeStruct(const NodeStruct& other);
 	// Clone Methode

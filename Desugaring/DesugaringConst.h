@@ -30,14 +30,15 @@ private:
 public:
 	explicit DesugaringConst(NodeProgram* program) : ASTDesugaring(program) {}
 
-    void visit(NodeVariable& node) override {
+    NodeAST * visit(NodeVariable& node) override {
 //		if(node.ty == TypeRegistry::Unknown) node.ty = TypeRegistry::Integer;
         if(!m_const_prefixes.empty()) {
             node.name = m_const_prefixes.top() + "." + node.name;
         }
+		return &node;
     };
 
-    void visit(NodeSingleDeclaration& node) override {
+    NodeAST * visit(NodeSingleDeclaration& node) override {
         if (node.variable->get_node_type() != NodeType::Variable) {
             auto error = CompileError(ErrorType::SyntaxError,"", "", node.variable->tok);
 			error.m_message = "Found incorrect <Constant Block> syntax. <Constant Blocks> can only contain <Variables>.";
@@ -57,9 +58,10 @@ public:
         }
         node.variable->data_type = DataType::Const;
         node.set_child_parents();
+		return &node;
     };
 
-    void visit(NodeConst& node) override {
+    NodeAST * visit(NodeConst& node) override {
         std::string pref = node.name;
         if(!m_const_prefixes.empty()) pref = m_const_prefixes.top() + "." + node.name;
         m_const_prefixes.push(pref);
@@ -97,6 +99,6 @@ public:
         auto constant = make_declare_variable(node.name+".SIZE", node.constants->statements.size(), DataType::Const, node.constants.get());
         node.constants->add_stmt(std::move(constant));
         m_const_prefixes.pop();
-//		lowered_node = &node;
+		return &node;
     }
 };

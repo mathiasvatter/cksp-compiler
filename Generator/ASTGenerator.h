@@ -23,30 +23,30 @@ inline std::string sanitize_dots(const std::string& str) {
 
 class ASTGenerator : public ASTVisitor {
 public:
-    void visit(NodeProgram& node) override;
-    void visit(NodeInt& node) override;
-    void visit(NodeReal& node) override;
-	void visit(NodeString& node) override;
-    void visit(NodeVariable& node) override;
-    void visit(NodeVariableRef& node) override;
-    void visit(NodeArray& node) override;
-    void visit(NodeArrayRef& node) override;
-    void visit(NodeUIControl& node) override;
-    void visit(NodeSingleDeclaration& node) override;
-    void visit(NodeParamList& node) override;
-    void visit(NodeBinaryExpr& node) override;
-    void visit(NodeUnaryExpr& node) override;
-    void visit(NodeSingleAssignment& node) override;
-    void visit(NodeStatement& node) override;
-	void visit(NodeBlock& node) override;
-    void visit(NodeIf& node) override;
-    void visit(NodeWhile& node) override;
-    void visit(NodeSelect& node) override;
-    void visit(NodeCallback& node) override;
-    void visit(NodeFunctionHeader& node) override;
-    void visit(NodeFunctionCall& node) override;
-    void visit(NodeFunctionDefinition& node) override;
-    void visit(NodeGetControl& node) override;
+    NodeAST * visit(NodeProgram& node) override;
+    NodeAST * visit(NodeInt& node) override;
+    NodeAST * visit(NodeReal& node) override;
+	NodeAST * visit(NodeString& node) override;
+    NodeAST * visit(NodeVariable& node) override;
+    NodeAST * visit(NodeVariableRef& node) override;
+    NodeAST * visit(NodeArray& node) override;
+    NodeAST * visit(NodeArrayRef& node) override;
+    NodeAST * visit(NodeUIControl& node) override;
+    NodeAST * visit(NodeSingleDeclaration& node) override;
+    NodeAST * visit(NodeParamList& node) override;
+    NodeAST * visit(NodeBinaryExpr& node) override;
+    NodeAST * visit(NodeUnaryExpr& node) override;
+    NodeAST * visit(NodeSingleAssignment& node) override;
+    NodeAST * visit(NodeStatement& node) override;
+	NodeAST * visit(NodeBlock& node) override;
+    NodeAST * visit(NodeIf& node) override;
+    NodeAST * visit(NodeWhile& node) override;
+    NodeAST * visit(NodeSelect& node) override;
+    NodeAST * visit(NodeCallback& node) override;
+    NodeAST * visit(NodeFunctionHeader& node) override;
+    NodeAST * visit(NodeFunctionCall& node) override;
+    NodeAST * visit(NodeFunctionDefinition& node) override;
+    NodeAST * visit(NodeGetControl& node) override;
 
     std::ostringstream os;
 

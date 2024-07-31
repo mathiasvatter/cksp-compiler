@@ -6,7 +6,7 @@
 
 ASTSemanticAnalysis::ASTSemanticAnalysis(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
-void ASTSemanticAnalysis::visit(NodeProgram& node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeProgram& node) {
     m_program = &node;
 
 	m_program->global_declarations->accept(*this);
@@ -22,41 +22,45 @@ void ASTSemanticAnalysis::visit(NodeProgram& node) {
 		// reset visited flag
 		func_def->visited = false;
 	}
-
+	return &node;
 }
 
-void ASTSemanticAnalysis::visit(NodeWildcard& node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeWildcard& node) {
 	if(!node.check_semantic()) {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 		error.m_message = "Wildcard is not allowed in this context";
 		error.exit();
 	}
+	return &node;
 }
 
 
-void ASTSemanticAnalysis::visit(NodeCallback& node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeCallback& node) {
 	m_program->current_callback = &node;
 	if(node.callback_id) node.callback_id->accept(*this);
 	node.statements->accept(*this);
 	m_program->current_callback = nullptr;
+	return &node;
 }
 
 
-void ASTSemanticAnalysis::visit(NodeBlock &node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeBlock &node) {
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
 	}
+	return &node;
 }
 
-void ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
 	node.visited = true;
     node.header ->accept(*this);
     if (node.return_variable.has_value())
         node.return_variable.value()->accept(*this);
     node.body->accept(*this);
+	return &node;
 }
 
-void ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
 
 	// to method chain if function call is not defined
@@ -83,29 +87,30 @@ void ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	// if definition parameters of this function have different node types as the call site -> update
 	update_func_call_node_types(&node);
 	node.function->accept(*this);
+	return &node;
 }
 
-void ASTSemanticAnalysis::visit(NodeArray &node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeArray &node) {
 	if(node.size) node.size->accept(*this);
-	replace_incorrectly_detected_data_struct(&node);
+	return replace_incorrectly_detected_data_struct(&node);
 }
 
-void ASTSemanticAnalysis::visit(NodeArrayRef &node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeArrayRef &node) {
     if(node.index) node.index->accept(*this);
 	NodeReference* new_node = &node;
 	if(auto repl = replace_incorrectly_detected_reference(m_def_provider, &node)) {
 		new_node = repl;
 		new_node->accept(*this);
 	}
-	replace_incorrectly_detected_data_struct(new_node->declaration);
+	return replace_incorrectly_detected_data_struct(new_node->declaration);
 }
 
-void ASTSemanticAnalysis::visit(NodeNDArray& node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeNDArray& node) {
 	if(node.sizes) node.sizes->accept(*this);
-	replace_incorrectly_detected_data_struct(&node);
+	return replace_incorrectly_detected_data_struct(&node);
 }
 
-void ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
     if(node.indexes) node.indexes->accept(*this);
 
 	if(!node.determine_sizes()) {
@@ -114,7 +119,7 @@ void ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
 			new_node = repl;
 			new_node->accept(*this);
 		}
-		replace_incorrectly_detected_data_struct(new_node->declaration);
+		return replace_incorrectly_detected_data_struct(new_node->declaration);
 //		CompileError(ErrorType::Variable, "Incorrectly recognized as <ndarray>: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 	}
 
@@ -124,49 +129,50 @@ void ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
 		error.m_message = "Number of indices does not match number of dimensions: " + node.name;
 		error.exit();
 	}
+	return &node;
 }
 
-void ASTSemanticAnalysis::visit(NodeVariable &node) {
-	replace_incorrectly_detected_data_struct(&node);
+NodeAST * ASTSemanticAnalysis::visit(NodeVariable &node) {
+	return replace_incorrectly_detected_data_struct(&node);
 }
 
-void ASTSemanticAnalysis::visit(NodeVariableRef &node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeVariableRef &node) {
 	NodeReference* new_node = &node;
 	if(auto repl = replace_incorrectly_detected_reference(m_def_provider, &node)) {
 		new_node = repl;
 		new_node->accept(*this);
 	}
-	replace_incorrectly_detected_data_struct(new_node->declaration);
+	return replace_incorrectly_detected_data_struct(new_node->declaration);
 }
 
-void ASTSemanticAnalysis::visit(NodePointer &node) {
-	replace_incorrectly_detected_data_struct(&node);
+NodeAST * ASTSemanticAnalysis::visit(NodePointer &node) {
+	return replace_incorrectly_detected_data_struct(&node);
 }
 
-void ASTSemanticAnalysis::visit(NodePointerRef &node) {
+NodeAST * ASTSemanticAnalysis::visit(NodePointerRef &node) {
 	NodeReference* new_node = &node;
 	if(auto repl = replace_incorrectly_detected_reference(m_def_provider, &node)) {
 		new_node = repl;
 		new_node->accept(*this);
 	}
-	replace_incorrectly_detected_data_struct(new_node->declaration);
+	return replace_incorrectly_detected_data_struct(new_node->declaration);
 }
 
-void ASTSemanticAnalysis::visit(NodeList& node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeList& node) {
 	for(auto &params : node.body) {
 		params->accept(*this);
 	}
-	replace_incorrectly_detected_data_struct(&node);
+	return replace_incorrectly_detected_data_struct(&node);
 }
 
-void ASTSemanticAnalysis::visit(NodeListRef& node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
 	NodeReference* new_node = &node;
 	if(auto repl = replace_incorrectly_detected_reference(m_def_provider, &node)) {
 		new_node = repl;
 		new_node->accept(*this);
 	}
-	replace_incorrectly_detected_data_struct(new_node->declaration);
+	return replace_incorrectly_detected_data_struct(new_node->declaration);
 }
 
 void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_call) {
@@ -218,11 +224,11 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 	}
 }
 
-void ASTSemanticAnalysis::replace_incorrectly_detected_data_struct(NodeDataStructure* data_struct) {
+NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct(NodeDataStructure* data_struct) {
 	// if data struct is provided from declaration pointer
-	if(!data_struct or data_struct->is_engine) return;
+	if(!data_struct or data_struct->is_engine) return data_struct;
 	// only replace function parameters
-	if(!data_struct->is_function_param()) return;
+	if(!data_struct->is_function_param()) return data_struct;
 	// check if references of this data struct are of different node type
 	std::set<NodeType> reference_node_types;
 	std::set<NodeReference*> references = m_def_provider->get_references(data_struct);
@@ -231,7 +237,7 @@ void ASTSemanticAnalysis::replace_incorrectly_detected_data_struct(NodeDataStruc
 			reference_node_types.emplace(ref->get_node_type());
 	}
 	// if reference node types are same as data struct -> return
-	if(reference_node_types.empty()) return;
+	if(reference_node_types.empty()) return data_struct;
 
 	NodeDataStructure* new_data_struct = nullptr;
 	// if some of the references were detected as Array References -> change data_struct type
@@ -268,6 +274,8 @@ void ASTSemanticAnalysis::replace_incorrectly_detected_data_struct(NodeDataStruc
 //			strct->update_member_table();
 //		}
 //	}
+	if(new_data_struct) return new_data_struct;
+	return data_struct;
 }
 
 NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(DefinitionProvider* def_provider, NodeReference* reference) {

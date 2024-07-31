@@ -19,7 +19,7 @@ public:
 	explicit LoweringArray(NodeProgram* program) : ASTLowering(program) {}
 
 	/// Determining array size at compile time -> not of references!
-	void visit(NodeArray& node) override {
+	NodeAST * visit(NodeArray& node) override {
 		m_current_array = &node;
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 		if (node.parent->get_node_type() != NodeType::SingleDeclaration and
@@ -28,7 +28,7 @@ public:
 			error.m_got = node.name;
 			error.exit();
 		}
-		if(node.is_function_param()) return;
+		if(node.is_function_param()) return &node;
 
 		auto node_declaration = cast_node<NodeSingleDeclaration>(node.parent);
 		// infer size from r_value param list
@@ -60,24 +60,27 @@ public:
 			}
 		}
 
-		lowered_node = &node;
+		return &node;
 	}
 
-	void visit(NodeVariableRef& node) override {
+	NodeAST * visit(NodeVariableRef& node) override {
 		if(node.data_type == DataType::Const and node.ty == TypeRegistry::Integer) {
 			m_size_is_constant &= true;
 		}
+		return &node;
 	}
 
-	void visit(NodeReal& node) override {
+	NodeAST * visit(NodeReal& node) override {
 		m_size_is_constant &= false;
+		return &node;
 	}
 
-	void visit(NodeInt& node) override {
+	NodeAST * visit(NodeInt& node) override {
 		m_size_is_constant &= true;
+		return &node;
 	}
 
-	void visit(NodeFunctionCall& node) override {
+	NodeAST * visit(NodeFunctionCall& node) override {
 		// check if func is 'num_elements' which returns constant and can be used as array size
 		if(node.kind == NodeFunctionCall::Kind::Builtin and node.function->args->params.size() == 1) {
 			if(node.function->name == "num_elements") {
@@ -87,10 +90,11 @@ public:
 					error.exit();
 				}
 				m_size_is_constant &= true;
-				return;
+				return &node;
 			}
 		}
 		m_size_is_constant &= false;
+		return &node;
 	}
 
 

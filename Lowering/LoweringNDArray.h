@@ -12,8 +12,8 @@ class LoweringNDArray : public ASTLowering {
 public:
 	explicit LoweringNDArray(NodeProgram* program) : ASTLowering(program) {}
 
-	void visit(NodeSingleAssignment &node) override {
-		lowered_node = &node;
+	NodeAST* visit(NodeSingleAssignment &node) override {
+//		lowered_node = &node;
 
 		NodeAST* r_value = node.r_value.get();
 		NodeAST* assigned_node = node.r_value.get();
@@ -35,31 +35,27 @@ public:
 			// nda := ((1,2,3,4),(5,6,7,8))
 			if(!nd_array_ref->indexes) {
 				// lower left side to array to utilize array lowering later on
-				nd_array_ref->accept(*this);
-				return;
+				return nd_array_ref->accept(*this);
 			}
 			auto wildcard_dims = get_wildcard_dimensions(nd_array_ref);
 			int num_wildcards = wildcard_dims.first != -1 ? wildcard_dims.second-wildcard_dims.first+1 : 0;
 			if(num_wildcards > 1) {
 				// ndarray2[0, *, *] := ((1,2,3), (1,2,3))
 				if(param_list->params.size() > 1) {
-					lowered_node = node.replace_with(get_ranged_array_init_from_list(nd_array_ref, param_list, wildcard_dims));
-					return;
+					return node.replace_with(get_ranged_array_init_from_list(nd_array_ref, param_list, wildcard_dims));
 				}
 			}
 			// case ndarray[2, *] := (0)
 			if(param_list->params.size() == 1) {
 				add_ndarray_init_function_def(m_program, nd_array_ref, wildcard_dims);
-				lowered_node = node.replace_with(get_ndarray_function_call(nd_array_ref,
+				auto lowered = node.replace_with(get_ndarray_function_call(nd_array_ref,
 																		   param_list->params.at(0).get(),
 																		   wildcard_dims, "init"));
-				lowered_node->accept(*this);
-				return;
+				return lowered->accept(*this);
 			// ndarray[2, *] := (2,3,4)
 			} else if (param_list->params.size() > 1) {
-				lowered_node = node.replace_with(get_array_init_from_list(nd_array_ref, param_list, wildcard_dims));
-				lowered_node->accept(*this);
-				return;
+				auto lowered = node.replace_with(get_array_init_from_list(nd_array_ref, param_list, wildcard_dims));
+				return lowered->accept(*this);
 			}
 		// copying ndarrays to part of ndarrays -> copying over ndarrays where both have no indexes is handled by lowering array
 		// nd1[5, *, *]: int[][] := nd2: int[][]
@@ -70,9 +66,8 @@ public:
 				// get wildcard dimensions
 				auto wildcard_dims = get_wildcard_dimensions(nd_array_ref);
 				add_ndarray_copy_function_def(m_program, nd_array_ref, wildcard_dims);
-				lowered_node = node.replace_with(get_ndarray_function_call(nd_array_ref, nd_array_copy, wildcard_dims, "copy"));
-				lowered_node->accept(*this);
-				return;
+				auto lowered = node.replace_with(get_ndarray_function_call(nd_array_ref, nd_array_copy, wildcard_dims, "copy"));
+				return lowered->accept(*this);
 			}
 		} else if(node.l_value->get_node_type() == NodeType::NDArrayRef and node.r_value->get_node_type() == NodeType::ArrayRef) {
 			auto nd_array_ref = static_cast<NodeNDArrayRef *>(node.l_value.get());
@@ -81,13 +76,13 @@ public:
 				// get wildcard dimensions
 				auto wildcard_dims = get_wildcard_dimensions(nd_array_ref);
 				add_ndarray_copy_function_def(m_program, nd_array_ref, wildcard_dims);
-				lowered_node = node.replace_with(get_ndarray_function_call(nd_array_ref, array_ref, wildcard_dims, "copy"));
-				lowered_node->accept(*this);
-				return;
+				auto lowered = node.replace_with(get_ndarray_function_call(nd_array_ref, array_ref, wildcard_dims, "copy"));
+				return lowered->accept(*this);
 			}
 		}
 		node.l_value->accept(*this);
 		node.r_value->accept(*this);
+		return &node;
 	}
 
 	/**
@@ -99,7 +94,7 @@ public:
 	 * 	declare const ndarray.SIZE_D2 := 3
 	 * 	declare _ndarray[3 * 3]: int[] := (1,2,3,4,5,6,7,8,9) // ndarray := ((1,2,3), (4,5,6), (7,8,9))
 	 */
-	void visit(NodeSingleDeclaration &node) override {
+	NodeAST* visit(NodeSingleDeclaration &node) override {
 		lowered_node = &node;
         if(node.variable->get_node_type() == NodeType::NDArray) {
             if (auto node_ndarray = cast_node<NodeNDArray>(node.variable.get())) {
@@ -117,13 +112,13 @@ public:
                 }
                 node.variable->accept(*this);
                 node_body->add_stmt(std::make_unique<NodeStatement>(node.clone(), node.tok));
-                lowered_node = node.replace_with(std::move(node_body));
-				return;
+                return node.replace_with(std::move(node_body));
             }
         }
+		return &node;
 	}
 	/// Lowering of multidimensional arrays to arrays -> declaration
-	void visit(NodeNDArray& node) override {
+	NodeAST* visit(NodeNDArray& node) override {
 		std::unique_ptr<NodeAST> node_expression = nullptr;
 		if(node.sizes) node_expression = NodeBinaryExpr::create_right_nested_binary_expr(node.sizes->params, 0, token::MULT);
         auto node_lowered_array = std::make_unique<NodeArray>(
@@ -139,11 +134,11 @@ public:
 		if(auto lowering = node_lowered_array->get_lowering(m_program)) {
 			node_lowered_array->accept(*lowering);
 		}
-		lowered_node = node.replace_with(std::move(node_lowered_array));
+		return node.replace_with(std::move(node_lowered_array));
 	}
 
     /// Lowering of multidimensional arrays to arrays when reference
-    void visit(NodeNDArrayRef& node) override {
+	NodeAST* visit(NodeNDArrayRef& node) override {
         auto error = CompileError(ErrorType::Variable, "", "", node.tok);
         if(node.indexes and node.sizes and node.indexes->params.size() != node.sizes->params.size()) {
             error.m_message = "Number of indices does not match number of dimensions: " + node.name;
@@ -177,17 +172,18 @@ public:
         node_lowered_array->parent = node.parent;
         node_lowered_array->declaration = node.declaration;
 		node_lowered_array->update_parents(node.parent);
-        lowered_node = node.replace_with(std::move(node_lowered_array));
+        return node.replace_with(std::move(node_lowered_array));
     }
 
-	void visit(NodeFor& node) override {
+	NodeAST* visit(NodeFor& node) override {
 		node.body->accept(*this);
 		if(auto desugaring = node.get_desugaring(m_program)) {
 			node.accept(*desugaring);
 			// move replacement to this visitor in case of nested for loops
 			auto replacement = std::move(desugaring->replacement_node);
-			node.replace_with(std::move(replacement));
+			return node.replace_with(std::move(replacement));
 		}
+		return &node;
 	}
 
 private:
@@ -513,12 +509,6 @@ private:
 		}
 		return node_block;
 	}
-
-	inline bool check_initializer_list_correctness(NodeNDArrayRef* ref, NodeParamList* matrix) {
-		// init list is correct in assignment when for ndarray[m, n, p] := (m-elements(n-elements(p-elements)))
-		return true;
-	}
-
 
 };
 

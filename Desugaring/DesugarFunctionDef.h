@@ -16,28 +16,29 @@ private:
 public:
 	explicit DesugarFunctionDef(NodeProgram *program) : ASTDesugaring(program) {};
 
-	void inline visit(NodeFunctionDefinition &node) override {
+	inline NodeAST* visit(NodeFunctionDefinition &node) override {
 		m_functions_visited.push(&node);
 		if(node.return_variable.has_value()) {
 			node.num_return_params = 1;
 		}
 		node.body->accept(*this);
 		m_functions_visited.pop();
+		return &node;
 	};
 
-	void inline visit(NodeSingleAssignment &node) override {
+	inline NodeAST* visit(NodeSingleAssignment &node) override {
 		if(m_functions_visited.top()->return_variable.has_value()) {
 			if(node.l_value->get_string() == m_functions_visited.top()->return_variable.value()->name) {
 				std::vector<std::unique_ptr<NodeAST>> returns;
 				returns.push_back(std::move(node.r_value));
 				auto node_return = std::make_unique<NodeReturn>(std::move(returns), node.tok);
 				m_functions_visited.top()->return_variable.reset();
-				node.replace_with(std::move(node_return));
-				return;
+				return node.replace_with(std::move(node_return));
 			}
 		}
 		node.l_value->accept(*this);
 		node.r_value->accept(*this);
+		return &node;
 	};
 
 	inline bool throw_shadow_error(NodeReference *ref) {
@@ -52,35 +53,41 @@ public:
 		return false;
 	}
 
-	void inline visit(NodeVariableRef &node) override {
+	inline NodeAST* visit(NodeVariableRef &node) override {
 		throw_shadow_error(&node);
 		m_gensym.ingest(node.name);
+		return &node;
 	}
 
-	void inline visit(NodeVariable &node) override {
+	inline NodeAST* visit(NodeVariable &node) override {
 		m_gensym.ingest(node.name);
+		return &node;
 	}
 
-	void inline visit(NodeArrayRef &node) override {
+	inline NodeAST* visit(NodeArrayRef &node) override {
 		throw_shadow_error(&node);
 		m_gensym.ingest(node.name);
+		return &node;
 	}
 
-	void inline visit(NodeArray &node) override {
+	inline NodeAST* visit(NodeArray &node) override {
 		m_gensym.ingest(node.name);
+		return &node;
 	}
 
-	void inline visit(NodeNDArrayRef &node) override {
+	inline NodeAST* visit(NodeNDArrayRef &node) override {
 		throw_shadow_error(&node);
 		m_gensym.ingest(node.name);
+		return &node;
 	}
 
-	void inline visit(NodeNDArray &node) override {
+	inline NodeAST* visit(NodeNDArray &node) override {
 		m_gensym.ingest(node.name);
+		return &node;
 	}
 
 	// add dummy variable for every return parameter >1 to function header
-	void inline visit(NodeReturn &node) override {
+	inline NodeAST* visit(NodeReturn &node) override {
 		if (m_functions_visited.top()->return_variable.has_value()) {
 			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 			error.m_message = "No Return Statement allowed in <FunctionDefinition> using deprecated return syntax.";
@@ -98,7 +105,7 @@ public:
 				m_functions_visited.top()->header->args->add_param(std::move(new_param));
 			}
 		}
-
+		return &node;
 	};
 
 };

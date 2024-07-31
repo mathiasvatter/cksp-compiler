@@ -12,7 +12,7 @@ struct NodeVariableRef : NodeReference {
 	inline NodeVariableRef(std::string name, Token tok)
 		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok)) {
 	}
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeVariableRef(const NodeVariableRef& other);
 	// Clone Methode
@@ -34,7 +34,7 @@ struct NodeArrayRef : NodeReference {
 		: NodeReference(std::move(name), NodeType::ArrayRef, std::move(tok)), index(std::move(index)) {
 		set_child_parents();
 	}
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeArrayRef(const NodeArrayRef& other);
 	// Clone Methode
@@ -63,7 +63,7 @@ struct NodeNDArrayRef : NodeReference {
 		: NodeReference(std::move(name), NodeType::NDArrayRef, std::move(tok)), indexes(std::move(indexes)) {
 		set_child_parents();
 	}
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeNDArrayRef(const NodeNDArrayRef& other);
 	// Clone Methode
@@ -102,7 +102,7 @@ struct NodeListRef : NodeReference {
 		: NodeReference(std::move(name), NodeType::ListRef, std::move(tok)), indexes(std::move(indexes)) {
 		set_child_parents();
 	}
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeListRef(const NodeListRef& other);
 	// Clone Methode
@@ -126,7 +126,7 @@ struct NodePointerRef : NodeReference {
 	inline NodePointerRef(std::string name, Token tok)
 		: NodeReference(std::move(name), NodeType::PointerRef, std::move(tok)) {
 	}
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodePointerRef(const NodePointerRef& other);
 	// Clone Methode
@@ -143,7 +143,7 @@ struct NodePointerRef : NodeReference {
 
 struct NodeNil : NodePointerRef {
 	inline explicit NodeNil(Token tok) : NodePointerRef(std::move("nil"), std::move(tok)) {node_type = NodeType::Nil;}
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeNil(const NodeNil& other) : NodePointerRef(other) {}
 	// Clone Methode
@@ -160,7 +160,7 @@ struct NodeAccessChain : NodeReference {
 	}
 	inline explicit NodeAccessChain(Token tok)
 		: NodeReference("", NodeType::AccessChain, std::move(tok)) {}
-	void accept(ASTVisitor& visitor) override;
+	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeAccessChain(const NodeAccessChain& other);
 	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
