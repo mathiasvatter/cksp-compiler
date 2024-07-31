@@ -25,6 +25,10 @@ void ASTCollectLowerings::visit(NodeProgram& node) {
 	node.accept(lowering_types);
 }
 
+//void ASTCollectLowerings::visit(NodeReturn& node) {
+//}
+
+
 void ASTCollectLowerings::visit(NodeBlock& node) {
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
