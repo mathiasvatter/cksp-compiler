@@ -5,6 +5,7 @@
 #include "Compiler.h"
 #include "AST/ASTVisitor/GlobalScope/ASTGlobalScope.h"
 #include "AST/ASTVisitor/TypeInference.h"
+#include "AST/ASTVisitor/ASTReturnFunctionRewriting.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -116,10 +117,14 @@ void Compiler::compile() {
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
 
-	ast->debug_print();
-
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
+
+	ASTReturnFunctionRewriting return_function_rewriting(&m_definition_provider);
+	ast->accept(return_function_rewriting);
+
+	ast->debug_print();
+
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
     ast->accept(infer_types);

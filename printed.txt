@@ -1,34 +1,6 @@
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
-struct List
-	declare const List.MAX_STRUCTS : int := MAX_STRUCTS
-	declare List.free_idx : int := 0
-	declare List.allocation[List.MAX_STRUCTS] : int[]
-	declare List.value[List.MAX_STRUCTS] : int[]
-	declare List.next[List.MAX_STRUCTS] : int[]
-
-	function List.__init__(value : int, next : int) : int
-		List.free_idx := search(List.allocation, 0)
-		if(List.free_idx = -1)
-			message("Error: No more free space available to allocate objects of type 'List'")
-		end if
-		List.allocation[List.free_idx] := 1
-		List.value[List.free_idx] := value
-		List.next[List.free_idx] := next
-		return List.free_idx
-	end function
-
-	function List.get_next_next_value(self : int) : int
-		return List.value[List.next[List.next[self]]]
-	end function
-
-	function List.__repr__(self : int) : string
-		return "<List> Object: " & self
-	end function
-
-end struct
-
-struct Note
+on init
 	declare const Note.MAX_STRUCTS : int := MAX_STRUCTS / _max(11 * 12, 10)
 	declare Note.free_idx : int := 0
 	declare Note.allocation[Note.MAX_STRUCTS] : int[]
@@ -40,34 +12,11 @@ struct Note
 	declare const Note.play_pos.SIZE_D2 : int := 11
 	declare const Note.play_pos.SIZE_D3 : int := 12
 	declare _Note.play_pos[Note.MAX_STRUCTS * (11 * 12)] : int[]
-
-	function Note.__init__(p : int, v : int[], _pp : int[]) : int
-		Note.free_idx := search(Note.allocation, 0)
-		if(Note.free_idx = -1)
-			message("Error: No more free space available to allocate objects of type 'Note'")
-		end if
-		Note.allocation[Note.free_idx] := 1
-		Note.pitch[Note.free_idx] := p
-		ndarray.copy.Integer.dim2.from1.to1(_Note.velocities, v, Note.free_idx)
-		ndarray.copy.Integer.dim3.from1.to2(_Note.play_pos, _pp, Note.free_idx)
-		return Note.free_idx
-	end function
-
-	function Note.__repr__(self : int) : string
-		return "Note {Pitch: " & Note.pitch[self] & "}"
-	end function
-
-	function Note.play(self : int) : int
-		return play_note(Note.pitch[self], _Note.velocities[(self * 10) + 0], _Note.play_pos[(self * (11 * 12)) + ((1 * 12) + 2)], 0)
-	end function
-
-	function Note.get_velocities(self : int) : int
-		return _Note.velocities[(self * 10) + *]
-	end function
-
-end struct
-
-on init
+	declare const List.MAX_STRUCTS : int := MAX_STRUCTS
+	declare List.free_idx : int := 0
+	declare List.allocation[List.MAX_STRUCTS] : int[]
+	declare List.value[List.MAX_STRUCTS] : int[]
+	declare List.next[List.MAX_STRUCTS] : int[]
 	declare _iter : int
 	declare const color.a : int := 0 + 0
 	declare const color.b : int := 0 + (0 + 1)
@@ -79,12 +28,14 @@ on init
 	declare const color.SIZE : int := 7
 	message(color.a)
 	declare this_list : int := - 1
-	message(List.__repr__(this_list))
+	declare _return0 : Unknown := List.__repr__(this_list)
+	message(_return0)
 	this_list := List.next[List(42, - 1)]
 	declare lists[5] : int[] := (- 1)
 	message(List.value[List.next[lists[0]]])
 	message(List.value[List.next[this_list]])
-	message(List.__repr__(this_list))
+	declare _return1 : Unknown := List.__repr__(this_list)
+	message(_return1)
 	declare new_note : int := - 1
 	declare velo : int := Note.get_velocities(new_note)
 	declare ui_slider sli : int (1, 500)
@@ -126,17 +77,18 @@ end on
 on persistence_changed
 	declare array[5] : int[]
 	scoped_func1()
-	furz2(furz(1))
+	declare _return2 : int := furz(1)
+	furz2(_return2)
 end on
 
-function furz(z : int) : int
+function furz(return0 : int, z : int) : int
 	declare a : int
-	return z + a
+	return0 := z + a
 end function
 
-function furz2(z : int) : int
+function furz2(return0 : int, z : int) : int
 	declare b : int
-	return z + b
+	return0 := z + b
 end function
 
 function ndarray_func(_ndarray : int[]) : Unknown
@@ -166,14 +118,14 @@ function scoped_func2() : Unknown
 	end if
 end function
 
-function ret_sth(return0 : int[]) : int
+function ret_sth(return0 : int, return1 : int[]) : int
 	declare b[5] : int[] := (0)
-	return0 := (1, 2, 3, 4)
-	return 1
+	return0 := 1
+	return1 := (1, 2, 3, 4)
 end function
 
-function _max(a : int, b : int) : int
-	return ((a + b) + abs(a - b)) / 2
+function _max(return0 : Unknown, a : int, b : int) : int
+	return0 := ((a + b) + abs(a - b)) / 2
 end function
 
 function ndarray.copy.Integer.dim2.from1.to1(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
@@ -220,6 +172,49 @@ function ndarray.init.Integer.dim3.from1.to2(_ndarray : int[], value : int, para
 		end while
 		inc(_iter1)
 	end while
+end function
+
+function List.__init__(return0 : int, value : int, next : int) : int
+	List.free_idx := search(List.allocation, 0)
+	if(List.free_idx = -1)
+		message("Error: No more free space available to allocate objects of type 'List'")
+	end if
+	List.allocation[List.free_idx] := 1
+	List.value[List.free_idx] := value
+	List.next[List.free_idx] := next
+	return0 := List.free_idx
+end function
+
+function List.get_next_next_value(return0 : int[], self : int) : int
+	return0 := List.value[List.next[List.next[self]]]
+end function
+
+function List.__repr__(return0 : string, self : int) : string
+	return0 := "<List> Object: " & self
+end function
+
+function Note.__init__(return0 : int, p : int, v : int[], _pp : int[]) : int
+	Note.free_idx := search(Note.allocation, 0)
+	if(Note.free_idx = -1)
+		message("Error: No more free space available to allocate objects of type 'Note'")
+	end if
+	Note.allocation[Note.free_idx] := 1
+	Note.pitch[Note.free_idx] := p
+	ndarray.copy.Integer.dim2.from1.to1(_Note.velocities, v, Note.free_idx)
+	ndarray.copy.Integer.dim3.from1.to2(_Note.play_pos, _pp, Note.free_idx)
+	return0 := Note.free_idx
+end function
+
+function Note.__repr__(return0 : string, self : int) : string
+	return0 := "Note {Pitch: " & Note.pitch[self] & "}"
+end function
+
+function Note.play(return0 : int, self : int) : int
+	return0 := play_note(Note.pitch[self], _Note.velocities[(self * 10) + 0], _Note.play_pos[(self * (11 * 12)) + ((1 * 12) + 2)], 0)
+end function
+
+function Note.get_velocities(return0 : int[], self : int) : int
+	return0 := _Note.velocities[(self * 10) + *]
 end function
 
 

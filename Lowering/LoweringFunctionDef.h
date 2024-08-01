@@ -7,16 +7,43 @@
 #include "ASTLowering.h"
 #include "../misc/Gensym.h"
 
-/// Lowers to retun statements when necessary
+/// Rewrites all return statements
+/// promotes parameters of all return statements to return values
 class LoweringFunctionDef : public ASTLowering {
 private:
 	std::stack<NodeFunctionDefinition*> m_functions_visited;
-
+	Gensym m_gensym;
 public:
 	explicit LoweringFunctionDef(NodeProgram *program) : ASTLowering(program) {}
 
+	inline NodeAST* visit(NodeVariableRef &node) override {
+		m_gensym.ingest(node.name);
+		return &node;
+	}
+	inline NodeAST* visit(NodeVariable &node) override {
+		m_gensym.ingest(node.name);
+		return &node;
+	}
+	inline NodeAST* visit(NodeArrayRef &node) override {
+		m_gensym.ingest(node.name);
+		return &node;
+	}
+	inline NodeAST* visit(NodeArray &node) override {
+		m_gensym.ingest(node.name);
+		return &node;
+	}
+	inline NodeAST* visit(NodeNDArrayRef &node) override {
+		m_gensym.ingest(node.name);
+		return &node;
+	}
+	inline NodeAST* visit(NodeNDArray &node) override {
+		m_gensym.ingest(node.name);
+		return &node;
+	}
+
 	inline NodeAST* visit(NodeFunctionDefinition &node) override {
 		m_functions_visited.push(&node);
+		m_gensym.refresh();
 		if(node.return_variable.has_value()) {
 			node.num_return_params = 1;
 		}
@@ -33,67 +60,68 @@ public:
 			error.m_got = node.return_variables.size();
 			error.exit();
 		}
-		auto node_single_return = std::make_unique<NodeSingleReturn>(std::move(node.return_variables[0]), node.tok);
-		m_functions_visited.top()->return_param = node_single_return->return_variable.get();
 
-		// parameter promotion when multiple return values present
+		// parameter promotion of return parameters
 		// replace parameter placeholders instantiated in Desugaring with copies of return values when references
-		if(node.return_variables.size() > 1) {
-			auto block_replace = std::make_unique<NodeBlock>(Token());
-			for(int i = 1; i<node.return_variables.size(); i++) {
-				int ret_param_idx = m_functions_visited.top()->header->args->params.size()-(node.return_variables.size()-1)+(i-1);
-				auto name = static_cast<NodeDataStructure*>(m_functions_visited.top()->header->args->params[ret_param_idx].get())->name;
-				auto& node_return = node.return_variables[i];
-				// if return parameter is a reference -> replace with copy
-				std::unique_ptr<NodeDataStructure> new_param = nullptr;
-				if(auto node_ref = cast_node<NodeReference>(node_return.get())) {
-					if(node_ref->ty->get_type_kind() == TypeKind::Basic) {
-						new_param = std::make_unique<NodeVariable>(
-							std::nullopt,
-							name,
-							node_ref->ty,
-							DataType::Return, node.return_variables[i]->tok
-						);
-					} else if(node_ref->ty->get_type_kind() == TypeKind::Composite) {
-						new_param = std::make_unique<NodeArray>(
-							std::nullopt,
-							name,
-							node_ref->ty,
-							nullptr,
-							node_return->tok
-						);
-					} else {
-						auto error = CompileError(ErrorType::InternalError, "", "", node_return->tok);
-						error.m_message = "Return Type not supported. Object Pointers should not exist anymore.";
-						error.exit();
-					}
-				// when param list -> array return var
-				} else if (node_return->get_node_type() == NodeType::ParamList) {
+		auto block_replace = std::make_unique<NodeBlock>(Token());
+		for(int i = 0; i<node.return_variables.size(); i++) {
+			auto& node_return = node.return_variables[i];
+			// if return parameter is a reference -> replace with copy
+			std::unique_ptr<NodeDataStructure> new_param = nullptr;
+			if(auto node_ref = cast_node<NodeReference>(node_return.get())) {
+				if(node_ref->ty->get_type_kind() == TypeKind::Basic) {
+					new_param = std::make_unique<NodeVariable>(
+						std::nullopt,
+						m_gensym.fresh("return"),
+						node_ref->ty,
+						DataType::Return, node.return_variables[i]->tok
+					);
+				} else if(node_ref->ty->get_type_kind() == TypeKind::Composite) {
 					new_param = std::make_unique<NodeArray>(
 						std::nullopt,
-						name,
-						TypeRegistry::add_composite_type(CompoundKind::Array, node_return->ty->get_element_type()),
+						m_gensym.fresh("return"),
+						node_ref->ty,
 						nullptr,
 						node_return->tok
-						);
+					);
 				} else {
 					auto error = CompileError(ErrorType::InternalError, "", "", node_return->tok);
-					error.m_message = "Return Type not supported.";
+					error.m_message = "Return Type not supported. Object Pointers should not exist anymore.";
 					error.exit();
 				}
-				auto new_param_ref = new_param->to_reference();
-				new_param_ref->ty = node_return->ty;
-
-				m_functions_visited.top()->header->args->params[ret_param_idx]->replace_with(std::move(new_param));
-				auto node_assignment = std::make_unique<NodeSingleAssignment>(std::move(new_param_ref), std::move(node.return_variables[i]), node.tok);
-				block_replace->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
+			// when param list -> array return var
+			} else if (node_return->get_node_type() == NodeType::ParamList) {
+				new_param = std::make_unique<NodeArray>(
+					std::nullopt,
+					m_gensym.fresh("return"),
+					TypeRegistry::add_composite_type(CompoundKind::Array, node_return->ty->get_element_type()),
+					nullptr,
+					node_return->tok
+					);
+			// if not array -> then var
+			} else {
+				new_param = std::make_unique<NodeVariable>(
+					std::nullopt,
+					m_gensym.fresh("return"),
+					node_return->ty,
+					DataType::Return, node.return_variables[i]->tok
+					);
 			}
-			block_replace->add_stmt(std::make_unique<NodeStatement>(std::move(node_single_return), node.tok));
-			return node.replace_with(std::move(block_replace));
-		} else {
-			return node.replace_with(std::move(node_single_return));
-		}
+			auto new_param_ref = new_param->to_reference();
+			new_param_ref->ty = node_return->ty;
 
+			// replace param in function header in case more than 1 return param
+			if(i>0) {
+				m_functions_visited.top()->header->args->params[i]->replace_with(std::move(new_param));
+			// add them to front in case i = 0
+			} else {
+				m_functions_visited.top()->header->args->prepend_param(std::move(new_param));
+			}
+			auto node_assignment = std::make_unique<NodeSingleAssignment>(std::move(new_param_ref), std::move(node.return_variables[i]), node.tok);
+			block_replace->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
+		}
+		return node.replace_with(std::move(block_replace));
 	}
+
 
 };

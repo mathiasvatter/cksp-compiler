@@ -48,9 +48,10 @@ public:
 		// wrap in statement to make use of replace_child
 		auto node_statement = std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok);
 		// lowering of ndarray, turn Declaration into NodeBlock
-		if(auto lowering = node_statement->statement->get_lowering(m_program)) {
-			node_statement->statement->accept(*lowering);
-		}
+//		if(auto lowering = node_statement->statement->get_lowering(m_program)) {
+//			node_statement->statement->accept(*lowering);
+//		}
+		node_statement->statement->lower(m_program);
 
 		body_post_lowering->statements.push_back(std::move(node_statement));
 		body_post_lowering->append_body(create_ui_controls(*m_ui_control_array, std::move(m_ui_array_size)));
@@ -77,10 +78,7 @@ public:
 	}
 
 	NodeAST * visit(NodeNDArray &node) override {
-		if(auto lowering = node.get_lowering(m_program)) {
-			return node.accept(*lowering);
-		}
-		return &node;
+		return node.lower(m_program);
 	}
 
 

@@ -131,9 +131,11 @@ public:
 		node_lowered_array->parent = node.parent;
 		node_lowered_array->is_local = node.is_local;
 		node_lowered_array->data_type = node.data_type;
-		if(auto lowering = node_lowered_array->get_lowering(m_program)) {
-			node_lowered_array->accept(*lowering);
-		}
+		// call array lowering
+		node_lowered_array->lower(m_program);
+//		if(auto lowering = node_lowered_array->get_lowering(m_program)) {
+//			node_lowered_array->accept(*lowering);
+//		}
 		return node.replace_with(std::move(node_lowered_array));
 	}
 
@@ -164,7 +166,7 @@ public:
                 node.name,
                 std::move(node_expression), node.tok);
         node_lowered_array->name = "_" + node_lowered_array->name;
-        node_lowered_array->ty = node.ty;
+        node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
 		// if no sizes -> ndarray is func param and needs to have another type dimension
 		if(!node.indexes) {
 			node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
