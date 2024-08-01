@@ -103,9 +103,7 @@ public:
 	}
 
 	inline NodeAST * visit(NodeAccessChain& node) override {
-		if(auto lowering = node.get_lowering(m_program)) {
-			node.accept(*lowering);
-		}
+		node.lower(m_program);
 		return node.replace_with(std::move(node.chain.back()));
 	}
 

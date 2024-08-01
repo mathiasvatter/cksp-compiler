@@ -75,15 +75,17 @@ public:
 				int num_return_params = func_call->definition ? func_call->definition->num_return_params : 1;
 				num_values += num_return_params-1;
 				if(num_return_params > 1 and i+num_values < l_values.size()) {
-					for (int ii = 1; ii < num_return_params; ii++) {
+					for (int ii = num_return_params-1; ii > 0; ii--) {
 						if(node_type == NodeType::Declaration) {
-							func_call->function->args->add_param(static_cast<NodeDataStructure*>(l_values[i + ii].get())->to_reference());
+							func_call->function->args->prepend_param(static_cast<NodeDataStructure*>(l_values[i + ii].get())->to_reference());
 							auto node_single_declare_stmt =
 								std::make_unique<NodeSingleDeclaration>(std::unique_ptr<NodeDataStructure>(static_cast<NodeDataStructure*>(l_values[i + ii].release())), nullptr, Token());
 							node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_single_declare_stmt), Token()));
 						} else if (node_type == NodeType::Assignment) {
-							func_call->function->args->add_param(std::move(l_values[i + ii]));
-						} else return false;
+							func_call->function->args->prepend_param(std::move(l_values[i + ii]));
+						} else {
+							return false;
+						}
 						l_values[i + ii] = nullptr;
 					}
 				} else if (i+num_values > l_values.size()) {

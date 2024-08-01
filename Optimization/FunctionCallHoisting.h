@@ -5,30 +5,36 @@
 #pragma once
 
 #include "../AST/ASTVisitor/ASTVisitor.h"
+#include "../misc/Gensym.h"
 
 class FunctionCallHoisting : public ASTVisitor {
 private:
+	Gensym m_gensym;
 	NodeStatement* m_last_stmt = nullptr;
 	std::unordered_map<NodeStatement*, std::vector<std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_stmt;
-	/// function call is hoistable when userdefined and is nested in other function call
-	/// or in condition statement
+	/// function call is hoistable when userdefined and returns values
+	/// or is in condition statement
 	static inline bool is_hoistable(NodeFunctionCall* node, NodeStatement* last_stmt) {
+		if(node->kind == NodeFunctionCall::Kind::Builtin) return false;
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 		if(!node->definition) {
-			error.m_message = "Function "+node->function->name+" has not been defined";
-			error.m_got = node->function->name;
-			error.exit();
-		}
-		if(node->definition and node->definition->num_return_params == 0) {
-			error.m_message = "Function "+node->function->name+" does not return any value";
+			error.m_message = "Function "+node->function->name+" has not been defined and cannot be rewritten.";
 			error.m_got = node->function->name;
 			error.exit();
 		}
 		bool is_userdefined = node->kind == NodeFunctionCall::Kind::UserDefined;
-		bool is_in_func_call = last_stmt->statement->get_node_type() == NodeType::FunctionCall;
+		bool is_param = node->parent->get_node_type() == NodeType::ParamList and node->parent->parent->get_node_type() == NodeType::FunctionHeader;
 		bool is_in_condition = last_stmt->statement->get_node_type() == NodeType::If ||
 			last_stmt->statement->get_node_type() == NodeType::While || last_stmt->statement->get_node_type() == NodeType::Select;
-		return is_userdefined and (is_in_func_call or is_in_condition);
+		if((is_param or is_in_condition) and node->definition and node->definition->num_return_params == 0) {
+			error.m_message = "Function "+node->function->name+" does not return any value";
+			error.m_got = node->function->name;
+			error.exit();
+		}
+		if(node->definition and node->definition->num_return_params == 0) {
+			return false;
+		}
+		return is_userdefined and (is_in_condition or is_param);
 	}
 
 public:
@@ -56,11 +62,18 @@ public:
 			stmt.first->statement = std::move(node_body);
 			stmt.first->statement->parent = stmt.first;
 		}
+		return &node;
 	};
+
+	inline NodeAST* visit(NodeSingleDeclaration &node) override {
+		m_gensym.ingest(node.variable->name);
+		return &node;
+	}
 
 	inline NodeAST * visit(NodeStatement& node) override {
 		m_last_stmt = &node;
 		node.statement->accept(*this);
+		return &node;
 	}
 
 	inline NodeAST * visit(NodeFunctionCall& node) override {
@@ -69,7 +82,7 @@ public:
 		if(is_hoistable(&node, m_last_stmt)) {
 			auto return_var = std::make_unique<NodeVariable>(
 				std::nullopt,
-				node.function->name,
+				m_gensym.fresh("_return"),
 				node.ty,
 				DataType::Mutable,
 				node.tok
@@ -83,8 +96,9 @@ public:
 					node.tok
 				)
 			);
-			node.replace_with(std::move(return_var_ref));
+			return node.replace_with(std::move(return_var_ref));
 		}
+		return &node;
 	}
 
 };
