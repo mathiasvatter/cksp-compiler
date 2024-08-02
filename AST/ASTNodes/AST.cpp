@@ -229,11 +229,11 @@ bool NodeWildcard::check_semantic() {
 	bool check_parents = parent->get_node_type() == NodeType::ParamList and parent->parent->get_node_type() == NodeType::NDArrayRef
 		and parent->parent->parent->get_node_type() == NodeType::SingleAssignment;
 	if(check_parents) {
-		auto assign_stmt = static_cast<NodeSingleAssignment*>(parent->parent->parent);
-		auto nd_array_ref = static_cast<NodeNDArrayRef*>(parent->parent);
-		if(assign_stmt->l_value.get() == nd_array_ref) {
+//		auto assign_stmt = static_cast<NodeSingleAssignment*>(parent->parent->parent);
+//		auto nd_array_ref = static_cast<NodeNDArrayRef*>(parent->parent);
+//		if(assign_stmt->l_value.get() == nd_array_ref) {
 			return true;
-		}
+//		}
 	}
 	return false;
 }

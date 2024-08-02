@@ -6,6 +6,7 @@
 #include "AST/ASTVisitor/GlobalScope/ASTGlobalScope.h"
 #include "AST/ASTVisitor/TypeInference.h"
 #include "AST/ASTVisitor/ASTReturnFunctionRewriting.h"
+#include "AST/ASTVisitor/ASTDataStructureLowering.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -122,6 +123,9 @@ void Compiler::compile() {
 
 	ASTReturnFunctionRewriting return_function_rewriting(&m_definition_provider);
 	ast->accept(return_function_rewriting);
+
+	ASTDataStructureLowering data_structure_lowering(&m_definition_provider);
+	ast->accept(data_structure_lowering);
 
 	ast->debug_print();
 

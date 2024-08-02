@@ -65,7 +65,7 @@ public:
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string() + "." + node.name;
 		auto node_array = node.to_array_ref(nullptr);
-		node_array->ty = TypeRegistry::ArrayOfInt;
+//		node_array->ty = TypeRegistry::ArrayOfInt;
 		return node.replace_with(std::move(node_array));
 	}
 
@@ -79,7 +79,8 @@ public:
 		node_ndarray_ref->name = prev_type->to_string()+"."+node.name;
 		node_ndarray_ref->declaration = node.declaration;
 		node_ndarray_ref->determine_sizes();
-		node_ndarray_ref->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node_ndarray_ref->sizes->params.size());
+		node_ndarray_ref->ty = node.ty;
+//		node_ndarray_ref->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node_ndarray_ref->sizes->params.size());
 		return node.replace_with(std::move(node_ndarray_ref));
 	}
 
@@ -104,7 +105,7 @@ public:
 		auto node_array_ref = node.to_array_ref(nullptr);
 		node_array_ref->name = prev_type->to_string()+"."+node.name;
 		node_array_ref->ty = node.ty;
-		node_array_ref->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
+//		node_array_ref->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
 		return node.replace_with(std::move(node_array_ref));
 	}
 
