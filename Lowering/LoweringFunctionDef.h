@@ -77,13 +77,29 @@ public:
 						DataType::Return, node.return_variables[i]->tok
 					);
 				} else if(node_ref->ty->get_type_kind() == TypeKind::Composite) {
-					new_param = std::make_unique<NodeArray>(
-						std::nullopt,
-						m_gensym.fresh("return"),
-						node_ref->ty,
-						nullptr,
-						node_return->tok
-					);
+					if(node_ref->ty->get_dimensions() == 1) {
+						new_param = std::make_unique<NodeArray>(
+							std::nullopt,
+							m_gensym.fresh("return"),
+							node_ref->ty,
+							nullptr,
+							node_return->tok
+						);
+					} else {
+						if(node_ref->get_node_type() != NodeType::NDArrayRef) {
+							auto error = CompileError(ErrorType::InternalError, "", "", node_ref->tok);
+							error.m_message = "Got incorrect type of return parameter. Expected NDArrayRef.";
+							error.exit();
+						}
+						auto node_ndarray_ref = static_cast<NodeNDArrayRef*>(node_ref);
+						new_param = std::make_unique<NodeNDArray>(
+							std::nullopt,
+							m_gensym.fresh("return"),
+							node_ref->ty,
+							std::move(node_ndarray_ref->sizes),
+							node_return->tok
+						);
+					}
 				} else {
 					auto error = CompileError(ErrorType::InternalError, "", "", node_return->tok);
 					error.m_message = "Return Type not supported. Object Pointers should not exist anymore.";

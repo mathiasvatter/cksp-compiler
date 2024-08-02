@@ -63,11 +63,19 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 	if(node.value) node.value->accept(*this);
+	if(node.variable -> get_node_type() == NodeType::NDArray) {
+		return &node;
+	}
 	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
-	if(node.r_value) node.r_value->accept(*this);
+	if(node.r_value -> get_node_type() != NodeType::NDArrayRef) {
+		node.r_value->accept(*this);
+	}
+	if(node.l_value -> get_node_type() == NodeType::NDArrayRef) {
+		return &node;
+	}
 	if(auto lowering = node.get_lowering(m_program)) {
 		return node.accept(*lowering);
 	} else {
@@ -114,12 +122,14 @@ NodeAST * ASTCollectLowerings::visit(NodeNDArray& node) {
 		return &node;
 	}
 	if(node.sizes) node.sizes->accept(*this);
-	return node.lower(m_program);
+	return &node;
+//	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
-	return node.lower(m_program);
+	return &node;
+//	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeListRef& node) {

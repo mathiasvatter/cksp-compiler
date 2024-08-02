@@ -19,19 +19,21 @@ public:
 
 	// TODO: Call Function Rewriting after Lowering -> call Function Call Hoisting first and then do return statement rewriting as parameters
 	inline NodeAST* visit(NodeProgram& node) override {
-		FunctionCallHoisting hoisting;
-		node.accept(hoisting);
 
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
-		for(auto & struct_def : node.struct_definitions) {
-			struct_def->accept(*this);
-		}
-		for(auto & callback : node.callbacks) {
-			callback->accept(*this);
-		}
+//		for(auto & struct_def : node.struct_definitions) {
+//			struct_def->accept(*this);
+//		}
 		for(auto & function_definition : node.function_definitions) {
 			function_definition->accept(*this);
+		}
+		// call hoisting afterwards to profit from correct data types in definition params
+		FunctionCallHoisting hoisting;
+		node.accept(hoisting);
+
+		for(auto & callback : node.callbacks) {
+			callback->accept(*this);
 		}
 		node.merge_function_definitions();
 		return &node;
@@ -55,6 +57,24 @@ public:
 			if(func_call->definition->num_return_params > 0) {
 				func_call->function->args->prepend_param(std::move(node.l_value));
 				return node.replace_with(std::move(node.r_value));
+			}
+		}
+		return &node;
+	}
+
+	inline NodeAST* visit(NodeSingleDeclaration &node) override {
+		if(!node.value) return &node;
+		if(node.value->get_node_type() == NodeType::FunctionCall) {
+			auto func_call = static_cast<NodeFunctionCall*>(node.value.get());
+			if(!func_call->get_definition(m_program)) return &node;
+			if(func_call->definition->num_return_params > 0) {
+				func_call->function->args->prepend_param(node.variable->to_reference());
+				auto node_block = std::make_unique<NodeBlock>(node.tok);
+				node_block->scope = true;
+				node_block->add_stmt(std::make_unique<NodeStatement>(
+					std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok), node.tok));
+				node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node.value), node.tok));
+				return node.replace_with(std::move(node_block));
 			}
 		}
 		return &node;

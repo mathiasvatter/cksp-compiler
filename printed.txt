@@ -28,16 +28,21 @@ on init
 	declare const color.SIZE : int := 7
 	message(color.a)
 	declare this_list : int := - 1
-	declare _return0 : Unknown := List.__repr__(this_list)
+		declare _return0 : string
+		List.__repr__(_return0, this_list)
+
 	message(_return0)
 	this_list := List.next[List(42, - 1)]
 	declare lists[5] : int[] := (- 1)
 	message(List.value[List.next[lists[0]]])
 	message(List.value[List.next[this_list]])
-	declare _return1 : Unknown := List.__repr__(this_list)
+		declare _return1 : string
+		List.__repr__(_return1, this_list)
+
 	message(_return1)
 	declare new_note : int := - 1
-	declare velo : int := Note.get_velocities(new_note)
+	declare velo : int
+	Note.get_velocities(velo, new_note)
 	declare ui_slider sli : int (1, 500)
 	set_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT, "sdfkj")
 	declare a : string
@@ -51,6 +56,7 @@ on init
 	_nda[(0 * 4) + 3] := 1
 	_nda[(1 * 4) + 3] := 2
 	_nda[(2 * 4) + 3] := 6
+	ndarray.copy.Integer.dim2.from1.to1(_nda, _nda, 1)
 	message(_nda.SIZE_D1)
 	declare const nda2.SIZE_D1 : int := 4
 	declare const nda2.SIZE_D2 : int := 5
@@ -64,6 +70,7 @@ on init
 	ndarray.init.Integer.dim3.from1.to2(_nda2, 0, 1)
 	declare arr[4] : int[]
 	ndarray.copy.Integer.dim2.from1.to1(_nda, arr, 0)
+	arr := nda[0, *]
 	declare const colorz.a : int := 0 + 0
 	declare const colorz.b : int := 0 + (0 + 1)
 	declare colorz[2] : int[] := (0 + 0, 0 + (0 + 1))
@@ -71,13 +78,16 @@ on init
 	scoped_func1()
 	scoped_func1()
 	declare c[6] : int[]
-	declare b : int := ret_sth(c)
+	declare b : int
+	ret_sth(b, c)
 end on
 
 on persistence_changed
 	declare array[5] : int[]
 	scoped_func1()
-	declare _return2 : int := furz(1)
+		declare _return2 : int
+		furz(_return2, 1)
+
 	furz2(_return2)
 end on
 
@@ -128,52 +138,6 @@ function _max(return0 : Unknown, a : int, b : int) : int
 	return0 := ((a + b) + abs(a - b)) / 2
 end function
 
-function ndarray.copy.Integer.dim2.from1.to1(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
-	declare _iter1 : int
-	_iter1 := 0
-	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
-		_ndarray[(param1 * ndarray.SIZE_D2) + _iter1] := _to_copy[_iter1]
-		inc(_iter1)
-	end while
-end function
-
-function ndarray.copy.Integer.dim3.from1.to2(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
-	declare _iter2 : int
-	declare _iter1 : int
-	_iter1 := 0
-	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
-		_iter2 := 0
-		while(_iter2 <= (ndarray.SIZE_D2 - 1)) 
-			_ndarray[(param1 * (ndarray.SIZE_D2 * ndarray.SIZE_D3)) + ((_iter1 * ndarray.SIZE_D3) + _iter2)] := _to_copy[(_iter1 * to_copy.SIZE_D2) + _iter2]
-			inc(_iter2)
-		end while
-		inc(_iter1)
-	end while
-end function
-
-function ndarray.init.Integer.dim2.from1.to1(_ndarray : int[], value : int, param1 : int) : Unknown
-	declare _iter1 : int
-	_iter1 := 0
-	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
-		_ndarray[(param1 * ndarray.SIZE_D2) + _iter1] := value
-		inc(_iter1)
-	end while
-end function
-
-function ndarray.init.Integer.dim3.from1.to2(_ndarray : int[], value : int, param1 : int) : Unknown
-	declare _iter2 : int
-	declare _iter1 : int
-	_iter1 := 0
-	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
-		_iter2 := 0
-		while(_iter2 <= (ndarray.SIZE_D2 - 1)) 
-			_ndarray[(param1 * (ndarray.SIZE_D2 * ndarray.SIZE_D3)) + ((_iter1 * ndarray.SIZE_D3) + _iter2)] := value
-			inc(_iter2)
-		end while
-		inc(_iter1)
-	end while
-end function
-
 function List.__init__(return0 : int, value : int, next : int) : int
 	List.free_idx := search(List.allocation, 0)
 	if(List.free_idx = -1)
@@ -185,7 +149,7 @@ function List.__init__(return0 : int, value : int, next : int) : int
 	return0 := List.free_idx
 end function
 
-function List.get_next_next_value(return0 : int[], self : int) : int
+function List.get_next_next_value(return0 : int, self : int) : int
 	return0 := List.value[List.next[List.next[self]]]
 end function
 
@@ -210,11 +174,57 @@ function Note.__repr__(return0 : string, self : int) : string
 end function
 
 function Note.play(return0 : int, self : int) : int
-	return0 := play_note(Note.pitch[self], _Note.velocities[(self * 10) + 0], _Note.play_pos[(self * (11 * 12)) + ((1 * 12) + 2)], 0)
+	return0 := play_note(Note.pitch[self], Note.velocities[self, 0], Note.play_pos[self, 1, 2], 0)
 end function
 
-function Note.get_velocities(return0 : int[], self : int) : int
-	return0 := _Note.velocities[(self * 10) + *]
+function Note.get_velocities(_return0[Note.MAX_STRUCTS * 10] : int[], self : int) : int
+	_return0 := _Note.velocities[(self * Note.velocities.SIZE_D2) + *]
+end function
+
+function ndarray.init.Integer.dim2.from1.to1(_ndarray : int[], value : int, param1 : int) : Unknown
+	declare _iter1 : int
+	_iter1 := 0
+	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
+		_ndarray[(param1 * ndarray.SIZE_D2) + _iter1] := value
+		inc(_iter1)
+	end while
+end function
+
+function ndarray.copy.Integer.dim2.from1.to1(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
+	declare _iter1 : int
+	_iter1 := 0
+	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
+		_ndarray[(param1 * ndarray.SIZE_D2) + _iter1] := _to_copy[(param1 * to_copy.SIZE_D2) + _iter1]
+		inc(_iter1)
+	end while
+end function
+
+function ndarray.init.Integer.dim3.from1.to2(_ndarray : int[], value : int, param1 : int) : Unknown
+	declare _iter2 : int
+	declare _iter1 : int
+	_iter1 := 0
+	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
+		_iter2 := 0
+		while(_iter2 <= (ndarray.SIZE_D2 - 1)) 
+			_ndarray[(param1 * (ndarray.SIZE_D2 * ndarray.SIZE_D3)) + ((_iter1 * ndarray.SIZE_D3) + _iter2)] := value
+			inc(_iter2)
+		end while
+		inc(_iter1)
+	end while
+end function
+
+function ndarray.copy.Integer.dim3.from1.to2(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
+	declare _iter2 : int
+	declare _iter1 : int
+	_iter1 := 0
+	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
+		_iter2 := 0
+		while(_iter2 <= (ndarray.SIZE_D2 - 1)) 
+			_ndarray[(param1 * (ndarray.SIZE_D2 * ndarray.SIZE_D3)) + ((_iter1 * ndarray.SIZE_D3) + _iter2)] := _to_copy[(_iter1 * to_copy.SIZE_D2) + _iter2]
+			inc(_iter2)
+		end while
+		inc(_iter1)
+	end while
 end function
 
 

@@ -23,18 +23,20 @@ private:
 			error.exit();
 		}
 		bool is_userdefined = node->kind == NodeFunctionCall::Kind::UserDefined;
-		bool is_param = node->parent->get_node_type() == NodeType::ParamList and node->parent->parent->get_node_type() == NodeType::FunctionHeader;
-		bool is_in_condition = last_stmt->statement->get_node_type() == NodeType::If ||
-			last_stmt->statement->get_node_type() == NodeType::While || last_stmt->statement->get_node_type() == NodeType::Select;
-		if((is_param or is_in_condition) and node->definition and node->definition->num_return_params == 0) {
+//		bool is_param = node->parent->get_node_type() == NodeType::ParamList and node->parent->parent->get_node_type() == NodeType::FunctionHeader;
+//		bool is_in_condition = last_stmt->statement->get_node_type() == NodeType::If ||
+//			last_stmt->statement->get_node_type() == NodeType::While || last_stmt->statement->get_node_type() == NodeType::Select;
+		bool returns_values = node->definition and node->definition->num_return_params > 0;
+		bool is_in_stmt = node->parent->get_node_type() == NodeType::Statement;
+		if(!is_in_stmt and !returns_values) {
 			error.m_message = "Function "+node->function->name+" does not return any value";
 			error.m_got = node->function->name;
 			error.exit();
 		}
-		if(node->definition and node->definition->num_return_params == 0) {
+		if(!returns_values) {
 			return false;
 		}
-		return is_userdefined and (is_in_condition or is_param);
+		return is_userdefined and !is_in_stmt;
 	}
 
 public:
@@ -80,13 +82,9 @@ public:
 		node.function->accept(*this);
 		node.get_definition(m_program, true);
 		if(is_hoistable(&node, m_last_stmt)) {
-			auto return_var = std::make_unique<NodeVariable>(
-				std::nullopt,
-				m_gensym.fresh("_return"),
-				node.ty,
-				DataType::Mutable,
-				node.tok
-			);
+			// clone return variable from function definition
+			auto return_var = clone_as<NodeDataStructure>(node.definition->header->args->params[0].get());
+			return_var->name = m_gensym.fresh("_return");
 			auto return_var_ref = return_var->to_reference();
 			return_var_ref->match_data_structure(return_var.get());
 			m_declares_per_stmt[m_last_stmt].push_back(
