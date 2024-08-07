@@ -12,6 +12,11 @@ private:
 public:
 	explicit ASTDataStructureLowering(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {};
 
+	inline NodeAST* visit(NodeFor& node) override {
+		node.body->accept(*this);
+		return node.desugar(m_program)->accept(*this);
+	}
+
 	inline NodeAST* visit(NodeSingleDeclaration &node) override {
 //		node.variable->accept(*this);
 		if(node.value) node.value ->accept(*this);
@@ -19,7 +24,7 @@ public:
 	}
 
 	inline NodeAST* visit(NodeSingleAssignment &node) override {
-//		node.r_value ->accept(*this);
+		node.r_value ->accept(*this);
 		return node.lower(m_program);
 	}
 

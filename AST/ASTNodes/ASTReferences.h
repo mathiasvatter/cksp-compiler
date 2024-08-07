@@ -109,10 +109,12 @@ struct NodeNDArrayRef : NodeReference {
 	/// depends on the size -> size has to be known beforehand
 	bool add_wildcards() {
 		if(this->indexes) return false;
-		if(!this->sizes) return false;
+		if(!this->sizes and !this->ty) return false;
 		this->indexes = std::make_unique<NodeParamList>(this->tok);
 		this->indexes->parent = this->indexes.get();
-		for(int i=0; i<this->sizes->params.size(); i++) {
+		// get dimensions either from type or from sizes
+		auto num_dimensions = ty ? ty->get_dimensions() : sizes->params.size();
+		for(int i=0; i<num_dimensions; i++) {
 			auto wildcard = std::make_unique<NodeWildcard>("*", Token());
 			this->indexes->add_param(std::move(wildcard));
 		}

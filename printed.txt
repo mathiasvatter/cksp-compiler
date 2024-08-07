@@ -1,3 +1,4 @@
+Global Declarations:
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
 on init
@@ -18,46 +19,17 @@ on init
 	declare List.value[List.MAX_STRUCTS] : int[]
 	declare List.next[List.MAX_STRUCTS] : int[]
 	declare _iter : int
-	declare const color.a : int := 0 + 0
-	declare const color.b : int := 0 + (0 + 1)
-	declare const color.c : int := 0 + ((0 + 1) + 1)
-	declare const color.d : int := 0 + (((0 + 1) + 1) + 1)
-	declare const color.e : int := 0 + ((((0 + 1) + 1) + 1) + 1)
-	declare const color.f : int := 0 + (((((0 + 1) + 1) + 1) + 1) + 1)
-	declare color[6] : int[] := (0 + 0, 0 + (0 + 1), 0 + ((0 + 1) + 1), 0 + (((0 + 1) + 1) + 1), 0 + ((((0 + 1) + 1) + 1) + 1), 0 + (((((0 + 1) + 1) + 1) + 1) + 1))
-	declare const color.SIZE : int := 7
-	message(color.a)
-	declare this_list : int := - 1
-		declare _return0 : string
-		List.__repr__(_return0, this_list)
-
-	message(_return0)
-	this_list := List.next[List(42, - 1)]
-	declare lists[5] : int[] := (- 1)
-	message(List.value[List.next[lists[0]]])
-	message(List.value[List.next[this_list]])
-		declare _return1 : string
-		List.__repr__(_return1, this_list)
-
-	message(_return1)
-	declare new_note : int := - 1
-	declare velo : int
-	Note.get_velocities(velo, new_note)
-	declare ui_slider sli : int (1, 500)
-	set_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT, "sdfkj")
-	declare a : string
-	a := get_control_par_str(get_ui_id(sli), CONTROL_PAR_TEXT) & 3
 	declare const nda.SIZE_D1 : int := 2
 	declare const nda.SIZE_D2 : int := 4
 	declare _nda[2 * 4] : int[] := (1, 2, 3, 4, 5, 6, 7, 8)
-	message(_nda)
-	_nda[(* * 4) + *] := (1, 2, 3, 4, 5, 6, 7, 8)
-	ndarray.init(Integer_dim2_from1_to1)(_nda, 0, 0)
+	message(_nda[(* * 4) + *])
+	_nda := (1, 2, 3, 4, 5, 6, 7, 8)
+	ndarray$dim2<-init[Integer](_nda, 0, 0)
 	_nda[(0 * 4) + 3] := 1
 	_nda[(1 * 4) + 3] := 2
 	_nda[(2 * 4) + 3] := 6
-	ndarray.copy(Integer_dim2_from1_to1)(_nda, _nda, 1)
-	message(_nda.SIZE_D1)
+	ndarray$dim2$1<-ndarray$dim2$1[Integer](_nda, _nda, 1)
+	message(nda.SIZE_D1)
 	declare const nda2.SIZE_D1 : int := 4
 	declare const nda2.SIZE_D2 : int := 5
 	declare const nda2.SIZE_D3 : int := 5
@@ -67,10 +39,10 @@ on init
 	_nda2[(1 * (5 * 5)) + 2] := 4
 	_nda2[(1 * (5 * 5)) + 3] := 5
 	_nda2[(1 * (5 * 5)) + 4] := 6
-	ndarray.init(Integer_dim3_from1_to2)(_nda2, 0, 1)
+	ndarray$dim3$1<-init[Integer](_nda2, 0, 1)
 	declare arr[4] : int[]
-	ndarray.copy(Integer_dim2_from1_to1)(_nda, arr, 0)
-	arr := nda[0, *]
+	ndarray$dim2$1<-ndarray$dim2$1[Integer](_nda, arr, 0)
+	array<-array[Integer](arr, _nda, 0)
 	declare const colorz.a : int := 0 + 0
 	declare const colorz.b : int := 0 + (0 + 1)
 	declare colorz[2] : int[] := (0 + 0, 0 + (0 + 1))
@@ -85,10 +57,10 @@ end on
 on persistence_changed
 	declare array[5] : int[]
 	scoped_func1()
-		declare _return2 : int
-		furz(_return2, 1)
+		declare _return0 : int
+		furz(_return0, 1)
 
-	furz2(_return2)
+	furz2(_return0)
 end on
 
 function furz(return0 : int, z : int) : int
@@ -164,8 +136,8 @@ function Note.__init__(return0 : int, p : int, v : int[], _pp : int[]) : int
 	end if
 	Note.allocation[Note.free_idx] := 1
 	Note.pitch[Note.free_idx] := p
-	ndarray.copy(Integer_dim2_from1_to1)(_Note.velocities, v, Note.free_idx)
-	ndarray.copy(Integer_dim3_from1_to2)(_Note.play_pos, _pp, Note.free_idx)
+	ndarray$dim2$1<-ndarray$dim2$1[Integer](_Note.velocities, v, Note.free_idx)
+	ndarray$dim3$1$2<-ndarray$dim3$1$2[Integer](_Note.play_pos, _pp, Note.free_idx)
 	return0 := Note.free_idx
 end function
 
@@ -174,14 +146,14 @@ function Note.__repr__(return0 : string, self : int) : string
 end function
 
 function Note.play(return0 : int, self : int) : int
-	return0 := play_note(Note.pitch[self], Note.velocities[self, 0], Note.play_pos[self, 1, 2], 0)
+	return0 := play_note(Note.pitch[self], _Note.velocities[(self * 10) + 0], _Note.play_pos[(self * (11 * 12)) + ((1 * 12) + 2)], 0)
 end function
 
-function Note.get_velocities(_return0[Note.MAX_STRUCTS * 10] : int[], self : int) : int
-	_return0 := _Note.velocities[(self * Note.velocities.SIZE_D2) + *]
+function Note.get_velocities(return0 : int[], self : int) : int[]
+	array<-array[Integer](return0, _Note.velocities, self)
 end function
 
-function ndarray.init(Integer_dim2_from1_to1)(_ndarray : int[], value : int, param1 : int) : Unknown
+function ndarray$dim2<-init[Integer](_ndarray : int[], value : int, param1 : int) : Unknown
 	declare _iter1 : int
 	_iter1 := 0
 	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
@@ -190,16 +162,16 @@ function ndarray.init(Integer_dim2_from1_to1)(_ndarray : int[], value : int, par
 	end while
 end function
 
-function ndarray.copy(Integer_dim2_from1_to1)(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
-	declare _iter1 : int
-	_iter1 := 0
-	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
-		_ndarray[(param1 * ndarray.SIZE_D2) + _iter1] := _to_copy[(param1 * to_copy.SIZE_D2) + _iter1]
-		inc(_iter1)
+function ndarray$dim2$1<-ndarray$dim2$1[Integer](_original : int[], _to_copy : int[], dim0 : int) : Unknown
+	declare _iter0 : int
+	_iter0 := 0
+	while(_iter0 <= (original.SIZE_D1 - 1)) 
+		_original[(dim0 * original.SIZE_D2) + _iter0] := _to_copy[(dim0 * to_copy.SIZE_D2) + _iter0]
+		inc(_iter0)
 	end while
 end function
 
-function ndarray.init(Integer_dim3_from1_to2)(_ndarray : int[], value : int, param1 : int) : Unknown
+function ndarray$dim3$1<-init[Integer](_ndarray : int[], value : int, param1 : int) : Unknown
 	declare _iter2 : int
 	declare _iter1 : int
 	_iter1 := 0
@@ -213,17 +185,26 @@ function ndarray.init(Integer_dim3_from1_to2)(_ndarray : int[], value : int, par
 	end while
 end function
 
-function ndarray.copy(Integer_dim3_from1_to2)(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
-	declare _iter2 : int
+function array<-array[Integer](original : int[], _to_copy : int[], dim0 : int, dim1 : int) : Unknown
+	declare _iter0 : int
+	_iter0 := 0
+	while(_iter0 <= (num_elements(arr) - 1)) 
+		original[_iter0] := _to_copy[(dim0 * to_copy.SIZE_D2) + _iter0]
+		inc(_iter0)
+	end while
+end function
+
+function ndarray$dim3$1$2<-ndarray$dim3$1$2[Integer](_original : int[], _to_copy : int[], dim0 : int) : Unknown
 	declare _iter1 : int
-	_iter1 := 0
-	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
-		_iter2 := 0
-		while(_iter2 <= (ndarray.SIZE_D2 - 1)) 
-			_ndarray[(param1 * (ndarray.SIZE_D2 * ndarray.SIZE_D3)) + ((_iter1 * ndarray.SIZE_D3) + _iter2)] := _to_copy[(_iter1 * to_copy.SIZE_D2) + _iter2]
-			inc(_iter2)
+	declare _iter0 : int
+	_iter0 := 0
+	while(_iter0 <= (original.SIZE_D1 - 1)) 
+		_iter1 := 0
+		while(_iter1 <= (original.SIZE_D2 - 1)) 
+			_original[(dim0 * (original.SIZE_D2 * original.SIZE_D3)) + ((_iter0 * original.SIZE_D3) + _iter1)] := _to_copy[(_iter0 * to_copy.SIZE_D2) + _iter1]
+			inc(_iter1)
 		end while
-		inc(_iter1)
+		inc(_iter0)
 	end while
 end function
 

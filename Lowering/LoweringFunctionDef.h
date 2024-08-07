@@ -77,6 +77,13 @@ public:
 						DataType::Return, node.return_variables[i]->tok
 					);
 				} else if(node_ref->ty->get_type_kind() == TypeKind::Composite) {
+					// 	return Note.velocities[self, *]
+					// check for wildcards and lower dimension count when encountering wildcard -> array
+					if(node_ref->get_node_type() == NodeType::NDArrayRef) {
+						auto node_ndarray = static_cast<NodeNDArrayRef*>(node_ref);
+						auto dimensions = node_ndarray->indexes->params.size() - node_ndarray->num_wildcards();
+						node_ndarray->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node_ref->ty->get_element_type(), dimensions);
+					}
 					if(node_ref->ty->get_dimensions() == 1) {
 						new_param = std::make_unique<NodeArray>(
 							std::nullopt,
