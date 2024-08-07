@@ -54,6 +54,7 @@ struct NodeArrayRef : NodeReference {
 	std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() override;
 	/// this_list.next.value[6]
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
+	std::unique_ptr<NodeFunctionCall> get_size();
 };
 
 struct NodeNDArrayRef : NodeReference {
@@ -92,6 +93,31 @@ struct NodeNDArrayRef : NodeReference {
 	}
 	/// clones sizes list from declaration if it is a NDArray
 	bool determine_sizes();
+	inline CompileError throw_missing_indexes_error() {
+		auto compile_error = CompileError(ErrorType::SyntaxError, "","", tok);
+		compile_error.m_message = "NDArray reference requires indexes in this context: " + tok.val + ".";
+		compile_error.m_expected = "Valid indexes";
+		return compile_error;
+	}
+	inline CompileError throw_missing_sizes_error() {
+		auto compile_error = CompileError(ErrorType::InternalError, "","", tok);
+		compile_error.m_message = "NDArray reference has unknown sizes: " + tok.val + ".";
+		compile_error.m_expected = "Valid sizes";
+		return compile_error;
+	}
+	/// adds wildcard indexes to ndarray reference if there are no indexes present
+	/// depends on the size -> size has to be known beforehand
+	bool add_wildcards() {
+		if(this->indexes) return false;
+		if(!this->sizes) return false;
+		this->indexes = std::make_unique<NodeParamList>(this->tok);
+		this->indexes->parent = this->indexes.get();
+		for(int i=0; i<this->sizes->params.size(); i++) {
+			auto wildcard = std::make_unique<NodeWildcard>("*", Token());
+			this->indexes->add_param(std::move(wildcard));
+		}
+		return true;
+	}
 };
 
 struct NodeListRef : NodeReference {

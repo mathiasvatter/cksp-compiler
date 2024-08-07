@@ -51,12 +51,12 @@ on init
 	declare const nda.SIZE_D2 : int := 4
 	declare _nda[2 * 4] : int[] := (1, 2, 3, 4, 5, 6, 7, 8)
 	message(_nda)
-	_nda := (1, 2, 3, 4, 5, 6, 7, 8)
-	ndarray.init.Integer.dim2.from1.to1(_nda, 0, 0)
+	_nda[(* * 4) + *] := (1, 2, 3, 4, 5, 6, 7, 8)
+	ndarray.init(Integer_dim2_from1_to1)(_nda, 0, 0)
 	_nda[(0 * 4) + 3] := 1
 	_nda[(1 * 4) + 3] := 2
 	_nda[(2 * 4) + 3] := 6
-	ndarray.copy.Integer.dim2.from1.to1(_nda, _nda, 1)
+	ndarray.copy(Integer_dim2_from1_to1)(_nda, _nda, 1)
 	message(_nda.SIZE_D1)
 	declare const nda2.SIZE_D1 : int := 4
 	declare const nda2.SIZE_D2 : int := 5
@@ -67,9 +67,9 @@ on init
 	_nda2[(1 * (5 * 5)) + 2] := 4
 	_nda2[(1 * (5 * 5)) + 3] := 5
 	_nda2[(1 * (5 * 5)) + 4] := 6
-	ndarray.init.Integer.dim3.from1.to2(_nda2, 0, 1)
+	ndarray.init(Integer_dim3_from1_to2)(_nda2, 0, 1)
 	declare arr[4] : int[]
-	ndarray.copy.Integer.dim2.from1.to1(_nda, arr, 0)
+	ndarray.copy(Integer_dim2_from1_to1)(_nda, arr, 0)
 	arr := nda[0, *]
 	declare const colorz.a : int := 0 + 0
 	declare const colorz.b : int := 0 + (0 + 1)
@@ -164,8 +164,8 @@ function Note.__init__(return0 : int, p : int, v : int[], _pp : int[]) : int
 	end if
 	Note.allocation[Note.free_idx] := 1
 	Note.pitch[Note.free_idx] := p
-	ndarray.copy.Integer.dim2.from1.to1(_Note.velocities, v, Note.free_idx)
-	ndarray.copy.Integer.dim3.from1.to2(_Note.play_pos, _pp, Note.free_idx)
+	ndarray.copy(Integer_dim2_from1_to1)(_Note.velocities, v, Note.free_idx)
+	ndarray.copy(Integer_dim3_from1_to2)(_Note.play_pos, _pp, Note.free_idx)
 	return0 := Note.free_idx
 end function
 
@@ -181,7 +181,7 @@ function Note.get_velocities(_return0[Note.MAX_STRUCTS * 10] : int[], self : int
 	_return0 := _Note.velocities[(self * Note.velocities.SIZE_D2) + *]
 end function
 
-function ndarray.init.Integer.dim2.from1.to1(_ndarray : int[], value : int, param1 : int) : Unknown
+function ndarray.init(Integer_dim2_from1_to1)(_ndarray : int[], value : int, param1 : int) : Unknown
 	declare _iter1 : int
 	_iter1 := 0
 	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
@@ -190,7 +190,7 @@ function ndarray.init.Integer.dim2.from1.to1(_ndarray : int[], value : int, para
 	end while
 end function
 
-function ndarray.copy.Integer.dim2.from1.to1(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
+function ndarray.copy(Integer_dim2_from1_to1)(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
 	declare _iter1 : int
 	_iter1 := 0
 	while(_iter1 <= (ndarray.SIZE_D1 - 1)) 
@@ -199,7 +199,7 @@ function ndarray.copy.Integer.dim2.from1.to1(_ndarray : int[], _to_copy : int[],
 	end while
 end function
 
-function ndarray.init.Integer.dim3.from1.to2(_ndarray : int[], value : int, param1 : int) : Unknown
+function ndarray.init(Integer_dim3_from1_to2)(_ndarray : int[], value : int, param1 : int) : Unknown
 	declare _iter2 : int
 	declare _iter1 : int
 	_iter1 := 0
@@ -213,7 +213,7 @@ function ndarray.init.Integer.dim3.from1.to2(_ndarray : int[], value : int, para
 	end while
 end function
 
-function ndarray.copy.Integer.dim3.from1.to2(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
+function ndarray.copy(Integer_dim3_from1_to2)(_ndarray : int[], _to_copy : int[], param1 : int) : Unknown
 	declare _iter2 : int
 	declare _iter1 : int
 	_iter1 := 0

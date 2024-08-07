@@ -196,6 +196,22 @@ public:
     NodeFunctionDefinition* get_property_function(NodeFunctionHeader* function);
     void set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions);
     void add_property_function(std::unique_ptr<NodeFunctionDefinition> property_function);
+
+
+	static std::unique_ptr<NodeFunctionCall> num_elements(std::unique_ptr<NodeArrayRef> ref) {
+		return std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"num_elements",
+				std::make_unique<NodeParamList>(
+					ref->tok,
+					std::move(ref)
+				),
+				ref->tok
+			),
+			ref->tok
+		);
+	}
 };
 
 

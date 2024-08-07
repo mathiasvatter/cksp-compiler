@@ -46,7 +46,7 @@ struct NodeAST {
     [[nodiscard]] virtual ASTDesugaring *get_desugaring(NodeProgram *program) const {
         return nullptr;
     }
-	virtual NodeAST* desugar(NodeProgram* program) {return nullptr;}
+	virtual NodeAST* desugar(NodeProgram* program);
 	virtual NodeAST* lower(NodeProgram* program);
     [[nodiscard]] NodeType get_node_type() const { return node_type; }
 	/// attempts to set the element type of this node to element_type if node has Composite Type
@@ -134,7 +134,7 @@ struct NodeReference : NodeAST {
 		}
 		return ptr_chain;
 	}
-	inline bool is_ptr_chain_candidate() {
+	inline bool is_ptr_chain_candidate() const {
 		return name.find('.') != std::string::npos;
 	}
 
