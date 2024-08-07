@@ -196,7 +196,7 @@ public:
 
 
 	static inline std::unique_ptr<NodeBlock> get_array_init_function_call(NodeReference* array_ref, NodeAST* value) {
-		std::string func_name = "array.init."+array_ref->declaration->ty->get_element_type()->to_string();
+		std::string func_name = "array<-init["+array_ref->declaration->ty->get_element_type()->to_string()+"]";
 		auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
 		node_iterator->is_local = true;
 		auto node_iterator_ref = node_iterator->to_reference();
@@ -246,7 +246,7 @@ public:
 	 * end function
 	 */
 	static inline bool add_array_init_function_def(NodeProgram* program, Type* type) {
-		std::string func_name = "array.init."+type->to_string();
+		std::string func_name = "array<-init["+type->to_string()+"]";
 		// check if function with this type already exists
 		auto it = program->function_lookup.find({func_name, 3});
 		if(it != program->function_lookup.end()) {

@@ -150,4 +150,6 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         Lowering/LoweringFunctionDef.h
         AST/ASTVisitor/ASTDataStructureLowering.h
         AST/ASTVisitor/ASTReturnFunctionRewriting.h
+        Lowering/NDArrayCopyFunction.h
+        AST/ASTVisitor/NormalizeNDArrayAssign.h
 )

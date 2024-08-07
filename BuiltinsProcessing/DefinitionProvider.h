@@ -207,9 +207,9 @@ public:
 					ref->tok,
 					std::move(ref)
 				),
-				ref->tok
+				Token()
 			),
-			ref->tok
+			Token()
 		);
 	}
 };

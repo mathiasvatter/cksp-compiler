@@ -15,6 +15,11 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_def_provider->refresh_scopes();
 	m_def_provider->refresh_data_vectors();
 
+	// refresh call_sites of function definitions
+	for(auto & func_def : node.function_definitions) {
+		func_def->call_sites.clear();
+	}
+
 	// most func defs will be visited when called, keeping local scopes in mind
 	m_program->global_declarations->accept(*this);
 	for(auto & s : node.struct_definitions) {
@@ -37,7 +42,7 @@ NodeAST* ASTVariableChecking::visit(NodeCallback& node) {
 
 	if(node.callback_id) {
 		node.callback_id->accept(*this);
-		if(fail) check_callback_id_data_type(node.callback_id.get());
+		check_callback_id_data_type(node.callback_id.get());
 	}
 	node.statements->accept(*this);
 
@@ -59,7 +64,7 @@ NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
 	node.params->accept(*this);
 
 	// if fail is set to false, return early. the rest is determined after lowering
-	if(!fail) return &node;
+//	if(!fail) return &node;
 
 	auto node_type = node.control_var->get_node_type();
 	auto engine_widget_type = engine_widget->control_var->get_node_type();
@@ -238,6 +243,10 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 //				access_chain->match_data_structure(access_chain->declaration);
 				access_chain->accept(*this);
 				return node.replace_with(std::move(access_chain));
+			} else {
+				// if it is a constant, do not add to references
+				node.declaration = nullptr;
+				return &node;
 			}
 		} else {
 			DefinitionProvider::throw_declaration_error(&node).exit();

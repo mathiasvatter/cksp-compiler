@@ -7,6 +7,7 @@
 #include "AST/ASTVisitor/TypeInference.h"
 #include "AST/ASTVisitor/ASTReturnFunctionRewriting.h"
 #include "AST/ASTVisitor/ASTDataStructureLowering.h"
+#include "AST/ASTVisitor/NormalizeNDArrayAssign.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -98,7 +99,7 @@ void Compiler::compile() {
 	compile_time.stop("Desugaring");
 	compile_time.start("Build Data Structures");
 
-	ASTVariableChecking variable_checking0(&m_definition_provider, true);
+	ASTVariableChecking variable_checking0(&m_definition_provider, false);
 	ast->accept(variable_checking0);
 
 	ASTSemanticAnalysis data_structures(&m_definition_provider);
@@ -123,6 +124,9 @@ void Compiler::compile() {
 
 	ASTReturnFunctionRewriting return_function_rewriting(&m_definition_provider);
 	ast->accept(return_function_rewriting);
+
+	NormalizeNDArrayAssign nd_array_assign(&m_definition_provider);
+	ast->accept(nd_array_assign);
 
 	ASTDataStructureLowering data_structure_lowering(&m_definition_provider);
 	ast->accept(data_structure_lowering);

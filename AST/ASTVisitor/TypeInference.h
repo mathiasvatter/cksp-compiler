@@ -108,9 +108,22 @@ private:
 		if(!node1->ty->is_compatible(node2->ty)) {
             throw_type_error(node1, node2).exit();
 		}
+		// if one of them is composite type -> the other will be too
+		if(node2->ty->get_type_kind() == TypeKind::Composite and node1->ty == TypeRegistry::Unknown) {
+			// stash elem_typ temporarily
+			auto elem_type = node1->ty->get_element_type();
+			node1->ty = node2->ty;
+			node1->set_element_type(elem_type);
+		} else if(node1->ty->get_type_kind() == TypeKind::Composite and node2->ty == TypeRegistry::Unknown) {
+			// stash elem_typ temporarily
+			auto elem_type = node2->ty->get_element_type();
+			node2->ty = node1->ty;
+			node2->set_element_type(elem_type);
+		}
 
 		// specialize types:
         node1->set_element_type(specialize_type(node1->ty, node2->ty));
+
         return node1->ty;
 	}
 
