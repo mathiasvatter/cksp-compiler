@@ -110,6 +110,10 @@ std::unique_ptr<NodeAccessChain> NodeArrayRef::to_method_chain() {
 	return method_chain;
 }
 
+std::unique_ptr<NodeFunctionCall> NodeArrayRef::get_size() {
+	return DefinitionProvider::num_elements(clone_as<NodeArrayRef>(this));
+}
+
 // ************* NodeNDArrayRef ***************
 NodeAST *NodeNDArrayRef::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);

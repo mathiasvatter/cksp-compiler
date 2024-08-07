@@ -66,6 +66,13 @@ NodeAST *NodeAST::lower(NodeProgram *program) {
 	return this;
 }
 
+NodeAST *NodeAST::desugar(NodeProgram *program) {
+	if(auto desugaring = get_desugaring(program)) {
+		return accept(*desugaring);
+	}
+	return this;
+}
+
 // ************* NodeDataStructure ***************
 NodeAST *NodeDataStructure::accept(struct ASTVisitor &visitor) {
 	return nullptr;

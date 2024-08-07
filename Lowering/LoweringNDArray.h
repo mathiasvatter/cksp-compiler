@@ -14,25 +14,26 @@ public:
 
 	NodeAST* visit(NodeSingleAssignment &node) override {
 //		lowered_node = &node;
-		NodeAST* r_value = node.r_value.get();
-		NodeAST* assigned_node = node.r_value.get();
-		if(node.r_value->get_node_type() == NodeType::FunctionCall) {
-			auto function_call = static_cast<NodeFunctionCall*>(node.r_value.get());
-			if(!function_call->definition) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-				error.m_message = "Call to undefined function, when assigning to <NDArray>: " + function_call->function->name;
-				error.exit();
-			}
-			assigned_node = function_call;
-			r_value = function_call->definition->return_param;
-		}
+//		NodeAST* r_value = node.r_value.get();
+//		NodeAST* assigned_node = node.r_value.get();
+//		if(node.r_value->get_node_type() == NodeType::FunctionCall) {
+//			auto function_call = static_cast<NodeFunctionCall*>(node.r_value.get());
+//			if(!function_call->definition) {
+//				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+//				error.m_message = "Call to undefined function, when assigning to <NDArray>: " + function_call->function->name;
+//				error.exit();
+//			}
+//			assigned_node = function_call;
+//			r_value = function_call->definition->return_param;
+//		}
 
-		if(node.l_value->get_node_type() == NodeType::NDArrayRef and r_value->get_node_type() == NodeType::ParamList) {
+		if(node.l_value->get_node_type() == NodeType::NDArrayRef and node.r_value->get_node_type() == NodeType::ParamList) {
 			auto nd_array_ref = static_cast<NodeNDArrayRef*>(node.l_value.get());
-			auto param_list = static_cast<NodeParamList*>(r_value);
+			nd_array_ref->add_wildcards();
+			auto param_list = static_cast<NodeParamList*>(node.r_value.get());
 			param_list->flatten();
 			// nda := ((1,2,3,4),(5,6,7,8))
-			if(!nd_array_ref->indexes) {
+			if(nd_array_ref->num_wildcards() == nd_array_ref->sizes->params.size()) {
 				// lower left side to array to utilize array lowering later on
 				return nd_array_ref->accept(*this);
 			}
@@ -60,8 +61,12 @@ public:
 		// nd1[5, *, *]: int[][] := nd2: int[][]
 		} else if(node.l_value->get_node_type() == NodeType::NDArrayRef and node.r_value->get_node_type() == NodeType::NDArrayRef) {
 			auto nd_array_ref = static_cast<NodeNDArrayRef *>(node.l_value.get());
+			nd_array_ref->add_wildcards();
 			auto nd_array_copy = static_cast<NodeNDArrayRef *>(node.r_value.get());
+			nd_array_copy->add_wildcards();
+
 			// nda[0, *] := nda2[1,*]/nda2[*]
+//			if(!nd_array_ref->indexes) nd_array_ref->throw_missing_indexes_error().exit();
 			if(nd_array_ref->num_wildcards() > 0) {
 				// get wildcard dimensions
 				auto wildcard_dims = get_wildcard_dimensions(nd_array_ref);
@@ -80,6 +85,7 @@ public:
 		} else if(node.l_value->get_node_type() == NodeType::NDArrayRef and node.r_value->get_node_type() == NodeType::ArrayRef) {
 			auto nd_array_ref = static_cast<NodeNDArrayRef *>(node.l_value.get());
 			auto array_ref = static_cast<NodeArrayRef *>(node.r_value.get());
+			if(!nd_array_ref->indexes) nd_array_ref->throw_missing_indexes_error().exit();
 			if(nd_array_ref->num_wildcards() > 0) {
 				// get wildcard dimensions
 				auto wildcard_dims = get_wildcard_dimensions(nd_array_ref);
@@ -87,6 +93,11 @@ public:
 				auto lowered = node.replace_with(get_ndarray_function_call(nd_array_ref, array_ref, wildcard_dims, "copy"));
 				return lowered->accept(*this);
 			}
+		} else if(node.l_value->get_node_type() == NodeType::ArrayRef and node.r_value->get_node_type() == NodeType::NDArrayRef) {
+			auto array_ref = static_cast<NodeArrayRef *>(node.l_value.get());
+			auto nd_array_ref = static_cast<NodeNDArrayRef *>(node.r_value.get());
+			if(!nd_array_ref->indexes) nd_array_ref->throw_missing_indexes_error().exit();
+
 		}
 		node.l_value->accept(*this);
 		node.r_value->accept(*this);
@@ -197,6 +208,7 @@ public:
 	}
 
 private:
+
 
 	static std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok) {
 		// Basisfall: letztes Element in der Berechnung
@@ -378,7 +390,7 @@ private:
 	}
 
 	static inline const std::string get_func_name(std::string instruction, Type* ty, int dimension, std::pair<int, int> wildcard_dims) {
-		return "ndarray."+instruction+"." + ty->get_element_type()->to_string() + ".dim" + std::to_string(dimension) + ".from" + std::to_string(wildcard_dims.first) + ".to" + std::to_string(wildcard_dims.second);
+		return "ndarray."+instruction+"(" + ty->get_element_type()->to_string() + "_dim" + std::to_string(dimension) + "_from" + std::to_string(wildcard_dims.first) + "_to" + std::to_string(wildcard_dims.second)+")";
 	}
 
 	/**
@@ -395,6 +407,108 @@ private:
 	 * 	end for
 	 * end function
 	 */
+	struct NDArrayCopyFunction {
+		NodeAST* array;
+		NodeAST* array_to_copy;
+		/// iterator variables for the loop nest
+		std::vector<std::unique_ptr<NodeDataStructure>> iterators;
+		/// holds the variables for the dimensions to copy
+		std::vector<std::unique_ptr<NodeDataStructure>> dims_to_copy;
+		/// lower bounds for the iterators
+		std::vector<std::unique_ptr<NodeAST>> lower_bounds;
+		/// upper bounds for the iterators
+		std::vector<std::unique_ptr<NodeAST>> upper_bounds;
+		/// function parameters
+		std::unique_ptr<NodeParamList> func_params;
+
+		/// only copies between same dimensions allowed
+		NDArrayCopyFunction(NodeAST* array, NodeAST* array_to_copy): array(array), array_to_copy(array_to_copy) {}
+
+		void generate_bounds() {
+			// if normal array -> only one bound
+			if(array->get_node_type() == NodeType::ArrayRef) {
+				lower_bounds.push_back(std::make_unique<NodeInt>(0, Token()));
+				upper_bounds.push_back(static_cast<NodeArrayRef*>(array)->get_size());
+			}
+			if(array->get_node_type() == NodeType::NDArrayRef) {
+				auto node_nd_array_ref = static_cast<NodeNDArrayRef *>(array);
+				// holds all iterators per wildcard
+				int count = 1;
+				for (auto &idx : node_nd_array_ref->indexes->params) {
+					if (idx->get_node_type() == NodeType::Wildcard) {
+						auto node_upper_bound = std::make_unique<NodeVariableRef>(
+							node_nd_array_ref->name + ".SIZE_D" + std::to_string(count), Token());
+						node_upper_bound->kind = NodeReference::Compiler;
+						upper_bounds.push_back(std::move(node_upper_bound));
+						lower_bounds.push_back(std::make_unique<NodeInt>(0, Token()));
+						count++;
+					}
+				}
+			}
+		}
+		void generate_iterators() {
+			// if normal array -> only one _iter1
+			if(array->get_node_type() == NodeType::ArrayRef) {
+				auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter1", TypeRegistry::Integer, DataType::Mutable, Token());
+				node_iterator->is_local = true;
+				iterators.push_back(std::move(node_iterator));
+			}
+			if(array->get_node_type() == NodeType::NDArrayRef) {
+				auto node_nd_array_ref = static_cast<NodeNDArrayRef *>(array);
+				// holds all iterators per wildcard
+				int count = 1;
+				for (auto &idx : node_nd_array_ref->indexes->params) {
+					if (idx->get_node_type() == NodeType::Wildcard) {
+						auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter" + std::to_string(count), TypeRegistry::Integer, DataType::Mutable, Token());
+						node_iterator->is_local = true;
+						iterators.push_back(std::move(node_iterator));
+						count++;
+					}
+				}
+			}
+		}
+		void generate_dims_params() {
+			// if normal array -> only one _iter1
+			if(array->get_node_type() == NodeType::ArrayRef) {
+				auto node_dim = std::make_unique<NodeVariable>(std::nullopt, "param1", TypeRegistry::Integer, DataType::Mutable, Token());
+				dims_to_copy.push_back(std::move(node_dim));
+			}
+			if(array->get_node_type() == NodeType::NDArrayRef) {
+				auto node_nd_array_ref = static_cast<NodeNDArrayRef *>(array);
+				// holds all iterators per wildcard
+				int count = 1;
+				for (auto &idx : node_nd_array_ref->indexes->params) {
+					if (idx->get_node_type() != NodeType::Wildcard) {
+						auto node_dim = std::make_unique<NodeVariable>(std::nullopt, "param" + std::to_string(count), TypeRegistry::Integer, DataType::Mutable, Token());
+						dims_to_copy.push_back(std::move(node_dim));
+						count++;
+					}
+				}
+			}
+		}
+		/// iterators have to be generated first!
+		std::unique_ptr<NodeParamList> generate_indexes(NodeAST* array_ref) {
+			auto indexes = std::make_unique<NodeParamList>(array_ref->tok);
+			if(array_ref->get_node_type() == NodeType::ArrayRef) {
+				indexes->add_param(iterators[0]->to_reference());
+			}
+			if(array_ref->get_node_type() == NodeType::NDArrayRef) {
+				auto node_nd_array_ref = static_cast<NodeNDArrayRef *>(array_ref);
+				// holds all iterators per wildcard
+				int count = 0;
+				for (auto &idx : node_nd_array_ref->indexes->params) {
+					if (idx->get_node_type() == NodeType::Wildcard) {
+						indexes->add_param(iterators[count]->to_reference());
+					} else {
+						indexes->add_param(dims_to_copy[count]->to_reference());
+					}
+					count++;
+				}
+			}
+			return indexes;
+		}
+	};
+
 	inline bool add_ndarray_copy_function_def(NodeProgram* program, NodeNDArrayRef* node, NodeReference* to_copy, std::pair<int, int> wildcard_dims) {
 		auto func_name = get_func_name("copy", node->ty, node->sizes->params.size(), wildcard_dims);
 		// check if function with this type already exists

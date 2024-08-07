@@ -33,18 +33,12 @@ NodeAST* ASTDesugar::visit(NodeBlock& node) {
 NodeAST* ASTDesugar::visit(NodeFunctionDefinition& node) {
 	node.header->accept(*this);
 	node.body->accept(*this);
-	if(auto desugaring = node.get_desugaring(m_program)) {
-		return node.accept(*desugaring);
-	}
-	return &node;
+	return node.desugar(m_program);
 }
 
 NodeAST* ASTDesugar::visit(NodeDeclaration& node) {
-    if(auto desugaring = node.get_desugaring(m_program)) {
-        auto desugared = node.accept(*desugaring);
-        return desugared->accept(*this);
-    }
-	return &node;
+	// desugar first into single declarations and then visit them
+    return node.desugar(m_program)->accept(*this);
 }
 
 NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
@@ -64,47 +58,28 @@ NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
 }
 
 NodeAST* ASTDesugar::visit(NodeAssignment &node) {
-    if(auto desugaring = node.get_desugaring(m_program)) {
-        auto desugared = node.accept(*desugaring);
-        return desugared->accept(*this);
-    }
-	return &node;
+	return node.desugar(m_program)->accept(*this);
 }
 
 NodeAST* ASTDesugar::visit(NodeForEach& node) {
     node.body->accept(*this);
-    if(auto desugaring = node.get_desugaring(m_program)) {
-		auto desugared = node.accept(*desugaring);
-        // move replacement to this visitor in case of nested for loops
-        // accept again to desugar resulting for loops
-        return desugared->accept(*this);
-    }
-	return &node;
+	// accept again to desugar resulting for loops
+	return node.desugar(m_program)->accept(*this);
 }
 
 NodeAST* ASTDesugar::visit(NodeFor& node) {
     node.body->accept(*this);
-    if(auto desugaring = node.get_desugaring(m_program)) {
-        return node.accept(*desugaring);
-        // move replacement to this visitor in case of nested for loops
-    }
-	return &node;
+	return node.desugar(m_program)->accept(*this);
 }
 
 NodeAST* ASTDesugar::visit(NodeFamily &node) {
     node.members->accept(*this);
-    if(auto desugaring = node.get_desugaring(m_program)) {
-        return node.accept(*desugaring);
-    }
-	return &node;
+	return node.desugar(m_program);
 }
 
 NodeAST* ASTDesugar::visit(NodeConst &node) {
 	node.constants->accept(*this);
-	if(auto desugaring = node.get_desugaring(m_program)) {
-		return node.accept(*desugaring);
-	}
-	return &node;
+	return node.desugar(m_program);
 }
 
 NodeAST* ASTDesugar::visit(NodeParamList &node) {
@@ -131,10 +106,7 @@ NodeAST* ASTDesugar::visit(NodeStruct& node) {
 	for(auto & m: node.methods) {
 		m->accept(*this);
 	}
-	if(auto desugaring = node.get_desugaring(m_program)) {
-		return node.accept(*desugaring);
-	}
-	return &node;
+	return node.desugar(m_program);
 }
 
 
