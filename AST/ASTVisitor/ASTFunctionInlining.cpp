@@ -10,6 +10,8 @@ ASTFunctionInlining::ASTFunctionInlining(DefinitionProvider* definition_provider
 NodeAST * ASTFunctionInlining::visit(NodeProgram& node) {
     m_program = &node;
 	node.update_function_lookup();
+
+	node.global_declarations->accept(*this);
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }

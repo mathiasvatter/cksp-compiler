@@ -152,4 +152,5 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         AST/ASTVisitor/ASTReturnFunctionRewriting.h
         Lowering/NDArrayCopyFunction.h
         AST/ASTVisitor/NormalizeNDArrayAssign.h
+        AST/ASTVisitor/ASTFunctionInlining2.h
 )
