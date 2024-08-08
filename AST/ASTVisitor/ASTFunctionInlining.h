@@ -37,10 +37,8 @@ public:
 
 	/// do substitution
 	NodeAST * visit(NodeArrayRef& node) override;
-//	void visit(NodeArray& node) override;
     /// do substitution
 	NodeAST * visit(NodeVariableRef& node) override;
-//    void visit(NodeVariable& node) override;
 	NodeAST * visit(NodeFunctionHeader& node) override;
 
 	std::unordered_map<NodeAST*, std::unique_ptr<NodeStatement>> get_function_inlines();
