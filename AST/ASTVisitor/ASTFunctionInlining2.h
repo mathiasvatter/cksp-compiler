@@ -12,9 +12,37 @@ public:
 	explicit ASTFunctionInlining2(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
 	/// check for used functions
-	NodeAST *visit(NodeProgram &node) override;
+	inline NodeAST *visit(NodeProgram &node) override {
+		m_program = &node;
+		node.update_function_lookup();
 
-	NodeAST *visit(NodeCallback &node) override;
+		m_program->global_declarations->accept(*this);
+		for(auto & struct_def : node.struct_definitions) {
+			struct_def->accept(*this);
+		}
+		for(auto & callback : node.callbacks) {
+			callback->accept(*this);
+		}
+
+		/// vector to house only the definitions that are actually used in the program
+		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
+		for(auto & func_def : node.function_definitions) {
+			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
+				final_function_definitions.push_back(std::move(func_def));
+			}
+		}
+		node.function_definitions = std::move(final_function_definitions);
+		return &node;
+	}
+
+	inline NodeAST *visit(NodeCallback &node) override {
+		// empty the local var stack after init, because the idx can be reused now
+		m_current_callback = &node;
+		if(node.callback_id) node.callback_id->accept(*this);
+		node.statements->accept(*this);
+		return &node;
+	}
+
 	/// initiating substitution
 	inline NodeAST *visit(NodeFunctionCall &node) override {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
@@ -31,17 +59,6 @@ public:
 			error.m_message = "Unable to find function definition for <"+node.function->name+">.";
 			error.exit();
 		}
-		m_program->function_call_stack.push(node.definition);
-		m_functions_in_use.insert(node.definition);
-		if(m_functions_in_use.find(node.definition) != m_functions_in_use.end()) {
-			// recursive function call detected
-			error.m_message = "Recursive function call detected. Calling functions inside their definition is not allowed.";
-			error.m_got = node.function->name;
-			error.exit();
-		}
-
-		// visit header
-		node.function->accept(*this);
 
 		if(node.kind == NodeFunctionCall::Kind::Builtin) {
 			if(m_restricted_builtin_functions.find(node.function->name) != m_restricted_builtin_functions.end()) {
@@ -54,6 +71,18 @@ public:
 			return &node;
 		}
 
+		if(m_functions_in_use.find(node.definition) != m_functions_in_use.end()) {
+			// recursive function call detected
+			error.m_message = "Recursive function call detected. Calling functions inside their definition is not allowed.";
+			error.m_got = node.function->name;
+			error.exit();
+		}
+		m_program->function_call_stack.push(node.definition);
+		m_functions_in_use.insert(node.definition);
+
+		// visit header
+		node.function->accept(*this);
+
 		if(node.kind != NodeFunctionCall::Kind::UserDefined) {
 			CompileError(ErrorType::InternalError,"Found function that is neither tagged Property, Undefined, Builtin or UserDefined.", "", node.tok).exit();
 		}
@@ -62,23 +91,62 @@ public:
 			CompileError(ErrorType::InternalError,"Function call was not rewritten and is not within <Statement>.", "", node.tok).exit();
 		}
 
+		// check that we are not in init callback and add the function to used_func_def vector if called
+		if(m_current_callback != m_program->init_callback) {
+			// make function called if it is no params
+			if(node.definition->header->args->params.empty()) node.is_call = true;
+			if (node.is_call) {
+				m_used_function_definitions.insert(node.definition);
+				return &node;
+			}
+		} else if(node.is_call){
+			error.m_message = "The usage of <call> keyword is not allowed in the <on init> callback. Automatically removed <call> and inlined function. Consider not using the <call> keyword.";
+			error.print();
+			node.is_call = false;
+		}
+
 		auto node_func_def = clone_as<NodeFunctionDefinition>(node.definition);
+		m_substitution_stack.push(get_substitution_map(node_func_def->header.get(), node.function.get()));
 
+		node_func_def->body->accept(*this);
 
-
-		m_functions_in_use.erase(m_program->function_call_stack.top());
+		m_substitution_stack.pop();
+		m_functions_in_use.erase(node.definition);
 		m_program->function_call_stack.pop();
+
+		return node.replace_with(std::move(node_func_def->body));
 	}
 
 
 
 
 	/// do substitution
-	NodeAST *visit(NodeArrayRef &node) override;
+	inline NodeAST *visit(NodeArrayRef &node) override {
+		return do_substitution(&node);
+	}
 	/// do substitution
-	NodeAST *visit(NodeVariableRef &node) override;
+	inline NodeAST *visit(NodeVariableRef &node) override {
+		return do_substitution(&node);
+	}
 	/// do substitution
-	NodeAST *visit(NodeFunctionHeader &node) override;
+	inline NodeAST *visit(NodeFunctionHeader& node) override {
+		node.args->accept(*this);
+		// substitution
+		if (!m_substitution_stack.empty()) {
+			if (auto substitute = get_substitute(node.name)) {
+				if(auto substitute_ref = cast_node<NodeReference>(substitute.get())) {
+					node.name = substitute_ref->name;
+					return &node;;
+				} else {
+					auto error = CompileError(ErrorType::SyntaxError, "Cannot substitute Function name with <non-datastructure>", "", node.tok);
+					error.m_expected = "<Reference>";
+					error.m_got = substitute->get_string();
+					error.exit();
+				}
+			}
+		}
+		return &node;
+	}
 
 	static std::unordered_map<std::string, std::unique_ptr<NodeAST>> get_substitution_map(NodeFunctionHeader* definition, NodeFunctionHeader* call) {
 		std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_map;
@@ -98,23 +166,35 @@ public:
 		return substitution_map;
 	}
 
-	std::string get_ndarray_base(NodeReference* ref) {
+
+	/// returns empty string if ndarray constant pattern is not found
+	std::string get_ndarray_constant_base(const std::string& input) {
+		std::regex pattern(R"(^(.*)\.SIZE_D\d+$)");
+		std::smatch match;
+		if (std::regex_search(input, match, pattern)) {
+			// Der Teilstring vor dem Muster wird zurückgegeben
+			return match[1].str();
+		}
+		return "";
+	}
+
+	/// returns nullptr if ref was no ndarray constant and could not be substituted
+	/// ndarray.SIZE_D1 -> nd.SIZE_D1
+	NodeAST* substitute_ndarray_constants(NodeReference* ref) {
 		// special case when variable ref is ndarray constant
 		if(ref->declaration and ref->get_node_type() == NodeType::VariableRef) {
-			if(ref->declaration->get_node_type() == NodeType::Array) {
-				auto array = static_cast<NodeArray*>(ref->declaration);
-				std::string string_pattern = "^_" + array->name + R"(.SIZE_D(\d+)$)";
-				std::regex pattern(string_pattern);
-				std::smatch match;
-				// Überprüfen, ob der String dem Muster entspricht
-				if(std::regex_match(ref->name, match, pattern)) {
-					// Extrahiere die Zahl aus dem Match
-//					int number = std::stoi(match[1].str());
-					return "_"+array->name;
+			std::string ndarray_name = get_ndarray_constant_base(ref->name);
+			if(ndarray_name.empty()) return nullptr;
+			// Überprüfen, ob der String dem Muster entspricht
+			if(auto substitute = get_substitute("_"+ndarray_name)) {
+				if(substitute->get_node_type() == NodeType::ArrayRef) {
+					auto array_ref = static_cast<NodeArrayRef*>(substitute.get());
+					ref->name = array_ref->name + remove_substring(ref->name, ndarray_name);
+					return ref;
 				}
 			}
 		}
-		return "";
+		return nullptr;
 	}
 
 	NodeAST* do_substitution(NodeReference* ref) {
@@ -122,18 +202,9 @@ public:
 
 		if(auto substitute = get_substitute(ref->name)) {
 			return ref->replace_with(std::move(substitute));
+		} else if(auto ndarray_substitute = substitute_ndarray_constants(ref)) {
+			return ndarray_substitute;
 		} else {
-			// special case when variable ref is ndarray constant
-			auto ndarray_base = get_ndarray_base(ref);
-			if(!ndarray_base.empty()) {
-				substitute = get_substitute(ndarray_base);
-				if(substitute) {
-					auto array_ref = clone_as<NodeArrayRef>(ref);
-					array_ref->name = substitute->get_string();
-					return ref->replace_with(std::move(array_ref));
-				}
-			}
-
 			auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
 			error.m_message = "Unable to find substitute for <"+ref->name+">.";
 			error.exit();
@@ -145,6 +216,10 @@ public:
 private:
 	DefinitionProvider *m_def_provider;
 	NodeCallback* m_current_callback = nullptr;
+
+	/// set of all function_definitions that are actually used in program
+	/// can only house called functions with no params
+	std::set<NodeFunctionDefinition*> m_used_function_definitions;
 
 	/// track functions in use to search for recursive calls
 	std::unordered_set<NodeFunctionDefinition*> m_functions_in_use;

@@ -69,6 +69,8 @@ public:
 
 	inline NodeAST* visit(NodeSingleDeclaration &node) override {
 		m_gensym.ingest(node.variable->name);
+		node.variable->accept(*this);
+		if(node.value) node.value->accept(*this);
 		return &node;
 	}
 

@@ -8,6 +8,7 @@
 #include "AST/ASTVisitor/ASTReturnFunctionRewriting.h"
 #include "AST/ASTVisitor/ASTDataStructureLowering.h"
 #include "AST/ASTVisitor/NormalizeNDArrayAssign.h"
+#include "AST/ASTVisitor/ASTFunctionInlining2.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -151,7 +152,7 @@ void Compiler::compile() {
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");
 
-	ASTFunctionInlining func_inlining(&m_definition_provider);
+	ASTFunctionInlining2 func_inlining(&m_definition_provider);
 	ast->accept(func_inlining);
 
     compile_time.stop("Function Inlining");

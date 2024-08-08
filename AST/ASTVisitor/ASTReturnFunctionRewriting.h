@@ -39,6 +39,12 @@ public:
 		return &node;
 	};
 
+	inline NodeAST* visit(NodeFunctionCall& node) override {
+		node.function->accept(*this);
+		node.get_definition(m_program);
+		return &node;
+	}
+
 	inline NodeAST* visit(NodeFunctionDefinition& node) override {
 		node.lower(m_program);
 		node.header->accept(*this);

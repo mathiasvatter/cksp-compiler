@@ -109,6 +109,7 @@ NodeAST * ASTCollectLowerings::visit(NodeGetControl& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
+	node.get_definition(m_program);
 	return node.lower(m_program);
 }
 

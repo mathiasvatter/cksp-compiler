@@ -2,7 +2,10 @@ Global Declarations:
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
 on init
-	declare const Note.MAX_STRUCTS : int := MAX_STRUCTS / _max(11 * 12, 10)
+		declare _return0 : Unknown
+		_max(_return0, 11 * 12, 10)
+
+	declare const Note.MAX_STRUCTS : int := MAX_STRUCTS / _return0
 	declare Note.free_idx : int := 0
 	declare Note.allocation[Note.MAX_STRUCTS] : int[]
 	declare Note.pitch[Note.MAX_STRUCTS] : int[]
@@ -50,17 +53,19 @@ on init
 	scoped_func1()
 	scoped_func1()
 	declare c[6] : int[]
-	declare b : int
-	ret_sth(b, c)
+		declare _return1 : int
+		ret_sth(_return1, c)
+
+	declare b : int := _return1
 end on
 
 on persistence_changed
 	declare array[5] : int[]
 	scoped_func1()
-		declare _return0 : int
-		furz(_return0, 1)
+		declare _return2 : int
+		furz(_return2, 1)
 
-	furz2(_return0)
+	furz2(_return2)
 end on
 
 function furz(return0 : int, z : int) : int
