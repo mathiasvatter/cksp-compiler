@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "../AST/ASTVisitor/ASTVisitor.h"
+#include "../misc/Gensym.h"
 
 /**
  * @class DefinitionProvider
@@ -53,15 +54,22 @@ public:
 
 	/// returns a static global dummy datastructure that can be used for declarations of compiler vars
 	static NodeDataStructure* get_compiler_declaration(NodeReference* var) {
-		if(var->kind != NodeReference::Kind::Compiler) return nullptr;
+		if(var->kind != NodeReference::Kind::Compiler and var->kind != NodeReference::Kind::Throwaway)
+			return nullptr;
 		auto static comp_var = std::make_unique<NodeVariable>(
 			std::nullopt,
-			"compiler_dummy",
+			"compiler$dummy",
 			TypeRegistry::Unknown,
 			DataType::Mutable,
 			Token()
 			);
 		return comp_var.get();
+	}
+
+	/// holds all in this program defined variable names for safely issuing new ones that do not get captured
+	Gensym m_gensym;
+	inline std::string get_fresh_name(std::string name) {
+		return m_gensym.fresh(name);
 	}
 
 	/// returns the definition of a data structure, if it exists. If datastructure itself is

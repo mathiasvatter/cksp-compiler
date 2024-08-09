@@ -63,16 +63,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
 NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
 
-	// to method chain if function call is not defined
-	if(!node.get_definition(m_program)) {
-//		if(node.function->name.rfind('.') != std::string::npos) {
-//			auto method_chain = node.to_method_chain();
-//			method_chain->accept(*this);
-//			node.replace_with(std::move(method_chain));
-//			return;
-//		}
-	}
-
+	node.get_definition(m_program);
 
 	if(node.kind == NodeFunctionCall::UserDefined and node.definition) {
 		if(!node.definition->visited) node.definition->accept(*this);

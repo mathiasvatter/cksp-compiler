@@ -8,7 +8,7 @@
 #include "AST/ASTVisitor/ASTReturnFunctionRewriting.h"
 #include "AST/ASTVisitor/ASTDataStructureLowering.h"
 #include "AST/ASTVisitor/NormalizeNDArrayAssign.h"
-#include "AST/ASTVisitor/ASTFunctionInlining2.h"
+#include "AST/ASTVisitor/ASTFunctionInlining.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -132,7 +132,7 @@ void Compiler::compile() {
 	ASTDataStructureLowering data_structure_lowering(&m_definition_provider);
 	ast->accept(data_structure_lowering);
 
-	ast->debug_print();
+//	ast->debug_print();
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
@@ -152,8 +152,9 @@ void Compiler::compile() {
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");
 
-	ASTFunctionInlining2 func_inlining(&m_definition_provider);
+	ASTFunctionInlining func_inlining(&m_definition_provider);
 	ast->accept(func_inlining);
+//	ast->debug_print();
 
     compile_time.stop("Function Inlining");
 	compile_time.start("Variable Checking");

@@ -1,8 +1,7 @@
-{ Compiled with cksp version 0.0.5 on Thu Aug 01 10:47:27 2024 }
+{ Compiled with cksp version 0.0.5 on Fri Aug 09 17:40:49 2024 }
 on init
   declare const $MAX_STRUCTS := 1000000
-  declare const $Note__MAX_STRUCTS := $MAX_STRUCTS /     132
-
+  declare const $Note__MAX_STRUCTS := $MAX_STRUCTS / 132
   declare $Note__free_idx := 0
   declare %Note__allocation[$Note__MAX_STRUCTS]
   declare %Note__pitch[$Note__MAX_STRUCTS]
@@ -13,25 +12,9 @@ on init
   declare %List__allocation[$List__MAX_STRUCTS]
   declare %List__value[$List__MAX_STRUCTS]
   declare %List__next[$List__MAX_STRUCTS]
-  declare const $color__a := 0
-  message($color__a)
-  declare  := - 1
-  message(    "<List> Object: " & 
-)
-   := %List__next[List(42, - 1)]
-  declare %lists[5] := (- 1)
-  message(%List__value[%List__next[%lists[0]]])
-  message(%List__value[%List__next[]])
-  message(    "<List> Object: " & 
-)
-  declare  := - 1
-  declare ui_slider $sli (1, 500)
-  set_control_par_str(get_ui_id($sli), $CONTROL_PAR_TEXT, "sdfkj")
-  declare @a
-  @a := get_control_par_str(get_ui_id($sli), $CONTROL_PAR_TEXT) & 3
   declare const $nda__SIZE_D1 := 2
   declare %_nda[8] := (1, 2, 3, 4, 5, 6, 7, 8)
-  message(%_nda)
+  message(%_nda[( * 4) + ])
   %_nda[0] := 1
   %_nda[1] := 2
   %_nda[2] := 3
@@ -40,120 +23,150 @@ on init
   %_nda[5] := 6
   %_nda[6] := 7
   %_nda[7] := 8
-  declare $loc_17
-  $loc_17 := 0
-  $loc_17 := 0
-  while($loc_17 <= ($ndarray__SIZE_D1 - 1)) 
-    %_nda[(0 * $ndarray__SIZE_D2) + $loc_17] := 0
-    inc($loc_17)
+  declare $loc_19
+  $loc_19 := 0
+  $loc_19 := 0
+  while($loc_19 <= ($_nda__SIZE_D1 - 1)) 
+    %_nda[(0 * $_nda__SIZE_D2) + $loc_19] := 0
+    inc($loc_19)
   end while
   %_nda[3] := 1
   %_nda[7] := 2
   %_nda[11] := 6
-  message($_nda__SIZE_D1)
+  $loc_19 := 0
+  $loc_19 := 0
+  while($loc_19 <= ($_nda__SIZE_D1 - 1)) 
+    %_nda[(1 * $_nda__SIZE_D2) + $loc_19] := %_nda[(1 * $_nda__SIZE_D2) + $loc_19]
+    inc($loc_19)
+  end while
+  message($nda__SIZE_D1)
   declare %_nda2[100]
   %_nda2[25] := 2
   %_nda2[26] := 3
   %_nda2[27] := 4
   %_nda2[28] := 5
   %_nda2[29] := 6
-  declare $loc_18
-  $loc_17 := 0
-  $loc_18 := 0
-  $loc_18 := 0
-  while($loc_18 <= ($ndarray__SIZE_D1 - 1)) 
-    $loc_17 := 0
-    while($loc_17 <= ($ndarray__SIZE_D2 - 1)) 
-      %_nda2[(1 * ($ndarray__SIZE_D2 * $ndarray__SIZE_D3)) + (($loc_18 * $ndarray__SIZE_D3) + $loc_17)] := 0
-      inc($loc_17)
+  declare $loc_20
+  $loc_19 := 0
+  $loc_20 := 0
+  $loc_20 := 0
+  while($loc_20 <= ($_nda2__SIZE_D1 - 1)) 
+    $loc_19 := 0
+    while($loc_19 <= ($_nda2__SIZE_D2 - 1)) 
+      %_nda2[(1 * ($_nda2__SIZE_D2 * $_nda2__SIZE_D3)) + (($loc_20 * $_nda2__SIZE_D3) + $loc_19)] := 0
+      inc($loc_19)
     end while
-    inc($loc_18)
+    inc($loc_20)
   end while
   declare %arr[4]
-  $loc_17 := 0
-  $loc_17 := 0
-  while($loc_17 <= ($ndarray__SIZE_D1 - 1)) 
-    %_nda[(0 * $ndarray__SIZE_D2) + $loc_17] := %arr[$loc_17]
-    inc($loc_17)
+  $loc_19 := 0
+  $loc_19 := 0
+  while($loc_19 <= ($_nda__SIZE_D1 - 1)) 
+    %_nda[(0 * $_nda__SIZE_D2) + $loc_19] := %arr[$loc_19]
+    inc($loc_19)
   end while
-  declare @loc_19
-  declare %loc_20[4]
-  declare %loc_21[5]
-  declare $loc_22
-  @loc_19 := "sdlkj"
-  message(@loc_19)
-  $loc_17 := 0
-  message($loc_17)
-  if($loc_17 = 1)
-    $loc_18 := 0
-    while($loc_18 < num_elements(%loc_21)) 
-      %loc_21[$loc_18] := 1
-      inc($loc_18)
+  $loc_19 := 0
+  $loc_19 := 0
+  while($loc_19 <= (num_elements(%arr) - 1)) 
+    %arr[$loc_19] := %_nda[(0 * $_nda__SIZE_D2) + $loc_19]
+    inc($loc_19)
+  end while
+  declare @loc_21
+  declare %loc_22[4]
+  declare %loc_23[5]
+  declare $loc_24
+  @loc_21 := "sdlkj"
+  message(@loc_21)
+  $loc_19 := 0
+  message($loc_19)
+  if($loc_19 = 1)
+    $loc_20 := 0
+    while($loc_20 < num_elements(%loc_23)) 
+      %loc_23[$loc_20] := 1
+      inc($loc_20)
     end while
-    $loc_18 := 0
-    $loc_22 := 0
-    message($loc_18 & $loc_22 & %loc_21[4])
+    $loc_20 := 0
+    $loc_24 := 0
+    message($loc_20 & $loc_24 & %loc_23[4])
   end if
-  if($loc_17 = 2)
-    $loc_18 := 0
-    $loc_22 := 0
-    message($loc_18 & $loc_22)
+  if($loc_19 = 2)
+    $loc_20 := 0
+    $loc_24 := 0
+    message($loc_20 & $loc_24)
   end if
-  %loc_20[0] := 3
-  %loc_20[1] := 4
-  @loc_19 := "sdlkj"
-  message(@loc_19)
-  $loc_17 := 0
-  message($loc_17)
-  if($loc_17 = 1)
-    $loc_18 := 0
-    while($loc_18 < num_elements(%loc_21)) 
-      %loc_21[$loc_18] := 1
-      inc($loc_18)
+  %loc_22[0] := 3
+  %loc_22[1] := 4
+  @loc_21 := "sdlkj"
+  message(@loc_21)
+  $loc_19 := 0
+  message($loc_19)
+  if($loc_19 = 1)
+    $loc_20 := 0
+    while($loc_20 < num_elements(%loc_23)) 
+      %loc_23[$loc_20] := 1
+      inc($loc_20)
     end while
-    $loc_18 := 0
-    $loc_22 := 0
-    message($loc_18 & $loc_22 & %loc_21[4])
+    $loc_20 := 0
+    $loc_24 := 0
+    message($loc_20 & $loc_24 & %loc_23[4])
   end if
-  if($loc_17 = 2)
-    $loc_18 := 0
-    $loc_22 := 0
-    message($loc_18 & $loc_22)
+  if($loc_19 = 2)
+    $loc_20 := 0
+    $loc_24 := 0
+    message($loc_20 & $loc_24)
   end if
-  %loc_20[0] := 3
-  %loc_20[1] := 4
+  %loc_22[0] := 3
+  %loc_22[1] := 4
   declare %c[6]
+  declare $b
+  $loc_19 := 0
+  while($loc_19 < num_elements(%loc_23)) 
+    %loc_23[$loc_19] := 0
+    inc($loc_19)
+  end while
+  $b := 1
+  %c[0] := 1
+  %c[1] := 2
+  %c[2] := 3
+  %c[3] := 4
+  $loc_19 := 0
+  $loc_19 := 0
+  while($loc_19 <= (num_elements(%arr) - 1)) 
+    %c[$loc_19] := %_nda[(0 * $_nda__SIZE_D2) + $loc_19]
+    inc($loc_19)
+  end while
 end on
 on persistence_changed
-  $loc_17 := 0
-  while($loc_17 < num_elements(%loc_21)) 
-    %loc_21[$loc_17] := 0
-    inc($loc_17)
+  $loc_19 := 0
+  while($loc_19 < num_elements(%loc_23)) 
+    %loc_23[$loc_19] := 0
+    inc($loc_19)
   end while
-  @loc_19 := "sdlkj"
-  message(@loc_19)
-  $loc_17 := 0
-  message($loc_17)
-  if($loc_17 = 1)
-    $loc_18 := 0
-    while($loc_18 < num_elements(%loc_21)) 
-      %loc_21[$loc_18] := 1
-      inc($loc_18)
+  @loc_21 := "sdlkj"
+  message(@loc_21)
+  $loc_19 := 0
+  message($loc_19)
+  if($loc_19 = 1)
+    $loc_20 := 0
+    while($loc_20 < num_elements(%loc_23)) 
+      %loc_23[$loc_20] := 1
+      inc($loc_20)
     end while
-    $loc_18 := 0
-    $loc_22 := 0
-    message($loc_18 & $loc_22 & %loc_21[4])
+    $loc_20 := 0
+    $loc_24 := 0
+    message($loc_20 & $loc_24 & %loc_23[4])
   end if
-  if($loc_17 = 2)
-    $loc_18 := 0
-    $loc_22 := 0
-    message($loc_18 & $loc_22)
+  if($loc_19 = 2)
+    $loc_20 := 0
+    $loc_24 := 0
+    message($loc_20 & $loc_24)
   end if
-  %loc_20[0] := 3
-  %loc_20[1] := 4
-  $loc_18 := 0
-      $loc_17 := 0
-    1 + $loc_17
- + $loc_18
+  %loc_22[0] := 3
+  %loc_22[1] := 4
+  $loc_19 := 0
+  $loc_20 := 0
+  $loc_19 := 1 + $loc_20
+  $loc_19 := 0
+  $_1 := $loc_19 + $loc_19
 end on
 

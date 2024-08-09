@@ -111,6 +111,7 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 }
 
 NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, bool global_scope) {
+	m_gensym.ingest(var->name);
 	// get builtin declaration if it exists
 	NodeDataStructure *node_builtin_declaration = nullptr;
 	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
