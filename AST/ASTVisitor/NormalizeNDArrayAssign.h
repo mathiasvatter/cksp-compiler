@@ -193,17 +193,17 @@ private:
 		auto params = std::make_unique<NodeParamList>(node->tok);
 		for(auto & param : node_nd_array_ref->indexes->params) {
 			if(param->get_node_type() == NodeType::Wildcard) {
-				auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter"+std::to_string(count), TypeRegistry::Integer, DataType::Mutable, Token());
+				auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter"+std::to_string(count), TypeRegistry::Integer, DataType::Mutable, node->tok);
 				node_iterator->is_local = true;
 				param = node_iterator->to_reference();
 				iterators.push_back(std::move(node_iterator));
-				auto node_upper_bound = std::make_unique<NodeVariableRef>(node_nd_array_ref->name + ".SIZE_D" + std::to_string(count), Token());
+				auto node_upper_bound = std::make_unique<NodeVariableRef>(node_nd_array_ref->name + ".SIZE_D" + std::to_string(count), node->tok);
 				node_upper_bound->kind = NodeReference::Compiler;
 				upper_bounds.push_back(std::move(node_upper_bound));
-				lower_bounds.push_back(std::make_unique<NodeInt>(0, Token()));
+				lower_bounds.push_back(std::make_unique<NodeInt>(0, node->tok));
 				count++;
 			} else {
-				auto node_iterate_dim = std::make_unique<NodeVariable>(std::nullopt, "param"+std::to_string(count2), TypeRegistry::Integer, DataType::Mutable, Token());
+				auto node_iterate_dim = std::make_unique<NodeVariable>(std::nullopt, "param"+std::to_string(count2), TypeRegistry::Integer, DataType::Mutable, node->tok);
 				count2++;
 				param = node_iterate_dim->to_reference();
 				params->add_param(std::move(node_iterate_dim));
@@ -214,18 +214,18 @@ private:
 		auto node_value = std::make_unique<NodeVariable>(std::nullopt, "value", node->ty->get_element_type(), DataType::Mutable, Token());
 		auto node_value_ref = node_value->to_reference();
 		// create for loop
-		auto node_body = std::make_unique<NodeBlock>(Token(), true);
+		auto node_body = std::make_unique<NodeBlock>(node->tok, true);
 		auto node_assignment = std::make_unique<NodeSingleAssignment>(
 			node_nd_array_ref->clone(),
 			std::move(node_value_ref),
-			Token()
+			node->tok
 		);
-		node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), Token()));
+		node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node->tok));
 		node_body->wrap_in_loop_nest(std::move(iterators), std::move(lower_bounds), std::move(upper_bounds));
 		auto node_ndarray = std::make_unique<NodeNDArray>(std::nullopt,
 														  "ndarray",
 														  TypeRegistry::add_composite_type(CompoundKind::Array, node->ty->get_element_type(), (int)node->sizes->params.size()),
-														  nullptr, Token()
+														  nullptr, node->tok
 		);
 		// make function definition
 		params->prepend_param(std::move(node_value));
@@ -234,12 +234,12 @@ private:
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
 				std::move(params),
-				Token()
+				node->tok
 			),
 			std::nullopt,
 			false,
 			std::move(node_body),
-			Token()
+			node->tok
 		);
 
 		// lower nd arrays to arrays

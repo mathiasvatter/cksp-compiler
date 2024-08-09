@@ -138,6 +138,10 @@ NodeFunctionDefinition *NodeFunctionCall::find_constructor_definition(NodeProgra
 
 bool NodeFunctionCall::get_definition(NodeProgram* program, bool fail) {
     if (definition) {
+		// update call sites
+		if(kind == Kind::UserDefined) {
+			definition->call_sites.emplace(this);
+		}
         return true;
     }
     if (find_builtin_definition(program)) {

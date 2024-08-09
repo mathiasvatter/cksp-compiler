@@ -25,6 +25,8 @@ struct NodeVariableRef : NodeReference {
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
 	std::unique_ptr<struct NodePointerRef> to_pointer_ref() override;
 
+	/// checks if variable ref is a ndarray size constant by checking the declaration and
+	/// pattern matching the name (....SIZE_D(\d+))
 	bool is_ndarray_constant();
 };
 

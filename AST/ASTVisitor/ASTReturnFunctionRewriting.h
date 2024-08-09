@@ -9,26 +9,29 @@
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
 #include "../../Lowering/ASTLowering.h"
 #include "../../Optimization/FunctionCallHoisting.h"
+#include "ASTExpressionFunctionInlining.h"
 
 class ASTReturnFunctionRewriting: public ASTVisitor {
 private:
 	DefinitionProvider *m_def_provider;
-	NodeDataStructure* m_throwaway_var = nullptr;
 public:
 	inline explicit ASTReturnFunctionRewriting(DefinitionProvider *definition_provider): m_def_provider(definition_provider) {}
 
 	// TODO: Call Function Rewriting after Lowering -> call Function Call Hoisting first and then do return statement rewriting as parameters
 	inline NodeAST* visit(NodeProgram& node) override {
+		/// do immediate inlining of return-only functions
+		ASTExpressionFunctionInlining inlining(m_def_provider);
+		node.accept(inlining);
+		node.debug_print();
 
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
-//		for(auto & struct_def : node.struct_definitions) {
-//			struct_def->accept(*this);
-//		}
-		for(auto & function_definition : node.function_definitions) {
-			function_definition->accept(*this);
+
+		/// lower func_defs
+		for(auto & func_def : node.function_definitions) {
+			func_def->lower(m_program);
 		}
-		// call hoisting afterwards to profit from correct data types in definition params
+		// call hoisting after func lowering to profit from correct data types in definition params
 		FunctionCallHoisting hoisting;
 		node.accept(hoisting);
 
@@ -41,12 +44,13 @@ public:
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		node.get_definition(m_program);
+		if(node.get_definition(m_program)) {
+			node.definition->accept(*this);
+		}
 		return &node;
 	}
 
 	inline NodeAST* visit(NodeFunctionDefinition& node) override {
-		node.lower(m_program);
 		node.header->accept(*this);
 		if(node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);
@@ -81,6 +85,30 @@ public:
 					std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok), node.tok));
 				node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node.value), node.tok));
 				return node.replace_with(std::move(node_block));
+			}
+		}
+		return &node;
+	}
+
+	// if statement is func call and function is return function but does not return anything:
+	// transform into assign statement with throwaway var "_"
+	inline NodeAST* visit(NodeStatement &node) override {
+		node.statement->accept(*this);
+		if(node.statement->get_node_type() == NodeType::FunctionCall) {
+			auto func_call = static_cast<NodeFunctionCall*>(node.statement.get());
+			if(func_call->definition and func_call->definition->num_return_params>0) {
+				auto throwaway_var = static_cast<NodeDataStructure*>(func_call->definition->header->args->params[0].get());
+				auto throwaway_ref =throwaway_var->to_reference();
+				throwaway_ref->name = m_def_provider->get_fresh_name("_");
+				throwaway_ref->kind = NodeReference::Kind::Throwaway;
+				auto assignment = std::make_unique<NodeSingleAssignment>(
+					std::move(throwaway_ref),
+					std::move(node.statement),
+					node.tok
+				);
+				node.statement = std::move(assignment);
+				node.statement->parent = &node;
+				node.statement->accept(*this);
 			}
 		}
 		return &node;

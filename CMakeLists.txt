@@ -71,7 +71,6 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         AST/ASTNodes/ASTReferences.cpp
         AST/ASTVisitor/ASTVisitor.h
         AST/ASTVisitor/ASTVisitor.cpp
-        AST/ASTVisitor/ASTFunctionInlining.cpp
         AST/ASTVisitor/ASTPrinter.h
         AST/ASTVisitor/ASTPrinter.cpp
         AST/ASTVisitor/ASTDesugar.cpp
@@ -152,5 +151,6 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         AST/ASTVisitor/ASTReturnFunctionRewriting.h
         Lowering/NDArrayCopyFunction.h
         AST/ASTVisitor/NormalizeNDArrayAssign.h
-        AST/ASTVisitor/ASTFunctionInlining2.h
+        AST/ASTVisitor/ASTFunctionInlining.h
+        AST/ASTVisitor/ASTExpressionFunctionInlining.h
 )

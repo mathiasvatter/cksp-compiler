@@ -236,8 +236,8 @@ std::unique_ptr<NodeAST> NodeWildcard::clone() const {
 }
 
 bool NodeWildcard::check_semantic() {
-	bool check_parents = parent->get_node_type() == NodeType::ParamList and parent->parent->get_node_type() == NodeType::NDArrayRef
-		and parent->parent->parent->get_node_type() == NodeType::SingleAssignment;
+	bool check_parents = parent->get_node_type() == NodeType::ParamList and parent->parent->get_node_type() == NodeType::NDArrayRef;
+//		and parent->parent->parent->get_node_type() == NodeType::SingleAssignment;
 	if(check_parents) {
 //		auto assign_stmt = static_cast<NodeSingleAssignment*>(parent->parent->parent);
 //		auto nd_array_ref = static_cast<NodeNDArrayRef*>(parent->parent);
