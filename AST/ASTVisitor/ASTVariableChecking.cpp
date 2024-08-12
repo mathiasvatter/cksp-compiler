@@ -64,7 +64,7 @@ NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
 	node.params->accept(*this);
 
 	// if fail is set to false, return early. the rest is determined after lowering
-//	if(!fail) return &node;
+	if(!fail) return &node;
 
 	auto node_type = node.control_var->get_node_type();
 	auto engine_widget_type = engine_widget->control_var->get_node_type();

@@ -15,14 +15,14 @@ private:
 	/// function call is hoistable when userdefined and returns values
 	/// or is in condition statement
 	static inline bool is_hoistable(NodeFunctionCall* node, NodeStatement* last_stmt) {
-		if(node->kind == NodeFunctionCall::Kind::Builtin) return false;
+		if(node->kind != NodeFunctionCall::Kind::UserDefined) return false;
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 		if(!node->definition) {
 			error.m_message = "Function "+node->function->name+" has not been defined and cannot be rewritten.";
 			error.m_got = node->function->name;
 			error.exit();
 		}
-		bool is_userdefined = node->kind == NodeFunctionCall::Kind::UserDefined;
+//		bool is_userdefined = node->kind == NodeFunctionCall::Kind::UserDefined;
 //		bool is_param = node->parent->get_node_type() == NodeType::ParamList and node->parent->parent->get_node_type() == NodeType::FunctionHeader;
 //		bool is_in_condition = last_stmt->statement->get_node_type() == NodeType::If ||
 //			last_stmt->statement->get_node_type() == NodeType::While || last_stmt->statement->get_node_type() == NodeType::Select;
@@ -38,7 +38,7 @@ private:
 		if(!returns_values) {
 			return false;
 		}
-		return is_userdefined and !is_in_stmt and !is_in_declaration;
+		return true and !is_in_stmt and !is_in_declaration;
 	}
 
 	std::unique_ptr<NodeBlock> declare_throwaway_variables() {

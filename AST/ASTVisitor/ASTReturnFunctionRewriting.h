@@ -64,6 +64,7 @@ public:
 		if(node.r_value->get_node_type() == NodeType::FunctionCall) {
 			auto func_call = static_cast<NodeFunctionCall*>(node.r_value.get());
 			if(!func_call->get_definition(m_program)) return &node;
+			if(func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
 			if(func_call->definition->num_return_params > 0) {
 				func_call->function->args->prepend_param(std::move(node.l_value));
 				return node.replace_with(std::move(node.r_value));
@@ -77,6 +78,7 @@ public:
 		if(node.value->get_node_type() == NodeType::FunctionCall) {
 			auto func_call = static_cast<NodeFunctionCall*>(node.value.get());
 			if(!func_call->get_definition(m_program)) return &node;
+			if(func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
 			if(func_call->definition->num_return_params > 0) {
 				func_call->function->args->prepend_param(node.variable->to_reference());
 				auto node_block = std::make_unique<NodeBlock>(node.tok);
@@ -96,6 +98,7 @@ public:
 		node.statement->accept(*this);
 		if(node.statement->get_node_type() == NodeType::FunctionCall) {
 			auto func_call = static_cast<NodeFunctionCall*>(node.statement.get());
+			if(func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
 			if(func_call->definition and func_call->definition->num_return_params>0) {
 				auto throwaway_var = static_cast<NodeDataStructure*>(func_call->definition->header->args->params[0].get());
 				auto throwaway_ref =throwaway_var->to_reference();

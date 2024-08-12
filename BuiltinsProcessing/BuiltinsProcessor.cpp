@@ -197,10 +197,12 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
 		apply_annotation_information(static_cast<NodeDataStructure*>(arg.get()));
 	}
 
+	int num_return_vars = 0;
 	Type* ret_type = TypeRegistry::Void;
     if(peek(m_tokens).type == token::TYPE) {
         consume(m_tokens); // consume :
 		ret_type = TypeRegistry::get_type_from_annotation(peek(m_tokens).val);
+		num_return_vars = 1;
     }
     auto node_function_header = std::make_unique<NodeFunctionHeader>(
             func_name.val, std::move(func_args), func_name
@@ -219,6 +221,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
             func_name
             );
     node_function->ty = ret_type;
+	node_function->num_return_params = num_return_vars;
     return Result<std::unique_ptr<NodeFunctionDefinition>>(std::move(node_function));
 }
 

@@ -74,7 +74,7 @@ public:
 				func_call->get_definition(m_program);
 				int num_return_params = func_call->definition ? func_call->definition->num_return_params : 1;
 				num_values += num_return_params-1;
-				if(num_return_params > 1 and i+num_values < l_values.size()) {
+				if(num_return_params > 1 and i+num_values < l_values.size() and func_call->kind == NodeFunctionCall::Kind::UserDefined) {
 					for (int ii = num_return_params-1; ii > 0; ii--) {
 						if(node_type == NodeType::Declaration) {
 							func_call->function->args->prepend_param(static_cast<NodeDataStructure*>(l_values[i + ii].get())->to_reference());

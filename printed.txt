@@ -14,6 +14,16 @@ on init
 	declare List.value[List.MAX_STRUCTS] : int[]
 	declare List.next[List.MAX_STRUCTS] : int[]
 	declare _iter : int
+	declare uiarray[4] : int[]
+	declare ui_label uiarray0 : int (1, 1)
+	declare ui_label uiarray1 : int (1, 1)
+	declare ui_label uiarray2 : int (1, 1)
+	declare ui_label uiarray3 : int (1, 1)
+	_iter := 0
+	while(_iter < 4) 
+	uiarray[_iter] := get_ui_id(uiarray0) + _iter
+	inc(_iter)
+	end while
 	declare nda[2, 4] : Array[Integer][Integer] := (1, 2, 3, 4, 5, 6, 7, 8)
 	message(nda)
 	nda := (1, 2, 3, 4, 5, 6, 7, 8)
@@ -31,6 +41,8 @@ on init
 	declare const colorz.b : int := 0 + (0 + 1)
 	declare colorz[2] : int[] := (0 + 0, 0 + (0 + 1))
 	declare const colorz.SIZE : int := 3
+	declare folder_path : string
+	folder_path := get_folder(GET_FOLDER_LIBRARY_DIR)
 	scoped_func1()
 	scoped_func1()
 	declare c[6] : int[]
