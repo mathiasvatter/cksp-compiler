@@ -58,6 +58,8 @@ public:
     static inline BasicType* Unknown;
     static inline std::unique_ptr<BasicType> NumberType;
     static inline BasicType* Number;
+	static inline std::unique_ptr<BasicType> PGSType;
+	static inline BasicType* PGS;
 
     // Deklaration der Composite-Typen
     static inline CompositeType* ArrayOfInt;

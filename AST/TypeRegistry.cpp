@@ -25,6 +25,8 @@ void TypeRegistry::initialize() {
     Unknown = UnknownType.get();
     NumberType = std::make_unique<BasicType>(Kind::Number);
     Number = NumberType.get();
+	PGSType = std::make_unique<BasicType>(Kind::PGS);
+	PGS = PGSType.get();
 
     // Initialisierung der Composite-Typen
     ArrayOfInt = add_composite_type(CompoundKind::Array, Integer, 1);

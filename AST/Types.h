@@ -10,8 +10,8 @@
 
 inline static std::string type_kind_names[] = {"Basic", "Composite", "Object"};
 enum class TypeKind {Basic, Composite, Object};
-inline static std::string kind_names[] = {"Integer", "Boolean", "String", "Real", "Unknown", "Object", "Any", "Void", "Number", "Comparison"};
-enum class Kind {Integer, Boolean, String, Real, Unknown, Object, Any, Void, Number, Comparison};
+inline static std::string kind_names[] = {"Integer", "Boolean", "String", "Real", "Unknown", "Object", "Any", "Void", "Number", "Comparison", "PGS"};
+enum class Kind {Integer, Boolean, String, Real, Unknown, Object, Any, Void, Number, Comparison, PGS};
 inline static std::string compound_kind_names[] = {"Array", "List"};
 enum class CompoundKind {Array, List};
 
