@@ -6,6 +6,7 @@
 
 
 #include "ASTFunctionInlining.h"
+#include "../../Lowering/LoweringFunctionDef.h"
 
 /// Immediate Inlining of return-only functions
 /// Substitution already takes place in the parent class ASTFunctionInlining in the following nodes:
@@ -16,7 +17,7 @@
 class ASTExpressionFunctionInlining: public ASTFunctionInlining {
 private:
 public:
-	inline explicit ASTExpressionFunctionInlining(DefinitionProvider *definition_provider) : ASTFunctionInlining(definition_provider) {}
+	inline explicit ASTExpressionFunctionInlining(DefinitionProvider *definition_provider) : ASTFunctionInlining(definition_provider) {m_used_function_definitions.clear();}
 
 	NodeAST* visit(NodeProgram &node) override {
 		m_program = &node;
@@ -27,10 +28,37 @@ public:
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-		for(auto & function_definition : node.function_definitions) {
-			function_definition->accept(*this);
+		for(auto & def : node.function_definitions) def->visited = false;
+
+		/// vector to house only the definitions that are actually used in the program
+		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
+		for(auto & func_def : node.function_definitions) {
+			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
+				final_function_definitions.push_back(std::move(func_def));
+			}
 		}
+		node.function_definitions = std::move(final_function_definitions);
+
+		node.update_function_lookup();
 		return &node;
+	}
+
+	/// only transforms expression only function into return statement functions
+	static inline bool transform_to_return_function(NodeFunctionDefinition* def) {
+		if(!def->return_variable.has_value()) return false;
+		LoweringFunctionDef::throw_function_deprecation_error(def->return_variable.value()->tok);
+		if(def->body->statements.size() == 1) {
+			auto stmt = def->body->statements[0]->statement.get();
+			if(stmt->get_node_type() == NodeType::SingleAssignment) {
+				auto assignment = static_cast<NodeSingleAssignment*>(stmt);
+				if(assignment->l_value->get_string() == def->return_variable.value()->name) {
+					auto node_return = std::make_unique<NodeReturn>(assignment->tok, std::move(assignment->r_value));
+					stmt->replace_with(std::move(node_return));
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	NodeAST* visit(NodeFunctionCall &node) override {
@@ -38,6 +66,10 @@ public:
 		if(node.kind != NodeFunctionCall::Kind::UserDefined) return &node;
 
 		if(node.get_definition(m_program)) {
+			// if it is not an expression-only function, do not transform into return statement, instead add return variable to function header
+			transform_to_return_function(node.definition);
+			node.definition->accept(*this);
+			node.definition->visited = true;
 			// see if the function is a return-only function
 			if(is_expression_function(node.definition)) {
 				check_recursion(node.definition);
@@ -54,6 +86,8 @@ public:
 				m_program->function_call_stack.pop();
 
 				return node.replace_with(get_expression_func_return(node_func_def.get()));
+			} else {
+				m_used_function_definitions.insert(node.definition);
 			}
 
 		}

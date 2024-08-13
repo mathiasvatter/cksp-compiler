@@ -152,6 +152,9 @@ private:
         // match type from declaration to reference
 		node->set_element_type(specialize_type(reference_type, declaration_type));
 
+		// do not alter declaration type if it already has a type
+		if(node->declaration->ty->get_element_type() != TypeRegistry::Unknown) return node->ty;
+
         declaration_type = node->declaration->ty->get_element_type();
         reference_type = node->ty->get_element_type();
         if(!declaration_type->is_compatible(reference_type)) {

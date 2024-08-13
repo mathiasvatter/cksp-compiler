@@ -49,19 +49,6 @@ public:
         // message overloaded is not recognized as builtin
 		// constructor method renaming
         if(node.kind == NodeFunctionCall::Kind::Undefined) {
-
-//			// check for constructor method
-//			if(node.is_constructor(m_program)) {
-//				node.function->name += ".__init__";
-//				if(!node.find_method_definition(m_program)) {
-//					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-//					error.m_message = "Constructor method "+node.get_object_name()+" not found.";
-//					error.exit();
-//				}
-//				return;
-//			}
-
-
             if(node.function->args->params.size() == 1) return &node;
             if(node.function->name != "message") return &node;
             // lowering of message parameters when separated by comma
@@ -71,12 +58,9 @@ public:
 	}
 
     /// lowering of get control statements from property functions
-	NodeAST * visit(NodeGetControl &node) override {
-        if(auto lowering = node.get_lowering(m_program)) {
-            return node.accept(*lowering);
-        }
-		return &node;
-    };
+	NodeAST * visit(NodeSingleAssignment &node) override {
+		return node.lower(m_program);
+	};
 
     NodeAST * visit(NodeVariableRef &node) override {
         if(node.data_type == DataType::UIControl and node.is_func_arg()) {

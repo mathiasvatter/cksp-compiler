@@ -179,6 +179,7 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 					nullptr,
 					node_var_ref->tok);
 				node_array_ref->match_data_structure(node_var_ref->declaration);
+				m_def_provider->remove_reference(node_var_ref->declaration, node_var_ref);
 				auto new_ref = static_cast<NodeReference*>(node_var_ref->replace_with(std::move(node_array_ref)));
 				m_def_provider->add_reference(new_ref->declaration, new_ref);
 			// problem when desugaring return stmts with multiple return variables -> all get to be variables
@@ -195,6 +196,7 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 						new_references.emplace(new_ref);
 					}
 					m_def_provider->set_references(new_declaration, new_references);
+					m_def_provider->remove_references(node_ret_var);
 				}
 			} else if (arg->get_node_type() == NodeType::NDArrayRef and param->get_node_type() == NodeType::Variable) {
 				auto node_ret_var = static_cast<NodeVariable*>(param.get());
@@ -209,6 +211,7 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 						new_references.emplace(new_ref);
 					}
 					m_def_provider->set_references(new_declaration, new_references);
+					m_def_provider->remove_references(node_ret_var);
 				}
 			}
 		}
@@ -240,11 +243,6 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
             nullptr,
 			data_struct->tok);
 		new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_array)));
-		m_def_provider->set_references(new_data_struct, references);
-		// update all reference declaration pointers
-		for(auto & ref : references) {
-			ref->declaration = new_data_struct;
-		}
 	// if some references were detected as pointer references -> change data_struct type
 	} else if(reference_node_types.find(NodeType::PointerRef) != reference_node_types.end()) {
 		auto node_pointer = std::make_unique<NodePointer>(
@@ -253,19 +251,17 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 			data_struct->ty,
 			data_struct->tok);
 		new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_pointer)));
+	}
+
+	if(new_data_struct) {
 		m_def_provider->set_references(new_data_struct, references);
 		// update all reference declaration pointers
 		for(auto & ref : references) {
 			ref->declaration = new_data_struct;
 		}
+		m_def_provider->remove_references(data_struct);
+		return new_data_struct;
 	}
-	// update member table of struct if member being replaced
-//	if(new_data_struct) {
-//		if (auto strct = new_data_struct->is_member()) {
-//			strct->update_member_table();
-//		}
-//	}
-	if(new_data_struct) return new_data_struct;
 	return data_struct;
 }
 
@@ -317,7 +313,6 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(Defin
 		node_replacement->match_data_structure(reference->declaration);
 		def_provider->remove_reference(reference->declaration, reference);
 		auto new_ref = static_cast<NodeReference*>(reference->replace_with(std::move(node_replacement)));
-//		new_ref->accept(*this);
 		def_provider->add_reference(new_ref->declaration, new_ref);
 		return new_ref;
 	}

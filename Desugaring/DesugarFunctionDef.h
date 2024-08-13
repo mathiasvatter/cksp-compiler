@@ -7,7 +7,7 @@
 #include "ASTDesugaring.h"
 #include "../misc/Gensym.h"
 
-/// raises functions with deprecated style return to return statement by substituting them
+/// raises functions with deprecated style return to return statement only if expression only function
 /// when encountering return statement with multiple return values -> parameter promotion
 class DesugarFunctionDef : public ASTDesugaring {
 private:
@@ -18,43 +18,43 @@ public:
 
 	inline NodeAST* visit(NodeFunctionDefinition &node) override {
 		m_functions_visited.push(&node);
+		node.body->accept(*this);
 		if(node.return_variable.has_value()) {
 			node.num_return_params = 1;
 		}
-		node.body->accept(*this);
 		m_functions_visited.pop();
 		return &node;
 	};
 
 	inline NodeAST* visit(NodeSingleAssignment &node) override {
-		if(m_functions_visited.top()->return_variable.has_value()) {
-			if(node.l_value->get_string() == m_functions_visited.top()->return_variable.value()->name) {
-				std::vector<std::unique_ptr<NodeAST>> returns;
-				returns.push_back(std::move(node.r_value));
-				auto node_return = std::make_unique<NodeReturn>(std::move(returns), node.tok);
-				m_functions_visited.top()->return_variable.reset();
-				return node.replace_with(std::move(node_return));
-			}
-		}
+//		if(m_functions_visited.top()->return_variable.has_value()) {
+//			if(node.l_value->get_string() == m_functions_visited.top()->return_variable.value()->name) {
+//				std::vector<std::unique_ptr<NodeAST>> returns;
+//				returns.push_back(std::move(node.r_value));
+//				auto node_return = std::make_unique<NodeReturn>(std::move(returns), node.tok);
+//				m_functions_visited.top()->return_variable.reset();
+//				return node.replace_with(std::move(node_return));
+//			}
+//		}
 		node.l_value->accept(*this);
 		node.r_value->accept(*this);
 		return &node;
 	};
 
-	inline bool throw_shadow_error(NodeReference *ref) {
-		if(m_functions_visited.top()->return_variable.has_value()) {
-			if(ref->name == m_functions_visited.top()->return_variable.value()->name) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", ref->tok);
-				error.m_message = "Variable Reference shadows return variable.";
-				error.print();
-				return true;
-			}
-		}
-		return false;
-	}
+//	inline bool throw_shadow_error(NodeReference *ref) {
+//		if(m_functions_visited.top()->return_variable.has_value()) {
+//			if(ref->name == m_functions_visited.top()->return_variable.value()->name) {
+//				auto error = CompileError(ErrorType::SyntaxError, "", "", ref->tok);
+//				error.m_message = "Variable Reference shadows return variable.";
+//				error.print();
+//				return true;
+//			}
+//		}
+//		return false;
+//	}
 
 	inline NodeAST* visit(NodeVariableRef &node) override {
-		throw_shadow_error(&node);
+//		throw_shadow_error(&node);
 		m_gensym.ingest(node.name);
 		return &node;
 	}
@@ -65,7 +65,7 @@ public:
 	}
 
 	inline NodeAST* visit(NodeArrayRef &node) override {
-		throw_shadow_error(&node);
+//		throw_shadow_error(&node);
 		m_gensym.ingest(node.name);
 		return &node;
 	}
@@ -76,7 +76,7 @@ public:
 	}
 
 	inline NodeAST* visit(NodeNDArrayRef &node) override {
-		throw_shadow_error(&node);
+//		throw_shadow_error(&node);
 		m_gensym.ingest(node.name);
 		return &node;
 	}

@@ -32,23 +32,18 @@ protected:
 public:
     virtual NodeAST* visit(NodeDeadCode& node) {return &node;};
 	virtual NodeAST* visit(NodeWildcard& node) {
-//		node.ty = TypeRegistry::Integer;
 		return &node;
 	};
 	virtual NodeAST* visit(NodeInt& node) {
-//		node.ty = TypeRegistry::Integer;
 		return &node;
 	};
     virtual NodeAST* visit(NodeReal& node) {
-//		node.ty = TypeRegistry::Real;
 		return &node;
 	};
     virtual NodeAST* visit(NodeString& node) {
-		node.ty = TypeRegistry::String;
 		return &node;
 	};
 	virtual NodeAST* visit(NodeNil& node) {
-		node.ty = TypeRegistry::Nil;
 		return &node;
 	};
 	virtual NodeAST* visit(NodeVariable& node) {

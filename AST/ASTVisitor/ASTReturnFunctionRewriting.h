@@ -14,6 +14,9 @@
 class ASTReturnFunctionRewriting: public ASTVisitor {
 private:
 	DefinitionProvider *m_def_provider;
+	/// set of all function_definitions that are actually used in program
+	/// can only house called functions with no params
+	std::set<NodeFunctionDefinition*> m_used_function_definitions;
 public:
 	inline explicit ASTReturnFunctionRewriting(DefinitionProvider *definition_provider): m_def_provider(definition_provider) {}
 
@@ -22,10 +25,8 @@ public:
 		/// do immediate inlining of return-only functions
 		ASTExpressionFunctionInlining inlining(m_def_provider);
 		node.accept(inlining);
-		node.debug_print();
 
 		m_program = &node;
-		m_program->global_declarations->accept(*this);
 
 		/// lower func_defs
 		for(auto & func_def : node.function_definitions) {
@@ -35,22 +36,49 @@ public:
 		FunctionCallHoisting hoisting;
 		node.accept(hoisting);
 
+		m_program->global_declarations->accept(*this);
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-		node.merge_function_definitions();
+		for(auto & def : node.function_definitions) def->visited = false;
+
+		/// vector to house only the definitions that are actually used in the program
+		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
+		for(auto & func_def : node.function_definitions) {
+			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
+				final_function_definitions.push_back(std::move(func_def));
+			}
+		}
+		node.function_definitions = std::move(final_function_definitions);
+		node.update_function_lookup();
+
 		return &node;
 	};
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		if(node.get_definition(m_program)) {
-			node.definition->accept(*this);
+			if(!node.definition->visited) node.definition->accept(*this);
+
+			// add throwaway variable ref to args
+			if(node.parent->get_node_type() == NodeType::Statement) {
+				if (node.kind != NodeFunctionCall::Kind::UserDefined) return &node;
+				if (node.definition and node.definition->num_return_params > 0) {
+					auto throwaway_var = static_cast<NodeDataStructure *>(node.definition->header->args->params[0].get());
+					auto throwaway_ref = throwaway_var->to_reference();
+					throwaway_ref->name = m_def_provider->get_fresh_name("_");
+					throwaway_ref->kind = NodeReference::Kind::Throwaway;
+					node.function->args->prepend_param(std::move(throwaway_ref));
+				}
+			}
 		}
+
 		return &node;
 	}
 
 	inline NodeAST* visit(NodeFunctionDefinition& node) override {
+		node.visited = true;
+		m_used_function_definitions.insert(&node);
 		node.header->accept(*this);
 		if(node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);
@@ -61,6 +89,8 @@ public:
 	// if assigned functioncall has return parameter -> make it argument
 	// replace single assignment with function call
 	inline NodeAST* visit(NodeSingleAssignment &node) override {
+		node.r_value->accept(*this);
+		node.l_value->accept(*this);
 		if(node.r_value->get_node_type() == NodeType::FunctionCall) {
 			auto func_call = static_cast<NodeFunctionCall*>(node.r_value.get());
 			if(!func_call->get_definition(m_program)) return &node;
@@ -74,12 +104,13 @@ public:
 	}
 
 	inline NodeAST* visit(NodeSingleDeclaration &node) override {
-		if(!node.value) return &node;
-		if(node.value->get_node_type() == NodeType::FunctionCall) {
-			auto func_call = static_cast<NodeFunctionCall*>(node.value.get());
-			if(!func_call->get_definition(m_program)) return &node;
-			if(func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
-			if(func_call->definition->num_return_params > 0) {
+		if (!node.value) return &node;
+		node.value->accept(*this);
+		if (node.value->get_node_type() == NodeType::FunctionCall) {
+			auto func_call = static_cast<NodeFunctionCall *>(node.value.get());
+			if (!func_call->get_definition(m_program)) return &node;
+			if (func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
+			if (func_call->definition->num_return_params > 0) {
 				func_call->function->args->prepend_param(node.variable->to_reference());
 				auto node_block = std::make_unique<NodeBlock>(node.tok);
 				node_block->scope = true;
@@ -91,30 +122,4 @@ public:
 		}
 		return &node;
 	}
-
-	// if statement is func call and function is return function but does not return anything:
-	// transform into assign statement with throwaway var "_"
-	inline NodeAST* visit(NodeStatement &node) override {
-		node.statement->accept(*this);
-		if(node.statement->get_node_type() == NodeType::FunctionCall) {
-			auto func_call = static_cast<NodeFunctionCall*>(node.statement.get());
-			if(func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
-			if(func_call->definition and func_call->definition->num_return_params>0) {
-				auto throwaway_var = static_cast<NodeDataStructure*>(func_call->definition->header->args->params[0].get());
-				auto throwaway_ref =throwaway_var->to_reference();
-				throwaway_ref->name = m_def_provider->get_fresh_name("_");
-				throwaway_ref->kind = NodeReference::Kind::Throwaway;
-				auto assignment = std::make_unique<NodeSingleAssignment>(
-					std::move(throwaway_ref),
-					std::move(node.statement),
-					node.tok
-				);
-				node.statement = std::move(assignment);
-				node.statement->parent = &node;
-				node.statement->accept(*this);
-			}
-		}
-		return &node;
-	}
-
 };

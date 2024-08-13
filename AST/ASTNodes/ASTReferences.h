@@ -52,7 +52,7 @@ struct NodeArrayRef : NodeReference {
 	std::string get_string() override {
 		return name;
 	}
-    ASTLowering* get_lowering(NodeProgram *program) const override;
+//    ASTLowering* get_lowering(NodeProgram *program) const override;
 	std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() override;
 	/// this_list.next.value[6]
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;

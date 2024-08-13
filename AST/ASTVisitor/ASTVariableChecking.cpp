@@ -177,7 +177,7 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 			access_chain->accept(*this);
 			return node.replace_with(std::move(access_chain));
 		}
-//        if(!fail) return;
+        if(!fail) return &node;
 	    DefinitionProvider::throw_declaration_error(&node).exit();
     }
 
@@ -218,10 +218,10 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 	node.determine_locality(m_program, m_current_block);
 
 	// handle return_vars -> do not check if they have been declared
-	if(node.is_compiler_return) {
-		node.is_used = true;
-		return &node;
-	}
+//	if(node.is_compiler_return) {
+//		node.is_used = true;
+//		return &node;
+//	}
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node);
@@ -230,9 +230,9 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 	// handle return_vars -> do not check if they have been declared
-	if(node.is_compiler_return) {
-		return &node;
-	}
+//	if(node.is_compiler_return) {
+//		return &node;
+//	}
 	auto node_declaration = m_def_provider->get_declaration(&node);
     if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
@@ -249,6 +249,8 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 				return &node;
 			}
 		} else {
+			// could still fail on ui control array values or raw list subarrays
+			if(!fail) return &node;
 			DefinitionProvider::throw_declaration_error(&node).exit();
 		}
     }
