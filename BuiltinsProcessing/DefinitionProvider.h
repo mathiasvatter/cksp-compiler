@@ -128,6 +128,11 @@ public:
 		m_references_per_data_structure[data_struct] = std::move(references);
 		return true;
 	}
+	/// removes key, value pair from map
+	bool remove_references(NodeDataStructure* data_struct) {
+		m_references_per_data_structure.erase(data_struct);
+		return true;
+	}
 	bool add_reference(NodeDataStructure* data_struct, NodeReference* reference) {
 		m_references_per_data_structure[data_struct].insert(reference);
 		return true;

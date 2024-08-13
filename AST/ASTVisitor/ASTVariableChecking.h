@@ -98,7 +98,8 @@ private:
 			id_node_type = "<Variable>";
 		}
 		auto node_reference = static_cast<NodeReference*>(callback_id);
-
+		// return prematurely if no declaration yet provided
+		if(!node_reference->declaration) return false;
 		// check if callback id reference is ui_control
 		auto error = CompileError(ErrorType::TypeError, "", "", callback_id->tok);
 		if(node_reference->data_type != DataType::UIControl) {

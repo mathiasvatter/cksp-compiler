@@ -28,8 +28,7 @@ NodeAST * ASTGlobalScope::visit(NodeProgram &node) {
 	node.accept(param_promotion);
 
 	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
-	node.accept(register_reuse);
-
+	return node.accept(register_reuse);
 }
 
 

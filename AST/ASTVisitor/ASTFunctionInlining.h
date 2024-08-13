@@ -9,7 +9,7 @@
 
 class ASTFunctionInlining : public ASTVisitor {
 public:
-	explicit ASTFunctionInlining(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
+	explicit ASTFunctionInlining(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {m_used_function_definitions.clear();}
 
 	/// check for used functions
 	inline NodeAST *visit(NodeProgram &node) override {
@@ -54,7 +54,7 @@ public:
 			error.exit();
 		}
 
-		node.get_definition(m_program);
+		node.get_definition(m_program, true);
 		if(node.kind == NodeFunctionCall::Kind::Property) {
 			CompileError(ErrorType::InternalError,"Found undefined property function.", "", node.tok).exit();
 		}
@@ -203,7 +203,7 @@ public:
 
 	/// if substitute and ref are both of type <Composite> and <ArrayRef>: only change name
 	static NodeReference* substitute_composite_type(NodeReference* ref, NodeAST* substitute) {
-		if(ref->ty->get_type_kind() == TypeKind::Composite and substitute->ty->get_type_kind() == TypeKind::Composite) {
+		if(substitute->ty->get_type_kind() == TypeKind::Composite) {
 			if (substitute->get_node_type() != NodeType::ArrayRef and substitute->get_node_type() != NodeType::NDArrayRef) {
 				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
 				error.m_message = "Arg is of type <Composite> but is no <ArrayRef> Node: <" + ref->name + ">.";

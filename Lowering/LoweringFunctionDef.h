@@ -11,6 +11,7 @@
 /// promotes parameters of all return statements to return values
 class LoweringFunctionDef : public ASTLowering {
 private:
+	bool throw_deprecated_warning = false;
 	std::stack<NodeFunctionDefinition*> m_functions_visited;
 	Gensym m_gensym;
 public:
@@ -46,11 +47,25 @@ public:
 		m_gensym.refresh();
 		if(node.return_variable.has_value()) {
 			node.num_return_params = 1;
+			if(!throw_deprecated_warning) {
+				LoweringFunctionDef::throw_function_deprecation_error(node.return_variable.value()->tok);
+				throw_deprecated_warning = true;
+			}
+			node.return_variable.value()->data_type = DataType::Return;
+			node.header->args->prepend_param(std::move(node.return_variable.value()));
+			node.return_variable.reset();
 		}
 		node.body->accept(*this);
 		m_functions_visited.pop();
 		return &node;
 	};
+
+	inline static CompileError throw_function_deprecation_error(Token tok) {
+		auto error = CompileError(ErrorType::SyntaxError, "", "<Return> Statement", tok);
+		error.m_message = "Deprecated return syntax used in function definition. For type safety, using"
+						  " multiple return values or returning arrays, use <return> statement syntax instead.";
+		return error;
+	}
 
 	inline NodeAST* visit(NodeReturn &node) override {
 		if(node.return_variables.size() != m_functions_visited.top()->num_return_params) {

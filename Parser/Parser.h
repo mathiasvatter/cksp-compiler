@@ -31,7 +31,6 @@ inline static std::map<token, int> operator_precedence = {
         {token::LESS_EQUAL, 7},
 		{token::EQUAL, 7},
 		{token::NOT_EQUAL, 7},
-//		{token::COMPARISON, 7},
         {token::BIT_XOR, 8},
         {token::BIT_OR, 9},
         {token::BIT_AND, 10},
@@ -41,6 +40,26 @@ inline static std::map<token, int> operator_precedence = {
         {token::MULT, 13},
         {token::DIV, 13},
         {token::MODULO, 13}
+
+//	{token::BOOL_XOR, 2},      // Niedrigste Präzedenz unter den logischen Operatoren
+//	{token::BOOL_OR, 3},       // Logisches OR hat eine höhere Präzedenz als XOR
+//	{token::BOOL_AND, 4},      // Logisches AND hat eine höhere Präzedenz als OR und XOR
+//	{token::BOOL_NOT, 12},     // Logisches NOT hat eine der höchsten Präzedenzwerte, da es ein unärer Operator ist
+//	{token::GREATER_THAN, 9},  // Vergleichsoperatoren haben mittlere Präzedenz
+//	{token::LESS_THAN, 9},
+//	{token::GREATER_EQUAL, 9},
+//	{token::LESS_EQUAL, 9},
+//	{token::EQUAL, 8},         // Gleichheits- und Ungleichheitsoperatoren haben leicht niedrigere Präzedenz als Vergleichsoperatoren
+//	{token::NOT_EQUAL, 8},
+//	{token::BIT_XOR, 5},       // Bitweises XOR hat eine niedrigere Präzedenz als AND, aber höhere als logisches AND
+//	{token::BIT_OR, 6},        // Bitweises OR hat eine niedrigere Präzedenz als AND und XOR
+//	{token::BIT_AND, 7},       // Bitweises AND hat eine niedrigere Präzedenz als die Vergleichsoperatoren
+//	{token::BIT_NOT, 13},      // Bitweises NOT hat eine der höchsten Präzedenzwerte, da es ein unärer Operator ist
+//	{token::ADD, 10},          // Additive Operatoren haben eine höhere Präzedenz als die Vergleichsoperatoren
+//	{token::SUB, 10},
+//	{token::MULT, 11},         // Multiplikative Operatoren haben die höchste Präzedenz unter den binären Operatoren
+//	{token::DIV, 11},
+//	{token::MODULO, 11}
 };
 
 inline static int _get_binop_precedence(token tok) {

@@ -6,6 +6,8 @@
 
 NodeAST* ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
+
+	m_program->global_declarations->accept(*this);
 	for(auto & struct_def : node.struct_definitions) {
 		struct_def->accept(*this);
 	}
@@ -15,6 +17,8 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
     for(auto & function_definition : node.function_definitions) {
         function_definition->accept(*this);
     }
+	// update because function parameters might have been added which might cause problems in typechecking
+	m_program->update_function_lookup();
 	m_program->global_declarations->prepend_body(NodeStruct::declare_struct_constants());
 	m_program->init_callback->statements->prepend_body(NodeProgram::declare_compiler_variables());
 //	m_program->global_declarations->append_body(declare_compiler_variables());

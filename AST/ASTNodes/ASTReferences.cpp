@@ -87,10 +87,10 @@ NodeAST *NodeArrayRef::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST>
 	return nullptr;
 }
 
-ASTLowering* NodeArrayRef::get_lowering(NodeProgram *program) const {
-    static LoweringArray lowering(program);
-    return &lowering;
-}
+//ASTLowering* NodeArrayRef::get_lowering(NodeProgram *program) const {
+//    static LoweringArray lowering(program);
+//    return &lowering;
+//}
 
 std::unique_ptr<NodeNDArrayRef> NodeArrayRef::to_ndarray_ref() {
 	return std::make_unique<NodeNDArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, index->clone()) : nullptr, tok);

@@ -20,6 +20,7 @@ public:
 
 	/// Determining array size at compile time -> not of references!
 	NodeAST * visit(NodeArray& node) override {
+		m_size_is_constant = true;
 		m_current_array = &node;
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 		if (node.parent->get_node_type() != NodeType::SingleDeclaration and

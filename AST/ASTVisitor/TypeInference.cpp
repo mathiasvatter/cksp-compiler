@@ -419,11 +419,21 @@ NodeAST * TypeInference::visit(NodeUIControl& node) {
 		error.exit();
 	}
 
+	node.control_var->accept(*this);
+
 	// only to matching if node types are the same (because of ui control arrays)
 	// eg. declare ui_label %lbl_sdf[3,1](1,1) -> $lbl_sdf
-	if(node.control_var->get_node_type() == node.declaration->control_var->get_node_type())
+	if(node.control_var->get_node_type() == node.declaration->control_var->get_node_type()) {
 		match_type(node.control_var.get(), node.declaration->control_var.get());
-	node.control_var->accept(*this);
+	// in case of ui_arrays -> match against element type of declaration
+	} else if(node.is_ui_control_array()) {
+		if(node.control_var->ty->get_element_type()->is_compatible(node.declaration->control_var->ty->get_element_type())) {
+			node.control_var->set_element_type(node.declaration->control_var->ty->get_element_type());
+		} else {
+			// provoke type error
+			throw_type_error(node.control_var.get(), node.declaration->control_var.get()).exit();
+		}
+	}
 
 	for(int i = 0; i < node.params->params.size(); i++) {
 		match_type(node.params->params[i].get(), node.declaration->params->params[i].get());
@@ -473,7 +483,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		return &node;
 	}
 	node.function->accept(*this);
-	for(int i = 0; i < node.function->args->params.size(); i++) {
+	for (int i = 0; i < node.function->args->params.size(); i++) {
 		match_type(node.function->args->params[i].get(), node.definition->header->args->params[i].get());
 	}
 
@@ -550,8 +560,9 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 		error.exit();
 	}
 
-	if(!is_compatible)
+	if(!is_compatible) {
         error.exit();
+	}
 	node.left->set_element_type(specialize_type(node.left->ty, node.ty));
 	node.right->set_element_type(specialize_type(node.right->ty, node.ty));
 	return &node;
@@ -577,12 +588,13 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	} else if(node.op == token::BOOL_NOT) {
 		node.ty = TypeRegistry::Boolean;
 		is_compatible = node.operand->ty->is_compatible(node.ty);
-		error.m_message += "<Bool Operators> can only be used in between <Boolean> or <Comparison> values.";
+		error.m_message += "<Bool Operators> can only be used in between <Boolean> or <Comparison> values. Be sure to use correct parentheses.";
 	} else {
 		error.exit();
 	}
 
-	if(!is_compatible) error.exit();
+	if(!is_compatible)
+		error.exit();
 	node.operand->ty = specialize_type(node.operand->ty, node.ty);
 	return &node;
 }

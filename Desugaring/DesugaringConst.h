@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTDesugaring.h"
+#include "../Optimization/ConstantFolding.h"
 
 /**
  * @brief This class is responsible for lowering the const statement.
@@ -99,6 +100,7 @@ public:
         auto constant = make_declare_variable(node.name+".SIZE", node.constants->statements.size(), DataType::Const, node.constants.get());
         node.constants->add_stmt(std::move(constant));
         m_const_prefixes.pop();
-		return &node;
+		static ConstantFolding cf;
+		return node.constants->accept(cf);
     }
 };
