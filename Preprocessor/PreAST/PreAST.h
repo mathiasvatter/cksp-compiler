@@ -35,6 +35,7 @@ enum class PreNodeType {
 };
 
 struct PreNodeAST {
+//	Token tok;
 	PreNodeType type;
 	PreNodeAST* parent = nullptr;
 	PreNodeAST(PreNodeAST* parent=nullptr, PreNodeType type=PreNodeType::DEAD_CODE) : parent(parent), type(type) {}
@@ -59,6 +60,11 @@ T* safe_cast(PreNodeAST* node, PreNodeType type) {
 		return static_cast<T*>(node);
 	}
 	return nullptr;
+}
+
+template<typename T>
+std::unique_ptr<T> clone_as(PreNodeAST* node) {
+	return std::unique_ptr<T>(static_cast<T*>(node->clone().release()));
 }
 
 struct PreNodeNumber : PreNodeAST {
@@ -242,6 +248,27 @@ struct PreNodeChunk : PreNodeAST {
             c->update_token_data(token);
         }
     }
+	/// puts nested statement list in one, returns new vector to replace node->statements with
+	inline void flatten() {
+		std::vector<std::unique_ptr<PreNodeAST>> temp;
+		temp.reserve(chunk.size()); // Speicherreservierung um unnötige Allokationen zu vermeiden
+
+		for (auto& i : chunk) {
+			if (auto node_statement = safe_cast<PreNodeStatement>(i.get(), PreNodeType::STATEMENT)) {
+				if (auto node_chunk = safe_cast<PreNodeChunk>(node_statement->statement.get(), PreNodeType::CHUNK)) {
+					// Fügen Sie die inneren Statements zum temporären Vector hinzu
+					auto& inner_chunk = node_chunk->chunk;
+					temp.insert(temp.end(),
+								std::make_move_iterator(inner_chunk.begin()),
+								std::make_move_iterator(inner_chunk.end()));
+					continue; // Weiter zur nächsten Iteration
+				}
+			}
+			// Fügen Sie das aktuelle Element zum temporären Vector hinzu
+			temp.push_back(std::move(i));
+		}
+		chunk = std::move(temp);
+	}
 };
 
 struct PreNodeList : PreNodeAST {

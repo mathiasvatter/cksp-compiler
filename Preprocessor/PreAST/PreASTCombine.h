@@ -10,6 +10,7 @@ class PreASTCombine : public PreASTVisitor {
 public:
     std::vector<Token> m_tokens;
 
+	void visit(PreNodeChunk& node) override;
     void visit(PreNodeNumber& node) override;
     void visit(PreNodeInt& node) override;
     void visit(PreNodeKeyword& node) override;

@@ -130,7 +130,6 @@ Result<std::unique_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable(
     Token name = consume(m_tokens); // consume variable name token
     // cut away identifier
     std::string var_name = name.val;
-//    ASTType type = get_identifier_type(var_name[0]);
 	Type* ty = TypeRegistry::get_type_from_identifier(var_name[0]);
     if(get_token_type(TYPES, std::string(1, var_name[0])))
         var_name = var_name.erase(0,1);
@@ -140,7 +139,6 @@ Result<std::unique_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable(
 		return Result<std::unique_ptr<NodeVariable>>(type_annotation.get_error());
 	}
     auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name, type_annotation.unwrap(), DataType::Mutable, name);
-//    node_variable->type = type;
     node_variable->is_local = false;
     node_variable->is_engine = true;
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
@@ -149,7 +147,6 @@ Result<std::unique_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable(
 Result<std::unique_ptr<NodeArray>> BuiltinsProcessor::parse_builtin_array() {
     Token name = consume(m_tokens); // consume array name token
     std::string arr_name = name.val;
-//    ASTType type = get_identifier_type(arr_name[0]);
 	Type* ty = TypeRegistry::get_type_from_identifier(arr_name[0]);
     if(get_token_type(TYPES, std::string(1, arr_name[0])))
         arr_name = arr_name.erase(0,1);
@@ -211,7 +208,6 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
 	node_function_header->ty = ret_type;
     node_function_header->is_builtin = true;
     node_function_header->has_forced_parenth = has_forced_parenth;
-	node_function_header->arg_types = types;
 
     auto node_function = std::make_unique<NodeFunctionDefinition>(
             std::move(node_function_header),
@@ -275,13 +271,6 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 	node_ui_control->arg_types = types;
 	node_ui_control->ty = node_ui_control->control_var->ty;
 	return Result<std::unique_ptr<NodeUIControl>>(std::move(node_ui_control));
-}
-
-DataType BuiltinsProcessor::get_var_type_annotation(const std::string& keyword) {
-    if(keyword.find("array") != std::string::npos) {
-        return DataType::Mutable;
-    }
-    return DataType::Mutable;
 }
 
 Result<std::unique_ptr<NodeParamList>> BuiltinsProcessor::parse_builtin_args_list() {

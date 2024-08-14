@@ -202,7 +202,7 @@ public:
 		}
 
 		auto node_declaration = m_def_provider->get_declaration(&node);
-		if(!node_declaration) DefinitionProvider::throw_declaration_error(&node).exit();
+		if(!node_declaration) DefinitionProvider::throw_declaration_error(node).exit();
 
 		node.match_data_structure(node_declaration);
 		return &node;
@@ -232,7 +232,7 @@ public:
 		}
 
 		auto node_declaration = m_def_provider->get_declaration(&node);
-		if(!node_declaration) DefinitionProvider::throw_declaration_error(&node).exit();
+		if(!node_declaration) DefinitionProvider::throw_declaration_error(node).exit();
 
 		node.match_data_structure(node_declaration);
 		return &node;

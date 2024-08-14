@@ -417,7 +417,7 @@ NodeAST *NodeFunctionDefinition::accept(struct ASTVisitor &visitor) {
 NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& other)
         : NodeAST(other), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
           header(clone_unique(other.header)), override(other.override),
-          call_sites(other.call_sites), callback_sites(other.callback_sites), body(clone_unique(other.body)),
+          call_sites(other.call_sites), body(clone_unique(other.body)),
 		  num_return_params(other.num_return_params), return_param(other.return_param) {
     if (other.return_variable) {
         return_variable = std::make_optional(clone_unique(other.return_variable.value()));

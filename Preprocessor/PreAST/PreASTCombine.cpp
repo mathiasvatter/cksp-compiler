@@ -4,6 +4,11 @@
 
 #include "PreASTCombine.h"
 
+void PreASTCombine::visit(PreNodeChunk& node) {
+	for(auto & n : node.chunk) {
+		n->accept(*this);
+	}
+}
 
 void PreASTCombine::visit(PreNodeNumber &node) {
     m_tokens.push_back(std::move(node.number));
@@ -22,6 +27,7 @@ void PreASTCombine::visit(PreNodeOther &node) {
 }
 
 void PreASTCombine::visit(PreNodeProgram& node) {
+	m_tokens.reserve(m_tokens.size() + node.program.size());
     for(auto & n : node.program) {
         n->accept(*this);
     }

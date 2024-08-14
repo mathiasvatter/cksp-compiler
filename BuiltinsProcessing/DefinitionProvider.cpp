@@ -183,7 +183,7 @@ NodeFunctionDefinition* DefinitionProvider::get_builtin_function(NodeFunctionHea
 }
 
 NodeFunctionDefinition* DefinitionProvider::get_property_function(NodeFunctionHeader *function) {
-	const auto it = property_functions.find(function->name);
+	auto it = property_functions.find(function->name);
 	if(it != property_functions.end()) {
 		return it->second.get();
 	}
@@ -192,7 +192,7 @@ NodeFunctionDefinition* DefinitionProvider::get_property_function(NodeFunctionHe
 
 NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::string& data) {
     for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
-        const auto it = rit->find(data);
+		auto it = rit->find(data);
         if (it != rit->end()) {
             return it->second;
         }
@@ -202,7 +202,7 @@ NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::st
 
 NodeDataStructure *DefinitionProvider::get_scoped_data_structure(const std::string& data, bool global_scope) {
     const auto& map = global_scope ? m_declared_data_structures.at(0) : m_declared_data_structures.back();
-	const auto it = map.find(data);
+	auto it = map.find(data);
 	if (it != map.end()) {
 		return it->second;
 	}

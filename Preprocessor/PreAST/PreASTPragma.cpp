@@ -26,7 +26,7 @@ void PreASTPragma::visit(PreNodePragma& node) {
         argument.pop_back();
 
         if(option == "output_path") {
-			PathHandler path_handler(token, current_file);
+			static PathHandler path_handler(token, current_file);
             auto output_path = path_handler.resolve_path(argument);
             if (output_path.is_error()) {
                 output_path.get_error().exit();
