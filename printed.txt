@@ -20,7 +20,7 @@ on init
 	declare _iter : int
 	make_perfview()
 	set_script_title("Legato Script")
-	message("** Script " & "'" & "Legato Script" & "'" & " Compile " & "15:56:27" & " " & "08/14/24" & " **")
+	message("** Script " & "'" & "Legato Script" & "'" & " Compile " & "18:48:44" & " " & "08/14/24" & " **")
 	set_listener(NI_SIGNAL_TIMER_MS, 10000)
 	declare _id : int
 	declare read decode[2] : int[]

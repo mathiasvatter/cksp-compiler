@@ -24,7 +24,7 @@ void PreASTDesugar::visit(PreNodeNumber& node) {
     // substitution
     if (!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.number.val)) {
-            substitute->update_token_data(node.number);
+//            substitute->update_token_data(node.number);
             node.replace_with(std::move(substitute));
             return;
         }
@@ -36,7 +36,7 @@ void PreASTDesugar::visit(PreNodeInt& node) {
     // substitution
     if (!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.number.val)) {
-            substitute->update_token_data(node.number);
+//            substitute->update_token_data(node.number);
             node.replace_with(std::move(substitute));
             return;
         }
@@ -49,7 +49,7 @@ void PreASTDesugar::visit(PreNodeKeyword& node) {
     // substitution
     if (!m_substitution_stack.empty()) {
         if (auto substitute = get_substitute(node.keyword.val)) {
-            substitute->update_token_data(node.keyword);
+//            substitute->update_token_data(node.keyword);
             node.replace_with(std::move(substitute));
             return;
         } else {
@@ -80,8 +80,7 @@ void PreASTDesugar::visit(PreNodeChunk& node) {
     for(auto &c : node.chunk) {
         c->accept(*this);
     }
-
-	node.chunk = cleanup_node_chunk(&node);
+	node.flatten();
 }
 
 void PreASTDesugar::visit(PreNodeList& node) {
@@ -179,10 +178,16 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
     while(node.to.type == token::DOWNTO ? i >= to : i <= to) {
         std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
         auto node_number_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
-        auto node_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INT, std::to_string(i), 0, 0, ""),
-                                                                                                 nullptr), nullptr);
+        auto node_statement = std::make_unique<PreNodeStatement>(
+			std::make_unique<PreNodeNumber>(
+				Token(token::INT, std::to_string(i), 0, 0, ""
+				),
+				 nullptr
+			 ),
+		 	nullptr
+		);
         node_number_chunk->chunk.push_back(std::move(node_statement));
-		auto node_number_chunk_macro_arg = std::unique_ptr<PreNodeChunk>(static_cast<PreNodeChunk*>(node_number_chunk->clone().release()));
+		auto node_number_chunk_macro_arg = clone_as<PreNodeChunk>(node_number_chunk.get());
 
         substitution_vector.push_back(std::pair("#n#", std::move(node_number_chunk)));
         m_substitution_stack.push(std::move(substitution_vector));
@@ -275,16 +280,16 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar
 std::unique_ptr<PreNodeMacroDefinition> PreASTDesugar::get_macro_definition(PreNodeMacroHeader *macro_header) {
     auto it = m_macro_lookup.find({macro_header->name->keyword.val, (int)macro_header->args->params.size()});
     if(it != m_macro_lookup.end()) {
-        auto copy = it->second->clone();
+        auto copy = clone_as<PreNodeMacroDefinition>(it->second);
         copy->update_parents(nullptr);
-        return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
+        return copy;
     }
 	// if macro call has no arguments (literate or iterate) and therefore does not match its original definition
 	auto it2 = m_macro_string_lookup.find(macro_header->name->keyword.val);
 	if(it2 != m_macro_string_lookup.end()) {
-		auto copy = it2->second->clone();
+		auto copy = clone_as<PreNodeMacroDefinition>(it2->second);
 		copy->update_parents(nullptr);
-		return std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition*>(copy.release()));
+		return copy;
 	}
 
     return nullptr;

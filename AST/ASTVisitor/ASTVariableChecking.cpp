@@ -3,6 +3,7 @@
 //
 
 #include "ASTVariableChecking.h"
+#include <future>
 
 ASTVariableChecking::ASTVariableChecking(DefinitionProvider* definition_provider, bool fail)
 	: m_def_provider(definition_provider), fail(fail) {}
@@ -22,16 +23,17 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 
 	// most func defs will be visited when called, keeping local scopes in mind
 	m_program->global_declarations->accept(*this);
+	m_program->init_callback->accept(*this);
 	for(const auto & s : node.struct_definitions) {
 		s->accept(*this);
 	}
-	m_program->init_callback->accept(*this);
 	for(const auto & callback : node.callbacks) {
 		if(callback.get() != m_program->init_callback) callback->accept(*this);
 	}
 	for(const auto & func_def : node.function_definitions) {
 		if(!func_def->visited) func_def->accept(*this);
 	}
+
 	node.reset_function_visited_flag();
 	return &node;
 }
@@ -50,9 +52,9 @@ NodeAST* ASTVariableChecking::visit(NodeCallback& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
-	auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 	auto engine_widget = m_def_provider->get_builtin_widget(node.ui_control_type);
 	if(!engine_widget) {
+		auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 		error.m_message = "Unknown Engine Widget";
 		error.m_got = node.ui_control_type;
 		error.exit();
@@ -83,6 +85,7 @@ NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
 
 	//check param size
 	if(engine_widget->params->params.size() != node.params->params.size()) {
+		auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 		error.m_message = "Engine Widget has incorrect number of parameters.";
 		error.m_expected = std::to_string(engine_widget->params->params.size());
 		error.m_got = std::to_string(node.params->params.size());
@@ -176,7 +179,7 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
         if(!fail) return &node;
-	    DefinitionProvider::throw_declaration_error(&node).exit();
+	    DefinitionProvider::throw_declaration_error(node).exit();
     }
 
     node.match_data_structure(node_declaration);
@@ -239,7 +242,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 			// could still fail on ui control array values or raw list subarrays
 			if(!fail)
 				return &node;
-			DefinitionProvider::throw_declaration_error(&node).exit();
+			DefinitionProvider::throw_declaration_error(node).exit();
 		}
     }
 
@@ -271,7 +274,7 @@ NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
 		}
 		// if fail is set to false, return early. the rest is determined after lowering
 //		if(!fail) return;
-		DefinitionProvider::throw_declaration_error(&node).exit();
+		DefinitionProvider::throw_declaration_error(node).exit();
 	}
 
 	node.match_data_structure(node_declaration);
@@ -342,9 +345,9 @@ NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure
 			new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_ndarray)));
 		}
 	} else if (node->ty->get_type_kind() == TypeKind::Basic) {
-		auto syntax_error = CompileError(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
 		// if var is annotated as variable but recognized as array by parser -> throw error
 		if(node->get_node_type() == NodeType::Array or node->get_node_type() == NodeType::NDArray) {
+			auto syntax_error = CompileError(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
 			syntax_error.m_message += " Variable was annotated as <Variable> but recognized as <Array>: "+node->name+".";
 			syntax_error.m_expected = "<Variable> Syntax";
 			syntax_error.m_got = "<Array> Syntax";
@@ -354,8 +357,8 @@ NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure
 	// var was annotated as object
 	} else if (node->ty->get_type_kind() == TypeKind::Object and node->get_node_type() != NodeType::Pointer) {
 		// throw error when node was not recognized as variable by parser
-		auto syntax_error = CompileError(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
 		if(node->get_node_type() != NodeType::Variable) {
+			auto syntax_error = CompileError(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
 			syntax_error.m_message += " Variable was annotated as <Object> but recognized as <Array>: "+node->name+".";
 			syntax_error.m_expected = "<Object> Syntax";
 			syntax_error.m_got = "<Array> Syntax";

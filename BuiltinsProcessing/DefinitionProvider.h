@@ -153,19 +153,19 @@ public:
 	NodeDataStructure* get_scoped_data_structure(const std::string& data, bool global_scope);
 
 	/// variable error handling
-	static inline CompileError throw_declaration_error(NodeReference* node) {
-		auto compile_error = CompileError(ErrorType::Variable, "","", node->tok);
+	static inline CompileError throw_declaration_error(const NodeReference &node) {
+		auto compile_error = CompileError(ErrorType::Variable, "","", node.tok);
 		std::string type = "<Variable>";
-		if(node->get_node_type() == NodeType::Array) type = "<Array>";
-		compile_error.m_message = type+" has not been declared: " + node->name+".";
+		if(node.get_node_type() == NodeType::Array) type = "<Array>";
+		compile_error.m_message = type+" has not been declared: " + node.name+".";
 		compile_error.m_expected = "Valid declaration";
-		compile_error.m_got = node->name;
+		compile_error.m_got = node.name;
 		return compile_error;
 	};
 
 	static inline CompileError throw_declaration_type_error(NodeReference* node) {
 		auto compile_error = CompileError(ErrorType::Variable, "","", node->tok);
-		if(!node->declaration) throw_declaration_error(node).exit();
+		if(!node->declaration) throw_declaration_error(*node).exit();
 		if(node->declaration->get_node_type() == NodeType::Array && node->get_node_type() == NodeType::Variable) {
 			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Array>: " + node->name+".";
 			compile_error.m_expected = "<Array>";
@@ -238,6 +238,21 @@ public:
 			false,
 			std::make_unique<NodeFunctionHeader>(
 				"get_ui_id",
+				std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
+				Token()
+			),
+			Token()
+		);
+		func_call->ty = TypeRegistry::Integer;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		return std::move(func_call);
+	}
+
+	static std::unique_ptr<NodeFunctionCall> inc(std::unique_ptr<NodeReference> ref) {
+		auto func_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"inc",
 				std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
 				Token()
 			),

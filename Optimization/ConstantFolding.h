@@ -9,10 +9,10 @@
 
 class ConstantFolding : public ASTVisitor {
 private:
-	inline bool is_zero(NodeInt* node) {
+	static inline bool is_zero(NodeInt* node) {
 		return node && node->value == 0;
 	}
-	inline bool is_zero(NodeReal* node) {
+	static inline bool is_zero(NodeReal* node) {
 		return node && node->value == 0;
 	}
 

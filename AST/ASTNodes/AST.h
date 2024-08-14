@@ -131,7 +131,7 @@ struct NodeReference : NodeAST {
 		std::istringstream iss(name);
 		std::string ns;
 		while (std::getline(iss, ns, '.')) {
-			ptr_chain.push_back(ns);
+			ptr_chain.push_back(std::move(ns));
 		}
 		return ptr_chain;
 	}
@@ -445,7 +445,6 @@ struct NodeFunctionHeader: NodeAST {
     bool has_forced_parenth = false;
     std::string name;
     std::unique_ptr<NodeParamList> args;
-	std::vector<Type*> arg_types;
     inline explicit NodeFunctionHeader(Token tok) : NodeAST(std::move(tok), NodeType::FunctionHeader) {}
     inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeParamList> args, Token tok)
     : NodeAST(std::move(tok), NodeType::FunctionHeader), name(std::move(name)), args(std::move(args)) {
@@ -478,7 +477,6 @@ struct NodeFunctionDefinition: NodeAST {
 	int num_return_params = 0;
 	NodeAST* return_param = nullptr;
     std::unordered_set<class NodeFunctionCall*> call_sites = {};
-    std::unordered_set<NodeCallback*> callback_sites = {};
     std::unique_ptr<NodeFunctionHeader> header;
     std::optional<std::unique_ptr<NodeDataStructure>> return_variable;
     bool override = false;

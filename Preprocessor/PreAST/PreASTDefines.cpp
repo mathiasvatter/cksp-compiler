@@ -8,7 +8,7 @@
 
 void PreASTDefines::visit(PreNodeProgram& node) {
 	m_main_ptr = &node;
-	for(auto & def : node.define_statements) {
+	for(const auto & def : node.define_statements) {
 		m_define_lookup.insert({def->header->name->keyword.val, def.get()});
 	}
 
@@ -24,55 +24,35 @@ void PreASTDefines::visit(PreNodeProgram& node) {
 	}
 }
 
-void PreASTDefines::visit(PreNodeNumber& node) {
-	m_debug_token = node.get_string();
-	// substitution
+void PreASTDefines::do_substitution(PreNodeAST& node, const Token& tok) {
 	if (!m_substitution_stack.empty()) {
-		if (auto substitute = get_substitute(node.number.val)) {
-			substitute->update_token_data(node.number);
+		if (auto substitute = get_substitute(tok.val)) {
+//			substitute->update_token_data(tok);
 			node.replace_with(std::move(substitute));
 			return;
 		}
 	}
+}
+
+void PreASTDefines::visit(PreNodeNumber& node) {
+	// substitution
+	do_substitution(node, node.number);
 }
 
 void PreASTDefines::visit(PreNodeInt& node) {
-	m_debug_token = node.get_string();
-
 	// substitution
-	if (!m_substitution_stack.empty()) {
-		if (auto substitute = get_substitute(node.number.val)) {
-			substitute->update_token_data(node.number);
-			node.replace_with(std::move(substitute));
-			return;
-		}
-	}
+	do_substitution(node, node.number);
 }
 
 void PreASTDefines::visit(PreNodeKeyword& node) {
-	m_debug_token = node.get_string();
-
 	if(auto builtin_define = get_builtin_define(node.keyword.val)) {
 		builtin_define->update_token_data(node.keyword);
 		node.replace_with(std::move(builtin_define));
 		return;
 	}
-
 	// substitution
-	if (!m_substitution_stack.empty()) {
-		if (auto substitute = get_substitute(node.keyword.val)) {
-			substitute->update_token_data(node.keyword);
-			node.replace_with(std::move(substitute));
-			return;
-		}
-	}
+	do_substitution(node, node.keyword);
 }
-
-//void PreASTDefines::visit(PreNodeIncrementer& node) {
-//	for(auto &b : node.body) {
-//		b->accept(*this);
-//	}
-//}
 
 std::unique_ptr<PreNodeAST> PreASTDefines::get_builtin_define(const std::string& keyword) {
 	auto it = m_builtin_defines.find(keyword);
@@ -83,15 +63,13 @@ std::unique_ptr<PreNodeAST> PreASTDefines::get_builtin_define(const std::string&
 }
 
 
-void PreASTDefines::visit(PreNodeOther& node) {
-	m_debug_token = node.get_string();
-}
+void PreASTDefines::visit(PreNodeOther& node) {}
 
 void PreASTDefines::visit(PreNodeChunk& node) {
 	for(auto &c : node.chunk) {
 		c->accept(*this);
 	}
-	node.chunk = cleanup_node_chunk(&node);
+	node.flatten();
 }
 
 void PreASTDefines::visit(PreNodeDefineHeader& node) {
@@ -108,7 +86,7 @@ void PreASTDefines::visit(PreNodeDefineStatement& node) {
 	node.header->accept(*this);
 	node.body->accept(*this);
 
-	auto node_body = std::unique_ptr<PreNodeChunk>(static_cast<PreNodeChunk*>(node.body->clone().release()));
+	auto node_body = clone_as<PreNodeChunk>(node.body.get());
 	SimpleExprInterpreter eval("", 0);
 	auto eval_result = eval.parse_and_evaluate(std::move(node_body->chunk));
 	if(!eval_result.is_error()) {
@@ -121,18 +99,27 @@ void PreASTDefines::visit(PreNodeDefineStatement& node) {
 	}
 }
 
+bool PreASTDefines::check_recursion(const Token &tok) {
+	if(m_define_call_stack.find(tok.val) != m_define_call_stack.end()) {
+		// recursive function call detected
+		auto error = CompileError(ErrorType::PreprocessorError, "", "", tok);
+		error.m_message = "Recursive define call detected. Calling defines inside their definition is not allowed.";
+		error.m_got = tok.val;
+		error.exit();
+		return true;
+	}
+	return false;
+}
+
 void PreASTDefines::visit(PreNodeDefineCall& node) {
 	Token token_name = node.define->name->keyword;
-	if(std::find(m_define_call_stack.begin(), m_define_call_stack.end(), token_name.val) != m_define_call_stack.end()) {
-		// recursive function call detected
-		CompileError(ErrorType::PreprocessorError,"Recursive define call detected. Calling defines inside their definition is not allowed.", token_name.line, "", token_name.val, token_name.file).exit();
-	}
+	check_recursion(token_name);
 
 	node.define->accept(*this);
 	//substitution
 	auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
 	if( auto node_define_definition = get_define_definition(node.define.get())) {
-		m_define_call_stack.push_back(token_name.val);
+		m_define_call_stack.insert(token_name.val);
 		node_define_definition->parent = node.parent;
 		auto substitution_vec = get_substitution_vector(node_define_definition->header.get(), node.define.get());
 		m_substitution_stack.push(std::move(substitution_vec));
@@ -140,7 +127,7 @@ void PreASTDefines::visit(PreNodeDefineCall& node) {
 		node_new_chunk = std::move(node_define_definition->body);
 		node_new_chunk->parent = node.parent;
 		m_substitution_stack.pop();
-		m_define_call_stack.pop_back();
+		m_define_call_stack.erase(token_name.val);
 	}
 	node.replace_with(std::move(node_new_chunk));
 }
@@ -148,15 +135,15 @@ void PreASTDefines::visit(PreNodeDefineCall& node) {
 std::unique_ptr<PreNodeDefineStatement> PreASTDefines::get_define_definition(PreNodeDefineHeader *define_header) {
 	auto it = m_define_lookup.find(define_header->name->keyword.val);
 	if(it != m_define_lookup.end()) {
-		auto copy = it->second->clone();
+		auto copy = clone_as<PreNodeDefineStatement>(it->second);
 		copy->update_parents(nullptr);
-		return std::unique_ptr<PreNodeDefineStatement>(static_cast<PreNodeDefineStatement*>(copy.release()));
+		return copy;
 	}
 	return nullptr;
 }
 
 std::unique_ptr<PreNodeAST> PreASTDefines::get_substitute(const std::string& name) {
-	for (auto &pair: m_substitution_stack.top()) {
+	for (const auto &pair: m_substitution_stack.top()) {
 		if (pair.first == name) {
 			return pair.second->clone();
 		}
