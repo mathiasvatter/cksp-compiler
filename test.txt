@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.5 on Wed Aug 14 19:16:43 2024 }
+{ Compiled with cksp version 0.0.5 on Wed Aug 14 20:11:28 2024 }
 on init
   declare $slider
   declare %clicktime[3]
@@ -16,15 +16,15 @@ on init
   declare @tests__separator := "----------------------------"
   declare ~loc_30
   declare ~loc_29
-  declare $loc_28
   declare ~loc_31
+  declare $loc_28
+  declare ~loc_23
+  declare ~loc_21
+  declare $loc_22
   declare ~loc_24
   declare $loc_25
   declare $loc_26
   declare $loc_27
-  declare ~loc_21
-  declare $loc_22
-  declare ~loc_23
   declare $loc_14
   declare $loc_15
   declare $loc_16
@@ -35,7 +35,7 @@ on init
   declare $loc_9
   make_perfview
   set_script_title("Legato Script")
-  message("** Script " & "'" & "Legato Script" & "'" & " Compile " & "19:16:40" & " " & "08/14/24" & " **")
+  message("** Script " & "'" & "Legato Script" & "'" & " Compile " & "20:11:26" & " " & "08/14/24" & " **")
   set_listener($NI_SIGNAL_TIMER_MS, 10000)
   declare $_id
   declare %decode[2]

@@ -224,8 +224,9 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 	// check if references of this data struct are of different node type
 	std::unordered_set<NodeType> reference_node_types;
 	const std::unordered_set<NodeReference*>& references = m_def_provider->get_references(data_struct);
+	const auto& ref_node_type = data_struct->get_ref_node_type();
 	for(const auto & ref : references) {
-		if(data_struct->get_ref_node_type() != ref->get_node_type())
+		if(ref_node_type != ref->get_node_type())
 			reference_node_types.emplace(ref->get_node_type());
 	}
 	// if reference node types are same as data struct -> return

@@ -17,9 +17,7 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_def_provider->refresh_data_vectors();
 
 	// refresh call_sites of function definitions
-	for(const auto & func_def : node.function_definitions) {
-		func_def->call_sites.clear();
-	}
+	for(const auto & func_def : node.function_definitions) func_def->call_sites.clear();
 
 	// most func defs will be visited when called, keeping local scopes in mind
 	m_program->global_declarations->accept(*this);
@@ -113,7 +111,7 @@ NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
-//	node.visited = true;
+	node.visited = true;
 	m_program->function_call_stack.push(&node);
 	m_def_provider->add_scope();
 	node.header ->accept(*this);
@@ -325,21 +323,19 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 
 NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure* node) {
 	if(node->ty == TypeRegistry::Unknown) return node;
-	auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
-	error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
-	error.m_got = node->ty->to_string();
+
 	NodeDataStructure* new_data_struct = nullptr;
 	if(node->ty->get_type_kind() == TypeKind::Composite) {
 		auto comp_type = static_cast<CompositeType*>(node->ty);
 		// if var is annotated as array, replace with array
 		if(comp_type->get_compound_type() == CompoundKind::Array and node->get_node_type() != NodeType::Array and comp_type->get_dimensions() == 1) {
 			auto node_array = node->to_array(nullptr);
-			if(!node_array) error.exit();
+			if(!node_array) get_apply_type_annotations_error(node).exit();
 			node_array->is_local = node->is_local;
 			new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_array)));
 		} else if(comp_type->get_compound_type() == CompoundKind::Array and node->get_node_type() != NodeType::NDArray and comp_type->get_dimensions() > 1) {
 			auto node_ndarray = node->to_ndarray();
-			if(!node_ndarray) error.exit();
+			if(!node_ndarray) get_apply_type_annotations_error(node).exit();
 			node_ndarray->dimensions = comp_type->get_dimensions();
 			node_ndarray->is_local = node->is_local;
 			new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_ndarray)));
@@ -366,7 +362,7 @@ NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure
 			return nullptr;
 		} else {
 			auto node_pointer = node->to_pointer();
-			if(!node_pointer) error.exit();
+			if(!node_pointer) get_apply_type_annotations_error(node).exit();
 			node_pointer->is_local = node->is_local;
 			new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_pointer)));
 		}
