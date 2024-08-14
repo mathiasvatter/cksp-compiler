@@ -127,7 +127,6 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         Compiler.h
         Compiler.cpp
         AST/ASTVisitor/ASTOptimizations.h
-        AST/ASTVisitor/ASTOptimizations.cpp
         AST/ASTVisitor/ASTVariableChecking.h
         AST/ASTVisitor/ASTVariableChecking.cpp
         AST/ASTVisitor/GlobalScope/ASTGlobalScope.h
