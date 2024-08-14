@@ -239,6 +239,7 @@ public:
 			function_definition->accept(*this);
 		}
 		node.merge_function_definitions();
+		node.reset_function_visited_flag();
 		return &node;
 	};
     virtual NodeAST* visit(NodeBlock& node) {

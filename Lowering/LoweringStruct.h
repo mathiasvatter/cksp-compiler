@@ -244,7 +244,7 @@ private:
 	}
 	/// to be used on datastructures
 	inline NodeDataStructure* safe_replace_datastructure(std::unique_ptr<NodeDataStructure> new_node, NodeDataStructure* old_node) {
-		auto references = m_def_provider->get_references(old_node);
+		const auto references = m_def_provider->get_references(old_node);
 		auto new_data_struct = static_cast<NodeDataStructure*>(old_node->replace_with(std::move(new_node)));
 		m_def_provider->set_references(new_data_struct, references);
 		for(auto & ref : references) {
@@ -280,7 +280,7 @@ private:
 	}
 
 	static std::unique_ptr<NodeFunctionCall> create_max_call(const std::unique_ptr<NodeAST>& left, const std::unique_ptr<NodeAST>& right) {
-		std::string func_name = "_max";
+		std::string func_name = "Struct::max";
 		return std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeader>(
@@ -316,7 +316,7 @@ private:
 	 * end function
 	 */
 	static inline bool add_max_function_def(NodeProgram* program) {
-		std::string func_name = "_max";
+		std::string func_name = "Struct::max";
 
 		// Prüfen, ob die Funktion bereits existiert
 		auto it = program->function_lookup.find({func_name, 2});

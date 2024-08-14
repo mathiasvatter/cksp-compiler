@@ -107,6 +107,7 @@ struct NodeReference : NodeAST {
                           this->parent->parent->get_node_type() == NodeType::FunctionHeader;
         return func_arg;
     }
+	std::unique_ptr<struct NodeFunctionCall> wrap_in_get_ui_id();
 	/// determines if reference is reference to struct member
 	[[nodiscard]] bool is_member_ref() const;
 	/// checks if reference is raw version of multi-dimensional array
@@ -134,14 +135,16 @@ struct NodeReference : NodeAST {
 		}
 		return ptr_chain;
 	}
-	inline bool is_ptr_chain_candidate() const {
-		return name.find('.') != std::string::npos;
-	}
 
-	[[nodiscard]] bool is_valid_object_type(NodeProgram* program);
-	struct NodeStruct* get_object_ptr(NodeProgram* program, const std::string& obj);
+	static struct NodeStruct* get_object_ptr(NodeProgram* program, const std::string& obj);
 	/// lower type from object to int if applicable
 	NodeReference* lower_type();
+
+	/// determines if given reference is ui_control and belongs to ui array
+//	bool is_ui_array_ref(DefinitionProvider* def_provider) {
+//
+//	}
+
 };
 
 struct NodeDataStructure : NodeAST {
@@ -474,8 +477,8 @@ struct NodeFunctionDefinition: NodeAST {
 	bool visited = false;
 	int num_return_params = 0;
 	NodeAST* return_param = nullptr;
-    std::set<class NodeFunctionCall*> call_sites = {};
-    std::set<NodeCallback*> callback_sites = {};
+    std::unordered_set<class NodeFunctionCall*> call_sites = {};
+    std::unordered_set<NodeCallback*> callback_sites = {};
     std::unique_ptr<NodeFunctionHeader> header;
     std::optional<std::unique_ptr<NodeDataStructure>> return_variable;
     bool override = false;
@@ -547,6 +550,7 @@ struct NodeProgram : NodeAST {
 	static std::unique_ptr<NodeBlock> declare_compiler_variables();
 	void inline_global_variables();
 	void inline_structs();
+	void reset_function_visited_flag();
 };
 
 

@@ -40,14 +40,18 @@ public:
     NodeDataStructure* remove_from_current_scope(const std::string& name);
 	/// copies last scope in current scope
 	inline bool copy_last_scope() {
-		auto compile_error = CompileError(ErrorType::InternalError, "",-1, "","","");
 		if(m_declared_data_structures.size() < 2) {
+			auto compile_error = CompileError(ErrorType::InternalError, "",-1, "","","");
 			compile_error.m_message = "Tried to copy last scope, but there is no last scope to copy.";
 			compile_error.exit();
 			return false;
 		}
-		for(auto &data_struct : m_declared_data_structures.at(m_declared_data_structures.size()-2)) {
-			m_declared_data_structures.back().emplace(data_struct);
+		const auto& last_scope = m_declared_data_structures[m_declared_data_structures.size() - 2];
+		auto& current_scope = m_declared_data_structures.back();
+		// Optional: Reserve Platz im aktuellen Scope, um unnötige Allokationen zu vermeiden
+		current_scope.reserve(current_scope.size() + last_scope.size());
+		for (const auto& data_struct : last_scope) {
+			current_scope.emplace(data_struct);
 		}
 		return true;
 	}
@@ -56,19 +60,19 @@ public:
 	static NodeDataStructure* get_compiler_declaration(NodeReference* var) {
 		if(var->kind != NodeReference::Kind::Compiler and var->kind != NodeReference::Kind::Throwaway)
 			return nullptr;
-		auto static comp_var = std::make_unique<NodeVariable>(
+		static NodeVariable comp_var(
 			std::nullopt,
 			"compiler$dummy",
 			TypeRegistry::Unknown,
 			DataType::Mutable,
 			Token()
-			);
-		return comp_var.get();
+		);
+		return &comp_var;
 	}
 
 	/// holds all in this program defined variable names for safely issuing new ones that do not get captured
 	Gensym m_gensym;
-	inline std::string get_fresh_name(std::string name) {
+	inline std::string get_fresh_name(const std::string& name) {
 		return m_gensym.fresh(name);
 	}
 
@@ -120,11 +124,11 @@ public:
 		return m_all_assignments;
 	}
 
-	std::unordered_map<NodeDataStructure*, std::set<NodeReference*>> m_references_per_data_structure;
-	const std::set<NodeReference*> &get_references(NodeDataStructure* data_struct) {
+	std::unordered_map<NodeDataStructure*, std::unordered_set<NodeReference*>> m_references_per_data_structure;
+	const std::unordered_set<NodeReference*> &get_references(NodeDataStructure* data_struct) {
 		return m_references_per_data_structure[data_struct];
 	}
-	bool set_references(NodeDataStructure* data_struct, std::set<NodeReference*> references) {
+	bool set_references(NodeDataStructure* data_struct, std::unordered_set<NodeReference*> references) {
 		m_references_per_data_structure[data_struct] = std::move(references);
 		return true;
 	}
@@ -212,7 +216,7 @@ public:
 
 
 	static std::unique_ptr<NodeFunctionCall> num_elements(std::unique_ptr<NodeArrayRef> ref) {
-		return std::make_unique<NodeFunctionCall>(
+		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeader>(
 				"num_elements",
@@ -224,6 +228,24 @@ public:
 			),
 			Token()
 		);
+		func_call->ty = TypeRegistry::Integer;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		return std::move(func_call);
+	}
+
+	static std::unique_ptr<NodeFunctionCall> get_ui_id(std::unique_ptr<NodeReference> ref) {
+		auto func_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"get_ui_id",
+				std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
+				Token()
+			),
+			Token()
+		);
+		func_call->ty = TypeRegistry::Integer;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		return std::move(func_call);
 	}
 };
 

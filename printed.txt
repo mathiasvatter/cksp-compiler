@@ -20,7 +20,7 @@ on init
 	declare _iter : int
 	make_perfview()
 	set_script_title("Legato Script")
-	message("** Script " & "'" & "Legato Script" & "'" & " Compile " & "18:59:40" & " " & "08/13/24" & " **")
+	message("** Script " & "'" & "Legato Script" & "'" & " Compile " & "15:56:27" & " " & "08/14/24" & " **")
 	set_listener(NI_SIGNAL_TIMER_MS, 10000)
 	declare _id : int
 	declare read decode[2] : int[]
@@ -436,7 +436,7 @@ on init
 	set_control_par(get_ui_id(sli_dynamics), CONTROL_PAR_MOUSE_BEHAVIOUR, 1800)
 	set_control_par(get_ui_id(sli_dynamics), CONTROL_PAR_POS_X, 35)
 	set_control_par(get_ui_id(sli_dynamics), CONTROL_PAR_POS_Y, 157)
-	set_control_par(get_ui_id(sli_dynamics), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_home)))
+	set_control_par(get_ui_id(sli_dynamics), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_home))
 	declare last_time_dynamics : int
 	declare ui_label lbl_dynamics : int (1, 1)
 	set_control_par(get_ui_id(lbl_dynamics), CONTROL_PAR_TEXT, "Dynamics")
@@ -447,7 +447,7 @@ on init
 	set_control_par(get_ui_id(lbl_dynamics), CONTROL_PAR_POS_Y, 157 - 27)
 	set_control_par(get_ui_id(lbl_dynamics), CONTROL_PAR_WIDTH, 100)
 	set_control_par(get_ui_id(lbl_dynamics), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_dynamics), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_home)))
+	set_control_par(get_ui_id(lbl_dynamics), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_home))
 	declare ui_label lbl_dynamics2 : int (1, 2)
 	set_control_par(get_ui_id(lbl_dynamics2), CONTROL_PAR_TEXT, "Mod wheel controlled")
 	set_control_par(get_ui_id(lbl_dynamics2), CONTROL_PAR_PICTURE, "alpha")
@@ -458,14 +458,14 @@ on init
 	set_control_par(get_ui_id(lbl_dynamics2), CONTROL_PAR_WIDTH, 180)
 	set_control_par(get_ui_id(lbl_dynamics2), CONTROL_PAR_HEIGHT, 100)
 	add_text_line(get_ui_id(lbl_dynamics2), "dynamics (CC103)")
-	set_control_par(get_ui_id(lbl_dynamics2), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_home)))
+	set_control_par(get_ui_id(lbl_dynamics2), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_home))
 	declare ui_slider read sli_vibrato : int (0, 1000000)
 	set_control_par(get_ui_id(sli_vibrato), CONTROL_PAR_DEFAULT_VALUE, 0)
 	set_control_par(get_ui_id(sli_vibrato), CONTROL_PAR_PICTURE, "slider")
 	set_control_par(get_ui_id(sli_vibrato), CONTROL_PAR_MOUSE_BEHAVIOUR, 1800)
 	set_control_par(get_ui_id(sli_vibrato), CONTROL_PAR_POS_X, 221)
 	set_control_par(get_ui_id(sli_vibrato), CONTROL_PAR_POS_Y, 157)
-	set_control_par(get_ui_id(sli_vibrato), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_home)))
+	set_control_par(get_ui_id(sli_vibrato), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_home))
 	declare last_time_vibrato : int
 	declare ui_label lbl_vibrato : int (1, 1)
 	set_control_par(get_ui_id(lbl_vibrato), CONTROL_PAR_TEXT, "Vibrato")
@@ -476,7 +476,7 @@ on init
 	set_control_par(get_ui_id(lbl_vibrato), CONTROL_PAR_POS_Y, 157 - 27)
 	set_control_par(get_ui_id(lbl_vibrato), CONTROL_PAR_WIDTH, 100)
 	set_control_par(get_ui_id(lbl_vibrato), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_vibrato), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_home)))
+	set_control_par(get_ui_id(lbl_vibrato), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_home))
 	declare ui_label lbl_vibrato2 : int (1, 2)
 	set_control_par(get_ui_id(lbl_vibrato2), CONTROL_PAR_TEXT, "Intensity control")
 	set_control_par(get_ui_id(lbl_vibrato2), CONTROL_PAR_PICTURE, "alpha")
@@ -487,14 +487,14 @@ on init
 	set_control_par(get_ui_id(lbl_vibrato2), CONTROL_PAR_WIDTH, 180)
 	set_control_par(get_ui_id(lbl_vibrato2), CONTROL_PAR_HEIGHT, 100)
 	add_text_line(get_ui_id(lbl_vibrato2), "of vibrato fx (CC101)")
-	set_control_par(get_ui_id(lbl_vibrato2), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_home)))
+	set_control_par(get_ui_id(lbl_vibrato2), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_home))
 	declare ui_slider read sli_expression : int (0, 1000000)
 	set_control_par(get_ui_id(sli_expression), CONTROL_PAR_DEFAULT_VALUE, 0)
 	set_control_par(get_ui_id(sli_expression), CONTROL_PAR_PICTURE, "slider")
 	set_control_par(get_ui_id(sli_expression), CONTROL_PAR_MOUSE_BEHAVIOUR, 1800)
 	set_control_par(get_ui_id(sli_expression), CONTROL_PAR_POS_X, 405)
 	set_control_par(get_ui_id(sli_expression), CONTROL_PAR_POS_Y, 157)
-	set_control_par(get_ui_id(sli_expression), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_home)))
+	set_control_par(get_ui_id(sli_expression), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_home))
 	declare last_time_expression : int
 	declare ui_label lbl_expression : int (1, 1)
 	set_control_par(get_ui_id(lbl_expression), CONTROL_PAR_TEXT, "Expression")
@@ -505,7 +505,7 @@ on init
 	set_control_par(get_ui_id(lbl_expression), CONTROL_PAR_POS_Y, 157 - 27)
 	set_control_par(get_ui_id(lbl_expression), CONTROL_PAR_WIDTH, 100)
 	set_control_par(get_ui_id(lbl_expression), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_expression), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_home)))
+	set_control_par(get_ui_id(lbl_expression), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_home))
 	declare ui_label lbl_expression2 : int (1, 2)
 	set_control_par(get_ui_id(lbl_expression2), CONTROL_PAR_TEXT, "Volume control")
 	set_control_par(get_ui_id(lbl_expression2), CONTROL_PAR_PICTURE, "alpha")
@@ -516,7 +516,7 @@ on init
 	set_control_par(get_ui_id(lbl_expression2), CONTROL_PAR_WIDTH, 180)
 	set_control_par(get_ui_id(lbl_expression2), CONTROL_PAR_HEIGHT, 100)
 	add_text_line(get_ui_id(lbl_expression2), "0-100% (CC11)")
-	set_control_par(get_ui_id(lbl_expression2), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_home)))
+	set_control_par(get_ui_id(lbl_expression2), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_home))
 	sli_dynamics := real_to_int((((80 - 0) * (1e+06 - 0)) / (127 - 0)) + 0)
 	sli_expression := 1000000
 	declare ui_panel UI_reverb : int 
@@ -535,22 +535,22 @@ on init
 	set_control_par(get_ui_id(btn_reverb), CONTROL_PAR_DISABLE_TEXT_SHIFTING, TRUE)
 	i := 0
 	while(i <= (num_elements(font.types) - 1)) 
-		set_control_par(get_ui_id(get_ui_id(get_ui_id(btn_reverb))), font.types[i], _font.3pt6[(i * 2) + 0])
+		set_control_par(get_ui_id(btn_reverb), font.types[i], _font.3pt6[(i * 2) + 0])
 		inc(i)
 	end while
-	set_control_par(get_ui_id(btn_reverb), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_reverb)))
+	set_control_par(get_ui_id(btn_reverb), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_reverb))
 	declare ui_button btn_prev_rev : int 
 	set_control_par(get_ui_id(btn_prev_rev), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_prev_rev), CONTROL_PAR_PICTURE, "btn_left_small")
 	set_control_par(get_ui_id(btn_prev_rev), CONTROL_PAR_POS_X, 0)
 	set_control_par(get_ui_id(btn_prev_rev), CONTROL_PAR_POS_Y, 40 + 3)
-	set_control_par(get_ui_id(btn_prev_rev), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_reverb)))
+	set_control_par(get_ui_id(btn_prev_rev), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_reverb))
 	declare ui_button btn_next_rev : int 
 	set_control_par(get_ui_id(btn_next_rev), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_next_rev), CONTROL_PAR_PICTURE, "btn_right_small")
 	set_control_par(get_ui_id(btn_next_rev), CONTROL_PAR_POS_X, 11)
 	set_control_par(get_ui_id(btn_next_rev), CONTROL_PAR_POS_Y, 40 + 3)
-	set_control_par(get_ui_id(btn_next_rev), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_reverb)))
+	set_control_par(get_ui_id(btn_next_rev), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_reverb))
 	declare revtypes[15] : string[] := ("Concert Hall 1", "Concert Hall 2", "Medium Hall 1", "Medium Hall 2", "Small Hall 1", "Small Hall 2", "Recording Stage 1", "Recording Stage 2", "Cathedral", "Mystique", "Uialtum", "Silmataurea", "Waenen", "Menomenta", "Namaarie")
 	declare ui_menu read mnu_revtype : int 
 	set_control_par(get_ui_id(mnu_revtype), CONTROL_PAR_PICTURE, "alpha")
@@ -567,14 +567,14 @@ on init
 		inc(i)
 	end while
 	load_ir_sample(revtypes[mnu_revtype], 1, 1)
-	set_control_par(get_ui_id(mnu_revtype), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_reverb)))
+	set_control_par(get_ui_id(mnu_revtype), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_reverb))
 	declare ui_slider read sli_reverbmix : int (0, 1000000)
 	set_control_par(get_ui_id(sli_reverbmix), CONTROL_PAR_DEFAULT_VALUE, 200000)
 	set_control_par(get_ui_id(sli_reverbmix), CONTROL_PAR_PICTURE, "sli_small")
 	set_control_par(get_ui_id(sli_reverbmix), CONTROL_PAR_MOUSE_BEHAVIOUR, - 600)
 	set_control_par(get_ui_id(sli_reverbmix), CONTROL_PAR_POS_X, 10)
 	set_control_par(get_ui_id(sli_reverbmix), CONTROL_PAR_POS_Y, 75)
-	set_control_par(get_ui_id(sli_reverbmix), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_reverb)))
+	set_control_par(get_ui_id(sli_reverbmix), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_reverb))
 	declare last_time_reverbmix : int
 	declare ui_label lbl_reverbmix : int (1, 1)
 	set_control_par(get_ui_id(lbl_reverbmix), CONTROL_PAR_TEXT, "Mix")
@@ -585,7 +585,7 @@ on init
 	set_control_par(get_ui_id(lbl_reverbmix), CONTROL_PAR_POS_Y, 75 + 22)
 	set_control_par(get_ui_id(lbl_reverbmix), CONTROL_PAR_WIDTH, 70)
 	set_control_par(get_ui_id(lbl_reverbmix), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_reverbmix), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_reverb)))
+	set_control_par(get_ui_id(lbl_reverbmix), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_reverb))
 	set_engine_par(ENGINE_PAR_EFFECT_TYPE, EFFECT_TYPE_IRC, - 1, 1, NI_INSERT_BUS)
 	set_engine_par(ENGINE_PAR_SEND_EFFECT_TYPE, EFFECT_TYPE_NONE, - 1, 0, NI_SEND_BUS)
 	set_engine_par(ENGINE_PAR_SEND_EFFECT_BYPASS, abs(btn_reverb - 1), - 1, 1, NI_INSERT_BUS)
@@ -604,17 +604,17 @@ on init
 	set_control_par(get_ui_id(btn_eq), CONTROL_PAR_DISABLE_TEXT_SHIFTING, TRUE)
 	i := 0
 	while(i <= (num_elements(font.types) - 1)) 
-		set_control_par(get_ui_id(get_ui_id(get_ui_id(btn_eq))), font.types[i], _font.3pt6[(i * 2) + 0])
+		set_control_par(get_ui_id(btn_eq), font.types[i], _font.3pt6[(i * 2) + 0])
 		inc(i)
 	end while
-	set_control_par(get_ui_id(btn_eq), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_eq)))
+	set_control_par(get_ui_id(btn_eq), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_eq))
 	declare ui_slider read sli_lowGain : int (0, 1000000)
 	set_control_par(get_ui_id(sli_lowGain), CONTROL_PAR_DEFAULT_VALUE, 500000)
 	set_control_par(get_ui_id(sli_lowGain), CONTROL_PAR_PICTURE, "sli_small")
 	set_control_par(get_ui_id(sli_lowGain), CONTROL_PAR_MOUSE_BEHAVIOUR, - 600)
 	set_control_par(get_ui_id(sli_lowGain), CONTROL_PAR_POS_X, 0)
 	set_control_par(get_ui_id(sli_lowGain), CONTROL_PAR_POS_Y, 30)
-	set_control_par(get_ui_id(sli_lowGain), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_eq)))
+	set_control_par(get_ui_id(sli_lowGain), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_eq))
 	declare last_time_lowGain : int
 	declare ui_label lbl_lowGain : int (1, 1)
 	set_control_par(get_ui_id(lbl_lowGain), CONTROL_PAR_TEXT, "Low")
@@ -625,14 +625,14 @@ on init
 	set_control_par(get_ui_id(lbl_lowGain), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_lowGain), CONTROL_PAR_POS_Y) + 22)
 	set_control_par(get_ui_id(lbl_lowGain), CONTROL_PAR_WIDTH, 70)
 	set_control_par(get_ui_id(lbl_lowGain), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_lowGain), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_eq)))
+	set_control_par(get_ui_id(lbl_lowGain), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_eq))
 	declare ui_slider read sli_highGain : int (0, 1000000)
 	set_control_par(get_ui_id(sli_highGain), CONTROL_PAR_DEFAULT_VALUE, 500000)
 	set_control_par(get_ui_id(sli_highGain), CONTROL_PAR_PICTURE, "sli_small")
 	set_control_par(get_ui_id(sli_highGain), CONTROL_PAR_MOUSE_BEHAVIOUR, - 600)
 	set_control_par(get_ui_id(sli_highGain), CONTROL_PAR_POS_X, 105)
 	set_control_par(get_ui_id(sli_highGain), CONTROL_PAR_POS_Y, 30)
-	set_control_par(get_ui_id(sli_highGain), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_eq)))
+	set_control_par(get_ui_id(sli_highGain), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_eq))
 	declare last_time_highGain : int
 	declare ui_label lbl_highGain : int (1, 1)
 	set_control_par(get_ui_id(lbl_highGain), CONTROL_PAR_TEXT, "High")
@@ -643,7 +643,7 @@ on init
 	set_control_par(get_ui_id(lbl_highGain), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_highGain), CONTROL_PAR_POS_Y) + 22)
 	set_control_par(get_ui_id(lbl_highGain), CONTROL_PAR_WIDTH, 70)
 	set_control_par(get_ui_id(lbl_highGain), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_highGain), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_eq)))
+	set_control_par(get_ui_id(lbl_highGain), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_eq))
 	set_engine_par(ENGINE_PAR_SEND_EFFECT_TYPE, EFFECT_TYPE_NONE, - 1, 5, NI_SEND_BUS)
 	set_engine_par(ENGINE_PAR_EFFECT_TYPE, EFFECT_TYPE_SOLID_GEQ, - 1, 0, NI_INSERT_BUS)
 	set_engine_par(ENGINE_PAR_SEQ_LF_FREQ, 830000, - 1, 0, NI_INSERT_BUS)
@@ -666,7 +666,7 @@ on init
 	set_control_par(get_ui_id(lbl_dynamic_cc), CONTROL_PAR_POS_Y, 48)
 	set_control_par(get_ui_id(lbl_dynamic_cc), CONTROL_PAR_WIDTH, 140)
 	set_control_par(get_ui_id(lbl_dynamic_cc), CONTROL_PAR_HEIGHT, 25)
-	set_control_par(get_ui_id(lbl_dynamic_cc), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_settings)))
+	set_control_par(get_ui_id(lbl_dynamic_cc), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_settings))
 	declare ui_menu read mnu_dynamic_cc : int 
 	set_control_par(get_ui_id(mnu_dynamic_cc), CONTROL_PAR_PICTURE, "mnu")
 	set_control_par(get_ui_id(mnu_dynamic_cc), CONTROL_PAR_FONT_TYPE, _font.2pt8[(1 * 2) + 0])
@@ -680,9 +680,9 @@ on init
 	add_menu_item(get_ui_id(mnu_dynamic_cc), "CC 2", 2)
 	add_menu_item(get_ui_id(mnu_dynamic_cc), "CC 11", 11)
 	set_control_par(get_ui_id(mnu_dynamic_cc), CONTROL_PAR_Z_LAYER, 1)
-	set_control_par(get_ui_id(mnu_dynamic_cc), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_settings)))
+	set_control_par(get_ui_id(mnu_dynamic_cc), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_settings))
 	declare num_dynamic_cc : int
-	num_dynamic_cc := get_menu_item_value(get_ui_id(get_ui_id(get_ui_id(mnu_dynamic_cc))), get_control_par(get_ui_id(get_ui_id(mnu_dynamic_cc)), CONTROL_PAR_VALUE))
+	num_dynamic_cc := get_menu_item_value(get_ui_id(mnu_dynamic_cc), get_control_par(get_ui_id(mnu_dynamic_cc), CONTROL_PAR_VALUE))
 	declare ui_label lbl_user_interface : int (1, 1)
 	set_control_par(get_ui_id(lbl_user_interface), CONTROL_PAR_TEXT, "User Interface")
 	set_control_par(get_ui_id(lbl_user_interface), CONTROL_PAR_PICTURE, "alpha")
@@ -693,7 +693,7 @@ on init
 	set_control_par(get_ui_id(lbl_user_interface), CONTROL_PAR_POS_Y, 111)
 	set_control_par(get_ui_id(lbl_user_interface), CONTROL_PAR_WIDTH, 140)
 	set_control_par(get_ui_id(lbl_user_interface), CONTROL_PAR_HEIGHT, 25)
-	set_control_par(get_ui_id(lbl_user_interface), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_settings)))
+	set_control_par(get_ui_id(lbl_user_interface), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_settings))
 	declare interfaces[4] : string[] := ("Default", "Strings of Winter", "Horns of Hell", "Woods of the Wild")
 	declare ui_menu read mnu_user_interface : int 
 	set_control_par(get_ui_id(mnu_user_interface), CONTROL_PAR_PICTURE, "mnu")
@@ -710,14 +710,14 @@ on init
 		inc(i)
 	end while
 	set_control_par(get_ui_id(mnu_user_interface), CONTROL_PAR_Z_LAYER, 1)
-	set_control_par(get_ui_id(mnu_user_interface), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_settings)))
+	set_control_par(get_ui_id(mnu_user_interface), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_settings))
 	declare ui_slider read sli_transition_volume : int (0, 1000000)
 	set_control_par(get_ui_id(sli_transition_volume), CONTROL_PAR_DEFAULT_VALUE, 500000)
 	set_control_par(get_ui_id(sli_transition_volume), CONTROL_PAR_PICTURE, "sli_small")
 	set_control_par(get_ui_id(sli_transition_volume), CONTROL_PAR_MOUSE_BEHAVIOUR, - 600)
 	set_control_par(get_ui_id(sli_transition_volume), CONTROL_PAR_POS_X, 523)
 	set_control_par(get_ui_id(sli_transition_volume), CONTROL_PAR_POS_Y, 68)
-	set_control_par(get_ui_id(sli_transition_volume), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_settings)))
+	set_control_par(get_ui_id(sli_transition_volume), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_settings))
 	declare last_time_transition_volume : int
 	declare ui_label lbl_transition_volume : int (1, 1)
 	set_control_par(get_ui_id(lbl_transition_volume), CONTROL_PAR_TEXT, "Transition Volume")
@@ -728,7 +728,7 @@ on init
 	set_control_par(get_ui_id(lbl_transition_volume), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_transition_volume), CONTROL_PAR_POS_Y) + 55)
 	set_control_par(get_ui_id(lbl_transition_volume), CONTROL_PAR_WIDTH, 120)
 	set_control_par(get_ui_id(lbl_transition_volume), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_transition_volume), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_settings)))
+	set_control_par(get_ui_id(lbl_transition_volume), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_settings))
 	declare ui_button btn_legatoSettings : int 
 	set_control_par(get_ui_id(btn_legatoSettings), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_legatoSettings), CONTROL_PAR_PICTURE, "btn_quilt")
@@ -739,7 +739,7 @@ on init
 	set_control_par(get_ui_id(UI_waveform), CONTROL_PAR_POS_Y, (80 + 25) + 1)
 	declare ui_panel UI_fadeLines : int 
 	set_control_par(get_ui_id(UI_fadeLines), CONTROL_PAR_Z_LAYER, 1)
-	set_control_par(get_ui_id(UI_fadeLines), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(UI_fadeLines), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_panel UI_dataSettings : int 
 	declare x_positions[20] : int[]
 	declare UI_dataSettingsElements[20] : int[]
@@ -767,7 +767,7 @@ on init
 		set_control_par(lbl_infoSettings[i], CONTROL_PAR_POS_Y, 50)
 		set_control_par(lbl_infoSettings[i], CONTROL_PAR_WIDTH, titles_width[i])
 		set_control_par(lbl_infoSettings[i], CONTROL_PAR_HEIGHT, 25)
-		set_control_par(lbl_infoSettings[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_dataSettings)))
+		set_control_par(lbl_infoSettings[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_dataSettings))
 		inc(i)
 	end while
 	prefix_idx := 0
@@ -781,8 +781,8 @@ on init
 	set_control_par(get_ui_id(txt_loadedData), CONTROL_PAR_POS_Y, 50 + 2)
 	set_control_par(get_ui_id(txt_loadedData), CONTROL_PAR_WIDTH, 120)
 	set_control_par(get_ui_id(txt_loadedData), CONTROL_PAR_HEIGHT, 15)
-	set_control_par(get_ui_id(txt_loadedData), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_dataSettings)))
-	UI_dataSettingsElements[0] := get_ui_id(get_ui_id(txt_loadedData))
+	set_control_par(get_ui_id(txt_loadedData), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_dataSettings))
+	UI_dataSettingsElements[0] := get_ui_id(txt_loadedData)
 	UI_dataSettingsElements[1] := lbl_infoSettings[0]
 	set_control_par_str(get_ui_id(txt_loadedData), CONTROL_PAR_TEXT, legato_prefixes[prefix_idx])
 	declare ui_value_edit vlue_atkGroups : int (0, 20, 1)
@@ -795,8 +795,8 @@ on init
 	set_control_par(get_ui_id(vlue_atkGroups), CONTROL_PAR_POS_Y, 50 + 1)
 	set_control_par(get_ui_id(vlue_atkGroups), CONTROL_PAR_WIDTH, 31)
 	set_control_par(get_ui_id(vlue_atkGroups), CONTROL_PAR_HEIGHT, 16)
-	set_control_par(get_ui_id(vlue_atkGroups), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_dataSettings)))
-	UI_dataSettingsElements[2] := get_ui_id(get_ui_id(vlue_atkGroups))
+	set_control_par(get_ui_id(vlue_atkGroups), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_dataSettings))
+	UI_dataSettingsElements[2] := get_ui_id(vlue_atkGroups)
 	UI_dataSettingsElements[3] := lbl_infoSettings[1]
 	declare ui_value_edit vlue_dynamicLayers : int (0, 20, 1)
 	set_control_par(get_ui_id(vlue_dynamicLayers), CONTROL_PAR_TEXT, "")
@@ -808,8 +808,8 @@ on init
 	set_control_par(get_ui_id(vlue_dynamicLayers), CONTROL_PAR_POS_Y, 50 + 1)
 	set_control_par(get_ui_id(vlue_dynamicLayers), CONTROL_PAR_WIDTH, 31)
 	set_control_par(get_ui_id(vlue_dynamicLayers), CONTROL_PAR_HEIGHT, 16)
-	set_control_par(get_ui_id(vlue_dynamicLayers), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_dataSettings)))
-	UI_dataSettingsElements[4] := get_ui_id(get_ui_id(vlue_dynamicLayers))
+	set_control_par(get_ui_id(vlue_dynamicLayers), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_dataSettings))
+	UI_dataSettingsElements[4] := get_ui_id(vlue_dynamicLayers)
 	UI_dataSettingsElements[5] := lbl_infoSettings[2]
 	declare ui_value_edit vlue_transitions : int (0, 20, 1)
 	set_control_par(get_ui_id(vlue_transitions), CONTROL_PAR_TEXT, "")
@@ -821,8 +821,8 @@ on init
 	set_control_par(get_ui_id(vlue_transitions), CONTROL_PAR_POS_Y, 50 + 1)
 	set_control_par(get_ui_id(vlue_transitions), CONTROL_PAR_WIDTH, 31)
 	set_control_par(get_ui_id(vlue_transitions), CONTROL_PAR_HEIGHT, 16)
-	set_control_par(get_ui_id(vlue_transitions), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_dataSettings)))
-	UI_dataSettingsElements[6] := get_ui_id(get_ui_id(vlue_transitions))
+	set_control_par(get_ui_id(vlue_transitions), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_dataSettings))
+	UI_dataSettingsElements[6] := get_ui_id(vlue_transitions)
 	UI_dataSettingsElements[7] := lbl_infoSettings[3]
 	declare ui_button btn_sustainFX : int 
 	set_control_par(get_ui_id(btn_sustainFX), CONTROL_PAR_TEXT, "")
@@ -831,8 +831,8 @@ on init
 	set_control_par(get_ui_id(btn_sustainFX), CONTROL_PAR_POS_Y, 50 + 1)
 	set_control_par(get_ui_id(btn_sustainFX), CONTROL_PAR_WIDTH, 22)
 	set_control_par(get_ui_id(btn_sustainFX), CONTROL_PAR_HEIGHT, 25)
-	set_control_par(get_ui_id(btn_sustainFX), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_dataSettings)))
-	UI_dataSettingsElements[8] := get_ui_id(get_ui_id(btn_sustainFX))
+	set_control_par(get_ui_id(btn_sustainFX), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_dataSettings))
+	UI_dataSettingsElements[8] := get_ui_id(btn_sustainFX)
 	declare ui_button btn_analyze : int 
 	set_control_par(get_ui_id(btn_analyze), CONTROL_PAR_TEXT, "Analyze")
 	set_control_par(get_ui_id(btn_analyze), CONTROL_PAR_PICTURE, "bg_label")
@@ -845,12 +845,12 @@ on init
 	set_control_par(get_ui_id(btn_analyze), CONTROL_PAR_HEIGHT, 20)
 	i := 0
 	while(i <= (num_elements(font.types) - 1)) 
-		set_control_par(get_ui_id(get_ui_id(get_ui_id(btn_analyze))), font.types[i], _font.2pt7[(i * 2) + 0])
+		set_control_par(get_ui_id(btn_analyze), font.types[i], _font.2pt7[(i * 2) + 0])
 		inc(i)
 	end while
 	set_control_par(get_ui_id(btn_analyze), CONTROL_PAR_DISABLE_TEXT_SHIFTING, TRUE)
-	set_control_par(get_ui_id(btn_analyze), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_dataSettings)))
-	UI_dataSettingsElements[9] := get_ui_id(get_ui_id(btn_analyze))
+	set_control_par(get_ui_id(btn_analyze), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_dataSettings))
+	UI_dataSettingsElements[9] := get_ui_id(btn_analyze)
 	UI_dataSettingsElements[10] := lbl_infoSettings[4]
 	declare ui_label lbl_loadedData : int (1, 1)
 	set_control_par(get_ui_id(lbl_loadedData), CONTROL_PAR_TEXT, "")
@@ -862,16 +862,16 @@ on init
 	set_control_par(get_ui_id(lbl_loadedData), CONTROL_PAR_POS_Y, 50)
 	set_control_par(get_ui_id(lbl_loadedData), CONTROL_PAR_WIDTH, 80)
 	set_control_par(get_ui_id(lbl_loadedData), CONTROL_PAR_HEIGHT, 18)
-	set_control_par(get_ui_id(lbl_loadedData), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_dataSettings)))
-	UI_dataSettingsElements[11] := get_ui_id(get_ui_id(lbl_loadedData))
+	set_control_par(get_ui_id(lbl_loadedData), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_dataSettings))
+	UI_dataSettingsElements[11] := get_ui_id(lbl_loadedData)
 	declare ui_button btn_export_marked : int 
 	set_control_par(get_ui_id(btn_export_marked), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_export_marked), CONTROL_PAR_PICTURE, "btn_export")
 	set_control_par(get_ui_id(btn_export_marked), CONTROL_PAR_POS_X, 715 + 10)
 	set_control_par(get_ui_id(btn_export_marked), CONTROL_PAR_POS_Y, (16 + 2) + 25)
 	set_control_par_str(get_ui_id(btn_export_marked), CONTROL_PAR_HELP, "Export marked file names as 'INSTRUMENT__samples_to_revisit.nka'")
-	set_control_par(get_ui_id(btn_export_marked), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_dataSettings)))
-	UI_dataSettingsElements[12] := get_ui_id(get_ui_id(btn_export_marked))
+	set_control_par(get_ui_id(btn_export_marked), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_dataSettings))
+	UI_dataSettingsElements[12] := get_ui_id(btn_export_marked)
 	i := 0
 	while(i <= (num_elements(UI_dataSettingsElements) - 1)) 
 		if(UI_dataSettingsElements[i] # 0)
@@ -891,7 +891,7 @@ on init
 	set_control_par(get_ui_id(btn_lockSettings), CONTROL_PAR_POS_Y, 50 - 2)
 	set_control_par(get_ui_id(btn_lockSettings), CONTROL_PAR_WIDTH, ((get_control_par(get_ui_id(btn_analyze), CONTROL_PAR_POS_X) + get_control_par(get_ui_id(btn_analyze), CONTROL_PAR_WIDTH)) + 5) - 30)
 	set_control_par(get_ui_id(btn_lockSettings), CONTROL_PAR_HEIGHT, 30)
-	set_control_par(get_ui_id(btn_lockSettings), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_dataSettings)))
+	set_control_par(get_ui_id(btn_lockSettings), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_dataSettings))
 	set_control_par(get_ui_id(btn_lockSettings), CONTROL_PAR_Z_LAYER, 1)
 	declare ui_waveform wf_transition : int (2, 2)
 	set_control_par(get_ui_id(wf_transition), CONTROL_PAR_BG_ALPHA, 0)
@@ -903,7 +903,7 @@ on init
 	set_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_Y, 40)
 	set_control_par(get_ui_id(wf_transition), CONTROL_PAR_WIDTH, 555)
 	set_control_par(get_ui_id(wf_transition), CONTROL_PAR_HEIGHT, 165)
-	set_control_par(get_ui_id(wf_transition), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(wf_transition), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	set_control_par(get_ui_id(wf_transition), CONTROL_PAR_Z_LAYER, - 1)
 	declare ui_label lbl_scanningSettings : int (1, 1)
 	set_control_par(get_ui_id(lbl_scanningSettings), CONTROL_PAR_TEXT, "")
@@ -912,7 +912,7 @@ on init
 	set_control_par(get_ui_id(lbl_scanningSettings), CONTROL_PAR_FONT_TYPE, 0)
 	set_control_par(get_ui_id(lbl_scanningSettings), CONTROL_PAR_POS_X, (get_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_X) + (555 / 2)) - 100)
 	set_control_par(get_ui_id(lbl_scanningSettings), CONTROL_PAR_POS_Y, (get_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_Y) + (165 / 2)) - 25)
-	set_control_par(get_ui_id(lbl_scanningSettings), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_scanningSettings), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	set_control_par(get_ui_id(lbl_scanningSettings), CONTROL_PAR_HIDE, HIDE_WHOLE_CONTROL)
 	declare ui_button btn_legato : int 
 	set_control_par(get_ui_id(btn_legato), CONTROL_PAR_TEXT, "LEGATO ON")
@@ -925,10 +925,10 @@ on init
 	set_control_par(get_ui_id(btn_legato), CONTROL_PAR_HEIGHT, 15)
 	i := 0
 	while(i <= (num_elements(font.types) - 1)) 
-		set_control_par(get_ui_id(get_ui_id(get_ui_id(btn_legato))), font.types[i], _font.3pt3[(i * 2) + 0])
+		set_control_par(get_ui_id(btn_legato), font.types[i], _font.3pt3[(i * 2) + 0])
 		inc(i)
 	end while
-	set_control_par(get_ui_id(btn_legato), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(btn_legato), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	btn_legato := TRUE
 	declare ui_button btn_legatoList : int 
 	set_control_par(get_ui_id(btn_legatoList), CONTROL_PAR_TEXT, "           Open File Browser")
@@ -944,7 +944,7 @@ on init
 	set_control_par(get_ui_id(btn_legatoList), CONTROL_PAR_POS_X, get_control_par(get_ui_id(btn_legato), CONTROL_PAR_POS_X) - 5)
 	set_control_par(get_ui_id(btn_legatoList), CONTROL_PAR_POS_Y, ((get_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_Y) + 165) - 30) + 15)
 	set_control_par(get_ui_id(btn_legatoList), CONTROL_PAR_WIDTH, 200)
-	set_control_par(get_ui_id(btn_legatoList), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(btn_legatoList), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	set_control_par(get_ui_id(btn_legatoList), CONTROL_PAR_DISABLE_TEXT_SHIFTING, 1)
 	declare ui_label lbl_samplestartInd : int (1, 1)
 	set_control_par(get_ui_id(lbl_samplestartInd), CONTROL_PAR_TEXT, "")
@@ -953,7 +953,7 @@ on init
 	set_control_par(get_ui_id(lbl_samplestartInd), CONTROL_PAR_POS_Y, (((get_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_Y) + 3) + 10) + 10) - 1)
 	set_control_par(get_ui_id(lbl_samplestartInd), CONTROL_PAR_WIDTH, 555)
 	set_control_par(get_ui_id(lbl_samplestartInd), CONTROL_PAR_HEIGHT, 180)
-	set_control_par(get_ui_id(lbl_samplestartInd), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_samplestartInd), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_label lbl_sModInd : int (1, 1)
 	set_control_par(get_ui_id(lbl_sModInd), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(lbl_sModInd), CONTROL_PAR_PICTURE, "smod")
@@ -961,7 +961,7 @@ on init
 	set_control_par(get_ui_id(lbl_sModInd), CONTROL_PAR_POS_Y, ((get_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_Y) + 3) + 10) + 12)
 	set_control_par(get_ui_id(lbl_sModInd), CONTROL_PAR_WIDTH, 555)
 	set_control_par(get_ui_id(lbl_sModInd), CONTROL_PAR_HEIGHT, 180)
-	set_control_par(get_ui_id(lbl_sModInd), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_sModInd), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_label lbl_releaseCurve : int (1, 1)
 	set_control_par(get_ui_id(lbl_releaseCurve), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(lbl_releaseCurve), CONTROL_PAR_PICTURE, "release_curve")
@@ -969,7 +969,7 @@ on init
 	set_control_par(get_ui_id(lbl_releaseCurve), CONTROL_PAR_POS_Y, ((get_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_Y) + 3) + 10) + 15)
 	set_control_par(get_ui_id(lbl_releaseCurve), CONTROL_PAR_WIDTH, 555)
 	set_control_par(get_ui_id(lbl_releaseCurve), CONTROL_PAR_HEIGHT, 180)
-	set_control_par(get_ui_id(lbl_releaseCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_releaseCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	set_control_par(get_ui_id(lbl_releaseCurve), CONTROL_PAR_PICTURE_STATE, real_to_int((((280 - 0) * (99 - 0)) / (1000 - 0)) + 0))
 	declare ui_label lbl_fadeInCurve : int (1, 1)
 	set_control_par(get_ui_id(lbl_fadeInCurve), CONTROL_PAR_TEXT, "")
@@ -979,7 +979,7 @@ on init
 	set_control_par(get_ui_id(lbl_fadeInCurve), CONTROL_PAR_WIDTH, 555)
 	set_control_par(get_ui_id(lbl_fadeInCurve), CONTROL_PAR_HEIGHT, 180)
 	set_control_par(get_ui_id(lbl_fadeInCurve), CONTROL_PAR_PICTURE_STATE, real_to_int((((100 - 0) * (99 - 0)) / (500 - 0)) + 0))
-	set_control_par(get_ui_id(lbl_fadeInCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_fadeLines)))
+	set_control_par(get_ui_id(lbl_fadeInCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_fadeLines))
 	declare ui_label lbl_fadeOutCurve : int (1, 1)
 	set_control_par(get_ui_id(lbl_fadeOutCurve), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(lbl_fadeOutCurve), CONTROL_PAR_PICTURE, "trans_fadeout")
@@ -988,7 +988,7 @@ on init
 	set_control_par(get_ui_id(lbl_fadeOutCurve), CONTROL_PAR_WIDTH, 555)
 	set_control_par(get_ui_id(lbl_fadeOutCurve), CONTROL_PAR_HEIGHT, 180)
 	set_control_par(get_ui_id(lbl_fadeOutCurve), CONTROL_PAR_PICTURE_STATE, real_to_int((((100 - 0) * (99 - 0)) / (1000 - 0)) + 0))
-	set_control_par(get_ui_id(lbl_fadeOutCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_fadeLines)))
+	set_control_par(get_ui_id(lbl_fadeOutCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_fadeLines))
 	declare ui_label lbl_waitTime : int (1, 1)
 	set_control_par(get_ui_id(lbl_waitTime), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(lbl_waitTime), CONTROL_PAR_PICTURE, "wait_time2")
@@ -996,7 +996,7 @@ on init
 	set_control_par(get_ui_id(lbl_waitTime), CONTROL_PAR_POS_Y, ((get_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_Y) + 3) + 10) + 15)
 	set_control_par(get_ui_id(lbl_waitTime), CONTROL_PAR_WIDTH, 555)
 	set_control_par(get_ui_id(lbl_waitTime), CONTROL_PAR_HEIGHT, 180)
-	set_control_par(get_ui_id(lbl_waitTime), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_waitTime), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	set_control_par(get_ui_id(lbl_waitTime), CONTROL_PAR_WIDTH, (555 - get_control_par(get_ui_id(lbl_waitTime), CONTROL_PAR_POS_X)) - 2)
 	declare current_waitTime : real := 0
 	declare current_fadeInTime : real := 0
@@ -1015,10 +1015,10 @@ on init
 	set_control_par(get_ui_id(btn_play), CONTROL_PAR_HEIGHT, 25)
 	i := 0
 	while(i <= (num_elements(font.types) - 1)) 
-		set_control_par(get_ui_id(get_ui_id(get_ui_id(btn_play))), font.types[i], _font.3pt3[(i * 2) + 0])
+		set_control_par(get_ui_id(btn_play), font.types[i], _font.3pt3[(i * 2) + 0])
 		inc(i)
 	end while
-	set_control_par(get_ui_id(btn_play), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(btn_play), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	set_control_par(get_ui_id(btn_play), CONTROL_PAR_Z_LAYER, 1)
 	declare rr[4] : string[] := ("RR1", "RR2", "VELO", "RR")
 	declare ui_menu read mnu_rr : int 
@@ -1035,13 +1035,13 @@ on init
 		add_menu_item(get_ui_id(mnu_rr), rr[i], i)
 		inc(i)
 	end while
-	set_control_par(get_ui_id(mnu_rr), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(mnu_rr), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_button btn_completed : int 
 	set_control_par(get_ui_id(btn_completed), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_completed), CONTROL_PAR_PICTURE, "btn_current_completed")
 	set_control_par(get_ui_id(btn_completed), CONTROL_PAR_POS_X, (get_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_X) + 555) - 30)
 	set_control_par(get_ui_id(btn_completed), CONTROL_PAR_POS_Y, ((get_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_Y) + 14) + 10) - 3)
-	set_control_par(get_ui_id(btn_completed), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(btn_completed), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	set_control_par(get_ui_id(btn_completed), CONTROL_PAR_Z_LAYER, 1)
 	declare ui_slider read sli_releaseSus : int (0, 1000000)
 	set_control_par(get_ui_id(sli_releaseSus), CONTROL_PAR_DEFAULT_VALUE, real_to_int((((int_to_real(DEFAULT_VAL[0]) - 0) * (1e+06 - 0)) / (1000 - 0)) + 0))
@@ -1049,7 +1049,7 @@ on init
 	set_control_par(get_ui_id(sli_releaseSus), CONTROL_PAR_MOUSE_BEHAVIOUR, - 600)
 	set_control_par(get_ui_id(sli_releaseSus), CONTROL_PAR_POS_X, 8 + (81 * 0))
 	set_control_par(get_ui_id(sli_releaseSus), CONTROL_PAR_POS_Y, 0)
-	set_control_par(get_ui_id(sli_releaseSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(sli_releaseSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare last_time_releaseSus : int
 	declare ui_label lbl_releaseSus : int (1, 1)
 	set_control_par(get_ui_id(lbl_releaseSus), CONTROL_PAR_TEXT, "Release")
@@ -1060,14 +1060,14 @@ on init
 	set_control_par(get_ui_id(lbl_releaseSus), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_releaseSus), CONTROL_PAR_POS_Y) + 42)
 	set_control_par(get_ui_id(lbl_releaseSus), CONTROL_PAR_WIDTH, 60)
 	set_control_par(get_ui_id(lbl_releaseSus), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_releaseSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_releaseSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_slider read sli_fadeInTrans : int (0, 1000000)
 	set_control_par(get_ui_id(sli_fadeInTrans), CONTROL_PAR_DEFAULT_VALUE, DEFAULT_VAL[1])
 	set_control_par(get_ui_id(sli_fadeInTrans), CONTROL_PAR_PICTURE, "sli_smallsmall")
 	set_control_par(get_ui_id(sli_fadeInTrans), CONTROL_PAR_MOUSE_BEHAVIOUR, - 600)
 	set_control_par(get_ui_id(sli_fadeInTrans), CONTROL_PAR_POS_X, 8 + (81 * 1))
 	set_control_par(get_ui_id(sli_fadeInTrans), CONTROL_PAR_POS_Y, 0)
-	set_control_par(get_ui_id(sli_fadeInTrans), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(sli_fadeInTrans), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare last_time_fadeInTrans : int
 	declare ui_label lbl_fadeInTrans : int (1, 1)
 	set_control_par(get_ui_id(lbl_fadeInTrans), CONTROL_PAR_TEXT, "Fade In")
@@ -1078,14 +1078,14 @@ on init
 	set_control_par(get_ui_id(lbl_fadeInTrans), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_fadeInTrans), CONTROL_PAR_POS_Y) + 42)
 	set_control_par(get_ui_id(lbl_fadeInTrans), CONTROL_PAR_WIDTH, 60)
 	set_control_par(get_ui_id(lbl_fadeInTrans), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_fadeInTrans), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_fadeInTrans), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_slider read sli_samplestart : int (0, 1000000)
 	set_control_par(get_ui_id(sli_samplestart), CONTROL_PAR_DEFAULT_VALUE, 0)
 	set_control_par(get_ui_id(sli_samplestart), CONTROL_PAR_PICTURE, "sli_smallsmall")
 	set_control_par(get_ui_id(sli_samplestart), CONTROL_PAR_MOUSE_BEHAVIOUR, - 600)
 	set_control_par(get_ui_id(sli_samplestart), CONTROL_PAR_POS_X, 8 + (81 * 2))
 	set_control_par(get_ui_id(sli_samplestart), CONTROL_PAR_POS_Y, 0)
-	set_control_par(get_ui_id(sli_samplestart), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(sli_samplestart), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare last_time_samplestart : int
 	declare ui_label lbl_samplestart : int (1, 1)
 	set_control_par(get_ui_id(lbl_samplestart), CONTROL_PAR_TEXT, "S. Start")
@@ -1096,14 +1096,14 @@ on init
 	set_control_par(get_ui_id(lbl_samplestart), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_samplestart), CONTROL_PAR_POS_Y) + 42)
 	set_control_par(get_ui_id(lbl_samplestart), CONTROL_PAR_WIDTH, 60)
 	set_control_par(get_ui_id(lbl_samplestart), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_samplestart), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_samplestart), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_slider read sli_volume : int (0, 1000000)
 	set_control_par(get_ui_id(sli_volume), CONTROL_PAR_DEFAULT_VALUE, 500000)
 	set_control_par(get_ui_id(sli_volume), CONTROL_PAR_PICTURE, "sli_smallsmall")
 	set_control_par(get_ui_id(sli_volume), CONTROL_PAR_MOUSE_BEHAVIOUR, - 600)
 	set_control_par(get_ui_id(sli_volume), CONTROL_PAR_POS_X, 8 + (81 * 3))
 	set_control_par(get_ui_id(sli_volume), CONTROL_PAR_POS_Y, 0)
-	set_control_par(get_ui_id(sli_volume), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(sli_volume), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare last_time_volume : int
 	declare ui_label lbl_volume : int (1, 1)
 	set_control_par(get_ui_id(lbl_volume), CONTROL_PAR_TEXT, "Zone Vol.")
@@ -1114,14 +1114,14 @@ on init
 	set_control_par(get_ui_id(lbl_volume), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_volume), CONTROL_PAR_POS_Y) + 42)
 	set_control_par(get_ui_id(lbl_volume), CONTROL_PAR_WIDTH, 70)
 	set_control_par(get_ui_id(lbl_volume), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_volume), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_volume), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_slider read sli_fadeOutTrans : int (0, 1000000)
 	set_control_par(get_ui_id(sli_fadeOutTrans), CONTROL_PAR_DEFAULT_VALUE, DEFAULT_VAL[2])
 	set_control_par(get_ui_id(sli_fadeOutTrans), CONTROL_PAR_PICTURE, "sli_smallsmall")
 	set_control_par(get_ui_id(sli_fadeOutTrans), CONTROL_PAR_MOUSE_BEHAVIOUR, - 600)
 	set_control_par(get_ui_id(sli_fadeOutTrans), CONTROL_PAR_POS_X, 8 + (81 * 4))
 	set_control_par(get_ui_id(sli_fadeOutTrans), CONTROL_PAR_POS_Y, 0)
-	set_control_par(get_ui_id(sli_fadeOutTrans), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(sli_fadeOutTrans), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare last_time_fadeOutTrans : int
 	declare ui_label lbl_fadeOutTrans : int (1, 1)
 	set_control_par(get_ui_id(lbl_fadeOutTrans), CONTROL_PAR_TEXT, "Fade Out")
@@ -1132,14 +1132,14 @@ on init
 	set_control_par(get_ui_id(lbl_fadeOutTrans), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_fadeOutTrans), CONTROL_PAR_POS_Y) + 42)
 	set_control_par(get_ui_id(lbl_fadeOutTrans), CONTROL_PAR_WIDTH, 60)
 	set_control_par(get_ui_id(lbl_fadeOutTrans), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_fadeOutTrans), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_fadeOutTrans), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_slider read sli_waitSus : int (0, 1000000)
 	set_control_par(get_ui_id(sli_waitSus), CONTROL_PAR_DEFAULT_VALUE, DEFAULT_VAL[3])
 	set_control_par(get_ui_id(sli_waitSus), CONTROL_PAR_PICTURE, "sli_smallsmall")
 	set_control_par(get_ui_id(sli_waitSus), CONTROL_PAR_MOUSE_BEHAVIOUR, - 600)
 	set_control_par(get_ui_id(sli_waitSus), CONTROL_PAR_POS_X, 8 + (81 * 5))
 	set_control_par(get_ui_id(sli_waitSus), CONTROL_PAR_POS_Y, 0)
-	set_control_par(get_ui_id(sli_waitSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(sli_waitSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare last_time_waitSus : int
 	declare ui_label lbl_waitSus : int (1, 1)
 	set_control_par(get_ui_id(lbl_waitSus), CONTROL_PAR_TEXT, "Wait Time")
@@ -1150,14 +1150,14 @@ on init
 	set_control_par(get_ui_id(lbl_waitSus), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_waitSus), CONTROL_PAR_POS_Y) + 42)
 	set_control_par(get_ui_id(lbl_waitSus), CONTROL_PAR_WIDTH, 73)
 	set_control_par(get_ui_id(lbl_waitSus), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_waitSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_waitSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_slider read sli_fadeInSus : int (0, 1000000)
 	set_control_par(get_ui_id(sli_fadeInSus), CONTROL_PAR_DEFAULT_VALUE, DEFAULT_VAL[4])
 	set_control_par(get_ui_id(sli_fadeInSus), CONTROL_PAR_PICTURE, "sli_smallsmall")
 	set_control_par(get_ui_id(sli_fadeInSus), CONTROL_PAR_MOUSE_BEHAVIOUR, - 600)
 	set_control_par(get_ui_id(sli_fadeInSus), CONTROL_PAR_POS_X, 8 + (81 * 6))
 	set_control_par(get_ui_id(sli_fadeInSus), CONTROL_PAR_POS_Y, 0)
-	set_control_par(get_ui_id(sli_fadeInSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(sli_fadeInSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare last_time_fadeInSus : int
 	declare ui_label lbl_fadeInSus : int (1, 1)
 	set_control_par(get_ui_id(lbl_fadeInSus), CONTROL_PAR_TEXT, "Fade In")
@@ -1168,7 +1168,7 @@ on init
 	set_control_par(get_ui_id(lbl_fadeInSus), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_fadeInSus), CONTROL_PAR_POS_Y) + 42)
 	set_control_par(get_ui_id(lbl_fadeInSus), CONTROL_PAR_WIDTH, 60)
 	set_control_par(get_ui_id(lbl_fadeInSus), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_fadeInSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_fadeInSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_label lbl_transitionBG : int (1, 1)
 	set_control_par(get_ui_id(lbl_transitionBG), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(lbl_transitionBG), CONTROL_PAR_PICTURE, "bg_label")
@@ -1176,7 +1176,7 @@ on init
 	set_control_par(get_ui_id(lbl_transitionBG), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_samplestart), CONTROL_PAR_POS_Y))
 	set_control_par(get_ui_id(lbl_transitionBG), CONTROL_PAR_WIDTH, (get_control_par(get_ui_id(sli_waitSus), CONTROL_PAR_POS_X) - get_control_par(get_ui_id(sli_fadeInTrans), CONTROL_PAR_POS_X)) - 10)
 	set_control_par(get_ui_id(lbl_transitionBG), CONTROL_PAR_HEIGHT, 60)
-	set_control_par(get_ui_id(lbl_transitionBG), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_transitionBG), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_label lbl_attackSusBG : int (1, 1)
 	set_control_par(get_ui_id(lbl_attackSusBG), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(lbl_attackSusBG), CONTROL_PAR_PICTURE, "bg_label")
@@ -1184,7 +1184,7 @@ on init
 	set_control_par(get_ui_id(lbl_attackSusBG), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_samplestart), CONTROL_PAR_POS_Y))
 	set_control_par(get_ui_id(lbl_attackSusBG), CONTROL_PAR_WIDTH, (get_control_par(get_ui_id(sli_fadeInTrans), CONTROL_PAR_POS_X) - get_control_par(get_ui_id(sli_releaseSus), CONTROL_PAR_POS_X)) - 10)
 	set_control_par(get_ui_id(lbl_attackSusBG), CONTROL_PAR_HEIGHT, 60)
-	set_control_par(get_ui_id(lbl_attackSusBG), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_attackSusBG), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_label lbl_releaseSusBG : int (1, 1)
 	set_control_par(get_ui_id(lbl_releaseSusBG), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(lbl_releaseSusBG), CONTROL_PAR_PICTURE, "bg_label")
@@ -1192,7 +1192,7 @@ on init
 	set_control_par(get_ui_id(lbl_releaseSusBG), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_samplestart), CONTROL_PAR_POS_Y))
 	set_control_par(get_ui_id(lbl_releaseSusBG), CONTROL_PAR_WIDTH, (get_control_par(get_ui_id(sli_fadeInSus), CONTROL_PAR_POS_X) - get_control_par(get_ui_id(sli_waitSus), CONTROL_PAR_POS_X)) + 70)
 	set_control_par(get_ui_id(lbl_releaseSusBG), CONTROL_PAR_HEIGHT, 60)
-	set_control_par(get_ui_id(lbl_releaseSusBG), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_releaseSusBG), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_button btn_markSample : int 
 	set_control_par(get_ui_id(btn_markSample), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_markSample), CONTROL_PAR_PICTURE, "btn_current_marked")
@@ -1210,7 +1210,7 @@ on init
 	set_control_par(get_ui_id(btn_markSample), CONTROL_PAR_HEIGHT, 25)
 	set_control_par(get_ui_id(btn_markSample), CONTROL_PAR_Z_LAYER, 1)
 	set_control_par(get_ui_id(btn_markSample), CONTROL_PAR_DISABLE_TEXT_SHIFTING, TRUE)
-	set_control_par(get_ui_id(btn_markSample), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(btn_markSample), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_text_edit read txt_sampleComment : string 
 	set_control_par(get_ui_id(txt_sampleComment), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(txt_sampleComment), CONTROL_PAR_PICTURE, "")
@@ -1221,7 +1221,7 @@ on init
 	set_control_par(get_ui_id(txt_sampleComment), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(btn_markSample), CONTROL_PAR_POS_Y) + 7)
 	set_control_par(get_ui_id(txt_sampleComment), CONTROL_PAR_WIDTH, 200)
 	set_control_par(get_ui_id(txt_sampleComment), CONTROL_PAR_HEIGHT, 18)
-	set_control_par(get_ui_id(txt_sampleComment), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(txt_sampleComment), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	set_control_par(get_ui_id(txt_sampleComment), CONTROL_PAR_HIDE, HIDE_WHOLE_CONTROL)
 	declare ui_label lbl_sampleCommentBG : int (1, 1)
 	set_control_par(get_ui_id(lbl_sampleCommentBG), CONTROL_PAR_TEXT, "")
@@ -1230,7 +1230,7 @@ on init
 	set_control_par(get_ui_id(lbl_sampleCommentBG), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(txt_sampleComment), CONTROL_PAR_POS_Y) - 4)
 	set_control_par(get_ui_id(lbl_sampleCommentBG), CONTROL_PAR_WIDTH, get_control_par(get_ui_id(txt_sampleComment), CONTROL_PAR_WIDTH) + 15)
 	set_control_par(get_ui_id(lbl_sampleCommentBG), CONTROL_PAR_HEIGHT, get_control_par(get_ui_id(txt_sampleComment), CONTROL_PAR_HEIGHT) + 4)
-	set_control_par(get_ui_id(lbl_sampleCommentBG), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_sampleCommentBG), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	set_control_par(get_ui_id(lbl_sampleCommentBG), CONTROL_PAR_HIDE, HIDE_WHOLE_CONTROL)
 	declare ui_panel UI_checkButtons : int 
 	set_control_par(get_ui_id(UI_checkButtons), CONTROL_PAR_POS_X, get_control_par(get_ui_id(UI_waveform), CONTROL_PAR_POS_X))
@@ -1244,7 +1244,7 @@ on init
 	set_control_par(get_ui_id(btn_check_releaseSus), CONTROL_PAR_POS_Y, 0)
 	set_control_par(get_ui_id(btn_check_releaseSus), CONTROL_PAR_WIDTH, 50)
 	set_control_par(get_ui_id(btn_check_releaseSus), CONTROL_PAR_HEIGHT, 25)
-	set_control_par(get_ui_id(btn_check_releaseSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_checkButtons)))
+	set_control_par(get_ui_id(btn_check_releaseSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_checkButtons))
 	declare ui_button btn_check_samplestart : int 
 	set_control_par(get_ui_id(btn_check_samplestart), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_check_samplestart), CONTROL_PAR_PICTURE, "btn_check")
@@ -1253,7 +1253,7 @@ on init
 	set_control_par(get_ui_id(btn_check_samplestart), CONTROL_PAR_POS_Y, 0)
 	set_control_par(get_ui_id(btn_check_samplestart), CONTROL_PAR_WIDTH, 50)
 	set_control_par(get_ui_id(btn_check_samplestart), CONTROL_PAR_HEIGHT, 25)
-	set_control_par(get_ui_id(btn_check_samplestart), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_checkButtons)))
+	set_control_par(get_ui_id(btn_check_samplestart), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_checkButtons))
 	declare ui_button btn_check_volume : int 
 	set_control_par(get_ui_id(btn_check_volume), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_check_volume), CONTROL_PAR_PICTURE, "btn_check")
@@ -1262,7 +1262,7 @@ on init
 	set_control_par(get_ui_id(btn_check_volume), CONTROL_PAR_POS_Y, 0)
 	set_control_par(get_ui_id(btn_check_volume), CONTROL_PAR_WIDTH, 50)
 	set_control_par(get_ui_id(btn_check_volume), CONTROL_PAR_HEIGHT, 25)
-	set_control_par(get_ui_id(btn_check_volume), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_checkButtons)))
+	set_control_par(get_ui_id(btn_check_volume), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_checkButtons))
 	declare ui_button btn_check_waitSus : int 
 	set_control_par(get_ui_id(btn_check_waitSus), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_check_waitSus), CONTROL_PAR_PICTURE, "btn_check")
@@ -1271,7 +1271,7 @@ on init
 	set_control_par(get_ui_id(btn_check_waitSus), CONTROL_PAR_POS_Y, 0)
 	set_control_par(get_ui_id(btn_check_waitSus), CONTROL_PAR_WIDTH, 50)
 	set_control_par(get_ui_id(btn_check_waitSus), CONTROL_PAR_HEIGHT, 25)
-	set_control_par(get_ui_id(btn_check_waitSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_checkButtons)))
+	set_control_par(get_ui_id(btn_check_waitSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_checkButtons))
 	declare ui_button btn_check_fadeInSus : int 
 	set_control_par(get_ui_id(btn_check_fadeInSus), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_check_fadeInSus), CONTROL_PAR_PICTURE, "btn_check")
@@ -1280,7 +1280,7 @@ on init
 	set_control_par(get_ui_id(btn_check_fadeInSus), CONTROL_PAR_POS_Y, 0)
 	set_control_par(get_ui_id(btn_check_fadeInSus), CONTROL_PAR_WIDTH, 50)
 	set_control_par(get_ui_id(btn_check_fadeInSus), CONTROL_PAR_HEIGHT, 25)
-	set_control_par(get_ui_id(btn_check_fadeInSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_checkButtons)))
+	set_control_par(get_ui_id(btn_check_fadeInSus), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_checkButtons))
 	declare ui_button btn_check_fadeInTrans : int 
 	set_control_par(get_ui_id(btn_check_fadeInTrans), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_check_fadeInTrans), CONTROL_PAR_PICTURE, "btn_check")
@@ -1289,7 +1289,7 @@ on init
 	set_control_par(get_ui_id(btn_check_fadeInTrans), CONTROL_PAR_POS_Y, 0)
 	set_control_par(get_ui_id(btn_check_fadeInTrans), CONTROL_PAR_WIDTH, 50)
 	set_control_par(get_ui_id(btn_check_fadeInTrans), CONTROL_PAR_HEIGHT, 25)
-	set_control_par(get_ui_id(btn_check_fadeInTrans), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_checkButtons)))
+	set_control_par(get_ui_id(btn_check_fadeInTrans), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_checkButtons))
 	declare ui_button btn_check_fadeOutTrans : int 
 	set_control_par(get_ui_id(btn_check_fadeOutTrans), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_check_fadeOutTrans), CONTROL_PAR_PICTURE, "btn_check")
@@ -1298,7 +1298,7 @@ on init
 	set_control_par(get_ui_id(btn_check_fadeOutTrans), CONTROL_PAR_POS_Y, 0)
 	set_control_par(get_ui_id(btn_check_fadeOutTrans), CONTROL_PAR_WIDTH, 50)
 	set_control_par(get_ui_id(btn_check_fadeOutTrans), CONTROL_PAR_HEIGHT, 25)
-	set_control_par(get_ui_id(btn_check_fadeOutTrans), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_checkButtons)))
+	set_control_par(get_ui_id(btn_check_fadeOutTrans), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_checkButtons))
 	declare ui_button btn_check_markSample : int 
 	set_control_par(get_ui_id(btn_check_markSample), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_check_markSample), CONTROL_PAR_PICTURE, "btn_check")
@@ -1307,7 +1307,7 @@ on init
 	set_control_par(get_ui_id(btn_check_markSample), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(btn_markSample), CONTROL_PAR_POS_Y) + 21)
 	set_control_par(get_ui_id(btn_check_markSample), CONTROL_PAR_WIDTH, 50)
 	set_control_par(get_ui_id(btn_check_markSample), CONTROL_PAR_HEIGHT, 25)
-	set_control_par(get_ui_id(btn_check_markSample), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_checkButtons)))
+	set_control_par(get_ui_id(btn_check_markSample), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_checkButtons))
 	declare ui_button btn_check_completed : int 
 	set_control_par(get_ui_id(btn_check_completed), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_check_completed), CONTROL_PAR_PICTURE, "btn_check")
@@ -1316,8 +1316,8 @@ on init
 	set_control_par(get_ui_id(btn_check_completed), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(btn_completed), CONTROL_PAR_POS_Y) + 24)
 	set_control_par(get_ui_id(btn_check_completed), CONTROL_PAR_WIDTH, 50)
 	set_control_par(get_ui_id(btn_check_completed), CONTROL_PAR_HEIGHT, 25)
-	set_control_par(get_ui_id(btn_check_completed), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_checkButtons)))
-	declare check_button_state[9] : int[] := (get_ui_id(get_ui_id(btn_check_releaseSus)), get_ui_id(get_ui_id(btn_check_fadeInTrans)), get_ui_id(get_ui_id(btn_check_samplestart)), get_ui_id(get_ui_id(btn_check_volume)), get_ui_id(get_ui_id(btn_check_fadeOutTrans)), get_ui_id(get_ui_id(btn_check_waitSus)), get_ui_id(get_ui_id(btn_check_fadeInSus)), get_ui_id(get_ui_id(btn_check_markSample)), get_ui_id(get_ui_id(btn_check_completed)))
+	set_control_par(get_ui_id(btn_check_completed), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_checkButtons))
+	declare check_button_state[9] : int[] := (get_ui_id(btn_check_releaseSus), get_ui_id(btn_check_fadeInTrans), get_ui_id(btn_check_samplestart), get_ui_id(btn_check_volume), get_ui_id(btn_check_fadeOutTrans), get_ui_id(btn_check_waitSus), get_ui_id(btn_check_fadeInSus), get_ui_id(btn_check_markSample), get_ui_id(btn_check_completed))
 	declare ui_button btn_filename : int 
 	set_control_par(get_ui_id(btn_filename), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_filename), CONTROL_PAR_PICTURE, "alpha")
@@ -1333,7 +1333,7 @@ on init
 	set_control_par(get_ui_id(btn_filename), CONTROL_PAR_POS_Y, ((get_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_Y) + 165) - 20) + 15)
 	set_control_par(get_ui_id(btn_filename), CONTROL_PAR_WIDTH, 230)
 	set_control_par(get_ui_id(btn_filename), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(btn_filename), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(btn_filename), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	playedInterval := midi.note_names[range[0]] & " to " & midi.note_names[range[1]]
 	declare ui_label lbl_intervalInfo : int (1, 1)
 	set_control_par(get_ui_id(lbl_intervalInfo), CONTROL_PAR_TEXT, playedInterval)
@@ -1344,7 +1344,7 @@ on init
 	set_control_par(get_ui_id(lbl_intervalInfo), CONTROL_PAR_POS_Y, ((get_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_Y) + 165) - 20) + 15)
 	set_control_par(get_ui_id(lbl_intervalInfo), CONTROL_PAR_WIDTH, 200)
 	set_control_par(get_ui_id(lbl_intervalInfo), CONTROL_PAR_HEIGHT, 25)
-	set_control_par(get_ui_id(lbl_intervalInfo), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_intervalInfo), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_label lbl_sModRange : int (1, 1)
 	set_control_par(get_ui_id(lbl_sModRange), CONTROL_PAR_TEXT, "S. Mod: 1230")
 	set_control_par(get_ui_id(lbl_sModRange), CONTROL_PAR_PICTURE, "alpha")
@@ -1355,7 +1355,7 @@ on init
 	set_control_par(get_ui_id(lbl_sModRange), CONTROL_PAR_WIDTH, 100)
 	set_control_par(get_ui_id(lbl_sModRange), CONTROL_PAR_HEIGHT, 20)
 	set_control_par_str(get_ui_id(lbl_sModRange), CONTROL_PAR_TEXT, "S Mod: " & real_to_int(round(int_to_real(max_samplestart) * 48)))
-	set_control_par(get_ui_id(lbl_sModRange), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_sModRange), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_label lbl_zonevolume : int (1, 1)
 	set_control_par(get_ui_id(lbl_zonevolume), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(lbl_zonevolume), CONTROL_PAR_PICTURE, "alpha")
@@ -1365,7 +1365,7 @@ on init
 	set_control_par(get_ui_id(lbl_zonevolume), CONTROL_PAR_POS_Y, ((get_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_Y) + 165) - 20) + 15)
 	set_control_par(get_ui_id(lbl_zonevolume), CONTROL_PAR_WIDTH, 150)
 	set_control_par(get_ui_id(lbl_zonevolume), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_zonevolume), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_zonevolume), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_label lbl_zonepan : int (1, 1)
 	set_control_par(get_ui_id(lbl_zonepan), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(lbl_zonepan), CONTROL_PAR_PICTURE, "alpha")
@@ -1375,7 +1375,7 @@ on init
 	set_control_par(get_ui_id(lbl_zonepan), CONTROL_PAR_POS_Y, ((get_control_par(get_ui_id(wf_transition), CONTROL_PAR_POS_Y) + 165) - 20) + 15)
 	set_control_par(get_ui_id(lbl_zonepan), CONTROL_PAR_WIDTH, 150)
 	set_control_par(get_ui_id(lbl_zonepan), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(lbl_zonepan), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(lbl_zonepan), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_button btn_reset : int 
 	set_control_par(get_ui_id(btn_reset), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_reset), CONTROL_PAR_PICTURE, "trash")
@@ -1388,10 +1388,10 @@ on init
 	set_control_par(get_ui_id(btn_reset), CONTROL_PAR_HEIGHT, 25)
 	i := 0
 	while(i <= (num_elements(font.types) - 1)) 
-		set_control_par(get_ui_id(get_ui_id(get_ui_id(btn_reset))), font.types[i], _font.3pt3[(i * 2) + 0])
+		set_control_par(get_ui_id(btn_reset), font.types[i], _font.3pt3[(i * 2) + 0])
 		inc(i)
 	end while
-	set_control_par(get_ui_id(btn_reset), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(btn_reset), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_button btn_ok : int 
 	set_control_par(get_ui_id(btn_ok), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_ok), CONTROL_PAR_PICTURE, "ok_button")
@@ -1415,9 +1415,9 @@ on init
 	declare ui_panel UI_resetWindow : int 
 	set_control_par(get_ui_id(UI_resetWindow), CONTROL_PAR_POS_X, 37 + 10)
 	set_control_par(get_ui_id(UI_resetWindow), CONTROL_PAR_POS_Y, (75 + 22) + 25)
-	set_control_par(get_ui_id(btn_ok), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_resetWindow)))
-	set_control_par(get_ui_id(btn_cancel), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_resetWindow)))
-	set_control_par(get_ui_id(lbl_sure), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_resetWindow)))
+	set_control_par(get_ui_id(btn_ok), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_resetWindow))
+	set_control_par(get_ui_id(btn_cancel), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_resetWindow))
+	set_control_par(get_ui_id(lbl_sure), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_resetWindow))
 	set_control_par(get_ui_id(UI_resetWindow), CONTROL_PAR_HIDE, HIDE_WHOLE_CONTROL)
 	declare ui_panel UI_forallWindow : int 
 	set_control_par(get_ui_id(UI_forallWindow), CONTROL_PAR_POS_X, 4 + 10)
@@ -1434,7 +1434,7 @@ on init
 	set_control_par(get_ui_id(btn_forall), CONTROL_PAR_HEIGHT, 25)
 	i := 0
 	while(i <= (num_elements(font.types) - 1)) 
-		set_control_par(get_ui_id(get_ui_id(get_ui_id(btn_forall))), font.types[i], _font.3pt3[(i * 2) + 0])
+		set_control_par(get_ui_id(btn_forall), font.types[i], _font.3pt3[(i * 2) + 0])
 		inc(i)
 	end while
 	set_control_par(get_ui_id(btn_forall), CONTROL_PAR_DISABLE_TEXT_SHIFTING, TRUE)
@@ -1443,13 +1443,13 @@ on init
 	set_control_par(get_ui_id(btn_ok2), CONTROL_PAR_PICTURE, "ok_button")
 	set_control_par(get_ui_id(btn_ok2), CONTROL_PAR_POS_X, 14)
 	set_control_par(get_ui_id(btn_ok2), CONTROL_PAR_POS_Y, 301)
-	set_control_par(get_ui_id(btn_ok2), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_forallWindow)))
+	set_control_par(get_ui_id(btn_ok2), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_forallWindow))
 	declare ui_button btn_cancel2 : int 
 	set_control_par(get_ui_id(btn_cancel2), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_cancel2), CONTROL_PAR_PICTURE, "cancel_button")
 	set_control_par(get_ui_id(btn_cancel2), CONTROL_PAR_POS_X, 14 + 28)
 	set_control_par(get_ui_id(btn_cancel2), CONTROL_PAR_POS_Y, 301)
-	set_control_par(get_ui_id(btn_cancel2), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_forallWindow)))
+	set_control_par(get_ui_id(btn_cancel2), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_forallWindow))
 	declare ui_label lbl_sure2 : int (1, 1)
 	set_control_par(get_ui_id(lbl_sure2), CONTROL_PAR_TEXT, "Add settings of marked controls to all samples? (Settings will be added not replaced)")
 	set_control_par(get_ui_id(lbl_sure2), CONTROL_PAR_PICTURE, "alpha")
@@ -1459,7 +1459,7 @@ on init
 	set_control_par(get_ui_id(lbl_sure2), CONTROL_PAR_POS_Y, 313)
 	set_control_par(get_ui_id(lbl_sure2), CONTROL_PAR_WIDTH, 600)
 	set_control_par(get_ui_id(lbl_sure2), CONTROL_PAR_HEIGHT, 10)
-	set_control_par(get_ui_id(lbl_sure2), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_forallWindow)))
+	set_control_par(get_ui_id(lbl_sure2), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_forallWindow))
 	set_control_par_str(get_ui_id(lbl_loadedData), CONTROL_PAR_HELP, "Displays the prefix of the nka files loaded into the instrument from the Legato Data folder. These should reflect the name of the Legato .nki at hand. If this is not the case, or if the keys are colored red, the instrument has to be reinitialized with Creator Tools.")
 	set_control_par_str(get_ui_id(btn_export_marked), CONTROL_PAR_HELP, "Export marked file names, comments and intervals as 'INSTRUMENT__samples_to_revisit.nka'. The resulting .nka file can be found in the 'Data' folder outside the 'instruments' folder.")
 	set_control_par_str(get_ui_id(wf_transition), CONTROL_PAR_HELP, "Displays the waveform of the currently played transition sample.")
@@ -1491,7 +1491,7 @@ on init
 	set_control_par(get_ui_id(btn_noInput), CONTROL_PAR_WIDTH, 805)
 	set_control_par(get_ui_id(btn_noInput), CONTROL_PAR_HEIGHT, 422)
 	set_control_par(get_ui_id(btn_noInput), CONTROL_PAR_Z_LAYER, 1)
-	set_control_par(get_ui_id(btn_noInput), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_waveform)))
+	set_control_par(get_ui_id(btn_noInput), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_waveform))
 	declare ui_panel UI_legatoList : int 
 	declare legatoList.end_of_list[2000 + 12] : int[] := (- 1)
 	declare btn_elements_onoff[2000] : int[]
@@ -1537,7 +1537,7 @@ on init
 	set_control_par(get_ui_id(btn_listBrowserBG), CONTROL_PAR_POS_Y, 0)
 	set_control_par(get_ui_id(btn_listBrowserBG), CONTROL_PAR_WIDTH, 805)
 	set_control_par(get_ui_id(btn_listBrowserBG), CONTROL_PAR_HEIGHT, 422)
-	set_control_par(get_ui_id(btn_listBrowserBG), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+	set_control_par(get_ui_id(btn_listBrowserBG), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 	set_control_par(get_ui_id(btn_listBrowserBG), CONTROL_PAR_Z_LAYER, - 1)
 	declare ui_button btn_listBrowserFG : int 
 	set_control_par(get_ui_id(btn_listBrowserFG), CONTROL_PAR_TEXT, "")
@@ -1546,13 +1546,13 @@ on init
 	set_control_par(get_ui_id(btn_listBrowserFG), CONTROL_PAR_POS_Y, 38)
 	set_control_par(get_ui_id(btn_listBrowserFG), CONTROL_PAR_WIDTH, 785)
 	set_control_par(get_ui_id(btn_listBrowserFG), CONTROL_PAR_HEIGHT, 350)
-	set_control_par(get_ui_id(btn_listBrowserFG), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+	set_control_par(get_ui_id(btn_listBrowserFG), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 	set_control_par(get_ui_id(btn_listBrowserFG), CONTROL_PAR_Z_LAYER, - 1)
 	declare ui_button btn_listBrowserDC : int 
 	set_control_par(get_ui_id(btn_listBrowserDC), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_listBrowserDC), CONTROL_PAR_PICTURE, "alpha")
 	set_control_par(get_ui_id(btn_listBrowserDC), CONTROL_PAR_HIDE, HIDE_WHOLE_CONTROL)
-	set_control_par(get_ui_id(btn_listBrowserDC), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+	set_control_par(get_ui_id(btn_listBrowserDC), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 	set_control_par(get_ui_id(btn_listBrowserDC), CONTROL_PAR_Z_LAYER, 1)
 	declare ui_slider sli_scrollbar : int (0, 1000000)
 	set_control_par(get_ui_id(sli_scrollbar), CONTROL_PAR_DEFAULT_VALUE, 1000000)
@@ -1562,7 +1562,7 @@ on init
 	set_control_par(get_ui_id(sli_scrollbar), CONTROL_PAR_POS_Y, ((list_matrix_coord[1] + 25) - 10) + 12)
 	set_control_par(get_ui_id(sli_scrollbar), CONTROL_PAR_WIDTH, 21)
 	set_control_par(get_ui_id(sli_scrollbar), CONTROL_PAR_HEIGHT, 245)
-	set_control_par(get_ui_id(sli_scrollbar), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+	set_control_par(get_ui_id(sli_scrollbar), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 	declare ui_label lbl_scrollhandle : int (1, 1)
 	set_control_par(get_ui_id(lbl_scrollhandle), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(lbl_scrollhandle), CONTROL_PAR_PICTURE, "scrollbar")
@@ -1570,7 +1570,7 @@ on init
 	set_control_par(get_ui_id(lbl_scrollhandle), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_scrollbar), CONTROL_PAR_POS_Y))
 	set_control_par(get_ui_id(lbl_scrollhandle), CONTROL_PAR_HEIGHT, handle_size)
 	set_control_par(get_ui_id(lbl_scrollhandle), CONTROL_PAR_Z_LAYER, - 1)
-	set_control_par(get_ui_id(lbl_scrollhandle), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+	set_control_par(get_ui_id(lbl_scrollhandle), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 	declare ui_label lbl_scrollBG : int (1, 1)
 	set_control_par(get_ui_id(lbl_scrollBG), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(lbl_scrollBG), CONTROL_PAR_PICTURE, "scrollbar_bg")
@@ -1579,7 +1579,7 @@ on init
 	set_control_par(get_ui_id(lbl_scrollBG), CONTROL_PAR_WIDTH, 5)
 	set_control_par(get_ui_id(lbl_scrollBG), CONTROL_PAR_HEIGHT, (245 + 2) + 1)
 	set_control_par(get_ui_id(lbl_scrollBG), CONTROL_PAR_Z_LAYER, - 1)
-	set_control_par(get_ui_id(lbl_scrollBG), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+	set_control_par(get_ui_id(lbl_scrollBG), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 	declare lbl_categories[7] : int[]
 	declare ui_button lbl_categories0 : int 
 	declare ui_button lbl_categories1 : int 
@@ -1607,7 +1607,7 @@ on init
 		if(i # (num_elements(get_ui_id(lbl_categories)) - 1))
 			set_control_par(lbl_categories[i], CONTROL_PAR_Z_LAYER, 0)
 		end if
-		set_control_par(lbl_categories[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+		set_control_par(lbl_categories[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 		inc(i)
 	end while
 	declare btn_element_button[12] : int[]
@@ -1797,14 +1797,14 @@ on init
 			inc(u)
 		end while
 		set_control_par(btn_element_button[i], CONTROL_PAR_DISABLE_TEXT_SHIFTING, TRUE)
-		set_control_par(btn_element_button[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+		set_control_par(btn_element_button[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 		set_control_par(btn_element_completed[i], CONTROL_PAR_TEXT, "")
 		set_control_par(btn_element_completed[i], CONTROL_PAR_PICTURE, "btn_completed")
 		set_control_par(btn_element_completed[i], CONTROL_PAR_POS_X, ((list_matrix_coord[0] + btn_width_per_category_accum[7 - 1]) + (btn_width_per_category[7 - 1] / 2)) - (20 / 2))
 		set_control_par(btn_element_completed[i], CONTROL_PAR_POS_Y, element_grid_pos_y[i])
 		set_control_par(btn_element_completed[i], CONTROL_PAR_WIDTH, 15)
 		set_control_par(btn_element_completed[i], CONTROL_PAR_HEIGHT, 20)
-		set_control_par(btn_element_completed[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+		set_control_par(btn_element_completed[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 		set_control_par(btn_element_completed[i], CONTROL_PAR_DISABLE_TEXT_SHIFTING, TRUE)
 		set_control_par(btn_element_marked[i], CONTROL_PAR_TEXT, "")
 		set_control_par(btn_element_marked[i], CONTROL_PAR_PICTURE, "btn_marked")
@@ -1812,7 +1812,7 @@ on init
 		set_control_par(btn_element_marked[i], CONTROL_PAR_POS_Y, element_grid_pos_y[i])
 		set_control_par(btn_element_marked[i], CONTROL_PAR_WIDTH, 30)
 		set_control_par(btn_element_marked[i], CONTROL_PAR_HEIGHT, 20)
-		set_control_par(btn_element_marked[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+		set_control_par(btn_element_marked[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 		set_control_par(btn_element_marked[i], CONTROL_PAR_DISABLE_TEXT_SHIFTING, TRUE)
 		set_control_par(txt_element_marked[i], CONTROL_PAR_TEXT, "")
 		set_control_par(txt_element_marked[i], CONTROL_PAR_PICTURE, "alpha")
@@ -1823,7 +1823,7 @@ on init
 		set_control_par(txt_element_marked[i], CONTROL_PAR_POS_Y, element_grid_pos_y[i] + 4)
 		set_control_par(txt_element_marked[i], CONTROL_PAR_WIDTH, btn_width_per_category[5])
 		set_control_par(txt_element_marked[i], CONTROL_PAR_HEIGHT, 20 - 4)
-		set_control_par(txt_element_marked[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+		set_control_par(txt_element_marked[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 		set_control_par(txt_element_marked[i], CONTROL_PAR_Z_LAYER, 1)
 		set_control_par(btn_element_played[i], CONTROL_PAR_TEXT, "")
 		set_control_par(btn_element_played[i], CONTROL_PAR_PICTURE, "btn_play_small")
@@ -1831,7 +1831,7 @@ on init
 		set_control_par(btn_element_played[i], CONTROL_PAR_POS_Y, element_grid_pos_y[i])
 		set_control_par(btn_element_played[i], CONTROL_PAR_WIDTH, 15)
 		set_control_par(btn_element_played[i], CONTROL_PAR_HEIGHT, 20)
-		set_control_par(btn_element_played[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+		set_control_par(btn_element_played[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 		set_control_par(btn_element_played[i], CONTROL_PAR_DISABLE_TEXT_SHIFTING, TRUE)
 		ii := 0
 		while(ii <= (lbl_file_infos.SIZE_D1 - 1)) 
@@ -1844,7 +1844,7 @@ on init
 			set_control_par(_lbl_file_infos[(ii * 12) + i], CONTROL_PAR_POS_Y, element_grid_pos_y[i])
 			set_control_par(_lbl_file_infos[(ii * 12) + i], CONTROL_PAR_WIDTH, btn_width_per_category[ii])
 			set_control_par(_lbl_file_infos[(ii * 12) + i], CONTROL_PAR_HEIGHT, 20)
-			set_control_par(_lbl_file_infos[(ii * 12) + i], CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+			set_control_par(_lbl_file_infos[(ii * 12) + i], CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 			set_control_par_str(_lbl_file_infos[(0 * 12) + i], CONTROL_PAR_PICTURE, "alpha")
 			set_control_par_str(_lbl_file_infos[(2 * 12) + i], CONTROL_PAR_TEXT, legatoList.trans_zone_ids[i])
 			set_control_par_str(_lbl_file_infos[(3 * 12) + i], CONTROL_PAR_TEXT, legatoList.intervals[i])
@@ -1863,19 +1863,19 @@ on init
 	set_control_par(get_ui_id(lbl_presetcount), CONTROL_PAR_WIDTH, 100)
 	set_control_par(get_ui_id(lbl_presetcount), CONTROL_PAR_HEIGHT, 20)
 	set_control_par(get_ui_id(lbl_presetcount), CONTROL_PAR_Z_LAYER, - 1)
-	set_control_par(get_ui_id(lbl_presetcount), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+	set_control_par(get_ui_id(lbl_presetcount), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 	declare ui_button btn_prev : int 
 	set_control_par(get_ui_id(btn_prev), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_prev), CONTROL_PAR_PICTURE, "btn_left")
 	set_control_par(get_ui_id(btn_prev), CONTROL_PAR_POS_X, (list_matrix_coord[0] + btn_width_per_category_accum[2]) - 50)
 	set_control_par(get_ui_id(btn_prev), CONTROL_PAR_POS_Y, list_matrix_coord[1])
-	set_control_par(get_ui_id(btn_prev), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+	set_control_par(get_ui_id(btn_prev), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 	declare ui_button btn_next : int 
 	set_control_par(get_ui_id(btn_next), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_next), CONTROL_PAR_PICTURE, "btn_right")
 	set_control_par(get_ui_id(btn_next), CONTROL_PAR_POS_X, ((list_matrix_coord[0] + btn_width_per_category_accum[2]) - 50) + 16)
 	set_control_par(get_ui_id(btn_next), CONTROL_PAR_POS_Y, list_matrix_coord[1])
-	set_control_par(get_ui_id(btn_next), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+	set_control_par(get_ui_id(btn_next), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 	declare ui_label lbl_scanningList : int (1, 1)
 	set_control_par(get_ui_id(lbl_scanningList), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(lbl_scanningList), CONTROL_PAR_PICTURE, "lbl_scanning")
@@ -1883,26 +1883,26 @@ on init
 	set_control_par(get_ui_id(lbl_scanningList), CONTROL_PAR_FONT_TYPE, 0)
 	set_control_par(get_ui_id(lbl_scanningList), CONTROL_PAR_POS_X, (805 / 2) - (263 / 2))
 	set_control_par(get_ui_id(lbl_scanningList), CONTROL_PAR_POS_Y, ((422 / 2) - (40 / 2)) + 10)
-	set_control_par(get_ui_id(lbl_scanningList), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+	set_control_par(get_ui_id(lbl_scanningList), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 	set_control_par(get_ui_id(lbl_scanningList), CONTROL_PAR_HIDE, HIDE_WHOLE_CONTROL)
 	declare ui_button read btn_mute : int 
 	set_control_par(get_ui_id(btn_mute), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_mute), CONTROL_PAR_PICTURE, "btn_mute")
 	set_control_par(get_ui_id(btn_mute), CONTROL_PAR_POS_X, (747 + 10) - 30)
 	set_control_par(get_ui_id(btn_mute), CONTROL_PAR_POS_Y, (25 + 21) - 2)
-	set_control_par(get_ui_id(btn_mute), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+	set_control_par(get_ui_id(btn_mute), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 	declare ui_button btn_scan : int 
 	set_control_par(get_ui_id(btn_scan), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_scan), CONTROL_PAR_PICTURE, "btn_scan")
 	set_control_par(get_ui_id(btn_scan), CONTROL_PAR_POS_X, ((747 + 10) - 30) - 30)
 	set_control_par(get_ui_id(btn_scan), CONTROL_PAR_POS_Y, 25 + 21)
-	set_control_par(get_ui_id(btn_scan), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+	set_control_par(get_ui_id(btn_scan), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 	declare ui_button btn_closeBrowser : int 
 	set_control_par(get_ui_id(btn_closeBrowser), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_closeBrowser), CONTROL_PAR_PICTURE, "cancel_button")
 	set_control_par(get_ui_id(btn_closeBrowser), CONTROL_PAR_POS_X, 747 + 10)
 	set_control_par(get_ui_id(btn_closeBrowser), CONTROL_PAR_POS_Y, 25 + 20)
-	set_control_par(get_ui_id(btn_closeBrowser), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_legatoList)))
+	set_control_par(get_ui_id(btn_closeBrowser), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_legatoList))
 	declare sustain_idx[4] : int[]
 	declare sus_zone_ids[4] : int[]
 	declare ui_panel UI_sustainSettings : int 
@@ -1917,10 +1917,10 @@ on init
 	set_control_par(get_ui_id(btn_sus), CONTROL_PAR_HEIGHT, 15)
 	i := 0
 	while(i <= (num_elements(font.types) - 1)) 
-		set_control_par(get_ui_id(get_ui_id(get_ui_id(btn_sus))), font.types[i], _font.3pt3[(i * 2) + 0])
+		set_control_par(get_ui_id(btn_sus), font.types[i], _font.3pt3[(i * 2) + 0])
 		inc(i)
 	end while
-	set_control_par(get_ui_id(btn_sus), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_sustainSettings)))
+	set_control_par(get_ui_id(btn_sus), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_sustainSettings))
 	declare sus_filenames[3] : string[] := ("p", "mf", "f")
 	declare lbl_sus_filename[4] : int[]
 	declare ui_label lbl_sus_filename0 : int (1, 1)
@@ -1944,7 +1944,7 @@ on init
 		set_control_par(lbl_sus_filename[(num_elements(get_ui_id(lbl_sus_filename)) - 1) - i], CONTROL_PAR_POS_Y, (115 + 26) + ((27 + 11) * i))
 		set_control_par(lbl_sus_filename[(num_elements(get_ui_id(lbl_sus_filename)) - 1) - i], CONTROL_PAR_WIDTH, 160)
 		set_control_par(lbl_sus_filename[(num_elements(get_ui_id(lbl_sus_filename)) - 1) - i], CONTROL_PAR_HEIGHT, 27)
-		set_control_par(lbl_sus_filename[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_sustainSettings)))
+		set_control_par(lbl_sus_filename[i], CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_sustainSettings))
 		inc(i)
 	end while
 	declare ui_button btn_vibratoSettings : int 
@@ -2337,52 +2337,52 @@ on init
 	set_control_par(get_ui_id(lbl_vibIntensity), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_vibIntensity), CONTROL_PAR_POS_Y) + 5)
 	set_control_par(get_ui_id(lbl_vibIntensity), CONTROL_PAR_WIDTH, 170)
 	set_control_par(get_ui_id(lbl_vibIntensity), CONTROL_PAR_HEIGHT, 20)
-	set_control_par(get_ui_id(sli_eqFreq), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_eqFreq), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_eqBandwidth), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_eqBandwidth), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_eqGain), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_eqGain), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_gainModulation), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_gainModulation), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_bg1), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_lfoFreq), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_lfoFreq), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_lfoRand), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_lfoRand), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_lfoFadeIn), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_lfoFadeIn), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_pitchModulation), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_pitchModulation), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_bg2), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_envRateCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_envRateCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_envRateAttack), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_envRateAttack), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_envRateHold), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_envRateHold), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_envRateDecay), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_envRateDecay), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_envRateSustain), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_envRateSustain), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_rateEnv), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_rateEnv), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_bg3), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_envIntCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_envIntCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_envIntAttack), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_envIntAttack), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_envIntHold), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_envIntHold), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_envIntDecay), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_envIntDecay), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_envIntSustain), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_envIntSustain), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_intEnv), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_intEnv), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_bg4), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(sli_vibIntensity), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(lbl_vibIntensity), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
+	set_control_par(get_ui_id(sli_eqFreq), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_eqFreq), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_eqBandwidth), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_eqBandwidth), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_eqGain), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_eqGain), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_gainModulation), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_gainModulation), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_bg1), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_lfoFreq), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_lfoFreq), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_lfoRand), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_lfoRand), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_lfoFadeIn), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_lfoFadeIn), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_pitchModulation), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_pitchModulation), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_bg2), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_envRateCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_envRateCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_envRateAttack), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_envRateAttack), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_envRateHold), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_envRateHold), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_envRateDecay), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_envRateDecay), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_envRateSustain), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_envRateSustain), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_rateEnv), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_rateEnv), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_bg3), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_envIntCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_envIntCurve), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_envIntAttack), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_envIntAttack), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_envIntHold), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_envIntHold), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_envIntDecay), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_envIntDecay), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_envIntSustain), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_envIntSustain), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_intEnv), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_intEnv), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_bg4), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(sli_vibIntensity), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(lbl_vibIntensity), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
 	declare const tbl_rate.NUM_TABLE_STEPS : int := real_to_int(int_to_real(257) / 2.056)
 	declare tbl_rate.env_array[tbl_rate.NUM_TABLE_STEPS] : real[]
 	declare tbl_rate.expCurve[tbl_rate.NUM_TABLE_STEPS] : int[]
@@ -2392,14 +2392,14 @@ on init
 	declare tbl_rate.releaseCurve[tbl_rate.NUM_TABLE_STEPS] : int[]
 	declare tbl_rate.attack : real
 	declare tbl_rate.attack_idx : int
-	declare tbl_rate.hold : real
+	declare tbl_rate.hold : int
 	declare tbl_rate.decay : real
-	declare tbl_rate.sustain : real
+	declare tbl_rate.sustain : int
 	declare tbl_rate.release : real
 	declare tbl_rate.curve : int
 	declare tbl_rate.release_idx : int
 	declare tbl_rate.attack_point : real
-	declare ui_table tbl_rate1[tbl_rate.NUM_TABLE_STEPS] : real[] (2, 2, 1000)
+	declare ui_table tbl_rate1[tbl_rate.NUM_TABLE_STEPS] : int[] (2, 2, 1000)
 	set_control_par_str(get_ui_id(tbl_rate1), CONTROL_PAR_PICTURE, "alpha")
 	set_control_par(get_ui_id(tbl_rate1), CONTROL_PAR_BAR_COLOR, 16711679)
 	set_control_par(get_ui_id(tbl_rate1), CONTROL_PAR_ZERO_LINE_COLOR, 16711679)
@@ -2409,7 +2409,7 @@ on init
 	set_control_par(get_ui_id(tbl_rate1), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_envRateCurve), CONTROL_PAR_POS_Y) - 40)
 	set_control_par(get_ui_id(tbl_rate1), CONTROL_PAR_WIDTH, 257)
 	set_control_par(get_ui_id(tbl_rate1), CONTROL_PAR_HEIGHT, 40)
-	declare ui_table tbl_rate2[tbl_rate.NUM_TABLE_STEPS] : real[] (2, 2, 1000)
+	declare ui_table tbl_rate2[tbl_rate.NUM_TABLE_STEPS] : int[] (2, 2, 1000)
 	set_control_par_str(get_ui_id(tbl_rate2), CONTROL_PAR_PICTURE, "alpha")
 	set_control_par(get_ui_id(tbl_rate2), CONTROL_PAR_BAR_COLOR, 16711679)
 	set_control_par(get_ui_id(tbl_rate2), CONTROL_PAR_ZERO_LINE_COLOR, 16711679)
@@ -2419,8 +2419,8 @@ on init
 	set_control_par(get_ui_id(tbl_rate2), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_envRateCurve), CONTROL_PAR_POS_Y) - 40)
 	set_control_par(get_ui_id(tbl_rate2), CONTROL_PAR_WIDTH, 257)
 	set_control_par(get_ui_id(tbl_rate2), CONTROL_PAR_HEIGHT, 40)
-	set_control_par(get_ui_id(tbl_rate1), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(tbl_rate2), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
+	set_control_par(get_ui_id(tbl_rate1), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(tbl_rate2), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
 	declare const tbl_int.NUM_TABLE_STEPS : int := real_to_int(int_to_real(257) / 2.056)
 	declare tbl_int.env_array[tbl_int.NUM_TABLE_STEPS] : real[]
 	declare tbl_int.expCurve[tbl_int.NUM_TABLE_STEPS] : int[]
@@ -2430,14 +2430,14 @@ on init
 	declare tbl_int.releaseCurve[tbl_int.NUM_TABLE_STEPS] : int[]
 	declare tbl_int.attack : real
 	declare tbl_int.attack_idx : int
-	declare tbl_int.hold : real
+	declare tbl_int.hold : int
 	declare tbl_int.decay : real
-	declare tbl_int.sustain : real
+	declare tbl_int.sustain : int
 	declare tbl_int.release : real
 	declare tbl_int.curve : int
 	declare tbl_int.release_idx : int
 	declare tbl_int.attack_point : real
-	declare ui_table tbl_int1[tbl_int.NUM_TABLE_STEPS] : real[] (2, 2, 1000)
+	declare ui_table tbl_int1[tbl_int.NUM_TABLE_STEPS] : int[] (2, 2, 1000)
 	set_control_par_str(get_ui_id(tbl_int1), CONTROL_PAR_PICTURE, "alpha")
 	set_control_par(get_ui_id(tbl_int1), CONTROL_PAR_BAR_COLOR, 16711679)
 	set_control_par(get_ui_id(tbl_int1), CONTROL_PAR_ZERO_LINE_COLOR, 16711679)
@@ -2447,7 +2447,7 @@ on init
 	set_control_par(get_ui_id(tbl_int1), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_envIntCurve), CONTROL_PAR_POS_Y) - 40)
 	set_control_par(get_ui_id(tbl_int1), CONTROL_PAR_WIDTH, 257)
 	set_control_par(get_ui_id(tbl_int1), CONTROL_PAR_HEIGHT, 40)
-	declare ui_table tbl_int2[tbl_int.NUM_TABLE_STEPS] : real[] (2, 2, 1000)
+	declare ui_table tbl_int2[tbl_int.NUM_TABLE_STEPS] : int[] (2, 2, 1000)
 	set_control_par_str(get_ui_id(tbl_int2), CONTROL_PAR_PICTURE, "alpha")
 	set_control_par(get_ui_id(tbl_int2), CONTROL_PAR_BAR_COLOR, 16711679)
 	set_control_par(get_ui_id(tbl_int2), CONTROL_PAR_ZERO_LINE_COLOR, 16711679)
@@ -2457,8 +2457,8 @@ on init
 	set_control_par(get_ui_id(tbl_int2), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(sli_envIntCurve), CONTROL_PAR_POS_Y) - 40)
 	set_control_par(get_ui_id(tbl_int2), CONTROL_PAR_WIDTH, 257)
 	set_control_par(get_ui_id(tbl_int2), CONTROL_PAR_HEIGHT, 40)
-	set_control_par(get_ui_id(tbl_int1), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
-	set_control_par(get_ui_id(tbl_int2), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
+	set_control_par(get_ui_id(tbl_int1), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
+	set_control_par(get_ui_id(tbl_int2), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
 	tbl_rate.curve := sli_envRateCurve
 	tbl_rate.attack_point := pow(10, (log(1.5) / log(10)) + ((((int_to_real(tbl_rate.NUM_TABLE_STEPS) * 0.51) - 0) / (int_to_real(tbl_rate.NUM_TABLE_STEPS) - 0)) * ((log(0.056) / log(10)) - (log(1.5) / log(10)))))
 	tbl_rate.release_idx := real_to_int(int_to_real(tbl_rate.NUM_TABLE_STEPS) * 0.75)
@@ -2581,31 +2581,31 @@ on init
 	declare vibrato_preset[100] : int[]
 	declare vibrato_preset2[100] : int[]
 	declare uiControls[100] : int[]
-	uiControls[0] := get_ui_id(get_ui_id(sli_eqFreq))
-	uiControls[1] := get_ui_id(get_ui_id(sli_eqBandwidth))
-	uiControls[2] := get_ui_id(get_ui_id(sli_eqGain))
-	uiControls[3] := get_ui_id(get_ui_id(sli_gainModulation))
-	uiControls[4] := get_ui_id(get_ui_id(sli_lfoFreq))
-	uiControls[5] := get_ui_id(get_ui_id(sli_lfoRand))
-	uiControls[6] := get_ui_id(get_ui_id(sli_lfoFadeIn))
-	uiControls[7] := get_ui_id(get_ui_id(sli_pitchModulation))
-	uiControls[8] := get_ui_id(get_ui_id(sli_envRateCurve))
-	uiControls[9] := get_ui_id(get_ui_id(sli_envRateAttack))
-	uiControls[10] := get_ui_id(get_ui_id(sli_envRateHold))
-	uiControls[11] := get_ui_id(get_ui_id(sli_envRateDecay))
-	uiControls[12] := get_ui_id(get_ui_id(sli_envRateSustain))
-	uiControls[13] := get_ui_id(get_ui_id(sli_rateEnv))
-	uiControls[14] := get_ui_id(get_ui_id(sli_envIntCurve))
-	uiControls[15] := get_ui_id(get_ui_id(sli_envIntAttack))
-	uiControls[16] := get_ui_id(get_ui_id(sli_envIntHold))
-	uiControls[17] := get_ui_id(get_ui_id(sli_envIntDecay))
-	uiControls[18] := get_ui_id(get_ui_id(sli_envIntSustain))
-	uiControls[19] := get_ui_id(get_ui_id(sli_intEnv))
-	uiControls[20] := get_ui_id(get_ui_id(sli_vibIntensity))
+	uiControls[0] := get_ui_id(sli_eqFreq)
+	uiControls[1] := get_ui_id(sli_eqBandwidth)
+	uiControls[2] := get_ui_id(sli_eqGain)
+	uiControls[3] := get_ui_id(sli_gainModulation)
+	uiControls[4] := get_ui_id(sli_lfoFreq)
+	uiControls[5] := get_ui_id(sli_lfoRand)
+	uiControls[6] := get_ui_id(sli_lfoFadeIn)
+	uiControls[7] := get_ui_id(sli_pitchModulation)
+	uiControls[8] := get_ui_id(sli_envRateCurve)
+	uiControls[9] := get_ui_id(sli_envRateAttack)
+	uiControls[10] := get_ui_id(sli_envRateHold)
+	uiControls[11] := get_ui_id(sli_envRateDecay)
+	uiControls[12] := get_ui_id(sli_envRateSustain)
+	uiControls[13] := get_ui_id(sli_rateEnv)
+	uiControls[14] := get_ui_id(sli_envIntCurve)
+	uiControls[15] := get_ui_id(sli_envIntAttack)
+	uiControls[16] := get_ui_id(sli_envIntHold)
+	uiControls[17] := get_ui_id(sli_envIntDecay)
+	uiControls[18] := get_ui_id(sli_envIntSustain)
+	uiControls[19] := get_ui_id(sli_intEnv)
+	uiControls[20] := get_ui_id(sli_vibIntensity)
 	declare ui_panel UI_presetControls : int 
 	set_control_par(get_ui_id(UI_presetControls), CONTROL_PAR_POS_X, 524)
 	set_control_par(get_ui_id(UI_presetControls), CONTROL_PAR_POS_Y, 21)
-	set_control_par(get_ui_id(UI_presetControls), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_vibrato)))
+	set_control_par(get_ui_id(UI_presetControls), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_vibrato))
 	declare ui_menu read mnu_preset : int 
 	set_control_par(get_ui_id(mnu_preset), CONTROL_PAR_PICTURE, "mnu")
 	set_control_par(get_ui_id(mnu_preset), CONTROL_PAR_FONT_TYPE, 1)
@@ -2620,7 +2620,7 @@ on init
 		add_menu_item(get_ui_id(mnu_preset), "", i)
 		inc(i)
 	end while
-	set_control_par(get_ui_id(mnu_preset), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_presetControls)))
+	set_control_par(get_ui_id(mnu_preset), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_presetControls))
 	declare ui_text_edit txt_presetName : string 
 	set_control_par(get_ui_id(txt_presetName), CONTROL_PAR_TEXT, "EMPTY PRESET")
 	set_control_par(get_ui_id(txt_presetName), CONTROL_PAR_PICTURE, "")
@@ -2631,7 +2631,7 @@ on init
 	set_control_par(get_ui_id(txt_presetName), CONTROL_PAR_POS_Y, (0 + 1) + 4)
 	set_control_par(get_ui_id(txt_presetName), CONTROL_PAR_WIDTH, 126 - 3)
 	set_control_par(get_ui_id(txt_presetName), CONTROL_PAR_HEIGHT, 16)
-	set_control_par(get_ui_id(txt_presetName), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_presetControls)))
+	set_control_par(get_ui_id(txt_presetName), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_presetControls))
 	declare ui_label bg_preset : int (1, 1)
 	set_control_par(get_ui_id(bg_preset), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(bg_preset), CONTROL_PAR_PICTURE, "bg_label")
@@ -2639,7 +2639,7 @@ on init
 	set_control_par(get_ui_id(bg_preset), CONTROL_PAR_POS_Y, 0 + 1)
 	set_control_par(get_ui_id(bg_preset), CONTROL_PAR_WIDTH, (157 - 5) + 29)
 	set_control_par(get_ui_id(bg_preset), CONTROL_PAR_HEIGHT, get_control_par(get_ui_id(txt_presetName), CONTROL_PAR_HEIGHT) + 6)
-	set_control_par(get_ui_id(bg_preset), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_presetControls)))
+	set_control_par(get_ui_id(bg_preset), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_presetControls))
 	declare ui_button btn_prevPreset : int 
 	set_control_par(get_ui_id(btn_prevPreset), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_prevPreset), CONTROL_PAR_PICTURE, "btn_left_small")
@@ -2647,7 +2647,7 @@ on init
 	set_control_par(get_ui_id(btn_prevPreset), CONTROL_PAR_FONT_TYPE, 1)
 	set_control_par(get_ui_id(btn_prevPreset), CONTROL_PAR_POS_X, 3)
 	set_control_par(get_ui_id(btn_prevPreset), CONTROL_PAR_POS_Y, 0 + 4)
-	set_control_par(get_ui_id(btn_prevPreset), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_presetControls)))
+	set_control_par(get_ui_id(btn_prevPreset), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_presetControls))
 	declare ui_button btn_nextPreset : int 
 	set_control_par(get_ui_id(btn_nextPreset), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_nextPreset), CONTROL_PAR_PICTURE, "btn_right_small")
@@ -2655,7 +2655,7 @@ on init
 	set_control_par(get_ui_id(btn_nextPreset), CONTROL_PAR_FONT_TYPE, 1)
 	set_control_par(get_ui_id(btn_nextPreset), CONTROL_PAR_POS_X, 15)
 	set_control_par(get_ui_id(btn_nextPreset), CONTROL_PAR_POS_Y, 0 + 4)
-	set_control_par(get_ui_id(btn_nextPreset), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_presetControls)))
+	set_control_par(get_ui_id(btn_nextPreset), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_presetControls))
 	declare ui_button btn_savePreset : int 
 	set_control_par(get_ui_id(btn_savePreset), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_savePreset), CONTROL_PAR_PICTURE, "btn_save_dev")
@@ -2663,7 +2663,7 @@ on init
 	set_control_par(get_ui_id(btn_savePreset), CONTROL_PAR_FONT_TYPE, 1)
 	set_control_par(get_ui_id(btn_savePreset), CONTROL_PAR_POS_X, 0 + get_control_par(get_ui_id(bg_preset), CONTROL_PAR_WIDTH))
 	set_control_par(get_ui_id(btn_savePreset), CONTROL_PAR_POS_Y, 0 + 1)
-	set_control_par(get_ui_id(btn_savePreset), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_presetControls)))
+	set_control_par(get_ui_id(btn_savePreset), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_presetControls))
 	declare ui_button btn_deletePreset : int 
 	set_control_par(get_ui_id(btn_deletePreset), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_deletePreset), CONTROL_PAR_PICTURE, "btn_delete")
@@ -2671,7 +2671,7 @@ on init
 	set_control_par(get_ui_id(btn_deletePreset), CONTROL_PAR_FONT_TYPE, 1)
 	set_control_par(get_ui_id(btn_deletePreset), CONTROL_PAR_POS_X, 22 + get_control_par(get_ui_id(bg_preset), CONTROL_PAR_WIDTH))
 	set_control_par(get_ui_id(btn_deletePreset), CONTROL_PAR_POS_Y, 0 + 1)
-	set_control_par(get_ui_id(btn_deletePreset), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_presetControls)))
+	set_control_par(get_ui_id(btn_deletePreset), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_presetControls))
 	declare ui_button btn_scanPresets : int 
 	set_control_par(get_ui_id(btn_scanPresets), CONTROL_PAR_TEXT, "")
 	set_control_par(get_ui_id(btn_scanPresets), CONTROL_PAR_PICTURE, "btn_scan")
@@ -2679,7 +2679,7 @@ on init
 	set_control_par(get_ui_id(btn_scanPresets), CONTROL_PAR_FONT_TYPE, 1)
 	set_control_par(get_ui_id(btn_scanPresets), CONTROL_PAR_POS_X, (22 + 22) + get_control_par(get_ui_id(bg_preset), CONTROL_PAR_WIDTH))
 	set_control_par(get_ui_id(btn_scanPresets), CONTROL_PAR_POS_Y, 0 + 1)
-	set_control_par(get_ui_id(btn_scanPresets), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_presetControls)))
+	set_control_par(get_ui_id(btn_scanPresets), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_presetControls))
 	declare ui_mouse_area mouse_nka : int 
 	set_control_par(get_ui_id(mouse_nka), CONTROL_PAR_DND_ACCEPT_ARRAY, NI_DND_ACCEPT_ONE)
 	set_control_par(get_ui_id(mouse_nka), CONTROL_PAR_RECEIVE_DRAG_EVENTS, TRUE)
@@ -2687,7 +2687,7 @@ on init
 	set_control_par(get_ui_id(mouse_nka), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(bg_preset), CONTROL_PAR_POS_Y))
 	set_control_par(get_ui_id(mouse_nka), CONTROL_PAR_WIDTH, get_control_par(get_ui_id(bg_preset), CONTROL_PAR_WIDTH))
 	set_control_par(get_ui_id(mouse_nka), CONTROL_PAR_HEIGHT, get_control_par(get_ui_id(bg_preset), CONTROL_PAR_HEIGHT))
-	set_control_par(get_ui_id(mouse_nka), CONTROL_PAR_PARENT_PANEL, get_ui_id(get_ui_id(UI_presetControls)))
+	set_control_par(get_ui_id(mouse_nka), CONTROL_PAR_PARENT_PANEL, get_ui_id(UI_presetControls))
 	declare ui_file_selector file_browser : int 
 	set_control_par(get_ui_id(file_browser), CONTROL_PAR_HIDE, HIDE_WHOLE_CONTROL)
 	set_control_par(get_ui_id(file_browser), CONTROL_PAR_COLUMN_WIDTH, 200)
@@ -5214,17 +5214,17 @@ on ui_control(btn_scanPresets)
 		array.clear(vibrato_preset2)
 		array.clear(vibrato_preset)
 		presetCount := 0
-		fs_navigate(get_ui_id(get_ui_id(get_ui_id(file_browser))), 1)
+		fs_navigate(get_ui_id(file_browser), 1)
 	end if
 end on
 
 on ui_control(file_browser)
 	message("File Browser triggered")
-	wait_async(load_array_str(vibrato_preset, fs_get_filename(get_ui_id(get_ui_id(get_ui_id(get_ui_id(get_ui_id(file_browser))))), 2)))
+	wait_async(load_array_str(vibrato_preset, fs_get_filename(get_ui_id(file_browser), 2)))
 	if((preset_scan = TRUE) and (vibrato_preset[preset_idx.DELETED] # - 420))
 		if(vibrato_preset[preset_idx.DELETED] = 0)
 			if(not array_equal(vibrato_preset, vibrato_preset2))
-				vibPresetNames[presetCount] := fs_get_filename(get_ui_id(get_ui_id(get_ui_id(file_browser))), 0)
+				vibPresetNames[presetCount] := fs_get_filename(get_ui_id(file_browser), 0)
 				vibPresetCount[presetCount] := 1
 				inc(presetCount)
 			end if
@@ -5233,17 +5233,17 @@ on ui_control(file_browser)
 			if(((vibrato_preset[preset_idx.DELETED] = 0) or (vibrato_preset[preset_idx.DELETED] = 1)) and (get_control_par(get_ui_id(btn_scanPresets), CONTROL_PAR_KEY_ALT) = TRUE))
 				message("Scanning for deleted")
 				if(not array_equal(vibrato_preset, vibrato_preset2))
-					vibPresetNames[presetCount] := fs_get_filename(get_ui_id(get_ui_id(get_ui_id(file_browser))), 0)
+					vibPresetNames[presetCount] := fs_get_filename(get_ui_id(file_browser), 0)
 					vibPresetCount[presetCount] := 1
 					inc(presetCount)
 					vibrato_preset[preset_idx.DELETED] := FALSE
-					save_array_str(vibrato_preset, fs_get_filename(get_ui_id(get_ui_id(get_ui_id(get_ui_id(file_browser)))), 2))
+					save_array_str(vibrato_preset, fs_get_filename(get_ui_id(file_browser), 2))
 				end if
 				array.clear(vibrato_preset)
 			end if
 		end if
 		set_control_par(get_ui_id(btn_scanPresets), CONTROL_PAR_VALUE, TRUE)
-		fs_navigate(get_ui_id(get_ui_id(get_ui_id(file_browser))), 1)
+		fs_navigate(get_ui_id(file_browser), 1)
 	else
 		message("The end")
 		save.resource_arrays()
@@ -5354,7 +5354,7 @@ on ui_control(sli_highGain)
 end on
 
 on ui_control(mnu_dynamic_cc)
-	num_dynamic_cc := get_menu_item_value(get_ui_id(get_ui_id(get_ui_id(mnu_dynamic_cc))), get_control_par(get_ui_id(get_ui_id(mnu_dynamic_cc)), CONTROL_PAR_VALUE))
+	num_dynamic_cc := get_menu_item_value(get_ui_id(mnu_dynamic_cc), get_control_par(get_ui_id(mnu_dynamic_cc), CONTROL_PAR_VALUE))
 	call update.cc_dynamics()
 end on
 
@@ -6124,7 +6124,7 @@ function load.element() : Unknown
 	update.interval_keycolor(played_interval[0], played_interval[1])
 end function
 
-function get_element_idx_from_trans(result : Unknown, trans_idx : Unknown) : int
+function get_element_idx_from_trans(result : int, trans_idx : Unknown) : int
 	btn_elements_onoff[0 - ((0 - element.idx) .and. sh_right(0 - element.idx, 31))] := 0
 	result := 0 - ((0 - search(legatoList.trans_zone_ids, trans_zone_ids[trans_idx])) .and. sh_right(0 - search(legatoList.trans_zone_ids, trans_zone_ids[trans_idx]), 31))
 	btn_elements_onoff[element.idx] := 1
@@ -6223,7 +6223,7 @@ function update.releaseSus() : Unknown
 	set_control_par_str(get_ui_id(lbl_releaseSus), CONTROL_PAR_TEXT, sus_release_time[trans_idx] & " ms")
 	zw := (((int_to_real(get_ui_id(sli_releaseSus)) - 0) * (1000 - 0)) / (1e+06 - 0)) + 0
 	set_control_par(get_ui_id(lbl_releaseCurve), CONTROL_PAR_PICTURE_STATE, ((real_to_int(((((zw * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0) * (1 + (sh_right(99 - real_to_int(((((zw * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0), 31) .or. sh_right(real_to_int(((((zw * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0) - 0, 31)))) - (0 * sh_right(real_to_int(((((zw * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0) - 0, 31))) - (99 * sh_right(99 - real_to_int(((((zw * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0), 31)))
-	set_control_par(get_ui_id(lbl_releaseCurve), CONTROL_PAR_POS_X, 2 + real_to_int((((int_to_real(get_control_par(get_ui_id(get_ui_id(lbl_samplestartInd)), CONTROL_PAR_PICTURE_STATE)) - 0) * (int_to_real(555) - 0)) / (99 - 0)) + 0))
+	set_control_par(get_ui_id(lbl_releaseCurve), CONTROL_PAR_POS_X, 2 + real_to_int((((int_to_real(get_control_par(get_ui_id(lbl_samplestartInd), CONTROL_PAR_PICTURE_STATE)) - 0) * (int_to_real(555) - 0)) / (99 - 0)) + 0))
 end function
 
 function update.fadeOutTrans() : Unknown
@@ -6232,7 +6232,7 @@ function update.fadeOutTrans() : Unknown
 	set_control_par_str(get_ui_id(lbl_fadeOutTrans), CONTROL_PAR_TEXT, real_to_int(current_fadeInTime) & " ms")
 	real := (((int_to_real(get_ui_id(sli_fadeOutTrans)) - 0) * (1000 - 0)) / (1e+06 - 0)) + 0
 	set_control_par(get_ui_id(lbl_fadeOutCurve), CONTROL_PAR_PICTURE_STATE, ((real_to_int(((((real * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0) * (1 + (sh_right(99 - real_to_int(((((real * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0), 31) .or. sh_right(real_to_int(((((real * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0) - 0, 31)))) - (0 * sh_right(real_to_int(((((real * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0) - 0, 31))) - (99 * sh_right(99 - real_to_int(((((real * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0), 31)))
-	set_control_par(get_ui_id(lbl_fadeOutCurve), CONTROL_PAR_POS_X, 2 + real_to_int((((int_to_real(get_control_par(get_ui_id(get_ui_id(lbl_samplestartInd)), CONTROL_PAR_PICTURE_STATE)) - 0) * (int_to_real(555) - 0)) / (99 - 0)) + 0))
+	set_control_par(get_ui_id(lbl_fadeOutCurve), CONTROL_PAR_POS_X, 2 + real_to_int((((int_to_real(get_control_par(get_ui_id(lbl_samplestartInd), CONTROL_PAR_PICTURE_STATE)) - 0) * (int_to_real(555) - 0)) / (99 - 0)) + 0))
 end function
 
 function update.sampleStart() : Unknown
@@ -6241,9 +6241,9 @@ function update.sampleStart() : Unknown
 	trans_zone_start[trans_idx] := ((real_to_int((int_to_real(slider) / 1e+06) * 48000) * (1 + (sh_right(sample_end - real_to_int((int_to_real(slider) / 1e+06) * 48000), 31) .or. sh_right(real_to_int((int_to_real(slider) / 1e+06) * 48000) - 0, 31)))) - (0 * sh_right(real_to_int((int_to_real(slider) / 1e+06) * 48000) - 0, 31))) - (sample_end * sh_right(sample_end - real_to_int((int_to_real(slider) / 1e+06) * 48000), 31))
 	set_control_par(get_ui_id(lbl_samplestartInd), CONTROL_PAR_PICTURE_STATE, real_to_int((((int_to_real(trans_zone_start[trans_idx]) - 0) * (99 - 0)) / (int_to_real(sample_end) - 0)) + 0))
 	set_control_par_str(get_ui_id(lbl_samplestart), CONTROL_PAR_TEXT, ((((sli_samplestart - 0) * (max_samplestart - 0)) / (1000000 - 0)) + 0) & " ms")
-	set_control_par(get_ui_id(lbl_releaseCurve), CONTROL_PAR_POS_X, 2 + real_to_int((((int_to_real(get_control_par(get_ui_id(get_ui_id(lbl_samplestartInd)), CONTROL_PAR_PICTURE_STATE)) - 0) * (int_to_real(555) - 0)) / (99 - 0)) + 0))
-	set_control_par(get_ui_id(lbl_fadeInCurve), CONTROL_PAR_POS_X, 2 + real_to_int((((int_to_real(get_control_par(get_ui_id(get_ui_id(lbl_samplestartInd)), CONTROL_PAR_PICTURE_STATE)) - 0) * (int_to_real(555) - 0)) / (99 - 0)) + 0))
-	set_control_par(get_ui_id(lbl_fadeOutCurve), CONTROL_PAR_POS_X, 2 + real_to_int((((int_to_real(get_control_par(get_ui_id(get_ui_id(lbl_samplestartInd)), CONTROL_PAR_PICTURE_STATE)) - 0) * (int_to_real(555) - 0)) / (99 - 0)) + 0))
+	set_control_par(get_ui_id(lbl_releaseCurve), CONTROL_PAR_POS_X, 2 + real_to_int((((int_to_real(get_control_par(get_ui_id(lbl_samplestartInd), CONTROL_PAR_PICTURE_STATE)) - 0) * (int_to_real(555) - 0)) / (99 - 0)) + 0))
+	set_control_par(get_ui_id(lbl_fadeInCurve), CONTROL_PAR_POS_X, 2 + real_to_int((((int_to_real(get_control_par(get_ui_id(lbl_samplestartInd), CONTROL_PAR_PICTURE_STATE)) - 0) * (int_to_real(555) - 0)) / (99 - 0)) + 0))
+	set_control_par(get_ui_id(lbl_fadeOutCurve), CONTROL_PAR_POS_X, 2 + real_to_int((((int_to_real(get_control_par(get_ui_id(lbl_samplestartInd), CONTROL_PAR_PICTURE_STATE)) - 0) * (int_to_real(555) - 0)) / (99 - 0)) + 0))
 	current_fadeInTime := (((int_to_real(get_ui_id(sli_fadeInSus)) - 0) * (500 - 0)) / (1e+06 - 0)) + 0
 	set_control_par(get_ui_id(lbl_waitTime), CONTROL_PAR_PICTURE_STATE, ((real_to_int(((((current_fadeInTime * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0) * (1 + (sh_right(99 - real_to_int(((((current_fadeInTime * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0), 31) .or. sh_right(real_to_int(((((current_fadeInTime * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0) - 0, 31)))) - (0 * sh_right(real_to_int(((((current_fadeInTime * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0) - 0, 31))) - (99 * sh_right(99 - real_to_int(((((current_fadeInTime * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0), 31)))
 	current_waitTime := (((int_to_real(get_ui_id(sli_waitSus)) - 0) * (500 - 0)) / (1e+06 - 0)) + 0
@@ -6268,7 +6268,7 @@ function check_development() : Unknown
 	end if
 end function
 
-function Rand(result : int, min : int, max : int) : int
+function Rand(result : int, min : number, max : number) : int
 	___M.Seed := (8088405 * ___M.Seed) + 1
 	result := ((sh_right(___M.Seed, 8) .and. 16777215) mod ((max - min) + 1)) + min
 end function
@@ -6346,10 +6346,10 @@ function update.preset.menu() : Unknown
 	i := 0
 	while(i <= (100 - 1)) 
 		if(i < presetCount)
-			set_menu_item_str(get_ui_id(get_ui_id(get_ui_id(mnu_preset))), i, vibPresetNames[i])
-			set_menu_item_visibility(get_ui_id(get_ui_id(get_ui_id(mnu_preset))), i, TRUE)
+			set_menu_item_str(get_ui_id(mnu_preset), i, vibPresetNames[i])
+			set_menu_item_visibility(get_ui_id(mnu_preset), i, TRUE)
 		else
-			set_menu_item_visibility(get_ui_id(get_ui_id(get_ui_id(mnu_preset))), i, FALSE)
+			set_menu_item_visibility(get_ui_id(mnu_preset), i, FALSE)
 		end if
 		inc(i)
 	end while
@@ -6406,7 +6406,7 @@ function update.fadeInTrans() : Unknown
 	set_control_par_str(get_ui_id(lbl_fadeInTrans), CONTROL_PAR_TEXT, real_to_int(current_fadeInTime) & " ms")
 	real := (((int_to_real(get_ui_id(sli_fadeInTrans)) - 0) * (500 - 0)) / (1e+06 - 0)) + 0
 	set_control_par(get_ui_id(lbl_fadeInCurve), CONTROL_PAR_PICTURE_STATE, ((real_to_int(((((real * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0) * (1 + (sh_right(99 - real_to_int(((((real * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0), 31) .or. sh_right(real_to_int(((((real * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0) - 0, 31)))) - (0 * sh_right(real_to_int(((((real * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0) - 0, 31))) - (99 * sh_right(99 - real_to_int(((((real * 1000) - 0) * (99 - 0)) / (int_to_real(sample_length) - 0)) + 0), 31)))
-	set_control_par(get_ui_id(lbl_fadeInCurve), CONTROL_PAR_POS_X, 2 + real_to_int((((int_to_real(get_control_par(get_ui_id(get_ui_id(lbl_samplestartInd)), CONTROL_PAR_PICTURE_STATE)) - 0) * (int_to_real(555) - 0)) / (99 - 0)) + 0))
+	set_control_par(get_ui_id(lbl_fadeInCurve), CONTROL_PAR_POS_X, 2 + real_to_int((((int_to_real(get_control_par(get_ui_id(lbl_samplestartInd), CONTROL_PAR_PICTURE_STATE)) - 0) * (int_to_real(555) - 0)) / (99 - 0)) + 0))
 end function
 
 function update.rateEnv() : Unknown
@@ -6536,7 +6536,7 @@ function apply.forall.settings() : Unknown
 	end while
 end function
 
-function get_sus_zone_ids(base_group : int, iterator : int) : Unknown
+function get_sus_zone_ids(base_group : number, iterator : number) : Unknown
 	blip_note := play_note(event_note, 1, 1, - 1)
 	change_vol(blip_note, - 200000, 0)
 	set_event_par_arr(blip_note, EVENT_PAR_ALLOW_GROUP, 0, ALL_GROUPS)
@@ -6627,7 +6627,7 @@ function update.waveform() : Unknown
 	call reset.label_texts()
 end function
 
-function legato(note : int, start_group : int, num_dynamic_layers : int, num_rr : int, trans_groups : int, sustain_fx : int) : Unknown
+function legato(note : number, start_group : int, num_dynamic_layers : int, num_rr : int, trans_groups : int, sustain_fx : int) : Unknown
 	atk_group := start_group
 	atk_sus_group := (atk_group + num_rr) + title_groups
 	sus_group := (atk_sus_group + num_dynamic_layers) + title_groups

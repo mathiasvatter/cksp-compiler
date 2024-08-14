@@ -98,15 +98,19 @@ void Compiler::compile() {
 	ast->accept(desugar);
 
 	compile_time.stop("Desugaring");
-	compile_time.start("Build Data Structures");
+	compile_time.start("Variable Checking");
 
 	ASTVariableChecking variable_checking0(&m_definition_provider, false);
 	ast->accept(variable_checking0);
 
+	compile_time.stop("Variable Checking");
+	std::cout << compile_time.report() << std::endl;
+	compile_time.start("Semantic Analysis");
+
 	ASTSemanticAnalysis data_structures(&m_definition_provider);
 	ast->accept(data_structures);
 
-	compile_time.stop("Build Data Structures");
+	compile_time.stop("Semantic Analysis");
 	compile_time.start("Type Checking");
 
 	TypeInference infer_types(&m_definition_provider);
@@ -157,13 +161,13 @@ void Compiler::compile() {
 //	ast->debug_print();
 
     compile_time.stop("Function Inlining");
-	compile_time.start("Variable Checking");
+	compile_time.start("Variable Checking 2");
 
 	ASTVariableChecking variable_checking2(&m_definition_provider, true);
     ast->accept(variable_checking2);
 	ast->inline_global_variables();
 
-	compile_time.stop("Variable Checking");
+	compile_time.stop("Variable Checking 2");
 	compile_time.start("Optimization");
 
 	ASTOptimizations optimizations;

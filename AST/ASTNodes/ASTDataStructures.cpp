@@ -182,7 +182,7 @@ ASTLowering* NodeUIControl::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
-bool NodeUIControl::is_ui_control_array() {
+bool NodeUIControl::is_ui_control_array() const {
 	if(!declaration) return false;
 	if(declaration->control_var->get_node_type() == control_var->get_node_type()) return false;
 	return control_var->get_node_type() == NodeType::Array or control_var->get_node_type() == NodeType::NDArray;

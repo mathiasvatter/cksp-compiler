@@ -92,6 +92,8 @@ public:
 			if(node.definition->header->args->params.empty()) node.is_call = true;
 			if (node.is_call) {
 				m_used_function_definitions.insert(node.definition);
+				m_program->function_call_stack.pop();
+				m_functions_in_use.erase(node.definition);
 				return &node;
 			}
 		} else if(node.is_call){
@@ -167,7 +169,7 @@ public:
 
 	/// returns empty string if ndarray constant pattern is not found
 	static std::string get_ndarray_constant_base(const std::string& input) {
-		std::regex pattern(R"(^(.*)\.SIZE_D\d+$)");
+		static const std::regex pattern(R"(^(.*)\.SIZE_D\d+$)");
 		std::smatch match;
 		if (std::regex_search(input, match, pattern)) {
 			// Der Teilstring vor dem Muster wird zurückgegeben
