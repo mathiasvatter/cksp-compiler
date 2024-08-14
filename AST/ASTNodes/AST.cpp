@@ -120,6 +120,8 @@ Type* NodeDataStructure::cast_type() {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
 		error.m_got = ty->to_string();
 		this->set_element_type(TypeRegistry::Integer);
+		// if it is number do not print warning or is_used
+		if(type == TypeRegistry::Number or !is_used) return ty;
 		error.m_message = "Failed to infer <"+ty->get_type_kind_name()+"> type.";
 		error.m_message += " Automatically casted '"+name+"' as <"+ty->to_string()+">. Consider using type annotations (like <"+name+": "
 			+TypeRegistry::get_annotation_from_type(this->ty)+">) to improve readability.";

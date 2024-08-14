@@ -168,14 +168,30 @@ public:
 
 
 	/// returns empty string if ndarray constant pattern is not found
+//	static std::string get_ndarray_constant_base(const std::string& input) {
+//		static const std::regex pattern(R"(^(.*)\.SIZE_D\d+$)");
+//		std::smatch match;
+//		if (std::regex_search(input, match, pattern)) {
+//			// Der Teilstring vor dem Muster wird zurückgegeben
+//			return match[1].str();
+//		}
+//		return "";
+//	}
+
 	static std::string get_ndarray_constant_base(const std::string& input) {
-		static const std::regex pattern(R"(^(.*)\.SIZE_D\d+$)");
-		std::smatch match;
-		if (std::regex_search(input, match, pattern)) {
-			// Der Teilstring vor dem Muster wird zurückgegeben
-			return match[1].str();
+		// Finde die Position des letzten Punktes
+		size_t pos = input.find_last_of('.');
+		if (pos == std::string::npos) {
+			return ""; // Kein Punkt gefunden, also kein gültiges Muster
 		}
-		return "";
+
+		// Überprüfe, ob der Teil nach dem Punkt dem erwarteten Muster entspricht
+		std::string suffix = input.substr(pos + 1);
+		if (suffix.size() > 6 && suffix.substr(0, 6) == "SIZE_D" && std::all_of(suffix.begin() + 6, suffix.end(), ::isdigit)) {
+			return input.substr(0, pos); // Der Teil vor dem Punkt wird zurückgegeben
+		}
+
+		return ""; // Wenn kein gültiges Muster gefunden wurde, leere Zeichenfolge zurückgeben
 	}
 
 	/// returns nullptr if ref was no ndarray constant and could not be substituted

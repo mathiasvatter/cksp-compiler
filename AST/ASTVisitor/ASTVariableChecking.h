@@ -54,6 +54,13 @@ private:
     NodeBlock* m_current_block = nullptr;
 	DefinitionProvider* m_def_provider = nullptr;
 
+	static CompileError get_apply_type_annotations_error(NodeDataStructure* node) {
+		auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
+		error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
+		error.m_got = node->ty->to_string();
+		return error;
+	}
+
 	/// node can be NodeFunctionCall or NodeReference
 	/// transformation when first object is clearly a reference this_list.next.next()
 	/// tries to get declaration of first object and if there is one, replaces it with method chain
