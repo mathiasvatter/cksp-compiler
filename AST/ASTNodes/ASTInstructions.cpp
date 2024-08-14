@@ -439,47 +439,91 @@ NodeStatement* NodeBlock::add_stmt(std::unique_ptr<NodeStatement> stmt) {
 	return statements.back().get();
 }
 
+//void NodeBlock::flatten() {
+//    std::vector<std::unique_ptr<NodeStatement>> temp;
+//    for(auto & statement : statements) {
+//        if(statement->statement->get_node_type() == NodeType::Block) {
+//            // Übertragen Sie die function_inlines vom aktuellen NodeBlock-Element
+//            // auf das erste Element der inneren NodeBlock
+//			auto node_innner_body = static_cast<NodeBlock*>(statement->statement.get());
+////			if(node_innner_body->scope) continue;
+//            auto& inner_statements = node_innner_body->statements;
+//            if (!inner_statements.empty()) {
+//                inner_statements[0]->function_inlines.insert(
+//                        inner_statements[0]->function_inlines.end(),
+//                        std::make_move_iterator(statement->function_inlines.begin()),
+//                        std::make_move_iterator(statement->function_inlines.end())
+//                );
+//            }
+//            // Aktualisieren Sie das parent-Attribut für jedes innere Statement
+//            for (int i=0; i<inner_statements.size(); i++) {
+//				auto& stmt = inner_statements[i];
+//				if(stmt->statement->get_node_type() == NodeType::DeadCode) {
+//					inner_statements.erase(inner_statements.begin() + i);
+//					i--;
+//					continue;
+//				}
+//                stmt->parent = this;
+//            }
+//            // Fügen Sie die inneren Statements zum temporären Vector hinzu
+//            temp.insert(
+//                    temp.end(),
+//                    std::make_move_iterator(inner_statements.begin()),
+//                    std::make_move_iterator(inner_statements.end())
+//            );
+//            // Überspringen Sie das Hinzufügen des aktuellen NodeBlock-Elements zu `temp`
+//            continue;
+//        }
+//        // Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht speziell behandelt wird
+//        temp.push_back(std::move(statement));
+//    }
+//    // Ersetzen Sie die alte Liste durch die neue
+//    statements = std::move(temp);
+//}
+
 void NodeBlock::flatten() {
-    std::vector<std::unique_ptr<NodeStatement>> temp;
-    for(auto & statement : statements) {
-        if(statement->statement->get_node_type() == NodeType::Block) {
-            // Übertragen Sie die function_inlines vom aktuellen NodeBlock-Element
-            // auf das erste Element der inneren NodeBlock
+	// Reserviere genug Platz für den schlimmsten Fall, in dem keine Flattening nötig ist
+	std::vector<std::unique_ptr<NodeStatement>> new_statements;
+	new_statements.reserve(statements.size());
+
+	for (auto& statement : statements) {
+		if (statement->statement->get_node_type() == NodeType::Block) {
 			auto node_innner_body = static_cast<NodeBlock*>(statement->statement.get());
-//			if(node_innner_body->scope) continue;
-            auto& inner_statements = node_innner_body->statements;
-            if (!inner_statements.empty()) {
-                inner_statements[0]->function_inlines.insert(
-                        inner_statements[0]->function_inlines.end(),
-                        std::make_move_iterator(statement->function_inlines.begin()),
-                        std::make_move_iterator(statement->function_inlines.end())
-                );
-            }
-            // Aktualisieren Sie das parent-Attribut für jedes innere Statement
-            for (int i=0; i<inner_statements.size(); i++) {
-				auto& stmt = inner_statements[i];
-				if(stmt->statement->get_node_type() == NodeType::DeadCode) {
-					inner_statements.erase(inner_statements.begin() + i);
-					i--;
-					continue;
-				}
-                stmt->parent = this;
-            }
-            // Fügen Sie die inneren Statements zum temporären Vector hinzu
-            temp.insert(
-                    temp.end(),
-                    std::make_move_iterator(inner_statements.begin()),
-                    std::make_move_iterator(inner_statements.end())
-            );
-            // Überspringen Sie das Hinzufügen des aktuellen NodeBlock-Elements zu `temp`
-            continue;
-        }
-        // Fügen Sie das aktuelle Element zum temporären Vector hinzu, wenn es nicht speziell behandelt wird
-        temp.push_back(std::move(statement));
-    }
-    // Ersetzen Sie die alte Liste durch die neue
-    statements = std::move(temp);
+			auto& inner_statements = node_innner_body->statements;
+			if (!inner_statements.empty()) {
+				// Übertragen Sie die function_inlines zum ersten Element
+				inner_statements[0]->function_inlines.insert(
+					inner_statements[0]->function_inlines.end(),
+					std::make_move_iterator(statement->function_inlines.begin()),
+					std::make_move_iterator(statement->function_inlines.end())
+				);
+			}
+
+			// Entfernen Sie DeadCode-Nodes in einem Schritt
+			auto new_end = std::remove_if(inner_statements.begin(), inner_statements.end(),
+										  [](const std::unique_ptr<NodeStatement>& stmt) {
+											return stmt->statement->get_node_type() == NodeType::DeadCode;
+										  });
+			inner_statements.erase(new_end, inner_statements.end());
+
+			// Aktualisieren Sie das parent-Attribut und fügen Sie sie zu new_statements hinzu
+			for (auto& stmt : inner_statements) {
+				stmt->parent = this;
+				new_statements.push_back(std::move(stmt));
+			}
+
+			// Continue, um das Hinzufügen des aktuellen NodeBlock-Elements zu überspringen
+			continue;
+		}
+
+		// Fügen Sie das aktuelle Element hinzu, wenn es nicht speziell behandelt wird
+		new_statements.push_back(std::move(statement));
+	}
+
+	// Ersetzen Sie die alte Liste durch die neue
+	statements = std::move(new_statements);
 }
+
 
 void NodeBlock::wrap_in_loop_nest(std::vector<std::unique_ptr<NodeDataStructure>> iterators,
 								  std::vector<std::unique_ptr<NodeAST>> lower_bounds,

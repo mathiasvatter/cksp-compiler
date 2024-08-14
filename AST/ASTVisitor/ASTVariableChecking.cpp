@@ -16,24 +16,23 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_def_provider->refresh_data_vectors();
 
 	// refresh call_sites of function definitions
-	for(auto & func_def : node.function_definitions) {
+	for(const auto & func_def : node.function_definitions) {
 		func_def->call_sites.clear();
 	}
 
 	// most func defs will be visited when called, keeping local scopes in mind
 	m_program->global_declarations->accept(*this);
-	for(auto & s : node.struct_definitions) {
+	for(const auto & s : node.struct_definitions) {
 		s->accept(*this);
 	}
 	m_program->init_callback->accept(*this);
-	for(auto & callback : node.callbacks) {
+	for(const auto & callback : node.callbacks) {
 		if(callback.get() != m_program->init_callback) callback->accept(*this);
 	}
-	for(auto & func_def : node.function_definitions) {
-		func_def->accept(*this);
-		// reset visited flag
-		func_def->visited = false;
+	for(const auto & func_def : node.function_definitions) {
+		if(!func_def->visited) func_def->accept(*this);
 	}
+	node.reset_function_visited_flag();
 	return &node;
 }
 
@@ -66,20 +65,21 @@ NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
 	// if fail is set to false, return early. the rest is determined after lowering
 	if(!fail) return &node;
 
-	auto node_type = node.control_var->get_node_type();
-	auto engine_widget_type = engine_widget->control_var->get_node_type();
-	//check variable type
-	if(node_type != engine_widget_type) {
-		error.m_message = "Engine Widget Variable is of wrong type.";
-		if(node_type == NodeType::Array) {
-			error.m_got = "<Array>";
-			error.m_expected = "<Variable>";
-		} else if (node_type == NodeType::Variable) {
-			error.m_got = "<Variable>";
-			error.m_expected = "<Array>";
-		}
-		error.exit();
-	}
+	// already gets checked in typechecker
+//	auto node_type = node.control_var->get_node_type();
+//	auto engine_widget_type = engine_widget->control_var->get_node_type();
+//	//check variable type
+//	if(node_type != engine_widget_type) {
+//		error.m_message = "Engine Widget Variable is of wrong type.";
+//		if(node_type == NodeType::Array) {
+//			error.m_got = "<Array>";
+//			error.m_expected = "<Variable>";
+//		} else if (node_type == NodeType::Variable) {
+//			error.m_got = "<Variable>";
+//			error.m_expected = "<Array>";
+//		}
+//		error.exit();
+//	}
 
 	//check param size
 	if(engine_widget->params->params.size() != node.params->params.size()) {
@@ -133,7 +133,6 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 
 	if(!node.get_definition(m_program)) {
 		if (auto access_chain = try_access_chain_transform(node.function->name, &node)) {
-//		access_chain->match_data_structure(access_chain->declaration);
 			access_chain->accept(*this);
 			node.replace_with(std::move(access_chain));
 			return &node;
@@ -173,7 +172,6 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 	// maybe declaration comes after lowering, do not throw error
 	if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
-//			access_chain->match_data_structure(access_chain->declaration);
 			access_chain->accept(*this);
 			return node.replace_with(std::move(access_chain));
 		}
@@ -201,7 +199,6 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
-//			access_chain->match_data_structure(access_chain->declaration);
 			access_chain->accept(*this);
 			return node.replace_with(std::move(access_chain));
 		}
@@ -217,11 +214,6 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 	check_annotation_with_expected(&node, TypeRegistry::Unknown);
 	node.determine_locality(m_program, m_current_block);
 
-	// handle return_vars -> do not check if they have been declared
-//	if(node.is_compiler_return) {
-//		node.is_used = true;
-//		return &node;
-//	}
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node);
@@ -229,10 +221,6 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
-	// handle return_vars -> do not check if they have been declared
-//	if(node.is_compiler_return) {
-//		return &node;
-//	}
 	auto node_declaration = m_def_provider->get_declaration(&node);
     if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
@@ -240,7 +228,6 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 			node_declaration = access_chain->declaration;
 			node.declaration = node_declaration;
 			if(!node.is_ndarray_constant()) {
-//				access_chain->match_data_structure(access_chain->declaration);
 				access_chain->accept(*this);
 				return node.replace_with(std::move(access_chain));
 			} else {
@@ -250,7 +237,8 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 			}
 		} else {
 			// could still fail on ui control array values or raw list subarrays
-			if(!fail) return &node;
+			if(!fail)
+				return &node;
 			DefinitionProvider::throw_declaration_error(&node).exit();
 		}
     }
@@ -264,11 +252,6 @@ NodeAST* ASTVariableChecking::visit(NodePointer& node) {
 	check_annotation_with_expected(&node, TypeRegistry::Unknown);
 	node.determine_locality(m_program, m_current_block);
 
-	// handle return_vars -> do not check if they have been declared
-	if(node.is_compiler_return) {
-		node.is_used = true;
-		return &node;
-	}
 	auto new_node = apply_type_annotations(&node);
 	m_def_provider->set_declaration(new_node, !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node);

@@ -8,17 +8,6 @@
 
 class LoweringFunctionCall : public ASTLowering {
 private:
-    std::unique_ptr<NodeFunctionCall> get_ui_id = std::make_unique<NodeFunctionCall>(
-            false,
-            std::make_unique<NodeFunctionHeader>(
-                    "get_ui_id",
-                    std::make_unique<NodeParamList>(Token()),
-                    Token()
-            ),
-            Token()
-    );
-
-
 public:
 	explicit LoweringFunctionCall(NodeProgram *program) : ASTLowering(program) {}
 
@@ -62,34 +51,44 @@ public:
 		return node.lower(m_program);
 	};
 
+	inline static bool needs_get_ui_id(NodeReference* ref) {
+		auto wrap_it = ref->data_type == DataType::UIControl and ref->is_func_arg();
+		if(ref->parent->parent->parent->get_node_type() == NodeType::FunctionCall) {
+			auto func_call = static_cast<NodeFunctionCall*>(ref->parent->parent->parent);
+			wrap_it &= func_call->function->name != "get_ui_id";
+		}
+		if(ref->declaration and ref->declaration->parent and ref->declaration->parent->get_node_type() == NodeType::UIControl) {
+			auto declaration = static_cast<NodeUIControl*>(ref->declaration->parent);
+			wrap_it &= !declaration->is_ui_control_array();
+		}
+		return wrap_it;
+	}
+
     NodeAST * visit(NodeVariableRef &node) override {
-        if(node.data_type == DataType::UIControl and node.is_func_arg()) {
-            auto node_get_ui_id = clone_as<NodeFunctionCall>(get_ui_id.get());
-            node_get_ui_id->function->ty = TypeRegistry::Integer;
-            node_get_ui_id->kind = NodeFunctionCall::Kind::Builtin;
-            node_get_ui_id->update_token_data(node.tok);
-            node_get_ui_id->function->args->params.push_back(std::move(node.clone()));
-            node_get_ui_id->function->args->set_child_parents();
-            return node.replace_with(std::move(node_get_ui_id));
+        if(needs_get_ui_id(&node)) {
+            return node.replace_with(node.wrap_in_get_ui_id());
         }
 		return &node;
     }
 
     NodeAST * visit(NodeArrayRef &node) override {
-        if(node.data_type == DataType::UIControl and node.is_func_arg()) {
-            auto node_get_ui_id = clone_as<NodeFunctionCall>(get_ui_id.get());
-            node_get_ui_id->function->ty = TypeRegistry::Integer;
-            node_get_ui_id->kind = NodeFunctionCall::Kind::Builtin;
-            node_get_ui_id->update_token_data(node.tok);
-            node_get_ui_id->function->args->params.push_back(std::move(node.clone()));
-            node_get_ui_id->function->args->set_child_parents();
-            return node.replace_with(std::move(node_get_ui_id));
-        }
+		if(node.index) node.index->accept(*this);
+        if(needs_get_ui_id(&node)) {
+			return node.replace_with(node.wrap_in_get_ui_id());
+		}
 		return &node;
     }
 
+	NodeAST * visit(NodeNDArrayRef &node) override {
+		if(node.indexes) node.indexes->accept(*this);
+		if(needs_get_ui_id(&node)) {
+			return node.replace_with(node.wrap_in_get_ui_id());
+		}
+		return &node;
+	}
+
 private:
-    inline std::unique_ptr<NodeBlock> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
+    static inline std::unique_ptr<NodeBlock> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
         auto node_body = std::make_unique<NodeBlock>(function_header->tok);
         for(int i = 1; i<function_header->args->params.size(); i++) {
             auto node_get_control = std::make_unique<NodeGetControl>(
@@ -109,7 +108,7 @@ private:
         return std::move(node_body);
     }
 
-    inline std::unique_ptr<NodeParamList> inline_message_parameters(std::unique_ptr<NodeParamList>& params) {
+    static inline std::unique_ptr<NodeParamList> inline_message_parameters(std::unique_ptr<NodeParamList>& params) {
         // it is already only one parameter
         if (params->params.size() == 1) return std::move(params);
 

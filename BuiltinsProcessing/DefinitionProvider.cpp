@@ -21,7 +21,7 @@ DefinitionProvider::DefinitionProvider(
 		  external_variables(std::move(m_external_variables)) {
 	// add default scope to work as global scope
 	this->add_scope();
-    for(auto& var : external_variables) {
+    for(const auto& var : external_variables) {
         m_declared_data_structures.back().insert({var->name, var.get()});
     }
 }
@@ -29,7 +29,7 @@ DefinitionProvider::DefinitionProvider(
 DefinitionProvider::DefinitionProvider() {
 	// add default scope to work as global scope
 	this->add_scope();
-	for(auto& var : external_variables) {
+	for(const auto& var : external_variables) {
 		m_declared_data_structures.back().insert({var->name, var.get()});
 	}
 }
@@ -45,9 +45,9 @@ std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual> Def
         compile_error.m_message = "Tried to remove global scope.";
         compile_error.exit();
     }
-    auto passive_scope = m_declared_data_structures.back();
-    m_declared_data_structures.pop_back();
-    return passive_scope;
+	auto passive_scope = std::move(m_declared_data_structures.back());
+	m_declared_data_structures.pop_back();
+	return passive_scope;
 }
 
 bool DefinitionProvider::refresh_scopes() {
@@ -55,7 +55,7 @@ bool DefinitionProvider::refresh_scopes() {
 	m_references_per_data_structure.clear();
     // add global scope
     add_scope();
-    for(auto& var : external_variables) {
+    for(const auto& var : external_variables) {
         m_declared_data_structures.back().insert({var->name, var.get()});
     }
     return true;
@@ -72,7 +72,7 @@ bool DefinitionProvider::refresh_scopes() {
 
 
 NodeDataStructure* DefinitionProvider::remove_from_current_scope(const std::string& name) {
-    auto it = m_declared_data_structures.back().find(name);
+    const auto it = m_declared_data_structures.back().find(name);
     if(it != m_declared_data_structures.back().end()) {
         auto var = it->second;
         m_declared_data_structures.back().erase(it);
@@ -84,7 +84,7 @@ NodeDataStructure* DefinitionProvider::remove_from_current_scope(const std::stri
 
 NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 	// if reference is compiler, return dummy declaration pointer
-	if(auto dummy_decl = get_compiler_declaration(var)) {
+	if(const auto &dummy_decl = get_compiler_declaration(var)) {
 		return dummy_decl;
 	}
 
@@ -93,7 +93,6 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
 	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var->name);
 
-	auto compile_error = CompileError(ErrorType::Variable, "",var->tok.line, "", var->name, var->tok.file);
 	if (node_builtin_declaration) {
 		return node_builtin_declaration;
 	}
@@ -144,7 +143,7 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 
 
 NodeVariable* DefinitionProvider::get_builtin_variable(const std::string& var) {
-    auto it = builtin_variables.find(var);
+    const auto it = builtin_variables.find(var);
     if(it != builtin_variables.end()) {
         return it->second.get();
     }
@@ -152,7 +151,7 @@ NodeVariable* DefinitionProvider::get_builtin_variable(const std::string& var) {
 }
 
 NodeArray* DefinitionProvider::get_builtin_array(const std::string& arr) {
-    auto it = builtin_arrays.find(arr);
+    const auto it = builtin_arrays.find(arr);
     if(it != builtin_arrays.end()) {
         return it->second.get();
     }
@@ -160,7 +159,7 @@ NodeArray* DefinitionProvider::get_builtin_array(const std::string& arr) {
 }
 
 NodeUIControl* DefinitionProvider::get_builtin_widget(const std::string &ui_control) {
-    auto it = builtin_widgets.find(ui_control);
+    const auto it = builtin_widgets.find(ui_control);
     if(it != builtin_widgets.end()) {
         return it->second.get();
     }
@@ -168,7 +167,7 @@ NodeUIControl* DefinitionProvider::get_builtin_widget(const std::string &ui_cont
 }
 
 NodeFunctionDefinition* DefinitionProvider::get_builtin_function(const std::string &function, int params) {
-    auto it = builtin_functions.find({function, params});
+    const auto it = builtin_functions.find({function, params});
     if(it != builtin_functions.end()) {
         return it->second.get();
     }
@@ -176,7 +175,7 @@ NodeFunctionDefinition* DefinitionProvider::get_builtin_function(const std::stri
 }
 
 NodeFunctionDefinition* DefinitionProvider::get_builtin_function(NodeFunctionHeader *function) {
-	auto it = builtin_functions.find({function->name, (int)function->args->params.size()});
+	const auto it = builtin_functions.find({function->name, (int)function->args->params.size()});
 	if(it != builtin_functions.end()) {
 		return it->second.get();
 	}
@@ -184,7 +183,7 @@ NodeFunctionDefinition* DefinitionProvider::get_builtin_function(NodeFunctionHea
 }
 
 NodeFunctionDefinition* DefinitionProvider::get_property_function(NodeFunctionHeader *function) {
-	auto it = property_functions.find(function->name);
+	const auto it = property_functions.find(function->name);
 	if(it != property_functions.end()) {
 		return it->second.get();
 	}
@@ -193,7 +192,7 @@ NodeFunctionDefinition* DefinitionProvider::get_property_function(NodeFunctionHe
 
 NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::string& data) {
     for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
-        auto it = rit->find(data);
+        const auto it = rit->find(data);
         if (it != rit->end()) {
             return it->second;
         }
@@ -202,8 +201,8 @@ NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::st
 }
 
 NodeDataStructure *DefinitionProvider::get_scoped_data_structure(const std::string& data, bool global_scope) {
-    auto& map = global_scope ? m_declared_data_structures.at(0) : m_declared_data_structures.back();
-	auto it = map.find(data);
+    const auto& map = global_scope ? m_declared_data_structures.at(0) : m_declared_data_structures.back();
+	const auto it = map.find(data);
 	if (it != map.end()) {
 		return it->second;
 	}

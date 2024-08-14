@@ -87,23 +87,15 @@ on init
 
 	declare @folder_path
 	@folder_path := get_folder(GET_FOLDER_LIBRARY_DIR)
-	// 	// As Declaration 1
-	// list !all_fx_texts[,]
-	// 	"Low Pass -12dB",		0,		 "Hz","Reso","%"	
-	// 	"Low Pass -24dB",		"Cutoff","Hz","Reso","%"	
-	// 	"Low Pass Vintage",		"Cutoff","Hz","Reso","%"	
-	// 	"High Pass -12dB",		"Cutoff","Hz","Reso","%"	
-	// 	"High Pass -24dB",		"Cutoff","Hz","Reso","%"	
-	// end list
-	declare ~attack_point := scale.range.log(int_to_real(3)*0.51,0.0,int_to_real(4), 1.5,0.056)
 
 	scoped_func1()
 	scoped_func1()
 	declare b : int, c[6] := ret_sth()
 	c := return_ndarray_dimension()
 end on
-function scale.range.log(input,currentMin,currentMax,scaleToMin,scaleToMax) -> result
-	result := pow(10.0,log(scaleToMin)/log(10.0)+((input-currentMin)/(currentMax-currentMin))*(log(scaleToMax)/log(10.0)-log(scaleToMin)/log(10.0)))
+
+function scale.range(input,currentMin,currentMax,scaleToMin,scaleToMax) -> result
+	result := (input-currentMin)*(scaleToMax-scaleToMin)/(currentMax-currentMin)+scaleToMin
 end function
 
 function eq(a,b)

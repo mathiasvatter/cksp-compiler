@@ -181,13 +181,6 @@ bool NodeReference::is_member_ref() const {
 	return declaration->is_member();
 }
 
-bool NodeReference::is_valid_object_type(NodeProgram *program) {
-	if(ty->get_type_kind() != TypeKind::Object) return false;
-	auto obj = ty->to_string();
-	if(program->struct_lookup.find(obj) == program->struct_lookup.end()) return true;
-	return false;
-}
-
 NodeStruct *NodeReference::get_object_ptr(NodeProgram* program, const std::string& obj) {
 	auto it = program->struct_lookup.find(obj);
 	if(it != program->struct_lookup.end()) {
@@ -201,6 +194,10 @@ NodeReference* NodeReference::lower_type() {
 		set_element_type(TypeRegistry::Integer);
 	}
 	return this;
+}
+
+std::unique_ptr<NodeFunctionCall> NodeReference::wrap_in_get_ui_id() {
+	return DefinitionProvider::get_ui_id(clone_as<NodeReference>(this));
 }
 
 // ************* NodeInstruction ***************
@@ -490,32 +487,32 @@ std::unique_ptr<NodeAST> NodeProgram::clone() const {
 
 void NodeProgram::set_child_parents() {
 	global_declarations->parent = this;
-	for(auto& s : struct_definitions) s->parent = this;
-	for(auto& c : callbacks) c->parent = this;
-	for(auto& f : function_definitions) f->parent = this;
+	for(const auto& s : struct_definitions) s->parent = this;
+	for(const auto& c : callbacks) c->parent = this;
+	for(const auto& f : function_definitions) f->parent = this;
 }
 
 void NodeProgram::update_parents(NodeAST *new_parent) {
 	parent = new_parent;
 	global_declarations->update_parents(this);
-	for(auto& s : struct_definitions) s->update_parents(this);
-	for(auto & c : callbacks) c->update_parents(this);
-	for(auto & f : function_definitions) f->update_parents(this);
+	for(const auto& s : struct_definitions) s->update_parents(this);
+	for(const auto & c : callbacks) c->update_parents(this);
+	for(const auto & f : function_definitions) f->update_parents(this);
 }
 
 void NodeProgram::update_function_lookup() {
 	function_lookup.clear();
-	for(auto & def : function_definitions) {
+	for(const auto & def : function_definitions) {
 		function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
 	}
-	for(auto & def : additional_function_definitions) {
+	for(const auto & def : additional_function_definitions) {
 		function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
 	}
 }
 
 void NodeProgram::update_struct_lookup() {
 	struct_lookup.clear();
-	for(auto & def : struct_definitions) {
+	for(const auto & def : struct_definitions) {
 		struct_lookup.insert({def->name, def.get()});
 	}
 }
@@ -544,7 +541,7 @@ bool NodeProgram::check_unique_callbacks() {
 
 NodeCallback* NodeProgram::move_on_init_callback() {
 	// Finden des ersten (und einzigen) on init Callbacks
-	auto it = std::find_if(callbacks.begin(), callbacks.end(), [&](const std::unique_ptr<NodeCallback>& callback) {
+	const auto it = std::find_if(callbacks.begin(), callbacks.end(), [&](const std::unique_ptr<NodeCallback>& callback) {
 	  return callback.get() == init_callback;
 	});
 	// Move the callback to the first position
@@ -559,7 +556,7 @@ std::unique_ptr<NodeBlock> NodeProgram::declare_compiler_variables() {
 	Token tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
 	auto node_body = std::make_unique<NodeBlock>(tok);
 //	node_body->scope = true;
-	for(auto & var_name: compiler_variables) {
+	for(const auto & var_name: compiler_variables) {
 		auto node_variable = std::make_unique<NodeVariable>(
 			std::nullopt,
 			var_name.first,
@@ -581,11 +578,15 @@ void NodeProgram::inline_global_variables() {
 }
 
 void NodeProgram::inline_structs() {
-	for(auto & obj : struct_definitions) {
+	for(const auto & obj : struct_definitions) {
 		obj->inline_struct(this);
 	}
 	struct_definitions.clear();
 	update_struct_lookup();
+}
+
+void NodeProgram::reset_function_visited_flag() {
+	for(const auto & def : function_definitions) def->visited = false;
 }
 
 

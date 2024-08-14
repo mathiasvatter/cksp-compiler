@@ -18,9 +18,7 @@ public:
 
 		auto get_control_statement = cast_node<NodeGetControl>(node.l_value.get());
 		// lower in case of array or nd array
-		if(auto lowering = get_control_statement->ui_id->get_lowering(m_program)) {
-			get_control_statement->ui_id->accept(*lowering);
-		}
+		get_control_statement->ui_id->lower(m_program);
 
 		std::string control_function = "set_control_par";
 		auto new_node = lowering(control_function, get_control_statement);
@@ -32,9 +30,7 @@ public:
 
 	NodeAST * visit(NodeGetControl &node) override {
 		// lower in case of array or nd array
-		if(auto lowering = node.ui_id->get_lowering(m_program)) {
-			node.ui_id->accept(*lowering);
-		}
+		node.ui_id->lower(m_program);
 		std::string control_function = "get_control_par";
 		auto new_node = lowering(control_function, &node);
 		new_node->update_parents(node.parent);
@@ -78,10 +74,9 @@ private:
             node_control_function->function->args->params.push_back(std::move(node->ui_id));
 			node_control_function->function->args->params.push_back(std::move(control_par));
 			node_control_function->function->args->set_child_parents();
+
             // check if var needs is ui control and needs to wrapped in get_ui_id
-            if(auto lowering = node_control_function->get_lowering(m_program)) {
-                lowering->visit(*node_control_function);
-            }
+			node_control_function->lower(m_program);
 			return node_control_function;
 		}
 		return nullptr;

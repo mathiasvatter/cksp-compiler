@@ -165,7 +165,7 @@ struct NodeUIControl : NodeDataStructure {
 		ty = control_var->ty;
 		return ty;
 	}
-	bool is_ui_control_array();
+	bool is_ui_control_array() const;
 };
 
 struct NodeList : NodeDataStructure {

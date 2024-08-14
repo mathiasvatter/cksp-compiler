@@ -50,8 +50,7 @@ std::unique_ptr<NodeAccessChain> NodeVariableRef::to_method_chain() {
 bool NodeVariableRef::is_ndarray_constant() {
 	if(declaration and declaration->get_node_type() == NodeType::NDArray) {
 		auto ndarray= static_cast<NodeNDArray*>(declaration);
-		std::string string_pattern = "^" + ndarray->name + R"(.SIZE_D(\d+)$)";
-		std::regex pattern(string_pattern);
+		static const std::regex pattern("^" + ndarray->name + R"(.SIZE_D(\d+)$)");
 		std::smatch match;
 		// Überprüfen, ob der String dem Muster entspricht
 		if (std::regex_match(name, match, pattern)) {
@@ -65,6 +64,24 @@ bool NodeVariableRef::is_ndarray_constant() {
 	}
 	return false;
 }
+
+//bool NodeVariableRef::is_ndarray_constant() {
+//	if (declaration && declaration->get_node_type() == NodeType::NDArray) {
+//		auto ndarray = static_cast<NodeNDArray*>(declaration);
+//		const std::string& prefix = ndarray->name + ".SIZE_D";
+//		if (name.compare(0, prefix.length(), prefix) == 0) {
+//			std::string number_str = name.substr(prefix.length());
+//			try {
+//				int number = std::stoi(number_str);
+//				return number >= 1 && number <= ndarray->dimensions;
+//			} catch (const std::invalid_argument&) {
+//				return false;
+//			}
+//		}
+//		return false;
+//	}
+//	return false;
+//}
 
 // ************* NodeArrayRef ***************
 NodeAST *NodeArrayRef::accept(struct ASTVisitor &visitor) {

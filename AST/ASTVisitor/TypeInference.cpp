@@ -16,13 +16,14 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 	for(auto & s : node.struct_definitions) {
 		s->accept(*this);
 	}
-	// get all types of function params first
-	for(auto & function_definition : node.function_definitions) {
-		function_definition->accept(*this);
-	}
 	for(auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
+	for(auto & func_def : node.function_definitions) {
+		if(!func_def->visited) func_def->accept(*this);
+	}
+	node.reset_function_visited_flag();
+
 	return &node;
 }
 
@@ -195,7 +196,7 @@ NodeAST * TypeInference::visit(NodeArray& node) {
 }
 
 NodeAST * TypeInference::visit(NodeArrayRef& node) {
-	if(node.declaration) node.declaration->accept(*this);
+//	if(node.declaration) node.declaration->accept(*this);
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
 		if(node.ty == TypeRegistry::Unknown) {
@@ -223,7 +224,7 @@ NodeAST * TypeInference::visit(NodeNDArray& node) {
 }
 
 NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
-	if(node.declaration) node.declaration->accept(*this);
+//	if(node.declaration) node.declaration->accept(*this);
     // if handed over without index -> as whole array structure type
     if(!node.indexes) {
         if(node.ty == TypeRegistry::Unknown) {
@@ -486,13 +487,13 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	for (int i = 0; i < node.function->args->params.size(); i++) {
 		match_type(node.function->args->params[i].get(), node.definition->header->args->params[i].get());
 	}
-
+	if(!node.definition->visited) node.definition->accept(*this);
 	match_type(&node, node.definition);
-	match_type(node.definition, &node);
 	return &node;
 }
 
 NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
+	node.visited = true;
     node.header->accept(*this);
     if(node.return_variable.has_value()) node.return_variable.value()->accept(*this);
 
@@ -538,9 +539,16 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 			error.m_message += "<Mathematical Operators> can only be used in between <Integer> or <Real> values.";
 			error.exit();
 		}
-		if(is_compatible) node.ty = TypeRegistry::Integer;
-		is_compatible |= node.left->ty->is_compatible(TypeRegistry::Real) and node.right->ty->is_compatible(TypeRegistry::Real);
-		if(is_compatible and node.ty != TypeRegistry::Integer) node.ty = TypeRegistry::Real;
+		if(is_compatible) node.ty = TypeRegistry::Number;
+		if(node.left->ty == TypeRegistry::Integer and node.right->ty == TypeRegistry::Integer) {
+			node.ty = TypeRegistry::Integer;
+		} else if(node.left->ty == TypeRegistry::Real and node.right->ty == TypeRegistry::Real) {
+			node.ty = TypeRegistry::Real;
+		}
+		if(node.left->ty != node.right->ty)
+			is_compatible = false;
+//		is_compatible |= node.left->ty->is_compatible(TypeRegistry::Real) and node.right->ty->is_compatible(TypeRegistry::Real);
+//		if(is_compatible and node.ty != TypeRegistry::Integer) node.ty = TypeRegistry::Real;
 		error.m_message += "Please use real() and int() to use <Real> and <Integer> numbers in a single expression.";
 	} else if (contains(BITWISE_TOKENS, node.op)) {
 		node.ty = TypeRegistry::Integer;
@@ -578,9 +586,13 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	if(node.op == token::SUB) {
 		// can only be int or float
 		is_compatible = node.operand->ty->is_compatible(TypeRegistry::Integer);
-		if(is_compatible) node.ty = TypeRegistry::Integer;
+		if(is_compatible) node.ty = TypeRegistry::Number;
 		is_compatible |= node.operand->ty->is_compatible(TypeRegistry::Real);
-		if(is_compatible and node.ty != TypeRegistry::Integer) node.ty = TypeRegistry::Real;
+		if(is_compatible and node.operand->ty == TypeRegistry::Integer) {
+			node.ty = TypeRegistry::Integer;
+		} else if(is_compatible and node.operand->ty == TypeRegistry::Real) {
+			node.ty = TypeRegistry::Real;
+		}
 		error.m_message += "Please use real() and int() to use <Real> and <Integer> numbers in a single expression.";
 	} else if (node.op == token::BIT_NOT) {
 		node.ty = TypeRegistry::Integer;

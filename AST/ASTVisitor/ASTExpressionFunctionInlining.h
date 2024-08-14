@@ -28,7 +28,7 @@ public:
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-		for(auto & def : node.function_definitions) def->visited = false;
+		node.reset_function_visited_flag();
 
 		/// vector to house only the definitions that are actually used in the program
 		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
