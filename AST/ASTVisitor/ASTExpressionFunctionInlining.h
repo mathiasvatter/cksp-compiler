@@ -69,7 +69,7 @@ public:
 		if(node.get_definition(m_program)) {
 			// if it is not an expression-only function, do not transform into return statement, instead add return variable to function header
 			transform_to_return_function(node.definition);
-			node.definition->accept(*this);
+			if(!node.definition->visited) node.definition->accept(*this);
 			node.definition->visited = true;
 			// see if the function is a return-only function
 			if(is_expression_function(node.definition)) {
