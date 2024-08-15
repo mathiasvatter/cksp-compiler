@@ -66,10 +66,10 @@ private:
 
 		if(auto node_reference = cast_node<NodeReference>(node->ui_id.get())) {
 			// do not wrap in get_ui_id when it is a ui_control array
-            auto node_declaration = m_def_provider->get_declaration(node_reference);
-            if(node_declaration) {
-                node_reference->match_data_structure(node_declaration);
-            }
+//            auto node_declaration = m_def_provider->get_declaration(node_reference);
+//            if(node_declaration) {
+//                node_reference->match_data_structure(node_declaration);
+//            }
 
             node_control_function->function->args->params.push_back(std::move(node->ui_id));
 			node_control_function->function->args->params.push_back(std::move(control_par));

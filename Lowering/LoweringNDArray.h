@@ -28,7 +28,6 @@ public:
 	 * 	declare _ndarray[3 * 3]: int[] := (1,2,3,4,5,6,7,8,9) // ndarray := ((1,2,3), (4,5,6), (7,8,9))
 	 */
 	NodeAST* visit(NodeSingleDeclaration &node) override {
-		lowered_node = &node;
         if(node.variable->get_node_type() == NodeType::NDArray) {
             if (auto node_ndarray = cast_node<NodeNDArray>(node.variable.get())) {
                 auto node_body = std::make_unique<NodeBlock>(node.tok);
@@ -96,11 +95,13 @@ public:
                 node.name,
                 std::move(node_expression), node.tok);
         node_lowered_array->name = "_" + node_lowered_array->name;
-        node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
+//        node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
+        node_lowered_array->ty = node.ty->get_element_type();
 		// if no sizes -> ndarray is func param and needs to have another type dimension
 		if(!node.indexes) {
 			node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
 		}
+		node_lowered_array->data_type = node.data_type;
         node_lowered_array->parent = node.parent;
         node_lowered_array->declaration = node.declaration;
 		node_lowered_array->update_parents(node.parent);
