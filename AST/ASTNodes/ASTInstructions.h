@@ -10,7 +10,6 @@
 // can be assign_statement, if_statement etc.
 struct NodeStatement: NodeInstruction {
     std::unique_ptr<NodeAST> statement;
-    std::vector<NodeAST*> function_inlines = {};
     inline explicit NodeStatement(Token tok) : NodeInstruction(NodeType::Statement, std::move(tok)) {}
     inline NodeStatement(std::unique_ptr<NodeAST> statement, Token tok) : NodeInstruction(NodeType::Statement, std::move(tok)), statement(std::move(statement)) {
         set_child_parents();

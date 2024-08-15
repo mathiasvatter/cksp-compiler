@@ -19,8 +19,7 @@ NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeStatement::NodeStatement(const NodeStatement& other)
-        : NodeInstruction(other), statement(clone_unique(other.statement)),
-          function_inlines(other.function_inlines) {
+        : NodeInstruction(other), statement(clone_unique(other.statement)) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeStatement::clone() const {
@@ -490,14 +489,14 @@ void NodeBlock::flatten() {
 		if (statement->statement->get_node_type() == NodeType::Block) {
 			auto node_innner_body = static_cast<NodeBlock*>(statement->statement.get());
 			auto& inner_statements = node_innner_body->statements;
-			if (!inner_statements.empty()) {
-				// Übertragen Sie die function_inlines zum ersten Element
-				inner_statements[0]->function_inlines.insert(
-					inner_statements[0]->function_inlines.end(),
-					std::make_move_iterator(statement->function_inlines.begin()),
-					std::make_move_iterator(statement->function_inlines.end())
-				);
-			}
+//			if (!inner_statements.empty()) {
+//				// Übertragen Sie die function_inlines zum ersten Element
+//				inner_statements[0]->function_inlines.insert(
+//					inner_statements[0]->function_inlines.end(),
+//					std::make_move_iterator(statement->function_inlines.begin()),
+//					std::make_move_iterator(statement->function_inlines.end())
+//				);
+//			}
 
 			// Entfernen Sie DeadCode-Nodes in einem Schritt
 			auto new_end = std::remove_if(inner_statements.begin(), inner_statements.end(),
