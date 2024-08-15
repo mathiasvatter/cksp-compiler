@@ -127,8 +127,14 @@ void Compiler::compile() {
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
 
+	compile_time.stop("Lowering");
+	compile_time.start("Return Function Rewriting");
+
 	ASTReturnFunctionRewriting return_function_rewriting(&m_definition_provider);
 	ast->accept(return_function_rewriting);
+
+	compile_time.stop("Return Function Rewriting");
+	compile_time.start("Data Structure Lowering");
 
 	NormalizeNDArrayAssign nd_array_assign(&m_definition_provider);
 	ast->accept(nd_array_assign);
@@ -136,9 +142,9 @@ void Compiler::compile() {
 	ASTDataStructureLowering data_structure_lowering(&m_definition_provider);
 	ast->accept(data_structure_lowering);
 
-	compile_time.stop("Lowering");
-	std::cout << compile_time.print_timer("Lowering") << std::endl;
-	ast->debug_print();
+//	std::cout << compile_time.print_timer("Lowering") << std::endl;
+//	ast->debug_print();
+	compile_time.stop("Data Structure Lowering");
 	compile_time.start("Variable Checking 1");
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
@@ -162,12 +168,12 @@ void Compiler::compile() {
 //	ast->debug_print();
 
     compile_time.stop("Function Inlining");
-	compile_time.start("Variable Checking 2");
-
-	ASTVariableChecking variable_checking2(&m_definition_provider, true);
-    ast->accept(variable_checking2);
-
-	compile_time.stop("Variable Checking 2");
+//	compile_time.start("Variable Checking 2");
+//
+//	ASTVariableChecking variable_checking2(&m_definition_provider, true);
+//    ast->accept(variable_checking2);
+//
+//	compile_time.stop("Variable Checking 2");
 	compile_time.start("Optimization");
 
 	ast->inline_global_variables();

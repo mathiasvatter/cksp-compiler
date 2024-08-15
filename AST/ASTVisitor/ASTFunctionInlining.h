@@ -9,10 +9,9 @@
 
 class ASTFunctionInlining : public ASTVisitor {
 private:
-	std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
-
+	std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
 public:
-	explicit ASTFunctionInlining(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {m_used_function_definitions.clear();}
+	explicit ASTFunctionInlining(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
 	/// check for used functions
 	inline NodeAST *visit(NodeProgram &node) override {
@@ -28,13 +27,14 @@ public:
 		}
 
 		/// vector to house only the definitions that are actually used in the program
-		for(auto & func_def : node.function_definitions) {
-			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
-				final_function_definitions.push_back(std::move(func_def));
-			}
-		}
+//		for(auto & func_def : node.function_definitions) {
+//			if(func_def->is_used) {
+//				m_function_definitions.push_back(std::move(func_def));
+//			}
+//		}
 
-		node.function_definitions = std::move(final_function_definitions);
+		node.function_definitions = std::move(m_function_definitions);
+		node.update_function_lookup();
 		return &node;
 	}
 
@@ -83,9 +83,6 @@ public:
 		m_program->function_call_stack.push(node.definition);
 		m_functions_in_use.insert(node.definition);
 
-		if(!node.definition->visited) node.definition->body->accept(*this);
-		node.definition->visited = true;
-
 		if(node.kind != NodeFunctionCall::Kind::UserDefined) {
 			CompileError(ErrorType::InternalError,"Found function that is neither tagged Property, Undefined, Builtin or UserDefined.", "", node.tok).exit();
 		}
@@ -98,13 +95,7 @@ public:
 		if(m_current_callback != m_program->init_callback) {
 			// make function called if it is no params
 			if(node.definition->header->args->params.empty()) node.is_call = true;
-			if (node.is_call) {
-//				final_function_definitions.push_back(clone_as<NodeFunctionDefinition>(node.definition));
-				m_used_function_definitions.insert(node.definition);
-				m_program->function_call_stack.pop();
-				m_functions_in_use.erase(node.definition);
-				return &node;
-			}
+
 		} else if(node.is_call){
 			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 			error.m_message = "The usage of <call> keyword is not allowed in the <on init> callback. Automatically removed <call> and inlined function. Consider not using the <call> keyword.";
@@ -121,6 +112,12 @@ public:
 		m_functions_in_use.erase(node.definition);
 		m_program->function_call_stack.pop();
 
+		node.definition->call_sites.clear();
+		node.definition = nullptr;
+		if (node.is_call) {
+			m_function_definitions.push_back(std::move(node_func_def));
+			return &node;
+		}
 		return node.replace_with(std::move(node_func_def->body));
 	}
 
@@ -142,6 +139,7 @@ public:
 	inline NodeAST *visit(NodeFunctionHeader& node) override {
 		node.args->accept(*this);
 		// substitution
+		if(m_program->function_call_stack.empty()) return &node;
 		if (!m_substitution_stack.empty()) {
 			if (auto substitute = get_substitute(node.name)) {
 				if(auto substitute_ref = cast_node<NodeReference>(substitute.get())) {
@@ -163,7 +161,7 @@ public:
 		for (size_t i = 0; i < definition->args->params.size(); ++i) {
 			auto& var = definition->args->params[i];
 			// Überprüfen, ob var ein NodeDataStructure ist
-			if (auto node_data_structure = cast_node<NodeDataStructure>(var.get())) {
+			if (auto node_data_structure = static_cast<NodeDataStructure*>(var.get())) {
 				// Direktes Einfügen in die Map
 				substitution_map[node_data_structure->name] = std::move(call->args->params[i]);
 			} else {
@@ -267,7 +265,7 @@ protected:
 
 	/// vector of all function_definitions that are actually used in program
 	/// can only house called functions with no params
-	std::set<NodeFunctionDefinition*> m_used_function_definitions;
+//	std::set<NodeFunctionDefinition*> m_used_function_definitions;
 
 	/// track functions in use to search for recursive calls
 	std::unordered_set<NodeFunctionDefinition*> m_functions_in_use;

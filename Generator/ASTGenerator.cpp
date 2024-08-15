@@ -110,7 +110,7 @@ NodeAST * ASTGenerator::visit(NodeUIControl &node) {
 NodeAST * ASTGenerator::visit(NodeSingleDeclaration &node) {
     os << "declare ";
     node.variable->accept(*this);
-    if(node.value != nullptr) {
+    if(node.value) {
         os << " := ";
         auto node_param_list = node.value->get_node_type() == NodeType::ParamList;
         if(node_param_list) os << "(";

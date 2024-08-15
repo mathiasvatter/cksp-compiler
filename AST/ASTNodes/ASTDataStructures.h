@@ -130,7 +130,6 @@ struct NodeUIControl : NodeDataStructure {
 	std::unique_ptr<NodeDataStructure> control_var; //Array or Variable
 	std::unique_ptr<NodeParamList> params;
 	std::unique_ptr<NodeParamList> sizes; // if it is ui_control array
-	std::vector<Type*> arg_types;
     NodeUIControl* declaration = nullptr;
 	inline explicit NodeUIControl(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::UIControl) {}
 	inline NodeUIControl(std::string uiControlType, std::unique_ptr<NodeDataStructure> controlVar, std::unique_ptr<NodeParamList> params, Token tok)

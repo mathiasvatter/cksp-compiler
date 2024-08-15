@@ -17,9 +17,10 @@
 class ASTExpressionFunctionInlining: public ASTFunctionInlining {
 private:
 public:
-	inline explicit ASTExpressionFunctionInlining(DefinitionProvider *definition_provider) : ASTFunctionInlining(definition_provider) {m_used_function_definitions.clear();}
+	inline explicit ASTExpressionFunctionInlining(DefinitionProvider *definition_provider) : ASTFunctionInlining(definition_provider) {}
 
 	NodeAST* visit(NodeProgram &node) override {
+		node.reset_function_used_flag();
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
@@ -33,12 +34,12 @@ public:
 		/// vector to house only the definitions that are actually used in the program
 		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
 		for(auto & func_def : node.function_definitions) {
-			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
+			if(func_def->is_used) {
 				final_function_definitions.push_back(std::move(func_def));
 			}
 		}
 		node.function_definitions = std::move(final_function_definitions);
-
+		node.reset_function_used_flag();
 		node.update_function_lookup();
 		return &node;
 	}
@@ -87,7 +88,7 @@ public:
 
 				return node.replace_with(get_expression_func_return(node_func_def.get()));
 			} else {
-				m_used_function_definitions.insert(node.definition);
+				node.definition->is_used = true;
 			}
 
 		}

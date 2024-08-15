@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD 23)
 if(WIN32)
     set(CMAKE_EXE_LINKER_FLAGS -static)
 endif()
+#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native -flto -fno-plt -fomit-frame-pointer")
 
 # Pfad zu den Textdateien
 set(TEXT_FILES_DIR "${CMAKE_SOURCE_DIR}/Builtins")

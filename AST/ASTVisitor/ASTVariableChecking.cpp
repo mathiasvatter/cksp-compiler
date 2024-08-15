@@ -142,6 +142,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 	}
 
 	if(node.kind == NodeFunctionCall::UserDefined and node.definition) {
+		node.definition->call_sites.emplace(&node);
 		if(!node.definition->visited) node.definition->accept(*this);
 	}
 	return &node;
