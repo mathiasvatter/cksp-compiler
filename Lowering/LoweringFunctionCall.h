@@ -57,10 +57,7 @@ public:
 			auto func_call = static_cast<NodeFunctionCall*>(ref->parent->parent->parent);
 			wrap_it &= func_call->function->name != "get_ui_id";
 		}
-		if(ref->declaration and ref->declaration->parent and ref->declaration->parent->get_node_type() == NodeType::UIControl) {
-			auto declaration = static_cast<NodeUIControl*>(ref->declaration->parent);
-			wrap_it &= !declaration->is_ui_control_array();
-		}
+		wrap_it &= ref->data_type != DataType::UIArray;
 		return wrap_it;
 	}
 

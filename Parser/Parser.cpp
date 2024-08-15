@@ -59,7 +59,7 @@ Result<std::unique_ptr<NodeInt>> Parser::parse_int(const Token& tok, int base, N
     }
     try {
         long long val = std::stoll(value, nullptr, base);
-        auto node_int = std::make_unique<NodeInt>(static_cast<int32_t>(val & 0xFFFFFFFF), get_tok());
+        auto node_int = std::make_unique<NodeInt>(static_cast<int32_t>(val & 0xFFFFFFFF), tok);
         node_int->parent= parent;
         return Result<std::unique_ptr<NodeInt>>(std::move(node_int));
     } catch (const std::exception& e) {
@@ -102,7 +102,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_number(NodeAST* parent) {
         return Result<std::unique_ptr<NodeAST>>(std::move(parsed_int.unwrap()));
     } else if(value.type == token::FLOAT) {
         try {
-            auto node_real = std::make_unique<NodeReal>(std::stod(value.val), get_tok());
+            auto node_real = std::make_unique<NodeReal>(std::stod(value.val), value);
             node_real->parent = parent;
             return Result<std::unique_ptr<NodeAST>>(std::move(node_real));
         } catch (const std::exception &e) {

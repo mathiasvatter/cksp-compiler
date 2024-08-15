@@ -28,6 +28,8 @@ struct NodeVariableRef : NodeReference {
 	/// checks if variable ref is a ndarray size constant by checking the declaration and
 	/// pattern matching the name (....SIZE_D(\d+))
 	bool is_ndarray_constant();
+	/// checks if variable list size constant
+	bool is_list_constant();
 };
 
 struct NodeArrayRef : NodeReference {
@@ -57,6 +59,8 @@ struct NodeArrayRef : NodeReference {
 	/// this_list.next.value[6]
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
 	std::unique_ptr<NodeFunctionCall> get_size();
+	/// check if array ref is <list_ref>.size[] array
+	bool is_list_sizes();
 };
 
 struct NodeNDArrayRef : NodeReference {

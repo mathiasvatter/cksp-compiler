@@ -484,10 +484,12 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		return &node;
 	}
 	node.function->accept(*this);
-	for (int i = 0; i < node.function->args->params.size(); i++) {
-		match_type(node.function->args->params[i].get(), node.definition->header->args->params[i].get());
-	}
 	if(!node.definition->visited) node.definition->accept(*this);
+
+	for (int i = 0; i < node.function->args->params.size(); i++) {
+		const std::string error_message = "Found incorrect type in <Function Call>. Function <"+node.function->name+"> expects "+node.definition->header->args->params[i]->ty->to_string()+" as argument type.";
+		match_type(node.function->args->params[i].get(), node.definition->header->args->params[i].get(), error_message);
+	}
 	match_type(&node, node.definition);
 	return &node;
 }

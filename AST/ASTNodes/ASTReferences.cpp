@@ -65,6 +65,18 @@ std::unique_ptr<NodeAccessChain> NodeVariableRef::to_method_chain() {
 //	return false;
 //}
 
+
+bool NodeVariableRef::is_list_constant() {
+	if (declaration && declaration->get_node_type() == NodeType::List) {
+		auto list = static_cast<NodeList*>(declaration);
+		const std::string& prefix = list->name + ".SIZE";
+		if (name.compare(0, prefix.length(), prefix) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
 bool NodeVariableRef::is_ndarray_constant() {
 	if (declaration && declaration->get_node_type() == NodeType::NDArray) {
 		auto ndarray = static_cast<NodeNDArray*>(declaration);
@@ -78,7 +90,6 @@ bool NodeVariableRef::is_ndarray_constant() {
 				return false;
 			}
 		}
-		return false;
 	}
 	return false;
 }
@@ -130,6 +141,18 @@ std::unique_ptr<NodeAccessChain> NodeArrayRef::to_method_chain() {
 std::unique_ptr<NodeFunctionCall> NodeArrayRef::get_size() {
 	return DefinitionProvider::num_elements(clone_as<NodeArrayRef>(this));
 }
+
+bool NodeArrayRef::is_list_sizes() {
+	if (declaration && declaration->get_node_type() == NodeType::List) {
+		auto list = static_cast<NodeList*>(declaration);
+		const std::string& prefix = list->name + ".sizes";
+		if (name.compare(0, prefix.length(), prefix) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
 
 // ************* NodeNDArrayRef ***************
 NodeAST *NodeNDArrayRef::accept(struct ASTVisitor &visitor) {

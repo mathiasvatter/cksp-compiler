@@ -12,18 +12,36 @@ private:
 public:
 	explicit ASTDataStructureLowering(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {};
 
+	inline NodeAST* visit(NodeProgram& node) override {
+		m_program = &node;
+		m_program->global_declarations->accept(*this);
+		for(auto & struct_def : node.struct_definitions) {
+			struct_def->accept(*this);
+		}
+		for(auto & callback : node.callbacks) {
+			callback->accept(*this);
+		}
+		for(auto & func_def : node.function_definitions) {
+			if(!func_def->visited) func_def->accept(*this);
+		}
+		node.merge_function_definitions();
+		node.reset_function_visited_flag();
+		return &node;
+	};
+
 	inline NodeAST* visit(NodeFor& node) override {
 		node.body->accept(*this);
 		return node.desugar(m_program)->accept(*this);
 	}
 
 	inline NodeAST* visit(NodeSingleDeclaration &node) override {
-//		node.variable->accept(*this);
+		// no variable visiting since this gets lowered in loweringNDArray as SingleDeclaration
 		if(node.value) node.value ->accept(*this);
 		return node.lower(m_program);
 	}
 
 	inline NodeAST* visit(NodeSingleAssignment &node) override {
+		node.l_value->accept(*this);
 		node.r_value ->accept(*this);
 		return node.lower(m_program);
 	}
@@ -42,4 +60,18 @@ public:
 		if(node.indexes) node.indexes->accept(*this);
 		return node.lower(m_program);
 	}
+
+	inline NodeAST* visit(NodeArrayRef& node) override {
+		if(node.index) node.index->accept(*this);
+		return &node;
+	};
+
+	inline NodeAST* visit(NodeFunctionCall& node) override {
+		node.function->accept(*this);
+		if(node.get_definition(m_program)) {
+			node.definition->visited = true;
+			node.definition->accept(*this);
+		}
+		return &node;
+	};
 };
