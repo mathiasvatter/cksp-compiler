@@ -58,6 +58,7 @@ NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
 		error.exit();
 	}
 	node.declaration = engine_widget;
+	if(node.is_ui_control_array()) node.control_var->data_type = DataType::UIArray;
 
 	node.control_var->accept(*this);
 	node.params->accept(*this);
@@ -173,8 +174,16 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 	// maybe declaration comes after lowering, do not throw error
 	if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
-			access_chain->accept(*this);
-			return node.replace_with(std::move(access_chain));
+			node_declaration = access_chain->declaration;
+			node.declaration = node_declaration;
+			if(node.is_list_sizes()) {
+				// if it is a list constant, do not add to references
+				node.declaration = nullptr;
+				return &node;
+			} else {
+				access_chain->accept(*this);
+				return node.replace_with(std::move(access_chain));
+			}
 		}
         if(!fail) return &node;
 	    DefinitionProvider::throw_declaration_error(node).exit();
@@ -228,13 +237,14 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 			// check if its maybe a nd_Array size constant like nda.SIZE_D1
 			node_declaration = access_chain->declaration;
 			node.declaration = node_declaration;
-			if(!node.is_ndarray_constant()) {
-				access_chain->accept(*this);
-				return node.replace_with(std::move(access_chain));
-			} else {
+			if(node.is_ndarray_constant() || node.is_list_constant()) {
 				// if it is a constant, do not add to references
 				node.declaration = nullptr;
+				node.data_type = DataType::Const;
 				return &node;
+			} else {
+				access_chain->accept(*this);
+				return node.replace_with(std::move(access_chain));
 			}
 		} else {
 			// could still fail on ui control array values or raw list subarrays

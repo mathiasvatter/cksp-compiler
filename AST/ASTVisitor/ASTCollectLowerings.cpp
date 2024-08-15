@@ -16,19 +16,16 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	for(auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
-	for(auto & function_definition : node.function_definitions) {
-		function_definition->accept(*this);
+	for(auto & func_def : node.function_definitions) {
+		if(!func_def->visited) func_def->accept(*this);
 	}
 	node.merge_function_definitions();
+	node.reset_function_visited_flag();
 
 	ASTLowerTypes lowering_types(m_def_provider);
 	node.accept(lowering_types);
 	return &node;
 }
-
-//void ASTCollectLowerings::visit(NodeReturn& node) {
-//}
-
 
 NodeAST * ASTCollectLowerings::visit(NodeBlock& node) {
 	for(auto & stmt : node.statements) {
@@ -57,7 +54,6 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
 	if (node.return_variable.has_value())
 		node.return_variable.value()->accept(*this);
 	node.body->accept(*this);
-//	return node.lower(m_program);
 	return &node;
 }
 
@@ -109,7 +105,10 @@ NodeAST * ASTCollectLowerings::visit(NodeGetControl& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
-	node.get_definition(m_program);
+	if(node.get_definition(m_program)) {
+		node.definition->visited = true;
+		node.definition->accept(*this);
+	}
 	return node.lower(m_program);
 }
 
@@ -124,13 +123,11 @@ NodeAST * ASTCollectLowerings::visit(NodeNDArray& node) {
 	}
 	if(node.sizes) node.sizes->accept(*this);
 	return &node;
-//	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
 	return &node;
-//	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeListRef& node) {
@@ -156,15 +153,6 @@ NodeAST * ASTCollectLowerings::visit(NodeAccessChain& node) {
 NodeAST * ASTCollectLowerings::visit(NodeConst &node) {
     return node.replace_with(std::move(node.constants));
 }
-
-//void ASTCollectLowerings::visit(NodeFamily &node) {
-//    node.members->accept(*this);
-//    if(auto lowering = node.get_lowering()) {
-//        node.accept(*lowering);
-//    }
-//    node.replace_with(std::move(node.members));
-//}
-
 
 
 

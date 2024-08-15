@@ -14,6 +14,7 @@ enum class DataType {
 	Polyphonic,
 	Mutable,
 	UIControl,
+	UIArray,
 	Return,
 };
 

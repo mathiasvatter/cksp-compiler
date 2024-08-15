@@ -104,13 +104,14 @@ void Compiler::compile() {
 	ast->accept(variable_checking0);
 
 	compile_time.stop("Variable Checking");
-	std::cout << compile_time.report() << std::endl;
+	std::cout << compile_time.print_timer("Variable Checking") << std::endl;
 	compile_time.start("Semantic Analysis");
 
 	ASTSemanticAnalysis data_structures(&m_definition_provider);
 	ast->accept(data_structures);
 
 	compile_time.stop("Semantic Analysis");
+	std::cout << compile_time.print_timer("Semantic Analysis") << std::endl;
 	compile_time.start("Type Checking");
 
 	TypeInference infer_types(&m_definition_provider);
@@ -131,20 +132,21 @@ void Compiler::compile() {
 
 	NormalizeNDArrayAssign nd_array_assign(&m_definition_provider);
 	ast->accept(nd_array_assign);
-
+	// Data Structure Lowering of NDArrays and Array assignments
 	ASTDataStructureLowering data_structure_lowering(&m_definition_provider);
 	ast->accept(data_structure_lowering);
 
+	compile_time.stop("Lowering");
+	std::cout << compile_time.print_timer("Lowering") << std::endl;
 	ast->debug_print();
+	compile_time.start("Variable Checking 1");
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
     ast->accept(infer_types);
     TypeInference::cast_data_structure_types(&m_definition_provider, true);
 
-	// Data Structure Lowering of NDArrays and Array assignments
-
-	compile_time.stop("Lowering");
+	compile_time.stop("Variable Checking 1");
 	compile_time.start("Global Scope");
 
 	ASTGlobalScope global_scope(&m_definition_provider);
@@ -164,11 +166,11 @@ void Compiler::compile() {
 
 	ASTVariableChecking variable_checking2(&m_definition_provider, true);
     ast->accept(variable_checking2);
-	ast->inline_global_variables();
 
 	compile_time.stop("Variable Checking 2");
 	compile_time.start("Optimization");
 
+	ast->inline_global_variables();
 	ASTOptimizations optimizations;
 	ast->accept(optimizations);
 

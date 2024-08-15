@@ -234,8 +234,8 @@ public:
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-		for(auto & function_definition : node.function_definitions) {
-			function_definition->accept(*this);
+		for(auto & func_def : node.function_definitions) {
+			func_def->accept(*this);
 		}
 		node.merge_function_definitions();
 		node.reset_function_visited_flag();

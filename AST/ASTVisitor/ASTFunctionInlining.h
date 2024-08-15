@@ -8,6 +8,9 @@
 #include "ASTVisitor.h"
 
 class ASTFunctionInlining : public ASTVisitor {
+private:
+	std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
+
 public:
 	explicit ASTFunctionInlining(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {m_used_function_definitions.clear();}
 
@@ -25,12 +28,12 @@ public:
 		}
 
 		/// vector to house only the definitions that are actually used in the program
-		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
 		for(auto & func_def : node.function_definitions) {
 			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
 				final_function_definitions.push_back(std::move(func_def));
 			}
 		}
+
 		node.function_definitions = std::move(final_function_definitions);
 		return &node;
 	}
@@ -48,8 +51,8 @@ public:
 		// visit header
 		node.function->accept(*this);
 
-		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 		if(node.is_call and !node.function->args->params.empty()) {
+			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 			error.m_message = "Found incorrect amount of function arguments when using <call>.";
 			error.exit();
 		}
@@ -59,6 +62,7 @@ public:
 			CompileError(ErrorType::InternalError,"Found undefined property function.", "", node.tok).exit();
 		}
 		if(!node.definition or node.kind == NodeFunctionCall::Kind::Undefined) {
+			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 			error.m_message = "Unable to find function definition for <"+node.function->name+">.";
 			error.exit();
 		}
@@ -66,6 +70,7 @@ public:
 		if(node.kind == NodeFunctionCall::Kind::Builtin) {
 			if(m_restricted_builtin_functions.find(node.function->name) != m_restricted_builtin_functions.end()) {
 				if(!contains(RESTRICTED_CALLBACKS, remove_substring(m_current_callback->begin_callback, "on "))) {
+					auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 					error.m_message = "<"+node.function->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks.";
 					error.m_got = "<"+m_current_callback->begin_callback+">";
 					error.exit();
@@ -77,6 +82,9 @@ public:
 		check_recursion(node.definition);
 		m_program->function_call_stack.push(node.definition);
 		m_functions_in_use.insert(node.definition);
+
+		if(!node.definition->visited) node.definition->body->accept(*this);
+		node.definition->visited = true;
 
 		if(node.kind != NodeFunctionCall::Kind::UserDefined) {
 			CompileError(ErrorType::InternalError,"Found function that is neither tagged Property, Undefined, Builtin or UserDefined.", "", node.tok).exit();
@@ -91,12 +99,14 @@ public:
 			// make function called if it is no params
 			if(node.definition->header->args->params.empty()) node.is_call = true;
 			if (node.is_call) {
+//				final_function_definitions.push_back(clone_as<NodeFunctionDefinition>(node.definition));
 				m_used_function_definitions.insert(node.definition);
 				m_program->function_call_stack.pop();
 				m_functions_in_use.erase(node.definition);
 				return &node;
 			}
 		} else if(node.is_call){
+			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 			error.m_message = "The usage of <call> keyword is not allowed in the <on init> callback. Automatically removed <call> and inlined function. Consider not using the <call> keyword.";
 			error.print();
 			node.is_call = false;
@@ -150,18 +160,17 @@ public:
 
 	static std::unordered_map<std::string, std::unique_ptr<NodeAST>> get_substitution_map(NodeFunctionHeader* definition, NodeFunctionHeader* call) {
 		std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_map;
-		for(int i= 0; i<definition->args->params.size(); i++) {
-			auto &var = definition->args->params[i];
-			std::pair<std::string, std::unique_ptr<NodeAST>> pair;
-			if(auto node_data_structure = cast_node<NodeDataStructure>(var.get())) {
-				pair.first = node_data_structure->name;
+		for (size_t i = 0; i < definition->args->params.size(); ++i) {
+			auto& var = definition->args->params[i];
+			// Überprüfen, ob var ein NodeDataStructure ist
+			if (auto node_data_structure = cast_node<NodeDataStructure>(var.get())) {
+				// Direktes Einfügen in die Map
+				substitution_map[node_data_structure->name] = std::move(call->args->params[i]);
 			} else {
-				auto error = CompileError(ErrorType::SyntaxError, "", definition->tok.line, "<keyword>", var->tok.val,definition->tok.file);
+				auto error = CompileError(ErrorType::SyntaxError, "", definition->tok.line, "<keyword>", var->tok.val, definition->tok.file);
 				error.m_message = "Found incorrect parameter definitions in <Function Definition>. Unable to substitute function arguments. Only <Data Structures> can be substituted.";
 				error.exit();
 			}
-			pair.second = std::move(call->args->params[i]);
-			substitution_map.insert(std::move(pair));
 		}
 		return substitution_map;
 	}
@@ -198,7 +207,7 @@ public:
 	/// ndarray.SIZE_D1 -> nd.SIZE_D1
 	NodeAST* substitute_ndarray_constants(NodeReference* ref) {
 		// special case when variable ref is ndarray constant
-		if(ref->declaration and ref->get_node_type() == NodeType::VariableRef) {
+		if(ref->data_type == DataType::Const and ref->declaration and ref->get_node_type() == NodeType::VariableRef) {
 			std::string ndarray_name = get_ndarray_constant_base(ref->name);
 			if(ndarray_name.empty()) return nullptr;
 			if(auto substitute = get_substitute("_"+ndarray_name)) {
@@ -227,7 +236,7 @@ public:
 				error.m_message = "Arg is of type <Composite> but is no <ArrayRef> Node: <" + ref->name + ">.";
 				error.exit();
 			}
-			auto array_ref = cast_node<NodeReference>(substitute);
+			auto array_ref = static_cast<NodeReference*>(substitute);
 			ref->name = array_ref->name;
 			return ref;
 		}
@@ -256,7 +265,7 @@ protected:
 	DefinitionProvider *m_def_provider;
 	NodeCallback* m_current_callback = nullptr;
 
-	/// set of all function_definitions that are actually used in program
+	/// vector of all function_definitions that are actually used in program
 	/// can only house called functions with no params
 	std::set<NodeFunctionDefinition*> m_used_function_definitions;
 
@@ -265,6 +274,7 @@ protected:
 	/// track all parameter->arg pairs when substituting
 	std::stack<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_substitution_stack;
 	inline std::unique_ptr<NodeAST> get_substitute(const std::string& name) {
+		if(m_program->function_call_stack.empty()) return nullptr;
 		if(m_substitution_stack.empty()) return nullptr;
 		const auto & map = m_substitution_stack.top();
 		auto it = map.find(name);

@@ -92,7 +92,24 @@ on init
 	scoped_func1()
 	declare b : int, c[6] := ret_sth()
 	c := return_ndarray_dimension()
+	
+	declare const TRUE := 1
+	declare scroll.up := 0	
+	floatmask(bit_list)
+	if floatmask.equal(bit_list,0) = TRUE
+		scroll.up := scroll.up //one of the first presets is chosen -> the clear button shall not change anything
+	else
+		scroll.up := 1
+	end if
 end on
+
+function floatmask.equal(float_mask1, float_mask2) -> result
+	result := eq(float_mask1[0] - float_mask2[0] + float_mask1[1] - float_mask2[1], 0)
+end function
+
+macro floatmask(#l#)
+	declare %#l#[2] := (0)
+end macro
 
 function scale.range(input,currentMin,currentMax,scaleToMin,scaleToMax) -> result
 	result := (input-currentMin)*(scaleToMax-scaleToMin)/(currentMax-currentMin)+scaleToMin

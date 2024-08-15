@@ -67,9 +67,10 @@ private:
         return error;
     }
 
-    static inline CompileError throw_type_error(NodeAST* node1, NodeAST* node2) {
+    static inline CompileError throw_type_error(NodeAST* node1, NodeAST* node2, const std::string& message="") {
         auto error = CompileError(ErrorType::TypeError,"", "", node1->tok);
         error.m_message = "Type mismatch: " + node1->ty->to_string() + " and " + node2->ty->to_string()+". ";
+		error.m_message += message;
         return error;
     }
 
@@ -104,9 +105,9 @@ private:
     }
 
 	/// tries to match the type of node 1 to the type of node2 after checking type compatibility
-	static inline Type* match_type(NodeAST* node1, NodeAST* node2) {
+	static inline Type* match_type(NodeAST* node1, NodeAST* node2, const std::string& message="") {
 		if(!node1->ty->is_compatible(node2->ty)) {
-            throw_type_error(node1, node2).exit();
+            throw_type_error(node1, node2, message).exit();
 		}
 		// if one of them is composite type -> the other will be too
 		if(node2->ty->get_type_kind() == TypeKind::Composite and node1->ty == TypeRegistry::Unknown) {

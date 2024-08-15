@@ -51,7 +51,7 @@ public:
      * Each timer can have multiple durations if it was started and stopped multiple times.
      * @return A string containing the report.
      */
-	std::string report() const {
+	[[nodiscard]] std::string report() const {
 		std::string result;
 		for (const auto& name : m_order_of_completion) {
 			result += name + ": ";
@@ -62,6 +62,17 @@ public:
 			result.pop_back(); // Leerzeichen entfernen
 			result += "\n";
 		}
+		return result;
+	}
+
+	std::string print_timer(const std::string& name) const {
+		std::string result;
+		result += name + ": ";
+		for (const auto& duration : m_completed_timers.at(name)) {
+			result += std::to_string(duration.count()) + " ms, ";
+		}
+		result.pop_back(); // Letztes Komma entfernen
+		result.pop_back(); // Leerzeichen entfernen
 		return result;
 	}
 };

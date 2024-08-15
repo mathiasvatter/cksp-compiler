@@ -8,6 +8,9 @@ configure_file(
 )
 
 set(CMAKE_CXX_STANDARD 23)
+if(WIN32)
+    set(CMAKE_EXE_LINKER_FLAGS -static)
+endif()
 
 # Pfad zu den Textdateien
 set(TEXT_FILES_DIR "${CMAKE_SOURCE_DIR}/Builtins")
