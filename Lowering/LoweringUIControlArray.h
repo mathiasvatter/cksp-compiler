@@ -21,7 +21,6 @@ public:
 	explicit LoweringUIControlArray(NodeProgram* program) : ASTLowering(program) {}
 
 	NodeAST * visit(NodeSingleDeclaration &node) override {
-		lowered_node = &node;
 		if(node.variable->get_node_type() != NodeType::UIControl) return &node;
 
 		auto node_ui_control = static_cast<NodeUIControl*>(node.variable.get());
@@ -38,7 +37,6 @@ public:
 
 
 		std::unique_ptr<NodeBlock> body_post_lowering = std::make_unique<NodeBlock>(node.tok);
-
 		auto node_array_declaration = std::make_unique<NodeSingleDeclaration>(
 			std::move(node_ui_control->control_var),
 			nullptr, node.tok
@@ -160,6 +158,7 @@ public:
 			std::move(node_while_body_expression),
 		   	ui_control.tok
 		);
+		node_assignment->l_value->ty = TypeRegistry::Integer;
 
 		node_while_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_assignment), ui_control.tok));
 		auto node_while_loop = make_while_loop(

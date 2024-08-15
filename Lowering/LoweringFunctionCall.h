@@ -15,7 +15,6 @@ public:
 	/// Determining if function parameter needs to be wrapped in get_ui_id because of ui control
 	/// Determining if function call is method constructor -> rename
 	NodeAST * visit(NodeFunctionCall &node) override {
-		lowered_node = &node;
         if(node.kind == NodeFunctionCall::Kind::Property) {
             auto node_body = inline_property_function(node.definition->header.get(), std::move(node.function));
             node_body->accept(*this);
