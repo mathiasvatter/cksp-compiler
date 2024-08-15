@@ -268,7 +268,6 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 	}
 	node_var->data_type = DataType::UIControl;
 	auto node_ui_control = std::make_unique<NodeUIControl>(ui_control_type, std::move(node_var), std::move(params), tok);
-	node_ui_control->arg_types = types;
 	node_ui_control->ty = node_ui_control->control_var->ty;
 	return Result<std::unique_ptr<NodeUIControl>>(std::move(node_ui_control));
 }

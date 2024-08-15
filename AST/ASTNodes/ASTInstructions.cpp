@@ -56,7 +56,7 @@ NodeFunctionDefinition* NodeFunctionCall::find_definition(struct NodeProgram *pr
     if(it != program->function_lookup.end()) {
         it->second->is_used = true;
         definition = it->second;
-        definition->call_sites.emplace(this);
+//        definition->call_sites.emplace(this);
         kind = Kind::UserDefined;
         return it->second;
     }
@@ -139,9 +139,9 @@ NodeFunctionDefinition *NodeFunctionCall::find_constructor_definition(NodeProgra
 bool NodeFunctionCall::get_definition(NodeProgram* program, bool fail) {
     if (definition) {
 		// update call sites
-		if(kind == Kind::UserDefined) {
-			definition->call_sites.emplace(this);
-		}
+//		if(kind == Kind::UserDefined) {
+//			definition->call_sites.emplace(this);
+//		}
         return true;
     }
     if (find_builtin_definition(program)) {

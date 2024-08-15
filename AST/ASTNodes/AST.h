@@ -549,6 +549,7 @@ struct NodeProgram : NodeAST {
 	void inline_global_variables();
 	void inline_structs();
 	void reset_function_visited_flag();
+	void reset_function_used_flag();
 };
 
 

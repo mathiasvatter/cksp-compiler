@@ -591,6 +591,10 @@ void NodeProgram::reset_function_visited_flag() {
 	for(const auto & def : function_definitions) def->visited = false;
 }
 
+void NodeProgram::reset_function_used_flag() {
+	for(const auto & def : function_definitions) def->is_used = false;
+}
+
 
 
 
