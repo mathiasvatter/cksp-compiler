@@ -324,7 +324,7 @@ Result<std::unique_ptr<PreNodeDefineStatement>> PreprocessorParser::parse_define
     auto define_header_result = parse_define_header(define_statement.get());
     if(define_header_result.is_error())
         return Result<std::unique_ptr<PreNodeDefineStatement>>(define_header_result.get_error());
-    auto header = define_header_result.unwrap()->name->keyword.val;
+    auto header = define_header_result.unwrap()->name->value.val;
     if(peek().type != token::ASSIGN)
         return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
      "Found invalid Define Statement Syntax. Missing <assign> symbol.", peek().line, ":=", peek().val, peek().file));
@@ -337,7 +337,7 @@ Result<std::unique_ptr<PreNodeDefineStatement>> PreprocessorParser::parse_define
             return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
          "Unexpected end of m_tokens. Missing assignment of define statement.",peek().line, "", peek().val,peek().file));
 
-        if(peek().type == token::KEYWORD and define_header_result.unwrap()->name->keyword.val == peek().val) {
+        if(peek().type == token::KEYWORD and define_header_result.unwrap()->name->value.val == peek().val) {
             return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
 	    "A define constant cannot define itself.",peek().line,"","", peek().file));
 		}

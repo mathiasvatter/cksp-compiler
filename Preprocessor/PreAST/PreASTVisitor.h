@@ -8,6 +8,8 @@
 
 
 class PreASTVisitor {
+protected:
+	PreNodeProgram* m_program = nullptr;
 public:
     virtual void visit(PreNodeNumber& node) {};
     virtual void visit(PreNodeInt& node) {};
@@ -90,7 +92,5 @@ public:
             b->accept(*this);
         }
     };
-
-protected:
 
 };

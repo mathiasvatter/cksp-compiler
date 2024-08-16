@@ -13,6 +13,11 @@ void PreNodeAST::replace_with(std::unique_ptr<PreNodeAST> newNode) {
     }
 }
 
+// ************* PreNodeLiteral *************
+std::unique_ptr<PreNodeAST> PreNodeLiteral::clone() const {
+	return std::make_unique<PreNodeLiteral>(*this);
+}
+
 // ************* PreNodeNumber *************
 void PreNodeNumber::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);

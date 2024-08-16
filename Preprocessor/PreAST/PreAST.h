@@ -38,7 +38,7 @@ struct PreNodeAST {
 //	Token tok;
 	PreNodeType type;
 	PreNodeAST* parent = nullptr;
-	PreNodeAST(PreNodeAST* parent=nullptr, PreNodeType type=PreNodeType::DEAD_CODE) : parent(parent), type(type) {}
+	explicit PreNodeAST(PreNodeAST* parent=nullptr, PreNodeType type=PreNodeType::DEAD_CODE) : parent(parent), type(type) {}
     virtual ~PreNodeAST() = default;
     virtual void accept(class PreASTVisitor& visitor) {}
     // Virtuelle clone()-Methode für tiefe Kopien
@@ -67,33 +67,39 @@ std::unique_ptr<T> clone_as(PreNodeAST* node) {
 	return std::unique_ptr<T>(static_cast<T*>(node->clone().release()));
 }
 
-struct PreNodeNumber : PreNodeAST {
-    Token number;
-    PreNodeNumber(Token tok, PreNodeAST* parent) : PreNodeAST(parent, PreNodeType::NUMBER), number(std::move(tok)) {}
-    void accept(PreASTVisitor& visitor) override;
-    PreNodeNumber(const PreNodeNumber& other) : PreNodeAST(other), number(other.number) {}
-    [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+struct PreNodeLiteral : PreNodeAST {
+	Token value;
+	PreNodeLiteral(Token tok, PreNodeAST* parent, PreNodeType type=PreNodeType::DEAD_CODE) : PreNodeAST(parent, type), value(std::move(tok)) {}
+	PreNodeLiteral(const PreNodeLiteral& other) : PreNodeAST(other), value(other.value) {}
+	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
 	std::string get_string() override {
-		return number.val;
+		return value.val;
 	}
-    void update_token_data(const Token &token) override {
-        number.line = token.line; number.file = token.file;
-    }
+	void update_token_data(const Token &token) override {
+		value.line = token.line; value.file = token.file;
+	}
 };
 
-struct PreNodeInt : PreNodeAST {
-    int32_t integer;
-    Token number;
-    PreNodeInt(int32_t integer, Token number, PreNodeAST* parent) : PreNodeAST(parent, PreNodeType::INT), number(std::move(number)), integer(integer) {}
+struct PreNodeNumber : PreNodeLiteral {
+    PreNodeNumber(Token tok, PreNodeAST* parent) : PreNodeLiteral(tok, parent, PreNodeType::NUMBER) {}
     void accept(PreASTVisitor& visitor) override;
-    PreNodeInt(const PreNodeInt& other) : PreNodeAST(other), integer(other.integer), number(other.number) {}
+    PreNodeNumber(const PreNodeNumber& other) : PreNodeLiteral(other) {}
     [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
-	std::string get_string() override {
-		return number.val;
-	}
-    void update_token_data(const Token &token) override {
-        number.line = token.line; number.file = token.file;
-    }
+};
+
+struct PreNodeInt : PreNodeLiteral {
+    int32_t integer;
+    PreNodeInt(int32_t integer, Token number, PreNodeAST* parent) : PreNodeLiteral(number, parent, PreNodeType::INT), integer(integer) {}
+    void accept(PreASTVisitor& visitor) override;
+    PreNodeInt(const PreNodeInt& other) : PreNodeLiteral(other), integer(other.integer) {}
+    [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+};
+
+struct PreNodeKeyword : PreNodeLiteral {
+	PreNodeKeyword(Token tok, PreNodeAST *parent) : PreNodeLiteral(tok, parent, PreNodeType::KEYWORD) {}
+	void accept(PreASTVisitor& visitor) override;
+	PreNodeKeyword(const PreNodeKeyword& other) : PreNodeLiteral(other) {}
+	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
 };
 
 struct PreNodeUnaryExpr : PreNodeAST {
@@ -140,20 +146,6 @@ struct PreNodeBinaryExpr: PreNodeAST {
         op.line = token.line; op.file = token.file;
         left->update_token_data(token);
         right->update_token_data(token);
-    }
-};
-
-struct PreNodeKeyword : PreNodeAST {
-    Token keyword;
-	PreNodeKeyword(Token tok, PreNodeAST *parent) : PreNodeAST(parent, PreNodeType::KEYWORD), keyword(std::move(tok)) {}
-    void accept(PreASTVisitor& visitor) override;
-    PreNodeKeyword(const PreNodeKeyword& other) : PreNodeAST(other), keyword(other.keyword) {}
-    [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
-	std::string get_string() override {
-		return keyword.val;
-	}
-    void update_token_data(const Token &token) override {
-        keyword.line = token.line; keyword.file = token.file;
     }
 };
 
@@ -536,6 +528,8 @@ struct PreNodeIncrementer : PreNodeAST {
 };
 
 struct PreNodeProgram : PreNodeAST {
+	std::stack<PreNodeDefineStatement*> define_call_stack;
+	std::stack<PreNodeMacroCall*> macro_call_stack;
     std::vector<std::unique_ptr<PreNodeAST>> program;
     std::vector<std::unique_ptr<PreNodeDefineStatement>> define_statements;
     std::vector<std::unique_ptr<PreNodeMacroDefinition>> macro_definitions;

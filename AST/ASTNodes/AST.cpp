@@ -171,7 +171,6 @@ std::unique_ptr<NodeAST> NodeReference::clone() const {
 
 void NodeReference::match_data_structure(NodeDataStructure* data_structure) {
 	declaration = data_structure;
-	data_structure->is_used = true;
 	is_engine = data_structure->is_engine;
 	is_local = data_structure->is_local;
 	is_compiler_return = data_structure->is_compiler_return;

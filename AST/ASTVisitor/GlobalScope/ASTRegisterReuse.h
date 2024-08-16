@@ -73,6 +73,7 @@ public:
 		}
 		// rename all local references with their new passive_var names
 		for(auto & local_ref : m_all_local_references) {
+			local_ref->declaration->is_used = true;
 			if(local_ref->is_local) local_ref->name = local_ref->declaration->name;
 		}
 		m_all_local_vars.clear();
@@ -119,7 +120,6 @@ public:
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-
 		node.get_definition(m_program);
 		// do not visit definition -> because passive var allocation is separate between callbacks and functions
 		return &node;
@@ -257,11 +257,6 @@ private:
 	Gensym m_gensym;
 	NodeBlock* m_current_body = nullptr;
 
-	bool inline is_thread_safe_env() {
-		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or
-			(!m_program->function_call_stack.empty() and m_program->function_call_stack.top()->header->is_thread_safe);
-	};
-
 	/// vector for all local declarations in callbacks
 	std::unordered_map<NodeCallback*, std::vector<NodeSingleDeclaration*>> m_all_callback_decl = {};
 	/// vector for all local vars in functions -> do not get moved into on init
@@ -275,16 +270,7 @@ private:
 				m_passive_vars_map[get_passive_var_hash(var.second)].push_back(var.second);
 		}
 	};
-	static inline std::string get_passive_var_hash(NodeDataStructure* data) {
-		auto hash = data->ty->to_string();
-		// add size if it is array
-		if(data->get_node_type() == NodeType::Array) {
-			auto array = static_cast<NodeArray*>(data);
-			if(array->size) hash += array->size->get_string();
-		}
-		if(data->persistence.has_value()) hash += data->persistence.value().val;
-		return hash;
-	}
+
 	/// get next free passive_var for given type
 	inline NodeDataStructure* get_free_passive_var(NodeDataStructure* data) {
 		auto hash = get_passive_var_hash(data);

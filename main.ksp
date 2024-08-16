@@ -38,138 +38,45 @@ struct Note
 
 end struct
 
-on init
-	// const color
-	// 	a, b, c, d, e, f
-	// end const
-	// message(color.a)
-	// declare this_list: List := nil
-	// message(this_list)
-	// this_list := List(42, nil).next
-	// declare lists[5]: List[] := (nil)
-	// message(lists[0].next.value)
-	// message(this_list.next.value)
-	// message(this_list)
+on init	
+	declare ui_button btn_1, ui_button btn_2
 
-	// declare new_note: Note := Note(5, )
-	// declare velo[10]: int[] := new_note.get_velocities()
-	// // declare lists[5]: List[] := (nil)
+	do_sth(3)
+	do_sth(2)
+end on
 
-	declare ui_slider sli(1,500)
-	sli->text := "sdfkj"
-	set_bounds(sli, 1, 500)
-	// declare a: string
-	// a := sli->text & 3
-	declare ui_label uiarray[4](1,1)
+on ui_control( btn_1 )
+	do_sth(1)
+end on
 
-
-	declare nda[2,4] := ((1,2,3,4),(5,6,7,8))
-	message(nda)
-	nda := ((1,2,3,4),(5,6,7,8))
-	nda[0, *] := (0)
-	nda[*, 3] := (1,2,6)
-	nda[1, *] := nda[0, *]
-	message(nda.SIZE_D1)
-	
-	// message(ndarray[0,0,0])
-	
-	declare nda2[4,5,5]
-	nda2[1,*,*] := (2,3,4,5,6)
-	nda2[1,*,*] := (0)
-
-	declare arr[4]
-	nda[0, *] := arr
-	arr := nda[0, *]
-	const colorz
-		a
-		b
-	end const
-
-	declare @folder_path
-	@folder_path := get_folder(GET_FOLDER_LIBRARY_DIR)
-
-	scoped_func1()
-	scoped_func1()
-	declare b : int, c[6] := ret_sth()
-	c := return_ndarray_dimension()
-	
-	declare const TRUE := 1
-	declare scroll.up := 0	
-	floatmask(bit_list)
-	if floatmask.equal(bit_list,0) = TRUE
-		scroll.up := scroll.up //one of the first presets is chosen -> the clear button shall not change anything
-	else
-		scroll.up := 1
+on ui_control( btn_2 )
+	do_sth(4)
+	// wait(500)
+	do_sth_in_sth()
+	if(1=2)
+		declare a := 0
 	end if
 end on
 
-function floatmask.equal(float_mask1, float_mask2) -> result
-	result := eq(float_mask1[0] - float_mask2[0] + float_mask1[1] - float_mask2[1], 0)
-end function
-
-macro floatmask(#l#)
-	declare %#l#[2] := (0)
-end macro
-
-function scale.range(input,currentMin,currentMax,scaleToMin,scaleToMax) -> result
-	result := (input-currentMin)*(scaleToMax-scaleToMin)/(currentMax-currentMin)+scaleToMin
-end function
-
-function eq(a,b)
-  return -sh_right(abs(a-b)-1,31)
-end function
-
-function return_ndarray_dimension()
-	return nda[0, *]
-end function
-
-function ret_sth()
-	declare b[5] := (0)
-	return 1, (1,2,3,4)
-end function
-
-function ndarray_func(ndarray: int[][])
-	message(ndarray[0,0])
-end function
-
-on persistence_changed
-	declare array[5]
-	scoped_func1()
-	furz2(furz(1))
-end on
-
-function furz(z: int)
-	declare a: int
-	return z+a
-end function
-
-function furz2(z: int)
-	declare b: int
-	return z+b
-end function
-
-function scoped_func1()
+function do_sth(pipi : int)
 	declare text := "sdlkj"
 	message(text)
-	scoped_func2()
-	declare array[4] := (3,4)
+	declare a, b, c, d := 0
+	inc(a)
+	do_sth_in_sth()
+	message(a, pipi)
 end function
 
-function scoped_func2()
-	declare i: int
-	message(i)
-	if(i = 1)
-		declare arr[5]: int[] := (1)
-		declare j: int, k: int
-		message(j & k & arr[4])
-	end if
-	if(i = 2)
-		declare h: int, g: int
-		message(h & g)
-	end if
+function do_sth_in_sth()
+	declare z := 1
+	message(z)
 end function
 
 
+// if threadsafe environment, do no lifting -> all params are promoted to global variables
+// do necessary assignments in function calls if the function had previous params
+
+// if not threadsafe environment, do lifting and copy function definition with params
 
 {*******************************************************************************************************************
 											* UI CALLBACKS *

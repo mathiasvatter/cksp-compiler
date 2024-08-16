@@ -29,11 +29,10 @@ public:
 private:
 	std::string m_debug_token;
 
-	PreNodeProgram* m_main_ptr = nullptr;
 	std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_definitions;
 	std::unordered_map<std::string, PreNodeDefineStatement*> m_define_lookup;
 
-	void do_substitution(PreNodeAST& node, const Token & tok);
+	void do_substitution(PreNodeLiteral& node);
 	std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
 	std::unique_ptr<PreNodeDefineStatement> get_define_definition(PreNodeDefineHeader* define_header);
 	static std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> get_substitution_vector(PreNodeDefineHeader* definition, PreNodeDefineHeader* call);
@@ -41,7 +40,7 @@ private:
 	/// returns substitute for current node.name, or nullptr if there is no substitute
 	std::stack<std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>>> m_substitution_stack;
 
-	std::unordered_set<std::string> m_define_call_stack;
+	std::unordered_set<std::string> m_defines_used;
 	inline bool check_recursion(const Token &tok);
 
 	std::unordered_map<std::string, std::unique_ptr<PreNodeAST>> m_builtin_defines;
