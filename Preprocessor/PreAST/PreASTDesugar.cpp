@@ -8,58 +8,48 @@
 #include <iterator>
 
 void PreASTDesugar::visit(PreNodeProgram& node) {
-    m_main_ptr = &node;
+    m_program = &node;
 
     for(auto & def : node.macro_definitions) {
-        m_macro_lookup.insert({{def->header->name->keyword.val, (int)def->header->args->params.size()}, def.get()});
-		m_macro_string_lookup.insert({def->header->name->keyword.val, def.get()});
+        m_macro_lookup.insert({{def->header->name->value.val, (int)def->header->args->params.size()}, def.get()});
+		m_macro_string_lookup.insert({def->header->name->value.val, def.get()});
     }
     for(auto & n : node.program) {
         n->accept(*this);
     }
 }
 
+void PreASTDesugar::do_substitution(PreNodeLiteral& node) {
+	if(m_program->macro_call_stack.empty()) return;
+	if (!m_substitution_stack.empty()) {
+		if (auto substitute = get_substitute(node.value.val)) {
+			node.replace_with(std::move(substitute));
+			return;
+		} else if(node.get_node_type() == PreNodeType::KEYWORD) {
+			// in case there are more # substitutions in one word
+			if (count_char(node.value.val, '#') >= 2) {
+				node.value.val = get_text_replacement(node.value);
+			}
+		}
+	}
+}
+
 void PreASTDesugar::visit(PreNodeNumber& node) {
-	m_debug_token = node.get_string();
+//	m_debug_token = node.get_string();
     // substitution
-    if (!m_substitution_stack.empty()) {
-        if (auto substitute = get_substitute(node.number.val)) {
-//            substitute->update_token_data(node.number);
-            node.replace_with(std::move(substitute));
-            return;
-        }
-    }
+	do_substitution(node);
 }
 
 void PreASTDesugar::visit(PreNodeInt& node) {
-	m_debug_token = node.get_string();
+//	m_debug_token = node.get_string();
     // substitution
-    if (!m_substitution_stack.empty()) {
-        if (auto substitute = get_substitute(node.number.val)) {
-//            substitute->update_token_data(node.number);
-            node.replace_with(std::move(substitute));
-            return;
-        }
-    }
+	do_substitution(node);
 }
 
 void PreASTDesugar::visit(PreNodeKeyword& node) {
-	m_debug_token = node.get_string();
-
+//	m_debug_token = node.get_string();
     // substitution
-    if (!m_substitution_stack.empty()) {
-        if (auto substitute = get_substitute(node.keyword.val)) {
-//            substitute->update_token_data(node.keyword);
-            node.replace_with(std::move(substitute));
-            return;
-        } else {
-            // in case there are more # substitutions in one word
-            if (count_char(node.keyword.val, '#') >= 2) {
-                node.keyword.val = get_text_replacement(node.keyword);
-            }
-        }
-    }
-
+	do_substitution(node);
 }
 
 void PreASTDesugar::visit(PreNodeIncrementer& node) {
@@ -69,7 +59,7 @@ void PreASTDesugar::visit(PreNodeIncrementer& node) {
 }
 
 void PreASTDesugar::visit(PreNodeOther& node) {
-	m_debug_token = node.get_string();
+//	m_debug_token = node.get_string();
 }
 
 void PreASTDesugar::visit(PreNodeStatement& node) {
@@ -89,22 +79,32 @@ void PreASTDesugar::visit(PreNodeList& node) {
     }
 }
 
-void PreASTDesugar::visit(PreNodeMacroCall& node) {
-	m_debug_token = node.get_string();
+bool PreASTDesugar::check_recursion(const Token &tok) {
+	if(m_macros_used.find(tok.val) != m_macros_used.end()) {
+		// recursive function call detected
+		auto error = CompileError(ErrorType::PreprocessorError, "", "", tok);
+		error.m_message = "Recursive macro call detected. Calling macros inside their definition is not allowed.";
+		error.m_got = tok.val;
+		error.exit();
+		return true;
+	}
+	return false;
+}
 
+void PreASTDesugar::visit(PreNodeMacroCall& node) {
+//	m_debug_token = node.get_string();
+
+	m_program->macro_call_stack.push(&node);
     node.macro->accept(*this);
 
-    Token token_name = node.macro->name->keyword;
-    if(std::find(m_macro_call_stack.begin(), m_macro_call_stack.end(), token_name.val) != m_macro_call_stack.end()) {
-        // recursive function call detected
-        CompileError(ErrorType::PreprocessorError,"Recursive macro call detected. Calling macros inside their definition is not allowed.", token_name.line, "", token_name.val, token_name.file).exit();
-    }
+    Token token_name = node.macro->name->value;
+	check_recursion(token_name);
     // substitution
     auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
 
 	// see if parent is iterate or literate -> ignore amount of parameters then
     if(auto node_macro_definition = get_macro_definition(node.macro.get())) {
-        m_macro_call_stack.push_back(token_name.val);
+        m_macros_used.insert(token_name.val);
         node_macro_definition->parent = node.parent;
 		if(!node.macro->args->params.empty()) {
 			auto substitution_vec = get_substitution_vector(node_macro_definition->header.get(), node.macro.get());
@@ -128,11 +128,11 @@ void PreASTDesugar::visit(PreNodeMacroCall& node) {
         node_new_chunk->parent = node.parent;
 		if(!node.macro->args->params.empty()) {
 			m_substitution_stack.pop();
-
 		}
-        m_macro_call_stack.pop_back();
+        m_macros_used.erase(token_name.val);
     	node.replace_with(std::move(node_new_chunk));
     }
+	m_program->macro_call_stack.pop();
 }
 
 void PreASTDesugar::visit(PreNodeMacroHeader& node) {
@@ -265,7 +265,7 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar
 		auto &var = definition->args->params[i]->chunk[0];
 		if(definition->args->params[i]->chunk.size() > 1) {
 			auto err_msg = "Unable to substitute <macro> arguments. Found wrong number of substitution tokens in <macro-header>. Only <keywords> or <numbers> can be substituted.";
-			auto error = CompileError(ErrorType::SyntaxError, "", definition->name->keyword.line, "", definition->get_string(),definition->name->keyword.file);
+			auto error = CompileError(ErrorType::SyntaxError, "", definition->name->value.line, "", definition->get_string(),definition->name->value.file);
 			error.set_message(err_msg);
 			error.exit();
 		}
@@ -278,14 +278,14 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar
 }
 
 std::unique_ptr<PreNodeMacroDefinition> PreASTDesugar::get_macro_definition(PreNodeMacroHeader *macro_header) {
-    auto it = m_macro_lookup.find({macro_header->name->keyword.val, (int)macro_header->args->params.size()});
+    auto it = m_macro_lookup.find({macro_header->name->value.val, (int)macro_header->args->params.size()});
     if(it != m_macro_lookup.end()) {
         auto copy = clone_as<PreNodeMacroDefinition>(it->second);
         copy->update_parents(nullptr);
         return copy;
     }
 	// if macro call has no arguments (literate or iterate) and therefore does not match its original definition
-	auto it2 = m_macro_string_lookup.find(macro_header->name->keyword.val);
+	auto it2 = m_macro_string_lookup.find(macro_header->name->value.val);
 	if(it2 != m_macro_string_lookup.end()) {
 		auto copy = clone_as<PreNodeMacroDefinition>(it2->second);
 		copy->update_parents(nullptr);
@@ -305,28 +305,28 @@ std::unique_ptr<PreNodeAST> PreASTDesugar::get_substitute(const std::string& nam
 }
 
 std::string PreASTDesugar::get_text_replacement(const Token& name) {
+	// Zähle einmalig die Anzahl der '#' im Token
 	auto replacements = count_char(name.val, '#');
-	if(replacements % 2 != 0) {
+	if (replacements % 2 != 0) {
 		CompileError(ErrorType::PreprocessorError,
-		 "Found wrong number of # in macro replacement", name.line, "", name.val,name.file).exit();
+					 "Found wrong number of # in macro replacement", name.line, "", name.val, name.file).exit();
 	}
+	std::string result = name.val;
+	// Iteriere durch die Substitutionen
+	const auto& substitutions = m_substitution_stack.top();
+	for (const auto& replacement : substitutions) {
+		// Führe einen frühen Check durch, um zu sehen, ob replacement.first überhaupt qualifiziert ist
+		if (replacement.first.front() == '#' && replacement.first.back() == '#' &&
+			replacements % 2 == 0) {
+			size_t start = 0;
+			const std::string& replace_with = replacement.second->chunk[0]->get_string();
 
-    std::string result = name.val;
-    // Für jedes Ersetzungspaar
-    for (const auto& replacement : m_substitution_stack.top()) {
-        size_t start = 0;
-		// check that found replacement is text replacement
-		if(replacement.first.front() == '#' and replacement.first.back() == '#' and count_char(result, '#')%2==0) {
+			// Verwende result.find und result.replace direkt, ohne den String mehrfach zu verändern
 			while ((start = result.find(replacement.first, start)) != std::string::npos) {
-				// Ersetzt den gefundenen Substring durch pair.second
-				std::string replace_with = replacement.second->chunk[0]->get_string();
 				result.replace(start, replacement.first.length(), replace_with);
-				// Bewegt den Startpunkt vorbei am zuletzt ersetzten Substring,
-				// um Endlosschleifen zu vermeiden
 				start += replace_with.length();
 			}
 		}
-    }
-
-    return result;
+	}
+	return result;
 }

@@ -30,19 +30,18 @@ public:
 private:
 	std::string m_debug_token;
 
-    PreNodeProgram* m_main_ptr = nullptr;
-//    std::vector<std::unique_ptr<PreNodeMacroDefinition>> m_macro_definitions;
 	std::unordered_map<StringIntKey, PreNodeMacroDefinition*, StringIntKeyHash> m_macro_lookup;
     std::unordered_map<std::string, PreNodeMacroDefinition*> m_macro_string_lookup;
 
+	void do_substitution(PreNodeLiteral& node);
     std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
     static std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> get_substitution_vector(PreNodeMacroHeader* definition, PreNodeMacroHeader* call);
     std::unique_ptr<PreNodeMacroDefinition> get_macro_definition(PreNodeMacroHeader* macro_header);
     std::string get_text_replacement(const Token& name);
 
     std::stack<std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>>> m_substitution_stack;
-    std::vector<std::string> m_define_call_stack;
-    std::vector<std::string> m_macro_call_stack;
+	bool check_recursion(const Token &tok);
+    std::unordered_set<std::string> m_macros_used;
 };
 
 

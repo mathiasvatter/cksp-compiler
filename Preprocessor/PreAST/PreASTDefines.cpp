@@ -7,9 +7,9 @@
 #include <sstream>
 
 void PreASTDefines::visit(PreNodeProgram& node) {
-	m_main_ptr = &node;
+	m_program = &node;
 	for(const auto & def : node.define_statements) {
-		m_define_lookup.insert({def->header->name->keyword.val, def.get()});
+		m_define_lookup.insert({def->header->name->value.val, def.get()});
 	}
 
 	m_builtin_defines = get_builtin_defines();
@@ -24,9 +24,10 @@ void PreASTDefines::visit(PreNodeProgram& node) {
 	}
 }
 
-void PreASTDefines::do_substitution(PreNodeAST& node, const Token& tok) {
+void PreASTDefines::do_substitution(PreNodeLiteral& node) {
+	if(m_program->define_call_stack.empty()) return;
 	if (!m_substitution_stack.empty()) {
-		if (auto substitute = get_substitute(tok.val)) {
+		if (auto substitute = get_substitute(node.value.val)) {
 //			substitute->update_token_data(tok);
 			node.replace_with(std::move(substitute));
 			return;
@@ -36,22 +37,22 @@ void PreASTDefines::do_substitution(PreNodeAST& node, const Token& tok) {
 
 void PreASTDefines::visit(PreNodeNumber& node) {
 	// substitution
-	do_substitution(node, node.number);
+	do_substitution(node);
 }
 
 void PreASTDefines::visit(PreNodeInt& node) {
 	// substitution
-	do_substitution(node, node.number);
+	do_substitution(node);
 }
 
 void PreASTDefines::visit(PreNodeKeyword& node) {
-	if(auto builtin_define = get_builtin_define(node.keyword.val)) {
-		builtin_define->update_token_data(node.keyword);
+	if(auto builtin_define = get_builtin_define(node.value.val)) {
+		builtin_define->update_token_data(node.value);
 		node.replace_with(std::move(builtin_define));
 		return;
 	}
 	// substitution
-	do_substitution(node, node.keyword);
+	do_substitution(node);
 }
 
 std::unique_ptr<PreNodeAST> PreASTDefines::get_builtin_define(const std::string& keyword) {
@@ -100,7 +101,7 @@ void PreASTDefines::visit(PreNodeDefineStatement& node) {
 }
 
 bool PreASTDefines::check_recursion(const Token &tok) {
-	if(m_define_call_stack.find(tok.val) != m_define_call_stack.end()) {
+	if(m_defines_used.find(tok.val) != m_defines_used.end()) {
 		// recursive function call detected
 		auto error = CompileError(ErrorType::PreprocessorError, "", "", tok);
 		error.m_message = "Recursive define call detected. Calling defines inside their definition is not allowed.";
@@ -112,14 +113,15 @@ bool PreASTDefines::check_recursion(const Token &tok) {
 }
 
 void PreASTDefines::visit(PreNodeDefineCall& node) {
-	Token token_name = node.define->name->keyword;
+	Token token_name = node.define->name->value;
 	check_recursion(token_name);
 
 	node.define->accept(*this);
 	//substitution
 	auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
 	if( auto node_define_definition = get_define_definition(node.define.get())) {
-		m_define_call_stack.insert(token_name.val);
+		m_defines_used.insert(token_name.val);
+		m_program->define_call_stack.push(node_define_definition.get());
 		node_define_definition->parent = node.parent;
 		auto substitution_vec = get_substitution_vector(node_define_definition->header.get(), node.define.get());
 		m_substitution_stack.push(std::move(substitution_vec));
@@ -127,13 +129,14 @@ void PreASTDefines::visit(PreNodeDefineCall& node) {
 		node_new_chunk = std::move(node_define_definition->body);
 		node_new_chunk->parent = node.parent;
 		m_substitution_stack.pop();
-		m_define_call_stack.erase(token_name.val);
+		m_program->define_call_stack.pop();
+		m_defines_used.erase(token_name.val);
 	}
 	node.replace_with(std::move(node_new_chunk));
 }
 
 std::unique_ptr<PreNodeDefineStatement> PreASTDefines::get_define_definition(PreNodeDefineHeader *define_header) {
-	auto it = m_define_lookup.find(define_header->name->keyword.val);
+	auto it = m_define_lookup.find(define_header->name->value.val);
 	if(it != m_define_lookup.end()) {
 		auto copy = clone_as<PreNodeDefineStatement>(it->second);
 		copy->update_parents(nullptr);
@@ -157,7 +160,7 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDefines::ge
 		auto &var = definition->args->params[i]->chunk[0];
 		if(definition->args->params[i]->chunk.size() > 1) {
 			CompileError(ErrorType::SyntaxError,
-			 "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>", definition->name->keyword.line, "", definition->get_string(),definition->name->keyword.file).exit();
+			 "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>", definition->name->value.line, "", definition->get_string(),definition->name->value.file).exit();
 		}
 		std::pair<std::string, std::unique_ptr<PreNodeChunk>> pair;
 		pair.first = var->get_string();

@@ -79,6 +79,16 @@ public:
 			return &node;
 		}
 
+		// only threadsafe functions can be called in <on init> callback
+		if(m_current_callback == m_program->init_callback) {
+			if(!node.definition->header->is_thread_safe) {
+				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+				error.m_message = "Only threadsafe functions can be called in the <on init> callback. Function <"
+								  +node.function->name+"> contains asychronous operations.";
+				error.exit();
+			}
+		}
+
 		check_recursion(node.definition);
 		m_program->function_call_stack.push(node.definition);
 		m_functions_in_use.insert(node.definition);
@@ -113,9 +123,12 @@ public:
 		m_program->function_call_stack.pop();
 
 		node.definition->call_sites.clear();
-		node.definition = nullptr;
 		if (node.is_call) {
-			m_function_definitions.push_back(std::move(node_func_def));
+			if(!node.definition->visited) {
+				m_function_definitions.push_back(std::move(node_func_def));
+			}
+			node.definition->visited = true;
+			node.definition = nullptr;
 			return &node;
 		}
 		return node.replace_with(std::move(node_func_def->body));
@@ -244,6 +257,7 @@ public:
 	NodeAST* do_substitution(NodeReference* ref) {
 		if(m_program->function_call_stack.empty()) return ref;
 		if(m_substitution_stack.empty()) return ref;
+		if(!ref->declaration->is_function_param()) return ref;
 
 		if(auto substitute = get_substitute(ref->name)) {
 			// if substitute and ref are both of type <Composite> and <ArrayRef>: only change name

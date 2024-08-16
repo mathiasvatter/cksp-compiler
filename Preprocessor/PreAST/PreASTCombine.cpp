@@ -11,15 +11,15 @@ void PreASTCombine::visit(PreNodeChunk& node) {
 }
 
 void PreASTCombine::visit(PreNodeNumber &node) {
-    m_tokens.push_back(std::move(node.number));
+    m_tokens.push_back(std::move(node.value));
 }
 
 void PreASTCombine::visit(PreNodeInt &node) {
-    m_tokens.push_back(std::move(node.number));
+    m_tokens.push_back(std::move(node.value));
 }
 
 void PreASTCombine::visit(PreNodeKeyword &node) {
-    m_tokens.push_back(std::move(node.keyword));
+    m_tokens.push_back(std::move(node.value));
 }
 
 void PreASTCombine::visit(PreNodeOther &node) {

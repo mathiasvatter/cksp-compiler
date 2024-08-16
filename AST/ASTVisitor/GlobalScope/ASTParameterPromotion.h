@@ -19,10 +19,10 @@ private:
 	/// map for local variable declarations per function definition to be added to the next/above function
 	std::unordered_map<NodeFunctionDefinition*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_local_var_declarations;
 	/// map for local variable declarations per function definition to be added to the next/above callback when no function is above
-	/// TODO: unordered_map per statement to insert declarations right above the function call even when nested function calls
-//	std::unordered_map<NodeCallback*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_callback;
 	std::unordered_map<NodeStatement*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_stmt;
 	NodeStatement* m_last_stmt = nullptr;
+
+	std::unordered_map<std::string, std::unique_ptr<NodeSingleDeclaration>> m_local_function_vars;
 public:
 	explicit ASTParameterPromotion(DefinitionProvider* definition_provider) : ASTGlobalScope(definition_provider) {}
 	~ASTParameterPromotion() = default;
@@ -42,11 +42,13 @@ public:
 				decl.second->is_promoted = true;
 				node_body->add_stmt(std::make_unique<NodeStatement>(clone_as<NodeSingleDeclaration>(decl.second.get()), node.tok));
 			}
-//			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
 			node_body->add_stmt(clone_as<NodeStatement>(stmt.first));
 			stmt.first->statement->replace_with(std::move(node_body));
-//			m_last_stmt->replace_with(std::move(node_body));
 		}
+		for(auto & m_local_function_var : m_local_function_vars) {
+			m_program->global_declarations->add_stmt(std::make_unique<NodeStatement>(std::move(m_local_function_var.second), node.tok));
+		}
+
 		return &node;
 	}
 
@@ -86,54 +88,58 @@ public:
             return &node;
         }
 
-		if(node.definition and not node.definition->visited) {
-			// extra arguments in definition
-			// get declare statements of local variables
-
+		if(node.definition and !node.definition->visited) {
 			node.definition->accept(*this);
-			for (auto &decl : m_local_var_declarations[node.definition]) {
-				// add local declarations of function definition to parameters
-				node.definition->header->args->params.push_back(decl.second->variable->clone());
-				for (auto &call_site : node.definition->call_sites) {
-					// add references to those local variables in the function call
-					call_site->function->args->params.push_back(decl.second->variable->to_reference());
-					call_site->function->args->params.back()->parent = call_site->function->args.get();
+
+			// see if this call is in thread safe env -> if not, clone and promote local vars
+			if(!node.definition->header->is_thread_safe and !m_local_var_declarations[node.definition].empty()) {
+				// do this only if current call is not threadsafe environment
+				for (auto &decl : m_local_var_declarations[node.definition]) {
+					// add local declarations of function definition to parameters
+					node.definition->header->args->add_param(decl.second->variable->clone());
+					for (auto &call_site : node.definition->call_sites) {
+						// add references to those local variables in the function call
+						call_site->function->args->add_param(decl.second->variable->to_reference());
+					}
 				}
 			}
-			node.definition->header->args->set_child_parents();
 		}
-
-		// do declaration insertion only if there are local declarations in function
-		if(m_local_var_declarations[node.definition].empty()) return &node;;
 
 		if(node.definition) {
-			// add declaration statements to the body of the current/above function or callback if function stack is empty
-			auto& next_declares = m_program->function_call_stack.empty() ? m_declares_per_stmt[m_last_stmt] : m_local_var_declarations[m_program->function_call_stack.top()];
-			for (auto &decl : m_local_var_declarations[node.definition]) {
-				next_declares.emplace(decl.first,clone_as<NodeSingleDeclaration>(decl.second.get()));
+			// if the call is in a nested function -> get the local var declaration map to the above function
+			if(!m_program->function_call_stack.empty()) {
+				// add declaration statements to the body of the current/above function
+				auto &next_declares = m_local_var_declarations[m_program->function_call_stack.top()];
+				for (auto &decl : m_local_var_declarations[node.definition]) {
+					next_declares.emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
+				}
+			// if the call is in a callback -> check if threadsafe (add to global declarations) or not (do parameter promotion)
+			} else {
+				// if the call is in a threadsafe environment
+				if(node.definition->header->is_thread_safe) {
+					// otherwise add them to global declarations
+					for (auto &decl : m_local_var_declarations[node.definition]) {
+						// set to global to prevent from being used in other functions by register reuse
+//						decl.second->variable->is_local = true;
+						m_local_function_vars.emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
+					}
+				} else {
+					// add declaration statements to the statement right above the function call
+					for (auto &decl : m_local_var_declarations[node.definition]) {
+						m_declares_per_stmt[m_last_stmt].emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
+					}
+				}
+
 			}
 
-			// remove call flag when function call got parameters
-			if(!node.function->args->params.empty()) {
+			// remove call flag when function is not thread safe
+			if(!node.definition->header->is_thread_safe and !node.function->args->params.empty()) {
 				node.is_call = false;
+			} else if (node.definition->header->is_thread_safe and node.function->args->params.empty()){
+				if(m_program->current_callback != m_program->init_callback) node.is_call = true;
 			}
-		}
 
-//		if(m_program->function_call_stack.empty() and !m_declares_per_stmt[m_last_stmt].empty()) {
-//			// if in callback, put the declarations right above the function call
-//			auto node_body = std::make_unique<NodeBlock>(node.tok);
-//			node_body->scope = true;
-//			for(auto &decl : m_declares_per_stmt[m_last_stmt]) {
-//				decl.second->is_promoted = true;
-//				node_body->add_stmt(std::make_unique<NodeStatement>(clone_as<NodeSingleDeclaration>(decl.second.get()), node.tok));
-//			}
-//			m_declares_per_stmt[m_last_stmt].clear();
-////			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
-//			node_body->add_stmt(clone_as<NodeStatement>(m_last_stmt));
-//			node.replace_with(std::move(node_body));
-////			m_last_stmt->replace_with(std::move(node_body));
-//			return;
-//		}
+		}
 		return &node;
 	}
 
@@ -167,13 +173,10 @@ public:
                    );
 
 
-//		auto node_assignment = node.to_assign_stmt();
-//		node.replace_with(std::move(node_assignment));
 		return node.replace_with(to_assign_statement(node));
 	}
 
     inline NodeAST* visit(NodeArray& node) override {
-//        node.size = nullptr;
         node.show_brackets = false;
 		return &node;
     }

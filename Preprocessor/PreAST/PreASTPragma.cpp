@@ -13,14 +13,14 @@ void PreASTPragma::visit(PreNodeProgram& node) {
 
 void PreASTPragma::visit(PreNodePragma& node) {
     auto option = node.option->get_string();
-    auto token = node.option->keyword;
+    auto token = node.option->value;
     auto it = m_pragma_directives.find(option);
     if(it == m_pragma_directives.end()) {
         CompileError(ErrorType::PreprocessorError, "Found unknown #pragma option.", token.line, "valid option.",option, token.file).exit();
     }
-    auto argument = node.argument->keyword.val;
-    std::string current_file = node.argument->keyword.file;
-    if(node.argument->keyword.type == token::STRING) {
+    auto argument = node.argument->value.val;
+    std::string current_file = node.argument->value.file;
+    if(node.argument->value.type == token::STRING) {
         // erase ""
         argument.erase(0,1);
         argument.pop_back();

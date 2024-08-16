@@ -51,11 +51,13 @@ NodeAST * ASTSemanticAnalysis::visit(NodeBlock &node) {
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
+	m_program->function_call_stack.push(&node);
 	node.visited = true;
     node.header ->accept(*this);
     if (node.return_variable.has_value())
         node.return_variable.value()->accept(*this);
     node.body->accept(*this);
+	m_program->function_call_stack.pop();
 	return &node;
 }
 
@@ -68,11 +70,13 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 		if(!node.definition->visited) node.definition->accept(*this);
 	}
 
-	if(!m_program->function_call_stack.empty()) {
-		m_program->function_call_stack.top()->header->is_thread_safe &= node.function->is_thread_safe;
+	if(node.definition) {
+		if(!m_program->function_call_stack.empty()) {
+			m_program->function_call_stack.top()->header->is_thread_safe &= node.definition->header->is_thread_safe;
+		}
+		if(m_program->current_callback) m_program->current_callback->is_thread_safe &= node.definition->header->is_thread_safe;
+//		if(m_program->current_callback) node.definition->header->is_thread_safe &= m_program->current_callback->is_thread_safe;
 	}
-	if(m_program->current_callback) m_program->current_callback->is_thread_safe &= node.function->is_thread_safe;
-	if(m_program->current_callback) node.function->is_thread_safe &= m_program->current_callback->is_thread_safe;
 
 	// if definition parameters of this function have different node types as the call site -> update
 	update_func_call_node_types(&node);

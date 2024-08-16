@@ -140,6 +140,15 @@ private:
 									node.tok
 									)
 								);
+		} else if (node.variable->get_node_type() == NodeType::Variable) {
+			auto node_var = static_cast<NodeVariable*>(node.variable.get());
+			// no string const variables are allowed???
+			node_var->data_type = DataType::Mutable;
+			if(node.value) {
+				node_body = std::make_unique<NodeBlock>(node.tok);
+				node_body->add_stmt(std::make_unique<NodeStatement>(std::make_unique<NodeSingleAssignment>(node_var->to_reference(), std::move(node.value), node.tok), node.tok));
+				node_body->prepend_stmt(std::make_unique<NodeStatement>(std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok), node.tok));
+			}
 		}
 		// if node_body is set, replace node with node_body
 		if(node_body) {
