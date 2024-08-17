@@ -9,6 +9,7 @@
 #include "AST/ASTVisitor/ASTDataStructureLowering.h"
 #include "AST/ASTVisitor/NormalizeNDArrayAssign.h"
 #include "AST/ASTVisitor/ASTFunctionInlining.h"
+#include "AST/ASTVisitor/ASTRelinkGlobalScope.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -171,8 +172,10 @@ void Compiler::compile() {
     compile_time.stop("Function Inlining");
 	compile_time.start("Variable Checking 2");
 
-	ASTVariableChecking variable_checking2(&m_definition_provider, true);
-    ast->accept(variable_checking2);
+//	ASTVariableChecking variable_checking2(&m_definition_provider, true);
+//    ast->accept(variable_checking2);
+	ASTRelinkGlobalScope relink_global_scope(&m_definition_provider);
+	ast->accept(relink_global_scope);
 
 	compile_time.stop("Variable Checking 2");
 	compile_time.start("Optimization");
