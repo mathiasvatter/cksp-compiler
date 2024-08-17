@@ -54,6 +54,20 @@ private:
     NodeBlock* m_current_block = nullptr;
 	DefinitionProvider* m_def_provider = nullptr;
 
+	/// track functions in use to search for recursive calls
+	std::unordered_set<NodeFunctionDefinition*> m_functions_in_use;
+	inline bool check_recursion(NodeFunctionDefinition* func) {
+		if(m_functions_in_use.find(func) != m_functions_in_use.end()) {
+			// recursive function call detected
+			auto error = CompileError(ErrorType::SyntaxError, "", "", func->tok);
+			error.m_message = "Recursive function call detected. Calling functions inside their definition is not allowed.";
+			error.m_got = func->header->name;
+			error.exit();
+			return true;
+		}
+		return false;
+	}
+
 	static CompileError get_apply_type_annotations_error(NodeDataStructure* node) {
 		auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
 		error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";

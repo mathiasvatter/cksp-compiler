@@ -193,6 +193,7 @@ NodeFunctionDefinition* DefinitionProvider::get_property_function(NodeFunctionHe
 }
 
 NodeDataStructure *DefinitionProvider::get_declared_data_structure(const std::string& data) {
+	// then search in all other scopes
     for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
 		auto it = rit->find(data);
         if (it != rit->end()) {

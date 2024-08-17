@@ -134,6 +134,7 @@ void Compiler::compile() {
 	ast->accept(return_function_rewriting);
 
 	compile_time.stop("Return Function Rewriting");
+	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
 	compile_time.start("Data Structure Lowering");
 
 	NormalizeNDArrayAssign nd_array_assign(&m_definition_provider);

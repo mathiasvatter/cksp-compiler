@@ -48,7 +48,7 @@ public:
 		if(node.return_variable.has_value()) {
 			node.num_return_params = 1;
 			if(!throw_deprecated_warning) {
-				LoweringFunctionDef::throw_function_deprecation_error(node.return_variable.value()->tok);
+				LoweringFunctionDef::throw_function_deprecation_error(node.return_variable.value()->tok).print();
 				throw_deprecated_warning = true;
 			}
 			node.return_variable.value()->data_type = DataType::Return;
