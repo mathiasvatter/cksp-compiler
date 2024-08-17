@@ -61,6 +61,14 @@ private:
 		return error;
 	}
 
+	static inline bool set_as_function_param(NodeDataStructure* node) {
+		if(node->is_function_param() and node->data_type != DataType::Return) {
+			node->data_type = DataType::Param;
+			return true;
+		}
+		return false;
+	}
+
 	/// node can be NodeFunctionCall or NodeReference
 	/// transformation when first object is clearly a reference this_list.next.next()
 	/// tries to get declaration of first object and if there is one, replaces it with method chain

@@ -16,6 +16,7 @@ enum class DataType {
 	UIControl,
 	UIArray,
 	Return,
+	Param,
 };
 
 inline std::string data_type_to_string(DataType type) {

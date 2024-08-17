@@ -69,13 +69,27 @@ public:
 		if(node.get_definition(m_program)) {
 			// if it is not an expression-only function, do not transform into return statement, instead add return variable to function header
 			transform_to_return_function(node.definition);
-			if(!node.definition->visited) node.definition->accept(*this);
+
+			if(!node.definition->visited) {
+//				if(is_expression_function(node.definition)) {
+//					std::unordered_set<std::string> function_params;
+//					for (auto &param : node.definition->header->args->params) {
+//						function_params.insert(static_cast<NodeDataStructure *>(param.get())->name);
+//					}
+//					m_function_params.push(function_params);
+//					node.definition->body->accept(*this);
+//					m_function_params.pop();
+//				} else {
+					node.definition->accept(*this);
+//				}
+			}
+
 			node.definition->visited = true;
 			// see if the function is a return-only function
 			if(is_expression_function(node.definition)) {
 				check_recursion(node.definition);
-				m_program->function_call_stack.push(node.definition);
 				m_functions_in_use.insert(node.definition);
+				m_program->function_call_stack.push(node.definition);
 
 				auto node_func_def = clone_as<NodeFunctionDefinition>(node.definition);
 				m_substitution_stack.push(get_substitution_map(node_func_def->header.get(), node.function.get()));
@@ -90,7 +104,6 @@ public:
 			} else {
 				node.definition->is_used = true;
 			}
-
 		}
 		return &node;
 	}
