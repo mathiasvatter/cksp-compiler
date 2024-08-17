@@ -16,6 +16,7 @@
 /// NodeFunctionHeader
 class ASTExpressionFunctionInlining: public ASTFunctionInlining {
 private:
+	bool deprecated_warning = false;
 public:
 	inline explicit ASTExpressionFunctionInlining(DefinitionProvider *definition_provider) : ASTFunctionInlining(definition_provider) {}
 
@@ -45,9 +46,12 @@ public:
 	}
 
 	/// only transforms expression only function into return statement functions
-	static inline bool transform_to_return_function(NodeFunctionDefinition* def) {
+	inline bool transform_to_return_function(NodeFunctionDefinition* def) {
 		if(!def->return_variable.has_value()) return false;
-		LoweringFunctionDef::throw_function_deprecation_error(def->return_variable.value()->tok);
+		if(!deprecated_warning) {
+			LoweringFunctionDef::throw_function_deprecation_error(def->return_variable.value()->tok).print();
+			deprecated_warning = true;
+		}
 		if(def->body->statements.size() == 1) {
 			auto stmt = def->body->statements[0]->statement.get();
 			if(stmt->get_node_type() == NodeType::SingleAssignment) {
@@ -69,26 +73,12 @@ public:
 		if(node.get_definition(m_program)) {
 			// if it is not an expression-only function, do not transform into return statement, instead add return variable to function header
 			transform_to_return_function(node.definition);
-
 			if(!node.definition->visited) {
-//				if(is_expression_function(node.definition)) {
-//					std::unordered_set<std::string> function_params;
-//					for (auto &param : node.definition->header->args->params) {
-//						function_params.insert(static_cast<NodeDataStructure *>(param.get())->name);
-//					}
-//					m_function_params.push(function_params);
-//					node.definition->body->accept(*this);
-//					m_function_params.pop();
-//				} else {
-					node.definition->accept(*this);
-//				}
+				node.definition->accept(*this);
 			}
-
 			node.definition->visited = true;
 			// see if the function is a return-only function
 			if(is_expression_function(node.definition)) {
-				check_recursion(node.definition);
-				m_functions_in_use.insert(node.definition);
 				m_program->function_call_stack.push(node.definition);
 
 				auto node_func_def = clone_as<NodeFunctionDefinition>(node.definition);
@@ -97,7 +87,6 @@ public:
 				node_func_def->body->accept(*this);
 
 				m_substitution_stack.pop();
-				m_functions_in_use.erase(node.definition);
 				m_program->function_call_stack.pop();
 
 				return node.replace_with(get_expression_func_return(node_func_def.get()));

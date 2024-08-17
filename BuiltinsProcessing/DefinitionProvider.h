@@ -88,7 +88,7 @@ public:
 	bool refresh_data_vectors() {
 		m_all_declarations.clear();
 		m_all_references.clear();
-		m_all_declarations.clear();
+		m_all_data_structures.clear();
 		m_all_assignments.clear();
 		m_references_per_data_structure.clear();
 		return true;

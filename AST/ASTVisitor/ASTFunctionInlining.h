@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <regex>
+#include <future>
 #include "ASTVisitor.h"
 
 class ASTFunctionInlining : public ASTVisitor {
@@ -25,13 +25,19 @@ public:
 			callback->accept(*this);
 		}
 
-		/// vector to house only the definitions that are actually used in the program
-//		for(auto & func_def : node.function_definitions) {
-//			if(func_def->is_used) {
-//				m_function_definitions.push_back(std::move(func_def));
-//			}
+//		// Verbesserung: Parallelisiere die Verarbeitung
+//		std::vector<std::future<void>> futures;
+//		for(auto & callback : node.callbacks) {
+//			futures.push_back(std::async(std::launch::async, [&]{
+//			  callback->accept(*this);
+//			}));
+//		}
+//
+//		for (auto &fut : futures) {
+//			fut.get();  // Warte auf die Beendigung aller Aufgaben
 //		}
 
+		/// vector to house only the definitions that are actually used in the program
 		node.function_definitions = std::move(m_function_definitions);
 		node.update_function_lookup();
 		return &node;
@@ -88,9 +94,7 @@ public:
 			}
 		}
 
-		check_recursion(node.definition);
 		m_program->function_call_stack.push(node.definition);
-		m_functions_in_use.insert(node.definition);
 
 		if(node.kind != NodeFunctionCall::Kind::UserDefined) {
 			CompileError(ErrorType::InternalError,"Found function that is neither tagged Property, Undefined, Builtin or UserDefined.", "", node.tok).exit();
@@ -112,35 +116,28 @@ public:
 			node.is_call = false;
 		}
 
-//		if(!node.definition->visited) {
-//			std::unordered_set<std::string> function_params;
-//			for(auto& param : node.definition->header->args->params) {
-//				function_params.insert(static_cast<NodeDataStructure*>(param.get())->name);
-//			}
-//			m_function_params.push(function_params);
-//			node.definition->body->accept(*this);
-//			m_function_params.pop();
-//		}
-
-		auto node_func_def = clone_as<NodeFunctionDefinition>(node.definition);
-		m_substitution_stack.push(get_substitution_map(node_func_def->header.get(), node.function.get()));
-
-		node_func_def->body->accept(*this);
-
-		m_substitution_stack.pop();
-		m_functions_in_use.erase(node.definition);
+		std::unique_ptr<NodeFunctionDefinition> node_func_def = nullptr;
+		if(node.is_call) {
+			if(!node.definition->visited) {
+				node.definition->accept(*this);
+				m_function_definitions.push_back(clone_as<NodeFunctionDefinition>(node.definition));
+				node.definition->visited = true;
+				node.definition->call_sites.clear();
+			}
+		} else {
+			node_func_def = clone_as<NodeFunctionDefinition>(node.definition);
+			m_substitution_stack.push(get_substitution_map(node_func_def->header.get(), node.function.get()));
+			node_func_def->body->accept(*this);
+			m_substitution_stack.pop();
+		}
 		m_program->function_call_stack.pop();
 
-		node.definition->call_sites.clear();
-		if (node.is_call) {
-			if(!node.definition->visited) {
-				m_function_definitions.push_back(std::move(node_func_def));
-			}
-			node.definition->visited = true;
+		if(node.is_call) {
 			node.definition = nullptr;
 			return &node;
+		} else {
+			return node.replace_with(std::move(node_func_def->body));
 		}
-		return node.replace_with(std::move(node_func_def->body));
 	}
 
 	/// do substitution
@@ -183,6 +180,7 @@ public:
 
 	static std::unordered_map<std::string, std::unique_ptr<NodeAST>> get_substitution_map(NodeFunctionHeader* definition, NodeFunctionHeader* call) {
 		std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_map;
+		substitution_map.reserve(definition->args->params.size());
 		for (size_t i = 0; i < definition->args->params.size(); ++i) {
 			auto& var = definition->args->params[i];
 			// Überprüfen, ob var ein NodeDataStructure ist
@@ -297,8 +295,6 @@ protected:
 	/// can only house called functions with no params
 //	std::set<NodeFunctionDefinition*> m_used_function_definitions;
 
-	/// track functions in use to search for recursive calls
-	std::unordered_set<NodeFunctionDefinition*> m_functions_in_use;
 	/// track all parameter->arg pairs when substituting
 	std::stack<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_substitution_stack;
 	inline std::unique_ptr<NodeAST> get_substitute(const std::string& name) {
@@ -312,18 +308,6 @@ protected:
 			return substitute;
 		}
 		return nullptr;
-	}
-
-	inline bool check_recursion(NodeFunctionDefinition* func) {
-		if(m_functions_in_use.find(func) != m_functions_in_use.end()) {
-			// recursive function call detected
-			auto error = CompileError(ErrorType::SyntaxError, "", "", func->tok);
-			error.m_message = "Recursive function call detected. Calling functions inside their definition is not allowed.";
-			error.m_got = func->header->name;
-			error.exit();
-			return true;
-		}
-		return false;
 	}
 
 };

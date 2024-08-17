@@ -105,15 +105,12 @@ public:
 		if(node.definition and !node.definition->visited) {
 			node.definition->accept(*this);
 
-
 			// see if this call is in thread safe env -> if not, clone and promote local vars
 			if(!node.definition->header->is_thread_safe and !m_local_var_declarations[node.definition].empty()) {
 				// do this only if current call is not threadsafe environment
 				for (auto &decl : m_local_var_declarations[node.definition]) {
 					// add local declarations of function definition to parameters
-					auto new_param = clone_as<NodeDataStructure>(decl.second->variable.get());
-					new_param->data_type = DataType::Param;
-					node.definition->header->args->add_param(std::move(new_param));
+					node.definition->header->args->add_param(clone_as<NodeDataStructure>(decl.second->variable.get()));
 					for (auto &call_site : node.definition->call_sites) {
 						// add references to those local variables in the function call
 						call_site->function->args->add_param(decl.second->variable->to_reference());
@@ -168,8 +165,8 @@ public:
 
 	inline NodeAST* visit(NodeFunctionDefinition& node) override {
 		m_program->function_call_stack.push(&node);
-		node.body->accept(*this);
 		node.visited = true;
+		node.body->accept(*this);
 		m_program->function_call_stack.pop();
 		return &node;
 	}
@@ -185,7 +182,7 @@ public:
 			return &node;
 		}
 		// if it is a local variable, set data type to param because it is prob going to be promoted
-		if(node.variable->is_local) node.variable->data_type = DataType::Param;
+//		if(node.variable->is_local) node.variable->data_type = DataType::Param;
         // visit declaration node because array as function param needs to have <no brackets>
         node.variable->accept(*this);
 
@@ -206,15 +203,6 @@ public:
         node.show_brackets = false;
 		return &node;
     }
-
-//	inline NodeAST* visit(NodeVariableRef& node) override {
-//		m_references
-//	}
-//	inline NodeAST* visit(NodeArrayRef& node) override {
-//		if(node.index) node.index->accept(*this);
-//		m_references[node.name].insert(&node);
-//		return &node;
-//	}
 
 
 };
