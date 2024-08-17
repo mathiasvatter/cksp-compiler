@@ -107,6 +107,7 @@ bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBlock* curr
 
 bool NodeDataStructure::is_function_param() {
 	if(!this->parent) return false;
+	if(this->parent->get_node_type() == NodeType::SingleDeclaration) return false;
     if(!this->parent->parent) return false;
 	bool func_param = this->parent->get_node_type() == NodeType::ParamList and
 		(this->parent->parent->get_node_type() == NodeType::FunctionHeader or

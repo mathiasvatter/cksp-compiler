@@ -7,9 +7,11 @@
 #include "ASTVisitor.h"
 #include "../../Optimization/ConstantFolding.h"
 #include "../../Optimization/ConstantPropagation.h"
+#include "../../Optimization/VariablePruning.h"
 
 /** @brief Class for AST Optimizations
- * Removing of unused variables, arrays, etc.
+ * Constant Propagation
+ * Variable Pruning
  * Constant Folding
  */
 class ASTOptimizations : public ASTVisitor {
@@ -21,6 +23,8 @@ public:
 	inline NodeAST* visit(NodeProgram& node) override {
 		static ConstantPropagation constant_propagation;
 		node.accept(constant_propagation);
+		static VariablePruning variable_pruning;
+		node.accept(variable_pruning);
 
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
@@ -42,18 +46,6 @@ public:
 	inline NodeAST* visit(NodeBinaryExpr& node) override {
 		static ConstantFolding constant_folding;
 		node.accept(constant_folding);
-		return &node;
-	}
-
-	/// remove unused variables
-	inline NodeAST* visit(NodeSingleDeclaration& node) override {
-		// remove unused variables -> do not remove UIControls
-		if(!node.variable->is_used and node.variable->get_node_type() != NodeType::UIControl) {
-			return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
-		}
-
-		node.variable->accept(*this);
-		if(node.value) node.value->accept(*this);
 		return &node;
 	}
 

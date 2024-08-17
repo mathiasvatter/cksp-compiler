@@ -162,6 +162,7 @@ public:
 			node.variable->is_local = false;
 			node.variable->is_global = true;
 			m_def_provider->set_declaration(node.variable.get(), !node.variable->is_local);
+//			node.variable->accept(*this);
 			return &node;
 		}
 
@@ -208,7 +209,7 @@ public:
 		return &node;
 	}
 
-	NodeAST inline * visit(NodeArray& node) override {
+	inline NodeAST * visit(NodeArray& node) override {
 		node.determine_locality(m_program, m_current_body);
 
 		if(node.size) node.size->accept(*this);
@@ -218,7 +219,10 @@ public:
 		return &node;
 	}
 
-	NodeAST inline * visit(NodeVariableRef& node) override {
+	inline NodeAST * visit(NodeVariableRef& node) override {
+//		if(node.name == "loc_67" and node.declaration->is_global) {
+//
+//		}
 		// add all references in local scope to vector for later passive_var replacement
 		m_all_local_references.push_back(&node);
 

@@ -90,18 +90,20 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 
 	// get builtin declaration if it exists
 	NodeDataStructure *node_builtin_declaration = nullptr;
-	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
 	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var->name);
+	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
 
 	if (node_builtin_declaration) {
 		return node_builtin_declaration;
 	}
 
-	// sanitize name if array
-	std::string sanitized = var->sanitize_name();
 	// try not sanitized name first
 	auto node_declaration = get_declared_data_structure(var->name);
-	if(!node_declaration) node_declaration = get_declared_data_structure(sanitized);
+	if(!node_declaration) {
+		// sanitize name if array
+		const std::string sanitized = var->sanitize_name();
+		node_declaration = get_declared_data_structure(sanitized);
+	}
 	if (node_declaration) {
 		m_references_per_data_structure[node_declaration].insert(var);
 		return node_declaration;

@@ -89,7 +89,7 @@ public:
 						std::nullopt,
 						m_gensym.fresh("return"),
 						node_ref->ty,
-						DataType::Return, node.return_variables[i]->tok
+						DataType::Param, node.return_variables[i]->tok
 					);
 				} else if(node_ref->ty->get_type_kind() == TypeKind::Composite) {
 					// 	return Note.velocities[self, *]
@@ -142,12 +142,13 @@ public:
 					std::nullopt,
 					m_gensym.fresh("return"),
 					node_return->ty,
-					DataType::Return, node.return_variables[i]->tok
+					DataType::Param, node.return_variables[i]->tok
 					);
 			}
+			new_param->data_type = DataType::Param;
 			auto new_param_ref = new_param->to_reference();
 			new_param_ref->ty = node_return->ty;
-
+			new_param_ref->data_type = DataType::Param;
 			// replace param in function header in case more than 1 return param
 			if(i>0) {
 				m_functions_visited.top()->header->args->params[i]->replace_with(std::move(new_param));

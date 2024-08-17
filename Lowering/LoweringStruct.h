@@ -325,8 +325,8 @@ private:
 		}
 
 		// Erstellung der Parameter a und b
-		auto node_a = std::make_unique<NodeVariable>(std::nullopt, "a", TypeRegistry::Integer, DataType::Mutable, Token());
-		auto node_b = std::make_unique<NodeVariable>(std::nullopt, "b", TypeRegistry::Integer, DataType::Mutable, Token());
+		auto node_a = std::make_unique<NodeVariable>(std::nullopt, "a", TypeRegistry::Integer, DataType::Param, Token());
+		auto node_b = std::make_unique<NodeVariable>(std::nullopt, "b", TypeRegistry::Integer, DataType::Param, Token());
 
 		// Referenzen auf die Parameter
 		auto node_a_ref = node_a->to_reference();

@@ -117,13 +117,14 @@ struct NodeReference : NodeAST {
 	/// when is variable = raw array? if variable has _ in front and is array and was declared without _
 	/// returns sanitized name of reference
 	[[nodiscard]] std::string sanitize_name() {
-		std::string var_without_identifier = name;
-		if (name[0] == '_' && name[1] != '_') {
-			var_without_identifier = var_without_identifier.erase(0,1);
-		} else if (name.ends_with(".raw")) {
-			var_without_identifier = var_without_identifier.replace(var_without_identifier.size()-4, 4, "");
+		if (name.empty()) return "";
+		std::string_view sanitized_name = name;
+		if (sanitized_name[0] == '_' && (sanitized_name.size() == 1 || sanitized_name[1] != '_')) {
+			sanitized_name.remove_prefix(1); // Effizienter als erase
+		} else if (sanitized_name.size() >= 4 && sanitized_name.substr(sanitized_name.size() - 4) == ".raw") {
+			sanitized_name.remove_suffix(4); // Effizienter als replace
 		}
-		return var_without_identifier;
+		return std::string(sanitized_name); // Erzeugt das Resultat nur einmal
 	}
 
 	std::vector<std::string> get_ptr_chain() {
@@ -502,6 +503,11 @@ struct NodeFunctionDefinition: NodeAST {
 		bool has_params = header->args->params.size() > 0 and header->args->params[0]->get_string() == "self";
 		bool within_struct = parent and parent->get_node_type() == NodeType::Struct;
 		return has_params and within_struct;
+	}
+	void update_param_data_type() const {
+		for(auto& param : this->header->args->params) {
+			static_cast<NodeDataStructure*>(param.get())->data_type = DataType::Param;
+		}
 	}
 };
 

@@ -158,22 +158,22 @@ void Compiler::compile() {
 	ASTGlobalScope global_scope(&m_definition_provider);
 	ast->accept(global_scope);
 
-	ast->debug_print();
+//	ast->debug_print();
 
 	compile_time.stop("Global Scope");
     compile_time.start("Function Inlining");
 
 	ASTFunctionInlining func_inlining(&m_definition_provider);
 	ast->accept(func_inlining);
-//	ast->debug_print();
+	ast->debug_print();
 
     compile_time.stop("Function Inlining");
-//	compile_time.start("Variable Checking 2");
-//
-//	ASTVariableChecking variable_checking2(&m_definition_provider, true);
-//    ast->accept(variable_checking2);
-//
-//	compile_time.stop("Variable Checking 2");
+	compile_time.start("Variable Checking 2");
+
+	ASTVariableChecking variable_checking2(&m_definition_provider, true);
+    ast->accept(variable_checking2);
+
+	compile_time.stop("Variable Checking 2");
 	compile_time.start("Optimization");
 
 	ast->inline_global_variables();

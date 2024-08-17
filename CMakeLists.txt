@@ -157,4 +157,6 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         AST/ASTVisitor/ASTFunctionInlining.h
         AST/ASTVisitor/ASTExpressionFunctionInlining.h
         Optimization/ConstantPropagation.h
+        Optimization/VariablePruning.h
+        Optimization/ParameterMarking.h
 )

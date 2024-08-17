@@ -160,6 +160,8 @@ NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 NodeAST* ASTVariableChecking::visit(NodeArray& node) {
 	check_annotation_with_expected(&node, TypeRegistry::ArrayOfUnknown);
 
+//	set_as_function_param(&node);
+
 	node.determine_locality(m_program, m_current_block);
 	if(node.size) node.size->accept(*this);
 	auto new_node = apply_type_annotations(&node);
@@ -197,6 +199,7 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeNDArray& node) {
 	check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions).get());
+//	set_as_function_param(&node);
 	node.determine_locality(m_program, m_current_block);
 	if(node.sizes) node.sizes->accept(*this);
 	auto new_node = apply_type_annotations(&node);
@@ -223,6 +226,7 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 	check_annotation_with_expected(&node, TypeRegistry::Unknown);
+//	set_as_function_param(&node);
 	node.determine_locality(m_program, m_current_block);
 
 	auto new_node = apply_type_annotations(&node);
@@ -262,6 +266,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 
 NodeAST* ASTVariableChecking::visit(NodePointer& node) {
 	check_annotation_with_expected(&node, TypeRegistry::Unknown);
+//	set_as_function_param(&node);
 	node.determine_locality(m_program, m_current_block);
 
 	auto new_node = apply_type_annotations(&node);
@@ -293,6 +298,7 @@ NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeList& node) {
 	check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::List, TypeRegistry::Unknown, 1).get());
+//	set_as_function_param(&node);
 	node.determine_locality(m_program, m_current_block);
 	for(auto &params : node.body) {
 		params->accept(*this);

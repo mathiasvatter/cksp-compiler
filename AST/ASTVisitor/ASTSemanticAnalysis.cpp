@@ -225,6 +225,7 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 	if(!data_struct or data_struct->is_engine) return data_struct;
 	// only replace function parameters
 	if(!data_struct->is_function_param()) return data_struct;
+	auto data_type = data_struct->data_type;
 	// check if references of this data struct are of different node type
 	std::unordered_set<NodeType> reference_node_types;
 	const std::unordered_set<NodeReference*>& references = m_def_provider->get_references(data_struct);
@@ -257,6 +258,7 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 	}
 
 	if(new_data_struct) {
+		new_data_struct->data_type = data_type;
 		m_def_provider->set_references(new_data_struct, references);
 		// update all reference declaration pointers
 		for(auto & ref : references) {

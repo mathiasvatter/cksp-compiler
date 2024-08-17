@@ -17,7 +17,6 @@ public:
 	inline NodeAST *visit(NodeProgram &node) override {
 		m_program = &node;
 		node.update_function_lookup();
-
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
@@ -113,6 +112,16 @@ public:
 			node.is_call = false;
 		}
 
+//		if(!node.definition->visited) {
+//			std::unordered_set<std::string> function_params;
+//			for(auto& param : node.definition->header->args->params) {
+//				function_params.insert(static_cast<NodeDataStructure*>(param.get())->name);
+//			}
+//			m_function_params.push(function_params);
+//			node.definition->body->accept(*this);
+//			m_function_params.pop();
+//		}
+
 		auto node_func_def = clone_as<NodeFunctionDefinition>(node.definition);
 		m_substitution_stack.push(get_substitution_map(node_func_def->header.get(), node.function.get()));
 
@@ -137,15 +146,18 @@ public:
 	/// do substitution
 	inline NodeAST *visit(NodeNDArrayRef &node) override {
 		if(node.indexes) node.indexes->accept(*this);
+//		mark_function_param_ref(&node);
 		return do_substitution(&node);
 	}
 	/// do substitution
 	inline NodeAST *visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);
+//		mark_function_param_ref(&node);
 		return do_substitution(&node);
 	}
 	/// do substitution
 	inline NodeAST *visit(NodeVariableRef &node) override {
+//		mark_function_param_ref(&node);
 		return do_substitution(&node);
 	}
 	/// do substitution
@@ -188,16 +200,6 @@ public:
 
 
 	/// returns empty string if ndarray constant pattern is not found
-//	static std::string get_ndarray_constant_base(const std::string& input) {
-//		static const std::regex pattern(R"(^(.*)\.SIZE_D\d+$)");
-//		std::smatch match;
-//		if (std::regex_search(input, match, pattern)) {
-//			// Der Teilstring vor dem Muster wird zurückgegeben
-//			return match[1].str();
-//		}
-//		return "";
-//	}
-
 	static std::string get_ndarray_constant_base(const std::string& input) {
 		// Finde die Position des letzten Punktes
 		size_t pos = input.find_last_of('.');
@@ -257,7 +259,8 @@ public:
 	NodeAST* do_substitution(NodeReference* ref) {
 		if(m_program->function_call_stack.empty()) return ref;
 		if(m_substitution_stack.empty()) return ref;
-		if(!ref->declaration->is_function_param()) return ref;
+//		if(!ref->declaration->is_function_param()) return ref;
+//		if(ref->data_type != DataType::Param) return ref;
 
 		if(auto substitute = get_substitute(ref->name)) {
 			// if substitute and ref are both of type <Composite> and <ArrayRef>: only change name
@@ -276,6 +279,19 @@ public:
 protected:
 	DefinitionProvider *m_def_provider;
 	NodeCallback* m_current_callback = nullptr;
+
+//	std::stack<std::unordered_set<std::string>> m_function_params;
+//	inline bool mark_function_param_ref(NodeReference* ref) {
+//		if(m_program->function_call_stack.empty()) return false;
+//		if(m_function_params.empty()) return false;
+//		const auto & set = m_function_params.top();
+//		auto it = set.find(ref->name);
+//		if(it != set.end()) {
+//			ref->data_type = DataType::Param;
+//			return true;
+//		}
+//		return false;
+//	}
 
 	/// vector of all function_definitions that are actually used in program
 	/// can only house called functions with no params

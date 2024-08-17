@@ -313,6 +313,7 @@ NodeFunctionDefinition *NodeStruct::generate_init_method() {
 		std::move(node_block),
 		this->tok
 	);
+//	function_def->update_param_data_type();
 	function_def->ty = TypeRegistry::add_object_type(this->name);
 	function_def->parent = this;
 	this->methods.push_back(std::move(function_def));
@@ -349,6 +350,7 @@ NodeFunctionDefinition *NodeStruct::generate_repr_method() {
 		std::move(node_body),
 		this->tok
 	);
+//	function_def->update_param_data_type();
 	function_def->parent = this;
 	function_def->ty = TypeRegistry::String;
 	function_def->num_return_params = 1;
