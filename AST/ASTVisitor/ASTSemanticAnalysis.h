@@ -30,6 +30,7 @@ public:
 	NodeAST * visit(NodeCallback& node) override;
 
 	NodeAST * visit(NodeBlock& node) override;
+	NodeAST * visit(NodeSingleAssignment& node) override;
 
 	NodeAST * visit(NodeArray& node) override;
     NodeAST * visit(NodeArrayRef& node) override;

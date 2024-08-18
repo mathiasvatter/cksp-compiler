@@ -18,6 +18,27 @@ private:
 public:
 	explicit LoweringArray(NodeProgram* program) : ASTLowering(program) {}
 
+	NodeAST * visit(NodeSingleDeclaration& node) override {
+		node.variable->accept(*this);
+//		if(node.value) node.value->accept(*this);
+		if(node.variable->get_node_type() == NodeType::Array) {
+			auto node_array = static_cast<NodeArray*>(node.variable.get());
+			auto node_body = std::make_unique<NodeBlock>(node.tok);
+			auto node_var = std::make_unique<NodeVariable>(
+				std::nullopt,
+				node_array->name + ".SIZE",
+				TypeRegistry::Integer,
+				DataType::Const, node.tok);
+			auto node_declaration = std::make_unique<NodeSingleDeclaration>(
+				std::move(node_var),
+				node_array->size->clone(), node.tok);
+			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declaration), node.tok));
+			node_body->add_stmt(std::make_unique<NodeStatement>(node.clone(), node.tok));
+			return node.replace_with(std::move(node_body));
+		}
+		return &node;
+	}
+
 	/// Determining array size at compile time -> not of references!
 	NodeAST * visit(NodeArray& node) override {
 		m_size_is_constant = true;
@@ -84,7 +105,7 @@ public:
 	NodeAST * visit(NodeFunctionCall& node) override {
 		// check if func is 'num_elements' which returns constant and can be used as array size
 		if(node.kind == NodeFunctionCall::Kind::Builtin and node.function->args->params.size() == 1) {
-			if(node.function->name == "num_elements") {
+			if(node.function->name == "num_elements" or node.function->name == "get_ui_id") {
 				if(node.function->args->params.at(0)->get_string() == m_current_array->name) {
 					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 					error.m_message = "Size of <Array> cannot reference itself.";

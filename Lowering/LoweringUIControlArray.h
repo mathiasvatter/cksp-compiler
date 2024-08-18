@@ -46,7 +46,10 @@ public:
 		// wrap in statement to make use of replace_child
 		auto node_statement = std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok);
 		// lowering of ndarray, turn Declaration into NodeBlock
-		node_statement->statement->lower(m_program);
+		// only lower if ndarray otherwise array size constant gets declared twice
+		if(m_ui_control_array->control_var->get_node_type() == NodeType::NDArray) {
+			node_statement->statement->lower(m_program);
+		}
 		body_post_lowering->statements.push_back(std::move(node_statement));
 		body_post_lowering->append_body(create_ui_controls(*m_ui_control_array, std::move(m_ui_array_size)));
 		return node.replace_with(std::move(body_post_lowering));

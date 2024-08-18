@@ -105,51 +105,58 @@ public:
 		if(node.definition and !node.definition->visited) {
 			node.definition->accept(*this);
 
-			// see if this call is in thread safe env -> if not, clone and promote local vars
-			if(!node.definition->header->is_thread_safe and !m_local_var_declarations[node.definition].empty()) {
-				// do this only if current call is not threadsafe environment
-				for (auto &decl : m_local_var_declarations[node.definition]) {
-					// add local declarations of function definition to parameters
-					node.definition->header->args->add_param(clone_as<NodeDataStructure>(decl.second->variable.get()));
-					for (auto &call_site : node.definition->call_sites) {
-						// add references to those local variables in the function call
-						call_site->function->args->add_param(decl.second->variable->to_reference());
+			if(!m_local_var_declarations[node.definition].empty()) {
+				// see if this call is in thread safe env -> if not, clone and promote local vars
+				if (!node.definition->header->is_thread_safe) {
+					// do this only if current call is not threadsafe environment
+					for (auto &decl : m_local_var_declarations[node.definition]) {
+						// add local declarations of function definition to parameters
+						node.definition->header->args->add_param(clone_as<NodeDataStructure>(decl.second->variable.get()));
+						for (auto &call_site : node.definition->call_sites) {
+							// add references to those local variables in the function call
+							call_site->function->args->add_param(decl.second->variable->to_reference());
+						}
+					}
+
+					// if the call is in a nested function -> get the local var declaration map to the above function
+					if(!m_program->function_call_stack.empty()) {
+						// add declaration statements to the body of the current/above function
+						auto &next_declares = m_local_var_declarations[m_program->function_call_stack.top()];
+						for (auto &decl : m_local_var_declarations[node.definition]) {
+							next_declares.emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
+						}
+					}
+
+				// if threadsafe, add to global declarations
+				} else {
+					// put local declaration into global declaration as a one time thing
+					auto &declares = m_local_var_declarations[node.definition];
+					// check if variables were already added to global declarations
+					if (!declares.empty()) {
+						// otherwise add them to global declarations
+						for (auto &decl : declares) {
+							// set to global to prevent from being used in other functions by register reuse
+							m_global_function_vars.emplace(decl.first, std::move(decl.second));
+						}
+						declares.clear();
 					}
 				}
-			}
-
-			// put local declaration into global declaration as a one time thing
-			auto &declares = m_local_var_declarations[node.definition];
-			// check if variables were already added to global declarations
-			if(!declares.empty()) {
-				// otherwise add them to global declarations
-				for (auto &decl : declares) {
-					// set to global to prevent from being used in other functions by register reuse
-					m_global_function_vars.emplace(decl.first, std::move(decl.second));
-				}
-				declares.clear();
 			}
 
 		}
 
 		if(node.definition) {
-			// if the call is in a nested function -> get the local var declaration map to the above function
-			if(!m_program->function_call_stack.empty()) {
-				// add declaration statements to the body of the current/above function
-				auto &next_declares = m_local_var_declarations[m_program->function_call_stack.top()];
-				for (auto &decl : m_local_var_declarations[node.definition]) {
-					next_declares.emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
-				}
-			// if the call is in a callback -> check if threadsafe (add to global declarations) or not (do parameter promotion)
-			} else {
-				// if the call is not in a threadsafe environment
-				if(!node.definition->header->is_thread_safe) {
-					// add declaration statements to the statement right above the function call
-					for (auto &decl : m_local_var_declarations[node.definition]) {
-						m_declares_per_stmt[m_last_stmt].emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
+			if(!node.definition->header->is_thread_safe) {
+				// if the call is in a callback -> check if threadsafe (add to global declarations) or not (do parameter promotion)
+				if (!m_program->function_call_stack.empty()) {
+					// if the call is not in a threadsafe environment
+					if (!node.definition->header->is_thread_safe) {
+						// add declaration statements to the statement right above the function call
+						for (auto &decl : m_local_var_declarations[node.definition]) {
+							m_declares_per_stmt[m_last_stmt].emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
+						}
 					}
 				}
-
 			}
 
 			// remove call flag when function is not thread safe

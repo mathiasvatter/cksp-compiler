@@ -79,17 +79,17 @@ public:
 			node.tok
 		);
         auto main_size = (int32_t)node.body.size();
-        auto node_declare_main_const = std::make_unique<NodeSingleDeclaration>(
-                std::make_unique<NodeVariable>(
-                        std::nullopt,
-                        name_wo_ident+".SIZE",
-                        TypeRegistry::Integer,
-                        DataType::Const, node.tok),
-                std::make_unique<NodeInt>(main_size,node.tok), node.tok);
+//        auto node_declare_main_const = std::make_unique<NodeSingleDeclaration>(
+//                std::make_unique<NodeVariable>(
+//                        std::nullopt,
+//                        name_wo_ident+".SIZE",
+//                        TypeRegistry::Integer,
+//                        DataType::Const, node.tok),
+//                std::make_unique<NodeInt>(main_size,node.tok), node.tok);
 		// add "_" to main array name if dimension is > 1
 		if(max_dimension>1) node_declare_main_array->variable->name = "_" + node_declare_main_array->variable->name;
         node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_main_array), node.tok));
-        node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_main_const), node.tok));
+//        node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_main_const), node.tok));
 
 
         if(max_dimension == 1) {
@@ -159,17 +159,17 @@ public:
                     );
             node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok));
 
-            auto node_variable = std::make_unique<NodeVariable>(
-                    std::nullopt,
-                    name_wo_ident+std::to_string(i)+".SIZE",
-                    TypeRegistry::Integer,
-                    DataType::Const, node.tok
-                    );
-            auto node_const_declaration = std::make_unique<NodeSingleDeclaration>(
-                    std::move(node_variable),
-                    std::make_unique<NodeInt>(sizes[i], node.tok),
-                    node.tok);
-            node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_const_declaration), node.tok));
+//            auto node_variable = std::make_unique<NodeVariable>(
+//                    std::nullopt,
+//                    name_wo_ident+std::to_string(i)+".SIZE",
+//                    TypeRegistry::Integer,
+//                    DataType::Const, node.tok
+//                    );
+//            auto node_const_declaration = std::make_unique<NodeSingleDeclaration>(
+//                    std::move(node_variable),
+//                    std::make_unique<NodeInt>(sizes[i], node.tok),
+//                    node.tok);
+//            node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_const_declaration), node.tok));
 
             auto node_while_body = std::make_unique<NodeBlock>(node.tok);
             auto node_expression = std::make_unique<NodeBinaryExpr>(

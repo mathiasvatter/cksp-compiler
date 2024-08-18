@@ -54,6 +54,8 @@ public:
 	inline NodeAST *visit(NodeSingleDeclaration &node) override {
 		node.variable->accept(*this);
 		if (node.value) node.value->accept(*this);
+		// get ui control variables out of the picture
+		if(node.variable->get_node_type() == NodeType::UIControl) return &node;
 		// claim everything as unused at first
 		node.variable->is_used = false;
 		m_all_declarations.push_back(&node);
@@ -64,7 +66,7 @@ public:
 	inline bool is_used(const NodeReference &node) {
 		if(node.data_type != DataType::UIControl) {
 			if(node.parent->get_node_type() == NodeType::SingleAssignment) {
-				auto assignment = cast_node<NodeSingleAssignment>(node.parent);
+				auto assignment = static_cast<NodeSingleAssignment*>(node.parent);
 				if(assignment->l_value.get() == &node) {
 					m_all_assignments.push_back(assignment);
 					return false;
@@ -75,13 +77,13 @@ public:
 	}
 
 	inline NodeAST *visit(NodeVariableRef &node) override {
-		node.declaration->is_used = is_used(node);
+		node.declaration->is_used |= is_used(node);
 		return &node;
 	}
 
 	inline NodeAST *visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);
-		node.declaration->is_used = is_used(node);
+		node.declaration->is_used |= is_used(node);
 		return &node;
 	}
 

@@ -9,6 +9,7 @@
 #include "../../Desugaring/DesugarFunctionDef.h"
 #include "../ASTVisitor/ASTPrinter.h"
 #include "../../Lowering/LoweringFunctionDef.h"
+#include "../../Optimization/ConstExprValidator.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(tok),
@@ -74,6 +75,11 @@ NodeAST *NodeAST::desugar(NodeProgram *program) {
 		return accept(*desugaring);
 	}
 	return this;
+}
+
+bool NodeAST::is_constant() {
+	static ConstExprValidator const_validator;
+	return const_validator.is_constant(*this);
 }
 
 // ************* NodeDataStructure ***************
@@ -176,7 +182,7 @@ void NodeReference::match_data_structure(NodeDataStructure* data_structure) {
 	is_local = data_structure->is_local;
 	is_compiler_return = data_structure->is_compiler_return;
 	data_type = data_structure->data_type;
-	ty = data_structure->ty;
+//	ty = data_structure->ty;
 }
 
 bool NodeReference::is_member_ref() const {

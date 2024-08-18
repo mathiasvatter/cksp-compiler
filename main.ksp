@@ -40,9 +40,42 @@ end struct
 
 on init	
 	declare ui_button btn_1, ui_button btn_2
-
+	btn_1 := 1
 	do_sth(3)
 	do_sth(2)
+	declare const dufus := 0
+	declare i := 0
+	i := btn_1
+	inc(i)
+	i := 4
+	declare anus := 0*3+0
+	inc(anus)
+	message(i, 3)
+	i := i + 1
+	message(i, 2)
+	while(i < 10)
+		i := i + 1
+		message(i)
+	end while
+	if(i = 3)
+		i := 5
+	else 
+		i := 6
+	end if
+	declare arr[] := (1,2,3,4,5,6,7,8,9,10)
+	arr[0] := 1
+	message(arr[0])
+	message(arr)
+	if(1=1 and arr[0] # 1)
+		message("whileh")
+	end if
+
+
+	if(i < 3 and i> 5)
+
+	else
+		message("sdflkj")
+	end if
 end on
 
 on ui_control( btn_1 )

@@ -200,7 +200,7 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
 		if(node.ty == TypeRegistry::Unknown) {
-			node.ty = TypeRegistry::get_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
+			node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
             if(!node.ty) throw_composite_error(&node).exit();
 		}
 	} else {
@@ -228,7 +228,14 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
     // if handed over without index -> as whole array structure type
     if(!node.indexes) {
         if(node.ty == TypeRegistry::Unknown) {
-            node.ty = TypeRegistry::get_composite_type(CompoundKind::Array, node.ty->get_element_type(), node.sizes->params.size());
+			// in case sizes are not known -> get type from declaration -> if type is still unknown -> set array to dim size 0
+			if(!node.sizes and node.declaration) {
+				node.ty = node.declaration->ty;
+			}
+			if(node.ty == TypeRegistry::Unknown) {
+				int dim = node.sizes ? node.sizes->params.size() : 0;
+				node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), dim);
+			}
             if(!node.ty) throw_composite_error(&node).exit();
         }
     } else {
