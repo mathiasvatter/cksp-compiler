@@ -23,14 +23,16 @@ public:
     ASTOptimizations() = default;
 
 	inline NodeAST* visit(NodeProgram& node) override {
-		static ConstantPropagation constant_propagation;
-		node.accept(constant_propagation);
-		static ConstExprPropagation const_expr_propagation;
-		node.accept(const_expr_propagation);
+		for(int i = 0; i<2; i++) {
+			static ConstantPropagation constant_propagation;
+			node.accept(constant_propagation);
+			static ConstExprPropagation const_expr_propagation;
+			node.accept(const_expr_propagation);
+			static ConstantFolding constant_folding;
+			node.accept(constant_folding);
+		}
 		static VariablePruning variable_pruning;
 		node.accept(variable_pruning);
-		static ConstantFolding constant_folding;
-		node.accept(constant_folding);
 		static DeadCodeElimination dead_code_elimination;
 		node.accept(dead_code_elimination);
 //

@@ -43,8 +43,11 @@ public:
 				node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declaration), node.tok));
 			}
 			node.variable->accept(*this);
-			node_body->add_stmt(std::make_unique<NodeStatement>(node.clone(), node.tok));
-			return node.replace_with(std::move(node_body));
+			// now that it is array declaration -> lower again to get array size const
+			auto new_node = node.lower(m_program);
+			node_body->add_stmt(std::make_unique<NodeStatement>(new_node->clone(), node.tok));
+			node_body->flatten();
+			return new_node->replace_with(std::move(node_body));
         }
 		return &node;
 	}
