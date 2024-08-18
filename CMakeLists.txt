@@ -142,7 +142,7 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         AST/ASTNodes/ASTInstructions.h
         AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h
         AST/ASTVisitor/GlobalScope/ASTRegisterReuse.h
-        AST/ASTVisitor/GlobalScope/NormalizeSingleDeclareAssign.h
+        AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h
         Desugaring/DesugarStruct.h
         Lowering/LoweringStruct.h
         Lowering/LoweringPointer.h
@@ -163,4 +163,5 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         Optimization/ConstExprValidator.h
         Optimization/ConstExprPropagation.h
         Optimization/DeadCodeElimination.h
+        AST/ASTVisitor/ASTKSPSyntaxCheck.h
 )

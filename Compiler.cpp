@@ -10,6 +10,7 @@
 #include "AST/ASTVisitor/NormalizeNDArrayAssign.h"
 #include "AST/ASTVisitor/ASTFunctionInlining.h"
 #include "AST/ASTVisitor/ASTRelinkGlobalScope.h"
+#include "AST/ASTVisitor/ASTKSPSyntaxCheck.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -187,6 +188,8 @@ void Compiler::compile() {
 	compile_time.stop("Optimization");
 	compile_time.start("Generator");
 
+	ASTKSPSyntaxCheck syntax_check(&m_definition_provider);
+	ast->accept(syntax_check);
 
 	ASTGenerator generator;
 	ast->accept(generator);

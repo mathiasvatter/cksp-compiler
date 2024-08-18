@@ -12,7 +12,7 @@
 #include "../../Desugaring/DesugarForStatement.h"
 #include "../../Desugaring/DesugarForEachStatement.h"
 #include "../ASTVisitor/GlobalScope/ASTGlobalScope.h"
-#include "../ASTVisitor/GlobalScope/NormalizeSingleDeclareAssign.h"
+#include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {

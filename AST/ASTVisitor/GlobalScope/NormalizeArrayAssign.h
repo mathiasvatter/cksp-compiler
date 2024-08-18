@@ -7,7 +7,7 @@
 #include "../ASTVisitor.h"
 
 /**
- * @class NormalizeSingleDeclareAssign
+ * @class NormalizeArrayAssign
  * @brief This class is used for lowering single assign and declare statements considering special needs of vanilla ksp
  * syntax.
  *
@@ -18,7 +18,7 @@
  * assignments is generated.
  * Inherits from the ASTVisitor class.
  */
-class NormalizeSingleDeclareAssign : public ASTVisitor {
+class NormalizeArrayAssign : public ASTVisitor {
 private:
 	inline NodeAST * visit(NodeBlock& node) override {
 		for(auto &stmt : node.statements) {
@@ -59,14 +59,14 @@ private:
 				// if param list has only one value:
 				auto param_list = static_cast<NodeParamList *>(node.r_value.get());
 				if (param_list->params.size() == 1) {
-					NormalizeSingleDeclareAssign::add_array_init_function_def(m_program,node.l_value->ty->get_element_type());
+					NormalizeArrayAssign::add_array_init_function_def(m_program, node.l_value->ty->get_element_type());
 					return node.replace_with(get_array_init_function_call(node_array_ref, param_list->params[0].get()));
 				} else {
 					return node.replace_with(get_array_init_from_list(node_array_ref, param_list));
 				}
 			} else if(node.r_value->get_node_type() == NodeType::ArrayRef) {
 				auto node_val_array_ref = static_cast<NodeArrayRef*>(node.r_value.get());
-				NormalizeSingleDeclareAssign::add_array_copy_function_def(m_program,node.l_value->ty->get_element_type());
+				NormalizeArrayAssign::add_array_copy_function_def(m_program, node.l_value->ty->get_element_type());
 				return node.replace_with(get_array_copy_function_call(node_array_ref, node_val_array_ref));
 			}
 		}
@@ -106,7 +106,7 @@ private:
 			}
 
 			if(!node.value) {
-				NormalizeSingleDeclareAssign::add_array_init_function_def(m_program, node.variable->ty->get_element_type());
+				NormalizeArrayAssign::add_array_init_function_def(m_program, node.variable->ty->get_element_type());
 				node_body->add_stmt(std::make_unique<NodeStatement>(
 					get_array_init_function_call(node_array_ref.get(), TypeRegistry::get_neutral_element_from_type(node.variable->ty->get_element_type()).get()),
 					node.tok));
@@ -116,8 +116,8 @@ private:
 					// if param list has only one value:
 					auto param_list = static_cast<NodeParamList *>(node.value.get());
 					if (param_list->params.size() == 1) {
-						NormalizeSingleDeclareAssign::add_array_init_function_def(m_program,
-																				  node.variable->ty->get_element_type());
+						NormalizeArrayAssign::add_array_init_function_def(m_program,
+																		  node.variable->ty->get_element_type());
 						node_body->add_stmt(std::make_unique<NodeStatement>(
 							get_array_init_function_call(node_array_ref.get(), param_list->params[0].get()),
 							node.tok));
@@ -128,8 +128,8 @@ private:
 				// copy assignment array to array
 				} else if (node.value->get_node_type() == NodeType::ArrayRef) {
 					auto node_val_array_ref = static_cast<NodeArrayRef*>(node.value.get());
-					NormalizeSingleDeclareAssign::add_array_copy_function_def(m_program,
-																			  node.variable->ty->get_element_type());
+					NormalizeArrayAssign::add_array_copy_function_def(m_program,
+																	  node.variable->ty->get_element_type());
 					node_body->add_stmt(std::make_unique<NodeStatement>(
 						get_array_copy_function_call(node_array_ref.get(), node_val_array_ref),
 						node.tok));
@@ -158,35 +158,9 @@ private:
 	}
 
 public:
-	explicit NormalizeSingleDeclareAssign(NodeProgram* program) {
+	explicit NormalizeArrayAssign(NodeProgram* program) {
 		m_program = program;
 	};
-
-	static std::unique_ptr<NodeBlock> add_read_functions(const Token& persistence, NodeDataStructure* var) {
-		auto node_body = std::make_unique<NodeBlock>(var->tok);
-
-		auto it = PERSISTENCE_TOKENS.find(persistence.type);
-		if(it == PERSISTENCE_TOKENS.end()) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", var->tok);
-			error.m_message = "Persistence keyword not recognized.";
-			error.exit();
-		}
-		for(auto &pers_func : it->second) {
-			auto make_persistent = std::make_unique<NodeFunctionCall>(
-				false,
-				std::make_unique<NodeFunctionHeader>(
-					pers_func,
-					std::make_unique<NodeParamList>(var->tok, var->to_reference()),
-					var->tok
-				),
-				var->tok
-			);
-			make_persistent->kind = NodeFunctionCall::Kind::Builtin;
-			make_persistent->ty = TypeRegistry::Void;
-			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(make_persistent), var->tok));
-		}
-		return node_body;
-	}
 
 	static std::unique_ptr<NodeBlock> get_array_init_from_list(NodeArrayRef* array_ref, NodeParamList* param_list) {
 		auto node_body = std::make_unique<NodeBlock>(array_ref->tok);
