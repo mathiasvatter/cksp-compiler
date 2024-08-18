@@ -19,14 +19,14 @@ private:
 public:
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		// return immediately if the function is not a builtin function to save time
-		if(!node.function->is_builtin) return &node;
+		if(node.kind != NodeFunctionCall::Kind::Builtin) return &node;
 
 		node.function->args->accept(*this);
 
 		if(node.function->args->params.size() == 1) {
 			if (node.function->args->params[0]->get_node_type() == NodeType::Int) {
 				int32_t result = 0;
-				auto int_node = cast_node<NodeInt>(node.function->args->params[0].get());
+				auto int_node = static_cast<NodeInt*>(node.function->args->params[0].get());
 				// Definition der Funktions-Map für Integer-Operationen
 				static std::unordered_map<std::string, std::function<int32_t(int32_t)>> int_functions = {
 					{"inc", [](int32_t value) { return value + 1; }},
@@ -43,7 +43,7 @@ public:
 				}
 			} else if (node.function->args->params[0]->get_node_type() == NodeType::Real) {
 				double result = 0;
-				auto real_node = cast_node<NodeReal>(node.function->args->params[0].get());
+				auto real_node = static_cast<NodeReal*>(node.function->args->params[0].get());
 				static std::unordered_map<std::string, std::function<double(double)>> real_functions = {
 					// real number functions
 					{"exp", [](double value) { return std::exp(value); }},
@@ -72,9 +72,13 @@ public:
 
 		switch (node.operand->get_node_type()) {
 			case NodeType::Int: {
-				if (auto int_node = cast_node<NodeInt>(node.operand.get())) {
+				if (auto int_node = static_cast<NodeInt*>(node.operand.get())) {
 					if (node.op == token::SUB) {
 						auto new_node = std::make_unique<NodeInt>(-int_node->value, node.tok);
+						new_node->parent = node.parent;
+						return node.replace_with(std::move(new_node));
+					} else if (node.op == token::BOOL_NOT) {
+						auto new_node = std::make_unique<NodeInt>(int_node->value == 0 ? 1 : 0, node.tok);
 						new_node->parent = node.parent;
 						return node.replace_with(std::move(new_node));
 					}
@@ -82,7 +86,7 @@ public:
 				break;
 			}
 			case NodeType::Real: {
-				if (auto real_node = cast_node<NodeReal>(node.operand.get())) {
+				if (auto real_node = static_cast<NodeReal*>(node.operand.get())) {
 					if (node.op == token::SUB) {
 						auto new_node = std::make_unique<NodeReal>(-real_node->value, node.tok);
 						new_node->parent = node.parent;
@@ -105,12 +109,11 @@ public:
 		NodeReal* right_real = nullptr;
 		NodeReal* left_real = nullptr;
 
-		if(node.right->get_node_type() == NodeType::Int) right_int = cast_node<NodeInt>(node.right.get());
-		if(node.right->get_node_type() == NodeType::Int) left_int = cast_node<NodeInt>(node.left.get());
-		if(node.right->get_node_type() == NodeType::Real) right_real = cast_node<NodeReal>(node.right.get());
-		if(node.right->get_node_type() == NodeType::Real) left_real = cast_node<NodeReal>(node.left.get());
+		if(node.right->get_node_type() == NodeType::Int) right_int = static_cast<NodeInt*>(node.right.get());
+		if(node.left->get_node_type() == NodeType::Int) left_int = static_cast<NodeInt*>(node.left.get());
+		if(node.right->get_node_type() == NodeType::Real) right_real = static_cast<NodeReal*>(node.right.get());
+		if(node.left->get_node_type() == NodeType::Real) left_real = static_cast<NodeReal*>(node.left.get());
 
-		auto error = CompileError(ErrorType::MathError,"","", node.tok);
 
 		if(right_int || left_int) {
 			if (contains(MATH_TOKENS, node.op) or contains(BITWISE_TOKENS, node.op)) {
@@ -135,24 +138,49 @@ public:
 					}
 				// division by zero
 				} else if (is_zero(right_int) and node.op == token::DIV) {
+					auto error = CompileError(ErrorType::MathError,"","", node.tok);
 					error.m_message = "Found division by zero. Result will be infinite.";
 					error.exit();
-				// multiplication with neutral element
-				} else if (node.op == token::MULT && (is_zero(left_int) || is_zero(right_int))) {
-					auto new_node = std::make_unique<NodeInt>(0, node.tok);
-					return node.replace_with(std::move(new_node));
-				// 0 + var
-				} else if (node.op == token::ADD and is_zero(left_int)) {
-					return node.replace_with(std::move(node.right));
-				// var + 0
-				} else if (node.op == token::ADD and is_zero(right_int)) {
-					return node.replace_with(std::move(node.left));
+				}
+			} else if (contains(BOOL_TOKENS, node.op)) {
+				if (left_int and right_int) {
+					int32_t result = 0;
+					auto static bool_operations = std::unordered_map<token, std::function<int32_t(int32_t, int32_t)>>{
+						{token::BOOL_AND, [](int32_t a, int32_t b) { return (a && b) ? 1 : 0; }},
+						{token::BOOL_OR, [](int32_t a, int32_t b) { return (a || b) ? 1 : 0; }},
+						{token::BOOL_XOR, [](int32_t a, int32_t b) { return (a ^ b) ? 1 : 0; }},
+					};
+					if (bool_operations.find(node.op) != bool_operations.end()) {
+						result = bool_operations[node.op](left_int->value, right_int->value);
+						auto new_node = std::make_unique<NodeInt>(result, node.tok);
+						new_node->ty = TypeRegistry::Integer;
+						return node.replace_with(std::move(new_node));
+					}
+				}
+			} else if (contains(COMPARISON_TOKENS, node.op)) {
+				if (left_int and right_int) {
+					int32_t result = 0;
+					auto static bool_operations = std::unordered_map<token, std::function<int32_t(int32_t, int32_t)>>{
+						{token::LESS_THAN, [](int32_t a, int32_t b) { return (a < b) ? 1 : 0; }},
+						{token::GREATER_THAN, [](int32_t a, int32_t b) { return (a > b) ? 1 : 0; }},
+						{token::EQUAL, [](int32_t a, int32_t b) { return (a == b) ? 1 : 0; }},
+						{token::NOT_EQUAL, [](int32_t a, int32_t b) { return (a != b) ? 1 : 0; }},
+						{token::LESS_EQUAL, [](int32_t a, int32_t b) { return (a <= b) ? 1 : 0; }},
+						{token::GREATER_EQUAL, [](int32_t a, int32_t b) { return (a >= b) ? 1 : 0; }},
+					};
+					if (bool_operations.find(node.op) != bool_operations.end()) {
+						result = bool_operations[node.op](left_int->value, right_int->value);
+						auto new_node = std::make_unique<NodeInt>(result, node.tok);
+						new_node->ty = TypeRegistry::Integer;
+						return node.replace_with(std::move(new_node));
+					}
 				}
 			}
 		} else if (right_real or left_real) {
 			if (contains(MATH_TOKENS, node.op)) {
 				// check division by zero
 				if (node.op == token::DIV && is_zero(right_real)) {
+					auto error = CompileError(ErrorType::MathError,"","", node.tok);
 					error.m_message = "Found division by zero. Result will be infinite.";
 					error.exit();
 				}
@@ -169,6 +197,24 @@ public:
 					if (real_operations.find(node.op) != real_operations.end()) {
 						result = real_operations[node.op](left_real->value, right_real->value);
 						auto new_node = std::make_unique<NodeReal>(result, node.tok);
+						return node.replace_with(std::move(new_node));
+					}
+				}
+			} else if (contains(COMPARISON_TOKENS, node.op)) {
+				if (left_real and right_real) {
+					int32_t result = 0;
+					auto static bool_operations = std::unordered_map<token, std::function<int32_t(double, double)>>{
+						{token::LESS_THAN, [](double a, double b) { return (a < b) ? 1 : 0; }},
+						{token::GREATER_THAN, [](double a, double b) { return (a > b) ? 1 : 0; }},
+						{token::EQUAL, [](double a, double b) { return (a == b) ? 1 : 0; }},
+						{token::NOT_EQUAL, [](double a, double b) { return (a != b) ? 1 : 0; }},
+						{token::LESS_EQUAL, [](double a, double b) { return (a <= b) ? 1 : 0; }},
+						{token::GREATER_EQUAL, [](double a, double b) { return (a >= b) ? 1 : 0; }},
+					};
+					if (bool_operations.find(node.op) != bool_operations.end()) {
+						result = bool_operations[node.op](left_real->value, left_real->value);
+						auto new_node = std::make_unique<NodeInt>(result, node.tok);
+						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));
 					}
 				}

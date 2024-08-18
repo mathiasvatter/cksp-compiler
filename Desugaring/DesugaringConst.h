@@ -98,13 +98,13 @@ public:
         auto array = std::make_unique<NodeStatement>(std::move(node_declare_statement), node.tok);
         node.constants->add_stmt(std::move(array));
 
-		auto constant = std::make_unique<NodeSingleDeclaration>(
-			std::make_unique<NodeVariable>(std::nullopt, node.name+".SIZE", TypeRegistry::Integer, DataType::Const, node.tok),
-			std::make_unique<NodeInt>(node.constants->statements.size(), node.tok),
-			node.tok
-		);
+//		auto constant = std::make_unique<NodeSingleDeclaration>(
+//			std::make_unique<NodeVariable>(std::nullopt, node.name+".SIZE", TypeRegistry::Integer, DataType::Const, node.tok),
+//			std::make_unique<NodeInt>(node.constants->statements.size(), node.tok),
+//			node.tok
+//		);
 
-        node.constants->add_stmt(std::make_unique<NodeStatement>(std::move(constant), node.tok));
+//        node.constants->add_stmt(std::make_unique<NodeStatement>(std::move(constant), node.tok));
         m_const_prefixes.pop();
 		static ConstantFolding cf;
 		return node.constants->accept(cf);

@@ -54,7 +54,7 @@ struct NodeAST {
 	Type* set_element_type(Type *element_type);
 	void debug_print();
 	virtual std::unique_ptr<struct NodeAccessChain> to_method_chain() {return nullptr;}
-
+	bool is_constant();
 };
 
 template<typename T>

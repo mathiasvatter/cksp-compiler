@@ -8,6 +8,8 @@
 #include "../../Optimization/ConstantFolding.h"
 #include "../../Optimization/ConstantPropagation.h"
 #include "../../Optimization/VariablePruning.h"
+#include "../../Optimization/ConstExprPropagation.h"
+#include "../../Optimization/DeadCodeElimination.h"
 
 /** @brief Class for AST Optimizations
  * Constant Propagation
@@ -23,38 +25,44 @@ public:
 	inline NodeAST* visit(NodeProgram& node) override {
 		static ConstantPropagation constant_propagation;
 		node.accept(constant_propagation);
+		static ConstExprPropagation const_expr_propagation;
+		node.accept(const_expr_propagation);
 		static VariablePruning variable_pruning;
 		node.accept(variable_pruning);
-
-		m_program = &node;
-		m_program->global_declarations->accept(*this);
-		for(auto & struct_def : node.struct_definitions) {
-			struct_def->accept(*this);
-		}
-		for(auto & callback : node.callbacks) {
-			callback->accept(*this);
-		}
-		for(auto & func_def : node.function_definitions) {
-			func_def->accept(*this);
-		}
-		node.merge_function_definitions();
-		node.reset_function_visited_flag();
-		return &node;
-	}
-
-	/// do constant folding for int and reals
-	inline NodeAST* visit(NodeBinaryExpr& node) override {
 		static ConstantFolding constant_folding;
 		node.accept(constant_folding);
+		static DeadCodeElimination dead_code_elimination;
+		node.accept(dead_code_elimination);
+//
+//		m_program = &node;
+//		m_program->global_declarations->accept(*this);
+//		for(auto & struct_def : node.struct_definitions) {
+//			struct_def->accept(*this);
+//		}
+//		for(auto & callback : node.callbacks) {
+//			callback->accept(*this);
+//		}
+//		for(auto & func_def : node.function_definitions) {
+//			func_def->accept(*this);
+//		}
+//		node.merge_function_definitions();
+//		node.reset_function_visited_flag();
 		return &node;
 	}
 
-    /// do node body cleanup
-	inline NodeAST* visit(NodeBlock& node) override {
-		for(auto& statement : node.statements) {
-			statement->accept(*this);
-		}
-		node.flatten();
-		return &node;
-	}
+//	/// do constant folding for int and reals
+//	inline NodeAST* visit(NodeBinaryExpr& node) override {
+//		static ConstantFolding constant_folding;
+//		node.accept(constant_folding);
+//		return &node;
+//	}
+
+//    /// do node body cleanup
+//	inline NodeAST* visit(NodeBlock& node) override {
+//		for(auto& statement : node.statements) {
+//			statement->accept(*this);
+//		}
+//		node.flatten();
+//		return &node;
+//	}
 };

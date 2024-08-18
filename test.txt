@@ -1,72 +1,60 @@
-{ Compiled with cksp version 0.0.6 on Sat Aug 17 14:45:25 2024 }
+{ Compiled with cksp version 0.0.6 on Sun Aug 18 19:56:27 2024 }
 on init
-  declare $loc_4
-  declare $loc_0
-  declare $loc_3
-  declare $loc_5
-  declare @loc_1
   declare $loc_2
-  declare $Note__free_idx := 0
-  declare %Note__allocation[$Note__MAX_STRUCTS]
-  declare %Note__pitch[$Note__MAX_STRUCTS]
-  declare %_Note__velocities[$Note__MAX_STRUCTS * 10]
-  declare %_Note__play_pos[$Note__MAX_STRUCTS * 132]
-  declare $List__free_idx := 0
-  declare %List__allocation[$List__MAX_STRUCTS]
-  declare %List__value[$List__MAX_STRUCTS]
-  declare %List__next[$List__MAX_STRUCTS]
-  declare $loc_6
   declare ui_button $btn_1 
   declare ui_button $btn_2 
-  @loc_1 := "sdlkj"
-  message(@loc_1)
+  $btn_1 := 1
+  message("sdlkj")
   $loc_2 := 0
-  $loc_3 := 0
-  $loc_4 := 0
-  $loc_5 := 0
   inc($loc_2)
-  $loc_0 := 1
-  message($loc_0)
+  message(1)
   message($loc_2 & ", " & 3)
-  @loc_1 := "sdlkj"
-  message(@loc_1)
+  message("sdlkj")
   $loc_2 := 0
-  $loc_3 := 0
-  $loc_4 := 0
-  $loc_5 := 0
   inc($loc_2)
-  $loc_0 := 1
-  message($loc_0)
+  message(1)
   message($loc_2 & ", " & 2)
+  declare $i := 0
+  $i := $btn_1
+  inc($i)
+  declare $anus := 0
+  inc($anus)
+  message(4 & ", " & 3)
+  $i := 5
+  message(5 & ", " & 2)
+  while($i < 10) 
+    $i := $i + 1
+    message($i)
+  end while
+  if($i = 3)
+    $i := 5
+  else
+    $i := 6
+  end if
+  declare %arr[10] := (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+  %arr[0] := 1
+  message(1)
+  message(%arr)
+  if(not (($i < 3) and ($i > 5)))
+    message("sdflkj")
+  end if
 end on
 function do_sth_in_sth
-  $loc_0 := 1
-  message($loc_0)
+  message(1)
 end function
 on ui_control($btn_1)
-  @loc_1 := "sdlkj"
-  message(@loc_1)
+  message("sdlkj")
   $loc_2 := 0
-  $loc_3 := 0
-  $loc_4 := 0
-  $loc_5 := 0
   inc($loc_2)
   call do_sth_in_sth
   message($loc_2 & ", " & 1)
 end on
 on ui_control($btn_2)
-  @loc_1 := "sdlkj"
-  message(@loc_1)
+  message("sdlkj")
   $loc_2 := 0
-  $loc_3 := 0
-  $loc_4 := 0
-  $loc_5 := 0
   inc($loc_2)
   call do_sth_in_sth
   message($loc_2 & ", " & 4)
   call do_sth_in_sth
-  if(1 = 2)
-    $loc_6 := 0
-  end if
 end on
 

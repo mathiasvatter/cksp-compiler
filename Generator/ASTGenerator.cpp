@@ -76,7 +76,7 @@ NodeAST * ASTGenerator::visit(NodeVariableRef &node) {
 }
 
 NodeAST * ASTGenerator::visit(NodeArrayRef &node) {
-    os << TypeRegistry::get_identifier_from_type(node.ty);
+    os << TypeRegistry::get_identifier_from_type(node.declaration->ty);
     os << sanitize_dots(node.name);
 	if(node.index) {
 		os << "[";

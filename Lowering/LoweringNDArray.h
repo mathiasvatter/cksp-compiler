@@ -29,23 +29,22 @@ public:
 	 */
 	NodeAST* visit(NodeSingleDeclaration &node) override {
         if(node.variable->get_node_type() == NodeType::NDArray) {
-            if (auto node_ndarray = cast_node<NodeNDArray>(node.variable.get())) {
-                auto node_body = std::make_unique<NodeBlock>(node.tok);
-                for (int i = 0; i < node_ndarray->dimensions; i++) {
-                    auto node_var = std::make_unique<NodeVariable>(
-                            std::optional<Token>(),
-                            node_ndarray->name + ".SIZE_D" + std::to_string(i + 1),
-                            TypeRegistry::Integer,
-                            DataType::Const, node.tok);
-                    auto node_declaration = std::make_unique<NodeSingleDeclaration>(
-                            std::move(node_var),
-                            node_ndarray->sizes->params[i]->clone(), node.tok);
-                    node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declaration), node.tok));
-                }
-                node.variable->accept(*this);
-                node_body->add_stmt(std::make_unique<NodeStatement>(node.clone(), node.tok));
-                return node.replace_with(std::move(node_body));
-            }
+			auto node_ndarray = static_cast<NodeNDArray*>(node.variable.get());
+			auto node_body = std::make_unique<NodeBlock>(node.tok);
+			for (int i = 0; i < node_ndarray->dimensions; i++) {
+				auto node_var = std::make_unique<NodeVariable>(
+						std::optional<Token>(),
+						node_ndarray->name + ".SIZE_D" + std::to_string(i + 1),
+						TypeRegistry::Integer,
+						DataType::Const, node.tok);
+				auto node_declaration = std::make_unique<NodeSingleDeclaration>(
+						std::move(node_var),
+						node_ndarray->sizes->params[i]->clone(), node.tok);
+				node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declaration), node.tok));
+			}
+			node.variable->accept(*this);
+			node_body->add_stmt(std::make_unique<NodeStatement>(node.clone(), node.tok));
+			return node.replace_with(std::move(node_body));
         }
 		return &node;
 	}

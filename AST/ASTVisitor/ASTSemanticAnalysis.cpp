@@ -33,6 +33,20 @@ NodeAST * ASTSemanticAnalysis::visit(NodeWildcard& node) {
 	return &node;
 }
 
+/// check if declared constant variable ref gets new assignment -> throw error
+NodeAST* ASTSemanticAnalysis::visit(NodeSingleAssignment& node) {
+	node.l_value->accept(*this);
+	if(node.l_value->get_node_type() == NodeType::VariableRef) {
+		auto ref = static_cast<NodeVariableRef*>(node.l_value.get());
+		if(ref->data_type == DataType::Const) {
+			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+			error.m_message = "Cannot reassign value to constant variable.";
+			error.exit();
+		}
+	}
+	node.r_value->accept(*this);
+	return &node;
+}
 
 NodeAST * ASTSemanticAnalysis::visit(NodeCallback& node) {
 	m_program->current_callback = &node;

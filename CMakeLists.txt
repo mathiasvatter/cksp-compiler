@@ -160,4 +160,7 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         Optimization/VariablePruning.h
         Optimization/ParameterMarking.h
         AST/ASTVisitor/ASTRelinkGlobalScope.h
+        Optimization/ConstExprValidator.h
+        Optimization/ConstExprPropagation.h
+        Optimization/DeadCodeElimination.h
 )
