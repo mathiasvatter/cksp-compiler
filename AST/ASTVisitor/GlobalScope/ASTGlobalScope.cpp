@@ -6,13 +6,13 @@
 #include "ASTRegisterReuse.h"
 #include "ASTParameterPromotion.h"
 #include "../ASTPrinter.h"
-#include "NormalizeSingleDeclareAssign.h"
+#include "NormalizeArrayAssign.h"
 
 NodeAST * ASTGlobalScope::visit(NodeProgram &node) {
 
 	m_program = &node;
 
-	NormalizeSingleDeclareAssign desugar_single_assign(m_program);
+	NormalizeArrayAssign desugar_single_assign(m_program);
 	node.accept(desugar_single_assign);
 
 	// first pass to analyze dynamic extend within function definitions and replace with passive_vars
