@@ -30,7 +30,7 @@ public:
 		if(node.value) {
 			node.value->accept(*this);
 			// if mutable, try to propagate the value
-			if(node.variable->data_type == DataType::Mutable){
+			if(node.variable->data_type == DataType::Mutable and node.variable->get_node_type() == NodeType::Variable) {
 				if(node.value->is_constant()) {
 					m_constant_expressions[node.variable->name] = node.value->clone();
 				}
@@ -58,7 +58,7 @@ public:
 		remove_constant_expression(ref);
 		node.l_value->accept(*this);
 		// if mutable, try to propagate the value
-		if(ref->data_type == DataType::Mutable){
+		if(ref->data_type == DataType::Mutable and ref->get_node_type() == NodeType::Variable) {
 			if(node.r_value->is_constant()) {
 				m_constant_expressions[ref->name] = node.r_value->clone();
 			}
