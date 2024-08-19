@@ -365,7 +365,13 @@ NodeAST *NodeCallback::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST>
     if (callback_id.get() == oldChild) {
         callback_id = std::move(newChild);
 		return callback_id.get();
-    }
+    } else if(statements.get() == oldChild) {
+		if(auto new_block = cast_node<NodeBlock>(newChild.get())) {
+			newChild.release();
+			statements = std::unique_ptr<NodeBlock>(new_block);
+			return statements.get();
+		}
+	}
 	return nullptr;
 }
 

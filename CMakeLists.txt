@@ -164,4 +164,6 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         Optimization/ConstExprPropagation.h
         Optimization/DeadCodeElimination.h
         AST/ASTVisitor/ASTKSPSyntaxCheck.h
+        SyntaxChecks/KSPPersistency.h
+        SyntaxChecks/KSPDeclarations.h
 )

@@ -35,7 +35,7 @@ public:
 	}
 
 	NodeAST * visit(NodeVariableRef& node) override {
-		if(node.data_type == DataType::Const) {
+		if(node.data_type == DataType::Const or node.kind == NodeReference::Kind::Builtin) {
 			m_is_constant &= true;
 		} else {
 			m_is_constant &= false;

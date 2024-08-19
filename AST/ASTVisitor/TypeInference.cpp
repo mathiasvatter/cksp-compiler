@@ -11,7 +11,9 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 //	m_def_provider->refresh_data_vectors();
 	m_def_provider->m_all_declarations.clear();
 	m_def_provider->m_all_references.clear();
-	m_def_provider->m_all_declarations.clear();
+	m_def_provider->m_all_data_structures.clear();
+	m_def_provider->m_all_assignments.clear();
+
 	m_program->global_declarations->accept(*this);
 	for(auto & s : node.struct_definitions) {
 		s->accept(*this);
@@ -196,6 +198,7 @@ NodeAST * TypeInference::visit(NodeArray& node) {
 }
 
 NodeAST * TypeInference::visit(NodeArrayRef& node) {
+	if(node.index) node.index->accept(*this);
 //	if(node.declaration) node.declaration->accept(*this);
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
@@ -224,6 +227,7 @@ NodeAST * TypeInference::visit(NodeNDArray& node) {
 }
 
 NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
+	if(node.indexes) node.indexes->accept(*this);
 //	if(node.declaration) node.declaration->accept(*this);
     // if handed over without index -> as whole array structure type
     if(!node.indexes) {
@@ -272,6 +276,7 @@ NodeAST * TypeInference::visit(NodeList& node) {
 }
 
 NodeAST * TypeInference::visit(NodeListRef& node) {
+	if(node.indexes) node.indexes->accept(*this);
     // if handed over without index -> as whole list structure type
     if(!node.indexes) {
         if(node.ty == TypeRegistry::Unknown) {
@@ -480,6 +485,7 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
+	node.function->accept(*this);
 	node.get_definition(m_program);
 	if(!node.definition) {
 		// if definition pre lowering not found -> could be struct __init__ func
@@ -490,7 +496,6 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		}
 		return &node;
 	}
-	node.function->accept(*this);
 	if(!node.definition->visited) node.definition->accept(*this);
 
 	for (int i = 0; i < node.function->args->params.size(); i++) {

@@ -113,12 +113,24 @@ public:
 			}
 		}
 		/// propagation inside certain builtin functions is not allowed
+		/// if parameter in builtin function is a variable or an array -> no propagation
 		if(node->is_func_arg()) {
 			auto func_call = static_cast<NodeFunctionCall*>(node->parent->parent->parent);
 			if(func_call->kind == NodeFunctionCall::Kind::Builtin) {
-				if(contains(no_propagation, func_call->function->name)) {
+				if(func_call->definition) {
+					auto param_list = static_cast<NodeParamList*>(node->parent);
+					auto param = func_call->definition->header->args->params[param_list->get_idx(node)].get();
+					if(contains(static_cast<NodeDataStructure*>(param)->name, "variable")) {
+						return node;
+					}
+					if(contains(static_cast<NodeDataStructure*>(param)->name, "array")) {
+						return node;
+					}
+				} else {
 					return node;
 				}
+			} else {
+				return node;
 			}
 		}
 

@@ -70,7 +70,8 @@ public:
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		if(node.get_definition(m_program)) {
-			if(!node.definition->visited) node.definition->accept(*this);
+			if(node.kind != NodeFunctionCall::Kind::UserDefined) return &node;
+			if(!node.definition->visited) node.definition->body->accept(*this);
 			node.definition->visited = true;
 		}
 		return &node;

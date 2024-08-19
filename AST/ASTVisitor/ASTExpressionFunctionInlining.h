@@ -71,6 +71,7 @@ public:
 		if(node.kind != NodeFunctionCall::Kind::UserDefined) return &node;
 
 		if(node.get_definition(m_program)) {
+			if(node.kind != NodeFunctionCall::Kind::UserDefined) return &node;
 			// if it is not an expression-only function, do not transform into return statement, instead add return variable to function header
 			transform_to_return_function(node.definition);
 			if(!node.definition->visited) {
@@ -79,6 +80,7 @@ public:
 			node.definition->visited = true;
 			// see if the function is a return-only function
 			if(is_expression_function(node.definition)) {
+
 				m_program->function_call_stack.push(node.definition);
 
 				auto node_func_def = clone_as<NodeFunctionDefinition>(node.definition);

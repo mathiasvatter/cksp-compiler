@@ -21,6 +21,7 @@ public:
 		get_control_statement->ui_id->lower(m_program);
 
 		std::string control_function = "set_control_par";
+
 		auto new_node = lowering(control_function, get_control_statement);
 		// add r_value as third parameter to set_control_par
 		new_node->function->args->params.push_back(std::move(node.r_value));
@@ -48,6 +49,7 @@ private:
 			error.m_expected = "valid <control parameter> ($CONTROL_PAR...)";
 			error.exit();
 		}
+		node->ty = get_control_function_type(control_par->name);
 
 		// determine if _str needs to be added to control function name
 		if(node->ty == TypeRegistry::String) control_function += "_str";
@@ -80,6 +82,26 @@ private:
 			return node_control_function;
 		}
 		return nullptr;
+	}
+
+	static inline Type* get_control_function_type(const std::string& control_param) {
+		std::string control_par = to_lower(control_param);
+		static const std::unordered_set<std::string> str_substrings{"name", "path", "picture", "help", "identifier", "label", "text"};
+		static const std::unordered_set<std::string> int_substrings{"state", "alignment", "pos", "shifting"};
+		Type* type = TypeRegistry::Integer;
+		for (auto const &substring : str_substrings) {
+			if(contains(control_par, substring)) {
+				type = TypeRegistry::String;
+				break;
+			}
+		}
+		for (auto const &substring : int_substrings) {
+			if(contains(control_par, substring)) {
+				type = TypeRegistry::Integer;
+				break;
+			}
+		}
+		return type;
 	}
 
 };

@@ -29,6 +29,7 @@ std::unique_ptr<NodeReference> NodeVariable::to_reference() {
     auto ref = std::make_unique<NodeVariableRef>(name, tok);
 	ref->parent = parent;
 	ref->match_data_structure(this);
+	ref->ty = ty;
 	return ref;
 }
 
@@ -64,6 +65,7 @@ std::unique_ptr<NodeReference> NodePointer::to_reference() {
 	auto ref = std::make_unique<NodePointerRef>(name, tok);
 	ref->parent = parent;
 	ref->match_data_structure(this);
+	ref->ty = ty;
 	return ref;
 }
 
@@ -109,6 +111,7 @@ std::unique_ptr<NodeReference> NodeArray::to_reference() {
     auto ref = std::make_unique<NodeArrayRef>(name, nullptr, tok);
 	ref->parent = parent;
 	ref->match_data_structure(this);
+	ref->ty = ty;
 	return ref;
 }
 
@@ -142,6 +145,7 @@ std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
     auto ref = std::make_unique<NodeNDArrayRef>(name, nullptr, tok);
 	ref->parent = parent;
 	ref->match_data_structure(this);
+	ref->ty = ty;
 	return ref;
 }
 

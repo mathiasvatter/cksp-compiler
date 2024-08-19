@@ -182,8 +182,10 @@ public:
 		std::string func_name = "array<-init["+array_ref->declaration->ty->get_element_type()->to_string()+"]";
 		auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
 		node_iterator->is_local = true;
+		node_iterator->ty = TypeRegistry::Integer;
 		auto node_iterator_ref = node_iterator->to_reference();
 		node_iterator_ref->match_data_structure(node_iterator.get());
+		node_iterator_ref->ty = TypeRegistry::Integer;
 		auto node_body = std::make_unique<NodeBlock>(array_ref->tok);
 		node_body->scope = true;
 
