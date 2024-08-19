@@ -15,6 +15,9 @@ private:
 	static inline bool is_zero(NodeReal* node) {
 		return node && node->value == 0;
 	}
+	inline static std::unique_ptr<NodeInt> get_int(int32_t value, Token tok) {
+		return std::make_unique<NodeInt>(value, tok);
+	}
 
 public:
 	inline NodeAST* visit(NodeFunctionCall& node) override {
@@ -166,6 +169,35 @@ public:
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));
 					}
+				// e.g. if(($mw_active = 0) and 1)
+				} else if (left_int or right_int) {
+					// der bekannte Integer
+					NodeInt* known_int = left_int ? left_int : right_int;
+					// der unbekannte Ausdruck
+					std::unique_ptr<NodeAST> other_expr = left_int ? std::move(node.right) : std::move(node.left);
+					std::unique_ptr<NodeAST> result = std::move(other_expr);
+					switch (node.op) {
+						case token::BOOL_AND:
+							if (known_int->value == 0) {
+								// Absorbierendes Element, das Ergebnis ist immer 0
+								result = get_int(0, node.tok);
+							}
+							break;
+						case token::BOOL_OR:
+							if (known_int->value == 1) {
+								// Absorbierendes Element, das Ergebnis ist immer 1
+								result = get_int(1, node.tok);
+							}
+							break;
+						case token::BOOL_XOR:
+							if (known_int->value == 1) {
+								// Umkehrendes Element, kehre den anderen Ausdruck um
+								result = std::make_unique<NodeUnaryExpr>(token::BOOL_NOT, std::move(other_expr), node.tok);
+							}
+							break;
+						default: break;
+					}
+					return node.replace_with(std::move(result));
 				}
 			} else if (contains(COMPARISON_TOKENS, node.op)) {
 				if (left_int and right_int) {

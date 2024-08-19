@@ -5,6 +5,8 @@
 #pragma once
 
 #include "ASTVisitor.h"
+#include "../../SyntaxChecks/KSPPersistency.h"
+#include "../../SyntaxChecks/KSPDeclarations.h"
 
 /**
  * Adds persistence functions to variables that are declared with a persistence keyword.
@@ -13,36 +15,89 @@
 class ASTKSPSyntaxCheck: public ASTVisitor {
 private:
 	DefinitionProvider *m_def_provider;
-	std::vector<NodeDataStructure*> m_persistent_vars;
+	std::unordered_map<std::string, int> m_ui_control_count;
+
+	static const int MAX_BLOCK_LINES = 4990;
+	static const int MAX_UI_CONTROLS = 999;
+	static const int MAX_ARRAY_ELEMENTS = 1000000;
+
+	static void check_max_array_size(NodeArray* node) {
+		if(node->size->get_node_type() == NodeType::Int) {
+			auto node_int = static_cast<NodeInt*>(node->size.get());
+			if(node_int->value > MAX_ARRAY_ELEMENTS) {
+				auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *node->size);
+				error.m_message = "Array size exceeds maximum of " + std::to_string(MAX_ARRAY_ELEMENTS) + ".";
+				error.exit();
+			}
+		}
+	}
+
+	void check_max_ui_controls(NodeUIControl* node) {
+		if(m_ui_control_count[node->ui_control_type] > MAX_UI_CONTROLS) {
+			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *node);
+			error.m_message = "Maximum number of UI controls exceeded for <"+node->ui_control_type+">. Counted "+std::to_string(m_ui_control_count[node->ui_control_type])+" controls.";
+			error.exit();
+		}
+	}
+
+	static bool check_line_count(NodeBlock* node, int line_count) {
+		if(line_count > MAX_BLOCK_LINES) {
+			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *node);
+			error.m_message = "Maximum number of lines in block exceeded ("+std::to_string(MAX_BLOCK_LINES)+"). This will prompt a 'memory exhausted' error in KSP.";
+			error.print();
+			return true;
+		}
+		return false;
+	}
+
+	static std::vector<std::unique_ptr<NodeBlock>> split_blocks(NodeBlock &block) {
+		std::vector<std::unique_ptr<NodeBlock>> result_blocks;
+		auto it = block.statements.begin();
+		while (it != block.statements.end()) {
+			// Erstelle einen neuen Block mit vorreserviertem Speicherplatz
+			auto new_block = std::make_unique<NodeBlock>(block.tok);
+			new_block->statements.reserve(MAX_BLOCK_LINES);
+
+			// Kopiere bis zu max_block_size Statements in den neuen Block
+			for (size_t i = 0; i < MAX_BLOCK_LINES && it != block.statements.end(); ++i, ++it) {
+				new_block->add_stmt(std::move((*it)));
+			}
+
+			// Füge den neuen Block zum Ergebnis hinzu
+			result_blocks.push_back(std::move(new_block));
+		}
+		block.statements.clear();
+		return result_blocks;
+	}
+
+	std::unique_ptr<NodeBlock> get_block_of_if_stmts(std::vector<std::unique_ptr<NodeBlock>>& blocks) {
+		Token tok = blocks[0]->tok;
+		auto new_block = std::make_unique<NodeBlock>(tok);
+		auto true_expr = std::make_unique<NodeBinaryExpr>(token::EQUAL, std::make_unique<NodeInt>(1,tok), std::make_unique<NodeInt>(1,tok),tok);
+		true_expr->ty = TypeRegistry::Boolean;
+		for(auto& block : blocks) {
+			auto node_if = std::make_unique<NodeIf>(
+				true_expr->clone(),
+				std::move(block),
+				std::make_unique<NodeBlock>(tok),
+				tok
+			);
+			new_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_if), tok));
+		}
+		return new_block;
+	}
+
 public:
 	explicit ASTKSPSyntaxCheck(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {};
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);
-		std::unique_ptr<NodeBlock> body = nullptr;
-		if(node.variable->persistence.has_value()) {
-			body = add_read_functions(node.variable->persistence.value(), node.variable.get());
-		}
-		if(node.value) {
-			node.value->accept(*this);
-			if(!node.value->is_constant()) {
-				if(!body) {
-					body = std::make_unique<NodeBlock>(node.tok);
-				}
-				auto node_var_ref = node.variable->to_reference();
-				node_var_ref->match_data_structure(node.variable.get());
-				node_var_ref->ty = node.variable->ty;
-				body->add_stmt(std::make_unique<NodeStatement>(std::make_unique<NodeSingleAssignment>(std::move(node_var_ref), std::move(node.value), node.tok), node.tok));
-				body->prepend_stmt(std::make_unique<NodeStatement>(std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok), node.tok));
-				return node.replace_with(std::move(body));
-			}
-		}
+		if(node.value) node.value->accept(*this);
 
-		if(body) {
-			body->prepend_stmt(std::make_unique<NodeStatement>(node.clone(), node.tok));
-			return node.replace_with(std::move(body));
-		}
-		return &node;
+		static KSPDeclarations declarations;
+		auto new_node = node.accept(declarations);
+		static KSPPersistency persistency;
+		return new_node->accept(persistency);
 	}
 
 	NodeAST* visit(NodeBlock& node) override {
@@ -50,39 +105,26 @@ public:
 			stmt->accept(*this);
 		}
 		node.flatten();
+		if(check_line_count(&node, node.statements.size())) {
+			auto blocks = split_blocks(node);
+			return node.replace_with(get_block_of_if_stmts(blocks));
+		}
 		return &node;
 	};
 
-
-
-private:
-	static std::unique_ptr<NodeBlock> add_read_functions(const Token& persistence, NodeDataStructure* var) {
-		auto node_body = std::make_unique<NodeBlock>(var->tok);
-
-		auto it = PERSISTENCE_TOKENS.find(persistence.type);
-		if(it == PERSISTENCE_TOKENS.end()) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", var->tok);
-			error.m_message = "Persistence keyword not recognized.";
-			error.exit();
-		}
-		auto var_ref = var->to_reference();
-		var_ref->match_data_structure(var);
-		var_ref->ty = var->ty;
-		for(auto &pers_func : it->second) {
-			auto make_persistent = std::make_unique<NodeFunctionCall>(
-				false,
-				std::make_unique<NodeFunctionHeader>(
-					pers_func,
-					std::make_unique<NodeParamList>(var->tok, var_ref->clone()),
-					var->tok
-				),
-				var->tok
-			);
-			make_persistent->kind = NodeFunctionCall::Kind::Builtin;
-			make_persistent->ty = TypeRegistry::Void;
-			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(make_persistent), var->tok));
-		}
-		return node_body;
+	NodeAST* visit(NodeArray& node) override {
+		node.size->accept(*this);
+		check_max_array_size(&node);
+		return &node;
 	}
+
+	NodeAST* visit(NodeUIControl& node) override {
+		m_ui_control_count[node.ui_control_type]++;
+		check_max_ui_controls(&node);
+		node.control_var->accept(*this);
+		node.params->accept(*this);
+		return &node;
+	}
+
 
 };

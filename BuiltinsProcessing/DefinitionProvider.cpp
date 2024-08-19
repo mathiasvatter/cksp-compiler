@@ -85,6 +85,7 @@ NodeDataStructure* DefinitionProvider::remove_from_current_scope(const std::stri
 NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 	// if reference is compiler, return dummy declaration pointer
 	if(const auto &dummy_decl = get_compiler_declaration(var)) {
+		var->kind = NodeReference::Kind::Compiler;
 		return dummy_decl;
 	}
 
@@ -94,6 +95,7 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
 
 	if (node_builtin_declaration) {
+		var->kind = NodeReference::Kind::Builtin;
 		return node_builtin_declaration;
 	}
 
@@ -106,6 +108,7 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 	}
 	if (node_declaration) {
 		m_references_per_data_structure[node_declaration].insert(var);
+		var->kind = NodeReference::Kind::User;
 		return node_declaration;
 	}
 	return nullptr;

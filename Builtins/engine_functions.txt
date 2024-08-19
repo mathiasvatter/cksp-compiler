@@ -62,7 +62,7 @@ change_velo(event_id: int, new_velocity: int)
 change_vol(event_id: int, volume: int, relative_bit: int)
 cbrt(value: real):real
 cos(value: real):real
-dec(expression: int): int
+dec(variable: int): int
 delete_event_mark(event_id: int, bit_mark: int)
 detect_pitch(zone_id: int, return_var: int): int
 detect_rms(zone_id: int, return_var: int): int
@@ -138,7 +138,7 @@ ignore_event(event_id: int)
 ignore_midi
 import_nckp(filepath: string): string
 in_range(value: number, value: number, value: number): bool
-inc(expression: int)
+inc(variable: int)
 int(value: real): int
 int_to_real(value: int): real
 is_zone_empty(zone_id: int): int

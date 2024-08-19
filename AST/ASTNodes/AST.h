@@ -310,6 +310,14 @@ struct NodeParamList: NodeAST {
             p->update_token_data(token);
         }
     }
+	int get_idx(NodeAST* node) {
+		for(int i = 0; i < params.size(); i++) {
+			if(params[i].get() == node) {
+				return i;
+			}
+		}
+		return -1;
+	}
 	void add_param(std::unique_ptr<NodeAST> param) {
 		param->parent = this;
 		params.push_back(std::move(param));

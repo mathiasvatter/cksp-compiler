@@ -55,7 +55,6 @@ NodeFunctionDefinition* NodeFunctionCall::find_definition(struct NodeProgram *pr
     if(it != program->function_lookup.end()) {
         it->second->is_used = true;
         definition = it->second;
-//        definition->call_sites.emplace(this);
         kind = Kind::UserDefined;
         return it->second;
     }

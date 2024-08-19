@@ -55,11 +55,26 @@ public:
 		node.variable->accept(*this);
 		if (node.value) node.value->accept(*this);
 		// get ui control variables out of the picture
-		if(node.variable->get_node_type() == NodeType::UIControl) return &node;
+		if(!is_prune_candidate(node.variable.get())) {
+			return &node;
+		}
 		// claim everything as unused at first
 		node.variable->is_used = false;
 		m_all_declarations.push_back(&node);
 		return &node;
+	}
+
+	/// decide whether to potentially prune or not
+	/// ui controls will not be pruned
+	/// persistent data structures will not be pruned
+	static inline bool is_prune_candidate(NodeDataStructure* node) {
+		if(node->get_node_type() == NodeType::UIControl) {
+			return false;
+		}
+		if(node->persistence.has_value()) {
+			return false;
+		}
+		return true;
 	}
 
 	// is unused if not ui_control and only used as l_value in assignments -> adds these assignments to vector

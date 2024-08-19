@@ -4,7 +4,6 @@
 
 #pragma once
 #include <iostream>
-//#include <utility>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -155,10 +154,6 @@ std::unordered_map<V, K> invert_map(const std::unordered_map<K, V>& map) {
     }
     return inverted_map;
 }
-
-inline int MAX_CALLBACK_LINES = 4990;
-inline int MAX_UI_CONTROLS = 999;
-inline int MAX_ARRAY_ELEMENTS = 1000000;
 
 inline std::unordered_set<char> BINARY_OPERATORS = {'-', '+', '/', '*', '&'};
 inline std::unordered_set<char> PARENTH = {'(',')', '[', ']'};
