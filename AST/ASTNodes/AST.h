@@ -142,10 +142,7 @@ struct NodeReference : NodeAST {
 	/// lower type from object to int if applicable
 	NodeReference* lower_type();
 
-	/// determines if given reference is ui_control and belongs to ui array
-//	bool is_ui_array_ref(DefinitionProvider* def_provider) {
-//
-//	}
+	bool is_l_value();
 
 };
 

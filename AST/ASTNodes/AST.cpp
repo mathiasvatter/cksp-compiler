@@ -208,6 +208,16 @@ std::unique_ptr<NodeFunctionCall> NodeReference::wrap_in_get_ui_id() {
 	return DefinitionProvider::get_ui_id(clone_as<NodeReference>(this));
 }
 
+bool NodeReference::is_l_value() {
+	if(this->parent->get_node_type() == NodeType::SingleAssignment) {
+		auto assignment = static_cast<NodeSingleAssignment*>(this->parent);
+		if(assignment->l_value.get() == this) {
+			return true;
+		}
+	}
+	return false;
+}
+
 // ************* NodeInstruction ***************
 NodeAST *NodeInstruction::accept(struct ASTVisitor &visitor) {
 	return nullptr;

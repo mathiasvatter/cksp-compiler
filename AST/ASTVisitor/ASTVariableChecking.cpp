@@ -66,22 +66,6 @@ NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
 	// if fail is set to false, return early. the rest is determined after lowering
 	if(!fail) return &node;
 
-	// already gets checked in typechecker
-//	auto node_type = node.control_var->get_node_type();
-//	auto engine_widget_type = engine_widget->control_var->get_node_type();
-//	//check variable type
-//	if(node_type != engine_widget_type) {
-//		error.m_message = "Engine Widget Variable is of wrong type.";
-//		if(node_type == NodeType::Array) {
-//			error.m_got = "<Array>";
-//			error.m_expected = "<Variable>";
-//		} else if (node_type == NodeType::Variable) {
-//			error.m_got = "<Variable>";
-//			error.m_expected = "<Array>";
-//		}
-//		error.exit();
-//	}
-
 	//check param size
 	if(engine_widget->params->params.size() != node.params->params.size()) {
 		auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
