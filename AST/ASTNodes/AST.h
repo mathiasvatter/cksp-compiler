@@ -16,6 +16,7 @@
 #include "ASTHelper.h"
 #include "../Types.h"
 #include "../TypeRegistry.h"
+#include "../../misc/HashFunctions.h"
 
 class ASTDesugaring;
 
@@ -449,8 +450,8 @@ struct NodeImport : NodeAST {
 };
 
 struct NodeFunctionHeader: NodeAST {
-	bool is_thread_safe = true;
-    bool is_builtin = false;
+//	bool is_thread_safe = true;
+//    bool is_builtin = false;
     bool has_forced_parenth = false;
     std::string name;
     std::unique_ptr<NodeParamList> args;
@@ -480,6 +481,10 @@ struct NodeFunctionHeader: NodeAST {
 };
 
 struct NodeFunctionDefinition: NodeAST {
+	/// is tagged when restricted builtin functions are used within this function (save_array, load_array, etc)
+	bool is_restricted = false;
+	/// is tagged when non thread-safe builtin functions are used within this function (wait, wait_asnyc, etc)
+	bool is_thread_safe = true;
     bool is_used = false;
     bool is_compiled = false;
 	bool visited = false;

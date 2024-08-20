@@ -84,12 +84,18 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 		if(!node.definition->visited) node.definition->accept(*this);
 	}
 
+	// determine thread safety of currently visiting function definition
 	if(node.definition) {
 		if(!m_program->function_call_stack.empty()) {
-			m_program->function_call_stack.top()->header->is_thread_safe &= node.definition->header->is_thread_safe;
+			m_program->function_call_stack.top()->is_thread_safe &= node.definition->is_thread_safe;
 		}
-		if(m_program->current_callback) m_program->current_callback->is_thread_safe &= node.definition->header->is_thread_safe;
-//		if(m_program->current_callback) node.definition->header->is_thread_safe &= m_program->current_callback->is_thread_safe;
+		if(m_program->current_callback) m_program->current_callback->is_thread_safe &= node.definition->is_thread_safe;
+	}
+	// determine if currently visiting function in stack is restricted
+	if(node.definition) {
+		if(!m_program->function_call_stack.empty()) {
+			m_program->function_call_stack.top()->is_restricted &= node.definition->is_restricted;
+		}
 	}
 
 	// if definition parameters of this function have different node types as the call site -> update

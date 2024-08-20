@@ -62,6 +62,7 @@ public:
 	NodeDataStructure* replace_incorrectly_detected_data_struct(NodeDataStructure* data_struct);
 	/// updated incorrectly detected references of function params
 	static NodeReference* replace_incorrectly_detected_reference(DefinitionProvider* def_provider, NodeReference* reference);
+
 private:
     NodeProgram* m_program = nullptr;
 	DefinitionProvider* m_def_provider = nullptr;

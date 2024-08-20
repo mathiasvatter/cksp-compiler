@@ -5,9 +5,9 @@
 #pragma once
 
 #include <functional>
-#include "../AST/ASTVisitor/ASTVisitor.h"
+#include "../AST/ASTVisitor/ASTOptimizations.h"
 
-class ConstantFolding : public ASTVisitor {
+class ConstantFolding : public ASTOptimizations {
 private:
 	static inline bool is_zero(NodeInt* node) {
 		return node && node->value == 0;
@@ -15,11 +15,16 @@ private:
 	static inline bool is_zero(NodeReal* node) {
 		return node && node->value == 0;
 	}
-	inline static std::unique_ptr<NodeInt> get_int(int32_t value, Token tok) {
+	inline static std::unique_ptr<NodeInt> get_int(int32_t value, const Token& tok) {
 		return std::make_unique<NodeInt>(value, tok);
 	}
+	inline static bool all_params_are_type(const NodeFunctionCall& node, NodeType type) {
+		for(auto & param : node.function->args->params) {
+			if(param->get_node_type() != type) return false;
+		}
+		return true;
+	}
 
-	// TODO: in_range function
 public:
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		// return immediately if the function is not a builtin function to save time
@@ -28,7 +33,7 @@ public:
 		node.function->args->accept(*this);
 
 		if(node.function->args->params.size() == 1) {
-			if(node.function->args->params[0]->get_node_type() == NodeType::ArrayRef) {
+			if(all_params_are_type(node, NodeType::ArrayRef)) {
 				if(node.function->name == "num_elements") {
 					auto array_ref = static_cast<NodeArrayRef*>(node.function->args->params[0].get());
 					auto node_size_const = std::make_unique<NodeVariableRef>(
@@ -38,7 +43,7 @@ public:
 					node_size_const->data_type = DataType::Const;
 					return node.replace_with(std::move(node_size_const));
 				}
-			} else if (node.function->args->params[0]->get_node_type() == NodeType::Int) {
+			} else if (all_params_are_type(node, NodeType::Int)) {
 				int32_t result = 0;
 				auto int_node = static_cast<NodeInt*>(node.function->args->params[0].get());
 				// Definition der Funktions-Map für Integer-Operationen
@@ -55,7 +60,7 @@ public:
 					auto new_node = std::make_unique<NodeReal>(static_cast<double>(int_node->value), node.tok);
 					return node.replace_with(std::move(new_node));
 				}
-			} else if (node.function->args->params[0]->get_node_type() == NodeType::Real) {
+			} else if (all_params_are_type(node, NodeType::Real)) {
 				double result = 0;
 				auto real_node = static_cast<NodeReal*>(node.function->args->params[0].get());
 				static std::unordered_map<std::string, std::function<double(double)>> real_functions = {
@@ -74,6 +79,22 @@ public:
 					return node.replace_with(std::move(new_node));
 				} else if (node.function->name == "int") {
 					auto new_node = std::make_unique<NodeInt>(static_cast<int32_t>(real_node->value), node.tok);
+					return node.replace_with(std::move(new_node));
+				}
+			}
+		} else if(node.function->args->params.size() == 3) {
+			if(node.function->name == "in_range") {
+				if(all_params_are_type(node, NodeType::Int)) {
+					auto value = static_cast<NodeInt*>(node.function->args->params[0].get());
+					auto min = static_cast<NodeInt*>(node.function->args->params[1].get());
+					auto max = static_cast<NodeInt*>(node.function->args->params[2].get());
+					auto new_node = std::make_unique<NodeInt>(value->value >= min->value && value->value <= max->value, node.tok);
+					return node.replace_with(std::move(new_node));
+				} else if(all_params_are_type(node, NodeType::Real)) {
+					auto value = static_cast<NodeReal*>(node.function->args->params[0].get());
+					auto min = static_cast<NodeReal*>(node.function->args->params[1].get());
+					auto max = static_cast<NodeReal*>(node.function->args->params[2].get());
+					auto new_node = std::make_unique<NodeReal>(value->value >= min->value && value->value <= max->value, node.tok);
 					return node.replace_with(std::move(new_node));
 				}
 			}

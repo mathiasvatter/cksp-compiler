@@ -77,21 +77,20 @@ public:
 			error.exit();
 		}
 
-		if(node.kind == NodeFunctionCall::Kind::Builtin) {
-			if(m_restricted_builtin_functions.find(node.function->name) != m_restricted_builtin_functions.end()) {
-				if(!contains(RESTRICTED_CALLBACKS, remove_substring(m_current_callback->begin_callback, "on "))) {
-					auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-					error.m_message = "<"+node.function->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks.";
-					error.m_got = "<"+m_current_callback->begin_callback+">";
-					error.exit();
-				}
+		if(node.kind == NodeFunctionCall::Kind::Builtin) return &node;
+
+		if(node.definition->is_restricted) {
+			if(!contains(RESTRICTED_CALLBACKS, remove_substring(m_current_callback->begin_callback, "on "))) {
+				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+				error.m_message = "<"+node.function->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks.";
+				error.m_got = "<"+m_current_callback->begin_callback+">";
+				error.exit();
 			}
-			return &node;
 		}
 
 		// only threadsafe functions can be called in <on init> callback
 		if(m_current_callback == m_program->init_callback) {
-			if(!node.definition->header->is_thread_safe) {
+			if(!node.definition->is_thread_safe) {
 				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 				error.m_message = "Only threadsafe functions can be called in the <on init> callback. Function <"
 								  +node.function->name+"> contains asychronous operations.";

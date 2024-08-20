@@ -29,7 +29,7 @@ void Compiler::compile() {
 
 //	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
-	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -39,7 +39,7 @@ void Compiler::compile() {
 //	input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
 //    input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 
-    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
+//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
 //    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
 //    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
@@ -182,7 +182,7 @@ void Compiler::compile() {
 
 	ast->inline_global_variables();
 	ASTOptimizations optimizations;
-	ast->accept(optimizations);
+	optimizations.optimize(*ast);
 
 	compile_time.stop("Optimization");
 	compile_time.start("Generator");

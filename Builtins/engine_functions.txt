@@ -157,7 +157,7 @@ lsb(value: int): int
 make_instr_persistent(variable: any)
 make_perfview
 make_persistent(variable: any)
-message(variable_or_string: any)
+message(value: any)
 mf_copy_export_area(zone_id: int)
 mf_get_buffer_size(): int
 mf_get_byte_one(): int
