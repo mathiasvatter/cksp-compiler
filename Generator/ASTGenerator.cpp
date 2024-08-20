@@ -70,13 +70,15 @@ NodeAST * ASTGenerator::visit(NodeVariable &node) {
 }
 
 NodeAST * ASTGenerator::visit(NodeVariableRef &node) {
-    os << TypeRegistry::get_identifier_from_type(node.ty ? node.ty : node.declaration->ty);
+    os << TypeRegistry::get_identifier_from_type(node.ty);
     os << sanitize_dots(node.name);
 	return &node;
 }
 
 NodeAST * ASTGenerator::visit(NodeArrayRef &node) {
-    os << TypeRegistry::get_identifier_from_type(node.declaration->ty);
+	// get korrekt type since array refs with index are internally treated as variables with a basic type
+	const auto &type = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
+    os << TypeRegistry::get_identifier_from_type(type);
     os << sanitize_dots(node.name);
 	if(node.index) {
 		os << "[";
@@ -200,6 +202,7 @@ NodeAST * ASTGenerator::visit(NodeSelect &node) {
     os << "select(" ;
     node.expression->accept(*this);
     os << ")" << std::endl;
+	m_scope_count++;
     for(const auto &cas: node.cases) {
         os << get_indent() << "case ";
         cas.first[0]->accept(*this);
@@ -210,6 +213,7 @@ NodeAST * ASTGenerator::visit(NodeSelect &node) {
         os << std::endl;
         cas.second->accept(*this);
     }
+	m_scope_count--;
     os << get_indent() << "end select";
 	return &node;
 }

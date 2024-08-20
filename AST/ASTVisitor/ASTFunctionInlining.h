@@ -10,6 +10,7 @@
 class ASTFunctionInlining : public ASTVisitor {
 private:
 	std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
+	std::vector<NodeFunctionCall*> m_function_calls;
 public:
 	explicit ASTFunctionInlining(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
@@ -17,6 +18,7 @@ public:
 	inline NodeAST *visit(NodeProgram &node) override {
 		m_program = &node;
 		node.update_function_lookup();
+		node.reset_function_used_flag();
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
@@ -40,6 +42,9 @@ public:
 		/// vector to house only the definitions that are actually used in the program
 		node.function_definitions = std::move(m_function_definitions);
 		node.update_function_lookup();
+		for(auto & call : m_function_calls) {
+			call->definition = nullptr;
+		}
 		return &node;
 	}
 
@@ -104,10 +109,10 @@ public:
 			CompileError(ErrorType::InternalError,"Function call was not rewritten and is not within <Statement>.", "", node.tok).exit();
 		}
 
-		// check that we are not in init callback and add the function to used_func_def vector if called
+		// check that we are not in init callback
 		if(m_current_callback != m_program->init_callback) {
 			// make function called if it is no params
-			if(node.definition->header->args->params.empty()) node.is_call = true;
+//			if(node.definition->header->args->params.empty()) node.is_call = true;
 
 		} else if(node.is_call){
 			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
@@ -116,13 +121,22 @@ public:
 			node.is_call = false;
 		}
 
+
+		// visit everything beforehand to get depth first search
+		if(!node.definition->visited)
+			node.definition->accept(*this);
+
 		std::unique_ptr<NodeFunctionDefinition> node_func_def = nullptr;
 		if(node.is_call) {
+			m_function_calls.push_back(&node);
+//			if (!node.definition->is_used){
 			if(!node.definition->visited) {
-				node.definition->accept(*this);
 				m_function_definitions.push_back(clone_as<NodeFunctionDefinition>(node.definition));
-				node.definition->visited = true;
 				node.definition->call_sites.clear();
+				node.definition->is_used = true;
+				node.definition->visited = true;
+				node.definition = nullptr;
+//			}
 			}
 		} else {
 			node_func_def = clone_as<NodeFunctionDefinition>(node.definition);
@@ -133,7 +147,6 @@ public:
 		m_program->function_call_stack.pop();
 
 		if(node.is_call) {
-			node.definition = nullptr;
 			return &node;
 		} else {
 			return node.replace_with(std::move(node_func_def->body));
@@ -225,6 +238,7 @@ public:
 				if(substitute->get_node_type() == NodeType::ArrayRef) {
 					auto array_ref = static_cast<NodeArrayRef*>(substitute.get());
 					ref->name = array_ref->name + remove_substring(ref->name, ndarray_name);
+					ref->ty = TypeRegistry::Integer;
 					return ref;
 				}
 			// in case it is before datastructure lowering and ndarray refs still exist
@@ -232,6 +246,7 @@ public:
 				if(nd_substitute->get_node_type() == NodeType::NDArrayRef) {
 					auto nd_array_ref = static_cast<NodeNDArrayRef*>(nd_substitute.get());
 					ref->name = nd_array_ref->name + remove_substring(ref->name, ndarray_name);
+					ref->ty = TypeRegistry::Integer;
 					return ref;
 				}
 			}
@@ -249,6 +264,7 @@ public:
 			}
 			auto array_ref = static_cast<NodeReference*>(substitute);
 			ref->name = array_ref->name;
+			ref->ty = substitute->ty;
 			return ref;
 		}
 		return nullptr;

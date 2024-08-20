@@ -95,7 +95,7 @@ public:
 
 		// for now, when function has no params and is not in init callback, assume as call
 		if(node.definition and node.definition->header->args->params.empty() and m_program->current_callback != m_program->init_callback) {
-			node.is_call = true;
+//			node.is_call = true;
 		}
 		// for now, when function is called, do not promote and assume as threadsafe
 		if(node.definition and node.is_call) {
@@ -118,15 +118,6 @@ public:
 						}
 					}
 
-					// if the call is in a nested function -> get the local var declaration map to the above function
-					if(!m_program->function_call_stack.empty()) {
-						// add declaration statements to the body of the current/above function
-						auto &next_declares = m_local_var_declarations[m_program->function_call_stack.top()];
-						for (auto &decl : m_local_var_declarations[node.definition]) {
-							next_declares.emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
-						}
-					}
-
 				// if threadsafe, add to global declarations
 				} else {
 					// put local declaration into global declaration as a one time thing
@@ -146,15 +137,22 @@ public:
 		}
 
 		if(node.definition) {
+			// if the call is not in a threadsafe environment
 			if(!node.definition->header->is_thread_safe) {
 				// if the call is in a callback -> check if threadsafe (add to global declarations) or not (do parameter promotion)
-				if (!m_program->function_call_stack.empty()) {
-					// if the call is not in a threadsafe environment
-					if (!node.definition->header->is_thread_safe) {
-						// add declaration statements to the statement right above the function call
-						for (auto &decl : m_local_var_declarations[node.definition]) {
-							m_declares_per_stmt[m_last_stmt].emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
-						}
+				if (m_program->function_call_stack.empty()) {
+					// add declaration statements to the statement right above the function call
+					for (auto &decl : m_local_var_declarations[node.definition]) {
+						m_declares_per_stmt[m_last_stmt].emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
+					}
+				}
+
+				// if the call is in a nested function -> get the local var declaration map to the above function
+				if(!m_program->function_call_stack.empty()) {
+					// add declaration statements to the body of the current/above function
+					auto &next_declares = m_local_var_declarations[m_program->function_call_stack.top()];
+					for (auto &decl : m_local_var_declarations[node.definition]) {
+						next_declares.emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
 					}
 				}
 			}
@@ -163,7 +161,7 @@ public:
 			if(!node.definition->header->is_thread_safe and !node.function->args->params.empty()) {
 				node.is_call = false;
 			} else if (node.definition->header->is_thread_safe and node.function->args->params.empty()){
-				if(m_program->current_callback != m_program->init_callback) node.is_call = true;
+//				if(m_program->current_callback != m_program->init_callback) node.is_call = true;
 			}
 
 		}
