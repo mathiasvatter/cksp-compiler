@@ -15,25 +15,6 @@ class DeadCodeElimination : public ASTVisitor {
 private:
 	std::unordered_map<std::string, NodeReference*> m_last_reference;
 public:
-//
-//	NodeAST* visit(NodeFunctionDefinition& node) override {
-//		if(node.header->name == "update_user_preset_tags_to_1_1") {
-//
-//		}
-//		node.header ->accept(*this);
-//		if (node.return_variable.has_value())
-//			node.return_variable.value()->accept(*this);
-//		node.body->accept(*this);
-//		return &node;
-//	};
-//
-////	NodeAST* visit(NodeFunctionCall& node) override {
-////		if(node.function->name == "update_user_preset_tags_to_1_1") {
-////
-////		}
-////		node.function->accept(*this);
-////		return &node;
-////	}
 
 	/// kill empty while loops and if statements
 	NodeAST* visit(NodeWhile& node) override {

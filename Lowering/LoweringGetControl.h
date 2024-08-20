@@ -24,9 +24,8 @@ public:
 
 		auto new_node = lowering(control_function, get_control_statement);
 		// add r_value as third parameter to set_control_par
-		new_node->function->args->params.push_back(std::move(node.r_value));
-		new_node->function->args->set_child_parents();
-		return node.replace_with(std::move(new_node));
+		new_node->function->args->add_param(std::move(node.r_value));
+		return node.replace_with(std::move(new_node))->accept(*this);
 	};
 
 	NodeAST * visit(NodeGetControl &node) override {
@@ -35,7 +34,7 @@ public:
 		std::string control_function = "get_control_par";
 		auto new_node = lowering(control_function, &node);
 		new_node->update_parents(node.parent);
-		return node.replace_with(std::move(new_node));
+		return node.replace_with(std::move(new_node))->accept(*this);
 	};
 
 private:
@@ -66,16 +65,9 @@ private:
         node_control_function->function->ty = node->ty;
         node_control_function->kind = NodeFunctionCall::Kind::Builtin;
 
-		if(auto node_reference = cast_node<NodeReference>(node->ui_id.get())) {
-			// do not wrap in get_ui_id when it is a ui_control array
-//            auto node_declaration = m_def_provider->get_declaration(node_reference);
-//            if(node_declaration) {
-//                node_reference->match_data_structure(node_declaration);
-//            }
-
-            node_control_function->function->args->params.push_back(std::move(node->ui_id));
-			node_control_function->function->args->params.push_back(std::move(control_par));
-			node_control_function->function->args->set_child_parents();
+		if(is_instance_of<NodeReference>(node->ui_id.get())) {
+            node_control_function->function->args->add_param(std::move(node->ui_id));
+			node_control_function->function->args->add_param(std::move(control_par));
 
             // check if var needs is ui control and needs to wrapped in get_ui_id
 			node_control_function->lower(m_program);

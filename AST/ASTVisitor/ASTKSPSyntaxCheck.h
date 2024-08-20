@@ -11,6 +11,7 @@
 /**
  * Adds persistence functions to variables that are declared with a persistence keyword.
  * Is assigned value to a declaration statement is not constant, split the declaration into a declaration and an assignment statement.
+ * CAREFUL: This visitor will mess up the declaration pointers of the references.
  */
 class ASTKSPSyntaxCheck: public ASTVisitor {
 private:

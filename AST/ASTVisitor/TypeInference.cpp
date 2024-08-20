@@ -32,7 +32,11 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 void TypeInference::cast_data_structure_types(DefinitionProvider* def_provider, bool cast) {
 	for(auto& refs : def_provider->m_references_per_data_structure) {
 		for(auto & ref : refs.second) {
+			if(ref->name == "category_accum"){
+
+			}
 			match_reference_declaration(ref);
+
 		}
 	}
 
@@ -54,6 +58,12 @@ void TypeInference::cast_data_structure_types(DefinitionProvider* def_provider, 
 	for(auto& refs : def_provider->m_references_per_data_structure) {
 		for(auto & ref : refs.second) {
 			match_reference_declaration(ref);
+			if(ref->name == "category_accum") {
+				if(ref->ty->get_element_type() == TypeRegistry::Unknown || ref->ty->get_element_type() == TypeRegistry::Any
+				|| ref->ty->get_element_type() == TypeRegistry::Number){
+
+				}
+			}
 		}
 	}
 }

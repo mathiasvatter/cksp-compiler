@@ -19,6 +19,7 @@ private:
 		return std::make_unique<NodeInt>(value, tok);
 	}
 
+	// TODO: in_range function
 public:
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		// return immediately if the function is not a builtin function to save time
