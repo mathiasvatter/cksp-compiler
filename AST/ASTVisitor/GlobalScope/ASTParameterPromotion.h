@@ -99,7 +99,7 @@ public:
 		}
 		// for now, when function is called, do not promote and assume as threadsafe
 		if(node.definition and node.is_call) {
-			node.definition->header->is_thread_safe = true;
+			node.definition->is_thread_safe = true;
 		}
 
 		if(node.definition and !node.definition->visited) {
@@ -107,7 +107,7 @@ public:
 
 			if(!m_local_var_declarations[node.definition].empty()) {
 				// see if this call is in thread safe env -> if not, clone and promote local vars
-				if (!node.definition->header->is_thread_safe) {
+				if (!node.definition->is_thread_safe) {
 					// do this only if current call is not threadsafe environment
 					for (auto &decl : m_local_var_declarations[node.definition]) {
 						// add local declarations of function definition to parameters
@@ -138,7 +138,7 @@ public:
 
 		if(node.definition) {
 			// if the call is not in a threadsafe environment
-			if(!node.definition->header->is_thread_safe) {
+			if(!node.definition->is_thread_safe) {
 				// if the call is in a callback -> check if threadsafe (add to global declarations) or not (do parameter promotion)
 				if (m_program->function_call_stack.empty()) {
 					// add declaration statements to the statement right above the function call
@@ -158,9 +158,9 @@ public:
 			}
 
 			// remove call flag when function is not thread safe
-			if(!node.definition->header->is_thread_safe and !node.function->args->params.empty()) {
+			if(!node.definition->is_thread_safe and !node.function->args->params.empty()) {
 				node.is_call = false;
-			} else if (node.definition->header->is_thread_safe and node.function->args->params.empty()){
+			} else if (node.definition->is_thread_safe and node.function->args->params.empty()){
 //				if(m_program->current_callback != m_program->init_callback) node.is_call = true;
 			}
 

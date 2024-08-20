@@ -232,7 +232,7 @@ struct NodeConst : NodeDataStructure {
 };
 
 struct NodeStruct : NodeDataStructure {
-	std::unique_ptr<NodeVariable> node_self = std::make_unique<NodeVariable>(std::nullopt, "self", TypeRegistry::add_object_type(this->name), DataType::Mutable, this->tok);
+	std::unique_ptr<NodePointer> node_self = std::make_unique<NodePointer>(std::nullopt, "self", TypeRegistry::add_object_type(this->name), this->tok);
 	std::unique_ptr<NodeBlock> members;
 	std::map<std::string, NodeDataStructure*> member_table;
 	std::set<std::string> member_set;

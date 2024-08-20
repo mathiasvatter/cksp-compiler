@@ -329,7 +329,6 @@ NodeFunctionDefinition *NodeStruct::generate_init_method() {
 NodeFunctionDefinition *NodeStruct::generate_repr_method() {
 	auto self_ref = node_self->to_reference();
 	self_ref->declaration = node_self.get();
-	self_ref->kind = NodeReference::Kind::Compiler;
 	auto message = std::make_unique<NodeBinaryExpr>(
 		token::STRING_OP,
 		std::make_unique<NodeString>("\"<"+this->name+"> Object: \"", tok),

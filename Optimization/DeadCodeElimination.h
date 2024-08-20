@@ -4,16 +4,16 @@
 
 #pragma once
 
-#include "../AST/ASTVisitor/ASTVisitor.h"
+#include "../AST/ASTVisitor/ASTOptimizations.h"
 #include "ConstantFolding.h"
 
 /**
  * Removes Dead Code:
  * - Assignments that are reassigned without being used
  */
-class DeadCodeElimination : public ASTVisitor {
+class DeadCodeElimination : public ASTOptimizations {
 private:
-	std::unordered_map<std::string, NodeReference*> m_last_reference;
+	std::unordered_map<StringTypeKey, NodeReference*, StringTypeKeyHash> m_last_reference;
 public:
 
 	/// kill empty while loops and if statements
@@ -91,14 +91,14 @@ public:
 
 	NodeAST* visit(NodeVariableRef& node) override {
 		kill_last_assignment(&node);
-		m_last_reference[node.name] = &node;
+		m_last_reference[get_hash_value(node)] = &node;
 		return &node;
 	}
 
 	NodeAST* visit(NodeArrayRef& node) override {
 		kill_last_assignment(&node);
 		if(node.index) node.index->accept(*this);
-		m_last_reference[node.name] = &node;
+		m_last_reference[get_hash_value(node)] = &node;
 		return &node;
 	}
 
@@ -114,7 +114,7 @@ public:
 		}
 		// check if last reference is an assignment statement
 		if(m_last_reference.empty()) return false;
-		auto it = m_last_reference.find(node->name);
+		auto it = m_last_reference.find(get_hash_value(*node));
 		if(it != m_last_reference.end()) {
 			if(it->second->parent->get_node_type() == NodeType::SingleAssignment) {
 				auto assignment = static_cast<NodeSingleAssignment*>(it->second->parent);

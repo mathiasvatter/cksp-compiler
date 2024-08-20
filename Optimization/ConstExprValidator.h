@@ -16,7 +16,7 @@
  * constant propagation, where constant expressions are replaced with their
  * evaluated values at compile time.
  *
- * ### Key Responsibilities:
+ * ### StringTypeKey Responsibilities:
  * - Identifies if a given AST node represents a constant expression.
  * - Supports evaluation of number literals, constant variable references,
  *   and simple arithmetic expressions.

@@ -204,9 +204,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
     auto node_function_header = std::make_unique<NodeFunctionHeader>(
             func_name.val, std::move(func_args), func_name
         );
-	node_function_header->is_thread_safe = m_thread_unsafe_functions.find(node_function_header->name) == m_thread_unsafe_functions.end();
 	node_function_header->ty = ret_type;
-    node_function_header->is_builtin = true;
     node_function_header->has_forced_parenth = has_forced_parenth;
 
     auto node_function = std::make_unique<NodeFunctionDefinition>(
@@ -217,6 +215,8 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
             func_name
             );
     node_function->ty = ret_type;
+	node_function->is_thread_safe = is_threadsafe_function(node_function->header->name);
+	node_function->is_restricted = is_restricted_function(node_function->header->name);
 	node_function->num_return_params = num_return_vars;
     return Result<std::unique_ptr<NodeFunctionDefinition>>(std::move(node_function));
 }

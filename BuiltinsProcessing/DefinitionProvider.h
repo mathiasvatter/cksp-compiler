@@ -8,6 +8,7 @@
 
 #include "../AST/ASTVisitor/ASTVisitor.h"
 #include "../misc/Gensym.h"
+#include "../misc/HashFunctions.h"
 
 /**
  * @class DefinitionProvider

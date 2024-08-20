@@ -495,18 +495,6 @@ bool Tokenizer::is_callback_end() {
     return false;
 }
 
-std::string read_file(const std::string& filename) {
-    std::ifstream f(filename);
-    std::stringstream buf;
-    if (!f.is_open()) {
-        CompileError(ErrorType::FileError, "Unable to open file.", -1, "valid path/valid *.ksp file", filename, "").exit();
-    } else {
-        buf << f.rdbuf();
-        f.close();
-    }
-    return buf.str();
-}
-
 
 
 

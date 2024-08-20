@@ -68,10 +68,9 @@ NodeFunctionDefinition* NodeFunctionCall::find_builtin_definition(NodeProgram *p
     if(auto builtin_func = program->def_provider->get_builtin_function(function.get())) {
         function->ty = builtin_func->ty;
         function->has_forced_parenth = builtin_func->header->has_forced_parenth;
-        function->is_builtin = builtin_func->header->is_builtin;
-        function->is_thread_safe = builtin_func->header->is_thread_safe;
         definition = builtin_func;
-        kind = Kind::Builtin;
+		definition->is_thread_safe = builtin_func->is_thread_safe;
+		kind = Kind::Builtin;
         return builtin_func;
     }
     return nullptr;

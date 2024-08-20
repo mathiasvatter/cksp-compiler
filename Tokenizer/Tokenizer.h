@@ -150,52 +150,6 @@ inline static std::string to_upper(const std::string& input) {
     return output;
 }
 
-inline bool string_compare(const std::string& str1, const std::string& str2) {
-    if (str1.length() != str2.length()) {
-        return false;
-    }
-    for (size_t i = 0; i < str1.length(); ++i) {
-        if (std::tolower(str1[i]) != std::tolower(str2[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-// Struktur für den zusammengesetzten Schlüssel
-struct StringIntKey {
-    std::string str;
-    int num;
-
-    bool operator==(const StringIntKey& other) const {
-        return str == other.str && num == other.num;
-    }
-};
-// Benutzerdefinierte Hash-Funktion
-struct StringIntKeyHash {
-    std::size_t operator()(const StringIntKey& key) const {
-        return std::hash<std::string>()(key.str) ^ std::hash<int>()(key.num);
-    }
-};
-
-// user-defined hash functions for comparison of variables and unordered_map
-struct StringHash {
-    size_t operator()(const std::string& key) const {
-        std::string lower_key;
-        std::transform(key.begin(), key.end(), std::back_inserter(lower_key), [](unsigned char c){ return std::tolower(c); });
-        return std::hash<std::string>()(key);
-    }
-};
-
-struct StringEqual {
-    bool operator()(const std::string& a, const std::string& b) const {
-        return string_compare(a, b);
-//		return a == b;
-    }
-};
-
-static std::string read_file(const std::string& filename);
 
 /*
  * Tokenizer Class

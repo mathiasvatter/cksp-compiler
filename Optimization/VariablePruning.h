@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../AST/ASTVisitor/ASTVisitor.h"
+#include "../AST/ASTVisitor/ASTOptimizations.h"
 
 /**
  * Removes variables that are unused
@@ -13,7 +13,7 @@
  * - only used as l_value in assignments
  * - never used as r_value
  */
-class VariablePruning : public ASTVisitor {
+class VariablePruning : public ASTOptimizations {
 private:
 	std::vector<NodeSingleDeclaration*> m_all_declarations;
 	std::vector<NodeSingleAssignment*> m_all_assignments;
@@ -77,7 +77,7 @@ public:
 		return true;
 	}
 
-	// is unused if not ui_control and only used as l_value in assignments -> adds these assignments to vector
+	// is unused if not ui_control and only used as l_value in assignments (if not arrayref) -> adds these assignments to vector
 	inline bool is_used(const NodeReference &node) {
 		if(node.data_type != DataType::UIControl) {
 			if(node.parent->get_node_type() == NodeType::SingleAssignment) {

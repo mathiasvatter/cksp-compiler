@@ -163,7 +163,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 	if(node.declaration->get_node_type() == NodeType::Variable) {
 		auto node_var = static_cast<NodeVariable*>(node.declaration);
 		auto ptr = node_var->to_pointer();
-		auto references = m_def_provider->get_references(node.declaration);
+		auto &references = m_def_provider->get_references(node.declaration);
 		auto new_node = static_cast<NodeDataStructure*>(node.declaration->replace_with(std::move(ptr)));
 		for(auto ref : references) {
 			ref->declaration = new_node;

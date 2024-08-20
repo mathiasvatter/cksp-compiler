@@ -4,12 +4,13 @@
 
 #pragma once
 
-#include "../AST/ASTVisitor/ASTVisitor.h"
+#include "../AST/ASTVisitor/ASTOptimizations.h"
 
-class ConstExprPropagation : public ASTVisitor {
+class ConstExprPropagation : public ASTOptimizations {
 private:
-	std::unordered_map<std::string, std::unique_ptr<NodeAST>> m_constant_expressions;
+	std::unordered_map<StringTypeKey, std::unique_ptr<NodeAST>, StringTypeKeyHash> m_constant_expressions;
 
+	/// map value will be reset after ref is in one of these functions
 	inline static const std::unordered_set<std::string> no_propagation = {
 		"inc", "dec",
 	};
@@ -32,7 +33,7 @@ public:
 			// if mutable, try to propagate the value
 			if(node.variable->data_type == DataType::Mutable and node.variable->get_node_type() == NodeType::Variable) {
 				if(node.value->is_constant()) {
-					m_constant_expressions[node.variable->name] = node.value->clone();
+					m_constant_expressions[get_hash_value(*node.variable)] = node.value->clone();
 				}
 			}
 		}
@@ -58,9 +59,9 @@ public:
 		remove_constant_expression(ref);
 		node.l_value->accept(*this);
 		// if mutable, try to propagate the value
-		if(ref->data_type == DataType::Mutable and ref->get_node_type() == NodeType::Variable) {
+		if(ref->data_type == DataType::Mutable) {
 			if(node.r_value->is_constant()) {
-				m_constant_expressions[ref->name] = node.r_value->clone();
+				m_constant_expressions[get_hash_value(*node.l_value)] = node.r_value->clone();
 			}
 		}
 
@@ -68,7 +69,7 @@ public:
 	}
 
 	bool remove_constant_expression(NodeReference* node) {
-		auto it = m_constant_expressions.find(node->name);
+		auto it = m_constant_expressions.find(get_hash_value(*node));
 		if(it != m_constant_expressions.end()) {
 			m_constant_expressions.erase(it);
 			return true;
@@ -135,7 +136,7 @@ public:
 		}
 
 		if(!m_constant_expressions.empty()) {
-			if(auto substitute = get_constant_expression(node->name)) {
+			if(auto substitute = get_constant_expression(node)) {
 				if(substitute->ty->is_compatible(node->ty)) {
 					return node->replace_with(std::move(substitute));
 				}
@@ -148,8 +149,8 @@ public:
 
 private:
 
-	std::unique_ptr<NodeAST> get_constant_expression(const std::string& name) {
-		auto it = m_constant_expressions.find(name);
+	std::unique_ptr<NodeAST> get_constant_expression(NodeAST* node) {
+		auto it = m_constant_expressions.find(get_hash_value(*node));
 		if(it != m_constant_expressions.end()) {
 			auto constant = it->second->clone();
 			constant->update_parents(nullptr);
