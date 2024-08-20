@@ -106,23 +106,16 @@ public:
 	/// on the left side, remove the last assignment
 	bool kill_last_assignment(NodeReference* node) {
 		// only stay in here if current node is left side of assign statement
-		if(node->parent->get_node_type() == NodeType::SingleAssignment) {
-			auto assignment = static_cast<NodeSingleAssignment*>(node->parent);
-			if(assignment->l_value.get() != node) return false;
-		} else {
-			return false;
-		}
+		if(!node->is_l_value()) return false;
 		// check if last reference is an assignment statement
 		if(m_last_reference.empty()) return false;
 		auto it = m_last_reference.find(get_hash_value(*node));
 		if(it != m_last_reference.end()) {
-			if(it->second->parent->get_node_type() == NodeType::SingleAssignment) {
-				auto assignment = static_cast<NodeSingleAssignment*>(it->second->parent);
-				if(assignment->l_value.get() == it->second) {
-					assignment->replace_with(std::make_unique<NodeDeadCode>(assignment->tok));
-					m_last_reference.erase(it);
-					return true;
-				}
+			if(it->second->is_l_value()) {
+				auto assignment = it->second->parent;
+				assignment->replace_with(std::make_unique<NodeDeadCode>(assignment->tok));
+				m_last_reference.erase(it);
+				return true;
 			}
 		}
 		return false;

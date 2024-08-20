@@ -6,6 +6,7 @@
 
 #include "ASTVisitor.h"
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
+#include "../../Optimization/ConstExprPropagation.h"
 
 class ASTVariableChecking : public ASTVisitor {
 public:
@@ -46,11 +47,35 @@ public:
 	/// apply type annotations given before parse time and replace node types accordingly
 	/// returns the new datastructure pointer if replaced, or the old one if not
 	static NodeDataStructure* apply_type_annotations(NodeDataStructure* node);
+
+	inline static bool promote_vars_to_constants(DefinitionProvider* def_provider) {
+		// if in all references there is no new assignment
+		for(auto &refs : def_provider->m_references_per_data_structure) {
+			if(refs.first->get_node_type() != NodeType::Variable) continue;
+			auto var = static_cast<NodeVariable*>(refs.first);
+			if(var->is_local) continue;
+			DataType data_type = DataType::Const;
+			if(refs.first->data_type == DataType::Mutable) {
+				for (auto &ref : refs.second) {
+					if (ref->is_l_value() or ConstExprPropagation::is_forbidden_func_arg(ref)) {
+						data_type = DataType::Mutable;
+					} else {
+						if(data_type != DataType::Mutable) data_type = DataType::Const;
+					}
+				}
+				if(data_type == DataType::Const) {
+					var->data_type = DataType::Const;
+					var->persistence = std::nullopt;
+				}
+			}
+		}
+		return true;
+	}
+
 private:
 	// boolean to continue after not finding declaration or fail
 	bool fail = false;
 
-	NodeProgram* m_program = nullptr;
     NodeBlock* m_current_block = nullptr;
 	DefinitionProvider* m_def_provider = nullptr;
 

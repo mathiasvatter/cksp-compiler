@@ -10,10 +10,6 @@ class ConstExprPropagation : public ASTOptimizations {
 private:
 	std::unordered_map<StringTypeKey, std::unique_ptr<NodeAST>, StringTypeKeyHash> m_constant_expressions;
 
-	/// map value will be reset after ref is in one of these functions
-	inline static const std::unordered_set<std::string> no_propagation = {
-		"inc", "dec",
-	};
 public:
 
 	/// reset the constant expression propagation map every block
@@ -107,12 +103,7 @@ public:
 
 	NodeAST* do_constant_expr_propagation(NodeReference* node) {
 		// do not substitute if the variable is on the left side of an assignment
-		if(node->parent->get_node_type() == NodeType::SingleAssignment) {
-			auto assignment = static_cast<NodeSingleAssignment*>(node->parent);
-			if(assignment->l_value.get() == node) {
-				return node;
-			}
-		}
+		if(node->is_l_value()) return node;
 		/// propagation inside certain builtin functions is not allowed
 		/// if parameter in builtin function is a variable or an array -> no propagation
 		if(node->is_func_arg()) {
