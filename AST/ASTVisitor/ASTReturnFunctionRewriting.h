@@ -23,8 +23,6 @@ public:
 
 	// TODO: Call Function Rewriting after Lowering -> call Function Call Hoisting first and then do return statement rewriting as parameters
 	inline NodeAST* visit(NodeProgram& node) override {
-//		ParameterMarking marking;
-//		node.accept(marking);
 		/// do immediate inlining of return-only functions
 		ASTExpressionFunctionInlining inlining(m_def_provider);
 		node.accept(inlining);

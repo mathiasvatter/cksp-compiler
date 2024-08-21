@@ -11,6 +11,7 @@
 #include "AST/ASTVisitor/ASTFunctionInlining.h"
 #include "AST/ASTVisitor/ASTRelinkGlobalScope.h"
 #include "AST/ASTVisitor/ASTKSPSyntaxCheck.h"
+#include "Optimization/ConstantPromotion.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -152,7 +153,6 @@ void Compiler::compile() {
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
-	ASTVariableChecking::promote_vars_to_constants(&m_definition_provider);
     ast->accept(infer_types);
     TypeInference::cast_data_structure_types(&m_definition_provider, true);
 
@@ -173,7 +173,6 @@ void Compiler::compile() {
 
     compile_time.stop("Function Inlining");
 	compile_time.start("Variable Checking 2");
-
 
 	ASTRelinkGlobalScope relink_global_scope(&m_definition_provider);
 	ast->accept(relink_global_scope);

@@ -4,6 +4,8 @@
 
 
 #include "AST.h"
+
+#include <utility>
 #include "ASTInstructions.h"
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Desugaring/DesugarFunctionDef.h"
@@ -12,7 +14,7 @@
 #include "../../Optimization/ConstExprValidator.h"
 
 // ************* NodeAST Base Class ***************
-NodeAST::NodeAST(Token tok, NodeType node_type) : tok(tok),
+NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
 	node_type(node_type), ty(TypeRegistry::Unknown) {}
 
 NodeAST *NodeAST::accept(ASTVisitor &visitor) {
