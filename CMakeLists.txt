@@ -168,4 +168,5 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         SyntaxChecks/KSPDeclarations.h
         misc/HashFunctions.h
         AST/ASTVisitor/ASTOptimizations.cpp
+        Optimization/ConstantPromotion.h
 )

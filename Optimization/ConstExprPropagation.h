@@ -33,7 +33,6 @@ public:
 				}
 			}
 		}
-
 		return &node;
 	}
 
@@ -73,29 +72,15 @@ public:
 		return false;
 	}
 
-	static bool is_forbidden_func_arg(NodeReference* node) {
-		if(node->is_func_arg()) {
-			auto func_call = static_cast<NodeFunctionCall*>(node->parent->parent->parent);
-			if(func_call->kind == NodeFunctionCall::Kind::Builtin) {
-				if(contains(no_propagation, func_call->function->name)) {
-					return true;
-				}
-			} else if (func_call->kind == NodeFunctionCall::Kind::UserDefined) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	NodeAST* visit(NodeVariableRef& node) override {
-		if(is_forbidden_func_arg(&node)) {
+		if(is_value_altering_func_arg(&node)) {
 			remove_constant_expression(&node);
 		}
 		return do_constant_expr_propagation(&node);
 	}
 
 	NodeAST* visit(NodeArrayRef& node) override {
-		if(is_forbidden_func_arg(&node)) {
+		if(is_value_altering_func_arg(&node)) {
 			remove_constant_expression(&node);
 		}
 		return do_constant_expr_propagation(&node);

@@ -9,8 +9,11 @@
 #include "../../Optimization/VariablePruning.h"
 #include "../../Optimization/ConstExprPropagation.h"
 #include "../../Optimization/DeadCodeElimination.h"
+#include "../../Optimization/ConstantPromotion.h"
 
 bool ASTOptimizations::optimize(NodeProgram &node, int iterations) {
+//	static ConstantPromotion constant_promotion;
+//	node.accept(constant_promotion);
 	for(int i = 0; i<iterations; i++) {
 		static ConstantPropagation constant_propagation;
 		node.accept(constant_propagation);

@@ -19,6 +19,15 @@ public:
 			body->prepend_stmt(std::make_unique<NodeStatement>(std::move(new_declaration), node.tok));
 			return node.replace_with(std::move(body));
 		}
+		if(node.variable->get_node_type() == NodeType::UIControl) {
+			auto ui_control = static_cast<NodeUIControl*>(node.variable.get());
+			if(ui_control->persistence.has_value()) {
+				auto new_declaration = clone_as<NodeSingleDeclaration>(&node);
+				auto body = add_persistency_functions(ui_control->control_var.get());
+				body->prepend_stmt(std::make_unique<NodeStatement>(std::move(new_declaration), node.tok));
+				return node.replace_with(std::move(body));
+			}
+		}
 		return &node;
 	}
 

@@ -32,4 +32,18 @@ protected:
 		}
 		return {hash_val, ref.ty};
 	}
+
+	inline static bool is_value_altering_func_arg(NodeReference* node) {
+		if(node->is_func_arg()) {
+			auto func_call = static_cast<NodeFunctionCall*>(node->parent->parent->parent);
+			if(func_call->kind == NodeFunctionCall::Kind::Builtin) {
+				if(contains(no_propagation, func_call->function->name)) {
+					return true;
+				}
+			} else if (func_call->kind == NodeFunctionCall::Kind::UserDefined) {
+				return true;
+			}
+		}
+		return false;
+	}
 };

@@ -3,7 +3,6 @@
 //
 
 #include "TypeInference.h"
-#include "ASTVariableChecking.h"
 #include "ASTSemanticAnalysis.h"
 
 NodeAST * TypeInference::visit(NodeProgram& node) {
