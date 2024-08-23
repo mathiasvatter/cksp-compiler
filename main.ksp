@@ -84,6 +84,11 @@ on init
 	set_listener($NI_SIGNAL_TIMER_MS, 1000000)
 	declare $autoSave
 
+	declare ui_button btn_slot[5]
+	declare ui_button btn_prev_slot_group
+	set_button_properties(btn_prev_slot_group, "", "btn_left", 1, 1)
+	set_bounds(btn_prev_slot_group, btn_slot0 -> pos_x - 30, btn_slot0 -> pos_y + 3)
+	btn_prev_slot_group -> help := "Show the slots 1-5."
 	
 
 end on

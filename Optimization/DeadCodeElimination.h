@@ -108,7 +108,10 @@ public:
 	NodeAST* visit(NodeArrayRef& node) override {
 		kill_last_assignment(&node);
 		if(node.index) node.index->accept(*this);
-		m_last_reference[get_hash_value(node)] = &node;
+		// only store last reference if it has a constant index that will not change
+		if(node.index and node.index->is_constant()) {
+			m_last_reference[get_hash_value(node)] = &node;
+		}
 		return &node;
 	}
 

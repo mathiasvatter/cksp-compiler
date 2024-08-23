@@ -16,12 +16,10 @@ void PreASTDefines::visit(PreNodeProgram& node) {
 	for(auto & def : node.define_statements) {
 		def->accept(*this);
 	}
-//	for(auto & def : node.macro_definitions) {
-//		def->accept(*this);
-//	}
 	for(auto & n : node.program) {
 		n->accept(*this);
 	}
+
 }
 
 void PreASTDefines::do_substitution(PreNodeLiteral& node) {

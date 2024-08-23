@@ -65,7 +65,14 @@ private:
         node_control_function->function->ty = node->ty;
         node_control_function->kind = NodeFunctionCall::Kind::Builtin;
 
-		if(is_instance_of<NodeReference>(node->ui_id.get())) {
+		if(auto reference = cast_node<NodeReference>(node->ui_id.get())) {
+			// check declaration of ui_id to decide if it needs to be wrapped in get_ui_id later on in LoweringFunctionCall
+			auto declaration = m_def_provider->get_declaration(reference);
+			if(declaration) {
+				reference->match_data_structure(declaration);
+				reference->ty = declaration->ty;
+			}
+
             node_control_function->function->args->add_param(std::move(node->ui_id));
 			node_control_function->function->args->add_param(std::move(control_par));
 
