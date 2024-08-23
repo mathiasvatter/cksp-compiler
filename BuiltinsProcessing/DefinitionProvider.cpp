@@ -88,6 +88,9 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 		var->kind = NodeReference::Kind::Compiler;
 		return dummy_decl;
 	}
+	if(const auto &pgs_decl = get_pgs_declaration(var)) {
+		return pgs_decl;
+	}
 
 	// get builtin declaration if it exists
 	NodeDataStructure *node_builtin_declaration = nullptr;

@@ -204,14 +204,14 @@ num_elements(array_variable: any[]): int
 num_slices(group_idx: int): int
 num_slices_zone(zone_id: int): int
 output_channel_name(output_idx: int): int
-pgs_create_key(key_id: any, size: int)
-pgs_create_str_key(key_id: any)
-pgs_get_key_val(key_id: any, index: int): int
-pgs_get_str_key_val(key_id: any): string
-pgs_key_exists(key_id: any): bool
-pgs_set_key_val(key_id: any, index: int, value: int)
-pgs_set_str_key_val(key_id: any, text: string)
-pgs_str_key_exists(key_id: any): bool
+pgs_create_key(variable: pgs, size: int)
+pgs_create_str_key(variable: pgs)
+pgs_get_key_val(variable: pgs, index: int): int
+pgs_get_str_key_val(variable: pgs): string
+pgs_key_exists(variable: pgs): bool
+pgs_set_key_val(variable: pgs, index: int, value: int)
+pgs_set_str_key_val(variable: pgs, text: string)
+pgs_str_key_exists(variable: pgs): bool
 play_note(note_number: int, velocity: int, sampleoffset: int, duration: int): int
 pow(value: real, value: real): real
 purge_group(group_idx: int, mode: int): int

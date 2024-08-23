@@ -71,6 +71,18 @@ public:
 		return &comp_var;
 	}
 
+	static NodeDataStructure* get_pgs_declaration(NodeReference* var) {
+		if(var->ty != TypeRegistry::PGS) return nullptr;
+		static NodeVariable comp_var(
+			std::nullopt,
+			"pgs$dummy",
+			TypeRegistry::PGS,
+			DataType::Mutable,
+			Token()
+		);
+		return &comp_var;
+	}
+
 	/// holds all in this program defined variable names for safely issuing new ones that do not get captured
 	Gensym m_gensym;
 	inline std::string get_fresh_name(const std::string& name) {

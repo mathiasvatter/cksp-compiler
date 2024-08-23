@@ -112,6 +112,9 @@ public:
         compare_number |= other->get_kind() == Kind::Comparison && (m_kind == Kind::Number || m_kind == Kind::Integer || m_kind == Kind::Real);
         if(compare_number) return true;
 
+		bool pgs = m_kind == Kind::PGS && other->get_kind() == Kind::PGS;
+		if(pgs) return true;
+
 		return false;
 	}
 };
