@@ -53,7 +53,7 @@ public:
 	};
 
 	inline static bool needs_get_ui_id(NodeReference* ref) {
-		auto wrap_it = ref->data_type == DataType::UIControl and ref->is_func_arg();
+		bool wrap_it = ref->data_type == DataType::UIControl and ref->is_func_arg();
 		if(ref->parent->parent->parent->get_node_type() == NodeType::FunctionCall) {
 			auto func_call = static_cast<NodeFunctionCall*>(ref->parent->parent->parent);
 			// check if function expects Integer as parameter, or parameter is compatible

@@ -119,6 +119,7 @@ public:
 			new_ui_control->control_var->data_type = DataType::UIControl;
 			new_ui_control->control_var->persistence = m_persistence;
 
+			m_def_provider->set_declaration(new_ui_control->control_var.get(), true);
 			auto new_node_declaration = std::make_unique<NodeSingleDeclaration>(
 					std::move(new_ui_control),
 					nullptr, ui_control.tok
