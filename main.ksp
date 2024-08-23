@@ -40,44 +40,60 @@ end struct
 
 on init	
 	declare ui_button btn_1, ui_button btn_2
-	btn_1 := 1
-	do_sth(3)
-	do_sth(2)
-	declare const dufus := 0
-	declare i := 0
-	i := btn_1
-	inc(i)
-	i := 4
-	declare anus := 0*3+0
-	inc(anus)
-	message(i, 3)
-	i := i + 1
-	message(i, 2)
-	while(i < 10)
-		i := i + 1
-		message(i)
-	end while
-	if(i = 3)
-		i := 5
-	else 
-		i := 6
-	end if
-	declare arr[] := (1,2,3,4,5,6,7,8,9,10)
-	arr[0] := 1
-	arr[1] := 1
-	arr[2] := 1
-	arr[3] := 1
-	message(arr[0])
-	message(arr)
-	if(1=1 and arr[0] # 1)
-		message("whileh")
-	end if
+	// btn_1 := 1
+	// do_sth(3)
+	// do_sth(2)
+	// declare const dufus := 0
+	// declare i := 0
+	// i := btn_1
+	// inc(i)
+	// i := 4
+	// declare anus := 0*3+0
+	// inc(anus)
+	// message(i, 3)
+	// i := i + 1
+	// message(i, 2)
+	// while(i < 10)
+	// 	i := i + 1
+	// 	message(i)
+	// end while
+	// if(i = 3)
+	// 	i := 5
+	// else 
+	// 	i := 6
+	// end if
+	// declare arr[] := (1,2,3,4,5,6,7,8,9,10)
+	// arr[0] := 1
+	// arr[1] := 1
+	// arr[2] := 1
+	// arr[3] := 1
+	// message(arr[0])
+	// message(arr)
+	// if(1=1 and arr[0] # 1)
+	// 	message("whileh")
+	// end if
 
 
-	if(i < 3 and i> 5)
+	// if(i < 3 and i> 5)
 
-	else
-		message("sdflkj")
+	// else
+	// 	message("sdflkj")
+	// end if
+
+	pgs_create_key(AUTO_SAVE, 1)
+	set_listener($NI_SIGNAL_TIMER_MS, 1000000)
+	declare $autoSave
+
+	
+
+end on
+
+on listener
+	if ($NI_SIGNAL_TYPE = $NI_SIGNAL_TIMER_MS)
+		$autoSave := ($autoSave+1) mod (60000000/1000000)
+		if ($autoSave = 0)
+			pgs_set_key_val(AUTO_SAVE, 0, 1)
+		end if
 	end if
 end on
 

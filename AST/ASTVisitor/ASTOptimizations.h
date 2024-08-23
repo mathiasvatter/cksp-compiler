@@ -14,7 +14,7 @@
  */
 class ASTOptimizations : public ASTVisitor {
 private:
-	;
+
 public:
     ASTOptimizations() = default;
 

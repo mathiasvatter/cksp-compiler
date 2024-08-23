@@ -1,60 +1,33 @@
-{ Compiled with cksp version 0.0.6 on Tue Aug 20 17:11:30 2024 }
+{ Compiled with cksp version 0.0.6 on Fri Aug 23 11:09:46 2024 }
 on init
-  declare $loc_0
+  declare $loc_2
   declare ui_button $btn_1 
   declare ui_button $btn_2 
-  $btn_1 := 1
-  message("sdlkj")
-  $loc_0 := 0
-  inc($loc_0)
-  message(1)
-  message($loc_0 & ", " & 3)
-  message("sdlkj")
-  $loc_0 := 0
-  inc($loc_0)
-  message(1)
-  message($loc_0 & ", " & 2)
-  declare $i := 0
-  $i := $btn_1
-  inc($i)
-  declare $anus := 0
-  inc($anus)
-  message(4 & ", " & 3)
-  $i := 5
-  message(5 & ", " & 2)
-  while($i < 10) 
-    $i := $i + 1
-    message($i)
-  end while
-  if($i = 3)
-    $i := 5
-  else
-    $i := 6
-  end if
-  declare %arr[10] := (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-  %arr[0] := 1
-  %arr[1] := 1
-  %arr[2] := 1
-  %arr[3] := 1
-  message(1)
-  message(%arr)
-  if(not (($i < 3) and ($i > 5)))
-    message("sdflkj")
+  pgs_create_key( AUTO_SAVE, 1)
+  set_listener($NI_SIGNAL_TIMER_MS, 1000000)
+  declare $autoSave
+end on
+on listener
+  if($NI_SIGNAL_TYPE = $NI_SIGNAL_TIMER_MS)
+    $autoSave := ($autoSave + 1) mod 60
+    if($autoSave = 0)
+      pgs_set_key_val( AUTO_SAVE, 0, 1)
+    end if
   end if
 end on
 on ui_control($btn_1)
   message("sdlkj")
-  $loc_0 := 0
-  inc($loc_0)
+  $loc_2 := 0
+  inc($loc_2)
   message(1)
-  message($loc_0 & ", " & 1)
+  message($loc_2 & ", " & 1)
 end on
 on ui_control($btn_2)
   message("sdlkj")
-  $loc_0 := 0
-  inc($loc_0)
+  $loc_2 := 0
+  inc($loc_2)
   message(1)
-  message($loc_0 & ", " & 4)
+  message($loc_2 & ", " & 4)
   message(1)
 end on
 

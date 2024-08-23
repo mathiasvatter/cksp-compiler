@@ -46,6 +46,7 @@ void TypeRegistry::initialize() {
 			{"number", Number},
             {"void", Void},
             {"any", Any},
+			{"pgs", PGS},
             {"int[]", ArrayOfInt},
             {"real[]", ArrayOfReal},
             {"string[]", ArrayOfString},

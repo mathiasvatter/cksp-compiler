@@ -16,12 +16,17 @@ private:
 	std::unordered_map<StringTypeKey, NodeReference*, StringTypeKeyHash> m_last_reference;
 public:
 
+	DeadCodeElimination() {
+		m_last_reference.clear();
+	}
+
 	/// kill empty while loops and if statements
 	NodeAST* visit(NodeWhile& node) override {
 		node.condition->accept(*this);
 		node.body->accept(*this);
 
 		if(node.body->statements.empty()) {
+			m_last_reference.clear();
 			return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
 		}
 
@@ -31,8 +36,10 @@ public:
 			if(int_node->value == 1) {
 				auto true_expr = std::make_unique<NodeBinaryExpr>(token::EQUAL, std::make_unique<NodeInt>(1, node.tok), std::make_unique<NodeInt>(1, node.tok), node.tok);
 				true_expr->ty = TypeRegistry::Boolean;
+				m_last_reference.clear();
 				return node.condition->replace_with(std::move(true_expr));
 			} else if(int_node->value == 0) {
+				m_last_reference.clear();
 				return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
 			}
 		}
@@ -66,11 +73,14 @@ public:
 		if(node.condition->get_node_type() == NodeType::Int) {
 			auto int_node = static_cast<NodeInt*>(node.condition.get());
 			if(int_node->value == 1) {
+				m_last_reference.clear();
 				return node.replace_with(std::move(node.if_body));
 			} else if(int_node->value == 0) {
 				if(node.else_body->statements.empty()) {
+					m_last_reference.clear();
 					return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
 				} else {
+					m_last_reference.clear();
 					return node.replace_with(std::move(node.else_body));
 				}
 			}
