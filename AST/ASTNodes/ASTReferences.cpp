@@ -66,8 +66,9 @@ std::unique_ptr<NodeAccessChain> NodeVariableRef::to_method_chain() {
 //}
 
 
-bool NodeVariableRef::is_list_constant() {
-	if (declaration && declaration->get_node_type() == NodeType::List) {
+bool NodeVariableRef::is_array_constant() {
+	if (declaration && (declaration->get_node_type() == NodeType::Array
+	|| declaration->get_node_type() == NodeType::List)) {
 		auto list = static_cast<NodeList*>(declaration);
 		const std::string& prefix = list->name + ".SIZE";
 		if (name.compare(0, prefix.length(), prefix) == 0) {
