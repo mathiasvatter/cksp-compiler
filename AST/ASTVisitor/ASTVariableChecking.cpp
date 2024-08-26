@@ -231,7 +231,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 			// check if its maybe a nd_Array size constant like nda.SIZE_D1
 			node_declaration = access_chain->declaration;
 			node.declaration = node_declaration;
-			if(node.is_ndarray_constant() || node.is_list_constant()) {
+			if(node.is_ndarray_constant() || node.is_array_constant()) {
 				// if it is a constant, do not add to references
 				node.declaration = nullptr;
 				node.data_type = DataType::Const;

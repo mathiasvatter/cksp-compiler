@@ -512,12 +512,20 @@ Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* 
                                                                     "Found invalid Assign Statement Syntax.", ":=", peek()));
     }
     consume(); // consume :=
+	bool starts_with_parenth = peek().type == token::OPEN_PARENTH;
+	std::unique_ptr<NodeParamList> assignees = nullptr;
     auto assignee =  parse_param_list(node_assign_statement.get()); //_parse_assignee();
     if(assignee.is_error()) {
         return Result<std::unique_ptr<NodeAssignment>>(assignee.get_error());
     }
+	assignees = std::move(assignee.unwrap());
+	// if assignment starts with parenth and has only one member -> nested param list
+	if(starts_with_parenth and assignees->params.size() == 1) {
+		auto nested_param_list = std::make_unique<NodeParamList>(get_tok(), std::move(assignees));
+		assignees = std::move(nested_param_list);
+	}
     node_assign_statement->l_value = std::move(vars);
-    node_assign_statement->r_value = std::move(assignee.unwrap());
+    node_assign_statement->r_value = std::move(assignees);
     node_assign_statement->set_child_parents();
     node_assign_statement->parent = parent;
     return Result<std::unique_ptr<NodeAssignment>>(std::move(node_assign_statement));
@@ -799,19 +807,19 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
             auto exprResult = parse_expression(parent);
             // check here also if expr is no binary expression (or unary_expr and then no bin_expr)
             // because of array declarations like: declare array[3] := (0)
-            bool is_parse_error = exprResult.is_error();
-            bool is_binary_expr = is_parse_error;
-            std::unique_ptr<NodeAST> expr;
-            if(!is_parse_error) {
-                expr = std::move(exprResult.unwrap());
-                is_binary_expr = expr->get_node_type() == NodeType::BinaryExpr;
-                if(expr->get_node_type() == NodeType::UnaryExpr) {
-                    auto unary_expr = static_cast<NodeUnaryExpr*>(expr.get());
-                    is_binary_expr = unary_expr->operand->get_node_type() == NodeType::BinaryExpr;
-                }
-            }
-            if (!is_parse_error and is_binary_expr) {
-                params.push_back(std::move(expr));
+//            bool is_parse_error = exprResult.is_error();
+//            bool is_binary_expr = is_parse_error;
+//            std::unique_ptr<NodeAST> expr;
+//            if(!is_parse_error) {
+//                expr = std::move(exprResult.unwrap());
+//                is_binary_expr = expr->get_node_type() == NodeType::BinaryExpr;
+//                if(expr->get_node_type() == NodeType::UnaryExpr) {
+//                    auto unary_expr = static_cast<NodeUnaryExpr*>(expr.get());
+//                    is_binary_expr = unary_expr->operand->get_node_type() == NodeType::BinaryExpr;
+//                }
+//            }
+            if (!exprResult.is_error()) {
+                params.push_back(std::move(exprResult.unwrap()));
             } else {
                 m_pos = backup_pos; // set back token index
                 consume(); // consume (
@@ -1052,11 +1060,18 @@ Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST
     // if there is an assignment following
     if (peek().type == token::ASSIGN) {
         consume(); //consume :=
+		// check here if the following assignment starts with a parenthesis in case of array declaration
+		bool starts_with_parenth = peek().type == token::OPEN_PARENTH;
         auto assignee = parse_param_list(node_declare_statement.get());
         if(assignee.is_error()) {
             return Result<std::unique_ptr<NodeDeclaration>>(assignee.get_error());
         }
         assignees = std::move(assignee.unwrap());
+		// if assignment starts with parenth and has only one member -> nested param list
+		if(starts_with_parenth and assignees->params.size() == 1) {
+			auto nested_param_list = std::make_unique<NodeParamList>(get_tok(), std::move(assignees));
+			assignees = std::move(nested_param_list);
+		}
     } else {
         // initializes empty param list
         assignees = std::make_unique<NodeParamList>(get_tok());

@@ -28,8 +28,8 @@ struct NodeVariableRef : NodeReference {
 	/// checks if variable ref is a ndarray size constant by checking the declaration and
 	/// pattern matching the name (....SIZE_D(\d+))
 	bool is_ndarray_constant();
-	/// checks if variable list size constant
-	bool is_list_constant();
+	/// checks if variable list or array size constant
+	bool is_array_constant();
 };
 
 struct NodeArrayRef : NodeReference {

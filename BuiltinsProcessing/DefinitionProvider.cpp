@@ -89,6 +89,7 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 		return dummy_decl;
 	}
 	if(const auto &pgs_decl = get_pgs_declaration(var)) {
+		var->kind = NodeReference::Kind::User;
 		return pgs_decl;
 	}
 
