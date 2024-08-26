@@ -43,29 +43,29 @@ endforeach()
 include_directories(${GENERATED_HEADERS_DIR}
         ${GENERATED_DIR})
 
-add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
+add_executable(cksp main.cpp
         Tokenizer/Tokens.h
         Tokenizer/Tokenizer.h
         Tokenizer/Tokenizer.cpp
         Parser/Parser.h
         Parser/Parser.cpp
-        misc/CompileError.cpp
         misc/CompileError.h
+        misc/CompileError.cpp
         misc/Result.h
-        Preprocessor/Preprocessor.cpp
         Preprocessor/Preprocessor.h
-        Preprocessor/ImportProcessor.cpp
+        Preprocessor/Preprocessor.cpp
         Preprocessor/ImportProcessor.h
-        Preprocessor/PreprocessorConditions.cpp
+        Preprocessor/ImportProcessor.cpp
         Preprocessor/PreprocessorConditions.h
+        Preprocessor/PreprocessorConditions.cpp
         Preprocessor/PreAST/PreAST.h
         Preprocessor/PreAST/PreAST.cpp
         Preprocessor/PreAST/PreASTVisitor.h
         Preprocessor/PreAST/PreASTVisitor.cpp
-        Preprocessor/PreprocessorParser.cpp
         Preprocessor/PreprocessorParser.h
-        Preprocessor/PreAST/PreASTDesugar.cpp
+        Preprocessor/PreprocessorParser.cpp
         Preprocessor/PreAST/PreASTDesugar.h
+        Preprocessor/PreAST/PreASTDesugar.cpp
         AST/ASTNodes/AST.h
         AST/ASTNodes/AST.cpp
         AST/ASTNodes/ASTDataStructures.h
@@ -77,46 +77,46 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         AST/ASTVisitor/ASTVisitor.cpp
         AST/ASTVisitor/ASTPrinter.h
         AST/ASTVisitor/ASTPrinter.cpp
-        AST/ASTVisitor/ASTDesugar.cpp
         AST/ASTVisitor/ASTDesugar.h
-        AST/ASTVisitor/ASTCollectLowerings.cpp
+        AST/ASTVisitor/ASTDesugar.cpp
         AST/ASTVisitor/ASTCollectLowerings.h
-        AST/ASTVisitor/ASTSemanticAnalysis.cpp
+        AST/ASTVisitor/ASTCollectLowerings.cpp
         AST/ASTVisitor/ASTSemanticAnalysis.h
-        AST/Types.cpp
+        AST/ASTVisitor/ASTSemanticAnalysis.cpp
         AST/Types.h
-        AST/TypeRegistry.cpp
+        AST/Types.cpp
         AST/TypeRegistry.h
-        Interpreter/SimpleExprInterpreter.cpp
+        AST/TypeRegistry.cpp
         Interpreter/SimpleExprInterpreter.h
-        Preprocessor/PreAST/PreASTCombine.cpp
+        Interpreter/SimpleExprInterpreter.cpp
         Preprocessor/PreAST/PreASTCombine.h
-        Preprocessor/PreAST/PreASTIncrementer.cpp
+        Preprocessor/PreAST/PreASTCombine.cpp
         Preprocessor/PreAST/PreASTIncrementer.h
-        BuiltinsProcessing/BuiltinsProcessor.cpp
+        Preprocessor/PreAST/PreASTIncrementer.cpp
         BuiltinsProcessing/BuiltinsProcessor.h
-        Generator/ASTGenerator.cpp
+        BuiltinsProcessing/BuiltinsProcessor.cpp
         Generator/ASTGenerator.h
+        Generator/ASTGenerator.cpp
         ${GENERATED_HEADERS}
         generated/version.h
         JSON/JSONParser.h
         JSON/JSONParser.cpp
         JSON/JSONVisitor.h
         JSON/JSONVisitor.cpp
-        Preprocessor/PreAST/PreASTDefines.cpp
         Preprocessor/PreAST/PreASTDefines.h
-        Preprocessor/PreAST/PreASTPragma.cpp
+        Preprocessor/PreAST/PreASTDefines.cpp
         Preprocessor/PreAST/PreASTPragma.h
-        misc/FileHandler.cpp
+        Preprocessor/PreAST/PreASTPragma.cpp
         misc/FileHandler.h
-        misc/CommandLineOptions.cpp
+        misc/FileHandler.cpp
         misc/CommandLineOptions.h
+        misc/CommandLineOptions.cpp
         BuiltinsProcessing/DefinitionProvider.h
         BuiltinsProcessing/DefinitionProvider.cpp
-        Processor/Processor.cpp
         Processor/Processor.h
-        misc/PathHandler.cpp
+        Processor/Processor.cpp
         misc/PathHandler.h
+        misc/PathHandler.cpp
         Lowering/ASTLowering.h
         Lowering/LoweringList.h
         Lowering/LoweringNDArray.h
@@ -131,6 +131,7 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         Compiler.h
         Compiler.cpp
         AST/ASTVisitor/ASTOptimizations.h
+        AST/ASTVisitor/ASTOptimizations.cpp
         AST/ASTVisitor/ASTVariableChecking.h
         AST/ASTVisitor/ASTVariableChecking.cpp
         AST/ASTVisitor/GlobalScope/ASTGlobalScope.h
@@ -138,8 +139,8 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         AST/ASTVisitor/TypeInference.h
         AST/ASTVisitor/TypeInference.cpp
         Lowering/LoweringFunctionCall.h
-        AST/ASTNodes/ASTInstructions.cpp
         AST/ASTNodes/ASTInstructions.h
+        AST/ASTNodes/ASTInstructions.cpp
         AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h
         AST/ASTVisitor/GlobalScope/ASTRegisterReuse.h
         AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h
@@ -167,6 +168,5 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         SyntaxChecks/KSPPersistency.h
         SyntaxChecks/KSPDeclarations.h
         misc/HashFunctions.h
-        AST/ASTVisitor/ASTOptimizations.cpp
         Optimization/ConstantPromotion.h
 )

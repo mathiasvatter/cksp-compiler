@@ -15,7 +15,6 @@
 
 #include "ASTHelper.h"
 #include "../Types.h"
-#include "../TypeRegistry.h"
 #include "../../misc/HashFunctions.h"
 
 class ASTDesugaring;

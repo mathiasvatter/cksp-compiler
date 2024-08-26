@@ -5,8 +5,10 @@
 
 #include "AST.h"
 
-#include <utility>
+#include "../TypeRegistry.h"
 #include "ASTInstructions.h"
+#include "ASTDataStructures.h"
+#include "ASTReferences.h"
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Desugaring/DesugarFunctionDef.h"
 #include "../ASTVisitor/ASTPrinter.h"

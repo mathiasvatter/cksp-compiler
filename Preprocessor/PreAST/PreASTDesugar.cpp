@@ -4,7 +4,6 @@
 
 #include "PreASTDesugar.h"
 #include "../../Interpreter/SimpleExprInterpreter.h"
-#include <locale>
 #include <iterator>
 
 void PreASTDesugar::visit(PreNodeProgram& node) {

@@ -5,7 +5,7 @@
 #pragma once
 
 #include "Types.h"
-#include "ASTNodes/AST.h"
+#include <unordered_map>
 
 /**
  * @class TypeRegistry
@@ -28,7 +28,7 @@ public:
     /// returns the identifier from the type (Integer -> $, Real -> ~, ...)
     static char get_identifier_from_type(Type* ty);
     /// returns the neutral element from the type (Integer -> 0, Real -> 0.0, ...)
-    static std::unique_ptr<NodeAST> get_neutral_element_from_type(Type* ty);
+    static std::unique_ptr<struct NodeAST> get_neutral_element_from_type(Type* ty);
     /// adds a new object type to the registry, if object type already exists, the existing type is returned
     static ObjectType* add_object_type(const std::string& name);
     /// returns the object type from the name, if no object type with the name exists, nullptr is returned

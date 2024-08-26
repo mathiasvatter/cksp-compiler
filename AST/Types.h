@@ -5,7 +5,7 @@
 #pragma once
 
 #include <utility>
-
+#include <memory>
 #include "../Tokenizer/Tokens.h"
 
 inline static std::string type_kind_names[] = {"Basic", "Composite", "Object"};
