@@ -6,7 +6,7 @@
 #include <unordered_set>
 #include <utility>
 
-#include "../AST/ASTNodes/AST.h"
+//#include "../AST/ASTNodes/AST.h"
 #include "../Processor/Processor.h"
 
 /// Bundles all preprocessor related classes and steps in one class

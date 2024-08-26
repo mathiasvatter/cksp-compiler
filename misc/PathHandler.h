@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../AST/ASTNodes/AST.h"
+#include "../Tokenizer/Tokenizer.h"
 
 
 class PathHandler {
