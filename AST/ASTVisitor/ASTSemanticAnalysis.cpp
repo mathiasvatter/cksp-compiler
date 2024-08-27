@@ -264,9 +264,28 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 			std::nullopt,
 			data_struct->name,
 			data_struct->ty,
-            nullptr,
+			nullptr,
 			data_struct->tok);
-		new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_array)));
+		new_data_struct = static_cast<NodeDataStructure *>(data_struct->replace_with(std::move(node_array)));
+	// if some references were detected as ndarray refs
+	} else if(reference_node_types.find(NodeType::NDArrayRef) != reference_node_types.end()) {
+		auto node_ndarray = std::make_unique<NodeNDArray>(
+			std::nullopt,
+			data_struct->name,
+			data_struct->ty,
+			nullptr,
+			data_struct->tok);
+		// get dimensions from references
+		for(auto & ref : references) {
+			if(ref->get_node_type() == NodeType::NDArrayRef) {
+				auto nd_array_ref = static_cast<NodeNDArrayRef*>(ref);
+				if(nd_array_ref->indexes) {
+					node_ndarray->dimensions = nd_array_ref->indexes->params.size();
+					break;
+				}
+			}
+		}
+		new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_ndarray)));
 	// if some references were detected as pointer references -> change data_struct type
 	} else if(reference_node_types.find(NodeType::PointerRef) != reference_node_types.end()) {
 		auto node_pointer = std::make_unique<NodePointer>(
@@ -332,6 +351,19 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(Defin
 		node_replacement = std::make_unique<NodePointerRef>(
 			reference->name,
 			reference->tok);
+	// if function param was changed to NDArray in here -> size constants have been replaced by access chains!
+	} else if(reference->get_node_type() == NodeType::AccessChain and (reference->declaration->get_node_type() == NodeType::NDArray
+	|| reference->declaration->get_node_type() == NodeType::Array || reference->declaration->get_node_type() == NodeType::List)) {
+		auto access_chain = static_cast<NodeAccessChain*>(reference);
+		if(access_chain->chain.size() == 2) {
+			auto node_var_ref = std::make_unique<NodeVariableRef>(
+				access_chain->get_string(),
+				access_chain->tok);
+			node_var_ref->declaration = reference->declaration;
+			if(node_var_ref->is_ndarray_constant() || node_var_ref->is_array_constant()) {
+				node_replacement = std::move(node_var_ref);
+			}
+		}
 	}
 
 	if(node_replacement) {

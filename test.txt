@@ -1,9 +1,16 @@
-{ Compiled with cksp version 0.0.6 on Mon Aug 26 18:34:22 2024 }
+{ Compiled with cksp version 0.0.6 on Tue Aug 27 15:54:41 2024 }
 on init
   declare $loc_2
   declare $loc_6
+  declare $loc_7
   declare ui_button $btn_1 
   declare ui_button $btn_2 
+  declare %_ndaarray[9]
+  $loc_6 := 0
+  while($loc_6 <= ($ndarray__SIZE_D1 - 1)) 
+    %_ndaarray[($loc_6 * $ndarray__SIZE_D2) + 0] := 0
+    inc($loc_6)
+  end while
   pgs_create_key( AUTO_SAVE, 1)
   set_listener($NI_SIGNAL_TIMER_MS, 1000000)
   declare $autoSave
@@ -12,9 +19,9 @@ on init
   declare ui_button $btn_slot2 
   declare ui_button $btn_slot3 
   declare ui_button $btn_slot4 
-  $loc_6 := 0
-  while($loc_6 < 5) 
-    inc($loc_6)
+  $loc_7 := 0
+  while($loc_7 < 5) 
+    inc($loc_7)
   end while
   declare ui_button $btn_prev_slot_group 
   set_control_par_str(get_ui_id($btn_prev_slot_group), $CONTROL_PAR_TEXT, "")
@@ -27,6 +34,7 @@ on init
   declare %_fx_num_slot[10] := (32)
   make_persistent(%_fx_num_slot)
   read_persistent_var(%_fx_num_slot)
+  %_ndaarray[(0 * $ndaarray__SIZE_D2) + 3]
 end on
 on listener
   if($NI_SIGNAL_TYPE = $NI_SIGNAL_TIMER_MS)

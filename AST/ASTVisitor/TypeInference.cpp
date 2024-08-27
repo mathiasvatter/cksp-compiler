@@ -206,8 +206,13 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
             if(!node.ty) throw_composite_error(&node).exit();
 		}
 	} else {
-		// handed over as array element -> set to element type
-		if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
+		if(node.index->get_node_type() == NodeType::Wildcard) {
+			node.ty = TypeRegistry::get_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
+		} else {
+			// not handed over as array element
+			// handed over as array element -> set to element type
+			if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
+		}
 	}
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
@@ -303,6 +308,11 @@ NodeAST * TypeInference::visit(NodeStruct& node) {
 }
 
 NodeAST * TypeInference::visit(NodeAccessChain& node) {
+	// in case an array size constant has been mistakenly converted to an access chain
+	if(auto size_const = node.is_size_constant()) {
+		return node.replace_with(std::move(size_const));
+	}
+
 	for(int i = 0; i<node.chain.size(); i++) {
 		auto& ptr = node.chain[i];
 		auto error = CompileError(ErrorType::SyntaxError, "", "", ptr->tok);
@@ -467,6 +477,14 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	if(node.r_value ->get_node_type() == NodeType::ParamList and node.l_value->ty->get_type_kind() == TypeKind::Composite) {
 		node.r_value->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.l_value->ty)->get_compound_type(), node.r_value->ty->get_element_type(), node.l_value->ty->get_dimensions());
 	}
+	// if l_value is basic type and r_value is param list -> move first element of list to r_value
+	if(node.l_value->ty->get_type_kind() == TypeKind::Basic and node.r_value->get_node_type() == NodeType::ParamList) {
+		auto param_list = cast_node<NodeParamList>(node.r_value.get());
+		if(param_list->params.size() == 1) {
+			node.r_value->replace_with(std::move(param_list->params[0]));
+		}
+	}
+
 	match_assignment_types(node.l_value.get(), node.r_value.get());
 
 	// a second time to get the new types to the declaration pointer!

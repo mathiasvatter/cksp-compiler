@@ -73,7 +73,7 @@ NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
 		return &node;
 	}
 	if(auto lowering = node.get_lowering(m_program)) {
-		return node.accept(*lowering);
+		return node.accept(*lowering)->accept(*this);
 	} else {
 		node.l_value->accept(*this);
 //		if(node.r_value) node.r_value->accept(*this);
@@ -100,7 +100,7 @@ NodeAST * ASTCollectLowerings::visit(NodeGetControl& node) {
 	}
 
 	// only handles get control
-	return node.lower(m_program);
+	return node.lower(m_program)->accept(*this);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
@@ -129,6 +129,11 @@ NodeAST * ASTCollectLowerings::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
 	return &node;
 }
+
+NodeAST * ASTCollectLowerings::visit(NodeArrayRef& node) {
+	if(node.index) node.index->accept(*this);
+	return &node;
+};
 
 NodeAST * ASTCollectLowerings::visit(NodeListRef& node) {
 	node.indexes->accept(*this);

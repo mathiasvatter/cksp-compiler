@@ -14,8 +14,8 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
     for(auto & callback : node.callbacks) {
         callback->accept(*this);
     }
-    for(auto & function_definition : node.function_definitions) {
-        function_definition->accept(*this);
+    for(auto & func_def : node.function_definitions) {
+        func_def->accept(*this);
     }
 	// update because function parameters might have been added which might cause problems in typechecking
 	m_program->update_function_lookup();
@@ -49,7 +49,34 @@ NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
     node.variable->accept(*this);
     if(node.value) node.value->accept(*this);
 
+	// if var is global -> make assignment and move declaration to global declarations
     if(node.variable->is_global) {
+//		// if global variable is const, check if it has a value and move it to global declarations
+//		if(node.variable->data_type == DataType::Const) {
+//			if(!node.value) {
+//				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+//				error.m_message = "Found incorrect declare statement syntax. Const variables must be assigned a value.";
+//				error.exit();
+//			}
+//			m_global_variable_declarations->add_stmt(std::make_unique<NodeStatement>(node.clone(), node.tok));
+//			node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+//		// if not const, move declaration to global declarations and make assignment, if no value is given, make it a dead code
+//		} else {
+//			std::unique_ptr<NodeAST> assignment = std::make_unique<NodeDeadCode>(node.tok);
+//			if(node.value) {
+//				assignment = std::make_unique<NodeSingleAssignment>(
+//					node.variable->to_reference(),
+//					std::move(node.value),
+//					node.tok
+//				);
+//			}
+//			auto declaration = std::make_unique<NodeSingleDeclaration>(
+//				std::move(node.variable),
+//				nullptr,
+//				node.tok);
+//			m_global_variable_declarations->add_stmt(std::make_unique<NodeStatement>(std::move(declaration), node.tok));
+//			return node.replace_with(std::move(assignment));
+//		}
         m_global_variable_declarations->statements.push_back(
 			std::make_unique<NodeStatement>(
 				node.clone(),

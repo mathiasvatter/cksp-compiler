@@ -225,6 +225,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
+
 	auto node_declaration = m_def_provider->get_declaration(&node);
     if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
@@ -241,6 +242,9 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 				return node.replace_with(std::move(access_chain));
 			}
 		} else {
+			// if data_type is const -> do not throw error since constant variable ref
+			if(node.data_type == DataType::Const) return &node;
+
 			// could still fail on ui control array values or raw list subarrays
 			if(!fail)
 				return &node;

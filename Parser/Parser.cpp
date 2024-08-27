@@ -513,6 +513,8 @@ Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* 
     }
     consume(); // consume :=
 	bool starts_with_parenth = peek().type == token::OPEN_PARENTH;
+	bool is_array = vars->params.at(0)->get_node_type() == NodeType::ArrayRef || vars->params.at(0)->get_node_type() == NodeType::NDArrayRef;
+
 	std::unique_ptr<NodeParamList> assignees = nullptr;
     auto assignee =  parse_param_list(node_assign_statement.get()); //_parse_assignee();
     if(assignee.is_error()) {
@@ -520,7 +522,7 @@ Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* 
     }
 	assignees = std::move(assignee.unwrap());
 	// if assignment starts with parenth and has only one member -> nested param list
-	if(starts_with_parenth and assignees->params.size() == 1) {
+	if(starts_with_parenth and is_array and assignees->params.size() == 1) {
 		auto nested_param_list = std::make_unique<NodeParamList>(get_tok(), std::move(assignees));
 		assignees = std::move(nested_param_list);
 	}
@@ -1062,13 +1064,15 @@ Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST
         consume(); //consume :=
 		// check here if the following assignment starts with a parenthesis in case of array declaration
 		bool starts_with_parenth = peek().type == token::OPEN_PARENTH;
+		bool is_array = to_be_declared.at(0)->get_node_type() == NodeType::Array || to_be_declared.at(0)->get_node_type() == NodeType::NDArray;
+
         auto assignee = parse_param_list(node_declare_statement.get());
         if(assignee.is_error()) {
             return Result<std::unique_ptr<NodeDeclaration>>(assignee.get_error());
         }
         assignees = std::move(assignee.unwrap());
 		// if assignment starts with parenth and has only one member -> nested param list
-		if(starts_with_parenth and assignees->params.size() == 1) {
+		if(starts_with_parenth and is_array and assignees->params.size() == 1) {
 			auto nested_param_list = std::make_unique<NodeParamList>(get_tok(), std::move(assignees));
 			assignees = std::move(nested_param_list);
 		}
