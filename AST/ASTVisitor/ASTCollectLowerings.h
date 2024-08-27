@@ -57,6 +57,7 @@ public:
 	NodeAST * visit(NodeNDArray& node) override;
 	/// lower ndArray when they are a reference
 	NodeAST * visit(NodeNDArrayRef& node) override;
+	NodeAST * visit(NodeArrayRef& node) override;
 	/// move node block of const out of const construct
 	NodeAST * visit(NodeConst& node) override;
 //    void visit(NodeFamily& node) override;

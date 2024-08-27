@@ -67,8 +67,7 @@ std::unique_ptr<NodeAccessChain> NodeVariableRef::to_method_chain() {
 
 
 bool NodeVariableRef::is_array_constant() {
-	if (declaration && (declaration->get_node_type() == NodeType::Array
-	|| declaration->get_node_type() == NodeType::List)) {
+	if (declaration && (declaration->get_node_type() == NodeType::Array || declaration->get_node_type() == NodeType::List)) {
 		auto list = static_cast<NodeList*>(declaration);
 		const std::string& prefix = list->name + ".SIZE";
 		if (name.compare(0, prefix.length(), prefix) == 0) {
@@ -315,4 +314,22 @@ NodeAST *NodeAccessChain::replace_child(NodeAST* oldChild, std::unique_ptr<NodeA
 ASTLowering* NodeAccessChain::get_lowering(NodeProgram *program) const {
 	static LoweringAccessChain lowering(program);
 	return &lowering;
+}
+
+std::unique_ptr<NodeVariableRef> NodeAccessChain::is_size_constant() {
+	auto base = static_cast<NodeReference*>(chain[0].get());
+	if(base->declaration->get_node_type() == NodeType::NDArray
+		|| base->declaration->get_node_type() == NodeType::Array || base->declaration->get_node_type() == NodeType::List) {
+		if(chain.size() == 2) {
+			auto node_var_ref = std::make_unique<NodeVariableRef>(
+				this->get_string(),
+				tok);
+			node_var_ref->data_type = DataType::Const;
+			node_var_ref->declaration = base->declaration;
+			if(node_var_ref->is_ndarray_constant() || node_var_ref->is_array_constant()) {
+				return node_var_ref;
+			}
+		}
+	}
+	return nullptr;
 }

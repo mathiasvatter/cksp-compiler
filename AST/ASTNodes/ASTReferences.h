@@ -216,6 +216,13 @@ struct NodeAccessChain : NodeReference {
 			types.push_back(c->ty);
 		}
 	}
+	std::string get_string() override {
+		std::string str = "";
+		for(auto & c: chain) {
+			str += c->get_string() + ".";
+		}
+		return str.erase(str.size() - 1);
+	}
 	void flatten() {
 		std::vector<std::unique_ptr<NodeAST>> flat_list;
 		// Rekursive Funktion, um die Parameterliste abzuflachen
@@ -233,6 +240,9 @@ struct NodeAccessChain : NodeReference {
 		flatten(std::move(chain));
 		chain = std::move(flat_list);
 	}
+
+	/// returns variable ref if access chain is incorrectly detected array/list/ndarray size constant
+	std::unique_ptr<NodeVariableRef> is_size_constant();
 
 	ASTLowering* get_lowering(NodeProgram *program) const override;
 

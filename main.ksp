@@ -72,7 +72,8 @@ on init
 	// if(1=1 and arr[0] # 1)
 	// 	message("whileh")
 	// end if
-
+	declare ndaarray[3, 3]: int[][]
+	ndaarray[*, 0] := (0)
 
 	// if(i < 3 and i> 5)
 
@@ -90,12 +91,18 @@ on init
 	set_bounds(btn_prev_slot_group, btn_slot0 -> pos_x - 30, btn_slot0 -> pos_y + 3)
 	btn_prev_slot_group -> help := "Show the slots 1-5."
 	
-	declare array[btn_slot.SIZE], no_array := (0+2, 1, 2), 23
+	declare array[btn_slot.SIZE] := (0)
 	define NUM_FX_LOADABLE := 33
 	define NUM_EMITTER := 2
 	define NUM_FX_SLOTS := 5
 	declare read fx_num_slot[NUM_EMITTER,NUM_FX_SLOTS] := (NUM_FX_LOADABLE-1) // holds fx number of each slot
+
+	sooi(ndaarray, 0)
 end on
+
+function sooi(array_big, number) -> result
+	result := array_big[number, array_big.SIZE_D2]
+end function 
 
 on listener
 	if ($NI_SIGNAL_TYPE = $NI_SIGNAL_TIMER_MS)
