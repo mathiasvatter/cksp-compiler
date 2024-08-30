@@ -1,42 +1,42 @@
 
-// struct List
-// 	declare value: int
-// 	declare next
+struct List
+	declare value: int
+	declare next
 
-// 	function __init__(self, value: int, next)
-// 		self.value := value
-// 		self.next := next
-// 	end function
+	function __init__(self, value: int, next)
+		self.value := value
+		self.next := next
+	end function
 
-//     function get_next_next_value(self)
-//         return self.next.next.value
-//     end function
-// end struct
+    function get_next_next_value(self)
+        return self.next.next.value
+    end function
+end struct
 
-// struct Note
-// 	declare pitch: int
-// 	declare velocities[10]: int[]
-// 	declare play_pos[11, 12]: int[][]
+struct Note
+	declare pitch: int
+	declare velocities[10]: int[]
+	declare play_pos[11, 12]: int[][]
 
-// 	function __init__(self, p: int, v: int[], pp: int[][])
-// 		self.pitch := p
-// 		self.velocities := v
-// 		self.play_pos := pp
-// 	end function
+	function __init__(self, p: int, v: int[], pp: int[][])
+		self.pitch := p
+		self.velocities := v
+		self.play_pos := pp
+	end function
 
-// 	function __repr__(self)
-// 		return "Note {Pitch: " & self.pitch & "}"
-// 	end function
+	function __repr__(self)
+		return "Note {Pitch: " & self.pitch & "}"
+	end function
 
-// 	function play(self)
-// 		return play_note(self.pitch, self.velocities[0], self.play_pos[1,2], 0)
-// 	end function
+	function play(self)
+		return play_note(self.pitch, self.velocities[0], self.play_pos[1,2], 0)
+	end function
 
-// 	function get_velocities(self)
-// 		return self.velocities
-// 	end function
+	function get_velocities(self)
+		return self.velocities
+	end function
 
-// end struct
+end struct
 
 on init	
 	declare ui_button btn_1, ui_button btn_2
@@ -72,8 +72,7 @@ on init
 	// if(1=1 and arr[0] # 1)
 	// 	message("whileh")
 	// end if
-	declare ndaarray[3, 3]: int[][]
-	ndaarray[*, 0] := (0)
+
 
 	// if(i < 3 and i> 5)
 
@@ -91,18 +90,12 @@ on init
 	set_bounds(btn_prev_slot_group, btn_slot0 -> pos_x - 30, btn_slot0 -> pos_y + 3)
 	btn_prev_slot_group -> help := "Show the slots 1-5."
 	
-	declare array[btn_slot.SIZE] := (0)
+	declare array[btn_slot.SIZE], no_array := (0+2, 1, 2), 23
 	define NUM_FX_LOADABLE := 33
 	define NUM_EMITTER := 2
 	define NUM_FX_SLOTS := 5
 	declare read fx_num_slot[NUM_EMITTER,NUM_FX_SLOTS] := (NUM_FX_LOADABLE-1) // holds fx number of each slot
-
-	sooi(ndaarray, 0)
 end on
-
-function sooi(array_big, number) -> result
-	result := array_big[number, array_big.SIZE_D2]
-end function 
 
 on listener
 	if ($NI_SIGNAL_TYPE = $NI_SIGNAL_TIMER_MS)
