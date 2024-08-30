@@ -220,9 +220,8 @@ public:
 	}
 
 	inline NodeAST * visit(NodeVariableRef& node) override {
-//		if(node.name == "loc_67" and node.declaration->is_global) {
-//
-//		}
+		if(node.data_type == DataType::Const) return &node;
+
 		// add all references in local scope to vector for later passive_var replacement
 		m_all_local_references.push_back(&node);
 
