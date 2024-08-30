@@ -86,7 +86,10 @@ public:
 
 	NodeAST* visit(NodeNDArrayRef& node) override {
 		if(node.indexes) node.indexes->accept(*this);
-		node.add_wildcards();
+		// only add wildcards if it is l_value in assignment
+		if(node.is_l_value()) {
+			node.add_wildcards();
+		}
 		return &node;
 	}
 

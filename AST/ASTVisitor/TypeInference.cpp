@@ -502,6 +502,10 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
+	if(node.function->name == "update.strip.noAutomation") {
+
+	}
+
 	node.function->accept(*this);
 	node.get_definition(m_program);
 	if(!node.definition) {

@@ -229,6 +229,9 @@ public:
 	/// returns nullptr if ref was no ndarray constant and could not be substituted
 	/// ndarray.SIZE_D1 -> nd.SIZE_D1
 	NodeAST* substitute_ndarray_constants(NodeReference* ref) {
+		if(ref->name == "UI_array.SIZE_D2") {
+
+		}
 		// special case when variable ref is ndarray constant
 		if(ref->data_type == DataType::Const and ref->declaration and ref->get_node_type() == NodeType::VariableRef) {
 			std::string ndarray_name = get_ndarray_constant_base(ref->name);
@@ -238,6 +241,7 @@ public:
 					auto array_ref = static_cast<NodeArrayRef*>(substitute.get());
 					ref->name = array_ref->name + remove_substring(ref->name, ndarray_name);
 					ref->ty = TypeRegistry::Integer;
+					ref->declaration = nullptr;
 					return ref;
 				}
 			// in case it is before datastructure lowering and ndarray refs still exist
@@ -246,6 +250,7 @@ public:
 					auto nd_array_ref = static_cast<NodeNDArrayRef*>(nd_substitute.get());
 					ref->name = nd_array_ref->name + remove_substring(ref->name, ndarray_name);
 					ref->ty = TypeRegistry::Integer;
+					ref->declaration = nullptr;
 					return ref;
 				}
 			}
@@ -255,15 +260,27 @@ public:
 
 	/// if substitute and ref are both of type <Composite> and <ArrayRef>: only change name
 	static NodeReference* substitute_composite_type(NodeReference* ref, NodeAST* substitute) {
-		if(substitute->ty->get_type_kind() == TypeKind::Composite || ref->ty->get_type_kind() == TypeKind::Composite) {
+		if(substitute->ty->get_type_kind() == TypeKind::Composite) {// || ref->ty->get_type_kind() == TypeKind::Composite) {
 			if (substitute->get_node_type() != NodeType::ArrayRef and substitute->get_node_type() != NodeType::NDArrayRef) {
 				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
 				error.m_message = "Arg is of type <Composite> but is no <ArrayRef> Node: <" + ref->name + ">.";
 				error.exit();
 			}
+			if(ref->get_node_type() == NodeType::VariableRef) {
+				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
+				error.m_message = "Tried to substitute a <Variable> function argument with an <Array>";
+				error.exit();
+			}
 			auto array_ref = static_cast<NodeReference*>(substitute);
 			ref->name = array_ref->name;
-			ref->ty = substitute->ty;
+			//if ref (in function) is of type composite -> same type
+			if(ref->ty->get_type_kind() == TypeKind::Composite) {
+				ref->ty = substitute->ty;
+			// if ref has index and is of type basic then -> set to element type
+			} else {
+				ref->ty = substitute->ty->get_element_type();
+			}
+
 			return ref;
 		}
 		return nullptr;

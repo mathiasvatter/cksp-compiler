@@ -7,16 +7,33 @@ Global Declarations:
 	declare loc_5 : int
 	declare loc_1 : string
 	declare loc_2 : int
-	declare loc_6 : int
 on init
-	declare loc_7 : int
+	declare const Note.MAX_STRUCTS : int := MAX_STRUCTS / ((((11 * 12) + 10) + abs((11 * 12) - 10)) / 2)
+	declare Note.free_idx : int := 0
+	declare const Note.allocation.SIZE : int := Note.MAX_STRUCTS
+	declare Note.allocation[Note.MAX_STRUCTS] : int[]
+	declare const Note.pitch.SIZE : int := Note.MAX_STRUCTS
+	declare Note.pitch[Note.MAX_STRUCTS] : int[]
+	declare const Note.velocities.SIZE_D1 : int := Note.MAX_STRUCTS
+	declare const Note.velocities.SIZE_D2 : int := 10
+	declare const _Note.velocities.SIZE : int := Note.MAX_STRUCTS * 10
+	declare _Note.velocities[Note.MAX_STRUCTS * 10] : int[]
+	declare const Note.play_pos.SIZE_D1 : int := Note.MAX_STRUCTS
+	declare const Note.play_pos.SIZE_D2 : int := 11
+	declare const Note.play_pos.SIZE_D3 : int := 12
+	declare const _Note.play_pos.SIZE : int := Note.MAX_STRUCTS * (11 * 12)
+	declare _Note.play_pos[Note.MAX_STRUCTS * (11 * 12)] : int[]
+	declare const List.MAX_STRUCTS : int := MAX_STRUCTS
+	declare List.free_idx : int := 0
+	declare const List.allocation.SIZE : int := List.MAX_STRUCTS
+	declare List.allocation[List.MAX_STRUCTS] : int[]
+	declare const List.value.SIZE : int := List.MAX_STRUCTS
+	declare List.value[List.MAX_STRUCTS] : int[]
+	declare const List.next.SIZE : int := List.MAX_STRUCTS
+	declare List.next[List.MAX_STRUCTS] : int[]
+	declare loc_6 : int
 	declare ui_button btn_1 : int 
 	declare ui_button btn_2 : int 
-	declare const ndaarray.SIZE_D1 : int := 3
-	declare const ndaarray.SIZE_D2 : int := 3
-	declare const _ndaarray.SIZE : int := 3 * 3
-	declare _ndaarray[3 * 3] : int[]
-	ndarray$dim2<-init[Integer](_ndaarray, 0, 0)
 	pgs_create_key(AUTO_SAVE, 1)
 	set_listener(NI_SIGNAL_TIMER_MS, 1000000)
 	declare autoSave : int
@@ -27,10 +44,10 @@ on init
 	declare ui_button btn_slot2 : int 
 	declare ui_button btn_slot3 : int 
 	declare ui_button btn_slot4 : int 
-	loc_7 := 0
-	while(loc_7 < 5) 
-		btn_slot[loc_7] := get_ui_id(btn_slot0) + loc_7
-		inc(loc_7)
+	loc_6 := 0
+	while(loc_6 < 5) 
+		btn_slot[loc_6] := get_ui_id(btn_slot0) + loc_6
+		inc(loc_6)
 	end while
 	declare ui_button btn_prev_slot_group : int 
 	set_control_par_str(get_ui_id(btn_prev_slot_group), CONTROL_PAR_TEXT, "")
@@ -41,12 +58,12 @@ on init
 	set_control_par(get_ui_id(btn_prev_slot_group), CONTROL_PAR_POS_Y, get_control_par(get_ui_id(btn_slot0), CONTROL_PAR_POS_Y) + 3)
 	set_control_par_str(get_ui_id(btn_prev_slot_group), CONTROL_PAR_HELP, "Show the slots 1-5.")
 	declare const array.SIZE : int := btn_slot.SIZE
-	declare array[btn_slot.SIZE] : int[] := (0)
+	declare array[btn_slot.SIZE] : int[] := (0 + 2, 1, 2)
+	declare no_array : int := 23
 	declare const fx_num_slot.SIZE_D1 : int := 2
 	declare const fx_num_slot.SIZE_D2 : int := 5
 	declare const _fx_num_slot.SIZE : int := 2 * 5
 	declare read _fx_num_slot[2 * 5] : int[] := (33 - 1)
-	_ndaarray[(0 * ndaarray.SIZE_D2) + ndaarray.SIZE_D2]
 end on
 
 on listener
@@ -66,7 +83,7 @@ on ui_control(btn_2)
 	do_sth(4)
 	do_sth_in_sth()
 	if(1 = 2)
-		loc_7 := 0
+		loc_6 := 0
 	end if
 end on
 
@@ -85,15 +102,6 @@ function do_sth(pipi : int) : Unknown
 	inc(loc_2)
 	do_sth_in_sth()
 	message(loc_2 & ", " & pipi)
-end function
-
-function ndarray$dim2<-init[Integer](_ndarray : int[], value : int, param1 : int) : Unknown
-	loc_6 := 0
-	loc_6 := 0
-	while(loc_6 <= (ndarray.SIZE_D1 - 1)) 
-		_ndarray[(loc_6 * ndarray.SIZE_D2) + param1] := value
-		inc(loc_6)
-	end while
 end function
 
 
