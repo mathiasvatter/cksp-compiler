@@ -487,6 +487,7 @@ void NodeBlock::flatten() {
 	for (auto& statement : statements) {
 		if (statement->statement->get_node_type() == NodeType::Block) {
 			auto node_innner_body = static_cast<NodeBlock*>(statement->statement.get());
+//			node_innner_body->flatten();
 			auto& inner_statements = node_innner_body->statements;
 
 			// Entfernen Sie DeadCode-Nodes in einem Schritt

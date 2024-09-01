@@ -327,6 +327,7 @@ std::unique_ptr<NodeVariableRef> NodeAccessChain::is_size_constant() {
 			node_var_ref->data_type = DataType::Const;
 			node_var_ref->declaration = base->declaration;
 			if(node_var_ref->is_ndarray_constant() || node_var_ref->is_array_constant()) {
+				node_var_ref->declaration = nullptr;
 				return node_var_ref;
 			}
 		}

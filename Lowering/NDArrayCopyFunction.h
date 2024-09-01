@@ -132,7 +132,8 @@ private:
 				if (idx->get_node_type() == NodeType::Wildcard) {
 					auto node_upper_bound = std::make_unique<NodeVariableRef>(
 						"original.SIZE_D" + std::to_string(count), array->tok);
-					node_upper_bound->kind = NodeReference::Compiler;
+//					node_upper_bound->kind = NodeReference::Compiler;
+					node_upper_bound->data_type = DataType::Const;
 					upper_bounds.push_back(std::move(node_upper_bound));
 					lower_bounds.push_back(std::make_unique<NodeInt>(0, array->tok));
 					count++;

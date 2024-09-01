@@ -1,42 +1,59 @@
 
-struct List
-	declare value: int
-	declare next
+// struct List
+// 	declare value: int
+// 	declare next
 
-	function __init__(self, value: int, next)
-		self.value := value
-		self.next := next
-	end function
+// 	function __init__(self, value: int, next)
+// 		self.value := value
+// 		self.next := next
+// 	end function
 
-    function get_next_next_value(self)
-        return self.next.next.value
-    end function
-end struct
+//     function get_next_next_value(self)
+//         return self.next.next.value
+//     end function
+// end struct
 
-struct Note
-	declare pitch: int
-	declare velocities[10]: int[]
-	declare play_pos[11, 12]: int[][]
+// struct Note
+// 	declare pitch: int
+// 	declare velocities[10]: int[]
+// 	declare play_pos[11, 12]: int[][]
 
-	function __init__(self, p: int, v: int[], pp: int[][])
-		self.pitch := p
-		self.velocities := v
-		self.play_pos := pp
-	end function
+// 	function __init__(self, p: int, v: int[], pp: int[][])
+// 		self.pitch := p
+// 		self.velocities := v
+// 		self.play_pos := pp
+// 	end function
 
-	function __repr__(self)
-		return "Note {Pitch: " & self.pitch & "}"
-	end function
+// 	function __repr__(self)
+// 		return "Note {Pitch: " & self.pitch & "}"
+// 	end function
 
-	function play(self)
-		return play_note(self.pitch, self.velocities[0], self.play_pos[1,2], 0)
-	end function
+// 	function play(self)
+// 		return play_note(self.pitch, self.velocities[0], self.play_pos[1,2], 0)
+// 	end function
 
-	function get_velocities(self)
-		return self.velocities
-	end function
+// 	function get_velocities(self)
+// 		return self.velocities
+// 	end function
 
-end struct
+// end struct
+
+function update.strip.noAutomation(btn_name,UI_array,value_array,control_array,animation_label, emitter)
+	for i := 0 to UI_array.SIZE_D2-1
+		if UI_array[emitter,i] # get_ui_id(btn_name)
+			UI_array[emitter,i] -> value := 0
+		else 
+			UI_array[emitter,i] -> value := 1
+		end if
+		value_array[emitter,i] := UI_array[emitter,i] -> value
+	end for
+	
+	bigknob_active[2]:= 1
+	bigknob_active[1]:= 3000000
+
+	control_array[emitter,3] := control_array[emitter,get_active_idx(value_array, emitter)]
+	animation_label -> picture_state := control_array[emitter,get_active_idx(value_array, emitter)]
+end function
 
 on init	
 	declare ui_button btn_1, ui_button btn_2

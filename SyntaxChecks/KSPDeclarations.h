@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../AST/ASTVisitor/ASTVisitor.h"
+#include "../AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 /**
  * Checks that declarations with values have non-constant values.
@@ -26,14 +27,25 @@ public:
 				node_assignment_ref->match_data_structure(new_declaration->variable.get());
 				node_assignment_ref->ty = new_declaration->variable->ty;
 
-				body->add_stmt(std::make_unique<NodeStatement>(
-						std::move(new_declaration),
-					    node.tok)
-					);
-				body->add_stmt(std::make_unique<NodeStatement>(
-						std::move(new_assignment),
-					    node.tok)
-					);
+				// lower initializer list when array with non-constant or string values
+				if(new_declaration->variable->get_node_type() == NodeType::Array and new_assignment->r_value->get_node_type() == NodeType::ParamList) {
+					auto array_ref = static_cast<NodeArrayRef*>(node_assignment_ref);
+					auto param_list = static_cast<NodeParamList *>(new_assignment->r_value.get());
+					body = NormalizeArrayAssign::get_array_init_from_list(array_ref, param_list);
+					body->prepend_stmt(std::make_unique<NodeStatement>(
+							std::move(new_declaration),
+						    node.tok)
+						);
+				} else {
+					body->add_stmt(std::make_unique<NodeStatement>(
+							std::move(new_declaration),
+							node.tok)
+						);
+					body->add_stmt(std::make_unique<NodeStatement>(
+							std::move(new_assignment),
+							node.tok)
+						);
+				}
 				return node.replace_with(std::move(body));
 			}
 		}

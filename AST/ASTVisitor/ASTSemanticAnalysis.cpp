@@ -359,9 +359,13 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(Defin
 			auto node_var_ref = std::make_unique<NodeVariableRef>(
 				access_chain->get_string(),
 				access_chain->tok);
-			node_var_ref->declaration = reference->declaration;
+			node_var_ref->declaration = static_cast<NodeReference*>(access_chain->chain[0].get())->declaration;
+			node_var_ref->data_type = DataType::Const;
 			if(node_var_ref->is_ndarray_constant() || node_var_ref->is_array_constant()) {
 				node_replacement = std::move(node_var_ref);
+				node_replacement->declaration = nullptr;
+				auto new_ref = static_cast<NodeReference*>(reference->replace_with(std::move(node_replacement)));
+				return new_ref;
 			}
 		}
 	}

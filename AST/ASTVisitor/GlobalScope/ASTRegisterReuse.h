@@ -73,6 +73,7 @@ public:
 		}
 		// rename all local references with their new passive_var names
 		for(auto & local_ref : m_all_local_references) {
+			if(!local_ref->declaration) continue;
 			local_ref->declaration->is_used = true;
 			if(local_ref->is_local) local_ref->name = local_ref->declaration->name;
 		}
@@ -142,12 +143,12 @@ public:
 	inline NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->determine_locality(m_program, m_current_body);
 
-		if(node.value) node.value->accept(*this);
 
 		if(m_current_body != m_program->global_declarations.get()) {
 			if (node.variable->is_local and node.variable->data_type == DataType::Const) {
 				node.variable->is_local = false;
 				node.variable->is_global = true;
+				if(node.value) node.value->accept(*this);
 				auto node_global_const = clone_as<NodeSingleDeclaration>(&node);
 				m_def_provider->set_declaration(node_global_const->variable.get(), !node.variable->is_local);
 				m_program->global_declarations->add_stmt(
@@ -161,6 +162,7 @@ public:
 		} else {
 			node.variable->is_local = false;
 			node.variable->is_global = true;
+			if(node.value) node.value->accept(*this);
 			m_def_provider->set_declaration(node.variable.get(), !node.variable->is_local);
 //			node.variable->accept(*this);
 			return &node;
@@ -179,6 +181,7 @@ public:
 		}
 		// only add var to local scope if it is not replaced by passive_var
 		node.variable->accept(*this);
+		if(node.value) node.value->accept(*this);
 		// add local vars to lists for later renaming
 		if(node.variable->is_local) {
 			if(m_program->current_callback) m_all_callback_decl[m_program->current_callback].push_back(&node);
@@ -220,8 +223,7 @@ public:
 	}
 
 	inline NodeAST * visit(NodeVariableRef& node) override {
-		if(node.data_type == DataType::Const) return &node;
-
+//		if(node.data_type == DataType::Const) return &node;
 		// add all references in local scope to vector for later passive_var replacement
 		m_all_local_references.push_back(&node);
 
@@ -235,7 +237,13 @@ public:
 		}
 
 		auto node_declaration = m_def_provider->get_declaration(&node);
-		if(!node_declaration) DefinitionProvider::throw_declaration_error(node).exit();
+		if(!node_declaration) {
+			if(node.data_type == DataType::Const) {
+				// do not throw error for const variables
+				return &node;
+			}
+			DefinitionProvider::throw_declaration_error(node).exit();
+		}
 
 		node.match_data_structure(node_declaration);
 		return &node;
