@@ -229,11 +229,8 @@ public:
 	/// returns nullptr if ref was no ndarray constant and could not be substituted
 	/// ndarray.SIZE_D1 -> nd.SIZE_D1
 	NodeAST* substitute_ndarray_constants(NodeReference* ref) {
-		if(ref->name == "UI_array.SIZE_D2") {
-
-		}
 		// special case when variable ref is ndarray constant
-		if(ref->data_type == DataType::Const and ref->declaration and ref->get_node_type() == NodeType::VariableRef) {
+		if(ref->data_type == DataType::Const) {
 			std::string ndarray_name = get_ndarray_constant_base(ref->name);
 			if(ndarray_name.empty()) return nullptr;
 			if(auto substitute = get_substitute("_"+ndarray_name)) {
@@ -291,7 +288,9 @@ public:
 		if(m_substitution_stack.empty()) return ref;
 //		if(!ref->declaration->is_function_param()) return ref;
 //		if(ref->data_type != DataType::Param) return ref;
+		if(ref->name == "UI_array.SIZE_D2") {
 
+		}
 		if(auto substitute = get_substitute(ref->name)) {
 			// if substitute and ref are both of type <Composite> and <ArrayRef>: only change name
 			if(auto composite_substitute = substitute_composite_type(ref, substitute.get())) {

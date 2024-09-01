@@ -105,6 +105,9 @@ public:
 		for(auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
+		if(cast_node<NodeCallback>(node.parent) == m_program->init_callback) {
+
+		}
 		node.flatten();
 		if(check_line_count(&node, node.statements.size())) {
 			auto blocks = split_blocks(node);

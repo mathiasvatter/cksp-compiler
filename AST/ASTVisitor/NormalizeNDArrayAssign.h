@@ -201,7 +201,8 @@ private:
 				param = node_iterator->to_reference();
 				iterators.push_back(std::move(node_iterator));
 				auto node_upper_bound = std::make_unique<NodeVariableRef>(node_nd_array_ref->name + ".SIZE_D" + std::to_string(count), node->tok);
-				node_upper_bound->kind = NodeReference::Compiler;
+//				node_upper_bound->kind = NodeReference::Compiler;
+				node_upper_bound->data_type = DataType::Const;
 				upper_bounds.push_back(std::move(node_upper_bound));
 				lower_bounds.push_back(std::make_unique<NodeInt>(0, node->tok));
 				count++;
