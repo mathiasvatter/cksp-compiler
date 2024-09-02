@@ -164,13 +164,14 @@ public:
 		);
 		node_assignment->l_value->ty = TypeRegistry::Integer;
 
-		node_while_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_assignment), ui_control.tok));
+		node_while_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), ui_control.tok));
 		auto node_while_loop = make_while_loop(
 			node_iterator_var_ref.get(),
 			0,
 			array_size,
 			std::move(node_while_body), node_body.get());
-		node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_while_loop), ui_control.tok));
+		node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while_loop), ui_control.tok));
+//		node_body->update_parents(nullptr);
 		return node_body;
 	}
 };

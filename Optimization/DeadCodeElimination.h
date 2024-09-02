@@ -13,6 +13,9 @@
  */
 class DeadCodeElimination : public ASTOptimizations {
 private:
+	/// TODO: do not kill last assignment is current assignment has the var as r_value
+	/// var := 1*23
+	/// var := var + 1 -> do not kill
 	std::unordered_map<StringTypeKey, NodeReference*, StringTypeKeyHash> m_last_reference;
 public:
 

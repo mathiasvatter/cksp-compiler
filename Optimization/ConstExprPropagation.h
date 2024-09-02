@@ -44,6 +44,12 @@ public:
 
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
+		// if function is builtin and asynchronus, do not propagate -> reset map
+		if(node.kind == NodeFunctionCall::Kind::Builtin) {
+			if(!node.definition->is_thread_safe) {
+				m_constant_expressions.clear();
+			}
+		}
 		return &node;
 	}
 

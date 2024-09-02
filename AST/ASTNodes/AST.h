@@ -108,6 +108,7 @@ struct NodeReference : NodeAST {
         return func_arg;
     }
 	std::unique_ptr<struct NodeFunctionCall> wrap_in_get_ui_id();
+	bool needs_get_ui_id();
 	/// determines if reference is reference to struct member
 	[[nodiscard]] bool is_member_ref() const;
 	/// checks if reference is raw version of multi-dimensional array
