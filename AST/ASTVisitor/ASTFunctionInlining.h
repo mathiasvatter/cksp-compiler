@@ -236,7 +236,7 @@ public:
 			if(auto substitute = get_substitute("_"+ndarray_name)) {
 				if(substitute->get_node_type() == NodeType::ArrayRef) {
 					auto array_ref = static_cast<NodeArrayRef*>(substitute.get());
-					ref->name = array_ref->name + remove_substring(ref->name, ndarray_name);
+					ref->name = array_ref->sanitize_name() + remove_substring(ref->name, ndarray_name);
 					ref->ty = TypeRegistry::Integer;
 					ref->declaration = nullptr;
 					return ref;

@@ -18,7 +18,7 @@ private:
 	DefinitionProvider *m_def_provider;
 	std::unordered_map<std::string, int> m_ui_control_count;
 
-	static const int MAX_BLOCK_LINES = 4990;
+	static const int MAX_BLOCK_LINES = 4991;
 	static const int MAX_UI_CONTROLS = 999;
 	static const int MAX_ARRAY_ELEMENTS = 1000000;
 
@@ -44,7 +44,7 @@ private:
 	static bool check_line_count(NodeBlock* node, int line_count) {
 		if(line_count > MAX_BLOCK_LINES) {
 			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *node);
-			error.m_message = "Maximum number of lines in block exceeded ("+std::to_string(MAX_BLOCK_LINES)+"). This will prompt a 'memory exhausted' error in KSP.";
+			error.m_message = "Maximum number of lines in block exceeded ("+std::to_string(MAX_BLOCK_LINES)+"). This will probably prompt a 'memory exhausted' error in KSP.";
 			error.print();
 			return true;
 		}
@@ -52,15 +52,16 @@ private:
 	}
 
 	static std::vector<std::unique_ptr<NodeBlock>> split_blocks(NodeBlock &block) {
+		int new_max_block_lines = calc_adjusted_max_block_lines(block);
 		std::vector<std::unique_ptr<NodeBlock>> result_blocks;
 		auto it = block.statements.begin();
 		while (it != block.statements.end()) {
 			// Erstelle einen neuen Block mit vorreserviertem Speicherplatz
 			auto new_block = std::make_unique<NodeBlock>(block.tok);
-			new_block->statements.reserve(MAX_BLOCK_LINES);
+			new_block->statements.reserve(new_max_block_lines);
 
 			// Kopiere bis zu max_block_size Statements in den neuen Block
-			for (size_t i = 0; i < MAX_BLOCK_LINES && it != block.statements.end(); ++i, ++it) {
+			for (size_t i = 0; i < new_max_block_lines && it != block.statements.end(); ++i, ++it) {
 				new_block->add_stmt(std::move((*it)));
 			}
 
@@ -69,6 +70,13 @@ private:
 		}
 		block.statements.clear();
 		return result_blocks;
+	}
+
+	/// calculate new max block size, since for every control flow statement created, the max block size inside them
+	/// shrinks by 3 stmts
+	inline static int calc_adjusted_max_block_lines(NodeBlock& block) {
+		int block_size = block.statements.size();
+		return MAX_BLOCK_LINES - (block_size/MAX_BLOCK_LINES*3)-3;
 	}
 
 	std::unique_ptr<NodeBlock> get_block_of_if_stmts(std::vector<std::unique_ptr<NodeBlock>>& blocks) {
@@ -119,6 +127,21 @@ public:
 	NodeAST* visit(NodeArray& node) override {
 		node.size->accept(*this);
 		check_max_array_size(&node);
+		return &node;
+	}
+
+	NodeAST* visit(NodeArrayRef& node) override {
+		if(node.index) node.index->accept(*this);
+		if(node.needs_get_ui_id()) {
+			return node.replace_with(std::move(node.wrap_in_get_ui_id()));
+		}
+		return &node;
+	}
+
+	NodeAST* visit(NodeVariableRef& node) override {
+		if(node.needs_get_ui_id()) {
+			return node.replace_with(std::move(node.wrap_in_get_ui_id()));
+		}
 		return &node;
 	}
 

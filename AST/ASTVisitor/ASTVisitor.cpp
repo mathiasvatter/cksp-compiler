@@ -33,12 +33,12 @@ std::unique_ptr<NodeBlock> ASTVisitor::make_while_loop(NodeAST* var, int32_t fro
 		),
 		var->tok
 	);
-    body->statements.push_back(std::move(node_increment));
+    body->add_stmt(std::move(node_increment));
     auto node_while = std::make_unique<NodeWhile>(
 		std::move(node_comparison),
 		std::move(body), var->tok
 	);
-    node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_while), var->tok));
+    node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while), var->tok));
     return std::move(node_body);
 }
 

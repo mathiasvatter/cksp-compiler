@@ -222,6 +222,25 @@ bool NodeReference::is_l_value() {
 	return false;
 }
 
+bool NodeReference::needs_get_ui_id() {
+	bool wrap_it = this->data_type == DataType::UIControl and this->is_func_arg();
+	if(parent and parent->parent and parent->parent->parent
+	and parent->parent->parent->get_node_type() == NodeType::FunctionCall) {
+		auto func_call = static_cast<NodeFunctionCall*>(this->parent->parent->parent);
+		// check if function expects Integer as parameter, or parameter is compatible
+//			if(func_call->definition) {
+//				auto param_list = static_cast<NodeParamList*>(this->parent);
+//				auto param = func_call->definition->header->args->params[param_list->get_idx(this)].get();
+//				wrap_it &= param->ty->is_compatible(TypeRegistry::Integer);
+//			}
+//			wrap_it &= func_call->function->name != "get_ui_id";
+		wrap_it &= func_call->kind == NodeFunctionCall::Kind::Builtin;
+		wrap_it &= contains(func_call->function->name, "control_par");
+	}
+	wrap_it &= this->data_type != DataType::UIArray;
+	return wrap_it;
+}
+
 // ************* NodeInstruction ***************
 NodeAST *NodeInstruction::accept(struct ASTVisitor &visitor) {
 	return nullptr;

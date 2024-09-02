@@ -52,43 +52,27 @@ public:
 		return node.lower(m_program);
 	};
 
-	inline static bool needs_get_ui_id(NodeReference* ref) {
-		bool wrap_it = ref->data_type == DataType::UIControl and ref->is_func_arg();
-		if(ref->parent->parent->parent->get_node_type() == NodeType::FunctionCall) {
-			auto func_call = static_cast<NodeFunctionCall*>(ref->parent->parent->parent);
-			// check if function expects Integer as parameter, or parameter is compatible
-//			if(func_call->definition) {
-//				auto param_list = static_cast<NodeParamList*>(ref->parent);
-//				auto param = func_call->definition->header->args->params[param_list->get_idx(ref)].get();
-//				wrap_it &= param->ty->is_compatible(TypeRegistry::Integer);
-//			}
-//			wrap_it &= func_call->function->name != "get_ui_id";
-			wrap_it &= func_call->kind == NodeFunctionCall::Kind::Builtin;
-			wrap_it &= contains(func_call->function->name, "control_par");
-		}
-		wrap_it &= ref->data_type != DataType::UIArray;
-		return wrap_it;
-	}
+
 
     NodeAST * visit(NodeVariableRef &node) override {
-        if(needs_get_ui_id(&node)) {
-            return node.replace_with(node.wrap_in_get_ui_id());
-        }
+		if(node.needs_get_ui_id()) {
+			return node.replace_with(std::move(node.wrap_in_get_ui_id()));
+		}
 		return &node;
     }
 
     NodeAST * visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);
-        if(needs_get_ui_id(&node)) {
-			return node.replace_with(node.wrap_in_get_ui_id());
+		if(node.needs_get_ui_id()) {
+			return node.replace_with(std::move(node.wrap_in_get_ui_id()));
 		}
 		return &node;
     }
 
 	NodeAST * visit(NodeNDArrayRef &node) override {
 		if(node.indexes) node.indexes->accept(*this);
-		if(needs_get_ui_id(&node)) {
-			return node.replace_with(node.wrap_in_get_ui_id());
+		if(node.needs_get_ui_id()) {
+			return node.replace_with(std::move(node.wrap_in_get_ui_id()));
 		}
 		return &node;
 	}
