@@ -59,6 +59,7 @@ public:
 				if(assignment->l_value->get_string() == def->return_variable.value()->name) {
 					auto node_return = std::make_unique<NodeReturn>(assignment->tok, std::move(assignment->r_value));
 					stmt->replace_with(std::move(node_return));
+					def->return_variable.reset();
 					return true;
 				}
 			}
@@ -100,6 +101,7 @@ public:
 
 	static inline bool is_expression_function(NodeFunctionDefinition* def) {
 		if(def->num_return_params > 0) {
+			if(def->return_variable.has_value()) return false;
 			if(def->body->statements.size() == 1) {
 				auto stmt = def->body->statements[0]->statement.get();
 				if(stmt->get_node_type() == NodeType::Return) {

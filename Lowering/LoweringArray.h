@@ -15,12 +15,39 @@ class LoweringArray : public ASTLowering {
 private:
 	NodeArray* m_current_array = nullptr;
 	bool m_size_is_constant = true;
+
+	static inline bool check_size_against_initializer_list(const NodeSingleDeclaration& node) {
+		if(node.variable->get_node_type() == NodeType::Array) {
+			auto node_array = static_cast<NodeArray*>(node.variable.get());
+			// check if size of array is correct when given initializer list
+			if(node.value and node.value->get_node_type() == NodeType::ParamList) {
+				auto param_list = static_cast<NodeParamList*>(node.value.get());
+				if(node_array->size->get_node_type() == NodeType::Int) {
+					auto node_int = static_cast<NodeInt*>(node_array->size.get());
+					if(node_int->value < param_list->params.size()) {
+						auto error = CompileError(ErrorType::SyntaxError, "", "", node_array->tok);
+						error.m_message = "Size of <Array> does not match the size of the initializer list.";
+						error.m_got = std::to_string(param_list->params.size());
+						error.m_expected = std::to_string(node_int->value);
+						error.exit();
+						return false;
+					}
+				} else {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 public:
 	explicit LoweringArray(NodeProgram* program) : ASTLowering(program) {}
 
 	NodeAST * visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);
-//		if(node.value) node.value->accept(*this);
+
+		check_size_against_initializer_list(node);
+		// add size constant ".SIZE" to every array declaration
 		if(node.variable->get_node_type() == NodeType::Array) {
 			auto node_array = static_cast<NodeArray*>(node.variable.get());
 			auto node_body = std::make_unique<NodeBlock>(node.tok);

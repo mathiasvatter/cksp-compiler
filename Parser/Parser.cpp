@@ -1497,13 +1497,13 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
     auto expression = parse_expression(node_select_statement.get());
     if(peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeSelect>>(CompileError(ErrorType::SyntaxError,
-                                                                "Expected linebreak after select-expression.", "linebreak", peek()));
+			"Expected linebreak after select-expression.", "linebreak", peek()));
     }
     consume(); //consume linebreak
     _skip_linebreaks();
     if(peek().type != token::CASE) {
         return Result<std::unique_ptr<NodeSelect>>(CompileError(ErrorType::SyntaxError,
-                                                                "Expected cases in select-expression.", "case <expression>", peek()));
+		"Expected cases in select-expression.", "case <expression>", peek()));
     }
     std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBlock>>> cases;
     while (peek().type != token::END_SELECT) {
@@ -1537,8 +1537,8 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
                                                                         "Expected linebreak after case.", "linebreak", peek()));
 			}
 			consume(); //consume linebreak
+			_skip_linebreaks();
 			auto stmts = std::make_unique<NodeBlock>(get_tok());
-//            stmts->parent = node_select_statement.get();
 			while(peek().type != token::END_SELECT && peek().type != token::CASE) {
 				auto stmt = parse_statement(node_select_statement.get());
 				if (stmt.is_error()) {

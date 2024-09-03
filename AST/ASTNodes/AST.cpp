@@ -165,6 +165,17 @@ NodeDataStructure* NodeDataStructure::lower_type() {
 	return this;
 }
 
+NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDataStructure> new_node,
+																 DefinitionProvider *def_provider) {
+	const auto references = def_provider->get_references(this);
+	auto new_data_struct = static_cast<NodeDataStructure*>(this->replace_with(std::move(new_node)));
+	def_provider->set_references(new_data_struct, references);
+	for(auto & ref : references) {
+		ref->declaration = new_data_struct;
+	}
+	return new_data_struct;
+}
+
 // ************* NodeReference ***************
 NodeAST *NodeReference::accept(struct ASTVisitor &visitor) {
 	return nullptr;
@@ -249,6 +260,15 @@ bool NodeReference::is_r_value() {
 		return var_exists_validator.var_exists(*assignment, name);
 	}
 	return false;
+}
+
+NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> new_node,
+												struct DefinitionProvider *def_provider) {
+	new_node->match_data_structure(this->declaration);
+	def_provider->remove_reference(new_node->declaration, this);
+	auto new_ref = static_cast<NodeReference*>(this->replace_with(std::move(new_node)));
+	def_provider->add_reference(new_ref->declaration, new_ref);
+	return new_ref;
 }
 
 // ************* NodeInstruction ***************
@@ -605,7 +625,7 @@ NodeCallback* NodeProgram::move_on_init_callback() {
 	if (it != callbacks.end()) {
 		std::rotate(callbacks.begin(), it, std::next(it));
 	}
-	return it->get(); // Return the pointer to the init callback
+	return callbacks.at(0).get(); // Return the pointer to the init callback
 }
 
 std::unique_ptr<NodeBlock> NodeProgram::declare_compiler_variables() {

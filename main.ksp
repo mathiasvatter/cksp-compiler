@@ -89,7 +89,16 @@ on init
 	// if(1=1 and arr[0] # 1)
 	// 	message("whileh")
 	// end if
-
+	const instrument
+		SUSTAIN, LEGATO
+	end const
+	declare ui_text_edit !txt_element_marked[4]
+	select btn_1
+		case instrument.SUSTAIN
+			message(234)
+		case instrument.LEGATO
+			// legato(interval, event_note)
+	end select
 
 	// if(i < 3 and i> 5)
 
@@ -113,6 +122,7 @@ on init
 	define NUM_FX_SLOTS := 5
 	declare read fx_num_slot[NUM_EMITTER,NUM_FX_SLOTS] := (NUM_FX_LOADABLE-1) // holds fx number of each slot
 end on
+
 
 on listener
 	if ($NI_SIGNAL_TYPE = $NI_SIGNAL_TIMER_MS)
