@@ -32,12 +32,8 @@ public:
 	NodeAST* do_constant_propagation(NodeReference* node) {
 		if (node->data_type != DataType::Const) return node;
 		// do not substitute if the variable is on the left side of an assignment
-		if (node->parent->get_node_type() == NodeType::SingleAssignment) {
-			auto assignment = static_cast<NodeSingleAssignment *>(node->parent);
-			if (assignment->l_value.get() == node) {
-				return node;
-			}
-		}
+		if(node->is_l_value()) return node;
+
 		if (!m_constants.empty()) {
 			if (auto substitute = get_constant(node->name)) {
 				if (substitute->ty->is_compatible(node->ty)) {

@@ -43,6 +43,8 @@ public:
 		);
 		// not data typ ui_control anymore
 		node_array_declaration->variable->data_type = DataType::Mutable;
+		// also not string/real type anymore (in case of ui_text_edit or ui_xy)
+		node_array_declaration->variable->ty = TypeRegistry::ArrayOfInt;
 		// wrap in statement to make use of replace_child
 		auto node_statement = std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok);
 		// lowering of ndarray, turn Declaration into NodeBlock
@@ -140,6 +142,7 @@ public:
 		 */
 		auto node_iterator_var_ref = std::make_unique<NodeVariableRef>("_iter", ui_control.tok);
         node_iterator_var_ref->is_engine = true;
+		node_iterator_var_ref->kind = NodeReference::Kind::Builtin;
 		auto node_while_body = std::make_unique<NodeBlock>(ui_control.tok);
 
 		// this is the $_lbl_lbl0 from the above example

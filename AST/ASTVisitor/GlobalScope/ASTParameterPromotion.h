@@ -81,7 +81,6 @@ public:
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-
 		node.get_definition(m_program);
 
         if(node.kind == NodeFunctionCall::Kind::Property) {
@@ -91,7 +90,6 @@ public:
             // no lambda lifting for builtin function pls
             return &node;
         }
-
 
 		// for now, when function has no params and is not in init callback, assume as call
 		if(node.definition and node.definition->header->args->params.empty() and m_program->current_callback != m_program->init_callback) {

@@ -125,18 +125,20 @@ NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, b
 	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
 	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_variable(var->name);
 
-	auto compile_error = CompileError(ErrorType::Variable, "",var->tok.line, "", var->name, var->tok.file);
 	// is declaration and is builtin -> compile error
 	if (node_builtin_declaration) {
+		auto compile_error = CompileError(ErrorType::Variable, "",var->tok.line, "", var->name, var->tok.file);
 		compile_error.m_message = "Variable shadows builtin variable. Try renaming the variable.";
 		compile_error.exit();
 	}
 
 	// input var is declaration
-	if (get_scoped_data_structure(var->name, global_scope)) {
-		compile_error.m_message = "Data Structure has already been declared in this scope.";
-        if(global_scope) compile_error.m_message += " Variables declared in the <init> callback are always considered global, no local scopes are created.";
-		compile_error.print();
+	if (auto data_struct = get_scoped_data_structure(var->name, global_scope)) {
+		auto compile_error = CompileError(ErrorType::Variable, "",var->tok.line, "", var->name, var->tok.file);
+		compile_error.m_message = "Data Structure has already been declared in this scope. Variables with different types but same names are not allowed. " +
+			var->name + " is a redeclaration of " + data_struct->get_string() + " in line " + std::to_string(data_struct->tok.line) + ".";
+        if(global_scope) compile_error.m_message += "\nVariables declared in the <init> callback are always considered global, no local scopes are created.";
+		compile_error.exit();
 	} else {
 		if(global_scope) {
 			m_declared_data_structures.at(0).insert({var->name, var});

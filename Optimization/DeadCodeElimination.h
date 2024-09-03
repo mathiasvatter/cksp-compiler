@@ -21,6 +21,31 @@ public:
 		m_last_reference.clear();
 	}
 
+	/// do not optimise empty select cases
+//	NodeAST* visit(NodeSelect& node) override {
+//		std::vector<int> empty_case_indices;
+//		node.expression->accept(*this);
+//
+//		int index = 0;
+//		for(const auto &cas: node.cases) {
+//			for(auto &c: cas.first) {
+//				c->accept(*this);
+//			}
+//			cas.second->accept(*this);
+//			if (cas.second->statements.empty()) {
+//				empty_case_indices.push_back(index); // Mark this case for removal
+//			}
+//			++index; // Increment the index for the next case
+//		}
+//
+//		// Second pass: Remove marked cases in reverse order to avoid shifting indices
+//		for (auto it = empty_case_indices.rbegin(); it != empty_case_indices.rend(); ++it) {
+//			node.cases.erase(node.cases.begin() + *it);
+//		}
+//
+//		return &node;
+//	}
+
 	/// kill empty while loops and if statements
 	NodeAST* visit(NodeWhile& node) override {
 		node.condition->accept(*this);

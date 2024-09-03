@@ -146,6 +146,9 @@ struct NodeReference : NodeAST {
 	bool is_l_value();
 	/// checks if reference is somewhere in the r_value expresssion
 	bool is_r_value();
+
+	/// to be used on references
+	NodeReference* replace_reference(std::unique_ptr<NodeReference> new_node, class DefinitionProvider* def_provider);
 };
 
 struct NodeDataStructure : NodeAST {
@@ -189,6 +192,9 @@ struct NodeDataStructure : NodeAST {
 	virtual std::unique_ptr<class NodeList> to_list() {return nullptr;}
 	/// lower type from object to int if applicable
 	NodeDataStructure* lower_type();
+
+	/// to be used on datastructures
+	NodeDataStructure* replace_datastruct(std::unique_ptr<NodeDataStructure> new_node, class DefinitionProvider* def_provider);
 };
 
 struct NodeInstruction : NodeAST {

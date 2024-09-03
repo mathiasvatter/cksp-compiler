@@ -39,7 +39,7 @@ NodeAST *NodeFunctionCall::accept(struct ASTVisitor &visitor) {
 }
 NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
         : NodeInstruction(other), is_call(other.is_call), is_new(other.is_new), kind(other.kind),
-          function(clone_unique(other.function)) {
+          function(clone_unique(other.function)), definition(other.definition) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeFunctionCall::clone() const {
