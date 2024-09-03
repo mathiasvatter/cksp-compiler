@@ -169,4 +169,5 @@ add_executable(cksp main.cpp
         SyntaxChecks/KSPDeclarations.h
         misc/HashFunctions.h
         Optimization/ConstantPromotion.h
+        Optimization/VarExistsValidator.h
 )
