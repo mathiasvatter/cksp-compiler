@@ -142,8 +142,10 @@ struct NodeReference : NodeAST {
 	/// lower type from object to int if applicable
 	NodeReference* lower_type();
 
+	/// checks if reference is l_value in an assignment
 	bool is_l_value();
-
+	/// checks if reference is somewhere in the r_value expresssion
+	bool is_r_value();
 };
 
 struct NodeDataStructure : NodeAST {

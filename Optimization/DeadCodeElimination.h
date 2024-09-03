@@ -13,9 +13,7 @@
  */
 class DeadCodeElimination : public ASTOptimizations {
 private:
-	/// TODO: do not kill last assignment is current assignment has the var as r_value
-	/// var := 1*23
-	/// var := var + 1 -> do not kill
+
 	std::unordered_map<StringTypeKey, NodeReference*, StringTypeKeyHash> m_last_reference;
 public:
 
@@ -120,6 +118,9 @@ public:
 
 	/// if this and the last occurence of the var ref are assignment statements with this var
 	/// on the left side, remove the last assignment
+	/// TODO: do not kill last assignment is current assignment has the var as r_value
+	/// var := 1*23
+	/// var := var + 1 -> do not kill
 	bool kill_last_assignment(NodeReference* node) {
 		// only stay in here if current node is left side of assign statement
 		if(!node->is_l_value()) return false;
@@ -127,7 +128,8 @@ public:
 		if(m_last_reference.empty()) return false;
 		auto it = m_last_reference.find(get_hash_value(*node));
 		if(it != m_last_reference.end()) {
-			if(it->second->is_l_value()) {
+			// check if reference is also somewhere on the right side of the assignment
+			if(it->second->is_l_value() and !it->second->is_r_value()) {
 				auto assignment = it->second->parent;
 				assignment->replace_with(std::make_unique<NodeDeadCode>(assignment->tok));
 				m_last_reference.erase(it);
