@@ -35,8 +35,9 @@ TEST*.xml
 Thumbs.db
 
 cmake-build*
+build/*
 *.json
-CMakeLists.txt
+
 *.zip
 
 

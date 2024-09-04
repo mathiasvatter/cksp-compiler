@@ -1,0 +1,38 @@
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering cksp
+--------------------------------------------------------------------------------------------}
+
+/*
+ * Lowering of Array initializations when in assign statements
+ */
+
+declare array[4]: int[] := (1,2,3,4)
+array := (0) // array := (0,0,0,0)
+array := (1,2,3,4)
+array := (1,2,6) // array := (1,2,6,4)
+
+{-------------------------------------------------------------------------------------------
+										Post Lowering cksp
+--------------------------------------------------------------------------------------------}
+
+declare array[4] := (1,2,3,4) // can stay that way because it is a declaration
+array<-init[Integer](array, 0) // array := (0,0,0,0)
+array[0] := 1
+array[1] := 2
+array[2] := 3
+array[3] := 4
+// -> array := (1,2,3,4)
+array[0] := 1
+array[1] := 2
+array[2] := 6
+// -> array := (1,2,6)
+
+// Function to initialize an array with a given value
+function array_init<-[Integer](array: int[], value: int)
+    declare _iter: int := 0
+    while(_iter < num_elements(array))
+        array[_iter] := 0
+        inc(iter)
+    end while
+end function

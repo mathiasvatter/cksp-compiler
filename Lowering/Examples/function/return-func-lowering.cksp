@@ -1,0 +1,70 @@
+
+{-------------------------------------------------------------------------------------------
+                                   Pre Lowering
+--------------------------------------------------------------------------------------------}
+
+declare get_sth: int := return_sth()
+function return_sth()
+    return 1
+end function
+
+declare get_sth: int, get_sth_more: int := return_sth_more();
+function return_sth_more()
+    declare x: int := 43
+    return 1, x
+end function
+
+declare array[3] := return_array()
+function return_array()
+    declare arr[]: int[] := (1, 1, 0)
+    return arr
+end function
+
+{-------------------------------------------------------------------------------------------
+                                    Post Lowering 1
+--------------------------------------------------------------------------------------------}
+// when multiple return variables -> they are promoted to parameters
+
+declare get_sth: int := return_sth()
+function return_sth()
+    return 1
+end function
+
+declare get_sth: int := return_sth_more(get_sth_more)
+function return_sth_more(ret0: int)
+    declare x: int := 43
+    ret0 := x
+    return 1
+end function
+
+declare array[3] := return_array()
+function return_array()
+    declare arr[]: int[] := (1, 1, 0)
+    return arr
+end function
+
+{-------------------------------------------------------------------------------------------
+                                    Post Lowering 2
+--------------------------------------------------------------------------------------------}
+// every return variable is promoted to a parameter, the calls are rewritten
+
+declare get_sth: int 
+return_sth(get_sth)
+function return_sth(ret0: int)
+    ret0 := 1
+end function
+
+declare get_sth: int
+return_sth_more(get_sth_more, get_sth)
+function return_sth_more(ret0: int, ret1: int)
+    declare x: int := 43
+    ret0 := x
+    ret1 := 1
+end function
+
+declare array[3] 
+return_array(array)
+function return_array(ret0: int[])
+    declare arr[]: int[] := (1, 1, 0)
+    ret0 := arr
+end function
