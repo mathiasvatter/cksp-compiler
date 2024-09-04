@@ -19,6 +19,7 @@ public:
 		m_program = &node;
 		node.update_function_lookup();
 		node.reset_function_used_flag();
+		m_function_calls.clear();
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
@@ -42,9 +43,10 @@ public:
 		/// vector to house only the definitions that are actually used in the program
 		node.function_definitions = std::move(m_function_definitions);
 		node.update_function_lookup();
-		for(auto & call : m_function_calls) {
-			call->definition = nullptr;
-		}
+		// does not work -> some calls have been moved
+//		for(auto & call : m_function_calls) {
+//			call->definition = nullptr;
+//		}
 		return &node;
 	}
 
@@ -60,7 +62,10 @@ public:
 	inline NodeAST *visit(NodeFunctionCall &node) override {
 		// visit header
 		node.function->accept(*this);
+		if(node.function->name == "eq.curve0") {
 
+		}
+		// check if function is called with correct amount of arguments
 		if(node.is_call and !node.function->args->params.empty()) {
 			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 			error.m_message = "Found incorrect amount of function arguments when using <call>.";
@@ -128,15 +133,14 @@ public:
 		std::unique_ptr<NodeFunctionDefinition> node_func_def = nullptr;
 		if(node.is_call) {
 			m_function_calls.push_back(&node);
-//			if (!node.definition->is_used){
 			if(!node.definition->visited) {
 				m_function_definitions.push_back(clone_as<NodeFunctionDefinition>(node.definition));
 				node.definition->call_sites.clear();
 				node.definition->is_used = true;
 				node.definition->visited = true;
-				node.definition = nullptr;
-//			}
 			}
+			// kill definition of all calls, not only the first one
+			node.definition = nullptr;
 		} else {
 			node_func_def = clone_as<NodeFunctionDefinition>(node.definition);
 			m_substitution_stack.push(get_substitution_map(node_func_def->header.get(), node.function.get()));
