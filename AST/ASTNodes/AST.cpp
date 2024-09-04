@@ -257,7 +257,7 @@ bool NodeReference::is_r_value() {
 	if(this->parent->get_node_type() == NodeType::SingleAssignment) {
 		auto assignment = static_cast<NodeSingleAssignment*>(this->parent);
 		static VarExistsValidator var_exists_validator;
-		return var_exists_validator.var_exists(*assignment, name);
+		return var_exists_validator.var_exists(*assignment->r_value, name);
 	}
 	return false;
 }
