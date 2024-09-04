@@ -12,6 +12,32 @@
  * Adds persistence functions to variables that are declared with a persistence keyword.
  * Is assigned value to a declaration statement is not constant, split the declaration into a declaration and an assignment statement.
  * CAREFUL: This visitor will mess up the declaration pointers of the references.
+ *
+ * infos on the max_block_lines:
+ * // one param functions
+ * define ASSIGNMENT_DECLARATION := 4992
+ * define ZERO_PARAM_FUNC := 4994
+ * define ONE_PARAM_FUNC := 4991
+ * define TWO_PARAM_FUNC := 4989
+ * define THREE_PARAM_FUNC := 4987
+ * define FOUR_PARAM_FUNC := 4985
+ * define FIVE_PARAM_FUNC := 4985
+ * define NKS2_FUNC := 2495
+ *
+ * define ONE_TOKEN := 4993 // declarations, functions with no params
+ * define TWO_TOKEN := 4991 // assigments, functions with one param
+ * define THREE_TOKEN := 4989 // functions with two params
+ * define FOUR_TOKEN := 4987
+ * define FIVE_TOKEN := 4985 // if-statements with empty else statements and while statements
+ * define SIX_TOKEN := 4984 // if statements with non-empty else blocks
+ *
+ * define pts_one_token := ONE_TOKEN/ONE_TOKEN 1
+ * define pts_two_token := TWO_TOKEN/ONE_TOKEN 4993/4991
+ * define pts_three_token := THREE_TOKEN/ONE_TOKEN 4993/4989
+ * define pts_four_token := FOUR_TOKEN/ONE_TOKEN 4993/4987
+ * define pts_five_token := FIVE_TOKEN/ONE_TOKEN 4993/4985
+ * define pts_six_token := SIX_TOKEN/ONE_TOKEN 4993/4984
+ * define pts_nks_token := ONE_TOKEN/NKS2_FUNC 4993/2495
  */
 class ASTKSPSyntaxCheck: public ASTVisitor {
 private:
