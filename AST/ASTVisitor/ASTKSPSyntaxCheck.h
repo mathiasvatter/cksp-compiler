@@ -76,7 +76,8 @@ private:
 	/// shrinks by 3 stmts
 	inline static int calc_adjusted_max_block_lines(NodeBlock& block) {
 		int block_size = block.statements.size();
-		return MAX_BLOCK_LINES - (block_size/MAX_BLOCK_LINES*3)-3;
+//		return MAX_BLOCK_LINES - (block_size/MAX_BLOCK_LINES*3)-3;
+		return MAX_BLOCK_LINES - (block_size/MAX_BLOCK_LINES*4)-3;
 	}
 
 	std::unique_ptr<NodeBlock> get_block_of_if_stmts(std::vector<std::unique_ptr<NodeBlock>>& blocks) {
