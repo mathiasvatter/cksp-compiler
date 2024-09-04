@@ -1,0 +1,280 @@
+//
+// Created by Mathias Vatter on 05.04.24.
+//
+
+#pragma once
+
+#include <utility>
+
+#include "../AST/ASTVisitor/ASTVisitor.h"
+#include "../misc/Gensym.h"
+#include "../misc/HashFunctions.h"
+
+/**
+ * @class DefinitionProvider
+ *
+ * @brief Collects all definitions of builtin variables, arrays, functions, widgets and external variables as well as
+ * declared data structures and provides them to the ASTVisitors including dedicated methods to search for the
+ * definitions.
+ *
+ * This class is responsible for providing definitions for builtin ksp definitions as well as
+ * keeping track of declared variables, arrays, data structures and controls by adding them to the respective maps/scopes
+ * and returning their declaration when needed. It also provides methods to search for declared variables, arrays,
+ * data structures and controls.
+ */
+class DefinitionProvider {
+public:
+    DefinitionProvider(
+			std::unordered_map<std::string, std::unique_ptr<NodeVariable>> m_builtin_variables,
+			std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions,
+			std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> m_property_functions,
+			std::unordered_map<std::string, std::unique_ptr<NodeArray>> m_builtin_arrays,
+			std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> m_builtin_widgets,
+			std::vector<std::unique_ptr<NodeDataStructure>> m_external_variables);
+	explicit DefinitionProvider();
+
+	bool add_scope();
+	std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual> remove_scope();
+	/// removes all scopes and initializes again
+	bool refresh_scopes();
+    /// removes variable from current scope by their name value
+    NodeDataStructure* remove_from_current_scope(const std::string& name);
+	/// copies last scope in current scope
+	inline bool copy_last_scope() {
+		if(m_declared_data_structures.size() < 2) {
+			auto compile_error = CompileError(ErrorType::InternalError, "",-1, "","","");
+			compile_error.m_message = "Tried to copy last scope, but there is no last scope to copy.";
+			compile_error.exit();
+			return false;
+		}
+		const auto& last_scope = m_declared_data_structures[m_declared_data_structures.size() - 2];
+		auto& current_scope = m_declared_data_structures.back();
+		// Optional: Reserve Platz im aktuellen Scope, um unnötige Allokationen zu vermeiden
+		current_scope.reserve(current_scope.size() + last_scope.size());
+		for (const auto& data_struct : last_scope) {
+			current_scope.emplace(data_struct);
+		}
+		return true;
+	}
+
+	/// returns a static global dummy datastructure that can be used for declarations of compiler vars
+	static NodeDataStructure* get_compiler_declaration(NodeReference* var) {
+		if(var->kind != NodeReference::Kind::Compiler and var->kind != NodeReference::Kind::Throwaway)
+			return nullptr;
+		static NodeVariable comp_var(
+			std::nullopt,
+			"compiler$dummy",
+			TypeRegistry::Unknown,
+			DataType::Mutable,
+			Token()
+		);
+		return &comp_var;
+	}
+
+	static NodeDataStructure* get_pgs_declaration(NodeReference* var) {
+		if(var->ty != TypeRegistry::PGS) return nullptr;
+		static NodeVariable comp_var(
+			std::nullopt,
+			"pgs$dummy",
+			TypeRegistry::PGS,
+			DataType::Mutable,
+			Token()
+		);
+		return &comp_var;
+	}
+
+	/// holds all in this program defined variable names for safely issuing new ones that do not get captured
+	Gensym m_gensym;
+	inline std::string get_fresh_name(const std::string& name) {
+		return m_gensym.fresh(name);
+	}
+
+	/// returns the definition of a data structure, if it exists. If datastructure itself is
+	/// definition -> return nullptr. If datastructure is reference -> return declaration. If global_scope is true,
+	/// adds declaration to global scope.
+	/// only called by references -> only gets declaration does not add existing declarations to map
+	NodeDataStructure* get_declaration(NodeReference* var);
+	/// adds existing declaration to declaration map for look up. Always returns nullptr.
+	NodeDataStructure* set_declaration(NodeDataStructure* var, bool global_scope);
+
+	/// clears all static pointer vectors
+	bool refresh_data_vectors() {
+		m_all_declarations.clear();
+		m_all_references.clear();
+		m_all_data_structures.clear();
+		m_all_assignments.clear();
+		m_references_per_data_structure.clear();
+		return true;
+	}
+	std::vector<NodeReference*> m_all_references;
+	void add_to_references(NodeReference* reference) {
+		m_all_references.push_back(reference);
+	}
+	[[nodiscard]] const std::vector<NodeReference *> &get_all_references() const {
+		return m_all_references;
+	}
+	std::vector<NodeDataStructure*> m_all_data_structures;
+	void add_to_data_structures(NodeDataStructure* data_struct) {
+		m_all_data_structures.push_back(data_struct);
+	}
+	[[nodiscard]] const std::vector<NodeDataStructure *> &get_all_data_structures() const {
+		return m_all_data_structures;
+	}
+	/// All declaration statements
+    std::vector<NodeSingleDeclaration*> m_all_declarations;
+	void add_to_declarations(NodeSingleDeclaration* decl) {
+		m_all_declarations.push_back(decl);
+	}
+    [[nodiscard]] const std::vector<NodeSingleDeclaration *> &get_all_declarations() const {
+        return m_all_declarations;
+    }
+	/// All assignments statements
+	std::vector<NodeSingleAssignment*> m_all_assignments;
+	void add_to_assignments(NodeSingleAssignment* ass) {
+		m_all_assignments.push_back(ass);
+	}
+	[[nodiscard]] const std::vector<NodeSingleAssignment *> &get_all_assignments() const {
+		return m_all_assignments;
+	}
+
+	std::unordered_map<NodeDataStructure*, std::unordered_set<NodeReference*>> m_references_per_data_structure;
+	const std::unordered_set<NodeReference*> &get_references(NodeDataStructure* data_struct) {
+		return m_references_per_data_structure[data_struct];
+	}
+	bool set_references(NodeDataStructure* data_struct, std::unordered_set<NodeReference*> references) {
+		m_references_per_data_structure[data_struct] = std::move(references);
+		return true;
+	}
+	/// removes key, value pair from map
+	bool remove_references(NodeDataStructure* data_struct) {
+		m_references_per_data_structure.erase(data_struct);
+		return true;
+	}
+	bool add_reference(NodeDataStructure* data_struct, NodeReference* reference) {
+		m_references_per_data_structure[data_struct].insert(reference);
+		return true;
+	}
+	bool remove_reference(NodeDataStructure* data_struct, NodeReference* reference) {
+		m_references_per_data_structure[data_struct].erase(reference);
+		return true;
+	}
+    /// dynamic vector containing every data structure; scoped
+    std::vector<std::unordered_map<std::string, NodeDataStructure*, StringHash, StringEqual>> m_declared_data_structures;
+	/// returns data structure declaration searching all scopes
+    NodeDataStructure* get_declared_data_structure(const std::string& data);
+	/// only returns data structure declaration in current scope or global_scope
+	NodeDataStructure* get_scoped_data_structure(const std::string& data, bool global_scope);
+
+	/// variable error handling
+	static inline CompileError throw_declaration_error(const NodeReference &node) {
+		auto compile_error = CompileError(ErrorType::Variable, "","", node.tok);
+		std::string type = "<Variable>";
+		if(node.get_node_type() == NodeType::Array) type = "<Array>";
+		compile_error.m_message = type+" has not been declared: " + node.name+".";
+		compile_error.m_expected = "Valid declaration";
+		compile_error.m_got = node.name;
+		return compile_error;
+	};
+
+	static inline CompileError throw_declaration_type_error(NodeReference* node) {
+		auto compile_error = CompileError(ErrorType::Variable, "","", node->tok);
+		if(!node->declaration) throw_declaration_error(*node).exit();
+		if(node->declaration->get_node_type() == NodeType::Array && node->get_node_type() == NodeType::Variable) {
+			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Array>: " + node->name+".";
+			compile_error.m_expected = "<Array>";
+			compile_error.m_got = "<Variable>";
+			compile_error.exit();
+		}
+		if(node->declaration->get_node_type() == NodeType::Variable && node->get_node_type() == NodeType::Array) {
+			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Variable>: " + node->name+".";
+			compile_error.m_expected = "<Variable>";
+			compile_error.m_got = "<Array>";
+			compile_error.exit();
+		}
+		return compile_error;
+	}
+
+
+
+    /// external variables from eg nckp file
+    std::vector<std::unique_ptr<NodeDataStructure>> external_variables{};
+    void set_external_variables(std::vector<std::unique_ptr<NodeDataStructure>> external_variables);
+    void add_external_variable(std::unique_ptr<NodeDataStructure> external_variable);
+    /// builtin engine variables
+    std::unordered_map<std::string, std::unique_ptr<NodeVariable>> builtin_variables{};
+    NodeVariable* get_builtin_variable(const std::string& var);
+    void set_builtin_variables(std::unordered_map<std::string, std::unique_ptr<NodeVariable>> builtin_variables);
+    void add_builtin_variable(std::unique_ptr<NodeVariable> builtin_variable);
+    /// builtin engine arrays
+    std::unordered_map<std::string, std::unique_ptr<NodeArray>> builtin_arrays{};
+    NodeArray* get_builtin_array(const std::string& arr);
+    void set_builtin_arrays(std::unordered_map<std::string, std::unique_ptr<NodeArray>> builtin_arrays);
+    void add_builtin_array(std::unique_ptr<NodeArray> builtin_array);
+    /// builtin engine widgets
+    std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> builtin_widgets{};
+    NodeUIControl* get_builtin_widget(const std::string &ui_control);
+    void set_builtin_widgets(std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> builtin_widgets);
+    void add_builtin_widget(std::unique_ptr<NodeUIControl> builtin_widget);
+    /// builtin engine functions
+    std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions{};
+    NodeFunctionDefinition* get_builtin_function(const std::string &function, int params);
+    NodeFunctionDefinition* get_builtin_function(NodeFunctionHeader* function);
+    void set_builtin_functions(std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
+    void add_builtin_function(std::unique_ptr<NodeFunctionDefinition> builtin_function);
+    /// predefined property functions like set_label_properties etc
+    std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions{};
+    NodeFunctionDefinition* get_property_function(NodeFunctionHeader* function);
+    void set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions);
+    void add_property_function(std::unique_ptr<NodeFunctionDefinition> property_function);
+
+
+	static std::unique_ptr<NodeFunctionCall> num_elements(std::unique_ptr<NodeArrayRef> ref) {
+		auto func_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"num_elements",
+				std::make_unique<NodeParamList>(
+					ref->tok,
+					std::move(ref)
+				),
+				Token()
+			),
+			Token()
+		);
+		func_call->ty = TypeRegistry::Integer;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		return std::move(func_call);
+	}
+
+	static std::unique_ptr<NodeFunctionCall> get_ui_id(std::unique_ptr<NodeReference> ref) {
+		auto func_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"get_ui_id",
+				std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
+				Token()
+			),
+			Token()
+		);
+		func_call->ty = TypeRegistry::Integer;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		return std::move(func_call);
+	}
+
+	static std::unique_ptr<NodeFunctionCall> inc(std::unique_ptr<NodeReference> ref) {
+		auto func_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"inc",
+				std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
+				Token()
+			),
+			Token()
+		);
+		func_call->ty = TypeRegistry::Integer;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		return std::move(func_call);
+	}
+};
+
+

@@ -4,8 +4,8 @@
 
 #include "JSONVisitor.h"
 
-NCKPTranslator::NCKPTranslator(const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets)
-	: m_builtin_widgets(m_builtin_widgets) {}
+NCKPTranslator::NCKPTranslator(DefinitionProvider* definition_provider)
+	: m_def_provider(definition_provider) {}
 
 void NCKPTranslator::visit(JSONBool &boolean) {
 
@@ -55,8 +55,8 @@ void NCKPTranslator::visit(JSONObject &object) {
 	}
 }
 
-std::vector<std::unique_ptr<NodeAST>> NCKPTranslator::collect_ui_variables() {
-	std::vector<std::unique_ptr<NodeAST>> ui_variables;
+std::vector<std::unique_ptr<NodeDataStructure>> NCKPTranslator::collect_ui_variables() {
+	std::vector<std::unique_ptr<NodeDataStructure>> ui_variables;
 	for(auto &ui_pair : m_ui_controls) {
 		auto it = UI_CONTROL_INDEX.find(ui_pair.second);
 		if(it == UI_CONTROL_INDEX.end()) {
@@ -64,14 +64,14 @@ std::vector<std::unique_ptr<NodeAST>> NCKPTranslator::collect_ui_variables() {
 		}
 		std::string ui_control = it->second;
 		std::string ui_var = ui_pair.first;
-		auto node_ast = m_builtin_widgets.find(ui_control)->second->clone();
+		auto node_ast = m_def_provider->builtin_widgets.find(ui_control)->second->clone();
 		auto node_ui_control = std::unique_ptr<NodeUIControl>(static_cast<NodeUIControl*>(node_ast.release()));
 		if(auto node_variable = cast_node<NodeVariable>(node_ui_control->control_var.get())) {
 			node_variable->name = ui_var;
-            node_variable->var_type = UI_Control;
+            node_variable->data_type = DataType::UIControl;
 		} else if(auto node_array  = cast_node<NodeArray>(node_ui_control->control_var.get())) {
 			node_array->name = ui_var;
-            node_array->var_type = UI_Control;
+            node_array->data_type = DataType::UIControl;
 		}
 		auto num_params = node_ui_control->params->params.size();
 		node_ui_control->params->params.clear();

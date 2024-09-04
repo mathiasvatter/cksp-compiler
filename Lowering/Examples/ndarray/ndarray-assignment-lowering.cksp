@@ -1,0 +1,191 @@
+
+{-------------------------------------------------------------------------------------------
+                                    NDArray Initializations
+--------------------------------------------------------------------------------------------}
+
+// case 1: initialization of all dimensions
+ndarray[*, *] := (0)
+// Post Lowering: -> utilize array initialization
+array<-init[Integer](_ndarray, 0)
+
+{-------------------------------------------------------------------------------------------}
+
+// case 2: initialization of a single dimension
+ndarray[2, *] := (0)
+// Post Lowering: ndarray_init$<type>$<num_dimensions>$<start_dim>$<end_dim>(ndarray: type[][], value: type)
+ndarray$dim2$2<-init[Integer](ndarray, 0)
+function ndarray$dim2$2<-init[Integer](ndarray: int[][], value: type)
+    declare local _iter: int := 0
+    for _iter := 0 to ndarray.SIZE_D2-1
+        ndarray[2, _iter] := value
+    end for
+end function
+
+{-------------------------------------------------------------------------------------------}
+
+// case 3: initialization with a list of values
+ndarray[2, *] := (2,3,4)
+// Post Lowering:
+ndarray[2, 0] := 2
+ndarray[2, 1] := 3
+ndarray[2, 2] := 4
+
+{-------------------------------------------------------------------------------------------
+                                        NDArray Copy
+--------------------------------------------------------------------------------------------}
+
+// case 1: copy of all dimensions
+ndarray[*, *] := ndarray2[*, *]
+// Post Lowering: -> utilize array copy
+array<-array[Integer](_ndarray, _ndarray2)
+
+{-------------------------------------------------------------------------------------------}
+
+// case 2: copy of a single dimension
+ndarray[2, *] := ndarray2[0, *]
+// Post Lowering:
+ndarray$dim2$2<-ndarray$dim2$2[Integer](ndarray, 2, ndarray2, 0)
+function ndarray$dim2$2<-ndarray$dim2$2[Integer](ndarray: int[][], dim1: int, ndarray2: int[][], dim2: int)
+    declare _iter1: int
+    for _iter1 := 0 to ndarray.SIZE_D2-1
+        ndarray[dim1, _iter1] := v[dim2, _iter1]
+    end for
+end function
+
+{-------------------------------------------------------------------------------------------}
+
+// case 3: copy of all dimensions on one side
+ndarray[1, *, *] := ndarray2[*, *]
+
+// Post Lowering:
+ndarray$dim3$2$3<-ndarray$dim2$2$3[Integer]
+function ndarray$dim3$2$3<-ndarray$dim2$2$3[Integer](ndarray: int[][][], dim1: int, ndarray2: int[][])
+    declare _iter1: int, _iter2: int
+    for _iter1 := 0 to ndarray.SIZE_D2-1
+        for _iter2 := 0 to ndarray.SIZE_D3-1
+            ndarray[dim1, _iter1, _iter2] := ndarray2[_iter1, _iter2]
+        end for
+    end for
+end function
+
+{-------------------------------------------------------------------------------------------}
+
+// case 4: copy array to one ndarray dimension
+ndarray[0, *] := arr
+// Post Lowering:
+ndarray$dim2$2<-array[Integer](ndarray, 0, arr)
+function ndarray$dim2$2<-array[Integer](ndarray: int[][], dim1: int, arr: int[])
+    declare _iter: int
+    for _iter := 0 to ndarray.SIZE_D2-1
+        ndarray[dim1, _iter] := arr[_iter]
+    end for
+end function
+
+{-------------------------------------------------------------------------------------------}
+
+// case 5: copy ndarray dimension to array
+arr := ndarray[0, *]
+// Post Lowering:
+array<-ndarray$dim2$2[Integer](arr, ndarray, 0)
+function array<-ndarray$dim2$2[Integer](arr: int[], ndarray: int[][], dim1: int)
+    declare _iter: int
+    for _iter := 0 to num_elements(arr)-1
+        arr[_iter] := ndarray[dim1, _iter]
+    end for
+end function
+
+{-------------------------------------------------------------------------------------------}
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering cksp
+--------------------------------------------------------------------------------------------}
+
+/*
+ * Lowering of NDArray initializations when in assign statements
+ */
+
+declare ndarray[3, 3]: int[][] := (1,2,3,4,5,6,7,8,9) // ndarray := ((1,2,3), (4,5,6), (7,8,9))
+ndarray[2, *] := (0)        // ndarray := ((1,2,3), (0,0,0), (7,8,9))
+ndarray[2, *] := (2,3,4)    // ndarray := ((1,2,3), (2,3,4), (7,8,9)) 
+ndarray[*, 2] := (1,2,6)    // ndarray := ((1,2,1), (2,3,2), (7,8,6)) 
+ndarray[*, 2] := (-1)       // ndarray := ((-1,2,1), (-1,3,2), (-1,8,6))
+ndarray := ((1,2,3), (1,2,3), (1,2,3))
+declare ndarray2[3, 3, 3]
+ndarray2[0, *, *] := ((1,2,3), (1,2,3))
+ndarray2 := (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)
+
+ndarray_init(((1,2,3),(1,2,3)))
+function ndarray_assign(v: int[][])
+    ndarray := v
+end function
+
+ndarray2[0, *, *] := ndarray
+
+
+{-------------------------------------------------------------------------------------------
+										Post Lowering cksp
+--------------------------------------------------------------------------------------------}
+
+declare const ndarray.SIZE_D1 := 3
+declare const ndarray.SIZE_D2 := 3
+declare _ndarray[3 * 3]: int[] := (1,2,3,4,5,6,7,8,9) // ndarray := ((1,2,3), (4,5,6), (7,8,9))
+
+// ndarray[2, *] := (0)        // ndarray := ((1,2,3), (0,0,0), (7,8,9))
+
+ndarray.init.Integer.2.2.2(ndarray, 0)
+// function ndarray.init.<type>.<num_dimensions>.<start_dim>.<end_dim>(ndarray: type[][], value: type)
+function ndarray.init.Integer.2.2.2(ndarray: int[][], value: type)
+    declare local _iter: int := 0
+    for _iter := 0 to ndarray.SIZE_D2-1
+        ndarray[2, _iter] := value
+    end for
+end function
+
+// ndarray[2, *] := (2,3,4)    // ndarray := ((1,2,3), (2,3,4), (7,8,9)) 
+ndarray[2, 0] := 2
+ndarray[2, 1] := 3
+ndarray[2, 2] := 4
+
+// ndarray[*, 2] := (1,2,6)    // ndarray := ((1,2,1), (2,3,2), (7,8,6)) 
+ndarray[0, 2] := 1
+ndarray[1, 2] := 2
+ndarray[2, 2] := 6
+
+// ndarray[*, 2] := (-1)       // ndarray := ((-1,2,1), (-1,3,2), (-1,8,6))
+ndarray.init.Integer.2.1.1(ndarray, -1)
+// function ndarray.init.<type>.<num_dimensions>.<start_dim>.<end_dim>(ndarray: type[][], value: type)
+function ndarray.init.Integer.2.1.1(ndarray: int[][], value: type)
+    declare local _iter: int
+    for _iter := 0 to ndarray.SIZE_D1-1
+        ndarray[_iter, 2] := value
+    end for
+end function
+
+
+// ndarray2 := (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)
+_ndarray2[0] := 1
+_ndarray2[1] := 2 //...
+
+// ndarray2[0, *, *] := ((1,2,3), (1,2,3))
+_ndarray2[0*3*3 + 0] := 1
+_ndarray2[0*3*3 + 1] := 2
+_ndarray2[0*3*3 + 2] := 3
+_ndarray2[1*3*3 + 3] := 1 //...
+
+
+declare local _ndarray_[2,3] := ((1,2,3),(1,2,3))
+ndarray_init(_ndarray_)
+
+function ndarray_assign(v: int[][])
+    ndarray.copy.Integer.2.1.2(ndarray, v)
+end function
+
+// function ndarray.ndarray.copy.<type>.<num_dimensions>.<start_dim>.<end_dim>(ndarray: type[][], v: type[][])
+function ndarray.copy.Integer.2.1.2(ndarray: int[][], v: int[][])
+    declare local _iter1: int, local _iter2: int
+    for _iter1 := 0 to ndarray.SIZE_D1-1
+        for _iter2 := 0 to ndarray.SIZE_D2-1
+            ndarray[_iter1, _iter2] := v[_iter1, _iter2]
+        end for
+    end for
+end function

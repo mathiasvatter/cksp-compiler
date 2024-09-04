@@ -5,15 +5,18 @@
 #pragma once
 
 #include "Preprocessor.h"
-#include "PreAST.h"
+#include "PreAST/PreAST.h"
 
 
-class PreprocessorParser : public Parser {
+class PreprocessorParser : public Processor {
 public:
     explicit PreprocessorParser(std::vector<Token> tokens);
 
     Result<std::unique_ptr<PreNodeProgram>> parse_program(PreNodeAST* parent);
+
 private:
+	PreNodeProgram* m_program = nullptr;
+
     Result<std::unique_ptr<PreNodeNumber>> parse_number(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeAST>> parse_int(PreNodeAST *parent);
     Result<std::unique_ptr<PreNodeKeyword>> parse_keyword(PreNodeAST* parent);
@@ -35,21 +38,19 @@ private:
     Result<std::unique_ptr<PreNodeIterateMacro>> parse_iterate_macro(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeLiterateMacro>> parse_literate_macro(PreNodeAST* parent);
 
+	/// INCREMENTER
     Result<std::unique_ptr<PreNodeIncrementer>> parse_incrementer(PreNodeAST* parent);
 
-    PreNodeProgram* m_program;
-
-    //    std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_strings;
     std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_define_strings;
     // macro name and num_macro_arguments
     std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_macro_strings;
     std::set<std::string> m_macro_iterate_strings;
     bool m_parsing_iterator_macro = false;
+	bool m_parsing_literate_macro = false;
     std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_definitions;
 
     int get_num_params_in_definition();
 
-    bool is_empty_line();
     bool is_define_call(const Token &tok);
     bool is_macro_call(const Token &tok);
     bool is_define_definition();

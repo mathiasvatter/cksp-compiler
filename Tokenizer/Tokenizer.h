@@ -16,9 +16,9 @@
 #include <fstream>
 #include <sstream>
 
-#include "../Result.h"
+#include "../misc/Result.h"
 #include "Tokens.h"
-#include "../FileHandler.h"
+#include "../misc/FileHandler.h"
 
 /*
  * Token struct that gets line numbers, the token type and its value
@@ -30,7 +30,7 @@ struct Token {
     size_t pos;
     std::string file;
 
-    Token() : type(token::INVALID), val(""), line(0), pos(0), file("") {}
+    Token() : type(token::INVALID), val(""), line(-1), pos(0), file("") {}
     Token(token type, std::string val, size_t line, size_t pos, const std::string &file);
     friend std::ostream& operator<<(std::ostream& os, const Token& tok);
 	bool operator==(const Token &other) const {
@@ -44,13 +44,13 @@ struct Token {
 inline static bool contains(std::vector<char> &vec, char c) {
     return std::any_of(vec.begin(), vec.end(), [&](const auto& ch) {return ch == c;});
 };
-inline static bool contains(std::set<char> &vec, char c) {
+inline static bool contains(std::unordered_set<char> &vec, char c) {
     return vec.find(c) != vec.end();
 };
 inline static bool contains(const std::vector<std::string>& vec, const std::string& value) {
     return std::find(vec.begin(), vec.end(), value) != vec.end();
 };
-inline static bool contains(const std::set<std::string>& vec, const std::string& value) {
+inline static bool contains(const std::unordered_set<std::string>& vec, const std::string& value) {
     return vec.find(value) != vec.end();
 };
 inline static bool contains(const std::vector<Keyword>& vec, const std::string& value) {
@@ -60,6 +60,9 @@ inline static bool contains(const std::vector<Keyword>& vec, const std::string& 
 };
 inline static bool contains(const std::string& string, const std::string& substring) {
 	return string.find(substring) != std::string::npos;
+}
+inline static bool contains(const std::unordered_set<token>& token_set, const token& tok) {
+	return token_set.find(tok) != token_set.end();
 }
 
 inline static long count_char(const std::string& str, char c) {
@@ -91,6 +94,18 @@ inline std::string remove_quotes(const std::string &input) {
 	}
 }
 
+/// takes string and returns vector of namespaces ('.')
+inline std::vector<std::string> get_namespaces(const std::string& str) {
+	std::vector<std::string> namespaces;
+	std::istringstream iss(str);
+	std::string ns;
+
+	while (std::getline(iss, ns, '.')) {
+		namespaces.push_back(ns);
+	}
+	return namespaces;
+}
+
 inline static token get_token_type(const std::vector<Keyword>& vec, const std::string& value) {
     auto it = std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
         return kw.value == value;
@@ -98,7 +113,7 @@ inline static token get_token_type(const std::vector<Keyword>& vec, const std::s
     if (it != vec.end()) {
         return it->type;
     }
-    return INVALID;
+    return token::INVALID;
 }
 
 inline static std::string get_token_value(const std::vector<Keyword>& vec, const token& tok) {
@@ -135,36 +150,6 @@ inline static std::string to_upper(const std::string& input) {
     return output;
 }
 
-inline bool string_compare(const std::string& str1, const std::string& str2) {
-    if (str1.length() != str2.length()) {
-        return false;
-    }
-    for (size_t i = 0; i < str1.length(); ++i) {
-        if (std::tolower(str1[i]) != std::tolower(str2[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-// Struktur für den zusammengesetzten Schlüssel
-struct StringIntKey {
-    std::string str;
-    int num;
-
-    bool operator==(const StringIntKey& other) const {
-        return str == other.str && num == other.num;
-    }
-};
-// Benutzerdefinierte Hash-Funktion
-struct StringIntKeyHash {
-    std::size_t operator()(const StringIntKey& key) const {
-        return std::hash<std::string>()(key.str) ^ std::hash<int>()(key.num);
-    }
-};
-
-static std::string read_file(const std::string& filename);
 
 /*
  * Tokenizer Class

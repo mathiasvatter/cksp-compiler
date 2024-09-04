@@ -18,23 +18,23 @@ std::unique_ptr<JSONValue> JSONParser::parse_value() {
 	_skip_linebreaks();
     auto tok = peek();
     switch (tok.type) {
-        case STRING:
+        case token::STRING:
             consume();
             return std::make_unique<JSONString>(tok.val);
-		case SUB:
+		case token::SUB:
 			consume();
 			tok = peek();
-        case INT:
+        case token::INT:
             consume();
             return std::make_unique<JSONInt>(std::stoi(tok.val));
-        case FLOAT:
+        case token::FLOAT:
             consume();
             return std::make_unique<JSONFloat>(std::stod(tok.val));
-        case OPEN_CURLY:
+        case token::OPEN_CURLY:
             return parse_object();
-        case OPEN_BRACKET:
+        case token::OPEN_BRACKET:
             return parse_array();
-        case KEYWORD:
+		case token::KEYWORD:
 			consume();
             if(tok.val == "false") {
                 return std::make_unique<JSONBool>(false);
@@ -55,10 +55,10 @@ std::unique_ptr<JSONValue> JSONParser::parse_object() {
     auto current_token = consume(); // Consume '{'
     std::unique_ptr<JSONObject> jsonObject = std::make_unique<JSONObject>();
 
-    while (peek().type != CLOSED_CURLY) {
+    while (peek().type != token::CLOSED_CURLY) {
 		_skip_linebreaks();
         auto keyToken = consume(); // Consume key (assumed to be a string)
-        if (keyToken.type != STRING) {
+        if (keyToken.type != token::STRING) {
 			CompileError(ErrorType::ParseError, "Found incorrect json object syntax.", keyToken.line, "<string>", keyToken.val, keyToken.file).exit();
 			// Handle error
             return nullptr;
@@ -74,7 +74,7 @@ std::unique_ptr<JSONValue> JSONParser::parse_object() {
 
         jsonObject->properties[keyToken.val] = std::move(value);
 
-        if (peek().type == COMMA) {
+        if (peek().type == token::COMMA) {
             consume(); // Consume ','
         }
 		_skip_linebreaks();
@@ -86,7 +86,7 @@ std::unique_ptr<JSONValue> JSONParser::parse_object() {
 std::unique_ptr<JSONValue> JSONParser::parse_array() {
     auto current_token = consume(); // Consume '['
     std::unique_ptr<JSONArray> jsonArray = std::make_unique<JSONArray>();
-    while (peek().type != CLOSED_BRACKET) {
+    while (peek().type != token::CLOSED_BRACKET) {
 		_skip_linebreaks();
         std::unique_ptr<JSONValue> value = parse_value();
         if (!value) {
@@ -97,7 +97,7 @@ std::unique_ptr<JSONValue> JSONParser::parse_array() {
 
         jsonArray->elements.push_back(std::move(value));
 
-        if (peek().type == COMMA) {
+        if (peek().type == token::COMMA) {
             consume(); // Consume ','
         }
 		_skip_linebreaks();
