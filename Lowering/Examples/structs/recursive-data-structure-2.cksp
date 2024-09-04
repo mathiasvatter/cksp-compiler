@@ -1,0 +1,84 @@
+{
+
+Dynamic object allocation only works with 
+int variables, n-dimensional arrays, (booleans) -> not with ui control values
+
+structs do not work with polyphonic variables
+
+}
+
+
+
+
+// new type object_id/pointer that is resembled as a positive int or nil which is -1
+
+component ExitWindow
+    declare ui_button btn_confirm
+    declare ui_button btn_cancel
+    declare ui_label lbl_frame(1,1)
+
+    function __init__(self, panel: int)
+        self.btn_confirm->parent_panel := get_ui_id(panel)
+        self.btn_cancel -> parent_panel := get_ui_id(panel)
+        self.lbl_frame -> parent_panel := get_ui_id(panel)
+    end function
+
+    function __repr__(self): string
+        return "Exit Window"
+    end function
+end component
+
+
+declare ui_panel main_window
+declare this_dialog: ExitWindow = ExitWindow(main_window)
+
+
+{-------------------------------------------------------------------------------------------
+                                        Post Lowering
+--------------------------------------------------------------------------------------------}
+
+on init
+
+    declare const MAX_STRUCTS := 1000000
+    declare @object.warning := "Memory Error: No more free space available to allocate objects of type"
+
+    declare %ExitWindow.allocation[MAX_STRUCTS] := (0)
+    declare %ExitWindow.value[MAX_STRUCTS]             // Wert des Elements
+    declare %ExitWindow.next[MAX_STRUCTS] := (-1)      // Verweis auf den Index des nächsten Elements
+    declare %ExitWindow.free_idx := 0                  // Zeigt auf den ersten freien Platz im Array
+
+    declare $this_list := -1 // nil
+    $this_list := ExitWindow.__init__(42, -1)
+
+    declare $that_list := ExitWindow.__init__(39, ExitWindow.__init__(40, ExitWindow.__init__(41, this_list)))
+    message(%ExitWindow.value[%ExitWindow.next[$that_list]])
+
+end on
+
+
+function ExitWindow.__init__(value, next) -> result
+    ExitWindow.free_idx := search(ExitWindow.allocation, 0)
+    if ExitWindow.free_idx = -1
+        message(@object.warning & "'ExitWindow'")        
+    end if
+    ExitWindow.allocation[ExitWindow.free_idx] := 1
+    ExitWindow.value[ExitWindow.free_idx] := value
+    ExitWindow.next[ExitWindow.free_idx] := next
+    result := ExitWindow.free_idx
+end function
+
+function ExitWindow.delete(object_id)
+    Note.allocation[object_id] := 0
+end function
+
+function nil() -> result
+    result := -1  // -1 repräsentiert `nil` in dieser Implementierung
+end function
+
+
+
+
+
+
+
+

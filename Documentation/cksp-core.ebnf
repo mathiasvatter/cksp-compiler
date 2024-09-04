@@ -1,0 +1,70 @@
+(********************************************************************)
+(*                        CKSP CORE EBNF                            *)
+(********************************************************************)
+
+(* Program Architecture *)
+programm = callback | function_definition | program
+callback = "on" callback_identifier ("("variable | array")")? linebreak statement* "end on" linebreak+
+
+(* Expressions *)
+unary_expression = unary_op (num | variable | array | function_header)
+primary_expression = num | variable | array | function_header | unary_expression | "("binary_expression")"
+binary_expression = primary_expression (binary_op binary_expression)?
+string_expression = (string | binary_expression) (string_op (string | binary_expression))?
+expression = string_expression | binary_expression | param_list
+(* Special cases of expressions for type checking *)
+condition = comparison (bool comparison)?
+comparison = binary_expression comparison_op binary_expression
+
+(* Variables *)
+variable =  var_ident? keyword
+array = array_ident? keyword "[" expression "]"
+param_list = expression ("," expression)*
+
+(* Declaration and Assignment *)
+declare_variable = ("const" | "polyphonic")? variable
+declare_control = ui_control (variable | array) ("(" param_list ")")?
+declare_list = ("read" | "pers" | "instpers")? ("local" | "global")? ( declare_variable | array | declare_control) ("," declare_list)*
+declare_statement =  "declare" (variable | array) (":=" expression)?
+assign_statement = (variable | array) ":=" expression
+
+(* Statements *)
+statement = linebreak* (if_statement | while_statement | select_statement | assign_statement | funcion_call ) linebreak+
+get_control_statement = (array | variable) "->" keyword
+set_control_statement = get_control_statement ":=" expression
+if_statement = "if" (? condition )? linebreak+ statements ("else" linebreak+ statements)? "end if" linebreak+
+while_statement = "while" (? condition )? linebreak+ statements "end while" linebreak+
+select_statement = "select" (? expression )? linebreak+ ("case" (expression | "default") linebreak statements)+ "end select" linebreak+
+
+(* Functions *)
+function_header = keyword ("(" (param_list | expression)? ")")?
+function_definition = "function" function_header ("->" variable)? ("override")? linebreak+ statement* "end function"
+function_call = "call"? function_header
+
+(* Terminals *)
+int = [0-9]+
+real = int+ "." int*
+num = (int | real)
+binary_op = "-" | "+" | "mod" | "/" | "*" | bitwise_op | comparison_op | bool_op | string_op
+unary_op = "not" | ".not." | "-"
+linebreak = "\n"
+comparison_op = "=" | "<" | ">" | "=" | "=" | "#"
+bool_op = "and" | "or" | "not" | "xor"
+bitwise_op = ".and." | ".xor." | ".or." | ".not."
+string_op = "&"
+
+char = "A" | ... | "Z" | "a" | ... | "z" | "0" | ... | "9"
+keyword = char | "." | "_" | keyword
+string = "\'" text "\'"
+variable_ident = "$" | "~" | "@"
+array_ident = "!" | "%" | "?"
+callback_identifier = "async_complete" | "controller" | "init" |
+                          "listener" | "note" | "persistence_changed" | "pgs_changed" | "poly_at" |
+                          "release" | "rpn/nrpn" | "ui_control" | "ui_update"
+ui_control = "ui_label" | "ui_button" | "ui_switch" | "ui_slider" | "ui_menu" | "ui_value_edit" | 
+            "ui_waveform" | "ui_wavetable" | "ui_knob" | "ui_table" | "ui_xy" | "ui_text_edit" | 
+            "ui_level_meter" | "ui_file_selector" | "ui_panel" | "ui_mouse_area"
+
+
+
+

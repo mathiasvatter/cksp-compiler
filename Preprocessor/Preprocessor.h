@@ -6,29 +6,24 @@
 #include <unordered_set>
 #include <utility>
 
-#include "../Tokenizer/Tokenizer.h"
-#include "../AST/AST.h"
-#include "../Parser.h"
+//#include "../AST/ASTNodes/AST.h"
+#include "../Processor/Processor.h"
 
-class Preprocessor : public Parser {
+/// Bundles all preprocessor related classes and steps in one class
+class Preprocessor {
 public:
-    Preprocessor(std::vector<Token> tokens, std::string current_file);
-	Preprocessor();
+    explicit Preprocessor(std::vector<Token> tokens);
 	~Preprocessor() = default;
-    std::vector<Token> get_tokens();
+
+	/// main function to process the tokens
     void process();
+    [[nodiscard]] const std::string &get_output_path() const;
+	std::vector<Token> get_token_vector();
 
-
-protected:
-    std::string m_current_file;
-
-    void remove_tokens(std::vector<Token>& tok, size_t start, size_t end);
-	static size_t search(const std::vector<std::string>& vec, const std::string& str);
-
-	[[nodiscard]] Token peek(const std::vector<Token>& tok, int ahead = 0);
-	Token consume(const std::vector<Token>& tok);
-	[[nodiscard]] const Token& get_tok(const std::vector<Token>& tok) const;
-    std::string token_vector_to_string(const std::vector<Token>& tokens);
+private:
+	std::vector<Token> m_tokens{};
+	/// output path from pragma
+    std::string m_output_path;
 
 };
 

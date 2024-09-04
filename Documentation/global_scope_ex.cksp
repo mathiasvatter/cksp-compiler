@@ -1,0 +1,47 @@
+
+on init
+	
+    declare normal_var
+	
+
+	scoped_func1()
+	scoped_func1()
+end on
+
+on persistence_changed
+	declare array[5]
+	scoped_func1()
+end on
+
+on listener
+	declare a, b, c
+	a := 1
+	wait(1)
+end on
+
+{*******************************************************************************************************************
+											* functions *
+*******************************************************************************************************************}
+
+function scoped_func1()
+	declare text := "sdlkj"
+	message(text)
+	declare array[5] := (3,4)
+	scoped_func2()
+end function
+
+function scoped_func2()
+	declare i: int
+	message(i)
+	if(i = 1)
+		declare arr[5]: int[] := (1)
+		declare j: int, k: int
+		message(j & k & arr[4])
+	end if
+	if(i = 2)
+		declare h: int, g: int
+		message(h & g)
+	end if
+end function
+
+

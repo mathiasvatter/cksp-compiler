@@ -1,84 +1,178 @@
-//henlo
-{-------------------------------------------------------------------------------------------------------------------
-Title: Trinity Drums 2
-File: MAIN.ksp
-Author: Mathias Vatter, Stefan Kemler
-First Written:
-Current Version: 2.0
-Last Modified:
--------------------------------------------------------------------------------------------------------------------}
-{*******************************************************************************************************************
-												* INCLUDES *
-*******************************************************************************************************************}
 
-	//* PRAGMA - Save the file on compile *
-	{#pragma save_compiled_source samples/resources/scripts/trinity-drums-2.txt}
+// struct List
+// 	declare value: int
+// 	declare next
 
-// import "/Users/Mathias/Scripting/sonu-libraries/ksp/1.0/control-positioner.ksp"
-SET_CONDITION(POSITION_CONTROL)
-RESET_CONDITION(POSITION_CONTROL)
-SET_CONDITION(DEV)
-RESET_CONDITION(DEV)
-{******************************************************************************************************************
-											** COLLECT ALL WINDOWS ** 
-******************************************************************************************************************}
-{*******************************************************************************************************************
-										   * SYSTEM CALLBACKS *
-*******************************************************************************************************************}
-on init 
-	make_perfview
-	define SCRIPT_TITLE := "Trinity Drums 2"
-	message("** Script " & "'" & SCRIPT_TITLE & "'" & " Compile " & __LOCALE_TIME__ & " " & __LOCALE_DATE__ & " **")
-	set_script_title(SCRIPT_TITLE)
-	declare const UI_HEIGHT := 608 - 69
-	declare const UI_WIDTH := 750
-	set_ui_height_px(UI_HEIGHT-68)
-	set_ui_width_px(UI_WIDTH)
-	INST_WALLPAPER_ID -> picture := "bg"
-	INST_ICON_ID -> picture := "sonu-badge"
-	set_snapshot_type(0)
-	declare const TRUE := 1
-	declare const FALSE := 0
-	declare $i
-	declare a
-	a := 0x77AAFF // sets a to 77AAFF, or 7842559
-    a := 077AAFFh // sets a to 77AAFF, or 7842559. First 0 can be a digit 0-9!
-    a := 1100b // LSB-right, sets a to 12
-    a := b1100 // LSB-left, sets a to 3
-    a := 9b0111110h .and. 1
-	declare floaty := 0.033
-	declare polyphonic iterator
-	declare read soundset_ids[3] := ...
-	(0,1,2)
-	for i := 0 to num_elements(soundset_ids)-1
-	    message(i)
+// 	function __init__(self, value: int, next)
+// 		self.value := value
+// 		self.next := next
+// 	end function
+
+//     function get_next_next_value(self)
+//         return self.next.next.value
+//     end function
+// end struct
+
+// struct Note
+// 	declare pitch: int
+// 	declare velocities[10]: int[]
+// 	declare play_pos[11, 12]: int[][]
+
+// 	function __init__(self, p: int, v: int[], pp: int[][])
+// 		self.pitch := p
+// 		self.velocities := v
+// 		self.play_pos := pp
+// 	end function
+
+// 	function __repr__(self)
+// 		return "Note {Pitch: " & self.pitch & "}"
+// 	end function
+
+// 	function play(self)
+// 		return play_note(self.pitch, self.velocities[0], self.play_pos[1,2], 0)
+// 	end function
+
+// 	function get_velocities(self)
+// 		return self.velocities
+// 	end function
+
+// end struct
+
+function update.strip.noAutomation(btn_name,UI_array,value_array,control_array,animation_label, emitter)
+	for i := 0 to UI_array.SIZE_D2-1
+		if UI_array[emitter,i] # get_ui_id(btn_name)
+			UI_array[emitter,i] -> value := 0
+		else 
+			UI_array[emitter,i] -> value := 1
+		end if
+		value_array[emitter,i] := UI_array[emitter,i] -> value
 	end for
-	declare hide_state[2] := (HIDE_WHOLE_CONTROL,HIDE_PART_NOTHING)
+	
+	bigknob_active[2]:= 1
+	bigknob_active[1]:= 3000000
+
+	control_array[emitter,3] := control_array[emitter,get_active_idx(value_array, emitter)]
+	animation_label -> picture_state := control_array[emitter,get_active_idx(value_array, emitter)]
+end function
+
+on init	
+	declare ui_button btn_1, ui_button btn_2
+	// btn_1 := 1
+	// do_sth(3)
+	// do_sth(2)
+	// declare const dufus := 0
+	// declare i := 0
+	// i := btn_1
+	// inc(i)
+	// i := 4
+	// declare anus := 0*3+0
+	// inc(anus)
+	// message(i, 3)
+	// i := i + 1
+	// message(i, 2)
+	// while(i < 10)
+	// 	i := i + 1
+	// 	message(i)
+	// end while
+	// if(i = 3)
+	// 	i := 5
+	// else 
+	// 	i := 6
+	// end if
+	// declare arr[] := (1,2,3,4,5,6,7,8,9,10)
+	// arr[0] := 1
+	// arr[1] := 1
+	// arr[2] := 1
+	// arr[3] := 1
+	// message(arr[0])
+	// message(arr)
+	// if(1=1 and arr[0] # 1)
+	// 	message("whileh")
+	// end if
+	const instrument
+		SUSTAIN, LEGATO
+	end const
+	declare ui_text_edit !txt_element_marked[4]
+	select btn_1
+		case instrument.SUSTAIN
+			message(234)
+		case instrument.LEGATO
+			// legato(interval, event_note)
+	end select
+
+	// if(i < 3 and i> 5)
+
+	// else
+	// 	message("sdflkj")
+	// end if
+
+	pgs_create_key(AUTO_SAVE, 1)
+	set_listener($NI_SIGNAL_TIMER_MS, 1000000)
+	declare $autoSave
+
+	declare ui_button btn_slot[5]
+	declare ui_button btn_prev_slot_group
+	set_button_properties(btn_prev_slot_group, "", "btn_left", 1, 1)
+	set_bounds(btn_prev_slot_group, btn_slot0 -> pos_x - 30, btn_slot0 -> pos_y + 3)
+	btn_prev_slot_group -> help := "Show the slots 1-5."
+	
+	declare array[btn_slot.SIZE], no_array := (0+2, 1, 2), 23
+	define NUM_FX_LOADABLE := 33
+	define NUM_EMITTER := 2
+	define NUM_FX_SLOTS := 5
+	declare read fx_num_slot[NUM_EMITTER,NUM_FX_SLOTS] := (NUM_FX_LOADABLE-1) // holds fx number of each slot
 end on
 
 
 on listener
-
+	if ($NI_SIGNAL_TYPE = $NI_SIGNAL_TIMER_MS)
+		$autoSave := ($autoSave+1) mod (60000000/1000000)
+		if ($autoSave = 0)
+			pgs_set_key_val(AUTO_SAVE, 0, 1)
+		end if
+	end if
 end on
 
-{*******************************************************************************************************************
-											* ON NOTE CALLBACK *
-*******************************************************************************************************************}
-on note
-
+on ui_control( btn_1 )
+	do_sth(1)
 end on
-{******************************************************************************************************************
-										** ON RELEASE CALLBACK ** 
-******************************************************************************************************************}
-on release
 
+on ui_control( btn_2 )
+	do_sth(4)
+	// wait(500)
+	do_sth_in_sth()
+	if(1=2)
+		declare a := 0
+	end if
 end on
+
+function do_sth(pipi : int)
+	declare text := "sdlkj"
+	message(text)
+	declare a, b, c, d := 0
+	inc(a)
+	do_sth_in_sth()
+	message(a, pipi)
+end function
+
+function do_sth_in_sth()
+	declare z := 1
+	message(z)
+end function
+
+
+// if threadsafe environment, do no lifting -> all params are promoted to global variables
+// do necessary assignments in function calls if the function had previous params
+
+// if not threadsafe environment, do lifting and copy function definition with params
+
 {*******************************************************************************************************************
 											* UI CALLBACKS *
 *******************************************************************************************************************}
+
+
 {*******************************************************************************************************************
 												* MACROS *
 *******************************************************************************************************************}
-
 
 

@@ -1,0 +1,67 @@
+{ Compiled with cksp version 0.0.6 on Tue Sep 03 20:30:10 2024 }
+on init
+  declare $loc_2
+  declare $loc_6
+  declare ui_button $btn_1 
+  declare ui_button $btn_2 
+  declare ui_text_edit @txt_element_marked0 
+  declare ui_text_edit @txt_element_marked1 
+  declare ui_text_edit @txt_element_marked2 
+  declare ui_text_edit @txt_element_marked3 
+  $loc_6 := 0
+  while($loc_6 < 4) 
+    inc($loc_6)
+  end while
+  select($btn_1)
+    case 0
+      message(234)
+    case 1
+  end select
+  pgs_create_key( AUTO_SAVE, 1)
+  set_listener($NI_SIGNAL_TIMER_MS, 1000000)
+  declare $autoSave
+  declare ui_button $btn_slot0 
+  declare ui_button $btn_slot1 
+  declare ui_button $btn_slot2 
+  declare ui_button $btn_slot3 
+  declare ui_button $btn_slot4 
+  $loc_6 := 0
+  while($loc_6 < 5) 
+    inc($loc_6)
+  end while
+  declare ui_button $btn_prev_slot_group 
+  set_control_par_str(get_ui_id($btn_prev_slot_group), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($btn_prev_slot_group), $CONTROL_PAR_PICTURE, "btn_left")
+  set_control_par(get_ui_id($btn_prev_slot_group), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($btn_prev_slot_group), $CONTROL_PAR_FONT_TYPE, 1)
+  set_control_par(get_ui_id($btn_prev_slot_group), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_slot0), $CONTROL_PAR_POS_X) - 30)
+  set_control_par(get_ui_id($btn_prev_slot_group), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_slot0), $CONTROL_PAR_POS_Y) + 3)
+  set_control_par_str(get_ui_id($btn_prev_slot_group), $CONTROL_PAR_HELP, "Show the slots 1-5.")
+  declare %_fx_num_slot[10] := (32)
+  make_persistent(%_fx_num_slot)
+  read_persistent_var(%_fx_num_slot)
+end on
+on listener
+  if($NI_SIGNAL_TYPE = $NI_SIGNAL_TIMER_MS)
+    $autoSave := ($autoSave + 1) mod 60
+    if($autoSave = 0)
+      pgs_set_key_val( AUTO_SAVE, 0, 1)
+    end if
+  end if
+end on
+on ui_control($btn_1)
+  message("sdlkj")
+  $loc_2 := 0
+  inc($loc_2)
+  message(1)
+  message($loc_2 & ", " & 1)
+end on
+on ui_control($btn_2)
+  message("sdlkj")
+  $loc_2 := 0
+  inc($loc_2)
+  message(1)
+  message($loc_2 & ", " & 4)
+  message(1)
+end on
+
