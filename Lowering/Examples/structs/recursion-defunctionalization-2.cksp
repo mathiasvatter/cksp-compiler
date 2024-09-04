@@ -1,0 +1,63 @@
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering
+--------------------------------------------------------------------------------------------}
+
+struct Tree
+	declare value: int
+	declare left: Tree
+	declare right: Tree
+
+	function __init__(self, value: int, left: Tree, right: Tree)
+		self.value := value
+		self.left := left
+		self.right := right
+	end function
+end struct
+
+
+function sum_values(tree: Tree): int
+    if tree # nil then
+        return tree.value + sum_values(tree.left) + sum_values(tree.right)
+    else
+        return 0
+    end if
+end function
+
+//step 0
+function sum_values(tree: Tree): int
+    if tree # nil then
+    	declare c1 := sum_values(tree.left)
+    	declare c2 := sum_values(tree.right)
+        return tree.value + c1 + c2
+    else
+        return 0
+    end if
+end function
+
+{-------------------------------------------------------------------------------------------
+								Step 1: CPS Convertion
+--------------------------------------------------------------------------------------------}
+
+function sum_values_cps(tree: Tree, cont: function) -> int
+    if tree # nil then
+        sum_values_cps(tree.left, lambda left_sum:
+            sum_values_cps(tree.right, lambda right_sum:
+                cont(tree.value + left_sum + right_sum)))
+    else
+        cont(0)
+    end if
+end function
+
+struct Cons
+    declare tree_left: Tree
+    declare tree_right: Tree
+    declare tree: Tree
+    declare 
+
+
+end struct
+
+
+end struct
+

@@ -5,57 +5,66 @@
 #pragma once
 
 #include <sstream>
-#include "../AST/ASTVisitor.h"
+#include "../AST/ASTVisitor/ASTVisitor.h"
+
+
+inline std::string sanitize_dots(const std::string& str) {
+	std::string result;
+	for (char ch : str) {
+		if (ch == '.') {
+			result += "__";
+		} else {
+			result += ch;
+		}
+	}
+	return result;
+}
+
 
 class ASTGenerator : public ASTVisitor {
 public:
-    void visit(NodeProgram& node) override;
-
-    void visit(NodeInt& node) override;
-
-    void visit(NodeReal& node) override;
-
-    void visit(NodeString& node) override;
-
-    void visit(NodeVariable& node) override;
-
-    void visit(NodeArray& node) override;
-
-    void visit(NodeUIControl& node) override;
-
-    void visit(NodeSingleDeclareStatement& node) override;
-
-    void visit(NodeParamList& node) override;
-
-    void visit(NodeBinaryExpr& node) override;
-
-    void visit(NodeUnaryExpr& node) override;
-
-    void visit(NodeSingleAssignStatement& node) override;
-
-    void visit(NodeStatement& node) override;
-
-    void visit(NodeIfStatement& node) override;
-
-    void visit(NodeWhileStatement& node) override;
-
-    void visit(NodeForStatement& node) override;
-
-    void visit(NodeSelectStatement& node) override;
-
-    void visit(NodeCallback& node) override;
-
-    void visit(NodeFunctionHeader& node) override;
-
-    void visit(NodeFunctionCall& node) override;
-
-    void visit(NodeFunctionDefinition& node) override;
-
-    void visit(NodeGetControlStatement& node) override;
-
-    void visit(NodeSetControlStatement& node) override;
+    NodeAST * visit(NodeProgram& node) override;
+    NodeAST * visit(NodeInt& node) override;
+    NodeAST * visit(NodeReal& node) override;
+	NodeAST * visit(NodeString& node) override;
+    NodeAST * visit(NodeVariable& node) override;
+    NodeAST * visit(NodeVariableRef& node) override;
+    NodeAST * visit(NodeArray& node) override;
+    NodeAST * visit(NodeArrayRef& node) override;
+    NodeAST * visit(NodeUIControl& node) override;
+    NodeAST * visit(NodeSingleDeclaration& node) override;
+    NodeAST * visit(NodeParamList& node) override;
+    NodeAST * visit(NodeBinaryExpr& node) override;
+    NodeAST * visit(NodeUnaryExpr& node) override;
+    NodeAST * visit(NodeSingleAssignment& node) override;
+    NodeAST * visit(NodeStatement& node) override;
+	NodeAST * visit(NodeBlock& node) override;
+    NodeAST * visit(NodeIf& node) override;
+    NodeAST * visit(NodeWhile& node) override;
+    NodeAST * visit(NodeSelect& node) override;
+    NodeAST * visit(NodeCallback& node) override;
+    NodeAST * visit(NodeFunctionHeader& node) override;
+    NodeAST * visit(NodeFunctionCall& node) override;
+    NodeAST * visit(NodeFunctionDefinition& node) override;
+    NodeAST * visit(NodeGetControl& node) override;
 
     std::ostringstream os;
+
+
+	void generate(const std::string& path) const;
+	void print() const;
+
+private:
+	std::string m_indent = "  ";
+	int m_scope_count = 0;
+	inline std::string get_indent() {
+		std::string result;
+		for (int i = 0; i < m_scope_count; i++) {
+			result += m_indent;
+		}
+		return result;
+	}
+    static std::string get_compiled_date_time();
 };
 
 

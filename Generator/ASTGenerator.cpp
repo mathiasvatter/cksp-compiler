@@ -5,210 +5,269 @@
 #include "ASTGenerator.h"
 
 
-void ASTGenerator::visit(NodeProgram &node) {
-    for(auto& callback: node.callbacks) {
-        callback->accept(*this);
-    }
+void ASTGenerator::generate(const std::string& path) const {
+	std::ofstream outFile(path);
+	if (outFile) {
+		outFile << os.str();
+	} else {
+		// Fehlerbehandlung, falls die Datei nicht geöffnet werden kann
+		std::cerr << "Fehler beim Öffnen der Datei: " << path << std::endl;
+	}
+}
+
+void ASTGenerator::print() const {
+	std::cout << os.str();
+}
+
+
+NodeAST * ASTGenerator::visit(NodeProgram &node) {
+    os << get_compiled_date_time() << std::endl;
+    // get init callback first
+    node.callbacks[0]->accept(*this);
     for(auto & function : node.function_definitions) {
         function->accept(*this);
     }
+    for(int i = 1; i<node.callbacks.size(); i++) {
+        node.callbacks[i]->accept(*this);
+    }
     os << std::endl;
+	return &node;
 }
 
-void ASTGenerator::visit(NodeInt &node) {
+NodeAST * ASTGenerator::visit(NodeInt &node) {
     os << node.value;
+	return &node;
 }
 
-void ASTGenerator::visit(NodeReal &node) {
+NodeAST * ASTGenerator::visit(NodeReal &node) {
+	std::ios oldState(nullptr);
+	oldState.copyfmt(os); // Speichert den aktuellen Zustand von os
+
+	// Überprüfen, ob der Wert genau einer Ganzzahl entspricht
+	if (std::abs(node.value - std::round(node.value)) < std::numeric_limits<double>::epsilon()) {
+		os << std::fixed << std::setprecision(1) << node.value; // Rundet auf eine Nachkommastelle, für den Fall 0.000000
+	} else {
+		os << std::fixed << std::setprecision(15) << node.value; // Zeigt den Wert mit maximaler Präzision
+	}
+	os.copyfmt(oldState); // Stellt den ursprünglichen Zustand von os wieder her
+	return &node;
+}
+
+
+NodeAST * ASTGenerator::visit(NodeString &node) {
     os << node.value;
+	return &node;
 }
 
-void ASTGenerator::visit(NodeString &node) {
-    os << node.value;
+NodeAST * ASTGenerator::visit(NodeVariable &node) {
+    if (node.data_type == DataType::Polyphonic)
+        os << "polyphonic ";
+    else if (node.data_type == DataType::Const)
+        os << "const ";
+	os << TypeRegistry::get_identifier_from_type(node.ty);
+    os << sanitize_dots(node.name);
+	return &node;
 }
 
-void ASTGenerator::visit(NodeVariable &node) {
-    if(node.is_persistent)
-        os << "read ";
-    if(node.var_type == VarType::Polyphonic)
-        os << " polyphonic ";
-    else if(node.var_type == VarType::Const)
-        os << " const ";
-    os << "(var)" << node.name;
+NodeAST * ASTGenerator::visit(NodeVariableRef &node) {
+    os << TypeRegistry::get_identifier_from_type(node.ty);
+    os << sanitize_dots(node.name);
+	return &node;
 }
 
-void ASTGenerator::visit(NodeArray &node) {
-    if(node.is_persistent)
-        os << "read ";
-    os << "(arr)" << node.name;
-    os << "[";
-    node.sizes->accept(*this);
-    os << "].at(";
-    node.indexes->accept(*this);
-    os << ")";
+NodeAST * ASTGenerator::visit(NodeArrayRef &node) {
+	// get korrekt type since array refs with index are internally treated as variables with a basic type
+	const auto &type = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
+    os << TypeRegistry::get_identifier_from_type(type);
+    os << sanitize_dots(node.name);
+	if(node.index) {
+		os << "[";
+		node.index->accept(*this);
+		os << "]";
+	}
+	return &node;
 }
 
-void ASTGenerator::visit(NodeUIControl &node) {
+NodeAST * ASTGenerator::visit(NodeArray &node) {
+    os << TypeRegistry::get_identifier_from_type(node.ty);
+    os << sanitize_dots(node.name);
+    if(node.size) {
+        os << "[";
+        node.size->accept(*this);
+        os << "]";
+    }
+	return &node;
+}
+
+NodeAST * ASTGenerator::visit(NodeUIControl &node) {
     os << node.ui_control_type << " ";
     node.control_var->accept(*this);
     os << " ";
+	if(!node.params->params.empty()) os << "(";
     node.params -> accept(*this);
+	if(!node.params->params.empty()) os << ")";
+	return &node;
 }
 
-void ASTGenerator::visit(NodeSingleDeclareStatement &node) {
+NodeAST * ASTGenerator::visit(NodeSingleDeclaration &node) {
     os << "declare ";
-    node.to_be_declared->accept(*this);
-    if(node.assignee != nullptr) {
-        os << ":= ";
-        node.assignee->accept(*this);
+    node.variable->accept(*this);
+    if(node.value) {
+        os << " := ";
+        auto node_param_list = node.value->get_node_type() == NodeType::ParamList;
+        if(node_param_list) os << "(";
+        node.value->accept(*this);
+        if(node_param_list) os << ")";
     }
     os << "";
+	return &node;
 }
 
-void ASTGenerator::visit(NodeParamList &node) {
+NodeAST * ASTGenerator::visit(NodeParamList &node) {
     if (!node.params.empty()) {
-        os << "[";
         for (int i = 0; i < node.params.size() - 1; i++) {
             node.params[i]->accept(*this);
             os << ", ";
         }
         node.params[node.params.size() - 1]->accept(*this);
-        os << "]";
     }
+	return &node;
 }
 
-void ASTGenerator::visit(NodeBinaryExpr &node) {
-    std::string expression_type = "BinaryExpr(";
-    if(node.type == Comparison)
-        expression_type = "ComparisonExpr(";
-    else if (node.type == Boolean)
-        expression_type = "BooleanExpr(";
-    else if (node.type ==String)
-        expression_type = "StringExpr(";
-    os << expression_type;
+NodeAST * ASTGenerator::visit(NodeBinaryExpr &node) {
+    auto is_nested_bin_expr = node.parent->get_node_type() == NodeType::BinaryExpr || node.parent->get_node_type() == NodeType::UnaryExpr;
+    if(is_nested_bin_expr and node.ty != TypeRegistry::String) os << "(";
+
     node.left->accept(*this);
-    os << " " << node.op << " ";
+    os << " " << GENERATE_ALL_OPERATORS[node.op] << " ";
     node.right->accept(*this);
-    os << ")" ;
+    if(is_nested_bin_expr and node.ty != TypeRegistry::String) os << ")";
+	return &node;
 }
 
-void ASTGenerator::visit(NodeUnaryExpr &node) {
-    os << "UnaryExpr(";
-    os << node.op.val << " ";
+NodeAST * ASTGenerator::visit(NodeUnaryExpr &node) {
+    os << GENERATE_ALL_OPERATORS[node.op] << " ";
     node.operand->accept(*this);
-    os << ")" ;
+	return &node;
 }
 
-void ASTGenerator::visit(NodeSingleAssignStatement &node) {
-    os << "VariableAssign(";
-    node.array_variable->accept(*this);
-    os << ":= ";
-    node.assignee->accept(*this);
-    os << ")";
+NodeAST * ASTGenerator::visit(NodeSingleAssignment &node) {
+    node.l_value->accept(*this);
+    os << " := ";
+    node.r_value->accept(*this);
+	return &node;
 }
 
-void ASTGenerator::visit(NodeStatement &node) {
-    os << "Stmt(" ;
-    node.statement->accept(*this);
-    os << ")" << std::endl;
+NodeAST * ASTGenerator::visit(NodeStatement &node) {
+	if(node.statement->get_node_type() != NodeType::DeadCode) {
+		os << get_indent();
+		node.statement->accept(*this);
+		os << std::endl;
+	}
+	return &node;
 }
 
-void ASTGenerator::visit(NodeIfStatement &node) {
-    os << "if " ;
+NodeAST * ASTGenerator::visit(NodeBlock& node) {
+	m_scope_count++;
+	for(auto & stmt : node.statements) {
+		stmt->accept(*this);
+	}
+	m_scope_count--;
+	return &node;
+}
+
+NodeAST * ASTGenerator::visit(NodeIf &node) {
+    os << "if(" ;
     node.condition->accept(*this);
-    os << std::endl;
-    for(auto &stmt: node.statements) {
-        stmt->accept(*this);
-    }
-    os << "else" << std::endl;
-    for(auto &stmt: node.else_statements) {
-        stmt->accept(*this);
-    }
-    os << "end if";
+    os << ")" << std::endl;
+	node.if_body->accept(*this);
+	if (!node.else_body->statements.empty()) {
+    	os << get_indent() << "else" << std::endl;
+		node.else_body->accept(*this);
+	}
+    os << get_indent() << "end if";
+	return &node;
 }
 
-void ASTGenerator::visit(NodeWhileStatement &node) {
+NodeAST * ASTGenerator::visit(NodeWhile &node) {
     os << "while(" ;
     node.condition->accept(*this);
     os << ") " << std::endl;
-    for(auto &stmt: node.statements) {
-        stmt->accept(*this);
-    }
-    os << "end while";
+    node.body->accept(*this);
+    os << get_indent() << "end while";
+	return &node;
 }
 
-void ASTGenerator::visit(NodeForStatement &node) {
-    os << "for " ;
-    node.iterator->accept(*this);
-    os << " " << node.to.val << " ";
-    node.iterator_end->accept(*this);
-    os << std::endl;
-    for(auto &stmt: node.statements) {
-        stmt->accept(*this);
-    }
-    os << "end for";
-}
-
-void ASTGenerator::visit(NodeSelectStatement &node) {
-    os << "select " ;
+NodeAST * ASTGenerator::visit(NodeSelect &node) {
+    os << "select(" ;
     node.expression->accept(*this);
-    os << std::endl;
+    os << ")" << std::endl;
+	m_scope_count++;
     for(const auto &cas: node.cases) {
-        os << "case ";
-        for(auto &stmt: cas.first) {
-            stmt->accept(*this);
+        os << get_indent() << "case ";
+        cas.first[0]->accept(*this);
+        if(cas.first.size() == 2) {
+            os << " to ";
+            cas.first[1]->accept(*this);
         }
         os << std::endl;
-        for(auto &stmt: cas.second) {
-            stmt->accept(*this);
-        }
+        cas.second->accept(*this);
     }
-    os << "end select";
+	m_scope_count--;
+    os << get_indent() << "end select";
+	return &node;
 }
 
-void ASTGenerator::visit(NodeCallback &node) {
-    os << "Callback(" << node.begin_callback << ")" << std::endl;
+NodeAST * ASTGenerator::visit(NodeCallback &node) {
+    os << node.begin_callback;
+	if(node.callback_id) {
+		os << "(";
+		node.callback_id->accept(*this);
+		os << ")";
+	}
+	os << std::endl;
     node.statements->accept(*this);
-    os << "End_callback(" << node.end_callback << ")"<< std::endl;
+    os << node.end_callback << std::endl;
+	return &node;
 }
 
-void ASTGenerator::visit(NodeFunctionHeader &node) {
-    os << node.name << "(";
+NodeAST * ASTGenerator::visit(NodeFunctionHeader &node) {
+    os << sanitize_dots(node.name);
+	if(!node.args->params.empty() || node.has_forced_parenth) os << "(";
     node.args->accept(*this);
-    os << ")";
+	if(!node.args->params.empty() || node.has_forced_parenth) os << ")";
+	return &node;
 }
 
-void ASTGenerator::visit(NodeFunctionCall &node) {
+NodeAST * ASTGenerator::visit(NodeFunctionCall &node) {
     if (node.is_call) {
         os << "call ";
     }
     node.function->accept(*this);
+	return &node;
 }
 
-void ASTGenerator::visit(NodeFunctionDefinition &node) {
+NodeAST * ASTGenerator::visit(NodeFunctionDefinition &node) {
     os << "function ";
     node.header ->accept(*this);
-    if (node.return_variable.has_value()) {
-        os << " -> ";
-        node.return_variable.value()->accept(*this);
-    }
-    if (node.override) {
-        os << "override" << std::endl;
-    }
-    os << "\n";
+    os << std::endl;
     node.body->accept(*this);
     os << "end function" << std::endl;
+	return &node;
 }
 
-void ASTGenerator::visit(NodeGetControlStatement &node) {
+NodeAST * ASTGenerator::visit(NodeGetControl &node) {
     node.ui_id ->accept(*this);
     os << " -> " << node.control_param;
+	return &node;
 }
 
-void ASTGenerator::visit(NodeSetControlStatement &node) {
-    node.get_control ->accept(*this);
-    os << " := ";
-    node.assignee -> accept(*this);
-    os << std::endl;
-}
+std::string ASTGenerator::get_compiled_date_time() {
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
 
+    std::ostringstream ss;
+    ss << "{ Compiled with cksp version " << COMPILER_VERSION;
+    ss << std::put_time(std::localtime(&in_time_t), " on %a %b %d %H:%M:%S %Y }");
+    return ss.str();
+}

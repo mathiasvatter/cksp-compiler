@@ -1,0 +1,17 @@
+// widgets
+ui_button $variable_name
+ui_file_selector $variable_name
+ui_label $variable_name (grid_width: int, grid_height: int)
+ui_level_meter $variable_name
+ui_knob $variable_name (min: int, max: int, display_ratio: int)
+ui_menu $variable_name
+ui_mouse_area $variable_name
+ui_panel $variable_name
+ui_slider $variable_name (min: int, max: int)
+ui_switch $variable_name
+ui_table %array_name[num_elements] (grid_width: int, grid_height: int, range: int)
+ui_text_edit @variable_name
+ui_value_edit $variable_name (min: int, max: int, display_raio: int)
+ui_waveform $variable_name (grid_width: int, grid_height: int)
+ui_wavetable $variable_name
+ui_xy ?array_name[num_elements]

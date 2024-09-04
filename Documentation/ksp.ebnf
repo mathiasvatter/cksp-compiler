@@ -1,0 +1,82 @@
+(********************************************************************)
+(*                           KSP EBNF                               *)
+(********************************************************************)
+
+(* Program Architecture *)
+program = callback | function_definition | program
+callback = "on" callback_identifier ("("variable | array")")? linebreak statement* "end on" linebreak+
+
+(* Expressions *)
+unary_expression = unary_op (num | variable | array | function_header)
+primary_expression = num | variable | array | function_header | unary_expression | "("binary_expression")"
+binary_expression = primary_expression (binary_op binary_expression)?
+string_expression = (string | binary_expression) (string_op (string | binary_expression))?
+expression = string_expression | binary_expression
+(* Special cases of expressions for type checking *)
+condition = boolean_expression
+boolean_expression = comparison_expression (bool comparison_expression)?
+comparison_expression = binary_expression comparison_op binary_expression
+
+(* Variables *)
+variable =  var_ident keyword
+array = array_ident keyword "[" expression "]"
+
+(* Declaration and Assignment *)
+declare_variable = ("const" | "polyphonic")? variable
+declare_control = ui_label | ui_button | ui_switch | ui_slider | ui_menu | ui_value_edit | ui_waveform | ui_wavetable | ui_knob | ui_table | ui_xy | ui_text_edit | ui_level_meter | ui_file_selector | ui_panel | ui_mouse_area
+declare_statement =  "declare" (declare_variable | array | declare_control) (":=" expression)?
+assign_statement = (variable | array | declare_control) ":=" expression
+
+(* Statements *)
+statement = linebreak* (if_statement | while_statement | select_statement | assign_statement | funcion_call ) linebreak+
+if_statement = "if" ( condition ) linebreak+ statements (else linebreak+ statements)? "end if" linebreak+
+while_statement = "while" ( condition ) linebreak+ statements "end while" linebreak+
+select_statement = "select" ( expression ) linebreak+ ("case" expression linebreak statements)+ "end select" linebreak+
+
+(* Functions *)
+function_header = keyword
+function_definition = "function" function_header linebreak+ statement* "end function"
+function_call = "call" function_header
+
+(* ui_controls *)
+ui_label = "ui_label" "$"variable "("expression, expression")"
+ui_button = "ui_button" "$"variable
+ui_switch = "ui_switch" "$"variable
+ui_slider = "ui_slider" "$"variable "("expression, expression")"
+ui_menu = "ui_menu" "$"variable
+ui_value_edit = "ui_value_edit" "$"variable "("expression, expression, expression")"
+ui_waveform = "ui_waveform" "$"variable "("expression, expression")"
+ui_wavetable = "ui_wavetable" "$"variable
+ui_knob = "ui_knob" "$"variable "("expression, expression, expression")"
+ui_table = "ui_table" "%"array "("expression, expression, expression")"
+ui_xy = "ui_xy" "?"array
+ui_text_edit = "ui_text_edit" "@"variable
+ui_level_meter = "ui_level_meter" "$"variable
+ui_file_selector = "ui_file_selector" "$"variable
+ui_panel = "ui_panel" "$"variable
+ui_mouse_area = "ui_mouse_area" "$"variable
+
+(* Terminals *)
+int = [0-9]+
+real = int+ "." int*
+num = (int | real)
+binary_op = "-" | "+" | "mod" | "/" | "*" | bitwise_op | comparison_op | bool_op | string_op
+unary_op = "not" | ".not." | "-"
+linebreak = "\n"
+comparison_op = "=" | "<" | ">" | "=" | "=" | "#"
+bool_op = "and" | "or" | "not" | "xor"
+bitwise_op = ".and." | ".xor." | ".or." | ".not."
+string_op = "&"
+
+char = "A" | ... | "Z" | "a" | ... | "z" | "0" | ... | "9"
+keyword = char | "." | "_" | keyword
+string = "\'" text "\'"
+variable_ident = "$" | "~" | "@"
+array_ident = "!" | "%" | "?"
+callback_identifier = ("async_complete" | "controller" | "init" |
+                          "listener" | "note" | "persistence_changed" | "pgs_changed" | "poly_at" |
+                          "release" | "rpn/nrpn" | "ui_control" | "ui_update")
+
+
+
+

@@ -1,0 +1,106 @@
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering cksp
+--------------------------------------------------------------------------------------------}
+
+struct Note
+	declare pitch: int // maybe default value := 0
+	declare velocity: int
+	declare samplestart: int
+
+	function __init__(self, p: int, v: int, s: int)
+		self.pitch := p
+		self.velocity := v
+		self.samplestart := s
+	end function
+
+	function play(self): int
+		return play_note(self.pitch, self.velocity, self.samplestart, 0)
+	end function
+end struct
+
+declare new_note: Note := new Note(69, 127, 50000)
+message("New Note: "&new_note)
+declare event_id: int := new_note.play()
+
+declare many_notes[127]: [Note]
+
+// dynamic allocating of Note objects
+for idx, val in midi_notes
+	many_notes[idx] := new Note(val, 127, 50000)
+end for
+
+for idx, val in midi_notes
+	play_note(many_notes[idx].pitch, many_notes[idx].velocity, many_notes[idx].samplestart, 0)
+	delete many_notes[idx] //?????
+end for
+
+function func_with_object(note: Note)
+	note.play()
+end function
+
+//Destruction??!?!?!?!
+
+{-------------------------------------------------------------------------------------------
+										Post Lowering
+--------------------------------------------------------------------------------------------}
+
+declare const MAX_STRUCTS := 1000000 // allgemeine constante für structs
+declare nil[2] := ("", "nil")
+function Nil.__repr__(self)
+	nil[1] := self
+	return nil[signbit(self)]
+end function
+
+declare %Note.allocation[MAX_STRUCTS] := (0)
+declare %Note.pitch[MAX_STRUCTS] // default values if given := 10 
+declare %Note.velocity[MAX_STRUCTS] // default values if given := 10
+declare %Note.samplestart[MAX_STRUCT] // default values if given := 10
+declare $Note.free_idx := 0 // Zeiger auf den nächsten freien index
+
+function Note.__init__(p: int, v: int, s: int)
+	Note.free_idx := search(Note.allocation, 0)
+	if Note.free_idx = -1
+		message("Memory Error: No more free space available to allocate objects of type 'Note'")		
+	end if
+	Note.allocation[Note.free_idx] := 1
+	Note.pitch[Note.free_idx] := p
+	Note.velocity[Note.free_idx] := v
+	Note.samplestart[Note.free_idx] := s
+	return Note.free_idx
+end function
+
+// standard str function if not overwritten
+function Note.__repr__(self)
+	return "Note Object: "& self
+end function
+
+function Note.play(self: int)
+	return play_note(Note.pitch[self], Note.velocity[self], Note.velocity[self], 0)
+end function
+
+function Note.__del__(self)
+	Note.allocation[self] := 0
+end function
+
+declare $new_note := Note.__init__(69, 127, 50000)
+message("New Note: "& Note.__repr__($new_note))
+declare $event_id := Note.play($new_note)
+
+declare %many_notes[127]
+
+for idx := 0 to num_elements(midi_notes)-1
+	many_notes[idx] := Note.__init__(midi_notes[idx], 127, 50000)
+end for
+
+for idx := 0 to num_elements(midi_notes)-1
+	play_note(Note.pitch[many_notes[idx]], Note.velocity[many_notes[idx]], Note.velocity[many_notes[idx]], 0)
+end for
+
+function func_with_object(note: int)
+	Note.play(note)
+end function
+
+
+
+
