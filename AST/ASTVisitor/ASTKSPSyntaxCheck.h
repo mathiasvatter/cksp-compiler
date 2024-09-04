@@ -19,6 +19,7 @@ private:
 	std::unordered_map<std::string, int> m_ui_control_count;
 
 	static const int MAX_BLOCK_LINES = 4991;
+	int max_block_lines = MAX_BLOCK_LINES;
 	static const int MAX_UI_CONTROLS = 999;
 	static const int MAX_ARRAY_ELEMENTS = 1000000;
 
@@ -41,17 +42,17 @@ private:
 		}
 	}
 
-	static bool check_line_count(NodeBlock* node, int line_count) {
-		if(line_count > MAX_BLOCK_LINES) {
+	bool check_line_count(NodeBlock* node, int line_count) {
+		if(line_count > max_block_lines) {
 			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *node);
-			error.m_message = "Maximum number of lines in block exceeded ("+std::to_string(MAX_BLOCK_LINES)+"). This will probably prompt a 'memory exhausted' error in KSP.";
+			error.m_message = "Maximum number of lines in block exceeded ("+std::to_string(max_block_lines)+"). This will probably prompt a 'memory exhausted' error in KSP.";
 			error.print();
 			return true;
 		}
 		return false;
 	}
 
-	static std::vector<std::unique_ptr<NodeBlock>> split_blocks(NodeBlock &block) {
+	std::vector<std::unique_ptr<NodeBlock>> split_blocks(NodeBlock &block) {
 		int new_max_block_lines = calc_adjusted_max_block_lines(block);
 		std::vector<std::unique_ptr<NodeBlock>> result_blocks;
 		auto it = block.statements.begin();
@@ -74,10 +75,10 @@ private:
 
 	/// calculate new max block size, since for every control flow statement created, the max block size inside them
 	/// shrinks by 3 stmts
-	inline static int calc_adjusted_max_block_lines(NodeBlock& block) {
+	inline int calc_adjusted_max_block_lines(NodeBlock& block) const {
 		int block_size = block.statements.size();
-//		return MAX_BLOCK_LINES - (block_size/MAX_BLOCK_LINES*3)-3;
-		return MAX_BLOCK_LINES - (block_size/MAX_BLOCK_LINES*4)-3;
+		return max_block_lines - (block_size/max_block_lines*3)-3;
+//		return MAX_BLOCK_LINES - (block_size/MAX_BLOCK_LINES*4)-3;
 	}
 
 	std::unique_ptr<NodeBlock> get_block_of_if_stmts(std::vector<std::unique_ptr<NodeBlock>>& blocks) {
@@ -98,7 +99,9 @@ private:
 	}
 
 public:
-	explicit ASTKSPSyntaxCheck(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {};
+	explicit ASTKSPSyntaxCheck(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {
+		max_block_lines = MAX_BLOCK_LINES;
+	};
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);
@@ -120,6 +123,7 @@ public:
 		node.flatten();
 		if(check_line_count(&node, node.statements.size())) {
 			auto blocks = split_blocks(node);
+			max_block_lines = MAX_BLOCK_LINES;
 			return node.replace_with(get_block_of_if_stmts(blocks));
 		}
 		return &node;
@@ -153,6 +157,21 @@ public:
 		node.params->accept(*this);
 		return &node;
 	}
+
+	NodeAST* visit(NodeIf& node) override {
+//		max_block_lines =-1 ;
+		node.condition->accept(*this);
+		node.if_body->accept(*this);
+		node.else_body->accept(*this);
+		return &node;
+	};
+
+	NodeAST* visit(NodeWhile& node) override {
+//		max_block_lines =-1;
+		node.condition->accept(*this);
+		node.body->accept(*this);
+		return &node;
+	};
 
 
 };
