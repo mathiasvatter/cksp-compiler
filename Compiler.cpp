@@ -191,6 +191,7 @@ void Compiler::compile() {
 
 	ASTKSPSyntaxCheck syntax_check(&m_definition_provider);
 	ast->accept(syntax_check);
+	syntax_check.fix_memory_exhausted_error(*ast);
 
 	ASTGenerator generator;
 	ast->accept(generator);
