@@ -21,6 +21,7 @@ public:
 		return m_tokens;
 	}
 
+protected:
 	NodeAST * visit(NodeArrayRef& node) override {
 		if(node.index) {
 			node.index->accept(*this);
