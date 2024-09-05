@@ -154,7 +154,7 @@ public:
 		auto it = m_last_reference.find(get_hash_value(*node));
 		if(it != m_last_reference.end()) {
 			// check if reference is also somewhere on the right side of the assignment
-			if(it->second->is_l_value() and !it->second->is_r_value()) {
+			if(it->second->is_l_value() and !node->is_r_value()) {
 				auto assignment = it->second->parent;
 				assignment->replace_with(std::make_unique<NodeDeadCode>(assignment->tok));
 				m_last_reference.erase(it);

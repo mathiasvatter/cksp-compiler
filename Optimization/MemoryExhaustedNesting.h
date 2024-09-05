@@ -67,7 +67,7 @@ public:
 			block_points += get_points(stmt->get_bison_tokens());
 			if(check_line_count(&node, block_points)) {
 				idx_ranges.emplace_back(idx_ranges.back().second+1, i-1);
-				block_points = get_points_per_stmt(*stmt->statement);
+				block_points = get_points(stmt->get_bison_tokens());
 			}
 		}
 		// add last range if not already added
