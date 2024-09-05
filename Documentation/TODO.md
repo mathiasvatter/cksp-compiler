@@ -9,3 +9,4 @@
 - [ ] check functionality of struct declaration and usage of methods more thoroughly
 - [ ] implement initializer list so that unnamed arrays can be passed to functions (implement as throwaway variable)
 - [ ] add removal of throwaway variables to dead code elimination pass
+- [ ] add *.txt to valid file types
