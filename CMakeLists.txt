@@ -170,4 +170,6 @@ add_executable(cksp main.cpp
         misc/HashFunctions.h
         Optimization/ConstantPromotion.h
         Optimization/VarExistsValidator.h
+        Optimization/MemoryExhaustedNesting.h
+        Optimization/TokenCounter.h
 )

@@ -15,6 +15,7 @@
 #include "../../Lowering/LoweringFunctionDef.h"
 #include "../../Optimization/ConstExprValidator.h"
 #include "../../Optimization/VarExistsValidator.h"
+#include "../../Optimization/TokenCounter.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -85,6 +86,11 @@ NodeAST *NodeAST::desugar(NodeProgram *program) {
 bool NodeAST::is_constant() {
 	static ConstExprValidator const_validator;
 	return const_validator.is_constant(*this);
+}
+
+int NodeAST::get_bison_tokens() {
+	static TokenCounter token_counter;
+	return token_counter.get_tokens(*this);
 }
 
 // ************* NodeDataStructure ***************
@@ -257,7 +263,7 @@ bool NodeReference::is_r_value() {
 	if(this->parent->get_node_type() == NodeType::SingleAssignment) {
 		auto assignment = static_cast<NodeSingleAssignment*>(this->parent);
 		static VarExistsValidator var_exists_validator;
-		return var_exists_validator.var_exists(*assignment, name);
+		return var_exists_validator.var_exists(*assignment->r_value, name);
 	}
 	return false;
 }
