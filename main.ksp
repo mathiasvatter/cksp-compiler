@@ -38,25 +38,9 @@
 
 // end struct
 
-function update.strip.noAutomation(btn_name,UI_array,value_array,control_array,animation_label, emitter)
-	for i := 0 to UI_array.SIZE_D2-1
-		if UI_array[emitter,i] # get_ui_id(btn_name)
-			UI_array[emitter,i] -> value := 0
-		else 
-			UI_array[emitter,i] -> value := 1
-		end if
-		value_array[emitter,i] := UI_array[emitter,i] -> value
-	end for
-	
-	bigknob_active[2]:= 1
-	bigknob_active[1]:= 3000000
-
-	control_array[emitter,3] := control_array[emitter,get_active_idx(value_array, emitter)]
-	animation_label -> picture_state := control_array[emitter,get_active_idx(value_array, emitter)]
-end function
-
 on init	
 	declare ui_button btn_1, ui_button btn_2
+
 	// btn_1 := 1
 	// do_sth(3)
 	// do_sth(2)

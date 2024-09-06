@@ -55,6 +55,7 @@ struct NodeAST {
 	void debug_print();
 	virtual std::unique_ptr<struct NodeAccessChain> to_method_chain() {return nullptr;}
 	bool is_constant();
+	int get_bison_tokens();
 };
 
 template<typename T>
