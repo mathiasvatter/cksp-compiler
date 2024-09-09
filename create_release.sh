@@ -58,8 +58,8 @@ gh release create "$TAG" \
   --repo "$REPO" \
   --title "$RELEASE_NAME" \
   --notes "$BODY" \
-  --draft \
   "$ASSETS_PATH"
+#  --draft \
 
 # Switch back to the original branch
 git checkout "$CURRENT_BRANCH"
