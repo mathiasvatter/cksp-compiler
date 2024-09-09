@@ -11,7 +11,6 @@
 #include "AST/ASTVisitor/ASTFunctionInlining.h"
 #include "AST/ASTVisitor/ASTRelinkGlobalScope.h"
 #include "AST/ASTVisitor/ASTKSPSyntaxCheck.h"
-#include "Optimization/ConstantPromotion.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
