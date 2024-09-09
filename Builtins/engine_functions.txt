@@ -316,3 +316,4 @@ set_nks_nav_par(group_idx: int,index: int,param_id: int)
 get_nks_nav_par(group_idx: int, index: int): int
 set_nks_nav_name(group_idx: int,index: int, name: string)
 get_nks_nav_name(group_idx: int, index: int): string
+reset_nks_nav()
