@@ -13,7 +13,7 @@
 ImportProcessor::ImportProcessor(std::vector<Token> tokens, std::string current_file, DefinitionProvider* definition_provider)
         : Processor(std::move(tokens)), m_def_provider(definition_provider), m_current_file(std::move(current_file)) {
     m_pos = 0;
-    m_curr_token = m_tokens.at(0).type;
+	m_curr_token_type = m_tokens.at(0).type;
 }
 
 Result<SuccessTag> ImportProcessor::process_imports() {

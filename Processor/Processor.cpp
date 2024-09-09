@@ -7,7 +7,7 @@
 
 Processor::Processor(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {
 	if(!m_tokens.empty())
-		m_curr_token = m_tokens.at(0).type;
+		m_curr_token_type = m_tokens.at(0).type;
 }
 
 Token Processor::peek(const std::vector<Token> &tok, int ahead) {
@@ -15,8 +15,9 @@ Token Processor::peek(const std::vector<Token> &tok, int ahead) {
 		auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
 		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "end token", tok.at(m_pos).val, tok.at(m_pos).file).exit();
 	}
-	m_curr_token = tok.at(m_pos).type;
-	m_curr_token_value = tok.at(m_pos).val;
+	m_curr_token = tok.at(m_pos);
+	m_curr_token_type = m_curr_token.type;
+	m_curr_token_value = m_curr_token.val;
 	return tok.at(m_pos+ahead);
 }
 
@@ -29,8 +30,9 @@ Token Processor::consume(const std::vector<Token> &tok) {
 		auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
 		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "end token", tok.at(m_pos).val, tok.at(m_pos).file).exit();
 	}
-	m_curr_token = tok.at(m_pos + 1).type;
-	m_curr_token_value = tok.at(m_pos+1).val;
+	m_curr_token = tok.at(m_pos+1);
+	m_curr_token_type = m_curr_token.type;
+	m_curr_token_value = m_curr_token.val;
 	return tok.at(m_pos++);
 }
 
@@ -110,4 +112,10 @@ Result<Type*> Processor::parse_type_annotation(Type* ty) {
 		if(ty) type = ty;
 	}
 	return Result<Type*>(type);
+}
+
+void Processor::_skip_linebreaks() {
+	while(peek().type == token::LINEBRK){
+		consume();
+	}
 }

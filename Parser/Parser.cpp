@@ -16,13 +16,6 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse() {
 	return parse_program();
 }
 
-void Parser::_skip_linebreaks() {
-    while(peek().type == token::LINEBRK){
-        consume();
-    }
-}
-
-
 std::string Parser::sanitize_binary(const std::string& input) {
     if (input.empty()) {
         return input;

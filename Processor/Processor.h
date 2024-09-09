@@ -24,8 +24,9 @@ public:
 protected:
 	size_t m_pos = 0;
 	std::vector<Token> m_tokens{};
-	token m_curr_token = token::INVALID;
+	token m_curr_token_type = token::INVALID;
 	std::string m_curr_token_value;
+	Token m_curr_token;
 
 
 	Token peek(const std::vector<Token>& tok, int ahead = 0);
@@ -41,6 +42,7 @@ protected:
 
 	Result<Type*> parse_type_annotation(Type* ty = nullptr);
 
+	void _skip_linebreaks();
 
 };
 
