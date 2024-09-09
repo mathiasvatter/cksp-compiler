@@ -1,5 +1,18 @@
 #!/bin/bash
 
+# Save current branch
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# Überprüfe auf uncommited Changes
+if git diff-index --quiet HEAD --; then
+    # Keine Änderungen, wechsel zu Master-Branch
+    git checkout main
+else
+    # Es gibt uncommited Änderungen
+    echo "Error: There are uncommitted changes. Please commit or stash them before running this script." >&2
+    exit 1
+fi
+
 BUILD_DIR="cmake-build-release"
 
 # Check if cksp executable exists
@@ -24,7 +37,14 @@ RELEASE_DIR="${RELEASES_DIR}/${VERSION_DIR}"
 REPO="mathiasvatter/ksp-compiler"
 TAG="v${VERSION}"
 RELEASE_NAME=$TAG
-BODY="$("$BUILD_DIR/cksp" --help)"
+# Reading the changelog content
+CHANGELOG_PATH="CHANGELOG.md"
+if [ -f "$CHANGELOG_PATH" ]; then
+    BODY=$(<"$CHANGELOG_PATH")
+else
+    echo "Error: CHANGELOG.md file not found." >&2
+    exit 1
+fi
 
 # Ensure the assets path is correct
 ASSETS_PATH="${RELEASE_DIR}.zip"
@@ -40,3 +60,6 @@ gh release create "$TAG" \
   --notes "$BODY" \
   --draft \
   "$ASSETS_PATH"
+
+# Switch back to the original branch
+git checkout "$CURRENT_BRANCH"
