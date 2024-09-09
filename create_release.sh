@@ -6,7 +6,7 @@ CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 # Überprüfe auf uncommited Changes
 if git diff-index --quiet HEAD --; then
     # Keine Änderungen, wechsel zu Master-Branch
-    git checkout main
+    git checkout master
 else
     # Es gibt uncommited Änderungen
     echo "Error: There are uncommitted changes. Please commit or stash them before running this script." >&2
@@ -34,6 +34,7 @@ VERSION_DIR="cksp_v${VERSION}_release"
 RELEASE_DIR="${RELEASES_DIR}/${VERSION_DIR}"
 
 # Variables
+PUBLIC_REPO="mathiasvatter/cksp-compiler-issues"
 REPO="mathiasvatter/ksp-compiler"
 TAG="v${VERSION}"
 RELEASE_NAME=$TAG
@@ -58,8 +59,8 @@ gh release create "$TAG" \
   --repo "$REPO" \
   --title "$RELEASE_NAME" \
   --notes "$BODY" \
-  --draft \
   "$ASSETS_PATH"
+#  --draft \
 
 # Switch back to the original branch
 git checkout "$CURRENT_BRANCH"
