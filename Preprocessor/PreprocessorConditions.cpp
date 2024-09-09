@@ -7,7 +7,7 @@
 PreprocessorConditions::PreprocessorConditions(std::vector<Token> tokens) :
         Processor(std::move(tokens)) {
     m_pos = 0;
-    m_curr_token = m_tokens.at(0).type;
+	m_curr_token_type = m_tokens.at(0).type;
 }
 
 Result<SuccessTag> PreprocessorConditions::process_conditions() {

@@ -6,7 +6,7 @@
 
 PreprocessorParser::PreprocessorParser(std::vector<Token> tokens) : Processor(std::move(tokens)) {
     m_pos = 0;
-    m_curr_token = m_tokens.at(0).type;
+	m_curr_token_type = m_tokens.at(0).type;
 }
 
 Result<std::unique_ptr<PreNodeProgram>> PreprocessorParser::parse_program(PreNodeAST *parent) {
@@ -275,8 +275,11 @@ Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *
                 parenth_depth--;
             } else if (peek().type == token::END_TOKEN) {
                 return Result<std::unique_ptr<PreNodeList>>(CompileError(ErrorType::PreprocessorError,
-            "Unexpected end of file. Missing closing parenthesis.",peek().line, ")", peek().val,peek().file));
-            }
+            "Unexpected end of file. Missing closing parenthesis.",")", peek()));
+            } else if (peek().type == token::LINEBRK) {
+				return Result<std::unique_ptr<PreNodeList>>(CompileError(ErrorType::SyntaxError,
+				 "Unexpected linebreak. Missing closing parenthesis.",")", peek()));
+			}
             if (peek().type == token::COMMA && parenth_depth == 1) {
                 node_list->params.push_back(std::move(node_chunk));
                 node_chunk = std::make_unique<PreNodeChunk>(std::move(std::vector<std::unique_ptr<PreNodeAST>>{}), node_list.get());
@@ -518,7 +521,9 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
         return Result<std::unique_ptr<PreNodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
     "Missing necessary linebreak after <iterate_macro> statement.",peek().line,"linebreak",peek().val, peek().file));
     }
+
     consume(); // consume linebreak
+	_skip_linebreaks();
     node_iterate_macro->macro_call = std::move(node_statement.unwrap());
     node_iterate_macro->iterator_start = std::move(node_iterator_start);
     node_iterate_macro->iterator_end = std::move(node_iterator_end);

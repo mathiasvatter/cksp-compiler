@@ -79,7 +79,6 @@ public:
 
 protected:
 
-	void _skip_linebreaks();
 
     static std::optional<Token> get_persistent_keyword(const Token& tok);
     static std::string sanitize_binary(const std::string& input);
