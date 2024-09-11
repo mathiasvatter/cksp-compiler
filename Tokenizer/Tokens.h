@@ -248,3 +248,4 @@ inline static std::unordered_map<token, std::string> GENERATE_ALL_OPERATORS = []
 	ops.insert(GENERATE_STRING_OPERATOR.begin(), GENERATE_STRING_OPERATOR.end());
 	return ops;
 }();
+
