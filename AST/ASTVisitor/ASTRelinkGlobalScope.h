@@ -68,9 +68,6 @@ public:
 	}
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {
-		if(node.function->name == "eq.curve0") {
-
-		}
 		node.function->accept(*this);
 		if(node.get_definition(m_program)) {
 			if(node.kind != NodeFunctionCall::Kind::UserDefined) return &node;
