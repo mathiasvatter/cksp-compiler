@@ -130,7 +130,7 @@ public:
 		if(!node.definition->visited)
 			node.definition->accept(*this);
 
-		std::unique_ptr<NodeFunctionDefinition> node_func_def = nullptr;
+		std::unique_ptr<NodeBlock> node_func_body = nullptr;
 		if(node.is_call) {
 			m_function_calls.push_back(&node);
 			if(!node.definition->visited) {
@@ -142,9 +142,9 @@ public:
 			// kill definition of all calls, not only the first one
 			node.definition = nullptr;
 		} else {
-			node_func_def = clone_as<NodeFunctionDefinition>(node.definition);
-			m_substitution_stack.push(get_substitution_map(node_func_def->header.get(), node.function.get()));
-			node_func_def->body->accept(*this);
+			node_func_body = clone_as<NodeBlock>(node.definition->body.get());
+			m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function.get()));
+			node_func_body->accept(*this);
 			m_substitution_stack.pop();
 		}
 		m_program->function_call_stack.pop();
@@ -152,7 +152,7 @@ public:
 		if(node.is_call) {
 			return &node;
 		} else {
-			return node.replace_with(std::move(node_func_def->body));
+			return node.replace_with(std::move(node_func_body));
 		}
 	}
 

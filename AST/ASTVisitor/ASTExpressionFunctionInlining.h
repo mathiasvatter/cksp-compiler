@@ -31,7 +31,6 @@ public:
 			callback->accept(*this);
 		}
 		node.reset_function_visited_flag();
-
 		/// vector to house only the definitions that are actually used in the program
 		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
 		for(auto & func_def : node.function_definitions) {
@@ -83,15 +82,14 @@ public:
 
 				m_program->function_call_stack.push(node.definition);
 
-				auto node_func_def = clone_as<NodeFunctionDefinition>(node.definition);
-				m_substitution_stack.push(get_substitution_map(node_func_def->header.get(), node.function.get()));
-
-				node_func_def->body->accept(*this);
+				auto node_func_body = clone_as<NodeBlock>(node.definition->body.get());
+				m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function.get()));
+				node_func_body->accept(*this);
 
 				m_substitution_stack.pop();
 				m_program->function_call_stack.pop();
-
-				return node.replace_with(get_expression_func_return(node_func_def.get()));
+//				return node.replace_with(get_expression_func_return(node_func_body.get()));
+				return node.replace_with(get_expression_return(node_func_body.get()));
 			} else {
 				node.definition->is_used = true;
 			}
@@ -119,6 +117,18 @@ public:
 			return std::move(ret->return_variables[0]);
 		}
 		auto error = CompileError(ErrorType::InternalError, "", "", def->tok);
+		error.m_message = "Function is not a return-only function";
+		error.exit();
+		return nullptr;
+	}
+
+	static inline std::unique_ptr<NodeAST> get_expression_return(NodeBlock* body) {
+		auto stmt = body->statements[0]->statement.get();
+		if(stmt->get_node_type() == NodeType::Return) {
+			auto ret = static_cast<NodeReturn*>(stmt);
+			return std::move(ret->return_variables[0]);
+		}
+		auto error = CompileError(ErrorType::InternalError, "", "", body->tok);
 		error.m_message = "Function is not a return-only function";
 		error.exit();
 		return nullptr;
