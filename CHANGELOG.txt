@@ -1,4 +1,23 @@
 Merge branch 'development'
+Add updated x86 executable
+add arm executable
+Add better windows executable
+Fix error reporting in Import Processor
+add windows executable
+Update arm64 executable
+add new executable vor x86
+Merge remote-tracking branch 'origin/development' into development
+Speed up Function Inlining significantly
+Update arm executable
+Update submodule
+Merge branch 'master' into development
+Update create_release
+add wiki
+Update create_release
+Merge branch 'development'
+Add changelog and changelog script
+Add create_release.sh script
+Merge branch 'development'
 Update macos x86 executable
 Add missing nks command
 Merge branch 'development'
