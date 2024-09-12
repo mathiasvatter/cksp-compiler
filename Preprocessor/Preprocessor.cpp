@@ -20,18 +20,18 @@ void Preprocessor::process() {
 	PreprocessorConditions conditions(m_tokens);
 	result = conditions.process_conditions();
 	if(result.is_error()) {
-		result.get_error().print();
-		auto err_msg = "Preprocessor failed while processing conditions.";
-		CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",result.get_error().m_file_name).exit();
+		auto error = result.get_error();
+		error.m_message += " Preprocessor failed while processing conditions.";
+		error.exit();
 	}
 	m_tokens = std::move(conditions.get_token_vector());
 
     PreprocessorParser parser(m_tokens);
     auto result_parse = parser.parse_program(nullptr);
     if(result_parse.is_error()) {
-        result_parse.get_error().print();
-        auto err_msg = "Preprocessor parsing failed.";
-        CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",result_parse.get_error().m_file_name).exit();
+        auto error = result_parse.get_error();
+        error.m_message += " Preprocessor parsing failed.";
+        error.exit();
     }
     auto pre_ast = std::move(result_parse.unwrap());
     PreASTPragma pragma;
