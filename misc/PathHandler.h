@@ -14,6 +14,7 @@ public:
 
 private:
 	Token m_current_token;
+    CompileError m_error = CompileError(ErrorType::FileError, "Found incorrect path.", "valid path", m_current_token);
 	std::string m_current_file;
 public:
 
