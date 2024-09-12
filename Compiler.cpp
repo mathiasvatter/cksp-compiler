@@ -29,6 +29,7 @@ void Compiler::compile() {
 
 //	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
+    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 //	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
@@ -59,10 +60,9 @@ void Compiler::compile() {
 	ImportProcessor imports(tokens, input_filename, &m_definition_provider);
 	auto import_result = imports.process_imports();
 	if(import_result.is_error()) {
-		import_result.get_error().print();
-		auto err_msg = "Preprocessor failed while processing import statements.";
-		CompileError(ErrorType::PreprocessorError, err_msg, -1, "", "",input_filename).print();
-		exit(EXIT_FAILURE);
+		auto error = import_result.get_error();
+        error.m_message += " Preprocessor failed while processing import statements.";
+        error.exit();
 	}
 	tokens = std::move(imports.get_token_vector());
 

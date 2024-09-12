@@ -32,15 +32,19 @@ Result<SuccessTag> ImportProcessor::process_import_statements(std::vector<Token>
         if(peek(tokens).type == token::IMPORT) {
             auto import_stmt = parse_import(tokens);
             if (import_stmt.is_error())
-                Result<SuccessTag>(import_stmt.get_error());
-            else
-                evaluate_import(tokens, import_stmt.unwrap(), current_file);
+                return Result<SuccessTag>(import_stmt.get_error());
+            else {
+                auto import_success = evaluate_import(tokens, import_stmt.unwrap(), current_file);
+                if(import_success.is_error()) return Result<SuccessTag>(import_success.get_error());
+            }
         } else if (peek(tokens).type == token::KEYWORD and peek(tokens).val == "import_nckp") {
             auto import_nckp_stmt = parse_import_nckp(tokens);
             if(import_nckp_stmt.is_error())
-                Result<SuccessTag>(import_nckp_stmt.get_error());
-            else
-                evaluate_import_nckp(tokens, import_nckp_stmt.unwrap(), current_file);
+                return Result<SuccessTag>(import_nckp_stmt.get_error());
+            else {
+                auto import_success = evaluate_import_nckp(tokens, import_nckp_stmt.unwrap(), current_file);
+                if(import_success.is_error()) return Result<SuccessTag>(import_success.get_error());
+            }
         } else {
             consume(tokens);
         }
@@ -52,7 +56,7 @@ Result<SuccessTag> ImportProcessor::process_import_statements(std::vector<Token>
 
 Result<SuccessTag> ImportProcessor::evaluate_import(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file) {
     auto alias = import_stmt->alias;
-	PathHandler path_handler(peek(tokens), current_file);
+	PathHandler path_handler(import_stmt->tok, current_file);
 
     auto path = path_handler.resolve_import_path(import_stmt->filepath);
     if(path.is_error()) {
@@ -110,7 +114,8 @@ Result<std::unique_ptr<NodeImport>> ImportProcessor::parse_import_nckp(std::vect
         return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::PreprocessorError,
         "Not a filepath",peek(tokens).line,"path",peek(tokens).val, peek(tokens).file));
     }
-    std::string filepath = consume(tokens).val;
+    Token path = consume(tokens);
+    std::string filepath = path.val;
     // erase ""
     filepath.erase(0,1);
     filepath.pop_back();
@@ -124,7 +129,7 @@ Result<std::unique_ptr<NodeImport>> ImportProcessor::parse_import_nckp(std::vect
         "Incorrect import Syntax.",peek(tokens).line,"linebreak",peek(tokens).val, peek(tokens).file));
     consume(tokens); //consume linebreak
     remove_tokens(tokens, begin, m_pos);
-    auto return_value = std::make_unique<NodeImport>(filepath, "", get_tok(tokens));
+    auto return_value = std::make_unique<NodeImport>(filepath, "", path);
     return Result<std::unique_ptr<NodeImport>>(std::move(return_value));
 }
 
@@ -133,7 +138,8 @@ Result<std::unique_ptr<NodeImport>> ImportProcessor::parse_import(std::vector<To
     size_t begin = m_pos;
     consume(tokens);
     if(peek(tokens).type ==token::STRING) {
-        std::string filepath = consume(tokens).val;
+        Token path = consume(tokens);
+        std::string filepath = path.val;
         // erase ""
         filepath.erase(0,1);
         filepath.pop_back();
@@ -153,7 +159,7 @@ Result<std::unique_ptr<NodeImport>> ImportProcessor::parse_import(std::vector<To
     "Incorrect import Syntax.",peek(tokens).line,"linebreak",peek(tokens).val, peek(tokens).file));
         consume(tokens); //consume linebreak
         remove_tokens(tokens, begin, m_pos);
-        auto return_value = std::make_unique<NodeImport>(filepath, alias, get_tok(tokens));
+        auto return_value = std::make_unique<NodeImport>(filepath, alias, path);
         return Result<std::unique_ptr<NodeImport>>(std::move(return_value));
     } else {
         return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::FileError,
