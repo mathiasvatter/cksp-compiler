@@ -4,7 +4,6 @@
 SUBMODULE_DIR="cksp-compiler-issues"
 CHANGELOG_DIR="${SUBMODULE_DIR}/changelogs"
 BUILD_DIR="cmake-build-release"
-PUSH_SCRIPT="${SUBMODULE_DIR}/push_changelog.sh"
 PUBLIC_REPO="mathiasvatter/${SUBMODULE_DIR}"
 
 # Hole die aktuelle Version des Tags (z.B. v1.0.0)
@@ -33,20 +32,13 @@ if [ ! -f "$CHANGELOG_FILE" ]; then
     echo "Error: ${CHANGELOG_FILE} does not exist. Aborting."
     exit 1
 fi
-BODY=$(<"$CHANGELOG_PATH")
+BODY=$(<"$CHANGELOG_FILE")
 
-# Führt das push_changelog.sh Skript aus, wenn das Changelog existiert
-if [ -f "$PUSH_SCRIPT" ]; then
-    echo "Running ${PUSH_SCRIPT}..."
-    bash "$PUSH_SCRIPT"
-else
-    echo "Error: ${PUSH_SCRIPT} does not exist. Aborting."
-    exit 1
-fi
+# pushe womögliche veränderte Changelogs
+./scripts/push_changelog.sh
 
 # Wechsle ins Submodule-Verzeichnis
 pushd "$SUBMODULE_DIR" >/dev/null || exit 1
-
 # Lösche den Tag, wenn er bereits existiert
 if git rev-parse "$TAG" >/dev/null 2>&1; then
     echo "Tag '$TAG' exists. Deleting the tag..."
@@ -54,10 +46,19 @@ if git rev-parse "$TAG" >/dev/null 2>&1; then
     git push --delete origin "$TAG"
 fi
 
+# Überprüfen, ob ein Release auf GitHub mit demselben Namen existiert, und falls ja, löschen
+if gh release view "$TAG" --repo "$PUBLIC_REPO" >/dev/null 2>&1; then
+    echo "Release '$TAG' already exists on GitHub. Deleting the release..."
+    gh release delete "$TAG" --repo "$PUBLIC_REPO" --yes
+fi
+
 # Füge einen neuen Tag hinzu und pushe ihn
 echo "Creating and pushing new tag '$TAG'..."
 git tag "$TAG"
 git push origin "$TAG"
+
+# Zurück ins ursprüngliche Verzeichnis
+popd >/dev/null
 
 # Release auf GitHub erstellen
 echo "Creating a release for the current commit..."
@@ -68,7 +69,5 @@ gh release create "$TAG" \
   --notes "$BODY" \
   "$ASSETS_PATH"
 
-# Zurück ins ursprüngliche Verzeichnis
-popd >/dev/null
 
 echo "Release published and tagged."
