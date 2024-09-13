@@ -17,7 +17,20 @@ fi
 BUILD_DIR="cmake-build-release"
 
 # build and deploy executable
-$CMAKE_DIR -B $BUILD_DIR -DCMAKE_BUILD_TYPE=Release -S . && $CMAKE_DIR --build $BUILD_DIR -- -j 8
+# $CMAKE_DIR -B $BUILD_DIR -DCMAKE_BUILD_TYPE=Release -S . && $CMAKE_DIR --build $BUILD_DIR -- -j 8
+
+# Build and deploy executable
+$CMAKE_DIR -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release -S .
+if [ $? -ne 0 ]; then
+    echo "Error: CMake configuration failed." >&2
+    exit 1
+fi
+
+$CMAKE_DIR --build "$BUILD_DIR" -- -j 8
+if [ $? -ne 0 ]; then
+    echo "Error: Build failed." >&2
+    exit 1
+fi
 
 # check if cksp exists
 if [ ! -f "$BUILD_DIR/cksp" ]; then

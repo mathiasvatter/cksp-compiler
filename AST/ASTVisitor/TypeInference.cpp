@@ -391,7 +391,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 
 
 NodeAST * TypeInference::visit(NodeParamList& node) {
-	std::cout << __FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
+	std::cout << __FUNCTION__ << ", " << node.tok.line << std::endl;
     std::vector<Type*> types;
     for(const auto & param : node.params) {
         param->accept(*this);
