@@ -3,15 +3,15 @@
 # Save current branch
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-# Überprüfe auf uncommited Changes
-if git diff-index --quiet HEAD --; then
-    # Keine Änderungen, wechsel zu Master-Branch
-    git checkout master
-else
-    # Es gibt uncommited Änderungen
-    echo "Error: There are uncommitted changes. Please commit or stash them before running this script." >&2
-    exit 1
-fi
+# # Überprüfe auf uncommited Changes
+# if git diff-index --quiet HEAD --; then
+#     # Keine Änderungen, wechsel zu Master-Branch
+#     git checkout master
+# else
+#     # Es gibt uncommited Änderungen
+#     echo "Error: There are uncommitted changes. Please commit or stash them before running this script." >&2
+#     exit 1
+# fi
 
 BUILD_DIR="cmake-build-release"
 
@@ -34,7 +34,6 @@ VERSION_DIR="cksp_v${VERSION}_release"
 RELEASE_DIR="${RELEASES_DIR}/${VERSION_DIR}"
 
 # Variables
-PUBLIC_REPO="mathiasvatter/cksp-compiler-issues"
 REPO="mathiasvatter/ksp-compiler"
 TAG="v${VERSION}"
 RELEASE_NAME=$TAG
