@@ -38,6 +38,20 @@ PUBLIC_REPO="mathiasvatter/cksp-compiler-issues"
 REPO="mathiasvatter/ksp-compiler"
 TAG="v${VERSION}"
 RELEASE_NAME=$TAG
+
+# Überprüfen, ob der Tag bereits existiert, und falls ja, löschen
+if git rev-parse "$TAG" >/dev/null 2>&1; then
+    echo "Tag '$TAG' already exists. Deleting the tag..."
+    git tag -d "$TAG"    # Löscht den lokalen Tag
+    git push --delete origin "$TAG"   # Löscht den Tag aus dem Remote-Repository
+fi
+
+# Überprüfen, ob ein Release auf GitHub mit demselben Namen existiert, und falls ja, löschen
+if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+    echo "Release '$TAG' already exists on GitHub. Deleting the release..."
+    gh release delete "$TAG" --repo "$REPO" --yes
+fi
+
 # Reading the changelog content
 CHANGELOG_PATH="CHANGELOG.md"
 if [ -f "$CHANGELOG_PATH" ]; then
@@ -54,13 +68,12 @@ if [ ! -f "$ASSETS_PATH" ]; then
     exit 1
 fi
 
-# Create the release
+# Create the new release
 gh release create "$TAG" \
   --repo "$REPO" \
   --title "$RELEASE_NAME" \
   --notes "$BODY" \
   "$ASSETS_PATH"
-#  --draft \
 
 # Switch back to the original branch
 git checkout "$CURRENT_BRANCH"
