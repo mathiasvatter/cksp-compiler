@@ -34,7 +34,6 @@ VERSION_DIR="cksp_v${VERSION}_release"
 RELEASE_DIR="${RELEASES_DIR}/${VERSION_DIR}"
 
 # Variables
-PUBLIC_REPO="mathiasvatter/cksp-compiler-issues"
 REPO="mathiasvatter/ksp-compiler"
 TAG="v${VERSION}"
 RELEASE_NAME=$TAG

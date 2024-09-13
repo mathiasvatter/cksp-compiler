@@ -35,6 +35,7 @@ if [ ! -d "$RELEASES_DIR" ]; then
 	mkdir -p "$RELEASES_DIR"
 fi
 
+TAG="v${VERSION}"
 VERSION_DIR="cksp_v${VERSION}_release"
 RELEASE_DIR="${RELEASES_DIR}/${VERSION_DIR}"
 
@@ -62,3 +63,11 @@ zip -vr "${VERSION_DIR}.zip" "$VERSION_DIR" -x "*.DS_Store"
 cd -
 
 echo "Release files copied to $RELEASE_DIR"
+
+# Überprüfen, ob der Tag bereits existiert, und falls ja, löschen
+if git rev-parse "$TAG" >/dev/null 2>&1; then
+    echo "Tag '$TAG' already exists. Deleting the tag..."
+    git tag -d "$TAG"    # Löscht den lokalen Tag
+    git push --delete origin "$TAG"   # Löscht den Tag aus dem Remote-Repository
+fi
+./get_changelog.sh
