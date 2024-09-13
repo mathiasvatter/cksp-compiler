@@ -102,3 +102,16 @@ else
     echo "Usage: $0 [<tag1> <tag2>]" >&2
     exit 1
 fi
+
+pushd "$SUBMODULE_DIR" >/dev/null || exit 1
+PUSH_SCRIPT="${SUBMODULE_DIR}/push_changelog.sh"
+# Führt das push_changelog.sh Skript aus, wenn das Changelog existiert
+if [ -f "$PUSH_SCRIPT" ]; then
+    echo "Running ${PUSH_SCRIPT}..."
+    bash "$PUSH_SCRIPT"
+else
+    echo "Error: ${PUSH_SCRIPT} does not exist. Aborting."
+    exit 1
+fi
+# Zurück ins ursprüngliche Verzeichnis
+popd >/dev/null
