@@ -70,4 +70,5 @@ if git rev-parse "$TAG" >/dev/null 2>&1; then
     git tag -d "$TAG"    # Löscht den lokalen Tag
     git push --delete origin "$TAG"   # Löscht den Tag aus dem Remote-Repository
 fi
-./get_changelog.sh
+./scripts/get_changelog.sh
+./scripts/push_merge_release.sh
