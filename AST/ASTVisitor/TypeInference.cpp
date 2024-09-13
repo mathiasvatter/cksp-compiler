@@ -107,6 +107,7 @@ NodeAST * TypeInference::visit(NodeConst& node) {
 }
 
 NodeAST * TypeInference::visit(NodeVariableRef& node) {
+	std::cout << __FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	if(node.declaration) {
 		// manual replacement of node type if declaration is a pointer
 		// 	declare this_list := nil
@@ -129,6 +130,7 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 }
 
 NodeAST * TypeInference::visit(NodeVariable& node) {
+	std::cout << __FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// because of pointer node -> apply type annotations again
 	if(node.ty->get_type_kind() == TypeKind::Object) {
 		auto ptr = node.to_pointer();
@@ -148,6 +150,7 @@ NodeAST * TypeInference::visit(NodeVariable& node) {
 }
 
 NodeAST * TypeInference::visit(NodePointerRef& node) {
+	std::cout << __FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// replace declaration node with Pointer if it is Variable
 	if(node.declaration->get_node_type() == NodeType::Variable) {
 		auto node_var = static_cast<NodeVariable*>(node.declaration);
@@ -176,6 +179,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 }
 
 NodeAST * TypeInference::visit(NodePointer& node) {
+	std::cout << __FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::Nil;
 	}
@@ -184,6 +188,7 @@ NodeAST * TypeInference::visit(NodePointer& node) {
 }
 
 NodeAST * TypeInference::visit(NodeArray& node) {
+	std::cout << __FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// if array is unknown type -> set to array of unknown
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Unknown, 1);
@@ -197,6 +202,7 @@ NodeAST * TypeInference::visit(NodeArray& node) {
 }
 
 NodeAST * TypeInference::visit(NodeArrayRef& node) {
+	std::cout << __FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	if(node.index) node.index->accept(*this);
 //	if(node.declaration) node.declaration->accept(*this);
 	// if handed over without index -> as whole array structure type
@@ -221,6 +227,7 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 }
 
 NodeAST * TypeInference::visit(NodeNDArray& node) {
+	std::cout << __FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
     if(node.sizes) node.sizes->accept(*this);
     // if array is unknown type -> set to array of unknown
     if(node.ty == TypeRegistry::Unknown) {
@@ -231,6 +238,7 @@ NodeAST * TypeInference::visit(NodeNDArray& node) {
 }
 
 NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
+	std::cout << __FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	if(node.indexes) node.indexes->accept(*this);
 //	if(node.declaration) node.declaration->accept(*this);
     // if handed over without index -> as whole array structure type
@@ -263,6 +271,7 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 }
 
 NodeAST * TypeInference::visit(NodeList& node) {
+	std::cout << __FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// if list is unknown type -> set to list of unknown
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::add_composite_type(CompoundKind::List, TypeRegistry::Unknown, node.size);
@@ -280,6 +289,7 @@ NodeAST * TypeInference::visit(NodeList& node) {
 }
 
 NodeAST * TypeInference::visit(NodeListRef& node) {
+	std::cout << __FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	if(node.indexes) node.indexes->accept(*this);
     // if handed over without index -> as whole list structure type
     if(!node.indexes) {
@@ -308,6 +318,7 @@ NodeAST * TypeInference::visit(NodeStruct& node) {
 }
 
 NodeAST * TypeInference::visit(NodeAccessChain& node) {
+	std::cout << __FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// in case an array size constant has been mistakenly converted to an access chain
 	if(auto size_const = node.is_size_constant()) {
 		return node.replace_with(std::move(size_const));
@@ -380,6 +391,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 
 
 NodeAST * TypeInference::visit(NodeParamList& node) {
+	std::cout << __FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
     std::vector<Type*> types;
     for(const auto & param : node.params) {
         param->accept(*this);
@@ -502,9 +514,7 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
-	if(node.function->name == "update.strip.noAutomation") {
-
-	}
+	std::cout << __FUNCTION__ << ", " << node.function->name << ", " << node.tok.line << std::endl;
 
 	node.function->accept(*this);
 	node.get_definition(m_program);
