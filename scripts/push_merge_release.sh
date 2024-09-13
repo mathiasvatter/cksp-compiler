@@ -2,6 +2,9 @@
 
 # Speichere den aktuellen Branch
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+BUILD_DIR="cmake-build-release"
+# Execute cksp --version and extract the version number
+VERSION=$("$BUILD_DIR/cksp" --version | awk '{print $3}')
 
 # Überprüfe auf uncommitted changes
 if git diff-index --quiet HEAD --; then
@@ -9,7 +12,7 @@ if git diff-index --quiet HEAD --; then
 else
     # Füge alle Änderungen hinzu und committe sie mit der Nachricht "Update executables"
     git add .
-    git commit -m "Update executables"
+    git commit -m "Update executables for version $VERSION."
     echo "Changes committed with message: 'Update executables'."
 fi
 
