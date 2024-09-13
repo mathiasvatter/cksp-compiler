@@ -38,6 +38,8 @@ PUBLIC_REPO="mathiasvatter/cksp-compiler-issues"
 REPO="mathiasvatter/ksp-compiler"
 TAG="v${VERSION}"
 RELEASE_NAME=$TAG
+SUBMODULE_DIR="cksp-compiler-issues"
+CHANGELOG_DIR="${SUBMODULE_DIR}/changelogs"
 
 # Überprüfen, ob der Tag bereits existiert, und falls ja, löschen
 if git rev-parse "$TAG" >/dev/null 2>&1; then
@@ -53,7 +55,7 @@ if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
 fi
 
 # Reading the changelog content
-CHANGELOG_PATH="CHANGELOG.md"
+CHANGELOG_PATH="${CHANGELOG_DIR}/CHANGELOG_${TAG}.md"
 if [ -f "$CHANGELOG_PATH" ]; then
     BODY=$(<"$CHANGELOG_PATH")
 else
