@@ -104,7 +104,7 @@ else
 fi
 
 pushd "$SUBMODULE_DIR" >/dev/null || exit 1
-PUSH_SCRIPT="${SUBMODULE_DIR}/push_changelog.sh"
+PUSH_SCRIPT="push_changelog.sh"
 # Führt das push_changelog.sh Skript aus, wenn das Changelog existiert
 if [ -f "$PUSH_SCRIPT" ]; then
     echo "Running ${PUSH_SCRIPT}..."

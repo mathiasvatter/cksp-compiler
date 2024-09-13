@@ -4,7 +4,6 @@
 SUBMODULE_DIR="cksp-compiler-issues"
 CHANGELOG_DIR="${SUBMODULE_DIR}/changelogs"
 BUILD_DIR="cmake-build-release"
-PUSH_SCRIPT="${SUBMODULE_DIR}/push_changelog.sh"
 PUBLIC_REPO="mathiasvatter/${SUBMODULE_DIR}"
 
 # Hole die aktuelle Version des Tags (z.B. v1.0.0)
@@ -35,6 +34,10 @@ if [ ! -f "$CHANGELOG_FILE" ]; then
 fi
 BODY=$(<"$CHANGELOG_PATH")
 
+
+# Wechsle ins Submodule-Verzeichnis
+pushd "$SUBMODULE_DIR" >/dev/null || exit 1
+PUSH_SCRIPT="push_changelog.sh"
 # Führt das push_changelog.sh Skript aus, wenn das Changelog existiert
 if [ -f "$PUSH_SCRIPT" ]; then
     echo "Running ${PUSH_SCRIPT}..."
@@ -43,9 +46,6 @@ else
     echo "Error: ${PUSH_SCRIPT} does not exist. Aborting."
     exit 1
 fi
-
-# Wechsle ins Submodule-Verzeichnis
-pushd "$SUBMODULE_DIR" >/dev/null || exit 1
 
 # Lösche den Tag, wenn er bereits existiert
 if git rev-parse "$TAG" >/dev/null 2>&1; then
