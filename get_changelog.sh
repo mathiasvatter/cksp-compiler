@@ -28,6 +28,13 @@ check_submodule_branch() {
 VERSION=$("$BUILD_DIR/cksp" --version | awk '{print $3}')
 CURRENT_TAG="v${VERSION}"
 
+# Überprüfen, ob der Tag bereits existiert, und falls ja, löschen
+if git rev-parse "$TAG" >/dev/null 2>&1; then
+    echo "Tag '$TAG' already exists. Deleting the tag..."
+    git tag -d "$TAG"    # Löscht den lokalen Tag
+    git push --delete origin "$TAG"   # Löscht den Tag aus dem Remote-Repository
+fi
+
 # Funktion, um das Vorhandensein eines Tags zu überprüfen
 check_tag_exists() {
     if ! git rev-parse "$1" >/dev/null 2>&1; then
