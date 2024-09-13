@@ -13,6 +13,9 @@ CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 #     exit 1
 # fi
 
+# pushe womöglich veränderte Changelogs
+./scripts/push_changelog.sh
+
 BUILD_DIR="cmake-build-release"
 
 # Check if cksp executable exists
