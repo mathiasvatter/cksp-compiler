@@ -15,6 +15,7 @@ CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 # pushe womöglich veränderte Changelogs
 ./scripts/push_changelog.sh
+./scripts/push_merge_release.sh
 
 BUILD_DIR="cmake-build-release"
 
