@@ -41,108 +41,22 @@
 on init	
 	declare ui_button btn_1, ui_button btn_2
 
-	// btn_1 := 1
-	// do_sth(3)
-	// do_sth(2)
-	// declare const dufus := 0
-	// declare i := 0
-	// i := btn_1
-	// inc(i)
-	// i := 4
-	// declare anus := 0*3+0
-	// inc(anus)
-	// message(i, 3)
-	// i := i + 1
-	// message(i, 2)
-	// while(i < 10)
-	// 	i := i + 1
-	// 	message(i)
-	// end while
-	// if(i = 3)
-	// 	i := 5
-	// else 
-	// 	i := 6
-	// end if
-	// declare arr[] := (1,2,3,4,5,6,7,8,9,10)
-	// arr[0] := 1
-	// arr[1] := 1
-	// arr[2] := 1
-	// arr[3] := 1
-	// message(arr[0])
-	// message(arr)
-	// if(1=1 and arr[0] # 1)
-	// 	message("whileh")
-	// end if
-	const instrument
-		SUSTAIN, LEGATO
-	end const
-	declare ui_text_edit !txt_element_marked[4]
-	select btn_1
-		case instrument.SUSTAIN
-			message(234)
-		case instrument.LEGATO
-			// legato(interval, event_note)
-	end select
-
-	// if(i < 3 and i> 5)
-
-	// else
-	// 	message("sdflkj")
-	// end if
-
-	pgs_create_key(AUTO_SAVE, 1)
-	set_listener($NI_SIGNAL_TIMER_MS, 1000000)
-	declare $autoSave
 
 	declare ui_button btn_slot[5]
-	declare ui_button btn_prev_slot_group
-	set_button_properties(btn_prev_slot_group, "", "btn_left", 1, 1)
-	set_bounds(btn_prev_slot_group, btn_slot0 -> pos_x - 30, btn_slot0 -> pos_y + 3)
-	btn_prev_slot_group -> help := "Show the slots 1-5."
 	
 	declare array[btn_slot.SIZE], no_array := (0+2, 1, 2), 23
-	define NUM_FX_LOADABLE := 33
-	define NUM_EMITTER := 2
-	define NUM_FX_SLOTS := 5
-	declare read fx_num_slot[NUM_EMITTER,NUM_FX_SLOTS] := (NUM_FX_LOADABLE-1) // holds fx number of each slot
+	do_sth_with_btn(btn_slot)
 end on
 
-
-on listener
-	if ($NI_SIGNAL_TYPE = $NI_SIGNAL_TIMER_MS)
-		$autoSave := ($autoSave+1) mod (60000000/1000000)
-		if ($autoSave = 0)
-			pgs_set_key_val(AUTO_SAVE, 0, 1)
-		end if
-	end if
-end on
-
-on ui_control( btn_1 )
-	do_sth(1)
-end on
-
-on ui_control( btn_2 )
-	do_sth(4)
-	// wait(500)
-	do_sth_in_sth()
-	if(1=2)
-		declare a := 0
-	end if
-end on
-
-function do_sth(pipi : int)
-	declare text := "sdlkj"
-	message(text)
-	declare a, b, c, d := 0
-	inc(a)
-	do_sth_in_sth()
-	message(a, pipi)
+function do_sth_with_btn(ui_array: int[]) 
+	declare another_array[3, 2] := (1)
+	declare i
+	for i := 0 to ui_array.SIZE-1
+		declare ui_id := ui_array[i]	
+		message(ui_id, another_array[i, 0], another_array.SIZE_D2)
+	end for
 end function
 
-function do_sth_in_sth()
-	declare z := 1
-	message(z)
-end function
 
 
 // if threadsafe environment, do no lifting -> all params are promoted to global variables

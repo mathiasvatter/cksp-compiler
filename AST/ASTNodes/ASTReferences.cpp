@@ -47,25 +47,6 @@ std::unique_ptr<NodeAccessChain> NodeVariableRef::to_method_chain() {
 	return method_chain;
 }
 
-//bool NodeVariableRef::is_ndarray_constant() {
-//	if(declaration and declaration->get_node_type() == NodeType::NDArray) {
-//		auto ndarray= static_cast<NodeNDArray*>(declaration);
-//		static const std::regex pattern("^" + ndarray->name + R"(.SIZE_D(\d+)$)");
-//		std::smatch match;
-//		// Überprüfen, ob der String dem Muster entspricht
-//		if (std::regex_match(name, match, pattern)) {
-//			// Extrahiere die Zahl aus dem Match
-//			int number = std::stoi(match[1].str());
-//
-//			// Überprüfe, ob die Zahl innerhalb der Grenzen liegt
-//			return number >= 1 && number <= ndarray->dimensions;
-//		}
-//		return false;
-//	}
-//	return false;
-//}
-
-
 bool NodeVariableRef::is_array_constant() {
 	if (declaration && (declaration->get_node_type() == NodeType::Array || declaration->get_node_type() == NodeType::List)) {
 		auto list = static_cast<NodeList*>(declaration);
@@ -316,21 +297,58 @@ ASTLowering* NodeAccessChain::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
-std::unique_ptr<NodeVariableRef> NodeAccessChain::is_size_constant() {
-	auto base = static_cast<NodeReference*>(chain[0].get());
-	if(base->declaration->get_node_type() == NodeType::NDArray
-		|| base->declaration->get_node_type() == NodeType::Array || base->declaration->get_node_type() == NodeType::List) {
-		if(chain.size() == 2) {
-			auto node_var_ref = std::make_unique<NodeVariableRef>(
-				this->get_string(),
-				tok);
-			node_var_ref->data_type = DataType::Const;
-			node_var_ref->declaration = base->declaration;
-			if(node_var_ref->is_ndarray_constant() || node_var_ref->is_array_constant()) {
-				node_var_ref->declaration = nullptr;
-				return node_var_ref;
+bool NodeAccessChain::is_size_constant() {
+	return is_nd_array_size() || is_array_size() || is_list_size();
+}
+
+bool NodeAccessChain::is_nd_array_size() {
+	if(chain.size() != 2) return false;
+	if (declaration && declaration->get_node_type() == NodeType::NDArray) {
+		auto ndarray = static_cast<NodeNDArray*>(declaration);
+		const std::string& prefix = "SIZE_D";
+		if (chain[1]->get_string().compare(0, prefix.length(), prefix) == 0) {
+			std::string number_str = chain[1]->get_string().substr(prefix.length());
+			try {
+				int number = std::stoi(number_str);
+				return number >= 1 && number <= ndarray->dimensions;
+			} catch (const std::invalid_argument&) {
+				return false;
 			}
 		}
 	}
-	return nullptr;
+	return false;
 }
+
+bool NodeAccessChain::is_array_size() {
+	if(chain.size() != 2) return false;
+	if (declaration && (declaration->get_node_type() == NodeType::Array)) {
+		const std::string& prefix = "SIZE";
+		if (chain[1]->get_string().compare(0, prefix.length(), prefix) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool NodeAccessChain::is_list_size() {
+	if(chain.size() != 2) return false;
+	if (declaration && (declaration->get_node_type() == NodeType::List)) {
+		const std::string& prefix = "SIZE";
+		if (chain[1]->get_string().compare(0, prefix.length(), prefix) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+std::unique_ptr<NodeVariableRef> NodeAccessChain::to_size_constant() {
+	auto node_var_ref = std::make_unique<NodeVariableRef>(
+		this->get_string(),
+		tok);
+	node_var_ref->ty = TypeRegistry::Integer;
+	node_var_ref->data_type = DataType::Const;
+	return node_var_ref;
+}
+
+
+

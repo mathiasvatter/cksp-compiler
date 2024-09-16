@@ -64,6 +64,14 @@ public:
 	inline NodeAST* visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
 		return &node;
+	}
+
+	// NDArray references in access chain bases shall not be lowered
+	inline NodeAST* visit(NodeAccessChain& node) override {
+		for(auto & method : node.chain) {
+			method->accept(*this);
+		}
+		return &node;
 	};
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {

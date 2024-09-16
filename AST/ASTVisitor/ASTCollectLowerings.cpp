@@ -149,6 +149,7 @@ NodeAST * ASTCollectLowerings::visit(NodePointerRef& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeAccessChain& node) {
+	if(node.is_size_constant()) return &node;
 	node.lower(m_program);
 	node.chain.back()->accept(*this);
 	return node.replace_with(std::move(node.chain.back()));

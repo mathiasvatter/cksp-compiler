@@ -67,6 +67,11 @@ public:
 		return &node;
 	}
 
+	inline NodeAST* visit(NodeAccessChain& node) override {
+		auto size_const = node.to_size_constant();
+		return node.replace_with(std::move(size_const));
+	}
+
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		if(node.get_definition(m_program)) {

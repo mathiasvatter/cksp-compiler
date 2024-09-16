@@ -31,7 +31,7 @@ void Compiler::compile() {
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 //	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+//    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -171,6 +171,7 @@ void Compiler::compile() {
 	ASTFunctionInlining func_inlining(&m_definition_provider);
 	ast->accept(func_inlining);
 //	ast->debug_print();
+	ast->debug_print();
 
     compile_time.stop("Function Inlining");
 	compile_time.start("Variable Checking 2");

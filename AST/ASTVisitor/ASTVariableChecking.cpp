@@ -109,9 +109,20 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
+
+//	// convert into variable ref if it is size constant and there is a declaration
+//	if(node.is_nd_array_size() || node.is_array_size() || node.is_list_size()) {
+//		auto size_const = node.to_size_constant();
+//		// if there is an existing variable declaration
+//		if(m_def_provider->get_declaration(size_const.get())) {
+//			size_const->accept(*this);
+//			return node.replace_with(std::move(size_const));
+//		}
+//	}
 	node.chain[0]->accept(*this);
 	node.flatten();
 	return &node;
+
 }
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
@@ -168,14 +179,14 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			node_declaration = access_chain->declaration;
 			node.declaration = node_declaration;
-			if(node.is_list_sizes()) {
-				// if it is a list constant, do not add to references
-				node.declaration = nullptr;
-				return &node;
-			} else {
+//			if(node.is_list_sizes()) {
+//				// if it is a list constant, do not add to references
+//				node.declaration = nullptr;
+//				return &node;
+//			} else {
 				access_chain->accept(*this);
 				return node.replace_with(std::move(access_chain));
-			}
+//			}
 		}
         if(!fail) return &node;
 	    DefinitionProvider::throw_declaration_error(node).exit();
@@ -231,15 +242,15 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 			// check if its maybe a nd_Array size constant like nda.SIZE_D1
 			node_declaration = access_chain->declaration;
 			node.declaration = node_declaration;
-			if(node.is_ndarray_constant() || node.is_array_constant()) {
-				// if it is a constant, do not add to references
-				node.declaration = nullptr;
-				node.data_type = DataType::Const;
-				return &node;
-			} else {
+//			if(node.is_ndarray_constant() || node.is_array_constant()) {
+//				// if it is a constant, do not add to references
+//				node.declaration = nullptr;
+//				node.data_type = DataType::Const;
+//				return &node;
+//			} else {
 				access_chain->accept(*this);
 				return node.replace_with(std::move(access_chain));
-			}
+//			}
 		} else {
 			// if data_type is const -> do not throw error since constant variable ref
 			if(node.data_type == DataType::Const) return &node;
