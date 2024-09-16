@@ -142,6 +142,7 @@ public:
 		return m_references_per_data_structure[data_struct];
 	}
 	bool set_references(NodeDataStructure* data_struct, std::unordered_set<NodeReference*> references) {
+		if(!data_struct) return false;
 		m_references_per_data_structure[data_struct] = std::move(references);
 		return true;
 	}
@@ -151,10 +152,12 @@ public:
 		return true;
 	}
 	bool add_reference(NodeDataStructure* data_struct, NodeReference* reference) {
+		if(!data_struct) return false;
 		m_references_per_data_structure[data_struct].insert(reference);
 		return true;
 	}
 	bool remove_reference(NodeDataStructure* data_struct, NodeReference* reference) {
+		if(!data_struct) return false;
 		m_references_per_data_structure[data_struct].erase(reference);
 		return true;
 	}

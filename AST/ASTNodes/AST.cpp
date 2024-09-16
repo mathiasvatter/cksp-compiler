@@ -174,7 +174,14 @@ NodeDataStructure* NodeDataStructure::lower_type() {
 NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDataStructure> new_node,
 																 DefinitionProvider *def_provider) {
 	const auto references = def_provider->get_references(this);
-	auto new_data_struct = static_cast<NodeDataStructure*>(this->replace_with(std::move(new_node)));
+	def_provider->remove_references(this);
+
+	if (!parent) {
+		CompileError(ErrorType::InternalError, "Parent of data structure is null", "", tok).exit();
+	}
+	new_node->parent = parent;
+	auto new_data_struct = static_cast<NodeDataStructure*>(parent->replace_child(this, std::move(new_node)));
+
 	def_provider->set_references(new_data_struct, references);
 	for(auto & ref : references) {
 		ref->declaration = new_data_struct;
@@ -272,7 +279,13 @@ NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> n
 												struct DefinitionProvider *def_provider) {
 	new_node->match_data_structure(this->declaration);
 	def_provider->remove_reference(new_node->declaration, this);
-	auto new_ref = static_cast<NodeReference*>(this->replace_with(std::move(new_node)));
+
+	if (!parent) {
+		CompileError(ErrorType::InternalError, "Parent of reference is null", "", tok).exit();
+	}
+	new_node->parent = parent;
+	auto new_ref = static_cast<NodeReference*>(parent->replace_child(this, std::move(new_node)));
+
 	def_provider->add_reference(new_ref->declaration, new_ref);
 	return new_ref;
 }
