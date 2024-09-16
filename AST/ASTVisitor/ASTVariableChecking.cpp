@@ -110,15 +110,15 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 
 NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
 
-//	// convert into variable ref if it is size constant and there is a declaration
-//	if(node.is_nd_array_size() || node.is_array_size() || node.is_list_size()) {
-//		auto size_const = node.to_size_constant();
-//		// if there is an existing variable declaration
-//		if(m_def_provider->get_declaration(size_const.get())) {
-//			size_const->accept(*this);
-//			return node.replace_with(std::move(size_const));
-//		}
-//	}
+	// convert into variable ref if it is size constant and there is a declaration
+	if(node.is_nd_array_size() || node.is_array_size() || node.is_list_size()) {
+		auto size_const = node.to_size_constant();
+		// if there is an existing variable declaration
+		if(m_def_provider->get_declaration(size_const.get())) {
+			size_const->accept(*this);
+			return node.replace_with(std::move(size_const));
+		}
+	}
 	node.chain[0]->accept(*this);
 	node.flatten();
 	return &node;

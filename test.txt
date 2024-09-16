@@ -1,8 +1,8 @@
-{ Compiled with cksp version 0.0.6 on Mon Sep 16 14:33:39 2024 }
+{ Compiled with cksp version 0.0.6 on Mon Sep 16 18:18:43 2024 }
 on init
   declare $loc_1
   declare $loc_2
-  declare %loc_0[3]
+  declare %loc_0[6]
   declare $loc_3
   declare ui_button $btn_1 
   declare ui_button $btn_2 
@@ -17,13 +17,15 @@ on init
     %btn_slot[$loc_3] := get_ui_id($btn_slot0) + $loc_3
     inc($loc_3)
   end while
-  %loc_0[0] := 1
-  %loc_0[1] := 2
-  %loc_0[2] := 3
+  $loc_1 := 0
+  while($loc_1 < num_elements(%loc_0)) 
+    %loc_0[$loc_1] := 1
+    inc($loc_1)
+  end while
   $loc_1 := 0
   while($loc_1 <= 4) 
     $loc_2 := %btn_slot[$loc_1]
-    message($loc_2 & ", " & %loc_0[$loc_1] & ", " & 3)
+    message($loc_2 & ", " & %loc_0[($loc_1 * 2) + 0] & ", " & $_another_array__SIZE_D2)
     inc($loc_1)
   end while
 end on

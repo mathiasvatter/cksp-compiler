@@ -23,8 +23,8 @@ on init
 		btn_slot[loc_3] := get_ui_id(btn_slot0) + loc_3
 		inc(loc_3)
 	end while
-	declare const array.SIZE : int := btn_slot{int[]}.SIZE{Unknown}
-	declare array[btn_slot{int[]}.SIZE{Unknown}] : int[] := (0 + 2, 1, 2)
+	declare const array.SIZE : int := btn_slot.SIZE
+	declare array[btn_slot.SIZE] : int[] := (0 + 2, 1, 2)
 	declare no_array : int := 23
 	loc_1 := 0
 		while(loc_1 < num_elements(loc_0)) 
@@ -36,7 +36,7 @@ on init
 	loc_1 := 0
 	while(loc_1 <= (btn_slot{int[]}.SIZE{Unknown} - 1)) 
 		loc_2 := btn_slot[loc_1]
-		message(loc_2 & ", " & loc_0[(loc_1 * 2) + 0] & ", " & loc_0{int[]}.SIZE_D2{Unknown})
+		message(loc_2 & ", " & loc_0[(loc_1 * 2) + 0] & ", " & _another_array.SIZE_D2)
 		inc(loc_1)
 	end while
 end on
