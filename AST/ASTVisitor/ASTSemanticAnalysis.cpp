@@ -171,6 +171,13 @@ NodeAST * ASTSemanticAnalysis::visit(NodePointerRef &node) {
 	return replace_incorrectly_detected_data_struct(new_node->declaration);
 }
 
+NodeAST* ASTSemanticAnalysis::visit(NodeAccessChain& node) {
+	for(auto & method : node.chain) {
+		method->accept(*this);
+	}
+	return &node;
+}
+
 NodeAST * ASTSemanticAnalysis::visit(NodeList& node) {
 	for(auto &params : node.body) {
 		params->accept(*this);

@@ -241,9 +241,12 @@ struct NodeAccessChain : NodeReference {
 		chain = std::move(flat_list);
 	}
 
-	/// returns variable ref if access chain is incorrectly detected array/list/ndarray size constant
-	std::unique_ptr<NodeVariableRef> is_size_constant();
-
+	/// returns true access chain is detected array/list/ndarray size constant
+	bool is_size_constant();
+	std::unique_ptr<NodeVariableRef> to_size_constant();
+	bool is_nd_array_size();
+	bool is_array_size();
+	bool is_list_size();
 	ASTLowering* get_lowering(NodeProgram *program) const override;
 
 };

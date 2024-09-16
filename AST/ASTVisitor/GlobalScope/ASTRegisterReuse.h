@@ -75,7 +75,8 @@ public:
 		for(auto & local_ref : m_all_local_references) {
 			if(!local_ref->declaration) continue;
 			local_ref->declaration->is_used = true;
-			if(local_ref->is_local) local_ref->name = local_ref->declaration->name;
+			if(local_ref->is_local)
+				local_ref->name = local_ref->declaration->name;
 		}
 		m_all_local_vars.clear();
 		m_all_local_references.clear();
@@ -146,6 +147,10 @@ public:
 
 		if(m_current_body != m_program->global_declarations.get()) {
 			if (node.variable->is_local and node.variable->data_type == DataType::Const) {
+//				// if const still add to m_all_local_vars for later renaming and e.g. finding of .SIZE constants
+//				if(node.variable->data_type == DataType::Const) {
+//					m_all_local_vars.push_back(node.variable.get());
+//				}
 				node.variable->is_local = false;
 				node.variable->is_global = true;
 				if(node.value) node.value->accept(*this);
@@ -189,6 +194,17 @@ public:
 		}
 		return &node;
 	}
+
+	// only array size constants should be here (in functions)
+	inline NodeAST* visit(NodeAccessChain& node) override {
+		if(auto reference = dynamic_cast<NodeReference*>(node.chain[0].get())) {
+			reference->accept(*this);
+		} else {
+			CompileError(ErrorType::InternalError, "First element of access chain is not a reference.", "visit(NodeAccessChain&)", node.tok).exit();
+		}
+		return &node;
+	}
+
 
 	inline NodeAST* visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
@@ -238,10 +254,10 @@ public:
 
 		auto node_declaration = m_def_provider->get_declaration(&node);
 		if(!node_declaration) {
-			if(node.data_type == DataType::Const) {
-				// do not throw error for const variables
-				return &node;
-			}
+//			if(node.data_type == DataType::Const) {
+//				// do not throw error for const variables
+//				return &node;
+//			}
 			DefinitionProvider::throw_declaration_error(node).exit();
 		}
 

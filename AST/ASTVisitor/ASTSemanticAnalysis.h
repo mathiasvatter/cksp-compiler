@@ -41,6 +41,8 @@ public:
 	NodeAST * visit(NodePointer& node) override;
 	NodeAST * visit(NodePointerRef& node) override;
 
+	NodeAST * visit(NodeAccessChain& node) override;
+
 	/// List Struct and Reference
 	NodeAST * visit(NodeList& node) override;
 	NodeAST * visit(NodeListRef& node) override;
