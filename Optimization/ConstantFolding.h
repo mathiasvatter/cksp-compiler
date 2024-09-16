@@ -34,18 +34,18 @@ public:
 
 		if(node.function->args->params.size() == 1) {
 			if(all_params_are_type(node, NodeType::ArrayRef)) {
-				if(node.function->name == "num_elements") {
-					auto array_ref = static_cast<NodeArrayRef*>(node.function->args->params[0].get());
-					// array only has SIZE constant if user defined
-					if(array_ref->kind != NodeReference::Kind::User) return &node;
-
-					auto node_size_const = std::make_unique<NodeVariableRef>(
-						array_ref->name + ".SIZE", array_ref->tok
-						);
-					node_size_const->ty = TypeRegistry::Integer;
-					node_size_const->data_type = DataType::Const;
-					return node.replace_with(std::move(node_size_const));
-				}
+//				if(node.function->name == "num_elements") {
+//					auto array_ref = static_cast<NodeArrayRef*>(node.function->args->params[0].get());
+//					// array only has SIZE constant if user defined
+//					if(array_ref->kind != NodeReference::Kind::User) return &node;
+//
+//					auto node_size_const = std::make_unique<NodeVariableRef>(
+//						array_ref->name + ".SIZE", array_ref->tok
+//						);
+//					node_size_const->ty = TypeRegistry::Integer;
+//					node_size_const->data_type = DataType::Const;
+//					return node.replace_with(std::move(node_size_const));
+//				}
 			} else if (all_params_are_type(node, NodeType::Int)) {
 				int32_t result = 0;
 				auto int_node = static_cast<NodeInt*>(node.function->args->params[0].get());

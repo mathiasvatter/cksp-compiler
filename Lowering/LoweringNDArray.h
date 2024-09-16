@@ -67,7 +67,8 @@ public:
 		node_lowered_array->data_type = node.data_type;
 		// call array lowering
 		node_lowered_array->lower(m_program);
-		return node.replace_with(std::move(node_lowered_array));
+//		return node.replace_with(std::move(node_lowered_array));
+		return node.replace_datastruct(std::move(node_lowered_array), m_def_provider);
 	}
 
     /// Lowering of multidimensional arrays to arrays when reference
