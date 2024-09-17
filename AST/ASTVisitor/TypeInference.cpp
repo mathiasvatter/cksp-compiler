@@ -29,19 +29,24 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 }
 
 void TypeInference::cast_data_structure_types(DefinitionProvider* def_provider, bool cast) {
+//	std::cout << "TypeInference::match_reference_declaration" << std::endl;
 	for(auto& refs : def_provider->m_references_per_data_structure) {
+//		std::cout << refs.first->name << std::endl;
+//		if(refs.first->name == "UI_array") {
+//
+//		}
 		for(auto & ref : refs.second) {
 			match_reference_declaration(ref);
 		}
 	}
-
+//	std::cout << "TypeInference::match_assignment_types" << std::endl;
 	for(auto& ass : def_provider->get_all_assignments()) {
 		if(ass->l_value->ty->get_element_type() == TypeRegistry::Unknown ||
 		ass->r_value->ty->get_element_type() == TypeRegistry::Unknown) {
 			match_assignment_types(ass->l_value.get(), ass->r_value.get());
 		}
 	}
-
+//	std::cout << "TypeInference::match_assignment_types" << std::endl;
     for(auto & decl : def_provider->get_all_declarations()) {
 		if (decl->value) {
 			match_assignment_types(decl->variable.get(), decl->value.get());
@@ -49,7 +54,7 @@ void TypeInference::cast_data_structure_types(DefinitionProvider* def_provider, 
 		// cast as Integer if still unknown
 		if (cast) decl->variable->cast_type();
 	}
-
+//	std::cout << "TypeInference::match_reference_declaration" << std::endl;
 	for(auto& refs : def_provider->m_references_per_data_structure) {
 		for(auto & ref : refs.second) {
 			match_reference_declaration(ref);
@@ -325,6 +330,9 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// in case an array size constant has been mistakenly converted to an access chain
 	if(auto size_const = node.is_size_constant()) {
+		// chain[0] was already written into reference map
+		auto nd_arr_ref = static_cast<NodeReference*>(node.chain[0].get());
+		m_def_provider->remove_reference(nd_arr_ref->declaration, nd_arr_ref);
 		return node.replace_with(std::move(size_const));
 	}
 
