@@ -123,6 +123,7 @@ void Compiler::compile() {
 	TypeInference::cast_data_structure_types(&m_definition_provider, true);
 
 	compile_time.stop("Type Checking");
+	std::cout << compile_time.print_timer("Type Checking") << std::endl;
 	compile_time.start("Lowering");
 
 	ASTCollectLowerings lowering(&m_definition_provider);
@@ -132,6 +133,7 @@ void Compiler::compile() {
 	ast->inline_structs();
 
 	compile_time.stop("Lowering");
+	std::cout << compile_time.print_timer("Lowering") << std::endl;
 	compile_time.start("Return Function Rewriting");
 
 	ASTReturnFunctionRewriting return_function_rewriting(&m_definition_provider);
@@ -143,6 +145,7 @@ void Compiler::compile() {
 
 	NormalizeNDArrayAssign nd_array_assign(&m_definition_provider);
 	ast->accept(nd_array_assign);
+//	std::cout << "NDArray Assignments normalized" << std::endl;
 	// Data Structure Lowering of NDArrays and Array assignments
 	ASTDataStructureLowering data_structure_lowering(&m_definition_provider);
 	ast->accept(data_structure_lowering);
@@ -150,6 +153,7 @@ void Compiler::compile() {
 //	std::cout << compile_time.print_timer("Lowering") << std::endl;
 //	ast->debug_print();
 	compile_time.stop("Data Structure Lowering");
+	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
@@ -158,6 +162,7 @@ void Compiler::compile() {
     TypeInference::cast_data_structure_types(&m_definition_provider, true);
 
 	compile_time.stop("Variable Checking 1");
+	std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;
 	compile_time.start("Global Scope");
 
 	ASTGlobalScope global_scope(&m_definition_provider);
@@ -166,6 +171,7 @@ void Compiler::compile() {
 //	ast->debug_print();
 
 	compile_time.stop("Global Scope");
+	std::cout << compile_time.print_timer("Global Scope") << std::endl;
     compile_time.start("Function Inlining");
 
 	ASTFunctionInlining func_inlining(&m_definition_provider);
@@ -173,12 +179,14 @@ void Compiler::compile() {
 //	ast->debug_print();
 
     compile_time.stop("Function Inlining");
+	std::cout << compile_time.print_timer("Function Inlining") << std::endl;
 	compile_time.start("Variable Checking 2");
 
 	ASTRelinkGlobalScope relink_global_scope(&m_definition_provider);
 	ast->accept(relink_global_scope);
 
 	compile_time.stop("Variable Checking 2");
+	std::cout << compile_time.print_timer("Variable Checking 2") << std::endl;
 	compile_time.start("Optimization");
 
 	ast->inline_global_variables();
@@ -186,6 +194,7 @@ void Compiler::compile() {
 	optimizations.optimize(*ast);
 
 	compile_time.stop("Optimization");
+	std::cout << compile_time.print_timer("Optimization") << std::endl;
 	compile_time.start("Generator");
 
 	ASTKSPSyntaxCheck syntax_check(&m_definition_provider);
