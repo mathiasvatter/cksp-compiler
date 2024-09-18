@@ -40,6 +40,7 @@ void Compiler::compile() {
 //    input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
 //	input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
 //    input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
+//	input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
