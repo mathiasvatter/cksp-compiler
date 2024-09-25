@@ -261,6 +261,8 @@ bool NodeReference::needs_get_ui_id() {
 //			wrap_it &= func_call->function->name != "get_ui_id";
 		wrap_it &= func_call->kind == NodeFunctionCall::Kind::Builtin;
 		wrap_it &= contains(func_call->function->name, "control_par");
+		// check if reference is first argument -> then wrap it
+		wrap_it &= func_call->function->args->params[0].get() == this;
 	}
 	wrap_it &= this->data_type != DataType::UIArray;
 	return wrap_it;
