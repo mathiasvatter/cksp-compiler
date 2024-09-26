@@ -8,8 +8,8 @@
 #include <memory>
 #include "../Tokenizer/Tokens.h"
 
-inline static std::string type_kind_names[] = {"Basic", "Composite", "Object"};
-enum class TypeKind {Basic, Composite, Object};
+inline static std::string type_kind_names[] = {"Basic", "Composite", "Object", "Function"};
+enum class TypeKind {Basic, Composite, Object, Function};
 inline static std::string kind_names[] = {"Integer", "Boolean", "String", "Real", "Unknown", "Object", "Any", "Void", "Number", "Comparison", "PGS"};
 enum class Kind {Integer, Boolean, String, Real, Unknown, Object, Any, Void, Number, Comparison, PGS};
 inline static std::string compound_kind_names[] = {"Array", "List"};
@@ -182,6 +182,68 @@ public:
 	}
 private:
     std::string m_name;
+};
+
+class FunctionType : public Type {
+public:
+	explicit FunctionType(std::vector<Type*> params, Type* return_type)
+		: Type(return_type->get_kind()), m_params(std::move(params)), m_return_type(return_type) {}
+	FunctionType(const FunctionType& other) = default;
+	[[nodiscard]] std::unique_ptr<Type> clone() const override {
+		return std::make_unique<FunctionType>(*this);
+	}
+	[[nodiscard]] std::string to_string() const override {
+		std::string result = "(";
+		for (size_t i = 0; i < m_params.size(); ++i) {
+			result += m_params[i]->to_string();
+			if (i < m_params.size() - 1) {
+				result += ", ";
+			}
+		}
+		result += ") -> " + m_return_type->to_string();
+		return result;
+	}
+
+	[[nodiscard]] TypeKind get_type_kind() const override {
+		return TypeKind::Function;
+	}
+
+	[[nodiscard]] const std::vector<Type*>& get_params() const { return m_params; }
+	[[nodiscard]] Type* get_return_type() const { return m_return_type; }
+
+	[[nodiscard]] bool is_compatible(const Type* other) const override {
+		// Zunächst prüfen, ob der andere Typ ebenfalls ein Funktionstyp ist
+		if (other->get_type_kind() != TypeKind::Function) {
+			return false;
+		}
+
+		// Cast auf den Funktionstyp
+		const auto* other_function = dynamic_cast<const FunctionType*>(other);
+
+		// Parameteranzahl prüfen
+		if (m_params.size() != other_function->get_params().size()) {
+			return false;
+		}
+
+		// Jeder Parameter muss kompatibel sein
+		for (size_t i = 0; i < m_params.size(); ++i) {
+			if (!m_params[i]->is_compatible(other_function->get_params()[i])) {
+				return false;
+			}
+		}
+
+		// Der Rückgabewert muss ebenfalls kompatibel sein
+		if (!m_return_type->is_compatible(other_function->get_return_type())) {
+			return false;
+		}
+
+		// Wenn alle Überprüfungen erfolgreich waren, sind die Funktionstypen kompatibel
+		return true;
+	}
+
+private:
+	std::vector<Type*> m_params;
+	Type* m_return_type;
 };
 
 

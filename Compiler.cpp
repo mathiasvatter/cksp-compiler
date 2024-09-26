@@ -40,6 +40,7 @@ void Compiler::compile() {
 //    input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
 //	input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
 //    input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
+//	input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
@@ -168,7 +169,7 @@ void Compiler::compile() {
 	ASTGlobalScope global_scope(&m_definition_provider);
 	ast->accept(global_scope);
 
-//	ast->debug_print();
+	ast->debug_print();
 
 	compile_time.stop("Global Scope");
 	std::cout << compile_time.print_timer("Global Scope") << std::endl;

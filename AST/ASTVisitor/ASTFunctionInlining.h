@@ -62,9 +62,6 @@ public:
 	inline NodeAST *visit(NodeFunctionCall &node) override {
 		// visit header
 		node.function->accept(*this);
-		if(node.function->name == "eq.curve0") {
-
-		}
 		// check if function is called with correct amount of arguments
 		if(node.is_call and !node.function->args->params.empty()) {
 			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
@@ -230,13 +227,39 @@ public:
 		return ""; // Wenn kein gültiges Muster gefunden wurde, leere Zeichenfolge zurückgeben
 	}
 
+	static std::string get_array_constant_base(const std::string& input) {
+		size_t pos = input.find_last_of('.');
+		if (pos == std::string::npos) {
+			return ""; // Kein Punkt gefunden, also kein gültiges Muster
+		}
+		std::string suffix = input.substr(pos + 1);
+		// if array.SIZE constant
+		if(suffix.size() == 4 && suffix.substr(0, 4) == "SIZE") {
+			return input.substr(0, pos); // Der Teil vor dem Punkt wird zurückgegeben
+		}
+		return "";
+	}
+
 	/// returns nullptr if ref was no ndarray constant and could not be substituted
 	/// ndarray.SIZE_D1 -> nd.SIZE_D1
 	NodeAST* substitute_ndarray_constants(NodeReference* ref) {
 		// special case when variable ref is ndarray constant
 		if(ref->data_type == DataType::Const) {
 			std::string ndarray_name = get_ndarray_constant_base(ref->name);
-			if(ndarray_name.empty()) return nullptr;
+			if(ndarray_name.empty()) {
+				// no ndarray constant pattern found -> search for array constant pattern array.SIZE
+				std::string array_name = get_array_constant_base(ref->name);
+				if(array_name.empty()) return nullptr;
+				if(auto substitute = get_substitute(array_name)) {
+					if(substitute->get_node_type() == NodeType::ArrayRef) {
+						auto array_ref = static_cast<NodeArrayRef*>(substitute.get());
+						ref->name = array_ref->sanitize_name() + remove_substring(ref->name, array_name);
+						ref->ty = TypeRegistry::Integer;
+						ref->declaration = nullptr;
+						return ref;
+					}
+				}
+			}
 			if(auto substitute = get_substitute("_"+ndarray_name)) {
 				if(substitute->get_node_type() == NodeType::ArrayRef) {
 					auto array_ref = static_cast<NodeArrayRef*>(substitute.get());
@@ -292,7 +315,7 @@ public:
 		if(m_substitution_stack.empty()) return ref;
 //		if(!ref->declaration->is_function_param()) return ref;
 //		if(ref->data_type != DataType::Param) return ref;
-		if(ref->name == "UI_array.SIZE_D2") {
+		if(ref->name == "UI_array.SIZE") {
 
 		}
 		if(auto substitute = get_substitute(ref->name)) {

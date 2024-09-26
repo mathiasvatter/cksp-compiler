@@ -935,7 +935,7 @@ Result<std::unique_ptr<NodeFunctionCall>> Parser::parse_function_call(NodeAST* p
     node_function_call->function = std::move(func_stmt.unwrap());
     node_function_call->set_child_parents();
     node_function_call->parent = parent;
-    mark_function_as_used(node_function_call->function->name, node_function_call->function->args->params.size());
+//    mark_function_as_used(node_function_call->function->name, node_function_call->function->args->params.size());
     return Result<std::unique_ptr<NodeFunctionCall>>(std::move(node_function_call));
 }
 
@@ -1771,12 +1771,12 @@ Result<std::unique_ptr<NodeGetControl>> Parser::parse_get_control_statement(std:
 	return Result<std::unique_ptr<NodeGetControl>>(std::move(node_get_control_statement));
 }
 
-void Parser::mark_function_as_used(const std::string& func_name, int num_args) {
-	auto it = m_function_definitions.find({func_name, num_args});
-	if(it != m_function_definitions.end()) {
-		it->second->is_used = true;
-	}
-}
+//void Parser::mark_function_as_used(const std::string& func_name, int num_args) {
+//	auto it = m_function_definitions.find({func_name, num_args});
+//	if(it != m_function_definitions.end()) {
+//		it->second->is_used = true;
+//	}
+//}
 
 
 
