@@ -41,7 +41,7 @@
 on init	
 	declare ui_button btn_1, ui_button btn_2
 
-
+	declare huihui : (int, int): void
 	declare ui_button btn_slot[5]
 	
 	declare array[btn_slot.SIZE], no_array := (0+2, 1, 2), 23

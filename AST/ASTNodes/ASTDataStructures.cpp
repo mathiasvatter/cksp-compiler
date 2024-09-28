@@ -157,6 +157,17 @@ std::unique_ptr<NodeList> NodeNDArray::to_list() {
     return std::make_unique<NodeList>(tok);
 }
 
+// ************* NodeFunctionVar ***************
+NodeAST *NodeFunctionVar::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeFunctionVar::NodeFunctionVar(const NodeFunctionVar& other)
+	: NodeDataStructure(other), def(other.def) {}
+
+std::unique_ptr<NodeAST> NodeFunctionVar::clone() const {
+	return std::make_unique<NodeFunctionVar>(*this);
+}
+
 // ************* NodeUIControl ***************
 NodeAST *NodeUIControl::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
