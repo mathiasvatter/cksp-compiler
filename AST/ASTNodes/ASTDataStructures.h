@@ -125,6 +125,21 @@ struct NodeNDArray : NodeDataStructure {
 	std::unique_ptr<NodeList> to_list() override;
 };
 
+struct NodeFunctionVar: NodeDataStructure {
+	NodeFunctionDefinition* def = nullptr;
+	inline explicit NodeFunctionVar(std::string name, Token tok) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionVar) {}
+	inline NodeFunctionVar(std::string name, Type* ty, NodeFunctionDefinition* def, Token tok)
+		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::FunctionVar), def(def) {}
+	NodeAST * accept(struct ASTVisitor &visitor) override;
+	// Kopierkonstruktor
+	NodeFunctionVar(const NodeFunctionVar& other);
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+	}
+};
+
 struct NodeUIControl : NodeDataStructure {
 	std::string ui_control_type;
 	std::unique_ptr<NodeDataStructure> control_var; //Array or Variable

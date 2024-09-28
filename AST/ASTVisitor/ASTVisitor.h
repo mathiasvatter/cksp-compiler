@@ -89,6 +89,13 @@ public:
 		}
 		return &node;
 	}
+	virtual NodeAST* visit(NodeFunctionVar& node) {
+		return &node;
+	}
+	virtual NodeAST* visit(NodeFunctionVarRef& node) {
+		node.header->accept(*this);
+		return &node;
+	}
     virtual NodeAST* visit(NodeUIControl& node){
 		node.control_var->accept(*this);
 		node.params->accept(*this);

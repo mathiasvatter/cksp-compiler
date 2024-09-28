@@ -200,7 +200,7 @@ public:
 				result += ", ";
 			}
 		}
-		result += ") -> " + m_return_type->to_string();
+		result += ") : " + m_return_type->to_string();
 		return result;
 	}
 

@@ -203,6 +203,20 @@ std::unique_ptr<NodeAccessChain> NodeNDArrayRef::to_method_chain() {
 	return method_chain;
 }
 
+// ************* NodeFunctionVarRef ***************
+NodeAST *NodeFunctionVarRef::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+
+NodeFunctionVarRef::NodeFunctionVarRef(const NodeFunctionVarRef& other)
+	: NodeReference(other), header(clone_unique(other.header)) {
+	set_child_parents();
+}
+
+std::unique_ptr<NodeAST> NodeFunctionVarRef::clone() const {
+	return std::make_unique<NodeFunctionVarRef>(*this);
+}
+
 // ************* NodeListRef ***************
 NodeAST *NodeListRef::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);

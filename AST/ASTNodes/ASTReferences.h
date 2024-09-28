@@ -128,6 +128,27 @@ struct NodeNDArrayRef : NodeReference {
 	}
 };
 
+struct NodeFunctionVarRef : NodeReference {
+	std::unique_ptr<NodeFunctionHeader> header;
+	NodeFunctionVarRef(std::unique_ptr<NodeFunctionHeader> header, Token tok)
+		: NodeReference(header->name, NodeType::FunctionVarRef, std::move(tok)), header(std::move(header)) {}
+	NodeAST * accept(struct ASTVisitor &visitor) override;
+	// Kopierkonstruktor
+	NodeFunctionVarRef(const NodeFunctionVarRef& other);
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		header->update_parents(this);
+	}
+	std::string get_string() override {
+		return name;
+	}
+	void set_child_parents() override {
+		header->parent = this;
+	};
+};
+
 struct NodeListRef : NodeReference {
 	NodeParamList* sizes = nullptr; // param list of size of the lists in the list
 	NodeParamList* pos = nullptr; // param list of positions in the list
