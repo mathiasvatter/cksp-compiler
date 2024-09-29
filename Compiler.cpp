@@ -119,6 +119,7 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Semantic Analysis") << std::endl;
 	compile_time.start("Type Checking");
 
+	ast->debug_print();
 	TypeInference infer_types(&m_definition_provider);
 	ast->accept(infer_types);
 	TypeInference::cast_data_structure_types(&m_definition_provider, true);
@@ -136,6 +137,7 @@ void Compiler::compile() {
 	compile_time.stop("Lowering");
 	std::cout << compile_time.print_timer("Lowering") << std::endl;
 	compile_time.start("Return Function Rewriting");
+
 
 	ASTReturnFunctionRewriting return_function_rewriting(&m_definition_provider);
 	ast->accept(return_function_rewriting);
@@ -166,10 +168,10 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;
 	compile_time.start("Global Scope");
 
+//	ast->debug_print();
 	ASTGlobalScope global_scope(&m_definition_provider);
 	ast->accept(global_scope);
 
-	ast->debug_print();
 
 	compile_time.stop("Global Scope");
 	std::cout << compile_time.print_timer("Global Scope") << std::endl;

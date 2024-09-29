@@ -235,6 +235,13 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 					m_def_provider->set_references(new_declaration, new_references);
 					m_def_provider->remove_references(node_ret_var);
 				}
+			} else if (arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::FunctionVar) {
+				auto node_var_ref = static_cast<NodeVariableRef*>(arg.get());
+				auto func_var_ref = std::make_unique<NodeFunctionVarRef>(
+					std::make_unique<NodeFunctionHeader>(node_var_ref->name, std::make_unique<NodeParamList>(node_var_ref->tok), node_var_ref->tok),
+					    node_var_ref->tok
+					);
+				node_var_ref->replace_reference(std::move(func_var_ref), m_def_provider);
 			}
 		}
 	}
@@ -294,6 +301,13 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 			data_struct->ty,
 			data_struct->tok);
 		new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_pointer)));
+	} else if(reference_node_types.find(NodeType::FunctionVarRef) != reference_node_types.end()) {
+		auto node_var = std::make_unique<NodeFunctionVar>(
+			data_struct->name,
+			data_struct->ty,
+			nullptr,
+			data_struct->tok);
+		new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_var)));
 	}
 
 	if(new_data_struct) {

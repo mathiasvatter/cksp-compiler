@@ -279,6 +279,21 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeFunctionVar& node) {
+	m_def_provider->add_to_data_structures(&node);
+	return &node;
+}
+
+NodeAST * TypeInference::visit(NodeFunctionVarRef& node) {
+	node.header->accept(*this);
+	if(node.definition) {
+		if(!node.definition->visited) node.definition->accept(*this);
+		match_type(&node, node.definition);
+	}
+	match_reference_declaration(&node);
+	return &node;
+}
+
 NodeAST * TypeInference::visit(NodeList& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// if list is unknown type -> set to list of unknown

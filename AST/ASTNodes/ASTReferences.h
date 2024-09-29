@@ -129,6 +129,7 @@ struct NodeNDArrayRef : NodeReference {
 };
 
 struct NodeFunctionVarRef : NodeReference {
+	NodeFunctionDefinition* definition = nullptr;
 	std::unique_ptr<NodeFunctionHeader> header;
 	NodeFunctionVarRef(std::unique_ptr<NodeFunctionHeader> header, Token tok)
 		: NodeReference(header->name, NodeType::FunctionVarRef, std::move(tok)), header(std::move(header)) {}

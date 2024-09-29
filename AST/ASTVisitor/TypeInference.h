@@ -42,6 +42,9 @@ public:
     NodeAST * visit(NodeList& node) override;
     NodeAST * visit(NodeListRef& node) override;
 
+	NodeAST * visit(NodeFunctionVar& node) override;
+	NodeAST * visit(NodeFunctionVarRef& node) override;
+
 	NodeAST * visit(NodeBinaryExpr& node) override;
 	NodeAST * visit(NodeUnaryExpr& node) override;
     NodeAST * visit(NodeFunctionCall& node) override;

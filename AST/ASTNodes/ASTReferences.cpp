@@ -209,7 +209,7 @@ NodeAST *NodeFunctionVarRef::accept(struct ASTVisitor &visitor) {
 }
 
 NodeFunctionVarRef::NodeFunctionVarRef(const NodeFunctionVarRef& other)
-	: NodeReference(other), header(clone_unique(other.header)) {
+	: NodeReference(other), header(clone_unique(other.header)), definition(other.definition) {
 	set_child_parents();
 }
 

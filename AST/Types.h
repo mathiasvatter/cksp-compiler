@@ -200,20 +200,20 @@ public:
 				result += ", ";
 			}
 		}
-		result += ") : " + m_return_type->to_string();
+		result += "): " + m_return_type->to_string();
 		return result;
 	}
 
 	[[nodiscard]] TypeKind get_type_kind() const override {
 		return TypeKind::Function;
 	}
-
+	[[nodiscard]] Type* get_element_type() const override {return (Type *) this;}
 	[[nodiscard]] const std::vector<Type*>& get_params() const { return m_params; }
 	[[nodiscard]] Type* get_return_type() const { return m_return_type; }
 
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		// Zunächst prüfen, ob der andere Typ ebenfalls ein Funktionstyp ist
-		if (other->get_type_kind() != TypeKind::Function) {
+		if (other->get_type_kind() != TypeKind::Function and other->get_kind() != Kind::Unknown) {
 			return false;
 		}
 
