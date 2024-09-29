@@ -134,6 +134,19 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 			m_functions_in_use.erase(node.definition);
 		}
 	}
+
+	// check if we are in a function and the header is an arg of the current function
+	if(!m_program->function_call_stack.empty() and !node.definition and node.kind == NodeFunctionCall::Undefined) {
+		auto function_ref = std::make_unique<NodeFunctionVarRef>(clone_as<NodeFunctionHeader>(node.function.get()), node.function->tok);
+		auto node_declaration = m_def_provider->get_declaration(function_ref.get());
+		if(node_declaration) {
+			auto new_node = static_cast<NodeReference*>(node.replace_with(std::move(function_ref)));
+			new_node->match_data_structure(node_declaration);
+			m_def_provider->add_to_references(new_node);
+			return new_node;
+		}
+	}
+
 	return &node;
 }
 
@@ -206,6 +219,26 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		CompileError(ErrorType::Variable, "Multidimensional array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+		return &node;
+	}
+	node.match_data_structure(node_declaration);
+	m_def_provider->add_to_references(&node);
+	return &node;
+}
+
+NodeAST* ASTVariableChecking::visit(NodeFunctionVar& node) {
+	check_annotation_with_expected(&node, TypeRegistry::Unknown);
+	node.determine_locality(m_program, m_current_block);
+	auto new_node = apply_type_annotations(&node);
+	m_def_provider->set_declaration(new_node, !new_node->is_local);
+	m_def_provider->add_to_data_structures(new_node);
+	return new_node;
+}
+
+NodeAST* ASTVariableChecking::visit(NodeFunctionVarRef& node) {
+	auto node_declaration = m_def_provider->get_declaration(&node);
+	if(!node_declaration) {
+		CompileError(ErrorType::Variable, "Function Variable has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return &node;
 	}
 	node.match_data_structure(node_declaration);
@@ -375,6 +408,11 @@ NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure
 			node_pointer->is_local = node->is_local;
 			new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_pointer)));
 		}
+	} else if(node->ty->get_type_kind() == TypeKind::Function and node->get_node_type() != NodeType::FunctionVar and node->get_node_type() == NodeType::Variable) {
+		auto node_function = std::make_unique<NodeFunctionVar>(node->name, node->ty, nullptr, node->tok);
+		if(!node_function) get_apply_type_annotations_error(node).exit();
+		node_function->is_local = node->is_local;
+		new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_function)));
 	}
 	if(new_data_struct) return new_data_struct;
 	return node;

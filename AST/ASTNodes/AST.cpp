@@ -51,14 +51,19 @@ Type* NodeAST::set_element_type(Type *element_type) {
 		ty = element_type;
 		return ty;
 	} else if(ty->get_type_kind() == TypeKind::Composite and element_type->get_type_kind() == TypeKind::Composite) {
-		ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(ty)->get_compound_type(), element_type->get_element_type(), ty->get_dimensions());
+		ty = TypeRegistry::add_composite_type(static_cast<CompositeType *>(ty)->get_compound_type(),
+											  element_type->get_element_type(),
+											  ty->get_dimensions());
 		return ty;
-	} else {
+	} else if(ty->get_type_kind() == TypeKind::Object and element_type->get_type_kind() != TypeKind::Object) {
 		auto error = CompileError(ErrorType::TypeError, "", "", tok);
 		error.m_message = "Failed to set element type. Object of type <"+element_type->to_string()+"> has not been defined.";
 		error.m_expected = "valid <Object> type";
 		error.m_got = element_type->to_string();
 		error.exit();
+	} else {
+		ty = element_type;
+		return ty;
 	}
 	return nullptr;
 }

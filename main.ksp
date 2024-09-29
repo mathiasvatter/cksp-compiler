@@ -41,12 +41,22 @@
 on init	
 	declare ui_button btn_1, ui_button btn_2
 
-	declare huihui : (int, int): void
+	// declare huihui : (int, int): void
 	declare ui_button btn_slot[5]
 	
 	declare array[btn_slot.SIZE], no_array := (0+2, 1, 2), 23
 	do_sth_with_btn(btn_slot)
+	pupu(get_pipi)
 end on
+
+function get_pipi()
+	message("pipi")
+end function
+
+function pupu(msg: ():void)
+	message("pupu")
+	msg()
+end function
 
 function do_sth_with_btn(ui_array: int[]) 
 	declare another_array[3, 2] := (1)

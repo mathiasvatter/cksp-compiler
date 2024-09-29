@@ -24,6 +24,8 @@ public:
 	NodeAST * visit(NodeArrayRef& node) override;
 	NodeAST * visit(NodeNDArray& node) override;
 	NodeAST * visit(NodeNDArrayRef& node) override;
+	NodeAST * visit(NodeFunctionVar& node) override;
+	NodeAST * visit(NodeFunctionVarRef& node) override;
 	NodeAST * visit(NodeUIControl& node) override;
 	NodeAST * visit(NodeDeclaration& node) override;
     NodeAST * visit(NodeSingleDeclaration& node) override;

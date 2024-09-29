@@ -124,6 +124,18 @@ NodeAST * ASTPrinter::visit(NodeNDArrayRef &node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeFunctionVar &node) {
+	os << node.name;
+	auto type = TypeRegistry::get_annotation_from_type(node.ty);
+	if(!type.empty()) os << " : " << type;
+	return &node;
+}
+
+NodeAST * ASTPrinter::visit(NodeFunctionVarRef &node) {
+	os << node.name;
+	return &node;
+}
+
 
 
 NodeAST * ASTPrinter::visit(NodeUIControl &node) {
