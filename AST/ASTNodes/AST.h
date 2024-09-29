@@ -546,7 +546,7 @@ struct NodeProgram : NodeAST {
 	explicit NodeProgram(Token tok);
 	NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 					   std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok);
-	~NodeProgram() = default;
+	~NodeProgram();
     NodeAST* accept(struct ASTVisitor &visitor) override;
     // Kopierkonstruktor
     NodeProgram(const NodeProgram& other);

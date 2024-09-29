@@ -569,6 +569,7 @@ NodeProgram::NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 	global_declarations = std::make_unique<NodeBlock>(Token());
 	set_child_parents();
 }
+NodeProgram::~NodeProgram() = default;
 
 NodeAST *NodeProgram::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);

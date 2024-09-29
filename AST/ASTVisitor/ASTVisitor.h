@@ -90,6 +90,7 @@ public:
 		return &node;
 	}
 	virtual NodeAST* visit(NodeFunctionVar& node) {
+		if(node.definition) node.definition->accept(*this);
 		return &node;
 	}
 	virtual NodeAST* visit(NodeFunctionVarRef& node) {
