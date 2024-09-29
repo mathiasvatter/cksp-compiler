@@ -162,7 +162,7 @@ NodeAST *NodeFunctionVar::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeFunctionVar::NodeFunctionVar(const NodeFunctionVar& other)
-	: NodeDataStructure(other), def(other.def) {}
+	: NodeDataStructure(other), definition(clone_unique(other.definition)) {}
 
 std::unique_ptr<NodeAST> NodeFunctionVar::clone() const {
 	return std::make_unique<NodeFunctionVar>(*this);
