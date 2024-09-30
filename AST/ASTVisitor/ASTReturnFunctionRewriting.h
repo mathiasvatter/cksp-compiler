@@ -44,14 +44,14 @@ public:
 		node.reset_function_visited_flag();
 
 		/// vector to house only the definitions that are actually used in the program
-		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
-		for(auto & func_def : node.function_definitions) {
-			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
-				final_function_definitions.push_back(std::move(func_def));
-			}
-		}
-		node.function_definitions = std::move(final_function_definitions);
-		node.update_function_lookup();
+//		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
+//		for(auto & func_def : node.function_definitions) {
+//			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
+//				final_function_definitions.push_back(std::move(func_def));
+//			}
+//		}
+//		node.function_definitions = std::move(final_function_definitions);
+//		node.update_function_lookup();
 
 		return &node;
 	};

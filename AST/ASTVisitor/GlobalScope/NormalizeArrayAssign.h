@@ -304,6 +304,8 @@ public:
 			Token()
 		);
 		node_function_def->body->add_stmt(std::make_unique<NodeStatement>(std::move(new_while), Token()));
+		node_function_def->header->create_function_type(TypeRegistry::Void);
+		node_function_def->ty = node_function_def->header->ty;
 		program->additional_function_definitions.push_back(std::move(node_function_def));
 		// update function lookup so that the new function can be found
 		program->update_function_lookup();
@@ -426,6 +428,8 @@ public:
 		);
 
 		node_function_def->body->add_stmt(std::make_unique<NodeStatement>(std::move(new_while), Token()));
+		node_function_def->header->create_function_type(TypeRegistry::Void);
+		node_function_def->ty = node_function_def->header->ty;
 		program->additional_function_definitions.push_back(std::move(node_function_def));
 		// update function lookup so that the new function can be found
 		program->update_function_lookup();

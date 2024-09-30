@@ -18,6 +18,11 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 
 	// refresh call_sites of function definitions
 	for(const auto & func_def : node.function_definitions) func_def->call_sites.clear();
+	for(const auto & func_def : node.function_definitions) {
+		// node header as data struct
+		m_def_provider->set_declaration(func_def->header.get(), !func_def->header->is_local);
+		m_def_provider->add_to_data_structures(func_def->header.get());
+	}
 
 	// most func defs will be visited when called, keeping local scopes in mind
 	m_program->global_declarations->accept(*this);
@@ -95,10 +100,22 @@ NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 	return &node;
 }
 
+NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
+	if(node.is_function_param()) {
+		// node header as data struct
+		m_def_provider->set_declaration(&node, !node.is_local);
+		m_def_provider->add_to_data_structures(&node);
+	}
+	if(node.args) node.args->accept(*this);
+	return &node;
+}
+
 NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 	node.visited = true;
 	m_program->function_call_stack.push(&node);
 	m_def_provider->add_scope();
+
+
 	node.header ->accept(*this);
 	if (node.return_variable.has_value())
 		node.return_variable.value()->accept(*this);
@@ -224,15 +241,6 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 	node.match_data_structure(node_declaration);
 	m_def_provider->add_to_references(&node);
 	return &node;
-}
-
-NodeAST* ASTVariableChecking::visit(NodeFunctionVar& node) {
-	check_annotation_with_expected(&node, TypeRegistry::Unknown);
-	node.determine_locality(m_program, m_current_block);
-	auto new_node = apply_type_annotations(&node);
-	m_def_provider->set_declaration(new_node, !new_node->is_local);
-	m_def_provider->add_to_data_structures(new_node);
-	return new_node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionVarRef& node) {
@@ -408,8 +416,8 @@ NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure
 			node_pointer->is_local = node->is_local;
 			new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_pointer)));
 		}
-	} else if(node->ty->get_type_kind() == TypeKind::Function and node->get_node_type() != NodeType::FunctionVar and node->get_node_type() == NodeType::Variable) {
-		auto node_function = std::make_unique<NodeFunctionVar>(node->name, node->ty, nullptr, node->tok);
+	} else if(node->ty->get_type_kind() == TypeKind::Function and node->get_node_type() != NodeType::FunctionHeader and node->get_node_type() == NodeType::Variable) {
+		auto node_function = std::make_unique<NodeFunctionHeader>(node->name, std::make_unique<NodeParamList>(node->tok), node->tok);
 		if(!node_function) get_apply_type_annotations_error(node).exit();
 		node_function->is_local = node->is_local;
 		new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_function)));

@@ -124,18 +124,10 @@ NodeAST * ASTPrinter::visit(NodeNDArrayRef &node) {
 	return &node;
 }
 
-NodeAST * ASTPrinter::visit(NodeFunctionVar &node) {
-	os << node.name;
-	auto type = TypeRegistry::get_annotation_from_type(node.ty);
-	if(!type.empty()) os << " : " << type;
-	return &node;
-}
-
 NodeAST * ASTPrinter::visit(NodeFunctionVarRef &node) {
-	os << node.name;
+	node.header->accept(*this);
 	return &node;
 }
-
 
 
 NodeAST * ASTPrinter::visit(NodeUIControl &node) {
@@ -337,9 +329,16 @@ NodeAST * ASTPrinter::visit(NodeCallback &node) {
 }
 
 NodeAST * ASTPrinter::visit(NodeFunctionHeader &node) {
-    os << node.name << "(";
-    node.args->accept(*this);
-    os << ")";
+	os << node.name;
+	if(node.args) {
+		os << "(";
+		node.args->accept(*this);
+		os << ")";
+	}
+	if(node.parent->get_node_type() != NodeType::FunctionDefinition and node.parent->get_node_type() != NodeType::FunctionCall) {
+		auto type = TypeRegistry::get_annotation_from_type(node.ty);
+		if(!type.empty()) os << " : " << type;
+	}
 	return &node;
 }
 
@@ -354,8 +353,7 @@ NodeAST * ASTPrinter::visit(NodeFunctionCall &node) {
 NodeAST * ASTPrinter::visit(NodeFunctionDefinition &node) {
     os << get_indent() << "function ";
     node.header ->accept(*this);
-	auto type = TypeRegistry::get_annotation_from_type(node.ty);
-	if(!type.empty()) os << " : " << type;
+	os << " : " << static_cast<FunctionType*>(node.ty)->get_return_type()->to_string();
     if (node.return_variable.has_value()) {
         os << " -> ";
         node.return_variable.value()->accept(*this);
