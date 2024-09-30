@@ -1,34 +1,61 @@
 Global Declarations:
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
+	declare const another_array.SIZE_D1 : int := 3
+	declare const another_array.SIZE_D2 : int := 2
+	declare const _another_array.SIZE : int := 3 * 2
+	declare loc_1 : int
+	declare loc_2 : int
+	declare loc_0[3 * 2] : int[]
 on init
-	declare _iter : int
-	declare ui_button btn_1 : Unknown 
-	declare ui_button btn_2 : Unknown 
-	declare ui_button btn_slot[5] : Unknown 
-	declare array[btn_slot.SIZE] : Unknown := (0 + 2, 1, 2)
-	declare no_array : Unknown := 23
+	declare loc_3 : int
+	declare ui_button btn_1 : int 
+	declare ui_button btn_2 : int 
+	declare const btn_slot.SIZE : int := 5
+	declare btn_slot[5] : int[]
+	declare ui_button btn_slot0 : int 
+	declare ui_button btn_slot1 : int 
+	declare ui_button btn_slot2 : int 
+	declare ui_button btn_slot3 : int 
+	declare ui_button btn_slot4 : int 
+	loc_3 := 0
+	while(loc_3 < 5) 
+		btn_slot[loc_3] := get_ui_id(btn_slot0) + loc_3
+		inc(loc_3)
+	end while
+	declare const array.SIZE : int := btn_slot.SIZE
+	declare array[btn_slot.SIZE] : int[] := (0 + 2, 1, 2)
+	declare no_array : int := 23
 	do_sth_with_btn(btn_slot)
+	pupu(get_pipi() : (): unknown)
 end on
 
-function do_sth_with_btn(ui_array : int[]) : Unknown
-	declare another_array[3, 2] : Unknown := (1)
-	declare i : Unknown
-	i := 0
-	while(i <= (ui_array.SIZE - 1)) 
-		declare ui_id : Unknown := ui_array[i]
-		message(ui_id, another_array[i, 0], another_array.SIZE_D2)
-		inc(i)
+function do_sth_with_btn(ui_array : int[]) : unknown
+	loc_1 := 0
+	array<-init[int](loc_0, loc_1, 1)
+	loc_1 := 0
+	loc_1 := 0
+	while(loc_1 <= (ui_array.SIZE - 1)) 
+		loc_2 := ui_array[loc_1]
+		message(loc_2 & ", " & loc_0[(loc_1 * 2) + 0] & ", " & another_array.SIZE_D2)
+		inc(loc_1)
 	end while
 end function
 
-function pupu(msg : (): Void) : Unknown
+function pupu(msg() : (): unknown) : unknown
 	message("pupu")
-	msg
+	msg() : (): unknown
 end function
 
-function get_pipi() : Unknown
+function get_pipi() : unknown
 	message("pipi")
+end function
+
+function array<-init[int](array : int[], _iter : int, value : int) : void
+	while(_iter < num_elements(array)) 
+		array[_iter] := value
+		inc(_iter)
+	end while
 end function
 
 

@@ -217,6 +217,20 @@ std::unique_ptr<NodeAST> NodeFunctionVarRef::clone() const {
 	return std::make_unique<NodeFunctionVarRef>(*this);
 }
 
+NodeFunctionVarRef::NodeFunctionVarRef(std::unique_ptr<NodeFunctionHeader> header, Token tok)
+	: NodeReference(header->name, NodeType::FunctionVarRef, std::move(tok)), header(std::move(header)) {
+	set_child_parents();
+}
+
+void NodeFunctionVarRef::update_parents(NodeAST *new_parent) {
+	parent = new_parent;
+	header->update_parents(this);
+}
+
+void NodeFunctionVarRef::set_child_parents() {
+	header->parent = this;
+}
+
 // ************* NodeListRef ***************
 NodeAST *NodeListRef::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);

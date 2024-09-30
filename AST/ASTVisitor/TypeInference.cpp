@@ -279,11 +279,6 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 	return &node;
 }
 
-NodeAST * TypeInference::visit(NodeFunctionVar& node) {
-	m_def_provider->add_to_data_structures(&node);
-	return &node;
-}
-
 NodeAST * TypeInference::visit(NodeFunctionVarRef& node) {
 	node.header->accept(*this);
 	if(node.definition) {
@@ -560,19 +555,49 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		const std::string error_message = "Found incorrect type in <Function Call>. Function <"+node.function->name+"> expects "+node.definition->header->args->params[i]->ty->to_string()+" as argument type.";
 		match_type(node.function->args->params[i].get(), node.definition->header->args->params[i].get(), error_message);
 	}
-	match_type(&node, node.definition);
+//	match_type(&node, node.definition);
+
+	auto return_type = static_cast<FunctionType*>(node.definition->ty)->get_return_type();
+	if(!node.ty->is_compatible(return_type)) {
+		throw_type_error(&node, node.definition).exit();
+	}
+	node.set_element_type(specialize_type(node.ty, return_type));
+
+	return &node;
+}
+
+NodeAST * TypeInference::visit(NodeFunctionHeader& node) {
+	if(node.args) node.args->accept(*this);
+
+	if(node.ty == TypeRegistry::Unknown) {
+		node.create_function_type();
+	}
+	if(node.ty->get_type_kind() != TypeKind::Function) {
+		auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+		error.m_message = "Function type expected.";
+		error.exit();
+	}
 	return &node;
 }
 
 NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
 	node.visited = true;
-    node.header->accept(*this);
-    if(node.return_variable.has_value()) node.return_variable.value()->accept(*this);
 
+	// add data structures to provider
+	m_def_provider->add_to_data_structures(node.header.get());
+
+    node.header->accept(*this);
+    if(node.return_variable.has_value()) {
+		node.return_variable.value()->accept(*this);
+
+	}
+	update_function_type(node.header.get(), node.return_variable.has_value() ? node.return_variable.value().get()->ty : TypeRegistry::Unknown);
     node.body->accept(*this);
     // get possible return type of node.definition by looking at the return param
-    if(node.return_variable.has_value())
-		match_type(&node, node.return_variable.value().get());
+//    if(node.return_variable.has_value()) {
+//		match_type(node.header.get(), node.return_variable.value().get());
+		match_type(&node, node.header.get());
+//	}
 	return &node;
 }
 

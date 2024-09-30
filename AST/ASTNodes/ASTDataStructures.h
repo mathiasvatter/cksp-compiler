@@ -125,25 +125,38 @@ struct NodeNDArray : NodeDataStructure {
 	std::unique_ptr<NodeList> to_list() override;
 };
 
-struct NodeFunctionVar: NodeDataStructure {
-	std::unique_ptr<NodeFunctionDefinition> definition = nullptr;
-	inline explicit NodeFunctionVar(std::string name, Token tok) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionVar) {}
-	inline NodeFunctionVar(std::string name, Type* ty, std::unique_ptr<NodeFunctionDefinition> def, Token tok)
-		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::FunctionVar), definition(std::move(def)) {}
-	NodeAST * accept(struct ASTVisitor &visitor) override;
-	// Kopierkonstruktor
-	NodeFunctionVar(const NodeFunctionVar& other);
-	// Clone Methode
+struct NodeFunctionHeader: NodeDataStructure {
+	bool has_forced_parenth = false;
+	std::unique_ptr<NodeParamList> args;
+	inline explicit NodeFunctionHeader(std::string name, Token tok) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader) {}
+	inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeParamList> args, Token tok)
+		: NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader), args(std::move(args)) {
+		set_child_parents();
+	};
+	NodeAST* accept(struct ASTVisitor &visitor) override;
+	NodeFunctionHeader(const NodeFunctionHeader& other);
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
-		if(definition) definition->update_parents(this);
+		if(args) args->update_parents(this);
 	}
 	void set_child_parents() override {
-		if (definition) definition->parent = this;
+		if(args) args->parent = this;
 	};
+	std::string get_string() override {
+		return name + "(" + args->get_string() + ")";
+	}
 	void update_token_data(const Token& token) override {
-		if(definition) definition->update_token_data(token);
+		tok.line = token.line; tok.file = token.file;
+		if(args) args -> update_token_data(token);
+	}
+	Type* create_function_type(Type* return_type = TypeRegistry::Unknown) {
+		std::vector<Type*> func_arg_types;
+		for(auto &param : this->args->params) {
+			func_arg_types.push_back(param->ty);
+		}
+		ty = TypeRegistry::add_function_type(func_arg_types, return_type);
+		return ty;
 	}
 };
 
