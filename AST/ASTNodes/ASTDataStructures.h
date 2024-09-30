@@ -126,10 +126,10 @@ struct NodeNDArray : NodeDataStructure {
 };
 
 struct NodeFunctionVar: NodeDataStructure {
-	std::unique_ptr<NodeFunctionDefinition> definition = nullptr;
+	NodeFunctionDefinition* definition = nullptr;
 	inline explicit NodeFunctionVar(std::string name, Token tok) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionVar) {}
-	inline NodeFunctionVar(std::string name, Type* ty, std::unique_ptr<NodeFunctionDefinition> def, Token tok)
-		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::FunctionVar), definition(std::move(def)) {}
+	inline NodeFunctionVar(std::string name, Type* ty, NodeFunctionDefinition* def, Token tok)
+		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::FunctionVar), definition(def) {}
 	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeFunctionVar(const NodeFunctionVar& other);
@@ -137,14 +137,14 @@ struct NodeFunctionVar: NodeDataStructure {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
-		if(definition) definition->update_parents(this);
+//		if(definition) definition->update_parents(this);
 	}
-	void set_child_parents() override {
-		if (definition) definition->parent = this;
-	};
-	void update_token_data(const Token& token) override {
-		if(definition) definition->update_token_data(token);
-	}
+//	void set_child_parents() override {
+//		if (definition) definition->parent = this;
+//	};
+//	void update_token_data(const Token& token) override {
+//		if(definition) definition->update_token_data(token);
+//	}
 };
 
 struct NodeUIControl : NodeDataStructure {
