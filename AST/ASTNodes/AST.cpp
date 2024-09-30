@@ -697,6 +697,15 @@ void NodeProgram::reset_function_used_flag() {
 	for(const auto & def : function_definitions) def->is_used = false;
 }
 
+void NodeProgram::create_function_vars() {
+	merge_function_definitions();
+	this->function_vars.clear();
+	for(const auto & def : function_definitions) {
+		auto func_var = std::make_unique<NodeFunctionVar>(def->header->name, def->ty, def.get(), def->tok);
+		this->function_vars.push_back(std::move(func_var));
+	}
+}
+
 
 
 
