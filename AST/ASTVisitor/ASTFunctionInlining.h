@@ -156,39 +156,26 @@ public:
 	/// do substitution
 	inline NodeAST *visit(NodeNDArrayRef &node) override {
 		if(node.indexes) node.indexes->accept(*this);
-//		mark_function_param_ref(&node);
 		return do_substitution(&node);
 	}
 	/// do substitution
 	inline NodeAST *visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);
-//		mark_function_param_ref(&node);
 		return do_substitution(&node);
 	}
 	/// do substitution
 	inline NodeAST *visit(NodeVariableRef &node) override {
-//		mark_function_param_ref(&node);
 		return do_substitution(&node);
 	}
 	/// do substitution
-	inline NodeAST *visit(NodeFunctionHeader& node) override {
-		node.args->accept(*this);
-		// substitution
-		if(m_program->function_call_stack.empty()) return &node;
-		if (!m_substitution_stack.empty()) {
-			if (auto substitute = get_substitute(node.name)) {
-				if(auto substitute_ref = cast_node<NodeReference>(substitute.get())) {
-					node.name = substitute_ref->name;
-					return &node;;
-				} else {
-					auto error = CompileError(ErrorType::SyntaxError, "Cannot substitute Function name with <non-datastructure>", "", node.tok);
-					error.m_expected = "<Reference>";
-					error.m_got = substitute->get_string();
-					error.exit();
-				}
-			}
-		}
-		return &node;
+	inline NodeAST *visit(NodeFunctionVarRef &node) override {
+		auto new_node = do_substitution(&node);
+		if(m_program->function_call_stack.empty()) return new_node;
+		if(m_substitution_stack.empty()) return new_node;
+
+		auto function_ref = static_cast<NodeFunctionVarRef*>(new_node);
+		auto function_call = new_node->replace_with(std::make_unique<NodeFunctionCall>(false, std::move(function_ref->header), function_ref->tok));
+		return function_call->accept(*this);
 	}
 
 	static std::unordered_map<std::string, std::unique_ptr<NodeAST>> get_substitution_map(NodeFunctionHeader* definition, NodeFunctionHeader* call) {
@@ -310,18 +297,35 @@ public:
 		return nullptr;
 	}
 
+	static NodeReference* substitute_function_type(NodeReference* ref, NodeAST* substitute) {
+		if(substitute->ty->get_type_kind() == TypeKind::Function) {
+			if (substitute->get_node_type() != NodeType::FunctionVarRef and ref->get_node_type() != NodeType::FunctionVarRef) {
+				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
+				error.m_message = "Arg is of type <Function> but is no <FunctionVarRef> Node: <" + ref->name + ">.";
+				error.exit();
+			}
+			auto function_subst = static_cast<NodeFunctionVarRef*>(substitute);
+			auto function_ref = static_cast<NodeFunctionVarRef*>(ref);
+			function_ref->name = function_subst->name;
+			function_ref->header->name = function_subst->header->name;
+			function_ref->ty = substitute->ty;
+			return function_ref;
+		}
+		return nullptr;
+	}
+
 	NodeAST* do_substitution(NodeReference* ref) {
 		if(m_program->function_call_stack.empty()) return ref;
 		if(m_substitution_stack.empty()) return ref;
 //		if(!ref->declaration->is_function_param()) return ref;
 //		if(ref->data_type != DataType::Param) return ref;
-		if(ref->name == "UI_array.SIZE") {
 
-		}
 		if(auto substitute = get_substitute(ref->name)) {
 			// if substitute and ref are both of type <Composite> and <ArrayRef>: only change name
 			if(auto composite_substitute = substitute_composite_type(ref, substitute.get())) {
 				return composite_substitute;
+			} else if(auto function_substitute = substitute_function_type(ref, substitute.get())) {
+				return function_substitute;
 			} else {
 				return ref->replace_with(std::move(substitute));
 			}

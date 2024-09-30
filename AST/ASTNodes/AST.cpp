@@ -490,19 +490,6 @@ std::unique_ptr<NodeAST> NodeImport::clone() const {
     return std::make_unique<NodeImport>(*this);
 }
 
-// ************* NodeFunctionHeader ***************
-NodeAST *NodeFunctionHeader::accept(struct ASTVisitor &visitor) {
-    return visitor.visit(*this);
-}
-NodeFunctionHeader::NodeFunctionHeader(const NodeFunctionHeader& other)
-        : NodeAST(other), name(other.name),
-		  has_forced_parenth(other.has_forced_parenth), args(clone_unique(other.args)) {
-	set_child_parents();
-}
-std::unique_ptr<NodeAST> NodeFunctionHeader::clone() const {
-    return std::make_unique<NodeFunctionHeader>(*this);
-}
-
 // ************* NodeFunctionDefinition ***************
 NodeFunctionDefinition::NodeFunctionDefinition(Token tok) : NodeAST(std::move(tok), NodeType::FunctionDefinition) {}
 NodeFunctionDefinition::NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
@@ -555,6 +542,22 @@ ASTLowering *NodeFunctionDefinition::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
+void NodeFunctionDefinition::update_token_data(const Token &token) {
+	header -> update_token_data(token);
+	if(return_variable.has_value()) return_variable.value()->update_token_data(token);
+}
+
+bool NodeFunctionDefinition::is_method() {
+	bool has_params = header->args->params.size() > 0 and header->args->params[0]->get_string() == "self";
+	bool within_struct = parent and parent->get_node_type() == NodeType::Struct;
+	return has_params and within_struct;
+}
+
+void NodeFunctionDefinition::update_param_data_type() const {
+	for(auto& param : this->header->args->params) {
+		static_cast<NodeDataStructure*>(param.get())->data_type = DataType::Param;
+	}
+}
 
 // ************* NodeProgramm ***************
 NodeProgram::NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {

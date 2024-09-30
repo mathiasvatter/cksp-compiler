@@ -455,37 +455,6 @@ struct NodeImport : NodeAST {
     void update_token_data(const Token& token) override {}
 };
 
-struct NodeFunctionHeader: NodeAST {
-//	bool is_thread_safe = true;
-//    bool is_builtin = false;
-    bool has_forced_parenth = false;
-    std::string name;
-    std::unique_ptr<NodeParamList> args;
-    inline explicit NodeFunctionHeader(Token tok) : NodeAST(std::move(tok), NodeType::FunctionHeader) {}
-    inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeParamList> args, Token tok)
-    : NodeAST(std::move(tok), NodeType::FunctionHeader), name(std::move(name)), args(std::move(args)) {
-		set_child_parents();
-	};
-    NodeAST* accept(struct ASTVisitor &visitor) override;
-    NodeFunctionHeader(const NodeFunctionHeader& other);
-    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    void update_parents(NodeAST* new_parent) override {
-        parent = new_parent;
-        args->update_parents(this);
-    }
-	void set_child_parents() override {
-		args->parent = this;
-	};
-    std::string get_string() override {
-        return name + "(" + args->get_string() + ")";
-    }
-    void update_token_data(const Token& token) override {
-        tok.line = token.line; tok.file = token.file;
-        args -> update_token_data(token);
-    }
-
-};
-
 struct NodeFunctionDefinition: NodeAST {
 	/// is tagged when restricted builtin functions are used within this function (save_array, load_array, etc)
 	bool is_restricted = false;
@@ -497,7 +466,7 @@ struct NodeFunctionDefinition: NodeAST {
 	int num_return_params = 0;
 	NodeAST* return_param = nullptr;
     std::unordered_set<class NodeFunctionCall*> call_sites = {};
-    std::unique_ptr<NodeFunctionHeader> header;
+    std::unique_ptr<class NodeFunctionHeader> header;
     std::optional<std::unique_ptr<NodeDataStructure>> return_variable;
     bool override = false;
     std::unique_ptr<NodeBlock> body;
@@ -512,22 +481,11 @@ struct NodeFunctionDefinition: NodeAST {
     void update_parents(NodeAST* new_parent) override;
 	void set_child_parents() override;;
     std::string get_string() override {return "";}
-    void update_token_data(const Token& token) override {
-        header -> update_token_data(token);
-        if(return_variable.has_value()) return_variable.value()->update_token_data(token);
-    }
+    void update_token_data(const Token& token) override;
 	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
-	bool is_method() {
-		bool has_params = header->args->params.size() > 0 and header->args->params[0]->get_string() == "self";
-		bool within_struct = parent and parent->get_node_type() == NodeType::Struct;
-		return has_params and within_struct;
-	}
-	void update_param_data_type() const {
-		for(auto& param : this->header->args->params) {
-			static_cast<NodeDataStructure*>(param.get())->data_type = DataType::Param;
-		}
-	}
+	bool is_method();
+	void update_param_data_type() const;
 };
 
 struct NodeProgram : NodeAST {

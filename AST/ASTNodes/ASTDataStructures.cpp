@@ -157,15 +157,17 @@ std::unique_ptr<NodeList> NodeNDArray::to_list() {
     return std::make_unique<NodeList>(tok);
 }
 
-// ************* NodeFunctionVar ***************
-NodeAST *NodeFunctionVar::accept(struct ASTVisitor &visitor) {
+// ************* NodeFunctionHeader ***************
+NodeAST *NodeFunctionHeader::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
-NodeFunctionVar::NodeFunctionVar(const NodeFunctionVar& other)
-	: NodeDataStructure(other), definition(clone_unique(other.definition)) {}
-
-std::unique_ptr<NodeAST> NodeFunctionVar::clone() const {
-	return std::make_unique<NodeFunctionVar>(*this);
+NodeFunctionHeader::NodeFunctionHeader(const NodeFunctionHeader& other)
+	: NodeDataStructure(other),
+	  has_forced_parenth(other.has_forced_parenth), args(clone_unique(other.args)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeFunctionHeader::clone() const {
+	return std::make_unique<NodeFunctionHeader>(*this);
 }
 
 // ************* NodeUIControl ***************
