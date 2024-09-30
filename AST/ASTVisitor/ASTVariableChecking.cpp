@@ -16,8 +16,6 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_def_provider->refresh_scopes();
 	m_def_provider->refresh_data_vectors();
 
-	// create function vars for all function definitions
-	node.create_function_vars();
 	// refresh call_sites of function definitions
 	for(const auto & func_def : node.function_definitions) func_def->call_sites.clear();
 

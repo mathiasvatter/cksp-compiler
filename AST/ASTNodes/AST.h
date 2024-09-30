@@ -537,7 +537,6 @@ struct NodeProgram : NodeAST {
 	std::stack<NodeFunctionDefinition*> function_call_stack{};
 	class DefinitionProvider* def_provider = nullptr;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
-	std::vector<std::unique_ptr<struct NodeFunctionVar>> function_vars;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
 	std::vector<std::unique_ptr<NodeFunctionDefinition>> additional_function_definitions;
 	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> function_lookup;
@@ -547,7 +546,7 @@ struct NodeProgram : NodeAST {
 	explicit NodeProgram(Token tok);
 	NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 					   std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok);
-	~NodeProgram() override;
+	~NodeProgram();
     NodeAST* accept(struct ASTVisitor &visitor) override;
     // Kopierkonstruktor
     NodeProgram(const NodeProgram& other);
@@ -559,7 +558,6 @@ struct NodeProgram : NodeAST {
 	/// update function lookup table
 	void update_function_lookup();
 	void update_struct_lookup();
-	void create_function_vars();
 	/// Checks for uniqueness of all callbacks except "on ui_control"
 	bool check_unique_callbacks();
 	/// Checks for existence and uniqueness of "on init" callback
