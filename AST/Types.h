@@ -10,7 +10,7 @@
 
 inline static std::string type_kind_names[] = {"Basic", "Composite", "Object", "Function"};
 enum class TypeKind {Basic, Composite, Object, Function};
-inline static std::string kind_names[] = {"Integer", "Boolean", "String", "Real", "Unknown", "Object", "Any", "Void", "Number", "Comparison", "PGS"};
+inline static std::string kind_names[] = {"int", "bool", "string", "real", "unknown", "object", "any", "void", "number", "comparison", "pgs"};
 enum class Kind {Integer, Boolean, String, Real, Unknown, Object, Any, Void, Number, Comparison, PGS};
 inline static std::string compound_kind_names[] = {"Array", "List"};
 enum class CompoundKind {Array, List};
@@ -132,11 +132,16 @@ public:
         return std::make_unique<CompositeType>(m_compound_kind, m_element_type);
     }
     [[nodiscard]] std::string to_string() const override {
-        std::string output = compound_kind_names[(int)m_compound_kind];
-        for(int i = 0; i < m_dimensions; i++) {
-            output += "["+ m_element_type->to_string() +"]";
-        }
-        return output;
+//        std::string output = compound_kind_names[(int)m_compound_kind];
+//        for(int i = 0; i < m_dimensions; i++) {
+//            output += "["+ m_element_type->to_string() +"]";
+//        }
+//        return output;
+		std::string output = m_element_type->to_string();
+		for(int i = 0; i < m_dimensions; i++) {
+			output += "[]";
+		}
+		return output;
     };
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Composite;
@@ -241,9 +246,9 @@ public:
 		return true;
 	}
 
-private:
 	std::vector<Type*> m_params;
 	Type* m_return_type;
+private:
 };
 
 

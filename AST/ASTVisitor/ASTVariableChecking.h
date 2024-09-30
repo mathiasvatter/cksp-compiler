@@ -28,7 +28,6 @@ public:
 	NodeAST * visit(NodeVariable& node) override;
     /// get declaration
 	NodeAST * visit(NodeVariableRef& node) override;
-	NodeAST * visit(NodeFunctionVar& node) override;
 	NodeAST * visit(NodeFunctionVarRef& node) override;
 	NodeAST * visit(NodeNDArray& node) override;
 	NodeAST * visit(NodeNDArrayRef& node) override;
@@ -39,6 +38,7 @@ public:
 	/// handle get_ui_id specific checks. Replace variable parameter when in get_ui_id and not ui_control
 	NodeAST * visit(NodeFunctionCall& node) override;
     NodeAST * visit(NodeFunctionDefinition& node) override;
+	NodeAST * visit(NodeFunctionHeader& node) override;
 
 	NodeAST * visit(NodeAccessChain& node) override;
 

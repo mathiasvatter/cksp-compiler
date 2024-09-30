@@ -850,14 +850,33 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
 }
 
 Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAST* parent, bool is_definition) {
-    auto node_function_header = std::make_unique<NodeFunctionHeader>(get_tok());
     std::string func_name;
     func_name = consume().val;
+    auto node_function_header = std::make_unique<NodeFunctionHeader>(func_name, get_tok());
     auto func_args = parse_function_args(node_function_header.get(), is_definition);
     if(func_args.is_error()) {
         return Result<std::unique_ptr<NodeFunctionHeader>>(func_args.get_error());
     }
-    node_function_header->name = func_name;
+	// parse function type if definition
+	Type* ty = TypeRegistry::Unknown;
+	if(is_definition) {
+		auto type = parse_type_annotation();
+		if(type.is_error()) {
+			return Result<std::unique_ptr<NodeFunctionHeader>>(type.get_error());
+		}
+		auto return_type = type.unwrap();
+		if(return_type->get_type_kind() == TypeKind::Function) {
+			auto error = CompileError(ErrorType::ParseError,"", "", peek());
+			error.m_message = "Function type not allowed as return type.";
+			error.exit();
+		}
+		std::vector<Type*> arg_types;
+		for(const auto & arg: func_args.unwrap()->params) {
+			arg_types.push_back(arg->ty);
+		}
+		ty = TypeRegistry::add_function_type(arg_types, return_type);
+	}
+	node_function_header->ty = ty;
     node_function_header->args = std::move(func_args.unwrap());
     node_function_header->set_child_parents();
     node_function_header->parent = parent;

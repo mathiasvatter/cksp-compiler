@@ -50,19 +50,10 @@ struct NodeFunctionCall : NodeInstruction {
     NodeAST * accept(struct ASTVisitor &visitor) override;
     NodeFunctionCall(const NodeFunctionCall& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    void update_parents(NodeAST* new_parent) override {
-        parent = new_parent;
-        function->update_parents(this);
-    }
-    void set_child_parents() override {
-        function->parent = this;
-    };
-    std::string get_string() override {
-        return function->get_string();
-    }
-    void update_token_data(const Token& token) override {
-        function -> update_token_data(token);
-    }
+    void update_parents(NodeAST* new_parent) override;
+    void set_child_parents() override;;
+    std::string get_string() override;
+    void update_token_data(const Token& token) override;
     ASTLowering* get_lowering(struct NodeProgram *program) const override;
     /// attempts to get and set the definition pointer of the function call and updates the call sites of the definition
     NodeFunctionDefinition* find_definition(class NodeProgram *program);
@@ -77,20 +68,8 @@ struct NodeFunctionCall : NodeInstruction {
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
 
 
-	[[nodiscard]] std::string get_object_name() const {
-		size_t pos = function->name.find('.');
-		if (pos != std::string::npos) {
-			return function->name.substr(0, pos);
-		}
-		return "";
-	}
-	[[nodiscard]] std::string get_method_name() const {
-		size_t pos = function->name.rfind('.');
-		if (pos != std::string::npos) {
-			return function->name.substr(pos + 1);
-		}
-		return "";
-	}
+	[[nodiscard]] std::string get_object_name() const;
+	[[nodiscard]] std::string get_method_name() const;
 
 };
 

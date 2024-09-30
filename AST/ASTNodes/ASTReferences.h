@@ -130,24 +130,18 @@ struct NodeNDArrayRef : NodeReference {
 
 struct NodeFunctionVarRef : NodeReference {
 	NodeFunctionDefinition* definition = nullptr;
-	std::unique_ptr<NodeFunctionHeader> header;
-	NodeFunctionVarRef(std::unique_ptr<NodeFunctionHeader> header, Token tok)
-		: NodeReference(header->name, NodeType::FunctionVarRef, std::move(tok)), header(std::move(header)) {}
+	std::unique_ptr<class NodeFunctionHeader> header;
+	NodeFunctionVarRef(std::unique_ptr<NodeFunctionHeader> header, Token tok);
 	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeFunctionVarRef(const NodeFunctionVarRef& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-	void update_parents(NodeAST* new_parent) override {
-		parent = new_parent;
-		header->update_parents(this);
-	}
+	void update_parents(NodeAST* new_parent) override;
 	std::string get_string() override {
 		return name;
 	}
-	void set_child_parents() override {
-		header->parent = this;
-	};
+	void set_child_parents() override;;
 };
 
 struct NodeListRef : NodeReference {

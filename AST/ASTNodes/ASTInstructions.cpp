@@ -172,6 +172,39 @@ std::unique_ptr<NodeAccessChain> NodeFunctionCall::to_method_chain() {
 	return method_chain;
 }
 
+void NodeFunctionCall::update_parents(NodeAST *new_parent) {
+	parent = new_parent;
+	function->update_parents(this);
+}
+
+void NodeFunctionCall::set_child_parents() {
+	function->parent = this;
+}
+
+std::string NodeFunctionCall::get_string() {
+	return function->get_string();
+}
+
+void NodeFunctionCall::update_token_data(const Token &token) {
+	function -> update_token_data(token);
+}
+
+std::string NodeFunctionCall::get_object_name() const {
+	size_t pos = function->name.find('.');
+	if (pos != std::string::npos) {
+		return function->name.substr(0, pos);
+	}
+	return "";
+}
+
+std::string NodeFunctionCall::get_method_name() const {
+	size_t pos = function->name.rfind('.');
+	if (pos != std::string::npos) {
+		return function->name.substr(pos + 1);
+	}
+	return "";
+}
+
 // ************* NodeAssignment ***************
 NodeAST *NodeAssignment::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
