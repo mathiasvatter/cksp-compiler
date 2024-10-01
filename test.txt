@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.6 on Mon Sep 30 18:31:08 2024 }
+{ Compiled with cksp version 0.0.6 on Tue Oct 01 15:46:06 2024 }
 on init
   declare $loc_1
   declare $loc_2
@@ -29,6 +29,6 @@ on init
     inc($loc_1)
   end while
   message("pupu")
-  message("pipi")
+  message("pipi" & ", " & 3 & ", " & "pipi")
 end on
 

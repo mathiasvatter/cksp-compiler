@@ -281,10 +281,21 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 
 NodeAST * TypeInference::visit(NodeFunctionVarRef& node) {
 	node.header->accept(*this);
+	match_type(&node, node.header.get());
 	if(node.definition) {
 		if(!node.definition->visited) node.definition->accept(*this);
 		match_type(&node, node.definition);
 	}
+//	match_type(node.header.get(), node.declaration);
+//	match_type(node.declaration, node.header.get());
+//
+//	if(node.parent->get_node_type() != NodeType::Statement and !node.is_func_arg()) {
+//		auto return_type = static_cast<FunctionType *>(node.header->ty)->get_return_type();
+//		if (!node.ty->is_compatible(return_type)) {
+//			throw_type_error(&node, node.declaration).exit();
+//		}
+//		node.set_element_type(specialize_type(node.ty, return_type));
+//	}
 	match_reference_declaration(&node);
 	return &node;
 }
