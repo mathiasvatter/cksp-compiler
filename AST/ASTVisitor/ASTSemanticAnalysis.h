@@ -48,6 +48,7 @@ public:
 	NodeAST * visit(NodeVariable& node) override;
     NodeAST * visit(NodeVariableRef& node) override;
 
+	NodeAST * visit(NodeFunctionVarRef& node) override;
 	/// provide and search for function definition; handle is_thread_safe flag
 	NodeAST * visit(NodeFunctionCall& node) override;
     /// add function parameters to scope

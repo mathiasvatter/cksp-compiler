@@ -31,7 +31,7 @@ void Compiler::compile() {
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 //	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+//    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -112,6 +112,7 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Variable Checking") << std::endl;
 	compile_time.start("Semantic Analysis");
 
+	ast->debug_print();
 	ASTSemanticAnalysis data_structures(&m_definition_provider);
 	ast->accept(data_structures);
 
@@ -171,8 +172,6 @@ void Compiler::compile() {
 	ASTGlobalScope global_scope(&m_definition_provider);
 	ast->accept(global_scope);
 
-
-	ast->debug_print();
 	compile_time.stop("Global Scope");
 	std::cout << compile_time.print_timer("Global Scope") << std::endl;
     compile_time.start("Function Inlining");

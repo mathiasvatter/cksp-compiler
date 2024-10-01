@@ -131,7 +131,7 @@ struct NodeNDArrayRef : NodeReference {
 struct NodeFunctionVarRef : NodeReference {
 	NodeFunctionDefinition* definition = nullptr;
 	std::unique_ptr<class NodeFunctionHeader> header;
-	NodeFunctionVarRef(std::unique_ptr<NodeFunctionHeader> header, Token tok);
+	NodeFunctionVarRef(std::string name, std::unique_ptr<NodeFunctionHeader> header, Token tok);
 	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeFunctionVarRef(const NodeFunctionVarRef& other);

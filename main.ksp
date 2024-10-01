@@ -49,13 +49,21 @@ on init
 	pupu(get_pipi)
 end on
 
-function get_pipi()
-	message("pipi")
+function get_pipi(num1: int, str1: string)
+	message("pipi", num1, str1)
 end function
 
-function pupu(msg)
+function array.reduce(array, func) -> result
+	declare lib.i
+	result := array[0]
+	for lib.i := 0 to num_elements(array)-1
+		result := func(result, array[lib.i])
+	end for
+end function
+
+function pupu(msg: (int, string): void)
 	message("pupu")
-	msg()
+	msg(3, "pipi")
 end function
 
 function do_sth_with_btn(ui_array: int[]) 

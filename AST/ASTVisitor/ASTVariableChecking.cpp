@@ -154,9 +154,11 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 
 	// check if we are in a function and the header is an arg of the current function
 	if(!m_program->function_call_stack.empty() and !node.definition and node.kind == NodeFunctionCall::Undefined) {
-		auto function_ref = std::make_unique<NodeFunctionVarRef>(clone_as<NodeFunctionHeader>(node.function.get()), node.function->tok);
+		auto function_ref = std::make_unique<NodeFunctionVarRef>(node.function->name, nullptr, node.function->tok);
 		auto node_declaration = m_def_provider->get_declaration(function_ref.get());
 		if(node_declaration) {
+			function_ref->header = std::move(node.function);
+			function_ref->header->parent = function_ref.get();
 			auto new_node = static_cast<NodeReference*>(node.replace_with(std::move(function_ref)));
 			new_node->match_data_structure(node_declaration);
 			m_def_provider->add_to_references(new_node);
@@ -420,6 +422,7 @@ NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure
 		auto node_function = std::make_unique<NodeFunctionHeader>(node->name, std::make_unique<NodeParamList>(node->tok), node->tok);
 		if(!node_function) get_apply_type_annotations_error(node).exit();
 		node_function->is_local = node->is_local;
+		node_function->ty = node->ty;
 		new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_function)));
 	}
 	if(new_data_struct) return new_data_struct;

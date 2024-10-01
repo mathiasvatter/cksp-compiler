@@ -90,7 +90,7 @@ public:
 		return &node;
 	}
 	virtual NodeAST* visit(NodeFunctionVarRef& node) {
-		node.header->accept(*this);
+		if(node.header) node.header->accept(*this);
 		return &node;
 	}
     virtual NodeAST* visit(NodeUIControl& node){

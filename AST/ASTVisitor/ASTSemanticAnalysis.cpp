@@ -75,6 +75,29 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
 	return &node;
 }
 
+NodeAST * ASTSemanticAnalysis::visit(NodeFunctionVarRef& node) {
+	if(node.header) node.header->accept(*this);
+	NodeReference* new_node = &node;
+	if(auto repl = replace_incorrectly_detected_reference(m_def_provider, &node)) {
+		new_node = repl;
+		new_node->accept(*this);
+	}
+	replace_incorrectly_detected_data_struct(new_node->declaration);
+	if(new_node->declaration and new_node->declaration->get_node_type() == NodeType::FunctionHeader
+	and new_node->get_node_type() == NodeType::FunctionVarRef) {
+		auto func_var_ref = static_cast<NodeFunctionVarRef*>(new_node);
+		auto func_declaration = static_cast<NodeFunctionHeader*>(new_node->declaration);
+		if(func_var_ref->header->args->params.empty()) {
+			func_var_ref->header->args = clone_as<NodeParamList>(func_declaration->args.get());
+			func_var_ref->header->args->parent = func_var_ref->header.get();
+		} else if(func_declaration->args->params.empty()) {
+			func_declaration->args = clone_as<NodeParamList>(func_var_ref->header->args.get());
+			func_declaration->args->parent = func_declaration;
+		}
+	}
+	return &node;
+}
+
 NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
 
@@ -127,9 +150,9 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNDArray& node) {
 NodeAST * ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
     if(node.indexes) node.indexes->accept(*this);
 
-	if(!node.determine_sizes()) {
-		NodeReference* new_node = &node;
-		if(auto repl = replace_incorrectly_detected_reference(m_def_provider, &node)) {
+	if (!node.determine_sizes()) {
+		NodeReference *new_node = &node;
+		if (auto repl = replace_incorrectly_detected_reference(m_def_provider, &node)) {
 			new_node = repl;
 			new_node->accept(*this);
 		}
@@ -238,6 +261,7 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 			} else if (arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::FunctionHeader) {
 				auto node_var_ref = static_cast<NodeVariableRef*>(arg.get());
 				auto func_var_ref = std::make_unique<NodeFunctionVarRef>(
+					node_var_ref->name,
 					std::make_unique<NodeFunctionHeader>(node_var_ref->name, std::make_unique<NodeParamList>(node_var_ref->tok), node_var_ref->tok),
 					    node_var_ref->tok
 					);
@@ -317,7 +341,7 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 
 	if(new_data_struct) {
 		new_data_struct->data_type = data_type;
-
+		new_data_struct->ty = data_struct->ty;
 //		m_def_provider->set_references(new_data_struct, references);
 //		// update all reference declaration pointers
 //		for(auto & ref : references) {
@@ -390,6 +414,7 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(Defin
 		}
 	} else if (reference->get_node_type() == NodeType::VariableRef and reference->declaration->get_node_type() == NodeType::FunctionHeader) {
 		node_replacement = std::make_unique<NodeFunctionVarRef>(
+			reference->name,
 			std::make_unique<NodeFunctionHeader>(
 				reference->name,
 				std::make_unique<NodeParamList>(reference->tok),
