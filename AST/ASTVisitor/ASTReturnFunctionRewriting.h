@@ -69,7 +69,7 @@ public:
 					auto throwaway_ref = throwaway_var->to_reference();
 					throwaway_ref->name = m_def_provider->get_fresh_name("_");
 					throwaway_ref->kind = NodeReference::Kind::Throwaway;
-					node.function->args->prepend_param(std::move(throwaway_ref));
+					node.function->prepend_arg(std::move(throwaway_ref));
 				}
 			}
 		}
@@ -97,7 +97,7 @@ public:
 			if(!func_call->get_definition(m_program)) return &node;
 			if(func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
 			if(func_call->definition->num_return_params > 0) {
-				func_call->function->args->prepend_param(std::move(node.l_value));
+				func_call->function->prepend_arg(std::move(node.l_value));
 				return node.replace_with(std::move(node.r_value));
 			}
 		}
@@ -112,7 +112,7 @@ public:
 			if (!func_call->get_definition(m_program)) return &node;
 			if (func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
 			if (func_call->definition->num_return_params > 0) {
-				func_call->function->args->prepend_param(node.variable->to_reference());
+				func_call->function->prepend_arg(node.variable->to_reference());
 				auto node_block = std::make_unique<NodeBlock>(node.tok);
 				node_block->scope = true;
 				node_block->add_stmt(std::make_unique<NodeStatement>(

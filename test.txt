@@ -1,34 +1,19 @@
-{ Compiled with cksp version 0.0.6 on Tue Oct 01 15:46:06 2024 }
+{ Compiled with cksp version 0.0.6 on Wed Oct 02 16:21:35 2024 }
 on init
-  declare $loc_1
-  declare $loc_2
-  declare %loc_0[6]
-  declare $loc_3
+  declare $loc_0
   declare ui_button $btn_1 
   declare ui_button $btn_2 
-  declare %btn_slot[5]
   declare ui_button $btn_slot0 
   declare ui_button $btn_slot1 
   declare ui_button $btn_slot2 
   declare ui_button $btn_slot3 
   declare ui_button $btn_slot4 
-  $loc_3 := 0
-  while($loc_3 < 5) 
-    %btn_slot[$loc_3] := get_ui_id($btn_slot0) + $loc_3
-    inc($loc_3)
-  end while
-  $loc_1 := 0
-  while($loc_1 < num_elements(%loc_0)) 
-    %loc_0[$loc_1] := 1
-    inc($loc_1)
-  end while
-  $loc_1 := 0
-  while($loc_1 <= 4) 
-    $loc_2 := %btn_slot[$loc_1]
-    message($loc_2 & ", " & %loc_0[($loc_1 * 2) + 0] & ", " & 2)
-    inc($loc_1)
+  $loc_0 := 0
+  while($loc_0 < 5) 
+    inc($loc_0)
   end while
   message("pupu")
   message("pipi" & ", " & 3 & ", " & "pipi")
+  $btn_1 := 1
 end on
 

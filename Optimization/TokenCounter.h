@@ -58,7 +58,7 @@ protected:
 
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		int func_tokens = node.function->args->params.size();
+		int func_tokens = node.function->get_num_args();
 		func_tokens += 1; // because of function name
 		m_tokens += func_tokens;
 		if(contains(node.function->name, "nks")) {

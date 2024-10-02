@@ -234,14 +234,17 @@ public:
 	static std::unique_ptr<NodeFunctionCall> num_elements(std::unique_ptr<NodeArrayRef> ref) {
 		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
-				"num_elements",
-				std::make_unique<NodeParamList>(
-					ref->tok,
-					std::move(ref)
+			std::make_unique<NodeFunctionVarRef>(
+				std::make_unique<NodeFunctionHeader>(
+					"num_elements",
+					std::make_unique<NodeParamList>(
+						ref->tok,
+						std::move(ref)
+						),
+					Token()
 				),
 				Token()
-			),
+				),
 			Token()
 		);
 		func_call->ty = TypeRegistry::Integer;
@@ -252,11 +255,14 @@ public:
 	static std::unique_ptr<NodeFunctionCall> get_ui_id(std::unique_ptr<NodeReference> ref) {
 		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
-				"get_ui_id",
-				std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
+			std::make_unique<NodeFunctionVarRef>(
+				std::make_unique<NodeFunctionHeader>(
+					"get_ui_id",
+					std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
+					Token()
+					),
 				Token()
-			),
+				),
 			Token()
 		);
 		func_call->ty = TypeRegistry::Integer;
@@ -267,9 +273,12 @@ public:
 	static std::unique_ptr<NodeFunctionCall> inc(std::unique_ptr<NodeReference> ref) {
 		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
-				"inc",
-				std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
+			std::make_unique<NodeFunctionVarRef>(
+				std::make_unique<NodeFunctionHeader>(
+					"inc",
+					std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
+					Token()
+				),
 				Token()
 			),
 			Token()

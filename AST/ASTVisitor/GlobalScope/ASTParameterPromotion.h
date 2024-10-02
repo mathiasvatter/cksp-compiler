@@ -112,7 +112,7 @@ public:
 						node.definition->header->args->add_param(clone_as<NodeDataStructure>(decl.second->variable.get()));
 						for (auto &call_site : node.definition->call_sites) {
 							// add references to those local variables in the function call
-							call_site->function->args->add_param(decl.second->variable->to_reference());
+							call_site->function->add_arg(decl.second->variable->to_reference());
 						}
 					}
 
@@ -156,9 +156,9 @@ public:
 			}
 
 			// remove call flag when function is not thread safe
-			if(!node.definition->is_thread_safe and !node.function->args->params.empty()) {
+			if(!node.definition->is_thread_safe and !node.function->has_no_args()) {
 				node.is_call = false;
-			} else if (node.definition->is_thread_safe and node.function->args->params.empty()){
+			} else if (node.definition->is_thread_safe and node.function->has_no_args()){
 //				if(m_program->current_callback != m_program->init_callback) node.is_call = true;
 			}
 

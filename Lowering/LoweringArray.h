@@ -131,9 +131,9 @@ public:
 
 	NodeAST * visit(NodeFunctionCall& node) override {
 		// check if func is 'num_elements' which returns constant and can be used as array size
-		if(node.kind == NodeFunctionCall::Kind::Builtin and node.function->args->params.size() == 1) {
+		if(node.kind == NodeFunctionCall::Kind::Builtin and node.function->get_num_args() == 1) {
 			if(node.function->name == "num_elements" or node.function->name == "get_ui_id") {
-				if(node.function->args->params.at(0)->get_string() == m_current_array->name) {
+				if(node.function->get_arg(0)->get_string() == m_current_array->name) {
 					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 					error.m_message = "Size of <Array> cannot reference itself.";
 					error.exit();

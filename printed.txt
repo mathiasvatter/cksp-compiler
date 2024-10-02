@@ -3,43 +3,37 @@ Global Declarations:
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
 on init
 	declare _iter : int
-	declare ui_button btn_1 : unknown 
-	declare ui_button btn_2 : unknown 
-	declare ui_button btn_slot[5] : unknown 
-	declare array[btn_slot.SIZE] : unknown := (0 + 2, 1, 2)
-	declare no_array : unknown := 23
-	do_sth_with_btn(btn_slot)
-	pupu(get_pipi)
+	declare ui_button btn_1 : int 
+	declare ui_button btn_2 : int 
+	declare const btn_slot.SIZE : int := 5
+	declare btn_slot[5] : int[]
+	declare ui_button btn_slot0 : int 
+	declare ui_button btn_slot1 : int 
+	declare ui_button btn_slot2 : int 
+	declare ui_button btn_slot3 : int 
+	declare ui_button btn_slot4 : int 
+	_iter := 0
+	while(_iter < 5) 
+	btn_slot[_iter] := get_ui_id(btn_slot0) : unknown + _iter
+	inc(_iter) : unknown
+	end while
+	pupu(get_pipi() : unknown) : unknown
+	return_twice(btn_1, _) : unknown
 end on
 
-function pupu(msg() : (int, string): void)
-	message("pupu")
+function get_pipi(num1 : int, str1 : string) : unknown
+	message("pipi" & ", " & num1 & ", " & str1) : (string, int, string): unknown
+end function
+
+function pupu(msg() : (int, string): void) : unknown
+	message("pupu") : (any): void
 	msg(3, "pipi") : unknown
 end function
 
-function do_sth_with_btn(ui_array : int[])
-	declare another_array[3, 2] : unknown := (1)
-	declare i : unknown
-	i := 0
-	while(i <= (ui_array.SIZE - 1)) 
-		declare ui_id : unknown := ui_array[i]
-		message(ui_id, another_array[i, 0], another_array.SIZE_D2)
-		inc(i)
-	end while
-end function
-
-function array.reduce(array : unknown, func : unknown) -> result : unknown
-	declare lib.i : unknown
-	result := array[0]
-	lib.i := 0
-	while(lib.i <= (num_elements(array) - 1)) 
-		result := func(result, array[lib.i]) : unknown
-		inc(lib.i)
-	end while
-end function
-
-function get_pipi(num1 : int, str1 : string)
-	message("pipi", num1, str1)
+function return_twice(return0 : int, return1 : int) : unknown
+	declare a : int := 2
+	return0 := 1
+	return1 := a
 end function
 
 

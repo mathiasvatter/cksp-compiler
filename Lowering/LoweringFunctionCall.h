@@ -18,7 +18,7 @@ public:
 		node.get_definition(m_program);
 
         if(node.kind == NodeFunctionCall::Kind::Property) {
-            auto node_body = inline_property_function(node.definition->header.get(), std::move(node.function));
+            auto node_body = inline_property_function(node.definition->header.get(), std::move(node.function->header));
             node_body->accept(*this);
             return node.replace_with(std::move(node_body));
         }
@@ -39,10 +39,10 @@ public:
         // message overloaded is not recognized as builtin
 		// constructor method renaming
         if(node.kind == NodeFunctionCall::Kind::Undefined) {
-            if(node.function->args->params.size() == 1) return &node;
+            if(node.function->get_num_args() == 1) return &node;
             if(node.function->name != "message") return &node;
             // lowering of message parameters when separated by comma
-            node.function->args = inline_message_parameters(node.function->args);
+            node.function->header->args = inline_message_parameters(node.function->header->args);
         }
 		return &node;
 	}

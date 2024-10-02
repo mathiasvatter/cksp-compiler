@@ -44,10 +44,15 @@ on init
 	// declare huihui : (int, int): void
 	declare ui_button btn_slot[5]
 	
-	declare array[btn_slot.SIZE], no_array := (0+2, 1, 2), 23
-	do_sth_with_btn(btn_slot)
 	pupu(get_pipi)
+
+	btn_1, _ := return_twice()
 end on
+
+function return_twice()
+	declare a := 2
+	return 1, a
+end function
 
 function get_pipi(num1: int, str1: string)
 	message("pipi", num1, str1)
@@ -64,15 +69,6 @@ end function
 function pupu(msg: (int, string): void)
 	message("pupu")
 	msg(3, "pipi")
-end function
-
-function do_sth_with_btn(ui_array: int[]) 
-	declare another_array[3, 2] := (1)
-	declare i
-	for i := 0 to ui_array.SIZE-1
-		declare ui_id := ui_array[i]	
-		message(ui_id, another_array[i, 0], another_array.SIZE_D2)
-	end for
 end function
 
 

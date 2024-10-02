@@ -281,22 +281,22 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 
 NodeAST * TypeInference::visit(NodeFunctionVarRef& node) {
 	node.header->accept(*this);
-	match_type(&node, node.header.get());
-	if(node.definition) {
-		if(!node.definition->visited) node.definition->accept(*this);
-		match_type(&node, node.definition);
+
+	// if declaration type has empty args -> get type from reference
+	if(node.declaration) {
+		auto decl_type = static_cast<FunctionType *>(node.declaration->ty);
+		auto ref_type = static_cast<FunctionType *>(node.ty);
+		if (decl_type->get_params().empty()) {
+			node.declaration->ty = node.ty;
+		} else if (ref_type->get_params().empty()) {
+			node.ty = node.declaration->ty;
+		}
+		node.header->ty = node.ty;
 	}
-//	match_type(node.header.get(), node.declaration);
-//	match_type(node.declaration, node.header.get());
-//
-//	if(node.parent->get_node_type() != NodeType::Statement and !node.is_func_arg()) {
-//		auto return_type = static_cast<FunctionType *>(node.header->ty)->get_return_type();
-//		if (!node.ty->is_compatible(return_type)) {
-//			throw_type_error(&node, node.declaration).exit();
-//		}
-//		node.set_element_type(specialize_type(node.ty, return_type));
-//	}
-	match_reference_declaration(&node);
+
+//	match_reference_declaration(&node);
+//	match_type(&node, node.header.get());
+//	match_reference_declaration(&node);
 	return &node;
 }
 
@@ -549,8 +549,8 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.function->name << ", " << node.tok.line << std::endl;
 
-	node.function->accept(*this);
 	node.get_definition(m_program);
+	node.function->accept(*this);
 	if(!node.definition) {
 		// if definition pre lowering not found -> could be struct __init__ func
 		// this_list := List(42, nil)
@@ -558,22 +558,29 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			node.ty = obj_type;
 			return &node;
 		}
-		return &node;
+//		return &node;
 	}
-	if(!node.definition->visited) node.definition->accept(*this);
 
-	for (int i = 0; i < node.function->args->params.size(); i++) {
-		const std::string error_message = "Found incorrect type in <Function Call>. Function <"+node.function->name+"> expects "+node.definition->header->args->params[i]->ty->to_string()+" as argument type.";
-		match_type(node.function->args->params[i].get(), node.definition->header->args->params[i].get(), error_message);
+	if(node.definition) {
+		if (!node.definition->visited) node.definition->accept(*this);
+		for (int i = 0; i < node.function->get_num_args(); i++) {
+			const std::string error_message =
+				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
+					+ node.definition->header->args->params[i]->ty->to_string() + " as argument type.";
+			match_type(node.function->get_arg(i).get(), node.definition->header->args->params[i].get(), error_message);
+		}
 	}
 //	match_type(&node, node.definition);
-
-	auto return_type = static_cast<FunctionType*>(node.definition->ty)->get_return_type();
-	if(!node.ty->is_compatible(return_type)) {
-		throw_type_error(&node, node.definition).exit();
+	if(node.function->declaration) {
+		Type* return_type = node.ty;
+		if(node.function->declaration->ty->get_type_kind() == TypeKind::Function) {
+			return_type = static_cast<FunctionType *>(node.function->declaration->ty)->get_return_type();
+		}
+		if (!node.ty->is_compatible(return_type)) {
+			throw_type_error(&node, node.function->declaration).exit();
+		}
+		node.set_element_type(specialize_type(node.ty, return_type));
 	}
-	node.set_element_type(specialize_type(node.ty, return_type));
-
 	return &node;
 }
 
@@ -600,14 +607,15 @@ NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
     node.header->accept(*this);
     if(node.return_variable.has_value()) {
 		node.return_variable.value()->accept(*this);
-
 	}
-	update_function_type(node.header.get(), node.return_variable.has_value() ? node.return_variable.value().get()->ty : TypeRegistry::Unknown);
+//	update_function_type(node.header.get(), node.return_variable.has_value() ? node.return_variable.value().get()->ty : TypeRegistry::Unknown);
     node.body->accept(*this);
     // get possible return type of node.definition by looking at the return param
+	node.header->create_function_type(node.return_variable.has_value() ? node.return_variable.value().get()->ty : TypeRegistry::Unknown);
+//	match_type(&node, node.header.get());
+	node.ty = node.header->ty;
 //    if(node.return_variable.has_value()) {
 //		match_type(node.header.get(), node.return_variable.value().get());
-		match_type(&node, node.header.get());
 //	}
 	return &node;
 }

@@ -307,6 +307,7 @@ struct NodeParamList: NodeAST {
 	};
     std::string get_string() override {
         std::string str;
+		if(params.empty()) return str;
         for(auto & p : params) {
             str += p->get_string() + ", ";
         }
@@ -486,6 +487,8 @@ struct NodeFunctionDefinition: NodeAST {
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	bool is_method();
 	void update_param_data_type() const;
+	std::unique_ptr<NodeAST>& get_arg(int i);
+
 };
 
 struct NodeProgram : NodeAST {
@@ -504,7 +507,7 @@ struct NodeProgram : NodeAST {
 	explicit NodeProgram(Token tok);
 	NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 					   std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok);
-	~NodeProgram();
+	~NodeProgram() override;
     NodeAST* accept(struct ASTVisitor &visitor) override;
     // Kopierkonstruktor
     NodeProgram(const NodeProgram& other);

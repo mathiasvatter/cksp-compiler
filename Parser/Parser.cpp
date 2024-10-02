@@ -951,7 +951,7 @@ Result<std::unique_ptr<NodeFunctionCall>> Parser::parse_function_call(NodeAST* p
     }
     node_function_call->is_call = is_call;
 	node_function_call->is_new = is_new;
-    node_function_call->function = std::move(func_stmt.unwrap());
+    node_function_call->function = std::make_unique<NodeFunctionVarRef>(std::move(func_stmt.unwrap()), node_function_call->tok);
     node_function_call->set_child_parents();
     node_function_call->parent = parent;
 //    mark_function_as_used(node_function_call->function->name, node_function_call->function->args->params.size());

@@ -24,7 +24,7 @@ public:
 
 		auto new_node = lowering(control_function, get_control_statement);
 		// add r_value as third parameter to set_control_par
-		new_node->function->args->add_param(std::move(node.r_value));
+		new_node->function->add_arg(std::move(node.r_value));
 		return node.replace_with(std::move(new_node))->accept(*this);
 	};
 
@@ -73,8 +73,8 @@ private:
 				reference->ty = declaration->ty;
 			}
 
-            node_control_function->function->args->add_param(std::move(node->ui_id));
-			node_control_function->function->args->add_param(std::move(control_par));
+            node_control_function->function->add_arg(std::move(node->ui_id));
+			node_control_function->function->add_arg(std::move(control_par));
 
             // check if var needs is ui control and needs to wrapped in get_ui_id
 			node_control_function->lower(m_program);

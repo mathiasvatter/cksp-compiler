@@ -3,6 +3,7 @@
 //
 
 #include "ASTInstructions.h"
+#include "ASTReferences.h"
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Lowering/ASTLowering.h"
 #include "../../Desugaring/DesugarDeclareAssign.h"
@@ -37,11 +38,25 @@ NodeAST *NodeStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST
 NodeAST *NodeFunctionCall::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
+NodeFunctionCall::NodeFunctionCall(Token tok) : NodeInstruction(NodeType::FunctionCall, std::move(tok)) {}
+NodeFunctionCall::NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionVarRef> function, Token tok)
+	: NodeInstruction(NodeType::FunctionCall, std::move(tok)), is_call(is_call), function(std::move(function)) {
+	set_child_parents();
+}
+NodeFunctionCall::NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHeader> header, Token tok)
+	: NodeInstruction(NodeType::FunctionCall, std::move(tok)), is_call(is_call) {
+	function = std::make_unique<NodeFunctionVarRef>(std::move(header), header->tok);
+	set_child_parents();
+}
+
+NodeFunctionCall::~NodeFunctionCall() = default;
+
 NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
         : NodeInstruction(other), is_call(other.is_call), is_new(other.is_new), kind(other.kind),
           function(clone_unique(other.function)), definition(other.definition) {
     set_child_parents();
 }
+
 std::unique_ptr<NodeAST> NodeFunctionCall::clone() const {
     return std::make_unique<NodeFunctionCall>(*this);
 }
@@ -51,7 +66,7 @@ ASTLowering* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
 }
 
 NodeFunctionDefinition* NodeFunctionCall::find_definition(struct NodeProgram *program) {
-    auto it = program->function_lookup.find({function->name, (int)function->args->params.size()});
+    auto it = program->function_lookup.find({function->name, (int)function->header->args->params.size()});
     if(it != program->function_lookup.end()) {
         it->second->is_used = true;
         definition = it->second;
@@ -65,9 +80,9 @@ NodeFunctionDefinition* NodeFunctionCall::find_builtin_definition(NodeProgram *p
     if(!program->def_provider) {
         CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
-    if(auto builtin_func = program->def_provider->get_builtin_function(function.get())) {
+    if(auto builtin_func = program->def_provider->get_builtin_function(function->header.get())) {
         function->ty = builtin_func->ty;
-        function->has_forced_parenth = builtin_func->header->has_forced_parenth;
+        function->header->has_forced_parenth = builtin_func->header->has_forced_parenth;
         definition = builtin_func;
 		definition->is_thread_safe = builtin_func->is_thread_safe;
 		kind = Kind::Builtin;
@@ -80,13 +95,13 @@ NodeFunctionDefinition* NodeFunctionCall::find_property_definition(NodeProgram *
     if(!program->def_provider) {
         CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
-    if(auto property_func = program->def_provider->get_property_function(function.get())) {
-        if(function->args->params.size() < 2) {
+    if(auto property_func = program->def_provider->get_property_function(function->header.get())) {
+        if(function->header->args->params.size() < 2) {
             CompileError(
                     ErrorType::SyntaxError,
                     "Found Property Function with insufficient amount of arguments.",
                     tok.line, "At least 2 arguments",
-                    std::to_string(function->args->params.size()),
+                    std::to_string(function->header->args->params.size()),
                     tok.file
             ).exit();
         }
@@ -107,7 +122,7 @@ NodeFunctionDefinition* NodeFunctionCall::find_method_definition(NodeProgram *pr
 	auto strct = program->struct_lookup.find(obj);
 	if(strct == program->struct_lookup.end()) return nullptr;
 	if(strct->second->method_table.empty()) return nullptr;
-	auto func = strct->second->method_table.find({this->function->name, (int)this->function->args->params.size()});
+	auto func = strct->second->method_table.find({this->function->name, (int)this->function->header->args->params.size()});
 	if(func == strct->second->method_table.end()) return nullptr;
 
 	function->ty = func->second->ty;

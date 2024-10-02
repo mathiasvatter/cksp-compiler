@@ -40,13 +40,12 @@ struct NodeFunctionCall : NodeInstruction {
     Kind kind = Undefined;
     bool is_call = false;
 	bool is_new = false;
-    std::unique_ptr<NodeFunctionHeader> function;
+    std::unique_ptr<class NodeFunctionVarRef> function;
     NodeFunctionDefinition* definition = nullptr;
-    inline explicit NodeFunctionCall(Token tok) : NodeInstruction(NodeType::FunctionCall, std::move(tok)) {}
-    inline NodeFunctionCall(bool isCall, std::unique_ptr<NodeFunctionHeader> function, Token tok)
-            : NodeInstruction(NodeType::FunctionCall, std::move(tok)), is_call(isCall), function(std::move(function)) {
-        set_child_parents();
-    }
+	explicit NodeFunctionCall(Token tok);
+	NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionVarRef> function, Token tok);
+	NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHeader> header, Token tok);
+	~NodeFunctionCall() override;
     NodeAST * accept(struct ASTVisitor &visitor) override;
     NodeFunctionCall(const NodeFunctionCall& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;

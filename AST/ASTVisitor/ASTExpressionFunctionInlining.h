@@ -32,15 +32,15 @@ public:
 		}
 		node.reset_function_visited_flag();
 		/// vector to house only the definitions that are actually used in the program
-//		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
-//		for(auto & func_def : node.function_definitions) {
-//			if(func_def->is_used) {
-//				final_function_definitions.push_back(std::move(func_def));
-//			}
-//		}
-//		node.function_definitions = std::move(final_function_definitions);
+		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
+		for(auto & func_def : node.function_definitions) {
+			if(func_def->is_used) {
+				final_function_definitions.push_back(std::move(func_def));
+			}
+		}
+		node.function_definitions = std::move(final_function_definitions);
 		node.reset_function_used_flag();
-//		node.update_function_lookup();
+		node.update_function_lookup();
 		return &node;
 	}
 
@@ -83,7 +83,7 @@ public:
 				m_program->function_call_stack.push(node.definition);
 
 				auto node_func_body = clone_as<NodeBlock>(node.definition->body.get());
-				m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function.get()));
+				m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function->header.get()));
 				node_func_body->accept(*this);
 
 				m_substitution_stack.pop();
@@ -94,6 +94,20 @@ public:
 				node.definition->is_used = true;
 			}
 		}
+		return &node;
+	}
+
+	NodeAST * visit(NodeFunctionVarRef& node) override {
+		// make sure that the function that is arg in a higher-order function
+		// does not get deleted because it is only ref and not being called
+		// foo(bar: (): void) -> bar is not called but function ref
+		if(node.declaration and node.is_func_arg()) {
+			if(node.declaration->parent->get_node_type() == NodeType::FunctionDefinition) {
+				auto def = static_cast<NodeFunctionDefinition*>(node.declaration->parent);
+				def->is_used = true;
+			}
+		}
+		node.header->accept(*this);
 		return &node;
 	}
 
