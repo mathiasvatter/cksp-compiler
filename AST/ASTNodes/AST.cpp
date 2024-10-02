@@ -267,7 +267,7 @@ bool NodeReference::needs_get_ui_id() {
 		wrap_it &= func_call->kind == NodeFunctionCall::Kind::Builtin;
 		wrap_it &= contains(func_call->function->name, "control_par");
 		// check if reference is first argument -> then wrap it
-		wrap_it &= func_call->function->args->params[0].get() == this;
+		wrap_it &= func_call->function->get_arg(0).get() == this;
 	}
 	wrap_it &= this->data_type != DataType::UIArray;
 	return wrap_it;
@@ -557,6 +557,13 @@ void NodeFunctionDefinition::update_param_data_type() const {
 	for(auto& param : this->header->args->params) {
 		static_cast<NodeDataStructure*>(param.get())->data_type = DataType::Param;
 	}
+}
+
+std::unique_ptr<NodeAST> &NodeFunctionDefinition::get_arg(int i) {
+	if(header->args->params.size() <= i) {
+		CompileError(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
+	}
+	return header->args->params[i];
 }
 
 // ************* NodeProgramm ***************

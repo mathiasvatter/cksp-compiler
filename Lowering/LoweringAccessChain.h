@@ -47,7 +47,7 @@ public:
 				node_ndarray_ref->indexes->prepend_param(std::move(prev_node));
 			} else if(curr_node->get_node_type() == NodeType::FunctionCall) {
 				auto node_func_call = static_cast<NodeFunctionCall*>(curr_node.get());
-				node_func_call->function->args->prepend_param(std::move(prev_node));
+				node_func_call->function->prepend_arg(std::move(prev_node));
 			}
 		}
 		return &node;

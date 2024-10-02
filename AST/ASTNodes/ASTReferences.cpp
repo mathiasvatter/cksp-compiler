@@ -209,17 +209,23 @@ NodeAST *NodeFunctionVarRef::accept(struct ASTVisitor &visitor) {
 }
 
 NodeFunctionVarRef::NodeFunctionVarRef(const NodeFunctionVarRef& other)
-	: NodeReference(other), header(clone_unique(other.header)), definition(other.definition) {
+	: NodeReference(other), header(clone_unique(other.header)) {
 	set_child_parents();
 }
-
-std::unique_ptr<NodeAST> NodeFunctionVarRef::clone() const {
-	return std::make_unique<NodeFunctionVarRef>(*this);
+NodeFunctionVarRef::NodeFunctionVarRef(std::unique_ptr<NodeFunctionHeader> header, Token tok)
+	: NodeReference(header->name, NodeType::FunctionVarRef, std::move(tok)), header(std::move(header)) {
+	set_child_parents();
 }
 
 NodeFunctionVarRef::NodeFunctionVarRef(std::string name, std::unique_ptr<NodeFunctionHeader> header, Token tok)
 	: NodeReference(std::move(name), NodeType::FunctionVarRef, std::move(tok)), header(std::move(header)) {
 	set_child_parents();
+}
+NodeFunctionVarRef::~NodeFunctionVarRef() = default;
+
+
+std::unique_ptr<NodeAST> NodeFunctionVarRef::clone() const {
+	return std::make_unique<NodeFunctionVarRef>(*this);
 }
 
 void NodeFunctionVarRef::update_parents(NodeAST *new_parent) {
@@ -229,6 +235,29 @@ void NodeFunctionVarRef::update_parents(NodeAST *new_parent) {
 
 void NodeFunctionVarRef::set_child_parents() {
 	if(header) header->parent = this;
+}
+
+int NodeFunctionVarRef::get_num_args() const {
+	return (int)header->args->params.size();
+}
+
+bool NodeFunctionVarRef::has_no_args() const {
+	return header->args->params.empty();
+}
+
+std::unique_ptr<NodeAST>& NodeFunctionVarRef::get_arg(int i) {
+	if(get_num_args() <= i) {
+		CompileError(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
+	}
+	return header->args->params[i];
+}
+
+void NodeFunctionVarRef::prepend_arg(std::unique_ptr<NodeAST> arg) const {
+	header->args->prepend_param(std::move(arg));
+}
+
+void NodeFunctionVarRef::add_arg(std::unique_ptr<NodeAST> arg) const {
+	header->args->add_param(std::move(arg));
 }
 
 // ************* NodeListRef ***************
@@ -293,9 +322,12 @@ bool NodePointerRef::is_string_repr() {
 std::unique_ptr<NodeFunctionCall> NodePointerRef::get_repr_call() {
 	return std::make_unique<NodeFunctionCall>(
 		false,
-		std::make_unique<NodeFunctionHeader>(
-			ty->to_string() + ".__repr__",
-			std::make_unique<NodeParamList>(tok, this->to_variable_ref()),
+		std::make_unique<NodeFunctionVarRef>(
+			std::make_unique<NodeFunctionHeader>(
+				ty->to_string() + ".__repr__",
+				std::make_unique<NodeParamList>(tok, this->to_variable_ref()),
+				tok
+			),
 			tok
 		),
 		tok

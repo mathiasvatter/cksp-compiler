@@ -101,9 +101,10 @@ NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 }
 
 NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
+	// function definitions are being visited in the program node
 	if(node.is_function_param()) {
 		// node header as data struct
-		m_def_provider->set_declaration(&node, !node.is_local);
+		m_def_provider->set_declaration(&node, false);
 		m_def_provider->add_to_data_structures(&node);
 	}
 	if(node.args) node.args->accept(*this);
@@ -132,7 +133,6 @@ NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
-	node.function->accept(*this);
 
 	if(!node.get_definition(m_program)) {
 		if (auto access_chain = try_access_chain_transform(node.function->name, &node)) {
@@ -141,6 +141,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 			return &node;
 		}
 	}
+	node.function->accept(*this);
 
 	if(node.kind == NodeFunctionCall::UserDefined and node.definition) {
 		node.definition->call_sites.emplace(&node);
@@ -149,20 +150,6 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 			m_functions_in_use.insert(node.definition);
 			node.definition->accept(*this);
 			m_functions_in_use.erase(node.definition);
-		}
-	}
-
-	// check if we are in a function and the header is an arg of the current function
-	if(!m_program->function_call_stack.empty() and !node.definition and node.kind == NodeFunctionCall::Undefined) {
-		auto function_ref = std::make_unique<NodeFunctionVarRef>(node.function->name, nullptr, node.function->tok);
-		auto node_declaration = m_def_provider->get_declaration(function_ref.get());
-		if(node_declaration) {
-			function_ref->header = std::move(node.function);
-			function_ref->header->parent = function_ref.get();
-			auto new_node = static_cast<NodeReference*>(node.replace_with(std::move(function_ref)));
-			new_node->match_data_structure(node_declaration);
-			m_def_provider->add_to_references(new_node);
-			return new_node;
 		}
 	}
 
@@ -246,6 +233,18 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionVarRef& node) {
+	node.header->accept(*this);
+	if(node.parent->get_node_type() == NodeType::FunctionCall) {
+		auto func_call = static_cast<NodeFunctionCall*>(node.parent);
+		if(func_call->kind != NodeFunctionCall::Undefined) {
+			node.declaration = func_call->definition->header.get();
+			return &node;
+		}
+		if(node.name == "message") {
+			return &node;
+		}
+	}
+
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
 		CompileError(ErrorType::Variable, "Function Variable has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();

@@ -112,7 +112,6 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Variable Checking") << std::endl;
 	compile_time.start("Semantic Analysis");
 
-	ast->debug_print();
 	ASTSemanticAnalysis data_structures(&m_definition_provider);
 	ast->accept(data_structures);
 
@@ -159,6 +158,7 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
 
+	ast->debug_print();
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
     ast->accept(infer_types);
@@ -176,9 +176,9 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Global Scope") << std::endl;
     compile_time.start("Function Inlining");
 
+//	ast->debug_print();
 	ASTFunctionInlining func_inlining(&m_definition_provider);
 	ast->accept(func_inlining);
-//	ast->debug_print();
 
     compile_time.stop("Function Inlining");
 	std::cout << compile_time.print_timer("Function Inlining") << std::endl;

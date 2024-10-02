@@ -82,20 +82,20 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionVarRef& node) {
 		new_node = repl;
 		new_node->accept(*this);
 	}
-	replace_incorrectly_detected_data_struct(new_node->declaration);
-	if(new_node->declaration and new_node->declaration->get_node_type() == NodeType::FunctionHeader
-	and new_node->get_node_type() == NodeType::FunctionVarRef) {
-		auto func_var_ref = static_cast<NodeFunctionVarRef*>(new_node);
-		auto func_declaration = static_cast<NodeFunctionHeader*>(new_node->declaration);
-		if(func_var_ref->header->args->params.empty()) {
-			func_var_ref->header->args = clone_as<NodeParamList>(func_declaration->args.get());
-			func_var_ref->header->args->parent = func_var_ref->header.get();
-		} else if(func_declaration->args->params.empty()) {
-			func_declaration->args = clone_as<NodeParamList>(func_var_ref->header->args.get());
-			func_declaration->args->parent = func_declaration;
-		}
-	}
-	return &node;
+	return replace_incorrectly_detected_data_struct(new_node->declaration);
+//	if(new_node->declaration and new_node->declaration->get_node_type() == NodeType::FunctionHeader
+//	and new_node->get_node_type() == NodeType::FunctionVarRef) {
+//		auto func_var_ref = static_cast<NodeFunctionVarRef*>(new_node);
+//		auto func_declaration = static_cast<NodeFunctionHeader*>(new_node->declaration);
+//		if(func_var_ref->header->args->params.empty()) {
+//			func_var_ref->header->args = clone_as<NodeParamList>(func_declaration->args.get());
+//			func_var_ref->header->args->parent = func_var_ref->header.get();
+//		} else if(func_declaration->args->params.empty()) {
+//			func_declaration->args = clone_as<NodeParamList>(func_var_ref->header->args.get());
+//			func_declaration->args->parent = func_declaration;
+//		}
+//	}
+//	return &node;
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
@@ -213,9 +213,9 @@ NodeAST * ASTSemanticAnalysis::visit(NodeListRef& node) {
 
 void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_call) {
 	if(func_call->kind == NodeFunctionCall::Kind::UserDefined and func_call->definition) {
-		for(int i=0; i<func_call->function->args->params.size(); i++) {
-			auto & arg = func_call->function->args->params.at(i);
-			auto & param = func_call->definition->header->args->params.at(i);
+		for(int i=0; i<func_call->function->get_num_args(); i++) {
+			auto & arg = func_call->function->get_arg(i);
+			auto & param = func_call->definition->get_arg(i);
 			if(arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::Array) {
 				auto node_var_ref = static_cast<NodeVariableRef*>(arg.get());
 				if(!node_var_ref->declaration) return;

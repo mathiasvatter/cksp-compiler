@@ -78,10 +78,10 @@ public:
 			),
 			array->tok
 		);
-		func_call->function->args->add_param(remove_indexes(array));
-		func_call->function->args->add_param(remove_indexes(array_to_copy));
+		func_call->function->add_arg(remove_indexes(array));
+		func_call->function->add_arg(remove_indexes(array_to_copy));
 		for(auto &dim : dims_to_copy) {
-			func_call->function->args->add_param(dim->clone());
+			func_call->function->add_arg(dim->clone());
 		}
 		return func_call;
 	}

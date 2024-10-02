@@ -63,17 +63,22 @@ public:
 		// visit header
 		node.function->accept(*this);
 		// check if function is called with correct amount of arguments
-		if(node.is_call and !node.function->args->params.empty()) {
+		if(node.is_call and !node.function->has_no_args()) {
 			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 			error.m_message = "Found incorrect amount of function arguments when using <call>.";
 			error.exit();
 		}
 
-		node.get_definition(m_program, true);
+		node.get_definition(m_program);
 		if(node.kind == NodeFunctionCall::Kind::Property) {
 			CompileError(ErrorType::InternalError,"Found undefined property function.", "", node.tok).exit();
 		}
-		if(!node.definition or node.kind == NodeFunctionCall::Kind::Undefined) {
+		if(!node.definition) {
+			// since we do depth first and try to visit every function before inlining,
+			// skip the error throw if definition is not found at the first visit since it
+			// could be found later -> high-order functions etc.
+			if(node.function->declaration and node.function->declaration->is_function_param()) return &node;
+
 			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 			error.m_message = "Unable to find function definition for <"+node.function->name+">.";
 			error.exit();
@@ -122,7 +127,6 @@ public:
 			node.is_call = false;
 		}
 
-
 		// visit everything beforehand to get depth first search
 		if(!node.definition->visited)
 			node.definition->accept(*this);
@@ -140,7 +144,7 @@ public:
 			node.definition = nullptr;
 		} else {
 			node_func_body = clone_as<NodeBlock>(node.definition->body.get());
-			m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function.get()));
+			m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function->header.get()));
 			node_func_body->accept(*this);
 			m_substitution_stack.pop();
 		}
@@ -169,13 +173,8 @@ public:
 	}
 	/// do substitution
 	inline NodeAST *visit(NodeFunctionVarRef &node) override {
-		auto new_node = do_substitution(&node);
-		if(m_program->function_call_stack.empty()) return new_node;
-		if(m_substitution_stack.empty()) return new_node;
-
-		auto function_ref = static_cast<NodeFunctionVarRef*>(new_node);
-		auto function_call = new_node->replace_with(std::make_unique<NodeFunctionCall>(false, std::move(function_ref->header), function_ref->tok));
-		return function_call->accept(*this);
+		node.header->accept(*this);
+		return do_substitution(&node);
 	}
 
 	static std::unordered_map<std::string, std::unique_ptr<NodeAST>> get_substitution_map(NodeFunctionHeader* definition, NodeFunctionHeader* call) {
