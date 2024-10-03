@@ -105,6 +105,8 @@ public:
 			if(node.declaration->parent->get_node_type() == NodeType::FunctionDefinition) {
 				auto def = static_cast<NodeFunctionDefinition*>(node.declaration->parent);
 				def->is_used = true;
+				def->accept(*this);
+				def->visited = true;
 			}
 		}
 		node.header->accept(*this);

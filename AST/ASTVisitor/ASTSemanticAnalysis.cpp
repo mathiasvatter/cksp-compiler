@@ -335,6 +335,7 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 			data_struct->name,
 			std::make_unique<NodeParamList>(data_struct->tok),
 			data_struct->tok);
+		node_var->ty = data_struct->ty;
 //		new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_var)));
 		new_data_struct = std::move(node_var);
 	}
