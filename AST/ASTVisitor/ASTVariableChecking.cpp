@@ -133,7 +133,6 @@ NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
-
 	if(!node.get_definition(m_program)) {
 		if (auto access_chain = try_access_chain_transform(node.function->name, &node)) {
 			access_chain->accept(*this);

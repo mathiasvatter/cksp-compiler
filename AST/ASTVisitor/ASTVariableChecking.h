@@ -100,6 +100,13 @@ private:
 		auto node_declaration = m_def_provider->get_declared_data_structure(ptr_name);
 		if(!node_declaration) return nullptr;
 
+		// different scenarios for different node types
+		// eq.lbl_param0 -> a reference originally recognized as a variable cannot have a variable or function declaration (eq)
+		if(node->get_node_type() == NodeType::VariableRef and (
+			node_declaration->get_node_type() != NodeType::Variable and node_declaration->get_node_type() != NodeType::Pointer)) {
+			return nullptr;
+		}
+
 		auto method_chain = node->to_method_chain();
 		if(!method_chain) return nullptr;
 		auto object = static_cast<NodeReference*>(method_chain->chain[0].get());
