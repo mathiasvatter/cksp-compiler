@@ -44,14 +44,15 @@ public:
 		node.reset_function_visited_flag();
 
 		/// vector to house only the definitions that are actually used in the program
-//		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
-//		for(auto & func_def : node.function_definitions) {
-//			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
-//				final_function_definitions.push_back(std::move(func_def));
-//			}
-//		}
-//		node.function_definitions = std::move(final_function_definitions);
-//		node.update_function_lookup();
+		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
+		// this is needed in case a return only function is called in a function with return value
+		for(auto & func_def : node.function_definitions) {
+			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
+				final_function_definitions.push_back(std::move(func_def));
+			}
+		}
+		node.function_definitions = std::move(final_function_definitions);
+		node.update_function_lookup();
 
 		return &node;
 	};
@@ -74,6 +75,20 @@ public:
 			}
 		}
 
+		return &node;
+	}
+
+	inline NodeAST * visit(NodeFunctionVarRef& node) override {
+		// make sure that the function that is arg in a higher-order function
+		// does not get deleted because it is only ref and not being called
+		// foo(bar: (): void) -> bar is not called but function ref
+		if(node.declaration and node.is_func_arg()) {
+			if(node.declaration->parent->get_node_type() == NodeType::FunctionDefinition) {
+				auto def = static_cast<NodeFunctionDefinition*>(node.declaration->parent);
+				if(!def->visited) def->accept(*this);
+			}
+		}
+		node.header->accept(*this);
 		return &node;
 	}
 

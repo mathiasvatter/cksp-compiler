@@ -280,10 +280,14 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionVarRef& node) {
+	if(node.name == "exec_startup_funcs_conditions") {
+
+	}
 	node.header->accept(*this);
 
 	// if declaration type has empty args -> get type from reference
 	if(node.declaration) {
+		node.ty = node.header->ty;
 		auto decl_type = static_cast<FunctionType *>(node.declaration->ty);
 		auto ref_type = static_cast<FunctionType *>(node.ty);
 		if (decl_type->get_params().empty()) {
