@@ -70,6 +70,7 @@ struct NodeFunctionCall : NodeInstruction {
 	[[nodiscard]] std::string get_object_name() const;
 	[[nodiscard]] std::string get_method_name() const;
 
+	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 };
 
 struct NodeAssignment: NodeInstruction {

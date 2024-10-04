@@ -40,6 +40,11 @@ NodeAST* ASTDesugar::visit(NodeFunctionDefinition& node) {
 	return node.desugar(m_program);
 }
 
+NodeAST* ASTDesugar::visit(NodeFunctionCall& node) {
+	node.function->accept(*this);
+	return node.desugar(m_program);
+}
+
 NodeAST* ASTDesugar::visit(NodeDeclaration& node) {
 	// desugar first into single declarations and then visit them
     return node.desugar(m_program)->accept(*this);

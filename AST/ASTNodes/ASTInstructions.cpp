@@ -14,6 +14,7 @@
 #include "../../Desugaring/DesugarForEachStatement.h"
 #include "../ASTVisitor/GlobalScope/ASTGlobalScope.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
+#include "../../Desugaring/DesugarFunctionCall.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -218,6 +219,11 @@ std::string NodeFunctionCall::get_method_name() const {
 		return function->name.substr(pos + 1);
 	}
 	return "";
+}
+
+ASTDesugaring * NodeFunctionCall::get_desugaring(NodeProgram *program) const {
+	static DesugarFunctionCall desugaring(program);
+	return &desugaring;
 }
 
 // ************* NodeAssignment ***************

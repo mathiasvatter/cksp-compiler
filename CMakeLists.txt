@@ -173,4 +173,5 @@ add_executable(cksp main.cpp
         Optimization/VarExistsValidator.h
         Optimization/MemoryExhaustedNesting.h
         Optimization/TokenCounter.h
+        Desugaring/DesugarFunctionCall.h
 )
