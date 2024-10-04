@@ -88,7 +88,7 @@ public:
 						}
 						l_values[i + ii] = nullptr;
 					}
-				} else if (i+num_values > l_values.size()) {
+				} else if (i+num_values >= l_values.size()) {
 					auto error = CompileError(ErrorType::SyntaxError,"", val->tok.line, "", "", val->tok.file);
 					error.m_message = "Found incorrect declare statement syntax. Called Function returns more values than variables declared.";
 					error.exit();

@@ -12,6 +12,7 @@
  * - not a ui_control
  * - only used as l_value in assignments
  * - never used as r_value
+ * Also removes throwaway variables
  */
 class VariablePruning : public ASTOptimizations {
 private:
@@ -91,10 +92,33 @@ public:
 		return true;
 	}
 
+	inline NodeAST *visit(NodeSingleAssignment& node) override {
+		if(node.l_value->get_node_type() == NodeType::VariableRef) {
+			auto var_ref = static_cast<NodeVariableRef*>(node.l_value.get());
+			if(var_ref->kind == NodeReference::Kind::Throwaway) {
+				return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+			}
+		}
+
+		node.l_value->accept(*this);
+		node.r_value->accept(*this);
+		return &node;
+	}
+
 	inline NodeAST *visit(NodeVariableRef &node) override {
+		if(node.kind == NodeReference::Kind::Throwaway) {
+			// if a throwaway variable is not in assignment it has been incorrectly used
+			if(node.parent->get_node_type() != NodeType::SingleAssignment) {
+				auto error = get_raw_compile_error(ErrorType::Variable, node);
+				error.m_message  = "Throwaway variables <"+node.name+"> are removed by the compiler and will not be included "
+																	 "in the compiled code. Consider renaming your variable.";
+				error.exit();
+			}
+		}
 		node.declaration->is_used |= is_used(node);
 		return &node;
 	}
+
 
 	inline NodeAST *visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);

@@ -49,12 +49,6 @@ public:
 	NodeAST * visit(NodeGetControl& node) override;
 	NodeAST * visit(NodeAccessChain& node) override;
 
-	static void debug_print(NodeAST* node) {
-		static ASTPrinter printer;
-		node->accept(printer);
-		printer.generate(PRINTER_OUTPUT);
-	};
-
     inline void generate(const std::string& path) const {
         std::ofstream outFile(path);
         if (outFile) {

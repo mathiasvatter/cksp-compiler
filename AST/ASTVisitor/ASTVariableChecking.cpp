@@ -266,6 +266,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
+
 	auto node_declaration = m_def_provider->get_declaration(&node);
     if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
