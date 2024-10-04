@@ -47,7 +47,16 @@ on init
 	pupu(get_pipi)
 
 	btn_1, _ := return_twice()
+
+	if(return_once() = 1)
+		message("pipi")
+	end if
 end on
+
+function return_once()
+	declare a := 2
+	return a
+end function
 
 function return_twice()
 	declare a := 2

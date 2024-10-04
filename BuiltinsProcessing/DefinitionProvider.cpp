@@ -92,6 +92,10 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 		var->kind = NodeReference::Kind::User;
 		return pgs_decl;
 	}
+	if(const auto &throwaway = get_throwaway_declaration(var)) {
+		var->kind = NodeReference::Kind::Throwaway;
+		return throwaway;
+	}
 
 	// get builtin declaration if it exists
 	NodeDataStructure *node_builtin_declaration = nullptr;
@@ -118,7 +122,8 @@ NodeDataStructure* DefinitionProvider::get_declaration(NodeReference* var) {
 	return nullptr;
 }
 
-NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, bool global_scope) {
+const NodeDataStructure* DefinitionProvider::set_declaration(NodeDataStructure* var, bool global_scope) {
+	handle_throwaway_var(*var);
 	m_gensym.ingest(var->name);
 	// get builtin declaration if it exists
 	NodeDataStructure *node_builtin_declaration = nullptr;

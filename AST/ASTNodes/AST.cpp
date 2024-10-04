@@ -69,9 +69,12 @@ Type* NodeAST::set_element_type(Type *element_type) {
 }
 
 void NodeAST::debug_print() {
+	// only print stuff if we are in debug mode
+#ifndef NDEBUG
 	static ASTPrinter printer;
 	this->accept(printer);
 	printer.generate(PRINTER_OUTPUT);
+#endif
 }
 
 NodeAST *NodeAST::lower(NodeProgram *program) {

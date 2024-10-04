@@ -57,9 +57,32 @@ public:
 		return true;
 	}
 
+	static inline void handle_throwaway_var(NodeDataStructure& var) {
+		if(var.name == "_") {
+			auto error = CompileError(ErrorType::Variable, "","", var.tok);
+			error.m_message = "Throwaway variable cannot be declared.";
+			error.exit();
+		}
+	}
+	NodeDataStructure* get_throwaway_declaration(NodeReference* var) {
+		if(var->name == "_") {
+			var->kind = NodeReference::Kind::Throwaway;
+		}
+		if(var->kind != NodeReference::Kind::Throwaway)
+			return nullptr;
+		static NodeVariable throwaway_var(
+			std::nullopt,
+			"_",
+			TypeRegistry::Unknown,
+			DataType::Mutable,
+			Token()
+		);
+		return &throwaway_var;
+	}
+
 	/// returns a static global dummy datastructure that can be used for declarations of compiler vars
 	static NodeDataStructure* get_compiler_declaration(NodeReference* var) {
-		if(var->kind != NodeReference::Kind::Compiler and var->kind != NodeReference::Kind::Throwaway)
+		if(var->kind != NodeReference::Kind::Compiler)
 			return nullptr;
 		static NodeVariable comp_var(
 			std::nullopt,
@@ -95,7 +118,7 @@ public:
 	/// only called by references -> only gets declaration does not add existing declarations to map
 	NodeDataStructure* get_declaration(NodeReference* var);
 	/// adds existing declaration to declaration map for look up. Always returns nullptr.
-	NodeDataStructure* set_declaration(NodeDataStructure* var, bool global_scope);
+	const NodeDataStructure* set_declaration(NodeDataStructure* var, bool global_scope);
 
 	/// clears all static pointer vectors
 	bool refresh_data_vectors() {
