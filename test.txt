@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.6 on Thu Oct 03 15:54:30 2024 }
+{ Compiled with cksp version 0.0.6-alpha.1 on Fri Oct 04 10:37:26 2024 }
 on init
   declare $loc_2
   declare ui_button $btn_1 

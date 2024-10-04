@@ -14,17 +14,17 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
 	std::string input_file;
 	std::string output_file;
 
-    std::string cli_help = R"(
-Usage: cksp [options] <input-file>
-
-Options:
- -h, --help                    Display usage information
- -o <file>, --output <file>    Set output file name (default: <input_dir>/out.txt)
- -v, --version                 Display version number
-
-)";
-    std::string data(reinterpret_cast<char*>(help), help_len);
-	cli_help += data;
+//    std::string cli_help = R"(
+//Usage: cksp [options] <input-file>
+//
+//OPTIONS:
+// -h, --help                    Display usage information
+// -o <file>, --output <file>    Set output file name (default: <input_dir>/out.txt)
+// -v, --version                 Display version number
+//
+//)";
+    std::string cli_help(reinterpret_cast<char*>(help), help_len);
+//	cli_help += data;
     std::string version = "cksp version "+COMPILER_VERSION+"\n";
 
     for (int i = 1; i < argc; ++i) {

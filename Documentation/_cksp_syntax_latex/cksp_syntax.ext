@@ -6,7 +6,7 @@
   keywords=[1]{
     START_INC, END_INC, SET_CONDITION, RESET_CONDITION, USE_CODE_IF, USE_CODE_IF_NOT, END_USE_CODE,
     NO_SYS_SCRIPT_GROUP_START, NO_SYS_SCRIPT_PEDAL, NO_SYS_SCRIPT_RLS_TRIG, import, as, \#pragma, output_path,
-    define, continue, for, in, to, steps, end, if, else, select, case, while, macro, struct, self, end, list, const, family,
+    define, iterate_macro, literate_macro, continue, for, in, to, steps, end, if, else, select, case, while, macro, struct, self, end, list, const, family,
     function, end function, override, return, on, end on, async_complete, controller,
     init, listener, note, persistence_changed, pgs_changed, poly_at, release, rpn, nrpn, ui_control, ui_update, midi_in,
     ui_controls, family, end family, list, end list, macro, end macro
@@ -105,13 +105,13 @@
 
 \definecolor{mycomment}{RGB}{80,90,80}     % Farbe für comment
 \definecolor{mykeyword}{RGB}{175,109,169}     % Farbe für Keywords
-\definecolor{mybuiltin}{RGB}{61,186,157}   % Farbe für builtin Funktionen 
+\definecolor{mybuiltin}{RGB}{61,150,157}   % Farbe für builtin Funktionen 
 \definecolor{mydeclare}{RGB}{67,134,202}     % Farbe für Deklarationen
 \definecolor{myboolean}{RGB}{60,60,60}   % Farbe für Booleans
 \definecolor{mysymbol}{RGB}{60,60,60}   % Farbe für symbols
 % \definecolor{mybooleanop}{RGB}{67,134,202}   % Farbe für Booleans operators
 \definecolor{mybooleanop}{RGB}{60,60,60}   % Farbe für Booleans operators
-\definecolor{mytype}{RGB}{61,100,157}        % Farbe für Typen
+\definecolor{mytype}{RGB}{61,150,157}        % Farbe für Typen
 \definecolor{mynumber}{RGB}{171,71,188}     % Farbe für Zahlen
 \definecolor{mystring}{RGB}{192,123,85}     % Farbe für Strings
 
@@ -119,7 +119,7 @@
   keywordstyle=[1]\color{mykeyword}\bfseries, %keyword
   keywordstyle=[2]\color{mytype}, %type
   keywordstyle=[3]\color{myboolean}, %booleans
-  keywordstyle=[4]\color{mydeclare}, %declarekeywords
+  keywordstyle=[4]\color{mydeclare}\bfseries, %declarekeywords
   keywordstyle=[5]\color{mybooleanop}, %boolean operators
   keywordstyle=[6]\color{mybuiltin}, %builtin functions
   commentstyle=\color{mycomment},
