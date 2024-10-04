@@ -16,9 +16,6 @@ fi
 
 BUILD_DIR="cmake-build-release"
 
-# build and deploy executable
-# $CMAKE_DIR -B $BUILD_DIR -DCMAKE_BUILD_TYPE=Release -S . && $CMAKE_DIR --build $BUILD_DIR -- -j 8
-
 # Build and deploy executable
 $CMAKE_DIR -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release -S .
 if [ $? -ne 0 ]; then
@@ -49,14 +46,20 @@ if [ ! -d "$RELEASES_DIR" ]; then
 fi
 
 TAG="v${VERSION}"
-VERSION_DIR="cksp_v${VERSION}_release"
+# Überprüfen, ob es sich um eine Pre-Release-Version handelt (z.B. -alpha, -beta, -rc)
+if [[ "$VERSION" == *"-"* ]]; then
+    VERSION_DIR="cksp_v${VERSION}"
+else
+    VERSION_DIR="cksp_v${VERSION}_release"
+fi
 RELEASE_DIR="${RELEASES_DIR}/${VERSION_DIR}"
 
 # Erstellen des Release-Ordners
 mkdir -p "$RELEASE_DIR"
 
-# create readme file
-"$BUILD_DIR/cksp" --help > "$RELEASE_DIR/Readme.txt"
+# Kopieren von README.md und CHANGELOG.md in den Release-Ordner
+cp README.md "$RELEASE_DIR/README.md"
+cp CHANGELOG.md "$RELEASE_DIR/CHANGELOG.md"
 
 mkdir -p "$RELEASE_DIR/$ARM_DIR"
 mkdir -p "$RELEASE_DIR/$INTEL_DIR"
@@ -65,8 +68,22 @@ mkdir -p "$RELEASE_DIR/$WINDOWS_DIR"
 rm "$RELEASE_DIR/$TARGET_DIR/cksp"
 # Kopieren der Binärdateien in den Release-Ordner
 cp "$BUILD_DIR/cksp" "$RELEASE_DIR/$TARGET_DIR/cksp"
-"ksp-compiler.wiki/convert_to_pdf.sh" "ksp-compiler.wiki/Features.md"
-mv "ksp-compiler.wiki/Features.pdf" "$RELEASE_DIR/Features.pdf"
+
+# Erstellen eines Namens für den Release-Ordner
+WIKI_DIR="ksp-compiler.wiki"
+# check if cksp exists
+if [ -d "$WIKI_DIR" ]; then
+  cd "$WIKI_DIR"
+  "./convert_to_pdf.sh" \
+    "1. Introduction.md" \
+    "2. Features.md" \
+    "3. Adopted Features.md" \
+    "4. Planned Features.md" \
+    "5. Installation.md"
+
+  mv "The CKSP Dialect.pdf" "$RELEASE_DIR/The CKSP Dialect.pdf"
+  cd -
+fi
 
 # Wechseln in das Verzeichnis _Releases vor dem Zippen
 cd "$RELEASES_DIR"
