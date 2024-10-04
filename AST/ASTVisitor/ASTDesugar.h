@@ -26,6 +26,8 @@ class ASTDesugar: public ASTVisitor {
     /// desugar into single assign statements
 	NodeAST * visit(NodeAssignment& node) override;
 
+	NodeAST * visit(NodeFunctionCall& node) override;
+
     /// desugar for each loops to for loops
 	NodeAST * visit(NodeForEach& node) override;
     /// alter for loops to while loops

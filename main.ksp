@@ -39,19 +39,29 @@
 // end struct
 
 on init	
-	declare ui_button btn_1, ui_button btn_2
+	declare ui_button btn_1: int, ui_button btn_2: int
 
 	// declare huihui : (int, int): void
-	declare ui_button btn_slot[5]
+	// declare ui_button btn_slot[5]: int[]
 	
-	pupu(get_pipi)
+	// pupu(get_pipi)
 
 	btn_1, _ := return_twice()
 
-	if(return_once() = 1)
+	if(return_twice() = 1)
 		message("pipi")
 	end if
+
+	declare get_sth: int, get_sth_more[3]: int[] := return_sth_more()
+
 end on
+
+function return_sth_more()
+    declare x[3]: int[] := (42, 43, 44)
+    return 1, x
+end function
+
+
 
 function return_once()
 	declare a := 2
@@ -60,7 +70,7 @@ end function
 
 function return_twice()
 	declare a := 2
-	return 1, a
+	return 1, by_marks(a)
 end function
 
 function get_pipi(num1: int, str1: string)

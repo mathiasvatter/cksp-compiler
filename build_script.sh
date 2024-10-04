@@ -74,12 +74,7 @@ WIKI_DIR="ksp-compiler.wiki"
 # check if cksp exists
 if [ -d "$WIKI_DIR" ]; then
   cd "$WIKI_DIR"
-  "./convert_to_pdf.sh" \
-    "1. Introduction.md" \
-    "2. Features.md" \
-    "3. Adopted Features.md" \
-    "4. Planned Features.md" \
-    "5. Installation.md"
+  ./export_wiki.sh
 
   mv "The CKSP Dialect.pdf" "$RELEASE_DIR/The CKSP Dialect.pdf"
   cd -

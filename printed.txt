@@ -5,46 +5,30 @@ on init
 	declare _iter : int
 	declare ui_button btn_1 : int 
 	declare ui_button btn_2 : int 
-	declare const btn_slot.SIZE : int := 5
-	declare btn_slot[5] : int[]
-	declare ui_button btn_slot0 : int 
-	declare ui_button btn_slot1 : int 
-	declare ui_button btn_slot2 : int 
-	declare ui_button btn_slot3 : int 
-	declare ui_button btn_slot4 : int 
-	_iter := 0
-	while(_iter < 5) 
-	btn_slot[_iter] := get_ui_id(btn_slot0) : unknown + _iter
-	inc(_iter) : unknown
-	end while
-	pupu(get_pipi() : (int, string): unknown) : ((int, string): unknown): unknown
 	return_twice(btn_1, _) : (unknown): unknown
 		declare _return0 : int
-		return_once(_return0) : (): unknown
+		return_twice(_return0, _) : (unknown): unknown
 
 	if(_return0 = 1)
 		message("pipi") : (string): unknown
 	end if
+	declare const get_sth_more.SIZE : int := 3
+	declare get_sth_more[3] : int[]
+	declare get_sth : int
+	return_sth_more(get_sth, get_sth_more) : (int[]): unknown
 end on
-
-function get_pipi(num1 : int, str1 : string) : unknown
-	message("pipi" & ", " & num1 & ", " & str1) : (string, int, string): unknown
-end function
-
-function pupu(msg() : (int, string): void) : unknown
-	message("pupu") : (string): unknown
-	msg(3, "pipi") : (int, string): unknown
-end function
 
 function return_twice(return0 : int, return1 : int) : unknown
 	declare a : int := 2
 	return0 := 1
-	return1 := a
+	return1 := by_marks(a) : (int): unknown
 end function
 
-function return_once(return0 : int) : unknown
-	declare a : int := 2
-	return0 := a
+function return_sth_more(return0 : int, return1 : int[]) : unknown
+	declare const x.SIZE : int := 3
+	declare x[3] : int[] := (42, 43, 44)
+	return0 := 1
+	return1 := x
 end function
 
 
