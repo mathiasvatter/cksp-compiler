@@ -2,33 +2,48 @@ Global Declarations:
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
 on init
+	declare const List.MAX_STRUCTS : int := MAX_STRUCTS
+	declare List.free_idx : int := 0
+	declare List.allocation[List.MAX_STRUCTS] : int[]
+	declare List.value[List.MAX_STRUCTS] : int[]
+	declare List.next[List.MAX_STRUCTS] : int[]
 	declare _iter : int
 	declare ui_button btn_1 : int 
 	declare ui_button btn_2 : int 
-	return_twice(btn_1, _) : (unknown): unknown
+	declare ptr : int := List(1, - 1)
+	return_twice(btn_1, _)
 		declare _return0 : int
-		return_twice(_return0, _) : (unknown): unknown
+		return_twice(_return0, _)
 
 	if(_return0 = 1)
-		message("pipi") : (string): unknown
+		message("pipi")
 	end if
-	declare const get_sth_more.SIZE : int := 3
 	declare get_sth_more[3] : int[]
 	declare get_sth : int
-	return_sth_more(get_sth, get_sth_more) : (int[]): unknown
+	return_sth_more(get_sth, get_sth_more)
 end on
 
 function return_twice(return0 : int, return1 : int) : unknown
 	declare a : int := 2
 	return0 := 1
-	return1 := by_marks(a) : (int): unknown
+	return1 := by_marks(a)
 end function
 
 function return_sth_more(return0 : int, return1 : int[]) : unknown
-	declare const x.SIZE : int := 3
 	declare x[3] : int[] := (42, 43, 44)
 	return0 := 1
 	return1 := x
+end function
+
+function List.__init__(return0 : int, value : int, next : int) : unknown
+	List.free_idx := search(List.allocation, 0)
+	if(List.free_idx = -1)
+		message("Error: No more free space available to allocate objects of type 'List'")
+	end if
+	List.allocation[List.free_idx] := 1
+	List.value[List.free_idx] := value
+	List.next[List.free_idx] := next
+	return0 := List.free_idx
 end function
 
 

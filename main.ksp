@@ -1,17 +1,17 @@
 
-// struct List
-// 	declare value: int
-// 	declare next
+struct List
+	declare value: int
+	declare next
 
-// 	function __init__(self, value: int, next)
-// 		self.value := value
-// 		self.next := next
-// 	end function
+	function __init__(self, value: int, next)
+		self.value := value
+		self.next := next
+	end function
 
-//     function get_next_next_value(self)
-//         return self.next.next.value
-//     end function
-// end struct
+    function get_next_next_value(self)
+        return self.next.next.value
+    end function
+end struct
 
 // struct Note
 // 	declare pitch: int
@@ -40,6 +40,8 @@
 
 on init	
 	declare ui_button btn_1: int, ui_button btn_2: int
+
+	declare ptr: List := List(1, nil)
 
 	// declare huihui : (int, int): void
 	// declare ui_button btn_slot[5]: int[]
