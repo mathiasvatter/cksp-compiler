@@ -226,6 +226,12 @@ ASTDesugaring * NodeFunctionCall::get_desugaring(NodeProgram *program) const {
 	return &desugaring;
 }
 
+bool NodeFunctionCall::is_builtin_kind() const {
+	static const std::unordered_set<NodeFunctionCall::Kind> builtin_kind = {NodeFunctionCall::Kind::Undefined, NodeFunctionCall::Kind::Builtin, NodeFunctionCall::Kind::Property};
+	if(builtin_kind.find(kind) != builtin_kind.end()) return true;
+	return false;
+}
+
 // ************* NodeAssignment ***************
 NodeAST *NodeAssignment::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);

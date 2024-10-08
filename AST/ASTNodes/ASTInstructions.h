@@ -66,7 +66,8 @@ struct NodeFunctionCall : NodeInstruction {
     bool get_definition(NodeProgram* program, bool fail=false);
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
 
-
+	/// returns true if function call is of kind: Undefined, Builtin or Property
+	[[nodiscard]] bool is_builtin_kind() const;
 	[[nodiscard]] std::string get_object_name() const;
 	[[nodiscard]] std::string get_method_name() const;
 

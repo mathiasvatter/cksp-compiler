@@ -10,11 +10,11 @@ on init
 	declare _iter : int
 	declare ui_button btn_1 : int 
 	declare ui_button btn_2 : int 
-	declare ptr : int := List(1, - 1)
+	declare ptr : int
+	List(ptr, 1, - 1)
 	return_twice(btn_1, _)
-		declare _return0 : int
-		return_twice(_return0, _)
-
+	declare _return0 : int
+	return_twice(_return0, _)
 	if(_return0 = 1)
 		message("pipi")
 	end if

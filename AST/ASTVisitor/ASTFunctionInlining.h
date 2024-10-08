@@ -107,9 +107,10 @@ public:
 
 		m_program->function_call_stack.push(node.definition);
 
-		if(node.kind != NodeFunctionCall::Kind::UserDefined) {
-			CompileError(ErrorType::InternalError,"Found function that is neither tagged Property, Undefined, Builtin or UserDefined.", "", node.tok).exit();
-		}
+		// does throw error when encountering method or constructor
+//		if(node.kind != NodeFunctionCall::Kind::UserDefined) {
+//			CompileError(ErrorType::InternalError,"Found function that is neither tagged Property, Undefined, Builtin or UserDefined.", "", node.tok).exit();
+//		}
 		// check if FunctionCall is in statement and not assigned or in a condition etc (Handled bei ReturnFunctionRewriting class)
 		if(node.parent->get_node_type() != NodeType::Statement) {
 			CompileError(ErrorType::InternalError,"Function call was not rewritten and is not within <Statement>.", "", node.tok).exit();
