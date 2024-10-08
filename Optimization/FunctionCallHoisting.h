@@ -15,7 +15,9 @@ private:
 	/// function call is hoistable when userdefined and returns values
 	/// or is in condition statement
 	static inline bool is_hoistable(NodeFunctionCall* node) {
-		if(node->kind != NodeFunctionCall::Kind::UserDefined) return false;
+//		if(node->kind != NodeFunctionCall::Kind::UserDefined) return false;
+		// not hoistable functions are: Undefined, Builtin, Property
+		if(node->is_builtin_kind()) return false;
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 		if(!node->definition) {
 //			error.m_message = "Function "+node->function->name+" has not been defined and cannot be rewritten.";

@@ -1,7 +1,7 @@
 
 struct List
 	declare value: int
-	declare next
+	declare next: List
 
 	function __init__(self, value: int, next)
 		self.value := value
