@@ -20,7 +20,7 @@ struct NodeVariableRef : NodeReference {
 	std::string get_string() override {
 		return name;
 	}
-	std::unique_ptr<struct NodeArrayRef> to_array_ref(NodeAST* index) override;
+	std::unique_ptr<struct NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) override;
 	/// this_list.next.next
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
 	std::unique_ptr<struct NodePointerRef> to_pointer_ref() override;
@@ -30,6 +30,8 @@ struct NodeVariableRef : NodeReference {
 	bool is_ndarray_constant();
 	/// checks if variable list or array size constant
 	bool is_array_constant();
+	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+
 };
 
 struct NodeArrayRef : NodeReference {
@@ -61,6 +63,8 @@ struct NodeArrayRef : NodeReference {
 	std::unique_ptr<NodeFunctionCall> get_size();
 	/// check if array ref is <list_ref>.size[] array
 	bool is_list_sizes();
+	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+
 };
 
 struct NodeNDArrayRef : NodeReference {
@@ -86,7 +90,7 @@ struct NodeNDArrayRef : NodeReference {
 		return name;
 	}
     ASTLowering* get_lowering(NodeProgram *program) const override;
-	std::unique_ptr<NodeArrayRef> to_array_ref(NodeAST* index) override;
+	std::unique_ptr<NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) override;
 	/// this_list.next.value[6,4]
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
 
@@ -126,6 +130,9 @@ struct NodeNDArrayRef : NodeReference {
 		}
 		return true;
 	}
+
+	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+
 };
 
 struct NodeFunctionVarRef : NodeReference {
@@ -185,13 +192,12 @@ struct NodePointerRef : NodeReference {
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 
-	std::unique_ptr<NodeArrayRef> to_array_ref(NodeAST* index) override;
+	std::unique_ptr<NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) override;
 	std::unique_ptr<NodeVariableRef> to_variable_ref() override;
 
 	ASTLowering* get_lowering(NodeProgram *program) const override;
 
-	bool is_string_repr();
-	std::unique_ptr<NodeFunctionCall> get_repr_call();
+	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
 };
 
 struct NodeNil : NodePointerRef {

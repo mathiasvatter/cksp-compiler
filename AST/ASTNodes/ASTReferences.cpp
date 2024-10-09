@@ -27,8 +27,8 @@ std::unique_ptr<NodeAST> NodeVariableRef::clone() const {
 	return std::make_unique<NodeVariableRef>(*this);
 }
 
-std::unique_ptr<NodeArrayRef> NodeVariableRef::to_array_ref(NodeAST* index) {
-	return std::make_unique<NodeArrayRef>(name, index ? index->clone() : nullptr, tok);
+std::unique_ptr<NodeArrayRef> NodeVariableRef::to_array_ref(std::unique_ptr<NodeAST> index) {
+	return std::make_unique<NodeArrayRef>(name, std::move(index), tok);
 }
 
 std::unique_ptr<NodePointerRef> NodeVariableRef::to_pointer_ref() {
@@ -94,6 +94,13 @@ bool NodeVariableRef::is_ndarray_constant() {
 	return false;
 }
 
+std::unique_ptr<NodeReference> NodeVariableRef::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	auto node_array_ref = to_array_ref(std::move(new_index));
+	node_array_ref->match_data_structure(declaration);
+	node_array_ref->ty = ty;
+	return node_array_ref;
+}
+
 // ************* NodeArrayRef ***************
 NodeAST *NodeArrayRef::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
@@ -153,6 +160,19 @@ bool NodeArrayRef::is_list_sizes() {
 	return false;
 }
 
+std::unique_ptr<NodeReference> NodeArrayRef::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	// if array has no indexes -> wildcard
+	if(!index) {
+		index = std::make_unique<NodeWildcard>("*", tok);
+		index->parent = this;
+	}
+	auto node_ndarray_ref = to_ndarray_ref();
+	node_ndarray_ref->indexes->prepend_param(std::move(new_index));
+	node_ndarray_ref->match_data_structure(declaration);
+	node_ndarray_ref->ty = ty;
+	node_ndarray_ref->determine_sizes();
+	return node_ndarray_ref;
+}
 
 // ************* NodeNDArrayRef ***************
 NodeAST *NodeNDArrayRef::accept(struct ASTVisitor &visitor) {
@@ -174,8 +194,8 @@ ASTLowering* NodeNDArrayRef::get_lowering(NodeProgram *program) const {
     return &lowering;
 }
 
-std::unique_ptr<NodeArrayRef> NodeNDArrayRef::to_array_ref(NodeAST* index) {
-	return std::make_unique<NodeArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, index->clone()) : nullptr, tok);
+std::unique_ptr<NodeArrayRef> NodeNDArrayRef::to_array_ref(std::unique_ptr<NodeAST> index) {
+	return std::make_unique<NodeArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, std::move(index)) : nullptr, tok);
 }
 
 bool NodeNDArrayRef::determine_sizes() {
@@ -201,6 +221,16 @@ std::unique_ptr<NodeAccessChain> NodeNDArrayRef::to_method_chain() {
 	method_chain->add_method(std::move(array_ref));
 	method_chain->parent = this->parent;
 	return method_chain;
+}
+
+std::unique_ptr<NodeReference> NodeNDArrayRef::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	determine_sizes();
+	// if array has no indexes -> everything should be copied -> wildcards for every index of size
+	if (!indexes) {
+		add_wildcards();
+	}
+	indexes->prepend_param(std::move(new_index));
+	return clone_as<NodeReference>(this);
 }
 
 // ************* NodeFunctionVarRef ***************
@@ -295,8 +325,8 @@ std::unique_ptr<NodeAST> NodePointerRef::clone() const {
 	return std::make_unique<NodePointerRef>(*this);
 }
 
-std::unique_ptr<NodeArrayRef> NodePointerRef::to_array_ref(NodeAST* index) {
-	return std::make_unique<NodeArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, index->clone()) : nullptr, tok);
+std::unique_ptr<NodeArrayRef> NodePointerRef::to_array_ref(std::unique_ptr<NodeAST> index) {
+	return std::make_unique<NodeArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, std::move(index)) : nullptr, tok);
 }
 
 std::unique_ptr<NodeVariableRef> NodePointerRef::to_variable_ref() {
@@ -308,30 +338,11 @@ ASTLowering* NodePointerRef::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
-bool NodePointerRef::is_string_repr() {
-	bool is_string = false;
-	// is within string environment
-	is_string |= parent->ty == TypeRegistry::String;
-	// is within message call
-	is_string |= is_func_arg() and static_cast<NodeFunctionHeader*>(parent->parent)->name == "message";
-	// is within return statement
-	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->definition->ty == TypeRegistry::String;
-	return is_string;
-}
-
-std::unique_ptr<NodeFunctionCall> NodePointerRef::get_repr_call() {
-	return std::make_unique<NodeFunctionCall>(
-		false,
-		std::make_unique<NodeFunctionVarRef>(
-			std::make_unique<NodeFunctionHeader>(
-				ty->to_string() + ".__repr__",
-				std::make_unique<NodeParamList>(tok, this->to_variable_ref()),
-				tok
-			),
-			tok
-		),
-		tok
-	);
+std::unique_ptr<NodeReference> NodePointerRef::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	auto node_array_ref = to_array_ref(std::move(new_index));
+	node_array_ref->match_data_structure(declaration);
+	node_array_ref->ty = ty;
+	return node_array_ref;
 }
 
 // ************* NodeNil ***************

@@ -300,6 +300,17 @@ NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> n
 	return new_ref;
 }
 
+bool NodeReference::is_string_env() {
+	bool is_string = false;
+	// is within string environment
+	is_string |= parent->ty == TypeRegistry::String;
+	// is within message call
+	is_string |= is_func_arg() and static_cast<NodeFunctionHeader*>(parent->parent)->name == "message";
+	// is within return statement
+	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->definition->ty == TypeRegistry::String;
+	return is_string;
+}
+
 // ************* NodeInstruction ***************
 NodeAST *NodeInstruction::accept(struct ASTVisitor &visitor) {
 	return nullptr;

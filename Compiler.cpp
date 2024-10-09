@@ -129,6 +129,7 @@ void Compiler::compile() {
 
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
+	ast->debug_print();
 
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
@@ -136,8 +137,6 @@ void Compiler::compile() {
 	compile_time.stop("Lowering");
 	std::cout << compile_time.print_timer("Lowering") << std::endl;
 	compile_time.start("Return Function Rewriting");
-
-	ast->debug_print();
 
 	ASTReturnFunctionRewriting return_function_rewriting(&m_definition_provider);
 	ast->accept(return_function_rewriting);

@@ -232,6 +232,12 @@ bool NodeFunctionCall::is_builtin_kind() const {
 	return false;
 }
 
+bool NodeFunctionCall::is_string_env() {
+	bool is_string = false;
+	is_string |= parent->ty == TypeRegistry::String;
+	return is_string;
+}
+
 // ************* NodeAssignment ***************
 NodeAST *NodeAssignment::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);

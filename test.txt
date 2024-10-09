@@ -1,9 +1,10 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Wed Oct 09 14:13:36 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Wed Oct 09 19:02:28 2024 }
 on init
   declare %loc_1[3]
   declare $loc_2
   declare $List__free_idx := 0
   declare %List__allocation[1000000]
+  declare %List__next[1000000] := (-1)
   declare ui_button $btn_1 
   declare ui_button $btn_2 
   $List__free_idx := search(%List__allocation, 0)
@@ -11,10 +12,20 @@ on init
     message("Error: No more free space available to allocate objects of type 'List'")
   end if
   %List__allocation[$List__free_idx] := 1
+  %List__next[$List__free_idx] := 
+  declare $ptr
+  $List__free_idx := search(%List__allocation, 0)
+  if($List__free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'List'")
+  end if
+  %List__allocation[$List__free_idx] := 1
+  %List__next[$List__free_idx] := 
+  $ptr := $List__free_idx
+  message("<List> Object: " & %List__next[%List__next[$ptr]])
   $btn_1 := 1
-  declare $_return0
-  $_return0 := 1
-  if($_return0 = 1)
+  declare $_return1
+  $_return1 := 1
+  if($_return1 = 1)
     message("pipi")
   end if
   %loc_1[0] := 42

@@ -109,6 +109,9 @@ public:
 			error.m_message = "Method definition must contain <self> as first parameter.";
 			error.exit();
 		}
+		// every self as first parameter has to be of type object
+		node.header->args->params[0]->ty = TypeRegistry::get_object_type(m_structs.top()->name);
+
 		// add constructor type
 		if(node.header->name == "__init__") {
 			auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
@@ -125,6 +128,8 @@ public:
 			}
 			node.num_return_params = 1;
 			node.ty = TypeRegistry::add_object_type(m_structs.top()->name);
+			// delete "self" keyword
+			node.header->args->params.erase(node.header->args->params.begin());
 		}
 		if(node.header->name == "__repr__") {
 			if(node.num_return_params > 1) {
@@ -142,12 +147,11 @@ public:
 		}
 		node.header->accept(*this);
 		node.header->name = add_struct_prefix(node.header->name);
-		// delete "self" keyword
-		node.header->args->params.erase(node.header->args->params.begin());
 
 		node.body->accept(*this);
 		return &node;
 	}
+
 
 	inline NodeAST* visit(NodeSingleDeclaration& node) override {
 		if(node.variable->is_member()) {
