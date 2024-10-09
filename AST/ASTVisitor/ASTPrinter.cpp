@@ -33,6 +33,10 @@ NodeAST * ASTPrinter::visit(NodeReturn& node) {
 	os << "return (";
 	for(auto &ret : node.return_variables) {
 		ret->accept(*this);
+		os << ", ";
+	}
+	if(!node.return_variables.empty()) {
+		os.seekp(-2, std::ios_base::end);
 	}
 	os << ")";
 	return &node;
@@ -59,6 +63,8 @@ NodeAST * ASTPrinter::visit(NodeVariable &node) {
 
 NodeAST * ASTPrinter::visit(NodeVariableRef &node) {
 	os << node.name;
+	auto type = TypeRegistry::get_annotation_from_type(node.ty);
+	if(!type.empty()) os << "{" << type << "}";
 	return &node;
 }
 
@@ -73,6 +79,8 @@ NodeAST * ASTPrinter::visit(NodePointer &node) {
 
 NodeAST * ASTPrinter::visit(NodePointerRef &node) {
 	os << node.name;
+	auto type = TypeRegistry::get_annotation_from_type(node.ty);
+	if(!type.empty()) os << "{" << type << "}";
 	return &node;
 }
 
@@ -97,6 +105,8 @@ NodeAST * ASTPrinter::visit(NodeArrayRef &node) {
 		node.index->accept(*this);
 		os << "]";
 	}
+	auto type = TypeRegistry::get_annotation_from_type(node.ty);
+	if(!type.empty()) os << "{" << type << "}";
 	return &node;
 }
 
@@ -121,6 +131,8 @@ NodeAST * ASTPrinter::visit(NodeNDArrayRef &node) {
 		node.indexes->accept(*this);
 		os << "]";
 	}
+	auto type = TypeRegistry::get_annotation_from_type(node.ty);
+	if(!type.empty()) os << "{" << type << "}";
 	return &node;
 }
 
@@ -181,13 +193,13 @@ NodeAST * ASTPrinter::visit(NodeParamList &node) {
 NodeAST * ASTPrinter::visit(NodeAccessChain &node) {
 	for (int i = 0; i < node.chain.size() - 1; i++) {
 		node.chain[i]->accept(*this);
-		auto type = TypeRegistry::get_annotation_from_type(node.chain[i]->ty);
-		if(!type.empty()) os << "{" << type << "}";
+//		auto type = TypeRegistry::get_annotation_from_type(node.chain[i]->ty);
+//		if(!type.empty()) os << "{" << type << "}";
 		os << ".";
 	}
 	node.chain[node.chain.size() - 1]->accept(*this);
-	auto type = TypeRegistry::get_annotation_from_type(node.chain[node.chain.size() - 1]->ty);
-	if(!type.empty()) os << "{" << type << "}";
+//	auto type = TypeRegistry::get_annotation_from_type(node.chain[node.chain.size() - 1]->ty);
+//	if(!type.empty()) os << "{" << type << "}";
 	return &node;
 }
 

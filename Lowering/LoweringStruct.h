@@ -118,10 +118,8 @@ public:
 				return &node;
 			}
 			if(node.value->get_node_type() != NodeType::ParamList) {
-				auto param_list = std::make_unique<NodeParamList>(node.tok);
-				param_list->params.push_back(std::move(node.value));
-				param_list->parent = &node;
-				node.value = std::move(param_list);
+				node.value = std::make_unique<NodeParamList>(node.tok, std::move(node.value));
+				node.value->parent = &node;
 			}
 		}
 		return &node;
@@ -132,7 +130,7 @@ public:
 		if(node.is_member()) {
 			auto node_array = node.to_array(m_current_struct->max_individual_struts_var->to_reference().get());
 			node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
-			return safe_replace_datastructure(std::move(node_array), &node);
+			return node.replace_datastruct(std::move(node_array), m_def_provider);
 		}
 		return &node;
 	}
@@ -141,7 +139,7 @@ public:
 		if(node.is_member()) {
 			auto node_array = node.to_array(m_current_struct->max_individual_struts_var->to_reference().get());
 			node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
-			return safe_replace_datastructure(std::move(node_array), &node);
+			return node.replace_datastruct(std::move(node_array), m_def_provider);
 		}
 		return &node;
 	}
@@ -156,7 +154,7 @@ public:
 			node_ndarray->sizes->prepend_param(m_current_struct->max_individual_struts_var->to_reference());
 			node_ndarray->dimensions = node_ndarray->sizes->params.size();
 			node_ndarray->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node_ndarray->dimensions);
-			return safe_replace_datastructure(std::move(node_ndarray), &node);
+			return node.replace_datastruct(std::move(node_ndarray), m_def_provider);
 		}
 		return &node;
 	}
@@ -175,7 +173,7 @@ public:
 		// if member reference, turn into array reference with (struct.free_idx as index if in constructor, self as index if not)
 		if(node.is_member_ref()) {
 			auto node_array_ref = node.to_array_ref(get_index_ref().get());
-			return safe_replace_reference(std::move(node_array_ref), &node);
+			return node.replace_reference(std::move(node_array_ref), m_def_provider);
 		}
 		return &node;
 	}
@@ -190,7 +188,7 @@ public:
 			node_ndarray_ref->indexes->prepend_param(get_index_ref());
 			node_ndarray_ref->declaration = node.declaration;
 			node_ndarray_ref->determine_sizes();
-			return safe_replace_reference(std::move(node_ndarray_ref), &node);
+			return node.replace_reference(std::move(node_ndarray_ref), m_def_provider);
 		}
 		return &node;
 	}
@@ -198,7 +196,7 @@ public:
 	inline NodeAST * visit(NodePointerRef& node) override {
 		if(node.is_member_ref()) {
 			auto node_array_ref = node.to_array_ref(get_index_ref().get());
-			return safe_replace_reference(std::move(node_array_ref), &node);
+			return node.replace_reference(std::move(node_array_ref), m_def_provider);
 		}
 		return &node;
 	}

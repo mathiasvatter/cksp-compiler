@@ -119,7 +119,7 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 		//	this_list := List(42, nil)
 		if(node.declaration->get_node_type() == NodeType::Pointer or node.declaration->ty->get_type_kind() == TypeKind::Object
 		or node.ty->get_type_kind() == TypeKind::Object) {
-			auto pointer_ref = std::make_unique<NodePointerRef>(node.name, node.tok);
+			auto pointer_ref = node.to_pointer_ref();
 			match_type(pointer_ref.get(), &node);
 //			pointer_ref->match_data_structure(node.declaration);
 //			m_def_provider->remove_reference(node.declaration, &node);
@@ -164,18 +164,17 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 	if(node.declaration->get_node_type() == NodeType::Variable) {
 		auto node_var = static_cast<NodeVariable*>(node.declaration);
 		auto ptr = node_var->to_pointer();
+		auto new_node = node_var->replace_datastruct(std::move(ptr), m_def_provider);
 		auto &references = m_def_provider->get_references(node.declaration);
-		auto new_node = static_cast<NodeDataStructure*>(node.declaration->replace_with(std::move(ptr)));
 		for(auto ref : references) {
-			ref->declaration = new_node;
 			ASTSemanticAnalysis::replace_incorrectly_detected_reference(m_def_provider, ref);
 		}
-		new_node->accept(*this);
+//		new_node->accept(*this);
 		node.declaration = new_node;
 		if(auto strct = new_node->is_member()) {
 			strct->update_member_table();
 		}
-		return new_node;
+//		return new_node;
 	}
 
 	if(node.ty == TypeRegistry::Unknown) {
@@ -393,13 +392,14 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 					}
 					error.exit();
 				}
+				strct->update_member_table();
 				auto node_declaration = strct->get_member(prev_obj+"."+reference->name);
 				if(!node_declaration) {
 					error.m_message = "Member "+reference->name+" does not exist in "+prev_obj+".";
 					error.exit();
 				}
 				reference->declaration = node_declaration;
-
+				match_reference_declaration(reference);
 				// if declaration of this reference is unknown and it is not the end of the chain,
 				// we can assume that it is also an object. we can check if the next reference is also in this struct
 				// and then cast this reference to the object of the last
