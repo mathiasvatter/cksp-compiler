@@ -33,8 +33,8 @@ std::unique_ptr<NodeReference> NodeVariable::to_reference() {
 	return ref;
 }
 
-std::unique_ptr<NodeArray> NodeVariable::to_array(NodeAST* size) {
-	return std::make_unique<NodeArray>(persistence, name, ty, size ? size->clone() : nullptr, tok);
+std::unique_ptr<NodeArray> NodeVariable::to_array(std::unique_ptr<NodeAST> size) {
+	return std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
 }
 
 std::unique_ptr<NodePointer> NodeVariable::to_pointer() {
@@ -47,6 +47,12 @@ std::unique_ptr<NodeNDArray> NodeVariable::to_ndarray() {
 
 std::unique_ptr<NodeList> NodeVariable::to_list() {
 	return std::make_unique<NodeList>(tok);
+}
+
+std::unique_ptr<NodeDataStructure> NodeVariable::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	auto node_array = to_array(std::move(new_index));
+	node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type());
+	return node_array;
 }
 
 // ************* NodePointer ***************
@@ -74,14 +80,19 @@ ASTLowering* NodePointer::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
-std::unique_ptr<NodeArray> NodePointer::to_array(NodeAST* size) {
-	return std::make_unique<NodeArray>(persistence, name, ty, size ? size->clone() : nullptr, tok);
+std::unique_ptr<NodeArray> NodePointer::to_array(std::unique_ptr<NodeAST> size) {
+	return std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
 }
 
 std::unique_ptr<NodeVariable> NodePointer::to_variable() {
 	return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
 }
 
+std::unique_ptr<NodeDataStructure> NodePointer::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	auto node_array = to_array(std::move(new_index));
+	node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type());
+	return node_array;
+}
 
 // ************* NodeArray ***************
 NodeAST *NodeArray::accept(struct ASTVisitor &visitor) {
@@ -123,6 +134,14 @@ std::unique_ptr<NodeList> NodeArray::to_list() {
     return std::make_unique<NodeList>(tok);
 }
 
+std::unique_ptr<NodeDataStructure> NodeArray::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	auto node_ndarray = to_ndarray();
+	node_ndarray->sizes->prepend_param(std::move(new_index));
+	node_ndarray->dimensions = node_ndarray->sizes->params.size();
+	node_ndarray->ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type(), node_ndarray->dimensions);
+	return node_ndarray;
+}
+
 // ************* NodeNDArray ***************
 NodeAST *NodeNDArray::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
@@ -149,12 +168,19 @@ std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
 	return ref;
 }
 
-std::unique_ptr<NodeArray> NodeNDArray::to_array(NodeAST* size) {
-    return std::make_unique<NodeArray>(persistence, name, ty, size ? size->clone() : nullptr, tok);
+std::unique_ptr<NodeArray> NodeNDArray::to_array(std::unique_ptr<NodeAST> size) {
+    return std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
 }
 
 std::unique_ptr<NodeList> NodeNDArray::to_list() {
     return std::make_unique<NodeList>(tok);
+}
+
+std::unique_ptr<NodeDataStructure> NodeNDArray::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	sizes->prepend_param(std::move(new_index));
+	dimensions = sizes->params.size();
+	ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type(), dimensions);
+	return clone_as<NodeDataStructure>(this);
 }
 
 // ************* NodeFunctionHeader ***************
@@ -227,8 +253,8 @@ std::unique_ptr<NodeVariable> NodeList::to_variable() {
     return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
 }
 
-std::unique_ptr<NodeArray> NodeList::to_array(NodeAST* size) {
-    return std::make_unique<NodeArray>(persistence, name, ty, size ? size->clone() : nullptr, tok);
+std::unique_ptr<NodeArray> NodeList::to_array(std::unique_ptr<NodeAST> size) {
+    return std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
 }
 
 std::unique_ptr<NodeNDArray> NodeList::to_ndarray() {

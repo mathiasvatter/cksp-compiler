@@ -23,10 +23,12 @@ struct NodeVariable: NodeDataStructure {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::VariableRef;}
-	std::unique_ptr<class NodeArray> to_array(NodeAST* size) override;
+	std::unique_ptr<class NodeArray> to_array(std::unique_ptr<NodeAST> size) override;
 	std::unique_ptr<class NodePointer> to_pointer() override;
 	std::unique_ptr<class NodeNDArray> to_ndarray() override ;
 	std::unique_ptr<class NodeList> to_list() override ;
+	std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+
 };
 
 struct NodePointer: NodeDataStructure {
@@ -44,8 +46,9 @@ struct NodePointer: NodeDataStructure {
 	NodeType get_ref_node_type() override {return NodeType::PointerRef;}
 
 	ASTLowering* get_lowering(NodeProgram *program) const override;
-	std::unique_ptr<NodeArray> to_array(NodeAST* size) override;
+	std::unique_ptr<NodeArray> to_array(std::unique_ptr<NodeAST> size) override;
 	std::unique_ptr<NodeVariable> to_variable() override;
+	std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
 };
 
 struct NodeArray : NodeDataStructure {
@@ -83,6 +86,7 @@ struct NodeArray : NodeDataStructure {
 	}
 	std::unique_ptr<class NodeNDArray> to_ndarray() override;
 	std::unique_ptr<class NodeList> to_list() override;
+	std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
 };
 
 struct NodeNDArray : NodeDataStructure {
@@ -121,8 +125,9 @@ struct NodeNDArray : NodeDataStructure {
 	std::unique_ptr<NodeVariable> to_variable() override {
 		return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
 	}
-	std::unique_ptr<NodeArray> to_array(NodeAST* size) override;
+	std::unique_ptr<NodeArray> to_array(std::unique_ptr<NodeAST> size) override;
 	std::unique_ptr<NodeList> to_list() override;
+	std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
 };
 
 struct NodeFunctionHeader: NodeDataStructure {
@@ -235,7 +240,7 @@ struct NodeList : NodeDataStructure {
 	ASTLowering* get_lowering(NodeProgram *program) const override;
 	NodeType get_ref_node_type() override {return NodeType::ListRef;}
 	std::unique_ptr<NodeVariable> to_variable() override;
-	std::unique_ptr<NodeArray> to_array(NodeAST* size) override;
+	std::unique_ptr<NodeArray> to_array(std::unique_ptr<NodeAST> size) override;
 	std::unique_ptr<NodeNDArray> to_ndarray() override;
 };
 
