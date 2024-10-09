@@ -137,11 +137,11 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Lowering") << std::endl;
 	compile_time.start("Return Function Rewriting");
 
+	ast->debug_print();
 
 	ASTReturnFunctionRewriting return_function_rewriting(&m_definition_provider);
 	ast->accept(return_function_rewriting);
 
-	ast->debug_print();
 	compile_time.stop("Return Function Rewriting");
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
 	compile_time.start("Data Structure Lowering");
@@ -161,6 +161,7 @@ void Compiler::compile() {
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
+
     ast->accept(infer_types);
     TypeInference::cast_data_structure_types(&m_definition_provider, true);
 
