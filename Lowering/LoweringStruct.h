@@ -128,18 +128,16 @@ public:
 	inline NodeAST * visit(NodeVariable& node) override {
 		// if member, turn into array
 		if(node.is_member()) {
-			auto node_array = node.to_array(m_current_struct->max_individual_struts_var->to_reference().get());
-			node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
-			return node.replace_datastruct(std::move(node_array), m_def_provider);
+			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
+			return node.replace_datastruct(std::move(new_node), m_def_provider);
 		}
 		return &node;
 	}
 	inline NodeAST * visit(NodePointer& node) override {
 		// if member, turn into array of pointers
 		if(node.is_member()) {
-			auto node_array = node.to_array(m_current_struct->max_individual_struts_var->to_reference().get());
-			node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
-			return node.replace_datastruct(std::move(node_array), m_def_provider);
+			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
+			return node.replace_datastruct(std::move(new_node), m_def_provider);
 		}
 		return &node;
 	}
@@ -150,21 +148,18 @@ public:
 		 * 	declare struct.velocity[struct.MAX_STRUCTS, 10]
 		 */
 		if(node.is_member()) {
-			auto node_ndarray = node.to_ndarray();
-			node_ndarray->sizes->prepend_param(m_current_struct->max_individual_struts_var->to_reference());
-			node_ndarray->dimensions = node_ndarray->sizes->params.size();
-			node_ndarray->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node_ndarray->dimensions);
-			return node.replace_datastruct(std::move(node_ndarray), m_def_provider);
+			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
+			return node.replace_datastruct(std::move(new_node), m_def_provider);
 		}
 		return &node;
 	}
 	inline NodeAST * visit(NodeNDArray& node) override {
 		// if member, turn into multi-dimensional array
 		if(node.is_member()) {
-			node.sizes->prepend_param(m_current_struct->max_individual_struts_var->to_reference());
-			node.dimensions = node.sizes->params.size();
-			node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node.dimensions);
-			node.is_local = false;
+			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
+			new_node->is_local = false;
+			return node.replace_datastruct(std::move(new_node), m_def_provider);
+//			node.is_local = false;
 		}
 		return &node;
 	}

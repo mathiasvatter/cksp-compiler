@@ -193,12 +193,14 @@ struct NodeDataStructure : NodeAST {
 	/// methods to change node type. Everything possible is copied over, even the type;
 	virtual std::unique_ptr<class NodeVariable> to_variable() {return nullptr;}
 	virtual std::unique_ptr<class NodePointer> to_pointer() {return nullptr;}
-	virtual std::unique_ptr<class NodeArray> to_array(NodeAST* size) {return nullptr;}
+	virtual std::unique_ptr<class NodeArray> to_array(std::unique_ptr<NodeAST> size) {return nullptr;}
 	virtual std::unique_ptr<class NodeNDArray> to_ndarray() {return nullptr;}
 	virtual std::unique_ptr<class NodeList> to_list() {return nullptr;}
 	/// lower type from object to int if applicable
 	NodeDataStructure* lower_type();
-
+	virtual std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+		return nullptr;
+	}
 	/// to be used on datastructures
 	NodeDataStructure* replace_datastruct(std::unique_ptr<NodeDataStructure> new_node, class DefinitionProvider* def_provider);
 };
