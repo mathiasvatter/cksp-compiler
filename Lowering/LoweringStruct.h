@@ -172,31 +172,24 @@ public:
 	inline NodeAST * visit(NodeVariableRef& node) override {
 		// if member reference, turn into array reference with (struct.free_idx as index if in constructor, self as index if not)
 		if(node.is_member_ref()) {
-			auto node_array_ref = node.to_array_ref(get_index_ref().get());
-			return node.replace_reference(std::move(node_array_ref), m_def_provider);
+			auto new_node = node.inflate_dimension(get_index_ref());
+			return node.replace_reference(std::move(new_node), m_def_provider);
 		}
 		return &node;
 	}
 	inline NodeAST * visit(NodeArrayRef& node) override {
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(node.is_member_ref()) {
-			// if array has no indexes -> wildcard
-			if(!node.index) {
-				node.index = std::make_unique<NodeWildcard>("*", node.tok);
-			}
-			auto node_ndarray_ref = node.to_ndarray_ref();
-			node_ndarray_ref->indexes->prepend_param(get_index_ref());
-			node_ndarray_ref->declaration = node.declaration;
-			node_ndarray_ref->determine_sizes();
-			return node.replace_reference(std::move(node_ndarray_ref), m_def_provider);
+			auto new_node = node.inflate_dimension(get_index_ref());
+			return node.replace_reference(std::move(new_node), m_def_provider);
 		}
 		return &node;
 	}
 
 	inline NodeAST * visit(NodePointerRef& node) override {
 		if(node.is_member_ref()) {
-			auto node_array_ref = node.to_array_ref(get_index_ref().get());
-			return node.replace_reference(std::move(node_array_ref), m_def_provider);
+			auto new_node = node.inflate_dimension(get_index_ref());
+			return node.replace_reference(std::move(new_node), m_def_provider);
 		}
 		return &node;
 	}
@@ -204,15 +197,8 @@ public:
 	inline NodeAST * visit(NodeNDArrayRef& node) override {
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(node.is_member_ref()) {
-			node.determine_sizes();
-			// if array has no indexes -> everything should be copied -> wildcards for every index of size
-			if (!node.indexes) {
-				node.indexes = std::make_unique<NodeParamList>(node.tok);
-				for (int i = 1; i < node.sizes->params.size(); i++) {
-					node.indexes->add_param(std::make_unique<NodeWildcard>("*", node.tok));
-				}
-			}
-			node.indexes->prepend_param(get_index_ref());
+			auto new_node = node.inflate_dimension(get_index_ref());
+			return node.replace_reference(std::move(new_node), m_def_provider);
 		}
 		return &node;
 	}
@@ -225,31 +211,12 @@ public:
 		// lower init function
 		if(node.header->name == m_current_struct->name+".__init__") {
 			lower_init_method(&node);
-		} else {
-			node.header->args->prepend_param(m_current_struct->node_self->clone());
 		}
 		return &node;
 	}
 
 private:
-	/// to be used on references
-	inline NodeReference* safe_replace_reference(std::unique_ptr<NodeReference> new_node, NodeReference* old_node) {
-		new_node->match_data_structure(old_node->declaration);
-		m_def_provider->remove_reference(new_node->declaration, old_node);
-		auto new_ref = static_cast<NodeReference*>(old_node->replace_with(std::move(new_node)));
-		m_def_provider->add_reference(new_ref->declaration, new_ref);
-		return new_ref;
-	}
-	/// to be used on datastructures
-	inline NodeDataStructure* safe_replace_datastructure(std::unique_ptr<NodeDataStructure> new_node, NodeDataStructure* old_node) {
-		const auto references = m_def_provider->get_references(old_node);
-		auto new_data_struct = static_cast<NodeDataStructure*>(old_node->replace_with(std::move(new_node)));
-		m_def_provider->set_references(new_data_struct, references);
-		for(auto & ref : references) {
-			ref->declaration = new_data_struct;
-		}
-		return new_data_struct;
-	}
+
 	/// uses the member table to determine the size max size of struct allocations
 	/// declare const Node.MAX_STRUCTS: int := MAX_STRUCTS/_max(10, 11*12)
 	/// returns either MAX_STRUCTS or binary_expr with biggest array member size

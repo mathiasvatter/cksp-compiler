@@ -92,7 +92,7 @@ struct NodeReference : NodeAST {
     std::string get_string() override {
         return name;
     }
-	virtual std::unique_ptr<struct NodeArrayRef> to_array_ref(NodeAST* index) {return nullptr;}
+	virtual std::unique_ptr<struct NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) {return nullptr;}
 	virtual std::unique_ptr<struct NodeVariableRef> to_variable_ref() {return nullptr;}
 	virtual std::unique_ptr<struct NodePointerRef> to_pointer_ref() {return nullptr;}
 	virtual std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() {return nullptr;}
@@ -118,7 +118,7 @@ struct NodeReference : NodeAST {
 	}
 	/// when is variable = raw array? if variable has _ in front and is array and was declared without _
 	/// returns sanitized name of reference
-	[[nodiscard]] std::string sanitize_name() {
+	[[nodiscard]] std::string sanitize_name() const {
 		if (name.empty()) return "";
 		std::string_view sanitized_name = name;
 		if (sanitized_name[0] == '_' && (sanitized_name.size() == 1 || sanitized_name[1] != '_')) {
@@ -129,7 +129,7 @@ struct NodeReference : NodeAST {
 		return std::string(sanitized_name); // Erzeugt das Resultat nur einmal
 	}
 
-	std::vector<std::string> get_ptr_chain() {
+	std::vector<std::string> get_ptr_chain() const {
 		std::vector<std::string> ptr_chain;
 		std::istringstream iss(name);
 		std::string ns;
@@ -147,6 +147,11 @@ struct NodeReference : NodeAST {
 	bool is_l_value();
 	/// checks if reference is somewhere in the r_value expresssion
 	bool is_r_value();
+	/// checks if reference is in a string representation (printing or string assignment)
+	[[nodiscard]] bool is_string_env();
+	virtual std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+		return nullptr;
+	}
 
 	/// to be used on references
 	NodeReference* replace_reference(std::unique_ptr<NodeReference> new_node, class DefinitionProvider* def_provider);
