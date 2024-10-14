@@ -9,14 +9,22 @@
 
 
 inline std::string sanitize_dots(const std::string& str) {
-	std::string result;
-	for (char ch : str) {
-		if (ch == '.') {
-			result += "__";
-		} else {
-			result += ch;
-		}
+	std::string result = str;
+	size_t pos = 0;
+
+	// Ersetze "::" durch "__"
+	while ((pos = result.find("::", pos)) != std::string::npos) {
+		result.replace(pos, 2, "__");
+		pos += 2;  // Gehe zur nächsten Position nach dem Ersetzen
 	}
+
+	pos = 0;
+	// Ersetze "." durch "__"
+	while ((pos = result.find('.', pos)) != std::string::npos) {
+		result.replace(pos, 1, "__");
+		pos += 2;  // Gehe zur nächsten Position nach dem Ersetzen
+	}
+
 	return result;
 }
 

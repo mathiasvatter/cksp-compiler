@@ -284,7 +284,8 @@ struct NodeStruct : NodeDataStructure {
 	NodeVariable* max_individual_struts_var = nullptr;
 	NodeVariable* free_idx_var = nullptr;
 	NodeArray* allocation_var = nullptr;
-	static std::unordered_set<NodeType> allowed_member_node_types;
+	inline static std::unordered_set<NodeType> allowed_member_node_types = {NodeType::Variable, NodeType::Pointer, NodeType::NDArray, NodeType::Array};
+
 	inline explicit NodeStruct(const std::string& name, Token tok) : NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct) {}
 	inline NodeStruct(const std::string& name, std::unique_ptr<NodeBlock> members, std::vector<std::unique_ptr<NodeFunctionDefinition>> methods, Token tok)
 		: NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct), members(std::move(members)), methods(std::move(methods)) {

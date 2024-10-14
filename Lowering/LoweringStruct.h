@@ -58,7 +58,7 @@ public:
 		auto node_block = std::make_unique<NodeBlock>(Token());
 		auto max_structs_var = std::make_unique<NodeVariable>(
 			std::nullopt,
-			m_current_struct->name+".MAX_STRUCTS",
+			m_current_struct->name+OBJ_DELIMITER+"MAX_STRUCTS",
 			TypeRegistry::Integer,
 			DataType::Const,
 			Token()
@@ -72,7 +72,7 @@ public:
 		// add free_idx variable and allocation array to struct
 		auto free_idx_var = std::make_unique<NodeVariable>(
 			std::nullopt,
-			m_current_struct->name+".free_idx",
+			m_current_struct->name+OBJ_DELIMITER+"free_idx",
 			TypeRegistry::Integer,
 			DataType::Mutable,
 			Token()
@@ -85,7 +85,7 @@ public:
 		m_current_struct->free_idx_var = static_cast<NodeVariable*>(free_idx_decl->variable.get());
 		auto allocation_var = std::make_unique<NodeArray>(
 			std::nullopt,
-			m_current_struct->name+".allocation",
+			m_current_struct->name+OBJ_DELIMITER+"allocation",
 			TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Integer),
 			m_current_struct->max_individual_struts_var->to_reference(),
 			Token()
@@ -204,7 +204,7 @@ public:
 		node.header->accept(*this);
 		node.body->accept(*this);
 		// lower init function
-		if(node.header->name == m_current_struct->name+".__init__") {
+		if(node.header->name == m_current_struct->name+OBJ_DELIMITER+"__init__") {
 			lower_init_method(&node);
 		}
 		return &node;
@@ -240,7 +240,7 @@ private:
 	}
 
 	static std::unique_ptr<NodeFunctionCall> create_max_call(const std::unique_ptr<NodeAST>& left, const std::unique_ptr<NodeAST>& right) {
-		std::string func_name = "Struct::max";
+		std::string func_name = "Struct"+OBJ_DELIMITER+"max";
 		return std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeader>(
@@ -276,7 +276,7 @@ private:
 	 * end function
 	 */
 	static inline bool add_max_function_def(NodeProgram* program) {
-		std::string func_name = "Struct::max";
+		std::string func_name = "Struct"+OBJ_DELIMITER+"max";
 
 		// Prüfen, ob die Funktion bereits existiert
 		auto it = program->function_lookup.find({func_name, 2});
