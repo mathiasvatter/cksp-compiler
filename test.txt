@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Wed Oct 09 19:15:54 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Mon Oct 14 14:08:51 2024 }
 on init
   declare %loc_1[3]
   declare $loc_2

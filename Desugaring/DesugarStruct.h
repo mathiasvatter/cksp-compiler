@@ -46,7 +46,7 @@ private:
 	}
 	std::string add_struct_prefix(const std::string& name) {
 		if(!m_structs.empty()) {
-			return m_structs.top()->name + "." + name;
+			return m_structs.top()->name + OBJ_DELIMITER + name;
 		}
 		return name;
 	}
@@ -54,7 +54,7 @@ private:
 	std::string replace_self_struct_prefix(const std::string& name) {
 		if (!m_structs.empty() && name.find("self.") == 0) {
 			std::string new_name = name;
-			new_name.replace(0, 4, m_structs.top()->name); // Ersetze 'self.' durch das Präfix
+			new_name.replace(0, 5, m_structs.top()->name + OBJ_DELIMITER); // Ersetze 'self.' durch das Präfix
 			if (members.find(new_name) != members.end()) {
 				return new_name;
 			}

@@ -90,7 +90,7 @@
     {+}    {{{\color{mysymbol}+}}}{1}
     {-}    {{{\color{mysymbol}-}}}{1}
     {*}    {{{\color{mysymbol}*}}}{1}
-    {/}    {{{\color{mysymbol}/}}}{1}
+    % {/}    {{{\color{mysymbol}/}}}{1}
     {\&}    {{{\color{mysymbol}\&}}}{1}
     {(}    {{{\color{mysymbol}(}}}{1}
     {)}    {{{\color{mysymbol})}}}{1}

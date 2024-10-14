@@ -64,7 +64,7 @@ public:
 		}
 //		node.lower_type();
 		if(&node == start_pointer) return &node;
-		node.name = prev_type->to_string() + "." + node.name;
+		node.name = prev_type->to_string() + OBJ_DELIMITER + node.name;
 		auto node_array = node.to_array_ref(nullptr);
 		node_array->declaration = node.declaration;
 		node_array->ty = node.ty;
@@ -79,7 +79,7 @@ public:
 		// no index -> array -> List.array[sth, *]
 		if(!node.index) node.index = std::make_unique<NodeWildcard>("*", node.tok);
 		auto node_ndarray_ref = node.to_ndarray_ref();
-		node_ndarray_ref->name = prev_type->to_string()+"."+node.name;
+		node_ndarray_ref->name = prev_type->to_string()+OBJ_DELIMITER+node.name;
 		node_ndarray_ref->declaration = node.declaration;
 		node_ndarray_ref->determine_sizes();
 		node_ndarray_ref->ty = node.ty;
@@ -98,7 +98,7 @@ public:
 				node.indexes->add_param(std::make_unique<NodeWildcard>("*", node.tok));
 			}
 		}
-		node.name = prev_type->to_string()+"."+node.name;
+		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
 		return &node;
 	}
 
@@ -107,15 +107,15 @@ public:
 		if(&node == start_pointer) return &node;
 		auto node_array_ref = node.to_array_ref(nullptr);
 		node_array_ref->declaration = node.declaration;
-		node_array_ref->name = prev_type->to_string()+"."+node.name;
+		node_array_ref->name = prev_type->to_string()+OBJ_DELIMITER+node.name;
 		node_array_ref->ty = node.ty;
 //		node_array_ref->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
 		return node.replace_reference(std::move(node_array_ref), m_def_provider);
 	}
 
 	inline NodeAST * visit(NodeFunctionCall& node) override {
-		if(&node == start_pointer) return &node;;
-		node.function->name = prev_type->to_string()+"."+node.function->name;
+		if(&node == start_pointer) return &node;
+		node.function->name = prev_type->to_string()+OBJ_DELIMITER+node.function->name;
 		node.get_definition(m_program);
 		return &node;
 	}

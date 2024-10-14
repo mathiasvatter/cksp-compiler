@@ -50,7 +50,7 @@ struct NodeFunctionCall : NodeInstruction {
     NodeFunctionCall(const NodeFunctionCall& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override;
-    void set_child_parents() override;;
+    void set_child_parents() override;
     std::string get_string() override;
     void update_token_data(const Token& token) override;
     ASTLowering* get_lowering(struct NodeProgram *program) const override;
@@ -60,7 +60,6 @@ struct NodeFunctionCall : NodeInstruction {
     NodeFunctionDefinition* find_builtin_definition(NodeProgram *program);
     /// attempts to get property function that and set definition pointer + error handling
     NodeFunctionDefinition* find_property_definition(NodeProgram *program);
-	NodeFunctionDefinition* find_method_definition(NodeProgram *program);
 	NodeFunctionDefinition* find_constructor_definition(NodeProgram* program);
     /// gets and sets definition ptr or matches builtin func metadata -> throws error if not found when fail set to true
     bool get_definition(NodeProgram* program, bool fail=false);

@@ -2,28 +2,28 @@ Global Declarations:
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
 struct List
-	declare const List.MAX_STRUCTS : int := MAX_STRUCTS{unknown}
-	declare List.free_idx : int := 0
-	declare List.allocation[List.MAX_STRUCTS{int}] : int[]
-	declare List.value[List.MAX_STRUCTS{int}] : int[]
-	declare List.next[List.MAX_STRUCTS{int}] : int[] := (- 1)
+	declare const List::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
+	declare List::free_idx : int := 0
+	declare List::allocation[List::MAX_STRUCTS{int}] : int[]
+	declare List::value[List::MAX_STRUCTS{int}] : int[]
+	declare List::next[List::MAX_STRUCTS{int}] : int[] := (- 1)
 
-	function List.__init__(value : int, next : int) : unknown
-		List.free_idx{int} := search(List.allocation{int[]}, 0)
-		if(List.free_idx{int} = -1)
+	function List::__init__(value : int, next : int) : unknown
+		List::free_idx{int} := search(List::allocation{int[]}, 0)
+		if(List::free_idx{int} = -1)
 			message("Error: No more free space available to allocate objects of type 'List'")
 		end if
-		List.allocation[List.free_idx{int}]{int[]} := 1
-		List.value[List.free_idx{int}]{int} := value{int}
-		List.next[List.free_idx{int}]{int} := next{int}
-		return (List.free_idx{int})
+		List::allocation[List::free_idx{int}]{int[]} := 1
+		List::value[List::free_idx{int}]{int} := value{int}
+		List::next[List::free_idx{int}]{int} := next{int}
+		return (List::free_idx{int})
 	end function
 
-	function List.get_next_next_value(self : int) : unknown
-		return (List.value[List.next[List.next[self{int}]{int}]{int}]{int})
+	function List::get_next_next_value(self : int) : unknown
+		return (List::value[List::next[List::next[self{int}]{int}]{int}]{int})
 	end function
 
-	function List.__repr__(self : int) : unknown
+	function List::__repr__(self : int) : unknown
 		return ("<List> Object: " & self{int})
 	end function
 
@@ -34,7 +34,7 @@ on init
 	declare ui_button btn_1 : int 
 	declare ui_button btn_2 : int 
 	declare ptr : int := List(1, List(3, - 1))
-	message(List.__repr__(List.next[List.next[ptr{int}]{int}]{int}))
+	message(List::__repr__(List::next[List::next[ptr{int}]{int}]{int}))
 	btn_1{int} := return_twice(_{unknown})
 	if(return_twice(_{unknown}) = 1)
 		message("pipi")

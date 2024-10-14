@@ -294,8 +294,6 @@ NodeStruct::NodeStruct(const NodeStruct& other)
 std::unique_ptr<NodeAST> NodeStruct::clone() const {
 	return std::make_unique<NodeStruct>(*this);
 }
-std::unordered_set<NodeType> NodeStruct::allowed_member_node_types =
-	{NodeType::Variable, NodeType::Pointer, NodeType::NDArray, NodeType::Array};
 
 ASTDesugaring *NodeStruct::get_desugaring(NodeProgram *program) const {
 	static DesugarStruct desugaring(program);

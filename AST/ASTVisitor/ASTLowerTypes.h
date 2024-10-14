@@ -88,7 +88,7 @@ private:
 			false,
 			std::make_unique<NodeFunctionVarRef>(
 				std::make_unique<NodeFunctionHeader>(
-					prefix + ".__repr__",
+					prefix + OBJ_DELIMITER+"__repr__",
 					std::make_unique<NodeParamList>(node.tok, node.clone()),
 					node.tok
 				),
@@ -114,8 +114,8 @@ private:
 		return nullptr;
 	}
 
-	Type* is_repr_header(NodeFunctionHeader& header) {
-		if(contains(header.name, "__repr__")) {
+	static Type* is_repr_header(NodeFunctionHeader& header) {
+		if(contains(header.name, OBJ_DELIMITER+"__repr__")) {
 			if(header.args->params.size() == 1) {
 				return header.args->params[0]->ty;
 			}

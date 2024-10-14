@@ -28,13 +28,13 @@ public:
 			return &node;
         }
 
-		if(node.kind == NodeFunctionCall::Kind::UserDefined) {
-			if(node.get_method_name() == "__init__") {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-				error.m_message = "Do not call constructor method directly.";
-				error.exit();
-			}
-		}
+//		if(node.kind == NodeFunctionCall::Kind::UserDefined) {
+//			if(node.get_method_name() == "__init__") {
+//				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+//				error.m_message = "Do not call constructor method directly.";
+//				error.exit();
+//			}
+//		}
 
         // message overloaded is not recognized as builtin
 		// constructor method renaming

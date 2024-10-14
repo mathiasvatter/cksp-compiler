@@ -393,7 +393,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 					error.exit();
 				}
 				strct->update_member_table();
-				auto node_declaration = strct->get_member(prev_obj+"."+reference->name);
+				auto node_declaration = strct->get_member(prev_obj+OBJ_DELIMITER+reference->name);
 				if(!node_declaration) {
 					error.m_message = "Member "+reference->name+" does not exist in "+prev_obj+".";
 					error.exit();
@@ -407,7 +407,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 					auto& next = node.chain[i+1];
 					if(auto next_ref = cast_node<NodeReference>(next.get())) {
 						// next reference is also in this object
-						auto next_obj = strct->get_member(prev_obj+"."+next_ref->name);
+						auto next_obj = strct->get_member(prev_obj+OBJ_DELIMITER+next_ref->name);
 						if(next_obj) {
 							reference->ty = prev_type;
 						}

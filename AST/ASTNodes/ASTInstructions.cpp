@@ -114,25 +114,6 @@ NodeFunctionDefinition* NodeFunctionCall::find_property_definition(NodeProgram *
     return nullptr;
 }
 
-NodeFunctionDefinition* NodeFunctionCall::find_method_definition(NodeProgram *program) {
-	if(!program->def_provider) {
-		CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
-	}
-	auto obj = get_object_name();
-	if(obj.empty()) return nullptr;
-	auto strct = program->struct_lookup.find(obj);
-	if(strct == program->struct_lookup.end()) return nullptr;
-	if(strct->second->method_table.empty()) return nullptr;
-	auto func = strct->second->method_table.find({this->function->name, (int)this->function->header->args->params.size()});
-	if(func == strct->second->method_table.end()) return nullptr;
-
-	function->ty = func->second->ty;
-	definition = func->second;
-	definition->call_sites.emplace(this);
-	kind = Kind::Method;
-	return func->second;
-}
-
 
 NodeFunctionDefinition *NodeFunctionCall::find_constructor_definition(NodeProgram *program) {
 	auto it = program->struct_lookup.find(function->name);
