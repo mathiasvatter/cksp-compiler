@@ -436,7 +436,9 @@ NodeAST * TypeInference::visit(NodeParamList& node) {
     auto node_assignment = node.parent->get_node_type() == NodeType::SingleAssignment;
 	auto node_list_struct = node.parent->get_node_type() == NodeType::List;
 	auto node_return = node.parent->get_node_type() == NodeType::Return;
-    if(!node_declaration and !node_assignment and !node_list_struct and !node_return) return &node;
+	auto node_function_init = node.parent->get_node_type() == NodeType::ParamList and
+		node.parent->parent->get_node_type() == NodeType::FunctionHeader;
+    if(!node_declaration and !node_assignment and !node_list_struct and !node_return and !node_function_init) return &node;
 
     node.ty = infer_initialization_types(types, &node);
 	return &node;
@@ -565,10 +567,15 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	if(node.definition) {
 		if (!node.definition->visited) node.definition->accept(*this);
 		for (int i = 0; i < node.function->get_num_args(); i++) {
+			auto &func_arg = node.function->get_arg(i);
+			auto &param = node.definition->header->args->params[i];
 			const std::string error_message =
 				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
-					+ node.definition->header->args->params[i]->ty->to_string() + " as argument type.";
-			match_type(node.function->get_arg(i).get(), node.definition->header->args->params[i].get(), error_message);
+					+ param->ty->to_string() + " as argument type.";
+			if(func_arg->get_node_type() == NodeType::ParamList and param->ty->get_type_kind() == TypeKind::Composite) {
+				func_arg->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(param->ty)->get_compound_type(), func_arg->ty->get_element_type(), param->ty->get_dimensions());
+			}
+			match_type(func_arg.get(), param.get(), error_message);
 		}
 	}
 //	match_type(&node, node.definition);

@@ -7,6 +7,8 @@
 #include "../AST/ASTVisitor/ASTVisitor.h"
 #include "../misc/Gensym.h"
 
+/// Hoist function calls that return values and are userdefined out of control flow into a separate declaration
+/// Hoist array or ndarray initializer lists out of function args into separate declarations
 class FunctionCallHoisting : public ASTVisitor {
 private:
 //	Gensym m_gensym;
@@ -104,6 +106,44 @@ public:
 				)
 			);
 			return node.replace_with(std::move(ref));
+		}
+		return &node;
+	}
+
+	inline NodeAST * visit(NodeParamList& node) override {
+		for(auto & param : node.params) {
+			param->accept(*this);
+		}
+		// if node is not an array initializer list, return node
+		if(node.parent->get_node_type() == NodeType::ParamList and node.parent->parent->get_node_type() == NodeType::FunctionHeader) {
+			auto func_call = static_cast<NodeFunctionCall*>(node.parent->parent->parent->parent);
+			if(!func_call->definition) {
+				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+				error.m_message = "Function "+func_call->function->name+" has not been defined and cannot be rewritten with an array initializer.";
+				error.m_got = func_call->function->name;
+				error.exit();
+			}
+
+
+			node.flatten();
+
+			// if initializer list inside function header -> hoist out
+			auto array_node = std::make_unique<NodeNDArray>(
+				std::nullopt,
+				m_program->def_provider->get_fresh_name("_init_array"),
+				TypeRegistry::Unknown,
+				nullptr, //std::make_unique<NodeInt>(node.params.size(), node.tok),
+				node.tok
+			);
+			auto node_declaration = std::make_unique<NodeSingleDeclaration>(
+				std::move(array_node),
+				node.clone(),
+				node.tok
+			);
+			auto array_ref = node_declaration->variable->to_reference();
+			array_ref->match_data_structure(node_declaration->variable.get());
+			m_declares_per_stmt[m_last_stmt].push_back(std::move(node_declaration));
+			return node.replace_with(std::move(array_ref));
 		}
 		return &node;
 	}

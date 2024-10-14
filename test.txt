@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Mon Oct 14 14:08:51 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Mon Oct 14 18:52:28 2024 }
 on init
   declare %loc_1[3]
   declare $loc_2
@@ -35,5 +35,7 @@ on init
   while($loc_2 < num_elements(%loc_1)) 
     inc($loc_2)
   end while
+  message("NDArray of type <int[][]>")
+  message("Array of type <int[]>")
 end on
 

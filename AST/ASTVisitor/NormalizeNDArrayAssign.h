@@ -38,9 +38,9 @@ public:
 			// case ndarray[2, *] := (0)
 			if(param_list->params.size() == 1) {
 				add_ndarray_init_function_def(m_program, nd_array_ref, wildcard_dims);
-				auto lowered = node.replace_with(get_ndarray_function_call(nd_array_ref,
-																		   param_list->params.at(0).get(),
-																		   wildcard_dims));
+				auto lowered = node.replace_with(get_ndarray_init_function_call(nd_array_ref,
+																				param_list->params.at(0).get(),
+																				wildcard_dims));
 				return lowered;
 				// ndarray[2, *] := (2,3,4)
 			} else if (param_list->params.size() > 1) {
@@ -54,7 +54,8 @@ public:
 			auto nd_array_copy = static_cast<NodeNDArrayRef *>(node.r_value.get());
 
 			if(nd_array_ref->num_wildcards() == 0 and nd_array_copy->num_wildcards() == 0) return &node;
-
+			// try to lower to array assignment
+//			if(nd_array_copy->num_wildcards() == 0) return &node;
 			// check amount of wildcards
 			if (nd_array_ref->num_wildcards() != nd_array_copy->num_wildcards()) {
 				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
@@ -87,7 +88,7 @@ public:
 	NodeAST* visit(NodeNDArrayRef& node) override {
 		if(node.indexes) node.indexes->accept(*this);
 		// only add wildcards if it is l_value in assignment
-		if(node.is_l_value()) {
+		if(node.is_l_value() or node.is_r_value()) {
 			node.add_wildcards();
 		}
 		return &node;
@@ -137,8 +138,8 @@ private:
 		return {wildcard_start, wildcard_end};
 	}
 
-	/// ndarray.<init|copy>.<type>.<num_dimensions>.<dimension>(ndarray: type[][], value: type)
-	inline std::unique_ptr<NodeFunctionCall> get_ndarray_function_call(NodeNDArrayRef* node, NodeAST* value, std::pair<int, int> wildcard_dims) {
+	/// ndarray.<init>.<type>.<num_dimensions>.<dimension>(ndarray: type[][], value: type)
+	inline std::unique_ptr<NodeFunctionCall> get_ndarray_init_function_call(NodeNDArrayRef* node, NodeAST* value, std::pair<int, int> wildcard_dims) {
 		auto func_name = get_init_func_name(node->ty, node->sizes->params.size(), wildcard_dims);
 
 		auto params = std::make_unique<NodeParamList>(Token());

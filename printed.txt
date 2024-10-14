@@ -1,80 +1,98 @@
 Global Declarations:
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
-struct List
+on init
+	declare const Note::MAX_STRUCTS : int := MAX_STRUCTS{unknown} / ((((2 * 2) + 10) + abs((2 * 2) - 10)) / 2)
+	declare Note::free_idx : int := 0
+	declare Note::allocation[Note::MAX_STRUCTS{int}] : int[]
+	declare Note::pitch[Note::MAX_STRUCTS{int}] : int[]
+	declare Note::velocities[Note::MAX_STRUCTS{int}, 10] : int[][]
+	declare Note::play_pos[Note::MAX_STRUCTS{int}, 2, 2] : int[][][]
 	declare const List::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
 	declare List::free_idx : int := 0
 	declare List::allocation[List::MAX_STRUCTS{int}] : int[]
 	declare List::value[List::MAX_STRUCTS{int}] : int[]
 	declare List::next[List::MAX_STRUCTS{int}] : int[] := (- 1)
-
-	function List::__init__(value : int, next : int) : unknown
-		List::free_idx{int} := search(List::allocation{int[]}, 0)
-		if(List::free_idx{int} = -1)
-			message("Error: No more free space available to allocate objects of type 'List'")
-		end if
-		List::allocation[List::free_idx{int}]{int[]} := 1
-		List::value[List::free_idx{int}]{int} := value{int}
-		List::next[List::free_idx{int}]{int} := next{int}
-		return (List::free_idx{int})
-	end function
-
-	function List::get_next_next_value(self : int) : unknown
-		return (List::value[List::next[List::next[self{int}]{int}]{int}]{int})
-	end function
-
-	function List::__repr__(self : int) : unknown
-		return ("<List> Object: " & self{int})
-	end function
-
-end struct
-
-on init
 	declare _iter : int
 	declare ui_button btn_1 : int 
 	declare ui_button btn_2 : int 
-	declare ptr : int := List(1, List(3, - 1))
-	message(List::__repr__(List::next[List::next[ptr{int}]{int}]{int}))
-	btn_1{int} := return_twice(_{unknown})
-	if(return_twice(_{unknown}) = 1)
+	declare _init_array0 : unknown := (3, 0)
+	declare _init_array1 : unknown := (10, 110, 10, 127)
+	declare first_note : int
+	Note(first_note{int}, 69, _init_array0{unknown}, _init_array1{unknown})
+	declare _return2 : int
+	List(_return2{int}, 3, - 1)
+	declare ptr : int
+	List(ptr{int}, 1, _return2{int})
+	message("<List> Object: " & List::next[List::next[ptr{int}]{int}]{int})
+	return_twice(btn_1{int}, _{unknown})
+	declare _return3 : int
+	return_twice(_return3{int}, _{unknown})
+	if(_return3{int} = 1)
 		message("pipi")
 	end if
 	declare get_sth_more[3] : int[]
-	declare get_sth : int := return_sth_more(get_sth_more{int[]})
+	declare get_sth : int
+	return_sth_more(get_sth{int}, get_sth_more{int[]})
+	declare _init_array4 : unknown := (1, 2, 3, 4)
+	take_array(_init_array4{unknown})
+	message("Array of type <int[]>")
 end on
 
-function get_pipi(num1 : int, str1 : string) : unknown
-	message("pipi" & ", " & num1{int} & ", " & str1{string})
+function take_array(ndarray : int[][]) : unknown
+	message("NDArray of type <int[][]>")
 end function
 
-function return_twice(return0 : unknown) : unknown
+function return_twice(return0 : int, return1 : int) : unknown
 	declare a : int := 2
-	return (1, by_marks(a{int}))
+	return0{int} := 1
+	return1{int} := by_marks(a{int})
 end function
 
-function pupu(msg() : (int, string): void) : unknown
-	message("pupu")
-	msg(3, "pipi")
-end function
-
-function array.reduce(array : any[], func() : (unknown, unknown): unknown) : unknown -> result : any
-	declare lib.i : int
-	result{any} := array[0]{any}
-	lib.i{int} := 0
-	while(lib.i{int} <= (num_elements(array{any[]}) - 1)) 
-		result{unknown} := func(result{unknown}, array[lib.i{int}]{any})
-		inc(lib.i{int})
-	end while
-end function
-
-function return_once() : unknown
-	declare a : int := 2
-	return (a{int})
-end function
-
-function return_sth_more(return1 : []) : unknown
+function return_sth_more(return0 : int, return1 : int[]) : unknown
 	declare x[3] : int[] := (42, 43, 44)
-	return (1, x{int[]})
+	return0{int} := 1
+	return1{int[]} := x{int[]}
+end function
+
+function List::__init__(return0 : int, value : int, next : int) : unknown
+	List::free_idx{int} := search(List::allocation{int[]}, 0)
+	if(List::free_idx{int} = -1)
+		message("Error: No more free space available to allocate objects of type 'List'")
+	end if
+	List::allocation[List::free_idx{int}]{int[]} := 1
+	List::value[List::free_idx{int}]{int} := value{int}
+	List::next[List::free_idx{int}]{int} := next{int}
+	return0{int} := List::free_idx{int}
+end function
+
+function Note::__init__(return0 : int, p : int, v : int[], pp : int[][]) : unknown
+	Note::free_idx{int} := search(Note::allocation{int[]}, 0)
+	if(Note::free_idx{int} = -1)
+		message("Error: No more free space available to allocate objects of type 'Note'")
+	end if
+	Note::allocation[Note::free_idx{int}]{int[]} := 1
+	Note::pitch[Note::free_idx{int}]{int} := p{int}
+	ndarray$dim2$1<-array[int](Note::velocities{int[]}, v{int[]}, Note::free_idx{int})
+	ndarray$dim3$1$2<-ndarray$dim2$1[int](Note::play_pos{int[][]}, pp{int[][]}, Note::free_idx{int})
+	return0{int} := Note::free_idx{int}
+end function
+
+function ndarray$dim2$1<-array[int](original : int[], to_copy : int[], dim0 : int)
+	declare _iter0 : int
+	for _iter0{int} := 0 to original.SIZE_D1{unknown} - 1
+		original[dim0{int}, _iter0{int}]{int[]} := to_copy[_iter0{int}]{int[]}
+	end for
+end function
+
+function ndarray$dim3$1$2<-ndarray$dim2$1[int](original : int[][], to_copy : int[][], dim0 : int)
+	declare _iter1 : int
+	declare _iter0 : int
+	for _iter0{int} := 0 to original.SIZE_D1{unknown} - 1
+		for _iter1{int} := 0 to original.SIZE_D2{unknown} - 1
+			original[dim0{int}, _iter0{int}, _iter1{int}]{int[][]} := to_copy[_iter0{int}, _iter1{int}]{int[][]}
+		end for
+	end for
 end function
 
 
