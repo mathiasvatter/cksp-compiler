@@ -129,7 +129,6 @@ void Compiler::compile() {
 
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
-	ast->debug_print();
 
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
@@ -147,6 +146,7 @@ void Compiler::compile() {
 
 	NormalizeNDArrayAssign nd_array_assign(&m_definition_provider);
 	ast->accept(nd_array_assign);
+	ast->debug_print();
 //	std::cout << "NDArray Assignments normalized" << std::endl;
 	// Data Structure Lowering of NDArrays and Array assignments
 	ASTDataStructureLowering data_structure_lowering(&m_definition_provider);

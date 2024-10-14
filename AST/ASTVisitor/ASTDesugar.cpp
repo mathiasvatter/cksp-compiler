@@ -123,7 +123,12 @@ NodeAST* ASTDesugar::visit(NodeParamList &node) {
 		param->accept(*this);
 	}
 	// in case it is a double param_list [[0,1,2,3]] move params up to parent
-	if(auto node_param_list = cast_node<NodeParamList>(node.parent)) {
+	if(node.parent->get_node_type() == NodeType::ParamList) {
+		auto node_param_list = static_cast<NodeParamList*>(node.parent);
+		// could be array initializer in function call
+		if(node_param_list->parent -> get_node_type() == NodeType::FunctionHeader) {
+			return &node;
+		}
 		if(node_param_list->params.size() == 1) {
 			node_param_list->params.insert(
 				node_param_list->params.begin(),

@@ -13,34 +13,34 @@ struct List
     end function
 end struct
 
-// struct Note
-// 	declare pitch: int
-// 	declare velocities[10]: int[]
-// 	declare play_pos[11, 12]: int[][]
+struct Note
+	declare pitch: int
+	declare velocities[10]: int[]
+	declare play_pos[2, 2]: int[][]
 
-// 	function __init__(self, p: int, v: int[], pp: int[][])
-// 		self.pitch := p
-// 		self.velocities := v
-// 		self.play_pos := pp
-// 	end function
+	function __init__(self, p: int, v: int[], pp: int[][])
+		self.pitch := p
+		self.velocities := v
+		self.play_pos := pp
+	end function
 
-// 	function __repr__(self)
-// 		return "Note {Pitch: " & self.pitch & "}"
-// 	end function
+	function __repr__(self)
+		return "Note {Pitch: " & self.pitch & "}"
+	end function
 
-// 	function play(self)
-// 		return play_note(self.pitch, self.velocities[0], self.play_pos[1,2], 0)
-// 	end function
+	function play(self)
+		return play_note(self.pitch, self.velocities[0], self.play_pos[1,2], 0)
+	end function
 
-// 	function get_velocities(self)
-// 		return self.velocities
-// 	end function
+	function get_velocities(self)
+		return self.velocities
+	end function
 
-// end struct
+end struct
 
 on init	
 	declare ui_button btn_1: int, ui_button btn_2: int
-
+	declare first_note := Note(69, (3,0), ((10,110),(10, 127)))
 	declare ptr: List := List(1, List(3, nil))
 	message(ptr.next.next)
 	// declare huihui : (int, int): void
@@ -55,7 +55,8 @@ on init
 	end if
 
 	declare get_sth: int, get_sth_more[3]: int[] := return_sth_more()
-
+	take_array((1,2,3,4))
+	message(get_sth_more)
 end on
 
 function return_sth_more()
@@ -63,7 +64,9 @@ function return_sth_more()
     return 1, x
 end function
 
-
+function take_array(ndarray: int[][])
+	message(ndarray)
+end function
 
 function return_once()
 	declare a := 2

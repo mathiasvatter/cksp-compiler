@@ -181,11 +181,17 @@ NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
 
 NodeAST * ASTPrinter::visit(NodeParamList &node) {
 	if (!node.params.empty()) {
+		if(node.parent->get_node_type() == NodeType::ParamList) {
+			os << "(";
+		}
 		for (int i = 0; i < node.params.size() - 1; i++) {
 			node.params[i]->accept(*this);
             os << ", ";
         }
         node.params[node.params.size() - 1]->accept(*this);
+		if(node.parent->get_node_type() == NodeType::ParamList) {
+			os << ")";
+		}
     }
 	return &node;
 }

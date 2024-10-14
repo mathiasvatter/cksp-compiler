@@ -4,6 +4,7 @@
 
 #include "ASTCollectLowerings.h"
 #include "ASTLowerTypes.h"
+#include "ASTHandleStringRepresentations.h"
 
 ASTCollectLowerings::ASTCollectLowerings(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
@@ -21,6 +22,9 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	}
 	node.merge_function_definitions();
 	node.reset_function_visited_flag();
+
+	ASTHandleStringRepresentations handle_string_representations(m_def_provider);
+	node.accept(handle_string_representations);
 
 	ASTLowerTypes lowering_types(m_def_provider);
 	node.accept(lowering_types);
