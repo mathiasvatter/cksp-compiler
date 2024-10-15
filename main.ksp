@@ -40,12 +40,17 @@ end struct
 
 on init	
 	declare ui_button btn_1: int, ui_button btn_2: int
-	declare first_note := Note(69, (3,0), ((10,110),(10, 127)))
+	declare first_note := Note(69, (3,0), ((10, 10), (10, 10)))
 	declare ptr: List := List(1, List(3, nil))
 	message(ptr.next.next)
 	// declare huihui : (int, int): void
 	// declare ui_button btn_slot[5]: int[]
 	
+	declare lists[10]: List[] := (nil)
+	for idx, ls in lists
+		ls := List(idx, ls)
+		message(ls.next)
+	end for
 	// pupu(get_pipi)
 
 	btn_1, _ := return_twice()

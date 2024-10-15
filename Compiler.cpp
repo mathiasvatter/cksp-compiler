@@ -132,6 +132,7 @@ void Compiler::compile() {
 
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
+	ast->debug_print();
 
 	compile_time.stop("Lowering");
 	std::cout << compile_time.print_timer("Lowering") << std::endl;
@@ -146,14 +147,10 @@ void Compiler::compile() {
 
 	NormalizeNDArrayAssign nd_array_assign(&m_definition_provider);
 	ast->accept(nd_array_assign);
-	ast->debug_print();
-//	std::cout << "NDArray Assignments normalized" << std::endl;
 	// Data Structure Lowering of NDArrays and Array assignments
 	ASTDataStructureLowering data_structure_lowering(&m_definition_provider);
 	ast->accept(data_structure_lowering);
 
-//	std::cout << compile_time.print_timer("Lowering") << std::endl;
-//	ast->debug_print();
 	compile_time.stop("Data Structure Lowering");
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
