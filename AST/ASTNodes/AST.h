@@ -359,6 +359,68 @@ struct NodeParamList: NodeAST {
 		flatten(std::move(params));
 		params = std::move(flat_list);
 	}
+	/**
+	 * @brief Calculates the dimensions of a multi-dimensional parameter list.
+	 *
+	 * This method calculates the dimensions of a multi-dimensional parameter list by recursively
+	 * traversing the list and checking the sizes of nested lists. If the sizes of nested lists are
+	 * inconsistent, an exception is thrown.
+	 *
+	 * @return A vector containing the sizes of each dimension.
+	 * @throws std::runtime_error if the sizes of nested lists are inconsistent.
+	 */
+	[[nodiscard]] std::vector<int> get_dimensions() const {
+		// Hilfsfunktion, um die Dimensionen rekursiv zu berechnen
+		std::function<std::vector<int>(const NodeParamList*, int&)> calculate_dimensions =
+			[&](const NodeParamList* node, int& valid) -> std::vector<int> {
+			  if (node == nullptr || node->params.empty()) {
+				  valid = 0; // Kein gültiger Parameter
+				  return {};
+			  }
+
+			  int current_size = node->params.size(); // Die Anzahl der Parameter auf dieser Ebene
+			  std::vector<int> dimensions = { current_size }; // Speichere die aktuelle Dimension
+
+			  // Prüfen, ob die Parameter Listen sind oder normale Werte (also nicht tiefer verschachtelt)
+			  bool found_list = false;
+			  for (size_t i = 0; i < node->params.size(); ++i) {
+				  if (node->params[i]->get_node_type() == NodeType::ParamList) {
+					  found_list = true;
+					  // Vergewissere dich, dass alle inneren Listen die gleiche Größe haben
+					  if (static_cast<NodeParamList*>(node->params[i].get())->params.size() !=
+						  static_cast<NodeParamList*>(node->params[0].get())->params.size()) {
+						  valid = 0; // Ungleiche Größe der inneren Listen
+						  return {};
+					  }
+				  }
+			  }
+
+			  // Falls alle Parameter auf der aktuellen Ebene keine Listen mehr sind, gehe nicht tiefer
+			  if (!found_list) {
+				  return dimensions; // Flache Liste, keine weitere Dimension
+			  }
+
+			  // Falls alle inneren Parameter ebenfalls Listen sind, gehe eine Dimension tiefer
+			  std::vector<int> next_dimensions =
+				  calculate_dimensions(static_cast<NodeParamList*>(node->params[0].get()), valid);
+			  if (valid == 0) return {}; // Ungültig
+			  dimensions.insert(dimensions.end(), next_dimensions.begin(), next_dimensions.end());
+
+			  return dimensions;
+			};
+
+		int valid = 1; // Flag für Gültigkeit
+		std::vector<int> dimensions = calculate_dimensions(this, valid);
+
+		if (valid == 0) {
+			auto error = CompileError(ErrorType::TypeError, "", "", tok);
+			error.m_message = "Inconsistent sizes in initializers.";
+			error.exit();
+		}
+
+		return dimensions;
+	}
+
 };
 
 struct NodeUnaryExpr : NodeAST {

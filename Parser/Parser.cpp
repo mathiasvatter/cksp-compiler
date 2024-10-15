@@ -505,8 +505,8 @@ Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* 
                                                                     "Found invalid Assign Statement Syntax.", ":=", peek()));
     }
     consume(); // consume :=
-	bool starts_with_parenth = peek().type == token::OPEN_PARENTH;
-	bool is_array = vars->params.at(0)->get_node_type() == NodeType::ArrayRef || vars->params.at(0)->get_node_type() == NodeType::NDArrayRef;
+//	bool starts_with_parenth = peek().type == token::OPEN_PARENTH;
+//	bool is_array = vars->params.at(0)->get_node_type() == NodeType::ArrayRef || vars->params.at(0)->get_node_type() == NodeType::NDArrayRef;
 
 	std::unique_ptr<NodeParamList> assignees = nullptr;
     auto assignee =  parse_param_list(node_assign_statement.get()); //_parse_assignee();
@@ -515,10 +515,10 @@ Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* 
     }
 	assignees = std::move(assignee.unwrap());
 	// if assignment starts with parenth and has only one member -> nested param list
-	if(starts_with_parenth and is_array and assignees->params.size() == 1) {
-		auto nested_param_list = std::make_unique<NodeParamList>(get_tok(), std::move(assignees));
-		assignees = std::move(nested_param_list);
-	}
+//	if(starts_with_parenth and is_array and assignees->params.size() == 1) {
+//		auto nested_param_list = std::make_unique<NodeParamList>(get_tok(), std::move(assignees));
+//		assignees = std::move(nested_param_list);
+//	}
     node_assign_statement->l_value = std::move(vars);
     node_assign_statement->r_value = std::move(assignees);
     node_assign_statement->set_child_parents();
@@ -800,21 +800,14 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
         if (peek().type == token::OPEN_PARENTH) {
             size_t backup_pos = m_pos; // backup token index
             auto exprResult = parse_expression(parent);
-            // check here also if expr is no binary expression (or unary_expr and then no bin_expr)
-            // because of array declarations like: declare array[3] := (0)
-//            bool is_parse_error = exprResult.is_error();
-//            bool is_binary_expr = is_parse_error;
-//            std::unique_ptr<NodeAST> expr;
-//            if(!is_parse_error) {
-//                expr = std::move(exprResult.unwrap());
-//                is_binary_expr = expr->get_node_type() == NodeType::BinaryExpr;
-//                if(expr->get_node_type() == NodeType::UnaryExpr) {
-//                    auto unary_expr = static_cast<NodeUnaryExpr*>(expr.get());
-//                    is_binary_expr = unary_expr->operand->get_node_type() == NodeType::BinaryExpr;
-//                }
-//            }
+
             if (!exprResult.is_error()) {
-                params.push_back(std::move(exprResult.unwrap()));
+				if(peek(-1).type == token::CLOSED_PARENTH) {
+					params.push_back(std::make_unique<NodeParamList>(get_tok(), std::move(exprResult.unwrap())));
+					params.back()->parent = parent;
+				} else {
+                	params.push_back(std::move(exprResult.unwrap()));
+				}
             } else {
                 m_pos = backup_pos; // set back token index
                 consume(); // consume (

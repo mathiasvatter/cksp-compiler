@@ -127,6 +127,9 @@ NodeAST* ASTDesugar::visit(NodeParamList &node) {
 		auto node_param_list = static_cast<NodeParamList*>(node.parent);
 		// could be array initializer in function call
 		if(node_param_list->parent -> get_node_type() == NodeType::FunctionHeader) {
+//			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+//			error.m_message = "Detected <array initializer> in function call. This is not yet allowed.";
+//			error.exit();
 			return &node;
 		}
 		if(node_param_list->params.size() == 1) {

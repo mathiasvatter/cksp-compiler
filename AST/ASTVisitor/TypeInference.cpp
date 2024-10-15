@@ -574,6 +574,17 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 					+ param->ty->to_string() + " as argument type.";
 			if(func_arg->get_node_type() == NodeType::ParamList and param->ty->get_type_kind() == TypeKind::Composite) {
 				func_arg->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(param->ty)->get_compound_type(), func_arg->ty->get_element_type(), param->ty->get_dimensions());
+			} else if(func_arg->get_node_type() == NodeType::ParamList) {
+				auto param_list = cast_node<NodeParamList>(func_arg.get());
+				param_list->flatten();
+				if(param_list->params.size() == 1) {
+					func_arg = std::move(param_list->params[0]);
+					func_arg->parent = &node;
+				} else {
+					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+					error.m_message = "Detected <array initializer> in function call. This is not yet allowed.";
+					error.exit();
+				}
 			}
 			match_type(func_arg.get(), param.get(), error_message);
 		}

@@ -1,12 +1,37 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Mon Oct 14 18:52:28 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Tue Oct 15 15:14:38 2024 }
 on init
-  declare %loc_1[3]
   declare $loc_2
+  declare $loc_3
+  declare %loc_1[3]
+  declare $loc_5
+  declare $loc_4
+  declare $Note__free_idx := 0
+  declare %Note__allocation[100000]
   declare $List__free_idx := 0
   declare %List__allocation[1000000]
   declare %List__next[1000000] := (-1)
   declare ui_button $btn_1 
   declare ui_button $btn_2 
+  declare %init_array0[2] := (3, 0)
+  declare %_init_ndarray1[4] := (10, 10, 10, 10)
+  $Note__free_idx := search(%Note__allocation, 0)
+  if($Note__free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'Note'")
+  end if
+  %Note__allocation[$Note__free_idx] := 1
+  $loc_3 := 0
+  while($loc_3 <= 99999) 
+    inc($loc_3)
+  end while
+  $loc_4 := 0
+  $loc_5 := 0
+  while($loc_5 <= 99999) 
+    $loc_4 := 0
+    while($loc_4 <= 1) 
+      inc($loc_4)
+    end while
+    inc($loc_5)
+  end while
   $List__free_idx := search(%List__allocation, 0)
   if($List__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'List'")
@@ -22,10 +47,23 @@ on init
   %List__next[$List__free_idx] := 
   $ptr := $List__free_idx
   message("<List> Object: " & %List__next[%List__next[$ptr]])
+  declare %lists[10] := (-1)
+  declare $loc_7
+  $loc_7 := 0
+  while($loc_7 <= (num_elements(%lists) - 1)) 
+    $List__free_idx := search(%List__allocation, 0)
+    if($List__free_idx = -1)
+      message("Error: No more free space available to allocate objects of type 'List'")
+    end if
+    %List__allocation[$List__free_idx] := 1
+    %List__next[$List__free_idx] := 
+    %lists[$loc_7] := $List__free_idx
+    inc($loc_7)
+  end while
   $btn_1 := 1
-  declare $_return1
-  $_return1 := 1
-  if($_return1 = 1)
+  declare $_return3
+  $_return3 := 1
+  if($_return3 = 1)
     message("pipi")
   end if
   %loc_1[0] := 42
