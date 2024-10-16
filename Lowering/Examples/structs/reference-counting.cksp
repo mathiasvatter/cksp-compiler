@@ -1,0 +1,59 @@
+struct List
+    declare value: int
+    declare next: List := nil
+    declare right: List := nil
+    declare left: List := nil
+    declare other_struct: OtherStruct := nil
+
+    function __init__(self, value: int, next: List)
+        self.value := value
+        self.next := next
+    end function
+
+end struct
+
+{-------------------------------------------------------------------------------------------
+                                        Post Lowering
+--------------------------------------------------------------------------------------------}
+
+function List::__del__(self: List)
+
+    // Solange es Objekte gibt, die freigegeben werden sollen, weiter durch die Struktur iterieren
+    while self != nil
+        // Schritt 1: Referenzzähler reduzieren
+        dec(List::ref_count[self])
+
+        // Wenn das Objekt noch referenziert wird, zum nächsten Objekt gehen
+        if (List::ref_count[self] <= 0)
+            List::allocation[self] := 0 // Freigabe des aktuellen Objekts
+       
+            // Schritt 2: Member-Structs löschen, wenn sie vorhanden sind
+            if (self.other_struct # nil)
+                OtherStruct::__del__(self.other_struct)
+                self.other_struct := nil
+            end if
+
+            // Schritt 3: Gehe zu anderen rekursiven Pointern (z. B. `left`, `right` in einem Baum)
+            // Statt die Methode rekursiv aufzurufen, wechsle den `self`-Pointer direkt
+            if (self.left # nil)
+                self := self.left
+                self.left := nil // Entferne den linken Pointer, um zyklische Referenzen zu vermeiden
+                continue // Weitermachen mit dem linken Kind
+            end if
+
+            if (self.right # nil)
+                self := self.right
+                self.right := nil // Entferne den rechten Pointer, um zyklische Referenzen zu vermeiden
+                continue // Weitermachen mit dem rechten Kind
+            end if
+
+            if(self.next # nil)
+                self := self.next
+                self.next := nil // Entferne den rechten Pointer, um zyklische Referenzen zu vermeiden
+                continue // Weitermachen mit dem rechten Kind
+            end if
+
+        end if
+        self := nil
+    end while
+end function

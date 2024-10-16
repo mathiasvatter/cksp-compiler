@@ -34,35 +34,35 @@ message(that_list.next.value)
 
 on init
 
-    declare const MAX_STRUCTS := 1000000
-    declare object.warning: string := "Memory Error: No more free space available to allocate objects of type"
+    declare const MAX_STRUCTS: int := 1000000
+    declare MEM_WARNING: string := "Memory Error: No more free space available to allocate objects of type"
 
-    declare const List.MAX_STRUCTS := MAX_STRUCTS // can alternate if mutlidimensional array is needed
-    declare List.allocation[List.MAX_STRUCTS]: int[] := (0)
-    declare List.value[List.MAX_STRUCTS]: int[]             // Wert des Elements
-    declare List.next[List.MAX_STRUCTS]: List[] := (nil)      // Verweis auf den Index des nächsten Elements
-    declare List.free_idx: int := 0                  // Zeigt auf den ersten freien Platz im Array
+    declare const List::MAX_STRUCTS: int := MAX_STRUCTS // can alternate if mutlidimensional array is needed
+    declare List::allocation[List::MAX_STRUCTS]: int[] := (0)
+    declare List::ref_count[List::MAX_STRUCTS]: int[] := (0)
+    declare List::value[List::MAX_STRUCTS]: int[]             // Wert des Elements
+    declare List::next[List::MAX_STRUCTS]: List[] := (nil)      // Verweis auf den Index des nächsten Elements
+    declare List::free_idx: int := 0                  // Zeigt auf den ersten freien Platz im Array
 
-    declare $this_list := nil // nil
-    $this_list := List.__init__(42, nil)
+    declare this_list := nil // nil
+    this_list := List::__init__(42, nil)
 
-    declare $that_list := List.__init__(39, List.__init__(40, List.__init__(41, this_list)))
-    message(%List.value[%List.next[$that_list]])
+    declare that_list := List::__init__(39, List::__init__(40, List::__init__(41, this_list)))
+    message(List::value[List::next[that_list]])
 
 end on
 
 
-function List.__init__(value, next) -> result
-    List.free_idx := search(List.allocation, 0)
-    if List.free_idx = -1
-        message(@object.warning & "'List'")        
+function List::__init__(value: int, next: List)
+    List::free_idx := search(List::allocation, 0)
+    if List::free_idx = nil
+        message("Error: No more free space available to allocate objects of type 'List'") 
     end if
-    List.allocation[List.free_idx] := 1
-    List.value[List.free_idx] := value
-    List.next[List.free_idx] := next
-    result := List.free_idx
+    List::allocation[List::free_idx] := 1
+    List::value[List::free_idx] := value
+    List::next[List::free_idx] := next
+    return List::free_idx
 end function
-
 
 {-------------------------------------------------------------------------------------------
                                 Pre Lowering recursive functions
