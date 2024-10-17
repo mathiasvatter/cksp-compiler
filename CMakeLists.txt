@@ -175,4 +175,5 @@ add_executable(cksp main.cpp
         Optimization/TokenCounter.h
         Desugaring/DesugarFunctionCall.h
         AST/ASTVisitor/ASTHandleStringRepresentations.h
+        Desugaring/DesugarDelete.h
 )

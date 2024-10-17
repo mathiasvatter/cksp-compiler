@@ -7,6 +7,7 @@
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Lowering/ASTLowering.h"
 #include "../../Desugaring/DesugarDeclareAssign.h"
+#include "../../Desugaring/DesugarDelete.h"
 #include "../../Lowering/LoweringGetControl.h"
 #include "../../Lowering/LoweringFunctionCall.h"
 #include "../../Desugaring/DesugaringFamily.h"
@@ -304,8 +305,7 @@ std::unique_ptr<NodeAST> NodeSingleDeclaration::clone() const {
 }
 NodeAST *NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (variable.get() == oldChild) {
-        if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.get())) {
-            newChild.release();
+        if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.release())) {
             variable = std::unique_ptr<NodeDataStructure>(new_data_structure);
             return variable.get();
         }
@@ -379,20 +379,37 @@ NodeAST *NodeDelete::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeDelete::NodeDelete(const NodeDelete& other)
-	: NodeInstruction(other), delete_pointer(clone_vector(other.delete_pointer)) {
+	: NodeInstruction(other), ptrs(clone_vector(other.ptrs)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeDelete::clone() const {
 	return std::make_unique<NodeDelete>(*this);
 }
 NodeAST *NodeDelete::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
-	for(auto &del : delete_pointer) {
+	for(auto &del : ptrs) {
 		if (del.get() == oldChild) {
-			del = std::move(newChild);
+			del = std::unique_ptr<NodeReference>(static_cast<NodeReference*>(newChild.release()));
 			return del.get();
 		}
 	}
 	return nullptr;
+}
+
+ASTDesugaring * NodeDelete::get_desugaring(NodeProgram *program) const {
+	static DesugarDelete desugaring(program);
+	return &desugaring;
+}
+
+// ************* NodeSingleDelete ***************
+	NodeAST *NodeSingleDelete::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeSingleDelete::NodeSingleDelete(const NodeSingleDelete& other)
+	: NodeInstruction(other), ptr(clone_unique(other.ptr)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeSingleDelete::clone() const {
+	return std::make_unique<NodeSingleDelete>(*this);
 }
 
 // ************* NodeGetControl ***************

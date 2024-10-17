@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Tue Oct 15 15:14:38 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Thu Oct 17 12:29:16 2024 }
 on init
   declare $loc_2
   declare $loc_3
@@ -58,6 +58,7 @@ on init
     %List__allocation[$List__free_idx] := 1
     %List__next[$List__free_idx] := 
     %lists[$loc_7] := $List__free_idx
+    message("<List> Object: " & %List__next[%lists[$loc_7]])
     inc($loc_7)
   end while
   $btn_1 := 1

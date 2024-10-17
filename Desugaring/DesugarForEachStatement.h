@@ -37,6 +37,17 @@ private:
         return nullptr;
     }
 
+	/// in case the value is actually an access chain -> transform it
+	/// for _, val in array -> where array is Object[]
+	/// 	val.<member> -> array[_].<member>
+	static NodeAccessChain* try_access_chain_transform(NodeVariableRef& node) {
+		size_t pos = node.name.find('.');
+		if (pos == std::string::npos) {
+			return nullptr;
+		}
+		return static_cast<NodeAccessChain*>(node.replace_with(node.to_method_chain()));
+	}
+
 public:
 	explicit DesugarForEachStatement(NodeProgram* program) : ASTDesugaring(program) {};
 
@@ -46,10 +57,29 @@ public:
             if(auto substitute = get_key_value_substitute(node.name)) {
                 substitute->update_parents(node.parent);
                 return node.replace_with(std::move(substitute));
-            }
+            } else {
+				// check if the variable is actually an access chain
+				if(auto access_chain = try_access_chain_transform(node)) {
+					return access_chain->accept(*this);
+				}
+			}
         }
 		return &node;
     }
+
+	/// check if the access chain is a key-value pair and substitute it
+	inline NodeAST* visit(NodeAccessChain& node) override {
+		if(!m_key_value_scope_stack.empty()) {
+			if(node.chain[0]->get_node_type() == NodeType::VariableRef) {
+				auto var_ref = static_cast<NodeVariableRef*>(node.chain[0].get());
+				if(auto substitute = get_key_value_substitute(var_ref->name)) {
+					substitute->update_parents(node.parent);
+					node.chain[0]->replace_with(std::move(substitute));
+				}
+			}
+		}
+		return &node;
+	}
 
 	inline NodeAST* visit(NodeForEach& node) override {
         auto error = CompileError(ErrorType::SyntaxError, "", node.tok.line, "", "", node.tok.file);

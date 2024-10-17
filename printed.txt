@@ -24,7 +24,7 @@ on init
 	idx{int} := 0
 	while(idx{int} <= (num_elements(lists{int[]}) - 1)) 
 		lists[idx{int}]{int} := List(idx{int}, lists[idx{int}]{int})
-		message(ls.next{any})
+		message(List::__repr__(List::next[lists[idx{int}]{int}]{int}))
 		inc(idx{int})
 	end while
 	btn_1{int} := return_twice(_{unknown})

@@ -141,9 +141,13 @@ public:
 	};
 	virtual NodeAST* visit(NodeDelete& node) {
 		CompileError(ErrorType::InternalError, "<Delete> node not yet implemented.", "", node.tok).exit();
-		for(auto &del : node.delete_pointer) {
+		for(auto &del : node.ptrs) {
 			del->accept(*this);
 		}
+		return &node;
+	};
+	virtual NodeAST* visit(NodeSingleDelete& node) {
+		node.ptr->accept(*this);
 		return &node;
 	};
     virtual NodeAST* visit(NodeGetControl& node) {

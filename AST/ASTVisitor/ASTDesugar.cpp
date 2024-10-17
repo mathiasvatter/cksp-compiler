@@ -118,6 +118,13 @@ NodeAST* ASTDesugar::visit(NodeConst &node) {
 	return node.desugar(m_program);
 }
 
+NodeAST* ASTDesugar::visit(NodeDelete &node) {
+	for(auto & ptr : node.ptrs) {
+		ptr->accept(*this);
+	}
+	return node.desugar(m_program);
+}
+
 NodeAST* ASTDesugar::visit(NodeParamList &node) {
 	for(auto & param : node.params) {
 		param->accept(*this);

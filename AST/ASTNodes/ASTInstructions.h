@@ -286,10 +286,10 @@ struct NodeSingleReturn : NodeInstruction {
 };
 
 struct NodeDelete : NodeInstruction {
-	std::vector<std::unique_ptr<NodeAST>> delete_pointer;
-	inline explicit NodeDelete(Token tok) : NodeInstruction(NodeType::Return, std::move(tok)) {}
-	NodeDelete(std::vector<std::unique_ptr<NodeAST>> delete_pointer, Token tok)
-		: NodeInstruction(NodeType::Return, std::move(tok)), delete_pointer(std::move(delete_pointer)) {
+	std::vector<std::unique_ptr<NodeReference>> ptrs;
+	inline explicit NodeDelete(Token tok) : NodeInstruction(NodeType::Delete, std::move(tok)) {}
+	NodeDelete(std::vector<std::unique_ptr<NodeReference>> delete_pointer, Token tok)
+		: NodeInstruction(NodeType::Delete, std::move(tok)), ptrs(std::move(delete_pointer)) {
 		set_child_parents();
 	}
 	NodeAST * accept(struct ASTVisitor &visitor) override;
@@ -300,26 +300,55 @@ struct NodeDelete : NodeInstruction {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
-		for(auto &del : delete_pointer) {
+		for(auto &del : ptrs) {
 			del->update_parents(this);
 		}
 	}
 	void set_child_parents() override {
-		for(auto& del : delete_pointer) {
+		for(auto& del : ptrs) {
 			if(del) del->parent = this;
 		}
 	};
 	std::string get_string() override {
 		std::string del = "delete ";
-		for(auto &d : delete_pointer) {
+		for(auto &d : ptrs) {
 			del += d->get_string() + ", ";
 		}
 		return del;
 	}
 	void update_token_data(const Token& token) override {
-		for(auto &del : delete_pointer) {
+		for(auto &del : ptrs) {
 			del->update_token_data(token);
 		}
+	}
+	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+
+};
+
+struct NodeSingleDelete : NodeInstruction {
+	std::unique_ptr<NodeReference> ptr;
+	inline explicit NodeSingleDelete(Token tok) : NodeInstruction(NodeType::SingleDelete, std::move(tok)) {}
+	NodeSingleDelete(std::unique_ptr<NodeReference> ptr, Token tok)
+	: NodeInstruction(NodeType::SingleDelete, std::move(tok)), ptr(std::move(ptr)) {
+		set_child_parents();
+	}
+	NodeAST * accept(ASTVisitor &visitor) override;
+	// Copy Constructor
+	NodeSingleDelete(const NodeSingleDelete& other);
+	// Clone Method
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		ptr->update_parents(this);
+	}
+	void set_child_parents() override {
+		ptr->parent = this;
+	};
+	std::string get_string() override {
+		return "delete " + ptr->get_string();
+	}
+	void update_token_data(const Token& token) override {
+		ptr->update_token_data(token);
 	}
 };
 
