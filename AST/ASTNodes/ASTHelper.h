@@ -65,6 +65,7 @@ enum class NodeType {
 	SingleReturn,
 	GetControl,
 	ParamList,
+	InitializerList,
 	Wildcard,
 	Int,
 	Real,
