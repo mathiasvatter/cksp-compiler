@@ -62,9 +62,11 @@ public:
 		return &node;
 	};
     virtual NodeAST* visit(NodeParamList& node) {
-		for(auto & param : node.params) {
-			param->accept(*this);
-		}
+		for(auto & param : node.params) param->accept(*this);
+		return &node;
+	};
+	virtual NodeAST* visit(NodeInitializerList& node) {
+		for(auto & elem : node.elements) elem->accept(*this);
 		return &node;
 	};
 	virtual NodeAST* visit(NodeArray& node) {
@@ -84,9 +86,7 @@ public:
 		return &node;
 	};
 	virtual NodeAST* visit(NodeAccessChain& node) {
-		for(auto & method : node.chain) {
-			method->accept(*this);
-		}
+		for(auto & method : node.chain) method->accept(*this);
 		return &node;
 	}
 	virtual NodeAST* visit(NodeFunctionVarRef& node) {
@@ -108,9 +108,7 @@ public:
 		return &node;
 	};
     virtual NodeAST* visit(NodeDeclaration& node) {
-        for(auto const &decl : node.variable) {
-            decl->accept(*this);
-        }
+        for(auto const &decl : node.variable) decl->accept(*this);
 		if(node.value) node.value -> accept(*this);
 		return &node;
 	};
@@ -130,9 +128,7 @@ public:
 		return &node;
     };
 	virtual NodeAST* visit(NodeReturn& node) {
-		for(auto &ret : node.return_variables) {
-			ret->accept(*this);
-		}
+		for(auto &ret : node.return_variables) ret->accept(*this);
 		return &node;
 	};
 	virtual NodeAST* visit(NodeSingleReturn& node) {
@@ -258,9 +254,7 @@ public:
 		return &node;
 	};
     virtual NodeAST* visit(NodeBlock& node) {
-        for(auto & stmt : node.statements) {
-            stmt->accept(*this);
-        }
+        for(auto & stmt : node.statements) stmt->accept(*this);
 		return &node;
     };
     virtual NodeAST* visit(NodeImport& node) {

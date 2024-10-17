@@ -16,6 +16,7 @@
 #include "../../Optimization/ConstExprValidator.h"
 #include "../../Optimization/VarExistsValidator.h"
 #include "../../Optimization/TokenCounter.h"
+#include "../../Desugaring/DesugarParamList.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -399,6 +400,159 @@ NodeAST *NodeParamList::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST
         }
     }
 	return nullptr;
+}
+ASTDesugaring *NodeParamList::get_desugaring(NodeProgram *program) const {
+	static DesugarParamList desugaring(program);
+	return &desugaring;
+}
+int NodeParamList::get_idx(NodeAST *node) {
+	for(int i = 0; i < params.size(); i++) {
+		if(params[i].get() == node) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+void NodeParamList::add_param(std::unique_ptr<NodeAST> param) {
+	param->parent = this;
+	params.push_back(std::move(param));
+}
+
+void NodeParamList::prepend_param(std::unique_ptr<NodeAST> param) {
+	param->parent = this;
+	params.insert(params.begin(), std::move(param));
+}
+
+void NodeParamList::flatten() {
+	std::vector<std::unique_ptr<NodeAST>> flat_list;
+	// Rekursive Funktion, um die Parameterliste abzuflachen
+	std::function<void(std::vector<std::unique_ptr<NodeAST>>)> flatten = [&](std::vector<std::unique_ptr<NodeAST>> current_node) {
+	  for (auto& param : current_node) {
+		  if (param->get_node_type() == NodeType::ParamList) {
+			  flatten(std::move(static_cast<NodeParamList*>(param.get())->params));
+		  } else {
+			  // Wenn es kein NodeParamList ist, fügen wir es direkt zur Liste hinzu
+			  param->parent = this;
+			  flat_list.push_back(std::move(param));
+		  }
+	  }
+	};
+	flatten(std::move(params));
+	params = std::move(flat_list);
+}
+
+std::unique_ptr<struct NodeInitializerList> NodeParamList::to_initializer_list() {
+	// Erstelle eine neue Initializer-Liste mit dem gleichen Token wie die Parameterliste
+	auto initializer_list = std::make_unique<NodeInitializerList>(this->tok);
+
+	// Gehe durch alle Parameter der Parameterliste
+	for (auto& param : params) {
+		// Falls der Parameter selbst eine verschachtelte NodeParamList ist, rufe die Methode rekursiv auf
+		if (param->get_node_type() == NodeType::ParamList) {
+			auto nested_initializer = static_cast<NodeParamList*>(param.get())->to_initializer_list();
+			initializer_list->add_element(std::move(nested_initializer));
+		} else {
+			// Falls es kein NodeParamList ist, füge das Element direkt der Initializer-Liste hinzu
+			initializer_list->add_element(std::move(param)); // Verschieben des Parameters
+		}
+	}
+
+	// Leere die ursprüngliche Liste, da die Elemente verschoben wurden
+	params.clear();
+
+	return initializer_list;
+}
+
+// ************* NodeInitializerList ***************
+NodeAST *NodeInitializerList::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeInitializerList::NodeInitializerList(const NodeInitializerList& other) : NodeAST(other) {
+	elements = clone_vector(other.elements);
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeInitializerList::clone() const {
+	return std::make_unique<NodeInitializerList>(*this);
+}
+NodeAST *NodeInitializerList::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	for (auto& param : elements) {
+		if (param.get() == oldChild) {
+			param = std::move(newChild);
+			return param.get();
+		}
+	}
+	return nullptr;
+}
+
+void NodeInitializerList::flatten() {
+	std::vector<std::unique_ptr<NodeAST>> flat_list;
+	// Rekursive Funktion, um die Parameterliste abzuflachen
+	std::function<void(std::vector<std::unique_ptr<NodeAST>>)> flatten = [&](std::vector<std::unique_ptr<NodeAST>> current_node) {
+	  for (auto& elem : current_node) {
+		  if (elem->get_node_type() == NodeType::InitializerList) {
+			  flatten(std::move(static_cast<NodeInitializerList*>(elem.get())->elements));
+		  } else {
+			  // Wenn es kein NodeParamList ist, fügen wir es direkt zur Liste hinzu
+			  elem->parent = this;
+			  flat_list.push_back(std::move(elem));
+		  }
+	  }
+	};
+	flatten(std::move(elements));
+	elements = std::move(flat_list);
+}
+
+std::vector<int> NodeInitializerList::get_dimensions() const {
+	// Hilfsfunktion, um die Dimensionen rekursiv zu berechnen
+	std::function<std::vector<int>(const NodeInitializerList*, int&)> calculate_dimensions =
+		[&](const NodeInitializerList* node, int& valid) -> std::vector<int> {
+		  if (node == nullptr || node->elements.empty()) {
+			  valid = 0; // Kein gültiger Parameter
+			  return {};
+		  }
+
+		  int current_size = node->elements.size(); // Die Anzahl der Parameter auf dieser Ebene
+		  std::vector<int> dimensions = { current_size }; // Speichere die aktuelle Dimension
+
+		  // Prüfen, ob die Parameter Listen sind oder normale Werte (also nicht tiefer verschachtelt)
+		  bool found_list = false;
+		  for (size_t i = 0; i < node->elements.size(); ++i) {
+			  if (node->elements[i]->get_node_type() == NodeType::InitializerList) {
+				  found_list = true;
+				  // Vergewissere dich, dass alle inneren Listen die gleiche Größe haben
+				  if (static_cast<NodeInitializerList*>(node->elements[i].get())->elements.size() !=
+					  static_cast<NodeInitializerList*>(node->elements[0].get())->elements.size()) {
+					  valid = 0; // Ungleiche Größe der inneren Listen
+					  return {};
+				  }
+			  }
+		  }
+
+		  // Falls alle Parameter auf der aktuellen Ebene keine Listen mehr sind, gehe nicht tiefer
+		  if (!found_list) {
+			  return dimensions; // Flache Liste, keine weitere Dimension
+		  }
+
+		  // Falls alle inneren Parameter ebenfalls Listen sind, gehe eine Dimension tiefer
+		  std::vector<int> next_dimensions =
+			  calculate_dimensions(static_cast<NodeInitializerList*>(node->elements[0].get()), valid);
+		  if (valid == 0) return {}; // Ungültig
+		  dimensions.insert(dimensions.end(), next_dimensions.begin(), next_dimensions.end());
+
+		  return dimensions;
+		};
+
+	int valid = 1; // Flag für Gültigkeit
+	std::vector<int> dimensions = calculate_dimensions(this, valid);
+
+	if (valid == 0) {
+		auto error = CompileError(ErrorType::TypeError, "", "", tok);
+		error.m_message = "Inconsistent sizes in <InitializerList>.";
+		error.exit();
+	}
+
+	return dimensions;
 }
 
 // ************* NodeUnaryExpr ***************
