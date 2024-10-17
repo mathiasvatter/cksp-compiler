@@ -150,6 +150,10 @@ public:
 		node.ptr->accept(*this);
 		return &node;
 	};
+	virtual NodeAST* visit(NodeSingleRetain& node) {
+		node.ptr->accept(*this);
+		return &node;
+	};
     virtual NodeAST* visit(NodeGetControl& node) {
 		node.ui_id->accept(*this);
 		return &node;

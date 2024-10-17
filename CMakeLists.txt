@@ -125,8 +125,8 @@ add_executable(cksp main.cpp
         Desugaring/DesugaringFamily.h
         Desugaring/ASTDesugaring.h
         Desugaring/DesugarDeclareAssign.h
-        Desugaring/DesugarForStatement.h
-        Desugaring/DesugarForEachStatement.h
+        Desugaring/DesugarFor.h
+        Desugaring/DesugarForEach.h
         misc/Gensym.h
         misc/Timer.h
         Compiler.h
@@ -176,4 +176,5 @@ add_executable(cksp main.cpp
         Desugaring/DesugarFunctionCall.h
         AST/ASTVisitor/ASTHandleStringRepresentations.h
         Desugaring/DesugarDelete.h
+        AST/ASTVisitor/ASTReferenceCounting.h
 )

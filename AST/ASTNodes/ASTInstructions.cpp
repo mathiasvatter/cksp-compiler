@@ -11,8 +11,8 @@
 #include "../../Lowering/LoweringGetControl.h"
 #include "../../Lowering/LoweringFunctionCall.h"
 #include "../../Desugaring/DesugaringFamily.h"
-#include "../../Desugaring/DesugarForStatement.h"
-#include "../../Desugaring/DesugarForEachStatement.h"
+#include "../../Desugaring/DesugarFor.h"
+#include "../../Desugaring/DesugarForEach.h"
 #include "../ASTVisitor/GlobalScope/ASTGlobalScope.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "../../Desugaring/DesugarFunctionCall.h"
@@ -388,7 +388,7 @@ std::unique_ptr<NodeAST> NodeDelete::clone() const {
 NodeAST *NodeDelete::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	for(auto &del : ptrs) {
 		if (del.get() == oldChild) {
-			del = std::unique_ptr<NodeReference>(static_cast<NodeReference*>(newChild.release()));
+			del = std::move(newChild);
 			return del.get();
 		}
 	}
@@ -411,6 +411,19 @@ NodeSingleDelete::NodeSingleDelete(const NodeSingleDelete& other)
 std::unique_ptr<NodeAST> NodeSingleDelete::clone() const {
 	return std::make_unique<NodeSingleDelete>(*this);
 }
+
+// ************* NodeSingleRetain ***************
+NodeAST *NodeSingleRetain::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeSingleRetain::NodeSingleRetain(const NodeSingleRetain& other)
+	: NodeInstruction(other), ptr(clone_unique(other.ptr)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeSingleRetain::clone() const {
+	return std::make_unique<NodeSingleRetain>(*this);
+}
+
 
 // ************* NodeGetControl ***************
 NodeAST *NodeGetControl::accept(struct ASTVisitor &visitor) {
@@ -664,7 +677,7 @@ NodeAST *NodeFor::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newC
 }
 
 ASTDesugaring * NodeFor::get_desugaring(NodeProgram *program) const {
-    static DesugarForStatement desugaring(program);
+    static DesugarFor desugaring(program);
     return &desugaring;
 }
 
@@ -689,7 +702,7 @@ NodeAST *NodeForEach::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> 
 }
 
 ASTDesugaring * NodeForEach::get_desugaring(NodeProgram *program) const {
-    static DesugarForEachStatement desugaring(program);
+    static DesugarForEach desugaring(program);
     return &desugaring;
 }
 

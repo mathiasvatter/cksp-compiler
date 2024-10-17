@@ -24,7 +24,7 @@
  *     message(array[_])
  * end for
  */
-class DesugarForEachStatement : public ASTDesugaring {
+class DesugarForEach : public ASTDesugaring {
 private:
     std::vector<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_key_value_scope_stack;
     std::unique_ptr<NodeAST> get_key_value_substitute(const std::string& name) {
@@ -49,7 +49,7 @@ private:
 	}
 
 public:
-	explicit DesugarForEachStatement(NodeProgram* program) : ASTDesugaring(program) {};
+	explicit DesugarForEach(NodeProgram* program) : ASTDesugaring(program) {};
 
     inline NodeAST* visit(NodeVariableRef& node) override {
         // range-based for-loop substitution

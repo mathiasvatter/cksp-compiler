@@ -558,7 +558,14 @@ Result<std::unique_ptr<NodeDelete>> Parser::parse_delete_statement(NodeAST* pare
 		if(expr_result.is_error()) {
 			return Result<std::unique_ptr<NodeDelete>>(expr_result.get_error());
 		}
-		node_delete_stmt->ptrs.push_back(std::move(expr_result.unwrap()));
+		auto ptr_ref = std::move(expr_result.unwrap());
+		if(auto ref = dynamic_cast<NodeReference*>(ptr_ref.release())) {
+			node_delete_stmt->ptrs.push_back(std::unique_ptr<NodeReference>(ref));
+		} else {
+			auto error = CompileError(ErrorType::SyntaxError,"Found invalid <Delete> Syntax.", "", peek());
+			error.m_message += " Only References to Pointers can be deleted.";
+			error.exit();
+		}
 		if(peek().type == token::COMMA) consume();
 	}
 	node_delete_stmt->set_child_parents();

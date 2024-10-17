@@ -218,7 +218,7 @@ Update LoweringConstStruct
  Update LoweringArray, LoweringList and LoweringNDArray
 Update BuildDataStructures class with reference nodes
 finish updating ASTDesugarStructs with reference nodes
-Update Parser and DesugarForEachStatement with References
+Update Parser and DesugarForEach with References
 Fix small bug
 Add Gensym Class
 Add move semantics to token parameter of AST Nodes

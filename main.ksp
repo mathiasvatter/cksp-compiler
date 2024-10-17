@@ -62,6 +62,10 @@ on init
 	declare get_sth: int, get_sth_more[3]: int[] := return_sth_more()
 	take_array((1,2,3,4))
 	message(get_sth_more)
+
+	declare ndarray[10,10]
+
+	ndarray[2, *] := (1,2,3,4)
 end on
 
 function return_sth_more()
