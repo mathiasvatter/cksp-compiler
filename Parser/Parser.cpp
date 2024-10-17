@@ -558,7 +558,7 @@ Result<std::unique_ptr<NodeDelete>> Parser::parse_delete_statement(NodeAST* pare
 		if(expr_result.is_error()) {
 			return Result<std::unique_ptr<NodeDelete>>(expr_result.get_error());
 		}
-		node_delete_stmt->delete_pointer.push_back(std::move(expr_result.unwrap()));
+		node_delete_stmt->ptrs.push_back(std::move(expr_result.unwrap()));
 		if(peek().type == token::COMMA) consume();
 	}
 	node_delete_stmt->set_child_parents();

@@ -29,7 +29,10 @@ struct NodeAST {
     NodeAST(const NodeAST& other);
     [[nodiscard]] virtual std::unique_ptr<NodeAST> clone() const = 0;
 	virtual NodeAST* accept(class ASTVisitor &visitor);
-	virtual NodeAST* replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {return nullptr;};
+	virtual NodeAST* replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+		throw std::runtime_error("replace_child not implemented for this node type");
+		return nullptr;
+	};
 	NodeAST* replace_with(std::unique_ptr<NodeAST> newNode);
     // Hinzugefügte Methode zum Aktualisieren der Parent-Pointer
     virtual void update_parents(NodeAST* new_parent) {
@@ -129,7 +132,7 @@ struct NodeReference : NodeAST {
 		return std::string(sanitized_name); // Erzeugt das Resultat nur einmal
 	}
 
-	std::vector<std::string> get_ptr_chain() const {
+	[[nodiscard]] std::vector<std::string> get_ptr_chain() const {
 		std::vector<std::string> ptr_chain;
 		std::istringstream iss(name);
 		std::string ns;

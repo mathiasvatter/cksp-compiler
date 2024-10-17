@@ -1,3 +1,24 @@
+{
+Um eine Art Garbage Collection zu implementieren, soll reference counting angewendet werden.
+Dabei dient das <Object>::allocation Array als Referenzzähler für jedes Objekt.
+Sobald ein Object mit der __init__ methode erstellt wird, wird der Referenzzähler auf 1 gesetzt.
+Der Referenzzähler wird außerdem mittels der __incr__ Methode erhöht, sobald:
+1. Der Pointer r_value in einem Assignment ist
+2. Der Pointer r_value in einer Deklaration ist
+
+Ist das allocation Array <= 0, so gilt das Objekt als gelöscht.
+Der Referenzzähler wird mittels der __del__ Methode reduziert, sobald:
+1. Der Pointer l_value in einem Assignment ist
+2. Am Scope Ende für jeden lokalen Pointer dieses Scopes
+Für jedes struct muss eine eigene delete Methode automatisch erstellt werden, die im einfachsten Fall nur den reference
+count des Objekts reduziert, und bei rekursiven Datenstrukturen auch den reference count aller Member-Structs reduziert.
+Fälle:
+1. das struct hat keine anderen objekte als member: dec(allocation[self])
+2. das struct hat andere objekte als member: dec(allocation[self]) und delete(member)
+3. das struct hat rekursive objekte als member: while schleife mit pseude rekursion
+
+}
+
 struct List
     declare value: int
     declare next: List := nil
@@ -16,16 +37,53 @@ end struct
                                         Post Lowering
 --------------------------------------------------------------------------------------------}
 
-function List::__del__(self: List)
+on init
 
+    declare const MAX_STRUCTS: int := 1000000
+    declare MEM_WARNING: string := "Memory Error: No more free space available to allocate objects of type"
+
+    declare const List::MAX_STRUCTS: int := MAX_STRUCTS // can alternate if mutlidimensional array is needed
+    declare List::allocation[List::MAX_STRUCTS]: int[] := (0)
+    declare List::value[List::MAX_STRUCTS]: int[]             // Wert des Elements
+    declare List::next[List::MAX_STRUCTS]: List[] := (nil)      // Verweis auf den Index des nächsten Elements
+    declare List::free_idx: int := 0                  // Zeigt auf den ersten freien Platz im Array
+
+end on
+
+
+function List::__init__(value: int, next: List)
+    List::free_idx := search(List::allocation, 0)
+    if List::free_idx = nil
+        message("Error: No more free space available to allocate objects of type 'List'") 
+    end if
+    List::allocation[List::free_idx] := 1
+    List::value[List::free_idx] := value
+    List::next[List::free_idx] := next
+    return List::free_idx
+end function
+
+// Erhöht den reference count des Objekts unter zwei Voraussetzungen:
+// 1. Der ptr ist r_value in einem Assignment
+// 2. Der ptr ist r_value in einer Deklaration
+function List::__incr__(self: List)
+    if self # nil
+        inc(List::allocation[self])
+    end if
+end function
+
+// Betreibt reference counting
+// delete funktion wird aufgerufen, falls:
+// 1. Ein List Objekt l_value in einem Assignment ist -> dann wird delete davor für diesen ptr aufgerufen
+// 2. Am Scope Ende für jeden lokalen Pointer dieses Scopes -> dann wird delete für jeden lokalen ptr aufgerufen
+
+function List::__del__(self: List)
     // Solange es Objekte gibt, die freigegeben werden sollen, weiter durch die Struktur iterieren
-    while self != nil
+    while self # nil
         // Schritt 1: Referenzzähler reduzieren
-        dec(List::ref_count[self])
+        dec(List::allocation[self])
 
         // Wenn das Objekt noch referenziert wird, zum nächsten Objekt gehen
-        if (List::ref_count[self] <= 0)
-            List::allocation[self] := 0 // Freigabe des aktuellen Objekts
+        if (List::allocation[self] <= 0)
        
             // Schritt 2: Member-Structs löschen, wenn sie vorhanden sind
             if (self.other_struct # nil)

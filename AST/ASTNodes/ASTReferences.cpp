@@ -47,25 +47,6 @@ std::unique_ptr<NodeAccessChain> NodeVariableRef::to_method_chain() {
 	return method_chain;
 }
 
-//bool NodeVariableRef::is_ndarray_constant() {
-//	if(declaration and declaration->get_node_type() == NodeType::NDArray) {
-//		auto ndarray= static_cast<NodeNDArray*>(declaration);
-//		static const std::regex pattern("^" + ndarray->name + R"(.SIZE_D(\d+)$)");
-//		std::smatch match;
-//		// Überprüfen, ob der String dem Muster entspricht
-//		if (std::regex_match(name, match, pattern)) {
-//			// Extrahiere die Zahl aus dem Match
-//			int number = std::stoi(match[1].str());
-//
-//			// Überprüfe, ob die Zahl innerhalb der Grenzen liegt
-//			return number >= 1 && number <= ndarray->dimensions;
-//		}
-//		return false;
-//	}
-//	return false;
-//}
-
-
 bool NodeVariableRef::is_array_constant() {
 	if (declaration && (declaration->get_node_type() == NodeType::Array || declaration->get_node_type() == NodeType::List)) {
 		auto list = static_cast<NodeList*>(declaration);
