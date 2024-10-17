@@ -35,6 +35,8 @@ on init
 	declare get_sth : int := return_sth_more(get_sth_more{int[]})
 	take_array((1, 2, 3, 4))
 	message(int[]::__repr__(get_sth_more{int[]}))
+	declare ndarray[10, 10] : int[][]
+	ndarray[2, *]{int[]} := (1, 2, 3, 4)
 end on
 
 function pupu(msg() : (int, string): void) : unknown

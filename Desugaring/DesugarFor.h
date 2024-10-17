@@ -25,9 +25,9 @@
  *     dec($o)
  * end while
  */
-class DesugarForStatement : public ASTDesugaring {
+class DesugarFor : public ASTDesugaring {
 public:
-	explicit DesugarForStatement(NodeProgram* program) : ASTDesugaring(program) {};
+	explicit DesugarFor(NodeProgram* program) : ASTDesugaring(program) {};
 
     inline NodeAST* visit(NodeFor& node) override {
         // function arg

@@ -16,6 +16,9 @@ public:
 	NodeAST * visit(NodeWildcard& node) override;
 	NodeAST * visit(NodeReturn& node) override;
 	NodeAST * visit(NodeSingleReturn& node) override;
+	NodeAST * visit(NodeDelete& node) override;
+	NodeAST * visit(NodeSingleDelete& node) override;
+	NodeAST * visit(NodeSingleRetain& node) override;
 	NodeAST * visit(NodeVariable& node) override;
 	NodeAST * visit(NodeVariableRef& node) override;
 	NodeAST * visit(NodePointer& node) override;

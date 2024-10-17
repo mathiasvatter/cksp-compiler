@@ -48,6 +48,31 @@ NodeAST * ASTPrinter::visit(NodeSingleReturn& node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeDelete& node) {
+	os << "delete (";
+	for(auto &d : node.ptrs) {
+		os << d->get_string() + ", ";
+	}
+	if(!node.ptrs.empty()) {
+		os.seekp(-2, std::ios_base::end);
+	}
+	os << ")";
+	return &node;
+}
+
+NodeAST * ASTPrinter::visit(NodeSingleDelete& node) {
+	os << "delete ";
+	node.ptr->accept(*this);
+	return &node;
+}
+
+NodeAST * ASTPrinter::visit(NodeSingleRetain& node) {
+	os << "retain ";
+	node.ptr->accept(*this);
+	return &node;
+}
+
+
 NodeAST * ASTPrinter::visit(NodeVariable &node) {
     if(node.persistence.has_value())
         os << node.persistence.value().val << " ";
