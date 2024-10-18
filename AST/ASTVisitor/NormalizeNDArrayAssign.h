@@ -17,12 +17,12 @@ public:
 		node.l_value->accept(*this);
 		node.r_value->accept(*this);
 
-		if(node.l_value->get_node_type() == NodeType::NDArrayRef and node.r_value->get_node_type() == NodeType::ParamList) {
+		if(node.l_value->get_node_type() == NodeType::NDArrayRef and node.r_value->get_node_type() == NodeType::InitializerList) {
 			auto nd_array_ref = static_cast<NodeNDArrayRef*>(node.l_value.get());
-			auto param_list = static_cast<NodeParamList*>(node.r_value.get());
-			param_list->flatten();
+			auto init_list = static_cast<NodeInitializerList*>(node.r_value.get());
+			init_list->flatten();
 			// nda := ((1,2,3,4),(5,6,7,8))
-			if(nd_array_ref->num_wildcards() == nd_array_ref->sizes->params.size()) {
+			if(nd_array_ref->num_wildcards() == nd_array_ref->sizes->size()) {
 				// lower left side to array to utilize array lowering later on
 				nd_array_ref->indexes = nullptr;
 				return &node;
@@ -31,20 +31,20 @@ public:
 			int num_wildcards = wildcard_dims.first != -1 ? wildcard_dims.second-wildcard_dims.first+1 : 0;
 			if(num_wildcards > 1) {
 				// ndarray2[0, *, *] := ((1,2,3), (1,2,3))
-				if(param_list->params.size() > 1) {
-					return node.replace_with(get_ranged_array_init_from_list(nd_array_ref, param_list, wildcard_dims));
+				if(init_list->size() > 1) {
+					return node.replace_with(get_ranged_array_init_from_list(nd_array_ref, init_list, wildcard_dims));
 				}
 			}
 			// case ndarray[2, *] := (0)
-			if(param_list->params.size() == 1) {
+			if(init_list->size() == 1) {
 				add_ndarray_init_function_def(m_program, nd_array_ref, wildcard_dims);
 				auto lowered = node.replace_with(get_ndarray_init_function_call(nd_array_ref,
-																				param_list->params.at(0).get(),
+																				init_list->elem(0).get(),
 																				wildcard_dims));
 				return lowered;
 				// ndarray[2, *] := (2,3,4)
-			} else if (param_list->params.size() > 1) {
-				auto lowered = node.replace_with(get_array_init_from_list(nd_array_ref, param_list, wildcard_dims));
+			} else if (init_list->size() > 1) {
+				auto lowered = node.replace_with(get_array_init_from_list(nd_array_ref, init_list, wildcard_dims));
 				return lowered;
 			}
 		// copying ndarrays to part of ndarrays -> copying over ndarrays where both have no indexes is handled by lowering array
@@ -139,7 +139,7 @@ private:
 	}
 
 	/// ndarray.<init>.<type>.<num_dimensions>.<dimension>(ndarray: type[][], value: type)
-	inline std::unique_ptr<NodeFunctionCall> get_ndarray_init_function_call(NodeNDArrayRef* node, NodeAST* value, std::pair<int, int> wildcard_dims) {
+	static inline std::unique_ptr<NodeFunctionCall> get_ndarray_init_function_call(NodeNDArrayRef* node, NodeAST* value, std::pair<int, int> wildcard_dims) {
 		auto func_name = get_init_func_name(node->ty, node->sizes->params.size(), wildcard_dims);
 
 		auto params = std::make_unique<NodeParamList>(Token());
@@ -274,15 +274,15 @@ private:
 	 * ndarray[2, 1] := 3
 	 * ndarray[2, 2] := 4
 	 */
-	static std::unique_ptr<NodeBlock> get_array_init_from_list(NodeNDArrayRef* ndarray_ref, NodeParamList* param_list, std::pair<int, int> wildcard_dims) {
+	static std::unique_ptr<NodeBlock> get_array_init_from_list(NodeNDArrayRef* ndarray_ref, NodeInitializerList* init_list, std::pair<int, int> wildcard_dims) {
 		auto node_block = std::make_unique<NodeBlock>(ndarray_ref->tok);
-		for(int i = 0; i<param_list->params.size(); i++) {
+		for(int i = 0; i<init_list->size(); i++) {
 			auto node_ndarray_ref = clone_as<NodeNDArrayRef>(ndarray_ref);
-			node_ndarray_ref->indexes->params[wildcard_dims.first] = std::make_unique<NodeInt>(i, ndarray_ref->tok);
-			node_ndarray_ref->indexes->params[wildcard_dims.first]->parent = node_ndarray_ref->indexes.get();
+			node_ndarray_ref->indexes->param(wildcard_dims.first) = std::make_unique<NodeInt>(i, ndarray_ref->tok);
+			node_ndarray_ref->indexes->param(wildcard_dims.first)->parent = node_ndarray_ref->indexes.get();
 			auto node_assignment = std::make_unique<NodeSingleAssignment>(
 				std::move(node_ndarray_ref),
-				param_list->params[i]->clone(),
+				init_list->elem(i)->clone(),
 				ndarray_ref->tok
 			);
 			node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), ndarray_ref->tok));
@@ -290,7 +290,7 @@ private:
 		return node_block;
 	}
 	/// for when there are multiple wildcards
-	static std::unique_ptr<NodeBlock> get_ranged_array_init_from_list(NodeNDArrayRef* ndarray_ref, NodeParamList* param_list, std::pair<int, int> wildcard_dims) {
+	static std::unique_ptr<NodeBlock> get_ranged_array_init_from_list(NodeNDArrayRef* ndarray_ref, NodeInitializerList* init_list, std::pair<int, int> wildcard_dims) {
 		// get sizes and indices
 		std::vector<std::unique_ptr<NodeAST>> sizes = std::move(ndarray_ref->sizes->params);
 		std::vector<std::unique_ptr<NodeAST>> indices = std::move(ndarray_ref->indexes->params);
@@ -300,7 +300,7 @@ private:
 		auto node_index_expr = std::move(static_cast<NodeBinaryExpr*>(node_expression.get())->left);
 
 		auto node_block = std::make_unique<NodeBlock>(ndarray_ref->tok);
-		for(int i = 0; i<param_list->params.size(); i++) {
+		for(int i = 0; i<init_list->size(); i++) {
 			auto node_array_ref = ndarray_ref->to_array_ref(nullptr);
 			node_array_ref->name = "_"+node_array_ref->name;
 			auto node_index = std::make_unique<NodeBinaryExpr>(token::ADD, node_index_expr->clone(), std::make_unique<NodeInt>(i, ndarray_ref->tok), ndarray_ref->tok);
@@ -308,7 +308,7 @@ private:
 			node_array_ref->index = std::move(node_index);
 			auto node_assignment = std::make_unique<NodeSingleAssignment>(
 				std::move(node_array_ref),
-				param_list->params[i]->clone(),
+				init_list->elem(i)->clone(),
 				ndarray_ref->tok
 			);
 			node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), ndarray_ref->tok));

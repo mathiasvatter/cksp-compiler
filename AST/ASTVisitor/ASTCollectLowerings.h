@@ -73,7 +73,8 @@ public:
 	NodeAST * visit(NodeAccessChain& node) override;
 	/// lower nil to -1
 	NodeAST * visit(NodeNil& node) override;
-
+	/// flatten nested lists
+	NodeAST * visit(NodeInitializerList& node) override;
 private:
     DefinitionProvider* m_def_provider;
 };

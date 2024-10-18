@@ -28,10 +28,10 @@ public:
 				node_assignment_ref->ty = new_declaration->variable->ty;
 
 				// lower initializer list when array with non-constant or string values
-				if(new_declaration->variable->get_node_type() == NodeType::Array and new_assignment->r_value->get_node_type() == NodeType::ParamList) {
+				if(new_declaration->variable->get_node_type() == NodeType::Array and new_assignment->r_value->get_node_type() == NodeType::InitializerList) {
 					auto array_ref = static_cast<NodeArrayRef*>(node_assignment_ref);
-					auto param_list = static_cast<NodeParamList *>(new_assignment->r_value.get());
-					body = NormalizeArrayAssign::get_array_init_from_list(array_ref, param_list);
+					auto init_list = static_cast<NodeInitializerList *>(new_assignment->r_value.get());
+					body = NormalizeArrayAssign::get_array_init_from_list(array_ref, init_list);
 					body->prepend_stmt(std::make_unique<NodeStatement>(
 							std::move(new_declaration),
 						    node.tok)

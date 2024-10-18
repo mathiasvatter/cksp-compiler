@@ -11,6 +11,7 @@
 #include "AST/ASTVisitor/ASTFunctionInlining.h"
 #include "AST/ASTVisitor/ASTRelinkGlobalScope.h"
 #include "AST/ASTVisitor/ASTKSPSyntaxCheck.h"
+#include "AST/ASTVisitor/ASTInitializerFunctionInlining.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -126,13 +127,13 @@ void Compiler::compile() {
 	compile_time.stop("Type Checking");
 	std::cout << compile_time.print_timer("Type Checking") << std::endl;
 	compile_time.start("Lowering");
+	ast->debug_print();
 
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
 
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
-	ast->debug_print();
 
 	compile_time.stop("Lowering");
 	std::cout << compile_time.print_timer("Lowering") << std::endl;
@@ -140,6 +141,8 @@ void Compiler::compile() {
 
 	ASTReturnFunctionRewriting return_function_rewriting(&m_definition_provider);
 	ast->accept(return_function_rewriting);
+	ASTInitializerFunctionInlining initializer_inlining(&m_definition_provider);
+	ast->accept(initializer_inlining);
 
 	compile_time.stop("Return Function Rewriting");
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;

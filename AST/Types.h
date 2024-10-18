@@ -132,11 +132,6 @@ public:
         return std::make_unique<CompositeType>(m_compound_kind, m_element_type);
     }
     [[nodiscard]] std::string to_string() const override {
-//        std::string output = compound_kind_names[(int)m_compound_kind];
-//        for(int i = 0; i < m_dimensions; i++) {
-//            output += "["+ m_element_type->to_string() +"]";
-//        }
-//        return output;
 		std::string output = m_element_type->to_string();
 		for(int i = 0; i < m_dimensions; i++) {
 			output += "[]";
@@ -150,7 +145,7 @@ public:
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		bool is_unknown = other->get_kind() == Kind::Unknown and other->get_type_kind() == TypeKind::Basic;
 		bool is_any = other->get_kind() == Kind::Any and other->get_type_kind() == TypeKind::Basic;
-		bool is_unknown_dim = other->get_type_kind() == TypeKind::Composite and other->get_dimensions() == 0;
+		bool is_unknown_dim = m_dimensions == 0 or (other->get_type_kind() == TypeKind::Composite and other->get_dimensions() == 0);
 		return is_unknown or is_any or is_unknown_dim or (get_type_kind() == other->get_type_kind() and m_dimensions == other->get_dimensions() and m_element_type->is_compatible(other->get_element_type()));
 	}
 	[[nodiscard]] Type* get_element_type() const override {return m_element_type;}

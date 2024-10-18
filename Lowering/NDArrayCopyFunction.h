@@ -274,7 +274,7 @@ private:
 			name += "ndarray";
 			auto ndarray = static_cast<NodeNDArrayRef*>(ref);
 			// add dimension size
-			name += "$dim"+std::to_string(ndarray->indexes->params.size());
+			name += "$dim"+std::to_string(ndarray->indexes->size());
 			for(int i=1; i<ndarray->indexes->params.size(); i++) {
 				if(ndarray->indexes->params[i]->get_node_type() == NodeType::Wildcard) {
 					name += "$"+std::to_string(i);

@@ -201,22 +201,22 @@ inline std::unordered_map<token, std::vector<std::string>> PERSISTENCE_TOKENS = 
 															{token::INSTPERS, {"make_instr_persistent"}}};
 
 inline static std::string OBJ_DELIMITER = "::";
-inline std::unordered_map<token, std::string> OPERATOR_OVERWRITES = {{
-			{token::ADD, "__add__"},             // +
-			{token::SUB, "__sub__"},             // -
-			{token::MULT, "__mul__"},            // *
-			{token::DIV, "__div__"},         	// /
-			{token::MODULO, "__mod__"},          // %
-			{token::EQUAL, "__eq__"},            // =
-			{token::NOT_EQUAL, "__ne__"},        // #
-			{token::LESS_THAN, "__lt__"},        // <
-			{token::LESS_EQUAL, "__le__"},       // <=
-			{token::GREATER_THAN, "__gt__"},     // >
-			{token::GREATER_EQUAL, "__ge__"},    // >=
-			{token::BIT_NOT, "__invert__"},      // .not.
-			{token::BIT_AND, "__and__"},         // .and.
-			{token::BIT_OR, "__or__"},           // .or.
-			{token::BIT_XOR, "__xor__"},         // .xor.
+inline std::unordered_map<token, std::pair<std::string, int>> OPERATOR_OVERWRITES = {{
+			{token::ADD, {"__add__", 2}},             // +
+			{token::SUB, {"__sub__", 2}},             // -
+			{token::MULT, {"__mul__", 2}},            // *
+			{token::DIV, {"__div__", 2}},         	// /
+			{token::MODULO, {"__mod__", 2}},          // %
+			{token::EQUAL, {"__eq__", 2}},            // =
+			{token::NOT_EQUAL, {"__ne__", 2}},        // #
+			{token::LESS_THAN, {"__lt__", 2}},        // <
+			{token::LESS_EQUAL, {"__le__", 2}},       // <=
+			{token::GREATER_THAN, {"__gt__", 2}},     // >
+			{token::GREATER_EQUAL, {"__ge__", 2}},    // >=
+			{token::BIT_NOT, {"__invert__", 1}},      // .not.
+			{token::BIT_AND, {"__and__", 2}},         // .and.
+			{token::BIT_OR, {"__or__", 2}},           // .or.
+			{token::BIT_XOR, {"__xor__", 2}},         // .xor.
 		}};
 
 /// string->Token operator maps

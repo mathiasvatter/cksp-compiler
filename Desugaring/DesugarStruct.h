@@ -22,12 +22,12 @@
  * end struct
  * post desugaring:
  * struct List
- *	declare List.value: int
- *	declare List.next: List := nil
+ *	declare List::value: int
+ *	declare List::next: List := nil
  *
- *	function List.__init__(value: int, next: List)
- *		List.value := value
- *		List.next := next
+ *	function List::__init__(value: int, next: List)
+ *		List::value := value
+ *		List::next := next
  *	end function
  */
 class DesugarStruct : public ASTDesugaring {
@@ -66,6 +66,27 @@ private:
 			return node->to_method_chain();
 		}
 		return nullptr;
+	}
+	/**
+	 * @brief Retrieves the operator token for a given operator name and number of arguments.
+	 * @param name The name of the operator.
+	 * @param num_args The number of arguments the operator takes.
+	 * @return std::optional<token> The corresponding token if found, otherwise std::nullopt.
+ 	 */
+	static std::optional<token> get_operator_token(const std::string& name, int num_args) {
+		static const std::unordered_map<StringIntKey, token, StringIntKeyHash> operator_overload_methods = [](){
+			std::unordered_map<StringIntKey, token, StringIntKeyHash> result;
+			for (const auto& [key, value] : OPERATOR_OVERWRITES) {
+				result[StringIntKey{value.first, value.second}] = key;
+			}
+			return result;
+		}();
+
+		auto it = operator_overload_methods.find(StringIntKey{name, num_args});
+		if (it != operator_overload_methods.end()) {
+			return it->second;
+		}
+		return std::nullopt;
 	}
 public:
 	explicit DesugarStruct(NodeProgram *program) : ASTDesugaring(program) {};
@@ -115,19 +136,20 @@ public:
 		// add constructor type
 		if(node.header->name == "__init__") {
 			auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
-			if(node.ty != TypeRegistry::Unknown and node.ty != TypeRegistry::get_object_type(m_structs.top()->name)) {
-				error.m_message = "Constructor method has to be of object type.";
-				error.m_got = node.ty->to_string();
-				error.m_expected = m_structs.top()->name;
-				error.exit();
-			}
+//			if(node.ty != TypeRegistry::Unknown and node.ty != TypeRegistry::get_object_type(m_structs.top()->name)) {
+//				error.m_message = "Constructor method has to be of object type.";
+//				error.m_got = node.ty->to_string();
+//				error.m_expected = m_structs.top()->name;
+//				error.exit();
+//			}
 			m_structs.top()->constructor = &node;
 			if(node.num_return_params > 0) {
 				error.m_message = "Constructor method cannot have return values.";
 				error.exit();
 			}
 			node.num_return_params = 1;
-			node.ty = TypeRegistry::add_object_type(m_structs.top()->name);
+			node.header->create_function_type(TypeRegistry::add_object_type(m_structs.top()->name));
+			node.ty = node.header->ty;
 			// delete "self" keyword
 			node.header->args->params.erase(node.header->args->params.begin());
 		}
@@ -143,8 +165,15 @@ public:
 				error.exit();
 			}
 			node.num_return_params = 1;
-			node.ty = TypeRegistry::String;
+			node.header->create_function_type(TypeRegistry::String);
+			node.ty = node.header->ty;
 		}
+
+		// check if method is operator overload
+		if(auto token = get_operator_token(node.header->name, node.header->args->size())) {
+			m_structs.top()->overloaded_operators.insert({*token, &node});
+		}
+
 		node.header->accept(*this);
 		node.header->name = add_struct_prefix(node.header->name);
 

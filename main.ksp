@@ -13,6 +13,26 @@ struct List
     end function
 end struct
 
+struct Point
+	declare x: int
+	declare y: int
+
+	function __init__(self, x: int, y: int)
+		self.x := x
+		self.y := y
+	end function
+
+	function __repr__(self)
+		return "Point {X: " & self.x & ", Y: " & self.y & "}"
+	end function
+
+	function __add__(self, other: Point)
+		self.x := self.x + other.x
+		self.y := self.y + other.y
+		return self
+	end function
+end struct
+
 struct Note
 	declare pitch: int
 	declare velocities[10]: int[]
@@ -39,8 +59,7 @@ struct Note
 end struct
 
 on init	
-	declare ui_button btn_1: int, ui_button btn_2: int
-	declare first_note := Note(69, (3,0), ((10, 10), (10, 10)))
+	declare first_note := Note(69, (3,0), ((10)))
 	declare ptr: List := List(1, List(3, nil))
 	message(ptr.next.next)
 	// declare huihui : (int, int): void
@@ -51,9 +70,8 @@ on init
 		ls := List(idx, ls)
 		message(ls.next)
 	end for
-	// pupu(get_pipi)
 
-	btn_1, _ := return_twice()
+	// btn_1, _ := return_twice()
 
 	if(return_twice() = 1)
 		message("pipi")
@@ -66,6 +84,10 @@ on init
 	declare ndarray[10,10]
 
 	ndarray[2, *] := (1,2,3,4)
+
+	declare p1 := Point(1, 2)
+	declare p2 := Point(3, 4)
+	message(p1 + p2)
 end on
 
 function return_sth_more()

@@ -331,6 +331,15 @@ struct NodeParamList: NodeAST {
 	 * @return Index of the node if found, otherwise -1.
 	 */
 	int get_idx(NodeAST* node);
+	std::unique_ptr<NodeAST>& param(int idx) {
+		return params.at(idx);
+	}
+	[[nodiscard]] size_t size() const {
+		return params.size();
+	}
+	[[nodiscard]] bool empty() const {
+		return params.empty();
+	}
 	/**
 	 * @brief Adds a new parameter to the parameter list.
 	 * @param param Unique pointer to the new parameter node.
@@ -406,6 +415,15 @@ struct NodeInitializerList: NodeAST {
 	void prepend_element(std::unique_ptr<NodeAST> param) {
 		param->parent = this;
 		elements.insert(elements.begin(), std::move(param));
+	}
+	std::unique_ptr<NodeAST>& elem(int idx) {
+		return elements.at(idx);
+	}
+	[[nodiscard]] size_t size() const {
+		return elements.size();
+	}
+	[[nodiscard]] bool empty() const {
+		return elements.empty();
 	}
 	/// recursively flattens the initializer list
 	void flatten();

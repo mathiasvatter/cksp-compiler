@@ -271,6 +271,7 @@ public:
 
 	/// if substitute and ref are both of type <Composite> and <ArrayRef>: only change name
 	static NodeReference* substitute_composite_type(NodeReference* ref, NodeAST* substitute) {
+		if(substitute->get_node_type() == NodeType::InitializerList) return nullptr;
 		if(substitute->ty->get_type_kind() == TypeKind::Composite) {// || ref->ty->get_type_kind() == TypeKind::Composite) {
 			if (substitute->get_node_type() != NodeType::ArrayRef and substitute->get_node_type() != NodeType::NDArrayRef) {
 				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);

@@ -426,32 +426,76 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 
 NodeAST * TypeInference::visit(NodeParamList& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.tok.line << std::endl;
-    std::vector<Type*> types;
+//    std::vector<Type*> types;
     for(const auto & param : node.params) {
         param->accept(*this);
-        types.push_back(param->ty);
+//        types.push_back(param->ty);
     }
     // enforce same type for every member only if in array declaration, assignment, liststruct, return stmt
-    auto node_declaration = node.parent->get_node_type() == NodeType::SingleDeclaration;
-    auto node_assignment = node.parent->get_node_type() == NodeType::SingleAssignment;
-	auto node_list_struct = node.parent->get_node_type() == NodeType::List;
-	auto node_return = node.parent->get_node_type() == NodeType::Return;
-	auto node_function_init = node.parent->get_node_type() == NodeType::ParamList and
-		node.parent->parent->get_node_type() == NodeType::FunctionHeader;
-    if(!node_declaration and !node_assignment and !node_list_struct and !node_return and !node_function_init) return &node;
-
-    node.ty = infer_initialization_types(types, &node);
+//    auto node_declaration = node.parent->get_node_type() == NodeType::SingleDeclaration;
+//    auto node_assignment = node.parent->get_node_type() == NodeType::SingleAssignment;
+//	auto node_list_struct = node.parent->get_node_type() == NodeType::List;
+//	auto node_return = node.parent->get_node_type() == NodeType::Return;
+//	auto node_function_init = node.parent->get_node_type() == NodeType::ParamList and
+//		node.parent->parent->get_node_type() == NodeType::FunctionHeader;
+//    if(!node_list_struct and !node_return and !node_function_init) return &node;
+//
+//    node.ty = infer_initialization_types(types, &node);
 	return &node;
 }
+
+NodeAST * TypeInference::visit(NodeInitializerList& node) {
+	// if type was already inferred -> return
+//	if(node.ty != TypeRegistry::Unknown) {
+//		return &node;
+//	}
+
+	// check if in case we are in declaration or assignment, the list size is only 1, the l_value is of type composite
+	// some_var := (3+4-5) <- would have still registered as initializer list
+	if(node.size() == 1 and node.elem(0)->get_node_type() != NodeType::InitializerList) {
+		if(node.parent->get_node_type() == NodeType::SingleDeclaration) {
+			auto decl = static_cast<NodeSingleDeclaration*>(node.parent);
+			if(decl->variable->ty->get_type_kind() != TypeKind::Composite) {
+				return node.replace_with(std::move(node.elem(0)))->accept(*this);
+			}
+		} else if(node.parent->get_node_type() == NodeType::SingleAssignment) {
+			auto assign = static_cast<NodeSingleAssignment*>(node.parent);
+			if(assign->l_value->ty->get_type_kind() != TypeKind::Composite) {
+				return node.replace_with(std::move(node.elem(0)))->accept(*this);
+			}
+		}
+	}
+
+	std::vector<Type*> types;
+	for(const auto & param : node.elements) {
+		param->accept(*this);
+		types.push_back(param->ty);
+	}
+	// enforce same type for every member
+	auto element_type = infer_initialization_types(types, &node);
+
+	// only add composite type if we are at the topmost level
+	if(node.parent->get_node_type() == NodeType::InitializerList or node.parent->get_node_type() == NodeType::List) {
+		node.ty = element_type;
+	} else {
+		auto dims = node.get_dimensions();
+		// if recognized multiple dimensions like ((1,2), (2,3)) -> set dimensions, otherwise set to 0
+		int dimensions = dims.size() > 1 ? dims.size() : 0;
+		node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, element_type, dimensions);
+	}
+
+	return &node;
+}
+
 
 NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	node.variable->accept(*this);
 	if(node.value) {
 		node.value->accept(*this);
 		// cast node r_value to composite type if variable is composite type
-		if(node.value ->get_node_type() == NodeType::ParamList and node.variable->ty->get_type_kind() == TypeKind::Composite) {
-			node.value->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.variable->ty)->get_compound_type(), node.value->ty->get_element_type(), node.variable->ty->get_dimensions());
-		}
+//		if(node.value ->get_node_type() == NodeType::ParamList and node.variable->ty->get_type_kind() == TypeKind::Composite) {
+//			node.value->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.variable->ty)->get_compound_type(), node.value->ty->get_element_type(), node.variable->ty->get_dimensions());
+//		}
 		match_assignment_types(node.variable.get(), node.value.get());
 		node.variable->accept(*this);
 	}
@@ -462,21 +506,18 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 		if(!node.value) {
 			auto nil = std::make_unique<NodeNil>(node.tok);
 			nil->parent = &node;
-			nil->accept(*this);
-			if(node.variable->get_node_type() == NodeType::Pointer) {
-				node.value = std::move(nil);
-			// pack into param list if declaration is array type
-			} else {
-				auto param_list = std::make_unique<NodeParamList>(node.tok, std::move(nil));
-				param_list->parent = &node;
-				param_list->accept(*this);
-				node.value = std::move(param_list);
+			node.value = std::move(nil);
+			node.value->accept(*this);
+			// wrap nil in initializer list if variable is of composite type
+			if(node.variable->ty->get_type_kind() == TypeKind::Composite) {
+				return node.value
+				->replace_with(std::make_unique<NodeInitializerList>(node.tok, std::move(nil)))
+				->accept(*this);
 			}
-		}
-		if(node.value->ty->get_element_type() == TypeRegistry::Nil) {
-			node.variable->has_obj_assigned = false;
+			return &node;
 		}
 	}
+
 	return &node;
 }
 
@@ -505,8 +546,8 @@ NodeAST * TypeInference::visit(NodeUIControl& node) {
 		}
 	}
 
-	for(int i = 0; i < node.params->params.size(); i++) {
-		match_type(node.params->params[i].get(), node.declaration->params->params[i].get());
+	for(int i = 0; i < node.params->size(); i++) {
+		match_type(node.params->param(i).get(), node.declaration->params->param(i).get());
 	}
 	node.params->accept(*this);
 	return &node;
@@ -522,16 +563,17 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
 	// cast node r_value to composite type if variable is composite type
-	if(node.r_value ->get_node_type() == NodeType::ParamList and node.l_value->ty->get_type_kind() == TypeKind::Composite) {
-		node.r_value->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.l_value->ty)->get_compound_type(), node.r_value->ty->get_element_type(), node.l_value->ty->get_dimensions());
-	}
+//	if(node.r_value ->get_node_type() == NodeType::ParamList and node.l_value->ty->get_type_kind() == TypeKind::Composite) {
+//		node.r_value->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.l_value->ty)->get_compound_type(), node.r_value->ty->get_element_type(), node.l_value->ty->get_dimensions());
+//	}
+	// ???? wtf is this for?
 	// if l_value is basic type and r_value is param list -> move first element of list to r_value
-	if(node.l_value->ty->get_type_kind() == TypeKind::Basic and node.r_value->get_node_type() == NodeType::ParamList) {
-		auto param_list = cast_node<NodeParamList>(node.r_value.get());
-		if(param_list->params.size() == 1) {
-			node.r_value->replace_with(std::move(param_list->params[0]));
-		}
-	}
+//	if(node.l_value->ty->get_type_kind() == TypeKind::Basic and node.r_value->get_node_type() == NodeType::ParamList) {
+//		auto param_list = cast_node<NodeParamList>(node.r_value.get());
+//		if(param_list->params.size() == 1) {
+//			node.r_value->replace_with(std::move(param_list->params[0]));
+//		}
+//	}
 
 	match_assignment_types(node.l_value.get(), node.r_value.get());
 
@@ -540,11 +582,11 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	node.r_value->accept(*this);
 
 	// check if object assigned and set flag
-	if(node.l_value->ty->get_type_kind() == TypeKind::Object) {
-		if(auto ref = cast_node<NodeReference>(node.l_value.get())) {
-			ref->declaration->has_obj_assigned = node.r_value->ty->get_element_type() != TypeRegistry::Nil;
-		}
-	}
+//	if(node.l_value->ty->get_type_kind() == TypeKind::Object) {
+//		if(auto ref = cast_node<NodeReference>(node.l_value.get())) {
+//			ref->declaration->has_obj_assigned = node.r_value->ty->get_element_type() != TypeRegistry::Nil;
+//		}
+//	}
 	m_def_provider->add_to_assignments(&node);
 	return &node;
 }
@@ -572,20 +614,20 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			const std::string error_message =
 				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
 					+ param->ty->to_string() + " as argument type.";
-			if(func_arg->get_node_type() == NodeType::ParamList and param->ty->get_type_kind() == TypeKind::Composite) {
-				func_arg->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(param->ty)->get_compound_type(), func_arg->ty->get_element_type(), param->ty->get_dimensions());
-			} else if(func_arg->get_node_type() == NodeType::ParamList) {
-				auto param_list = cast_node<NodeParamList>(func_arg.get());
-				param_list->flatten();
-				if(param_list->params.size() == 1) {
-					func_arg = std::move(param_list->params[0]);
-					func_arg->parent = &node;
-				} else {
-					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-					error.m_message = "Detected <array initializer> in function call. This is not yet allowed.";
-					error.exit();
-				}
-			}
+//			if(func_arg->get_node_type() == NodeType::ParamList and param->ty->get_type_kind() == TypeKind::Composite) {
+//				func_arg->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(param->ty)->get_compound_type(), func_arg->ty->get_element_type(), param->ty->get_dimensions());
+//			} else if(func_arg->get_node_type() == NodeType::ParamList) {
+//				auto param_list = cast_node<NodeParamList>(func_arg.get());
+//				param_list->flatten();
+//				if(param_list->params.size() == 1) {
+//					func_arg = std::move(param_list->params[0]);
+//					func_arg->parent = &node;
+//				} else {
+//					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+//					error.m_message = "Detected <array initializer> in function call. This is not yet allowed.";
+//					error.exit();
+//				}
+//			}
 			match_type(func_arg.get(), param.get(), error_message);
 		}
 	}
@@ -630,8 +672,11 @@ NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
 //	update_function_type(node.header.get(), node.return_variable.has_value() ? node.return_variable.value().get()->ty : TypeRegistry::Unknown);
     node.body->accept(*this);
     // get possible return type of node.definition by looking at the return param
-	node.header->create_function_type(node.return_variable.has_value() ? node.return_variable.value().get()->ty : TypeRegistry::Unknown);
+//	node.header->create_function_type(node.return_variable.has_value() ? node.return_variable.value().get()->ty : TypeRegistry::Unknown);
 //	match_type(&node, node.header.get());
+//	auto header_type = static_cast<FunctionType*>(node.header->ty);
+//	auto function_type = static_cast<FunctionType*>(node.ty);
+//	header_type->m_return_type = function_type->m_return_type;
 	node.ty = node.header->ty;
 //    if(node.return_variable.has_value()) {
 //		match_type(node.header.get(), node.return_variable.value().get());
@@ -653,6 +698,33 @@ NodeAST * TypeInference::visit(NodeReturn& node) {
 NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	node.left->accept(*this);
 	node.right->accept(*this);
+
+	// if type if object -> check for operator overloading
+	if(node.left->ty->get_type_kind() == TypeKind::Object) {
+		auto strct = NodeReference::get_object_ptr(m_program, node.left->ty->to_string());
+		if(auto def = strct->get_overloaded_method(node.op)) {
+			auto call = std::make_unique<NodeFunctionCall>(
+				false,
+				std::make_unique<NodeFunctionVarRef>(
+					std::make_unique<NodeFunctionHeader>(
+						def->header->name,
+						std::make_unique<NodeParamList>(node.left->tok, strct->node_self->to_reference(), std::move(node.right)),
+						node.tok
+					),
+					node.tok
+				),
+				node.tok
+			);
+			call->definition = def;
+			match_type(node.right.get(), def->header->args->param(1).get(), "Second argument of overloaded operator does not match expected type.");
+			return node.replace_with(std::move(call))->accept(*this);
+		} else {
+			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+			error.m_message = "Operator <"+std::string(tokenStrings[(int)node.op]) +"> has not been overloaded for type "+node.left->ty->to_string()+".";
+			error.exit();
+		}
+
+	}
 
 	// do not infer type if together in string
 	if(contains(STRING_TOKENS, node.op)) {
