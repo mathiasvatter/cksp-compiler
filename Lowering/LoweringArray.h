@@ -20,14 +20,21 @@ private:
 		if(node.variable->get_node_type() == NodeType::Array) {
 			auto node_array = static_cast<NodeArray*>(node.variable.get());
 			// check if size of array is correct when given initializer list
-			if(node.value and node.value->get_node_type() == NodeType::ParamList) {
-				auto param_list = static_cast<NodeParamList*>(node.value.get());
+			if(node.value and node.value->get_node_type() == NodeType::InitializerList) {
+				auto init_list = static_cast<NodeInitializerList*>(node.value.get());
 				if(node_array->size->get_node_type() == NodeType::Int) {
 					auto node_int = static_cast<NodeInt*>(node_array->size.get());
-					if(node_int->value < param_list->params.size()) {
+					auto dims = init_list->get_dimensions();
+					if(dims.size() != 1) {
+						auto error = CompileError(ErrorType::SyntaxError, "", "", node_array->tok);
+						error.m_message = "Initializer List for <Array> has to be one-dimensional.";
+						error.exit();
+						return false;
+					}
+					if(node_int->value < dims[0]) {
 						auto error = CompileError(ErrorType::SyntaxError, "", "", node_array->tok);
 						error.m_message = "Size of <Array> does not match the size of the initializer list.";
-						error.m_got = std::to_string(param_list->params.size());
+						error.m_got = std::to_string(init_list->size());
 						error.m_expected = std::to_string(node_int->value);
 						error.exit();
 						return false;
@@ -92,11 +99,11 @@ public:
 				error.m_message =
 					"Unable to infer array size. Size of Array has to be determined at compile time by providing an initializer list.";
 				error.m_got = node.name;
-				error.m_expected = "initializer list";
+				error.m_expected = "<Initializer List>";
 				error.exit();
 			}
-			if (auto param_list = cast_node<NodeParamList>(node_declaration->value.get())) {
-				node.size = std::make_unique<NodeInt>((int32_t) param_list->params.size(), node.tok);
+			if (auto init_list = cast_node<NodeInitializerList>(node_declaration->value.get())) {
+				node.size = std::make_unique<NodeInt>((int32_t) init_list->size(), node.tok);
 			}
 		// array has size -> check if it is a constant variable
 		} else {

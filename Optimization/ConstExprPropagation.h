@@ -102,7 +102,7 @@ public:
 			if(func_call->kind == NodeFunctionCall::Kind::Builtin) {
 				if(func_call->definition) {
 					auto param_list = static_cast<NodeParamList*>(node->parent);
-					auto param = func_call->definition->header->args->params[param_list->get_idx(node)].get();
+					auto param = func_call->definition->header->args->param(param_list->get_idx(node)).get();
 					if(contains(static_cast<NodeDataStructure*>(param)->name, "variable")) {
 						return node;
 					}

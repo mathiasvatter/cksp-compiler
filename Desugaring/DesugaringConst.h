@@ -92,7 +92,7 @@ public:
 		);
         auto node_declare_statement = std::make_unique<NodeSingleDeclaration>(
 			std::move(node_array),
-			std::make_unique<NodeParamList>(std::move(const_indexes), node.tok),
+			std::make_unique<NodeInitializerList>(std::move(const_indexes), node.tok),
 			node.tok
 		);
         auto array = std::make_unique<NodeStatement>(std::move(node_declare_statement), node.tok);

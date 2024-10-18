@@ -39,30 +39,30 @@ private:
 		if(node.l_value->get_node_type() == NodeType::ArrayRef) {
 			auto node_array_ref = static_cast<NodeArrayRef*>(node.l_value.get());
 			// if lhs is arrayref and has no index, check if array is initialized with a list of values or array copy
-			if(!node_array_ref->index and not(node.r_value->get_node_type() == NodeType::ParamList or node.r_value->get_node_type() == NodeType::ArrayRef)) {
+			if(!node_array_ref->index and not(node.r_value->get_node_type() == NodeType::InitializerList or node.r_value->get_node_type() == NodeType::ArrayRef)) {
 				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 				error.m_message = "<Array> can only be assigned with a list of values.";
-				error.m_expected = "<ParamList>";
+				error.m_expected = "<InitializerList>";
 				error.m_got = node.r_value->get_string();
 				error.exit();
-			} else if (node_array_ref->index and node.r_value->get_node_type() == NodeType::ParamList) {
+			} else if (node_array_ref->index and node.r_value->get_node_type() == NodeType::InitializerList) {
 				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 				error.m_message = "Array element can only be assigned with a single value.";
 				error.m_expected = "<Variable>";
-				error.m_got = "<ParamList>";
+				error.m_got = "<InitializerList>";
 				error.exit();
 			} else if (node_array_ref->index) {
 				return &node;
 			}
 
-			if(node.r_value->get_node_type() == NodeType::ParamList) {
+			if(node.r_value->get_node_type() == NodeType::InitializerList) {
 				// if param list has only one value:
-				auto param_list = static_cast<NodeParamList *>(node.r_value.get());
-				if (param_list->params.size() == 1) {
+				auto init_list = static_cast<NodeInitializerList *>(node.r_value.get());
+				if (init_list->size() == 1) {
 					NormalizeArrayAssign::add_array_init_function_def(m_program, node.l_value->ty->get_element_type());
-					return node.replace_with(get_array_init_function_call(node_array_ref, param_list->params[0].get()));
+					return node.replace_with(get_array_init_function_call(node_array_ref, init_list->elem(0).get()));
 				} else {
-					return node.replace_with(get_array_init_from_list(node_array_ref, param_list));
+					return node.replace_with(get_array_init_from_list(node_array_ref, init_list));
 				}
 			} else if(node.r_value->get_node_type() == NodeType::ArrayRef) {
 				auto node_val_array_ref = static_cast<NodeArrayRef*>(node.r_value.get());
@@ -96,10 +96,10 @@ private:
 			auto node_array_ref = node_array->to_reference();
 			// if lhs is arrayref and has no index, check if array is initialized with a list of values
 			if(node.value) {
-				if (not(node.value->get_node_type() == NodeType::ParamList or node.value->get_node_type() == NodeType::ArrayRef)) {
+				if (not(node.value->get_node_type() == NodeType::InitializerList or node.value->get_node_type() == NodeType::ArrayRef)) {
 					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 					error.m_message = "<Array> can only be declared with a list of values.";
-					error.m_expected = "<ParamList>";
+					error.m_expected = "<InitializerList>";
 					error.m_got = node.value->get_string();
 					error.exit();
 				}
@@ -112,18 +112,18 @@ private:
 					node.tok));
 			} else {
 				// declare local array: [] := (1) or (1,2,3,45)
-				if (node.value->get_node_type() == NodeType::ParamList) {
+				if (node.value->get_node_type() == NodeType::InitializerList) {
 					// if param list has only one value:
-					auto param_list = static_cast<NodeParamList *>(node.value.get());
-					if (param_list->params.size() == 1) {
+					auto init_list = static_cast<NodeInitializerList *>(node.value.get());
+					if (init_list->size() == 1) {
 						NormalizeArrayAssign::add_array_init_function_def(m_program,
 																		  node.variable->ty->get_element_type());
 						node_body->add_stmt(std::make_unique<NodeStatement>(
-							get_array_init_function_call(node_array_ref.get(), param_list->params[0].get()),
+							get_array_init_function_call(node_array_ref.get(), init_list->elem(0).get()),
 							node.tok));
 					} else {
 						auto array_ref = static_cast<NodeArrayRef *>(node_array_ref.get());
-						node_body = get_array_init_from_list(array_ref, param_list);
+						node_body = get_array_init_from_list(array_ref, init_list);
 					}
 				// copy assignment array to array
 				} else if (node.value->get_node_type() == NodeType::ArrayRef) {
@@ -162,17 +162,17 @@ public:
 		m_program = program;
 	};
 
-	static std::unique_ptr<NodeBlock> get_array_init_from_list(NodeArrayRef* array_ref, NodeParamList* param_list) {
+	static std::unique_ptr<NodeBlock> get_array_init_from_list(NodeArrayRef* array_ref, NodeInitializerList* init_list) {
 		auto node_body = std::make_unique<NodeBlock>(array_ref->tok);
-		for(int i = 0; i<param_list->params.size(); i++) {
+		for(int i = 0; i<init_list->size(); i++) {
 			array_ref->index = std::make_unique<NodeInt>((int32_t)i, array_ref->tok);
-			auto &param = param_list->params[i];
+			auto &elem = init_list->elem(i);
 			auto node_assign = std::make_unique<NodeSingleAssignment>(
 				array_ref->clone(),
-				param->clone(),
-				param->tok
+				elem->clone(),
+				elem->tok
 			);
-			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign), param->tok));
+			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign), elem->tok));
 		}
 		return node_body;
 	}

@@ -209,9 +209,9 @@ struct NodeUIControl : NodeDataStructure {
 
 struct NodeList : NodeDataStructure {
 	int32_t size = 0;
-	std::vector<std::unique_ptr<NodeParamList>> body;
+	std::vector<std::unique_ptr<NodeInitializerList>> body;
 	inline explicit NodeList(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::List) {}
-	inline NodeList(std::string name, Type* ty, int32_t size, std::vector<std::unique_ptr<NodeParamList>> body, Token tok)
+	inline NodeList(std::string name, Type* ty, int32_t size, std::vector<std::unique_ptr<NodeInitializerList>> body, Token tok)
 		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::List), size(size), body(std::move(body)) {
 		set_child_parents();
 	}
@@ -284,8 +284,9 @@ struct NodeStruct : NodeDataStructure {
 	NodeVariable* max_individual_struts_var = nullptr;
 	NodeVariable* free_idx_var = nullptr;
 	NodeArray* allocation_var = nullptr;
-	inline static std::unordered_set<NodeType> allowed_member_node_types = {NodeType::Variable, NodeType::Pointer, NodeType::NDArray, NodeType::Array};
+	std::unordered_map<token, NodeFunctionDefinition*> overloaded_operators;
 
+	inline static std::unordered_set<NodeType> allowed_member_node_types = {NodeType::Variable, NodeType::Pointer, NodeType::NDArray, NodeType::Array};
 	inline explicit NodeStruct(const std::string& name, Token tok) : NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct) {}
 	inline NodeStruct(const std::string& name, std::unique_ptr<NodeBlock> members, std::vector<std::unique_ptr<NodeFunctionDefinition>> methods, Token tok)
 		: NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct), members(std::move(members)), methods(std::move(methods)) {
@@ -376,4 +377,5 @@ struct NodeStruct : NodeDataStructure {
 	 */
 	NodeFunctionDefinition* generate_repr_method();
 	void inline_struct(NodeProgram* program);
+	NodeFunctionDefinition* get_overloaded_method(token op);
 };

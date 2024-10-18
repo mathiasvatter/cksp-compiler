@@ -115,69 +115,53 @@ public:
 			param->accept(*this);
 		}
 		// if node is not an array initializer list, return node
-		if(node.parent->get_node_type() == NodeType::ParamList and node.parent->parent->get_node_type() == NodeType::FunctionHeader) {
-//			auto func_call = static_cast<NodeFunctionCall*>(node.parent->parent->parent->parent);
-//			if(!func_call->definition) {
-//				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-//				error.m_message = "Function "+func_call->function->name+" has not been defined and cannot be rewritten with an array initializer.";
-//				error.m_got = func_call->function->name;
-//				error.exit();
+//		if(node.parent->get_node_type() == NodeType::ParamList and node.parent->parent->get_node_type() == NodeType::FunctionHeader) {
+//
+//			// get dimensions of initializer list for array
+//			auto dims = node.get_dimensions();
+//			auto dims_params = std::make_unique<NodeParamList>(node.tok);
+//			for(auto dim : dims) {
+//				dims_params->add_param(std::make_unique<NodeInt>(dim, node.tok));
 //			}
-//			// try to get expected type to determine if array or ndarray
-//			Type* expected_type = nullptr;
-//			for(auto & param : func_call->definition->header->args->params) {
-//				if(param.get() == &node) {
-//					expected_type = param->ty;
-//					break;
-//				}
+//			std::unique_ptr<NodeSingleDeclaration> node_declaration = nullptr;
+//			// is single dimension array
+//			if(dims.size() == 1) {
+//				// if initializer list inside function header -> hoist out
+//				auto array_node = std::make_unique<NodeArray>(
+//					std::nullopt,
+//					m_program->def_provider->get_fresh_name("init_array"),
+//					TypeRegistry::ArrayOfUnknown,
+//					std::move(dims_params->params[0]),
+//					node.tok
+//				);
+//				node_declaration = std::make_unique<NodeSingleDeclaration>(
+//					std::move(array_node),
+//					node.clone(),
+//					node.tok
+//				);
+//
+//			} else {
+//				// if initializer list inside function header -> hoist out
+//				auto ndarray_node = std::make_unique<NodeNDArray>(
+//					std::nullopt,
+//					m_program->def_provider->get_fresh_name("init_ndarray"),
+//					TypeRegistry::Unknown,
+//					std::move(dims_params),
+//					node.tok
+//				);
+//				ndarray_node->dimensions = dims.size();
+//				node_declaration = std::make_unique<NodeSingleDeclaration>(
+//					std::move(ndarray_node),
+//					node.clone(),
+//					node.tok
+//				);
 //			}
 //
-
-			// get dimensions of initializer list for array
-			auto dims = node.get_dimensions();
-			auto dims_params = std::make_unique<NodeParamList>(node.tok);
-			for(auto dim : dims) {
-				dims_params->add_param(std::make_unique<NodeInt>(dim, node.tok));
-			}
-			std::unique_ptr<NodeSingleDeclaration> node_declaration = nullptr;
-			// is single dimension array
-			if(dims.size() == 1) {
-				// if initializer list inside function header -> hoist out
-				auto array_node = std::make_unique<NodeArray>(
-					std::nullopt,
-					m_program->def_provider->get_fresh_name("init_array"),
-					TypeRegistry::ArrayOfUnknown,
-					std::move(dims_params->params[0]),
-					node.tok
-				);
-				node_declaration = std::make_unique<NodeSingleDeclaration>(
-					std::move(array_node),
-					node.clone(),
-					node.tok
-				);
-
-			} else {
-				// if initializer list inside function header -> hoist out
-				auto ndarray_node = std::make_unique<NodeNDArray>(
-					std::nullopt,
-					m_program->def_provider->get_fresh_name("init_ndarray"),
-					TypeRegistry::Unknown,
-					std::move(dims_params),
-					node.tok
-				);
-				ndarray_node->dimensions = dims.size();
-				node_declaration = std::make_unique<NodeSingleDeclaration>(
-					std::move(ndarray_node),
-					node.clone(),
-					node.tok
-				);
-			}
-
-			auto array_ref = node_declaration->variable->to_reference();
-			array_ref->match_data_structure(node_declaration->variable.get());
-			m_declares_per_stmt[m_last_stmt].push_back(std::move(node_declaration));
-			return node.replace_with(std::move(array_ref));
-		}
+//			auto array_ref = node_declaration->variable->to_reference();
+//			array_ref->match_data_structure(node_declaration->variable.get());
+//			m_declares_per_stmt[m_last_stmt].push_back(std::move(node_declaration));
+//			return node.replace_with(std::move(array_ref));
+//		}
 		return &node;
 	}
 

@@ -18,7 +18,7 @@ public:
 	NodeAST * visit(NodeParamList &node) override {
 
 		// in case it is a double param_list [[0,1,2,3]] -> flatten
-		if(node.params.size() == 1 and node.params[0]->get_node_type() == NodeType::ParamList) {
+		if(node.size() == 1 and node.param(0)->get_node_type() == NodeType::ParamList) {
 			node.flatten();
 		}
 
@@ -42,6 +42,11 @@ public:
 		// in case we are inside a function call
 		if(node.parent->get_node_type() == NodeType::ParamList
 			and node.parent->parent->get_node_type() == NodeType::FunctionHeader) {
+			node.replace_with(node.to_initializer_list());
+		}
+
+		// in case we are in return statement
+		if(node.parent->get_node_type() == NodeType::Return) {
 			node.replace_with(node.to_initializer_list());
 		}
 

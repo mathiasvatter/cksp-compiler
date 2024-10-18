@@ -195,10 +195,10 @@ NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
 	node.variable->accept(*this);
 	if(node.value) {
         os << " := ";
-        auto node_param_list = node.value->get_node_type() == NodeType::ParamList;
-        if(node_param_list) os << "(";
+//        auto node_param_list = node.value->get_node_type() == NodeType::ParamList;
+//        if(node_param_list) os << "(";
         node.value->accept(*this);
-        if(node_param_list) os << ")";
+//        if(node_param_list) os << ")";
 	}
 	os << "";
 	return &node;
@@ -218,6 +218,19 @@ NodeAST * ASTPrinter::visit(NodeParamList &node) {
 			os << ")";
 		}
     }
+	return &node;
+}
+
+NodeAST * ASTPrinter::visit(NodeInitializerList &node) {
+	if (!node.elements.empty()) {
+		os << "[";
+		for (int i = 0; i < node.elements.size() - 1; i++) {
+			node.elements[i]->accept(*this);
+			os << ", ";
+		}
+		node.elements[node.elements.size() - 1]->accept(*this);
+		os << "]";
+	}
 	return &node;
 }
 
@@ -263,10 +276,10 @@ NodeAST * ASTPrinter::visit(NodeSingleAssignment &node) {
     os << "";
     node.l_value->accept(*this);
     os << " := ";
-    auto node_param_list = node.r_value->get_node_type() == NodeType::ParamList;
-    if(node_param_list) os << "(";
+//    auto node_param_list = node.r_value->get_node_type() == NodeType::ParamList;
+//    if(node_param_list) os << "(";
     node.r_value->accept(*this);
-    if(node_param_list) os << ")";
+//    if(node_param_list) os << ")";
 	return &node;
 }
 

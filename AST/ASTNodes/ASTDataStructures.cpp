@@ -417,4 +417,12 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	this->update_member_table();
 }
 
+NodeFunctionDefinition* NodeStruct::get_overloaded_method(token op) {
+	auto it = overloaded_operators.find(op);
+	if(it != overloaded_operators.end()) {
+		return it->second;
+	}
+	return nullptr;
+}
+
 

@@ -74,7 +74,7 @@ public:
     /// Lowering of multidimensional arrays to arrays when reference
 	NodeAST* visit(NodeNDArrayRef& node) override {
         auto error = CompileError(ErrorType::Variable, "", "", node.tok);
-        if(node.indexes and node.sizes and node.indexes->params.size() != node.sizes->params.size()) {
+        if(node.indexes and node.sizes and node.indexes->size() != node.sizes->size()) {
             error.m_message = "Number of indices does not match number of dimensions: " + node.name;
             error.exit();
         }
@@ -84,9 +84,8 @@ public:
 			// if no sizes -> ndarray is func param
 			if(!node.sizes) {
 				auto sizes = std::make_unique<NodeParamList>(node.tok);
-				for(int i = 0; i<node.indexes->params.size(); i++) {
+				for(int i = 0; i<node.indexes->size(); i++) {
 					auto size_const = std::make_unique<NodeVariableRef>(node.name + ".SIZE_D" + std::to_string(i+1), node.tok);
-//					size_const->kind = NodeReference::Compiler;
 					size_const->data_type = DataType::Const;
 					sizes->add_param(std::move(size_const));
 				}

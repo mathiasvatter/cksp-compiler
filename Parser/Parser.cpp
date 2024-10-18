@@ -1690,7 +1690,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 	}
 
 	consume(); // consume linebreak
-	std::vector<std::unique_ptr<NodeParamList>> stmts;
+	std::vector<std::unique_ptr<NodeInitializerList>> stmts;
 	int32_t size = 0;
 	while(peek().type != token::END_LIST) {
 		_skip_linebreaks();
@@ -1699,8 +1699,10 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 		if(param_list.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(param_list.get_error());
 		}
-		size += (int32_t)param_list.unwrap()->params.size();
-		stmts.push_back(std::move(param_list.unwrap()));
+		size += (int32_t)param_list.unwrap()->size();
+		auto init_list = param_list.unwrap()->to_initializer_list();
+		init_list->parent = node_list_block.get();
+		stmts.push_back(std::move(init_list));
 		auto l = consume_linebreak("<statement>");
 		if(l.is_error())
 			return Result<std::unique_ptr<NodeAST>>(l.get_error());

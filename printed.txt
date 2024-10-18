@@ -1,42 +1,99 @@
 Global Declarations:
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
+struct List
+	declare self : List := nil
+	declare List::value : int
+	declare List::next : List := nil
+
+	function List::__init__(value : int, next : List) : unknown
+		List::value{int} := value{int}
+		List::next{List} := next{List}
+	end function
+
+	function List::get_next_next_value(self : List) : unknown
+		return (self{List}.next{List}.next{List}.value{int})
+	end function
+
+	function List::__repr__(self : List) : unknown
+		return ("<List> Object: " & self{List})
+	end function
+
+end struct
+
+struct Point
+	declare self : Point := nil
+	declare Point::x : int
+	declare Point::y : int
+
+	function Point::__init__(x : int, y : int) : unknown
+		Point::x{int} := x{int}
+		Point::y{int} := y{int}
+	end function
+
+	function Point::__repr__(self : Point) : unknown
+		return ("Point {X: " & Point::x{int} & ", Y: " & Point::y{int} & "}")
+	end function
+
+	function Point::__add__(self : Point, other : Point) : unknown
+		Point::x{int} := Point::x{int} + other{Point}.x{int}
+		Point::y{int} := Point::y{int} + other{Point}.y{int}
+		return (self{Point})
+	end function
+
+end struct
+
+struct Note
+	declare self : Note := nil
+	declare Note::pitch : int
+	declare Note::velocities[10] : int[]
+	declare Note::play_pos[2, 2] : int[][]
+
+	function Note::__init__(p : int, v : int[], pp : int[][]) : unknown
+		Note::pitch{int} := p{int}
+		Note::velocities{int[]} := v{int[]}
+		Note::play_pos{int[][]} := pp{int[][]}
+	end function
+
+	function Note::__repr__(self : Note) : unknown
+		return ("Note {Pitch: " & Note::pitch{int} & "}")
+	end function
+
+	function Note::play(self : Note) : unknown
+		return (play_note(Note::pitch{int}, Note::velocities[0]{int}, Note::play_pos[1, 2]{int}, 0))
+	end function
+
+	function Note::get_velocities(self : Note) : unknown
+		return (Note::velocities{int[]})
+	end function
+
+end struct
+
 on init
-	declare const Note::MAX_STRUCTS : int := MAX_STRUCTS{unknown} / Struct::max(2 * 2, 10)
-	declare Note::free_idx : int := 0
-	declare Note::allocation[Note::MAX_STRUCTS{int}] : int[]
-	declare Note::pitch[Note::MAX_STRUCTS{int}] : int[]
-	declare Note::velocities[Note::MAX_STRUCTS{int}, 10] : int[][]
-	declare Note::play_pos[Note::MAX_STRUCTS{int}, 2, 2] : int[][][]
-	declare const List::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
-	declare List::free_idx : int := 0
-	declare List::allocation[List::MAX_STRUCTS{int}] : int[]
-	declare List::value[List::MAX_STRUCTS{int}] : int[]
-	declare List::next[List::MAX_STRUCTS{int}] : int[] := (- 1)
 	declare _iter : int
-	declare ui_button btn_1 : int 
-	declare ui_button btn_2 : int 
-	declare first_note : int := Note(69, (3, 0), ((10, 10), (10, 10)))
-	declare ptr : int := List(1, List(3, - 1))
-	message(List::__repr__(List::next[List::next[ptr{int}]{int}]{int}))
-	declare lists[10] : int[] := (- 1)
+	declare first_note : int := Note(69, [3, 0], [10])
+	declare ptr : List := List(1, List(3, nil))
+	message(ptr{List}.next{List}.next{List})
+	declare lists[10] : List[] := [nil]
 	declare idx : int
 	idx{int} := 0
-	while(idx{int} <= (num_elements(lists{int[]}) - 1)) 
-		lists[idx{int}]{int} := List(idx{int}, lists[idx{int}]{int})
-		message(List::__repr__(List::next[lists[idx{int}]{int}]{int}))
+	while(idx{int} <= (num_elements(lists{List[]}) - 1)) 
+		lists[idx{int}]{List} := List(idx{int}, lists[idx{int}]{List})
+		message(lists[idx{int}]{List}.next{List})
 		inc(idx{int})
 	end while
-	btn_1{int} := return_twice(_{unknown})
 	if(return_twice(_{unknown}) = 1)
 		message("pipi")
 	end if
 	declare get_sth_more[3] : int[]
 	declare get_sth : int := return_sth_more(get_sth_more{int[]})
-	take_array((1, 2, 3, 4))
-	message(int[]::__repr__(get_sth_more{int[]}))
+	take_array([1, 2, 3, 4])
+	message(get_sth_more{int[]})
 	declare ndarray[10, 10] : int[][]
-	ndarray[2, *]{int[]} := (1, 2, 3, 4)
+	ndarray[2, *]{int[]} := [1, 2, 3, 4]
+	declare p1 : int := Point(1, 2)
+	declare p2 : int := Point(3, 4)
+	message(p1{int} + p2{int})
 end on
 
 function pupu(msg() : (int, string): void) : unknown
@@ -55,11 +112,11 @@ function array.reduce(array : any[], func() : (unknown, unknown): unknown) : unk
 end function
 
 function get_pipi(num1 : int, str1 : string) : unknown
-	message("pipi" & ", " & num1{int} & ", " & str1{string})
+	message("pipi", num1{int}, str1{string})
 end function
 
 function take_array(ndarray : int[][]) : unknown
-	message(int[][]::__repr__(ndarray{int[][]}))
+	message(ndarray{int[][]})
 end function
 
 function return_twice(return0 : unknown) : unknown
@@ -73,63 +130,8 @@ function return_once() : unknown
 end function
 
 function return_sth_more(return1 : []) : unknown
-	declare x[3] : int[] := (42, 43, 44)
+	declare x[3] : int[] := [42, 43, 44]
 	return (1, x{int[]})
-end function
-
-function Struct::max(a : int, b : int)
-	return (((a{int} + b{int}) + abs(a{int} - b{int})) / 2)
-end function
-
-function int[]::__repr__(self : int[])
-	return ("Array of type <int[]>")
-end function
-
-function int[][]::__repr__(self : int[][])
-	return ("NDArray of type <int[][]>")
-end function
-
-function List::__init__(value : int, next : int) : unknown
-	List::free_idx{int} := search(List::allocation{int[]}, 0)
-	if(List::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'List'")
-	end if
-	List::allocation[List::free_idx{int}]{int[]} := 1
-	List::value[List::free_idx{int}]{int} := value{int}
-	List::next[List::free_idx{int}]{int} := next{int}
-	return (List::free_idx{int})
-end function
-
-function List::get_next_next_value(self : int) : unknown
-	return (List::value[List::next[List::next[self{int}]{int}]{int}]{int})
-end function
-
-function List::__repr__(self : int) : unknown
-	return ("<List> Object: " & self{int})
-end function
-
-function Note::__init__(p : int, v : int[], pp : int[][]) : unknown
-	Note::free_idx{int} := search(Note::allocation{int[]}, 0)
-	if(Note::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'Note'")
-	end if
-	Note::allocation[Note::free_idx{int}]{int[]} := 1
-	Note::pitch[Note::free_idx{int}]{int} := p{int}
-	Note::velocities[Note::free_idx{int}, *]{int[]} := v{int[]}
-	Note::play_pos[Note::free_idx{int}, *, *]{int[][]} := pp{int[][]}
-	return (Note::free_idx{int})
-end function
-
-function Note::__repr__(self : int) : unknown
-	return ("Note {Pitch: " & Note::pitch[self{int}]{int} & "}")
-end function
-
-function Note::play(self : int) : unknown
-	return (play_note(Note::pitch[self{int}]{int}, Note::velocities[self{int}, 0]{int}, Note::play_pos[self{int}, 1, 2]{int}, 0))
-end function
-
-function Note::get_velocities(self : int) : unknown
-	return (Note::velocities[self{int}, *]{int[]})
 end function
 
 

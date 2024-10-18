@@ -16,8 +16,8 @@ public:
 
 	NodeAST * visit(NodeListRef& node) override {
 		// list references can only have one or two (jagged lists) index
-		if(node.indexes->params.size() != 2 && node.indexes->params.size() != 1) {
-			CompileError(ErrorType::SyntaxError,"Got wrong amount of index for <list>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).exit();
+		if(node.indexes->size() != 2 && node.indexes->size() != 1) {
+			CompileError(ErrorType::SyntaxError,"Got wrong amount of index for <lList>.", node.tok.line, "2", std::to_string(node.indexes->params.size()), node.tok.file).exit();
 		}
 
 		auto lowered_list_reference = std::make_unique<NodeArrayRef>(
@@ -40,13 +40,13 @@ public:
 		 */
 		auto node_position_array = std::make_unique<NodeArrayRef>(
                 node.name+".pos",
-                std::move(node.indexes->params[0]), node.tok
+                std::move(node.indexes->param(0)), node.tok
                 );
 
 		auto node_expression = std::make_unique<NodeBinaryExpr>(
                 token::ADD,
                 std::move(node_position_array),
-                std::move(node.indexes->params[1]), node.tok);
+                std::move(node.indexes->param(1)), node.tok);
         node_expression->ty = TypeRegistry::Integer;
 
 		lowered_list_reference->index = std::move(node_expression);
@@ -68,8 +68,8 @@ public:
 
         //check dimension -> if only 1 then treat as an array
         int max_dimension = 0;
-        for(auto & param : node.body) {
-            max_dimension = std::max(max_dimension, (int)param->params.size());
+        for(auto & ls : node.body) {
+            max_dimension = std::max(max_dimension, (int)ls->size());
         }
         if(max_dimension>1) node_main_array->data_type = DataType::Mutable;
 
@@ -95,7 +95,7 @@ public:
         if(max_dimension == 1) {
             // bring all one sized param lists into the first
             for(int i = 1; i<node.body.size(); i++) {
-                node.body[0]->params.push_back(std::move(node.body[i]->params[0]));
+                node.body[0]->add_element(std::move(node.body[i]->elem(0)));
             }
 			auto node_assignment = std::make_unique<NodeSingleAssignment>(
 				node_main_array->to_reference(),
@@ -122,13 +122,13 @@ public:
         std::vector<int32_t> sizes(node.body.size());
         std::vector<int32_t> positions(node.body.size());
         auto node_sizes = std::make_unique<NodeParamList>(node.tok);
-        auto node_positions = std::make_unique<NodeParamList>(node.tok);
+        auto node_positions = std::make_unique<NodeInitializerList>(node.tok);
         positions[0] = 0;
         for(int i = 0; i<node.body.size(); i++) {
-            sizes[i] = static_cast<int32_t>(node.body[i]->params.size());
+            sizes[i] = static_cast<int32_t>(node.body[i]->size());
             if(i>0) positions[i] = positions[i - 1] + sizes[i - 1];
-            node_sizes->params.push_back(std::make_unique<NodeInt>(sizes[i], node.tok));
-            node_positions->params.push_back(std::make_unique<NodeInt>(positions[i], node.tok));
+            node_sizes->add_param(std::make_unique<NodeInt>(sizes[i], node.tok));
+            node_positions->add_element(std::make_unique<NodeInt>(positions[i], node.tok));
         }
         auto node_sizes_declaration = std::make_unique<NodeSingleDeclaration>(
                 std::move(node_sizes_array),
@@ -192,8 +192,7 @@ public:
                     std::move(node_main_array_ref),
                     std::move(node_array_ref), node.tok
                     );
-            node_while_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
-            node_while_body->set_child_parents();
+            node_while_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
             auto node_while_loop = make_while_loop(node_iterator_var.get(), 0, sizes[i], std::move(node_while_body), node_body.get());
             node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while_loop), node.tok));
         }

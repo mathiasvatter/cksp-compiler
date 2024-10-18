@@ -163,5 +163,13 @@ NodeAST * ASTCollectLowerings::visit(NodeConst &node) {
     return node.replace_with(std::move(node.constants));
 }
 
+NodeAST * ASTCollectLowerings::visit(NodeInitializerList &node) {
+	node.flatten();
+	for(auto & init : node.elements) {
+		init->accept(*this);
+	}
+	return &node;
+}
+
 
 
