@@ -370,13 +370,19 @@ void Tokenizer::get_comparison_operators() {
 //    std::string token;
     if (peek() == '>' ) {
         if (peek(1) == '=') {
-            tok = token::GREATER_EQUAL;
+			tok = token::GREATER_EQUAL;
+			consume();
+		} else if(peek(1) == '>') {
+			tok = token::SHIFT_RIGHT;
 			consume();
         } else
             tok = token::GREATER_THAN;
     } else if (peek() == '<') {
         if (peek(1) == '=') {
-            tok = token::LESS_EQUAL;
+			tok = token::LESS_EQUAL;
+			consume();
+		} else if(peek(1) == '<') {
+			tok = token::SHIFT_LEFT;
 			consume();
         } else
             tok = token::LESS_THAN;
