@@ -34,12 +34,14 @@ inline static std::map<token, int> operator_precedence = {
         {token::BIT_XOR, 8},
         {token::BIT_OR, 9},
         {token::BIT_AND, 10},
-        {token::BIT_NOT, 11},
-        {token::ADD, 12},
-        {token::SUB, 12},
-        {token::MULT, 13},
-        {token::DIV, 13},
-        {token::MODULO, 13}
+		{token::SHIFT_RIGHT, 11},
+		{token::SHIFT_LEFT, 11},
+        {token::BIT_NOT, 12},
+        {token::ADD, 13},
+        {token::SUB, 13},
+        {token::MULT, 14},
+        {token::DIV, 14},
+        {token::MODULO, 14}
 
 //	{token::BOOL_XOR, 2},      // Niedrigste Präzedenz unter den logischen Operatoren
 //	{token::BOOL_OR, 3},       // Logisches OR hat eine höhere Präzedenz als XOR
