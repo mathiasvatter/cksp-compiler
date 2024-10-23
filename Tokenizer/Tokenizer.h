@@ -197,6 +197,7 @@ protected:
     void get_comment();
 	void get_invalid();
     void get_comparison_operators();
+	void get_compound_assignment_operators();
 	void get_string();
     void get_binary_operators();
     void get_parenth();

@@ -573,6 +573,14 @@ Result<std::unique_ptr<NodeDelete>> Parser::parse_delete_statement(NodeAST* pare
 	return Result<std::unique_ptr<NodeDelete>>(std::move(node_delete_stmt));
 }
 
+Result<std::unique_ptr<NodeBreak>> Parser::parse_break_statement(NodeAST* parent) {
+	consume(); // consume break keyword
+	auto node_break_stmt = std::make_unique<NodeBreak>(get_tok());
+	node_break_stmt->set_child_parents();
+	node_break_stmt->parent = parent;
+	return Result<std::unique_ptr<NodeBreak>>(std::move(node_break_stmt));
+}
+
 Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) {
     auto node_statement = std::make_unique<NodeStatement>(get_tok());
     _skip_linebreaks();
@@ -656,6 +664,12 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
 			return Result<std::unique_ptr<NodeStatement>>(return_stmt.get_error());
 		}
 		stmt = std::move(return_stmt.unwrap());
+	} else if(peek().type == token::BREAK) {
+		auto break_stmt = parse_break_statement(node_statement.get());
+		if (break_stmt.is_error()) {
+			return Result<std::unique_ptr<NodeStatement>>(break_stmt.get_error());
+		}
+		stmt = std::move(break_stmt.unwrap());
 	} else if (peek().type == token::DELETE) {
 		auto delete_stmt = parse_delete_statement(node_statement.get());
 		if (delete_stmt.is_error()) {

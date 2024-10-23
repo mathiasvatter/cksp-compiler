@@ -6,7 +6,7 @@
   keywords=[1]{
     START_INC, END_INC, SET_CONDITION, RESET_CONDITION, USE_CODE_IF, USE_CODE_IF_NOT, END_USE_CODE,
     NO_SYS_SCRIPT_GROUP_START, NO_SYS_SCRIPT_PEDAL, NO_SYS_SCRIPT_RLS_TRIG, import, as, \#pragma, output_path,
-    define, iterate_macro, literate_macro, continue, for, in, to, steps, end, if, else, select, case, default, while, macro, struct, self, end, list, const, family,
+    define, iterate_macro, literate_macro, continue, break, for, in, to, steps, end, if, else, select, case, default, while, macro, struct, self, end, list, const, family,
     function, end function, override, return, on, end on, async_complete, controller,
     init, listener, note, persistence_changed, pgs_changed, poly_at, release, rpn, nrpn, ui_control, ui_update, midi_in,
     ui_controls, family, end family, list, end list, macro, end macro, call

@@ -408,8 +408,8 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 			callsite->definition = new_func_ptr;
 		}
 	}
-	program->update_function_lookup();
 	methods.clear();
+	program->update_function_lookup();
 	this->update_method_table();
 
 	program->init_callback->statements->prepend_body(std::move(members));

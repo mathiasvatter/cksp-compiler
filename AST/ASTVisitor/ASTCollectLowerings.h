@@ -61,7 +61,10 @@ public:
 	/// move node block of const out of const construct
 	NodeAST * visit(NodeConst& node) override;
 //    void visit(NodeFamily& node) override;
-
+	/// transform break stmts
+	NodeAST * visit(NodeWhile& node) override;
+	/// throw error since they are not in loop
+	NodeAST * visit(NodeBreak& node) override;
 	/// lower list struct references to array references
 	NodeAST * visit(NodeListRef& node) override;
 	/// lower list structs to arrays and while loops

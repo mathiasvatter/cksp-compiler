@@ -26,7 +26,7 @@ public:
 		/// do immediate inlining of return-only functions
 		ASTExpressionFunctionInlining inlining(m_def_provider);
 		node.accept(inlining);
-
+		node.debug_print();
 		m_program = &node;
 
 		/// lower func_defs

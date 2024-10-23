@@ -59,7 +59,7 @@ public:
 	}
 	inline NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		return &node;
+		return wrap_in_repr_call(node);
 	}
 
 private:
@@ -81,6 +81,17 @@ private:
 		);
 		call->ty = TypeRegistry::String;
 		return call;
+	}
+
+	static NodeAST* wrap_in_repr_call(NodeFunctionCall& call) {
+		if(call.ty->get_type_kind() != TypeKind::Object and call.ty->get_type_kind() != TypeKind::Composite)
+			return nullptr;
+
+		if(call.is_string_env()) {
+			std::string prefix = call.ty->to_string();
+			return call.replace_with(construct_repr_call(call, prefix));
+		}
+		return &call;
 	}
 
 	NodeAST * wrap_in_repr_call(NodeReference& ref) {

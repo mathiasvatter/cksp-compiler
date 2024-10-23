@@ -632,15 +632,11 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		}
 	}
 //	match_type(&node, node.definition);
-	if(node.function->declaration) {
-		Type* return_type = node.ty;
-		if(node.function->declaration->ty->get_type_kind() == TypeKind::Function) {
-			return_type = static_cast<FunctionType *>(node.function->declaration->ty)->get_return_type();
+	if(node.definition) {
+		if (!node.ty->is_compatible(node.definition->ty)) {
+			throw_type_error(&node, node.definition).exit();
 		}
-		if (!node.ty->is_compatible(return_type)) {
-			throw_type_error(&node, node.function->declaration).exit();
-		}
-		node.set_element_type(specialize_type(node.ty, return_type));
+		node.set_element_type(specialize_type(node.ty, node.definition->ty));
 	}
 	return &node;
 }
@@ -661,6 +657,7 @@ NodeAST * TypeInference::visit(NodeFunctionHeader& node) {
 
 NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
 	node.visited = true;
+	m_program->function_call_stack.push(&node);
 
 	// add data structures to provider
 	m_def_provider->add_to_data_structures(node.header.get());
@@ -674,13 +671,26 @@ NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
     // get possible return type of node.definition by looking at the return param
 //	node.header->create_function_type(node.return_variable.has_value() ? node.return_variable.value().get()->ty : TypeRegistry::Unknown);
 //	match_type(&node, node.header.get());
-//	auto header_type = static_cast<FunctionType*>(node.header->ty);
+	auto header_type = static_cast<FunctionType*>(node.header->ty);
 //	auto function_type = static_cast<FunctionType*>(node.ty);
 //	header_type->m_return_type = function_type->m_return_type;
-	node.ty = node.header->ty;
+
+//	if(node.ty == TypeRegistry::Unknown) {
+//		node.ty = header_type->get_return_type();
+//	} else {
+//		header_type->m_return_type = node.ty;
+//	}
+
+//	if (!node.ty->is_compatible(header_type->get_return_type())) {
+//		throw_type_error(&node, node.header.get()).exit();
+//	}
+	node.set_element_type(specialize_type(node.ty, header_type->get_return_type()));
+	header_type->m_return_type = node.ty;
+
 //    if(node.return_variable.has_value()) {
 //		match_type(node.header.get(), node.return_variable.value().get());
 //	}
+	m_program->function_call_stack.pop();
 	return &node;
 }
 
@@ -688,8 +698,10 @@ NodeAST * TypeInference::visit(NodeReturn& node) {
 	for(auto &ret : node.return_variables) {
 		ret->accept(*this);
 	}
+	if(!node.definition) node.definition = m_program->function_call_stack.top();
 	if(!node.return_variables.empty() ) {
-		if(node.definition) match_type(node.definition, node.return_variables[0].get());
+		if(node.definition)
+			match_type(node.definition, node.return_variables[0].get());
 	}
 	return &node;
 }
@@ -703,20 +715,20 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	if(node.left->ty->get_type_kind() == TypeKind::Object) {
 		auto strct = NodeReference::get_object_ptr(m_program, node.left->ty->to_string());
 		if(auto def = strct->get_overloaded_method(node.op)) {
+			match_type(node.right.get(), def->header->args->param(1).get(), "Second argument of overloaded operator does not match expected type.");
 			auto call = std::make_unique<NodeFunctionCall>(
 				false,
 				std::make_unique<NodeFunctionVarRef>(
 					std::make_unique<NodeFunctionHeader>(
 						def->header->name,
-						std::make_unique<NodeParamList>(node.left->tok, strct->node_self->to_reference(), std::move(node.right)),
+						std::make_unique<NodeParamList>(node.left->tok, std::move(node.left), std::move(node.right)),
 						node.tok
 					),
 					node.tok
 				),
 				node.tok
 			);
-			call->definition = def;
-			match_type(node.right.get(), def->header->args->param(1).get(), "Second argument of overloaded operator does not match expected type.");
+			// do not yet add definition to call -> will be done in function call
 			return node.replace_with(std::move(call))->accept(*this);
 		} else {
 			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);

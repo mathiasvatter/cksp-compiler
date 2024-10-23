@@ -41,7 +41,8 @@ inline static std::map<token, int> operator_precedence = {
         {token::SUB, 13},
         {token::MULT, 14},
         {token::DIV, 14},
-        {token::MODULO, 14}
+        {token::MODULO, 14},
+		{token::EXP,15}
 
 //	{token::BOOL_XOR, 2},      // Niedrigste Präzedenz unter den logischen Operatoren
 //	{token::BOOL_OR, 3},       // Logisches OR hat eine höhere Präzedenz als XOR
@@ -117,6 +118,7 @@ protected:
     Result<std::unique_ptr<NodeAssignment>> parse_assign_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeReturn>> parse_return_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeDelete>> parse_delete_statement(NodeAST* parent);
+	Result<std::unique_ptr<NodeBreak>> parse_break_statement(NodeAST* parent);
 
     Result<std::unique_ptr<NodeSingleAssignment>> parse_single_assign_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);

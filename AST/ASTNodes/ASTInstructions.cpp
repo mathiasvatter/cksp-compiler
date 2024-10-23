@@ -16,6 +16,7 @@
 #include "../ASTVisitor/GlobalScope/ASTGlobalScope.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "../../Desugaring/DesugarFunctionCall.h"
+#include "../../Lowering/LoweringWhile.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -123,7 +124,7 @@ NodeFunctionDefinition *NodeFunctionCall::find_constructor_definition(NodeProgra
 		if(!constructor) return nullptr;
 		function->ty = constructor->ty;
 		definition = constructor;
-		definition->call_sites.emplace(this);
+//		definition->call_sites.emplace(this);
 		kind = Kind::Constructor;
 		return it->second->constructor;
 	}
@@ -216,8 +217,64 @@ bool NodeFunctionCall::is_builtin_kind() const {
 
 bool NodeFunctionCall::is_string_env() {
 	bool is_string = false;
+	// is within string environment
 	is_string |= parent->ty == TypeRegistry::String;
+	// is within message call
+	is_string |= parent->parent->get_node_type() == NodeType::FunctionHeader and static_cast<NodeFunctionHeader*>(parent->parent)->name == "message";
+	// is within return statement
+	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->definition->ty == TypeRegistry::String;
 	return is_string;
+}
+
+
+// ************* NodeDelete ***************
+NodeAST *NodeDelete::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeDelete::NodeDelete(const NodeDelete& other)
+	: NodeInstruction(other), ptrs(clone_vector(other.ptrs)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeDelete::clone() const {
+	return std::make_unique<NodeDelete>(*this);
+}
+NodeAST *NodeDelete::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	for(auto &del : ptrs) {
+		if (del.get() == oldChild) {
+			del = std::move(newChild);
+			return del.get();
+		}
+	}
+	return nullptr;
+}
+
+ASTDesugaring * NodeDelete::get_desugaring(NodeProgram *program) const {
+	static DesugarDelete desugaring(program);
+	return &desugaring;
+}
+
+// ************* NodeSingleDelete ***************
+NodeAST *NodeSingleDelete::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeSingleDelete::NodeSingleDelete(const NodeSingleDelete& other)
+	: NodeInstruction(other), ptr(clone_unique(other.ptr)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeSingleDelete::clone() const {
+	return std::make_unique<NodeSingleDelete>(*this);
+}
+
+// ************* NodeSingleRetain ***************
+NodeAST *NodeSingleRetain::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeSingleRetain::NodeSingleRetain(const NodeSingleRetain& other)
+	: NodeInstruction(other), ptr(clone_unique(other.ptr)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeSingleRetain::clone() const {
+	return std::make_unique<NodeSingleRetain>(*this);
 }
 
 // ************* NodeAssignment ***************
@@ -244,7 +301,8 @@ NodeAST *NodeSingleAssignment::accept(struct ASTVisitor &visitor) {
 }
 NodeSingleAssignment::NodeSingleAssignment(const NodeSingleAssignment& other)
         : NodeInstruction(other), l_value(clone_unique(other.l_value)),
-          r_value(clone_unique(other.r_value)) {
+          r_value(clone_unique(other.r_value)), delete_stmt(clone_unique(other.delete_stmt)),
+		  retain_stmt(clone_unique(other.retain_stmt)) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleAssignment::clone() const {
@@ -297,7 +355,8 @@ NodeAST *NodeSingleDeclaration::accept(struct ASTVisitor &visitor) {
 }
 NodeSingleDeclaration::NodeSingleDeclaration(const NodeSingleDeclaration& other)
         : NodeInstruction(other), variable(clone_unique(other.variable)),
-          value(clone_unique(other.value)), is_promoted(other.is_promoted) {
+          value(clone_unique(other.value)), retain_stmt(clone_unique(other.retain_stmt)),
+		  is_promoted(other.is_promoted) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleDeclaration::clone() const {
@@ -373,57 +432,6 @@ NodeAST *NodeSingleReturn::replace_child(NodeAST* oldChild, std::unique_ptr<Node
 	}
 	return nullptr;
 }
-
-// ************* NodeDelete ***************
-NodeAST *NodeDelete::accept(struct ASTVisitor &visitor) {
-	return visitor.visit(*this);
-}
-NodeDelete::NodeDelete(const NodeDelete& other)
-	: NodeInstruction(other), ptrs(clone_vector(other.ptrs)) {
-	set_child_parents();
-}
-std::unique_ptr<NodeAST> NodeDelete::clone() const {
-	return std::make_unique<NodeDelete>(*this);
-}
-NodeAST *NodeDelete::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
-	for(auto &del : ptrs) {
-		if (del.get() == oldChild) {
-			del = std::move(newChild);
-			return del.get();
-		}
-	}
-	return nullptr;
-}
-
-ASTDesugaring * NodeDelete::get_desugaring(NodeProgram *program) const {
-	static DesugarDelete desugaring(program);
-	return &desugaring;
-}
-
-// ************* NodeSingleDelete ***************
-	NodeAST *NodeSingleDelete::accept(struct ASTVisitor &visitor) {
-	return visitor.visit(*this);
-}
-NodeSingleDelete::NodeSingleDelete(const NodeSingleDelete& other)
-	: NodeInstruction(other), ptr(clone_unique(other.ptr)) {
-	set_child_parents();
-}
-std::unique_ptr<NodeAST> NodeSingleDelete::clone() const {
-	return std::make_unique<NodeSingleDelete>(*this);
-}
-
-// ************* NodeSingleRetain ***************
-NodeAST *NodeSingleRetain::accept(struct ASTVisitor &visitor) {
-	return visitor.visit(*this);
-}
-NodeSingleRetain::NodeSingleRetain(const NodeSingleRetain& other)
-	: NodeInstruction(other), ptr(clone_unique(other.ptr)) {
-	set_child_parents();
-}
-std::unique_ptr<NodeAST> NodeSingleRetain::clone() const {
-	return std::make_unique<NodeSingleRetain>(*this);
-}
-
 
 // ************* NodeGetControl ***************
 NodeAST *NodeGetControl::accept(struct ASTVisitor &visitor) {
@@ -725,6 +733,11 @@ NodeAST *NodeWhile::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
     }
     return nullptr;
 }
+ASTLowering* NodeWhile::get_lowering(struct NodeProgram *program) const {
+	static LoweringWhile lowering(program);
+	return &lowering;
+}
+
 
 // ************* Helper to clone map with unique_ptr keys and vector of unique_ptr values ***************
 static std::map< std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeStatement>>> clone_map(
@@ -771,4 +784,15 @@ NodeAST *NodeSelect::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
         }
     }
     return nullptr;
+}
+
+// ************* NodeBreak ***************
+NodeAST *NodeBreak::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeBreak::NodeBreak(const NodeBreak& other)
+	: NodeInstruction(other) {}
+
+std::unique_ptr<NodeAST> NodeBreak::clone() const {
+	return std::make_unique<NodeBreak>(*this);
 }

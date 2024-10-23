@@ -129,26 +129,6 @@ NodeAST* ASTDesugar::visit(NodeParamList &node) {
 	for(auto & param : node.params) {
 		param->accept(*this);
 	}
-//	// in case it is a double param_list [[0,1,2,3]] move params up to parent
-//	if(node.parent->get_node_type() == NodeType::ParamList) {
-//		auto node_param_list = static_cast<NodeParamList*>(node.parent);
-//		// could be array initializer in function call
-//		if(node_param_list->parent -> get_node_type() == NodeType::FunctionHeader) {
-////			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-////			error.m_message = "Detected <array initializer> in function call. This is not yet allowed.";
-////			error.exit();
-//			return &node;
-//		}
-//		if(node_param_list->params.size() == 1) {
-//			node_param_list->params.insert(
-//				node_param_list->params.begin(),
-//				std::make_move_iterator(node.params.begin()),
-//				std::make_move_iterator(node.params.end())
-//			);
-//			node_param_list->params.pop_back();
-//			node_param_list->set_child_parents();
-//		}
-//	}
 	return node.desugar(m_program);
 }
 
@@ -157,6 +137,12 @@ NodeAST* ASTDesugar::visit(NodeStruct& node) {
 	for(auto & m: node.methods) {
 		m->accept(*this);
 	}
+	return node.desugar(m_program);
+}
+
+NodeAST *ASTDesugar::visit(NodeBinaryExpr &node) {
+	node.left->accept(*this);
+	node.right->accept(*this);
 	return node.desugar(m_program);
 }
 

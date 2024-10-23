@@ -27,7 +27,7 @@ public:
 		if(node.parent->get_node_type() == NodeType::SingleDeclaration) {
 			auto declaration = static_cast<NodeSingleDeclaration*>(node.parent);
 			if(declaration->value and declaration->value.get() == &node) {
-				node.replace_with(node.to_initializer_list());
+				return node.replace_with(node.to_initializer_list());
 			}
 		}
 
@@ -35,19 +35,19 @@ public:
 		if(node.parent->get_node_type() == NodeType::SingleAssignment) {
 			auto assignment = static_cast<NodeSingleAssignment*>(node.parent);
 			if(assignment->r_value.get() == &node) {
-				node.replace_with(node.to_initializer_list());
+				return node.replace_with(node.to_initializer_list());
 			}
 		}
 
 		// in case we are inside a function call
 		if(node.parent->get_node_type() == NodeType::ParamList
 			and node.parent->parent->get_node_type() == NodeType::FunctionHeader) {
-			node.replace_with(node.to_initializer_list());
+			return node.replace_with(node.to_initializer_list());
 		}
 
 		// in case we are in return statement
 		if(node.parent->get_node_type() == NodeType::Return) {
-			node.replace_with(node.to_initializer_list());
+			return node.replace_with(node.to_initializer_list());
 		}
 
 		return &node;

@@ -250,7 +250,7 @@ private:
 		// lower nd arrays to arrays
 		node_function_def->accept(*this);
 		node_function_def->header->create_function_type(TypeRegistry::Void);
-		node_function_def->ty = node_function_def->header->ty;
+		node_function_def->ty = TypeRegistry::Void;
 		program->additional_function_definitions.push_back(std::move(node_function_def));
 		// update function lookup so that the new function can be found
 		program->update_function_lookup();

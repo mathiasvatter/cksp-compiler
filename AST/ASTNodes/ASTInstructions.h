@@ -36,7 +36,7 @@ struct NodeStatement: NodeInstruction {
 };
 
 struct NodeFunctionCall : NodeInstruction {
-    enum Kind{Property, Builtin, UserDefined, Undefined, Method, Constructor};
+    enum Kind{Property, Builtin, UserDefined, Undefined, Method, Constructor, Operator};
     Kind kind = Undefined;
     bool is_call = false;
 	bool is_new = false;
@@ -72,6 +72,107 @@ struct NodeFunctionCall : NodeInstruction {
 	[[nodiscard]] bool is_string_env();
 
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+};
+
+struct NodeDelete : NodeInstruction {
+	// nodeAST because it can also be a FunctionCall
+	std::vector<std::unique_ptr<NodeAST>> ptrs;
+	inline explicit NodeDelete(Token tok) : NodeInstruction(NodeType::Delete, std::move(tok)) {}
+	NodeDelete(std::vector<std::unique_ptr<NodeAST>> delete_pointer, Token tok)
+		: NodeInstruction(NodeType::Delete, std::move(tok)), ptrs(std::move(delete_pointer)) {
+		set_child_parents();
+	}
+	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	// Copy Constructor
+	NodeDelete(const NodeDelete& other);
+	// Clone Method
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		for(auto &del : ptrs) {
+			del->update_parents(this);
+		}
+	}
+	void set_child_parents() override {
+		for(auto& del : ptrs) {
+			if(del) del->parent = this;
+		}
+	};
+	std::string get_string() override {
+		std::string del = "delete ";
+		for(auto &d : ptrs) {
+			del += d->get_string() + ", ";
+		}
+		return del;
+	}
+	void update_token_data(const Token& token) override {
+		for(auto &del : ptrs) {
+			del->update_token_data(token);
+		}
+	}
+	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+
+};
+
+struct NodeSingleDelete : NodeInstruction {
+	std::unique_ptr<NodeAST> ptr;
+	inline explicit NodeSingleDelete(Token tok) : NodeInstruction(NodeType::SingleDelete, std::move(tok)) {}
+	NodeSingleDelete(std::unique_ptr<NodeAST> ptr, Token tok)
+		: NodeInstruction(NodeType::SingleDelete, std::move(tok)), ptr(std::move(ptr)) {
+		set_child_parents();
+	}
+	NodeAST * accept(ASTVisitor &visitor) override;
+	// Copy Constructor
+	NodeSingleDelete(const NodeSingleDelete& other);
+	// Clone Method
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		ptr->update_parents(this);
+	}
+	void set_child_parents() override {
+		ptr->parent = this;
+	};
+	std::string get_string() override {
+		return "delete " + ptr->get_string();
+	}
+	void update_token_data(const Token& token) override {
+		ptr->update_token_data(token);
+	}
+};
+
+/// Node to retain a single pointer
+/// only used internally in AST
+struct NodeSingleRetain : NodeInstruction {
+	std::unique_ptr<NodeAST> ptr;
+	std::unique_ptr<NodeAST> num; // number of times to retain
+	inline explicit NodeSingleRetain(Token tok) : NodeInstruction(NodeType::SingleRetain, std::move(tok)) {}
+	NodeSingleRetain(std::unique_ptr<NodeAST> ptr, Token tok)
+		: NodeInstruction(NodeType::SingleRetain, std::move(tok)), ptr(std::move(ptr)) {
+		set_child_parents();
+	}
+	NodeAST * accept(ASTVisitor &visitor) override;
+	// Copy Constructor
+	NodeSingleRetain(const NodeSingleRetain& other);
+	// Clone Method
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		ptr->update_parents(this);
+		num->update_parents(this);
+	}
+	void set_child_parents() override {
+		ptr->parent = this;
+		num->parent = this;
+	};
+	std::string get_string() override {
+		return "delete " + ptr->get_string() + ", " + num->get_string();
+	}
+	void update_token_data(const Token& token) override {
+		ptr->update_token_data(token);
+		num->update_token_data(token);
+	}
 };
 
 struct NodeAssignment: NodeInstruction {
@@ -110,6 +211,8 @@ struct NodeAssignment: NodeInstruction {
 struct NodeSingleAssignment : NodeInstruction {
     std::unique_ptr<NodeAST> l_value;
     std::unique_ptr<NodeAST> r_value;
+	std::unique_ptr<NodeSingleDelete> delete_stmt = nullptr;
+	std::unique_ptr<NodeSingleRetain> retain_stmt = nullptr;
     inline explicit NodeSingleAssignment(Token tok) : NodeInstruction(NodeType::SingleAssignment, std::move(tok)) {}
     NodeSingleAssignment(std::unique_ptr<NodeAST> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
             : NodeInstruction(NodeType::SingleAssignment, std::move(tok)), l_value(std::move(arrayVariable)), r_value(std::move(assignee)) {
@@ -123,19 +226,25 @@ struct NodeSingleAssignment : NodeInstruction {
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
+		if(delete_stmt) delete_stmt->update_parents(this);
         l_value->update_parents(this);
         r_value->update_parents(this);
+		if(retain_stmt) retain_stmt->update_parents(this);
     }
     void set_child_parents() override {
+		if(delete_stmt) delete_stmt->parent = this;
         if(l_value) l_value->parent = this;
         if(r_value) r_value->parent = this;
+		if(retain_stmt) retain_stmt->parent = this;
     };
     std::string get_string() override {
         return l_value->get_string() + " := " + r_value->get_string();
     }
     void update_token_data(const Token& token) override {
+		if(delete_stmt) delete_stmt->update_token_data(token);
         l_value -> update_token_data(token);
         r_value -> update_token_data(token);
+		if(retain_stmt) retain_stmt ->update_token_data(token);
     }
     ASTLowering* get_lowering(struct NodeProgram *program) const override;
 
@@ -180,6 +289,7 @@ struct NodeDeclaration : NodeInstruction {
 struct NodeSingleDeclaration : NodeInstruction {
     std::unique_ptr<NodeDataStructure> variable;
     std::unique_ptr<NodeAST> value;
+	std::unique_ptr<NodeSingleRetain> retain_stmt = nullptr;
 	bool is_promoted = false;
     inline explicit NodeSingleDeclaration(Token tok) : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)) {}
     NodeSingleDeclaration(std::unique_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
@@ -196,10 +306,12 @@ struct NodeSingleDeclaration : NodeInstruction {
         parent = new_parent;
         variable->update_parents(this);
         if(value) value->update_parents(this);
+		if(retain_stmt) retain_stmt->update_parents(this);
     }
     void set_child_parents() override {
         if(variable) variable->parent = this;
         if(value) value->parent = this;
+		if(retain_stmt) retain_stmt->parent = this;
     };
     std::string get_string() override {
         auto string = variable->get_string();
@@ -210,6 +322,7 @@ struct NodeSingleDeclaration : NodeInstruction {
     void update_token_data(const Token& token) override {
         variable -> update_token_data(token);
         if(value) value -> update_token_data(token);
+		if(retain_stmt) retain_stmt -> update_token_data(token);
     }
     ASTLowering* get_lowering(struct NodeProgram *program) const override;
     /// returns new assign statement with the declared variable and r_value or neutral element. Can optionally take new
@@ -282,103 +395,6 @@ struct NodeSingleReturn : NodeInstruction {
 	};
 	void update_token_data(const Token& token) override {
 		return_variable->update_token_data(token);
-	}
-};
-
-struct NodeDelete : NodeInstruction {
-	// nodeAST because it can also be a FunctionCall
-	std::vector<std::unique_ptr<NodeAST>> ptrs;
-	inline explicit NodeDelete(Token tok) : NodeInstruction(NodeType::Delete, std::move(tok)) {}
-	NodeDelete(std::vector<std::unique_ptr<NodeAST>> delete_pointer, Token tok)
-		: NodeInstruction(NodeType::Delete, std::move(tok)), ptrs(std::move(delete_pointer)) {
-		set_child_parents();
-	}
-	NodeAST * accept(struct ASTVisitor &visitor) override;
-	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
-	// Copy Constructor
-	NodeDelete(const NodeDelete& other);
-	// Clone Method
-	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-	void update_parents(NodeAST* new_parent) override {
-		parent = new_parent;
-		for(auto &del : ptrs) {
-			del->update_parents(this);
-		}
-	}
-	void set_child_parents() override {
-		for(auto& del : ptrs) {
-			if(del) del->parent = this;
-		}
-	};
-	std::string get_string() override {
-		std::string del = "delete ";
-		for(auto &d : ptrs) {
-			del += d->get_string() + ", ";
-		}
-		return del;
-	}
-	void update_token_data(const Token& token) override {
-		for(auto &del : ptrs) {
-			del->update_token_data(token);
-		}
-	}
-	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
-
-};
-
-struct NodeSingleDelete : NodeInstruction {
-	std::unique_ptr<NodeAST> ptr;
-	inline explicit NodeSingleDelete(Token tok) : NodeInstruction(NodeType::SingleDelete, std::move(tok)) {}
-	NodeSingleDelete(std::unique_ptr<NodeAST> ptr, Token tok)
-	: NodeInstruction(NodeType::SingleDelete, std::move(tok)), ptr(std::move(ptr)) {
-		set_child_parents();
-	}
-	NodeAST * accept(ASTVisitor &visitor) override;
-	// Copy Constructor
-	NodeSingleDelete(const NodeSingleDelete& other);
-	// Clone Method
-	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-	void update_parents(NodeAST* new_parent) override {
-		parent = new_parent;
-		ptr->update_parents(this);
-	}
-	void set_child_parents() override {
-		ptr->parent = this;
-	};
-	std::string get_string() override {
-		return "delete " + ptr->get_string();
-	}
-	void update_token_data(const Token& token) override {
-		ptr->update_token_data(token);
-	}
-};
-
-/// Node to retain a single pointer
-/// only used internally in AST
-struct NodeSingleRetain : NodeInstruction {
-	std::unique_ptr<NodeAST> ptr;
-	inline explicit NodeSingleRetain(Token tok) : NodeInstruction(NodeType::SingleRetain, std::move(tok)) {}
-	NodeSingleRetain(std::unique_ptr<NodeAST> ptr, Token tok)
-	: NodeInstruction(NodeType::SingleRetain, std::move(tok)), ptr(std::move(ptr)) {
-		set_child_parents();
-	}
-	NodeAST * accept(ASTVisitor &visitor) override;
-	// Copy Constructor
-	NodeSingleRetain(const NodeSingleRetain& other);
-	// Clone Method
-	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-	void update_parents(NodeAST* new_parent) override {
-		parent = new_parent;
-		ptr->update_parents(this);
-	}
-	void set_child_parents() override {
-		ptr->parent = this;
-	};
-	std::string get_string() override {
-		return "delete " + ptr->get_string();
-	}
-	void update_token_data(const Token& token) override {
-		ptr->update_token_data(token);
 	}
 };
 
@@ -636,6 +652,8 @@ struct NodeWhile : NodeInstruction {
         condition -> update_token_data(token);
         body->update_token_data(token);
     }
+	ASTLowering* get_lowering(struct NodeProgram *program) const override;
+
 };
 
 struct NodeSelect : NodeInstruction {
@@ -679,4 +697,29 @@ struct NodeSelect : NodeInstruction {
             pair.second->update_token_data(token);
         }
     }
+};
+
+struct NodeBreak : NodeInstruction {
+	inline explicit NodeBreak(Token tok) : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)) {}
+	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeBreak(const NodeBreak& other);
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+	}
+	std::string get_string() override {
+		return "break";
+	}
+	NodeWhile* get_nearest_loop() {
+		NodeAST* loop = parent;
+		while(loop and loop->get_node_type() != NodeType::While) {
+			loop = loop->parent;
+		}
+		if(!loop) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+			error.m_message = "<Break> statement outside of loop. The <break> keyword can only be used inside a for- or while-loop.";
+			error.exit();
+		}
+		return static_cast<NodeWhile*>(loop);
+	}
 };
