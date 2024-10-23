@@ -136,12 +136,12 @@ public:
 		// add constructor type
 		if(node.header->name == "__init__") {
 			auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
-//			if(node.ty != TypeRegistry::Unknown and node.ty != TypeRegistry::get_object_type(m_structs.top()->name)) {
-//				error.m_message = "Constructor method has to be of object type.";
-//				error.m_got = node.ty->to_string();
-//				error.m_expected = m_structs.top()->name;
-//				error.exit();
-//			}
+			if(node.ty != TypeRegistry::Unknown and node.ty != TypeRegistry::get_object_type(m_structs.top()->name)) {
+				error.m_message = "Constructor method has to be of object type.";
+				error.m_got = node.ty->to_string();
+				error.m_expected = m_structs.top()->name;
+				error.exit();
+			}
 			m_structs.top()->constructor = &node;
 			if(node.num_return_params > 0) {
 				error.m_message = "Constructor method cannot have return values.";
@@ -149,7 +149,7 @@ public:
 			}
 			node.num_return_params = 1;
 			node.header->create_function_type(TypeRegistry::add_object_type(m_structs.top()->name));
-			node.ty = node.header->ty;
+			node.ty = TypeRegistry::add_object_type(m_structs.top()->name);
 			// delete "self" keyword
 			node.header->args->params.erase(node.header->args->params.begin());
 		}
@@ -166,7 +166,7 @@ public:
 			}
 			node.num_return_params = 1;
 			node.header->create_function_type(TypeRegistry::String);
-			node.ty = node.header->ty;
+			node.ty = TypeRegistry::String;
 		}
 
 		// check if method is operator overload

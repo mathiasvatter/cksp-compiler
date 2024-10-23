@@ -127,7 +127,6 @@ void Compiler::compile() {
 	compile_time.stop("Type Checking");
 	std::cout << compile_time.print_timer("Type Checking") << std::endl;
 	compile_time.start("Lowering");
-	ast->debug_print();
 
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
@@ -143,6 +142,7 @@ void Compiler::compile() {
 	ast->accept(return_function_rewriting);
 	ASTInitializerFunctionInlining initializer_inlining(&m_definition_provider);
 	ast->accept(initializer_inlining);
+//	ast->debug_print();
 
 	compile_time.stop("Return Function Rewriting");
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;

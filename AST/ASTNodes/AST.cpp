@@ -17,6 +17,7 @@
 #include "../../Optimization/VarExistsValidator.h"
 #include "../../Optimization/TokenCounter.h"
 #include "../../Desugaring/DesugarParamList.h"
+#include "../../Desugaring/DesugarBinaryExpr.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -597,6 +598,11 @@ NodeAST *NodeBinaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 	return nullptr;
 }
 
+ASTDesugaring *NodeBinaryExpr::get_desugaring(NodeProgram *program) const {
+	static DesugarBinaryExpr desugaring(program);
+	return &desugaring;
+}
+
 // ************* NodeCallback ***************
 NodeCallback::NodeCallback(Token tok) : NodeAST(std::move(tok), NodeType::Callback) {}
 NodeCallback::NodeCallback(std::string begin_callback, std::unique_ptr<NodeBlock> statements, std::string end_callback, Token tok)
@@ -789,6 +795,12 @@ void NodeProgram::update_function_lookup() {
 	}
 	for(const auto & def : additional_function_definitions) {
 		function_lookup.insert({{def->header->name, (int)def->header->args->params.size()}, def.get()});
+	}
+	// add all struct methods to the lookup
+	for(const auto & struct_def : struct_definitions) {
+		for(const auto & method : struct_def->methods) {
+			function_lookup.insert({{method->header->name, (int)method->header->args->params.size()}, method.get()});
+		}
 	}
 }
 

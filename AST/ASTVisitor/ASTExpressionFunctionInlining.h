@@ -32,20 +32,21 @@ public:
 		}
 		node.reset_function_visited_flag();
 		/// vector to house only the definitions that are actually used in the program
-		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
-		for(auto & func_def : node.function_definitions) {
-			if(func_def->is_used) {
-				final_function_definitions.push_back(std::move(func_def));
-			}
-		}
-		node.function_definitions = std::move(final_function_definitions);
-		node.reset_function_used_flag();
+//		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
+//		for(auto & func_def : node.function_definitions) {
+//			if(func_def->is_used) {
+//				final_function_definitions.push_back(std::move(func_def));
+//			}
+//		}
+//		node.function_definitions = std::move(final_function_definitions);
+//		node.reset_function_used_flag();
+
 //		for(auto & func_def : node.function_definitions) {
 //			for(auto & call : func_def->call_sites) {
 //				call->definition = func_def.get();
 //			}
 //		}
-		node.update_function_lookup();
+//		node.update_function_lookup();
 		return &node;
 	}
 

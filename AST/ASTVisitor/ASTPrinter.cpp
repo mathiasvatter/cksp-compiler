@@ -29,6 +29,11 @@ NodeAST * ASTPrinter::visit(NodeWildcard &node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeBreak& node) {
+	os << "break";
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeReturn& node) {
 	os << "return (";
 	for(auto &ret : node.return_variables) {
@@ -409,8 +414,10 @@ NodeAST * ASTPrinter::visit(NodeFunctionCall &node) {
 NodeAST * ASTPrinter::visit(NodeFunctionDefinition &node) {
     os << get_indent() << "function ";
     node.header ->accept(*this);
-	if(node.ty->get_type_kind() == TypeKind::Function)
+	if(node.ty->get_type_kind() == TypeKind::Function) {
 		os << " : " << static_cast<FunctionType*>(node.ty)->get_return_type()->to_string();
+	}
+
     if (node.return_variable.has_value()) {
         os << " -> ";
         node.return_variable.value()->accept(*this);

@@ -510,6 +510,7 @@ struct NodeBinaryExpr: NodeAST {
 		// Kombiniere das aktuelle Element mit der rechten Seite in einer NodeBinaryExpr.
 		return std::make_unique<NodeBinaryExpr>(op, nodes[index]->clone(), std::move(right), Token());
 	}
+	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 };
 
 struct NodeCallback: NodeAST {

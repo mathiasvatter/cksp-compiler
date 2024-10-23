@@ -1,0 +1,42 @@
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering cksp
+--------------------------------------------------------------------------------------------}
+
+function scoped_func2()
+    declare i: int // <- ist das ganze scope über sichtbar, wird nie zu passiver Variable
+    message(i)
+    if(i = 1)
+        declare arr[5] := (1,2,3,4) // <- turns into passive var as soon as scope is left
+        declare j: int // <- turns into passive var as soon as scope is left
+        declare k: int // <- turns into passive var as soon as scope is left
+        message(j & k & arr[3])
+    end if
+    if(i = 2)
+        declare h: int // <- will be replaced by passive var
+        declare g: int // <- will be replaced by passive var
+        message(h & g)
+    end if
+end function
+
+{-------------------------------------------------------------------------------------------
+										Post Lowering
+--------------------------------------------------------------------------------------------}
+
+function scoped_func2(loc_0 : int, loc_1 : int[], loc_2 : int, loc_3 : int)
+    loc_0 := 0
+    message(loc_0)
+    if(loc_0 = 1)
+        loc_1 := (1, 2, 3, 4) // <- so direkt in KSP nicht möglich
+        loc_2 := 0
+        loc_3 := 0
+        message(loc_2 & loc_3 & loc_1[3])
+    end if
+    if(loc_0 = 2)
+        loc_2 := 0
+        loc_3 := 0
+        message(loc_2 & loc_3)
+    end if
+end function
+
+

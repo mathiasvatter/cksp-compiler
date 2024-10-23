@@ -68,9 +68,11 @@ on init
 	declare lists[10]: List[] := (nil)
 	for idx, ls in lists
 		ls := List(idx, ls)
+		if(idx = 5)
+			break
+		end if
 		message(ls.next)
 	end for
-
 	// btn_1, _ := return_twice()
 
 	if(return_twice() = 1)
@@ -101,7 +103,7 @@ end function
 
 function return_once()
 	declare a := 2
-	return a
+	return 2 >> a
 end function
 
 function return_twice()
@@ -136,6 +138,7 @@ end function
 {*******************************************************************************************************************
 											* UI CALLBACKS *
 *******************************************************************************************************************}
+
 
 
 {*******************************************************************************************************************

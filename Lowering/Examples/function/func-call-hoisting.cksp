@@ -20,6 +20,11 @@ function array_true(array: int[])
     return t
 end function
 
+{
+Problem: wenn eine expression-only function inlined wird und als parameter längere funktionen
+inne hat, dann wird diese längere funktion mehrmals ausgeführt!!
+}
+
 
 {-------------------------------------------------------------------------------------------
                                         Post Lowering

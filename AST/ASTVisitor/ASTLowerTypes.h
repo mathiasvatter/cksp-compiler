@@ -64,6 +64,18 @@ public:
 		}
 		return &node;
 	}
+	inline NodeAST * visit(NodeFunctionHeader& node) override {
+		if(node.args) node.args->accept(*this);
+		if(node.ty->get_type_kind() == TypeKind::Function) {
+			auto function_type = static_cast<FunctionType *>(node.ty);
+			auto return_type = function_type->get_return_type();
+			if (return_type->get_type_kind() == TypeKind::Object) {
+				return_type = TypeRegistry::Integer;
+			}
+			node.create_function_type(return_type);
+		}
+		return &node;
+	}
 
 private:
 	DefinitionProvider* m_def_provider;

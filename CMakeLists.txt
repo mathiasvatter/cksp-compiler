@@ -179,4 +179,6 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTReferenceCounting.h
         Desugaring/DesugarParamList.h
         AST/ASTVisitor/ASTInitializerFunctionInlining.h
+        Desugaring/DesugarBinaryExpr.h
+        Lowering/LoweringWhile.h
 )

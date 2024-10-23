@@ -215,7 +215,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
             func_name
             );
 	node_function->visited = true;
-    node_function->ty = node_function->header->ty;
+    node_function->ty = ret_type;
 	node_function->is_thread_safe = is_threadsafe_function(node_function->header->name);
 	node_function->is_restricted = is_restricted_function(node_function->header->name);
 	node_function->num_return_params = num_return_vars;

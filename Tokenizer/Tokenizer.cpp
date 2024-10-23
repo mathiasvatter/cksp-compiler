@@ -47,14 +47,16 @@ std::vector<Token> Tokenizer::tokenize() {
         } else if (peek() == '\n') {
             get_linebreak();
             fix_line_continuation();
-        } else if (contains(BINARY_OPERATORS, peek()) && peek(1) != '>') {
-            get_binary_operators();
         } else if (contains(PARENTH, peek())) {
             get_parenth();
         } else if (peek() == ':' && peek(1) == '=') {
             get_assignment();
         } else if (peek() == '-' && peek(1) == '>') {
             get_arrow();
+        } else if (contains(BINARY_OPERATORS, peek()) && peek(1) != '>') {
+			get_binary_operators();
+//		} else if(peek() == '=' and contains(BINARY_OPERATORS, peek(1))) {
+
         } else if (is_keyword_or_num()) {
             get_keyword_or_num();
         } else if (is_string()) {
@@ -198,13 +200,24 @@ void Tokenizer::get_binary_operators() {
     } else if (peek() == '/') {
         tok = token::DIV;
     } else if (peek() == '*') {
-        tok = token::MULT;
+		if(peek(1) == '*') {
+			consume();
+			tok = token::EXP;
+		} else {
+        	tok = token::MULT;
+		}
     } else if (peek() == '&') {
         tok = token::STRING_OP;
     }
 	consume();
     m_tokens.emplace_back(tok, m_buffer, m_line, m_line_pos-m_buffer.length(), m_current_file);
     skip_whitespace();
+}
+
+void Tokenizer::get_compound_assignment_operators() {
+	flush_buffer();
+	token tok;
+
 }
 
 void Tokenizer::get_parenth() {

@@ -1,0 +1,45 @@
+// wenn ein nicht thread safer callback eintritt
+// -> inflate dimensions
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering cksp
+--------------------------------------------------------------------------------------------}
+
+on ui_controls()
+    declare i: int 
+    message(i)
+    if(i = 1)
+        declare arr[5] := (1,2,3,4) 
+        declare j: int 
+        declare k: int 
+        message(j & k & arr[3])
+    end if
+    if(i = 2)
+        declare h: int 
+        declare g: int 
+        message(h & g)
+    end if 
+end on
+
+{-------------------------------------------------------------------------------------------
+										Post Lowering
+--------------------------------------------------------------------------------------------}
+
+declare const MAX_CB_STACK := 1000
+declare CB_IDX := NI_CALLBACK_ID mod MAX_CB_STACK
+on ui_controls()
+    declare i[MAX_CB_STACK]: int 
+    message(i[CB_IDX])
+    if(i[CB_IDX] = 1)
+        declare arr[MAX_CB_STACK, 5] := (1,2,3,4) 
+        declare j[MAX_CB_STACK]: int 
+        declare k[MAX_CB_STACK]: int 
+        message(j[CB_IDX] & k[CB_IDX] & arr[CB_IDX, 3])
+    end if
+    if(i[CB_IDX] = 2)
+        declare h[MAX_CB_STACK]: int 
+        declare g[MAX_CB_STACK]: int 
+        message(h[CB_IDX] & g[CB_IDX])
+    end if 
+end on
+
