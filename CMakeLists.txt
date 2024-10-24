@@ -151,7 +151,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTLowerTypes.h
         Lowering/LoweringNil.h
         Optimization/FunctionCallHoisting.h
-        Lowering/LoweringFunctionDef.h
+        AST/ASTVisitor/ASTReturnParamPromotion.h
         AST/ASTVisitor/ASTDataStructureLowering.h
         AST/ASTVisitor/ASTReturnFunctionRewriting.h
         Lowering/NDArrayCopyFunction.h
@@ -181,4 +181,5 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTInitializerFunctionInlining.h
         Desugaring/DesugarBinaryExpr.h
         Lowering/LoweringWhile.h
+        Lowering/LoweringFunctionDef.h
 )

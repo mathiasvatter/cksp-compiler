@@ -32,9 +32,6 @@ void TypeInference::cast_data_structure_types(DefinitionProvider* def_provider, 
 //	std::cout << "TypeInference::match_reference_declaration" << std::endl;
 	for(auto& refs : def_provider->m_references_per_data_structure) {
 //		std::cout << refs.first->name << std::endl;
-//		if(refs.first->name == "UI_array") {
-//
-//		}
 		for(auto & ref : refs.second) {
 			match_reference_declaration(ref);
 		}
@@ -463,7 +460,13 @@ NodeAST * TypeInference::visit(NodeInitializerList& node) {
 			if(assign->l_value->ty->get_type_kind() != TypeKind::Composite) {
 				return node.replace_with(std::move(node.elem(0)))->accept(*this);
 			}
+		} else if(node.parent->get_node_type() == NodeType::Return) {
+			auto ret = static_cast<NodeReturn*>(node.parent);
+			if(ret->definition and ret->definition->ty->get_type_kind() != TypeKind::Composite) {
+				return node.replace_with(std::move(node.elem(0)))->accept(*this);
+			}
 		}
+
 	}
 
 	std::vector<Type*> types;
@@ -593,7 +596,6 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.function->name << ", " << node.tok.line << std::endl;
-
 	node.get_definition(m_program);
 	node.function->accept(*this);
 	if(!node.definition) {
@@ -614,29 +616,11 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			const std::string error_message =
 				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
 					+ param->ty->to_string() + " as argument type.";
-//			if(func_arg->get_node_type() == NodeType::ParamList and param->ty->get_type_kind() == TypeKind::Composite) {
-//				func_arg->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(param->ty)->get_compound_type(), func_arg->ty->get_element_type(), param->ty->get_dimensions());
-//			} else if(func_arg->get_node_type() == NodeType::ParamList) {
-//				auto param_list = cast_node<NodeParamList>(func_arg.get());
-//				param_list->flatten();
-//				if(param_list->params.size() == 1) {
-//					func_arg = std::move(param_list->params[0]);
-//					func_arg->parent = &node;
-//				} else {
-//					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-//					error.m_message = "Detected <array initializer> in function call. This is not yet allowed.";
-//					error.exit();
-//				}
-//			}
 			match_type(func_arg.get(), param.get(), error_message);
 		}
 	}
-//	match_type(&node, node.definition);
 	if(node.definition) {
-		if (!node.ty->is_compatible(node.definition->ty)) {
-			throw_type_error(&node, node.definition).exit();
-		}
-		node.set_element_type(specialize_type(node.ty, node.definition->ty));
+		match_type(&node, node.definition);
 	}
 	return &node;
 }
@@ -661,47 +645,38 @@ NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
 
 	// add data structures to provider
 	m_def_provider->add_to_data_structures(node.header.get());
-
     node.header->accept(*this);
     if(node.return_variable.has_value()) {
 		node.return_variable.value()->accept(*this);
 	}
-//	update_function_type(node.header.get(), node.return_variable.has_value() ? node.return_variable.value().get()->ty : TypeRegistry::Unknown);
     node.body->accept(*this);
-    // get possible return type of node.definition by looking at the return param
-//	node.header->create_function_type(node.return_variable.has_value() ? node.return_variable.value().get()->ty : TypeRegistry::Unknown);
-//	match_type(&node, node.header.get());
+	node.header->accept(*this);
+
+
 	auto header_type = static_cast<FunctionType*>(node.header->ty);
-//	auto function_type = static_cast<FunctionType*>(node.ty);
-//	header_type->m_return_type = function_type->m_return_type;
-
-//	if(node.ty == TypeRegistry::Unknown) {
-//		node.ty = header_type->get_return_type();
-//	} else {
-//		header_type->m_return_type = node.ty;
-//	}
-
-//	if (!node.ty->is_compatible(header_type->get_return_type())) {
-//		throw_type_error(&node, node.header.get()).exit();
-//	}
 	node.set_element_type(specialize_type(node.ty, header_type->get_return_type()));
-	header_type->m_return_type = node.ty;
+	node.header->ty = TypeRegistry::add_function_type(header_type->get_params(), node.ty);
 
-//    if(node.return_variable.has_value()) {
-//		match_type(node.header.get(), node.return_variable.value().get());
-//	}
+	// try to update def type with return var type
+	if(node.return_variable.has_value()) {
+		match_type(&node, node.return_variable.value().get());
+	}
 	m_program->function_call_stack.pop();
 	return &node;
 }
 
 NodeAST * TypeInference::visit(NodeReturn& node) {
+	if(!node.definition) node.definition = m_program->function_call_stack.top();
 	for(auto &ret : node.return_variables) {
 		ret->accept(*this);
 	}
-	if(!node.definition) node.definition = m_program->function_call_stack.top();
 	if(!node.return_variables.empty() ) {
 		if(node.definition)
 			match_type(node.definition, node.return_variables[0].get());
+	}
+	// a second time to get the new types to the declaration pointer!
+	for(auto &ret : node.return_variables) {
+		ret->accept(*this);
 	}
 	return &node;
 }
