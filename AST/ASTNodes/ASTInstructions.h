@@ -441,7 +441,7 @@ struct NodeBlock : NodeInstruction {
 	// Variadischer Template-Konstruktor
 	template<typename... Stmts>
 	inline explicit NodeBlock(Token tok, Stmts&&... stmts) : NodeInstruction(NodeType::Block, std::move(tok)) {
-		(statements.push_back(std::move(stmts)), ...);
+		(statements.push_back(std::forward<Stmts>(stmts)), ...);
 		set_child_parents();
 	}
     NodeAST * accept(struct ASTVisitor &visitor) override;

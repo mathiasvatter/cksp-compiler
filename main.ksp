@@ -86,6 +86,7 @@ on init
 	message(get_sth_more)
 
 	declare ndarray[10,10]
+	message(search_matrix(ndarray, 3))
 	// ndarray[10, *], _ := return_twice()
 	ndarray[2, *] := (1,2,3,4)
 
@@ -132,6 +133,19 @@ end function
 function pupu(msg: (int, string): void)
 	message("pupu")
 	msg(3, "pipi")
+end function
+
+function search_matrix(matrix: int[][], target: int)
+    declare row, col: int
+    for row := 0 to matrix.SIZE_D1 - 1
+        for col := 0 to matrix.SIZE_D2 - 1
+            if matrix[row,col] = target
+                return (row * 10) + col
+            end if
+        end for
+    end for
+
+    return -1  // If the target is not found
 end function
 
 

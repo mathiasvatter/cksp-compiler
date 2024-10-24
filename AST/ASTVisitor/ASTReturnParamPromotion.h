@@ -11,32 +11,33 @@
 class ASTReturnParamPromotion : public ASTVisitor {
 private:
 	DefinitionProvider* m_def_provider;
-	std::stack<NodeFunctionDefinition*> m_functions_visited;
+	NodeFunctionDefinition* m_current_function = nullptr;
 public:
 	explicit ASTReturnParamPromotion(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {};
 
 	inline NodeAST* visit(NodeFunctionDefinition &node) override {
-		m_functions_visited.push(&node);
+		m_current_function = &node;
 		if(node.return_variable.has_value()) {
 			node.num_return_params = 1;
 			node.return_variable.value()->data_type = DataType::Return;
 			node.header->args->prepend_param(std::move(node.return_variable.value()));
 			node.return_variable.reset();
 		}
+		m_current_function->return_stmts.clear();
 		node.body->accept(*this);
-		m_functions_visited.pop();
+		m_current_function = nullptr;
 		return &node;
 	};
 
 	inline NodeAST* visit(NodeReturn &node) override {
-		if(node.return_variables.size() != m_functions_visited.top()->num_return_params) {
+		if(node.return_variables.size() != m_current_function->num_return_params) {
 			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 			error.m_message = "Return Statement has incorrect number of return values.";
-			error.m_expected = std::to_string(m_functions_visited.top()->num_return_params);
+			error.m_expected = std::to_string(m_current_function->num_return_params);
 			error.m_got = std::to_string(node.return_variables.size());
 			error.exit();
 		}
-
+		m_current_function->return_stmts.push_back(&node);
 		// parameter promotion of return parameters
 		// replace parameter placeholders instantiated in Desugaring with copies of return values when references
 		auto block_replace = std::make_unique<NodeBlock>(Token());
@@ -112,11 +113,14 @@ public:
 			new_param_ref->ty = node_return->ty;
 			new_param_ref->data_type = DataType::Param;
 			// replace param in function header in case more than 1 return param
-			if(i>0) {
-				m_functions_visited.top()->header->args->params[i]->replace_with(std::move(new_param));
-			// add them to front in case i = 0
-			} else {
-				m_functions_visited.top()->header->args->prepend_param(std::move(new_param));
+			// when multiple return statements -> add only return params for the first one
+			if(&node == m_current_function->return_stmts[0]) {
+				if (i > 0) {
+					m_current_function->header->args->params[i]->replace_with(std::move(new_param));
+					// add them to front in case i = 0
+				} else {
+					m_current_function->header->args->prepend_param(std::move(new_param));
+				}
 			}
 			auto node_assignment = std::make_unique<NodeSingleAssignment>(std::move(new_param_ref), std::move(node.return_variables[i]), node.tok);
 			block_replace->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));

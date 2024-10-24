@@ -78,7 +78,15 @@ public:
 
 		auto block = std::make_unique<NodeBlock>(node.tok);
 		block->add_stmt(std::make_unique<NodeStatement>(std::move(exit_flag_decl), node.tok));
-		block->add_stmt(std::make_unique<NodeStatement>(node.clone(), node.tok));
+		block->add_stmt(std::make_unique<NodeStatement>(
+			std::make_unique<NodeWhile>(
+				std::move(node.condition),
+				std::move(node.body),
+				node.tok
+			),
+			node.tok
+			)
+		);
 		return node.replace_with(std::move(block));
 	}
 
@@ -103,6 +111,7 @@ public:
 			),
 			node.tok
 		);
+		continue_call->function->header->has_forced_parenth = false;
 		auto block = std::make_unique<NodeBlock>(node.tok);
 		block->add_stmt(std::make_unique<NodeStatement>(std::move(exit_flag_assign), node.tok));
 		block->add_stmt(std::make_unique<NodeStatement>(std::move(continue_call), node.tok));
