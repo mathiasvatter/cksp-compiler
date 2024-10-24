@@ -1,9 +1,12 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Thu Oct 24 16:08:45 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Thu Oct 24 21:51:30 2024 }
 on init
-  declare $loc_1
-  declare $loc_3
-  declare %loc_0[3]
   declare $loc_2
+  declare $loc_0
+  declare %loc_3[3]
+  declare $loc_4
+  declare $loc_6
+  declare $loc_1
+  declare $loc_5
   declare $Note__free_idx := 0
   declare %Note__allocation[100000]
   declare $Point__free_idx := 0
@@ -18,14 +21,14 @@ on init
     message("Error: No more free space available to allocate objects of type 'Note'")
   end if
   %Note__allocation[$Note__free_idx] := 1
-  $loc_2 := 0
-  $loc_3 := 0
-  while($loc_3 <= 99999) 
-    $loc_2 := 0
-    while($loc_2 <= 1) 
-      inc($loc_2)
+  $loc_5 := 0
+  $loc_6 := 0
+  while($loc_6 <= 99999) 
+    $loc_5 := 0
+    while($loc_5 <= 1) 
+      inc($loc_5)
     end while
-    inc($loc_3)
+    inc($loc_6)
   end while
   $List__free_idx := search(%List__allocation, 0)
   if($List__free_idx = -1)
@@ -43,40 +46,73 @@ on init
   $ptr := $List__free_idx
   message("<List> Object: " & %List__next[%List__next[$ptr]])
   declare %lists[10] := (-1)
-  declare $loc_8
-  $loc_8 := 0
-  declare $loc_9
-  while(($loc_8 <= (num_elements(%lists) - 1)) and ($loc_9 = 0)) 
+  declare $loc_11
+  $loc_11 := 0
+  declare $loc_12
+  while(($loc_11 <= (num_elements(%lists) - 1)) and ($loc_12 = 0)) 
     $List__free_idx := search(%List__allocation, 0)
     if($List__free_idx = -1)
       message("Error: No more free space available to allocate objects of type 'List'")
     end if
     %List__allocation[$List__free_idx] := 1
     %List__next[$List__free_idx] := 
-    %lists[$loc_8] := $List__free_idx
-    if($loc_8 = 5)
-      $loc_9 := 1
+    %lists[$loc_11] := $List__free_idx
+    if($loc_11 = 5)
+      $loc_12 := 1
       continue
     else
-      $loc_9 := 1
+      $loc_12 := 1
       continue
     end if
-    message("<List> Object: " & %List__next[%lists[$loc_8]])
-    inc($loc_8)
+    message("<List> Object: " & %List__next[%lists[$loc_11]])
+    inc($loc_11)
   end while
   declare %tag_mask_array[3]
   declare %tagmask[2]
   %tag_mask_array[0] := sh_right(%tagmask[0], 31) .and. 1
   message(%tag_mask_array[0])
-  %loc_0[0] := 42
-  %loc_0[1] := 43
-  %loc_0[2] := 44
-  $loc_1 := 0
-  while($loc_1 < num_elements(%loc_0)) 
-    inc($loc_1)
+  %loc_3[0] := 42
+  %loc_3[1] := 43
+  %loc_3[2] := 44
+  $loc_4 := 0
+  while($loc_4 < num_elements(%loc_3)) 
+    inc($loc_4)
   end while
   message("NDArray of type <int[][]>")
   message("Array of type <int[]>")
+  declare %_ndarray[100]
+  declare $_return7
+  $loc_0 := 0
+  while($loc_0 = 0) 
+    $loc_2 := 0
+    $loc_1 := 0
+    while(($loc_1 <= 9) and ($loc_0 = 0)) 
+      $loc_2 := 0
+      while(($loc_2 <= 9) and ($loc_0 = 0)) 
+        if(%_ndarray[($loc_1 * 10) + $loc_2] = 3)
+          $_return7 := ($loc_1 * 10) + $loc_2
+          $loc_0 := 1
+          continue
+        end if
+        inc($loc_2)
+      end while
+      if($loc_0 = 1)
+        continue
+      end if
+      inc($loc_1)
+    end while
+    if($loc_0 = 1)
+      continue
+    end if
+    $_return7 := -1
+    $loc_0 := 1
+    continue
+  end while
+  message($_return7)
+  %_ndarray[20] := 1
+  %_ndarray[21] := 2
+  %_ndarray[22] := 3
+  %_ndarray[23] := 4
   $Point__free_idx := search(%Point__allocation, 0)
   if($Point__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Point'")
@@ -91,14 +127,14 @@ on init
   %Point__allocation[$Point__free_idx] := 1
   %Point__x[$Point__free_idx] := 3
   %Point__y[$Point__free_idx] := 4
-  declare $_return3
+  declare $_return8
   %Point__x[] := %Point__x[] + %Point__x[]
   %Point__y[] := %Point__y[] + %Point__y[]
-  $_return3 := 
-  declare $_return4
+  $_return8 := 
+  declare $_return9
   %Point__x[] := %Point__x[] + %Point__x[]
   %Point__y[] := %Point__y[] + %Point__y[]
-  $_return4 := 
-  message("Point {X: " & %Point__x[$_return3] & ", Y: " & %Point__y[$_return4] & "}")
+  $_return9 := 
+  message("Point {X: " & %Point__x[$_return8] & ", Y: " & %Point__y[$_return9] & "}")
 end on
 

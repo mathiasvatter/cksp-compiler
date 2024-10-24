@@ -1,147 +1,223 @@
 Global Declarations:
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
-struct List
-	declare self : List
-	declare List::value : int
-	declare List::next : List
-
-	function List::__init__(value : int, next : unknown)
-		List::value{unknown} := value{unknown}
-		List::next{unknown} := next{unknown}
-	end function
-
-	function List::get_next_next_value(self : List)
-		return (self{unknown}.next{unknown}.next{unknown}.value{unknown})
-	end function
-
-	function List::__repr__(self : List)
-		return ("<List> Object: " & self{List})
-	end function
-
-end struct
-
-struct Point
-	declare self : Point
-	declare Point::x : int
-	declare Point::y : int
-
-	function Point::__init__(x : int, y : int)
-		Point::x{unknown} := x{unknown}
-		Point::y{unknown} := y{unknown}
-	end function
-
-	function Point::__repr__(self : Point)
-		return ("Point {X: " & Point::x{unknown} & ", Y: " & Point::y{unknown} & "}")
-	end function
-
-	function Point::__add__(self : Point, other : Point)
-		Point::x{unknown} := Point::x{unknown} + other{unknown}.x{unknown}
-		Point::y{unknown} := Point::y{unknown} + other{unknown}.y{unknown}
-		return (self{unknown})
-	end function
-
-end struct
-
-struct Note
-	declare self : Note
-	declare Note::pitch : int
-	declare Note::velocities[10] : int[]
-	declare Note::play_pos[2, 2] : int[][]
-
-	function Note::__init__(p : int, v : int[], pp : int[][])
-		Note::pitch{unknown} := p{unknown}
-		Note::velocities{unknown} := v{unknown}
-		Note::play_pos{unknown} := pp{unknown}
-	end function
-
-	function Note::__repr__(self : Note)
-		return ("Note {Pitch: " & Note::pitch{unknown} & "}")
-	end function
-
-	function Note::play(self : Note)
-		return (play_note(Note::pitch{unknown}, Note::velocities[0]{unknown}, Note::play_pos[1, 2]{unknown}, 0))
-	end function
-
-	function Note::get_velocities(self : Note)
-		return (Note::velocities{unknown})
-	end function
-
-end struct
-
 on init
+	declare const Note::MAX_STRUCTS : int := MAX_STRUCTS{unknown} / ((((2 * 2) + 10) + abs((2 * 2) - 10)) / 2)
+	declare Note::free_idx : int := 0
+	declare const Note::allocation.SIZE : int := Note::MAX_STRUCTS{int}
+	declare Note::allocation[Note::MAX_STRUCTS{int}] : int[]
+	declare const Note::pitch.SIZE : int := Note::MAX_STRUCTS{int}
+	declare Note::pitch[Note::MAX_STRUCTS{int}] : int[]
+	declare const Note::velocities.SIZE_D1 : int := Note::MAX_STRUCTS{int}
+	declare const Note::velocities.SIZE_D2 : int := 10
+	declare const _Note::velocities.SIZE : int := Note::MAX_STRUCTS{int} * 10
+	declare _Note::velocities[Note::MAX_STRUCTS{int} * 10] : int[]
+	declare const Note::play_pos.SIZE_D1 : int := Note::MAX_STRUCTS{int}
+	declare const Note::play_pos.SIZE_D2 : int := 2
+	declare const Note::play_pos.SIZE_D3 : int := 2
+	declare const _Note::play_pos.SIZE : int := Note::MAX_STRUCTS{int} * (2 * 2)
+	declare _Note::play_pos[Note::MAX_STRUCTS{int} * (2 * 2)] : int[]
+	declare const Point::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
+	declare Point::free_idx : int := 0
+	declare const Point::allocation.SIZE : int := Point::MAX_STRUCTS{int}
+	declare Point::allocation[Point::MAX_STRUCTS{int}] : int[]
+	declare const Point::x.SIZE : int := Point::MAX_STRUCTS{int}
+	declare Point::x[Point::MAX_STRUCTS{int}] : int[]
+	declare const Point::y.SIZE : int := Point::MAX_STRUCTS{int}
+	declare Point::y[Point::MAX_STRUCTS{int}] : int[]
+	declare const List::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
+	declare List::free_idx : int := 0
+	declare const List::allocation.SIZE : int := List::MAX_STRUCTS{int}
+	declare List::allocation[List::MAX_STRUCTS{int}] : int[]
+	declare const List::value.SIZE : int := List::MAX_STRUCTS{int}
+	declare List::value[List::MAX_STRUCTS{int}] : int[]
+	declare const List::next.SIZE : int := List::MAX_STRUCTS{int}
+	declare List::next[List::MAX_STRUCTS{int}] : int[] := - 1
 	declare _iter : int
-	declare first_note : unknown := Note(69, [3, 0], [10])
-	declare ptr : List := List(1, List(3, nil))
-	message(ptr{unknown}.next{unknown}.next{unknown})
-	declare lists[10] : List[] := [nil]
+	declare first_note : int
+	Note::free_idx{int} := search(Note::allocation{int[]}, 0)
+	if(Note::free_idx{int} = -1)
+		message("Error: No more free space available to allocate objects of type 'Note'")
+	end if
+	Note::allocation[Note::free_idx{int}]{int[]} := 1
+	Note::pitch[Note::free_idx{int}]{int} := 69
+	_Note::velocities[(Note::free_idx{int} * 10) + 0]{int} := 3
+	_Note::velocities[(Note::free_idx{int} * 10) + 1]{int} := 0
+
+	ndarray$dim3$1<-init[int](_Note::play_pos{int[]}, 10, Note::free_idx{int})
+	first_note{int} := Note::free_idx{int}
+	declare _return6 : int
+	List(_return6{int}, 3, - 1)
+	declare ptr : int
+	List(ptr{int}, 1, _return6{int})
+	message("<List> Object: " & List::next[List::next[ptr{int}]{int}]{int})
+	declare const lists.SIZE : int := 10
+	declare lists[10] : int[] := [- 1]
 	declare idx : int
-	idx{unknown} := 0
-	while(idx{unknown} <= (num_elements(lists{unknown}) - 1)) 
-		lists[idx{unknown}]{unknown} := List(idx{unknown}, lists[idx{unknown}]{unknown})
-		if(idx{unknown} = 5)
-			break
+	idx{int} := 0
+	declare EXIT_FLAG0 : int
+	while((idx{int} <= (num_elements(lists{int[]}) - 1)) and (EXIT_FLAG0{int} = 0)) 
+		List(lists[idx{int}]{int}, idx{int}, lists[idx{int}]{int})
+		if(idx{int} = 5)
+			EXIT_FLAG0{unknown} := 1
+			continue
 		else
-			break
+			EXIT_FLAG0{unknown} := 1
+			continue
 		end if
-		message(lists[idx{unknown}]{unknown}.next{unknown})
-		inc(idx{unknown})
+		message("<List> Object: " & List::next[lists[idx{int}]{int}]{int})
+		inc(idx{int})
 	end while
-	declare tag_mask_array[3] : unknown
-	declare tagmask[2] : unknown
-	tag_mask_array[0]{unknown} := floatmask.get(tagmask{unknown}, 0)
-	message(tag_mask_array[0]{unknown})
+	declare const tag_mask_array.SIZE : int := 3
+	declare tag_mask_array[3] : int[]
+	declare const tagmask.SIZE : int := 2
+	declare tagmask[2] : int[]
+	tag_mask_array[0]{int} := sh_right(tagmask[0 / 32]{int}, (31 - 0) mod 32) .and. 1
+	message(tag_mask_array[0]{int})
+	declare const get_sth_more.SIZE : int := 3
 	declare get_sth_more[3] : int[]
-	declare get_sth : int := return_sth_more(get_sth_more{int[]})
-	take_array([1, 2, 3, 4])
-	message(get_sth_more{unknown})
-	declare ndarray[10, 10] : unknown
-	ndarray[2, *]{unknown} := [1, 2, 3, 4]
-	declare p1 : unknown := Point(1, 2)
-	declare p2 : unknown := Point(3, 4)
-	message(p1{unknown} + p2{unknown})
+	declare get_sth : int
+	return_sth_more(get_sth{int}, get_sth_more{int[]})
+	message("NDArray of type <int[][]>")
+	message("Array of type <int[]>")
+	declare const ndarray.SIZE_D1 : int := 10
+	declare const ndarray.SIZE_D2 : int := 10
+	declare const _ndarray.SIZE : int := 10 * 10
+	declare _ndarray[10 * 10] : int[]
+	declare _return7 : int
+	search_matrix(_return7{int}, _ndarray{int[]}, 3)
+	message(_return7{int})
+	_ndarray[(2 * 10) + 0]{int} := 1
+	_ndarray[(2 * 10) + 1]{int} := 2
+	_ndarray[(2 * 10) + 2]{int} := 3
+	_ndarray[(2 * 10) + 3]{int} := 4
+	declare p1 : int
+	Point(p1{int}, 1, 2)
+	declare p2 : int
+	Point(p2{int}, 3, 4)
+	declare _return8 : int
+	Point::__add__(_return8{int}, p1{int}, p2{int})
+	declare _return9 : int
+	Point::__add__(_return9{int}, p1{int}, p2{int})
+	message("Point {X: " & Point::x[_return8{int}]{int} & ", Y: " & Point::y[_return9{int}]{int} & "}")
 end on
 
-function pupu(msg() : (int, string): void)
-	message("pupu")
-	msg(3, "pipi")
-end function
-
-function array.reduce(array : unknown, func() : unknown) -> result : unknown
-	declare lib.i : unknown
-	result{unknown} := array[0]{unknown}
-	lib.i{unknown} := 0
-	while(lib.i{unknown} <= (num_elements(array{unknown}) - 1)) 
-		result{unknown} := func(result{unknown}, array[lib.i{unknown}]{unknown})
-		inc(lib.i{unknown})
+function search_matrix(ret$1 : int, _matrix : int[], target : int)
+	declare RETURN_FLAG4 : int
+	while(RETURN_FLAG4{int} = 0) 
+		declare row : int
+		declare col : int
+		row{int} := 0
+		while((row{int} <= (matrix.SIZE_D1{int} - 1)) and (RETURN_FLAG4{int} = 0)) 
+			col{int} := 0
+			while((col{int} <= (matrix.SIZE_D2{int} - 1)) and (RETURN_FLAG4{int} = 0)) 
+				if(_matrix[(row{int} * matrix.SIZE_D2{unknown}) + col{int}]{int} = target{int})
+					ret$1{int} := (row{int} * 10) + col{int}
+					RETURN_FLAG4{int} := 1
+					continue
+				end if
+				inc(col{int})
+			end while
+			if(RETURN_FLAG4{int} = 1)
+				continue
+			end if
+			inc(row{int})
+		end while
+		if(RETURN_FLAG4{int} = 1)
+			continue
+		end if
+		ret$1{int} := - 1
+		RETURN_FLAG4{int} := 1
+		continue
 	end while
 end function
 
-function get_pipi(num1 : int, str1 : string)
-	message("pipi", num1{unknown}, str1{unknown})
+function take_array(_ndarray : int[])
+	message("NDArray of type <int[][]>")
 end function
 
-function take_array(ndarray : int[][])
-	message(ndarray{unknown})
-end function
-
-function return_twice(ret$1 : unknown)
-	declare a : unknown := 2
-	return ([1, 2, 3], by_marks(a{unknown}))
-end function
-
-function return_once()
-	declare a : unknown := 2
-	return (sh_right(2, a{unknown}))
-end function
-
-function return_sth_more(ret$1 : unknown)
+function return_sth_more(ret$1 : int, ret$2 : int[])
+	declare const x.SIZE : int := 3
 	declare x[3] : int[] := [42, 43, 44]
-	return (1, x{unknown})
+	ret$1{int} := 1
+	ret$2{int[]} := x{int[]}
 end function
 
-function floatmask.get(float_mask : unknown, idx : unknown)
-	return ([sh_right(float_mask[idx{unknown} / 32]{unknown}, (31 - idx{unknown}) mod 32) .and. 1])
+function List::__init__(ret$1 : int, value : int, next : int)
+	List::free_idx{int} := search(List::allocation{int[]}, 0)
+	if(List::free_idx{int} = -1)
+		message("Error: No more free space available to allocate objects of type 'List'")
+	end if
+	List::allocation[List::free_idx{int}]{int[]} := 1
+	List::value[List::free_idx{int}]{int} := value{int}
+	List::next[List::free_idx{int}]{int} := next{int}
+	ret$1{int} := List::free_idx{int}
+end function
+
+function Point::__init__(ret$1 : int, x : int, y : int)
+	Point::free_idx{int} := search(Point::allocation{int[]}, 0)
+	if(Point::free_idx{int} = -1)
+		message("Error: No more free space available to allocate objects of type 'Point'")
+	end if
+	Point::allocation[Point::free_idx{int}]{int[]} := 1
+	Point::x[Point::free_idx{int}]{int} := x{int}
+	Point::y[Point::free_idx{int}]{int} := y{int}
+	ret$1{int} := Point::free_idx{int}
+end function
+
+function Point::__add__(ret$1 : int, self : int, other : int)
+	Point::x[self{int}]{int} := Point::x[self{int}]{int} + Point::x[other{int}]{int}
+	Point::y[self{int}]{int} := Point::y[self{int}]{int} + Point::y[other{int}]{int}
+	ret$1{int} := self{int}
+end function
+
+function Note::__init__(ret$1 : int, p : int, v : int[], _pp : int[])
+	Note::free_idx{int} := search(Note::allocation{int[]}, 0)
+	if(Note::free_idx{int} = -1)
+		message("Error: No more free space available to allocate objects of type 'Note'")
+	end if
+	Note::allocation[Note::free_idx{int}]{int[]} := 1
+	Note::pitch[Note::free_idx{int}]{int} := p{int}
+	ndarray$dim2$1<-array[int](_Note::velocities{int[]}, v{int[]}, Note::free_idx{int})
+	ndarray$dim3$1$2<-ndarray$dim2$1[int](_Note::play_pos{int[]}, _pp{int[]}, Note::free_idx{int})
+	ret$1{int} := Note::free_idx{int}
+end function
+
+function ndarray$dim3$1<-init[int](_ndarray : int[], value : int, param1 : int)
+	declare _iter2 : int
+	declare _iter1 : int
+	_iter1{int} := 0
+	while(_iter1{int} <= (ndarray.SIZE_D1{unknown} - 1)) 
+		_iter2{int} := 0
+		while(_iter2{int} <= (ndarray.SIZE_D2{unknown} - 1)) 
+			_ndarray[(param1{int} * (ndarray.SIZE_D2{unknown} * ndarray.SIZE_D3{unknown})) + ((_iter1{int} * ndarray.SIZE_D3{unknown}) + _iter2{int})]{int} := value{int}
+			inc(_iter2{int})
+		end while
+		inc(_iter1{int})
+	end while
+end function
+
+function ndarray$dim2$1<-array[int](_original : int[], to_copy : int[], dim0 : int)
+	declare _iter0 : int
+	_iter0{int} := 0
+	while(_iter0{int} <= (original.SIZE_D1{unknown} - 1)) 
+		_original[(dim0{int} * original.SIZE_D2{unknown}) + _iter0{int}]{int} := to_copy[_iter0{int}]{int[]}
+		inc(_iter0{int})
+	end while
+end function
+
+function ndarray$dim3$1$2<-ndarray$dim2$1[int](_original : int[], _to_copy : int[], dim0 : int)
+	declare _iter1 : int
+	declare _iter0 : int
+	_iter0{int} := 0
+	while(_iter0{int} <= (original.SIZE_D1{unknown} - 1)) 
+		_iter1{int} := 0
+		while(_iter1{int} <= (original.SIZE_D2{unknown} - 1)) 
+			_original[(dim0{int} * (original.SIZE_D2{unknown} * original.SIZE_D3{unknown})) + ((_iter0{int} * original.SIZE_D3{unknown}) + _iter1{int})]{int} := _to_copy[(_iter0{int} * to_copy.SIZE_D2{unknown}) + _iter1{int}]{int}
+			inc(_iter1{int})
+		end while
+		inc(_iter0{int})
+	end while
 end function
 
 

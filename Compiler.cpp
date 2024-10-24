@@ -119,7 +119,6 @@ void Compiler::compile() {
 	compile_time.stop("Semantic Analysis");
 	std::cout << compile_time.print_timer("Semantic Analysis") << std::endl;
 	compile_time.start("Type Checking");
-	ast->debug_print();
 
 	TypeInference infer_types(&m_definition_provider);
 	ast->accept(infer_types);
@@ -157,6 +156,7 @@ void Compiler::compile() {
 	compile_time.stop("Data Structure Lowering");
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
+	ast->debug_print();
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);

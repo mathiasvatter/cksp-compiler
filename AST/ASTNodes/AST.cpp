@@ -18,6 +18,7 @@
 #include "../../Optimization/TokenCounter.h"
 #include "../../Desugaring/DesugarParamList.h"
 #include "../../Desugaring/DesugarBinaryExpr.h"
+#include "../../Lowering/LoweringFunctionDef.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -683,7 +684,7 @@ NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& oth
         : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
           header(clone_unique(other.header)), override(other.override),
           call_sites(other.call_sites), body(clone_unique(other.body)),
-		  num_return_params(other.num_return_params), return_param(other.return_param),
+		  num_return_params(other.num_return_params), return_stmts(other.return_stmts),
 		  num_return_stmts(other.num_return_stmts) {
     if (other.return_variable) {
         return_variable = std::make_optional(clone_unique(other.return_variable.value()));
@@ -713,11 +714,10 @@ ASTDesugaring *NodeFunctionDefinition::get_desugaring(NodeProgram *program) cons
 	return &desugaring;
 }
 
-//ASTLowering *NodeFunctionDefinition::get_lowering(NodeProgram *program) const {
-////	static ASTReturnParamPromotion lowering(program);
-////	return &lowering;
-//	return nullptr;
-//}
+ASTLowering *NodeFunctionDefinition::get_lowering(NodeProgram *program) const {
+	static LoweringFunctionDef lowering(program);
+	return &lowering;
+}
 
 void NodeFunctionDefinition::update_token_data(const Token &token) {
 	header -> update_token_data(token);

@@ -84,8 +84,9 @@ public:
 			error.exit();
 		}
 		m_current_function->num_return_stmts++;
+		m_current_function->return_stmts.push_back(&node);
 		// parameter promotion when multiple return values present
-		if(node.return_variables.size() > 1) {
+		if(node.return_variables.size() > 1 and m_current_function->num_return_stmts == 1) {
 			for(int i = 1; i<node.return_variables.size(); i++) {
 				auto new_param = std::make_unique<NodeVariable>(
 					std::nullopt,

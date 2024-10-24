@@ -1,0 +1,50 @@
+// return statements have to be implemented as assign statements
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering cksp
+--------------------------------------------------------------------------------------------}
+
+function search_matrix(matrix: int[][], target: int)
+    declare row, col: int
+    for row := 0 to matrix.SIZE_D1 - 1
+        for col := 0 to matrix.SIZE_D2 - 1
+            if matrix[row,col] = target
+                return (row * 10) + col
+            end if
+        end for
+    end for
+
+    return -1  // If the target is not found
+end function
+
+{-------------------------------------------------------------------------------------------
+										Post Lowering
+--------------------------------------------------------------------------------------------}
+// if function has multiple return statements, wrap everything in while
+// stmt and use exit flag
+// when encountering nested while loops exit them too
+
+function search_matrix(matrix: int[][], target: int)
+	declare RETURN_FLAG: int
+    while(RETURN_FLAG = 0)
+        declare row, col: int
+        while(row < matrix.SIZE_D1 and RETURN_FLAG = 0)
+            while(col < matrix.SIZE_D2 and RETURN_FLAG = 0)
+                if matrix[row,col] = target
+                    return (row * 10) + col
+                    RETURN_FLAG := 1
+                    continue
+                end if
+                inc(col)
+            end while
+            if(RETURN_FLAG = 1) // <- add this check after each nested while loop
+                continue
+            end if
+            inc(row)
+        end while
+
+        return -1  // If the target is not found
+        RETURN_FLAG := 1
+        continue
+    end while
+end function

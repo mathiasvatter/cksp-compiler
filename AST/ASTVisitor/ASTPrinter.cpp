@@ -392,9 +392,9 @@ NodeAST * ASTPrinter::visit(NodeCallback &node) {
 NodeAST * ASTPrinter::visit(NodeFunctionHeader &node) {
 	os << node.name;
 	if(node.args) {
-		os << "(";
+		if(!node.args->params.empty() || node.has_forced_parenth) os << "(";
 		node.args->accept(*this);
-		os << ")";
+		if(!node.args->params.empty() || node.has_forced_parenth) os << ")";
 	}
 	if(node.parent->get_node_type() != NodeType::FunctionDefinition and node.parent->parent->get_node_type() != NodeType::FunctionCall) {
 		auto type = TypeRegistry::get_annotation_from_type(node.ty);
