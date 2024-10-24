@@ -1,9 +1,9 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Wed Oct 23 19:00:49 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Thu Oct 24 16:08:45 2024 }
 on init
-  declare $loc_2
-  declare $loc_4
-  declare %loc_1[3]
+  declare $loc_1
   declare $loc_3
+  declare %loc_0[3]
+  declare $loc_2
   declare $Note__free_idx := 0
   declare %Note__allocation[100000]
   declare $Point__free_idx := 0
@@ -18,14 +18,14 @@ on init
     message("Error: No more free space available to allocate objects of type 'Note'")
   end if
   %Note__allocation[$Note__free_idx] := 1
+  $loc_2 := 0
   $loc_3 := 0
-  $loc_4 := 0
-  while($loc_4 <= 99999) 
-    $loc_3 := 0
-    while($loc_3 <= 1) 
-      inc($loc_3)
+  while($loc_3 <= 99999) 
+    $loc_2 := 0
+    while($loc_2 <= 1) 
+      inc($loc_2)
     end while
-    inc($loc_4)
+    inc($loc_3)
   end while
   $List__free_idx := search(%List__allocation, 0)
   if($List__free_idx = -1)
@@ -43,35 +43,37 @@ on init
   $ptr := $List__free_idx
   message("<List> Object: " & %List__next[%List__next[$ptr]])
   declare %lists[10] := (-1)
+  declare $loc_8
+  $loc_8 := 0
   declare $loc_9
-  $loc_9 := 0
-  declare $loc_10
-  while(($loc_9 <= (num_elements(%lists) - 1)) and ($loc_10 = 0)) 
+  while(($loc_8 <= (num_elements(%lists) - 1)) and ($loc_9 = 0)) 
     $List__free_idx := search(%List__allocation, 0)
     if($List__free_idx = -1)
       message("Error: No more free space available to allocate objects of type 'List'")
     end if
     %List__allocation[$List__free_idx] := 1
     %List__next[$List__free_idx] := 
-    %lists[$loc_9] := $List__free_idx
-    if($loc_9 = 5)
-      $loc_10 := 1
+    %lists[$loc_8] := $List__free_idx
+    if($loc_8 = 5)
+      $loc_9 := 1
+      continue
+    else
+      $loc_9 := 1
       continue
     end if
-    message("<List> Object: " & %List__next[%lists[$loc_9]])
-    inc($loc_9)
+    message("<List> Object: " & %List__next[%lists[$loc_8]])
+    inc($loc_8)
   end while
-  declare $_return3
-  $_return3 := 1
-  if($_return3 = 1)
-    message("pipi")
-  end if
-  %loc_1[0] := 42
-  %loc_1[1] := 43
-  %loc_1[2] := 44
-  $loc_2 := 0
-  while($loc_2 < num_elements(%loc_1)) 
-    inc($loc_2)
+  declare %tag_mask_array[3]
+  declare %tagmask[2]
+  %tag_mask_array[0] := sh_right(%tagmask[0], 31) .and. 1
+  message(%tag_mask_array[0])
+  %loc_0[0] := 42
+  %loc_0[1] := 43
+  %loc_0[2] := 44
+  $loc_1 := 0
+  while($loc_1 < num_elements(%loc_0)) 
+    inc($loc_1)
   end while
   message("NDArray of type <int[][]>")
   message("Array of type <int[]>")
@@ -89,14 +91,14 @@ on init
   %Point__allocation[$Point__free_idx] := 1
   %Point__x[$Point__free_idx] := 3
   %Point__y[$Point__free_idx] := 4
+  declare $_return3
+  %Point__x[] := %Point__x[] + %Point__x[]
+  %Point__y[] := %Point__y[] + %Point__y[]
+  $_return3 := 
   declare $_return4
   %Point__x[] := %Point__x[] + %Point__x[]
   %Point__y[] := %Point__y[] + %Point__y[]
   $_return4 := 
-  declare $_return5
-  %Point__x[] := %Point__x[] + %Point__x[]
-  %Point__y[] := %Point__y[] + %Point__y[]
-  $_return5 := 
-  message("Point {X: " & %Point__x[$_return4] & ", Y: " & %Point__y[$_return5] & "}")
+  message("Point {X: " & %Point__x[$_return3] & ", Y: " & %Point__y[$_return4] & "}")
 end on
 

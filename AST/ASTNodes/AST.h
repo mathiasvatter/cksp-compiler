@@ -553,6 +553,7 @@ struct NodeFunctionDefinition: NodeAST {
     bool is_compiled = false;
 	bool visited = false;
 	int num_return_params = 0;
+	int num_return_stmts = 0;
 	NodeAST* return_param = nullptr;
     std::unordered_set<class NodeFunctionCall*> call_sites = {};
     std::unique_ptr<class NodeFunctionHeader> header;
@@ -571,7 +572,7 @@ struct NodeFunctionDefinition: NodeAST {
 	void set_child_parents() override;;
     std::string get_string() override {return "";}
     void update_token_data(const Token& token) override;
-	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
+//	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	bool is_method();
 	void update_param_data_type() const;

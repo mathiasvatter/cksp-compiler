@@ -11,6 +11,7 @@
 #include "../../Optimization/FunctionCallHoisting.h"
 #include "ASTExpressionFunctionInlining.h"
 #include "../../Optimization/ParameterMarking.h"
+#include "ASTReturnParamPromotion.h"
 
 class ASTReturnFunctionRewriting: public ASTVisitor {
 private:
@@ -26,12 +27,12 @@ public:
 		/// do immediate inlining of return-only functions
 		ASTExpressionFunctionInlining inlining(m_def_provider);
 		node.accept(inlining);
-		node.debug_print();
 		m_program = &node;
 
-		/// lower func_defs
+		/// promote return values to parameters of func_defs
+		ASTReturnParamPromotion param_promotion(m_def_provider);
 		for(auto & func_def : node.function_definitions) {
-			func_def->lower(m_program);
+			func_def->accept(param_promotion);
 		}
 		// call hoisting after func lowering to profit from correct data types in definition params
 		FunctionCallHoisting hoisting;

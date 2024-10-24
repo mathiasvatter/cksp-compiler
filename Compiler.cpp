@@ -119,6 +119,7 @@ void Compiler::compile() {
 	compile_time.stop("Semantic Analysis");
 	std::cout << compile_time.print_timer("Semantic Analysis") << std::endl;
 	compile_time.start("Type Checking");
+	ast->debug_print();
 
 	TypeInference infer_types(&m_definition_provider);
 	ast->accept(infer_types);
@@ -142,7 +143,6 @@ void Compiler::compile() {
 	ast->accept(return_function_rewriting);
 	ASTInitializerFunctionInlining initializer_inlining(&m_definition_provider);
 	ast->accept(initializer_inlining);
-//	ast->debug_print();
 
 	compile_time.stop("Return Function Rewriting");
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
@@ -160,7 +160,7 @@ void Compiler::compile() {
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
-
+//	ast->debug_print();
     ast->accept(infer_types);
     TypeInference::cast_data_structure_types(&m_definition_provider, true);
 

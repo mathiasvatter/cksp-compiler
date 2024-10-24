@@ -6,7 +6,6 @@
 
 
 #include "ASTFunctionInlining.h"
-#include "../../Lowering/LoweringFunctionDef.h"
 
 /// Immediate Inlining of return-only functions
 /// Substitution already takes place in the parent class ASTFunctionInlining in the following nodes:
@@ -16,7 +15,6 @@
 /// NodeFunctionHeader
 class ASTExpressionFunctionInlining: public ASTFunctionInlining {
 private:
-	bool deprecated_warning = false;
 public:
 	inline explicit ASTExpressionFunctionInlining(DefinitionProvider *definition_provider) : ASTFunctionInlining(definition_provider) {}
 
@@ -50,28 +48,6 @@ public:
 		return &node;
 	}
 
-	/// only transforms expression only function into return statement functions
-	inline bool transform_to_return_function(NodeFunctionDefinition* def) {
-		if(!def->return_variable.has_value()) return false;
-		if(!deprecated_warning) {
-			LoweringFunctionDef::throw_function_deprecation_error(def->return_variable.value()->tok).print();
-			deprecated_warning = true;
-		}
-		if(def->body->statements.size() == 1) {
-			auto stmt = def->body->statements[0]->statement.get();
-			if(stmt->get_node_type() == NodeType::SingleAssignment) {
-				auto assignment = static_cast<NodeSingleAssignment*>(stmt);
-				if(assignment->l_value->get_string() == def->return_variable.value()->name) {
-					auto node_return = std::make_unique<NodeReturn>(assignment->tok, std::move(assignment->r_value));
-					stmt->replace_with(std::move(node_return));
-					def->return_variable.reset();
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
 	NodeAST* visit(NodeFunctionCall &node) override {
 		node.function->accept(*this);
 
@@ -81,8 +57,6 @@ public:
 				node.definition->accept(*this);
 			}
 			node.definition->visited = true;
-			// if it is not an expression-only function, do not transform into return statement, instead add return variable to function header
-			transform_to_return_function(node.definition);
 			// see if the function is a return-only function
 			if(is_expression_function(node.definition)) {
 
@@ -94,7 +68,6 @@ public:
 
 				m_substitution_stack.pop();
 				m_program->function_call_stack.pop();
-//				return node.replace_with(get_expression_func_return(node_func_body.get()));
 				return node.replace_with(get_expression_return(node_func_body.get()));
 			} else {
 				node.definition->is_used = true;

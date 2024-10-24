@@ -70,27 +70,33 @@ on init
 		ls := List(idx, ls)
 		if(idx = 5)
 			break
+		else 
+			break
 		end if
 		message(ls.next)
 	end for
 	// btn_1, _ := return_twice()
 
-	if(return_twice() = 1)
-		message("pipi")
-	end if
-
+	declare tag_mask_array[3]
+	declare tagmask[2]
+	tag_mask_array[0] := floatmask.get(tagmask, 0)	
+	message(tag_mask_array[0])
 	declare get_sth: int, get_sth_more[3]: int[] := return_sth_more()
 	take_array((1,2,3,4))
 	message(get_sth_more)
 
 	declare ndarray[10,10]
-
+	// ndarray[10, *], _ := return_twice()
 	ndarray[2, *] := (1,2,3,4)
 
 	declare p1 := Point(1, 2)
 	declare p2 := Point(3, 4)
 	message(p1 + p2)
 end on
+
+function floatmask.get(float_mask, idx) -> result
+	result := (sh_right(float_mask[idx / 32], (31-idx) mod 32) .and. 1)
+end function
 
 function return_sth_more()
     declare x[3]: int[] := (42, 43, 44)
@@ -108,7 +114,7 @@ end function
 
 function return_twice()
 	declare a := 2
-	return 1, by_marks(a)
+	return (1,2,3), by_marks(a)
 end function
 
 function get_pipi(num1: int, str1: string)
