@@ -270,11 +270,23 @@ NodeAST *NodeSingleRetain::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeSingleRetain::NodeSingleRetain(const NodeSingleRetain& other)
-	: NodeInstruction(other), ptr(clone_unique(other.ptr)) {
+	: NodeInstruction(other), ptr(clone_unique(other.ptr)), num(clone_unique(other.num)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleRetain::clone() const {
 	return std::make_unique<NodeSingleRetain>(*this);
+}
+
+// ************* NodeRetain ***************
+NodeAST *NodeRetain::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeRetain::NodeRetain(const NodeRetain& other)
+	: NodeInstruction(other), ptrs(clone_vector(other.ptrs)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeRetain::clone() const {
+	return std::make_unique<NodeRetain>(*this);
 }
 
 // ************* NodeAssignment ***************
@@ -302,7 +314,7 @@ NodeAST *NodeSingleAssignment::accept(struct ASTVisitor &visitor) {
 NodeSingleAssignment::NodeSingleAssignment(const NodeSingleAssignment& other)
         : NodeInstruction(other), l_value(clone_unique(other.l_value)),
           r_value(clone_unique(other.r_value)), delete_stmt(clone_unique(other.delete_stmt)),
-		  retain_stmt(clone_unique(other.retain_stmt)) {
+		  retain_stmt(clone_unique(other.retain_stmt)), has_object(other.has_object) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleAssignment::clone() const {
@@ -356,7 +368,7 @@ NodeAST *NodeSingleDeclaration::accept(struct ASTVisitor &visitor) {
 NodeSingleDeclaration::NodeSingleDeclaration(const NodeSingleDeclaration& other)
         : NodeInstruction(other), variable(clone_unique(other.variable)),
           value(clone_unique(other.value)), retain_stmt(clone_unique(other.retain_stmt)),
-		  is_promoted(other.is_promoted) {
+		  is_promoted(other.is_promoted), has_object(other.has_object) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleDeclaration::clone() const {
@@ -390,6 +402,7 @@ std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(Node
             std::move(node_assignee),
             tok
     );
+	node_assign_statement->has_object = this->has_object;
     return node_assign_statement;
 }
 

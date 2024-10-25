@@ -148,8 +148,9 @@ struct NodeSingleRetain : NodeInstruction {
 	std::unique_ptr<NodeAST> ptr;
 	std::unique_ptr<NodeAST> num; // number of times to retain
 	inline explicit NodeSingleRetain(Token tok) : NodeInstruction(NodeType::SingleRetain, std::move(tok)) {}
-	NodeSingleRetain(std::unique_ptr<NodeAST> ptr, Token tok)
-		: NodeInstruction(NodeType::SingleRetain, std::move(tok)), ptr(std::move(ptr)) {
+	NodeSingleRetain(std::unique_ptr<NodeAST> ptr, std::unique_ptr<NodeAST> num, Token tok)
+		: NodeInstruction(NodeType::SingleRetain, std::move(tok)), ptr(std::move(ptr)),
+		num(std::move(num)) {
 		set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -167,11 +168,47 @@ struct NodeSingleRetain : NodeInstruction {
 		num->parent = this;
 	};
 	std::string get_string() override {
-		return "delete " + ptr->get_string() + ", " + num->get_string();
+		return "retain " + ptr->get_string() + ", " + num->get_string();
 	}
 	void update_token_data(const Token& token) override {
 		ptr->update_token_data(token);
 		num->update_token_data(token);
+	}
+};
+
+/// Node to retain multiple pointers
+/// only used internally in AST
+struct NodeRetain : NodeInstruction {
+	std::vector<std::unique_ptr<NodeSingleRetain>> ptrs;
+	inline explicit NodeRetain(Token tok) : NodeInstruction(NodeType::Retain, std::move(tok)) {}
+	NodeRetain(std::vector<std::unique_ptr<NodeSingleRetain>> ptrs, Token tok)
+		: NodeInstruction(NodeType::Retain, std::move(tok)), ptrs(std::move(ptrs)) {
+		set_child_parents();
+	}
+	NodeAST * accept(ASTVisitor &visitor) override;
+	// Copy Constructor
+	NodeRetain(const NodeRetain& other);
+	// Clone Method
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		for(auto & ptr: ptrs) ptr->update_parents(this);
+	}
+	void set_child_parents() override {
+		for(auto & ptr: ptrs) ptr->parent = this;
+	};
+	std::string get_string() override {
+		std::string output = "delete ";
+		for(auto & ptr: ptrs) output += ptr->get_string() + ", ";
+		return output;
+	}
+	void update_token_data(const Token& token) override {
+		for(auto & ptr: ptrs) ptr->update_token_data(token);
+	}
+	void add_single_retain(std::unique_ptr<NodeReference> ref, std::unique_ptr<NodeAST> num) {
+		auto retain = std::make_unique<NodeSingleRetain>(std::move(ref), std::move(num), tok);
+		retain->parent = this;
+		ptrs.push_back(std::move(retain));
 	}
 };
 
@@ -213,6 +250,7 @@ struct NodeSingleAssignment : NodeInstruction {
     std::unique_ptr<NodeAST> r_value;
 	std::unique_ptr<NodeSingleDelete> delete_stmt = nullptr;
 	std::unique_ptr<NodeSingleRetain> retain_stmt = nullptr;
+	bool has_object = false;
     inline explicit NodeSingleAssignment(Token tok) : NodeInstruction(NodeType::SingleAssignment, std::move(tok)) {}
     NodeSingleAssignment(std::unique_ptr<NodeAST> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
             : NodeInstruction(NodeType::SingleAssignment, std::move(tok)), l_value(std::move(arrayVariable)), r_value(std::move(assignee)) {
@@ -289,7 +327,8 @@ struct NodeDeclaration : NodeInstruction {
 struct NodeSingleDeclaration : NodeInstruction {
     std::unique_ptr<NodeDataStructure> variable;
     std::unique_ptr<NodeAST> value;
-	std::unique_ptr<NodeSingleRetain> retain_stmt = nullptr;
+	std::unique_ptr<NodeRetain> retain_stmt = nullptr;
+	bool has_object = false;
 	bool is_promoted = false;
     inline explicit NodeSingleDeclaration(Token tok) : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)) {}
     NodeSingleDeclaration(std::unique_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
@@ -328,6 +367,10 @@ struct NodeSingleDeclaration : NodeInstruction {
     /// returns new assign statement with the declared variable and r_value or neutral element. Can optionally take new
     /// variable to make reference of
     [[nodiscard]] std::unique_ptr<NodeSingleAssignment> to_assign_stmt(NodeDataStructure* var=nullptr);
+	void set_retain(std::unique_ptr<NodeRetain> retain) {
+		retain->parent = this;
+		retain_stmt = std::move(retain);
+	}
 };
 
 struct NodeReturn : NodeInstruction {

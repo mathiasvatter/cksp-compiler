@@ -156,7 +156,6 @@ void Compiler::compile() {
 	compile_time.stop("Data Structure Lowering");
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
-	ast->debug_print();
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);
@@ -167,6 +166,7 @@ void Compiler::compile() {
 	compile_time.stop("Variable Checking 1");
 	std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;
 	compile_time.start("Global Scope");
+	ast->debug_print();
 
 //	ast->debug_print();
 	ASTGlobalScope global_scope(&m_definition_provider);
@@ -192,8 +192,8 @@ void Compiler::compile() {
 	compile_time.start("Optimization");
 
 	ast->inline_global_variables();
-	ASTOptimizations optimizations;
-	optimizations.optimize(*ast);
+//	ASTOptimizations optimizations;
+//	optimizations.optimize(*ast);
 
 	compile_time.stop("Optimization");
 	std::cout << compile_time.print_timer("Optimization") << std::endl;

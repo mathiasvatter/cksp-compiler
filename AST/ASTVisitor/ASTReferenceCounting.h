@@ -126,28 +126,55 @@ public:
 		return &node;
 	}
 
-//	/// replaces node with a block with retain statement and declaration/assign statement if applicable
-//	NodeAST* add_retain_stmt(NodeAST& node) {
-//		if(pointer_types.find(node.get_node_type()) == pointer_types.end()) return &node;
-//		if(node.ty->get_type_kind() != TypeKind::Object) return &node;
-//
-//		// 1. check if is r_value in a declaration statement ->
-//		if(node.parent->get_node_type() == NodeType::Declaration) {
-//			auto decl = static_cast<NodeSingleDeclaration*>(node.parent);
-//			if(decl->value and decl->value.get() == &node) {
-//				auto retain = std::make_unique<NodeSingleRetain>(node.clone(), node.tok);
-//				auto block = std::make_unique<NodeBlock>(node.tok);
-//				block->add_stmt(std::make_unique<NodeStatement>(std::move(retain), node.tok));
-//				block->add_stmt(std::make_unique<NodeStatement>(std::move(decl->value), node.tok));
-//				return block.get();
-//			}
-//		}
-//
-//		// 2. check if is r_value in an assignment statement ->
-//		if(node.parent->get_node_type() == NodeType::Assignment) {
-//			auto assign = static_cast<NodeSingleAssignment*>(node.parent);
-//		}
-//
-//	}
+	/// replaces node with a block with retain statement and declaration/assign statement if applicable
+	NodeAST* add_retain_stmt(NodeAST& node) {
+		// node can either be a declaration or an assignment
+		auto retain = std::make_unique<NodeRetain>(node.tok);
+		// 1. when it is declaration, check that variable is Object
+		if(node.parent->get_node_type() == NodeType::Declaration) {
+			auto decl = static_cast<NodeSingleDeclaration*>(node.parent);
+			auto &variable = decl->variable;
+			auto &value = decl->value;
+			// 1. if variable is not object type, return
+			if(variable->ty->get_element_type()->get_type_kind() != TypeKind::Object) {
+				return &node;
+			}
+			// 2. if there is no value assigned, return
+			if(!value) {
+				return &node;
+			}
+			// 3. if value is constructor, return as well, since retain is already called in constructor
+			// 4. if value is function call and returns object type -> retain
+			if(value->get_node_type() == NodeType::FunctionCall) {
+				auto func_call = static_cast<NodeFunctionCall*>(value.get());
+				if(func_call->kind == NodeFunctionCall::Kind::Constructor) {
+					return &node;
+				} else if(func_call->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+					retain->add_single_retain(variable->to_reference(), std::make_unique<NodeInt>(1, value->tok));
+					decl->set_retain(std::move(retain));
+					return &node;
+				}
+			}
+			// 5. if variable is pointer, then call retain one time
+			if(variable->get_node_type() == NodeType::Pointer) {
+				if(auto ref = clone_as<NodeReference>(value.get())) {
+					retain->add_single_retain(std::move(ref), std::make_unique<NodeInt>(1, value->tok));
+					decl->set_retain(std::move(retain));
+					return &node;
+				} else {
+					auto error = CompileError(ErrorType::InternalError, "Expected reference as value in pointer declaration", "", node.tok);
+					error.exit();
+				}
+			}
+			// 6. if value is initializer list, variable is array
+			// if initializer list is only one value, retain num_elements(array) times
+		}
+
+		// 2. check if is r_value in an assignment statement ->
+		if(node.parent->get_node_type() == NodeType::Assignment) {
+			auto assign = static_cast<NodeSingleAssignment*>(node.parent);
+		}
+
+	}
 
 };

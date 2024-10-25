@@ -91,7 +91,7 @@ public:
 					error.exit();
 				}
 			// when param list -> array return var
-			} else if (node_return->get_node_type() == NodeType::ParamList) {
+			} else if (node_return->get_node_type() == NodeType::InitializerList) {
 				new_param = std::make_unique<NodeArray>(
 					std::nullopt,
 					return_name,
