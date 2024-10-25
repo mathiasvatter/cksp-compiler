@@ -1,96 +1,135 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Thu Oct 24 21:51:30 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Fri Oct 25 16:53:56 2024 }
 on init
+  declare const $MAX_STRUCTS := 1000000
+  declare const @MEM_WARNING
+  @MEM_WARNING := "Memory Error: No more free space available to allocate objects of type"
   declare $loc_2
   declare $loc_0
-  declare %loc_3[3]
   declare $loc_4
-  declare $loc_6
   declare $loc_1
-  declare $loc_5
+  declare $loc_3
+  declare const $Note__MAX_STRUCTS
+  $Note__MAX_STRUCTS := $MAX_STRUCTS / ((((2 * 2) + 10) + abs((2 * 2) - 10)) / 2)
   declare $Note__free_idx := 0
-  declare %Note__allocation[100000]
+  declare const $Note__allocation__SIZE := $Note__MAX_STRUCTS
+  declare %Note__allocation[$Note__MAX_STRUCTS]
+  declare const $Note__pitch__SIZE := $Note__MAX_STRUCTS
+  declare %Note__pitch[$Note__MAX_STRUCTS]
+  declare const $Note__velocities__SIZE_D1 := $Note__MAX_STRUCTS
+  declare const $Note__velocities__SIZE_D2 := 10
+  declare const $_Note__velocities__SIZE := $Note__MAX_STRUCTS * 10
+  declare %_Note__velocities[$Note__MAX_STRUCTS * 10]
+  declare const $Note__play_pos__SIZE_D1 := $Note__MAX_STRUCTS
+  declare const $Note__play_pos__SIZE_D2 := 2
+  declare const $Note__play_pos__SIZE_D3 := 2
+  declare const $_Note__play_pos__SIZE := $Note__MAX_STRUCTS * (2 * 2)
+  declare %_Note__play_pos[$Note__MAX_STRUCTS * (2 * 2)]
+  declare const $Point__MAX_STRUCTS := $MAX_STRUCTS
   declare $Point__free_idx := 0
-  declare %Point__allocation[1000000]
-  declare %Point__x[1000000]
-  declare %Point__y[1000000]
+  declare const $Point__allocation__SIZE := $Point__MAX_STRUCTS
+  declare %Point__allocation[$Point__MAX_STRUCTS]
+  declare const $Point__x__SIZE := $Point__MAX_STRUCTS
+  declare %Point__x[$Point__MAX_STRUCTS]
+  declare const $Point__y__SIZE := $Point__MAX_STRUCTS
+  declare %Point__y[$Point__MAX_STRUCTS]
+  declare const $List__MAX_STRUCTS := $MAX_STRUCTS
   declare $List__free_idx := 0
-  declare %List__allocation[1000000]
-  declare %List__next[1000000] := -1
+  declare const $List__allocation__SIZE := $List__MAX_STRUCTS
+  declare %List__allocation[$List__MAX_STRUCTS]
+  declare const $List__value__SIZE := $List__MAX_STRUCTS
+  declare %List__value[$List__MAX_STRUCTS]
+  declare const $List__next__SIZE := $List__MAX_STRUCTS
+  declare %List__next[$List__MAX_STRUCTS] := - 1
+  declare $loc_8
+  declare $first_note
   $Note__free_idx := search(%Note__allocation, 0)
   if($Note__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Note'")
   end if
   %Note__allocation[$Note__free_idx] := 1
-  $loc_5 := 0
-  $loc_6 := 0
-  while($loc_6 <= 99999) 
-    $loc_5 := 0
-    while($loc_5 <= 1) 
-      inc($loc_5)
+  %Note__pitch[$Note__free_idx] := 69
+  %_Note__velocities[($Note__free_idx * 10) + 0] := 3
+  %_Note__velocities[($Note__free_idx * 10) + 1] := 0
+  $loc_3 := 0
+  $loc_4 := 0
+  $loc_4 := 0
+  while($loc_4 <= ($Note__play_pos__SIZE_D1 - 1)) 
+    $loc_3 := 0
+    while($loc_3 <= ($Note__play_pos__SIZE_D2 - 1)) 
+      %_Note__play_pos[($Note__free_idx * ($Note__play_pos__SIZE_D2 * $Note__play_pos__SIZE_D3)) + (($loc_4 * $Note__play_pos__SIZE_D3) + $loc_3)] := 10
+      inc($loc_3)
     end while
-    inc($loc_6)
+    inc($loc_4)
   end while
+  $first_note := $Note__free_idx
+  declare $_return5
   $List__free_idx := search(%List__allocation, 0)
   if($List__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'List'")
   end if
   %List__allocation[$List__free_idx] := 1
+  %List__value[$List__free_idx] := 3
   %List__next[$List__free_idx] := 
+  $_return5 := $List__free_idx
   declare $ptr
   $List__free_idx := search(%List__allocation, 0)
   if($List__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'List'")
   end if
   %List__allocation[$List__free_idx] := 1
+  %List__value[$List__free_idx] := 1
   %List__next[$List__free_idx] := 
   $ptr := $List__free_idx
   message("<List> Object: " & %List__next[%List__next[$ptr]])
-  declare %lists[10] := (-1)
-  declare $loc_11
-  $loc_11 := 0
-  declare $loc_12
-  while(($loc_11 <= (num_elements(%lists) - 1)) and ($loc_12 = 0)) 
+  declare const $lists__SIZE := 10
+  declare %lists[10] := (- 1)
+  declare $loc_9
+  $loc_9 := 0
+  declare $loc_10
+  while(($loc_9 <= (num_elements(%lists) - 1)) and ($loc_10 = 0)) 
     $List__free_idx := search(%List__allocation, 0)
     if($List__free_idx = -1)
       message("Error: No more free space available to allocate objects of type 'List'")
     end if
     %List__allocation[$List__free_idx] := 1
+    %List__value[$List__free_idx] := $loc_9
     %List__next[$List__free_idx] := 
-    %lists[$loc_11] := $List__free_idx
-    if($loc_11 = 5)
-      $loc_12 := 1
+    %lists[$loc_9] := $List__free_idx
+    if($loc_9 = 5)
+      $loc_10 := 1
       continue
     else
-      $loc_12 := 1
+      $loc_10 := 1
       continue
     end if
-    message("<List> Object: " & %List__next[%lists[$loc_11]])
-    inc($loc_11)
+    message("<List> Object: " & %List__next[%lists[$loc_9]])
+    inc($loc_9)
   end while
-  declare %tag_mask_array[3]
-  declare %tagmask[2]
-  %tag_mask_array[0] := sh_right(%tagmask[0], 31) .and. 1
-  message(%tag_mask_array[0])
-  %loc_3[0] := 42
-  %loc_3[1] := 43
-  %loc_3[2] := 44
-  $loc_4 := 0
-  while($loc_4 < num_elements(%loc_3)) 
-    inc($loc_4)
-  end while
-  message("NDArray of type <int[][]>")
+  declare const $n__SIZE := 10
+  declare %n[10] := (0)
+  declare const $array__SIZE := 10
+  declare %array[10]
   message("Array of type <int[]>")
-  declare %_ndarray[100]
-  declare $_return7
+  %array[0] := 1
+  %array[1] := 2
+  %array[2] := 3
+  %array[3] := 4
+  %array[4] := 5
+  declare const $ndarray__SIZE_D1 := 10
+  declare const $ndarray__SIZE_D2 := 10
+  declare const $_ndarray__SIZE := 10 * 10
+  declare %_ndarray[10 * 10]
+  declare $_return6
   $loc_0 := 0
   while($loc_0 = 0) 
+    $loc_1 := 0
     $loc_2 := 0
     $loc_1 := 0
-    while(($loc_1 <= 9) and ($loc_0 = 0)) 
+    while(($loc_1 <= ($ndarray__SIZE_D1 - 1)) and ($loc_0 = 0)) 
       $loc_2 := 0
-      while(($loc_2 <= 9) and ($loc_0 = 0)) 
-        if(%_ndarray[($loc_1 * 10) + $loc_2] = 3)
-          $_return7 := ($loc_1 * 10) + $loc_2
+      while(($loc_2 <= ($ndarray__SIZE_D2 - 1)) and ($loc_0 = 0)) 
+        if(%_ndarray[($loc_1 * $ndarray__SIZE_D2) + $loc_2] = 3)
+          $_return6 := ($loc_1 * 10) + $loc_2
           $loc_0 := 1
           continue
         end if
@@ -104,15 +143,12 @@ on init
     if($loc_0 = 1)
       continue
     end if
-    $_return7 := -1
+    $_return6 := - 1
     $loc_0 := 1
     continue
   end while
-  message($_return7)
-  %_ndarray[20] := 1
-  %_ndarray[21] := 2
-  %_ndarray[22] := 3
-  %_ndarray[23] := 4
+  message($_return6)
+  declare $p1
   $Point__free_idx := search(%Point__allocation, 0)
   if($Point__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Point'")
@@ -120,6 +156,8 @@ on init
   %Point__allocation[$Point__free_idx] := 1
   %Point__x[$Point__free_idx] := 1
   %Point__y[$Point__free_idx] := 2
+  $p1 := $Point__free_idx
+  declare $p2
   $Point__free_idx := search(%Point__allocation, 0)
   if($Point__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Point'")
@@ -127,14 +165,15 @@ on init
   %Point__allocation[$Point__free_idx] := 1
   %Point__x[$Point__free_idx] := 3
   %Point__y[$Point__free_idx] := 4
+  $p2 := $Point__free_idx
+  declare $_return7
+  %Point__x[] := %Point__x[] + %Point__x[]
+  %Point__y[] := %Point__y[] + %Point__y[]
+  $_return7 := 
   declare $_return8
   %Point__x[] := %Point__x[] + %Point__x[]
   %Point__y[] := %Point__y[] + %Point__y[]
   $_return8 := 
-  declare $_return9
-  %Point__x[] := %Point__x[] + %Point__x[]
-  %Point__y[] := %Point__y[] + %Point__y[]
-  $_return9 := 
-  message("Point {X: " & %Point__x[$_return8] & ", Y: " & %Point__y[$_return9] & "}")
+  message("Point {X: " & %Point__x[$_return7] & ", Y: " & %Point__y[$_return8] & "}")
 end on
 

@@ -75,6 +75,7 @@ enum class NodeType {
 	DeadCode,
 	Delete,
 	SingleDelete,
+	Retain,
 	SingleRetain,
 	Statement,
 	Block,
