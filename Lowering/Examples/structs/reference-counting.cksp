@@ -22,8 +22,8 @@ Fälle:
 struct List
     declare value: int
     declare next: List := nil
+    declare lefts[5]: List[] := (nil)
     declare right: List := nil
-    declare left: List := nil
     declare other_struct: OtherStruct := nil
 
     function __init__(self, value: int, next: List)
@@ -120,42 +120,85 @@ end function
 // 1. Ein List Objekt l_value in einem Assignment ist -> dann wird delete davor für diesen ptr aufgerufen
 // 2. Am Scope Ende für jeden lokalen Pointer dieses Scopes -> dann wird delete für jeden lokalen ptr aufgerufen
 
+// delete funktion, falls das struct nur einen rekursiven member hat
+struct List
+    declare value: int
+    declare next: List := nil
+end struct
+// in diesem fall ist kein stack nötig
 function List::__del__(self: List)
     // Solange es Objekte gibt, die freigegeben werden sollen, weiter durch die Struktur iterieren
     while self # nil
+
         // Schritt 1: Referenzzähler reduzieren
         dec(List::allocation[self])
-
         // Wenn das Objekt noch referenziert wird, zum nächsten Objekt gehen
-        if (List::allocation[self] <= 0)
-       
-            // Schritt 2: Member-Structs löschen, wenn sie vorhanden sind
-            if (self.other_struct # nil)
-                OtherStruct::__del__(self.other_struct)
-                self.other_struct := nil
-            end if
+        if (List::allocation[self] > 0)
+        	continue
+        end if            
 
-            // Schritt 3: Gehe zu anderen rekursiven Pointern (z. B. `left`, `right` in einem Baum)
-            // Statt die Methode rekursiv aufzurufen, wechsle den `self`-Pointer direkt
-            if (self.left # nil)
-                self := self.left
-                self.left := nil // Entferne den linken Pointer, um zyklische Referenzen zu vermeiden
-                continue // Weitermachen mit dem linken Kind
-            end if
+        // hier kommen noch mögliche andere delete methoden anderer
+        // member hin, die nicht vom Typ List sind.
 
-            if (self.right # nil)
-                self := self.right
-                self.right := nil // Entferne den rechten Pointer, um zyklische Referenzen zu vermeiden
-                continue // Weitermachen mit dem rechten Kind
-            end if
-
-            if(self.next # nil)
-                self := self.next
-                self.next := nil // Entferne den rechten Pointer, um zyklische Referenzen zu vermeiden
-                continue // Weitermachen mit dem rechten Kind
-            end if
-
+        if(self.next # nil)
+            self := self.next
+            self.next := nil // Entferne den next Pointer, um zyklische Referenzen zu vermeiden
+            continue // Weitermachen mit dem next Pointer
         end if
         self := nil
+    end while
+end function
+
+// delete funktion, falls das struct mehrere rekursive member vom Typ Node hat
+struct Node
+    declare value: int
+    declare left: Node := nil
+    declare right: Node := nil
+end struct
+// in diesem fall ist ein stack nötig
+declare Node::stack[MAX_STRUCTS]: Node[]
+function Node::__del__(self: Node)
+	
+    declare stack_top: int := 0
+    Node::stack[stack_top] := self
+    inc(stack_top)
+
+    // Solange der stack nicht leer ist
+    while stack_top > 0
+    	
+        dec(stack_top)
+        self := Node::stack[stack_top]
+
+        if(self = nil)
+            continue
+        end if
+
+        // Schritt 1: Referenzzähler reduzieren
+        dec(Node::allocation[self])
+
+        // Wenn der Referenzzähler noch größer als 0 ist, überspringe die Löschung
+        if Node::allocation[self] > 0
+            continue
+        end if
+
+        // hier kommen delete methoden von anderen membern hin die nicht typ Node
+        // sind
+
+        // Schritt 2: Füge rekursive Member dem Stack hinzu
+        // Überprüfe und füge `left` hinzu
+        if Node::left[self] # nil
+            Node::stack[stack_top] := Node::left[self]
+            inc(stack_top)
+            // Setze den Pointer auf `nil`, um Zyklen zu vermeiden
+            Node::left[self] := nil
+        end if
+
+        // Überprüfe und füge `right` hinzu
+        if Node::right[self] # nil
+            Node::stack[stack_top] := Node::right[self]
+            inc(stack_top)
+            Node::right[self] := nil
+        end if
+
     end while
 end function
