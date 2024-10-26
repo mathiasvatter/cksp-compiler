@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Sat Oct 26 17:03:56 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Sat Oct 26 20:18:39 2024 }
 on init
   declare const $MAX_STRUCTS := 1000000
   declare const @MEM_WARNING
@@ -11,6 +11,8 @@ on init
   declare $Note__free_idx := 0
   declare const $Note__allocation__SIZE := $Note__MAX_STRUCTS
   declare %Note__allocation[$Note__MAX_STRUCTS]
+  declare const $Note__stack__SIZE := $Note__MAX_STRUCTS
+  declare %Note__stack[$Note__MAX_STRUCTS]
   declare const $Note__pitch__SIZE := $Note__MAX_STRUCTS
   declare %Note__pitch[$Note__MAX_STRUCTS]
   declare const $Note__velocities__SIZE_D1 := $Note__MAX_STRUCTS
@@ -26,6 +28,8 @@ on init
   declare $Point__free_idx := 0
   declare const $Point__allocation__SIZE := $Point__MAX_STRUCTS
   declare %Point__allocation[$Point__MAX_STRUCTS]
+  declare const $Point__stack__SIZE := $Point__MAX_STRUCTS
+  declare %Point__stack[$Point__MAX_STRUCTS]
   declare const $Point__x__SIZE := $Point__MAX_STRUCTS
   declare %Point__x[$Point__MAX_STRUCTS]
   declare const $Point__y__SIZE := $Point__MAX_STRUCTS
@@ -34,6 +38,8 @@ on init
   declare $List__free_idx := 0
   declare const $List__allocation__SIZE := $List__MAX_STRUCTS
   declare %List__allocation[$List__MAX_STRUCTS]
+  declare const $List__stack__SIZE := $List__MAX_STRUCTS
+  declare %List__stack[$List__MAX_STRUCTS]
   declare const $List__value__SIZE := $List__MAX_STRUCTS
   declare %List__value[$List__MAX_STRUCTS]
   declare const $List__next__SIZE := $List__MAX_STRUCTS

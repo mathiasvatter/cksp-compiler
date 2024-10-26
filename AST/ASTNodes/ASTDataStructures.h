@@ -284,6 +284,7 @@ struct NodeStruct : NodeDataStructure {
 	NodeVariable* max_individual_struts_var = nullptr;
 	NodeVariable* free_idx_var = nullptr;
 	NodeArray* allocation_var = nullptr;
+	NodeArray* stack_var = nullptr;
 	std::unordered_map<token, NodeFunctionDefinition*> overloaded_operators;
 
 	inline static std::unordered_set<NodeType> allowed_member_node_types = {NodeType::Variable, NodeType::Pointer, NodeType::NDArray, NodeType::Array};

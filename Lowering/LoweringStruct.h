@@ -98,9 +98,23 @@ public:
 			Token()
 		);
 		m_current_struct->allocation_var = static_cast<NodeArray*>(allocation_decl->variable.get());
+		auto stack_var = std::make_unique<NodeArray>(
+			std::nullopt,
+			m_current_struct->name+OBJ_DELIMITER+"stack",
+			TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Integer),
+			m_current_struct->max_individual_struts_var->to_reference(),
+			Token()
+		);
+		auto stack_decl = std::make_unique<NodeSingleDeclaration>(
+			std::move(stack_var),
+			nullptr,
+			Token()
+		);
+		m_current_struct->stack_var = static_cast<NodeArray*>(stack_decl->variable.get());
 		node_block->add_as_stmt(std::move(max_structs_decl));
 		node_block->add_as_stmt(std::move(free_idx_decl));
 		node_block->add_as_stmt(std::move(allocation_decl));
+		node_block->add_as_stmt(std::move(stack_decl));
 		return node_block;
 	}
 

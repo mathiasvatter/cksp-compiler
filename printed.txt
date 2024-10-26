@@ -5,6 +5,7 @@ struct List
 	declare const List::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
 	declare List::free_idx : int := 0
 	declare List::allocation[List::MAX_STRUCTS{int}] : int[]
+	declare List::stack[List::MAX_STRUCTS{int}] : int[]
 	declare List::value[List::MAX_STRUCTS{int}] : int[]
 	declare List::next[List::MAX_STRUCTS{int}] : int[] := - 1
 
@@ -47,6 +48,7 @@ struct Point
 	declare const Point::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
 	declare Point::free_idx : int := 0
 	declare Point::allocation[Point::MAX_STRUCTS{int}] : int[]
+	declare Point::stack[Point::MAX_STRUCTS{int}] : int[]
 	declare Point::x[Point::MAX_STRUCTS{int}] : int[]
 	declare Point::y[Point::MAX_STRUCTS{int}] : int[]
 
@@ -84,6 +86,7 @@ struct Note
 	declare const Note::MAX_STRUCTS : int := MAX_STRUCTS{unknown} / Struct::max(2 * 2, 10)
 	declare Note::free_idx : int := 0
 	declare Note::allocation[Note::MAX_STRUCTS{int}] : int[]
+	declare Note::stack[Note::MAX_STRUCTS{int}] : int[]
 	declare Note::pitch[Note::MAX_STRUCTS{int}] : int[]
 	declare Note::velocities[Note::MAX_STRUCTS{int}, 10] : int[][]
 	declare Note::play_pos[Note::MAX_STRUCTS{int}, 2, 2] : int[][][]
