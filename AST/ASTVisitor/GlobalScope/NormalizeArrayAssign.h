@@ -168,7 +168,7 @@ public:
 			array_ref->index = std::make_unique<NodeInt>((int32_t)i, array_ref->tok);
 			auto &elem = init_list->elem(i);
 			auto node_assign = std::make_unique<NodeSingleAssignment>(
-				array_ref->clone(),
+				clone_as<NodeReference>(array_ref),
 				elem->clone(),
 				elem->tok
 			);
@@ -270,7 +270,7 @@ public:
 		auto node_while_body = std::make_unique<NodeBlock>(Token());
 		node_while_body->scope = true;
 		auto node_assignment = std::make_unique<NodeSingleAssignment>(
-			node_array_ref->clone(),
+			clone_as<NodeReference>(node_array_ref.get()),
 			std::move(node_value_ref),
 			Token()
 		);
@@ -395,7 +395,7 @@ public:
 		auto node_while_body = std::make_unique<NodeBlock>(Token());
 		node_while_body->scope = true;
 		auto node_assignment = std::make_unique<NodeSingleAssignment>(
-			node_dest_ref->clone(),
+			clone_as<NodeReference>(node_dest_ref.get()),
 			node_src_ref->clone(),
 			Token()
 		);

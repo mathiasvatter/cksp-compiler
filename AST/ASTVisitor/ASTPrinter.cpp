@@ -271,9 +271,9 @@ NodeAST * ASTPrinter::visit(NodeUnaryExpr &node) {
 
 NodeAST * ASTPrinter::visit(NodeAssignment &node) {
     os << "";
-    node.l_value->accept(*this);
+	for(auto& l_val : node.l_values) l_val->accept(*this);
     os << " := ";
-    node.r_value->accept(*this);
+    node.r_values->accept(*this);
 	return &node;
 }
 

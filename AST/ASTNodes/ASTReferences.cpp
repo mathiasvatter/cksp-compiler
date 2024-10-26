@@ -12,6 +12,7 @@
 #include "../../Lowering/LoweringPointer.h"
 #include "../../Lowering/LoweringAccessChain.h"
 #include "../../Lowering/LoweringNil.h"
+#include "../../Lowering/LoweringGetControl.h"
 
 // ************* NodeVariableRef ***************
 NodeAST *NodeVariableRef::accept(struct ASTVisitor &visitor) {
@@ -385,4 +386,60 @@ std::unique_ptr<NodeVariableRef> NodeAccessChain::is_size_constant() {
 		}
 	}
 	return nullptr;
+}
+
+
+// ************* NodeGetControl ***************
+NodeAST *NodeGetControl::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeGetControl::NodeGetControl(const NodeGetControl& other)
+	: NodeReference(other), ui_id(clone_unique(other.ui_id)), control_param(other.control_param) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeGetControl::clone() const {
+	return std::make_unique<NodeGetControl>(*this);
+}
+NodeAST *NodeGetControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (ui_id.get() == oldChild) {
+		ui_id = std::move(newChild);
+		return ui_id.get();
+	}
+	return nullptr;
+}
+
+ASTLowering* NodeGetControl::get_lowering(struct NodeProgram *program) const {
+	static LoweringGetControl lowering(program);
+	return &lowering;
+}
+
+std::unique_ptr<NodeReference> NodeGetControl::get_full_control_param(DefinitionProvider *def_provider) {
+	std::string control_par = to_lower(control_param);
+	if(control_par == "x") control_par = "pos_x";
+	if(control_par == "y") control_par = "pos_y";
+	if(control_par == "default") control_par += "_value";
+	if(auto builtin_var = def_provider->get_builtin_variable(to_upper("control_par_"+control_par))) {
+		return builtin_var->to_reference();
+	}
+	return nullptr;
+}
+
+Type *NodeGetControl::get_control_type() {
+	std::string control_par = to_lower(control_param);
+	static const std::unordered_set<std::string> str_substrings{"name", "path", "picture", "help", "identifier", "label", "text"};
+	static const std::unordered_set<std::string> int_substrings{"state", "alignment", "pos", "shifting"};
+	Type* type = TypeRegistry::Integer;
+	for (auto const &substring : str_substrings) {
+		if(contains(control_par, substring)) {
+			type = TypeRegistry::String;
+			break;
+		}
+	}
+	for (auto const &substring : int_substrings) {
+		if(contains(control_par, substring)) {
+			type = TypeRegistry::Integer;
+			break;
+		}
+	}
+	return type;
 }

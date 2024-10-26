@@ -85,7 +85,7 @@ public:
         auto error = CompileError(ErrorType::SyntaxError, "", node.tok.line, "", "", node.tok.file);
         error.m_message = "Found incorrect for-each-loop syntax.";
         // check if keys are variable references
-        for(auto &var : node.keys->params) {
+        for(auto &var : node.keys) {
             if(var->get_node_type() != NodeType::VariableRef) {
                 error.m_message = "Found incorrect key in ranged-for-loop syntax.";
                 error.m_expected = "<Variable>";
@@ -93,9 +93,9 @@ public:
                 error.exit();
             }
         }
-        if(node.keys->params.size() != 2) {
-            error.m_expected = "key, value";
-            error.m_got = node.keys->params[0]->get_string();
+        if(node.keys.size() != 2) {
+            error.m_expected = "<key, value> pair";
+            error.m_got = node.keys[0]->get_string();
             error.exit();
         }
         // range has to be an array that was parsed as variable ref
@@ -104,7 +104,7 @@ public:
             error.m_got = node.range->get_string();
             error.exit();
         }
-        auto node_key_ref = static_cast<NodeVariableRef*>(node.keys->params[0].get());
+        auto node_key_ref = static_cast<NodeVariableRef*>(node.keys[0].get());
         auto node_key_variable = std::make_unique<NodeVariable>(std::nullopt, node_key_ref->name, TypeRegistry::Integer, DataType::Mutable, node.tok);
         node_key_variable->is_local = true;
         node_key_variable->ty = TypeRegistry::Integer;
@@ -113,7 +113,7 @@ public:
                 std::move(node_key_variable),
                 nullptr, node.tok);
         auto node_key_iterator = std::make_unique<NodeSingleAssignment>(
-                node.keys->params[0]->clone(),
+                clone_as<NodeReference>(node.keys[0].get()),
                 std::make_unique<NodeInt>(0, node.tok), node.tok);
 
         auto node_num_elements = std::make_unique<NodeFunctionCall>(
@@ -134,9 +134,9 @@ public:
         node_end_range->ty = TypeRegistry::Integer;
 
         // add key-value pair to scope stack of array with <key> as index that needs to be substituted for <value>
-        auto node_value_array = std::make_unique<NodeArrayRef>(node.range->get_string(), std::move(node.keys->params[0]), node.tok);
+        auto node_value_array = std::make_unique<NodeArrayRef>(node.range->get_string(), std::move(node.keys[0]), node.tok);
         m_key_value_scope_stack.emplace_back();
-        m_key_value_scope_stack.back().insert({node.keys->params[1]->get_string(), std::move(node_value_array)});
+        m_key_value_scope_stack.back().insert({node.keys[1]->get_string(), std::move(node_value_array)});
 
         auto node_for_statement = std::make_unique<NodeFor>(
                 std::move(node_key_iterator),

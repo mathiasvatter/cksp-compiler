@@ -479,34 +479,55 @@ Result<std::unique_ptr<NodeSingleAssignment>> Parser::parse_single_assign_statem
     if(node_assign_statement_res.is_error())
         Result<std::unique_ptr<NodeSingleAssignment>>(node_assign_statement_res.get_error());
     auto node_assign_statement = std::move(node_assign_statement_res.unwrap());
-    if(node_assign_statement->l_value->params.size() != 1) {
+    if(node_assign_statement->l_values.size() != 1) {
         return Result<std::unique_ptr<NodeSingleAssignment>>(CompileError(ErrorType::ParseError,
-                                                                          "Incorrect Syntax in <Single Assign Statement>.", peek().line, "One Assignment", std::to_string(node_assign_statement->l_value->params.size()), peek().file));
+                                                                          "Incorrect Syntax in <Single Assign Statement>.", peek().line, "One Assignment", std::to_string(node_assign_statement->l_values.size()), peek().file));
     }
-    if(node_assign_statement->r_value->params.size() != 1) {
+    if(node_assign_statement->r_values->params.size() != 1) {
         return Result<std::unique_ptr<NodeSingleAssignment>>(CompileError(ErrorType::ParseError,
-                                                                          "Incorrect Syntax in <Single Assign Statement>.", peek().line, "One Assignment", std::to_string(node_assign_statement->r_value->params.size()), peek().file));
+                                                                          "Incorrect Syntax in <Single Assign Statement>.", peek().line, "One Assignment", std::to_string(node_assign_statement->r_values->params.size()), peek().file));
     }
+	auto ref = std::move(node_assign_statement->l_values[0]);
     auto node_single_assign_statement = std::make_unique<NodeSingleAssignment>(
-            std::move(node_assign_statement->l_value->params[0]), std::move(node_assign_statement->r_value->params[0]), get_tok());
+            std::move(ref), std::move(node_assign_statement->r_values->params[0]), get_tok());
     return Result<std::unique_ptr<NodeSingleAssignment>>(std::move(node_single_assign_statement));
 }
 
 Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* parent) {
     auto node_assign_statement = std::make_unique<NodeAssignment>(get_tok());
 	// make it possible to have more than one variable before assign
-	auto var_list = parse_param_list(node_assign_statement.get());
-	if(var_list.is_error()) {
-		return Result<std::unique_ptr<NodeAssignment>>(var_list.get_error());
+	std::vector<std::unique_ptr<NodeReference>> vars;
+	if(peek().type == token::COMMA) {
+		auto error = CompileError(ErrorType::SyntaxError, "Found invalid Assign Statement Syntax.", "", peek());
+		error.m_message += " Assignments must not start with a <comma>.";
+		error.exit();
 	}
-	auto vars = std::move(var_list.unwrap());
+	do {
+		if(peek().type == token::COMMA) consume();
+		// ui_control
+		if (peek().type == token::KEYWORD) {
+			auto ref = parse_reference_chain(node_assign_statement.get());
+			if (ref.is_error()) {
+				return Result<std::unique_ptr<NodeAssignment>>(ref.get_error());
+			}
+			auto reference = std::move(ref.unwrap());
+			if(reference->get_node_type() == NodeType::FunctionCall) {
+				auto error = CompileError(ErrorType::SyntaxError, "Found invalid Assign Statement Syntax.", "", peek());
+				error.m_message += " <Function Calls> cannot be l_values in Assign Statements.";
+				error.exit();
+			}
+			vars.push_back(std::unique_ptr<NodeReference>(static_cast<NodeReference*>(reference.release())));
+		} else {
+			return Result<std::unique_ptr<NodeAssignment>>(CompileError(ErrorType::ParseError,
+																		 "Incorrect syntax in declare statement.", "<ui_control>, <variable>, <array>", peek()));
+		}
+	} while(peek().type == token::COMMA);
+
     if(peek().type != token::ASSIGN) {
         return Result<std::unique_ptr<NodeAssignment>>(CompileError(ErrorType::SyntaxError,
                                                                     "Found invalid Assign Statement Syntax.", ":=", peek()));
     }
     consume(); // consume :=
-//	bool starts_with_parenth = peek().type == token::OPEN_PARENTH;
-//	bool is_array = vars->params.at(0)->get_node_type() == NodeType::ArrayRef || vars->params.at(0)->get_node_type() == NodeType::NDArrayRef;
 
 	std::unique_ptr<NodeParamList> assignees = nullptr;
     auto assignee =  parse_param_list(node_assign_statement.get()); //_parse_assignee();
@@ -514,13 +535,8 @@ Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* 
         return Result<std::unique_ptr<NodeAssignment>>(assignee.get_error());
     }
 	assignees = std::move(assignee.unwrap());
-	// if assignment starts with parenth and has only one member -> nested param list
-//	if(starts_with_parenth and is_array and assignees->params.size() == 1) {
-//		auto nested_param_list = std::make_unique<NodeParamList>(get_tok(), std::move(assignees));
-//		assignees = std::move(nested_param_list);
-//	}
-    node_assign_statement->l_value = std::move(vars);
-    node_assign_statement->r_value = std::move(assignees);
+    node_assign_statement->l_values = std::move(vars);
+    node_assign_statement->r_values = std::move(assignees);
     node_assign_statement->set_child_parents();
     node_assign_statement->parent = parent;
     return Result<std::unique_ptr<NodeAssignment>>(std::move(node_assign_statement));
@@ -1446,9 +1462,35 @@ Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* p
     auto node_for_statement = std::make_unique<NodeForEach>(get_tok());
     //consume for
     consume();
-    auto key_value_result = parse_param_list(node_for_statement.get());
-    if(key_value_result.is_error())
-        Result<std::unique_ptr<NodeForEach>>(key_value_result.get_error());
+
+	// make it possible to have more than one variable before assign
+	std::vector<std::unique_ptr<NodeReference>> keys;
+	if(peek().type == token::COMMA) {
+		auto error = CompileError(ErrorType::SyntaxError, "Found invalid <For-each> Statement Syntax.", "", peek());
+		error.m_message += " <key, value> pair references must not start with a <comma>.";
+		error.exit();
+	}
+	do {
+		if(peek().type == token::COMMA) consume();
+		// ui_control
+		if (peek().type == token::KEYWORD) {
+			auto ref = parse_variable_ref(node_for_statement.get());
+			if (ref.is_error()) {
+				return Result<std::unique_ptr<NodeForEach>>(ref.get_error());
+			}
+			auto reference = std::move(ref.unwrap());
+			keys.push_back(std::unique_ptr<NodeReference>(std::move(reference)));
+		} else {
+			return Result<std::unique_ptr<NodeForEach>>(CompileError(ErrorType::ParseError,
+				"Incorrect syntax in <key, value> pair.", "<variable>", peek()));
+		}
+	} while(peek().type == token::COMMA);
+	if(keys.size() != 2) {
+		auto error = CompileError(ErrorType::SyntaxError, "Found invalid <For-each> Statement Syntax.", "", peek());
+		error.m_message += " <key, value> pair references must be exactly two.";
+		error.exit();
+	}
+
     if(peek().type != token::IN)
         return Result<std::unique_ptr<NodeForEach>>(CompileError(ErrorType::SyntaxError,
                                                                  "Incorrect Syntax for range-based <for-loop>.", "in", peek()));
@@ -1474,7 +1516,7 @@ Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* p
             node_body->statements.push_back(std::move(stmt.unwrap()));
     }
     consume(); // consume end for
-    node_for_statement->keys = std::move(key_value_result.unwrap());
+    node_for_statement->keys = std::move(keys);
     node_for_statement->range = std::move(expression_stmt.unwrap());
     node_for_statement->body = std::move(node_body);
     node_for_statement->set_child_parents();

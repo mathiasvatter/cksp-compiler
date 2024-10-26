@@ -273,3 +273,35 @@ struct NodeAccessChain : NodeReference {
 
 };
 
+struct NodeGetControl : NodeReference {
+	std::unique_ptr<NodeAST> ui_id; //array or variable
+	std::string control_param;
+	inline NodeGetControl(std::unique_ptr<NodeAST> ui_id, std::string controlParam, Token tok)
+		: NodeReference(controlParam, NodeType::GetControl, std::move(tok)), ui_id(std::move(ui_id)), control_param(std::move(controlParam)) {
+		set_child_parents();
+	}
+	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	// Kopierkonstruktor
+	NodeGetControl(const NodeGetControl& other);
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		ui_id->update_parents(this);
+	}
+	void set_child_parents() override {
+		if(ui_id) ui_id->parent = this;
+	};
+	std::string get_string() override {
+		return ui_id->get_string() + " -> " + control_param;
+	}
+	void update_token_data(const Token& token) override {
+		ui_id -> update_token_data(token);
+	}
+	ASTLowering* get_lowering(struct NodeProgram *program) const override;
+
+	std::unique_ptr<NodeReference> get_full_control_param(DefinitionProvider* def_provider);
+	Type* get_control_type();
+};
+
