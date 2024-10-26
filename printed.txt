@@ -31,12 +31,13 @@ struct List
 	function List::__del__(self : int)
 		while(self{int} # - 1) 
 			dec(List::allocation[self{int}]{int})
-			if(List::allocation[self{int}]{int} <= 0)
-				if(List::next[self{int}]{int} # - 1)
-					self{int} := List::next[self{int}]{int}
-					List::next[self{int}]{int} := - 1
-					continue
-				end if
+			if(List::allocation[self{int}]{int} > 0)
+				continue
+			end if
+			if(List::next[self{int}]{int} # - 1)
+				self{int} := List::next[self{int}]{int}
+				List::next[self{int}]{int} := - 1
+				continue
 			end if
 			self{int} := - 1
 		end while

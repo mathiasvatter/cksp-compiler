@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Sat Oct 26 20:18:39 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Sat Oct 26 20:37:25 2024 }
 on init
   declare const $MAX_STRUCTS := 1000000
   declare const @MEM_WARNING

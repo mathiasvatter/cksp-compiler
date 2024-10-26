@@ -202,3 +202,34 @@ function Node::__del__(self: Node)
 
     end while
 end function
+
+// delete funktion, falls das struct einen rekursiven member in einem array hat
+struct List
+    declare value: int
+    declare nexts[5]: List[] := (nil)
+end struct
+// in diesem fall ist kein stack nötig
+function List::__del__(self: List)
+    // Solange es Objekte gibt, die freigegeben werden sollen, weiter durch die Struktur iterieren
+    while self # nil
+
+        // Schritt 1: Referenzzähler reduzieren
+        dec(List::allocation[self])
+        // Wenn das Objekt noch referenziert wird, zum nächsten Objekt gehen
+        if (List::allocation[self] > 0)
+        	continue
+        end if            
+
+        // hier kommen noch mögliche andere delete methoden anderer
+        // member hin, die nicht vom Typ List sind.
+        declare i: int
+        for i := 0 to num_elements(self.nexts)-1
+            if(self.nexts[i] # nil)
+                self := self.nexts[i]
+                self.nexts[i] := nil // Entferne den next Pointer, um zyklische Referenzen zu vermeiden
+                continue // Weitermachen mit dem next Pointer
+            end if
+        end for
+        self := nil
+    end while
+end function

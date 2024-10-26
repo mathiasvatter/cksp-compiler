@@ -474,10 +474,10 @@ NodeFunctionDefinition *NodeStruct::generate_delete_method() {
 	}
 	// if there are object members -> continue recursively
 	if(!member_objects.empty()) {
-		// if(List::allocation[self] <= 0)
+		// if(List::allocation[self] > 0) continue
 		auto inner_if = std::make_unique<NodeIf>(
 			std::make_unique<NodeBinaryExpr>(
-				token::LESS_EQUAL,
+				token::GREATER_THAN,
 				alloc_ref->clone(),
 				std::make_unique<NodeInt>(0, tok),
 				tok
@@ -486,6 +486,8 @@ NodeFunctionDefinition *NodeStruct::generate_delete_method() {
 			std::make_unique<NodeBlock>(tok, true),
 			tok
 		);
+		inner_if->if_body->add_as_stmt(DefinitionProvider::continu(tok));
+		outer_while->body->add_as_stmt(std::move(inner_if));
 		for(auto &mem : member_objects) {
 			std::string prefix = mem->ty->get_element_type()->to_string();
 			// self.other_struct -> was already changed
@@ -526,9 +528,8 @@ NodeFunctionDefinition *NodeStruct::generate_delete_method() {
 					mem->tok
 				));
 			}
-			inner_if->if_body->add_as_stmt(std::move(nil_check));
+			outer_while->body->add_as_stmt(std::move(nil_check));
 		}
-		outer_while->body->add_as_stmt(std::move(inner_if));
 	}
 	outer_while->body->add_as_stmt(std::move(last_assignment));
 	function_def->body->add_as_stmt(std::move(outer_while));
