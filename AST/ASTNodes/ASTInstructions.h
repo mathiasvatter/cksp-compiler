@@ -492,6 +492,11 @@ struct NodeBlock : NodeInstruction {
 		stmt->parent = this;
 		statements.insert(statements.begin(), std::move(stmt));
 	}
+	NodeStatement* add_as_stmt(std::unique_ptr<NodeAST> node) {
+		auto node_stmt = std::make_unique<NodeStatement>(std::move(node), tok);
+		add_stmt(std::move(node_stmt));
+		return statements.back().get();
+	}
     /// puts nested statement list in current one
     void flatten();
 	/// returns true if the block is a scope block and sets node.scope
@@ -566,6 +571,7 @@ struct NodeIf: NodeInstruction {
         if_body->update_token_data(token);
         else_body->update_token_data(token);
     }
+
 };
 
 struct NodeFor : NodeInstruction {

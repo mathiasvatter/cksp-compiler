@@ -64,7 +64,10 @@ struct NodeArrayRef : NodeReference {
 	/// check if array ref is <list_ref>.size[] array
 	bool is_list_sizes();
 	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
-
+	void set_index(std::unique_ptr<NodeAST> new_index) {
+		index = std::move(new_index);
+		index->parent = this;
+	}
 };
 
 struct NodeNDArrayRef : NodeReference {
@@ -219,6 +222,11 @@ struct NodeAccessChain : NodeReference {
 	}
 	inline explicit NodeAccessChain(Token tok)
 		: NodeReference("", NodeType::AccessChain, std::move(tok)) {}
+	// Variadischer Template-Konstruktor
+	template<typename... Member>
+	explicit NodeAccessChain(Token tok, Member&&... member) : NodeReference("", NodeType::AccessChain, std::move(tok)) {
+		(add_method(std::move(member)), ...);
+	}
 	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeAccessChain(const NodeAccessChain& other);
@@ -301,7 +309,39 @@ struct NodeGetControl : NodeReference {
 	}
 	ASTLowering* get_lowering(struct NodeProgram *program) const override;
 
-	std::unique_ptr<NodeReference> get_full_control_param(DefinitionProvider* def_provider);
+//	std::unique_ptr<NodeReference> get_full_control_param(DefinitionProvider* def_provider);
+	Type* get_control_type();
+};
+
+struct NodeSetControl : NodeReference {
+	std::unique_ptr<NodeAST> ui_id; //array or variable
+	std::string control_param;
+	inline NodeSetControl(std::unique_ptr<NodeAST> ui_id, std::string controlParam, Token tok)
+		: NodeReference(controlParam, NodeType::SetControl, std::move(tok)), ui_id(std::move(ui_id)), control_param(std::move(controlParam)) {
+		set_child_parents();
+	}
+	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	// Kopierkonstruktor
+	NodeSetControl(const NodeSetControl& other);
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		ui_id->update_parents(this);
+	}
+	void set_child_parents() override {
+		if(ui_id) ui_id->parent = this;
+	};
+	std::string get_string() override {
+		return ui_id->get_string() + " -> " + control_param;
+	}
+	void update_token_data(const Token& token) override {
+		ui_id -> update_token_data(token);
+	}
+	ASTLowering* get_lowering(struct NodeProgram *program) const override;
+
+//	std::unique_ptr<NodeReference> get_full_control_param(DefinitionProvider* def_provider);
 	Type* get_control_type();
 };
 

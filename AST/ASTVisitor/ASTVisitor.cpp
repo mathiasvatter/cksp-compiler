@@ -42,3 +42,18 @@ std::unique_ptr<NodeBlock> ASTVisitor::make_while_loop(NodeAST* var, int32_t fro
     return std::move(node_body);
 }
 
+std::unique_ptr<NodeIf> ASTVisitor::make_nil_check(std::unique_ptr<NodeReference> ref) {
+	auto tok = ref->tok;
+	return std::make_unique<NodeIf>(
+		std::make_unique<NodeBinaryExpr>(
+			token::NOT_EQUAL,
+			std::move(ref),
+			std::make_unique<NodeNil>(tok),
+			tok
+		),
+		std::make_unique<NodeBlock>(tok, true),
+		std::make_unique<NodeBlock>(tok, true),
+		tok
+	);
+}
+

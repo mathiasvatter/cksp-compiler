@@ -51,7 +51,7 @@ public:
 				node_func_call->function->prepend_arg(std::move(prev_node));
 			}
 		}
-		return &node;
+		return node.replace_with(std::move(node.chain.back()));
 	}
 
 	/// every pointer ref in access chain is replaced by array_ref with name "<obj_type>.<name>"

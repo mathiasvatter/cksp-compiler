@@ -155,7 +155,11 @@ struct NodeReference : NodeAST {
 	virtual std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) {
 		return nullptr;
 	}
-
+	void remove_obj_prefix() {
+		size_t pos = name.find(OBJ_DELIMITER);
+		if (pos != std::string::npos)
+			name = name.substr(pos + OBJ_DELIMITER.size());
+	}
 	/// to be used on references
 	NodeReference* replace_reference(std::unique_ptr<NodeReference> new_node, class DefinitionProvider* def_provider);
 };
@@ -206,6 +210,7 @@ struct NodeDataStructure : NodeAST {
 	}
 	/// to be used on datastructures
 	NodeDataStructure* replace_datastruct(std::unique_ptr<NodeDataStructure> new_node, class DefinitionProvider* def_provider);
+
 };
 
 struct NodeInstruction : NodeAST {

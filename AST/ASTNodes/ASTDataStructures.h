@@ -376,6 +376,7 @@ struct NodeStruct : NodeDataStructure {
 	 * end function
 	 */
 	NodeFunctionDefinition* generate_repr_method();
+	NodeFunctionDefinition* generate_delete_method();
 	void inline_struct(NodeProgram* program);
 	NodeFunctionDefinition* get_overloaded_method(token op);
 };

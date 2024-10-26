@@ -59,9 +59,10 @@ struct Note
 end struct
 
 on init	
-	declare first_note := Note(69, (3,0), ((10)))
+	// declare first_note := Note(69, (3,0), ((10)))
 	declare ptr: List := List(1, List(3, nil))
 	message(ptr.next.next)
+	message(ptr.get_next_next_value())
 	// declare huihui : (int, int): void
 	// declare ui_button btn_slot[5]: int[]
 	
@@ -83,9 +84,9 @@ on init
 	message(search_matrix(ndarray, 3))
 
 
-	declare p1 := Point(1, 2)
-	declare p2 := Point(3, 4)
-	message(p1 + p2)
+	// declare p1 := Point(1, 2)
+	// declare p2 := Point(3, 4)
+	// message(p1 + p2)
 end on
 
 function return_init(init: int[])

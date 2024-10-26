@@ -310,6 +310,42 @@ public:
 		func_call->kind = NodeFunctionCall::Kind::Builtin;
 		return std::move(func_call);
 	}
+
+	static std::unique_ptr<NodeFunctionCall> dec(std::unique_ptr<NodeReference> ref) {
+		auto func_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionVarRef>(
+				std::make_unique<NodeFunctionHeader>(
+					"dec",
+					std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
+					Token()
+				),
+				Token()
+			),
+			Token()
+		);
+		func_call->ty = TypeRegistry::Integer;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		return std::move(func_call);
+	}
+
+	/// continue
+	static std::unique_ptr<NodeFunctionCall> continu(Token &tok) {
+		auto call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeader>(
+				"continue",
+				std::make_unique<NodeParamList>(
+					tok
+				),
+				tok
+			),
+			tok
+		);
+		call->function->header->has_forced_parenth = false;
+		return call;
+	}
+
 };
 
 
