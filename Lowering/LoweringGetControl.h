@@ -38,10 +38,21 @@ public:
 	};
 
 private:
+	inline std::unique_ptr<NodeReference> get_full_control_param(NodeGetControl* node) {
+		std::string control_par = to_lower(node->control_param);
+		if(control_par == "x") control_par = "pos_x";
+		if(control_par == "y") control_par = "pos_y";
+		if(control_par == "default") control_par += "_value";
+		if(auto builtin_var = m_def_provider->get_builtin_variable(to_upper("control_par_"+control_par))) {
+			return builtin_var->to_reference();
+		}
+		return nullptr;
+	}
+
 	inline std::unique_ptr<NodeFunctionCall> lowering(std::string control_function, NodeGetControl* node) {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 		// get control_param from shorthand
-		auto control_par = node->get_full_control_param(m_def_provider);
+		auto control_par = get_full_control_param(node);
 		if(!control_par) {
 			error.m_message = "Unknown control parameter: " + node->control_param;
 			error.m_got = node->control_param;

@@ -101,6 +101,11 @@ public:
 		for(auto & m: node.methods) {
 			if (m->header->name == "__init__") has_init_method = true;
 			if (m->header->name == "__repr__") has_repr_method = true;
+			if (m->header->name == "__del__") {
+				auto error = CompileError(ErrorType::SyntaxError, "", "", m->tok);
+				error.m_message = "Destructor method is generated automatically. Please use another name.";
+				error.exit();
+			}
 		}
 		// automatically generate init method if none provided by user
 		if(!has_init_method) node.generate_init_method();

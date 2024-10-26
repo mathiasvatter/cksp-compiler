@@ -425,4 +425,120 @@ NodeFunctionDefinition* NodeStruct::get_overloaded_method(token op) {
 	return nullptr;
 }
 
+NodeFunctionDefinition *NodeStruct::generate_delete_method() {
+	auto function_def = std::make_unique<NodeFunctionDefinition>(
+		std::make_unique<NodeFunctionHeader>(
+			name+OBJ_DELIMITER+"__del__",
+			std::make_unique<NodeParamList>(this->tok, node_self->clone()),
+			this->tok
+		),
+		std::nullopt,
+		false,
+		std::make_unique<NodeBlock>(tok, true),
+		this->tok
+	);
+	auto self_ref = static_cast<NodeDataStructure*>(function_def->header->args->params[0].get())->to_reference();
+	self_ref->match_data_structure(node_self.get());
+	self_ref->ty = node_self->ty;
+	// while self # nil
+	auto outer_while = std::make_unique<NodeWhile>(
+		std::make_unique<NodeBinaryExpr>(
+			token::NOT_EQUAL,
+			self_ref->clone(),
+			std::make_unique<NodeNil>(tok),
+			tok
+		),
+		std::make_unique<NodeBlock>(tok, true),
+		tok
+	);
+	// self := nil last statement in outer while block
+	auto last_assignment = std::make_unique<NodeSingleAssignment>(
+		clone_as<NodeReference>(self_ref.get()),
+		std::make_unique<NodeNil>(tok),
+		tok
+	);
+	// List::allocation[self]
+	auto alloc_ref = allocation_var->to_reference();
+	static_cast<NodeArrayRef*>(alloc_ref.get())->set_index(self_ref->clone());
+	alloc_ref->ty = TypeRegistry::Integer;
+	// dec(List::allocation[self])
+	auto dec_call = DefinitionProvider::dec(clone_as<NodeReference>(alloc_ref.get()));
+	outer_while->body->add_as_stmt(std::move(dec_call));
+	// if struct has members that are also objects, delete them too
+	std::vector<NodeDataStructure*> member_objects;
+	for(auto &mem : member_table) {
+		if(mem.first == "self") continue;
+		if(mem.second->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+			member_objects.push_back(mem.second);
+		}
+	}
+	// if there are object members -> continue recursively
+	if(!member_objects.empty()) {
+		// if(List::allocation[self] <= 0)
+		auto inner_if = std::make_unique<NodeIf>(
+			std::make_unique<NodeBinaryExpr>(
+				token::LESS_EQUAL,
+				alloc_ref->clone(),
+				std::make_unique<NodeInt>(0, tok),
+				tok
+			),
+			std::make_unique<NodeBlock>(tok, true),
+			std::make_unique<NodeBlock>(tok, true),
+			tok
+		);
+		for(auto &mem : member_objects) {
+			std::string prefix = mem->ty->get_element_type()->to_string();
+			// self.other_struct -> was already changed
+			auto mem_ref = mem->to_reference();
+			mem_ref->remove_obj_prefix();
+			mem_ref->match_data_structure(mem);
+			auto mem_access_chain = std::make_unique<NodeAccessChain>(mem->tok, self_ref->clone(), std::move(mem_ref));
+			// if(self.other_struct # nil)
+			auto nil_check = ASTVisitor::make_nil_check(clone_as<NodeReference>(mem_access_chain.get()));
+			// check for recursive data structure
+			if(prefix == this->name)  {
+				// self := self.left
+				nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+					clone_as<NodeReference>(self_ref.get()),
+					mem_access_chain->clone(),
+					mem->tok
+				));
+				// self.left := nil
+				nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+					clone_as<NodeReference>(mem_access_chain.get()),
+					std::make_unique<NodeNil>(mem->tok),
+					mem->tok
+				));
+				nil_check->if_body->add_as_stmt(DefinitionProvider::continu(mem->tok));
+			} else {
+				nil_check->if_body->add_as_stmt(std::make_unique<NodeFunctionCall>(
+					false,
+					std::make_unique<NodeFunctionHeader>(
+						prefix+OBJ_DELIMITER+"__del__",
+						std::make_unique<NodeParamList>(mem->tok, mem_access_chain->clone()),
+						mem->tok
+						),
+					mem->tok
+				));
+				nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+					std::move(mem_access_chain),
+					std::make_unique<NodeNil>(mem->tok),
+					mem->tok
+				));
+			}
+			inner_if->if_body->add_as_stmt(std::move(nil_check));
+		}
+		outer_while->body->add_as_stmt(std::move(inner_if));
+	}
+	outer_while->body->add_as_stmt(std::move(last_assignment));
+	function_def->body->add_as_stmt(std::move(outer_while));
+
+	function_def->parent = this;
+	function_def->ty = TypeRegistry::Void;
+	this->methods.push_back(std::move(function_def));
+	this->update_method_table();
+	return method_table.find({name+OBJ_DELIMITER+"__del__", 1})->second;
+}
+
+
 

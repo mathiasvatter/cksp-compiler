@@ -127,7 +127,7 @@ public:
 				node.tok
 			),
 			std::make_unique<NodeStatement>(
-				get_continue_call(node.tok),
+				DefinitionProvider::continu(node.tok),
 				node.tok
 			)
 		));
@@ -148,7 +148,7 @@ private:
 			std::move(condition),
 			std::make_unique<NodeBlock>(
 				tok,
-				std::make_unique<NodeStatement>(get_continue_call(tok), tok)
+				std::make_unique<NodeStatement>(DefinitionProvider::continu(tok), tok)
 			),
 			std::make_unique<NodeBlock>(tok, true),
 			tok
@@ -158,25 +158,25 @@ private:
 	}
 
 
-	/// continue
-	static std::unique_ptr<NodeFunctionCall> get_continue_call(Token &tok) {
-		auto call = std::make_unique<NodeFunctionCall>(
-			false,
-			std::make_unique<NodeFunctionVarRef>(
-				std::make_unique<NodeFunctionHeader>(
-					"continue",
-					std::make_unique<NodeParamList>(
-						tok
-					),
-					tok
-				),
-				tok
-			),
-			tok
-		);
-		call->function->header->has_forced_parenth = false;
-		return call;
-	}
+//	/// continue
+//	static std::unique_ptr<NodeFunctionCall> get_continue_call(Token &tok) {
+//		auto call = std::make_unique<NodeFunctionCall>(
+//			false,
+//			std::make_unique<NodeFunctionVarRef>(
+//				std::make_unique<NodeFunctionHeader>(
+//					"continue",
+//					std::make_unique<NodeParamList>(
+//						tok
+//					),
+//					tok
+//				),
+//				tok
+//			),
+//			tok
+//		);
+//		call->function->header->has_forced_parenth = false;
+//		return call;
+//	}
 
 	/// adds "and RETURN_FLAG = 0" to condition
 	static std::unique_ptr<NodeBinaryExpr> add_return_condition(std::unique_ptr<NodeAST> condition, NodeDataStructure* return_flag_var) {

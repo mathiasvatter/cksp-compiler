@@ -40,6 +40,7 @@ public:
 
 		// add compiler struct vars
 		auto struct_vars = add_compiler_struct_vars();
+		node.generate_delete_method();
 		// remove "self" from member declarations
 		node.members->statements.erase(node.members->statements.begin());
 		node.members->accept(*this);
@@ -51,6 +52,7 @@ public:
 
 		m_current_struct = nullptr;
 		m_current_func = nullptr;
+
 		return &node;
 	}
 
@@ -96,15 +98,15 @@ public:
 			Token()
 		);
 		m_current_struct->allocation_var = static_cast<NodeArray*>(allocation_decl->variable.get());
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(max_structs_decl), Token()));
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(free_idx_decl), Token()));
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(allocation_decl), Token()));
+		node_block->add_as_stmt(std::move(max_structs_decl));
+		node_block->add_as_stmt(std::move(free_idx_decl));
+		node_block->add_as_stmt(std::move(allocation_decl));
 		return node_block;
 	}
 
 	inline NodeAST * visit(NodeAccessChain& node) override {
-		node.lower(m_program);
-		return node.replace_with(std::move(node.chain.back()));
+		return node.lower(m_program);
+//		return node.replace_with(std::move(node.chain.back()));
 	}
 
 	inline NodeAST * visit(NodeSingleDeclaration& node) override {
@@ -200,6 +202,10 @@ public:
 
 
 	inline NodeAST * visit(NodeFunctionDefinition& node) override {
+		// no lowering necessary for delete method
+		if(node.header->name == m_current_struct->name+OBJ_DELIMITER+"__del__") {
+			return &node;
+		}
 		m_current_func = &node;
 		node.header->accept(*this);
 		node.body->accept(*this);

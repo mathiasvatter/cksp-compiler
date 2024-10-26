@@ -131,6 +131,7 @@ void Compiler::compile() {
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
 
+	ast->debug_print();
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
 
@@ -166,7 +167,6 @@ void Compiler::compile() {
 	compile_time.stop("Variable Checking 1");
 	std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;
 	compile_time.start("Global Scope");
-	ast->debug_print();
 
 //	ast->debug_print();
 	ASTGlobalScope global_scope(&m_definition_provider);

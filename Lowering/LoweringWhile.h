@@ -97,24 +97,9 @@ public:
 			std::make_unique<NodeInt>(1, node.tok),
 			node.tok
 		);
-		auto continue_call = std::make_unique<NodeFunctionCall>(
-			false,
-			std::make_unique<NodeFunctionVarRef>(
-				std::make_unique<NodeFunctionHeader>(
-					"continue",
-					std::make_unique<NodeParamList>(
-						node.tok
-					),
-					node.tok
-				),
-				node.tok
-			),
-			node.tok
-		);
-		continue_call->function->header->has_forced_parenth = false;
 		auto block = std::make_unique<NodeBlock>(node.tok);
 		block->add_stmt(std::make_unique<NodeStatement>(std::move(exit_flag_assign), node.tok));
-		block->add_stmt(std::make_unique<NodeStatement>(std::move(continue_call), node.tok));
+		block->add_stmt(std::make_unique<NodeStatement>(DefinitionProvider::continu(node.tok), node.tok));
 		return node.replace_with(std::move(block));
 	}
 

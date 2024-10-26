@@ -99,7 +99,7 @@ NodeAST * ASTCollectLowerings::visit(NodeGetControl& node) {
 	// is set control
 	if(node.parent->get_node_type() == NodeType::SingleAssignment) {
 		if(auto node_assign_stmt = static_cast<NodeSingleAssignment*>(node.parent)) {
-			if(node_assign_stmt->l_value.get() == &node) return &node;;
+			if(node_assign_stmt->l_value.get() == &node) return &node;
 		}
 	}
 
@@ -153,9 +153,9 @@ NodeAST * ASTCollectLowerings::visit(NodePointerRef& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeAccessChain& node) {
-	node.lower(m_program);
-	node.chain.back()->accept(*this);
-	return node.replace_with(std::move(node.chain.back()));
+	return node.lower(m_program);
+//	node.chain.back()->accept(*this);
+//	return node.replace_with(std::move(node.chain.back()));
 }
 
 
