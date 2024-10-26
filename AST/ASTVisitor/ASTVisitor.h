@@ -119,8 +119,8 @@ public:
 		return &node;
     };
     virtual NodeAST* visit(NodeAssignment& node) {
-		node.l_value->accept(*this);
-		node.r_value->accept(*this);
+		for(auto& l_val : node.l_values) l_val->accept(*this);
+		node.r_values->accept(*this);
 		return &node;
 	};
     virtual NodeAST* visit(NodeSingleAssignment& node) {
@@ -205,7 +205,7 @@ public:
 		return &node;
 	};
     virtual NodeAST* visit(NodeForEach& node) {
-        node.keys->accept(*this);
+		for(auto &key : node.keys) key->accept(*this);
         node.range->accept(*this);
         node.body->accept(*this);
 		return &node;

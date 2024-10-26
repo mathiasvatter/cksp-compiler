@@ -221,7 +221,7 @@ private:
 		// create for loop
 		auto node_body = std::make_unique<NodeBlock>(node->tok, true);
 		auto node_assignment = std::make_unique<NodeSingleAssignment>(
-			node_nd_array_ref->clone(),
+			clone_as<NodeReference>(node_nd_array_ref.get()),
 			std::move(node_value_ref),
 			node->tok
 		);

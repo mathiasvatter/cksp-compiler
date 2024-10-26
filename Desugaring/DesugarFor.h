@@ -31,9 +31,9 @@ public:
 
     inline NodeAST* visit(NodeFor& node) override {
         // function arg
-        std::unique_ptr<NodeAST> iterator_var = node.iterator->l_value->clone();
-        std::unique_ptr<NodeAST> assign_var = iterator_var->clone();
-        std::unique_ptr<NodeAST> function_var = iterator_var->clone();
+        auto iterator_var = clone_as<NodeReference>(node.iterator->l_value.get());
+        auto assign_var = clone_as<NodeReference>(iterator_var.get());
+        auto function_var = clone_as<NodeReference>(iterator_var.get());
 
         if(!node.step) {
             // function call

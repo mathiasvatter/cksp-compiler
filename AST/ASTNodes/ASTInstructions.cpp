@@ -8,13 +8,10 @@
 #include "../../Lowering/ASTLowering.h"
 #include "../../Desugaring/DesugarDeclareAssign.h"
 #include "../../Desugaring/DesugarDelete.h"
-#include "../../Lowering/LoweringGetControl.h"
 #include "../../Lowering/LoweringFunctionCall.h"
 #include "../../Desugaring/DesugaringFamily.h"
 #include "../../Desugaring/DesugarFor.h"
 #include "../../Desugaring/DesugarForEach.h"
-#include "../ASTVisitor/GlobalScope/ASTGlobalScope.h"
-#include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "../../Desugaring/DesugarFunctionCall.h"
 #include "../../Lowering/LoweringWhile.h"
 
@@ -294,8 +291,8 @@ NodeAST *NodeAssignment::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeAssignment::NodeAssignment(const NodeAssignment& other)
-        : NodeInstruction(other), l_value(clone_unique(other.l_value)),
-          r_value(clone_unique(other.r_value)) {
+        : NodeInstruction(other), l_values(clone_vector(other.l_values)),
+          r_values(clone_unique(other.r_values)) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeAssignment::clone() const {
@@ -322,8 +319,12 @@ std::unique_ptr<NodeAST> NodeSingleAssignment::clone() const {
 }
 NodeAST *NodeSingleAssignment::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (l_value.get() == oldChild) {
-        l_value = std::move(newChild);
-        return l_value.get();
+		if(auto new_l_value = cast_node<NodeReference>(newChild.release())) {
+			l_value = std::unique_ptr<NodeReference>(new_l_value);
+			return l_value.get();
+		}
+//		l_value = std::move(newChild);
+//		return l_value.get();
     } else if (r_value.get() == oldChild) {
         r_value = std::move(newChild);
         return r_value.get();
@@ -444,61 +445,6 @@ NodeAST *NodeSingleReturn::replace_child(NodeAST* oldChild, std::unique_ptr<Node
 		return return_variable.get();
 	}
 	return nullptr;
-}
-
-// ************* NodeGetControl ***************
-NodeAST *NodeGetControl::accept(struct ASTVisitor &visitor) {
-    return visitor.visit(*this);
-}
-NodeGetControl::NodeGetControl(const NodeGetControl& other)
-        : NodeInstruction(other), ui_id(clone_unique(other.ui_id)), control_param(other.control_param) {
-    set_child_parents();
-}
-std::unique_ptr<NodeAST> NodeGetControl::clone() const {
-    return std::make_unique<NodeGetControl>(*this);
-}
-NodeAST *NodeGetControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
-    if (ui_id.get() == oldChild) {
-        ui_id = std::move(newChild);
-        return ui_id.get();
-    }
-    return nullptr;
-}
-
-ASTLowering* NodeGetControl::get_lowering(struct NodeProgram *program) const {
-    static LoweringGetControl lowering(program);
-    return &lowering;
-}
-
-std::unique_ptr<NodeReference> NodeGetControl::get_full_control_param(DefinitionProvider *def_provider) {
-	std::string control_par = to_lower(control_param);
-	if(control_par == "x") control_par = "pos_x";
-	if(control_par == "y") control_par = "pos_y";
-	if(control_par == "default") control_par += "_value";
-	if(auto builtin_var = def_provider->get_builtin_variable(to_upper("control_par_"+control_par))) {
-		return builtin_var->to_reference();
-	}
-	return nullptr;
-}
-
-Type *NodeGetControl::get_control_type() {
-	std::string control_par = to_lower(control_param);
-	static const std::unordered_set<std::string> str_substrings{"name", "path", "picture", "help", "identifier", "label", "text"};
-	static const std::unordered_set<std::string> int_substrings{"state", "alignment", "pos", "shifting"};
-	Type* type = TypeRegistry::Integer;
-	for (auto const &substring : str_substrings) {
-		if(contains(control_par, substring)) {
-			type = TypeRegistry::String;
-			break;
-		}
-	}
-	for (auto const &substring : int_substrings) {
-		if(contains(control_par, substring)) {
-			type = TypeRegistry::Integer;
-			break;
-		}
-	}
-	return type;
 }
 
 // ************* NodeBlock ***************
@@ -707,7 +653,7 @@ NodeAST *NodeForEach::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeForEach::NodeForEach(const NodeForEach& other)
-        : NodeInstruction(other), keys(clone_unique(other.keys)), range(clone_unique(other.range)),
+        : NodeInstruction(other), keys(clone_vector(other.keys)), range(clone_unique(other.range)),
           body(clone_unique(other.body)) {
     set_child_parents();
 }

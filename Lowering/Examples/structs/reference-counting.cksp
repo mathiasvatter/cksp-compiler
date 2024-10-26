@@ -44,6 +44,11 @@ if(scope)
     declare more_lists[10,10]: List[][] := (ls)
     retain ls 10*10 // increase ref count by num_elements of more_lists
 
+    declare lists[10] := List[] := (ls, ls1, ls2)
+    retain ls 1
+    retain ls1 1
+    retain ls2 10-2
+
     declare ls1 := ls
     retain ls 1 // increase ref count by 1
 

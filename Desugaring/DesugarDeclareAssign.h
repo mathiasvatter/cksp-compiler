@@ -104,25 +104,30 @@ public:
 
     inline NodeAST* visit(NodeAssignment &node) override {
         // error handling
-        if(node.l_value->params.size() < node.r_value->params.size()) {
+        if(node.l_values.size() < node.r_values->params.size()) {
             auto error = CompileError(ErrorType::SyntaxError,
                          "", node.tok.line, "", "", node.tok.file);
             error.m_message = "Found incorrect assign statement syntax. There are more values to assign than array variables.";
-            error.m_expected = node.l_value->params.size();
-            error.m_got = node.r_value->params.size();
+            error.m_expected = node.l_values.size();
+            error.m_got = node.r_values->params.size();
             error.exit();
         }
 
 		auto node_body = std::make_unique<NodeBlock>(node.tok);
-		handle_multiple_func_returns(node_body, node.l_value->params, node.r_value->params, NodeType::Assignment);
+		// turn node.variable into vector of NodeAST
+		std::vector<std::unique_ptr<NodeAST>> l_values;
+		l_values.insert(l_values.begin(), std::make_move_iterator(node.l_values.begin()), std::make_move_iterator(node.l_values.end()));
+		node.l_values.clear();
+		handle_multiple_func_returns(node_body, l_values, node.r_values->params, NodeType::Assignment);
+		for(auto &var : l_values) node.l_values.push_back(std::unique_ptr<NodeReference>(static_cast<NodeReference*>(var.release())));
 
         std::vector<std::unique_ptr<NodeSingleAssignment>> assign_statements;
-        for(auto &arr_var : node.l_value->params) {
+        for(auto &arr_var : node.l_values) {
             auto node_single_assign_stmt = std::make_unique<NodeSingleAssignment>(std::move(arr_var), nullptr, node.tok);
             assign_statements.push_back(std::move(node_single_assign_stmt));
         }
         std::vector<std::unique_ptr<NodeAST>> values;
-        for(auto &assignee : node.r_value->params) {
+        for(auto &assignee : node.r_values->params) {
             values.push_back(std::move(assignee));
         }
         // there were more variables given than values -> repeat the last value
