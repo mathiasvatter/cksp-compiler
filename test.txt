@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Sat Oct 26 20:37:25 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Sun Oct 27 19:13:05 2024 }
 on init
   declare const $MAX_STRUCTS := 1000000
   declare const @MEM_WARNING
@@ -8,11 +8,12 @@ on init
   declare $loc_0
   declare const $Note__MAX_STRUCTS
   $Note__MAX_STRUCTS := $MAX_STRUCTS / ((((2 * 2) + 10) + abs((2 * 2) - 10)) / 2)
-  declare $Note__free_idx := 0
+  declare $Note__free_idx
   declare const $Note__allocation__SIZE := $Note__MAX_STRUCTS
   declare %Note__allocation[$Note__MAX_STRUCTS]
   declare const $Note__stack__SIZE := $Note__MAX_STRUCTS
   declare %Note__stack[$Note__MAX_STRUCTS]
+  declare $Note__stack_top
   declare const $Note__pitch__SIZE := $Note__MAX_STRUCTS
   declare %Note__pitch[$Note__MAX_STRUCTS]
   declare const $Note__velocities__SIZE_D1 := $Note__MAX_STRUCTS
@@ -25,21 +26,23 @@ on init
   declare const $_Note__play_pos__SIZE := $Note__MAX_STRUCTS * (2 * 2)
   declare %_Note__play_pos[$Note__MAX_STRUCTS * (2 * 2)]
   declare const $Point__MAX_STRUCTS := $MAX_STRUCTS
-  declare $Point__free_idx := 0
+  declare $Point__free_idx
   declare const $Point__allocation__SIZE := $Point__MAX_STRUCTS
   declare %Point__allocation[$Point__MAX_STRUCTS]
   declare const $Point__stack__SIZE := $Point__MAX_STRUCTS
   declare %Point__stack[$Point__MAX_STRUCTS]
+  declare $Point__stack_top
   declare const $Point__x__SIZE := $Point__MAX_STRUCTS
   declare %Point__x[$Point__MAX_STRUCTS]
   declare const $Point__y__SIZE := $Point__MAX_STRUCTS
   declare %Point__y[$Point__MAX_STRUCTS]
   declare const $List__MAX_STRUCTS := $MAX_STRUCTS
-  declare $List__free_idx := 0
+  declare $List__free_idx
   declare const $List__allocation__SIZE := $List__MAX_STRUCTS
   declare %List__allocation[$List__MAX_STRUCTS]
   declare const $List__stack__SIZE := $List__MAX_STRUCTS
   declare %List__stack[$List__MAX_STRUCTS]
+  declare $List__stack_top
   declare const $List__value__SIZE := $List__MAX_STRUCTS
   declare %List__value[$List__MAX_STRUCTS]
   declare const $List__next__SIZE := $List__MAX_STRUCTS

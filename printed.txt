@@ -3,9 +3,10 @@ Global Declarations:
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
 struct List
 	declare const List::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
-	declare List::free_idx : int := 0
+	declare List::free_idx : int
 	declare List::allocation[List::MAX_STRUCTS{int}] : int[]
 	declare List::stack[List::MAX_STRUCTS{int}] : int[]
+	declare List::stack_top : int
 	declare List::value[List::MAX_STRUCTS{int}] : int[]
 	declare List::next[List::MAX_STRUCTS{int}] : int[] := - 1
 
@@ -31,13 +32,12 @@ struct List
 	function List::__del__(self : int)
 		while(self{int} # - 1) 
 			dec(List::allocation[self{int}]{int})
-			if(List::allocation[self{int}]{int} > 0)
-				continue
-			end if
-			if(List::next[self{int}]{int} # - 1)
-				self{int} := List::next[self{int}]{int}
-				List::next[self{int}]{int} := - 1
-				continue
+			if(List::allocation[self{int}]{int} <= 0)
+				if(List::next[self{int}]{int} # - 1)
+					self{int} := List::next[self{int}]{int}
+					List::next[self{int}]{int} := - 1
+					continue
+				end if
 			end if
 			self{int} := - 1
 		end while
@@ -47,9 +47,10 @@ end struct
 
 struct Point
 	declare const Point::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
-	declare Point::free_idx : int := 0
+	declare Point::free_idx : int
 	declare Point::allocation[Point::MAX_STRUCTS{int}] : int[]
 	declare Point::stack[Point::MAX_STRUCTS{int}] : int[]
+	declare Point::stack_top : int
 	declare Point::x[Point::MAX_STRUCTS{int}] : int[]
 	declare Point::y[Point::MAX_STRUCTS{int}] : int[]
 
@@ -85,9 +86,10 @@ end struct
 
 struct Note
 	declare const Note::MAX_STRUCTS : int := MAX_STRUCTS{unknown} / Struct::max(2 * 2, 10)
-	declare Note::free_idx : int := 0
+	declare Note::free_idx : int
 	declare Note::allocation[Note::MAX_STRUCTS{int}] : int[]
 	declare Note::stack[Note::MAX_STRUCTS{int}] : int[]
+	declare Note::stack_top : int
 	declare Note::pitch[Note::MAX_STRUCTS{int}] : int[]
 	declare Note::velocities[Note::MAX_STRUCTS{int}, 10] : int[][]
 	declare Note::play_pos[Note::MAX_STRUCTS{int}, 2, 2] : int[][][]
