@@ -123,113 +123,196 @@ end function
 // delete funktion, falls das struct nur einen rekursiven member hat
 struct List
     declare value: int
-    declare next: List := nil
+    declare next: List
 end struct
+function List::__refc__(self: List, num_refs: int)
+    declare current: List := self
+    // Solange es Objekte gibt, die freigegeben werden sollen, weiter durch die Struktur iterieren
+    while current # nil
+
+        // Schritt 1: Referenzzähler reduzieren/erhöhen
+        List::allocation[current] := List::allocation[current] + num_refs
+        // object still referenced, only delete this ptr
+        if(List::allocation[current] > 0) 
+            current := nil
+        	continue
+        end if
+
+        self := current
+        if(List::next[current] # nil)
+            current := List::next[current]
+        else
+            current := nil
+        end if
+        
+        // actual delete
+        List::__del__(self)
+    end while
+end function  
 // in diesem fall ist kein stack nötig
 function List::__del__(self: List)
-    // Solange es Objekte gibt, die freigegeben werden sollen, weiter durch die Struktur iterieren
-    while self # nil
-
-        // Schritt 1: Referenzzähler reduzieren
-        dec(List::allocation[self])
-        // Wenn das Objekt noch referenziert wird, zum nächsten Objekt gehen
-        if (List::allocation[self] > 0)
-        	continue
-        end if            
-
-        // hier kommen noch mögliche andere delete methoden anderer
-        // member hin, die nicht vom Typ List sind.
-
-        if(self.next # nil)
-            self := self.next
-            self.next := nil // Entferne den next Pointer, um zyklische Referenzen zu vermeiden
-            continue // Weitermachen mit dem next Pointer
-        end if
-        self := nil
-    end while
+    if(List::allocation[self] <= 0)
+    	// all object struct members       
+        List::next[self] := nil
+    end if 
 end function
-
+// nil -> List -> List -> List -> nil
+// 0       1       1       1       0    <- references
+// 
+// 
 // delete funktion, falls das struct mehrere rekursive member vom Typ Node hat
 struct Node
     declare value: int
     declare left: Node := nil
     declare right: Node := nil
 end struct
+// so sieht das ganze lowered aus:
+// declare Node::value[MAX_STRUCTS]: int[]
+// declare Node::left[MAX_STRUCTS]: Node[]
+// declare Node::right[MAX_STRUCTS]: Node[]
+// declare Node::allocation[MAX_STRUCTS]: int[]
 // in diesem fall ist ein stack nötig
 declare Node::stack[MAX_STRUCTS]: Node[]
-function Node::__del__(self: Node)
-	
-    declare stack_top: int := 0
-    Node::stack[stack_top] := self
-    inc(stack_top)
+declare Node::stack_top: int := 0
+function Node::__refc__(self: Node, num_refs: int)
+    Node::stack[Node::stack_top] := self
+    inc(Node::stack_top)
 
-    // Solange der stack nicht leer ist
-    while stack_top > 0
-    	
-        dec(stack_top)
-        self := Node::stack[stack_top]
+    // Solange der Stack nicht leer ist
+    while Node::stack_top > 0
+        dec(Node::stack_top)
+        self := Node::stack[Node::stack_top]
 
-        if(self = nil)
+        if self = nil
             continue
         end if
 
-        // Schritt 1: Referenzzähler reduzieren
-        dec(Node::allocation[self])
-
-        // Wenn der Referenzzähler noch größer als 0 ist, überspringe die Löschung
-        if Node::allocation[self] > 0
-            continue
+        // Schritt 1: Referenzzähler reduzieren/erhöhen (je nach num_refs)
+        Node::allocation[self] := Node::allocation[self] + num_refs
+        // object still referenced
+        if(Node::allocation[self] > 0) 
+        	continue
         end if
 
-        // hier kommen delete methoden von anderen membern hin die nicht typ Node
-        // sind
-
-        // Schritt 2: Füge rekursive Member dem Stack hinzu
-        // Überprüfe und füge `left` hinzu
+        // füge left dem stack hinzu
         if Node::left[self] # nil
-            Node::stack[stack_top] := Node::left[self]
-            inc(stack_top)
-            // Setze den Pointer auf `nil`, um Zyklen zu vermeiden
-            Node::left[self] := nil
+            inc(Node::stack_top)
+            Node::stack[Node::stack_top] := Node::left[self]
         end if
 
-        // Überprüfe und füge `right` hinzu
+        // füge right dem stack hinzu
         if Node::right[self] # nil
-            Node::stack[stack_top] := Node::right[self]
-            inc(stack_top)
-            Node::right[self] := nil
+            inc(Node::stack_top)
+            Node::stack[Node::stack_top] := Node::right[self]
         end if
+
+        // wenn self nicht mehr referenziert wird, lösche alle member
+        Node::__del__(self)
 
     end while
+    Node::stack_top := 0
 end function
 
-// delete funktion, falls das struct einen rekursiven member in einem array hat
+function Node::__del__(self: Node)
+    if(Node::allocation[self] <= 0)
+        Node::left[self] := nil
+        Node::right[self] := nil
+    end if
+end function
+
+// sollte List > 1 rekursive member haben, die nicht selbst list sind und
+// Node > 1 rekursive member haben, die nicht selbst node sind
 struct List
     declare value: int
-    declare nexts[5]: List[] := (nil)
+    declare next: Node
 end struct
-// in diesem fall ist kein stack nötig
-function List::__del__(self: List)
-    // Solange es Objekte gibt, die freigegeben werden sollen, weiter durch die Struktur iterieren
-    while self # nil
+struct Node
+    declare value: int
+    declare left: List
+    declare right: List
+end struct
+function List::__refc__(self: List, num_refs: int)
+    // Füge das initiale Objekt dem entsprechenden Stack hinzu
+    List::stack[List::stack_top] := self
+    inc(List::stack_top)
 
-        // Schritt 1: Referenzzähler reduzieren
-        dec(List::allocation[self])
-        // Wenn das Objekt noch referenziert wird, zum nächsten Objekt gehen
-        if (List::allocation[self] > 0)
-        	continue
-        end if            
+    // Hauptschleife zur Verarbeitung der Stacks
+    while List::stack_top > 0 or Node::stack_top > 0
+        // Verarbeite List-Stack
+        while List::stack_top > 0
+            dec(List::stack_top)
+            self := List::stack[List::stack_top]
 
-        // hier kommen noch mögliche andere delete methoden anderer
-        // member hin, die nicht vom Typ List sind.
-        declare i: int
-        for i := 0 to num_elements(self.nexts)-1
-            if(self.nexts[i] # nil)
-                self := self.nexts[i]
-                self.nexts[i] := nil // Entferne den next Pointer, um zyklische Referenzen zu vermeiden
-                continue // Weitermachen mit dem next Pointer
+            if self = nil
+                continue
             end if
-        end for
-        self := nil
+
+            // Schritt 1: Referenzzähler reduzieren/erhöhen (je nach num_refs)
+            List::allocation[self] := List::allocation[self] + num_refs
+
+            // Wenn das Objekt noch referenziert wird, überspringe die Löschung
+            if List::allocation[self] > 0
+                continue
+            end if
+
+            // Hier kommen Delete-Methoden von anderen Membern hin, die nicht vom Typ Node sind
+
+            // Füge rekursive Member hinzu
+            if self.next # nil
+                // Füge das Node-Objekt dem Node-Stack hinzu
+                Node::stack[Node::stack_top] := self.next
+                inc(Node::stack_top)
+            end if
+
+            List::__del__(self)
+        end while
+
+        // Verarbeite Node-Stack
+        while Node::stack_top > 0
+            dec(Node::stack_top)
+            self := Node::stack[Node::stack_top]
+
+            if self = nil
+                continue
+            end if
+
+            // Schritt 1: Referenzzähler reduzieren
+            dec(Node::allocation[self])
+
+            // Wenn das Objekt noch referenziert wird, überspringe die Löschung
+            if Node::allocation[self] > 0
+                continue
+            end if
+
+            // Hier kommen Delete-Methoden von anderen Membern hin, die nicht vom Typ List sind
+
+            // Füge rekursive Member hinzu
+            if self.left # nil
+                // Füge das List-Objekt dem List-Stack hinzu
+                List::stack[List::stack_top] := self.left
+                inc(List::stack_top)
+            end if
+
+            if self.right # nil
+                List::stack[List::stack_top] := self.right
+                inc(List::stack_top)
+            end if
+
+            Node::__del__(self)
+        end while
     end while
+    List::stack_top := 0
+    Node::stack_top := 0
 end function
+
+// Wann welche Methode:
+
+// Methode 1 (Lineare Rekursion):
+// Verwende diese Methode, wenn deine Struktur linear ist und jedes Objekt auf maximal ein weiteres Objekt desselben Typs verweist.
+// Beispiele: Einfach verkettete Listen, lineare Ketten von Objekten.
+// Methode 2 (Nicht-lineare Rekursion mit homogenen Typen):
+// Verwende diese Methode, wenn deine Struktur verzweigt ist und Objekte auf mehrere Objekte desselben Typs verweisen können.
+// Beispiele: Bäume, Graphen ohne unterschiedliche Typen.
+// Methode 3 (Nicht-lineare Rekursion mit heterogenen Typen):
+// Verwende diese Methode, wenn deine Struktur aus Objekten verschiedener Typen besteht, die sich gegenseitig referenzieren.
+// Beispiele: Gegenseitig rekursive Strukturen wie List und Node, die sich gegenseitig enthalten.

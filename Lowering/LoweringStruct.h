@@ -24,6 +24,7 @@ private:
 public:
 	explicit LoweringStruct(NodeProgram *program) : ASTLowering(program) {}
 
+
 	NodeAST * visit(NodeStruct& node) override {
 		m_current_struct = &node;
 
@@ -40,6 +41,7 @@ public:
 
 		// add compiler struct vars
 		auto struct_vars = add_compiler_struct_vars();
+		node.collect_recursive_structs(m_program);
 		node.generate_delete_method();
 		// remove "self" from member declarations
 		node.members->statements.erase(node.members->statements.begin());
@@ -81,7 +83,7 @@ public:
 		);
 		auto free_idx_decl = std::make_unique<NodeSingleDeclaration>(
 			std::move(free_idx_var),
-			std::make_unique<NodeInt>(0, Token()),
+			nullptr,
 			Token()
 		);
 		m_current_struct->free_idx_var = static_cast<NodeVariable*>(free_idx_decl->variable.get());
@@ -111,10 +113,25 @@ public:
 			Token()
 		);
 		m_current_struct->stack_var = static_cast<NodeArray*>(stack_decl->variable.get());
+		// add free_idx variable and allocation array to struct
+		auto stack_top_var = std::make_unique<NodeVariable>(
+			std::nullopt,
+			m_current_struct->name+OBJ_DELIMITER+"stack_top",
+			TypeRegistry::Integer,
+			DataType::Mutable,
+			Token()
+		);
+		auto stack_top_decl = std::make_unique<NodeSingleDeclaration>(
+			std::move(stack_top_var),
+			nullptr,
+			Token()
+		);
+		m_current_struct->stack_top_var = static_cast<NodeVariable*>(stack_top_decl->variable.get());
 		node_block->add_as_stmt(std::move(max_structs_decl));
 		node_block->add_as_stmt(std::move(free_idx_decl));
 		node_block->add_as_stmt(std::move(allocation_decl));
 		node_block->add_as_stmt(std::move(stack_decl));
+		node_block->add_as_stmt(std::move(stack_top_decl));
 		return node_block;
 	}
 

@@ -182,4 +182,5 @@ add_executable(cksp main.cpp
         Desugaring/DesugarBinaryExpr.h
         Lowering/LoweringWhile.h
         Lowering/LoweringFunctionDef.h
+        AST/ASTNodes/NodeStructCreateDestructor.h
 )
