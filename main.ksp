@@ -2,6 +2,7 @@
 struct List
 	declare value: int
 	declare next: List
+	declare prev: List
 
 	function __init__(self, value: int, next)
 		self.value := value
@@ -12,6 +13,11 @@ struct List
         return self.next.next.value
     end function
 end struct
+
+// struct Node
+// 	declare value: int
+// 	declare next : List
+// end struct 
 
 struct Point
 	declare x: int

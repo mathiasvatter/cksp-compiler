@@ -378,7 +378,7 @@ struct NodeStruct : NodeDataStructure {
 	 * end function
 	 */
 	NodeFunctionDefinition* generate_repr_method();
-	NodeFunctionDefinition* generate_delete_method();
+	void generate_ref_count_methods();
 	void inline_struct(NodeProgram* program);
 	NodeFunctionDefinition* get_overloaded_method(token op);
 
@@ -401,6 +401,7 @@ struct NodeStruct : NodeDataStructure {
 
 		  // Iteriere über die Mitglieder in member_table
 		  for (const auto& member : node_struct->member_table) {
+			  if(member.second->name == "self") continue;
 			  // Hole den Typ des Mitglieds
 			  Type* mem_type = member.second->ty->get_element_type();
 			  // Überprüfe, ob der Typ ein Struct ist
@@ -419,4 +420,5 @@ struct NodeStruct : NodeDataStructure {
 		collect(this);
 //		return recursive_structs;
 	}
+
 };

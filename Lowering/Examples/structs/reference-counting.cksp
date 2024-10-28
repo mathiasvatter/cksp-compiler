@@ -125,7 +125,7 @@ struct List
     declare value: int
     declare next: List
 end struct
-function List::__refc__(self: List, num_refs: int)
+function List::__decr__(self: List, num_refs: int)
     declare current: List := self
     // Solange es Objekte gibt, die freigegeben werden sollen, weiter durch die Struktur iterieren
     while current # nil
@@ -174,7 +174,7 @@ end struct
 // in diesem fall ist ein stack nötig
 declare Node::stack[MAX_STRUCTS]: Node[]
 declare Node::stack_top: int := 0
-function Node::__refc__(self: Node, num_refs: int)
+function Node::__decr__(self: Node, num_refs: int)
     Node::stack[Node::stack_top] := self
     inc(Node::stack_top)
 
@@ -210,7 +210,6 @@ function Node::__refc__(self: Node, num_refs: int)
         Node::__del__(self)
 
     end while
-    Node::stack_top := 0
 end function
 
 function Node::__del__(self: Node)
@@ -231,7 +230,7 @@ struct Node
     declare left: List
     declare right: List
 end struct
-function List::__refc__(self: List, num_refs: int)
+function List::__decr__(self: List, num_refs: int)
     // Füge das initiale Objekt dem entsprechenden Stack hinzu
     List::stack[List::stack_top] := self
     inc(List::stack_top)
@@ -260,8 +259,8 @@ function List::__refc__(self: List, num_refs: int)
             // Füge rekursive Member hinzu
             if self.next # nil
                 // Füge das Node-Objekt dem Node-Stack hinzu
-                Node::stack[Node::stack_top] := self.next
                 inc(Node::stack_top)
+                Node::stack[Node::stack_top] := self.next
             end if
 
             List::__del__(self)
@@ -289,20 +288,18 @@ function List::__refc__(self: List, num_refs: int)
             // Füge rekursive Member hinzu
             if self.left # nil
                 // Füge das List-Objekt dem List-Stack hinzu
-                List::stack[List::stack_top] := self.left
                 inc(List::stack_top)
+                List::stack[List::stack_top] := self.left
             end if
 
             if self.right # nil
-                List::stack[List::stack_top] := self.right
                 inc(List::stack_top)
+                List::stack[List::stack_top] := self.right
             end if
 
             Node::__del__(self)
         end while
     end while
-    List::stack_top := 0
-    Node::stack_top := 0
 end function
 
 // Wann welche Methode:

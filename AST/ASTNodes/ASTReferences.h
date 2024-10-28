@@ -12,6 +12,10 @@ struct NodeVariableRef : NodeReference {
 	inline NodeVariableRef(std::string name, Token tok)
 		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok)) {
 	}
+	inline NodeVariableRef(std::string name, Type* ty, Token tok)
+		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok)) {
+		this->ty = ty;
+	}
 	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeVariableRef(const NodeVariableRef& other);
