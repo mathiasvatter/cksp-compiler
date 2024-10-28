@@ -20,7 +20,6 @@ private:
 	std::unique_ptr<NodeReference> m_alloc_ref; // List::allocation[self]
 	std::unique_ptr<NodeReference> m_stack_top_ref; // List::stack_top
 	std::unique_ptr<NodeArrayRef> m_stack_ref; // List::stack[]
-	int m_num_recursive_members = 0;
 	std::vector<NodeDataStructure*> m_recursive_member_structs;
 	std::vector<NodeDataStructure*> m_non_recursive_member_structs;
 public:
@@ -62,12 +61,32 @@ public:
 		m_stack_ref->ty = TypeRegistry::Integer;
 		m_stack_ref->set_index(m_stack_top_ref->clone());
 
-		m_num_recursive_members = m_struct.recursive_structs.size();
 		// recursive member objects need to be at the end of the member objects vector
 		collect_recursive_and_non_recursive_member_structs();
 
 	}
 
+	std::unique_ptr<NodeFunctionDefinition> create_incr_function() {
+		m_self_ref->declaration = get_self_ptr(m_incr_func.get());
+		m_num_refs_ref->declaration = get_num_refs_ptr(m_incr_func.get());
+		auto &func_body = m_incr_func->body;
+		auto nil_check = ASTVisitor::make_nil_check(clone_as<NodeReference>(m_self_ref.get()));
+		// List::allocation[self] := List::allocation[self] + num_refs
+		nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+			clone_as<NodeReference>(m_alloc_ref.get()),
+			std::make_unique<NodeBinaryExpr>(
+				token::ADD,
+				m_alloc_ref->clone(),
+				m_num_refs_ref->clone(),
+				tok
+			),
+			tok
+		));
+		func_body->add_as_stmt(std::move(nil_check));
+		m_incr_func->parent = &m_struct;
+		m_incr_func->ty = TypeRegistry::Void;
+		return std::move(m_incr_func);
+	}
 
 	std::unique_ptr<NodeFunctionDefinition> create_destructor() {
 		// if(List::allocation[self] <= 0)
@@ -104,7 +123,7 @@ public:
 	}
 
 	/// returns true if struct has only one recursive member and this member is itself
-	bool is_linear_recursive() const {
+	[[nodiscard]] bool is_linear_recursive() const {
 		return m_struct.recursive_structs.size() <= 1;
 	}
 
@@ -499,7 +518,7 @@ private:
 		auto node_if = std::make_unique<NodeIf>(
 			std::make_unique<NodeBinaryExpr>(
 				token::GREATER_THAN,
-				std::move(m_alloc_ref),
+				m_alloc_ref->clone(),
 				std::make_unique<NodeInt>(0, tok),
 				tok
 			),
