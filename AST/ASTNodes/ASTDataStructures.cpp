@@ -13,6 +13,7 @@
 #include "../../Lowering/LoweringStruct.h"
 #include "../../Lowering/LoweringPointer.h"
 #include "NodeStructCreateRefCountFunctions.h"
+#include "../../Lowering/PreLoweringStruct.h"
 
 // ************* NodeVariable ***************
 NodeAST *NodeVariable::accept(struct ASTVisitor &visitor) {
@@ -306,6 +307,12 @@ ASTLowering* NodeStruct::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
+void NodeStruct::pre_lower(NodeProgram* program) {
+	static PreLoweringStruct pre_lowering(program);
+	this->accept(pre_lowering);
+}
+
+
 std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 	auto node_block = std::make_unique<NodeBlock>(Token());
 	auto node_max_structs = std::make_unique<NodeVariable>(std::nullopt, "MAX_STRUCTS", TypeRegistry::Integer,  DataType::Const, Token());
@@ -432,6 +439,12 @@ void NodeStruct::generate_ref_count_methods() {
 	this->methods.push_back(rf_methods.create_decr_function());
 	this->update_method_table();
 }
+
+std::unique_ptr<NodeWhile> NodeStruct::generate_ref_count_while(NodeDataStructure* self, NodeDataStructure* num_refs) {
+	NodeStructCreateRefCountFunctions rf_methods(*this);
+	return rf_methods.get_stack_while_loop(self, num_refs);
+}
+
 
 
 

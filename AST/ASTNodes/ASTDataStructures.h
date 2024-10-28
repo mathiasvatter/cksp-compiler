@@ -321,7 +321,7 @@ struct NodeStruct : NodeDataStructure {
 	}
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	ASTLowering* get_lowering(NodeProgram *program) const override;
-
+	void pre_lower(NodeProgram* program);
 	void update_member_table() {
 		member_table.clear();
 		for(auto& member : members->statements) {
@@ -379,6 +379,7 @@ struct NodeStruct : NodeDataStructure {
 	 */
 	NodeFunctionDefinition* generate_repr_method();
 	void generate_ref_count_methods();
+	std::unique_ptr<NodeWhile> generate_ref_count_while(NodeDataStructure* self, NodeDataStructure* num_refs);
 	void inline_struct(NodeProgram* program);
 	NodeFunctionDefinition* get_overloaded_method(token op);
 
@@ -392,16 +393,18 @@ struct NodeStruct : NodeDataStructure {
 		  if (!node_struct) return;
 		  // Inkrementiere den Besuchszähler für das aktuelle NodeStruct
 		  visit_counts[node_struct]++;
+		  recursive_structs.insert(node_struct);
 		  // Wenn das NodeStruct bereits mehr als einmal besucht wurde, füge es den rekursiven Structs hinzu
 		  if (visit_counts[node_struct] > 1) {
-			  recursive_structs.insert(node_struct);
+//			  recursive_structs.insert(node_struct);
 			  // Wir müssen nicht weiter in diesem Pfad suchen, da wir bereits festgestellt haben, dass es rekursiv ist
 			  return;
 		  }
 
 		  // Iteriere über die Mitglieder in member_table
 		  for (const auto& member : node_struct->member_table) {
-			  if(member.second->name == "self") continue;
+			  if(member.first == "self") continue;
+			  if(member.second->is_engine) continue;
 			  // Hole den Typ des Mitglieds
 			  Type* mem_type = member.second->ty->get_element_type();
 			  // Überprüfe, ob der Typ ein Struct ist

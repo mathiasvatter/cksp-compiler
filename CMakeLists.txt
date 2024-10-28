@@ -183,4 +183,5 @@ add_executable(cksp main.cpp
         Lowering/LoweringWhile.h
         Lowering/LoweringFunctionDef.h
         AST/ASTNodes/NodeStructCreateRefCountFunctions.h
+        Lowering/PreLoweringStruct.h
 )

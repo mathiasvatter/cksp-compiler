@@ -12,6 +12,13 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	m_program = &node;
 	m_program->global_declarations->accept(*this);
 	for(auto & struct_def : node.struct_definitions) {
+		struct_def->pre_lower(m_program);
+	}
+	for(auto & struct_def : node.struct_definitions) {
+		struct_def->generate_ref_count_methods();
+	}
+//	node.struct_definitions.at(0)->debug_print();
+	for(auto & struct_def : node.struct_definitions) {
 		struct_def->accept(*this);
 	}
 	for(auto & callback : node.callbacks) {

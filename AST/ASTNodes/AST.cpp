@@ -226,7 +226,7 @@ void NodeReference::match_data_structure(NodeDataStructure* data_structure) {
 }
 
 bool NodeReference::is_member_ref() const {
-	return declaration->is_member();
+	return declaration and declaration->is_member();
 }
 
 NodeStruct *NodeReference::get_object_ptr(NodeProgram* program, const std::string& obj) {

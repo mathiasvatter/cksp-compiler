@@ -103,16 +103,38 @@ public:
 		return std::move(m_del_func);
 	}
 
-	std::unique_ptr<NodeFunctionDefinition> create_decr_function() {
-		// is linear recursive
-//		if(m_recursive_member_structs.size() <= 1) {
-//			return create_decr_without_stack();
-//		} else {
-			return create_decr_with_stack();
-//		}
+	/// returns true if struct has only one recursive member and this member is itself
+	bool is_linear_recursive() {
+		return m_recursive_member_structs.size() <= 1;
 	}
 
-	std::unique_ptr<NodeFunctionDefinition> create_decr_with_stack() {
+	/// returns true if struct has more than one recursive member and these members are itself
+	bool is_non_linear_recursive_with_homogenous_types() {
+		if(m_recursive_member_structs.size() <= 1) return false;
+		for(auto &mem : m_recursive_member_structs) {
+			if(mem->ty != m_struct.ty) return false;
+		}
+		return true;
+	}
+
+	/// returns true if struct has more than one recursive member and these members are not itself
+	/// e.g. List -> Node -> List-> ...
+	bool is_non_linear_recursive_with_heterogenous_types() {
+		return !is_linear_recursive() and !is_non_linear_recursive_with_homogenous_types();
+	}
+
+	std::unique_ptr<NodeFunctionDefinition> create_decr_function() {
+		// is linear recursive
+		if(is_linear_recursive()) {
+			return create_lin_rec_decr();
+		} else if(is_non_linear_recursive_with_homogenous_types()) {
+			return create_non_lin_rec_homogenous_decr();
+		} else {
+			return create_non_lin_rec_heterogenous_decr();
+		}
+	}
+
+	std::unique_ptr<NodeFunctionDefinition> create_non_lin_rec_heterogenous_decr() {
 		m_self_ref->declaration = get_self_ptr(m_decr_func.get());
 		m_num_refs_ref->declaration = get_num_refs_ptr(m_decr_func.get());
 		auto &func_body = m_decr_func->body;
@@ -124,7 +146,50 @@ public:
 		));
 		// inc(Node::stack_top)
 		func_body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(m_stack_top_ref.get())));
+		auto node_while = std::make_unique<NodeWhile>(
+			std::make_unique<NodeBinaryExpr>(tok),
+			std::make_unique<NodeBlock>(tok, true),
+			tok
+		);
+		std::unique_ptr<NodeBinaryExpr> condition = nullptr;
+		for(auto & rec : m_struct.recursive_structs) {
+			// STRUCT::stack_top
+			auto stack_var_ref = rec->stack_top_var->to_reference();
+			stack_var_ref->match_data_structure(rec->stack_top_var);
+			if(!condition) {
+				condition = std::make_unique<NodeBinaryExpr>(
+					token::GREATER_THAN,
+					stack_var_ref->clone(),
+					std::make_unique<NodeInt>(0, tok),
+					tok
+				);
+			} else {
+				condition = std::make_unique<NodeBinaryExpr>(
+					token::BOOL_AND,
+					std::move(condition),
+					std::make_unique<NodeBinaryExpr>(
+						token::GREATER_THAN,
+						stack_var_ref->clone(),
+						std::make_unique<NodeInt>(0, tok),
+						tok
+					),
+					tok
+				);
+			}
+			auto while_body = rec->generate_ref_count_while(m_self_ref->declaration, m_num_refs_ref->declaration);
+			node_while->body->add_as_stmt(std::move(while_body));
+		}
+		node_while->set_condition(std::move(condition));
 
+		m_decr_func->body->add_as_stmt(std::move(node_while));
+		m_decr_func->parent = &m_struct;
+		m_decr_func->ty = TypeRegistry::Void;
+		return std::move(m_decr_func);
+	}
+
+	std::unique_ptr<NodeWhile> get_stack_while_loop(NodeDataStructure* self, NodeDataStructure* num_refs) {
+		m_self_ref->declaration = self;
+		m_num_refs_ref->declaration = num_refs;
 		// while Node::stack_top > 0
 		auto node_while = std::make_unique<NodeWhile>(
 			std::make_unique<NodeBinaryExpr>(
@@ -209,16 +274,32 @@ public:
 			),
 			tok
 		));
+		return node_while;
+	}
+
+	std::unique_ptr<NodeFunctionDefinition> create_non_lin_rec_homogenous_decr() {
+		m_self_ref->declaration = get_self_ptr(m_decr_func.get());
+		m_num_refs_ref->declaration = get_num_refs_ptr(m_decr_func.get());
+		auto &func_body = m_decr_func->body;
+		// Node::stack[Node::stack_top] := self
+		func_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+			clone_as<NodeReference>(m_stack_ref.get()),
+			m_self_ref->clone(),
+			tok
+		));
+		// inc(Node::stack_top)
+		func_body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(m_stack_top_ref.get())));
+
+		auto node_while = get_stack_while_loop(m_self_ref->declaration, m_num_refs_ref->declaration);
 
 		m_decr_func->body->add_as_stmt(std::move(node_while));
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
 		return std::move(m_decr_func);
-
 	}
 
 
-	std::unique_ptr<NodeFunctionDefinition> create_decr_without_stack() {
+	std::unique_ptr<NodeFunctionDefinition> create_lin_rec_decr() {
 		m_self_ref->declaration = get_self_ptr(m_decr_func.get());
 		m_num_refs_ref->declaration = get_num_refs_ptr(m_decr_func.get());
 		// declare current
