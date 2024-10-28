@@ -52,8 +52,8 @@ struct List
 					continue
 				end if
 				if(Node::next[self{int}]{int} # - 1)
-					inc(Node::stack_top{int})
-					Node::stack[Node::stack_top{int}]{int} := Node::next[self{int}]{int}
+					inc(List::stack_top{int})
+					List::stack_top{int} := Node::next[self{int}]{int}
 				end if
 				Node::__del__(self{int})
 			end while
@@ -68,12 +68,12 @@ struct List
 					continue
 				end if
 				if(List::next[self{int}]{int} # - 1)
-					inc(List::stack_top{int})
-					List::stack[List::stack_top{int}]{int} := List::next[self{int}]{int}
+					inc(Node::stack_top{int})
+					Node::stack_top{int} := List::next[self{int}]{int}
 				end if
 				if(List::prev[self{int}]{int} # - 1)
-					inc(List::stack_top{int})
-					List::stack[List::stack_top{int}]{int} := List::prev[self{int}]{int}
+					inc(Node::stack_top{int})
+					Node::stack_top{int} := List::prev[self{int}]{int}
 				end if
 				List::__del__(self{int})
 			end while
@@ -113,20 +113,45 @@ struct Node
 	end function
 
 	function Node::__decr__(self : int, num_refs : int)
-		declare current : int := self{int}
-		while(current{int} # - 1) 
-			Node::allocation[self{int}, current{int}]{int} := Node::allocation[self{int}, current{int}]{int} - num_refs{int}
-			if(Node::allocation[self{int}, self{int}]{int} > 0)
-				current{int} := - 1
-				continue
-			end if
-			self{int} := current{int}
-			if(Node::next[current{int}]{int} # - 1)
-				current{int} := Node::next[current{int}]{int}
-			else
-				current{int} := - 1
-			end if
-			Node::__del__(self{int})
+		Node::stack[self{int}, Node::stack_top{int}]{int} := self{int}
+		inc(Node::stack_top[self{int}]{int})
+		while((List::stack_top[self{int}]{int} > 0) and (Node::stack_top[self{int}]{int} > 0)) 
+			while(List::stack_top[self{int}]{int} > 0) 
+				dec(List::stack_top[self{int}]{int})
+				self{int} := List::stack[self{int}, List::stack_top{int}]{int}
+				if(self{int} = - 1)
+					continue
+				end if
+				List::allocation[self{int}, self{int}]{int} := List::allocation[self{int}, self{int}]{int} - num_refs{int}
+				if(List::allocation[self{int}, self{int}]{int} > 0)
+					continue
+				end if
+				if(List::next[self{int}]{int} # - 1)
+					inc(Node::stack_top[self{int}]{int})
+					Node::stack_top[self{int}]{int} := List::next[self{int}]{int}
+				end if
+				if(List::prev[self{int}]{int} # - 1)
+					inc(Node::stack_top[self{int}]{int})
+					Node::stack_top[self{int}]{int} := List::prev[self{int}]{int}
+				end if
+				List::__del__(self{int})
+			end while
+			while(Node::stack_top[self{int}]{int} > 0) 
+				dec(Node::stack_top[self{int}]{int})
+				self{int} := Node::stack[self{int}, Node::stack_top{int}]{int}
+				if(self{int} = - 1)
+					continue
+				end if
+				Node::allocation[self{int}, self{int}]{int} := Node::allocation[self{int}, self{int}]{int} - num_refs{int}
+				if(Node::allocation[self{int}, self{int}]{int} > 0)
+					continue
+				end if
+				if(Node::next[self{int}]{int} # - 1)
+					inc(List::stack_top[self{int}]{int})
+					List::stack_top[self{int}]{int} := Node::next[self{int}]{int}
+				end if
+				Node::__del__(self{int})
+			end while
 		end while
 	end function
 
@@ -241,31 +266,31 @@ on init
 end on
 
 function search_matrix(matrix : int[][], target : int)
-	declare RETURN_FLAG11 : int
-	while(RETURN_FLAG11{int} = 0) 
+	declare RETURN_FLAG15 : int
+	while(RETURN_FLAG15{int} = 0) 
 		declare row : int
 		declare col : int
 		row{int} := 0
-		while((row{int} <= (matrix.SIZE_D1{int} - 1)) and (RETURN_FLAG11{int} = 0)) 
+		while((row{int} <= (matrix.SIZE_D1{int} - 1)) and (RETURN_FLAG15{int} = 0)) 
 			col{int} := 0
-			while((col{int} <= (matrix.SIZE_D2{int} - 1)) and (RETURN_FLAG11{int} = 0)) 
+			while((col{int} <= (matrix.SIZE_D2{int} - 1)) and (RETURN_FLAG15{int} = 0)) 
 				if(matrix[row{int}, col{int}]{int} = target{int})
 					return ((row{int} * 10) + col{int})
-					RETURN_FLAG11{int} := 1
+					RETURN_FLAG15{int} := 1
 					continue
 				end if
 				inc(col{int})
 			end while
-			if(RETURN_FLAG11{int} = 1)
+			if(RETURN_FLAG15{int} = 1)
 				continue
 			end if
 			inc(row{int})
 		end while
-		if(RETURN_FLAG11{int} = 1)
+		if(RETURN_FLAG15{int} = 1)
 			continue
 		end if
 		return (- 1)
-		RETURN_FLAG11{int} := 1
+		RETURN_FLAG15{int} := 1
 		continue
 	end while
 end function

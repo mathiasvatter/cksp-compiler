@@ -445,6 +445,43 @@ std::unique_ptr<NodeWhile> NodeStruct::generate_ref_count_while(NodeDataStructur
 	return rf_methods.get_stack_while_loop(self, num_refs);
 }
 
+void NodeStruct::collect_recursive_structs(NodeProgram *program) {
+	std::unordered_map<NodeStruct*, int> visit_counts;
+
+	std::function<void(NodeStruct*)> collect = [&](NodeStruct* node_struct) {
+	  // base case
+	  if (!node_struct) return;
+	  // Inkrementiere den Besuchszähler für das aktuelle NodeStruct
+	  visit_counts[node_struct]++;
+	  recursive_structs.insert(node_struct);
+	  // Wenn das NodeStruct bereits mehr als einmal besucht wurde, füge es den rekursiven Structs hinzu
+	  if (visit_counts[node_struct] > 1) {
+		  // Wir müssen nicht weiter in diesem Pfad suchen, da wir bereits festgestellt haben, dass es rekursiv ist
+		  return;
+	  }
+
+	  // Iteriere über die Mitglieder in member_table
+	  for (const auto& member : node_struct->member_table) {
+		  if(member.first == "self") continue;
+		  if(member.second->is_engine) continue;
+		  // Hole den Typ des Mitglieds
+		  Type* mem_type = member.second->ty->get_element_type();
+		  // Überprüfe, ob der Typ ein Struct ist
+		  if (mem_type->get_type_kind() == TypeKind::Object) {
+			  // Hole den Namen des Structs
+			  std::string structName = mem_type->to_string();
+			  auto it = program->struct_lookup.find(structName);
+			  if (it != program->struct_lookup.end()) {
+				  NodeStruct* memberStruct = it->second;
+				  collect(memberStruct);
+			  }
+		  }
+	  }
+	};
+
+	collect(this);
+}
+
 
 
 

@@ -104,13 +104,13 @@ public:
 	}
 
 	/// returns true if struct has only one recursive member and this member is itself
-	bool is_linear_recursive() {
-		return m_recursive_member_structs.size() <= 1;
+	bool is_linear_recursive() const {
+		return m_struct.recursive_structs.size() <= 1;
 	}
 
 	/// returns true if struct has more than one recursive member and these members are itself
 	bool is_non_linear_recursive_with_homogenous_types() {
-		if(m_recursive_member_structs.size() <= 1) return false;
+		if(is_linear_recursive()) return false;
 		for(auto &mem : m_recursive_member_structs) {
 			if(mem->ty != m_struct.ty) return false;
 		}
@@ -253,10 +253,14 @@ public:
 				// if(self.next # nil)
 				auto nil_check = ASTVisitor::make_nil_check(to_member_chain_ref(mem));
 				// inc(Node::stack_top)
-				nil_check->if_body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(m_stack_top_ref.get())));
+				// stack_top has to have the prefix of its type this time!!
+				auto typed_stack_top = clone_as<NodeReference>(m_stack_top_ref.get());
+				typed_stack_top->remove_obj_prefix();
+				typed_stack_top->name = mem->ty->get_element_type()->to_string()+OBJ_DELIMITER+typed_stack_top->name;
+				nil_check->if_body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(typed_stack_top.get())));
 				// Node::stack[Node::stack_top] := self.next
 				nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
-					clone_as<NodeReference>(m_stack_ref.get()),
+					std::move(typed_stack_top),
 					to_member_chain_ref(mem)->clone(),
 					mem->tok
 				));

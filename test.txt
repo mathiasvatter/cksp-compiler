@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Mon Oct 28 15:36:05 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Mon Oct 28 17:31:49 2024 }
 on init
   declare const $MAX_STRUCTS := 1000000
   declare const @MEM_WARNING
@@ -65,7 +65,7 @@ on init
   declare const $ndarray__SIZE_D2 := 10
   declare const $_ndarray__SIZE := 10 * 10
   declare %_ndarray[10 * 10]
-  declare $_return12
+  declare $_return16
   $loc_0 := 0
   while($loc_0 = 0) 
     $loc_1 := 0
@@ -75,7 +75,7 @@ on init
       $loc_2 := 0
       while(($loc_2 <= ($ndarray__SIZE_D2 - 1)) and ($loc_0 = 0)) 
         if(%_ndarray[($loc_1 * $ndarray__SIZE_D2) + $loc_2] = 3)
-          $_return12 := ($loc_1 * 10) + $loc_2
+          $_return16 := ($loc_1 * 10) + $loc_2
           $loc_0 := 1
           continue
         end if
@@ -89,10 +89,10 @@ on init
     if($loc_0 = 1)
       continue
     end if
-    $_return12 := - 1
+    $_return16 := - 1
     $loc_0 := 1
     continue
   end while
-  message($_return12)
+  message($_return16)
 end on
 
