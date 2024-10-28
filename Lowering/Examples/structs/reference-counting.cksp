@@ -257,10 +257,10 @@ function List::__decr__(self: List, num_refs: int)
             // Hier kommen Delete-Methoden von anderen Membern hin, die nicht vom Typ Node sind
 
             // Füge rekursive Member hinzu
-            if self.next # nil
+            if List::next[self] # nil
                 // Füge das Node-Objekt dem Node-Stack hinzu
                 inc(Node::stack_top)
-                Node::stack[Node::stack_top] := self.next
+                Node::stack[Node::stack_top] := List::next[self]
             end if
 
             List::__del__(self)
@@ -292,9 +292,9 @@ function List::__decr__(self: List, num_refs: int)
                 List::stack[List::stack_top] := self.left
             end if
 
-            if self.right # nil
+            if Node::right[self] # nil
                 inc(List::stack_top)
-                List::stack[List::stack_top] := self.right
+                List::stack[List::stack_top] := Node::right[self]
             end if
 
             Node::__del__(self)
