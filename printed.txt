@@ -9,6 +9,7 @@ struct List
 	declare List::stack_top : int
 	declare List::value[List::MAX_STRUCTS{int}] : int[]
 	declare List::next[List::MAX_STRUCTS{int}] : int[] := - 1
+	declare List::prev[List::MAX_STRUCTS{int}] : int[] := - 1
 
 	function List::__init__(value : int, next : int)
 		List::free_idx{int} := search(List::allocation{int[]}, 0)
@@ -30,16 +31,34 @@ struct List
 	end function
 
 	function List::__del__(self : int)
-		while(self{int} # - 1) 
-			dec(List::allocation[self{int}]{int})
-			if(List::allocation[self{int}]{int} <= 0)
-				if(List::next[self{int}]{int} # - 1)
-					self{int} := List::next[self{int}]{int}
-					List::next[self{int}]{int} := - 1
-					continue
-				end if
+		if(List::allocation[self{int}]{int} <= 0)
+			List::next[self{int}]{int} := - 1
+			List::prev[self{int}]{int} := - 1
+		end if
+	end function
+
+	function List::__decr__(self : int, num_refs : int)
+		List::stack[List::stack_top{int}]{int} := self{int}
+		inc(List::stack_top{int})
+		while(List::stack_top{int} > 0) 
+			dec(List::stack_top{int})
+			self{int} := List::stack[List::stack_top{int}]{int}
+			if(self{int} = - 1)
+				continue
 			end if
-			self{int} := - 1
+			List::allocation[self{int}]{int} := List::allocation[self{int}]{int} - num_refs{int}
+			if(List::allocation[self{int}]{int} > 0)
+				continue
+			end if
+			if(List::next[self{int}]{int} # - 1)
+				inc(List::stack_top{int})
+				List::stack[List::stack_top{int}]{int} := List::next[self{int}]{int}
+			end if
+			if(List::prev[self{int}]{int} # - 1)
+				inc(List::stack_top{int})
+				List::stack[List::stack_top{int}]{int} := List::prev[self{int}]{int}
+			end if
+			List::__del__(self{int})
 		end while
 	end function
 
@@ -76,9 +95,24 @@ struct Point
 	end function
 
 	function Point::__del__(self : int)
-		while(self{int} # - 1) 
-			dec(Point::allocation[self{int}]{int})
-			self{int} := - 1
+		if(Point::allocation[self{int}, self{int}]{int} <= 0)
+		end if
+	end function
+
+	function Point::__decr__(self : int, num_refs : int)
+		Point::stack[self{int}, Point::stack_top{int}]{int} := self{int}
+		inc(Point::stack_top[self{int}]{int})
+		while(Point::stack_top[self{int}]{int} > 0) 
+			dec(Point::stack_top[self{int}]{int})
+			self{int} := Point::stack[self{int}, Point::stack_top{int}]{int}
+			if(self{int} = - 1)
+				continue
+			end if
+			Point::allocation[self{int}, self{int}]{int} := Point::allocation[self{int}, self{int}]{int} - num_refs{int}
+			if(Point::allocation[self{int}, self{int}]{int} > 0)
+				continue
+			end if
+			Point::__del__(self{int})
 		end while
 	end function
 
@@ -119,9 +153,24 @@ struct Note
 	end function
 
 	function Note::__del__(self : int)
-		while(self{int} # - 1) 
-			dec(Note::allocation[self{int}]{int})
-			self{int} := - 1
+		if(Note::allocation[self{int}, self{int}]{int} <= 0)
+		end if
+	end function
+
+	function Note::__decr__(self : int, num_refs : int)
+		Note::stack[self{int}, Note::stack_top{int}]{int} := self{int}
+		inc(Note::stack_top[self{int}]{int})
+		while(Note::stack_top[self{int}]{int} > 0) 
+			dec(Note::stack_top[self{int}]{int})
+			self{int} := Note::stack[self{int}, Note::stack_top{int}]{int}
+			if(self{int} = - 1)
+				continue
+			end if
+			Note::allocation[self{int}, self{int}]{int} := Note::allocation[self{int}, self{int}]{int} - num_refs{int}
+			if(Note::allocation[self{int}, self{int}]{int} > 0)
+				continue
+			end if
+			Note::__del__(self{int})
 		end while
 	end function
 

@@ -12,7 +12,7 @@
 #include "../../Desugaring/DesugarStruct.h"
 #include "../../Lowering/LoweringStruct.h"
 #include "../../Lowering/LoweringPointer.h"
-#include "NodeStructCreateDestructor.h"
+#include "NodeStructCreateRefCountFunctions.h"
 
 // ************* NodeVariable ***************
 NodeAST *NodeVariable::accept(struct ASTVisitor &visitor) {
@@ -426,12 +426,11 @@ NodeFunctionDefinition* NodeStruct::get_overloaded_method(token op) {
 	return nullptr;
 }
 
-NodeFunctionDefinition *NodeStruct::generate_delete_method() {
-	NodeStructCreateDestructor destructor(*this);
-	auto function_def = destructor.create_destructor();
-	this->methods.push_back(std::move(function_def));
+void NodeStruct::generate_ref_count_methods() {
+	NodeStructCreateRefCountFunctions rf_methods(*this);
+	this->methods.push_back(rf_methods.create_destructor());
+	this->methods.push_back(rf_methods.create_decr_function());
 	this->update_method_table();
-	return method_table.find({name+OBJ_DELIMITER+"__del__", 1})->second;
 }
 
 

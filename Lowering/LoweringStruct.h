@@ -42,7 +42,7 @@ public:
 		// add compiler struct vars
 		auto struct_vars = add_compiler_struct_vars();
 		node.collect_recursive_structs(m_program);
-		node.generate_delete_method();
+		node.generate_ref_count_methods();
 		// remove "self" from member declarations
 		node.members->statements.erase(node.members->statements.begin());
 		node.members->accept(*this);
@@ -233,8 +233,13 @@ public:
 
 
 	inline NodeAST * visit(NodeFunctionDefinition& node) override {
-		// no lowering necessary for delete method
-		if(node.header->name == m_current_struct->name+OBJ_DELIMITER+"__del__") {
+		// no lowering necessary for delete methods
+		static const std::unordered_set<std::string> destructors = {
+			m_current_struct->name+OBJ_DELIMITER+"__del__",
+			m_current_struct->name+OBJ_DELIMITER+"__decr__",
+			m_current_struct->name+OBJ_DELIMITER+"__incr__"
+		};
+		if(contains(destructors, node.header->name)) {
 			return &node;
 		}
 		m_current_func = &node;

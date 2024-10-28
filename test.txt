@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Sun Oct 27 19:13:05 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Mon Oct 28 12:09:35 2024 }
 on init
   declare const $MAX_STRUCTS := 1000000
   declare const @MEM_WARNING
@@ -47,6 +47,8 @@ on init
   declare %List__value[$List__MAX_STRUCTS]
   declare const $List__next__SIZE := $List__MAX_STRUCTS
   declare %List__next[$List__MAX_STRUCTS] := - 1
+  declare const $List__prev__SIZE := $List__MAX_STRUCTS
+  declare %List__prev[$List__MAX_STRUCTS] := - 1
   declare $loc_3
   declare $_return8
   $List__free_idx := search(%List__allocation, 0)
