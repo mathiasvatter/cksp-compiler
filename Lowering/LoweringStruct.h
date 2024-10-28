@@ -28,111 +28,113 @@ public:
 	NodeAST * visit(NodeStruct& node) override {
 		m_current_struct = &node;
 
-		// check if all member node types are allowed
-		for(auto & m: node.member_table) {
-			if(NodeStruct::allowed_member_node_types.find(m.second->get_node_type()) == NodeStruct::allowed_member_node_types.end()) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", m.second->tok);
-				error.m_message = "Member type not allowed in struct. Only <Variables>, <Arrays>, <NDArrays>, <Pointers> and <Structs> are allowed.";
-				error.m_got = m.second->ty->to_string();
-				error.exit();
-			}
-			node.member_node_types.insert(m.second->get_node_type());
-		}
+//		// check if all member node types are allowed
+//		for(auto & m: node.member_table) {
+//			if(NodeStruct::allowed_member_node_types.find(m.second->get_node_type()) == NodeStruct::allowed_member_node_types.end()) {
+//				auto error = CompileError(ErrorType::SyntaxError, "", "", m.second->tok);
+//				error.m_message = "Member type not allowed in struct. Only <Variables>, <Arrays>, <NDArrays>, <Pointers> and <Structs> are allowed.";
+//				error.m_got = m.second->ty->to_string();
+//				error.exit();
+//			}
+//			node.member_node_types.insert(m.second->get_node_type());
+//		}
 
 		// add compiler struct vars
-		auto struct_vars = add_compiler_struct_vars();
-		node.collect_recursive_structs(m_program);
-		node.generate_ref_count_methods();
-		// remove "self" from member declarations
-		node.members->statements.erase(node.members->statements.begin());
+//		prepend_compiler_struct_vars(&node);
+//		node.collect_recursive_structs(m_program);
+//		node.generate_ref_count_methods();
 		node.members->accept(*this);
 		m_current_struct = &node;
-		node.members->prepend_body(std::move(struct_vars));
 		for(auto & m: node.methods) {
 			m->accept(*this);
 		}
 
 		m_current_struct = nullptr;
 		m_current_func = nullptr;
-
+//		node.update_member_table();
 		return &node;
 	}
 
-	std::unique_ptr<NodeBlock> add_compiler_struct_vars() {
+	void prepend_compiler_struct_vars(NodeStruct* strct) {
 		auto node_block = std::make_unique<NodeBlock>(Token());
 		auto max_structs_var = std::make_unique<NodeVariable>(
 			std::nullopt,
-			m_current_struct->name+OBJ_DELIMITER+"MAX_STRUCTS",
+			strct->name+OBJ_DELIMITER+"MAX_STRUCTS",
 			TypeRegistry::Integer,
 			DataType::Const,
 			Token()
 		);
+		max_structs_var->is_engine = true;
 		auto max_structs_decl = std::make_unique<NodeSingleDeclaration>(
 			std::move(max_structs_var),
-			get_max_individual_structs_size(m_current_struct),
+			get_max_individual_structs_size(strct),
 			Token()
 		);
-		m_current_struct->max_individual_struts_var = static_cast<NodeVariable*>(max_structs_decl->variable.get());
+		strct->max_individual_struts_var = static_cast<NodeVariable*>(max_structs_decl->variable.get());
 		// add free_idx variable and allocation array to struct
 		auto free_idx_var = std::make_unique<NodeVariable>(
 			std::nullopt,
-			m_current_struct->name+OBJ_DELIMITER+"free_idx",
+			strct->name+OBJ_DELIMITER+"free_idx",
 			TypeRegistry::Integer,
 			DataType::Mutable,
 			Token()
 		);
+		free_idx_var->is_engine = true;
 		auto free_idx_decl = std::make_unique<NodeSingleDeclaration>(
 			std::move(free_idx_var),
 			nullptr,
 			Token()
 		);
-		m_current_struct->free_idx_var = static_cast<NodeVariable*>(free_idx_decl->variable.get());
+		strct->free_idx_var = static_cast<NodeVariable*>(free_idx_decl->variable.get());
 		auto allocation_var = std::make_unique<NodeArray>(
 			std::nullopt,
-			m_current_struct->name+OBJ_DELIMITER+"allocation",
+			strct->name+OBJ_DELIMITER+"allocation",
 			TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Integer),
-			m_current_struct->max_individual_struts_var->to_reference(),
+			strct->max_individual_struts_var->to_reference(),
 			Token()
 		);
+		allocation_var->is_engine = true;
 		auto allocation_decl = std::make_unique<NodeSingleDeclaration>(
 			std::move(allocation_var),
 			nullptr,
 			Token()
 		);
-		m_current_struct->allocation_var = static_cast<NodeArray*>(allocation_decl->variable.get());
+		strct->allocation_var = static_cast<NodeArray*>(allocation_decl->variable.get());
 		auto stack_var = std::make_unique<NodeArray>(
 			std::nullopt,
-			m_current_struct->name+OBJ_DELIMITER+"stack",
+			strct->name+OBJ_DELIMITER+"stack",
 			TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Integer),
-			m_current_struct->max_individual_struts_var->to_reference(),
+			strct->max_individual_struts_var->to_reference(),
 			Token()
 		);
+		stack_var->is_engine= true;
 		auto stack_decl = std::make_unique<NodeSingleDeclaration>(
 			std::move(stack_var),
 			nullptr,
 			Token()
 		);
-		m_current_struct->stack_var = static_cast<NodeArray*>(stack_decl->variable.get());
+		strct->stack_var = static_cast<NodeArray*>(stack_decl->variable.get());
 		// add free_idx variable and allocation array to struct
 		auto stack_top_var = std::make_unique<NodeVariable>(
 			std::nullopt,
-			m_current_struct->name+OBJ_DELIMITER+"stack_top",
+			strct->name+OBJ_DELIMITER+"stack_top",
 			TypeRegistry::Integer,
 			DataType::Mutable,
 			Token()
 		);
+		stack_top_var->is_engine = true;
 		auto stack_top_decl = std::make_unique<NodeSingleDeclaration>(
 			std::move(stack_top_var),
 			nullptr,
 			Token()
 		);
-		m_current_struct->stack_top_var = static_cast<NodeVariable*>(stack_top_decl->variable.get());
+		strct->stack_top_var = static_cast<NodeVariable*>(stack_top_decl->variable.get());
 		node_block->add_as_stmt(std::move(max_structs_decl));
 		node_block->add_as_stmt(std::move(free_idx_decl));
 		node_block->add_as_stmt(std::move(allocation_decl));
 		node_block->add_as_stmt(std::move(stack_decl));
 		node_block->add_as_stmt(std::move(stack_top_decl));
-		return node_block;
+		strct->members->prepend_body(std::move(node_block));
 	}
 
 	inline NodeAST * visit(NodeAccessChain& node) override {
@@ -141,6 +143,10 @@ public:
 	}
 
 	inline NodeAST * visit(NodeSingleDeclaration& node) override {
+		// delete "self"
+		if(node.variable->name == "self") {
+			return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+		}
 		// turn member into array if it is a member
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
@@ -150,8 +156,8 @@ public:
 			if(node.variable->get_node_type() != NodeType::Array and node.variable->get_node_type() != NodeType::NDArray) {
 				return &node;
 			}
-			if(node.value->get_node_type() != NodeType::ParamList) {
-				node.value = std::make_unique<NodeParamList>(node.tok, std::move(node.value));
+			if(node.value->get_node_type() != NodeType::InitializerList) {
+				node.value = std::make_unique<NodeInitializerList>(node.tok, std::move(node.value));
 				node.value->parent = &node;
 			}
 		}
@@ -160,7 +166,7 @@ public:
 
 	inline NodeAST * visit(NodeVariable& node) override {
 		// if member, turn into array
-		if(node.is_member()) {
+		if(node.is_member() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
 			return node.replace_datastruct(std::move(new_node), m_def_provider);
 		}
@@ -168,7 +174,7 @@ public:
 	}
 	inline NodeAST * visit(NodePointer& node) override {
 		// if member, turn into array of pointers
-		if(node.is_member()) {
+		if(node.is_member() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
 			return node.replace_datastruct(std::move(new_node), m_def_provider);
 		}
@@ -180,7 +186,7 @@ public:
 		 * 	declare velocities[10]: [int]
 		 * 	declare struct.velocity[struct.MAX_STRUCTS, 10]
 		 */
-		if(node.is_member()) {
+		if(node.is_member() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
 			return node.replace_datastruct(std::move(new_node), m_def_provider);
 		}
@@ -188,7 +194,7 @@ public:
 	}
 	inline NodeAST * visit(NodeNDArray& node) override {
 		// if member, turn into multi-dimensional array
-		if(node.is_member()) {
+		if(node.is_member() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
 			new_node->is_local = false;
 			return node.replace_datastruct(std::move(new_node), m_def_provider);

@@ -8,8 +8,8 @@ struct List
 	declare List::stack[List::MAX_STRUCTS{int}] : int[]
 	declare List::stack_top : int
 	declare List::value[List::MAX_STRUCTS{int}] : int[]
-	declare List::next[List::MAX_STRUCTS{int}] : int[] := - 1
-	declare List::prev[List::MAX_STRUCTS{int}] : int[] := - 1
+	declare List::next[List::MAX_STRUCTS{int}] : int[] := [- 1]
+	declare List::prev[List::MAX_STRUCTS{int}] : int[] := [- 1]
 
 	function List::__init__(value : int, next : int)
 		List::free_idx{int} := search(List::allocation{int[]}, 0)
@@ -23,7 +23,7 @@ struct List
 	end function
 
 	function List::get_next_next_value(self : int)
-		return (List::value[List::next[List::next[self{int}]{int}]{int}]{int})
+		return (List::value[Node::next[List::next[self{int}]{int}]{int}]{int})
 	end function
 
 	function List::__repr__(self : int)
@@ -40,25 +40,93 @@ struct List
 	function List::__decr__(self : int, num_refs : int)
 		List::stack[List::stack_top{int}]{int} := self{int}
 		inc(List::stack_top{int})
-		while(List::stack_top{int} > 0) 
-			dec(List::stack_top{int})
-			self{int} := List::stack[List::stack_top{int}]{int}
-			if(self{int} = - 1)
+		while((Node::stack_top{int} > 0) and (List::stack_top{int} > 0)) 
+			while(Node::stack_top{int} > 0) 
+				dec(Node::stack_top{int})
+				self{int} := Node::stack[Node::stack_top{int}]{int}
+				if(self{int} = - 1)
+					continue
+				end if
+				Node::allocation[self{int}]{int} := Node::allocation[self{int}]{int} - num_refs{int}
+				if(Node::allocation[self{int}]{int} > 0)
+					continue
+				end if
+				if(Node::next[self{int}]{int} # - 1)
+					inc(Node::stack_top{int})
+					Node::stack[Node::stack_top{int}]{int} := Node::next[self{int}]{int}
+				end if
+				Node::__del__(self{int})
+			end while
+			while(List::stack_top{int} > 0) 
+				dec(List::stack_top{int})
+				self{int} := List::stack[List::stack_top{int}]{int}
+				if(self{int} = - 1)
+					continue
+				end if
+				List::allocation[self{int}]{int} := List::allocation[self{int}]{int} - num_refs{int}
+				if(List::allocation[self{int}]{int} > 0)
+					continue
+				end if
+				if(List::next[self{int}]{int} # - 1)
+					inc(List::stack_top{int})
+					List::stack[List::stack_top{int}]{int} := List::next[self{int}]{int}
+				end if
+				if(List::prev[self{int}]{int} # - 1)
+					inc(List::stack_top{int})
+					List::stack[List::stack_top{int}]{int} := List::prev[self{int}]{int}
+				end if
+				List::__del__(self{int})
+			end while
+		end while
+	end function
+
+end struct
+
+struct Node
+	declare const Node::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
+	declare Node::free_idx : int
+	declare Node::allocation[Node::MAX_STRUCTS{int}] : int[]
+	declare Node::stack[Node::MAX_STRUCTS{int}] : int[]
+	declare Node::stack_top : int
+	declare Node::value[Node::MAX_STRUCTS{int}] : int[]
+	declare Node::next[Node::MAX_STRUCTS{int}] : int[] := [- 1]
+
+	function Node::__init__(next : int, value : int)
+		Node::free_idx{int} := search(Node::allocation{int[]}, 0)
+		if(Node::free_idx{int} = -1)
+			message("Error: No more free space available to allocate objects of type 'Node'")
+		end if
+		Node::allocation[Node::free_idx{int}]{int[]} := 1
+		Node::next[Node::free_idx{int}]{int} := next{int}
+		Node::value[Node::free_idx{int}]{int} := value{int}
+		return (Node::free_idx{int})
+	end function
+
+	function Node::__repr__(self : int)
+		return ("<Node> Object: " & self{int})
+	end function
+
+	function Node::__del__(self : int)
+		if(Node::allocation[self{int}, self{int}]{int} <= 0)
+			Node::next[self{int}]{int} := - 1
+		end if
+	end function
+
+	function Node::__decr__(self : int, num_refs : int)
+		declare current : int := self{int}
+		while(current{int} # - 1) 
+			Node::allocation[self{int}, current{int}]{int} := Node::allocation[self{int}, current{int}]{int} - num_refs{int}
+			if(Node::allocation[self{int}, self{int}]{int} > 0)
+				current{int} := - 1
 				continue
 			end if
-			List::allocation[self{int}]{int} := List::allocation[self{int}]{int} - num_refs{int}
-			if(List::allocation[self{int}]{int} > 0)
-				continue
+			self{int} := current{int}
+			if(Node::next[current{int}]{int} # - 1)
+				current{int} := Node::next[current{int}]{int}
+			else
+				current{int} := - 1
 			end if
-			if(List::next[self{int}]{int} # - 1)
-				inc(List::stack_top{int})
-				List::stack[List::stack_top{int}]{int} := List::next[self{int}]{int}
-			end if
-			if(List::prev[self{int}]{int} # - 1)
-				inc(List::stack_top{int})
-				List::stack[List::stack_top{int}]{int} := List::prev[self{int}]{int}
-			end if
-			List::__del__(self{int})
+			Node::__del__(self{int})
 		end while
 	end function
 
@@ -100,16 +168,11 @@ struct Point
 	end function
 
 	function Point::__decr__(self : int, num_refs : int)
-		Point::stack[self{int}, Point::stack_top{int}]{int} := self{int}
-		inc(Point::stack_top[self{int}]{int})
-		while(Point::stack_top[self{int}]{int} > 0) 
-			dec(Point::stack_top[self{int}]{int})
-			self{int} := Point::stack[self{int}, Point::stack_top{int}]{int}
-			if(self{int} = - 1)
-				continue
-			end if
-			Point::allocation[self{int}, self{int}]{int} := Point::allocation[self{int}, self{int}]{int} - num_refs{int}
+		declare current : int := self{int}
+		while(current{int} # - 1) 
+			Point::allocation[self{int}, current{int}]{int} := Point::allocation[self{int}, current{int}]{int} - num_refs{int}
 			if(Point::allocation[self{int}, self{int}]{int} > 0)
+				current{int} := - 1
 				continue
 			end if
 			Point::__del__(self{int})
@@ -158,16 +221,11 @@ struct Note
 	end function
 
 	function Note::__decr__(self : int, num_refs : int)
-		Note::stack[self{int}, Note::stack_top{int}]{int} := self{int}
-		inc(Note::stack_top[self{int}]{int})
-		while(Note::stack_top[self{int}]{int} > 0) 
-			dec(Note::stack_top[self{int}]{int})
-			self{int} := Note::stack[self{int}, Note::stack_top{int}]{int}
-			if(self{int} = - 1)
-				continue
-			end if
-			Note::allocation[self{int}, self{int}]{int} := Note::allocation[self{int}, self{int}]{int} - num_refs{int}
+		declare current : int := self{int}
+		while(current{int} # - 1) 
+			Note::allocation[self{int}, current{int}]{int} := Note::allocation[self{int}, current{int}]{int} - num_refs{int}
 			if(Note::allocation[self{int}, self{int}]{int} > 0)
+				current{int} := - 1
 				continue
 			end if
 			Note::__del__(self{int})
@@ -178,57 +236,36 @@ end struct
 
 on init
 	declare _iter : int
-	declare ptr : int := List(1, List(3, - 1))
-	message(List::__repr__(List::next[List::next[ptr{int}]{int}]{int}))
-	message(ptr.get_next_next_value(ptr{int}))
-	declare lists[10] : int[] := [- 1]
-	declare idx : int
-	idx{int} := 0
-	declare EXIT_FLAG3 : int
-	while((idx{int} <= (num_elements(lists{int[]}) - 1)) and (EXIT_FLAG3{int} = 0)) 
-		lists[idx{int}]{int} := List(idx{int}, lists[idx{int}]{int})
-		if(idx{int} = 5)
-			EXIT_FLAG3{unknown} := 1
-			continue
-		else
-			EXIT_FLAG3{unknown} := 1
-			continue
-		end if
-		message(List::__repr__(List::next[lists[idx{int}]{int}]{int}))
-		inc(idx{int})
-	end while
-	declare n[10] : int[] := [0]
-	declare array[10] : int[] := return_init(n{int[]})
 	declare ndarray[10, 10] : int[][]
 	message(search_matrix(ndarray{int[][]}, 3))
 end on
 
 function search_matrix(matrix : int[][], target : int)
-	declare RETURN_FLAG7 : int
-	while(RETURN_FLAG7{int} = 0) 
+	declare RETURN_FLAG11 : int
+	while(RETURN_FLAG11{int} = 0) 
 		declare row : int
 		declare col : int
 		row{int} := 0
-		while((row{int} <= (matrix.SIZE_D1{int} - 1)) and (RETURN_FLAG7{int} = 0)) 
+		while((row{int} <= (matrix.SIZE_D1{int} - 1)) and (RETURN_FLAG11{int} = 0)) 
 			col{int} := 0
-			while((col{int} <= (matrix.SIZE_D2{int} - 1)) and (RETURN_FLAG7{int} = 0)) 
+			while((col{int} <= (matrix.SIZE_D2{int} - 1)) and (RETURN_FLAG11{int} = 0)) 
 				if(matrix[row{int}, col{int}]{int} = target{int})
 					return ((row{int} * 10) + col{int})
-					RETURN_FLAG7{int} := 1
+					RETURN_FLAG11{int} := 1
 					continue
 				end if
 				inc(col{int})
 			end while
-			if(RETURN_FLAG7{int} = 1)
+			if(RETURN_FLAG11{int} = 1)
 				continue
 			end if
 			inc(row{int})
 		end while
-		if(RETURN_FLAG7{int} = 1)
+		if(RETURN_FLAG11{int} = 1)
 			continue
 		end if
 		return (- 1)
-		RETURN_FLAG7{int} := 1
+		RETURN_FLAG11{int} := 1
 		continue
 	end while
 end function

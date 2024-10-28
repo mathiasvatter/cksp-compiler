@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Mon Oct 28 12:09:35 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Mon Oct 28 15:36:05 2024 }
 on init
   declare const $MAX_STRUCTS := 1000000
   declare const @MEM_WARNING
@@ -36,6 +36,17 @@ on init
   declare %Point__x[$Point__MAX_STRUCTS]
   declare const $Point__y__SIZE := $Point__MAX_STRUCTS
   declare %Point__y[$Point__MAX_STRUCTS]
+  declare const $Node__MAX_STRUCTS := $MAX_STRUCTS
+  declare $Node__free_idx
+  declare const $Node__allocation__SIZE := $Node__MAX_STRUCTS
+  declare %Node__allocation[$Node__MAX_STRUCTS]
+  declare const $Node__stack__SIZE := $Node__MAX_STRUCTS
+  declare %Node__stack[$Node__MAX_STRUCTS]
+  declare $Node__stack_top
+  declare const $Node__value__SIZE := $Node__MAX_STRUCTS
+  declare %Node__value[$Node__MAX_STRUCTS]
+  declare const $Node__next__SIZE := $Node__MAX_STRUCTS
+  declare %Node__next[$Node__MAX_STRUCTS] := (- 1)
   declare const $List__MAX_STRUCTS := $MAX_STRUCTS
   declare $List__free_idx
   declare const $List__allocation__SIZE := $List__MAX_STRUCTS
@@ -46,69 +57,15 @@ on init
   declare const $List__value__SIZE := $List__MAX_STRUCTS
   declare %List__value[$List__MAX_STRUCTS]
   declare const $List__next__SIZE := $List__MAX_STRUCTS
-  declare %List__next[$List__MAX_STRUCTS] := - 1
+  declare %List__next[$List__MAX_STRUCTS] := (- 1)
   declare const $List__prev__SIZE := $List__MAX_STRUCTS
-  declare %List__prev[$List__MAX_STRUCTS] := - 1
+  declare %List__prev[$List__MAX_STRUCTS] := (- 1)
   declare $loc_3
-  declare $_return8
-  $List__free_idx := search(%List__allocation, 0)
-  if($List__free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'List'")
-  end if
-  %List__allocation[$List__free_idx] := 1
-  %List__value[$List__free_idx] := 3
-  %List__next[$List__free_idx] := 
-  $_return8 := $List__free_idx
-  declare 
-  $List__free_idx := search(%List__allocation, 0)
-  if($List__free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'List'")
-  end if
-  %List__allocation[$List__free_idx] := 1
-  %List__value[$List__free_idx] := 1
-  %List__next[$List__free_idx] := 
-   := $List__free_idx
-  message("<List> Object: " & %List__next[%List__next[]])
-  message(%List__value[%List__next[%List__next[]]])
-  declare const $lists__SIZE := 10
-  declare %lists[10] := (- 1)
-  declare $loc_4
-  $loc_4 := 0
-  declare $loc_5
-  while(($loc_4 <= (num_elements(%lists) - 1)) and ($loc_5 = 0)) 
-    $List__free_idx := search(%List__allocation, 0)
-    if($List__free_idx = -1)
-      message("Error: No more free space available to allocate objects of type 'List'")
-    end if
-    %List__allocation[$List__free_idx] := 1
-    %List__value[$List__free_idx] := $loc_4
-    %List__next[$List__free_idx] := 
-    %lists[$loc_4] := $List__free_idx
-    if($loc_4 = 5)
-      $loc_5 := 1
-      continue
-    else
-      $loc_5 := 1
-      continue
-    end if
-    message("<List> Object: " & %List__next[%lists[$loc_4]])
-    inc($loc_4)
-  end while
-  declare const $n__SIZE := 10
-  declare %n[10] := (0)
-  declare const $array__SIZE := 10
-  declare %array[10]
-  message("Array of type <int[]>")
-  %array[0] := 1
-  %array[1] := 2
-  %array[2] := 3
-  %array[3] := 4
-  %array[4] := 5
   declare const $ndarray__SIZE_D1 := 10
   declare const $ndarray__SIZE_D2 := 10
   declare const $_ndarray__SIZE := 10 * 10
   declare %_ndarray[10 * 10]
-  declare $_return9
+  declare $_return12
   $loc_0 := 0
   while($loc_0 = 0) 
     $loc_1 := 0
@@ -118,7 +75,7 @@ on init
       $loc_2 := 0
       while(($loc_2 <= ($ndarray__SIZE_D2 - 1)) and ($loc_0 = 0)) 
         if(%_ndarray[($loc_1 * $ndarray__SIZE_D2) + $loc_2] = 3)
-          $_return9 := ($loc_1 * 10) + $loc_2
+          $_return12 := ($loc_1 * 10) + $loc_2
           $loc_0 := 1
           continue
         end if
@@ -132,10 +89,10 @@ on init
     if($loc_0 = 1)
       continue
     end if
-    $_return9 := - 1
+    $_return12 := - 1
     $loc_0 := 1
     continue
   end while
-  message($_return9)
+  message($_return12)
 end on
 

@@ -672,7 +672,10 @@ struct NodeWhile : NodeInstruction {
         body->update_token_data(token);
     }
 	ASTLowering* get_lowering(struct NodeProgram *program) const override;
-
+	void set_condition(std::unique_ptr<NodeBinaryExpr> condition) {
+		condition->parent = this;
+		this->condition = std::move(condition);
+	}
 };
 
 struct NodeSelect : NodeInstruction {
