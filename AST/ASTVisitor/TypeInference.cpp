@@ -341,6 +341,21 @@ NodeAST * TypeInference::visit(NodeStruct& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeNumElements& node) {
+	node.array->accept(*this);
+	if(node.array->ty->get_type_kind() != TypeKind::Composite) {
+		auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+		error.m_message = "<num_elements> can only be used on <Composite> types like <Arrays> or <NDArrays>.";
+		error.exit();
+	}
+	if(node.dimension) node.dimension->accept(*this);
+	if(!node.size) {
+		node.size->accept(*this);
+	}
+	node.ty = TypeRegistry::Integer;
+	return &node;
+}
+
 NodeAST * TypeInference::visit(NodeAccessChain& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// in case an array size constant has been mistakenly converted to an access chain

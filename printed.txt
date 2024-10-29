@@ -1,73 +1,121 @@
 Global Declarations:
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
-struct Point
-	declare self : Point := nil // object
-	retain(self{Point}, 1)
-	declare Point::x : int
-	declare Point::y : int
-
-	function Point::__init__(x : int, y : int)
-		Point::x{int} := x{int}
-		Point::y{int} := y{int}
-	end function
-
-	function Point::__repr__(self : Point)
-		return ("Point {X: " & Point::x{int} & ", Y: " & Point::y{int} & "}")
-	end function
-
-	function Point::__add__(self : Point, other : Point)
-		Point::x{int} := Point::x{int} + other{Point}.x{int}
-		Point::y{int} := Point::y{int} + other{Point}.y{int}
-		return (self{Point})
-	end function
-
-end struct
-
 on init
+	declare const Point::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
+	declare Point::free_idx : int
+	declare Point::allocation[Point::MAX_STRUCTS{int}] : int[]
+	declare Point::stack[Point::MAX_STRUCTS{int}] : int[]
+	declare Point::stack_top : int
+	declare Point::x[Point::MAX_STRUCTS{int}] : int[]
+	declare Point::y[Point::MAX_STRUCTS{int}] : int[]
 	declare _iter : int
 	declare ndarray[10, 10] : int[][]
 	message((search_matrix(ndarray{int[][]}, 3) & ", " & "3" & ", " & "f"))
-	declare ptr_array[10] : Point[]
+	declare ptr_array[10] : int[]
 	declare idx : int
 	idx{int} := 0
-	while(idx{int} <= (num_elements(ptr_array{Point[]}) - 1)) 
-		ptr_array[idx{int}]{Point} := Point(idx{int}, idx{int} + 1)
+	while(idx{int} <= (num_elements(ptr_array{int[]}) - 1)) 
+		ptr_array[idx{int}]{int} := Point(idx{int}, idx{int} + 1)
 		inc(idx{int})
 	end while
-	declare ptr_array2[10] : Point[] := [ptr_array[0]{Point}, ptr_array[1]{Point}] // object
-	retain(ptr_array2[0]{Point}, 1)
-	retain(ptr_array2[1]{Point}, num_elements(ptr_array2{Point[]}) - 1)
-	declare p1 : Point := Point(1, 2)
-	declare p2 : Point := Point(3, 4)
-	message(Point::__add__(p1{Point}, p2{Point}))
-	delete p2{Point}
-	delete p1{Point}
-	delete ptr_array2{Point[]}
-	delete ptr_array{Point[]}
+	declare ptr_array2[10] : int[] := [ptr_array[0]{int}, ptr_array[1]{int}]
+	retain(ptr_array2[0]{int[]}, 1)
+	retain(ptr_array2[1]{int[]}, num_elements(ptr_array2{int[]}) - 1)
+	declare ptr_array3[10] : int[] := ptr_array{int[]}
+	retain(ptr_array3{int[]}, num_elements(ptr_array3{int[]}))
+	declare p1 : int := Point(1, 2)
+	declare p2 : int := Point(3, 4)
+	message(Point::__repr__(Point::__add__(p1{int}, p2{int})))
+	delete p2{int}
+	delete p1{int}
+	delete ptr_array3{int[]}
+	delete ptr_array2{int[]}
+	delete ptr_array{int[]}
 end on
 
 function search_matrix(matrix : int[][], target : int)
-	declare array[30] : int[] := [0]
-	declare row : int
-	declare col : int
-	row{int} := 0
-	while(row{int} <= (matrix.SIZE_D1{int} - 1)) 
-		col{int} := 0
-		while(col{int} <= (matrix.SIZE_D2{int} - 1)) 
-			if(matrix[row{int}, col{int}]{int} = target{int})
-				return ((row{int} * 10) + col{int})
+	declare RETURN_FLAG4 : int
+	while(RETURN_FLAG4{int} = 0) 
+		declare array[30] : int[] := [0]
+		declare row : int
+		declare col : int
+		row{int} := 0
+		while((row{int} <= (matrix.SIZE_D1{int} - 1)) and (RETURN_FLAG4{int} = 0)) 
+			col{int} := 0
+			while((col{int} <= (matrix.SIZE_D2{int} - 1)) and (RETURN_FLAG4{int} = 0)) 
+				if(matrix[row{int}, col{int}]{int} = target{int})
+					return ((row{int} * 10) + col{int})
+					RETURN_FLAG4{int} := 1
+					continue
+				end if
+				inc(col{int})
+			end while
+			if(RETURN_FLAG4{int} = 1)
+				continue
 			end if
-			inc(col{int})
+			inc(row{int})
 		end while
-		inc(row{int})
+		if(RETURN_FLAG4{int} = 1)
+			continue
+		end if
+		return (- 1)
+		RETURN_FLAG4{int} := 1
+		continue
 	end while
-	return (- 1)
 end function
 
 function return_init(init : int[])
-	message(init{int[]})
+	message(int[]::__repr__(init{int[]}))
 	return ([1, 2, 3, 4, 5])
+end function
+
+function int[]::__repr__(self : int[])
+	return ("Array of type <int[]>")
+end function
+
+function Point::__init__(x : int, y : int)
+	Point::free_idx{int} := search(Point::allocation{int[]}, 0)
+	if(Point::free_idx{int} = -1)
+		message("Error: No more free space available to allocate objects of type 'Point'")
+	end if
+	Point::allocation[Point::free_idx{int}]{int[]} := 1
+	Point::x[Point::free_idx{int}]{int} := x{int}
+	Point::y[Point::free_idx{int}]{int} := y{int}
+	return (Point::free_idx{int})
+end function
+
+function Point::__repr__(self : int)
+	return ("Point {X: " & Point::x[self{int}]{int} & ", Y: " & Point::y[self{int}]{int} & "}")
+end function
+
+function Point::__add__(self : int, other : int)
+	Point::x[self{int}]{int} := Point::x[self{int}]{int} + Point::x[other{int}]{int}
+	Point::y[self{int}]{int} := Point::y[self{int}]{int} + Point::y[other{int}]{int}
+	return (self{int})
+end function
+
+function Point::__del__(self : int)
+	if(Point::allocation[self{int}]{int} <= 0)
+	end if
+end function
+
+function Point::__decr__(self : int, num_refs : int)
+	declare current : int := self{int}
+	while(current{int} # - 1) 
+		Point::allocation[current{int}]{int} := Point::allocation[current{int}]{int} - num_refs{int}
+		if(Point::allocation[self{int}]{int} > 0)
+			current{int} := - 1
+			continue
+		end if
+		Point::__del__(self{int})
+	end while
+end function
+
+function Point::__incr__(self : int, num_refs : int)
+	if(self{int} # - 1)
+		Point::allocation[self{int}]{int} := Point::allocation[self{int}]{int} + num_refs{int}
+	end if
 end function
 
 

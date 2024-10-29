@@ -26,6 +26,15 @@ public:
         if(node.kind == NodeFunctionCall::Kind::Builtin) {
             // get_ui_id lowering
             node.function->accept(*this);
+
+//			if(node.function->name == "num_elements") {
+//				auto &arr_ref = node.function->header->args->params[0];
+//				if(arr_ref->get_node_type() == NodeType::ArrayRef) {
+//					auto node_arr = static_cast<NodeArrayRef*>(arr_ref.get());
+//					return node.replace_with(static_cast<NodeArray*>(node_arr->declaration)->size->clone());
+//				}
+//			}
+
 			return &node;
         }
 

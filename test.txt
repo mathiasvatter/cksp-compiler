@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Tue Oct 29 14:45:57 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Tue Oct 29 18:10:48 2024 }
 on init
   declare const $MAX_STRUCTS := 1000000
   declare const @MEM_WARNING
@@ -77,7 +77,10 @@ on init
   declare %loc_7[10]
   %loc_7[0] := %loc_5[0]
   %loc_7[1] := %loc_5[1]
-  declare $loc_8
+  declare const $ptr_array3__SIZE := 10
+  declare %loc_8[10]
+  %loc_8 := %loc_5
+  declare $loc_9
   $Point__free_idx := search(%Point__allocation, 0)
   if($Point__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Point'")
@@ -85,8 +88,8 @@ on init
   %Point__allocation[$Point__free_idx] := 1
   %Point__x[$Point__free_idx] := 1
   %Point__y[$Point__free_idx] := 2
-  $loc_8 := $Point__free_idx
-  declare $loc_9
+  $loc_9 := $Point__free_idx
+  declare $loc_10
   $Point__free_idx := search(%Point__allocation, 0)
   if($Point__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Point'")
@@ -94,7 +97,7 @@ on init
   %Point__allocation[$Point__free_idx] := 1
   %Point__x[$Point__free_idx] := 3
   %Point__y[$Point__free_idx] := 4
-  $loc_9 := $Point__free_idx
+  $loc_10 := $Point__free_idx
   declare $_return7
   %Point__x[] := %Point__x[] + %Point__x[]
   %Point__y[] := %Point__y[] + %Point__y[]
@@ -104,8 +107,9 @@ on init
   %Point__y[] := %Point__y[] + %Point__y[]
   $_return8 := 
   message("Point {X: " & %Point__x[$_return7] & ", Y: " & %Point__y[$_return8] & "}")
+  $loc_10
   $loc_9
-  $loc_8
+  %loc_8
   %loc_7
   %loc_5
 end on

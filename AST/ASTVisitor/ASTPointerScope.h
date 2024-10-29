@@ -125,7 +125,6 @@ public:
 	}
 
 	NodeAST* visit(NodeSingleDeclaration &node) override {
-		node.has_object = alters_ref_count(&node);
 
 		node.variable->accept(*this);
 		if(node.variable->is_local and node.variable->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
@@ -135,6 +134,8 @@ public:
 		if(alters_ref_count(&node)) {
 			if(auto retain = add_retain(node)) {
 				node.set_retain(std::move(retain));
+			} else {
+				node.has_object = true;
 			}
 		}
 
@@ -175,71 +176,125 @@ public:
 		return false;
 	}
 
+	std::unique_ptr<NodeRetain> add_retain_ptr_ptr(NodePointerRef* l_ref, NodePointerRef* r_ref) {
+		auto retain = std::make_unique<NodeRetain>(l_ref->tok);
+		retain->add_single_retain(clone_as<NodeReference>(l_ref), std::make_unique<NodeInt>(1, l_ref->tok));
+		return retain;
+	}
+	std::unique_ptr<NodeRetain> add_retain_arr_init(NodeArrayRef* l_ref, NodeInitializerList* r_ref) {
+		auto arr_ref = clone_as<NodeArrayRef>(l_ref);
+		arr_ref->set_index(std::make_unique<NodeInt>(0, l_ref->tok));
+		// 1. initializer list with one element declare lists[10]: List[] := (ls)
+		// retain whole array
+		if(r_ref->size() == 1) {
+			auto retain = std::make_unique<NodeRetain>(l_ref->tok);
+			retain->add_single_retain(std::move(arr_ref), l_ref->get_size());
+			return retain;
+		} else {
+			// 2. initializer list with multiple elements
+			// retain each element
+			auto retain = std::make_unique<NodeRetain>(l_ref->tok);
+			for(int i=0; i<r_ref->elements.size(); i++) {
+				arr_ref->set_index(std::make_unique<NodeInt>(i, l_ref->tok));
+				retain->add_single_retain(clone_as<NodeReference>(arr_ref.get()), std::make_unique<NodeInt>(1, l_ref->tok));
+			}
+			retain->ptrs.back()->set_num(std::make_unique<NodeBinaryExpr>(
+				token::SUB,
+				l_ref->get_size(),
+				std::make_unique<NodeInt>(r_ref->size()-1, l_ref->tok),
+				l_ref->tok
+			));
+			return retain;
+		}
+	}
+	std::unique_ptr<NodeRetain> add_retain_arr_arr(NodeArrayRef* l_ref, NodeArrayRef* r_ref) {
+		// 3. variable is array -> copy into retain stmt
+		auto retain = std::make_unique<NodeRetain>(l_ref->tok);
+		retain->add_single_retain(clone_as<NodeReference>(l_ref), l_ref->get_size());
+		return retain;
+	}
+//	std::unique_ptr<NodeRetain> add_ret
+
+
 	/// assuming variable is of type object
 	std::unique_ptr<NodeRetain> add_retain(NodeSingleDeclaration& declaration) {
 		if(!declaration.value) return nullptr;
-		auto &variable = declaration.variable;
+		auto variable = declaration.variable->to_reference();
 		auto &value = declaration.value;
 
-		// 1. if variable is not composite type -> easiest case
-		if(variable->ty->get_type_kind() != TypeKind::Composite) {
-			auto retain = std::make_unique<NodeRetain>(variable->tok);
-			retain->add_single_retain(variable->to_reference(), std::make_unique<NodeInt>(1, value->tok));
-//			declaration.set_retain(std::move(retain));
-			return retain;
+		auto l_pointer_ref = cast_node<NodePointerRef>(variable.get());
+		auto r_pointer_ref = cast_node<NodePointerRef>(value.get());
+		if(l_pointer_ref and r_pointer_ref) {
+			return add_retain_ptr_ptr(l_pointer_ref, r_pointer_ref);
 		}
 
-		// 2. value is initializer list
-		// two cases here: initializer list with one element or multiple elements
-		if(value->get_node_type() == NodeType::InitializerList) {
-			if(variable->get_node_type() != NodeType::Array) {
-				auto error = CompileError(ErrorType::InternalError, "Expected array as variable in initializer list", "", variable->tok);
-				error.exit();
-			}
-			auto ref = std::unique_ptr<NodeArrayRef>(static_cast<NodeArrayRef*>(variable->to_reference().release()));
-			auto ref_size = DefinitionProvider::num_elements(clone_as<NodeReference>(ref.get()));
-			ref->set_index(std::make_unique<NodeInt>(0, value->tok));
-			ref->ty = variable->ty->get_element_type();
-			auto init_list = static_cast<NodeInitializerList*>(value.get());
-			// 1. initializer list with one element declare lists[10]: List[] := (ls)
-			// retain whole array
-			if(init_list->size() == 1) {
-				auto retain = std::make_unique<NodeRetain>(variable->tok);
-				retain->add_single_retain(clone_as<NodeReference>(ref.get()), std::move(ref_size));
-//				declaration.set_retain(std::move(retain));
-				return retain;
-			} else {
-				// 2. initializer list with multiple elements
-				// retain each element
-				auto retain = std::make_unique<NodeRetain>(variable->tok);
-				for(int i=0; i<init_list->elements.size(); i++) {
-					ref->set_index(std::make_unique<NodeInt>(i, value->tok));
-					retain->add_single_retain(clone_as<NodeReference>(ref.get()), std::make_unique<NodeInt>(1, value->tok));
-				}
-				retain->ptrs.back()->set_num(std::make_unique<NodeBinaryExpr>(
-					token::SUB,
-					std::move(ref_size),
-					std::make_unique<NodeInt>(init_list->size()-1, value->tok),
-					value->tok
-					));
-//				declaration.set_retain(std::move(retain));
-				return retain;
-			}
-
+		auto l_array_ref = cast_node<NodeArrayRef>(variable.get());
+		auto r_initializer_list = cast_node<NodeInitializerList>(value.get());
+		if(l_array_ref and r_initializer_list) {
+			return add_retain_arr_init(l_array_ref, r_initializer_list);
 		}
 
-
-
-		if(variable->ty->get_type_kind() != TypeKind::Composite) {
-			// three cases: initializer list with one element:
-			// declare lists[10]: List[] := (ls)
-
-			auto retain = std::make_unique<NodeRetain>(variable->tok);
-			retain->add_single_retain(variable->to_reference(), std::make_unique<NodeInt>(1, value->tok));
-//			declaration.set_retain(std::move(retain));
-			return retain;
+		auto r_array_ref = cast_node<NodeArrayRef>(value.get());
+		if(l_array_ref and r_array_ref) {
+			return add_retain_arr_arr(l_array_ref, r_array_ref);
 		}
+
 		return nullptr;
+
+//
+//		// 1. if variable is not composite type -> easiest case
+//		if(variable->ty->get_type_kind() != TypeKind::Composite) {
+//			auto retain = std::make_unique<NodeRetain>(variable->tok);
+//			retain->add_single_retain(variable->to_reference(), std::make_unique<NodeInt>(1, value->tok));
+//			return retain;
+//		}
+//
+//		// 2. value is initializer list
+//		// two cases here: initializer list with one element or multiple elements
+//		if(value->get_node_type() == NodeType::InitializerList) {
+//			if(variable->get_node_type() != NodeType::Array) {
+//				auto error = CompileError(ErrorType::InternalError, "Expected array as variable in initializer list", "", variable->tok);
+//				error.exit();
+//			}
+//			auto ref = std::unique_ptr<NodeArrayRef>(static_cast<NodeArrayRef*>(variable->to_reference().release()));
+//			auto ref_size = DefinitionProvider::num_elements(clone_as<NodeReference>(ref.get()));
+//			ref->set_index(std::make_unique<NodeInt>(0, value->tok));
+//			ref->ty = variable->ty->get_element_type();
+//			auto init_list = static_cast<NodeInitializerList*>(value.get());
+//			// 1. initializer list with one element declare lists[10]: List[] := (ls)
+//			// retain whole array
+//			if(init_list->size() == 1) {
+//				auto retain = std::make_unique<NodeRetain>(variable->tok);
+//				retain->add_single_retain(clone_as<NodeReference>(ref.get()), std::move(ref_size));
+//				return retain;
+//			} else {
+//				// 2. initializer list with multiple elements
+//				// retain each element
+//				auto retain = std::make_unique<NodeRetain>(variable->tok);
+//				for(int i=0; i<init_list->elements.size(); i++) {
+//					ref->set_index(std::make_unique<NodeInt>(i, value->tok));
+//					retain->add_single_retain(clone_as<NodeReference>(ref.get()), std::make_unique<NodeInt>(1, value->tok));
+//				}
+//				retain->ptrs.back()->set_num(std::make_unique<NodeBinaryExpr>(
+//					token::SUB,
+//					std::move(ref_size),
+//					std::make_unique<NodeInt>(init_list->size()-1, value->tok),
+//					value->tok
+//					));
+//				return retain;
+//			}
+//
+//		}
+//
+//
+//
+//		if(variable->ty->get_type_kind() == TypeKind::Composite) {
+//			// 3. variable is array -> copy into retain stmt
+//			auto retain = std::make_unique<NodeRetain>(variable->tok);
+//			retain->add_single_retain(variable->to_reference(), DefinitionProvider::num_elements(variable->to_reference()));
+//			return retain;
+//		}
+//		return nullptr;
 
 	}
 

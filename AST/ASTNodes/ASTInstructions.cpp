@@ -223,6 +223,38 @@ bool NodeFunctionCall::is_string_env() {
 	return is_string;
 }
 
+// ************* NodeNumElements ***************
+NodeAST *NodeNumElements::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeNumElements::NodeNumElements(const NodeNumElements& other)
+	: NodeInstruction(other), array(clone_unique(other.array)),
+	  dimension(clone_unique(other.dimension)), size(clone_unique(other.size)){
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeNumElements::clone() const {
+	return std::make_unique<NodeNumElements>(*this);
+}
+NodeAST *NodeNumElements::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (array.get() == oldChild) {
+		if(auto new_ref = cast_node<NodeReference>(newChild.release())) {
+			array = std::unique_ptr<NodeReference>(new_ref);
+			return array.get();
+		}
+	} else if (dimension.get() == oldChild) {
+		dimension = std::move(newChild);
+		return dimension.get();
+	} else if (size.get() == oldChild) {
+		size = std::move(newChild);
+		return size.get();
+	}
+	return nullptr;
+}
+
+ASTLowering* NodeNumElements::get_lowering(struct NodeProgram *program) const {
+	static LoweringWhile lowering(program);
+	return &lowering;
+}
 
 // ************* NodeDelete ***************
 NodeAST *NodeDelete::accept(struct ASTVisitor &visitor) {

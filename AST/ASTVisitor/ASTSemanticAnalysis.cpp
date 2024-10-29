@@ -33,6 +33,15 @@ NodeAST * ASTSemanticAnalysis::visit(NodeWildcard& node) {
 	return &node;
 }
 
+NodeAST * ASTSemanticAnalysis::visit(NodeNumElements& node) {
+	node.array->accept(*this);
+	if(node.dimension) node.dimension->accept(*this);
+	if(!node.size) {
+		node.size->accept(*this);
+	}
+	return &node;
+}
+
 /// check if declared constant variable ref gets new assignment -> throw error
 NodeAST* ASTSemanticAnalysis::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
