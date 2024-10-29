@@ -151,6 +151,12 @@ public:
 		node.ptr->accept(*this);
 		return &node;
 	};
+	virtual NodeAST* visit(NodeNumElements& node) {
+		node.array->accept(*this);
+		if(node.dimension) node.dimension->accept(*this);
+		if(node.size) node.size->accept(*this);
+		return &node;
+	};
 	virtual NodeAST* visit(NodeSingleRetain& node) {
 		node.ptr->accept(*this);
 		node.num->accept(*this);

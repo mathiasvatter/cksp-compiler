@@ -74,6 +74,7 @@ enum class NodeType {
 	String,
 	Nil,
 	DeadCode,
+	NumElements,
 	Delete,
 	SingleDelete,
 	Retain,

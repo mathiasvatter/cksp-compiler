@@ -74,6 +74,48 @@ struct NodeFunctionCall : NodeInstruction {
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 };
 
+struct NodeNumElements : NodeInstruction {
+	std::unique_ptr<NodeReference> array;
+	std::unique_ptr<NodeAST> dimension;
+	std::unique_ptr<NodeAST> size;
+	inline explicit NodeNumElements(Token tok) : NodeInstruction(NodeType::NumElements, std::move(tok)) {}
+	inline NodeNumElements(std::unique_ptr<NodeReference> array, std::unique_ptr<NodeAST> dimension, Token tok)
+		: NodeInstruction(NodeType::NumElements, std::move(tok)), array(std::move(array)), dimension(std::move(dimension)) {
+		set_child_parents();
+	}
+	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	// Copy Constructor
+	NodeNumElements(const NodeNumElements& other);
+	// Clone Method
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		array->update_parents(this);
+		if(dimension) dimension->update_parents(this);
+		if(size) size->update_parents(this);
+	}
+	void set_child_parents() override {
+		array->parent = this;
+		if(dimension) dimension->parent = this;
+		if(size) size->parent = this;
+	};
+	std::string get_string() override {
+		std::string num_elements = "num_elements[" + array->get_string();
+		if(dimension) {
+			num_elements += ", " + dimension->get_string() + "]";
+		}
+		return num_elements;
+	}
+	void update_token_data(const Token& token) override {
+		array->update_token_data(token);
+		if(dimension) dimension->update_token_data(token);
+		if(size) size->update_token_data(token);
+	}
+	ASTLowering* get_lowering(struct NodeProgram *program) const override;
+
+};
+
 struct NodeDelete : NodeInstruction {
 	// nodeAST because it can also be a FunctionCall
 	std::vector<std::unique_ptr<NodeAST>> ptrs;

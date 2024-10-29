@@ -94,7 +94,7 @@ on init
 		ptr := Point(idx, idx+1)
 	end for
 	declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
-
+	declare local ptr_array3[10] := ptr_array
 	declare local p1 := Point(1, 2)
 	declare local p2 := Point(3, 4)
 	message(p1 + p2)

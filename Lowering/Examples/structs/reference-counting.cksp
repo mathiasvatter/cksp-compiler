@@ -59,6 +59,9 @@ if(scope)
     // ------ copy of array
     declare lists1[10] := lists
 
+    // ------ ndarray
+    declare more_lists[10,10]: List[][] := (ls, ls1, ls2)
+
     // --------- Assignmnets
 
     delete lists // delete complete array in for loop

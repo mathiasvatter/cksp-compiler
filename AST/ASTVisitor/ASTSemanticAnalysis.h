@@ -54,7 +54,7 @@ public:
     /// add function parameters to scope
 	NodeAST * visit(NodeFunctionDefinition& node) override;
 	NodeAST * visit(NodeWildcard& node) override;
-
+	NodeAST * visit(NodeNumElements& node) override;
 
 	/// updates the node types of parameters at call sites regarding the function definition
 	/// e.g. args can be incorrectly detected as variable refs at call sites, but they are arrays in the definition

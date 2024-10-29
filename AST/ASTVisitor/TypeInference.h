@@ -57,6 +57,7 @@ public:
 
 	NodeAST * visit(NodeConst& node) override;
 	NodeAST * visit(NodeStruct& node) override;
+	NodeAST * visit(NodeNumElements& node) override;
 
     /// iterates through all references and declarations and tries to match the types
     /// with cast set to true -> will cast types of data structures if no type could be infered
