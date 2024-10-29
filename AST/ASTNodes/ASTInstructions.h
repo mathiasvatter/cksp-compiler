@@ -127,6 +127,7 @@ struct NodeSingleDelete : NodeInstruction {
 	NodeSingleDelete(const NodeSingleDelete& other);
 	// Clone Method
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
 		ptr->update_parents(this);
@@ -140,6 +141,7 @@ struct NodeSingleDelete : NodeInstruction {
 	void update_token_data(const Token& token) override {
 		ptr->update_token_data(token);
 	}
+
 };
 
 /// Node to retain a single pointer
@@ -158,6 +160,7 @@ struct NodeSingleRetain : NodeInstruction {
 	NodeSingleRetain(const NodeSingleRetain& other);
 	// Clone Method
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
 		ptr->update_parents(this);
@@ -174,6 +177,11 @@ struct NodeSingleRetain : NodeInstruction {
 		ptr->update_token_data(token);
 		num->update_token_data(token);
 	}
+	void set_num(std::unique_ptr<NodeAST> new_num) {
+		num = std::move(new_num);
+		num->parent = this;
+	}
+
 };
 
 /// Node to retain multiple pointers

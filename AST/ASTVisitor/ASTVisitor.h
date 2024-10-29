@@ -153,10 +153,12 @@ public:
 	};
 	virtual NodeAST* visit(NodeSingleRetain& node) {
 		node.ptr->accept(*this);
+		node.num->accept(*this);
 		return &node;
 	};
 	virtual NodeAST* visit(NodeRetain& node) {
-		for(auto &ptr : node.ptrs) ptr->accept(*this);
+		for(auto &ptr : node.ptrs)
+			ptr->accept(*this);
 		return &node;
 	};
     virtual NodeAST* visit(NodeGetControl& node) {

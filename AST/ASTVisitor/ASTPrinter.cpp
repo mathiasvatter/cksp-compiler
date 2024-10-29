@@ -71,9 +71,24 @@ NodeAST * ASTPrinter::visit(NodeSingleDelete& node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeRetain& node) {
+	for(auto &ptr : node.ptrs) {
+		ptr->accept(*this);
+		os << "\n";
+	}
+	if (!node.ptrs.empty()) {
+		os.seekp(-1, std::ios_base::end);
+	}
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeSingleRetain& node) {
-	os << "retain ";
+	os << get_indent();
+	os << "retain(";
 	node.ptr->accept(*this);
+	os << ", ";
+	node.num->accept(*this);
+	os << ")";
 	return &node;
 }
 
@@ -200,12 +215,16 @@ NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
 	node.variable->accept(*this);
 	if(node.value) {
         os << " := ";
-//        auto node_param_list = node.value->get_node_type() == NodeType::ParamList;
-//        if(node_param_list) os << "(";
         node.value->accept(*this);
-//        if(node_param_list) os << ")";
 	}
 	os << "";
+	if(node.has_object) {
+		os << " // object";
+	}
+	if(node.retain_stmt) {
+		os << std::endl;
+		node.retain_stmt->accept(*this);
+	}
 	return &node;
 }
 
@@ -281,10 +300,10 @@ NodeAST * ASTPrinter::visit(NodeSingleAssignment &node) {
     os << "";
     node.l_value->accept(*this);
     os << " := ";
-//    auto node_param_list = node.r_value->get_node_type() == NodeType::ParamList;
-//    if(node_param_list) os << "(";
     node.r_value->accept(*this);
-//    if(node_param_list) os << ")";
+	if(node.has_object) {
+		os << " // object";
+	}
 	return &node;
 }
 

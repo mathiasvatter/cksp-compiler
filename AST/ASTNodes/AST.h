@@ -196,7 +196,12 @@ struct NodeDataStructure : NodeAST {
 	virtual Type* cast_type();
 	/// returns fitting reference node type for the data structures
 	virtual NodeType get_ref_node_type() {return NodeType::DeadCode;}
-
+	void match_metadata(NodeDataStructure* data_structure) {
+		is_engine = data_structure->is_engine;
+		is_local = data_structure->is_local;
+		is_compiler_return = data_structure->is_compiler_return;
+		data_type = data_structure->data_type;
+	}
 	/// methods to change node type. Everything possible is copied over, even the type;
 	virtual std::unique_ptr<class NodeVariable> to_variable() {return nullptr;}
 	virtual std::unique_ptr<class NodePointer> to_pointer() {return nullptr;}

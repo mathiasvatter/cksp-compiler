@@ -262,6 +262,14 @@ std::unique_ptr<NodeAST> NodeSingleDelete::clone() const {
 	return std::make_unique<NodeSingleDelete>(*this);
 }
 
+NodeAST *NodeSingleDelete::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (ptr.get() == oldChild) {
+		ptr = std::move(newChild);
+		return ptr.get();
+	}
+	return nullptr;
+}
+
 // ************* NodeSingleRetain ***************
 NodeAST *NodeSingleRetain::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
@@ -272,6 +280,14 @@ NodeSingleRetain::NodeSingleRetain(const NodeSingleRetain& other)
 }
 std::unique_ptr<NodeAST> NodeSingleRetain::clone() const {
 	return std::make_unique<NodeSingleRetain>(*this);
+}
+
+NodeAST *NodeSingleRetain::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (ptr.get() == oldChild) {
+		ptr = std::move(newChild);
+		return ptr.get();
+	}
+	return nullptr;
 }
 
 // ************* NodeRetain ***************

@@ -137,13 +137,6 @@ NodeAST * TypeInference::visit(NodeVariable& node) {
 	// because of pointer node -> apply type annotations again
 	if(node.ty->get_type_kind() == TypeKind::Object) {
 		auto ptr = node.to_pointer();
-//		auto references = m_def_provider->get_references(&node);
-//		m_def_provider->remove_references(&node);
-//		auto new_node = static_cast<NodeDataStructure*>(node.replace_with(std::move(ptr)));
-//		m_def_provider->set_references(new_node, references);
-//		for(auto ref : references) {
-//			ref->declaration = new_node;
-//		}
 		auto new_node = node.replace_datastruct(std::move(ptr), m_def_provider);
 		m_def_provider->add_to_data_structures(new_node);
 		if(auto strct = node.is_member()) {
@@ -161,6 +154,10 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 	if(node.declaration->get_node_type() == NodeType::Variable) {
 		auto node_var = static_cast<NodeVariable*>(node.declaration);
 		auto ptr = node_var->to_pointer();
+		ptr->is_engine = node_var->is_engine;
+		ptr->is_local = node_var->is_local;
+		ptr->is_compiler_return = node_var->is_compiler_return;
+		ptr->data_type = node_var->data_type;
 		auto new_node = node_var->replace_datastruct(std::move(ptr), m_def_provider);
 		auto &references = m_def_provider->get_references(node.declaration);
 		for(auto ref : references) {
