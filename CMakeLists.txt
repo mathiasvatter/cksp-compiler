@@ -176,7 +176,7 @@ add_executable(cksp main.cpp
         Desugaring/DesugarFunctionCall.h
         AST/ASTVisitor/ASTHandleStringRepresentations.h
         Desugaring/DesugarDelete.h
-        AST/ASTVisitor/ASTReferenceCounting.h
+        AST/ASTVisitor/ASTPointerScope.h
         Desugaring/DesugarParamList.h
         AST/ASTVisitor/ASTInitializerFunctionInlining.h
         Desugaring/DesugarBinaryExpr.h

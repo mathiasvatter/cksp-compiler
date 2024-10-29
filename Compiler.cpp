@@ -12,6 +12,7 @@
 #include "AST/ASTVisitor/ASTRelinkGlobalScope.h"
 #include "AST/ASTVisitor/ASTKSPSyntaxCheck.h"
 #include "AST/ASTVisitor/ASTInitializerFunctionInlining.h"
+#include "AST/ASTVisitor/ASTPointerScope.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -128,10 +129,13 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Type Checking") << std::endl;
 	compile_time.start("Lowering");
 
+	ASTPointerScope pointer_scope(&m_definition_provider);
+	ast->accept(pointer_scope);
+	ast->debug_print();
+
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
 
-	ast->debug_print();
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
 

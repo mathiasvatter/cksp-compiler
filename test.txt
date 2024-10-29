@@ -1,30 +1,13 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Mon Oct 28 17:48:02 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Tue Oct 29 14:45:57 2024 }
 on init
   declare const $MAX_STRUCTS := 1000000
   declare const @MEM_WARNING
   @MEM_WARNING := "Memory Error: No more free space available to allocate objects of type"
-  declare $loc_1
+  declare const $array__SIZE := 30
+  declare $loc_3
+  declare %loc_1[30]
   declare $loc_2
   declare $loc_0
-  declare const $Note__MAX_STRUCTS
-  $Note__MAX_STRUCTS := $MAX_STRUCTS / ((((2 * 2) + 10) + abs((2 * 2) - 10)) / 2)
-  declare $Note__free_idx
-  declare const $Note__allocation__SIZE := $Note__MAX_STRUCTS
-  declare %Note__allocation[$Note__MAX_STRUCTS]
-  declare const $Note__stack__SIZE := $Note__MAX_STRUCTS
-  declare %Note__stack[$Note__MAX_STRUCTS]
-  declare $Note__stack_top
-  declare const $Note__pitch__SIZE := $Note__MAX_STRUCTS
-  declare %Note__pitch[$Note__MAX_STRUCTS]
-  declare const $Note__velocities__SIZE_D1 := $Note__MAX_STRUCTS
-  declare const $Note__velocities__SIZE_D2 := 10
-  declare const $_Note__velocities__SIZE := $Note__MAX_STRUCTS * 10
-  declare %_Note__velocities[$Note__MAX_STRUCTS * 10]
-  declare const $Note__play_pos__SIZE_D1 := $Note__MAX_STRUCTS
-  declare const $Note__play_pos__SIZE_D2 := 2
-  declare const $Note__play_pos__SIZE_D3 := 2
-  declare const $_Note__play_pos__SIZE := $Note__MAX_STRUCTS * (2 * 2)
-  declare %_Note__play_pos[$Note__MAX_STRUCTS * (2 * 2)]
   declare const $Point__MAX_STRUCTS := $MAX_STRUCTS
   declare $Point__free_idx
   declare const $Point__allocation__SIZE := $Point__MAX_STRUCTS
@@ -36,63 +19,94 @@ on init
   declare %Point__x[$Point__MAX_STRUCTS]
   declare const $Point__y__SIZE := $Point__MAX_STRUCTS
   declare %Point__y[$Point__MAX_STRUCTS]
-  declare const $Node__MAX_STRUCTS := $MAX_STRUCTS
-  declare $Node__free_idx
-  declare const $Node__allocation__SIZE := $Node__MAX_STRUCTS
-  declare %Node__allocation[$Node__MAX_STRUCTS]
-  declare const $Node__stack__SIZE := $Node__MAX_STRUCTS
-  declare %Node__stack[$Node__MAX_STRUCTS]
-  declare $Node__stack_top
-  declare const $Node__value__SIZE := $Node__MAX_STRUCTS
-  declare %Node__value[$Node__MAX_STRUCTS]
-  declare const $Node__next__SIZE := $Node__MAX_STRUCTS
-  declare %Node__next[$Node__MAX_STRUCTS] := (- 1)
-  declare const $List__MAX_STRUCTS := $MAX_STRUCTS
-  declare $List__free_idx
-  declare const $List__allocation__SIZE := $List__MAX_STRUCTS
-  declare %List__allocation[$List__MAX_STRUCTS]
-  declare const $List__stack__SIZE := $List__MAX_STRUCTS
-  declare %List__stack[$List__MAX_STRUCTS]
-  declare $List__stack_top
-  declare const $List__value__SIZE := $List__MAX_STRUCTS
-  declare %List__value[$List__MAX_STRUCTS]
-  declare const $List__next__SIZE := $List__MAX_STRUCTS
-  declare %List__next[$List__MAX_STRUCTS] := (- 1)
-  declare const $List__prev__SIZE := $List__MAX_STRUCTS
-  declare %List__prev[$List__MAX_STRUCTS] := (- 1)
-  declare $loc_3
+  declare $loc_4
   declare const $ndarray__SIZE_D1 := 10
   declare const $ndarray__SIZE_D2 := 10
   declare const $_ndarray__SIZE := 10 * 10
   declare %_ndarray[10 * 10]
-  declare $_return16
+  declare $_return6
   $loc_0 := 0
   while($loc_0 = 0) 
-    $loc_1 := 0
     $loc_2 := 0
-    $loc_1 := 0
-    while(($loc_1 <= ($ndarray__SIZE_D1 - 1)) and ($loc_0 = 0)) 
-      $loc_2 := 0
-      while(($loc_2 <= ($ndarray__SIZE_D2 - 1)) and ($loc_0 = 0)) 
-        if(%_ndarray[($loc_1 * $ndarray__SIZE_D2) + $loc_2] = 3)
-          $_return16 := ($loc_1 * 10) + $loc_2
+    while($loc_2 < num_elements(%loc_1)) 
+      %loc_1[$loc_2] := 0
+      inc($loc_2)
+    end while
+    $loc_2 := 0
+    $loc_3 := 0
+    $loc_2 := 0
+    while(($loc_2 <= ($ndarray__SIZE_D1 - 1)) and ($loc_0 = 0)) 
+      $loc_3 := 0
+      while(($loc_3 <= ($ndarray__SIZE_D2 - 1)) and ($loc_0 = 0)) 
+        if(%_ndarray[($loc_2 * $ndarray__SIZE_D2) + $loc_3] = 3)
+          $_return6 := ($loc_2 * 10) + $loc_3
           $loc_0 := 1
           continue
         end if
-        inc($loc_2)
+        inc($loc_3)
       end while
       if($loc_0 = 1)
         continue
       end if
-      inc($loc_1)
+      inc($loc_2)
     end while
     if($loc_0 = 1)
       continue
     end if
-    $_return16 := - 1
+    $_return6 := - 1
     $loc_0 := 1
     continue
   end while
-  message($_return16)
+  message($_return6 & ", " & "3" & ", " & "f")
+  declare const $ptr_array__SIZE := 10
+  declare %loc_5[10]
+  declare $loc_6
+  $loc_6 := 0
+  while($loc_6 <= (num_elements(%loc_5) - 1)) 
+    $Point__free_idx := search(%Point__allocation, 0)
+    if($Point__free_idx = -1)
+      message("Error: No more free space available to allocate objects of type 'Point'")
+    end if
+    %Point__allocation[$Point__free_idx] := 1
+    %Point__x[$Point__free_idx] := $loc_6
+    %Point__y[$Point__free_idx] := $loc_6 + 1
+    %loc_5[$loc_6] := $Point__free_idx
+    inc($loc_6)
+  end while
+  declare const $ptr_array2__SIZE := 10
+  declare %loc_7[10]
+  %loc_7[0] := %loc_5[0]
+  %loc_7[1] := %loc_5[1]
+  declare $loc_8
+  $Point__free_idx := search(%Point__allocation, 0)
+  if($Point__free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'Point'")
+  end if
+  %Point__allocation[$Point__free_idx] := 1
+  %Point__x[$Point__free_idx] := 1
+  %Point__y[$Point__free_idx] := 2
+  $loc_8 := $Point__free_idx
+  declare $loc_9
+  $Point__free_idx := search(%Point__allocation, 0)
+  if($Point__free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'Point'")
+  end if
+  %Point__allocation[$Point__free_idx] := 1
+  %Point__x[$Point__free_idx] := 3
+  %Point__y[$Point__free_idx] := 4
+  $loc_9 := $Point__free_idx
+  declare $_return7
+  %Point__x[] := %Point__x[] + %Point__x[]
+  %Point__y[] := %Point__y[] + %Point__y[]
+  $_return7 := 
+  declare $_return8
+  %Point__x[] := %Point__x[] + %Point__x[]
+  %Point__y[] := %Point__y[] + %Point__y[]
+  $_return8 := 
+  message("Point {X: " & %Point__x[$_return7] & ", Y: " & %Point__y[$_return8] & "}")
+  $loc_9
+  $loc_8
+  %loc_7
+  %loc_5
 end on
 

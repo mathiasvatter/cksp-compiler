@@ -254,7 +254,7 @@ public:
     void add_property_function(std::unique_ptr<NodeFunctionDefinition> property_function);
 
 
-	static std::unique_ptr<NodeFunctionCall> num_elements(std::unique_ptr<NodeArrayRef> ref) {
+	static std::unique_ptr<NodeFunctionCall> num_elements(std::unique_ptr<NodeReference> ref) {
 		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionVarRef>(

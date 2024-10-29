@@ -160,6 +160,7 @@ NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 
     node.variable->accept(*this);
     if(node.value) node.value->accept(*this);
+	if(node.retain_stmt) node.retain_stmt->accept(*this);
 	m_def_provider->add_to_declarations(&node);
 	return &node;
 }
@@ -239,9 +240,9 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionVarRef& node) {
 			node.declaration = func_call->definition->header.get();
 			return &node;
 		}
-		if(node.name == "message") {
-			return &node;
-		}
+//		if(node.name == "message") {
+//			return &node;
+//		}
 	}
 
 	auto node_declaration = m_def_provider->get_declaration(&node);

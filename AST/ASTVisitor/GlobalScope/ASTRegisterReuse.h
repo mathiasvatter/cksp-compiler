@@ -182,6 +182,7 @@ public:
 		// only add var to local scope if it is not replaced by passive_var
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
+		if(node.retain_stmt) node.retain_stmt->accept(*this);
 		// add local vars to lists for later renaming
 		if(node.variable->is_local) {
 			if(m_program->current_callback) m_all_callback_decl[m_program->current_callback].push_back(&node);

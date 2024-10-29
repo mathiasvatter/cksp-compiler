@@ -15,6 +15,16 @@ public:
 	explicit DesugarFunctionCall(NodeProgram *program) : ASTDesugaring(program) {};
 
 	inline NodeAST * visit(NodeFunctionCall& node) override {
+		// message overloaded is not recognized as builtin
+		// constructor method renaming
+		if(node.kind == NodeFunctionCall::Kind::Undefined) {
+			if(node.function->get_num_args() > 1 and node.function->name == "message") {
+				// lowering of message parameters when separated by comma
+				node.function->header->args = inline_message_parameters(node.function->header->args);
+				node.function->header->args->parent = node.function->header->args.get();
+			}
+		}
+
 		node.get_definition(m_program);
 		if(!node.definition) return &node;
 		if(node.definition->num_return_params <= 1) return &node;
@@ -30,5 +40,46 @@ public:
 		}
 
 		return &node;
+	}
+
+private:
+
+	static inline std::unique_ptr<NodeParamList> inline_message_parameters(std::unique_ptr<NodeParamList>& params) {
+		// it is already only one parameter
+		if (params->params.size() == 1) return std::move(params);
+
+		auto new_param = std::make_unique<NodeParamList>(params->tok);
+
+		// initialize node_expr with last param
+		auto node_expr = std::move(params->params.back());
+		params->params.pop_back();
+
+		// Durchlaufe die restlichen Parameter in umgekehrter Reihenfolge
+		for (int i = params->params.size() - 1; i >= 0; --i) {
+			// Erstelle einen neuen NodeString für das Komma
+			auto comma_node = std::make_unique<NodeString>("\", \"", params->tok);
+
+			// Erstelle einen neuen NodeBinaryExpr mit dem aktuellen Parameter und dem bisherigen Ausdruck
+			auto combined_expr = std::make_unique<NodeBinaryExpr>(
+				token::STRING_OP,
+				std::move(params->params[i]),
+				std::move(comma_node),
+				params->tok
+			);
+			combined_expr->ty = TypeRegistry::String;
+
+			// Hänge den bisherigen Ausdruck an den neuen NodeBinaryExpr an
+			node_expr = std::make_unique<NodeBinaryExpr>(
+				token::STRING_OP,
+				std::move(combined_expr),
+				std::move(node_expr),
+				params->tok
+			);
+			node_expr->ty = TypeRegistry::String;
+		}
+		node_expr->parent = new_param.get();
+		// Füge das endgültige node_expr der neuen Parameterliste hinzu
+		new_param->add_param(std::move(node_expr));
+		return new_param;
 	}
 };

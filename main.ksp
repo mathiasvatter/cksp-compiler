@@ -1,23 +1,23 @@
 
-struct List
-	declare value: int
-	declare next: Node
-	declare prev: Node
+// struct List
+// 	declare value: int
+// 	declare next: Node
+// 	declare prev: Node
 
-	function __init__(self, value: int, next)
-		self.value := value
-		self.next := next
-	end function
+// 	function __init__(self, value: int, next)
+// 		self.value := value
+// 		self.next := next
+// 	end function
 
-    function get_next_next_value(self)
-        return self.next.next.value
-    end function
-end struct
+//     function get_next_next_value(self)
+//         return self.next.next.value
+//     end function
+// end struct
 
-struct Node
-	declare value: int
-	declare next : List
-end struct 
+// struct Node
+// 	declare value: int
+// 	declare next : List
+// end struct 
 
 struct Point
 	declare x: int
@@ -39,30 +39,30 @@ struct Point
 	end function
 end struct
 
-struct Note
-	declare pitch: int
-	declare velocities[10]: int[]
-	declare play_pos[2, 2]: int[][]
+// struct Note
+// 	declare pitch: int
+// 	declare velocities[10]: int[]
+// 	declare play_pos[2, 2]: int[][]
 
-	function __init__(self, p: int, v: int[], pp: int[][])
-		self.pitch := p
-		self.velocities := v
-		self.play_pos := pp
-	end function
+// 	function __init__(self, p: int, v: int[], pp: int[][])
+// 		self.pitch := p
+// 		self.velocities := v
+// 		self.play_pos := pp
+// 	end function
 
-	function __repr__(self)
-		return "Note {Pitch: " & self.pitch & "}"
-	end function
+// 	function __repr__(self)
+// 		return "Note {Pitch: " & self.pitch & "}"
+// 	end function
 
-	function play(self)
-		return play_note(self.pitch, self.velocities[0], self.play_pos[1,2], 0)
-	end function
+// 	function play(self)
+// 		return play_note(self.pitch, self.velocities[0], self.play_pos[1,2], 0)
+// 	end function
 
-	function get_velocities(self)
-		return self.velocities
-	end function
+// 	function get_velocities(self)
+// 		return self.velocities
+// 	end function
 
-end struct
+// end struct
 
 on init	
 	// declare first_note := Note(69, (3,0), ((10)))
@@ -87,12 +87,17 @@ on init
 	// declare array[10] : int[] := return_init(n)
 
 	declare ndarray[10,10]
-	message(search_matrix(ndarray, 3))
+	message(search_matrix(ndarray, 3), "3", "f")
 
+	declare local ptr_array[10]
+	for idx, ptr in ptr_array
+		ptr := Point(idx, idx+1)
+	end for
+	declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
 
-	// declare p1 := Point(1, 2)
-	// declare p2 := Point(3, 4)
-	// message(p1 + p2)
+	declare local p1 := Point(1, 2)
+	declare local p2 := Point(3, 4)
+	message(p1 + p2)
 end on
 
 function return_init(init: int[])
@@ -102,6 +107,8 @@ end function
 
 
 function search_matrix(matrix: int[][], target: int)
+	declare array[30] := (0)
+
     declare row, col: int
     for row := 0 to matrix.SIZE_D1 - 1
         for col := 0 to matrix.SIZE_D2 - 1

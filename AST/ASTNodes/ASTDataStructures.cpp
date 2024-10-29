@@ -36,19 +36,27 @@ std::unique_ptr<NodeReference> NodeVariable::to_reference() {
 }
 
 std::unique_ptr<NodeArray> NodeVariable::to_array(std::unique_ptr<NodeAST> size) {
-	return std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
+	auto node_array = std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
+	node_array->match_metadata(this);
+	return node_array;
 }
 
 std::unique_ptr<NodePointer> NodeVariable::to_pointer() {
-	return std::make_unique<NodePointer>(persistence, name, ty, tok);
+	auto node_ptr = std::make_unique<NodePointer>(persistence, name, ty, tok);
+	node_ptr->match_metadata(this);
+	return node_ptr;
 }
 
 std::unique_ptr<NodeNDArray> NodeVariable::to_ndarray() {
-	return std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
+	auto node_var = std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
+	node_var->match_metadata(this);
+	return node_var;
 }
 
 std::unique_ptr<NodeList> NodeVariable::to_list() {
-	return std::make_unique<NodeList>(tok);
+	auto node_list = std::make_unique<NodeList>(tok);
+	node_list->match_metadata(this);
+	return node_list;
 }
 
 std::unique_ptr<NodeDataStructure> NodeVariable::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
@@ -83,11 +91,15 @@ ASTLowering* NodePointer::get_lowering(NodeProgram *program) const {
 }
 
 std::unique_ptr<NodeArray> NodePointer::to_array(std::unique_ptr<NodeAST> size) {
-	return std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
+	auto node_array = std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
+	node_array->match_metadata(this);
+	return node_array;
 }
 
 std::unique_ptr<NodeVariable> NodePointer::to_variable() {
-	return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+	auto node_var = std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+	node_var->match_metadata(this);
+	return node_var;
 }
 
 std::unique_ptr<NodeDataStructure> NodePointer::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
@@ -129,11 +141,15 @@ std::unique_ptr<NodeReference> NodeArray::to_reference() {
 }
 
 std::unique_ptr<NodeNDArray> NodeArray::to_ndarray() {
-    return std::make_unique<NodeNDArray>(persistence, name, ty, std::make_unique<NodeParamList>(tok, size->clone()), tok);
+    auto nd_array = std::make_unique<NodeNDArray>(persistence, name, ty, std::make_unique<NodeParamList>(tok, size->clone()), tok);
+	nd_array->match_metadata(this);
+	return nd_array;
 }
 
 std::unique_ptr<NodeList> NodeArray::to_list() {
-    return std::make_unique<NodeList>(tok);
+    auto node_list = std::make_unique<NodeList>(tok);
+	node_list->match_metadata(this);
+	return node_list;
 }
 
 std::unique_ptr<NodeDataStructure> NodeArray::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
@@ -171,11 +187,15 @@ std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
 }
 
 std::unique_ptr<NodeArray> NodeNDArray::to_array(std::unique_ptr<NodeAST> size) {
-    return std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
+    auto node_array = std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
+	node_array->match_metadata(this);
+	return node_array;
 }
 
 std::unique_ptr<NodeList> NodeNDArray::to_list() {
-    return std::make_unique<NodeList>(tok);
+    auto node_list = std::make_unique<NodeList>(tok);
+	node_list->match_metadata(this);
+	return node_list;
 }
 
 std::unique_ptr<NodeDataStructure> NodeNDArray::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
@@ -252,15 +272,21 @@ ASTLowering* NodeList::get_lowering(NodeProgram *program) const {
 }
 
 std::unique_ptr<NodeVariable> NodeList::to_variable() {
-    return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+    auto node_var = std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+	node_var->match_metadata(this);
+	return node_var;
 }
 
 std::unique_ptr<NodeArray> NodeList::to_array(std::unique_ptr<NodeAST> size) {
-    return std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
+    auto node_array = std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
+	node_array->match_metadata(this);
+	return node_array;
 }
 
 std::unique_ptr<NodeNDArray> NodeList::to_ndarray() {
-    return std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
+    auto node_ndarray = std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
+	node_ndarray->match_metadata(this);
+	return node_ndarray;
 }
 
 // ************* NodeConst ***************
