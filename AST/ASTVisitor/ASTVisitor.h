@@ -30,7 +30,7 @@ protected:
 
 public:
 	static CompileError get_raw_compile_error(ErrorType err_type, const NodeAST& node);
-    static std::unique_ptr<NodeBlock> make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent);
+    static std::unique_ptr<NodeBlock> make_while_loop(NodeReference* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent);
 	static std::unique_ptr<NodeIf> make_nil_check(std::unique_ptr<NodeReference> ref);
 
 public:
@@ -94,10 +94,7 @@ public:
 		for(auto & method : node.chain) method->accept(*this);
 		return &node;
 	}
-	virtual NodeAST* visit(NodeFunctionVarRef& node) {
-		if(node.header) node.header->accept(*this);
-		return &node;
-	}
+
     virtual NodeAST* visit(NodeUIControl& node){
 		node.control_var->accept(*this);
 		node.params->accept(*this);
@@ -247,9 +244,13 @@ public:
 		return &node;
 	};
     virtual NodeAST* visit(NodeFunctionHeader& node) {
-		if(node.params) node.params->accept(*this);
+		for(auto &param : node.params) param->variable->accept(*this);
 		return &node;
 	};
+	virtual NodeAST* visit(NodeFunctionHeaderRef& node) {
+		if(node.args) node.args->accept(*this);
+		return &node;
+	}
     virtual NodeAST* visit(NodeFunctionCall& node) {
 		node.function->accept(*this);
 		return &node;

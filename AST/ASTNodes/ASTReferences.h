@@ -158,14 +158,15 @@ struct NodeNDArrayRef : NodeCompositeRef {
 
 };
 
-struct NodeFunctionVarRef : NodeReference {
-	std::unique_ptr<class NodeFunctionHeader> header;
-	NodeFunctionVarRef(std::unique_ptr<NodeFunctionHeader> header, Token tok);
-	NodeFunctionVarRef(std::string name, std::unique_ptr<NodeFunctionHeader> header, Token tok);
-	~NodeFunctionVarRef() override;
+struct NodeFunctionHeaderRef : NodeReference {
+	bool has_forced_parenth = false;
+	std::unique_ptr<NodeParamList> args;
+	NodeFunctionHeaderRef(std::string name, Token tok);
+	NodeFunctionHeaderRef(std::string name, std::unique_ptr<NodeParamList> args, Token tok);
+	~NodeFunctionHeaderRef() override;
 	NodeAST * accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
-	NodeFunctionVarRef(const NodeFunctionVarRef& other);
+	NodeFunctionHeaderRef(const NodeFunctionHeaderRef& other);
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override;

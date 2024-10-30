@@ -94,7 +94,7 @@ public:
 					TypeRegistry::Unknown,
 					DataType::Return, node.return_variables[i]->tok
 				);
-				m_current_function->header->params->add_param(std::move(new_param));
+				m_current_function->header->add_param(std::move(new_param));
 			}
 		}
 		return &node;

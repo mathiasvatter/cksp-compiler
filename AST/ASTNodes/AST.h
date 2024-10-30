@@ -108,7 +108,7 @@ struct NodeReference : NodeAST {
         if(!this->parent) return false;
         if(!this->parent->parent) return false;
         bool func_arg = this->parent->get_node_type() == NodeType::ParamList and
-                          this->parent->parent->get_node_type() == NodeType::FunctionHeader;
+                          this->parent->parent->get_node_type() == NodeType::FunctionHeaderRef;
         return func_arg;
     }
 	std::unique_ptr<struct NodeFunctionCall> wrap_in_get_ui_id();
@@ -641,7 +641,7 @@ struct NodeFunctionDefinition: NodeAST {
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	bool is_method();
 	void update_param_data_type() const;
-	std::unique_ptr<NodeAST>& get_arg(int i);
+	std::unique_ptr<NodeDataStructure>& get_param(int i);
 
 };
 

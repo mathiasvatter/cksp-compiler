@@ -147,10 +147,15 @@ struct NodeNDArray : NodeComposite {
 
 struct NodeFunctionHeader: NodeDataStructure {
 	bool has_forced_parenth = false;
-	std::unique_ptr<NodeParamList> params;
+	std::vector<std::unique_ptr<NodeSingleDeclaration>> params;
 	inline explicit NodeFunctionHeader(std::string name, Token tok) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader) {}
-	inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeParamList> args, Token tok)
-		: NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader), params(std::move(args)) {
+	inline NodeFunctionHeader(std::string name, std::vector<std::unique_ptr<NodeSingleDeclaration>> params, Token tok)
+		: NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader), params(std::move(params)) {
+		set_child_parents();
+	};
+	inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeSingleDeclaration> param, Token tok)
+		: NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader) {
+		params.push_back(std::move(param));
 		set_child_parents();
 	};
 	NodeAST* accept(struct ASTVisitor &visitor) override;
@@ -158,25 +163,43 @@ struct NodeFunctionHeader: NodeDataStructure {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
-		if(params) params->update_parents(this);
+		for(auto &param : params) param->update_parents(this);
 	}
 	void set_child_parents() override {
-		if(params) params->parent = this;
+		for(auto &param : params) param->parent = this;
 	};
 	std::string get_string() override {
-		return name + "(" + params->get_string() + ")";
+		std::string output = name + "(";
+		for(auto &param : params) output += param->get_string() + ", ";
+		output.erase(output.size() - 2);
+		return output + ")";
 	}
 	void update_token_data(const Token& token) override {
 		tok.line = token.line; tok.file = token.file;
-		if(params) params -> update_token_data(token);
+		for(auto &param : params) param->update_token_data(token);
 	}
 	Type* create_function_type(Type* return_type = TypeRegistry::Unknown) {
 		std::vector<Type*> func_arg_types;
-		for(auto &param : this->params->params) {
-			func_arg_types.push_back(param->ty);
-		}
+		for(auto &param : params) func_arg_types.push_back(param->variable->ty);
 		ty = TypeRegistry::add_function_type(func_arg_types, return_type);
 		return ty;
+	}
+	void add_param(std::unique_ptr<NodeDataStructure> param) {
+		auto decl = std::make_unique<NodeSingleDeclaration>(std::move(param), nullptr, tok);
+		decl->parent = this;
+		params.push_back(std::move(decl));
+	}
+	void add_param(std::unique_ptr<NodeSingleDeclaration> param) {
+		param->parent = this;
+		params.push_back(std::move(param));
+	}
+	void prepend_param(std::unique_ptr<NodeDataStructure> param) {
+		auto decl = std::make_unique<NodeSingleDeclaration>(std::move(param), nullptr, tok);
+		decl->parent = this;
+		params.insert(params.begin(), std::move(decl));
+	}
+	std::unique_ptr<NodeDataStructure>& get_param(int idx) {
+		return params[idx]->variable;
 	}
 };
 
@@ -357,7 +380,7 @@ struct NodeStruct : NodeDataStructure {
 	void update_method_table() {
 		method_table.clear();
 		for(auto& method : methods) {
-			method_table.insert({{method->header->name, (int)method->header->params->params.size()}, method.get()});
+			method_table.insert({{method->header->name, (int)method->header->params.size()}, method.get()});
 		}
 	}
 

@@ -40,11 +40,10 @@ struct NodeFunctionCall : NodeInstruction {
     Kind kind = Undefined;
     bool is_call = false;
 	bool is_new = false;
-    std::unique_ptr<class NodeFunctionVarRef> function;
+    std::unique_ptr<class NodeFunctionHeaderRef> function;
     NodeFunctionDefinition* definition = nullptr;
 	explicit NodeFunctionCall(Token tok);
-	NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionVarRef> function, Token tok);
-	NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHeader> header, Token tok);
+	NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHeaderRef> function, Token tok);
 	~NodeFunctionCall() override;
     NodeAST * accept(struct ASTVisitor &visitor) override;
     NodeFunctionCall(const NodeFunctionCall& other);
@@ -117,10 +116,9 @@ struct NodeNumElements : NodeInstruction {
 };
 
 struct NodeDelete : NodeInstruction {
-	// nodeAST because it can also be a FunctionCall
-	std::vector<std::unique_ptr<NodeAST>> ptrs;
+	std::vector<std::unique_ptr<NodeReference>> ptrs;
 	inline explicit NodeDelete(Token tok) : NodeInstruction(NodeType::Delete, std::move(tok)) {}
-	NodeDelete(std::vector<std::unique_ptr<NodeAST>> delete_pointer, Token tok)
+	NodeDelete(std::vector<std::unique_ptr<NodeReference>> delete_pointer, Token tok)
 		: NodeInstruction(NodeType::Delete, std::move(tok)), ptrs(std::move(delete_pointer)) {
 		set_child_parents();
 	}
@@ -152,6 +150,10 @@ struct NodeDelete : NodeInstruction {
 		for(auto &del : ptrs) {
 			del->update_token_data(token);
 		}
+	}
+	void add_pointer(std::unique_ptr<NodeReference> ptr) {
+		ptr->parent = this;
+		ptrs.push_back(std::move(ptr));
 	}
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 
@@ -378,7 +380,7 @@ struct NodeDeclaration : NodeInstruction {
 
 struct NodeSingleDeclaration : NodeInstruction {
     std::unique_ptr<NodeDataStructure> variable;
-    std::unique_ptr<NodeAST> value;
+    std::unique_ptr<NodeAST> value = nullptr;
 	std::unique_ptr<NodeRetain> retain_stmt = nullptr;
 	bool has_object = false;
 	bool is_promoted = false;
@@ -387,6 +389,10 @@ struct NodeSingleDeclaration : NodeInstruction {
             : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)), variable(std::move(arrayVariable)), value(std::move(assignee)) {
         set_child_parents();
     }
+	NodeSingleDeclaration(std::unique_ptr<NodeDataStructure> arrayVariable, Token tok)
+		: NodeInstruction(NodeType::SingleDeclaration, std::move(tok)), variable(std::move(arrayVariable)) {
+		set_child_parents();
+	}
     NodeAST * accept(struct ASTVisitor &visitor) override;
     NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Copy Constructor
@@ -400,7 +406,7 @@ struct NodeSingleDeclaration : NodeInstruction {
 		if(retain_stmt) retain_stmt->update_parents(this);
     }
     void set_child_parents() override {
-        if(variable) variable->parent = this;
+        variable->parent = this;
         if(value) value->parent = this;
 		if(retain_stmt) retain_stmt->parent = this;
     };
@@ -422,6 +428,9 @@ struct NodeSingleDeclaration : NodeInstruction {
 	void set_retain(std::unique_ptr<NodeRetain> retain) {
 		retain->parent = this;
 		retain_stmt = std::move(retain);
+	}
+	bool is_func_param() {
+		return parent and parent->get_node_type() == NodeType::FunctionHeader;
 	}
 };
 

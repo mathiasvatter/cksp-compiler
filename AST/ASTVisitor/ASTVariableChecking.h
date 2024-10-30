@@ -28,7 +28,7 @@ public:
 	NodeAST * visit(NodeVariable& node) override;
     /// get declaration
 	NodeAST * visit(NodeVariableRef& node) override;
-	NodeAST * visit(NodeFunctionVarRef& node) override;
+	NodeAST * visit(NodeFunctionHeaderRef& node) override;
 	NodeAST * visit(NodeNDArray& node) override;
 	NodeAST * visit(NodeNDArrayRef& node) override;
 	NodeAST * visit(NodePointer& node) override;

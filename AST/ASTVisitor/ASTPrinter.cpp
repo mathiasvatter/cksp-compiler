@@ -186,12 +186,6 @@ NodeAST * ASTPrinter::visit(NodeNDArrayRef &node) {
 	return &node;
 }
 
-NodeAST * ASTPrinter::visit(NodeFunctionVarRef &node) {
-	node.header->accept(*this);
-	return &node;
-}
-
-
 NodeAST * ASTPrinter::visit(NodeUIControl &node) {
 	os << node.ui_control_type << " ";
 	node.control_var->accept(*this);
@@ -216,7 +210,9 @@ NodeAST * ASTPrinter::visit(NodeDeclaration &node) {
 }
 
 NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
-	os << "declare ";
+	if(!node.is_func_param()) {
+		os << "declare ";
+	}
 	node.variable->accept(*this);
 	if(node.value) {
         os << " := ";
@@ -420,14 +416,25 @@ NodeAST * ASTPrinter::visit(NodeCallback &node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeFunctionHeaderRef &node) {
+	os << node.name;
+	if(!node.args->empty() || node.has_forced_parenth) os << "(";
+	node.args->accept(*this);
+	if(!node.args->empty() || node.has_forced_parenth) os << ")";
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeFunctionHeader &node) {
 	os << node.name;
-	if(node.params) {
-		if(!node.params->params.empty() || node.has_forced_parenth) os << "(";
-		node.params->accept(*this);
-		if(!node.params->params.empty() || node.has_forced_parenth) os << ")";
+
+	if(!node.params.empty() || node.has_forced_parenth) os << "(";
+	for(auto &param : node.params) {
+		param->accept(*this);
+		os << ", ";
 	}
-	if(node.parent->get_node_type() != NodeType::FunctionDefinition and node.parent->parent->get_node_type() != NodeType::FunctionCall) {
+	os.seekp(-2, std::ios_base::end);
+	if(!node.params.empty() || node.has_forced_parenth) os << ")";
+	if(node.parent->get_node_type() != NodeType::FunctionDefinition) {
 		auto type = TypeRegistry::get_annotation_from_type(node.ty);
 		if(!type.empty()) os << " : " << type;
 	}

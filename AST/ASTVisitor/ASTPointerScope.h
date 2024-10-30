@@ -125,6 +125,7 @@ public:
 	}
 
 	NodeAST* visit(NodeSingleDeclaration &node) override {
+		if(node.is_func_param()) return &node;
 
 		node.variable->accept(*this);
 		if(node.variable->is_local and node.variable->ty->get_element_type()->get_type_kind() == TypeKind::Object) {

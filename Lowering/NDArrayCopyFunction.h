@@ -71,7 +71,7 @@ public:
 	std::unique_ptr<NodeFunctionCall> generate_function_call() {
 		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
+			std::make_unique<NodeFunctionHeaderRef>(
 				generate_func_name(),
 				std::make_unique<NodeParamList>(Token()),
 				array->tok
@@ -89,7 +89,7 @@ public:
 	std::unique_ptr<NodeFunctionCall> generate_copy_function() {
 		auto func_call = generate_function_call();
 		// check if function with this type already exists
-		if(program->function_lookup.find({func_call->function->name, (int)func_params->params.size()}) != program->function_lookup.end()) {
+		if(program->function_lookup.find({func_call->function->name, (int)func_params.size()}) != program->function_lookup.end()) {
 			return func_call;
 		}
 		// generate function definition
@@ -115,7 +115,7 @@ private:
 	/// upper bounds for the iterators
 	std::vector<std::unique_ptr<NodeAST>> upper_bounds;
 	/// function parameters
-	std::unique_ptr<NodeParamList> func_params;
+	std::vector<std::unique_ptr<NodeSingleDeclaration>> func_params;
 
 
 	void generate_bounds() {
@@ -186,7 +186,6 @@ private:
 	}
 
 	void generate_func_params() {
-		func_params = std::make_unique<NodeParamList>(array->tok);
 		auto node_ndarray = std::make_unique<NodeNDArray>(
 			std::nullopt,
 			"ndarray",
@@ -200,23 +199,23 @@ private:
 		if(array->get_node_type() == NodeType::ArrayRef) {
 			node_array->ty = array->ty;
 			node_array->name = "original";
-			func_params->add_param(node_array->clone());
+			func_params.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node_array.get()), array->tok));
 		} else if(array->get_node_type() == NodeType::NDArrayRef) {
 			node_ndarray->ty = array->ty;
 			node_ndarray->name = "original";
-			func_params->add_param(node_ndarray->clone());
+			func_params.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node_ndarray.get()), array->tok));
 		}
 		if(array_to_copy->get_node_type() == NodeType::ArrayRef) {
 			node_array->ty = array_to_copy->ty;
 			node_array->name = "to_copy";
-			func_params->add_param(node_array->clone());
+			func_params.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node_array.get()), array->tok));
 		} else if(array_to_copy->get_node_type() == NodeType::NDArrayRef) {
 			node_ndarray->ty = array_to_copy->ty;
 			node_ndarray->name = "to_copy";
-			func_params->add_param(node_ndarray->clone());
+			func_params.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node_ndarray.get()), array->tok));
 		}
 		for(auto &dim : dim_vars_to_copy) {
-			func_params->add_param(dim->clone());
+			func_params.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(dim.get()), array->tok));
 		}
 	}
 

@@ -19,7 +19,7 @@ private:
 		return std::make_unique<NodeInt>(value, tok);
 	}
 	inline static bool all_params_are_type(const NodeFunctionCall& node, NodeType type) {
-		for(auto & param : node.function->header->params->params) {
+		for(auto & param : node.function->args->params) {
 			if(param->get_node_type() != type) return false;
 		}
 		return true;
@@ -30,12 +30,12 @@ public:
 		// return immediately if the function is not a builtin function to save time
 		if(node.kind != NodeFunctionCall::Kind::Builtin) return &node;
 
-		node.function->header->params->accept(*this);
+		node.function->args->accept(*this);
 
 		if(node.function->get_num_args() == 1) {
 			if(all_params_are_type(node, NodeType::ArrayRef)) {
 //				if(node.function->name == "num_elements") {
-//					auto array_ref = static_cast<NodeArrayRef*>(node.function->get_arg(0).get());
+//					auto array_ref = static_cast<NodeArrayRef*>(node.function->get_param(0).get());
 //					// array only has SIZE constant if user defined
 //					if(array_ref->kind != NodeReference::Kind::User) return &node;
 //

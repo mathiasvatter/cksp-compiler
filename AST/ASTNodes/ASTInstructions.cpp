@@ -39,13 +39,8 @@ NodeAST *NodeFunctionCall::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeFunctionCall::NodeFunctionCall(Token tok) : NodeInstruction(NodeType::FunctionCall, std::move(tok)) {}
-NodeFunctionCall::NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionVarRef> function, Token tok)
+NodeFunctionCall::NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHeaderRef> function, Token tok)
 	: NodeInstruction(NodeType::FunctionCall, std::move(tok)), is_call(is_call), function(std::move(function)) {
-	set_child_parents();
-}
-NodeFunctionCall::NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHeader> header, Token tok)
-	: NodeInstruction(NodeType::FunctionCall, std::move(tok)), is_call(is_call) {
-	function = std::make_unique<NodeFunctionVarRef>(std::move(header), header->tok);
 	set_child_parents();
 }
 
@@ -66,7 +61,7 @@ ASTLowering* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
 }
 
 NodeFunctionDefinition* NodeFunctionCall::find_definition(struct NodeProgram *program) {
-    auto it = program->function_lookup.find({function->name, (int)function->header->params->params.size()});
+    auto it = program->function_lookup.find({function->name, (int)function->args->size()});
     if(it != program->function_lookup.end()) {
         it->second->is_used = true;
         definition = it->second;
@@ -80,9 +75,9 @@ NodeFunctionDefinition* NodeFunctionCall::find_builtin_definition(NodeProgram *p
     if(!program->def_provider) {
         CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
-    if(auto builtin_func = program->def_provider->get_builtin_function(function->header.get())) {
+    if(auto builtin_func = program->def_provider->get_builtin_function(function.get())) {
         function->ty = builtin_func->ty;
-        function->header->has_forced_parenth = builtin_func->header->has_forced_parenth;
+        function->has_forced_parenth = builtin_func->header->has_forced_parenth;
         definition = builtin_func;
 		definition->is_thread_safe = builtin_func->is_thread_safe;
 		kind = Kind::Builtin;
@@ -95,13 +90,13 @@ NodeFunctionDefinition* NodeFunctionCall::find_property_definition(NodeProgram *
     if(!program->def_provider) {
         CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
-    if(auto property_func = program->def_provider->get_property_function(function->header.get())) {
-        if(function->header->params->params.size() < 2) {
+    if(auto property_func = program->def_provider->get_property_function(function.get())) {
+        if(function->args->size() < 2) {
             CompileError(
                     ErrorType::SyntaxError,
                     "Found Property Function with insufficient amount of arguments.",
                     tok.line, "At least 2 arguments",
-                    std::to_string(function->header->params->params.size()),
+                    std::to_string(function->args->size()),
                     tok.file
             ).exit();
         }
@@ -270,8 +265,10 @@ std::unique_ptr<NodeAST> NodeDelete::clone() const {
 NodeAST *NodeDelete::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	for(auto &del : ptrs) {
 		if (del.get() == oldChild) {
-			del = std::move(newChild);
-			return del.get();
+			if(auto new_del = cast_node<NodeReference>(newChild.release())) {
+				del = std::unique_ptr<NodeReference>(new_del);
+				return del.get();
+			}
 		}
 	}
 	return nullptr;
@@ -371,8 +368,6 @@ NodeAST *NodeSingleAssignment::replace_child(NodeAST* oldChild, std::unique_ptr<
 			l_value = std::unique_ptr<NodeReference>(new_l_value);
 			return l_value.get();
 		}
-//		l_value = std::move(newChild);
-//		return l_value.get();
     } else if (r_value.get() == oldChild) {
         r_value = std::move(newChild);
         return r_value.get();

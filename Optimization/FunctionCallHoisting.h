@@ -93,7 +93,7 @@ public:
 		if(is_hoistable(&node)) {
 			std::unique_ptr<NodeReference> ref = nullptr;
 			// clone return variable from function definition
-			auto return_var = clone_as<NodeDataStructure>(node.definition->header->params->params[0].get());
+			auto return_var = clone_as<NodeDataStructure>(node.definition->header->get_param(0).get());
 			return_var->name = m_program->def_provider->get_fresh_name("_return");
 			ref = return_var->to_reference();
 			ref->match_data_structure(return_var.get());

@@ -67,7 +67,7 @@ public:
 			if(node.parent->get_node_type() == NodeType::Statement) {
 				if(node.is_builtin_kind()) return &node;
 				if (node.definition and node.definition->num_return_params > 0) {
-					auto throwaway_var = static_cast<NodeDataStructure *>(node.definition->header->params->params[0].get());
+					auto &throwaway_var = node.definition->header->get_param(0);
 					auto throwaway_ref = throwaway_var->to_reference();
 					throwaway_ref->name = m_def_provider->get_fresh_name("_");
 					throwaway_ref->kind = NodeReference::Kind::Throwaway;
@@ -79,7 +79,7 @@ public:
 		return &node;
 	}
 
-	inline NodeAST * visit(NodeFunctionVarRef& node) override {
+	inline NodeAST * visit(NodeFunctionHeaderRef& node) override {
 		// make sure that the function that is arg in a higher-order function
 		// does not get deleted because it is only ref and not being called
 		// foo(bar: (): void) -> bar is not called but function ref
@@ -89,7 +89,7 @@ public:
 				if(!def->visited) def->accept(*this);
 			}
 		}
-		node.header->accept(*this);
+		if(node.args) node.args->accept(*this);
 		return &node;
 	}
 

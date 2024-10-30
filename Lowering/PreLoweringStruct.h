@@ -154,7 +154,7 @@ private:
 		std::string func_name = "Struct"+OBJ_DELIMITER+"max";
 		return std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
+			std::make_unique<NodeFunctionHeaderRef>(
 				func_name,
 				std::make_unique<NodeParamList>(
 					left->tok, // Hier annehmen, dass 'tok' ein Token-Objekt ist
@@ -204,16 +204,11 @@ private:
 		auto node_b_ref = node_b->to_reference();
 
 		// Aufbau der Funktionsdefinition
+		auto node_function_header = std::make_unique<NodeFunctionHeader>(func_name, Token());
+		node_function_header->add_param(std::move(node_a));
+		node_function_header->add_param(std::move(node_b));
 		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
-			std::make_unique<NodeFunctionHeader>(
-				func_name,
-				std::make_unique<NodeParamList>(
-					Token(),
-					std::move(node_a),
-					std::move(node_b)
-				),
-				Token()
-			),
+			std::move(node_function_header),
 			std::nullopt,
 			false,
 			std::make_unique<NodeBlock>(Token()),
@@ -226,7 +221,7 @@ private:
 		// abs(a - b)
 		auto node_abs_func = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
+			std::make_unique<NodeFunctionHeaderRef>(
 				"abs",
 				std::make_unique<NodeParamList>(
 					Token(),

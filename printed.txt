@@ -26,7 +26,7 @@ on init
 	retain(ptr_array3{int[]}, num_elements(ptr_array3{int[]}))
 	declare p1 : int := Point(1, 2)
 	declare p2 : int := Point(3, 4)
-	message(Point::__repr__(Point::__add__(p1{int}, p2{int})))
+	message(Point::__add__(p1{int}, p2{int}))
 	delete p2{int}
 	delete p1{int}
 	delete ptr_array3{int[]}
@@ -66,12 +66,8 @@ function search_matrix(matrix : int[][], target : int)
 end function
 
 function return_init(init : int[])
-	message(int[]::__repr__(init{int[]}))
+	message(init{int[]})
 	return ([1, 2, 3, 4, 5])
-end function
-
-function int[]::__repr__(self : int[])
-	return ("Array of type <int[]>")
 end function
 
 function Point::__init__(x : int, y : int)

@@ -1,3 +1,4 @@
+
 //
 // Created by Mathias Vatter on 21.11.23.
 //
@@ -52,7 +53,8 @@ public:
     NodeAST * visit(NodeWhile& node) override;
     NodeAST * visit(NodeSelect& node) override;
     NodeAST * visit(NodeCallback& node) override;
-    NodeAST * visit(NodeFunctionHeader& node) override;
+	NodeAST * visit(NodeFunctionHeaderRef& node) override;
+	NodeAST * visit(NodeFunctionHeader& node) override;
     NodeAST * visit(NodeFunctionCall& node) override;
     NodeAST * visit(NodeFunctionDefinition& node) override;
     NodeAST * visit(NodeGetControl& node) override;

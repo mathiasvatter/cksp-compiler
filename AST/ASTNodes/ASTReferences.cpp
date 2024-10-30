@@ -224,61 +224,59 @@ std::unique_ptr<NodeReference> NodeNDArrayRef::inflate_dimension(std::unique_ptr
 	return clone_as<NodeReference>(this);
 }
 
-// ************* NodeFunctionVarRef ***************
-NodeAST *NodeFunctionVarRef::accept(struct ASTVisitor &visitor) {
+// ************* NodeFunctionHeaderRef ***************
+NodeFunctionHeaderRef::NodeFunctionHeaderRef(std::string name, Token tok)
+	: NodeReference(std::move(name), NodeType::FunctionHeaderRef, std::move(tok)) {}
+
+NodeFunctionHeaderRef::NodeFunctionHeaderRef(std::string name, std::unique_ptr<NodeParamList> args, Token tok)
+	: NodeReference(std::move(name), NodeType::FunctionHeaderRef, std::move(tok)), args(std::move(args)) {
+	set_child_parents();
+}
+NodeFunctionHeaderRef::~NodeFunctionHeaderRef() = default;
+
+NodeFunctionHeaderRef::NodeFunctionHeaderRef(const NodeFunctionHeaderRef& other)
+	: NodeReference(other), args(clone_unique(other.args)), has_forced_parenth(other.has_forced_parenth) {
+	set_child_parents();
+}
+
+NodeAST *NodeFunctionHeaderRef::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 
-NodeFunctionVarRef::NodeFunctionVarRef(const NodeFunctionVarRef& other)
-	: NodeReference(other), header(clone_unique(other.header)) {
-	set_child_parents();
-}
-NodeFunctionVarRef::NodeFunctionVarRef(std::unique_ptr<NodeFunctionHeader> header, Token tok)
-	: NodeReference(header->name, NodeType::FunctionVarRef, std::move(tok)), header(std::move(header)) {
-	set_child_parents();
+std::unique_ptr<NodeAST> NodeFunctionHeaderRef::clone() const {
+	return std::make_unique<NodeFunctionHeaderRef>(*this);
 }
 
-NodeFunctionVarRef::NodeFunctionVarRef(std::string name, std::unique_ptr<NodeFunctionHeader> header, Token tok)
-	: NodeReference(std::move(name), NodeType::FunctionVarRef, std::move(tok)), header(std::move(header)) {
-	set_child_parents();
-}
-NodeFunctionVarRef::~NodeFunctionVarRef() = default;
-
-
-std::unique_ptr<NodeAST> NodeFunctionVarRef::clone() const {
-	return std::make_unique<NodeFunctionVarRef>(*this);
-}
-
-void NodeFunctionVarRef::update_parents(NodeAST *new_parent) {
+void NodeFunctionHeaderRef::update_parents(NodeAST *new_parent) {
 	parent = new_parent;
-	if(header) header->update_parents(this);
+	if(args) args->update_parents(this);
 }
 
-void NodeFunctionVarRef::set_child_parents() {
-	if(header) header->parent = this;
+void NodeFunctionHeaderRef::set_child_parents() {
+	if(args) args->parent = this;
 }
 
-int NodeFunctionVarRef::get_num_args() const {
-	return (int)header->params->params.size();
+int NodeFunctionHeaderRef::get_num_args() const {
+	return (int)args->params.size();
 }
 
-bool NodeFunctionVarRef::has_no_args() const {
-	return header->params->params.empty();
+bool NodeFunctionHeaderRef::has_no_args() const {
+	return args->params.empty();
 }
 
-std::unique_ptr<NodeAST>& NodeFunctionVarRef::get_arg(int i) {
+std::unique_ptr<NodeAST>& NodeFunctionHeaderRef::get_arg(int i) {
 	if(get_num_args() <= i) {
 		CompileError(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
 	}
-	return header->params->params[i];
+	return args->params[i];
 }
 
-void NodeFunctionVarRef::prepend_arg(std::unique_ptr<NodeAST> arg) const {
-	header->params->prepend_param(std::move(arg));
+void NodeFunctionHeaderRef::prepend_arg(std::unique_ptr<NodeAST> arg) const {
+	args->prepend_param(std::move(arg));
 }
 
-void NodeFunctionVarRef::add_arg(std::unique_ptr<NodeAST> arg) const {
-	header->params->add_param(std::move(arg));
+void NodeFunctionHeaderRef::add_arg(std::unique_ptr<NodeAST> arg) const {
+	args->add_param(std::move(arg));
 }
 
 // ************* NodeListRef ***************

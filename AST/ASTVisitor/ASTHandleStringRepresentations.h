@@ -69,12 +69,9 @@ private:
 	static std::unique_ptr<NodeFunctionCall> construct_repr_call(NodeAST& node, std::string& prefix) {
 		auto call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionVarRef>(
-				std::make_unique<NodeFunctionHeader>(
-					prefix + OBJ_DELIMITER+"__repr__",
-					std::make_unique<NodeParamList>(node.tok, node.clone()),
-					node.tok
-				),
+			std::make_unique<NodeFunctionHeaderRef>(
+				prefix + OBJ_DELIMITER+"__repr__",
+				std::make_unique<NodeParamList>(node.tok, node.clone()),
 				node.tok
 			),
 			node.tok
@@ -120,8 +117,8 @@ private:
 
 	static Type* is_repr_header(NodeFunctionHeader& header) {
 		if(contains(header.name, OBJ_DELIMITER+"__repr__")) {
-			if(header.params->params.size() == 1) {
-				return header.params->params[0]->ty;
+			if(header.params.size() == 1) {
+				return header.get_param(0)->ty;
 			}
 		}
 		return nullptr;
@@ -158,7 +155,7 @@ private:
 		auto function_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
-				std::make_unique<NodeParamList>(node.tok, std::move(node_self)),
+				std::make_unique<NodeSingleDeclaration>(std::move(node_self), nullptr, node.tok),
 				node.tok
 			),
 			std::nullopt,
@@ -206,7 +203,7 @@ private:
 		auto function_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
-				std::make_unique<NodeParamList>(node.tok, std::move(node_self)),
+				std::make_unique<NodeSingleDeclaration>(std::move(node_self), nullptr, node.tok),
 				node.tok
 			),
 			std::nullopt,

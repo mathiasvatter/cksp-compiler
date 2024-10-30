@@ -198,7 +198,7 @@ public:
 
 		auto node_function_call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
+			std::make_unique<NodeFunctionHeaderRef>(
 				func_name,
 				std::make_unique<NodeParamList>(
 					array_ref->tok,
@@ -247,25 +247,21 @@ public:
 		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
-				std::make_unique<NodeParamList>(
-					Token(),
-					node_array->clone(),
-					node_iterator->clone(),
-					node_value->clone()
-				),
 				Token()
 			),
 			std::nullopt,
 			false,
-			std::make_unique<NodeBlock>(Token()),
+			std::make_unique<NodeBlock>(Token(), true),
 			Token()
 		);
-		node_function_def->body->scope = true;
+		node_function_def->header->add_param(clone_as<NodeDataStructure>(node_array.get()));
+		node_function_def->header->add_param(clone_as<NodeDataStructure>(node_iterator.get()));
+		node_function_def->header->add_param(clone_as<NodeDataStructure>(node_value.get()));
 
 		// get declaration pointer right
-		node_array_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->params->params[0].get()));
-		node_iterator_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->params->params[1].get()));
-		node_value_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->params->params[2].get()));
+		node_array_ref->match_data_structure(node_function_def->header->get_param(0).get());
+		node_iterator_ref->match_data_structure(node_function_def->header->get_param(1).get());
+		node_value_ref->match_data_structure(node_function_def->header->get_param(2).get());
 
 		auto node_while_body = std::make_unique<NodeBlock>(Token());
 		node_while_body->scope = true;
@@ -276,7 +272,7 @@ public:
 		);
 		auto node_inc = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
+			std::make_unique<NodeFunctionHeaderRef>(
 				"inc",
 				std::make_unique<NodeParamList>(Token(),node_iterator_ref->clone()),Token()),
 			Token()
@@ -291,13 +287,7 @@ public:
 			std::make_unique<NodeBinaryExpr>(
 				token::LESS_THAN,
 				node_iterator_ref->clone(),
-				std::make_unique<NodeFunctionCall>(
-					false,
-					std::make_unique<NodeFunctionHeader>(
-						"num_elements",
-						std::make_unique<NodeParamList>(Token(),node_array_ref->clone()),Token()),
-					Token()
-				),
+				DefinitionProvider::num_elements(clone_as<NodeReference>(node_array_ref.get())),
 				Token()
 			),
 			std::move(node_while_body),
@@ -324,7 +314,7 @@ public:
 
 		auto node_function_call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
+			std::make_unique<NodeFunctionHeaderRef>(
 				func_name,
 				std::make_unique<NodeParamList>(
 					array_dest->tok,
@@ -372,25 +362,21 @@ public:
 		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
-				std::make_unique<NodeParamList>(
-					Token(),
-					node_dest->clone(),
-					node_src->clone(),
-					node_iterator->clone()
-				),
 				Token()
 			),
 			std::nullopt,
 			false,
-			std::make_unique<NodeBlock>(Token()),
+			std::make_unique<NodeBlock>(Token(), true),
 			Token()
 		);
-		node_function_def->body->scope = true;
+		node_function_def->header->add_param(clone_as<NodeDataStructure>(node_dest.get()));
+		node_function_def->header->add_param(clone_as<NodeDataStructure>(node_src.get()));
+		node_function_def->header->add_param(clone_as<NodeDataStructure>(node_iterator.get()));
 
 		// get declaration pointer right
-		node_dest_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->params->params[0].get()));
-		node_src_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->params->params[1].get()));
-		node_iterator_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->params->params[2].get()));
+		node_dest_ref->match_data_structure(node_function_def->header->get_param(0).get());
+		node_src_ref->match_data_structure(node_function_def->header->get_param(1).get());
+		node_iterator_ref->match_data_structure(node_function_def->header->get_param(2).get());
 
 		auto node_while_body = std::make_unique<NodeBlock>(Token());
 		node_while_body->scope = true;
@@ -399,16 +385,10 @@ public:
 			node_src_ref->clone(),
 			Token()
 		);
-		auto node_inc = std::make_unique<NodeFunctionCall>(
-			false,
-			std::make_unique<NodeFunctionHeader>(
-				"inc",
-				std::make_unique<NodeParamList>(Token(), node_iterator_ref->clone()), Token()),
-			Token()
-		);
+		auto node_inc = DefinitionProvider::inc(clone_as<NodeReference>(node_iterator_ref.get()));
 
-		node_while_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), Token()));
-		node_while_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_inc), Token()));
+		node_while_body->add_as_stmt(std::move(node_assignment));
+		node_while_body->add_as_stmt(std::move(node_inc));
 
 		// delete index of node_array_ref for its last usage in num_elements
 		node_src_ref->index = nullptr;
@@ -416,11 +396,7 @@ public:
 			std::make_unique<NodeBinaryExpr>(
 				token::LESS_THAN,
 				node_iterator_ref->clone(),
-				std::make_unique<NodeFunctionHeader>(
-					"num_elements",
-					std::make_unique<NodeParamList>(Token(),std::move(node_src_ref)),
-					Token()
-					),
+				node_src_ref->get_size(),
 				Token()
 			),
 			std::move(node_while_body),

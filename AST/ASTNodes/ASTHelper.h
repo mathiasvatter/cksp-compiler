@@ -53,7 +53,6 @@ enum class NodeType {
 	NDArrayRef,
 	Pointer,
 	PointerRef,
-	FunctionVarRef,
 	AccessChain,
 	UIControl,
 	UnaryExpr,
@@ -95,6 +94,7 @@ enum class NodeType {
 	Callback,
 	Import,
 	FunctionHeader,
+	FunctionHeaderRef,
 	FunctionDefinition,
 	FunctionCall,
 	Program
@@ -102,6 +102,12 @@ enum class NodeType {
 
 // forward declaration
 struct NodeAST;
+
+// Funktion zum Casten eines unique_ptr von Base auf Derived
+template <typename Derived, typename Base>
+std::unique_ptr<Derived> unique_ptr_cast(std::unique_ptr<Base> basePtr) {
+	return std::unique_ptr<Derived>(static_cast<Derived*>(basePtr.release()));
+}
 
 template <typename T>
 bool is_instance_of(NodeAST* node) {

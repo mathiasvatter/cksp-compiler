@@ -107,7 +107,7 @@ NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
 		m_def_provider->set_declaration(&node, false);
 		m_def_provider->add_to_data_structures(&node);
 	}
-	if(node.params) node.params->accept(*this);
+	for(auto &param : node.params) param->accept(*this);
 	return &node;
 }
 
@@ -233,8 +233,8 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 	return &node;
 }
 
-NodeAST* ASTVariableChecking::visit(NodeFunctionVarRef& node) {
-	node.header->accept(*this);
+NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
+	if(node.args) node.args->accept(*this);
 	if(node.parent->get_node_type() == NodeType::FunctionCall) {
 		auto func_call = static_cast<NodeFunctionCall*>(node.parent);
 		if(func_call->kind != NodeFunctionCall::Undefined) {
@@ -415,7 +415,7 @@ NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure
 			new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_pointer)));
 		}
 	} else if(node->ty->get_type_kind() == TypeKind::Function and node->get_node_type() != NodeType::FunctionHeader and node->get_node_type() == NodeType::Variable) {
-		auto node_function = std::make_unique<NodeFunctionHeader>(node->name, std::make_unique<NodeParamList>(node->tok), node->tok);
+		auto node_function = std::make_unique<NodeFunctionHeader>(node->name, node->tok);
 		if(!node_function) get_apply_type_annotations_error(node).exit();
 		node_function->is_local = node->is_local;
 		node_function->ty = node->ty;

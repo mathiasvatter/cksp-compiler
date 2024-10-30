@@ -135,11 +135,10 @@ bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBlock* curr
 
 bool NodeDataStructure::is_function_param() {
 	if(!this->parent) return false;
-	if(this->parent->get_node_type() == NodeType::SingleDeclaration) return false;
+	if(this->parent->get_node_type() != NodeType::SingleDeclaration) return false;
     if(!this->parent->parent) return false;
-	bool func_param = this->parent->get_node_type() == NodeType::ParamList and
-		(this->parent->parent->get_node_type() == NodeType::FunctionHeader or
-		this->parent->parent->get_node_type() == NodeType::FunctionDefinition);
+	bool func_param = this->parent->get_node_type() == NodeType::SingleDeclaration and
+		this->parent->parent->get_node_type() == NodeType::FunctionHeader;
 	return func_param;
 }
 
@@ -268,13 +267,6 @@ bool NodeReference::needs_get_ui_id() {
 	if(parent and parent->parent and parent->parent->parent
 	and parent->parent->parent->get_node_type() == NodeType::FunctionCall) {
 		auto func_call = static_cast<NodeFunctionCall*>(this->parent->parent->parent);
-		// check if function expects Integer as parameter, or parameter is compatible
-//			if(func_call->definition) {
-//				auto param_list = static_cast<NodeParamList*>(this->parent);
-//				auto param = func_call->definition->header->params->params[param_list->get_idx(this)].get();
-//				wrap_it &= param->ty->is_compatible(TypeRegistry::Integer);
-//			}
-//			wrap_it &= func_call->function->name != "get_ui_id";
 		wrap_it &= func_call->kind == NodeFunctionCall::Kind::Builtin;
 		wrap_it &= contains(func_call->function->name, "control_par");
 		// check if reference is first argument -> then wrap it
@@ -772,22 +764,22 @@ void NodeFunctionDefinition::update_token_data(const Token &token) {
 }
 
 bool NodeFunctionDefinition::is_method() {
-	bool has_params = header->params->params.size() > 0 and header->params->params[0]->get_string() == "self";
+	bool has_params = !header->params.empty() and header->get_param(0)->name == "self";
 	bool within_struct = parent and parent->get_node_type() == NodeType::Struct;
 	return has_params and within_struct;
 }
 
 void NodeFunctionDefinition::update_param_data_type() const {
-	for(auto& param : this->header->params->params) {
-		static_cast<NodeDataStructure*>(param.get())->data_type = DataType::Param;
+	for(auto& param : this->header->params) {
+		param->variable->data_type = DataType::Param;
 	}
 }
 
-std::unique_ptr<NodeAST> &NodeFunctionDefinition::get_arg(int i) {
-	if(header->params->params.size() <= i) {
+std::unique_ptr<NodeDataStructure> &NodeFunctionDefinition::get_param(int i) {
+	if(header->params.size() <= i) {
 		CompileError(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
 	}
-	return header->params->params[i];
+	return header->get_param(i);
 }
 
 // ************* NodeProgramm ***************
@@ -841,15 +833,15 @@ void NodeProgram::update_parents(NodeAST *new_parent) {
 void NodeProgram::update_function_lookup() {
 	function_lookup.clear();
 	for(const auto & def : function_definitions) {
-		function_lookup.insert({{def->header->name, (int)def->header->params->params.size()}, def.get()});
+		function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def.get()});
 	}
 	for(const auto & def : additional_function_definitions) {
-		function_lookup.insert({{def->header->name, (int)def->header->params->params.size()}, def.get()});
+		function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def.get()});
 	}
 	// add all struct methods to the lookup
 	for(const auto & struct_def : struct_definitions) {
 		for(const auto & method : struct_def->methods) {
-			function_lookup.insert({{method->header->name, (int)method->header->params->params.size()}, method.get()});
+			function_lookup.insert({{method->header->name, (int)method->header->params.size()}, method.get()});
 		}
 	}
 }

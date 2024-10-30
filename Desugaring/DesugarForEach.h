@@ -116,15 +116,7 @@ public:
                 clone_as<NodeReference>(node.keys[0].get()),
                 std::make_unique<NodeInt>(0, node.tok), node.tok);
 
-        auto node_num_elements = std::make_unique<NodeFunctionCall>(
-			false,
-			std::make_unique<NodeFunctionHeader>(
-				"num_elements",
-				std::make_unique<NodeParamList>(node.tok, node.range->clone()),
-				node.tok
-				),
-			node.tok
-		);
+        auto node_num_elements = DefinitionProvider::num_elements(clone_as<NodeReference>(node.range.get()));
         auto node_end_range = std::make_unique<NodeBinaryExpr>(
 			token::SUB,
 			std::move(node_num_elements),

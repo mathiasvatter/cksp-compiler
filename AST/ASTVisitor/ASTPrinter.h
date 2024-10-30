@@ -30,7 +30,6 @@ public:
 	NodeAST * visit(NodeArrayRef& node) override;
 	NodeAST * visit(NodeNDArray& node) override;
 	NodeAST * visit(NodeNDArrayRef& node) override;
-	NodeAST * visit(NodeFunctionVarRef& node) override;
 	NodeAST * visit(NodeUIControl& node) override;
 	NodeAST * visit(NodeDeclaration& node) override;
     NodeAST * visit(NodeSingleDeclaration& node) override;
@@ -51,6 +50,7 @@ public:
 	NodeAST * visit(NodeFor& node) override;
 	NodeAST * visit(NodeSelect& node) override;
 	NodeAST * visit(NodeCallback& node) override;
+	NodeAST * visit(NodeFunctionHeaderRef& node) override;
 	NodeAST * visit(NodeFunctionHeader& node) override;
 	NodeAST * visit(NodeFunctionCall& node) override;
 	NodeAST * visit(NodeFunctionDefinition& node) override;

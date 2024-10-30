@@ -211,7 +211,7 @@ NodeAST *NodeFunctionHeader::accept(struct ASTVisitor &visitor) {
 }
 NodeFunctionHeader::NodeFunctionHeader(const NodeFunctionHeader& other)
 	: NodeDataStructure(other),
-	  has_forced_parenth(other.has_forced_parenth), params(clone_unique(other.params)) {
+	  has_forced_parenth(other.has_forced_parenth), params(clone_vector(other.params)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeFunctionHeader::clone() const {
@@ -361,13 +361,13 @@ std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 }
 
 NodeFunctionDefinition *NodeStruct::generate_init_method() {
-	auto param_list = std::make_unique<NodeParamList>(this->tok);
-	param_list->add_param(node_self->clone());
+	std::vector<std::unique_ptr<NodeSingleDeclaration>> param_list;
+	param_list.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node_self.get()), nullptr, tok));
 	auto node_block = std::make_unique<NodeBlock>(this->tok);
 	for(auto & mem : this->member_table) {
 		std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
 		auto member_ref = mem.second->to_reference();
-		param_list->add_param(mem.second->clone());
+		param_list.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(mem.second), nullptr, tok));
 		member_ref->name = "self." + member_ref->name;
 		assignment = std::make_unique<NodeSingleAssignment>(
 			std::move(member_ref),
@@ -376,7 +376,7 @@ NodeFunctionDefinition *NodeStruct::generate_init_method() {
 		);
 		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
 	}
-	auto num_params = param_list->params.size();
+	auto num_params = param_list.size();
 	auto function_def = std::make_unique<NodeFunctionDefinition>(
 		std::make_unique<NodeFunctionHeader>(
 			"__init__",
@@ -416,7 +416,7 @@ NodeFunctionDefinition *NodeStruct::generate_repr_method() {
 	auto function_def = std::make_unique<NodeFunctionDefinition>(
 		std::make_unique<NodeFunctionHeader>(
 			"__repr__",
-			std::make_unique<NodeParamList>(this->tok, node_self->clone()),
+			std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node_self.get()), nullptr, tok),
 			this->tok
 		),
 		std::nullopt,

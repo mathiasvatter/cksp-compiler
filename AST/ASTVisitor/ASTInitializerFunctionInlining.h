@@ -40,7 +40,7 @@ public:
 				m_program->function_call_stack.push(node.definition);
 
 				auto node_func_body = clone_as<NodeBlock>(node.definition->body.get());
-				m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function->header.get()));
+				m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function.get()));
 				node_func_body->accept(*this);
 
 				m_substitution_stack.pop();
@@ -51,7 +51,7 @@ public:
 		return &node;
 	}
 
-	NodeAST * visit(NodeFunctionVarRef& node) override {
+	NodeAST * visit(NodeFunctionHeaderRef& node) override {
 		// make sure that the function that is arg in a higher-order function
 		// does not get deleted because it is only ref and not being called
 		// foo(bar: (): void) -> bar is not called but function ref
@@ -63,12 +63,12 @@ public:
 				def->visited = true;
 			}
 		}
-		node.header->accept(*this);
+		if(node.args) node.args->accept(*this);
 		return &node;
 	}
 
 	static inline bool is_initializer_function(const NodeFunctionCall& call) {
-		for(auto &arg : call.function->header->params->params) {
+		for(auto &arg : call.function->args->params) {
 			if(arg->get_node_type() == NodeType::InitializerList) {
 				return true;
 			}

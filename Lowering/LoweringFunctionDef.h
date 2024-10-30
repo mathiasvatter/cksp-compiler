@@ -162,7 +162,7 @@ private:
 //	static std::unique_ptr<NodeFunctionCall> get_continue_call(Token &tok) {
 //		auto call = std::make_unique<NodeFunctionCall>(
 //			false,
-//			std::make_unique<NodeFunctionVarRef>(
+//			std::make_unique<NodeFunctionHeaderRef>(
 //				std::make_unique<NodeFunctionHeader>(
 //					"continue",
 //					std::make_unique<NodeParamList>(

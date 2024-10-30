@@ -44,7 +44,7 @@ public:
     NodeAST * visit(NodeList& node) override;
     NodeAST * visit(NodeListRef& node) override;
 
-	NodeAST * visit(NodeFunctionVarRef& node) override;
+	NodeAST * visit(NodeFunctionHeaderRef& node) override;
 
 	NodeAST * visit(NodeBinaryExpr& node) override;
 	NodeAST * visit(NodeUnaryExpr& node) override;
@@ -81,26 +81,26 @@ public:
         return error;
     }
 
-	static Type* update_function_type(NodeFunctionHeader* header, Type* return_type) {
-		auto function_type = header->ty;
-		auto function = static_cast<FunctionType*>(function_type);
-		auto param_types = function->m_params;
-		for(int i=0; i<header->params->size(); i++) {
-			auto &old_param_type = param_types[i];
-			auto &new_param = header->params->param(i);
-			auto throwaway_old_node = new_param->clone();
-			throwaway_old_node->ty = old_param_type;
-			param_types[i] = match_type(throwaway_old_node.get(), new_param.get());
-		}
-		auto new_return_var = std::make_unique<NodeVariableRef>("return", header->tok);
-		new_return_var->ty = return_type;
-		auto old_return_var = std::make_unique<NodeVariableRef>("return", header->tok);
-		old_return_var->ty = function->get_return_type();
-		match_type(old_return_var.get(), new_return_var.get());
-		function->m_return_type = std::move(old_return_var->ty);
-		header->ty = function;
-		return function;
-	}
+//	static Type* update_function_type(NodeFunctionHeader* header, Type* return_type) {
+//		auto function_type = header->ty;
+//		auto function = static_cast<FunctionType*>(function_type);
+//		auto param_types = function->m_params;
+//		for(int i=0; i<header->params->size(); i++) {
+//			auto &old_param_type = param_types[i];
+//			auto &new_param = header->params->param(i);
+//			auto throwaway_old_node = new_param->clone();
+//			throwaway_old_node->ty = old_param_type;
+//			param_types[i] = match_type(throwaway_old_node.get(), new_param.get());
+//		}
+//		auto new_return_var = std::make_unique<NodeVariableRef>("return", header->tok);
+//		new_return_var->ty = return_type;
+//		auto old_return_var = std::make_unique<NodeVariableRef>("return", header->tok);
+//		old_return_var->ty = function->get_return_type();
+//		match_type(old_return_var.get(), new_return_var.get());
+//		function->m_return_type = std::move(old_return_var->ty);
+//		header->ty = function;
+//		return function;
+//	}
 
     /// check types of initializations and try to infer overall element type
     static Type* infer_initialization_types(std::vector<Type*> &type_list, NodeAST* node) {

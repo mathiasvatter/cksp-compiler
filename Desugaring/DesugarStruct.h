@@ -136,7 +136,7 @@ public:
 			error.exit();
 		}
 		// every self as first parameter has to be of type object
-		node.header->params->params[0]->ty = TypeRegistry::get_object_type(m_structs.top()->name);
+		node.header->get_param(0)->ty = TypeRegistry::get_object_type(m_structs.top()->name);
 
 		// add constructor type
 		if(node.header->name == "__init__") {
@@ -156,7 +156,7 @@ public:
 			node.header->create_function_type(TypeRegistry::add_object_type(m_structs.top()->name));
 			node.ty = TypeRegistry::add_object_type(m_structs.top()->name);
 			// delete "self" keyword
-			node.header->params->params.erase(node.header->params->params.begin());
+			node.header->params.erase(node.header->params.begin());
 		}
 		if(node.header->name == "__repr__") {
 			if(node.num_return_params > 1) {
@@ -164,7 +164,7 @@ public:
 				error.m_message = "Repr method cannot have more than one return value.";
 				error.exit();
 			}
-			if(node.header->params->params.size() > 1) {
+			if(node.header->params.size() > 1) {
 				auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
 				error.m_message = "Repr method cannot have more than one argument.";
 				error.exit();
@@ -175,7 +175,7 @@ public:
 		}
 
 		// check if method is operator overload
-		if(auto token = get_operator_token(node.header->name, node.header->params->size())) {
+		if(auto token = get_operator_token(node.header->name, node.header->params.size())) {
 			m_structs.top()->overloaded_operators.insert({*token, &node});
 		}
 
