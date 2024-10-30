@@ -84,8 +84,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
 	return &node;
 }
 
-NodeAST * ASTSemanticAnalysis::visit(NodeFunctionVarRef& node) {
-	if(node.header) node.header->accept(*this);
+NodeAST * ASTSemanticAnalysis::visit(NodeFunctionHeaderRef& node) {
+	if(node.args) node.args->accept(*this);
 	NodeReference* new_node = &node;
 	if(auto repl = replace_incorrectly_detected_reference(m_def_provider, &node)) {
 		new_node = repl;
@@ -93,8 +93,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionVarRef& node) {
 	}
 	return replace_incorrectly_detected_data_struct(new_node->declaration);
 //	if(new_node->declaration and new_node->declaration->get_node_type() == NodeType::FunctionHeader
-//	and new_node->get_node_type() == NodeType::FunctionVarRef) {
-//		auto func_var_ref = static_cast<NodeFunctionVarRef*>(new_node);
+//	and new_node->get_node_type() == NodeType::FunctionHeaderRef) {
+//		auto func_var_ref = static_cast<NodeFunctionHeaderRef*>(new_node);
 //		auto func_declaration = static_cast<NodeFunctionHeader*>(new_node->declaration);
 //		if(func_var_ref->header->params->params.empty()) {
 //			func_var_ref->header->params = clone_as<NodeParamList>(func_declaration->params.get());
@@ -224,7 +224,7 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 	if(func_call->kind == NodeFunctionCall::Kind::UserDefined and func_call->definition) {
 		for(int i=0; i<func_call->function->get_num_args(); i++) {
 			auto & arg = func_call->function->get_arg(i);
-			auto & param = func_call->definition->get_arg(i);
+			auto & param = func_call->definition->get_param(i);
 			if(arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::Array) {
 				auto node_var_ref = static_cast<NodeVariableRef*>(arg.get());
 				if(!node_var_ref->declaration) return;
@@ -269,10 +269,10 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 				}
 			} else if (arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::FunctionHeader) {
 				auto node_var_ref = static_cast<NodeVariableRef*>(arg.get());
-				auto func_var_ref = std::make_unique<NodeFunctionVarRef>(
+				auto func_var_ref = std::make_unique<NodeFunctionHeaderRef>(
 					node_var_ref->name,
-					std::make_unique<NodeFunctionHeader>(node_var_ref->name, std::make_unique<NodeParamList>(node_var_ref->tok), node_var_ref->tok),
-					    node_var_ref->tok
+					std::make_unique<NodeParamList>(node_var_ref->tok),
+					node_var_ref->tok
 					);
 				func_var_ref->ty = node_var_ref->ty;
 				func_var_ref->declaration = node_var_ref->declaration;
@@ -339,10 +339,9 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 			data_struct->tok);
 //		new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_pointer)));
 		new_data_struct = std::move(node_pointer);
-	} else if(reference_node_types.find(NodeType::FunctionVarRef) != reference_node_types.end()) {
+	} else if(reference_node_types.find(NodeType::FunctionHeaderRef) != reference_node_types.end()) {
 		auto node_var = std::make_unique<NodeFunctionHeader>(
 			data_struct->name,
-			std::make_unique<NodeParamList>(data_struct->tok),
 			data_struct->tok);
 		node_var->ty = data_struct->ty;
 //		new_data_struct = static_cast<NodeDataStructure*>(data_struct->replace_with(std::move(node_var)));
@@ -425,12 +424,9 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(Defin
 			}
 		}
 	} else if (reference->get_node_type() == NodeType::VariableRef and reference->declaration->get_node_type() == NodeType::FunctionHeader) {
-		node_replacement = std::make_unique<NodeFunctionVarRef>(
+		node_replacement = std::make_unique<NodeFunctionHeaderRef>(
 			reference->name,
-			std::make_unique<NodeFunctionHeader>(
-				reference->name,
-				std::make_unique<NodeParamList>(reference->tok),
-				reference->tok),
+			std::make_unique<NodeParamList>(reference->tok),
 			reference->tok);
 		node_replacement->ty = reference->ty;
 	}

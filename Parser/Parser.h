@@ -121,6 +121,7 @@ protected:
 	Result<std::unique_ptr<NodeBreak>> parse_break_statement(NodeAST* parent);
 
     Result<std::unique_ptr<NodeSingleAssignment>> parse_single_assign_statement(NodeAST* parent);
+	Result<std::unique_ptr<NodeSingleDeclaration>> parse_single_declare_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_declare_array(NodeAST* parent);
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);
@@ -142,8 +143,9 @@ protected:
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition(NodeAST* parent);
 	NodeFunctionDefinition* m_current_function_def = nullptr;
     /// function params are no references -> replace with references
-    Result<std::unique_ptr<NodeParamList>> parse_function_args(NodeAST* parent, bool is_definition);
-    Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header(NodeAST* parent, bool is_definition);
+    Result<std::unique_ptr<NodeParamList>> parse_function_args(NodeAST* parent);
+	Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header(NodeAST* parent);
+	Result<std::unique_ptr<NodeFunctionHeaderRef>> parse_function_header_ref(NodeAST* parent);
     Result<std::unique_ptr<NodeFunctionCall>> parse_function_call(NodeAST* parent);
     Result<std::unique_ptr<NodeCallback>> parse_callback(NodeAST* parent);
 

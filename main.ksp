@@ -100,13 +100,13 @@ on init
 	message(p1 + p2)
 end on
 
-function return_init(init: int[])
+function return_init(init: int[]): int[]
 	message(init)
 	return (1,2,3,4,5)
 end function	
 
 
-function search_matrix(matrix: int[][], target: int)
+function search_matrix(matrix: int[][], target: int): int
 	declare array[30] := (0)
 
     declare row, col: int

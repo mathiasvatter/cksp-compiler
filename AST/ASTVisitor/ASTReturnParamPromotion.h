@@ -20,7 +20,7 @@ public:
 		if(node.return_variable.has_value()) {
 			node.num_return_params = 1;
 			node.return_variable.value()->data_type = DataType::Return;
-			node.header->params->prepend_param(std::move(node.return_variable.value()));
+			node.header->prepend_param(std::move(node.return_variable.value()));
 			node.return_variable.reset();
 		}
 		m_current_function->return_stmts.clear();
@@ -116,10 +116,10 @@ public:
 			// when multiple return statements -> add only return params for the first one
 			if(&node == m_current_function->return_stmts[0]) {
 				if (i > 0) {
-					m_current_function->header->params->params[i]->replace_with(std::move(new_param));
+					m_current_function->header->get_param(i)->replace_with(std::move(new_param));
 					// add them to front in case i = 0
 				} else {
-					m_current_function->header->params->prepend_param(std::move(new_param));
+					m_current_function->header->prepend_param(std::move(new_param));
 				}
 			}
 			auto node_assignment = std::make_unique<NodeSingleAssignment>(std::move(new_param_ref), std::move(node.return_variables[i]), node.tok);

@@ -23,6 +23,7 @@ public:
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_builtin_function();
 	Result<std::unique_ptr<NodeUIControl>> parse_builtin_ui_control();
     Result<std::unique_ptr<NodeParamList>> parse_builtin_args_list();
+	Result<std::vector<std::unique_ptr<NodeSingleDeclaration>>> parse_builtin_params_list();
 
 private:
 	DefinitionProvider* m_def_provider;

@@ -21,8 +21,8 @@ public:
 			if(node.function->get_num_args() > 1) {
 				if (node.function->name == "message") {
 					// lowering of message parameters when separated by comma
-					node.function->header->params = inline_message_parameters(node.function->header->params);
-					node.function->header->params->parent = node.function->header->params.get();
+					node.function->args = inline_message_parameters(node.function->args);
+					node.function->args->parent = node.function->args.get();
 				}
 //				if (node.function->name == "num_elements") {
 //					node.kind = NodeFunctionCall::Kind::Builtin;

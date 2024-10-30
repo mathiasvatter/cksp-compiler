@@ -63,7 +63,7 @@ private:
 			var_ref->ty = var->ty;
 			auto make_persistent = std::make_unique<NodeFunctionCall>(
 				false,
-				std::make_unique<NodeFunctionHeader>(
+				std::make_unique<NodeFunctionHeaderRef>(
 					pers_func,
 					std::make_unique<NodeParamList>(var->tok, std::move(var_ref)),
 					var->tok

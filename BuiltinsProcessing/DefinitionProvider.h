@@ -244,12 +244,12 @@ public:
     /// builtin engine functions
     std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions{};
     NodeFunctionDefinition* get_builtin_function(const std::string &function, int params);
-    NodeFunctionDefinition* get_builtin_function(NodeFunctionHeader* function);
+    NodeFunctionDefinition* get_builtin_function(NodeFunctionHeaderRef* function);
     void set_builtin_functions(std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
     void add_builtin_function(std::unique_ptr<NodeFunctionDefinition> builtin_function);
     /// predefined property functions like set_label_properties etc
     std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions{};
-    NodeFunctionDefinition* get_property_function(NodeFunctionHeader* function);
+    NodeFunctionDefinition* get_property_function(NodeFunctionHeaderRef* function);
     void set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions);
     void add_property_function(std::unique_ptr<NodeFunctionDefinition> property_function);
 
@@ -257,15 +257,12 @@ public:
 	static std::unique_ptr<NodeFunctionCall> num_elements(std::unique_ptr<NodeReference> ref) {
 		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionVarRef>(
-				std::make_unique<NodeFunctionHeader>(
-					"num_elements",
-					std::make_unique<NodeParamList>(
-						ref->tok,
-						std::move(ref)
-						),
-					Token()
-				),
+			std::make_unique<NodeFunctionHeaderRef>(
+				"num_elements",
+				std::make_unique<NodeParamList>(
+					ref->tok,
+					std::move(ref)
+					),
 				Token()
 				),
 			Token()
@@ -278,12 +275,9 @@ public:
 	static std::unique_ptr<NodeFunctionCall> get_ui_id(std::unique_ptr<NodeReference> ref) {
 		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionVarRef>(
-				std::make_unique<NodeFunctionHeader>(
-					"get_ui_id",
-					std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
-					Token()
-					),
+			std::make_unique<NodeFunctionHeaderRef>(
+				"get_ui_id",
+				std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
 				Token()
 				),
 			Token()
@@ -296,17 +290,14 @@ public:
 	static std::unique_ptr<NodeFunctionCall> inc(std::unique_ptr<NodeReference> ref) {
 		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionVarRef>(
-				std::make_unique<NodeFunctionHeader>(
-					"inc",
-					std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
-					Token()
-				),
+			std::make_unique<NodeFunctionHeaderRef>(
+				"inc",
+				std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
 				Token()
 			),
 			Token()
 		);
-		func_call->ty = TypeRegistry::Integer;
+		func_call->ty = TypeRegistry::Void;
 		func_call->kind = NodeFunctionCall::Kind::Builtin;
 		return std::move(func_call);
 	}
@@ -314,17 +305,14 @@ public:
 	static std::unique_ptr<NodeFunctionCall> dec(std::unique_ptr<NodeReference> ref) {
 		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionVarRef>(
-				std::make_unique<NodeFunctionHeader>(
-					"dec",
-					std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
-					Token()
-				),
+			std::make_unique<NodeFunctionHeaderRef>(
+				"dec",
+				std::make_unique<NodeParamList>(ref->tok, std::move(ref)),
 				Token()
 			),
 			Token()
 		);
-		func_call->ty = TypeRegistry::Integer;
+		func_call->ty = TypeRegistry::Void;
 		func_call->kind = NodeFunctionCall::Kind::Builtin;
 		return std::move(func_call);
 	}
@@ -333,7 +321,7 @@ public:
 	static std::unique_ptr<NodeFunctionCall> continu(Token &tok) {
 		auto call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
+			std::make_unique<NodeFunctionHeaderRef>(
 				"continue",
 				std::make_unique<NodeParamList>(
 					tok
@@ -342,7 +330,7 @@ public:
 			),
 			tok
 		);
-		call->function->header->has_forced_parenth = false;
+		call->function->has_forced_parenth = false;
 		return call;
 	}
 

@@ -19,7 +19,7 @@ public:
 		node.get_definition(m_program);
 
         if(node.kind == NodeFunctionCall::Kind::Property) {
-            auto node_body = inline_property_function(node.definition->header.get(), std::move(node.function->header));
+            auto node_body = inline_property_function(node.definition->header.get(), std::move(node.function));
             node_body->accept(*this);
             return node.replace_with(std::move(node_body));
         }
@@ -81,18 +81,18 @@ public:
 	}
 
 private:
-    static inline std::unique_ptr<NodeBlock> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
-        auto node_body = std::make_unique<NodeBlock>(function_header->tok);
-        for(int i = 1; i<function_header->params->params.size(); i++) {
+    static inline std::unique_ptr<NodeBlock> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeaderRef> header_ref) {
+        auto node_body = std::make_unique<NodeBlock>(header_ref->tok);
+        for(int i = 1; i<header_ref->args->size(); i++) {
             auto node_get_control = std::make_unique<NodeGetControl>(
-                    function_header->params->params[0]->clone(),
-                    property_function->params->params[i]->get_string(),
-                    function_header->tok
+				header_ref->get_arg(0)->clone(),
+				property_function->get_param(i)->name,
+				header_ref->tok
             );
             auto node_assignment = std::make_unique<NodeSingleAssignment>(
-                    std::move(node_get_control),
-                    std::move(function_header->params->params[i]),
-                    function_header->tok
+				std::move(node_get_control),
+				std::move(header_ref->get_arg(i)),
+				header_ref->tok
             );
             node_body->add_stmt(
                     std::make_unique<NodeStatement>(std::move(node_assignment), node_body->tok)

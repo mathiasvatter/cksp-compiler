@@ -244,11 +244,26 @@ NodeAST * ASTGenerator::visit(NodeCallback &node) {
 	return &node;
 }
 
+NodeAST * ASTGenerator::visit(NodeFunctionHeaderRef &node) {
+	os << sanitize_dots(node.name);
+
+	if(!node.args->empty() || node.has_forced_parenth) os << "(";
+	node.args->accept(*this);
+	if(!node.args->empty() || node.has_forced_parenth) os << ")";
+	return &node;
+}
+
 NodeAST * ASTGenerator::visit(NodeFunctionHeader &node) {
     os << sanitize_dots(node.name);
-	if(!node.params->params.empty() || node.has_forced_parenth) os << "(";
-    node.params->accept(*this);
-	if(!node.params->params.empty() || node.has_forced_parenth) os << ")";
+
+	if(!node.params.empty() || node.has_forced_parenth) os << "(";
+	for(auto &param : node.params) {
+		param->accept(*this);
+		os << ", ";
+	}
+	os.seekp(-2, std::ios_base::end);
+	if(!node.params.empty() || node.has_forced_parenth) os << ")";
+
 	return &node;
 }
 

@@ -159,7 +159,7 @@ private:
 		params->prepend_param(std::move(node_ndarray_ref));
 		auto node_function_call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
+			std::make_unique<NodeFunctionHeaderRef>(
 				func_name,
 				std::move(params),
 				node->tok
@@ -194,7 +194,7 @@ private:
 		std::vector<std::unique_ptr<NodeDataStructure>> iterators; int count = 1; int count2 = 1;
 		std::vector<std::unique_ptr<NodeAST>> lower_bounds;
 		std::vector<std::unique_ptr<NodeAST>> upper_bounds;
-		auto params = std::make_unique<NodeParamList>(node->tok);
+		auto func_header = std::make_unique<NodeFunctionHeader>(func_name, node->tok);
 		for(auto & param : node_nd_array_ref->indexes->params) {
 			if(param->get_node_type() == NodeType::Wildcard) {
 				auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter"+std::to_string(count), TypeRegistry::Integer, DataType::Mutable, node->tok);
@@ -211,7 +211,7 @@ private:
 				auto node_iterate_dim = std::make_unique<NodeVariable>(std::nullopt, "param"+std::to_string(count2), TypeRegistry::Integer, DataType::Mutable, node->tok);
 				count2++;
 				param = node_iterate_dim->to_reference();
-				params->add_param(std::move(node_iterate_dim));
+				func_header->add_param(std::move(node_iterate_dim));
 			}
 		}
 		node_nd_array_ref->indexes->set_child_parents();
@@ -233,14 +233,10 @@ private:
 														  nullptr, node->tok
 		);
 		// make function definition
-		params->prepend_param(std::move(node_value));
-		params->prepend_param(std::move(node_ndarray));
+		func_header->prepend_param(std::move(node_value));
+		func_header->prepend_param(std::move(node_ndarray));
 		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
-			std::make_unique<NodeFunctionHeader>(
-				func_name,
-				std::move(params),
-				node->tok
-			),
+			std::move(func_header),
 			std::nullopt,
 			false,
 			std::move(node_body),

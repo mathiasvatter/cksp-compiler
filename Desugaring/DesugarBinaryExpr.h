@@ -35,15 +35,12 @@ public:
 
 		auto call = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionVarRef>(
-				std::make_unique<NodeFunctionHeader>(
-					desugared_op,
-					std::make_unique<NodeParamList>(
-						node.tok,
-						std::move(node.left),
-						std::move(node.right)
-					),
-					node.tok
+			std::make_unique<NodeFunctionHeaderRef>(
+				desugared_op,
+				std::make_unique<NodeParamList>(
+					node.tok,
+					std::move(node.left),
+					std::move(node.right)
 				),
 				node.tok
 			),

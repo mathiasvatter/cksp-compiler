@@ -39,8 +39,8 @@ public:
 		m_num_refs_ref->match_data_structure(m_num_refs.get());
 
 		m_del_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__del__");
-		m_decr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__decr__", m_num_refs->clone());
-		m_incr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__incr__", m_num_refs->clone());
+		m_decr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__decr__", clone_as<NodeDataStructure>(m_num_refs.get()));
+		m_incr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__incr__", clone_as<NodeDataStructure>(m_num_refs.get()));
 
 		// self
 		m_self_ref = m_struct.node_self->to_reference();
@@ -254,7 +254,7 @@ public:
 				auto nil_check = ASTVisitor::make_nil_check(to_member_chain_ref(mem));
 				nil_check->if_body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 					false,
-					std::make_unique<NodeFunctionHeader>(
+					std::make_unique<NodeFunctionHeaderRef>(
 						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + "__del__",
 						std::make_unique<NodeParamList>(mem->tok, mem->clone()),
 						mem->tok
@@ -290,7 +290,7 @@ public:
 		// add actual delete function
 		node_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
+			std::make_unique<NodeFunctionHeaderRef>(
 				m_struct.name + OBJ_DELIMITER + "__del__",
 				std::make_unique<NodeParamList>(tok, m_self_ref->clone()),
 				tok
@@ -375,7 +375,7 @@ public:
 				auto nil_check = ASTVisitor::make_nil_check(to_member_chain_ref(mem, current_ref.get()));
 				nil_check->if_body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 					false,
-					std::make_unique<NodeFunctionHeader>(
+					std::make_unique<NodeFunctionHeaderRef>(
 						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + "__del__",
 						std::make_unique<NodeParamList>(mem->tok, mem->clone()),
 						mem->tok
@@ -420,7 +420,7 @@ public:
 		// add actual delete function
 		outer_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
+			std::make_unique<NodeFunctionHeaderRef>(
 				m_struct.name + OBJ_DELIMITER + "__del__",
 				std::make_unique<NodeParamList>(tok, m_self_ref->clone()),
 				tok
@@ -437,14 +437,11 @@ public:
 
 private:
 
-	std::unique_ptr<NodeFunctionDefinition> get_base_func(const std::string& name, std::unique_ptr<NodeAST> add_param = nullptr) {
+	std::unique_ptr<NodeFunctionDefinition> get_base_func(const std::string& name, std::unique_ptr<NodeDataStructure> add_param = nullptr) {
 		auto func_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				name,
-				std::make_unique<NodeParamList>(
-					tok,
-					m_struct.node_self->clone()
-				),
+				std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(m_struct.node_self.get()), tok),
 				tok
 			),
 			std::nullopt,
@@ -453,7 +450,7 @@ private:
 			tok
 		);
 		if(add_param) {
-			func_def->header->params->add_param(std::move(add_param));
+			func_def->header->add_param(std::move(add_param));
 		}
 		return func_def;
 	}
@@ -487,10 +484,10 @@ private:
 	}
 
 	static NodeDataStructure* get_self_ptr(NodeFunctionDefinition* func_def) {
-		return static_cast<NodeDataStructure*>(func_def->header->params->params[0].get());
+		return func_def->header->get_param(0).get();
 	}
 	static NodeDataStructure* get_num_refs_ptr(NodeFunctionDefinition* func_def) {
-		return static_cast<NodeDataStructure*>(func_def->header->params->params.back().get());
+		return func_def->header->get_param(1).get();
 	}
 
 	///	List::allocation[self] := List::allocation[self] - num_refs

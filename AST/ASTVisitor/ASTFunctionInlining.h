@@ -145,7 +145,7 @@ public:
 			node.definition = nullptr;
 		} else {
 			node_func_body = clone_as<NodeBlock>(node.definition->body.get());
-			m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function->header.get()));
+			m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function.get()));
 			node_func_body->accept(*this);
 			m_substitution_stack.pop();
 		}
@@ -173,20 +173,20 @@ public:
 		return do_substitution(&node);
 	}
 	/// do substitution
-	inline NodeAST *visit(NodeFunctionVarRef &node) override {
-		node.header->accept(*this);
+	inline NodeAST *visit(NodeFunctionHeaderRef &node) override {
+		if(node.args) node.args->accept(*this);
 		return do_substitution(&node);
 	}
 
-	static std::unordered_map<std::string, std::unique_ptr<NodeAST>> get_substitution_map(NodeFunctionHeader* definition, NodeFunctionHeader* call) {
+	static std::unordered_map<std::string, std::unique_ptr<NodeAST>> get_substitution_map(NodeFunctionHeader* definition, NodeFunctionHeaderRef* call) {
 		std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_map;
-		substitution_map.reserve(definition->params->params.size());
-		for (size_t i = 0; i < definition->params->params.size(); ++i) {
-			auto& var = definition->params->params[i];
+		substitution_map.reserve(definition->params.size());
+		for (size_t i = 0; i < definition->params.size(); ++i) {
+			auto& var = definition->get_param(i);
 			// Überprüfen, ob var ein NodeDataStructure ist
 			if (auto node_data_structure = static_cast<NodeDataStructure*>(var.get())) {
 				// Direktes Einfügen in die Map
-				substitution_map[node_data_structure->name] = std::move(call->params->params[i]);
+				substitution_map[node_data_structure->name] = std::move(call->get_arg(i));
 			} else {
 				auto error = CompileError(ErrorType::SyntaxError, "", definition->tok.line, "<keyword>", var->tok.val, definition->tok.file);
 				error.m_message = "Found incorrect parameter definitions in <Function Definition>. Unable to substitute function arguments. Only <Data Structures> can be substituted.";
@@ -300,15 +300,15 @@ public:
 
 	static NodeReference* substitute_function_type(NodeReference* ref, NodeAST* substitute) {
 		if(substitute->ty->get_type_kind() == TypeKind::Function) {
-			if (substitute->get_node_type() != NodeType::FunctionVarRef and ref->get_node_type() != NodeType::FunctionVarRef) {
+			if (substitute->get_node_type() != NodeType::FunctionHeaderRef and ref->get_node_type() != NodeType::FunctionHeaderRef) {
 				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
-				error.m_message = "Arg is of type <Function> but is no <FunctionVarRef> Node: <" + ref->name + ">.";
+				error.m_message = "Arg is of type <Function> but is no <FunctionHeaderRef> Node: <" + ref->name + ">.";
 				error.exit();
 			}
-			auto function_subst = static_cast<NodeFunctionVarRef*>(substitute);
-			auto function_ref = static_cast<NodeFunctionVarRef*>(ref);
+			auto function_subst = static_cast<NodeFunctionHeaderRef*>(substitute);
+			auto function_ref = static_cast<NodeFunctionHeaderRef*>(ref);
 			function_ref->name = function_subst->name;
-			function_ref->header->name = function_subst->header->name;
+			function_ref->name = function_subst->name;
 			function_ref->ty = substitute->ty;
 			return function_ref;
 		}

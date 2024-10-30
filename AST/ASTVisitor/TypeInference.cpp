@@ -269,28 +269,6 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 	return &node;
 }
 
-NodeAST * TypeInference::visit(NodeFunctionVarRef& node) {
-	node.header->accept(*this);
-
-	// if declaration type has empty params -> get type from reference
-	if(node.declaration) {
-		node.ty = node.header->ty;
-		auto decl_type = static_cast<FunctionType *>(node.declaration->ty);
-		auto ref_type = static_cast<FunctionType *>(node.ty);
-		if (decl_type->get_params().empty()) {
-			node.declaration->ty = node.ty;
-		} else if (ref_type->get_params().empty()) {
-			node.ty = node.declaration->ty;
-		}
-		node.header->ty = node.ty;
-	}
-
-//	match_reference_declaration(&node);
-//	match_type(&node, node.header.get());
-//	match_reference_declaration(&node);
-	return &node;
-}
-
 NodeAST * TypeInference::visit(NodeList& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// if list is unknown type -> set to list of unknown
@@ -514,7 +492,7 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	m_def_provider->add_to_declarations(&node);
 
 	// if declaration is pointer -> always initialize with nil!
-	if(node.variable->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+	if(!node.is_func_param() and node.variable->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 		if(!node.value) {
 			auto nil = std::make_unique<NodeNil>(node.tok);
 			nil->parent = &node;
@@ -621,7 +599,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		if (!node.definition->visited) node.definition->accept(*this);
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
-			auto &param = node.definition->header->params->params[i];
+			auto &param = node.definition->get_param(i);
 			const std::string error_message =
 				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
 					+ param->ty->to_string() + " as argument type.";
@@ -634,8 +612,28 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeFunctionHeaderRef& node) {
+	if(node.args) node.args->accept(*this);
+
+	// if declaration type has empty params -> get type from reference
+	if(node.declaration) {
+		auto decl_type = static_cast<FunctionType *>(node.declaration->ty);
+		auto ref_type = static_cast<FunctionType *>(node.ty);
+		if (decl_type->get_params().empty()) {
+			node.declaration->ty = node.ty;
+		} else if (ref_type->get_params().empty()) {
+			node.ty = node.declaration->ty;
+		}
+	}
+
+//	match_reference_declaration(&node);
+//	match_type(&node, node.header.get());
+//	match_reference_declaration(&node);
+	return &node;
+}
+
 NodeAST * TypeInference::visit(NodeFunctionHeader& node) {
-	if(node.params) node.params->accept(*this);
+	for(auto &param : node.params) param->accept(*this);
 
 	if(node.ty == TypeRegistry::Unknown) {
 		node.create_function_type();
@@ -699,15 +697,12 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	if(node.left->ty->get_type_kind() == TypeKind::Object) {
 		auto strct = NodeReference::get_object_ptr(m_program, node.left->ty->to_string());
 		if(auto def = strct->get_overloaded_method(node.op)) {
-			match_type(node.right.get(), def->header->params->param(1).get(), "Second argument of overloaded operator does not match expected type.");
+			match_type(node.right.get(), def->header->get_param(1).get(), "Second argument of overloaded operator does not match expected type.");
 			auto call = std::make_unique<NodeFunctionCall>(
 				false,
-				std::make_unique<NodeFunctionVarRef>(
-					std::make_unique<NodeFunctionHeader>(
-						def->header->name,
-						std::make_unique<NodeParamList>(node.left->tok, std::move(node.left), std::move(node.right)),
-						node.tok
-					),
+				std::make_unique<NodeFunctionHeaderRef>(
+					def->header->name,
+					std::make_unique<NodeParamList>(node.left->tok, std::move(node.left), std::move(node.right)),
 					node.tok
 				),
 				node.tok

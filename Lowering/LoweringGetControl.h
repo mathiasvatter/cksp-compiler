@@ -66,7 +66,7 @@ private:
 
 		auto node_control_function = std::make_unique<NodeFunctionCall>(
 			false,
-			std::make_unique<NodeFunctionHeader>(
+			std::make_unique<NodeFunctionHeaderRef>(
 				control_function,
 				std::make_unique<NodeParamList>(node->tok),
 				node->tok
