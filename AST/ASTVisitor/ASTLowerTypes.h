@@ -65,7 +65,7 @@ public:
 		return &node;
 	}
 	inline NodeAST * visit(NodeFunctionHeader& node) override {
-		if(node.args) node.args->accept(*this);
+		if(node.params) node.params->accept(*this);
 		if(node.ty->get_type_kind() == TypeKind::Function) {
 			auto function_type = static_cast<FunctionType *>(node.ty);
 			auto return_type = function_type->get_return_type();

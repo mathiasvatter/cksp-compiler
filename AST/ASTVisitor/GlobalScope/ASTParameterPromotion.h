@@ -92,7 +92,7 @@ public:
         }
 
 		// for now, when function has no params and is not in init callback, assume as call
-		if(node.definition and node.definition->header->args->params.empty() and m_program->current_callback != m_program->init_callback) {
+		if(node.definition and node.definition->header->params->params.empty() and m_program->current_callback != m_program->init_callback) {
 //			node.is_call = true;
 		}
 		// for now, when function is called, do not promote and assume as threadsafe
@@ -109,7 +109,7 @@ public:
 					// do this only if current call is not threadsafe environment
 					for (auto &decl : m_local_var_declarations[node.definition]) {
 						// add local declarations of function definition to parameters
-						node.definition->header->args->add_param(clone_as<NodeDataStructure>(decl.second->variable.get()));
+						node.definition->header->params->add_param(clone_as<NodeDataStructure>(decl.second->variable.get()));
 						for (auto &call_site : node.definition->call_sites) {
 							// add references to those local variables in the function call
 							call_site->function->add_arg(decl.second->variable->to_reference());

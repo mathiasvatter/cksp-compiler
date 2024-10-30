@@ -779,7 +779,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 				return Result<std::unique_ptr<NodeProgram>>(function.get_error());
 			auto node_function = std::move(function.unwrap());
 			auto hash_value =
-				StringIntKey{node_function->header->name, (int) node_function->header->args->params.size()};
+				StringIntKey{node_function->header->name, (int) node_function->header->params->params.size()};
 			auto it = m_function_definitions.find(hash_value);
 			// if function already defined
 			if (it != m_function_definitions.end()) {
@@ -907,7 +907,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
 		ty = TypeRegistry::add_function_type(arg_types, return_type);
 	}
 	node_function_header->ty = ty;
-    node_function_header->args = std::move(func_args.unwrap());
+    node_function_header->params = std::move(func_args.unwrap());
     node_function_header->set_child_parents();
     node_function_header->parent = parent;
 //	node_function_header->update_parents(parent);
@@ -984,7 +984,7 @@ Result<std::unique_ptr<NodeFunctionCall>> Parser::parse_function_call(NodeAST* p
     node_function_call->function = std::make_unique<NodeFunctionVarRef>(std::move(func_stmt.unwrap()), node_function_call->tok);
     node_function_call->set_child_parents();
     node_function_call->parent = parent;
-//    mark_function_as_used(node_function_call->function->name, node_function_call->function->args->params.size());
+//    mark_function_as_used(node_function_call->function->name, node_function_call->function->params->params.size());
     return Result<std::unique_ptr<NodeFunctionCall>>(std::move(node_function_call));
 }
 

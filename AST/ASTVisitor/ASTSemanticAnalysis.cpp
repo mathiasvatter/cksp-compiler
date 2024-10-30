@@ -96,12 +96,12 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionVarRef& node) {
 //	and new_node->get_node_type() == NodeType::FunctionVarRef) {
 //		auto func_var_ref = static_cast<NodeFunctionVarRef*>(new_node);
 //		auto func_declaration = static_cast<NodeFunctionHeader*>(new_node->declaration);
-//		if(func_var_ref->header->args->params.empty()) {
-//			func_var_ref->header->args = clone_as<NodeParamList>(func_declaration->args.get());
-//			func_var_ref->header->args->parent = func_var_ref->header.get();
-//		} else if(func_declaration->args->params.empty()) {
-//			func_declaration->args = clone_as<NodeParamList>(func_var_ref->header->args.get());
-//			func_declaration->args->parent = func_declaration;
+//		if(func_var_ref->header->params->params.empty()) {
+//			func_var_ref->header->params = clone_as<NodeParamList>(func_declaration->params.get());
+//			func_var_ref->header->params->parent = func_var_ref->header.get();
+//		} else if(func_declaration->params->params.empty()) {
+//			func_declaration->params = clone_as<NodeParamList>(func_var_ref->header->params.get());
+//			func_declaration->params->parent = func_declaration;
 //		}
 //	}
 //	return &node;

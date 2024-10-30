@@ -154,10 +154,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 	if(node.declaration->get_node_type() == NodeType::Variable) {
 		auto node_var = static_cast<NodeVariable*>(node.declaration);
 		auto ptr = node_var->to_pointer();
-		ptr->is_engine = node_var->is_engine;
-		ptr->is_local = node_var->is_local;
-		ptr->is_compiler_return = node_var->is_compiler_return;
-		ptr->data_type = node_var->data_type;
+		ptr->match_metadata(node_var);
 		auto new_node = node_var->replace_datastruct(std::move(ptr), m_def_provider);
 		auto &references = m_def_provider->get_references(node.declaration);
 		for(auto ref : references) {
@@ -275,7 +272,7 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 NodeAST * TypeInference::visit(NodeFunctionVarRef& node) {
 	node.header->accept(*this);
 
-	// if declaration type has empty args -> get type from reference
+	// if declaration type has empty params -> get type from reference
 	if(node.declaration) {
 		node.ty = node.header->ty;
 		auto decl_type = static_cast<FunctionType *>(node.declaration->ty);
@@ -624,7 +621,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		if (!node.definition->visited) node.definition->accept(*this);
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
-			auto &param = node.definition->header->args->params[i];
+			auto &param = node.definition->header->params->params[i];
 			const std::string error_message =
 				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
 					+ param->ty->to_string() + " as argument type.";
@@ -638,7 +635,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionHeader& node) {
-	if(node.args) node.args->accept(*this);
+	if(node.params) node.params->accept(*this);
 
 	if(node.ty == TypeRegistry::Unknown) {
 		node.create_function_type();
@@ -702,7 +699,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	if(node.left->ty->get_type_kind() == TypeKind::Object) {
 		auto strct = NodeReference::get_object_ptr(m_program, node.left->ty->to_string());
 		if(auto def = strct->get_overloaded_method(node.op)) {
-			match_type(node.right.get(), def->header->args->param(1).get(), "Second argument of overloaded operator does not match expected type.");
+			match_type(node.right.get(), def->header->params->param(1).get(), "Second argument of overloaded operator does not match expected type.");
 			auto call = std::make_unique<NodeFunctionCall>(
 				false,
 				std::make_unique<NodeFunctionVarRef>(

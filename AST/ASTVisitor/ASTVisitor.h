@@ -62,6 +62,10 @@ public:
 	virtual NodeAST* visit(NodePointer& node) {
 		return &node;
 	};
+	virtual NodeAST* visit(NodeReferenceList& node) {
+		for(auto & ref : node.references) ref->accept(*this);
+		return &node;
+	};
     virtual NodeAST* visit(NodeParamList& node) {
 		for(auto & param : node.params) param->accept(*this);
 		return &node;
@@ -243,7 +247,7 @@ public:
 		return &node;
 	};
     virtual NodeAST* visit(NodeFunctionHeader& node) {
-		if(node.args) node.args->accept(*this);
+		if(node.params) node.params->accept(*this);
 		return &node;
 	};
     virtual NodeAST* visit(NodeFunctionCall& node) {

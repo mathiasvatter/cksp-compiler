@@ -263,9 +263,9 @@ public:
 		node_function_def->body->scope = true;
 
 		// get declaration pointer right
-		node_array_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->args->params[0].get()));
-		node_iterator_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->args->params[1].get()));
-		node_value_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->args->params[2].get()));
+		node_array_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->params->params[0].get()));
+		node_iterator_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->params->params[1].get()));
+		node_value_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->params->params[2].get()));
 
 		auto node_while_body = std::make_unique<NodeBlock>(Token());
 		node_while_body->scope = true;
@@ -388,9 +388,9 @@ public:
 		node_function_def->body->scope = true;
 
 		// get declaration pointer right
-		node_dest_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->args->params[0].get()));
-		node_src_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->args->params[1].get()));
-		node_iterator_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->args->params[2].get()));
+		node_dest_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->params->params[0].get()));
+		node_src_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->params->params[1].get()));
+		node_iterator_ref->match_data_structure(static_cast<NodeDataStructure*>(node_function_def->header->params->params[2].get()));
 
 		auto node_while_body = std::make_unique<NodeBlock>(Token());
 		node_while_body->scope = true;

@@ -68,7 +68,7 @@ public:
 	}
 
 	static inline bool is_initializer_function(const NodeFunctionCall& call) {
-		for(auto &arg : call.function->header->args->params) {
+		for(auto &arg : call.function->header->params->params) {
 			if(arg->get_node_type() == NodeType::InitializerList) {
 				return true;
 			}

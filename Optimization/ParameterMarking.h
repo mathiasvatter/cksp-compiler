@@ -51,7 +51,7 @@ public:
 			m_program->function_call_stack.push(node.definition);
 			if (!node.definition->visited) {
 				std::unordered_set<std::string> function_params;
-				for (auto &param : node.definition->header->args->params) {
+				for (auto &param : node.definition->header->params->params) {
 					function_params.insert(static_cast<NodeDataStructure *>(param.get())->name);
 				}
 				m_function_params.push(function_params);

@@ -8,7 +8,7 @@
 
 /**
  * Desugaring of Function calls with multiple arguments that are not in assignment/declaration context
- * -> only use first return and fill up with throwaway args
+ * -> only use first return and fill up with throwaway params
  */
 class DesugarFunctionCall : public ASTDesugaring {
 public:
@@ -21,27 +21,27 @@ public:
 			if(node.function->get_num_args() > 1) {
 				if (node.function->name == "message") {
 					// lowering of message parameters when separated by comma
-					node.function->header->args = inline_message_parameters(node.function->header->args);
-					node.function->header->args->parent = node.function->header->args.get();
+					node.function->header->params = inline_message_parameters(node.function->header->params);
+					node.function->header->params->parent = node.function->header->params.get();
 				}
 //				if (node.function->name == "num_elements") {
 //					node.kind = NodeFunctionCall::Kind::Builtin;
 //					std::unique_ptr<NodeReference> array = nullptr;
 //					if(is_instance_of<NodeReference>(array.get())) {
-//						array = std::unique_ptr<NodeReference>(static_cast<NodeReference*>(node.function->header->args->params[0].release()));
+//						array = std::unique_ptr<NodeReference>(static_cast<NodeReference*>(node.function->header->params->params[0].release()));
 //					} else {
 //						auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 //						error.m_message = "First argument for function call <num_elements> must be a reference.";
 //						error.exit();
 //					}
-//					if (node.function->header->args->params.size() == 2) {
-//						auto dimension = std::move(node.function->header->args->params[1]);
+//					if (node.function->header->params->params.size() == 2) {
+//						auto dimension = std::move(node.function->header->params->params[1]);
 //						auto num_elements =
 //							std::make_unique<NodeNumElements>(std::move(array), std::move(dimension), node.tok);
 //						num_elements->parent = &node;
 //						return node.replace_with(std::move(num_elements));
 //					}
-//					if (node.function->header->args->params.size() > 2) {
+//					if (node.function->header->params->params.size() > 2) {
 //						auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 //						error.m_message = "Too many arguments for function call <num_elements>.";
 //						error.exit();

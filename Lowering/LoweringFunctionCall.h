@@ -28,7 +28,7 @@ public:
             node.function->accept(*this);
 
 //			if(node.function->name == "num_elements") {
-//				auto &arr_ref = node.function->header->args->params[0];
+//				auto &arr_ref = node.function->header->params->params[0];
 //				if(arr_ref->get_node_type() == NodeType::ArrayRef) {
 //					auto node_arr = static_cast<NodeArrayRef*>(arr_ref.get());
 //					return node.replace_with(static_cast<NodeArray*>(node_arr->declaration)->size->clone());
@@ -83,15 +83,15 @@ public:
 private:
     static inline std::unique_ptr<NodeBlock> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
         auto node_body = std::make_unique<NodeBlock>(function_header->tok);
-        for(int i = 1; i<function_header->args->params.size(); i++) {
+        for(int i = 1; i<function_header->params->params.size(); i++) {
             auto node_get_control = std::make_unique<NodeGetControl>(
-                    function_header->args->params[0]->clone(),
-                    property_function->args->params[i]->get_string(),
+                    function_header->params->params[0]->clone(),
+                    property_function->params->params[i]->get_string(),
                     function_header->tok
             );
             auto node_assignment = std::make_unique<NodeSingleAssignment>(
                     std::move(node_get_control),
-                    std::move(function_header->args->params[i]),
+                    std::move(function_header->params->params[i]),
                     function_header->tok
             );
             node_body->add_stmt(

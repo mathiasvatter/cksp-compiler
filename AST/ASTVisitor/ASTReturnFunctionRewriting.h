@@ -63,11 +63,11 @@ public:
 		if(node.get_definition(m_program)) {
 			if(!node.definition->visited) node.definition->accept(*this);
 
-			// add throwaway variable ref to args
+			// add throwaway variable ref to params
 			if(node.parent->get_node_type() == NodeType::Statement) {
 				if(node.is_builtin_kind()) return &node;
 				if (node.definition and node.definition->num_return_params > 0) {
-					auto throwaway_var = static_cast<NodeDataStructure *>(node.definition->header->args->params[0].get());
+					auto throwaway_var = static_cast<NodeDataStructure *>(node.definition->header->params->params[0].get());
 					auto throwaway_ref = throwaway_var->to_reference();
 					throwaway_ref->name = m_def_provider->get_fresh_name("_");
 					throwaway_ref->kind = NodeReference::Kind::Throwaway;

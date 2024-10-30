@@ -67,6 +67,7 @@ enum class NodeType {
 	GetControl,
 	SetControl,
 	ParamList,
+	ReferenceList,
 	InitializerList,
 	Wildcard,
 	Int,

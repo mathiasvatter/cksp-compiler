@@ -80,7 +80,7 @@ struct NodeReference : NodeAST {
     class NodeDataStructure* declaration = nullptr;
     bool is_engine = false;
     bool is_local = false;
-    bool is_compiler_return = false;
+//    bool is_compiler_return = false;
 	enum Kind{Builtin, Compiler, User, Throwaway};
 	Kind kind = User;
 	DataType data_type = DataType::Mutable;
@@ -170,7 +170,7 @@ struct NodeDataStructure : NodeAST {
 	std::optional<Token> persistence;
 	bool is_local = false;
 	bool is_global = false;
-	bool is_compiler_return = false;
+//	bool is_compiler_return = false;
 	bool has_obj_assigned = false;
 	DataType data_type;
 	std::string name;
@@ -196,12 +196,7 @@ struct NodeDataStructure : NodeAST {
 	virtual Type* cast_type();
 	/// returns fitting reference node type for the data structures
 	virtual NodeType get_ref_node_type() {return NodeType::DeadCode;}
-	void match_metadata(NodeDataStructure* data_structure) {
-		is_engine = data_structure->is_engine;
-		is_local = data_structure->is_local;
-		is_compiler_return = data_structure->is_compiler_return;
-		data_type = data_structure->data_type;
-	}
+	void match_metadata(NodeDataStructure* data_structure);
 	/// methods to change node type. Everything possible is copied over, even the type;
 	virtual std::unique_ptr<class NodeVariable> to_variable() {return nullptr;}
 	virtual std::unique_ptr<class NodePointer> to_pointer() {return nullptr;}
@@ -291,6 +286,66 @@ struct NodeString : NodeAST {
     std::string get_string() override {
         return value;
     }
+};
+
+struct NodeReferenceList: NodeAST {
+	std::vector<std::unique_ptr<NodeReference>> references;
+	inline explicit NodeReferenceList(Token tok) : NodeAST(std::move(tok), NodeType::ReferenceList) {
+		set_child_parents();
+	}
+	inline explicit NodeReferenceList(std::vector<std::unique_ptr<NodeReference>> references, Token tok) : NodeAST(std::move(tok), NodeType::ReferenceList), references(std::move(references)) {
+		set_child_parents();
+	}
+	// Variadischer Template-Konstruktor
+	template<typename... References>
+	explicit NodeReferenceList(Token tok, References&&... references) : NodeAST(std::move(tok), NodeType::ReferenceList) {
+		(add_reference(std::move(references)), ...);
+	}
+
+	NodeAST* accept(struct ASTVisitor &visitor) override;
+	NodeAST* replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	// Kopierkonstruktor
+	NodeReferenceList(const NodeReferenceList& other);
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		for(auto& ref : references) ref->update_parents(this);
+	}
+	void set_child_parents() override {
+		for(auto& ref : references) {
+			if(ref) ref->parent = this;
+		}
+	};
+	std::string get_string() override {
+		std::string str;
+		if(references.empty()) return str;
+		for(auto & ref : references) str += ref->get_string() + ", ";
+		return str.erase(str.size() - 2);
+	}
+	void update_token_data(const Token& token) override {
+		for(auto &p : references) p->update_token_data(token);
+	}
+//	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+	/**
+	 * @brief Returns the index of the given node in the parameter list.
+	 * @param node Pointer to the node to find.
+	 * @return Index of the node if found, otherwise -1.
+	 */
+	int get_idx(NodeAST* node);
+	std::unique_ptr<NodeReference>& param(int idx) {
+		return references.at(idx);
+	}
+	[[nodiscard]] size_t size() const {
+		return references.size();
+	}
+	[[nodiscard]] bool empty() const {
+		return references.empty();
+	}
+	void add_reference(std::unique_ptr<NodeReference> ref);
+	void prepend_reference(std::unique_ptr<NodeReference> ref);
+
+
 };
 
 struct NodeParamList: NodeAST {

@@ -108,7 +108,7 @@ private:
 	std::vector<std::unique_ptr<NodeDataStructure>> iterators;
 	/// holds the variables for the dimensions to copy
 	std::vector<std::unique_ptr<NodeDataStructure>> dim_vars_to_copy;
-	/// copying actuall numbers of dims for the args in function call
+	/// copying actuall numbers of dims for the params in function call
 	std::vector<std::unique_ptr<NodeAST>> dims_to_copy;
 	/// lower bounds for the iterators
 	std::vector<std::unique_ptr<NodeAST>> lower_bounds;

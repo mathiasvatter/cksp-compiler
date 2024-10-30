@@ -57,7 +57,7 @@ public:
 	NodeAST * visit(NodeNumElements& node) override;
 
 	/// updates the node types of parameters at call sites regarding the function definition
-	/// e.g. args can be incorrectly detected as variable refs at call sites, but they are arrays in the definition
+	/// e.g. params can be incorrectly detected as variable refs at call sites, but they are arrays in the definition
 	void update_func_call_node_types(NodeFunctionCall* func_call);
 	/// updates incorrectly detected function params (eg arrays detected as variables)
 	NodeDataStructure* replace_incorrectly_detected_data_struct(NodeDataStructure* data_struct);

@@ -246,9 +246,9 @@ NodeAST * ASTGenerator::visit(NodeCallback &node) {
 
 NodeAST * ASTGenerator::visit(NodeFunctionHeader &node) {
     os << sanitize_dots(node.name);
-	if(!node.args->params.empty() || node.has_forced_parenth) os << "(";
-    node.args->accept(*this);
-	if(!node.args->params.empty() || node.has_forced_parenth) os << ")";
+	if(!node.params->params.empty() || node.has_forced_parenth) os << "(";
+    node.params->accept(*this);
+	if(!node.params->params.empty() || node.has_forced_parenth) os << ")";
 	return &node;
 }
 

@@ -90,7 +90,7 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_functions(const std::string 
                 m_property_functions.insert({result_function.unwrap()->header->name, std::move(result_function.unwrap())});
             } else {
                 auto node_function = std::move(result_function.unwrap());
-                m_builtin_functions[{node_function->header->name, (int)node_function->header->args->params.size()}] = std::move(node_function);
+                m_builtin_functions[{node_function->header->name, (int)node_function->header->params->params.size()}] = std::move(node_function);
             }
         } else consume(m_tokens);
     }

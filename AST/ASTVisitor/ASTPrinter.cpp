@@ -233,6 +233,13 @@ NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeReferenceList &node) {
+	if (!node.references.empty()) {
+		os << node.get_string();
+	}
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeParamList &node) {
 	if (!node.params.empty()) {
 		if(node.parent->get_node_type() == NodeType::ParamList) {
@@ -415,10 +422,10 @@ NodeAST * ASTPrinter::visit(NodeCallback &node) {
 
 NodeAST * ASTPrinter::visit(NodeFunctionHeader &node) {
 	os << node.name;
-	if(node.args) {
-		if(!node.args->params.empty() || node.has_forced_parenth) os << "(";
-		node.args->accept(*this);
-		if(!node.args->params.empty() || node.has_forced_parenth) os << ")";
+	if(node.params) {
+		if(!node.params->params.empty() || node.has_forced_parenth) os << "(";
+		node.params->accept(*this);
+		if(!node.params->params.empty() || node.has_forced_parenth) os << ")";
 	}
 	if(node.parent->get_node_type() != NodeType::FunctionDefinition and node.parent->parent->get_node_type() != NodeType::FunctionCall) {
 		auto type = TypeRegistry::get_annotation_from_type(node.ty);

@@ -120,8 +120,8 @@ private:
 
 	static Type* is_repr_header(NodeFunctionHeader& header) {
 		if(contains(header.name, OBJ_DELIMITER+"__repr__")) {
-			if(header.args->params.size() == 1) {
-				return header.args->params[0]->ty;
+			if(header.params->params.size() == 1) {
+				return header.params->params[0]->ty;
 			}
 		}
 		return nullptr;
