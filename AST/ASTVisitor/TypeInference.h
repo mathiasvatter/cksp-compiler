@@ -85,9 +85,9 @@ public:
 		auto function_type = header->ty;
 		auto function = static_cast<FunctionType*>(function_type);
 		auto param_types = function->m_params;
-		for(int i=0; i<header->args->size(); i++) {
+		for(int i=0; i<header->params->size(); i++) {
 			auto &old_param_type = param_types[i];
-			auto &new_param = header->args->param(i);
+			auto &new_param = header->params->param(i);
 			auto throwaway_old_node = new_param->clone();
 			throwaway_old_node->ty = old_param_type;
 			param_types[i] = match_type(throwaway_old_node.get(), new_param.get());

@@ -191,7 +191,7 @@ NodeFunctionDefinition* DefinitionProvider::get_builtin_function(const std::stri
 }
 
 NodeFunctionDefinition* DefinitionProvider::get_builtin_function(NodeFunctionHeader *function) {
-	const auto it = builtin_functions.find({function->name, (int)function->args->params.size()});
+	const auto it = builtin_functions.find({function->name, (int)function->params->params.size()});
 	if(it != builtin_functions.end()) {
 		return it->second.get();
 	}
@@ -267,7 +267,7 @@ void DefinitionProvider::add_builtin_widget(std::unique_ptr<NodeUIControl> built
 }
 
 void DefinitionProvider::add_builtin_function(std::unique_ptr<NodeFunctionDefinition> builtin_function) {
-    builtin_functions[{builtin_function->header->name, (int)builtin_function->header->args->params.size()}] = std::move(builtin_function);
+    builtin_functions[{builtin_function->header->name, (int)builtin_function->header->params->params.size()}] = std::move(builtin_function);
 }
 
 void DefinitionProvider::add_property_function(std::unique_ptr<NodeFunctionDefinition> property_function) {

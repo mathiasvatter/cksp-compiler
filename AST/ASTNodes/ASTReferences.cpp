@@ -89,7 +89,7 @@ NodeAST *NodeArrayRef::accept(struct ASTVisitor &visitor) {
 }
 
 NodeArrayRef::NodeArrayRef(const NodeArrayRef& other)
-	: NodeReference(other), index(clone_unique(other.index)) {
+	: NodeCompositeRef(other), index(clone_unique(other.index)) {
 	set_child_parents();
 }
 
@@ -127,8 +127,10 @@ std::unique_ptr<NodeAccessChain> NodeArrayRef::to_method_chain() {
 	return method_chain;
 }
 
-std::unique_ptr<NodeFunctionCall> NodeArrayRef::get_size() {
-	return DefinitionProvider::num_elements(clone_as<NodeArrayRef>(this));
+std::unique_ptr<NodeAST> NodeArrayRef::get_size() {
+	auto new_ref = clone_as<NodeArrayRef>(this);
+	new_ref->index = nullptr;
+	return DefinitionProvider::num_elements(std::move(new_ref));
 }
 
 bool NodeArrayRef::is_list_sizes() {
@@ -162,7 +164,7 @@ NodeAST *NodeNDArrayRef::accept(struct ASTVisitor &visitor) {
 }
 
 NodeNDArrayRef::NodeNDArrayRef(const NodeNDArrayRef& other)
-	: NodeReference(other), indexes(clone_unique(other.indexes)),
+	: NodeCompositeRef(other), indexes(clone_unique(other.indexes)),
 	sizes(clone_unique(other.sizes)) {
 	set_child_parents();
 }
@@ -175,6 +177,13 @@ ASTLowering* NodeNDArrayRef::get_lowering(NodeProgram *program) const {
     static LoweringNDArray lowering(program);
     return &lowering;
 }
+
+std::unique_ptr<NodeAST> NodeNDArrayRef::get_size() {
+	auto new_ref = this->to_array_ref(nullptr);
+	new_ref->name = "_"+new_ref->name;
+	return DefinitionProvider::num_elements(std::move(new_ref));
+}
+
 
 std::unique_ptr<NodeArrayRef> NodeNDArrayRef::to_array_ref(std::unique_ptr<NodeAST> index) {
 	return std::make_unique<NodeArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, std::move(index)) : nullptr, tok);
@@ -250,26 +259,26 @@ void NodeFunctionVarRef::set_child_parents() {
 }
 
 int NodeFunctionVarRef::get_num_args() const {
-	return (int)header->args->params.size();
+	return (int)header->params->params.size();
 }
 
 bool NodeFunctionVarRef::has_no_args() const {
-	return header->args->params.empty();
+	return header->params->params.empty();
 }
 
 std::unique_ptr<NodeAST>& NodeFunctionVarRef::get_arg(int i) {
 	if(get_num_args() <= i) {
 		CompileError(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
 	}
-	return header->args->params[i];
+	return header->params->params[i];
 }
 
 void NodeFunctionVarRef::prepend_arg(std::unique_ptr<NodeAST> arg) const {
-	header->args->prepend_param(std::move(arg));
+	header->params->prepend_param(std::move(arg));
 }
 
 void NodeFunctionVarRef::add_arg(std::unique_ptr<NodeAST> arg) const {
-	header->args->add_param(std::move(arg));
+	header->params->add_param(std::move(arg));
 }
 
 // ************* NodeListRef ***************

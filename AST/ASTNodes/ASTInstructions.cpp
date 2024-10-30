@@ -66,7 +66,7 @@ ASTLowering* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
 }
 
 NodeFunctionDefinition* NodeFunctionCall::find_definition(struct NodeProgram *program) {
-    auto it = program->function_lookup.find({function->name, (int)function->header->args->params.size()});
+    auto it = program->function_lookup.find({function->name, (int)function->header->params->params.size()});
     if(it != program->function_lookup.end()) {
         it->second->is_used = true;
         definition = it->second;
@@ -96,12 +96,12 @@ NodeFunctionDefinition* NodeFunctionCall::find_property_definition(NodeProgram *
         CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
     if(auto property_func = program->def_provider->get_property_function(function->header.get())) {
-        if(function->header->args->params.size() < 2) {
+        if(function->header->params->params.size() < 2) {
             CompileError(
                     ErrorType::SyntaxError,
                     "Found Property Function with insufficient amount of arguments.",
                     tok.line, "At least 2 arguments",
-                    std::to_string(function->header->args->params.size()),
+                    std::to_string(function->header->params->params.size()),
                     tok.file
             ).exit();
         }

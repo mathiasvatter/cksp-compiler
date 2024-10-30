@@ -453,7 +453,7 @@ private:
 			tok
 		);
 		if(add_param) {
-			func_def->header->args->add_param(std::move(add_param));
+			func_def->header->params->add_param(std::move(add_param));
 		}
 		return func_def;
 	}
@@ -487,10 +487,10 @@ private:
 	}
 
 	static NodeDataStructure* get_self_ptr(NodeFunctionDefinition* func_def) {
-		return static_cast<NodeDataStructure*>(func_def->header->args->params[0].get());
+		return static_cast<NodeDataStructure*>(func_def->header->params->params[0].get());
 	}
 	static NodeDataStructure* get_num_refs_ptr(NodeFunctionDefinition* func_def) {
-		return static_cast<NodeDataStructure*>(func_def->header->args->params.back().get());
+		return static_cast<NodeDataStructure*>(func_def->header->params->params.back().get());
 	}
 
 	///	List::allocation[self] := List::allocation[self] - num_refs

@@ -119,7 +119,7 @@ public:
 		// check that we are not in init callback
 		if(m_current_callback != m_program->init_callback) {
 			// make function called if it is no params
-//			if(node.definition->header->args->params.empty()) node.is_call = true;
+//			if(node.definition->header->params->params.empty()) node.is_call = true;
 
 		} else if(node.is_call){
 			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
@@ -180,13 +180,13 @@ public:
 
 	static std::unordered_map<std::string, std::unique_ptr<NodeAST>> get_substitution_map(NodeFunctionHeader* definition, NodeFunctionHeader* call) {
 		std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_map;
-		substitution_map.reserve(definition->args->params.size());
-		for (size_t i = 0; i < definition->args->params.size(); ++i) {
-			auto& var = definition->args->params[i];
+		substitution_map.reserve(definition->params->params.size());
+		for (size_t i = 0; i < definition->params->params.size(); ++i) {
+			auto& var = definition->params->params[i];
 			// Überprüfen, ob var ein NodeDataStructure ist
 			if (auto node_data_structure = static_cast<NodeDataStructure*>(var.get())) {
 				// Direktes Einfügen in die Map
-				substitution_map[node_data_structure->name] = std::move(call->args->params[i]);
+				substitution_map[node_data_structure->name] = std::move(call->params->params[i]);
 			} else {
 				auto error = CompileError(ErrorType::SyntaxError, "", definition->tok.line, "<keyword>", var->tok.val, definition->tok.file);
 				error.m_message = "Found incorrect parameter definitions in <Function Definition>. Unable to substitute function arguments. Only <Data Structures> can be substituted.";

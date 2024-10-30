@@ -38,10 +38,24 @@ struct NodeVariableRef : NodeReference {
 
 };
 
-struct NodeArrayRef : NodeReference {
+struct NodeCompositeRef : NodeReference {
+	// Konstruktor
+	inline NodeCompositeRef(std::string name, NodeType node_type, Token tok)
+		: NodeReference(std::move(name), node_type, std::move(tok)) {}
+	// Kopierkonstruktor
+	NodeCompositeRef(const NodeCompositeRef& other) : NodeReference(other) {}
+	// Standardmethoden für gemeinsame Funktionalitäten
+	virtual void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+	}
+	virtual void set_child_parents() override = 0;  // Wird in den abgeleiteten Klassen implementiert
+	virtual std::unique_ptr<NodeAST> get_size() = 0;
+};
+
+struct NodeArrayRef : NodeCompositeRef {
 	std::unique_ptr<NodeAST> index;
 	inline NodeArrayRef(std::string name, std::unique_ptr<NodeAST> index, Token tok)
-		: NodeReference(std::move(name), NodeType::ArrayRef, std::move(tok)), index(std::move(index)) {
+		: NodeCompositeRef(std::move(name), NodeType::ArrayRef, std::move(tok)), index(std::move(index)) {
 		set_child_parents();
 	}
 	NodeAST * accept(struct ASTVisitor &visitor) override;
@@ -64,7 +78,7 @@ struct NodeArrayRef : NodeReference {
 	std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() override;
 	/// this_list.next.value[6]
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
-	std::unique_ptr<NodeFunctionCall> get_size();
+	std::unique_ptr<NodeAST> get_size() override;
 	/// check if array ref is <list_ref>.size[] array
 	bool is_list_sizes();
 	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
@@ -74,11 +88,11 @@ struct NodeArrayRef : NodeReference {
 	}
 };
 
-struct NodeNDArrayRef : NodeReference {
+struct NodeNDArrayRef : NodeCompositeRef {
 	std::unique_ptr<NodeParamList> indexes = nullptr;
     std::unique_ptr<NodeParamList> sizes = nullptr;
 	inline NodeNDArrayRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
-		: NodeReference(std::move(name), NodeType::NDArrayRef, std::move(tok)), indexes(std::move(indexes)) {
+		: NodeCompositeRef(std::move(name), NodeType::NDArrayRef, std::move(tok)), indexes(std::move(indexes)) {
 		set_child_parents();
 	}
 	NodeAST * accept(struct ASTVisitor &visitor) override;
@@ -97,6 +111,8 @@ struct NodeNDArrayRef : NodeReference {
 		return name;
 	}
     ASTLowering* get_lowering(NodeProgram *program) const override;
+	std::unique_ptr<NodeAST> get_size() override;
+
 	std::unique_ptr<NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) override;
 	/// this_list.next.value[6,4]
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;

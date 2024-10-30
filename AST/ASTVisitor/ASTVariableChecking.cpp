@@ -107,7 +107,7 @@ NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
 		m_def_provider->set_declaration(&node, false);
 		m_def_provider->add_to_data_structures(&node);
 	}
-	if(node.args) node.args->accept(*this);
+	if(node.params) node.params->accept(*this);
 	return &node;
 }
 
@@ -157,6 +157,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 
 NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 	node.variable->determine_locality(m_program, m_current_block);
+
 
     node.variable->accept(*this);
     if(node.value) node.value->accept(*this);
@@ -310,10 +311,6 @@ NodeAST* ASTVariableChecking::visit(NodePointer& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
-	// handle return_vars -> do not check if they have been declared
-	if(node.is_compiler_return) {
-		return &node;
-	}
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {

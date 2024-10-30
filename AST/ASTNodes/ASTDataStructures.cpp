@@ -113,7 +113,7 @@ NodeAST *NodeArray::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeArray::NodeArray(const NodeArray& other)
-	: NodeDataStructure(other), show_brackets(other.show_brackets), size(clone_unique(other.size)) {
+	: NodeComposite(other), size(clone_unique(other.size)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeArray::clone() const {
@@ -165,7 +165,7 @@ NodeAST *NodeNDArray::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeNDArray::NodeNDArray(const NodeNDArray& other)
-	: NodeDataStructure(other), show_brackets(other.show_brackets), sizes(clone_unique(other.sizes)),
+	: NodeComposite(other), sizes(clone_unique(other.sizes)),
 	dimensions(other.dimensions) {
 	set_child_parents();
 }
@@ -211,7 +211,7 @@ NodeAST *NodeFunctionHeader::accept(struct ASTVisitor &visitor) {
 }
 NodeFunctionHeader::NodeFunctionHeader(const NodeFunctionHeader& other)
 	: NodeDataStructure(other),
-	  has_forced_parenth(other.has_forced_parenth), args(clone_unique(other.args)) {
+	  has_forced_parenth(other.has_forced_parenth), params(clone_unique(other.params)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeFunctionHeader::clone() const {

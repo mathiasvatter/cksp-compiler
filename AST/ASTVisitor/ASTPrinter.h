@@ -34,6 +34,7 @@ public:
 	NodeAST * visit(NodeUIControl& node) override;
 	NodeAST * visit(NodeDeclaration& node) override;
     NodeAST * visit(NodeSingleDeclaration& node) override;
+	NodeAST * visit(NodeReferenceList& node) override;
 	NodeAST * visit(NodeParamList& node) override;
 	NodeAST * visit(NodeInitializerList& node) override;
 	NodeAST * visit(NodeBinaryExpr& node) override;
