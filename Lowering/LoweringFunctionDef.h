@@ -201,7 +201,7 @@ private:
 
 	static std::unique_ptr<NodeSingleDeclaration> get_exit_flag_declaration(Token &tok, std::string &flag_name) {
 		// add exit flag to condition
-		auto exit_flag_var = std::make_unique<NodeVariable>(
+		auto exit_flag_var = std::make_shared<NodeVariable>(
 			std::nullopt,
 			flag_name,
 			TypeRegistry::Integer,

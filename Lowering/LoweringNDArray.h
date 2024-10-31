@@ -9,6 +9,14 @@
 
 /// entry points: NodeSingleDeclaration
 class LoweringNDArray : public ASTLowering {
+private:
+	static std::unique_ptr<NodeAST> get_lowered_size_expr(NodeNDArray& ref) {
+		// in case of function param -> sizes are not set
+		if(!ref.sizes) {
+			return nullptr;
+		}
+		return NodeBinaryExpr::create_right_nested_binary_expr(ref.sizes->params, 0, token::MULT);
+	}
 public:
 	explicit LoweringNDArray(NodeProgram* program) : ASTLowering(program) {}
 
@@ -23,6 +31,8 @@ public:
 	 * Pre Lowering of NDArray to Array
 	 *  declare ndarray[3, 3]: int[][] := (1,2,3,4,5,6,7,8,9) // ndarray := ((1,2,3), (4,5,6), (7,8,9))
 	 * Post Lowering:
+	 * 	declare const ndarray::num_elements[3] := (3*3, 3, 3)
+	 * 	declare const ndarray.SIZE := 3 * 3
 	 *  declare const ndarray.SIZE_D1 := 3
 	 * 	declare const ndarray.SIZE_D2 := 3
 	 * 	declare _ndarray[3 * 3]: int[] := (1,2,3,4,5,6,7,8,9) // ndarray := ((1,2,3), (4,5,6), (7,8,9))
@@ -30,7 +40,34 @@ public:
 	NodeAST* visit(NodeSingleDeclaration &node) override {
         if(node.variable->get_node_type() == NodeType::NDArray) {
 			auto node_ndarray = static_cast<NodeNDArray*>(node.variable.get());
+			if(!node_ndarray->sizes) {
+				auto error = CompileError(ErrorType::Variable, "", "", node.tok);
+				error.m_message = "Unable to infer array size. Size of NDArray has to be determined at compile time.";
+				error.exit();
+			}
 			auto node_body = std::make_unique<NodeBlock>(node.tok);
+			auto node_num_elements_decl = std::make_unique<NodeSingleDeclaration>(
+					std::make_unique<NodeArray>(
+							std::optional<Token>(),
+							node_ndarray->name + OBJ_DELIMITER+"num_elements",
+							TypeRegistry::ArrayOfInt,
+							std::make_unique<NodeInt>(node_ndarray->dimensions, node.tok),
+							node.tok
+					),
+					node.tok
+			);
+			auto node_init_list = std::make_unique<NodeInitializerList>(
+				node.tok,
+				get_lowered_size_expr(*node_ndarray)
+			);
+			auto node_size_decl = std::make_unique<NodeSingleDeclaration>(
+					std::make_unique<NodeVariable>(
+							std::optional<Token>(),
+							node_ndarray->name + ".SIZE",
+							TypeRegistry::Integer,
+							DataType::Const, node.tok),
+					get_lowered_size_expr(*node_ndarray), node.tok);
+			node_body->add_as_stmt(std::move(node_size_decl));
 			for (int i = 0; i < node_ndarray->dimensions; i++) {
 				auto node_var = std::make_unique<NodeVariable>(
 						std::optional<Token>(),
@@ -41,25 +78,23 @@ public:
 						std::move(node_var),
 						node_ndarray->sizes->params[i]->clone(), node.tok);
 				node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declaration), node.tok));
+				node_init_list->add_element(node_ndarray->sizes->params[i]->clone());
 			}
+			node_body->add_as_stmt(std::move(node_num_elements_decl));
 			node.variable->accept(*this);
-			// now that it is array declaration -> lower again to get array size const
-			auto new_node = node.lower(m_program);
-			node_body->add_stmt(std::make_unique<NodeStatement>(new_node->clone(), node.tok));
+			node_body->add_as_stmt(std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok));
 			node_body->flatten();
-			return new_node->replace_with(std::move(node_body));
+			return node.replace_with(std::move(node_body));
         }
 		return &node;
 	}
 	/// Lowering of multidimensional arrays to arrays -> declaration
 	NodeAST* visit(NodeNDArray& node) override {
-		std::unique_ptr<NodeAST> node_expression = nullptr;
-		if(node.sizes) node_expression = NodeBinaryExpr::create_right_nested_binary_expr(node.sizes->params, 0, token::MULT);
         auto node_lowered_array = std::make_unique<NodeArray>(
                 node.persistence,
                 node.name,
                 TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1),
-                std::move(node_expression), node.tok);
+				get_lowered_size_expr(node), node.tok);
 		node_lowered_array->name = "_" + node_lowered_array->name;
 		node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
 		node_lowered_array->parent = node.parent;
@@ -68,7 +103,6 @@ public:
 		// call array lowering
 		node_lowered_array->lower(m_program);
 		return node.replace_with(std::move(node_lowered_array));
-//		return node.replace_datastruct(std::move(node_lowered_array), m_def_provider);
 	}
 
     /// Lowering of multidimensional arrays to arrays when reference
@@ -136,8 +170,6 @@ public:
 		// Kombinieren des aktuellen Teils mit dem nächsten Teil
 		return std::make_unique<NodeBinaryExpr>(token::ADD, std::move(current_part), std::move(next_part), tok);
 	}
-
-private:
 
 };
 

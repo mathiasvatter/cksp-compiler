@@ -104,6 +104,22 @@ enum class NodeType {
 // forward declaration
 struct NodeAST;
 
+template <typename T>
+std::shared_ptr<T> to_shared_ptr(std::unique_ptr<T> uniquePtr) {
+	return std::shared_ptr<T>(std::move(uniquePtr));
+}
+
+template <typename T>
+std::unique_ptr<T> to_unique_ptr(std::shared_ptr<T> &sharedPtr) {
+	// Wenn der shared_ptr der einzige Besitzer ist, konvertiere ihn in unique_ptr
+	if (sharedPtr.unique()) {
+		return std::unique_ptr<T>(sharedPtr.release());  // Überträgt das Ownership
+	} else {
+		// Andernfalls erstelle eine Kopie des Objekts
+		return std::make_unique<T>(*sharedPtr);
+	}
+}
+
 // Funktion zum Casten eines unique_ptr von Base auf Derived
 template <typename Derived, typename Base>
 std::unique_ptr<Derived> unique_ptr_cast(std::unique_ptr<Base> basePtr) {
@@ -120,6 +136,11 @@ template <typename T>
 T* cast_node(NodeAST* node) {
 	static_assert(std::is_base_of<NodeAST, T>::value, "T must be a subclass of NodeAST");
 	return dynamic_cast<T*>(node);
+}
+
+template <typename T>
+std::shared_ptr<T> clone_shared(const std::shared_ptr<T>& source) {
+	return source ? std::shared_ptr<T>(static_cast<T*>(source->clone().release())) : nullptr;
 }
 
 // Hilfsfunktion zum Klonen von unique_ptrs
