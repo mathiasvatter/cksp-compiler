@@ -136,7 +136,7 @@ private:
 				}
 			}
 			node_body->prepend_stmt(std::make_unique<NodeStatement>(
-									std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok),
+									std::make_unique<NodeSingleDeclaration>(node.variable, nullptr, node.tok),
 									node.tok
 									)
 								);

@@ -66,8 +66,8 @@ public:
 			auto node_declaration = std::make_unique<NodeSingleDeclaration>(
 				std::move(node_var),
 				node_array->size->clone(), node.tok);
-			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declaration), node.tok));
-			node_body->add_stmt(std::make_unique<NodeStatement>(node.clone(), node.tok));
+			node_body->add_as_stmt(std::move(node_declaration));
+			node_body->add_as_stmt(std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok));
 			return node.replace_with(std::move(node_body));
 		}
 		return &node;

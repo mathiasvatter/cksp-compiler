@@ -494,7 +494,7 @@ NodeAST * ASTPrinter::visit(NodeBlock &node) {
 
 NodeAST * ASTPrinter::visit(NodeProgram &node) {
 	if(!node.global_declarations->statements.empty()) {
-		os << "Global Declarations:" << std::endl;
+		os << "// Global Declarations:" << std::endl;
 		node.global_declarations->accept(*this);
 	}
 	for(auto& s : node.struct_definitions) {

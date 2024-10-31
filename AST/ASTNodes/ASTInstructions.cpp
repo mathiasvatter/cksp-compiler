@@ -14,6 +14,9 @@
 #include "../../Desugaring/DesugarForEach.h"
 #include "../../Desugaring/DesugarFunctionCall.h"
 #include "../../Lowering/LoweringWhile.h"
+#include "../../Lowering/LoweringRetain.h"
+#include "../../Lowering/LoweringDelete.h"
+#include "../../Lowering/LoweringNumElements.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -247,7 +250,7 @@ NodeAST *NodeNumElements::replace_child(NodeAST* oldChild, std::unique_ptr<NodeA
 }
 
 ASTLowering* NodeNumElements::get_lowering(struct NodeProgram *program) const {
-	static LoweringWhile lowering(program);
+	static LoweringNumElements lowering(program);
 	return &lowering;
 }
 
@@ -284,7 +287,7 @@ NodeAST *NodeSingleDelete::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeSingleDelete::NodeSingleDelete(const NodeSingleDelete& other)
-	: NodeInstruction(other), ptr(clone_unique(other.ptr)) {
+	: NodeInstruction(other), ptr(clone_unique(other.ptr)), num(clone_unique(other.num)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleDelete::clone() const {
@@ -297,6 +300,11 @@ NodeAST *NodeSingleDelete::replace_child(NodeAST* oldChild, std::unique_ptr<Node
 		return ptr.get();
 	}
 	return nullptr;
+}
+
+ASTLowering* NodeSingleDelete::get_lowering(NodeProgram *program) const {
+	static LoweringDelete lowering(program);
+	return &lowering;
 }
 
 // ************* NodeSingleRetain ***************
@@ -313,10 +321,17 @@ std::unique_ptr<NodeAST> NodeSingleRetain::clone() const {
 
 NodeAST *NodeSingleRetain::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (ptr.get() == oldChild) {
-		ptr = std::move(newChild);
-		return ptr.get();
+		if(auto new_ptr = cast_node<NodeReference>(newChild.release())) {
+			ptr = std::unique_ptr<NodeReference>(new_ptr);
+			return ptr.get();
+		}
 	}
 	return nullptr;
+}
+
+ASTLowering* NodeSingleRetain::get_lowering(NodeProgram *program) const {
+	static LoweringRetain lowering(program);
+	return &lowering;
 }
 
 // ************* NodeRetain ***************
@@ -410,7 +425,7 @@ NodeAST *NodeSingleDeclaration::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeSingleDeclaration::NodeSingleDeclaration(const NodeSingleDeclaration& other)
-        : NodeInstruction(other), variable(clone_unique(other.variable)),
+        : NodeInstruction(other), variable(clone_shared(other.variable)),
           value(clone_unique(other.value)), retain_stmt(clone_unique(other.retain_stmt)),
 		  is_promoted(other.is_promoted), has_object(other.has_object) {
     set_child_parents();
@@ -421,7 +436,7 @@ std::unique_ptr<NodeAST> NodeSingleDeclaration::clone() const {
 NodeAST *NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (variable.get() == oldChild) {
         if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.release())) {
-            variable = std::unique_ptr<NodeDataStructure>(new_data_structure);
+			variable = std::shared_ptr<NodeDataStructure>(new_data_structure);
             return variable.get();
         }
     } else if (value.get() == oldChild) {
@@ -455,7 +470,7 @@ NodeAST *NodeFunctionParam::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeFunctionParam::NodeFunctionParam(const NodeFunctionParam& other)
-	: NodeInstruction(other), variable(clone_unique(other.variable)),
+	: NodeInstruction(other), variable(clone_shared(other.variable)),
 	  value(clone_unique(other.value)) {
 	set_child_parents();
 }
@@ -465,7 +480,7 @@ std::unique_ptr<NodeAST> NodeFunctionParam::clone() const {
 NodeAST *NodeFunctionParam::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (variable.get() == oldChild) {
 		if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.release())) {
-			variable = std::unique_ptr<NodeDataStructure>(new_data_structure);
+			variable = std::shared_ptr<NodeDataStructure>(new_data_structure);
 			return variable.get();
 		}
 	} else if (value.get() == oldChild) {

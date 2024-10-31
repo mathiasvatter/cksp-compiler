@@ -50,6 +50,7 @@ struct NodeCompositeRef : NodeReference {
 	}
 	virtual void set_child_parents() override = 0;  // Wird in den abgeleiteten Klassen implementiert
 	virtual std::unique_ptr<NodeAST> get_size() = 0;
+//	virtual std::unique_ptr<NodeBlock> iterate_over() = 0;
 };
 
 struct NodeArrayRef : NodeCompositeRef {
@@ -86,6 +87,7 @@ struct NodeArrayRef : NodeCompositeRef {
 		index = std::move(new_index);
 		index->parent = this;
 	}
+//	std::unique_ptr<NodeBlock> iterate_over() override;
 };
 
 struct NodeNDArrayRef : NodeCompositeRef {

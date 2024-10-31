@@ -161,10 +161,15 @@ NodeAST * ASTCollectLowerings::visit(NodePointerRef& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeAccessChain& node) {
 	return node.lower(m_program);
-//	node.chain.back()->accept(*this);
-//	return node.replace_with(std::move(node.chain.back()));
 }
 
+NodeAST * ASTCollectLowerings::visit(NodeSingleRetain& node) {
+	return node.lower(m_program);
+}
+
+NodeAST * ASTCollectLowerings::visit(NodeSingleDelete& node) {
+	return node.lower(m_program);
+}
 
 NodeAST * ASTCollectLowerings::visit(NodeConst &node) {
     return node.replace_with(std::move(node.constants));

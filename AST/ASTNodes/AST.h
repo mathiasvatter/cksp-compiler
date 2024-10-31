@@ -641,7 +641,7 @@ struct NodeFunctionDefinition: NodeAST {
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	bool is_method();
 	void update_param_data_type() const;
-	std::unique_ptr<NodeDataStructure>& get_param(int i);
+	std::shared_ptr<NodeDataStructure>& get_param(int i);
 
 };
 

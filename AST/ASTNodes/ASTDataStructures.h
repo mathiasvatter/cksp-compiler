@@ -198,7 +198,7 @@ struct NodeFunctionHeader: NodeDataStructure {
 		decl->parent = this;
 		params.insert(params.begin(), std::move(decl));
 	}
-	std::unique_ptr<NodeDataStructure>& get_param(int idx) {
+	std::shared_ptr<NodeDataStructure>& get_param(int idx) {
 		return params[idx]->variable;
 	}
 };

@@ -773,7 +773,7 @@ void NodeFunctionDefinition::update_param_data_type() const {
 	}
 }
 
-std::unique_ptr<NodeDataStructure> &NodeFunctionDefinition::get_param(int i) {
+std::shared_ptr<NodeDataStructure> &NodeFunctionDefinition::get_param(int i) {
 	if(header->params.size() <= i) {
 		CompileError(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
 	}

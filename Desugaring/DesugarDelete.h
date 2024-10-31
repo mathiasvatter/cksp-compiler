@@ -23,7 +23,12 @@ public:
 		}
 		auto block = std::make_unique<NodeBlock>(node.tok);
 		for(auto &ptr : node.ptrs) {
-			block->add_stmt(std::make_unique<NodeStatement>(std::make_unique<NodeSingleDelete>(std::move(ptr), node.tok), node.tok));
+			block->add_as_stmt(
+				std::make_unique<NodeSingleDelete>(
+					std::move(ptr),
+					std::make_unique<NodeInt>(1, node.tok),
+					node.tok)
+				);
 		}
 		return node.replace_with(std::move(block));
 	}

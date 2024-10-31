@@ -155,6 +155,7 @@ public:
 	};
 	virtual NodeAST* visit(NodeSingleDelete& node) {
 		node.ptr->accept(*this);
+		node.num->accept(*this);
 		return &node;
 	};
 	virtual NodeAST* visit(NodeNumElements& node) {

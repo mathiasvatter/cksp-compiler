@@ -158,6 +158,17 @@ std::unique_ptr<NodeReference> NodeArrayRef::inflate_dimension(std::unique_ptr<N
 	return node_ndarray_ref;
 }
 
+//std::unique_ptr<NodeBlock> NodeArrayRef::iterate_over() {
+//	auto node_block = std::make_unique<NodeBlock>(tok);
+//	auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, tok);
+//	node_iterator->is_local = true;
+//	auto node_iterator_ref = node_iterator->to_reference();
+//	auto node_iterator_decl = std::make_unique<NodeSingleDeclaration>(std::move(node_iterator), nullptr, tok);
+//	node_block->add_as_stmt(std::move(node_iterator_decl));
+//	auto node_assign =
+//
+//}
+
 // ************* NodeNDArrayRef ***************
 NodeAST *NodeNDArrayRef::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);

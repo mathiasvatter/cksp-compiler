@@ -487,6 +487,13 @@ NodeAST * TypeInference::visit(NodeFunctionParam& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeSingleDelete& node) {
+	node.ptr->accept(*this);
+	node.num->accept(*this);
+	match_type(&node, node.ptr.get());
+	return &node;
+}
+
 
 NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	node.variable->accept(*this);

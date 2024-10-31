@@ -17,3 +17,4 @@ declare const ndarray::num_elements[2] := (10, 10)
 
 declare dynamic_val: int := 2
 message(ndarray::num_elements[min(max(1, 0), 2)], ndarray::num_elements[dynamic_val])
+
