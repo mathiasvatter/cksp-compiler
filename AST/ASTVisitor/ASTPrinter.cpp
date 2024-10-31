@@ -482,6 +482,14 @@ NodeAST * ASTPrinter::visit(NodeGetControl &node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeSetControl &node) {
+	node.ui_id ->accept(*this);
+	os << " -> " << node.control_param;
+	os << " := ";
+	node.value ->accept(*this);
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeBlock &node) {
 	node.flatten();
     if(node.scope) m_scope_count++;

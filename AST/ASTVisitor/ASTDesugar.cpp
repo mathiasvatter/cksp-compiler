@@ -97,6 +97,10 @@ NodeAST* ASTDesugar::visit(NodeAssignment &node) {
 	return node.desugar(m_program)->accept(*this);
 }
 
+NodeAST* ASTDesugar::visit(NodeSingleAssignment& node) {
+	return node.desugar(m_program);
+}
+
 NodeAST* ASTDesugar::visit(NodeForEach& node) {
     node.body->accept(*this);
 	// accept again to desugar resulting for loops

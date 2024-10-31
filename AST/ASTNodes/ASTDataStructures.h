@@ -158,6 +158,11 @@ struct NodeFunctionHeader: NodeDataStructure {
 		params.push_back(std::move(param));
 		set_child_parents();
 	};
+	// Variadischer Template-Konstruktor
+	template<typename... Params>
+	explicit NodeFunctionHeader(std::string name, Token tok, Params&&... params) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader) {
+		(add_param(std::move(params)), ...);
+	}
 	NodeAST* accept(struct ASTVisitor &visitor) override;
 	NodeFunctionHeader(const NodeFunctionHeader& other);
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;

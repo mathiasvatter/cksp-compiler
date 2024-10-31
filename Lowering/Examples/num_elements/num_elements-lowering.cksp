@@ -16,5 +16,9 @@ declare ndarray[10, 10] : int[][]
 declare const ndarray::num_elements[2] := (10, 10)
 
 declare dynamic_val: int := 2
-message(ndarray::num_elements[min(max(1, 0), 2)], ndarray::num_elements[dynamic_val])
+message(ndarray::num_elements[clip(1, 2)], ndarray::num_elements[clip(dynamic_val, 2])
+
+function clip(x, b) 
+	return x + (-x .and. sh_right(x, 31)) - ((x - b) .and. sh_right((b - x), 31))   
+end function    
 

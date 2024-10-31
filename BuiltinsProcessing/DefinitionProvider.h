@@ -334,6 +334,38 @@ public:
 		return call;
 	}
 
+	/// sh_right(a, b)
+	static std::unique_ptr<NodeFunctionCall> sh_right(std::unique_ptr<NodeAST> a, std::unique_ptr<NodeAST> b) {
+		auto func_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeaderRef>(
+				"sh_right",
+				std::make_unique<NodeParamList>(a->tok, std::move(a), std::move(b)),
+				Token()
+			),
+			Token()
+		);
+		func_call->ty = TypeRegistry::Integer;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		return std::move(func_call);
+	}
+
+	/// sh_left(a, b)
+	static std::unique_ptr<NodeFunctionCall> sh_left(std::unique_ptr<NodeAST> a, std::unique_ptr<NodeAST> b) {
+		auto func_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeaderRef>(
+				"sh_left",
+				std::make_unique<NodeParamList>(a->tok, std::move(a), std::move(b)),
+				Token()
+			),
+			Token()
+		);
+		func_call->ty = TypeRegistry::Integer;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		return std::move(func_call);
+	}
+
 };
 
 

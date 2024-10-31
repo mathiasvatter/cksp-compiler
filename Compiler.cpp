@@ -188,8 +188,8 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Function Inlining") << std::endl;
 	compile_time.start("Variable Checking 2");
 
-	ASTRelinkGlobalScope relink_global_scope(&m_definition_provider);
-	ast->accept(relink_global_scope);
+//	ASTRelinkGlobalScope relink_global_scope(&m_definition_provider);
+//	ast->accept(relink_global_scope);
 
 	compile_time.stop("Variable Checking 2");
 	std::cout << compile_time.print_timer("Variable Checking 2") << std::endl;
@@ -205,7 +205,7 @@ void Compiler::compile() {
 
 	ASTKSPSyntaxCheck syntax_check(&m_definition_provider);
 	ast->accept(syntax_check);
-	syntax_check.fix_memory_exhausted_error(*ast);
+	ASTKSPSyntaxCheck::fix_memory_exhausted_error(*ast);
 
 	ASTGenerator generator;
 	ast->accept(generator);

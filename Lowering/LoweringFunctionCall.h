@@ -84,19 +84,13 @@ private:
     static inline std::unique_ptr<NodeBlock> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeaderRef> header_ref) {
         auto node_body = std::make_unique<NodeBlock>(header_ref->tok);
         for(int i = 1; i<header_ref->args->size(); i++) {
-            auto node_get_control = std::make_unique<NodeGetControl>(
+            auto node_set_control = std::make_unique<NodeSetControl>(
 				header_ref->get_arg(0)->clone(),
 				property_function->get_param(i)->name,
-				header_ref->tok
-            );
-            auto node_assignment = std::make_unique<NodeSingleAssignment>(
-				std::move(node_get_control),
 				std::move(header_ref->get_arg(i)),
 				header_ref->tok
             );
-            node_body->add_stmt(
-                    std::make_unique<NodeStatement>(std::move(node_assignment), node_body->tok)
-            );
+            node_body->add_as_stmt(std::move(node_set_control));
         }
         return std::move(node_body);
     }

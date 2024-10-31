@@ -25,6 +25,7 @@ class ASTDesugar: public ASTVisitor {
     NodeAST * visit(NodeSingleDeclaration& node) override;
     /// desugar into single assign statements
 	NodeAST * visit(NodeAssignment& node) override;
+	NodeAST * visit(NodeSingleAssignment& node) override;
 
 	NodeAST * visit(NodeFunctionCall& node) override;
 

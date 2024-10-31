@@ -227,6 +227,13 @@ public:
 		return "";
 	}
 
+	std::string get_num_elements_base(const std::string& input) {
+		size_t pos = input.find(OBJ_DELIMITER);
+		if (pos != std::string::npos)
+			return input.substr(0, pos);
+		return "";
+	}
+
 	/// returns nullptr if ref was no ndarray constant and could not be substituted
 	/// ndarray.SIZE_D1 -> nd.SIZE_D1
 	NodeAST* substitute_ndarray_constants(NodeReference* ref) {

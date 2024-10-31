@@ -17,6 +17,7 @@
 #include "../../Lowering/LoweringRetain.h"
 #include "../../Lowering/LoweringDelete.h"
 #include "../../Lowering/LoweringNumElements.h"
+#include "../../Desugaring/DesugarSingleAssignment.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -388,6 +389,11 @@ NodeAST *NodeSingleAssignment::replace_child(NodeAST* oldChild, std::unique_ptr<
         return r_value.get();
     }
     return nullptr;
+}
+
+ASTDesugaring * NodeSingleAssignment::get_desugaring(NodeProgram *program) const {
+	static DesugarSingleAssignment desugaring(program);
+	return &desugaring;
 }
 
 ASTLowering* NodeSingleAssignment::get_lowering(struct NodeProgram *program) const {

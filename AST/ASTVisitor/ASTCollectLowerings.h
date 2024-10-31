@@ -49,6 +49,7 @@ public:
 	NodeAST * visit(NodeSingleAssignment& node) override;
 	/// lower get_control statements to get_control_par
 	NodeAST * visit(NodeGetControl& node) override;
+	NodeAST * visit(NodeSetControl& node) override;
 	/// lower property functions to get_control_par
 	NodeAST * visit(NodeFunctionCall& node) override;
     /// determine size of array in declaration if possible

@@ -22,7 +22,7 @@ public:
 
 				// get correct declarations and stuff
 				auto new_assignment = std::make_unique<NodeSingleAssignment>(node.variable->to_reference(), std::move(node.value), node.tok);
-				auto new_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok);
+				auto new_declaration = std::make_unique<NodeSingleDeclaration>(node.variable, nullptr, node.tok);
 				auto node_assignment_ref = static_cast<NodeReference*>(new_assignment->l_value.get());
 				node_assignment_ref->match_data_structure(new_declaration->variable.get());
 				node_assignment_ref->ty = new_declaration->variable->ty;
