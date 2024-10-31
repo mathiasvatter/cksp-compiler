@@ -52,7 +52,7 @@ private:
 public:
 	explicit ASTKSPSyntaxCheck(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {};
 
-	NodeAST* fix_memory_exhausted_error(NodeAST& node) {
+	static NodeAST* fix_memory_exhausted_error(NodeAST& node) {
 		MemoryExhaustedNesting memory_exhausted_nesting;
 		return node.accept(memory_exhausted_nesting);
 	}

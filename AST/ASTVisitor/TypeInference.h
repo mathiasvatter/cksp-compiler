@@ -26,6 +26,7 @@ public:
 	NodeAST * visit(NodeSingleAssignment& node) override;
 	NodeAST * visit(NodeUIControl& node) override;
 	NodeAST * visit(NodeGetControl& node) override;
+	NodeAST * visit(NodeSetControl& node) override;
 
 	NodeAST * visit(NodeParamList& node) override;
     /// check if every member has same type

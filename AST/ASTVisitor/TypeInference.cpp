@@ -566,21 +566,18 @@ NodeAST * TypeInference::visit(NodeGetControl& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeSetControl& node) {
+	node.ui_id->accept(*this);
+	node.value->accept(*this);
+	match_assignment_types(&node, node.value.get());
+	node.ui_id->accept(*this);
+	node.value->accept(*this);
+	return &node;
+}
+
 NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
-	// cast node r_value to composite type if variable is composite type
-//	if(node.r_value ->get_node_type() == NodeType::ParamList and node.l_value->ty->get_type_kind() == TypeKind::Composite) {
-//		node.r_value->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.l_value->ty)->get_compound_type(), node.r_value->ty->get_element_type(), node.l_value->ty->get_dimensions());
-//	}
-	// ???? wtf is this for?
-	// if l_value is basic type and r_value is param list -> move first element of list to r_value
-//	if(node.l_value->ty->get_type_kind() == TypeKind::Basic and node.r_value->get_node_type() == NodeType::ParamList) {
-//		auto param_list = cast_node<NodeParamList>(node.r_value.get());
-//		if(param_list->params.size() == 1) {
-//			node.r_value->replace_with(std::move(param_list->params[0]));
-//		}
-//	}
 
 	match_assignment_types(node.l_value.get(), node.r_value.get());
 
@@ -588,12 +585,6 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
 
-	// check if object assigned and set flag
-//	if(node.l_value->ty->get_type_kind() == TypeKind::Object) {
-//		if(auto ref = cast_node<NodeReference>(node.l_value.get())) {
-//			ref->declaration->has_obj_assigned = node.r_value->ty->get_element_type() != TypeRegistry::Nil;
-//		}
-//	}
 	m_def_provider->add_to_assignments(&node);
 	return &node;
 }

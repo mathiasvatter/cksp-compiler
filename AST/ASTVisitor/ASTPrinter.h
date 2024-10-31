@@ -56,6 +56,7 @@ public:
 	NodeAST * visit(NodeFunctionCall& node) override;
 	NodeAST * visit(NodeFunctionDefinition& node) override;
 	NodeAST * visit(NodeGetControl& node) override;
+	NodeAST * visit(NodeSetControl& node) override;
 	NodeAST * visit(NodeAccessChain& node) override;
 
     inline void generate(const std::string& path) const {

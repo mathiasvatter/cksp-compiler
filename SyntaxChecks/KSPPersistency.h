@@ -16,15 +16,15 @@ public:
 		if(node.variable->get_node_type() == NodeType::UIControl) {
 			auto ui_control = static_cast<NodeUIControl*>(node.variable.get());
 			if(ui_control->control_var->persistence.has_value()) {
-				auto new_declaration = clone_as<NodeSingleDeclaration>(&node);
+				auto new_declaration = std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok);
 				auto body = add_persistency_functions(ui_control->control_var.get());
-				body->prepend_stmt(std::make_unique<NodeStatement>(std::move(new_declaration), node.tok));
+				body->prepend_as_stmt(std::move(new_declaration));
 				return node.replace_with(std::move(body));
 			}
 		} else if(node.variable->persistence.has_value()) {
-			auto new_declaration = clone_as<NodeSingleDeclaration>(&node);
+			auto new_declaration = std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok);
 			auto body = add_persistency_functions(new_declaration->variable.get());
-			body->prepend_stmt(std::make_unique<NodeStatement>(std::move(new_declaration), node.tok));
+			body->prepend_as_stmt(std::move(new_declaration));
 			return node.replace_with(std::move(body));
 		}
 		return &node;
@@ -71,7 +71,7 @@ private:
 				var->tok
 			);
 			make_persistent->kind = NodeFunctionCall::Kind::Builtin;
-			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(make_persistent), var->tok));
+			node_body->add_as_stmt(std::move(make_persistent));
 		}
 		return node_body;
 	}

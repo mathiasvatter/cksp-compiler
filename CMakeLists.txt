@@ -187,4 +187,5 @@ add_executable(cksp main.cpp
         Lowering/LoweringRetain.h
         Lowering/LoweringDelete.h
         Lowering/LoweringNumElements.h
+        Desugaring/DesugarSingleAssignment.h
 )

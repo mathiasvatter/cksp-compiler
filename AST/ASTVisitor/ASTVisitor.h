@@ -180,6 +180,7 @@ public:
 	};
 	virtual NodeAST* visit(NodeSetControl& node) {
 		node.ui_id->accept(*this);
+		node.value->accept(*this);
 		return &node;
 	};
     virtual NodeAST* visit(NodeConst& node) {
