@@ -39,6 +39,22 @@ struct Point
 	end function
 end struct
 
+struct Note
+	declare pitch: int
+	declare velocity: int
+
+	function __init__(self, p: int, v: int)
+		self.pitch := p
+		self.velocity := v
+	end function
+
+	function play(self): int
+		return play_note(self.pitch, self.velocity, 0, -1)
+	end function
+end struct
+
+
+
 // struct Note
 // 	declare pitch: int
 // 	declare velocities[10]: int[]
@@ -85,7 +101,8 @@ on init
 	// // btn_1, _ := return_twice()
 	// declare n[10] := (0)
 	// declare array[10] : int[] := return_init(n)
-
+	// 
+	// 
 	declare ndarray[10,10]
 	message(search_matrix(ndarray, 3), "3", "f")
 
@@ -137,5 +154,4 @@ end function
 {*******************************************************************************************************************
 												* MACROS *
 *******************************************************************************************************************}
-
 

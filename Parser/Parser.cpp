@@ -33,7 +33,7 @@ std::string Parser::sanitize_binary(const std::string& input) {
 
 std::string Parser::sanitize_hex(const std::string& input) {
     // Überprüfen, ob der String mit einer Ziffer zwischen 0 und 9 beginnt und mit "h" endet
-    if (input.size() > 1 && isdigit(input[0]) && input.back() == 'h') {
+    if (input.size() > 1 && isdigit(input[0]) && (input.back() == 'h' || input.back() == 'H')) {
         // Entfernen der ersten Ziffer und des letzten "h"
         std::string newStr = input.substr(1, input.size() - 2);
         // Hinzufügen von "0x" am Anfang
