@@ -61,6 +61,7 @@ enum class NodeType {
 	SingleAssignment,
 	Declaration,
 	SingleDeclaration,
+	FunctionParam,
 	Return,
 	SingleReturn,
 	GetControl,

@@ -441,7 +441,7 @@ private:
 		auto func_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				name,
-				std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(m_struct.node_self.get()), tok),
+				std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(m_struct.node_self.get())),
 				tok
 			),
 			std::nullopt,

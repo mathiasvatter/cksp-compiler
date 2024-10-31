@@ -361,13 +361,13 @@ std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 }
 
 NodeFunctionDefinition *NodeStruct::generate_init_method() {
-	std::vector<std::unique_ptr<NodeSingleDeclaration>> param_list;
-	param_list.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node_self.get()), nullptr, tok));
+	std::vector<std::unique_ptr<NodeFunctionParam>> param_list;
+	param_list.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_self.get())));
 	auto node_block = std::make_unique<NodeBlock>(this->tok);
 	for(auto & mem : this->member_table) {
 		std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
 		auto member_ref = mem.second->to_reference();
-		param_list.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(mem.second), nullptr, tok));
+		param_list.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(mem.second)));
 		member_ref->name = "self." + member_ref->name;
 		assignment = std::make_unique<NodeSingleAssignment>(
 			std::move(member_ref),
@@ -416,7 +416,7 @@ NodeFunctionDefinition *NodeStruct::generate_repr_method() {
 	auto function_def = std::make_unique<NodeFunctionDefinition>(
 		std::make_unique<NodeFunctionHeader>(
 			"__repr__",
-			std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node_self.get()), nullptr, tok),
+			std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_self.get())),
 			this->tok
 		),
 		std::nullopt,
@@ -445,7 +445,9 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	methods.clear();
 	program->update_function_lookup();
 	this->update_method_table();
-
+//	for(auto & mem: member_table) {
+//		mem.second->is_local = false;
+//	}
 	program->init_callback->statements->prepend_body(std::move(members));
 	members = std::make_unique<NodeBlock>(Token());
 	this->update_member_table();

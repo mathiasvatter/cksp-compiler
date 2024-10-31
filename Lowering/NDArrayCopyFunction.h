@@ -115,7 +115,7 @@ private:
 	/// upper bounds for the iterators
 	std::vector<std::unique_ptr<NodeAST>> upper_bounds;
 	/// function parameters
-	std::vector<std::unique_ptr<NodeSingleDeclaration>> func_params;
+	std::vector<std::unique_ptr<NodeFunctionParam>> func_params;
 
 
 	void generate_bounds() {
@@ -199,23 +199,23 @@ private:
 		if(array->get_node_type() == NodeType::ArrayRef) {
 			node_array->ty = array->ty;
 			node_array->name = "original";
-			func_params.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node_array.get()), array->tok));
+			func_params.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_array.get())));
 		} else if(array->get_node_type() == NodeType::NDArrayRef) {
 			node_ndarray->ty = array->ty;
 			node_ndarray->name = "original";
-			func_params.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node_ndarray.get()), array->tok));
+			func_params.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_ndarray.get())));
 		}
 		if(array_to_copy->get_node_type() == NodeType::ArrayRef) {
 			node_array->ty = array_to_copy->ty;
 			node_array->name = "to_copy";
-			func_params.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node_array.get()), array->tok));
+			func_params.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_array.get())));
 		} else if(array_to_copy->get_node_type() == NodeType::NDArrayRef) {
 			node_ndarray->ty = array_to_copy->ty;
 			node_ndarray->name = "to_copy";
-			func_params.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node_ndarray.get()), array->tok));
+			func_params.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_ndarray.get())));
 		}
 		for(auto &dim : dim_vars_to_copy) {
-			func_params.push_back(std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(dim.get()), array->tok));
+			func_params.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(dim.get())));
 		}
 	}
 

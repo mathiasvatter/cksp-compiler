@@ -147,13 +147,13 @@ struct NodeNDArray : NodeComposite {
 
 struct NodeFunctionHeader: NodeDataStructure {
 	bool has_forced_parenth = false;
-	std::vector<std::unique_ptr<NodeSingleDeclaration>> params;
+	std::vector<std::unique_ptr<NodeFunctionParam>> params;
 	inline explicit NodeFunctionHeader(std::string name, Token tok) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader) {}
-	inline NodeFunctionHeader(std::string name, std::vector<std::unique_ptr<NodeSingleDeclaration>> params, Token tok)
+	inline NodeFunctionHeader(std::string name, std::vector<std::unique_ptr<NodeFunctionParam>> params, Token tok)
 		: NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader), params(std::move(params)) {
 		set_child_parents();
 	};
-	inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeSingleDeclaration> param, Token tok)
+	inline NodeFunctionHeader(std::string name, std::unique_ptr<NodeFunctionParam> param, Token tok)
 		: NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader) {
 		params.push_back(std::move(param));
 		set_child_parents();
@@ -185,16 +185,16 @@ struct NodeFunctionHeader: NodeDataStructure {
 		return ty;
 	}
 	void add_param(std::unique_ptr<NodeDataStructure> param) {
-		auto decl = std::make_unique<NodeSingleDeclaration>(std::move(param), nullptr, tok);
+		auto decl = std::make_unique<NodeFunctionParam>(std::move(param));
 		decl->parent = this;
 		params.push_back(std::move(decl));
 	}
-	void add_param(std::unique_ptr<NodeSingleDeclaration> param) {
+	void add_param(std::unique_ptr<NodeFunctionParam> param) {
 		param->parent = this;
 		params.push_back(std::move(param));
 	}
 	void prepend_param(std::unique_ptr<NodeDataStructure> param) {
-		auto decl = std::make_unique<NodeSingleDeclaration>(std::move(param), nullptr, tok);
+		auto decl = std::make_unique<NodeFunctionParam>(std::move(param));
 		decl->parent = this;
 		params.insert(params.begin(), std::move(decl));
 	}

@@ -46,11 +46,14 @@ public:
 
 	inline NodeAST * visit(NodeSingleDeclaration& node) override {
 		// delete "self"
-		if(!node.is_func_param() and node.variable->name == "self") {
+		if(node.variable->name == "self") {
 			return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
 		}
 		// turn member into array if it is a member
 		node.variable->accept(*this);
+		if(node.variable->is_member()) {
+			node.variable->is_local = false;
+		}
 		if(node.value) node.value->accept(*this);
 
 		// turn node.value into param list if is member and has been turned into array

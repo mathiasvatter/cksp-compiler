@@ -450,6 +450,35 @@ std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(Node
     return node_assign_statement;
 }
 
+// ************* NodeFunctionParam ***************
+NodeAST *NodeFunctionParam::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeFunctionParam::NodeFunctionParam(const NodeFunctionParam& other)
+	: NodeInstruction(other), variable(clone_unique(other.variable)),
+	  value(clone_unique(other.value)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeFunctionParam::clone() const {
+	return std::make_unique<NodeFunctionParam>(*this);
+}
+NodeAST *NodeFunctionParam::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (variable.get() == oldChild) {
+		if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.release())) {
+			variable = std::unique_ptr<NodeDataStructure>(new_data_structure);
+			return variable.get();
+		}
+	} else if (value.get() == oldChild) {
+		value = std::move(newChild);
+		return value.get();
+	}
+	return nullptr;
+}
+
+ASTLowering* NodeFunctionParam::get_lowering(NodeProgram *program) const {
+	return nullptr;
+}
+
 // ************* NodeReturn ***************
 NodeAST *NodeReturn::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);

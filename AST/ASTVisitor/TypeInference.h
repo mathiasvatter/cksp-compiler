@@ -21,6 +21,7 @@ public:
 
     NodeAST * visit(NodeCallback& node) override;
 
+	NodeAST * visit(NodeFunctionParam& node) override;
 	NodeAST * visit(NodeSingleDeclaration& node) override;
 	NodeAST * visit(NodeSingleAssignment& node) override;
 	NodeAST * visit(NodeUIControl& node) override;

@@ -477,6 +477,16 @@ NodeAST * TypeInference::visit(NodeInitializerList& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeFunctionParam& node) {
+	node.variable->accept(*this);
+	if(node.value) {
+		node.value->accept(*this);
+		match_assignment_types(node.variable.get(), node.value.get());
+		node.variable->accept(*this);
+	}
+	return &node;
+}
+
 
 NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	node.variable->accept(*this);
@@ -492,7 +502,7 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	m_def_provider->add_to_declarations(&node);
 
 	// if declaration is pointer -> always initialize with nil!
-	if(!node.is_func_param() and node.variable->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+	if(node.variable->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 		if(!node.value) {
 			auto nil = std::make_unique<NodeNil>(node.tok);
 			nil->parent = &node;
