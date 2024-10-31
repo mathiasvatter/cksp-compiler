@@ -209,10 +209,17 @@ NodeAST * ASTPrinter::visit(NodeDeclaration &node) {
 	return &node;
 }
 
-NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
-	if(!node.is_func_param()) {
-		os << "declare ";
+NodeAST * ASTPrinter::visit(NodeFunctionParam & node) {
+	node.variable->accept(*this);
+	if(node.value) {
+		os << " := ";
+		node.value->accept(*this);
 	}
+	return &node;
+}
+
+NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
+	os << "declare ";
 	node.variable->accept(*this);
 	if(node.value) {
         os << " := ";

@@ -122,6 +122,7 @@ protected:
 
     Result<std::unique_ptr<NodeSingleAssignment>> parse_single_assign_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeSingleDeclaration>> parse_single_declare_statement(NodeAST* parent);
+	Result<std::unique_ptr<NodeFunctionParam>> parse_function_param(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_declare_array(NodeAST* parent);
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);

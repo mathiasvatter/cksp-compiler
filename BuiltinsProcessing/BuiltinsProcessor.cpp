@@ -167,7 +167,7 @@ Result<std::unique_ptr<NodeArray>> BuiltinsProcessor::parse_builtin_array() {
 
 Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin_function() {
     Token func_name = consume(m_tokens); // consume function name
-    std::vector<std::unique_ptr<NodeSingleDeclaration>> func_args;
+    std::vector<std::unique_ptr<NodeFunctionParam>> func_args;
 	std::vector<Type*> types;
     bool has_forced_parenth = false;
     if (peek(m_tokens).type == token::OPEN_PARENTH) {
@@ -295,25 +295,25 @@ Result<std::unique_ptr<NodeParamList>> BuiltinsProcessor::parse_builtin_args_lis
     return Result<std::unique_ptr<NodeParamList>>(std::move(func_args));
 }
 
-Result<std::vector<std::unique_ptr<NodeSingleDeclaration>>> BuiltinsProcessor::parse_builtin_params_list() {
-	std::vector<std::unique_ptr<NodeSingleDeclaration>> func_params;
+Result<std::vector<std::unique_ptr<NodeFunctionParam>>> BuiltinsProcessor::parse_builtin_params_list() {
+	std::vector<std::unique_ptr<NodeFunctionParam>> func_params;
 	while(peek(m_tokens).type != token::CLOSED_PARENTH) {
 		if(peek(m_tokens).type == token::CLOSED_PARENTH) break;
 		if(peek(m_tokens).type == token::KEYWORD or peek(m_tokens).type == token::TO) {
 			Token tok = peek(m_tokens);
 			auto node_arg_res = parse_builtin_variable();
 			if(node_arg_res.is_error()) {
-				return Result<std::vector<std::unique_ptr<NodeSingleDeclaration>>>(node_arg_res.get_error());
+				return Result<std::vector<std::unique_ptr<NodeFunctionParam>>>(node_arg_res.get_error());
 			}
 			auto arg = std::move(node_arg_res.unwrap());
-			func_params.push_back(std::make_unique<NodeSingleDeclaration>(std::move(arg), tok));
+			func_params.push_back(std::make_unique<NodeFunctionParam>(std::move(arg)));
 		} else {
-			return Result<std::vector<std::unique_ptr<NodeSingleDeclaration>>>(CompileError(ErrorType::PreprocessorError,
+			return Result<std::vector<std::unique_ptr<NodeFunctionParam>>>(CompileError(ErrorType::PreprocessorError,
 			"Failed loading builtins. Found unknown syntax in function parameters.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
 		}
 		if(peek(m_tokens).type == token::COMMA) consume(m_tokens); // consume comma
 	}
-	return Result<std::vector<std::unique_ptr<NodeSingleDeclaration>>>(std::move(func_params));
+	return Result<std::vector<std::unique_ptr<NodeFunctionParam>>>(std::move(func_params));
 }
 
 bool BuiltinsProcessor::is_property_function(const std::string &fun_name) {

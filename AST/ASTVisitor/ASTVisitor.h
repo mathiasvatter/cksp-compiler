@@ -109,6 +109,11 @@ public:
 		node.right->accept(*this);
 		return &node;
 	};
+	virtual NodeAST* visit(NodeFunctionParam& node) {
+		node.variable ->accept(*this);
+		if(node.value) node.value -> accept(*this);
+		return &node;
+	};
     virtual NodeAST* visit(NodeDeclaration& node) {
         for(auto const &decl : node.variable) decl->accept(*this);
 		if(node.value) node.value -> accept(*this);

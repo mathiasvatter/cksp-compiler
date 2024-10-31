@@ -155,7 +155,7 @@ private:
 		auto function_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
-				std::make_unique<NodeSingleDeclaration>(std::move(node_self), nullptr, node.tok),
+				std::make_unique<NodeFunctionParam>(std::move(node_self)),
 				node.tok
 			),
 			std::nullopt,
@@ -203,7 +203,7 @@ private:
 		auto function_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
-				std::make_unique<NodeSingleDeclaration>(std::move(node_self), nullptr, node.tok),
+				std::make_unique<NodeFunctionParam>(std::move(node_self)),
 				node.tok
 			),
 			std::nullopt,
