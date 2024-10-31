@@ -491,7 +491,7 @@ bool Tokenizer::is_binary(const std::string& str) {
                        std::all_of(str.begin() + 1, str.end(), [](char c){ return c == '0' || c == '1'; });
 
     // Überprüfen, ob der String mit "b" endet und nur 0 und 1 enthält
-    bool ends_width_b = str.size() > 1 && str.back() == 'b' &&
+    bool ends_width_b = str.size() > 1 && std::tolower(str.back()) == 'b' &&
                      std::all_of(str.begin(), str.end() - 1, [](char c){ return c == '0' || c == '1'; });
     // XOR-Prüfung
     return starts_with_b xor ends_width_b;
@@ -499,7 +499,7 @@ bool Tokenizer::is_binary(const std::string& str) {
 
 bool Tokenizer::is_hexadecimal(const std::string& str) {
     // Überprüfen, ob der String mit "0x" beginnt xor mit einer ziffer beginnt und mit h endet
-    return (str.substr(0, 2) == "0x") xor (str.size() > 1 && str.back() == 'h' && isdigit(str[0]));
+    return (str.substr(0, 2) == "0x") xor (str.size() > 1 && std::tolower(str.back()) == 'h' && isdigit(str[0]));
 }
 
 bool Tokenizer::is_callback_start() {

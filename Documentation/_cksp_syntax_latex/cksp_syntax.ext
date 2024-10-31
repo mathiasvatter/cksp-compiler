@@ -6,7 +6,7 @@
   keywords=[1]{
     START_INC, END_INC, SET_CONDITION, RESET_CONDITION, USE_CODE_IF, USE_CODE_IF_NOT, END_USE_CODE,
     NO_SYS_SCRIPT_GROUP_START, NO_SYS_SCRIPT_PEDAL, NO_SYS_SCRIPT_RLS_TRIG, import, as, \#pragma, output_path,
-    define, iterate_macro, literate_macro, continue, break, for, in, to, downto, steps, end, if, else, select, case, default, while, macro, struct, self, end, list, const, family,
+    define, iterate_macro, literate_macro, continue, break, for, in, to, downto, steps, end, if, else, select, case, default, while, macro, struct, end, list, const, family,
     function, end function, override, return, on, end on, async_complete, controller,
     init, listener, note, persistence_changed, pgs_changed, poly_at, release, rpn, nrpn, ui_control, ui_update, midi_in,
     ui_controls, family, end family, list, end list, macro, end macro, call
@@ -20,7 +20,7 @@
   keywords=[3]{true, false},
   keywords=[4]{declare, read, pers, instpers, local, global, polyphonic, ui_button, ui_file_selector, ui_label, ui_knob,
   ui_level_meter, ui_menu, ui_mouse_area, ui_panel, ui_slider, ui_switch, ui_table, ui_text_edit, ui_value_edit,
-  ui_waveform, ui_wavetable, ui_xy, const}, 
+  ui_waveform, ui_wavetable, ui_xy, const, self}, 
   keywords=[5]{\.and\., .or., .xor., .not., and, or, not, xor, mod},
   keywords=[6]{
     set_bounds, set_button_properties, set_knob_properties, set_label_properties, set_level_meter_properties,
