@@ -28,6 +28,18 @@ public:
 		return do_constant_propagation(&node);
 	}
 
+	NodeAST* visit(NodeGetControl& node) override {
+		auto error = CompileError(ErrorType::InternalError, "GetControl node should exist anymore in ConstantPropagation", "", node.tok);
+		error.exit();
+		return &node;
+	}
+
+	NodeAST* visit(NodeSetControl& node) override {
+		auto error = CompileError(ErrorType::InternalError, "SetControl node should exist anymore in ConstantPropagation", "", node.tok);
+		error.exit();
+		return &node;
+	}
+
 	// to constant propagation (with declared constants) everywhere except left hand of assignments
 	NodeAST* do_constant_propagation(NodeReference* node) {
 		if (node->data_type != DataType::Const) return node;

@@ -286,7 +286,13 @@ public:
 		return &node;
 	};
     virtual NodeAST* visit(NodeBlock& node) {
-        for(auto & stmt : node.statements) stmt->accept(*this);
+        for(auto & stmt : node.statements) {
+			if(!stmt) {
+				auto error = CompileError(ErrorType::InternalError, "Null statement in block.", "", node.tok);
+				error.exit();
+			}
+			stmt->accept(*this);
+		}
 		return &node;
     };
     virtual NodeAST* visit(NodeImport& node) {

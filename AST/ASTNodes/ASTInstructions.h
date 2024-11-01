@@ -112,6 +112,7 @@ struct NodeNumElements : NodeInstruction {
 		if(size) size->update_token_data(token);
 	}
 	ASTLowering* get_lowering(struct NodeProgram *program) const override;
+	ASTLowering* get_post_lowering(struct NodeProgram *program) const override;
 	void set_dimension(std::unique_ptr<NodeAST> new_dimension) {
 		dimension = std::move(new_dimension);
 		dimension->parent = this;
@@ -446,6 +447,10 @@ struct NodeSingleDeclaration : NodeInstruction {
 	void set_retain(std::unique_ptr<NodeRetain> retain) {
 		retain->parent = this;
 		retain_stmt = std::move(retain);
+	}
+	void set_value(std::unique_ptr<NodeAST> new_value) {
+		value = std::move(new_value);
+		value->parent = this;
 	}
 };
 

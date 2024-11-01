@@ -7,50 +7,51 @@
 
 #include "ASTLowering.h"
 
+/**
+ * First Lowering Phase of num_elements
+ * Checks for correct usage of num_elements with ndarrays and arrays (node second arg with arrays)
+ * Filling in dimension 0 in case ndarray ref got called without dimension
+ * Inserting clip function call for num member of NodeNumElements
+ */
 class LoweringNumElements : public ASTLowering {
 private:
-
+	std::string m_func_name = "Array"+OBJ_DELIMITER+"clip";
 public:
 	explicit LoweringNumElements(NodeProgram *program) : ASTLowering(program) {}
 
 
 	NodeAST * visit(NodeNumElements &node) override {
-		if(node.ty->get_type_kind() != TypeKind::Composite) {
+		if(node.array->ty->get_type_kind() != TypeKind::Composite) {
 			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
 			error.m_message = "<num_elements> can only be used with <Composite> types like <Arrays> or <NDArrays>.";
 			error.exit();
 		}
 
-		if(node.get_node_type() == NodeType::ArrayRef and node.dimension) {
+		if(node.array->get_node_type() == NodeType::ArrayRef and node.dimension) {
 			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
 			error.m_message = "The <dimension> parameter of <num_elements> can not be used with <ArrayRef>.";
 			error.exit();
 		}
 
 		// if no dimension is given and it is ndarray -> use 0
-		if(node.get_node_type() == NodeType::NDArrayRef and !node.dimension) {
+		if(node.array->get_node_type() == NodeType::NDArrayRef and !node.dimension) {
 			node.set_dimension(std::make_unique<NodeInt>(0, node.tok));
 		}
 
-		if(node.get_node_type() == NodeType::NDArrayRef) {
-			auto nd_array = static_cast<NodeNDArrayRef*>(node.array.get());
-			auto array_call = std::make_unique<NodeArrayRef>(
-				nd_array->sanitize_name() + OBJ_DELIMITER + "num_elements",
-				inline_clip_function(std::move(node.dimension), std::make_unique<NodeInt>(nd_array->sizes->size(), node.tok)),
-				node.tok
-			);
-			array_call->data_type = DataType::Const;
-			return node.replace_with(std::move(array_call));
+		if(node.array->get_node_type() == NodeType::NDArrayRef) {
+			auto nd_array = static_cast<NodeNDArray*>(node.array->declaration);
+			add_clip_function(m_program);
+			node.set_dimension(get_clip_call(std::move(node.dimension), std::make_unique<NodeInt>(nd_array->dimensions, node.tok)));
 		}
 
-		return node.replace_with(DefinitionProvider::num_elements(std::move(node.array)));
+		return &node;
 	}
 
-	static std::unique_ptr<NodeFunctionCall> get_clip_call(std::unique_ptr<NodeAST> x, std::unique_ptr<NodeAST> b) {
+	std::unique_ptr<NodeFunctionCall> get_clip_call(std::unique_ptr<NodeAST> x, std::unique_ptr<NodeAST> b) {
 		auto clip_call = std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeaderRef>(
-				"Array"+OBJ_DELIMITER+"clip",
+				m_func_name,
 				std::make_unique<NodeParamList>(Token(), std::move(x), std::move(b)),
 				Token()
 			),
@@ -118,10 +119,9 @@ public:
 	 * 	return x + (-x .and. sh_right(x, 31)) - ((x - b) .and. sh_right((b - x), 31))
 	 * end function
 	 */
-	inline static bool add_clip_function(NodeProgram* program) {
-		std::string func_name = "Array"+OBJ_DELIMITER+"clip";
+	inline bool add_clip_function(NodeProgram* program) {
 		// Prüfen, ob die Funktion bereits existiert
-		auto it = program->function_lookup.find({func_name, 2});
+		auto it = program->function_lookup.find({m_func_name, 2});
 		if (it != program->function_lookup.end()) {
 			return false; // Funktion existiert bereits
 		}
@@ -140,18 +140,7 @@ public:
 			DataType::Mutable,
 			Token()
 		);
-		auto node_function = std::make_unique<NodeFunctionDefinition>(
-			std::make_unique<NodeFunctionHeader>(
-				"clip",
-				Token(),
-				std::make_unique<NodeFunctionParam>(std::move(x)),
-				std::make_unique<NodeFunctionParam>(std::move(b))
-			),
-			std::nullopt,
-			false,
-			std::make_unique<NodeBlock>(Token(), true),
-			Token()
-		);
+
 		// b-x
 		auto b_minus_x = std::make_unique<NodeBinaryExpr>(
 			token::SUB,
@@ -204,16 +193,29 @@ public:
 			Token()
 		);
 
-		node_function->body->add_stmt(
-			std::make_unique<NodeStatement>(
-				std::make_unique<NodeReturn>(
-					Token(),
-					std::move(final_expr)
-				),
-				Token()
+		auto node_function = std::make_unique<NodeFunctionDefinition>(
+			std::make_unique<NodeFunctionHeader>(
+				m_func_name,
+				Token(),
+				std::make_unique<NodeFunctionParam>(std::move(x)),
+				std::make_unique<NodeFunctionParam>(std::move(b))
+			),
+			std::nullopt,
+			false,
+			std::make_unique<NodeBlock>(Token(), true),
+			Token()
+		);
+
+		node_function->body->add_as_stmt(
+			std::make_unique<NodeReturn>(
+				Token(),
+				std::move(final_expr)
 			)
 		);
 
+		node_function->num_return_stmts = 1;
+		node_function->num_return_params = 1;
+		node_function->return_stmts.push_back(static_cast<NodeReturn*>(node_function->body->statements[0]->statement.get()));
 		// Fügen Sie die neue Funktionsdefinition zum Programm hinzu
 		program->additional_function_definitions.push_back(std::move(node_function));
 

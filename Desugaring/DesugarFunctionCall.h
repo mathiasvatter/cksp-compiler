@@ -24,30 +24,32 @@ public:
 					node.function->args = inline_message_parameters(node.function->args);
 					node.function->args->parent = node.function->args.get();
 				}
-//				if (node.function->name == "num_elements") {
-//					node.kind = NodeFunctionCall::Kind::Builtin;
-//					std::unique_ptr<NodeReference> array = nullptr;
-//					if(is_instance_of<NodeReference>(array.get())) {
-//						array = std::unique_ptr<NodeReference>(static_cast<NodeReference*>(node.function->header->params->params[0].release()));
-//					} else {
-//						auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-//						error.m_message = "First argument for function call <num_elements> must be a reference.";
-//						error.exit();
-//					}
-//					if (node.function->header->params->params.size() == 2) {
-//						auto dimension = std::move(node.function->header->params->params[1]);
-//						auto num_elements =
-//							std::make_unique<NodeNumElements>(std::move(array), std::move(dimension), node.tok);
-//						num_elements->parent = &node;
-//						return node.replace_with(std::move(num_elements));
-//					}
-//					if (node.function->header->params->params.size() > 2) {
-//						auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-//						error.m_message = "Too many arguments for function call <num_elements>.";
-//						error.exit();
-//					}
-//				}
 			}
+		}
+
+		if (node.function->get_num_args() > 0 and node.function->name == "num_elements") {
+			node.kind = NodeFunctionCall::Kind::Builtin;
+			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+			if (node.function->get_num_args() > 2) {
+				error.m_message = "Too many arguments for function call <num_elements>.";
+				error.exit();
+			} else if (node.function->get_num_args() < 1) {
+				error.m_message = "Too few arguments for function call <num_elements>.";
+				error.exit();
+			}
+			std::unique_ptr<NodeReference> array = nullptr;
+			if(is_instance_of<NodeReference>(node.function->get_arg(0).get())) {
+				array = unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0)));
+			} else {
+				error.m_message = "First argument for function call <num_elements> must be a reference.";
+				error.exit();
+			}
+			std::unique_ptr<NodeAST> dimension = nullptr;
+			if (node.function->get_num_args() == 2) {
+				dimension = std::move(node.function->get_arg(1));
+			}
+			auto num_elements = std::make_unique<NodeNumElements>(std::move(array), std::move(dimension), node.tok);
+			return node.replace_with(std::move(num_elements));
 		}
 
 		node.get_definition(m_program);

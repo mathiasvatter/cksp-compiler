@@ -210,7 +210,7 @@ struct NodeFunctionHeader: NodeDataStructure {
 
 struct NodeUIControl : NodeDataStructure {
 	std::string ui_control_type;
-	std::unique_ptr<NodeDataStructure> control_var; //Array or Variable
+	std::shared_ptr<NodeDataStructure> control_var; //Array or Variable
 	std::unique_ptr<NodeParamList> params;
 	std::unique_ptr<NodeParamList> sizes; // if it is ui_control array
     NodeUIControl* declaration = nullptr;

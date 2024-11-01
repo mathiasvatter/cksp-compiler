@@ -31,17 +31,21 @@ public:
 	NodeAST * visit(NodeSetControl &node) override {
 		// lower in case of array or nd array
 		node.ui_id->lower(m_program);
+		node.ty = get_control_type(node.control_param);
 		auto call = get_function_call("set_control_par", node.control_param, &node);
 		call->function->prepend_arg(std::move(node.ui_id));
 		call->function->add_arg(std::move(node.value));
+		call->get_definition(m_program);
 		return node.replace_with(std::move(call));
 	}
 
 	NodeAST * visit(NodeGetControl &node) override {
 		// lower in case of array or nd array
 		node.ui_id->lower(m_program);
+		node.ty = get_control_type(node.control_param);
 		auto call = get_function_call("get_control_par", node.control_param, &node);
 		call->function->prepend_arg(std::move(node.ui_id));
+		call->get_definition(m_program);
 		return node.replace_with(std::move(call));
 	};
 
@@ -57,7 +61,7 @@ private:
 		return nullptr;
 	}
 
-	inline std::unique_ptr<NodeFunctionCall> get_function_call(std::string control_function, std::string control_param, NodeAST* node) {
+	inline std::unique_ptr<NodeFunctionCall> get_function_call(std::string control_function, const std::string& control_param, NodeAST* node) {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 		// get control_param from shorthand
 		auto control_par = get_full_control_param(control_param);
@@ -84,6 +88,26 @@ private:
         node_control_function->kind = NodeFunctionCall::Kind::Builtin;
 		return node_control_function;
 
+	}
+
+	static Type* get_control_type(const std::string& control_param) {
+		std::string control_par = to_lower(control_param);
+		static const std::unordered_set<std::string> str_substrings{"name", "path", "picture", "help", "identifier", "label", "text"};
+		static const std::unordered_set<std::string> int_substrings{"state", "alignment", "pos", "shifting"};
+		Type* type = TypeRegistry::Integer;
+		for (auto const &substring : str_substrings) {
+			if(contains(control_par, substring)) {
+				type = TypeRegistry::String;
+				break;
+			}
+		}
+		for (auto const &substring : int_substrings) {
+			if(contains(control_par, substring)) {
+				type = TypeRegistry::Integer;
+				break;
+			}
+		}
+		return type;
 	}
 
 };
