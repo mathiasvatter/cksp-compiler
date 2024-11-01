@@ -18,6 +18,7 @@
 #include "../../Lowering/LoweringDelete.h"
 #include "../../Lowering/LoweringNumElements.h"
 #include "../../Desugaring/DesugarSingleAssignment.h"
+#include "../../Lowering/PostLoweringNumElements.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -35,6 +36,7 @@ NodeAST *NodeStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST
         statement = std::move(newChild);
         return statement.get();
     }
+	throw std::runtime_error("NodeStatement::replace_child: oldChild not found");
     return nullptr;
 }
 
@@ -250,8 +252,13 @@ NodeAST *NodeNumElements::replace_child(NodeAST* oldChild, std::unique_ptr<NodeA
 	return nullptr;
 }
 
-ASTLowering* NodeNumElements::get_lowering(struct NodeProgram *program) const {
+ASTLowering* NodeNumElements::get_lowering(NodeProgram *program) const {
 	static LoweringNumElements lowering(program);
+	return &lowering;
+}
+
+ASTLowering* NodeNumElements::get_post_lowering(NodeProgram *program) const {
+	static PostLoweringNumElements lowering(program);
 	return &lowering;
 }
 

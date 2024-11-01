@@ -36,9 +36,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeWildcard& node) {
 NodeAST * ASTSemanticAnalysis::visit(NodeNumElements& node) {
 	node.array->accept(*this);
 	if(node.dimension) node.dimension->accept(*this);
-	if(!node.size) {
-		node.size->accept(*this);
-	}
+	if(node.size) node.size->accept(*this);
 	return &node;
 }
 

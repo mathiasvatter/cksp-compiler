@@ -44,7 +44,9 @@ public:
 			node_body->scope = true;
 			for(auto &decl : stmt.second) {
 				decl.second->is_promoted = true;
-				node_body->add_stmt(std::make_unique<NodeStatement>(clone_as<NodeSingleDeclaration>(decl.second.get()), node.tok));
+				node_body->add_as_stmt(
+					clone_as<NodeSingleDeclaration>(decl.second.get())
+				);
 			}
 			node_body->add_stmt(clone_as<NodeStatement>(stmt.first));
 			stmt.first->statement->replace_with(std::move(node_body));

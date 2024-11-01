@@ -50,11 +50,17 @@ public:
 		return &node;
 	}
 
-    /// lowering of get control statements from property functions
-	NodeAST * visit(NodeSingleAssignment &node) override {
+    /// lowering of set control statements from property functions
+	NodeAST * visit(NodeSetControl &node) override {
+		node.ui_id->accept(*this);
+		node.value->accept(*this);
 		return node.lower(m_program);
 	};
 
+	NodeAST * visit(NodeGetControl &node) override {
+		node.ui_id->accept(*this);
+		return node.lower(m_program);
+	}
 
 
     NodeAST * visit(NodeVariableRef &node) override {
@@ -81,7 +87,7 @@ public:
 	}
 
 private:
-    static inline std::unique_ptr<NodeBlock> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeaderRef> header_ref) {
+    inline std::unique_ptr<NodeBlock> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeaderRef> header_ref) {
         auto node_body = std::make_unique<NodeBlock>(header_ref->tok);
         for(int i = 1; i<header_ref->args->size(); i++) {
             auto node_set_control = std::make_unique<NodeSetControl>(

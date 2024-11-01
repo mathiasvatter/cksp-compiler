@@ -224,7 +224,7 @@ NodeAST *NodeUIControl::accept(struct ASTVisitor &visitor) {
 }
 NodeUIControl::NodeUIControl(const NodeUIControl& other)
 	: NodeDataStructure(other), ui_control_type(other.ui_control_type),
-	  control_var(clone_unique(other.control_var)), params(clone_unique(other.params)),
+	  control_var(clone_shared(other.control_var)), params(clone_unique(other.params)),
 	  sizes(clone_unique(other.sizes)), declaration(other.declaration) {
 	set_child_parents();
 }
@@ -233,9 +233,8 @@ std::unique_ptr<NodeAST> NodeUIControl::clone() const {
 }
 NodeAST *NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (control_var.get() == oldChild) {
-		if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.get())) {
-			newChild.release();
-			control_var = std::unique_ptr<NodeDataStructure>(new_data_structure);
+		if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.release())) {
+			control_var = std::shared_ptr<NodeDataStructure>(new_data_structure);
 			return control_var.get();
 		}
 	}

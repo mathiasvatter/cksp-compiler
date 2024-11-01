@@ -43,14 +43,18 @@ struct NodeAST {
     virtual void update_token_data(const Token& token) {
         tok.line = token.line; tok.file = token.file;
     }
-	[[nodiscard]] virtual class ASTLowering * get_lowering(struct NodeProgram *program) const {
-		return nullptr;
-	}
-    [[nodiscard]] virtual ASTDesugaring *get_desugaring(NodeProgram *program) const {
+    [[nodiscard]] virtual ASTDesugaring *get_desugaring(struct NodeProgram *program) const {
         return nullptr;
     }
+	[[nodiscard]] virtual class ASTLowering * get_lowering(NodeProgram *program) const {
+		return nullptr;
+	}
+	[[nodiscard]] virtual class ASTLowering * get_post_lowering(NodeProgram *program) const {
+		return nullptr;
+	}
 	virtual NodeAST* desugar(NodeProgram* program);
 	virtual NodeAST* lower(NodeProgram* program);
+	virtual NodeAST* post_lower(NodeProgram* program);
     [[nodiscard]] NodeType get_node_type() const { return node_type; }
 	/// attempts to set the element type of this node to element_type if node has Composite Type
 	/// and elemen_type is Basic Type
@@ -145,7 +149,6 @@ struct NodeReference : NodeAST {
 	static struct NodeStruct* get_object_ptr(NodeProgram* program, const std::string& obj);
 	/// lower type from object to int if applicable
 	NodeReference* lower_type();
-
 	/// checks if reference is l_value in an assignment
 	bool is_l_value();
 	/// checks if reference is somewhere in the r_value expresssion

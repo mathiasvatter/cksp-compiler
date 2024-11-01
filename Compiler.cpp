@@ -13,6 +13,7 @@
 #include "AST/ASTVisitor/ASTKSPSyntaxCheck.h"
 #include "AST/ASTVisitor/ASTInitializerFunctionInlining.h"
 #include "AST/ASTVisitor/ASTPointerScope.h"
+#include "AST/ASTVisitor/ASTCollectPostLowerings.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -186,18 +187,20 @@ void Compiler::compile() {
 
     compile_time.stop("Function Inlining");
 	std::cout << compile_time.print_timer("Function Inlining") << std::endl;
-	compile_time.start("Variable Checking 2");
+	compile_time.start("Post Lowering");
 
-//	ASTRelinkGlobalScope relink_global_scope(&m_definition_provider);
-//	ast->accept(relink_global_scope);
+	ASTRelinkGlobalScope relink_global_scope(&m_definition_provider);
+	ast->accept(relink_global_scope);
+	ASTCollectPostLowerings post_lowering(&m_definition_provider);
+	ast->accept(post_lowering);
 
-	compile_time.stop("Variable Checking 2");
-	std::cout << compile_time.print_timer("Variable Checking 2") << std::endl;
+	compile_time.stop("Post Lowering");
+	std::cout << compile_time.print_timer("Post Lowering") << std::endl;
 	compile_time.start("Optimization");
 
 	ast->inline_global_variables();
-//	ASTOptimizations optimizations;
-//	optimizations.optimize(*ast);
+	ASTOptimizations optimizations;
+	ASTOptimizations::optimize(*ast);
 
 	compile_time.stop("Optimization");
 	std::cout << compile_time.print_timer("Optimization") << std::endl;

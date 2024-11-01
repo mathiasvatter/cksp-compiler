@@ -51,11 +51,12 @@ public:
 							std::optional<Token>(),
 							node_ndarray->name + OBJ_DELIMITER+"num_elements",
 							TypeRegistry::ArrayOfInt,
-							std::make_unique<NodeInt>(node_ndarray->dimensions, node.tok),
+							std::make_unique<NodeInt>(node_ndarray->dimensions+1, node.tok),
 							node.tok
 					),
 					node.tok
 			);
+			node_num_elements_decl->variable->data_type = DataType::Const;
 			auto node_init_list = std::make_unique<NodeInitializerList>(
 				node.tok,
 				get_lowered_size_expr(*node_ndarray)
@@ -80,6 +81,7 @@ public:
 				node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declaration), node.tok));
 				node_init_list->add_element(node_ndarray->sizes->params[i]->clone());
 			}
+			node_num_elements_decl->set_value(std::move(node_init_list));
 			node_body->add_as_stmt(std::move(node_num_elements_decl));
 			node.variable->accept(*this);
 			node_body->add_as_stmt(std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok));

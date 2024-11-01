@@ -35,7 +35,13 @@ NodeAST * ASTPrinter::visit(NodeBreak& node) {
 }
 
 NodeAST * ASTPrinter::visit(NodeNumElements& node) {
-	os << node.get_string();
+	os << "num_elements[";
+	node.array->accept(*this);
+	if(node.dimension) {
+		os << ", ";
+		node.dimension->accept(*this);
+	}
+	os << "]";
 	return &node;
 }
 

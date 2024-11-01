@@ -80,6 +80,13 @@ void NodeAST::debug_print() {
 #endif
 }
 
+NodeAST *NodeAST::desugar(NodeProgram *program) {
+	if(auto desugaring = get_desugaring(program)) {
+		return accept(*desugaring);
+	}
+	return this;
+}
+
 NodeAST *NodeAST::lower(NodeProgram *program) {
 	if(auto lowering = get_lowering(program)) {
 		return accept(*lowering);
@@ -87,9 +94,9 @@ NodeAST *NodeAST::lower(NodeProgram *program) {
 	return this;
 }
 
-NodeAST *NodeAST::desugar(NodeProgram *program) {
-	if(auto desugaring = get_desugaring(program)) {
-		return accept(*desugaring);
+NodeAST *NodeAST::post_lower(NodeProgram *program) {
+	if(auto post_lowering = get_post_lowering(program)) {
+		return accept(*post_lowering);
 	}
 	return this;
 }

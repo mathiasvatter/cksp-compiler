@@ -324,9 +324,7 @@ NodeAST * TypeInference::visit(NodeNumElements& node) {
 		error.exit();
 	}
 	if(node.dimension) node.dimension->accept(*this);
-	if(!node.size) {
-		node.size->accept(*this);
-	}
+	if(node.size) node.size->accept(*this);
 	node.ty = TypeRegistry::Integer;
 	return &node;
 }

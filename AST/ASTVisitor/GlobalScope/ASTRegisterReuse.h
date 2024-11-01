@@ -48,13 +48,11 @@ public:
 				// set local to false to avoid renaming in rename_local_vars
 				local_decl->variable->is_local = false;
 				if(callback.first == m_program->init_callback) continue;
-				local_declare_statements->add_stmt(
-					std::make_unique<NodeStatement>(
+				local_declare_statements->add_as_stmt(
 						std::make_unique<NodeSingleDeclaration>(
-							clone_as<NodeDataStructure>(local_decl->variable.get()),
+							local_decl->variable,
 							nullptr, node.tok
-						),
-						node.tok)
+						)
 				);
 				local_decl->replace_with(std::move(to_assign_statement(*local_decl)));
 //				auto node_assign_statement = local_decl->to_assign_stmt();
@@ -149,13 +147,14 @@ public:
 				node.variable->is_local = false;
 				node.variable->is_global = true;
 				if(node.value) node.value->accept(*this);
-				auto node_global_const = clone_as<NodeSingleDeclaration>(&node);
+				auto node_global_const = std::make_unique<NodeSingleDeclaration>(
+					node.variable,
+					std::move(node.value),
+					node.tok
+				);
 				m_def_provider->set_declaration(node_global_const->variable.get(), !node.variable->is_local);
-				m_program->global_declarations->add_stmt(
-					std::make_unique<NodeStatement>(
-						std::move(node_global_const),
-						node.tok
-					)
+				m_program->global_declarations->add_as_stmt(
+					std::move(node_global_const)
 				);
 				return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
 			}
