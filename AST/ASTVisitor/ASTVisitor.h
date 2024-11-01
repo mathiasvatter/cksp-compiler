@@ -32,6 +32,17 @@ public:
 	static CompileError get_raw_compile_error(ErrorType err_type, const NodeAST& node);
     static std::unique_ptr<NodeBlock> make_while_loop(NodeReference* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent);
 	static std::unique_ptr<NodeIf> make_nil_check(std::unique_ptr<NodeReference> ref);
+	static std::shared_ptr<NodeVariable> get_iterator_var(const Token& tok) {
+		auto iter = std::make_shared<NodeVariable>(
+			std::nullopt,
+			"_iter",
+			TypeRegistry::Integer,
+			DataType::Mutable,
+			tok
+		);
+		iter->is_local = true;
+		return iter;
+	}
 
 public:
     virtual NodeAST* visit(NodeDeadCode& node) {return &node;};

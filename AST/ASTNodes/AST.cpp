@@ -787,6 +787,19 @@ std::shared_ptr<NodeDataStructure> &NodeFunctionDefinition::get_param(int i) {
 	return header->get_param(i);
 }
 
+bool NodeFunctionDefinition::is_expression_function() {
+	if(num_return_params == 1 and num_return_stmts == 1) {
+		if(return_variable.has_value()) return false;
+		if(body->statements.size() == 1) {
+			auto stmt = body->statements[0]->statement.get();
+			if(stmt->get_node_type() == NodeType::Return) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 // ************* NodeProgramm ***************
 NodeProgram::NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {
 	global_declarations = std::make_unique<NodeBlock>(Token());

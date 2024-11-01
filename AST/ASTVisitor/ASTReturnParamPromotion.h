@@ -17,6 +17,9 @@ public:
 
 	inline NodeAST* visit(NodeFunctionDefinition &node) override {
 		m_current_function = &node;
+		// do not rewrite if expression function
+		if(node.is_expression_function()) return &node;
+
 		if(node.return_variable.has_value()) {
 			node.num_return_params = 1;
 			node.return_variable.value()->data_type = DataType::Return;

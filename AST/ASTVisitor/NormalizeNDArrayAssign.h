@@ -191,13 +191,13 @@ private:
 		node_nd_array_ref->name = "ndarray";
 		node_nd_array_ref->sizes = nullptr;
 		// holds all iterators per wildcard
-		std::vector<std::unique_ptr<NodeDataStructure>> iterators; int count = 1; int count2 = 1;
+		std::vector<std::shared_ptr<NodeDataStructure>> iterators; int count = 1; int count2 = 1;
 		std::vector<std::unique_ptr<NodeAST>> lower_bounds;
 		std::vector<std::unique_ptr<NodeAST>> upper_bounds;
 		auto func_header = std::make_unique<NodeFunctionHeader>(func_name, node->tok);
 		for(auto & param : node_nd_array_ref->indexes->params) {
 			if(param->get_node_type() == NodeType::Wildcard) {
-				auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter"+std::to_string(count), TypeRegistry::Integer, DataType::Mutable, node->tok);
+				auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter"+std::to_string(count), TypeRegistry::Integer, DataType::Mutable, node->tok);
 				node_iterator->is_local = true;
 				param = node_iterator->to_reference();
 				iterators.push_back(std::move(node_iterator));
@@ -226,7 +226,7 @@ private:
 			node->tok
 		);
 		node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node->tok));
-		node_body->wrap_in_loop_nest(std::move(iterators), std::move(lower_bounds), std::move(upper_bounds));
+		node_body->wrap_in_loop_nest(iterators, std::move(lower_bounds), std::move(upper_bounds));
 		auto node_ndarray = std::make_unique<NodeNDArray>(std::nullopt,
 														  "ndarray",
 														  TypeRegistry::add_composite_type(CompoundKind::Array, node->ty->get_element_type(), (int)node->sizes->params.size()),

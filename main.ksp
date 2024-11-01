@@ -115,6 +115,8 @@ on init
 	declare local p1 := Point(1, 2)
 	declare local p2 := Point(3, 4)
 	message(p1 + p2)
+	
+	ndarray[0, *] := ndarray[1, *]
 end on
 
 function return_init(init: int[]): int[]

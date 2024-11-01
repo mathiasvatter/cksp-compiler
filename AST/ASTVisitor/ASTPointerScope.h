@@ -110,6 +110,13 @@ public:
 	}
 
 	NodeAST* visit(NodeSingleDelete &node) override {
+		// delete statement can only be applied to pointers or arrays -> not to array indices
+		if((node.ptr->get_node_type() == NodeType::Array or node.ptr->get_node_type() == NodeType::NDArray)
+			and node.ptr->ty->get_type_kind() != TypeKind::Composite) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+			error.m_message = "Delete statement can only be applied to pointers or arrays, not to array indices.";
+			error.exit();
+		}
 		node.ptr->accept(*this);
 		remove_pointer(*static_cast<NodeReference*>(node.ptr.get()));
 		return &node;
@@ -216,7 +223,7 @@ public:
 	std::unique_ptr<NodeBlock> retain_arr_arr(NodeArrayRef* l_ref, NodeArrayRef* r_ref) {
 		// 3. variable is array -> copy into retain stmt
 		auto retain = std::make_unique<NodeBlock>(l_ref->tok);
-		retain->add_as_single_retain(clone_as<NodeReference>(l_ref), l_ref->get_size());
+		retain->add_as_single_retain(clone_as<NodeReference>(l_ref), std::make_unique<NodeInt>(1, l_ref->tok));
 		return retain;
 	}
 

@@ -58,7 +58,7 @@ public:
 			}
 			node.definition->visited = true;
 			// see if the function is a return-only function
-			if(is_expression_function(node.definition)) {
+			if(node.definition->is_expression_function()) {
 
 				m_program->function_call_stack.push(node.definition);
 
@@ -90,19 +90,6 @@ public:
 		}
 		if(node.args) node.args->accept(*this);
 		return &node;
-	}
-
-	static inline bool is_expression_function(NodeFunctionDefinition* def) {
-		if(def->num_return_params > 0) {
-			if(def->return_variable.has_value()) return false;
-			if(def->body->statements.size() == 1) {
-				auto stmt = def->body->statements[0]->statement.get();
-				if(stmt->get_node_type() == NodeType::Return) {
-					return true;
-				}
-			}
-		}
-		return false;
 	}
 
 	static inline std::unique_ptr<NodeAST> get_expression_func_return(NodeFunctionDefinition* def) {

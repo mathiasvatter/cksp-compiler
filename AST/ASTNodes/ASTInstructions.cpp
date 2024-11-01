@@ -218,7 +218,7 @@ bool NodeFunctionCall::is_string_env() {
 	// is within string environment
 	is_string |= parent->ty == TypeRegistry::String;
 	// is within message call
-	is_string |= parent->parent->get_node_type() == NodeType::FunctionHeader and static_cast<NodeFunctionHeader*>(parent->parent)->name == "message";
+	is_string |= parent->parent->get_node_type() == NodeType::FunctionHeaderRef and static_cast<NodeFunctionHeaderRef*>(parent->parent)->name == "message";
 	// is within return statement
 	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->definition->ty == TypeRegistry::String;
 	return is_string;
@@ -660,7 +660,7 @@ void NodeBlock::flatten() {
 }
 
 
-void NodeBlock::wrap_in_loop_nest(std::vector<std::unique_ptr<NodeDataStructure>> iterators,
+void NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>> iterators,
 								  std::vector<std::unique_ptr<NodeAST>> lower_bounds,
 								  std::vector<std::unique_ptr<NodeAST>> upper_bounds) {
 	std::unique_ptr<NodeBlock> inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
@@ -674,13 +674,31 @@ void NodeBlock::wrap_in_loop_nest(std::vector<std::unique_ptr<NodeDataStructure>
 			Token()
 		);
 		inner_body = std::make_unique<NodeBlock>(Token(), true);
-		inner_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_for), Token()));
+		inner_body->add_as_stmt(std::move(node_for));
 	}
 	for(auto & iterator : iterators) {
 		iterator->is_local = true;
-		auto node_decl = std::make_unique<NodeSingleDeclaration>(std::move(iterator), nullptr, Token());
-		inner_body->prepend_stmt(std::make_unique<NodeStatement>(std::move(node_decl), Token()));
+		auto node_decl = std::make_unique<NodeSingleDeclaration>(iterator, nullptr, Token());
+		inner_body->prepend_as_stmt(std::move(node_decl));
 	}
+	statements = std::move(inner_body->statements);
+}
+
+void NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound) {
+	std::unique_ptr<NodeBlock> inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
+	inner_body->scope = true;
+	auto node_for = std::make_unique<NodeFor>(
+		std::make_unique<NodeSingleAssignment>(iterator->to_reference(), std::move(lower_bound), Token()),
+		token::TO,
+		std::make_unique<NodeBinaryExpr>(token::SUB, std::move(upper_bound), std::make_unique<NodeInt>(1, Token()), Token()),
+		std::move(inner_body),
+		Token()
+	);
+	inner_body = std::make_unique<NodeBlock>(Token(), true);
+	inner_body->add_as_stmt(std::move(node_for));
+	iterator->is_local = true;
+	auto node_decl = std::make_unique<NodeSingleDeclaration>(iterator, nullptr, Token());
+	inner_body->prepend_as_stmt(std::move(node_decl));
 	statements = std::move(inner_body->statements);
 }
 
