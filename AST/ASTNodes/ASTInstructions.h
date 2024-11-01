@@ -638,9 +638,16 @@ struct NodeBlock : NodeInstruction {
 		}
 		return false;
 	}
-	void wrap_in_loop_nest(std::vector<std::unique_ptr<NodeDataStructure>> iterators,
+	void wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>> iterators,
 						   std::vector<std::unique_ptr<NodeAST>> lower_bounds,
 						   std::vector<std::unique_ptr<NodeAST>> upper_bounds);
+	void wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound);
+	std::unique_ptr<NodeAST>& get_statement(size_t index) {
+		return statements[index]->statement;
+	}
+	std::unique_ptr<NodeAST>& get_last_statement() {
+		return statements.back()->statement;
+	}
 };
 
 struct NodeFamily : NodeInstruction {

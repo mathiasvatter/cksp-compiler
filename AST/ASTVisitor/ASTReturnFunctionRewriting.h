@@ -24,9 +24,6 @@ public:
 
 	// TODO: Call Function Rewriting after Lowering -> call Function Call Hoisting first and then do return statement rewriting as parameters
 	inline NodeAST* visit(NodeProgram& node) override {
-		/// do immediate inlining of return-only functions
-		ASTExpressionFunctionInlining inlining(m_def_provider);
-		node.accept(inlining);
 		m_program = &node;
 
 		/// promote return values to parameters of func_defs
@@ -37,6 +34,10 @@ public:
 		// call hoisting after func lowering to profit from correct data types in definition params
 		FunctionCallHoisting hoisting;
 		node.accept(hoisting);
+
+		/// do immediate inlining of return-only functions
+		ASTExpressionFunctionInlining inlining(m_def_provider);
+		node.accept(inlining);
 
 		m_program->global_declarations->accept(*this);
 		for(auto & callback : node.callbacks) {
@@ -105,6 +106,10 @@ public:
 
 	// if assigned functioncall has return parameter -> make it argument
 	// replace single assignment with function call
+	// Pre Lowering:
+	// var := func_call()
+	// Post Lowering:
+	// func_call(var)
 	inline NodeAST* visit(NodeSingleAssignment &node) override {
 		node.r_value->accept(*this);
 		node.l_value->accept(*this);
@@ -122,6 +127,11 @@ public:
 		return &node;
 	}
 
+	// Pre Lowering:
+	// declare var := func_call()
+	// Post Lowering:
+	// declare var;
+	// func_call(var);
 	inline NodeAST* visit(NodeSingleDeclaration &node) override {
 		if (!node.value) return &node;
 		node.value->accept(*this);

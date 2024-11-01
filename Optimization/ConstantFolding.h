@@ -101,6 +101,21 @@ public:
 					return node.replace_with(std::move(new_node));
 				}
 			}
+		} else if(node.function->get_num_args() == 2) {
+			if(node.function->name == "sh_left" or node.function->name == "sh_right") {
+				if(all_params_are_type(node, NodeType::Int)) {
+					auto value = static_cast<NodeInt*>(node.function->get_arg(0).get());
+					auto shift = static_cast<NodeInt*>(node.function->get_arg(1).get());
+					int32_t result = 0;
+					if(node.function->name == "sh_left") {
+						result = value->value << shift->value;
+					} else {
+						result = value->value >> shift->value;
+					}
+					auto new_node = std::make_unique<NodeInt>(result, node.tok);
+					return node.replace_with(std::move(new_node));
+				}
+			}
 		}
 		return &node;
 	};

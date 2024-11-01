@@ -325,7 +325,7 @@ public:
 	NodeAST* do_substitution(NodeReference* ref) {
 		if(m_program->function_call_stack.empty()) return ref;
 		if(m_substitution_stack.empty()) return ref;
-//		if(!ref->declaration->is_function_param()) return ref;
+//		if(ref->declaration and !ref->declaration->is_function_param()) return ref;
 //		if(ref->data_type != DataType::Param) return ref;
 
 		if(auto substitute = get_substitute(ref->name)) {

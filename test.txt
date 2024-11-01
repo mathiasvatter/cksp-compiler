@@ -1,9 +1,5 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Fri Nov 01 16:02:54 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Fri Nov 01 22:38:57 2024 }
 on init
-  declare $loc_3
-  declare %loc_1[30]
-  declare $loc_2
-  declare $loc_0
   declare $Note__free_idx
   declare %Note__allocation[1000000]
   declare %Note__stack[1000000]
@@ -16,41 +12,50 @@ on init
   declare $Point__stack_top
   declare %Point__x[1000000]
   declare %Point__y[1000000]
-  declare $loc_4
+  declare $loc_5
   declare %_ndarray[100]
   declare $_return6
-  $loc_0 := 0
-  while($loc_0 = 0) 
-    $loc_2 := 0
-    while($loc_2 < num_elements(%loc_1)) 
-      %loc_1[$loc_2] := 0
-      inc($loc_2)
+  declare $loc_6
+  declare %loc_7[30]
+  declare $loc_8
+  declare $loc_9
+  $loc_6 := 0
+  while($loc_6 = 0) 
+    $loc_8 := 0
+    while($loc_8 < num_elements(%loc_7)) 
+      %loc_7[$loc_8] := 0
+      inc($loc_8)
     end while
-    $loc_3 := 0
-    $loc_2 := 0
-    while(($loc_2 <= (%ndarray__num_elements[1 + ((-1 .and. sh_right(1, 31)) + (-1 .and. sh_right(1, 31)))] - 1)) and ($loc_0 = 0)) 
-      $loc_3 := 0
-      while(($loc_3 <= (%ndarray__num_elements[2 + ((-2 .and. sh_right(2, 31)) + (0 .and. sh_right(0, 31)))] - 1)) and ($loc_0 = 0)) 
-        if(%_ndarray[($loc_2 * 10) + $loc_3] = 3)
-          $_return6 := ($loc_2 * 10) + $loc_3
-          $loc_0 := 1
+    $loc_9 := 0
+    $loc_8 := 0
+    while(($loc_8 <= (%ndarray__num_elements[1] - 1)) and ($loc_6 = 0)) 
+      $loc_9 := 0
+      while(($loc_9 <= (%ndarray__num_elements[2] - 1)) and ($loc_6 = 0)) 
+        if(%_ndarray[($loc_8 * 10) + $loc_9] = 3)
+          $_return6 := ($loc_8 * 10) + $loc_9
+          $loc_6 := 1
           continue
         end if
-        inc($loc_3)
+        inc($loc_9)
       end while
-      if($loc_0 = 1)
+      if($loc_6 = 1)
         continue
       end if
-      inc($loc_2)
+      inc($loc_8)
     end while
-    if($loc_0 = 1)
+    if($loc_6 = 1)
       continue
     end if
     $_return6 := -1
-    $loc_0 := 1
+    $loc_6 := 1
     continue
   end while
   message($_return6 & ", " & "3" & ", " & "f")
-  message(%ndarray__num_elements[2 + ((-2 .and. sh_right(2, 31)) + (0 .and. sh_right(0, 31)))])
+  message(%ndarray__num_elements[2])
+  $loc_9 := 0
+  while($loc_9 <= 9) 
+    %_ndarray[0 + $loc_9] := %_ndarray[0 + $loc_9]
+    inc($loc_9)
+  end while
 end on
 

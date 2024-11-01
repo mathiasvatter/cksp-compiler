@@ -52,7 +52,7 @@ public:
 			stmt.first->statement->replace_with(std::move(node_body));
 		}
 		for(auto & m_global_var : m_global_function_vars) {
-			m_program->global_declarations->add_stmt(std::make_unique<NodeStatement>(std::move(m_global_var.second), node.tok));
+			m_program->global_declarations->add_as_stmt(std::move(m_global_var.second));
 		}
 
 		return &node;
@@ -107,7 +107,7 @@ public:
 
 			if(!m_local_var_declarations[node.definition].empty()) {
 				// see if this call is in thread safe env -> if not, clone and promote local vars
-				if (!node.definition->is_thread_safe) {
+//				if (!node.definition->is_thread_safe) {
 					// do this only if current call is not threadsafe environment
 					for (auto &decl : m_local_var_declarations[node.definition]) {
 						// add local declarations of function definition to parameters
@@ -119,26 +119,26 @@ public:
 					}
 
 				// if threadsafe, add to global declarations
-				} else {
-					// put local declaration into global declaration as a one time thing
-					auto &declares = m_local_var_declarations[node.definition];
-					// check if variables were already added to global declarations
-					if (!declares.empty()) {
-						// otherwise add them to global declarations
-						for (auto &decl : declares) {
-							// set to global to prevent from being used in other functions by register reuse
-							m_global_function_vars.emplace(decl.first, std::move(decl.second));
-						}
-						declares.clear();
-					}
-				}
+//				} else {
+//					// put local declaration into global declaration as a one time thing
+//					auto &declares = m_local_var_declarations[node.definition];
+//					// check if variables were already added to global declarations
+//					if (!declares.empty()) {
+//						// otherwise add them to global declarations
+//						for (auto &decl : declares) {
+//							// set to global to prevent from being used in other functions by register reuse
+//							m_global_function_vars.emplace(decl.first, std::move(decl.second));
+//						}
+//						declares.clear();
+//					}
+//				}
 			}
 
 		}
 
 		if(node.definition) {
 			// if the call is not in a threadsafe environment
-			if(!node.definition->is_thread_safe) {
+//			if(!node.definition->is_thread_safe) {
 				// if the call is in a callback -> check if threadsafe (add to global declarations) or not (do parameter promotion)
 				if (m_program->function_call_stack.empty()) {
 					// add declaration statements to the statement right above the function call
@@ -155,7 +155,7 @@ public:
 						next_declares.emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
 					}
 				}
-			}
+//			}
 
 			// remove call flag when function is not thread safe
 			if(!node.definition->is_thread_safe and !node.function->has_no_args()) {

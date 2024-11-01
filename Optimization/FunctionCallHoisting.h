@@ -10,26 +10,17 @@
 /// Hoist function calls that return values and are userdefined out of control flow into a separate declaration
 class FunctionCallHoisting : public ASTVisitor {
 private:
-//	Gensym m_gensym;
 	NodeStatement* m_last_stmt = nullptr;
 	std::unordered_map<NodeStatement*, std::vector<std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_stmt;
 	/// function call is hoistable when userdefined and returns values and is not an expression function
 	/// or is in condition statement
 	static inline bool is_hoistable(NodeFunctionCall* node) {
-//		if(node->kind != NodeFunctionCall::Kind::UserDefined) return false;
 		// not hoistable functions are: Undefined, Builtin, Property
 		if(node->is_builtin_kind()) return false;
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 		if(!node->definition) {
-//			error.m_message = "Function "+node->function->name+" has not been defined and cannot be rewritten.";
-//			error.m_got = node->function->name;
-//			error.exit();
 			return false;
 		}
-//		bool is_userdefined = node->kind == NodeFunctionCall::Kind::UserDefined;
-//		bool is_param = node->parent->get_node_type() == NodeType::ParamList and node->parent->parent->get_node_type() == NodeType::FunctionHeader;
-//		bool is_in_condition = last_stmt->statement->get_node_type() == NodeType::If ||
-//			last_stmt->statement->get_node_type() == NodeType::While || last_stmt->statement->get_node_type() == NodeType::Select;
 		bool returns_values = node->definition and node->definition->num_return_params > 0;
 		bool is_in_stmt = node->parent->get_node_type() == NodeType::Statement;
 		// do not hoist if in declaration -> we do not need an extra declaration var
@@ -90,6 +81,8 @@ public:
 	inline NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		node.get_definition(m_program);
+		if(node.definition and node.definition->is_expression_function()) return &node;
+
 		if(is_hoistable(&node)) {
 			std::unique_ptr<NodeReference> ref = nullptr;
 			// clone return variable from function definition

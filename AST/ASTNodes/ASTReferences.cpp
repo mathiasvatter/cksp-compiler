@@ -191,9 +191,7 @@ ASTLowering* NodeNDArrayRef::get_lowering(NodeProgram *program) const {
 }
 
 std::unique_ptr<NodeAST> NodeNDArrayRef::get_size() {
-	auto new_ref = this->to_array_ref(nullptr);
-	new_ref->name = "_"+new_ref->name;
-	return DefinitionProvider::num_elements(std::move(new_ref));
+	return std::make_unique<NodeNumElements>(clone_as<NodeReference>(this), nullptr, tok);
 }
 
 

@@ -50,6 +50,8 @@ struct NodeCompositeRef : NodeReference {
 	}
 	virtual void set_child_parents() override = 0;  // Wird in den abgeleiteten Klassen implementiert
 	virtual std::unique_ptr<NodeAST> get_size() = 0;
+	virtual std::unique_ptr<NodeArrayRef> get_indexed_raw_ref(std::unique_ptr<NodeAST> new_index) = 0;
+
 //	virtual std::unique_ptr<NodeBlock> iterate_over() = 0;
 };
 
@@ -86,6 +88,11 @@ struct NodeArrayRef : NodeCompositeRef {
 	void set_index(std::unique_ptr<NodeAST> new_index) {
 		index = std::move(new_index);
 		index->parent = this;
+	}
+	std::unique_ptr<NodeArrayRef> get_indexed_raw_ref(std::unique_ptr<NodeAST> new_index) override {
+		auto new_ref = clone_as<NodeArrayRef>(this);
+		new_ref->set_index(std::move(new_index));
+		return new_ref;
 	}
 //	std::unique_ptr<NodeBlock> iterate_over() override;
 };
@@ -157,7 +164,10 @@ struct NodeNDArrayRef : NodeCompositeRef {
 	}
 
 	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
-
+	std::unique_ptr<NodeArrayRef> get_indexed_raw_ref(std::unique_ptr<NodeAST> new_index) override {
+		auto array_ref = this->to_array_ref(std::move(new_index));
+		return array_ref;
+	}
 };
 
 struct NodeFunctionHeaderRef : NodeReference {
@@ -176,6 +186,14 @@ struct NodeFunctionHeaderRef : NodeReference {
 	[[nodiscard]] int get_num_args() const;
 	[[nodiscard]] bool has_no_args() const;
 	std::unique_ptr<NodeAST>& get_arg(int i);
+	void set_arg(int i, std::unique_ptr<NodeAST> arg) {
+		if(i >= get_num_args()) {
+			auto error = CompileError(ErrorType::InternalError, "Index out of bounds", "", tok);
+			error.exit();
+		}
+		args->params[i] = std::move(arg);
+		args->params[i]->parent = args.get();
+	}
 	void prepend_arg(std::unique_ptr<NodeAST> arg) const;
 	void add_arg(std::unique_ptr<NodeAST> arg) const;
 };

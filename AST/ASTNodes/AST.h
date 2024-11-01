@@ -645,7 +645,7 @@ struct NodeFunctionDefinition: NodeAST {
 	bool is_method();
 	void update_param_data_type() const;
 	std::shared_ptr<NodeDataStructure>& get_param(int i);
-
+	bool is_expression_function();
 };
 
 struct NodeProgram : NodeAST {

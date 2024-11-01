@@ -50,7 +50,7 @@ public:
 		);
 		auto body = std::make_unique<NodeBlock>(Token(), true);
 		body->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), array->tok));
-		body->wrap_in_loop_nest(std::move(iterators), std::move(lower_bounds), std::move(upper_bounds));
+		body->wrap_in_loop_nest(iterators, std::move(lower_bounds), std::move(upper_bounds));
 
 		// desugar for loop
 //		body->statements.back()->statement->desugar(program);
@@ -105,7 +105,7 @@ private:
 	NodeReference* array;
 	NodeReference* array_to_copy;
 	/// iterator variables for the loop nest
-	std::vector<std::unique_ptr<NodeDataStructure>> iterators;
+	std::vector<std::shared_ptr<NodeDataStructure>> iterators;
 	/// holds the variables for the dimensions to copy
 	std::vector<std::unique_ptr<NodeDataStructure>> dim_vars_to_copy;
 	/// copying actuall numbers of dims for the params in function call
@@ -145,7 +145,7 @@ private:
 		int iter_size = iterators.size();
 		// if normal array -> only one _iter1
 		if(array_ref->get_node_type() == NodeType::ArrayRef) {
-			auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter"+std::to_string(iter_size), TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
+			auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter"+std::to_string(iter_size), TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
 			node_iterator->is_local = true;
 			iterators.push_back(std::move(node_iterator));
 		}
@@ -155,7 +155,7 @@ private:
 			int count = iter_size;
 			for (auto &idx : node_nd_array_ref->indexes->params) {
 				if (idx->get_node_type() == NodeType::Wildcard) {
-					auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter" + std::to_string(count), TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
+					auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter" + std::to_string(count), TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
 					node_iterator->is_local = true;
 					iterators.push_back(std::move(node_iterator));
 					count++;

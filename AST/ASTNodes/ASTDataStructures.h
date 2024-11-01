@@ -189,8 +189,8 @@ struct NodeFunctionHeader: NodeDataStructure {
 		ty = TypeRegistry::add_function_type(func_arg_types, return_type);
 		return ty;
 	}
-	void add_param(std::unique_ptr<NodeDataStructure> param) {
-		auto decl = std::make_unique<NodeFunctionParam>(std::move(param));
+	void add_param(std::shared_ptr<NodeDataStructure> param) {
+		auto decl = std::make_unique<NodeFunctionParam>(param, nullptr, param->tok);
 		decl->parent = this;
 		params.push_back(std::move(decl));
 	}
