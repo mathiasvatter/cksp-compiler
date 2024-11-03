@@ -40,21 +40,21 @@ if(scope)
 
     // ------ initializer list of a single object
     declare lists[10]: List[] := (ls)
-    retain lists[0] 10 // increase ref count by num_elements of lists
+    retain(lists[0] 10 // increase ref count by num_elements of lists)
     
     // ------ initializer list of a single object
     declare more_lists[10,10]: List[][] := (ls)
-    retain more_lists[0,0] 10*10 // increase ref count by num_elements of more_lists
+    retain(more_lists[0,0] 10*10 // increase ref count by num_elements of more_lists)
 
     // ----- initializer list of multiple objects
     declare lists[10] := List[] := (ls, ls1, ls2)
-    retain lists[0] 1
-    retain lists[1] 1
-    retain lists[2] 10-2
+    retain(lists[0], 1)
+    retain(lists[1], 1)
+    retain(lists[2], 10-2)
 
     // ----- single ptr assignment
     declare ls1 := ls
-    retain ls1 1 // increase ref count by 1
+    retain(ls1, 1) // increase ref count by 1
 
     // ------ copy of array
     declare lists1[10] := lists
@@ -66,18 +66,18 @@ if(scope)
 
     delete lists // delete complete array in for loop
     lists := (ls) // <-
-    retain lists 10
+    retain(lists, num_elements(lists))
 
     delete more_lists // delete complete array in for loop
     more_lists[*, *] := (ls) // <-
-    retain more_lists 10*10
+    retain(more_lists, 10*10)
 
     // if there are different lists as r_values
     delete more_lists[4,0]
     delete more_lists[4,1]
     more_lists[4, *] := (ls, ls1) // <-
-    retain more_lists[4,0] 1
-    retain more_lists[4,1] 1
+    retain(more_lists[4,0], 1)
+    retain(more_lists[4,1], 1)
 
 end if
 
@@ -197,7 +197,7 @@ function Node::__decr__(self: Node, num_refs: int)
             continue
         end if
 
-        // Schritt 1: Referenzzähler reduzieren/erhöhen (je nach num_refs)
+        // lower reference count
         Node::allocation[self] := Node::allocation[self] + num_refs
         // object still referenced
         if(Node::allocation[self] > 0) 
