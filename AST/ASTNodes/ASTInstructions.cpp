@@ -15,7 +15,6 @@
 #include "../../Desugaring/DesugarFunctionCall.h"
 #include "../../Lowering/LoweringWhile.h"
 #include "../../Lowering/LoweringRetain.h"
-#include "../../Lowering/LoweringDelete.h"
 #include "../../Lowering/LoweringNumElements.h"
 #include "../../Desugaring/DesugarSingleAssignment.h"
 #include "../../Lowering/PostLoweringNumElements.h"
@@ -72,6 +71,7 @@ NodeFunctionDefinition* NodeFunctionCall::find_definition(struct NodeProgram *pr
         it->second->is_used = true;
         definition = it->second;
         kind = Kind::UserDefined;
+//		definition->call_sites.emplace(this);
         return it->second;
     }
     return nullptr;
@@ -262,6 +262,37 @@ ASTLowering* NodeNumElements::get_post_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
+// ************* NodeUseCount ***************
+NodeAST *NodeUseCount::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeUseCount::NodeUseCount(const NodeUseCount& other)
+	: NodeInstruction(other), ref(clone_unique(other.ref)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeUseCount::clone() const {
+	return std::make_unique<NodeUseCount>(*this);
+}
+NodeAST *NodeUseCount::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (ref.get() == oldChild) {
+		if(auto new_ref = cast_node<NodeReference>(newChild.release())) {
+			ref = std::unique_ptr<NodeReference>(new_ref);
+			return ref.get();
+		}
+	}
+	return nullptr;
+}
+
+ASTLowering* NodeUseCount::get_lowering(NodeProgram *program) const {
+	static LoweringNumElements lowering(program);
+	return &lowering;
+}
+
+ASTLowering* NodeUseCount::get_post_lowering(NodeProgram *program) const {
+	static PostLoweringNumElements lowering(program);
+	return &lowering;
+}
+
 // ************* NodeDelete ***************
 NodeAST *NodeDelete::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
@@ -304,14 +335,16 @@ std::unique_ptr<NodeAST> NodeSingleDelete::clone() const {
 
 NodeAST *NodeSingleDelete::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (ptr.get() == oldChild) {
-		ptr = std::move(newChild);
-		return ptr.get();
+		if(auto new_ptr = cast_node<NodeReference>(newChild.release())) {
+			ptr = std::unique_ptr<NodeReference>(new_ptr);
+			return ptr.get();
+		}
 	}
 	return nullptr;
 }
 
 ASTLowering* NodeSingleDelete::get_lowering(NodeProgram *program) const {
-	static LoweringDelete lowering(program);
+	static LoweringRetain lowering(program);
 	return &lowering;
 }
 
@@ -623,7 +656,7 @@ NodeStatement* NodeBlock::add_stmt(std::unique_ptr<NodeStatement> stmt) {
 //    statements = std::move(temp);
 //}
 
-void NodeBlock::flatten() {
+void NodeBlock::flatten(bool force) {
 	// Reserviere genug Platz für den schlimmsten Fall, in dem keine Flattening nötig ist
 	std::vector<std::unique_ptr<NodeStatement>> new_statements;
 	new_statements.reserve(statements.size());
@@ -641,6 +674,10 @@ void NodeBlock::flatten() {
 										  });
 			inner_statements.erase(new_end, inner_statements.end());
 
+			if(node_innner_body->scope and !force) {
+				new_statements.push_back(std::move(statement));
+				continue;
+			}
 			// Aktualisieren Sie das parent-Attribut und fügen Sie sie zu new_statements hinzu
 			for (auto& stmt : inner_statements) {
 				stmt->parent = this;

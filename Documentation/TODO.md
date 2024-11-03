@@ -12,4 +12,5 @@
 - [x] add removal of throwaway variables to dead code elimination pass
 - [x] add *.txt to valid file types
 - [ ] add indexes to functions with multiple return values
-- [ ] implement parsing of ksp builtin functions as operators e.g. sh_left, sh_right, pow
+- [x] implement parsing of ksp builtin functions as operators e.g. sh_left, sh_right, pow
+- [ ] when const like array.SIZE are declared locally, they go into global scope where there might be name clashes

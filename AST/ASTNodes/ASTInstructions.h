@@ -119,6 +119,40 @@ struct NodeNumElements : NodeInstruction {
 	}
 };
 
+struct NodeUseCount : NodeInstruction {
+	std::unique_ptr<NodeReference> ref;
+	inline NodeUseCount(std::unique_ptr<NodeReference> ref)
+		: NodeInstruction(NodeType::UseCount, ref->tok), ref(std::move(ref)) {
+		set_child_parents();
+	}
+	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	// Copy Constructor
+	NodeUseCount(const NodeUseCount& other);
+	// Clone Method
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		ref->update_parents(this);
+	}
+	void set_child_parents() override {
+		ref->parent = this;
+	};
+	std::string get_string() override {
+		std::string use_count = "use_count[" + ref->get_string();
+		return use_count + "]";
+	}
+	void update_token_data(const Token& token) override {
+		ref->update_token_data(token);
+	}
+	void set_ref(std::unique_ptr<NodeReference> new_ref) {
+		ref = std::move(new_ref);
+		ref->parent = this;
+	}
+	ASTLowering* get_lowering(struct NodeProgram *program) const override;
+	ASTLowering* get_post_lowering(struct NodeProgram *program) const override;
+};
+
 struct NodeDelete : NodeInstruction {
 	std::vector<std::unique_ptr<NodeReference>> ptrs;
 	inline explicit NodeDelete(Token tok) : NodeInstruction(NodeType::Delete, std::move(tok)) {}
@@ -164,10 +198,10 @@ struct NodeDelete : NodeInstruction {
 };
 
 struct NodeSingleDelete : NodeInstruction {
-	std::unique_ptr<NodeAST> ptr;
+	std::unique_ptr<NodeReference> ptr;
 	std::unique_ptr<NodeAST> num;
 	inline explicit NodeSingleDelete(Token tok) : NodeInstruction(NodeType::SingleDelete, std::move(tok)) {}
-	NodeSingleDelete(std::unique_ptr<NodeAST> ptr, std::unique_ptr<NodeAST> num, Token tok)
+	NodeSingleDelete(std::unique_ptr<NodeReference> ptr, std::unique_ptr<NodeAST> num, Token tok)
 		: NodeInstruction(NodeType::SingleDelete, std::move(tok)), ptr(std::move(ptr)), num(std::move(num)) {
 		set_child_parents();
 		ty = this->ptr->ty;
@@ -181,15 +215,18 @@ struct NodeSingleDelete : NodeInstruction {
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
 		ptr->update_parents(this);
+		if(num) num->update_parents(this);
 	}
 	void set_child_parents() override {
 		ptr->parent = this;
+		if(num) num->parent = this;
 	};
 	std::string get_string() override {
 		return "delete " + ptr->get_string();
 	}
 	void update_token_data(const Token& token) override {
 		ptr->update_token_data(token);
+		if(num) num->update_token_data(token);
 	}
 	ASTLowering* get_lowering(struct NodeProgram *program) const override;
 
@@ -627,10 +664,16 @@ struct NodeBlock : NodeInstruction {
 		add_as_stmt(std::move(retain));
 		return statements.back().get();
 	}
+	NodeStatement* add_as_single_delete(std::unique_ptr<NodeReference> ref) {
+		auto del = std::make_unique<NodeSingleDelete>(std::move(ref), nullptr, tok);
+		add_as_stmt(std::move(del));
+		return statements.back().get();
+	}
     /// puts nested statement list in current one
-    void flatten();
+    void flatten(bool force=false);
 	/// returns true if the block is a scope block and sets node.scope
 	inline bool determine_scope() {
+		if(scope) return true;
 		scope = false;
 		if(parent->get_node_type() != NodeType::Statement and !is_instance_of<NodeDataStructure>(parent)) {
 			scope = true;

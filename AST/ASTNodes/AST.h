@@ -63,6 +63,7 @@ struct NodeAST {
 	virtual std::unique_ptr<struct NodeAccessChain> to_method_chain() {return nullptr;}
 	bool is_constant();
 	int get_bison_tokens();
+	bool is_nil();
 };
 
 template<typename T>

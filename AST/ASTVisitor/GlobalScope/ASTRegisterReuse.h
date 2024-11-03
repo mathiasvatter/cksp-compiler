@@ -120,6 +120,7 @@ public:
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		node.get_definition(m_program);
+
 		// do not visit definition -> because passive var allocation is separate between callbacks and functions
 		return &node;
 	}

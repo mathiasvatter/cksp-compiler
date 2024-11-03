@@ -143,7 +143,7 @@ public:
 			if (func_call->definition->num_return_params > 0) {
 				func_call->function->prepend_arg(node.variable->to_reference());
 				auto node_block = std::make_unique<NodeBlock>(node.tok);
-				node_block->scope = true;
+				node_block->scope = false;
 				node_block->add_stmt(std::make_unique<NodeStatement>(
 					std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok), node.tok));
 				node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node.value), node.tok));

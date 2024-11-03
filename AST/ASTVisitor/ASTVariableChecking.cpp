@@ -143,13 +143,17 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 	node.function->accept(*this);
 
 	if(node.kind == NodeFunctionCall::UserDefined and node.definition) {
-		node.definition->call_sites.emplace(&node);
+//		node.definition->call_sites.emplace(&node);
 		check_recursion(node.definition);
 		if(!node.definition->visited) {
 			m_functions_in_use.insert(node.definition);
 			node.definition->accept(*this);
 			m_functions_in_use.erase(node.definition);
 		}
+	}
+
+	if(fail and node.definition and node.kind != NodeFunctionCall::Kind::Builtin) {
+		node.definition->call_sites.insert(&node);
 	}
 
 	return &node;

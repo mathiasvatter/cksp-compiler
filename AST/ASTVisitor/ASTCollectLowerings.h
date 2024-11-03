@@ -72,6 +72,7 @@ public:
 	NodeAST * visit(NodeList& node) override;
 	NodeAST * visit(NodeSingleRetain& node) override;
 	NodeAST * visit(NodeSingleDelete& node) override;
+	NodeAST * visit(NodePointer& node) override;
 	/// lower pointer reference types and replace with __repr__ if in string surrounding
 	NodeAST * visit(NodePointerRef& node) override;
 	/// lower access chain to nested array_ref structure
