@@ -7,11 +7,11 @@
 
 #include "ASTLowering.h"
 
-class LoweringRetain : public ASTLowering {
+class LoweringMemAlloc : public ASTLowering {
 private:
 
 public:
-	explicit LoweringRetain(NodeProgram *program) : ASTLowering(program) {}
+	explicit LoweringMemAlloc(NodeProgram *program) : ASTLowering(program) {}
 
 	NodeAST * visit(NodeSingleRetain &node) override {
 		if(node.ty->get_element_type()->get_type_kind() != TypeKind::Object) {

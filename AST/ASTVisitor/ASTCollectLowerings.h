@@ -81,6 +81,7 @@ public:
 	NodeAST * visit(NodeNil& node) override;
 	/// lower num elements node
 	NodeAST * visit(NodeNumElements& node) override;
+	NodeAST * visit(NodeUseCount& node) override;
 	/// flatten nested lists
 	NodeAST * visit(NodeInitializerList& node) override;
 private:

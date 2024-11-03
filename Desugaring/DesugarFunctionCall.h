@@ -52,6 +52,22 @@ public:
 			return node.replace_with(std::move(num_elements));
 		}
 
+		if(node.function->get_num_args() == 1 and node.function->name == "use_count") {
+			node.kind = NodeFunctionCall::Kind::Builtin;
+			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+			if(node.function->get_num_args() != 1) {
+				error.m_message = "Function call <use_count> expects exactly one argument.";
+				error.exit();
+			}
+			if(is_instance_of<NodeReference>(node.function->get_arg(0).get())) {
+				auto use_count = std::make_unique<NodeUseCount>(unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0))));
+				return node.replace_with(std::move(use_count));
+			} else {
+				error.m_message = "Argument for function call <use_count> must be a reference.";
+				error.exit();
+			}
+		}
+
 		node.get_definition(m_program);
 		if(!node.definition) return &node;
 		if(node.definition->num_return_params <= 1) return &node;
