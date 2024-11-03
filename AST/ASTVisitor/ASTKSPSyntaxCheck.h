@@ -71,7 +71,7 @@ public:
 		for(auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
-		node.flatten();
+		node.flatten(true);
 		return &node;
 	};
 

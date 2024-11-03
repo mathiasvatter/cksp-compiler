@@ -465,6 +465,11 @@ void NodeStruct::generate_ref_count_methods() {
 	this->methods.push_back(rf_methods.create_destructor());
 	this->methods.push_back(rf_methods.create_decr_function());
 	this->methods.push_back(rf_methods.create_incr_function());
+
+	this->methods.push_back(rf_methods.create_array_function("__incr__"));
+	this->methods.push_back(rf_methods.create_array_function("__decr__"));
+	this->methods.push_back(rf_methods.create_array_function("__del__"));
+
 	this->update_method_table();
 }
 

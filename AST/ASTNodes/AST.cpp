@@ -19,6 +19,7 @@
 #include "../../Desugaring/DesugarParamList.h"
 #include "../../Desugaring/DesugarBinaryExpr.h"
 #include "../../Lowering/LoweringFunctionDef.h"
+#include "../../Optimization/NilValidator.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -110,6 +111,12 @@ int NodeAST::get_bison_tokens() {
 	static TokenCounter token_counter;
 	return token_counter.get_tokens(*this);
 }
+
+bool NodeAST::is_nil() {
+	static NilValidator nil_validator;
+	return nil_validator.is_nil(*this);
+}
+
 
 // ************* NodeDataStructure ***************
 NodeAST *NodeDataStructure::accept(struct ASTVisitor &visitor) {

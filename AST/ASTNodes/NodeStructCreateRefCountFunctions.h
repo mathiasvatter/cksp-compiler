@@ -38,6 +38,7 @@ public:
 		m_num_refs_ref = m_num_refs->to_reference();
 		m_num_refs_ref->match_data_structure(m_num_refs.get());
 
+
 		m_del_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__del__");
 		m_decr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__decr__", clone_as<NodeDataStructure>(m_num_refs.get()));
 		m_incr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__incr__", clone_as<NodeDataStructure>(m_num_refs.get()));
@@ -66,6 +67,55 @@ public:
 
 	}
 
+	/**
+	 * @brief create array loops for __incr__ and __decr__ and __del__ functions
+	 * function Point::Array::__incr__(arr: int[], num: int)
+	 * 	declare i: int
+	 * 	for i := 0 to num_elements(arr)-1
+	 * 		Point::__incr__(arr[i], num)
+	 * 	end for
+	 * end function
+	 */
+	std::unique_ptr<NodeFunctionDefinition> create_array_function(const std::string& name) {
+		auto func_name = m_struct.name+OBJ_DELIMITER+"Array"+OBJ_DELIMITER+name;
+		auto func_call_name = m_struct.name+OBJ_DELIMITER+name;
+
+		auto arr = std::make_shared<NodeArray>(std::nullopt, "arr", TypeRegistry::ArrayOfInt, nullptr, Token());
+		auto num = std::make_shared<NodeVariable>(std::nullopt, "num", TypeRegistry::Integer, DataType::Mutable, Token());
+		auto iterator = ASTVisitor::get_iterator_var(Token());
+		auto arr_ref = unique_ptr_cast<NodeArrayRef>(arr->to_reference());
+		auto num_ref = num->to_reference();
+		arr_ref->set_index(iterator->to_reference());
+		auto incr_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeaderRef>(
+				func_call_name,
+				std::make_unique<NodeParamList>(arr->tok, arr_ref->clone(), std::move(num_ref)),
+				arr->tok
+			),
+			arr->tok
+		);
+
+		auto func_def = std::make_unique<NodeFunctionDefinition>(
+			std::make_unique<NodeFunctionHeader>(
+				func_name,
+				Token(),
+				std::move(arr),
+				std::move(num)
+			),
+			std::nullopt,
+			false,
+			std::make_unique<NodeBlock>(Token(), true),
+			Token()
+		);
+		func_def->body->add_as_stmt(std::move(incr_call));
+		func_def->body->wrap_in_loop(iterator, std::make_unique<NodeInt>(0, Token()), arr_ref->get_size());
+		func_def->body->get_last_statement()->desugar(nullptr);
+		func_def->ty = TypeRegistry::Void;
+		func_def->header->create_function_type(TypeRegistry::Void);
+		return func_def;
+	}
+
 	std::unique_ptr<NodeFunctionDefinition> create_incr_function() {
 		m_self_ref->declaration = get_self_ptr(m_incr_func.get());
 		m_num_refs_ref->declaration = get_num_refs_ptr(m_incr_func.get());
@@ -84,6 +134,7 @@ public:
 		));
 		func_body->add_as_stmt(std::move(nil_check));
 		m_incr_func->parent = &m_struct;
+		m_incr_func->header->create_function_type(TypeRegistry::Void);
 		m_incr_func->ty = TypeRegistry::Void;
 		return std::move(m_incr_func);
 	}
@@ -119,6 +170,7 @@ public:
 		m_del_func->body->add_as_stmt(std::move(node_if));
 		m_del_func->parent = &m_struct;
 		m_del_func->ty = TypeRegistry::Void;
+		m_del_func->header->create_function_type(TypeRegistry::Void);
 		return std::move(m_del_func);
 	}
 
@@ -203,6 +255,7 @@ public:
 		m_decr_func->body->add_as_stmt(std::move(node_while));
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
+		m_decr_func->header->create_function_type(TypeRegistry::Void);
 		return std::move(m_decr_func);
 	}
 
@@ -318,6 +371,7 @@ public:
 		m_decr_func->body->add_as_stmt(std::move(node_while));
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
+		m_decr_func->header->create_function_type(TypeRegistry::Void);
 		return std::move(m_decr_func);
 	}
 
@@ -431,6 +485,7 @@ public:
 		m_decr_func->body->add_as_stmt(std::move(outer_while));
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
+		m_decr_func->header->create_function_type(TypeRegistry::Void);
 		return std::move(m_decr_func);
 	}
 

@@ -1,23 +1,22 @@
 
-// struct List
-// 	declare value: int
-// 	declare next: Node
-// 	declare prev: Node
+struct List
+	declare value: int
+	declare next: List
 
-// 	function __init__(self, value: int, next)
-// 		self.value := value
-// 		self.next := next
-// 	end function
+	function __init__(self, value: int, next)
+		self.value := value
+		self.next := next
+	end function
 
-//     function get_next_next_value(self)
-//         return self.next.next.value
-//     end function
-// end struct
+    function get_next_next_value(self)
+        return self.next.next.value
+    end function
+end struct
 
-// struct Node
-// 	declare value: int
-// 	declare next : List
-// end struct 
+struct Node
+	declare value: int
+	declare next : List
+end struct 
 
 struct Point
 	declare x: int
@@ -36,20 +35,6 @@ struct Point
 		self.x := self.x + other.x
 		self.y := self.y + other.y
 		return self
-	end function
-end struct
-
-struct Note
-	declare pitch: int
-	declare velocity: int
-
-	function __init__(self, p: int, v: int)
-		self.pitch := p
-		self.velocity := v
-	end function
-
-	function play(self): int
-		return play_note(self.pitch, self.velocity, 0, -1)
 	end function
 end struct
 
@@ -88,21 +73,23 @@ on init
 	// // declare huihui : (int, int): void
 	// // declare ui_button btn_slot[5]: int[]
 	
-	// declare lists[10]: List[] := (nil)
-	// for idx, ls in lists
-	// 	ls := List(idx, ls)
-	// 	if(idx = 5)
-	// 		break
-	// 	else 
-	// 		break
-	// 	end if
-	// 	message(ls.next)
-	// end for
-	// // btn_1, _ := return_twice()
-	// declare n[10] := (0)
-	// declare array[10] : int[] := return_init(n)
-	// 
-	// 
+	declare lists[10]: List[] := (nil)
+	declare list_ptr: List
+	for idx, ls in lists
+		ls := List(idx, ls)
+		list_ptr := ls
+		if(idx = 5)
+			break
+		else 
+			break
+		end if
+		message(ls.next)
+	end for
+	// btn_1, _ := return_twice()
+	declare n[10] := (0)
+	declare array[10] : int[] := return_init(n)
+	
+	
 	declare ndarray[10,10]
 	message(search_matrix(ndarray, 3), "3", "f")
 	message(num_elements(ndarray, 2))
@@ -126,7 +113,7 @@ end function
 
 
 function search_matrix(matrix: int[][], target: int): int
-	declare array[30] := (0)
+	// declare array[30] := (0)
 
     declare row, col: int
     for row := 0 to num_elements(matrix, 1)- 1

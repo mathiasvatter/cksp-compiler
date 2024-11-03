@@ -109,7 +109,7 @@ public:
 
 	inline NodeAST * visit(NodeVariableRef& node) override {
 		// if member reference, turn into array reference with (struct.free_idx as index if in constructor, self as index if not)
-		if(node.is_member_ref()) {
+		if(node.is_member_ref() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(get_index_ref());
 			return node.replace_reference(std::move(new_node), m_def_provider);
 		}
@@ -117,7 +117,7 @@ public:
 	}
 	inline NodeAST * visit(NodeArrayRef& node) override {
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
-		if(node.is_member_ref()) {
+		if(node.is_member_ref() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(get_index_ref());
 			return node.replace_reference(std::move(new_node), m_def_provider);
 		}
@@ -125,7 +125,7 @@ public:
 	}
 
 	inline NodeAST * visit(NodePointerRef& node) override {
-		if(node.is_member_ref()) {
+		if(node.is_member_ref() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(get_index_ref());
 			return node.replace_reference(std::move(new_node), m_def_provider);
 		}
@@ -134,7 +134,7 @@ public:
 
 	inline NodeAST * visit(NodeNDArrayRef& node) override {
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
-		if(node.is_member_ref()) {
+		if(node.is_member_ref() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(get_index_ref());
 			return node.replace_reference(std::move(new_node), m_def_provider);
 		}
@@ -144,14 +144,16 @@ public:
 
 	inline NodeAST * visit(NodeFunctionDefinition& node) override {
 		// no lowering necessary for delete methods
-		static const std::unordered_set<std::string> destructors = {
-			m_current_struct->name+OBJ_DELIMITER+"__del__",
-			m_current_struct->name+OBJ_DELIMITER+"__decr__",
-			m_current_struct->name+OBJ_DELIMITER+"__incr__"
-		};
-		if(contains(destructors, node.header->name)) {
-			return &node;
-		}
+//		static const std::unordered_set<std::string> destructors = {
+//			OBJ_DELIMITER+"__del__",
+//			OBJ_DELIMITER+"__decr__",
+//			OBJ_DELIMITER+"__incr__"
+//		};
+//		for (const auto& destructor : destructors) {
+//			if (node.header->name.find(destructor) != std::string::npos) {
+//				return &node;
+//			}
+//		}
 		m_current_func = &node;
 		node.header->accept(*this);
 		node.body->accept(*this);
