@@ -1,16 +1,17 @@
 #!/bin/bash
 
-# Überprüfen, ob ein Dateiname als Argument übergeben wurde
-if [ "$#" -ne 1 ]; then
-  echo "Verwendung: $0 <Markdown-Datei>"
+# Überprüfen, ob mindestens eine Datei als Argument übergeben wurde
+if [ "$#" -lt 1 ]; then
+  echo "Verwendung: $0 <Markdown-Datei1> <Markdown-Datei2> ... <Markdown-DateiN>"
   exit 1
 fi
 
-# Der Name der Markdown-Datei
-md_file="$1"
+# Alle übergebenen Markdown-Dateien speichern
+md_files=("$@")
+NAME="Bachelor"
 
 # Konvertierung zu PDF mit Pandoc, inklusive Inhaltsverzeichnis, Anpassungen für listings, Syntax-Highlighting, und erhöhten Abständen vor Überschriften
-pandoc "$md_file" \
+pandoc "${md_files[@]}" \
   --pdf-engine=xelatex \
   --toc \
   -V toc-title:"Contents" \
@@ -78,7 +79,7 @@ pandoc "$md_file" \
 
 \lstset{
   language=CKSP,
-  style=basicCKSP,
+  style=coloredCKSP,
   % basicstyle=\sffamily,
   basicstyle=\ttfamily\footnotesize,
   % numbers=left,
@@ -101,6 +102,6 @@ pandoc "$md_file" \
   belowskip=1em                               % Abstand unter dem Codeblock
 }
 ') \
-  -o "${md_file%.md}.pdf"
+  -o "${NAME}.pdf"
 
-echo "Konvertierung abgeschlossen: ${md_file} -> ${md_file%.md}.pdf"
+echo "Konvertierung abgeschlossen: ${md_files[*]} -> ${NAME}.pdf"

@@ -408,7 +408,7 @@ public:
 		);
 
 		outer_while->body->add_as_stmt(dec_alloc_array(current_ref->clone()));
-		auto check_for_deletion = alloc_array_check_continue();
+		auto check_for_deletion = alloc_array_check_continue(current_ref->clone());
 		// current := nil
 		check_for_deletion->if_body->prepend_stmt(
 			std::make_unique<NodeStatement>(
@@ -566,11 +566,15 @@ private:
 	///	if (List::allocation[self] > 0)
 	///		continue
 	///	end if
-	std::unique_ptr<NodeIf> alloc_array_check_continue() {
+	std::unique_ptr<NodeIf> alloc_array_check_continue(std::unique_ptr<NodeAST> idx =nullptr) {
+		auto alloc_ref = clone_as<NodeArrayRef>(m_alloc_ref.get());
+		if(idx) {
+			alloc_ref->set_index(std::move(idx));
+		}
 		auto node_if = std::make_unique<NodeIf>(
 			std::make_unique<NodeBinaryExpr>(
 				token::GREATER_THAN,
-				m_alloc_ref->clone(),
+				std::move(alloc_ref),
 				std::make_unique<NodeInt>(0, tok),
 				tok
 			),

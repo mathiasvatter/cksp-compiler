@@ -1,4 +1,3 @@
-
 # Implementing Functional Programming Concepts in a Domain-Specific Scripting Language: A Compiler for KSP
 
 ## Thema Brainstorming:
@@ -159,7 +158,7 @@ end function
 
 
 
-## 2. Rekursive Data Structure declaration and dynamic allocation
+<!-- ## 2. Rekursive Data Structure declaration and dynamic allocation
 - Allow declaration of structs by lowering them to arrays
 - Allow dynamic allocation by tracking them in a global array
 - Allow recursive data structures by using pointers to the next index of the global struct array
@@ -251,10 +250,4 @@ Wenn das struct bereits ein oder mehrere Arrays enthält, wird ein multidimensio
 7. Füge `__repr__` Funktion hinzu und erkenne, ob die pointer variable in einem string context aufgerufen wird und wrappe diesen in erstere funktion
 8. Neuen Referenz Node Type hinzufügen: Access Chain. TypeInference schreiben für diesen Typ
 9. `__init__` Funktion lowering
-10. Rerence counting implementieren. Verschiedene arten von `__decr__` Funktionen implementieren die direkte, indirekte Rekursion berücksichtigen.
-
-## 3. Allow recursive Functions (Defunctionalize the Continuation)
-- Transform recursive Functions into continuation passing style
-- Defunctionalize by turning functions into data structures
-- Allow recursive functions on these data structures by lowering them to loops
-- <https://www.pathsensitive.com/2019/07/the-best-refactoring-youve-never-heard.html>
+10. Rerence counting implementieren. Verschiedene arten von `__decr__` Funktionen implementieren die direkte, indirekte Rekursion berücksichtigen. -->

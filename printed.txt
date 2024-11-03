@@ -1,14 +1,94 @@
 // Global Declarations:
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
-on init
-	declare const Point::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
-	declare Point::free_idx : int
-	declare Point::allocation[Point::MAX_STRUCTS{int}] : int[]
-	declare Point::stack[Point::MAX_STRUCTS{int}] : int[]
-	declare Point::stack_top : int
-	declare Point::x[Point::MAX_STRUCTS{int}] : int[]
-	declare Point::y[Point::MAX_STRUCTS{int}] : int[]
+struct List
+	declare const List::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
+	declare List::free_idx : int
+	declare List::allocation[List::MAX_STRUCTS{int}] : int[]
+	declare List::stack[List::MAX_STRUCTS{int}] : int[]
+	declare List::stack_top : int
+	declare List::value[List::MAX_STRUCTS{int}] : int[]
+	declare List::next[List::MAX_STRUCTS{int}] : int[] := [- 1]
+
+	function List::__init__(value : int, next : int)
+		List::free_idx{int} := search(List::allocation{int[]}, 0)
+		if(List::free_idx{int} = -1)
+			message("Error: No more free space available to allocate objects of type 'List'")
+		end if
+		List::allocation[List::free_idx{int}]{int[]} := 1
+		List::value[List::free_idx{int}]{int} := value{int}
+		List::next[List::free_idx{int}]{int} := next{int}
+		return (List::free_idx{int})
+	end function
+
+	function List::get_next_next_value(self : int)
+		return (List::value[List::next[List::next[self{int}]{int}]{int}]{int})
+	end function
+
+	function List::__repr__(self : int)
+		return ("<List> Object: " & self{int})
+	end function
+
+	function List::__del__(self : int)
+		if(List::allocation[self{int}]{int} <= 0)
+			List::next[self{int}]{int} := - 1
+		end if
+	end function
+
+	function List::__decr__(self : int, num_refs : int)
+		declare current : int := self{int}
+		while(current{int} # - 1) 
+			List::allocation[current{int}]{int} := List::allocation[current{int}]{int} - num_refs{int}
+			if(List::allocation[current{int}]{int} > 0)
+				current{int} := - 1
+				continue
+			end if
+			self{int} := current{int}
+			if(List::next[current{int}]{int} # - 1)
+				current{int} := List::next[current{int}]{int}
+			else
+				current{int} := - 1
+			end if
+			List::__del__(self{int})
+		end while
+	end function
+
+	function List::__incr__(self : int, num_refs : int)
+		if(self{int} # - 1)
+			List::allocation[self{int}]{int} := List::allocation[self{int}]{int} + num_refs{int}
+		end if
+	end function
+
+	function List::Array::__incr__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			List::__incr__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+	function List::Array::__decr__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			List::__decr__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+	function List::Array::__del__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			List::__del__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+end struct
+
+struct Node
 	declare const Node::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
 	declare Node::free_idx : int
 	declare Node::allocation[Node::MAX_STRUCTS{int}] : int[]
@@ -17,13 +97,170 @@ on init
 	declare Node::value[Node::MAX_STRUCTS{int}] : int[]
 	declare Node::left[Node::MAX_STRUCTS{int}] : int[] := [- 1]
 	declare Node::right[Node::MAX_STRUCTS{int}] : int[] := [- 1]
-	declare const List::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
-	declare List::free_idx : int
-	declare List::allocation[List::MAX_STRUCTS{int}] : int[]
-	declare List::stack[List::MAX_STRUCTS{int}] : int[]
-	declare List::stack_top : int
-	declare List::value[List::MAX_STRUCTS{int}] : int[]
-	declare List::next[List::MAX_STRUCTS{int}] : int[] := [- 1]
+
+	function Node::__init__(left : int, right : int, value : int)
+		Node::free_idx{int} := search(Node::allocation{int[]}, 0)
+		if(Node::free_idx{int} = -1)
+			message("Error: No more free space available to allocate objects of type 'Node'")
+		end if
+		Node::allocation[Node::free_idx{int}]{int[]} := 1
+		Node::left[Node::free_idx{int}]{int} := left{int}
+		Node::right[Node::free_idx{int}]{int} := right{int}
+		Node::value[Node::free_idx{int}]{int} := value{int}
+		return (Node::free_idx{int})
+	end function
+
+	function Node::__repr__(self : int)
+		return ("<Node> Object: " & self{int})
+	end function
+
+	function Node::__del__(self : int)
+		if(Node::allocation[self{int}]{int} <= 0)
+			Node::left[self{int}]{int} := - 1
+			Node::right[self{int}]{int} := - 1
+		end if
+	end function
+
+	function Node::__decr__(self : int, num_refs : int)
+		declare current : int := self{int}
+		while(current{int} # - 1) 
+			Node::allocation[current{int}]{int} := Node::allocation[current{int}]{int} - num_refs{int}
+			if(Node::allocation[current{int}]{int} > 0)
+				current{int} := - 1
+				continue
+			end if
+			self{int} := current{int}
+			if(Node::left[current{int}]{int} # - 1)
+				current{int} := Node::left[current{int}]{int}
+			else
+				current{int} := - 1
+			end if
+			self{int} := current{int}
+			if(Node::right[current{int}]{int} # - 1)
+				current{int} := Node::right[current{int}]{int}
+			else
+				current{int} := - 1
+			end if
+			Node::__del__(self{int})
+		end while
+	end function
+
+	function Node::__incr__(self : int, num_refs : int)
+		if(self{int} # - 1)
+			Node::allocation[self{int}]{int} := Node::allocation[self{int}]{int} + num_refs{int}
+		end if
+	end function
+
+	function Node::Array::__incr__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			Node::__incr__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+	function Node::Array::__decr__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			Node::__decr__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+	function Node::Array::__del__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			Node::__del__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+end struct
+
+struct Point
+	declare const Point::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
+	declare Point::free_idx : int
+	declare Point::allocation[Point::MAX_STRUCTS{int}] : int[]
+	declare Point::stack[Point::MAX_STRUCTS{int}] : int[]
+	declare Point::stack_top : int
+	declare Point::x[Point::MAX_STRUCTS{int}] : int[]
+	declare Point::y[Point::MAX_STRUCTS{int}] : int[]
+
+	function Point::__init__(x : int, y : int)
+		Point::free_idx{int} := search(Point::allocation{int[]}, 0)
+		if(Point::free_idx{int} = -1)
+			message("Error: No more free space available to allocate objects of type 'Point'")
+		end if
+		Point::allocation[Point::free_idx{int}]{int[]} := 1
+		Point::x[Point::free_idx{int}]{int} := x{int}
+		Point::y[Point::free_idx{int}]{int} := y{int}
+		return (Point::free_idx{int})
+	end function
+
+	function Point::__repr__(self : int)
+		return ("Point {X: " & Point::x[self{int}]{int} & ", Y: " & Point::y[self{int}]{int} & "}")
+	end function
+
+	function Point::__add__(self : int, other : int)
+		return (Point(Point::x[self{int}]{int} + Point::x[other{int}]{int}, Point::y[self{int}]{int} + Point::y[other{int}]{int}))
+	end function
+
+	function Point::__del__(self : int)
+		if(Point::allocation[self{int}]{int} <= 0)
+		end if
+	end function
+
+	function Point::__decr__(self : int, num_refs : int)
+		declare current : int := self{int}
+		while(current{int} # - 1) 
+			Point::allocation[current{int}]{int} := Point::allocation[current{int}]{int} - num_refs{int}
+			if(Point::allocation[current{int}]{int} > 0)
+				current{int} := - 1
+				continue
+			end if
+			Point::__del__(self{int})
+		end while
+	end function
+
+	function Point::__incr__(self : int, num_refs : int)
+		if(self{int} # - 1)
+			Point::allocation[self{int}]{int} := Point::allocation[self{int}]{int} + num_refs{int}
+		end if
+	end function
+
+	function Point::Array::__incr__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			Point::__incr__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+	function Point::Array::__decr__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			Point::__decr__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+	function Point::Array::__del__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			Point::__del__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+end struct
+
+on init
 	declare _iter : int
 	declare p1 : int := Point(1, 2)
 	declare p2 : int := Point(3, 4)
@@ -32,7 +269,7 @@ on init
 	Point::__decr__(p1{int}, 1)
 end on
 
-function search_matrix(ret$1 : int, matrix : int[][], target : int)
+function search_matrix(matrix : int[][], target : int)
 	declare RETURN_FLAG15 : int
 	while(RETURN_FLAG15{int} = 0) 
 		declare row : int
@@ -42,8 +279,7 @@ function search_matrix(ret$1 : int, matrix : int[][], target : int)
 			col{int} := 0
 			while((col{int} <= (num_elements[matrix{int[][]}, Array::clip(2, 2)] - 1)) and (RETURN_FLAG15{int} = 0)) 
 				if(matrix[row{int}, col{int}]{int} = target{int})
-					ret$1{int} := (row{int} * 10) + col{int}
-
+					return ((row{int} * 10) + col{int})
 					RETURN_FLAG15{int} := 1
 					continue
 				end if
@@ -57,245 +293,19 @@ function search_matrix(ret$1 : int, matrix : int[][], target : int)
 		if(RETURN_FLAG15{int} = 1)
 			continue
 		end if
-		ret$1{int} := - 1
-
+		return (- 1)
 		RETURN_FLAG15{int} := 1
 		continue
 	end while
 end function
 
-function return_init(ret$1 : int[], init : int[])
+function return_init(init : int[])
 	message(init{int[]})
-	ret$1{int} := [1, 2, 3, 4, 5]
+	return ([1, 2, 3, 4, 5])
 end function
 
 function Array::clip(x : int, b : int)
 	return (x{int} + ((- x{int} .and. sh_right(x{int}, 31)) + ((x{int} - b{int}) .and. sh_right(b{int} - x{int}, 31))))
-end function
-
-function List::__init__(ret$1 : int, value : int, next : int)
-	List::free_idx{int} := search(List::allocation{int[]}, 0)
-	if(List::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'List'")
-	end if
-	List::allocation[List::free_idx{int}]{int[]} := 1
-	List::value[List::free_idx{int}]{int} := value{int}
-	List::next[List::free_idx{int}]{int} := next{int}
-	ret$1{int} := List::free_idx{int}
-end function
-
-function List::get_next_next_value(self : int)
-	return (List::value[List::next[List::next[self{int}]{int}]{int}]{int})
-end function
-
-function List::__repr__(ret$1 : string, self : int)
-	ret$1{string} := "<List> Object: " & self{int}
-end function
-
-function List::__del__(self : int)
-	if(List::allocation[self{int}]{int} <= 0)
-		List::next[self{int}]{int} := - 1
-	end if
-end function
-
-function List::__decr__(self : int, num_refs : int)
-	declare current : int := self{int}
-	while(current{int} # - 1) 
-		List::allocation[current{int}]{int} := List::allocation[current{int}]{int} - num_refs{int}
-		if(List::allocation[self{int}]{int} > 0)
-			current{int} := - 1
-			continue
-		end if
-		self{int} := current{int}
-		if(List::next[current{int}]{int} # - 1)
-			current{int} := List::next[current{int}]{int}
-		else
-			current{int} := - 1
-		end if
-		List::__del__(self{int})
-	end while
-end function
-
-function List::__incr__(self : int, num_refs : int)
-	if(self{int} # - 1)
-		List::allocation[self{int}]{int} := List::allocation[self{int}]{int} + num_refs{int}
-	end if
-end function
-
-function List::Array::__incr__(arr : int[], num : int)
-	declare _iter : int
-	_iter{int} := 0
-	while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
-		List::__incr__(arr[_iter{int}]{int[]}, num{int})
-		inc(_iter{int})
-	end while
-end function
-
-function List::Array::__decr__(arr : int[], num : int)
-	declare _iter : int
-	_iter{int} := 0
-	while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
-		List::__decr__(arr[_iter{int}]{int[]}, num{int})
-		inc(_iter{int})
-	end while
-end function
-
-function List::Array::__del__(arr : int[], num : int)
-	declare _iter : int
-	_iter{int} := 0
-	while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
-		List::__del__(arr[_iter{int}]{int[]}, num{int})
-		inc(_iter{int})
-	end while
-end function
-
-function Node::__init__(ret$1 : int, left : int, right : int, value : int)
-	Node::free_idx{int} := search(Node::allocation{int[]}, 0)
-	if(Node::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'Node'")
-	end if
-	Node::allocation[Node::free_idx{int}]{int[]} := 1
-	Node::left[Node::free_idx{int}]{int} := left{int}
-	Node::right[Node::free_idx{int}]{int} := right{int}
-	Node::value[Node::free_idx{int}]{int} := value{int}
-	ret$1{int} := Node::free_idx{int}
-end function
-
-function Node::__repr__(ret$1 : string, self : int)
-	ret$1{string} := "<Node> Object: " & self{int}
-end function
-
-function Node::__del__(self : int)
-	if(Node::allocation[self{int}]{int} <= 0)
-		Node::left[self{int}]{int} := - 1
-		Node::right[self{int}]{int} := - 1
-	end if
-end function
-
-function Node::__decr__(self : int, num_refs : int)
-	declare current : int := self{int}
-	while(current{int} # - 1) 
-		Node::allocation[current{int}]{int} := Node::allocation[current{int}]{int} - num_refs{int}
-		if(Node::allocation[self{int}]{int} > 0)
-			current{int} := - 1
-			continue
-		end if
-		self{int} := current{int}
-		if(Node::left[current{int}]{int} # - 1)
-			current{int} := Node::left[current{int}]{int}
-		else
-			current{int} := - 1
-		end if
-		self{int} := current{int}
-		if(Node::right[current{int}]{int} # - 1)
-			current{int} := Node::right[current{int}]{int}
-		else
-			current{int} := - 1
-		end if
-		Node::__del__(self{int})
-	end while
-end function
-
-function Node::__incr__(self : int, num_refs : int)
-	if(self{int} # - 1)
-		Node::allocation[self{int}]{int} := Node::allocation[self{int}]{int} + num_refs{int}
-	end if
-end function
-
-function Node::Array::__incr__(arr : int[], num : int)
-	declare _iter : int
-	_iter{int} := 0
-	while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
-		Node::__incr__(arr[_iter{int}]{int[]}, num{int})
-		inc(_iter{int})
-	end while
-end function
-
-function Node::Array::__decr__(arr : int[], num : int)
-	declare _iter : int
-	_iter{int} := 0
-	while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
-		Node::__decr__(arr[_iter{int}]{int[]}, num{int})
-		inc(_iter{int})
-	end while
-end function
-
-function Node::Array::__del__(arr : int[], num : int)
-	declare _iter : int
-	_iter{int} := 0
-	while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
-		Node::__del__(arr[_iter{int}]{int[]}, num{int})
-		inc(_iter{int})
-	end while
-end function
-
-function Point::__init__(ret$1 : int, x : int, y : int)
-	Point::free_idx{int} := search(Point::allocation{int[]}, 0)
-	if(Point::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'Point'")
-	end if
-	Point::allocation[Point::free_idx{int}]{int[]} := 1
-	Point::x[Point::free_idx{int}]{int} := x{int}
-	Point::y[Point::free_idx{int}]{int} := y{int}
-	ret$1{int} := Point::free_idx{int}
-end function
-
-function Point::__repr__(self : int)
-	return ("Point {X: " & Point::x[self{int}]{int} & ", Y: " & Point::y[self{int}]{int} & "}")
-end function
-
-function Point::__add__(self : int, other : int)
-	return (Point(Point::x[self{int}]{int} + Point::x[other{int}]{int}, Point::y[self{int}]{int} + Point::y[other{int}]{int}))
-end function
-
-function Point::__del__(self : int)
-	if(Point::allocation[self{int}]{int} <= 0)
-	end if
-end function
-
-function Point::__decr__(self : int, num_refs : int)
-	declare current : int := self{int}
-	while(current{int} # - 1) 
-		Point::allocation[current{int}]{int} := Point::allocation[current{int}]{int} - num_refs{int}
-		if(Point::allocation[self{int}]{int} > 0)
-			current{int} := - 1
-			continue
-		end if
-		Point::__del__(self{int})
-	end while
-end function
-
-function Point::__incr__(self : int, num_refs : int)
-	if(self{int} # - 1)
-		Point::allocation[self{int}]{int} := Point::allocation[self{int}]{int} + num_refs{int}
-	end if
-end function
-
-function Point::Array::__incr__(arr : int[], num : int)
-	declare _iter : int
-	_iter{int} := 0
-	while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
-		Point::__incr__(arr[_iter{int}]{int[]}, num{int})
-		inc(_iter{int})
-	end while
-end function
-
-function Point::Array::__decr__(arr : int[], num : int)
-	declare _iter : int
-	_iter{int} := 0
-	while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
-		Point::__decr__(arr[_iter{int}]{int[]}, num{int})
-		inc(_iter{int})
-	end while
-end function
-
-function Point::Array::__del__(arr : int[], num : int)
-	declare _iter : int
-	_iter{int} := 0
-	while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
-		Point::__del__(arr[_iter{int}]{int[]}, num{int})
-		inc(_iter{int})
-	end while
 end function
 
 

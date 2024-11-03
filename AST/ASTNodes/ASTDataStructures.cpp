@@ -362,7 +362,7 @@ std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 NodeFunctionDefinition *NodeStruct::generate_init_method() {
 	std::vector<std::unique_ptr<NodeFunctionParam>> param_list;
 	param_list.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_self.get())));
-	auto node_block = std::make_unique<NodeBlock>(this->tok);
+	auto node_block = std::make_unique<NodeBlock>(this->tok, true);
 	for(auto & mem : this->member_table) {
 		std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
 		auto member_ref = mem.second->to_reference();
