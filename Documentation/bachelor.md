@@ -236,18 +236,22 @@ end struct
 __Post-desugaring__:
 ```
 struct List
-	declare List.value: int
-	declare List.next: List := nil
+	declare List::value: int
+	declare List::next: List := nil
 
-	function List.__init__(value: int, next: List)
-		List.value := value
-		List.next := next
+	function List::__init__(value: int, next: List)
+		List::value := value
+		List::next := next
 	end function
 end struct
 ```
 5. Lowering der Structs in Arrays. Erstelle für jede struct Deklaration ein Array, das die Werte der Structs enthält. Erstelle für jede struct Deklaration ein Array, das die Verweise auf die nächsten Elemente enthält.
 Wenn das struct bereits ein oder mehrere Arrays enthält, wird ein multidimensionales array erstellt, dessen neue Dimension die maximale Größe aus den bisherigen Arrays ist.
 6. Erweitere Typsystem mit dynamischen Typen für Objekte.
+7. Füge `__repr__` Funktion hinzu und erkenne, ob die pointer variable in einem string context aufgerufen wird und wrappe diesen in erstere funktion
+8. Neuen Referenz Node Type hinzufügen: Access Chain. TypeInference schreiben für diesen Typ
+9. `__init__` Funktion lowering
+10. Rerence counting implementieren. Verschiedene arten von `__decr__` Funktionen implementieren die direkte, indirekte Rekursion berücksichtigen.
 
 ## 3. Allow recursive Functions (Defunctionalize the Continuation)
 - Transform recursive Functions into continuation passing style

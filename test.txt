@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Sun Nov 03 15:04:00 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Sun Nov 03 17:23:41 2024 }
 on init
   declare $Point__free_idx
   declare %Point__allocation[1000000]

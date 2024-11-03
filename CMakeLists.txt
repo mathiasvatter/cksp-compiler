@@ -184,10 +184,11 @@ add_executable(cksp main.cpp
         Lowering/LoweringFunctionDef.h
         AST/ASTNodes/NodeStructCreateRefCountFunctions.h
         Lowering/PreLoweringStruct.h
-        Lowering/LoweringRetain.h
+        Lowering/LoweringMemAlloc.h
         Lowering/LoweringNumElements.h
         Desugaring/DesugarSingleAssignment.h
         Lowering/PostLoweringNumElements.h
         AST/ASTVisitor/ASTCollectPostLowerings.h
         Optimization/NilValidator.h
+        Lowering/LoweringUseCount.h
 )

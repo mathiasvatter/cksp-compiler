@@ -26,6 +26,7 @@ public:
 	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 
+
 		/// promote return values to parameters of func_defs
 		ASTReturnParamPromotion param_promotion(m_def_provider);
 		for(auto & func_def : node.function_definitions) {

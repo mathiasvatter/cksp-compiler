@@ -205,6 +205,12 @@ NodeAST * ASTCollectLowerings::visit(NodeNumElements& node) {
 	return node.lower(m_program);
 }
 
+NodeAST * ASTCollectLowerings::visit(NodeUseCount& node) {
+	node.ref->accept(*this);
+	return node.lower(m_program);
+}
+
+
 NodeAST * ASTCollectLowerings::visit(NodeInitializerList &node) {
 	node.flatten();
 	for(auto & init : node.elements) {

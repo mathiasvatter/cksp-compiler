@@ -14,10 +14,11 @@
 #include "../../Desugaring/DesugarForEach.h"
 #include "../../Desugaring/DesugarFunctionCall.h"
 #include "../../Lowering/LoweringWhile.h"
-#include "../../Lowering/LoweringRetain.h"
+#include "../../Lowering/LoweringMemAlloc.h"
 #include "../../Lowering/LoweringNumElements.h"
 #include "../../Desugaring/DesugarSingleAssignment.h"
 #include "../../Lowering/PostLoweringNumElements.h"
+#include "../../Lowering/LoweringUseCount.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -284,13 +285,12 @@ NodeAST *NodeUseCount::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST>
 }
 
 ASTLowering* NodeUseCount::get_lowering(NodeProgram *program) const {
-	static LoweringNumElements lowering(program);
+	static LoweringUseCount lowering(program);
 	return &lowering;
 }
 
 ASTLowering* NodeUseCount::get_post_lowering(NodeProgram *program) const {
-	static PostLoweringNumElements lowering(program);
-	return &lowering;
+	return nullptr;
 }
 
 // ************* NodeDelete ***************
@@ -344,7 +344,7 @@ NodeAST *NodeSingleDelete::replace_child(NodeAST* oldChild, std::unique_ptr<Node
 }
 
 ASTLowering* NodeSingleDelete::get_lowering(NodeProgram *program) const {
-	static LoweringRetain lowering(program);
+	static LoweringMemAlloc lowering(program);
 	return &lowering;
 }
 
@@ -371,7 +371,7 @@ NodeAST *NodeSingleRetain::replace_child(NodeAST* oldChild, std::unique_ptr<Node
 }
 
 ASTLowering* NodeSingleRetain::get_lowering(NodeProgram *program) const {
-	static LoweringRetain lowering(program);
+	static LoweringMemAlloc lowering(program);
 	return &lowering;
 }
 

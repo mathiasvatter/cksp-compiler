@@ -138,7 +138,6 @@ void Compiler::compile() {
 
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
-	ast->debug_print();
 
 	compile_time.stop("Lowering");
 	std::cout << compile_time.print_timer("Lowering") << std::endl;
@@ -148,6 +147,7 @@ void Compiler::compile() {
 	ast->accept(return_function_rewriting);
 	ASTInitializerFunctionInlining initializer_inlining(&m_definition_provider);
 	ast->accept(initializer_inlining);
+//	ast->debug_print();
 
 	compile_time.stop("Return Function Rewriting");
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
