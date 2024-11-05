@@ -14,6 +14,7 @@
 #include "../../Lowering/LoweringNil.h"
 #include "../../Lowering/LoweringGetControl.h"
 #include "../../Desugaring/DesugarSingleAssignment.h"
+#include "../../Lowering/LoweringVariableRef.h"
 
 // ************* NodeVariableRef ***************
 NodeAST *NodeVariableRef::accept(struct ASTVisitor &visitor) {
@@ -50,6 +51,7 @@ std::unique_ptr<NodeAccessChain> NodeVariableRef::to_method_chain() {
 }
 
 bool NodeVariableRef::is_array_constant() {
+	if(kind == NodeReference::Kind::Builtin) return false;
 	if (declaration && (declaration->get_node_type() == NodeType::Array || declaration->get_node_type() == NodeType::List)) {
 		auto list = static_cast<NodeList*>(declaration);
 		const std::string& prefix = list->name + ".SIZE";
@@ -61,6 +63,11 @@ bool NodeVariableRef::is_array_constant() {
 }
 
 bool NodeVariableRef::is_ndarray_constant() {
+	if(kind == NodeReference::Kind::Builtin) return false;
+	size_t pos = name.find(".SIZE_D");
+	if(pos == std::string::npos) return false;
+	auto n = name.substr(0, pos);
+	auto dimension = name.substr(pos+7, name.length());
 	if (declaration && declaration->get_node_type() == NodeType::NDArray) {
 		auto ndarray = static_cast<NodeNDArray*>(declaration);
 		const std::string& prefix = ndarray->name + ".SIZE_D";
@@ -77,11 +84,53 @@ bool NodeVariableRef::is_ndarray_constant() {
 	return false;
 }
 
+std::unique_ptr<NodeNumElements> NodeVariableRef::transform_ndarray_constant() {
+	if(kind == NodeReference::Kind::Builtin) return nullptr;
+	size_t pos = name.find(".SIZE_D");
+	if(pos == std::string::npos) return nullptr;
+	auto array_name = name.substr(0, pos);
+	auto dimension = name.substr(pos+7, name.length());
+	auto nd_array_ref = std::make_unique<NodeNDArrayRef>(array_name, nullptr, tok);
+	try {
+		int dim_int = std::stoi(dimension);
+		return std::make_unique<NodeNumElements>(
+			std::move(nd_array_ref),
+			std::make_unique<NodeInt>(dim_int, tok),
+			tok
+		);
+	} catch (const std::invalid_argument&) {
+		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+		error.m_message = "Invalid dimension number in NDArray reference: " + name + ".";
+		error.m_got = dimension;
+		error.exit();
+	}
+	return nullptr;
+}
+
+std::unique_ptr<NodeNumElements> NodeVariableRef::transform_array_constant() {
+	if(kind == NodeReference::Kind::Builtin) return nullptr;
+	size_t pos = name.find(".SIZE");
+	if(pos == std::string::npos) return nullptr;
+	auto array_name = name.substr(0, pos);
+	auto array_ref = std::make_unique<NodeArrayRef>(array_name, nullptr, tok);
+	return std::make_unique<NodeNumElements>(
+		std::move(array_ref),
+		nullptr,
+		tok
+	);
+}
+
+
 std::unique_ptr<NodeReference> NodeVariableRef::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
 	auto node_array_ref = to_array_ref(std::move(new_index));
 	node_array_ref->match_data_structure(declaration);
 	node_array_ref->ty = ty;
 	return node_array_ref;
+}
+
+ASTLowering* NodeVariableRef::get_lowering(NodeProgram *program) const {
+	static LoweringVariableRef lowering(program);
+	return &lowering;
 }
 
 // ************* NodeArrayRef ***************
@@ -128,9 +177,10 @@ std::unique_ptr<NodeAccessChain> NodeArrayRef::to_method_chain() {
 	return method_chain;
 }
 
-std::unique_ptr<NodeAST> NodeArrayRef::get_size() {
+std::unique_ptr<NodeAST> NodeArrayRef::get_size(std::unique_ptr<NodeAST> dim) {
 	auto new_ref = clone_as<NodeArrayRef>(this);
 	new_ref->index = nullptr;
+	if(declaration) new_ref->ty = declaration->ty;
 	return DefinitionProvider::num_elements(std::move(new_ref));
 }
 
@@ -190,8 +240,11 @@ ASTLowering* NodeNDArrayRef::get_lowering(NodeProgram *program) const {
     return &lowering;
 }
 
-std::unique_ptr<NodeAST> NodeNDArrayRef::get_size() {
-	return std::make_unique<NodeNumElements>(clone_as<NodeReference>(this), nullptr, tok);
+std::unique_ptr<NodeAST> NodeNDArrayRef::get_size(std::unique_ptr<NodeAST> dim) {
+	auto ref = clone_as<NodeNDArrayRef>(this);
+	ref->indexes = nullptr;
+	if(declaration) ref->ty = declaration->ty;
+	return std::make_unique<NodeNumElements>(std::move(ref), dim ? std::move(dim) : nullptr, tok);
 }
 
 
@@ -204,9 +257,18 @@ bool NodeNDArrayRef::determine_sizes() {
 	if(declaration->get_node_type() != NodeType::NDArray) return false;
 	auto node_ndarray = static_cast<NodeNDArray*>(declaration);
 	// has no size if function definition parameter
-	if(!node_ndarray->sizes) return false;
-	sizes = clone_as<NodeParamList>(node_ndarray->sizes.get());
-	sizes->parent = this;
+	if(!node_ndarray->sizes) {
+		if(indexes) {
+			auto n_sizes = std::make_unique<NodeParamList>(tok);
+			for(int i = 0; i<indexes->size(); i++) {
+				n_sizes->add_param(get_size(std::make_unique<NodeInt>(i+1, tok)));
+			}
+			set_sizes(std::move(n_sizes));
+		}
+//		return false;
+	} else {
+		set_sizes(clone_as<NodeParamList>(node_ndarray->sizes.get()));
+	}
 	return true;
 }
 

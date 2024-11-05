@@ -33,6 +33,25 @@ public:
 			error.exit();
 		}
 
+		if(node.dimension and node.dimension->get_node_type() == NodeType::Int) {
+			auto int_node = static_cast<NodeInt*>(node.dimension.get());
+			auto dim = int_node->value;
+			if(node.array->get_node_type() == NodeType::NDArrayRef) {
+				auto nd_array = static_cast<NodeNDArray *>(node.array->declaration);
+				if (dim > nd_array->dimensions) {
+					auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+					error.m_message =
+						"Dimension " + std::to_string(dim) + " does not exist in <NDArray> " + node.array->name + ".";
+					error.exit();
+				} else if (dim <= 0) {
+					auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+					error.m_message = "Dimension " + std::to_string(dim) + " is not valid. Dimensions start at 1. If"
+																		   " you want to access the number of all elements, use 0.";
+					error.exit();
+				}
+			}
+		}
+
 		// if no dimension is given and it is ndarray -> use 0
 		if(node.array->get_node_type() == NodeType::NDArrayRef and !node.dimension) {
 			node.set_dimension(std::make_unique<NodeInt>(0, node.tok));

@@ -69,6 +69,8 @@ NodeAST* ASTDesugar::visit(NodeAssignment &node) {
 }
 
 NodeAST* ASTDesugar::visit(NodeSingleAssignment& node) {
+	node.l_value->accept(*this);
+	node.r_value->accept(*this);
 	return node.desugar(m_program);
 }
 

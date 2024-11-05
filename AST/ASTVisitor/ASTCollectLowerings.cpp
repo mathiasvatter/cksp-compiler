@@ -85,13 +85,10 @@ NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
 	if(node.l_value -> get_node_type() == NodeType::NDArrayRef) {
 		return &node;
 	}
-	if(auto lowering = node.get_lowering(m_program)) {
-		return node.accept(*lowering)->accept(*this);
-	} else {
-		node.l_value->accept(*this);
+
+	node.l_value->accept(*this);
 //		if(node.r_value) node.r_value->accept(*this);
-		return &node;
-	}
+	return &node;
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeGetControl& node) {
@@ -140,15 +137,20 @@ NodeAST * ASTCollectLowerings::visit(NodeArray& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNDArray& node) {
-	if(node.parent->get_node_type() == NodeType::SingleAssignment) {
-		return &node;
-	}
+//	if(node.parent->get_node_type() == NodeType::SingleAssignment) {
+//		return &node;
+//	}
 	if(node.sizes) node.sizes->accept(*this);
 	return &node;
 }
 
+NodeAST * ASTCollectLowerings::visit(NodeVariableRef& node) {
+	return node.lower(m_program);
+}
+
 NodeAST * ASTCollectLowerings::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
+	if(node.sizes) node.sizes->accept(*this);
 	return &node;
 }
 

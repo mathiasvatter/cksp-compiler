@@ -161,6 +161,7 @@ public:
 	/// do substitution
 	inline NodeAST *visit(NodeNDArrayRef &node) override {
 		if(node.indexes) node.indexes->accept(*this);
+		if(node.sizes) node.sizes->accept(*this);
 		return do_substitution(&node);
 	}
 	/// do substitution

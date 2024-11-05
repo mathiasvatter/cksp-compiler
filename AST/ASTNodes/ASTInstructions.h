@@ -76,7 +76,6 @@ struct NodeFunctionCall : NodeInstruction {
 struct NodeNumElements : NodeInstruction {
 	std::unique_ptr<NodeReference> array;
 	std::unique_ptr<NodeAST> dimension;
-	std::unique_ptr<NodeAST> size;
 	inline explicit NodeNumElements(Token tok) : NodeInstruction(NodeType::NumElements, std::move(tok)) {}
 	inline NodeNumElements(std::unique_ptr<NodeReference> array, std::unique_ptr<NodeAST> dimension, Token tok)
 		: NodeInstruction(NodeType::NumElements, std::move(tok)), array(std::move(array)), dimension(std::move(dimension)) {
@@ -92,12 +91,10 @@ struct NodeNumElements : NodeInstruction {
 		parent = new_parent;
 		array->update_parents(this);
 		if(dimension) dimension->update_parents(this);
-		if(size) size->update_parents(this);
 	}
 	void set_child_parents() override {
 		array->parent = this;
 		if(dimension) dimension->parent = this;
-		if(size) size->parent = this;
 	};
 	std::string get_string() override {
 		std::string num_elements = "num_elements[" + array->get_string();
@@ -109,7 +106,6 @@ struct NodeNumElements : NodeInstruction {
 	void update_token_data(const Token& token) override {
 		array->update_token_data(token);
 		if(dimension) dimension->update_token_data(token);
-		if(size) size->update_token_data(token);
 	}
 	ASTLowering* get_lowering(struct NodeProgram *program) const override;
 	ASTLowering* get_post_lowering(struct NodeProgram *program) const override;

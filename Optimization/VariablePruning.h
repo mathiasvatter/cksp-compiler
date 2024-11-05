@@ -33,7 +33,7 @@ public:
 			func_def->accept(*this);
 		}
 		node.reset_function_visited_flag();
-//		prune_unused_variables();
+		prune_unused_variables();
 		return &node;
 	};
 
@@ -72,6 +72,8 @@ public:
 		if(node->get_node_type() == NodeType::UIControl) {
 			return false;
 		}
+		if(node->data_type == DataType::Const) return false;
+
 		if(node->persistence.has_value()) {
 			return false;
 		}
