@@ -1,4 +1,20 @@
 
+{ Parameter Promotion and Register Reuse:
+
+How to mark thread-unsafe functions:
+- function definition is tagged thread when non threadsafe builtin functions
+  are used within the function
+
+
+
+Parameter Promotion should only be applied under the following circumstances:
+- The function was tagged as non-threadsafe
+- The function
+
+
+
+}
+
 {-------------------------------------------------------------------------------------------
 										Pre Lowering cksp
 --------------------------------------------------------------------------------------------}

@@ -5,6 +5,8 @@
 - compilation of functionial programming features to a domain-specific script language array language
 funktionale programmierfeatures repräsentieren in eingeschränkter umgebung
 - Implementing Functional Programming Concepts in a Domain-Specific Scripting Language: A Compiler for KSP
+- Efficient Scope and Data Management in a Compiler for KSP
+- Implementing Recursive Data Structures and Scope Management in a KSP Compiler
 
 ## 1. Lexical Scope to Global Scope
 - Checking of scopes and variable shadowing

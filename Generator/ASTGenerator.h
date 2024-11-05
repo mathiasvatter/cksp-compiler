@@ -38,6 +38,8 @@ public:
 	NodeAST * visit(NodeString& node) override;
     NodeAST * visit(NodeVariable& node) override;
     NodeAST * visit(NodeVariableRef& node) override;
+	NodeAST * visit(NodePointer& node) override;
+	NodeAST * visit(NodePointerRef& node) override;
     NodeAST * visit(NodeArray& node) override;
     NodeAST * visit(NodeArrayRef& node) override;
     NodeAST * visit(NodeUIControl& node) override;

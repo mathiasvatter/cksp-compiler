@@ -121,9 +121,13 @@ public:
 			if(!node.sizes) {
 				auto sizes = std::make_unique<NodeParamList>(node.tok);
 				for(int i = 0; i<node.indexes->size(); i++) {
-					auto size_const = std::make_unique<NodeVariableRef>(node.name + ".SIZE_D" + std::to_string(i+1), node.tok);
-					size_const->data_type = DataType::Const;
-					sizes->add_param(std::move(size_const));
+					auto num_elem = std::make_unique<NodeNumElements>(
+						clone_as<NodeReference>(&node),
+						std::make_unique<NodeInt>(i+1, node.tok),
+						node.tok
+					);
+					num_elem->lower(m_program);
+					sizes->add_param(std::move(num_elem));
 				}
 				node.sizes = std::move(sizes);
 				node.sizes->parent = &node;

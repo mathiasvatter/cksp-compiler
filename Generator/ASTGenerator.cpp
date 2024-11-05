@@ -75,6 +75,24 @@ NodeAST * ASTGenerator::visit(NodeVariableRef &node) {
 	return &node;
 }
 
+NodeAST * ASTGenerator::visit(NodePointer &node) {
+	auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+	error.m_message = "<Pointer> Nodes should have been lowered already.";
+	error.print();
+	os << TypeRegistry::get_identifier_from_type(node.ty);
+	os << sanitize_dots(node.name);
+	return &node;
+}
+
+NodeAST * ASTGenerator::visit(NodePointerRef &node) {
+	auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+	error.m_message = "<PointerRef> Nodes should have been lowered already.";
+	error.print();
+	os << TypeRegistry::get_identifier_from_type(node.ty);
+	os << sanitize_dots(node.name);
+	return &node;
+}
+
 NodeAST * ASTGenerator::visit(NodeArrayRef &node) {
 	// get korrekt type since array refs with index are internally treated as variables with a basic type
 	const auto &type = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);

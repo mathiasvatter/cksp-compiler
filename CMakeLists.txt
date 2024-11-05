@@ -191,4 +191,5 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTCollectPostLowerings.h
         Optimization/NilValidator.h
         Lowering/LoweringUseCount.h
+        Lowering/LoweringVariableRef.h
 )

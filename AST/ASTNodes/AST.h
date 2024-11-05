@@ -646,6 +646,8 @@ struct NodeFunctionDefinition: NodeAST {
 	bool is_method();
 	void update_param_data_type() const;
 	std::shared_ptr<NodeDataStructure>& get_param(int i);
+	size_t get_num_params() const;
+	bool has_no_params() const;
 	bool is_expression_function();
 };
 
@@ -694,6 +696,9 @@ struct NodeProgram : NodeAST {
 	void inline_structs();
 	void reset_function_visited_flag();
 	void reset_function_used_flag();
+	bool is_init_callback(NodeCallback* curr_callback) const {
+		return curr_callback == init_callback;
+	}
 };
 
 

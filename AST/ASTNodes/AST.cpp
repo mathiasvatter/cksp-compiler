@@ -807,6 +807,14 @@ bool NodeFunctionDefinition::is_expression_function() {
 	return false;
 }
 
+size_t NodeFunctionDefinition::get_num_params() const {
+	return header->params.size();
+}
+
+bool NodeFunctionDefinition::has_no_params() const {
+	return header->params.empty();
+}
+
 // ************* NodeProgramm ***************
 NodeProgram::NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {
 	global_declarations = std::make_unique<NodeBlock>(Token());
