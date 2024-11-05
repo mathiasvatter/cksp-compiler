@@ -65,6 +65,10 @@ end struct
 // end struct
 
 on init	
+	declare ui_menu mnu: int, i
+	declare ari[2]
+ 	mnu->value := (mnu->value + 1) mod num_elements(ari)
+	i := (i+1) mod num_elements(ari)
 	// declare first_note := Note(69, (3,0), ((10)))
 	// declare ptr: List := List(1, List(3, nil))
 	// message(ptr.next.next)
@@ -84,7 +88,8 @@ on init
 	// end for
 	// btn_1, _ := return_twice()
 	declare n[10] := (0)
-	
+	declare array[10] := (1)
+	message(array.SIZE)
 	declare this_list: List // := nil
 	this_list := List(42, nil)
 
@@ -92,8 +97,10 @@ on init
 	// new type: object Pointer nil := -1
 	message(that_list.next.value)
 	
-	// declare ndarray[10,10]
-	// message(search_matrix(ndarray, 3), "3", "f")
+	n := (1,2,3,4,5)
+
+	declare ndarray[10,10]
+	message(search_matrix(ndarray, 3), "3", "f")
 	// message(num_elements(ndarray, 2))
 	// declare local ptr_array[10]
 	// for idx, ptr in ptr_array
@@ -105,7 +112,7 @@ on init
 	// declare local p2 := Point(3, 4)
 	// message(p1 + p2)
 	
-	// ndarray[0, *] := ndarray[1, *]
+	ndarray[0, *] := ndarray[1, *]
 end on
 
 function return_init(init: int[]): int[]
@@ -115,7 +122,7 @@ end function
 
 
 function search_matrix(matrix: int[][], target: int): int
-	// declare array[30] := (0)
+	declare array[30] := (0)
 
     declare row, col: int
     for row := 0 to num_elements(matrix, 1)- 1

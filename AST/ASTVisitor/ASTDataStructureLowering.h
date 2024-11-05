@@ -58,6 +58,7 @@ public:
 
 	inline NodeAST * visit(NodeNDArrayRef& node) override {
 		if(node.indexes) node.indexes->accept(*this);
+		if(node.sizes) node.sizes->accept(*this);
 		return node.lower(m_program);
 	}
 
@@ -69,8 +70,8 @@ public:
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		if(node.get_definition(m_program)) {
-			node.definition->visited = true;
 			node.definition->accept(*this);
+			node.definition->visited = true;
 		}
 		return &node;
 	};

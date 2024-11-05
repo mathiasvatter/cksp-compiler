@@ -183,6 +183,7 @@ std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
 	ref->parent = parent;
 	ref->match_data_structure(this);
 	ref->ty = ty;
+	ref->determine_sizes();
 	return ref;
 }
 

@@ -239,6 +239,7 @@ NodeAST * TypeInference::visit(NodeNDArray& node) {
 NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	if(node.indexes) node.indexes->accept(*this);
+	if(node.sizes) node.sizes->accept(*this);
 //	if(node.declaration) node.declaration->accept(*this);
     // if handed over without index -> as whole array structure type
     if(!node.indexes) {
@@ -324,7 +325,6 @@ NodeAST * TypeInference::visit(NodeNumElements& node) {
 		error.exit();
 	}
 	if(node.dimension) node.dimension->accept(*this);
-	if(node.size) node.size->accept(*this);
 	node.ty = TypeRegistry::Integer;
 	return &node;
 }
@@ -448,6 +448,11 @@ NodeAST * TypeInference::visit(NodeInitializerList& node) {
 		} else if(node.parent->get_node_type() == NodeType::Return) {
 			auto ret = static_cast<NodeReturn*>(node.parent);
 			if(ret->definition and ret->definition->ty->get_type_kind() != TypeKind::Composite) {
+				return node.replace_with(std::move(node.elem(0)))->accept(*this);
+			}
+		} else if(node.parent->get_node_type() == NodeType::SetControl) {
+			auto set = static_cast<NodeSetControl*>(node.parent);
+			if(set->value->ty->get_type_kind() != TypeKind::Composite) {
 				return node.replace_with(std::move(node.elem(0)))->accept(*this);
 			}
 		}

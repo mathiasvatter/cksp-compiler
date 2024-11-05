@@ -53,7 +53,7 @@ public:
 		body->wrap_in_loop_nest(iterators, std::move(lower_bounds), std::move(upper_bounds));
 
 		// desugar for loop
-//		body->statements.back()->statement->desugar(program);
+		body->get_last_statement()->desugar(program);
 
 		return std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
@@ -130,11 +130,7 @@ private:
 			int count = 1;
 			for (auto &idx : node_nd_array_ref->indexes->params) {
 				if (idx->get_node_type() == NodeType::Wildcard) {
-					auto node_upper_bound = std::make_unique<NodeVariableRef>(
-						"original.SIZE_D" + std::to_string(count), array->tok);
-//					node_upper_bound->kind = NodeReference::Compiler;
-					node_upper_bound->data_type = DataType::Const;
-					upper_bounds.push_back(std::move(node_upper_bound));
+					upper_bounds.push_back(node_nd_array_ref->get_size(std::make_unique<NodeInt>(count, array->tok)));
 					lower_bounds.push_back(std::make_unique<NodeInt>(0, array->tok));
 					count++;
 				}
@@ -243,7 +239,6 @@ private:
 			}
 			node_nd_array_ref->indexes = std::move(indexes);
 			node_nd_array_ref->indexes->parent = node_nd_array_ref.get();
-			node_nd_array_ref->sizes = nullptr;
 			return node_nd_array_ref;
 		}
 		return nullptr;

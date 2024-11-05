@@ -119,18 +119,8 @@ public:
 		if(node.indexes) {
 			// if no sizes -> ndarray is func param
 			if(!node.sizes) {
-				auto sizes = std::make_unique<NodeParamList>(node.tok);
-				for(int i = 0; i<node.indexes->size(); i++) {
-					auto num_elem = std::make_unique<NodeNumElements>(
-						clone_as<NodeReference>(&node),
-						std::make_unique<NodeInt>(i+1, node.tok),
-						node.tok
-					);
-					num_elem->lower(m_program);
-					sizes->add_param(std::move(num_elem));
-				}
-				node.sizes = std::move(sizes);
-				node.sizes->parent = &node;
+				error.m_message = "Unable to infer array size. Size of <NDArrayRef> has to be determined at compile time.";
+				error.exit();
 			}
 			node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0,node.tok);
 		}

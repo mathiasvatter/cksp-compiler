@@ -239,7 +239,7 @@ NodeAST *NodeNumElements::accept(struct ASTVisitor &visitor) {
 }
 NodeNumElements::NodeNumElements(const NodeNumElements& other)
 	: NodeInstruction(other), array(clone_unique(other.array)),
-	  dimension(clone_unique(other.dimension)), size(clone_unique(other.size)){
+	  dimension(clone_unique(other.dimension)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeNumElements::clone() const {
@@ -254,9 +254,6 @@ NodeAST *NodeNumElements::replace_child(NodeAST* oldChild, std::unique_ptr<NodeA
 	} else if (dimension.get() == oldChild) {
 		dimension = std::move(newChild);
 		return dimension.get();
-	} else if (size.get() == oldChild) {
-		size = std::move(newChild);
-		return size.get();
 	}
 	return nullptr;
 }

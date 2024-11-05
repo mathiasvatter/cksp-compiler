@@ -238,12 +238,9 @@ public:
 			return false;
 		}
 
-		auto node_array = std::make_unique<NodeArray>(std::nullopt, "array", TypeRegistry::add_composite_type(CompoundKind::Array, type), nullptr, Token());
-		auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, Token());
-		auto node_value = std::make_unique<NodeVariable>(std::nullopt, "value", type, DataType::Mutable, Token());
-		auto node_iterator_ref = node_iterator->to_reference();
-		auto node_array_ref = std::make_unique<NodeArrayRef>("array", node_iterator->to_reference(), Token());
-		auto node_value_ref = node_value->to_reference();
+		auto node_array = std::make_shared<NodeArray>(std::nullopt, "array", TypeRegistry::add_composite_type(CompoundKind::Array, type), nullptr, Token());
+		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, Token());
+		auto node_value = std::make_shared<NodeVariable>(std::nullopt, "value", type, DataType::Mutable, Token());
 		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
@@ -254,14 +251,14 @@ public:
 			std::make_unique<NodeBlock>(Token(), true),
 			Token()
 		);
-		node_function_def->header->add_param(clone_as<NodeDataStructure>(node_array.get()));
-		node_function_def->header->add_param(clone_as<NodeDataStructure>(node_iterator.get()));
-		node_function_def->header->add_param(clone_as<NodeDataStructure>(node_value.get()));
+		node_function_def->header->add_param(node_array);
+		node_function_def->header->add_param(node_iterator);
+		node_function_def->header->add_param(node_value);
 
-		// get declaration pointer right
-		node_array_ref->match_data_structure(node_function_def->header->get_param(0).get());
-		node_iterator_ref->match_data_structure(node_function_def->header->get_param(1).get());
-		node_value_ref->match_data_structure(node_function_def->header->get_param(2).get());
+		auto node_array_ref = unique_ptr_cast<NodeArrayRef>(node_array->to_reference());
+		node_array_ref->set_index(node_iterator->to_reference());
+		auto node_iterator_ref = node_iterator->to_reference();
+		auto node_value_ref = node_value ->to_reference();
 
 		auto node_while_body = std::make_unique<NodeBlock>(Token());
 		node_while_body->scope = true;
@@ -287,7 +284,7 @@ public:
 			std::make_unique<NodeBinaryExpr>(
 				token::LESS_THAN,
 				node_iterator_ref->clone(),
-				DefinitionProvider::num_elements(clone_as<NodeReference>(node_array_ref.get())),
+				node_array_ref->get_size(),
 				Token()
 			),
 			std::move(node_while_body),

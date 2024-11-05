@@ -99,6 +99,7 @@ public:
 	};
 	virtual NodeAST* visit(NodeNDArrayRef& node) {
 		if(node.indexes) node.indexes->accept(*this);
+		if(node.sizes) node.sizes->accept(*this);
 		return &node;
 	};
 	virtual NodeAST* visit(NodeAccessChain& node) {
@@ -172,7 +173,6 @@ public:
 	virtual NodeAST* visit(NodeNumElements& node) {
 		node.array->accept(*this);
 		if(node.dimension) node.dimension->accept(*this);
-		if(node.size) node.size->accept(*this);
 		return &node;
 	};
 	virtual NodeAST* visit(NodeUseCount& node) {

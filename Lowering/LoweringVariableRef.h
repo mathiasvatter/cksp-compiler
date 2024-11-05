@@ -13,6 +13,11 @@ public:
 	explicit LoweringVariableRef(NodeProgram *program) : ASTLowering(program) {}
 
 	inline NodeAST * visit(NodeVariableRef &node) override {
+
+//		if(node.data_type != DataType::Const) {
+//			return &node;
+//		}
+
 		if(node.is_array_constant()) {
 			auto ref = node.declaration->to_reference();
 			auto num_elements = std::make_unique<NodeNumElements>(
@@ -20,7 +25,7 @@ public:
 				nullptr,
 				node.tok
 			);
-			node.replace_with(std::move(num_elements));
+			node.replace_with(std::move(num_elements))->lower(m_program)->accept(*this);
 		}
 
 		if(node.is_ndarray_constant()) {
@@ -33,7 +38,7 @@ public:
 				std::make_unique<NodeInt>(dimension, node.tok),
 				node.tok
 			);
-			node.replace_with(std::move(num_elements));
+			node.replace_with(std::move(num_elements))->lower(m_program)->accept(*this);
 		}
 
 		return &node;

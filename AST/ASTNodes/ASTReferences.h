@@ -32,9 +32,12 @@ struct NodeVariableRef : NodeReference {
 	/// checks if variable ref is a ndarray size constant by checking the declaration and
 	/// pattern matching the name (....SIZE_D(\d+))
 	bool is_ndarray_constant();
+	std::unique_ptr<struct NodeNumElements> transform_ndarray_constant();
 	/// checks if variable list or array size constant
 	bool is_array_constant();
+	std::unique_ptr<NodeNumElements> transform_array_constant();
 	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
 
 };
 
@@ -49,7 +52,7 @@ struct NodeCompositeRef : NodeReference {
 		parent = new_parent;
 	}
 	virtual void set_child_parents() override = 0;  // Wird in den abgeleiteten Klassen implementiert
-	virtual std::unique_ptr<NodeAST> get_size() = 0;
+	virtual std::unique_ptr<NodeAST> get_size(std::unique_ptr<NodeAST> dim = nullptr) = 0;
 	virtual std::unique_ptr<NodeArrayRef> get_indexed_raw_ref(std::unique_ptr<NodeAST> new_index) = 0;
 
 //	virtual std::unique_ptr<NodeBlock> iterate_over() = 0;
@@ -81,7 +84,7 @@ struct NodeArrayRef : NodeCompositeRef {
 	std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() override;
 	/// this_list.next.value[6]
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
-	std::unique_ptr<NodeAST> get_size() override;
+	std::unique_ptr<NodeAST> get_size(std::unique_ptr<NodeAST> dim = nullptr) override;
 	/// check if array ref is <list_ref>.size[] array
 	bool is_list_sizes();
 	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
@@ -120,8 +123,11 @@ struct NodeNDArrayRef : NodeCompositeRef {
 		return name;
 	}
     ASTLowering* get_lowering(NodeProgram *program) const override;
-	std::unique_ptr<NodeAST> get_size() override;
-
+	std::unique_ptr<NodeAST> get_size(std::unique_ptr<NodeAST> dim = nullptr) override;
+	void set_sizes(std::unique_ptr<NodeParamList> new_sizes) {
+		sizes = std::move(new_sizes);
+		sizes->parent = this;
+	}
 	std::unique_ptr<NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) override;
 	/// this_list.next.value[6,4]
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
