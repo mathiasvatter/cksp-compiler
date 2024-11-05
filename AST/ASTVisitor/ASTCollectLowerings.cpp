@@ -72,6 +72,8 @@ NodeAST * ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 	if(node.value) node.value->accept(*this);
 	if(node.variable -> get_node_type() == NodeType::NDArray || node.variable -> get_node_type() == NodeType::Array) {
 		return &node;
+	} else {
+		node.variable->accept(*this);
 	}
 	return node.lower(m_program);
 }

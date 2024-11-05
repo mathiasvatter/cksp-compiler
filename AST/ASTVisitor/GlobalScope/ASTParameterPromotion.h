@@ -89,17 +89,13 @@ public:
             CompileError(ErrorType::InternalError,
                          "Found undefined <property function>.", "", node.tok).exit();
         } else if (node.kind == NodeFunctionCall::Kind::Builtin) {
-            // no lambda lifting for builtin function pls
+            // no param promotion for builtin function pls
             return &node;
         }
-
-		// for now, when function has no params and is not in init callback, assume as call
-		if(node.definition and node.definition->header->params.empty() and m_program->current_callback != m_program->init_callback) {
-//			node.is_call = true;
-		}
-		// for now, when function is called, do not promote and assume as threadsafe
-		if(node.definition and node.is_call) {
-			node.definition->is_thread_safe = true;
+		bool needs_param_promotion = node.do_param_promotion();
+		// for now, when function does not need param promotion and has no params and is not in init callback, assume as call
+		if(!needs_param_promotion and node.definition->has_no_params() and !m_program->is_init_callback(m_program->current_callback)) {
+			node.is_call = true;
 		}
 
 		if(node.definition and !node.definition->visited) {
@@ -107,7 +103,7 @@ public:
 
 			if(!m_local_var_declarations[node.definition].empty()) {
 				// see if this call is in thread safe env -> if not, clone and promote local vars
-//				if (!node.definition->is_thread_safe) {
+				if (needs_param_promotion) {
 					// do this only if current call is not threadsafe environment
 					for (auto &decl : m_local_var_declarations[node.definition]) {
 						// add local declarations of function definition to parameters
@@ -118,27 +114,27 @@ public:
 						}
 					}
 
-				// if threadsafe, add to global declarations
-//				} else {
-//					// put local declaration into global declaration as a one time thing
-//					auto &declares = m_local_var_declarations[node.definition];
-//					// check if variables were already added to global declarations
-//					if (!declares.empty()) {
-//						// otherwise add them to global declarations
-//						for (auto &decl : declares) {
-//							// set to global to prevent from being used in other functions by register reuse
-//							m_global_function_vars.emplace(decl.first, std::move(decl.second));
-//						}
-//						declares.clear();
-//					}
-//				}
+				// if no param promotion, add directly to global declarations
+				} else {
+					// put local declaration into global declaration as a one time thing
+					auto &declares = m_local_var_declarations[node.definition];
+					// check if variables were already added to global declarations
+					if (!declares.empty()) {
+						// otherwise add them to global declarations
+						for (auto &decl : declares) {
+							// set to global to prevent from being used in other functions by register reuse
+							m_global_function_vars.emplace(decl.first, std::move(decl.second));
+						}
+						declares.clear();
+					}
+				}
 			}
 
 		}
 
 		if(node.definition) {
-			// if the call is not in a threadsafe environment
-//			if(!node.definition->is_thread_safe) {
+			// if the call does need param promotion
+			if(needs_param_promotion) {
 				// if the call is in a callback -> check if threadsafe (add to global declarations) or not (do parameter promotion)
 				if (m_program->function_call_stack.empty()) {
 					// add declaration statements to the statement right above the function call
@@ -155,7 +151,7 @@ public:
 						next_declares.emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
 					}
 				}
-//			}
+			}
 
 			// remove call flag when function is not thread safe
 			if(!node.definition->is_thread_safe and !node.function->has_no_args()) {

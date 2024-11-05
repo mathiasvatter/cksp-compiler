@@ -1,18 +1,20 @@
 ## 2. Lowering von rekursiven Datenstrukturen in CKSP
 
-- Neue ASTNode Type Pointer, PointerRef, Nil, AccessChain
-- Neuer Typ: Object
+- Neue ASTNode Types Struct, Pointer, PointerRef, Nil, AccessChain
+- Neuer Typ: Object[<structname>]
 
 ### Eingangs struct:
 
 ```cksp
 struct List
     declare value: int
-    declare next: List := nil
+    declare next: List
+    declare arr[5]: int[]
 
-    function __init__(self, value: int, next: List)
+    function __init__(self, value: int, next: List, arr: int[])
         self.value := value
         self.next := next
+        self.arr := arr
     end function
 
     function get_next_next_value(self)
@@ -23,8 +25,8 @@ end struct
 
 ### 1. Erste Transformation (Desugaring):
 - prüft, ob `__init__` oder `__repr__` Methode definiert sind, definiert sie ansonsten selbst
-- Fügt self keyword hinzu, um die self referenzen einer DataStruct Node zuzuweisen
-- Checkt, ob die Methoden alle als erstes das self keyword besitzen
+- Fügt `self` keyword hinzu, um die `self` referenzen einer DataStruct Node zuzuweisen
+- Checkt, ob die Methoden alle als erstes das `self` keyword besitzen
 - Checkt, ob Operator overload existiert
 - Fügt zu allen membern den namen des struct als prefix hinzu, genauso wie zu den member referenzen, ersetzt hier das `self.` prefix. Dabei werden `::` benutzt, damit kein Variable Shadowing stattfinden kann, da `:` nicht supported ist im Tokenizer.
 
@@ -35,14 +37,16 @@ struct List
 	declare self : List
 	declare List::value : int
 	declare List::next : List
+    declare List::arr[5]: int[]
 
-	function List::__init__(value : int, next)
+	function List::__init__(value : int, next: List, arr: int[])
         List::value := value
         List::next := next
+        List::arr := arr
 	end function
 
 	function List::get_next_next_value(self : List)
-	return (self.next.next.value)
+	    return (self.next.next.value)
 	end function
 
 	function List::__repr__(self : List)
@@ -69,6 +73,7 @@ self{List}.next{List}.next{List}.value{int}
 
 ### 4. Dritte Transformation (Lowering):
 - Alle member und member referenzen werden um eine Dimension erhöht: Variablen werden zu Arrays, Arrays zu NDArrays usw.
+- Implementation von Wildcard Operator `*`, um einzelne Dimensionen von multidimensionalen Arrays zu initialisieren.
 - Als index bekommen sie eine referenz zu self und sofern sie im Constructor sind, eine referenz zu free_idx
 - zum Constructor werden das allocation array und die variable free_idx hinzugefügt
 - Pointer -> Variable, PointerRef -> VariableRef, Nil -> -1
@@ -86,8 +91,9 @@ struct List
 	declare List::stack_top : int
 	declare List::value[List::MAX_STRUCTS{int}] : int[]
 	declare List::next[List::MAX_STRUCTS{int}] : int[] := [- 1]
+    declare List::arr[List::MAX_STRUCTS{int}, 5] : int[][]
 
-	function List::__init__(value : int, next : int)
+	function List::__init__(value : int, next : int, arr: int[])
 		List::free_idx{int} := search(List::allocation{int[]}, 0)
 		if(List::free_idx{int} = -1)
 			message("Error: No more free space available to allocate objects of type 'List'")
@@ -95,6 +101,7 @@ struct List
 		List::allocation[List::free_idx{int}]{int[]} := 1
 		List::value[List::free_idx{int}]{int} := value{int}
 		List::next[List::free_idx{int}]{int} := next{int}
+        List::arr[List::free_idx{int}, *]{int[]} := arr{int[]}
 		return (List::free_idx{int})
 	end function
 
@@ -133,7 +140,7 @@ retain(lists[0], 10) // increase ref count by num_elements of lists
 ### Creating Reference Counting Methods for recursive Structures
 
 - Folgende Methoden werden pro struct erstellt:
-    - __incr__(ptr): Erhöht den Reference Count einer struct instanz.
+    - `__incr__(ptr)`: Erhöht den Reference Count einer struct instanz.
     ```cksp
     function List::__incr__(self: List, num_refs: int)
         if self # nil
@@ -141,8 +148,8 @@ retain(lists[0], 10) // increase ref count by num_elements of lists
         end if
     end function
     ```
-    - `__decr__`(ptr): Reduziert den Reference Count einer struct instanz, sobald der rc bei <=0 liegt, wird die Methode auch auf alle rekursiven member angewendet und der Pointer selbst auf nil gesetzt. Damit ist der Speicherplatz im allocation array wieder frei für eine neue struct instanz
-    - `__del__`(ptr): Kümmert sich um das eigentliche löschen, setzt im Falle von rekursiven struct membern diese auf nil
+    - `__decr__(ptr)`: Reduziert den Reference Count einer struct instanz, sobald der rc bei <=0 liegt, wird die Methode auch auf alle rekursiven member angewendet und der Pointer selbst auf nil gesetzt. Damit ist der Speicherplatz im allocation array wieder frei für eine neue struct instanz
+    - `__del__(ptr)`: Kümmert sich um das eigentliche löschen, setzt im Falle von rekursiven struct membern diese auf nil
     ```cksp
     function List::__del__(self: List)
         if(List::allocation[self] <= 0)
@@ -156,8 +163,8 @@ retain(lists[0], 10) // increase ref count by num_elements of lists
 Für die `__decr__` Methode gibt es drei unterschiedliche Implementationsmöglichkeiten, je nach Art der rekursion.
 
 ### 1. Methode 1 (Lineare direkte Rekursion)
-    - Voraussetzungen: Struct hat maximal einen direkt rekursiven member
-    - Die Methode kann auf einen stack verzichten und somit Speicherplatz sparen.
+- Voraussetzungen: Struct hat maximal einen direkt rekursiven member
+- Die Methode kann auf einen stack verzichten und somit Speicherplatz sparen.
 ```cksp
 struct List
     declare value: int
@@ -192,8 +199,8 @@ end function
 ```
 
 ### 2. Methode 2 (Nicht-lineare direkte Rekursion)
-    - Voraussetzungen: Struct hat mehrere direkt rekursive member
-    - Die Methode setzt einen stack und eine stack_top variable voraus
+- Voraussetzungen: Struct hat mehrere direkt rekursive member
+- Die Methode setzt einen stack und eine stack_top variable voraus
 ```cksp
 struct Node
     declare value: int
@@ -248,7 +255,7 @@ end function
 ```
 
 ### 3. Methode 3 (nicht-lineare indirekte Rekursion)
-    - Voraussetzungen: Struct hat ein oder mehrere indirekt rekursive Member, bspw. Member, die den Typ eines anderen struct haben, welches aber wiederum Member hat, die den Typ des ersten struct haben.
+- Voraussetzungen: Struct hat ein oder mehrere indirekt rekursive Member, bspw. Member, die den Typ eines anderen struct haben, welches aber wiederum Member hat, die den Typ des ersten struct haben.
 ```cksp
 struct List
     declare value: int
@@ -331,3 +338,22 @@ function List::__decr__(self: List, num_refs: int)
     end while
 end function
 ```
+
+### Herausforderungen:
+- Reference Counting bei multidimensional array assignments noch nicht implementiert
+```cksp
+// if there are different lists as r_values
+delete more_lists[4,0]
+delete more_lists[4,1]
+more_lists[4, *] := (ls, ls1) // <-
+retain(more_lists[4,0], 1)
+retain(more_lists[4,1], 1)
+```
+- Array of Objects case in `__incr__` und `__decr__` abdecken
+```cksp
+struct List
+    declare value: int
+    declare next[5]: List[]
+end struct
+```
+- List::MAX_STRUCTS verändern durch statische Analyse und somit Speicherplatz sparen?

@@ -225,6 +225,14 @@ bool NodeFunctionCall::is_string_env() {
 	return is_string;
 }
 
+bool NodeFunctionCall::do_param_promotion() const {
+	if(!definition) return false;
+	if(definition->is_thread_safe) return false;
+	if(is_call) return false;
+	if(definition->call_sites.size() > 2) return false;
+	return true;
+}
+
 // ************* NodeNumElements ***************
 NodeAST *NodeNumElements::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);

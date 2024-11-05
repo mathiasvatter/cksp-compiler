@@ -3,7 +3,7 @@ struct List
 	declare value: int
 	declare next: List
 
-	function __init__(self, value: int, next)
+	function __init__(self, value: int, next: List)
 		self.value := value
 		self.next := next
 	end function
@@ -79,15 +79,18 @@ on init
 	// 	list_ptr := ls
 	// 	if(idx = 5)
 	// 		break
-	// 	else 
-	// 		break
 	// 	end if
 	// 	message(ls.next)
 	// end for
-	// // btn_1, _ := return_twice()
-	// declare n[10] := (0)
-	// declare array[10] : int[] := return_init(n)
+	// btn_1, _ := return_twice()
+	declare n[10] := (0)
 	
+	declare this_list: List // := nil
+	this_list := List(42, nil)
+
+	declare that_list: List := List(39, List(40, List(41, this_list)))
+	// new type: object Pointer nil := -1
+	message(that_list.next.value)
 	
 	// declare ndarray[10,10]
 	// message(search_matrix(ndarray, 3), "3", "f")
@@ -98,9 +101,9 @@ on init
 	// end for
 	// declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
 	// declare local ptr_array3[10] := ptr_array
-	declare local p1 := Point(1, 2)
-	declare local p2 := Point(3, 4)
-	message(p1 + p2)
+	// declare local p1 := Point(1, 2)
+	// declare local p2 := Point(3, 4)
+	// message(p1 + p2)
 	
 	// ndarray[0, *] := ndarray[1, *]
 end on
