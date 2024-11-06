@@ -102,6 +102,13 @@ NodeAST *NodeAST::post_lower(NodeProgram *program) {
 	return this;
 }
 
+NodeAST *NodeAST::data_lower(NodeProgram *program) {
+	if(auto data_lower = get_data_lowering(program)) {
+		return accept(*data_lower);
+	}
+	return this;
+}
+
 bool NodeAST::is_constant() {
 	static ConstExprValidator const_validator;
 	return const_validator.is_constant(*this);

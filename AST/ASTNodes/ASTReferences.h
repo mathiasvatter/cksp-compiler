@@ -122,7 +122,9 @@ struct NodeNDArrayRef : NodeCompositeRef {
 	std::string get_string() override {
 		return name;
 	}
-    ASTLowering* get_lowering(NodeProgram *program) const override;
+//    ASTLowering* get_lowering(NodeProgram *program) const override;
+	ASTLowering *get_data_lowering(NodeProgram *program) const override;
+
 	std::unique_ptr<NodeAST> get_size(std::unique_ptr<NodeAST> dim = nullptr) override;
 	void set_sizes(std::unique_ptr<NodeParamList> new_sizes) {
 		sizes = std::move(new_sizes);

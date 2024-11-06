@@ -127,7 +127,7 @@ NodeAST *NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 	return nullptr;
 }
 
-ASTLowering* NodeArray::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeArray::get_data_lowering(NodeProgram *program) const {
 	static LoweringArray lowering(program);
 	return &lowering;
 }
@@ -173,7 +173,7 @@ std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 	return std::make_unique<NodeNDArray>(*this);
 }
 
-ASTLowering* NodeNDArray::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeNDArray::get_data_lowering(NodeProgram *program) const {
 	static LoweringNDArray lowering(program);
 	return &lowering;
 }

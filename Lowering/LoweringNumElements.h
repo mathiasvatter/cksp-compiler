@@ -54,10 +54,27 @@ public:
 
 		// if no dimension is given and it is ndarray -> use 0
 		if(node.array->get_node_type() == NodeType::NDArrayRef and !node.dimension) {
+			// set default dimension to 0
 			node.set_dimension(std::make_unique<NodeInt>(0, node.tok));
 		}
 
 		if(node.array->get_node_type() == NodeType::NDArrayRef) {
+//			// get correct name (because local ndarrays get renamed) by using the lookup table in NodeProgram
+//			if(!node.array->declaration) {
+//				auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
+//				error.m_message = "Missing pointer to array definition: " + node.array->name;
+//				error.exit();
+//			}
+//			auto it = m_program->num_element_constants.find(node.array->declaration);
+//			if(it == m_program->num_element_constants.end()) {
+//				auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
+//				error.m_message = "Missing num_elements constant for array: " + node.array->name;
+//				error.exit();
+//			}
+//			// set found size_array
+//			node.size_array = it->second;
+
+			// add clip function when ndarray is used
 			auto nd_array = static_cast<NodeNDArray*>(node.array->declaration);
 			add_clip_function(m_program);
 			node.set_dimension(get_clip_call(std::move(node.dimension), std::make_unique<NodeInt>(nd_array->dimensions, node.tok)));

@@ -89,6 +89,10 @@ private:
 				} else if (!node.value) return &node;
 			}
 		}
+		// skip constant variables
+		if(node.variable->data_type == DataType::Const)
+			return &node;
+
 		std::unique_ptr<NodeBlock> node_body = nullptr;
 		if(node.variable->get_node_type() == NodeType::Array) {
 			node_body = std::make_unique<NodeBlock>(node.tok);

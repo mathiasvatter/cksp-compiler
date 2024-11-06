@@ -1144,7 +1144,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 	m_current_function_def = node_function_definition.get();
     std::unique_ptr<NodeFunctionHeader> func_header;
     std::optional<std::unique_ptr<NodeDataStructure>> func_return_var;
-    auto func_body = std::make_unique<NodeBlock>(get_tok());
+    auto func_body = std::make_unique<NodeBlock>(get_tok(), true);
     bool func_override = false;
     if (peek().type != token::KEYWORD) {
         error.m_message = "Missing function name.";

@@ -41,7 +41,7 @@ public:
         if(node.variable->get_node_type() == NodeType::NDArray) {
 			auto node_ndarray = static_cast<NodeNDArray*>(node.variable.get());
 			if(!node_ndarray->sizes) {
-				auto error = CompileError(ErrorType::Variable, "", "", node.tok);
+				auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
 				error.m_message = "Unable to infer array size. Size of NDArray has to be determined at compile time.";
 				error.exit();
 			}
@@ -57,6 +57,9 @@ public:
 					node.tok
 			);
 			node_num_elements_decl->variable->data_type = DataType::Const;
+			node_num_elements_decl->variable->is_local = node.variable->is_local;
+			// Add to num_elements global list
+			m_program->num_element_constants[node.variable.get()] = node_num_elements_decl->variable;
 			auto node_init_list = std::make_unique<NodeInitializerList>(
 				node.tok,
 				get_lowered_size_expr(*node_ndarray)
@@ -109,7 +112,7 @@ public:
 
     /// Lowering of multidimensional arrays to arrays when reference
 	NodeAST* visit(NodeNDArrayRef& node) override {
-        auto error = CompileError(ErrorType::Variable, "", "", node.tok);
+        auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
         if(node.indexes and node.sizes and node.indexes->size() != node.sizes->size()) {
             error.m_message = "Number of indices does not match number of dimensions: " + node.name;
             error.exit();

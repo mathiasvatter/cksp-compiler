@@ -158,11 +158,11 @@ void Compiler::compile() {
 	// Data Structure Lowering of NDArrays and Array assignments
 	ASTDataStructureLowering data_structure_lowering(&m_definition_provider);
 	ast->accept(data_structure_lowering);
-	ast->debug_print();
 
 	compile_time.stop("Data Structure Lowering");
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
+	ast->debug_print();
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);

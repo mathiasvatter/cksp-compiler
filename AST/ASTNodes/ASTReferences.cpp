@@ -227,7 +227,7 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::clone() const {
 	return std::make_unique<NodeNDArrayRef>(*this);
 }
 
-ASTLowering* NodeNDArrayRef::get_lowering(NodeProgram *program) const {
+ASTLowering* NodeNDArrayRef::get_data_lowering(NodeProgram *program) const {
     static LoweringNDArray lowering(program);
     return &lowering;
 }

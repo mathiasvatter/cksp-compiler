@@ -26,13 +26,26 @@ public:
 		}
 
 		if(node.dimension) {
+//			if(!node.size_array) {
+//				auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
+//				error.m_message = "Missing num_elements constant for array: " + node.array->name;
+//				error.exit();
+//			}
+
 			auto array_call = std::make_unique<NodeArrayRef>(
-				node.array->sanitize_name() + OBJ_DELIMITER + "num_elements",
+				node.array->sanitize_name()+OBJ_DELIMITER+"num_elements",
 				std::move(node.dimension),
 				node.tok
 			);
+
+//			auto array_call = std::make_unique<NodeArrayRef>(
+//				node.size_array->name,
+//				std::move(node.dimension),
+//				node.tok
+//			);
+//			array_call->match_data_structure(node.size_array.get());
 			array_call->match_data_structure(node.array->declaration);
-			array_call->ty = node.array->ty->get_element_type();
+			array_call->ty = TypeRegistry::Integer;
 			return node.replace_with(std::move(array_call));
 		} else {
 			// no dimension -> use builtin num_elements function
