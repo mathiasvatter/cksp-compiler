@@ -76,6 +76,7 @@ struct NodeFunctionCall : NodeInstruction {
 struct NodeNumElements : NodeInstruction {
 	std::unique_ptr<NodeReference> array;
 	std::unique_ptr<NodeAST> dimension;
+	std::shared_ptr<NodeDataStructure> size_array = nullptr;
 	inline explicit NodeNumElements(Token tok) : NodeInstruction(NodeType::NumElements, std::move(tok)) {}
 	inline NodeNumElements(std::unique_ptr<NodeReference> array, std::unique_ptr<NodeAST> dimension, Token tok)
 		: NodeInstruction(NodeType::NumElements, std::move(tok)), array(std::move(array)), dimension(std::move(dimension)) {
@@ -382,6 +383,7 @@ struct NodeSingleAssignment : NodeInstruction {
     }
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
     ASTLowering* get_lowering(NodeProgram *program) const override;
+	ASTLowering *get_data_lowering(NodeProgram *program) const override;
 
 };
 
@@ -474,6 +476,8 @@ struct NodeSingleDeclaration : NodeInstruction {
 		if(retain_stmt) retain_stmt -> update_token_data(token);
     }
     ASTLowering* get_lowering(struct NodeProgram *program) const override;
+	ASTLowering *get_data_lowering(NodeProgram *program) const override;
+
     /// returns new assign statement with the declared variable and r_value or neutral element. Can optionally take new
     /// variable to make reference of
     [[nodiscard]] std::unique_ptr<NodeSingleAssignment> to_assign_stmt(NodeDataStructure* var=nullptr);

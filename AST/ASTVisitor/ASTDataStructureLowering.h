@@ -37,29 +37,29 @@ public:
 	inline NodeAST* visit(NodeSingleDeclaration &node) override {
 		// no variable visiting since this gets lowered in loweringNDArray as SingleDeclaration
 		if(node.value) node.value ->accept(*this);
-		return node.lower(m_program);
+		return node.data_lower(m_program);
 	}
 
 	inline NodeAST* visit(NodeSingleAssignment &node) override {
 		node.l_value->accept(*this);
 		node.r_value ->accept(*this);
-		return node.lower(m_program);
+		return node.data_lower(m_program);
 	}
 
 	inline NodeAST * visit(NodeArray& node) override {
 		if(node.size) node.size->accept(*this);
-		return node.lower(m_program);
+		return node.data_lower(m_program);
 	}
 
 	inline NodeAST * visit(NodeNDArray& node) override {
 		if(node.sizes) node.sizes->accept(*this);
-		return node.lower(m_program);
+		return node.data_lower(m_program);
 	}
 
 	inline NodeAST * visit(NodeNDArrayRef& node) override {
 		if(node.indexes) node.indexes->accept(*this);
 		if(node.sizes) node.sizes->accept(*this);
-		return node.lower(m_program);
+		return node.data_lower(m_program);
 	}
 
 	inline NodeAST* visit(NodeArrayRef& node) override {

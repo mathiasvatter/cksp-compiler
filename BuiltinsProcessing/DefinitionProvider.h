@@ -59,7 +59,7 @@ public:
 
 	static inline void handle_throwaway_var(NodeDataStructure& var) {
 		if(var.name == "_") {
-			auto error = CompileError(ErrorType::Variable, "","", var.tok);
+			auto error = CompileError(ErrorType::VariableError, "", "", var.tok);
 			error.m_message = "Throwaway variable cannot be declared.";
 			error.exit();
 		}
@@ -193,7 +193,7 @@ public:
 
 	/// variable error handling
 	static inline CompileError throw_declaration_error(const NodeReference &node) {
-		auto compile_error = CompileError(ErrorType::Variable, "","", node.tok);
+		auto compile_error = CompileError(ErrorType::VariableError, "", "", node.tok);
 		std::string type = "<Variable>";
 		if(node.get_node_type() == NodeType::Array) type = "<Array>";
 		compile_error.m_message = type+" has not been declared: " + node.name+".";
@@ -203,7 +203,7 @@ public:
 	};
 
 	static inline CompileError throw_declaration_type_error(NodeReference* node) {
-		auto compile_error = CompileError(ErrorType::Variable, "","", node->tok);
+		auto compile_error = CompileError(ErrorType::VariableError, "", "", node->tok);
 		if(!node->declaration) throw_declaration_error(*node).exit();
 		if(node->declaration->get_node_type() == NodeType::Array && node->get_node_type() == NodeType::Variable) {
 			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Array>: " + node->name+".";

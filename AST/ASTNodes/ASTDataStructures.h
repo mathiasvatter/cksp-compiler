@@ -94,7 +94,9 @@ struct NodeArray : NodeComposite {
 	void update_token_data(const Token& token) override {
 		if(size) size->update_token_data(token);
 	}
-	ASTLowering* get_lowering(NodeProgram *program) const override;
+//	ASTLowering* get_lowering(NodeProgram *program) const override;
+	ASTLowering *get_data_lowering(NodeProgram *program) const override;
+
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::ArrayRef;}
 	std::unique_ptr<NodeVariable> to_variable() override {
@@ -134,7 +136,9 @@ struct NodeNDArray : NodeComposite {
 	void update_token_data(const Token& token) override {
 		if(sizes) sizes->update_token_data(token);
 	}
-	ASTLowering* get_lowering(NodeProgram *program) const override;
+//	ASTLowering* get_lowering(NodeProgram *program) const override;
+	ASTLowering *get_data_lowering(NodeProgram *program) const override;
+
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::NDArrayRef;}
 	std::unique_ptr<NodeVariable> to_variable() override {
@@ -377,7 +381,7 @@ struct NodeStruct : NodeDataStructure {
 				auto declaration = static_cast<NodeSingleDeclaration*>(member->statement.get());
 				member_table[declaration->variable->name] = declaration->variable.get();
 			} else {
-				auto error = CompileError(ErrorType::Variable, "<Struct> member must be a declaration", "", tok);
+				auto error = CompileError(ErrorType::VariableError, "<Struct> member must be a declaration", "", tok);
 				error.exit();
 			}
 		}

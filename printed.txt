@@ -57,13 +57,18 @@ on init
 		message((_return19{int} & ", " & "3" & ", " & "f"))
 
 	ndarray$dim2$1<-ndarray$dim2$1[real](_ndarray{real[]}, _ndarray{real[]}, 0, 1)
+		declare _return20 : unknown
+		Struct::max(_return20{unknown}, 0, this_list{int})
+		message(List::allocation[_return20{unknown}]{unknown})
+
 end on
 
 function search_matrix(ret$1 : int, _matrix : number[], target : number)
 	declare RETURN_FLAG15 : int
 	while(RETURN_FLAG15{int} = 0) 
 		declare array[30] : int[] := [0]
-
+		declare ndarray::num_elements[3] : int[] := [2 * 3, 2, 3]
+		declare _ndarray[2 * 3] : int[]
 		declare row : int
 		declare col : int
 		row{int} := 0
@@ -89,6 +94,10 @@ function search_matrix(ret$1 : int, _matrix : number[], target : number)
 		RETURN_FLAG15{int} := 1
 		continue
 	end while
+end function
+
+function Struct::max(ret$1 : unknown, a : int, b : int)
+	ret$1{unknown} := ((a{int} + b{int}) + abs(a{int} - b{int})) / 2
 end function
 
 function List::__init__(ret$1 : int, value : int, next : int)

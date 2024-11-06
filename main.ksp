@@ -115,6 +115,8 @@ on init
 	// message(p1 + p2)
 	
 	ndarray[0, *] := ndarray[1, *]
+
+	message(use_count(this_list))
 end on
 
 function return_init(init: int[]): int[]
@@ -125,7 +127,8 @@ end function
 
 function search_matrix(matrix: number[][], target: number): number
 	declare array[30] := (0)
-
+	declare ndarray[2,3]
+	// message(num_elements(ndarray))
     declare row, col: int
     for row := 0 to num_elements(matrix, 1)- 1
         for col := 0 to num_elements(matrix, 2)- 1

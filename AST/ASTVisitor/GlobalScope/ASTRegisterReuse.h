@@ -66,7 +66,12 @@ public:
 	inline bool rename_local_vars() {
 		// rename local passive_vars with gensym and add to global scope
 		for(auto & local_var : m_all_local_vars) {
-			local_var->name = m_gensym.fresh(loc_var_prefix);
+			// in case it is ::num_elements ->  the suffix needs to be retained
+			if(local_var->is_num_elements_constant()) {
+				local_var->name = m_gensym.fresh(loc_var_prefix) + OBJ_DELIMITER + "num_elements";
+			} else {
+				local_var->name = m_gensym.fresh(loc_var_prefix);
+			}
 			m_def_provider->set_declaration(local_var, false);
 		}
 		// rename all local references with their new passive_var names
@@ -144,6 +149,7 @@ public:
 
 
 		if(m_current_body != m_program->global_declarations.get()) {
+			// constant local declarations shall not be reused. But still need to be renamed to avoid name clashes
 			if (node.variable->is_local and node.variable->data_type == DataType::Const) {
 				node.variable->is_local = false;
 				node.variable->is_global = true;
@@ -153,10 +159,11 @@ public:
 					std::move(node.value),
 					node.tok
 				);
-				m_def_provider->set_declaration(node_global_const->variable.get(), !node.variable->is_local);
-				m_program->global_declarations->add_as_stmt(
-					std::move(node_global_const)
-				);
+				// set declaration to local to avoid name clashes
+				m_def_provider->set_declaration(node_global_const->variable.get(), false);
+				// add to vector here for later renaming and to avoid it turning into a passive var
+				m_all_local_vars.push_back(node.variable.get());
+				m_program->global_declarations->add_as_stmt(std::move(node_global_const));
 				return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
 			}
 		} else {
@@ -239,10 +246,10 @@ public:
 
 		auto node_declaration = m_def_provider->get_declaration(&node);
 		if(!node_declaration) {
-			if(node.data_type == DataType::Const) {
-				// do not throw error for const variables
-				return &node;
-			}
+//			if(node.data_type == DataType::Const) {
+//				// do not throw error for const variables
+//				return &node;
+//			}
 			DefinitionProvider::throw_declaration_error(node).exit();
 		}
 
@@ -269,6 +276,8 @@ private:
 	Gensym m_gensym;
 	NodeBlock* m_current_body = nullptr;
 
+	/// Body for all local constant declarations
+//	std::unique_ptr<NodeBlock> m_local_const_declares = std::make_unique<NodeBlock>(Token());
 	/// vector for all local declarations in callbacks
 	std::unordered_map<NodeCallback*, std::vector<NodeSingleDeclaration*>> m_all_callback_decl = {};
 	/// vector for all local vars in functions -> do not get moved into on init

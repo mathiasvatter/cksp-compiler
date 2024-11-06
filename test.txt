@@ -1,8 +1,10 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Wed Nov 06 13:24:03 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Wed Nov 06 18:28:38 2024 }
 on init
-  declare $loc_4
-  declare $loc_3
+  declare %loc_3__num_elements[3] := (6, 2, 3)
+  declare $loc_6
   declare %loc_1[30]
+  declare $loc_5
+  declare %loc_4[6]
   declare $loc_2
   declare $loc_0
   declare $List__free_idx
@@ -64,17 +66,22 @@ on init
       %loc_1[$loc_2] := 0
       inc($loc_2)
     end while
-    $loc_3 := 0
     $loc_2 := 0
-    while(($loc_2 <= (?ndarray__num_elements[1] - 1)) and ($loc_0 = 0)) 
-      $loc_3 := 0
-      while(($loc_3 <= (?ndarray__num_elements[2] - 1)) and ($loc_0 = 0)) 
-        if(?_ndarray[($loc_2 * ?ndarray__num_elements[2]) + $loc_3] = 3.0)
-          $_return18 := ($loc_2 * 10) + $loc_3
+    while($loc_2 < num_elements(%loc_4)) 
+      %loc_4[$loc_2] := 0
+      inc($loc_2)
+    end while
+    $loc_5 := 0
+    $loc_2 := 0
+    while(($loc_2 <= (%ndarray__num_elements[1] - 1)) and ($loc_0 = 0)) 
+      $loc_5 := 0
+      while(($loc_5 <= (%ndarray__num_elements[2] - 1)) and ($loc_0 = 0)) 
+        if(?_ndarray[($loc_2 * %ndarray__num_elements[2]) + $loc_5] = 3.0)
+          $_return18 := ($loc_2 * 10) + $loc_5
           $loc_0 := 1
           continue
         end if
-        inc($loc_3)
+        inc($loc_5)
       end while
       if($loc_0 = 1)
         continue
@@ -96,17 +103,22 @@ on init
       %loc_1[$loc_2] := 0
       inc($loc_2)
     end while
-    $loc_3 := 0
+    $loc_2 := 0
+    while($loc_2 < num_elements(%loc_4)) 
+      %loc_4[$loc_2] := 0
+      inc($loc_2)
+    end while
+    $loc_5 := 0
     $loc_2 := 0
     while(($loc_2 <= (%ndarray2__num_elements[1] - 1)) and ($loc_0 = 0)) 
-      $loc_3 := 0
-      while(($loc_3 <= (%ndarray2__num_elements[2] - 1)) and ($loc_0 = 0)) 
-        if(%_ndarray2[($loc_2 * %ndarray2__num_elements[2]) + $loc_3] = 3)
-          $_return19 := ($loc_2 * 10) + $loc_3
+      $loc_5 := 0
+      while(($loc_5 <= (%ndarray2__num_elements[2] - 1)) and ($loc_0 = 0)) 
+        if(%_ndarray2[($loc_2 * %ndarray2__num_elements[2]) + $loc_5] = 3)
+          $_return19 := ($loc_2 * 10) + $loc_5
           $loc_0 := 1
           continue
         end if
-        inc($loc_3)
+        inc($loc_5)
       end while
       if($loc_0 = 1)
         continue
@@ -121,10 +133,13 @@ on init
     continue
   end while
   message($_return19 & ", " & "3" & ", " & "f")
-  $loc_4 := 0
-  while($loc_4 <= (?ndarray__num_elements[1] - 1)) 
-    ?_ndarray[0 + $loc_4] := ?_ndarray[0 + $loc_4]
-    inc($loc_4)
+  $loc_6 := 0
+  while($loc_6 <= (%ndarray__num_elements[1] - 1)) 
+    ?_ndarray[0 + $loc_6] := ?_ndarray[0 + $loc_6]
+    inc($loc_6)
   end while
+  declare $_return20
+  $_return20 := ((0 + $this_list) + abs(0 - $this_list)) / 2
+  message(%List__allocation[$_return20])
 end on
 

@@ -121,7 +121,7 @@ public:
 	}
 
 
-private:
+public:
 
 	/// uses the member table to determine the size max size of struct allocations
 	/// declare const Node.MAX_STRUCTS: int := MAX_STRUCTS/_max(10, 11*12)

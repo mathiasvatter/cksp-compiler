@@ -46,7 +46,7 @@ enum class ErrorType {
     FileError,
 	SyntaxError,
 	TypeError,
-	Variable,
+	VariableError,
 	TokenError,
     ParseError,
     PreprocessorError,
@@ -90,7 +90,7 @@ public:
             case ErrorType::CompileWarning: return "CompileWarning";
             case ErrorType::SyntaxError: return "SyntaxError";
             case ErrorType::TypeError: return "TypeError";
-            case ErrorType::Variable: return "Variable";
+            case ErrorType::VariableError: return "VariableError";
             case ErrorType::TokenError: return "TokenError";
             case ErrorType::ParseError: return "ParseError";
             case ErrorType::PreprocessorError: return "PreprocessorError";

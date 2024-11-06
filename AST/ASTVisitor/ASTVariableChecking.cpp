@@ -229,7 +229,7 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 			access_chain->accept(*this);
 			return node.replace_with(std::move(access_chain));
 		}
-		CompileError(ErrorType::Variable, "Multidimensional array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+		CompileError(ErrorType::VariableError, "Multidimensional array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return &node;
 	}
 	node.match_data_structure(node_declaration);
@@ -252,7 +252,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
-		CompileError(ErrorType::Variable, "Function Variable has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+		CompileError(ErrorType::VariableError, "Function Variable has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return &node;
 	}
 	node.match_data_structure(node_declaration);
@@ -347,7 +347,7 @@ NodeAST* ASTVariableChecking::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
 	auto node_declaration = m_def_provider->get_declaration(&node);
 	if(!node_declaration) {
-		CompileError(ErrorType::Variable, "List has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+		CompileError(ErrorType::VariableError, "List has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return &node;
 	}
 	m_def_provider->add_to_references(&node);

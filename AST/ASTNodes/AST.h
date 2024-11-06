@@ -52,9 +52,13 @@ struct NodeAST {
 	[[nodiscard]] virtual class ASTLowering * get_post_lowering(NodeProgram *program) const {
 		return nullptr;
 	}
+	[[nodiscard]] virtual class ASTLowering * get_data_lowering(NodeProgram *program) const {
+		return nullptr;
+	}
 	virtual NodeAST* desugar(NodeProgram* program);
 	virtual NodeAST* lower(NodeProgram* program);
 	virtual NodeAST* post_lower(NodeProgram* program);
+	virtual NodeAST* data_lower(NodeProgram* program);
     [[nodiscard]] NodeType get_node_type() const { return node_type; }
 	/// attempts to set the element type of this node to element_type if node has Composite Type
 	/// and elemen_type is Basic Type
@@ -214,7 +218,12 @@ struct NodeDataStructure : NodeAST {
 	}
 	/// to be used on datastructures
 	NodeDataStructure* replace_datastruct(std::unique_ptr<NodeDataStructure> new_node, class DefinitionProvider* def_provider);
-
+	bool is_num_elements_constant() const {
+		if(data_type != DataType::Const) return false;
+		size_t pos = name.find(OBJ_DELIMITER+"num_elements");
+		if(pos == std::string::npos) return false;
+		return true;
+	}
 };
 
 struct NodeInstruction : NodeAST {
@@ -646,8 +655,8 @@ struct NodeFunctionDefinition: NodeAST {
 	bool is_method();
 	void update_param_data_type() const;
 	std::shared_ptr<NodeDataStructure>& get_param(int i);
-	size_t get_num_params() const;
-	bool has_no_params() const;
+	[[nodiscard]] size_t get_num_params() const;
+	[[nodiscard]] bool has_no_params() const;
 	bool is_expression_function();
 };
 
@@ -664,6 +673,7 @@ struct NodeProgram : NodeAST {
 	std::vector<std::unique_ptr<struct NodeStruct>> struct_definitions;
 	std::unordered_map<std::string, NodeStruct*> struct_lookup;
 	std::unique_ptr<NodeBlock> global_declarations;
+	std::unordered_map<NodeDataStructure*, std::shared_ptr<NodeDataStructure>> num_element_constants; // ndarray declaration -> ndarray size declarations
 	explicit NodeProgram(Token tok);
 	NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 					   std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok);

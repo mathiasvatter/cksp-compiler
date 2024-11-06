@@ -239,7 +239,7 @@ NodeAST *NodeNumElements::accept(struct ASTVisitor &visitor) {
 }
 NodeNumElements::NodeNumElements(const NodeNumElements& other)
 	: NodeInstruction(other), array(clone_unique(other.array)),
-	  dimension(clone_unique(other.dimension)) {
+	  dimension(clone_unique(other.dimension)), size_array(other.size_array) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeNumElements::clone() const {
@@ -442,7 +442,11 @@ ASTDesugaring * NodeSingleAssignment::get_desugaring(NodeProgram *program) const
 }
 
 ASTLowering* NodeSingleAssignment::get_lowering(struct NodeProgram *program) const {
-    return this->l_value->get_lowering(program);
+	return this->l_value->get_lowering(program);
+}
+
+ASTLowering* NodeSingleAssignment::get_data_lowering(struct NodeProgram *program) const {
+    return this->l_value->get_data_lowering(program);
 }
 
 // ************* NodeDeclaration ***************
@@ -498,7 +502,11 @@ NodeAST *NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_ptr
 }
 
 ASTLowering* NodeSingleDeclaration::get_lowering(struct NodeProgram *program) const {
-    return this->variable->get_lowering(program);
+	return this->variable->get_lowering(program);
+}
+
+ASTLowering* NodeSingleDeclaration::get_data_lowering(struct NodeProgram *program) const {
+    return this->variable->get_data_lowering(program);
 }
 
 std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(NodeDataStructure* var) {

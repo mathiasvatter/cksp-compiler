@@ -55,21 +55,21 @@ public:
 
 		check_size_against_initializer_list(node);
 		// add size constant ".SIZE" to every array declaration
-		if(node.variable->get_node_type() == NodeType::Array) {
-			auto node_array = static_cast<NodeArray*>(node.variable.get());
-			auto node_body = std::make_unique<NodeBlock>(node.tok);
-//			auto node_var = std::make_unique<NodeVariable>(
-//				std::nullopt,
-//				node_array->name + ".SIZE",
-//				TypeRegistry::Integer,
-//				DataType::Const, node.tok);
-//			auto node_declaration = std::make_unique<NodeSingleDeclaration>(
-//				std::move(node_var),
-//				node_array->size->clone(), node.tok);
-//			node_body->add_as_stmt(std::move(node_declaration));
-			node_body->add_as_stmt(std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok));
-			return node.replace_with(std::move(node_body));
-		}
+//		if(node.variable->get_node_type() == NodeType::Array) {
+//			auto node_array = static_cast<NodeArray*>(node.variable.get());
+//			auto node_body = std::make_unique<NodeBlock>(node.tok);
+////			auto node_var = std::make_unique<NodeVariable>(
+////				std::nullopt,
+////				node_array->name + ".SIZE",
+////				TypeRegistry::Integer,
+////				DataType::Const, node.tok);
+////			auto node_declaration = std::make_unique<NodeSingleDeclaration>(
+////				std::move(node_var),
+////				node_array->size->clone(), node.tok);
+////			node_body->add_as_stmt(std::move(node_declaration));
+//			node_body->add_as_stmt(std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok));
+//			return node.replace_with(std::move(node_body));
+//		}
 		return &node;
 	}
 
