@@ -13,7 +13,7 @@
 - [x] add *.txt to valid file types
 - [ ] add indexes to functions with multiple return values
 - [x] implement parsing of ksp builtin functions as operators e.g. sh_left, sh_right, pow
-- [ ] when const like array.SIZE are declared locally, they go into global scope where there might be name clashes ->
+- [x] when const like array.SIZE are declared locally, they go into global scope where there might be name clashes ->
 desugar .SIZE constants to num_elements nodes in ASTDesugaring
 - [ ] add working functions with default parameters and add them with all possible mutations into the function lookup table
 - [ ] add thread-safety features via dimension inflation (?)
@@ -21,3 +21,4 @@ desugar .SIZE constants to num_elements nodes in ASTDesugaring
 - [ ] implement tail call recursion optimization
 - [ ] implement missing reference counting assignments 
 - [ ] rework param promotion algorithm to promote local vars directly to global vars under specific circumstances (when function is called multiple times)
+- [ ] rewrite replacing references and datastructures in variable checking class and semantic analysis class

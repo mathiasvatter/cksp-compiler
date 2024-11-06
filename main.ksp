@@ -99,8 +99,10 @@ on init
 	
 	n := (1,2,3,4,5)
 
-	declare ndarray[10,10]
-	message(search_matrix(ndarray, 3), "3", "f")
+	declare ndarray[10,10]: real[][]
+	declare ndarray2[10,10]: int[][]
+	message(search_matrix(ndarray, 3.0), "3", "f")
+	message(search_matrix(ndarray2, 3), "3", "f")
 	// message(num_elements(ndarray, 2))
 	// declare local ptr_array[10]
 	// for idx, ptr in ptr_array
@@ -121,7 +123,7 @@ function return_init(init: int[]): int[]
 end function	
 
 
-function search_matrix(matrix: int[][], target: int): int
+function search_matrix(matrix: number[][], target: number): number
 	declare array[30] := (0)
 
     declare row, col: int
