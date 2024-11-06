@@ -31,13 +31,13 @@ struct NodeVariableRef : NodeReference {
 
 	/// checks if variable ref is a ndarray size constant by checking the declaration and
 	/// pattern matching the name (....SIZE_D(\d+))
-	bool is_ndarray_constant();
+//	bool is_ndarray_constant();
 	std::unique_ptr<struct NodeNumElements> transform_ndarray_constant();
 	/// checks if variable list or array size constant
-	bool is_array_constant();
+//	bool is_array_constant();
 	std::unique_ptr<NodeNumElements> transform_array_constant();
 	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
-	ASTLowering* get_lowering(NodeProgram *program) const override;
+//	ASTLowering* get_lowering(NodeProgram *program) const override;
 
 };
 
@@ -322,7 +322,7 @@ struct NodeAccessChain : NodeReference {
 	}
 
 	/// returns variable ref if access chain is incorrectly detected array/list/ndarray size constant
-	std::unique_ptr<NodeVariableRef> is_size_constant();
+//	std::unique_ptr<NodeVariableRef> is_size_constant();
 
 	ASTLowering* get_lowering(NodeProgram *program) const override;
 

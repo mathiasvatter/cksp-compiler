@@ -215,7 +215,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeListRef& node) {
 }
 
 void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_call) {
-	if(func_call->kind == NodeFunctionCall::Kind::UserDefined and func_call->definition) {
+	if(func_call->definition) {
 		for(int i=0; i<func_call->function->get_num_args(); i++) {
 			auto & arg = func_call->function->get_arg(i);
 			auto & param = func_call->definition->get_param(i);
@@ -271,6 +271,14 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 				func_var_ref->ty = node_var_ref->ty;
 				func_var_ref->declaration = node_var_ref->declaration;
 				node_var_ref->replace_reference(std::move(func_var_ref), m_def_provider);
+//			} else if(arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::Array) {
+//				auto node_var_ref = static_cast<NodeVariableRef*>(arg.get());
+//				auto node_array_ref = std::make_unique<NodeArrayRef>(
+//					node_var_ref->name,
+//					nullptr,
+//					node_var_ref->tok);
+//				node_array_ref->match_data_structure(node_var_ref->declaration);
+
 			}
 		}
 	}
@@ -401,22 +409,22 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(Defin
 			reference->name,
 			reference->tok);
 	// if function param was changed to NDArray in here -> size constants have been replaced by access chains!
-	} else if(reference->get_node_type() == NodeType::AccessChain and (reference->declaration->get_node_type() == NodeType::NDArray
-	|| reference->declaration->get_node_type() == NodeType::Array || reference->declaration->get_node_type() == NodeType::List)) {
-		auto access_chain = static_cast<NodeAccessChain*>(reference);
-		if(access_chain->chain.size() == 2) {
-			auto node_var_ref = std::make_unique<NodeVariableRef>(
-				access_chain->get_string(),
-				access_chain->tok);
-			node_var_ref->declaration = static_cast<NodeReference*>(access_chain->chain[0].get())->declaration;
-			node_var_ref->data_type = DataType::Const;
-			if(node_var_ref->is_ndarray_constant() || node_var_ref->is_array_constant()) {
-				node_replacement = std::move(node_var_ref);
-				node_replacement->declaration = nullptr;
-				auto new_ref = static_cast<NodeReference*>(reference->replace_with(std::move(node_replacement)));
-				return new_ref;
-			}
-		}
+//	} else if(reference->get_node_type() == NodeType::AccessChain and (reference->declaration->get_node_type() == NodeType::NDArray
+//	|| reference->declaration->get_node_type() == NodeType::Array || reference->declaration->get_node_type() == NodeType::List)) {
+//		auto access_chain = static_cast<NodeAccessChain*>(reference);
+//		if(access_chain->chain.size() == 2) {
+//			auto node_var_ref = std::make_unique<NodeVariableRef>(
+//				access_chain->get_string(),
+//				access_chain->tok);
+//			node_var_ref->declaration = static_cast<NodeReference*>(access_chain->chain[0].get())->declaration;
+//			node_var_ref->data_type = DataType::Const;
+//			if(node_var_ref->is_ndarray_constant() || node_var_ref->is_array_constant()) {
+//				node_replacement = std::move(node_var_ref);
+//				node_replacement->declaration = nullptr;
+//				auto new_ref = static_cast<NodeReference*>(reference->replace_with(std::move(node_replacement)));
+//				return new_ref;
+//			}
+//		}
 	} else if (reference->get_node_type() == NodeType::VariableRef and reference->declaration->get_node_type() == NodeType::FunctionHeader) {
 		node_replacement = std::make_unique<NodeFunctionHeaderRef>(
 			reference->name,

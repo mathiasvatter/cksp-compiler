@@ -144,10 +144,6 @@ NodeAST * ASTCollectLowerings::visit(NodeNDArray& node) {
 	return &node;
 }
 
-NodeAST * ASTCollectLowerings::visit(NodeVariableRef& node) {
-	return node.lower(m_program);
-}
-
 NodeAST * ASTCollectLowerings::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
 	if(node.sizes) node.sizes->accept(*this);

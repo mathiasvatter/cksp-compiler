@@ -8,13 +8,10 @@
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Lowering/LoweringList.h"
 #include "../../Lowering/LoweringNDArray.h"
-#include "../../Lowering/LoweringArray.h"
 #include "../../Lowering/LoweringPointer.h"
 #include "../../Lowering/LoweringAccessChain.h"
 #include "../../Lowering/LoweringNil.h"
 #include "../../Lowering/LoweringGetControl.h"
-#include "../../Desugaring/DesugarSingleAssignment.h"
-#include "../../Lowering/LoweringVariableRef.h"
 
 // ************* NodeVariableRef ***************
 NodeAST *NodeVariableRef::accept(struct ASTVisitor &visitor) {
@@ -50,39 +47,39 @@ std::unique_ptr<NodeAccessChain> NodeVariableRef::to_method_chain() {
 	return method_chain;
 }
 
-bool NodeVariableRef::is_array_constant() {
-	if(kind == NodeReference::Kind::Builtin) return false;
-	if (declaration && (declaration->get_node_type() == NodeType::Array || declaration->get_node_type() == NodeType::List)) {
-		auto list = static_cast<NodeList*>(declaration);
-		const std::string& prefix = list->name + ".SIZE";
-		if (name.compare(0, prefix.length(), prefix) == 0) {
-			return true;
-		}
-	}
-	return false;
-}
+//bool NodeVariableRef::is_array_constant() {
+//	if(kind == NodeReference::Kind::Builtin) return false;
+//	if (declaration && (declaration->get_node_type() == NodeType::Array || declaration->get_node_type() == NodeType::List)) {
+//		auto list = static_cast<NodeList*>(declaration);
+//		const std::string& prefix = list->name + ".SIZE";
+//		if (name.compare(0, prefix.length(), prefix) == 0) {
+//			return true;
+//		}
+//	}
+//	return false;
+//}
 
-bool NodeVariableRef::is_ndarray_constant() {
-	if(kind == NodeReference::Kind::Builtin) return false;
-	size_t pos = name.find(".SIZE_D");
-	if(pos == std::string::npos) return false;
-	auto n = name.substr(0, pos);
-	auto dimension = name.substr(pos+7, name.length());
-	if (declaration && declaration->get_node_type() == NodeType::NDArray) {
-		auto ndarray = static_cast<NodeNDArray*>(declaration);
-		const std::string& prefix = ndarray->name + ".SIZE_D";
-		if (name.compare(0, prefix.length(), prefix) == 0) {
-			std::string number_str = name.substr(prefix.length());
-			try {
-				int number = std::stoi(number_str);
-				return number >= 1 && number <= ndarray->dimensions;
-			} catch (const std::invalid_argument&) {
-				return false;
-			}
-		}
-	}
-	return false;
-}
+//bool NodeVariableRef::is_ndarray_constant() {
+//	if(kind == NodeReference::Kind::Builtin) return false;
+//	size_t pos = name.find(".SIZE_D");
+//	if(pos == std::string::npos) return false;
+//	auto n = name.substr(0, pos);
+//	auto dimension = name.substr(pos+7, name.length());
+//	if (declaration && declaration->get_node_type() == NodeType::NDArray) {
+//		auto ndarray = static_cast<NodeNDArray*>(declaration);
+//		const std::string& prefix = ndarray->name + ".SIZE_D";
+//		if (name.compare(0, prefix.length(), prefix) == 0) {
+//			std::string number_str = name.substr(prefix.length());
+//			try {
+//				int number = std::stoi(number_str);
+//				return number >= 1 && number <= ndarray->dimensions;
+//			} catch (const std::invalid_argument&) {
+//				return false;
+//			}
+//		}
+//	}
+//	return false;
+//}
 
 std::unique_ptr<NodeNumElements> NodeVariableRef::transform_ndarray_constant() {
 	if(kind == NodeReference::Kind::Builtin) return nullptr;
@@ -126,11 +123,6 @@ std::unique_ptr<NodeReference> NodeVariableRef::inflate_dimension(std::unique_pt
 	node_array_ref->match_data_structure(declaration);
 	node_array_ref->ty = ty;
 	return node_array_ref;
-}
-
-ASTLowering* NodeVariableRef::get_lowering(NodeProgram *program) const {
-	static LoweringVariableRef lowering(program);
-	return &lowering;
 }
 
 // ************* NodeArrayRef ***************
@@ -448,24 +440,24 @@ ASTLowering* NodeAccessChain::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
-std::unique_ptr<NodeVariableRef> NodeAccessChain::is_size_constant() {
-	auto base = static_cast<NodeReference*>(chain[0].get());
-	if(base->declaration->get_node_type() == NodeType::NDArray
-		|| base->declaration->get_node_type() == NodeType::Array || base->declaration->get_node_type() == NodeType::List) {
-		if(chain.size() == 2) {
-			auto node_var_ref = std::make_unique<NodeVariableRef>(
-				this->get_string(),
-				tok);
-			node_var_ref->data_type = DataType::Const;
-			node_var_ref->declaration = base->declaration;
-			if(node_var_ref->is_ndarray_constant() || node_var_ref->is_array_constant()) {
-				node_var_ref->declaration = nullptr;
-				return node_var_ref;
-			}
-		}
-	}
-	return nullptr;
-}
+//std::unique_ptr<NodeVariableRef> NodeAccessChain::is_size_constant() {
+//	auto base = static_cast<NodeReference*>(chain[0].get());
+//	if(base->declaration->get_node_type() == NodeType::NDArray
+//		|| base->declaration->get_node_type() == NodeType::Array || base->declaration->get_node_type() == NodeType::List) {
+//		if(chain.size() == 2) {
+//			auto node_var_ref = std::make_unique<NodeVariableRef>(
+//				this->get_string(),
+//				tok);
+//			node_var_ref->data_type = DataType::Const;
+//			node_var_ref->declaration = base->declaration;
+//			if(node_var_ref->is_ndarray_constant() || node_var_ref->is_array_constant()) {
+//				node_var_ref->declaration = nullptr;
+//				return node_var_ref;
+//			}
+//		}
+//	}
+//	return nullptr;
+//}
 
 
 // ************* NodeGetControl ***************
