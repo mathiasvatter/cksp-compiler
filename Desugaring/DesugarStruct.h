@@ -191,6 +191,7 @@ public:
 		if(node.variable->is_member()) {
 			node.variable->name = add_struct_prefix(node.variable->name);
 			add_to_members(node.variable.get());
+			node.variable->accept(*this);
 		} else {
 			if(node.variable->name.find("self.") == 0) {
 				auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
@@ -198,6 +199,21 @@ public:
 			}
 		}
 		if(node.value) node.value->accept(*this);
+		return &node;
+	}
+
+	// does currently ONLY visit when member declaration
+	NodeAST* visit(NodeVariable& node) override {
+		if(node.name == "SIZE") {
+			auto error = CompileError(ErrorType::Variable, "", "", node.tok);
+			error.m_message = "Variable name 'SIZE' is reserved for array size constants. Please choose another name.";
+			error.exit();
+		}
+		if(contains(node.name, "SIZE_D")) {
+			auto error = CompileError(ErrorType::Variable, "", "", node.tok);
+			error.m_message = "Variable names containing 'SIZE_D' are reserved for multidimensional array size constants. Please choose another name.";
+			error.exit();
+		}
 		return &node;
 	}
 

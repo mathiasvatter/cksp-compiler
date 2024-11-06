@@ -332,12 +332,12 @@ NodeAST * TypeInference::visit(NodeNumElements& node) {
 NodeAST * TypeInference::visit(NodeAccessChain& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// in case an array size constant has been mistakenly converted to an access chain
-	if(auto size_const = node.is_size_constant()) {
-		// chain[0] was already written into reference map
-		auto nd_arr_ref = static_cast<NodeReference*>(node.chain[0].get());
-		m_def_provider->remove_reference(nd_arr_ref->declaration, nd_arr_ref);
-		return node.replace_with(std::move(size_const));
-	}
+//	if(auto size_const = node.is_size_constant()) {
+//		// chain[0] was already written into reference map
+//		auto nd_arr_ref = static_cast<NodeReference*>(node.chain[0].get());
+//		m_def_provider->remove_reference(nd_arr_ref->declaration, nd_arr_ref);
+//		return node.replace_with(std::move(size_const));
+//	}
 
 	for(int i = 0; i<node.chain.size(); i++) {
 		auto& ptr = node.chain[i];

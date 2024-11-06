@@ -273,6 +273,8 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 	auto node_declaration = m_def_provider->get_declaration(&node);
+
+	// check for array constants
 	if(auto nd_constant = node.transform_ndarray_constant()) {
 		return node.replace_with(std::move(nd_constant))->accept(*this);
 	} else if(auto array_constant = node.transform_array_constant()) {
@@ -283,19 +285,10 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 			// check if its maybe a nd_Array size constant like nda.SIZE_D1
 			node_declaration = access_chain->declaration;
 			node.declaration = node_declaration;
-			// lowering SIZE constants to num_element
-			if(node.is_ndarray_constant() || node.is_array_constant()) {
-				// if it is a constant, do not add to references
-//				node.declaration = nullptr;
-				node.data_type = DataType::Const;
-				return &node;
-			} else {
-				access_chain->accept(*this);
-				return node.replace_with(std::move(access_chain));
-			}
+
+			access_chain->accept(*this);
+			return node.replace_with(std::move(access_chain));
 		} else {
-			// if data_type is const -> do not throw error since constant variable ref
-//			if(node.data_type == DataType::Const) return &node;
 
 			// could still fail on ui control array values or raw list subarrays
 			if(!fail)

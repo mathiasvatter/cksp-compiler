@@ -32,9 +32,9 @@ public:
 	 *  declare ndarray[3, 3]: int[][] := (1,2,3,4,5,6,7,8,9) // ndarray := ((1,2,3), (4,5,6), (7,8,9))
 	 * Post Lowering:
 	 * 	declare const ndarray::num_elements[3] := (3*3, 3, 3)
-	 * 	declare const ndarray.SIZE := 3 * 3
-	 *  declare const ndarray.SIZE_D1 := 3
-	 * 	declare const ndarray.SIZE_D2 := 3
+	 * 	declare const ndarray.SIZE := 3 * 3 <- removed
+	 *  declare const ndarray.SIZE_D1 := 3 <- removed
+	 * 	declare const ndarray.SIZE_D2 := 3 <- removed
 	 * 	declare _ndarray[3 * 3]: int[] := (1,2,3,4,5,6,7,8,9) // ndarray := ((1,2,3), (4,5,6), (7,8,9))
 	 */
 	NodeAST* visit(NodeSingleDeclaration &node) override {
@@ -61,24 +61,24 @@ public:
 				node.tok,
 				get_lowered_size_expr(*node_ndarray)
 			);
-			auto node_size_decl = std::make_unique<NodeSingleDeclaration>(
-					std::make_unique<NodeVariable>(
-							std::optional<Token>(),
-							node_ndarray->name + ".SIZE",
-							TypeRegistry::Integer,
-							DataType::Const, node.tok),
-					get_lowered_size_expr(*node_ndarray), node.tok);
-			node_body->add_as_stmt(std::move(node_size_decl));
+//			auto node_size_decl = std::make_unique<NodeSingleDeclaration>(
+//					std::make_unique<NodeVariable>(
+//							std::optional<Token>(),
+//							node_ndarray->name + ".SIZE",
+//							TypeRegistry::Integer,
+//							DataType::Const, node.tok),
+//					get_lowered_size_expr(*node_ndarray), node.tok);
+//			node_body->add_as_stmt(std::move(node_size_decl));
 			for (int i = 0; i < node_ndarray->dimensions; i++) {
-				auto node_var = std::make_unique<NodeVariable>(
-						std::optional<Token>(),
-						node_ndarray->name + ".SIZE_D" + std::to_string(i + 1),
-						TypeRegistry::Integer,
-						DataType::Const, node.tok);
-				auto node_declaration = std::make_unique<NodeSingleDeclaration>(
-						std::move(node_var),
-						node_ndarray->sizes->params[i]->clone(), node.tok);
-				node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declaration), node.tok));
+//				auto node_var = std::make_unique<NodeVariable>(
+//						std::optional<Token>(),
+//						node_ndarray->name + ".SIZE_D" + std::to_string(i + 1),
+//						TypeRegistry::Integer,
+//						DataType::Const, node.tok);
+//				auto node_declaration = std::make_unique<NodeSingleDeclaration>(
+//						std::move(node_var),
+//						node_ndarray->sizes->params[i]->clone(), node.tok);
+//				node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_declaration), node.tok));
 				node_init_list->add_element(node_ndarray->sizes->params[i]->clone());
 			}
 			node_num_elements_decl->set_value(std::move(node_init_list));
