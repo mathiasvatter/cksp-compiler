@@ -128,6 +128,7 @@ end function
 function search_matrix(matrix: number[][], target: number): number
 	declare array[30] := (0)
 	declare ndarray[2,3]
+	// declare ui_slider sli(0,1)
 	// message(num_elements(ndarray))
     declare row, col: int
     for row := 0 to num_elements(matrix, 1)- 1

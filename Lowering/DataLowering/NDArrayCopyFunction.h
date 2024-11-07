@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "LoweringNDArray.h"
+#include "DataLoweringNDArray.h"
 
 class NDArrayCopyFunction {
 public:

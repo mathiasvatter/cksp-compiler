@@ -50,7 +50,7 @@ public:
 		// lowering of ndarray, turn Declaration into NodeBlock
 		// only lower if ndarray otherwise array size constant gets declared twice
 		if(m_ui_control_array->control_var->get_node_type() == NodeType::NDArray) {
-			node_statement->statement->lower(m_program);
+			node_statement->statement->data_lower(m_program);
 		}
 		body_post_lowering->statements.push_back(std::move(node_statement));
 		body_post_lowering->append_body(create_ui_controls(*m_ui_control_array, std::move(m_ui_array_size)));
@@ -69,7 +69,7 @@ public:
 	}
 
 	NodeAST * visit(NodeNDArray &node) override {
-		return node.lower(m_program);
+		return node.data_lower(m_program);
 	}
 
 

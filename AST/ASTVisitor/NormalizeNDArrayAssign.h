@@ -5,7 +5,7 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "../../Lowering/NDArrayCopyFunction.h"
+#include "../../Lowering/DataLowering/NDArrayCopyFunction.h"
 
 class NormalizeNDArrayAssign: public ASTVisitor {
 private:
@@ -291,7 +291,7 @@ private:
 		std::vector<std::unique_ptr<NodeAST>> sizes = std::move(ndarray_ref->sizes->params);
 		std::vector<std::unique_ptr<NodeAST>> indices = std::move(ndarray_ref->indexes->params);
 		indices.erase(indices.begin()+wildcard_dims.first+1, indices.begin()+wildcard_dims.second+1);
-		auto node_expression = LoweringNDArray::calculate_index_expression(sizes, indices, 0, ndarray_ref->tok);
+		auto node_expression = DataLoweringNDArray::calculate_index_expression(sizes, indices, 0, ndarray_ref->tok);
 		// calc index ends in additional addition.
 		auto node_index_expr = std::move(static_cast<NodeBinaryExpr*>(node_expression.get())->left);
 

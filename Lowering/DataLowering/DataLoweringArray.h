@@ -4,14 +4,14 @@
 
 #pragma once
 
-#include "ASTLowering.h"
+#include "../ASTLowering.h"
 
 /**
  * Determining the size of the array if possible
  * Throwing necessary errors if the array is not declared correctly
  * e.g. if size is not a constant or not able to be determined at compile time
  */
-class LoweringArray : public ASTLowering {
+class DataLoweringArray : public ASTLowering {
 private:
 	NodeArray* m_current_array = nullptr;
 	bool m_size_is_constant = true;
@@ -48,7 +48,7 @@ private:
 	}
 
 public:
-	explicit LoweringArray(NodeProgram* program) : ASTLowering(program) {}
+	explicit DataLoweringArray(NodeProgram* program) : ASTLowering(program) {}
 
 	NodeAST * visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);

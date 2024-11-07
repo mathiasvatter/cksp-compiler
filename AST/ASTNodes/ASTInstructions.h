@@ -382,8 +382,8 @@ struct NodeSingleAssignment : NodeInstruction {
 		if(retain_stmt) retain_stmt ->update_token_data(token);
     }
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
-    ASTLowering* get_lowering(NodeProgram *program) const override;
-	ASTLowering *get_data_lowering(NodeProgram *program) const override;
+//    ASTLowering* get_lowering(NodeProgram *program) const override;
+//	ASTLowering *get_data_lowering(NodeProgram *program) const override;
 
 };
 
@@ -476,7 +476,7 @@ struct NodeSingleDeclaration : NodeInstruction {
 		if(retain_stmt) retain_stmt -> update_token_data(token);
     }
     ASTLowering* get_lowering(struct NodeProgram *program) const override;
-	ASTLowering *get_data_lowering(NodeProgram *program) const override;
+//	ASTLowering *get_data_lowering(NodeProgram *program) const override;
 
     /// returns new assign statement with the declared variable and r_value or neutral element. Can optionally take new
     /// variable to make reference of

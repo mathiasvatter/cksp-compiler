@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ASTLowering.h"
+#include "../ASTLowering.h"
 
 /**
  * Second Lowering Phase of num_elements
@@ -26,11 +26,11 @@ public:
 		}
 
 		if(node.dimension) {
-//			if(!node.size_array) {
-//				auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
-//				error.m_message = "Missing num_elements constant for array: " + node.array->name;
-//				error.exit();
-//			}
+			if(!node.size_array) {
+				auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
+				error.m_message = "Missing num_elements constant for array: " + node.array->name;
+				error.exit();
+			}
 
 			auto array_call = std::make_unique<NodeArrayRef>(
 				node.array->sanitize_name()+OBJ_DELIMITER+"num_elements",

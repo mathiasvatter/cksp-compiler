@@ -69,23 +69,25 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
+	node.variable->accept(*this);
 	if(node.value) node.value->accept(*this);
-	if(node.variable -> get_node_type() == NodeType::NDArray || node.variable -> get_node_type() == NodeType::Array) {
-		return &node;
-	} else {
-		node.variable->accept(*this);
-	}
+//	if(node.variable -> get_node_type() == NodeType::NDArray || node.variable -> get_node_type() == NodeType::Array) {
+//		return &node;
+//	} else {
+//		node.variable->accept(*this);
+//	}
 	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
-	if(node.r_value -> get_node_type() != NodeType::NDArrayRef) {
-		node.r_value->accept(*this);
-	}
-	if(node.l_value -> get_node_type() == NodeType::NDArrayRef) {
-		return &node;
-	}
+//	if(node.r_value -> get_node_type() != NodeType::NDArrayRef) {
+//		node.r_value->accept(*this);
+//	}
+//	if(node.l_value -> get_node_type() == NodeType::NDArrayRef) {
+//		return &node;
+//	}
 
+	node.r_value->accept(*this);
 	node.l_value->accept(*this);
 //		if(node.r_value) node.r_value->accept(*this);
 	return &node;

@@ -5,10 +5,10 @@
 #include "ASTDataStructures.h"
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Lowering/LoweringUIControlArray.h"
-#include "../../Lowering/LoweringNDArray.h"
+#include "../../Lowering/DataLowering/DataLoweringNDArray.h"
 #include "../../Lowering/LoweringList.h"
 #include "../../Desugaring/DesugaringConst.h"
-#include "../../Lowering/LoweringArray.h"
+#include "../../Lowering/DataLowering/DataLoweringArray.h"
 #include "../../Desugaring/DesugarStruct.h"
 #include "../../Lowering/LoweringStruct.h"
 #include "../../Lowering/LoweringPointer.h"
@@ -128,7 +128,7 @@ NodeAST *NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 }
 
 ASTLowering* NodeArray::get_data_lowering(NodeProgram *program) const {
-	static LoweringArray lowering(program);
+	static DataLoweringArray lowering(program);
 	return &lowering;
 }
 
@@ -174,7 +174,7 @@ std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 }
 
 ASTLowering* NodeNDArray::get_data_lowering(NodeProgram *program) const {
-	static LoweringNDArray lowering(program);
+	static DataLoweringNDArray lowering(program);
 	return &lowering;
 }
 
