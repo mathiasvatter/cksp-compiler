@@ -17,8 +17,9 @@
 #include "../../Lowering/LoweringMemAlloc.h"
 #include "../../Lowering/LoweringNumElements.h"
 #include "../../Desugaring/DesugarSingleAssignment.h"
-#include "../../Lowering/PostLoweringNumElements.h"
+#include "../../Lowering/PostLowering/PostLoweringNumElements.h"
 #include "../../Lowering/LoweringUseCount.h"
+#include "../../Lowering/LoweringSingleDeclaration.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -441,13 +442,13 @@ ASTDesugaring * NodeSingleAssignment::get_desugaring(NodeProgram *program) const
 	return &desugaring;
 }
 
-ASTLowering* NodeSingleAssignment::get_lowering(struct NodeProgram *program) const {
-	return this->l_value->get_lowering(program);
-}
+//ASTLowering* NodeSingleAssignment::get_lowering(struct NodeProgram *program) const {
+//	return this->l_value->get_lowering(program);
+//}
 
-ASTLowering* NodeSingleAssignment::get_data_lowering(struct NodeProgram *program) const {
-    return this->l_value->get_data_lowering(program);
-}
+//ASTLowering* NodeSingleAssignment::get_data_lowering(struct NodeProgram *program) const {
+//    return this->l_value->get_data_lowering(program);
+//}
 
 // ************* NodeDeclaration ***************
 NodeAST *NodeDeclaration::accept(struct ASTVisitor &visitor) {
@@ -502,12 +503,16 @@ NodeAST *NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_ptr
 }
 
 ASTLowering* NodeSingleDeclaration::get_lowering(struct NodeProgram *program) const {
-	return this->variable->get_lowering(program);
+	if(variable->get_node_type() == NodeType::UIControl) {
+		return variable->get_lowering(program);
+	}
+	static LoweringSingleDeclaration lowering(program);
+	return &lowering;
 }
-
-ASTLowering* NodeSingleDeclaration::get_data_lowering(struct NodeProgram *program) const {
-    return this->variable->get_data_lowering(program);
-}
+//
+//ASTLowering* NodeSingleDeclaration::get_data_lowering(struct NodeProgram *program) const {
+//    return this->variable->get_data_lowering(program);
+//}
 
 std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(NodeDataStructure* var) {
     // if var provided -> turn to reference else turn variable to reference

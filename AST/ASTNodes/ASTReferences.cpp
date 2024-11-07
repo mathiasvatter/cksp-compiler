@@ -7,7 +7,7 @@
 #include "ASTReferences.h"
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Lowering/LoweringList.h"
-#include "../../Lowering/LoweringNDArray.h"
+#include "../../Lowering/DataLowering/DataLoweringNDArray.h"
 #include "../../Lowering/LoweringPointer.h"
 #include "../../Lowering/LoweringAccessChain.h"
 #include "../../Lowering/LoweringNil.h"
@@ -228,7 +228,7 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::clone() const {
 }
 
 ASTLowering* NodeNDArrayRef::get_data_lowering(NodeProgram *program) const {
-    static LoweringNDArray lowering(program);
+    static DataLoweringNDArray lowering(program);
     return &lowering;
 }
 

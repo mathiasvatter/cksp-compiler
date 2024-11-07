@@ -162,6 +162,12 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 	node.variable->determine_locality(m_program, m_current_block);
 
+	if(node.variable->get_node_type() == NodeType::UIControl and node.variable->is_local) {
+		auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+		error.m_message = "<UIControls> cannot be declared as local variables or in local scopes. They have "
+						  "to be declared in the <on init> callback.";
+		error.exit();
+	}
 
     node.variable->accept(*this);
     if(node.value) node.value->accept(*this);

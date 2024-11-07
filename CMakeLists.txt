@@ -120,7 +120,7 @@ add_executable(cksp main.cpp
         misc/PathHandler.cpp
         Lowering/ASTLowering.h
         Lowering/LoweringList.h
-        Lowering/LoweringNDArray.h
+        Lowering/DataLowering/DataLoweringNDArray.h
         Lowering/LoweringUIControlArray.h
         Desugaring/DesugaringFamily.h
         Desugaring/ASTDesugaring.h
@@ -154,7 +154,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTReturnParamPromotion.h
         AST/ASTVisitor/ASTDataStructureLowering.h
         AST/ASTVisitor/ASTReturnFunctionRewriting.h
-        Lowering/NDArrayCopyFunction.h
+        Lowering/DataLowering/NDArrayCopyFunction.h
         AST/ASTVisitor/NormalizeNDArrayAssign.h
         AST/ASTVisitor/ASTFunctionInlining.h
         AST/ASTVisitor/ASTExpressionFunctionInlining.h
@@ -187,8 +187,9 @@ add_executable(cksp main.cpp
         Lowering/LoweringMemAlloc.h
         Lowering/LoweringNumElements.h
         Desugaring/DesugarSingleAssignment.h
-        Lowering/PostLoweringNumElements.h
+        Lowering/PostLowering/PostLoweringNumElements.h
         AST/ASTVisitor/ASTCollectPostLowerings.h
         Optimization/NilValidator.h
         Lowering/LoweringUseCount.h
+        Lowering/LoweringSingleDeclaration.h
 )

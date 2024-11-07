@@ -65,14 +65,16 @@ public:
 //				error.m_message = "Missing pointer to array definition: " + node.array->name;
 //				error.exit();
 //			}
-//			auto it = m_program->num_element_constants.find(node.array->declaration);
-//			if(it == m_program->num_element_constants.end()) {
-//				auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
-//				error.m_message = "Missing num_elements constant for array: " + node.array->name;
-//				error.exit();
+//			if(!node.array->declaration->is_function_param()) {
+//				auto it = m_program->num_element_constants.find(node.array->declaration);
+//				if (it == m_program->num_element_constants.end()) {
+//					auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
+//					error.m_message = "Missing num_elements constant for array: " + node.array->name;
+//					error.exit();
+//				}
+//				// set found size_array
+//				node.size_array = it->second;
 //			}
-//			// set found size_array
-//			node.size_array = it->second;
 
 			// add clip function when ndarray is used
 			auto nd_array = static_cast<NodeNDArray*>(node.array->declaration);
