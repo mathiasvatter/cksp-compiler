@@ -177,26 +177,28 @@ public:
 
 		// return if not in function
 		if(m_program->function_call_stack.empty()) return &node;;
-		if(node.variable->data_type == DataType::Const) {
-			m_program->global_declarations->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
-			node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
-			return &node;
-		}
-		// if it is a local variable, set data type to param because it is prob going to be promoted
-//		if(node.variable->is_local) node.variable->data_type = DataType::Param;
+
+		// what is this for??
+//		if(node.variable->data_type == DataType::Const) {
+//			m_program->global_declarations->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
+//			node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+//			return &node;
+//		}
+
+
         // visit declaration node because array as function param needs to have <no brackets>
         node.variable->accept(*this);
 
+		auto assignment = to_assign_statement(node);
 		m_local_var_declarations[m_program->function_call_stack.top()].emplace(
                         node.variable->name,
                        std::make_unique<NodeSingleDeclaration>(
-                            clone_as<NodeDataStructure>(node.variable.get()),
+                            node.variable,
                             nullptr, node.tok
                        )
                    );
 
-
-		return node.replace_with(to_assign_statement(node));
+		return node.replace_with(std::move(assignment));
 	}
 
     inline NodeAST* visit(NodeArray& node) override {

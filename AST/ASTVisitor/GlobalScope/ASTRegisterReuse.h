@@ -179,6 +179,7 @@ public:
 			if(is_thread_safe_env()) {
 				if (auto free_passive_var = get_free_passive_var(node.variable.get())) {
 					m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
+
 					auto replacement = to_assign_statement(node);
 					// visit replacement (assign statement) to replace local var with passive_var
 					replacement->accept(*this);
@@ -276,8 +277,9 @@ private:
 	Gensym m_gensym;
 	NodeBlock* m_current_body = nullptr;
 
-	/// Body for all local constant declarations
-//	std::unique_ptr<NodeBlock> m_local_const_declares = std::make_unique<NodeBlock>(Token());
+	/// track all vars and their replacements
+	std::unordered_map<std::shared_ptr<NodeDataStructure>, std::shared_ptr<NodeDataStructure>> m_all_replacements;
+
 	/// vector for all local declarations in callbacks
 	std::unordered_map<NodeCallback*, std::vector<NodeSingleDeclaration*>> m_all_callback_decl = {};
 	/// vector for all local vars in functions -> do not get moved into on init
