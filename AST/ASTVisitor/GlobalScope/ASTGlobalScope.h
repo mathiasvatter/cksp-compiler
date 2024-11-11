@@ -66,14 +66,14 @@ protected:
 			(!m_program->function_call_stack.empty() and m_program->function_call_stack.top()->is_thread_safe);
 	};
 
-	static inline std::string get_passive_var_hash(NodeDataStructure* data) {
-		auto hash = data->ty->to_string();
+	static inline std::string get_passive_var_hash(NodeDataStructure& data) {
+		auto hash = data.ty->to_string();
 		// add size if it is array
-		if(data->get_node_type() == NodeType::Array) {
-			auto array = static_cast<NodeArray*>(data);
+		if(data.get_node_type() == NodeType::Array) {
+			auto array = static_cast<NodeArray*>(&data);
 			if(array->size) hash += array->size->get_string();
 		}
-		if(data->persistence.has_value()) hash += data->persistence.value().val;
+		if(data.persistence.has_value()) hash += data.persistence.value().val;
 		return hash;
 	}
 

@@ -132,6 +132,7 @@ void Compiler::compile() {
 
 	ASTPointerScope pointer_scope(&m_definition_provider);
 	ast->accept(pointer_scope);
+	ast->debug_print();
 
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
@@ -162,7 +163,6 @@ void Compiler::compile() {
 	compile_time.stop("Data Structure Lowering");
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
-	ast->debug_print();
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, true);
 	ast->accept(variable_checking1);

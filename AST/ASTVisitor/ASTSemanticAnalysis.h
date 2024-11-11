@@ -60,7 +60,7 @@ public:
 	/// e.g. params can be incorrectly detected as variable refs at call sites, but they are arrays in the definition
 	void update_func_call_node_types(NodeFunctionCall* func_call);
 	/// updates incorrectly detected function params (eg arrays detected as variables)
-	NodeDataStructure* replace_incorrectly_detected_data_struct(NodeDataStructure* data_struct);
+	NodeDataStructure* replace_incorrectly_detected_data_struct(std::shared_ptr<NodeDataStructure> data_struct);
 	/// updated incorrectly detected references of function params
 	static NodeReference* replace_incorrectly_detected_reference(DefinitionProvider* def_provider, NodeReference* reference);
 

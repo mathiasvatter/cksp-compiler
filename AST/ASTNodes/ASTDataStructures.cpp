@@ -30,32 +30,32 @@ std::unique_ptr<NodeAST> NodeVariable::clone() const {
 std::unique_ptr<NodeReference> NodeVariable::to_reference() {
     auto ref = std::make_unique<NodeVariableRef>(name, tok);
 	ref->parent = parent;
-	ref->match_data_structure(this);
+	if(is_shared()) ref->match_data_structure(get_shared());
 	ref->ty = ty;
 	return ref;
 }
 
 std::unique_ptr<NodeArray> NodeVariable::to_array(std::unique_ptr<NodeAST> size) {
 	auto node_array = std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
-	node_array->match_metadata(this);
+	node_array->match_metadata(get_shared());
 	return node_array;
 }
 
 std::unique_ptr<NodePointer> NodeVariable::to_pointer() {
 	auto node_ptr = std::make_unique<NodePointer>(persistence, name, ty, tok);
-	node_ptr->match_metadata(this);
+	node_ptr->match_metadata(get_shared());
 	return node_ptr;
 }
 
 std::unique_ptr<NodeNDArray> NodeVariable::to_ndarray() {
 	auto node_var = std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
-	node_var->match_metadata(this);
+	node_var->match_metadata(get_shared());
 	return node_var;
 }
 
 std::unique_ptr<NodeList> NodeVariable::to_list() {
 	auto node_list = std::make_unique<NodeList>(tok);
-	node_list->match_metadata(this);
+	node_list->match_metadata(get_shared());
 	return node_list;
 }
 
@@ -80,7 +80,7 @@ std::unique_ptr<NodeAST> NodePointer::clone() const {
 std::unique_ptr<NodeReference> NodePointer::to_reference() {
 	auto ref = std::make_unique<NodePointerRef>(name, tok);
 	ref->parent = parent;
-	ref->match_data_structure(this);
+	if(is_shared()) ref->match_data_structure(get_shared());
 	ref->ty = ty;
 	return ref;
 }
@@ -92,13 +92,13 @@ ASTLowering* NodePointer::get_lowering(NodeProgram *program) const {
 
 std::unique_ptr<NodeArray> NodePointer::to_array(std::unique_ptr<NodeAST> size) {
 	auto node_array = std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
-	node_array->match_metadata(this);
+	node_array->match_metadata(get_shared());
 	return node_array;
 }
 
 std::unique_ptr<NodeVariable> NodePointer::to_variable() {
 	auto node_var = std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
-	node_var->match_metadata(this);
+	node_var->match_metadata(get_shared());
 	return node_var;
 }
 
@@ -135,20 +135,20 @@ ASTLowering* NodeArray::get_data_lowering(NodeProgram *program) const {
 std::unique_ptr<NodeReference> NodeArray::to_reference() {
     auto ref = std::make_unique<NodeArrayRef>(name, nullptr, tok);
 	ref->parent = parent;
-	ref->match_data_structure(this);
+	if(is_shared()) ref->match_data_structure(get_shared());
 	ref->ty = ty;
 	return ref;
 }
 
 std::unique_ptr<NodeNDArray> NodeArray::to_ndarray() {
     auto nd_array = std::make_unique<NodeNDArray>(persistence, name, ty, std::make_unique<NodeParamList>(tok, size->clone()), tok);
-	nd_array->match_metadata(this);
+	nd_array->match_metadata(get_shared());
 	return nd_array;
 }
 
 std::unique_ptr<NodeList> NodeArray::to_list() {
     auto node_list = std::make_unique<NodeList>(tok);
-	node_list->match_metadata(this);
+	node_list->match_metadata(get_shared());
 	return node_list;
 }
 
@@ -181,7 +181,7 @@ ASTLowering* NodeNDArray::get_data_lowering(NodeProgram *program) const {
 std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
     auto ref = std::make_unique<NodeNDArrayRef>(name, nullptr, tok);
 	ref->parent = parent;
-	ref->match_data_structure(this);
+	if(is_shared()) ref->match_data_structure(get_shared());
 	ref->ty = ty;
 	ref->determine_sizes();
 	return ref;
@@ -189,13 +189,13 @@ std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
 
 std::unique_ptr<NodeArray> NodeNDArray::to_array(std::unique_ptr<NodeAST> size) {
     auto node_array = std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
-	node_array->match_metadata(this);
+	node_array->match_metadata(get_shared());
 	return node_array;
 }
 
 std::unique_ptr<NodeList> NodeNDArray::to_list() {
     auto node_list = std::make_unique<NodeList>(tok);
-	node_list->match_metadata(this);
+	node_list->match_metadata(get_shared());
 	return node_list;
 }
 
@@ -273,19 +273,19 @@ ASTLowering* NodeList::get_lowering(NodeProgram *program) const {
 
 std::unique_ptr<NodeVariable> NodeList::to_variable() {
     auto node_var = std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
-	node_var->match_metadata(this);
+	node_var->match_metadata(get_shared());
 	return node_var;
 }
 
 std::unique_ptr<NodeArray> NodeList::to_array(std::unique_ptr<NodeAST> size) {
     auto node_array = std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
-	node_array->match_metadata(this);
+	node_array->match_metadata(get_shared());
 	return node_array;
 }
 
 std::unique_ptr<NodeNDArray> NodeList::to_ndarray() {
     auto node_ndarray = std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
-	node_ndarray->match_metadata(this);
+	node_ndarray->match_metadata(get_shared());
 	return node_ndarray;
 }
 
@@ -367,7 +367,7 @@ NodeFunctionDefinition *NodeStruct::generate_init_method() {
 	for(auto & mem : this->member_table) {
 		std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
 		auto member_ref = mem.second->to_reference();
-		param_list.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(mem.second)));
+		param_list.push_back(std::make_unique<NodeFunctionParam>(mem.second, nullptr, mem.second->tok));
 		member_ref->name = "self." + member_ref->name;
 		assignment = std::make_unique<NodeSingleAssignment>(
 			std::move(member_ref),
@@ -399,7 +399,7 @@ NodeFunctionDefinition *NodeStruct::generate_init_method() {
 
 NodeFunctionDefinition *NodeStruct::generate_repr_method() {
 	auto self_ref = node_self->to_reference();
-	self_ref->declaration = node_self.get();
+	self_ref->declaration = node_self;
 	auto message = std::make_unique<NodeBinaryExpr>(
 		token::STRING_OP,
 		std::make_unique<NodeString>("\"<"+this->name+"> Object: \"", tok),
@@ -474,7 +474,7 @@ void NodeStruct::generate_ref_count_methods() {
 	this->update_method_table();
 }
 
-std::unique_ptr<NodeWhile> NodeStruct::generate_ref_count_while(NodeDataStructure* self, NodeDataStructure* num_refs) {
+std::unique_ptr<NodeWhile> NodeStruct::generate_ref_count_while(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs) {
 	NodeStructCreateRefCountFunctions rf_methods(*this);
 	return rf_methods.get_stack_while_loop(self, num_refs);
 }

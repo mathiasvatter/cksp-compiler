@@ -1847,7 +1847,6 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 		std::move(node_methods),
 		get_tok());
 	node_struct -> parent = parent;
-	node_struct->update_member_table();
 	node_struct->update_method_table();
 	node_struct->update_lookup_sets();
 	return Result<std::unique_ptr<NodeStruct>>(std::move(node_struct));

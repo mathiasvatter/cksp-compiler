@@ -65,10 +65,10 @@ end struct
 // end struct
 
 on init	
-	declare ui_menu mnu: int, i
-	declare ari[2]
- 	mnu->value := (mnu->value + 1) mod num_elements(ari)
-	i := (i+1) mod num_elements(ari)
+	// declare ui_menu mnu: int, i
+	// declare ari[2]
+ 	// mnu->value := (mnu->value + 1) mod num_elements(ari)
+	// i := (i+1) mod num_elements(ari)
 	// declare first_note := Note(69, (3,0), ((10)))
 	// declare ptr: List := List(1, List(3, nil))
 	// message(ptr.next.next)

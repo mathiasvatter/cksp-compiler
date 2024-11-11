@@ -17,13 +17,13 @@ public:
 			auto ui_control = static_cast<NodeUIControl*>(node.variable.get());
 			if(ui_control->control_var->persistence.has_value()) {
 				auto new_declaration = std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok);
-				auto body = add_persistency_functions(ui_control->control_var.get());
+				auto body = add_persistency_functions(ui_control->control_var);
 				body->prepend_as_stmt(std::move(new_declaration));
 				return node.replace_with(std::move(body));
 			}
 		} else if(node.variable->persistence.has_value()) {
 			auto new_declaration = std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok);
-			auto body = add_persistency_functions(new_declaration->variable.get());
+			auto body = add_persistency_functions(new_declaration->variable);
 			body->prepend_as_stmt(std::move(new_declaration));
 			return node.replace_with(std::move(body));
 		}
@@ -41,7 +41,7 @@ public:
 
 
 private:
-	static std::unique_ptr<NodeBlock> add_persistency_functions(NodeDataStructure* var) {
+	static std::unique_ptr<NodeBlock> add_persistency_functions(const std::shared_ptr<NodeDataStructure>& var) {
 		auto node_body = std::make_unique<NodeBlock>(var->tok);
 
 		if(!var->persistence.has_value()) {

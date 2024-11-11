@@ -217,9 +217,9 @@ struct NodeUIControl : NodeDataStructure {
 	std::shared_ptr<NodeDataStructure> control_var; //Array or Variable
 	std::unique_ptr<NodeParamList> params;
 	std::unique_ptr<NodeParamList> sizes; // if it is ui_control array
-    NodeUIControl* declaration = nullptr;
+    std::shared_ptr<NodeUIControl> declaration = nullptr;
 	inline explicit NodeUIControl(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::UIControl) {}
-	inline NodeUIControl(std::string uiControlType, std::unique_ptr<NodeDataStructure> controlVar, std::unique_ptr<NodeParamList> params, Token tok)
+	inline NodeUIControl(std::string uiControlType, std::shared_ptr<NodeDataStructure> controlVar, std::unique_ptr<NodeParamList> params, Token tok)
 		: NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::UIControl), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {
 		set_child_parents();
 	}
@@ -319,20 +319,20 @@ struct NodeConst : NodeDataStructure {
 };
 
 struct NodeStruct : NodeDataStructure {
-	std::unique_ptr<NodePointer> node_self = std::make_unique<NodePointer>(std::nullopt, "self", TypeRegistry::add_object_type(this->name), this->tok);
+	std::shared_ptr<NodePointer> node_self = std::make_shared<NodePointer>(std::nullopt, "self", TypeRegistry::add_object_type(this->name), this->tok);
 	std::unique_ptr<NodeBlock> members;
-	std::map<std::string, NodeDataStructure*> member_table;
+	std::map<std::string, std::shared_ptr<NodeDataStructure>> member_table;
 	std::set<std::string> member_set;
 	NodeFunctionDefinition* constructor = nullptr;
 	std::vector<std::unique_ptr<NodeFunctionDefinition>> methods;
 	std::set<std::string> method_set;
 	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> method_table;
 	std::unordered_set<NodeType> member_node_types;
-	NodeVariable* max_individual_struts_var = nullptr;
-	NodeVariable* free_idx_var = nullptr;
-	NodeArray* allocation_var = nullptr;
-	NodeArray* stack_var = nullptr;
-	NodeVariable* stack_top_var = nullptr;
+	std::shared_ptr<NodeVariable> max_individual_struts_var = nullptr;
+	std::shared_ptr<NodeVariable> free_idx_var = nullptr;
+	std::shared_ptr<NodeArray> allocation_var = nullptr;
+	std::shared_ptr<NodeArray> stack_var = nullptr;
+	std::shared_ptr<NodeVariable> stack_top_var = nullptr;
 	std::unordered_map<token, NodeFunctionDefinition*> overloaded_operators;
 	std::unordered_set<NodeStruct*> recursive_structs;
 	inline static std::unordered_set<NodeType> allowed_member_node_types = {NodeType::Variable, NodeType::Pointer, NodeType::NDArray, NodeType::Array};
@@ -372,14 +372,9 @@ struct NodeStruct : NodeDataStructure {
 	void update_member_table() {
 		member_table.clear();
 		for(auto& member : members->statements) {
-			if(member->statement->get_node_type() == NodeType::Declaration) {
-				auto declaration = static_cast<NodeDeclaration*>(member->statement.get());
-				for(auto & var : declaration->variable) {
-					member_table[var->name] = var.get();
-				}
-			} else if(member->statement->get_node_type() == NodeType::SingleDeclaration) {
+			if(member->statement->get_node_type() == NodeType::SingleDeclaration) {
 				auto declaration = static_cast<NodeSingleDeclaration*>(member->statement.get());
-				member_table[declaration->variable->name] = declaration->variable.get();
+				member_table[declaration->variable->name] = declaration->variable;
 			} else {
 				auto error = CompileError(ErrorType::VariableError, "<Struct> member must be a declaration", "", tok);
 				error.exit();
@@ -404,7 +399,7 @@ struct NodeStruct : NodeDataStructure {
 		}
 	}
 
-	NodeDataStructure* get_member(const std::string& ref_name) {
+	std::shared_ptr<NodeDataStructure> get_member(const std::string& ref_name) {
 		auto member = member_table.find(ref_name);
 		if(member != member_table.end()) {
 			return member->second;
@@ -426,7 +421,7 @@ struct NodeStruct : NodeDataStructure {
 	 */
 	NodeFunctionDefinition* generate_repr_method();
 	void generate_ref_count_methods();
-	std::unique_ptr<NodeWhile> generate_ref_count_while(NodeDataStructure* self, NodeDataStructure* num_refs);
+	std::unique_ptr<NodeWhile> generate_ref_count_while(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs);
 	void inline_struct(NodeProgram* program);
 	NodeFunctionDefinition* get_overloaded_method(token op);
 

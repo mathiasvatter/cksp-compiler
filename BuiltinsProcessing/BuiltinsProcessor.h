@@ -18,21 +18,21 @@ public:
     Result<SuccessTag> parse_builtin_functions(const std::string &file);
 	Result<SuccessTag> parse_builtin_widgets(const std::string &file);
 
-    Result<std::unique_ptr<NodeVariable>> parse_builtin_variable();
-    Result<std::unique_ptr<NodeArray>> parse_builtin_array();
+    Result<std::shared_ptr<NodeVariable>> parse_builtin_variable();
+    Result<std::shared_ptr<NodeArray>> parse_builtin_array();
     Result<std::unique_ptr<NodeFunctionDefinition>> parse_builtin_function();
-	Result<std::unique_ptr<NodeUIControl>> parse_builtin_ui_control();
+	Result<std::shared_ptr<NodeUIControl>> parse_builtin_ui_control();
     Result<std::unique_ptr<NodeParamList>> parse_builtin_args_list();
 	Result<std::vector<std::unique_ptr<NodeFunctionParam>>> parse_builtin_params_list();
 
 private:
 	DefinitionProvider* m_def_provider;
-    std::unordered_map<std::string, std::unique_ptr<NodeVariable>> m_builtin_variables;
-    std::unordered_map<std::string, std::unique_ptr<NodeArray>> m_builtin_arrays;
+    std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables;
+    std::unordered_map<std::string, std::shared_ptr<NodeArray>> m_builtin_arrays;
     std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions;
 
     std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> m_property_functions;
-    std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> m_builtin_widgets;
+    std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> m_builtin_widgets;
 
     std::string m_builtin_variables_file;
     std::string m_builtin_functions_file;

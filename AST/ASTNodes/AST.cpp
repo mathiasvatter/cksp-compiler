@@ -143,7 +143,6 @@ std::unique_ptr<NodeAST> NodeDataStructure::clone() const {
 
 std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
 	auto ref = std::make_unique<NodeReference>(name, node_type, tok);
-	ref->match_data_structure(this);
 	return ref;
 }
 
@@ -202,23 +201,23 @@ NodeDataStructure* NodeDataStructure::lower_type() {
 
 NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDataStructure> new_node,
 																 DefinitionProvider *def_provider) {
-	const auto references = def_provider->get_references(this);
-	def_provider->remove_references(this);
+//	const auto references = def_provider->get_references(this);
+//	def_provider->remove_references(this);
 
 	if (!parent) {
 		CompileError(ErrorType::InternalError, "Parent of data structure is null", "", tok).exit();
 	}
-	new_node->parent = parent;
-	auto new_data_struct = static_cast<NodeDataStructure*>(parent->replace_child(this, std::move(new_node)));
+//	new_node->parent = parent;
+	auto new_data_struct = static_cast<NodeDataStructure*>(this->replace_with(std::move(new_node)));
 
-	def_provider->set_references(new_data_struct, references);
-	for(auto & ref : references) {
-		ref->declaration = new_data_struct;
-	}
+//	def_provider->set_references(new_data_struct, references);
+//	for(auto & ref : references) {
+//		ref->declaration = new_data_struct;
+//	}
 	return new_data_struct;
 }
 
-void NodeDataStructure::match_metadata(NodeDataStructure *data_structure) {
+void NodeDataStructure::match_metadata(std::shared_ptr<NodeDataStructure> data_structure) {
 	is_engine = data_structure->is_engine;
 	is_local = data_structure->is_local;
 	data_type = data_structure->data_type;
@@ -240,7 +239,7 @@ std::unique_ptr<NodeAST> NodeReference::clone() const {
 	return std::make_unique<NodeReference>(*this);
 }
 
-void NodeReference::match_data_structure(NodeDataStructure* data_structure) {
+void NodeReference::match_data_structure(std::shared_ptr<NodeDataStructure> data_structure) {
 	declaration = data_structure;
 	is_engine = data_structure->is_engine;
 	is_local = data_structure->is_local;
@@ -740,7 +739,7 @@ NodeAST *NodeFunctionDefinition::accept(struct ASTVisitor &visitor) {
 
 NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& other)
         : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
-          header(clone_unique(other.header)), override(other.override),
+          header(other.header), override(other.override),
           call_sites(other.call_sites), body(clone_unique(other.body)),
 		  num_return_params(other.num_return_params), return_stmts(other.return_stmts),
 		  num_return_stmts(other.num_return_stmts) {
