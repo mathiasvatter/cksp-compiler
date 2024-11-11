@@ -121,6 +121,15 @@ std::unique_ptr<T> to_unique_ptr(std::shared_ptr<T> &sharedPtr) {
 	}
 }
 
+//// Funktion für den Typ-Check und den Cast
+//template <typename TargetType>
+//std::shared_ptr<TargetType> castNode(const std::shared_ptr<Node>& node, NodeType expectedType) {
+//	if (node && node->getType() == expectedType) {
+//		return std::static_pointer_cast<TargetType>(node);
+//	}
+//	return nullptr;
+//}
+
 // Funktion zum Casten eines unique_ptr von Base auf Derived
 template <typename Derived, typename Base>
 std::unique_ptr<Derived> unique_ptr_cast(std::unique_ptr<Base> basePtr) {

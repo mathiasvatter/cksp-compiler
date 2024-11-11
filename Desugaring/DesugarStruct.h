@@ -114,7 +114,7 @@ public:
 		node.members->accept(*this);
 		// add self keyword for declarations
 		node.members->prepend_stmt(std::make_unique<NodeStatement>(
-			std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node.node_self.get()), nullptr, node.tok),
+			std::make_unique<NodeSingleDeclaration>(node.node_self, nullptr, node.tok),
 			    node.tok
 				)
 			);

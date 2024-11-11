@@ -37,7 +37,7 @@ public:
 			auto int_node = static_cast<NodeInt*>(node.dimension.get());
 			auto dim = int_node->value;
 			if(node.array->get_node_type() == NodeType::NDArrayRef) {
-				auto nd_array = static_cast<NodeNDArray *>(node.array->declaration);
+				auto nd_array = static_pointer_cast<NodeNDArray>(node.array->declaration);
 				if (dim > nd_array->dimensions) {
 					auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
 					error.m_message =
@@ -77,7 +77,7 @@ public:
 //			}
 
 			// add clip function when ndarray is used
-			auto nd_array = static_cast<NodeNDArray*>(node.array->declaration);
+			auto nd_array = static_pointer_cast<NodeNDArray>(node.array->declaration);
 			add_clip_function(m_program);
 			node.set_dimension(get_clip_call(std::move(node.dimension), std::make_unique<NodeInt>(nd_array->dimensions, node.tok)));
 		}
@@ -164,14 +164,14 @@ public:
 			return false; // Funktion existiert bereits
 		}
 
-		auto x = std::make_unique<NodeVariable>(
+		auto x = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"x",
 			TypeRegistry::Integer,
 			DataType::Mutable,
 			Token()
 		);
-		auto b = std::make_unique<NodeVariable>(
+		auto b = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"b",
 			TypeRegistry::Integer,
@@ -235,8 +235,8 @@ public:
 			std::make_unique<NodeFunctionHeader>(
 				m_func_name,
 				Token(),
-				std::make_unique<NodeFunctionParam>(std::move(x)),
-				std::make_unique<NodeFunctionParam>(std::move(b))
+				std::make_unique<NodeFunctionParam>(std::move(x), nullptr, Token()),
+				std::make_unique<NodeFunctionParam>(std::move(b), nullptr, Token())
 			),
 			std::nullopt,
 			false,

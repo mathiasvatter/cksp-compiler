@@ -184,11 +184,11 @@ public:
 
 	static inline std::unique_ptr<NodeBlock> get_array_init_function_call(NodeReference* array_ref, NodeAST* value) {
 		std::string func_name = "array<-init["+array_ref->declaration->ty->get_element_type()->to_string()+"]";
-		auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
+		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
 		node_iterator->is_local = true;
 		node_iterator->ty = TypeRegistry::Integer;
 		auto node_iterator_ref = node_iterator->to_reference();
-		node_iterator_ref->match_data_structure(node_iterator.get());
+		node_iterator_ref->match_data_structure(node_iterator);
 		node_iterator_ref->ty = TypeRegistry::Integer;
 		auto node_body = std::make_unique<NodeBlock>(array_ref->tok);
 		node_body->scope = true;
@@ -305,10 +305,10 @@ public:
 
 	static inline std::unique_ptr<NodeBlock> get_array_copy_function_call(NodeReference* array_dest, NodeReference* array_src) {
 		std::string func_name = "array.copy."+array_dest->declaration->ty->get_element_type()->to_string();
-		auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, array_dest->tok);
+		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, array_dest->tok);
 		node_iterator->is_local = true;
 		auto node_iterator_ref = node_iterator->to_reference();
-		node_iterator_ref->match_data_structure(node_iterator.get());
+		node_iterator_ref->match_data_structure(node_iterator);
 		auto node_body = std::make_unique<NodeBlock>(array_dest->tok);
 		node_body->scope = true;
 
@@ -354,12 +354,12 @@ public:
 			return false;
 		}
 
-		auto node_dest = std::make_unique<NodeArray>(std::nullopt, "dest", TypeRegistry::add_composite_type(CompoundKind::Array, type), nullptr, Token());
-		auto node_src = std::make_unique<NodeArray>(std::nullopt, "src", TypeRegistry::add_composite_type(CompoundKind::Array, type), nullptr, Token());
-		auto node_iterator = std::make_unique<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, Token());
+		auto node_dest = std::make_shared<NodeArray>(std::nullopt, "dest", TypeRegistry::add_composite_type(CompoundKind::Array, type), nullptr, Token());
+		auto node_src = std::make_shared<NodeArray>(std::nullopt, "src", TypeRegistry::add_composite_type(CompoundKind::Array, type), nullptr, Token());
+		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, Token());
 		auto node_iterator_ref = node_iterator->to_reference();
-		auto node_dest_ref = std::make_unique<NodeArrayRef>("dest", node_iterator->to_reference(), Token());
-		auto node_src_ref = std::make_unique<NodeArrayRef>("src", node_iterator->to_reference(), Token());
+		auto node_dest_ref = unique_ptr_cast<NodeArrayRef>(node_dest->to_reference());
+		auto node_src_ref = unique_ptr_cast<NodeArrayRef>(node_src->to_reference());
 		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
@@ -375,9 +375,9 @@ public:
 		node_function_def->header->add_param(clone_as<NodeDataStructure>(node_iterator.get()));
 
 		// get declaration pointer right
-		node_dest_ref->match_data_structure(node_function_def->header->get_param(0).get());
-		node_src_ref->match_data_structure(node_function_def->header->get_param(1).get());
-		node_iterator_ref->match_data_structure(node_function_def->header->get_param(2).get());
+//		node_dest_ref->match_data_structure(node_function_def->header->get_param(0).get());
+//		node_src_ref->match_data_structure(node_function_def->header->get_param(1).get());
+//		node_iterator_ref->match_data_structure(node_function_def->header->get_param(2).get());
 
 		auto node_while_body = std::make_unique<NodeBlock>(Token());
 		node_while_body->scope = true;

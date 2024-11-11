@@ -137,7 +137,7 @@ private:
 			return false;
 		}
 
-		auto node_self = clone_as<NodeArray>(node.declaration);
+		auto node_self = clone_as<NodeArray>(node.declaration.get());
 		node_self->name = "self";
 		node_self->size = nullptr;
 		auto self_ref = node_self->to_reference();
@@ -185,7 +185,7 @@ private:
 			return false;
 		}
 
-		auto node_self = clone_as<NodeNDArray>(node.declaration);
+		auto node_self = clone_as<NodeNDArray>(node.declaration.get());
 		node_self->name = "self";
 		node_self->sizes = nullptr;
 		auto self_ref = node_self->to_reference();

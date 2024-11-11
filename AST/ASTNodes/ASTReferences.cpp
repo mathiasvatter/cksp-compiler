@@ -178,7 +178,7 @@ std::unique_ptr<NodeAST> NodeArrayRef::get_size(std::unique_ptr<NodeAST> dim) {
 
 bool NodeArrayRef::is_list_sizes() {
 	if (declaration && declaration->get_node_type() == NodeType::List) {
-		auto list = static_cast<NodeList*>(declaration);
+		auto list = static_cast<NodeList*>(declaration.get());
 		const std::string& prefix = list->name + ".sizes";
 		if (name.compare(0, prefix.length(), prefix) == 0) {
 			return true;
@@ -247,7 +247,7 @@ std::unique_ptr<NodeArrayRef> NodeNDArrayRef::to_array_ref(std::unique_ptr<NodeA
 bool NodeNDArrayRef::determine_sizes() {
 	if(!declaration) return false;
 	if(declaration->get_node_type() != NodeType::NDArray) return false;
-	auto node_ndarray = static_cast<NodeNDArray*>(declaration);
+	auto node_ndarray = static_cast<NodeNDArray*>(declaration.get());
 	// has no size if function definition parameter
 	if(!node_ndarray->sizes) {
 		if(indexes) {

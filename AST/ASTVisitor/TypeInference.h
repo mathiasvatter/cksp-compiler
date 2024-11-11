@@ -177,7 +177,7 @@ public:
         Type* declaration_type = node->declaration->ty->get_element_type();
         Type* reference_type = node->ty->get_element_type();
         if(!reference_type->is_compatible(declaration_type)) {
-            throw_type_error(node, node->declaration).exit();
+            throw_type_error(node, node->declaration.get()).exit();
         }
 
         // match type from declaration to reference
@@ -189,7 +189,7 @@ public:
         declaration_type = node->declaration->ty->get_element_type();
         reference_type = node->ty->get_element_type();
         if(!declaration_type->is_compatible(reference_type)) {
-            throw_type_error(node->declaration, node).exit();
+            throw_type_error(node->declaration.get(), node).exit();
         }
         // match type from reference to declaration
         node->declaration->set_element_type(specialize_type(declaration_type, reference_type));

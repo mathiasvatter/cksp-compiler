@@ -100,7 +100,7 @@ public:
 			auto local_ptrs = remove_scope();
 			for(auto & [key, ptr] : local_ptrs) {
 				auto ref = ptr->to_reference();
-				ref->match_data_structure(ptr);
+//				ref->match_data_structure(ptr);
 				auto del = std::make_unique<NodeSingleDelete>(std::move(ref), std::make_unique<NodeInt>(1, ptr->tok), ptr->tok);
 				node.add_as_stmt(std::move(del));
 			}

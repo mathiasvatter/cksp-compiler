@@ -104,7 +104,7 @@ public:
 		}
 		int array_size = array_size_res.unwrap();
 		std::string new_control_name = ui_control.control_var->name;
-		auto new_ui_control_template = clone_as<NodeUIControl>(ui_control.declaration);
+		auto new_ui_control_template = clone_as<NodeUIControl>(ui_control.declaration.get());
         // if is ui_table array -> set size to ui_table array size
         if(auto node_array = cast_node<NodeArray>(new_ui_control_template->control_var.get())) {
             node_array->size = clone_as<NodeParamList>(m_ui_control_var_size.get());
@@ -121,7 +121,7 @@ public:
 			new_ui_control->control_var->data_type = DataType::UIControl;
 			new_ui_control->control_var->persistence = m_persistence;
 
-			m_def_provider->set_declaration(new_ui_control->control_var.get(), true);
+			m_def_provider->set_declaration(new_ui_control->control_var, true);
 			auto new_node_declaration = std::make_unique<NodeSingleDeclaration>(
 					std::move(new_ui_control),
 					nullptr, ui_control.tok

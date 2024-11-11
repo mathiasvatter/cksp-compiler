@@ -12,7 +12,7 @@
 class ConstantPromotion : public ASTOptimizations {
 private:
 	/// saves constant candidates and their values
-	std::unordered_map<NodeDataStructure*, std::unique_ptr<NodeAST>> m_constant_candidates;
+	std::unordered_map<std::shared_ptr<NodeDataStructure>, std::unique_ptr<NodeAST>> m_constant_candidates;
 	std::vector<NodeReference*> m_constant_candidate_references;
 public:
 
@@ -54,9 +54,9 @@ public:
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
-		if(is_constant_candidate(node.variable.get())) {
+		if(is_constant_candidate(*node.variable)) {
 			// add to constant candidates -> if it has a value, add it, otherwise add nullptr
-			add_to_constant_candidates(&node);
+			add_to_constant_candidates(node);
 		}
 		return &node;
 	}
@@ -86,9 +86,9 @@ public:
 	}
 
 	/// add to map including its value if it has one, otherwise add nullptr
-	bool add_to_constant_candidates(NodeSingleDeclaration* node) {
-		if(node->value and !node->value->is_constant()) return false;
-		m_constant_candidates[node->variable.get()] = node->value ? node->value->clone() : nullptr;
+	bool add_to_constant_candidates(const NodeSingleDeclaration& node) {
+		if(node.value and !node.value->is_constant()) return false;
+		m_constant_candidates[node.variable] = node.value ? node.value->clone() : nullptr;
 		return true;
 	}
 
@@ -108,13 +108,13 @@ public:
 		return false;
 	}
 
-	bool is_in_constant_candidates_map(NodeDataStructure* node) {
+	bool is_in_constant_candidates_map(std::shared_ptr<NodeDataStructure> node) {
 		return m_constant_candidates.find(node) != m_constant_candidates.end();
 	}
 
-	bool is_constant_candidate(NodeDataStructure* node) {
-		if(!node->is_local and node->data_type == DataType::Mutable and node->get_node_type() == NodeType::Variable) {
-			return node->ty != TypeRegistry::String;
+	static bool is_constant_candidate(const NodeDataStructure& node) {
+		if(!node.is_local and node.data_type == DataType::Mutable and node.get_node_type() == NodeType::Variable) {
+			return node.ty != TypeRegistry::String;
 		}
 		return false;
 	}

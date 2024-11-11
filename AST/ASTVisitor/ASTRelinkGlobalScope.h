@@ -39,14 +39,14 @@ public:
 			m_def_provider->set_declaration(data_struct, true);
 		}
 		for(auto & reference : m_def_provider->get_all_references()) {
-			auto new_declaration = m_def_provider->get_declaration(reference);
+			auto new_declaration = m_def_provider->get_declaration(*reference);
 			if(!new_declaration) DefinitionProvider::throw_declaration_error(*reference).exit();
 			reference->match_data_structure(new_declaration);
 		}
 	}
 
 	inline NodeAST* visit(NodeVariable& node) override {
-		m_def_provider->add_to_data_structures(&node);
+		m_def_provider->add_to_data_structures(node.get_shared());
 		return &node;
 	}
 
@@ -57,7 +57,7 @@ public:
 
 	inline NodeAST* visit(NodeArray& node) override {
 		if(node.size) node.size->accept(*this);
-		m_def_provider->add_to_data_structures(&node);
+		m_def_provider->add_to_data_structures(node.get_shared());
 		return &node;
 	}
 

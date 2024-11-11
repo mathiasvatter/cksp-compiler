@@ -138,13 +138,13 @@ NodeAST * TypeInference::visit(NodeVariable& node) {
 	if(node.ty->get_type_kind() == TypeKind::Object) {
 		auto ptr = node.to_pointer();
 		auto new_node = node.replace_datastruct(std::move(ptr), m_def_provider);
-		m_def_provider->add_to_data_structures(new_node);
+		m_def_provider->add_to_data_structures(new_node->get_shared());
 		if(auto strct = node.is_member()) {
 			strct->update_member_table();
 		}
 		return new_node;
 	}
-	m_def_provider->add_to_data_structures(&node);
+	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
@@ -152,7 +152,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// replace declaration node with Pointer if it is Variable
 	if(node.declaration->get_node_type() == NodeType::Variable) {
-		auto node_var = static_cast<NodeVariable*>(node.declaration);
+		auto node_var = static_pointer_cast<NodeVariable>(node.declaration);
 		auto ptr = node_var->to_pointer();
 		ptr->match_metadata(node_var);
 		auto new_node = node_var->replace_datastruct(std::move(ptr), m_def_provider);
@@ -161,7 +161,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 			ASTSemanticAnalysis::replace_incorrectly_detected_reference(m_def_provider, ref);
 		}
 //		new_node->accept(*this);
-		node.declaration = new_node;
+		node.declaration = new_node->get_shared();
 		if(auto strct = new_node->is_member()) {
 			strct->update_member_table();
 		}
@@ -182,7 +182,7 @@ NodeAST * TypeInference::visit(NodePointer& node) {
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::Nil;
 	}
-	m_def_provider->add_to_data_structures(&node);
+	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
@@ -196,7 +196,7 @@ NodeAST * TypeInference::visit(NodeArray& node) {
         node.size->accept(*this);
         node.size->ty = specialize_type(node.size->ty, TypeRegistry::Integer);
     }
-	m_def_provider->add_to_data_structures(&node);
+	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
@@ -232,7 +232,7 @@ NodeAST * TypeInference::visit(NodeNDArray& node) {
     if(node.ty == TypeRegistry::Unknown) {
         node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions);
     }
-	m_def_provider->add_to_data_structures(&node);
+	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
@@ -284,7 +284,7 @@ NodeAST * TypeInference::visit(NodeList& node) {
         types.push_back(b->ty);
     }
     node.set_element_type(infer_initialization_types(types, &node));
-	m_def_provider->add_to_data_structures(&node);
+	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
@@ -662,7 +662,7 @@ NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
 	m_program->function_call_stack.push(&node);
 
 	// add data structures to provider
-	m_def_provider->add_to_data_structures(node.header.get());
+	m_def_provider->add_to_data_structures(node.header);
     node.header->accept(*this);
     if(node.return_variable.has_value()) {
 		node.return_variable.value()->accept(*this);

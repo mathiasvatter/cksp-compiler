@@ -20,8 +20,8 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	for(const auto & func_def : node.function_definitions) func_def->call_sites.clear();
 	for(const auto & func_def : node.function_definitions) {
 		// node header as data struct
-		m_def_provider->set_declaration(func_def->header.get(), !func_def->header->is_local);
-		m_def_provider->add_to_data_structures(func_def->header.get());
+		m_def_provider->set_declaration(func_def->header, !func_def->header->is_local);
+		m_def_provider->add_to_data_structures(func_def->header);
 	}
 
 	// most func defs will be visited when called, keeping local scopes in mind
@@ -104,8 +104,8 @@ NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
 	// function definitions are being visited in the program node
 	if(node.is_function_param()) {
 		// node header as data struct
-		m_def_provider->set_declaration(&node, false);
-		m_def_provider->add_to_data_structures(&node);
+		m_def_provider->set_declaration(node.get_shared(), false);
+		m_def_provider->add_to_data_structures(node.get_shared());
 	}
 	for(auto &param : node.params) param->accept(*this);
 	return &node;
@@ -184,15 +184,15 @@ NodeAST* ASTVariableChecking::visit(NodeArray& node) {
 	node.determine_locality(m_program, m_current_block);
 	if(node.size) node.size->accept(*this);
 	auto new_node = apply_type_annotations(&node);
-	m_def_provider->set_declaration(new_node, !new_node->is_local);
-	m_def_provider->add_to_data_structures(new_node);
+	m_def_provider->set_declaration(new_node->get_shared(), !new_node->is_local);
+	m_def_provider->add_to_data_structures(new_node->get_shared());
 	return new_node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 	if(node.index) node.index->accept(*this);
 
-	auto node_declaration = m_def_provider->get_declaration(&node);
+	auto node_declaration = m_def_provider->get_declaration(node);
 	// maybe declaration comes after lowering, do not throw error
 	if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
@@ -222,14 +222,14 @@ NodeAST* ASTVariableChecking::visit(NodeNDArray& node) {
 	node.determine_locality(m_program, m_current_block);
 	if(node.sizes) node.sizes->accept(*this);
 	auto new_node = apply_type_annotations(&node);
-	m_def_provider->set_declaration(new_node, !new_node->is_local);
-	m_def_provider->add_to_data_structures(new_node);
+	m_def_provider->set_declaration(new_node->get_shared(), !new_node->is_local);
+	m_def_provider->add_to_data_structures(new_node->get_shared());
 	return new_node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
-	auto node_declaration = m_def_provider->get_declaration(&node);
+	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			access_chain->accept(*this);
@@ -248,7 +248,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(node.parent->get_node_type() == NodeType::FunctionCall) {
 		auto func_call = static_cast<NodeFunctionCall*>(node.parent);
 		if(func_call->kind != NodeFunctionCall::Undefined) {
-			node.declaration = func_call->definition->header.get();
+			node.declaration = func_call->definition->header;
 			return &node;
 		}
 //		if(node.name == "message") {
@@ -256,7 +256,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 //		}
 	}
 
-	auto node_declaration = m_def_provider->get_declaration(&node);
+	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
 		CompileError(ErrorType::VariableError, "Function Variable has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return &node;
@@ -272,13 +272,13 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 	node.determine_locality(m_program, m_current_block);
 
 	auto new_node = apply_type_annotations(&node);
-	m_def_provider->set_declaration(new_node, !new_node->is_local);
-	m_def_provider->add_to_data_structures(new_node);
+	m_def_provider->set_declaration(new_node->get_shared(), !new_node->is_local);
+	m_def_provider->add_to_data_structures(new_node->get_shared());
 	return new_node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
-	auto node_declaration = m_def_provider->get_declaration(&node);
+	auto node_declaration = m_def_provider->get_declaration(node);
 
 	// check for array constants
 	if(auto nd_constant = node.transform_ndarray_constant()) {
@@ -314,13 +314,13 @@ NodeAST* ASTVariableChecking::visit(NodePointer& node) {
 	node.determine_locality(m_program, m_current_block);
 
 	auto new_node = apply_type_annotations(&node);
-	m_def_provider->set_declaration(new_node, !new_node->is_local);
-	m_def_provider->add_to_data_structures(new_node);
+	m_def_provider->set_declaration(new_node->get_shared(), !new_node->is_local);
+	m_def_provider->add_to_data_structures(new_node->get_shared());
 	return new_node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
-	auto node_declaration = m_def_provider->get_declaration(&node);
+	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			access_chain->accept(*this);
@@ -344,14 +344,14 @@ NodeAST* ASTVariableChecking::visit(NodeList& node) {
 		params->accept(*this);
 	}
 	auto new_node = apply_type_annotations(&node);
-	m_def_provider->set_declaration(new_node, !new_node->is_local);
-	m_def_provider->add_to_data_structures(new_node);
+	m_def_provider->set_declaration(new_node->get_shared(), !new_node->is_local);
+	m_def_provider->add_to_data_structures(new_node->get_shared());
 	return new_node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
-	auto node_declaration = m_def_provider->get_declaration(&node);
+	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
 		CompileError(ErrorType::VariableError, "List has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return &node;
