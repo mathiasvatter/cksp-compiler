@@ -102,10 +102,10 @@ private:
 			}
 
 			if(ref.ty->get_type_kind() == TypeKind::Composite) {
-				if(ref.get_node_type() == NodeType::ArrayRef) {
-					generate_array_repr_method(static_cast<NodeArrayRef&>(ref));
-				} else if (ref.get_node_type() == NodeType::NDArrayRef) {
-					generate_ndarray_repr_method(static_cast<NodeNDArrayRef&>(ref));
+				if(auto arr_ref = ref.cast<NodeArrayRef>()) {
+					generate_array_repr_method(*arr_ref);
+				} else if (auto ndarr_ref = ref.cast<NodeNDArrayRef>()) {
+					generate_ndarray_repr_method(*ndarr_ref);
 				}
 			}
 

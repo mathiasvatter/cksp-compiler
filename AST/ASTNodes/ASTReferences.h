@@ -234,7 +234,6 @@ struct NodeListRef : NodeReference {
 };
 
 struct NodePointerRef : NodeReference {
-	std::vector<std::string> ptr_chain;
 	inline NodePointerRef(std::string name, Token tok)
 		: NodeReference(std::move(name), NodeType::PointerRef, std::move(tok)) {
 	}

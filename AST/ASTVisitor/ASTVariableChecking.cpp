@@ -183,7 +183,7 @@ NodeAST* ASTVariableChecking::visit(NodeArray& node) {
 
 	node.determine_locality(m_program, m_current_block);
 	if(node.size) node.size->accept(*this);
-	auto new_node = apply_type_annotations(&node);
+	auto new_node = apply_type_annotations(node.get_shared());
 	m_def_provider->set_declaration(new_node->get_shared(), !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node->get_shared());
 	return new_node;
@@ -221,7 +221,7 @@ NodeAST* ASTVariableChecking::visit(NodeNDArray& node) {
 //	set_as_function_param(&node);
 	node.determine_locality(m_program, m_current_block);
 	if(node.sizes) node.sizes->accept(*this);
-	auto new_node = apply_type_annotations(&node);
+	auto new_node = apply_type_annotations(node.get_shared());
 	m_def_provider->set_declaration(new_node->get_shared(), !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node->get_shared());
 	return new_node;
@@ -271,7 +271,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 //	set_as_function_param(&node);
 	node.determine_locality(m_program, m_current_block);
 
-	auto new_node = apply_type_annotations(&node);
+	auto new_node = apply_type_annotations(node.get_shared());
 	m_def_provider->set_declaration(new_node->get_shared(), !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node->get_shared());
 	return new_node;
@@ -313,7 +313,7 @@ NodeAST* ASTVariableChecking::visit(NodePointer& node) {
 //	set_as_function_param(&node);
 	node.determine_locality(m_program, m_current_block);
 
-	auto new_node = apply_type_annotations(&node);
+	auto new_node = apply_type_annotations(node.get_shared());
 	m_def_provider->set_declaration(new_node->get_shared(), !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node->get_shared());
 	return new_node;
@@ -343,7 +343,7 @@ NodeAST* ASTVariableChecking::visit(NodeList& node) {
 	for(auto &params : node.body) {
 		params->accept(*this);
 	}
-	auto new_node = apply_type_annotations(&node);
+	auto new_node = apply_type_annotations(node.get_shared());
 	m_def_provider->set_declaration(new_node->get_shared(), !new_node->is_local);
 	m_def_provider->add_to_data_structures(new_node->get_shared());
 	return new_node;
@@ -378,10 +378,10 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 }
 
 
-NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure* node) {
-	if(node->ty == TypeRegistry::Unknown) return node;
+NodeDataStructure* ASTVariableChecking::apply_type_annotations(std::shared_ptr<NodeDataStructure> node) {
+	if(node->ty == TypeRegistry::Unknown) return node.get();
 
-	NodeDataStructure* new_data_struct = nullptr;
+	NodeAST* new_data_struct = nullptr;
 	if(node->ty->get_type_kind() == TypeKind::Composite) {
 		auto comp_type = static_cast<CompositeType*>(node->ty);
 		// if var is annotated as array, replace with array
@@ -389,13 +389,13 @@ NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure
 			auto node_array = node->to_array(nullptr);
 			if(!node_array) get_apply_type_annotations_error(node).exit();
 			node_array->is_local = node->is_local;
-			new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_array)));
+			new_data_struct = node->replace_with(std::move(node_array));
 		} else if(comp_type->get_compound_type() == CompoundKind::Array and node->get_node_type() != NodeType::NDArray and comp_type->get_dimensions() > 1) {
 			auto node_ndarray = node->to_ndarray();
 			if(!node_ndarray) get_apply_type_annotations_error(node).exit();
 			node_ndarray->dimensions = comp_type->get_dimensions();
 			node_ndarray->is_local = node->is_local;
-			new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_ndarray)));
+			new_data_struct = node->replace_with(std::move(node_ndarray));
 		}
 	} else if (node->ty->get_type_kind() == TypeKind::Basic) {
 		// if var is annotated as variable but recognized as array by parser -> throw error
@@ -421,17 +421,19 @@ NodeDataStructure* ASTVariableChecking::apply_type_annotations(NodeDataStructure
 			auto node_pointer = node->to_pointer();
 			if(!node_pointer) get_apply_type_annotations_error(node).exit();
 			node_pointer->is_local = node->is_local;
-			new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_pointer)));
+			new_data_struct = node->replace_with(std::move(node_pointer));
 		}
 	} else if(node->ty->get_type_kind() == TypeKind::Function and node->get_node_type() != NodeType::FunctionHeader and node->get_node_type() == NodeType::Variable) {
 		auto node_function = std::make_unique<NodeFunctionHeader>(node->name, node->tok);
 		if(!node_function) get_apply_type_annotations_error(node).exit();
 		node_function->is_local = node->is_local;
 		node_function->ty = node->ty;
-		new_data_struct = static_cast<NodeDataStructure*>(node->replace_with(std::move(node_function)));
+		new_data_struct = node->replace_with(std::move(node_function));
 	}
-	if(new_data_struct) return new_data_struct;
-	return node;
+	if(new_data_struct) {
+		return static_cast<NodeDataStructure*>(new_data_struct);
+	}
+	return node.get();
 }
 
 

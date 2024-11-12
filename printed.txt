@@ -2,100 +2,310 @@
 	declare const MAX_STRUCTS : int := 1000000
 	declare const MEM_WARNING : string := "Memory Error: No more free space available to allocate objects of type"
 struct List
-	declare self : List := nil
-	declare List::value : int
-	declare List::next : List := nil
+	declare const List::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
+	declare List::free_idx : int
+	declare List::allocation[List::MAX_STRUCTS{int}] : int[]
+	declare List::stack[List::MAX_STRUCTS{int}] : int[]
+	declare List::stack_top : int
+	declare List::value[List::MAX_STRUCTS{int}] : int[]
+	declare List::next[List::MAX_STRUCTS{int}] : int[] := [- 1]
 
-	function List::__init__(value : int, next : List)
-		List::value{int} := value{int}
-		List::next{List} := next{List}
+	function List::__init__(value : int, next : int)
+		List::free_idx{int} := search(List::allocation{int[]}, 0)
+		if(List::free_idx{int} = -1)
+			message("Error: No more free space available to allocate objects of type 'List'")
+		end if
+		List::allocation[List::free_idx{int}]{int[]} := 1
+		List::value[List::free_idx{int}]{int} := value{int}
+		List::next[List::free_idx{int}]{int} := next{int}
+		return (List::free_idx{int})
 	end function
 
-	function List::get_next_next_value(self : List)
-		return (self{List}.next{List}.next{List}.value{int})
+	function List::get_next_next_value(self : int)
+		return (List::value[List::next[List::next[self{int}]{int}]{int}]{int})
 	end function
 
-	function List::__repr__(self : List)
-		return ("<List> Object: " & self{List})
+	function List::__repr__(self : int)
+		return ("<List> Object: " & self{int})
+	end function
+
+	function List::__del__(self : int)
+		if(List::allocation[self{int}]{int} <= 0)
+			List::next[self{int}]{int} := - 1
+		end if
+	end function
+
+	function List::__decr__(self : int, num_refs : int)
+		declare current : int := self{int}
+		while(current{int} # - 1) 
+			List::allocation[current{int}]{int} := List::allocation[current{int}]{int} - num_refs{int}
+			if(List::allocation[current{int}]{int} > 0)
+				current{int} := - 1
+				continue
+			end if
+			self{int} := current{int}
+			if(List::next[current{int}]{int} # - 1)
+				current{int} := List::next[current{int}]{int}
+			else
+				current{int} := - 1
+			end if
+			List::__del__(self{int})
+		end while
+	end function
+
+	function List::__incr__(self : int, num_refs : int)
+		if(self{int} # - 1)
+			List::allocation[self{int}]{int} := List::allocation[self{int}]{int} + num_refs{int}
+		end if
+	end function
+
+	function List::Array::__incr__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			List::__incr__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+	function List::Array::__decr__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			List::__decr__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+	function List::Array::__del__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			List::__del__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
 	end function
 
 end struct
 
 struct Node
-	declare self : Node := nil
-	declare Node::value : int
-	declare Node::left : Node := nil
-	declare Node::right : Node := nil
+	declare const Node::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
+	declare Node::free_idx : int
+	declare Node::allocation[Node::MAX_STRUCTS{int}] : int[]
+	declare Node::stack[Node::MAX_STRUCTS{int}] : int[]
+	declare Node::stack_top : int
+	declare Node::value[Node::MAX_STRUCTS{int}] : int[]
+	declare Node::left[Node::MAX_STRUCTS{int}] : int[] := [- 1]
+	declare Node::right[Node::MAX_STRUCTS{int}] : int[] := [- 1]
 
 	function Node::__init
+		Node::free_idx{int} := search(Node::allocation{int[]}, 0)
+		if(Node::free_idx{int} = -1)
+			message("Error: No more free space available to allocate objects of type 'Node'")
+		end if
+		Node::allocation[Node::free_idx{int}]{int[]} := 1
+		return (Node::free_idx{int})
 	end function
 
-	function Node::__repr__(self : Node)
-		return ("<Node> Object: " & self{Node})
+	function Node::__repr__(self : int)
+		return ("<Node> Object: " & self{int})
 	end function
 
-end struct
-
-struct Point
-	declare self : Point := nil
-	declare Point::x : int
-	declare Point::y : int
-
-	function Point::__init__(x : int, y : int)
-		Point::x{int} := x{int}
-		Point::y{int} := y{int}
+	function Node::__del__(self : int)
+		if(Node::allocation[self{int}]{int} <= 0)
+			Node::left[self{int}]{int} := - 1
+			Node::right[self{int}]{int} := - 1
+		end if
 	end function
 
-	function Point::__repr__(self : Point)
-		return ("Point {X: " & Point::x{int} & ", Y: " & Point::y{int} & "}")
+	function Node::__decr__(self : int, num_refs : int)
+		declare current : int := self{int}
+		while(current{int} # - 1) 
+			Node::allocation[current{int}]{int} := Node::allocation[current{int}]{int} - num_refs{int}
+			if(Node::allocation[current{int}]{int} > 0)
+				current{int} := - 1
+				continue
+			end if
+			self{int} := current{int}
+			if(Node::left[current{int}]{int} # - 1)
+				current{int} := Node::left[current{int}]{int}
+			else
+				current{int} := - 1
+			end if
+			self{int} := current{int}
+			if(Node::right[current{int}]{int} # - 1)
+				current{int} := Node::right[current{int}]{int}
+			else
+				current{int} := - 1
+			end if
+			Node::__del__(self{int})
+		end while
 	end function
 
-	function Point::__add__(self : Point, other : Point)
-		return (Point(Point::x{int} + other{Point}.x{int}, Point::y{int} + other{Point}.y{int}))
+	function Node::__incr__(self : int, num_refs : int)
+		if(self{int} # - 1)
+			Node::allocation[self{int}]{int} := Node::allocation[self{int}]{int} + num_refs{int}
+		end if
+	end function
+
+	function Node::Array::__incr__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			Node::__incr__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+	function Node::Array::__decr__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			Node::__decr__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+	function Node::Array::__del__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			Node::__del__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
 	end function
 
 end struct
 
 on init
 	declare _iter : int
+	declare const all_fx_settings.SIZE : int := 8
+	declare _all_fx_settings[48] : int[]
+	declare all_fx_settings.sizes[8] : int[] := [6, 6, 6, 6, 6, 6, 6, 6]
+	declare all_fx_settings.pos[8] : int[] := [0, 6, 12, 18, 24, 30, 36, 42]
+	declare all_fx_settings0[6] : [] := [FILTER_TYPE_SV_LP2{int}, 2, ENGINE_PAR_CUTOFF{int}, 450000, ENGINE_PAR_RESONANCE{int}, 0]
+		_iter{unknown} := 0
+		while(_iter{unknown} < 6) 
+		_all_fx_settings[_iter{unknown} + 0]{unknown} := all_fx_settings0[_iter{unknown}]{unknown}
+		inc(_iter{unknown})
+		end while
+
+	declare all_fx_settings1[6] : [] := [FILTER_TYPE_SV_LP4{int}, 2, ENGINE_PAR_CUTOFF{int}, 450000, ENGINE_PAR_RESONANCE{int}, 0]
+		_iter{unknown} := 0
+		while(_iter{unknown} < 6) 
+		_all_fx_settings[_iter{unknown} + 6]{unknown} := all_fx_settings1[_iter{unknown}]{unknown}
+		inc(_iter{unknown})
+		end while
+
+	declare all_fx_settings2[6] : [] := [FILTER_TYPE_PRO52{int}, 2, ENGINE_PAR_CUTOFF{int}, 450000, ENGINE_PAR_RESONANCE{int}, 0]
+		_iter{unknown} := 0
+		while(_iter{unknown} < 6) 
+		_all_fx_settings[_iter{unknown} + 12]{unknown} := all_fx_settings2[_iter{unknown}]{unknown}
+		inc(_iter{unknown})
+		end while
+
+	declare all_fx_settings3[6] : [] := [FILTER_TYPE_SV_HP2{int}, 2, ENGINE_PAR_CUTOFF{int}, 450000, ENGINE_PAR_RESONANCE{int}, 0]
+		_iter{unknown} := 0
+		while(_iter{unknown} < 6) 
+		_all_fx_settings[_iter{unknown} + 18]{unknown} := all_fx_settings3[_iter{unknown}]{unknown}
+		inc(_iter{unknown})
+		end while
+
+	declare all_fx_settings4[6] : [] := [FILTER_TYPE_SV_HP4{int}, 2, ENGINE_PAR_CUTOFF{int}, 450000, ENGINE_PAR_RESONANCE{int}, 0]
+		_iter{unknown} := 0
+		while(_iter{unknown} < 6) 
+		_all_fx_settings[_iter{unknown} + 24]{unknown} := all_fx_settings4[_iter{unknown}]{unknown}
+		inc(_iter{unknown})
+		end while
+
+	declare all_fx_settings5[6] : [] := [FILTER_TYPE_SV_BP2{int}, 2, ENGINE_PAR_CUTOFF{int}, 450000, ENGINE_PAR_RESONANCE{int}, 0]
+		_iter{unknown} := 0
+		while(_iter{unknown} < 6) 
+		_all_fx_settings[_iter{unknown} + 30]{unknown} := all_fx_settings5[_iter{unknown}]{unknown}
+		inc(_iter{unknown})
+		end while
+
+	declare all_fx_settings6[6] : [] := [FILTER_TYPE_SV_BP4{int}, 2, ENGINE_PAR_CUTOFF{int}, 450000, ENGINE_PAR_RESONANCE{int}, 0]
+		_iter{unknown} := 0
+		while(_iter{unknown} < 6) 
+		_all_fx_settings[_iter{unknown} + 36]{unknown} := all_fx_settings6[_iter{unknown}]{unknown}
+		inc(_iter{unknown})
+		end while
+
+	declare all_fx_settings7[6] : [] := [FILTER_TYPE_SV_NOTCH4{int}, 2, ENGINE_PAR_CUTOFF{int}, 450000, ENGINE_PAR_RESONANCE{int}, 0]
+		_iter{unknown} := 0
+		while(_iter{unknown} < 6) 
+		_all_fx_settings[_iter{unknown} + 42]{unknown} := all_fx_settings7[_iter{unknown}]{unknown}
+		inc(_iter{unknown})
+		end while
+
+	message(_all_fx_settings[all_fx_settings.pos[0]{unknown} + 1]{unknown})
 	declare n[10] : int[] := [0]
 	declare array[10] : int[] := [1]
 	message(num_elements[array{int[]}])
-	declare this_list : List := nil
-	this_list{List} := List(42, nil)
-	declare that_list : List := List(39, List(40, List(41, this_list{List})))
-	message(that_list{List}.next{List}.value{int})
+	declare this_list : int := - 1
+	this_list{int} := List(42, - 1)
+	declare that_list : int := List(39, List(40, List(41, this_list{int})))
+	message(List::value[List::next[that_list{int}]{int}]{int})
 	n{int[]} := [1, 2, 3, 4, 5]
+	declare ndarray::num_elements[3] : int[] := [10 * 10, 10, 10]
 	declare ndarray[10, 10] : real[][]
+	declare ndarray2::num_elements[3] : int[] := [10 * 10, 10, 10]
 	declare ndarray2[10, 10] : int[][]
 	message((search_matrix(ndarray{real[][]}, 3) & ", " & "3" & ", " & "f"))
 	message((search_matrix(ndarray2{int[][]}, 3) & ", " & "3" & ", " & "f"))
 	ndarray[0, *]{real[]} := ndarray[1, *]{real[]}
-	message(this_list{List})
+	message(List::allocation[Struct::max(0, this_list{int})]{unknown})
 end on
 
 function search_matrix(matrix : number[][], target : number)
-	declare array[30] : int[] := [0]
-	declare ndarray[2, 3] : int[][]
-	declare row : int
-	declare col : int
-	row{int} := 0
-	while(row{int} <= (num_elements[matrix{number[][]}, 1] - 1)) 
-		col{int} := 0
-		while(col{int} <= (num_elements[matrix{number[][]}, 2] - 1)) 
-			if(matrix[row{int}, col{int}]{number} = target{number})
-				return ((row{int} * 10) + col{int})
+	declare RETURN_FLAG11 : int
+	while(RETURN_FLAG11{int} = 0) 
+		declare array[30] : int[] := [0]
+		declare ndarray::num_elements[3] : int[] := [2 * 3, 2, 3]
+		declare ndarray[2, 3] : int[][]
+		declare row : int
+		declare col : int
+		row{int} := 0
+		while((row{int} <= (num_elements[matrix{number[][]}, Array::clip(1, 2)] - 1)) and (RETURN_FLAG11{int} = 0)) 
+			col{int} := 0
+			while((col{int} <= (num_elements[matrix{number[][]}, Array::clip(2, 2)] - 1)) and (RETURN_FLAG11{int} = 0)) 
+				if(matrix[row{int}, col{int}]{number} = target{number})
+					return ((row{int} * 10) + col{int})
+					RETURN_FLAG11{int} := 1
+					continue
+				end if
+				inc(col{int})
+			end while
+			if(RETURN_FLAG11{int} = 1)
+				continue
 			end if
-			inc(col{int})
+			inc(row{int})
 		end while
-		inc(row{int})
+		if(RETURN_FLAG11{int} = 1)
+			continue
+		end if
+		return (- 1)
+		RETURN_FLAG11{int} := 1
+		continue
 	end while
-	return (- 1)
 end function
 
 function return_init(init : int[])
-	message(init{int[]})
+	message(int[]::__repr__(init{int[]}))
 	return ([1, 2, 3, 4, 5])
+end function
+
+function Struct::max(a : int, b : int)
+	return (((a{int} + b{int}) + abs(a{int} - b{int})) / 2)
+end function
+
+function Array::clip(x : int, b : int)
+	return (x{int} + ((- x{int} .and. sh_right(x{int}, 31)) + ((x{int} - b{int}) .and. sh_right(b{int} - x{int}, 31))))
+end function
+
+function int[]::__repr__(self : int[])
+	return ("Array of type <int[]>")
 end function
 
 

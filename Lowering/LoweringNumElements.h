@@ -36,8 +36,7 @@ public:
 		if(node.dimension and node.dimension->get_node_type() == NodeType::Int) {
 			auto int_node = static_cast<NodeInt*>(node.dimension.get());
 			auto dim = int_node->value;
-			if(node.array->get_node_type() == NodeType::NDArrayRef) {
-				auto nd_array = static_pointer_cast<NodeNDArray>(node.array->declaration);
+			if(auto nd_array = node.array->declaration->cast<NodeNDArray>()) {
 				if (dim > nd_array->dimensions) {
 					auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
 					error.m_message =
@@ -58,7 +57,7 @@ public:
 			node.set_dimension(std::make_unique<NodeInt>(0, node.tok));
 		}
 
-		if(node.array->get_node_type() == NodeType::NDArrayRef) {
+		if(auto nd_array = node.array->declaration->cast<NodeNDArray>()) {
 //			// get correct name (because local ndarrays get renamed) by using the lookup table in NodeProgram
 //			if(!node.array->declaration) {
 //				auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
@@ -77,7 +76,6 @@ public:
 //			}
 
 			// add clip function when ndarray is used
-			auto nd_array = static_pointer_cast<NodeNDArray>(node.array->declaration);
 			add_clip_function(m_program);
 			node.set_dimension(get_clip_call(std::move(node.dimension), std::make_unique<NodeInt>(nd_array->dimensions, node.tok)));
 		}

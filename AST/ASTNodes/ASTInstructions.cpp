@@ -502,8 +502,11 @@ NodeAST *NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_ptr
     return nullptr;
 }
 
-ASTLowering* NodeSingleDeclaration::get_lowering(struct NodeProgram *program) const {
+ASTLowering* NodeSingleDeclaration::get_lowering(NodeProgram *program) const {
 	if(variable->get_node_type() == NodeType::UIControl) {
+		return variable->get_lowering(program);
+	}
+	if(variable->get_node_type() == NodeType::List) {
 		return variable->get_lowering(program);
 	}
 	static LoweringSingleDeclaration lowering(program);

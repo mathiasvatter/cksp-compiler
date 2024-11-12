@@ -12,6 +12,7 @@
 #include <list>
 #include <chrono>
 #include <functional>
+#include <typeindex>
 
 #include "ASTHelper.h"
 #include "../Types.h"
@@ -68,6 +69,16 @@ struct NodeAST {
 	bool is_constant();
 	int get_bison_tokens();
 	bool is_nil();
+
+	// Template-Methode für den Cast
+	template <typename TargetType>
+	TargetType* cast() {
+		// Überprüfen, ob der Typ des Objekts mit `TargetType` übereinstimmt
+		if (std::type_index(typeid(*this)) == std::type_index(typeid(TargetType))) {
+			return static_cast<TargetType*>(this);
+		}
+		return nullptr;
+	}
 };
 
 template<typename T>
@@ -75,6 +86,7 @@ std::unique_ptr<T> clone_as(NodeAST* node) {
 	auto cloned_ptr = node->clone(); // Nutzt die clone()-Methode der NodeAST Klasse
 	return std::unique_ptr<T>(static_cast<T*>(cloned_ptr.release()));
 }
+
 
 struct NodeDeadCode : NodeAST {
     explicit NodeDeadCode(const Token tok) : NodeAST(tok, NodeType::DeadCode) {};
@@ -642,7 +654,7 @@ struct NodeFunctionDefinition: NodeAST {
 	std::vector<struct NodeReturn*> return_stmts;
     std::unordered_set<class NodeFunctionCall*> call_sites = {};
     std::shared_ptr<class NodeFunctionHeader> header;
-    std::optional<std::unique_ptr<NodeDataStructure>> return_variable;
+    std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;
     std::unique_ptr<NodeBlock> body;
     explicit NodeFunctionDefinition(Token tok);

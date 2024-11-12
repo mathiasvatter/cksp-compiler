@@ -113,11 +113,7 @@ public:
 
 		node.members->accept(*this);
 		// add self keyword for declarations
-		node.members->prepend_stmt(std::make_unique<NodeStatement>(
-			std::make_unique<NodeSingleDeclaration>(node.node_self, nullptr, node.tok),
-			    node.tok
-				)
-			);
+		node.members->prepend_as_stmt(std::make_unique<NodeSingleDeclaration>(node.node_self, nullptr, node.tok));
 		for(auto & m: node.methods) {
 			m->accept(*this);
 		}
