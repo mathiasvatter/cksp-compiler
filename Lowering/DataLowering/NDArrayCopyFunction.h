@@ -120,18 +120,17 @@ private:
 
 	void generate_bounds() {
 		// if normal array -> only one bound
-		if(array->get_node_type() == NodeType::ArrayRef) {
-			lower_bounds.push_back(std::make_unique<NodeInt>(0, array->tok));
-			upper_bounds.push_back(static_cast<NodeArrayRef*>(array)->get_size());
+		if(auto arr_ref = array->cast<NodeArrayRef>()) {
+			lower_bounds.push_back(std::make_unique<NodeInt>(0, arr_ref->tok));
+			upper_bounds.push_back(arr_ref->get_size());
 		}
-		if(array->get_node_type() == NodeType::NDArrayRef) {
-			auto node_nd_array_ref = static_cast<NodeNDArrayRef *>(array);
+		if(auto nd_arr_ref = array->cast<NodeNDArrayRef>()) {
 			// holds all iterators per wildcard
 			int count = 1;
-			for (auto &idx : node_nd_array_ref->indexes->params) {
+			for (auto &idx : nd_arr_ref->indexes->params) {
 				if (idx->get_node_type() == NodeType::Wildcard) {
-					upper_bounds.push_back(node_nd_array_ref->get_size(std::make_unique<NodeInt>(count, array->tok)));
-					lower_bounds.push_back(std::make_unique<NodeInt>(0, array->tok));
+					upper_bounds.push_back(nd_arr_ref->get_size(std::make_unique<NodeInt>(count, nd_arr_ref->tok)));
+					lower_bounds.push_back(std::make_unique<NodeInt>(0, nd_arr_ref->tok));
 					count++;
 				}
 			}
@@ -145,11 +144,10 @@ private:
 			node_iterator->is_local = true;
 			iterators.push_back(std::move(node_iterator));
 		}
-		if(array_ref->get_node_type() == NodeType::NDArrayRef) {
-			auto node_nd_array_ref = static_cast<NodeNDArrayRef *>(array_ref);
+		if(auto nd_arr_ref = array_ref->cast<NodeNDArrayRef>()) {
 			// holds all iterators per wildcard
 			int count = iter_size;
-			for (auto &idx : node_nd_array_ref->indexes->params) {
+			for (auto &idx : nd_arr_ref->indexes->params) {
 				if (idx->get_node_type() == NodeType::Wildcard) {
 					auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter" + std::to_string(count), TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
 					node_iterator->is_local = true;
@@ -166,11 +164,10 @@ private:
 			auto node_dim = std::make_unique<NodeVariable>(std::nullopt, "dim"+std::to_string(dims_size), TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
 			dim_vars_to_copy.push_back(std::move(node_dim));
 		}
-		if(array_ref->get_node_type() == NodeType::NDArrayRef) {
-			auto node_nd_array_ref = static_cast<NodeNDArrayRef *>(array_ref);
+		if(auto nd_arr_ref = array_ref->cast<NodeNDArrayRef>()) {
 			// holds all iterators per wildcard
 			int count = dims_size;
-			for (auto &idx : node_nd_array_ref->indexes->params) {
+			for (auto &idx : nd_arr_ref->indexes->params) {
 				if (idx->get_node_type() != NodeType::Wildcard) {
 					auto node_dim = std::make_unique<NodeVariable>(std::nullopt, "dim" + std::to_string(count), TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
 					dim_vars_to_copy.push_back(std::move(node_dim));

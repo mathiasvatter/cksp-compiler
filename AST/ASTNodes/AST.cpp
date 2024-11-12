@@ -323,7 +323,7 @@ bool NodeReference::is_string_env() {
 	// is within string environment
 	is_string |= parent->ty == TypeRegistry::String;
 	// is within message call
-	is_string |= is_func_arg() and static_cast<NodeFunctionHeader*>(parent->parent)->name == "message";
+	is_string |= is_func_arg() and static_cast<NodeFunctionHeaderRef*>(parent->parent)->name == "message";
 	// is within return statement
 	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->definition->ty == TypeRegistry::String;
 	return is_string;
@@ -744,7 +744,7 @@ NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& oth
 		  num_return_params(other.num_return_params), return_stmts(other.return_stmts),
 		  num_return_stmts(other.num_return_stmts) {
     if (other.return_variable) {
-        return_variable = std::make_optional(clone_unique(other.return_variable.value()));
+        return_variable = std::make_optional(other.return_variable.value());
     }
 	set_child_parents();
 }

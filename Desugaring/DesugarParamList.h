@@ -18,35 +18,32 @@ public:
 	NodeAST * visit(NodeParamList &node) override {
 
 		// in case it is a double param_list [[0,1,2,3]] -> flatten
-		if(node.size() == 1 and node.param(0)->get_node_type() == NodeType::ParamList) {
+		if(node.size() == 1 and node.param(0)->cast<NodeParamList>()) {
 			node.flatten();
 		}
 
 		// transformation into initializer list:
 		// in case we are r_value in a declaration statement
-		if(node.parent->get_node_type() == NodeType::SingleDeclaration) {
-			auto declaration = static_cast<NodeSingleDeclaration*>(node.parent);
-			if(declaration->value and declaration->value.get() == &node) {
+		if(auto decl = node.parent->cast<NodeSingleDeclaration>()) {
+			if(decl->value and decl->value.get() == &node) {
 				return node.replace_with(node.to_initializer_list());
 			}
 		}
 
 		// in case we are r_value in a assignment statement
-		if(node.parent->get_node_type() == NodeType::SingleAssignment) {
-			auto assignment = static_cast<NodeSingleAssignment*>(node.parent);
-			if(assignment->r_value.get() == &node) {
+		if(auto assign = node.parent->cast<NodeSingleAssignment>()) {
+			if(assign->r_value.get() == &node) {
 				return node.replace_with(node.to_initializer_list());
 			}
 		}
 
 		// in case we are inside a function call
-		if(node.parent->get_node_type() == NodeType::ParamList
-			and node.parent->parent->get_node_type() == NodeType::FunctionHeader) {
+		if(node.parent->cast<NodeParamList>() and node.parent->parent->cast<NodeFunctionHeader>()) {
 			return node.replace_with(node.to_initializer_list());
 		}
 
 		// in case we are in return statement
-		if(node.parent->get_node_type() == NodeType::Return) {
+		if(node.parent->cast<NodeReturn>()) {
 			return node.replace_with(node.to_initializer_list());
 		}
 

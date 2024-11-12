@@ -151,8 +151,7 @@ private:
 		// node ref without indexes
 		auto node_ndarray_ref = clone_as<NodeNDArrayRef>(node);
 		node_ndarray_ref->indexes = nullptr;
-		if(value->get_node_type() == NodeType::NDArrayRef) {
-			auto node_ndarray_value_ref = static_cast<NodeNDArrayRef*>(value);
+		if(auto node_ndarray_value_ref = value->cast<NodeNDArrayRef>()) {
 			node_ndarray_value_ref->indexes = nullptr;
 		}
 		params->prepend_param(value->clone());

@@ -163,7 +163,11 @@ NodeAST * ASTCollectLowerings::visit(NodeListRef& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeList& node) {
-	return node.lower(m_program);
+	for(auto & b : node.body) {
+		b->accept(*this);
+	}
+	return &node;
+//	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodePointer& node) {
@@ -175,7 +179,7 @@ NodeAST * ASTCollectLowerings::visit(NodePointerRef& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeAccessChain& node) {
-	return node.lower(m_program);
+	return node.lower(m_program)->accept(*this);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleRetain& node) {

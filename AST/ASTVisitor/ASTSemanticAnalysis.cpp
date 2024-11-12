@@ -36,6 +36,16 @@ NodeAST * ASTSemanticAnalysis::visit(NodeWildcard& node) {
 NodeAST * ASTSemanticAnalysis::visit(NodeNumElements& node) {
 	node.array->accept(*this);
 	if(node.dimension) node.dimension->accept(*this);
+
+	// transform var ref to composite type
+	if(auto var = node.array->cast<NodeVariableRef>()) {
+		if (!var->declaration) return &node;
+		auto node_array_ref = var->to_array_ref(nullptr);
+		node_array_ref->match_data_structure(var->declaration);
+		m_def_provider->remove_reference(var->declaration, var);
+		auto new_ref = static_cast<NodeReference *>(var->replace_with(std::move(node_array_ref)));
+		m_def_provider->add_reference(new_ref->declaration, new_ref);
+	}
 	return &node;
 }
 
@@ -220,7 +230,7 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 			auto & arg = func_call->function->get_arg(i);
 			auto & param = func_call->definition->get_param(i);
 			if(arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::Array) {
-				auto node_var_ref = static_cast<NodeVariableRef*>(arg.get());
+				auto node_var_ref = arg->cast<NodeVariableRef>();
 				if(!node_var_ref->declaration) return;
 				auto node_array_ref = std::make_unique<NodeArrayRef>(
 					node_var_ref->name,
@@ -260,7 +270,7 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 //					m_def_provider->remove_references(node_ret_var);
 				}
 			} else if (arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::FunctionHeader) {
-				auto node_var_ref = static_cast<NodeVariableRef*>(arg.get());
+				auto node_var_ref = arg->cast<NodeVariableRef>();
 				auto func_var_ref = std::make_unique<NodeFunctionHeaderRef>(
 					node_var_ref->name,
 					std::make_unique<NodeParamList>(node_var_ref->tok),
@@ -318,8 +328,7 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 			data_struct->tok);
 		// get dimensions from references
 		for(auto & ref : references) {
-			if(ref->get_node_type() == NodeType::NDArrayRef) {
-				auto nd_array_ref = static_cast<NodeNDArrayRef*>(ref);
+			if(auto nd_array_ref = ref->cast<NodeNDArrayRef>()) {
 				if(nd_array_ref->indexes) {
 					node_ndarray->dimensions = nd_array_ref->indexes->params.size();
 					break;
@@ -385,13 +394,13 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(Defin
 		}
 		// check if it is NodeListRef
 	} else if(reference->get_node_type() == NodeType::ArrayRef and reference->declaration->get_node_type() == NodeType::List) {
-		auto node_array_ref = static_cast<NodeArrayRef*>(reference);
+		auto node_array_ref = reference->cast<NodeArrayRef>();
 		node_replacement = std::make_unique<NodeListRef>(
 			reference->name,
 			std::make_unique<NodeParamList>(reference->tok, std::move(node_array_ref->index)),
 			reference->tok);
 	} else if(reference->get_node_type() == NodeType::NDArrayRef and reference->declaration->get_node_type() == NodeType::List) {
-		auto node_nd_array_ref = static_cast<NodeNDArrayRef*>(reference);
+		auto node_nd_array_ref = reference->cast<NodeNDArrayRef>();
 		node_replacement = std::make_unique<NodeListRef>(
 			reference->name,
 			std::move(node_nd_array_ref->indexes),

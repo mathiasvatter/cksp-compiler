@@ -1914,9 +1914,11 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 	node_list_block->name = name;
 	node_list_block->size = size;
 	node_list_block->body = std::move(stmts);
-	node_list_block->parent = parent;
+//	node_list_block->parent = node_declaration.get();
 	node_list_block->ty = type.unwrap();
-	return Result<std::unique_ptr<NodeAST>>(std::move(node_list_block));
+	auto node_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_list_block), node_list_block->tok);
+	node_declaration->parent = parent;
+	return Result<std::unique_ptr<NodeAST>>(std::move(node_declaration));
 }
 
 

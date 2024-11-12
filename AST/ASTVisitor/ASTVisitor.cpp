@@ -10,7 +10,7 @@ CompileError ASTVisitor::get_raw_compile_error(ErrorType err_type, const NodeAST
 }
 
 std::unique_ptr<NodeBlock> ASTVisitor::make_while_loop(NodeReference* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent) {
-    auto node_body = std::make_unique<NodeBlock>(var->tok);
+    auto node_body = std::make_unique<NodeBlock>(var->tok, true);
     auto node_assignment = std::make_unique<NodeSingleAssignment>(
 		clone_as<NodeReference>(var),
 		std::make_unique<NodeInt>(from, var->tok), var->tok

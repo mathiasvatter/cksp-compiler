@@ -47,7 +47,7 @@ public:
 
 	/// apply type annotations given before parse time and replace node types accordingly
 	/// returns the new datastructure pointer if replaced, or the old one if not
-	static NodeDataStructure* apply_type_annotations(NodeDataStructure* node);
+	static NodeDataStructure* apply_type_annotations(std::shared_ptr<NodeDataStructure> node);
 
 
 private:
@@ -71,7 +71,7 @@ private:
 		return false;
 	}
 
-	static CompileError get_apply_type_annotations_error(NodeDataStructure* node) {
+	static CompileError get_apply_type_annotations_error(std::shared_ptr<NodeDataStructure> node) {
 		auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
 		error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
 		error.m_got = node->ty->to_string();

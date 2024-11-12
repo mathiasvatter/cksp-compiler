@@ -127,14 +127,14 @@ NodeAST * ASTPrinter::visit(NodeVariableRef &node) {
 NodeAST * ASTPrinter::visit(NodePointer &node) {
 	if(node.persistence.has_value())
 		os << node.persistence.value().val << " ";
-	os << node.name;
+	os << node.name << "{Ptr}";
 	auto type = TypeRegistry::get_annotation_from_type(node.ty);
 	if(!type.empty()) os << " : " << type;
 	return &node;
 }
 
 NodeAST * ASTPrinter::visit(NodePointerRef &node) {
-	os << node.name;
+	os << node.name << "{Ptr}";
 	auto type = TypeRegistry::get_annotation_from_type(node.ty);
 	if(!type.empty()) os << "{" << type << "}";
 	return &node;

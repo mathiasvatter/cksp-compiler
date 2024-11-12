@@ -90,8 +90,7 @@ NodeAST * TypeInference::visit(NodeConst& node) {
 	node.ty = TypeRegistry::Integer;
 	for(auto & constant : node.constants->statements) {
 		constant->accept(*this);
-		if(constant->statement->get_node_type() == NodeType::SingleDeclaration) {
-			auto decl = static_cast<NodeSingleDeclaration*>(constant->statement.get());
+		if(auto decl = constant->statement->cast<NodeSingleDeclaration>()) {
 			if(decl->variable->ty == TypeRegistry::Unknown || decl->variable->ty == TypeRegistry::Integer) {
 				decl->variable->ty = TypeRegistry::Integer;
 			} else if(decl->variable->ty != TypeRegistry::ArrayOfInt) {
@@ -160,7 +159,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 		for(auto ref : references) {
 			ASTSemanticAnalysis::replace_incorrectly_detected_reference(m_def_provider, ref);
 		}
-//		new_node->accept(*this);
+		new_node->accept(*this);
 		node.declaration = new_node->get_shared();
 		if(auto strct = new_node->is_member()) {
 			strct->update_member_table();
@@ -427,36 +426,26 @@ NodeAST * TypeInference::visit(NodeParamList& node) {
 }
 
 NodeAST * TypeInference::visit(NodeInitializerList& node) {
-	// if type was already inferred -> return
-//	if(node.ty != TypeRegistry::Unknown) {
-//		return &node;
-//	}
-
 	// check if in case we are in declaration or assignment, the list size is only 1, the l_value is of type composite
 	// some_var := (3+4-5) <- would have still registered as initializer list
 	if(node.size() == 1 and node.elem(0)->get_node_type() != NodeType::InitializerList) {
-		if(node.parent->get_node_type() == NodeType::SingleDeclaration) {
-			auto decl = static_cast<NodeSingleDeclaration*>(node.parent);
+		if(auto decl = node.parent->cast<NodeSingleDeclaration>()) {
 			if(decl->variable->ty->get_type_kind() != TypeKind::Composite) {
 				return node.replace_with(std::move(node.elem(0)))->accept(*this);
 			}
-		} else if(node.parent->get_node_type() == NodeType::SingleAssignment) {
-			auto assign = static_cast<NodeSingleAssignment*>(node.parent);
+		} else if(auto assign = node.parent->cast<NodeSingleAssignment>()) {
 			if(assign->l_value->ty->get_type_kind() != TypeKind::Composite) {
 				return node.replace_with(std::move(node.elem(0)))->accept(*this);
 			}
-		} else if(node.parent->get_node_type() == NodeType::Return) {
-			auto ret = static_cast<NodeReturn*>(node.parent);
+		} else if(auto ret = node.parent->cast<NodeReturn>()) {
 			if(ret->definition and ret->definition->ty->get_type_kind() != TypeKind::Composite) {
 				return node.replace_with(std::move(node.elem(0)))->accept(*this);
 			}
-		} else if(node.parent->get_node_type() == NodeType::SetControl) {
-			auto set = static_cast<NodeSetControl*>(node.parent);
+		} else if(auto set = node.parent->cast<NodeSetControl>()) {
 			if(set->value->ty->get_type_kind() != TypeKind::Composite) {
 				return node.replace_with(std::move(node.elem(0)))->accept(*this);
 			}
 		}
-
 	}
 
 	std::vector<Type*> types;

@@ -132,10 +132,10 @@ void Compiler::compile() {
 
 	ASTPointerScope pointer_scope(&m_definition_provider);
 	ast->accept(pointer_scope);
-	ast->debug_print();
 
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
+	ast->debug_print();
 
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();

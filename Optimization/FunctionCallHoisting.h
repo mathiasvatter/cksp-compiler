@@ -57,9 +57,9 @@ public:
 			auto node_body = std::make_unique<NodeBlock>(node.tok);
 			node_body->scope = true;
 			for(auto &decl : stmt.second) {
-				node_body->add_stmt(std::make_unique<NodeStatement>(std::move(decl), node.tok));
+				node_body->add_as_stmt(std::move(decl));
 			}
-			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(stmt.first->statement), stmt.first->tok));
+			node_body->add_as_stmt(std::move(stmt.first->statement));
 			stmt.first->statement = std::move(node_body);
 			stmt.first->statement->parent = stmt.first;
 		}

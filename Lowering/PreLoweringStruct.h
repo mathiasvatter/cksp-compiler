@@ -178,7 +178,7 @@ public:
 		for (size_t i = 1; i < sizes.size(); ++i) {
 			max_call = create_max_call(max_call, sizes[i]);
 		}
-		return std::unique_ptr<NodeFunctionCall>(static_cast<NodeFunctionCall*>(max_call.release()));
+		return unique_ptr_cast<NodeFunctionCall>(std::move(max_call));
 	}
 
 	/**

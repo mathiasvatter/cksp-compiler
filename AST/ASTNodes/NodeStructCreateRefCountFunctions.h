@@ -58,7 +58,7 @@ public:
 		m_stack_top_ref->match_data_structure(m_struct.stack_top_var);
 
 		// List::stack[]
-		m_stack_ref = std::unique_ptr<NodeArrayRef>(static_cast<NodeArrayRef*>(m_struct.stack_var->to_reference().release()));
+		m_stack_ref = unique_ptr_cast<NodeArrayRef>(m_struct.stack_var->to_reference());
 		m_stack_ref->ty = TypeRegistry::Integer;
 		m_stack_ref->set_index(m_stack_top_ref->clone());
 
