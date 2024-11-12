@@ -372,9 +372,8 @@ struct NodeStruct : NodeDataStructure {
 	void update_member_table() {
 		member_table.clear();
 		for(auto& member : members->statements) {
-			if(member->statement->get_node_type() == NodeType::SingleDeclaration) {
-				auto declaration = static_cast<NodeSingleDeclaration*>(member->statement.get());
-				member_table[declaration->variable->name] = declaration->variable;
+			if(auto decl = member->statement->cast<NodeSingleDeclaration>()) {
+				member_table[decl->variable->name] = decl->variable;
 			} else {
 				auto error = CompileError(ErrorType::VariableError, "<Struct> member must be a declaration", "", tok);
 				error.exit();
