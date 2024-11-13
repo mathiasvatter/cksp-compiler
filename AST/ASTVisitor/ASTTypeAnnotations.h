@@ -74,6 +74,31 @@ public:
 	}
 
 
+private:
+	DefinitionProvider* m_def_provider = nullptr;
+
+	static CompileError get_apply_type_annotations_error(std::shared_ptr<NodeDataStructure> node) {
+		auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
+		error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
+		error.m_got = node->ty->to_string();
+		return error;
+	}
+
+	/// check if data structure annotations fit with the detected node type if not in func arguments
+	static inline Type* check_annotation_with_expected(NodeDataStructure* node, Type* expected) {
+		// skip function parameters
+		if(node->is_function_param()) return node->ty;
+		if(node->ty == TypeRegistry::Unknown) return node->ty;
+		if(!node->ty->is_same_type(expected)) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
+			error.m_message = "Type Annotation of "+node->name+" does not match expected type kind.";
+			error.m_expected =  "<"+expected->get_type_kind_name()+"> Type";
+			error.m_got = "<"+node->ty->get_type_kind_name()+"> Type";
+			error.exit();
+		}
+		return nullptr;
+	}
+
 	/// apply type annotations given before parse time and replace node types accordingly
 	/// returns the new datastructure pointer if replaced, or the old one if not
 	static inline NodeDataStructure* apply_type_annotations(const std::shared_ptr<NodeDataStructure>& node) {
@@ -132,31 +157,6 @@ public:
 			return static_cast<NodeDataStructure*>(new_data_struct);
 		}
 		return node.get();
-	}
-
-private:
-	DefinitionProvider* m_def_provider = nullptr;
-
-	static CompileError get_apply_type_annotations_error(std::shared_ptr<NodeDataStructure> node) {
-		auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
-		error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
-		error.m_got = node->ty->to_string();
-		return error;
-	}
-
-	/// check if data structure annotations fit with the detected node type if not in func arguments
-	static inline Type* check_annotation_with_expected(NodeDataStructure* node, Type* expected) {
-		// skip function parameters
-		if(node->is_function_param()) return node->ty;
-		if(node->ty == TypeRegistry::Unknown) return node->ty;
-		if(!node->ty->is_same_type(expected)) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
-			error.m_message = "Type Annotation of "+node->name+" does not match expected type kind.";
-			error.m_expected =  "<"+expected->get_type_kind_name()+"> Type";
-			error.m_got = "<"+node->ty->get_type_kind_name()+"> Type";
-			error.exit();
-		}
-		return nullptr;
 	}
 
 };
