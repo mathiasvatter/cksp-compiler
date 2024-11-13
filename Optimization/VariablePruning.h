@@ -41,7 +41,7 @@ public:
 	void prune_unused_variables() {
 		for(auto &ass: m_all_assignments) {
 			auto reference = static_cast<NodeReference*>(ass->l_value.get());
-			if(!reference->declaration->is_used) {
+			if(!reference->get_declaration()->is_used) {
 				ass->replace_with(std::make_unique<NodeDeadCode>(ass->tok));
 			}
 		}
@@ -117,14 +117,14 @@ public:
 				error.exit();
 			}
 		}
-		node.declaration->is_used |= is_used(node);
+		node.get_declaration()->is_used |= is_used(node);
 		return &node;
 	}
 
 
 	inline NodeAST *visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);
-		node.declaration->is_used |= is_used(node);
+		node.get_declaration()->is_used |= is_used(node);
 		return &node;
 	}
 

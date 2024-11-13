@@ -183,7 +183,7 @@ public:
 
 
 	static inline std::unique_ptr<NodeBlock> get_array_init_function_call(NodeReference* array_ref, NodeAST* value) {
-		std::string func_name = "array<-init["+array_ref->declaration->ty->get_element_type()->to_string()+"]";
+		std::string func_name = "array<-init["+array_ref->get_declaration()->ty->get_element_type()->to_string()+"]";
 		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
 		node_iterator->is_local = true;
 		node_iterator->ty = TypeRegistry::Integer;
@@ -195,7 +195,7 @@ public:
 
 		std::unique_ptr<NodeAST> rhs_value = nullptr;
 		if(!value) {
-			rhs_value = TypeRegistry::get_neutral_element_from_type(array_ref->declaration->ty->get_element_type());
+			rhs_value = TypeRegistry::get_neutral_element_from_type(array_ref->get_declaration()->ty->get_element_type());
 		} else {
 			rhs_value = value->clone();
 		}
@@ -304,7 +304,7 @@ public:
 	}
 
 	static inline std::unique_ptr<NodeBlock> get_array_copy_function_call(NodeReference* array_dest, NodeReference* array_src) {
-		std::string func_name = "array.copy."+array_dest->declaration->ty->get_element_type()->to_string();
+		std::string func_name = "array.copy."+array_dest->get_declaration()->ty->get_element_type()->to_string();
 		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, array_dest->tok);
 		node_iterator->is_local = true;
 		auto node_iterator_ref = node_iterator->to_reference();

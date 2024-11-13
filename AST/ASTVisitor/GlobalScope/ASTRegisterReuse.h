@@ -76,9 +76,9 @@ public:
 		}
 		// rename all local references with their new passive_var names
 		for(auto & local_ref : m_all_local_references) {
-			if(!local_ref->declaration) continue;
-			local_ref->declaration->is_used = true;
-			if(local_ref->is_local) local_ref->name = local_ref->declaration->name;
+			if(!local_ref->get_declaration()) continue;
+			local_ref->get_declaration()->is_used = true;
+			if(local_ref->is_local) local_ref->name = local_ref->get_declaration()->name;
 		}
 		m_all_local_vars.clear();
 		m_all_local_references.clear();

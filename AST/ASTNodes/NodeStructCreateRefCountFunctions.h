@@ -247,7 +247,7 @@ public:
 					tok
 				);
 			}
-			auto while_body = rec->generate_ref_count_while(m_self_ref->declaration, m_num_refs_ref->declaration);
+			auto while_body = rec->generate_ref_count_while(m_self_ref->get_declaration(), m_num_refs_ref->get_declaration());
 			node_while->body->add_as_stmt(std::move(while_body));
 		}
 		node_while->set_condition(std::move(condition));
@@ -366,7 +366,7 @@ public:
 		// inc(Node::stack_top)
 		func_body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(m_stack_top_ref.get())));
 
-		auto node_while = get_stack_while_loop(m_self_ref->declaration, m_num_refs_ref->declaration);
+		auto node_while = get_stack_while_loop(m_self_ref->get_declaration(), m_num_refs_ref->get_declaration());
 
 		m_decr_func->body->add_as_stmt(std::move(node_while));
 		m_decr_func->parent = &m_struct;
@@ -392,7 +392,7 @@ public:
 		);
 		current_decl->variable->is_local = true;
 		auto current_ref = current_decl->variable->to_reference();
-		current_ref->match_data_structure(current_decl->variable);
+//		current_ref->match_data_structure(current_decl->variable);
 		m_decr_func->body->add_as_stmt(std::move(current_decl));
 
 		// while self # nil
@@ -527,12 +527,12 @@ private:
 		}
 		for(auto &mem : m_struct.member_table) {
 			if(mem.first == "self") continue;
-			if(mem.second->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
-				auto mem_type = mem.second->ty->get_element_type();
+			if(mem.second.lock()->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+				auto mem_type = mem.second.lock()->ty->get_element_type();
 				if(recursive_structs.find(mem_type->to_string()) != recursive_structs.end()) {
-					m_recursive_member_structs.push_back(mem.second);
+					m_recursive_member_structs.push_back(mem.second.lock());
 				} else {
-					m_non_recursive_member_structs.push_back(mem.second);
+					m_non_recursive_member_structs.push_back(mem.second.lock());
 				}
 			}
 		}

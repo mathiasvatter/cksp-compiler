@@ -43,7 +43,7 @@ public:
 			}
 		}
 		for(auto & ref : m_constant_candidate_references) {
-			if(ref->declaration->data_type == DataType::Const) {
+			if(ref->get_declaration()->data_type == DataType::Const) {
 				ref->data_type = DataType::Const;
 			}
 		}
@@ -64,7 +64,7 @@ public:
 	/// remove var from constant candidates if reassigned or used value-altering builtin function call
 	NodeAST * visit(NodeVariableRef& node) override {
 		if(node.data_type == DataType::Const) return &node;
-		if(is_in_constant_candidates_map(node.declaration)) {
+		if(is_in_constant_candidates_map(node.get_declaration())) {
 			// if it gets reassigned, check if it already has a value, if yes, remove from constant candidates
 			if(node.is_l_value()) {
 				auto assignment = static_cast<NodeSingleAssignment*>(node.parent);
@@ -93,13 +93,13 @@ public:
 	}
 
 	bool remove_from_constant_candidates(NodeVariableRef* node) {
-		m_constant_candidates.erase(node->declaration);
+		m_constant_candidates.erase(node->get_declaration());
 		return true;
 	}
 
 	/// if it already has a value, return false, if not, add value to constant candidates and return true
 	bool add_value_to_constant_candidates(NodeVariableRef* ref, std::unique_ptr<NodeAST>& value) {
-		auto it = m_constant_candidates.find(ref->declaration);
+		auto it = m_constant_candidates.find(ref->get_declaration());
 		if(it != m_constant_candidates.end()) {
 			if(it->second) return false;
 			it->second = value->clone();

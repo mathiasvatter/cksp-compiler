@@ -21,13 +21,14 @@ public:
 
 		// check if all member node types are allowed
 		for(auto & m: node.member_table) {
-			if(NodeStruct::allowed_member_node_types.find(m.second->get_node_type()) == NodeStruct::allowed_member_node_types.end()) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", m.second->tok);
+			auto member = m.second.lock();
+			if(NodeStruct::allowed_member_node_types.find(member->get_node_type()) == NodeStruct::allowed_member_node_types.end()) {
+				auto error = CompileError(ErrorType::SyntaxError, "", "", member->tok);
 				error.m_message = "Member type not allowed in struct. Only <Variables>, <Arrays>, <NDArrays>, <Pointers> and <Structs> are allowed.";
-				error.m_got = m.second->ty->to_string();
+				error.m_got = member->ty->to_string();
 				error.exit();
 			}
-			node.member_node_types.insert(m.second->get_node_type());
+			node.member_node_types.insert(member->get_node_type());
 		}
 
 		// add compiler struct vars
@@ -129,11 +130,12 @@ public:
 	inline std::unique_ptr<NodeAST> get_max_individual_structs_size(NodeStruct* object) {
 		std::vector<std::unique_ptr<NodeAST>> sizes;
 		for(auto & data : object->member_table) {
-			if(data.second->get_node_type() == NodeType::Array) {
-				auto node_array = static_pointer_cast<NodeArray>(data.second);
+			auto member = data.second.lock();
+			if(member->get_node_type() == NodeType::Array) {
+				auto node_array = static_pointer_cast<NodeArray>(member);
 				sizes.push_back(node_array->size->clone());
-			} else if(data.second->get_node_type() == NodeType::NDArray) {
-				auto node_ndarray = static_pointer_cast<NodeNDArray>(data.second);
+			} else if(member->get_node_type() == NodeType::NDArray) {
+				auto node_ndarray = static_pointer_cast<NodeNDArray>(member);
 				auto size = NodeBinaryExpr::create_right_nested_binary_expr(node_ndarray->sizes->params, 0, token::MULT);
 				sizes.push_back(std::move(size));
 			}

@@ -127,7 +127,7 @@ private:
 	/// generate __repr__ function for ArrayRef and add it to the program
 	/// if return is false, the function already exists
 	bool generate_array_repr_method(NodeArrayRef& node) {
-		if(!node.declaration) {
+		if(!node.get_declaration()) {
 			auto error = get_raw_compile_error(ErrorType::InternalError, node);
 			error.m_message = "ArrayRef has no declaration";
 			error.exit();
@@ -137,7 +137,7 @@ private:
 			return false;
 		}
 
-		auto node_self = clone_as<NodeArray>(node.declaration.get());
+		auto node_self = clone_as<NodeArray>(node.get_declaration().get());
 		node_self->name = "self";
 		node_self->size = nullptr;
 		auto self_ref = node_self->to_reference();
@@ -175,7 +175,7 @@ private:
 	/// generate __repr__ function for NDArrayRef and add it to the program
 	/// if return is false, the function already exists
 	bool generate_ndarray_repr_method(NodeNDArrayRef& node) {
-		if(!node.declaration) {
+		if(!node.get_declaration()) {
 			auto error = get_raw_compile_error(ErrorType::InternalError, node);
 			error.m_message = "NDArrayRef has no declaration";
 			error.exit();
@@ -185,7 +185,7 @@ private:
 			return false;
 		}
 
-		auto node_self = clone_as<NodeNDArray>(node.declaration.get());
+		auto node_self = clone_as<NodeNDArray>(node.get_declaration().get());
 		node_self->name = "self";
 		node_self->sizes = nullptr;
 		auto self_ref = node_self->to_reference();

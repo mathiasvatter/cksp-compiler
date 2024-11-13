@@ -196,11 +196,11 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 	// maybe declaration comes after lowering, do not throw error
 	if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
-			node_declaration = access_chain->declaration;
+			node_declaration = access_chain->get_declaration();
 			node.declaration = node_declaration;
 			if(node.is_list_sizes()) {
 				// if it is a list constant, do not add to references
-				node.declaration = nullptr;
+				node.declaration.reset();
 				return &node;
 			} else {
 				access_chain->accept(*this);
@@ -289,7 +289,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
     if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			// check if its maybe a nd_Array size constant like nda.SIZE_D1
-			node_declaration = access_chain->declaration;
+			node_declaration = access_chain->get_declaration();
 			node.declaration = node_declaration;
 
 			access_chain->accept(*this);
@@ -378,7 +378,7 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 }
 
 
-NodeDataStructure* ASTVariableChecking::apply_type_annotations(std::shared_ptr<NodeDataStructure> node) {
+NodeDataStructure* ASTVariableChecking::apply_type_annotations(const std::shared_ptr<NodeDataStructure>& node) {
 	if(node->ty == TypeRegistry::Unknown) return node.get();
 
 	NodeAST* new_data_struct = nullptr;
