@@ -321,7 +321,7 @@ struct NodeConst : NodeDataStructure {
 struct NodeStruct : NodeDataStructure {
 	std::shared_ptr<NodePointer> node_self = std::make_shared<NodePointer>(std::nullopt, "self", TypeRegistry::add_object_type(this->name), this->tok);
 	std::unique_ptr<NodeBlock> members;
-	std::map<std::string, std::shared_ptr<NodeDataStructure>> member_table;
+	std::map<std::string, std::weak_ptr<NodeDataStructure>> member_table;
 	std::set<std::string> member_set;
 	NodeFunctionDefinition* constructor = nullptr;
 	std::vector<std::unique_ptr<NodeFunctionDefinition>> methods;
@@ -401,7 +401,7 @@ struct NodeStruct : NodeDataStructure {
 	std::shared_ptr<NodeDataStructure> get_member(const std::string& ref_name) {
 		auto member = member_table.find(ref_name);
 		if(member != member_table.end()) {
-			return member->second;
+			return member->second.lock();
 		}
 		return nullptr;
 	}
@@ -419,7 +419,7 @@ struct NodeStruct : NodeDataStructure {
 	 * end function
 	 */
 	NodeFunctionDefinition* generate_repr_method();
-	void generate_ref_count_methods();
+	void generate_ref_count_methods(DefinitionProvider* def_provider);
 	std::unique_ptr<NodeWhile> generate_ref_count_while(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs);
 	void inline_struct(NodeProgram* program);
 	NodeFunctionDefinition* get_overloaded_method(token op);

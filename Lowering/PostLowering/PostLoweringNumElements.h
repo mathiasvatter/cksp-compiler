@@ -44,7 +44,7 @@ public:
 //				node.tok
 //			);
 //			array_call->match_data_structure(node.size_array.get());
-			array_call->match_data_structure(node.array->declaration);
+			array_call->match_data_structure(node.array->get_declaration());
 			array_call->ty = TypeRegistry::Integer;
 			return node.replace_with(std::move(array_call));
 		} else {

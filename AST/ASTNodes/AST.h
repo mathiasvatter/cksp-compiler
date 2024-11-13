@@ -70,6 +70,8 @@ struct NodeAST {
 	int get_bison_tokens();
 	bool is_nil();
 
+	/// performs ASTVariableChecking class on provided node to add vars and refs to definition provider
+	void check_variables(class DefinitionProvider* definition_provider);
 	// Template-Methode für den Cast
 	template <typename TargetType>
 	TargetType* cast() {
@@ -98,7 +100,7 @@ struct NodeDeadCode : NodeAST {
 
 struct NodeReference : NodeAST {
     std::string name;
-    std::shared_ptr<class NodeDataStructure> declaration = nullptr;
+    std::weak_ptr<class NodeDataStructure> declaration;
     bool is_engine = false;
     bool is_local = false;
 //    bool is_compiler_return = false;
@@ -121,9 +123,9 @@ struct NodeReference : NodeAST {
 	virtual std::unique_ptr<struct NodePointerRef> to_pointer_ref() {return nullptr;}
 	virtual std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() {return nullptr;}
 	std::unique_ptr<NodeAccessChain> to_method_chain() override {return nullptr;}
-
+	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_declaration() const;
 	/// Completes the data structure of reference by copying missing parameters of declaration
-	void match_data_structure(std::shared_ptr<NodeDataStructure> data_structure);
+	void match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure);
     /// Determines if current reference is function argument
     bool is_func_arg() {
         if(!this->parent) return false;
@@ -216,7 +218,7 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 	virtual Type* cast_type();
 	/// returns fitting reference node type for the data structures
 	virtual NodeType get_ref_node_type() {return NodeType::DeadCode;}
-	void match_metadata(std::shared_ptr<NodeDataStructure> data_structure);
+	void match_metadata(const std::shared_ptr<NodeDataStructure>& data_structure);
 	/// methods to change node type. Everything possible is copied over, even the type;
 	virtual std::unique_ptr<class NodeVariable> to_variable() {return nullptr;}
 	virtual std::unique_ptr<class NodePointer> to_pointer() {return nullptr;}

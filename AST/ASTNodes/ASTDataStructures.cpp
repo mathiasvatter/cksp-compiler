@@ -3,6 +3,8 @@
 //
 
 #include "ASTDataStructures.h"
+
+#include <utility>
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Lowering/LoweringUIControlArray.h"
 #include "../../Lowering/DataLowering/DataLoweringNDArray.h"
@@ -365,14 +367,15 @@ NodeFunctionDefinition *NodeStruct::generate_init_method() {
 	param_list.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_self.get())));
 	auto node_block = std::make_unique<NodeBlock>(this->tok, true);
 	for(auto & mem : this->member_table) {
+		auto member = mem.second.lock();
 		std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
-		auto member_ref = mem.second->to_reference();
-		param_list.push_back(std::make_unique<NodeFunctionParam>(mem.second, nullptr, mem.second->tok));
+		auto member_ref = member->to_reference();
+		param_list.push_back(std::make_unique<NodeFunctionParam>(member, nullptr, member->tok));
 		member_ref->name = "self." + member_ref->name;
 		assignment = std::make_unique<NodeSingleAssignment>(
 			std::move(member_ref),
-			mem.second->to_reference(),
-			mem.second->tok
+			member->to_reference(),
+			member->tok
 		);
 		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
 	}
@@ -461,22 +464,38 @@ NodeFunctionDefinition* NodeStruct::get_overloaded_method(token op) {
 	return nullptr;
 }
 
-void NodeStruct::generate_ref_count_methods() {
+void NodeStruct::generate_ref_count_methods(DefinitionProvider* def_provider) {
 	NodeStructCreateRefCountFunctions rf_methods(*this);
-	this->methods.push_back(rf_methods.create_destructor());
-	this->methods.push_back(rf_methods.create_decr_function());
-	this->methods.push_back(rf_methods.create_incr_function());
+	auto del = rf_methods.create_destructor();
+	del->check_variables(def_provider);
+	methods.push_back(std::move(del));
 
-	this->methods.push_back(rf_methods.create_array_function("__incr__"));
-	this->methods.push_back(rf_methods.create_array_function("__decr__"));
-	this->methods.push_back(rf_methods.create_array_function("__del__"));
+	auto decr = rf_methods.create_decr_function();
+	decr->check_variables(def_provider);
+	methods.push_back(std::move(decr));
+
+	auto incr = rf_methods.create_incr_function();
+	incr->check_variables(def_provider);
+	methods.push_back(std::move(incr));
+
+	auto array_incr = rf_methods.create_array_function("__incr__");
+	array_incr->check_variables(def_provider);
+	methods.push_back(std::move(array_incr));
+
+	auto array_decr = rf_methods.create_array_function("__decr__");
+	array_decr->check_variables(def_provider);
+	methods.push_back(std::move(array_decr));
+
+	auto array_del = rf_methods.create_array_function("__del__");
+	array_del->check_variables(def_provider);
+	methods.push_back(std::move(array_del));
 
 	this->update_method_table();
 }
 
 std::unique_ptr<NodeWhile> NodeStruct::generate_ref_count_while(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs) {
 	NodeStructCreateRefCountFunctions rf_methods(*this);
-	return rf_methods.get_stack_while_loop(self, num_refs);
+	return rf_methods.get_stack_while_loop(std::move(self), std::move(num_refs));
 }
 
 void NodeStruct::collect_recursive_structs(NodeProgram *program) {
@@ -495,11 +514,12 @@ void NodeStruct::collect_recursive_structs(NodeProgram *program) {
 	  }
 
 	  // Iteriere über die Mitglieder in member_table
-	  for (const auto& member : node_struct->member_table) {
-		  if(member.first == "self") continue;
-		  if(member.second->is_engine) continue;
+	  for (const auto& mem : node_struct->member_table) {
+		  auto member = mem.second.lock();
+		  if(mem.first == "self") continue;
+		  if(member->is_engine) continue;
 		  // Hole den Typ des Mitglieds
-		  Type* mem_type = member.second->ty->get_element_type();
+		  Type* mem_type = member->ty->get_element_type();
 		  // Überprüfe, ob der Typ ein Struct ist
 		  if (mem_type->get_type_kind() == TypeKind::Object) {
 			  // Hole den Namen des Structs

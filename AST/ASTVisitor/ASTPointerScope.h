@@ -51,7 +51,7 @@ private:
 	bool remove_pointer(const NodeReference& ref) {
 		// if declaration is array and ptr to be deleted is only idx of array, return false
 		// we do not handle this case for now
-		if(ref.declaration and ref.declaration->ty != ref.ty) {
+		if(ref.get_declaration() and ref.get_declaration()->ty != ref.ty) {
 			return false;
 		}
 

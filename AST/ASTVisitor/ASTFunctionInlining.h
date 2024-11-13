@@ -77,7 +77,7 @@ public:
 			// since we do depth first and try to visit every function before inlining,
 			// skip the error throw if definition is not found at the first visit since it
 			// could be found later -> high-order functions etc.
-			if(node.function->declaration and node.function->declaration->is_function_param()) return &node;
+			if(node.function->get_declaration() and node.function->get_declaration()->is_function_param()) return &node;
 
 			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 			error.m_message = "Unable to find function definition for <"+node.function->name+">.";
@@ -250,7 +250,7 @@ public:
 						auto array_ref = static_cast<NodeArrayRef*>(substitute.get());
 						ref->name = array_ref->sanitize_name() + remove_substring(ref->name, array_name);
 						ref->ty = TypeRegistry::Integer;
-						ref->declaration = nullptr;
+						ref->declaration.reset();
 						return ref;
 					}
 				}
@@ -260,7 +260,7 @@ public:
 					auto array_ref = static_cast<NodeArrayRef*>(substitute.get());
 					ref->name = array_ref->sanitize_name() + remove_substring(ref->name, ndarray_name);
 					ref->ty = TypeRegistry::Integer;
-					ref->declaration = nullptr;
+					ref->declaration.reset();
 					return ref;
 				}
 			// in case it is before datastructure lowering and ndarray refs still exist
@@ -269,7 +269,7 @@ public:
 					auto nd_array_ref = static_cast<NodeNDArrayRef*>(nd_substitute.get());
 					ref->name = nd_array_ref->name + remove_substring(ref->name, ndarray_name);
 					ref->ty = TypeRegistry::Integer;
-					ref->declaration = nullptr;
+					ref->declaration.reset();
 					return ref;
 				}
 			}

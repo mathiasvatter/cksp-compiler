@@ -20,6 +20,7 @@
 #include "../../Desugaring/DesugarBinaryExpr.h"
 #include "../../Lowering/LoweringFunctionDef.h"
 #include "../../Optimization/NilValidator.h"
+#include "../ASTVisitor/ASTVariableChecking.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -124,6 +125,10 @@ bool NodeAST::is_nil() {
 	return nil_validator.is_nil(*this);
 }
 
+void NodeAST::check_variables(DefinitionProvider* definition_provider) {
+	static ASTVariableChecking var_checker(definition_provider);
+	accept(var_checker);
+}
 
 // ************* NodeDataStructure ***************
 NodeAST *NodeDataStructure::accept(struct ASTVisitor &visitor) {
@@ -201,8 +206,8 @@ NodeDataStructure* NodeDataStructure::lower_type() {
 
 NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDataStructure> new_node,
 																 DefinitionProvider *def_provider) {
-//	const auto references = def_provider->get_references(this);
-//	def_provider->remove_references(this);
+	const auto references = def_provider->get_references(get_shared());
+	def_provider->remove_references(get_shared());
 
 	if (!parent) {
 		CompileError(ErrorType::InternalError, "Parent of data structure is null", "", tok).exit();
@@ -210,14 +215,14 @@ NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDat
 //	new_node->parent = parent;
 	auto new_data_struct = static_cast<NodeDataStructure*>(this->replace_with(std::move(new_node)));
 
-//	def_provider->set_references(new_data_struct, references);
-//	for(auto & ref : references) {
-//		ref->declaration = new_data_struct;
-//	}
+	def_provider->set_references(new_data_struct->get_shared(), references);
+	for(auto & ref : references) {
+		ref->declaration = new_data_struct->get_shared();
+	}
 	return new_data_struct;
 }
 
-void NodeDataStructure::match_metadata(std::shared_ptr<NodeDataStructure> data_structure) {
+void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>& data_structure) {
 	is_engine = data_structure->is_engine;
 	is_local = data_structure->is_local;
 	data_type = data_structure->data_type;
@@ -239,7 +244,7 @@ std::unique_ptr<NodeAST> NodeReference::clone() const {
 	return std::make_unique<NodeReference>(*this);
 }
 
-void NodeReference::match_data_structure(std::shared_ptr<NodeDataStructure> data_structure) {
+void NodeReference::match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure) {
 	declaration = data_structure;
 	is_engine = data_structure->is_engine;
 	is_local = data_structure->is_local;
@@ -248,7 +253,7 @@ void NodeReference::match_data_structure(std::shared_ptr<NodeDataStructure> data
 }
 
 bool NodeReference::is_member_ref() const {
-	return declaration and declaration->is_member();
+	return get_declaration() and get_declaration()->is_member();
 }
 
 NodeStruct *NodeReference::get_object_ptr(NodeProgram* program, const std::string& obj) {
@@ -295,8 +300,7 @@ bool NodeReference::needs_get_ui_id() {
 }
 
 bool NodeReference::is_r_value() {
-	if(this->parent->get_node_type() == NodeType::SingleAssignment) {
-		auto assignment = static_cast<NodeSingleAssignment*>(this->parent);
+	if(auto assignment = this->parent->cast<NodeSingleAssignment>()) {
 		static VarExistsValidator var_exists_validator;
 		return var_exists_validator.var_exists(*assignment->r_value, name);
 	}
@@ -305,8 +309,8 @@ bool NodeReference::is_r_value() {
 
 NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> new_node,
 												struct DefinitionProvider *def_provider) {
-	new_node->match_data_structure(this->declaration);
-	def_provider->remove_reference(new_node->declaration, this);
+	new_node->match_data_structure(get_declaration());
+	def_provider->remove_reference(new_node->get_declaration(), this);
 
 	if (!parent) {
 		CompileError(ErrorType::InternalError, "Parent of reference is null", "", tok).exit();
@@ -314,7 +318,7 @@ NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> n
 	new_node->parent = parent;
 	auto new_ref = static_cast<NodeReference*>(parent->replace_child(this, std::move(new_node)));
 
-	def_provider->add_reference(new_ref->declaration, new_ref);
+	def_provider->add_reference(new_ref->get_declaration(), new_ref);
 	return new_ref;
 }
 
@@ -327,6 +331,14 @@ bool NodeReference::is_string_env() {
 	// is within return statement
 	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->definition->ty == TypeRegistry::String;
 	return is_string;
+}
+
+std::shared_ptr<NodeDataStructure> NodeReference::get_declaration() const {
+	auto ptr = declaration.lock(); // Gibt nullptr zurück, falls das Objekt bereits gelöscht wurde
+//	if(!ptr and fail) {
+//		throw std::runtime_error("Declaration of reference " + name + " is no longer available");
+//	}
+	return ptr;
 }
 
 // ************* NodeInstruction ***************

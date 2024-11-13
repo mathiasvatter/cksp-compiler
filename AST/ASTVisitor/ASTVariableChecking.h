@@ -47,7 +47,7 @@ public:
 
 	/// apply type annotations given before parse time and replace node types accordingly
 	/// returns the new datastructure pointer if replaced, or the old one if not
-	static NodeDataStructure* apply_type_annotations(std::shared_ptr<NodeDataStructure> node);
+	static NodeDataStructure* apply_type_annotations(const std::shared_ptr<NodeDataStructure>& node);
 
 
 private:
@@ -139,7 +139,7 @@ private:
 		}
 		auto node_reference = static_cast<NodeReference*>(callback_id);
 		// return prematurely if no declaration yet provided
-		if(!node_reference->declaration) return false;
+		if(!node_reference->get_declaration()) return false;
 		// check if callback id reference is ui_control
 		auto error = CompileError(ErrorType::TypeError, "", "", callback_id->tok);
 		if(node_reference->data_type != DataType::UIControl) {
@@ -147,8 +147,8 @@ private:
 			error.exit();
 		} else {
 			// var ref is ui control -> check if it is ui_label
-			if(node_reference->declaration and node_reference->declaration->parent and node_reference->declaration->parent->get_node_type() == NodeType::UIControl) {
-				auto ui_control = static_cast<NodeUIControl*>(node_reference->declaration->parent);
+			if(node_reference->get_declaration() and node_reference->get_declaration()->parent and node_reference->get_declaration()->parent->get_node_type() == NodeType::UIControl) {
+				auto ui_control = static_cast<NodeUIControl*>(node_reference->get_declaration()->parent);
 				if(ui_control->name == "ui_label") {
 					error.m_message = "<UI Label> cannot be referenced in <UI Callback>.";
 					error.exit();

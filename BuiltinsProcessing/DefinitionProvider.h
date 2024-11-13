@@ -115,7 +115,7 @@ public:
 	/// only called by references -> only gets declaration does not add existing declarations to map
 	std::shared_ptr<NodeDataStructure> get_declaration(NodeReference& var);
 	/// adds existing declaration to declaration map for look up. Always returns nullptr.
-	const std::shared_ptr<NodeDataStructure> set_declaration(std::shared_ptr<NodeDataStructure> var, bool global_scope);
+	std::shared_ptr<NodeDataStructure> set_declaration(std::shared_ptr<NodeDataStructure> var, bool global_scope);
 
 	/// clears all static pointer vectors
 	bool refresh_data_vectors() {
@@ -201,14 +201,14 @@ public:
 
 	static inline CompileError throw_declaration_type_error(NodeReference* node) {
 		auto compile_error = CompileError(ErrorType::VariableError, "", "", node->tok);
-		if(!node->declaration) throw_declaration_error(*node).exit();
-		if(node->declaration->get_node_type() == NodeType::Array && node->get_node_type() == NodeType::Variable) {
+		if(!node->get_declaration()) throw_declaration_error(*node).exit();
+		if(node->get_declaration()->get_node_type() == NodeType::Array && node->get_node_type() == NodeType::Variable) {
 			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Array>: " + node->name+".";
 			compile_error.m_expected = "<Array>";
 			compile_error.m_got = "<Variable>";
 			compile_error.exit();
 		}
-		if(node->declaration->get_node_type() == NodeType::Variable && node->get_node_type() == NodeType::Array) {
+		if(node->get_declaration()->get_node_type() == NodeType::Variable && node->get_node_type() == NodeType::Array) {
 			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Variable>: " + node->name+".";
 			compile_error.m_expected = "<Variable>";
 			compile_error.m_got = "<Array>";

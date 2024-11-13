@@ -109,25 +109,25 @@ NodeAST * TypeInference::visit(NodeConst& node) {
 
 NodeAST * TypeInference::visit(NodeVariableRef& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
-	if(node.declaration) {
+	if(node.get_declaration()) {
 		// manual replacement of node type if declaration is a pointer
 		// 	declare this_list := nil
 		//	this_list := List(42, nil)
-		if(node.declaration->get_node_type() == NodeType::Pointer or node.declaration->ty->get_type_kind() == TypeKind::Object
+		if(node.get_declaration()->get_node_type() == NodeType::Pointer or node.get_declaration()->ty->get_type_kind() == TypeKind::Object
 		or node.ty->get_type_kind() == TypeKind::Object) {
 			auto pointer_ref = node.to_pointer_ref();
 			match_type(pointer_ref.get(), &node);
-//			pointer_ref->match_data_structure(node.declaration);
-//			m_def_provider->remove_reference(node.declaration, &node);
+//			pointer_ref->match_data_structure(node.get_declaration());
+//			m_def_provider->remove_reference(node.get_declaration(), &node);
 //			auto new_node = static_cast<NodeReference*>(node.replace_with(std::move(pointer_ref)));
-//			m_def_provider->add_reference(node.declaration, new_node);
+//			m_def_provider->add_reference(node.get_declaration(), new_node);
 			auto new_node = node.replace_reference(std::move(pointer_ref), m_def_provider);
 			return new_node->accept(*this);
 		}
 	}
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
-	m_def_provider->add_reference(node.declaration, &node);
+	m_def_provider->add_reference(node.get_declaration(), &node);
 	return &node;
 }
 
@@ -150,17 +150,17 @@ NodeAST * TypeInference::visit(NodeVariable& node) {
 NodeAST * TypeInference::visit(NodePointerRef& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// replace declaration node with Pointer if it is Variable
-	if(node.declaration->get_node_type() == NodeType::Variable) {
-		auto node_var = static_pointer_cast<NodeVariable>(node.declaration);
+	if(node.get_declaration()->get_node_type() == NodeType::Variable) {
+		auto node_var = static_pointer_cast<NodeVariable>(node.get_declaration());
 		auto ptr = node_var->to_pointer();
 		ptr->match_metadata(node_var);
 		auto new_node = node_var->replace_datastruct(std::move(ptr), m_def_provider);
-		auto &references = m_def_provider->get_references(node.declaration);
+		auto &references = m_def_provider->get_references(node.get_declaration());
 		for(auto ref : references) {
 			ASTSemanticAnalysis::replace_incorrectly_detected_reference(m_def_provider, ref);
 		}
 		new_node->accept(*this);
-		node.declaration = new_node->get_shared();
+		node.get_declaration() = new_node->get_shared();
 		if(auto strct = new_node->is_member()) {
 			strct->update_member_table();
 		}
@@ -172,7 +172,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 	}
 	match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
-	m_def_provider->add_reference(node.declaration, &node);
+	m_def_provider->add_reference(node.get_declaration(), &node);
 	return &node;
 }
 
@@ -202,7 +202,7 @@ NodeAST * TypeInference::visit(NodeArray& node) {
 NodeAST * TypeInference::visit(NodeArrayRef& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	if(node.index) node.index->accept(*this);
-//	if(node.declaration) node.declaration->accept(*this);
+//	if(node.get_declaration()) node.get_declaration()->accept(*this);
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
 		if(node.ty == TypeRegistry::Unknown) {
@@ -220,7 +220,7 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 	}
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
-	m_def_provider->add_reference(node.declaration, &node);
+	m_def_provider->add_reference(node.get_declaration(), &node);
 	return &node;
 }
 
@@ -239,13 +239,13 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 //	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	if(node.indexes) node.indexes->accept(*this);
 	if(node.sizes) node.sizes->accept(*this);
-//	if(node.declaration) node.declaration->accept(*this);
+//	if(node.get_declaration()) node.get_declaration()->accept(*this);
     // if handed over without index -> as whole array structure type
     if(!node.indexes) {
         if(node.ty == TypeRegistry::Unknown) {
 			// in case sizes are not known -> get type from declaration -> if type is still unknown -> set array to dim size 0
-			if(!node.sizes and node.declaration) {
-				node.ty = node.declaration->ty;
+			if(!node.sizes and node.get_declaration()) {
+				node.ty = node.get_declaration()->ty;
 			}
 			if(node.ty == TypeRegistry::Unknown) {
 				int dim = node.sizes ? node.sizes->params.size() : 0;
@@ -265,7 +265,7 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
     }
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
-	m_def_provider->add_reference(node.declaration, &node);
+	m_def_provider->add_reference(node.get_declaration(), &node);
 	return &node;
 }
 
@@ -302,7 +302,7 @@ NodeAST * TypeInference::visit(NodeListRef& node) {
     }
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
-	m_def_provider->add_reference(node.declaration, &node);
+	m_def_provider->add_reference(node.get_declaration(), &node);
 	return &node;
 }
 
@@ -616,13 +616,13 @@ NodeAST * TypeInference::visit(NodeFunctionHeaderRef& node) {
 	if(node.args) node.args->accept(*this);
 
 	// if declaration type has empty params -> get type from reference
-	if(node.declaration) {
-		auto decl_type = static_cast<FunctionType *>(node.declaration->ty);
+	if(node.get_declaration()) {
+		auto decl_type = static_cast<FunctionType *>(node.get_declaration()->ty);
 		auto ref_type = static_cast<FunctionType *>(node.ty);
 		if (decl_type->get_params().empty()) {
-			node.declaration->ty = node.ty;
+			node.get_declaration()->ty = node.ty;
 		} else if (ref_type->get_params().empty()) {
-			node.ty = node.declaration->ty;
+			node.ty = node.get_declaration()->ty;
 		}
 	}
 

@@ -122,7 +122,7 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declaration(NodeRefer
 	return nullptr;
 }
 
-const std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(std::shared_ptr<NodeDataStructure> var, bool global_scope) {
+std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(std::shared_ptr<NodeDataStructure> var, bool global_scope) {
 	handle_throwaway_var(*var);
 	m_gensym.ingest(var->name);
 	// get builtin declaration if it exists
