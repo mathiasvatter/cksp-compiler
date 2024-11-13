@@ -193,4 +193,6 @@ add_executable(cksp main.cpp
         Lowering/LoweringUseCount.h
         Lowering/LoweringSingleDeclaration.h
         AST/ASTVisitor/ASTTypeAnnotations.h
+        AST/ASTVisitor/ReferenceManager.h
+        AST/ASTVisitor/ReferenceManager.cpp
 )
