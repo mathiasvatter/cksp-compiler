@@ -23,6 +23,8 @@
  * data structures and controls.
  */
 class DefinitionProvider {
+private:
+
 public:
     DefinitionProvider(
 			std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables,
@@ -32,6 +34,7 @@ public:
 			std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> m_builtin_widgets,
 			std::vector<std::shared_ptr<NodeDataStructure>> m_external_variables);
 	explicit DefinitionProvider();
+
 
 	bool add_scope();
 	std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual> remove_scope();
@@ -123,7 +126,7 @@ public:
 		m_all_references.clear();
 		m_all_data_structures.clear();
 		m_all_assignments.clear();
-		m_references_per_data_structure.clear();
+//		m_references_per_data_structure.clear();
 		return true;
 	}
 	std::vector<NodeReference*> m_all_references;
@@ -157,30 +160,30 @@ public:
 		return m_all_assignments;
 	}
 
-	std::unordered_map<std::shared_ptr<NodeDataStructure>, std::unordered_set<NodeReference*>> m_references_per_data_structure;
-	const std::unordered_set<NodeReference*> &get_references(std::shared_ptr<NodeDataStructure> data_struct) {
-		return m_references_per_data_structure[data_struct];
-	}
-	bool set_references(std::shared_ptr<NodeDataStructure> data_struct, std::unordered_set<NodeReference*> references) {
-		if(!data_struct) return false;
-		m_references_per_data_structure[data_struct] = std::move(references);
-		return true;
-	}
-	/// removes key, value pair from map
-	bool remove_references(std::shared_ptr<NodeDataStructure> data_struct) {
-		m_references_per_data_structure.erase(data_struct);
-		return true;
-	}
-	bool add_reference(std::shared_ptr<NodeDataStructure> data_struct, NodeReference* reference) {
-		if(!data_struct) return false;
-		m_references_per_data_structure[data_struct].insert(reference);
-		return true;
-	}
-	bool remove_reference(std::shared_ptr<NodeDataStructure> data_struct, NodeReference* reference) {
-		if(!data_struct) return false;
-		m_references_per_data_structure[data_struct].erase(reference);
-		return true;
-	}
+//	std::unordered_map<std::shared_ptr<NodeDataStructure>, std::unordered_set<NodeReference*>> m_references_per_data_structure;
+//	const std::unordered_set<NodeReference*> &get_references(std::shared_ptr<NodeDataStructure> data_struct) {
+//		return m_references_per_data_structure[data_struct];
+//	}
+//	bool set_references(std::shared_ptr<NodeDataStructure> data_struct, std::unordered_set<NodeReference*> references) {
+//		if(!data_struct) return false;
+//		m_references_per_data_structure[data_struct] = std::move(references);
+//		return true;
+//	}
+//	/// removes key, value pair from map
+//	bool remove_references(std::shared_ptr<NodeDataStructure> data_struct) {
+//		m_references_per_data_structure.erase(data_struct);
+//		return true;
+//	}
+//	bool add_reference(std::shared_ptr<NodeDataStructure> data_struct, NodeReference* reference) {
+//		if(!data_struct) return false;
+//		m_references_per_data_structure[data_struct].insert(reference);
+//		return true;
+//	}
+//	bool remove_reference(std::shared_ptr<NodeDataStructure> data_struct, NodeReference* reference) {
+//		if(!data_struct) return false;
+//		m_references_per_data_structure[data_struct].erase(reference);
+//		return true;
+//	}
     /// dynamic vector containing every data structure; scoped
     std::vector<std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual>> m_declared_data_structures;
 	/// returns data structure declaration searching all scopes
