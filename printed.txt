@@ -292,7 +292,7 @@ function search_matrix(matrix : number[][], target : number)
 end function
 
 function return_init(init : int[])
-	message(int[]::__repr__(init{int[]}))
+	message(init{int})
 	return ([1, 2, 3, 4, 5])
 end function
 
@@ -302,10 +302,6 @@ end function
 
 function Array::clip(x : int, b : int)
 	return (x{int} + ((- x{int} .and. sh_right(x{int}, 31)) + ((x{int} - b{int}) .and. sh_right(b{int} - x{int}, 31))))
-end function
-
-function int[]::__repr__(self : int[])
-	return ("Array of type <int[]>")
 end function
 
 

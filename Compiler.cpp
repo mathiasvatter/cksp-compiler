@@ -14,6 +14,7 @@
 #include "AST/ASTVisitor/ASTInitializerFunctionInlining.h"
 #include "AST/ASTVisitor/ASTPointerScope.h"
 #include "AST/ASTVisitor/ASTCollectPostLowerings.h"
+#include "AST/ASTVisitor/ASTTypeAnnotations.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -108,7 +109,10 @@ void Compiler::compile() {
 	compile_time.stop("Desugaring");
 	compile_time.start("Variable Checking");
 
-	ASTVariableChecking variable_checking0(&m_definition_provider, false);
+	ASTTypeAnnotations type_annotations(&m_definition_provider);
+	ast->accept(type_annotations);
+
+	ASTVariableChecking variable_checking0(&m_definition_provider, ast.get(), false);
 	ast->accept(variable_checking0);
 
 	compile_time.stop("Variable Checking");
@@ -164,7 +168,7 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
 
-	ASTVariableChecking variable_checking1(&m_definition_provider, true);
+	ASTVariableChecking variable_checking1(&m_definition_provider, ast.get(), true);
 	ast->accept(variable_checking1);
 //	ast->debug_print();
     ast->accept(infer_types);
