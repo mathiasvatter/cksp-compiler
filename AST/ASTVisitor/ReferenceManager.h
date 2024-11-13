@@ -19,6 +19,10 @@ private:
 	std::unordered_map<std::shared_ptr<NodeDataStructure>, std::unordered_set<NodeReference*>> reference_map;
 public:
 
+	void reset() {
+		reference_map.clear();
+	}
+
 	void add_reference(const std::shared_ptr<NodeDataStructure>& data_struct,
 					   NodeReference* reference);
 
