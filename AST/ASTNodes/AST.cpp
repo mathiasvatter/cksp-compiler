@@ -125,9 +125,9 @@ bool NodeAST::is_nil() {
 	return nil_validator.is_nil(*this);
 }
 
-void NodeAST::check_variables(DefinitionProvider* definition_provider) {
-	static ASTVariableChecking var_checker(definition_provider);
-	accept(var_checker);
+void NodeAST::check_variables(NodeProgram* program) {
+	static ASTVariableChecking var_checker(program->def_provider, program, false);
+	var_checker.check_variables(this);
 }
 
 // ************* NodeDataStructure ***************

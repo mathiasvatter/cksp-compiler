@@ -419,7 +419,7 @@ struct NodeStruct : NodeDataStructure {
 	 * end function
 	 */
 	NodeFunctionDefinition* generate_repr_method();
-	void generate_ref_count_methods(DefinitionProvider* def_provider);
+	void generate_ref_count_methods(NodeProgram* program);
 	std::unique_ptr<NodeWhile> generate_ref_count_while(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs);
 	void inline_struct(NodeProgram* program);
 	NodeFunctionDefinition* get_overloaded_method(token op);

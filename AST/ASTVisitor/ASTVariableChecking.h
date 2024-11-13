@@ -5,11 +5,10 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "../../BuiltinsProcessing/DefinitionProvider.h"
 
 class ASTVariableChecking : public ASTVisitor {
 public:
-	explicit ASTVariableChecking(DefinitionProvider* definition_provider, bool fail=false);
+	explicit ASTVariableChecking(DefinitionProvider* definition_provider, NodeProgram* program, bool fail=false);
 
 	NodeAST * visit(NodeProgram& node) override;
 	/// check if on init callback currently
@@ -47,8 +46,12 @@ public:
 
 	/// apply type annotations given before parse time and replace node types accordingly
 	/// returns the new datastructure pointer if replaced, or the old one if not
-	static NodeDataStructure* apply_type_annotations(const std::shared_ptr<NodeDataStructure>& node);
+//	static NodeDataStructure* apply_type_annotations(const std::shared_ptr<NodeDataStructure>& node);
 
+	void check_variables(NodeAST* node) {
+		m_current_block = nullptr;
+		node->accept(*this);
+	}
 
 private:
 	// boolean to continue after not finding declaration or fail
@@ -71,20 +74,13 @@ private:
 		return false;
 	}
 
-	static CompileError get_apply_type_annotations_error(std::shared_ptr<NodeDataStructure> node) {
-		auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
-		error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
-		error.m_got = node->ty->to_string();
-		return error;
-	}
+//	static CompileError get_apply_type_annotations_error(std::shared_ptr<NodeDataStructure> node) {
+//		auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
+//		error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
+//		error.m_got = node->ty->to_string();
+//		return error;
+//	}
 
-	static inline bool set_as_function_param(NodeDataStructure* node) {
-		if(node->is_function_param() and node->data_type != DataType::Return) {
-			node->data_type = DataType::Param;
-			return true;
-		}
-		return false;
-	}
 
 	/// node can be NodeFunctionCall or NodeReference
 	/// transformation when first object is clearly a reference this_list.next.next()
@@ -116,20 +112,20 @@ private:
 		return method_chain;
 	}
 
-	/// check if data structure annotations fit with the detected node type if not in func arguments
-	static inline Type* check_annotation_with_expected(NodeDataStructure* node, Type* expected) {
-		// skip function parameters
-		if(node->is_function_param()) return node->ty;
-		if(node->ty == TypeRegistry::Unknown) return node->ty;
-		if(!node->ty->is_same_type(expected)) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
-			error.m_message = "Type Annotation of "+node->name+" does not match expected type kind.";
-			error.m_expected =  "<"+expected->get_type_kind_name()+"> Type";
-			error.m_got = "<"+node->ty->get_type_kind_name()+"> Type";
-			error.exit();
-		}
-		return nullptr;
-	}
+//	/// check if data structure annotations fit with the detected node type if not in func arguments
+//	static inline Type* check_annotation_with_expected(NodeDataStructure* node, Type* expected) {
+//		// skip function parameters
+//		if(node->is_function_param()) return node->ty;
+//		if(node->ty == TypeRegistry::Unknown) return node->ty;
+//		if(!node->ty->is_same_type(expected)) {
+//			auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
+//			error.m_message = "Type Annotation of "+node->name+" does not match expected type kind.";
+//			error.m_expected =  "<"+expected->get_type_kind_name()+"> Type";
+//			error.m_got = "<"+node->ty->get_type_kind_name()+"> Type";
+//			error.exit();
+//		}
+//		return nullptr;
+//	}
 
 	/// checks if given callback id is of type ui_control
 	static bool check_callback_id_data_type(NodeAST* callback_id) {
