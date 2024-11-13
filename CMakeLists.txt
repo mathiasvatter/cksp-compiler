@@ -195,4 +195,5 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTTypeAnnotations.h
         AST/ASTVisitor/ReferenceManager.h
         AST/ASTVisitor/ReferenceManager.cpp
+        AST/ASTVisitor/ASTCollectReferences.h
 )

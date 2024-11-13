@@ -52,7 +52,7 @@ std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, 
 
 bool DefinitionProvider::refresh_scopes() {
     m_declared_data_structures.clear();
-	m_references_per_data_structure.clear();
+//	m_references_per_data_structure.clear();
     // add global scope
     add_scope();
     for(const auto& var : external_variables) {
@@ -115,7 +115,7 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declaration(NodeRefer
 		node_declaration = get_declared_data_structure(sanitized);
 	}
 	if (node_declaration) {
-		m_references_per_data_structure[node_declaration].insert(&var);
+//		m_references_per_data_structure[node_declaration].insert(&var);
 		var.kind = NodeReference::Kind::User;
 		return node_declaration;
 	}

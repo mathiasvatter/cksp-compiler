@@ -183,7 +183,7 @@ struct NodeReference : NodeAST {
 			name = name.substr(pos + OBJ_DELIMITER.size());
 	}
 	/// to be used on references
-	NodeReference* replace_reference(std::unique_ptr<NodeReference> new_node, class DefinitionProvider* def_provider);
+	NodeReference* replace_reference(std::unique_ptr<NodeReference> new_node, NodeProgram* main);
 };
 
 struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeDataStructure> {
@@ -231,7 +231,7 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 		return nullptr;
 	}
 	/// to be used on datastructures
-	NodeDataStructure* replace_datastruct(std::unique_ptr<NodeDataStructure> new_node, class DefinitionProvider* def_provider);
+	NodeDataStructure* replace_datastruct(std::unique_ptr<NodeDataStructure> new_node, NodeProgram* main);
 	bool is_num_elements_constant() const {
 		if(data_type != DataType::Const) return false;
 		size_t pos = name.find(OBJ_DELIMITER+"num_elements");
@@ -682,11 +682,12 @@ struct NodeFunctionDefinition: NodeAST {
 };
 
 struct NodeProgram : NodeAST {
+	class DefinitionProvider* def_provider = nullptr;
+	class ReferenceManager* ref_manager = nullptr;
 	NodeCallback* init_callback = nullptr;
 	NodeCallback* current_callback = nullptr;
 	/// holds the current function definition that is being processed
 	std::stack<NodeFunctionDefinition*> function_call_stack{};
-	class DefinitionProvider* def_provider = nullptr;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
 	std::vector<std::unique_ptr<NodeFunctionDefinition>> additional_function_definitions;
