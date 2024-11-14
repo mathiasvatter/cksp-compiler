@@ -44,10 +44,6 @@ public:
 	NodeAST * visit(NodeConst& node) override;
 	NodeAST * visit(NodeStruct& node) override;
 
-	/// apply type annotations given before parse time and replace node types accordingly
-	/// returns the new datastructure pointer if replaced, or the old one if not
-//	static NodeDataStructure* apply_type_annotations(const std::shared_ptr<NodeDataStructure>& node);
-
 	void check_variables(NodeAST* node) {
 		m_current_block = nullptr;
 		node->accept(*this);
@@ -74,19 +70,10 @@ private:
 		return false;
 	}
 
-//	static CompileError get_apply_type_annotations_error(std::shared_ptr<NodeDataStructure> node) {
-//		auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
-//		error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
-//		error.m_got = node->ty->to_string();
-//		return error;
-//	}
-
-
 	/// node can be NodeFunctionCall or NodeReference
 	/// transformation when first object is clearly a reference this_list.next.next()
 	/// tries to get declaration of first object and if there is one, replaces it with method chain
 	std::unique_ptr<NodeAccessChain> try_access_chain_transform(const std::string& name, NodeAST* node) {
-//		if(fail) return nullptr;
 		// find object ptr name
 		size_t pos = name.find('.');
 		if (pos == std::string::npos) {
@@ -111,21 +98,6 @@ private:
 		method_chain->declaration = node_declaration;
 		return method_chain;
 	}
-
-//	/// check if data structure annotations fit with the detected node type if not in func arguments
-//	static inline Type* check_annotation_with_expected(NodeDataStructure* node, Type* expected) {
-//		// skip function parameters
-//		if(node->is_function_param()) return node->ty;
-//		if(node->ty == TypeRegistry::Unknown) return node->ty;
-//		if(!node->ty->is_same_type(expected)) {
-//			auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
-//			error.m_message = "Type Annotation of "+node->name+" does not match expected type kind.";
-//			error.m_expected =  "<"+expected->get_type_kind_name()+"> Type";
-//			error.m_got = "<"+node->ty->get_type_kind_name()+"> Type";
-//			error.exit();
-//		}
-//		return nullptr;
-//	}
 
 	/// checks if given callback id is of type ui_control
 	static bool check_callback_id_data_type(NodeAST* callback_id) {

@@ -7,7 +7,7 @@
 
 void ReferenceManager::add_reference(const std::shared_ptr<NodeDataStructure> &data_struct,
 									 NodeReference *reference) {
-	if (reference) {  // Nur gültige Zeiger hinzufügen
+	if (data_struct and reference) {  // Nur gültige Zeiger hinzufügen
 		reference_map[data_struct].insert(reference);
 	}
 }
@@ -46,4 +46,28 @@ void ReferenceManager::replace_reference(const std::shared_ptr<NodeDataStructure
 	// Entferne die alte Referenz und füge die neue Referenz hinzu
 	remove_reference(data_struct, old_reference);
 	add_reference(data_struct, new_reference);
+}
+
+std::unordered_set<NodeType> ReferenceManager::get_reference_types(const std::shared_ptr<NodeDataStructure> &data_struct) {
+	std::unordered_set<NodeType> types;
+	auto references = get_references(data_struct);
+
+	for (const auto& reference : references) {
+		if (reference) {
+			types.insert(reference->get_node_type());
+		}
+	}
+	return types;
+}
+
+bool ReferenceManager::all_reference_types_match(const std::shared_ptr<NodeDataStructure> &data_struct) {
+	auto ref_node_type = data_struct->get_ref_node_type(); // NodeType des data_struct
+	auto references = get_references(data_struct);
+
+	for (const auto& reference : references) {
+		if (reference && reference->get_node_type() != ref_node_type) {
+			return false; // Abweichender NodeType gefunden
+		}
+	}
+	return true; // Alle NodeTypes stimmen überein
 }

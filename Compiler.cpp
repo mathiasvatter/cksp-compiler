@@ -100,6 +100,7 @@ void Compiler::compile() {
 	auto ast = std::move(ast_result.unwrap());
 	ast->def_provider = &m_definition_provider;
 	ast->ref_manager = &m_reference_manager;
+	m_program = ast.get();
 
 	compile_time.stop("Parsing");
 	compile_time.start("Desugaring");
@@ -115,28 +116,30 @@ void Compiler::compile() {
 
 	ASTVariableChecking variable_checking0(&m_definition_provider, ast.get(), false);
 	ast->accept(variable_checking0);
+	ast->collect_references(m_program);
 
 	compile_time.stop("Variable Checking");
 	std::cout << compile_time.print_timer("Variable Checking") << std::endl;
 	compile_time.start("Semantic Analysis");
 
-	ASTSemanticAnalysis data_structures(&m_definition_provider);
+	ASTSemanticAnalysis data_structures(ast.get());
 	ast->accept(data_structures);
 
 	compile_time.stop("Semantic Analysis");
 	std::cout << compile_time.print_timer("Semantic Analysis") << std::endl;
 	compile_time.start("Type Checking");
 
-	TypeInference infer_types(&m_definition_provider);
+	TypeInference infer_types(ast.get());
 	ast->accept(infer_types);
-	TypeInference::cast_data_structure_types(&m_definition_provider, true);
+	TypeInference::cast_data_structure_types(ast.get(), true);
 
 	compile_time.stop("Type Checking");
 	std::cout << compile_time.print_timer("Type Checking") << std::endl;
 	compile_time.start("Lowering");
 
-	ASTPointerScope pointer_scope(&m_definition_provider);
+	ASTPointerScope pointer_scope(m_program);
 	ast->accept(pointer_scope);
+	ast->collect_references(m_program);
 
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
@@ -173,7 +176,7 @@ void Compiler::compile() {
 	ast->accept(variable_checking1);
 //	ast->debug_print();
     ast->accept(infer_types);
-    TypeInference::cast_data_structure_types(&m_definition_provider, true);
+    TypeInference::cast_data_structure_types(ast.get(), true);
 
 	compile_time.stop("Variable Checking 1");
 	std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;

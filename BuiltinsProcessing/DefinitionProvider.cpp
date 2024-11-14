@@ -52,7 +52,6 @@ std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, 
 
 bool DefinitionProvider::refresh_scopes() {
     m_declared_data_structures.clear();
-//	m_references_per_data_structure.clear();
     // add global scope
     add_scope();
     for(const auto& var : external_variables) {
@@ -60,16 +59,6 @@ bool DefinitionProvider::refresh_scopes() {
     }
     return true;
 }
-
-//bool DefinitionProvider::clear_all_reference_sets() {
-//	for(auto& var : m_all_data_structures) {
-//		var->references.clear();
-//	}
-//	m_all_data_structures.clear();
-//	m_all_references.clear();
-//	return true;
-//}
-
 
 std::shared_ptr<NodeDataStructure> DefinitionProvider::remove_from_current_scope(const std::string& name) {
     const auto it = m_declared_data_structures.back().find(name);
@@ -115,7 +104,6 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declaration(NodeRefer
 		node_declaration = get_declared_data_structure(sanitized);
 	}
 	if (node_declaration) {
-//		m_references_per_data_structure[node_declaration].insert(&var);
 		var.kind = NodeReference::Kind::User;
 		return node_declaration;
 	}

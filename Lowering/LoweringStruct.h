@@ -73,7 +73,7 @@ public:
 		// if member, turn into array
 		if(node.is_member() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
-			return node.replace_datastruct(std::move(new_node), m_def_provider);
+			return node.replace_datastruct(std::move(new_node), m_program);
 		}
 		return &node;
 	}
@@ -81,7 +81,7 @@ public:
 		// if member, turn into array of pointers
 		if(node.is_member() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
-			return node.replace_datastruct(std::move(new_node), m_def_provider);
+			return node.replace_datastruct(std::move(new_node), m_program);
 		}
 		return &node;
 	}
@@ -93,7 +93,7 @@ public:
 		 */
 		if(node.is_member() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
-			return node.replace_datastruct(std::move(new_node), m_def_provider);
+			return node.replace_datastruct(std::move(new_node), m_program);
 		}
 		return &node;
 	}
@@ -102,7 +102,7 @@ public:
 		if(node.is_member() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
 			new_node->is_local = false;
-			return node.replace_datastruct(std::move(new_node), m_def_provider);
+			return node.replace_datastruct(std::move(new_node), m_program);
 		}
 		return &node;
 	}
@@ -111,7 +111,7 @@ public:
 		// if member reference, turn into array reference with (struct.free_idx as index if in constructor, self as index if not)
 		if(node.is_member_ref() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(get_index_ref());
-			return node.replace_reference(std::move(new_node), m_def_provider);
+			return node.replace_reference(std::move(new_node), m_program);
 		}
 		return &node;
 	}
@@ -119,7 +119,7 @@ public:
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(node.is_member_ref() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(get_index_ref());
-			return node.replace_reference(std::move(new_node), m_def_provider);
+			return node.replace_reference(std::move(new_node), m_program);
 		}
 		return &node;
 	}
@@ -127,7 +127,7 @@ public:
 	inline NodeAST * visit(NodePointerRef& node) override {
 		if(node.is_member_ref() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(get_index_ref());
-			return node.replace_reference(std::move(new_node), m_def_provider);
+			return node.replace_reference(std::move(new_node), m_program);
 		}
 		return &node;
 	}
@@ -136,7 +136,7 @@ public:
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(node.is_member_ref() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(get_index_ref());
-			return node.replace_reference(std::move(new_node), m_def_provider);
+			return node.replace_reference(std::move(new_node), m_program);
 		}
 		return &node;
 	}

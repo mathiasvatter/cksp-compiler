@@ -235,10 +235,6 @@ NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
 	if(node.has_object) {
 		os << " // object";
 	}
-	if(node.retain_stmt) {
-		os << std::endl;
-		node.retain_stmt->accept(*this);
-	}
 	return &node;
 }
 

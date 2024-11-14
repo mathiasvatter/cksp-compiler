@@ -71,7 +71,7 @@ struct NodeAST {
 	bool is_nil();
 
 	/// performs ASTVariableChecking class on provided node to add vars and refs to definition provider
-	void check_variables(NodeProgram* program);
+	void collect_references(NodeProgram* program);
 	// Template-Methode für den Cast
 	template <typename TargetType>
 	TargetType* cast() {

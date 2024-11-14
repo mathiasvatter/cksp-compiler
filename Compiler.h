@@ -30,6 +30,7 @@ private:
 	CompilerConfig* m_config;
 	DefinitionProvider m_definition_provider;
 	ReferenceManager m_reference_manager;
+	NodeProgram* m_program = nullptr;
 
 //	bool tokenize();
 //	bool preprocess();

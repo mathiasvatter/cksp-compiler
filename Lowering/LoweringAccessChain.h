@@ -69,7 +69,7 @@ public:
 		node_array->declaration = node.declaration;
 		node_array->ty = node.ty;
 //		node_array->ty = TypeRegistry::ArrayOfInt;
-		return node.replace_reference(std::move(node_array), m_def_provider);
+		return node.replace_reference(std::move(node_array), m_program);
 	}
 
 	// increase dimensions -> to ndarray_ref
@@ -84,7 +84,7 @@ public:
 		node_ndarray_ref->determine_sizes();
 		node_ndarray_ref->ty = node.ty;
 //		node_ndarray_ref->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node_ndarray_ref->sizes->params.size());
-		return node.replace_reference(std::move(node_ndarray_ref), m_def_provider);
+		return node.replace_reference(std::move(node_ndarray_ref), m_program);
 	}
 
 	inline NodeAST * visit(NodeNDArrayRef& node) override {
@@ -110,7 +110,7 @@ public:
 		node_array_ref->name = prev_type->to_string()+OBJ_DELIMITER+node.name;
 		node_array_ref->ty = node.ty;
 //		node_array_ref->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
-		return node.replace_reference(std::move(node_array_ref), m_def_provider);
+		return node.replace_reference(std::move(node_array_ref), m_program);
 	}
 
 	inline NodeAST * visit(NodeFunctionCall& node) override {
