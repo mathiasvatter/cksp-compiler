@@ -111,13 +111,15 @@ private:
 			if(comp_type->get_compound_type() == CompoundKind::Array and node->get_node_type() != NodeType::Array and comp_type->get_dimensions() == 1) {
 				auto node_array = node->to_array(nullptr);
 				if(!node_array) get_apply_type_annotations_error(node).exit();
-				node_array->is_local = node->is_local;
+//				node_array->is_local = node->is_local;
+				node_array->ty = comp_type;
 				new_data_struct = node->replace_with(std::move(node_array));
 			} else if(comp_type->get_compound_type() == CompoundKind::Array and node->get_node_type() != NodeType::NDArray and comp_type->get_dimensions() > 1) {
 				auto node_ndarray = node->to_ndarray();
 				if(!node_ndarray) get_apply_type_annotations_error(node).exit();
 				node_ndarray->dimensions = comp_type->get_dimensions();
-				node_ndarray->is_local = node->is_local;
+//				node_ndarray->is_local = node->is_local;
+				node_ndarray->ty = comp_type;
 				new_data_struct = node->replace_with(std::move(node_ndarray));
 			}
 		} else if (node->ty->get_type_kind() == TypeKind::Basic) {
@@ -143,7 +145,8 @@ private:
 			} else {
 				auto node_pointer = node->to_pointer();
 				if(!node_pointer) get_apply_type_annotations_error(node).exit();
-				node_pointer->is_local = node->is_local;
+//				node_pointer->is_local = node->is_local;
+				node_pointer->ty = node->ty;
 				new_data_struct = node->replace_with(std::move(node_pointer));
 			}
 		} else if(node->ty->get_type_kind() == TypeKind::Function and node->get_node_type() != NodeType::FunctionHeader and node->get_node_type() == NodeType::Variable) {

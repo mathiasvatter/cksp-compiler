@@ -19,23 +19,23 @@ struct Node
 	declare right: Node
 end struct 
 
-// struct Point
-// 	declare x: int
-// 	declare y: int
+struct Point
+	declare x: int
+	declare y: int
 
-// 	function __init__(self, x: int, y: int)
-// 		self.x := x
-// 		self.y := y
-// 	end function
+	function __init__(self, x: int, y: int)
+		self.x := x
+		self.y := y
+	end function
 
-// 	function __repr__(self)
-// 		return "Point {X: " & self.x & ", Y: " & self.y & "}"
-// 	end function
+	function __repr__(self)
+		return "Point {X: " & self.x & ", Y: " & self.y & "}"
+	end function
 
-// 	function __add__(self, other: Point)
-// 		return Point(self.x + other.x, self.y + other.y)
-// 	end function
-// end struct
+	function __add__(self, other: Point)
+		return Point(self.x + other.x, self.y + other.y)
+	end function
+end struct
 
 
 
@@ -118,15 +118,15 @@ on init
 	declare ndarray2[10,10]: int[][]
 	message(search_matrix(ndarray, 3.0), "3", "f")
 	message(search_matrix(ndarray2, 3), "3", "f")
-	// message(num_elements(ndarray, 2))
-	// declare local ptr_array[10]
-	// for idx, ptr in ptr_array
-	// 	ptr := Point(idx, idx+1)
-	// end for
-	// declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
-	// declare local ptr_array3[10] := ptr_array
-	// declare local p1 := Point(1, 2)
-	// declare local p2 := Point(3, 4)
+	message(num_elements(ndarray, 2))
+	declare local ptr_array[10]
+	for idx, ptr in ptr_array
+		ptr := Point(idx, idx+1)
+	end for
+	declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
+	declare local ptr_array3[10] := ptr_array
+	declare local p1 := Point(1, 2)
+	declare local p2 := Point(3, 4)
 	// message(p1 + p2)
 	
 	ndarray[0, *] := ndarray[1, *]

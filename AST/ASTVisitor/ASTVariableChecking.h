@@ -44,11 +44,6 @@ public:
 	NodeAST * visit(NodeConst& node) override;
 	NodeAST * visit(NodeStruct& node) override;
 
-	void check_variables(NodeAST* node) {
-		m_current_block = nullptr;
-		node->accept(*this);
-	}
-
 private:
 	// boolean to continue after not finding declaration or fail
 	bool fail = false;

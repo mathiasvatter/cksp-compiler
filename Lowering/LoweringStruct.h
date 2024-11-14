@@ -36,7 +36,7 @@ public:
 
 		m_current_struct = nullptr;
 		m_current_func = nullptr;
-//		node.update_member_table();
+//		node.rebuild_member_table();
 		return &node;
 	}
 

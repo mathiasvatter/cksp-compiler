@@ -421,12 +421,6 @@ struct NodeSingleDeclaration : NodeInstruction {
 	bool has_object = false;
 	bool is_promoted = false;
     inline explicit NodeSingleDeclaration(Token tok) : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)) {}
-//    NodeSingleDeclaration(std::unique_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
-//            : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)),
-//			variable(std::shared_ptr<NodeDataStructure>(std::move(arrayVariable))),
-//			value(std::move(assignee)) {
-//        set_child_parents();
-//    }
 	NodeSingleDeclaration(std::shared_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
 		: NodeInstruction(NodeType::SingleDeclaration, std::move(tok)),
 		  variable(std::move(arrayVariable)),
