@@ -177,6 +177,86 @@ struct Node
 
 end struct
 
+struct Point
+	declare const Point::MAX_STRUCTS : int := MAX_STRUCTS{unknown}
+	declare Point::free_idx : int
+	declare Point::allocation[Point::MAX_STRUCTS{int}] : int[]
+	declare Point::stack[Point::MAX_STRUCTS{int}] : int[]
+	declare Point::stack_top : int
+	declare Point::x[Point::MAX_STRUCTS{int}] : int[]
+	declare Point::y[Point::MAX_STRUCTS{int}] : int[]
+
+	function Point::__init__(x : int, y : int)
+		Point::free_idx{int} := search(Point::allocation{int[]}, 0)
+		if(Point::free_idx{int} = -1)
+			message("Error: No more free space available to allocate objects of type 'Point'")
+		end if
+		Point::allocation[Point::free_idx{int}]{int[]} := 1
+		Point::x[Point::free_idx{int}]{int} := x{int}
+		Point::y[Point::free_idx{int}]{int} := y{int}
+		return (Point::free_idx{int})
+	end function
+
+	function Point::__repr__(self : int)
+		return ("Point {X: " & Point::x[self{int}]{int} & ", Y: " & Point::y[self{int}]{int} & "}")
+	end function
+
+	function Point::__add__(self : int, other : int)
+		return (Point(Point::x[self{int}]{int} + Point::x[other{int}]{int}, Point::y[self{int}]{int} + Point::y[other{int}]{int}))
+	end function
+
+	function Point::__del__(self : int)
+		if(Point::allocation[self{int}]{int} <= 0)
+		end if
+	end function
+
+	function Point::__decr__(self : int, num_refs : int)
+		declare current : int := self{int}
+		while(current{int} # - 1) 
+			Point::allocation[current{int}]{int} := Point::allocation[current{int}]{int} - num_refs{int}
+			if(Point::allocation[current{int}]{int} > 0)
+				current{int} := - 1
+				continue
+			end if
+			Point::__del__(self{int})
+		end while
+	end function
+
+	function Point::__incr__(self : int, num_refs : int)
+		if(self{int} # - 1)
+			Point::allocation[self{int}]{int} := Point::allocation[self{int}]{int} + num_refs{int}
+		end if
+	end function
+
+	function Point::Array::__incr__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			Point::__incr__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+	function Point::Array::__decr__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			Point::__decr__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+	function Point::Array::__del__(arr : int[], num : int)
+		declare _iter : int
+		_iter{int} := 0
+		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
+			Point::__del__(arr[_iter{int}]{int[]}, num{int})
+			inc(_iter{int})
+		end while
+	end function
+
+end struct
+
 on init
 	declare _iter : int
 	declare const all_fx_settings.SIZE : int := 8
@@ -254,39 +334,60 @@ on init
 	declare ndarray2[10, 10] : int[][]
 	message((search_matrix(ndarray{real[][]}, 3) & ", " & "3" & ", " & "f"))
 	message((search_matrix(ndarray2{int[][]}, 3) & ", " & "3" & ", " & "f"))
+	message(num_elements[ndarray{real[][]}, Array::clip(2, 2)])
+	declare ptr_array[10] : int[]
+		declare idx : int
+		idx{int} := 0
+		while(idx{int} <= (num_elements[ptr_array{int[]}] - 1)) 
+			ptr_array[idx{int}]{int} := Point(idx{int}, idx{int} + 1)
+			inc(idx{int})
+		end while
+
+	declare ptr_array2[10] : int[] := [ptr_array[0]{int}, ptr_array[1]{int}]
+	Point::__incr__(ptr_array2[0]{int}, 1)
+	Point::__incr__(ptr_array2[1]{int}, num_elements(ptr_array2{int[]}) - 1)
+	declare ptr_array3[10] : int[] := ptr_array{int[]}
+	Point::Array::__incr__(ptr_array3{int[]}, 1)
+	declare p1 : int := Point(1, 2)
+	declare p2 : int := Point(3, 4)
 	ndarray[0, *]{real[]} := ndarray[1, *]{real[]}
 	message(List::allocation[Struct::max(0, this_list{int})]{unknown})
+	Point::__decr__(p1{int}, 1)
+	Point::__decr__(p2{int}, 1)
+	Point::Array::__decr__(ptr_array3{int[]}, 1)
+	Point::Array::__decr__(ptr_array2{int[]}, 1)
+	Point::Array::__decr__(ptr_array{int[]}, 1)
 end on
 
 function search_matrix(matrix : number[][], target : number)
-	declare RETURN_FLAG11 : int
-	while(RETURN_FLAG11{int} = 0) 
+	declare RETURN_FLAG15 : int
+	while(RETURN_FLAG15{int} = 0) 
 		declare array[30] : int[] := [0]
 		declare ndarray::num_elements[3] : int[] := [2 * 3, 2, 3]
 		declare ndarray[2, 3] : int[][]
 		declare row : int
 		declare col : int
 		row{int} := 0
-		while((row{int} <= (num_elements[matrix{number[][]}, Array::clip(1, 2)] - 1)) and (RETURN_FLAG11{int} = 0)) 
+		while((row{int} <= (num_elements[matrix{number[][]}, Array::clip(1, 2)] - 1)) and (RETURN_FLAG15{int} = 0)) 
 			col{int} := 0
-			while((col{int} <= (num_elements[matrix{number[][]}, Array::clip(2, 2)] - 1)) and (RETURN_FLAG11{int} = 0)) 
+			while((col{int} <= (num_elements[matrix{number[][]}, Array::clip(2, 2)] - 1)) and (RETURN_FLAG15{int} = 0)) 
 				if(matrix[row{int}, col{int}]{number} = target{number})
 					return ((row{int} * 10) + col{int})
-					RETURN_FLAG11{int} := 1
+					RETURN_FLAG15{int} := 1
 					continue
 				end if
 				inc(col{int})
 			end while
-			if(RETURN_FLAG11{int} = 1)
+			if(RETURN_FLAG15{int} = 1)
 				continue
 			end if
 			inc(row{int})
 		end while
-		if(RETURN_FLAG11{int} = 1)
+		if(RETURN_FLAG15{int} = 1)
 			continue
 		end if
 		return (- 1)
-		RETURN_FLAG11{int} := 1
+		RETURN_FLAG15{int} := 1
 		continue
 	end while
 end function

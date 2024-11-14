@@ -127,9 +127,9 @@ NodeAST * TypeInference::visit(NodeVariable& node) {
 		auto ptr = node.to_pointer();
 		ptr->match_metadata(node.get_shared());
 		auto new_node = node.replace_datastruct(std::move(ptr), m_program);
-		if(auto strct = node.is_member()) {
-			strct->update_member_table();
-		}
+//		if(auto strct = node.is_member()) {
+//			strct->rebuild_member_table();
+//		}
 		return new_node->accept(*this);
 	}
 	m_def_provider->add_to_data_structures(node.get_shared());
@@ -145,13 +145,14 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 		auto new_node = node_var->replace_datastruct(std::move(ptr), m_program);
 		auto &references = m_ref_manager->get_references(node.get_declaration());
 		for(auto ref : references) {
-			ASTSemanticAnalysis::replace_incorrectly_detected_reference(m_program, ref);
+			ref->accept(*this);
+//			ASTSemanticAnalysis::replace_incorrectly_detected_reference(m_program, ref);
 		}
 		new_node->accept(*this);
 		node.get_declaration() = new_node->get_shared();
-		if(auto strct = new_node->is_member()) {
-			strct->update_member_table();
-		}
+//		if(auto strct = new_node->is_member()) {
+//			strct->rebuild_member_table();
+//		}
 	}
 
 	if(node.ty == TypeRegistry::Unknown) {
@@ -285,8 +286,9 @@ NodeAST * TypeInference::visit(NodeStruct& node) {
 	for(auto & m: node.methods) {
 		m->accept(*this);
 	}
-	node.update_member_table();
-	node.update_method_table();
+	// needs to rebuild because has not been rebuild since desugaring
+	node.rebuild_member_table();
+	node.rebuild_method_table();
 	return &node;
 }
 
@@ -339,13 +341,20 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 					}
 					error.exit();
 				}
-				strct->update_member_table();
 				auto node_declaration = strct->get_member(prev_obj+OBJ_DELIMITER+reference->name);
+				// could be nullptr because refs in accessChain are not yet reference-collected
+				if(!node_declaration) {
+					// needs to be here because the struct member could have been replaced resulting in nullptr if
+					// member is pointer and reference has not been reference-collected because of accessChain
+					strct->rebuild_member_table();
+					node_declaration = strct->get_member(prev_obj+OBJ_DELIMITER+reference->name);
+				}
 				if(!node_declaration) {
 					error.m_message = "Member "+reference->name+" does not exist in "+prev_obj+".";
 					error.exit();
 				}
 				reference->declaration = node_declaration;
+				reference->collect_references(m_program);
 				match_reference_declaration(reference);
 				// if declaration of this reference is unknown and it is not the end of the chain,
 				// we can assume that it is also an object. we can check if the next reference is also in this struct

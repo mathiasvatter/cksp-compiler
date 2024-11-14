@@ -396,7 +396,7 @@ NodeFunctionDefinition *NodeStruct::generate_init_method() {
 	function_def->parent = this;
 	this->methods.push_back(std::move(function_def));
 	this->constructor = methods.back().get();
-	this->update_method_table();
+	this->rebuild_method_table();
 	return method_table.find({"__init__", (int)num_params})->second;
 }
 
@@ -432,7 +432,7 @@ NodeFunctionDefinition *NodeStruct::generate_repr_method() {
 	function_def->ty = TypeRegistry::String;
 	function_def->num_return_params = 1;
 	this->methods.push_back(std::move(function_def));
-	this->update_method_table();
+	this->rebuild_method_table();
 	return method_table.find({"__repr__", 1})->second;
 }
 
@@ -447,13 +447,13 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	}
 	methods.clear();
 	program->update_function_lookup();
-	this->update_method_table();
+	this->rebuild_method_table();
 //	for(auto & mem: member_table) {
 //		mem.second->is_local = false;
 //	}
 	program->init_callback->statements->prepend_body(std::move(members));
 	members = std::make_unique<NodeBlock>(Token());
-	this->update_member_table();
+	this->rebuild_member_table();
 }
 
 NodeFunctionDefinition* NodeStruct::get_overloaded_method(token op) {
@@ -490,7 +490,7 @@ void NodeStruct::generate_ref_count_methods(NodeProgram* program) {
 	array_del->collect_references(program);
 	methods.push_back(std::move(array_del));
 
-	this->update_method_table();
+	this->rebuild_method_table();
 }
 
 std::unique_ptr<NodeWhile> NodeStruct::generate_ref_count_while(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs) {

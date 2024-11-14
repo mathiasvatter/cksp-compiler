@@ -117,8 +117,8 @@ public:
 		for(auto & m: node.methods) {
 			m->accept(*this);
 		}
-		node.update_member_table();
-		node.update_method_table();
+		node.rebuild_member_table();
+		node.rebuild_method_table();
 
 		m_structs.pop();
 		members.clear();

@@ -181,14 +181,14 @@ Type* NodeDataStructure::cast_type() {
 }
 
 NodeStruct* NodeDataStructure::is_member() {
-	if(this->parent and this->parent->get_node_type() == NodeType::SingleDeclaration) {
-		auto decl = this->parent;
+	if(parent and parent->get_node_type() == NodeType::SingleDeclaration) {
+		auto decl = parent;
 		if(decl->parent and decl->parent->get_node_type() == NodeType::Statement) {
 			auto stmt = decl->parent;
 			if(stmt->parent and stmt->parent->get_node_type() == NodeType::Block) {
 				auto body = stmt->parent;
 				if(body->parent and body->parent->get_node_type() == NodeType::Struct) {
-					return static_cast<NodeStruct*>(body->parent);
+					return body->parent->cast<NodeStruct>();
 				}
 			}
 		}
@@ -205,10 +205,13 @@ NodeDataStructure* NodeDataStructure::lower_type() {
 
 NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDataStructure> new_node,
 																 NodeProgram* main) {
-	auto old_data = this->get_shared();
+	auto old_data = get_shared();
 	auto new_data_struct = static_cast<NodeDataStructure*>(replace_with(std::move(new_node)));
 	auto new_data = new_data_struct->get_shared();
 	main->ref_manager->replace_data_structure(old_data, new_data);
+	if(auto strct = new_data->is_member()) {
+		strct->replace_member_in_table(old_data, new_data);
+	}
 	return new_data_struct;
 }
 
@@ -266,8 +269,8 @@ std::unique_ptr<NodeFunctionCall> NodeReference::wrap_in_get_ui_id() {
 }
 
 bool NodeReference::is_l_value() {
-	if(this->parent->get_node_type() == NodeType::SingleAssignment) {
-		auto assignment = static_cast<NodeSingleAssignment*>(this->parent);
+	if(parent->get_node_type() == NodeType::SingleAssignment) {
+		auto assignment = static_cast<NodeSingleAssignment*>(parent);
 		if(assignment->l_value.get() == this) {
 			return true;
 		}

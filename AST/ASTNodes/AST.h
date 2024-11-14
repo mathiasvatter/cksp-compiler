@@ -103,7 +103,6 @@ struct NodeReference : NodeAST {
     std::weak_ptr<class NodeDataStructure> declaration;
     bool is_engine = false;
     bool is_local = false;
-//    bool is_compiler_return = false;
 	enum Kind{Builtin, Compiler, User, Throwaway};
 	Kind kind = User;
 	DataType data_type = DataType::Mutable;

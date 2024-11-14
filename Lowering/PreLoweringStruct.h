@@ -35,7 +35,7 @@ public:
 		prepend_compiler_struct_vars(&node);
 		node.collect_recursive_structs(m_program);
 //		node.generate_ref_count_methods();
-		node.update_member_table();
+		node.rebuild_member_table();
 		return &node;
 	}
 

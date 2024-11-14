@@ -369,7 +369,7 @@ struct NodeStruct : NodeDataStructure {
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	ASTLowering* get_lowering(NodeProgram *program) const override;
 	void pre_lower(NodeProgram* program);
-	void update_member_table() {
+	void rebuild_member_table() {
 		member_table.clear();
 		for(auto& member : members->statements) {
 			if(auto decl = member->statement->cast<NodeSingleDeclaration>()) {
@@ -380,14 +380,22 @@ struct NodeStruct : NodeDataStructure {
 			}
 		}
 	}
-	void update_method_table() {
+	void replace_member_in_table(const std::shared_ptr<NodeDataStructure>& old_member, const std::shared_ptr<NodeDataStructure>& new_member) {
+		if(old_member->name == new_member->name) {
+			member_table[old_member->name] = new_member;
+		} else {
+			member_table.erase(old_member->name);
+			member_table[new_member->name] = new_member;
+		}
+	}
+	void rebuild_method_table() {
 		method_table.clear();
 		for(auto& method : methods) {
 			method_table.insert({{method->header->name, (int)method->header->params.size()}, method.get()});
 		}
 	}
 
-	void update_lookup_sets() {
+	void rebuild_lookup_sets() {
 		method_set.clear();
 		for(auto& method : methods) {
 			method_set.emplace(method->header->name);
