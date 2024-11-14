@@ -171,7 +171,6 @@ public:
 			node.variable->is_global = true;
 			if(node.value) node.value->accept(*this);
 			m_def_provider->set_declaration(node.variable, !node.variable->is_local);
-//			node.variable->accept(*this);
 			return &node;
 		}
 
@@ -190,7 +189,6 @@ public:
 		// only add var to local scope if it is not replaced by passive_var
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
-//		if(node.retain_stmt) node.retain_stmt->accept(*this);
 		// add local vars to lists for later renaming
 		if(node.variable->is_local) {
 			if(m_program->current_callback) m_all_callback_decl[m_program->current_callback].push_back(&node);
@@ -232,7 +230,6 @@ public:
 	}
 
 	inline NodeAST * visit(NodeVariableRef& node) override {
-//		if(node.data_type == DataType::Const) return &node;
 		// add all references in local scope to vector for later passive_var replacement
 		m_all_local_references.push_back(&node);
 

@@ -8,8 +8,13 @@
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
 
 class TypeInference : public ASTVisitor {
+private:
+	DefinitionProvider* m_def_provider;
+	ReferenceManager* m_ref_manager;
 public:
-	explicit TypeInference(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {};
+	explicit TypeInference(NodeProgram* main) : m_def_provider(main->def_provider), m_ref_manager(main->ref_manager) {
+		m_program = main;
+	};
 
 	NodeAST * visit(NodeProgram& node) override;
 
@@ -63,10 +68,7 @@ public:
 
     /// iterates through all references and declarations and tries to match the types
     /// with cast set to true -> will cast types of data structures if no type could be infered
-    static void cast_data_structure_types(DefinitionProvider* def_provider, bool cast= false);
-
-private:
-	DefinitionProvider* m_def_provider;
+    static void cast_data_structure_types(NodeProgram* program, bool cast= false);
 
 public:
     /// error if composite type was not added to the type registry
@@ -82,27 +84,6 @@ public:
 		error.m_message += message;
         return error;
     }
-
-//	static Type* update_function_type(NodeFunctionHeader* header, Type* return_type) {
-//		auto function_type = header->ty;
-//		auto function = static_cast<FunctionType*>(function_type);
-//		auto param_types = function->m_params;
-//		for(int i=0; i<header->params->size(); i++) {
-//			auto &old_param_type = param_types[i];
-//			auto &new_param = header->params->param(i);
-//			auto throwaway_old_node = new_param->clone();
-//			throwaway_old_node->ty = old_param_type;
-//			param_types[i] = match_type(throwaway_old_node.get(), new_param.get());
-//		}
-//		auto new_return_var = std::make_unique<NodeVariableRef>("return", header->tok);
-//		new_return_var->ty = return_type;
-//		auto old_return_var = std::make_unique<NodeVariableRef>("return", header->tok);
-//		old_return_var->ty = function->get_return_type();
-//		match_type(old_return_var.get(), new_return_var.get());
-//		function->m_return_type = std::move(old_return_var->ty);
-//		header->ty = function;
-//		return function;
-//	}
 
     /// check types of initializations and try to infer overall element type
     static Type* infer_initialization_types(std::vector<Type*> &type_list, NodeAST* node) {

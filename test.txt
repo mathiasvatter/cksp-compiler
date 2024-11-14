@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Wed Nov 13 18:04:13 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Thu Nov 14 15:25:26 2024 }
 on init
   declare %loc_3__num_elements[3] := (6, 2, 3)
   declare $loc_6
@@ -188,6 +188,6 @@ on init
   end while
   declare $_return16
   $_return16 := ((0 + $this_list) + abs(0 - $this_list)) / 2
-  message(%List__allocation[$_return16])
+  message(%List__allocation[ _return16])
 end on
 

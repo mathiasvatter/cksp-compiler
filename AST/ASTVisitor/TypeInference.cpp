@@ -6,7 +6,6 @@
 #include "ASTSemanticAnalysis.h"
 
 NodeAST * TypeInference::visit(NodeProgram& node) {
-	m_program = &node;
 //	m_def_provider->refresh_data_vectors();
 	m_def_provider->m_all_declarations.clear();
 	m_def_provider->m_all_references.clear();
@@ -28,22 +27,20 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 	return &node;
 }
 
-void TypeInference::cast_data_structure_types(DefinitionProvider* def_provider, bool cast) {
-//	std::cout << "TypeInference::match_reference_declaration" << std::endl;
-	for(auto& refs : def_provider->m_references_per_data_structure) {
-//		std::cout << refs.first->name << std::endl;
+void TypeInference::cast_data_structure_types(NodeProgram* program, bool cast) {
+	auto ref_manager = program->ref_manager;
+	auto def_provider = program->def_provider;
+	for(auto& refs : ref_manager->get_reference_map()) {
 		for(auto & ref : refs.second) {
 			match_reference_declaration(ref);
 		}
 	}
-//	std::cout << "TypeInference::match_assignment_types" << std::endl;
 	for(auto& ass : def_provider->get_all_assignments()) {
 		if(ass->l_value->ty->get_element_type() == TypeRegistry::Unknown ||
 		ass->r_value->ty->get_element_type() == TypeRegistry::Unknown) {
 			match_assignment_types(ass->l_value.get(), ass->r_value.get());
 		}
 	}
-//	std::cout << "TypeInference::match_assignment_types" << std::endl;
     for(auto & decl : def_provider->get_all_declarations()) {
 		if (decl->value) {
 			match_assignment_types(decl->variable.get(), decl->value.get());
@@ -51,8 +48,7 @@ void TypeInference::cast_data_structure_types(DefinitionProvider* def_provider, 
 		// cast as Integer if still unknown
 		if (cast) decl->variable->cast_type();
 	}
-//	std::cout << "TypeInference::match_reference_declaration" << std::endl;
-	for(auto& refs : def_provider->m_references_per_data_structure) {
+	for(auto& refs : ref_manager->get_reference_map()) {
 		for(auto & ref : refs.second) {
 			match_reference_declaration(ref);
 		}
@@ -108,7 +104,6 @@ NodeAST * TypeInference::visit(NodeConst& node) {
 }
 
 NodeAST * TypeInference::visit(NodeVariableRef& node) {
-//	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	if(node.get_declaration()) {
 		// manual replacement of node type if declaration is a pointer
 		// 	declare this_list := nil
@@ -117,54 +112,46 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 		or node.ty->get_type_kind() == TypeKind::Object) {
 			auto pointer_ref = node.to_pointer_ref();
 			match_type(pointer_ref.get(), &node);
-//			pointer_ref->match_data_structure(node.get_declaration());
-//			m_def_provider->remove_reference(node.get_declaration(), &node);
-//			auto new_node = static_cast<NodeReference*>(node.replace_with(std::move(pointer_ref)));
-//			m_def_provider->add_reference(node.get_declaration(), new_node);
-			auto new_node = node.replace_reference(std::move(pointer_ref), m_def_provider);
+			auto new_node = node.replace_reference(std::move(pointer_ref), m_program);
 			return new_node->accept(*this);
 		}
 	}
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
-	m_def_provider->add_reference(node.get_declaration(), &node);
 	return &node;
 }
 
 NodeAST * TypeInference::visit(NodeVariable& node) {
-//	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// because of pointer node -> apply type annotations again
 	if(node.ty->get_type_kind() == TypeKind::Object) {
 		auto ptr = node.to_pointer();
-		auto new_node = node.replace_datastruct(std::move(ptr), m_def_provider);
-		m_def_provider->add_to_data_structures(new_node->get_shared());
+		ptr->match_metadata(node.get_shared());
+		auto new_node = node.replace_datastruct(std::move(ptr), m_program);
 		if(auto strct = node.is_member()) {
 			strct->update_member_table();
 		}
-		return new_node;
+		return new_node->accept(*this);
 	}
 	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
 NodeAST * TypeInference::visit(NodePointerRef& node) {
-//	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// replace declaration node with Pointer if it is Variable
 	if(node.get_declaration()->get_node_type() == NodeType::Variable) {
 		auto node_var = static_pointer_cast<NodeVariable>(node.get_declaration());
 		auto ptr = node_var->to_pointer();
 		ptr->match_metadata(node_var);
-		auto new_node = node_var->replace_datastruct(std::move(ptr), m_def_provider);
-		auto &references = m_def_provider->get_references(node.get_declaration());
+		auto new_node = node_var->replace_datastruct(std::move(ptr), m_program);
+		auto &references = m_ref_manager->get_references(node.get_declaration());
 		for(auto ref : references) {
-			ASTSemanticAnalysis::replace_incorrectly_detected_reference(m_def_provider, ref);
+			ASTSemanticAnalysis::replace_incorrectly_detected_reference(m_program, ref);
 		}
 		new_node->accept(*this);
 		node.get_declaration() = new_node->get_shared();
 		if(auto strct = new_node->is_member()) {
 			strct->update_member_table();
 		}
-//		return new_node;
 	}
 
 	if(node.ty == TypeRegistry::Unknown) {
@@ -172,12 +159,10 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 	}
 	match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
-	m_def_provider->add_reference(node.get_declaration(), &node);
 	return &node;
 }
 
 NodeAST * TypeInference::visit(NodePointer& node) {
-//	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::Nil;
 	}
@@ -186,7 +171,6 @@ NodeAST * TypeInference::visit(NodePointer& node) {
 }
 
 NodeAST * TypeInference::visit(NodeArray& node) {
-//	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// if array is unknown type -> set to array of unknown
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Unknown, 1);
@@ -200,9 +184,7 @@ NodeAST * TypeInference::visit(NodeArray& node) {
 }
 
 NodeAST * TypeInference::visit(NodeArrayRef& node) {
-//	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	if(node.index) node.index->accept(*this);
-//	if(node.get_declaration()) node.get_declaration()->accept(*this);
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
 		if(node.ty == TypeRegistry::Unknown) {
@@ -220,12 +202,10 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 	}
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
-	m_def_provider->add_reference(node.get_declaration(), &node);
 	return &node;
 }
 
 NodeAST * TypeInference::visit(NodeNDArray& node) {
-//	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
     if(node.sizes) node.sizes->accept(*this);
     // if array is unknown type -> set to array of unknown
     if(node.ty == TypeRegistry::Unknown) {
@@ -236,10 +216,8 @@ NodeAST * TypeInference::visit(NodeNDArray& node) {
 }
 
 NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
-//	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	if(node.indexes) node.indexes->accept(*this);
 	if(node.sizes) node.sizes->accept(*this);
-//	if(node.get_declaration()) node.get_declaration()->accept(*this);
     // if handed over without index -> as whole array structure type
     if(!node.indexes) {
         if(node.ty == TypeRegistry::Unknown) {
@@ -265,12 +243,10 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
     }
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
-	m_def_provider->add_reference(node.get_declaration(), &node);
 	return &node;
 }
 
 NodeAST * TypeInference::visit(NodeList& node) {
-//	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	// if list is unknown type -> set to list of unknown
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::add_composite_type(CompoundKind::List, TypeRegistry::Unknown, node.size);
@@ -288,7 +264,6 @@ NodeAST * TypeInference::visit(NodeList& node) {
 }
 
 NodeAST * TypeInference::visit(NodeListRef& node) {
-//	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
 	if(node.indexes) node.indexes->accept(*this);
     // if handed over without index -> as whole list structure type
     if(!node.indexes) {
@@ -302,7 +277,6 @@ NodeAST * TypeInference::visit(NodeListRef& node) {
     }
     match_reference_declaration(&node);
 	m_def_provider->add_to_references(&node);
-	m_def_provider->add_reference(node.get_declaration(), &node);
 	return &node;
 }
 
@@ -329,14 +303,6 @@ NodeAST * TypeInference::visit(NodeNumElements& node) {
 }
 
 NodeAST * TypeInference::visit(NodeAccessChain& node) {
-//	std::cout << __PRETTY_FUNCTION__ << ", " << node.name << ", " << node.tok.line << std::endl;
-	// in case an array size constant has been mistakenly converted to an access chain
-//	if(auto size_const = node.is_size_constant()) {
-//		// chain[0] was already written into reference map
-//		auto nd_arr_ref = static_cast<NodeReference*>(node.chain[0].get());
-//		m_def_provider->remove_reference(nd_arr_ref->declaration, nd_arr_ref);
-//		return node.replace_with(std::move(size_const));
-//	}
 
 	for(int i = 0; i<node.chain.size(); i++) {
 		auto& ptr = node.chain[i];
@@ -352,7 +318,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				error.exit();
 			}
 			auto prev_obj = prev_type->to_string();
-			if(ptr->get_node_type() == NodeType::FunctionCall) {
+			if(ptr->cast<NodeFunctionCall>()) {
 //				auto func_call = static_cast<NodeFunctionCall*>(ptr.get());
 //				func_call->function->name = prev_obj+"."+func_call->function->name;
 				ptr->accept(*this);
@@ -366,7 +332,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				if(!strct) {
 					if(prev_type == TypeRegistry::Nil) {
 						error.m_message = "Method chaining can not be used on <Nil> types.";
-					} else if(prev_ptr->get_node_type() == NodeType::FunctionCall) {
+					} else if(prev_ptr->cast<NodeFunctionCall>()) {
 						error.m_message = prev_ptr->get_string()+" does not return <Object> type.";
 					} else {
 						error.m_message = "Struct "+prev_obj+" does not exist.";
@@ -406,22 +372,9 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 
 
 NodeAST * TypeInference::visit(NodeParamList& node) {
-//	std::cout << __PRETTY_FUNCTION__ << ", " << node.tok.line << std::endl;
-//    std::vector<Type*> types;
     for(const auto & param : node.params) {
         param->accept(*this);
-//        types.push_back(param->ty);
     }
-    // enforce same type for every member only if in array declaration, assignment, liststruct, return stmt
-//    auto node_declaration = node.parent->get_node_type() == NodeType::SingleDeclaration;
-//    auto node_assignment = node.parent->get_node_type() == NodeType::SingleAssignment;
-//	auto node_list_struct = node.parent->get_node_type() == NodeType::List;
-//	auto node_return = node.parent->get_node_type() == NodeType::Return;
-//	auto node_function_init = node.parent->get_node_type() == NodeType::ParamList and
-//		node.parent->parent->get_node_type() == NodeType::FunctionHeader;
-//    if(!node_list_struct and !node_return and !node_function_init) return &node;
-//
-//    node.ty = infer_initialization_types(types, &node);
 	return &node;
 }
 
@@ -491,10 +444,6 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	node.variable->accept(*this);
 	if(node.value) {
 		node.value->accept(*this);
-		// cast node r_value to composite type if variable is composite type
-//		if(node.value ->get_node_type() == NodeType::ParamList and node.variable->ty->get_type_kind() == TypeKind::Composite) {
-//			node.value->ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(node.variable->ty)->get_compound_type(), node.value->ty->get_element_type(), node.variable->ty->get_dimensions());
-//		}
 		match_assignment_types(node.variable.get(), node.value.get());
 		node.variable->accept(*this);
 	}
@@ -582,7 +531,6 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
-//	std::cout << __PRETTY_FUNCTION__ << ", " << node.function->name << ", " << node.tok.line << std::endl;
 	node.get_definition(m_program);
 	node.function->accept(*this);
 	if(!node.definition) {
@@ -592,7 +540,6 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			node.ty = obj_type;
 			return &node;
 		}
-//		return &node;
 	}
 
 	if(node.definition) {
@@ -626,9 +573,6 @@ NodeAST * TypeInference::visit(NodeFunctionHeaderRef& node) {
 		}
 	}
 
-//	match_reference_declaration(&node);
-//	match_type(&node, node.header.get());
-//	match_reference_declaration(&node);
 	return &node;
 }
 
@@ -745,8 +689,6 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 		}
 		if(node.left->ty != node.right->ty)
 			is_compatible = false;
-//		is_compatible |= node.left->ty->is_compatible(TypeRegistry::Real) and node.right->ty->is_compatible(TypeRegistry::Real);
-//		if(is_compatible and node.ty != TypeRegistry::Integer) node.ty = TypeRegistry::Real;
 		error.m_message += "Please use real() and int() to use <Real> and <Integer> numbers in a single expression.";
 	} else if (contains(BITWISE_TOKENS, node.op)) {
 		node.ty = TypeRegistry::Integer;

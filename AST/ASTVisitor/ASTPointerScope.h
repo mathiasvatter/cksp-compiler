@@ -30,6 +30,7 @@
 class ASTPointerScope : public ASTVisitor {
 private:
 	DefinitionProvider* m_def_provider = nullptr;
+	ReferenceManager* m_ref_manager = nullptr;
 	std::vector<std::unordered_map<StringTypeKey, NodeDataStructure*, StringTypeKeyHash>> m_pointer_scope_stack;
 
 	// which references can be pointers?
@@ -68,7 +69,9 @@ private:
 
 
 public:
-	explicit ASTPointerScope(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {};
+	explicit ASTPointerScope(NodeProgram *main) : m_def_provider(main->def_provider), m_ref_manager(main->ref_manager) {
+		m_program = main;
+	};
 
 	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
@@ -82,9 +85,6 @@ public:
 		for(const auto & callback : node.callbacks) {
 			if(callback.get() != m_program->init_callback) callback->accept(*this);
 		}
-//		for(const auto & func_def : node.function_definitions) {
-//			if(!func_def->visited) func_def->accept(*this);
-//		}
 
 		node.reset_function_visited_flag();
 		return &node;
@@ -100,7 +100,6 @@ public:
 			auto local_ptrs = remove_scope();
 			for(auto & [key, ptr] : local_ptrs) {
 				auto ref = ptr->to_reference();
-//				ref->match_data_structure(ptr);
 				auto del = std::make_unique<NodeSingleDelete>(std::move(ref), std::make_unique<NodeInt>(1, ptr->tok), ptr->tok);
 				node.add_as_stmt(std::move(del));
 			}
@@ -159,13 +158,10 @@ public:
 			return node.replace_with(std::move(new_block));
 		}
 
-//		node.l_value->accept(*this);
-//		node.r_value->accept(*this);
 		return &node;
 	}
 
 	NodeAST* visit(NodeSingleDeclaration &node) override {
-//		if(node.variable->name == "self") return &node;
 		if(node.variable->is_member()) return &node;
 
 		node.variable->accept(*this);
@@ -182,25 +178,20 @@ public:
 			}
 		}
 
-//		if(node.value) {
-//			node.value->accept(*this);
-//		}
 		return &node;
 	}
 
 	// if l_value is of type object and r_value is no constructor
-	bool alters_ref_count(NodeAST* node) {
+	static bool alters_ref_count(NodeAST* node) {
 		Type* l_value_type = nullptr;
 		NodeAST* r_value;
-		if(node->get_node_type() == NodeType::SingleDeclaration) {
-			auto decl = static_cast<NodeSingleDeclaration*>(node);
+		if(auto decl = node->cast<NodeSingleDeclaration>()) {
 			l_value_type = decl->variable->ty->get_element_type();
 			if(!decl->value) {
 				return false;
 			}
 			r_value = decl->value.get();
-		} else if(node->get_node_type() == NodeType::SingleAssignment) {
-			auto assign = static_cast<NodeSingleAssignment*>(node);
+		} else if(auto assign = node->cast<NodeSingleAssignment>()) {
 			l_value_type = assign->l_value->ty->get_element_type();
 			r_value = assign->r_value.get();
 		} else {
@@ -208,8 +199,7 @@ public:
 		}
 
 		if(l_value_type->get_type_kind() == TypeKind::Object) {
-			if(r_value->get_node_type() == NodeType::FunctionCall) {
-				auto func_call = static_cast<NodeFunctionCall*>(r_value);
+			if(auto func_call = r_value->cast<NodeFunctionCall>()) {
 				if(func_call->kind == NodeFunctionCall::Kind::Constructor) {
 					return false;
 				}
@@ -232,21 +222,21 @@ public:
 		auto del = std::make_unique<NodeBlock>(assign.tok);
 
 		// ptr := ptr1
-		auto l_pointer_ref = cast_node<NodePointerRef>(variable);
+		auto l_pointer_ref = variable->cast<NodePointerRef>();
 		if(l_pointer_ref) {
 			del->add_as_single_delete(clone_as<NodeReference>(l_pointer_ref));
 			return del;
 		}
 
 		// arr[*] := arr1[*]
-		auto l_array_ref = cast_node<NodeArrayRef>(variable);
-		auto r_array_ref = cast_node<NodeArrayRef>(value);
+		auto l_array_ref = variable->cast<NodeArrayRef>();
+		auto r_array_ref = value->cast<NodeArrayRef>();
 		if(l_array_ref and r_array_ref) {
 			del->add_as_single_delete(clone_as<NodeReference>(l_array_ref));
 			return del;
 		}
 
-		auto r_initializer_list = cast_node<NodeInitializerList>(value);
+		auto r_initializer_list = value->cast<NodeInitializerList>();
 
 
 		return del;
@@ -259,18 +249,18 @@ public:
 
 		if(!value) return nullptr;
 
-		auto l_pointer_ref = cast_node<NodePointerRef>(variable);
+		auto l_pointer_ref = variable->cast<NodePointerRef>();
 		if(l_pointer_ref) {
 			return retain_ptr_ptr(l_pointer_ref);
 		}
 
-		auto l_array_ref = cast_node<NodeArrayRef>(variable);
-		auto r_initializer_list = cast_node<NodeInitializerList>(value);
+		auto l_array_ref = variable->cast<NodeArrayRef>();
+		auto r_initializer_list = value->cast<NodeInitializerList>();
 		if(l_array_ref and r_initializer_list) {
 			return retain_arr_init(l_array_ref, r_initializer_list, is_decl);
 		}
 
-		auto r_array_ref = cast_node<NodeArrayRef>(value);
+		auto r_array_ref = value->cast<NodeArrayRef>();
 		if(l_array_ref and r_array_ref) {
 			return retain_arr_arr(l_array_ref);
 		}
@@ -286,8 +276,7 @@ private:
 	/// r_value is a function call and the return type is an object
 	/// else will return og r_value
 	NodeAST* get_return_var_ptr(NodeAST* r_value) {
-		if(r_value->get_node_type() == NodeType::FunctionCall) {
-			auto func_call = static_cast<NodeFunctionCall*>(r_value);
+		if(auto func_call = r_value->cast<NodeFunctionCall>()) {
 			if(func_call->kind == NodeFunctionCall::Kind::Constructor) {
 				return nullptr;
 			}

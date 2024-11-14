@@ -42,7 +42,6 @@ public:
 	inline NodeAST * visit(NodeProgram& node) override {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
-//		m_program->global_declarations->prepend_body(declare_throwaway_variables());
 		for(auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
 		}

@@ -345,8 +345,6 @@ struct NodeAssignment: NodeInstruction {
 struct NodeSingleAssignment : NodeInstruction {
     std::unique_ptr<NodeReference> l_value;
     std::unique_ptr<NodeAST> r_value;
-	std::unique_ptr<NodeSingleDelete> delete_stmt = nullptr;
-	std::unique_ptr<NodeSingleRetain> retain_stmt = nullptr;
 	bool has_object = false;
     inline explicit NodeSingleAssignment(Token tok) : NodeInstruction(NodeType::SingleAssignment, std::move(tok)) {}
     NodeSingleAssignment(std::unique_ptr<NodeReference> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
@@ -361,25 +359,19 @@ struct NodeSingleAssignment : NodeInstruction {
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
-		if(delete_stmt) delete_stmt->update_parents(this);
         l_value->update_parents(this);
         r_value->update_parents(this);
-		if(retain_stmt) retain_stmt->update_parents(this);
     }
     void set_child_parents() override {
-		if(delete_stmt) delete_stmt->parent = this;
         if(l_value) l_value->parent = this;
         if(r_value) r_value->parent = this;
-		if(retain_stmt) retain_stmt->parent = this;
     };
     std::string get_string() override {
         return l_value->get_string() + " := " + r_value->get_string();
     }
     void update_token_data(const Token& token) override {
-		if(delete_stmt) delete_stmt->update_token_data(token);
         l_value -> update_token_data(token);
         r_value -> update_token_data(token);
-		if(retain_stmt) retain_stmt ->update_token_data(token);
     }
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
@@ -426,7 +418,6 @@ struct NodeDeclaration : NodeInstruction {
 struct NodeSingleDeclaration : NodeInstruction {
     std::shared_ptr<NodeDataStructure> variable;
     std::unique_ptr<NodeAST> value = nullptr;
-	std::unique_ptr<NodeRetain> retain_stmt = nullptr;
 	bool has_object = false;
 	bool is_promoted = false;
     inline explicit NodeSingleDeclaration(Token tok) : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)) {}
@@ -457,12 +448,10 @@ struct NodeSingleDeclaration : NodeInstruction {
         parent = new_parent;
         variable->update_parents(this);
         if(value) value->update_parents(this);
-		if(retain_stmt) retain_stmt->update_parents(this);
     }
     void set_child_parents() override {
         variable->parent = this;
         if(value) value->parent = this;
-		if(retain_stmt) retain_stmt->parent = this;
     };
     std::string get_string() override {
         auto string = variable->get_string();
@@ -473,7 +462,6 @@ struct NodeSingleDeclaration : NodeInstruction {
     void update_token_data(const Token& token) override {
         variable -> update_token_data(token);
         if(value) value -> update_token_data(token);
-		if(retain_stmt) retain_stmt -> update_token_data(token);
     }
     ASTLowering* get_lowering(struct NodeProgram *program) const override;
 //	ASTLowering *get_data_lowering(NodeProgram *program) const override;
@@ -483,7 +471,6 @@ struct NodeSingleDeclaration : NodeInstruction {
     [[nodiscard]] std::unique_ptr<NodeSingleAssignment> to_assign_stmt(NodeDataStructure* var=nullptr);
 	void set_retain(std::unique_ptr<NodeRetain> retain) {
 		retain->parent = this;
-		retain_stmt = std::move(retain);
 	}
 	void set_value(std::unique_ptr<NodeAST> new_value) {
 		value = std::move(new_value);

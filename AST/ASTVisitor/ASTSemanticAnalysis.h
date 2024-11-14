@@ -23,8 +23,12 @@
  * Changes node types of incorrectly detected data structures and references.
  */
 class ASTSemanticAnalysis: public ASTVisitor {
+private:
+	DefinitionProvider* m_def_provider = nullptr;
+	ReferenceManager* m_ref_manager = nullptr;
+
 public:
-	explicit ASTSemanticAnalysis(DefinitionProvider* definition_provider);
+	explicit ASTSemanticAnalysis(NodeProgram* main);
 
     NodeAST * visit(NodeProgram& node) override;
 	NodeAST * visit(NodeCallback& node) override;
@@ -62,11 +66,8 @@ public:
 	/// updates incorrectly detected function params (eg arrays detected as variables)
 	NodeDataStructure* replace_incorrectly_detected_data_struct(std::shared_ptr<NodeDataStructure> data_struct);
 	/// updated incorrectly detected references of function params
-	static NodeReference* replace_incorrectly_detected_reference(DefinitionProvider* def_provider, NodeReference* reference);
+	static NodeReference* replace_incorrectly_detected_reference(NodeProgram* program, NodeReference* reference);
 
-private:
-    NodeProgram* m_program = nullptr;
-	DefinitionProvider* m_def_provider = nullptr;
 
 };
 

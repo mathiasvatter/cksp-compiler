@@ -20,11 +20,6 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 
 	// refresh call_sites of function definitions
 	for(const auto & func_def : node.function_definitions) func_def->call_sites.clear();
-//	for(const auto & func_def : node.function_definitions) {
-//		// node header as data struct
-//		m_def_provider->set_declaration(func_def->header, !func_def->header->is_local);
-//		m_def_provider->add_to_data_structures(func_def->header);
-//	}
 
 	// most func defs will be visited when called, keeping local scopes in mind
 	m_program->global_declarations->accept(*this);
@@ -105,11 +100,9 @@ NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
 	node.determine_locality(m_program, m_current_block);
 	// function definitions are being visited in the program node
-//	if(node.is_function_param()) {
-		// node header as data struct
-		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-		m_def_provider->add_to_data_structures(node.get_shared());
-//	}
+	// node header as data struct
+	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
+	m_def_provider->add_to_data_structures(node.get_shared());
 	for(auto &param : node.params) param->accept(*this);
 	return &node;
 }
@@ -146,7 +139,6 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 	node.function->accept(*this);
 
 	if(node.kind == NodeFunctionCall::UserDefined and node.definition) {
-//		node.definition->call_sites.emplace(&node);
 		check_recursion(node.definition);
 		if(!node.definition->visited) {
 			m_functions_in_use.insert(node.definition);
@@ -174,15 +166,11 @@ NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 
     node.variable->accept(*this);
     if(node.value) node.value->accept(*this);
-	if(node.retain_stmt) node.retain_stmt->accept(*this);
 	m_def_provider->add_to_declarations(&node);
 	return &node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeArray& node) {
-
-//	set_as_function_param(&node);
-
 	node.determine_locality(m_program, m_current_block);
 	if(node.size) node.size->accept(*this);
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
@@ -218,7 +206,6 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeNDArray& node) {
-//	set_as_function_param(&node);
 	node.determine_locality(m_program, m_current_block);
 	if(node.sizes) node.sizes->accept(*this);
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
@@ -250,9 +237,6 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 			node.declaration = func_call->definition->header;
 			return &node;
 		}
-//		if(node.name == "message") {
-//			return &node;
-//		}
 	}
 
 	auto node_declaration = m_def_provider->get_declaration(node);
@@ -266,7 +250,6 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
-//	set_as_function_param(&node);
 	node.determine_locality(m_program, m_current_block);
 
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
@@ -306,7 +289,6 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodePointer& node) {
-//	set_as_function_param(&node);
 	node.determine_locality(m_program, m_current_block);
 
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
@@ -322,7 +304,6 @@ NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		// if fail is set to false, return early. the rest is determined after lowering
-//		if(!fail) return;
 		DefinitionProvider::throw_declaration_error(node).exit();
 	}
 
@@ -332,7 +313,6 @@ NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeList& node) {
-//	set_as_function_param(&node);
 	node.determine_locality(m_program, m_current_block);
 	for(auto &params : node.body) {
 		params->accept(*this);
@@ -370,64 +350,6 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 	return &node;
 }
 
-
-//NodeDataStructure* ASTVariableChecking::apply_type_annotations(const std::shared_ptr<NodeDataStructure>& node) {
-//	if(node->ty == TypeRegistry::Unknown) return node.get();
-//
-//	NodeAST* new_data_struct = nullptr;
-//	if(node->ty->get_type_kind() == TypeKind::Composite) {
-//		auto comp_type = static_cast<CompositeType*>(node->ty);
-//		// if var is annotated as array, replace with array
-//		if(comp_type->get_compound_type() == CompoundKind::Array and node->get_node_type() != NodeType::Array and comp_type->get_dimensions() == 1) {
-//			auto node_array = node->to_array(nullptr);
-//			if(!node_array) get_apply_type_annotations_error(node).exit();
-//			node_array->is_local = node->is_local;
-//			new_data_struct = node->replace_with(std::move(node_array));
-//		} else if(comp_type->get_compound_type() == CompoundKind::Array and node->get_node_type() != NodeType::NDArray and comp_type->get_dimensions() > 1) {
-//			auto node_ndarray = node->to_ndarray();
-//			if(!node_ndarray) get_apply_type_annotations_error(node).exit();
-//			node_ndarray->dimensions = comp_type->get_dimensions();
-//			node_ndarray->is_local = node->is_local;
-//			new_data_struct = node->replace_with(std::move(node_ndarray));
-//		}
-//	} else if (node->ty->get_type_kind() == TypeKind::Basic) {
-//		// if var is annotated as variable but recognized as array by parser -> throw error
-//		if(node->get_node_type() == NodeType::Array or node->get_node_type() == NodeType::NDArray) {
-//			auto syntax_error = CompileError(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
-//			syntax_error.m_message += " Variable was annotated as <Variable> but recognized as <Array>: "+node->name+".";
-//			syntax_error.m_expected = "<Variable> Syntax";
-//			syntax_error.m_got = "<Array> Syntax";
-//			syntax_error.exit();
-//			return nullptr;
-//		}
-//	// var was annotated as object
-//	} else if (node->ty->get_type_kind() == TypeKind::Object and node->get_node_type() != NodeType::Pointer) {
-//		// throw error when node was not recognized as variable by parser
-//		if(node->get_node_type() != NodeType::Variable) {
-//			auto syntax_error = CompileError(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
-//			syntax_error.m_message += " Variable was annotated as <Object> but recognized as <Array>: "+node->name+".";
-//			syntax_error.m_expected = "<Object> Syntax";
-//			syntax_error.m_got = "<Array> Syntax";
-//			syntax_error.exit();
-//			return nullptr;
-//		} else {
-//			auto node_pointer = node->to_pointer();
-//			if(!node_pointer) get_apply_type_annotations_error(node).exit();
-//			node_pointer->is_local = node->is_local;
-//			new_data_struct = node->replace_with(std::move(node_pointer));
-//		}
-//	} else if(node->ty->get_type_kind() == TypeKind::Function and node->get_node_type() != NodeType::FunctionHeader and node->get_node_type() == NodeType::Variable) {
-//		auto node_function = std::make_unique<NodeFunctionHeader>(node->name, node->tok);
-//		if(!node_function) get_apply_type_annotations_error(node).exit();
-//		node_function->is_local = node->is_local;
-//		node_function->ty = node->ty;
-//		new_data_struct = node->replace_with(std::move(node_function));
-//	}
-//	if(new_data_struct) {
-//		return static_cast<NodeDataStructure*>(new_data_struct);
-//	}
-//	return node.get();
-//}
 
 
 

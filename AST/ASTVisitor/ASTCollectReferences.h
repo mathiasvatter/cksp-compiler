@@ -59,7 +59,7 @@ public:
 	}
 	inline NodeAST *visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);
-		check_for_valid_declaration(node);
+//		check_for_valid_declaration(node);
 		m_ref_manager->add_reference(node.get_declaration(), &node);
 		return &node;
 	}
@@ -67,7 +67,7 @@ public:
 		return &node;
 	}
 	inline NodeAST *visit(NodeVariableRef &node) override {
-		check_for_valid_declaration(node);
+//		check_for_valid_declaration(node);
 		m_ref_manager->add_reference(node.get_declaration(), &node);
 		return &node;
 	}
@@ -76,8 +76,9 @@ public:
 		return &node;
 	}
 	inline NodeAST *visit(NodeFunctionHeaderRef &node) override {
-		check_for_valid_declaration(node);
-		m_ref_manager->add_reference(node.get_declaration(), &node);
+		if(node.args) node.args->accept(*this);
+//		check_for_valid_declaration(node);
+//		m_ref_manager->add_reference(node.get_declaration(), &node);
 		return &node;
 	}
 	inline NodeAST *visit(NodeNDArray &node) override {
@@ -87,7 +88,7 @@ public:
 	inline NodeAST *visit(NodeNDArrayRef &node) override {
 		if(node.indexes) node.indexes->accept(*this);
 		if(node.sizes) node.sizes->accept(*this);
-		check_for_valid_declaration(node);
+//		check_for_valid_declaration(node);
 		m_ref_manager->add_reference(node.get_declaration(), &node);
 		return &node;
 	}
@@ -95,7 +96,7 @@ public:
 		return &node;
 	}
 	inline NodeAST *visit(NodePointerRef &node) override {
-		check_for_valid_declaration(node);
+//		check_for_valid_declaration(node);
 		m_ref_manager->add_reference(node.get_declaration(), &node);
 		return &node;
 	}
@@ -105,7 +106,7 @@ public:
 	}
 	inline NodeAST *visit(NodeListRef &node) override {
 		node.indexes->accept(*this);
-		check_for_valid_declaration(node);
+//		check_for_valid_declaration(node);
 		m_ref_manager->add_reference(node.get_declaration(), &node);
 		return &node;
 	}

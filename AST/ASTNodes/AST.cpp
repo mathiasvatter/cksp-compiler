@@ -10,7 +10,6 @@
 #include "ASTDataStructures.h"
 #include "ASTReferences.h"
 #include "../../Lowering/ASTLowering.h"
-#include "../ASTVisitor/ASTVisitor.h"
 #include "../../Desugaring/DesugarFunctionDef.h"
 #include "../ASTVisitor/ASTPrinter.h"
 #include "../../Optimization/ConstExprValidator.h"
@@ -20,7 +19,7 @@
 #include "../../Desugaring/DesugarBinaryExpr.h"
 #include "../../Lowering/LoweringFunctionDef.h"
 #include "../../Optimization/NilValidator.h"
-#include "../ASTVisitor/ASTVariableChecking.h"
+#include "../ASTVisitor/ASTCollectReferences.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -125,9 +124,9 @@ bool NodeAST::is_nil() {
 	return nil_validator.is_nil(*this);
 }
 
-void NodeAST::check_variables(NodeProgram* program) {
-	static ASTVariableChecking var_checker(program->def_provider, program, false);
-	var_checker.check_variables(this);
+void NodeAST::collect_references(NodeProgram* program) {
+	static ASTCollectReferences ref_collect(program);
+	accept(ref_collect);
 }
 
 // ************* NodeDataStructure ***************
