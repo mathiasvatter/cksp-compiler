@@ -19,8 +19,8 @@
 #include "../../Desugaring/DesugarBinaryExpr.h"
 #include "../../Lowering/LoweringFunctionDef.h"
 #include "../../Optimization/NilValidator.h"
-#include "../ASTVisitor/ReferenceManager/ASTCollectReferences.h"
-#include "../ASTVisitor/ReferenceManager/ASTRemoveReferences.h"
+#include "../ASTVisitor/ReferenceManagement/ASTCollectReferences.h"
+#include "../ASTVisitor/ReferenceManagement/ASTRemoveReferences.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
