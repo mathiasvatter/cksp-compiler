@@ -20,6 +20,12 @@ private:
 			error.exit();
 		}
 	}
+
+	void remove_reference(NodeReference* ref) {
+		if(auto decl = ref->get_declaration()) {
+			decl->remove_reference(ref);
+		}
+	}
 public:
 	explicit ASTRemoveReferences(NodeProgram* main) : m_def_provider(main->def_provider), m_ref_manager(main->ref_manager) {
 		m_program = main;
@@ -55,65 +61,59 @@ public:
 
 	inline NodeAST *visit(NodeArray &node) override {
 		if(node.size) node.size->accept(*this);
-		m_ref_manager->remove_data_structure(node.get_shared());
 		return &node;
 	}
 	inline NodeAST *visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);
 //		check_for_valid_declaration(node);
-		m_ref_manager->remove_reference(node.get_declaration(), &node);
+		remove_reference(&node);
 		return &node;
 	}
 	inline NodeAST *visit(NodeVariable &node) override {
-		m_ref_manager->remove_data_structure(node.get_shared());
 		return &node;
 	}
 	inline NodeAST *visit(NodeVariableRef &node) override {
 //		check_for_valid_declaration(node);
-		m_ref_manager->remove_reference(node.get_declaration(), &node);
+		remove_reference(&node);
 		return &node;
 	}
 	inline NodeAST *visit(NodeFunctionHeader &node) override {
 		for(auto &param : node.params) param->variable->accept(*this);
-		m_ref_manager->remove_data_structure(node.get_shared());
 		return &node;
 	}
 	inline NodeAST *visit(NodeFunctionHeaderRef &node) override {
 		if(node.args) node.args->accept(*this);
 //		check_for_valid_declaration(node);
-		m_ref_manager->remove_reference(node.get_declaration(), &node);
+		remove_reference(&node);
 		return &node;
 	}
 	inline NodeAST *visit(NodeNDArray &node) override {
 		if(node.sizes) node.sizes->accept(*this);
-		m_ref_manager->remove_data_structure(node.get_shared());
 		return &node;
 	}
 	inline NodeAST *visit(NodeNDArrayRef &node) override {
 		if(node.indexes) node.indexes->accept(*this);
 		if(node.sizes) node.sizes->accept(*this);
 //		check_for_valid_declaration(node);
-		m_ref_manager->remove_reference(node.get_declaration(), &node);
+		remove_reference(&node);
 		return &node;
 	}
 	inline NodeAST *visit(NodePointer &node) override {
-		m_ref_manager->remove_data_structure(node.get_shared());
 		return &node;
 	}
 	inline NodeAST *visit(NodePointerRef &node) override {
 //		check_for_valid_declaration(node);
-		m_ref_manager->remove_reference(node.get_declaration(), &node);
+		remove_reference(&node);
 		return &node;
 	}
 	inline NodeAST *visit(NodeList &node) override {
 		for(auto & b : node.body) b->accept(*this);
-		m_ref_manager->remove_data_structure(node.get_shared());
 		return &node;
 	}
 	inline NodeAST *visit(NodeListRef &node) override {
 		node.indexes->accept(*this);
 //		check_for_valid_declaration(node);
-		m_ref_manager->remove_reference(node.get_declaration(), &node);
+		remove_reference(&node);
 		return &node;
 	}
 	inline NodeAST *visit(NodeAccessChain &node) override {
