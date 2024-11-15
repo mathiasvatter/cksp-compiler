@@ -28,10 +28,9 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 }
 
 void TypeInference::cast_data_structure_types(NodeProgram* program, bool cast) {
-	auto ref_manager = program->ref_manager;
 	auto def_provider = program->def_provider;
-	for(auto& refs : ref_manager->get_reference_map()) {
-		for(auto & ref : refs.second) {
+	for(auto& refs : def_provider->get_all_data_structures()) {
+		for(auto & ref : refs->references) {
 			match_reference_declaration(ref);
 		}
 	}
@@ -48,8 +47,8 @@ void TypeInference::cast_data_structure_types(NodeProgram* program, bool cast) {
 		// cast as Integer if still unknown
 		if (cast) decl->variable->cast_type();
 	}
-	for(auto& refs : ref_manager->get_reference_map()) {
-		for(auto & ref : refs.second) {
+	for(auto& refs : def_provider->get_all_data_structures()) {
+		for(auto & ref : refs->references) {
 			match_reference_declaration(ref);
 		}
 	}
