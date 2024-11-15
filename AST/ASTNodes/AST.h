@@ -71,9 +71,9 @@ struct NodeAST {
 	bool is_nil();
 	/// removes node from AST and Reference Manager and returns NodeDeadCode
 	NodeAST * remove_node(NodeProgram* program);
-	/// performs ASTVariableChecking class on provided node to add vars and refs to ReferenceManager
+	/// performs ASTVariableChecking class on provided node to add vars and refs to ReferenceManagement
 	void collect_references(NodeProgram* program);
-	/// performs ASTVariableChecking class on provided node and removes vars and refs from ReferenceManager
+	/// performs ASTVariableChecking class on provided node and removes vars and refs from ReferenceManagement
 	void remove_references(NodeProgram* program);
 	// Template-Methode für den Cast
 	template <typename TargetType>
@@ -198,6 +198,7 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 	bool has_obj_assigned = false;
 	DataType data_type;
 	std::string name;
+	std::unordered_set<NodeReference*> references;
 	inline NodeDataStructure(std::string name, Type* ty, Token tok, NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {
         this->ty = ty;
     }
@@ -245,6 +246,12 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 	}
 	bool is_shared() {
 		return !weak_from_this().expired();
+	}
+	void add_reference(NodeReference* ref) {
+		references.insert(ref);
+	}
+	void remove_reference(NodeReference* ref) {
+		references.erase(ref);
 	}
 
 };

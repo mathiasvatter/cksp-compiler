@@ -20,6 +20,12 @@ private:
 			error.exit();
 		}
 	}
+
+	void add_reference(NodeReference* ref) {
+		if(auto decl = ref->get_declaration()) {
+			decl->add_reference(ref);
+		}
+	}
 public:
 	explicit ASTCollectReferences(NodeProgram* main) : m_def_provider(main->def_provider), m_ref_manager(main->ref_manager) {
 		m_program = main;
@@ -60,7 +66,7 @@ public:
 	inline NodeAST *visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);
 //		check_for_valid_declaration(node);
-		m_ref_manager->add_reference(node.get_declaration(), &node);
+		add_reference(&node);
 		return &node;
 	}
 	inline NodeAST *visit(NodeVariable &node) override {
@@ -68,7 +74,7 @@ public:
 	}
 	inline NodeAST *visit(NodeVariableRef &node) override {
 //		check_for_valid_declaration(node);
-		m_ref_manager->add_reference(node.get_declaration(), &node);
+		add_reference(&node);
 		return &node;
 	}
 	inline NodeAST *visit(NodeFunctionHeader &node) override {
@@ -78,7 +84,7 @@ public:
 	inline NodeAST *visit(NodeFunctionHeaderRef &node) override {
 		if(node.args) node.args->accept(*this);
 //		check_for_valid_declaration(node);
-//		m_ref_manager->add_reference(node.get_declaration(), &node);
+//		add_reference(&node);)
 		return &node;
 	}
 	inline NodeAST *visit(NodeNDArray &node) override {
@@ -89,7 +95,7 @@ public:
 		if(node.indexes) node.indexes->accept(*this);
 		if(node.sizes) node.sizes->accept(*this);
 //		check_for_valid_declaration(node);
-		m_ref_manager->add_reference(node.get_declaration(), &node);
+		add_reference(&node);
 		return &node;
 	}
 	inline NodeAST *visit(NodePointer &node) override {
@@ -97,7 +103,7 @@ public:
 	}
 	inline NodeAST *visit(NodePointerRef &node) override {
 //		check_for_valid_declaration(node);
-		m_ref_manager->add_reference(node.get_declaration(), &node);
+		add_reference(&node);
 		return &node;
 	}
 	inline NodeAST *visit(NodeList &node) override {
@@ -107,7 +113,7 @@ public:
 	inline NodeAST *visit(NodeListRef &node) override {
 		node.indexes->accept(*this);
 //		check_for_valid_declaration(node);
-		m_ref_manager->add_reference(node.get_declaration(), &node);
+		add_reference(&node);
 		return &node;
 	}
 	inline NodeAST *visit(NodeAccessChain &node) override {

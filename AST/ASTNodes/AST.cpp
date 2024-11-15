@@ -148,7 +148,8 @@ NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
 	  is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
 	  is_local(other.is_local), is_global(other.is_global),
-	  data_type(other.data_type), name(other.name), has_obj_assigned(other.has_obj_assigned) {
+	  data_type(other.data_type), name(other.name), has_obj_assigned(other.has_obj_assigned),
+	  references(other.references) {
 	set_child_parents();
 }
 
@@ -219,7 +220,11 @@ NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDat
 	auto old_data = get_shared();
 	auto new_data_struct = static_cast<NodeDataStructure*>(replace_with(std::move(new_node)));
 	auto new_data = new_data_struct->get_shared();
-	main->ref_manager->replace_data_structure(old_data, new_data);
+
+	new_data->references = old_data->references;
+	for(auto const &ref : new_data->references) {
+		ref->declaration = new_data;
+	}
 	if(auto strct = new_data->is_member()) {
 		strct->replace_member_in_table(old_data, new_data);
 	}
@@ -317,7 +322,8 @@ NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> n
 	new_node->match_data_structure(decl);
 	auto old_ref = this;
 	auto new_ref = static_cast<NodeReference*>(replace_with(std::move(new_node)));
-	main->ref_manager->replace_reference(decl, old_ref, new_ref);
+	decl->references.erase(old_ref);
+	decl->references.insert(new_ref);
 	return new_ref;
 }
 
