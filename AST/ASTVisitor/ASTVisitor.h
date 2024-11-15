@@ -15,7 +15,7 @@
 #include "../ASTNodes/ASTDataStructures.h"
 #include "../ASTNodes/ASTReferences.h"
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
-#include "ReferenceManager.h"
+#include "ReferenceManager/ReferenceManager.h"
 
 class ASTVisitor {
 protected:

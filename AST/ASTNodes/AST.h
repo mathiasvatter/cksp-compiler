@@ -69,9 +69,12 @@ struct NodeAST {
 	bool is_constant();
 	int get_bison_tokens();
 	bool is_nil();
-
-	/// performs ASTVariableChecking class on provided node to add vars and refs to definition provider
+	/// removes node from AST and Reference Manager and returns NodeDeadCode
+	NodeAST * remove_node(NodeProgram* program);
+	/// performs ASTVariableChecking class on provided node to add vars and refs to ReferenceManager
 	void collect_references(NodeProgram* program);
+	/// performs ASTVariableChecking class on provided node and removes vars and refs from ReferenceManager
+	void remove_references(NodeProgram* program);
 	// Template-Methode für den Cast
 	template <typename TargetType>
 	TargetType* cast() {

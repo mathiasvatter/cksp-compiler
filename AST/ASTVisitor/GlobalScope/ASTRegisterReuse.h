@@ -164,7 +164,7 @@ public:
 				// add to vector here for later renaming and to avoid it turning into a passive var
 				m_all_local_vars.push_back(node.variable);
 				m_program->global_declarations->add_as_stmt(std::move(node_global_const));
-				return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+				return node.remove_node(m_program);
 			}
 		} else {
 			node.variable->is_local = false;

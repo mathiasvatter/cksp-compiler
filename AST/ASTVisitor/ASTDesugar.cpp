@@ -59,7 +59,7 @@ NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
         m_global_variable_declarations->add_as_stmt(
 			std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok)
 		);
-		return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+		return node.remove_node(m_program);
     }
 	return &node;
 }
