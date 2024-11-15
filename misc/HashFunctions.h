@@ -7,6 +7,25 @@
 #include <string>
 #include "../AST/ASTNodes/ASTHelper.h"
 
+/// Used for Reference Manager and including weak pointers in unordered_map
+struct WeakPtrHash {
+	template <typename T>
+	std::size_t operator()(const std::weak_ptr<T>& wp) const {
+		if (auto sp = wp.lock()) {
+			return std::hash<std::shared_ptr<T>>{}(sp);
+		}
+		return 0; // Ungültige weak_ptr haben einen Hash-Wert von 0
+	}
+};
+
+struct WeakPtrEqual {
+	template <typename T>
+	bool operator()(const std::weak_ptr<T>& wp1, const std::weak_ptr<T>& wp2) const {
+		return !wp1.owner_before(wp2) && !wp2.owner_before(wp1); // Gleichheit basierend auf Besitz
+	}
+};
+
+
 inline bool string_compare(const std::string& str1, const std::string& str2) {
 	if (str1.length() != str2.length()) {
 		return false;

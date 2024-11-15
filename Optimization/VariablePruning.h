@@ -42,12 +42,12 @@ public:
 		for(auto &ass: m_all_assignments) {
 			auto reference = static_cast<NodeReference*>(ass->l_value.get());
 			if(!reference->get_declaration()->is_used) {
-				ass->replace_with(std::make_unique<NodeDeadCode>(ass->tok));
+				ass->remove_node(m_program);
 			}
 		}
 		for(auto &decl : m_all_declarations) {
 			if(!decl->variable->is_used) {
-				decl->replace_with(std::make_unique<NodeDeadCode>(decl->tok));
+				decl->remove_node(m_program);
 			}
 		}
 	}
@@ -98,7 +98,7 @@ public:
 		if(node.l_value->get_node_type() == NodeType::VariableRef) {
 			auto var_ref = static_cast<NodeVariableRef*>(node.l_value.get());
 			if(var_ref->kind == NodeReference::Kind::Throwaway) {
-				return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+				return node.remove_node(m_program);
 			}
 		}
 

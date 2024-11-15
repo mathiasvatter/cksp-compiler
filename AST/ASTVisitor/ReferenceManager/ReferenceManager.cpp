@@ -3,7 +3,7 @@
 //
 
 #include "ReferenceManager.h"
-#include "../ASTNodes/AST.h"
+#include "../../ASTNodes/AST.h"
 
 void ReferenceManager::add_reference(const std::shared_ptr<NodeDataStructure> &data_struct,
 									 NodeReference *reference) {
@@ -25,11 +25,9 @@ void ReferenceManager::remove_reference(const std::shared_ptr<NodeDataStructure>
 
 void ReferenceManager::replace_data_structure(const std::shared_ptr<NodeDataStructure> &old_data_struct,
 											  const std::shared_ptr<NodeDataStructure> &new_data_struct) {
-	auto it = reference_map.find(old_data_struct);
-	if (it != reference_map.end()) {
-		auto references = std::move(it->second);
-		reference_map.erase(it);
-		reference_map[new_data_struct] = std::move(references);
+	if (auto node = reference_map.extract(old_data_struct)) {
+		node.key() = new_data_struct;
+		reference_map.insert(std::move(node));
 
 		// Aktualisiert jede NodeReference
 		for (auto ref : reference_map[new_data_struct]) {
@@ -38,6 +36,15 @@ void ReferenceManager::replace_data_structure(const std::shared_ptr<NodeDataStru
 			}
 		}
 	}
+
+//	auto &references = get_references(old_data_struct);
+//	for (auto ref : references) {
+//		if (ref) {
+//			ref->declaration = new_data_struct;
+//		}
+//	}
+//	add_references(new_data_struct, references);
+//	remove_data_structure(old_data_struct);
 }
 
 void ReferenceManager::replace_reference(const std::shared_ptr<NodeDataStructure> &data_struct,
@@ -70,4 +77,14 @@ bool ReferenceManager::all_reference_types_match(const std::shared_ptr<NodeDataS
 		}
 	}
 	return true; // Alle NodeTypes stimmen überein
+}
+
+void ReferenceManager::cleanup() {
+	for (auto it = reference_map.begin(); it != reference_map.end();) {
+		if (it->first.expired()) {
+			it = reference_map.erase(it); // Entferne ungültige weak_ptr
+		} else {
+			++it;
+		}
+	}
 }

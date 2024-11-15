@@ -34,7 +34,7 @@ void Compiler::compile() {
 //	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-//	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
@@ -174,6 +174,9 @@ void Compiler::compile() {
 
 	ASTVariableChecking variable_checking1(&m_definition_provider, ast.get(), true);
 	ast->accept(variable_checking1);
+	m_reference_manager.reset();
+	ast->collect_references(m_program);
+
 //	ast->debug_print();
     ast->accept(infer_types);
     TypeInference::cast_data_structure_types(ast.get(), true);

@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
-#include "../ASTNodes/ASTHelper.h"
+#include "../../../misc/HashFunctions.h"
 
 class NodeDataStructure;
 class NodeReference;
@@ -17,15 +17,20 @@ class NodeReference;
  */
 class ReferenceManager {
 private:
-	std::unordered_map<std::shared_ptr<NodeDataStructure>, std::unordered_set<NodeReference*>> reference_map;
+	std::unordered_map<std::weak_ptr<NodeDataStructure>, std::unordered_set<NodeReference*>, WeakPtrHash, WeakPtrEqual>
+	    reference_map;
+
 public:
 
 	void reset() {
 		reference_map.clear();
 	}
 
-	[[nodiscard]] const std::unordered_map<std::shared_ptr<NodeDataStructure>, std::unordered_set<NodeReference*>>&
-	get_reference_map() const {
+	/// Removes all weak_ptrs that are expired
+	void cleanup();
+
+	[[nodiscard]] const std::unordered_map<std::weak_ptr<NodeDataStructure>, std::unordered_set<NodeReference*>,
+	    WeakPtrHash, WeakPtrEqual>& get_reference_map() const {
 		return reference_map;
 	}
 
@@ -42,6 +47,15 @@ public:
 
 	void remove_reference(const std::shared_ptr<NodeDataStructure>& data_struct,
 						  NodeReference* reference);
+
+	void remove_data_structure(const std::shared_ptr<NodeDataStructure>& data_struct) {
+		reference_map.erase(data_struct);
+	}
+
+	void add_references(const std::shared_ptr<NodeDataStructure>& data_struct,
+						const std::unordered_set<NodeReference*>& references) {
+		reference_map[data_struct].insert(references.begin(), references.end());
+	}
 
 	void replace_data_structure(const std::shared_ptr<NodeDataStructure>& old_data_struct,
 								const std::shared_ptr<NodeDataStructure>& new_data_struct);

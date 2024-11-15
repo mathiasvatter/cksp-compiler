@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ASTVisitor.h"
+#include "../ASTVisitor.h"
 
 /// Works only when declarations of every reference are already set
 /// Adds references and their connected data structures to the reference manager class (map)

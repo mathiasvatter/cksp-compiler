@@ -47,7 +47,7 @@ public:
 	inline NodeAST * visit(NodeSingleDeclaration& node) override {
 		// delete "self"
 		if(node.variable->name == "self") {
-			return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+			return node.remove_node(m_program);
 		}
 		// turn member into array if it is a member
 		node.variable->accept(*this);

@@ -23,7 +23,7 @@
 #include "AST/ASTVisitor/ASTVariableChecking.h"
 #include "AST/ASTVisitor/ASTOptimizations.h"
 #include "misc/Timer.h"
-#include "AST/ASTVisitor/ReferenceManager.h"
+#include "AST/ASTVisitor/ReferenceManager/ReferenceManager.h"
 
 class Compiler {
 private:

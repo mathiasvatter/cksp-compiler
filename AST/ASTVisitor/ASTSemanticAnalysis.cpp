@@ -264,14 +264,21 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 	if(!data_struct->is_function_param()) return data_struct.get();
 	// check if references of this data struct are of different node type
 	// if all reference nodeTypes are same as data struct -> return
-	if(m_ref_manager->all_reference_types_match(data_struct)) return data_struct.get();
+	auto references = m_ref_manager->get_references(data_struct);
+	std::unordered_set<NodeType> ref_types;
+	for(auto & ref : references) {
+		if(ref->get_node_type() != data_struct->get_ref_node_type())
+			ref_types.insert(ref->get_node_type());
+	}
+	if(ref_types.empty()) return data_struct.get();
+//	if(m_ref_manager->all_reference_types_match(data_struct)) return data_struct.get();
 
 	// if not -> continue and gather all reference node types
-	auto reference_node_types = m_ref_manager->get_reference_types(data_struct);
+//	auto ref_types = m_ref_manager->get_reference_types(data_struct);
 
 	std::unique_ptr<NodeDataStructure> new_data_struct = nullptr;
 	// if some of the references were detected as Array References -> change data_struct type
-	if(m_ref_manager->reference_type_exists(reference_node_types, NodeType::ArrayRef)) {
+	if(ref_types.find(NodeType::ArrayRef) != ref_types.end()) {
 		auto node_array = std::make_unique<NodeArray>(
 			std::nullopt,
 			data_struct->name,
@@ -280,7 +287,7 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 			data_struct->tok);
 		new_data_struct = std::move(node_array);
 	// if some references were detected as ndarray refs
-	} else if(m_ref_manager->reference_type_exists(reference_node_types, NodeType::NDArrayRef)) {
+	} else if(ref_types.find(NodeType::NDArrayRef) != ref_types.end()) {
 		auto node_ndarray = std::make_unique<NodeNDArray>(
 			std::nullopt,
 			data_struct->name,
@@ -298,14 +305,14 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 		}
 		new_data_struct = std::move(node_ndarray);
 	// if some references were detected as pointer references -> change data_struct type
-	} else if(m_ref_manager->reference_type_exists(reference_node_types, NodeType::PointerRef)) {
+	} else if(ref_types.find(NodeType::PointerRef) != ref_types.end()) {
 		auto node_pointer = std::make_unique<NodePointer>(
 			std::nullopt,
 			data_struct->name,
 			data_struct->ty,
 			data_struct->tok);
 		new_data_struct = std::move(node_pointer);
-	} else if(m_ref_manager->reference_type_exists(reference_node_types, NodeType::FunctionHeaderRef)) {
+	} else if(ref_types.find(NodeType::FunctionHeaderRef) != ref_types.end()) {
 		auto node_var = std::make_unique<NodeFunctionHeader>(
 			data_struct->name,
 			data_struct->tok);
