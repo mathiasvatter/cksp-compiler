@@ -7,6 +7,8 @@
 #include <utility>
 
 #include "AST.h"
+#include "../TypeRegistry.h"
+
 
 struct NodeVariableRef : NodeReference {
 	inline NodeVariableRef(std::string name, Token tok)
