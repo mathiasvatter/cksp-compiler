@@ -57,7 +57,14 @@ public:
 			node.set_dimension(std::make_unique<NodeInt>(0, node.tok));
 		}
 
-		if(auto nd_array = node.array->get_declaration()->cast<NodeNDArray>()) {
+		if(node.array->get_node_type() == NodeType::NDArrayRef) {
+			auto nd_array = node.array->get_declaration()->cast<NodeNDArray>();
+			if(!nd_array) {
+				auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
+				error.m_message = "<NDArrayRef> has somehow a declaration that is not an <NDArray>.";
+				error.exit();
+			}
+
 //			// get correct name (because local ndarrays get renamed) by using the lookup table in NodeProgram
 //			if(!node.array->declaration) {
 //				auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);

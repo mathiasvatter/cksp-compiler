@@ -35,7 +35,7 @@ void Compiler::compile() {
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 //	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-//    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -116,7 +116,7 @@ void Compiler::compile() {
 
 	ASTVariableChecking variable_checking0(&m_definition_provider, ast.get(), false);
 	ast->accept(variable_checking0);
-	ast->collect_references(m_program);
+	ast->collect_references();
 
 	compile_time.stop("Variable Checking");
 	std::cout << compile_time.print_timer("Variable Checking") << std::endl;
@@ -139,7 +139,7 @@ void Compiler::compile() {
 
 	ASTPointerScope pointer_scope(m_program);
 	ast->accept(pointer_scope);
-	ast->collect_references(m_program);
+	ast->collect_references();
 
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
@@ -172,14 +172,14 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
 
-	ASTVariableChecking variable_checking1(&m_definition_provider, ast.get(), true);
+	ASTVariableChecking variable_checking1(&m_definition_provider, m_program, true);
 	ast->accept(variable_checking1);
-	m_reference_manager.reset();
-	ast->collect_references(m_program);
+	ast->remove_references();
+	ast->collect_references();
 
 //	ast->debug_print();
     ast->accept(infer_types);
-    TypeInference::cast_data_structure_types(ast.get(), true);
+    TypeInference::cast_data_structure_types(m_program, true);
 
 	compile_time.stop("Variable Checking 1");
 	std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;

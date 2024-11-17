@@ -42,12 +42,12 @@ public:
 		for(auto &ass: m_all_assignments) {
 			auto reference = static_cast<NodeReference*>(ass->l_value.get());
 			if(!reference->get_declaration()->is_used) {
-				ass->remove_node(m_program);
+				ass->remove_node();
 			}
 		}
 		for(auto &decl : m_all_declarations) {
 			if(!decl->variable->is_used) {
-				decl->remove_node(m_program);
+				decl->remove_node();
 			}
 		}
 	}
@@ -98,7 +98,7 @@ public:
 		if(node.l_value->get_node_type() == NodeType::VariableRef) {
 			auto var_ref = static_cast<NodeVariableRef*>(node.l_value.get());
 			if(var_ref->kind == NodeReference::Kind::Throwaway) {
-				return node.remove_node(m_program);
+				return node.remove_node();
 			}
 		}
 

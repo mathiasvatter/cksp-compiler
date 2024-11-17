@@ -42,7 +42,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNumElements& node) {
 	// transform var ref to composite type
 	if(auto var = node.array->cast<NodeVariableRef>()) {
 		auto node_array_ref = var->to_array_ref(nullptr);
-		return var->replace_reference(std::move(node_array_ref), m_program);
+		return var->replace_reference(std::move(node_array_ref));
 	}
 	return &node;
 }
@@ -216,24 +216,24 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 			auto & param = func_call->definition->get_param(i);
 			if(arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::Array) {
 				auto node_var_ref = arg->cast<NodeVariableRef>();
-				if(!node_var_ref->get_declaration()) continue;
+//				if(!node_var_ref->get_declaration()) return;
 				auto node_array_ref = std::make_unique<NodeArrayRef>(
 					node_var_ref->name,
 					nullptr,
 					node_var_ref->tok);
-				node_var_ref->replace_reference(std::move(node_array_ref), m_program);
+				node_var_ref->replace_reference(std::move(node_array_ref));
 			// problem when desugaring return stmts with multiple return variables -> all get to be variables
 			} else if (arg->get_node_type() == NodeType::ArrayRef and param->get_node_type() == NodeType::Variable) {
 				// only permissible if return variable as function param
 				if(param->data_type == DataType::Return) {
 					auto node_array = param->to_array(nullptr);
-					param->replace_datastruct(std::move(node_array), m_program);
+					param->replace_datastruct(std::move(node_array));
 				}
 			} else if (arg->get_node_type() == NodeType::NDArrayRef and param->get_node_type() == NodeType::Variable) {
 				// only permissible if return variable
 				if(param->data_type == DataType::Return) {
 					auto node_ndarray = param->to_ndarray();
-					param->replace_datastruct(std::move(node_ndarray), m_program);
+					param->replace_datastruct(std::move(node_ndarray));
 				}
 			} else if (arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::FunctionHeader) {
 				auto node_var_ref = arg->cast<NodeVariableRef>();
@@ -243,7 +243,7 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 					node_var_ref->tok
 					);
 				func_var_ref->ty = node_var_ref->ty;
-				node_var_ref->replace_reference(std::move(func_var_ref), m_program);
+				node_var_ref->replace_reference(std::move(func_var_ref));
 //			} else if(arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::Array) {
 //				auto node_var_ref = static_cast<NodeVariableRef*>(arg.get());
 //				auto node_array_ref = std::make_unique<NodeArrayRef>(
@@ -257,28 +257,23 @@ void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_cal
 	}
 }
 
-NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct(std::shared_ptr<NodeDataStructure> data_struct) {
+NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct(const std::shared_ptr<NodeDataStructure>& data_struct) {
 	// if data struct is provided from declaration pointer
 	if(!data_struct or data_struct->is_engine) return data_struct.get();
 	// only replace function parameters
 	if(!data_struct->is_function_param()) return data_struct.get();
 	// check if references of this data struct are of different node type
 	// if all reference nodeTypes are same as data struct -> return
-	auto references = m_ref_manager->get_references(data_struct);
 	std::unordered_set<NodeType> ref_types;
-	for(auto & ref : references) {
+	for(auto & ref : data_struct->references) {
 		if(ref->get_node_type() != data_struct->get_ref_node_type())
 			ref_types.insert(ref->get_node_type());
 	}
 	if(ref_types.empty()) return data_struct.get();
-//	if(m_ref_manager->all_reference_types_match(data_struct)) return data_struct.get();
-
-	// if not -> continue and gather all reference node types
-//	auto ref_types = m_ref_manager->get_reference_types(data_struct);
 
 	std::unique_ptr<NodeDataStructure> new_data_struct = nullptr;
 	// if some of the references were detected as Array References -> change data_struct type
-	if(ref_types.find(NodeType::ArrayRef) != ref_types.end()) {
+	if(ref_types.contains(NodeType::ArrayRef)) {
 		auto node_array = std::make_unique<NodeArray>(
 			std::nullopt,
 			data_struct->name,
@@ -287,7 +282,7 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 			data_struct->tok);
 		new_data_struct = std::move(node_array);
 	// if some references were detected as ndarray refs
-	} else if(ref_types.find(NodeType::NDArrayRef) != ref_types.end()) {
+	} else if(ref_types.contains(NodeType::NDArrayRef)) {
 		auto node_ndarray = std::make_unique<NodeNDArray>(
 			std::nullopt,
 			data_struct->name,
@@ -295,7 +290,7 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 			nullptr,
 			data_struct->tok);
 		// get dimensions from references
-		for(auto & ref : m_ref_manager->get_references(data_struct)) {
+		for(auto & ref : data_struct->references) {
 			if(auto nd_array_ref = ref->cast<NodeNDArrayRef>()) {
 				if(nd_array_ref->indexes) {
 					node_ndarray->dimensions = nd_array_ref->indexes->params.size();
@@ -305,14 +300,14 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 		}
 		new_data_struct = std::move(node_ndarray);
 	// if some references were detected as pointer references -> change data_struct type
-	} else if(ref_types.find(NodeType::PointerRef) != ref_types.end()) {
+	} else if(ref_types.contains(NodeType::PointerRef)) {
 		auto node_pointer = std::make_unique<NodePointer>(
 			std::nullopt,
 			data_struct->name,
 			data_struct->ty,
 			data_struct->tok);
 		new_data_struct = std::move(node_pointer);
-	} else if(ref_types.find(NodeType::FunctionHeaderRef) != ref_types.end()) {
+	} else if(ref_types.contains(NodeType::FunctionHeaderRef)) {
 		auto node_var = std::make_unique<NodeFunctionHeader>(
 			data_struct->name,
 			data_struct->tok);
@@ -322,7 +317,7 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 
 	if(new_data_struct) {
 		new_data_struct->ty = data_struct->ty;
-		return data_struct->replace_datastruct(std::move(new_data_struct), m_program);
+		return data_struct->replace_datastruct(std::move(new_data_struct));
 	}
 	return data_struct.get();
 }
@@ -380,7 +375,7 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeP
 
 	if(node_replacement) {
 		node_replacement->match_data_structure(declaration);
-		auto new_ref = reference->replace_reference(std::move(node_replacement), program);
+		auto new_ref = reference->replace_reference(std::move(node_replacement));
 		return new_ref;
 	}
 	return nullptr;

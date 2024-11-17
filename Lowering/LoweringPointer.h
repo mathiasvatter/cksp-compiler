@@ -16,7 +16,7 @@ public:
 	inline NodeAST * visit(NodePointer& node) override {
 		auto node_var = node.to_variable();
 		node_var->ty = node.ty;
-		return node.replace_datastruct(std::move(node_var), m_program);
+		return node.replace_datastruct(std::move(node_var));
 	}
 
 	inline NodeAST * visit(NodePointerRef& node) override {
@@ -28,6 +28,6 @@ public:
 		}
 		auto node_var_ref = node.to_variable_ref();
 		node_var_ref->ty = node.ty;
-		return node.replace_reference(std::move(node_var_ref), m_program);
+		return node.replace_reference(std::move(node_var_ref));
 	}
 };

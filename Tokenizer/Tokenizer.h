@@ -4,21 +4,16 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include <iostream>
-#include <map>
-#include <algorithm>
 #include <stack>
-#include <cmath>
 #include <iomanip>
 #include <filesystem>
 #include <fstream>
-#include <sstream>
 
 #include "../misc/Result.h"
 #include "Tokens.h"
 #include "../misc/FileHandler.h"
+#include "../misc/FreeFunctions.h"
 
 /*
  * Token struct that gets line numbers, the token type and its value
@@ -38,47 +33,10 @@ struct Token {
 	}
 };
 
-/*
- * helper function to search vectors for chars, std::String and Keyword obj
- */
-inline static bool contains(std::vector<char> &vec, char c) {
-    return std::any_of(vec.begin(), vec.end(), [&](const auto& ch) {return ch == c;});
-};
-inline static bool contains(std::unordered_set<char> &vec, char c) {
-    return vec.find(c) != vec.end();
-};
-inline static bool contains(const std::vector<std::string>& vec, const std::string& value) {
-    return std::find(vec.begin(), vec.end(), value) != vec.end();
-};
-inline static bool contains(const std::unordered_set<std::string>& vec, const std::string& value) {
-    return vec.find(value) != vec.end();
-};
-inline static bool contains(const std::vector<Keyword>& vec, const std::string& value) {
-    return std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
-        return kw.value == value;
-    }) != vec.end();
-};
-inline static bool contains(const std::string& string, const std::string& substring) {
-	return string.find(substring) != std::string::npos;
-}
-inline static bool contains(const std::unordered_set<token>& token_set, const token& tok) {
-	return token_set.find(tok) != token_set.end();
-}
+
 
 inline static long count_char(const std::string& str, char c) {
 	return std::count(str.begin(), str.end(), c);
-}
-
-inline std::string remove_substring(const std::string& str, const std::string& substring) {
-    // Suche nach dem Substring im Hauptstring
-    size_t pos = str.find(substring);
-    // Wenn der Substring gefunden wurde, entferne ihn
-    if (pos != std::string::npos) {
-        auto new_str = str;
-        new_str.erase(pos, substring.length());
-        return new_str;
-    }
-    return str;
 }
 
 inline std::string remove_quotes(const std::string &input) {
@@ -94,17 +52,6 @@ inline std::string remove_quotes(const std::string &input) {
 	}
 }
 
-/// takes string and returns vector of namespaces ('.')
-inline std::vector<std::string> get_namespaces(const std::string& str) {
-	std::vector<std::string> namespaces;
-	std::istringstream iss(str);
-	std::string ns;
-
-	while (std::getline(iss, ns, '.')) {
-		namespaces.push_back(ns);
-	}
-	return namespaces;
-}
 
 inline static token get_token_type(const std::vector<Keyword>& vec, const std::string& value) {
     auto it = std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
@@ -136,19 +83,6 @@ inline static std::optional<token> get_token_type(const std::unordered_map<std::
     return std::nullopt;
 }
 
-inline static std::string to_lower(const std::string& input) {
-    std::string output = input;
-    std::transform(output.begin(), output.end(), output.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
-    return output;
-}
-
-inline static std::string to_upper(const std::string& input) {
-    std::string output = input;
-    std::transform(output.begin(), output.end(), output.begin(),
-                   [](unsigned char c) { return std::toupper(c); });
-    return output;
-}
 
 
 /*

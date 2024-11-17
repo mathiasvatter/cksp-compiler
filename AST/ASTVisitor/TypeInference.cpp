@@ -111,7 +111,7 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 		or node.ty->get_type_kind() == TypeKind::Object) {
 			auto pointer_ref = node.to_pointer_ref();
 			match_type(pointer_ref.get(), &node);
-			auto new_node = node.replace_reference(std::move(pointer_ref), m_program);
+			auto new_node = node.replace_reference(std::move(pointer_ref));
 			return new_node->accept(*this);
 		}
 	}
@@ -125,7 +125,7 @@ NodeAST * TypeInference::visit(NodeVariable& node) {
 	if(node.ty->get_type_kind() == TypeKind::Object) {
 		auto ptr = node.to_pointer();
 		ptr->match_metadata(node.get_shared());
-		auto new_node = node.replace_datastruct(std::move(ptr), m_program);
+		auto new_node = node.replace_datastruct(std::move(ptr));
 //		if(auto strct = node.is_member()) {
 //			strct->rebuild_member_table();
 //		}
@@ -141,7 +141,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 		auto node_var = static_pointer_cast<NodeVariable>(node.get_declaration());
 		auto ptr = node_var->to_pointer();
 		ptr->match_metadata(node_var);
-		auto new_node = node_var->replace_datastruct(std::move(ptr), m_program);
+		auto new_node = node_var->replace_datastruct(std::move(ptr));
 		auto &references = m_ref_manager->get_references(node.get_declaration());
 		for(auto ref : references) {
 			ref->accept(*this);
@@ -353,7 +353,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 					error.exit();
 				}
 				reference->declaration = node_declaration;
-				reference->collect_references(m_program);
+				reference->collect_references();
 				match_reference_declaration(reference);
 				// if declaration of this reference is unknown and it is not the end of the chain,
 				// we can assume that it is also an object. we can check if the next reference is also in this struct
