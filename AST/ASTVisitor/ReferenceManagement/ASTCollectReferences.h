@@ -10,8 +10,6 @@
 /// Adds references and their connected data structures to the reference manager class (map)
 class ASTCollectReferences : public ASTVisitor {
 private:
-	DefinitionProvider* m_def_provider;
-	ReferenceManager* m_ref_manager;
 	static void check_for_valid_declaration(const NodeReference& ref) {
 		if(!ref.get_declaration()) {
 			auto error = CompileError(ErrorType::InternalError, "", "", ref.tok);
@@ -21,17 +19,15 @@ private:
 		}
 	}
 
-	void add_reference(NodeReference* ref) {
+	static void add_reference(NodeReference* ref) {
 		if(auto decl = ref->get_declaration()) {
 			decl->add_reference(ref);
 		}
 	}
-public:
-	explicit ASTCollectReferences(NodeProgram* main) : m_def_provider(main->def_provider), m_ref_manager(main->ref_manager) {
-		m_program = main;
-	}
 
+public:
 	inline NodeAST* visit(NodeProgram& node) override {
+		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		m_program->init_callback->accept(*this);
 		for(const auto & s : node.struct_definitions) {

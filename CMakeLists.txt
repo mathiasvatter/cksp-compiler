@@ -197,4 +197,5 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ReferenceManagement/ReferenceManager.cpp
         AST/ASTVisitor/ReferenceManagement/ASTCollectReferences.h
         AST/ASTVisitor/ReferenceManagement/ASTRemoveReferences.h
+        misc/FreeFunctions.h
 )

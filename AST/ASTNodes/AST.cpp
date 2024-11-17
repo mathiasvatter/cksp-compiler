@@ -4,6 +4,7 @@
 
 
 #include "AST.h"
+#include <execution>
 
 #include "../TypeRegistry.h"
 #include "ASTInstructions.h"
@@ -125,18 +126,18 @@ bool NodeAST::is_nil() {
 	return nil_validator.is_nil(*this);
 }
 
-void NodeAST::collect_references(NodeProgram* program) {
-	static ASTCollectReferences ref_collect(program);
+void NodeAST::collect_references() {
+	static ASTCollectReferences ref_collect;
 	accept(ref_collect);
 }
 
-void NodeAST::remove_references(NodeProgram* program) {
-	static ASTRemoveReferences remove_ref(program);
+void NodeAST::remove_references() {
+	static ASTRemoveReferences remove_ref;
 	accept(remove_ref);
 }
 
-NodeAST *NodeAST::remove_node(NodeProgram *program) {
-	this->remove_references(program);
+NodeAST *NodeAST::remove_node() {
+	this->remove_references();
 	return replace_with(std::make_unique<NodeDeadCode>(tok));
 }
 
@@ -215,16 +216,19 @@ NodeDataStructure* NodeDataStructure::lower_type() {
 	return this;
 }
 
-NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDataStructure> new_node,
-																 NodeProgram* main) {
+NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDataStructure> new_node) {
 	auto old_data = get_shared();
 	auto new_data_struct = static_cast<NodeDataStructure*>(replace_with(std::move(new_node)));
 	auto new_data = new_data_struct->get_shared();
 
-	new_data->references = old_data->references;
-	for(auto const &ref : new_data->references) {
-		ref->declaration = new_data;
-	}
+	new_data->references = std::move(old_data->references);
+//	for(auto const &ref : new_data->references) {
+//		ref->declaration = new_data;
+//	}
+	parallel_for_each(new_data->references.begin(), new_data->references.end(),
+				  [&new_data](auto const& ref) {
+					ref->declaration = new_data;
+				  });
 	if(auto strct = new_data->is_member()) {
 		strct->replace_member_in_table(old_data, new_data);
 	}
@@ -235,6 +239,17 @@ void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>&
 	is_engine = data_structure->is_engine;
 	is_local = data_structure->is_local;
 	data_type = data_structure->data_type;
+}
+
+void NodeDataStructure::clear_references() {
+//	for (auto &ref : references) {
+//		ref->declaration.reset();
+//	}
+	parallel_for_each(references.begin(), references.end(),
+				  [](auto const& ref) {
+					ref->declaration.reset();
+				  });
+	references.clear();
 }
 
 // ************* NodeReference ***************
@@ -316,8 +331,7 @@ bool NodeReference::is_r_value() {
 	return false;
 }
 
-NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> new_node,
-												NodeProgram* main) {
+NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> new_node) {
 	auto decl = get_declaration();
 	new_node->match_data_structure(decl);
 	auto old_ref = this;

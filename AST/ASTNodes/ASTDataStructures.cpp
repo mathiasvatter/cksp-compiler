@@ -467,27 +467,27 @@ NodeFunctionDefinition* NodeStruct::get_overloaded_method(token op) {
 void NodeStruct::generate_ref_count_methods(NodeProgram* program) {
 	NodeStructCreateRefCountFunctions rf_methods(*this);
 	auto del = rf_methods.create_destructor();
-	del->collect_references(program);
+	del->collect_references();
 	methods.push_back(std::move(del));
 
 	auto decr = rf_methods.create_decr_function();
-	decr->collect_references(program);
+	decr->collect_references();
 	methods.push_back(std::move(decr));
 
 	auto incr = rf_methods.create_incr_function();
-	incr->collect_references(program);
+	incr->collect_references();
 	methods.push_back(std::move(incr));
 
 	auto array_incr = rf_methods.create_array_function("__incr__");
-	array_incr->collect_references(program);
+	array_incr->collect_references();
 	methods.push_back(std::move(array_incr));
 
 	auto array_decr = rf_methods.create_array_function("__decr__");
-	array_decr->collect_references(program);
+	array_decr->collect_references();
 	methods.push_back(std::move(array_decr));
 
 	auto array_del = rf_methods.create_array_function("__del__");
-	array_del->collect_references(program);
+	array_del->collect_references();
 	methods.push_back(std::move(array_del));
 
 	this->rebuild_method_table();

@@ -48,6 +48,7 @@ public:
 	}
 
 	inline NodeAST* visit(NodeArray& node) override {
+		if(node.size) node.size->accept(*this);
 		check_annotation_with_expected(&node, TypeRegistry::ArrayOfUnknown);
 		return apply_type_annotations(node.get_shared());
 	}
@@ -56,10 +57,12 @@ public:
 		return apply_type_annotations(node.get_shared());
 	}
 	inline NodeAST* visit(NodeNDArray& node) override {
+		if(node.sizes) node.sizes->accept(*this);
 		check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions).get());
 		return apply_type_annotations(node.get_shared());
 	}
 	inline NodeAST* visit(NodeFunctionHeader& node) override {
+		for(auto &param : node.params) param->variable->accept(*this);
 //		check_annotation_with_expected(&node, TypeRegistry::Unknown);
 //		return apply_type_annotations(node.get_shared());
 		return &node;
@@ -69,6 +72,7 @@ public:
 		return apply_type_annotations(node.get_shared());
 	}
 	inline NodeAST* visit(NodeList& node) override {
+		for(auto & b : node.body) b->accept(*this);
 		check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::List, TypeRegistry::Unknown, 1).get());
 		return apply_type_annotations(node.get_shared());
 	}

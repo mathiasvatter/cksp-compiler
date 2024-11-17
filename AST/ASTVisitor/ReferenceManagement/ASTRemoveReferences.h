@@ -10,8 +10,6 @@
 /// Removes references and their connected data structures and data structures from the reference manager class (map)
 class ASTRemoveReferences : public ASTVisitor {
 private:
-	DefinitionProvider* m_def_provider;
-	ReferenceManager* m_ref_manager;
 	static void check_for_valid_declaration(const NodeReference& ref) {
 		if(!ref.get_declaration()) {
 			auto error = CompileError(ErrorType::InternalError, "", "", ref.tok);
@@ -21,17 +19,15 @@ private:
 		}
 	}
 
-	void remove_reference(NodeReference* ref) {
+	static void remove_reference(NodeReference* ref) {
 		if(auto decl = ref->get_declaration()) {
 			decl->remove_reference(ref);
 		}
 	}
-public:
-	explicit ASTRemoveReferences(NodeProgram* main) : m_def_provider(main->def_provider), m_ref_manager(main->ref_manager) {
-		m_program = main;
-	}
 
+public:
 	inline NodeAST* visit(NodeProgram& node) override {
+		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		m_program->init_callback->accept(*this);
 		for(const auto & s : node.struct_definitions) {
@@ -61,6 +57,7 @@ public:
 
 	inline NodeAST *visit(NodeArray &node) override {
 		if(node.size) node.size->accept(*this);
+		node.clear_references();
 		return &node;
 	}
 	inline NodeAST *visit(NodeArrayRef &node) override {
@@ -70,6 +67,7 @@ public:
 		return &node;
 	}
 	inline NodeAST *visit(NodeVariable &node) override {
+		node.clear_references();
 		return &node;
 	}
 	inline NodeAST *visit(NodeVariableRef &node) override {
@@ -78,16 +76,18 @@ public:
 		return &node;
 	}
 	inline NodeAST *visit(NodeFunctionHeader &node) override {
+		node.clear_references();
 		for(auto &param : node.params) param->variable->accept(*this);
 		return &node;
 	}
 	inline NodeAST *visit(NodeFunctionHeaderRef &node) override {
 		if(node.args) node.args->accept(*this);
 //		check_for_valid_declaration(node);
-		remove_reference(&node);
+//		remove_reference(&node);
 		return &node;
 	}
 	inline NodeAST *visit(NodeNDArray &node) override {
+		node.clear_references();
 		if(node.sizes) node.sizes->accept(*this);
 		return &node;
 	}
@@ -99,6 +99,7 @@ public:
 		return &node;
 	}
 	inline NodeAST *visit(NodePointer &node) override {
+		node.clear_references();
 		return &node;
 	}
 	inline NodeAST *visit(NodePointerRef &node) override {
@@ -107,6 +108,7 @@ public:
 		return &node;
 	}
 	inline NodeAST *visit(NodeList &node) override {
+		node.clear_references();
 		for(auto & b : node.body) b->accept(*this);
 		return &node;
 	}

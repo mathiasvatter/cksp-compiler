@@ -69,12 +69,12 @@ struct NodeAST {
 	bool is_constant();
 	int get_bison_tokens();
 	bool is_nil();
-	/// removes node from AST and Reference Manager and returns NodeDeadCode
-	NodeAST * remove_node(NodeProgram* program);
-	/// performs ASTVariableChecking class on provided node to add vars and refs to ReferenceManagement
-	void collect_references(NodeProgram* program);
-	/// performs ASTVariableChecking class on provided node and removes vars and refs from ReferenceManagement
-	void remove_references(NodeProgram* program);
+	/// removes node from AST and all references from data_structs
+	NodeAST *remove_node();
+	/// performs ASTVariableChecking class on provided node to add refs to data_structs
+	void collect_references();
+	/// performs ASTVariableChecking class on provided node and removes vars and refs from datastrucs
+	void remove_references();
 	// Template-Methode für den Cast
 	template <typename TargetType>
 	TargetType* cast() {
@@ -185,7 +185,7 @@ struct NodeReference : NodeAST {
 			name = name.substr(pos + OBJ_DELIMITER.size());
 	}
 	/// to be used on references
-	NodeReference* replace_reference(std::unique_ptr<NodeReference> new_node, NodeProgram* main);
+	NodeReference *replace_reference(std::unique_ptr<NodeReference> new_node);
 };
 
 struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeDataStructure> {
@@ -234,7 +234,7 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 		return nullptr;
 	}
 	/// to be used on datastructures
-	NodeDataStructure* replace_datastruct(std::unique_ptr<NodeDataStructure> new_node, NodeProgram* main);
+	NodeDataStructure *replace_datastruct(std::unique_ptr<NodeDataStructure> new_node);
 	bool is_num_elements_constant() const {
 		if(data_type != DataType::Const) return false;
 		size_t pos = name.find(OBJ_DELIMITER+"num_elements");
@@ -253,6 +253,7 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 	void remove_reference(NodeReference* ref) {
 		references.erase(ref);
 	}
+	void clear_references();
 
 };
 
