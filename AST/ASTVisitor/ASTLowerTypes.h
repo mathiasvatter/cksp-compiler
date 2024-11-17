@@ -66,15 +66,21 @@ public:
 	}
 	inline NodeAST * visit(NodeFunctionHeader& node) override {
 		for(auto &param : node.params) param->accept(*this);
-		if(node.ty->get_type_kind() == TypeKind::Function) {
-			auto function_type = static_cast<FunctionType *>(node.ty);
-			auto return_type = function_type->get_return_type();
+		if(auto func_type = node.ty->cast<FunctionType>()) {
+			auto return_type = func_type->get_return_type();
 			if (return_type->get_type_kind() == TypeKind::Object) {
 				return_type = TypeRegistry::Integer;
 			}
 			node.create_function_type(return_type);
 		}
 		return &node;
+	}
+	inline NodeAST * visit(NodeFunctionHeaderRef& node) override {
+		if(node.args) node.args->accept(*this);
+		if(auto decl = node.get_declaration()) {
+			node.ty = decl->ty;
+		}
+		return node.lower_type();
 	}
 
 private:

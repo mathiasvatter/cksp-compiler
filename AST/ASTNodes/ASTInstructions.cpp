@@ -122,7 +122,7 @@ NodeFunctionDefinition *NodeFunctionCall::find_constructor_definition(NodeProgra
 	if(it != program->struct_lookup.end()) {
 		auto constructor = it->second->constructor;
 		if(!constructor) return nullptr;
-		function->ty = constructor->ty;
+		function->ty = constructor->header->ty;
 		definition = constructor;
 //		definition->call_sites.emplace(this);
 		kind = Kind::Constructor;

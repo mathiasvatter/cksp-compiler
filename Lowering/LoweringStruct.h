@@ -45,10 +45,7 @@ public:
 	}
 
 	inline NodeAST * visit(NodeSingleDeclaration& node) override {
-		// delete "self"
-		if(node.variable->name == "self") {
-			return node.remove_node();
-		}
+		// "self" gets deleted in the inline_struct method
 		// turn member into array if it is a member
 		node.variable->accept(*this);
 		if(node.variable->is_member()) {

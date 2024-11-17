@@ -83,7 +83,7 @@ public:
 	inline NodeAST *visit(NodeFunctionHeaderRef &node) override {
 		if(node.args) node.args->accept(*this);
 //		check_for_valid_declaration(node);
-//		remove_reference(&node);
+		remove_reference(&node);
 		return &node;
 	}
 	inline NodeAST *visit(NodeNDArray &node) override {

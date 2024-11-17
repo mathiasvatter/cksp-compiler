@@ -6,6 +6,7 @@
 
 #include <utility>
 #include <memory>
+#include <typeindex>
 #include "../Tokenizer/Tokens.h"
 
 inline static std::string type_kind_names[] = {"Basic", "Composite", "Object", "Function"};
@@ -43,6 +44,15 @@ public:
 	}
 	virtual bool is_same_type(const Type* other) const {
 		return get_type_kind() == other->get_type_kind();
+	}
+	// Template-Methode für den Cast
+	template <typename TargetType>
+	const TargetType* cast() const {
+		// Überprüfen, ob der Typ des Objekts mit `TargetType` übereinstimmt
+		if (std::type_index(typeid(*this)) == std::type_index(typeid(TargetType))) {
+			return static_cast<const TargetType*>(this);
+		}
+		return nullptr;
 	}
 protected:
     Kind m_kind = Kind::Unknown;

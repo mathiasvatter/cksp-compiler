@@ -447,6 +447,9 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	}
 	methods.clear();
 	program->update_function_lookup();
+	// remove self node
+	auto self = this->node_self->parent->cast<NodeSingleDeclaration>();
+	self->remove_node();
 	this->rebuild_method_table();
 //	for(auto & mem: member_table) {
 //		mem.second->is_local = false;
