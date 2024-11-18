@@ -234,7 +234,7 @@ private:
 		// make function definition
 		func_header->prepend_param(std::move(node_value));
 		func_header->prepend_param(std::move(node_ndarray));
-		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
+		auto node_function_def = std::make_shared<NodeFunctionDefinition>(
 			std::move(func_header),
 			std::nullopt,
 			false,
@@ -246,9 +246,10 @@ private:
 		node_function_def->accept(*this);
 		node_function_def->header->create_function_type(TypeRegistry::Void);
 		node_function_def->ty = TypeRegistry::Void;
-		program->additional_function_definitions.push_back(std::move(node_function_def));
+//		program->additional_function_definitions.push_back(std::move(node_function_def));
 		// update function lookup so that the new function can be found
-		program->update_function_lookup();
+		program->add_function_definition(node_function_def);
+//		program->update_function_lookup();
 		return true;
 	}
 

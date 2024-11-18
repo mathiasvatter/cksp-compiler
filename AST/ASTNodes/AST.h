@@ -699,16 +699,16 @@ struct NodeProgram : NodeAST {
 	/// holds the current function definition that is being processed
 	std::stack<NodeFunctionDefinition*> function_call_stack{};
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
-    std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
-	std::vector<std::unique_ptr<NodeFunctionDefinition>> additional_function_definitions;
-	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> function_lookup;
+    std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;
+	std::vector<std::shared_ptr<NodeFunctionDefinition>> additional_function_definitions;
+	std::unordered_map<StringIntKey, std::weak_ptr<NodeFunctionDefinition>, StringIntKeyHash> function_lookup;
 	std::vector<std::unique_ptr<struct NodeStruct>> struct_definitions;
 	std::unordered_map<std::string, NodeStruct*> struct_lookup;
 	std::unique_ptr<NodeBlock> global_declarations;
 	std::unordered_map<NodeDataStructure*, std::shared_ptr<NodeDataStructure>> num_element_constants; // ndarray declaration -> ndarray size declarations
 	explicit NodeProgram(Token tok);
 	NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
-					   std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok);
+					   std::vector<std::shared_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok);
 	~NodeProgram() override;
     NodeAST* accept(struct ASTVisitor &visitor) override;
     // Kopierkonstruktor
@@ -720,6 +720,7 @@ struct NodeProgram : NodeAST {
     void update_token_data(const Token& token) override {}
 	/// update function lookup table
 	void update_function_lookup();
+	void add_function_definition(const std::shared_ptr<NodeFunctionDefinition>& def);
 	void update_struct_lookup();
 	/// Checks for uniqueness of all callbacks except "on ui_control"
 	bool check_unique_callbacks();
@@ -727,12 +728,7 @@ struct NodeProgram : NodeAST {
 	/// If found, returns pointer to the callback node
 	NodeCallback* move_on_init_callback();
 	/// merges vector of additional function definitions into the main function definitions vector
-	inline void merge_function_definitions() {
-		function_definitions.insert(function_definitions.end(), std::make_move_iterator(additional_function_definitions.begin()),
-									std::make_move_iterator(additional_function_definitions.end()));
-		additional_function_definitions.clear();
-		update_function_lookup();
-	}
+	inline void merge_function_definitions();
 	static std::unique_ptr<NodeBlock> declare_compiler_variables();
 	void inline_global_variables();
 	void inline_structs();

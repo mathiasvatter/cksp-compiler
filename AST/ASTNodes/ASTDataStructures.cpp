@@ -316,7 +316,7 @@ NodeAST *NodeStruct::accept(struct ASTVisitor &visitor) {
 }
 NodeStruct::NodeStruct(const NodeStruct& other)
 	: NodeDataStructure(other), members(clone_unique(other.members)),
-	  methods(clone_vector<NodeFunctionDefinition>(other.methods)), constructor(other.constructor),
+	  methods(other.methods), constructor(other.constructor),
 	  member_table(other.member_table), method_table(other.method_table),
 	  member_node_types(other.member_node_types), max_individual_struts_var(other.max_individual_struts_var) {
 	set_child_parents();

@@ -324,7 +324,7 @@ struct NodeStruct : NodeDataStructure {
 	std::map<std::string, std::weak_ptr<NodeDataStructure>> member_table;
 	std::set<std::string> member_set;
 	NodeFunctionDefinition* constructor = nullptr;
-	std::vector<std::unique_ptr<NodeFunctionDefinition>> methods;
+	std::vector<std::shared_ptr<NodeFunctionDefinition>> methods;
 	std::set<std::string> method_set;
 	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> method_table;
 	std::unordered_set<NodeType> member_node_types;
@@ -337,7 +337,7 @@ struct NodeStruct : NodeDataStructure {
 	std::unordered_set<NodeStruct*> recursive_structs;
 	inline static std::unordered_set<NodeType> allowed_member_node_types = {NodeType::Variable, NodeType::Pointer, NodeType::NDArray, NodeType::Array};
 	inline explicit NodeStruct(const std::string& name, Token tok) : NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct) {}
-	inline NodeStruct(const std::string& name, std::unique_ptr<NodeBlock> members, std::vector<std::unique_ptr<NodeFunctionDefinition>> methods, Token tok)
+	inline NodeStruct(const std::string& name, std::unique_ptr<NodeBlock> members, std::vector<std::shared_ptr<NodeFunctionDefinition>> methods, Token tok)
 		: NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct), members(std::move(members)), methods(std::move(methods)) {
 		set_child_parents();
 	}

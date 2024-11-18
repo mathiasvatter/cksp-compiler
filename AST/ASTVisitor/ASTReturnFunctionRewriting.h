@@ -46,16 +46,16 @@ public:
 		}
 		node.reset_function_visited_flag();
 
-		/// vector to house only the definitions that are actually used in the program
-		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
-		// this is needed in case a return only function is called in a function with return value
-		for(auto & func_def : node.function_definitions) {
-			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
-				final_function_definitions.push_back(std::move(func_def));
-			}
-		}
-		node.function_definitions = std::move(final_function_definitions);
-		node.update_function_lookup();
+//		/// vector to house only the definitions that are actually used in the program
+//		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
+//		// this is needed in case a return only function is called in a function with return value
+//		for(auto & func_def : node.function_definitions) {
+//			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
+//				final_function_definitions.push_back(std::move(func_def));
+//			}
+//		}
+//		node.function_definitions = std::move(final_function_definitions);
+//		node.update_function_lookup();
 
 		return &node;
 	};
@@ -96,7 +96,7 @@ public:
 
 	inline NodeAST* visit(NodeFunctionDefinition& node) override {
 		node.visited = true;
-		m_used_function_definitions.insert(&node);
+//		m_used_function_definitions.insert(&node);
 		node.header->accept(*this);
 		if(node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);
