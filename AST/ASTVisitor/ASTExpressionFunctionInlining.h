@@ -62,7 +62,7 @@ public:
 			if(definition->is_expression_function()) {
 
 				m_program->function_call_stack.push(definition);
-				definition->remove_references();
+//				definition->remove_references();
 				auto node_func_body = clone_as<NodeBlock>(definition->body.get());
 				m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 				node_func_body->accept(*this);

@@ -236,7 +236,9 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(node.parent->get_node_type() == NodeType::FunctionCall) {
 		auto func_call = static_cast<NodeFunctionCall*>(node.parent);
 		if(func_call->kind != NodeFunctionCall::Undefined) {
-			node.declaration = func_call->get_definition()->header;
+			if(func_call->get_definition()) {
+				node.declaration = func_call->get_definition()->header;
+			}
 			return &node;
 		}
 	}
