@@ -41,7 +41,7 @@ struct NodeFunctionCall : NodeInstruction {
     bool is_call = false;
 	bool is_new = false;
     std::unique_ptr<class NodeFunctionHeaderRef> function;
-    NodeFunctionDefinition* definition = nullptr;
+    std::weak_ptr<NodeFunctionDefinition> definition;
 	explicit NodeFunctionCall(Token tok);
 	NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHeaderRef> function, Token tok);
 	~NodeFunctionCall() override;
@@ -54,14 +54,14 @@ struct NodeFunctionCall : NodeInstruction {
     void update_token_data(const Token& token) override;
     ASTLowering* get_lowering(struct NodeProgram *program) const override;
     /// attempts to get and set the definition pointer of the function call and updates the call sites of the definition
-    NodeFunctionDefinition* find_definition(class NodeProgram *program);
+    std::shared_ptr<NodeFunctionDefinition> find_definition(class NodeProgram *program);
     /// attempts to get and match metadata from builtin function to this
-    NodeFunctionDefinition* find_builtin_definition(NodeProgram *program);
+    std::shared_ptr<NodeFunctionDefinition> find_builtin_definition(NodeProgram *program);
     /// attempts to get property function that and set definition pointer + error handling
-    NodeFunctionDefinition* find_property_definition(NodeProgram *program);
-	NodeFunctionDefinition* find_constructor_definition(NodeProgram* program);
+    std::shared_ptr<NodeFunctionDefinition> find_property_definition(NodeProgram *program);
+	std::shared_ptr<NodeFunctionDefinition> find_constructor_definition(NodeProgram* program);
     /// gets and sets definition ptr or matches builtin func metadata -> throws error if not found when fail set to true
-    bool get_definition(NodeProgram* program, bool fail=false);
+    bool bind_definition(NodeProgram* program, bool fail= false);
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
 
 	/// returns true if function call is of kind: Undefined, Builtin or Property
@@ -71,6 +71,9 @@ struct NodeFunctionCall : NodeInstruction {
 	[[nodiscard]] bool is_string_env();
 	[[nodiscard]] bool do_param_promotion() const;
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+	[[nodiscard]] std::shared_ptr<NodeFunctionDefinition> get_definition() const {
+		return definition.lock();
+	}
 };
 
 struct NodeNumElements : NodeInstruction {
@@ -516,7 +519,7 @@ struct NodeFunctionParam : NodeInstruction {
 
 struct NodeReturn : NodeInstruction {
     std::vector<std::unique_ptr<NodeAST>> return_variables;
-	NodeFunctionDefinition* definition = nullptr;
+	std::weak_ptr<NodeFunctionDefinition> definition;
     inline explicit NodeReturn(Token tok) : NodeInstruction(NodeType::Return, std::move(tok)) {}
     NodeReturn(std::vector<std::unique_ptr<NodeAST>> return_variables, Token tok)
             : NodeInstruction(NodeType::Return, std::move(tok)), return_variables(std::move(return_variables)) {
@@ -553,6 +556,9 @@ struct NodeReturn : NodeInstruction {
 	void add_return_param(std::unique_ptr<NodeAST> param) {
 		param->parent = this;
 		return_variables.push_back(std::move(param));
+	}
+	[[nodiscard]] std::shared_ptr<NodeFunctionDefinition> get_definition() const {
+		return definition.lock();
 	}
 };
 

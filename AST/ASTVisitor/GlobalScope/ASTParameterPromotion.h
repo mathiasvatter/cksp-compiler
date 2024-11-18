@@ -83,7 +83,7 @@ public:
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		node.get_definition(m_program);
+		node.bind_definition(m_program);
 
         if(node.kind == NodeFunctionCall::Kind::Property) {
             CompileError(ErrorType::InternalError,
@@ -94,21 +94,22 @@ public:
         }
 		bool needs_param_promotion = node.do_param_promotion();
 		// for now, when function does not need param promotion and has no params and is not in init callback, assume as call
-		if(!needs_param_promotion and node.definition->has_no_params() and !m_program->is_init_callback(m_program->current_callback)) {
+		if(!needs_param_promotion and node.get_definition()->has_no_params() and !m_program->is_init_callback(m_program->current_callback)) {
 			node.is_call = true;
 		}
 
-		if(node.definition and !node.definition->visited) {
-			node.definition->accept(*this);
+		auto definition = node.get_definition();
+		if(definition and !definition->visited) {
+			definition->accept(*this);
 
-			if(!m_local_var_declarations[node.definition].empty()) {
+			if(!m_local_var_declarations[definition.get()].empty()) {
 				// see if this call is in thread safe env -> if not, clone and promote local vars
 				if (needs_param_promotion) {
 					// do this only if current call is not threadsafe environment
-					for (auto &decl : m_local_var_declarations[node.definition]) {
+					for (auto &decl : m_local_var_declarations[definition.get()]) {
 						// add local declarations of function definition to parameters
-						node.definition->header->add_param(clone_as<NodeDataStructure>(decl.second->variable.get()));
-						for (auto &call_site : node.definition->call_sites) {
+						definition->header->add_param(clone_as<NodeDataStructure>(decl.second->variable.get()));
+						for (auto &call_site : definition->call_sites) {
 							// add references to those local variables in the function call
 							call_site->function->add_arg(decl.second->variable->to_reference());
 						}
@@ -117,7 +118,7 @@ public:
 				// if no param promotion, add directly to global declarations
 				} else {
 					// put local declaration into global declaration as a one time thing
-					auto &declares = m_local_var_declarations[node.definition];
+					auto &declares = m_local_var_declarations[definition.get()];
 					// check if variables were already added to global declarations
 					if (!declares.empty()) {
 						// otherwise add them to global declarations
@@ -132,13 +133,13 @@ public:
 
 		}
 
-		if(node.definition) {
+		if(definition) {
 			// if the call does need param promotion
 			if(needs_param_promotion) {
 				// if the call is in a callback -> check if threadsafe (add to global declarations) or not (do parameter promotion)
 				if (m_program->function_call_stack.empty()) {
 					// add declaration statements to the statement right above the function call
-					for (auto &decl : m_local_var_declarations[node.definition]) {
+					for (auto &decl : m_local_var_declarations[definition.get()]) {
 						m_declares_per_stmt[m_last_stmt].emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
 					}
 				}
@@ -146,17 +147,17 @@ public:
 				// if the call is in a nested function -> get the local var declaration map to the above function
 				if(!m_program->function_call_stack.empty()) {
 					// add declaration statements to the body of the current/above function
-					auto &next_declares = m_local_var_declarations[m_program->function_call_stack.top()];
-					for (auto &decl : m_local_var_declarations[node.definition]) {
+					auto &next_declares = m_local_var_declarations[m_program->get_current_function().get()];
+					for (auto &decl : m_local_var_declarations[definition.get()]) {
 						next_declares.emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
 					}
 				}
 			}
 
 			// remove call flag when function is not thread safe
-			if(!node.definition->is_thread_safe and !node.function->has_no_args()) {
+			if(!definition->is_thread_safe and !node.function->has_no_args()) {
 				node.is_call = false;
-			} else if (node.definition->is_thread_safe and node.function->has_no_args()){
+			} else if (definition->is_thread_safe and node.function->has_no_args()){
 //				if(m_program->current_callback != m_program->init_callback) node.is_call = true;
 			}
 
@@ -165,7 +166,7 @@ public:
 	}
 
 	inline NodeAST* visit(NodeFunctionDefinition& node) override {
-		m_program->function_call_stack.push(&node);
+		m_program->function_call_stack.push(node.weak_from_this());
 		node.visited = true;
 		node.body->accept(*this);
 		m_program->function_call_stack.pop();
@@ -190,7 +191,7 @@ public:
         node.variable->accept(*this);
 
 		auto assignment = to_assign_statement(node);
-		m_local_var_declarations[m_program->function_call_stack.top()].emplace(
+		m_local_var_declarations[m_program->get_current_function().get()].emplace(
                         node.variable->name,
                        std::make_unique<NodeSingleDeclaration>(
                             node.variable,

@@ -78,15 +78,6 @@ struct List
 		end while
 	end function
 
-	function List::Array::__del__(arr : int[], num : int)
-		declare _iter : int
-		_iter{int} := 0
-		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
-			List::__del__(arr[_iter{int}]{int[]}, num{int})
-			inc(_iter{int})
-		end while
-	end function
-
 end struct
 
 struct Node
@@ -168,15 +159,6 @@ struct Node
 		end while
 	end function
 
-	function Node::Array::__del__(arr : int[], num : int)
-		declare _iter : int
-		_iter{int} := 0
-		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
-			Node::__del__(arr[_iter{int}]{int[]}, num{int})
-			inc(_iter{int})
-		end while
-	end function
-
 end struct
 
 struct Point
@@ -245,15 +227,6 @@ struct Point
 		_iter{int} := 0
 		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
 			Point::__decr__(arr[_iter{int}]{int[]}, num{int})
-			inc(_iter{int})
-		end while
-	end function
-
-	function Point::Array::__del__(arr : int[], num : int)
-		declare _iter : int
-		_iter{int} := 0
-		while(_iter{int} <= (num_elements(arr{int[]}) - 1)) 
-			Point::__del__(arr[_iter{int}]{int[]}, num{int})
 			inc(_iter{int})
 		end while
 	end function
@@ -355,42 +328,42 @@ on init
 	declare p2 : int := Point(3, 4)
 	ndarray[0, *]{real[]} := ndarray[1, *]{real[]}
 	message(List::allocation[Struct::max(0, this_list{int})]{unknown})
+	Point::__decr__(p1{int}, 1)
 	Point::Array::__decr__(ptr_array3{int[]}, 1)
 	Point::__decr__(p2{int}, 1)
-	Point::__decr__(p1{int}, 1)
 	Point::Array::__decr__(ptr_array2{int[]}, 1)
 	Point::Array::__decr__(ptr_array{int[]}, 1)
 end on
 
 function search_matrix(matrix : number[][], target : number)
-	declare RETURN_FLAG15 : int
-	while(RETURN_FLAG15{int} = 0) 
+	declare RETURN_FLAG12 : int
+	while(RETURN_FLAG12{int} = 0) 
 		declare array[30] : int[] := [0]
 		declare ndarray::num_elements[3] : int[] := [2 * 3, 2, 3]
 		declare ndarray[2, 3] : int[][]
 		declare row : int
 		declare col : int
 		row{int} := 0
-		while((row{int} <= (num_elements[matrix{number[][]}, Array::clip(1, 2)] - 1)) and (RETURN_FLAG15{int} = 0)) 
+		while((row{int} <= (num_elements[matrix{number[][]}, Array::clip(1, 2)] - 1)) and (RETURN_FLAG12{int} = 0)) 
 			col{int} := 0
-			while((col{int} <= (num_elements[matrix{number[][]}, Array::clip(2, 2)] - 1)) and (RETURN_FLAG15{int} = 0)) 
+			while((col{int} <= (num_elements[matrix{number[][]}, Array::clip(2, 2)] - 1)) and (RETURN_FLAG12{int} = 0)) 
 				if(matrix[row{int}, col{int}]{number} = target{number})
 					return ((row{int} * 10) + col{int})
-					RETURN_FLAG15{int} := 1
+					RETURN_FLAG12{int} := 1
 					continue
 				end if
 				inc(col{int})
 			end while
-			if(RETURN_FLAG15{int} = 1)
+			if(RETURN_FLAG12{int} = 1)
 				continue
 			end if
 			inc(row{int})
 		end while
-		if(RETURN_FLAG15{int} = 1)
+		if(RETURN_FLAG12{int} = 1)
 			continue
 		end if
 		return (- 1)
-		RETURN_FLAG15{int} := 1
+		RETURN_FLAG12{int} := 1
 		continue
 	end while
 end function

@@ -18,7 +18,7 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
         func_def->accept(*this);
     }
 	// update because function parameters might have been added which might cause problems in typechecking
-	m_program->update_function_lookup();
+//	m_program->update_function_lookup();
 	m_program->global_declarations->prepend_body(NodeStruct::declare_struct_constants());
 	m_program->init_callback->statements->prepend_body(NodeProgram::declare_compiler_variables());
 //	m_program->global_declarations->append_body(declare_compiler_variables());

@@ -236,7 +236,7 @@ public:
 			Token()
 		);
 
-		auto node_function = std::make_unique<NodeFunctionDefinition>(
+		auto node_function = std::make_shared<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				m_func_name,
 				Token(),
@@ -260,10 +260,11 @@ public:
 		node_function->num_return_params = 1;
 		node_function->return_stmts.push_back(static_cast<NodeReturn*>(node_function->body->statements[0]->statement.get()));
 		// Fügen Sie die neue Funktionsdefinition zum Programm hinzu
-		program->additional_function_definitions.push_back(std::move(node_function));
+		program->add_function_definition(node_function);
+//		program->additional_function_definitions.push_back(std::move(node_function));
 
 		// Update function lookup so that the new function can be found
-		program->update_function_lookup();
+//		program->update_function_lookup();
 
 		return true;
 

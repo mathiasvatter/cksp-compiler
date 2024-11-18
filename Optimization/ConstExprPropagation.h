@@ -46,7 +46,7 @@ public:
 		node.function->accept(*this);
 		// if function is builtin and asynchronus, do not propagate -> reset map
 		if(node.kind == NodeFunctionCall::Kind::Builtin) {
-			if(!node.definition->is_thread_safe) {
+			if(!node.get_definition()->is_thread_safe) {
 				m_constant_expressions.clear();
 			}
 		}
@@ -100,9 +100,9 @@ public:
 		if(node->is_func_arg()) {
 			auto func_call = static_cast<NodeFunctionCall*>(node->parent->parent->parent);
 			if(func_call->kind == NodeFunctionCall::Kind::Builtin) {
-				if(func_call->definition) {
+				if(func_call->get_definition()) {
 					auto param_list = static_cast<NodeParamList*>(node->parent);
-					auto &param = func_call->definition->header->get_param(param_list->get_idx(node));
+					auto &param = func_call->get_definition()->header->get_param(param_list->get_idx(node));
 					if(contains(param->name, "variable")) {
 						return node;
 					}

@@ -20,7 +20,7 @@ public:
 
     Result<std::shared_ptr<NodeVariable>> parse_builtin_variable();
     Result<std::shared_ptr<NodeArray>> parse_builtin_array();
-    Result<std::unique_ptr<NodeFunctionDefinition>> parse_builtin_function();
+    Result<std::shared_ptr<NodeFunctionDefinition>> parse_builtin_function();
 	Result<std::shared_ptr<NodeUIControl>> parse_builtin_ui_control();
     Result<std::unique_ptr<NodeParamList>> parse_builtin_args_list();
 	Result<std::vector<std::unique_ptr<NodeFunctionParam>>> parse_builtin_params_list();
@@ -29,9 +29,9 @@ private:
 	DefinitionProvider* m_def_provider;
     std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables;
     std::unordered_map<std::string, std::shared_ptr<NodeArray>> m_builtin_arrays;
-    std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions;
+    std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions;
 
-    std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> m_property_functions;
+    std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> m_property_functions;
     std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> m_builtin_widgets;
 
     std::string m_builtin_variables_file;

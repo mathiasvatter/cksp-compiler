@@ -653,7 +653,7 @@ struct NodeImport : NodeAST {
     void update_token_data(const Token& token) override {}
 };
 
-struct NodeFunctionDefinition: NodeAST {
+struct NodeFunctionDefinition: NodeAST, public std::enable_shared_from_this<NodeFunctionDefinition> {
 	/// is tagged when restricted builtin functions are used within this function (save_array, load_array, etc)
 	bool is_restricted = false;
 	/// is tagged when non thread-safe builtin functions are used within this function (wait, wait_asnyc, etc)
@@ -689,6 +689,9 @@ struct NodeFunctionDefinition: NodeAST {
 	[[nodiscard]] size_t get_num_params() const;
 	[[nodiscard]] bool has_no_params() const;
 	bool is_expression_function();
+	std::shared_ptr<NodeFunctionDefinition> get_shared() {
+		return shared_from_this();
+	}
 };
 
 struct NodeProgram : NodeAST {
@@ -697,7 +700,11 @@ struct NodeProgram : NodeAST {
 	NodeCallback* init_callback = nullptr;
 	NodeCallback* current_callback = nullptr;
 	/// holds the current function definition that is being processed
-	std::stack<NodeFunctionDefinition*> function_call_stack{};
+	std::stack<std::weak_ptr<NodeFunctionDefinition>> function_call_stack{};
+	std::shared_ptr<NodeFunctionDefinition> get_current_function() {
+		if(function_call_stack.empty()) return nullptr;
+		return function_call_stack.top().lock();
+	}
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> additional_function_definitions;
@@ -728,7 +735,7 @@ struct NodeProgram : NodeAST {
 	/// If found, returns pointer to the callback node
 	NodeCallback* move_on_init_callback();
 	/// merges vector of additional function definitions into the main function definitions vector
-	inline void merge_function_definitions();
+	void merge_function_definitions();
 	static std::unique_ptr<NodeBlock> declare_compiler_variables();
 	void inline_global_variables();
 	void inline_structs();
@@ -737,6 +744,7 @@ struct NodeProgram : NodeAST {
 	bool is_init_callback(NodeCallback* curr_callback) const {
 		return curr_callback == init_callback;
 	}
+
 };
 
 

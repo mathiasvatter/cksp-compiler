@@ -1137,11 +1137,11 @@ Result<std::unique_ptr<NodeFunctionCall>> Parser::parse_function_call(NodeAST* p
 }
 
 
-Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definition(NodeAST* parent) {
+Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definition(NodeAST* parent) {
     auto error = CompileError(ErrorType::ParseError,"", "", peek());
     consume(); //consume "function"
-    auto node_function_definition = std::make_unique<NodeFunctionDefinition>(get_tok());
-	m_current_function_def = node_function_definition.get();
+    auto node_function_definition = std::make_shared<NodeFunctionDefinition>(get_tok());
+	m_current_function_def = node_function_definition;
     std::unique_ptr<NodeFunctionHeader> func_header;
     std::optional<std::unique_ptr<NodeDataStructure>> func_return_var;
     auto func_body = std::make_unique<NodeBlock>(get_tok(), true);
@@ -1149,11 +1149,11 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     if (peek().type != token::KEYWORD) {
         error.m_message = "Missing function name.";
         error.m_expected = "keyword";
-        return Result<std::unique_ptr<NodeFunctionDefinition>>(error);
+        return Result<std::shared_ptr<NodeFunctionDefinition>>(error);
     }
     auto header = parse_function_header(node_function_definition.get());
     if (header.is_error()) {
-        return Result<std::unique_ptr<NodeFunctionDefinition>>(header.get_error());
+        return Result<std::shared_ptr<NodeFunctionDefinition>>(header.get_error());
     }
     func_header = std::move(header.unwrap());
     func_return_var = {};
@@ -1165,7 +1165,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
         if (peek().type == token::KEYWORD) {
             auto return_vars = parse_declare_statement(node_function_definition.get());
             if (return_vars.is_error()) {
-                Result<std::unique_ptr<NodeFunctionDefinition>>(return_vars.get_error());
+                Result<std::shared_ptr<NodeFunctionDefinition>>(return_vars.get_error());
             }
             auto return_var = std::move(return_vars.unwrap()->variable);
 			if(return_var.size() > 1) {
@@ -1177,7 +1177,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
         } else {
             error.m_message = "Missing return variable after ->";
             error.m_expected = "<return variable>";
-            return Result<std::unique_ptr<NodeFunctionDefinition>>(error);
+            return Result<std::shared_ptr<NodeFunctionDefinition>>(error);
         }
     }
     if (peek().type == token::OVERRIDE) {
@@ -1186,7 +1186,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     }
     if (peek().type != token::LINEBRK) {
         error.m_message = "Missing linebreak after function header."; error.m_expected = "linebreak";
-        return Result<std::unique_ptr<NodeFunctionDefinition>>(error);
+        return Result<std::shared_ptr<NodeFunctionDefinition>>(error);
     }
     consume(); // consume linebreak
 
@@ -1195,7 +1195,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
         if(peek().type == token::END_FUNCTION) break;
         auto stmt = parse_statement(node_function_definition.get());
         if (stmt.is_error()) {
-            return Result<std::unique_ptr<NodeFunctionDefinition>>(stmt.get_error());
+            return Result<std::shared_ptr<NodeFunctionDefinition>>(stmt.get_error());
         }
         if(stmt.unwrap()->statement)
             func_body->statements.push_back(std::move(stmt.unwrap()));
@@ -1208,7 +1208,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     node_function_definition->set_child_parents();
     node_function_definition->parent = parent;
 	m_current_function_def = nullptr;
-    return Result<std::unique_ptr<NodeFunctionDefinition>>(std::move(node_function_definition));
+    return Result<std::shared_ptr<NodeFunctionDefinition>>(std::move(node_function_definition));
 }
 
 Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST* parent) {

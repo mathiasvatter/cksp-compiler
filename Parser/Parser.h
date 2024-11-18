@@ -141,8 +141,8 @@ protected:
     Result<std::unique_ptr<NodeWhile>> parse_while_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeSelect>> parse_select_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeGetControl>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent);
-    Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition(NodeAST* parent);
-	NodeFunctionDefinition* m_current_function_def = nullptr;
+    Result<std::shared_ptr<NodeFunctionDefinition>> parse_function_definition(NodeAST* parent);
+	std::shared_ptr<NodeFunctionDefinition> m_current_function_def;
     /// function params are no references -> replace with references
     Result<std::unique_ptr<NodeParamList>> parse_function_args(NodeAST* parent);
 	Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header(NodeAST* parent);
@@ -153,7 +153,7 @@ protected:
 	Result<std::unique_ptr<NodeProgram>> parse_program();
 	std::vector<std::unique_ptr<NodeCallback>> m_callbacks;
 	int m_init_callback_idx = -1;
-    std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_function_definitions;
+    std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_function_definitions;
 	std::vector<NodeDataStructure*> m_all_data_structures;
     void mark_function_as_used(const std::string& func_name, int num_args);
 

@@ -51,26 +51,28 @@ public:
 	NodeAST* visit(NodeFunctionCall &node) override {
 		node.function->accept(*this);
 
-		if(node.get_definition(m_program)) {
+		if(node.bind_definition(m_program)) {
 			if(node.is_builtin_kind()) return &node;
-			if(!node.definition->visited) {
-				node.definition->accept(*this);
+			auto definition = node.get_definition();
+			if(!definition->visited) {
+				definition->accept(*this);
 			}
-			node.definition->visited = true;
+			definition->visited = true;
 			// see if the function is a return-only function
-			if(node.definition->is_expression_function()) {
+			if(definition->is_expression_function()) {
 
-				m_program->function_call_stack.push(node.definition);
-
-				auto node_func_body = clone_as<NodeBlock>(node.definition->body.get());
-				m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function.get()));
+				m_program->function_call_stack.push(definition);
+				definition->remove_references();
+				auto node_func_body = clone_as<NodeBlock>(definition->body.get());
+				m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 				node_func_body->accept(*this);
+				definition->call_sites.erase(&node);
 
 				m_substitution_stack.pop();
 				m_program->function_call_stack.pop();
 				return node.replace_with(get_expression_return(node_func_body.get()));
 			} else {
-				node.definition->is_used = true;
+				definition->is_used = true;
 			}
 		}
 		return &node;

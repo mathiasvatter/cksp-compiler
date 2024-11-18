@@ -38,7 +38,7 @@ public:
 		return name;
 	}
 
-	std::unique_ptr<NodeFunctionDefinition> generate_function_def() {
+	std::shared_ptr<NodeFunctionDefinition> generate_function_def() {
 		// new Assignment Node
 		// update names
 		array->name = "original";
@@ -55,7 +55,7 @@ public:
 		// desugar for loop
 		body->get_last_statement()->desugar(program);
 
-		return std::make_unique<NodeFunctionDefinition>(
+		return std::make_shared<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				generate_func_name(),
 				std::move(func_params),
@@ -94,9 +94,10 @@ public:
 		}
 		// generate function definition
 		auto node_function_def = generate_function_def();
-		program->additional_function_definitions.push_back(std::move(node_function_def));
+		program->add_function_definition(node_function_def);
+//		program->additional_function_definitions.push_back(std::move(node_function_def));
 		// update function lookup so that the new function can be found
-		program->update_function_lookup();
+//		program->update_function_lookup();
 		return func_call;
 	}
 

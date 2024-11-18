@@ -13,6 +13,7 @@ ASTVariableChecking::ASTVariableChecking(DefinitionProvider* definition_provider
 NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_program = &node;
 	// update function lookup map because of altered param counts after lambda lifting
+	node.merge_function_definitions();
     node.update_function_lookup();
 	// erase all previously saved scopes
 	m_def_provider->refresh_scopes();
@@ -27,13 +28,13 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	for(const auto & s : node.struct_definitions) {
 		s->accept(*this);
 	}
+	node.reset_function_visited_flag();
 	for(const auto & callback : node.callbacks) {
 		if(callback.get() != m_program->init_callback) callback->accept(*this);
 	}
 	for(const auto & func_def : node.function_definitions) {
 		if(!func_def->visited) func_def->accept(*this);
 	}
-
 	node.reset_function_visited_flag();
 	return &node;
 }
@@ -102,14 +103,14 @@ NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
 	// function definitions are being visited in the program node
 	// node header as data struct
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-	m_def_provider->add_to_data_structures(node.get_shared());
+//	m_def_provider->add_to_data_structures(node.get_shared());
 	for(auto &param : node.params) param->accept(*this);
 	return &node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 	node.visited = true;
-	m_program->function_call_stack.push(&node);
+	m_program->function_call_stack.push(node.weak_from_this());
 	m_def_provider->add_scope();
 
 
@@ -129,26 +130,27 @@ NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
-	if(!node.get_definition(m_program)) {
+	if(!node.bind_definition(m_program)) {
 		if (auto access_chain = try_access_chain_transform(node.function->name, &node)) {
 			access_chain->accept(*this);
 			node.replace_with(std::move(access_chain));
 			return &node;
 		}
 	}
-	node.function->accept(*this);
 
-	if(node.kind == NodeFunctionCall::UserDefined and node.definition) {
-		check_recursion(node.definition);
-		if(!node.definition->visited) {
-			m_functions_in_use.insert(node.definition);
-			node.definition->accept(*this);
-			m_functions_in_use.erase(node.definition);
+	if(node.kind == NodeFunctionCall::UserDefined and node.get_definition()) {
+		check_recursion(node.get_definition());
+		if(!node.get_definition()->visited) {
+			m_functions_in_use.insert(node.get_definition());
+			node.get_definition()->accept(*this);
+			m_functions_in_use.erase(node.get_definition());
 		}
 	}
+	node.function->accept(*this);
 
-	if(fail and node.definition and node.kind != NodeFunctionCall::Kind::Builtin) {
-		node.definition->call_sites.insert(&node);
+	// add call sites at second stage when fail is true
+	if(fail and node.get_definition() and node.kind != NodeFunctionCall::Kind::Builtin) {
+		node.get_definition()->call_sites.insert(&node);
 	}
 
 	return &node;
@@ -174,7 +176,7 @@ NodeAST* ASTVariableChecking::visit(NodeArray& node) {
 	node.determine_locality(m_program, m_current_block);
 	if(node.size) node.size->accept(*this);
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-	m_def_provider->add_to_data_structures(node.get_shared());
+//	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
@@ -209,7 +211,7 @@ NodeAST* ASTVariableChecking::visit(NodeNDArray& node) {
 	node.determine_locality(m_program, m_current_block);
 	if(node.sizes) node.sizes->accept(*this);
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-	m_def_provider->add_to_data_structures(node.get_shared());
+//	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
@@ -234,7 +236,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(node.parent->get_node_type() == NodeType::FunctionCall) {
 		auto func_call = static_cast<NodeFunctionCall*>(node.parent);
 		if(func_call->kind != NodeFunctionCall::Undefined) {
-			node.declaration = func_call->definition->header;
+			node.declaration = func_call->get_definition()->header;
 			return &node;
 		}
 	}
@@ -253,7 +255,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 	node.determine_locality(m_program, m_current_block);
 
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-	m_def_provider->add_to_data_structures(node.get_shared());
+//	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
@@ -292,7 +294,7 @@ NodeAST* ASTVariableChecking::visit(NodePointer& node) {
 	node.determine_locality(m_program, m_current_block);
 
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-	m_def_provider->add_to_data_structures(node.get_shared());
+//	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
@@ -318,7 +320,7 @@ NodeAST* ASTVariableChecking::visit(NodeList& node) {
 		params->accept(*this);
 	}
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-	m_def_provider->add_to_data_structures(node.get_shared());
+//	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 

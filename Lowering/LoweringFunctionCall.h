@@ -16,12 +16,12 @@ public:
 	/// Determining if function parameter needs to be wrapped in get_ui_id because of ui control
 	/// Determining if function call is method constructor -> rename
 	NodeAST * visit(NodeFunctionCall &node) override {
-		node.get_definition(m_program);
+		node.bind_definition(m_program);
 
         if(node.kind == NodeFunctionCall::Kind::Property) {
-            auto node_body = inline_property_function(node.definition->header.get(), std::move(node.function));
+            auto node_body = inline_property_function(node.get_definition()->header, std::move(node.function));
             node_body->accept(*this);
-			node.definition->call_sites.erase(&node);
+			node.get_definition()->call_sites.erase(&node);
             return node.replace_with(std::move(node_body));
         }
         if(node.kind == NodeFunctionCall::Kind::Builtin) {
@@ -88,7 +88,7 @@ public:
 	}
 
 private:
-    inline std::unique_ptr<NodeBlock> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeaderRef> header_ref) {
+    inline std::unique_ptr<NodeBlock> inline_property_function(const std::shared_ptr<NodeFunctionHeader>& property_function, std::unique_ptr<NodeFunctionHeaderRef> header_ref) {
         auto node_body = std::make_unique<NodeBlock>(header_ref->tok);
         for(int i = 1; i<header_ref->args->size(); i++) {
             auto node_set_control = std::make_unique<NodeSetControl>(

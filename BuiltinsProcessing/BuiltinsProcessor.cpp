@@ -165,7 +165,7 @@ Result<std::shared_ptr<NodeArray>> BuiltinsProcessor::parse_builtin_array() {
     return Result<std::shared_ptr<NodeArray>>(std::move(node_array));
 }
 
-Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin_function() {
+Result<std::shared_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin_function() {
     Token func_name = consume(m_tokens); // consume function name
     std::vector<std::unique_ptr<NodeFunctionParam>> func_args;
 	std::vector<Type*> types;
@@ -176,7 +176,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
         if(peek(m_tokens).type != token::CLOSED_PARENTH) {
             auto param_list = parse_builtin_params_list();
             if (param_list.is_error()) {
-                Result<std::unique_ptr<NodeFunctionDefinition>>(param_list.get_error());
+                Result<std::shared_ptr<NodeFunctionDefinition>>(param_list.get_error());
             }
             func_args = std::move(param_list.unwrap());
             for(const auto & param : func_args) {
@@ -186,7 +186,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
         if (peek(m_tokens).type == token::CLOSED_PARENTH) {
             consume(m_tokens);
         } else {
-            return Result<std::unique_ptr<NodeFunctionDefinition>>(CompileError(ErrorType::PreprocessorError,
+            return Result<std::shared_ptr<NodeFunctionDefinition>>(CompileError(ErrorType::PreprocessorError,
            "Failed loading builtins. Found unknown <function_header> syntax.", peek(m_tokens).line, ")", peek(m_tokens).val, peek(m_tokens).file));
         }
     }
@@ -207,7 +207,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
 	node_function_header->create_function_type(ret_type);
     node_function_header->has_forced_parenth = has_forced_parenth;
 
-    auto node_function = std::make_unique<NodeFunctionDefinition>(
+    auto node_function = std::make_shared<NodeFunctionDefinition>(
             std::move(node_function_header),
             std::nullopt,
             false,
@@ -219,7 +219,7 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
 	node_function->is_thread_safe = is_threadsafe_function(node_function->header->name);
 	node_function->is_restricted = is_restricted_function(node_function->header->name);
 	node_function->num_return_params = num_return_vars;
-    return Result<std::unique_ptr<NodeFunctionDefinition>>(std::move(node_function));
+    return Result<std::shared_ptr<NodeFunctionDefinition>>(std::move(node_function));
 }
 
 Result<std::shared_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_control() {

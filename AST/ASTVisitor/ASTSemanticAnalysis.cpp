@@ -76,7 +76,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeBlock &node) {
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
-	m_program->function_call_stack.push(&node);
+	m_program->function_call_stack.push(node.weak_from_this());
 	node.visited = true;
     node.header ->accept(*this);
     if (node.return_variable.has_value())
@@ -99,23 +99,23 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionHeaderRef& node) {
 NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
 
-	node.get_definition(m_program);
-
-	if(node.kind == NodeFunctionCall::UserDefined and node.definition) {
-		if(!node.definition->visited) node.definition->accept(*this);
+	node.bind_definition(m_program);
+	auto definition = node.get_definition();
+	if(node.kind == NodeFunctionCall::UserDefined and definition) {
+		if(!definition->visited) definition->accept(*this);
 	}
 
 	// determine thread safety of currently visiting function definition
-	if(node.definition) {
-		if(!m_program->function_call_stack.empty()) {
-			m_program->function_call_stack.top()->is_thread_safe &= node.definition->is_thread_safe;
+	if(definition) {
+		if(auto func = m_program->get_current_function()) {
+			func->is_thread_safe &= definition->is_thread_safe;
 		}
-		if(m_program->current_callback) m_program->current_callback->is_thread_safe &= node.definition->is_thread_safe;
+		if(m_program->current_callback) m_program->current_callback->is_thread_safe &= definition->is_thread_safe;
 	}
 	// determine if currently visiting function in stack is restricted
-	if(node.definition) {
-		if(!m_program->function_call_stack.empty()) {
-			m_program->function_call_stack.top()->is_restricted &= node.definition->is_restricted;
+	if(definition) {
+		if(auto func = m_program->get_current_function()) {
+			func->is_restricted &= definition->is_restricted;
 		}
 	}
 
@@ -210,10 +210,10 @@ NodeAST * ASTSemanticAnalysis::visit(NodeListRef& node) {
 }
 
 void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_call) {
-	if(func_call->definition) {
+	if(func_call->get_definition()) {
 		for(int i=0; i<func_call->function->get_num_args(); i++) {
 			auto & arg = func_call->function->get_arg(i);
-			auto & param = func_call->definition->get_param(i);
+			auto & param = func_call->get_definition()->get_param(i);
 			if(arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::Array) {
 				auto node_var_ref = arg->cast<NodeVariableRef>();
 //				if(!node_var_ref->get_declaration()) return;

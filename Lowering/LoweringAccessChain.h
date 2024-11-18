@@ -116,7 +116,7 @@ public:
 	inline NodeAST * visit(NodeFunctionCall& node) override {
 		if(&node == start_pointer) return &node;
 		node.function->name = prev_type->to_string()+OBJ_DELIMITER+node.function->name;
-		node.get_definition(m_program);
+		node.bind_definition(m_program);
 		return &node;
 	}
 

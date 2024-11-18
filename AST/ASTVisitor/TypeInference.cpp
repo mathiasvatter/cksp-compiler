@@ -30,7 +30,9 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 void TypeInference::cast_data_structure_types(NodeProgram* program, bool cast) {
 	auto def_provider = program->def_provider;
 	for(auto& refs : def_provider->get_all_data_structures()) {
-		for(auto & ref : refs->references) {
+		auto data_struct = refs.lock();
+		if(!data_struct) continue;
+		for(auto & ref : data_struct->references) {
 			match_reference_declaration(ref);
 		}
 	}
@@ -48,10 +50,13 @@ void TypeInference::cast_data_structure_types(NodeProgram* program, bool cast) {
 		if (cast) decl->variable->cast_type();
 	}
 	for(auto& refs : def_provider->get_all_data_structures()) {
-		for(auto & ref : refs->references) {
+		auto data_struct = refs.lock();
+		if(!data_struct) continue;
+		for(auto & ref : refs.lock()->references) {
 			match_reference_declaration(ref);
 		}
 	}
+	def_provider->m_all_data_structures.clear();
 }
 
 NodeAST * TypeInference::visit(NodeCallback& node) {
@@ -399,7 +404,7 @@ NodeAST * TypeInference::visit(NodeInitializerList& node) {
 				return node.replace_with(std::move(node.elem(0)))->accept(*this);
 			}
 		} else if(auto ret = node.parent->cast<NodeReturn>()) {
-			if(ret->definition and ret->definition->ty->get_type_kind() != TypeKind::Composite) {
+			if(ret->get_definition() and ret->get_definition()->ty->get_type_kind() != TypeKind::Composite) {
 				return node.replace_with(std::move(node.elem(0)))->accept(*this);
 			}
 		} else if(auto set = node.parent->cast<NodeSetControl>()) {
@@ -539,9 +544,10 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
-	node.get_definition(m_program);
+	node.bind_definition(m_program);
 	node.function->accept(*this);
-	if(!node.definition) {
+	auto definition = node.get_definition();
+	if(!definition) {
 		// if definition pre lowering not found -> could be struct __init__ func
 		// this_list := List(42, nil)
 		if(auto obj_type = TypeRegistry::get_object_type(node.function->name)) {
@@ -550,19 +556,19 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		}
 	}
 
-	if(node.definition) {
-		if (!node.definition->visited) node.definition->accept(*this);
+	if(definition) {
+		if (!definition->visited) definition->accept(*this);
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
-			auto &param = node.definition->get_param(i);
+			auto &param = definition->get_param(i);
 			const std::string error_message =
 				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
 					+ param->ty->to_string() + " as argument type.";
 			match_type(func_arg.get(), param.get(), error_message);
 		}
 	}
-	if(node.definition) {
-		match_type(&node, node.definition);
+	if(definition) {
+		match_type(&node, definition.get());
 	}
 	return &node;
 }
@@ -600,7 +606,7 @@ NodeAST * TypeInference::visit(NodeFunctionHeader& node) {
 
 NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
 	node.visited = true;
-	m_program->function_call_stack.push(&node);
+	m_program->function_call_stack.push(node.weak_from_this());
 
 	// add data structures to provider
 	m_def_provider->add_to_data_structures(node.header);
@@ -625,13 +631,13 @@ NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
 }
 
 NodeAST * TypeInference::visit(NodeReturn& node) {
-	if(!node.definition) node.definition = m_program->function_call_stack.top();
+	if(!node.get_definition()) node.definition = m_program->get_current_function();
 	for(auto &ret : node.return_variables) {
 		ret->accept(*this);
 	}
 	if(!node.return_variables.empty() ) {
-		if(node.definition)
-			match_type(node.definition, node.return_variables[0].get());
+		if(node.get_definition())
+			match_type(node.get_definition().get(), node.return_variables[0].get());
 	}
 	// a second time to get the new types to the declaration pointer!
 	for(auto &ret : node.return_variables) {
