@@ -143,7 +143,7 @@ public:
 				error.m_expected = m_structs.top()->name;
 				error.exit();
 			}
-			m_structs.top()->constructor = &node;
+			m_structs.top()->constructor = node.get_shared();
 			if(node.num_return_params > 0) {
 				error.m_message = "Constructor method cannot have return values.";
 				error.exit();
@@ -172,7 +172,7 @@ public:
 
 		// check if method is operator overload
 		if(auto token = get_operator_token(node.header->name, node.header->params.size())) {
-			m_structs.top()->overloaded_operators.insert({*token, &node});
+			m_structs.top()->overloaded_operators.insert({*token, node.get_shared()});
 		}
 
 		node.header->accept(*this);

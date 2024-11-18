@@ -63,7 +63,7 @@ protected:
 
 	bool inline is_thread_safe_env() {
 		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or
-			(!m_program->function_call_stack.empty() and m_program->function_call_stack.top()->is_thread_safe);
+			(m_program->get_current_function() and m_program->get_current_function()->is_thread_safe);
 	};
 
 	static inline std::string get_passive_var_hash(NodeDataStructure& data) {

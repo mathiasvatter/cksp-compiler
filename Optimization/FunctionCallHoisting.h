@@ -18,10 +18,10 @@ private:
 		// not hoistable functions are: Undefined, Builtin, Property
 		if(node->is_builtin_kind()) return false;
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
-		if(!node->definition) {
+		if(!node->get_definition()) {
 			return false;
 		}
-		bool returns_values = node->definition and node->definition->num_return_params > 0;
+		bool returns_values = node->get_definition() and node->get_definition()->num_return_params > 0;
 		bool is_in_stmt = node->parent->get_node_type() == NodeType::Statement;
 		// do not hoist if in declaration -> we do not need an extra declaration var
 		bool is_in_declaration = node->parent->get_node_type() == NodeType::SingleDeclaration;
@@ -79,13 +79,13 @@ public:
 
 	inline NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		node.get_definition(m_program);
-		if(node.definition and node.definition->is_expression_function()) return &node;
+		node.bind_definition(m_program);
+		if(node.get_definition() and node.get_definition()->is_expression_function()) return &node;
 
 		if(is_hoistable(&node)) {
 			std::unique_ptr<NodeReference> ref = nullptr;
 			// clone return variable from function definition
-			auto return_var = clone_shared(node.definition->header->get_param(0));
+			auto return_var = clone_shared(node.get_definition()->header->get_param(0));
 			return_var->name = m_program->def_provider->get_fresh_name("_return");
 			ref = return_var->to_reference();
 			ref->match_data_structure(return_var);

@@ -133,10 +133,10 @@ public:
 
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		node.get_definition(m_program);
-		if(node.definition and node.kind != NodeFunctionCall::Kind::Builtin) {
-			if(!node.definition->visited) node.definition->accept(*this);
-			node.definition->visited = true;
+		node.bind_definition(m_program);
+		if(node.get_definition() and node.kind != NodeFunctionCall::Kind::Builtin) {
+			if(!node.get_definition()->visited) node.get_definition()->accept(*this);
+			node.get_definition()->visited = true;
 		}
 		return &node;
 	};
@@ -281,13 +281,13 @@ private:
 				return nullptr;
 			}
 			if(func_call->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
-				if(!func_call->definition) {
+				if(!func_call->get_definition()) {
 					auto error = CompileError(ErrorType::TypeError, "", "", func_call->tok);
 					error.m_message = "Function call assigned to <Pointer> does not have a definition."
 									  " It needs to be defined for memory allocation to work correctly.";
 					error.exit();
 				}
-				return func_call->definition->return_stmts[0]->return_variables[0].get();
+				return func_call->get_definition()->return_stmts[0]->return_variables[0].get();
 			}
 		}
 		return r_value;

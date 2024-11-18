@@ -35,7 +35,7 @@ public:
 		auto call = get_function_call("set_control_par", node.control_param, &node);
 		call->function->prepend_arg(std::move(node.ui_id));
 		call->function->add_arg(std::move(node.value));
-		call->get_definition(m_program);
+		call->bind_definition(m_program);
 		return node.replace_with(std::move(call));
 	}
 
@@ -45,7 +45,7 @@ public:
 		node.ty = get_control_type(node.control_param);
 		auto call = get_function_call("get_control_par", node.control_param, &node);
 		call->function->prepend_arg(std::move(node.ui_id));
-		call->get_definition(m_program);
+		call->bind_definition(m_program);
 		return node.replace_with(std::move(call));
 	};
 

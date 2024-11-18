@@ -12,7 +12,7 @@ private:
 	NodeStruct* m_current_struct = nullptr;
 	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX_STRUCTS", Token());
 	inline bool in_constructor() {
-		return m_current_func and m_current_struct and m_current_func == m_current_struct->constructor;
+		return m_current_func and m_current_struct and m_current_func == m_current_struct->constructor.get();
 	}
 	/// returns free_idx as reference if in constructor, self as reference if not
 	inline std::unique_ptr<NodeReference> get_index_ref() {

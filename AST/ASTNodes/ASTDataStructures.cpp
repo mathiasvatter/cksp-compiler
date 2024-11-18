@@ -362,7 +362,7 @@ std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 	return node_block;
 }
 
-NodeFunctionDefinition *NodeStruct::generate_init_method() {
+std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_init_method() {
 	std::vector<std::unique_ptr<NodeFunctionParam>> param_list;
 	param_list.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_self.get())));
 	auto node_block = std::make_unique<NodeBlock>(this->tok, true);
@@ -380,7 +380,7 @@ NodeFunctionDefinition *NodeStruct::generate_init_method() {
 		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
 	}
 	auto num_params = param_list.size();
-	auto function_def = std::make_unique<NodeFunctionDefinition>(
+	auto function_def = std::make_shared<NodeFunctionDefinition>(
 		std::make_unique<NodeFunctionHeader>(
 			"__init__",
 			std::move(param_list),
@@ -394,13 +394,14 @@ NodeFunctionDefinition *NodeStruct::generate_init_method() {
 //	function_def->update_param_data_type();
 	function_def->ty = TypeRegistry::add_object_type(this->name);
 	function_def->parent = this;
-	this->methods.push_back(std::move(function_def));
-	this->constructor = methods.back().get();
-	this->rebuild_method_table();
-	return method_table.find({"__init__", (int)num_params})->second;
+//	this->methods.push_back(std::move(function_def));
+//	this->constructor = methods.back().get();
+//	this->rebuild_method_table();
+//	return method_table.find({"__init__", (int)num_params})->second;
+	return add_method(function_def);
 }
 
-NodeFunctionDefinition *NodeStruct::generate_repr_method() {
+std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_repr_method() {
 	auto self_ref = node_self->to_reference();
 	self_ref->declaration = node_self;
 	auto message = std::make_unique<NodeBinaryExpr>(
@@ -416,7 +417,7 @@ NodeFunctionDefinition *NodeStruct::generate_repr_method() {
 		)
 	);
 	node_body->scope = true;
-	auto function_def = std::make_unique<NodeFunctionDefinition>(
+	auto function_def = std::make_shared<NodeFunctionDefinition>(
 		std::make_unique<NodeFunctionHeader>(
 			"__repr__",
 			std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_self.get())),
@@ -431,18 +432,18 @@ NodeFunctionDefinition *NodeStruct::generate_repr_method() {
 	function_def->parent = this;
 	function_def->ty = TypeRegistry::String;
 	function_def->num_return_params = 1;
-	this->methods.push_back(std::move(function_def));
-	this->rebuild_method_table();
-	return method_table.find({"__repr__", 1})->second;
+//	this->methods.push_back(std::move(function_def));
+//	this->rebuild_method_table();
+//	return method_table.find({"__repr__", 1})->second;
+	return add_method(function_def);
 }
 
 void NodeStruct::inline_struct(NodeProgram *program) {
 	// add struct methods to program functions
-	for(auto & m: methods) {
-		program->function_definitions.push_back(std::move(m));
-		auto new_func_ptr = program->function_definitions.back().get();
-		for(auto & callsite : new_func_ptr->call_sites) {
-			callsite->definition = new_func_ptr;
+	for(auto & method: methods) {
+		program->function_definitions.push_back(method);
+		for(auto & callsite : method->call_sites) {
+			callsite->definition = method;
 		}
 	}
 	methods.clear();
@@ -450,19 +451,19 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	// remove self node
 	auto self = this->node_self->parent->cast<NodeSingleDeclaration>();
 	self->remove_node();
-	this->rebuild_method_table();
+//	this->rebuild_method_table();
 //	for(auto & mem: member_table) {
 //		mem.second->is_local = false;
 //	}
 	program->init_callback->statements->prepend_body(std::move(members));
 	members = std::make_unique<NodeBlock>(Token());
-	this->rebuild_member_table();
+//	this->rebuild_member_table();
 }
 
-NodeFunctionDefinition* NodeStruct::get_overloaded_method(token op) {
+std::shared_ptr<NodeFunctionDefinition> NodeStruct::get_overloaded_method(token op) {
 	auto it = overloaded_operators.find(op);
 	if(it != overloaded_operators.end()) {
-		return it->second;
+		return it->second.lock();
 	}
 	return nullptr;
 }
@@ -489,9 +490,9 @@ void NodeStruct::generate_ref_count_methods(NodeProgram* program) {
 	array_decr->collect_references();
 	methods.push_back(std::move(array_decr));
 
-	auto array_del = rf_methods.create_array_function("__del__");
-	array_del->collect_references();
-	methods.push_back(std::move(array_del));
+//	auto array_del = rf_methods.create_array_function("__del__");
+//	array_del->collect_references();
+//	methods.push_back(std::move(array_del));
 
 	this->rebuild_method_table();
 }

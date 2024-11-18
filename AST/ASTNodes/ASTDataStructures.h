@@ -323,17 +323,17 @@ struct NodeStruct : NodeDataStructure {
 	std::unique_ptr<NodeBlock> members;
 	std::map<std::string, std::weak_ptr<NodeDataStructure>> member_table;
 	std::set<std::string> member_set;
-	NodeFunctionDefinition* constructor = nullptr;
+	std::shared_ptr<NodeFunctionDefinition> constructor = nullptr;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> methods;
 	std::set<std::string> method_set;
-	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> method_table;
+	std::unordered_map<StringIntKey, std::weak_ptr<NodeFunctionDefinition>, StringIntKeyHash> method_table;
 	std::unordered_set<NodeType> member_node_types;
 	std::shared_ptr<NodeVariable> max_individual_struts_var = nullptr;
 	std::shared_ptr<NodeVariable> free_idx_var = nullptr;
 	std::shared_ptr<NodeArray> allocation_var = nullptr;
 	std::shared_ptr<NodeArray> stack_var = nullptr;
 	std::shared_ptr<NodeVariable> stack_top_var = nullptr;
-	std::unordered_map<token, NodeFunctionDefinition*> overloaded_operators;
+	std::unordered_map<token, std::weak_ptr<NodeFunctionDefinition>> overloaded_operators;
 	std::unordered_set<NodeStruct*> recursive_structs;
 	inline static std::unordered_set<NodeType> allowed_member_node_types = {NodeType::Variable, NodeType::Pointer, NodeType::NDArray, NodeType::Array};
 	inline explicit NodeStruct(const std::string& name, Token tok) : NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct) {}
@@ -391,8 +391,13 @@ struct NodeStruct : NodeDataStructure {
 	void rebuild_method_table() {
 		method_table.clear();
 		for(auto& method : methods) {
-			method_table.insert({{method->header->name, (int)method->header->params.size()}, method.get()});
+			method_table.insert({{method->header->name, (int)method->header->params.size()}, method});
 		}
+	}
+	std::shared_ptr<NodeFunctionDefinition> add_method(const std::shared_ptr<NodeFunctionDefinition>& method) {
+		methods.push_back(method);
+		method_table.insert({{method->header->name, (int)method->header->params.size()}, method});
+		return method;
 	}
 
 	void rebuild_lookup_sets() {
@@ -416,7 +421,7 @@ struct NodeStruct : NodeDataStructure {
 
 	static std::unique_ptr<NodeBlock> declare_struct_constants();
 	/// generated init method only needs assignment if it has pointer -> nil
-	NodeFunctionDefinition* generate_init_method();
+	std::shared_ptr<NodeFunctionDefinition> generate_init_method();
 
 	/**
 	 * generates a __repr__ method for a struct
@@ -426,11 +431,11 @@ struct NodeStruct : NodeDataStructure {
 	 * 	 return "<struct> Object: "& self
 	 * end function
 	 */
-	NodeFunctionDefinition* generate_repr_method();
+	std::shared_ptr<NodeFunctionDefinition> generate_repr_method();
 	void generate_ref_count_methods(NodeProgram* program);
 	std::unique_ptr<NodeWhile> generate_ref_count_while(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs);
 	void inline_struct(NodeProgram* program);
-	NodeFunctionDefinition* get_overloaded_method(token op);
+	std::shared_ptr<NodeFunctionDefinition> get_overloaded_method(token op);
 
 	/// Funktion zur rekursiven Sammlung von rekursiven NodeStructs
 	void collect_recursive_structs(NodeProgram* program);

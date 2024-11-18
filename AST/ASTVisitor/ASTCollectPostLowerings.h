@@ -42,9 +42,9 @@ public:
 
 	NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		if(node.get_definition(m_program)) {
-			if(!node.definition->visited) node.definition->accept(*this);
-			node.definition->visited = true;
+		if(node.bind_definition(m_program)) {
+			if(!node.get_definition()->visited) node.get_definition()->accept(*this);
+			node.get_definition()->visited = true;
 		}
 		return &node;
 	}

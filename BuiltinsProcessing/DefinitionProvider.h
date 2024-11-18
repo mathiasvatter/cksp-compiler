@@ -28,8 +28,8 @@ private:
 public:
     DefinitionProvider(
 			std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables,
-			std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions,
-			std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> m_property_functions,
+			std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions,
+			std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> m_property_functions,
 			std::unordered_map<std::string, std::shared_ptr<NodeArray>> m_builtin_arrays,
 			std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> m_builtin_widgets,
 			std::vector<std::shared_ptr<NodeDataStructure>> m_external_variables);
@@ -135,11 +135,11 @@ public:
 	[[nodiscard]] const std::vector<NodeReference *> &get_all_references() const {
 		return m_all_references;
 	}
-	std::vector<std::shared_ptr<NodeDataStructure>> m_all_data_structures;
+	std::vector<std::weak_ptr<NodeDataStructure>> m_all_data_structures;
 	void add_to_data_structures(std::shared_ptr<NodeDataStructure> data_struct) {
 		m_all_data_structures.push_back(data_struct);
 	}
-	[[nodiscard]] const std::vector<std::shared_ptr<NodeDataStructure>> &get_all_data_structures() const {
+	[[nodiscard]] const std::vector<std::weak_ptr<NodeDataStructure>> &get_all_data_structures() const {
 		return m_all_data_structures;
 	}
 	/// All declaration statements
@@ -213,13 +213,13 @@ public:
 	std::shared_ptr<NodeUIControl> get_builtin_widget(const std::string &ui_control);
     void set_builtin_widgets(std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> builtin_widgets);
     /// builtin engine functions
-    std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions{};
-    NodeFunctionDefinition* get_builtin_function(NodeFunctionHeaderRef* function);
-    void set_builtin_functions(std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
+    std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions{};
+    std::shared_ptr<NodeFunctionDefinition> get_builtin_function(NodeFunctionHeaderRef* function);
+    void set_builtin_functions(std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
     /// predefined property functions like set_label_properties etc
-    std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions{};
-    NodeFunctionDefinition* get_property_function(NodeFunctionHeaderRef* function);
-    void set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions);
+    std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions{};
+    std::shared_ptr<NodeFunctionDefinition> get_property_function(NodeFunctionHeaderRef* function);
+    void set_property_functions(std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions);
 
 
 	static std::unique_ptr<NodeFunctionCall> num_elements(std::unique_ptr<NodeReference> ref) {

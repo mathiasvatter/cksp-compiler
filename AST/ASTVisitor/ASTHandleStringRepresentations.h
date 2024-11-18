@@ -152,7 +152,7 @@ private:
 			)
 		);
 		node_body->scope = true;
-		auto function_def = std::make_unique<NodeFunctionDefinition>(
+		auto function_def = std::make_shared<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
 				std::make_unique<NodeFunctionParam>(std::move(node_self)),
@@ -165,10 +165,12 @@ private:
 		);
 		function_def->ty = TypeRegistry::String;
 		function_def->num_return_params = 1;
+		function_def->num_return_stmts = 1;
 		function_def->parent = m_program;
-		m_program->additional_function_definitions.push_back(std::move(function_def));
+		m_program->add_function_definition(function_def);
+//		m_program->additional_function_definitions.push_back(std::move(function_def));
 		// update function lookup so that the new function can be found
-		m_program->update_function_lookup();
+//		m_program->update_function_lookup();
 		return true;
 	}
 
@@ -187,6 +189,7 @@ private:
 
 		auto node_self = clone_as<NodeNDArray>(node.get_declaration().get());
 		node_self->name = "self";
+		node_self->ty = node.get_declaration()->ty;
 		node_self->sizes = nullptr;
 		auto self_ref = node_self->to_reference();
 		auto message = std::make_unique<NodeString>(
@@ -200,7 +203,7 @@ private:
 			)
 		);
 		node_body->scope = true;
-		auto function_def = std::make_unique<NodeFunctionDefinition>(
+		auto function_def = std::make_shared<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
 				std::make_unique<NodeFunctionParam>(std::move(node_self)),
@@ -214,9 +217,10 @@ private:
 		function_def->ty = TypeRegistry::String;
 		function_def->num_return_params = 1;
 		function_def->parent = m_program;
-		m_program->additional_function_definitions.push_back(std::move(function_def));
+		m_program->add_function_definition(function_def);
+//		m_program->additional_function_definitions.push_back(std::move(function_def));
 		// update function lookup so that the new function can be found
-		m_program->update_function_lookup();
+//		m_program->update_function_lookup();
 		return true;
 	}
 };

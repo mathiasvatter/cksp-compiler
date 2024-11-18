@@ -245,7 +245,7 @@ public:
 		auto node_array = std::make_shared<NodeArray>(std::nullopt, "array", TypeRegistry::add_composite_type(CompoundKind::Array, type), nullptr, Token());
 		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, Token());
 		auto node_value = std::make_shared<NodeVariable>(std::nullopt, "value", type, DataType::Mutable, Token());
-		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
+		auto node_function_def = std::make_shared<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
 				Token()
@@ -297,9 +297,10 @@ public:
 		node_function_def->body->add_stmt(std::make_unique<NodeStatement>(std::move(new_while), Token()));
 		node_function_def->header->create_function_type(TypeRegistry::Void);
 		node_function_def->ty = TypeRegistry::Void;
-		program->additional_function_definitions.push_back(std::move(node_function_def));
+		program->add_function_definition(node_function_def);
+//		program->additional_function_definitions.push_back(std::move(node_function_def));
 		// update function lookup so that the new function can be found
-		program->update_function_lookup();
+//		program->update_function_lookup();
 		return true;
 	}
 
@@ -360,7 +361,7 @@ public:
 		auto node_iterator_ref = node_iterator->to_reference();
 		auto node_dest_ref = unique_ptr_cast<NodeArrayRef>(node_dest->to_reference());
 		auto node_src_ref = unique_ptr_cast<NodeArrayRef>(node_src->to_reference());
-		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
+		auto node_function_def = std::make_shared<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
 				Token()
@@ -407,9 +408,10 @@ public:
 		node_function_def->body->add_stmt(std::make_unique<NodeStatement>(std::move(new_while), Token()));
 		node_function_def->header->create_function_type(TypeRegistry::Void);
 		node_function_def->ty = TypeRegistry::Void;
-		program->additional_function_definitions.push_back(std::move(node_function_def));
+		program->add_function_definition(node_function_def);
+//		program->additional_function_definitions.push_back(std::move(node_function_def));
 		// update function lookup so that the new function can be found
-		program->update_function_lookup();
+//		program->update_function_lookup();
 		return true;
 	}
 

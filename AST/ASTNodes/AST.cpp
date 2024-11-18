@@ -345,7 +345,7 @@ bool NodeReference::is_string_env() {
 	// is within message call
 	is_string |= is_func_arg() and static_cast<NodeFunctionHeaderRef*>(parent->parent)->name == "message";
 	// is within return statement
-	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->definition->ty == TypeRegistry::String;
+	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->get_definition()->ty == TypeRegistry::String;
 	return is_string;
 }
 
@@ -921,6 +921,7 @@ void NodeProgram::update_function_lookup() {
 
 
 void NodeProgram::merge_function_definitions() {
+	if(additional_function_definitions.empty()) return;
 	function_definitions.insert(function_definitions.end(), additional_function_definitions.begin(),
 								additional_function_definitions.end());
 	additional_function_definitions.clear();

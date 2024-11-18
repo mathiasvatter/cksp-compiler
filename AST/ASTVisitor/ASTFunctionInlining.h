@@ -9,7 +9,7 @@
 
 class ASTFunctionInlining : public ASTVisitor {
 private:
-	std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
+	std::vector<std::shared_ptr<NodeFunctionDefinition>> m_function_definitions;
 	std::vector<NodeFunctionCall*> m_function_calls;
 public:
 	explicit ASTFunctionInlining(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
@@ -17,7 +17,7 @@ public:
 	/// check for used functions
 	inline NodeAST *visit(NodeProgram &node) override {
 		m_program = &node;
-		node.update_function_lookup();
+//		node.update_function_lookup();
 		node.reset_function_used_flag();
 		m_function_calls.clear();
 		m_program->global_declarations->accept(*this);
@@ -41,7 +41,8 @@ public:
 //		}
 
 		/// vector to house only the definitions that are actually used in the program
-		node.function_definitions = std::move(m_function_definitions);
+//		node.function_definitions.clear();
+		node.function_definitions = m_function_definitions;
 		node.update_function_lookup();
 		// does not work -> some calls have been moved
 //		for(auto & call : m_function_calls) {
@@ -69,11 +70,13 @@ public:
 			error.exit();
 		}
 
-		node.get_definition(m_program);
+		node.bind_definition(m_program);
+		auto definition = node.get_definition();
+
 		if(node.kind == NodeFunctionCall::Kind::Property) {
 			CompileError(ErrorType::InternalError,"Found undefined property function.", "", node.tok).exit();
 		}
-		if(!node.definition) {
+		if(!definition) {
 			// since we do depth first and try to visit every function before inlining,
 			// skip the error throw if definition is not found at the first visit since it
 			// could be found later -> high-order functions etc.
@@ -86,7 +89,7 @@ public:
 
 		if(node.kind == NodeFunctionCall::Kind::Builtin) return &node;
 
-		if(node.definition->is_restricted) {
+		if(definition->is_restricted) {
 			if(!contains(RESTRICTED_CALLBACKS, remove_substring(m_current_callback->begin_callback, "on "))) {
 				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 				error.m_message = "<"+node.function->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks.";
@@ -97,7 +100,7 @@ public:
 
 		// only threadsafe functions can be called in <on init> callback
 		if(m_current_callback == m_program->init_callback) {
-			if(!node.definition->is_thread_safe) {
+			if(!definition->is_thread_safe) {
 				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 				error.m_message = "Only threadsafe functions can be called in the <on init> callback. Function <"
 								  +node.function->name+"> contains asychronous operations.";
@@ -105,7 +108,7 @@ public:
 			}
 		}
 
-		m_program->function_call_stack.push(node.definition);
+		m_program->function_call_stack.push(definition);
 
 		// does throw error when encountering method or constructor
 //		if(node.kind != NodeFunctionCall::Kind::UserDefined) {
@@ -129,24 +132,27 @@ public:
 		}
 
 		// visit everything beforehand to get depth first search
-		if(!node.definition->visited)
-			node.definition->accept(*this);
+		if(!definition->visited)
+			definition->accept(*this);
 
 		std::unique_ptr<NodeBlock> node_func_body = nullptr;
 		if(node.is_call) {
-			m_function_calls.push_back(&node);
-			if(!node.definition->visited) {
-				m_function_definitions.push_back(clone_as<NodeFunctionDefinition>(node.definition));
-				node.definition->call_sites.clear();
-				node.definition->is_used = true;
-				node.definition->visited = true;
+//			m_function_calls.push_back(&node);
+			if(!definition->visited) {
+				m_function_definitions.push_back(definition);
+//				definition->call_sites.clear();
+				definition->is_used = true;
+				definition->visited = true;
 			}
 			// kill definition of all calls, not only the first one
-			node.definition = nullptr;
+//			node.definition.reset();
+//			definition = nullptr;
+		// inlining process
 		} else {
-			node_func_body = clone_as<NodeBlock>(node.definition->body.get());
-			m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function.get()));
+			node_func_body = clone_as<NodeBlock>(definition->body.get());
+			m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 			node_func_body->accept(*this);
+			definition->call_sites.erase(&node);
 			m_substitution_stack.pop();
 		}
 		m_program->function_call_stack.pop();

@@ -17,6 +17,8 @@ public:
 		m_program = &node;
 		// erase all previously saved scopes
 		m_def_provider->refresh_scopes();
+
+		m_def_provider->m_all_data_structures.clear();
 		m_def_provider->refresh_data_vectors();
 
 		m_program->global_declarations->accept(*this);
@@ -36,7 +38,7 @@ public:
 
 	inline void relink_global_scope() {
 		for(auto & data_struct : m_def_provider->get_all_data_structures()) {
-			m_def_provider->set_declaration(data_struct, true);
+			m_def_provider->set_declaration(data_struct.lock(), true);
 		}
 		for(auto & reference : m_def_provider->get_all_references()) {
 			auto new_declaration = m_def_provider->get_declaration(*reference);
@@ -69,10 +71,10 @@ public:
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		if(node.get_definition(m_program)) {
+		if(node.bind_definition(m_program)) {
 			if(node.kind != NodeFunctionCall::Kind::UserDefined) return &node;
-			if(!node.definition->visited) node.definition->body->accept(*this);
-			node.definition->visited = true;
+			if(!node.get_definition()->visited) node.get_definition()->body->accept(*this);
+			node.get_definition()->visited = true;
 		}
 		return &node;
 	}

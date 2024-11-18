@@ -253,7 +253,7 @@ private:
 		return true;
 	}
 
-	static inline const std::string get_init_func_name(Type* ty, int dimension, std::pair<int, int> wildcard_dims) {
+	static inline std::string get_init_func_name(Type* ty, int dimension, std::pair<int, int> wildcard_dims) {
 		std::string name = "ndarray$dim" + std::to_string(dimension);
 		for(int i=wildcard_dims.first; i<wildcard_dims.second; i++) {
 			name+="$"+std::to_string(i);

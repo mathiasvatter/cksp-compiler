@@ -124,7 +124,7 @@ public:
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		node.get_definition(m_program);
+		node.bind_definition(m_program);
 
 		// do not visit definition -> because passive var allocation is separate between callbacks and functions
 		return &node;
@@ -133,7 +133,7 @@ public:
 	inline NodeAST* visit(NodeFunctionDefinition& node) override {
 		// start every function definition with a clean slate
 		clear_passive_vars();
-		m_program->function_call_stack.push(&node);
+		m_program->function_call_stack.push(node.weak_from_this());
 		m_def_provider->add_scope();
 		node.header->accept(*this);
 		if (node.return_variable.has_value())

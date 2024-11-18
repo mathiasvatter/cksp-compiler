@@ -52,8 +52,8 @@ private:
 	DefinitionProvider* m_def_provider = nullptr;
 
 	/// track functions in use to search for recursive calls
-	std::unordered_set<NodeFunctionDefinition*> m_functions_in_use;
-	inline bool check_recursion(NodeFunctionDefinition* func) {
+	std::unordered_set<std::shared_ptr<NodeFunctionDefinition>> m_functions_in_use;
+	inline bool check_recursion(const std::shared_ptr<NodeFunctionDefinition>& func) {
 		if(m_functions_in_use.find(func) != m_functions_in_use.end()) {
 			// recursive function call detected
 			auto error = CompileError(ErrorType::SyntaxError, "", "", func->tok);

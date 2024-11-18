@@ -67,19 +67,20 @@ ASTLowering* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
     return &lowering;
 }
 
-NodeFunctionDefinition* NodeFunctionCall::find_definition(struct NodeProgram *program) {
+std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(struct NodeProgram *program) {
     auto it = program->function_lookup.find({function->name, (int)function->args->size()});
     if(it != program->function_lookup.end()) {
-        it->second->is_used = true;
+		auto func_def = it->second.lock();
+		func_def->is_used = true;
         definition = it->second;
         kind = Kind::UserDefined;
 //		definition->call_sites.emplace(this);
-        return it->second;
+        return func_def;
     }
     return nullptr;
 }
 
-NodeFunctionDefinition* NodeFunctionCall::find_builtin_definition(NodeProgram *program) {
+std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_builtin_definition(NodeProgram *program) {
     if(!program->def_provider) {
         CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
@@ -87,14 +88,14 @@ NodeFunctionDefinition* NodeFunctionCall::find_builtin_definition(NodeProgram *p
         function->ty = builtin_func->ty;
         function->has_forced_parenth = builtin_func->header->has_forced_parenth;
         definition = builtin_func;
-		definition->is_thread_safe = builtin_func->is_thread_safe;
+//		definition->is_thread_safe = builtin_func->is_thread_safe;
 		kind = Kind::Builtin;
         return builtin_func;
     }
     return nullptr;
 }
 
-NodeFunctionDefinition* NodeFunctionCall::find_property_definition(NodeProgram *program) {
+std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_property_definition(NodeProgram *program) {
     if(!program->def_provider) {
         CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
@@ -117,7 +118,7 @@ NodeFunctionDefinition* NodeFunctionCall::find_property_definition(NodeProgram *
 }
 
 
-NodeFunctionDefinition *NodeFunctionCall::find_constructor_definition(NodeProgram *program) {
+std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_constructor_definition(NodeProgram *program) {
 	auto it = program->struct_lookup.find(function->name);
 	if(it != program->struct_lookup.end()) {
 		auto constructor = it->second->constructor;
@@ -132,8 +133,8 @@ NodeFunctionDefinition *NodeFunctionCall::find_constructor_definition(NodeProgra
 }
 
 
-bool NodeFunctionCall::get_definition(NodeProgram* program, bool fail) {
-    if (definition) {
+bool NodeFunctionCall::bind_definition(NodeProgram* program, bool fail) {
+    if (get_definition()) {
 		// update call sites
 //		if(kind == Kind::UserDefined) {
 //			definition->call_sites.emplace(this);
@@ -222,15 +223,16 @@ bool NodeFunctionCall::is_string_env() {
 	// is within message call
 	is_string |= parent->parent->get_node_type() == NodeType::FunctionHeaderRef and static_cast<NodeFunctionHeaderRef*>(parent->parent)->name == "message";
 	// is within return statement
-	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->definition->ty == TypeRegistry::String;
+	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->get_definition()->ty == TypeRegistry::String;
 	return is_string;
 }
 
 bool NodeFunctionCall::do_param_promotion() const {
-	if(!definition) return false;
-	if(definition->is_thread_safe) return false;
+	auto def = get_definition();
+	if(!def) return false;
+	if(def->is_thread_safe) return false;
 	if(is_call) return false;
-	if(definition->call_sites.size() > 2) return false;
+	if(def->call_sites.size() > 2) return false;
 	return true;
 }
 

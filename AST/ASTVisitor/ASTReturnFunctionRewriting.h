@@ -47,7 +47,7 @@ public:
 		node.reset_function_visited_flag();
 
 //		/// vector to house only the definitions that are actually used in the program
-//		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
+//		std::vector<std::shared_ptr<NodeFunctionDefinition>> final_function_definitions;
 //		// this is needed in case a return only function is called in a function with return value
 //		for(auto & func_def : node.function_definitions) {
 //			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
@@ -62,14 +62,14 @@ public:
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		if(node.get_definition(m_program)) {
-			if(!node.definition->visited) node.definition->accept(*this);
+		if(node.bind_definition(m_program)) {
+			if(!node.get_definition()->visited) node.get_definition()->accept(*this);
 
 			// add throwaway variable ref to params
 			if(node.parent->get_node_type() == NodeType::Statement) {
 				if(node.is_builtin_kind()) return &node;
-				if (node.definition and node.definition->num_return_params > 0) {
-					auto &throwaway_var = node.definition->header->get_param(0);
+				if (node.get_definition() and node.get_definition()->num_return_params > 0) {
+					auto &throwaway_var = node.get_definition()->header->get_param(0);
 					auto throwaway_ref = throwaway_var->to_reference();
 					throwaway_ref->name = m_def_provider->get_fresh_name("_");
 					throwaway_ref->kind = NodeReference::Kind::Throwaway;
@@ -115,11 +115,11 @@ public:
 		node.l_value->accept(*this);
 		if(node.r_value->get_node_type() == NodeType::FunctionCall) {
 			auto func_call = static_cast<NodeFunctionCall*>(node.r_value.get());
-			if(!func_call->get_definition(m_program)) return &node;
+			if(!func_call->bind_definition(m_program)) return &node;
 //			if(func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
 			if(func_call->is_builtin_kind()) return &node;
 
-			if(func_call->definition->num_return_params > 0) {
+			if(func_call->get_definition()->num_return_params > 0) {
 				func_call->function->prepend_arg(std::move(node.l_value));
 				return node.replace_with(std::move(node.r_value));
 			}
@@ -137,10 +137,10 @@ public:
 		node.value->accept(*this);
 		if (node.value->get_node_type() == NodeType::FunctionCall) {
 			auto func_call = static_cast<NodeFunctionCall *>(node.value.get());
-			if (!func_call->get_definition(m_program)) return &node;
+			if (!func_call->bind_definition(m_program)) return &node;
 //			if (func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
 			if(func_call->is_builtin_kind()) return &node;
-			if (func_call->definition->num_return_params > 0) {
+			if (func_call->get_definition()->num_return_params > 0) {
 				func_call->function->prepend_arg(node.variable->to_reference());
 				auto node_block = std::make_unique<NodeBlock>(node.tok);
 				node_block->scope = false;

@@ -8,8 +8,8 @@
 
 DefinitionProvider::DefinitionProvider(
 		std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables,
-		std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions,
-		std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> m_property_functions,
+		std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions,
+		std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> m_property_functions,
 		std::unordered_map<std::string, std::shared_ptr<NodeArray>> m_builtin_arrays,
 		std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> m_builtin_widgets,
 		std::vector<std::shared_ptr<NodeDataStructure>> m_external_variables)
@@ -170,18 +170,18 @@ std::shared_ptr<NodeUIControl> DefinitionProvider::get_builtin_widget(const std:
     return nullptr;
 }
 
-NodeFunctionDefinition* DefinitionProvider::get_builtin_function(NodeFunctionHeaderRef *function) {
+std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_builtin_function(NodeFunctionHeaderRef *function) {
 	const auto it = builtin_functions.find({function->name, (int)function->args->size()});
 	if(it != builtin_functions.end()) {
-		return it->second.get();
+		return it->second;
 	}
 	return nullptr;
 }
 
-NodeFunctionDefinition* DefinitionProvider::get_property_function(NodeFunctionHeaderRef *function) {
+std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_property_function(NodeFunctionHeaderRef *function) {
 	auto it = property_functions.find(function->name);
 	if(it != property_functions.end()) {
-		return it->second.get();
+		return it->second;
 	}
 	return nullptr;
 }
@@ -222,11 +222,11 @@ void DefinitionProvider::set_builtin_widgets(std::unordered_map<std::string, std
 	DefinitionProvider::builtin_widgets = std::move(builtin_widgets);
 }
 
-void DefinitionProvider::set_builtin_functions(std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions) {
+void DefinitionProvider::set_builtin_functions(std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions) {
 	DefinitionProvider::builtin_functions = std::move(builtin_functions);
 }
 
-void DefinitionProvider::set_property_functions(std::unordered_map<std::string, std::unique_ptr<NodeFunctionDefinition>> property_functions) {
+void DefinitionProvider::set_property_functions(std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions) {
 	DefinitionProvider::property_functions = std::move(property_functions);
 }
 
