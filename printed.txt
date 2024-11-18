@@ -355,10 +355,10 @@ on init
 	declare p2 : int := Point(3, 4)
 	ndarray[0, *]{real[]} := ndarray[1, *]{real[]}
 	message(List::allocation[Struct::max(0, this_list{int})]{unknown})
-	Point::__decr__(p2{int}, 1)
-	Point::Array::__decr__(ptr_array2{int[]}, 1)
-	Point::__decr__(p1{int}, 1)
 	Point::Array::__decr__(ptr_array3{int[]}, 1)
+	Point::__decr__(p2{int}, 1)
+	Point::__decr__(p1{int}, 1)
+	Point::Array::__decr__(ptr_array2{int[]}, 1)
 	Point::Array::__decr__(ptr_array{int[]}, 1)
 end on
 

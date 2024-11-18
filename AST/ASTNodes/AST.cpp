@@ -2,10 +2,7 @@
 // Created by Mathias Vatter on 28.08.23.
 //
 
-
 #include "AST.h"
-#include <execution>
-
 #include "../TypeRegistry.h"
 #include "ASTInstructions.h"
 #include "ASTDataStructures.h"
@@ -242,13 +239,13 @@ void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>&
 }
 
 void NodeDataStructure::clear_references() {
-//	for (auto &ref : references) {
-//		ref->declaration.reset();
-//	}
-	parallel_for_each(references.begin(), references.end(),
-				  [](auto const& ref) {
-					ref->declaration.reset();
-				  });
+	for (auto &ref : references) {
+		ref->declaration.reset();
+	}
+//	parallel_for_each(references.begin(), references.end(),
+//				  [](auto const& ref) {
+//					ref->declaration.reset();
+//				  });
 	references.clear();
 }
 
@@ -859,7 +856,7 @@ NodeProgram::NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program)
 }
 
 NodeProgram::NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
-						 std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions,
+						 std::vector<std::shared_ptr<NodeFunctionDefinition>> functionDefinitions,
 						 Token tok)
 	: NodeAST(std::move(tok), NodeType::Program), callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)) {
 	global_declarations = std::make_unique<NodeBlock>(Token());
@@ -873,8 +870,8 @@ NodeAST *NodeProgram::accept(struct ASTVisitor &visitor) {
 
 NodeProgram::NodeProgram(const NodeProgram& other) : NodeAST(other), init_callback(other.init_callback) {
     callbacks = clone_vector<NodeCallback>(other.callbacks);
-    function_definitions = clone_vector<NodeFunctionDefinition>(other.function_definitions);
-	additional_function_definitions = clone_vector<NodeFunctionDefinition>(other.additional_function_definitions);
+    function_definitions = other.function_definitions;
+	additional_function_definitions = other.additional_function_definitions;
 	global_declarations = std::make_unique<NodeBlock>(*other.global_declarations);
 	struct_definitions = clone_vector<NodeStruct>(other.struct_definitions);
 	function_lookup = other.function_lookup;
@@ -900,20 +897,34 @@ void NodeProgram::update_parents(NodeAST *new_parent) {
 	for(const auto & f : function_definitions) f->update_parents(this);
 }
 
+void NodeProgram::add_function_definition(const std::shared_ptr<NodeFunctionDefinition>& def) {
+	def->parent = this;
+	additional_function_definitions.push_back(def);
+	function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def});
+}
+
 void NodeProgram::update_function_lookup() {
 	function_lookup.clear();
 	for(const auto & def : function_definitions) {
-		function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def.get()});
+		function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def});
 	}
 	for(const auto & def : additional_function_definitions) {
-		function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def.get()});
+		function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def});
 	}
 	// add all struct methods to the lookup
 	for(const auto & struct_def : struct_definitions) {
 		for(const auto & method : struct_def->methods) {
-			function_lookup.insert({{method->header->name, (int)method->header->params.size()}, method.get()});
+			function_lookup.insert({{method->header->name, (int)method->header->params.size()}, method});
 		}
 	}
+}
+
+
+void NodeProgram::merge_function_definitions() {
+	function_definitions.insert(function_definitions.end(), additional_function_definitions.begin(),
+								additional_function_definitions.end());
+	additional_function_definitions.clear();
+//		update_function_lookup();
 }
 
 void NodeProgram::update_struct_lookup() {
@@ -998,6 +1009,8 @@ void NodeProgram::reset_function_visited_flag() {
 void NodeProgram::reset_function_used_flag() {
 	for(const auto & def : function_definitions) def->is_used = false;
 }
+
+
 
 
 

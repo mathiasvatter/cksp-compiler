@@ -1819,7 +1819,7 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 	if(l.is_error())
 		return Result<std::unique_ptr<NodeStruct>>(l.get_error());
 	auto node_member_block = std::make_unique<NodeBlock>(construct);
-	std::vector<std::unique_ptr<NodeFunctionDefinition>> node_methods;
+	std::vector<std::shared_ptr<NodeFunctionDefinition>> node_methods;
 	while(peek().type != end_construct) {
 		_skip_linebreaks();
 		if(peek().type == token::DECLARE) {
