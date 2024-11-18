@@ -154,8 +154,8 @@ void Compiler::compile() {
 
 	ASTReturnFunctionRewriting return_function_rewriting(&m_definition_provider);
 	ast->accept(return_function_rewriting);
-	ASTInitializerFunctionInlining initializer_inlining(&m_definition_provider);
-	ast->accept(initializer_inlining);
+//	ASTInitializerFunctionInlining initializer_inlining(&m_definition_provider);
+//	ast->accept(initializer_inlining);
 //	ast->debug_print();
 
 	compile_time.stop("Return Function Rewriting");
