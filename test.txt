@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Tue Nov 19 14:22:34 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Tue Nov 19 14:32:16 2024 }
 on init
   declare %loc_3__num_elements[3] := (6, 2, 3)
   declare $loc_8
@@ -241,7 +241,7 @@ on init
   declare $_return18
   $_return18 := ((0 + $this_list) + abs(0 - $this_list)) / 2
   message(%List__allocation[$_return18])
-  $loc_8 := $loc_17
+  $loc_8 := $loc_18
   while($loc_8 # -1) 
     %Point__allocation[$loc_8] := %Point__allocation[$loc_8] - 1
     if(%Point__allocation[$loc_8] > 0)
@@ -249,7 +249,7 @@ on init
       continue
     end if
   end while
-  $loc_8 := $loc_18
+  $loc_8 := $loc_17
   while($loc_8 # -1) 
     %Point__allocation[$loc_8] := %Point__allocation[$loc_8] - 1
     if(%Point__allocation[$loc_8] > 0)

@@ -9,17 +9,13 @@
 
 class ASTFunctionInlining : public ASTVisitor {
 private:
-//	std::vector<std::shared_ptr<NodeFunctionDefinition>> m_function_definitions;
-	std::vector<NodeFunctionCall*> m_function_calls;
 public:
 	explicit ASTFunctionInlining(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
 	/// check for used functions
 	inline NodeAST *visit(NodeProgram &node) override {
 		m_program = &node;
-//		node.update_function_lookup();
 		node.reset_function_used_flag();
-		m_function_calls.clear();
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
@@ -28,27 +24,9 @@ public:
 			callback->accept(*this);
 		}
 
-//		// Verbesserung: Parallelisiere die Verarbeitung
-//		std::vector<std::future<void>> futures;
-//		for(auto & callback : node.callbacks) {
-//			futures.push_back(std::async(std::launch::async, [&]{
-//			  callback->accept(*this);
-//			}));
-//		}
-//
-//		for (auto &fut : futures) {
-//			fut.get();  // Warte auf die Beendigung aller Aufgaben
-//		}
 
-		/// vector to house only the definitions that are actually used in the program
-//		node.function_definitions.clear();
-//		node.function_definitions = m_function_definitions;
 		node.remove_unused_functions();
-//		node.update_function_lookup();
-		// does not work -> some calls have been moved
-//		for(auto & call : m_function_calls) {
-//			call->definition = nullptr;
-//		}
+
 		return &node;
 	}
 
@@ -138,22 +116,15 @@ public:
 
 		std::unique_ptr<NodeBlock> node_func_body = nullptr;
 		if(node.is_call) {
-//			m_function_calls.push_back(&node);
 			if(!definition->visited) {
-//				m_function_definitions.push_back(definition);
-//				definition->call_sites.clear();
 				definition->is_used = true;
 				definition->visited = true;
 			}
-			// kill definition of all calls, not only the first one
-//			node.definition.reset();
-//			definition = nullptr;
 		// inlining process
 		} else {
 			node_func_body = clone_as<NodeBlock>(definition->body.get());
 			m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 			node_func_body->accept(*this);
-			definition->call_sites.erase(&node);
 			m_substitution_stack.pop();
 		}
 		m_program->function_call_stack.pop();

@@ -134,7 +134,7 @@ void NodeAST::remove_references() {
 }
 
 NodeAST *NodeAST::remove_node() {
-	this->remove_references();
+//	this->remove_references();
 	return replace_with(std::make_unique<NodeDeadCode>(tok));
 }
 

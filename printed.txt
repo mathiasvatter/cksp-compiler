@@ -127,8 +127,8 @@ on init
 		Struct::max(_return18{unknown}, 0, this_list{int})
 		message(List::allocation[_return18{unknown}]{unknown})
 
-	Point::__decr__(p1{int}, 1)
 	Point::__decr__(p2{int}, 1)
+	Point::__decr__(p1{int}, 1)
 	Point::Array::__decr__(ptr_array3{int[]}, 1)
 	Point::Array::__decr__(ptr_array2{int[]}, 1)
 	Point::Array::__decr__(ptr_array{int[]}, 1)
