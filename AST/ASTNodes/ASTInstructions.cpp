@@ -51,7 +51,11 @@ NodeFunctionCall::NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHea
 	set_child_parents();
 }
 
-NodeFunctionCall::~NodeFunctionCall() = default;
+NodeFunctionCall::~NodeFunctionCall() {
+	if(auto def = definition.lock()) {
+		def->call_sites.erase(this);
+	}
+}
 
 NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
         : NodeInstruction(other), is_call(other.is_call), is_new(other.is_new), kind(other.kind),

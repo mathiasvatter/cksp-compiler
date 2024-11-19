@@ -202,9 +202,6 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 	inline NodeDataStructure(std::string name, Type* ty, Token tok, NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {
         this->ty = ty;
     }
-	~NodeDataStructure() override {
-		clear_references();
-	}
 	NodeAST* accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeDataStructure(const NodeDataStructure& other);

@@ -20,7 +20,7 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_def_provider->refresh_data_vectors();
 
 	// refresh call_sites of function definitions
-	for(const auto & func_def : node.function_definitions) func_def->call_sites.clear();
+//	for(const auto & func_def : node.function_definitions) func_def->call_sites.clear();
 
 	// most func defs will be visited when called, keeping local scopes in mind
 	m_program->global_declarations->accept(*this);
