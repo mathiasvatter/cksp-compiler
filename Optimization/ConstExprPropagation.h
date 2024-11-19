@@ -98,10 +98,10 @@ public:
 		/// propagation inside certain builtin functions is not allowed
 		/// if parameter in builtin function is a variable or an array -> no propagation
 		if(node->is_func_arg()) {
-			auto func_call = static_cast<NodeFunctionCall*>(node->parent->parent->parent);
-			if(func_call->kind == NodeFunctionCall::Kind::Builtin) {
+			auto func_call = node->parent->parent->parent->cast<NodeFunctionCall>();
+			if(func_call and func_call->kind == NodeFunctionCall::Kind::Builtin) {
 				if(func_call->get_definition()) {
-					auto param_list = static_cast<NodeParamList*>(node->parent);
+					auto param_list = node->parent->cast<NodeParamList>();
 					auto &param = func_call->get_definition()->header->get_param(param_list->get_idx(node));
 					if(contains(param->name, "variable")) {
 						return node;
