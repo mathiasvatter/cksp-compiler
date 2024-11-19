@@ -391,19 +391,14 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_init_method() {
 		std::move(node_block),
 		this->tok
 	);
-//	function_def->update_param_data_type();
 	function_def->ty = TypeRegistry::add_object_type(this->name);
 	function_def->parent = this;
-//	this->methods.push_back(std::move(function_def));
-//	this->constructor = methods.back().get();
-//	this->rebuild_method_table();
-//	return method_table.find({"__init__", (int)num_params})->second;
 	return add_method(function_def);
 }
 
 std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_repr_method() {
-	auto self_ref = node_self->to_reference();
-	self_ref->declaration = node_self;
+	auto self_param = std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_self.get()));
+	auto self_ref = self_param->variable->to_reference();
 	auto message = std::make_unique<NodeBinaryExpr>(
 		token::STRING_OP,
 		std::make_unique<NodeString>("\"<"+this->name+"> Object: \"", tok),
@@ -420,7 +415,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_repr_method() {
 	auto function_def = std::make_shared<NodeFunctionDefinition>(
 		std::make_unique<NodeFunctionHeader>(
 			"__repr__",
-			std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_self.get())),
+			std::move(self_param),
 			this->tok
 		),
 		std::nullopt,
@@ -428,13 +423,9 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_repr_method() {
 		std::move(node_body),
 		this->tok
 	);
-//	function_def->update_param_data_type();
 	function_def->parent = this;
 	function_def->ty = TypeRegistry::String;
 	function_def->num_return_params = 1;
-//	this->methods.push_back(std::move(function_def));
-//	this->rebuild_method_table();
-//	return method_table.find({"__repr__", 1})->second;
 	return add_method(function_def);
 }
 
@@ -442,9 +433,6 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	// add struct methods to program functions
 	for(auto & method: methods) {
 		program->function_definitions.push_back(method);
-//		for(auto & callsite : method->call_sites) {
-//			callsite->definition = method;
-//		}
 	}
 	methods.clear();
 	constructor.reset();
@@ -453,13 +441,8 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	auto self = this->node_self->parent->cast<NodeSingleDeclaration>();
 	self->remove_node();
 	node_self.reset();
-//	this->rebuild_method_table();
-//	for(auto & mem: member_table) {
-//		mem.second->is_local = false;
-//	}
 	program->init_callback->statements->prepend_body(std::move(members));
 	members = std::make_unique<NodeBlock>(Token());
-//	this->rebuild_member_table();
 }
 
 std::shared_ptr<NodeFunctionDefinition> NodeStruct::get_overloaded_method(token op) {

@@ -34,7 +34,7 @@ void Compiler::compile() {
 //	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+//	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
@@ -144,6 +144,7 @@ void Compiler::compile() {
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
 
+	ast->debug_print();
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
 
@@ -155,7 +156,6 @@ void Compiler::compile() {
 	ast->accept(return_function_rewriting);
 	ASTInitializerFunctionInlining initializer_inlining(&m_definition_provider);
 	ast->accept(initializer_inlining);
-//	ast->debug_print();
 
 	compile_time.stop("Return Function Rewriting");
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
