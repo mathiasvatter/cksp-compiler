@@ -33,6 +33,10 @@ struct NodeStatement: NodeInstruction {
     void update_token_data(const Token& token) override {
         statement -> update_token_data(token);
     }
+	void set_statement(std::unique_ptr<NodeAST> new_statement) {
+		statement = std::move(new_statement);
+		statement->parent = this;
+	}
 };
 
 struct NodeFunctionCall : NodeInstruction {

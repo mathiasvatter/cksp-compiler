@@ -53,6 +53,9 @@ public:
 	}
 
 	inline NodeAST *visit(NodeSingleDeclaration &node) override {
+		if(node.variable->name == "bit_list2") {
+
+		}
 		node.variable->accept(*this);
 		if (node.value) node.value->accept(*this);
 		// get ui control variables out of the picture
@@ -123,6 +126,9 @@ public:
 
 
 	inline NodeAST *visit(NodeArrayRef &node) override {
+		if(node.name == "bit_list2") {
+
+		}
 		if(node.index) node.index->accept(*this);
 		node.get_declaration()->is_used |= is_used(node);
 		return &node;

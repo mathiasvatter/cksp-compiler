@@ -60,6 +60,13 @@ public:
 			}
 		}
 		node.init_callback->statements->prepend_body(std::move(local_declare_statements));
+
+		m_def_provider->refresh_scopes();
+		m_all_replacements.clear();
+		m_all_callback_decl.clear();
+		m_all_local_vars.clear();
+		m_passive_vars_map.clear();
+
 		return &node;
 	}
 
@@ -212,10 +219,13 @@ public:
 			}
 		}
 
-//		auto node_declaration = m_def_provider->get_declaration(node);
-//		if(!node_declaration) DefinitionProvider::throw_declaration_error(node).exit();
-//
-//		node.match_data_structure(node_declaration);
+		// connect promoted refs and their declarations
+		if(!node.get_declaration()) {
+			auto node_declaration = m_def_provider->get_declaration(node);
+			if (!node_declaration) DefinitionProvider::throw_declaration_error(node).exit();
+
+			node.match_data_structure(node_declaration);
+		}
 		return &node;
 	}
 
@@ -224,7 +234,7 @@ public:
 
 		if(node.size) node.size->accept(*this);
 
-//		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
+		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 		m_gensym.ingest(node.name);
 		return &node;
 	}
@@ -241,19 +251,21 @@ public:
 				return &node;
 			}
 		}
+		// connect promoted refs and their declarations
+		if(!node.get_declaration()) {
+			auto node_declaration = m_def_provider->get_declaration(node);
+			if (!node_declaration) {
+				DefinitionProvider::throw_declaration_error(node).exit();
+			}
 
-//		auto node_declaration = m_def_provider->get_declaration(node);
-//		if(!node_declaration) {
-//			DefinitionProvider::throw_declaration_error(node).exit();
-//		}
-//
-//		node.match_data_structure(node_declaration);
+			node.match_data_structure(node_declaration);
+		}
 		return &node;
 	}
 
 	inline NodeAST* visit(NodeVariable& node) override {
 		node.determine_locality(m_program, m_current_body);
-//		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
+		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 		m_gensym.ingest(node.name);
 		return &node;
 	}
