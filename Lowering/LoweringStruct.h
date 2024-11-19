@@ -193,7 +193,7 @@ private:
 			std::move(node_search_call),
 			init->tok
 		);
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign_search), init->tok));
+		node_block->add_as_stmt(std::move(node_assign_search));
 
 		auto node_error_message = std::make_unique<NodeFunctionCall>(
 			false,
@@ -221,7 +221,7 @@ private:
 			init->tok
 		);
 		node_if_stmt->if_body->scope = true;
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_if_stmt), init->tok));
+		node_block->add_as_stmt(std::move(node_if_stmt));
 
 		auto node_allocation = m_current_struct->allocation_var->to_reference();
 		static_cast<NodeArrayRef *>(node_allocation.get())->index = m_current_struct->free_idx_var->to_reference();
@@ -230,10 +230,10 @@ private:
 			std::make_unique<NodeInt>(1, init->tok),
 			init->tok
 		);
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign_allocation), init->tok));
+		node_block->add_as_stmt(std::move(node_assign_allocation));
 		init->body->prepend_body(std::move(node_block));
-		init->body->add_stmt(std::make_unique<NodeStatement>(
-			std::make_unique<NodeReturn>(init->tok, m_current_struct->free_idx_var->to_reference()), init->tok)
+		init->body->add_as_stmt(
+			std::make_unique<NodeReturn>(init->tok, m_current_struct->free_idx_var->to_reference())
 		);
 	}
 

@@ -167,6 +167,7 @@ struct NodeFunctionHeader: NodeDataStructure {
 	explicit NodeFunctionHeader(std::string name, Token tok, Params&&... params) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader) {
 		(add_param(std::move(params)), ...);
 	}
+	~NodeFunctionHeader() override = default;
 	NodeAST* accept(struct ASTVisitor &visitor) override;
 	NodeFunctionHeader(const NodeFunctionHeader& other);
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;

@@ -25,7 +25,7 @@ public:
 			callback->accept(*this);
 		}
 		node.reset_function_visited_flag();
-
+		node.remove_unused_functions();
 		return &node;
 	}
 
@@ -52,6 +52,8 @@ public:
 				m_substitution_stack.pop();
 				m_program->function_call_stack.pop();
 				return node.replace_with(std::move(node_func_body));
+			} else {
+				definition->is_used = true;
 			}
 		}
 		return &node;

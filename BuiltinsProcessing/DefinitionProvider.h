@@ -136,7 +136,7 @@ public:
 		return m_all_references;
 	}
 	std::vector<std::weak_ptr<NodeDataStructure>> m_all_data_structures;
-	void add_to_data_structures(std::shared_ptr<NodeDataStructure> data_struct) {
+	void add_to_data_structures(std::weak_ptr<NodeDataStructure> data_struct) {
 		m_all_data_structures.push_back(data_struct);
 	}
 	[[nodiscard]] const std::vector<std::weak_ptr<NodeDataStructure>> &get_all_data_structures() const {

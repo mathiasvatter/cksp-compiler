@@ -28,7 +28,7 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	for(const auto & s : node.struct_definitions) {
 		s->accept(*this);
 	}
-	node.reset_function_visited_flag();
+//	node.reset_function_visited_flag();
 	for(const auto & callback : node.callbacks) {
 		if(callback.get() != m_program->init_callback) callback->accept(*this);
 	}
@@ -36,6 +36,7 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 		if(!func_def->visited) func_def->accept(*this);
 	}
 	node.reset_function_visited_flag();
+	m_def_provider->refresh_scopes();
 	return &node;
 }
 
@@ -139,11 +140,11 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 	}
 
 	if(node.kind == NodeFunctionCall::UserDefined and node.get_definition()) {
-		check_recursion(node.get_definition());
+		check_recursion(node.get_definition().get());
 		if(!node.get_definition()->visited) {
-			m_functions_in_use.insert(node.get_definition());
+			m_functions_in_use.insert(node.get_definition().get());
 			node.get_definition()->accept(*this);
-			m_functions_in_use.erase(node.get_definition());
+			m_functions_in_use.erase(node.get_definition().get());
 		}
 	}
 	node.function->accept(*this);

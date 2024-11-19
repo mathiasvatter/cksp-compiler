@@ -20,6 +20,7 @@ public:
 
 	NodeAST* visit(NodeProgram &node) override {
 		node.reset_function_used_flag();
+		node.reset_function_visited_flag();
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
@@ -29,22 +30,7 @@ public:
 			callback->accept(*this);
 		}
 		node.reset_function_visited_flag();
-		/// vector to house only the definitions that are actually used in the program
-//		std::vector<std::unique_ptr<NodeFunctionDefinition>> final_function_definitions;
-//		for(auto & func_def : node.function_definitions) {
-//			if(func_def->is_used) {
-//				final_function_definitions.push_back(std::move(func_def));
-//			}
-//		}
-//		node.function_definitions = std::move(final_function_definitions);
-//		node.reset_function_used_flag();
-
-//		for(auto & func_def : node.function_definitions) {
-//			for(auto & call : func_def->call_sites) {
-//				call->definition = func_def.get();
-//			}
-//		}
-//		node.update_function_lookup();
+		node.remove_unused_functions();
 		return &node;
 	}
 
@@ -62,7 +48,6 @@ public:
 			if(definition->is_expression_function()) {
 
 				m_program->function_call_stack.push(definition);
-//				definition->remove_references();
 				auto node_func_body = clone_as<NodeBlock>(definition->body.get());
 				m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 				node_func_body->accept(*this);
@@ -92,18 +77,6 @@ public:
 		}
 		if(node.args) node.args->accept(*this);
 		return &node;
-	}
-
-	static inline std::unique_ptr<NodeAST> get_expression_func_return(NodeFunctionDefinition* def) {
-		auto stmt = def->body->statements[0]->statement.get();
-		if(stmt->get_node_type() == NodeType::Return) {
-			auto ret = static_cast<NodeReturn*>(stmt);
-			return std::move(ret->return_variables[0]);
-		}
-		auto error = CompileError(ErrorType::InternalError, "", "", def->tok);
-		error.m_message = "Function is not a return-only function";
-		error.exit();
-		return nullptr;
 	}
 
 	static inline std::unique_ptr<NodeAST> get_expression_return(NodeBlock* body) {

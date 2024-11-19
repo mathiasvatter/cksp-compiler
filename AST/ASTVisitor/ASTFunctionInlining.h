@@ -9,7 +9,7 @@
 
 class ASTFunctionInlining : public ASTVisitor {
 private:
-	std::vector<std::shared_ptr<NodeFunctionDefinition>> m_function_definitions;
+//	std::vector<std::shared_ptr<NodeFunctionDefinition>> m_function_definitions;
 	std::vector<NodeFunctionCall*> m_function_calls;
 public:
 	explicit ASTFunctionInlining(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
@@ -42,8 +42,9 @@ public:
 
 		/// vector to house only the definitions that are actually used in the program
 //		node.function_definitions.clear();
-		node.function_definitions = m_function_definitions;
-		node.update_function_lookup();
+//		node.function_definitions = m_function_definitions;
+		node.remove_unused_functions();
+//		node.update_function_lookup();
 		// does not work -> some calls have been moved
 //		for(auto & call : m_function_calls) {
 //			call->definition = nullptr;
@@ -139,7 +140,7 @@ public:
 		if(node.is_call) {
 //			m_function_calls.push_back(&node);
 			if(!definition->visited) {
-				m_function_definitions.push_back(definition);
+//				m_function_definitions.push_back(definition);
 //				definition->call_sites.clear();
 				definition->is_used = true;
 				definition->visited = true;
