@@ -40,8 +40,7 @@ public:
 	/// deletes unused variables by removing declarations and assignments
 	void prune_unused_variables() {
 		for(auto &ass: m_all_assignments) {
-			auto reference = static_cast<NodeReference*>(ass->l_value.get());
-			if(!reference->get_declaration()->is_used) {
+			if(!ass->l_value->get_declaration()->is_used) {
 				ass->remove_node();
 			}
 		}
@@ -53,9 +52,6 @@ public:
 	}
 
 	inline NodeAST *visit(NodeSingleDeclaration &node) override {
-		if(node.variable->name == "bit_list2") {
-
-		}
 		node.variable->accept(*this);
 		if (node.value) node.value->accept(*this);
 		// get ui control variables out of the picture
@@ -86,8 +82,7 @@ public:
 	// is unused if not ui_control and only used as l_value in assignments (if not arrayref) -> adds these assignments to vector
 	inline bool is_used(const NodeReference &node) {
 		if(node.data_type != DataType::UIControl) {
-			if(node.parent->get_node_type() == NodeType::SingleAssignment) {
-				auto assignment = static_cast<NodeSingleAssignment*>(node.parent);
+			if(auto assignment = node.parent->cast<NodeSingleAssignment>()) {
 				if(assignment->l_value.get() == &node) {
 					m_all_assignments.push_back(assignment);
 					return false;
@@ -98,8 +93,7 @@ public:
 	}
 
 	inline NodeAST *visit(NodeSingleAssignment& node) override {
-		if(node.l_value->get_node_type() == NodeType::VariableRef) {
-			auto var_ref = static_cast<NodeVariableRef*>(node.l_value.get());
+		if(auto var_ref = node.l_value->cast<NodeVariableRef>()) {
 			if(var_ref->kind == NodeReference::Kind::Throwaway) {
 				return node.remove_node();
 			}
@@ -113,7 +107,7 @@ public:
 	inline NodeAST *visit(NodeVariableRef &node) override {
 		if(node.kind == NodeReference::Kind::Throwaway) {
 			// if a throwaway variable is not in assignment it has been incorrectly used
-			if(node.parent->get_node_type() != NodeType::SingleAssignment) {
+			if(node.parent->cast<NodeSingleAssignment>()) {
 				auto error = get_raw_compile_error(ErrorType::VariableError, node);
 				error.m_message  = "Throwaway variables <"+node.name+"> are removed by the compiler and will not be included "
 																	 "in the compiled code. Consider renaming your variable.";
@@ -126,9 +120,6 @@ public:
 
 
 	inline NodeAST *visit(NodeArrayRef &node) override {
-		if(node.name == "bit_list2") {
-
-		}
 		if(node.index) node.index->accept(*this);
 		node.get_declaration()->is_used |= is_used(node);
 		return &node;

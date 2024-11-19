@@ -296,8 +296,7 @@ std::unique_ptr<NodeFunctionCall> NodeReference::wrap_in_get_ui_id() {
 }
 
 bool NodeReference::is_l_value() {
-	if(parent->get_node_type() == NodeType::SingleAssignment) {
-		auto assignment = static_cast<NodeSingleAssignment*>(parent);
+	if(auto assignment = parent->cast<NodeSingleAssignment>()) {
 		if(assignment->l_value.get() == this) {
 			return true;
 		}
@@ -320,7 +319,7 @@ bool NodeReference::needs_get_ui_id() {
 }
 
 bool NodeReference::is_r_value() {
-	if(auto assignment = this->parent->cast<NodeSingleAssignment>()) {
+	if(auto assignment = parent->cast<NodeSingleAssignment>()) {
 		static VarExistsValidator var_exists_validator;
 		return var_exists_validator.var_exists(*assignment->r_value, name);
 	}

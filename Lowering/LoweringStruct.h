@@ -45,7 +45,7 @@ public:
 	}
 
 	inline NodeAST * visit(NodeSingleDeclaration& node) override {
-		// "self" gets deleted in the inline_struct method
+		// "self" gets deleted in the inline_struct method -> ignore here
 		if(node.variable == m_current_struct->node_self) {
 			return &node;
 		}
