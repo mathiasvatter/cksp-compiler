@@ -62,10 +62,6 @@ public:
 		node.init_callback->statements->prepend_body(std::move(local_declare_statements));
 
 		m_def_provider->refresh_scopes();
-		m_all_replacements.clear();
-		m_all_callback_decl.clear();
-		m_all_local_vars.clear();
-		m_passive_vars_map.clear();
 
 		return &node;
 	}
@@ -275,7 +271,13 @@ public:
 		return true;
 	}
 
-
+	bool clear_all_maps() {
+		m_all_replacements.clear();
+		m_all_callback_decl.clear();
+		m_all_local_vars.clear();
+		m_passive_vars_map.clear();
+		return true;
+	}
 
 private:
 	std::string loc_var_prefix = "loc_";
