@@ -45,11 +45,11 @@ public:
 			for(auto &decl : stmt.second) {
 				decl.second->is_promoted = true;
 				node_body->add_as_stmt(
-					clone_as<NodeSingleDeclaration>(decl.second.get())
+					std::make_unique<NodeSingleDeclaration>(decl.second->variable, nullptr, node.tok)
 				);
 			}
-			node_body->add_stmt(clone_as<NodeStatement>(stmt.first));
-			stmt.first->statement->replace_with(std::move(node_body));
+			node_body->add_as_stmt(std::move(stmt.first->statement));
+			stmt.first->set_statement(std::move(node_body));
 		}
 		for(auto & m_global_var : m_global_function_vars) {
 			m_program->global_declarations->add_as_stmt(std::move(m_global_var.second));
@@ -111,7 +111,10 @@ public:
 						definition->header->add_param(clone_as<NodeDataStructure>(decl.second->variable.get()));
 						for (auto &call_site : definition->call_sites) {
 							// add references to those local variables in the function call
-							call_site->function->add_arg(decl.second->variable->to_reference());
+							auto ref = decl.second->variable->to_reference();
+							// the ref in the call should not be connected to the param in the definition
+							ref->declaration.reset();
+							call_site->function->add_arg(std::move(ref));
 						}
 					}
 

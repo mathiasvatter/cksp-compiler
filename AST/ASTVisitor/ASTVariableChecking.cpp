@@ -104,7 +104,6 @@ NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
 	// function definitions are being visited in the program node
 	// node header as data struct
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-//	m_def_provider->add_to_data_structures(node.get_shared());
 	for(auto &param : node.params) param->accept(*this);
 	return &node;
 }
@@ -177,13 +176,13 @@ NodeAST* ASTVariableChecking::visit(NodeArray& node) {
 	node.determine_locality(m_program, m_current_block);
 	if(node.size) node.size->accept(*this);
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-//	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 	if(node.index) node.index->accept(*this);
 
+	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 	// maybe declaration comes after lowering, do not throw error
 	if(!node_declaration) {
@@ -204,7 +203,6 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
     }
 
     node.match_data_structure(node_declaration);
-	m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -212,12 +210,13 @@ NodeAST* ASTVariableChecking::visit(NodeNDArray& node) {
 	node.determine_locality(m_program, m_current_block);
 	if(node.sizes) node.sizes->accept(*this);
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-//	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
+
+	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
@@ -228,7 +227,6 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 		return &node;
 	}
 	node.match_data_structure(node_declaration);
-	m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -244,13 +242,13 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 		}
 	}
 
+	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
 		CompileError(ErrorType::VariableError, "Function Variable has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return &node;
 	}
 	node.match_data_structure(node_declaration);
-	m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -258,11 +256,11 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 	node.determine_locality(m_program, m_current_block);
 
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-//	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
+	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 
 	// check for array constants
@@ -289,7 +287,6 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
     }
 
     node.match_data_structure(node_declaration);
-	m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -297,11 +294,11 @@ NodeAST* ASTVariableChecking::visit(NodePointer& node) {
 	node.determine_locality(m_program, m_current_block);
 
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-//	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
+	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
@@ -313,7 +310,6 @@ NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
 	}
 
 	node.match_data_structure(node_declaration);
-	m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -323,18 +319,18 @@ NodeAST* ASTVariableChecking::visit(NodeList& node) {
 		params->accept(*this);
 	}
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-//	m_def_provider->add_to_data_structures(node.get_shared());
 	return &node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
+
+	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
 		CompileError(ErrorType::VariableError, "List has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
 		return &node;
 	}
-	m_def_provider->add_to_references(&node);
 	return &node;
 }
 

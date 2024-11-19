@@ -15,10 +15,11 @@ public:
 
 	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
+		node.reset_function_visited_flag();
+
 		// erase all previously saved scopes
 		m_def_provider->refresh_scopes();
 
-		m_def_provider->m_all_data_structures.clear();
 		m_def_provider->refresh_data_vectors();
 
 		m_program->global_declarations->accept(*this);

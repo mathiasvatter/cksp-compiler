@@ -24,9 +24,8 @@ public:
 			callback->accept(*this);
 		}
 
-
 		node.remove_unused_functions();
-
+		node.reset_function_visited_flag();
 		return &node;
 	}
 

@@ -56,11 +56,11 @@ public:
 	NodeAST* visit(NodeSingleAssignment& node) override {
 		node.r_value->accept(*this);
 		// remove constant from constant expression map when it gets reassigned
-		auto ref = static_cast<NodeReference*>(node.l_value.get());
-		remove_constant_expression(ref);
+//		auto ref = static_cast<NodeReference*>(node.l_value.get());
+		remove_constant_expression(node.l_value.get());
 		node.l_value->accept(*this);
 		// if mutable, try to propagate the value
-		if(ref->data_type == DataType::Mutable) {
+		if(node.l_value->data_type == DataType::Mutable) {
 			if(node.r_value->is_constant()) {
 				m_constant_expressions[get_hash_value(*node.l_value)] = node.r_value->clone();
 			}

@@ -34,7 +34,7 @@ void Compiler::compile() {
 //	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-//	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 //    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
@@ -166,7 +166,6 @@ void Compiler::compile() {
 	// Data Structure Lowering of NDArrays and Array assignments
 	ASTDataStructureLowering data_structure_lowering(&m_definition_provider);
 	ast->accept(data_structure_lowering);
-	ast->debug_print();
 
 	compile_time.stop("Data Structure Lowering");
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
@@ -204,6 +203,7 @@ void Compiler::compile() {
 	ast->accept(relink_global_scope);
 	ASTCollectPostLowerings post_lowering(&m_definition_provider);
 	ast->accept(post_lowering);
+//	ast->debug_print();
 
 	compile_time.stop("Post Lowering");
 	std::cout << compile_time.print_timer("Post Lowering") << std::endl;

@@ -51,7 +51,6 @@ public:
 				auto node_func_body = clone_as<NodeBlock>(definition->body.get());
 				m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 				node_func_body->accept(*this);
-//				definition->call_sites.erase(&node);
 
 				m_substitution_stack.pop();
 				m_program->function_call_stack.pop();
