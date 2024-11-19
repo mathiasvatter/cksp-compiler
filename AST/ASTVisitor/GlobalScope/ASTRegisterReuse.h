@@ -69,19 +69,19 @@ public:
 	inline bool rename_local_vars() {
 		// rename local passive_vars with gensym and add to global scope
 		for(auto & local_var : m_all_local_vars) {
-			// in case it is ::num_elements ->  the suffix needs to be retained
-			if(local_var->is_num_elements_constant()) {
-				local_var->name = m_gensym.fresh(loc_var_prefix) + OBJ_DELIMITER + "num_elements";
-			} else {
-				local_var->name = m_gensym.fresh(loc_var_prefix);
-			}
+
+			local_var->name = m_gensym.fresh(loc_var_prefix);
+
 			m_def_provider->set_declaration(local_var, false);
 		}
 		// rename all local references with their new passive_var names
 		for(auto & local_ref : m_all_local_references) {
-			if(!local_ref->get_declaration()) continue;
-			local_ref->get_declaration()->is_used = true;
-			if(local_ref->is_local) local_ref->name = local_ref->get_declaration()->name;
+			auto declaration = local_ref->get_declaration();
+			if(!declaration) continue;
+			declaration->is_used = true;
+			if(local_ref->is_local) {
+				local_ref->name = declaration->name;
+			}
 		}
 		m_all_local_vars.clear();
 		m_all_local_references.clear();
@@ -181,7 +181,7 @@ public:
 			if(is_thread_safe_env()) {
 				if (auto free_passive_var = get_free_passive_var(*node.variable)) {
 					m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
-
+					m_all_replacements[node.variable] = free_passive_var;
 					auto replacement = to_assign_statement(node);
 					// visit replacement (assign statement) to replace local var with passive_var
 					replacement->accept(*this);
@@ -284,7 +284,7 @@ private:
 	Gensym m_gensym;
 	NodeBlock* m_current_body = nullptr;
 
-	/// track all vars and their replacements
+	/// track all replacements and their original vars
 	std::unordered_map<std::shared_ptr<NodeDataStructure>, std::shared_ptr<NodeDataStructure>> m_all_replacements;
 
 	/// vector for all local declarations in callbacks

@@ -17,8 +17,6 @@ class LoweringAccessChain : public ASTLowering {
 private:
 	NodeAST* start_pointer = nullptr;
 	Type* prev_type = nullptr;
-	/// saves for each chain node its replacement slot, that the next is going into
-	std::map<NodeAST*, NodeAST*> node_replacement_slot;
 public:
 	explicit LoweringAccessChain(NodeProgram *program) : ASTLowering(program) {}
 
