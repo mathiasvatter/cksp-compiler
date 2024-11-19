@@ -112,6 +112,7 @@ struct NodeReference : NodeAST {
     inline explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::DeadCode) {}
     inline NodeReference(std::string name, NodeType node_type, Token tok)
             : NodeAST(tok, node_type), name(std::move(name)) {}
+	~NodeReference() override;
     NodeAST* accept(struct ASTVisitor &visitor) override;
     // Kopierkonstruktor
     NodeReference(const NodeReference& other);
@@ -194,7 +195,6 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 	std::optional<Token> persistence;
 	bool is_local = false;
 	bool is_global = false;
-//	bool is_compiler_return = false;
 	bool has_obj_assigned = false;
 	DataType data_type;
 	std::string name;
@@ -202,6 +202,9 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 	inline NodeDataStructure(std::string name, Type* ty, Token tok, NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {
         this->ty = ty;
     }
+	~NodeDataStructure() override {
+		clear_references();
+	}
 	NodeAST* accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeDataStructure(const NodeDataStructure& other);
@@ -665,7 +668,7 @@ struct NodeFunctionDefinition: NodeAST, public std::enable_shared_from_this<Node
 	int num_return_stmts = 0;
 	std::vector<struct NodeReturn*> return_stmts;
     std::unordered_set<class NodeFunctionCall*> call_sites = {};
-    std::shared_ptr<class NodeFunctionHeader> header;
+    std::shared_ptr<struct NodeFunctionHeader> header;
     std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;
     std::unique_ptr<NodeBlock> body;
@@ -744,6 +747,7 @@ struct NodeProgram : NodeAST {
 	bool is_init_callback(NodeCallback* curr_callback) const {
 		return curr_callback == init_callback;
 	}
+	void remove_unused_functions();
 
 };
 

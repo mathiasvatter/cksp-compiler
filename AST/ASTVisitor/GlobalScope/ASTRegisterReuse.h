@@ -212,10 +212,10 @@ public:
 			}
 		}
 
-		auto node_declaration = m_def_provider->get_declaration(node);
-		if(!node_declaration) DefinitionProvider::throw_declaration_error(node).exit();
-
-		node.match_data_structure(node_declaration);
+//		auto node_declaration = m_def_provider->get_declaration(node);
+//		if(!node_declaration) DefinitionProvider::throw_declaration_error(node).exit();
+//
+//		node.match_data_structure(node_declaration);
 		return &node;
 	}
 
@@ -224,7 +224,7 @@ public:
 
 		if(node.size) node.size->accept(*this);
 
-		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
+//		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 		m_gensym.ingest(node.name);
 		return &node;
 	}
@@ -242,22 +242,18 @@ public:
 			}
 		}
 
-		auto node_declaration = m_def_provider->get_declaration(node);
-		if(!node_declaration) {
-//			if(node.data_type == DataType::Const) {
-//				// do not throw error for const variables
-//				return &node;
-//			}
-			DefinitionProvider::throw_declaration_error(node).exit();
-		}
-
-		node.match_data_structure(node_declaration);
+//		auto node_declaration = m_def_provider->get_declaration(node);
+//		if(!node_declaration) {
+//			DefinitionProvider::throw_declaration_error(node).exit();
+//		}
+//
+//		node.match_data_structure(node_declaration);
 		return &node;
 	}
 
 	inline NodeAST* visit(NodeVariable& node) override {
 		node.determine_locality(m_program, m_current_body);
-		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
+//		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 		m_gensym.ingest(node.name);
 		return &node;
 	}

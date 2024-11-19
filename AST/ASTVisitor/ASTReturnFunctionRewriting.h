@@ -46,15 +46,15 @@ public:
 		}
 		node.reset_function_visited_flag();
 
-		/// vector to house only the definitions that are actually used in the program
-		std::vector<std::shared_ptr<NodeFunctionDefinition>> final_function_definitions;
-		// this is needed in case a return only function is called in a function with return value
-		for(auto & func_def : node.function_definitions) {
-			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
-				final_function_definitions.push_back(func_def);
-			}
-		}
-		node.function_definitions = final_function_definitions;
+//		/// vector to house only the definitions that are actually used in the program
+//		std::vector<std::shared_ptr<NodeFunctionDefinition>> final_function_definitions;
+//		// this is needed in case a return only function is called in a function with return value
+//		for(auto & func_def : node.function_definitions) {
+//			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
+//				final_function_definitions.push_back(func_def);
+//			}
+//		}
+//		node.function_definitions = final_function_definitions;
 		node.update_function_lookup();
 
 		return &node;
@@ -144,9 +144,9 @@ public:
 				func_call->function->prepend_arg(node.variable->to_reference());
 				auto node_block = std::make_unique<NodeBlock>(node.tok);
 				node_block->scope = false;
-				node_block->add_stmt(std::make_unique<NodeStatement>(
-					std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok), node.tok));
-				node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node.value), node.tok));
+				node_block->add_as_stmt(
+					std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok));
+				node_block->add_as_stmt(std::move(node.value));
 				return node.replace_with(std::move(node_block));
 			}
 		}

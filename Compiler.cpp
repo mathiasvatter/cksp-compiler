@@ -131,7 +131,7 @@ void Compiler::compile() {
 
 	TypeInference infer_types(ast.get());
 	ast->accept(infer_types);
-	TypeInference::cast_data_structure_types(ast.get(), true);
+//	TypeInference::cast_data_structure_types(ast.get(), true);
 
 	compile_time.stop("Type Checking");
 	std::cout << compile_time.print_timer("Type Checking") << std::endl;
@@ -143,7 +143,6 @@ void Compiler::compile() {
 
 	ASTCollectLowerings lowering(&m_definition_provider);
 	ast->accept(lowering);
-	ast->debug_print();
 
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
@@ -154,8 +153,8 @@ void Compiler::compile() {
 
 	ASTReturnFunctionRewriting return_function_rewriting(&m_definition_provider);
 	ast->accept(return_function_rewriting);
-//	ASTInitializerFunctionInlining initializer_inlining(&m_definition_provider);
-//	ast->accept(initializer_inlining);
+	ASTInitializerFunctionInlining initializer_inlining(&m_definition_provider);
+	ast->accept(initializer_inlining);
 //	ast->debug_print();
 
 	compile_time.stop("Return Function Rewriting");
@@ -167,6 +166,7 @@ void Compiler::compile() {
 	// Data Structure Lowering of NDArrays and Array assignments
 	ASTDataStructureLowering data_structure_lowering(&m_definition_provider);
 	ast->accept(data_structure_lowering);
+	ast->debug_print();
 
 	compile_time.stop("Data Structure Lowering");
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
@@ -179,7 +179,7 @@ void Compiler::compile() {
 
 //	ast->debug_print();
     ast->accept(infer_types);
-    TypeInference::cast_data_structure_types(m_program, true);
+//    TypeInference::cast_data_structure_types(m_program, true);
 
 	compile_time.stop("Variable Checking 1");
 	std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;

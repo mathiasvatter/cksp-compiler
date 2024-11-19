@@ -23,7 +23,7 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 		if(!func_def->visited) func_def->accept(*this);
 	}
 	node.reset_function_visited_flag();
-
+	cast_data_structure_types(&node, true);
 	return &node;
 }
 
@@ -52,7 +52,7 @@ void TypeInference::cast_data_structure_types(NodeProgram* program, bool cast) {
 	for(auto& refs : def_provider->get_all_data_structures()) {
 		auto data_struct = refs.lock();
 		if(!data_struct) continue;
-		for(auto & ref : refs.lock()->references) {
+		for(auto & ref : data_struct->references) {
 			match_reference_declaration(ref);
 		}
 	}
@@ -136,7 +136,7 @@ NodeAST * TypeInference::visit(NodeVariable& node) {
 //		}
 		return new_node->accept(*this);
 	}
-	m_def_provider->add_to_data_structures(node.get_shared());
+	m_def_provider->add_to_data_structures(node.weak_from_this());
 	return &node;
 }
 
@@ -171,7 +171,7 @@ NodeAST * TypeInference::visit(NodePointer& node) {
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::Nil;
 	}
-	m_def_provider->add_to_data_structures(node.get_shared());
+	m_def_provider->add_to_data_structures(node.weak_from_this());
 	return &node;
 }
 
@@ -184,7 +184,7 @@ NodeAST * TypeInference::visit(NodeArray& node) {
         node.size->accept(*this);
         node.size->ty = specialize_type(node.size->ty, TypeRegistry::Integer);
     }
-	m_def_provider->add_to_data_structures(node.get_shared());
+	m_def_provider->add_to_data_structures(node.weak_from_this());
 	return &node;
 }
 
@@ -216,7 +216,7 @@ NodeAST * TypeInference::visit(NodeNDArray& node) {
     if(node.ty == TypeRegistry::Unknown) {
         node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions);
     }
-	m_def_provider->add_to_data_structures(node.get_shared());
+	m_def_provider->add_to_data_structures(node.weak_from_this());
 	return &node;
 }
 
@@ -264,7 +264,7 @@ NodeAST * TypeInference::visit(NodeList& node) {
         types.push_back(b->ty);
     }
     node.set_element_type(infer_initialization_types(types, &node));
-	m_def_provider->add_to_data_structures(node.get_shared());
+	m_def_provider->add_to_data_structures(node.weak_from_this());
 	return &node;
 }
 
@@ -601,6 +601,7 @@ NodeAST * TypeInference::visit(NodeFunctionHeader& node) {
 		error.m_message = "Function type expected.";
 		error.exit();
 	}
+	m_def_provider->add_to_data_structures(node.weak_from_this());
 	return &node;
 }
 
@@ -609,7 +610,7 @@ NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
 	m_program->function_call_stack.push(node.weak_from_this());
 
 	// add data structures to provider
-	m_def_provider->add_to_data_structures(node.header);
+//	m_def_provider->add_to_data_structures(node.header);
     node.header->accept(*this);
     if(node.return_variable.has_value()) {
 		node.return_variable.value()->accept(*this);

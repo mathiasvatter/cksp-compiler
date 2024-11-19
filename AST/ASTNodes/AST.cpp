@@ -239,17 +239,16 @@ void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>&
 }
 
 void NodeDataStructure::clear_references() {
-	for (auto &ref : references) {
-		ref->declaration.reset();
-	}
-//	parallel_for_each(references.begin(), references.end(),
-//				  [](auto const& ref) {
-//					ref->declaration.reset();
-//				  });
 	references.clear();
 }
 
 // ************* NodeReference ***************
+NodeReference::~NodeReference() {
+	if(auto decl = declaration.lock()) {
+		decl->references.erase(this);
+	}
+}
+
 NodeAST *NodeReference::accept(struct ASTVisitor &visitor) {
 	return nullptr;
 }
@@ -356,6 +355,7 @@ std::shared_ptr<NodeDataStructure> NodeReference::get_declaration() const {
 //	}
 	return ptr;
 }
+
 
 // ************* NodeInstruction ***************
 NodeAST *NodeInstruction::accept(struct ASTVisitor &visitor) {
@@ -925,7 +925,6 @@ void NodeProgram::merge_function_definitions() {
 	function_definitions.insert(function_definitions.end(), additional_function_definitions.begin(),
 								additional_function_definitions.end());
 	additional_function_definitions.clear();
-//		update_function_lookup();
 }
 
 void NodeProgram::update_struct_lookup() {
@@ -973,7 +972,6 @@ std::unique_ptr<NodeBlock> NodeProgram::declare_compiler_variables() {
 	std::unordered_map<std::string, Type*> compiler_variables = {{"_iter", TypeRegistry::Integer}};
 	Token tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
 	auto node_body = std::make_unique<NodeBlock>(tok);
-//	node_body->scope = true;
 	for(const auto & var_name: compiler_variables) {
 		auto node_variable = std::make_unique<NodeVariable>(
 			std::nullopt,
@@ -1009,6 +1007,21 @@ void NodeProgram::reset_function_visited_flag() {
 
 void NodeProgram::reset_function_used_flag() {
 	for(const auto & def : function_definitions) def->is_used = false;
+}
+
+void NodeProgram::remove_unused_functions() {
+	function_lookup.clear();
+	std::vector<std::shared_ptr<NodeFunctionDefinition>> final_function_definitions;
+	for(auto const & def : function_definitions) {
+		if(def->is_used) {
+			final_function_definitions.push_back(def);
+			function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def});
+//		} else {
+//			def->remove_references();
+		}
+	}
+	function_definitions.clear();
+	function_definitions = final_function_definitions;
 }
 
 

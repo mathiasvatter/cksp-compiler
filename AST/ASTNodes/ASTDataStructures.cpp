@@ -442,15 +442,17 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	// add struct methods to program functions
 	for(auto & method: methods) {
 		program->function_definitions.push_back(method);
-		for(auto & callsite : method->call_sites) {
-			callsite->definition = method;
-		}
+//		for(auto & callsite : method->call_sites) {
+//			callsite->definition = method;
+//		}
 	}
 	methods.clear();
+	constructor.reset();
 	program->update_function_lookup();
 	// remove self node
 	auto self = this->node_self->parent->cast<NodeSingleDeclaration>();
 	self->remove_node();
+	node_self.reset();
 //	this->rebuild_method_table();
 //	for(auto & mem: member_table) {
 //		mem.second->is_local = false;

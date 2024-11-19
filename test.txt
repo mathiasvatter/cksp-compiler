@@ -1,10 +1,12 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Sun Nov 17 21:40:17 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Tue Nov 19 14:22:34 2024 }
 on init
   declare %loc_3__num_elements[3] := (6, 2, 3)
   declare $loc_8
+  declare $loc_11
   declare $loc_9
-  declare $loc_6
+  declare $loc_10
   declare $loc_7
+  declare $loc_6
   declare %loc_1[30]
   declare $loc_5
   declare %loc_4[6]
@@ -16,56 +18,56 @@ on init
   declare %List__allocation[1000000]
   declare %List__value[1000000]
   declare %List__next[1000000] := (-1)
-  declare $loc_10
+  declare $loc_12
   declare %_all_fx_settings[48]
   declare %all_fx_settings__pos[8] := (0, 6, 12, 18, 24, 30, 36, 42)
   declare %all_fx_settings0[6] := ($FILTER_TYPE_SV_LP2, 2, $ENGINE_PAR_CUTOFF, 450000, $ENGINE_PAR_RESONANCE, 0)
-  $loc_10 := 0
-  while($loc_10 < 6) 
-    %_all_fx_settings[$loc_10 + 0] := %all_fx_settings0[$loc_10]
-    inc($loc_10)
+  $loc_12 := 0
+  while($loc_12 < 6) 
+    %_all_fx_settings[$loc_12 + 0] := %all_fx_settings0[$loc_12]
+    inc($loc_12)
   end while
   declare %all_fx_settings1[6] := ($FILTER_TYPE_SV_LP4, 2, $ENGINE_PAR_CUTOFF, 450000, $ENGINE_PAR_RESONANCE, 0)
-  $loc_10 := 0
-  while($loc_10 < 6) 
-    %_all_fx_settings[$loc_10 + 6] := %all_fx_settings1[$loc_10]
-    inc($loc_10)
+  $loc_12 := 0
+  while($loc_12 < 6) 
+    %_all_fx_settings[$loc_12 + 6] := %all_fx_settings1[$loc_12]
+    inc($loc_12)
   end while
   declare %all_fx_settings2[6] := ($FILTER_TYPE_PRO52, 2, $ENGINE_PAR_CUTOFF, 450000, $ENGINE_PAR_RESONANCE, 0)
-  $loc_10 := 0
-  while($loc_10 < 6) 
-    %_all_fx_settings[$loc_10 + 12] := %all_fx_settings2[$loc_10]
-    inc($loc_10)
+  $loc_12 := 0
+  while($loc_12 < 6) 
+    %_all_fx_settings[$loc_12 + 12] := %all_fx_settings2[$loc_12]
+    inc($loc_12)
   end while
   declare %all_fx_settings3[6] := ($FILTER_TYPE_SV_HP2, 2, $ENGINE_PAR_CUTOFF, 450000, $ENGINE_PAR_RESONANCE, 0)
-  $loc_10 := 0
-  while($loc_10 < 6) 
-    %_all_fx_settings[$loc_10 + 18] := %all_fx_settings3[$loc_10]
-    inc($loc_10)
+  $loc_12 := 0
+  while($loc_12 < 6) 
+    %_all_fx_settings[$loc_12 + 18] := %all_fx_settings3[$loc_12]
+    inc($loc_12)
   end while
   declare %all_fx_settings4[6] := ($FILTER_TYPE_SV_HP4, 2, $ENGINE_PAR_CUTOFF, 450000, $ENGINE_PAR_RESONANCE, 0)
-  $loc_10 := 0
-  while($loc_10 < 6) 
-    %_all_fx_settings[$loc_10 + 24] := %all_fx_settings4[$loc_10]
-    inc($loc_10)
+  $loc_12 := 0
+  while($loc_12 < 6) 
+    %_all_fx_settings[$loc_12 + 24] := %all_fx_settings4[$loc_12]
+    inc($loc_12)
   end while
   declare %all_fx_settings5[6] := ($FILTER_TYPE_SV_BP2, 2, $ENGINE_PAR_CUTOFF, 450000, $ENGINE_PAR_RESONANCE, 0)
-  $loc_10 := 0
-  while($loc_10 < 6) 
-    %_all_fx_settings[$loc_10 + 30] := %all_fx_settings5[$loc_10]
-    inc($loc_10)
+  $loc_12 := 0
+  while($loc_12 < 6) 
+    %_all_fx_settings[$loc_12 + 30] := %all_fx_settings5[$loc_12]
+    inc($loc_12)
   end while
   declare %all_fx_settings6[6] := ($FILTER_TYPE_SV_BP4, 2, $ENGINE_PAR_CUTOFF, 450000, $ENGINE_PAR_RESONANCE, 0)
-  $loc_10 := 0
-  while($loc_10 < 6) 
-    %_all_fx_settings[$loc_10 + 36] := %all_fx_settings6[$loc_10]
-    inc($loc_10)
+  $loc_12 := 0
+  while($loc_12 < 6) 
+    %_all_fx_settings[$loc_12 + 36] := %all_fx_settings6[$loc_12]
+    inc($loc_12)
   end while
   declare %all_fx_settings7[6] := ($FILTER_TYPE_SV_NOTCH4, 2, $ENGINE_PAR_CUTOFF, 450000, $ENGINE_PAR_RESONANCE, 0)
-  $loc_10 := 0
-  while($loc_10 < 6) 
-    %_all_fx_settings[$loc_10 + 42] := %all_fx_settings7[$loc_10]
-    inc($loc_10)
+  $loc_12 := 0
+  while($loc_12 < 6) 
+    %_all_fx_settings[$loc_12 + 42] := %all_fx_settings7[$loc_12]
+    inc($loc_12)
   end while
   message(%_all_fx_settings[%all_fx_settings__pos[0] + 1])
   declare %array[10] := (1)
@@ -79,7 +81,7 @@ on init
   %List__value[$List__free_idx] := 42
   %List__next[$List__free_idx] := -1
   $this_list := $List__free_idx
-  declare $_return17
+  declare $_return14
   $List__free_idx := search(%List__allocation, 0)
   if($List__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'List'")
@@ -87,16 +89,16 @@ on init
   %List__allocation[$List__free_idx] := 1
   %List__value[$List__free_idx] := 41
   %List__next[$List__free_idx] := $this_list
-  $_return17 := $List__free_idx
-  declare $_return18
+  $_return14 := $List__free_idx
+  declare $_return15
   $List__free_idx := search(%List__allocation, 0)
   if($List__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'List'")
   end if
   %List__allocation[$List__free_idx] := 1
   %List__value[$List__free_idx] := 40
-  %List__next[$List__free_idx] := $_return17
-  $_return18 := $List__free_idx
+  %List__next[$List__free_idx] := $_return14
+  $_return15 := $List__free_idx
   declare $that_list
   $List__free_idx := search(%List__allocation, 0)
   if($List__free_idx = -1)
@@ -104,14 +106,14 @@ on init
   end if
   %List__allocation[$List__free_idx] := 1
   %List__value[$List__free_idx] := 39
-  %List__next[$List__free_idx] := $_return18
+  %List__next[$List__free_idx] := $_return15
   $that_list := $List__free_idx
   message(%List__value[%List__next[$that_list]])
   declare %ndarray__num_elements[3] := (100, 10, 10)
   declare ?_ndarray[100]
   declare %ndarray2__num_elements[3] := (100, 10, 10)
   declare %_ndarray2[100]
-  declare $_return19
+  declare $_return16
   $loc_0 := 0
   while($loc_0 = 0) 
     $loc_2 := 0
@@ -119,36 +121,36 @@ on init
       %loc_1[$loc_2] := 0
       inc($loc_2)
     end while
-    $loc_2 := 0
-    while($loc_2 < num_elements(%loc_4)) 
-      %loc_4[$loc_2] := 0
-      inc($loc_2)
-    end while
     $loc_5 := 0
-    $loc_2 := 0
-    while(($loc_2 <= (%ndarray__num_elements[1] - 1)) and ($loc_0 = 0)) 
-      $loc_5 := 0
-      while(($loc_5 <= (%ndarray__num_elements[2] - 1)) and ($loc_0 = 0)) 
-        if(?_ndarray[($loc_2 * %ndarray__num_elements[2]) + $loc_5] = 3.0)
-          $_return19 := ($loc_2 * 10) + $loc_5
+    while($loc_5 < num_elements(%loc_4)) 
+      %loc_4[$loc_5] := 0
+      inc($loc_5)
+    end while
+    $loc_7 := 0
+    $loc_6 := 0
+    while(($loc_6 <= (%ndarray__num_elements[1] - 1)) and ($loc_0 = 0)) 
+      $loc_7 := 0
+      while(($loc_7 <= (%ndarray__num_elements[2] - 1)) and ($loc_0 = 0)) 
+        if(?_ndarray[($loc_6 * %ndarray__num_elements[2]) + $loc_7] = 3.0)
+          $_return16 := ($loc_6 * 10) + $loc_7
           $loc_0 := 1
           continue
         end if
-        inc($loc_5)
+        inc($loc_7)
       end while
       if($loc_0 = 1)
         continue
       end if
-      inc($loc_2)
+      inc($loc_6)
     end while
     if($loc_0 = 1)
       continue
     end if
-    $_return19 := -1
+    $_return16 := -1
     continue
   end while
-  message($_return19 & ", " & "3" & ", " & "f")
-  declare $_return20
+  message($_return16 & ", " & "3" & ", " & "f")
+  declare $_return17
   $loc_0 := 0
   while($loc_0 = 0) 
     $loc_2 := 0
@@ -156,140 +158,140 @@ on init
       %loc_1[$loc_2] := 0
       inc($loc_2)
     end while
-    $loc_2 := 0
-    while($loc_2 < num_elements(%loc_4)) 
-      %loc_4[$loc_2] := 0
-      inc($loc_2)
-    end while
     $loc_5 := 0
-    $loc_2 := 0
-    while(($loc_2 <= (%ndarray2__num_elements[1] - 1)) and ($loc_0 = 0)) 
-      $loc_5 := 0
-      while(($loc_5 <= (%ndarray2__num_elements[2] - 1)) and ($loc_0 = 0)) 
-        if(%_ndarray2[($loc_2 * %ndarray2__num_elements[2]) + $loc_5] = 3)
-          $_return20 := ($loc_2 * 10) + $loc_5
+    while($loc_5 < num_elements(%loc_4)) 
+      %loc_4[$loc_5] := 0
+      inc($loc_5)
+    end while
+    $loc_7 := 0
+    $loc_6 := 0
+    while(($loc_6 <= (%ndarray2__num_elements[1] - 1)) and ($loc_0 = 0)) 
+      $loc_7 := 0
+      while(($loc_7 <= (%ndarray2__num_elements[2] - 1)) and ($loc_0 = 0)) 
+        if(%_ndarray2[($loc_6 * %ndarray2__num_elements[2]) + $loc_7] = 3)
+          $_return17 := ($loc_6 * 10) + $loc_7
           $loc_0 := 1
           continue
         end if
-        inc($loc_5)
+        inc($loc_7)
       end while
       if($loc_0 = 1)
         continue
       end if
-      inc($loc_2)
+      inc($loc_6)
     end while
     if($loc_0 = 1)
       continue
     end if
-    $_return20 := -1
+    $_return17 := -1
     $loc_0 := 1
     continue
   end while
-  message($_return20 & ", " & "3" & ", " & "f")
+  message($_return17 & ", " & "3" & ", " & "f")
   message(%ndarray__num_elements[2])
-  declare %loc_11[10]
-  declare $loc_12
-  $loc_12 := 0
-  while($loc_12 <= (num_elements(%loc_11) - 1)) 
+  declare %loc_13[10]
+  declare $loc_14
+  $loc_14 := 0
+  while($loc_14 <= (num_elements(%loc_13) - 1)) 
     $Point__free_idx := search(%Point__allocation, 0)
     if($Point__free_idx = -1)
       message("Error: No more free space available to allocate objects of type 'Point'")
     end if
     %Point__allocation[$Point__free_idx] := 1
-    %loc_11[$loc_12] := $Point__free_idx
-    inc($loc_12)
+    %loc_13[$loc_14] := $Point__free_idx
+    inc($loc_14)
   end while
-  declare %loc_13[10]
-  %loc_13[0] := %loc_11[0]
-  %loc_13[1] := %loc_11[1]
-  if(%loc_13[0] # -1)
-    %Point__allocation[%loc_13[0]] := %Point__allocation[%loc_13[0]] + 1
+  declare %loc_15[10]
+  %loc_15[0] := %loc_13[0]
+  %loc_15[1] := %loc_13[1]
+  if(%loc_15[0] # -1)
+    %Point__allocation[%loc_15[0]] := %Point__allocation[%loc_15[0]] + 1
   end if
-  if(%loc_13[1] # -1)
-    %Point__allocation[%loc_13[1]] := %Point__allocation[%loc_13[1]] + (num_elements(%loc_13) - 1)
+  if(%loc_15[1] # -1)
+    %Point__allocation[%loc_15[1]] := %Point__allocation[%loc_15[1]] + (num_elements(%loc_15) - 1)
   end if
-  declare %loc_14[10]
-  %loc_14 := %loc_11
-  $loc_7 := 0
-  while($loc_7 <= (num_elements(%loc_14) - 1)) 
-    if(%loc_14[$loc_7] # -1)
-      %Point__allocation[%loc_14[$loc_7]] := %Point__allocation[%loc_14[$loc_7]] + 1
-    end if
-    inc($loc_7)
-  end while
-  $loc_12 := 0
-  $Point__free_idx := search(%Point__allocation, 0)
-  if($Point__free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Point'")
-  end if
-  %Point__allocation[$Point__free_idx] := 1
-  $loc_12 := $Point__free_idx
-  declare $loc_15
-  $Point__free_idx := search(%Point__allocation, 0)
-  if($Point__free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Point'")
-  end if
-  %Point__allocation[$Point__free_idx] := 1
-  $loc_15 := $Point__free_idx
+  declare %loc_16[10]
+  %loc_16 := %loc_13
   $loc_9 := 0
-  while($loc_9 <= (%ndarray__num_elements[1] - 1)) 
-    ?_ndarray[0 + $loc_9] := ?_ndarray[0 + $loc_9]
+  while($loc_9 <= (num_elements(%loc_16) - 1)) 
+    if(%loc_16[$loc_9] # -1)
+      %Point__allocation[%loc_16[$loc_9]] := %Point__allocation[%loc_16[$loc_9]] + 1
+    end if
     inc($loc_9)
   end while
-  declare $_return21
-  $_return21 := ((0 + $this_list) + abs(0 - $this_list)) / 2
-  message(%List__allocation[$_return21])
-  $loc_6 := $loc_15
-  while($loc_6 # -1) 
-    %Point__allocation[$loc_6] := %Point__allocation[$loc_6] - 1
-    if(%Point__allocation[$loc_6] > 0)
-      $loc_6 := -1
+  declare $loc_17
+  $Point__free_idx := search(%Point__allocation, 0)
+  if($Point__free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'Point'")
+  end if
+  %Point__allocation[$Point__free_idx] := 1
+  $loc_17 := $Point__free_idx
+  declare $loc_18
+  $Point__free_idx := search(%Point__allocation, 0)
+  if($Point__free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'Point'")
+  end if
+  %Point__allocation[$Point__free_idx] := 1
+  $loc_18 := $Point__free_idx
+  $loc_11 := 0
+  while($loc_11 <= (%ndarray__num_elements[1] - 1)) 
+    ?_ndarray[0 + $loc_11] := ?_ndarray[0 + $loc_11]
+    inc($loc_11)
+  end while
+  declare $_return18
+  $_return18 := ((0 + $this_list) + abs(0 - $this_list)) / 2
+  message(%List__allocation[$_return18])
+  $loc_8 := $loc_17
+  while($loc_8 # -1) 
+    %Point__allocation[$loc_8] := %Point__allocation[$loc_8] - 1
+    if(%Point__allocation[$loc_8] > 0)
+      $loc_8 := -1
       continue
     end if
   end while
-  $loc_8 := 0
-  while($loc_8 <= (num_elements(%loc_13) - 1)) 
-    $loc_6 := %loc_13[$loc_8]
-    while($loc_6 # -1) 
-      %Point__allocation[$loc_6] := %Point__allocation[$loc_6] - 1
-      if(%Point__allocation[$loc_6] > 0)
-        $loc_6 := -1
-        continue
-      end if
-    end while
-    inc($loc_8)
-  end while
-  $loc_6 := $loc_12
-  while($loc_6 # -1) 
-    %Point__allocation[$loc_6] := %Point__allocation[$loc_6] - 1
-    if(%Point__allocation[$loc_6] > 0)
-      $loc_6 := -1
+  $loc_8 := $loc_18
+  while($loc_8 # -1) 
+    %Point__allocation[$loc_8] := %Point__allocation[$loc_8] - 1
+    if(%Point__allocation[$loc_8] > 0)
+      $loc_8 := -1
       continue
     end if
   end while
-  $loc_8 := 0
-  while($loc_8 <= (num_elements(%loc_14) - 1)) 
-    $loc_6 := %loc_14[$loc_8]
-    while($loc_6 # -1) 
-      %Point__allocation[$loc_6] := %Point__allocation[$loc_6] - 1
-      if(%Point__allocation[$loc_6] > 0)
-        $loc_6 := -1
+  $loc_10 := 0
+  while($loc_10 <= (num_elements(%loc_16) - 1)) 
+    $loc_8 := %loc_16[$loc_10]
+    while($loc_8 # -1) 
+      %Point__allocation[$loc_8] := %Point__allocation[$loc_8] - 1
+      if(%Point__allocation[$loc_8] > 0)
+        $loc_8 := -1
         continue
       end if
     end while
-    inc($loc_8)
+    inc($loc_10)
   end while
-  $loc_8 := 0
-  while($loc_8 <= (num_elements(%loc_11) - 1)) 
-    $loc_6 := %loc_11[$loc_8]
-    while($loc_6 # -1) 
-      %Point__allocation[$loc_6] := %Point__allocation[$loc_6] - 1
-      if(%Point__allocation[$loc_6] > 0)
-        $loc_6 := -1
+  $loc_10 := 0
+  while($loc_10 <= (num_elements(%loc_15) - 1)) 
+    $loc_8 := %loc_15[$loc_10]
+    while($loc_8 # -1) 
+      %Point__allocation[$loc_8] := %Point__allocation[$loc_8] - 1
+      if(%Point__allocation[$loc_8] > 0)
+        $loc_8 := -1
         continue
       end if
     end while
-    inc($loc_8)
+    inc($loc_10)
+  end while
+  $loc_10 := 0
+  while($loc_10 <= (num_elements(%loc_13) - 1)) 
+    $loc_8 := %loc_13[$loc_10]
+    while($loc_8 # -1) 
+      %Point__allocation[$loc_8] := %Point__allocation[$loc_8] - 1
+      if(%Point__allocation[$loc_8] > 0)
+        $loc_8 := -1
+        continue
+      end if
+    end while
+    inc($loc_10)
   end while
 end on
 

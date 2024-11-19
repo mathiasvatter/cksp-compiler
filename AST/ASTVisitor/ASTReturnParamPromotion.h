@@ -129,7 +129,7 @@ public:
 				}
 			}
 			auto node_assignment = std::make_unique<NodeSingleAssignment>(std::move(new_param_ref), std::move(node.return_variables[i]), node.tok);
-			block_replace->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
+			block_replace->add_as_stmt(std::move(node_assignment));
 		}
 		return node.replace_with(std::move(block_replace));
 	}
