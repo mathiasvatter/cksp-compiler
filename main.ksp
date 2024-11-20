@@ -114,7 +114,7 @@ on init
 	declare local ptr_array3[10] := ptr_array
 	declare local p1 := Point(1, 2)
 	declare local p2 := Point(3, 4)
-	// message(p1 + p2)
+	message(Point(1, 2) + Point(3, 4))
 	
 	ndarray[0, *] := ndarray[1, *]
 

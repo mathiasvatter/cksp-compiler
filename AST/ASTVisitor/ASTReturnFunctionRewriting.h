@@ -37,9 +37,9 @@ public:
 		node.accept(hoisting);
 
 		/// do immediate inlining of return-only functions
-		ASTExpressionFunctionInlining inlining(m_def_provider);
-		node.accept(inlining);
-
+//		ASTExpressionFunctionInlining inlining(m_def_provider);
+//		node.accept(inlining);
+		node.reset_function_visited_flag();
 		m_program->global_declarations->accept(*this);
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
@@ -64,6 +64,7 @@ public:
 		node.function->accept(*this);
 		if(node.bind_definition(m_program)) {
 			if(!node.get_definition()->visited) node.get_definition()->accept(*this);
+			if(node.get_definition()->is_expression_function()) return &node;
 
 			// add throwaway variable ref to params
 			if(node.parent->get_node_type() == NodeType::Statement) {
@@ -113,9 +114,9 @@ public:
 	inline NodeAST* visit(NodeSingleAssignment &node) override {
 		node.r_value->accept(*this);
 		node.l_value->accept(*this);
-		if(node.r_value->get_node_type() == NodeType::FunctionCall) {
-			auto func_call = static_cast<NodeFunctionCall*>(node.r_value.get());
+		if(auto func_call = node.r_value->cast<NodeFunctionCall>()) {
 			if(!func_call->bind_definition(m_program)) return &node;
+			if(func_call->get_definition()->is_expression_function()) return &node;
 //			if(func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
 			if(func_call->is_builtin_kind()) return &node;
 
@@ -135,9 +136,9 @@ public:
 	inline NodeAST* visit(NodeSingleDeclaration &node) override {
 		if (!node.value) return &node;
 		node.value->accept(*this);
-		if (node.value->get_node_type() == NodeType::FunctionCall) {
-			auto func_call = static_cast<NodeFunctionCall *>(node.value.get());
+		if (auto func_call = node.value->cast<NodeFunctionCall>()) {
 			if (!func_call->bind_definition(m_program)) return &node;
+			if(func_call->get_definition()->is_expression_function()) return &node;
 //			if (func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
 			if(func_call->is_builtin_kind()) return &node;
 			if (func_call->get_definition()->num_return_params > 0) {

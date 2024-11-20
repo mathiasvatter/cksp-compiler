@@ -829,11 +829,19 @@ std::shared_ptr<NodeDataStructure> &NodeFunctionDefinition::get_param(int i) {
 
 bool NodeFunctionDefinition::is_expression_function() {
 	if(num_return_params == 1 and num_return_stmts == 1) {
+		// in case of builtin functions
+		if(body->statements.size() == 0) return true;
 		if(return_variable.has_value()) return false;
 		if(body->statements.size() == 1) {
-			auto stmt = body->statements[0]->statement.get();
-			if(stmt->get_node_type() == NodeType::Return) {
-				return true;
+			auto& stmt = body->get_last_statement();
+			if(auto node_return = stmt->cast<NodeReturn>()) {
+				if(auto func_call = node_return->return_variables[0]->cast<NodeFunctionCall>()) {
+					if(func_call->get_definition()) {
+						return func_call->get_definition()->is_expression_function();
+					}
+				} else {
+					return true;
+				}
 			}
 		}
 	}
