@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Wed Nov 20 14:44:44 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Wed Nov 20 15:52:26 2024 }
 on init
   declare $loc_8
   declare $loc_7
@@ -12,6 +12,8 @@ on init
   declare $loc_2
   declare $Point__free_idx
   declare %Point__allocation[1000000]
+  declare %Point__x[1000000]
+  declare %Point__y[1000000]
   declare $List__free_idx
   declare %List__allocation[1000000]
   declare %List__value[1000000]
@@ -146,6 +148,8 @@ on init
       message("Error: No more free space available to allocate objects of type 'Point'")
     end if
     %Point__allocation[$Point__free_idx] := 1
+    %Point__x[$Point__free_idx] := $loc_11
+    %Point__y[$Point__free_idx] := $loc_11 + 1
     %loc_10[$loc_11] := $Point__free_idx
     inc($loc_11)
   end while
@@ -173,6 +177,8 @@ on init
     message("Error: No more free space available to allocate objects of type 'Point'")
   end if
   %Point__allocation[$Point__free_idx] := 1
+  %Point__x[$Point__free_idx] := 1
+  %Point__y[$Point__free_idx] := 2
   $loc_11 := $Point__free_idx
   declare $loc_14
   $Point__free_idx := search(%Point__allocation, 0)
@@ -180,31 +186,43 @@ on init
     message("Error: No more free space available to allocate objects of type 'Point'")
   end if
   %Point__allocation[$Point__free_idx] := 1
+  %Point__x[$Point__free_idx] := 3
+  %Point__y[$Point__free_idx] := 4
   $loc_14 := $Point__free_idx
+  declare $_return18
+  $Point__free_idx := search(%Point__allocation, 0)
+  if($Point__free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'Point'")
+  end if
+  %Point__allocation[$Point__free_idx] := 1
+  %Point__x[$Point__free_idx] := 1
+  %Point__y[$Point__free_idx] := 2
+  $_return18 := $Point__free_idx
+  declare $_return19
+  $Point__free_idx := search(%Point__allocation, 0)
+  if($Point__free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'Point'")
+  end if
+  %Point__allocation[$Point__free_idx] := 1
+  %Point__x[$Point__free_idx] := 3
+  %Point__y[$Point__free_idx] := 4
+  $_return19 := $Point__free_idx
+  declare $_return20
+  $Point__free_idx := search(%Point__allocation, 0)
+  if($Point__free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'Point'")
+  end if
+  %Point__allocation[$Point__free_idx] := 1
+  %Point__x[$Point__free_idx] := %Point__x[$_return18] + %Point__x[$_return19]
+  %Point__y[$Point__free_idx] := %Point__y[$_return18] + %Point__y[$_return19]
+  $_return20 := $Point__free_idx
+  message("Point {X: " & %Point__x[$_return20] & ", Y: " & %Point__y[$_return20] & "}")
   $loc_8 := 0
   while($loc_8 <= (num_elements(?_ndarray) - 1)) 
     ?_ndarray[0 + $loc_8] := ?_ndarray[0 + $loc_8]
     inc($loc_8)
   end while
-  declare $_return18
-  $_return18 := ((0 + $this_list) + abs(0 - $this_list)) / 2
-  message(%List__allocation[$_return18])
-  $loc_5 := $loc_14
-  while($loc_5 # -1) 
-    %Point__allocation[$loc_5] := %Point__allocation[$loc_5] - 1
-    if(%Point__allocation[$loc_5] > 0)
-      $loc_5 := -1
-      continue
-    end if
-  end while
-  $loc_5 := $loc_11
-  while($loc_5 # -1) 
-    %Point__allocation[$loc_5] := %Point__allocation[$loc_5] - 1
-    if(%Point__allocation[$loc_5] > 0)
-      $loc_5 := -1
-      continue
-    end if
-  end while
+  message(%List__allocation[((0 + $this_list) + abs(0 - $this_list)) / 2])
   $loc_7 := 0
   while($loc_7 <= (num_elements(%loc_13) - 1)) 
     $loc_5 := %loc_13[$loc_7]
@@ -217,6 +235,14 @@ on init
     end while
     inc($loc_7)
   end while
+  $loc_5 := $loc_11
+  while($loc_5 # -1) 
+    %Point__allocation[$loc_5] := %Point__allocation[$loc_5] - 1
+    if(%Point__allocation[$loc_5] > 0)
+      $loc_5 := -1
+      continue
+    end if
+  end while
   $loc_7 := 0
   while($loc_7 <= (num_elements(%loc_12) - 1)) 
     $loc_5 := %loc_12[$loc_7]
@@ -228,6 +254,14 @@ on init
       end if
     end while
     inc($loc_7)
+  end while
+  $loc_5 := $loc_14
+  while($loc_5 # -1) 
+    %Point__allocation[$loc_5] := %Point__allocation[$loc_5] - 1
+    if(%Point__allocation[$loc_5] > 0)
+      $loc_5 := -1
+      continue
+    end if
   end while
   $loc_7 := 0
   while($loc_7 <= (num_elements(%loc_10) - 1)) 

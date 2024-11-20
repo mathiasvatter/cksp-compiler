@@ -22,10 +22,11 @@ private:
 			return false;
 		}
 		bool returns_values = node->get_definition() and node->get_definition()->num_return_params > 0;
-		bool is_in_stmt = node->parent->get_node_type() == NodeType::Statement;
+		bool is_in_stmt = node->parent->cast<NodeStatement>();
 		// do not hoist if in declaration -> we do not need an extra declaration var
-		bool is_in_declaration = node->parent->get_node_type() == NodeType::SingleDeclaration;
-		bool is_in_assignment =  node->parent->get_node_type() == NodeType::SingleAssignment;
+		bool is_in_declaration = node->parent->cast<NodeSingleDeclaration>();
+		bool is_in_assignment =  node->parent->cast<NodeSingleAssignment>();
+		bool is_in_return = node->parent->cast<NodeReturn>();
 		if(!is_in_stmt and !returns_values) {
 			error.m_message = "Function "+node->function->name+" does not return any value";
 			error.m_got = node->function->name;

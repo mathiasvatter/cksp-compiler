@@ -219,6 +219,7 @@ Result<std::shared_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
 	node_function->is_thread_safe = is_threadsafe_function(node_function->header->name);
 	node_function->is_restricted = is_restricted_function(node_function->header->name);
 	node_function->num_return_params = num_return_vars;
+	node_function->num_return_stmts = num_return_vars;
     return Result<std::shared_ptr<NodeFunctionDefinition>>(std::move(node_function));
 }
 

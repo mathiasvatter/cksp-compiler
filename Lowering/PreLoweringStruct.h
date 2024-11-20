@@ -218,6 +218,7 @@ public:
 		);
 		node_function_def->body->scope = true;
 		node_function_def->num_return_params = 1;
+		node_function_def->num_return_stmts = 1;
 		node_function_def->ty = TypeRegistry::Integer;
 
 		// abs(a - b)
@@ -261,11 +262,7 @@ public:
 			));
 
 		// Fügen Sie die neue Funktionsdefinition zum Programm hinzu
-		program->function_definitions.push_back(std::move(node_function_def));
-
-		// Update function lookup so that the new function can be found
-		program->update_function_lookup();
-
+		program->add_function_definition(std::move(node_function_def));
 		return true;
 	}
 

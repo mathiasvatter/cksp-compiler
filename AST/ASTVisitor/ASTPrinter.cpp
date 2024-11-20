@@ -441,7 +441,7 @@ NodeAST * ASTPrinter::visit(NodeFunctionHeader &node) {
 		param->accept(*this);
 		os << ", ";
 	}
-	os.seekp(-2, std::ios_base::end);
+	if(!node.params.empty()) os.seekp(-2, std::ios_base::end);
 	if(!node.params.empty() || node.has_forced_parenth) os << ")";
 	if(node.parent->get_node_type() != NodeType::FunctionDefinition) {
 		auto type = TypeRegistry::get_annotation_from_type(node.ty);
@@ -470,7 +470,7 @@ NodeAST * ASTPrinter::visit(NodeFunctionDefinition &node) {
         node.return_variable.value()->accept(*this);
     }
     if (node.override) {
-        os << "override" << std::endl;
+        os << " override" << std::endl;
     }
     os << "\n";
     node.body->accept(*this);
