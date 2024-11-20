@@ -93,7 +93,7 @@ public:
 //			CompileError(ErrorType::InternalError,"Found function that is neither tagged Property, Undefined, Builtin or UserDefined.", "", node.tok).exit();
 //		}
 		// check if FunctionCall is in statement and not assigned or in a condition etc (Handled bei ReturnFunctionRewriting class)
-		if(node.parent->get_node_type() != NodeType::Statement) {
+		if(!node.parent->cast<NodeStatement>()) {
 			CompileError(ErrorType::InternalError,"Function call was not rewritten and is not within <Statement>.", "", node.tok).exit();
 		}
 
@@ -223,8 +223,7 @@ public:
 				std::string array_name = get_array_constant_base(ref->name);
 				if(array_name.empty()) return nullptr;
 				if(auto substitute = get_substitute(array_name)) {
-					if(substitute->get_node_type() == NodeType::ArrayRef) {
-						auto array_ref = static_cast<NodeArrayRef*>(substitute.get());
+					if(auto array_ref = substitute->cast<NodeArrayRef>()) {
 						ref->name = array_ref->sanitize_name() + remove_substring(ref->name, array_name);
 						ref->ty = TypeRegistry::Integer;
 						ref->declaration.reset();
@@ -233,8 +232,7 @@ public:
 				}
 			}
 			if(auto substitute = get_substitute("_"+ndarray_name)) {
-				if(substitute->get_node_type() == NodeType::ArrayRef) {
-					auto array_ref = static_cast<NodeArrayRef*>(substitute.get());
+				if(auto array_ref = substitute->cast<NodeArrayRef>()) {
 					ref->name = array_ref->sanitize_name() + remove_substring(ref->name, ndarray_name);
 					ref->ty = TypeRegistry::Integer;
 					ref->declaration.reset();
@@ -242,8 +240,7 @@ public:
 				}
 			// in case it is before datastructure lowering and ndarray refs still exist
 			} else if(auto nd_substitute = get_substitute(ndarray_name)) {
-				if(nd_substitute->get_node_type() == NodeType::NDArrayRef) {
-					auto nd_array_ref = static_cast<NodeNDArrayRef*>(nd_substitute.get());
+				if(auto nd_array_ref = nd_substitute->cast<NodeNDArrayRef>()) {
 					ref->name = nd_array_ref->name + remove_substring(ref->name, ndarray_name);
 					ref->ty = TypeRegistry::Integer;
 					ref->declaration.reset();
@@ -256,9 +253,9 @@ public:
 
 	/// if substitute and ref are both of type <Composite> and <ArrayRef>: only change name
 	static NodeReference* substitute_composite_type(NodeReference* ref, NodeAST* substitute) {
-		if(substitute->get_node_type() == NodeType::InitializerList) return nullptr;
+		if(substitute->cast<NodeInitializerList>()) return nullptr;
 		if(substitute->ty->get_type_kind() == TypeKind::Composite) {// || ref->ty->get_type_kind() == TypeKind::Composite) {
-			if (substitute->get_node_type() != NodeType::ArrayRef and substitute->get_node_type() != NodeType::NDArrayRef) {
+			if (!substitute->cast<NodeArrayRef>() and !substitute->cast<NodeNDArrayRef>()) {
 				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
 				error.m_message = "Arg is of type <Composite> but is no <ArrayRef> Node: <" + ref->name + ">.";
 				error.exit();
@@ -284,7 +281,7 @@ public:
 	}
 
 	static NodeReference* substitute_function_type(NodeReference* ref, NodeAST* substitute) {
-		if(substitute->ty->get_type_kind() == TypeKind::Function) {
+		if(substitute->ty->cast<FunctionType>()) {
 			if (!substitute->cast<NodeFunctionHeaderRef>() and !ref->cast<NodeFunctionHeaderRef>()) {
 				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
 				error.m_message = "Arg is of type <Function> but is no <FunctionHeaderRef> Node: <" + ref->name + ">.";

@@ -214,7 +214,7 @@ public:
 
 
 
-	std::unique_ptr<NodeBlock> add_delete(NodeSingleAssignment& assign) {
+	static std::unique_ptr<NodeBlock> add_delete(NodeSingleAssignment& assign) {
 		auto variable = assign.l_value.get();
 		auto value = get_return_var_ptr(assign.r_value.get());
 		if(!value) return nullptr;
@@ -243,7 +243,7 @@ public:
 	}
 
 	/// assuming variable is of type object
-	std::unique_ptr<NodeBlock> add_retain(NodeReference* var, NodeAST* val, bool is_decl = true) {
+	static std::unique_ptr<NodeBlock> add_retain(NodeReference* var, NodeAST* val, bool is_decl = true) {
 		auto variable = var;
 		auto value = get_return_var_ptr(val);
 
@@ -275,7 +275,7 @@ private:
 	/// returns ptr to refernce in retrun statement of functioncall if
 	/// r_value is a function call and the return type is an object
 	/// else will return og r_value
-	NodeAST* get_return_var_ptr(NodeAST* r_value) {
+	static NodeAST* get_return_var_ptr(NodeAST* r_value) {
 		if(auto func_call = r_value->cast<NodeFunctionCall>()) {
 			if(func_call->kind == NodeFunctionCall::Kind::Constructor) {
 				return nullptr;
@@ -292,12 +292,12 @@ private:
 		}
 		return r_value;
 	}
-	std::unique_ptr<NodeBlock> retain_ptr_ptr(NodePointerRef* l_ref) {
+	static std::unique_ptr<NodeBlock> retain_ptr_ptr(NodePointerRef* l_ref) {
 		auto retain = std::make_unique<NodeBlock>(l_ref->tok);
 		retain->add_as_single_retain(clone_as<NodeReference>(l_ref), std::make_unique<NodeInt>(1, l_ref->tok));
 		return retain;
 	}
-	std::unique_ptr<NodeBlock> retain_arr_init(NodeArrayRef* l_ref, NodeInitializerList* r_ref, bool is_decl = true) {
+	static std::unique_ptr<NodeBlock> retain_arr_init(NodeArrayRef* l_ref, NodeInitializerList* r_ref, bool is_decl = true) {
 		auto arr_ref = clone_as<NodeArrayRef>(l_ref);
 		arr_ref->ty = l_ref->ty->get_element_type();
 		arr_ref->set_index(std::make_unique<NodeInt>(0, l_ref->tok));
@@ -327,7 +327,7 @@ private:
 			return retain;
 		}
 	}
-	std::unique_ptr<NodeBlock> retain_arr_arr(NodeArrayRef* l_ref) {
+	static std::unique_ptr<NodeBlock> retain_arr_arr(NodeArrayRef* l_ref) {
 		// 3. variable is array -> copy into retain stmt
 		auto retain = std::make_unique<NodeBlock>(l_ref->tok);
 		retain->add_as_single_retain(clone_as<NodeReference>(l_ref), std::make_unique<NodeInt>(1, l_ref->tok));

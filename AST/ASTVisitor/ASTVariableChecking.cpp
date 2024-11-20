@@ -89,7 +89,7 @@ NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 
 	if(node.scope) m_def_provider->add_scope();
 	// if body is in function definition, copy over last scope of header variables
-	if(node.parent->get_node_type() == NodeType::FunctionDefinition) {
+	if(node.parent->cast<NodeFunctionDefinition>()) {
 		m_def_provider->copy_last_scope();
 	}
 	for(auto & stmt : node.statements) {
@@ -159,7 +159,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 	node.variable->determine_locality(m_program, m_current_block);
 
-	if(node.variable->get_node_type() == NodeType::UIControl and node.variable->is_local) {
+	if(node.variable->cast<NodeUIControl>() and node.variable->is_local) {
 		auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 		error.m_message = "<UIControls> cannot be declared as local variables or in local scopes. They have "
 						  "to be declared in the <on init> callback.";
@@ -232,8 +232,7 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(node.args) node.args->accept(*this);
-	if(node.parent->get_node_type() == NodeType::FunctionCall) {
-		auto func_call = static_cast<NodeFunctionCall*>(node.parent);
+	if(auto func_call = node.parent->cast<NodeFunctionCall>()) {
 		if(func_call->kind != NodeFunctionCall::Undefined) {
 			if(func_call->get_definition()) {
 				node.declaration = func_call->get_definition()->header;
