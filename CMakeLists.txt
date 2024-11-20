@@ -191,7 +191,6 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTCollectPostLowerings.h
         Optimization/NilValidator.h
         Lowering/LoweringUseCount.h
-        Lowering/LoweringSingleDeclaration.h
         AST/ASTVisitor/ASTTypeAnnotations.h
         AST/ASTVisitor/ReferenceManagement/ReferenceManager.h
         AST/ASTVisitor/ReferenceManagement/ReferenceManager.cpp

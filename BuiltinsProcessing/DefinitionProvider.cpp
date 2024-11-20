@@ -39,7 +39,25 @@ bool DefinitionProvider::add_scope() {
     return true;
 }
 
-std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual> DefinitionProvider::remove_scope() {
+bool DefinitionProvider::copy_last_scope() {
+	if(m_declared_data_structures.size() < 2) {
+		auto compile_error = CompileError(ErrorType::InternalError, "",-1, "","","");
+		compile_error.m_message = "Tried to copy last scope, but there is no last scope to copy.";
+		compile_error.exit();
+		return false;
+	}
+	const auto& last_scope = m_declared_data_structures[m_declared_data_structures.size() - 2];
+	auto& current_scope = m_declared_data_structures.back();
+	// Optional: Reserve Platz im aktuellen Scope, um unnötige Allokationen zu vermeiden
+	current_scope.reserve(current_scope.size() + last_scope.size());
+	for (const auto& data_struct : last_scope) {
+		current_scope.emplace(data_struct);
+	}
+	return true;
+}
+
+std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual>
+    DefinitionProvider::remove_scope() {
     auto compile_error = CompileError(ErrorType::InternalError, "",-1, "","","");
     if(m_declared_data_structures.empty()) {
         compile_error.m_message = "Tried to remove global scope.";
@@ -229,4 +247,6 @@ void DefinitionProvider::set_builtin_functions(std::unordered_map<StringIntKey, 
 void DefinitionProvider::set_property_functions(std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions) {
 	DefinitionProvider::property_functions = std::move(property_functions);
 }
+
+
 

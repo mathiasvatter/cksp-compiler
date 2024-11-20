@@ -263,7 +263,7 @@ public:
 				error.m_message = "Arg is of type <Composite> but is no <ArrayRef> Node: <" + ref->name + ">.";
 				error.exit();
 			}
-			if(ref->get_node_type() == NodeType::VariableRef) {
+			if(ref->cast<NodeVariableRef>()) {
 				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
 				error.m_message = "Tried to substitute a <Variable> function argument with an <Array>";
 				error.exit();
@@ -285,13 +285,13 @@ public:
 
 	static NodeReference* substitute_function_type(NodeReference* ref, NodeAST* substitute) {
 		if(substitute->ty->get_type_kind() == TypeKind::Function) {
-			if (substitute->get_node_type() != NodeType::FunctionHeaderRef and ref->get_node_type() != NodeType::FunctionHeaderRef) {
+			if (!substitute->cast<NodeFunctionHeaderRef>() and !ref->cast<NodeFunctionHeaderRef>()) {
 				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
 				error.m_message = "Arg is of type <Function> but is no <FunctionHeaderRef> Node: <" + ref->name + ">.";
 				error.exit();
 			}
-			auto function_subst = static_cast<NodeFunctionHeaderRef*>(substitute);
-			auto function_ref = static_cast<NodeFunctionHeaderRef*>(ref);
+			auto function_subst = substitute->cast<NodeFunctionHeaderRef>();
+			auto function_ref = ref->cast<NodeFunctionHeaderRef>();
 			function_ref->name = function_subst->name;
 			function_ref->name = function_subst->name;
 			function_ref->ty = substitute->ty;
@@ -309,10 +309,15 @@ public:
 		if(auto substitute = get_substitute(ref->name)) {
 			// if substitute and ref are both of type <Composite> and <ArrayRef>: only change name
 			if(auto composite_substitute = substitute_composite_type(ref, substitute.get())) {
+				composite_substitute->declaration = ref->declaration;
 				return composite_substitute;
 			} else if(auto function_substitute = substitute_function_type(ref, substitute.get())) {
+				function_substitute->declaration = ref->declaration;
 				return function_substitute;
 			} else {
+				if(auto subst_ref = substitute->cast<NodeVariableRef>()) {
+					subst_ref->declaration = ref->declaration;
+				}
 				return ref->replace_with(std::move(substitute));
 			}
 		} else if(auto ndarray_substitute = substitute_ndarray_constants(ref)) {
