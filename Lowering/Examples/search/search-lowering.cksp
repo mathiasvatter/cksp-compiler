@@ -1,0 +1,19 @@
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering cksp
+--------------------------------------------------------------------------------------------}
+
+declare ndarray[10, 10] : int[][]
+search(ndarray[0, *], 0)
+search(ndarray[0, *, *], -1)
+search(ndarray[*, 0], 0) // error, wildcard has to be in the last dimension
+search(ndarray[*, *], 0) // -> search(ndarray, 0)
+search(ndarray[10, *, 10, *], 0) // error, wildcard has to be in the last dimension
+search(ndarray[0, *, *], 9, 3) // error, from and to parameters not allowed with wildcards
+
+{-------------------------------------------------------------------------------------------
+                                        Post Lowering cksp
+--------------------------------------------------------------------------------------------}
+
+search(ndarray, 0, 10, num_elements(ndarray)-1)
+search(ndarray[0, *, *], -1, 10, num_elements(ndarray)-1)

@@ -68,8 +68,6 @@ public:
 			// check if node is ndarray ref -> check for wildcard index notation and adjust dimension param accordingly
 			handle_wildcard_notation(*node_ndarray, *nd_array, node);
 
-
-
 			// add clip function when ndarray is used
 			add_clip_function(m_program);
 			node.set_dimension(get_clip_call(std::move(node.dimension), std::make_unique<NodeInt>(nd_array->dimensions, node.tok)));
