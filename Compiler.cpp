@@ -83,6 +83,7 @@ void Compiler::compile() {
 		output_filename = preprocessor.get_output_path();
     if(output_filename.empty())
         output_filename = standard_output_path;
+	std::cout << std::endl;
 	std::cout << "Input File: " << input_filename << std::endl;
 	std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << output_filename << std::endl;
 	std::cout << std::endl;
