@@ -389,16 +389,9 @@ std::unique_ptr<NodeAST> NodeWildcard::clone() const {
 }
 
 bool NodeWildcard::check_semantic() {
-	bool check_parents = parent->get_node_type() == NodeType::ParamList and parent->parent->get_node_type() == NodeType::NDArrayRef;
-//		and parent->parent->parent->get_node_type() == NodeType::SingleAssignment;
-	if(check_parents) {
-//		auto assign_stmt = static_cast<NodeSingleAssignment*>(parent->parent->parent);
-//		auto nd_array_ref = static_cast<NodeNDArrayRef*>(parent->parent);
-//		if(assign_stmt->l_value.get() == nd_array_ref) {
-			return true;
-//		}
-	}
-	return false;
+	bool check_parents = (parent->cast<NodeParamList>() and parent->parent->cast<NodeNDArrayRef>())
+		or parent->cast<NodeArrayRef>();
+	return check_parents;
 }
 
 // ************* NodeInt ***************
@@ -830,7 +823,7 @@ std::shared_ptr<NodeDataStructure> &NodeFunctionDefinition::get_param(int i) {
 bool NodeFunctionDefinition::is_expression_function() {
 	if(num_return_params == 1 and num_return_stmts == 1) {
 		// in case of builtin functions
-		if(body->statements.size() == 0) return true;
+		if(body->statements.empty()) return true;
 		if(return_variable.has_value()) return false;
 		if(body->statements.size() == 1) {
 			auto& stmt = body->get_last_statement();

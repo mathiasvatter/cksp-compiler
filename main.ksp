@@ -105,7 +105,7 @@ on init
 	declare ndarray2[10,10]: int[][]
 	message(search_matrix(ndarray, 3.0), "3", "f")
 	message(search_matrix(ndarray2, 3), "3", "f")
-	message(num_elements(ndarray, 2))
+	message(num_elements(ndarray, 2), num_elements(ndarray[*, 0]))
 	declare local ptr_array[10]
 	for idx, ptr in ptr_array
 		ptr := Point(idx, idx+1)
@@ -115,7 +115,7 @@ on init
 	declare local p1 := Point(1, 2)
 	declare local p2 := Point(3, 4)
 	message(Point(1, 2) + Point(3, 4))
-	
+	message(n[*])
 	ndarray[0, *] := ndarray[1, *]
 
 	message(use_count(this_list))

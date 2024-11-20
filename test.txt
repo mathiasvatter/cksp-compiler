@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Wed Nov 20 16:06:50 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Wed Nov 20 17:54:47 2024 }
 on init
   declare $loc_8
   declare $loc_7
@@ -138,7 +138,7 @@ on init
     continue
   end while
   message($_return17 & ", " & "3" & ", " & "f")
-  message(num_elements(?_ndarray))
+  message(num_elements(?_ndarray) & ", " & num_elements(?_ndarray))
   declare %loc_10[10]
   declare $loc_11
   $loc_11 := 0
@@ -217,6 +217,7 @@ on init
   %Point__y[$Point__free_idx] := %Point__y[$_return18] + %Point__y[$_return19]
   $_return20 := $Point__free_idx
   message("Point {X: " & %Point__x[$_return20] & ", Y: " & %Point__y[$_return20] & "}")
+  message("Array of type <int[]>")
   $loc_8 := 0
   while($loc_8 <= (num_elements(?_ndarray) - 1)) 
     ?_ndarray[0 + $loc_8] := ?_ndarray[0 + $loc_8]

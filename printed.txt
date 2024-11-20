@@ -49,7 +49,7 @@ on init
 		search_matrix(_return17{int}, ndarray2{int[][]}, 3)
 		message((_return17{int} & ", " & "3" & ", " & "f"))
 
-	message(num_elements[ndarray{real[][]}, Array::clip(2, 2)])
+	message((num_elements[ndarray{real[][]}, Array::clip(2, 2)] & ", " & num_elements[ndarray{real[]}, Array::clip(1, 2)]))
 	declare ptr_array[10] : int[]
 		declare idx : int
 		idx{int} := 0
@@ -75,6 +75,7 @@ on init
 		Point::__add__(_return20{int}, _return18{int}, _return19{int})
 		message(Point::__repr__(_return20{int}))
 
+	message(int[]::__repr__(n[*]{int[]}))
 	ndarray[0, *]{real[]} := ndarray[1, *]{real[]}
 	message(List::allocation[Struct::max(0, this_list{int})]{unknown})
 	Point::__decr__(p2{int}, 1)
