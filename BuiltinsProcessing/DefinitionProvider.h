@@ -24,7 +24,8 @@
  */
 class DefinitionProvider {
 private:
-
+	/// holds all in this program defined variable names for safely issuing new ones that do not get captured
+	Gensym m_gensym;
 public:
     DefinitionProvider(
 			std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables,
@@ -43,23 +44,20 @@ public:
     /// removes variable from current scope by their name value
 	std::shared_ptr<NodeDataStructure> remove_from_current_scope(const std::string& name);
 	/// copies last scope in current scope
-	inline bool copy_last_scope() {
-		if(m_declared_data_structures.size() < 2) {
-			auto compile_error = CompileError(ErrorType::InternalError, "",-1, "","","");
-			compile_error.m_message = "Tried to copy last scope, but there is no last scope to copy.";
-			compile_error.exit();
-			return false;
-		}
-		const auto& last_scope = m_declared_data_structures[m_declared_data_structures.size() - 2];
-		auto& current_scope = m_declared_data_structures.back();
-		// Optional: Reserve Platz im aktuellen Scope, um unnötige Allokationen zu vermeiden
-		current_scope.reserve(current_scope.size() + last_scope.size());
-		for (const auto& data_struct : last_scope) {
-			current_scope.emplace(data_struct);
-		}
-		return true;
+	bool copy_last_scope();
+	/// returns the definition of a data structure, if it exists. If datastructure itself is
+	/// definition -> return nullptr. If datastructure is reference -> return declaration. If global_scope is true,
+	/// adds declaration to global scope.
+	/// only called by references -> only gets declaration does not add existing declarations to map
+	std::shared_ptr<NodeDataStructure> get_declaration(NodeReference& var);
+	/// adds existing declaration to declaration map for look up. Always returns nullptr.
+	std::shared_ptr<NodeDataStructure> set_declaration(std::shared_ptr<NodeDataStructure> var, bool global_scope);
+
+	inline std::string get_fresh_name(const std::string& name) {
+		return m_gensym.fresh(name);
 	}
 
+	/// detects if user-variable is declared throwaway and throws error if it is
 	static inline void handle_throwaway_var(NodeDataStructure& var) {
 		if(var.name == "_") {
 			auto error = CompileError(ErrorType::VariableError, "", "", var.tok);
@@ -67,6 +65,7 @@ public:
 			error.exit();
 		}
 	}
+	/// returns a static global dummy datastructure that can be used for declarations of throwaway vars
 	std::shared_ptr<NodeDataStructure> get_throwaway_declaration(NodeReference& var) {
 		if(var.name == "_") {
 			var.kind = NodeReference::Kind::Throwaway;
@@ -81,7 +80,6 @@ public:
 			Token()
 		);
 	}
-
 	/// returns a static global dummy datastructure that can be used for declarations of compiler vars
 	static std::shared_ptr<NodeDataStructure> get_compiler_declaration(NodeReference& var) {
 		if(var.kind != NodeReference::Kind::Compiler)
@@ -94,7 +92,7 @@ public:
 			Token()
 		);
 	}
-
+	/// returns a static global dummy datastructure that can be used for declarations of pgs vars
 	static std::shared_ptr<NodeDataStructure> get_pgs_declaration(NodeReference& var) {
 		if(var.ty != TypeRegistry::PGS) return nullptr;
 		return std::make_shared<NodeVariable>(
@@ -106,28 +104,7 @@ public:
 		);
 	}
 
-	/// holds all in this program defined variable names for safely issuing new ones that do not get captured
-	Gensym m_gensym;
-	inline std::string get_fresh_name(const std::string& name) {
-		return m_gensym.fresh(name);
-	}
-
-	/// returns the definition of a data structure, if it exists. If datastructure itself is
-	/// definition -> return nullptr. If datastructure is reference -> return declaration. If global_scope is true,
-	/// adds declaration to global scope.
-	/// only called by references -> only gets declaration does not add existing declarations to map
-	std::shared_ptr<NodeDataStructure> get_declaration(NodeReference& var);
-	/// adds existing declaration to declaration map for look up. Always returns nullptr.
-	std::shared_ptr<NodeDataStructure> set_declaration(std::shared_ptr<NodeDataStructure> var, bool global_scope);
-
-	/// clears all static pointer vectors
-	bool refresh_data_vectors() {
-		m_all_declarations.clear();
-		m_all_references.clear();
-		m_all_data_structures.clear();
-		m_all_assignments.clear();
-		return true;
-	}
+	/// All references to variables, arrays, data structures and controls can be saved here
 	std::vector<NodeReference*> m_all_references;
 	void add_to_references(NodeReference* reference) {
 		m_all_references.push_back(reference);
@@ -157,6 +134,15 @@ public:
 	}
 	[[nodiscard]] const std::vector<NodeSingleAssignment *> &get_all_assignments() const {
 		return m_all_assignments;
+	}
+
+	/// clears all static pointer vectors
+	bool refresh_data_vectors() {
+		m_all_declarations.clear();
+		m_all_references.clear();
+		m_all_data_structures.clear();
+		m_all_assignments.clear();
+		return true;
 	}
 
     /// dynamic vector containing every data structure; scoped

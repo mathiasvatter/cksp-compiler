@@ -484,9 +484,10 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 
 NodeAST * TypeInference::visit(NodeUIControl& node) {
 	// check if type is same as provided as builtin
-	if(node.ty != TypeRegistry::Unknown and node.ty->get_element_type() != node.declaration->control_var->ty->get_element_type()) {
+	auto declaration = node.get_declaration();
+	if(node.ty != TypeRegistry::Unknown and node.ty->get_element_type() != declaration->control_var->ty->get_element_type()) {
 		auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
-		error.m_message = "Type Annotation of <UI Control> "+node.name+" does not match expected type: "+node.declaration->control_var->ty->to_string()+".";
+		error.m_message = "Type Annotation of <UI Control> "+node.name+" does not match expected type: "+declaration->control_var->ty->to_string()+".";
 		error.m_got = node.ty->to_string();
 		error.exit();
 	}
@@ -495,20 +496,20 @@ NodeAST * TypeInference::visit(NodeUIControl& node) {
 
 	// only to matching if node types are the same (because of ui control arrays)
 	// eg. declare ui_label %lbl_sdf[3,1](1,1) -> $lbl_sdf
-	if(node.control_var->get_node_type() == node.declaration->control_var->get_node_type()) {
-		match_type(node.control_var.get(), node.declaration->control_var.get());
+	if(node.control_var->get_node_type() == declaration->control_var->get_node_type()) {
+		match_type(node.control_var.get(), declaration->control_var.get());
 	// in case of ui_arrays -> match against element type of declaration
 	} else if(node.is_ui_control_array()) {
-		if(node.control_var->ty->get_element_type()->is_compatible(node.declaration->control_var->ty->get_element_type())) {
-			node.control_var->set_element_type(node.declaration->control_var->ty->get_element_type());
+		if(node.control_var->ty->get_element_type()->is_compatible(declaration->control_var->ty->get_element_type())) {
+			node.control_var->set_element_type(declaration->control_var->ty->get_element_type());
 		} else {
 			// provoke type error
-			throw_type_error(node.control_var.get(), node.declaration->control_var.get()).exit();
+			throw_type_error(node.control_var.get(), declaration->control_var.get()).exit();
 		}
 	}
 
 	for(int i = 0; i < node.params->size(); i++) {
-		match_type(node.params->param(i).get(), node.declaration->params->param(i).get());
+		match_type(node.params->param(i).get(), declaration->params->param(i).get());
 	}
 	node.params->accept(*this);
 	return &node;

@@ -64,22 +64,9 @@ end struct
 
 // end struct
 
+
 on init	
 
-	list all_fx_settings[,]
-		// FILTER 					NUM 	CONTROLS 					DEFAULT VAL
-		FILTER_TYPE_SV_LP2,			2,		ENGINE_PAR_CUTOFF, 			450000,		ENGINE_PAR_RESONANCE, 		0
-		FILTER_TYPE_SV_LP4,			2,		ENGINE_PAR_CUTOFF, 			450000,		ENGINE_PAR_RESONANCE, 		0
-		FILTER_TYPE_PRO52,			2,		ENGINE_PAR_CUTOFF, 			450000,		ENGINE_PAR_RESONANCE, 		0
-		FILTER_TYPE_SV_HP2,			2,		ENGINE_PAR_CUTOFF, 			450000,		ENGINE_PAR_RESONANCE, 		0
-		FILTER_TYPE_SV_HP4,			2,		ENGINE_PAR_CUTOFF, 			450000,		ENGINE_PAR_RESONANCE, 		0
-		// FILTER_TYPE_AR_HP4,			1,		ENGINE_PAR_CUTOFF, 			450000,		ENGINE_PAR_RESONANCE, 		0
-		FILTER_TYPE_SV_BP2,			2,		ENGINE_PAR_CUTOFF, 			450000,		ENGINE_PAR_RESONANCE, 		0
-		FILTER_TYPE_SV_BP4,			2,		ENGINE_PAR_CUTOFF, 			450000,		ENGINE_PAR_RESONANCE, 		0
-		FILTER_TYPE_SV_NOTCH4,		2,		ENGINE_PAR_CUTOFF, 			450000,		ENGINE_PAR_RESONANCE, 		0
-	end list
-
-	message(all_fx_settings[0, 1])
 	// declare ui_menu mnu: int, i
 	// declare ari[2]
  	// mnu->value := (mnu->value + 1) mod num_elements(ari)
@@ -144,7 +131,7 @@ function search_matrix(matrix: number[][], target: number): number
 	declare array[30] := (0)
 	declare ndarray[2,3]
 	// declare ui_slider sli(0,1)
-	// message(num_elements(ndarray))
+	message(num_elements(ndarray))
     declare row, col: int
     for row := 0 to num_elements(matrix, 1)- 1
         for col := 0 to num_elements(matrix, 2)- 1

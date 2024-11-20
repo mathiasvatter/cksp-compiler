@@ -19,7 +19,6 @@
 #include "../../Desugaring/DesugarSingleAssignment.h"
 #include "../../Lowering/PostLowering/PostLoweringNumElements.h"
 #include "../../Lowering/LoweringUseCount.h"
-#include "../../Lowering/LoweringSingleDeclaration.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -514,13 +513,10 @@ ASTLowering* NodeSingleDeclaration::get_lowering(NodeProgram *program) const {
 	if(variable->get_node_type() == NodeType::List) {
 		return variable->get_lowering(program);
 	}
-	static LoweringSingleDeclaration lowering(program);
-	return &lowering;
+//	static LoweringSingleDeclaration lowering(program);
+//	return &lowering;
+	return nullptr;
 }
-//
-//ASTLowering* NodeSingleDeclaration::get_data_lowering(struct NodeProgram *program) const {
-//    return this->variable->get_data_lowering(program);
-//}
 
 std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(NodeDataStructure* var) {
     // if var provided -> turn to reference else turn variable to reference

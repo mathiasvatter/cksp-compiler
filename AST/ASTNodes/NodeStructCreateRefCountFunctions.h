@@ -113,6 +113,7 @@ public:
 		func_def->body->get_last_statement()->desugar(nullptr);
 		func_def->ty = TypeRegistry::Void;
 		func_def->header->create_function_type(TypeRegistry::Void);
+		func_def->collect_references();
 		return func_def;
 	}
 
@@ -136,6 +137,7 @@ public:
 		m_incr_func->parent = &m_struct;
 		m_incr_func->header->create_function_type(TypeRegistry::Void);
 		m_incr_func->ty = TypeRegistry::Void;
+		m_incr_func->collect_references();
 		return std::move(m_incr_func);
 	}
 
@@ -171,6 +173,7 @@ public:
 		m_del_func->parent = &m_struct;
 		m_del_func->ty = TypeRegistry::Void;
 		m_del_func->header->create_function_type(TypeRegistry::Void);
+		m_del_func->collect_references();
 		return std::move(m_del_func);
 	}
 
@@ -256,6 +259,7 @@ public:
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
 		m_decr_func->header->create_function_type(TypeRegistry::Void);
+		m_decr_func->collect_references();
 		return std::move(m_decr_func);
 	}
 
@@ -372,6 +376,7 @@ public:
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
 		m_decr_func->header->create_function_type(TypeRegistry::Void);
+		m_decr_func->collect_references();
 		return std::move(m_decr_func);
 	}
 
@@ -486,6 +491,7 @@ public:
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
 		m_decr_func->header->create_function_type(TypeRegistry::Void);
+		m_decr_func->collect_references();
 		return std::move(m_decr_func);
 	}
 

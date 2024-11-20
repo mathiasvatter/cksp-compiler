@@ -53,17 +53,28 @@ struct NodePointer: NodeDataStructure {
 
 struct NodeComposite : NodeDataStructure {
 	bool show_brackets = true;
+	std::unique_ptr<NodeParamList> num_elements = nullptr;
 	// Konstruktor
 	inline NodeComposite(std::string name, Type* ty, Token tok, NodeType node_type)
 		: NodeDataStructure(std::move(name), ty, std::move(tok), node_type) {}
 	// Kopierkonstruktor
-	NodeComposite(const NodeComposite& other) : NodeDataStructure(other), show_brackets(other.show_brackets) {}
+	NodeComposite(const NodeComposite& other) : NodeDataStructure(other),
+		show_brackets(other.show_brackets), num_elements(clone_unique(other.num_elements)) {}
 	// Standardmethoden für gemeinsame Funktionalitäten
-	virtual void update_parents(NodeAST* new_parent) override {
+	void update_parents(NodeAST* new_parent) override {
+		if(num_elements) num_elements->update_parents(new_parent);
 		parent = new_parent;
 	}
-	virtual void set_child_parents() override = 0;  // Wird in den abgeleiteten Klassen implementiert
-	virtual void update_token_data(const Token& token) override = 0; // Wird in den abgeleiteten Klassen implementiert
+	void set_child_parents() override {
+		if(num_elements) num_elements->parent = this;
+	}
+	void update_token_data(const Token& token) override {
+		if(num_elements) num_elements->update_token_data(token);
+	}
+	void set_num_elements(std::unique_ptr<NodeParamList> num_elem) {
+		num_elem->parent = this;
+		this->num_elements = std::move(num_elem);
+	}
 
 };
 
@@ -93,6 +104,10 @@ struct NodeArray : NodeComposite {
 	};
 	void update_token_data(const Token& token) override {
 		if(size) size->update_token_data(token);
+	}
+	void set_size(std::unique_ptr<NodeAST> size) {
+		size->parent = this;
+		this->size = std::move(size);
 	}
 //	ASTLowering* get_lowering(NodeProgram *program) const override;
 	ASTLowering *get_data_lowering(NodeProgram *program) const override;
@@ -218,7 +233,7 @@ struct NodeUIControl : NodeDataStructure {
 	std::shared_ptr<NodeDataStructure> control_var; //Array or Variable
 	std::unique_ptr<NodeParamList> params;
 	std::unique_ptr<NodeParamList> sizes; // if it is ui_control array
-    std::shared_ptr<NodeUIControl> declaration = nullptr;
+    std::weak_ptr<NodeUIControl> declaration;
 	inline explicit NodeUIControl(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::UIControl) {}
 	inline NodeUIControl(std::string uiControlType, std::shared_ptr<NodeDataStructure> controlVar, std::unique_ptr<NodeParamList> params, Token tok)
 		: NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::UIControl), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {
@@ -253,6 +268,9 @@ struct NodeUIControl : NodeDataStructure {
 		return ty;
 	}
 	bool is_ui_control_array() const;
+	std::shared_ptr<NodeUIControl> get_declaration() const {
+		return declaration.lock();
+	}
 };
 
 struct NodeList : NodeDataStructure {

@@ -712,7 +712,6 @@ struct NodeProgram : NodeAST {
 	std::vector<std::unique_ptr<struct NodeStruct>> struct_definitions;
 	std::unordered_map<std::string, NodeStruct*> struct_lookup;
 	std::unique_ptr<NodeBlock> global_declarations;
-	std::unordered_map<NodeDataStructure*, std::shared_ptr<NodeDataStructure>> num_element_constants; // ndarray declaration -> ndarray size declarations
 	explicit NodeProgram(Token tok);
 	NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 					   std::vector<std::shared_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok);

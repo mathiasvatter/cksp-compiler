@@ -181,7 +181,6 @@ public:
 			if(is_thread_safe_env()) {
 				if (auto free_passive_var = get_free_passive_var(*node.variable)) {
 					m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
-					m_all_replacements[node.variable] = free_passive_var;
 					auto replacement = to_assign_statement(node);
 					// visit replacement (assign statement) to replace local var with passive_var
 					replacement->accept(*this);
@@ -272,7 +271,6 @@ public:
 	}
 
 	bool clear_all_maps() {
-		m_all_replacements.clear();
 		m_all_callback_decl.clear();
 		m_all_local_vars.clear();
 		m_passive_vars_map.clear();
@@ -283,9 +281,6 @@ private:
 	std::string loc_var_prefix = "loc_";
 	Gensym m_gensym;
 	NodeBlock* m_current_body = nullptr;
-
-	/// track all replacements and their original vars
-	std::unordered_map<std::shared_ptr<NodeDataStructure>, std::shared_ptr<NodeDataStructure>> m_all_replacements;
 
 	/// vector for all local declarations in callbacks
 	std::unordered_map<NodeCallback*, std::vector<NodeSingleDeclaration*>> m_all_callback_decl = {};

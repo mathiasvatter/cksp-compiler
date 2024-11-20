@@ -52,7 +52,7 @@ public:
 		}
 
 		// if no dimension is given and it is ndarray -> use 0
-		if(node.array->get_node_type() == NodeType::NDArrayRef and !node.dimension) {
+		if(node.array->cast<NodeNDArrayRef>() and !node.dimension) {
 			// set default dimension to 0
 			node.set_dimension(std::make_unique<NodeInt>(0, node.tok));
 		}
@@ -64,23 +64,6 @@ public:
 				error.m_message = "<NDArrayRef> has somehow a declaration that is not an <NDArray>.";
 				error.exit();
 			}
-
-//			// get correct name (because local ndarrays get renamed) by using the lookup table in NodeProgram
-//			if(!node.array->declaration) {
-//				auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
-//				error.m_message = "Missing pointer to array definition: " + node.array->name;
-//				error.exit();
-//			}
-//			if(!node.array->declaration->is_function_param()) {
-//				auto it = m_program->num_element_constants.find(node.array->declaration);
-//				if (it == m_program->num_element_constants.end()) {
-//					auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
-//					error.m_message = "Missing num_elements constant for array: " + node.array->name;
-//					error.exit();
-//				}
-//				// set found size_array
-//				node.size_array = it->second;
-//			}
 
 			// add clip function when ndarray is used
 			add_clip_function(m_program);
@@ -261,11 +244,6 @@ public:
 		node_function->return_stmts.push_back(static_cast<NodeReturn*>(node_function->body->statements[0]->statement.get()));
 		// Fügen Sie die neue Funktionsdefinition zum Programm hinzu
 		program->add_function_definition(node_function);
-//		program->additional_function_definitions.push_back(std::move(node_function));
-
-		// Update function lookup so that the new function can be found
-//		program->update_function_lookup();
-
 		return true;
 
 	}
