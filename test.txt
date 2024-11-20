@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Wed Nov 20 15:52:26 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Wed Nov 20 16:06:50 2024 }
 on init
   declare $loc_8
   declare $loc_7
@@ -223,6 +223,22 @@ on init
     inc($loc_8)
   end while
   message(%List__allocation[((0 + $this_list) + abs(0 - $this_list)) / 2])
+  $loc_5 := $loc_14
+  while($loc_5 # -1) 
+    %Point__allocation[$loc_5] := %Point__allocation[$loc_5] - 1
+    if(%Point__allocation[$loc_5] > 0)
+      $loc_5 := -1
+      continue
+    end if
+  end while
+  $loc_5 := $loc_11
+  while($loc_5 # -1) 
+    %Point__allocation[$loc_5] := %Point__allocation[$loc_5] - 1
+    if(%Point__allocation[$loc_5] > 0)
+      $loc_5 := -1
+      continue
+    end if
+  end while
   $loc_7 := 0
   while($loc_7 <= (num_elements(%loc_13) - 1)) 
     $loc_5 := %loc_13[$loc_7]
@@ -235,14 +251,6 @@ on init
     end while
     inc($loc_7)
   end while
-  $loc_5 := $loc_11
-  while($loc_5 # -1) 
-    %Point__allocation[$loc_5] := %Point__allocation[$loc_5] - 1
-    if(%Point__allocation[$loc_5] > 0)
-      $loc_5 := -1
-      continue
-    end if
-  end while
   $loc_7 := 0
   while($loc_7 <= (num_elements(%loc_12) - 1)) 
     $loc_5 := %loc_12[$loc_7]
@@ -254,14 +262,6 @@ on init
       end if
     end while
     inc($loc_7)
-  end while
-  $loc_5 := $loc_14
-  while($loc_5 # -1) 
-    %Point__allocation[$loc_5] := %Point__allocation[$loc_5] - 1
-    if(%Point__allocation[$loc_5] > 0)
-      $loc_5 := -1
-      continue
-    end if
   end while
   $loc_7 := 0
   while($loc_7 <= (num_elements(%loc_10) - 1)) 
