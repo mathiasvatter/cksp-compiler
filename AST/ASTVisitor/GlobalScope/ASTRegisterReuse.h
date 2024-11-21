@@ -22,24 +22,33 @@
  */
 class ASTRegisterReuse : public ASTGlobalScope {
 public:
-	explicit ASTRegisterReuse(NodeProgram* program) : ASTGlobalScope(program) {}
-
-	inline NodeAST* visit(NodeProgram& node) override {
-		m_program = &node;
-		// update because of potentially altered param counts after lambda lifting
-		node.update_function_lookup();
+	explicit ASTRegisterReuse(NodeProgram* program) : ASTGlobalScope(program) {
 		m_def_provider->refresh_scopes();
-		clear_passive_vars();
+		clear_all_maps();
+	}
 
-		m_program->global_declarations->accept(*this);
-		for(auto & callback : node.callbacks) {
-			callback->accept(*this);
-		}
-
+	inline void do_register_reuse(NodeFunctionDefinition& def) {
+		m_program->current_callback = nullptr;
+		m_def_provider->refresh_scopes();
+		def.accept(*this);
 		rename_local_vars();
+		clear_all_maps();
+	}
 
+	inline void do_register_reuse(NodeProgram& program) {
+		m_program = &program;
+		m_program->current_callback = nullptr;
+		m_def_provider->refresh_scopes();
+		program.accept(*this);
+		rename_local_vars();
+		promote_to_global_vars();
+		clear_all_maps();
+	}
+
+public:
+	inline bool promote_to_global_vars() {
 		// move all passive_vars declarations to global scope
-		auto local_declare_statements = std::make_unique<NodeBlock>(node.tok);
+		auto local_declare_statements = std::make_unique<NodeBlock>(Token());
 		for(auto & callback : m_all_callback_decl) {
 			// do not replace with assign statements if in init callback already
 			for(auto & local_decl : callback.second) {
@@ -47,21 +56,16 @@ public:
 				local_decl->variable->is_local = false;
 				if(callback.first == m_program->init_callback) continue;
 				local_declare_statements->add_as_stmt(
-						std::make_unique<NodeSingleDeclaration>(
-							local_decl->variable,
-							nullptr, node.tok
-						)
+					std::make_unique<NodeSingleDeclaration>(
+						local_decl->variable,
+						nullptr, local_decl->tok
+					)
 				);
 				local_decl->replace_with(std::move(to_assign_statement(*local_decl)));
-//				auto node_assign_statement = local_decl->to_assign_stmt();
-//				local_decl->replace_with(std::move(node_assign_statement));
 			}
 		}
-		node.init_callback->statements->prepend_body(std::move(local_declare_statements));
-
-		m_def_provider->refresh_scopes();
-
-		return &node;
+		m_program->init_callback->statements->prepend_body(std::move(local_declare_statements));
+		return true;
 	}
 
 	inline bool rename_local_vars() {
@@ -78,9 +82,36 @@ public:
 				local_ref->name = declaration->name;
 			}
 		}
-		clear_all_maps();
+		return true;
+	}
+
+	bool clear_passive_vars() {
+		m_passive_vars_map.clear();
+		return true;
+	}
+
+	bool clear_all_maps() {
+		m_all_callback_decl.clear();
+		m_all_local_vars.clear();
+		m_passive_vars_map.clear();
 		m_def_provider->refresh_scopes();
 		return true;
+	}
+
+private:
+	inline NodeAST* visit(NodeProgram& node) override {
+		m_program = &node;
+		// update because of potentially altered param counts after lambda lifting
+		node.update_function_lookup();
+		m_def_provider->refresh_scopes();
+		clear_passive_vars();
+
+		m_program->global_declarations->accept(*this);
+		for(auto & callback : node.callbacks) {
+			callback->accept(*this);
+		}
+
+		return &node;
 	}
 
 	inline NodeAST* visit(NodeCallback& node) override {
@@ -143,7 +174,7 @@ public:
 	}
 
 	static bool is_in_global_declarations(const NodeAST& node, NodeProgram* program) {
-		return node.get_outmost_block() == program->global_declarations.get();
+		return node.get_parent_block() == program->global_declarations.get();
 	}
 
 	inline NodeAST* visit(NodeSingleDeclaration& node) override {
@@ -185,7 +216,8 @@ public:
 				}
 			}
 			// add local vars w/o free_passive_var to lists for later renaming
-			if(m_program->current_callback) m_all_callback_decl[m_program->current_callback].push_back(&node);
+			if(m_program->current_callback)
+				m_all_callback_decl[m_program->current_callback].push_back(&node);
 			m_all_local_vars.push_back(node.variable);
 		}
 
@@ -226,7 +258,6 @@ public:
 		if(node.size) node.size->accept(*this);
 
 		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-//		m_gensym.ingest(node.name);
 		return &node;
 	}
 
@@ -257,25 +288,11 @@ public:
 	inline NodeAST* visit(NodeVariable& node) override {
 		node.determine_locality(m_program, m_current_body);
 		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-//		m_gensym.ingest(node.name);
 		return &node;
-	}
-
-	bool clear_passive_vars() {
-		m_passive_vars_map.clear();
-		return true;
-	}
-
-	bool clear_all_maps() {
-		m_all_callback_decl.clear();
-		m_all_local_vars.clear();
-		m_passive_vars_map.clear();
-		return true;
 	}
 
 private:
 	std::string loc_var_prefix = "loc_";
-//	Gensym m_gensym;
 	NodeBlock* m_current_body = nullptr;
 
 	/// vector for all local declarations in callbacks

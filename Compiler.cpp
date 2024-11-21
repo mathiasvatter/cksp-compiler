@@ -8,10 +8,10 @@
 #include "AST/ASTVisitor/ASTReturnFunctionRewriting.h"
 #include "AST/ASTVisitor/ASTDataStructureLowering.h"
 #include "AST/ASTVisitor/NormalizeNDArrayAssign.h"
-#include "AST/ASTVisitor/ASTFunctionInlining.h"
+#include "AST/ASTVisitor/FunctionHandling/ASTFunctionInlining.h"
 #include "AST/ASTVisitor/ASTRelinkGlobalScope.h"
 #include "AST/ASTVisitor/ASTKSPSyntaxCheck.h"
-#include "AST/ASTVisitor/ASTInitializerFunctionInlining.h"
+#include "AST/ASTVisitor/FunctionHandling/ASTInitializerFunctionInlining.h"
 #include "AST/ASTVisitor/ASTPointerScope.h"
 #include "AST/ASTVisitor/ASTCollectPostLowerings.h"
 #include "AST/ASTVisitor/ASTTypeAnnotations.h"
@@ -112,10 +112,10 @@ void Compiler::compile() {
 	compile_time.stop("Desugaring");
 	compile_time.start("Variable Checking");
 
-	ASTTypeAnnotations type_annotations(&m_definition_provider);
+	ASTTypeAnnotations type_annotations(m_program);
 	ast->accept(type_annotations);
 
-	ASTVariableChecking variable_checking0(&m_definition_provider, ast.get(), false);
+	ASTVariableChecking variable_checking0(m_program, false);
 	ast->accept(variable_checking0);
 	ast->collect_references();
 
@@ -142,7 +142,7 @@ void Compiler::compile() {
 	ast->accept(pointer_scope);
 	ast->collect_references();
 
-	ASTCollectLowerings lowering(&m_definition_provider);
+	ASTCollectLowerings lowering(m_program);
 	ast->accept(lowering);
 
 	// inline here so inlined struct vars get their declaration for register reuse later on
@@ -152,30 +152,30 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Lowering") << std::endl;
 	compile_time.start("Return Function Rewriting");
 
-	ASTReturnFunctionRewriting return_function_rewriting(&m_definition_provider);
+	ASTReturnFunctionRewriting return_function_rewriting(m_program);
 	ast->accept(return_function_rewriting);
 	ast->debug_print();
 
-	ASTExpressionFunctionInlining inlining(&m_definition_provider);
+	ASTExpressionFunctionInlining inlining(m_program);
 	ast->accept(inlining);
-	ASTInitializerFunctionInlining initializer_inlining(&m_definition_provider);
+	ASTInitializerFunctionInlining initializer_inlining(m_program);
 	ast->accept(initializer_inlining);
 
 	compile_time.stop("Return Function Rewriting");
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
 	compile_time.start("Data Structure Lowering");
 
-	NormalizeNDArrayAssign nd_array_assign(&m_definition_provider);
+	NormalizeNDArrayAssign nd_array_assign(m_program);
 	ast->accept(nd_array_assign);
 	// Data Structure Lowering of NDArrays and Array assignments
-	ASTDataStructureLowering data_structure_lowering(&m_definition_provider);
+	ASTDataStructureLowering data_structure_lowering(m_program);
 	ast->accept(data_structure_lowering);
 
 	compile_time.stop("Data Structure Lowering");
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
 
-	ASTVariableChecking variable_checking1(&m_definition_provider, m_program, true);
+	ASTVariableChecking variable_checking1(m_program, true);
 	ast->accept(variable_checking1);
 	ast->remove_references();
 	ast->collect_references();
@@ -196,16 +196,17 @@ void Compiler::compile() {
     compile_time.start("Function Inlining");
 
 //	ast->debug_print();
-	ASTFunctionInlining func_inlining(&m_definition_provider);
+	ASTFunctionInlining func_inlining(m_program);
 	ast->accept(func_inlining);
+	ast->order_function_definitions();
 
     compile_time.stop("Function Inlining");
 	std::cout << compile_time.print_timer("Function Inlining") << std::endl;
 	compile_time.start("Post Lowering");
 
-	ASTRelinkGlobalScope relink_global_scope(&m_definition_provider);
+	ASTRelinkGlobalScope relink_global_scope(m_program);
 	ast->accept(relink_global_scope);
-	ASTCollectPostLowerings post_lowering(&m_definition_provider);
+	ASTCollectPostLowerings post_lowering(m_program);
 	ast->accept(post_lowering);
 //	ast->debug_print();
 
@@ -221,7 +222,7 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Optimization") << std::endl;
 	compile_time.start("Generator");
 
-	ASTKSPSyntaxCheck syntax_check(&m_definition_provider);
+	ASTKSPSyntaxCheck syntax_check(m_program);
 	ast->accept(syntax_check);
 	ASTKSPSyntaxCheck::fix_memory_exhausted_error(*ast);
 

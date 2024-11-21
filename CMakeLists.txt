@@ -156,8 +156,8 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTReturnFunctionRewriting.h
         Lowering/DataLowering/NDArrayCopyFunction.h
         AST/ASTVisitor/NormalizeNDArrayAssign.h
-        AST/ASTVisitor/ASTFunctionInlining.h
-        AST/ASTVisitor/ASTExpressionFunctionInlining.h
+        AST/ASTVisitor/FunctionHandling/ASTFunctionInlining.h
+        AST/ASTVisitor/FunctionHandling/ASTExpressionFunctionInlining.h
         Optimization/ConstantPropagation.h
         Optimization/VariablePruning.h
         Optimization/ParameterMarking.h
@@ -178,7 +178,7 @@ add_executable(cksp main.cpp
         Desugaring/DesugarDelete.h
         AST/ASTVisitor/ASTPointerScope.h
         Desugaring/DesugarParamList.h
-        AST/ASTVisitor/ASTInitializerFunctionInlining.h
+        AST/ASTVisitor/FunctionHandling/ASTInitializerFunctionInlining.h
         Desugaring/DesugarBinaryExpr.h
         Lowering/LoweringWhile.h
         Lowering/LoweringFunctionDef.h
@@ -197,4 +197,5 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ReferenceManagement/ASTCollectReferences.h
         AST/ASTVisitor/ReferenceManagement/ASTRemoveReferences.h
         misc/FreeFunctions.h
+        AST/ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h
 )

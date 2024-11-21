@@ -6,13 +6,17 @@
 
 
 #include "ASTFunctionInlining.h"
-#include "ASTReturnParamPromotion.h"
 
-/// Immediate Inlining of functions with Initializer Lists as arguments so to bypass needing to declare throwaway arrays
-class ASTInitializerFunctionInlining: public ASTFunctionInlining {
+/// Immediate Inlining of return-only functions
+/// Substitution already takes place in the parent class ASTFunctionInlining in the following nodes:
+/// NodeArrayRef
+/// NodeNDArrayRef
+/// NodeVariableRef
+/// NodeFunctionHeader
+class ASTExpressionFunctionInlining: public ASTFunctionInlining {
 private:
 public:
-	inline explicit ASTInitializerFunctionInlining(DefinitionProvider *definition_provider) : ASTFunctionInlining(definition_provider) {}
+	inline explicit ASTExpressionFunctionInlining(NodeProgram *main) : ASTFunctionInlining(main) {}
 
 	NodeAST* visit(NodeProgram &node) override {
 //		node.reset_function_used_flag();
@@ -40,17 +44,17 @@ public:
 				definition->accept(*this);
 			}
 			definition->visited = true;
-			// see if the function has initializer list arguments
-			if(is_initializer_function(node)) {
+			// see if the function is a return-only function
+			if(definition->is_expression_function()) {
 				definition->is_used = false;
-				m_program->function_call_stack.push(node.definition);
+				m_program->function_call_stack.push(definition);
 				auto node_func_body = clone_as<NodeBlock>(definition->body.get());
 				m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 				node_func_body->accept(*this);
 
 				m_substitution_stack.pop();
 				m_program->function_call_stack.pop();
-				return node.replace_with(std::move(node_func_body));
+				return node.replace_with(get_expression_return(node_func_body.get()));
 			} else {
 				definition->is_used = true;
 			}
@@ -63,7 +67,8 @@ public:
 		// does not get deleted because it is only ref and not being called
 		// foo(bar: (): void) -> bar is not called but function ref
 		if(node.get_declaration() and node.is_func_arg()) {
-			if(auto def = node.get_declaration()->parent->cast<NodeFunctionDefinition>()) {
+			if(node.get_declaration()->parent->get_node_type() == NodeType::FunctionDefinition) {
+				auto def = static_cast<NodeFunctionDefinition*>(node.get_declaration()->parent);
 				def->is_used = true;
 				def->accept(*this);
 				def->visited = true;
@@ -73,13 +78,16 @@ public:
 		return &node;
 	}
 
-	static inline bool is_initializer_function(const NodeFunctionCall& call) {
-		for(auto &arg : call.function->args->params) {
-			if(arg->get_node_type() == NodeType::InitializerList) {
-				return true;
-			}
+	static inline std::unique_ptr<NodeAST> get_expression_return(NodeBlock* body) {
+		auto stmt = body->statements[0]->statement.get();
+		if(stmt->get_node_type() == NodeType::Return) {
+			auto ret = static_cast<NodeReturn*>(stmt);
+			return std::move(ret->return_variables[0]);
 		}
-		return false;
+		auto error = CompileError(ErrorType::InternalError, "", "", body->tok);
+		error.m_message = "Function is not a return-only function";
+		error.exit();
+		return nullptr;
 	}
 
 

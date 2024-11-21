@@ -20,12 +20,8 @@ private:
 	std::unordered_map<NodeFunctionDefinition*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_local_var_declarations;
 	/// map for local variable declarations per function definition to be added to the next/above callback when no function is above
 	std::unordered_map<NodeStatement*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_stmt;
-	NodeStatement* m_last_stmt = nullptr;
-
+	/// map for local variable declarations per function definition directly promoted and to be added to the global declarations
 	std::unordered_map<std::string, std::unique_ptr<NodeSingleDeclaration>> m_global_function_vars;
-
-//	std::unordered_map<std::string, std::unordered_set<NodeReference*>> m_references;
-//	std::unordered_map<std::string, NodeDataStructure*> m_data_structures;
 
 public:
 	explicit ASTParameterPromotion(NodeProgram* main) : ASTGlobalScope(main) {}
@@ -33,52 +29,50 @@ public:
 
 	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
-		for(auto& def : node.function_definitions) def->visited = false;
+		node.reset_function_visited_flag();
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
 
+		insert_promoted_declarations();
+
+		return &node;
+	}
+
+	void do_param_promotion(NodeFunctionCall& call) {
+		m_program->reset_function_visited_flag();
+		call.accept(*this);
+		insert_promoted_declarations();
+
+		// clear all maps
+		m_declares_per_stmt.clear();
+		m_local_var_declarations.clear();
+		m_global_function_vars.clear();
+	}
+
+	/// insert declarations from m_declares_per_stmt into callbacks
+	/// - insert right above the function calls when param promoted
+	/// - insert to global declarations when not param promoted
+	inline void insert_promoted_declarations() {
+		// successivelly promoted local vars
 		for(auto & stmt : m_declares_per_stmt) {
 			// if in callback, put the declarations right above the function call
-			auto node_body = std::make_unique<NodeBlock>(node.tok);
+			auto node_body = std::make_unique<NodeBlock>(Token());
 			node_body->scope = true;
 			for(auto &decl : stmt.second) {
 				decl.second->is_promoted = true;
 				node_body->add_as_stmt(
-					std::make_unique<NodeSingleDeclaration>(decl.second->variable, nullptr, node.tok)
+					std::make_unique<NodeSingleDeclaration>(decl.second->variable, nullptr, decl.second->tok)
 				);
 			}
 			node_body->add_as_stmt(std::move(stmt.first->statement));
 			stmt.first->set_statement(std::move(node_body));
 		}
+
+		// directly promoted local vars
 		for(auto & m_global_var : m_global_function_vars) {
 			m_program->global_declarations->add_as_stmt(std::move(m_global_var.second));
 		}
-
-		return &node;
-	}
-
-	inline NodeAST* visit(NodeBlock& node) override {
-		for(auto & stmt : node.statements) {
-			stmt->accept(*this);
-		}
-		return &node;
-	}
-
-	inline NodeAST * visit(NodeStatement& node) override {
-		if(m_program->function_call_stack.empty()) m_last_stmt = &node;
-		node.statement->accept(*this);
-		return &node;
-	}
-
-	inline NodeAST* visit(NodeCallback& node) override {
-		m_program->current_callback = &node;
-
-		if(node.callback_id) node.callback_id->accept(*this);
-		node.statements->accept(*this);
-
-		m_program->current_callback = nullptr;
-		return &node;
 	}
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {
@@ -94,9 +88,9 @@ public:
         }
 		bool needs_param_promotion = node.do_param_promotion();
 		// for now, when function does not need param promotion and has no params and is not in init callback, assume as call
-		if(!needs_param_promotion and node.get_definition()->has_no_params() and !m_program->is_init_callback(m_program->current_callback)) {
-			node.is_call = true;
-		}
+//		if(!needs_param_promotion and node.get_definition()->has_no_params() and !m_program->is_init_callback(m_program->current_callback)) {
+//			node.is_call = true;
+//		}
 
 		auto definition = node.get_definition();
 		if(definition and !definition->visited) {
@@ -141,17 +135,17 @@ public:
 			// if the call does need param promotion
 			if(needs_param_promotion) {
 				// if the call is in a callback -> check if threadsafe (add to global declarations) or not (do parameter promotion)
-				if (m_program->function_call_stack.empty()) {
+				if (node.get_current_callback()) {
+					auto last_stmt = node.get_parent_statement();
 					// add declaration statements to the statement right above the function call
 					for (auto &decl : m_local_var_declarations[definition.get()]) {
-						m_declares_per_stmt[m_last_stmt].emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
+						m_declares_per_stmt[last_stmt].emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
 					}
 				}
-
 				// if the call is in a nested function -> get the local var declaration map to the above function
-				if(!m_program->function_call_stack.empty()) {
+				if(auto curr_func = node.get_current_function()) {
 					// add declaration statements to the body of the current/above function
-					auto &next_declares = m_local_var_declarations[m_program->get_current_function().get()];
+					auto &next_declares = m_local_var_declarations[curr_func];
 					for (auto &decl : m_local_var_declarations[definition.get()]) {
 						next_declares.emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
 					}
@@ -170,10 +164,10 @@ public:
 	}
 
 	inline NodeAST* visit(NodeFunctionDefinition& node) override {
-		m_program->function_call_stack.push(node.weak_from_this());
+//		m_program->function_call_stack.push(node.weak_from_this());
 		node.visited = true;
 		node.body->accept(*this);
-		m_program->function_call_stack.pop();
+//		m_program->function_call_stack.pop();
 		return &node;
 	}
 
@@ -181,21 +175,14 @@ public:
 		if(node.value) node.value->accept(*this);
 
 		// return if not in function
-		if(m_program->function_call_stack.empty()) return &node;;
-
-		// what is this for??
-//		if(node.variable->data_type == DataType::Const) {
-//			m_program->global_declarations->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
-//			node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
-//			return &node;
-//		}
-
+		auto curr_func = node.get_current_function();
+		if(!curr_func) return &node;;
 
         // visit declaration node because array as function param needs to have <no brackets>
         node.variable->accept(*this);
 
 		auto assignment = to_assign_statement(node);
-		m_local_var_declarations[m_program->get_current_function().get()].emplace(
+		m_local_var_declarations[curr_func].emplace(
                         node.variable->name,
                        std::make_unique<NodeSingleDeclaration>(
                             node.variable,

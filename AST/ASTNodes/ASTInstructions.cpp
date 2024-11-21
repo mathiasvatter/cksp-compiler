@@ -19,6 +19,7 @@
 #include "../../Desugaring/DesugarSingleAssignment.h"
 #include "../../Lowering/PostLowering/PostLoweringNumElements.h"
 #include "../../Lowering/LoweringUseCount.h"
+#include "../ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -76,7 +77,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(struct
 		auto func_def = it->second.lock();
         definition = it->second;
         kind = Kind::UserDefined;
-//		definition->call_sites.emplace(this);
+//		func_def->call_sites.emplace(this);
         return func_def;
     }
     return nullptr;
@@ -127,7 +128,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_constructor_defin
 		if(!constructor) return nullptr;
 		function->ty = constructor->header->ty;
 		definition = constructor;
-//		definition->call_sites.emplace(this);
+//		constructor->call_sites.emplace(this);
 		kind = Kind::Constructor;
 		return it->second->constructor;
 	}
@@ -236,6 +237,11 @@ bool NodeFunctionCall::do_param_promotion() const {
 	if(is_call) return false;
 	if(def->call_sites.size() > 2) return false;
 	return true;
+}
+
+void NodeFunctionCall::do_param_promotion(NodeProgram *program) {
+	static ASTParameterPromotion param_promotion(program);
+	param_promotion.do_param_promotion(*this);
 }
 
 // ************* NodeNumElements ***************

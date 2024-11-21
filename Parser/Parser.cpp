@@ -1193,12 +1193,12 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     while (peek().type != token::END_FUNCTION) {
         _skip_linebreaks();
         if(peek().type == token::END_FUNCTION) break;
-        auto stmt = parse_statement(node_function_definition.get());
+        auto stmt = parse_statement(func_body.get());
         if (stmt.is_error()) {
             return Result<std::shared_ptr<NodeFunctionDefinition>>(stmt.get_error());
         }
         if(stmt.unwrap()->statement)
-            func_body->statements.push_back(std::move(stmt.unwrap()));
+            func_body->add_stmt(std::move(stmt.unwrap()));
     }
     consume();
     node_function_definition->header = std::move(func_header);

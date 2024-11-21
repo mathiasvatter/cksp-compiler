@@ -633,7 +633,7 @@ NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
 }
 
 NodeAST * TypeInference::visit(NodeReturn& node) {
-	if(!node.get_definition()) node.definition = m_program->get_current_function();
+	if(!node.get_definition()) node.definition = m_program->get_curr_function();
 	for(auto &ret : node.return_variables) {
 		ret->accept(*this);
 	}

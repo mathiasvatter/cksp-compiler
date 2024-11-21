@@ -9,7 +9,7 @@
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
 #include "../../Lowering/ASTLowering.h"
 #include "../../Optimization/FunctionCallHoisting.h"
-#include "ASTExpressionFunctionInlining.h"
+#include "FunctionHandling/ASTExpressionFunctionInlining.h"
 #include "../../Optimization/ParameterMarking.h"
 #include "ASTReturnParamPromotion.h"
 
@@ -20,7 +20,9 @@ private:
 	/// can only house called functions with no params
 	std::set<NodeFunctionDefinition*> m_used_function_definitions;
 public:
-	inline explicit ASTReturnFunctionRewriting(DefinitionProvider *definition_provider): m_def_provider(definition_provider) {}
+	inline explicit ASTReturnFunctionRewriting(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 
 	// TODO: Call Function Rewriting after Lowering -> call Function Call Hoisting first and then do return statement rewriting as parameters
 	inline NodeAST* visit(NodeProgram& node) override {

@@ -107,14 +107,14 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 
 	// determine thread safety of currently visiting function definition
 	if(definition) {
-		if(auto func = m_program->get_current_function()) {
+		if(auto func = m_program->get_curr_function()) {
 			func->is_thread_safe &= definition->is_thread_safe;
 		}
 		if(m_program->current_callback) m_program->current_callback->is_thread_safe &= definition->is_thread_safe;
 	}
 	// determine if currently visiting function in stack is restricted
 	if(definition) {
-		if(auto func = m_program->get_current_function()) {
+		if(auto func = m_program->get_curr_function()) {
 			func->is_restricted &= definition->is_restricted;
 		}
 	}

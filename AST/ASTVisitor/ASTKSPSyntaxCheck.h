@@ -50,7 +50,9 @@ private:
 
 
 public:
-	explicit ASTKSPSyntaxCheck(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {};
+	explicit ASTKSPSyntaxCheck(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 
 	static NodeAST* fix_memory_exhausted_error(NodeAST& node) {
 		MemoryExhaustedNesting memory_exhausted_nesting;

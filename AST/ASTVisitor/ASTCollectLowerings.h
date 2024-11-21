@@ -32,7 +32,9 @@
  */
 class ASTCollectLowerings: public ASTVisitor {
 public:
-    explicit ASTCollectLowerings(DefinitionProvider* definition_provider);
+    explicit ASTCollectLowerings(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 	NodeAST * visit(NodeProgram& node) override;
 
 	/// do not visit return statements -> wait for them to get lowered to assign statements
