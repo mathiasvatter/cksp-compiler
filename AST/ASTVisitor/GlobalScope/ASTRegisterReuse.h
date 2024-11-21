@@ -22,9 +22,7 @@
  */
 class ASTRegisterReuse : public ASTGlobalScope {
 public:
-	explicit ASTRegisterReuse(DefinitionProvider *definition_provider, NodeProgram* program) : ASTGlobalScope(definition_provider) {
-		m_program = program;
-	}
+	explicit ASTRegisterReuse(NodeProgram* program) : ASTGlobalScope(program) {}
 
 	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
@@ -69,10 +67,7 @@ public:
 	inline bool rename_local_vars() {
 		// rename local passive_vars with gensym and add to global scope
 		for(auto & local_var : m_all_local_vars) {
-
-			local_var->name = m_gensym.fresh(loc_var_prefix);
-
-			m_def_provider->set_declaration(local_var, false);
+			local_var->name = m_def_provider->get_fresh_name(local_var->name);
 		}
 		// rename all local references with their new passive_var names
 		for(auto & local_ref : m_all_local_references) {
@@ -83,8 +78,8 @@ public:
 				local_ref->name = declaration->name;
 			}
 		}
-		m_all_local_vars.clear();
-		m_all_local_references.clear();
+		clear_all_maps();
+		m_def_provider->refresh_scopes();
 		return true;
 	}
 
@@ -147,35 +142,37 @@ public:
 		return &node;
 	}
 
+	static bool is_in_global_declarations(const NodeAST& node, NodeProgram* program) {
+		return node.get_outmost_block() == program->global_declarations.get();
+	}
+
 	inline NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->determine_locality(m_program, m_current_body);
 
-
-		if(m_current_body != m_program->global_declarations.get()) {
-			// constant local declarations shall not be reused. But still need to be renamed to avoid name clashes
-			if (node.variable->is_local and node.variable->data_type == DataType::Const) {
-				node.variable->is_local = false;
-				node.variable->is_global = true;
-				if(node.value) node.value->accept(*this);
-				auto node_global_const = std::make_unique<NodeSingleDeclaration>(
-					node.variable,
-					std::move(node.value),
-					node.tok
-				);
-				// set declaration to local to avoid name clashes
-				m_def_provider->set_declaration(node_global_const->variable, false);
-				// add to vector here for later renaming and to avoid it turning into a passive var
-				m_all_local_vars.push_back(node.variable);
-				m_program->global_declarations->add_as_stmt(std::move(node_global_const));
-				return node.remove_node();
-			}
-		} else {
-			node.variable->is_local = false;
-			node.variable->is_global = true;
+		if(is_in_global_declarations(node, m_program)) {
+			node.variable->to_global();
 			if(node.value) node.value->accept(*this);
 			m_def_provider->set_declaration(node.variable, !node.variable->is_local);
 			return &node;
 		}
+
+		// constant local declarations shall not be reused. But still need to be renamed to avoid name clashes
+		if (node.variable->is_local and node.variable->data_type == DataType::Const) {
+			node.variable->to_global();
+			if(node.value) node.value->accept(*this);
+			auto node_global_const = std::make_unique<NodeSingleDeclaration>(
+				node.variable,
+				std::move(node.value),
+				node.tok
+			);
+			// set declaration to local to avoid name clashes
+			m_def_provider->set_declaration(node_global_const->variable, false);
+			// add to vector here for later renaming and to avoid it turning into a passive var
+			m_all_local_vars.push_back(node.variable);
+			m_program->global_declarations->add_as_stmt(std::move(node_global_const));
+			return node.remove_node();
+		}
+
 
 		if(node.variable->is_local) {
 			if(is_thread_safe_env()) {
@@ -187,15 +184,14 @@ public:
 					return node.replace_with(std::move(replacement));
 				}
 			}
-		}
-		// only add var to local scope if it is not replaced by passive_var
-		node.variable->accept(*this);
-		if(node.value) node.value->accept(*this);
-		// add local vars to lists for later renaming
-		if(node.variable->is_local) {
+			// add local vars w/o free_passive_var to lists for later renaming
 			if(m_program->current_callback) m_all_callback_decl[m_program->current_callback].push_back(&node);
 			m_all_local_vars.push_back(node.variable);
 		}
+
+		// only add var to local scope if it is not replaced by passive_var
+		node.variable->accept(*this);
+		if(node.value) node.value->accept(*this);
 		return &node;
 	}
 
@@ -230,7 +226,7 @@ public:
 		if(node.size) node.size->accept(*this);
 
 		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-		m_gensym.ingest(node.name);
+//		m_gensym.ingest(node.name);
 		return &node;
 	}
 
@@ -261,7 +257,7 @@ public:
 	inline NodeAST* visit(NodeVariable& node) override {
 		node.determine_locality(m_program, m_current_body);
 		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
-		m_gensym.ingest(node.name);
+//		m_gensym.ingest(node.name);
 		return &node;
 	}
 
@@ -279,7 +275,7 @@ public:
 
 private:
 	std::string loc_var_prefix = "loc_";
-	Gensym m_gensym;
+//	Gensym m_gensym;
 	NodeBlock* m_current_body = nullptr;
 
 	/// vector for all local declarations in callbacks

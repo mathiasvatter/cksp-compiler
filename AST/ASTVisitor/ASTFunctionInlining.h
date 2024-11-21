@@ -15,7 +15,8 @@ public:
 	/// check for used functions
 	inline NodeAST *visit(NodeProgram &node) override {
 		m_program = &node;
-		node.reset_function_used_flag();
+//		node.reset_function_used_flag();
+		node.reset_function_visited_flag();
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
@@ -110,17 +111,19 @@ public:
 		}
 
 		// visit everything beforehand to get depth first search
-		if(!definition->visited)
+		if(!definition->visited) {
 			definition->accept(*this);
+		}
+		definition->visited = true;
 
 		std::unique_ptr<NodeBlock> node_func_body = nullptr;
 		if(node.is_call) {
 			if(!definition->visited) {
 				definition->is_used = true;
-				definition->visited = true;
 			}
 		// inlining process
 		} else {
+			definition->is_used = false;
 			node_func_body = clone_as<NodeBlock>(definition->body.get());
 			m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 			node_func_body->accept(*this);

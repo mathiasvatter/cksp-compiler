@@ -74,7 +74,6 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(struct
     auto it = program->function_lookup.find({function->name, (int)function->args->size()});
     if(it != program->function_lookup.end()) {
 		auto func_def = it->second.lock();
-		func_def->is_used = true;
         definition = it->second;
         kind = Kind::UserDefined;
 //		definition->call_sites.emplace(this);

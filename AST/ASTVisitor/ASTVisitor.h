@@ -47,6 +47,8 @@ public:
 	}
 
 public:
+//	explicit ASTVisitor(NodeProgram* program) : m_program(program) {}
+
     virtual NodeAST* visit(NodeDeadCode& node) {return &node;};
 	virtual NodeAST* visit(NodeWildcard& node) {
 		return &node;
