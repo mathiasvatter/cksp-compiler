@@ -11,7 +11,9 @@ class NormalizeNDArrayAssign: public ASTVisitor {
 private:
 	DefinitionProvider *m_def_provider;
 public:
-	explicit NormalizeNDArrayAssign(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {};
+	explicit NormalizeNDArrayAssign(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 
 	NodeAST* visit(NodeSingleAssignment &node) override {
 		node.l_value->accept(*this);

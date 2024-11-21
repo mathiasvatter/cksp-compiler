@@ -9,7 +9,7 @@
 
 #include "Parser/Parser.h"
 #include "Preprocessor/Preprocessor.h"
-#include "AST/ASTVisitor/ASTFunctionInlining.h"
+#include "AST/ASTVisitor/FunctionHandling/ASTFunctionInlining.h"
 #include "AST/ASTVisitor/ASTPrinter.h"
 #include "BuiltinsProcessing/BuiltinsProcessor.h"
 #include "Generator/ASTGenerator.h"

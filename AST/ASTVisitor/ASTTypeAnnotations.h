@@ -16,7 +16,9 @@
  */
 class ASTTypeAnnotations : public ASTVisitor {
 public:
-	explicit ASTTypeAnnotations(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {};
+	explicit ASTTypeAnnotations(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 
 	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;

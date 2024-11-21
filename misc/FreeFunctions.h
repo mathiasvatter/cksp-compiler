@@ -17,7 +17,6 @@
 
 #include <thread>
 
-
 template <typename Iterator, typename Func>
 void parallel_for_each(Iterator begin, Iterator end, Func func, size_t num_threads = 0) {
 	// Bestimme die Anzahl der Threads basierend auf der Hardware

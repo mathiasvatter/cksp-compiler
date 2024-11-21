@@ -8,7 +8,7 @@
 
 class ASTVariableChecking : public ASTVisitor {
 public:
-	explicit ASTVariableChecking(DefinitionProvider* definition_provider, NodeProgram* program, bool fail=false);
+	explicit ASTVariableChecking(NodeProgram* main, bool fail=false);
 
 	NodeAST * visit(NodeProgram& node) override;
 	/// check if on init callback currently

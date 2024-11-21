@@ -19,6 +19,7 @@
 #include "../../Optimization/NilValidator.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectReferences.h"
 #include "../ASTVisitor/ReferenceManagement/ASTRemoveReferences.h"
+#include "../ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -138,21 +139,18 @@ NodeAST *NodeAST::remove_node() {
 	return replace_with(std::make_unique<NodeDeadCode>(tok));
 }
 
-NodeBlock *NodeAST::get_next_block() const {
-	NodeAST* current = parent;
-	while(current) {
-		if(auto block = current->cast<NodeBlock>()) {
-			return block;
-		}
-		current = current->parent;
-	}
-	return nullptr;
+NodeBlock *NodeAST::get_parent_block() const {
+	return get_parent_of_type<NodeBlock>(*this);
+}
+
+struct NodeStatement *NodeAST::get_parent_statement() const {
+	return get_parent_of_type<NodeStatement>(*this);
 }
 
 NodeBlock *NodeAST::get_outmost_block() const {
-	auto next_block = get_next_block();
+	auto next_block = get_parent_block();
 	while(next_block) {
-		auto block = next_block->get_next_block();
+		auto block = next_block->get_parent_block();
 		if(!block) return next_block;
 		next_block = block;
 	}
@@ -174,6 +172,7 @@ struct NodeFunctionDefinition *NodeAST::get_current_function() const {
 	}
 	return nullptr;
 }
+
 
 // ************* NodeDataStructure ***************
 NodeAST *NodeDataStructure::accept(struct ASTVisitor &visitor) {
@@ -1039,11 +1038,19 @@ void NodeProgram::inline_structs() {
 }
 
 void NodeProgram::reset_function_visited_flag() {
-	for(const auto & def : function_definitions) def->visited = false;
+//	for(const auto & def : function_definitions) def->visited = false;
+	parallel_for_each(function_definitions.begin(), function_definitions.end(),
+				  [](auto const& def) {
+					def->visited = false;
+				  });
 }
 
 void NodeProgram::reset_function_used_flag() {
-	for(const auto & def : function_definitions) def->is_used = false;
+//	for(const auto & def : function_definitions) def->is_used = false;
+	parallel_for_each(function_definitions.begin(), function_definitions.end(),
+				  [](auto const& def) {
+					def->is_used = false;
+				  });
 }
 
 void NodeProgram::remove_unused_functions() {
@@ -1053,12 +1060,15 @@ void NodeProgram::remove_unused_functions() {
 		if(def->is_used) {
 			final_function_definitions.push_back(def);
 			function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def});
-//		} else {
-//			def->remove_references();
 		}
 	}
 	function_definitions.clear();
 	function_definitions = final_function_definitions;
+}
+
+void NodeProgram::order_function_definitions() {
+	static FunctionDefinitionOrdering ordering;
+	ordering.order_functions(*this);
 }
 
 

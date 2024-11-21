@@ -22,11 +22,17 @@ NodeAST * ASTGlobalScope::visit(NodeProgram &node) {
 	}
 	// rename local variables in function definitions
 	register_reuse.rename_local_vars();
+	register_reuse.clear_all_maps();
+
 	ASTParameterPromotion param_promotion(m_program);
 	node.accept(param_promotion);
 
 	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 	node.accept(register_reuse);
+	register_reuse.rename_local_vars();
+	register_reuse.promote_to_global_vars();
+	register_reuse.clear_all_maps();
+
 	node.reset_function_visited_flag();
 	return &node;
 }

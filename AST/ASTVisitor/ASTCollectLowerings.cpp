@@ -6,7 +6,6 @@
 #include "ASTLowerTypes.h"
 #include "ASTHandleStringRepresentations.h"
 
-ASTCollectLowerings::ASTCollectLowerings(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
 NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	m_program = &node;

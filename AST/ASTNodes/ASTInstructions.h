@@ -78,6 +78,8 @@ struct NodeFunctionCall : NodeInstruction {
 	[[nodiscard]] std::shared_ptr<NodeFunctionDefinition> get_definition() const {
 		return definition.lock();
 	}
+	void do_param_promotion(NodeProgram* program);
+
 };
 
 struct NodeNumElements : NodeInstruction {

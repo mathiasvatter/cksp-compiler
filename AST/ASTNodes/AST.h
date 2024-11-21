@@ -84,7 +84,10 @@ struct NodeAST {
 		}
 		return nullptr;
 	}
-	[[nodiscard]] struct NodeBlock* get_next_block() const;
+	/// returns the last most NodeBlock
+	[[nodiscard]] struct NodeBlock* get_parent_block() const;
+	/// returns the last most NodeStatement
+	[[nodiscard]] struct NodeStatement* get_parent_statement() const;
 	[[nodiscard]] NodeBlock* get_outmost_block() const;
 	[[nodiscard]] struct NodeCallback* get_current_callback() const;
 	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
@@ -96,6 +99,17 @@ std::unique_ptr<T> clone_as(NodeAST* node) {
 	return std::unique_ptr<T>(static_cast<T*>(cloned_ptr.release()));
 }
 
+template <typename T>
+T* get_parent_of_type(const NodeAST& node) {
+	NodeAST* current = node.parent;
+	while (current) {
+		if (auto desired = current->cast<T>()) {
+			return desired;
+		}
+		current = current->parent;
+	}
+	return nullptr;
+}
 
 struct NodeDeadCode : NodeAST {
     explicit NodeDeadCode(const Token tok) : NodeAST(tok, NodeType::DeadCode) {};
@@ -708,7 +722,7 @@ struct NodeProgram : NodeAST {
 	NodeCallback* current_callback = nullptr;
 	/// holds the current function definition that is being processed
 	std::stack<std::weak_ptr<NodeFunctionDefinition>> function_call_stack{};
-	std::shared_ptr<NodeFunctionDefinition> get_current_function() {
+	std::shared_ptr<NodeFunctionDefinition> get_curr_function() {
 		if(function_call_stack.empty()) return nullptr;
 		return function_call_stack.top().lock();
 	}
@@ -751,7 +765,7 @@ struct NodeProgram : NodeAST {
 		return curr_callback == init_callback;
 	}
 	void remove_unused_functions();
-
+	void order_function_definitions();
 };
 
 

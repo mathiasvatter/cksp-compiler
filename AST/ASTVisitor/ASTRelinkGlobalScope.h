@@ -11,7 +11,9 @@ class ASTRelinkGlobalScope : public ASTVisitor {
 private:
 	DefinitionProvider* m_def_provider = nullptr;
 public:
-	explicit ASTRelinkGlobalScope(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
+	explicit ASTRelinkGlobalScope(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 
 	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;

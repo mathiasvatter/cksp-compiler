@@ -5,9 +5,9 @@
 #include "ASTVariableChecking.h"
 #include <future>
 
-ASTVariableChecking::ASTVariableChecking(DefinitionProvider* definition_provider, NodeProgram* program, bool fail)
-	: m_def_provider(definition_provider), fail(fail) {
-	m_program = program;
+ASTVariableChecking::ASTVariableChecking(NodeProgram* main, bool fail)
+	: m_def_provider(main->def_provider), fail(fail) {
+	m_program = main;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
