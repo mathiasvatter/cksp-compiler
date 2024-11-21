@@ -28,7 +28,7 @@ private:
 //	std::unordered_map<std::string, NodeDataStructure*> m_data_structures;
 
 public:
-	explicit ASTParameterPromotion(DefinitionProvider* definition_provider) : ASTGlobalScope(definition_provider) {}
+	explicit ASTParameterPromotion(NodeProgram* main) : ASTGlobalScope(main) {}
 	~ASTParameterPromotion() = default;
 
 	inline NodeAST* visit(NodeProgram& node) override {
@@ -126,6 +126,7 @@ public:
 					if (!declares.empty()) {
 						// otherwise add them to global declarations
 						for (auto &decl : declares) {
+							decl.second->variable->to_global();
 							// set to global to prevent from being used in other functions by register reuse
 							m_global_function_vars.emplace(decl.first, std::move(decl.second));
 						}

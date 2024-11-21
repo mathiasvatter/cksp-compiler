@@ -36,9 +36,6 @@ public:
 		FunctionCallHoisting hoisting;
 		node.accept(hoisting);
 
-		/// do immediate inlining of return-only functions
-//		ASTExpressionFunctionInlining inlining(m_def_provider);
-//		node.accept(inlining);
 		node.reset_function_visited_flag();
 		m_program->global_declarations->accept(*this);
 		for(auto & callback : node.callbacks) {
@@ -46,15 +43,6 @@ public:
 		}
 		node.reset_function_visited_flag();
 
-//		/// vector to house only the definitions that are actually used in the program
-//		std::vector<std::shared_ptr<NodeFunctionDefinition>> final_function_definitions;
-//		// this is needed in case a return only function is called in a function with return value
-//		for(auto & func_def : node.function_definitions) {
-//			if(m_used_function_definitions.find(func_def.get()) != m_used_function_definitions.end()) {
-//				final_function_definitions.push_back(func_def);
-//			}
-//		}
-//		node.function_definitions = final_function_definitions;
 		node.update_function_lookup();
 
 		return &node;

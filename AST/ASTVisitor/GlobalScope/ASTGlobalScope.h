@@ -78,7 +78,9 @@ protected:
 	}
 
 public:
-	explicit ASTGlobalScope(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
+	explicit ASTGlobalScope(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 
 	NodeAST * visit(NodeProgram& node) override;
 

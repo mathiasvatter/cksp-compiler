@@ -15,7 +15,8 @@ public:
 	inline explicit ASTInitializerFunctionInlining(DefinitionProvider *definition_provider) : ASTFunctionInlining(definition_provider) {}
 
 	NodeAST* visit(NodeProgram &node) override {
-		node.reset_function_used_flag();
+//		node.reset_function_used_flag();
+		node.reset_function_visited_flag();
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
@@ -41,6 +42,7 @@ public:
 			definition->visited = true;
 			// see if the function has initializer list arguments
 			if(is_initializer_function(node)) {
+				definition->is_used = false;
 				m_program->function_call_stack.push(node.definition);
 				auto node_func_body = clone_as<NodeBlock>(definition->body.get());
 				m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));

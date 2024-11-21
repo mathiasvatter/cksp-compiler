@@ -119,7 +119,13 @@ on init
 	ndarray[0, *] := ndarray[1, *]
 
 	message(use_count(this_list))
+	// message(return_size(ndarray[*, 0]))
 end on
+
+function return_size(ndarray: int[])
+	return num_elements(ndarray)
+end function	
+
 
 function return_init(init: int[]): int[]
 	message(init)

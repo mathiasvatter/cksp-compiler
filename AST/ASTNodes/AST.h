@@ -84,6 +84,10 @@ struct NodeAST {
 		}
 		return nullptr;
 	}
+	[[nodiscard]] struct NodeBlock* get_next_block() const;
+	[[nodiscard]] NodeBlock* get_outmost_block() const;
+	[[nodiscard]] struct NodeCallback* get_current_callback() const;
+	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
 };
 
 template<typename T>
@@ -254,7 +258,10 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 		references.erase(ref);
 	}
 	void clear_references();
-
+	void to_global() {
+		is_global = true;
+		is_local = false;
+	}
 };
 
 struct NodeInstruction : NodeAST {

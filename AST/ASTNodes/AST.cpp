@@ -138,6 +138,43 @@ NodeAST *NodeAST::remove_node() {
 	return replace_with(std::make_unique<NodeDeadCode>(tok));
 }
 
+NodeBlock *NodeAST::get_next_block() const {
+	NodeAST* current = parent;
+	while(current) {
+		if(auto block = current->cast<NodeBlock>()) {
+			return block;
+		}
+		current = current->parent;
+	}
+	return nullptr;
+}
+
+NodeBlock *NodeAST::get_outmost_block() const {
+	auto next_block = get_next_block();
+	while(next_block) {
+		auto block = next_block->get_next_block();
+		if(!block) return next_block;
+		next_block = block;
+	}
+	return nullptr;
+}
+
+struct NodeCallback *NodeAST::get_current_callback() const {
+	auto block = get_outmost_block();
+	if (block and block->parent) {
+		return block->parent->cast<NodeCallback>();
+	}
+	return nullptr;
+}
+
+struct NodeFunctionDefinition *NodeAST::get_current_function() const {
+	auto block = get_outmost_block();
+	if (block and block->parent) {
+		return block->parent->cast<NodeFunctionDefinition>();
+	}
+	return nullptr;
+}
+
 // ************* NodeDataStructure ***************
 NodeAST *NodeDataStructure::accept(struct ASTVisitor &visitor) {
 	return nullptr;

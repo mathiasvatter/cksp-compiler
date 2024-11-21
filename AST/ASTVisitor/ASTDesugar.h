@@ -54,6 +54,6 @@ private:
 
     std::unique_ptr<NodeBlock> m_global_variable_declarations = std::make_unique<NodeBlock>(Token());
     /// declare necessary compiler variables for iterating etc.
-    std::unique_ptr<NodeBlock> declare_compiler_variables();
+//    std::unique_ptr<NodeBlock> declare_compiler_variables();
 };
 

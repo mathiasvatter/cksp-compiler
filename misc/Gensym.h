@@ -4,33 +4,37 @@
 
 #pragma once
 
-#include <set>
+#include <unordered_set>
 #include <string>
 
 class Gensym {
 private:
-	std::set<std::string> m_names{};
-	int m_counter = 0;
+	std::unordered_map<std::string, int> m_counters; // Map für Zähler und existierende Namen
 public:
-	explicit Gensym() : m_counter(0) {}
+	explicit Gensym() = default;
 	~Gensym() = default;
 
+	// Existierende Namen manuell hinzufügen
 	inline void ingest(const std::string& name) {
-		m_names.insert(name);
+		m_counters[name] = 0;
 	}
 
+	// Zurücksetzen aller Daten
 	inline void refresh() {
-		m_names.clear();
-		m_counter = 0;
+		m_counters.clear();
 	}
 
-	inline std::string fresh(const std::string &var_name) {
-		std::string new_name = var_name + std::to_string(m_counter++);
-		while(m_names.find(new_name) != m_names.end()) {
-			new_name = var_name + std::to_string(m_counter);
-			m_counter++;
-		}
-		m_names.insert(new_name);
+	// Generiert einen neuen eindeutigen Namen
+	inline std::string fresh(const std::string& var_name) {
+		int& counter = m_counters[var_name]; // Hole oder initialisiere den Zähler
+		std::string new_name;
+
+		do {
+			new_name = var_name + std::to_string(counter);
+			counter++; // Zähler hochzählen
+		} while (m_counters.find(new_name) != m_counters.end());
+
+		m_counters[new_name] = 0;
 		return new_name;
 	}
 };
