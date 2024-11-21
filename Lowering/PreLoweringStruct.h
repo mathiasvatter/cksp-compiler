@@ -21,26 +21,27 @@ public:
 
 		// check if all member node types are allowed
 		for(auto & m: node.member_table) {
-			if(NodeStruct::allowed_member_node_types.find(m.second->get_node_type()) == NodeStruct::allowed_member_node_types.end()) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", m.second->tok);
+			auto member = m.second.lock();
+			if(NodeStruct::allowed_member_node_types.find(member->get_node_type()) == NodeStruct::allowed_member_node_types.end()) {
+				auto error = CompileError(ErrorType::SyntaxError, "", "", member->tok);
 				error.m_message = "Member type not allowed in struct. Only <Variables>, <Arrays>, <NDArrays>, <Pointers> and <Structs> are allowed.";
-				error.m_got = m.second->ty->to_string();
+				error.m_got = member->ty->to_string();
 				error.exit();
 			}
-			node.member_node_types.insert(m.second->get_node_type());
+			node.member_node_types.insert(member->get_node_type());
 		}
 
 		// add compiler struct vars
 		prepend_compiler_struct_vars(&node);
 		node.collect_recursive_structs(m_program);
 //		node.generate_ref_count_methods();
-		node.update_member_table();
+		node.rebuild_member_table();
 		return &node;
 	}
 
 	void prepend_compiler_struct_vars(NodeStruct* strct) {
 		auto node_block = std::make_unique<NodeBlock>(Token());
-		auto max_structs_var = std::make_unique<NodeVariable>(
+		auto max_structs_var = std::make_shared<NodeVariable>(
 			std::nullopt,
 			strct->name+OBJ_DELIMITER+"MAX_STRUCTS",
 			TypeRegistry::Integer,
@@ -48,14 +49,14 @@ public:
 			Token()
 		);
 		max_structs_var->is_engine = true;
+		strct->max_individual_struts_var = max_structs_var;
 		auto max_structs_decl = std::make_unique<NodeSingleDeclaration>(
-			std::move(max_structs_var),
+			max_structs_var,
 			get_max_individual_structs_size(strct),
 			Token()
 		);
-		strct->max_individual_struts_var = static_cast<NodeVariable*>(max_structs_decl->variable.get());
 		// add free_idx variable and allocation array to struct
-		auto free_idx_var = std::make_unique<NodeVariable>(
+		auto free_idx_var = std::make_shared<NodeVariable>(
 			std::nullopt,
 			strct->name+OBJ_DELIMITER+"free_idx",
 			TypeRegistry::Integer,
@@ -63,13 +64,13 @@ public:
 			Token()
 		);
 		free_idx_var->is_engine = true;
+		strct->free_idx_var = free_idx_var;
 		auto free_idx_decl = std::make_unique<NodeSingleDeclaration>(
 			std::move(free_idx_var),
 			nullptr,
 			Token()
 		);
-		strct->free_idx_var = static_cast<NodeVariable*>(free_idx_decl->variable.get());
-		auto allocation_var = std::make_unique<NodeArray>(
+		auto allocation_var = std::make_shared<NodeArray>(
 			std::nullopt,
 			strct->name+OBJ_DELIMITER+"allocation",
 			TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Integer),
@@ -77,13 +78,13 @@ public:
 			Token()
 		);
 		allocation_var->is_engine = true;
+		strct->allocation_var = allocation_var;
 		auto allocation_decl = std::make_unique<NodeSingleDeclaration>(
 			std::move(allocation_var),
 			nullptr,
 			Token()
 		);
-		strct->allocation_var = static_cast<NodeArray*>(allocation_decl->variable.get());
-		auto stack_var = std::make_unique<NodeArray>(
+		auto stack_var = std::make_shared<NodeArray>(
 			std::nullopt,
 			strct->name+OBJ_DELIMITER+"stack",
 			TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Integer),
@@ -91,14 +92,14 @@ public:
 			Token()
 		);
 		stack_var->is_engine= true;
+		strct->stack_var = stack_var;
 		auto stack_decl = std::make_unique<NodeSingleDeclaration>(
 			std::move(stack_var),
 			nullptr,
 			Token()
 		);
-		strct->stack_var = static_cast<NodeArray*>(stack_decl->variable.get());
 		// add free_idx variable and allocation array to struct
-		auto stack_top_var = std::make_unique<NodeVariable>(
+		auto stack_top_var = std::make_shared<NodeVariable>(
 			std::nullopt,
 			strct->name+OBJ_DELIMITER+"stack_top",
 			TypeRegistry::Integer,
@@ -106,12 +107,12 @@ public:
 			Token()
 		);
 		stack_top_var->is_engine = true;
+		strct->stack_top_var = stack_top_var;
 		auto stack_top_decl = std::make_unique<NodeSingleDeclaration>(
 			std::move(stack_top_var),
 			nullptr,
 			Token()
 		);
-		strct->stack_top_var = static_cast<NodeVariable*>(stack_top_decl->variable.get());
 		node_block->add_as_stmt(std::move(max_structs_decl));
 		node_block->add_as_stmt(std::move(free_idx_decl));
 		node_block->add_as_stmt(std::move(allocation_decl));
@@ -129,11 +130,12 @@ public:
 	inline std::unique_ptr<NodeAST> get_max_individual_structs_size(NodeStruct* object) {
 		std::vector<std::unique_ptr<NodeAST>> sizes;
 		for(auto & data : object->member_table) {
-			if(data.second->get_node_type() == NodeType::Array) {
-				auto node_array = static_cast<NodeArray*>(data.second);
+			auto member = data.second.lock();
+			if(member->get_node_type() == NodeType::Array) {
+				auto node_array = static_pointer_cast<NodeArray>(member);
 				sizes.push_back(node_array->size->clone());
-			} else if(data.second->get_node_type() == NodeType::NDArray) {
-				auto node_ndarray = static_cast<NodeNDArray*>(data.second);
+			} else if(member->get_node_type() == NodeType::NDArray) {
+				auto node_ndarray = static_pointer_cast<NodeNDArray>(member);
 				auto size = NodeBinaryExpr::create_right_nested_binary_expr(node_ndarray->sizes->params, 0, token::MULT);
 				sizes.push_back(std::move(size));
 			}
@@ -178,7 +180,7 @@ public:
 		for (size_t i = 1; i < sizes.size(); ++i) {
 			max_call = create_max_call(max_call, sizes[i]);
 		}
-		return std::unique_ptr<NodeFunctionCall>(static_cast<NodeFunctionCall*>(max_call.release()));
+		return unique_ptr_cast<NodeFunctionCall>(std::move(max_call));
 	}
 
 	/**
@@ -196,8 +198,8 @@ public:
 		}
 
 		// Erstellung der Parameter a und b
-		auto node_a = std::make_unique<NodeVariable>(std::nullopt, "a", TypeRegistry::Integer, DataType::Param, Token());
-		auto node_b = std::make_unique<NodeVariable>(std::nullopt, "b", TypeRegistry::Integer, DataType::Param, Token());
+		auto node_a = std::make_shared<NodeVariable>(std::nullopt, "a", TypeRegistry::Integer, DataType::Param, Token());
+		auto node_b = std::make_shared<NodeVariable>(std::nullopt, "b", TypeRegistry::Integer, DataType::Param, Token());
 
 		// Referenzen auf die Parameter
 		auto node_a_ref = node_a->to_reference();
@@ -216,6 +218,7 @@ public:
 		);
 		node_function_def->body->scope = true;
 		node_function_def->num_return_params = 1;
+		node_function_def->num_return_stmts = 1;
 		node_function_def->ty = TypeRegistry::Integer;
 
 		// abs(a - b)
@@ -259,11 +262,7 @@ public:
 			));
 
 		// Fügen Sie die neue Funktionsdefinition zum Programm hinzu
-		program->function_definitions.push_back(std::move(node_function_def));
-
-		// Update function lookup so that the new function can be found
-		program->update_function_lookup();
-
+		program->add_function_definition(std::move(node_function_def));
 		return true;
 	}
 

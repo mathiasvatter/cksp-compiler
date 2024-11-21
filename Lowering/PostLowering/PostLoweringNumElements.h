@@ -9,12 +9,22 @@
 /**
  * Second Lowering Phase of num_elements
  * has to happen after function inlining
- * if dimension is given -> call to ndarray size array
+ * if num_elements member in array declaration is given -> create declaration for num_elements array
+ * 	declare ndarray::num_elements[3] := (3*3, 3, 3)
  * if no dimension is given -> was array -> call to num_elements
  */
 class PostLoweringNumElements : public ASTLowering {
 private:
-
+	static NodeSingleDeclaration* get_next_declaration(NodeDataStructure& data) {
+		if(auto decl = data.parent->cast<NodeSingleDeclaration>()) {
+			return decl;
+		} else if(auto ui_control = data.parent->cast<NodeUIControl>()) {
+			if(auto decl1 = ui_control->parent->cast<NodeSingleDeclaration>()) {
+				return decl1;
+			}
+		}
+		return nullptr;
+	}
 public:
 	explicit PostLoweringNumElements(NodeProgram *program) : ASTLowering(program) {}
 
@@ -25,33 +35,65 @@ public:
 			error.exit();
 		}
 
-		if(node.dimension) {
-//			if(!node.size_array) {
-//				auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
-//				error.m_message = "Missing num_elements constant for array: " + node.array->name;
-//				error.exit();
-//			}
-
-			auto array_call = std::make_unique<NodeArrayRef>(
-				node.array->sanitize_name()+OBJ_DELIMITER+"num_elements",
-				std::move(node.dimension),
-				node.tok
-			);
-
-//			auto array_call = std::make_unique<NodeArrayRef>(
-//				node.size_array->name,
-//				std::move(node.dimension),
-//				node.tok
-//			);
-//			array_call->match_data_structure(node.size_array.get());
-			array_call->match_data_structure(node.array->declaration);
-			array_call->ty = TypeRegistry::Integer;
-			return node.replace_with(std::move(array_call));
-		} else {
-			// no dimension -> use builtin num_elements function
-			return node.replace_with(DefinitionProvider::num_elements(std::move(node.array)));
+		auto decl = node.array->get_declaration();
+		if(!decl) {
+			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+			error.m_message = "Declaration of array in <num_elements> node was not set.";
+			error.exit();
 		}
 
+		// check if num_elements member is set ->
+		// if yes -> create declaration for num_elements array
+		// if not -> call to num_elements
+		if(auto node_array = decl->cast<NodeArray>()) {
+			// in case nd array was written in raw array form -> declaration has num_elements but no dimension
+			if(node_array->num_elements and node.dimension) {
+				auto node_block = std::make_unique<NodeBlock>(node_array->tok);
+				auto node_declaration = get_next_declaration(*node_array);
+				if(!node_declaration) {
+					auto error = CompileError(ErrorType::SyntaxError, "", "", node_array->tok);
+					error.m_message = "<NodeArray> is not in a declaration.";
+					error.exit();
+				}
+				auto node_num_elements = std::make_shared<NodeArray>(
+					std::optional<Token>(),
+					node_array->name + OBJ_DELIMITER+"num_elements",
+					TypeRegistry::ArrayOfInt,
+					std::make_unique<NodeInt>(node_array->num_elements->size(), node.tok),
+					node.tok
+				);
+				auto node_num_elements_decl = std::make_unique<NodeSingleDeclaration>(
+					node_num_elements,
+					node_array->num_elements->to_initializer_list(),
+					node.tok
+				);
+				node_num_elements_decl->variable->data_type = DataType::Const;
+				node_array->num_elements = nullptr;
+				node_block->add_as_stmt(std::move(node_num_elements_decl));
+
+				auto node_array_decl = std::make_unique<NodeSingleDeclaration>(
+					std::move(node_declaration->variable),
+					std::move(node_declaration->value),
+					node_declaration->tok
+					);
+				node_block->add_as_stmt(std::move(node_array_decl));
+				node_declaration->replace_with(std::move(node_block));
+
+				auto num_elements_call = node_num_elements->to_reference();
+				num_elements_call->cast<NodeArrayRef>()->set_index(std::move(node.dimension));
+				num_elements_call->ty = TypeRegistry::Integer;
+				return node.replace_with(std::move(num_elements_call));
+
+			} else {
+				// use builtin num_elements function
+				return node.replace_with(DefinitionProvider::num_elements(std::move(node.array)));
+			}
+		} else {
+			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+			error.m_message = "<reference> node in <num_elements> has somehow a declaration that is not an <Array>.";
+			error.exit();
+		}
+		return &node;
 	}
 
 	inline static std::unique_ptr<NodeAST> inline_clip_function(std::unique_ptr<NodeAST> x, std::unique_ptr<NodeAST> b) {

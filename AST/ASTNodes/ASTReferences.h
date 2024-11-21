@@ -7,6 +7,8 @@
 #include <utility>
 
 #include "AST.h"
+#include "../TypeRegistry.h"
+
 
 struct NodeVariableRef : NodeReference {
 	inline NodeVariableRef(std::string name, Token tok)
@@ -54,8 +56,7 @@ struct NodeCompositeRef : NodeReference {
 	virtual void set_child_parents() override = 0;  // Wird in den abgeleiteten Klassen implementiert
 	virtual std::unique_ptr<NodeAST> get_size(std::unique_ptr<NodeAST> dim = nullptr) = 0;
 	virtual std::unique_ptr<NodeArrayRef> get_indexed_raw_ref(std::unique_ptr<NodeAST> new_index) = 0;
-
-//	virtual std::unique_ptr<NodeBlock> iterate_over() = 0;
+	[[nodiscard]] virtual int num_wildcards() const = 0;
 };
 
 struct NodeArrayRef : NodeCompositeRef {
@@ -97,7 +98,12 @@ struct NodeArrayRef : NodeCompositeRef {
 		new_ref->set_index(std::move(new_index));
 		return new_ref;
 	}
-//	std::unique_ptr<NodeBlock> iterate_over() override;
+	[[nodiscard]] inline int num_wildcards() const override {
+		if(index and index->cast<NodeWildcard>()) {
+			return 1;
+		}
+		return 0;
+	}
 };
 
 struct NodeNDArrayRef : NodeCompositeRef {
@@ -134,10 +140,11 @@ struct NodeNDArrayRef : NodeCompositeRef {
 	/// this_list.next.value[6,4]
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
 
-	[[nodiscard]] inline int num_wildcards() const {
+	[[nodiscard]] inline int num_wildcards() const override {
 		int count = 0;
 		if(indexes) {
-			for(auto & idx: indexes->params) if(idx->get_node_type() == NodeType::Wildcard) count++;
+			for(auto & idx: indexes->params)
+				if(idx->cast<NodeWildcard>()) count++;
 		}
 		return count;
 	}
@@ -234,7 +241,6 @@ struct NodeListRef : NodeReference {
 };
 
 struct NodePointerRef : NodeReference {
-	std::vector<std::string> ptr_chain;
 	inline NodePointerRef(std::string name, Token tok)
 		: NodeReference(std::move(name), NodeType::PointerRef, std::move(tok)) {
 	}

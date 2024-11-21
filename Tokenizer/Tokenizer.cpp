@@ -128,9 +128,15 @@ void Tokenizer::get_invalid() {
 }
 
 bool Tokenizer::is_pragma() {
-    return peek(0) == '/' and peek(1) == '/' and peek(2) == '#' and
+    auto workaround_pragma = peek(0) == '/' and peek(1) == '/' and peek(2) == '#' and
             peek(3) == 'p' and peek(4) == 'r' and peek(5) == 'a' and
             peek(6) == 'g' and peek(7) == 'm' and peek(8) == 'a';
+	if(workaround_pragma) {
+		auto error = CompileError(ErrorType::CompileWarning, "", m_line, "", "//#pragma", m_current_file);
+		error.m_message = "Found usage of //#pragma. Note that this is a workaround and will be removed in future versions.";
+		error.print();
+	}
+	return workaround_pragma;
 }
 
 

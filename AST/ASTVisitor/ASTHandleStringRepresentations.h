@@ -102,10 +102,10 @@ private:
 			}
 
 			if(ref.ty->get_type_kind() == TypeKind::Composite) {
-				if(ref.get_node_type() == NodeType::ArrayRef) {
-					generate_array_repr_method(static_cast<NodeArrayRef&>(ref));
-				} else if (ref.get_node_type() == NodeType::NDArrayRef) {
-					generate_ndarray_repr_method(static_cast<NodeNDArrayRef&>(ref));
+				if(auto arr_ref = ref.cast<NodeArrayRef>()) {
+					generate_array_repr_method(*arr_ref);
+				} else if (auto ndarr_ref = ref.cast<NodeNDArrayRef>()) {
+					generate_ndarray_repr_method(*ndarr_ref);
 				}
 			}
 
@@ -127,7 +127,7 @@ private:
 	/// generate __repr__ function for ArrayRef and add it to the program
 	/// if return is false, the function already exists
 	bool generate_array_repr_method(NodeArrayRef& node) {
-		if(!node.declaration) {
+		if(!node.get_declaration()) {
 			auto error = get_raw_compile_error(ErrorType::InternalError, node);
 			error.m_message = "ArrayRef has no declaration";
 			error.exit();
@@ -137,7 +137,7 @@ private:
 			return false;
 		}
 
-		auto node_self = clone_as<NodeArray>(node.declaration);
+		auto node_self = clone_as<NodeArray>(node.get_declaration().get());
 		node_self->name = "self";
 		node_self->size = nullptr;
 		auto self_ref = node_self->to_reference();
@@ -152,7 +152,7 @@ private:
 			)
 		);
 		node_body->scope = true;
-		auto function_def = std::make_unique<NodeFunctionDefinition>(
+		auto function_def = std::make_shared<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
 				std::make_unique<NodeFunctionParam>(std::move(node_self)),
@@ -165,17 +165,19 @@ private:
 		);
 		function_def->ty = TypeRegistry::String;
 		function_def->num_return_params = 1;
+		function_def->num_return_stmts = 1;
 		function_def->parent = m_program;
-		m_program->additional_function_definitions.push_back(std::move(function_def));
+		m_program->add_function_definition(function_def);
+//		m_program->additional_function_definitions.push_back(std::move(function_def));
 		// update function lookup so that the new function can be found
-		m_program->update_function_lookup();
+//		m_program->update_function_lookup();
 		return true;
 	}
 
 	/// generate __repr__ function for NDArrayRef and add it to the program
 	/// if return is false, the function already exists
 	bool generate_ndarray_repr_method(NodeNDArrayRef& node) {
-		if(!node.declaration) {
+		if(!node.get_declaration()) {
 			auto error = get_raw_compile_error(ErrorType::InternalError, node);
 			error.m_message = "NDArrayRef has no declaration";
 			error.exit();
@@ -185,8 +187,9 @@ private:
 			return false;
 		}
 
-		auto node_self = clone_as<NodeNDArray>(node.declaration);
+		auto node_self = clone_as<NodeNDArray>(node.get_declaration().get());
 		node_self->name = "self";
+		node_self->ty = node.get_declaration()->ty;
 		node_self->sizes = nullptr;
 		auto self_ref = node_self->to_reference();
 		auto message = std::make_unique<NodeString>(
@@ -200,7 +203,7 @@ private:
 			)
 		);
 		node_body->scope = true;
-		auto function_def = std::make_unique<NodeFunctionDefinition>(
+		auto function_def = std::make_shared<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
 				std::make_unique<NodeFunctionParam>(std::move(node_self)),
@@ -214,9 +217,10 @@ private:
 		function_def->ty = TypeRegistry::String;
 		function_def->num_return_params = 1;
 		function_def->parent = m_program;
-		m_program->additional_function_definitions.push_back(std::move(function_def));
+		m_program->add_function_definition(function_def);
+//		m_program->additional_function_definitions.push_back(std::move(function_def));
 		// update function lookup so that the new function can be found
-		m_program->update_function_lookup();
+//		m_program->update_function_lookup();
 		return true;
 	}
 };

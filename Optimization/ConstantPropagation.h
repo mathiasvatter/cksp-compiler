@@ -18,7 +18,7 @@ public:
 			// when declared as const -> replace with dead code node
 			if(node.variable->data_type == DataType::Const and node.variable->get_node_type() == NodeType::Variable) {
 				m_constants[node.variable->name] = std::move(node.value);
-				return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+				return node.remove_node();
 			}
 		}
 		return &node;

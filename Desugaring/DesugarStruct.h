@@ -113,16 +113,12 @@ public:
 
 		node.members->accept(*this);
 		// add self keyword for declarations
-		node.members->prepend_stmt(std::make_unique<NodeStatement>(
-			std::make_unique<NodeSingleDeclaration>(clone_as<NodeDataStructure>(node.node_self.get()), nullptr, node.tok),
-			    node.tok
-				)
-			);
+		node.members->prepend_as_stmt(std::make_unique<NodeSingleDeclaration>(node.node_self, nullptr, node.tok));
 		for(auto & m: node.methods) {
 			m->accept(*this);
 		}
-		node.update_member_table();
-		node.update_method_table();
+		node.rebuild_member_table();
+		node.rebuild_method_table();
 
 		m_structs.pop();
 		members.clear();
@@ -147,7 +143,7 @@ public:
 				error.m_expected = m_structs.top()->name;
 				error.exit();
 			}
-			m_structs.top()->constructor = &node;
+			m_structs.top()->constructor = node.get_shared();
 			if(node.num_return_params > 0) {
 				error.m_message = "Constructor method cannot have return values.";
 				error.exit();
@@ -176,7 +172,7 @@ public:
 
 		// check if method is operator overload
 		if(auto token = get_operator_token(node.header->name, node.header->params.size())) {
-			m_structs.top()->overloaded_operators.insert({*token, &node});
+			m_structs.top()->overloaded_operators.insert({*token, node.get_shared()});
 		}
 
 		node.header->accept(*this);

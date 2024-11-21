@@ -12,7 +12,9 @@
  */
 class ASTCollectPostLowerings: public ASTVisitor {
 public:
-	explicit ASTCollectPostLowerings(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {}
+	explicit ASTCollectPostLowerings(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 
 	NodeAST * visit(NodeProgram& node) override {
 		m_program = &node;
@@ -42,9 +44,9 @@ public:
 
 	NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		if(node.get_definition(m_program)) {
-			if(!node.definition->visited) node.definition->accept(*this);
-			node.definition->visited = true;
+		if(node.bind_definition(m_program)) {
+			if(!node.get_definition()->visited) node.get_definition()->accept(*this);
+			node.get_definition()->visited = true;
 		}
 		return &node;
 	}

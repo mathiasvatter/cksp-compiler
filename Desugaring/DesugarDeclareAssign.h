@@ -71,8 +71,8 @@ public:
 			auto &val = r_values[i];
 			if(val->get_node_type() == NodeType::FunctionCall) {
 				auto func_call = static_cast<NodeFunctionCall*>(val.get());
-				func_call->get_definition(m_program);
-				int num_return_params = func_call->definition ? func_call->definition->num_return_params : 1;
+				func_call->bind_definition(m_program);
+				int num_return_params = func_call->get_definition() ? func_call->get_definition()->num_return_params : 1;
 				num_values += num_return_params-1;
 				if(num_return_params > 1 and i+num_values < l_values.size() and func_call->kind == NodeFunctionCall::Kind::UserDefined) {
 					for (int ii = num_return_params-1; ii > 0; ii--) {

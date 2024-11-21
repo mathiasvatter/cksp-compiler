@@ -64,11 +64,13 @@ end struct
 
 // end struct
 
+
 on init	
-	declare ui_menu mnu: int, i
-	declare ari[2]
- 	mnu->value := (mnu->value + 1) mod num_elements(ari)
-	i := (i+1) mod num_elements(ari)
+
+	// declare ui_menu mnu: int, i
+	// declare ari[2]
+ 	// mnu->value := (mnu->value + 1) mod num_elements(ari)
+	// i := (i+1) mod num_elements(ari)
 	// declare first_note := Note(69, (3,0), ((10)))
 	// declare ptr: List := List(1, List(3, nil))
 	// message(ptr.next.next)
@@ -103,33 +105,39 @@ on init
 	declare ndarray2[10,10]: int[][]
 	message(search_matrix(ndarray, 3.0), "3", "f")
 	message(search_matrix(ndarray2, 3), "3", "f")
-	// message(num_elements(ndarray, 2))
-	// declare local ptr_array[10]
-	// for idx, ptr in ptr_array
-	// 	ptr := Point(idx, idx+1)
-	// end for
-	// declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
-	// declare local ptr_array3[10] := ptr_array
-	// declare local p1 := Point(1, 2)
-	// declare local p2 := Point(3, 4)
-	// message(p1 + p2)
-	
+	message(num_elements(ndarray, 2), num_elements(ndarray[*, 0]))
+	declare local ptr_array[10]
+	for idx, ptr in ptr_array
+		ptr := Point(idx, idx+1)
+	end for
+	declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
+	declare local ptr_array3[10] := ptr_array
+	declare local p1 := Point(1, 2)
+	declare local p2 := Point(3, 4)
+	message(Point(1, 2) + Point(3, 4))
+	message(n[*])
 	ndarray[0, *] := ndarray[1, *]
 
 	message(use_count(this_list))
+	// message(return_size(ndarray[*, 0]))
 end on
+
+function return_size(ndarray: int[])
+	return num_elements(ndarray)
+end function	
+
 
 function return_init(init: int[]): int[]
 	message(init)
 	return (1,2,3,4,5)
-end function	
+end function
 
 
 function search_matrix(matrix: number[][], target: number): number
 	declare array[30] := (0)
 	declare ndarray[2,3]
 	// declare ui_slider sli(0,1)
-	// message(num_elements(ndarray))
+	message(num_elements(ndarray))
     declare row, col: int
     for row := 0 to num_elements(matrix, 1)- 1
         for col := 0 to num_elements(matrix, 2)- 1

@@ -11,12 +11,17 @@ class ASTRelinkGlobalScope : public ASTVisitor {
 private:
 	DefinitionProvider* m_def_provider = nullptr;
 public:
-	explicit ASTRelinkGlobalScope(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
+	explicit ASTRelinkGlobalScope(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 
 	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
+		node.reset_function_visited_flag();
+
 		// erase all previously saved scopes
 		m_def_provider->refresh_scopes();
+
 		m_def_provider->refresh_data_vectors();
 
 		m_program->global_declarations->accept(*this);
@@ -36,17 +41,17 @@ public:
 
 	inline void relink_global_scope() {
 		for(auto & data_struct : m_def_provider->get_all_data_structures()) {
-			m_def_provider->set_declaration(data_struct, true);
+			m_def_provider->set_declaration(data_struct.lock(), true);
 		}
 		for(auto & reference : m_def_provider->get_all_references()) {
-			auto new_declaration = m_def_provider->get_declaration(reference);
+			auto new_declaration = m_def_provider->get_declaration(*reference);
 			if(!new_declaration) DefinitionProvider::throw_declaration_error(*reference).exit();
 			reference->match_data_structure(new_declaration);
 		}
 	}
 
 	inline NodeAST* visit(NodeVariable& node) override {
-		m_def_provider->add_to_data_structures(&node);
+		m_def_provider->add_to_data_structures(node.get_shared());
 		return &node;
 	}
 
@@ -57,7 +62,7 @@ public:
 
 	inline NodeAST* visit(NodeArray& node) override {
 		if(node.size) node.size->accept(*this);
-		m_def_provider->add_to_data_structures(&node);
+		m_def_provider->add_to_data_structures(node.get_shared());
 		return &node;
 	}
 
@@ -69,10 +74,10 @@ public:
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		if(node.get_definition(m_program)) {
+		if(node.bind_definition(m_program)) {
 			if(node.kind != NodeFunctionCall::Kind::UserDefined) return &node;
-			if(!node.definition->visited) node.definition->body->accept(*this);
-			node.definition->visited = true;
+			if(!node.get_definition()->visited) node.get_definition()->body->accept(*this);
+			node.get_definition()->visited = true;
 		}
 		return &node;
 	}

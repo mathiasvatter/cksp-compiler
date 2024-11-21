@@ -19,7 +19,7 @@
 #include "../../Desugaring/DesugarSingleAssignment.h"
 #include "../../Lowering/PostLowering/PostLoweringNumElements.h"
 #include "../../Lowering/LoweringUseCount.h"
-#include "../../Lowering/LoweringSingleDeclaration.h"
+#include "../ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -51,7 +51,11 @@ NodeFunctionCall::NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHea
 	set_child_parents();
 }
 
-NodeFunctionCall::~NodeFunctionCall() = default;
+NodeFunctionCall::~NodeFunctionCall() {
+	if(auto def = definition.lock()) {
+		def->call_sites.erase(this);
+	}
+}
 
 NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
         : NodeInstruction(other), is_call(other.is_call), is_new(other.is_new), kind(other.kind),
@@ -67,19 +71,19 @@ ASTLowering* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
     return &lowering;
 }
 
-NodeFunctionDefinition* NodeFunctionCall::find_definition(struct NodeProgram *program) {
+std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(struct NodeProgram *program) {
     auto it = program->function_lookup.find({function->name, (int)function->args->size()});
     if(it != program->function_lookup.end()) {
-        it->second->is_used = true;
+		auto func_def = it->second.lock();
         definition = it->second;
         kind = Kind::UserDefined;
-//		definition->call_sites.emplace(this);
-        return it->second;
+//		func_def->call_sites.emplace(this);
+        return func_def;
     }
     return nullptr;
 }
 
-NodeFunctionDefinition* NodeFunctionCall::find_builtin_definition(NodeProgram *program) {
+std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_builtin_definition(NodeProgram *program) {
     if(!program->def_provider) {
         CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
@@ -87,14 +91,14 @@ NodeFunctionDefinition* NodeFunctionCall::find_builtin_definition(NodeProgram *p
         function->ty = builtin_func->ty;
         function->has_forced_parenth = builtin_func->header->has_forced_parenth;
         definition = builtin_func;
-		definition->is_thread_safe = builtin_func->is_thread_safe;
+//		definition->is_thread_safe = builtin_func->is_thread_safe;
 		kind = Kind::Builtin;
         return builtin_func;
     }
     return nullptr;
 }
 
-NodeFunctionDefinition* NodeFunctionCall::find_property_definition(NodeProgram *program) {
+std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_property_definition(NodeProgram *program) {
     if(!program->def_provider) {
         CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
@@ -117,14 +121,14 @@ NodeFunctionDefinition* NodeFunctionCall::find_property_definition(NodeProgram *
 }
 
 
-NodeFunctionDefinition *NodeFunctionCall::find_constructor_definition(NodeProgram *program) {
+std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_constructor_definition(NodeProgram *program) {
 	auto it = program->struct_lookup.find(function->name);
 	if(it != program->struct_lookup.end()) {
 		auto constructor = it->second->constructor;
 		if(!constructor) return nullptr;
-		function->ty = constructor->ty;
+		function->ty = constructor->header->ty;
 		definition = constructor;
-//		definition->call_sites.emplace(this);
+//		constructor->call_sites.emplace(this);
 		kind = Kind::Constructor;
 		return it->second->constructor;
 	}
@@ -132,8 +136,8 @@ NodeFunctionDefinition *NodeFunctionCall::find_constructor_definition(NodeProgra
 }
 
 
-bool NodeFunctionCall::get_definition(NodeProgram* program, bool fail) {
-    if (definition) {
+bool NodeFunctionCall::bind_definition(NodeProgram* program, bool fail) {
+    if (get_definition()) {
 		// update call sites
 //		if(kind == Kind::UserDefined) {
 //			definition->call_sites.emplace(this);
@@ -222,16 +226,22 @@ bool NodeFunctionCall::is_string_env() {
 	// is within message call
 	is_string |= parent->parent->get_node_type() == NodeType::FunctionHeaderRef and static_cast<NodeFunctionHeaderRef*>(parent->parent)->name == "message";
 	// is within return statement
-	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->definition->ty == TypeRegistry::String;
+	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->get_definition()->ty == TypeRegistry::String;
 	return is_string;
 }
 
 bool NodeFunctionCall::do_param_promotion() const {
-	if(!definition) return false;
-	if(definition->is_thread_safe) return false;
+	auto def = get_definition();
+	if(!def) return false;
+	if(def->is_thread_safe) return false;
 	if(is_call) return false;
-	if(definition->call_sites.size() > 2) return false;
+	if(def->call_sites.size() > 2) return false;
 	return true;
+}
+
+void NodeFunctionCall::do_param_promotion(NodeProgram *program) {
+	static ASTParameterPromotion param_promotion(program);
+	param_promotion.do_param_promotion(*this);
 }
 
 // ************* NodeNumElements ***************
@@ -417,8 +427,7 @@ NodeAST *NodeSingleAssignment::accept(struct ASTVisitor &visitor) {
 }
 NodeSingleAssignment::NodeSingleAssignment(const NodeSingleAssignment& other)
         : NodeInstruction(other), l_value(clone_unique(other.l_value)),
-          r_value(clone_unique(other.r_value)), delete_stmt(clone_unique(other.delete_stmt)),
-		  retain_stmt(clone_unique(other.retain_stmt)), has_object(other.has_object) {
+          r_value(clone_unique(other.r_value)), has_object(other.has_object) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleAssignment::clone() const {
@@ -482,7 +491,7 @@ NodeAST *NodeSingleDeclaration::accept(struct ASTVisitor &visitor) {
 }
 NodeSingleDeclaration::NodeSingleDeclaration(const NodeSingleDeclaration& other)
         : NodeInstruction(other), variable(clone_shared(other.variable)),
-          value(clone_unique(other.value)), retain_stmt(clone_unique(other.retain_stmt)),
+          value(clone_unique(other.value)),
 		  is_promoted(other.is_promoted), has_object(other.has_object) {
     set_child_parents();
 }
@@ -502,17 +511,17 @@ NodeAST *NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_ptr
     return nullptr;
 }
 
-ASTLowering* NodeSingleDeclaration::get_lowering(struct NodeProgram *program) const {
+ASTLowering* NodeSingleDeclaration::get_lowering(NodeProgram *program) const {
 	if(variable->get_node_type() == NodeType::UIControl) {
 		return variable->get_lowering(program);
 	}
-	static LoweringSingleDeclaration lowering(program);
-	return &lowering;
+	if(variable->get_node_type() == NodeType::List) {
+		return variable->get_lowering(program);
+	}
+//	static LoweringSingleDeclaration lowering(program);
+//	return &lowering;
+	return nullptr;
 }
-//
-//ASTLowering* NodeSingleDeclaration::get_data_lowering(struct NodeProgram *program) const {
-//    return this->variable->get_data_lowering(program);
-//}
 
 std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(NodeDataStructure* var) {
     // if var provided -> turn to reference else turn variable to reference

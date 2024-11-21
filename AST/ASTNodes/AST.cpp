@@ -2,15 +2,12 @@
 // Created by Mathias Vatter on 28.08.23.
 //
 
-
 #include "AST.h"
-
 #include "../TypeRegistry.h"
 #include "ASTInstructions.h"
 #include "ASTDataStructures.h"
 #include "ASTReferences.h"
 #include "../../Lowering/ASTLowering.h"
-#include "../ASTVisitor/ASTVisitor.h"
 #include "../../Desugaring/DesugarFunctionDef.h"
 #include "../ASTVisitor/ASTPrinter.h"
 #include "../../Optimization/ConstExprValidator.h"
@@ -20,6 +17,10 @@
 #include "../../Desugaring/DesugarBinaryExpr.h"
 #include "../../Lowering/LoweringFunctionDef.h"
 #include "../../Optimization/NilValidator.h"
+#include "../ASTVisitor/ReferenceManagement/ASTCollectReferences.h"
+#include "../ASTVisitor/ReferenceManagement/ASTRemoveReferences.h"
+#include "../ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h"
+#include "../ASTVisitor/GlobalScope/ASTRegisterReuse.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -124,6 +125,55 @@ bool NodeAST::is_nil() {
 	return nil_validator.is_nil(*this);
 }
 
+void NodeAST::collect_references() {
+	static ASTCollectReferences ref_collect;
+	accept(ref_collect);
+}
+
+void NodeAST::remove_references() {
+	static ASTRemoveReferences remove_ref;
+	accept(remove_ref);
+}
+
+NodeAST *NodeAST::remove_node() {
+//	this->remove_references();
+	return replace_with(std::make_unique<NodeDeadCode>(tok));
+}
+
+NodeBlock *NodeAST::get_parent_block() const {
+	return get_parent_of_type<NodeBlock>(*this);
+}
+
+struct NodeStatement *NodeAST::get_parent_statement() const {
+	return get_parent_of_type<NodeStatement>(*this);
+}
+
+NodeBlock *NodeAST::get_outmost_block() const {
+	auto next_block = get_parent_block();
+	while(next_block) {
+		auto block = next_block->get_parent_block();
+		if(!block) return next_block;
+		next_block = block;
+	}
+	return nullptr;
+}
+
+struct NodeCallback *NodeAST::get_current_callback() const {
+	auto block = get_outmost_block();
+	if (block and block->parent) {
+		return block->parent->cast<NodeCallback>();
+	}
+	return nullptr;
+}
+
+struct NodeFunctionDefinition *NodeAST::get_current_function() const {
+	auto block = get_outmost_block();
+	if (block and block->parent) {
+		return block->parent->cast<NodeFunctionDefinition>();
+	}
+	return nullptr;
+}
+
 
 // ************* NodeDataStructure ***************
 NodeAST *NodeDataStructure::accept(struct ASTVisitor &visitor) {
@@ -133,7 +183,8 @@ NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
 	  is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
 	  is_local(other.is_local), is_global(other.is_global),
-	  data_type(other.data_type), name(other.name), has_obj_assigned(other.has_obj_assigned) {
+	  data_type(other.data_type), name(other.name), has_obj_assigned(other.has_obj_assigned),
+	  references(other.references) {
 	set_child_parents();
 }
 
@@ -143,7 +194,6 @@ std::unique_ptr<NodeAST> NodeDataStructure::clone() const {
 
 std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
 	auto ref = std::make_unique<NodeReference>(name, node_type, tok);
-	ref->match_data_structure(this);
 	return ref;
 }
 
@@ -178,14 +228,14 @@ Type* NodeDataStructure::cast_type() {
 }
 
 NodeStruct* NodeDataStructure::is_member() {
-	if(this->parent and this->parent->get_node_type() == NodeType::SingleDeclaration) {
-		auto decl = this->parent;
+	if(parent and parent->get_node_type() == NodeType::SingleDeclaration) {
+		auto decl = parent;
 		if(decl->parent and decl->parent->get_node_type() == NodeType::Statement) {
 			auto stmt = decl->parent;
 			if(stmt->parent and stmt->parent->get_node_type() == NodeType::Block) {
 				auto body = stmt->parent;
 				if(body->parent and body->parent->get_node_type() == NodeType::Struct) {
-					return static_cast<NodeStruct*>(body->parent);
+					return body->parent->cast<NodeStruct>();
 				}
 			}
 		}
@@ -200,31 +250,42 @@ NodeDataStructure* NodeDataStructure::lower_type() {
 	return this;
 }
 
-NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDataStructure> new_node,
-																 DefinitionProvider *def_provider) {
-	const auto references = def_provider->get_references(this);
-	def_provider->remove_references(this);
+NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDataStructure> new_node) {
+	auto old_data = get_shared();
+	auto new_data_struct = static_cast<NodeDataStructure*>(replace_with(std::move(new_node)));
+	auto new_data = new_data_struct->get_shared();
 
-	if (!parent) {
-		CompileError(ErrorType::InternalError, "Parent of data structure is null", "", tok).exit();
-	}
-	new_node->parent = parent;
-	auto new_data_struct = static_cast<NodeDataStructure*>(parent->replace_child(this, std::move(new_node)));
-
-	def_provider->set_references(new_data_struct, references);
-	for(auto & ref : references) {
-		ref->declaration = new_data_struct;
+	new_data->references = std::move(old_data->references);
+//	for(auto const &ref : new_data->references) {
+//		ref->declaration = new_data;
+//	}
+	parallel_for_each(new_data->references.begin(), new_data->references.end(),
+				  [&new_data](auto const& ref) {
+					ref->declaration = new_data;
+				  });
+	if(auto strct = new_data->is_member()) {
+		strct->replace_member_in_table(old_data, new_data);
 	}
 	return new_data_struct;
 }
 
-void NodeDataStructure::match_metadata(NodeDataStructure *data_structure) {
+void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>& data_structure) {
 	is_engine = data_structure->is_engine;
 	is_local = data_structure->is_local;
 	data_type = data_structure->data_type;
 }
 
+void NodeDataStructure::clear_references() {
+	references.clear();
+}
+
 // ************* NodeReference ***************
+NodeReference::~NodeReference() {
+	if(auto decl = declaration.lock()) {
+		decl->references.erase(this);
+	}
+}
+
 NodeAST *NodeReference::accept(struct ASTVisitor &visitor) {
 	return nullptr;
 }
@@ -240,7 +301,7 @@ std::unique_ptr<NodeAST> NodeReference::clone() const {
 	return std::make_unique<NodeReference>(*this);
 }
 
-void NodeReference::match_data_structure(NodeDataStructure* data_structure) {
+void NodeReference::match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure) {
 	declaration = data_structure;
 	is_engine = data_structure->is_engine;
 	is_local = data_structure->is_local;
@@ -249,7 +310,7 @@ void NodeReference::match_data_structure(NodeDataStructure* data_structure) {
 }
 
 bool NodeReference::is_member_ref() const {
-	return declaration and declaration->is_member();
+	return get_declaration() and get_declaration()->is_member();
 }
 
 NodeStruct *NodeReference::get_object_ptr(NodeProgram* program, const std::string& obj) {
@@ -272,8 +333,7 @@ std::unique_ptr<NodeFunctionCall> NodeReference::wrap_in_get_ui_id() {
 }
 
 bool NodeReference::is_l_value() {
-	if(this->parent->get_node_type() == NodeType::SingleAssignment) {
-		auto assignment = static_cast<NodeSingleAssignment*>(this->parent);
+	if(auto assignment = parent->cast<NodeSingleAssignment>()) {
 		if(assignment->l_value.get() == this) {
 			return true;
 		}
@@ -296,26 +356,20 @@ bool NodeReference::needs_get_ui_id() {
 }
 
 bool NodeReference::is_r_value() {
-	if(this->parent->get_node_type() == NodeType::SingleAssignment) {
-		auto assignment = static_cast<NodeSingleAssignment*>(this->parent);
+	if(auto assignment = parent->cast<NodeSingleAssignment>()) {
 		static VarExistsValidator var_exists_validator;
 		return var_exists_validator.var_exists(*assignment->r_value, name);
 	}
 	return false;
 }
 
-NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> new_node,
-												struct DefinitionProvider *def_provider) {
-	new_node->match_data_structure(this->declaration);
-	def_provider->remove_reference(new_node->declaration, this);
-
-	if (!parent) {
-		CompileError(ErrorType::InternalError, "Parent of reference is null", "", tok).exit();
-	}
-	new_node->parent = parent;
-	auto new_ref = static_cast<NodeReference*>(parent->replace_child(this, std::move(new_node)));
-
-	def_provider->add_reference(new_ref->declaration, new_ref);
+NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> new_node) {
+	auto decl = get_declaration();
+	new_node->match_data_structure(decl);
+	auto old_ref = this;
+	auto new_ref = static_cast<NodeReference*>(replace_with(std::move(new_node)));
+	decl->references.erase(old_ref);
+	decl->references.insert(new_ref);
 	return new_ref;
 }
 
@@ -324,11 +378,20 @@ bool NodeReference::is_string_env() {
 	// is within string environment
 	is_string |= parent->ty == TypeRegistry::String;
 	// is within message call
-	is_string |= is_func_arg() and static_cast<NodeFunctionHeader*>(parent->parent)->name == "message";
+	is_string |= is_func_arg() and static_cast<NodeFunctionHeaderRef*>(parent->parent)->name == "message";
 	// is within return statement
-	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->definition->ty == TypeRegistry::String;
+	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->get_definition()->ty == TypeRegistry::String;
 	return is_string;
 }
+
+std::shared_ptr<NodeDataStructure> NodeReference::get_declaration() const {
+	auto ptr = declaration.lock(); // Gibt nullptr zurück, falls das Objekt bereits gelöscht wurde
+//	if(!ptr and fail) {
+//		throw std::runtime_error("Declaration of reference " + name + " is no longer available");
+//	}
+	return ptr;
+}
+
 
 // ************* NodeInstruction ***************
 NodeAST *NodeInstruction::accept(struct ASTVisitor &visitor) {
@@ -363,16 +426,9 @@ std::unique_ptr<NodeAST> NodeWildcard::clone() const {
 }
 
 bool NodeWildcard::check_semantic() {
-	bool check_parents = parent->get_node_type() == NodeType::ParamList and parent->parent->get_node_type() == NodeType::NDArrayRef;
-//		and parent->parent->parent->get_node_type() == NodeType::SingleAssignment;
-	if(check_parents) {
-//		auto assign_stmt = static_cast<NodeSingleAssignment*>(parent->parent->parent);
-//		auto nd_array_ref = static_cast<NodeNDArrayRef*>(parent->parent);
-//		if(assign_stmt->l_value.get() == nd_array_ref) {
-			return true;
-//		}
-	}
-	return false;
+	bool check_parents = (parent->cast<NodeParamList>() and parent->parent->cast<NodeNDArrayRef>())
+		or parent->cast<NodeArrayRef>();
+	return check_parents;
 }
 
 // ************* NodeInt ***************
@@ -740,12 +796,12 @@ NodeAST *NodeFunctionDefinition::accept(struct ASTVisitor &visitor) {
 
 NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& other)
         : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
-          header(clone_unique(other.header)), override(other.override),
+          header(other.header), override(other.override),
           call_sites(other.call_sites), body(clone_unique(other.body)),
 		  num_return_params(other.num_return_params), return_stmts(other.return_stmts),
 		  num_return_stmts(other.num_return_stmts) {
     if (other.return_variable) {
-        return_variable = std::make_optional(clone_unique(other.return_variable.value()));
+        return_variable = std::make_optional(other.return_variable.value());
     }
 	set_child_parents();
 }
@@ -803,11 +859,19 @@ std::shared_ptr<NodeDataStructure> &NodeFunctionDefinition::get_param(int i) {
 
 bool NodeFunctionDefinition::is_expression_function() {
 	if(num_return_params == 1 and num_return_stmts == 1) {
+		// in case of builtin functions
+		if(body->statements.empty()) return true;
 		if(return_variable.has_value()) return false;
 		if(body->statements.size() == 1) {
-			auto stmt = body->statements[0]->statement.get();
-			if(stmt->get_node_type() == NodeType::Return) {
-				return true;
+			auto& stmt = body->get_last_statement();
+			if(auto node_return = stmt->cast<NodeReturn>()) {
+				if(auto func_call = node_return->return_variables[0]->cast<NodeFunctionCall>()) {
+					if(func_call->get_definition()) {
+						return func_call->get_definition()->is_expression_function();
+					}
+				} else {
+					return true;
+				}
 			}
 		}
 	}
@@ -822,6 +886,11 @@ bool NodeFunctionDefinition::has_no_params() const {
 	return header->params.empty();
 }
 
+void NodeFunctionDefinition::do_register_reuse(NodeProgram *program) {
+	static ASTRegisterReuse register_reuse(program);
+	register_reuse.do_register_reuse(*this);
+}
+
 // ************* NodeProgramm ***************
 NodeProgram::NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {
 	global_declarations = std::make_unique<NodeBlock>(Token());
@@ -829,7 +898,7 @@ NodeProgram::NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program)
 }
 
 NodeProgram::NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
-						 std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions,
+						 std::vector<std::shared_ptr<NodeFunctionDefinition>> functionDefinitions,
 						 Token tok)
 	: NodeAST(std::move(tok), NodeType::Program), callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)) {
 	global_declarations = std::make_unique<NodeBlock>(Token());
@@ -843,8 +912,8 @@ NodeAST *NodeProgram::accept(struct ASTVisitor &visitor) {
 
 NodeProgram::NodeProgram(const NodeProgram& other) : NodeAST(other), init_callback(other.init_callback) {
     callbacks = clone_vector<NodeCallback>(other.callbacks);
-    function_definitions = clone_vector<NodeFunctionDefinition>(other.function_definitions);
-	additional_function_definitions = clone_vector<NodeFunctionDefinition>(other.additional_function_definitions);
+    function_definitions = other.function_definitions;
+	additional_function_definitions = other.additional_function_definitions;
 	global_declarations = std::make_unique<NodeBlock>(*other.global_declarations);
 	struct_definitions = clone_vector<NodeStruct>(other.struct_definitions);
 	function_lookup = other.function_lookup;
@@ -870,20 +939,34 @@ void NodeProgram::update_parents(NodeAST *new_parent) {
 	for(const auto & f : function_definitions) f->update_parents(this);
 }
 
+void NodeProgram::add_function_definition(const std::shared_ptr<NodeFunctionDefinition>& def) {
+	def->parent = this;
+	additional_function_definitions.push_back(def);
+	function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def});
+}
+
 void NodeProgram::update_function_lookup() {
 	function_lookup.clear();
 	for(const auto & def : function_definitions) {
-		function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def.get()});
+		function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def});
 	}
 	for(const auto & def : additional_function_definitions) {
-		function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def.get()});
+		function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def});
 	}
 	// add all struct methods to the lookup
 	for(const auto & struct_def : struct_definitions) {
 		for(const auto & method : struct_def->methods) {
-			function_lookup.insert({{method->header->name, (int)method->header->params.size()}, method.get()});
+			function_lookup.insert({{method->header->name, (int)method->header->params.size()}, method});
 		}
 	}
+}
+
+
+void NodeProgram::merge_function_definitions() {
+	if(additional_function_definitions.empty()) return;
+	function_definitions.insert(function_definitions.end(), additional_function_definitions.begin(),
+								additional_function_definitions.end());
+	additional_function_definitions.clear();
 }
 
 void NodeProgram::update_struct_lookup() {
@@ -931,7 +1014,6 @@ std::unique_ptr<NodeBlock> NodeProgram::declare_compiler_variables() {
 	std::unordered_map<std::string, Type*> compiler_variables = {{"_iter", TypeRegistry::Integer}};
 	Token tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
 	auto node_body = std::make_unique<NodeBlock>(tok);
-//	node_body->scope = true;
 	for(const auto & var_name: compiler_variables) {
 		auto node_variable = std::make_unique<NodeVariable>(
 			std::nullopt,
@@ -962,12 +1044,40 @@ void NodeProgram::inline_structs() {
 }
 
 void NodeProgram::reset_function_visited_flag() {
-	for(const auto & def : function_definitions) def->visited = false;
+//	for(const auto & def : function_definitions) def->visited = false;
+	parallel_for_each(function_definitions.begin(), function_definitions.end(),
+				  [](auto const& def) {
+					def->visited = false;
+				  });
 }
 
 void NodeProgram::reset_function_used_flag() {
-	for(const auto & def : function_definitions) def->is_used = false;
+//	for(const auto & def : function_definitions) def->is_used = false;
+	parallel_for_each(function_definitions.begin(), function_definitions.end(),
+				  [](auto const& def) {
+					def->is_used = false;
+				  });
 }
+
+void NodeProgram::remove_unused_functions() {
+	function_lookup.clear();
+	std::vector<std::shared_ptr<NodeFunctionDefinition>> final_function_definitions;
+	for(auto const & def : function_definitions) {
+		if(def->is_used) {
+			final_function_definitions.push_back(def);
+			function_lookup.insert({{def->header->name, (int)def->header->params.size()}, def});
+		}
+	}
+	function_definitions.clear();
+	function_definitions = final_function_definitions;
+}
+
+void NodeProgram::order_function_definitions() {
+	static FunctionDefinitionOrdering ordering;
+	ordering.order_functions(*this);
+}
+
+
 
 
 

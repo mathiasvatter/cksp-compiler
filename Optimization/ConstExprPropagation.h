@@ -46,7 +46,7 @@ public:
 		node.function->accept(*this);
 		// if function is builtin and asynchronus, do not propagate -> reset map
 		if(node.kind == NodeFunctionCall::Kind::Builtin) {
-			if(!node.definition->is_thread_safe) {
+			if(!node.get_definition()->is_thread_safe) {
 				m_constant_expressions.clear();
 			}
 		}
@@ -56,11 +56,11 @@ public:
 	NodeAST* visit(NodeSingleAssignment& node) override {
 		node.r_value->accept(*this);
 		// remove constant from constant expression map when it gets reassigned
-		auto ref = static_cast<NodeReference*>(node.l_value.get());
-		remove_constant_expression(ref);
+//		auto ref = static_cast<NodeReference*>(node.l_value.get());
+		remove_constant_expression(node.l_value.get());
 		node.l_value->accept(*this);
 		// if mutable, try to propagate the value
-		if(ref->data_type == DataType::Mutable) {
+		if(node.l_value->data_type == DataType::Mutable) {
 			if(node.r_value->is_constant()) {
 				m_constant_expressions[get_hash_value(*node.l_value)] = node.r_value->clone();
 			}
@@ -98,11 +98,11 @@ public:
 		/// propagation inside certain builtin functions is not allowed
 		/// if parameter in builtin function is a variable or an array -> no propagation
 		if(node->is_func_arg()) {
-			auto func_call = static_cast<NodeFunctionCall*>(node->parent->parent->parent);
-			if(func_call->kind == NodeFunctionCall::Kind::Builtin) {
-				if(func_call->definition) {
-					auto param_list = static_cast<NodeParamList*>(node->parent);
-					auto &param = func_call->definition->header->get_param(param_list->get_idx(node));
+			auto func_call = node->parent->parent->parent->cast<NodeFunctionCall>();
+			if(func_call and func_call->kind == NodeFunctionCall::Kind::Builtin) {
+				if(func_call->get_definition()) {
+					auto param_list = node->parent->cast<NodeParamList>();
+					auto &param = func_call->get_definition()->header->get_param(param_list->get_idx(node));
 					if(contains(param->name, "variable")) {
 						return node;
 					}

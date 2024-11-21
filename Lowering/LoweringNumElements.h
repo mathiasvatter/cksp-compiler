@@ -27,62 +27,111 @@ public:
 			error.exit();
 		}
 
-		if(node.array->get_node_type() == NodeType::ArrayRef and node.dimension) {
-			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
-			error.m_message = "The <dimension> parameter of <num_elements> can not be used with <ArrayRef>.";
-			error.exit();
-		}
-
-		if(node.dimension and node.dimension->get_node_type() == NodeType::Int) {
-			auto int_node = static_cast<NodeInt*>(node.dimension.get());
-			auto dim = int_node->value;
-			if(node.array->get_node_type() == NodeType::NDArrayRef) {
-				auto nd_array = static_cast<NodeNDArray *>(node.array->declaration);
-				if (dim > nd_array->dimensions) {
-					auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
-					error.m_message =
-						"Dimension " + std::to_string(dim) + " does not exist in <NDArray> " + node.array->name + ".";
-					error.exit();
-				} else if (dim <= 0) {
-					auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
-					error.m_message = "Dimension " + std::to_string(dim) + " is not valid. Dimensions start at 1. If"
-																		   " you want to access the number of all elements, use 0.";
-					error.exit();
+		if(node.dimension) {
+			// check if node is array ref -> no extra dimension allowed
+			if(node.array->cast<NodeArrayRef>()) {
+				auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+				error.m_message = "The <dimension> parameter of <num_elements> can not be used with <ArrayRef>.";
+				error.exit();
+			}
+			// check if dimension is valid when int literal is used
+			if(auto int_node = node.dimension->cast<NodeInt>()) {
+				auto dim = int_node->value;
+				if(auto nd_array = node.array->get_declaration()->cast<NodeNDArray>()) {
+					if (dim > nd_array->dimensions) {
+						auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+						error.m_message =
+							"Dimension " + std::to_string(dim) + " does not exist in <NDArray> " + node.array->name + ".";
+						error.exit();
+					} else if (dim <= 0) {
+						auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+						error.m_message = "Dimension " + std::to_string(dim) + " is not valid. Dimensions start at 1. If"
+																			   " you want to access the number of all elements, use 0.";
+						error.exit();
+					}
 				}
 			}
 		}
 
-		// if no dimension is given and it is ndarray -> use 0
-		if(node.array->get_node_type() == NodeType::NDArrayRef and !node.dimension) {
-			// set default dimension to 0
-			node.set_dimension(std::make_unique<NodeInt>(0, node.tok));
-		}
-
-		if(node.array->get_node_type() == NodeType::NDArrayRef) {
-//			// get correct name (because local ndarrays get renamed) by using the lookup table in NodeProgram
-//			if(!node.array->declaration) {
-//				auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
-//				error.m_message = "Missing pointer to array definition: " + node.array->name;
-//				error.exit();
-//			}
-//			if(!node.array->declaration->is_function_param()) {
-//				auto it = m_program->num_element_constants.find(node.array->declaration);
-//				if (it == m_program->num_element_constants.end()) {
-//					auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
-//					error.m_message = "Missing num_elements constant for array: " + node.array->name;
-//					error.exit();
-//				}
-//				// set found size_array
-//				node.size_array = it->second;
-//			}
+		// when node is array_ref check if node has wildcard -> if yes, kill index
+		if(auto node_array = node.array->cast<NodeArrayRef>()) {
+			if(node_array->num_wildcards()) {
+				node_array->index = nullptr;
+			}
+		} else if(auto node_ndarray = node.array->cast<NodeNDArrayRef>()) {
+			auto nd_array = node.array->get_declaration()->cast<NodeNDArray>();
+			if(!nd_array) {
+				auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
+				error.m_message = "<NDArrayRef> has somehow a declaration that is not an <NDArray>.";
+				error.exit();
+			}
+			// check if node is ndarray ref -> check for wildcard index notation and adjust dimension param accordingly
+			handle_wildcard_notation(*node_ndarray, *nd_array, node);
 
 			// add clip function when ndarray is used
-			auto nd_array = static_cast<NodeNDArray*>(node.array->declaration);
 			add_clip_function(m_program);
 			node.set_dimension(get_clip_call(std::move(node.dimension), std::make_unique<NodeInt>(nd_array->dimensions, node.tok)));
 		}
 
 		return &node;
+	}
+
+private:
+
+	static void handle_wildcard_notation(NodeNDArrayRef& array, const NodeNDArray& declaration, NodeNumElements& node) {
+		auto tok = array.tok;
+		int num_wildcards = array.num_wildcards();
+		int num_dimensions = declaration.dimensions;
+
+		// num_elements(ndarray[*, *], 1)
+		if(num_wildcards and node.dimension) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+			error.m_message = "Wildcard notation in <NDArrayRef> does not allow for dimension parameter in <num_elements>.";
+			error.exit();
+		}
+
+		// num_elements(ndarray[*, *]) -> num_elements(ndarray)
+		if(num_wildcards == num_dimensions) {
+			// set default dimension to 0
+			array.indexes = nullptr;
+		}
+
+		// num_elements(ndarray) -> num_elements(ndarray, 0)
+		// if no dimension is given and it is ndarray -> use 0
+		if(num_wildcards == 0 and !node.dimension) {
+			// set default dimension to 0
+			node.set_dimension(std::make_unique<NodeInt>(0, node.tok));
+			return;
+		}
+
+		if(num_wildcards == 0 and node.dimension) {
+			return;
+		}
+
+		// num_elements(ndarray[*, 10]) -> num_elements(ndarray, 1) // wildcard position -> dimension
+		if(num_wildcards == 1) {
+			// get index of wildcard
+			int idx = 0;
+			for(int i = 0; i < array.indexes->params.size(); i++) {
+				if(array.indexes->params[i]->cast<NodeWildcard>()) {
+					idx = 0;
+					break;
+				}
+			}
+			// set dimension to index + 1
+			idx++;
+			array.indexes = nullptr;
+			node.set_dimension(std::make_unique<NodeInt>(idx, tok));
+			return;
+		}
+
+		// num_elements(ndarray[*, *, 2])
+		if(num_wildcards > 1 and num_wildcards < num_dimensions) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+			error.m_message = "Cannot infer which dimension to return. Specify a single <Wildcard> (*).";
+			error.exit();
+		}
+
 	}
 
 	std::unique_ptr<NodeFunctionCall> get_clip_call(std::unique_ptr<NodeAST> x, std::unique_ptr<NodeAST> b) {
@@ -98,60 +147,6 @@ public:
 		return clip_call;
 	}
 
-	inline static std::unique_ptr<NodeAST> inline_clip_function(std::unique_ptr<NodeAST> x, std::unique_ptr<NodeAST> b) {
-		// b-x
-		auto b_minus_x = std::make_unique<NodeBinaryExpr>(
-			token::SUB,
-			b->clone(),
-			x->clone(),
-			Token()
-		);
-		// sh_right(b-x, 31)
-		auto sh_right_b_minus_x = DefinitionProvider::sh_right(std::move(b_minus_x), std::make_unique<NodeInt>(31, Token()));
-
-		// (x-b) .and. sh_right((b-x), 31)
-		auto and_expr = std::make_unique<NodeBinaryExpr>(
-			token::BIT_AND,
-			std::make_unique<NodeBinaryExpr>(
-				token::SUB,
-				x->clone(),
-				b->clone(),
-				Token()
-			),
-			std::move(sh_right_b_minus_x),
-			Token()
-		);
-
-		// -x .and. sh_right(x, 31)
-		auto sh_right_x = DefinitionProvider::sh_right(x->clone(), std::make_unique<NodeInt>(31, Token()));
-		auto and_expr2 = std::make_unique<NodeBinaryExpr>(
-			token::BIT_AND,
-			std::make_unique<NodeUnaryExpr>(
-				token::SUB,
-				x->clone(),
-				Token()
-			),
-			std::move(sh_right_x),
-			Token()
-		);
-
-		// -x .and. sh_right(x, 31) + (x-b) .and. sh_right((b-x), 31)
-		auto add_expr = std::make_unique<NodeBinaryExpr>(
-			token::ADD,
-			std::move(and_expr2),
-			std::move(and_expr),
-			Token()
-		);
-
-		// x + (-x .and. sh_right(x, 31)) - ((x - b) .and. sh_right((b - x), 31))
-		return std::make_unique<NodeBinaryExpr>(
-			token::ADD,
-			x->clone(),
-			std::move(add_expr),
-			Token()
-		);
-	}
-
 	/**
 	 * function clip(x, b)
 	 * 	return x + (-x .and. sh_right(x, 31)) - ((x - b) .and. sh_right((b - x), 31))
@@ -164,14 +159,14 @@ public:
 			return false; // Funktion existiert bereits
 		}
 
-		auto x = std::make_unique<NodeVariable>(
+		auto x = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"x",
 			TypeRegistry::Integer,
 			DataType::Mutable,
 			Token()
 		);
-		auto b = std::make_unique<NodeVariable>(
+		auto b = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"b",
 			TypeRegistry::Integer,
@@ -231,12 +226,12 @@ public:
 			Token()
 		);
 
-		auto node_function = std::make_unique<NodeFunctionDefinition>(
+		auto node_function = std::make_shared<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				m_func_name,
 				Token(),
-				std::make_unique<NodeFunctionParam>(std::move(x)),
-				std::make_unique<NodeFunctionParam>(std::move(b))
+				std::make_unique<NodeFunctionParam>(std::move(x), nullptr, Token()),
+				std::make_unique<NodeFunctionParam>(std::move(b), nullptr, Token())
 			),
 			std::nullopt,
 			false,
@@ -255,11 +250,7 @@ public:
 		node_function->num_return_params = 1;
 		node_function->return_stmts.push_back(static_cast<NodeReturn*>(node_function->body->statements[0]->statement.get()));
 		// Fügen Sie die neue Funktionsdefinition zum Programm hinzu
-		program->additional_function_definitions.push_back(std::move(node_function));
-
-		// Update function lookup so that the new function can be found
-		program->update_function_lookup();
-
+		program->add_function_definition(node_function);
 		return true;
 
 	}

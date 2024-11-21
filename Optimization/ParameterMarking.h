@@ -47,17 +47,17 @@ public:
 		node.function->accept(*this);
 		if(node.kind != NodeFunctionCall::Kind::UserDefined) return &node;
 
-		if(node.get_definition(m_program)) {
+		if(node.bind_definition(m_program)) {
 			m_program->function_call_stack.push(node.definition);
-			if (!node.definition->visited) {
+			if (!node.get_definition()->visited) {
 				std::unordered_set<std::string> function_params;
-				for (auto &param : node.definition->header->params) {
+				for (auto &param : node.get_definition()->header->params) {
 					function_params.insert(param->variable->name);
 				}
 				m_function_params.push(function_params);
-				node.definition->body->accept(*this);
+				node.get_definition()->body->accept(*this);
 				m_function_params.pop();
-				node.definition->visited = true;
+				node.get_definition()->visited = true;
 			}
 			m_program->function_call_stack.pop();
 		}

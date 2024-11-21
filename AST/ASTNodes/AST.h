@@ -12,6 +12,7 @@
 #include <list>
 #include <chrono>
 #include <functional>
+#include <typeindex>
 
 #include "ASTHelper.h"
 #include "../Types.h"
@@ -68,12 +69,46 @@ struct NodeAST {
 	bool is_constant();
 	int get_bison_tokens();
 	bool is_nil();
+	/// removes node from AST and all references from data_structs
+	NodeAST *remove_node();
+	/// performs ASTVariableChecking class on provided node to add refs to data_structs
+	void collect_references();
+	/// performs ASTVariableChecking class on provided node and removes vars and refs from datastrucs
+	void remove_references();
+	// Template-Methode für den Cast
+	template <typename TargetType>
+	TargetType* cast() {
+		// Überprüfen, ob der Typ des Objekts mit `TargetType` übereinstimmt
+		if (std::type_index(typeid(*this)) == std::type_index(typeid(TargetType))) {
+			return static_cast<TargetType*>(this);
+		}
+		return nullptr;
+	}
+	/// returns the last most NodeBlock
+	[[nodiscard]] struct NodeBlock* get_parent_block() const;
+	/// returns the last most NodeStatement
+	[[nodiscard]] struct NodeStatement* get_parent_statement() const;
+	[[nodiscard]] NodeBlock* get_outmost_block() const;
+	[[nodiscard]] struct NodeCallback* get_current_callback() const;
+	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
 };
 
 template<typename T>
 std::unique_ptr<T> clone_as(NodeAST* node) {
 	auto cloned_ptr = node->clone(); // Nutzt die clone()-Methode der NodeAST Klasse
 	return std::unique_ptr<T>(static_cast<T*>(cloned_ptr.release()));
+}
+
+template <typename T>
+T* get_parent_of_type(const NodeAST& node) {
+	NodeAST* current = node.parent;
+	while (current) {
+		if (auto desired = current->cast<T>()) {
+			return desired;
+		}
+		current = current->parent;
+	}
+	return nullptr;
 }
 
 struct NodeDeadCode : NodeAST {
@@ -86,16 +121,16 @@ struct NodeDeadCode : NodeAST {
 
 struct NodeReference : NodeAST {
     std::string name;
-    class NodeDataStructure* declaration = nullptr;
+    std::weak_ptr<class NodeDataStructure> declaration;
     bool is_engine = false;
     bool is_local = false;
-//    bool is_compiler_return = false;
 	enum Kind{Builtin, Compiler, User, Throwaway};
 	Kind kind = User;
 	DataType data_type = DataType::Mutable;
     inline explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::DeadCode) {}
     inline NodeReference(std::string name, NodeType node_type, Token tok)
             : NodeAST(tok, node_type), name(std::move(name)) {}
+	~NodeReference() override;
     NodeAST* accept(struct ASTVisitor &visitor) override;
     // Kopierkonstruktor
     NodeReference(const NodeReference& other);
@@ -109,9 +144,9 @@ struct NodeReference : NodeAST {
 	virtual std::unique_ptr<struct NodePointerRef> to_pointer_ref() {return nullptr;}
 	virtual std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() {return nullptr;}
 	std::unique_ptr<NodeAccessChain> to_method_chain() override {return nullptr;}
-
+	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_declaration() const;
 	/// Completes the data structure of reference by copying missing parameters of declaration
-	void match_data_structure(NodeDataStructure* data_structure);
+	void match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure);
     /// Determines if current reference is function argument
     bool is_func_arg() {
         if(!this->parent) return false;
@@ -169,19 +204,19 @@ struct NodeReference : NodeAST {
 			name = name.substr(pos + OBJ_DELIMITER.size());
 	}
 	/// to be used on references
-	NodeReference* replace_reference(std::unique_ptr<NodeReference> new_node, class DefinitionProvider* def_provider);
+	NodeReference *replace_reference(std::unique_ptr<NodeReference> new_node);
 };
 
-struct NodeDataStructure : NodeAST {
+struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeDataStructure> {
 	bool is_used = false;
 	bool is_engine = false;
 	std::optional<Token> persistence;
 	bool is_local = false;
 	bool is_global = false;
-//	bool is_compiler_return = false;
 	bool has_obj_assigned = false;
 	DataType data_type;
 	std::string name;
+	std::unordered_set<NodeReference*> references;
 	inline NodeDataStructure(std::string name, Type* ty, Token tok, NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {
         this->ty = ty;
     }
@@ -204,7 +239,7 @@ struct NodeDataStructure : NodeAST {
 	virtual Type* cast_type();
 	/// returns fitting reference node type for the data structures
 	virtual NodeType get_ref_node_type() {return NodeType::DeadCode;}
-	void match_metadata(NodeDataStructure* data_structure);
+	void match_metadata(const std::shared_ptr<NodeDataStructure>& data_structure);
 	/// methods to change node type. Everything possible is copied over, even the type;
 	virtual std::unique_ptr<class NodeVariable> to_variable() {return nullptr;}
 	virtual std::unique_ptr<class NodePointer> to_pointer() {return nullptr;}
@@ -217,12 +252,29 @@ struct NodeDataStructure : NodeAST {
 		return nullptr;
 	}
 	/// to be used on datastructures
-	NodeDataStructure* replace_datastruct(std::unique_ptr<NodeDataStructure> new_node, class DefinitionProvider* def_provider);
+	NodeDataStructure *replace_datastruct(std::unique_ptr<NodeDataStructure> new_node);
 	bool is_num_elements_constant() const {
 		if(data_type != DataType::Const) return false;
 		size_t pos = name.find(OBJ_DELIMITER+"num_elements");
 		if(pos == std::string::npos) return false;
 		return true;
+	}
+	std::shared_ptr<NodeDataStructure> get_shared() {
+		return shared_from_this();
+	}
+	bool is_shared() {
+		return !weak_from_this().expired();
+	}
+	void add_reference(NodeReference* ref) {
+		references.insert(ref);
+	}
+	void remove_reference(NodeReference* ref) {
+		references.erase(ref);
+	}
+	void clear_references();
+	void to_global() {
+		is_global = true;
+		is_local = false;
 	}
 };
 
@@ -622,7 +674,7 @@ struct NodeImport : NodeAST {
     void update_token_data(const Token& token) override {}
 };
 
-struct NodeFunctionDefinition: NodeAST {
+struct NodeFunctionDefinition: NodeAST, public std::enable_shared_from_this<NodeFunctionDefinition> {
 	/// is tagged when restricted builtin functions are used within this function (save_array, load_array, etc)
 	bool is_restricted = false;
 	/// is tagged when non thread-safe builtin functions are used within this function (wait, wait_asnyc, etc)
@@ -634,8 +686,8 @@ struct NodeFunctionDefinition: NodeAST {
 	int num_return_stmts = 0;
 	std::vector<struct NodeReturn*> return_stmts;
     std::unordered_set<class NodeFunctionCall*> call_sites = {};
-    std::unique_ptr<class NodeFunctionHeader> header;
-    std::optional<std::unique_ptr<NodeDataStructure>> return_variable;
+    std::shared_ptr<struct NodeFunctionHeader> header;
+    std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;
     std::unique_ptr<NodeBlock> body;
     explicit NodeFunctionDefinition(Token tok);
@@ -658,25 +710,33 @@ struct NodeFunctionDefinition: NodeAST {
 	[[nodiscard]] size_t get_num_params() const;
 	[[nodiscard]] bool has_no_params() const;
 	bool is_expression_function();
+	std::shared_ptr<NodeFunctionDefinition> get_shared() {
+		return shared_from_this();
+	}
+	void do_register_reuse(NodeProgram* program);
 };
 
 struct NodeProgram : NodeAST {
+	class DefinitionProvider* def_provider = nullptr;
+	class ReferenceManager* ref_manager = nullptr;
 	NodeCallback* init_callback = nullptr;
 	NodeCallback* current_callback = nullptr;
 	/// holds the current function definition that is being processed
-	std::stack<NodeFunctionDefinition*> function_call_stack{};
-	class DefinitionProvider* def_provider = nullptr;
+	std::stack<std::weak_ptr<NodeFunctionDefinition>> function_call_stack{};
+	std::shared_ptr<NodeFunctionDefinition> get_curr_function() {
+		if(function_call_stack.empty()) return nullptr;
+		return function_call_stack.top().lock();
+	}
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
-    std::vector<std::unique_ptr<NodeFunctionDefinition>> function_definitions;
-	std::vector<std::unique_ptr<NodeFunctionDefinition>> additional_function_definitions;
-	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> function_lookup;
+    std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;
+	std::vector<std::shared_ptr<NodeFunctionDefinition>> additional_function_definitions;
+	std::unordered_map<StringIntKey, std::weak_ptr<NodeFunctionDefinition>, StringIntKeyHash> function_lookup;
 	std::vector<std::unique_ptr<struct NodeStruct>> struct_definitions;
 	std::unordered_map<std::string, NodeStruct*> struct_lookup;
 	std::unique_ptr<NodeBlock> global_declarations;
-	std::unordered_map<NodeDataStructure*, std::shared_ptr<NodeDataStructure>> num_element_constants; // ndarray declaration -> ndarray size declarations
 	explicit NodeProgram(Token tok);
 	NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
-					   std::vector<std::unique_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok);
+					   std::vector<std::shared_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok);
 	~NodeProgram() override;
     NodeAST* accept(struct ASTVisitor &visitor) override;
     // Kopierkonstruktor
@@ -688,6 +748,7 @@ struct NodeProgram : NodeAST {
     void update_token_data(const Token& token) override {}
 	/// update function lookup table
 	void update_function_lookup();
+	void add_function_definition(const std::shared_ptr<NodeFunctionDefinition>& def);
 	void update_struct_lookup();
 	/// Checks for uniqueness of all callbacks except "on ui_control"
 	bool check_unique_callbacks();
@@ -695,12 +756,7 @@ struct NodeProgram : NodeAST {
 	/// If found, returns pointer to the callback node
 	NodeCallback* move_on_init_callback();
 	/// merges vector of additional function definitions into the main function definitions vector
-	inline void merge_function_definitions() {
-		function_definitions.insert(function_definitions.end(), std::make_move_iterator(additional_function_definitions.begin()),
-									std::make_move_iterator(additional_function_definitions.end()));
-		additional_function_definitions.clear();
-		update_function_lookup();
-	}
+	void merge_function_definitions();
 	static std::unique_ptr<NodeBlock> declare_compiler_variables();
 	void inline_global_variables();
 	void inline_structs();
@@ -709,6 +765,8 @@ struct NodeProgram : NodeAST {
 	bool is_init_callback(NodeCallback* curr_callback) const {
 		return curr_callback == init_callback;
 	}
+	void remove_unused_functions();
+	void order_function_definitions();
 };
 
 

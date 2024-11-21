@@ -127,14 +127,14 @@ NodeAST * ASTPrinter::visit(NodeVariableRef &node) {
 NodeAST * ASTPrinter::visit(NodePointer &node) {
 	if(node.persistence.has_value())
 		os << node.persistence.value().val << " ";
-	os << node.name;
+	os << node.name << "{Ptr}";
 	auto type = TypeRegistry::get_annotation_from_type(node.ty);
 	if(!type.empty()) os << " : " << type;
 	return &node;
 }
 
 NodeAST * ASTPrinter::visit(NodePointerRef &node) {
-	os << node.name;
+	os << node.name << "{Ptr}";
 	auto type = TypeRegistry::get_annotation_from_type(node.ty);
 	if(!type.empty()) os << "{" << type << "}";
 	return &node;
@@ -234,10 +234,6 @@ NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
 	os << "";
 	if(node.has_object) {
 		os << " // object";
-	}
-	if(node.retain_stmt) {
-		os << std::endl;
-		node.retain_stmt->accept(*this);
 	}
 	return &node;
 }
@@ -445,7 +441,7 @@ NodeAST * ASTPrinter::visit(NodeFunctionHeader &node) {
 		param->accept(*this);
 		os << ", ";
 	}
-	os.seekp(-2, std::ios_base::end);
+	if(!node.params.empty()) os.seekp(-2, std::ios_base::end);
 	if(!node.params.empty() || node.has_forced_parenth) os << ")";
 	if(node.parent->get_node_type() != NodeType::FunctionDefinition) {
 		auto type = TypeRegistry::get_annotation_from_type(node.ty);
@@ -474,7 +470,7 @@ NodeAST * ASTPrinter::visit(NodeFunctionDefinition &node) {
         node.return_variable.value()->accept(*this);
     }
     if (node.override) {
-        os << "override" << std::endl;
+        os << " override" << std::endl;
     }
     os << "\n";
     node.body->accept(*this);
