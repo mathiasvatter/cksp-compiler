@@ -27,16 +27,13 @@ public:
 	explicit ASTParameterPromotion(NodeProgram* main) : ASTGlobalScope(main) {}
 	~ASTParameterPromotion() = default;
 
-	inline NodeAST* visit(NodeProgram& node) override {
-		m_program = &node;
-		node.reset_function_visited_flag();
-		for(auto & callback : node.callbacks) {
-			callback->accept(*this);
-		}
-
+	void do_param_promotion(NodeProgram& program) {
+		program.accept(*this);
 		insert_promoted_declarations();
-
-		return &node;
+		// clear all maps
+		m_declares_per_stmt.clear();
+		m_local_var_declarations.clear();
+		m_global_function_vars.clear();
 	}
 
 	void do_param_promotion(NodeFunctionCall& call) {
@@ -50,6 +47,7 @@ public:
 		m_global_function_vars.clear();
 	}
 
+private:
 	/// insert declarations from m_declares_per_stmt into callbacks
 	/// - insert right above the function calls when param promoted
 	/// - insert to global declarations when not param promoted
@@ -73,6 +71,17 @@ public:
 		for(auto & m_global_var : m_global_function_vars) {
 			m_program->global_declarations->add_as_stmt(std::move(m_global_var.second));
 		}
+	}
+
+private:
+	inline NodeAST* visit(NodeProgram& node) override {
+		m_program = &node;
+		node.reset_function_visited_flag();
+		for(auto & callback : node.callbacks) {
+			callback->accept(*this);
+		}
+
+		return &node;
 	}
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {
@@ -164,6 +173,7 @@ public:
 	}
 
 	inline NodeAST* visit(NodeFunctionDefinition& node) override {
+		node.do_register_reuse(m_program);
 //		m_program->function_call_stack.push(node.weak_from_this());
 		node.visited = true;
 		node.body->accept(*this);

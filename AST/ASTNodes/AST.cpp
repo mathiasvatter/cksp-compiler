@@ -20,6 +20,7 @@
 #include "../ASTVisitor/ReferenceManagement/ASTCollectReferences.h"
 #include "../ASTVisitor/ReferenceManagement/ASTRemoveReferences.h"
 #include "../ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h"
+#include "../ASTVisitor/GlobalScope/ASTRegisterReuse.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -883,6 +884,11 @@ size_t NodeFunctionDefinition::get_num_params() const {
 
 bool NodeFunctionDefinition::has_no_params() const {
 	return header->params.empty();
+}
+
+void NodeFunctionDefinition::do_register_reuse(NodeProgram *program) {
+	static ASTRegisterReuse register_reuse(program);
+	register_reuse.do_register_reuse(*this);
 }
 
 // ************* NodeProgramm ***************
