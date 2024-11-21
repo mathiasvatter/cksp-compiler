@@ -6,7 +6,6 @@
 #include "ASTLowerTypes.h"
 #include "ASTHandleStringRepresentations.h"
 
-ASTCollectLowerings::ASTCollectLowerings(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
 
 NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	m_program = &node;
@@ -15,7 +14,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 		struct_def->pre_lower(m_program);
 	}
 	for(auto & struct_def : node.struct_definitions) {
-		struct_def->generate_ref_count_methods();
+		struct_def->generate_ref_count_methods(m_program);
 	}
 //	node.struct_definitions.at(0)->debug_print();
 	for(auto & struct_def : node.struct_definitions) {
@@ -126,9 +125,9 @@ NodeAST * ASTCollectLowerings::visit(NodeSetControl& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
-	if(node.get_definition(m_program)) {
-		if(!node.definition->visited) node.definition->accept(*this);
-		node.definition->visited = true;
+	if(node.bind_definition(m_program)) {
+		if(!node.get_definition()->visited) node.get_definition()->accept(*this);
+		node.get_definition()->visited = true;
 	}
 	return node.lower(m_program);
 }
@@ -163,7 +162,11 @@ NodeAST * ASTCollectLowerings::visit(NodeListRef& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeList& node) {
-	return node.lower(m_program);
+	for(auto & b : node.body) {
+		b->accept(*this);
+	}
+	return &node;
+//	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodePointer& node) {
@@ -175,7 +178,7 @@ NodeAST * ASTCollectLowerings::visit(NodePointerRef& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeAccessChain& node) {
-	return node.lower(m_program);
+	return node.lower(m_program)->accept(*this);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleRetain& node) {

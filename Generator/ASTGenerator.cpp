@@ -279,7 +279,7 @@ NodeAST * ASTGenerator::visit(NodeFunctionHeader &node) {
 		param->accept(*this);
 		os << ", ";
 	}
-	os.seekp(-2, std::ios_base::end);
+	if(!node.params.empty()) os.seekp(-2, std::ios_base::end);
 	if(!node.params.empty() || node.has_forced_parenth) os << ")";
 
 	return &node;

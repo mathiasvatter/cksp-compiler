@@ -11,7 +11,9 @@ class NormalizeNDArrayAssign: public ASTVisitor {
 private:
 	DefinitionProvider *m_def_provider;
 public:
-	explicit NormalizeNDArrayAssign(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {};
+	explicit NormalizeNDArrayAssign(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 
 	NodeAST* visit(NodeSingleAssignment &node) override {
 		node.l_value->accept(*this);
@@ -151,8 +153,7 @@ private:
 		// node ref without indexes
 		auto node_ndarray_ref = clone_as<NodeNDArrayRef>(node);
 		node_ndarray_ref->indexes = nullptr;
-		if(value->get_node_type() == NodeType::NDArrayRef) {
-			auto node_ndarray_value_ref = static_cast<NodeNDArrayRef*>(value);
+		if(auto node_ndarray_value_ref = value->cast<NodeNDArrayRef>()) {
 			node_ndarray_value_ref->indexes = nullptr;
 		}
 		params->prepend_param(value->clone());
@@ -235,7 +236,7 @@ private:
 		// make function definition
 		func_header->prepend_param(std::move(node_value));
 		func_header->prepend_param(std::move(node_ndarray));
-		auto node_function_def = std::make_unique<NodeFunctionDefinition>(
+		auto node_function_def = std::make_shared<NodeFunctionDefinition>(
 			std::move(func_header),
 			std::nullopt,
 			false,
@@ -247,13 +248,14 @@ private:
 		node_function_def->accept(*this);
 		node_function_def->header->create_function_type(TypeRegistry::Void);
 		node_function_def->ty = TypeRegistry::Void;
-		program->additional_function_definitions.push_back(std::move(node_function_def));
+//		program->additional_function_definitions.push_back(std::move(node_function_def));
 		// update function lookup so that the new function can be found
-		program->update_function_lookup();
+		program->add_function_definition(node_function_def);
+//		program->update_function_lookup();
 		return true;
 	}
 
-	static inline const std::string get_init_func_name(Type* ty, int dimension, std::pair<int, int> wildcard_dims) {
+	static inline std::string get_init_func_name(Type* ty, int dimension, std::pair<int, int> wildcard_dims) {
 		std::string name = "ndarray$dim" + std::to_string(dimension);
 		for(int i=wildcard_dims.first; i<wildcard_dims.second; i++) {
 			name+="$"+std::to_string(i);

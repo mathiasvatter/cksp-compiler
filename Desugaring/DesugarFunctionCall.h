@@ -68,14 +68,14 @@ public:
 			}
 		}
 
-		node.get_definition(m_program);
-		if(!node.definition) return &node;
-		if(node.definition->num_return_params <= 1) return &node;
+		node.bind_definition(m_program);
+		if(!node.get_definition()) return &node;
+		if(node.get_definition()->num_return_params <= 1) return &node;
 		if(node.parent->get_node_type() == NodeType::SingleDeclaration or node.parent->get_node_type() == NodeType::SingleAssignment) {
 			return &node;
 		}
 
-		auto num_throwaway_args = node.definition->num_return_params - 1;
+		auto num_throwaway_args = node.get_definition()->num_return_params - 1;
 		for(int i = 0; i < num_throwaway_args; i++) {
 			auto throwaway_ref = std::make_unique<NodeVariableRef>("_", node.tok);
 			throwaway_ref->kind = NodeVariableRef::Kind::Throwaway;

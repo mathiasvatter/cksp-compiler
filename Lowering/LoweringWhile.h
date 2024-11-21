@@ -48,7 +48,7 @@ public:
 		if(!m_has_break) return &node;
 
 		// add exit flag to condition
-		auto exit_flag_var = std::make_unique<NodeVariable>(
+		auto exit_flag_var = std::make_shared<NodeVariable>(
 			std::nullopt,
 			m_exit_flag_name,
 			TypeRegistry::Integer,
@@ -56,13 +56,13 @@ public:
 			node.tok
 		);
 		exit_flag_var->is_local = true;
+		auto exit_flag_ref = exit_flag_var->to_reference();
+		exit_flag_ref->match_data_structure(exit_flag_var);
 		auto exit_flag_decl = std::make_unique<NodeSingleDeclaration>(
 			std::move(exit_flag_var),
 			nullptr,
 			node.tok
 		);
-		auto exit_flag_ref = exit_flag_decl->variable->to_reference();
-		exit_flag_ref->match_data_structure(exit_flag_decl->variable.get());
 		node.condition = std::make_unique<NodeBinaryExpr>(
 			token::BOOL_AND,
 			std::move(node.condition),

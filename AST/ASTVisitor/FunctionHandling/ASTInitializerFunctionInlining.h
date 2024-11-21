@@ -6,16 +6,17 @@
 
 
 #include "ASTFunctionInlining.h"
-#include "ASTReturnParamPromotion.h"
+#include "../ASTReturnParamPromotion.h"
 
 /// Immediate Inlining of functions with Initializer Lists as arguments so to bypass needing to declare throwaway arrays
 class ASTInitializerFunctionInlining: public ASTFunctionInlining {
 private:
 public:
-	inline explicit ASTInitializerFunctionInlining(DefinitionProvider *definition_provider) : ASTFunctionInlining(definition_provider) {}
+	inline explicit ASTInitializerFunctionInlining(NodeProgram *main) : ASTFunctionInlining(main) {}
 
 	NodeAST* visit(NodeProgram &node) override {
-		node.reset_function_used_flag();
+//		node.reset_function_used_flag();
+		node.reset_function_visited_flag();
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
@@ -25,27 +26,33 @@ public:
 			callback->accept(*this);
 		}
 		node.reset_function_visited_flag();
-
+		node.remove_unused_functions();
 		return &node;
 	}
 
 	NodeAST* visit(NodeFunctionCall &node) override {
 		node.function->accept(*this);
 
-		if(node.get_definition(m_program)) {
+		if(node.bind_definition(m_program)) {
 			if(node.is_builtin_kind()) return &node;
+			auto definition = node.get_definition();
+			if(!definition->visited) {
+				definition->accept(*this);
+			}
+			definition->visited = true;
 			// see if the function has initializer list arguments
 			if(is_initializer_function(node)) {
-
+				definition->is_used = false;
 				m_program->function_call_stack.push(node.definition);
-
-				auto node_func_body = clone_as<NodeBlock>(node.definition->body.get());
-				m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function.get()));
+				auto node_func_body = clone_as<NodeBlock>(definition->body.get());
+				m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 				node_func_body->accept(*this);
 
 				m_substitution_stack.pop();
 				m_program->function_call_stack.pop();
 				return node.replace_with(std::move(node_func_body));
+			} else {
+				definition->is_used = true;
 			}
 		}
 		return &node;
@@ -55,9 +62,8 @@ public:
 		// make sure that the function that is arg in a higher-order function
 		// does not get deleted because it is only ref and not being called
 		// foo(bar: (): void) -> bar is not called but function ref
-		if(node.declaration and node.is_func_arg()) {
-			if(node.declaration->parent->get_node_type() == NodeType::FunctionDefinition) {
-				auto def = static_cast<NodeFunctionDefinition*>(node.declaration->parent);
+		if(node.get_declaration() and node.is_func_arg()) {
+			if(auto def = node.get_declaration()->parent->cast<NodeFunctionDefinition>()) {
 				def->is_used = true;
 				def->accept(*this);
 				def->visited = true;

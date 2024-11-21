@@ -43,7 +43,7 @@ public:
 		auto return_flag_decl = get_exit_flag_declaration(node.tok, m_exit_flag_name);
 		m_exit_flag_var = return_flag_decl->variable.get();
 		auto return_flag_ref = m_exit_flag_var->to_reference();
-		return_flag_ref->match_data_structure(m_exit_flag_var);
+//		return_flag_ref->match_data_structure(m_exit_flag_var);
 
 		m_num_nested_loops = 0;
 		m_current_function = &node;
@@ -109,7 +109,7 @@ public:
 
 	inline NodeAST* visit(NodeReturn &node) override {
 		auto return_flag_ref = m_exit_flag_var->to_reference();
-		return_flag_ref->match_data_structure(m_exit_flag_var);
+//		return_flag_ref->match_data_structure(m_exit_flag_var);
 		auto return_flag_assignment = std::make_unique<NodeSingleAssignment>(
 			std::move(return_flag_ref),
 			std::make_unique<NodeInt>(1, node.tok),
@@ -137,7 +137,7 @@ private:
 	/// if(RETURN_FLAG = 1) continue
 	static std::unique_ptr<NodeIf> get_return_if_check(NodeDataStructure* return_flag_var, Token &tok) {
 		auto return_flag_ref = return_flag_var->to_reference();
-		return_flag_ref->match_data_structure(return_flag_var);
+//		return_flag_ref->match_data_structure(return_flag_var);
 		auto condition = std::make_unique<NodeBinaryExpr>(
 			token::EQUAL,
 			std::move(return_flag_ref),
@@ -181,7 +181,7 @@ private:
 	/// adds "and RETURN_FLAG = 0" to condition
 	static std::unique_ptr<NodeBinaryExpr> add_return_condition(std::unique_ptr<NodeAST> condition, NodeDataStructure* return_flag_var) {
 		auto return_flag_ref = return_flag_var->to_reference();
-		return_flag_ref->match_data_structure(return_flag_var);
+//		return_flag_ref->match_data_structure(return_flag_var);
 		auto token = condition->tok;
 		auto parent = condition->parent;
 		auto new_condition = std::make_unique<NodeBinaryExpr>(

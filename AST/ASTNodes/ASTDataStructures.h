@@ -53,17 +53,28 @@ struct NodePointer: NodeDataStructure {
 
 struct NodeComposite : NodeDataStructure {
 	bool show_brackets = true;
+	std::unique_ptr<NodeParamList> num_elements = nullptr;
 	// Konstruktor
 	inline NodeComposite(std::string name, Type* ty, Token tok, NodeType node_type)
 		: NodeDataStructure(std::move(name), ty, std::move(tok), node_type) {}
 	// Kopierkonstruktor
-	NodeComposite(const NodeComposite& other) : NodeDataStructure(other), show_brackets(other.show_brackets) {}
+	NodeComposite(const NodeComposite& other) : NodeDataStructure(other),
+		show_brackets(other.show_brackets), num_elements(clone_unique(other.num_elements)) {}
 	// Standardmethoden für gemeinsame Funktionalitäten
-	virtual void update_parents(NodeAST* new_parent) override {
+	void update_parents(NodeAST* new_parent) override {
+		if(num_elements) num_elements->update_parents(new_parent);
 		parent = new_parent;
 	}
-	virtual void set_child_parents() override = 0;  // Wird in den abgeleiteten Klassen implementiert
-	virtual void update_token_data(const Token& token) override = 0; // Wird in den abgeleiteten Klassen implementiert
+	void set_child_parents() override {
+		if(num_elements) num_elements->parent = this;
+	}
+	void update_token_data(const Token& token) override {
+		if(num_elements) num_elements->update_token_data(token);
+	}
+	void set_num_elements(std::unique_ptr<NodeParamList> num_elem) {
+		num_elem->parent = this;
+		this->num_elements = std::move(num_elem);
+	}
 
 };
 
@@ -93,6 +104,10 @@ struct NodeArray : NodeComposite {
 	};
 	void update_token_data(const Token& token) override {
 		if(size) size->update_token_data(token);
+	}
+	void set_size(std::unique_ptr<NodeAST> size) {
+		size->parent = this;
+		this->size = std::move(size);
 	}
 //	ASTLowering* get_lowering(NodeProgram *program) const override;
 	ASTLowering *get_data_lowering(NodeProgram *program) const override;
@@ -167,6 +182,7 @@ struct NodeFunctionHeader: NodeDataStructure {
 	explicit NodeFunctionHeader(std::string name, Token tok, Params&&... params) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader) {
 		(add_param(std::move(params)), ...);
 	}
+	~NodeFunctionHeader() override = default;
 	NodeAST* accept(struct ASTVisitor &visitor) override;
 	NodeFunctionHeader(const NodeFunctionHeader& other);
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
@@ -217,9 +233,9 @@ struct NodeUIControl : NodeDataStructure {
 	std::shared_ptr<NodeDataStructure> control_var; //Array or Variable
 	std::unique_ptr<NodeParamList> params;
 	std::unique_ptr<NodeParamList> sizes; // if it is ui_control array
-    NodeUIControl* declaration = nullptr;
+    std::weak_ptr<NodeUIControl> declaration;
 	inline explicit NodeUIControl(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::UIControl) {}
-	inline NodeUIControl(std::string uiControlType, std::unique_ptr<NodeDataStructure> controlVar, std::unique_ptr<NodeParamList> params, Token tok)
+	inline NodeUIControl(std::string uiControlType, std::shared_ptr<NodeDataStructure> controlVar, std::unique_ptr<NodeParamList> params, Token tok)
 		: NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::UIControl), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {
 		set_child_parents();
 	}
@@ -252,6 +268,9 @@ struct NodeUIControl : NodeDataStructure {
 		return ty;
 	}
 	bool is_ui_control_array() const;
+	std::shared_ptr<NodeUIControl> get_declaration() const {
+		return declaration.lock();
+	}
 };
 
 struct NodeList : NodeDataStructure {
@@ -319,25 +338,25 @@ struct NodeConst : NodeDataStructure {
 };
 
 struct NodeStruct : NodeDataStructure {
-	std::unique_ptr<NodePointer> node_self = std::make_unique<NodePointer>(std::nullopt, "self", TypeRegistry::add_object_type(this->name), this->tok);
+	std::shared_ptr<NodePointer> node_self = std::make_shared<NodePointer>(std::nullopt, "self", TypeRegistry::add_object_type(this->name), this->tok);
 	std::unique_ptr<NodeBlock> members;
-	std::map<std::string, NodeDataStructure*> member_table;
+	std::map<std::string, std::weak_ptr<NodeDataStructure>> member_table;
 	std::set<std::string> member_set;
-	NodeFunctionDefinition* constructor = nullptr;
-	std::vector<std::unique_ptr<NodeFunctionDefinition>> methods;
+	std::shared_ptr<NodeFunctionDefinition> constructor = nullptr;
+	std::vector<std::shared_ptr<NodeFunctionDefinition>> methods;
 	std::set<std::string> method_set;
-	std::unordered_map<StringIntKey, NodeFunctionDefinition*, StringIntKeyHash> method_table;
+	std::unordered_map<StringIntKey, std::weak_ptr<NodeFunctionDefinition>, StringIntKeyHash> method_table;
 	std::unordered_set<NodeType> member_node_types;
-	NodeVariable* max_individual_struts_var = nullptr;
-	NodeVariable* free_idx_var = nullptr;
-	NodeArray* allocation_var = nullptr;
-	NodeArray* stack_var = nullptr;
-	NodeVariable* stack_top_var = nullptr;
-	std::unordered_map<token, NodeFunctionDefinition*> overloaded_operators;
+	std::shared_ptr<NodeVariable> max_individual_struts_var = nullptr;
+	std::shared_ptr<NodeVariable> free_idx_var = nullptr;
+	std::shared_ptr<NodeArray> allocation_var = nullptr;
+	std::shared_ptr<NodeArray> stack_var = nullptr;
+	std::shared_ptr<NodeVariable> stack_top_var = nullptr;
+	std::unordered_map<token, std::weak_ptr<NodeFunctionDefinition>> overloaded_operators;
 	std::unordered_set<NodeStruct*> recursive_structs;
 	inline static std::unordered_set<NodeType> allowed_member_node_types = {NodeType::Variable, NodeType::Pointer, NodeType::NDArray, NodeType::Array};
 	inline explicit NodeStruct(const std::string& name, Token tok) : NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct) {}
-	inline NodeStruct(const std::string& name, std::unique_ptr<NodeBlock> members, std::vector<std::unique_ptr<NodeFunctionDefinition>> methods, Token tok)
+	inline NodeStruct(const std::string& name, std::unique_ptr<NodeBlock> members, std::vector<std::shared_ptr<NodeFunctionDefinition>> methods, Token tok)
 		: NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct), members(std::move(members)), methods(std::move(methods)) {
 		set_child_parents();
 	}
@@ -369,31 +388,38 @@ struct NodeStruct : NodeDataStructure {
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	ASTLowering* get_lowering(NodeProgram *program) const override;
 	void pre_lower(NodeProgram* program);
-	void update_member_table() {
+	void rebuild_member_table() {
 		member_table.clear();
 		for(auto& member : members->statements) {
-			if(member->statement->get_node_type() == NodeType::Declaration) {
-				auto declaration = static_cast<NodeDeclaration*>(member->statement.get());
-				for(auto & var : declaration->variable) {
-					member_table[var->name] = var.get();
-				}
-			} else if(member->statement->get_node_type() == NodeType::SingleDeclaration) {
-				auto declaration = static_cast<NodeSingleDeclaration*>(member->statement.get());
-				member_table[declaration->variable->name] = declaration->variable.get();
+			if(auto decl = member->statement->cast<NodeSingleDeclaration>()) {
+				member_table[decl->variable->name] = decl->variable;
 			} else {
 				auto error = CompileError(ErrorType::VariableError, "<Struct> member must be a declaration", "", tok);
 				error.exit();
 			}
 		}
 	}
-	void update_method_table() {
-		method_table.clear();
-		for(auto& method : methods) {
-			method_table.insert({{method->header->name, (int)method->header->params.size()}, method.get()});
+	void replace_member_in_table(const std::shared_ptr<NodeDataStructure>& old_member, const std::shared_ptr<NodeDataStructure>& new_member) {
+		if(old_member->name == new_member->name) {
+			member_table[old_member->name] = new_member;
+		} else {
+			member_table.erase(old_member->name);
+			member_table[new_member->name] = new_member;
 		}
 	}
+	void rebuild_method_table() {
+		method_table.clear();
+		for(auto& method : methods) {
+			method_table.insert({{method->header->name, (int)method->header->params.size()}, method});
+		}
+	}
+	std::shared_ptr<NodeFunctionDefinition> add_method(const std::shared_ptr<NodeFunctionDefinition>& method) {
+		methods.push_back(method);
+		method_table.insert({{method->header->name, (int)method->header->params.size()}, method});
+		return method;
+	}
 
-	void update_lookup_sets() {
+	void rebuild_lookup_sets() {
 		method_set.clear();
 		for(auto& method : methods) {
 			method_set.emplace(method->header->name);
@@ -404,17 +430,17 @@ struct NodeStruct : NodeDataStructure {
 		}
 	}
 
-	NodeDataStructure* get_member(const std::string& ref_name) {
+	std::shared_ptr<NodeDataStructure> get_member(const std::string& ref_name) {
 		auto member = member_table.find(ref_name);
 		if(member != member_table.end()) {
-			return member->second;
+			return member->second.lock();
 		}
 		return nullptr;
 	}
 
 	static std::unique_ptr<NodeBlock> declare_struct_constants();
 	/// generated init method only needs assignment if it has pointer -> nil
-	NodeFunctionDefinition* generate_init_method();
+	std::shared_ptr<NodeFunctionDefinition> generate_init_method();
 
 	/**
 	 * generates a __repr__ method for a struct
@@ -424,11 +450,11 @@ struct NodeStruct : NodeDataStructure {
 	 * 	 return "<struct> Object: "& self
 	 * end function
 	 */
-	NodeFunctionDefinition* generate_repr_method();
-	void generate_ref_count_methods();
-	std::unique_ptr<NodeWhile> generate_ref_count_while(NodeDataStructure* self, NodeDataStructure* num_refs);
+	std::shared_ptr<NodeFunctionDefinition> generate_repr_method();
+	void generate_ref_count_methods(NodeProgram* program);
+	std::unique_ptr<NodeWhile> generate_ref_count_while(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs);
 	void inline_struct(NodeProgram* program);
-	NodeFunctionDefinition* get_overloaded_method(token op);
+	std::shared_ptr<NodeFunctionDefinition> get_overloaded_method(token op);
 
 	/// Funktion zur rekursiven Sammlung von rekursiven NodeStructs
 	void collect_recursive_structs(NodeProgram* program);

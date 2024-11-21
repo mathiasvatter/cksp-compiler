@@ -18,14 +18,15 @@ private:
 		// not hoistable functions are: Undefined, Builtin, Property
 		if(node->is_builtin_kind()) return false;
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
-		if(!node->definition) {
+		if(!node->get_definition()) {
 			return false;
 		}
-		bool returns_values = node->definition and node->definition->num_return_params > 0;
-		bool is_in_stmt = node->parent->get_node_type() == NodeType::Statement;
+		bool returns_values = node->get_definition() and node->get_definition()->num_return_params > 0;
+		bool is_in_stmt = node->parent->cast<NodeStatement>();
 		// do not hoist if in declaration -> we do not need an extra declaration var
-		bool is_in_declaration = node->parent->get_node_type() == NodeType::SingleDeclaration;
-		bool is_in_assignment =  node->parent->get_node_type() == NodeType::SingleAssignment;
+		bool is_in_declaration = node->parent->cast<NodeSingleDeclaration>();
+		bool is_in_assignment =  node->parent->cast<NodeSingleAssignment>();
+		bool is_in_return = node->parent->cast<NodeReturn>();
 		if(!is_in_stmt and !returns_values) {
 			error.m_message = "Function "+node->function->name+" does not return any value";
 			error.m_got = node->function->name;
@@ -42,7 +43,6 @@ public:
 	inline NodeAST * visit(NodeProgram& node) override {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
-//		m_program->global_declarations->prepend_body(declare_throwaway_variables());
 		for(auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
 		}
@@ -57,9 +57,9 @@ public:
 			auto node_body = std::make_unique<NodeBlock>(node.tok);
 			node_body->scope = true;
 			for(auto &decl : stmt.second) {
-				node_body->add_stmt(std::make_unique<NodeStatement>(std::move(decl), node.tok));
+				node_body->add_as_stmt(std::move(decl));
 			}
-			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(stmt.first->statement), stmt.first->tok));
+			node_body->add_as_stmt(std::move(stmt.first->statement));
 			stmt.first->statement = std::move(node_body);
 			stmt.first->statement->parent = stmt.first;
 		}
@@ -80,16 +80,16 @@ public:
 
 	inline NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		node.get_definition(m_program);
-		if(node.definition and node.definition->is_expression_function()) return &node;
+		node.bind_definition(m_program);
+		if(node.get_definition() and node.get_definition()->is_expression_function()) return &node;
 
 		if(is_hoistable(&node)) {
 			std::unique_ptr<NodeReference> ref = nullptr;
 			// clone return variable from function definition
-			auto return_var = clone_as<NodeDataStructure>(node.definition->header->get_param(0).get());
+			auto return_var = clone_shared(node.get_definition()->header->get_param(0));
 			return_var->name = m_program->def_provider->get_fresh_name("_return");
 			ref = return_var->to_reference();
-			ref->match_data_structure(return_var.get());
+			ref->match_data_structure(return_var);
 			m_declares_per_stmt[m_last_stmt].push_back(
 				std::make_unique<NodeSingleDeclaration>(
 					std::move(return_var),

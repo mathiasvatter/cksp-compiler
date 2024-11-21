@@ -17,8 +17,6 @@ class LoweringAccessChain : public ASTLowering {
 private:
 	NodeAST* start_pointer = nullptr;
 	Type* prev_type = nullptr;
-	/// saves for each chain node its replacement slot, that the next is going into
-	std::map<NodeAST*, NodeAST*> node_replacement_slot;
 public:
 	explicit LoweringAccessChain(NodeProgram *program) : ASTLowering(program) {}
 
@@ -39,15 +37,11 @@ public:
 		for(int i=1; i<node.chain.size(); i++) {
 			auto& prev_node = node.chain[i-1];
 			auto& curr_node = node.chain[i];
-			if(curr_node->get_node_type() == NodeType::ArrayRef) {
-				auto node_array_ref = static_cast<NodeArrayRef*>(curr_node.get());
-				node_array_ref->index = std::move(prev_node);
-				node_array_ref->index->parent = node_array_ref;
-			} else if(curr_node->get_node_type() == NodeType::NDArrayRef) {
-				auto node_ndarray_ref = static_cast<NodeNDArrayRef*>(curr_node.get());
+			if(auto node_array_ref = curr_node->cast<NodeArrayRef>()) {
+				node_array_ref->set_index(std::move(prev_node));
+			} else if(auto node_ndarray_ref = curr_node->cast<NodeNDArrayRef>()) {
 				node_ndarray_ref->indexes->prepend_param(std::move(prev_node));
-			} else if(curr_node->get_node_type() == NodeType::FunctionCall) {
-				auto node_func_call = static_cast<NodeFunctionCall*>(curr_node.get());
+			} else if(auto node_func_call = curr_node->cast<NodeFunctionCall>()) {
 				node_func_call->function->prepend_arg(std::move(prev_node));
 			}
 		}
@@ -62,19 +56,16 @@ public:
 			error.m_got = node.ty->to_string();
 			error.exit();
 		}
-//		node.lower_type();
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string() + OBJ_DELIMITER + node.name;
 		auto node_array = node.to_array_ref(nullptr);
 		node_array->declaration = node.declaration;
 		node_array->ty = node.ty;
-//		node_array->ty = TypeRegistry::ArrayOfInt;
-		return node.replace_reference(std::move(node_array), m_def_provider);
+		return node.replace_reference(std::move(node_array));
 	}
 
 	// increase dimensions -> to ndarray_ref
 	inline NodeAST * visit(NodeArrayRef& node) override {
-//		node.lower_type();
 		if(&node == start_pointer) return &node;
 		// no index -> array -> List.array[sth, *]
 		if(!node.index) node.index = std::make_unique<NodeWildcard>("*", node.tok);
@@ -83,12 +74,10 @@ public:
 		node_ndarray_ref->declaration = node.declaration;
 		node_ndarray_ref->determine_sizes();
 		node_ndarray_ref->ty = node.ty;
-//		node_ndarray_ref->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), node_ndarray_ref->sizes->params.size());
-		return node.replace_reference(std::move(node_ndarray_ref), m_def_provider);
+		return node.replace_reference(std::move(node_ndarray_ref));
 	}
 
 	inline NodeAST * visit(NodeNDArrayRef& node) override {
-//		node.lower_type();
 		if(&node == start_pointer) return &node;
 		node.determine_sizes();
 		// if array has no indexes -> everything should be copied -> wildcards for every index of size
@@ -103,20 +92,18 @@ public:
 	}
 
 	inline NodeAST * visit(NodeVariableRef& node) override {
-//		node.lower_type();
 		if(&node == start_pointer) return &node;
 		auto node_array_ref = node.to_array_ref(nullptr);
 		node_array_ref->declaration = node.declaration;
 		node_array_ref->name = prev_type->to_string()+OBJ_DELIMITER+node.name;
 		node_array_ref->ty = node.ty;
-//		node_array_ref->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type());
-		return node.replace_reference(std::move(node_array_ref), m_def_provider);
+		return node.replace_reference(std::move(node_array_ref));
 	}
 
 	inline NodeAST * visit(NodeFunctionCall& node) override {
 		if(&node == start_pointer) return &node;
 		node.function->name = prev_type->to_string()+OBJ_DELIMITER+node.function->name;
-		node.get_definition(m_program);
+		node.bind_definition(m_program);
 		return &node;
 	}
 

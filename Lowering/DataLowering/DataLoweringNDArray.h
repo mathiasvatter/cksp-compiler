@@ -10,13 +10,7 @@
 /// entry points: NodeSingleDeclaration
 class DataLoweringNDArray : public ASTLowering {
 private:
-	static std::unique_ptr<NodeAST> get_lowered_size_expr(NodeNDArray& ref) {
-		// in case of function param -> sizes are not set
-		if(!ref.sizes) {
-			return nullptr;
-		}
-		return NodeBinaryExpr::create_right_nested_binary_expr(ref.sizes->params, 0, token::MULT);
-	}
+
 public:
 	explicit DataLoweringNDArray(NodeProgram* program) : ASTLowering(program) {}
 //
@@ -93,21 +87,32 @@ public:
 //        }
 //		return &node;
 //	}
+
+
+
 	/// Lowering of multidimensional arrays to arrays -> declaration
+	/// Filling in num_elements param list member
 	NodeAST* visit(NodeNDArray& node) override {
         auto node_lowered_array = std::make_unique<NodeArray>(
-                node.persistence,
-                node.name,
-                TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1),
-				get_lowered_size_expr(node), node.tok);
+			node.persistence,
+			node.name,
+			TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1),
+			nullptr,
+			node.tok
+		);
+		if(node.sizes) {
+			auto lowered_size_expr = NodeBinaryExpr::create_right_nested_binary_expr(node.sizes->params, 0, token::MULT);
+			node_lowered_array->set_size(lowered_size_expr->clone());
+			auto num_elements = std::move(node.sizes);
+			num_elements->prepend_param(std::move(lowered_size_expr));
+			node_lowered_array->set_num_elements(std::move(num_elements));
+		}
 		node_lowered_array->name = "_" + node_lowered_array->name;
+		node_lowered_array->match_metadata(node.get_shared());
 		node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
-		node_lowered_array->parent = node.parent;
-		node_lowered_array->is_local = node.is_local;
-		node_lowered_array->data_type = node.data_type;
 		// call array lowering
 		node_lowered_array->lower(m_program);
-		return node.replace_with(std::move(node_lowered_array));
+		return node.replace_datastruct(std::move(node_lowered_array));
 	}
 
     /// Lowering of multidimensional arrays to arrays when reference
@@ -127,27 +132,16 @@ public:
 			}
 			node_expression = calculate_index_expression(node.sizes->params, node.indexes->params, 0,node.tok);
 		}
-        auto node_lowered_array = std::make_unique<NodeArrayRef>(
-                node.name,
-                std::move(node_expression), node.tok);
+        auto node_lowered_array = node.to_array_ref(std::move(node_expression));
         node_lowered_array->name = "_" + node_lowered_array->name;
-//        node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
         node_lowered_array->ty = node.ty->get_element_type();
 		// if no sizes -> ndarray is func param and needs to have another type dimension
 		if(!node.indexes) {
 			node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
 		}
-		node_lowered_array->data_type = node.data_type;
-        node_lowered_array->parent = node.parent;
-        node_lowered_array->declaration = node.declaration;
-		node_lowered_array->update_parents(node.parent);
-        return node.replace_with(std::move(node_lowered_array));
+//        return node.replace_reference(std::move(node_lowered_array));
+		return node.replace_with(std::move(node_lowered_array));
     }
-
-//	NodeAST* visit(NodeFor& node) override {
-//		node.body->accept(*this);
-//		return node.desugar(m_program)->accept(*this);
-//	}
 
 	static std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok) {
 		// Basisfall: letztes Element in der Berechnung

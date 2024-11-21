@@ -12,7 +12,7 @@ private:
 	NodeStruct* m_current_struct = nullptr;
 	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX_STRUCTS", Token());
 	inline bool in_constructor() {
-		return m_current_func and m_current_struct and m_current_func == m_current_struct->constructor;
+		return m_current_func and m_current_struct and m_current_func == m_current_struct->constructor.get();
 	}
 	/// returns free_idx as reference if in constructor, self as reference if not
 	inline std::unique_ptr<NodeReference> get_index_ref() {
@@ -36,7 +36,7 @@ public:
 
 		m_current_struct = nullptr;
 		m_current_func = nullptr;
-//		node.update_member_table();
+//		node.rebuild_member_table();
 		return &node;
 	}
 
@@ -45,9 +45,9 @@ public:
 	}
 
 	inline NodeAST * visit(NodeSingleDeclaration& node) override {
-		// delete "self"
-		if(node.variable->name == "self") {
-			return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+		// "self" gets deleted in the inline_struct method -> ignore here
+		if(node.variable == m_current_struct->node_self) {
+			return &node;
 		}
 		// turn member into array if it is a member
 		node.variable->accept(*this);
@@ -73,7 +73,7 @@ public:
 		// if member, turn into array
 		if(node.is_member() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
-			return node.replace_datastruct(std::move(new_node), m_def_provider);
+			return node.replace_datastruct(std::move(new_node));
 		}
 		return &node;
 	}
@@ -81,7 +81,7 @@ public:
 		// if member, turn into array of pointers
 		if(node.is_member() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
-			return node.replace_datastruct(std::move(new_node), m_def_provider);
+			return node.replace_datastruct(std::move(new_node));
 		}
 		return &node;
 	}
@@ -93,7 +93,7 @@ public:
 		 */
 		if(node.is_member() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
-			return node.replace_datastruct(std::move(new_node), m_def_provider);
+			return node.replace_datastruct(std::move(new_node));
 		}
 		return &node;
 	}
@@ -102,7 +102,7 @@ public:
 		if(node.is_member() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
 			new_node->is_local = false;
-			return node.replace_datastruct(std::move(new_node), m_def_provider);
+			return node.replace_datastruct(std::move(new_node));
 		}
 		return &node;
 	}
@@ -111,7 +111,7 @@ public:
 		// if member reference, turn into array reference with (struct.free_idx as index if in constructor, self as index if not)
 		if(node.is_member_ref() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(get_index_ref());
-			return node.replace_reference(std::move(new_node), m_def_provider);
+			return node.replace_reference(std::move(new_node));
 		}
 		return &node;
 	}
@@ -119,7 +119,7 @@ public:
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(node.is_member_ref() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(get_index_ref());
-			return node.replace_reference(std::move(new_node), m_def_provider);
+			return node.replace_reference(std::move(new_node));
 		}
 		return &node;
 	}
@@ -127,7 +127,7 @@ public:
 	inline NodeAST * visit(NodePointerRef& node) override {
 		if(node.is_member_ref() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(get_index_ref());
-			return node.replace_reference(std::move(new_node), m_def_provider);
+			return node.replace_reference(std::move(new_node));
 		}
 		return &node;
 	}
@@ -136,7 +136,7 @@ public:
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(node.is_member_ref() and !node.is_engine) {
 			auto new_node = node.inflate_dimension(get_index_ref());
-			return node.replace_reference(std::move(new_node), m_def_provider);
+			return node.replace_reference(std::move(new_node));
 		}
 		return &node;
 	}
@@ -196,7 +196,7 @@ private:
 			std::move(node_search_call),
 			init->tok
 		);
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign_search), init->tok));
+		node_block->add_as_stmt(std::move(node_assign_search));
 
 		auto node_error_message = std::make_unique<NodeFunctionCall>(
 			false,
@@ -224,7 +224,7 @@ private:
 			init->tok
 		);
 		node_if_stmt->if_body->scope = true;
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_if_stmt), init->tok));
+		node_block->add_as_stmt(std::move(node_if_stmt));
 
 		auto node_allocation = m_current_struct->allocation_var->to_reference();
 		static_cast<NodeArrayRef *>(node_allocation.get())->index = m_current_struct->free_idx_var->to_reference();
@@ -233,10 +233,10 @@ private:
 			std::make_unique<NodeInt>(1, init->tok),
 			init->tok
 		);
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign_allocation), init->tok));
+		node_block->add_as_stmt(std::move(node_assign_allocation));
 		init->body->prepend_body(std::move(node_block));
-		init->body->add_stmt(std::make_unique<NodeStatement>(
-			std::make_unique<NodeReturn>(init->tok, m_current_struct->free_idx_var->to_reference()), init->tok)
+		init->body->add_as_stmt(
+			std::make_unique<NodeReturn>(init->tok, m_current_struct->free_idx_var->to_reference())
 		);
 	}
 

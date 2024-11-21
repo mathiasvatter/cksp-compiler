@@ -120,7 +120,7 @@ std::unique_ptr<NodeNumElements> NodeVariableRef::transform_array_constant() {
 
 std::unique_ptr<NodeReference> NodeVariableRef::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
 	auto node_array_ref = to_array_ref(std::move(new_index));
-	node_array_ref->match_data_structure(declaration);
+	node_array_ref->match_data_structure(get_declaration());
 	node_array_ref->ty = ty;
 	return node_array_ref;
 }
@@ -172,13 +172,13 @@ std::unique_ptr<NodeAccessChain> NodeArrayRef::to_method_chain() {
 std::unique_ptr<NodeAST> NodeArrayRef::get_size(std::unique_ptr<NodeAST> dim) {
 	auto new_ref = clone_as<NodeArrayRef>(this);
 	new_ref->index = nullptr;
-	if(declaration) new_ref->ty = declaration->ty;
+	new_ref->ty = get_declaration()->ty;
 	return DefinitionProvider::num_elements(std::move(new_ref));
 }
 
 bool NodeArrayRef::is_list_sizes() {
-	if (declaration && declaration->get_node_type() == NodeType::List) {
-		auto list = static_cast<NodeList*>(declaration);
+	if (get_declaration()->get_node_type() == NodeType::List) {
+		auto list = static_pointer_cast<NodeList>(get_declaration());
 		const std::string& prefix = list->name + ".sizes";
 		if (name.compare(0, prefix.length(), prefix) == 0) {
 			return true;
@@ -195,7 +195,7 @@ std::unique_ptr<NodeReference> NodeArrayRef::inflate_dimension(std::unique_ptr<N
 	}
 	auto node_ndarray_ref = to_ndarray_ref();
 	node_ndarray_ref->indexes->prepend_param(std::move(new_index));
-	node_ndarray_ref->match_data_structure(declaration);
+	node_ndarray_ref->match_data_structure(get_declaration());
 	node_ndarray_ref->ty = ty;
 	node_ndarray_ref->determine_sizes();
 	return node_ndarray_ref;
@@ -235,7 +235,7 @@ ASTLowering* NodeNDArrayRef::get_data_lowering(NodeProgram *program) const {
 std::unique_ptr<NodeAST> NodeNDArrayRef::get_size(std::unique_ptr<NodeAST> dim) {
 	auto ref = clone_as<NodeNDArrayRef>(this);
 	ref->indexes = nullptr;
-	if(declaration) ref->ty = declaration->ty;
+	ref->ty = get_declaration()->ty;
 	return std::make_unique<NodeNumElements>(std::move(ref), dim ? std::move(dim) : nullptr, tok);
 }
 
@@ -245,9 +245,9 @@ std::unique_ptr<NodeArrayRef> NodeNDArrayRef::to_array_ref(std::unique_ptr<NodeA
 }
 
 bool NodeNDArrayRef::determine_sizes() {
-	if(!declaration) return false;
-	if(declaration->get_node_type() != NodeType::NDArray) return false;
-	auto node_ndarray = static_cast<NodeNDArray*>(declaration);
+//	if(!declaration) return false;
+	if(get_declaration()->get_node_type() != NodeType::NDArray) return false;
+	auto node_ndarray = static_pointer_cast<NodeNDArray>(get_declaration());
 	// has no size if function definition parameter
 	if(!node_ndarray->sizes) {
 		if(indexes) {
@@ -393,7 +393,7 @@ ASTLowering* NodePointerRef::get_lowering(NodeProgram *program) const {
 
 std::unique_ptr<NodeReference> NodePointerRef::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
 	auto node_array_ref = to_array_ref(std::move(new_index));
-	node_array_ref->match_data_structure(declaration);
+	node_array_ref->match_data_structure(get_declaration());
 	node_array_ref->ty = ty;
 	return node_array_ref;
 }

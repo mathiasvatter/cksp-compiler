@@ -15,6 +15,7 @@
 #include "../ASTNodes/ASTDataStructures.h"
 #include "../ASTNodes/ASTReferences.h"
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
+#include "ReferenceManagement/ReferenceManager.h"
 
 class ASTVisitor {
 protected:
@@ -41,10 +42,13 @@ public:
 			tok
 		);
 		iter->is_local = true;
+		iter->is_engine = true;
 		return iter;
 	}
 
 public:
+//	explicit ASTVisitor(NodeProgram* program) : m_program(program) {}
+
     virtual NodeAST* visit(NodeDeadCode& node) {return &node;};
 	virtual NodeAST* visit(NodeWildcard& node) {
 		return &node;
@@ -134,7 +138,6 @@ public:
     virtual NodeAST* visit(NodeSingleDeclaration& node) {
         node.variable ->accept(*this);
 		if(node.value) node.value -> accept(*this);
-		if(node.retain_stmt) node.retain_stmt->accept(*this);
 		return &node;
     };
     virtual NodeAST* visit(NodeAssignment& node) {
@@ -143,10 +146,8 @@ public:
 		return &node;
 	};
     virtual NodeAST* visit(NodeSingleAssignment& node) {
-		if(node.delete_stmt) node.delete_stmt->accept(*this);
         node.l_value ->accept(*this);
 		node.r_value -> accept(*this);
-		if(node.retain_stmt) node.retain_stmt->accept(*this);
 		return &node;
     };
 	virtual NodeAST* visit(NodeBreak& node) {return &node;}

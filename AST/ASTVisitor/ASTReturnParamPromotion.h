@@ -23,7 +23,11 @@ public:
 		if(node.return_variable.has_value()) {
 			node.num_return_params = 1;
 			node.return_variable.value()->data_type = DataType::Return;
-			node.header->prepend_param(std::move(node.return_variable.value()));
+
+			auto decl = std::make_unique<NodeFunctionParam>(node.return_variable.value(), nullptr, node.tok);
+			decl->parent = node.header.get();
+			node.header->params.insert(node.header->params.begin(), std::move(decl));
+
 			node.return_variable.reset();
 		}
 		m_current_function->return_stmts.clear();
@@ -60,8 +64,7 @@ public:
 				} else if(node_ref->ty->get_type_kind() == TypeKind::Composite) {
 					// 	return Note.velocities[self, *]
 					// check for wildcards and lower dimension count when encountering wildcard -> array
-					if(node_ref->get_node_type() == NodeType::NDArrayRef) {
-						auto node_ndarray = static_cast<NodeNDArrayRef*>(node_ref);
+					if(auto node_ndarray = node_ref->cast<NodeNDArrayRef>()) {
 						auto dimensions = node_ndarray->indexes->params.size() - node_ndarray->num_wildcards();
 						node_ndarray->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node_ref->ty->get_element_type(), dimensions);
 					}
@@ -126,7 +129,7 @@ public:
 				}
 			}
 			auto node_assignment = std::make_unique<NodeSingleAssignment>(std::move(new_param_ref), std::move(node.return_variables[i]), node.tok);
-			block_replace->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node.tok));
+			block_replace->add_as_stmt(std::move(node_assignment));
 		}
 		return node.replace_with(std::move(block_replace));
 	}

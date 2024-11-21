@@ -5,21 +5,20 @@
 #pragma once
 
 #include <future>
-#include "ASTVisitor.h"
+#include "../ASTVisitor.h"
 
 class ASTFunctionInlining : public ASTVisitor {
 private:
-	std::vector<std::unique_ptr<NodeFunctionDefinition>> m_function_definitions;
-	std::vector<NodeFunctionCall*> m_function_calls;
 public:
-	explicit ASTFunctionInlining(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
+	explicit ASTFunctionInlining(NodeProgram* main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 
 	/// check for used functions
 	inline NodeAST *visit(NodeProgram &node) override {
 		m_program = &node;
-		node.update_function_lookup();
 		node.reset_function_used_flag();
-		m_function_calls.clear();
+		node.reset_function_visited_flag();
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
@@ -28,25 +27,8 @@ public:
 			callback->accept(*this);
 		}
 
-//		// Verbesserung: Parallelisiere die Verarbeitung
-//		std::vector<std::future<void>> futures;
-//		for(auto & callback : node.callbacks) {
-//			futures.push_back(std::async(std::launch::async, [&]{
-//			  callback->accept(*this);
-//			}));
-//		}
-//
-//		for (auto &fut : futures) {
-//			fut.get();  // Warte auf die Beendigung aller Aufgaben
-//		}
-
-		/// vector to house only the definitions that are actually used in the program
-		node.function_definitions = std::move(m_function_definitions);
-		node.update_function_lookup();
-		// does not work -> some calls have been moved
-//		for(auto & call : m_function_calls) {
-//			call->definition = nullptr;
-//		}
+		node.remove_unused_functions();
+		node.reset_function_visited_flag();
 		return &node;
 	}
 
@@ -69,15 +51,17 @@ public:
 			error.exit();
 		}
 
-		node.get_definition(m_program);
+		node.bind_definition(m_program);
+		auto definition = node.get_definition();
+
 		if(node.kind == NodeFunctionCall::Kind::Property) {
 			CompileError(ErrorType::InternalError,"Found undefined property function.", "", node.tok).exit();
 		}
-		if(!node.definition) {
+		if(!definition) {
 			// since we do depth first and try to visit every function before inlining,
 			// skip the error throw if definition is not found at the first visit since it
 			// could be found later -> high-order functions etc.
-			if(node.function->declaration and node.function->declaration->is_function_param()) return &node;
+			if(node.function->get_declaration() and node.function->get_declaration()->is_function_param()) return &node;
 
 			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 			error.m_message = "Unable to find function definition for <"+node.function->name+">.";
@@ -86,7 +70,7 @@ public:
 
 		if(node.kind == NodeFunctionCall::Kind::Builtin) return &node;
 
-		if(node.definition->is_restricted) {
+		if(definition->is_restricted) {
 			if(!contains(RESTRICTED_CALLBACKS, remove_substring(m_current_callback->begin_callback, "on "))) {
 				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 				error.m_message = "<"+node.function->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks.";
@@ -97,7 +81,7 @@ public:
 
 		// only threadsafe functions can be called in <on init> callback
 		if(m_current_callback == m_program->init_callback) {
-			if(!node.definition->is_thread_safe) {
+			if(!definition->is_thread_safe) {
 				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 				error.m_message = "Only threadsafe functions can be called in the <on init> callback. Function <"
 								  +node.function->name+"> contains asychronous operations.";
@@ -105,14 +89,14 @@ public:
 			}
 		}
 
-		m_program->function_call_stack.push(node.definition);
+		m_program->function_call_stack.push(definition);
 
 		// does throw error when encountering method or constructor
 //		if(node.kind != NodeFunctionCall::Kind::UserDefined) {
 //			CompileError(ErrorType::InternalError,"Found function that is neither tagged Property, Undefined, Builtin or UserDefined.", "", node.tok).exit();
 //		}
 		// check if FunctionCall is in statement and not assigned or in a condition etc (Handled bei ReturnFunctionRewriting class)
-		if(node.parent->get_node_type() != NodeType::Statement) {
+		if(!node.parent->cast<NodeStatement>()) {
 			CompileError(ErrorType::InternalError,"Function call was not rewritten and is not within <Statement>.", "", node.tok).exit();
 		}
 
@@ -129,23 +113,21 @@ public:
 		}
 
 		// visit everything beforehand to get depth first search
-		if(!node.definition->visited)
-			node.definition->accept(*this);
+		if(!definition->visited) {
+			definition->accept(*this);
+		}
+		definition->visited = true;
 
 		std::unique_ptr<NodeBlock> node_func_body = nullptr;
 		if(node.is_call) {
-			m_function_calls.push_back(&node);
-			if(!node.definition->visited) {
-				m_function_definitions.push_back(clone_as<NodeFunctionDefinition>(node.definition));
-				node.definition->call_sites.clear();
-				node.definition->is_used = true;
-				node.definition->visited = true;
-			}
-			// kill definition of all calls, not only the first one
-			node.definition = nullptr;
+			definition->is_used = true;
+//			if(!definition->visited) {
+//			}
+		// inlining process
 		} else {
-			node_func_body = clone_as<NodeBlock>(node.definition->body.get());
-			m_substitution_stack.push(get_substitution_map(node.definition->header.get(), node.function.get()));
+//			definition->is_used = false;
+			node_func_body = clone_as<NodeBlock>(definition->body.get());
+			m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 			node_func_body->accept(*this);
 			m_substitution_stack.pop();
 		}
@@ -246,30 +228,27 @@ public:
 				std::string array_name = get_array_constant_base(ref->name);
 				if(array_name.empty()) return nullptr;
 				if(auto substitute = get_substitute(array_name)) {
-					if(substitute->get_node_type() == NodeType::ArrayRef) {
-						auto array_ref = static_cast<NodeArrayRef*>(substitute.get());
+					if(auto array_ref = substitute->cast<NodeArrayRef>()) {
 						ref->name = array_ref->sanitize_name() + remove_substring(ref->name, array_name);
 						ref->ty = TypeRegistry::Integer;
-						ref->declaration = nullptr;
+						ref->declaration.reset();
 						return ref;
 					}
 				}
 			}
 			if(auto substitute = get_substitute("_"+ndarray_name)) {
-				if(substitute->get_node_type() == NodeType::ArrayRef) {
-					auto array_ref = static_cast<NodeArrayRef*>(substitute.get());
+				if(auto array_ref = substitute->cast<NodeArrayRef>()) {
 					ref->name = array_ref->sanitize_name() + remove_substring(ref->name, ndarray_name);
 					ref->ty = TypeRegistry::Integer;
-					ref->declaration = nullptr;
+					ref->declaration.reset();
 					return ref;
 				}
 			// in case it is before datastructure lowering and ndarray refs still exist
 			} else if(auto nd_substitute = get_substitute(ndarray_name)) {
-				if(nd_substitute->get_node_type() == NodeType::NDArrayRef) {
-					auto nd_array_ref = static_cast<NodeNDArrayRef*>(nd_substitute.get());
+				if(auto nd_array_ref = nd_substitute->cast<NodeNDArrayRef>()) {
 					ref->name = nd_array_ref->name + remove_substring(ref->name, ndarray_name);
 					ref->ty = TypeRegistry::Integer;
-					ref->declaration = nullptr;
+					ref->declaration.reset();
 					return ref;
 				}
 			}
@@ -279,14 +258,14 @@ public:
 
 	/// if substitute and ref are both of type <Composite> and <ArrayRef>: only change name
 	static NodeReference* substitute_composite_type(NodeReference* ref, NodeAST* substitute) {
-		if(substitute->get_node_type() == NodeType::InitializerList) return nullptr;
+		if(substitute->cast<NodeInitializerList>()) return nullptr;
 		if(substitute->ty->get_type_kind() == TypeKind::Composite) {// || ref->ty->get_type_kind() == TypeKind::Composite) {
-			if (substitute->get_node_type() != NodeType::ArrayRef and substitute->get_node_type() != NodeType::NDArrayRef) {
+			if (!substitute->cast<NodeArrayRef>() and !substitute->cast<NodeNDArrayRef>()) {
 				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
 				error.m_message = "Arg is of type <Composite> but is no <ArrayRef> Node: <" + ref->name + ">.";
 				error.exit();
 			}
-			if(ref->get_node_type() == NodeType::VariableRef) {
+			if(ref->cast<NodeVariableRef>()) {
 				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
 				error.m_message = "Tried to substitute a <Variable> function argument with an <Array>";
 				error.exit();
@@ -307,14 +286,14 @@ public:
 	}
 
 	static NodeReference* substitute_function_type(NodeReference* ref, NodeAST* substitute) {
-		if(substitute->ty->get_type_kind() == TypeKind::Function) {
-			if (substitute->get_node_type() != NodeType::FunctionHeaderRef and ref->get_node_type() != NodeType::FunctionHeaderRef) {
+		if(substitute->ty->cast<FunctionType>()) {
+			if (!substitute->cast<NodeFunctionHeaderRef>() and !ref->cast<NodeFunctionHeaderRef>()) {
 				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
 				error.m_message = "Arg is of type <Function> but is no <FunctionHeaderRef> Node: <" + ref->name + ">.";
 				error.exit();
 			}
-			auto function_subst = static_cast<NodeFunctionHeaderRef*>(substitute);
-			auto function_ref = static_cast<NodeFunctionHeaderRef*>(ref);
+			auto function_subst = substitute->cast<NodeFunctionHeaderRef>();
+			auto function_ref = ref->cast<NodeFunctionHeaderRef>();
 			function_ref->name = function_subst->name;
 			function_ref->name = function_subst->name;
 			function_ref->ty = substitute->ty;
@@ -332,10 +311,15 @@ public:
 		if(auto substitute = get_substitute(ref->name)) {
 			// if substitute and ref are both of type <Composite> and <ArrayRef>: only change name
 			if(auto composite_substitute = substitute_composite_type(ref, substitute.get())) {
+				composite_substitute->declaration = ref->declaration;
 				return composite_substitute;
 			} else if(auto function_substitute = substitute_function_type(ref, substitute.get())) {
+				function_substitute->declaration = ref->declaration;
 				return function_substitute;
 			} else {
+				if(auto subst_ref = substitute->cast<NodeVariableRef>()) {
+					subst_ref->declaration = ref->declaration;
+				}
 				return ref->replace_with(std::move(substitute));
 			}
 		} else if(auto ndarray_substitute = substitute_ndarray_constants(ref)) {

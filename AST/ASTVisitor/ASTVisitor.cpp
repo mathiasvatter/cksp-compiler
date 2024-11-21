@@ -23,6 +23,7 @@ std::unique_ptr<NodeBlock> ASTVisitor::make_while_loop(NodeReference* var, int32
 	);
 
     body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(var)));
+	body->scope = true;
     auto node_while = std::make_unique<NodeWhile>(
 		std::move(node_comparison),
 		std::move(body), var->tok

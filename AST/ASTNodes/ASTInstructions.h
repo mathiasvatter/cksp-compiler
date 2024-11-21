@@ -33,6 +33,10 @@ struct NodeStatement: NodeInstruction {
     void update_token_data(const Token& token) override {
         statement -> update_token_data(token);
     }
+	void set_statement(std::unique_ptr<NodeAST> new_statement) {
+		statement = std::move(new_statement);
+		statement->parent = this;
+	}
 };
 
 struct NodeFunctionCall : NodeInstruction {
@@ -41,7 +45,7 @@ struct NodeFunctionCall : NodeInstruction {
     bool is_call = false;
 	bool is_new = false;
     std::unique_ptr<class NodeFunctionHeaderRef> function;
-    NodeFunctionDefinition* definition = nullptr;
+    std::weak_ptr<NodeFunctionDefinition> definition;
 	explicit NodeFunctionCall(Token tok);
 	NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHeaderRef> function, Token tok);
 	~NodeFunctionCall() override;
@@ -54,14 +58,14 @@ struct NodeFunctionCall : NodeInstruction {
     void update_token_data(const Token& token) override;
     ASTLowering* get_lowering(struct NodeProgram *program) const override;
     /// attempts to get and set the definition pointer of the function call and updates the call sites of the definition
-    NodeFunctionDefinition* find_definition(class NodeProgram *program);
+    std::shared_ptr<NodeFunctionDefinition> find_definition(class NodeProgram *program);
     /// attempts to get and match metadata from builtin function to this
-    NodeFunctionDefinition* find_builtin_definition(NodeProgram *program);
+    std::shared_ptr<NodeFunctionDefinition> find_builtin_definition(NodeProgram *program);
     /// attempts to get property function that and set definition pointer + error handling
-    NodeFunctionDefinition* find_property_definition(NodeProgram *program);
-	NodeFunctionDefinition* find_constructor_definition(NodeProgram* program);
+    std::shared_ptr<NodeFunctionDefinition> find_property_definition(NodeProgram *program);
+	std::shared_ptr<NodeFunctionDefinition> find_constructor_definition(NodeProgram* program);
     /// gets and sets definition ptr or matches builtin func metadata -> throws error if not found when fail set to true
-    bool get_definition(NodeProgram* program, bool fail=false);
+    bool bind_definition(NodeProgram* program, bool fail= false);
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
 
 	/// returns true if function call is of kind: Undefined, Builtin or Property
@@ -71,6 +75,11 @@ struct NodeFunctionCall : NodeInstruction {
 	[[nodiscard]] bool is_string_env();
 	[[nodiscard]] bool do_param_promotion() const;
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+	[[nodiscard]] std::shared_ptr<NodeFunctionDefinition> get_definition() const {
+		return definition.lock();
+	}
+	void do_param_promotion(NodeProgram* program);
+
 };
 
 struct NodeNumElements : NodeInstruction {
@@ -345,8 +354,6 @@ struct NodeAssignment: NodeInstruction {
 struct NodeSingleAssignment : NodeInstruction {
     std::unique_ptr<NodeReference> l_value;
     std::unique_ptr<NodeAST> r_value;
-	std::unique_ptr<NodeSingleDelete> delete_stmt = nullptr;
-	std::unique_ptr<NodeSingleRetain> retain_stmt = nullptr;
 	bool has_object = false;
     inline explicit NodeSingleAssignment(Token tok) : NodeInstruction(NodeType::SingleAssignment, std::move(tok)) {}
     NodeSingleAssignment(std::unique_ptr<NodeReference> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
@@ -361,25 +368,19 @@ struct NodeSingleAssignment : NodeInstruction {
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
-		if(delete_stmt) delete_stmt->update_parents(this);
         l_value->update_parents(this);
         r_value->update_parents(this);
-		if(retain_stmt) retain_stmt->update_parents(this);
     }
     void set_child_parents() override {
-		if(delete_stmt) delete_stmt->parent = this;
         if(l_value) l_value->parent = this;
         if(r_value) r_value->parent = this;
-		if(retain_stmt) retain_stmt->parent = this;
     };
     std::string get_string() override {
         return l_value->get_string() + " := " + r_value->get_string();
     }
     void update_token_data(const Token& token) override {
-		if(delete_stmt) delete_stmt->update_token_data(token);
         l_value -> update_token_data(token);
         r_value -> update_token_data(token);
-		if(retain_stmt) retain_stmt ->update_token_data(token);
     }
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
@@ -426,16 +427,9 @@ struct NodeDeclaration : NodeInstruction {
 struct NodeSingleDeclaration : NodeInstruction {
     std::shared_ptr<NodeDataStructure> variable;
     std::unique_ptr<NodeAST> value = nullptr;
-	std::unique_ptr<NodeRetain> retain_stmt = nullptr;
 	bool has_object = false;
 	bool is_promoted = false;
     inline explicit NodeSingleDeclaration(Token tok) : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)) {}
-//    NodeSingleDeclaration(std::unique_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
-//            : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)),
-//			variable(std::shared_ptr<NodeDataStructure>(std::move(arrayVariable))),
-//			value(std::move(assignee)) {
-//        set_child_parents();
-//    }
 	NodeSingleDeclaration(std::shared_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
 		: NodeInstruction(NodeType::SingleDeclaration, std::move(tok)),
 		  variable(std::move(arrayVariable)),
@@ -457,12 +451,10 @@ struct NodeSingleDeclaration : NodeInstruction {
         parent = new_parent;
         variable->update_parents(this);
         if(value) value->update_parents(this);
-		if(retain_stmt) retain_stmt->update_parents(this);
     }
     void set_child_parents() override {
         variable->parent = this;
         if(value) value->parent = this;
-		if(retain_stmt) retain_stmt->parent = this;
     };
     std::string get_string() override {
         auto string = variable->get_string();
@@ -473,7 +465,6 @@ struct NodeSingleDeclaration : NodeInstruction {
     void update_token_data(const Token& token) override {
         variable -> update_token_data(token);
         if(value) value -> update_token_data(token);
-		if(retain_stmt) retain_stmt -> update_token_data(token);
     }
     ASTLowering* get_lowering(struct NodeProgram *program) const override;
 //	ASTLowering *get_data_lowering(NodeProgram *program) const override;
@@ -483,7 +474,6 @@ struct NodeSingleDeclaration : NodeInstruction {
     [[nodiscard]] std::unique_ptr<NodeSingleAssignment> to_assign_stmt(NodeDataStructure* var=nullptr);
 	void set_retain(std::unique_ptr<NodeRetain> retain) {
 		retain->parent = this;
-		retain_stmt = std::move(retain);
 	}
 	void set_value(std::unique_ptr<NodeAST> new_value) {
 		value = std::move(new_value);
@@ -535,7 +525,7 @@ struct NodeFunctionParam : NodeInstruction {
 
 struct NodeReturn : NodeInstruction {
     std::vector<std::unique_ptr<NodeAST>> return_variables;
-	NodeFunctionDefinition* definition = nullptr;
+	std::weak_ptr<NodeFunctionDefinition> definition;
     inline explicit NodeReturn(Token tok) : NodeInstruction(NodeType::Return, std::move(tok)) {}
     NodeReturn(std::vector<std::unique_ptr<NodeAST>> return_variables, Token tok)
             : NodeInstruction(NodeType::Return, std::move(tok)), return_variables(std::move(return_variables)) {
@@ -572,6 +562,9 @@ struct NodeReturn : NodeInstruction {
 	void add_return_param(std::unique_ptr<NodeAST> param) {
 		param->parent = this;
 		return_variables.push_back(std::move(param));
+	}
+	[[nodiscard]] std::shared_ptr<NodeFunctionDefinition> get_definition() const {
+		return definition.lock();
 	}
 };
 
