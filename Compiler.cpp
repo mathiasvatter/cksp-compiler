@@ -31,11 +31,12 @@ void Compiler::compile() {
 	std::string output_filename = m_config->output_filename;
    	std::string standard_output_path = m_config->standard_output_file;
 
+#ifndef NDEBUG
 //	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-//    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+//	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -51,9 +52,8 @@ void Compiler::compile() {
 //    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
 //    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
 //	output_filename = "/Users/Mathias/Scripting/time-textures/Samples/resources/scripts/time-textures-2.txt";
+#endif
 
-	// Startzeitpunkt speichern
-//    auto start_time = std::chrono::high_resolution_clock::now();
 	Timer compile_time;
 	compile_time.start("Total Time");
 	compile_time.start("Import");

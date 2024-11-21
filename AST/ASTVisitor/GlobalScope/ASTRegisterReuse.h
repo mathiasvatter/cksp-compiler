@@ -111,6 +111,7 @@ private:
 			callback->accept(*this);
 		}
 
+		node.reset_function_visited_flag();
 		return &node;
 	}
 
@@ -156,6 +157,7 @@ private:
 		node.bind_definition(m_program);
 
 		// do not visit definition -> because passive var allocation is separate between callbacks and functions
+//		node.do_param_promotion(m_program);
 		return &node;
 	}
 
