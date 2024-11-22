@@ -15,6 +15,7 @@
 #include "AST/ASTVisitor/ASTPointerScope.h"
 #include "AST/ASTVisitor/ASTCollectPostLowerings.h"
 #include "AST/ASTVisitor/ASTTypeAnnotations.h"
+#include "AST/ASTVisitor/FunctionHandling/ASTExpressionFunctionInlining.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -36,7 +37,7 @@ void Compiler::compile() {
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 //	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-//    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -132,7 +133,6 @@ void Compiler::compile() {
 
 	TypeInference infer_types(ast.get());
 	ast->accept(infer_types);
-//	TypeInference::cast_data_structure_types(ast.get(), true);
 
 	compile_time.stop("Type Checking");
 	std::cout << compile_time.print_timer("Type Checking") << std::endl;
@@ -153,7 +153,7 @@ void Compiler::compile() {
 	compile_time.start("Return Function Rewriting");
 
 	ASTReturnFunctionRewriting return_function_rewriting(m_program);
-	ast->accept(return_function_rewriting);
+	return_function_rewriting.do_rewriting(*ast);
 
 	ASTExpressionFunctionInlining inlining(m_program);
 	ast->accept(inlining);
@@ -182,7 +182,6 @@ void Compiler::compile() {
 
 //	ast->debug_print();
     ast->accept(infer_types);
-//    TypeInference::cast_data_structure_types(m_program, true);
 
 	compile_time.stop("Variable Checking 1");
 	std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;

@@ -20,6 +20,7 @@
 #include "../../Lowering/PostLowering/PostLoweringNumElements.h"
 #include "../../Lowering/LoweringUseCount.h"
 #include "../ASTVisitor/GlobalScope/ASTParameterPromotion.h"
+#include "../ASTVisitor/FunctionRewriting/FunctionCallHoisting.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -242,6 +243,11 @@ bool NodeFunctionCall::do_param_promotion() const {
 void NodeFunctionCall::do_param_promotion(NodeProgram *program) {
 	static ASTParameterPromotion param_promotion(program);
 	param_promotion.do_param_promotion(*this);
+}
+
+NodeAST *NodeFunctionCall::do_function_call_hoisting(NodeProgram *program) {
+	static FunctionCallHoisting hoisting;
+	return hoisting.do_function_call_hoisting(*this, program);
 }
 
 // ************* NodeNumElements ***************

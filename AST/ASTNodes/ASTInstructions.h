@@ -79,6 +79,7 @@ struct NodeFunctionCall : NodeInstruction {
 		return definition.lock();
 	}
 	void do_param_promotion(NodeProgram* program);
+	NodeAST* do_function_call_hoisting(NodeProgram* program);
 
 };
 

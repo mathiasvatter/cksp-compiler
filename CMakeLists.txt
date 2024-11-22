@@ -150,8 +150,8 @@ add_executable(cksp main.cpp
         Lowering/LoweringPointer.h
         AST/ASTVisitor/ASTLowerTypes.h
         Lowering/LoweringNil.h
-        Optimization/FunctionCallHoisting.h
-        AST/ASTVisitor/ASTReturnParamPromotion.h
+        AST/ASTVisitor/FunctionRewriting/FunctionCallHoisting.h
+        AST/ASTVisitor/FunctionRewriting/ReturnParamPromotion.h
         AST/ASTVisitor/ASTDataStructureLowering.h
         AST/ASTVisitor/ASTReturnFunctionRewriting.h
         Lowering/DataLowering/NDArrayCopyFunction.h
@@ -198,4 +198,5 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ReferenceManagement/ASTRemoveReferences.h
         misc/FreeFunctions.h
         AST/ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h
+        AST/ASTVisitor/FunctionRewriting/ReturnFunctionIsolation.h
 )
