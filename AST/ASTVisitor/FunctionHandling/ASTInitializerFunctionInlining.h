@@ -6,7 +6,7 @@
 
 
 #include "ASTFunctionInlining.h"
-#include "../ASTReturnParamPromotion.h"
+#include "../FunctionRewriting/ReturnParamPromotion.h"
 
 /// Immediate Inlining of functions with Initializer Lists as arguments so to bypass needing to declare throwaway arrays
 class ASTInitializerFunctionInlining: public ASTFunctionInlining {

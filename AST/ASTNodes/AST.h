@@ -148,13 +148,7 @@ struct NodeReference : NodeAST {
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure);
     /// Determines if current reference is function argument
-    bool is_func_arg() {
-        if(!this->parent) return false;
-        if(!this->parent->parent) return false;
-        bool func_arg = this->parent->get_node_type() == NodeType::ParamList and
-                          this->parent->parent->get_node_type() == NodeType::FunctionHeaderRef;
-        return func_arg;
-    }
+    bool is_func_arg();
 	std::unique_ptr<struct NodeFunctionCall> wrap_in_get_ui_id();
 	bool needs_get_ui_id();
 	/// determines if reference is reference to struct member
@@ -714,6 +708,7 @@ struct NodeFunctionDefinition: NodeAST, public std::enable_shared_from_this<Node
 		return shared_from_this();
 	}
 	void do_register_reuse(NodeProgram* program);
+	void do_return_param_promotion();
 };
 
 struct NodeProgram : NodeAST {

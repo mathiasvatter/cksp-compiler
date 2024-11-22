@@ -30,6 +30,7 @@ public:
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		m_program->init_callback->accept(*this);
+
 		for(const auto & s : node.struct_definitions) {
 			s->accept(*this);
 		}

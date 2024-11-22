@@ -4,17 +4,21 @@
 
 #pragma once
 
-#include "ASTVisitor.h"
+#include "../ASTVisitor.h"
 
 /// Rewrites all return statements
 /// promotes all return values to function parameters utilizing the typesystem
-class ASTReturnParamPromotion : public ASTVisitor {
+class ReturnParamPromotion : public ASTVisitor {
 private:
-	DefinitionProvider* m_def_provider;
+	std::string m_return_param_name = "ret$";
 	NodeFunctionDefinition* m_current_function = nullptr;
 public:
-	explicit ASTReturnParamPromotion(DefinitionProvider* definition_provider) : m_def_provider(definition_provider) {};
 
+	inline void do_return_param_promotion(NodeFunctionDefinition& def) {
+		def.accept(*this);
+	}
+
+private:
 	inline NodeAST* visit(NodeFunctionDefinition &node) override {
 		m_current_function = &node;
 		// do not rewrite if expression function
@@ -50,7 +54,7 @@ public:
 		auto block_replace = std::make_unique<NodeBlock>(Token());
 		for(int i = 0; i<node.return_variables.size(); i++) {
 			auto& node_return = node.return_variables[i];
-			std::string return_name = "ret$"+std::to_string(i+1);
+			std::string return_name = m_return_param_name+std::to_string(i+1);
 			// if return parameter is a reference -> replace with copy
 			std::unique_ptr<NodeDataStructure> new_param = nullptr;
 			if(auto node_ref = cast_node<NodeReference>(node_return.get())) {

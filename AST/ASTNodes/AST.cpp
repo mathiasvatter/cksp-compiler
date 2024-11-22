@@ -21,6 +21,7 @@
 #include "../ASTVisitor/ReferenceManagement/ASTRemoveReferences.h"
 #include "../ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h"
 #include "../ASTVisitor/GlobalScope/ASTRegisterReuse.h"
+#include "../ASTVisitor/FunctionRewriting/ReturnParamPromotion.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -392,6 +393,12 @@ std::shared_ptr<NodeDataStructure> NodeReference::get_declaration() const {
 	return ptr;
 }
 
+bool NodeReference::is_func_arg() {
+	if(!this->parent) return false;
+	if(!this->parent->parent) return false;
+	return this->parent->cast<NodeParamList>() and
+		this->parent->parent->cast<NodeFunctionHeaderRef>();
+}
 
 // ************* NodeInstruction ***************
 NodeAST *NodeInstruction::accept(struct ASTVisitor &visitor) {
@@ -891,6 +898,11 @@ void NodeFunctionDefinition::do_register_reuse(NodeProgram *program) {
 	register_reuse.do_register_reuse(*this);
 }
 
+void NodeFunctionDefinition::do_return_param_promotion() {
+	static ReturnParamPromotion param_promotion;
+	param_promotion.do_return_param_promotion(*this);
+}
+
 // ************* NodeProgramm ***************
 NodeProgram::NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {
 	global_declarations = std::make_unique<NodeBlock>(Token());
@@ -1041,6 +1053,7 @@ void NodeProgram::inline_structs() {
 	}
 	struct_definitions.clear();
 	update_struct_lookup();
+	reset_function_visited_flag();
 }
 
 void NodeProgram::reset_function_visited_flag() {

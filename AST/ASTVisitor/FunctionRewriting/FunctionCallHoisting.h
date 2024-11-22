@@ -4,10 +4,21 @@
 
 #pragma once
 
-#include "../AST/ASTVisitor/ASTVisitor.h"
-#include "../misc/Gensym.h"
+#include "../ASTVisitor.h"
+#include "../../../misc/Gensym.h"
 
 /// Hoist function calls that return values and are userdefined out of control flow into a separate declaration
+/**
+ * PreLowering:
+ * 	if some_func() = 1
+ * 		...
+ * 	end if
+ * PostLowering:
+ * 	declare ret0 := some_func()
+ * 	if ret0 = 1
+ * 		...
+ * 	end if
+ */
 class FunctionCallHoisting : public ASTVisitor {
 private:
 	std::unordered_map<NodeStatement*, std::vector<std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_stmt;
@@ -16,7 +27,6 @@ private:
 	static inline bool is_hoistable(NodeFunctionCall* node) {
 		// not hoistable functions are: Undefined, Builtin, Property
 		if(node->is_builtin_kind()) return false;
-		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 		if(!node->get_definition()) {
 			return false;
 		}
@@ -27,6 +37,7 @@ private:
 		bool is_in_assignment =  node->parent->cast<NodeSingleAssignment>();
 		bool is_in_return = node->parent->cast<NodeReturn>();
 		if(!is_in_stmt and !returns_values) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 			error.m_message = "Function "+node->function->name+" does not return any value";
 			error.m_got = node->function->name;
 			error.exit();
@@ -38,6 +49,15 @@ private:
 	}
 
 public:
+
+	NodeAST* do_function_call_hoisting(NodeFunctionCall& node, NodeProgram* program) {
+		m_program = program;
+		m_declares_per_stmt.clear();
+		auto new_node = node.accept(*this);
+		insert_calls_in_statements();
+		m_declares_per_stmt.clear();
+		return new_node;
+	}
 
 	/// insert declarations from m_declares_per_stmt into the dedicated statements
 	inline void insert_calls_in_statements() {
@@ -81,7 +101,7 @@ public:
 				error.m_message = "Unable to find parent statement of <FunctionCall>.";
 				error.exit();
 			}
-			// clone return variable from function definition
+			// clone return variable from function definition if function was already return param promoted
 			auto return_var = clone_shared(node.get_definition()->header->get_param(0));
 			return_var->name = m_program->def_provider->get_fresh_name("_ret");
 			auto ref = return_var->to_reference();
