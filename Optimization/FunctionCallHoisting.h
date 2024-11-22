@@ -10,7 +10,6 @@
 /// Hoist function calls that return values and are userdefined out of control flow into a separate declaration
 class FunctionCallHoisting : public ASTVisitor {
 private:
-	NodeStatement* m_last_stmt = nullptr;
 	std::unordered_map<NodeStatement*, std::vector<std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_stmt;
 	/// function call is hoistable when userdefined and returns values and is not an expression function
 	/// or is in condition statement
@@ -40,6 +39,19 @@ private:
 
 public:
 
+	/// insert declarations from m_declares_per_stmt into the dedicated statements
+	inline void insert_calls_in_statements() {
+		for(auto & stmt : m_declares_per_stmt) {
+			auto node_body = std::make_unique<NodeBlock>(stmt.first->tok);
+			node_body->scope = true;
+			for(auto &decl : stmt.second) {
+				node_body->add_as_stmt(std::move(decl));
+			}
+			node_body->add_as_stmt(std::move(stmt.first->statement));
+			stmt.first->set_statement(std::move(node_body));
+		}
+	}
+
 	inline NodeAST * visit(NodeProgram& node) override {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
@@ -53,30 +65,9 @@ public:
 			def->accept(*this);
 		}
 
-		for(auto & stmt : m_declares_per_stmt) {
-			auto node_body = std::make_unique<NodeBlock>(node.tok);
-			node_body->scope = true;
-			for(auto &decl : stmt.second) {
-				node_body->add_as_stmt(std::move(decl));
-			}
-			node_body->add_as_stmt(std::move(stmt.first->statement));
-			stmt.first->statement = std::move(node_body);
-			stmt.first->statement->parent = stmt.first;
-		}
+		insert_calls_in_statements();
 		return &node;
 	};
-
-	inline NodeAST* visit(NodeSingleDeclaration &node) override {
-		node.variable->accept(*this);
-		if(node.value) node.value->accept(*this);
-		return &node;
-	}
-
-	inline NodeAST * visit(NodeStatement& node) override {
-		m_last_stmt = &node;
-		node.statement->accept(*this);
-		return &node;
-	}
 
 	inline NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
@@ -84,13 +75,18 @@ public:
 		if(node.get_definition() and node.get_definition()->is_expression_function()) return &node;
 
 		if(is_hoistable(&node)) {
-			std::unique_ptr<NodeReference> ref = nullptr;
+			auto last_stmt = node.get_parent_statement();
+			if(!last_stmt) {
+				auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+				error.m_message = "Unable to find parent statement of <FunctionCall>.";
+				error.exit();
+			}
 			// clone return variable from function definition
 			auto return_var = clone_shared(node.get_definition()->header->get_param(0));
-			return_var->name = m_program->def_provider->get_fresh_name("_return");
-			ref = return_var->to_reference();
+			return_var->name = m_program->def_provider->get_fresh_name("_ret");
+			auto ref = return_var->to_reference();
 			ref->match_data_structure(return_var);
-			m_declares_per_stmt[m_last_stmt].push_back(
+			m_declares_per_stmt[last_stmt].push_back(
 				std::make_unique<NodeSingleDeclaration>(
 					std::move(return_var),
 					node.clone(),

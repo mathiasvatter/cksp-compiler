@@ -211,6 +211,7 @@ struct NodeFunctionHeaderRef : NodeReference {
 	}
 	void prepend_arg(std::unique_ptr<NodeAST> arg) const;
 	void add_arg(std::unique_ptr<NodeAST> arg) const;
+	void set_args(std::unique_ptr<NodeParamList> new_args);
 };
 
 struct NodeListRef : NodeReference {

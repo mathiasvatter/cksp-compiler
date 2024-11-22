@@ -432,11 +432,12 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_repr_method() {
 void NodeStruct::inline_struct(NodeProgram *program) {
 	// add struct methods to program functions
 	for(auto & method: methods) {
+		method->parent = program;
 		program->function_definitions.push_back(method);
 	}
 	methods.clear();
 	constructor.reset();
-	program->update_function_lookup();
+//	program->update_function_lookup();
 	// remove self node
 	auto self = this->node_self->parent->cast<NodeSingleDeclaration>();
 	self->remove_node();
@@ -456,19 +457,19 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::get_overloaded_method(token 
 void NodeStruct::generate_ref_count_methods(NodeProgram* program) {
 	NodeStructCreateRefCountFunctions rf_methods(*this);
 	auto del = rf_methods.create_destructor();
-	methods.push_back(std::move(del));
+	add_method(std::move(del));
 
 	auto decr = rf_methods.create_decr_function();
-	methods.push_back(std::move(decr));
+	add_method(std::move(decr));
 
 	auto incr = rf_methods.create_incr_function();
-	methods.push_back(std::move(incr));
+	add_method(std::move(incr));
 
 	auto array_incr = rf_methods.create_array_function("__incr__");
-	methods.push_back(std::move(array_incr));
+	add_method(std::move(array_incr));
 
 	auto array_decr = rf_methods.create_array_function("__decr__");
-	methods.push_back(std::move(array_decr));
+	add_method(std::move(array_decr));
 
 //	auto array_del = rf_methods.create_array_function("__del__");
 //	methods.push_back(std::move(array_del));
