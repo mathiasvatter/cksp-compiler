@@ -78,7 +78,7 @@ public:
 	size_t m_marker_length;
     std::string m_file_name;
 
-    std::string get_line_from_file();
+    std::string get_line_from_file() const;
     static std::string get_os_version();
     static std::string get_os_architecture();
     static std::string url_encode(const std::string &value);

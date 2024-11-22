@@ -343,6 +343,11 @@ void NodeFunctionHeaderRef::add_arg(std::unique_ptr<NodeAST> arg) const {
 	args->add_param(std::move(arg));
 }
 
+void NodeFunctionHeaderRef::set_args(std::unique_ptr<NodeParamList> new_args) {
+	args = std::move(new_args);
+	args->parent = this;
+}
+
 // ************* NodeListRef ***************
 NodeAST *NodeListRef::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);

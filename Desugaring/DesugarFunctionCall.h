@@ -16,13 +16,13 @@ public:
 
 	inline NodeAST * visit(NodeFunctionCall& node) override {
 		// message overloaded is not recognized as builtin
+
 		// constructor method renaming
 		if(node.kind == NodeFunctionCall::Kind::Undefined) {
 			if(node.function->get_num_args() > 1) {
 				if (node.function->name == "message") {
 					// lowering of message parameters when separated by comma
-					node.function->args = inline_message_parameters(node.function->args);
-					node.function->args->parent = node.function->args.get();
+					node.function->set_args(inline_message_parameters(node.function->args));
 				}
 			}
 		}
@@ -120,7 +120,7 @@ private:
 			);
 			node_expr->ty = TypeRegistry::String;
 		}
-		node_expr->parent = new_param.get();
+//		node_expr->parent = new_param.get();
 		// Füge das endgültige node_expr der neuen Parameterliste hinzu
 		new_param->add_param(std::move(node_expr));
 		return new_param;

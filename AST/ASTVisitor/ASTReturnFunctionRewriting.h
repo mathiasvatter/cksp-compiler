@@ -28,12 +28,12 @@ public:
 	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 
-
 		/// promote return values to parameters of func_defs
 		ASTReturnParamPromotion param_promotion(m_def_provider);
 		for(auto & func_def : node.function_definitions) {
 			func_def->accept(param_promotion);
 		}
+		node.debug_print();
 		// call hoisting after func lowering to profit from correct data types in definition params
 		FunctionCallHoisting hoisting;
 		node.accept(hoisting);
@@ -57,7 +57,7 @@ public:
 			if(node.get_definition()->is_expression_function()) return &node;
 
 			// add throwaway variable ref to params
-			if(node.parent->get_node_type() == NodeType::Statement) {
+			if(node.parent->cast<NodeStatement>()) {
 				if(node.is_builtin_kind()) return &node;
 				if (node.get_definition() and node.get_definition()->num_return_params > 0) {
 					auto &throwaway_var = node.get_definition()->header->get_param(0);
@@ -87,7 +87,6 @@ public:
 
 	inline NodeAST* visit(NodeFunctionDefinition& node) override {
 		node.visited = true;
-//		m_used_function_definitions.insert(&node);
 		node.header->accept(*this);
 		if(node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);
@@ -107,7 +106,6 @@ public:
 		if(auto func_call = node.r_value->cast<NodeFunctionCall>()) {
 			if(!func_call->bind_definition(m_program)) return &node;
 			if(func_call->get_definition()->is_expression_function()) return &node;
-//			if(func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
 			if(func_call->is_builtin_kind()) return &node;
 
 			if(func_call->get_definition()->num_return_params > 0) {
@@ -129,7 +127,6 @@ public:
 		if (auto func_call = node.value->cast<NodeFunctionCall>()) {
 			if (!func_call->bind_definition(m_program)) return &node;
 			if(func_call->get_definition()->is_expression_function()) return &node;
-//			if (func_call->kind != NodeFunctionCall::Kind::UserDefined) return &node;
 			if(func_call->is_builtin_kind()) return &node;
 			if (func_call->get_definition()->num_return_params > 0) {
 				func_call->function->prepend_arg(node.variable->to_reference());

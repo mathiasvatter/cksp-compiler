@@ -48,7 +48,7 @@ public:
 		return node.lower_type();
 	}
 	inline NodeAST * visit(NodeFunctionDefinition& node) override {
-		if(node.ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+		if(node.ty->get_element_type()->cast<ObjectType>()) {
 			node.set_element_type(TypeRegistry::Integer);
 		}
 
@@ -68,7 +68,7 @@ public:
 		for(auto &param : node.params) param->accept(*this);
 		if(auto func_type = node.ty->cast<FunctionType>()) {
 			auto return_type = func_type->get_return_type();
-			if (return_type->get_type_kind() == TypeKind::Object) {
+			if (return_type->cast<ObjectType>()) {
 				return_type = TypeRegistry::Integer;
 			}
 			node.create_function_type(return_type);
