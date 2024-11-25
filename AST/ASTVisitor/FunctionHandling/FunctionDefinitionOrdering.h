@@ -19,6 +19,7 @@ public:
 		m_program = &node;
 		m_ordered_function_definitions = {};
 		node.reset_function_visited_flag();
+		node.reset_function_used_flag();
 
 		node.global_declarations->accept(*this);
 		node.init_callback->accept(*this);
@@ -30,6 +31,7 @@ public:
 		}
 
 		node.function_definitions = m_ordered_function_definitions;
+		node.reset_function_visited_flag();
 	}
 
 private:

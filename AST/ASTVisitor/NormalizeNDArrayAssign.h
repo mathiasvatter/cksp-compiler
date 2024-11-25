@@ -15,6 +15,12 @@ public:
 		m_program = main;
 	}
 
+	NodeAST* visit(NodeNumElements& node) override {
+		node.array->accept(*this);
+		if(node.dimension) node.dimension->accept(*this);
+		return node.lower(m_program);
+	}
+
 	NodeAST* visit(NodeSingleAssignment &node) override {
 		node.l_value->accept(*this);
 		node.r_value->accept(*this);

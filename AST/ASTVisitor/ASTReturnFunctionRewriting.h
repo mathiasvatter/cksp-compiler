@@ -5,9 +5,9 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "FunctionRewriting/FunctionCallHoisting.h"
-#include "FunctionRewriting/ReturnParamPromotion.h"
-#include "FunctionRewriting/ReturnFunctionIsolation.h"
+#include "ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
+#include "ReturnFunctionRewriting/ReturnParamPromotion.h"
+#include "ReturnFunctionRewriting/ReturnFunctionIsolation.h"
 
 class ASTReturnFunctionRewriting: public ASTVisitor {
 private:

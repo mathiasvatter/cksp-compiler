@@ -19,7 +19,7 @@
  * 		...
  * 	end if
  */
-class FunctionCallHoisting : public ASTVisitor {
+class ReturnFunctionCallHoisting : public ASTVisitor {
 private:
 	std::unordered_map<NodeStatement*, std::vector<std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_stmt;
 	/// function call is hoistable when userdefined and returns values and is not an expression function
@@ -103,6 +103,8 @@ public:
 			}
 			// clone return variable from function definition if function was already return param promoted
 			auto return_var = clone_shared(node.get_definition()->header->get_param(0));
+			return_var->is_local = true;
+			return_var->data_type = DataType::Mutable;
 			return_var->name = m_program->def_provider->get_fresh_name("_ret");
 			auto ref = return_var->to_reference();
 			ref->match_data_structure(return_var);

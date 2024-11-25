@@ -60,7 +60,7 @@ public:
     NodeAST * visit(NodeFunctionCall& node) override;
     NodeAST * visit(NodeFunctionDefinition& node) override;
     NodeAST * visit(NodeGetControl& node) override;
-
+	NodeAST * visit(NodeNumElements& node) override;
     std::ostringstream os;
 
 

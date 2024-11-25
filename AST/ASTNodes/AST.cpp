@@ -21,7 +21,7 @@
 #include "../ASTVisitor/ReferenceManagement/ASTRemoveReferences.h"
 #include "../ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h"
 #include "../ASTVisitor/GlobalScope/ASTRegisterReuse.h"
-#include "../ASTVisitor/FunctionRewriting/ReturnParamPromotion.h"
+#include "../ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -206,10 +206,8 @@ bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBlock* curr
 }
 
 bool NodeDataStructure::is_function_param() {
-	if(!this->parent) return false;
-	if(this->parent->get_node_type() == NodeType::SingleDeclaration) return false;
-	bool func_param = this->parent->get_node_type() == NodeType::FunctionParam;
-	return func_param;
+	if(!parent) return false;
+	return parent->cast<NodeFunctionParam>();
 }
 
 Type* NodeDataStructure::cast_type() {
@@ -873,6 +871,9 @@ bool NodeFunctionDefinition::is_expression_function() {
 			auto& stmt = body->get_last_statement();
 			if(auto node_return = stmt->cast<NodeReturn>()) {
 				if(auto func_call = node_return->return_variables[0]->cast<NodeFunctionCall>()) {
+					if(func_call->is_builtin_kind()) {
+						return true;
+					}
 					if(func_call->get_definition()) {
 						return func_call->get_definition()->is_expression_function();
 					}

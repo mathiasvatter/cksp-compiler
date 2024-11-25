@@ -255,7 +255,7 @@ private:
 	}
 
 	inline NodeAST * visit(NodeArray& node) override {
-		node.determine_locality(m_program, m_current_body);
+//		node.determine_locality(m_program, m_current_body);
 
 		if(node.size) node.size->accept(*this);
 
@@ -288,7 +288,7 @@ private:
 	}
 
 	inline NodeAST* visit(NodeVariable& node) override {
-		node.determine_locality(m_program, m_current_body);
+//		node.determine_locality(m_program, m_current_body);
 		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 		return &node;
 	}

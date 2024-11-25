@@ -67,6 +67,9 @@ end struct
 
 on init	
 
+	declare menu_strip_val[3,3]
+	declare left := get_active_idx(menu_strip_val, 0)
+	message(left)
 	// declare ui_menu mnu: int, i
 	// declare ari[2]
  	// mnu->value := (mnu->value + 1) mod num_elements(ari)
@@ -102,6 +105,8 @@ on init
 	n := (1,2,3,4,5)
 
 	declare ndarray[10,10]: real[][]
+	declare ndarray3[10,10,10,10]
+	message(ndarray3[4,5, 6, 7])
 	declare ndarray2[10,10]: int[][]
 	message(search_matrix(ndarray, 3.0), "3", "f")
 	message(search_matrix(ndarray2, 3), "3", "f")
@@ -119,8 +124,12 @@ on init
 	ndarray[0, *] := ndarray[1, *]
 
 	message(use_count(this_list))
-	// message(return_size(ndarray[*, 0]))
+	message(return_size(ndarray[*, 0]))
 end on
+
+function get_active_idx(value_array, emitter) -> result
+    result := value_array[emitter,0]*0+value_array[emitter,1]*1+value_array[emitter,2]*2
+end function
 
 function return_size(ndarray: int[])
 	return num_elements(ndarray)

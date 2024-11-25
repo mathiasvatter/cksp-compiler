@@ -20,7 +20,9 @@
 #include "../../Lowering/PostLowering/PostLoweringNumElements.h"
 #include "../../Lowering/LoweringUseCount.h"
 #include "../ASTVisitor/GlobalScope/ASTParameterPromotion.h"
-#include "../ASTVisitor/FunctionRewriting/FunctionCallHoisting.h"
+#include "../ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
+#include "../ASTVisitor/FunctionHandling/FunctionInlining.h"
+#include "../../Lowering/PostLowering/PostLoweringSingleDeclaration.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -246,8 +248,54 @@ void NodeFunctionCall::do_param_promotion(NodeProgram *program) {
 }
 
 NodeAST *NodeFunctionCall::do_function_call_hoisting(NodeProgram *program) {
-	static FunctionCallHoisting hoisting;
+	static ReturnFunctionCallHoisting hoisting;
 	return hoisting.do_function_call_hoisting(*this, program);
+}
+
+NodeAST *NodeFunctionCall::do_function_inlining(NodeProgram *program) {
+	static FunctionInlining inlining(program);
+	return inlining.inline_function(*this);
+}
+
+// ************* NodeSearch ***************
+NodeAST *NodeSearch::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeSearch::NodeSearch(const NodeSearch& other)
+	: NodeInstruction(other), array(clone_unique(other.array)),
+	  value(clone_unique(other.value)), from(clone_unique(other.from)), to(clone_unique(other.to)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeSearch::clone() const {
+	return std::make_unique<NodeSearch>(*this);
+}
+NodeAST *NodeSearch::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (array.get() == oldChild) {
+		if(auto new_ref = cast_node<NodeReference>(newChild.release())) {
+			array = std::unique_ptr<NodeReference>(new_ref);
+			return array.get();
+		}
+	} else if (value.get() == oldChild) {
+		value = std::move(newChild);
+		return value.get();
+	} else if (from.get() == oldChild) {
+		from = std::move(newChild);
+		return from.get();
+	} else if (to.get() == oldChild) {
+		to = std::move(newChild);
+		return to.get();
+	}
+	return nullptr;
+}
+
+ASTLowering* NodeSearch::get_lowering(NodeProgram *program) const {
+	static LoweringNumElements lowering(program);
+	return &lowering;
+}
+
+ASTLowering* NodeSearch::get_post_lowering(NodeProgram *program) const {
+	static PostLoweringNumElements lowering(program);
+	return &lowering;
 }
 
 // ************* NodeNumElements ***************
@@ -256,7 +304,7 @@ NodeAST *NodeNumElements::accept(struct ASTVisitor &visitor) {
 }
 NodeNumElements::NodeNumElements(const NodeNumElements& other)
 	: NodeInstruction(other), array(clone_unique(other.array)),
-	  dimension(clone_unique(other.dimension)), size_array(other.size_array) {
+	  dimension(clone_unique(other.dimension)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeNumElements::clone() const {
@@ -527,6 +575,11 @@ ASTLowering* NodeSingleDeclaration::get_lowering(NodeProgram *program) const {
 //	static LoweringSingleDeclaration lowering(program);
 //	return &lowering;
 	return nullptr;
+}
+
+ASTLowering* NodeSingleDeclaration::get_post_lowering(NodeProgram *program) const {
+	static PostLoweringSingleDeclaration lowering(program);
+	return &lowering;
 }
 
 std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(NodeDataStructure* var) {

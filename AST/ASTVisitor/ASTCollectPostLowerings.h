@@ -26,10 +26,11 @@ public:
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-		for(auto & func_def : node.function_definitions) {
-			if(!func_def->visited) func_def->accept(*this);
-		}
+//		for(auto & func_def : node.function_definitions) {
+//			if(!func_def->visited) func_def->accept(*this);
+//		}
 
+		node.reset_function_visited_flag();
 		return &node;
 	}
 
@@ -51,7 +52,21 @@ public:
 		return &node;
 	}
 
+	NodeAST * visit(NodeSingleDeclaration& node) override {
+		node.variable->accept(*this);
+		if(node.value) node.value->accept(*this);
+		return node.post_lower(m_program);
+	}
+
+//	NodeAST * visit(NodeArray& node) override {
+//		if(node.size) node.size->accept(*this);
+//		if(node.num_elements) node.num_elements->accept(*this);
+//		return &node;
+//	}
+
 	NodeAST * visit(NodeNumElements& node) override {
+		node.array->accept(*this);
+		if(node.dimension) node.dimension->accept(*this);
 		return node.post_lower(m_program)->accept(*this);
 	}
 

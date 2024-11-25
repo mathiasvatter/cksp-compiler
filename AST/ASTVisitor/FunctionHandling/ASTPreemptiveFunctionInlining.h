@@ -4,8 +4,7 @@
 
 #pragma once
 
-
-#include "ASTFunctionInlining.h"
+#include "../ASTVisitor.h"
 
 /// Immediate Inlining of return-only functions
 /// Substitution already takes place in the parent class ASTFunctionInlining in the following nodes:
@@ -13,13 +12,24 @@
 /// NodeNDArrayRef
 /// NodeVariableRef
 /// NodeFunctionHeader
-class ASTExpressionFunctionInlining: public ASTFunctionInlining {
+class ASTPreemptiveFunctionInlining: public ASTVisitor {
 private:
-public:
-	inline explicit ASTExpressionFunctionInlining(NodeProgram *main) : ASTFunctionInlining(main) {}
+	DefinitionProvider *m_def_provider;
 
+public:
+	inline explicit ASTPreemptiveFunctionInlining(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
+
+	static bool inline do_preemptive_function_inlining(NodeFunctionCall& call) {
+		auto def = call.get_definition();
+		if(!def) return false;
+		return def->is_expression_function() || is_initializer_function(call) || is_wildcard_function(call);
+	}
+
+private:
 	NodeAST* visit(NodeProgram &node) override {
-//		node.reset_function_used_flag();
+		node.reset_function_used_flag();
 		node.reset_function_visited_flag();
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
@@ -40,26 +50,42 @@ public:
 		if(node.bind_definition(m_program)) {
 			if(node.is_builtin_kind()) return &node;
 			auto definition = node.get_definition();
+			m_program->function_call_stack.push(definition);
 			if(!definition->visited) {
 				definition->accept(*this);
 			}
 			definition->visited = true;
 			// see if the function is a return-only function
-			if(definition->is_expression_function()) {
+			if(do_preemptive_function_inlining(node)) {
 				definition->is_used = false;
-				m_program->function_call_stack.push(definition);
-				auto node_func_body = clone_as<NodeBlock>(definition->body.get());
-				m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
-				node_func_body->accept(*this);
-
-				m_substitution_stack.pop();
+				auto new_node = node.do_function_inlining(m_program);
 				m_program->function_call_stack.pop();
-				return node.replace_with(get_expression_return(node_func_body.get()));
+				return new_node;
 			} else {
 				definition->is_used = true;
+				m_program->function_call_stack.pop();
 			}
 		}
 		return &node;
+	}
+
+	static inline bool is_initializer_function(const NodeFunctionCall& call) {
+		for(auto &arg : call.function->args->params) {
+			if(arg->cast<NodeInitializerList>()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	static inline bool is_wildcard_function(const NodeFunctionCall& call) {
+		for(auto &arg : call.function->args->params) {
+			if(auto nd_arg = arg->cast<NodeNDArrayRef>()) {
+				if(nd_arg->num_wildcards())
+					return true;
+			}
+		}
+		return false;
 	}
 
 	NodeAST * visit(NodeFunctionHeaderRef& node) override {
@@ -67,8 +93,7 @@ public:
 		// does not get deleted because it is only ref and not being called
 		// foo(bar: (): void) -> bar is not called but function ref
 		if(node.get_declaration() and node.is_func_arg()) {
-			if(node.get_declaration()->parent->get_node_type() == NodeType::FunctionDefinition) {
-				auto def = static_cast<NodeFunctionDefinition*>(node.get_declaration()->parent);
+			if(auto def = node.get_declaration()->parent->cast<NodeFunctionDefinition>()) {
 				def->is_used = true;
 				def->accept(*this);
 				def->visited = true;
@@ -77,18 +102,5 @@ public:
 		if(node.args) node.args->accept(*this);
 		return &node;
 	}
-
-	static inline std::unique_ptr<NodeAST> get_expression_return(NodeBlock* body) {
-		auto stmt = body->statements[0]->statement.get();
-		if(stmt->get_node_type() == NodeType::Return) {
-			auto ret = static_cast<NodeReturn*>(stmt);
-			return std::move(ret->return_variables[0]);
-		}
-		auto error = CompileError(ErrorType::InternalError, "", "", body->tok);
-		error.m_message = "Function is not a return-only function";
-		error.exit();
-		return nullptr;
-	}
-
 
 };

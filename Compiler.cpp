@@ -11,11 +11,10 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionInlining.h"
 #include "AST/ASTVisitor/ASTRelinkGlobalScope.h"
 #include "AST/ASTVisitor/ASTKSPSyntaxCheck.h"
-#include "AST/ASTVisitor/FunctionHandling/ASTInitializerFunctionInlining.h"
 #include "AST/ASTVisitor/ASTPointerScope.h"
 #include "AST/ASTVisitor/ASTCollectPostLowerings.h"
 #include "AST/ASTVisitor/ASTTypeAnnotations.h"
-#include "AST/ASTVisitor/FunctionHandling/ASTExpressionFunctionInlining.h"
+#include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -37,7 +36,7 @@ void Compiler::compile() {
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 //	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+//    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 //    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -155,11 +154,8 @@ void Compiler::compile() {
 	ASTReturnFunctionRewriting return_function_rewriting(m_program);
 	return_function_rewriting.do_rewriting(*ast);
 
-	ASTExpressionFunctionInlining inlining(m_program);
-	ast->accept(inlining);
-	ASTInitializerFunctionInlining initializer_inlining(m_program);
-	ast->accept(initializer_inlining);
-	ast->debug_print();
+	ASTPreemptiveFunctionInlining pre_inlining(m_program);
+	ast->accept(pre_inlining);
 
 	compile_time.stop("Return Function Rewriting");
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
@@ -193,6 +189,7 @@ void Compiler::compile() {
 	compile_time.stop("Global Scope");
 	std::cout << compile_time.print_timer("Global Scope") << std::endl;
     compile_time.start("Function Inlining");
+	ast->debug_print();
 
 //	ast->debug_print();
 	ASTFunctionInlining func_inlining(m_program);
@@ -203,10 +200,10 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Function Inlining") << std::endl;
 	compile_time.start("Post Lowering");
 
-	ASTRelinkGlobalScope relink_global_scope(m_program);
-	ast->accept(relink_global_scope);
 	ASTCollectPostLowerings post_lowering(m_program);
 	ast->accept(post_lowering);
+	ASTRelinkGlobalScope relink_global_scope(m_program);
+	ast->accept(relink_global_scope);
 //	ast->debug_print();
 
 	compile_time.stop("Post Lowering");

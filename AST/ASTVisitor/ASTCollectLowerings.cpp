@@ -134,6 +134,7 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeArray& node) {
     if(node.size) node.size->accept(*this);
+	if(node.num_elements) node.num_elements->accept(*this);
 	return node.lower(m_program);
 }
 
@@ -142,6 +143,7 @@ NodeAST * ASTCollectLowerings::visit(NodeNDArray& node) {
 //		return &node;
 //	}
 	if(node.sizes) node.sizes->accept(*this);
+	if(node.num_elements) node.num_elements->accept(*this);
 	return &node;
 }
 
@@ -207,7 +209,8 @@ NodeAST * ASTCollectLowerings::visit(NodeBreak& node) {
 NodeAST * ASTCollectLowerings::visit(NodeNumElements& node) {
 	node.array->accept(*this);
 	if(node.dimension) node.dimension->accept(*this);
-	return node.lower(m_program);
+	return &node;
+//	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeUseCount& node) {

@@ -303,8 +303,16 @@ NodeAST * ASTGenerator::visit(NodeFunctionDefinition &node) {
 }
 
 NodeAST * ASTGenerator::visit(NodeGetControl &node) {
-    node.ui_id ->accept(*this);
-    os << " -> " << node.control_param;
+	auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+	error.m_message = "<GetControl> Nodes should have been lowered already.";
+	error.exit();
+	return &node;
+}
+
+NodeAST * ASTGenerator::visit(NodeNumElements &node) {
+	auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+	error.m_message = "<NumElements> Nodes should have been lowered already.";
+	error.exit();
 	return &node;
 }
 
