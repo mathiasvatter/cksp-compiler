@@ -50,11 +50,13 @@ public:
 
 	inline NodeAST * visit(NodeArray& node) override {
 		if(node.size) node.size->accept(*this);
+		if(node.num_elements) node.num_elements->accept(*this);
 		return node.data_lower(m_program);
 	}
 
 	inline NodeAST * visit(NodeNDArray& node) override {
 		if(node.sizes) node.sizes->accept(*this);
+		if(node.num_elements) node.num_elements->accept(*this);
 		return node.data_lower(m_program);
 	}
 

@@ -150,14 +150,14 @@ add_executable(cksp main.cpp
         Lowering/LoweringPointer.h
         AST/ASTVisitor/ASTLowerTypes.h
         Lowering/LoweringNil.h
-        AST/ASTVisitor/FunctionRewriting/FunctionCallHoisting.h
-        AST/ASTVisitor/FunctionRewriting/ReturnParamPromotion.h
+        AST/ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h
+        AST/ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h
         AST/ASTVisitor/ASTDataStructureLowering.h
         AST/ASTVisitor/ASTReturnFunctionRewriting.h
         Lowering/DataLowering/NDArrayCopyFunction.h
         AST/ASTVisitor/NormalizeNDArrayAssign.h
         AST/ASTVisitor/FunctionHandling/ASTFunctionInlining.h
-        AST/ASTVisitor/FunctionHandling/ASTExpressionFunctionInlining.h
+        AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h
         Optimization/ConstantPropagation.h
         Optimization/VariablePruning.h
         Optimization/ParameterMarking.h
@@ -178,7 +178,6 @@ add_executable(cksp main.cpp
         Desugaring/DesugarDelete.h
         AST/ASTVisitor/ASTPointerScope.h
         Desugaring/DesugarParamList.h
-        AST/ASTVisitor/FunctionHandling/ASTInitializerFunctionInlining.h
         Desugaring/DesugarBinaryExpr.h
         Lowering/LoweringWhile.h
         Lowering/LoweringFunctionDef.h
@@ -198,5 +197,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ReferenceManagement/ASTRemoveReferences.h
         misc/FreeFunctions.h
         AST/ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h
-        AST/ASTVisitor/FunctionRewriting/ReturnFunctionIsolation.h
+        AST/ASTVisitor/ReturnFunctionRewriting/ReturnFunctionIsolation.h
+        AST/ASTVisitor/FunctionHandling/FunctionInlining.h
+        Lowering/PostLowering/PostLoweringSingleDeclaration.h
 )

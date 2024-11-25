@@ -91,6 +91,7 @@ public:
 	};
 	virtual NodeAST* visit(NodeArray& node) {
 		if(node.size) node.size->accept(*this);
+		if(node.num_elements) node.num_elements->accept(*this);
 		return &node;
 	};
 	virtual NodeAST* visit(NodeArrayRef& node) {
@@ -99,6 +100,7 @@ public:
 	};
 	virtual NodeAST* visit(NodeNDArray& node) {
 		if(node.sizes) node.sizes->accept(*this);
+		if(node.num_elements) node.num_elements->accept(*this);
 		return &node;
 	};
 	virtual NodeAST* visit(NodeNDArrayRef& node) {
@@ -169,6 +171,13 @@ public:
 	virtual NodeAST* visit(NodeSingleDelete& node) {
 		node.ptr->accept(*this);
 		if(node.num) node.num->accept(*this);
+		return &node;
+	};
+	virtual NodeAST* visit(NodeSearch& node) {
+		node.array->accept(*this);
+		node.value->accept(*this);
+		if(node.from) node.from->accept(*this);
+		if(node.to) node.to->accept(*this);
 		return &node;
 	};
 	virtual NodeAST* visit(NodeNumElements& node) {

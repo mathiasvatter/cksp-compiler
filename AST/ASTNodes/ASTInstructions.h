@@ -80,13 +80,62 @@ struct NodeFunctionCall : NodeInstruction {
 	}
 	void do_param_promotion(NodeProgram* program);
 	NodeAST* do_function_call_hoisting(NodeProgram* program);
+	NodeAST* do_function_inlining(NodeProgram* program);
+};
 
+struct NodeSearch : NodeInstruction {
+	std::unique_ptr<NodeReference> array;
+	std::unique_ptr<NodeAST> value;
+	std::unique_ptr<NodeAST> from;
+	std::unique_ptr<NodeAST> to;
+	inline explicit NodeSearch(Token tok) : NodeInstruction(NodeType::Search, std::move(tok)) {}
+	inline NodeSearch(std::unique_ptr<NodeReference> array, std::unique_ptr<NodeAST> value, Token tok)
+	: NodeInstruction(NodeType::Search, std::move(tok)), array(std::move(array)), value(std::move(value)) {
+		set_child_parents();
+	}
+	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	// Copy Constructor
+	NodeSearch(const NodeSearch& other);
+	// Clone Method
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		array->update_parents(this);
+		value->update_parents(this);
+		if(from) from->update_parents(this);
+		if(to) to->update_parents(this);
+	}
+	void set_child_parents() override {
+		array->parent = this;
+		value->parent = this;
+		if(from) from->parent = this;
+		if(to) to->parent = this;
+	};
+	std::string get_string() override {
+		std::string search = "search[" + array->get_string();
+		search += ", " + value->get_string();
+		if(from) {
+			search += ", " + from->get_string();
+		}
+		if(to) {
+			search += ", " + to->get_string();
+		}
+		return search += "]";
+	}
+	void update_token_data(const Token& token) override {
+		array->update_token_data(token);
+		value->update_token_data(token);
+		if(from) from->update_token_data(token);
+		if(to) to->update_token_data(token);
+	}
+	ASTLowering* get_lowering(struct NodeProgram *program) const override;
+	ASTLowering* get_post_lowering(struct NodeProgram *program) const override;
 };
 
 struct NodeNumElements : NodeInstruction {
 	std::unique_ptr<NodeReference> array;
 	std::unique_ptr<NodeAST> dimension;
-	std::shared_ptr<NodeDataStructure> size_array = nullptr;
 	inline explicit NodeNumElements(Token tok) : NodeInstruction(NodeType::NumElements, std::move(tok)) {}
 	inline NodeNumElements(std::unique_ptr<NodeReference> array, std::unique_ptr<NodeAST> dimension, Token tok)
 		: NodeInstruction(NodeType::NumElements, std::move(tok)), array(std::move(array)), dimension(std::move(dimension)) {
@@ -468,6 +517,7 @@ struct NodeSingleDeclaration : NodeInstruction {
         if(value) value -> update_token_data(token);
     }
     ASTLowering* get_lowering(struct NodeProgram *program) const override;
+	ASTLowering* get_post_lowering(NodeProgram *program) const override;
 //	ASTLowering *get_data_lowering(NodeProgram *program) const override;
 
     /// returns new assign statement with the declared variable and r_value or neutral element. Can optionally take new

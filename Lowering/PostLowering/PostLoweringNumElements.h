@@ -55,32 +55,39 @@ public:
 					error.m_message = "<NodeArray> is not in a declaration.";
 					error.exit();
 				}
-				auto node_num_elements = std::make_shared<NodeArray>(
-					std::optional<Token>(),
+//				// if once declared, make empty
+//				if(!node_array->num_elements->empty()) {
+//					auto node_num_elements = std::make_shared<NodeArray>(
+//						std::optional<Token>(),
+//						node_array->name + OBJ_DELIMITER+"num_elements",
+//						TypeRegistry::ArrayOfInt,
+//						std::make_unique<NodeInt>(node_array->num_elements->size(), node.tok),
+//						node.tok
+//					);
+//					auto node_num_elements_decl = std::make_unique<NodeSingleDeclaration>(
+//						node_num_elements,
+//						node_array->num_elements->to_initializer_list(),
+//						node.tok
+//					);
+//					node_num_elements_decl->variable->data_type = DataType::Const;
+//					node_array->num_elements = std::make_unique<NodeParamList>(node_array->tok);
+//					node_block->add_as_stmt(std::move(node_num_elements_decl));
+//
+//					auto node_array_decl = std::make_unique<NodeSingleDeclaration>(
+//						std::move(node_declaration->variable),
+//						std::move(node_declaration->value),
+//						node_declaration->tok
+//						);
+//					node_block->add_as_stmt(std::move(node_array_decl));
+//					node_declaration->replace_with(std::move(node_block));
+//				}
+
+				auto num_elements_call = std::make_unique<NodeArrayRef>(
 					node_array->name + OBJ_DELIMITER+"num_elements",
-					TypeRegistry::ArrayOfInt,
-					std::make_unique<NodeInt>(node_array->num_elements->size(), node.tok),
+					std::move(node.dimension),
 					node.tok
 				);
-				auto node_num_elements_decl = std::make_unique<NodeSingleDeclaration>(
-					node_num_elements,
-					node_array->num_elements->to_initializer_list(),
-					node.tok
-				);
-				node_num_elements_decl->variable->data_type = DataType::Const;
-				node_array->num_elements = nullptr;
-				node_block->add_as_stmt(std::move(node_num_elements_decl));
-
-				auto node_array_decl = std::make_unique<NodeSingleDeclaration>(
-					std::move(node_declaration->variable),
-					std::move(node_declaration->value),
-					node_declaration->tok
-					);
-				node_block->add_as_stmt(std::move(node_array_decl));
-				node_declaration->replace_with(std::move(node_block));
-
-				auto num_elements_call = node_num_elements->to_reference();
-				num_elements_call->cast<NodeArrayRef>()->set_index(std::move(node.dimension));
+//				num_elements_call->cast<NodeArrayRef>()->set_index(std::move(node.dimension));
 				num_elements_call->ty = TypeRegistry::Integer;
 				return node.replace_with(std::move(num_elements_call));
 

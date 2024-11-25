@@ -93,7 +93,7 @@ Add lowering to SingleReturn Node
 Add SingleReturn Node to AST
 Update function call hoisting and return function rewriting examples
 Fix struct desugaring
-Add FunctionCallHoisting class
+Add ReturnFunctionCallHoisting class
 Fix parameter promotion issue when nested functions; Fix renaming issue when using multiple structs
 Add working lowering for AccessChains and methods in Struct Nodes
 Do renaming

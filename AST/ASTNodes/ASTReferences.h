@@ -102,6 +102,7 @@ struct NodeArrayRef : NodeCompositeRef {
 		if(index and index->cast<NodeWildcard>()) {
 			return 1;
 		}
+		if(!index) return 1;
 		return 0;
 	}
 };

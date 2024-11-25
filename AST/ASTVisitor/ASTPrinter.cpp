@@ -226,6 +226,9 @@ NodeAST * ASTPrinter::visit(NodeFunctionParam & node) {
 
 NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
 	os << "declare ";
+	if(node.variable->is_local) {
+		os << "local ";
+	}
 	node.variable->accept(*this);
 	if(node.value) {
         os << " := ";

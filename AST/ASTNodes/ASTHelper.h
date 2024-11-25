@@ -76,6 +76,7 @@ enum class NodeType {
 	Nil,
 	DeadCode,
 	NumElements,
+	Search,
 	UseCount,
 	Delete,
 	SingleDelete,
