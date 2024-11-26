@@ -101,7 +101,7 @@ private:
 				return &ref;
 			}
 
-			if(ref.ty->get_type_kind() == TypeKind::Composite) {
+			if(auto comp_type = ref.ty->cast<CompositeType>()) {
 				if(auto arr_ref = ref.cast<NodeArrayRef>()) {
 					generate_array_repr_method(*arr_ref);
 				} else if (auto ndarr_ref = ref.cast<NodeNDArrayRef>()) {
@@ -187,7 +187,7 @@ private:
 			return false;
 		}
 
-		auto node_self = clone_as<NodeNDArray>(node.get_declaration().get());
+		auto node_self = shared_ptr_cast<NodeNDArray>(clone_shared(node.get_declaration()));
 		node_self->name = "self";
 		node_self->ty = node.get_declaration()->ty;
 		node_self->sizes = nullptr;
@@ -206,7 +206,7 @@ private:
 		auto function_def = std::make_shared<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
-				std::make_unique<NodeFunctionParam>(std::move(node_self)),
+				std::make_unique<NodeFunctionParam>(std::move(node_self), nullptr, node.tok),
 				node.tok
 			),
 			std::nullopt,
@@ -216,7 +216,9 @@ private:
 		);
 		function_def->ty = TypeRegistry::String;
 		function_def->num_return_params = 1;
+		function_def->num_return_stmts = 1;
 		function_def->parent = m_program;
+		function_def->collect_references();
 		m_program->add_function_definition(function_def);
 //		m_program->additional_function_definitions.push_back(std::move(function_def));
 		// update function lookup so that the new function can be found

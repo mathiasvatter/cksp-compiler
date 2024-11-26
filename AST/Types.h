@@ -163,6 +163,9 @@ public:
 	bool is_same_type(const Type* other) const override {
 		return get_type_kind() == other->get_type_kind() && m_compound_kind == static_cast<const CompositeType*>(other)->get_compound_type() && m_dimensions == other->get_dimensions();
 	}
+	void set_element_type(Type* element_type) {
+		m_element_type = element_type;
+	}
 private:
 	CompoundKind m_compound_kind;
 	Type* m_element_type;

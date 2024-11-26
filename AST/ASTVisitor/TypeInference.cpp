@@ -33,18 +33,18 @@ void TypeInference::cast_data_structure_types(NodeProgram* program, bool cast) {
 		auto data_struct = refs.lock();
 		if(!data_struct) continue;
 		for(auto & ref : data_struct->references) {
-			match_reference_declaration(ref);
+			match_reference_declaration(*ref);
 		}
 	}
 	for(auto& ass : def_provider->get_all_assignments()) {
 		if(ass->l_value->ty->get_element_type() == TypeRegistry::Unknown ||
 		ass->r_value->ty->get_element_type() == TypeRegistry::Unknown) {
-			match_assignment_types(ass->l_value.get(), ass->r_value.get());
+			match_assignment_types(*ass->l_value, *ass->r_value);
 		}
 	}
     for(auto & decl : def_provider->get_all_declarations()) {
 		if (decl->value) {
-			match_assignment_types(decl->variable.get(), decl->value.get());
+			match_assignment_types(*decl->variable, *decl->value);
 		}
 		// cast as Integer if still unknown
 		if (cast) decl->variable->cast_type();
@@ -53,7 +53,7 @@ void TypeInference::cast_data_structure_types(NodeProgram* program, bool cast) {
 		auto data_struct = refs.lock();
 		if(!data_struct) continue;
 		for(auto & ref : data_struct->references) {
-			match_reference_declaration(ref);
+			match_reference_declaration(*ref);
 		}
 	}
 	def_provider->m_all_data_structures.clear();
@@ -94,7 +94,7 @@ NodeAST * TypeInference::visit(NodeConst& node) {
 			if(decl->variable->ty == TypeRegistry::Unknown || decl->variable->ty == TypeRegistry::Integer) {
 				decl->variable->ty = TypeRegistry::Integer;
 			} else if(decl->variable->ty != TypeRegistry::ArrayOfInt) {
-				auto error = throw_type_error(decl->variable.get(), &node);
+				auto error = throw_type_error(*decl->variable, node.ty);
 				error.m_message += "Constant Blocks can only contain <Integer> Variables.";
 				error.exit();
 			}
@@ -115,12 +115,12 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 		if(node.get_declaration()->get_node_type() == NodeType::Pointer or node.get_declaration()->ty->get_type_kind() == TypeKind::Object
 		or node.ty->get_type_kind() == TypeKind::Object) {
 			auto pointer_ref = node.to_pointer_ref();
-			match_type(pointer_ref.get(), &node);
+			match_type(*pointer_ref, node);
 			auto new_node = node.replace_reference(std::move(pointer_ref));
 			return new_node->accept(*this);
 		}
 	}
-    match_reference_declaration(&node);
+    match_reference_declaration(node);
 	m_def_provider->add_to_references(&node);
 	return &node;
 }
@@ -162,7 +162,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::Nil;
 	}
-	match_reference_declaration(&node);
+	match_reference_declaration(node);
 	m_def_provider->add_to_references(&node);
 	return &node;
 }
@@ -205,7 +205,7 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 			if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
 		}
 	}
-    match_reference_declaration(&node);
+    match_reference_declaration(node);
 	m_def_provider->add_to_references(&node);
 	return &node;
 }
@@ -246,7 +246,7 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
         	if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
 		}
     }
-    match_reference_declaration(&node);
+    match_reference_declaration(node);
 	m_def_provider->add_to_references(&node);
 	return &node;
 }
@@ -280,7 +280,7 @@ NodeAST * TypeInference::visit(NodeListRef& node) {
         // handed over as list element -> set to element type
         if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
     }
-    match_reference_declaration(&node);
+    match_reference_declaration(node);
 	m_def_provider->add_to_references(&node);
 	return &node;
 }
@@ -298,13 +298,39 @@ NodeAST * TypeInference::visit(NodeStruct& node) {
 
 NodeAST * TypeInference::visit(NodeNumElements& node) {
 	node.array->accept(*this);
-	if(node.array->ty->get_type_kind() != TypeKind::Composite) {
-		auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+	match_against(*node.array, TypeRegistry::NDArrayOfUnknown, "<num_element> can only be used on <Composite> types like <Arrays> or <NDArrays>.");
+	if(!node.array->ty->cast<CompositeType>()) {
+		auto error = CompileError(ErrorType::TypeError, "", "", node.array->tok);
 		error.m_message = "<num_elements> can only be used on <Composite> types like <Arrays> or <NDArrays>.";
 		error.exit();
 	}
-	if(node.dimension) node.dimension->accept(*this);
-	node.ty = TypeRegistry::Integer;
+	if(node.dimension) {
+		node.dimension->accept(*this);
+		match_against(*node.dimension, TypeRegistry::Integer);
+	}
+	match_against(node, TypeRegistry::Integer);
+	return &node;
+}
+
+NodeAST * TypeInference::visit(NodeSearch& node) {
+	node.array->accept(*this);
+	match_against(*node.array, TypeRegistry::NDArrayOfInt, "<search> can only be used on <Composite> types like <Arrays> or <NDArrays>.");
+	if(!node.array->ty->cast<CompositeType>()) {
+		auto error = CompileError(ErrorType::TypeError, "", "", node.array->tok);
+		error.m_message = "<search> can only be used on <Composite> types like <Arrays> or <NDArrays>.";
+		error.exit();
+	}
+	node.value->accept(*this);
+	match_against(*node.value, TypeRegistry::Integer);
+	if(node.from) {
+		node.from->accept(*this);
+		match_against(*node.from, TypeRegistry::Integer);
+	}
+	if(node.to) {
+		node.to->accept(*this);
+		match_against(*node.to, TypeRegistry::Integer);
+	}
+	match_against(node, TypeRegistry::Integer);
 	return &node;
 }
 
@@ -325,13 +351,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 			}
 			auto prev_obj = prev_type->to_string();
 			if(ptr->cast<NodeFunctionCall>()) {
-//				auto func_call = static_cast<NodeFunctionCall*>(ptr.get());
-//				func_call->function->name = prev_obj+"."+func_call->function->name;
 				ptr->accept(*this);
-//				if(!func_call->definition) {
-//					error.m_message = "Method "+func_call->function->name+" does not exist.";
-//					error.exit();
-//				}
 			} else {
 				auto reference = cast_node<NodeReference>(ptr.get());
 				auto strct = reference->get_object_ptr(m_program, prev_obj);
@@ -359,7 +379,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				}
 				reference->declaration = node_declaration;
 				reference->collect_references();
-				match_reference_declaration(reference);
+				match_reference_declaration(*reference);
 				// if declaration of this reference is unknown and it is not the end of the chain,
 				// we can assume that it is also an object. we can check if the next reference is also in this struct
 				// and then cast this reference to the object of the last
@@ -379,7 +399,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 		}
 
 	}
-	match_type(&node, node.chain.back().get());
+	match_type(node, *node.chain.back());
 	return &node;
 }
 
@@ -439,7 +459,7 @@ NodeAST * TypeInference::visit(NodeFunctionParam& node) {
 	node.variable->accept(*this);
 	if(node.value) {
 		node.value->accept(*this);
-		match_assignment_types(node.variable.get(), node.value.get());
+		match_assignment_types(*node.variable, *node.value);
 		node.variable->accept(*this);
 	}
 	return &node;
@@ -448,7 +468,7 @@ NodeAST * TypeInference::visit(NodeFunctionParam& node) {
 NodeAST * TypeInference::visit(NodeSingleDelete& node) {
 	node.ptr->accept(*this);
 	node.num->accept(*this);
-	match_type(&node, node.ptr.get());
+	match_type(node, *node.ptr);
 	return &node;
 }
 
@@ -457,7 +477,7 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	node.variable->accept(*this);
 	if(node.value) {
 		node.value->accept(*this);
-		match_assignment_types(node.variable.get(), node.value.get());
+		match_assignment_types(*node.variable, *node.value);
 		node.variable->accept(*this);
 	}
 	m_def_provider->add_to_declarations(&node);
@@ -497,19 +517,19 @@ NodeAST * TypeInference::visit(NodeUIControl& node) {
 	// only to matching if node types are the same (because of ui control arrays)
 	// eg. declare ui_label %lbl_sdf[3,1](1,1) -> $lbl_sdf
 	if(node.control_var->get_node_type() == declaration->control_var->get_node_type()) {
-		match_type(node.control_var.get(), declaration->control_var.get());
+		match_type(*node.control_var, *declaration->control_var);
 	// in case of ui_arrays -> match against element type of declaration
 	} else if(node.is_ui_control_array()) {
 		if(node.control_var->ty->get_element_type()->is_compatible(declaration->control_var->ty->get_element_type())) {
 			node.control_var->set_element_type(declaration->control_var->ty->get_element_type());
 		} else {
 			// provoke type error
-			throw_type_error(node.control_var.get(), declaration->control_var.get()).exit();
+			throw_type_error(*node.control_var, declaration->control_var->ty).exit();
 		}
 	}
 
 	for(int i = 0; i < node.params->size(); i++) {
-		match_type(node.params->param(i).get(), declaration->params->param(i).get());
+		match_type(*node.params->param(i), *declaration->params->param(i));
 	}
 	node.params->accept(*this);
 	return &node;
@@ -524,7 +544,7 @@ NodeAST * TypeInference::visit(NodeGetControl& node) {
 NodeAST * TypeInference::visit(NodeSetControl& node) {
 	node.ui_id->accept(*this);
 	node.value->accept(*this);
-	match_assignment_types(&node, node.value.get());
+	match_assignment_types(node, *node.value);
 	node.ui_id->accept(*this);
 	node.value->accept(*this);
 	return &node;
@@ -534,7 +554,7 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
 
-	match_assignment_types(node.l_value.get(), node.r_value.get());
+	match_assignment_types(*node.l_value, *node.r_value);
 
 	// a second time to get the new types to the declaration pointer!
 	node.l_value->accept(*this);
@@ -565,11 +585,11 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			const std::string error_message =
 				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
 					+ param->ty->to_string() + " as argument type.";
-			match_type(func_arg.get(), param.get(), error_message);
+			match_type(*func_arg, *param, error_message);
 		}
 	}
 	if(definition) {
-		match_type(&node, definition.get());
+		match_type(node, *definition);
 	}
 	return &node;
 }
@@ -626,7 +646,7 @@ NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
 
 	// try to update def type with return var type
 	if(node.return_variable.has_value()) {
-		match_type(&node, node.return_variable.value().get());
+		match_type(node, *node.return_variable.value());
 	}
 	m_program->function_call_stack.pop();
 	return &node;
@@ -639,7 +659,7 @@ NodeAST * TypeInference::visit(NodeReturn& node) {
 	}
 	if(!node.return_variables.empty() ) {
 		if(node.get_definition())
-			match_type(node.get_definition().get(), node.return_variables[0].get());
+			match_type(*node.get_definition(), *node.return_variables[0]);
 	}
 	// a second time to get the new types to the declaration pointer!
 	for(auto &ret : node.return_variables) {
@@ -657,7 +677,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	if(node.left->ty->get_type_kind() == TypeKind::Object) {
 		auto strct = NodeReference::get_object_ptr(m_program, node.left->ty->to_string());
 		if(auto def = strct->get_overloaded_method(node.op)) {
-			match_type(node.right.get(), def->header->get_param(1).get(), "Second argument of overloaded operator does not match expected type.");
+			match_type(*node.right, *def->header->get_param(1), "Second argument of overloaded operator does not match expected type.");
 			auto call = std::make_unique<NodeFunctionCall>(
 				false,
 				std::make_unique<NodeFunctionHeaderRef>(
@@ -684,7 +704,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	}
 
 	bool is_compatible = true;
-	auto error = throw_type_error(node.left.get(), node.right.get());
+	auto error = throw_type_error(*node.left, node.right->ty);
 
 	node.left->ty = specialize_type(node.left->ty, node.right->ty);
 	node.right->ty = specialize_type(node.right->ty, node.left->ty);
@@ -736,7 +756,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	node.operand->accept(*this);
 
 	bool is_compatible = node.ty->is_compatible(node.operand->ty) && node.operand->ty->is_compatible(node.ty);
-	auto error = throw_type_error(node.operand.get(), &node);
+	auto error = throw_type_error(*node.operand, node.ty);
 	if(!is_compatible) error.exit();
 
 	if(node.op == token::SUB) {

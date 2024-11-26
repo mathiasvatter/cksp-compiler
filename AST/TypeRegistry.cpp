@@ -37,6 +37,9 @@ void TypeRegistry::initialize() {
     ArrayOfString = add_composite_type(CompoundKind::Array, String, 1);
     ArrayOfUnknown = add_composite_type(CompoundKind::Array, Unknown, 1);
 
+	NDArrayOfInt = add_composite_type(CompoundKind::Array, Integer, 0);
+	NDArrayOfUnknown = add_composite_type(CompoundKind::Array, Unknown, 0);
+
 	Nil = add_object_type("nil");
 
     // Initialisierung der Maps
