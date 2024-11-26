@@ -47,7 +47,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNumElements& node) {
 	return &node;
 }
 
-NodeAST * ASTSemanticAnalysis::visit(NodeSearch& node) {
+NodeAST * ASTSemanticAnalysis::visit(NodeSortSearch& node) {
 	node.array->accept(*this);
 	node.value->accept(*this);
 	if(node.from) node.from->accept(*this);

@@ -200,6 +200,6 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ReturnFunctionRewriting/ReturnFunctionIsolation.h
         AST/ASTVisitor/FunctionHandling/FunctionInlining.h
         Lowering/PostLowering/PostLoweringSingleDeclaration.h
-        Lowering/LoweringSearch.h
-        Lowering/PostLowering/PostLoweringSearch.h
+        Lowering/LoweringSortSearch.h
+        Lowering/PostLowering/PostLoweringSortSearch.h
 )

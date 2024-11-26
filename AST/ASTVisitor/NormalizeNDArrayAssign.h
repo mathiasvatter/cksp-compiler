@@ -21,7 +21,7 @@ public:
 		return node.lower(m_program);
 	}
 
-	NodeAST* visit(NodeSearch& node) override {
+	NodeAST* visit(NodeSortSearch& node) override {
 		node.array->accept(*this);
 		node.value->accept(*this);
 		if(node.from) node.from->accept(*this);

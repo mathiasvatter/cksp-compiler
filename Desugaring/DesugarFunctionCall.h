@@ -52,15 +52,22 @@ public:
 			return node.replace_with(std::move(num_elements));
 		}
 
-		if((node.function->get_num_args() == 2 || node.function->get_num_args() == 4) && node.function->name == "search") {
+		if((node.function->get_num_args() == 2 || node.function->get_num_args() == 4) &&
+			(node.function->name == "search" || node.function->name == "sort")) {
 			node.kind = NodeFunctionCall::Kind::Builtin;
 			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 			if(is_instance_of<NodeReference>(node.function->get_arg(0).get())) {
-				auto search = std::make_unique<NodeSearch>(
+				auto search = std::make_unique<NodeSortSearch>(
+					node.function->name,
 					unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0))),
 					std::move(node.function->get_arg(1)),
 					node.tok
 				);
+				if(search->name == "search") {
+					search->ty = TypeRegistry::Integer;
+				} else {
+					search->ty = TypeRegistry::Void;
+				}
 				if(node.function->get_num_args() == 4) {
 					search->set_from(std::move(node.function->get_arg(2)));
 					search->set_to(std::move(node.function->get_arg(3)));

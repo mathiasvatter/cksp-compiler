@@ -83,20 +83,21 @@ struct NodeFunctionCall : NodeInstruction {
 	NodeAST* do_function_inlining(NodeProgram* program);
 };
 
-struct NodeSearch : NodeInstruction {
+struct NodeSortSearch : NodeInstruction {
+	std::string name;
 	std::unique_ptr<NodeReference> array;
 	std::unique_ptr<NodeAST> value;
 	std::unique_ptr<NodeAST> from;
 	std::unique_ptr<NodeAST> to;
-	inline explicit NodeSearch(Token tok) : NodeInstruction(NodeType::Search, std::move(tok)) {}
-	inline NodeSearch(std::unique_ptr<NodeReference> array, std::unique_ptr<NodeAST> value, Token tok)
-	: NodeInstruction(NodeType::Search, std::move(tok)), array(std::move(array)), value(std::move(value)) {
+	inline explicit NodeSortSearch(std::string name, Token tok) : NodeInstruction(NodeType::Search, std::move(tok)), name(std::move(name)) {}
+	inline NodeSortSearch(std::string name, std::unique_ptr<NodeReference> array, std::unique_ptr<NodeAST> value, Token tok)
+	: NodeInstruction(NodeType::Search, std::move(tok)), name(std::move(name)), array(std::move(array)), value(std::move(value)) {
 		set_child_parents();
 	}
 	NodeAST * accept(struct ASTVisitor &visitor) override;
 	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	// Copy Constructor
-	NodeSearch(const NodeSearch& other);
+	NodeSortSearch(const NodeSortSearch& other);
 	// Clone Method
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {
@@ -113,7 +114,7 @@ struct NodeSearch : NodeInstruction {
 		if(to) to->parent = this;
 	};
 	std::string get_string() override {
-		std::string search = "search[" + array->get_string();
+		std::string search = name+"[" + array->get_string();
 		search += ", " + value->get_string();
 		if(from) {
 			search += ", " + from->get_string();

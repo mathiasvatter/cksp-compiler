@@ -16,10 +16,10 @@
  * search(ndarray[10, *, 10, *], 0) // error, wildcard has to be in the last dimension
  * search(ndarray[0, *, *], 9, 3) // error, from and to parameters not allowed with wildcards
  */
-class LoweringSearch : public ASTLowering {
+class LoweringSortSearch : public ASTLowering {
 private:
 public:
-	explicit LoweringSearch(NodeProgram *program) : ASTLowering(program) {}
+	explicit LoweringSortSearch(NodeProgram *program) : ASTLowering(program) {}
 
 	// handle wildcards and transform into from and to values
 	// search(ndarray[3, *, *], -1)
@@ -27,7 +27,7 @@ public:
 	// from = 3*dim1*dim2 + 0*dim2 + 0
 	// to -> [3, num_elements(ndarray, 2)-1, num_elements(ndarray, 3)-1]
 	// to = 3*dim1*dim2 + (dim2-1)*dim2 + (dim3-1)
-	NodeAST * visit(NodeSearch &node) override {
+	NodeAST * visit(NodeSortSearch &node) override {
 
 		if(auto array_ref = node.array->cast<NodeArrayRef>()) {
 			if(array_ref->index and array_ref->num_wildcards()) {
