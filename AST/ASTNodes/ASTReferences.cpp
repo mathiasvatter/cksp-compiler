@@ -245,7 +245,7 @@ std::unique_ptr<NodeArrayRef> NodeNDArrayRef::to_array_ref(std::unique_ptr<NodeA
 }
 
 bool NodeNDArrayRef::determine_sizes() {
-//	if(!declaration) return false;
+	if(!get_declaration()) return false;
 	if(get_declaration()->get_node_type() != NodeType::NDArray) return false;
 	auto node_ndarray = static_pointer_cast<NodeNDArray>(get_declaration());
 	// has no size if function definition parameter
@@ -286,6 +286,68 @@ std::unique_ptr<NodeReference> NodeNDArrayRef::inflate_dimension(std::unique_ptr
 	}
 	indexes->prepend_param(std::move(new_index));
 	return clone_as<NodeReference>(this);
+}
+
+int NodeNDArrayRef::num_wildcards() const {
+	int count = 0;
+	if(indexes) {
+		for(auto & idx: indexes->params)
+			if(idx->cast<NodeWildcard>()) count++;
+	}
+	return count;
+}
+
+bool NodeNDArrayRef::add_wildcards() {
+	if(this->indexes) return false;
+	if(!this->sizes and !this->ty) return false;
+	this->indexes = std::make_unique<NodeParamList>(this->tok);
+	this->indexes->parent = this->indexes.get();
+	// get dimensions either from type or from sizes
+	auto num_dimensions = ty ? ty->get_dimensions() : sizes->params.size();
+	for(int i=0; i<num_dimensions; i++) {
+		auto wildcard = std::make_unique<NodeWildcard>("*", Token());
+		this->indexes->add_param(std::move(wildcard));
+	}
+	return true;
+}
+
+std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() {
+	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+	std::vector<bool> wildcards;
+	// get wildcard dimension
+	int wildcard_start = -1;
+	int wildcard_end = -1;
+	if(!indexes) {
+		return {0, 0};
+	}
+	for(int i = 0; i<indexes->params.size(); i++) {
+		auto &idx = indexes->params[i];
+		bool is_wildcard = idx->cast<NodeWildcard>();
+		wildcards.push_back(is_wildcard);
+		if(wildcards.size() > 2) {
+			// (1,0,1....)
+			if(wildcards[wildcards.size()-2] and !wildcards[wildcards.size()-1]) {
+				error.m_message = "Wildcards must be contiguous in <NDArray> index when assigning list.";
+				error.exit();
+			}
+		}
+		if (is_wildcard) {
+			if (wildcard_start == -1) {
+				wildcard_start = i;
+			}
+			wildcard_end = i;
+		}
+	}
+	if(wildcard_start == -1) {
+		error.m_message = "No wildcard found in <NDArray> index when assigning list.";
+		error.exit();
+	}
+	// if more than one wildcard and it is not right aligned:
+	if(wildcard_end-wildcard_start > 1 and wildcard_end < wildcards.size()-1) {
+		error.m_message = "Wildcards have to be right aligned in index list.";
+		error.exit();
+	}
+	return {wildcard_start, wildcard_end};
 }
 
 // ************* NodeFunctionHeaderRef ***************

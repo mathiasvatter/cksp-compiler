@@ -22,6 +22,7 @@
 #include "../ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h"
 #include "../ASTVisitor/GlobalScope/ASTRegisterReuse.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h"
+#include "../../Optimization/ConstantFolding.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -175,6 +176,10 @@ struct NodeFunctionDefinition *NodeAST::get_current_function() const {
 	return nullptr;
 }
 
+void NodeAST::do_constant_folding() {
+	static ConstantFolding constant_folding;
+	accept(constant_folding);
+}
 
 // ************* NodeDataStructure ***************
 NodeAST *NodeDataStructure::accept(struct ASTVisitor &visitor) {
@@ -721,6 +726,43 @@ NodeAST *NodeBinaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 ASTDesugaring *NodeBinaryExpr::get_desugaring(NodeProgram *program) const {
 	static DesugarBinaryExpr desugaring(program);
 	return &desugaring;
+}
+
+std::unique_ptr<NodeAST> NodeBinaryExpr::create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>> &nodes,
+																		 size_t index,
+																		 token op) {
+	// Basisfall: Wenn nur ein Element übrig ist, gib dieses zurück.
+	if (index >= nodes.size() - 1) {
+		return nodes[index]->clone();
+	}
+	// Erstelle die rechte Seite der Expression rekursiv.
+	auto right = create_right_nested_binary_expr(nodes, index + 1, op);
+	// Kombiniere das aktuelle Element mit der rechten Seite in einer NodeBinaryExpr.
+	return std::make_unique<NodeBinaryExpr>(op, nodes[index]->clone(), std::move(right), Token());
+}
+
+std::unique_ptr<NodeAST> NodeBinaryExpr::calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>> &sizes,
+																	const std::vector<std::unique_ptr<NodeAST>> &indices,
+																	size_t dimension,
+																	const Token &tok) {
+	// Basisfall: letztes Element in der Berechnung
+	if (dimension == indices.size() - 1) {
+		return indices[dimension]->clone();
+	}
+	// Produkt der Größen der nachfolgenden Dimensionen
+	std::unique_ptr<NodeAST> size_product = sizes[dimension + 1]->clone();
+	for (size_t i = dimension + 2; i < sizes.size(); ++i) {
+		size_product = std::make_unique<NodeBinaryExpr>(token::MULT, std::move(size_product), sizes[i]->clone(), tok);
+	}
+	// Berechnung des aktuellen Teils der Formel
+	std::unique_ptr<NodeAST> current_part = std::make_unique<NodeBinaryExpr>(
+		token::MULT, indices[dimension]->clone(), std::move(size_product), tok);
+
+	// Rekursiver Aufruf für den nächsten Teil der Formel
+	std::unique_ptr<NodeAST> next_part = calculate_index_expression(sizes, indices, dimension + 1, tok);
+
+	// Kombinieren des aktuellen Teils mit dem nächsten Teil
+	return std::make_unique<NodeBinaryExpr>(token::ADD, std::move(current_part), std::move(next_part), tok);
 }
 
 // ************* NodeCallback ***************

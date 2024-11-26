@@ -21,73 +21,76 @@ public:
 		return node.lower(m_program);
 	}
 
+	NodeAST* visit(NodeSearch& node) override {
+		node.array->accept(*this);
+		node.value->accept(*this);
+		if(node.from) node.from->accept(*this);
+		if(node.to) node.to->accept(*this);
+		return node.lower(m_program);
+	}
+
 	NodeAST* visit(NodeSingleAssignment &node) override {
 		node.l_value->accept(*this);
 		node.r_value->accept(*this);
 
-		if(node.l_value->get_node_type() == NodeType::NDArrayRef and node.r_value->get_node_type() == NodeType::InitializerList) {
-			auto nd_array_ref = static_cast<NodeNDArrayRef*>(node.l_value.get());
-			auto init_list = static_cast<NodeInitializerList*>(node.r_value.get());
-			init_list->flatten();
-			// nda := ((1,2,3,4),(5,6,7,8))
-			if(nd_array_ref->num_wildcards() == nd_array_ref->sizes->size()) {
-				// lower left side to array to utilize array lowering later on
-				nd_array_ref->indexes = nullptr;
-				return &node;
-			}
-			auto wildcard_dims = get_wildcard_dimensions(nd_array_ref);
-			int num_wildcards = wildcard_dims.first != -1 ? wildcard_dims.second-wildcard_dims.first+1 : 0;
-			if(num_wildcards > 1) {
-				// ndarray2[0, *, *] := ((1,2,3), (1,2,3))
-				if(init_list->size() > 1) {
-					return node.replace_with(get_ranged_array_init_from_list(nd_array_ref, init_list, wildcard_dims));
+		if(auto nd_array_ref = node.l_value->cast<NodeNDArrayRef>()) {
+			if(auto init_list = node.r_value->cast<NodeInitializerList>()) {
+				init_list->flatten();
+				// nda := ((1,2,3,4),(5,6,7,8))
+				if(nd_array_ref->num_wildcards() == nd_array_ref->sizes->size()) {
+					// lower left side to array to utilize array lowering later on
+					nd_array_ref->indexes = nullptr;
+					return &node;
+				}
+				auto wildcard_dims = nd_array_ref->get_wildcard_dimensions();
+				int num_wildcards = wildcard_dims.first != -1 ? wildcard_dims.second-wildcard_dims.first+1 : 0;
+				if(num_wildcards > 1) {
+					// ndarray2[0, *, *] := ((1,2,3), (1,2,3))
+					if(init_list->size() > 1) {
+						return node.replace_with(get_ranged_array_init_from_list(nd_array_ref, init_list, wildcard_dims));
+					}
+				}
+				// case ndarray[2, *] := (0)
+				if(init_list->size() == 1) {
+					add_ndarray_init_function_def(m_program, nd_array_ref, wildcard_dims);
+					auto lowered = node.replace_with(get_ndarray_init_function_call(nd_array_ref,
+																					init_list->elem(0).get(),
+																					wildcard_dims));
+					return lowered;
+					// ndarray[2, *] := (2,3,4)
+				} else if (init_list->size() > 1) {
+					auto lowered = node.replace_with(get_array_init_from_list(nd_array_ref, init_list, wildcard_dims));
+					return lowered;
+				}
+			// copying ndarrays to part of ndarrays -> copying over ndarrays where both have no indexes is handled by lowering array
+			// nd1[5, *, *]: int[][] := nd2: int[][]
+			} else if(auto nd_array_copy = node.r_value->cast<NodeNDArrayRef>()) {
+				if(nd_array_ref->num_wildcards() == 0 and nd_array_copy->num_wildcards() == 0) return &node;
+				// try to lower to array assignment
+				// check amount of wildcards
+				if (nd_array_ref->num_wildcards() != nd_array_copy->num_wildcards()) {
+					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+					error.m_message = "Wildcard dimensions do not match in <NDArray> assignment.";
+					error.exit();
+				}
+				NDArrayCopyFunction nd_array_copy_function(m_program, nd_array_ref, nd_array_copy);
+				return node.replace_with(nd_array_copy_function.generate_copy_function());
+
+			} else if(auto array_ref = node.r_value->cast<NodeArrayRef>()) {
+				if (nd_array_ref->num_wildcards() > 0) {
+					// get wildcard dimensions
+					NDArrayCopyFunction nd_array_copy_function(m_program, nd_array_ref, array_ref);
+					return node.replace_with(nd_array_copy_function.generate_copy_function());
 				}
 			}
-			// case ndarray[2, *] := (0)
-			if(init_list->size() == 1) {
-				add_ndarray_init_function_def(m_program, nd_array_ref, wildcard_dims);
-				auto lowered = node.replace_with(get_ndarray_init_function_call(nd_array_ref,
-																				init_list->elem(0).get(),
-																				wildcard_dims));
-				return lowered;
-				// ndarray[2, *] := (2,3,4)
-			} else if (init_list->size() > 1) {
-				auto lowered = node.replace_with(get_array_init_from_list(nd_array_ref, init_list, wildcard_dims));
-				return lowered;
-			}
-		// copying ndarrays to part of ndarrays -> copying over ndarrays where both have no indexes is handled by lowering array
-		// nd1[5, *, *]: int[][] := nd2: int[][]
-		} else if(node.l_value->get_node_type() == NodeType::NDArrayRef and node.r_value->get_node_type() == NodeType::NDArrayRef) {
-			auto nd_array_ref = static_cast<NodeNDArrayRef *>(node.l_value.get());
-			auto nd_array_copy = static_cast<NodeNDArrayRef *>(node.r_value.get());
-
-			if(nd_array_ref->num_wildcards() == 0 and nd_array_copy->num_wildcards() == 0) return &node;
-			// try to lower to array assignment
-//			if(nd_array_copy->num_wildcards() == 0) return &node;
-			// check amount of wildcards
-			if (nd_array_ref->num_wildcards() != nd_array_copy->num_wildcards()) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-				error.m_message = "Wildcard dimensions do not match in <NDArray> assignment.";
-				error.exit();
-			}
-			NDArrayCopyFunction nd_array_copy_function(m_program, nd_array_ref, nd_array_copy);
-			return node.replace_with(nd_array_copy_function.generate_copy_function());
-
-		} else if(node.l_value->get_node_type() == NodeType::NDArrayRef and node.r_value->get_node_type() == NodeType::ArrayRef) {
-			auto nd_array_ref = static_cast<NodeNDArrayRef *>(node.l_value.get());
-			auto array_ref = static_cast<NodeArrayRef *>(node.r_value.get());
-			if(nd_array_ref->num_wildcards() > 0) {
-				// get wildcard dimensions
-				NDArrayCopyFunction nd_array_copy_function(m_program, nd_array_ref, array_ref);
-				return node.replace_with(nd_array_copy_function.generate_copy_function());
-			}
-		} else if(node.l_value->get_node_type() == NodeType::ArrayRef and node.r_value->get_node_type() == NodeType::NDArrayRef) {
-			auto array_ref = static_cast<NodeArrayRef *>(node.l_value.get());
-			auto nd_array_ref = static_cast<NodeNDArrayRef *>(node.r_value.get());
-			if(nd_array_ref->num_wildcards() > 0) {
-				// get wildcard dimensions
-				NDArrayCopyFunction nd_array_copy_function(m_program, array_ref, nd_array_ref);
-				return node.replace_with(nd_array_copy_function.generate_copy_function());
+		}
+		if(auto array_ref = node.l_value->cast<NodeArrayRef>()) {
+			if(auto nd_array_ref = node.r_value->cast<NodeNDArrayRef>()) {
+				if(nd_array_ref->num_wildcards() > 0) {
+					// get wildcard dimensions
+					NDArrayCopyFunction nd_array_copy_function(m_program, array_ref, nd_array_ref);
+					return node.replace_with(nd_array_copy_function.generate_copy_function());
+				}
 			}
 		}
 		return &node;
@@ -104,47 +107,7 @@ public:
 
 
 private:
-	/// Checks number of wildcards and wildcard position, returns position of wildcard
-	/// ndarray[2, *] := (0) -> function returns position of *, returns 2:2
-	/// ndarray[2, *, *] := (0) -> returns 2:3
-	static inline std::pair<int, int> get_wildcard_dimensions(NodeNDArrayRef* node) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
-		std::vector<bool> wildcards;
-		// get wildcard dimension
-		int wildcard_start = -1;
-		int wildcard_end = -1;
-		if(!node->indexes) {
-			return {0, 0};
-		}
-		for(int i = 0; i<node->indexes->params.size(); i++) {
-			auto &idx = node->indexes->params[i];
-			bool is_wildcard = idx->get_node_type() == NodeType::Wildcard;
-			wildcards.push_back(is_wildcard);
-			if(wildcards.size() > 2) {
-				// (1,0,1....)
-				if(wildcards[wildcards.size()-2] and !wildcards[wildcards.size()-1]) {
-					error.m_message = "Wildcards must be contiguous in <NDArray> index when assigning list.";
-					error.exit();
-				}
-			}
-			if (is_wildcard) {
-				if (wildcard_start == -1) {
-					wildcard_start = i;
-				}
-				wildcard_end = i;
-			}
-		}
-		if(wildcard_start == -1) {
-			error.m_message = "No wildcard found in <NDArray> index when assigning list.";
-			error.exit();
-		}
-		// if more than one wildcard and it is not right aligned:
-		if(wildcard_end-wildcard_start > 1 and wildcard_end < wildcards.size()-1) {
-			error.m_message = "Wildcards have to be right aligned in index list.";
-			error.exit();
-		}
-		return {wildcard_start, wildcard_end};
-	}
+
 
 	/// ndarray.<init>.<type>.<num_dimensions>.<dimension>(ndarray: type[][], value: type)
 	static inline std::unique_ptr<NodeFunctionCall> get_ndarray_init_function_call(NodeNDArrayRef* node, NodeAST* value, std::pair<int, int> wildcard_dims) {
@@ -299,7 +262,7 @@ private:
 		std::vector<std::unique_ptr<NodeAST>> sizes = std::move(ndarray_ref->sizes->params);
 		std::vector<std::unique_ptr<NodeAST>> indices = std::move(ndarray_ref->indexes->params);
 		indices.erase(indices.begin()+wildcard_dims.first+1, indices.begin()+wildcard_dims.second+1);
-		auto node_expression = DataLoweringNDArray::calculate_index_expression(sizes, indices, 0, ndarray_ref->tok);
+		auto node_expression = NodeBinaryExpr::calculate_index_expression(sizes, indices, 0, ndarray_ref->tok);
 		// calc index ends in additional addition.
 		auto node_index_expr = std::move(static_cast<NodeBinaryExpr*>(node_expression.get())->left);
 

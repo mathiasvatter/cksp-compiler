@@ -185,7 +185,7 @@ std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
 	ref->parent = parent;
 	if(is_shared()) ref->match_data_structure(get_shared());
 	ref->ty = ty;
-	ref->determine_sizes();
+	if(is_shared()) ref->determine_sizes();
 	return ref;
 }
 

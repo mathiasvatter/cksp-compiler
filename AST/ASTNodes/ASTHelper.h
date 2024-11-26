@@ -122,6 +122,13 @@ std::unique_ptr<T> to_unique_ptr(std::shared_ptr<T> &sharedPtr) {
 	}
 }
 
+// Funktion zum Casten eines shared_ptr von Base auf Derived
+template <typename Derived, typename Base>
+std::shared_ptr<Derived> shared_ptr_cast(const std::shared_ptr<Base>& basePtr) {
+	static_assert(std::is_base_of_v<Base, Derived>, "Derived must be a subclass of Base");
+	return std::static_pointer_cast<Derived>(basePtr);
+}
+
 // Funktion zum Casten eines unique_ptr von Base auf Derived
 template <typename Derived, typename Base>
 std::unique_ptr<Derived> unique_ptr_cast(std::unique_ptr<Base> basePtr) {

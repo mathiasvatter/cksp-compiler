@@ -91,6 +91,7 @@ struct NodeAST {
 	[[nodiscard]] NodeBlock* get_outmost_block() const;
 	[[nodiscard]] struct NodeCallback* get_current_callback() const;
 	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
+	void do_constant_folding();
 };
 
 template<typename T>
@@ -408,7 +409,7 @@ struct NodeReferenceList: NodeAST {
 };
 
 struct NodeParamList: NodeAST {
-    std::vector<std::unique_ptr<NodeAST>> params;
+    std::vector<std::unique_ptr<NodeAST>> params{};
     inline explicit NodeParamList(Token tok) : NodeAST(std::move(tok), NodeType::ParamList) {
         set_child_parents();
     }
@@ -624,16 +625,10 @@ struct NodeBinaryExpr: NodeAST {
         left -> update_token_data(token);
         right -> update_token_data(token);
     }
-	static std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, token op) {
-		// Basisfall: Wenn nur ein Element übrig ist, gib dieses zurück.
-		if (index >= nodes.size() - 1) {
-			return nodes[index]->clone();
-		}
-		// Erstelle die rechte Seite der Expression rekursiv.
-		auto right = create_right_nested_binary_expr(nodes, index + 1, op);
-		// Kombiniere das aktuelle Element mit der rechten Seite in einer NodeBinaryExpr.
-		return std::make_unique<NodeBinaryExpr>(op, nodes[index]->clone(), std::move(right), Token());
-	}
+	/// declare ndarray3[10,10,10,10] -> declare _ndarray3[10 * (10 * (10 * 10))]
+	static std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, token op);
+	/// ndarray3[4,5, 6, 7] -> _ndarray3[(4 * ((10 * 10) * 10)) + ((5 * (10 * 10)) + ((6 * 10) + 7))]
+	static std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok);
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 };
 

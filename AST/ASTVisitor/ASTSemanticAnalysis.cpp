@@ -47,6 +47,20 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNumElements& node) {
 	return &node;
 }
 
+NodeAST * ASTSemanticAnalysis::visit(NodeSearch& node) {
+	node.array->accept(*this);
+	node.value->accept(*this);
+	if(node.from) node.from->accept(*this);
+	if(node.to) node.to->accept(*this);
+
+	// transform var ref to composite type
+	if(auto var = node.array->cast<NodeVariableRef>()) {
+		auto node_array_ref = var->to_array_ref(nullptr);
+		return var->replace_reference(std::move(node_array_ref));
+	}
+	return &node;
+}
+
 /// check if declared constant variable ref gets new assignment -> throw error
 NodeAST* ASTSemanticAnalysis::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);

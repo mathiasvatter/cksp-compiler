@@ -70,6 +70,14 @@ public:
 		return node.post_lower(m_program)->accept(*this);
 	}
 
+	NodeAST * visit(NodeSearch& node) override {
+		node.array->accept(*this);
+		node.value->accept(*this);
+		if(node.from) node.from->accept(*this);
+		if(node.to) node.to->accept(*this);
+		return node.post_lower(m_program)->accept(*this);
+	};
+
 private:
 	DefinitionProvider* m_def_provider;
 };

@@ -112,8 +112,8 @@ private:
 		if(num_wildcards == 1) {
 			// get index of wildcard
 			int idx = 0;
-			for(int i = 0; i < array.indexes->params.size(); i++) {
-				if(array.indexes->params[i]->cast<NodeWildcard>()) {
+			for(const auto & param : array.indexes->params) {
+				if(param->cast<NodeWildcard>()) {
 					idx = 0;
 					break;
 				}

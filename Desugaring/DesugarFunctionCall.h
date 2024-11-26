@@ -52,6 +52,26 @@ public:
 			return node.replace_with(std::move(num_elements));
 		}
 
+		if((node.function->get_num_args() == 2 || node.function->get_num_args() == 4) && node.function->name == "search") {
+			node.kind = NodeFunctionCall::Kind::Builtin;
+			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+			if(is_instance_of<NodeReference>(node.function->get_arg(0).get())) {
+				auto search = std::make_unique<NodeSearch>(
+					unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0))),
+					std::move(node.function->get_arg(1)),
+					node.tok
+				);
+				if(node.function->get_num_args() == 4) {
+					search->set_from(std::move(node.function->get_arg(2)));
+					search->set_to(std::move(node.function->get_arg(3)));
+				}
+				return node.replace_with(std::move(search));
+			} else {
+				error.m_message = "First argument for function call <search> must be a reference.";
+				error.exit();
+			}
+		}
+
 		if(node.function->get_num_args() == 1 and node.function->name == "use_count") {
 			node.kind = NodeFunctionCall::Kind::Builtin;
 			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
@@ -120,7 +140,6 @@ private:
 			);
 			node_expr->ty = TypeRegistry::String;
 		}
-//		node_expr->parent = new_param.get();
 		// Füge das endgültige node_expr der neuen Parameterliste hinzu
 		new_param->add_param(std::move(node_expr));
 		return new_param;

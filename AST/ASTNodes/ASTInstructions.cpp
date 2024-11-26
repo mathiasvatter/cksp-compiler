@@ -23,6 +23,8 @@
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
 #include "../ASTVisitor/FunctionHandling/FunctionInlining.h"
 #include "../../Lowering/PostLowering/PostLoweringSingleDeclaration.h"
+#include "../../Lowering/LoweringSearch.h"
+#include "../../Lowering/PostLowering/PostLoweringSearch.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -289,12 +291,12 @@ NodeAST *NodeSearch::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
 }
 
 ASTLowering* NodeSearch::get_lowering(NodeProgram *program) const {
-	static LoweringNumElements lowering(program);
+	static LoweringSearch lowering(program);
 	return &lowering;
 }
 
 ASTLowering* NodeSearch::get_post_lowering(NodeProgram *program) const {
-	static PostLoweringNumElements lowering(program);
+	static PostLoweringSearch lowering(program);
 	return &lowering;
 }
 

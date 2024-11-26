@@ -19,6 +19,10 @@ search(ndarray[0, *, *], 9, 3) // error, from and to parameters not allowed with
 search(ndarray, 0, 0*10, 1 * num_elements(ndarray, 2)-1)
 
 // search(ndarray[3, *, *], -1)
+// from -> [3, 0, 0]
+// from = 3*dim1*dim2 + 0*dim2 + 0
+// to -> [3, num_elements(ndarray, 2)-1, num_elements(ndarray, 3)-1]
+// to = 3*dim1*dim2 + (dim2-1)*dim2 + (dim3-1)
 declare from = 3 * num_elements(ndarray, 2) * num_elements(ndarray, 3)
 declare to = from + (num_elements(ndarray, 2) * num_elements(ndarray, 3)) - 1
 search(ndarray, -1, from, to)

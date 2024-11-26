@@ -141,14 +141,7 @@ struct NodeNDArrayRef : NodeCompositeRef {
 	/// this_list.next.value[6,4]
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
 
-	[[nodiscard]] inline int num_wildcards() const override {
-		int count = 0;
-		if(indexes) {
-			for(auto & idx: indexes->params)
-				if(idx->cast<NodeWildcard>()) count++;
-		}
-		return count;
-	}
+	[[nodiscard]] int num_wildcards() const override;
 	/// clones sizes list from declaration if it is a NDArray
 	bool determine_sizes();
 	inline CompileError throw_missing_indexes_error() {
@@ -165,25 +158,18 @@ struct NodeNDArrayRef : NodeCompositeRef {
 	}
 	/// adds wildcard indexes to ndarray reference if there are no indexes present
 	/// depends on the size -> size has to be known beforehand
-	bool add_wildcards() {
-		if(this->indexes) return false;
-		if(!this->sizes and !this->ty) return false;
-		this->indexes = std::make_unique<NodeParamList>(this->tok);
-		this->indexes->parent = this->indexes.get();
-		// get dimensions either from type or from sizes
-		auto num_dimensions = ty ? ty->get_dimensions() : sizes->params.size();
-		for(int i=0; i<num_dimensions; i++) {
-			auto wildcard = std::make_unique<NodeWildcard>("*", Token());
-			this->indexes->add_param(std::move(wildcard));
-		}
-		return true;
-	}
+	bool add_wildcards();
 
 	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
 	std::unique_ptr<NodeArrayRef> get_indexed_raw_ref(std::unique_ptr<NodeAST> new_index) override {
 		auto array_ref = this->to_array_ref(std::move(new_index));
 		return array_ref;
 	}
+	/// Checks number of wildcards and wildcard position, returns position of wildcard and checks if they are
+	/// contiguous and right aligned (if more than one wildcard) ndarray[*, 2] is allowed
+	/// ndarray[2, *] := (0) -> function returns position of *, returns 2:2
+	/// ndarray[2, *, *] := (0) -> returns 2:3
+	std::pair<int, int> get_wildcard_dimensions();
 };
 
 struct NodeFunctionHeaderRef : NodeReference {

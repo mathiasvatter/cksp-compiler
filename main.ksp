@@ -104,9 +104,11 @@ on init
 	
 	n := (1,2,3,4,5)
 
-	declare ndarray[10,10]: real[][]
+	declare ndarray[10,10]: int[][]
 	declare ndarray3[10,10,10,10]
-	message(ndarray3[4,5, 6, 7])
+	message(ndarray3[4,5, 6, 7], search(ndarray[2, *], -1))
+	message(search(ndarray3[3, 4, *, *], -1), ndarray3[3, 4, 3, *])
+	message(n[*])
 	declare ndarray2[10,10]: int[][]
 	message(search_matrix(ndarray, 3.0), "3", "f")
 	message(search_matrix(ndarray2, 3), "3", "f")
@@ -120,7 +122,6 @@ on init
 	declare local p1 := Point(1, 2)
 	declare local p2 := Point(3, 4)
 	message(Point(1, 2) + Point(3, 4))
-	message(n[*])
 	ndarray[0, *] := ndarray[1, *]
 
 	message(use_count(this_list))

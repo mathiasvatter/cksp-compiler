@@ -16,6 +16,7 @@ public:
 
 	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
+		node.reset_function_visited_flag();
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
@@ -23,10 +24,7 @@ public:
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-		for(auto & func_def : node.function_definitions) {
-			if(!func_def->visited) func_def->accept(*this);
-		}
-		node.merge_function_definitions();
+
 		node.reset_function_visited_flag();
 		return &node;
 	};
@@ -74,8 +72,11 @@ public:
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		if(node.bind_definition(m_program)) {
-			node.get_definition()->accept(*this);
-			node.get_definition()->visited = true;
+			auto definition = node.get_definition();
+			if(!definition->visited) {
+				definition->accept(*this);
+			}
+			definition->visited = true;
 		}
 		return &node;
 	};

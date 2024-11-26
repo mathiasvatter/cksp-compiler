@@ -71,6 +71,9 @@ public:
     static inline CompositeType* ArrayOfString;
     static inline CompositeType* ArrayOfUnknown;
 
+	static inline CompositeType* NDArrayOfInt;
+	static inline CompositeType* NDArrayOfUnknown;
+
 	static inline ObjectType* Nil;
 
 private:

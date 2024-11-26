@@ -45,6 +45,23 @@ NodeAST * ASTPrinter::visit(NodeNumElements& node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeSearch& node) {
+	os << "search[";
+	node.array->accept(*this);
+	os << ", ";
+	node.value->accept(*this);
+	if(node.from) {
+		os << ", ";
+		node.from->accept(*this);
+	}
+	if(node.to) {
+		os << ", ";
+		node.to->accept(*this);
+	}
+	os << "]";
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeReturn& node) {
 	os << "return (";
 	for(auto &ret : node.return_variables) {

@@ -131,6 +131,14 @@ struct NodeSearch : NodeInstruction {
 	}
 	ASTLowering* get_lowering(struct NodeProgram *program) const override;
 	ASTLowering* get_post_lowering(struct NodeProgram *program) const override;
+	void set_from(std::unique_ptr<NodeAST> new_from) {
+		from = std::move(new_from);
+		from->parent = this;
+	}
+	void set_to(std::unique_ptr<NodeAST> new_to) {
+		to = std::move(new_to);
+		to->parent = this;
+	}
 };
 
 struct NodeNumElements : NodeInstruction {
