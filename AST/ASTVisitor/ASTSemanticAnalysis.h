@@ -59,7 +59,7 @@ public:
 	NodeAST * visit(NodeFunctionDefinition& node) override;
 	NodeAST * visit(NodeWildcard& node) override;
 	NodeAST * visit(NodeNumElements& node) override;
-	NodeAST * visit(NodeSearch& node) override;
+	NodeAST * visit(NodeSortSearch& node) override;
 
 	/// updates the node types of parameters at call sites regarding the function definition
 	/// e.g. params can be incorrectly detected as variable refs at call sites, but they are arrays in the definition

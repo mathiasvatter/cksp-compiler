@@ -23,8 +23,8 @@
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
 #include "../ASTVisitor/FunctionHandling/FunctionInlining.h"
 #include "../../Lowering/PostLowering/PostLoweringSingleDeclaration.h"
-#include "../../Lowering/LoweringSearch.h"
-#include "../../Lowering/PostLowering/PostLoweringSearch.h"
+#include "../../Lowering/LoweringSortSearch.h"
+#include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -259,19 +259,19 @@ NodeAST *NodeFunctionCall::do_function_inlining(NodeProgram *program) {
 	return inlining.inline_function(*this);
 }
 
-// ************* NodeSearch ***************
-NodeAST *NodeSearch::accept(struct ASTVisitor &visitor) {
+// ************* NodeSortSearch ***************
+NodeAST *NodeSortSearch::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
-NodeSearch::NodeSearch(const NodeSearch& other)
-	: NodeInstruction(other), array(clone_unique(other.array)),
+NodeSortSearch::NodeSortSearch(const NodeSortSearch& other)
+	: NodeInstruction(other), array(clone_unique(other.array)), name(other.name),
 	  value(clone_unique(other.value)), from(clone_unique(other.from)), to(clone_unique(other.to)) {
 	set_child_parents();
 }
-std::unique_ptr<NodeAST> NodeSearch::clone() const {
-	return std::make_unique<NodeSearch>(*this);
+std::unique_ptr<NodeAST> NodeSortSearch::clone() const {
+	return std::make_unique<NodeSortSearch>(*this);
 }
-NodeAST *NodeSearch::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+NodeAST *NodeSortSearch::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (array.get() == oldChild) {
 		if(auto new_ref = cast_node<NodeReference>(newChild.release())) {
 			array = std::unique_ptr<NodeReference>(new_ref);
@@ -290,13 +290,13 @@ NodeAST *NodeSearch::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
 	return nullptr;
 }
 
-ASTLowering* NodeSearch::get_lowering(NodeProgram *program) const {
-	static LoweringSearch lowering(program);
+ASTLowering* NodeSortSearch::get_lowering(NodeProgram *program) const {
+	static LoweringSortSearch lowering(program);
 	return &lowering;
 }
 
-ASTLowering* NodeSearch::get_post_lowering(NodeProgram *program) const {
-	static PostLoweringSearch lowering(program);
+ASTLowering* NodeSortSearch::get_post_lowering(NodeProgram *program) const {
+	static PostLoweringSortSearch lowering(program);
 	return &lowering;
 }
 

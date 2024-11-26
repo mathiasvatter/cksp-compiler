@@ -312,7 +312,7 @@ NodeAST * TypeInference::visit(NodeNumElements& node) {
 	return &node;
 }
 
-NodeAST * TypeInference::visit(NodeSearch& node) {
+NodeAST * TypeInference::visit(NodeSortSearch& node) {
 	node.array->accept(*this);
 	match_against(*node.array, TypeRegistry::NDArrayOfInt, "<search> can only be used on <Composite> types like <Arrays> or <NDArrays>.");
 	if(!node.array->ty->cast<CompositeType>()) {
@@ -330,7 +330,6 @@ NodeAST * TypeInference::visit(NodeSearch& node) {
 		node.to->accept(*this);
 		match_against(*node.to, TypeRegistry::Integer);
 	}
-	match_against(node, TypeRegistry::Integer);
 	return &node;
 }
 

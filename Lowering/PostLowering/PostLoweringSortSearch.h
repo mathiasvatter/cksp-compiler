@@ -9,20 +9,20 @@
 /**
  * Second Lowering Phase of search
  * has to happen after function inlining
- * transformation of separate Node NodeSearch into NodeFunctionCall
+ * transformation of separate Node NodeSortSearch into NodeFunctionCall
  */
-class PostLoweringSearch : public ASTLowering {
+class PostLoweringSortSearch : public ASTLowering {
 private:
 
 public:
-	explicit PostLoweringSearch(NodeProgram *program) : ASTLowering(program) {}
+	explicit PostLoweringSortSearch(NodeProgram *program) : ASTLowering(program) {}
 
-	NodeAST * visit(NodeSearch &node) override {
+	NodeAST * visit(NodeSortSearch &node) override {
 		// search(array, value, from, to)
 		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeaderRef>(
-				"search",
+				node.name,
 				std::make_unique<NodeParamList>(node.tok, std::move(node.array), std::move(node.value)),
 				node.tok
 			),

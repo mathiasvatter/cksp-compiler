@@ -69,8 +69,7 @@ public:
 		int num_values = 0;
 		for (int i=0; i<r_values.size(); i++) {
 			auto &val = r_values[i];
-			if(val->get_node_type() == NodeType::FunctionCall) {
-				auto func_call = static_cast<NodeFunctionCall*>(val.get());
+			if(auto func_call = val->cast<NodeFunctionCall>()) {
 				func_call->bind_definition(m_program);
 				int num_return_params = func_call->get_definition() ? func_call->get_definition()->num_return_params : 1;
 				num_values += num_return_params-1;
@@ -90,7 +89,13 @@ public:
 					}
 				} else if (i+num_values >= l_values.size()) {
 					auto error = CompileError(ErrorType::SyntaxError,"", val->tok.line, "", "", val->tok.file);
-					error.m_message = "Found incorrect declare statement syntax. Called Function returns more values than variables declared.";
+					error.m_message = "Found incorrect ";
+					if(node_type == NodeType::Assignment) {
+						error.m_message += "<Assign> ";
+					} else {
+						error.m_message += "<Declare> ";
+					}
+					error.m_message += "statement syntax. Called Function returns more values than l_values present.";
 					error.exit();
 				}
 				i += num_values;

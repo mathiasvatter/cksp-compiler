@@ -173,7 +173,7 @@ public:
 		if(node.num) node.num->accept(*this);
 		return &node;
 	};
-	virtual NodeAST* visit(NodeSearch& node) {
+	virtual NodeAST* visit(NodeSortSearch& node) {
 		node.array->accept(*this);
 		node.value->accept(*this);
 		if(node.from) node.from->accept(*this);

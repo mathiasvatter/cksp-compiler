@@ -70,6 +70,7 @@ on init
 	declare menu_strip_val[3,3]
 	declare left := get_active_idx(menu_strip_val, 0)
 	message(left)
+	
 	// declare ui_menu mnu: int, i
 	// declare ari[2]
  	// mnu->value := (mnu->value + 1) mod num_elements(ari)
