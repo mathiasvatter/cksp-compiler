@@ -40,7 +40,7 @@ public:
 			if(auto node_array_ref = curr_node->cast<NodeArrayRef>()) {
 				node_array_ref->set_index(std::move(prev_node));
 			} else if(auto node_ndarray_ref = curr_node->cast<NodeNDArrayRef>()) {
-				node_ndarray_ref->indexes->prepend_param(std::move(prev_node));
+				node_ndarray_ref->indexes->set_param(0, std::move(prev_node));
 			} else if(auto node_func_call = curr_node->cast<NodeFunctionCall>()) {
 				node_func_call->function->prepend_arg(std::move(prev_node));
 			}
@@ -58,10 +58,10 @@ public:
 		}
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string() + OBJ_DELIMITER + node.name;
-//		node.inflate_dimension(nullptr);
-		auto node_array = node.to_array_ref(nullptr);
-		node_array->declaration = node.declaration;
-		node_array->ty = node.ty;
+		auto node_array = node.inflate_dimension(nullptr);
+//		auto node_array = node.to_array_ref(nullptr);
+//		node_array->declaration = node.declaration;
+//		node_array->ty = node.ty;
 		return node.replace_reference(std::move(node_array));
 	}
 
@@ -69,35 +69,30 @@ public:
 	inline NodeAST * visit(NodeArrayRef& node) override {
 		if(&node == start_pointer) return &node;
 		// no index -> array -> List.array[sth, *]
-		if(!node.index) node.set_index(std::make_unique<NodeWildcard>("*", node.tok));
-		auto node_ndarray_ref = node.to_ndarray_ref();
-		node_ndarray_ref->name = prev_type->to_string()+OBJ_DELIMITER+node.name;
-		node_ndarray_ref->declaration = node.declaration;
-		node_ndarray_ref->determine_sizes();
-		node_ndarray_ref->ty = node.ty;
+//		if(!node.index) node.set_index(std::make_unique<NodeWildcard>("*", node.tok));
+		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
+		auto node_ndarray_ref = node.inflate_dimension(nullptr);
+//		auto node_ndarray_ref = node.to_ndarray_ref();
+//		node_ndarray_ref->declaration = node.declaration;
+//		node_ndarray_ref->determine_sizes();
+//		node_ndarray_ref->ty = node.ty;
 		return node.replace_reference(std::move(node_ndarray_ref));
 	}
 
 	inline NodeAST * visit(NodeNDArrayRef& node) override {
 		if(&node == start_pointer) return &node;
-		node.determine_sizes();
-		// if array has no indexes -> everything should be copied -> wildcards for every index of size
-		if (!node.indexes) {
-			node.indexes = std::make_unique<NodeParamList>(node.tok);
-			for (int i = 1; i < node.sizes->params.size(); i++) {
-				node.indexes->add_param(std::make_unique<NodeWildcard>("*", node.tok));
-			}
-		}
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
+		auto node_ndarray_ref = node.inflate_dimension(nullptr);
 		return &node;
 	}
 
 	inline NodeAST * visit(NodeVariableRef& node) override {
 		if(&node == start_pointer) return &node;
-		auto node_array_ref = node.to_array_ref(nullptr);
-		node_array_ref->declaration = node.declaration;
-		node_array_ref->name = prev_type->to_string()+OBJ_DELIMITER+node.name;
-		node_array_ref->ty = node.ty;
+		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
+		auto node_array_ref = node.inflate_dimension(nullptr);
+//		auto node_array_ref = node.to_array_ref(nullptr);
+//		node_array_ref->declaration = node.declaration;
+//		node_array_ref->ty = node.ty;
 		return node.replace_reference(std::move(node_array_ref));
 	}
 

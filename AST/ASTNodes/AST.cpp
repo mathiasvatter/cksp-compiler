@@ -590,6 +590,15 @@ std::unique_ptr<struct NodeInitializerList> NodeParamList::to_initializer_list()
 	return initializer_list;
 }
 
+void NodeParamList::set_param(int idx, std::unique_ptr<NodeAST> param) {
+	if(idx >= size()) {
+		auto error = CompileError(ErrorType::InternalError, "Index out of bounds", "", tok);
+		error.exit();
+	}
+	param->parent = this;
+	params.at(idx) = std::move(param);
+}
+
 // ************* NodeInitializerList ***************
 NodeAST *NodeInitializerList::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
