@@ -15,6 +15,7 @@
 #include "AST/ASTVisitor/ASTCollectPostLowerings.h"
 #include "AST/ASTVisitor/ASTTypeAnnotations.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
+#include "AST/ASTVisitor/ASTDimensionInflation.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -161,6 +162,10 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
 	compile_time.start("Data Structure Lowering");
 
+	ASTDimensionInflation dimension_inflation(m_program);
+	ast->accept(dimension_inflation);
+	ast->debug_print();
+
 	NormalizeNDArrayAssign nd_array_assign(m_program);
 	ast->accept(nd_array_assign);
 	// Data Structure Lowering of NDArrays and Array assignments
@@ -171,7 +176,6 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
 
-	ast->debug_print();
 	ASTVariableChecking variable_checking1(m_program, true);
 	ast->accept(variable_checking1);
 	ast->remove_references();

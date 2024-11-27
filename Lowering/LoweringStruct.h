@@ -10,7 +10,7 @@ class LoweringStruct : public ASTLowering {
 private:
 	NodeFunctionDefinition* m_current_func = nullptr;
 	NodeStruct* m_current_struct = nullptr;
-	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX_STRUCTS", Token());
+	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX::STRUCTS", Token());
 	inline bool in_constructor() {
 		return m_current_func and m_current_struct and m_current_func == m_current_struct->constructor.get();
 	}

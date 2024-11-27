@@ -10,7 +10,7 @@ class PreLoweringStruct : public ASTLowering {
 private:
 	NodeFunctionDefinition* m_current_func = nullptr;
 	NodeStruct* m_current_struct = nullptr;
-	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX_STRUCTS", Token());
+	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX::STRUCTS", Token());
 
 public:
 	explicit PreLoweringStruct(NodeProgram *program) : ASTLowering(program) {}

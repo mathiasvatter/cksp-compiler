@@ -98,6 +98,11 @@ public:
 		return true;
 	}
 
+	bool inline is_thread_safe_env() {
+		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or
+			(m_program->get_curr_function() and m_program->get_curr_function()->is_thread_safe);
+	};
+
 private:
 	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;

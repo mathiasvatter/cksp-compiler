@@ -123,6 +123,7 @@ struct NodeArray : NodeComposite {
 };
 
 struct NodeNDArray : NodeComposite {
+	int inflation_times = 0;
 	int dimensions = 1;
 	std::unique_ptr<NodeParamList> sizes = nullptr;
 	inline explicit NodeNDArray(std::string name, Token tok) : NodeComposite(std::move(name), TypeRegistry::Unknown, tok, NodeType::NDArray) {}

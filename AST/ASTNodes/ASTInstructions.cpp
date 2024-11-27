@@ -807,6 +807,7 @@ void NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>
 		inner_body->prepend_as_stmt(std::move(node_decl));
 	}
 	statements = std::move(inner_body->statements);
+	this->set_child_parents();
 }
 
 void NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound) {
@@ -825,6 +826,7 @@ void NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::u
 	auto node_decl = std::make_unique<NodeSingleDeclaration>(iterator, nullptr, Token());
 	inner_body->prepend_as_stmt(std::move(node_decl));
 	statements = std::move(inner_body->statements);
+	this->set_child_parents();
 }
 
 // ************* NodeFamily ***************

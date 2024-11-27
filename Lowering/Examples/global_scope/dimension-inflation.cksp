@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------------------}
 
 on ui_controls()
-    declare i: int 
+    declare i: int := 2
     message(i)
     if(i = 1)
         declare arr[5] := (1,2,3,4) 
@@ -26,9 +26,10 @@ end on
 --------------------------------------------------------------------------------------------}
 
 declare const MAX_CB_STACK := 1000
-declare CB_IDX := NI_CALLBACK_ID mod MAX_CB_STACK
+define CB_IDX := NI_CALLBACK_ID mod MAX_CB_STACK
 on ui_controls()
     declare i[MAX_CB_STACK]: int 
+    i[CB_IDX] := 2
     message(i[CB_IDX])
     if(i[CB_IDX] = 1)
         declare arr[MAX_CB_STACK, 5] := (1,2,3,4) 

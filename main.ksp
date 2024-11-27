@@ -171,6 +171,21 @@ end function
 {*******************************************************************************************************************
 											* UI CALLBACKS *
 *******************************************************************************************************************}
+on note
+	
+	declare note := EVENT_NOTE
+	declare event_id := EVENT_ID
+	wait(10)
+
+	if(note = 0)
+		declare note_off := 1
+		message("Note Off", note_off)
+	else
+		declare note_on := 1
+		message("Note On", note_on)
+	end if
+end on
+
 
 
 
