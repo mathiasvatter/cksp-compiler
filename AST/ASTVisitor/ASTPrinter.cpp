@@ -439,6 +439,9 @@ NodeAST * ASTPrinter::visit(NodeCallback &node) {
 		node.callback_id->accept(*this);
 		os << ")";
 	}
+	if(!node.is_thread_safe) {
+		os << "{thread-unsafe}";
+	}
 	os << std::endl;
 	node.statements->accept(*this);
 	os << node.end_callback << std::endl;
@@ -492,6 +495,9 @@ NodeAST * ASTPrinter::visit(NodeFunctionDefinition &node) {
     if (node.override) {
         os << " override" << std::endl;
     }
+	if(!node.is_thread_safe) {
+		os << "{thread-unsafe}";
+	}
     os << "\n";
     node.body->accept(*this);
     os << get_indent() <<  "end function" << std::endl;

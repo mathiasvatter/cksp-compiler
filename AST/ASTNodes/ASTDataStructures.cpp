@@ -168,7 +168,7 @@ NodeAST *NodeNDArray::accept(struct ASTVisitor &visitor) {
 }
 NodeNDArray::NodeNDArray(const NodeNDArray& other)
 	: NodeComposite(other), sizes(clone_unique(other.sizes)),
-	dimensions(other.dimensions) {
+	dimensions(other.dimensions), inflation_times(other.inflation_times) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeNDArray::clone() const {
@@ -203,6 +203,7 @@ std::unique_ptr<NodeList> NodeNDArray::to_list() {
 
 std::unique_ptr<NodeDataStructure> NodeNDArray::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
 	sizes->prepend_param(std::move(new_index));
+	inflation_times++;
 	dimensions = sizes->params.size();
 	ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type(), dimensions);
 	return clone_as<NodeDataStructure>(this);
@@ -343,7 +344,7 @@ void NodeStruct::pre_lower(NodeProgram* program) {
 
 std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 	auto node_block = std::make_unique<NodeBlock>(Token());
-	auto node_max_structs = std::make_unique<NodeVariable>(std::nullopt, "MAX_STRUCTS", TypeRegistry::Integer,  DataType::Const, Token());
+	auto node_max_structs = std::make_unique<NodeVariable>(std::nullopt, "MAX::STRUCTS", TypeRegistry::Integer,  DataType::Const, Token());
 	node_max_structs->is_global = true;
 	auto node_declare_max_structs = std::make_unique<NodeSingleDeclaration>(
 		std::move(node_max_structs),
@@ -351,7 +352,7 @@ std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 		Token()
 	);
 	node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_max_structs), Token()));
-	auto node_mem_warning = std::make_unique<NodeVariable>(std::nullopt, "MEM_WARNING", TypeRegistry::String,  DataType::Const, Token());
+	auto node_mem_warning = std::make_unique<NodeVariable>(std::nullopt, "MEM::WARNING", TypeRegistry::String,  DataType::Const, Token());
 	node_mem_warning->is_global = true;
 	auto node_declare_mem_warning = std::make_unique<NodeSingleDeclaration>(
 		std::move(node_mem_warning),

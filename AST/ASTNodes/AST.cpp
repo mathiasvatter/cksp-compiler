@@ -1079,7 +1079,7 @@ std::unique_ptr<NodeBlock> NodeProgram::declare_compiler_variables() {
 //        node_variable->is_global = true;
 		node_variable->is_local = true;
 		auto node_var_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_variable), nullptr, tok);
-		node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_var_declaration), tok));
+		node_body->add_as_stmt(std::move(node_var_declaration));
 	}
 	return node_body;
 }

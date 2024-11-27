@@ -58,6 +58,7 @@ public:
 		}
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string() + OBJ_DELIMITER + node.name;
+//		node.inflate_dimension(nullptr);
 		auto node_array = node.to_array_ref(nullptr);
 		node_array->declaration = node.declaration;
 		node_array->ty = node.ty;
@@ -68,7 +69,7 @@ public:
 	inline NodeAST * visit(NodeArrayRef& node) override {
 		if(&node == start_pointer) return &node;
 		// no index -> array -> List.array[sth, *]
-		if(!node.index) node.index = std::make_unique<NodeWildcard>("*", node.tok);
+		if(!node.index) node.set_index(std::make_unique<NodeWildcard>("*", node.tok));
 		auto node_ndarray_ref = node.to_ndarray_ref();
 		node_ndarray_ref->name = prev_type->to_string()+OBJ_DELIMITER+node.name;
 		node_ndarray_ref->declaration = node.declaration;
