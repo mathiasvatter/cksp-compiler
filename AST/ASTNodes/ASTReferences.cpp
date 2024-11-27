@@ -190,8 +190,7 @@ bool NodeArrayRef::is_list_sizes() {
 std::unique_ptr<NodeReference> NodeArrayRef::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
 	// if array has no indexes -> wildcard
 	if(!index) {
-		index = std::make_unique<NodeWildcard>("*", tok);
-		index->parent = this;
+		set_index(std::make_unique<NodeWildcard>("*", tok));
 	}
 	auto node_ndarray_ref = to_ndarray_ref();
 	node_ndarray_ref->indexes->prepend_param(std::move(new_index));

@@ -137,6 +137,10 @@ struct NodeNDArrayRef : NodeCompositeRef {
 		sizes = std::move(new_sizes);
 		sizes->parent = this;
 	}
+	void set_indexes(std::unique_ptr<NodeParamList> new_indexes) {
+		indexes = std::move(new_indexes);
+		indexes->parent = this;
+	}
 	std::unique_ptr<NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) override;
 	/// this_list.next.value[6,4]
 	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
@@ -189,12 +193,13 @@ struct NodeFunctionHeaderRef : NodeReference {
 	[[nodiscard]] bool has_no_args() const;
 	std::unique_ptr<NodeAST>& get_arg(int i);
 	void set_arg(int i, std::unique_ptr<NodeAST> arg) {
-		if(i >= get_num_args()) {
-			auto error = CompileError(ErrorType::InternalError, "Index out of bounds", "", tok);
-			error.exit();
-		}
-		args->params[i] = std::move(arg);
-		args->params[i]->parent = args.get();
+		args->set_param(i, std::move(arg));
+//		if(i >= get_num_args()) {
+//			auto error = CompileError(ErrorType::InternalError, "Index out of bounds", "", tok);
+//			error.exit();
+//		}
+//		args->params[i] = std::move(arg);
+//		args->params[i]->parent = args.get();
 	}
 	void prepend_arg(std::unique_ptr<NodeAST> arg) const;
 	void add_arg(std::unique_ptr<NodeAST> arg) const;

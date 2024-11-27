@@ -476,6 +476,7 @@ struct NodeParamList: NodeAST {
 	 * @param param Unique pointer to the new parameter node.
 	 */
 	void prepend_param(std::unique_ptr<NodeAST> param);
+	void set_param(int idx, std::unique_ptr<NodeAST> param);
 	/**
 	 * @brief Flattens the parameter list by removing nested parameter lists.
 	 */
