@@ -193,7 +193,7 @@ std::unique_ptr<NodeReference> NodeArrayRef::inflate_dimension(std::unique_ptr<N
 		set_index(std::make_unique<NodeWildcard>("*", tok));
 	}
 	auto node_ndarray_ref = to_ndarray_ref();
-	node_ndarray_ref->indexes->prepend_param(std::move(new_index));
+	if(new_index) node_ndarray_ref->indexes->prepend_param(std::move(new_index));
 	node_ndarray_ref->match_data_structure(get_declaration());
 	node_ndarray_ref->ty = ty;
 	node_ndarray_ref->determine_sizes();
@@ -283,7 +283,7 @@ std::unique_ptr<NodeReference> NodeNDArrayRef::inflate_dimension(std::unique_ptr
 	if (!indexes) {
 		add_wildcards();
 	}
-	indexes->prepend_param(std::move(new_index));
+	if(new_index) indexes->prepend_param(std::move(new_index));
 	return clone_as<NodeReference>(this);
 }
 

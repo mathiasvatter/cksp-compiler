@@ -144,6 +144,7 @@ void Compiler::compile() {
 
 	ASTCollectLowerings lowering(m_program);
 	ast->accept(lowering);
+	ast->debug_print();
 
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
@@ -164,7 +165,6 @@ void Compiler::compile() {
 
 	ASTDimensionInflation dimension_inflation(m_program);
 	ast->accept(dimension_inflation);
-	ast->debug_print();
 
 	NormalizeNDArrayAssign nd_array_assign(m_program);
 	ast->accept(nd_array_assign);

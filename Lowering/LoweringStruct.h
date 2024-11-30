@@ -62,8 +62,7 @@ public:
 				return &node;
 			}
 			if(node.value->get_node_type() != NodeType::InitializerList) {
-				node.value = std::make_unique<NodeInitializerList>(node.tok, std::move(node.value));
-				node.value->parent = &node;
+				node.set_value(std::make_unique<NodeInitializerList>(node.tok, std::move(node.value)));
 			}
 		}
 		return &node;

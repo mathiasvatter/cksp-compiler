@@ -112,14 +112,21 @@ std::shared_ptr<T> to_shared_ptr(std::unique_ptr<T> uniquePtr) {
 }
 
 template <typename T>
-std::unique_ptr<T> to_unique_ptr(std::shared_ptr<T> &sharedPtr) {
-	// Wenn der shared_ptr der einzige Besitzer ist, konvertiere ihn in unique_ptr
-	if (sharedPtr.unique()) {
-		return std::unique_ptr<T>(sharedPtr.release());  // Überträgt das Ownership
+std::unique_ptr<T> to_unique_ptr(std::shared_ptr<T>& sharedPtr) {
+	if (sharedPtr.use_count() == 1) { // Prüfe, ob der shared_ptr der einzige Besitzer ist
+		T* rawPtr = sharedPtr.get(); // Extrahiere den Rohzeiger
+		sharedPtr.reset();           // shared_ptr zurücksetzen, um Ownership aufzugeben
+		return std::unique_ptr<T>(rawPtr); // unique_ptr übernimmt Ownership
 	} else {
-		// Andernfalls erstelle eine Kopie des Objekts
-		return std::make_unique<T>(*sharedPtr);
+		// Wenn nicht, erstelle eine Kopie des Objekts
+		return clone_as<T>(*sharedPtr);
 	}
+}
+
+template <typename T>
+std::unique_ptr<T> to_unique_ptr(std::shared_ptr<T>&& sharedPtr) {
+	// Erstelle eine Kopie des Objekts für den unique_ptr
+	return std::make_unique<T>(*sharedPtr);
 }
 
 // Funktion zum Casten eines shared_ptr von Base auf Derived

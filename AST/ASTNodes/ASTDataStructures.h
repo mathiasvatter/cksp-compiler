@@ -75,7 +75,8 @@ struct NodeComposite : NodeDataStructure {
 		num_elem->parent = this;
 		this->num_elements = std::move(num_elem);
 	}
-
+	virtual std::shared_ptr<NodeArray> get_raw() = 0;
+	virtual std::unique_ptr<NodeAST> get_size() = 0;
 };
 
 
@@ -120,6 +121,12 @@ struct NodeArray : NodeComposite {
 	std::unique_ptr<class NodeNDArray> to_ndarray() override;
 	std::unique_ptr<class NodeList> to_list() override;
 	std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+	std::shared_ptr<NodeArray> get_raw() override {
+		return shared_ptr_cast<NodeArray>(get_shared());
+	}
+	std::unique_ptr<NodeAST> get_size() override {
+		return size->clone();
+	}
 };
 
 struct NodeNDArray : NodeComposite {
@@ -163,6 +170,8 @@ struct NodeNDArray : NodeComposite {
 	std::unique_ptr<NodeArray> to_array(std::unique_ptr<NodeAST> size) override;
 	std::unique_ptr<NodeList> to_list() override;
 	std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+	std::shared_ptr<NodeArray> get_raw() override;
+	std::unique_ptr<NodeAST> get_size() override;
 };
 
 struct NodeFunctionHeader: NodeDataStructure {
@@ -341,7 +350,7 @@ struct NodeConst : NodeDataStructure {
 struct NodeStruct : NodeDataStructure {
 	std::shared_ptr<NodePointer> node_self = std::make_shared<NodePointer>(std::nullopt, "self", TypeRegistry::add_object_type(this->name), this->tok);
 	std::unique_ptr<NodeBlock> members;
-	std::map<std::string, std::weak_ptr<NodeDataStructure>> member_table;
+	std::unordered_map<std::string, std::weak_ptr<NodeDataStructure>> member_table;
 	std::set<std::string> member_set;
 	std::shared_ptr<NodeFunctionDefinition> constructor = nullptr;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> methods;

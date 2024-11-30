@@ -17,24 +17,26 @@ public:
 	/// Lowering of multidimensional arrays to arrays -> declaration
 	/// Filling in num_elements param list member
 	NodeAST* visit(NodeNDArray& node) override {
-        auto node_lowered_array = std::make_unique<NodeArray>(
-			node.persistence,
-			node.name,
-			TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1),
-			nullptr,
-			node.tok
-		);
-		if(node.sizes) {
-			auto lowered_size_expr = NodeBinaryExpr::create_right_nested_binary_expr(node.sizes->params, 0, token::MULT);
-			lowered_size_expr->do_constant_folding();
-			node_lowered_array->set_size(lowered_size_expr->clone());
-			auto num_elements = std::move(node.sizes);
-			num_elements->prepend_param(std::move(lowered_size_expr));
-			node_lowered_array->set_num_elements(std::move(num_elements));
-		}
-		node_lowered_array->name = "_" + node_lowered_array->name;
-		node_lowered_array->match_metadata(node.get_shared());
-		node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
+//        auto node_lowered_array = std::make_unique<NodeArray>(
+//			node.persistence,
+//			node.name,
+//			TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1),
+//			nullptr,
+//			node.tok
+//		);
+		auto node_lowered_array = to_unique_ptr<NodeArray>(node.get_raw());
+
+//		if(node.sizes) {
+//			auto lowered_size_expr = NodeBinaryExpr::create_right_nested_binary_expr(node.sizes->params, 0, token::MULT);
+//			lowered_size_expr->do_constant_folding();
+//			node_lowered_array->set_size(lowered_size_expr->clone());
+//			auto num_elements = std::move(node.sizes);
+//			num_elements->prepend_param(std::move(lowered_size_expr));
+//			node_lowered_array->set_num_elements(std::move(num_elements));
+//		}
+//		node_lowered_array->name = "_" + node_lowered_array->name;
+//		node_lowered_array->match_metadata(node.get_shared());
+//		node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
 		// call array lowering
 		node_lowered_array->lower(m_program);
 		return node.replace_datastruct(std::move(node_lowered_array));
