@@ -20,6 +20,7 @@ private:
 	std::unique_ptr<NodeReference> m_alloc_ref; // List::allocation[self]
 	std::unique_ptr<NodeReference> m_stack_top_ref; // List::stack_top
 	std::unique_ptr<NodeArrayRef> m_stack_ref; // List::stack[]
+	std::unique_ptr<NodeReference> m_iterator_ref;
 	std::vector<std::shared_ptr<NodeDataStructure>> m_recursive_member_structs;
 	std::vector<std::shared_ptr<NodeDataStructure>> m_non_recursive_member_structs;
 public:
@@ -37,7 +38,6 @@ public:
 
 		m_num_refs_ref = m_num_refs->to_reference();
 		m_num_refs_ref->match_data_structure(m_num_refs);
-
 
 		m_del_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__del__");
 		m_decr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__decr__", clone_as<NodeDataStructure>(m_num_refs.get()));
@@ -62,9 +62,22 @@ public:
 		m_stack_ref->ty = TypeRegistry::Integer;
 		m_stack_ref->set_index(m_stack_top_ref->clone());
 
+		m_iterator_ref = ASTVisitor::get_iterator_var(tok)->to_reference();
+
 		// recursive member objects need to be at the end of the member objects vector
 		collect_recursive_and_non_recursive_member_structs();
 
+	}
+
+	/// returns iterator declaration for loops and sets m_iterator_ref to declaration
+	std::unique_ptr<NodeSingleDeclaration> get_iterator_declaration() {
+		auto decl = std::make_unique<NodeSingleDeclaration>(
+			ASTVisitor::get_iterator_var(tok),
+			nullptr,
+			tok
+		);
+		m_iterator_ref->declaration = decl->variable;
+		return decl;
 	}
 
 	/**
@@ -118,8 +131,8 @@ public:
 	}
 
 	std::unique_ptr<NodeFunctionDefinition> create_incr_function() {
-		m_self_ref->declaration = get_self_ptr(m_incr_func.get());
-		m_num_refs_ref->declaration = get_num_refs_ptr(m_incr_func.get());
+		set_self_ref_declaration(m_incr_func.get());
+		set_num_refs_ref_declaration(m_incr_func.get());
 		auto &func_body = m_incr_func->body;
 		auto nil_check = ASTVisitor::make_nil_check(clone_as<NodeReference>(m_self_ref.get()));
 		// List::allocation[self] := List::allocation[self] + num_refs
@@ -141,7 +154,19 @@ public:
 		return std::move(m_incr_func);
 	}
 
+	/// checks if member is of composite type -> if yes wraps block in loop and iterates over array
+	void wrap_in_loop(std::unique_ptr<NodeStatement>& stmt, std::shared_ptr<NodeDataStructure> mem, std::shared_ptr<NodeDataStructure> iterator) {
+		if(mem->ty->cast<CompositeType>()) {
+			auto block = std::make_unique<NodeBlock>(stmt->tok);
+			block->add_as_stmt(std::move(stmt->statement));
+			block->wrap_in_loop(iterator, std::make_unique<NodeInt>(0, tok), static_cast<NodeComposite*>(mem.get())->get_size(), false);
+			block->get_last_statement()->desugar(nullptr);
+			stmt->set_statement(std::move(block));
+		}
+	}
+
 	std::unique_ptr<NodeFunctionDefinition> create_destructor() {
+		auto iter_decl = get_iterator_declaration();
 		// if(List::allocation[self] <= 0)
 		auto node_if = std::make_unique<NodeIf>(
 			std::make_unique<NodeBinaryExpr>(
@@ -161,6 +186,7 @@ public:
 				std::make_unique<NodeNil>(tok),
 				tok
 			));
+			wrap_in_loop(node_if->if_body->statements[0], mem, iter_decl->variable);
 		}
 		for(auto &mem : m_recursive_member_structs) {
 			node_if->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
@@ -168,7 +194,9 @@ public:
 				std::make_unique<NodeNil>(tok),
 				tok
 			));
+			wrap_in_loop(node_if->if_body->statements[0], mem, iter_decl->variable);
 		}
+		m_del_func->body->add_as_stmt(std::move(iter_decl));
 		m_del_func->body->add_as_stmt(std::move(node_if));
 		m_del_func->parent = &m_struct;
 		m_del_func->ty = TypeRegistry::Void;
@@ -178,15 +206,24 @@ public:
 	}
 
 	/// returns true if struct has only one recursive member and this member is itself
+	/// this member must not be of composite type
 	[[nodiscard]] bool is_linear_recursive() const {
-		return m_struct.recursive_structs.size() <= 1;
+		bool is_non_recursive = m_struct.recursive_structs.empty();
+		if(is_non_recursive) return true;
+
+		bool is_linear_recursive = m_struct.recursive_structs.size() == 1 and m_recursive_member_structs.size() == 1;
+		// the linear recursive member must not be of composite type
+		if(is_linear_recursive and m_recursive_member_structs[0]->ty->cast<CompositeType>()) {
+			is_linear_recursive = false;
+		}
+		return is_linear_recursive;
 	}
 
 	/// returns true if struct has more than one recursive member and these members are itself
 	bool is_non_linear_recursive_with_homogenous_types() {
 		if(is_linear_recursive()) return false;
 		for(auto &mem : m_recursive_member_structs) {
-			if(mem->ty != m_struct.ty) return false;
+			if(mem->ty->get_element_type() != m_struct.ty) return false;
 		}
 		return true;
 	}
@@ -209,8 +246,8 @@ public:
 	}
 
 	std::unique_ptr<NodeFunctionDefinition> create_non_lin_rec_heterogenous_decr() {
-		m_self_ref->declaration = get_self_ptr(m_decr_func.get());
-		m_num_refs_ref->declaration = get_num_refs_ptr(m_decr_func.get());
+		set_self_ref_declaration(m_decr_func.get());
+		set_num_refs_ref_declaration(m_decr_func.get());
 		auto &func_body = m_decr_func->body;
 		// Node::stack[Node::stack_top] := self
 		func_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
@@ -264,6 +301,7 @@ public:
 	}
 
 	std::unique_ptr<NodeWhile> get_stack_while_loop(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs) {
+		auto iter_decl = get_iterator_declaration();
 		m_self_ref->declaration = self;
 		m_num_refs_ref->declaration = num_refs;
 		// while Node::stack_top > 0
@@ -324,6 +362,7 @@ public:
 					mem->tok
 				));
 				node_while->body->add_as_stmt(std::move(nil_check));
+				wrap_in_loop(node_while->body->statements.back(), mem, iter_decl->variable);
 			}
 			for(auto & mem : m_recursive_member_structs) {
 				// if(self.next # nil)
@@ -341,9 +380,11 @@ public:
 					mem->tok
 				));
 				node_while->body->add_as_stmt(std::move(nil_check));
+				wrap_in_loop(node_while->body->statements.back(), mem, iter_decl->variable);
 			}
 
 		}
+		node_while->body->prepend_as_stmt(std::move(iter_decl));
 		// add actual delete function
 		node_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 			false,
@@ -358,8 +399,8 @@ public:
 	}
 
 	std::unique_ptr<NodeFunctionDefinition> create_non_lin_rec_homogenous_decr() {
-		m_self_ref->declaration = get_self_ptr(m_decr_func.get());
-		m_num_refs_ref->declaration = get_num_refs_ptr(m_decr_func.get());
+		set_self_ref_declaration(m_decr_func.get());
+		set_num_refs_ref_declaration(m_decr_func.get());
 		auto &func_body = m_decr_func->body;
 		// Node::stack[Node::stack_top] := self
 		func_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
@@ -380,10 +421,9 @@ public:
 		return std::move(m_decr_func);
 	}
 
-
 	std::unique_ptr<NodeFunctionDefinition> create_lin_rec_decr() {
-		m_self_ref->declaration = get_self_ptr(m_decr_func.get());
-		m_num_refs_ref->declaration = get_num_refs_ptr(m_decr_func.get());
+		set_self_ref_declaration(m_decr_func.get());
+		set_num_refs_ref_declaration(m_decr_func.get());
 		// declare current
 		auto current_decl = std::make_unique<NodeSingleDeclaration>(
 			std::make_unique<NodeVariable>(
@@ -517,10 +557,17 @@ private:
 	}
 
 	std::unique_ptr<NodeReference> to_member_chain_ref(std::shared_ptr<NodeDataStructure> mem, NodeReference* idx = nullptr) {
-		auto ref = mem->to_reference();
+		std::unique_ptr<NodeReference> ref;
+		// if composite -> get raw array (if ndarray) and set index to iterator
+		if(auto node_comp = cast_node<NodeComposite>(mem.get())) {
+			auto raw_array = node_comp->get_raw()->to_reference();
+			raw_array->cast<NodeArrayRef>()->set_index(m_iterator_ref->clone());
+			ref = std::move(raw_array);
+		} else {
+			ref = mem->to_reference();
+		}
 		ref->remove_obj_prefix();
-		ref->match_data_structure(mem);
-		ref->ty = mem->ty;
+		ref->ty = mem->ty->get_element_type();
 		auto mem_access_chain = std::make_unique<NodeAccessChain>(mem->tok, idx ? idx->clone() : m_self_ref->clone(), std::move(ref));
 		mem_access_chain->ty = mem->ty;
 		return mem_access_chain;
@@ -544,11 +591,14 @@ private:
 		}
 	}
 
-	static std::shared_ptr<NodeDataStructure> get_self_ptr(NodeFunctionDefinition* func_def) {
-		return func_def->header->get_param(0);
+	/// gets pointer to node_self from function definition and sets the declaration of m_self_ref
+	void set_self_ref_declaration(NodeFunctionDefinition* func_def) {
+		m_self_ref->declaration = func_def->header->get_param(0);
 	}
-	static std::shared_ptr<NodeDataStructure> get_num_refs_ptr(NodeFunctionDefinition* func_def) {
-		return func_def->header->get_param(1);
+
+	/// gets pointer to num_refs from function definition and sets the declaration of m_num_refs_ref
+	void set_num_refs_ref_declaration(NodeFunctionDefinition* func_def) {
+		m_num_refs_ref->declaration = func_def->header->get_param(1);
 	}
 
 	///	List::allocation[self] := List::allocation[self] - num_refs

@@ -192,6 +192,7 @@ std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
 std::unique_ptr<NodeArray> NodeNDArray::to_array(std::unique_ptr<NodeAST> size) {
     auto node_array = std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
 	node_array->match_metadata(get_shared());
+	node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type(), 1);
 	return node_array;
 }
 
@@ -207,6 +208,30 @@ std::unique_ptr<NodeDataStructure> NodeNDArray::inflate_dimension(std::unique_pt
 	dimensions = sizes->params.size();
 	ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type(), dimensions);
 	return clone_as<NodeDataStructure>(this);
+}
+
+std::shared_ptr<NodeArray> NodeNDArray::get_raw() {
+	auto raw_array = to_array(nullptr);
+	raw_array->name = "_" + raw_array->name;
+
+	if(sizes) {
+		auto size_expr = NodeBinaryExpr::create_right_nested_binary_expr(
+			sizes->params,
+			0,
+			token::MULT
+		);
+		size_expr->do_constant_folding();
+
+		raw_array->set_size(std::move(size_expr));
+
+		raw_array->set_num_elements(clone_as<NodeParamList>(sizes.get()));
+		raw_array->num_elements->prepend_param(raw_array->size->clone());
+	}
+	return raw_array;
+}
+
+std::unique_ptr<NodeAST> NodeNDArray::get_size() {
+	return to_reference()->cast<NodeArrayRef>()->get_size();
 }
 
 // ************* NodeFunctionHeader ***************
@@ -367,19 +392,28 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_init_method() {
 	std::vector<std::unique_ptr<NodeFunctionParam>> param_list;
 	param_list.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_self.get())));
 	auto node_block = std::make_unique<NodeBlock>(this->tok, true);
-	for(auto & mem : this->member_table) {
-		auto member = mem.second.lock();
-		std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
-		auto member_ref = member->to_reference();
-		param_list.push_back(std::make_unique<NodeFunctionParam>(member, nullptr, member->tok));
-		member_ref->name = "self." + member_ref->name;
-		assignment = std::make_unique<NodeSingleAssignment>(
-			std::move(member_ref),
-			member->to_reference(),
-			member->tok
-		);
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
+
+	for(auto& member : members->statements) {
+		if(auto decl = member->statement->cast<NodeSingleDeclaration>()) {
+			auto mem = decl->variable;
+			std::unique_ptr<NodeSingleAssignment> assignment;
+			auto member_ref = mem->to_reference();
+			member_ref->name = "self." + member_ref->name;
+			auto func_param = std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(mem.get()));
+			auto param_ref = func_param->variable->to_reference();
+			param_list.push_back(std::move(func_param));
+			assignment = std::make_unique<NodeSingleAssignment>(
+				std::move(member_ref),
+				std::move(param_ref),
+				mem->tok
+			);
+			node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
+		} else {
+			auto error = CompileError(ErrorType::VariableError, "<Struct> member must be a declaration", "", tok);
+			error.exit();
+		}
 	}
+
 	auto num_params = param_list.size();
 	auto function_def = std::make_shared<NodeFunctionDefinition>(
 		std::make_unique<NodeFunctionHeader>(

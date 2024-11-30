@@ -1,7 +1,6 @@
-{ Compiled with cksp version 0.0.7-alpha.1 on Wed Nov 27 18:28:27 2024 }
+{ Compiled with cksp version 0.0.7-alpha.1 on Sat Nov 30 17:51:38 2024 }
 on init
-  declare $_iter3
-  declare $current0
+  declare $_iter5
   declare $_iter2
   declare $col0
   declare %array0[30]
@@ -11,21 +10,24 @@ on init
   declare %_ndarray0[6]
   declare $RETURN_FLAG00
   declare %note0[100]
-  declare $_iter5
-  declare %event_id0[100]
-  declare $_iter6
-  declare %note_off0[100]
   declare $_iter7
-  declare %note_on0[100]
+  declare %event_id0[100]
   declare $_iter8
+  declare %note_off0[100]
+  declare $_iter9
+  declare %note_on0[100]
+  declare $_iter10
   declare $Point__free_idx
   declare %Point__allocation[1000000]
+  declare %Point__stack[1000000]
+  declare $Point__stack_top
   declare %Point__x[1000000]
   declare %Point__y[1000000]
   declare $List__free_idx
   declare %List__allocation[1000000]
   declare %List__value[1000000]
   declare %List__next[1000000] := (-1)
+  declare %_Debug__next__num_elements[3] := (1000000, 100000, 10)
   declare %_menu_strip_val__num_elements[3] := (9, 3, 3)
   declare %_menu_strip_val[9]
   declare $left
@@ -245,90 +247,115 @@ on init
   end while
   message(%List__allocation[((0 + $this_list) + abs(0 - $this_list)) / 2])
   message(%_ndarray__num_elements[1])
-  $current0 := $_ret00
-  while($current0 # -1) 
-    %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-    if(%Point__allocation[$current0] > 0)
-      $current0 := -1
+  %Point__stack[$Point__stack_top] := $_ret00
+  inc($Point__stack_top)
+  while($Point__stack_top > 0) 
+    dec($Point__stack_top)
+    $_ret00 := %Point__stack[$Point__stack_top]
+    if($_ret00 = -1)
+      continue
+    end if
+    %Point__allocation[$_ret00] := %Point__allocation[$_ret00] - 1
+    if(%Point__allocation[$_ret00] > 0)
       continue
     end if
   end while
-  $_iter3 := 0
-  while($_iter3 <= (num_elements(%ptr_array30) - 1)) 
-    $current0 := %ptr_array30[$_iter3]
-    while($current0 # -1) 
-      %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-      if(%Point__allocation[$current0] > 0)
-        $current0 := -1
+  $_iter5 := 0
+  while($_iter5 <= (num_elements(%ptr_array20) - 1)) 
+    %Point__stack[$Point__stack_top] := %ptr_array20[$_iter5]
+    inc($Point__stack_top)
+    while($Point__stack_top > 0) 
+      dec($Point__stack_top)
+      %ptr_array20[$_iter5] := %Point__stack[$Point__stack_top]
+      if(%ptr_array20[$_iter5] = -1)
+        continue
+      end if
+      %Point__allocation[%ptr_array20[$_iter5]] := %Point__allocation[%ptr_array20[$_iter5]] - 1
+      if(%Point__allocation[%ptr_array20[$_iter5]] > 0)
         continue
       end if
     end while
-    inc($_iter3)
+    inc($_iter5)
   end while
-  $_iter3 := 0
-  while($_iter3 <= (num_elements(%ptr_array20) - 1)) 
-    $current0 := %ptr_array20[$_iter3]
-    while($current0 # -1) 
-      %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-      if(%Point__allocation[$current0] > 0)
-        $current0 := -1
-        continue
-      end if
-    end while
-    inc($_iter3)
-  end while
-  $current0 := $_ret10
-  while($current0 # -1) 
-    %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-    if(%Point__allocation[$current0] > 0)
-      $current0 := -1
+  %Point__stack[$Point__stack_top] := $_ret10
+  inc($Point__stack_top)
+  while($Point__stack_top > 0) 
+    dec($Point__stack_top)
+    $_ret10 := %Point__stack[$Point__stack_top]
+    if($_ret10 = -1)
+      continue
+    end if
+    %Point__allocation[$_ret10] := %Point__allocation[$_ret10] - 1
+    if(%Point__allocation[$_ret10] > 0)
       continue
     end if
   end while
-  $_iter3 := 0
-  while($_iter3 <= (num_elements(%ptr_array0) - 1)) 
-    $current0 := %ptr_array0[$_iter3]
-    while($current0 # -1) 
-      %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-      if(%Point__allocation[$current0] > 0)
-        $current0 := -1
+  $_iter5 := 0
+  while($_iter5 <= (num_elements(%ptr_array30) - 1)) 
+    %Point__stack[$Point__stack_top] := %ptr_array30[$_iter5]
+    inc($Point__stack_top)
+    while($Point__stack_top > 0) 
+      dec($Point__stack_top)
+      %ptr_array30[$_iter5] := %Point__stack[$Point__stack_top]
+      if(%ptr_array30[$_iter5] = -1)
+        continue
+      end if
+      %Point__allocation[%ptr_array30[$_iter5]] := %Point__allocation[%ptr_array30[$_iter5]] - 1
+      if(%Point__allocation[%ptr_array30[$_iter5]] > 0)
         continue
       end if
     end while
-    inc($_iter3)
+    inc($_iter5)
+  end while
+  $_iter5 := 0
+  while($_iter5 <= (num_elements(%ptr_array0) - 1)) 
+    %Point__stack[$Point__stack_top] := %ptr_array0[$_iter5]
+    inc($Point__stack_top)
+    while($Point__stack_top > 0) 
+      dec($Point__stack_top)
+      %ptr_array0[$_iter5] := %Point__stack[$Point__stack_top]
+      if(%ptr_array0[$_iter5] = -1)
+        continue
+      end if
+      %Point__allocation[%ptr_array0[$_iter5]] := %Point__allocation[%ptr_array0[$_iter5]] - 1
+      if(%Point__allocation[%ptr_array0[$_iter5]] > 0)
+        continue
+      end if
+    end while
+    inc($_iter5)
   end while
 end on
 on note
   %note0 := 0
-  $_iter5 := 0
-  while($_iter5 < num_elements(%note0)) 
-    %note0[$_iter5] := 0
-    inc($_iter5)
+  $_iter7 := 0
+  while($_iter7 < num_elements(%note0)) 
+    %note0[$_iter7] := 0
+    inc($_iter7)
   end while
   %note0[$NI_CALLBACK_ID mod 100] := $EVENT_NOTE
   %event_id0 := 0
-  $_iter6 := 0
-  while($_iter6 < num_elements(%event_id0)) 
-    %event_id0[$_iter6] := 0
-    inc($_iter6)
+  $_iter8 := 0
+  while($_iter8 < num_elements(%event_id0)) 
+    %event_id0[$_iter8] := 0
+    inc($_iter8)
   end while
   %event_id0[$NI_CALLBACK_ID mod 100] := $EVENT_ID
   wait(10)
   if(%note0[$NI_CALLBACK_ID mod 100] = 0)
     %note_off0 := 0
-    $_iter7 := 0
-    while($_iter7 < num_elements(%note_off0)) 
-      %note_off0[$_iter7] := 0
-      inc($_iter7)
+    $_iter9 := 0
+    while($_iter9 < num_elements(%note_off0)) 
+      %note_off0[$_iter9] := 0
+      inc($_iter9)
     end while
     %note_off0[$NI_CALLBACK_ID mod 100] := 1
     message("Note Off" & ", " & 1)
   else
     %note_on0 := 0
-    $_iter8 := 0
-    while($_iter8 < num_elements(%note_on0)) 
-      %note_on0[$_iter8] := 0
-      inc($_iter8)
+    $_iter10 := 0
+    while($_iter10 < num_elements(%note_on0)) 
+      %note_on0[$_iter10] := 0
+      inc($_iter10)
     end while
     %note_on0[$NI_CALLBACK_ID mod 100] := 1
     message("Note On" & ", " & 1)

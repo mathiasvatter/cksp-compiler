@@ -484,14 +484,12 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	// if declaration is pointer -> always initialize with nil!
 	if(node.variable->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 		if(!node.value) {
-			auto nil = std::make_unique<NodeNil>(node.tok);
-			nil->parent = &node;
-			node.value = std::move(nil);
+			node.set_value(std::make_unique<NodeNil>(node.tok));
 			node.value->accept(*this);
 			// wrap nil in initializer list if variable is of composite type
 			if(node.variable->ty->get_type_kind() == TypeKind::Composite) {
 				return node.value
-				->replace_with(std::make_unique<NodeInitializerList>(node.tok, std::move(nil)))
+				->replace_with(std::make_unique<NodeInitializerList>(node.tok, std::make_unique<NodeNil>(node.tok)))
 				->accept(*this);
 			}
 			return &node;

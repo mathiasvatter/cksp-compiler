@@ -1,12 +1,17 @@
+struct Debug
+	declare value: int
+	declare next[10]: Debug[]
+	// declare prev[10]: Debug[]
+end struct
 
 struct List
 	declare value: int
 	declare next: List
 
-	function __init__(self, value: int, next: List)
-		self.value := value
-		self.next := next
-	end function
+	// function __init__(self, value: int, next: List)
+	// 	self.value := value
+	// 	self.next := next
+	// end function
 
     function get_next_next_value(self)
         return self.next.next.value

@@ -40,7 +40,7 @@ public:
 			if(auto node_array_ref = curr_node->cast<NodeArrayRef>()) {
 				node_array_ref->set_index(std::move(prev_node));
 			} else if(auto node_ndarray_ref = curr_node->cast<NodeNDArrayRef>()) {
-				node_ndarray_ref->indexes->set_param(0, std::move(prev_node));
+				node_ndarray_ref->indexes->prepend_param(std::move(prev_node));
 			} else if(auto node_func_call = curr_node->cast<NodeFunctionCall>()) {
 				node_func_call->function->prepend_arg(std::move(prev_node));
 			}
