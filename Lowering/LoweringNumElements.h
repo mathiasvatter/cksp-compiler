@@ -65,6 +65,18 @@ public:
 				error.m_message = "<NDArrayRef> has somehow a declaration that is not an <NDArray>.";
 				error.exit();
 			}
+
+			// if node.dimension is set -> check variable member inflation_times
+			if(node.dimension and nd_array->inflation_times > 0) {
+				node.dimension = std::make_unique<NodeBinaryExpr>(
+					token::ADD,
+					std::move(node.dimension),
+					std::make_unique<NodeInt>(nd_array->inflation_times, node.tok),
+					node.tok
+				);
+				nd_array->inflation_times = 0;
+			}
+
 			// check if node is ndarray ref -> check for wildcard index notation and adjust dimension param accordingly
 			handle_wildcard_notation(*node_ndarray, *nd_array, node);
 
