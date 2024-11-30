@@ -20,6 +20,31 @@
  */
 class NormalizeArrayAssign : public ASTVisitor {
 private:
+
+	inline NodeAST* visit(NodeProgram& node) override {
+		m_program = &node;
+		node.reset_function_visited_flag();
+		m_program->global_declarations->accept(*this);
+		for (auto &callback : node.callbacks) {
+			callback->accept(*this);
+		}
+		node.merge_function_definitions();
+		return &node;
+	}
+
+	inline NodeAST* visit(NodeFunctionCall& node) override {
+		node.function->accept(*this);
+		if(node.bind_definition(m_program)) {
+			auto definition = node.get_definition();
+			if(!definition->visited) {
+				definition->accept(*this);
+			}
+			definition->visited = true;
+
+		}
+		return &node;
+	}
+
 	inline NodeAST * visit(NodeBlock& node) override {
 		for(auto &stmt : node.statements) {
 			stmt->accept(*this);
@@ -74,21 +99,9 @@ private:
 	}
 
 	inline NodeAST * visit(NodeSingleDeclaration& node) override {
-		// normally, no rewrites of array initializations need to be done in init callback
-		// unless array type is string!
-		if(node.variable->ty->get_element_type() != TypeRegistry::String) {
-			if (m_program->current_callback == m_program->init_callback) return &node;
-			if (!node.variable->is_local) return &node;
-		} else {
-			// check if assignment is only neutral string element and init callback -> skip
-			if (m_program->current_callback == m_program->init_callback) {
-				if (node.value and node.value->get_node_type() == NodeType::String) {
-					auto node_string = static_cast<NodeString*>(node.value.get());
-					if (node_string->value.empty()) return &node;
-				// if string is assigned to nothing -> skip too
-				} else if (!node.value) return &node;
-			}
-		}
+		if(!node.variable->ty->cast<CompositeType>()) return &node;
+		if (!node.variable->is_local) return &node;
+
 		// skip constant variables
 		if(node.variable->data_type == DataType::Const)
 			return &node;

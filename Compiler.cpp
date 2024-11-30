@@ -144,7 +144,6 @@ void Compiler::compile() {
 
 	ASTCollectLowerings lowering(m_program);
 	ast->accept(lowering);
-	ast->debug_print();
 
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
@@ -190,6 +189,7 @@ void Compiler::compile() {
 
 	ASTGlobalScope global_scope(m_program);
 	ast->accept(global_scope);
+	ast->debug_print();
 
 	compile_time.stop("Global Scope");
 	std::cout << compile_time.print_timer("Global Scope") << std::endl;
