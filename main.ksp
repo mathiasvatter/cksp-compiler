@@ -1,6 +1,6 @@
 struct Debug
 	declare value: int
-	declare next[10]: Debug[]
+	declare next[2]: Debug[]
 	// declare prev[10]: Debug[]
 end struct
 
@@ -72,6 +72,8 @@ end struct
 
 on init	
 
+	declare bugbug := Debug(3, (nil))
+
 	declare menu_strip_val[3,3]
 	declare left := get_active_idx(menu_strip_val, 0)
 	message(left)
@@ -116,7 +118,7 @@ on init
 	message(search(ndarray3[3, 4, *, *], -1), ndarray3[3, 4, 3, *])
 	message(n[*])
 	declare ndarray2[10,10]: int[][]
-	message(search_matrix(ndarray, 3.0), "3", "f")
+	// message(search_matrix(ndarray, 3.0), "3", "f")
 	message(search_matrix(ndarray2, 3), "3", "f")
 	message(num_elements(ndarray, 2), num_elements(ndarray[*, 0]))
 	declare local ptr_array[10]

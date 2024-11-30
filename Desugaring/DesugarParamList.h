@@ -38,7 +38,7 @@ public:
 		}
 
 		// in case we are inside a function call
-		if(node.parent->cast<NodeParamList>() and node.parent->parent->cast<NodeFunctionHeader>()) {
+		if(node.parent->cast<NodeParamList>() and node.parent->parent->cast<NodeFunctionHeaderRef>()) {
 			return node.replace_with(node.to_initializer_list());
 		}
 

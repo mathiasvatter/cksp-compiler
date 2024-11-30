@@ -157,24 +157,32 @@ private:
 		if(program->function_lookup.find({func_name, wildcard_dims.first+2}) != program->function_lookup.end()) {
 			return false;
 		}
-		auto node_nd_array_ref = clone_as<NodeNDArrayRef>(node);
-		node_nd_array_ref->name = "ndarray";
-		node_nd_array_ref->sizes = nullptr;
+		auto node_ndarray = std::make_shared<NodeNDArray>(std::nullopt,
+														  "ndarray",
+														  TypeRegistry::add_composite_type(CompoundKind::Array, node->ty->get_element_type(), (int)node->sizes->params.size()),
+														  nullptr, node->tok
+		);
+		auto node_nd_array_ref = unique_ptr_cast<NodeNDArrayRef>(node_ndarray->to_reference());
+		node_nd_array_ref->set_indexes(clone_as<NodeParamList>(node->indexes.get()));
+		node_nd_array_ref->determine_sizes();
+		auto node_value = std::make_shared<NodeVariable>(std::nullopt, "value", node->ty->get_element_type(), DataType::Mutable, Token());
+
 		// holds all iterators per wildcard
 		std::vector<std::shared_ptr<NodeDataStructure>> iterators; int count = 1; int count2 = 1;
 		std::vector<std::unique_ptr<NodeAST>> lower_bounds;
 		std::vector<std::unique_ptr<NodeAST>> upper_bounds;
 		auto func_header = std::make_unique<NodeFunctionHeader>(func_name, node->tok);
+		// make function definition
+		func_header->add_param(node_ndarray);
+		func_header->add_param(node_value);
 		for(auto & param : node_nd_array_ref->indexes->params) {
 			if(param->get_node_type() == NodeType::Wildcard) {
 				auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter"+std::to_string(count), TypeRegistry::Integer, DataType::Mutable, node->tok);
 				node_iterator->is_local = true;
 				param = node_iterator->to_reference();
 				iterators.push_back(std::move(node_iterator));
-				auto node_upper_bound = std::make_unique<NodeVariableRef>(node_nd_array_ref->name + ".SIZE_D" + std::to_string(count), node->tok);
-//				node_upper_bound->kind = NodeReference::Compiler;
-				node_upper_bound->data_type = DataType::Const;
-				upper_bounds.push_back(std::move(node_upper_bound));
+				auto num_elements = node_nd_array_ref->get_size(std::make_unique<NodeInt>(count, node->tok));
+				upper_bounds.push_back(std::move(num_elements));
 				lower_bounds.push_back(std::make_unique<NodeInt>(0, node->tok));
 				count++;
 			} else {
@@ -186,25 +194,17 @@ private:
 		}
 		node_nd_array_ref->indexes->set_child_parents();
 
-		auto node_value = std::make_unique<NodeVariable>(std::nullopt, "value", node->ty->get_element_type(), DataType::Mutable, Token());
-		auto node_value_ref = node_value->to_reference();
 		// create for loop
 		auto node_body = std::make_unique<NodeBlock>(node->tok, true);
 		auto node_assignment = std::make_unique<NodeSingleAssignment>(
 			clone_as<NodeReference>(node_nd_array_ref.get()),
-			std::move(node_value_ref),
+			node_value->to_reference(),
 			node->tok
 		);
-		node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), node->tok));
+		node_body->add_as_stmt(std::move(node_assignment));
 		node_body->wrap_in_loop_nest(iterators, std::move(lower_bounds), std::move(upper_bounds));
-		auto node_ndarray = std::make_unique<NodeNDArray>(std::nullopt,
-														  "ndarray",
-														  TypeRegistry::add_composite_type(CompoundKind::Array, node->ty->get_element_type(), (int)node->sizes->params.size()),
-														  nullptr, node->tok
-		);
-		// make function definition
-		func_header->prepend_param(std::move(node_value));
-		func_header->prepend_param(std::move(node_ndarray));
+
+
 		auto node_function_def = std::make_shared<NodeFunctionDefinition>(
 			std::move(func_header),
 			std::nullopt,
@@ -217,6 +217,7 @@ private:
 		node_function_def->accept(*this);
 		node_function_def->header->create_function_type(TypeRegistry::Void);
 		node_function_def->ty = TypeRegistry::Void;
+		node_function_def->collect_references();
 //		program->additional_function_definitions.push_back(std::move(node_function_def));
 		// update function lookup so that the new function can be found
 		program->add_function_definition(node_function_def);
