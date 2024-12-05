@@ -53,7 +53,7 @@ public:
 
 		if(node.body->statements.empty()) {
 			m_last_reference.clear();
-			return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+			return node.remove_node();
 		}
 
 		/// if condition is false, remove while loop, if true, replace with 1=1
@@ -66,7 +66,7 @@ public:
 				return node.condition->replace_with(std::move(true_expr));
 			} else if(int_node->value == 0) {
 				m_last_reference.clear();
-				return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+				return node.remove_node();
 			}
 		}
 
@@ -80,7 +80,7 @@ public:
 
 		// deal with empty if and/or else body
 		if(node.if_body->statements.empty() && node.else_body->statements.empty()) {
-			return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+			return node.remove_node();
 		// only else body left
 		} else if (node.if_body->statements.empty()) {
 			node.if_body = std::move(node.else_body);
@@ -104,7 +104,7 @@ public:
 			} else if(int_node->value == 0) {
 				if(node.else_body->statements.empty()) {
 					m_last_reference.clear();
-					return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+					return node.remove_node();
 				} else {
 					m_last_reference.clear();
 					return node.replace_with(std::move(node.else_body));
@@ -156,7 +156,7 @@ public:
 			// check if reference is also somewhere on the right side of the assignment
 			if(it->second->is_l_value() and !node->is_r_value()) {
 				auto assignment = it->second->parent;
-				assignment->replace_with(std::make_unique<NodeDeadCode>(assignment->tok));
+				assignment->remove_node();
 				m_last_reference.erase(it);
 				return true;
 			}

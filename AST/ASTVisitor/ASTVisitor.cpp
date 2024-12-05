@@ -9,10 +9,10 @@ CompileError ASTVisitor::get_raw_compile_error(ErrorType err_type, const NodeAST
 	return CompileError(err_type, "", "", node.tok);
 }
 
-std::unique_ptr<NodeBlock> ASTVisitor::make_while_loop(NodeAST* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent) {
+std::unique_ptr<NodeBlock> ASTVisitor::make_while_loop(NodeReference* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent) {
     auto node_body = std::make_unique<NodeBlock>(var->tok);
     auto node_assignment = std::make_unique<NodeSingleAssignment>(
-		var->clone(),
+		clone_as<NodeReference>(var),
 		std::make_unique<NodeInt>(from, var->tok), var->tok
 		);
     node_body->statements.push_back(std::make_unique<NodeStatement>(std::move(node_assignment), var->tok));
@@ -21,24 +21,29 @@ std::unique_ptr<NodeBlock> ASTVisitor::make_while_loop(NodeAST* var, int32_t fro
 		var->clone(),
 		std::make_unique<NodeInt>(to, var->tok), var->tok
 	);
-	auto node_increment = std::make_unique<NodeStatement>(
-		std::make_unique<NodeFunctionCall>(
-			false,
-			std::make_unique<NodeFunctionHeader>(
-				"inc",
-				std::make_unique<NodeParamList>(var->tok,var->clone()),
-				var->tok
-			),
-			var->tok
-		),
-		var->tok
-	);
-    body->add_stmt(std::move(node_increment));
+
+    body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(var)));
+	body->scope = true;
     auto node_while = std::make_unique<NodeWhile>(
 		std::move(node_comparison),
 		std::move(body), var->tok
 	);
-    node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while), var->tok));
+    node_body->add_as_stmt(std::move(node_while));
     return std::move(node_body);
+}
+
+std::unique_ptr<NodeIf> ASTVisitor::make_nil_check(std::unique_ptr<NodeReference> ref) {
+	auto tok = ref->tok;
+	return std::make_unique<NodeIf>(
+		std::make_unique<NodeBinaryExpr>(
+			token::NOT_EQUAL,
+			std::move(ref),
+			std::make_unique<NodeNil>(tok),
+			tok
+		),
+		std::make_unique<NodeBlock>(tok, true),
+		std::make_unique<NodeBlock>(tok, true),
+		tok
+	);
 }
 

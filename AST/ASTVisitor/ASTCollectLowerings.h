@@ -32,7 +32,9 @@
  */
 class ASTCollectLowerings: public ASTVisitor {
 public:
-    explicit ASTCollectLowerings(DefinitionProvider* definition_provider);
+    explicit ASTCollectLowerings(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 	NodeAST * visit(NodeProgram& node) override;
 
 	/// do not visit return statements -> wait for them to get lowered to assign statements
@@ -49,6 +51,7 @@ public:
 	NodeAST * visit(NodeSingleAssignment& node) override;
 	/// lower get_control statements to get_control_par
 	NodeAST * visit(NodeGetControl& node) override;
+	NodeAST * visit(NodeSetControl& node) override;
 	/// lower property functions to get_control_par
 	NodeAST * visit(NodeFunctionCall& node) override;
     /// determine size of array in declaration if possible
@@ -61,19 +64,28 @@ public:
 	/// move node block of const out of const construct
 	NodeAST * visit(NodeConst& node) override;
 //    void visit(NodeFamily& node) override;
-
+	/// transform break stmts
+	NodeAST * visit(NodeWhile& node) override;
+	/// throw error since they are not in loop
+	NodeAST * visit(NodeBreak& node) override;
 	/// lower list struct references to array references
 	NodeAST * visit(NodeListRef& node) override;
 	/// lower list structs to arrays and while loops
 	NodeAST * visit(NodeList& node) override;
-
+	NodeAST * visit(NodeSingleRetain& node) override;
+	NodeAST * visit(NodeSingleDelete& node) override;
+	NodeAST * visit(NodePointer& node) override;
 	/// lower pointer reference types and replace with __repr__ if in string surrounding
 	NodeAST * visit(NodePointerRef& node) override;
 	/// lower access chain to nested array_ref structure
 	NodeAST * visit(NodeAccessChain& node) override;
 	/// lower nil to -1
 	NodeAST * visit(NodeNil& node) override;
-
+	/// lower num elements node
+	NodeAST * visit(NodeNumElements& node) override;
+	NodeAST * visit(NodeUseCount& node) override;
+	/// flatten nested lists
+	NodeAST * visit(NodeInitializerList& node) override;
 private:
     DefinitionProvider* m_def_provider;
 };

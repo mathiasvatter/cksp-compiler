@@ -85,7 +85,7 @@ void CompileError::exit(ErrorType err) {
     ::exit(EXIT_FAILURE);
 }
 
-std::string CompileError::get_line_from_file() {
+std::string CompileError::get_line_from_file() const {
     std::ifstream file(m_file_name);
     std::string line;
     if (file.is_open()) {

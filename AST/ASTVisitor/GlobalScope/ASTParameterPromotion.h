@@ -20,110 +20,116 @@ private:
 	std::unordered_map<NodeFunctionDefinition*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_local_var_declarations;
 	/// map for local variable declarations per function definition to be added to the next/above callback when no function is above
 	std::unordered_map<NodeStatement*, std::map<std::string, std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_stmt;
-	NodeStatement* m_last_stmt = nullptr;
-
+	/// map for local variable declarations per function definition directly promoted and to be added to the global declarations
 	std::unordered_map<std::string, std::unique_ptr<NodeSingleDeclaration>> m_global_function_vars;
 
-//	std::unordered_map<std::string, std::unordered_set<NodeReference*>> m_references;
-//	std::unordered_map<std::string, NodeDataStructure*> m_data_structures;
-
 public:
-	explicit ASTParameterPromotion(DefinitionProvider* definition_provider) : ASTGlobalScope(definition_provider) {}
+	explicit ASTParameterPromotion(NodeProgram* main) : ASTGlobalScope(main) {}
 	~ASTParameterPromotion() = default;
 
+	void do_param_promotion(NodeProgram& program) {
+		program.accept(*this);
+		insert_promoted_declarations();
+		// clear all maps
+		m_declares_per_stmt.clear();
+		m_local_var_declarations.clear();
+		m_global_function_vars.clear();
+	}
+
+	void do_param_promotion(NodeFunctionCall& call) {
+		m_program->reset_function_visited_flag();
+		call.accept(*this);
+		insert_promoted_declarations();
+
+		// clear all maps
+		m_declares_per_stmt.clear();
+		m_local_var_declarations.clear();
+		m_global_function_vars.clear();
+	}
+
+private:
+	/// insert declarations from m_declares_per_stmt into callbacks
+	/// - insert right above the function calls when param promoted
+	/// - insert to global declarations when not param promoted
+	inline void insert_promoted_declarations() {
+		// successivelly promoted local vars
+		for(auto & stmt : m_declares_per_stmt) {
+			// if in callback, put the declarations right above the function call
+			auto node_body = std::make_unique<NodeBlock>(Token());
+			node_body->scope = true;
+			for(auto &decl : stmt.second) {
+				decl.second->is_promoted = true;
+				node_body->add_as_stmt(
+					std::make_unique<NodeSingleDeclaration>(decl.second->variable, nullptr, decl.second->tok)
+				);
+			}
+			node_body->add_as_stmt(std::move(stmt.first->statement));
+			stmt.first->set_statement(std::move(node_body));
+		}
+
+		// directly promoted local vars
+		for(auto & m_global_var : m_global_function_vars) {
+			m_program->global_declarations->add_as_stmt(std::move(m_global_var.second));
+		}
+	}
+
+private:
 	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
-		for(auto& def : node.function_definitions) def->visited = false;
+		node.reset_function_visited_flag();
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
 
-		for(auto & stmt : m_declares_per_stmt) {
-			// if in callback, put the declarations right above the function call
-			auto node_body = std::make_unique<NodeBlock>(node.tok);
-			node_body->scope = true;
-			for(auto &decl : stmt.second) {
-				decl.second->is_promoted = true;
-				node_body->add_stmt(std::make_unique<NodeStatement>(clone_as<NodeSingleDeclaration>(decl.second.get()), node.tok));
-			}
-			node_body->add_stmt(clone_as<NodeStatement>(stmt.first));
-			stmt.first->statement->replace_with(std::move(node_body));
-		}
-		for(auto & m_global_var : m_global_function_vars) {
-			m_program->global_declarations->add_stmt(std::make_unique<NodeStatement>(std::move(m_global_var.second), node.tok));
-		}
-
-		return &node;
-	}
-
-	inline NodeAST* visit(NodeBlock& node) override {
-		for(auto & stmt : node.statements) {
-			stmt->accept(*this);
-		}
-		return &node;
-	}
-
-	inline NodeAST * visit(NodeStatement& node) override {
-		if(m_program->function_call_stack.empty()) m_last_stmt = &node;
-		node.statement->accept(*this);
-		return &node;
-	}
-
-	inline NodeAST* visit(NodeCallback& node) override {
-		m_program->current_callback = &node;
-
-		if(node.callback_id) node.callback_id->accept(*this);
-		node.statements->accept(*this);
-
-		m_program->current_callback = nullptr;
 		return &node;
 	}
 
 	inline NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
-		node.get_definition(m_program);
+		node.bind_definition(m_program);
 
         if(node.kind == NodeFunctionCall::Kind::Property) {
             CompileError(ErrorType::InternalError,
                          "Found undefined <property function>.", "", node.tok).exit();
         } else if (node.kind == NodeFunctionCall::Kind::Builtin) {
-            // no lambda lifting for builtin function pls
+            // no param promotion for builtin function pls
             return &node;
         }
-
-		// for now, when function has no params and is not in init callback, assume as call
-		if(node.definition and node.definition->header->args->params.empty() and m_program->current_callback != m_program->init_callback) {
+		bool needs_param_promotion = node.do_param_promotion();
+		// for now, when function does not need param promotion and has no params and is not in init callback, assume as call
+//		if(!needs_param_promotion and node.get_definition()->has_no_params() and !m_program->is_init_callback(m_program->current_callback)) {
 //			node.is_call = true;
-		}
-		// for now, when function is called, do not promote and assume as threadsafe
-		if(node.definition and node.is_call) {
-			node.definition->is_thread_safe = true;
-		}
+//		}
 
-		if(node.definition and !node.definition->visited) {
-			node.definition->accept(*this);
+		auto definition = node.get_definition();
+		if(definition and !definition->visited) {
+			definition->accept(*this);
 
-			if(!m_local_var_declarations[node.definition].empty()) {
+			if(!m_local_var_declarations[definition.get()].empty()) {
 				// see if this call is in thread safe env -> if not, clone and promote local vars
-				if (!node.definition->is_thread_safe) {
+				if (needs_param_promotion) {
 					// do this only if current call is not threadsafe environment
-					for (auto &decl : m_local_var_declarations[node.definition]) {
+					for (auto &decl : m_local_var_declarations[definition.get()]) {
 						// add local declarations of function definition to parameters
-						node.definition->header->args->add_param(clone_as<NodeDataStructure>(decl.second->variable.get()));
-						for (auto &call_site : node.definition->call_sites) {
+						definition->header->add_param(clone_as<NodeDataStructure>(decl.second->variable.get()));
+						for (auto &call_site : definition->call_sites) {
 							// add references to those local variables in the function call
-							call_site->function->args->add_param(decl.second->variable->to_reference());
+							auto ref = decl.second->variable->to_reference();
+							// the ref in the call should not be connected to the param in the definition
+							ref->declaration.reset();
+							call_site->function->add_arg(std::move(ref));
 						}
 					}
 
-				// if threadsafe, add to global declarations
+				// if no param promotion, add directly to global declarations
 				} else {
 					// put local declaration into global declaration as a one time thing
-					auto &declares = m_local_var_declarations[node.definition];
+					auto &declares = m_local_var_declarations[definition.get()];
 					// check if variables were already added to global declarations
 					if (!declares.empty()) {
 						// otherwise add them to global declarations
 						for (auto &decl : declares) {
+							decl.second->variable->to_global();
 							// set to global to prevent from being used in other functions by register reuse
 							m_global_function_vars.emplace(decl.first, std::move(decl.second));
 						}
@@ -134,31 +140,31 @@ public:
 
 		}
 
-		if(node.definition) {
-			// if the call is not in a threadsafe environment
-			if(!node.definition->is_thread_safe) {
+		if(definition) {
+			// if the call does need param promotion
+			if(needs_param_promotion) {
 				// if the call is in a callback -> check if threadsafe (add to global declarations) or not (do parameter promotion)
-				if (m_program->function_call_stack.empty()) {
+				if (node.get_current_callback()) {
+					auto last_stmt = node.get_parent_statement();
 					// add declaration statements to the statement right above the function call
-					for (auto &decl : m_local_var_declarations[node.definition]) {
-						m_declares_per_stmt[m_last_stmt].emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
+					for (auto &decl : m_local_var_declarations[definition.get()]) {
+						m_declares_per_stmt[last_stmt].emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
 					}
 				}
-
 				// if the call is in a nested function -> get the local var declaration map to the above function
-				if(!m_program->function_call_stack.empty()) {
+				if(auto curr_func = node.get_current_function()) {
 					// add declaration statements to the body of the current/above function
-					auto &next_declares = m_local_var_declarations[m_program->function_call_stack.top()];
-					for (auto &decl : m_local_var_declarations[node.definition]) {
+					auto &next_declares = m_local_var_declarations[curr_func];
+					for (auto &decl : m_local_var_declarations[definition.get()]) {
 						next_declares.emplace(decl.first, clone_as<NodeSingleDeclaration>(decl.second.get()));
 					}
 				}
 			}
 
 			// remove call flag when function is not thread safe
-			if(!node.definition->is_thread_safe and !node.function->args->params.empty()) {
+			if(!definition->is_thread_safe and !node.function->has_no_args()) {
 				node.is_call = false;
-			} else if (node.definition->is_thread_safe and node.function->args->params.empty()){
+			} else if (definition->is_thread_safe and node.function->has_no_args()){
 //				if(m_program->current_callback != m_program->init_callback) node.is_call = true;
 			}
 
@@ -167,10 +173,11 @@ public:
 	}
 
 	inline NodeAST* visit(NodeFunctionDefinition& node) override {
-		m_program->function_call_stack.push(&node);
+		node.do_register_reuse(m_program);
+//		m_program->function_call_stack.push(node.weak_from_this());
 		node.visited = true;
 		node.body->accept(*this);
-		m_program->function_call_stack.pop();
+//		m_program->function_call_stack.pop();
 		return &node;
 	}
 
@@ -178,27 +185,22 @@ public:
 		if(node.value) node.value->accept(*this);
 
 		// return if not in function
-		if(m_program->function_call_stack.empty()) return &node;;
-		if(node.variable->data_type == DataType::Const) {
-			m_program->global_declarations->add_stmt(std::make_unique<NodeStatement>(std::move(node.clone()), node.tok));
-			node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
-			return &node;
-		}
-		// if it is a local variable, set data type to param because it is prob going to be promoted
-//		if(node.variable->is_local) node.variable->data_type = DataType::Param;
+		auto curr_func = node.get_current_function();
+		if(!curr_func) return &node;;
+
         // visit declaration node because array as function param needs to have <no brackets>
         node.variable->accept(*this);
 
-		m_local_var_declarations[m_program->function_call_stack.top()].emplace(
+		auto assignment = to_assign_statement(node);
+		m_local_var_declarations[curr_func].emplace(
                         node.variable->name,
                        std::make_unique<NodeSingleDeclaration>(
-                            clone_as<NodeDataStructure>(node.variable.get()),
+                            node.variable,
                             nullptr, node.tok
                        )
                    );
 
-
-		return node.replace_with(to_assign_statement(node));
+		return node.replace_with(std::move(assignment));
 	}
 
     inline NodeAST* visit(NodeArray& node) override {

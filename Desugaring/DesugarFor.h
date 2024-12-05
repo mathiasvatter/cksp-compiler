@@ -25,31 +25,25 @@
  *     dec($o)
  * end while
  */
-class DesugarForStatement : public ASTDesugaring {
+class DesugarFor : public ASTDesugaring {
 public:
-	explicit DesugarForStatement(NodeProgram* program) : ASTDesugaring(program) {};
+	explicit DesugarFor(NodeProgram* program) : ASTDesugaring(program) {};
 
     inline NodeAST* visit(NodeFor& node) override {
         // function arg
-        std::unique_ptr<NodeAST> iterator_var = node.iterator->l_value->clone();
-        std::unique_ptr<NodeAST> assign_var = iterator_var->clone();
-        std::unique_ptr<NodeAST> function_var = iterator_var->clone();
+        auto iterator_var = clone_as<NodeReference>(node.iterator->l_value.get());
+        auto assign_var = clone_as<NodeReference>(iterator_var.get());
+        auto function_var = clone_as<NodeReference>(iterator_var.get());
 
         if(!node.step) {
+			std::unique_ptr<NodeFunctionCall> node_inc;
             // function call
-            std::string function_name = "inc";
-            if (node.to == token::DOWNTO) function_name = "dec";
-
-            auto node_inc = std::make_unique<NodeFunctionCall>(
-                    false,
-                    std::make_unique<NodeFunctionHeader>(
-                            function_name,
-							std::make_unique<NodeParamList>(node.tok, std::move(function_var)),
-							node.tok
-						),
-                    node.tok
-            );
-            node.body->add_stmt(std::make_unique<NodeStatement>(std::move(node_inc), node.tok));
+            if (node.to == token::TO) {
+				node_inc = DefinitionProvider::inc(std::move(function_var));
+			} else {
+				node_inc = DefinitionProvider::dec(std::move(function_var));
+			}
+            node.body->add_as_stmt(std::move(node_inc));
         } else {
             // i := i + step
             auto inc_expression = std::make_unique<NodeBinaryExpr>(

@@ -21,38 +21,34 @@ public:
 	explicit LoweringUIControlArray(NodeProgram* program) : ASTLowering(program) {}
 
 	NodeAST * visit(NodeSingleDeclaration &node) override {
-		if(node.variable->get_node_type() != NodeType::UIControl) return &node;
+		auto node_ui_control = node.variable->cast<NodeUIControl>();
+		if(!node_ui_control)
+			return &node;
 
-		auto node_ui_control = static_cast<NodeUIControl*>(node.variable.get());
-		if(!node_ui_control->is_ui_control_array()) return &node;
+		if(!node_ui_control->is_ui_control_array())
+			return &node;
+
 		// move persistence information to not get a persistent array
 		m_persistence = node_ui_control->control_var->persistence;
 		node_ui_control->control_var->persistence = std::nullopt;
 		m_ui_control_array = clone_as<NodeUIControl>(node_ui_control);
+		m_ui_control_array->control_var->clear_references();
 		if(m_ui_control_array->control_var->get_node_type() == NodeType::NDArray) {
 			// get correct size for ui control array by lowering ndarray
-			m_ui_control_array->control_var->accept(*this);
+			m_ui_control_array->control_var->data_lower(m_program);
 		}
 		m_ui_control_array->control_var->accept(*this);
 
-
 		std::unique_ptr<NodeBlock> body_post_lowering = std::make_unique<NodeBlock>(node.tok);
 		auto node_array_declaration = std::make_unique<NodeSingleDeclaration>(
-			std::move(node_ui_control->control_var),
+			node_ui_control->control_var,
 			nullptr, node.tok
 		);
 		// not data typ ui_control anymore
 		node_array_declaration->variable->data_type = DataType::Mutable;
 		// also not string/real type anymore (in case of ui_text_edit or ui_xy)
 		node_array_declaration->variable->ty = TypeRegistry::ArrayOfInt;
-		// wrap in statement to make use of replace_child
-		auto node_statement = std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok);
-		// lowering of ndarray, turn Declaration into NodeBlock
-		// only lower if ndarray otherwise array size constant gets declared twice
-		if(m_ui_control_array->control_var->get_node_type() == NodeType::NDArray) {
-			node_statement->statement->lower(m_program);
-		}
-		body_post_lowering->statements.push_back(std::move(node_statement));
+		body_post_lowering->add_as_stmt(std::move(node_array_declaration));
 		body_post_lowering->append_body(create_ui_controls(*m_ui_control_array, std::move(m_ui_array_size)));
 		return node.replace_with(std::move(body_post_lowering));
 	}
@@ -67,11 +63,6 @@ public:
         }
 		return &node;
 	}
-
-	NodeAST * visit(NodeNDArray &node) override {
-		return node.lower(m_program);
-	}
-
 
 /**
  * Example:
@@ -104,9 +95,9 @@ public:
 		}
 		int array_size = array_size_res.unwrap();
 		std::string new_control_name = ui_control.control_var->name;
-		auto new_ui_control_template = clone_as<NodeUIControl>(ui_control.declaration);
+		auto new_ui_control_template = clone_as<NodeUIControl>(ui_control.get_declaration().get());
         // if is ui_table array -> set size to ui_table array size
-        if(auto node_array = cast_node<NodeArray>(new_ui_control_template->control_var.get())) {
+        if(auto node_array = new_ui_control_template->control_var->cast<NodeArray>()) {
             node_array->size = clone_as<NodeParamList>(m_ui_control_var_size.get());
             node_array->set_child_parents();
         }
@@ -121,12 +112,12 @@ public:
 			new_ui_control->control_var->data_type = DataType::UIControl;
 			new_ui_control->control_var->persistence = m_persistence;
 
-			m_def_provider->set_declaration(new_ui_control->control_var.get(), true);
+			m_def_provider->set_declaration(new_ui_control->control_var, true);
 			auto new_node_declaration = std::make_unique<NodeSingleDeclaration>(
 					std::move(new_ui_control),
 					nullptr, ui_control.tok
 					);
-			node_body->add_stmt(std::make_unique<NodeStatement>(std::move(new_node_declaration), ui_control.tok));
+			node_body->add_as_stmt(std::move(new_node_declaration));
 		}
 		// reinstantiate control name for while loop after
 		new_control_name = ui_control.control_var->name + std::to_string(0);
@@ -140,9 +131,8 @@ public:
 		 * -> or now with array assignments:
 		 * %_lbl_lbl := (get_ui_id($_lbl_lbl0)+inc)
 		 */
-		auto node_iterator_var_ref = std::make_unique<NodeVariableRef>("_iter", ui_control.tok);
-        node_iterator_var_ref->is_engine = true;
-		node_iterator_var_ref->kind = NodeReference::Kind::Builtin;
+
+		auto node_iterator_var_ref = get_iterator_var(ui_control.tok)->to_reference();
 		auto node_while_body = std::make_unique<NodeBlock>(ui_control.tok);
 
 		// this is the $_lbl_lbl0 from the above example
@@ -167,14 +157,13 @@ public:
 		);
 		node_assignment->l_value->ty = TypeRegistry::Integer;
 
-		node_while_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assignment), ui_control.tok));
+		node_while_body->add_as_stmt(std::move(node_assignment));
 		auto node_while_loop = make_while_loop(
 			node_iterator_var_ref.get(),
 			0,
 			array_size,
 			std::move(node_while_body), node_body.get());
-		node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while_loop), ui_control.tok));
-//		node_body->update_parents(nullptr);
+		node_body->add_as_stmt(std::move(node_while_loop));
 		return node_body;
 	}
 };

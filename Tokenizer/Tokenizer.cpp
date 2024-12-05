@@ -47,14 +47,16 @@ std::vector<Token> Tokenizer::tokenize() {
         } else if (peek() == '\n') {
             get_linebreak();
             fix_line_continuation();
-        } else if (contains(BINARY_OPERATORS, peek()) && peek(1) != '>') {
-            get_binary_operators();
         } else if (contains(PARENTH, peek())) {
             get_parenth();
         } else if (peek() == ':' && peek(1) == '=') {
             get_assignment();
         } else if (peek() == '-' && peek(1) == '>') {
             get_arrow();
+        } else if (contains(BINARY_OPERATORS, peek()) && peek(1) != '>') {
+			get_binary_operators();
+//		} else if(peek() == '=' and contains(BINARY_OPERATORS, peek(1))) {
+
         } else if (is_keyword_or_num()) {
             get_keyword_or_num();
         } else if (is_string()) {
@@ -126,9 +128,15 @@ void Tokenizer::get_invalid() {
 }
 
 bool Tokenizer::is_pragma() {
-    return peek(0) == '/' and peek(1) == '/' and peek(2) == '#' and
+    auto workaround_pragma = peek(0) == '/' and peek(1) == '/' and peek(2) == '#' and
             peek(3) == 'p' and peek(4) == 'r' and peek(5) == 'a' and
             peek(6) == 'g' and peek(7) == 'm' and peek(8) == 'a';
+	if(workaround_pragma) {
+		auto error = CompileError(ErrorType::CompileWarning, "", m_line, "", "//#pragma", m_current_file);
+		error.m_message = "Found usage of //#pragma. Note that this is a workaround and will be removed in future versions.";
+		error.print();
+	}
+	return workaround_pragma;
 }
 
 
@@ -198,13 +206,24 @@ void Tokenizer::get_binary_operators() {
     } else if (peek() == '/') {
         tok = token::DIV;
     } else if (peek() == '*') {
-        tok = token::MULT;
+		if(peek(1) == '*') {
+			consume();
+			tok = token::EXP;
+		} else {
+        	tok = token::MULT;
+		}
     } else if (peek() == '&') {
         tok = token::STRING_OP;
     }
 	consume();
     m_tokens.emplace_back(tok, m_buffer, m_line, m_line_pos-m_buffer.length(), m_current_file);
     skip_whitespace();
+}
+
+void Tokenizer::get_compound_assignment_operators() {
+	flush_buffer();
+	token tok;
+
 }
 
 void Tokenizer::get_parenth() {
@@ -370,13 +389,19 @@ void Tokenizer::get_comparison_operators() {
 //    std::string token;
     if (peek() == '>' ) {
         if (peek(1) == '=') {
-            tok = token::GREATER_EQUAL;
+			tok = token::GREATER_EQUAL;
+			consume();
+		} else if(peek(1) == '>') {
+			tok = token::SHIFT_RIGHT;
 			consume();
         } else
             tok = token::GREATER_THAN;
     } else if (peek() == '<') {
         if (peek(1) == '=') {
-            tok = token::LESS_EQUAL;
+			tok = token::LESS_EQUAL;
+			consume();
+		} else if(peek(1) == '<') {
+			tok = token::SHIFT_LEFT;
 			consume();
         } else
             tok = token::LESS_THAN;
@@ -472,7 +497,7 @@ bool Tokenizer::is_binary(const std::string& str) {
                        std::all_of(str.begin() + 1, str.end(), [](char c){ return c == '0' || c == '1'; });
 
     // Überprüfen, ob der String mit "b" endet und nur 0 und 1 enthält
-    bool ends_width_b = str.size() > 1 && str.back() == 'b' &&
+    bool ends_width_b = str.size() > 1 && std::tolower(str.back()) == 'b' &&
                      std::all_of(str.begin(), str.end() - 1, [](char c){ return c == '0' || c == '1'; });
     // XOR-Prüfung
     return starts_with_b xor ends_width_b;
@@ -480,7 +505,7 @@ bool Tokenizer::is_binary(const std::string& str) {
 
 bool Tokenizer::is_hexadecimal(const std::string& str) {
     // Überprüfen, ob der String mit "0x" beginnt xor mit einer ziffer beginnt und mit h endet
-    return (str.substr(0, 2) == "0x") xor (str.size() > 1 && str.back() == 'h' && isdigit(str[0]));
+    return (str.substr(0, 2) == "0x") xor (str.size() > 1 && std::tolower(str.back()) == 'h' && isdigit(str[0]));
 }
 
 bool Tokenizer::is_callback_start() {

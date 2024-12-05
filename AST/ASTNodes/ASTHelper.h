@@ -9,6 +9,7 @@
 
 static const std::string PRINTER_OUTPUT = (std::filesystem::path(__FILE__).parent_path().parent_path().parent_path() / "printed.txt").string();
 
+
 enum class DataType {
 	Const,
 	Polyphonic,
@@ -60,21 +61,31 @@ enum class NodeType {
 	SingleAssignment,
 	Declaration,
 	SingleDeclaration,
+	FunctionParam,
 	Return,
 	SingleReturn,
 	GetControl,
+	SetControl,
 	ParamList,
+	ReferenceList,
+	InitializerList,
 	Wildcard,
 	Int,
 	Real,
 	String,
 	Nil,
 	DeadCode,
+	NumElements,
+	Search,
+	UseCount,
+	Delete,
+	SingleDelete,
+	Retain,
+	SingleRetain,
 	Statement,
 	Block,
 	Const,
 	Struct,
-	StructRef,
 	Family,
 	List,
 	ListRef,
@@ -86,13 +97,50 @@ enum class NodeType {
 	Callback,
 	Import,
 	FunctionHeader,
+	FunctionHeaderRef,
 	FunctionDefinition,
 	FunctionCall,
 	Program
 };
 
 // forward declaration
-struct NodeAST;
+class NodeAST;
+
+template <typename T>
+std::shared_ptr<T> to_shared_ptr(std::unique_ptr<T> uniquePtr) {
+	return std::shared_ptr<T>(std::move(uniquePtr));
+}
+
+template <typename T>
+std::unique_ptr<T> to_unique_ptr(std::shared_ptr<T>& sharedPtr) {
+	if (sharedPtr.use_count() == 1) { // Prüfe, ob der shared_ptr der einzige Besitzer ist
+		T* rawPtr = sharedPtr.get(); // Extrahiere den Rohzeiger
+		sharedPtr.reset();           // shared_ptr zurücksetzen, um Ownership aufzugeben
+		return std::unique_ptr<T>(rawPtr); // unique_ptr übernimmt Ownership
+	} else {
+		// Wenn nicht, erstelle eine Kopie des Objekts
+		return clone_as<T>(*sharedPtr);
+	}
+}
+
+template <typename T>
+std::unique_ptr<T> to_unique_ptr(std::shared_ptr<T>&& sharedPtr) {
+	// Erstelle eine Kopie des Objekts für den unique_ptr
+	return std::make_unique<T>(*sharedPtr);
+}
+
+// Funktion zum Casten eines shared_ptr von Base auf Derived
+template <typename Derived, typename Base>
+std::shared_ptr<Derived> shared_ptr_cast(const std::shared_ptr<Base>& basePtr) {
+	static_assert(std::is_base_of_v<Base, Derived>, "Derived must be a subclass of Base");
+	return std::static_pointer_cast<Derived>(basePtr);
+}
+
+// Funktion zum Casten eines unique_ptr von Base auf Derived
+template <typename Derived, typename Base>
+std::unique_ptr<Derived> unique_ptr_cast(std::unique_ptr<Base> basePtr) {
+	return std::unique_ptr<Derived>(static_cast<Derived*>(basePtr.release()));
+}
 
 template <typename T>
 bool is_instance_of(NodeAST* node) {
@@ -104,6 +152,11 @@ template <typename T>
 T* cast_node(NodeAST* node) {
 	static_assert(std::is_base_of<NodeAST, T>::value, "T must be a subclass of NodeAST");
 	return dynamic_cast<T*>(node);
+}
+
+template <typename T>
+std::shared_ptr<T> clone_shared(const std::shared_ptr<T>& source) {
+	return source ? std::shared_ptr<T>(static_cast<T*>(source->clone().release())) : nullptr;
 }
 
 // Hilfsfunktion zum Klonen von unique_ptrs

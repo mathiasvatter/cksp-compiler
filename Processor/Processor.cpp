@@ -69,49 +69,101 @@ Result<Type*> Processor::parse_type_annotation(Type* ty) {
 	Type* type = TypeRegistry::Unknown;
 	if(peek().type == token::TYPE) {
 		consume(); // consume semicolon
-		auto error = CompileError(ErrorType::ParseError,"", "", get_tok());
-		if(peek().type != token::KEYWORD) {
-			error.m_message = "Found incorrect Type annotation syntax.";
-			return Result<Type*>(error);
-		}
-		auto type_token = consume(m_tokens);
-		int dimensions = 0;
-		while (peek().type == token::OPEN_BRACKET) {
-			consume(); // consume the open bracket [
-			if (peek().type != token::CLOSED_BRACKET) {
-				error.m_message = "Expected closed bracket in Type annotation syntax.";
-				error.m_expected = type_token.val + "[]";
-				return Result<Type*>(error);
-			}
-			consume(); // consume the closed bracket
-			dimensions++;
-		}
-		type = TypeRegistry::get_type_from_annotation(type_token.val);
-		// check if type object if type still unknown
-		if(type == TypeRegistry::Unknown) {
-			type = TypeRegistry::add_object_type(type_token.val);
-		}
-		if(!type) {
-			error.m_message = "Unknown Type annotation.";
-			error.m_expected = "valid type annotation";
-			return Result<Type*>(error);
-		}
-		// if composite type
-		if(dimensions>0) {
-			type = TypeRegistry::add_composite_type(CompoundKind::Array, type, dimensions);
-		}
+		auto parsed_type = parse_type();
+		if(parsed_type.is_error()) return Result<Type*>(parsed_type.get_error());
+		type = parsed_type.unwrap();
 		// if existing type is already not Unknown then there was an identifier
-		if(ty and ty != TypeRegistry::Unknown and ty != type) {
+		if (ty and ty != TypeRegistry::Unknown and ty != type) {
+			auto error = CompileError(ErrorType::ParseError,"", "", get_tok());
 			error.m_message = "Found identifier combined with differing type annotation. Identifier type must match annotation type.";
 			error.m_expected = type->to_string();
 			error.m_got = ty->to_string();
-			return Result<Type*>(error);
+			return Result<Type *>(error);
 		}
 	// if no type annotation was provided but an identifier was
 	} else {
 		if(ty) type = ty;
 	}
 	return Result<Type*>(type);
+}
+
+Result<Type*> Processor::parse_type() {
+	Type* type = TypeRegistry::Unknown;
+	auto error = CompileError(ErrorType::ParseError,"", "", get_tok());
+	if(peek().type != token::KEYWORD and peek().type != token::OPEN_PARENTH) {
+		error.m_message = "Found incorrect Type annotation syntax.";
+		return Result<Type*>(error);
+	}
+
+	if(peek().type == token::OPEN_PARENTH) {
+		auto func_type = _parse_function_type();
+		if(func_type.is_error()) return Result<Type*>(func_type.get_error());
+		type = func_type.unwrap();
+	} else if(peek().type == token::KEYWORD) {
+		auto single_type = _parse_single_types();
+		if(single_type.is_error()) return Result<Type*>(single_type.get_error());
+		type = single_type.unwrap();
+	}
+	return Result<Type*>(type);
+}
+
+
+Result<Type*> Processor::_parse_single_types() {
+	auto type_token = consume(m_tokens);
+	Type* type = nullptr;
+	int dimensions = 0;
+	auto error = CompileError(ErrorType::ParseError,"", "", get_tok());
+	while (peek().type == token::OPEN_BRACKET) {
+		consume(); // consume the open bracket [
+		if (peek().type != token::CLOSED_BRACKET) {
+			error.m_message = "Expected closed bracket in Type annotation syntax.";
+			error.m_expected = type_token.val + "[]";
+			return Result<Type *>(error);
+		}
+		consume(); // consume the closed bracket
+		dimensions++;
+	}
+	type = TypeRegistry::get_type_from_annotation(type_token.val);
+	// check if type object if type still unknown
+	if (type == TypeRegistry::Unknown) {
+		type = TypeRegistry::add_object_type(type_token.val);
+	}
+	if (!type) {
+		error.m_message = "Unknown Type annotation.";
+		error.m_expected = "valid type annotation";
+		return Result<Type *>(error);
+	}
+	// if composite type
+	if (dimensions > 0) {
+		type = TypeRegistry::add_composite_type(CompoundKind::Array, type, dimensions);
+	}
+	return Result<Type*>(type);
+}
+
+Result<Type*> Processor::_parse_function_type() {
+	std::vector<Type*> params;
+	// consume the open parenthesis
+	consume();
+	while(peek().type != token::CLOSED_PARENTH) {
+		auto type = parse_type();
+		if(type.is_error()) return Result<Type*>(type.get_error());
+		params.push_back(type.unwrap());
+		if(peek().type == token::COMMA) {
+			consume();
+		}
+	}
+	consume(); // consume the closed parenthesis
+	if(peek().type != token::TYPE) {
+		auto error = CompileError(ErrorType::ParseError,"", "", get_tok());
+		error.m_message = "Found incorrect Function type syntax. Expected return type annotation.";
+		error.m_got = peek().val;
+		error.m_expected = ":";
+		return Result<Type*>(error);
+	}
+	consume(); // consume the colon
+	auto return_type = parse_type();
+	if(return_type.is_error()) return Result<Type*>(return_type.get_error());
+	return Result<Type*>(TypeRegistry::add_function_type(params, return_type.unwrap()));
 }
 
 void Processor::_skip_linebreaks() {

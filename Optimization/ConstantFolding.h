@@ -32,10 +32,10 @@ public:
 
 		node.function->args->accept(*this);
 
-		if(node.function->args->params.size() == 1) {
+		if(node.function->get_num_args() == 1) {
 			if(all_params_are_type(node, NodeType::ArrayRef)) {
 //				if(node.function->name == "num_elements") {
-//					auto array_ref = static_cast<NodeArrayRef*>(node.function->args->params[0].get());
+//					auto array_ref = static_cast<NodeArrayRef*>(node.function->get_param(0).get());
 //					// array only has SIZE constant if user defined
 //					if(array_ref->kind != NodeReference::Kind::User) return &node;
 //
@@ -48,7 +48,7 @@ public:
 //				}
 			} else if (all_params_are_type(node, NodeType::Int)) {
 				int32_t result = 0;
-				auto int_node = static_cast<NodeInt*>(node.function->args->params[0].get());
+				auto int_node = static_cast<NodeInt*>(node.function->get_arg(0).get());
 				// Definition der Funktions-Map für Integer-Operationen
 				static std::unordered_map<std::string, std::function<int32_t(int32_t)>> int_functions = {
 					{"inc", [](int32_t value) { return value + 1; }},
@@ -65,7 +65,7 @@ public:
 				}
 			} else if (all_params_are_type(node, NodeType::Real)) {
 				double result = 0;
-				auto real_node = static_cast<NodeReal*>(node.function->args->params[0].get());
+				auto real_node = static_cast<NodeReal*>(node.function->get_arg(0).get());
 				static std::unordered_map<std::string, std::function<double(double)>> real_functions = {
 					// real number functions
 					{"exp", [](double value) { return std::exp(value); }},
@@ -85,19 +85,34 @@ public:
 					return node.replace_with(std::move(new_node));
 				}
 			}
-		} else if(node.function->args->params.size() == 3) {
+		} else if(node.function->get_num_args() == 3) {
 			if(node.function->name == "in_range") {
 				if(all_params_are_type(node, NodeType::Int)) {
-					auto value = static_cast<NodeInt*>(node.function->args->params[0].get());
-					auto min = static_cast<NodeInt*>(node.function->args->params[1].get());
-					auto max = static_cast<NodeInt*>(node.function->args->params[2].get());
+					auto value = static_cast<NodeInt*>(node.function->get_arg(0).get());
+					auto min = static_cast<NodeInt*>(node.function->get_arg(1).get());
+					auto max = static_cast<NodeInt*>(node.function->get_arg(2).get());
 					auto new_node = std::make_unique<NodeInt>(value->value >= min->value && value->value <= max->value, node.tok);
 					return node.replace_with(std::move(new_node));
 				} else if(all_params_are_type(node, NodeType::Real)) {
-					auto value = static_cast<NodeReal*>(node.function->args->params[0].get());
-					auto min = static_cast<NodeReal*>(node.function->args->params[1].get());
-					auto max = static_cast<NodeReal*>(node.function->args->params[2].get());
+					auto value = static_cast<NodeReal*>(node.function->get_arg(0).get());
+					auto min = static_cast<NodeReal*>(node.function->get_arg(1).get());
+					auto max = static_cast<NodeReal*>(node.function->get_arg(2).get());
 					auto new_node = std::make_unique<NodeReal>(value->value >= min->value && value->value <= max->value, node.tok);
+					return node.replace_with(std::move(new_node));
+				}
+			}
+		} else if(node.function->get_num_args() == 2) {
+			if(node.function->name == "sh_left" or node.function->name == "sh_right") {
+				if(all_params_are_type(node, NodeType::Int)) {
+					auto value = static_cast<NodeInt*>(node.function->get_arg(0).get());
+					auto shift = static_cast<NodeInt*>(node.function->get_arg(1).get());
+					int32_t result = 0;
+					if(node.function->name == "sh_left") {
+						result = value->value << shift->value;
+					} else {
+						result = value->value >> shift->value;
+					}
+					auto new_node = std::make_unique<NodeInt>(result, node.tok);
 					return node.replace_with(std::move(new_node));
 				}
 			}

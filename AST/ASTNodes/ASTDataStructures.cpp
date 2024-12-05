@@ -3,15 +3,19 @@
 //
 
 #include "ASTDataStructures.h"
+
+#include <utility>
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Lowering/LoweringUIControlArray.h"
-#include "../../Lowering/LoweringNDArray.h"
+#include "../../Lowering/DataLowering/DataLoweringNDArray.h"
 #include "../../Lowering/LoweringList.h"
 #include "../../Desugaring/DesugaringConst.h"
-#include "../../Lowering/LoweringArray.h"
+#include "../../Lowering/DataLowering/DataLoweringArray.h"
 #include "../../Desugaring/DesugarStruct.h"
 #include "../../Lowering/LoweringStruct.h"
 #include "../../Lowering/LoweringPointer.h"
+#include "NodeStructCreateRefCountFunctions.h"
+#include "../../Lowering/PreLoweringStruct.h"
 
 // ************* NodeVariable ***************
 NodeAST *NodeVariable::accept(struct ASTVisitor &visitor) {
@@ -28,25 +32,39 @@ std::unique_ptr<NodeAST> NodeVariable::clone() const {
 std::unique_ptr<NodeReference> NodeVariable::to_reference() {
     auto ref = std::make_unique<NodeVariableRef>(name, tok);
 	ref->parent = parent;
-	ref->match_data_structure(this);
+	if(is_shared()) ref->match_data_structure(get_shared());
 	ref->ty = ty;
 	return ref;
 }
 
-std::unique_ptr<NodeArray> NodeVariable::to_array(NodeAST* size) {
-	return std::make_unique<NodeArray>(persistence, name, ty, size ? size->clone() : nullptr, tok);
+std::unique_ptr<NodeArray> NodeVariable::to_array(std::unique_ptr<NodeAST> size) {
+	auto node_array = std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
+	node_array->match_metadata(get_shared());
+	return node_array;
 }
 
 std::unique_ptr<NodePointer> NodeVariable::to_pointer() {
-	return std::make_unique<NodePointer>(persistence, name, ty, tok);
+	auto node_ptr = std::make_unique<NodePointer>(persistence, name, ty, tok);
+	node_ptr->match_metadata(get_shared());
+	return node_ptr;
 }
 
 std::unique_ptr<NodeNDArray> NodeVariable::to_ndarray() {
-	return std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
+	auto node_var = std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
+	node_var->match_metadata(get_shared());
+	return node_var;
 }
 
 std::unique_ptr<NodeList> NodeVariable::to_list() {
-	return std::make_unique<NodeList>(tok);
+	auto node_list = std::make_unique<NodeList>(tok);
+	node_list->match_metadata(get_shared());
+	return node_list;
+}
+
+std::unique_ptr<NodeDataStructure> NodeVariable::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	auto node_array = to_array(std::move(new_index));
+	node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type());
+	return node_array;
 }
 
 // ************* NodePointer ***************
@@ -64,7 +82,7 @@ std::unique_ptr<NodeAST> NodePointer::clone() const {
 std::unique_ptr<NodeReference> NodePointer::to_reference() {
 	auto ref = std::make_unique<NodePointerRef>(name, tok);
 	ref->parent = parent;
-	ref->match_data_structure(this);
+	if(is_shared()) ref->match_data_structure(get_shared());
 	ref->ty = ty;
 	return ref;
 }
@@ -74,21 +92,30 @@ ASTLowering* NodePointer::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
-std::unique_ptr<NodeArray> NodePointer::to_array(NodeAST* size) {
-	return std::make_unique<NodeArray>(persistence, name, ty, size ? size->clone() : nullptr, tok);
+std::unique_ptr<NodeArray> NodePointer::to_array(std::unique_ptr<NodeAST> size) {
+	auto node_array = std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
+	node_array->match_metadata(get_shared());
+	return node_array;
 }
 
 std::unique_ptr<NodeVariable> NodePointer::to_variable() {
-	return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+	auto node_var = std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+	node_var->match_metadata(get_shared());
+	return node_var;
 }
 
+std::unique_ptr<NodeDataStructure> NodePointer::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	auto node_array = to_array(std::move(new_index));
+	node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type());
+	return node_array;
+}
 
 // ************* NodeArray ***************
 NodeAST *NodeArray::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeArray::NodeArray(const NodeArray& other)
-	: NodeDataStructure(other), show_brackets(other.show_brackets), size(clone_unique(other.size)) {
+	: NodeComposite(other), size(clone_unique(other.size)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeArray::clone() const {
@@ -102,25 +129,37 @@ NodeAST *NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 	return nullptr;
 }
 
-ASTLowering* NodeArray::get_lowering(NodeProgram *program) const {
-	static LoweringArray lowering(program);
+ASTLowering* NodeArray::get_data_lowering(NodeProgram *program) const {
+	static DataLoweringArray lowering(program);
 	return &lowering;
 }
 
 std::unique_ptr<NodeReference> NodeArray::to_reference() {
     auto ref = std::make_unique<NodeArrayRef>(name, nullptr, tok);
 	ref->parent = parent;
-	ref->match_data_structure(this);
+	if(is_shared()) ref->match_data_structure(get_shared());
 	ref->ty = ty;
 	return ref;
 }
 
 std::unique_ptr<NodeNDArray> NodeArray::to_ndarray() {
-    return std::make_unique<NodeNDArray>(persistence, name, ty, std::make_unique<NodeParamList>(tok, size->clone()), tok);
+    auto nd_array = std::make_unique<NodeNDArray>(persistence, name, ty, std::make_unique<NodeParamList>(tok, size->clone()), tok);
+	nd_array->match_metadata(get_shared());
+	return nd_array;
 }
 
 std::unique_ptr<NodeList> NodeArray::to_list() {
-    return std::make_unique<NodeList>(tok);
+    auto node_list = std::make_unique<NodeList>(tok);
+	node_list->match_metadata(get_shared());
+	return node_list;
+}
+
+std::unique_ptr<NodeDataStructure> NodeArray::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	auto node_ndarray = to_ndarray();
+	node_ndarray->sizes->prepend_param(std::move(new_index));
+	node_ndarray->dimensions = node_ndarray->sizes->params.size();
+	node_ndarray->ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type(), node_ndarray->dimensions);
+	return node_ndarray;
 }
 
 // ************* NodeNDArray ***************
@@ -128,33 +167,84 @@ NodeAST *NodeNDArray::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeNDArray::NodeNDArray(const NodeNDArray& other)
-	: NodeDataStructure(other), show_brackets(other.show_brackets), sizes(clone_unique(other.sizes)),
-	dimensions(other.dimensions) {
+	: NodeComposite(other), sizes(clone_unique(other.sizes)),
+	dimensions(other.dimensions), inflation_times(other.inflation_times) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 	return std::make_unique<NodeNDArray>(*this);
 }
 
-ASTLowering* NodeNDArray::get_lowering(NodeProgram *program) const {
-	static LoweringNDArray lowering(program);
+ASTLowering* NodeNDArray::get_data_lowering(NodeProgram *program) const {
+	static DataLoweringNDArray lowering(program);
 	return &lowering;
 }
 
 std::unique_ptr<NodeReference> NodeNDArray::to_reference() {
     auto ref = std::make_unique<NodeNDArrayRef>(name, nullptr, tok);
 	ref->parent = parent;
-	ref->match_data_structure(this);
+	if(is_shared()) ref->match_data_structure(get_shared());
 	ref->ty = ty;
+	if(is_shared()) ref->determine_sizes();
 	return ref;
 }
 
-std::unique_ptr<NodeArray> NodeNDArray::to_array(NodeAST* size) {
-    return std::make_unique<NodeArray>(persistence, name, ty, size ? size->clone() : nullptr, tok);
+std::unique_ptr<NodeArray> NodeNDArray::to_array(std::unique_ptr<NodeAST> size) {
+    auto node_array = std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
+	node_array->match_metadata(get_shared());
+	node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type(), 1);
+	return node_array;
 }
 
 std::unique_ptr<NodeList> NodeNDArray::to_list() {
-    return std::make_unique<NodeList>(tok);
+    auto node_list = std::make_unique<NodeList>(tok);
+	node_list->match_metadata(get_shared());
+	return node_list;
+}
+
+std::unique_ptr<NodeDataStructure> NodeNDArray::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	sizes->prepend_param(std::move(new_index));
+	inflation_times++;
+	dimensions = sizes->params.size();
+	ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type(), dimensions);
+	return clone_as<NodeDataStructure>(this);
+}
+
+std::shared_ptr<NodeArray> NodeNDArray::get_raw() {
+	auto raw_array = to_array(nullptr);
+	raw_array->name = "_" + raw_array->name;
+
+	if(sizes) {
+		auto size_expr = NodeBinaryExpr::create_right_nested_binary_expr(
+			sizes->params,
+			0,
+			token::MULT
+		);
+		size_expr->do_constant_folding();
+
+		raw_array->set_size(std::move(size_expr));
+
+		raw_array->set_num_elements(clone_as<NodeParamList>(sizes.get()));
+		raw_array->num_elements->prepend_param(raw_array->size->clone());
+	}
+	return raw_array;
+}
+
+std::unique_ptr<NodeAST> NodeNDArray::get_size() {
+	return to_reference()->cast<NodeArrayRef>()->get_size();
+}
+
+// ************* NodeFunctionHeader ***************
+NodeAST *NodeFunctionHeader::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeFunctionHeader::NodeFunctionHeader(const NodeFunctionHeader& other)
+	: NodeDataStructure(other),
+	  has_forced_parenth(other.has_forced_parenth), params(clone_vector(other.params)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeFunctionHeader::clone() const {
+	return std::make_unique<NodeFunctionHeader>(*this);
 }
 
 // ************* NodeUIControl ***************
@@ -163,7 +253,7 @@ NodeAST *NodeUIControl::accept(struct ASTVisitor &visitor) {
 }
 NodeUIControl::NodeUIControl(const NodeUIControl& other)
 	: NodeDataStructure(other), ui_control_type(other.ui_control_type),
-	  control_var(clone_unique(other.control_var)), params(clone_unique(other.params)),
+	  control_var(clone_shared(other.control_var)), params(clone_unique(other.params)),
 	  sizes(clone_unique(other.sizes)), declaration(other.declaration) {
 	set_child_parents();
 }
@@ -172,9 +262,8 @@ std::unique_ptr<NodeAST> NodeUIControl::clone() const {
 }
 NodeAST *NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (control_var.get() == oldChild) {
-		if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.get())) {
-			newChild.release();
-			control_var = std::unique_ptr<NodeDataStructure>(new_data_structure);
+		if(auto new_data_structure = cast_node<NodeDataStructure>(newChild.release())) {
+			control_var = std::shared_ptr<NodeDataStructure>(new_data_structure);
 			return control_var.get();
 		}
 	}
@@ -187,8 +276,8 @@ ASTLowering* NodeUIControl::get_lowering(NodeProgram *program) const {
 }
 
 bool NodeUIControl::is_ui_control_array() const {
-	if(!declaration) return false;
-	if(declaration->control_var->get_node_type() == control_var->get_node_type()) return false;
+	if(!get_declaration()) return false;
+	if(get_declaration()->control_var->get_node_type() == control_var->get_node_type()) return false;
 	return control_var->get_node_type() == NodeType::Array or control_var->get_node_type() == NodeType::NDArray;
 }
 
@@ -211,15 +300,21 @@ ASTLowering* NodeList::get_lowering(NodeProgram *program) const {
 }
 
 std::unique_ptr<NodeVariable> NodeList::to_variable() {
-    return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+    auto node_var = std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+	node_var->match_metadata(get_shared());
+	return node_var;
 }
 
-std::unique_ptr<NodeArray> NodeList::to_array(NodeAST* size) {
-    return std::make_unique<NodeArray>(persistence, name, ty, size ? size->clone() : nullptr, tok);
+std::unique_ptr<NodeArray> NodeList::to_array(std::unique_ptr<NodeAST> size) {
+    auto node_array = std::make_unique<NodeArray>(persistence, name, ty, std::move(size), tok);
+	node_array->match_metadata(get_shared());
+	return node_array;
 }
 
 std::unique_ptr<NodeNDArray> NodeList::to_ndarray() {
-    return std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
+    auto node_ndarray = std::make_unique<NodeNDArray>(persistence, name, ty, nullptr, tok);
+	node_ndarray->match_metadata(get_shared());
+	return node_ndarray;
 }
 
 // ************* NodeConst ***************
@@ -247,7 +342,7 @@ NodeAST *NodeStruct::accept(struct ASTVisitor &visitor) {
 }
 NodeStruct::NodeStruct(const NodeStruct& other)
 	: NodeDataStructure(other), members(clone_unique(other.members)),
-	  methods(clone_vector<NodeFunctionDefinition>(other.methods)), constructor(other.constructor),
+	  methods(other.methods), constructor(other.constructor),
 	  member_table(other.member_table), method_table(other.method_table),
 	  member_node_types(other.member_node_types), max_individual_struts_var(other.max_individual_struts_var) {
 	set_child_parents();
@@ -255,8 +350,6 @@ NodeStruct::NodeStruct(const NodeStruct& other)
 std::unique_ptr<NodeAST> NodeStruct::clone() const {
 	return std::make_unique<NodeStruct>(*this);
 }
-std::unordered_set<NodeType> NodeStruct::allowed_member_node_types =
-	{NodeType::Variable, NodeType::Pointer, NodeType::NDArray, NodeType::Array};
 
 ASTDesugaring *NodeStruct::get_desugaring(NodeProgram *program) const {
 	static DesugarStruct desugaring(program);
@@ -268,9 +361,15 @@ ASTLowering* NodeStruct::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
+void NodeStruct::pre_lower(NodeProgram* program) {
+	static PreLoweringStruct pre_lowering(program);
+	this->accept(pre_lowering);
+}
+
+
 std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 	auto node_block = std::make_unique<NodeBlock>(Token());
-	auto node_max_structs = std::make_unique<NodeVariable>(std::nullopt, "MAX_STRUCTS", TypeRegistry::Integer,  DataType::Const, Token());
+	auto node_max_structs = std::make_unique<NodeVariable>(std::nullopt, "MAX::STRUCTS", TypeRegistry::Integer,  DataType::Const, Token());
 	node_max_structs->is_global = true;
 	auto node_declare_max_structs = std::make_unique<NodeSingleDeclaration>(
 		std::move(node_max_structs),
@@ -278,7 +377,7 @@ std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 		Token()
 	);
 	node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_max_structs), Token()));
-	auto node_mem_warning = std::make_unique<NodeVariable>(std::nullopt, "MEM_WARNING", TypeRegistry::String,  DataType::Const, Token());
+	auto node_mem_warning = std::make_unique<NodeVariable>(std::nullopt, "MEM::WARNING", TypeRegistry::String,  DataType::Const, Token());
 	node_mem_warning->is_global = true;
 	auto node_declare_mem_warning = std::make_unique<NodeSingleDeclaration>(
 		std::move(node_mem_warning),
@@ -289,24 +388,34 @@ std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 	return node_block;
 }
 
-NodeFunctionDefinition *NodeStruct::generate_init_method() {
-	auto param_list = std::make_unique<NodeParamList>(this->tok);
-	param_list->add_param(node_self->clone());
-	auto node_block = std::make_unique<NodeBlock>(this->tok);
-	for(auto & mem : this->member_table) {
-		std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
-		auto member_ref = mem.second->to_reference();
-		param_list->add_param(mem.second->clone());
-		member_ref->name = "self." + member_ref->name;
-		assignment = std::make_unique<NodeSingleAssignment>(
-			std::move(member_ref),
-			mem.second->to_reference(),
-			mem.second->tok
-		);
-		node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
+std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_init_method() {
+	std::vector<std::unique_ptr<NodeFunctionParam>> param_list;
+	param_list.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_self.get())));
+	auto node_block = std::make_unique<NodeBlock>(this->tok, true);
+
+	for(auto& member : members->statements) {
+		if(auto decl = member->statement->cast<NodeSingleDeclaration>()) {
+			auto mem = decl->variable;
+			std::unique_ptr<NodeSingleAssignment> assignment;
+			auto member_ref = mem->to_reference();
+			member_ref->name = "self." + member_ref->name;
+			auto func_param = std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(mem.get()));
+			auto param_ref = func_param->variable->to_reference();
+			param_list.push_back(std::move(func_param));
+			assignment = std::make_unique<NodeSingleAssignment>(
+				std::move(member_ref),
+				std::move(param_ref),
+				mem->tok
+			);
+			node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
+		} else {
+			auto error = CompileError(ErrorType::VariableError, "<Struct> member must be a declaration", "", tok);
+			error.exit();
+		}
 	}
-	auto num_params = param_list->params.size();
-	auto function_def = std::make_unique<NodeFunctionDefinition>(
+
+	auto num_params = param_list.size();
+	auto function_def = std::make_shared<NodeFunctionDefinition>(
 		std::make_unique<NodeFunctionHeader>(
 			"__init__",
 			std::move(param_list),
@@ -317,18 +426,14 @@ NodeFunctionDefinition *NodeStruct::generate_init_method() {
 		std::move(node_block),
 		this->tok
 	);
-//	function_def->update_param_data_type();
 	function_def->ty = TypeRegistry::add_object_type(this->name);
 	function_def->parent = this;
-	this->methods.push_back(std::move(function_def));
-	this->constructor = methods.back().get();
-	this->update_method_table();
-	return method_table.find({"__init__", (int)num_params})->second;
+	return add_method(function_def);
 }
 
-NodeFunctionDefinition *NodeStruct::generate_repr_method() {
-	auto self_ref = node_self->to_reference();
-	self_ref->declaration = node_self.get();
+std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_repr_method() {
+	auto self_param = std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_self.get()));
+	auto self_ref = self_param->variable->to_reference();
 	auto message = std::make_unique<NodeBinaryExpr>(
 		token::STRING_OP,
 		std::make_unique<NodeString>("\"<"+this->name+"> Object: \"", tok),
@@ -342,10 +447,10 @@ NodeFunctionDefinition *NodeStruct::generate_repr_method() {
 		)
 	);
 	node_body->scope = true;
-	auto function_def = std::make_unique<NodeFunctionDefinition>(
+	auto function_def = std::make_shared<NodeFunctionDefinition>(
 		std::make_unique<NodeFunctionHeader>(
 			"__repr__",
-			std::make_unique<NodeParamList>(this->tok, node_self->clone()),
+			std::move(self_param),
 			this->tok
 		),
 		std::nullopt,
@@ -353,31 +458,103 @@ NodeFunctionDefinition *NodeStruct::generate_repr_method() {
 		std::move(node_body),
 		this->tok
 	);
-//	function_def->update_param_data_type();
 	function_def->parent = this;
 	function_def->ty = TypeRegistry::String;
 	function_def->num_return_params = 1;
-	this->methods.push_back(std::move(function_def));
-	this->update_method_table();
-	return method_table.find({"__repr__", 1})->second;
+	return add_method(function_def);
 }
 
 void NodeStruct::inline_struct(NodeProgram *program) {
 	// add struct methods to program functions
-	for(auto & m: methods) {
-		program->function_definitions.push_back(std::move(m));
-		auto new_func_ptr = program->function_definitions.back().get();
-		for(auto & callsite : new_func_ptr->call_sites) {
-			callsite->definition = new_func_ptr;
-		}
+	for(auto & method: methods) {
+		method->parent = program;
+		program->function_definitions.push_back(method);
 	}
-	program->update_function_lookup();
 	methods.clear();
-	this->update_method_table();
-
+	constructor.reset();
+//	program->update_function_lookup();
+	// remove self node
+	auto self = this->node_self->parent->cast<NodeSingleDeclaration>();
+	self->remove_node();
+	node_self.reset();
 	program->init_callback->statements->prepend_body(std::move(members));
 	members = std::make_unique<NodeBlock>(Token());
-	this->update_member_table();
 }
+
+std::shared_ptr<NodeFunctionDefinition> NodeStruct::get_overloaded_method(token op) {
+	auto it = overloaded_operators.find(op);
+	if(it != overloaded_operators.end()) {
+		return it->second.lock();
+	}
+	return nullptr;
+}
+
+void NodeStruct::generate_ref_count_methods(NodeProgram* program) {
+	NodeStructCreateRefCountFunctions rf_methods(*this);
+	auto del = rf_methods.create_destructor();
+	add_method(std::move(del));
+
+	auto decr = rf_methods.create_decr_function();
+	add_method(std::move(decr));
+
+	auto incr = rf_methods.create_incr_function();
+	add_method(std::move(incr));
+
+	auto array_incr = rf_methods.create_array_function("__incr__");
+	add_method(std::move(array_incr));
+
+	auto array_decr = rf_methods.create_array_function("__decr__");
+	add_method(std::move(array_decr));
+
+//	auto array_del = rf_methods.create_array_function("__del__");
+//	methods.push_back(std::move(array_del));
+
+	this->rebuild_method_table();
+}
+
+std::unique_ptr<NodeWhile> NodeStruct::generate_ref_count_while(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs) {
+	NodeStructCreateRefCountFunctions rf_methods(*this);
+	return rf_methods.get_stack_while_loop(std::move(self), std::move(num_refs));
+}
+
+void NodeStruct::collect_recursive_structs(NodeProgram *program) {
+	std::unordered_map<NodeStruct*, int> visit_counts;
+
+	std::function<void(NodeStruct*)> collect = [&](NodeStruct* node_struct) {
+	  // base case
+	  if (!node_struct) return;
+	  // Inkrementiere den Besuchszähler für das aktuelle NodeStruct
+	  visit_counts[node_struct]++;
+	  recursive_structs.insert(node_struct);
+	  // Wenn das NodeStruct bereits mehr als einmal besucht wurde, füge es den rekursiven Structs hinzu
+	  if (visit_counts[node_struct] > 1) {
+		  // Wir müssen nicht weiter in diesem Pfad suchen, da wir bereits festgestellt haben, dass es rekursiv ist
+		  return;
+	  }
+
+	  // Iteriere über die Mitglieder in member_table
+	  for (const auto& mem : node_struct->member_table) {
+		  auto member = mem.second.lock();
+		  if(mem.first == "self") continue;
+		  if(member->is_engine) continue;
+		  // Hole den Typ des Mitglieds
+		  Type* mem_type = member->ty->get_element_type();
+		  // Überprüfe, ob der Typ ein Struct ist
+		  if (mem_type->get_type_kind() == TypeKind::Object) {
+			  // Hole den Namen des Structs
+			  std::string structName = mem_type->to_string();
+			  auto it = program->struct_lookup.find(structName);
+			  if (it != program->struct_lookup.end()) {
+				  NodeStruct* memberStruct = it->second;
+				  collect(memberStruct);
+			  }
+		  }
+	  }
+	};
+
+	collect(this);
+}
+
+
 
 

@@ -34,12 +34,15 @@ inline static std::map<token, int> operator_precedence = {
         {token::BIT_XOR, 8},
         {token::BIT_OR, 9},
         {token::BIT_AND, 10},
-        {token::BIT_NOT, 11},
-        {token::ADD, 12},
-        {token::SUB, 12},
-        {token::MULT, 13},
-        {token::DIV, 13},
-        {token::MODULO, 13}
+		{token::SHIFT_RIGHT, 11},
+		{token::SHIFT_LEFT, 11},
+        {token::BIT_NOT, 12},
+        {token::ADD, 13},
+        {token::SUB, 13},
+        {token::MULT, 14},
+        {token::DIV, 14},
+        {token::MODULO, 14},
+		{token::EXP,15}
 
 //	{token::BOOL_XOR, 2},      // Niedrigste Präzedenz unter den logischen Operatoren
 //	{token::BOOL_OR, 3},       // Logisches OR hat eine höhere Präzedenz als XOR
@@ -78,8 +81,6 @@ public:
     Result<std::unique_ptr<NodeProgram>> parse();
 
 protected:
-
-
     static std::optional<Token> get_persistent_keyword(const Token& tok);
     static std::string sanitize_binary(const std::string& input);
     /// convert eg 0bFFFh into 0xbFFF
@@ -117,8 +118,11 @@ protected:
     Result<std::unique_ptr<NodeAssignment>> parse_assign_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeReturn>> parse_return_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeDelete>> parse_delete_statement(NodeAST* parent);
+	Result<std::unique_ptr<NodeBreak>> parse_break_statement(NodeAST* parent);
 
     Result<std::unique_ptr<NodeSingleAssignment>> parse_single_assign_statement(NodeAST* parent);
+	Result<std::unique_ptr<NodeSingleDeclaration>> parse_single_declare_statement(NodeAST* parent);
+	Result<std::unique_ptr<NodeFunctionParam>> parse_function_param(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_declare_array(NodeAST* parent);
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);
@@ -137,18 +141,19 @@ protected:
     Result<std::unique_ptr<NodeWhile>> parse_while_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeSelect>> parse_select_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeGetControl>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent);
-    Result<std::unique_ptr<NodeFunctionDefinition>> parse_function_definition(NodeAST* parent);
-	NodeFunctionDefinition* m_current_function_def = nullptr;
-    /// function args are no references -> replace with references
-    Result<std::unique_ptr<NodeParamList>> parse_function_args(NodeAST* parent, bool is_definition);
-    Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header(NodeAST* parent, bool is_definition);
+    Result<std::shared_ptr<NodeFunctionDefinition>> parse_function_definition(NodeAST* parent);
+	std::shared_ptr<NodeFunctionDefinition> m_current_function_def;
+    /// function params are no references -> replace with references
+    Result<std::unique_ptr<NodeParamList>> parse_function_args(NodeAST* parent);
+	Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header(NodeAST* parent);
+	Result<std::unique_ptr<NodeFunctionHeaderRef>> parse_function_header_ref(NodeAST* parent);
     Result<std::unique_ptr<NodeFunctionCall>> parse_function_call(NodeAST* parent);
     Result<std::unique_ptr<NodeCallback>> parse_callback(NodeAST* parent);
 
 	Result<std::unique_ptr<NodeProgram>> parse_program();
 	std::vector<std::unique_ptr<NodeCallback>> m_callbacks;
 	int m_init_callback_idx = -1;
-    std::unordered_map<StringIntKey, std::unique_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_function_definitions;
+    std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_function_definitions;
 	std::vector<NodeDataStructure*> m_all_data_structures;
     void mark_function_as_used(const std::string& func_name, int num_args);
 

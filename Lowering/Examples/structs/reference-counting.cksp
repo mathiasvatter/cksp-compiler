@@ -1,0 +1,325 @@
+{
+Um eine Art Garbage Collection zu implementieren, soll reference counting angewendet werden.
+Dabei dient das <Object>::allocation Array als Referenzzähler für jedes Objekt.
+Sobald ein Object mit der __init__ methode erstellt wird, wird der Referenzzähler auf 1 gesetzt.
+Der Referenzzähler wird außerdem mittels der __incr__ Methode erhöht, sobald:
+1. Der Pointer r_value in einem Assignment ist
+2. Der Pointer r_value in einer Deklaration ist
+
+Ist das allocation Array <= 0, so gilt das Objekt als gelöscht.
+Der Referenzzähler wird mittels der __del__ Methode reduziert, sobald:
+1. Der Pointer l_value in einem Assignment ist
+2. Am Scope Ende für jeden lokalen Pointer dieses Scopes
+Für jedes struct muss eine eigene delete Methode automatisch erstellt werden, die im einfachsten Fall nur den reference
+count des Objekts reduziert, und bei rekursiven Datenstrukturen auch den reference count aller Member-Structs reduziert.
+Fälle:
+1. das struct hat keine anderen objekte als member: dec(allocation[self])
+2. das struct hat andere objekte als member: dec(allocation[self]) und delete(member)
+3. das struct hat rekursive objekte als member: while schleife mit pseude rekursion
+
+}
+
+struct List
+    declare value: int
+    declare next: List := nil
+    declare lefts[5]: List[] := (nil)
+    declare right: List := nil
+    declare other_struct: OtherStruct := nil
+
+    function __init__(self, value: int, next: List)
+        self.value := value
+        self.next := next
+    end function
+
+end struct
+
+if(scope)
+    declare ls = List(1, List(2, List(3, nil)))
+
+    // -------- Declarations
+
+    // ------ initializer list of a single object
+    declare lists[10]: List[] := (ls)
+    retain(lists[0] 10 // increase ref count by num_elements of lists)
+    
+    // ------ initializer list of a single object
+    declare more_lists[10,10]: List[][] := (ls)
+    retain(more_lists[0,0] 10*10 // increase ref count by num_elements of more_lists)
+
+    // ----- initializer list of multiple objects
+    declare lists[10] := List[] := (ls, ls1, ls2)
+    retain(lists[0], 1)
+    retain(lists[1], 1)
+    retain(lists[2], 10-2)
+
+    // ----- single ptr assignment
+    declare ls1 := ls
+    retain(ls1, 1) // increase ref count by 1
+
+    // ------ copy of array
+    declare lists1[10] := lists
+
+    // ------ ndarray
+    declare more_lists[10,10]: List[][] := (ls, ls1, ls2)
+
+    // --------- Assignmnets
+
+    delete lists // delete complete array in for loop
+    lists := (ls) // <-
+    retain(lists, num_elements(lists))
+
+    delete more_lists // delete complete array in for loop
+    more_lists[*, *] := (ls) // <-
+    retain(more_lists, 10*10)
+
+    // if there are different lists as r_values
+    delete more_lists[4,0]
+    delete more_lists[4,1]
+    more_lists[4, *] := (ls, ls1) // <-
+    retain(more_lists[4,0], 1)
+    retain(more_lists[4,1], 1)
+
+end if
+
+delete ls
+delete lists // delete in for loop
+delete more_lists // delete complete array in for loop
+delete ls1
+
+
+{-------------------------------------------------------------------------------------------
+                                        Post Lowering
+--------------------------------------------------------------------------------------------}
+
+on init
+
+    declare const MAX_STRUCTS: int := 1000000
+    declare MEM_WARNING: string := "Memory Error: No more free space available to allocate objects of type"
+
+    declare const List::MAX_STRUCTS: int := MAX_STRUCTS // can alternate if mutlidimensional array is needed
+    declare List::allocation[List::MAX_STRUCTS]: int[] := (0)
+    declare List::value[List::MAX_STRUCTS]: int[]             // Wert des Elements
+    declare List::next[List::MAX_STRUCTS]: List[] := (nil)      // Verweis auf den Index des nächsten Elements
+    declare List::free_idx: int := 0                  // Zeigt auf den ersten freien Platz im Array
+
+end on
+
+
+function List::__init__(value: int, next: List)
+    List::free_idx := search(List::allocation, 0)
+    if List::free_idx = nil
+        message("Error: No more free space available to allocate objects of type 'List'") 
+    end if
+    List::allocation[List::free_idx] := 1
+    List::value[List::free_idx] := value
+    List::next[List::free_idx] := next
+    return List::free_idx
+end function
+
+// Erhöht den reference count des Objekts unter zwei Voraussetzungen:
+// 1. Der ptr ist r_value in einem Assignment
+// 2. Der ptr ist r_value in einer Deklaration
+function List::__incr__(self: List, num_refs: int)
+    if self # nil
+        List::allocation[self] := List::allocation[self] + num_refs
+    end if
+end function
+
+// Betreibt reference counting
+// delete funktion wird aufgerufen, falls:
+// 1. Ein List Objekt l_value in einem Assignment ist -> dann wird delete davor für diesen ptr aufgerufen
+// 2. Am Scope Ende für jeden lokalen Pointer dieses Scopes -> dann wird delete für jeden lokalen ptr aufgerufen
+
+// delete funktion, falls das struct nur einen rekursiven member hat
+struct List
+    declare value: int
+    declare next: List
+end struct
+function List::__decr__(self: List, num_refs: int)
+    declare current: List := self
+    // Solange es Objekte gibt, die freigegeben werden sollen, weiter durch die Struktur iterieren
+    while current # nil
+
+        // Schritt 1: Referenzzähler reduzieren/erhöhen
+        List::allocation[current] := List::allocation[current] + num_refs
+        // object still referenced, only delete this ptr
+        if(List::allocation[current] > 0) 
+            current := nil
+        	continue
+        end if
+
+        self := current
+        if(List::next[current] # nil)
+            current := List::next[current]
+        else
+            current := nil
+        end if
+        
+        // actual delete
+        List::__del__(self)
+    end while
+end function  
+// in diesem fall ist kein stack nötig
+function List::__del__(self: List)
+    if(List::allocation[self] <= 0)
+    	// all object struct members       
+        List::next[self] := nil
+    end if 
+end function
+// nil -> List -> List -> List -> nil
+// 0       1       1       1       0    <- references
+// 
+// 
+// delete funktion, falls das struct mehrere rekursive member vom Typ Node hat
+struct Node
+    declare value: int
+    declare left: Node := nil
+    declare right: Node := nil
+end struct
+// so sieht das ganze lowered aus:
+// declare Node::value[MAX_STRUCTS]: int[]
+// declare Node::left[MAX_STRUCTS]: Node[]
+// declare Node::right[MAX_STRUCTS]: Node[]
+// declare Node::allocation[MAX_STRUCTS]: int[]
+// in diesem fall ist ein stack nötig
+declare Node::stack[MAX_STRUCTS]: Node[]
+declare Node::stack_top: int := 0
+function Node::__decr__(self: Node, num_refs: int)
+    Node::stack[Node::stack_top] := self
+    inc(Node::stack_top)
+
+    // Solange der Stack nicht leer ist
+    while Node::stack_top > 0
+        dec(Node::stack_top)
+        self := Node::stack[Node::stack_top]
+
+        if self = nil
+            continue
+        end if
+
+        // lower reference count
+        Node::allocation[self] := Node::allocation[self] + num_refs
+        // object still referenced
+        if(Node::allocation[self] > 0) 
+        	continue
+        end if
+
+        // füge left dem stack hinzu
+        if Node::left[self] # nil
+            inc(Node::stack_top)
+            Node::stack[Node::stack_top] := Node::left[self]
+        end if
+
+        // füge right dem stack hinzu
+        if Node::right[self] # nil
+            inc(Node::stack_top)
+            Node::stack[Node::stack_top] := Node::right[self]
+        end if
+
+        // wenn self nicht mehr referenziert wird, lösche alle member
+        Node::__del__(self)
+
+    end while
+end function
+
+function Node::__del__(self: Node)
+    if(Node::allocation[self] <= 0)
+        Node::left[self] := nil
+        Node::right[self] := nil
+    end if
+end function
+
+// sollte List > 1 rekursive member haben, die nicht selbst list sind und
+// Node > 1 rekursive member haben, die nicht selbst node sind
+struct List
+    declare value: int
+    declare next: Node
+end struct
+struct Node
+    declare value: int
+    declare left: List
+    declare right: List
+end struct
+function List::__decr__(self: List, num_refs: int)
+    // Füge das initiale Objekt dem entsprechenden Stack hinzu
+    List::stack[List::stack_top] := self
+    inc(List::stack_top)
+
+    // Hauptschleife zur Verarbeitung der Stacks
+    while List::stack_top > 0 or Node::stack_top > 0
+        // Verarbeite List-Stack
+        while List::stack_top > 0
+            dec(List::stack_top)
+            self := List::stack[List::stack_top]
+
+            if self = nil
+                continue
+            end if
+
+            // Schritt 1: Referenzzähler reduzieren/erhöhen (je nach num_refs)
+            List::allocation[self] := List::allocation[self] + num_refs
+
+            // Wenn das Objekt noch referenziert wird, überspringe die Löschung
+            if List::allocation[self] > 0
+                continue
+            end if
+
+            // Hier kommen Delete-Methoden von anderen Membern hin, die nicht vom Typ Node sind
+
+            // Füge rekursive Member hinzu
+            if List::next[self] # nil
+                // Füge das Node-Objekt dem Node-Stack hinzu
+                inc(Node::stack_top)
+                Node::stack[Node::stack_top] := List::next[self]
+            end if
+
+            List::__del__(self)
+        end while
+
+        // Verarbeite Node-Stack
+        while Node::stack_top > 0
+            dec(Node::stack_top)
+            self := Node::stack[Node::stack_top]
+
+            if self = nil
+                continue
+            end if
+
+            // Schritt 1: Referenzzähler reduzieren
+            dec(Node::allocation[self])
+
+            // Wenn das Objekt noch referenziert wird, überspringe die Löschung
+            if Node::allocation[self] > 0
+                continue
+            end if
+
+            // Hier kommen Delete-Methoden von anderen Membern hin, die nicht vom Typ List sind
+
+            // Füge rekursive Member hinzu
+            if self.left # nil
+                // Füge das List-Objekt dem List-Stack hinzu
+                inc(List::stack_top)
+                List::stack[List::stack_top] := self.left
+            end if
+
+            if Node::right[self] # nil
+                inc(List::stack_top)
+                List::stack[List::stack_top] := Node::right[self]
+            end if
+
+            Node::__del__(self)
+        end while
+    end while
+end function
+
+// Wann welche Methode:
+
+// Methode 1 (Lineare Rekursion):
+// Verwende diese Methode, wenn deine Struktur linear ist und jedes Objekt auf maximal ein weiteres Objekt desselben Typs verweist.
+// Beispiele: Einfach verkettete Listen, lineare Ketten von Objekten.
+// Methode 2 (Nicht-lineare Rekursion mit homogenen Typen):
+// Verwende diese Methode, wenn deine Struktur verzweigt ist und Objekte auf mehrere Objekte desselben Typs verweisen können.
+// Beispiele: Bäume, Graphen ohne unterschiedliche Typen.
+// Methode 3 (Nicht-lineare Rekursion mit heterogenen Typen):
+// Verwende diese Methode, wenn deine Struktur aus Objekten verschiedener Typen besteht, die sich gegenseitig referenzieren.
+// Beispiele: Gegenseitig rekursive Strukturen wie List und Node, die sich gegenseitig enthalten.

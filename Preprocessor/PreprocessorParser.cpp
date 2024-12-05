@@ -305,7 +305,7 @@ Result<std::unique_ptr<PreNodeDefineHeader>> PreprocessorParser::parse_define_he
     if(define_name.is_error())
         return Result<std::unique_ptr<PreNodeDefineHeader>>(define_name.get_error());
     node_define_header->name = std::move(define_name.unwrap());
-//    std::unique_ptr<PreNodeList> args;
+//    std::unique_ptr<PreNodeList> params;
     std::unique_ptr<PreNodeList> define_args = std::make_unique<PreNodeList>(std::vector<std::unique_ptr<PreNodeChunk>>{}, node_define_header.get());
     if(peek().type == token::OPEN_PARENTH) {
         auto define_args_result = parse_list(node_define_header.get());

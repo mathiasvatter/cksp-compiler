@@ -69,28 +69,33 @@ public:
 		int num_values = 0;
 		for (int i=0; i<r_values.size(); i++) {
 			auto &val = r_values[i];
-			if(val->get_node_type() == NodeType::FunctionCall) {
-				auto func_call = static_cast<NodeFunctionCall*>(val.get());
-				func_call->get_definition(m_program);
-				int num_return_params = func_call->definition ? func_call->definition->num_return_params : 1;
+			if(auto func_call = val->cast<NodeFunctionCall>()) {
+				func_call->bind_definition(m_program);
+				int num_return_params = func_call->get_definition() ? func_call->get_definition()->num_return_params : 1;
 				num_values += num_return_params-1;
 				if(num_return_params > 1 and i+num_values < l_values.size() and func_call->kind == NodeFunctionCall::Kind::UserDefined) {
 					for (int ii = num_return_params-1; ii > 0; ii--) {
 						if(node_type == NodeType::Declaration) {
-							func_call->function->args->prepend_param(static_cast<NodeDataStructure*>(l_values[i + ii].get())->to_reference());
+							func_call->function->prepend_arg(static_cast<NodeDataStructure*>(l_values[i + ii].get())->to_reference());
 							auto node_single_declare_stmt =
 								std::make_unique<NodeSingleDeclaration>(std::unique_ptr<NodeDataStructure>(static_cast<NodeDataStructure*>(l_values[i + ii].release())), nullptr, Token());
 							node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_single_declare_stmt), Token()));
 						} else if (node_type == NodeType::Assignment) {
-							func_call->function->args->prepend_param(std::move(l_values[i + ii]));
+							func_call->function->prepend_arg(std::move(l_values[i + ii]));
 						} else {
 							return false;
 						}
 						l_values[i + ii] = nullptr;
 					}
-				} else if (i+num_values > l_values.size()) {
+				} else if (i+num_values >= l_values.size()) {
 					auto error = CompileError(ErrorType::SyntaxError,"", val->tok.line, "", "", val->tok.file);
-					error.m_message = "Found incorrect declare statement syntax. Called Function returns more values than variables declared.";
+					error.m_message = "Found incorrect ";
+					if(node_type == NodeType::Assignment) {
+						error.m_message += "<Assign> ";
+					} else {
+						error.m_message += "<Declare> ";
+					}
+					error.m_message += "statement syntax. Called Function returns more values than l_values present.";
 					error.exit();
 				}
 				i += num_values;
@@ -104,25 +109,30 @@ public:
 
     inline NodeAST* visit(NodeAssignment &node) override {
         // error handling
-        if(node.l_value->params.size() < node.r_value->params.size()) {
+        if(node.l_values.size() < node.r_values->params.size()) {
             auto error = CompileError(ErrorType::SyntaxError,
                          "", node.tok.line, "", "", node.tok.file);
             error.m_message = "Found incorrect assign statement syntax. There are more values to assign than array variables.";
-            error.m_expected = node.l_value->params.size();
-            error.m_got = node.r_value->params.size();
+            error.m_expected = node.l_values.size();
+            error.m_got = node.r_values->params.size();
             error.exit();
         }
 
 		auto node_body = std::make_unique<NodeBlock>(node.tok);
-		handle_multiple_func_returns(node_body, node.l_value->params, node.r_value->params, NodeType::Assignment);
+		// turn node.variable into vector of NodeAST
+		std::vector<std::unique_ptr<NodeAST>> l_values;
+		l_values.insert(l_values.begin(), std::make_move_iterator(node.l_values.begin()), std::make_move_iterator(node.l_values.end()));
+		node.l_values.clear();
+		handle_multiple_func_returns(node_body, l_values, node.r_values->params, NodeType::Assignment);
+		for(auto &var : l_values) node.l_values.push_back(std::unique_ptr<NodeReference>(static_cast<NodeReference*>(var.release())));
 
         std::vector<std::unique_ptr<NodeSingleAssignment>> assign_statements;
-        for(auto &arr_var : node.l_value->params) {
+        for(auto &arr_var : node.l_values) {
             auto node_single_assign_stmt = std::make_unique<NodeSingleAssignment>(std::move(arr_var), nullptr, node.tok);
             assign_statements.push_back(std::move(node_single_assign_stmt));
         }
         std::vector<std::unique_ptr<NodeAST>> values;
-        for(auto &assignee : node.r_value->params) {
+        for(auto &assignee : node.r_values->params) {
             values.push_back(std::move(assignee));
         }
         // there were more variables given than values -> repeat the last value

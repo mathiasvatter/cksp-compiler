@@ -1,0 +1,35 @@
+
+{
+Tail call recursion muss erkannt werden:
+- Wenn die letzte Anweisung in einer Funktion ein rekursiver Aufruf ist, dann kann der rekursive Aufruf durch einen Sprung ersetzt werden.
+
+}
+
+struct List
+    declare value: int
+    declare next: List
+end struct
+
+function sum_list(lst: List): int
+    if lst = nil
+        return 0
+    else
+        return lst.value + sum_list(lst.next)
+    end if
+end function
+
+
+{-------------------------------------------------------------------------------------------
+                                        Post Lowering
+--------------------------------------------------------------------------------------------}
+// Use a loop to iterate until the base case is reached.
+
+function sum_list_iterative(lst: List): int
+    declare sum: int
+    sum := 0 // <- base case
+    while lst # nil
+        sum := sum + lst.value
+        lst := lst.next
+    end while
+    return sum
+end function

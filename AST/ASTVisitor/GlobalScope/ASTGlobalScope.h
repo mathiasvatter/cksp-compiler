@@ -52,33 +52,29 @@ protected:
 			return std::make_unique<NodeDeadCode>(node.tok);
 		}
 		auto node_assignment = node.to_assign_stmt();
-		if (node_assignment->l_value->get_node_type() == NodeType::ArrayRef) {
-			auto node_array_ref = static_cast<NodeArrayRef *>(node_assignment->l_value.get());
-			if (!node_array_ref->index and node_assignment->r_value->get_node_type() == NodeType::ParamList) {
+		if (auto array_ref = node_assignment->l_value->cast<NodeArrayRef>()) {
+			if (!array_ref->index) {
 				return std::make_unique<NodeDeadCode>(node.tok);
 			}
 		}
 		return std::move(node_assignment);
 	};
 
-	bool inline is_thread_safe_env() {
-		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or
-			(!m_program->function_call_stack.empty() and m_program->function_call_stack.top()->is_thread_safe);
-	};
 
-	static inline std::string get_passive_var_hash(NodeDataStructure* data) {
-		auto hash = data->ty->to_string();
+	static inline std::string get_passive_var_hash(NodeDataStructure& data) {
+		auto hash = data.ty->to_string();
 		// add size if it is array
-		if(data->get_node_type() == NodeType::Array) {
-			auto array = static_cast<NodeArray*>(data);
+		if(auto array = data.cast<NodeArray>()) {
 			if(array->size) hash += array->size->get_string();
 		}
-		if(data->persistence.has_value()) hash += data->persistence.value().val;
+		if(data.persistence.has_value()) hash += data.persistence.value().val;
 		return hash;
 	}
 
 public:
-	explicit ASTGlobalScope(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {}
+	explicit ASTGlobalScope(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 
 	NodeAST * visit(NodeProgram& node) override;
 

@@ -16,9 +16,9 @@ public:
 		if(node.value) {
 			node.value->accept(*this);
 			// when declared as const -> replace with dead code node
-			if(node.variable->data_type == DataType::Const) {
+			if(node.variable->data_type == DataType::Const and node.variable->get_node_type() == NodeType::Variable) {
 				m_constants[node.variable->name] = std::move(node.value);
-				return node.replace_with(std::make_unique<NodeDeadCode>(node.tok));
+				return node.remove_node();
 			}
 		}
 		return &node;
@@ -26,6 +26,18 @@ public:
 
 	NodeAST* visit(NodeVariableRef& node) override {
 		return do_constant_propagation(&node);
+	}
+
+	NodeAST* visit(NodeGetControl& node) override {
+		auto error = CompileError(ErrorType::InternalError, "GetControl node should exist anymore in ConstantPropagation", "", node.tok);
+		error.exit();
+		return &node;
+	}
+
+	NodeAST* visit(NodeSetControl& node) override {
+		auto error = CompileError(ErrorType::InternalError, "SetControl node should exist anymore in ConstantPropagation", "", node.tok);
+		error.exit();
+		return &node;
 	}
 
 	// to constant propagation (with declared constants) everywhere except left hand of assignments

@@ -25,7 +25,12 @@ class ASTDesugar: public ASTVisitor {
     NodeAST * visit(NodeSingleDeclaration& node) override;
     /// desugar into single assign statements
 	NodeAST * visit(NodeAssignment& node) override;
+	NodeAST * visit(NodeSingleAssignment& node) override;
 
+	NodeAST * visit(NodeFunctionCall& node) override;
+
+	/// desugar certain binary operators into builtin functions
+	NodeAST * visit(NodeBinaryExpr& node) override;
     /// desugar for each loops to for loops
 	NodeAST * visit(NodeForEach& node) override;
     /// alter for loops to while loops
@@ -41,6 +46,7 @@ class ASTDesugar: public ASTVisitor {
 	/// desugar nested ParamLists [[1,2,3,4]]
 	NodeAST * visit(NodeParamList& node) override;
 
+	NodeAST* visit(NodeDelete& node) override;
 	/// add namespaces
 	NodeAST * visit(NodeStruct& node) override;
 
@@ -48,6 +54,6 @@ private:
 
     std::unique_ptr<NodeBlock> m_global_variable_declarations = std::make_unique<NodeBlock>(Token());
     /// declare necessary compiler variables for iterating etc.
-    std::unique_ptr<NodeBlock> declare_compiler_variables();
+//    std::unique_ptr<NodeBlock> declare_compiler_variables();
 };
 

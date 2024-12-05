@@ -8,9 +8,14 @@
 #include "AST/ASTVisitor/ASTReturnFunctionRewriting.h"
 #include "AST/ASTVisitor/ASTDataStructureLowering.h"
 #include "AST/ASTVisitor/NormalizeNDArrayAssign.h"
-#include "AST/ASTVisitor/ASTFunctionInlining.h"
+#include "AST/ASTVisitor/FunctionHandling/ASTFunctionInlining.h"
 #include "AST/ASTVisitor/ASTRelinkGlobalScope.h"
 #include "AST/ASTVisitor/ASTKSPSyntaxCheck.h"
+#include "AST/ASTVisitor/ASTPointerScope.h"
+#include "AST/ASTVisitor/ASTCollectPostLowerings.h"
+#include "AST/ASTVisitor/ASTTypeAnnotations.h"
+#include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
+#include "AST/ASTVisitor/ASTDimensionInflation.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -27,6 +32,7 @@ void Compiler::compile() {
 	std::string output_filename = m_config->output_filename;
    	std::string standard_output_path = m_config->standard_output_file;
 
+#ifndef NDEBUG
 //	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
@@ -47,9 +53,8 @@ void Compiler::compile() {
 //    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
 //    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
 //	output_filename = "/Users/Mathias/Scripting/time-textures/Samples/resources/scripts/time-textures-2.txt";
+#endif
 
-	// Startzeitpunkt speichern
-//    auto start_time = std::chrono::high_resolution_clock::now();
 	Timer compile_time;
 	compile_time.start("Total Time");
 	compile_time.start("Import");
@@ -79,6 +84,7 @@ void Compiler::compile() {
 		output_filename = preprocessor.get_output_path();
     if(output_filename.empty())
         output_filename = standard_output_path;
+	std::cout << std::endl;
 	std::cout << "Input File: " << input_filename << std::endl;
 	std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << output_filename << std::endl;
 	std::cout << std::endl;
@@ -95,6 +101,8 @@ void Compiler::compile() {
 	}
 	auto ast = std::move(ast_result.unwrap());
 	ast->def_provider = &m_definition_provider;
+	ast->ref_manager = &m_reference_manager;
+	m_program = ast.get();
 
 	compile_time.stop("Parsing");
 	compile_time.start("Desugaring");
@@ -105,29 +113,36 @@ void Compiler::compile() {
 	compile_time.stop("Desugaring");
 	compile_time.start("Variable Checking");
 
-	ASTVariableChecking variable_checking0(&m_definition_provider, false);
+	ASTTypeAnnotations type_annotations(m_program);
+	ast->accept(type_annotations);
+
+	ASTVariableChecking variable_checking0(m_program, false);
 	ast->accept(variable_checking0);
+	ast->collect_references();
 
 	compile_time.stop("Variable Checking");
 	std::cout << compile_time.print_timer("Variable Checking") << std::endl;
 	compile_time.start("Semantic Analysis");
 
-	ASTSemanticAnalysis data_structures(&m_definition_provider);
+	ASTSemanticAnalysis data_structures(ast.get());
 	ast->accept(data_structures);
 
 	compile_time.stop("Semantic Analysis");
 	std::cout << compile_time.print_timer("Semantic Analysis") << std::endl;
 	compile_time.start("Type Checking");
 
-	TypeInference infer_types(&m_definition_provider);
+	TypeInference infer_types(ast.get());
 	ast->accept(infer_types);
-	TypeInference::cast_data_structure_types(&m_definition_provider, true);
 
 	compile_time.stop("Type Checking");
 	std::cout << compile_time.print_timer("Type Checking") << std::endl;
 	compile_time.start("Lowering");
 
-	ASTCollectLowerings lowering(&m_definition_provider);
+	ASTPointerScope pointer_scope(m_program);
+	ast->accept(pointer_scope);
+	ast->collect_references();
+
+	ASTCollectLowerings lowering(m_program);
 	ast->accept(lowering);
 
 	// inline here so inlined struct vars get their declaration for register reuse later on
@@ -137,70 +152,79 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Lowering") << std::endl;
 	compile_time.start("Return Function Rewriting");
 
-	ASTReturnFunctionRewriting return_function_rewriting(&m_definition_provider);
-	ast->accept(return_function_rewriting);
+	ASTReturnFunctionRewriting return_function_rewriting(m_program);
+	return_function_rewriting.do_rewriting(*ast);
+
+	ASTPreemptiveFunctionInlining pre_inlining(m_program);
+	ast->accept(pre_inlining);
 
 	compile_time.stop("Return Function Rewriting");
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
 	compile_time.start("Data Structure Lowering");
 
-	NormalizeNDArrayAssign nd_array_assign(&m_definition_provider);
+	ASTDimensionInflation dimension_inflation(m_program);
+	ast->accept(dimension_inflation);
+
+	NormalizeNDArrayAssign nd_array_assign(m_program);
 	ast->accept(nd_array_assign);
-//	std::cout << "NDArray Assignments normalized" << std::endl;
 	// Data Structure Lowering of NDArrays and Array assignments
-	ASTDataStructureLowering data_structure_lowering(&m_definition_provider);
+	ASTDataStructureLowering data_structure_lowering(m_program);
 	ast->accept(data_structure_lowering);
 
-//	std::cout << compile_time.print_timer("Lowering") << std::endl;
-//	ast->debug_print();
 	compile_time.stop("Data Structure Lowering");
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
 
-	ASTVariableChecking variable_checking1(&m_definition_provider, true);
+	ASTVariableChecking variable_checking1(m_program, true);
 	ast->accept(variable_checking1);
+	ast->remove_references();
+	ast->collect_references();
+
+//	ast->debug_print();
     ast->accept(infer_types);
-    TypeInference::cast_data_structure_types(&m_definition_provider, true);
 
 	compile_time.stop("Variable Checking 1");
 	std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;
 	compile_time.start("Global Scope");
 
-	ASTGlobalScope global_scope(&m_definition_provider);
+	ASTGlobalScope global_scope(m_program);
 	ast->accept(global_scope);
-
 	ast->debug_print();
 
 	compile_time.stop("Global Scope");
 	std::cout << compile_time.print_timer("Global Scope") << std::endl;
     compile_time.start("Function Inlining");
 
-	ASTFunctionInlining func_inlining(&m_definition_provider);
-	ast->accept(func_inlining);
 //	ast->debug_print();
+	ASTFunctionInlining func_inlining(m_program);
+	ast->accept(func_inlining);
+	ast->order_function_definitions();
 
     compile_time.stop("Function Inlining");
 	std::cout << compile_time.print_timer("Function Inlining") << std::endl;
-	compile_time.start("Variable Checking 2");
+	compile_time.start("Post Lowering");
 
-	ASTRelinkGlobalScope relink_global_scope(&m_definition_provider);
+	ASTCollectPostLowerings post_lowering(m_program);
+	ast->accept(post_lowering);
+	ASTRelinkGlobalScope relink_global_scope(m_program);
 	ast->accept(relink_global_scope);
+//	ast->debug_print();
 
-	compile_time.stop("Variable Checking 2");
-	std::cout << compile_time.print_timer("Variable Checking 2") << std::endl;
+	compile_time.stop("Post Lowering");
+	std::cout << compile_time.print_timer("Post Lowering") << std::endl;
 	compile_time.start("Optimization");
 
 	ast->inline_global_variables();
 	ASTOptimizations optimizations;
-	optimizations.optimize(*ast);
+	ASTOptimizations::optimize(*ast);
 
 	compile_time.stop("Optimization");
 	std::cout << compile_time.print_timer("Optimization") << std::endl;
 	compile_time.start("Generator");
 
-	ASTKSPSyntaxCheck syntax_check(&m_definition_provider);
+	ASTKSPSyntaxCheck syntax_check(m_program);
 	ast->accept(syntax_check);
-	syntax_check.fix_memory_exhausted_error(*ast);
+	ASTKSPSyntaxCheck::fix_memory_exhausted_error(*ast);
 
 	ASTGenerator generator;
 	ast->accept(generator);

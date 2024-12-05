@@ -14,7 +14,7 @@ public:
 
 	inline NodeAST * visit(NodeNil &node) override {
 		std::unique_ptr<NodeAST> node_repl = nullptr;
-		if(node.is_string_repr()) {
+		if(node.is_string_env()) {
 			node_repl = std::make_unique<NodeString>("\"nil\"", node.tok);
 		} else {
 			// replace nil with -1
