@@ -62,7 +62,7 @@ change_velo(event_id: int, new_velocity: int)
 change_vol(event_id: int, volume: int, relative_bit: int)
 cbrt(value: real):real
 cos(value: real):real
-dec(variable: int): int
+dec(variable: int)
 delete_event_mark(event_id: int, bit_mark: int)
 detect_pitch(zone_id: int, return_var: int): int
 detect_rms(zone_id: int, return_var: int): int

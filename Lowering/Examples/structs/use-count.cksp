@@ -1,0 +1,30 @@
+{
+Use count is a simple way to keep track of how many times a struct 
+is being used. This is useful for garbage collection.
+
+}
+
+
+on init  
+    declare pointer : List := List(42, nil)
+    declare pointer2: List
+
+    message(use_count(pointer))
+end on
+
+
+{-------------------------------------------------------------------------------------------
+                                        Post Lowering
+--------------------------------------------------------------------------------------------}
+
+on init   
+    declare pointer : List := List(42, nil)
+    declare pointer2: List
+
+    message(List::allocation[max(0,pointer)])
+end on
+
+
+
+
+

@@ -15,7 +15,14 @@ public:
 	NodeAST * visit(NodeNil& node) override;
 	NodeAST * visit(NodeWildcard& node) override;
 	NodeAST * visit(NodeReturn& node) override;
+	NodeAST * visit(NodeBreak& node) override;
+	NodeAST * visit(NodeNumElements& node) override;
+	NodeAST * visit(NodeSortSearch& node) override;
 	NodeAST * visit(NodeSingleReturn& node) override;
+	NodeAST * visit(NodeDelete& node) override;
+	NodeAST * visit(NodeSingleDelete& node) override;
+	NodeAST * visit(NodeRetain& node) override;
+	NodeAST * visit(NodeSingleRetain& node) override;
 	NodeAST * visit(NodeVariable& node) override;
 	NodeAST * visit(NodeVariableRef& node) override;
 	NodeAST * visit(NodePointer& node) override;
@@ -26,8 +33,11 @@ public:
 	NodeAST * visit(NodeNDArrayRef& node) override;
 	NodeAST * visit(NodeUIControl& node) override;
 	NodeAST * visit(NodeDeclaration& node) override;
+	NodeAST * visit(NodeFunctionParam& node) override;
     NodeAST * visit(NodeSingleDeclaration& node) override;
+	NodeAST * visit(NodeReferenceList& node) override;
 	NodeAST * visit(NodeParamList& node) override;
+	NodeAST * visit(NodeInitializerList& node) override;
 	NodeAST * visit(NodeBinaryExpr& node) override;
 	NodeAST * visit(NodeUnaryExpr& node) override;
 	NodeAST * visit(NodeAssignment& node) override;
@@ -42,17 +52,13 @@ public:
 	NodeAST * visit(NodeFor& node) override;
 	NodeAST * visit(NodeSelect& node) override;
 	NodeAST * visit(NodeCallback& node) override;
+	NodeAST * visit(NodeFunctionHeaderRef& node) override;
 	NodeAST * visit(NodeFunctionHeader& node) override;
 	NodeAST * visit(NodeFunctionCall& node) override;
 	NodeAST * visit(NodeFunctionDefinition& node) override;
 	NodeAST * visit(NodeGetControl& node) override;
+	NodeAST * visit(NodeSetControl& node) override;
 	NodeAST * visit(NodeAccessChain& node) override;
-
-	static void debug_print(NodeAST* node) {
-		static ASTPrinter printer;
-		node->accept(printer);
-		printer.generate(PRINTER_OUTPUT);
-	};
 
     inline void generate(const std::string& path) const {
         std::ofstream outFile(path);

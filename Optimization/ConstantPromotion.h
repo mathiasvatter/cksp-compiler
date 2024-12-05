@@ -12,7 +12,7 @@
 class ConstantPromotion : public ASTOptimizations {
 private:
 	/// saves constant candidates and their values
-	std::unordered_map<NodeDataStructure*, std::unique_ptr<NodeAST>> m_constant_candidates;
+	std::unordered_map<std::shared_ptr<NodeDataStructure>, std::unique_ptr<NodeAST>> m_constant_candidates;
 	std::vector<NodeReference*> m_constant_candidate_references;
 public:
 
@@ -43,7 +43,7 @@ public:
 			}
 		}
 		for(auto & ref : m_constant_candidate_references) {
-			if(ref->declaration->data_type == DataType::Const) {
+			if(ref->get_declaration()->data_type == DataType::Const) {
 				ref->data_type = DataType::Const;
 			}
 		}
@@ -54,9 +54,9 @@ public:
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
-		if(is_constant_candidate(node.variable.get())) {
+		if(is_constant_candidate(*node.variable)) {
 			// add to constant candidates -> if it has a value, add it, otherwise add nullptr
-			add_to_constant_candidates(&node);
+			add_to_constant_candidates(node);
 		}
 		return &node;
 	}
@@ -64,7 +64,7 @@ public:
 	/// remove var from constant candidates if reassigned or used value-altering builtin function call
 	NodeAST * visit(NodeVariableRef& node) override {
 		if(node.data_type == DataType::Const) return &node;
-		if(is_in_constant_candidates_map(node.declaration)) {
+		if(is_in_constant_candidates_map(node.get_declaration())) {
 			// if it gets reassigned, check if it already has a value, if yes, remove from constant candidates
 			if(node.is_l_value()) {
 				auto assignment = static_cast<NodeSingleAssignment*>(node.parent);
@@ -86,20 +86,20 @@ public:
 	}
 
 	/// add to map including its value if it has one, otherwise add nullptr
-	bool add_to_constant_candidates(NodeSingleDeclaration* node) {
-		if(node->value and !node->value->is_constant()) return false;
-		m_constant_candidates[node->variable.get()] = node->value ? node->value->clone() : nullptr;
+	bool add_to_constant_candidates(const NodeSingleDeclaration& node) {
+		if(node.value and !node.value->is_constant()) return false;
+		m_constant_candidates[node.variable] = node.value ? node.value->clone() : nullptr;
 		return true;
 	}
 
 	bool remove_from_constant_candidates(NodeVariableRef* node) {
-		m_constant_candidates.erase(node->declaration);
+		m_constant_candidates.erase(node->get_declaration());
 		return true;
 	}
 
 	/// if it already has a value, return false, if not, add value to constant candidates and return true
 	bool add_value_to_constant_candidates(NodeVariableRef* ref, std::unique_ptr<NodeAST>& value) {
-		auto it = m_constant_candidates.find(ref->declaration);
+		auto it = m_constant_candidates.find(ref->get_declaration());
 		if(it != m_constant_candidates.end()) {
 			if(it->second) return false;
 			it->second = value->clone();
@@ -108,13 +108,13 @@ public:
 		return false;
 	}
 
-	bool is_in_constant_candidates_map(NodeDataStructure* node) {
+	bool is_in_constant_candidates_map(std::shared_ptr<NodeDataStructure> node) {
 		return m_constant_candidates.find(node) != m_constant_candidates.end();
 	}
 
-	bool is_constant_candidate(NodeDataStructure* node) {
-		if(!node->is_local and node->data_type == DataType::Mutable and node->get_node_type() == NodeType::Variable) {
-			return node->ty != TypeRegistry::String;
+	static bool is_constant_candidate(const NodeDataStructure& node) {
+		if(!node.is_local and node.data_type == DataType::Mutable and node.get_node_type() == NodeType::Variable) {
+			return node.ty != TypeRegistry::String;
 		}
 		return false;
 	}

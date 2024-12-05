@@ -35,12 +35,17 @@ protected:
 	Token peek(int ahead = 0);
 	Token consume();
 
-	const Token& get_tok(const std::vector<Token>& tok) const;
-    const Token& get_tok() const;
+	[[nodiscard]] const Token& get_tok(const std::vector<Token>& tok) const;
+    [[nodiscard]] const Token& get_tok() const;
 
 	void remove_tokens(std::vector<Token>& tok, size_t start, size_t end);
 
+	/// \brief Parse a type annotation
+	/// \param ty The optional identifier type before the variable name (e.g. ?|$|~x)
 	Result<Type*> parse_type_annotation(Type* ty = nullptr);
+	Result<Type*> parse_type();
+	Result<Type*> _parse_function_type();
+	Result<Type*> _parse_single_types();
 
 	void _skip_linebreaks();
 

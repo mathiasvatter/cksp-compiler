@@ -93,7 +93,7 @@ Add lowering to SingleReturn Node
 Add SingleReturn Node to AST
 Update function call hoisting and return function rewriting examples
 Fix struct desugaring
-Add FunctionCallHoisting class
+Add ReturnFunctionCallHoisting class
 Fix parameter promotion issue when nested functions; Fix renaming issue when using multiple structs
 Add working lowering for AccessChains and methods in Struct Nodes
 Do renaming
@@ -218,7 +218,7 @@ Update LoweringConstStruct
  Update LoweringArray, LoweringList and LoweringNDArray
 Update BuildDataStructures class with reference nodes
 finish updating ASTDesugarStructs with reference nodes
-Update Parser and DesugarForEachStatement with References
+Update Parser and DesugarForEach with References
 Fix small bug
 Add Gensym Class
 Add move semantics to token parameter of AST Nodes

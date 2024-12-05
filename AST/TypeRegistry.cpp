@@ -37,6 +37,9 @@ void TypeRegistry::initialize() {
     ArrayOfString = add_composite_type(CompoundKind::Array, String, 1);
     ArrayOfUnknown = add_composite_type(CompoundKind::Array, Unknown, 1);
 
+	NDArrayOfInt = add_composite_type(CompoundKind::Array, Integer, 0);
+	NDArrayOfUnknown = add_composite_type(CompoundKind::Array, Unknown, 0);
+
 	Nil = add_object_type("nil");
 
     // Initialisierung der Maps
@@ -159,3 +162,24 @@ CompositeType *TypeRegistry::add_composite_type(CompoundKind comp_type, Type *el
     composite_types[hash_val] = std::make_unique<CompositeType>(comp_type, element_type, dimensions);
     return composite_types[hash_val].get();
 }
+
+FunctionType *TypeRegistry::get_function_type(std::vector<Type *> params, Type *return_type) {
+	auto func_type = std::make_unique<FunctionType>(params, return_type);
+	auto hash_val = func_type->to_string();
+	auto it = function_types.find(hash_val);
+	if (it != function_types.end()) {
+		return it->second.get();
+	}
+	return nullptr;
+}
+
+FunctionType *TypeRegistry::add_function_type(const std::vector<Type *>& params, Type *return_type) {
+	if(auto func_ty = get_function_type(params, return_type)) {
+		return func_ty;
+	}
+	auto func_type = std::make_unique<FunctionType>(params, return_type);
+	auto hash_val = func_type->to_string();
+	function_types[hash_val] = std::move(func_type);
+	return function_types[hash_val].get();
+}
+

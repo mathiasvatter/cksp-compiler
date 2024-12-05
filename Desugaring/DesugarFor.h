@@ -1,0 +1,88 @@
+//
+// Created by Mathias Vatter on 28.04.24.
+//
+
+#pragma once
+
+#include "ASTDesugaring.h"
+
+/**
+ * @brief This class is responsible for desugaring for loops into while loops
+ * It takes one for loop at a time to rewrite it as a
+ * while loop. Nested for loops need to be handled in the
+ * parent ASTVisitor class.
+ * The transformation is as follows:
+ *
+ * Pre-desugaring:
+ * for o := 0 downto 4-1
+ *     message(4+5)
+ * end for
+ *
+ * Post-desugaring:
+ * $o := 0
+ * while($o >= 3)
+ *     message(9)
+ *     dec($o)
+ * end while
+ */
+class DesugarFor : public ASTDesugaring {
+public:
+	explicit DesugarFor(NodeProgram* program) : ASTDesugaring(program) {};
+
+    inline NodeAST* visit(NodeFor& node) override {
+        // function arg
+        auto iterator_var = clone_as<NodeReference>(node.iterator->l_value.get());
+        auto assign_var = clone_as<NodeReference>(iterator_var.get());
+        auto function_var = clone_as<NodeReference>(iterator_var.get());
+
+        if(!node.step) {
+			std::unique_ptr<NodeFunctionCall> node_inc;
+            // function call
+            if (node.to == token::TO) {
+				node_inc = DefinitionProvider::inc(std::move(function_var));
+			} else {
+				node_inc = DefinitionProvider::dec(std::move(function_var));
+			}
+            node.body->add_as_stmt(std::move(node_inc));
+        } else {
+            // i := i + step
+            auto inc_expression = std::make_unique<NodeBinaryExpr>(
+                    token::ADD,
+                    function_var->clone(),
+                    std::move(node.step), node.tok
+                    );
+            inc_expression->ty = TypeRegistry::Integer;
+            auto node_inc_statement = std::make_unique<NodeSingleAssignment>(
+                    std::move(function_var),
+                    std::move(inc_expression), node.tok);
+            node.body->add_stmt(std::make_unique<NodeStatement>(std::move(node_inc_statement), node.tok));
+        }
+
+        // handle while condition
+        token comparison_op = token::LESS_EQUAL;
+        if(node.to == token::DOWNTO) comparison_op = token::GREATER_EQUAL;
+        // make comparison expression
+        auto comparison = std::make_unique<NodeBinaryExpr>(
+                comparison_op,
+                std::move(iterator_var),
+                std::move(node.iterator_end), node.tok
+                );
+        comparison->ty = TypeRegistry::Comparison;
+
+        auto node_while_statement = std::make_unique<NodeWhile>(
+                std::move(comparison),
+                std::move(node.body), node.tok
+                );
+
+        auto node_assign_statement = std::make_unique<NodeSingleAssignment>(
+                std::move(assign_var),
+                std::move(node.iterator->r_value),
+                node.tok
+                );
+
+        auto node_body = std::make_unique<NodeBlock>(node.tok);
+        node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign_statement), node.tok));
+        node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while_statement), node.tok));
+        return node.replace_with(std::move(node_body));
+    }
+};

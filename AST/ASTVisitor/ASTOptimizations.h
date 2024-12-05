@@ -18,7 +18,7 @@ private:
 public:
     ASTOptimizations() = default;
 
-	bool optimize(NodeProgram& node, int iterations = 2);
+	static bool optimize(NodeProgram& node, int iterations = 2);
 
 protected:
 

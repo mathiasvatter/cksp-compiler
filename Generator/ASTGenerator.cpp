@@ -75,6 +75,24 @@ NodeAST * ASTGenerator::visit(NodeVariableRef &node) {
 	return &node;
 }
 
+NodeAST * ASTGenerator::visit(NodePointer &node) {
+	auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+	error.m_message = "<Pointer> Nodes should have been lowered already.";
+	error.print();
+	os << TypeRegistry::get_identifier_from_type(node.ty);
+	os << sanitize_dots(node.name);
+	return &node;
+}
+
+NodeAST * ASTGenerator::visit(NodePointerRef &node) {
+	auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+	error.m_message = "<PointerRef> Nodes should have been lowered already.";
+	error.print();
+	os << TypeRegistry::get_identifier_from_type(node.ty);
+	os << sanitize_dots(node.name);
+	return &node;
+}
+
 NodeAST * ASTGenerator::visit(NodeArrayRef &node) {
 	// get korrekt type since array refs with index are internally treated as variables with a basic type
 	const auto &type = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
@@ -114,10 +132,10 @@ NodeAST * ASTGenerator::visit(NodeSingleDeclaration &node) {
     node.variable->accept(*this);
     if(node.value) {
         os << " := ";
-        auto node_param_list = node.value->get_node_type() == NodeType::ParamList;
-        if(node_param_list) os << "(";
+//        auto node_param_list = node.value->get_node_type() == NodeType::ParamList;
+//        if(node_param_list) os << "(";
         node.value->accept(*this);
-        if(node_param_list) os << ")";
+//        if(node_param_list) os << ")";
     }
     os << "";
 	return &node;
@@ -131,6 +149,19 @@ NodeAST * ASTGenerator::visit(NodeParamList &node) {
         }
         node.params[node.params.size() - 1]->accept(*this);
     }
+	return &node;
+}
+
+NodeAST * ASTGenerator::visit(NodeInitializerList &node) {
+	if (!node.elements.empty()) {
+		os << "(";
+		for (int i = 0; i < node.elements.size() - 1; i++) {
+			node.elements[i]->accept(*this);
+			os << ", ";
+		}
+		node.elements[node.elements.size() - 1]->accept(*this);
+		os << ")";
+	}
 	return &node;
 }
 
@@ -231,11 +262,26 @@ NodeAST * ASTGenerator::visit(NodeCallback &node) {
 	return &node;
 }
 
+NodeAST * ASTGenerator::visit(NodeFunctionHeaderRef &node) {
+	os << sanitize_dots(node.name);
+
+	if(!node.args->empty() || node.has_forced_parenth) os << "(";
+	node.args->accept(*this);
+	if(!node.args->empty() || node.has_forced_parenth) os << ")";
+	return &node;
+}
+
 NodeAST * ASTGenerator::visit(NodeFunctionHeader &node) {
     os << sanitize_dots(node.name);
-	if(!node.args->params.empty() || node.has_forced_parenth) os << "(";
-    node.args->accept(*this);
-	if(!node.args->params.empty() || node.has_forced_parenth) os << ")";
+
+	if(!node.params.empty() || node.has_forced_parenth) os << "(";
+	for(auto &param : node.params) {
+		param->accept(*this);
+		os << ", ";
+	}
+	if(!node.params.empty()) os.seekp(-2, std::ios_base::end);
+	if(!node.params.empty() || node.has_forced_parenth) os << ")";
+
 	return &node;
 }
 
@@ -257,8 +303,16 @@ NodeAST * ASTGenerator::visit(NodeFunctionDefinition &node) {
 }
 
 NodeAST * ASTGenerator::visit(NodeGetControl &node) {
-    node.ui_id ->accept(*this);
-    os << " -> " << node.control_param;
+	auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+	error.m_message = "<GetControl> Nodes should have been lowered already.";
+	error.exit();
+	return &node;
+}
+
+NodeAST * ASTGenerator::visit(NodeNumElements &node) {
+	auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+	error.m_message = "<NumElements> Nodes should have been lowered already.";
+	error.exit();
 	return &node;
 }
 

@@ -1,0 +1,46 @@
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering cksp
+--------------------------------------------------------------------------------------------}
+
+declare ndarray[10, 10] : int[][]
+search(ndarray[0, *], 0)
+search(ndarray[3, *, *], -1)
+search(ndarray[*, 0], 0) // error, wildcard has to be in the last dimension
+search(ndarray[*, *], 0) // -> search(ndarray, 0)
+search(ndarray[10, *, 10, *], 0) // error, wildcard has to be in the last dimension
+search(ndarray[0, *, *], 9, 3) // error, from and to parameters not allowed with wildcards
+
+{-------------------------------------------------------------------------------------------
+                                        Post Lowering cksp
+--------------------------------------------------------------------------------------------}
+
+// search(ndarray[0, *], 0)
+search(ndarray, 0, 0*10, 1 * num_elements(ndarray, 2)-1)
+
+// search(ndarray[3, *, *], -1)
+// from -> [3, 0, 0]
+// from = 3*dim1*dim2 + 0*dim2 + 0
+// to -> [3, num_elements(ndarray, 2)-1, num_elements(ndarray, 3)-1]
+// to = 3*dim1*dim2 + (dim2-1)*dim2 + (dim3-1)
+declare from = 3 * num_elements(ndarray, 2) * num_elements(ndarray, 3)
+declare to = from + (num_elements(ndarray, 2) * num_elements(ndarray, 3)) - 1
+search(ndarray, -1, from, to)
+
+// search(ndarray[*, 0], 0)
+"Error: Wildcard must be in the last dimension. Found wildcard in middle dimension."
+
+// search(ndarray[*, *], 0)
+search(ndarray, 0)
+
+// search(ndarray[10, *, 10, *], 0)
+"Error: Wildcards must only appear in the last dimension."
+
+// search(ndarray[0, *, *], 9, 3)
+"Error: 'from' and 'to' parameters are not allowed with wildcards. Wildcard bounds are automatically derived."
+
+// search(ndarray[3, 4, *, *], -1)
+declare from = 3 * num_elements(ndarray, 2) * num_elements(ndarray, 3) * num_elements(ndarray, 4)
+             + 4 * num_elements(ndarray, 3) * num_elements(ndarray, 4)
+declare to = from + (num_elements(ndarray, 3) * num_elements(ndarray, 4)) - 1
+search(ndarray, -1, from, to)

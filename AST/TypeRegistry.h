@@ -39,6 +39,9 @@ public:
     /// adds a new composite type to the registry, if composite type already exists, the existing type is returned
     static CompositeType* add_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1);
 
+	static FunctionType* get_function_type(std::vector<Type*> params, Type* return_type);
+	static FunctionType* add_function_type(const std::vector<Type*>& params, Type* return_type);
+
     // Deklaration der Standardtypen
     static inline std::unique_ptr<BasicType> IntegerType;
     static inline BasicType* Integer;
@@ -68,11 +71,15 @@ public:
     static inline CompositeType* ArrayOfString;
     static inline CompositeType* ArrayOfUnknown;
 
+	static inline CompositeType* NDArrayOfInt;
+	static inline CompositeType* NDArrayOfUnknown;
+
 	static inline ObjectType* Nil;
 
 private:
     static inline std::unordered_map<std::string, std::unique_ptr<ObjectType>> object_types;
     static inline std::unordered_map<std::string, std::unique_ptr<CompositeType>> composite_types;
+	static inline std::unordered_map<std::string, std::unique_ptr<FunctionType>> function_types;
 
     static inline std::unordered_map<std::string, Type*> annotation_to_type;
     static inline std::unordered_map<Type*, std::string> type_to_annotation;

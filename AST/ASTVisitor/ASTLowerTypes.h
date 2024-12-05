@@ -10,7 +10,7 @@
 
 class ASTLowerTypes: public ASTVisitor {
 public:
-	explicit ASTLowerTypes(DefinitionProvider *definition_provider) {};
+	explicit ASTLowerTypes(DefinitionProvider *definition_provider): m_def_provider(definition_provider) {};
 
 	inline NodeAST * visit(NodeVariable& node) override {
 		return node.lower_type();
@@ -25,37 +25,64 @@ public:
 		return node.lower_type();
 	}
 	inline NodeAST * visit(NodeArray& node) override {
+		if(node.size) node.size->accept(*this);
 		return node.lower_type();
 	}
 	inline NodeAST * visit(NodeArrayRef& node) override {
+		if(node.index) node.index->accept(*this);
 		return node.lower_type();
 	}
 	inline NodeAST * visit(NodeNDArray& node) override {
+		if(node.sizes) node.sizes->accept(*this);
 		return node.lower_type();
 	}
 	inline NodeAST * visit(NodeNDArrayRef& node) override {
+		if(node.indexes) node.indexes->accept(*this);
 		return node.lower_type();
 	}
 	inline NodeAST * visit(NodeList& node) override {
 		return node.lower_type();
 	}
 	inline NodeAST * visit(NodeListRef& node) override {
+		if(node.indexes) node.indexes->accept(*this);
 		return node.lower_type();
 	}
 	inline NodeAST * visit(NodeFunctionDefinition& node) override {
-		if(node.ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+		if(node.ty->get_element_type()->cast<ObjectType>()) {
 			node.set_element_type(TypeRegistry::Integer);
 		}
+
 		node.header->accept(*this);
 		node.body->accept(*this);
+
 		return &node;
 	}
 	inline NodeAST * visit(NodeFunctionCall& node) override {
+		node.function->accept(*this);
 		if(node.ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 			node.set_element_type(TypeRegistry::Integer);
 		}
-		node.function->accept(*this);
 		return &node;
 	}
+	inline NodeAST * visit(NodeFunctionHeader& node) override {
+		for(auto &param : node.params) param->accept(*this);
+		if(auto func_type = node.ty->cast<FunctionType>()) {
+			auto return_type = func_type->get_return_type();
+			if (return_type->cast<ObjectType>()) {
+				return_type = TypeRegistry::Integer;
+			}
+			node.create_function_type(return_type);
+		}
+		return &node;
+	}
+	inline NodeAST * visit(NodeFunctionHeaderRef& node) override {
+		if(node.args) node.args->accept(*this);
+		if(auto decl = node.get_declaration()) {
+			node.ty = decl->ty;
+		}
+		return node.lower_type();
+	}
 
+private:
+	DefinitionProvider* m_def_provider;
 };

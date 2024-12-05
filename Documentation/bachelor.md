@@ -1,4 +1,3 @@
-
 # Implementing Functional Programming Concepts in a Domain-Specific Scripting Language: A Compiler for KSP
 
 ## Thema Brainstorming:
@@ -6,6 +5,8 @@
 - compilation of functionial programming features to a domain-specific script language array language
 funktionale programmierfeatures repräsentieren in eingeschränkter umgebung
 - Implementing Functional Programming Concepts in a Domain-Specific Scripting Language: A Compiler for KSP
+- Efficient Scope and Data Management in a Compiler for KSP
+- Implementing Recursive Data Structures and Scope Management in a KSP Compiler
 
 ## 1. Lexical Scope to Global Scope
 - Checking of scopes and variable shadowing
@@ -159,7 +160,7 @@ end function
 
 
 
-## 2. Rekursive Data Structure declaration and dynamic allocation
+<!-- ## 2. Rekursive Data Structure declaration and dynamic allocation
 - Allow declaration of structs by lowering them to arrays
 - Allow dynamic allocation by tracking them in a global array
 - Allow recursive data structures by using pointers to the next index of the global struct array
@@ -236,21 +237,19 @@ end struct
 __Post-desugaring__:
 ```
 struct List
-	declare List.value: int
-	declare List.next: List := nil
+	declare List::value: int
+	declare List::next: List := nil
 
-	function List.__init__(value: int, next: List)
-		List.value := value
-		List.next := next
+	function List::__init__(value: int, next: List)
+		List::value := value
+		List::next := next
 	end function
 end struct
 ```
 5. Lowering der Structs in Arrays. Erstelle für jede struct Deklaration ein Array, das die Werte der Structs enthält. Erstelle für jede struct Deklaration ein Array, das die Verweise auf die nächsten Elemente enthält.
 Wenn das struct bereits ein oder mehrere Arrays enthält, wird ein multidimensionales array erstellt, dessen neue Dimension die maximale Größe aus den bisherigen Arrays ist.
 6. Erweitere Typsystem mit dynamischen Typen für Objekte.
-
-## 3. Allow recursive Functions (Defunctionalize the Continuation)
-- Transform recursive Functions into continuation passing style
-- Defunctionalize by turning functions into data structures
-- Allow recursive functions on these data structures by lowering them to loops
-- <https://www.pathsensitive.com/2019/07/the-best-refactoring-youve-never-heard.html>
+7. Füge `__repr__` Funktion hinzu und erkenne, ob die pointer variable in einem string context aufgerufen wird und wrappe diesen in erstere funktion
+8. Neuen Referenz Node Type hinzufügen: Access Chain. TypeInference schreiben für diesen Typ
+9. `__init__` Funktion lowering
+10. Rerence counting implementieren. Verschiedene arten von `__decr__` Funktionen implementieren die direkte, indirekte Rekursion berücksichtigen. -->

@@ -90,7 +90,7 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_functions(const std::string 
                 m_property_functions.insert({result_function.unwrap()->header->name, std::move(result_function.unwrap())});
             } else {
                 auto node_function = std::move(result_function.unwrap());
-                m_builtin_functions[{node_function->header->name, (int)node_function->header->args->params.size()}] = std::move(node_function);
+                m_builtin_functions[{node_function->header->name, (int)node_function->header->params.size()}] = std::move(node_function);
             }
         } else consume(m_tokens);
     }
@@ -126,7 +126,7 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_widgets(const std::string &f
 }
 
 
-Result<std::unique_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable() {
+Result<std::shared_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable() {
     Token name = consume(m_tokens); // consume variable name token
     // cut away identifier
     std::string var_name = name.val;
@@ -136,15 +136,15 @@ Result<std::unique_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable(
 
 	auto type_annotation = parse_type_annotation(ty);
 	if(type_annotation.is_error()) {
-		return Result<std::unique_ptr<NodeVariable>>(type_annotation.get_error());
+		return Result<std::shared_ptr<NodeVariable>>(type_annotation.get_error());
 	}
-    auto node_variable = std::make_unique<NodeVariable>(std::optional<Token>(), var_name, type_annotation.unwrap(), DataType::Mutable, name);
+    auto node_variable = std::make_shared<NodeVariable>(std::optional<Token>(), var_name, type_annotation.unwrap(), DataType::Mutable, name);
     node_variable->is_local = false;
     node_variable->is_engine = true;
-    return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
+    return Result<std::shared_ptr<NodeVariable>>(std::move(node_variable));
 }
 
-Result<std::unique_ptr<NodeArray>> BuiltinsProcessor::parse_builtin_array() {
+Result<std::shared_ptr<NodeArray>> BuiltinsProcessor::parse_builtin_array() {
     Token name = consume(m_tokens); // consume array name token
     std::string arr_name = name.val;
 	Type* ty = TypeRegistry::get_type_from_identifier(arr_name[0]);
@@ -152,9 +152,9 @@ Result<std::unique_ptr<NodeArray>> BuiltinsProcessor::parse_builtin_array() {
         arr_name = arr_name.erase(0,1);
 	auto type_annotation = parse_type_annotation(ty);
 	if(type_annotation.is_error()) {
-		return Result<std::unique_ptr<NodeArray>>(type_annotation.get_error());
+		return Result<std::shared_ptr<NodeArray>>(type_annotation.get_error());
 	}
-    auto node_array = std::make_unique<NodeArray>(
+    auto node_array = std::make_shared<NodeArray>(
 		std::nullopt,
 		arr_name,
 		type_annotation.unwrap(),
@@ -162,36 +162,36 @@ Result<std::unique_ptr<NodeArray>> BuiltinsProcessor::parse_builtin_array() {
 	);
     node_array->is_local = false;
     node_array->is_engine = true;
-    return Result<std::unique_ptr<NodeArray>>(std::move(node_array));
+    return Result<std::shared_ptr<NodeArray>>(std::move(node_array));
 }
 
-Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin_function() {
+Result<std::shared_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin_function() {
     Token func_name = consume(m_tokens); // consume function name
-    std::unique_ptr<NodeParamList> func_args = std::make_unique<NodeParamList>(func_name);
+    std::vector<std::unique_ptr<NodeFunctionParam>> func_args;
 	std::vector<Type*> types;
     bool has_forced_parenth = false;
     if (peek(m_tokens).type == token::OPEN_PARENTH) {
         has_forced_parenth = true;
         consume(m_tokens); // consume (
         if(peek(m_tokens).type != token::CLOSED_PARENTH) {
-            auto param_list = parse_builtin_args_list();
+            auto param_list = parse_builtin_params_list();
             if (param_list.is_error()) {
-                Result<std::unique_ptr<NodeFunctionDefinition>>(param_list.get_error());
+                Result<std::shared_ptr<NodeFunctionDefinition>>(param_list.get_error());
             }
             func_args = std::move(param_list.unwrap());
-            for(const auto & param : func_args->params) {
-                types.push_back(param->ty);
+            for(const auto & param : func_args) {
+                types.push_back(param->variable->ty);
             }
         }
         if (peek(m_tokens).type == token::CLOSED_PARENTH) {
             consume(m_tokens);
         } else {
-            return Result<std::unique_ptr<NodeFunctionDefinition>>(CompileError(ErrorType::PreprocessorError,
+            return Result<std::shared_ptr<NodeFunctionDefinition>>(CompileError(ErrorType::PreprocessorError,
            "Failed loading builtins. Found unknown <function_header> syntax.", peek(m_tokens).line, ")", peek(m_tokens).val, peek(m_tokens).file));
         }
     }
-	for(auto & arg : func_args->params) {
-		apply_annotation_information(static_cast<NodeDataStructure*>(arg.get()));
+	for(auto & arg : func_args) {
+		apply_annotation_information(arg->variable.get());
 	}
 
 	int num_return_vars = 0;
@@ -204,35 +204,37 @@ Result<std::unique_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
     auto node_function_header = std::make_unique<NodeFunctionHeader>(
             func_name.val, std::move(func_args), func_name
         );
-	node_function_header->ty = ret_type;
+	node_function_header->create_function_type(ret_type);
     node_function_header->has_forced_parenth = has_forced_parenth;
 
-    auto node_function = std::make_unique<NodeFunctionDefinition>(
+    auto node_function = std::make_shared<NodeFunctionDefinition>(
             std::move(node_function_header),
             std::nullopt,
             false,
             std::make_unique<NodeBlock>(func_name),
             func_name
             );
+	node_function->visited = true;
     node_function->ty = ret_type;
 	node_function->is_thread_safe = is_threadsafe_function(node_function->header->name);
 	node_function->is_restricted = is_restricted_function(node_function->header->name);
 	node_function->num_return_params = num_return_vars;
-    return Result<std::unique_ptr<NodeFunctionDefinition>>(std::move(node_function));
+	node_function->num_return_stmts = num_return_vars;
+    return Result<std::shared_ptr<NodeFunctionDefinition>>(std::move(node_function));
 }
 
-Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_control() {
+Result<std::shared_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_control() {
 	Token tok = consume(m_tokens);
 	std::string ui_control_type = tok.val; // consume ui_control identifier
 	if(peek(m_tokens).type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::PreprocessorError,
+		return Result<std::shared_ptr<NodeUIControl>>(CompileError(ErrorType::PreprocessorError,
 		"Failed loading builtins. Found unknown <engine_widget> syntax.", peek(m_tokens).line, "<Keyword>", peek(m_tokens).val, peek(m_tokens).file));
 	}
-	std::unique_ptr<NodeDataStructure> node_var;
+	std::shared_ptr<NodeDataStructure> node_var;
 	if(peek(m_tokens, 1).type == token::OPEN_BRACKET) {
 		auto node_var_res = parse_builtin_array();
 		if(node_var_res.is_error()) {
-			return Result<std::unique_ptr<NodeUIControl>>(node_var_res.get_error());
+			return Result<std::shared_ptr<NodeUIControl>>(node_var_res.get_error());
 		}
 		node_var = std::move(node_var_res.unwrap());
 		consume(m_tokens); // consume open bracket
@@ -241,7 +243,7 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 	} else {
 		auto node_var_res = parse_builtin_variable();
 		if(node_var_res.is_error()) {
-			return Result<std::unique_ptr<NodeUIControl>>(node_var_res.get_error());
+			return Result<std::shared_ptr<NodeUIControl>>(node_var_res.get_error());
 		}
 		node_var = std::move(node_var_res.unwrap());
 	}
@@ -252,7 +254,7 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 		if(peek(m_tokens).type != token::CLOSED_PARENTH) {
 			auto param_list = parse_builtin_args_list();
 			if (param_list.is_error()) {
-				Result<std::unique_ptr<NodeFunctionHeader>>(param_list.get_error());
+				Result<std::shared_ptr<NodeFunctionHeader>>(param_list.get_error());
 			}
             params = std::move(param_list.unwrap());
             for(const auto & param : params->params) {
@@ -262,18 +264,17 @@ Result<std::unique_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 		if (peek(m_tokens).type == token::CLOSED_PARENTH) {
 			consume(m_tokens);
 		} else {
-			return Result<std::unique_ptr<NodeUIControl>>(CompileError(ErrorType::PreprocessorError,
+			return Result<std::shared_ptr<NodeUIControl>>(CompileError(ErrorType::PreprocessorError,
 			"Failed loading builtins. Found unknown <engine_widget> parameter syntax.", peek(m_tokens).line, ")", peek(m_tokens).val, peek(m_tokens).file));
 		}
 	}
 	node_var->data_type = DataType::UIControl;
-	auto node_ui_control = std::make_unique<NodeUIControl>(ui_control_type, std::move(node_var), std::move(params), tok);
+	auto node_ui_control = std::make_shared<NodeUIControl>(ui_control_type, std::move(node_var), std::move(params), tok);
 	node_ui_control->ty = node_ui_control->control_var->ty;
-	return Result<std::unique_ptr<NodeUIControl>>(std::move(node_ui_control));
+	return Result<std::shared_ptr<NodeUIControl>>(std::move(node_ui_control));
 }
 
 Result<std::unique_ptr<NodeParamList>> BuiltinsProcessor::parse_builtin_args_list() {
-	std::vector<Type*> types;
     auto func_args = std::make_unique<NodeParamList>(peek(m_tokens));
     while(peek(m_tokens).type != token::CLOSED_PARENTH) {
         if(peek(m_tokens).type == token::CLOSED_PARENTH) break;
@@ -285,8 +286,7 @@ Result<std::unique_ptr<NodeParamList>> BuiltinsProcessor::parse_builtin_args_lis
 			}
 			auto arg = std::move(node_arg_res.unwrap());
             arg->parent = func_args.get();
-			types.push_back(arg->ty);
-            func_args->params.push_back(std::move(arg));
+            func_args->params.push_back(arg->to_reference());
         } else {
             return Result<std::unique_ptr<NodeParamList>>(CompileError(ErrorType::PreprocessorError,
                                                                                                "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
@@ -294,6 +294,27 @@ Result<std::unique_ptr<NodeParamList>> BuiltinsProcessor::parse_builtin_args_lis
         if(peek(m_tokens).type == token::COMMA) consume(m_tokens); // consume comma
     }
     return Result<std::unique_ptr<NodeParamList>>(std::move(func_args));
+}
+
+Result<std::vector<std::unique_ptr<NodeFunctionParam>>> BuiltinsProcessor::parse_builtin_params_list() {
+	std::vector<std::unique_ptr<NodeFunctionParam>> func_params;
+	while(peek(m_tokens).type != token::CLOSED_PARENTH) {
+		if(peek(m_tokens).type == token::CLOSED_PARENTH) break;
+		if(peek(m_tokens).type == token::KEYWORD or peek(m_tokens).type == token::TO) {
+			Token tok = peek(m_tokens);
+			auto node_arg_res = parse_builtin_variable();
+			if(node_arg_res.is_error()) {
+				return Result<std::vector<std::unique_ptr<NodeFunctionParam>>>(node_arg_res.get_error());
+			}
+			auto arg = std::move(node_arg_res.unwrap());
+			func_params.push_back(std::make_unique<NodeFunctionParam>(std::move(arg), nullptr, tok));
+		} else {
+			return Result<std::vector<std::unique_ptr<NodeFunctionParam>>>(CompileError(ErrorType::PreprocessorError,
+			"Failed loading builtins. Found unknown syntax in function parameters.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
+		}
+		if(peek(m_tokens).type == token::COMMA) consume(m_tokens); // consume comma
+	}
+	return Result<std::vector<std::unique_ptr<NodeFunctionParam>>>(std::move(func_params));
 }
 
 bool BuiltinsProcessor::is_property_function(const std::string &fun_name) {

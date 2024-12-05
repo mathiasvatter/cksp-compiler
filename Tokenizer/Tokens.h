@@ -8,7 +8,6 @@
 #include <unordered_set>
 #include <vector>
 #include <set>
-//#include <memory>
 
 #include "version.h"
 
@@ -35,12 +34,15 @@
 	XX(ADD, "+") \
     XX(DIV, "/")      \
 	XX(MULT, "*")        \
+	XX(EXP, "**")        \
 	XX(MODULO, "mod")        \
 	XX(STRING_OP, "&")        \
 	XX(BIT_AND, ".and.")        \
 	XX(BIT_OR, ".or.")        \
 	XX(BIT_XOR, "bit_xor")        \
-	XX(BIT_NOT, "bit_not")        \
+	XX(BIT_NOT, "bit_not") \
+	XX(SHIFT_LEFT, "sh_left") \
+	XX(SHIFT_RIGHT, "sh_right") \
     XX(OPEN_PARENTH, "open_parenth")\
     XX(CLOSED_PARENTH, "closed_parenth")       \
     XX(OPEN_BRACKET, "open_bracket")\
@@ -63,6 +65,7 @@
     XX(OVERRIDE, "override") \
     XX(FOR, "for") \
     XX(WHILE, "while") \
+    XX(BREAK, "break") \
     XX(IF, "if") \
     XX(SELECT, "select") \
     XX(DEFAULT, "default") \
@@ -118,6 +121,7 @@
     XX(TRUE, "true")\
     XX(NEW, "new")\
     XX(DELETE, "delete")\
+    XX(STATIC, "static")\
     XX(NIL, "nil")\
 	XX(PRAGMA, "pragma")
 
@@ -175,9 +179,9 @@ inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{"#pragma",
 													{"START_INC", token::START_INC}, {"END_INC", token::END_INC}, {"SET_CONDITION", token::SET_CONDITION}, {"RESET_CONDITION", token::RESET_CONDITION},
                                                    {"USE_CODE_IF", token::USE_CODE_IF}, {"USE_CODE_IF_NOT", token::USE_CODE_IF_NOT}, {"END_USE_CODE", token::END_USE_CODE}};
 inline std::unordered_map<std::string, token> STATEMENT_SYNTAX = {{"to", token::TO}, {"downto", token::DOWNTO}, {"step", token::STEP}, {"else", token::ELSE},
-																  {"case", token::CASE}, {"in", token::IN}, {"default", token::DEFAULT}};
+																  {"case", token::CASE}, {"in", token::IN}, {"default", token::DEFAULT}, {"break", token::BREAK}};
 inline std::unordered_map<std::string, token> FUNCTION_SYNTAX = {{"override", token::OVERRIDE}, {"call", token::CALL}, {"return", token::RETURN}};
-inline std::unordered_map<std::string, token> OBJECT_SYNTAX = {{"new", token::NEW}, {"delete", token::DELETE}, {"nil", token::NIL}};
+inline std::unordered_map<std::string, token> OBJECT_SYNTAX = {{"new", token::NEW}, {"delete", token::DELETE}, {"nil", token::NIL}, {"static", token::STATIC}};
 inline std::unordered_map<std::string, token> BOOLEAN_SYNTAX = {{"false", token::FALSE}, {"true", token::TRUE}};
 
 
@@ -200,10 +204,29 @@ inline std::unordered_map<token, std::vector<std::string>> PERSISTENCE_TOKENS = 
 															{token::PERS, {"make_persistent"}},
 															{token::INSTPERS, {"make_instr_persistent"}}};
 
+inline static std::string OBJ_DELIMITER = "::";
+inline std::unordered_map<token, std::pair<std::string, int>> OPERATOR_OVERWRITES = {{
+			{token::ADD, {"__add__", 2}},             // +
+			{token::SUB, {"__sub__", 2}},             // -
+			{token::MULT, {"__mul__", 2}},            // *
+			{token::DIV, {"__div__", 2}},         	// /
+			{token::MODULO, {"__mod__", 2}},          // %
+			{token::EQUAL, {"__eq__", 2}},            // =
+			{token::NOT_EQUAL, {"__ne__", 2}},        // #
+			{token::LESS_THAN, {"__lt__", 2}},        // <
+			{token::LESS_EQUAL, {"__le__", 2}},       // <=
+			{token::GREATER_THAN, {"__gt__", 2}},     // >
+			{token::GREATER_EQUAL, {"__ge__", 2}},    // >=
+			{token::BIT_NOT, {"__invert__", 1}},      // .not.
+			{token::BIT_AND, {"__and__", 2}},         // .and.
+			{token::BIT_OR, {"__or__", 2}},           // .or.
+			{token::BIT_XOR, {"__xor__", 2}},         // .xor.
+		}};
+
 /// string->Token operator maps
-inline std::unordered_map<std::string, token> BITWISE_OPERATORS = {{".and.", token::BIT_AND}, {".or.", token::BIT_OR}, {".not.", token::BIT_NOT}, {".xor.", token::BIT_XOR}};
+inline std::unordered_map<std::string, token> BITWISE_OPERATORS = {{".and.", token::BIT_AND}, {".or.", token::BIT_OR}, {".not.", token::BIT_NOT}, {".xor.", token::BIT_XOR}, {"<<", token::SHIFT_LEFT}, {">>", token::SHIFT_RIGHT}};
 inline std::unordered_map<std::string, token> BOOL_OPERATORS = {{"and", token::BOOL_AND}, {"or", token::BOOL_OR}, {"not", token::BOOL_NOT}, {"xor", token::BOOL_XOR}};
-inline std::unordered_map<std::string, token> MATH_OPERATORS = {{"-", token::SUB}, {"+", token::ADD}, {"/", token::DIV}, {"*", token::MULT}, {"mod", token::MODULO}};
+inline std::unordered_map<std::string, token> MATH_OPERATORS = {{"-", token::SUB}, {"+", token::ADD}, {"/", token::DIV}, {"*", token::MULT}, {"mod", token::MODULO}, {"**", token::EXP}};
 inline std::unordered_map<std::string, token> UNARY_OPERATORS = {{"-", token::SUB}, {".not.", token::BIT_NOT}, {"not", token::BOOL_NOT}};
 inline std::unordered_map<std::string, token> COMPARISON_OPERATORS = {{"<", token::LESS_THAN}, {">", token::GREATER_THAN}, {"=", token::EQUAL}, {"<=", token::LESS_EQUAL}, {">=", token::GREATER_EQUAL}, {"#", token::NOT_EQUAL}};
 inline std::unordered_map<std::string, token> STRING_OPERATOR = {{"&", token::STRING_OP}};

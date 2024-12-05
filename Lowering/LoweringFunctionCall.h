@@ -6,6 +6,7 @@
 
 #include "ASTLowering.h"
 
+///
 class LoweringFunctionCall : public ASTLowering {
 private:
 public:
@@ -15,43 +16,52 @@ public:
 	/// Determining if function parameter needs to be wrapped in get_ui_id because of ui control
 	/// Determining if function call is method constructor -> rename
 	NodeAST * visit(NodeFunctionCall &node) override {
-		node.get_definition(m_program);
+		node.bind_definition(m_program);
 
         if(node.kind == NodeFunctionCall::Kind::Property) {
-            auto node_body = inline_property_function(node.definition->header.get(), std::move(node.function));
+            auto node_body = inline_property_function(node.get_definition()->header, std::move(node.function));
             node_body->accept(*this);
+			node.get_definition()->call_sites.erase(&node);
             return node.replace_with(std::move(node_body));
         }
         if(node.kind == NodeFunctionCall::Kind::Builtin) {
             // get_ui_id lowering
             node.function->accept(*this);
+
+//			if(node.function->name == "num_elements") {
+//				auto &arr_ref = node.function->header->params->params[0];
+//				if(arr_ref->get_node_type() == NodeType::ArrayRef) {
+//					auto node_arr = static_cast<NodeArrayRef*>(arr_ref.get());
+//					return node.replace_with(static_cast<NodeArray*>(node_arr->declaration)->size->clone());
+//				}
+//			}
+
 			return &node;
         }
 
-		if(node.kind == NodeFunctionCall::Kind::UserDefined) {
-			if(node.get_method_name() == "__init__") {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-				error.m_message = "Do not call constructor method directly.";
-				error.exit();
-			}
-		}
+//		if(node.kind == NodeFunctionCall::Kind::UserDefined) {
+//			if(node.get_method_name() == "__init__") {
+//				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+//				error.m_message = "Do not call constructor method directly.";
+//				error.exit();
+//			}
+//		}
 
-        // message overloaded is not recognized as builtin
-		// constructor method renaming
-        if(node.kind == NodeFunctionCall::Kind::Undefined) {
-            if(node.function->args->params.size() == 1) return &node;
-            if(node.function->name != "message") return &node;
-            // lowering of message parameters when separated by comma
-            node.function->args = inline_message_parameters(node.function->args);
-        }
+
 		return &node;
 	}
 
-    /// lowering of get control statements from property functions
-	NodeAST * visit(NodeSingleAssignment &node) override {
+    /// lowering of set control statements from property functions
+	NodeAST * visit(NodeSetControl &node) override {
+		node.ui_id->accept(*this);
+		node.value->accept(*this);
 		return node.lower(m_program);
 	};
 
+	NodeAST * visit(NodeGetControl &node) override {
+		node.ui_id->accept(*this);
+		return node.lower(m_program);
+	}
 
 
     NodeAST * visit(NodeVariableRef &node) override {
@@ -78,63 +88,20 @@ public:
 	}
 
 private:
-    static inline std::unique_ptr<NodeBlock> inline_property_function(NodeFunctionHeader* property_function, std::unique_ptr<NodeFunctionHeader> function_header) {
-        auto node_body = std::make_unique<NodeBlock>(function_header->tok);
-        for(int i = 1; i<function_header->args->params.size(); i++) {
-            auto node_get_control = std::make_unique<NodeGetControl>(
-                    function_header->args->params[0]->clone(),
-                    property_function->args->params[i]->get_string(),
-                    function_header->tok
+    inline std::unique_ptr<NodeBlock> inline_property_function(const std::shared_ptr<NodeFunctionHeader>& property_function, std::unique_ptr<NodeFunctionHeaderRef> header_ref) {
+        auto node_body = std::make_unique<NodeBlock>(header_ref->tok);
+        for(int i = 1; i<header_ref->args->size(); i++) {
+            auto node_set_control = std::make_unique<NodeSetControl>(
+				header_ref->get_arg(0)->clone(),
+				property_function->get_param(i)->name,
+				std::move(header_ref->get_arg(i)),
+				header_ref->tok
             );
-            auto node_assignment = std::make_unique<NodeSingleAssignment>(
-                    std::move(node_get_control),
-                    std::move(function_header->args->params[i]),
-                    function_header->tok
-            );
-            node_body->add_stmt(
-                    std::make_unique<NodeStatement>(std::move(node_assignment), node_body->tok)
-            );
+            node_body->add_as_stmt(std::move(node_set_control));
         }
         return std::move(node_body);
     }
 
-    static inline std::unique_ptr<NodeParamList> inline_message_parameters(std::unique_ptr<NodeParamList>& params) {
-        // it is already only one parameter
-        if (params->params.size() == 1) return std::move(params);
 
-        auto new_param = std::make_unique<NodeParamList>(params->tok);
 
-        // initialize node_expr with last param
-        auto node_expr = std::move(params->params.back());
-        params->params.pop_back();
-
-        // Durchlaufe die restlichen Parameter in umgekehrter Reihenfolge
-        for (int i = params->params.size() - 1; i >= 0; --i) {
-            // Erstelle einen neuen NodeString für das Komma
-            auto comma_node = std::make_unique<NodeString>("\", \"", params->tok);
-
-            // Erstelle einen neuen NodeBinaryExpr mit dem aktuellen Parameter und dem bisherigen Ausdruck
-            auto combined_expr = std::make_unique<NodeBinaryExpr>(
-                    token::STRING_OP,
-                    std::move(params->params[i]),
-                    std::move(comma_node),
-                    params->tok
-            );
-            combined_expr->ty = TypeRegistry::String;
-
-            // Hänge den bisherigen Ausdruck an den neuen NodeBinaryExpr an
-            node_expr = std::make_unique<NodeBinaryExpr>(
-                    token::STRING_OP,
-                    std::move(combined_expr),
-                    std::move(node_expr),
-                    params->tok
-            );
-            node_expr->ty = TypeRegistry::String;
-        }
-        node_expr->parent = new_param.get();
-        // Füge das endgültige node_expr der neuen Parameterliste hinzu
-        new_param->params.push_back(std::move(node_expr));
-        new_param->parent = params->parent;
-        return new_param;
-    }
 };

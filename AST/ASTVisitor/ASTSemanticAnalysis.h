@@ -23,8 +23,12 @@
  * Changes node types of incorrectly detected data structures and references.
  */
 class ASTSemanticAnalysis: public ASTVisitor {
+private:
+	DefinitionProvider* m_def_provider = nullptr;
+	ReferenceManager* m_ref_manager = nullptr;
+
 public:
-	explicit ASTSemanticAnalysis(DefinitionProvider* definition_provider);
+	explicit ASTSemanticAnalysis(NodeProgram* main);
 
     NodeAST * visit(NodeProgram& node) override;
 	NodeAST * visit(NodeCallback& node) override;
@@ -48,24 +52,23 @@ public:
 	NodeAST * visit(NodeVariable& node) override;
     NodeAST * visit(NodeVariableRef& node) override;
 
+	NodeAST * visit(NodeFunctionHeaderRef& node) override;
 	/// provide and search for function definition; handle is_thread_safe flag
 	NodeAST * visit(NodeFunctionCall& node) override;
     /// add function parameters to scope
 	NodeAST * visit(NodeFunctionDefinition& node) override;
 	NodeAST * visit(NodeWildcard& node) override;
-
+	NodeAST * visit(NodeNumElements& node) override;
+	NodeAST * visit(NodeSortSearch& node) override;
 
 	/// updates the node types of parameters at call sites regarding the function definition
-	/// e.g. args can be incorrectly detected as variable refs at call sites, but they are arrays in the definition
-	void update_func_call_node_types(NodeFunctionCall* func_call);
+	/// e.g. params can be incorrectly detected as variable refs at call sites, but they are arrays in the definition
+	static void update_func_call_node_types(NodeFunctionCall* func_call);
 	/// updates incorrectly detected function params (eg arrays detected as variables)
-	NodeDataStructure* replace_incorrectly_detected_data_struct(NodeDataStructure* data_struct);
+	static NodeDataStructure* replace_incorrectly_detected_data_struct(const std::shared_ptr<NodeDataStructure>& data_struct);
 	/// updated incorrectly detected references of function params
-	static NodeReference* replace_incorrectly_detected_reference(DefinitionProvider* def_provider, NodeReference* reference);
+	static NodeReference* replace_incorrectly_detected_reference(NodeProgram* program, NodeReference* reference);
 
-private:
-    NodeProgram* m_program = nullptr;
-	DefinitionProvider* m_def_provider = nullptr;
 
 };
 

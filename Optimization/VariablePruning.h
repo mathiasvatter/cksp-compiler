@@ -12,6 +12,7 @@
  * - not a ui_control
  * - only used as l_value in assignments
  * - never used as r_value
+ * Also removes throwaway variables
  */
 class VariablePruning : public ASTOptimizations {
 private:
@@ -39,14 +40,13 @@ public:
 	/// deletes unused variables by removing declarations and assignments
 	void prune_unused_variables() {
 		for(auto &ass: m_all_assignments) {
-			auto reference = static_cast<NodeReference*>(ass->l_value.get());
-			if(!reference->declaration->is_used) {
-				ass->replace_with(std::make_unique<NodeDeadCode>(ass->tok));
+			if(!ass->l_value->get_declaration()->is_used) {
+				ass->remove_node();
 			}
 		}
 		for(auto &decl : m_all_declarations) {
 			if(!decl->variable->is_used) {
-				decl->replace_with(std::make_unique<NodeDeadCode>(decl->tok));
+				decl->remove_node();
 			}
 		}
 	}
@@ -71,6 +71,8 @@ public:
 		if(node->get_node_type() == NodeType::UIControl) {
 			return false;
 		}
+		if(node->data_type == DataType::Const) return false;
+
 		if(node->persistence.has_value()) {
 			return false;
 		}
@@ -80,8 +82,7 @@ public:
 	// is unused if not ui_control and only used as l_value in assignments (if not arrayref) -> adds these assignments to vector
 	inline bool is_used(const NodeReference &node) {
 		if(node.data_type != DataType::UIControl) {
-			if(node.parent->get_node_type() == NodeType::SingleAssignment) {
-				auto assignment = static_cast<NodeSingleAssignment*>(node.parent);
+			if(auto assignment = node.parent->cast<NodeSingleAssignment>()) {
 				if(assignment->l_value.get() == &node) {
 					m_all_assignments.push_back(assignment);
 					return false;
@@ -91,14 +92,36 @@ public:
 		return true;
 	}
 
-	inline NodeAST *visit(NodeVariableRef &node) override {
-		node.declaration->is_used |= is_used(node);
+	inline NodeAST *visit(NodeSingleAssignment& node) override {
+		if(auto var_ref = node.l_value->cast<NodeVariableRef>()) {
+			if(var_ref->kind == NodeReference::Kind::Throwaway) {
+				return node.remove_node();
+			}
+		}
+
+		node.l_value->accept(*this);
+		node.r_value->accept(*this);
 		return &node;
 	}
 
+	inline NodeAST *visit(NodeVariableRef &node) override {
+		if(node.kind == NodeReference::Kind::Throwaway) {
+			// if a throwaway variable is not in assignment it has been incorrectly used
+			if(node.parent->cast<NodeSingleAssignment>()) {
+				auto error = get_raw_compile_error(ErrorType::VariableError, node);
+				error.m_message  = "Throwaway variables <"+node.name+"> are removed by the compiler and will not be included "
+																	 "in the compiled code. Consider renaming your variable.";
+				error.exit();
+			}
+		}
+		node.get_declaration()->is_used |= is_used(node);
+		return &node;
+	}
+
+
 	inline NodeAST *visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);
-		node.declaration->is_used |= is_used(node);
+		node.get_declaration()->is_used |= is_used(node);
 		return &node;
 	}
 

@@ -50,9 +50,11 @@ private:
 
 
 public:
-	explicit ASTKSPSyntaxCheck(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {};
+	explicit ASTKSPSyntaxCheck(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
+	}
 
-	NodeAST* fix_memory_exhausted_error(NodeAST& node) {
+	static NodeAST* fix_memory_exhausted_error(NodeAST& node) {
 		MemoryExhaustedNesting memory_exhausted_nesting;
 		return node.accept(memory_exhausted_nesting);
 	}
@@ -71,7 +73,7 @@ public:
 		for(auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
-		node.flatten();
+		node.flatten(true);
 		return &node;
 	};
 

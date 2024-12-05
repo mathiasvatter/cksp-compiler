@@ -34,7 +34,14 @@ if [ ! -d "$RELEASES_DIR" ]; then
     mkdir -p "$RELEASES_DIR"
 fi
 
-VERSION_DIR="cksp_v${VERSION}_release"
+# Überprüfen, ob es sich um eine Pre-Release-Version handelt (z.B. -alpha, -beta, -rc)
+if [[ "$VERSION" == *"-"* ]]; then
+    VERSION_DIR="cksp_v${VERSION}"
+    PRE_RELEASE_FLAG="--prerelease"
+else
+    VERSION_DIR="cksp_v${VERSION}_release"
+    PRE_RELEASE_FLAG="" # Keine Pre-Release-Flag
+fi
 RELEASE_DIR="${RELEASES_DIR}/${VERSION_DIR}"
 
 # Variables
@@ -78,7 +85,8 @@ gh release create "$TAG" \
   --repo "$REPO" \
   --title "$RELEASE_NAME" \
   --notes "$BODY" \
-  "$ASSETS_PATH"
+  "$ASSETS_PATH" \
+  $PRE_RELEASE_FLAG
 
 # Switch back to the original branch
 git checkout "$CURRENT_BRANCH"

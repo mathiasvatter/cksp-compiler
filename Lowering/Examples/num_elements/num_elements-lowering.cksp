@@ -1,0 +1,39 @@
+{-------------------------------------------------------------------------------------------
+										Pre Desugaring cksp
+--------------------------------------------------------------------------------------------}
+
+num_elements(ndarray[*, *], 1) // error, no dimension parameter allowed when using wildcards
+num_elements(ndarray[*, *, 2]) // error, cannot infer which dimension to return. Specify a single wildcard (*).
+num_elements(ndarray[*, 10]) // wildcard position -> dimension
+num_elements(ndarray[*, *])
+
+{-------------------------------------------------------------------------------------------
+										Post Desugaring cksp
+--------------------------------------------------------------------------------------------}
+
+num_elements(ndarray, 1)
+num_elements(ndarray) // dimension 0 wird im lowering prozess hinzugefügt
+
+{-------------------------------------------------------------------------------------------
+										Pre Lowering cksp
+--------------------------------------------------------------------------------------------}
+
+
+declare ndarray[10, 10] : int[][]
+declare dynamic_val: int := 2
+message(num_elements(ndarray, 1), num_elements(ndarray, dynamic_val))
+
+{-------------------------------------------------------------------------------------------
+                                        Post Lowering
+--------------------------------------------------------------------------------------------}
+
+declare ndarray[10, 10] : int[][]
+declare const ndarray::num_elements[2] := (10, 10)
+
+declare dynamic_val: int := 2
+message(ndarray::num_elements[Array::clip(1, 2)], ndarray::num_elements[Array::clip(dynamic_val, 2])
+
+function Array::clip(x, b) 
+	return x + (-x .and. sh_right(x, 31)) - ((x - b) .and. sh_right((b - x), 31))   
+end function    
+

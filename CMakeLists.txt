@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
-project(CKSP_Compiler VERSION 0.0.6)
+project(CKSP_Compiler VERSION 0.0.7)
+set(PRE_RELEASE_VERSION "-alpha.1")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -119,13 +120,13 @@ add_executable(cksp main.cpp
         misc/PathHandler.cpp
         Lowering/ASTLowering.h
         Lowering/LoweringList.h
-        Lowering/LoweringNDArray.h
+        Lowering/DataLowering/DataLoweringNDArray.h
         Lowering/LoweringUIControlArray.h
         Desugaring/DesugaringFamily.h
         Desugaring/ASTDesugaring.h
         Desugaring/DesugarDeclareAssign.h
-        Desugaring/DesugarForStatement.h
-        Desugaring/DesugarForEachStatement.h
+        Desugaring/DesugarFor.h
+        Desugaring/DesugarForEach.h
         misc/Gensym.h
         misc/Timer.h
         Compiler.h
@@ -149,14 +150,14 @@ add_executable(cksp main.cpp
         Lowering/LoweringPointer.h
         AST/ASTVisitor/ASTLowerTypes.h
         Lowering/LoweringNil.h
-        Optimization/FunctionCallHoisting.h
-        Lowering/LoweringFunctionDef.h
+        AST/ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h
+        AST/ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h
         AST/ASTVisitor/ASTDataStructureLowering.h
         AST/ASTVisitor/ASTReturnFunctionRewriting.h
-        Lowering/NDArrayCopyFunction.h
+        Lowering/DataLowering/NDArrayCopyFunction.h
         AST/ASTVisitor/NormalizeNDArrayAssign.h
-        AST/ASTVisitor/ASTFunctionInlining.h
-        AST/ASTVisitor/ASTExpressionFunctionInlining.h
+        AST/ASTVisitor/FunctionHandling/ASTFunctionInlining.h
+        AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h
         Optimization/ConstantPropagation.h
         Optimization/VariablePruning.h
         Optimization/ParameterMarking.h
@@ -172,4 +173,34 @@ add_executable(cksp main.cpp
         Optimization/VarExistsValidator.h
         Optimization/MemoryExhaustedNesting.h
         Optimization/TokenCounter.h
+        Desugaring/DesugarFunctionCall.h
+        AST/ASTVisitor/ASTHandleStringRepresentations.h
+        Desugaring/DesugarDelete.h
+        AST/ASTVisitor/ASTPointerScope.h
+        Desugaring/DesugarParamList.h
+        Desugaring/DesugarBinaryExpr.h
+        Lowering/LoweringWhile.h
+        Lowering/LoweringFunctionDef.h
+        AST/ASTNodes/NodeStructCreateRefCountFunctions.h
+        Lowering/PreLoweringStruct.h
+        Lowering/LoweringMemAlloc.h
+        Lowering/LoweringNumElements.h
+        Desugaring/DesugarSingleAssignment.h
+        Lowering/PostLowering/PostLoweringNumElements.h
+        AST/ASTVisitor/ASTCollectPostLowerings.h
+        Optimization/NilValidator.h
+        Lowering/LoweringUseCount.h
+        AST/ASTVisitor/ASTTypeAnnotations.h
+        AST/ASTVisitor/ReferenceManagement/ReferenceManager.h
+        AST/ASTVisitor/ReferenceManagement/ReferenceManager.cpp
+        AST/ASTVisitor/ReferenceManagement/ASTCollectReferences.h
+        AST/ASTVisitor/ReferenceManagement/ASTRemoveReferences.h
+        misc/FreeFunctions.h
+        AST/ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h
+        AST/ASTVisitor/ReturnFunctionRewriting/ReturnFunctionIsolation.h
+        AST/ASTVisitor/FunctionHandling/FunctionInlining.h
+        Lowering/PostLowering/PostLoweringSingleDeclaration.h
+        Lowering/LoweringSortSearch.h
+        Lowering/PostLowering/PostLoweringSortSearch.h
+        AST/ASTVisitor/ASTDimensionInflation.h
 )

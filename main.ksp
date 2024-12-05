@@ -1,22 +1,53 @@
+struct Debug
+	declare value: int
+	declare next[2]: Debug[]
+	// declare prev[10]: Debug[]
+end struct
 
-// struct List
-// 	declare value: int
-// 	declare next
+struct List
+	declare value: int
+	declare next: List
 
-// 	function __init__(self, value: int, next)
-// 		self.value := value
-// 		self.next := next
-// 	end function
+	// function __init__(self, value: int, next: List)
+	// 	self.value := value
+	// 	self.next := next
+	// end function
 
-//     function get_next_next_value(self)
-//         return self.next.next.value
-//     end function
-// end struct
+    function get_next_next_value(self)
+        return self.next.next.value
+    end function
+end struct
+
+struct Node
+	declare value: int
+	declare left: Node
+	declare right: Node
+end struct 
+
+struct Point
+	declare x: int
+	declare y: int
+
+	function __init__(self, x: int, y: int)
+		self.x := x
+		self.y := y
+	end function
+
+	function __repr__(self)
+		return "Point {X: " & self.x & ", Y: " & self.y & "}"
+	end function
+
+	function __add__(self, other: Point)
+		return Point(self.x + other.x, self.y + other.y)
+	end function
+end struct
+
+
 
 // struct Note
 // 	declare pitch: int
 // 	declare velocities[10]: int[]
-// 	declare play_pos[11, 12]: int[][]
+// 	declare play_pos[2, 2]: int[][]
 
 // 	function __init__(self, p: int, v: int[], pp: int[][])
 // 		self.pitch := p
@@ -38,23 +69,103 @@
 
 // end struct
 
+
 on init	
-	declare ui_button btn_1, ui_button btn_2
 
+	declare bugbug := Debug(3, (nil))
 
-	declare ui_button btn_slot[5]
+	declare menu_strip_val[3,3]
+	declare left := get_active_idx(menu_strip_val, 0)
+	message(left)
 	
-	declare array[btn_slot.SIZE], no_array := (0+2, 1, 2), 23
-	do_sth_with_btn(btn_slot)
+	// declare ui_menu mnu: int, i
+	// declare ari[2]
+ 	// mnu->value := (mnu->value + 1) mod num_elements(ari)
+	// i := (i+1) mod num_elements(ari)
+	// declare first_note := Note(69, (3,0), ((10)))
+	// declare ptr: List := List(1, List(3, nil))
+	// message(ptr.next.next)
+	// message(ptr.get_next_next_value())
+	// // declare huihui : (int, int): void
+	// // declare ui_button btn_slot[5]: int[]
+	
+	// declare lists[10]: List[] := (nil)
+	// declare list_ptr: List
+	// for idx, ls in lists
+	// 	ls := List(idx, ls)
+	// 	list_ptr := ls
+	// 	if(idx = 5)
+	// 		break
+	// 	end if
+	// 	message(ls.next)
+	// end for
+	// btn_1, _ := return_twice()
+	declare n[10] := (0)
+	declare array[10] := (1)
+	message(array.SIZE)
+	declare this_list: List // := nil
+	this_list := List(42, nil)
+
+	declare that_list: List := List(39, List(40, List(41, this_list)))
+	// new type: object Pointer nil := -1
+	message(that_list.next.value)
+	
+	n := (1,2,3,4,5)
+
+	declare ndarray[10,10]: int[][]
+	declare ndarray3[10,10,10,10]
+	message(ndarray3[4,5, 6, 7], search(ndarray[2, *], -1))
+	message(search(ndarray3[3, 4, *, *], -1), ndarray3[3, 4, 3, *])
+	message(n[*])
+	declare ndarray2[10,10]: int[][]
+	// message(search_matrix(ndarray, 3.0), "3", "f")
+	message(search_matrix(ndarray2, 3), "3", "f")
+	message(num_elements(ndarray, 2), num_elements(ndarray[*, 0]))
+	declare local ptr_array[10]
+	for idx, ptr in ptr_array
+		ptr := Point(idx, idx+1)
+	end for
+	declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
+	declare local ptr_array3[10] := ptr_array
+	declare local p1 := Point(1, 2)
+	declare local p2 := Point(3, 4)
+	message(Point(1, 2) + Point(3, 4))
+	ndarray[0, *] := ndarray[1, *]
+
+	message(use_count(this_list))
+	message(return_size(ndarray[*, 0]))
 end on
 
-function do_sth_with_btn(ui_array: int[]) 
-	declare another_array[3, 2] := (1)
-	declare i
-	for i := 0 to ui_array.SIZE-1
-		declare ui_id := ui_array[i]	
-		message(ui_id, another_array[i, 0], another_array.SIZE_D2)
-	end for
+function get_active_idx(value_array, emitter) -> result
+    result := value_array[emitter,0]*0+value_array[emitter,1]*1+value_array[emitter,2]*2
+end function
+
+function return_size(ndarray: int[])
+	return num_elements(ndarray)
+end function	
+
+
+function return_init(init: int[]): int[]
+	message(init)
+	return (1,2,3,4,5)
+end function
+
+
+function search_matrix(matrix: number[][], target: number): number
+	declare array[30] := (0)
+	declare ndarray[2,3]
+	// declare ui_slider sli(0,1)
+	message(num_elements(ndarray))
+    declare row, col: int
+    for row := 0 to num_elements(matrix, 1)- 1
+        for col := 0 to num_elements(matrix, 2)- 1
+            if matrix[row,col] = target
+                return (row * 10) + col
+            end if
+        end for
+    end for
+
+    return -1  // If the target is not found
 end function
 
 
@@ -67,10 +178,25 @@ end function
 {*******************************************************************************************************************
 											* UI CALLBACKS *
 *******************************************************************************************************************}
+on note
+	
+	declare note := EVENT_NOTE
+	declare event_id := EVENT_ID
+	wait(10)
+
+	if(note = 0)
+		declare note_off := 1
+		message("Note Off", note_off)
+	else
+		declare note_on := 1
+		message("Note On", note_on)
+	end if
+end on
+
+
 
 
 {*******************************************************************************************************************
 												* MACROS *
 *******************************************************************************************************************}
-
 
