@@ -84,6 +84,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-macos, build-windows]
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Download macOS artifact
         uses: actions/download-artifact@v3
         with:
@@ -102,7 +105,7 @@ jobs:
             mkdir -p _Releases/${{ env.VERSION_DIR }}
             
             # Dateien aus macos-release/ kopieren (falls Ziel noch leer ist)
-            rsync -a --ignore-existing macos-release/${{ env.VERSION_DIR }}/ _Releases/${{ env.VERSION_DIR }}/
+            rsync -a --update macos-release/${{ env.VERSION_DIR }}/ _Releases/${{ env.VERSION_DIR }}/
             
             # Dateien aus windows-release/ kopieren, bevorzugt neuere Dateien
             rsync -a --update windows-release/${{ env.VERSION_DIR }}/ _Releases/${{ env.VERSION_DIR }}/
@@ -113,7 +116,7 @@ jobs:
         run: |
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
-            git add _Releases
+            git add *
             git commit -m "Merge artifacts for version ${{ env.VERSION_DIR }}"
             git push origin master
 
