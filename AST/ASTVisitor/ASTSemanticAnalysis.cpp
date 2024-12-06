@@ -5,7 +5,7 @@
 #include "ASTSemanticAnalysis.h"
 
 ASTSemanticAnalysis::ASTSemanticAnalysis(NodeProgram *main)
-: m_def_provider(main->def_provider), m_ref_manager(main->ref_manager) {
+: m_def_provider(main->def_provider) {
 	m_program = main;
 }
 

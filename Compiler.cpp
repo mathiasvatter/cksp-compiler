@@ -101,7 +101,6 @@ void Compiler::compile() {
 	}
 	auto ast = std::move(ast_result.unwrap());
 	ast->def_provider = &m_definition_provider;
-	ast->ref_manager = &m_reference_manager;
 	m_program = ast.get();
 
 	compile_time.stop("Parsing");

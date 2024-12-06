@@ -25,7 +25,6 @@
 class ASTSemanticAnalysis: public ASTVisitor {
 private:
 	DefinitionProvider* m_def_provider = nullptr;
-	ReferenceManager* m_ref_manager = nullptr;
 
 public:
 	explicit ASTSemanticAnalysis(NodeProgram* main);
