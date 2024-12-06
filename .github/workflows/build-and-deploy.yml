@@ -94,6 +94,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Check if VERSION_DIR is set
+        if: ${{ needs.build-macos.outputs.version_dir == '' || needs.build-macos.outputs.version_dir == null }}
+        run: |
+          echo "Error: VERSION_DIR is not set. Aborting workflow."
+          exit 1
+
       - name: Download macOS artifact
         uses: actions/download-artifact@v3
         with:
@@ -105,10 +111,8 @@ jobs:
         with:
           name: windows-build
           path: windows-release/
-  
 
       - name: Merge artifacts into _Releases
-        if: ${{ needs.build-macos.outputs.version_dir && needs.build-macos.outputs.version_dir != '' }}
         run: |
             # Sicherstellen, dass der Zielordner existiert
             mkdir -p _Releases/${{ needs.build-macos.outputs.version_dir }}
@@ -120,7 +124,6 @@ jobs:
             rsync -a --update windows-release/${{ needs.build-macos.outputs.version_dir }}/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
 
       - name: Push merged _Releases to master
-        if: ${{ needs.build-macos.outputs.version_dir && needs.build-macos.outputs.version_dir != '' }}
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -131,7 +134,6 @@ jobs:
             git push origin master
 
       - name: Create and push Git tag
-        if: ${{ needs.build-macos.outputs.tag && needs.build-macos.outputs.tag != '' }}
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
