@@ -2,8 +2,8 @@ name: Build and Deploy CKSP Compiler
 
 on:
   push:
-    tags:
-      - 'v*' # Trigger nur bei neuen Tags, z. B. v1.0.0
+    # tags:
+    #   - 'v*' # Trigger nur bei neuen Tags, z. B. v1.0.0
     branches:
       - master # Trigger bei Push auf main-Branch
 
@@ -35,19 +35,12 @@ jobs:
             echo "VERSION_DIR=$VERSION_DIR" >> $GITHUB_ENV
             echo "Detected VERSION_DIR: $VERSION_DIR"
 
-      - name: Extract CKSP version and create a Git tag
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract version and set tag
+        id: extract-tag-macos
         run: |
-            # Version aus der CKSP-Binärdatei extrahieren
             VERSION=$(cmake-build-release/cksp --version | awk '{print $3}')
-            
-            # Git-Tag erstellen und pushen
             TAG="v${VERSION}"
-            git config user.name "GitHub Actions"
-            git config user.email "actions@github.com"
-            git tag -a "$TAG" -m "Release $TAG"
-            git push origin "$TAG"
+            echo "TAG=$TAG" >> $GITHUB_ENV
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v3
@@ -120,6 +113,24 @@ jobs:
             git commit -m "Merge artifacts for version ${{ env.VERSION_DIR }}"
             git push origin master
 
+      - name: Create and push Git tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+          # Entferne bestehenden Tag, falls vorhanden
+          if git rev-parse "${{ env.TAG }}" >/dev/null 2>&1; then
+              git tag -d "${{ env.TAG }}"
+              git push origin --delete "${{ env.TAG }}"
+          fi
+
+          # Erstelle und pushe neuen Tag
+          git tag -a "${{ env.TAG }}" -m "Release ${{ env.TAG }}"
+          git push origin "${{ env.TAG }}"
+
+            
     #   - name: Deploy to GitHub Releases
     #     uses: softprops/action-gh-release@v1
     #     with:
