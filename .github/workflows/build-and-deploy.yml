@@ -35,6 +35,7 @@ jobs:
             echo "VERSION_DIR=$VERSION_DIR" >> $GITHUB_ENV
             echo "Detected VERSION_DIR: $VERSION_DIR"
             ls _Releases/
+            echo "::set-output name=version_dir::$VERSION_DIR"
 
       - name: Extract version and set tag
         id: extract-tag-macos
@@ -43,6 +44,7 @@ jobs:
             TAG="v${VERSION}"
             echo "TAG=$TAG" >> $GITHUB_ENV
             echo "Detected TAG: $TAG"
+            echo "::set-output name=tag::$TAG"
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v3
@@ -105,44 +107,45 @@ jobs:
   
 
       - name: Merge artifacts into _Releases
-        if: ${{ env.VERSION_DIR && env.VERSION_DIR != '' }}
+        if: ${{ needs.build-macos.outputs.version_dir && needs.build-macos.outputs.version_dir != '' }}
         run: |
             # Sicherstellen, dass der Zielordner existiert
-            mkdir -p _Releases/${{ env.VERSION_DIR }}
+            mkdir -p _Releases/${{ needs.build-macos.outputs.version_dir }}
             
             # Dateien aus macos-release/ kopieren (falls Ziel noch leer ist)
-            rsync -a --update macos-release/${{ env.VERSION_DIR }}/ _Releases/${{ env.VERSION_DIR }}/
+            rsync -a --update macos-release/${{ needs.build-macos.outputs.version_dir }}/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
             
             # Dateien aus windows-release/ kopieren, bevorzugt neuere Dateien
-            rsync -a --update windows-release/${{ env.VERSION_DIR }}/ _Releases/${{ env.VERSION_DIR }}/
+            rsync -a --update windows-release/${{ needs.build-macos.outputs.version_dir }}/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
 
       - name: Push merged _Releases to master
+        if: ${{ needs.build-macos.outputs.version_dir && needs.build-macos.outputs.version_dir != '' }}
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
-            git add *
-            git commit -m "Merge artifacts for version ${{ env.VERSION_DIR }}"
+            git add _Releases/${{ needs.build-macos.outputs.version_dir }}
+            git commit -m "Merge artifacts for version ${{ needs.build-macos.outputs.version_dir }}"
             git push origin master
 
       - name: Create and push Git tag
-        if: ${{ env.TAG && env.TAG != '' }}
+        if: ${{ needs.build-macos.outputs.tag && needs.build-macos.outputs.tag != '' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
 
-          # Entferne bestehenden Tag, falls vorhanden
-          if git rev-parse "${{ env.TAG }}" >/dev/null 2>&1; then
-              git tag -d "${{ env.TAG }}"
-              git push origin --delete "${{ env.TAG }}"
-          fi
+            # Entferne bestehenden Tag, falls vorhanden
+            if git rev-parse "${{ needs.build-macos.outputs.tag }}" >/dev/null 2>&1; then
+                git tag -d "${{ needs.build-macos.outputs.tag }}"
+                git push origin --delete "${{ needs.build-macos.outputs.tag }}"
+            fi
 
-          # Erstelle und pushe neuen Tag
-          git tag -a "${{ env.TAG }}" -m "Release ${{ env.TAG }}"
-          git push origin "${{ env.TAG }}"
+            # Erstelle und pushe neuen Tag
+            git tag -a "${{ needs.build-macos.outputs.tag }}" -m "Release ${{ needs.build-macos.outputs.tag }}"
+            git push origin "${{ needs.build-macos.outputs.tag }}"
 
             
     #   - name: Deploy to GitHub Releases
