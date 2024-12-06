@@ -1,15 +1,53 @@
 @echo off
 setlocal
 
-set "BUILD_DIR=cmake-build-release"
-set "CC=C:/msys64/ucrt64/bin/gcc.exe"
-set "CXX=C:/msys64/ucrt64/bin/g++.exe"
-set "NINJA=C:/Program Files/JetBrains/CLion 2023.3.2/bin/ninja/win/x64/ninja.exe"
-rem Build the project using Ninja
-cmake -DCMAKE_BUILD_TYPE=Release "-DCMAKE_C_COMPILER=%CC%" "-DCMAKE_CXX_COMPILER=%CXX%" "-DCMAKE_MAKE_PROGRAM=%NINJA%" -G Ninja -S C:\Users\mathi\Documents\Scripting\ksp-compiler -B C:\Users\mathi\Documents\Scripting\ksp-compiler\%BUILD_DIR%
-cmake --build "C:\Users\mathi\Documents\Scripting\ksp-compiler\%BUILD_DIR%" --target all -j 6
+rem Dynamische Pfad-Suche für CI-Umgebungen oder lokale Systeme
+if defined CI (
+    for /f "tokens=*" %%i in ('where cmake') do set "CMAKE=%%i"
+    for /f "tokens=*" %%i in ('where ninja') do set "NINJA=%%i"
+    set "CC=gcc"
+    set "CXX=g++"
+) else (
+    rem Lokale Pfade (anpassbar)
+    set "CMAKE=C:\Program Files\CMake\bin\cmake.exe"
+    set "NINJA=C:\Program Files\JetBrains\CLion 2023.3.2\bin\ninja\win\x64\ninja.exe"
+    set "CC=C:/msys64/ucrt64/bin/gcc.exe"
+    set "CXX=C:/msys64/ucrt64/bin/g++.exe"
+)
 
-rem Check if cksp executable exists
+rem Prüfen, ob die benötigten Tools vorhanden sind
+if not exist "%CMAKE%" (
+    echo Error: cmake not found.
+    exit /b 1
+)
+if not exist "%NINJA%" (
+    echo Error: ninja not found.
+    exit /b 1
+)
+
+rem Setze das Build-Verzeichnis
+set "BUILD_DIR=cmake-build-release"
+
+rem Build-Projekt mit CMake und Ninja
+"%CMAKE%" -DCMAKE_BUILD_TYPE=Release ^
+    -DCMAKE_C_COMPILER="%CC%" ^
+    -DCMAKE_CXX_COMPILER="%CXX%" ^
+    -DCMAKE_MAKE_PROGRAM="%NINJA%" ^
+    -G Ninja ^
+    -S . ^
+    -B "%BUILD_DIR%"
+if errorlevel 1 (
+    echo Error: CMake configuration failed.
+    exit /b 1
+)
+
+"%CMAKE%" --build "%BUILD_DIR%" --target all -j 6
+if errorlevel 1 (
+    echo Error: Build failed.
+    exit /b 1
+)
+
+rem Überprüfen, ob die cksp-Binärdatei existiert
 if not exist "%BUILD_DIR%\cksp.exe" (
     echo Error: cksp executable not found in %BUILD_DIR%.
     exit /b 1

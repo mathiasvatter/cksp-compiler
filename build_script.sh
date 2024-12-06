@@ -4,14 +4,37 @@ ARM_DIR="macos_arm64"
 INTEL_DIR="macos_x86_64"
 WINDOWS_DIR="windows"
 
-# Überprüfen, auf welcher macOS-Architektur man sich befindet
+# Prüfe, ob das Skript in einer CI-Umgebung läuft
+if [ "$CI" == "true" ]; then
+    # Verwende das global installierte cmake im CI-Runner
+    CMAKE_DIR=$(which cmake)
+else
+    # Lokale Umgebung: Prüfe, ob ein benutzerdefinierter CMake-Pfad gesetzt ist
+    if [ -z "$CUSTOM_CMAKE_DIR" ]; then
+        # Fallback auf Standardpfade
+        ARCH=$(uname -m)
+        if [ "$ARCH" == "arm64" ]; then
+            CMAKE_DIR="/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake"
+        else
+            CMAKE_DIR="/Applications/CLion.app/Contents/bin/cmake/mac/x64/bin/cmake"
+        fi
+    else
+        CMAKE_DIR="$CUSTOM_CMAKE_DIR"
+    fi
+fi
+
+# Überprüfen, auf welcher macOS-Architektur man sich befindet und setze target_dir
 ARCH=$(uname -m)
 if [ "$ARCH" == "arm64" ]; then
     TARGET_DIR="$ARM_DIR"
-    CMAKE_DIR="/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake"
 else
     TARGET_DIR="$INTEL_DIR"
-    CMAKE_DIR="/Applications/CLion.app/Contents/bin/cmake/mac/x64/bin/cmake"
+fi
+
+# Überprüfe, ob cmake gefunden wurde
+if [ -z "$CMAKE_DIR" ] || [ ! -x "$CMAKE_DIR" ]; then
+    echo "Error: cmake not found or not executable." >&2
+    exit 1
 fi
 
 BUILD_DIR="cmake-build-release"
