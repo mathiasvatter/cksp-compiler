@@ -72,7 +72,7 @@ jobs:
         id: extract-version-windows
         shell: cmd
         run: |
-            for /f "delims=" %%a in ('call extract_version_dir.bat') do echo VERSION_DIR=%%a >> %GITHUB_ENV%
+            for /f "delims=" %%a in ('call scripts\extract_version_dir.bat') do echo VERSION_DIR=%%a >> %GITHUB_ENV%
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v3
