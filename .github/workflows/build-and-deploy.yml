@@ -1,0 +1,78 @@
+name: Build and Deploy CKSP Compiler
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger nur bei neuen Tags, z. B. v1.0.0
+    branches:
+      - main # Trigger bei Push auf main-Branch
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v1
+        with:
+          cmake-version: '3.27.0'
+
+      - name: Install dependencies
+        run: brew install ninja
+
+      - name: Build CKSP (macOS)
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-build
+          path: _Releases/ # Release-Dateien für macOS hochladen
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: choco install cmake ninja
+
+      - name: Build CKSP (Windows)
+        run: |
+          build_script.bat
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-build
+          path: _Releases/ # Release-Dateien für Windows hochladen
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build-macos, build-windows]
+    steps:
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: macos-build
+          path: macos-release/
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: windows-build
+          path: windows-release/
+
+      - name: Deploy to GitHub Releases
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            macos-release/**/*
+            windows-release/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
