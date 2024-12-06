@@ -24,8 +24,8 @@ jobs:
 
       - name: Build CKSP (macOS)
         run: |
-          chmod +x build.sh
-          ./build.sh
+          chmod +x build_script.sh
+          ./build_script.sh
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v3
@@ -44,7 +44,7 @@ jobs:
 
       - name: Build CKSP (Windows)
         run: |
-          build_script.bat
+          cmd /c build_script.bat
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v3
