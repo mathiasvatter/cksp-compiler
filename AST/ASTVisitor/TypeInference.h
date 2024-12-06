@@ -10,10 +10,9 @@
 class TypeInference : public ASTVisitor {
 private:
 	DefinitionProvider* m_def_provider;
-	ReferenceManager* m_ref_manager;
 
 public:
-	explicit TypeInference(NodeProgram* main) : m_def_provider(main->def_provider), m_ref_manager(main->ref_manager) {
+	explicit TypeInference(NodeProgram* main) : m_def_provider(main->def_provider) {
 		m_program = main;
 	};
 

@@ -2,14 +2,17 @@ name: Build and Deploy CKSP Compiler
 
 on:
   push:
-    tags:
-      - 'v*' # Trigger nur bei neuen Tags, z. B. v1.0.0
+    # tags:
+    #   - 'v*' # Trigger nur bei neuen Tags, z. B. v1.0.0
     branches:
-      - main # Trigger bei Push auf main-Branch
+      - master # Trigger bei Push auf main-Branch
 
 jobs:
   build-macos:
     runs-on: macos-latest
+    outputs:
+      version_dir: ${{ steps.extract-version-macos.outputs.version_dir }}
+      tag: ${{ steps.extract-tag-macos.outputs.tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -24,14 +27,31 @@ jobs:
 
       - name: Build CKSP (macOS)
         run: |
-          chmod +x build.sh
-          ./build.sh
+          chmod +x build_script.sh
+          ./build_script.sh
+
+      - name: Extract version directory (macOS)
+        id: extract-version-macos
+        run: |
+            chmod +x scripts/extract_version_dir.sh
+            VERSION_DIR=$(./scripts/extract_version_dir.sh)
+            echo "version_dir=$VERSION_DIR" >> $GITHUB_OUTPUT
+            echo "Detected VERSION_DIR: $VERSION_DIR"
+            ls _Releases/
+
+      - name: Extract version and set tag
+        id: extract-tag-macos
+        run: |
+            VERSION=$(cmake-build-release/cksp --version | awk '{print $3}')
+            TAG="v${VERSION}"
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+            echo "Detected TAG: $TAG"
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v3
         with:
           name: macos-build
-          path: _Releases/ # Release-Dateien für macOS hochladen
+          path: _Releases/${{ steps.extract-version-macos.outputs.version_dir }} # Release-Dateien für macOS hochladen
 
   build-windows:
     runs-on: windows-latest
@@ -44,18 +64,42 @@ jobs:
 
       - name: Build CKSP (Windows)
         run: |
-          build_script.bat
+            cmd /c build_script.bat
+
+      - name: Extract version directory (Windows)
+        id: extract-version-windows
+        shell: cmd
+        run: |
+            for /f "delims=" %%a in ('call scripts\extract_version_dir.bat') do echo VERSION_DIR=%%a >> %GITHUB_ENV%
+            
+            rem Ausgabe der extrahierten VERSION_DIR
+            echo Extracted VERSION_DIR:
+            for /f "delims=" %%a in ('call scripts\extract_version_dir.bat') do echo %%a
+            
+            rem Anzeigen des Inhalts des _Releases-Ordners
+            echo Current _Releases folder content:
+            dir _Releases /s
+    
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v3
         with:
           name: windows-build
-          path: _Releases/ # Release-Dateien für Windows hochladen
+          path: _Releases/${{ env.VERSION_DIR }} # Release-Dateien für Windows hochladen
 
   deploy:
     runs-on: ubuntu-latest
     needs: [build-macos, build-windows]
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Check if VERSION_DIR is set
+        if: ${{ needs.build-macos.outputs.version_dir == '' || needs.build-macos.outputs.version_dir == null }}
+        run: |
+          echo "Error: VERSION_DIR is not set. Aborting workflow."
+          exit 1
+
       - name: Download macOS artifact
         uses: actions/download-artifact@v3
         with:
@@ -68,11 +112,80 @@ jobs:
           name: windows-build
           path: windows-release/
 
-      - name: Deploy to GitHub Releases
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            macos-release/**/*
-            windows-release/**/*
+      - name: Merge artifacts into _Releases
+        run: |
+            ls windows-release/
+            ls macos-release/
+            # Sicherstellen, dass der Zielordner existiert
+            mkdir -p _Releases/${{ needs.build-macos.outputs.version_dir }}
+            
+            # Dateien aus macos-release/ kopieren (falls Ziel noch leer ist)
+            rsync -a --update macos-release/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
+            
+            # Dateien aus windows-release/ kopieren, bevorzugt neuere Dateien
+            rsync -a --update windows-release/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
+
+      - name: Push merged _Releases to master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            git add _Releases/${{ needs.build-macos.outputs.version_dir }}
+            git commit -m "Merge artifacts for version ${{ needs.build-macos.outputs.version_dir }}"
+            git push origin master
+
+      - name: Delete existing Git tag
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            git fetch --tags
+            TAG="${{ needs.build-macos.outputs.tag }}"
+
+            if git tag -l | grep -q "$TAG"; then
+                git tag -d "$TAG"
+            fi
+            git push --delete origin "$TAG"
+
+      - name: Create and push Git tag
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            git fetch --tags
+            TAG="${{ needs.build-macos.outputs.tag }}"
+
+            # Neuen Tag erstellen und pushen
+            git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
+
+      - name: Zip _Releases folder
+        run: |
+            zip -r _Releases/${{ needs.build-macos.outputs.version_dir }}.zip _Releases/${{ needs.build-macos.outputs.version_dir }} -x "*.DS_Store"
+    
+      - name: Delete existing GitHub release if it exists
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            EXISTING_RELEASE=$(gh release view "${{ needs.build-macos.outputs.tag }}" --json url --jq .url || echo "")
+            if [ -n "$EXISTING_RELEASE" ]; then
+            echo "Deleting existing release ${{ needs.build-macos.outputs.tag }}"
+            gh release delete "${{ needs.build-macos.outputs.tag }}" --yes
+            fi
+            
+      - name: Create GitHub release
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            IS_PRERELEASE="false"
+            if [[ "${{ needs.build-macos.outputs.tag }}" == *-* ]]; then
+            IS_PRERELEASE="true"
+            fi
+            gh release create "${{ needs.build-macos.outputs.tag }}" \
+            _Releases/${{ needs.build-macos.outputs.version_dir }}.zip \
+            --title "Release ${{ needs.build-macos.outputs.tag }}" \
+            --notes "Automatically generated release for ${{ needs.build-macos.outputs.tag }}" \
+            --prerelease=$IS_PRERELEASE
