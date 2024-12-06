@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 
 #include "../misc/Result.h"
 #include "Tokens.h"

@@ -6,7 +6,6 @@
 #include "../Tokenizer/Tokenizer.h"
 
 #include <utility>
-#include <format>
 #include <array>
 #if defined(_WIN32)
     #include <windows.h>
