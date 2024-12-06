@@ -51,7 +51,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: macos-build
-          path: _Releases/${{ steps.extract-version-macos.outputs.version_dir }}/ # Release-Dateien für macOS hochladen
+          path: _Releases/${{ steps.extract-version-macos.outputs.version_dir }} # Release-Dateien für macOS hochladen
 
   build-windows:
     runs-on: windows-latest
@@ -85,7 +85,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: windows-build
-          path: _Releases/${{ env.VERSION_DIR }}/ # Release-Dateien für Windows hochladen
+          path: _Releases/${{ env.VERSION_DIR }} # Release-Dateien für Windows hochladen
 
   deploy:
     runs-on: ubuntu-latest
@@ -114,6 +114,8 @@ jobs:
 
       - name: Merge artifacts into _Releases
         run: |
+            ls windows-release/
+            ls macos-release/
             # Sicherstellen, dass der Zielordner existiert
             mkdir -p _Releases/${{ needs.build-macos.outputs.version_dir }}
             
