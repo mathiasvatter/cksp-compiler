@@ -143,12 +143,9 @@ jobs:
             git config user.email "actions@github.com"
             TAG="${{ needs.build-macos.outputs.tag }}"
 
-            # Überprüfen, ob der Tag bereits existiert, und falls ja, löschen
-            if git rev-parse "$TAG" >/dev/null 2>&1; then
-                echo "Tag '$TAG' already exists. Deleting the tag..."
-                git tag -d "$TAG"    # Löscht den lokalen Tag
-                git push --delete origin "$TAG"   # Löscht den Tag aus dem Remote-Repository
-            fi
+            echo "Tag '$TAG' already exists. Deleting the tag..."
+            git tag -d "$TAG"    # Löscht den lokalen Tag
+            git push --delete origin "$TAG"   # Löscht den Tag aus dem Remote-Repository
 
       - name: Create and push Git tag
         env:
@@ -156,7 +153,7 @@ jobs:
         run: |
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
-
+            git fetch --tags
             TAG="${{ needs.build-macos.outputs.tag }}"
 
             # Neuen Tag erstellen und pushen
