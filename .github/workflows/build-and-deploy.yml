@@ -141,11 +141,13 @@ jobs:
         run: |
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
+            git fetch --tags
             TAG="${{ needs.build-macos.outputs.tag }}"
 
-            echo "Tag '$TAG' already exists. Deleting the tag..."
-            git tag -d "$TAG"    # Löscht den lokalen Tag
-            git push --delete origin "$TAG"   # Löscht den Tag aus dem Remote-Repository
+            if git tag -l | grep -q "$TAG"; then
+                git tag -d "$TAG"
+            fi
+            git push --delete origin "$TAG"
 
       - name: Create and push Git tag
         env:
