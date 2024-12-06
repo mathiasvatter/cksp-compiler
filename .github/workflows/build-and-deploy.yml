@@ -142,22 +142,43 @@ jobs:
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
 
-            # Entferne bestehenden Tag, falls vorhanden
-            if git rev-parse "${{ needs.build-macos.outputs.tag }}" >/dev/null 2>&1; then
-                git tag -d "${{ needs.build-macos.outputs.tag }}"
-                git push origin --delete "${{ needs.build-macos.outputs.tag }}"
+            TAG="${{ needs.build-macos.outputs.tag }}"
+
+            # Überprüfen, ob der Tag bereits existiert
+            if git rev-parse "$TAG" >/dev/null 2>&1; then
+                echo "Tag $TAG exists. Deleting it..."
+                git tag -d "$TAG"
+                git push origin :refs/tags/"$TAG"
             fi
 
-            # Erstelle und pushe neuen Tag
-            git tag -a "${{ needs.build-macos.outputs.tag }}" -m "Release ${{ needs.build-macos.outputs.tag }}"
-            git push origin "${{ needs.build-macos.outputs.tag }}"
+            # Neuen Tag erstellen und pushen
+            git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
 
+      - name: Zip _Releases folder
+        run: |
+            zip -r _Releases/${{ needs.build-macos.outputs.version_dir }}.zip _Releases/${{ needs.build-macos.outputs.version_dir }} -x "*.DS_Store"
+    
+      - name: Delete existing GitHub release if it exists
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            EXISTING_RELEASE=$(gh release view "${{ needs.build-macos.outputs.tag }}" --json url --jq .url || echo "")
+            if [ -n "$EXISTING_RELEASE" ]; then
+            echo "Deleting existing release ${{ needs.build-macos.outputs.tag }}"
+            gh release delete "${{ needs.build-macos.outputs.tag }}" --yes
+            fi
             
-    #   - name: Deploy to GitHub Releases
-    #     uses: softprops/action-gh-release@v1
-    #     with:
-    #       files: |
-    #         macos-release/**/*
-    #         windows-release/**/*
-    #     env:
-    #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub release
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            IS_PRERELEASE="false"
+            if [[ "${{ needs.build-macos.outputs.tag }}" == *-* ]]; then
+            IS_PRERELEASE="true"
+            fi
+            gh release create "${{ needs.build-macos.outputs.tag }}" \
+            _Releases/${{ needs.build-macos.outputs.version_dir }}.zip \
+            --title "Release ${{ needs.build-macos.outputs.tag }}" \
+            --notes "Automatically generated release for ${{ needs.build-macos.outputs.tag }}" \
+            --prerelease=$IS_PRERELEASE
