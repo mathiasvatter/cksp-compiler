@@ -45,7 +45,7 @@ fi
 RELEASE_DIR="${RELEASES_DIR}/${VERSION_DIR}"
 
 # Variables
-REPO="mathiasvatter/ksp-compiler"
+REPO="mathiasvatter/cksp-compiler"
 TAG="v${VERSION}"
 RELEASE_NAME=$TAG
 SUBMODULE_DIR="cksp-compiler-issues"

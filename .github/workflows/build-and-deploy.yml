@@ -27,11 +27,33 @@ jobs:
           chmod +x build_script.sh
           ./build_script.sh
 
+      - name: Extract version directory (macOS)
+        id: extract-version-macos
+        run: |
+            chmod +x scripts/extract_version_dir.sh
+            VERSION_DIR=$(./scripts/extract_version_dir.sh)
+            echo "VERSION_DIR=$VERSION_DIR" >> $GITHUB_ENV
+            echo "Detected VERSION_DIR: $VERSION_DIR"
+
+      - name: Extract CKSP version and create a Git tag
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            # Version aus der CKSP-Binärdatei extrahieren
+            VERSION=$(cmake-build-release/cksp --version | awk '{print $3}')
+            
+            # Git-Tag erstellen und pushen
+            TAG="v${VERSION}"
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
+
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v3
         with:
           name: macos-build
-          path: _Releases/ # Release-Dateien für macOS hochladen
+          path: _Releases/${{ env.VERSION_DIR }} # Release-Dateien für macOS hochladen
 
   build-windows:
     runs-on: windows-latest
@@ -44,13 +66,19 @@ jobs:
 
       - name: Build CKSP (Windows)
         run: |
-          cmd /c build_script.bat
+            cmd /c build_script.bat
+
+      - name: Extract version directory (Windows)
+        id: extract-version-windows
+        shell: cmd
+        run: |
+            for /f "delims=" %%a in ('call extract_version_dir.bat') do echo VERSION_DIR=%%a >> %GITHUB_ENV%
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v3
         with:
           name: windows-build
-          path: _Releases/ # Release-Dateien für Windows hochladen
+          path: _Releases/${{ env.VERSION_DIR }} # Release-Dateien für Windows hochladen
 
   deploy:
     runs-on: ubuntu-latest
@@ -68,11 +96,32 @@ jobs:
           name: windows-build
           path: windows-release/
 
-      - name: Deploy to GitHub Releases
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            macos-release/**/*
-            windows-release/**/*
+      - name: Merge artifacts into _Releases
+        run: |
+            # Sicherstellen, dass der Zielordner existiert
+            mkdir -p _Releases/${{ env.VERSION_DIR }}
+            
+            # Dateien aus macos-release/ kopieren (falls Ziel noch leer ist)
+            rsync -a --ignore-existing macos-release/${{ env.VERSION_DIR }}/ _Releases/${{ env.VERSION_DIR }}/
+            
+            # Dateien aus windows-release/ kopieren, bevorzugt neuere Dateien
+            rsync -a --update windows-release/${{ env.VERSION_DIR }}/ _Releases/${{ env.VERSION_DIR }}/
+
+      - name: Push merged _Releases to master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            git add _Releases
+            git commit -m "Merge artifacts for version ${{ env.VERSION_DIR }}"
+            git push origin master
+
+    #   - name: Deploy to GitHub Releases
+    #     uses: softprops/action-gh-release@v1
+    #     with:
+    #       files: |
+    #         macos-release/**/*
+    #         windows-release/**/*
+    #     env:
+    #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

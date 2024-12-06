@@ -55,6 +55,22 @@ if not exist "%BUILD_DIR%\cksp.exe" (
 
 rem Run cksp --version and extract the version number
 for /f "tokens=3" %%a in ('%BUILD_DIR%\cksp.exe --version') do set "VERSION=%%a"
+rem Dynamisch die Version Directory ermitteln
+if "%VERSION%" == "" (
+    echo Error: Version could not be determined.
+    exit /b 1
+)
+echo Detected version: %VERSION%
+
+rem Prüfen, ob es sich um eine Pre-Release-Version handelt
+echo %VERSION% | find "-" >nul
+if %ERRORLEVEL%==0 (
+    set "VERSION_DIR=cksp_v%VERSION%"
+) else (
+    set "VERSION_DIR=cksp_v%VERSION%_release"
+)
+echo Using version directory: %VERSION_DIR%
+
 
 rem Create a name for the release folder
 set "RELEASES_DIR=_Releases"
@@ -63,7 +79,7 @@ if not exist "%RELEASES_DIR%" (
     mkdir "%RELEASES_DIR%"
 )
 
-set "RELEASE_DIR=%RELEASES_DIR%\cksp_v%VERSION%_release"
+set "RELEASE_DIR=%RELEASES_DIR%\%VERSION_DIR%"
 set "ARM_DIR=macos_arm64"
 set "INTEL_DIR=macos_x86_64"
 set "WINDOWS_DIR=windows"
