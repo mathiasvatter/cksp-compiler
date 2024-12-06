@@ -10,6 +10,9 @@ on:
 jobs:
   build-macos:
     runs-on: macos-latest
+    outputs:
+      version_dir: ${{ steps.set-version.outputs.version_dir }}
+      tag: ${{ steps.set-tag.outputs.tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -32,25 +35,23 @@ jobs:
         run: |
             chmod +x scripts/extract_version_dir.sh
             VERSION_DIR=$(./scripts/extract_version_dir.sh)
-            echo "VERSION_DIR=$VERSION_DIR" >> $GITHUB_ENV
+            echo "version_dir=$VERSION_DIR" >> $GITHUB_OUTPUT
             echo "Detected VERSION_DIR: $VERSION_DIR"
             ls _Releases/
-            echo "::set-output name=version_dir::$VERSION_DIR"
 
       - name: Extract version and set tag
         id: extract-tag-macos
         run: |
             VERSION=$(cmake-build-release/cksp --version | awk '{print $3}')
             TAG="v${VERSION}"
-            echo "TAG=$TAG" >> $GITHUB_ENV
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
             echo "Detected TAG: $TAG"
-            echo "::set-output name=tag::$TAG"
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v3
         with:
           name: macos-build
-          path: _Releases/${{ env.VERSION_DIR }} # Release-Dateien für macOS hochladen
+          path: _Releases/${{ steps.set-version.outputs.version_dir }} # Release-Dateien für macOS hochladen
 
   build-windows:
     runs-on: windows-latest
