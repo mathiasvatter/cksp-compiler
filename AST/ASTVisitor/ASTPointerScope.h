@@ -30,7 +30,6 @@
 class ASTPointerScope : public ASTVisitor {
 private:
 	DefinitionProvider* m_def_provider = nullptr;
-	ReferenceManager* m_ref_manager = nullptr;
 	std::vector<std::unordered_map<StringTypeKey, NodeDataStructure*, StringTypeKeyHash>> m_pointer_scope_stack;
 
 	// which references can be pointers?
@@ -69,7 +68,7 @@ private:
 
 
 public:
-	explicit ASTPointerScope(NodeProgram *main) : m_def_provider(main->def_provider), m_ref_manager(main->ref_manager) {
+	explicit ASTPointerScope(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
 	};
 

@@ -23,13 +23,11 @@
 #include "AST/ASTVisitor/ASTVariableChecking.h"
 #include "AST/ASTVisitor/ASTOptimizations.h"
 #include "misc/Timer.h"
-#include "AST/ASTVisitor/ReferenceManagement/ReferenceManager.h"
 
 class Compiler {
 private:
 	CompilerConfig* m_config;
 	DefinitionProvider m_definition_provider;
-	ReferenceManager m_reference_manager;
 	NodeProgram* m_program = nullptr;
 
 //	bool tokenize();
