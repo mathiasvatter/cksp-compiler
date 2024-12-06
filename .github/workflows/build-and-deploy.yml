@@ -34,6 +34,7 @@ jobs:
             VERSION_DIR=$(./scripts/extract_version_dir.sh)
             echo "VERSION_DIR=$VERSION_DIR" >> $GITHUB_ENV
             echo "Detected VERSION_DIR: $VERSION_DIR"
+            ls _Releases/
 
       - name: Extract version and set tag
         id: extract-tag-macos
@@ -41,6 +42,7 @@ jobs:
             VERSION=$(cmake-build-release/cksp --version | awk '{print $3}')
             TAG="v${VERSION}"
             echo "TAG=$TAG" >> $GITHUB_ENV
+            echo "Detected TAG: $TAG"
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v3
@@ -66,6 +68,15 @@ jobs:
         shell: cmd
         run: |
             for /f "delims=" %%a in ('call scripts\extract_version_dir.bat') do echo VERSION_DIR=%%a >> %GITHUB_ENV%
+            
+            rem Ausgabe der extrahierten VERSION_DIR
+            echo Extracted VERSION_DIR:
+            for /f "delims=" %%a in ('call scripts\extract_version_dir.bat') do echo %%a
+            
+            rem Anzeigen des Inhalts des _Releases-Ordners
+            echo Current _Releases folder content:
+            dir _Releases /s
+    
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v3
@@ -91,8 +102,10 @@ jobs:
         with:
           name: windows-build
           path: windows-release/
+  
 
       - name: Merge artifacts into _Releases
+        if: ${{ env.VERSION_DIR && env.VERSION_DIR != '' }}
         run: |
             # Sicherstellen, dass der Zielordner existiert
             mkdir -p _Releases/${{ env.VERSION_DIR }}
@@ -114,6 +127,7 @@ jobs:
             git push origin master
 
       - name: Create and push Git tag
+        if: ${{ env.TAG && env.TAG != '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
