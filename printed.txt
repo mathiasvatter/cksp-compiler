@@ -8,8 +8,8 @@
 	declare _iter00 : int
 	declare _ndarray0[2 * 3] : int[]
 	declare RETURN_FLAG00 : int
-	declare _iter4 : int
 	declare _iter6 : int
+	declare _iter4 : int
 	declare _iter2 : int
 	declare _iter10 : int
 on init
@@ -130,10 +130,10 @@ on init
 	ndarray$dim2$1<-ndarray$dim2$1[int](_ndarray{int[]}, _ndarray{int[]}, 0, 1)
 	message(List::allocation[((0 + this_list{int}) + abs(0 - this_list{int})) / 2]{int})
 	message(num_elements[_ndarray{int[]}, Array::clip(1, 2)])
-	Point::Array::__decr__(ptr_array30{int[]}, 1)
-	Point::__decr__(_ret00{int}, 1)
 	Point::__decr__(_ret10{int}, 1)
+	Point::Array::__decr__(ptr_array30{int[]}, 1)
 	Point::Array::__decr__(ptr_array20{int[]}, 1)
+	Point::__decr__(_ret00{int}, 1)
 	Point::Array::__decr__(ptr_array{int[]}, 1)
 end on
 
@@ -226,7 +226,7 @@ function Point::__add__(ret$1 : int, self : int, other : int)
 end function
 
 function Point::__del__(self : int)
-	_iter6{int} := 0
+	_iter5{int} := 0
 	if(Point::allocation[self{int}]{int} <= 0)
 	end if
 end function
@@ -235,7 +235,7 @@ function Point::__decr__(self : int, num_refs : int)
 	Point::stack[Point::stack_top{int}]{int} := self{int}
 	inc(Point::stack_top{int})
 	while(Point::stack_top{int} > 0) 
-		_iter5{int} := 0
+		_iter4{int} := 0
 		dec(Point::stack_top{int})
 		self{int} := Point::stack[Point::stack_top{int}]{int}
 		if(self{int} = - 1)
@@ -265,11 +265,11 @@ function Point::Array::__incr__(arr : int[], num : int)
 end function
 
 function Point::Array::__decr__(arr : int[], num : int)
-	_iter4{int} := 0
-	_iter4{int} := 0
-	while(_iter4{int} <= (num_elements(arr{int[]}) - 1)) 
-		Point::__decr__(arr[_iter4{int}]{int}, num{int})
-		inc(_iter4{int})
+	_iter6{int} := 0
+	_iter6{int} := 0
+	while(_iter6{int} <= (num_elements(arr{int[]}) - 1)) 
+		Point::__decr__(arr[_iter6{int}]{int}, num{int})
+		inc(_iter6{int})
 	end while
 end function
 

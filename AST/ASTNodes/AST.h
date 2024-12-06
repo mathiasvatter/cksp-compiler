@@ -709,7 +709,6 @@ struct NodeFunctionDefinition: NodeAST, public std::enable_shared_from_this<Node
 
 struct NodeProgram : NodeAST {
 	class DefinitionProvider* def_provider = nullptr;
-	class ReferenceManager* ref_manager = nullptr;
 	NodeCallback* init_callback = nullptr;
 	NodeCallback* current_callback = nullptr;
 	/// holds the current function definition that is being processed

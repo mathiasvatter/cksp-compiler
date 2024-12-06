@@ -147,7 +147,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 		auto ptr = node_var->to_pointer();
 		ptr->match_metadata(node_var);
 		auto new_node = node_var->replace_datastruct(std::move(ptr));
-		auto &references = m_ref_manager->get_references(node.get_declaration());
+		auto &references = node.get_declaration()->references;
 		for(auto ref : references) {
 			ref->accept(*this);
 //			ASTSemanticAnalysis::replace_incorrectly_detected_reference(m_program, ref);
