@@ -58,6 +58,8 @@ if [ ! -f "$BUILD_DIR/cksp" ]; then
     exit 1
 fi
 
+chmod +x "$BUILD_DIR/cksp"
+
 # Ausführen von cksp --version und Extrahieren der Versionsnummer
 VERSION=$("$BUILD_DIR/cksp" --version | awk '{print $3}')
 
