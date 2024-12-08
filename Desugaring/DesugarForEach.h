@@ -86,7 +86,7 @@ public:
         error.m_message = "Found incorrect for-each-loop syntax.";
         // check if keys are variable references
         for(auto &var : node.keys) {
-            if(var->get_node_type() != NodeType::VariableRef) {
+            if(!var->cast<NodeVariableRef>()) {
                 error.m_message = "Found incorrect key in ranged-for-loop syntax.";
                 error.m_expected = "<Variable>";
                 error.m_got = var->get_string();
@@ -104,14 +104,27 @@ public:
             error.m_got = node.range->get_string();
             error.exit();
         }
-        auto node_key_ref = static_cast<NodeVariableRef*>(node.keys[0].get());
-        auto node_key_variable = std::make_unique<NodeVariable>(std::nullopt, node_key_ref->name, TypeRegistry::Integer, DataType::Mutable, node.tok);
-        node_key_variable->is_local = true;
-        node_key_variable->ty = TypeRegistry::Integer;
 
-        auto node_key_declaration = std::make_unique<NodeSingleDeclaration>(
-                std::move(node_key_variable),
-                nullptr, node.tok);
+		auto node_scope = std::make_unique<NodeBlock>(node.tok, true);
+
+        auto node_key_ref = node.keys[0]->cast<NodeVariableRef>();
+		// do not declare iteration var if it is throwaway -> only assignment then
+		if(node_key_ref->name == "_") {
+			node_scope->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+				clone_as<NodeReference>(node.keys[0].get()),
+				std::make_unique<NodeInt>(0, node.tok),
+				node.tok
+				)
+			);
+		} else {
+			auto node_key_variable = ASTVisitor::get_iterator_var(node_key_ref->tok);
+			node_key_variable->name = node_key_ref->name;
+			node_scope->add_as_stmt(std::make_unique<NodeSingleDeclaration>(
+					std::move(node_key_variable),
+					nullptr, node.tok)
+			);
+		}
+
         auto node_key_iterator = std::make_unique<NodeSingleAssignment>(
                 clone_as<NodeReference>(node.keys[0].get()),
                 std::make_unique<NodeInt>(0, node.tok), node.tok);
@@ -126,7 +139,8 @@ public:
         node_end_range->ty = TypeRegistry::Integer;
 
         // add key-value pair to scope stack of array with <key> as index that needs to be substituted for <value>
-        auto node_value_array = std::make_unique<NodeArrayRef>(node.range->get_string(), std::move(node.keys[0]), node.tok);
+		auto value_tok = node.keys[1]->tok;
+        auto node_value_array = std::make_unique<NodeArrayRef>(node.range->get_string(), std::move(node.keys[0]), value_tok);
         m_key_value_scope_stack.emplace_back();
         m_key_value_scope_stack.back().insert({node.keys[1]->get_string(), std::move(node_value_array)});
 
@@ -136,11 +150,9 @@ public:
                 std::move(node_end_range),
                 std::move(node.body), node.tok);
         node_for_statement->body->accept(*this);
-        auto node_scope = std::make_unique<NodeBlock>(node.tok);
-        node_scope->add_stmt(std::make_unique<NodeStatement>(std::move(node_key_declaration), node.tok));
-        node_scope->add_stmt(std::make_unique<NodeStatement>(std::move(node_for_statement), node.tok));
-        node_scope->scope = true;
 
+        node_scope->add_as_stmt(std::move(node_for_statement));
+		node_scope->get_last_statement()->desugar(m_program);
         m_key_value_scope_stack.pop_back();
         return node.replace_with(std::move(node_scope));
     }

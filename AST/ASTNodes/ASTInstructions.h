@@ -717,8 +717,8 @@ struct NodeBlock : NodeInstruction {
 		add_as_stmt(std::move(retain));
 		return statements.back().get();
 	}
-	NodeStatement* add_as_single_delete(std::unique_ptr<NodeReference> ref) {
-		auto del = std::make_unique<NodeSingleDelete>(std::move(ref), nullptr, tok);
+	NodeStatement* add_as_single_delete(std::unique_ptr<NodeReference> ref, std::unique_ptr<NodeAST> num=nullptr) {
+		auto del = std::make_unique<NodeSingleDelete>(std::move(ref), std::move(num), tok);
 		add_as_stmt(std::move(del));
 		return statements.back().get();
 	}
@@ -734,10 +734,10 @@ struct NodeBlock : NodeInstruction {
 		}
 		return false;
 	}
-	void wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>> iterators,
+	NodeBlock* wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>> iterators,
 						   std::vector<std::unique_ptr<NodeAST>> lower_bounds,
 						   std::vector<std::unique_ptr<NodeAST>> upper_bounds);
-	void wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound, bool declare=true);
+	NodeBlock* wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound, bool declare=true);
 	std::unique_ptr<NodeAST>& get_statement(size_t index) {
 		return statements[index]->statement;
 	}

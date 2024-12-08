@@ -54,9 +54,14 @@ struct NodeCompositeRef : NodeReference {
 		parent = new_parent;
 	}
 	virtual void set_child_parents() override = 0;  // Wird in den abgeleiteten Klassen implementiert
+	// gets effective size of array (when dim is nullptr) -> gets size of wildcards in ndarray (without syntax check)
 	virtual std::unique_ptr<NodeAST> get_size(std::unique_ptr<NodeAST> dim = nullptr) = 0;
+	/// returns the raw version of ndarray with an index
 	virtual std::unique_ptr<NodeArrayRef> get_indexed_raw_ref(std::unique_ptr<NodeAST> new_index) = 0;
 	[[nodiscard]] virtual int num_wildcards() const = 0;
+	/// returns the most inner body of desugared for loop over array ref depending on wildcards
+	/// if no wildcards are present -> iterates over whole ndarray
+	virtual NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body) = 0;
 };
 
 struct NodeArrayRef : NodeCompositeRef {
@@ -105,6 +110,7 @@ struct NodeArrayRef : NodeCompositeRef {
 		if(!index) return 1;
 		return 0;
 	}
+	NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body) override;
 };
 
 struct NodeNDArrayRef : NodeCompositeRef {
@@ -174,6 +180,7 @@ struct NodeNDArrayRef : NodeCompositeRef {
 	/// ndarray[2, *] := (0) -> function returns position of *, returns 2:2
 	/// ndarray[2, *, *] := (0) -> returns 2:3
 	std::pair<int, int> get_wildcard_dimensions();
+	NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body) override;
 };
 
 struct NodeFunctionHeaderRef : NodeReference {

@@ -7,6 +7,11 @@
 
 #include "ASTLowering.h"
 
+/**
+ * Lowering of single retain and single delete nodes into function calls to __incr__ and __decr__
+ * Either for arrays or variables
+ *
+ */
 class LoweringMemAlloc : public ASTLowering {
 private:
 

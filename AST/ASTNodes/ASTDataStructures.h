@@ -213,6 +213,7 @@ struct NodeFunctionHeader: NodeDataStructure {
 		tok.line = token.line; tok.file = token.file;
 		for(auto &param : params) param->update_token_data(token);
 	}
+	NodeType get_ref_node_type() override {return NodeType::FunctionHeaderRef;}
 	Type* create_function_type(Type* return_type = TypeRegistry::Unknown) {
 		std::vector<Type*> func_arg_types;
 		for(auto &param : params) func_arg_types.push_back(param->variable->ty);

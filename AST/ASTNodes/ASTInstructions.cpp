@@ -785,11 +785,12 @@ void NodeBlock::flatten(bool force) {
 }
 
 
-void NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>> iterators,
+NodeBlock* NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>> iterators,
 								  std::vector<std::unique_ptr<NodeAST>> lower_bounds,
 								  std::vector<std::unique_ptr<NodeAST>> upper_bounds) {
 	std::unique_ptr<NodeBlock> inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
 	inner_body->scope = true;
+	NodeBlock* for_loop_body = nullptr;
 	for (int i = (int)iterators.size()-1; i>=0 ; i--) {
 		auto node_for = std::make_unique<NodeFor>(
 			std::make_unique<NodeSingleAssignment>(iterators[i]->to_reference(), std::move(lower_bounds[i]), Token()),
@@ -798,6 +799,7 @@ void NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>
 			std::move(inner_body),
 			Token()
 		);
+		for_loop_body = node_for->body.get();
 		inner_body = std::make_unique<NodeBlock>(Token(), true);
 		inner_body->add_as_stmt(std::move(node_for));
 	}
@@ -807,10 +809,12 @@ void NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>
 		inner_body->prepend_as_stmt(std::move(node_decl));
 	}
 	statements = std::move(inner_body->statements);
+	scope = true;
 	this->set_child_parents();
+	return for_loop_body;
 }
 
-void NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound, bool declare) {
+NodeBlock* NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound, bool declare) {
 	std::unique_ptr<NodeBlock> inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
 	inner_body->scope = true;
 	auto node_for = std::make_unique<NodeFor>(
@@ -820,15 +824,19 @@ void NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::u
 		std::move(inner_body),
 		Token()
 	);
+	auto for_loop_body = node_for->body.get();
 	inner_body = std::make_unique<NodeBlock>(Token(), true);
 	inner_body->add_as_stmt(std::move(node_for));
+	inner_body->get_last_statement()->desugar(nullptr);
 	iterator->is_local = true;
 	if(declare) {
 		auto node_decl = std::make_unique<NodeSingleDeclaration>(iterator, nullptr, Token());
 		inner_body->prepend_as_stmt(std::move(node_decl));
 	}
 	statements = std::move(inner_body->statements);
+	scope = true;
 	this->set_child_parents();
+	return for_loop_body;
 }
 
 // ************* NodeFamily ***************
