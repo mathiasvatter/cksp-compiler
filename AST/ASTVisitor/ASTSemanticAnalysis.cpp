@@ -132,9 +132,9 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 			func->is_restricted &= definition->is_restricted;
 		}
 	}
-
 	// if definition parameters of this function have different node types as the call site -> update
 	update_func_call_node_types(&node);
+
 	node.function->accept(*this);
 	return &node;
 }
@@ -327,6 +327,10 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 			data_struct->tok);
 		node_var->ty = data_struct->ty;
 		new_data_struct = std::move(node_var);
+//	} else if(!ref_types.empty()) {
+//		auto error = CompileError(ErrorType::SyntaxError, "", "", data_struct->tok);
+//		error.m_message = "Reference type does not match declaration type: " + data_struct->name;
+//		error.exit();
 	}
 
 	if(new_data_struct) {
@@ -385,6 +389,15 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeP
 			std::make_unique<NodeParamList>(reference->tok),
 			reference->tok);
 		node_replacement->ty = reference->ty;
+	} else if(reference->get_node_type() == NodeType::ArrayRef and declaration->get_node_type() == NodeType::NDArray) {
+		auto ref = reference->cast<NodeArrayRef>();
+		if (!ref->is_raw_array()) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", reference->tok);
+			error.m_message =
+				"<ArrayRef> was declared as <NDArray> but is no raw array. To reference a raw <NDArray> use '_' as prefix.";
+			error.exit();
+		}
+
 	}
 
 	if(node_replacement) {

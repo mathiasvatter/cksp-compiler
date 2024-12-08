@@ -197,7 +197,7 @@ public:
 			return false;
 		}
 
-		if(l_value_type->get_type_kind() == TypeKind::Object) {
+		if(l_value_type->cast<ObjectType>()) {
 			if(auto func_call = r_value->cast<NodeFunctionCall>()) {
 				if(func_call->kind == NodeFunctionCall::Kind::Constructor) {
 					return false;
@@ -228,15 +228,31 @@ public:
 		}
 
 		// arr[*] := arr1[*]
+		// arr[*, 1] := arr1[*, 1]
+		// arr[1, *] := arr1[1, *]
 		auto l_array_ref = variable->cast<NodeArrayRef>();
+		auto l_nd_array_ref = variable->cast<NodeNDArrayRef>();
 		auto r_array_ref = value->cast<NodeArrayRef>();
-		if(l_array_ref and r_array_ref) {
+		if((l_array_ref or l_nd_array_ref) and r_array_ref) {
 			del->add_as_single_delete(clone_as<NodeReference>(l_array_ref));
 			return del;
 		}
 
 		auto r_initializer_list = value->cast<NodeInitializerList>();
-
+		if(l_array_ref and r_initializer_list) {
+			// arr[*] := (ls)
+			if(r_initializer_list->size() == 1) {
+				del->add_as_single_delete(clone_as<NodeReference>(l_array_ref));
+				return del;
+			}
+			// arr[*] := (el1, el2, ...)
+			for(int i=0; i<r_initializer_list->size(); i++) {
+				auto new_array_ref = clone_as<NodeArrayRef>(l_array_ref);
+				new_array_ref->set_index(std::make_unique<NodeInt>(i, l_array_ref->tok));
+				del->add_as_single_delete(std::move(new_array_ref));
+			}
+			return del;
+		}
 
 		return del;
 	}
