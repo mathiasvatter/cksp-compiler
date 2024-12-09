@@ -156,6 +156,7 @@ std::unique_ptr<NodeList> NodeArray::to_list() {
 
 std::unique_ptr<NodeDataStructure> NodeArray::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
 	auto node_ndarray = to_ndarray();
+	node_ndarray->inflation_times++;
 	node_ndarray->sizes->prepend_param(std::move(new_index));
 	node_ndarray->dimensions = node_ndarray->sizes->params.size();
 	node_ndarray->ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type(), node_ndarray->dimensions);
@@ -231,7 +232,9 @@ std::shared_ptr<NodeArray> NodeNDArray::get_raw() {
 }
 
 std::unique_ptr<NodeAST> NodeNDArray::get_size() {
-	return to_reference()->cast<NodeArrayRef>()->get_size();
+	auto nd_array_ref = to_reference()->cast<NodeArrayRef>();
+	nd_array_ref->remove_index();
+	return nd_array_ref->get_size();
 }
 
 // ************* NodeFunctionHeader ***************
@@ -499,12 +502,12 @@ void NodeStruct::generate_ref_count_methods(NodeProgram* program) {
 
 	auto incr = rf_methods.create_incr_function();
 	add_method(std::move(incr));
-
-	auto array_incr = rf_methods.create_array_function("__incr__");
-	add_method(std::move(array_incr));
-
-	auto array_decr = rf_methods.create_array_function("__decr__");
-	add_method(std::move(array_decr));
+//
+//	auto array_incr = rf_methods.create_array_function("__incr__");
+//	add_method(std::move(array_incr));
+//
+//	auto array_decr = rf_methods.create_array_function("__decr__");
+//	add_method(std::move(array_decr));
 
 //	auto array_del = rf_methods.create_array_function("__del__");
 //	methods.push_back(std::move(array_del));

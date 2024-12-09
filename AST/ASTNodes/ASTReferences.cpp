@@ -169,7 +169,7 @@ std::unique_ptr<NodeAccessChain> NodeArrayRef::to_method_chain() {
 	return method_chain;
 }
 
-std::unique_ptr<NodeAST> NodeArrayRef::get_size(std::unique_ptr<NodeAST> dim) {
+std::unique_ptr<NodeAST> NodeArrayRef::get_size() {
 	auto new_ref = clone_as<NodeArrayRef>(this);
 	new_ref->index = nullptr;
 	new_ref->ty = get_declaration()->ty;
@@ -202,7 +202,10 @@ std::unique_ptr<NodeReference> NodeArrayRef::inflate_dimension(std::unique_ptr<N
 
 NodeBlock* NodeArrayRef::iterate_over(std::unique_ptr<NodeBlock>& for_loop_block) {
 	for_loop_block->scope = true;
-	return for_loop_block->wrap_in_loop(ASTVisitor::get_iterator_var(tok), std::make_unique<NodeInt>(0, tok), get_size(nullptr));
+	auto iterator = ASTVisitor::get_iterator_var(tok);
+	set_index(iterator->to_reference());
+	ty = ty->get_element_type();
+	return for_loop_block->wrap_in_loop(std::move(iterator), std::make_unique<NodeInt>(0, tok), get_size());
 }
 
 // ************* NodeNDArrayRef ***************
@@ -225,13 +228,21 @@ ASTLowering* NodeNDArrayRef::get_data_lowering(NodeProgram *program) const {
     return &lowering;
 }
 
+std::unique_ptr<NodeAST> NodeNDArrayRef::get_size() {
+	// if indexes are set and no wildcards -> size is 1
+	if(indexes and num_wildcards() == 0) {
+		return std::make_unique<NodeInt>(1, tok);
+	}
+	auto ref = clone_as<NodeNDArrayRef>(this);
+	ref->ty = get_declaration()->ty;
+	return std::make_unique<NodeNumElements>(std::move(ref), nullptr, tok);
+}
+
 std::unique_ptr<NodeAST> NodeNDArrayRef::get_size(std::unique_ptr<NodeAST> dim) {
 	auto ref = clone_as<NodeNDArrayRef>(this);
-	// kill indexes only if no wildcards available and dim is nullptr
-	if(dim or num_wildcards() == 0)
-		ref->indexes = nullptr;
+	ref->indexes = nullptr;
 	ref->ty = get_declaration()->ty;
-	return std::make_unique<NodeNumElements>(std::move(ref), dim ? std::move(dim) : nullptr, tok);
+	return std::make_unique<NodeNumElements>(std::move(ref), std::move(dim), tok);
 }
 
 
@@ -384,10 +395,24 @@ NodeBlock* NodeNDArrayRef::iterate_over(std::unique_ptr<NodeBlock> &body) {
 			indexes->set_param(i, node_iterator->to_reference());
 		}
 	}
-
+	ty = ty->get_element_type();
 	// wrap body in loop nest
 	return body->wrap_in_loop_nest(iterators, std::move(lower_bounds), std::move(upper_bounds));
 
+}
+
+void NodeNDArrayRef::replace_next_wildcard_with_index(std::unique_ptr<NodeInt> new_index) {
+	if(!indexes) throw_missing_indexes_error();
+	if(!sizes) throw_missing_sizes_error();
+	if(num_wildcards() == 0) return;
+
+	auto wildcard_dimensions = get_wildcard_dimensions();
+	indexes->param(wildcard_dimensions.first)->replace_with(std::move(new_index));
+	if(wildcard_dimensions.second != wildcard_dimensions.first) {
+		for(int i = wildcard_dimensions.first+1; i<=wildcard_dimensions.second; i++) {
+			indexes->param(i)->replace_with(std::make_unique<NodeInt>(0, indexes->param(i)->tok));
+		}
+	}
 }
 
 // ************* NodeFunctionHeaderRef ***************

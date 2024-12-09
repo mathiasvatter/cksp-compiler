@@ -122,6 +122,7 @@ public:
 			}
 
 			auto inflated = node.variable->inflate_dimension(m_max_cb_stack->to_reference());
+			inflated->is_thread_safe = false;
 			node.variable->replace_datastruct(std::move(inflated));
 
 			if(node.value) {

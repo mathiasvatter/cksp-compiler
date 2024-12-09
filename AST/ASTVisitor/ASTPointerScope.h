@@ -220,41 +220,50 @@ public:
 
 		auto del = std::make_unique<NodeBlock>(assign.tok);
 
-		// ptr := ptr1
-		auto l_pointer_ref = variable->cast<NodePointerRef>();
-		if(l_pointer_ref) {
-			del->add_as_single_delete(clone_as<NodeReference>(l_pointer_ref));
-			return del;
-		}
-
-		// arr[*] := arr1[*]
-		// arr[*, 1] := arr1[*, 1]
-		// arr[1, *] := arr1[1, *]
-		auto l_array_ref = variable->cast<NodeArrayRef>();
-		auto l_nd_array_ref = variable->cast<NodeNDArrayRef>();
-		auto r_array_ref = value->cast<NodeArrayRef>();
-		if((l_array_ref or l_nd_array_ref) and r_array_ref) {
-			del->add_as_single_delete(clone_as<NodeReference>(l_array_ref));
-			return del;
-		}
-
+		// if r_value is initializer list, be more careful
 		auto r_initializer_list = value->cast<NodeInitializerList>();
-		if(l_array_ref and r_initializer_list) {
-			// arr[*] := (ls)
-			if(r_initializer_list->size() == 1) {
-				del->add_as_single_delete(clone_as<NodeReference>(l_array_ref));
-				return del;
-			}
+
+		// put whole l_value in delete statement -> size and iterations will be figured out at lowering phase
+		if(!r_initializer_list) {
+			del->add_as_single_delete(clone_as<NodeReference>(variable));
+			return del;
+		}
+
+		// if initializer is only 1 element -> delete whole array
+		// arr[*] := (ls)
+		if(r_initializer_list->size() == 1) {
+			del->add_as_single_delete(clone_as<NodeReference>(variable));
+			return del;
+		}
+
+		// if l_value is array and r_value is initializer list with multiple elements
+		if(variable->cast<NodeArrayRef>() and r_initializer_list) {
 			// arr[*] := (el1, el2, ...)
 			for(int i=0; i<r_initializer_list->size(); i++) {
-				auto new_array_ref = clone_as<NodeArrayRef>(l_array_ref);
-				new_array_ref->set_index(std::make_unique<NodeInt>(i, l_array_ref->tok));
+				auto new_array_ref = clone_as<NodeArrayRef>(variable);
+				new_array_ref->set_index(std::make_unique<NodeInt>(i, variable->tok));
+				new_array_ref->ty = new_array_ref->ty->get_element_type();
 				del->add_as_single_delete(std::move(new_array_ref));
 			}
 			return del;
 		}
 
-		return del;
+		// more_lists[4, *] := (ls, ls1) // <-
+		if(auto nd_array = variable->cast<NodeNDArrayRef>()) {
+			for (int i = 0; i<r_initializer_list->size(); i++) {
+				auto new_nd_array_ref = clone_as<NodeNDArrayRef>(nd_array);
+				new_nd_array_ref->replace_next_wildcard_with_index(std::make_unique<NodeInt>(i, Token()));
+				new_nd_array_ref->ty = new_nd_array_ref->ty->get_element_type();
+				del->add_as_single_delete(std::move(new_nd_array_ref));
+			}
+			return del;
+		}
+
+		auto error = CompileError(ErrorType::InternalError, "", "", assign.tok);
+		error.m_message = "Invalid delete statement. Could not determine delete statement.";
+		error.exit();
+
+		return nullptr;
 	}
 
 	/// assuming variable is of type object
@@ -263,26 +272,67 @@ public:
 		auto value = get_return_var_ptr(val);
 
 		if(!value) return nullptr;
+		auto retain = std::make_unique<NodeBlock>(variable->tok);
 
-		auto l_pointer_ref = variable->cast<NodePointerRef>();
-		if(l_pointer_ref) {
-			return retain_ptr_ptr(l_pointer_ref);
-		}
-
-		auto l_array_ref = variable->cast<NodeArrayRef>();
+		// if r_value is initializer list, be more careful
 		auto r_initializer_list = value->cast<NodeInitializerList>();
-		if(l_array_ref and r_initializer_list) {
-			return retain_arr_init(l_array_ref, r_initializer_list, is_decl);
+
+		if(!r_initializer_list) {
+			retain->add_as_single_retain(clone_as<NodeReference>(variable), std::make_unique<NodeInt>(1, variable->tok));
+			return retain;
 		}
 
-		auto r_array_ref = value->cast<NodeArrayRef>();
-		if(l_array_ref and r_array_ref) {
-			return retain_arr_arr(l_array_ref);
+		auto composite_ref = cast_node<NodeCompositeRef>(variable);
+		if(r_initializer_list->size() == 1) {
+			retain->add_as_single_retain(clone_as<NodeReference>(variable), std::make_unique<NodeInt>(1, variable->tok));
+			return retain;
 		}
+
+		// if l_value is array and r_value is initializer list with multiple elements
+		if(auto array_ref = variable->cast<NodeArrayRef>()) {
+			// arr[*] := (el1, el2, ...)
+			for(int i=0; i<r_initializer_list->size(); i++) {
+				auto new_array_ref = clone_as<NodeArrayRef>(variable);
+				new_array_ref->set_index(std::make_unique<NodeInt>(i, variable->tok));
+				new_array_ref->ty = new_array_ref->ty->get_element_type();
+				retain->add_as_single_retain(std::move(new_array_ref), std::make_unique<NodeInt>(1, variable->tok));
+			}
+			if(is_decl) {
+				auto last_retain = static_cast<NodeSingleRetain *>(retain->get_last_statement().get());
+				last_retain->set_num(std::make_unique<NodeBinaryExpr>(
+					token::SUB,
+					array_ref->get_size(),
+					std::make_unique<NodeInt>(r_initializer_list->size() - 1, variable->tok),
+					variable->tok
+				));
+			}
+			return retain;
+		}
+
+		// more_lists[4, *] := (ls, ls1) // <-
+		if(auto nd_array = variable->cast<NodeNDArrayRef>()) {
+			for (int i = 0; i<r_initializer_list->size(); i++) {
+				auto new_nd_array_ref = clone_as<NodeNDArrayRef>(nd_array);
+				new_nd_array_ref->replace_next_wildcard_with_index(std::make_unique<NodeInt>(i, Token()));
+				new_nd_array_ref->ty = new_nd_array_ref->ty->get_element_type();
+				retain->add_as_single_retain(std::move(new_nd_array_ref), std::make_unique<NodeInt>(1, variable->tok));
+			}
+			if(is_decl) {
+				auto last_retain = static_cast<NodeSingleRetain *>(retain->get_last_statement().get());
+				last_retain->set_num(std::make_unique<NodeBinaryExpr>(
+					token::SUB,
+					nd_array->get_size(),
+					std::make_unique<NodeInt>(r_initializer_list->size() - 1, variable->tok),
+					variable->tok
+				));
+			}
+		}
+
+		auto error = CompileError(ErrorType::InternalError, "", "", var->parent->tok);
+		error.m_message = "Invalid retain statement. Could not determine retain statement.";
+		error.exit();
 
 		return nullptr;
-
-
 
 	}
 

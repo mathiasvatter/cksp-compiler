@@ -200,6 +200,8 @@ struct NodeReference : NodeAST {
 	}
 	/// to be used on references
 	NodeReference *replace_reference(std::unique_ptr<NodeReference> new_node);
+	// gets effective size of references (1 unless it is array or ndarray with wildcards)
+	virtual std::unique_ptr<NodeAST> get_size();
 };
 
 struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeDataStructure> {
@@ -209,6 +211,7 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 	bool is_local = false;
 	bool is_global = false;
 	bool has_obj_assigned = false;
+	bool is_thread_safe = true; // gets set to false, if dimension inflation needs to be used because of unsafe declaration environment
 	DataType data_type;
 	std::string name;
 	std::unordered_set<NodeReference*> references;
