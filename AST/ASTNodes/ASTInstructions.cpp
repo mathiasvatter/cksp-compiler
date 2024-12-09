@@ -25,6 +25,7 @@
 #include "../../Lowering/PostLowering/PostLoweringSingleDeclaration.h"
 #include "../../Lowering/LoweringSortSearch.h"
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
+#include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -515,6 +516,11 @@ ASTDesugaring * NodeSingleAssignment::get_desugaring(NodeProgram *program) const
 //    return this->l_value->get_data_lowering(program);
 //}
 
+NodeAST *NodeSingleAssignment::do_array_normalization(NodeProgram *program) {
+	static NormalizeArrayAssign array_assign(program);
+	return accept(array_assign);
+}
+
 // ************* NodeDeclaration ***************
 NodeAST *NodeDeclaration::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
@@ -597,6 +603,11 @@ std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(Node
     );
 	node_assign_statement->has_object = this->has_object;
     return node_assign_statement;
+}
+
+NodeAST *NodeSingleDeclaration::do_array_normalization(NodeProgram *program) {
+	static NormalizeArrayAssign array_assign(program);
+	return accept(array_assign);
 }
 
 // ************* NodeFunctionParam ***************

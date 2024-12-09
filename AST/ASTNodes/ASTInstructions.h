@@ -444,6 +444,7 @@ struct NodeSingleAssignment : NodeInstruction {
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
 //	ASTLowering *get_data_lowering(NodeProgram *program) const override;
+	NodeAST* do_array_normalization(NodeProgram *program);
 
 };
 
@@ -528,7 +529,7 @@ struct NodeSingleDeclaration : NodeInstruction {
     ASTLowering* get_lowering(struct NodeProgram *program) const override;
 	ASTLowering* get_post_lowering(NodeProgram *program) const override;
 //	ASTLowering *get_data_lowering(NodeProgram *program) const override;
-
+	NodeAST* do_array_normalization(NodeProgram *program);
     /// returns new assign statement with the declared variable and r_value or neutral element. Can optionally take new
     /// variable to make reference of
     [[nodiscard]] std::unique_ptr<NodeSingleAssignment> to_assign_stmt(NodeDataStructure* var=nullptr);

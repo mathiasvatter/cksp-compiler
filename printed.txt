@@ -2,23 +2,19 @@
 	declare const MAX::STRUCTS : int := 1000000
 	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type"
 	declare _iter3 : int
+	declare row0 : int
 	declare col0 : int
 	declare array0[30] : int[]
 	declare _iter00 : int
 	declare _ndarray0[2 * 3] : int[]
 	declare RETURN_FLAG00 : int
-	declare _iter4 : int
 	declare _iter2 : int
 	declare _iter10 : int
 on init
 	declare note0[MAX::CB::STACK{int}] : int[]
-	declare _iter6 : int
 	declare event_id0[MAX::CB::STACK{int}] : int[]
-	declare _iter7 : int
 	declare note_off0[MAX::CB::STACK{int}] : int[]
-	declare _iter8 : int
 	declare note_on0[MAX::CB::STACK{int}] : int[]
-	declare _iter9 : int
 	declare const MAX::CB::STACK : int := 100
 	declare const Point::MAX_STRUCTS : int := MAX::STRUCTS{int}
 	declare Point::free_idx : int
@@ -49,7 +45,7 @@ on init
 	declare Debug::stack_top : int
 	declare Debug::value[Debug::MAX_STRUCTS{int}] : int[]
 	declare _Debug::next[Debug::MAX_STRUCTS{int} * 2] : int[] := [- 1]
-	declare _iter5 : int
+	declare _iter4 : int
 	declare bugbug : int
 		Debug::free_idx{int} := search(Debug::allocation{int[]}, 0)
 		if(Debug::free_idx{int} = -1)
@@ -101,20 +97,20 @@ on init
 			inc(_ret10{int})
 		end while
 
-	declare ptr_array20[10] : int[]
-	ptr_array20[0]{int[]} := ptr_array[0]{int}
-	ptr_array20[1]{int[]} := ptr_array[1]{int}
-	Point::__incr__(ptr_array20[0]{int}, 1)
-	Point::__incr__(ptr_array20[1]{int}, num_elements(ptr_array20{int[]}) - 1)
-	declare ptr_array30[10] : int[]
+	declare ptr_array2[10] : int[]
+	ptr_array2[0]{int[]} := ptr_array[0]{int}
+	ptr_array2[1]{int[]} := ptr_array[1]{int}
+	Point::__incr__(ptr_array2[0]{int}, 1)
+	Point::__incr__(ptr_array2[1]{int}, num_elements(ptr_array2{int[]}) - 1)
+	declare ptr_array3[10] : int[]
 		_ret10{int} := 0
-		array.copy.int(ptr_array30{int[]}, ptr_array{int[]}, _ret10{int})
+		array.copy.int(ptr_array3{int[]}, ptr_array{int[]}, _ret10{int})
 
 		_ret10{int} := 0
 		_ret10{int} := 0
-		while(_ret10{int} <= (num_elements(ptr_array30{int[]}) - 1)) 
+		while(_ret10{int} <= (num_elements(ptr_array3{int[]}) - 1)) 
+			Point::__incr__(ptr_array3[_ret10{int}]{int}, 1)
 			inc(_ret10{int})
-			Point::__incr__(ptr_array30[_ret10{int}]{int}, 1)
 		end while
 
 	_ret10{int} := 0
@@ -134,51 +130,39 @@ on init
 	ndarray$dim2$1<-ndarray$dim2$1[int](_ndarray{int[]}, _ndarray{int[]}, 0, 1)
 	message(List::allocation[((0 + this_list{int}) + abs(0 - this_list{int})) / 2]{int})
 	message(num_elements[_ndarray{int[]}, Array::clip(1, 2)])
+	Point::__decr__(_ret00{int}, 1)
 	Point::__decr__(_ret10{int}, 1)
 		_ret10{int} := 0
 		_ret10{int} := 0
-		while(_ret10{int} <= (num_elements(ptr_array30{int[]}) - 1)) 
+		while(_ret10{int} <= (num_elements(ptr_array3{int[]}) - 1)) 
+			Point::__decr__(ptr_array3[_ret10{int}]{int}, 1)
 			inc(_ret10{int})
-			Point::__decr__(ptr_array30[_ret10{int}]{int}, 1)
 		end while
 
-	Point::__decr__(_ret00{int}, 1)
 		_ret10{int} := 0
 		_ret10{int} := 0
-		while(_ret10{int} <= (num_elements(ptr_array20{int[]}) - 1)) 
+		while(_ret10{int} <= (num_elements(ptr_array2{int[]}) - 1)) 
+			Point::__decr__(ptr_array2[_ret10{int}]{int}, 1)
 			inc(_ret10{int})
-			Point::__decr__(ptr_array20[_ret10{int}]{int}, 1)
 		end while
 
 		_ret10{int} := 0
 		_ret10{int} := 0
 		while(_ret10{int} <= (num_elements(ptr_array{int[]}) - 1)) 
-			inc(_ret10{int})
 			Point::__decr__(ptr_array[_ret10{int}]{int}, 1)
+			inc(_ret10{int})
 		end while
 
 end on
 
 on note{thread-unsafe}
-		_iter6{int} := 0
-		array<-init[int](note0{int[]}, _iter6{int}, 0)
-
 	note0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int} := EVENT_NOTE{int}
-		_iter7{int} := 0
-		array<-init[int](event_id0{int[]}, _iter7{int}, 0)
-
 	event_id0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int} := EVENT_ID{int}
 	wait(10)
 	if(note0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int} = 0)
-			_iter8{int} := 0
-			array<-init[int](note_off0{int[]}, _iter8{int}, 0)
-
 		note_off0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int} := 1
 		message("Note Off" & ", " & note_off0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int})
 	else
-			_iter9{int} := 0
-			array<-init[int](note_on0{int[]}, _iter9{int}, 0)
-
 		note_on0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int} := 1
 		message("Note On" & ", " & note_on0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int})
 	end if
@@ -187,21 +171,15 @@ end on
 function search_matrix(ret$1 : int, _matrix : number[], target : number)
 	RETURN_FLAG00{int} := 0
 	while(RETURN_FLAG00{int} = 0) 
-			_iter2{int} := 0
-			array<-init[int](array0{int[]}, _iter2{int}, 0)
-
-			_iter2{int} := 0
-			array<-init[int](_ndarray0{int[]}, _iter2{int}, 0)
-
 		message(num_elements[_ndarray0{int[]}, Array::clip(0, 2)])
-		_iter2{int} := 0
+		row0{int} := 0
 		col0{int} := 0
-		_iter2{int} := 0
-		while((_iter2{int} <= (num_elements[_matrix{number[]}, Array::clip(1, 2)] - 1)) and (RETURN_FLAG00{int} = 0)) 
+		row0{int} := 0
+		while((row0{int} <= (num_elements[_matrix{number[]}, Array::clip(1, 2)] - 1)) and (RETURN_FLAG00{int} = 0)) 
 			col0{int} := 0
 			while((col0{int} <= (num_elements[_matrix{number[]}, Array::clip(2, 2)] - 1)) and (RETURN_FLAG00{int} = 0)) 
-				if(_matrix[(_iter2{int} * num_elements[_matrix{number[]}, 2]) + col0{int}]{number} = target{number})
-					ret$1{int} := (_iter2{int} * 10) + col0{int}
+				if(_matrix[(row0{int} * num_elements[_matrix{number[]}, 2]) + col0{int}]{number} = target{number})
+					ret$1{int} := (row0{int} * 10) + col0{int}
 					RETURN_FLAG00{int} := 1
 					continue
 				end if
@@ -210,7 +188,7 @@ function search_matrix(ret$1 : int, _matrix : number[], target : number)
 			if(RETURN_FLAG00{int} = 1)
 				continue
 			end if
-			inc(_iter2{int})
+			inc(row0{int})
 		end while
 		if(RETURN_FLAG00{int} = 1)
 			continue
@@ -248,7 +226,7 @@ function Point::__add__(ret$1 : int, self : int, other : int)
 end function
 
 function Point::__del__(self : int)
-	_iter4{int} := 0
+	_iter3{int} := 0
 	if(Point::allocation[self{int}]{int} <= 0)
 	end if
 end function
@@ -257,7 +235,7 @@ function Point::__decr__(self : int, num_refs : int)
 	Point::stack[Point::stack_top{int}]{int} := self{int}
 	inc(Point::stack_top{int})
 	while(Point::stack_top{int} > 0) 
-		_iter3{int} := 0
+		_iter2{int} := 0
 		dec(Point::stack_top{int})
 		self{int} := Point::stack[Point::stack_top{int}]{int}
 		if(self{int} = - 1)
@@ -299,16 +277,9 @@ function ndarray$dim2$1<-ndarray$dim2$1[int](_original : int[], _to_copy : int[]
 	end while
 end function
 
-function array<-init[int](array : int[], _iter : int, value : int)
-	while(_iter{int} < num_elements(array{int[]})) 
-		array[_iter{int}]{int[]} := value{int}
-		inc(_iter{int})
-	end while
-end function
-
 function array.copy.int(dest : int[], src : int[], _iter : int)
 	while(_iter{int} < num_elements(src{int[]})) 
-		dest{int[]} := src{int[]}
+		dest[_iter{int}]{int[]} := src[_iter{int}]{int[]}
 		inc(_iter{int})
 	end while
 end function

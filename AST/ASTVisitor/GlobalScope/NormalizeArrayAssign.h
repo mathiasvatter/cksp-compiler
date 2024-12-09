@@ -19,8 +19,11 @@
  * Inherits from the ASTVisitor class.
  */
 class NormalizeArrayAssign : public ASTVisitor {
+public:
+	explicit NormalizeArrayAssign(NodeProgram* program) {
+		m_program = program;
+	};
 private:
-
 	inline NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		node.reset_function_visited_flag();
@@ -29,34 +32,6 @@ private:
 			callback->accept(*this);
 		}
 		node.merge_function_definitions();
-		return &node;
-	}
-
-	inline NodeAST* visit(NodeFunctionCall& node) override {
-		node.function->accept(*this);
-		if(node.bind_definition(m_program)) {
-			auto definition = node.get_definition();
-			if(!definition->visited) {
-				definition->accept(*this);
-			}
-			definition->visited = true;
-
-		}
-		return &node;
-	}
-
-	inline NodeAST * visit(NodeBlock& node) override {
-		for(auto &stmt : node.statements) {
-			stmt->accept(*this);
-		}
-		node.flatten();
-		return &node;
-	}
-
-	inline NodeAST * visit(NodeCallback& node) override {
-		m_program->current_callback = &node;
-		node.statements->accept(*this);
-		m_program->current_callback = nullptr;
 		return &node;
 	}
 
@@ -100,7 +75,18 @@ private:
 
 	inline NodeAST * visit(NodeSingleDeclaration& node) override {
 		if(!node.variable->ty->cast<CompositeType>()) return &node;
-		if (!node.variable->is_local) return &node;
+
+		// if not local -> do not immediately return
+		if (!node.variable->is_local) {
+//			if(!node.value) return &node;
+			return &node;
+//			if(not(node.value->cast<NodeArrayRef>() and node.value->ty->cast<ObjectType>())) {
+//				return &node;
+//			}
+		}
+
+
+		if(!node.variable->is_thread_safe) return &node;
 
 		// skip constant variables
 		if(node.variable->data_type == DataType::Const)
@@ -175,10 +161,6 @@ private:
 	}
 
 public:
-	explicit NormalizeArrayAssign(NodeProgram* program) {
-		m_program = program;
-	};
-
 	static std::unique_ptr<NodeBlock> get_array_init_from_list(NodeArrayRef* array_ref, NodeInitializerList* init_list) {
 		auto node_body = std::make_unique<NodeBlock>(array_ref->tok);
 		for(int i = 0; i<init_list->size(); i++) {
@@ -341,14 +323,13 @@ public:
 			),
 			array_dest->tok
 		);
-		node_body->add_stmt(std::make_unique<NodeStatement>(
+		node_body->add_as_stmt(
 			std::make_unique<NodeSingleDeclaration>(
 				std::move(node_iterator),
 				nullptr, array_dest->tok
-			),
-			array_dest->tok)
+			)
 		);
-		node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_function_call), array_dest->tok));
+		node_body->add_as_stmt(std::move(node_function_call));
 		return node_body;
 	}
 
@@ -373,7 +354,9 @@ public:
 		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, Token());
 		auto node_iterator_ref = node_iterator->to_reference();
 		auto node_dest_ref = unique_ptr_cast<NodeArrayRef>(node_dest->to_reference());
+		node_dest_ref->set_index(node_iterator_ref->clone());
 		auto node_src_ref = unique_ptr_cast<NodeArrayRef>(node_src->to_reference());
+		node_src_ref->set_index(node_iterator_ref->clone());
 		auto node_function_def = std::make_shared<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,

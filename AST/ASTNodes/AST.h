@@ -92,6 +92,8 @@ struct NodeAST {
 	[[nodiscard]] struct NodeCallback* get_current_callback() const;
 	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
 	void do_constant_folding();
+	NodeAST* do_array_normalization(NodeProgram *program);
+
 };
 
 template<typename T>
