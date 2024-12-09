@@ -23,6 +23,7 @@
 #include "../ASTVisitor/GlobalScope/ASTRegisterReuse.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h"
 #include "../../Optimization/ConstantFolding.h"
+#include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -179,6 +180,11 @@ struct NodeFunctionDefinition *NodeAST::get_current_function() const {
 void NodeAST::do_constant_folding() {
 	static ConstantFolding constant_folding;
 	accept(constant_folding);
+}
+
+NodeAST *NodeAST::do_array_normalization(NodeProgram *program) {
+	static NormalizeArrayAssign array_assign(program);
+	return accept(array_assign);
 }
 
 // ************* NodeDataStructure ***************

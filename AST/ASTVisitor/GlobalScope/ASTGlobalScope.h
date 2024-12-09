@@ -58,6 +58,7 @@ protected:
 		auto node_assignment = node.to_assign_stmt();
 		if (auto array_ref = node_assignment->l_value->cast<NodeArrayRef>()) {
 			if (!array_ref->index) {
+//				return std::move(node_assignment);
 				return std::make_unique<NodeDeadCode>(node.tok);
 			}
 		}
