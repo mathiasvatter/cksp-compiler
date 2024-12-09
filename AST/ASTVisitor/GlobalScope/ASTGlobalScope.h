@@ -51,6 +51,10 @@ protected:
 		if(node.is_promoted) {
 			return std::make_unique<NodeDeadCode>(node.tok);
 		}
+//		if(!node.variable->is_thread_safe) {
+//			return std::make_unique<NodeDeadCode>(node.tok);
+//
+//		}
 		auto node_assignment = node.to_assign_stmt();
 		if (auto array_ref = node_assignment->l_value->cast<NodeArrayRef>()) {
 			if (!array_ref->index) {
