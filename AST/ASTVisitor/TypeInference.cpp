@@ -315,6 +315,24 @@ NodeAST * TypeInference::visit(NodeNumElements& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodePairs& node) {
+	node.range->accept(*this);
+	match_against(*node.range, TypeRegistry::NDArrayOfUnknown, "<pairs> can only be used on <Composite> types like <Arrays> or <NDArrays>.");
+	match_against(node, TypeRegistry::add_composite_type(CompoundKind::Array, node.range->ty->get_element_type(), 2));
+	return &node;
+}
+
+NodeAST * TypeInference::visit(NodeUseCount& node) {
+	node.ref->accept(*this);
+	if(!node.ref->ty->cast<ObjectType>()) {
+		auto error = CompileError(ErrorType::TypeError, "", "", node.ref->tok);
+		error.m_message = "<use_count> can only be used on <Object> types.";
+		error.exit();
+	}
+	match_against(node, TypeRegistry::Integer);
+	return &node;
+};
+
 NodeAST * TypeInference::visit(NodeSortSearch& node) {
 	node.array->accept(*this);
 	match_against(*node.array, TypeRegistry::NDArrayOfInt, "<search> can only be used on <Composite> types like <Arrays> or <NDArrays>.");
@@ -335,6 +353,13 @@ NodeAST * TypeInference::visit(NodeSortSearch& node) {
 	}
 	return &node;
 }
+
+NodeAST * TypeInference::visit(NodeForEach& node) {
+	for(auto &key : node.keys) key->accept(*this);
+	node.range->accept(*this);
+	node.body->accept(*this);
+	return &node;
+};
 
 NodeAST * TypeInference::visit(NodeAccessChain& node) {
 

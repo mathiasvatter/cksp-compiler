@@ -188,6 +188,10 @@ public:
 		node.ref->accept(*this);
 		return &node;
 	};
+	virtual NodeAST* visit(NodePairs& node) {
+		node.range->accept(*this);
+		return &node;
+	};
 	virtual NodeAST* visit(NodeSingleRetain& node) {
 		node.ptr->accept(*this);
 		node.num->accept(*this);

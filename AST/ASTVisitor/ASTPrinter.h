@@ -50,6 +50,7 @@ public:
 	NodeAST * visit(NodeIf& node) override;
 	NodeAST * visit(NodeWhile& node) override;
 	NodeAST * visit(NodeFor& node) override;
+	NodeAST * visit(NodeForEach& node) override;
 	NodeAST * visit(NodeSelect& node) override;
 	NodeAST * visit(NodeCallback& node) override;
 	NodeAST * visit(NodeFunctionHeaderRef& node) override;

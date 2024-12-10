@@ -387,6 +387,7 @@ NodeBlock* NodeNDArrayRef::iterate_over(std::unique_ptr<NodeBlock> &body) {
 	for(int i = 0; i< indexes->size(); i++) {
 		if(indexes->param(i)->cast<NodeWildcard>()) {
 			auto node_iterator = ASTVisitor::get_iterator_var(indexes->param(i)->tok);
+			node_iterator->name = node_iterator->name + std::to_string(i);
 			iterators.push_back(node_iterator);
 			auto lower_bound = std::make_unique<NodeInt>(0, tok);
 			lower_bounds.push_back(std::move(lower_bound));

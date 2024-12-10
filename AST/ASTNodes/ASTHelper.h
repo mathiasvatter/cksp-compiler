@@ -92,6 +92,7 @@ enum class NodeType {
 	If,
 	For,
 	ForEach,
+	Pairs,
 	While,
 	Select,
 	Callback,

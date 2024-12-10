@@ -125,8 +125,8 @@ add_executable(cksp main.cpp
         Desugaring/DesugaringFamily.h
         Desugaring/ASTDesugaring.h
         Desugaring/DesugarDeclareAssign.h
-        Desugaring/DesugarFor.h
-        Desugaring/DesugarForEach.h
+        Lowering/LoweringFor.h
+        Lowering/LoweringForEach.h
         misc/Gensym.h
         misc/Timer.h
         Compiler.h

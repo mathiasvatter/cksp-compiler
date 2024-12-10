@@ -782,7 +782,7 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
         }
         stmt = std::move(if_stmt.unwrap());
     } else if (peek().type == token::FOR) {
-        if(is_ranged_for_loop()) {
+        if(is_for_each_syntax()) {
             auto for_stmt = parse_for_each_statement(node_statement.get());
             if (for_stmt.is_error()) {
                 return Result<std::unique_ptr<NodeStatement>>(for_stmt.get_error());
@@ -1588,7 +1588,7 @@ Result<std::unique_ptr<NodeFor>> Parser::parse_for_statement(NodeAST* parent) {
     return Result<std::unique_ptr<NodeFor>>(std::move(node_for_statement));
 }
 
-bool Parser::is_ranged_for_loop() {
+bool Parser::is_for_each_syntax() {
     size_t begin = m_pos;
     while(peek().type != token::LINEBRK) {
         if(peek().type == token::ASSIGN) {
@@ -1633,19 +1633,19 @@ Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* p
 				"Incorrect syntax in <key, value> pair.", "<variable>", peek()));
 		}
 	} while(peek().type == token::COMMA);
-	if(keys.size() != 2) {
-		auto error = CompileError(ErrorType::SyntaxError, "Found invalid <For-each> Statement Syntax.", "", peek());
-		error.m_message += " <key, value> pair references must be exactly two.";
-		error.exit();
-	}
+//	if(keys.size() != 2) {
+//		auto error = CompileError(ErrorType::SyntaxError, "Found invalid <For-each> Statement Syntax.", "", peek());
+//		error.m_message += " <key, value> pair references must be exactly two.";
+//		error.exit();
+//	}
 
     if(peek().type != token::IN)
         return Result<std::unique_ptr<NodeForEach>>(CompileError(ErrorType::SyntaxError,
                                                                  "Incorrect Syntax for range-based <for-loop>.", "in", peek()));
     Token to = consume(); //consume in
-    auto expression_stmt = parse_binary_expr(node_for_statement.get());
-    if(expression_stmt.is_error()) {
-        return Result<std::unique_ptr<NodeForEach>>(expression_stmt.get_error());
+    auto reference = parse_reference_chain(node_for_statement.get());
+    if(reference.is_error()) {
+        return Result<std::unique_ptr<NodeForEach>>(reference.get_error());
     }
     if(peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeForEach>>(CompileError(ErrorType::SyntaxError,
@@ -1665,7 +1665,7 @@ Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* p
     }
     consume(); // consume end for
     node_for_statement->keys = std::move(keys);
-    node_for_statement->range = std::move(expression_stmt.unwrap());
+    node_for_statement->range = std::move(reference.unwrap());
     node_for_statement->body = std::move(node_body);
     node_for_statement->set_child_parents();
     node_for_statement->parent = parent;

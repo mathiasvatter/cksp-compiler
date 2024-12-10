@@ -333,6 +333,16 @@ NodeAST* ASTVariableChecking::visit(NodeListRef& node) {
 	return &node;
 }
 
+NodeAST* ASTVariableChecking::visit(NodeForEach& node) {
+	for(auto &key : node.keys) {
+		key->kind = NodeReference::Kind::Compiler;
+		key->accept(*this);
+	}
+	node.range->accept(*this);
+	node.body->accept(*this);
+	return &node;
+};
+
 NodeAST* ASTVariableChecking::visit(NodeConst& node) {
 	for(auto& stmt : node.constants->statements) {
 		stmt->accept(*this);

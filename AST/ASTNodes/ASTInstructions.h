@@ -729,7 +729,7 @@ struct NodeBlock : NodeInstruction {
 	inline bool determine_scope() {
 		if(scope) return true;
 		scope = false;
-		if(parent->get_node_type() != NodeType::Statement and !is_instance_of<NodeDataStructure>(parent)) {
+		if(!parent->cast<NodeStatement>()) { // and !is_instance_of<NodeDataStructure>(parent)) {
 			scope = true;
 			return scope;
 		}
@@ -843,7 +843,9 @@ struct NodeFor : NodeInstruction {
         if(step) step ->update_token_data(token);
         body->update_token_data(token);
     }
-    ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+//    ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
+
 };
 
 struct NodeForEach : NodeInstruction {
@@ -876,7 +878,34 @@ struct NodeForEach : NodeInstruction {
         range -> update_token_data(token);
         body->update_token_data(token);
     }
-    ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+//    ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
+
+};
+
+// for key, val in pairs(array)
+struct NodePairs : NodeInstruction {
+	std::unique_ptr<NodeAST> range;
+	inline explicit NodePairs(std::unique_ptr<NodeAST> range) : NodeInstruction(NodeType::Pairs, range->tok),
+		range(std::move(range)) {
+		set_child_parents();
+	}
+	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	NodePairs(const NodePairs& other);
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		range->update_parents(this);
+	}
+	void set_child_parents() override {
+		range->parent = this;
+	};
+	std::string get_string() override { return "pairs"; }
+	void update_token_data(const Token& token) override {
+		range -> update_token_data(token);
+	}
+
 };
 
 struct NodeWhile : NodeInstruction {

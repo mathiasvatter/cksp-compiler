@@ -31,10 +31,10 @@ class ASTDesugar: public ASTVisitor {
 
 	/// desugar certain binary operators into builtin functions
 	NodeAST * visit(NodeBinaryExpr& node) override;
-    /// desugar for each loops to for loops
-	NodeAST * visit(NodeForEach& node) override;
-    /// alter for loops to while loops
-	NodeAST * visit(NodeFor& node) override;
+//    /// desugar for each loops to for loops
+//	NodeAST * visit(NodeForEach& node) override;
+//    /// alter for loops to while loops
+//	NodeAST * visit(NodeFor& node) override;
 
     NodeAST * visit(NodeBlock& node) override;
 

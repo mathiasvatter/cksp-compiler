@@ -74,16 +74,16 @@ NodeAST* ASTDesugar::visit(NodeSingleAssignment& node) {
 	return node.desugar(m_program);
 }
 
-NodeAST* ASTDesugar::visit(NodeForEach& node) {
-    node.body->accept(*this);
-	// accept again to desugar resulting for loops
-	return node.desugar(m_program)->accept(*this);
-}
-
-NodeAST* ASTDesugar::visit(NodeFor& node) {
-    node.body->accept(*this);
-	return node.desugar(m_program)->accept(*this);
-}
+//NodeAST* ASTDesugar::visit(NodeForEach& node) {
+//    node.body->accept(*this);
+//	// accept again to desugar resulting for loops
+//	return node.desugar(m_program)->accept(*this);
+//}
+//
+//NodeAST* ASTDesugar::visit(NodeFor& node) {
+//    node.body->accept(*this);
+//	return node.desugar(m_program)->accept(*this);
+//}
 
 NodeAST* ASTDesugar::visit(NodeFamily &node) {
     node.members->accept(*this);
