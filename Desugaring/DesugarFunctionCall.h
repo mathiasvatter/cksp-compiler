@@ -81,18 +81,14 @@ public:
 
 		if(node.function->get_num_args() == 1 and node.function->name == "use_count") {
 			node.kind = NodeFunctionCall::Kind::Builtin;
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			if(node.function->get_num_args() != 1) {
-				error.m_message = "Function call <use_count> expects exactly one argument.";
-				error.exit();
-			}
-			if(is_instance_of<NodeReference>(node.function->get_arg(0).get())) {
-				auto use_count = std::make_unique<NodeUseCount>(unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0))));
-				return node.replace_with(std::move(use_count));
-			} else {
-				error.m_message = "Argument for function call <use_count> must be a reference.";
-				error.exit();
-			}
+			auto use_count = std::make_unique<NodeUseCount>(unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0))));
+			return node.replace_with(std::move(use_count));
+		}
+
+		if(node.function->get_num_args() == 1 and node.function->name == "pairs") {
+			node.kind = NodeFunctionCall::Kind::Builtin;
+			auto pairs = std::make_unique<NodePairs>(std::move(node.function->get_arg(0)));
+			return node.replace_with(std::move(pairs));
 		}
 
 		node.bind_definition(m_program);

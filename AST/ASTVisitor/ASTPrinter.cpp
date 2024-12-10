@@ -414,6 +414,21 @@ NodeAST * ASTPrinter::visit(NodeFor &node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeForEach& node) {
+	os << "for ";
+	for(auto &key : node.keys) {
+		key->accept(*this);
+		os << ", ";
+	}
+	if(!node.keys.empty()) os.seekp(-2, std::ios_base::end);
+	os << " in ";
+	node.range->accept(*this);
+	os << std::endl;
+	node.body->accept(*this);
+	os << get_indent() << "end for";
+	return &node;
+};
+
 NodeAST * ASTPrinter::visit(NodeSelect &node) {
     os << "select(" ;
     node.expression->accept(*this);

@@ -31,7 +31,7 @@ public:
 
 	inline NodeAST* visit(NodeFor& node) override {
 		node.body->accept(*this);
-		return node.desugar(m_program)->accept(*this);
+		return node.lower(m_program)->accept(*this);
 	}
 
 	inline NodeAST* visit(NodeSingleDeclaration &node) override {

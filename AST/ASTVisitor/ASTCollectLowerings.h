@@ -37,8 +37,10 @@ public:
 	}
 	NodeAST * visit(NodeProgram& node) override;
 
-	/// do not visit return statements -> wait for them to get lowered to assign statements
-//	void visit(NodeReturn& node) override;
+	/// desugar for each loops to for loops
+	NodeAST * visit(NodeForEach& node) override;
+	/// alter for loops to while loops
+	NodeAST * visit(NodeFor& node) override;
 
 	/// flatten blocks
 	NodeAST * visit(NodeBlock& node) override;

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ASTDesugaring.h"
+#include "ASTLowering.h"
 
 /**
  * @brief This class is responsible for desugaring for loops into while loops
@@ -25,9 +25,9 @@
  *     dec($o)
  * end while
  */
-class DesugarFor : public ASTDesugaring {
+class LoweringFor : public ASTLowering {
 public:
-	explicit DesugarFor(NodeProgram* program) : ASTDesugaring(program) {};
+	explicit LoweringFor(NodeProgram* program) : ASTLowering(program) {};
 
     inline NodeAST* visit(NodeFor& node) override {
         // function arg
