@@ -117,8 +117,7 @@ public:
 			if(node.value) {
 				block = std::make_unique<NodeBlock>(node.tok);
 				assignment = node.to_assign_stmt();
-				// accept first to transform and inflate dimensions
-				assignment->accept(*this);
+				node.variable->references.emplace(assignment->l_value.get());
 			}
 
 			auto inflated = node.variable->inflate_dimension(m_max_cb_stack->to_reference());
@@ -126,6 +125,8 @@ public:
 			node.variable->replace_datastruct(std::move(inflated));
 
 			if(node.value) {
+				assignment->accept(*this);
+
 				block->add_as_stmt(std::make_unique<NodeSingleDeclaration>(node.variable, nullptr, node.tok));
 				block->add_as_stmt(std::move(assignment));
 				return node.replace_with(std::move(block));
