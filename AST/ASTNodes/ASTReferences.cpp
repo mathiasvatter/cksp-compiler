@@ -200,9 +200,9 @@ std::unique_ptr<NodeReference> NodeArrayRef::inflate_dimension(std::unique_ptr<N
 	return node_ndarray_ref;
 }
 
-NodeBlock* NodeArrayRef::iterate_over(std::unique_ptr<NodeBlock>& for_loop_block) {
+NodeBlock* NodeArrayRef::iterate_over(std::unique_ptr<NodeBlock>& for_loop_block, NodeProgram* program) {
 	for_loop_block->scope = true;
-	auto iterator = ASTVisitor::get_iterator_var(tok);
+	auto iterator = ASTVisitor::get_iterator_var(tok, program->def_provider->get_fresh_name("_iter"));
 	set_index(iterator->to_reference());
 	ty = ty->get_element_type();
 	return for_loop_block->wrap_in_loop(std::move(iterator), std::make_unique<NodeInt>(0, tok), get_size());
@@ -368,7 +368,7 @@ std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() {
 	return {wildcard_start, wildcard_end};
 }
 
-NodeBlock* NodeNDArrayRef::iterate_over(std::unique_ptr<NodeBlock> &body) {
+NodeBlock* NodeNDArrayRef::iterate_over(std::unique_ptr<NodeBlock> &body, NodeProgram* program) {
 	if(!indexes) {
 		determine_sizes();
 		add_wildcards();
@@ -386,8 +386,7 @@ NodeBlock* NodeNDArrayRef::iterate_over(std::unique_ptr<NodeBlock> &body) {
 	std::vector<std::unique_ptr<NodeAST>> upper_bounds;
 	for(int i = 0; i< indexes->size(); i++) {
 		if(indexes->param(i)->cast<NodeWildcard>()) {
-			auto node_iterator = ASTVisitor::get_iterator_var(indexes->param(i)->tok);
-			node_iterator->name = node_iterator->name + std::to_string(i);
+			auto node_iterator = ASTVisitor::get_iterator_var(indexes->param(i)->tok, program->def_provider->get_fresh_name("_iter"));
 			iterators.push_back(node_iterator);
 			auto lower_bound = std::make_unique<NodeInt>(0, tok);
 			lower_bounds.push_back(std::move(lower_bound));

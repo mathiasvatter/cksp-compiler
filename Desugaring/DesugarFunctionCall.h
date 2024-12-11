@@ -91,6 +91,29 @@ public:
 			return node.replace_with(std::move(pairs));
 		}
 
+		if(node.function->get_num_args() >= 1 and node.function->get_num_args() <= 3 and node.function->name == "range") {
+			node.kind = NodeFunctionCall::Kind::Builtin;
+			std::unique_ptr<NodeAST> start = std::make_unique<NodeInt>(0, node.tok);
+			std::unique_ptr<NodeAST> stop;
+			std::unique_ptr<NodeAST> step = std::make_unique<NodeInt>(1, node.tok);
+			if(node.function->get_num_args() == 1) {
+				stop = std::move(node.function->get_arg(0));
+			} else {
+				start = std::move(node.function->get_arg(0));
+				stop = std::move(node.function->get_arg(1));
+				if(node.function->get_num_args() == 3) {
+					step = std::move(node.function->get_arg(2));
+				}
+			}
+			auto range = std::make_unique<NodeRange>(
+				std::move(start),
+				std::move(stop),
+				std::move(step),
+				node.tok
+			);
+			return node.replace_with(std::move(range));
+		}
+
 		node.bind_definition(m_program);
 		if(!node.get_definition()) return &node;
 		if(node.get_definition()->num_return_params <= 1) return &node;
@@ -109,6 +132,12 @@ public:
 	}
 
 private:
+
+	CompileError throw_insufficient_args_error(Token tok) {
+		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+		error.m_message = "Too few arguments for function call <"+tok.val+">.";
+		return error;
+	}
 
 	static inline std::unique_ptr<NodeParamList> inline_message_parameters(std::unique_ptr<NodeParamList>& params) {
 		// it is already only one parameter

@@ -93,6 +93,7 @@ enum class NodeType {
 	For,
 	ForEach,
 	Pairs,
+	Range,
 	While,
 	Select,
 	Callback,

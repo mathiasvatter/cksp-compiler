@@ -823,6 +823,7 @@ NodeBlock* NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStru
 	statements = std::move(inner_body->statements);
 	scope = true;
 	this->set_child_parents();
+	this->collect_references();
 	return for_loop_body;
 }
 
@@ -848,6 +849,7 @@ NodeBlock* NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, 
 	statements = std::move(inner_body->statements);
 	scope = true;
 	this->set_child_parents();
+	this->collect_references();
 	return for_loop_body;
 }
 
@@ -906,7 +908,10 @@ NodeAST *NodeFor::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newC
     if (iterator_end.get() == oldChild) {
         iterator_end = std::move(newChild);
         return iterator_end.get();
-    }
+    } else if (step.get() == oldChild) {
+		step = std::move(newChild);
+		return step.get();
+	}
     return nullptr;
 }
 
@@ -925,8 +930,8 @@ NodeAST *NodeForEach::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeForEach::NodeForEach(const NodeForEach& other)
-        : NodeInstruction(other), keys(clone_vector(other.keys)), range(clone_unique(other.range)),
-          body(clone_unique(other.body)) {
+        : NodeInstruction(other), key(clone_unique(other.key)), value(clone_unique(other.value)),
+		range(clone_unique(other.range)), body(clone_unique(other.body)) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeForEach::clone() const {
@@ -965,6 +970,32 @@ NodeAST *NodePairs::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 	if (range.get() == oldChild) {
 		range = std::move(newChild);
 		return range.get();
+	}
+	return nullptr;
+}
+
+// ************* NodeRange ***************
+NodeAST *NodeRange::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeRange::NodeRange(const NodeRange& other)
+	: NodeInstruction(other), start(clone_unique(other.start)), stop(clone_unique(other.stop)),
+	  step(clone_unique(other.step)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeRange::clone() const {
+	return std::make_unique<NodeRange>(*this);
+}
+NodeAST *NodeRange::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (start.get() == oldChild) {
+		start = std::move(newChild);
+		return start.get();
+	} else if (stop.get() == oldChild) {
+		stop = std::move(newChild);
+		return stop.get();
+	} else if (step.get() == oldChild) {
+		step = std::move(newChild);
+		return step.get();
 	}
 	return nullptr;
 }

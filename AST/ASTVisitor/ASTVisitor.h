@@ -32,10 +32,10 @@ public:
 	static CompileError get_raw_compile_error(ErrorType err_type, const NodeAST& node);
     static std::unique_ptr<NodeBlock> make_while_loop(NodeReference* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent);
 	static std::unique_ptr<NodeIf> make_nil_check(std::unique_ptr<NodeReference> ref);
-	static std::shared_ptr<NodeVariable> get_iterator_var(const Token& tok) {
+	static std::shared_ptr<NodeVariable> get_iterator_var(const Token& tok, const std::string& name="_iter") {
 		auto iter = std::make_shared<NodeVariable>(
 			std::nullopt,
-			"_iter",
+			name,
 			TypeRegistry::Integer,
 			DataType::Mutable,
 			tok
@@ -192,6 +192,12 @@ public:
 		node.range->accept(*this);
 		return &node;
 	};
+	virtual NodeAST* visit(NodeRange& node) {
+		if(node.start) node.start->accept(*this);
+		node.stop->accept(*this);
+		if(node.step) node.step->accept(*this);
+		return &node;
+	};
 	virtual NodeAST* visit(NodeSingleRetain& node) {
 		node.ptr->accept(*this);
 		node.num->accept(*this);
@@ -249,11 +255,13 @@ public:
     virtual NodeAST* visit(NodeFor& node) {
 		node.iterator->accept(*this);
 		node.iterator_end->accept(*this);
+		if(node.step) node.step->accept(*this);
         node.body->accept(*this);
 		return &node;
 	};
     virtual NodeAST* visit(NodeForEach& node) {
-		for(auto &key : node.keys) key->accept(*this);
+		if(node.key) node.key->accept(*this);
+		if(node.value) node.value->accept(*this);
         node.range->accept(*this);
         node.body->accept(*this);
 		return &node;

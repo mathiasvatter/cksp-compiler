@@ -849,12 +849,13 @@ struct NodeFor : NodeInstruction {
 };
 
 struct NodeForEach : NodeInstruction {
-    std::vector<std::unique_ptr<NodeReference>> keys;
+	std::unique_ptr<NodeFunctionParam> key;
+    std::unique_ptr<NodeFunctionParam> value;
     std::unique_ptr<NodeAST> range;
     std::unique_ptr<NodeBlock> body;
     inline explicit NodeForEach(Token tok) : NodeInstruction(NodeType::ForEach, std::move(tok)) {}
-    inline NodeForEach(std::vector<std::unique_ptr<NodeReference>> keys, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeBlock> statements, Token tok)
-            : NodeInstruction(NodeType::ForEach, std::move(tok)), keys(std::move(keys)), range(std::move(range)), body(std::move(statements)) {
+    inline NodeForEach(std::unique_ptr<NodeFunctionParam> key, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeBlock> statements, Token tok)
+            : NodeInstruction(NodeType::ForEach, std::move(tok)), key(std::move(key)), range(std::move(range)), body(std::move(statements)) {
         set_child_parents();
     }
     NodeAST * accept(struct ASTVisitor &visitor) override;
@@ -863,18 +864,21 @@ struct NodeForEach : NodeInstruction {
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
-		for(auto &key : keys) key->update_parents(this);
+		if(key) key->update_parents(this);
+		if(value) value->update_parents(this);
         range->update_parents(this);
         body->update_parents(this);
     }
     void set_child_parents() override {
-		for(auto &key : keys) key->parent = this;
+		if(key) key->parent = this;
+		if(value) value->parent = this;
         range->parent = this;
         body->parent = this;
     };
     std::string get_string() override { return ""; }
     void update_token_data(const Token& token) override {
-		for(auto &key : keys) key->update_token_data(token);
+		if(key) key->update_token_data(token);
+		if(value) value->update_token_data(token);
         range -> update_token_data(token);
         body->update_token_data(token);
     }
@@ -905,7 +909,45 @@ struct NodePairs : NodeInstruction {
 	void update_token_data(const Token& token) override {
 		range -> update_token_data(token);
 	}
+};
 
+// for key, val in range(10)
+struct NodeRange : NodeInstruction {
+	std::unique_ptr<NodeAST> start;
+	std::unique_ptr<NodeAST> stop;
+	std::unique_ptr<NodeAST> step;
+	inline explicit NodeRange(std::unique_ptr<NodeAST> start, std::unique_ptr<NodeAST> stop, std::unique_ptr<NodeAST> step, Token tok)
+	: NodeInstruction(NodeType::Range, std::move(tok)), start(std::move(start)), stop(std::move(stop)), step(std::move(step)) {
+		set_child_parents();
+	}
+	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	NodeRange(const NodeRange& other);
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		if(start) start->update_parents(this);
+		stop->update_parents(this);
+		if(step) step->update_parents(this);
+	}
+	void set_child_parents() override {
+		if(start) start->parent = this;
+		stop->parent = this;
+		if(step) step->parent = this;
+	};
+	std::string get_string() override { return "range"; }
+	void update_token_data(const Token& token) override {
+		if(start) start->update_token_data(token);
+		stop->update_token_data(token);
+		if(step) step->update_token_data(token);
+	}
+	bool all_literals() {
+		bool all_literals = true;
+		all_literals &= start->cast<NodeInt>() or start->cast<NodeReal>();
+		all_literals &= stop->cast<NodeInt>() or stop->cast<NodeReal>();
+		all_literals &= step->cast<NodeInt>() or step->cast<NodeReal>();
+		return all_literals;
+	}
 };
 
 struct NodeWhile : NodeInstruction {

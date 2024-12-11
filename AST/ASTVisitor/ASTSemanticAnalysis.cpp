@@ -61,6 +61,20 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSortSearch& node) {
 	return &node;
 }
 
+NodeAST * ASTSemanticAnalysis::visit(NodeRange& node) {
+	if(node.start) node.start->accept(*this);
+	node.stop->accept(*this);
+	if(node.step) node.step->accept(*this);
+
+	// check that it is only in for each loop (for now)
+	if(!node.parent->cast<NodeForEach>() and !node.parent->cast<NodePairs>()) {
+		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+		error.m_message = "As of v"+COMPILER_VERSION+", <range> can only be used in for-each loop.";
+		error.exit();
+	}
+	return &node;
+}
+
 /// check if declared constant variable ref gets new assignment -> throw error
 NodeAST* ASTSemanticAnalysis::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);

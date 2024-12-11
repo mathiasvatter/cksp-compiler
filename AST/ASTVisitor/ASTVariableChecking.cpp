@@ -334,12 +334,15 @@ NodeAST* ASTVariableChecking::visit(NodeListRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeForEach& node) {
-	for(auto &key : node.keys) {
-		key->kind = NodeReference::Kind::Compiler;
-		key->accept(*this);
-	}
+	m_def_provider->add_scope();
+
+	if(node.key) node.key->accept(*this);
+	if(node.value) node.value->accept(*this);
 	node.range->accept(*this);
 	node.body->accept(*this);
+
+	m_def_provider->remove_scope();
+
 	return &node;
 };
 

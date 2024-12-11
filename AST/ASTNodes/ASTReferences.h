@@ -59,7 +59,7 @@ struct NodeCompositeRef : NodeReference {
 	[[nodiscard]] virtual int num_wildcards() const = 0;
 	/// returns the most inner body of desugared for loop over array ref depending on wildcards
 	/// if no wildcards are present -> iterates over whole ndarray
-	virtual NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body) = 0;
+	virtual NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body, NodeProgram* program) = 0;
 	virtual void remove_index() = 0;
 };
 
@@ -109,7 +109,7 @@ struct NodeArrayRef : NodeCompositeRef {
 		if(!index) return 1;
 		return 0;
 	}
-	NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body) override;
+	NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body, NodeProgram* program) override;
 	void remove_index() override {
 		index = nullptr;
 	}
@@ -185,7 +185,7 @@ struct NodeNDArrayRef : NodeCompositeRef {
 	std::pair<int, int> get_wildcard_dimensions();
 	/// replaces next wildcard with given index
 	void replace_next_wildcard_with_index(std::unique_ptr<NodeInt> new_index);
-	NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body) override;
+	NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body, NodeProgram* program) override;
 	void remove_index() override {
 		indexes = nullptr;
 	}
