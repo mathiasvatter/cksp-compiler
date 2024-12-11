@@ -62,6 +62,28 @@ NodeAST * ASTPrinter::visit(NodeSortSearch& node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodePairs& node) {
+	os << "pairs(";
+	node.range->accept(*this);
+	os << ")";
+	return &node;
+}
+
+NodeAST * ASTPrinter::visit(NodeRange& node) {
+	os << "range(";
+	if(node.start) {
+		node.start->accept(*this);
+		os << ", ";
+	}
+	node.stop->accept(*this);
+	if(node.step) {
+		os << ", ";
+		node.step->accept(*this);
+	}
+	os << ")";
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeReturn& node) {
 	os << "return (";
 	for(auto &ret : node.return_variables) {
@@ -413,6 +435,21 @@ NodeAST * ASTPrinter::visit(NodeFor &node) {
     os << get_indent() << "end for";
 	return &node;
 }
+
+NodeAST * ASTPrinter::visit(NodeForEach& node) {
+	os << "for ";
+	if(node.key) {
+		node.key->accept(*this);
+		os << ", ";
+	}
+	if(node.value) node.value->accept(*this);
+	os << " in ";
+	node.range->accept(*this);
+	os << std::endl;
+	node.body->accept(*this);
+	os << get_indent() << "end for";
+	return &node;
+};
 
 NodeAST * ASTPrinter::visit(NodeSelect &node) {
     os << "select(" ;

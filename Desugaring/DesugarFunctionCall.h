@@ -81,18 +81,37 @@ public:
 
 		if(node.function->get_num_args() == 1 and node.function->name == "use_count") {
 			node.kind = NodeFunctionCall::Kind::Builtin;
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			if(node.function->get_num_args() != 1) {
-				error.m_message = "Function call <use_count> expects exactly one argument.";
-				error.exit();
-			}
-			if(is_instance_of<NodeReference>(node.function->get_arg(0).get())) {
-				auto use_count = std::make_unique<NodeUseCount>(unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0))));
-				return node.replace_with(std::move(use_count));
+			auto use_count = std::make_unique<NodeUseCount>(unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0))));
+			return node.replace_with(std::move(use_count));
+		}
+
+		if(node.function->get_num_args() == 1 and node.function->name == "pairs") {
+			node.kind = NodeFunctionCall::Kind::Builtin;
+			auto pairs = std::make_unique<NodePairs>(std::move(node.function->get_arg(0)));
+			return node.replace_with(std::move(pairs));
+		}
+
+		if(node.function->get_num_args() >= 1 and node.function->get_num_args() <= 3 and node.function->name == "range") {
+			node.kind = NodeFunctionCall::Kind::Builtin;
+			std::unique_ptr<NodeAST> start = std::make_unique<NodeInt>(0, node.tok);
+			std::unique_ptr<NodeAST> stop;
+			std::unique_ptr<NodeAST> step = std::make_unique<NodeInt>(1, node.tok);
+			if(node.function->get_num_args() == 1) {
+				stop = std::move(node.function->get_arg(0));
 			} else {
-				error.m_message = "Argument for function call <use_count> must be a reference.";
-				error.exit();
+				start = std::move(node.function->get_arg(0));
+				stop = std::move(node.function->get_arg(1));
+				if(node.function->get_num_args() == 3) {
+					step = std::move(node.function->get_arg(2));
+				}
 			}
+			auto range = std::make_unique<NodeRange>(
+				std::move(start),
+				std::move(stop),
+				std::move(step),
+				node.tok
+			);
+			return node.replace_with(std::move(range));
 		}
 
 		node.bind_definition(m_program);
@@ -113,6 +132,12 @@ public:
 	}
 
 private:
+
+	CompileError throw_insufficient_args_error(Token tok) {
+		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+		error.m_message = "Too few arguments for function call <"+tok.val+">.";
+		return error;
+	}
 
 	static inline std::unique_ptr<NodeParamList> inline_message_parameters(std::unique_ptr<NodeParamList>& params) {
 		// it is already only one parameter

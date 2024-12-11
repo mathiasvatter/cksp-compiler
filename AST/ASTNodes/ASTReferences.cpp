@@ -169,7 +169,7 @@ std::unique_ptr<NodeAccessChain> NodeArrayRef::to_method_chain() {
 	return method_chain;
 }
 
-std::unique_ptr<NodeAST> NodeArrayRef::get_size(std::unique_ptr<NodeAST> dim) {
+std::unique_ptr<NodeAST> NodeArrayRef::get_size() {
 	auto new_ref = clone_as<NodeArrayRef>(this);
 	new_ref->index = nullptr;
 	new_ref->ty = get_declaration()->ty;
@@ -200,16 +200,13 @@ std::unique_ptr<NodeReference> NodeArrayRef::inflate_dimension(std::unique_ptr<N
 	return node_ndarray_ref;
 }
 
-//std::unique_ptr<NodeBlock> NodeArrayRef::iterate_over() {
-//	auto node_block = std::make_unique<NodeBlock>(tok);
-//	auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, tok);
-//	node_iterator->is_local = true;
-//	auto node_iterator_ref = node_iterator->to_reference();
-//	auto node_iterator_decl = std::make_unique<NodeSingleDeclaration>(std::move(node_iterator), nullptr, tok);
-//	node_block->add_as_stmt(std::move(node_iterator_decl));
-//	auto node_assign =
-//
-//}
+NodeBlock* NodeArrayRef::iterate_over(std::unique_ptr<NodeBlock>& for_loop_block, NodeProgram* program) {
+	for_loop_block->scope = true;
+	auto iterator = ASTVisitor::get_iterator_var(tok, program->def_provider->get_fresh_name("_iter"));
+	set_index(iterator->to_reference());
+	ty = ty->get_element_type();
+	return for_loop_block->wrap_in_loop(std::move(iterator), std::make_unique<NodeInt>(0, tok), get_size());
+}
 
 // ************* NodeNDArrayRef ***************
 NodeAST *NodeNDArrayRef::accept(struct ASTVisitor &visitor) {
@@ -231,11 +228,21 @@ ASTLowering* NodeNDArrayRef::get_data_lowering(NodeProgram *program) const {
     return &lowering;
 }
 
+std::unique_ptr<NodeAST> NodeNDArrayRef::get_size() {
+	// if indexes are set and no wildcards -> size is 1
+	if(indexes and num_wildcards() == 0) {
+		return std::make_unique<NodeInt>(1, tok);
+	}
+	auto ref = clone_as<NodeNDArrayRef>(this);
+	ref->ty = get_declaration()->ty;
+	return std::make_unique<NodeNumElements>(std::move(ref), nullptr, tok);
+}
+
 std::unique_ptr<NodeAST> NodeNDArrayRef::get_size(std::unique_ptr<NodeAST> dim) {
 	auto ref = clone_as<NodeNDArrayRef>(this);
 	ref->indexes = nullptr;
 	ref->ty = get_declaration()->ty;
-	return std::make_unique<NodeNumElements>(std::move(ref), dim ? std::move(dim) : nullptr, tok);
+	return std::make_unique<NodeNumElements>(std::move(ref), std::move(dim), tok);
 }
 
 
@@ -244,8 +251,20 @@ std::unique_ptr<NodeArrayRef> NodeNDArrayRef::to_array_ref(std::unique_ptr<NodeA
 }
 
 bool NodeNDArrayRef::determine_sizes() {
-	if(!get_declaration()) return false;
-	if(get_declaration()->get_node_type() != NodeType::NDArray) return false;
+	if(!get_declaration()) {
+		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+		error.m_message = "NDArray reference has no declaration.";
+		error.exit();
+		return false;
+	}
+	if(get_declaration()->get_node_type() != NodeType::NDArray) {
+		if(get_declaration()->get_node_type() == NodeType::List) return false;
+		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+		error.m_message = "NDArray reference has to be declared as NDArray.";
+		error.m_got = get_declaration()->get_string();
+		error.exit();
+		return false;
+	}
 	auto node_ndarray = static_pointer_cast<NodeNDArray>(get_declaration());
 	// has no size if function definition parameter
 	if(!node_ndarray->sizes) {
@@ -347,6 +366,53 @@ std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() {
 		error.exit();
 	}
 	return {wildcard_start, wildcard_end};
+}
+
+NodeBlock* NodeNDArrayRef::iterate_over(std::unique_ptr<NodeBlock> &body, NodeProgram* program) {
+	if(!indexes) {
+		determine_sizes();
+		add_wildcards();
+	}
+	// if whole ndarray should be iterated over
+	if(num_wildcards() == 0) {
+		for(int i = 0; i<indexes->size(); i++) {
+			indexes->set_param(i, std::make_unique<NodeWildcard>("*", tok));
+		}
+	}
+
+	// replace every wildcard in index with iterator
+	std::vector<std::shared_ptr<NodeDataStructure>> iterators;
+	std::vector<std::unique_ptr<NodeAST>> lower_bounds;
+	std::vector<std::unique_ptr<NodeAST>> upper_bounds;
+	for(int i = 0; i< indexes->size(); i++) {
+		if(indexes->param(i)->cast<NodeWildcard>()) {
+			auto node_iterator = ASTVisitor::get_iterator_var(indexes->param(i)->tok, program->def_provider->get_fresh_name("_iter"));
+			iterators.push_back(node_iterator);
+			auto lower_bound = std::make_unique<NodeInt>(0, tok);
+			lower_bounds.push_back(std::move(lower_bound));
+			auto upper_bound = get_size(std::make_unique<NodeInt>(i+1, tok));
+			upper_bounds.push_back(std::move(upper_bound));
+			indexes->set_param(i, node_iterator->to_reference());
+		}
+	}
+	ty = ty->get_element_type();
+	// wrap body in loop nest
+	return body->wrap_in_loop_nest(iterators, std::move(lower_bounds), std::move(upper_bounds));
+
+}
+
+void NodeNDArrayRef::replace_next_wildcard_with_index(std::unique_ptr<NodeInt> new_index) {
+	if(!indexes) throw_missing_indexes_error();
+	if(!sizes) throw_missing_sizes_error();
+	if(num_wildcards() == 0) return;
+
+	auto wildcard_dimensions = get_wildcard_dimensions();
+	indexes->param(wildcard_dimensions.first)->replace_with(std::move(new_index));
+	if(wildcard_dimensions.second != wildcard_dimensions.first) {
+		for(int i = wildcard_dimensions.first+1; i<=wildcard_dimensions.second; i++) {
+			indexes->param(i)->replace_with(std::make_unique<NodeInt>(0, indexes->param(i)->tok));
+		}
+	}
 }
 
 // ************* NodeFunctionHeaderRef ***************

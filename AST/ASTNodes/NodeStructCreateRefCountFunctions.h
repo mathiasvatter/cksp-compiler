@@ -160,7 +160,7 @@ public:
 			auto block = std::make_unique<NodeBlock>(stmt->tok);
 			block->add_as_stmt(std::move(stmt->statement));
 			block->wrap_in_loop(iterator, std::make_unique<NodeInt>(0, tok), static_cast<NodeComposite*>(mem.get())->get_size(), false);
-			block->get_last_statement()->desugar(nullptr);
+//			block->get_last_statement()->desugar(nullptr);
 			stmt->set_statement(std::move(block));
 		}
 	}

@@ -40,11 +40,11 @@ if(scope)
 
     // ------ initializer list of a single object
     declare lists[10]: List[] := (ls)
-    retain(lists[0] 10 // increase ref count by num_elements of lists)
+    retain(lists[0], 10) // increase ref count by num_elements of lists)
     
     // ------ initializer list of a single object
     declare more_lists[10,10]: List[][] := (ls)
-    retain(more_lists[0,0] 10*10 // increase ref count by num_elements of more_lists)
+    retain(more_lists[0,0] 10*10) // increase ref count by num_elements of more_lists)
 
     // ----- initializer list of multiple objects
     declare lists[10] := List[] := (ls, ls1, ls2)
@@ -59,14 +59,33 @@ if(scope)
     // ------ copy of array
     declare lists1[10] := lists
 
+
     // ------ ndarray
     declare more_lists[10,10]: List[][] := (ls, ls1, ls2)
 
     // --------- Assignmnets
 
+    // array copy array
+    delete lists
+    lists := lists1
+    retain(lists)
+
+    delete lists[*, 1]
+    lists[*, 1] := lists[*, 0] // <- same handling? as array copy
+    retain(lists[*, 1], 1)
+
+
     delete lists // delete complete array in for loop
     lists := (ls) // <-
     retain(lists, num_elements(lists))
+
+    delete lists[0]
+    delete lists[1]
+    delete lists[2]
+    lists := (ls, ls1, ls2) // <-
+    retain(lists[0], 1)
+    retain(lists[1], 1)
+    retain(lists[2], 1)
 
     delete more_lists // delete complete array in for loop
     more_lists[*, *] := (ls) // <-

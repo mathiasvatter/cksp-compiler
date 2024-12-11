@@ -37,6 +37,23 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	return &node;
 }
 
+NodeAST* ASTCollectLowerings::visit(NodeForEach& node) {
+	if(node.key) node.key->accept(*this);
+	if(node.value) node.value->accept(*this);
+	node.range->accept(*this);
+	node.body->accept(*this);
+	// accept again to desugar resulting for loops
+	return node.lower(m_program)->accept(*this);
+}
+
+NodeAST* ASTCollectLowerings::visit(NodeFor& node) {
+	node.iterator->accept(*this);
+	node.iterator_end->accept(*this);
+	if(node.step) node.step->accept(*this);
+	node.body->accept(*this);
+	return node.lower(m_program)->accept(*this);
+}
+
 NodeAST * ASTCollectLowerings::visit(NodeBlock& node) {
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);

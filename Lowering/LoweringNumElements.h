@@ -66,8 +66,11 @@ public:
 				error.exit();
 			}
 
+			// check if node is ndarray ref -> check for wildcard index notation and adjust dimension param accordingly
+			handle_wildcard_notation(*node_ndarray, *nd_array, node);
+
 			// if node.dimension is set -> check variable member inflation_times
-			if(node.dimension and nd_array->inflation_times > 0) {
+			if(nd_array->inflation_times > 0) {
 				node.dimension = std::make_unique<NodeBinaryExpr>(
 					token::ADD,
 					std::move(node.dimension),
@@ -76,9 +79,6 @@ public:
 				);
 				nd_array->inflation_times = 0;
 			}
-
-			// check if node is ndarray ref -> check for wildcard index notation and adjust dimension param accordingly
-			handle_wildcard_notation(*node_ndarray, *nd_array, node);
 
 			// add clip function when ndarray is used
 			add_clip_function(m_program);

@@ -10,8 +10,8 @@
 #include "../../Desugaring/DesugarDelete.h"
 #include "../../Lowering/LoweringFunctionCall.h"
 #include "../../Desugaring/DesugaringFamily.h"
-#include "../../Desugaring/DesugarFor.h"
-#include "../../Desugaring/DesugarForEach.h"
+#include "../../Lowering/LoweringFor.h"
+#include "../../Lowering/LoweringForEach.h"
 #include "../../Desugaring/DesugarFunctionCall.h"
 #include "../../Lowering/LoweringWhile.h"
 #include "../../Lowering/LoweringMemAlloc.h"
@@ -25,6 +25,7 @@
 #include "../../Lowering/PostLowering/PostLoweringSingleDeclaration.h"
 #include "../../Lowering/LoweringSortSearch.h"
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
+#include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
@@ -515,6 +516,11 @@ ASTDesugaring * NodeSingleAssignment::get_desugaring(NodeProgram *program) const
 //    return this->l_value->get_data_lowering(program);
 //}
 
+NodeAST *NodeSingleAssignment::do_array_normalization(NodeProgram *program) {
+	static NormalizeArrayAssign array_assign(program);
+	return accept(array_assign);
+}
+
 // ************* NodeDeclaration ***************
 NodeAST *NodeDeclaration::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
@@ -597,6 +603,11 @@ std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(Node
     );
 	node_assign_statement->has_object = this->has_object;
     return node_assign_statement;
+}
+
+NodeAST *NodeSingleDeclaration::do_array_normalization(NodeProgram *program) {
+	static NormalizeArrayAssign array_assign(program);
+	return accept(array_assign);
 }
 
 // ************* NodeFunctionParam ***************
@@ -785,11 +796,12 @@ void NodeBlock::flatten(bool force) {
 }
 
 
-void NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>> iterators,
+NodeBlock* NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>> iterators,
 								  std::vector<std::unique_ptr<NodeAST>> lower_bounds,
 								  std::vector<std::unique_ptr<NodeAST>> upper_bounds) {
 	std::unique_ptr<NodeBlock> inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
 	inner_body->scope = true;
+	NodeBlock* for_loop_body = nullptr;
 	for (int i = (int)iterators.size()-1; i>=0 ; i--) {
 		auto node_for = std::make_unique<NodeFor>(
 			std::make_unique<NodeSingleAssignment>(iterators[i]->to_reference(), std::move(lower_bounds[i]), Token()),
@@ -798,8 +810,10 @@ void NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>
 			std::move(inner_body),
 			Token()
 		);
+		if(i == (int) iterators.size()-1) for_loop_body = node_for->body.get();
 		inner_body = std::make_unique<NodeBlock>(Token(), true);
 		inner_body->add_as_stmt(std::move(node_for));
+		inner_body->get_last_statement()->lower(nullptr);
 	}
 	for(auto & iterator : iterators) {
 		iterator->is_local = true;
@@ -807,10 +821,13 @@ void NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>
 		inner_body->prepend_as_stmt(std::move(node_decl));
 	}
 	statements = std::move(inner_body->statements);
+	scope = true;
 	this->set_child_parents();
+	this->collect_references();
+	return for_loop_body;
 }
 
-void NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound, bool declare) {
+NodeBlock* NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound, bool declare) {
 	std::unique_ptr<NodeBlock> inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
 	inner_body->scope = true;
 	auto node_for = std::make_unique<NodeFor>(
@@ -820,15 +837,20 @@ void NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::u
 		std::move(inner_body),
 		Token()
 	);
+	auto for_loop_body = node_for->body.get();
 	inner_body = std::make_unique<NodeBlock>(Token(), true);
 	inner_body->add_as_stmt(std::move(node_for));
+	inner_body->get_last_statement()->lower(nullptr);
 	iterator->is_local = true;
 	if(declare) {
 		auto node_decl = std::make_unique<NodeSingleDeclaration>(iterator, nullptr, Token());
 		inner_body->prepend_as_stmt(std::move(node_decl));
 	}
 	statements = std::move(inner_body->statements);
+	scope = true;
 	this->set_child_parents();
+	this->collect_references();
+	return for_loop_body;
 }
 
 // ************* NodeFamily ***************
@@ -886,13 +908,21 @@ NodeAST *NodeFor::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newC
     if (iterator_end.get() == oldChild) {
         iterator_end = std::move(newChild);
         return iterator_end.get();
-    }
+    } else if (step.get() == oldChild) {
+		step = std::move(newChild);
+		return step.get();
+	}
     return nullptr;
 }
 
-ASTDesugaring * NodeFor::get_desugaring(NodeProgram *program) const {
-    static DesugarFor desugaring(program);
-    return &desugaring;
+//ASTDesugaring * NodeFor::get_desugaring(NodeProgram *program) const {
+//    static LoweringFor desugaring(program);
+//    return &desugaring;
+//}
+
+ASTLowering * NodeFor::get_lowering(NodeProgram *program) const {
+	static LoweringFor lowering(program);
+	return &lowering;
 }
 
 // ************* NodeForEach ***************
@@ -900,8 +930,8 @@ NodeAST *NodeForEach::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeForEach::NodeForEach(const NodeForEach& other)
-        : NodeInstruction(other), keys(clone_vector(other.keys)), range(clone_unique(other.range)),
-          body(clone_unique(other.body)) {
+        : NodeInstruction(other), key(clone_unique(other.key)), value(clone_unique(other.value)),
+		range(clone_unique(other.range)), body(clone_unique(other.body)) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeForEach::clone() const {
@@ -915,9 +945,59 @@ NodeAST *NodeForEach::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> 
     return nullptr;
 }
 
-ASTDesugaring * NodeForEach::get_desugaring(NodeProgram *program) const {
-    static DesugarForEach desugaring(program);
-    return &desugaring;
+//ASTDesugaring * NodeForEach::get_desugaring(NodeProgram *program) const {
+//    static LoweringForEach desugaring(program);
+//    return &desugaring;
+//}
+
+ASTLowering * NodeForEach::get_lowering(NodeProgram *program) const {
+	static LoweringForEach lowering(program);
+	return &lowering;
+}
+
+// ************* NodePairs ***************
+NodeAST *NodePairs::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodePairs::NodePairs(const NodePairs& other)
+	: NodeInstruction(other), range(clone_unique(other.range)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodePairs::clone() const {
+	return std::make_unique<NodePairs>(*this);
+}
+NodeAST *NodePairs::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (range.get() == oldChild) {
+		range = std::move(newChild);
+		return range.get();
+	}
+	return nullptr;
+}
+
+// ************* NodeRange ***************
+NodeAST *NodeRange::accept(struct ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeRange::NodeRange(const NodeRange& other)
+	: NodeInstruction(other), start(clone_unique(other.start)), stop(clone_unique(other.stop)),
+	  step(clone_unique(other.step)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeRange::clone() const {
+	return std::make_unique<NodeRange>(*this);
+}
+NodeAST *NodeRange::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (start.get() == oldChild) {
+		start = std::move(newChild);
+		return start.get();
+	} else if (stop.get() == oldChild) {
+		stop = std::move(newChild);
+		return stop.get();
+	} else if (step.get() == oldChild) {
+		step = std::move(newChild);
+		return step.get();
+	}
+	return nullptr;
 }
 
 // ************* NodeWhile ***************
