@@ -32,12 +32,31 @@ for key := 0 to num_elements(array)-1
     message(key, array[key])
 end for
 
+// ******* Example 2, key, value pairs when ndarray
+declare ndarray[4, 5]: int[] := (1)
+for key, value in pairs(ndarray)
+	message(key, value)
+end for
+
+// Post Lowering
+declare ndarray[4, 5]: int[] := (1)
+declare local _iter0: int, local _iter1: int
+declare local key: int
+for _iter0 := 0 to num_elements(ndarray, 1)-1
+	for _iter1 := 0 to num_elements(ndarray, 2)-1
+        message(key, ndarray[_iter0, _iter1])
+        inc(key)
+    end for
+end for
+
+
 {-------------------------------------------------------------------------------------------
                                 range function
 --------------------------------------------------------------------------------------------}
 
 // ******* Example 3, range function (exclusive)
 // range(start: int, stop: int, step: int = 1) : int[]
+// ///// no doing this!!!!!!!
 for value in range(10)
 	message(value)
 end for
@@ -47,6 +66,34 @@ declare local _iter: int
 for _iter := 0 to 10-1
     message(_iter)
 end for
+
+// ******* REAL Example 3, range function (exclusive)
+// all args of range are variables and not known at compile time
+declare start: int := 4
+declare stop: int := 10
+declare step: int := 2
+for value in range(start, stop, step)
+	message(value)
+end for
+
+declare local value := start
+while (step > 0 and value < stop) or (step < 0 and value > stop)
+    message(value)
+    value += step
+end while
+
+
+for key, value in pairs(range(3, 10, 1))
+    message(key, value)
+end for	
+declare local key: int
+declare local value: int := 3
+while (1 > 0 and value < 10) or (1 < 0 and value > 10)
+    message(key, value)
+    value += 1
+    inc(key)
+end while
+
 
 {-------------------------------------------------------------------------------------------
                                 initializer list

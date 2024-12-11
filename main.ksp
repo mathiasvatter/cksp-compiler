@@ -78,11 +78,15 @@ on init
 	declare left := get_active_idx(menu_strip_val, 0)
 	message(left)
 
+	for key, value in pairs(range(3, 10, -1))
+		message(key, value)
+	end for	
+
 	declare array[4]: int[] := (1,2,3,4)
-	for value in menu_strip_val[*, *]
+	for key, value in pairs(menu_strip_val)
 		
-		for malue in array
-			message(value, malue)
+		for key, malue in pairs(array)
+			message(key, value, malue)
 	
 		end for		
 	end for

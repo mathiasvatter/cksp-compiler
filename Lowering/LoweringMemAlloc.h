@@ -29,7 +29,7 @@ public:
 		if(node.ptr->ty->cast<CompositeType>()) {
 			auto array_ref = static_cast<NodeCompositeRef*>(node.ptr.get());
 			auto new_block = std::make_unique<NodeBlock>(node.tok);
-			auto inner_block = array_ref->iterate_over(new_block);
+			auto inner_block = array_ref->iterate_over(new_block, m_program);
 			inner_block->prepend_as_stmt(get_ref_count_function_call("__incr__", std::move(node.ptr), std::move(node.num)));
 			return node.replace_with(std::move(new_block));
 		}
@@ -49,7 +49,7 @@ public:
 		if(node.ptr->ty->cast<CompositeType>()) {
 			auto array_ref = static_cast<NodeCompositeRef*>(node.ptr.get());
 			auto new_block = std::make_unique<NodeBlock>(node.tok);
-			auto inner_block = array_ref->iterate_over(new_block);
+			auto inner_block = array_ref->iterate_over(new_block, m_program);
 			inner_block->prepend_as_stmt(get_ref_count_function_call("__decr__", std::move(node.ptr), std::move(node.num)));
 			return node.replace_with(std::move(new_block));
 		}

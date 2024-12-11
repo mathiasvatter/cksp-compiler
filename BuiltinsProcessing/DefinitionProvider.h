@@ -157,9 +157,8 @@ public:
 		auto compile_error = CompileError(ErrorType::VariableError, "", "", node.tok);
 		std::string type = "<Variable>";
 		if(node.get_node_type() == NodeType::Array) type = "<Array>";
-		compile_error.m_message = type+" has not been declared: " + node.name+".";
+		compile_error.m_message = type+" has not been declared: " + node.tok.val+".";
 		compile_error.m_expected = "Valid declaration";
-		compile_error.m_got = node.name;
 		return compile_error;
 	};
 
@@ -167,13 +166,13 @@ public:
 		auto compile_error = CompileError(ErrorType::VariableError, "", "", node->tok);
 		if(!node->get_declaration()) throw_declaration_error(*node).exit();
 		if(node->get_declaration()->get_node_type() == NodeType::Array && node->get_node_type() == NodeType::Variable) {
-			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Array>: " + node->name+".";
+			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Array>: " + node->tok.val+".";
 			compile_error.m_expected = "<Array>";
 			compile_error.m_got = "<Variable>";
 			compile_error.exit();
 		}
 		if(node->get_declaration()->get_node_type() == NodeType::Variable && node->get_node_type() == NodeType::Array) {
-			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Variable>: " + node->name+".";
+			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Variable>: " + node->tok.val+".";
 			compile_error.m_expected = "<Variable>";
 			compile_error.m_got = "<Array>";
 			compile_error.exit();

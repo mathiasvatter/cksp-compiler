@@ -66,6 +66,7 @@ public:
 	NodeAST * visit(NodeStruct& node) override;
 	NodeAST * visit(NodeNumElements& node) override;
 	NodeAST * visit(NodePairs& node) override;
+	NodeAST * visit(NodeRange& node) override;
 	NodeAST * visit(NodeUseCount& node) override;
 	NodeAST * visit(NodeSortSearch& node) override;
 	NodeAST * visit(NodeForEach& node) override;

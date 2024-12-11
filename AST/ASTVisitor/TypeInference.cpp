@@ -322,6 +322,20 @@ NodeAST * TypeInference::visit(NodePairs& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeRange& node) {
+	node.start->accept(*this);
+	match_against(*node.start, TypeRegistry::Number);
+
+	node.stop->accept(*this);
+	match_against(*node.stop, TypeRegistry::Number);
+
+	node.step->accept(*this);
+	match_against(*node.step, TypeRegistry::Number);
+
+	match_against(node, TypeRegistry::ArrayOfUnknown);
+	return &node;
+}
+
 NodeAST * TypeInference::visit(NodeUseCount& node) {
 	node.ref->accept(*this);
 	if(!node.ref->ty->cast<ObjectType>()) {
@@ -355,7 +369,12 @@ NodeAST * TypeInference::visit(NodeSortSearch& node) {
 }
 
 NodeAST * TypeInference::visit(NodeForEach& node) {
-	for(auto &key : node.keys) key->accept(*this);
+	if(node.key) {
+		node.key->accept(*this);
+		match_against(*node.key->variable, TypeRegistry::Integer);
+	}
+
+	if(node.value) node.value->accept(*this);
 	node.range->accept(*this);
 	node.body->accept(*this);
 	return &node;
