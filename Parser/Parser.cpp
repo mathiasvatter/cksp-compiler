@@ -782,7 +782,7 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
         }
         stmt = std::move(if_stmt.unwrap());
     } else if (peek().type == token::FOR) {
-        if(is_ranged_for_loop()) {
+        if(is_for_each_syntax()) {
             auto for_stmt = parse_for_each_statement(node_statement.get());
             if (for_stmt.is_error()) {
                 return Result<std::unique_ptr<NodeStatement>>(for_stmt.get_error());
@@ -1588,7 +1588,7 @@ Result<std::unique_ptr<NodeFor>> Parser::parse_for_statement(NodeAST* parent) {
     return Result<std::unique_ptr<NodeFor>>(std::move(node_for_statement));
 }
 
-bool Parser::is_ranged_for_loop() {
+bool Parser::is_for_each_syntax() {
     size_t begin = m_pos;
     while(peek().type != token::LINEBRK) {
         if(peek().type == token::ASSIGN) {
@@ -1612,7 +1612,7 @@ Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* p
     consume();
 
 	// make it possible to have more than one variable before assign
-	std::vector<std::unique_ptr<NodeReference>> keys;
+	std::vector<std::unique_ptr<NodeVariable>> pair;
 	if(peek().type == token::COMMA) {
 		auto error = CompileError(ErrorType::SyntaxError, "Found invalid <For-each> Statement Syntax.", "", peek());
 		error.m_message += " <key, value> pair references must not start with a <comma>.";
@@ -1622,30 +1622,40 @@ Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* p
 		if(peek().type == token::COMMA) consume();
 		// ui_control
 		if (peek().type == token::KEYWORD) {
-			auto ref = parse_variable_ref(node_for_statement.get());
-			if (ref.is_error()) {
-				return Result<std::unique_ptr<NodeForEach>>(ref.get_error());
+			auto variable = parse_variable(node_for_statement.get());
+			if (variable.is_error()) {
+				return Result<std::unique_ptr<NodeForEach>>(variable.get_error());
 			}
-			auto reference = std::move(ref.unwrap());
-			keys.push_back(std::unique_ptr<NodeReference>(std::move(reference)));
+			auto var = std::move(variable.unwrap());
+			var->is_local = true;
+			pair.push_back(std::move(var));
 		} else {
 			return Result<std::unique_ptr<NodeForEach>>(CompileError(ErrorType::ParseError,
 				"Incorrect syntax in <key, value> pair.", "<variable>", peek()));
 		}
 	} while(peek().type == token::COMMA);
-	if(keys.size() != 2) {
+	if(pair.size() > 2) {
 		auto error = CompileError(ErrorType::SyntaxError, "Found invalid <For-each> Statement Syntax.", "", peek());
-		error.m_message += " <key, value> pair references must be exactly two.";
+		error.m_message += " <key> or <key, value> pairs cannot have more than two variables.";
 		error.exit();
+	}
+	std::unique_ptr<NodeFunctionParam> key;
+	std::unique_ptr<NodeFunctionParam> value;
+	if(pair.size() == 1) {
+		value = std::make_unique<NodeFunctionParam>(std::move(pair[0]));
+	}
+	if(pair.size() == 2) {
+		key = std::make_unique<NodeFunctionParam>(std::move(pair[0]));
+		value = std::make_unique<NodeFunctionParam>(std::move(pair[1]));
 	}
 
     if(peek().type != token::IN)
         return Result<std::unique_ptr<NodeForEach>>(CompileError(ErrorType::SyntaxError,
                                                                  "Incorrect Syntax for range-based <for-loop>.", "in", peek()));
     Token to = consume(); //consume in
-    auto expression_stmt = parse_binary_expr(node_for_statement.get());
-    if(expression_stmt.is_error()) {
-        return Result<std::unique_ptr<NodeForEach>>(expression_stmt.get_error());
+    auto reference = parse_reference_chain(node_for_statement.get());
+    if(reference.is_error()) {
+        return Result<std::unique_ptr<NodeForEach>>(reference.get_error());
     }
     if(peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeForEach>>(CompileError(ErrorType::SyntaxError,
@@ -1664,8 +1674,9 @@ Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* p
             node_body->statements.push_back(std::move(stmt.unwrap()));
     }
     consume(); // consume end for
-    node_for_statement->keys = std::move(keys);
-    node_for_statement->range = std::move(expression_stmt.unwrap());
+    node_for_statement->key = std::move(key);
+	node_for_statement->value = std::move(value);
+    node_for_statement->range = std::move(reference.unwrap());
     node_for_statement->body = std::move(node_body);
     node_for_statement->set_child_parents();
     node_for_statement->parent = parent;

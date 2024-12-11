@@ -79,11 +79,11 @@ elif [[ $# -eq 0 ]]; then
     VERSION=$("$BUILD_DIR/cksp" --version | awk '{print $3}')
     CURRENT_TAG="v${VERSION}"
     # Überprüfen, ob der Tag bereits existiert, und falls ja, löschen
-    if git rev-parse "$CURRENT_TAG" >/dev/null 2>&1; then
-        echo "Tag '$CURRENT_TAG' already exists. Deleting the tag..."
-        git tag -d "$CURRENT_TAG"    # Löscht den lokalen Tag
-        git push --delete origin "$CURRENT_TAG"   # Löscht den Tag aus dem Remote-Repository
-    fi
+    # if git rev-parse "$CURRENT_TAG" >/dev/null 2>&1; then
+    #     echo "Tag '$CURRENT_TAG' already exists. Deleting the tag..."
+    #     git tag -d "$CURRENT_TAG"    # Löscht den lokalen Tag
+    #     git push --delete origin "$CURRENT_TAG"   # Löscht den Tag aus dem Remote-Repository
+    # fi
 
     # Finde den letzten Tag (gehe davon aus, dass Tags Versionsnummern entsprechen)
     LAST_TAG=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null) # Unterdrückt Fehlermeldungen

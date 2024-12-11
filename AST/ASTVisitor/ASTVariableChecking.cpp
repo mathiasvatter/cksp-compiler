@@ -333,6 +333,19 @@ NodeAST* ASTVariableChecking::visit(NodeListRef& node) {
 	return &node;
 }
 
+NodeAST* ASTVariableChecking::visit(NodeForEach& node) {
+	m_def_provider->add_scope();
+
+	if(node.key) node.key->accept(*this);
+	if(node.value) node.value->accept(*this);
+	node.range->accept(*this);
+	node.body->accept(*this);
+
+	m_def_provider->remove_scope();
+
+	return &node;
+};
+
 NodeAST* ASTVariableChecking::visit(NodeConst& node) {
 	for(auto& stmt : node.constants->statements) {
 		stmt->accept(*this);

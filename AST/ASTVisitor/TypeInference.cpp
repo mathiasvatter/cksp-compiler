@@ -189,6 +189,9 @@ NodeAST * TypeInference::visit(NodeArray& node) {
 }
 
 NodeAST * TypeInference::visit(NodeArrayRef& node) {
+	if(node.name == "left") {
+
+	}
 	if(node.index) node.index->accept(*this);
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
@@ -312,6 +315,38 @@ NodeAST * TypeInference::visit(NodeNumElements& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodePairs& node) {
+	node.range->accept(*this);
+	match_against(*node.range, TypeRegistry::NDArrayOfUnknown, "<pairs> can only be used on <Composite> types like <Arrays> or <NDArrays>.");
+	match_against(node, TypeRegistry::add_composite_type(CompoundKind::Array, node.range->ty->get_element_type(), 2));
+	return &node;
+}
+
+NodeAST * TypeInference::visit(NodeRange& node) {
+	node.start->accept(*this);
+	match_against(*node.start, TypeRegistry::Number);
+
+	node.stop->accept(*this);
+	match_against(*node.stop, TypeRegistry::Number);
+
+	node.step->accept(*this);
+	match_against(*node.step, TypeRegistry::Number);
+
+	match_against(node, TypeRegistry::ArrayOfUnknown);
+	return &node;
+}
+
+NodeAST * TypeInference::visit(NodeUseCount& node) {
+	node.ref->accept(*this);
+	if(!node.ref->ty->cast<ObjectType>()) {
+		auto error = CompileError(ErrorType::TypeError, "", "", node.ref->tok);
+		error.m_message = "<use_count> can only be used on <Object> types.";
+		error.exit();
+	}
+	match_against(node, TypeRegistry::Integer);
+	return &node;
+};
+
 NodeAST * TypeInference::visit(NodeSortSearch& node) {
 	node.array->accept(*this);
 	match_against(*node.array, TypeRegistry::NDArrayOfInt, "<search> can only be used on <Composite> types like <Arrays> or <NDArrays>.");
@@ -332,6 +367,18 @@ NodeAST * TypeInference::visit(NodeSortSearch& node) {
 	}
 	return &node;
 }
+
+NodeAST * TypeInference::visit(NodeForEach& node) {
+	if(node.key) {
+		node.key->accept(*this);
+		match_against(*node.key->variable, TypeRegistry::Integer);
+	}
+
+	if(node.value) node.value->accept(*this);
+	node.range->accept(*this);
+	node.body->accept(*this);
+	return &node;
+};
 
 NodeAST * TypeInference::visit(NodeAccessChain& node) {
 

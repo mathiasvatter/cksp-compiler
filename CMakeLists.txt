@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.0.7)
-set(PRE_RELEASE_VERSION "-alpha.1")
+set(PRE_RELEASE_VERSION "-alpha.2")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -125,8 +125,8 @@ add_executable(cksp main.cpp
         Desugaring/DesugaringFamily.h
         Desugaring/ASTDesugaring.h
         Desugaring/DesugarDeclareAssign.h
-        Desugaring/DesugarFor.h
-        Desugaring/DesugarForEach.h
+        Lowering/LoweringFor.h
+        Lowering/LoweringForEach.h
         misc/Gensym.h
         misc/Timer.h
         Compiler.h

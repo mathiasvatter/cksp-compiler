@@ -77,7 +77,24 @@ on init
 	declare menu_strip_val[3,3]
 	declare left := get_active_idx(menu_strip_val, 0)
 	message(left)
+
+	for key, value in pairs(range(3, 10, -1))
+		message(key, value)
+	end for	
+
+	declare array[4]: int[] := (1,2,3,4)
+	for key, value in pairs(menu_strip_val)
+		
+		for key, malue in pairs(array)
+			message(key, value, malue)
 	
+		end for		
+	end for
+	
+	// for val in menu_strip_val
+	// 	message(val)
+	// end for	
+
 	// declare ui_menu mnu: int, i
 	// declare ari[2]
  	// mnu->value := (mnu->value + 1) mod num_elements(ari)
@@ -101,7 +118,7 @@ on init
 	// end for
 	// btn_1, _ := return_twice()
 	declare n[10] := (0)
-	declare array[10] := (1)
+	// declare array[10] := (1)
 	message(array.SIZE)
 	declare this_list: List // := nil
 	this_list := List(42, nil)
@@ -122,8 +139,8 @@ on init
 	message(search_matrix(ndarray2, 3), "3", "f")
 	message(num_elements(ndarray, 2), num_elements(ndarray[*, 0]))
 	declare local ptr_array[10]
-	for idx, ptr in ptr_array
-		ptr := Point(idx, idx+1)
+	for ptr in ptr_array
+		ptr := Point(1,2+1)
 	end for
 	declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
 	declare local ptr_array3[10] := ptr_array
@@ -179,7 +196,7 @@ end function
 											* UI CALLBACKS *
 *******************************************************************************************************************}
 on note
-	
+	declare node_array[4]: int[] := (1,2,3,4)
 	declare note := EVENT_NOTE
 	declare event_id := EVENT_ID
 	wait(10)

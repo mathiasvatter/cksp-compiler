@@ -23,6 +23,7 @@
 #include "../ASTVisitor/GlobalScope/ASTRegisterReuse.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h"
 #include "../../Optimization/ConstantFolding.h"
+#include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -181,6 +182,11 @@ void NodeAST::do_constant_folding() {
 	accept(constant_folding);
 }
 
+NodeAST *NodeAST::do_array_normalization(NodeProgram *program) {
+	static NormalizeArrayAssign array_assign(program);
+	return accept(array_assign);
+}
+
 // ************* NodeDataStructure ***************
 NodeAST *NodeDataStructure::accept(struct ASTVisitor &visitor) {
 	return nullptr;
@@ -188,7 +194,7 @@ NodeAST *NodeDataStructure::accept(struct ASTVisitor &visitor) {
 NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
 	  is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
-	  is_local(other.is_local), is_global(other.is_global),
+	  is_local(other.is_local), is_global(other.is_global), is_thread_safe(other.is_thread_safe),
 	  data_type(other.data_type), name(other.name), has_obj_assigned(other.has_obj_assigned),
 	  references(other.references) {
 	set_child_parents();
@@ -401,6 +407,10 @@ bool NodeReference::is_func_arg() {
 	if(!this->parent->parent) return false;
 	return this->parent->cast<NodeParamList>() and
 		this->parent->parent->cast<NodeFunctionHeaderRef>();
+}
+
+std::unique_ptr<NodeAST> NodeReference::get_size() {
+	return std::make_unique<NodeInt>(1, tok);
 }
 
 // ************* NodeInstruction ***************

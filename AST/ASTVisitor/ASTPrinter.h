@@ -18,6 +18,8 @@ public:
 	NodeAST * visit(NodeBreak& node) override;
 	NodeAST * visit(NodeNumElements& node) override;
 	NodeAST * visit(NodeSortSearch& node) override;
+	NodeAST * visit(NodePairs& node) override;
+	NodeAST * visit(NodeRange& node) override;
 	NodeAST * visit(NodeSingleReturn& node) override;
 	NodeAST * visit(NodeDelete& node) override;
 	NodeAST * visit(NodeSingleDelete& node) override;
@@ -50,6 +52,7 @@ public:
 	NodeAST * visit(NodeIf& node) override;
 	NodeAST * visit(NodeWhile& node) override;
 	NodeAST * visit(NodeFor& node) override;
+	NodeAST * visit(NodeForEach& node) override;
 	NodeAST * visit(NodeSelect& node) override;
 	NodeAST * visit(NodeCallback& node) override;
 	NodeAST * visit(NodeFunctionHeaderRef& node) override;

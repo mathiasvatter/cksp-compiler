@@ -136,7 +136,7 @@ protected:
     Result<std::unique_ptr<NodeStatement>> parse_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeIf>> parse_if_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeFor>> parse_for_statement(NodeAST* parent);
-    bool is_ranged_for_loop();
+    bool is_for_each_syntax();
     Result<std::unique_ptr<NodeForEach>> parse_for_each_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeWhile>> parse_while_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeSelect>> parse_select_statement(NodeAST* parent);

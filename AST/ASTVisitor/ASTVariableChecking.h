@@ -41,6 +41,7 @@ public:
 
 	NodeAST * visit(NodeAccessChain& node) override;
 
+	NodeAST * visit(NodeForEach& node) override;
 	NodeAST * visit(NodeConst& node) override;
 	NodeAST * visit(NodeStruct& node) override;
 
