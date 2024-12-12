@@ -167,10 +167,15 @@ jobs:
             git tag -a "$TAG" -m "Release $TAG"
             git push origin "$TAG"
 
-      - name: Zip _Releases folder
-        run: |
-            zip -r _Releases/${{ needs.build-macos.outputs.version_dir }}.zip _Releases/${{ needs.build-macos.outputs.version_dir }} -x "*.DS_Store"
+      # - name: Zip _Releases folder
+      #   run: |
+      #       zip -r _Releases/${{ needs.build-macos.outputs.version_dir }}.zip _Releases/${{ needs.build-macos.outputs.version_dir }} -x "*.DS_Store"
     
+      - name: Zip version_dir folder
+        run: |
+            cd _Releases && zip -r ${{ needs.build-macos.outputs.version_dir }}.zip ${{ needs.build-macos.outputs.version_dir }} -x "*.DS_Store"
+          
+
       - name: Delete GitHub release if it exists
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
