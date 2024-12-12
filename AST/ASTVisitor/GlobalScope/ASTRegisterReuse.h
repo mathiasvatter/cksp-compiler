@@ -234,13 +234,6 @@ private:
 		return &node;
 	}
 
-//	NodeAST* replace_declare_with_assign(NodeSingleDeclaration& decl, std::unique_ptr<NodeAST> assign) {
-//		auto new_node = decl.replace_with(std::move(assign));
-//		if(auto ass = new_node->cast<NodeSingleAssignment>()) {
-//			ass->do_array_normalization(m_program);
-//		}
-//	}
-
 	inline NodeAST* visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
 

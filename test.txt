@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.2 on Thu Dec 12 14:12:54 2024 }
+{ Compiled with cksp version 0.0.7-alpha.2 on Thu Dec 12 18:25:06 2024 }
 on init
   declare $row0
   declare $col0
@@ -7,7 +7,8 @@ on init
   declare $RETURN_FLAG00
   declare $_iter10
   declare $current0
-  declare $_iter7
+  declare %_node_array0__num_elements[3] := (400, 100, 4)
+  declare %_node_array0[400]
   declare %note0[100]
   declare $Point__free_idx
   declare %Point__allocation[1000000]
@@ -226,11 +227,6 @@ on init
   message(%_ndarray__num_elements[2] & ", " & %_ndarray__num_elements[1])
   declare %ptr_array[10]
   $pupsi0 := 0
-  while($pupsi0 < num_elements(%ptr_array)) 
-    %ptr_array[$pupsi0] := 0
-    inc($pupsi0)
-  end while
-  $pupsi0 := 0
   while($pupsi0 <= (num_elements(%ptr_array) - 1)) 
     $Point__free_idx := search(%Point__allocation, 0)
     if($Point__free_idx = -1)
@@ -325,17 +321,11 @@ on init
   end while
 end on
 on note
-  declare %_node_array__num_elements[3] := (400, 100, 4)
-  declare %_node_array[400]
-  $_iter7 := 0
-  while($_iter7 < num_elements(%_node_array)) 
-    %_node_array[$_iter7] := 0
-    inc($_iter7)
-  end while
-  %_node_array[(($NI_CALLBACK_ID mod 100) * 4) + 0] := 1
-  %_node_array[(($NI_CALLBACK_ID mod 100) * 4) + 1] := 2
-  %_node_array[(($NI_CALLBACK_ID mod 100) * 4) + 2] := 3
-  %_node_array[(($NI_CALLBACK_ID mod 100) * 4) + 3] := 4
+  %_node_array0[(($NI_CALLBACK_ID mod 100) * 4) + 0] := 1
+  %_node_array0[(($NI_CALLBACK_ID mod 100) * 4) + 1] := 2
+  %_node_array0[(($NI_CALLBACK_ID mod 100) * 4) + 2] := 3
+  %_node_array0[(($NI_CALLBACK_ID mod 100) * 4) + 3] := 4
+  message(%_node_array0[(($NI_CALLBACK_ID mod 100) * 4) + (2 + $EVENT_NOTE)])
   %note0[$NI_CALLBACK_ID mod 100] := $EVENT_NOTE
   wait(10)
   if(%note0[$NI_CALLBACK_ID mod 100] = 0)
