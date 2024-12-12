@@ -284,6 +284,7 @@ void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>&
 	is_engine = data_structure->is_engine;
 	is_local = data_structure->is_local;
 	data_type = data_structure->data_type;
+	is_thread_safe = data_structure->is_thread_safe;
 }
 
 void NodeDataStructure::clear_references() {
