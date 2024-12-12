@@ -24,6 +24,7 @@
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h"
 #include "../../Optimization/ConstantFolding.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
+#include "../../Lowering/LoweringInitializerList.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -565,8 +566,8 @@ void NodeParamList::flatten() {
 	// Rekursive Funktion, um die Parameterliste abzuflachen
 	std::function<void(std::vector<std::unique_ptr<NodeAST>>)> flatten = [&](std::vector<std::unique_ptr<NodeAST>> current_node) {
 	  for (auto& param : current_node) {
-		  if (param->get_node_type() == NodeType::ParamList) {
-			  flatten(std::move(static_cast<NodeParamList*>(param.get())->params));
+		  if (auto param_list = param->cast<NodeParamList>()) {
+			  flatten(std::move(param_list->params));
 		  } else {
 			  // Wenn es kein NodeParamList ist, fügen wir es direkt zur Liste hinzu
 			  param->parent = this;
@@ -585,8 +586,8 @@ std::unique_ptr<struct NodeInitializerList> NodeParamList::to_initializer_list()
 	// Gehe durch alle Parameter der Parameterliste
 	for (auto& param : params) {
 		// Falls der Parameter selbst eine verschachtelte NodeParamList ist, rufe die Methode rekursiv auf
-		if (param->get_node_type() == NodeType::ParamList) {
-			auto nested_initializer = static_cast<NodeParamList*>(param.get())->to_initializer_list();
+		if (auto param_list = param->cast<NodeParamList>()) {
+			auto nested_initializer = param_list->to_initializer_list();
 			initializer_list->add_element(std::move(nested_initializer));
 		} else {
 			// Falls es kein NodeParamList ist, füge das Element direkt der Initializer-Liste hinzu
@@ -635,8 +636,8 @@ void NodeInitializerList::flatten() {
 	// Rekursive Funktion, um die Parameterliste abzuflachen
 	std::function<void(std::vector<std::unique_ptr<NodeAST>>)> flatten = [&](std::vector<std::unique_ptr<NodeAST>> current_node) {
 	  for (auto& elem : current_node) {
-		  if (elem->get_node_type() == NodeType::InitializerList) {
-			  flatten(std::move(static_cast<NodeInitializerList*>(elem.get())->elements));
+		  if (auto init_list = elem->cast<NodeInitializerList>()) {
+			  flatten(std::move(init_list->elements));
 		  } else {
 			  // Wenn es kein NodeParamList ist, fügen wir es direkt zur Liste hinzu
 			  elem->parent = this;
@@ -663,11 +664,11 @@ std::vector<int> NodeInitializerList::get_dimensions() const {
 		  // Prüfen, ob die Parameter Listen sind oder normale Werte (also nicht tiefer verschachtelt)
 		  bool found_list = false;
 		  for (size_t i = 0; i < node->elements.size(); ++i) {
-			  if (node->elements[i]->get_node_type() == NodeType::InitializerList) {
+			  if (node->elements[i]->cast<NodeInitializerList>()) {
 				  found_list = true;
 				  // Vergewissere dich, dass alle inneren Listen die gleiche Größe haben
-				  if (static_cast<NodeInitializerList*>(node->elements[i].get())->elements.size() !=
-					  static_cast<NodeInitializerList*>(node->elements[0].get())->elements.size()) {
+				  if (node->elements[i]->cast<NodeInitializerList>()->elements.size() !=
+					  node->elements[0]->cast<NodeInitializerList>()->elements.size()) {
 					  valid = 0; // Ungleiche Größe der inneren Listen
 					  return {};
 				  }
@@ -681,7 +682,7 @@ std::vector<int> NodeInitializerList::get_dimensions() const {
 
 		  // Falls alle inneren Parameter ebenfalls Listen sind, gehe eine Dimension tiefer
 		  std::vector<int> next_dimensions =
-			  calculate_dimensions(static_cast<NodeInitializerList*>(node->elements[0].get()), valid);
+			  calculate_dimensions(node->elements[0]->cast<NodeInitializerList>(), valid);
 		  if (valid == 0) return {}; // Ungültig
 		  dimensions.insert(dimensions.end(), next_dimensions.begin(), next_dimensions.end());
 
@@ -698,6 +699,65 @@ std::vector<int> NodeInitializerList::get_dimensions() const {
 	}
 
 	return dimensions;
+}
+
+std::optional<std::unique_ptr<class NodeRange>> NodeInitializerList::transform_to_range() {
+	if (elements.size() < 2) {
+		return std::nullopt; // Nicht genug Elemente für eine Range
+	}
+	if(!ty) return std::nullopt;
+	if(ty->get_element_type() != TypeRegistry::Integer and ty->get_element_type() != TypeRegistry::Real) {
+		return std::nullopt;
+	}
+	std::vector<int32_t> int_values;
+	std::vector<double> real_values;
+	for (const auto &el : elements) {
+		if (auto int_el = el->cast<NodeInt>()) {
+			int_values.push_back(int_el->value);
+		} else if (auto real_el = el->cast<NodeReal>()) {
+			real_values.push_back(real_el->value);
+		} else {
+			return std::nullopt; // Ungültiger Typ
+		}
+	}
+
+	std::unique_ptr<NodeAST> node_start;
+	std::unique_ptr<NodeAST> node_stop;
+	std::unique_ptr<NodeAST> node_step;
+
+	// Liste der Werte extrahieren
+	if (!int_values.empty()) {
+		// Schrittweite berechnen und prüfen
+		int step = int_values[1] - int_values[0];
+		for (size_t i = 1; i < int_values.size() - 1; ++i) {
+			if (int_values[i + 1] - int_values[i] != step) {
+				return std::nullopt; // Uneinheitliche Schrittweite
+			}
+		}
+		node_start = std::make_unique<NodeInt>(int_values.front(), tok);
+		node_stop = std::make_unique<NodeInt>(int_values.back(), tok);
+		node_step = std::make_unique<NodeInt>(step, tok);
+	} else if (!real_values.empty()) {
+		// Schrittweite berechnen und prüfen
+		double step = real_values[1] - real_values[0];
+		for (size_t i = 1; i < real_values.size() - 1; ++i) {
+			if (std::abs(real_values[i + 1] - real_values[i] - step) > 1e-9) {
+				return std::nullopt; // Uneinheitliche Schrittweite
+			}
+		}
+		node_start = std::make_unique<NodeReal>(real_values.front(), tok);
+		node_stop = std::make_unique<NodeReal>(real_values.back(), tok);
+		node_step = std::make_unique<NodeReal>(step, tok);
+	} else {
+		return std::nullopt; // Sollte nie erreicht werden
+	}
+
+	return std::make_optional(std::make_unique<NodeRange>(std::move(node_start), std::move(node_stop), std::move(node_step), tok));
+}
+
+ASTLowering *NodeInitializerList::get_lowering(NodeProgram *program) const {
+	static LoweringInitializerList lowering(program);
+	return &lowering;
 }
 
 // ************* NodeUnaryExpr ***************
