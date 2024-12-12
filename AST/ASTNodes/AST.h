@@ -570,6 +570,10 @@ struct NodeInitializerList: NodeAST {
 	 * @throws CompileError if the sizes of nested lists are inconsistent.
 	 */
 	[[nodiscard]] std::vector<int> get_dimensions() const;
+	/// tries to find constant step size with start and stop and transform to range
+	std::optional<std::unique_ptr<class NodeRange>> transform_to_range();
+	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
+
 };
 
 struct NodeUnaryExpr : NodeAST {

@@ -33,11 +33,11 @@ public:
 private:
 	DefinitionProvider* m_def_provider;
 
-    std::unordered_map<std::string, std::unique_ptr<NodeReference>> m_value_substitution;
-    std::unique_ptr<NodeReference> get_value_substitute(const std::string& name) {
+    std::unordered_map<std::string, std::unique_ptr<NodeAST>> m_value_substitution;
+    std::unique_ptr<NodeAST> get_value_substitute(const std::string& name) {
 		auto it = m_value_substitution.find(name);
 		if(it != m_value_substitution.end()) {
-			return clone_as<NodeReference>(it->second.get());
+			return clone_as<NodeAST>(it->second.get());
 		}
         return nullptr;
     }
@@ -81,12 +81,8 @@ public:
 				error.m_got = "2";
 				error.exit();
 			}
-			if(node.range->cast<NodeRange>()) {
-
-			}
 			return node.replace_with(tackle_for_each(node));
 		}
-
 
 		return &node;
     }
@@ -121,6 +117,8 @@ public:
 			return std::move(node_scope);
 		} else if(auto range = node.range->cast<NodeRange>()) {
 			return lower_foreach_range(m_key, m_value, node);
+		} else if(node.range->cast<NodeInitializerList>()) {
+			return lower_foreach_initlist(m_key, m_value, node);
 		} else {
 			throw_range_composite_error(node.range->tok).exit();
 		}
@@ -141,6 +139,8 @@ public:
 			return std::move(node_scope);
 		} else if(auto range = node.range->cast<NodeRange>()) {
 			return lower_foreach_range(m_key, m_value, node);
+		} else if(node.range->cast<NodeInitializerList>()) {
+			return lower_foreach_initlist(m_key, m_value, node);
 		} else {
 			throw_range_composite_error(node.range->tok).exit();
 		}
@@ -179,10 +179,31 @@ public:
 		return std::move(node_scope);
 	}
 
+	std::unique_ptr<NodeBlock> lower_foreach_initlist(std::shared_ptr<NodeDataStructure>& key, std::shared_ptr<NodeDataStructure>& value, NodeForEach& node) {
+		auto node_scope = std::make_unique<NodeBlock>(node.tok, true);
+		auto init_list = node.range->cast<NodeInitializerList>();
+		init_list->flatten();
+		// inline loop -> for each element in initializer list
+		for(int i = 0; i < init_list->size(); i++) {
+			auto &val = init_list->elements[i];
+			// substitute val with value
+			m_value_substitution.insert({value->name, std::move(val)});
+			if(key) {
+				m_value_substitution.insert({key->name, std::make_unique<NodeInt>(i, node.tok)});
+			}
+			auto element_body = clone_as<NodeBlock>(node.body.get());
+			element_body->accept(*this);
+			m_value_substitution.clear();
+			node_scope->add_as_stmt(std::move(element_body));
+		}
+		return std::move(node_scope);
+	}
+
 	static CompileError throw_range_composite_error(Token tok) {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
 		error.m_message = "Found incorrect range in for-each syntax. Range has to be of type <Composite> which"
-						  " can be an array, a function or a multidimensional array";
+						  " can be an array, a function or a multidimensional array. This range parameter seems"
+						  " not to be recognized as valid.";
 		return error;
 	}
 

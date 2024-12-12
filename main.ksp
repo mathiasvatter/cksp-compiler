@@ -78,6 +78,11 @@ on init
 	declare left := get_active_idx(menu_strip_val, 0)
 	message(left)
 
+	for keks, number in pairs((0,3,6,9,12))
+		declare local pupsi := number		
+		message(keks, number)
+	end for	
+
 	for key, value in pairs(range(3, 10, -1))
 		message(key, value)
 	end for	
