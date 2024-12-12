@@ -138,19 +138,21 @@ jobs:
             git commit -m "Merge artifacts for version ${{ needs.build-macos.outputs.version_dir }}"
             git push origin master
 
-      - name: Delete existing Git tag
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-            git config user.name "GitHub Actions"
-            git config user.email "actions@github.com"
-            git fetch --tags
-            TAG="${{ needs.build-macos.outputs.tag }}"
-
-            if git tag -l | grep -q "$TAG"; then
-                git tag -d "$TAG"
-            fi
-            git push --delete origin "$TAG"
+        - name: Delete existing Git tag
+          env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          run: |
+              git config user.name "GitHub Actions"
+              git config user.email "actions@github.com"
+              git fetch --tags
+              TAG="${{ needs.build-macos.outputs.tag }}"
+        
+              if git tag -l | grep -q "$TAG"; then
+                  git tag -d "$TAG"
+                  git push --delete origin "$TAG" || echo "Tag $TAG does not exist remotely, skipping deletion"
+              else
+                  echo "Tag $TAG does not exist locally or remotely, skipping deletion"
+              fi
 
       - name: Create and push Git tag
         env:
@@ -169,7 +171,7 @@ jobs:
         run: |
             zip -r _Releases/${{ needs.build-macos.outputs.version_dir }}.zip _Releases/${{ needs.build-macos.outputs.version_dir }} -x "*.DS_Store"
     
-      - name: Delete existing GitHub release if it exists
+      - name: Delete GitHub release if it exists
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
