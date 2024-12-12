@@ -1652,11 +1652,21 @@ Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* p
     if(peek().type != token::IN)
         return Result<std::unique_ptr<NodeForEach>>(CompileError(ErrorType::SyntaxError,
                                                                  "Incorrect Syntax for range-based <for-loop>.", "in", peek()));
-    Token to = consume(); //consume in
-    auto reference = parse_reference_chain(node_for_statement.get());
-    if(reference.is_error()) {
-        return Result<std::unique_ptr<NodeForEach>>(reference.get_error());
-    }
+    Token in = consume(); //consume in
+	std::unique_ptr<NodeAST> node_range;
+	if(peek().type == token::OPEN_PARENTH) {
+		auto range = parse_param_list(node_for_statement.get());
+		if(range.is_error()) {
+			return Result<std::unique_ptr<NodeForEach>>(range.get_error());
+		}
+		node_range = std::move(range.unwrap());
+	} else {
+		auto range = parse_reference_chain(node_for_statement.get());
+		if(range.is_error()) {
+			return Result<std::unique_ptr<NodeForEach>>(range.get_error());
+		}
+		node_range = std::move(range.unwrap());
+	}
     if(peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeForEach>>(CompileError(ErrorType::SyntaxError,
                                                                  "Missing linebreak in <for-loop>", "linebreak", peek()));
@@ -1676,7 +1686,7 @@ Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* p
     consume(); // consume end for
     node_for_statement->key = std::move(key);
 	node_for_statement->value = std::move(value);
-    node_for_statement->range = std::move(reference.unwrap());
+    node_for_statement->range = std::move(node_range);
     node_for_statement->body = std::move(node_body);
     node_for_statement->set_child_parents();
     node_for_statement->parent = parent;

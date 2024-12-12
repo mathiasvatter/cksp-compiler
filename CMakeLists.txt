@@ -201,4 +201,5 @@ add_executable(cksp main.cpp
         Lowering/LoweringSortSearch.h
         Lowering/PostLowering/PostLoweringSortSearch.h
         AST/ASTVisitor/ASTDimensionInflation.h
+        Lowering/LoweringInitializerList.h
 )
