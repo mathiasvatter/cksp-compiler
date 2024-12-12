@@ -202,6 +202,7 @@ end function
 *******************************************************************************************************************}
 on note
 	declare node_array[4]: int[] := (1,2,3,4)
+	message(node_array[2+EVENT_NOTE])
 	declare note := EVENT_NOTE
 	declare event_id := EVENT_ID
 	wait(10)
