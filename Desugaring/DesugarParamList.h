@@ -47,6 +47,11 @@ public:
 			return node.replace_with(node.to_initializer_list());
 		}
 
+		// in case we are in a foreach statement
+		if(node.parent->cast<NodeForEach>() or node.parent->parent->cast<NodeForEach>()) {
+			return node.replace_with(node.to_initializer_list());
+		}
+
 		return &node;
 	}
 

@@ -227,7 +227,6 @@ NodeAST * ASTCollectLowerings::visit(NodeNumElements& node) {
 	node.array->accept(*this);
 	if(node.dimension) node.dimension->accept(*this);
 	return &node;
-//	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeUseCount& node) {
@@ -237,11 +236,10 @@ NodeAST * ASTCollectLowerings::visit(NodeUseCount& node) {
 
 
 NodeAST * ASTCollectLowerings::visit(NodeInitializerList &node) {
-	node.flatten();
 	for(auto & init : node.elements) {
 		init->accept(*this);
 	}
-	return &node;
+	return node.lower(m_program);
 }
 
 
