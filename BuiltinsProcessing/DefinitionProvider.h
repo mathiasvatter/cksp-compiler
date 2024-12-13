@@ -206,6 +206,24 @@ public:
     std::shared_ptr<NodeFunctionDefinition> get_property_function(NodeFunctionHeaderRef* function);
     void set_property_functions(std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions);
 
+	template<typename... Args>
+	inline static std::unique_ptr<NodeFunctionCall> create_builtin_call(const std::string &name, Args&&... args) {
+		auto func_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeaderRef>(
+				name,
+				std::make_unique<NodeParamList>(
+					Token(),
+					std::forward<Args>(std::move(args))... // Pack expansion hier
+				),
+				Token()
+			),
+			Token()
+		);
+		func_call->ty = TypeRegistry::Integer;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		return func_call;
+	}
 
 	static std::unique_ptr<NodeFunctionCall> num_elements(std::unique_ptr<NodeReference> ref) {
 		auto func_call = std::make_unique<NodeFunctionCall>(

@@ -347,7 +347,9 @@ NodeStruct::NodeStruct(const NodeStruct& other)
 	: NodeDataStructure(other), members(clone_unique(other.members)),
 	  methods(other.methods), constructor(other.constructor),
 	  member_table(other.member_table), method_table(other.method_table),
-	  member_node_types(other.member_node_types), max_individual_struts_var(other.max_individual_struts_var) {
+	  member_node_types(other.member_node_types), max_individual_structs_var(other.max_individual_structs_var),
+	  max_individual_structs_count(clone_unique(other.max_individual_structs_count))
+{
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeStruct::clone() const {

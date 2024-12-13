@@ -71,7 +71,7 @@ public:
 	inline NodeAST * visit(NodeVariable& node) override {
 		// if member, turn into array
 		if(node.is_member() and !node.is_engine) {
-			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
+			auto new_node = node.inflate_dimension(m_current_struct->max_individual_structs_var->to_reference());
 			return node.replace_datastruct(std::move(new_node));
 		}
 		return &node;
@@ -79,7 +79,7 @@ public:
 	inline NodeAST * visit(NodePointer& node) override {
 		// if member, turn into array of pointers
 		if(node.is_member() and !node.is_engine) {
-			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
+			auto new_node = node.inflate_dimension(m_current_struct->max_individual_structs_var->to_reference());
 			return node.replace_datastruct(std::move(new_node));
 		}
 		return &node;
@@ -91,7 +91,7 @@ public:
 		 * 	declare struct.velocity[struct.MAX_STRUCTS, 10]
 		 */
 		if(node.is_member() and !node.is_engine) {
-			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
+			auto new_node = node.inflate_dimension(m_current_struct->max_individual_structs_var->to_reference());
 			return node.replace_datastruct(std::move(new_node));
 		}
 		return &node;
@@ -99,7 +99,7 @@ public:
 	inline NodeAST * visit(NodeNDArray& node) override {
 		// if member, turn into multi-dimensional array
 		if(node.is_member() and !node.is_engine) {
-			auto new_node = node.inflate_dimension(m_current_struct->max_individual_struts_var->to_reference());
+			auto new_node = node.inflate_dimension(m_current_struct->max_individual_structs_var->to_reference());
 			new_node->is_local = false;
 			return node.replace_datastruct(std::move(new_node));
 		}
