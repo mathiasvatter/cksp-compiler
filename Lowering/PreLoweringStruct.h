@@ -49,7 +49,7 @@ public:
 			Token()
 		);
 		max_structs_var->is_engine = true;
-		strct->max_individual_struts_var = max_structs_var;
+		strct->max_individual_structs_var = max_structs_var;
 		auto max_structs_decl = std::make_unique<NodeSingleDeclaration>(
 			max_structs_var,
 			get_max_individual_structs_size(strct),
@@ -74,7 +74,7 @@ public:
 			std::nullopt,
 			strct->name+OBJ_DELIMITER+"allocation",
 			TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Integer),
-			strct->max_individual_struts_var->to_reference(),
+			strct->max_individual_structs_var->to_reference(),
 			Token()
 		);
 		allocation_var->is_engine = true;
@@ -88,7 +88,7 @@ public:
 			std::nullopt,
 			strct->name+OBJ_DELIMITER+"stack",
 			TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Integer),
-			strct->max_individual_struts_var->to_reference(),
+			strct->max_individual_structs_var->to_reference(),
 			Token()
 		);
 		stack_var->is_engine= true;
@@ -140,13 +140,16 @@ public:
 				sizes.push_back(std::move(size));
 			}
 		}
+
+		auto max_structs = object->max_individual_structs_count ? std::move(object->max_individual_structs_count) : m_max_structs_ref->clone();
+
 		if(sizes.empty()) {
-			return m_max_structs_ref->clone();
+			return max_structs;
 		}
 		add_max_function_def(m_program);
 		return std::make_unique<NodeBinaryExpr>(
 			token::DIV,
-			m_max_structs_ref->clone(),
+			std::move(max_structs),
 			find_max_array_size(sizes),
 			Token()
 		);

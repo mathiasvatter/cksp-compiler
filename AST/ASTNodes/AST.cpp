@@ -189,9 +189,6 @@ NodeAST *NodeAST::do_array_normalization(NodeProgram *program) {
 }
 
 // ************* NodeDataStructure ***************
-NodeAST *NodeDataStructure::accept(struct ASTVisitor &visitor) {
-	return nullptr;
-}
 NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
 	  is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
@@ -298,9 +295,6 @@ NodeReference::~NodeReference() {
 	}
 }
 
-NodeAST *NodeReference::accept(struct ASTVisitor &visitor) {
-	return nullptr;
-}
 NodeReference::NodeReference(const NodeReference& other)
 	: NodeAST(other), name(other.name), declaration(other.declaration),
     is_engine(other.is_engine), is_local(other.is_local),
@@ -416,17 +410,11 @@ std::unique_ptr<NodeAST> NodeReference::get_size() {
 }
 
 // ************* NodeInstruction ***************
-NodeAST *NodeInstruction::accept(struct ASTVisitor &visitor) {
-	return nullptr;
-}
 std::unique_ptr<NodeAST> NodeInstruction::clone() const {
     return std::make_unique<NodeInstruction>(*this);
 }
 
 // ************* NodeExpression ***************
-NodeAST *NodeExpression::accept(struct ASTVisitor &visitor) {
-	return nullptr;
-}
 std::unique_ptr<NodeAST> NodeExpression::clone() const {
     return std::make_unique<NodeExpression>(*this);
 }
@@ -965,10 +953,13 @@ void NodeFunctionDefinition::update_token_data(const Token &token) {
 	if(return_variable.has_value()) return_variable.value()->update_token_data(token);
 }
 
-bool NodeFunctionDefinition::is_method() {
+NodeStruct* NodeFunctionDefinition::is_method() {
 	bool has_params = !header->params.empty() and header->get_param(0)->name == "self";
 	bool within_struct = parent and parent->get_node_type() == NodeType::Struct;
-	return has_params and within_struct;
+	if(has_params and within_struct) {
+		return parent->cast<NodeStruct>();
+	}
+	return nullptr;
 }
 
 void NodeFunctionDefinition::update_param_data_type() const {

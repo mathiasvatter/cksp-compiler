@@ -897,7 +897,7 @@ NodeAST *NodeFor::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeFor::NodeFor(const NodeFor& other)
-        : NodeInstruction(other), iterator(clone_unique(other.iterator)), to(other.to), iterator_end(clone_unique(other.iterator_end)),
+        : NodeLoop(other), iterator(clone_unique(other.iterator)), to(other.to), iterator_end(clone_unique(other.iterator_end)),
           step(clone_unique(other.step)), body(clone_unique(other.body)) {
     set_child_parents();
 }
@@ -925,12 +925,38 @@ ASTLowering * NodeFor::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
+bool NodeFor::determine_linear() {
+	bool is_linear = true;
+	is_linear &= iterator->r_value->is_constant();
+	is_linear &= iterator_end->is_constant();
+	if(step) is_linear &= step->is_constant();
+	return is_linear;
+}
+
+std::unique_ptr<NodeRange> NodeFor::determine_loop_range() {
+	auto start = iterator->r_value->clone();
+	auto stop = iterator_end->clone();
+	auto step = this->step ? this->step->clone() : std::make_unique<NodeInt>(1, tok);
+	if(to == token::DOWNTO) {
+		step = std::make_unique<NodeUnaryExpr>(token::SUB, std::move(step), tok);
+	}
+	return std::make_unique<NodeRange>(std::move(start), std::move(stop), std::move(step), tok);
+}
+
+std::unique_ptr<NodeAST> NodeFor::get_num_iterations() {
+	// (end-start)/step
+	auto start = iterator->r_value->clone();
+	auto end = iterator_end->clone();
+	auto node_range = std::make_unique<NodeRange>(std::move(start), std::move(end), nullptr, tok);
+	return node_range->get_num_iterations();
+}
+
 // ************* NodeForEach ***************
 NodeAST *NodeForEach::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeForEach::NodeForEach(const NodeForEach& other)
-        : NodeInstruction(other), key(clone_unique(other.key)), value(clone_unique(other.value)),
+        : NodeLoop(other), key(clone_unique(other.key)), value(clone_unique(other.value)),
 		range(clone_unique(other.range)), body(clone_unique(other.body)) {
     set_child_parents();
 }
@@ -953,6 +979,45 @@ NodeAST *NodeForEach::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> 
 ASTLowering * NodeForEach::get_lowering(NodeProgram *program) const {
 	static LoweringForEach lowering(program);
 	return &lowering;
+}
+
+bool NodeForEach::determine_linear() {
+	return range->is_constant();
+}
+
+std::unique_ptr<NodeRange> NodeForEach::determine_loop_range() {
+	NodeAST* r = range.get();
+	if(auto pairs = range->cast<NodePairs>()) {
+		r = pairs->range.get();
+	}
+
+	if(auto node_range = r->cast<NodeRange>()) {
+		return clone_as<NodeRange>(node_range);
+	} else if (auto init_list = r->cast<NodeInitializerList>()) {
+		if(auto transformed_range = init_list->transform_to_range()) {
+			return std::move(transformed_range.value());
+		}
+	} else if (auto comp_ref = cast_node<NodeCompositeRef>(r)) {
+		auto start = std::make_unique<NodeInt>(0, r->tok);
+		auto stop = comp_ref->get_size();
+		auto step = std::make_unique<NodeInt>(1, r->tok);
+		return std::make_unique<NodeRange>(std::move(start), std::move(stop), std::move(step), r->tok);
+	}
+	return nullptr;
+}
+
+std::unique_ptr<NodeAST> NodeForEach::get_num_iterations() {
+	if(auto node_range = determine_loop_range()) {
+		return node_range->get_num_iterations();
+	} else if(auto init_list = range->cast<NodeInitializerList>()) {
+		auto dimensions = init_list->get_dimensions();
+		int size = 0;
+		for(auto &dim : dimensions) {
+			size += dim;
+		}
+		return std::make_unique<NodeInt>(size, tok);
+	}
+	return nullptr;
 }
 
 // ************* NodePairs ***************
@@ -1000,12 +1065,34 @@ NodeAST *NodeRange::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 	return nullptr;
 }
 
+std::unique_ptr<NodeAST> NodeRange::get_num_iterations() {
+	auto start = this->start->clone();
+	auto stop = this->stop->clone();
+	std::unique_ptr<NodeAST> expr = std::make_unique<NodeBinaryExpr>(
+		token::SUB,
+		std::move(stop),
+		std::move(start),
+		tok
+	);
+	expr->ty = TypeRegistry::Integer;
+	if(step) {
+		expr = std::make_unique<NodeBinaryExpr>(
+		token::DIV,
+		std::move(expr),
+		std::move(step),
+			tok
+		);
+	}
+	expr->ty = TypeRegistry::Integer;
+	return DefinitionProvider::create_builtin_call("abs", std::move(expr));
+}
+
 // ************* NodeWhile ***************
 NodeAST *NodeWhile::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeWhile::NodeWhile(const NodeWhile& other)
-        : NodeInstruction(other), condition(clone_unique(other.condition)),
+        : NodeLoop(other), condition(clone_unique(other.condition)),
           body(clone_unique(other.body)) {
     set_child_parents();
 }

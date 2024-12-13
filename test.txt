@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.2 on Thu Dec 12 18:25:06 2024 }
+{ Compiled with cksp version 0.0.7-alpha.2 on Fri Dec 13 18:15:47 2024 }
 on init
   declare $row0
   declare $col0
@@ -11,11 +11,11 @@ on init
   declare %_node_array0[400]
   declare %note0[100]
   declare $Point__free_idx
-  declare %Point__allocation[1000000]
-  declare %Point__stack[1000000]
+  declare %Point__allocation[2]
+  declare %Point__stack[2]
   declare $Point__stack_top
-  declare %Point__x[1000000]
-  declare %Point__y[1000000]
+  declare %Point__x[2]
+  declare %Point__y[2]
   declare $List__free_idx
   declare %List__allocation[1000000]
   declare %List__value[1000000]
@@ -226,6 +226,11 @@ on init
   message($pupsi0 & ", " & "3" & ", " & "f")
   message(%_ndarray__num_elements[2] & ", " & %_ndarray__num_elements[1])
   declare %ptr_array[10]
+  $pupsi0 := 0
+  while($pupsi0 < num_elements(%ptr_array)) 
+    %ptr_array[$pupsi0] := 0
+    inc($pupsi0)
+  end while
   $pupsi0 := 0
   while($pupsi0 <= (num_elements(%ptr_array) - 1)) 
     $Point__free_idx := search(%Point__allocation, 0)

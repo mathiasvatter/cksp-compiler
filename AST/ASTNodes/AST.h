@@ -132,9 +132,8 @@ struct NodeReference : NodeAST {
 	DataType data_type = DataType::Mutable;
     inline explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::DeadCode) {}
     inline NodeReference(std::string name, NodeType node_type, Token tok)
-            : NodeAST(tok, node_type), name(std::move(name)) {}
+            : NodeAST(std::move(tok), node_type), name(std::move(name)) {}
 	~NodeReference() override;
-    NodeAST* accept(struct ASTVisitor &visitor) override;
     // Kopierkonstruktor
     NodeReference(const NodeReference& other);
     // Clone Methode
@@ -220,7 +219,6 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 	inline NodeDataStructure(std::string name, Type* ty, Token tok, NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {
         this->ty = ty;
     }
-	NodeAST* accept(struct ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeDataStructure(const NodeDataStructure& other);
 	// Clone Methode
@@ -281,23 +279,17 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 struct NodeInstruction : NodeAST {
     inline explicit NodeInstruction(NodeType node_type, Token tok) : NodeAST(std::move(tok), node_type) {};
     ~NodeInstruction() override = default;
-    NodeAST* accept(struct ASTVisitor &visitor) override;
     NodeInstruction(const NodeInstruction& other) : NodeAST(other) {};
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    std::string get_string() override {
-        return "";
-    }
+	std::string get_string() override {return "";}
 };
 
 struct NodeExpression : NodeAST {
     inline explicit NodeExpression(NodeType node_type, Token tok) : NodeAST(std::move(tok), node_type) {};
     ~NodeExpression() override = default;
-    NodeAST* accept(struct ASTVisitor &visitor) override;
     NodeExpression(const NodeExpression& other) : NodeAST(other) {};
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
-    std::string get_string() override {
-        return "";
-    }
+	std::string get_string() override {return "";}
 };
 
 struct NodeWildcard : NodeAST {
@@ -703,7 +695,7 @@ struct NodeFunctionDefinition: NodeAST, public std::enable_shared_from_this<Node
     void update_token_data(const Token& token) override;
 	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
-	bool is_method();
+	NodeStruct* is_method();
 	void update_param_data_type() const;
 	std::shared_ptr<NodeDataStructure>& get_param(int i);
 	[[nodiscard]] size_t get_num_params() const;

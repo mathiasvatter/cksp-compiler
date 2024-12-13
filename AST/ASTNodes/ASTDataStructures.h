@@ -358,7 +358,8 @@ struct NodeStruct : NodeDataStructure {
 	std::set<std::string> method_set;
 	std::unordered_map<StringIntKey, std::weak_ptr<NodeFunctionDefinition>, StringIntKeyHash> method_table;
 	std::unordered_set<NodeType> member_node_types;
-	std::shared_ptr<NodeVariable> max_individual_struts_var = nullptr;
+	std::shared_ptr<NodeVariable> max_individual_structs_var = nullptr;
+	std::unique_ptr<NodeAST> max_individual_structs_count = nullptr;
 	std::shared_ptr<NodeVariable> free_idx_var = nullptr;
 	std::shared_ptr<NodeArray> allocation_var = nullptr;
 	std::shared_ptr<NodeArray> stack_var = nullptr;
@@ -469,5 +470,4 @@ struct NodeStruct : NodeDataStructure {
 
 	/// Funktion zur rekursiven Sammlung von rekursiven NodeStructs
 	void collect_recursive_structs(NodeProgram* program);
-
 };
