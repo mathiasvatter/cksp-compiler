@@ -374,7 +374,13 @@ NodeAST * ASTPrinter::visit(NodeConst &node) {
 }
 
 NodeAST * ASTPrinter::visit(NodeStruct &node) {
-	os << "struct " << node.name << std::endl;
+	os << "struct " << node.name;
+	if(node.max_individual_structs_count) {
+		os << "[";
+		node.max_individual_structs_count->accept(*this);
+		os << "]";
+	}
+	os << std::endl;
 	m_scope_count++;
 	node.members->accept(*this);
 	os << std::endl;
@@ -515,6 +521,7 @@ NodeAST * ASTPrinter::visit(NodeFunctionCall &node) {
         os << "call ";
     }
     node.function->accept(*this);
+	os << "{" << node.get_kind_as_string() << "}";
 	return &node;
 }
 

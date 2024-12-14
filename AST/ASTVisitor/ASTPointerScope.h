@@ -97,7 +97,9 @@ public:
 		node.reset_function_visited_flag();
 
 		for(auto & struct_def : m_num_constructors) {
+			struct_def.second->do_constant_folding();
 			struct_def.first->max_individual_structs_count = std::move(struct_def.second);
+			struct_def.first->max_individual_structs_count->parent = struct_def.first;
 		}
 
 		return &node;
@@ -147,11 +149,16 @@ public:
 	NodeAST* visit(NodeSingleAssignment &node) override {
 		if(node.l_value->is_member_ref()) return &node;
 
+		node.l_value->accept(*this);
+		node.r_value->accept(*this);
+
 		if(alters_ref_count(&node)) {
+			node.remove_references();
 			auto new_assign = std::make_unique<NodeSingleAssignment>(std::move(node.l_value), std::move(node.r_value), node.tok);
+			new_assign->collect_references();
 			auto new_block = std::make_unique<NodeBlock>(node.tok);
 			new_block->add_as_stmt(std::move(new_assign));
-			auto assign = static_cast<NodeSingleAssignment*>(new_block->get_last_statement().get());
+			auto assign = new_block->get_last_statement()->cast<NodeSingleAssignment>();
 			if(auto del = add_delete(*assign)) {
 				new_block->prepend_body(std::move(del));
 			}
@@ -168,6 +175,8 @@ public:
 		if(node.variable->is_member()) return &node;
 
 		node.variable->accept(*this);
+		if(node.value) node.value->accept(*this);
+
 		if(node.variable->is_local and node.variable->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 			m_pointer_scope_stack.back()[{node.variable->name, node.variable->ty}] = node.variable.get();
 		}
@@ -253,7 +262,7 @@ private:
 		auto it = m_num_constructors.find(key);
 		if(it != m_num_constructors.end()) {
 			auto& num = it->second;
-			auto new_expr = std::make_unique<NodeBinaryExpr>(token::ADD, std::move(num), std::move(expr), expr->tok);
+			auto new_expr = std::make_unique<NodeBinaryExpr>(token::ADD, std::move(expr), std::move(num), expr->tok);
 			num = std::move(new_expr);
 		} else {
 			m_num_constructors[key] = std::move(expr);

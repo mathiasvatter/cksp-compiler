@@ -145,7 +145,7 @@ on init
 	message(num_elements(ndarray, 2), num_elements(ndarray[*, 0]))
 	declare local ptr_array[10]
 	for ptr in ptr_array
-		ptr := Point(1,2+1)
+		ptr := Point(1,2+1*4-1)
 	end for
 	declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
 	declare local ptr_array3[10] := ptr_array

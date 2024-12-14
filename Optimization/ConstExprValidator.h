@@ -47,10 +47,12 @@ public:
 		if(node.index) node.index->accept(*this);
 		if(node.data_type == DataType::Const) {
 			m_is_constant &= true;
-		} else {
-			m_is_constant &= false;
+
 		}
+		// if it is of type composite it references the size -> which is constant
 		if(node.ty->get_type_kind() == TypeKind::Composite) {
+			m_is_constant &= true;
+		} else {
 			m_is_constant &= false;
 		}
 		return &node;

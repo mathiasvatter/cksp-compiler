@@ -140,6 +140,7 @@ void Compiler::compile() {
 	ASTPointerScope pointer_scope(m_program);
 	ast->accept(pointer_scope);
 	ast->collect_references();
+	ast->debug_print();
 
 	ASTCollectLowerings lowering(m_program);
 	ast->accept(lowering);
@@ -163,7 +164,6 @@ void Compiler::compile() {
 
 	ASTDimensionInflation dimension_inflation(m_program);
 	ast->accept(dimension_inflation);
-	ast->debug_print();
 
 	NormalizeNDArrayAssign nd_array_assign(m_program);
 	ast->accept(nd_array_assign);
