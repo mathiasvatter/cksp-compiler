@@ -1,21 +1,14 @@
-struct Debug
-	declare value: int
-	declare next[2]: Debug[]
-	// declare prev[10]: Debug[]
-end struct
-
 struct List
 	declare value: int
 	declare next: List
 
-	// function __init__(self, value: int, next: List)
-	// 	self.value := value
-	// 	self.next := next
-	// end function
-
     function get_next_next_value(self)
         return self.next.next.value
     end function
+
+	function add(self, value: int)
+		self.next := List(value, nil)
+	end function
 end struct
 
 struct Node
@@ -42,33 +35,44 @@ struct Point
 	end function
 end struct
 
+define NUM_DYN_GROUPS := 10
+
+struct Note
+	declare pitch: int
+	declare velocity: int
+	declare groups[NUM_DYN_GROUPS]: int[]
+
+	function __init__(self, p: int, v: int, g: int[])
+		self.pitch := p
+		self.velocity := v
+		self.groups := g
+	end function
+
+	function __repr__(self): string
+		return "Note {Pitch: " & self.pitch & ", Velocity: " & self.velocity & "}"
+	end function
+
+	function play(self): int
+		return play_note(self.pitch, self.velocity, 0, 0)
+	end function
+
+	function get_groups(self): int[]
+		return self.groups
+	end function
+
+end struct
+
+struct Group
+	declare idx: int
+	declare files: string[]
+	declare zone_ids: int[]
+
+	function add_zone(self, zone_id: int) : void
+		zone_ids
+	end function		
 
 
-// struct Note
-// 	declare pitch: int
-// 	declare velocities[10]: int[]
-// 	declare play_pos[2, 2]: int[][]
-
-// 	function __init__(self, p: int, v: int[], pp: int[][])
-// 		self.pitch := p
-// 		self.velocities := v
-// 		self.play_pos := pp
-// 	end function
-
-// 	function __repr__(self)
-// 		return "Note {Pitch: " & self.pitch & "}"
-// 	end function
-
-// 	function play(self)
-// 		return play_note(self.pitch, self.velocities[0], self.play_pos[1,2], 0)
-// 	end function
-
-// 	function get_velocities(self)
-// 		return self.velocities
-// 	end function
-
-// end struct
-
+end struct
 
 on init	
 
@@ -144,8 +148,8 @@ on init
 	message(search_matrix(ndarray2, 3), "3", "f")
 	message(num_elements(ndarray, 2), num_elements(ndarray[*, 0]))
 	declare local ptr_array[10]
-	for ptr in ptr_array
-		ptr := Point(1,2+1*4-1)
+	for i, ptr in pairs(ptr_array)
+		ptr := Point(i,i*2)
 	end for
 	declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
 	declare local ptr_array3[10] := ptr_array
@@ -201,6 +205,8 @@ end function
 											* UI CALLBACKS *
 *******************************************************************************************************************}
 on note
+	
+
 	declare node_array[4]: int[] := (1,2,3,4)
 	message(node_array[2+EVENT_NOTE])
 	declare note := EVENT_NOTE

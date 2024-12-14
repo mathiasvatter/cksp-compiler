@@ -87,7 +87,11 @@ NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 
 	node.determine_scope();
 
-	if(node.scope) m_def_provider->add_scope();
+	if(node.scope) {
+		if(!node.parent->cast<NodeStruct>()) {
+			m_def_provider->add_scope();
+		}
+	}
 	// if body is in function definition, copy over last scope of header variables
 	if(node.parent->cast<NodeFunctionDefinition>()) {
 		m_def_provider->copy_last_scope();
@@ -95,7 +99,12 @@ NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 	for(auto & stmt : node.statements) {
 		stmt->accept(*this);
 	}
-	if(node.scope) m_def_provider->remove_scope();
+
+	if(node.scope) {
+		if(!node.parent->cast<NodeStruct>()) {
+			m_def_provider->remove_scope();
+		}
+	}
 	return &node;
 }
 
@@ -223,7 +232,9 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 			access_chain->accept(*this);
 			return node.replace_with(std::move(access_chain));
 		}
-		CompileError(ErrorType::VariableError, "Multidimensional array has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+		auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
+		error.m_message = "Multidimensional array has not been declared: "+node.tok.val;
+		error.exit();
 		return &node;
 	}
 	node.match_data_structure(node_declaration);
@@ -355,10 +366,14 @@ NodeAST* ASTVariableChecking::visit(NodeConst& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 	m_def_provider->add_scope();
+	// add extra members scope
+	m_def_provider->add_scope();
 	node.members->accept(*this);
 	for(auto & m : node.methods) {
 		m->accept(*this);
 	}
+	// remove the members scope
+	m_def_provider->remove_scope();
 	m_def_provider->remove_scope();
 	return &node;
 }
