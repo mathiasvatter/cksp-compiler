@@ -1,134 +1,414 @@
 // Global Declarations:
 	declare const MAX::STRUCTS : int := 1000000
 	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type"
-struct Debug[1]
-		declare local self{Ptr} : Debug := nil
-		declare local Debug::value : int
-		declare local Debug::next[2] : Debug[] := [nil]
+struct Debug
+		declare const Debug::MAX_STRUCTS : int := 1 / 2
+		declare Debug::free_idx : int
+		declare Debug::allocation[Debug::MAX_STRUCTS{int}] : int[]
+		declare Debug::stack[Debug::MAX_STRUCTS{int}] : int[]
+		declare Debug::stack_top : int
+		declare local self : int := - 1
+		declare Debug::value[Debug::MAX_STRUCTS{int}] : int[]
+		declare Debug::next[Debug::MAX_STRUCTS{int}, 2] : int[][] := [- 1]
 
-	function Debug::__init__(value : int, next[2] : Debug[])
-		Debug::value{int} := value{int}
-		Debug::next{Debug[]} := next{Debug[]}
+	function Debug::__init__(value : int, next[2] : int[])
+		Debug::free_idx{int} := search(Debug::allocation{int[]}, 0){Builtin}
+		if(Debug::free_idx{int} = -1)
+			message("Error: No more free space available to allocate objects of type 'Debug'"){Builtin}
+		end if
+		Debug::allocation[Debug::free_idx{int}]{int[]} := 1
+		Debug::value[Debug::free_idx{int}]{int} := value{int}
+		Debug::next[Debug::free_idx{int}, *]{int[]} := next{int[]}
+		return (Debug::free_idx{int})
 	end function
 
-	function Debug::__repr__(self{Ptr} : Debug)
-		return ("<Debug> Object: " & self{Ptr}{Debug})
+	function Debug::__repr__(self : int)
+		return ("<Debug> Object: " & self{int})
+	end function
+
+	function Debug::__del__(self : int)
+		declare local _iter : int
+		if(Debug::allocation[self{int}]{int} <= 0)
+				_iter{int} := 0
+				while(_iter{int} <= (2 - 1)) 
+					Debug::next[self{int}, _iter{int}]{int} := - 1
+					inc(_iter{int}){Builtin}
+				end while
+
+		end if
+	end function
+
+	function Debug::__decr__(self : int, num_refs : int)
+		Debug::stack[Debug::stack_top{int}]{int} := self{int}
+		inc(Debug::stack_top{int}){Builtin}
+		while(Debug::stack_top{int} > 0) 
+			declare local _iter : int
+			dec(Debug::stack_top{int}){Builtin}
+			self{int} := Debug::stack[Debug::stack_top{int}]{int}
+			if(self{int} = - 1)
+				continue{Builtin}
+			end if
+			Debug::allocation[self{int}]{int} := Debug::allocation[self{int}]{int} - num_refs{int}
+			if(Debug::allocation[self{int}]{int} > 0)
+				continue{Builtin}
+			end if
+				_iter{int} := 0
+				while(_iter{int} <= (2 - 1)) 
+					if(Debug::next[self{int}, _iter{int}]{int} # - 1)
+						inc(Debug::stack_top{int}){Builtin}
+						Debug::stack_top{int} := Debug::next[self{int}, _iter{int}]{int}
+					end if
+					inc(_iter{int}){Builtin}
+				end while
+
+			Debug::__del__(self{int}){Undefined}
+		end while
+	end function
+
+	function Debug::__incr__(self : int, num_refs : int)
+		if(self{int} # - 1)
+			Debug::allocation[self{int}]{int} := Debug::allocation[self{int}]{int} + num_refs{int}
+		end if
 	end function
 
 end struct
 
-struct List[1 + 3]
-		declare local self{Ptr} : List := nil
-		declare local List::value : int
-		declare local List::next{Ptr} : List := nil
+struct List
+		declare const List::MAX_STRUCTS : int := 1 + 3
+		declare List::free_idx : int
+		declare List::allocation[List::MAX_STRUCTS{int}] : int[]
+		declare List::stack[List::MAX_STRUCTS{int}] : int[]
+		declare List::stack_top : int
+		declare local self : int := - 1
+		declare List::value[List::MAX_STRUCTS{int}] : int[]
+		declare List::next[List::MAX_STRUCTS{int}] : int[] := [- 1]
 
-	function List::get_next_next_value(self{Ptr} : List)
-		return (self{Ptr}{List}.next{Ptr}{List}.next{Ptr}{List}.value{int})
+	function List::get_next_next_value(self : int)
+		return (List::value[List::next[List::next[self{int}]{int}]{int}]{int})
 	end function
 
-	function List::__init__(value : int, next{Ptr} : List)
-		List::value{int} := value{int}
-		delete List::next{List}
-		List::next{List} := next{Ptr}{List}
-				retain(List::next{List}, 1)
+	function List::__init__(value : int, next : int)
+		List::free_idx{int} := search(List::allocation{int[]}, 0){Builtin}
+		if(List::free_idx{int} = -1)
+			message("Error: No more free space available to allocate objects of type 'List'"){Builtin}
+		end if
+		List::allocation[List::free_idx{int}]{int[]} := 1
+		List::value[List::free_idx{int}]{int} := value{int}
+		List::next[List::free_idx{int}]{int} := next{int}
+		return (List::free_idx{int})
 	end function
 
-	function List::__repr__(self{Ptr} : List)
-		return ("<List> Object: " & self{Ptr}{List})
+	function List::__repr__(self : int)
+		return ("<List> Object: " & self{int})
+	end function
+
+	function List::__del__(self : int)
+		declare local _iter : int
+		if(List::allocation[self{int}]{int} <= 0)
+			List::next[self{int}]{int} := - 1
+		end if
+	end function
+
+	function List::__decr__(self : int, num_refs : int)
+		declare local current : int := self{int}
+		while(current{int} # - 1) 
+			List::allocation[current{int}]{int} := List::allocation[current{int}]{int} - num_refs{int}
+			if(List::allocation[current{int}]{int} > 0)
+				current{int} := - 1
+				continue{Builtin}
+			end if
+			self{int} := current{int}
+			if(List::next[current{int}]{int} # - 1)
+				current{int} := List::next[current{int}]{int}
+			else
+				current{int} := - 1
+			end if
+			List::__del__(self{int}){Undefined}
+		end while
+	end function
+
+	function List::__incr__(self : int, num_refs : int)
+		if(self{int} # - 1)
+			List::allocation[self{int}]{int} := List::allocation[self{int}]{int} + num_refs{int}
+		end if
 	end function
 
 end struct
 
 struct Node
-		declare local self{Ptr} : Node := nil
-		declare local Node::value : int
-		declare local Node::left{Ptr} : Node := nil
-		declare local Node::right{Ptr} : Node := nil
+		declare const Node::MAX_STRUCTS : int := MAX::STRUCTS{unknown}
+		declare Node::free_idx : int
+		declare Node::allocation[Node::MAX_STRUCTS{int}] : int[]
+		declare Node::stack[Node::MAX_STRUCTS{int}] : int[]
+		declare Node::stack_top : int
+		declare local self : int := - 1
+		declare Node::value[Node::MAX_STRUCTS{int}] : int[]
+		declare Node::left[Node::MAX_STRUCTS{int}] : int[] := [- 1]
+		declare Node::right[Node::MAX_STRUCTS{int}] : int[] := [- 1]
 
-	function Node::__init__(value : int, left{Ptr} : Node, right{Ptr} : Node)
-		Node::value{int} := value{int}
-		delete Node::left{Node}
-		Node::left{Node} := left{Ptr}{Node}
-				retain(Node::left{Node}, 1)
-		delete Node::right{Node}
-		Node::right{Node} := right{Ptr}{Node}
-				retain(Node::right{Node}, 1)
+	function Node::__init__(value : int, left : int, right : int)
+		Node::free_idx{int} := search(Node::allocation{int[]}, 0){Builtin}
+		if(Node::free_idx{int} = -1)
+			message("Error: No more free space available to allocate objects of type 'Node'"){Builtin}
+		end if
+		Node::allocation[Node::free_idx{int}]{int[]} := 1
+		Node::value[Node::free_idx{int}]{int} := value{int}
+		Node::left[Node::free_idx{int}]{int} := left{int}
+		Node::right[Node::free_idx{int}]{int} := right{int}
+		return (Node::free_idx{int})
 	end function
 
-	function Node::__repr__(self{Ptr} : Node)
-		return ("<Node> Object: " & self{Ptr}{Node})
+	function Node::__repr__(self : int)
+		return ("<Node> Object: " & self{int})
+	end function
+
+	function Node::__del__(self : int)
+		declare local _iter : int
+		if(Node::allocation[self{int}]{int} <= 0)
+			Node::right[self{int}]{int} := - 1
+			Node::left[self{int}]{int} := - 1
+		end if
+	end function
+
+	function Node::__decr__(self : int, num_refs : int)
+		Node::stack[Node::stack_top{int}]{int} := self{int}
+		inc(Node::stack_top{int}){Builtin}
+		while(Node::stack_top{int} > 0) 
+			declare local _iter : int
+			dec(Node::stack_top{int}){Builtin}
+			self{int} := Node::stack[Node::stack_top{int}]{int}
+			if(self{int} = - 1)
+				continue{Builtin}
+			end if
+			Node::allocation[self{int}]{int} := Node::allocation[self{int}]{int} - num_refs{int}
+			if(Node::allocation[self{int}]{int} > 0)
+				continue{Builtin}
+			end if
+			if(Node::right[self{int}]{int} # - 1)
+				inc(Node::stack_top{int}){Builtin}
+				Node::stack_top{int} := Node::right[self{int}]{int}
+			end if
+			if(Node::left[self{int}]{int} # - 1)
+				inc(Node::stack_top{int}){Builtin}
+				Node::stack_top{int} := Node::left[self{int}]{int}
+			end if
+			Node::__del__(self{int}){Undefined}
+		end while
+	end function
+
+	function Node::__incr__(self : int, num_refs : int)
+		if(self{int} # - 1)
+			Node::allocation[self{int}]{int} := Node::allocation[self{int}]{int} + num_refs{int}
+		end if
 	end function
 
 end struct
 
-struct Point[1 + (1 + (1 + (1 + abs(num_elements(ptr_array{int[]}){Builtin}){Builtin})))]
-		declare local self{Ptr} : Point := nil
-		declare local Point::x : int
-		declare local Point::y : int
+struct Point
+		declare const Point::MAX_STRUCTS : int := 1 + (1 + (1 + (1 + abs(num_elements(ptr_array{int[]}){Builtin}){Builtin})))
+		declare Point::free_idx : int
+		declare Point::allocation[Point::MAX_STRUCTS{int}] : int[]
+		declare Point::stack[Point::MAX_STRUCTS{int}] : int[]
+		declare Point::stack_top : int
+		declare local self : int := - 1
+		declare Point::x[Point::MAX_STRUCTS{int}] : int[]
+		declare Point::y[Point::MAX_STRUCTS{int}] : int[]
 
 	function Point::__init__(x : int, y : int)
-		Point::x{int} := x{int}
-		Point::y{int} := y{int}
+		Point::free_idx{int} := search(Point::allocation{int[]}, 0){Builtin}
+		if(Point::free_idx{int} = -1)
+			message("Error: No more free space available to allocate objects of type 'Point'"){Builtin}
+		end if
+		Point::allocation[Point::free_idx{int}]{int[]} := 1
+		Point::x[Point::free_idx{int}]{int} := x{int}
+		Point::y[Point::free_idx{int}]{int} := y{int}
+		return (Point::free_idx{int})
 	end function
 
-	function Point::__repr__(self{Ptr} : Point)
-		return ("Point {X: " & Point::x{unknown} & ", Y: " & Point::y{unknown} & "}")
+	function Point::__repr__(self : int)
+		return ("Point {X: " & Point::x[self{int}]{int} & ", Y: " & Point::y[self{int}]{int} & "}")
 	end function
 
-	function Point::__add__(self{Ptr} : Point, other{Ptr} : Point)
-		return (Point(Point::x{int} + other{Ptr}{Point}.x{int}, Point::y{int} + other{Ptr}{Point}.y{int}){Constructor})
+	function Point::__add__(self : int, other : int)
+		return (Point(Point::x[self{int}]{int} + Point::x[other{int}]{int}, Point::y[self{int}]{int} + Point::y[other{int}]{int}){Constructor})
+	end function
+
+	function Point::__del__(self : int)
+		declare local _iter : int
+		if(Point::allocation[self{int}]{int} <= 0)
+		end if
+	end function
+
+	function Point::__decr__(self : int, num_refs : int)
+		Point::stack[Point::stack_top{int}]{int} := self{int}
+		inc(Point::stack_top{int}){Builtin}
+		while(Point::stack_top{int} > 0) 
+			declare local _iter : int
+			dec(Point::stack_top{int}){Builtin}
+			self{int} := Point::stack[Point::stack_top{int}]{int}
+			if(self{int} = - 1)
+				continue{Builtin}
+			end if
+			Point::allocation[self{int}]{int} := Point::allocation[self{int}]{int} - num_refs{int}
+			if(Point::allocation[self{int}]{int} > 0)
+				continue{Builtin}
+			end if
+			Point::__del__(self{int}){Undefined}
+		end while
+	end function
+
+	function Point::__incr__(self : int, num_refs : int)
+		if(self{int} # - 1)
+			Point::allocation[self{int}]{int} := Point::allocation[self{int}]{int} + num_refs{int}
+		end if
+	end function
+
+end struct
+
+struct Note
+		declare const Note::MAX_STRUCTS : int := MAX::STRUCTS{unknown} / 10
+		declare Note::free_idx : int
+		declare Note::allocation[Note::MAX_STRUCTS{int}] : int[]
+		declare Note::stack[Note::MAX_STRUCTS{int}] : int[]
+		declare Note::stack_top : int
+		declare local self : int := - 1
+		declare Note::pitch[Note::MAX_STRUCTS{int}] : int[]
+		declare Note::velocity[Note::MAX_STRUCTS{int}] : int[]
+		declare Note::groups[Note::MAX_STRUCTS{int}, 10] : int[][]
+
+	function Note::__init__(p : int, v : int, g : int[])
+		Note::free_idx{int} := search(Note::allocation{int[]}, 0){Builtin}
+		if(Note::free_idx{int} = -1)
+			message("Error: No more free space available to allocate objects of type 'Note'"){Builtin}
+		end if
+		Note::allocation[Note::free_idx{int}]{int[]} := 1
+		Note::pitch[Note::free_idx{int}]{int} := p{int}
+		Note::velocity[Note::free_idx{int}]{int} := v{int}
+		Note::groups[Note::free_idx{int}, *]{int[]} := g{int[]}
+		return (Note::free_idx{int})
+	end function
+
+	function Note::__repr__(self : int)
+		return ("Note {Pitch: " & Note::pitch[self{int}]{int} & ", Velocity: " & Note::velocity[self{int}]{int} & "}")
+	end function
+
+	function Note::play(self : int)
+		return (play_note(Note::pitch[self{int}]{int}, Note::velocity[self{int}]{int}, 0, 0){Builtin})
+	end function
+
+	function Note::get_groups(self : int)
+		return (Note::groups[self{int}, *]{int[]})
+	end function
+
+	function Note::__del__(self : int)
+		declare local _iter : int
+		if(Note::allocation[self{int}]{int} <= 0)
+		end if
+	end function
+
+	function Note::__decr__(self : int, num_refs : int)
+		Note::stack[Note::stack_top{int}]{int} := self{int}
+		inc(Note::stack_top{int}){Builtin}
+		while(Note::stack_top{int} > 0) 
+			declare local _iter : int
+			dec(Note::stack_top{int}){Builtin}
+			self{int} := Note::stack[Note::stack_top{int}]{int}
+			if(self{int} = - 1)
+				continue{Builtin}
+			end if
+			Note::allocation[self{int}]{int} := Note::allocation[self{int}]{int} - num_refs{int}
+			if(Note::allocation[self{int}]{int} > 0)
+				continue{Builtin}
+			end if
+			Note::__del__(self{int}){Undefined}
+		end while
+	end function
+
+	function Note::__incr__(self : int, num_refs : int)
+		if(self{int} # - 1)
+			Note::allocation[self{int}]{int} := Note::allocation[self{int}]{int} + num_refs{int}
+		end if
 	end function
 
 end struct
 
 on init
 	declare local _iter : int
-	declare bugbug{Ptr} : Debug := Debug(3, [nil]){Constructor}
+	declare bugbug : int := Debug(3, [- 1]){Constructor}
 	declare menu_strip_val[3, 3] : int[][]
 	declare left : int := get_active_idx(menu_strip_val{int[][]}, 0){UserDefined}
 	message(left{int}){Builtin}
-	for keks : int, number : unknown in pairs([0, 3, 6, 9, 12])
-		declare local pupsi : int := number{unknown}
-		message(keks{int} & ", " & number{unknown}){Builtin}
-	end for
-	for key : int, value : unknown in pairs(range(3, 10, - 1))
-		message(key{int} & ", " & value{unknown}){Builtin}
-	end for
+		declare local keks : int
+		declare local number : unknown := 0
+		while(((number{unknown} < 12) and (3 > 0)) or ((number{unknown} > 12) and (3 < 0))) 
+			declare local pupsi : int := number{unknown}
+			message(keks{int} & ", " & number{unknown}){Builtin}
+			number{unknown} := number{unknown} + 3
+			inc(keks{int}){Builtin}
+		end while
+
+		declare local key : int
+		declare local value : int := 3
+		while(((value{int} < 10) and (- 1 > 0)) or ((value{int} > 10) and (- 1 < 0))) 
+			message(key{int} & ", " & value{unknown}){Builtin}
+			value{int} := value{int} + - 1
+			inc(key{int}){Builtin}
+		end while
+
 	declare array[4] : int[] := [1, 2, 3, 4]
-	for key : int, value : unknown in pairs(menu_strip_val{int[][]})
-		for key : int, malue : unknown in pairs(array{int[]})
-			message(key{int} & ", " & value{unknown} & ", " & malue{unknown}){Builtin}
-		end for
-	end for
+		declare local key : int
+		declare local _iter1 : int
+		declare local _iter0 : int
+		_iter0{int} := 0
+		while(_iter0{int} <= (num_elements[menu_strip_val{int[][]}, 1] - 1)) 
+			_iter1{int} := 0
+			while(_iter1{int} <= (num_elements[menu_strip_val{int[][]}, 2] - 1)) 
+					declare local key : int
+					key{int} := 0
+					while(key{int} <= (num_elements(array{int[]}){Builtin} - 1)) 
+						message(key{int} & ", " & menu_strip_val[_iter0{int}, _iter1{int}]{int} & ", " & array[key{int}]{int}){Builtin}
+						inc(key{int}){Builtin}
+					end while
+
+				inc(_iter1{int}){Builtin}
+				inc(key{int}){Builtin}
+			end while
+			inc(_iter0{int}){Builtin}
+		end while
+
 	declare n[10] : int[] := [0]
 	message(num_elements[array{int[]}]){Builtin}
-	declare this_list{Ptr} : List := nil
-	this_list{Ptr}{List} := List(42, nil){Constructor}
-	declare that_list{Ptr} : List := List(39, List(40, List(41, this_list{Ptr}{List}){Constructor}){Constructor}){Constructor}
-	message(that_list{Ptr}{List}.next{Ptr}{List}.value{int}){Builtin}
+	declare this_list : int := - 1
+	this_list{int} := List(42, - 1){Constructor}
+	declare that_list : int := List(39, List(40, List(41, this_list{int}){Constructor}){Constructor}){Constructor}
+	message(List::value[List::next[that_list{int}]{int}]{int}){Builtin}
 	n{int[]} := [1, 2, 3, 4, 5]
 	declare ndarray[10, 10] : int[][]
 	declare ndarray3[10, 10, 10, 10] : int[][][][]
 	message(ndarray3[4, 5, 6, 7]{int} & ", " & search[ndarray[2, *]{int[]}, - 1]){Builtin}
-	message(search[ndarray3[3, 4, *, *]{int[][]}, - 1] & ", " & ndarray3[3, 4, 3, *]{int[]}){Builtin}
-	message(n[*]{int[]}){Builtin}
+	message(search[ndarray3[3, 4, *, *]{int[][]}, - 1] & ", " & int[]::__repr__(ndarray3[3, 4, 3, *]{int[]}){Undefined}){Builtin}
+	message(int[]::__repr__(n[*]{int[]}){Undefined}){Builtin}
 	declare ndarray2[10, 10] : int[][]
 	message(search_matrix(ndarray2{int[][]}, 3){UserDefined} & ", " & "3" & ", " & "f"){Builtin}
 	message(num_elements[ndarray{int[][]}, 2] & ", " & num_elements[ndarray[*, 0]{int[]}]){Builtin}
 	declare local ptr_array[10] : int[]
-	for ptr{Ptr} : Point in ptr_array{int[]}
-		ptr{Ptr}{Point} := Point(1, (2 + (1 * 4)) - 1){Constructor}
-	end for
+		declare local i : int
+		i{int} := 0
+		while(i{int} <= (num_elements(ptr_array{int[]}){Builtin} - 1)) 
+			ptr_array[i{int}]{int} := Point(i{int}, i{int} * 2){Constructor}
+			inc(i{int}){Builtin}
+		end while
+
 	declare local ptr_array2[10] : int[] := [ptr_array[0]{int}, ptr_array[1]{int}]
 	declare local ptr_array3[10] : int[] := ptr_array{int[]}
-	declare local p1{Ptr} : Point := Point(1, 2){Constructor}
-	declare local p2{Ptr} : Point := Point(3, 4){Constructor}
-	message(Point::__add__(Point(1, 2){Constructor}, Point(3, 4){Constructor}){UserDefined}){Builtin}
+	declare local p1 : int := Point(1, 2){Constructor}
+	declare local p2 : int := Point(3, 4){Constructor}
+	message(Point::__repr__(Point::__add__(Point(1, 2){Constructor}, Point(3, 4){Constructor}){UserDefined}){Undefined}){Builtin}
 	ndarray[0, *]{int[]} := ndarray[1, *]{int[]}
-	message(this_list{Ptr}{List}){Builtin}
+	message(List::allocation[Struct::max(0, this_list{int}){UserDefined}]{unknown}){Builtin}
 	message(return_size(ndarray[*, 0]{int[]}){UserDefined}){Builtin}
-	delete p2{Ptr}{Point}
-	delete p1{Ptr}{Point}
+	Point::__decr__(p2{int}, 1){Undefined}
+	Point::__decr__(p1{int}, 1){Undefined}
 end on
 
 on note{thread-unsafe}
@@ -147,23 +427,40 @@ on note{thread-unsafe}
 end on
 
 function search_matrix(matrix : number[][], target : number)
-	declare local array[30] : int[] := [0]
-	declare local ndarray[2, 3] : int[][]
-	message(num_elements[ndarray{int[][]}]){Builtin}
-	declare local row : int
-	declare local col : int
-	for row{int} := 0 to num_elements[matrix{number[][]}, 1] - 1
-		for col{int} := 0 to num_elements[matrix{number[][]}, 2] - 1
-			if(matrix[row{int}, col{int}]{number} = target{number})
-				return ((row{int} * 10) + col{int})
+	declare local RETURN_FLAG0 : int
+	while(RETURN_FLAG0{int} = 0) 
+		declare local array[30] : int[] := [0]
+		declare local ndarray[2, 3] : int[][]
+		message(num_elements[ndarray{int[][]}]){Builtin}
+		declare local row : int
+		declare local col : int
+		row{int} := 0
+		while((row{int} <= (num_elements[matrix{number[][]}, 1] - 1)) and (RETURN_FLAG0{int} = 0)) 
+			col{int} := 0
+			while((col{int} <= (num_elements[matrix{number[][]}, 2] - 1)) and (RETURN_FLAG0{int} = 0)) 
+				if(matrix[row{int}, col{int}]{number} = target{number})
+					return ((row{int} * 10) + col{int})
+					RETURN_FLAG0{int} := 1
+					continue{Undefined}
+				end if
+				inc(col{int}){Builtin}
+			end while
+			if(RETURN_FLAG0{int} = 1)
+				continue{Undefined}
 			end if
-		end for
-	end for
-	return (- 1)
+			inc(row{int}){Builtin}
+		end while
+		if(RETURN_FLAG0{int} = 1)
+			continue{Undefined}
+		end if
+		return (- 1)
+		RETURN_FLAG0{int} := 1
+		continue{Undefined}
+	end while
 end function
 
 function return_init(init : int[])
-	message(init{int[]}){Builtin}
+	message(int[]::__repr__(init{int[]}){Undefined}){Builtin}
 	return ([1, 2, 3, 4, 5])
 end function
 
@@ -173,6 +470,14 @@ end function
 
 function get_active_idx(value_array : int[][], emitter : unknown)
 	return (((value_array[emitter{unknown}, 0]{int} * 0) + (value_array[emitter{unknown}, 1]{int} * 1)) + (value_array[emitter{unknown}, 2]{int} * 2))
+end function
+
+function Struct::max(a : int, b : int)
+	return (((a{int} + b{int}) + abs(a{int} - b{int}){Builtin}) / 2)
+end function
+
+function int[]::__repr__(self : int[][][][])
+	return ("NDArray of type <int[]>")
 end function
 
 

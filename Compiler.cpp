@@ -140,13 +140,16 @@ void Compiler::compile() {
 	ASTPointerScope pointer_scope(m_program);
 	ast->accept(pointer_scope);
 	ast->collect_references();
-	ast->debug_print();
 
 	ASTCollectLowerings lowering(m_program);
 	ast->accept(lowering);
+	ast->debug_print();
 
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
+
+	ASTDimensionInflation dimension_inflation(m_program);
+	ast->accept(dimension_inflation);
 
 	compile_time.stop("Lowering");
 	std::cout << compile_time.print_timer("Lowering") << std::endl;
@@ -162,8 +165,6 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
 	compile_time.start("Data Structure Lowering");
 
-	ASTDimensionInflation dimension_inflation(m_program);
-	ast->accept(dimension_inflation);
 
 	NormalizeNDArrayAssign nd_array_assign(m_program);
 	ast->accept(nd_array_assign);
