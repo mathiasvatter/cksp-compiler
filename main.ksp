@@ -64,11 +64,11 @@ end struct
 
 struct Group
 	declare idx: int
-	declare files: string[]
-	declare zone_ids: int[]
+	declare files[100]: string[]
+	declare zone_ids[100]: int[]
 
 	function add_zone(self, zone_id: int) : void
-		zone_ids
+		zone_ids[0] := zone_id
 	end function		
 
 
@@ -76,8 +76,7 @@ end struct
 
 on init	
 
-	declare bugbug := Debug(3, (nil))
-
+	// declare bugbug := Debug(3, (nil))
 	declare menu_strip_val[3,3]
 	declare left := get_active_idx(menu_strip_val, 0)
 	message(left)
@@ -134,8 +133,9 @@ on init
 
 	declare that_list: List := List(39, List(40, List(41, this_list)))
 	// new type: object Pointer nil := -1
-	message(that_list.next.value)
-	
+	message(that_list.next.value, that_list.get_next_next_value())
+	that_list.add(43)
+
 	n := (1,2,3,4,5)
 
 	declare ndarray[10,10]: int[][]

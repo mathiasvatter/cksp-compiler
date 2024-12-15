@@ -143,7 +143,6 @@ void Compiler::compile() {
 
 	ASTCollectLowerings lowering(m_program);
 	ast->accept(lowering);
-	ast->debug_print();
 
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
@@ -164,6 +163,7 @@ void Compiler::compile() {
 	compile_time.stop("Return Function Rewriting");
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
 	compile_time.start("Data Structure Lowering");
+	ast->debug_print();
 
 
 	NormalizeNDArrayAssign nd_array_assign(m_program);

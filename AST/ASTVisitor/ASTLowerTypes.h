@@ -12,6 +12,21 @@ class ASTLowerTypes: public ASTVisitor {
 public:
 	explicit ASTLowerTypes(DefinitionProvider *definition_provider): m_def_provider(definition_provider) {};
 
+	inline NodeAST* visit(NodeProgram& node) override {
+		m_program = &node;
+		// most func defs will be visited when called, keeping local scopes in mind
+		m_program->global_declarations->accept(*this);
+		m_program->init_callback->accept(*this);
+		for(const auto & s : node.struct_definitions) {
+			s->accept(*this);
+		}
+		for(const auto & callback : node.callbacks) {
+			if(callback.get() != m_program->init_callback) callback->accept(*this);
+		}
+		node.reset_function_visited_flag();
+		return &node;
+	};
+
 	inline NodeAST * visit(NodeVariable& node) override {
 		return node.lower_type();
 	}
@@ -54,10 +69,16 @@ public:
 
 		node.header->accept(*this);
 		node.body->accept(*this);
+		node.visited = true;
 
 		return &node;
 	}
 	inline NodeAST * visit(NodeFunctionCall& node) override {
+		// go first into definition to lower the header type first und give that to the header ref
+		if(node.bind_definition(m_program)) {
+			if(!node.get_definition()->visited) node.get_definition()->accept(*this);
+			node.get_definition()->visited = true;
+		}
 		node.function->accept(*this);
 		if(node.ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 			node.set_element_type(TypeRegistry::Integer);

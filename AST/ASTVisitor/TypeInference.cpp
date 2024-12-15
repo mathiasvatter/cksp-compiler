@@ -189,9 +189,6 @@ NodeAST * TypeInference::visit(NodeArray& node) {
 }
 
 NodeAST * TypeInference::visit(NodeArrayRef& node) {
-	if(node.name == "left") {
-
-	}
 	if(node.index) node.index->accept(*this);
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {

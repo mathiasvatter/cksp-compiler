@@ -255,7 +255,9 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
-		CompileError(ErrorType::VariableError, "Function Variable has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+		auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
+		error.m_message = "Function Variable has not been declared: "+node.name;
+		error.exit();
 		return &node;
 	}
 	node.match_data_structure(node_declaration);
