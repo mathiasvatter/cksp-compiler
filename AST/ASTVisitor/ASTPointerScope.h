@@ -93,6 +93,11 @@ public:
 		for(const auto & callback : node.callbacks) {
 			if(callback.get() != m_program->init_callback) callback->accept(*this);
 		}
+//		for(auto & func_def : node.function_definitions) {
+//			if(!func_def->visited) {
+//				func_def->accept(*this);
+//			}
+//		}
 
 		node.reset_function_visited_flag();
 
@@ -147,7 +152,7 @@ public:
 	}
 
 	NodeAST* visit(NodeSingleAssignment &node) override {
-		if(node.l_value->is_member_ref()) return &node;
+//		if(node.l_value->is_member_ref()) return &node;
 
 		node.l_value->accept(*this);
 		node.r_value->accept(*this);
@@ -256,6 +261,14 @@ public:
 		return &node;
 	};
 
+	NodeAST* visit(NodeFunctionDefinition& node) override {
+		node.header ->accept(*this);
+		if (node.return_variable.has_value())
+			node.return_variable.value()->accept(*this);
+		node.body->accept(*this);
+		return &node;
+	};
+
 private:
 
 	void add_expr_to_num_constructors(NodeStruct* key, std::unique_ptr<NodeAST> expr) {
@@ -316,7 +329,8 @@ private:
 
 		if(l_value_type->cast<ObjectType>()) {
 			if(auto func_call = r_value->cast<NodeFunctionCall>()) {
-				if(func_call->kind == NodeFunctionCall::Kind::Constructor) {
+				// when constructor and declaration -> do not alter ref count
+				if(func_call->kind == NodeFunctionCall::Kind::Constructor) { //and node->cast<NodeSingleDeclaration>()) {
 					return false;
 				}
 			}

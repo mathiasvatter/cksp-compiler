@@ -1172,9 +1172,11 @@ void NodeProgram::inline_structs() {
 
 void NodeProgram::reset_function_visited_flag() {
 //	for(const auto & def : function_definitions) def->visited = false;
-	parallel_for_each(function_definitions.begin(), function_definitions.end(),
+	parallel_for_each(function_lookup.begin(), function_lookup.end(),
 				  [](auto const& def) {
-					def->visited = false;
+					if(def.second.lock()) {
+						def.second.lock()->visited = false;
+					}
 				  });
 }
 

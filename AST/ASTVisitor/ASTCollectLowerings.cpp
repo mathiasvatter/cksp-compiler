@@ -31,6 +31,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 
 	ASTHandleStringRepresentations handle_string_representations(m_def_provider);
 	node.accept(handle_string_representations);
+	node.reset_function_visited_flag();
 
 	ASTLowerTypes lowering_types(m_def_provider);
 	node.accept(lowering_types);
