@@ -510,6 +510,23 @@ NodeAST * TypeInference::visit(NodeFunctionParam& node) {
 
 NodeAST * TypeInference::visit(NodeSingleDelete& node) {
 	node.ptr->accept(*this);
+	if(node.ptr->ty->get_element_type()->get_type_kind() != TypeKind::Object) {
+		auto error = CompileError(ErrorType::InternalError, "", "", node.ptr->tok);
+		error.m_message = "Delete can only be used with <Object> types.";
+		error.exit();
+	}
+	node.num->accept(*this);
+	match_type(node, *node.ptr);
+	return &node;
+}
+
+NodeAST * TypeInference::visit(NodeSingleRetain& node) {
+	node.ptr->accept(*this);
+	if(node.ptr->ty->get_element_type()->get_type_kind() != TypeKind::Object) {
+		auto error = CompileError(ErrorType::InternalError, "", "", node.ptr->tok);
+		error.m_message = "Retain can only be used with <Object> types.";
+		error.exit();
+	}
 	node.num->accept(*this);
 	match_type(node, *node.ptr);
 	return &node;

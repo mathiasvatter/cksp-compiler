@@ -62,6 +62,7 @@ public:
 
 	NodeAST * visit(NodeAccessChain& node) override;
 	NodeAST * visit(NodeSingleDelete& node) override;
+	NodeAST * visit(NodeSingleRetain& node) override;
 	NodeAST * visit(NodeConst& node) override;
 	NodeAST * visit(NodeStruct& node) override;
 	NodeAST * visit(NodeNumElements& node) override;

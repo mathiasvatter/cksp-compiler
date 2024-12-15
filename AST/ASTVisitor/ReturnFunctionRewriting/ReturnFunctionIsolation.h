@@ -104,6 +104,7 @@ private:
 			if (func_call->is_builtin_kind()) return &node;
 
 			if (func_call->get_definition()->num_return_params > 0) {
+				node.remove_references();
 				func_call->function->prepend_arg(std::move(node.l_value));
 				return node.replace_with(std::move(node.r_value));
 			}
@@ -125,8 +126,8 @@ private:
 			if (func_call->is_builtin_kind()) return &node;
 			if (func_call->get_definition()->num_return_params > 0) {
 				func_call->function->prepend_arg(node.variable->to_reference());
-				auto node_block = std::make_unique<NodeBlock>(node.tok);
-				node_block->scope = false;
+				node.remove_references();
+				auto node_block = std::make_unique<NodeBlock>(node.tok, false);
 				node_block->add_as_stmt(
 					std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok));
 				node_block->add_as_stmt(std::move(node.value));
