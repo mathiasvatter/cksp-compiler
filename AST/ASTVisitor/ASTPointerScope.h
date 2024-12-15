@@ -262,6 +262,9 @@ public:
 	};
 
 	NodeAST* visit(NodeFunctionDefinition& node) override {
+		// do this because function definitions are also in the structs
+		if(node.visited) return &node;
+
 		node.header ->accept(*this);
 		if (node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);
@@ -330,7 +333,7 @@ private:
 		if(l_value_type->cast<ObjectType>()) {
 			if(auto func_call = r_value->cast<NodeFunctionCall>()) {
 				// when constructor and declaration -> do not alter ref count
-				if(func_call->kind == NodeFunctionCall::Kind::Constructor) { //and node->cast<NodeSingleDeclaration>()) {
+				if(func_call->kind == NodeFunctionCall::Kind::Constructor and node->cast<NodeSingleDeclaration>()) {
 					return false;
 				}
 			}
@@ -345,6 +348,12 @@ private:
 	static std::unique_ptr<NodeBlock> add_delete(NodeSingleAssignment& assign) {
 		auto variable = assign.l_value.get();
 		auto value = get_return_var_ptr(assign.r_value.get());
+		// add delete before constructor assignment in assign statements only for safety
+		if(auto func_call = assign.r_value->cast<NodeFunctionCall>()) {
+			if (func_call->kind == NodeFunctionCall::Kind::Constructor) {
+				value = func_call;
+			}
+		}
 		if(!value) return nullptr;
 
 		auto del = std::make_unique<NodeBlock>(assign.tok);

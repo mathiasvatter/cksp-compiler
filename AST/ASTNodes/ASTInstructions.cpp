@@ -230,9 +230,13 @@ bool NodeFunctionCall::is_string_env() {
 	// is within string environment
 	is_string |= parent->ty == TypeRegistry::String;
 	// is within message call
-	is_string |= parent->parent->get_node_type() == NodeType::FunctionHeaderRef and static_cast<NodeFunctionHeaderRef*>(parent->parent)->name == "message";
+	if(auto header_ref = parent->parent->cast<NodeFunctionHeaderRef>()) {
+		is_string |= header_ref->name == "message";
+	}
 	// is within return statement
-	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->get_definition()->ty == TypeRegistry::String;
+	if(auto ret = parent->cast<NodeReturn>()) {
+		is_string |= ret->get_definition()->ty == TypeRegistry::String;
+	}
 	return is_string;
 }
 
