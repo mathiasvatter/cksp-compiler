@@ -77,65 +77,65 @@ end struct
 
 on init	
 
-	// declare menu_strip_val[3,3]
-	// declare left := get_active_idx(menu_strip_val, 0)
-	// message(left)
+	declare menu_strip_val[3,3]
+	declare left := get_active_idx(menu_strip_val, 0)
+	message(left)
 
-	// for keks, number in pairs((0,3,6,9,12))
-	// 	declare local pupsi := number		
-	// 	message(keks, number)
-	// end for	
+	for keks, number in pairs((0,3,6,9,12))
+		declare local pupsi := number		
+		message(keks, number)
+	end for	
 
-	// for key, value in pairs(range(3, 10, -1))
-	// 	message(key, value)
-	// end for	
+	for key, value in pairs(range(3, 10, -1))
+		message(key, value)
+	end for	
 
-	// declare array[4]: int[] := (1,2,3,4)
-	// for key, value in pairs(menu_strip_val)
+	declare array[4]: int[] := (1,2,3,4)
+	for key, value in pairs(menu_strip_val)
 		
-	// 	for key, malue in pairs(array)
-	// 		message(key, value, malue)
+		for key, malue in pairs(array)
+			message(key, value, malue)
 	
-	// 	end for		
-	// end for
+		end for		
+	end for
 
-	// declare n[10] := (0)
-	// declare array[10] := (1)
-	// message(array.SIZE)
+	declare n[10] := (0)
+	declare array[10] := (1)
+	message(array.SIZE)
 	declare this_list: List := nil
-	// this_list := List(42, nil)
+	this_list := List(42, nil)
 
 	declare val := List(34, nil).value
 	// message(val)
 
 	declare that_list: List := List(39, List(40, List(41, this_list)))
-	// message(that_list.next.value, that_list.get_next_next_value())
-	// that_list.add(43)
+	message(that_list.next.value, that_list.get_next_next_value())
+	that_list.add(43)
 
-	// n := (1,2,3,4,5)
+	n := (1,2,3,4,5)
 
-	// declare ndarray[10,10]: int[][]
-	// declare ndarray3[10,10,10,10]
-	// message(ndarray3[4,5, 6, 7], search(ndarray[2, *], -1))
-	// message(search(ndarray3[3, 4, *, *], -1), ndarray3[3, 4, 3, *])
-	// message(n[*])
-	// declare ndarray2[10,10]: int[][]
-	// // message(search_matrix(ndarray, 3.0), "3", "f")
-	// message(search_matrix(ndarray2, 3), "3", "f")
-	// message(num_elements(ndarray, 2), num_elements(ndarray[*, 0]))
-	// declare local ptr_array[10]
-	// for i, ptr in pairs(ptr_array)
-	// 	ptr := Point(i,i*2)
-	// end for
-	// declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
-	// declare local ptr_array3[10] := ptr_array
-	// declare local p1 := Point(1, 2)
-	// declare local p2 := Point(3, 4)
-	// message(Point(1, 2) + Point(3, 4))
-	// ndarray[0, *] := ndarray[1, *]
+	declare ndarray[10,10]: int[][]
+	declare ndarray3[10,10,10,10]
+	message(ndarray3[4,5, 6, 7], search(ndarray[2, *], -1))
+	message(search(ndarray3[3, 4, *, *], -1), ndarray3[3, 4, 3, *])
+	message(n[*])
+	declare ndarray2[10,10]: int[][]
+	// message(search_matrix(ndarray, 3.0), "3", "f")
+	message(search_matrix(ndarray2, 3), "3", "f")
+	message(num_elements(ndarray, 2), num_elements(ndarray[*, 0]))
+	declare local ptr_array[10]
+	for i, ptr in pairs(ptr_array)
+		ptr := Point(i,i*2)
+	end for
+	declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
+	declare local ptr_array3[10] := ptr_array
+	declare local p1 := Point(1, 2)
+	declare local p2 := Point(3, 4)
+	message(Point(1, 2) + Point(3, 4))
+	ndarray[0, *] := ndarray[1, *]
 
-	// message(use_count(this_list))
-	// message(return_size(ndarray[*, 0]))
+	message(use_count(this_list))
+	message(return_size(ndarray[*, 0]))
 end on
 
 function get_active_idx(value_array, emitter) -> result
