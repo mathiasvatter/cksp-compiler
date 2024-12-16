@@ -14,8 +14,9 @@
     - Beispiel Code
 - Sublime KSP Syntax und Limitierungen
     - Beispiel Code
+- CKSP Compiler pre-thesis?
 
-### 3. Implementierung von Funktionen mit Parametern und return statements
+<!-- ### 3. Implementierung von Funktionen mit Parametern und return statements
 - **Functions in KSP**:
     - Funktionen ohne parameter mit `call` keyword
 - **Vorgehen**:
@@ -24,7 +25,7 @@
     - Function Call Hoisting, Return Parameter Rewriting
     - Function Inlining
 - **Herausforderungen**:
-    - 
+    -  -->
 
 ### 4. Von Lexical to Global Scope mittels Variable Reuse und Parameter Promotion
 - **Control Flow Management in KSP**:
