@@ -48,7 +48,7 @@ public:
 private:
 	// boolean to continue after not finding declaration or fail
 	bool fail = false;
-
+	NodeStruct* m_current_struct = nullptr;
     NodeBlock* m_current_block = nullptr;
 	DefinitionProvider* m_def_provider = nullptr;
 
@@ -81,8 +81,8 @@ private:
 
 		// different scenarios for different node types
 		// eq.lbl_param0 -> a reference originally recognized as a variable cannot have a variable or function declaration (eq)
-		if(node->get_node_type() == NodeType::VariableRef) {
-			if(node_declaration->get_node_type() == NodeType::FunctionHeader) {
+		if(node->cast<NodeVariableRef>()) {
+			if(node_declaration->cast<NodeFunctionHeader>()) {
 				return nullptr;
 			}
 		}

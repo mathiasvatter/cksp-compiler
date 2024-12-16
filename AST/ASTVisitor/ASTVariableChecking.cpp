@@ -207,6 +207,10 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 				return node.replace_with(std::move(access_chain));
 			}
 		}
+		if(m_current_struct) {
+			auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+			DefinitionProvider::throw_declaration_error(node, msg).exit();
+		}
         if(!fail) return &node;
 	    DefinitionProvider::throw_declaration_error(node).exit();
     }
@@ -232,9 +236,11 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 			access_chain->accept(*this);
 			return node.replace_with(std::move(access_chain));
 		}
-		auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
-		error.m_message = "Multidimensional array has not been declared: "+node.tok.val;
-		error.exit();
+		if(m_current_struct) {
+			auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+			DefinitionProvider::throw_declaration_error(node, msg).exit();
+		}
+		DefinitionProvider::throw_declaration_error(node).exit();
 		return &node;
 	}
 	node.match_data_structure(node_declaration);
@@ -290,6 +296,11 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 			access_chain->accept(*this);
 			return node.replace_with(std::move(access_chain));
 		} else {
+
+			if(m_current_struct) {
+				auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+				DefinitionProvider::throw_declaration_error(node, msg).exit();
+			}
 
 			// could still fail on ui control array values or raw list subarrays
 			if(!fail)
@@ -367,6 +378,7 @@ NodeAST* ASTVariableChecking::visit(NodeConst& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
+	m_current_struct = &node;
 	m_def_provider->add_scope();
 	// add extra members scope
 	m_def_provider->add_scope();
@@ -377,6 +389,7 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 	// remove the members scope
 	m_def_provider->remove_scope();
 	m_def_provider->remove_scope();
+	m_current_struct = nullptr;
 	return &node;
 }
 

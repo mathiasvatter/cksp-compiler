@@ -401,6 +401,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_init_method() {
 	for(auto& member : members->statements) {
 		if(auto decl = member->statement->cast<NodeSingleDeclaration>()) {
 			auto mem = decl->variable;
+			if(mem->data_type == DataType::Const) continue;
 			std::unique_ptr<NodeSingleAssignment> assignment;
 			auto member_ref = mem->to_reference();
 			member_ref->name = "self." + member_ref->name;
@@ -419,7 +420,6 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_init_method() {
 		}
 	}
 
-	auto num_params = param_list.size();
 	auto function_def = std::make_shared<NodeFunctionDefinition>(
 		std::make_unique<NodeFunctionHeader>(
 			"__init__",
@@ -504,15 +504,6 @@ void NodeStruct::generate_ref_count_methods(NodeProgram* program) {
 
 	auto incr = rf_methods.create_incr_function();
 	add_method(std::move(incr));
-//
-//	auto array_incr = rf_methods.create_array_function("__incr__");
-//	add_method(std::move(array_incr));
-//
-//	auto array_decr = rf_methods.create_array_function("__decr__");
-//	add_method(std::move(array_decr));
-
-//	auto array_del = rf_methods.create_array_function("__del__");
-//	methods.push_back(std::move(array_del));
 
 	this->rebuild_method_table();
 }
@@ -542,6 +533,7 @@ void NodeStruct::collect_recursive_structs(NodeProgram *program) {
 		  auto member = mem.second.lock();
 		  if(mem.first == "self") continue;
 		  if(member->is_engine) continue;
+		  if(member->data_type == DataType::Const) continue;
 		  // Hole den Typ des Mitglieds
 		  Type* mem_type = member->ty->get_element_type();
 		  // Überprüfe, ob der Typ ein Struct ist

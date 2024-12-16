@@ -50,7 +50,7 @@ public:
 
 		// List::allocation[self]
 		m_alloc_ref = m_struct.allocation_var->to_reference();
-		static_cast<NodeArrayRef*>(m_alloc_ref.get())->set_index(m_self_ref->clone());
+		m_alloc_ref->cast<NodeArrayRef>()->set_index(m_self_ref->clone());
 		m_alloc_ref->ty = TypeRegistry::Integer;
 
 		// List::stack_top
@@ -78,56 +78,6 @@ public:
 		);
 		m_iterator_ref->declaration = decl->variable;
 		return decl;
-	}
-
-	/**
-	 * @brief create array loops for __incr__ and __decr__ and __del__ functions
-	 * function Point::Array::__incr__(arr: int[], num: int)
-	 * 	declare i: int
-	 * 	for i := 0 to num_elements(arr)-1
-	 * 		Point::__incr__(arr[i], num)
-	 * 	end for
-	 * end function
-	 */
-	std::unique_ptr<NodeFunctionDefinition> create_array_function(const std::string& name) {
-		auto func_name = m_struct.name+OBJ_DELIMITER+"Array"+OBJ_DELIMITER+name;
-		auto func_call_name = m_struct.name+OBJ_DELIMITER+name;
-
-		auto arr = std::make_shared<NodeArray>(std::nullopt, "arr", TypeRegistry::ArrayOfInt, nullptr, Token());
-		auto num = std::make_shared<NodeVariable>(std::nullopt, "num", TypeRegistry::Integer, DataType::Mutable, Token());
-		auto iterator = ASTVisitor::get_iterator_var(Token());
-		auto arr_ref = unique_ptr_cast<NodeArrayRef>(arr->to_reference());
-		auto num_ref = num->to_reference();
-		arr_ref->set_index(iterator->to_reference());
-		auto incr_call = std::make_unique<NodeFunctionCall>(
-			false,
-			std::make_unique<NodeFunctionHeaderRef>(
-				func_call_name,
-				std::make_unique<NodeParamList>(arr->tok, arr_ref->clone(), std::move(num_ref)),
-				arr->tok
-			),
-			arr->tok
-		);
-
-		auto func_def = std::make_unique<NodeFunctionDefinition>(
-			std::make_unique<NodeFunctionHeader>(
-				func_name,
-				Token(),
-				std::move(arr),
-				std::move(num)
-			),
-			std::nullopt,
-			false,
-			std::make_unique<NodeBlock>(Token(), true),
-			Token()
-		);
-		func_def->body->add_as_stmt(std::move(incr_call));
-		func_def->body->wrap_in_loop(iterator, std::make_unique<NodeInt>(0, Token()), arr_ref->get_size());
-		func_def->body->get_last_statement()->desugar(nullptr);
-		func_def->ty = TypeRegistry::Void;
-		func_def->header->create_function_type(TypeRegistry::Void);
-		func_def->collect_references();
-		return func_def;
 	}
 
 	std::unique_ptr<NodeFunctionDefinition> create_incr_function() {
@@ -579,13 +529,16 @@ private:
 			recursive_structs.insert(strct->name);
 		}
 		for(auto &mem : m_struct.member_table) {
+			auto member = mem.second.lock();
 			if(mem.first == "self") continue;
-			if(mem.second.lock()->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
-				auto mem_type = mem.second.lock()->ty->get_element_type();
+			if(member->is_engine) continue;
+			if(member->data_type ==DataType::Const) continue;
+			if(member->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+				auto mem_type = member->ty->get_element_type();
 				if(recursive_structs.find(mem_type->to_string()) != recursive_structs.end()) {
-					m_recursive_member_structs.push_back(mem.second.lock());
+					m_recursive_member_structs.push_back(member);
 				} else {
-					m_non_recursive_member_structs.push_back(mem.second.lock());
+					m_non_recursive_member_structs.push_back(member);
 				}
 			}
 		}

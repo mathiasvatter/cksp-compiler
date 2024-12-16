@@ -80,9 +80,11 @@ public:
 
 		// deal with empty if and/or else body
 		if(node.if_body->statements.empty() && node.else_body->statements.empty()) {
+			m_last_reference.clear();
 			return node.remove_node();
 		// only else body left
 		} else if (node.if_body->statements.empty()) {
+			m_last_reference.clear();
 			node.if_body = std::move(node.else_body);
 			node.if_body->parent = &node;
 			node.else_body = std::make_unique<NodeBlock>(node.tok);
@@ -91,8 +93,7 @@ public:
 			negated_condition->ty = TypeRegistry::Boolean;
 			node.condition = std::move(negated_condition);
 			node.condition->parent = &node;
-			static ConstantFolding cf;
-			node.condition->accept(cf);
+			node.condition->do_constant_folding();
 		}
 
 		// if condition is constant, remove one of the branches

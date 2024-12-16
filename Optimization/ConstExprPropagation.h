@@ -56,7 +56,6 @@ public:
 	NodeAST* visit(NodeSingleAssignment& node) override {
 		node.r_value->accept(*this);
 		// remove constant from constant expression map when it gets reassigned
-//		auto ref = static_cast<NodeReference*>(node.l_value.get());
 		remove_constant_expression(node.l_value.get());
 		node.l_value->accept(*this);
 		// if mutable, try to propagate the value

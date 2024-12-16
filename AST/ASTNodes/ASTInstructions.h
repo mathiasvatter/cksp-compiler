@@ -42,7 +42,7 @@ struct NodeStatement: NodeInstruction {
 
 struct NodeFunctionCall : NodeInstruction {
     enum Kind{Property, Builtin, UserDefined, Undefined, Method, Constructor, Operator};
-	constexpr static const std::array<std::string, 7> KindStrings = {"Property","Builtin","UserDefined","Undefined","Method","Constructor","Operator"};
+	inline static const std::array<std::string, 7> KindStrings = {"Property","Builtin","UserDefined","Undefined","Method","Constructor","Operator"};
     Kind kind = Undefined;
     bool is_call = false;
 	bool is_new = false;
@@ -57,7 +57,7 @@ struct NodeFunctionCall : NodeInstruction {
     void update_parents(NodeAST* new_parent) override;
     void set_child_parents() override;
     std::string get_string() override;
-	std::string get_kind_as_string() const {
+	[[nodiscard]] std::string get_kind_as_string() const {
 		if (static_cast<size_t>(kind) < KindStrings.size()) {
 			return KindStrings[static_cast<size_t>(kind)];
 		}

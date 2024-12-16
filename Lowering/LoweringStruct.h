@@ -36,7 +36,6 @@ public:
 
 		m_current_struct = nullptr;
 		m_current_func = nullptr;
-//		node.rebuild_member_table();
 		return &node;
 	}
 
@@ -70,7 +69,7 @@ public:
 
 	inline NodeAST * visit(NodeVariable& node) override {
 		// if member, turn into array
-		if(node.is_member() and !node.is_engine) {
+		if(determine_inflation_need(node)) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_structs_var->to_reference());
 			return node.replace_datastruct(std::move(new_node));
 		}
@@ -78,7 +77,7 @@ public:
 	}
 	inline NodeAST * visit(NodePointer& node) override {
 		// if member, turn into array of pointers
-		if(node.is_member() and !node.is_engine) {
+		if(determine_inflation_need(node)) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_structs_var->to_reference());
 			return node.replace_datastruct(std::move(new_node));
 		}
@@ -90,7 +89,7 @@ public:
 		 * 	declare velocities[10]: [int]
 		 * 	declare struct.velocity[struct.MAX_STRUCTS, 10]
 		 */
-		if(node.is_member() and !node.is_engine) {
+		if(determine_inflation_need(node)) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_structs_var->to_reference());
 			return node.replace_datastruct(std::move(new_node));
 		}
@@ -98,7 +97,7 @@ public:
 	}
 	inline NodeAST * visit(NodeNDArray& node) override {
 		// if member, turn into multi-dimensional array
-		if(node.is_member() and !node.is_engine) {
+		if(determine_inflation_need(node)) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_structs_var->to_reference());
 			new_node->is_local = false;
 			return node.replace_datastruct(std::move(new_node));
@@ -108,7 +107,7 @@ public:
 
 	inline NodeAST * visit(NodeVariableRef& node) override {
 		// if member reference, turn into array reference with (struct.free_idx as index if in constructor, self as index if not)
-		if(node.is_member_ref() and !node.is_engine) {
+		if(determine_inflation_need(node)) {
 			auto new_node = node.inflate_dimension(get_index_ref());
 			return node.replace_reference(std::move(new_node));
 		}
@@ -116,7 +115,7 @@ public:
 	}
 	inline NodeAST * visit(NodeArrayRef& node) override {
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
-		if(node.is_member_ref() and !node.is_engine) {
+		if(determine_inflation_need(node)) {
 			auto new_node = node.inflate_dimension(get_index_ref());
 			return node.replace_reference(std::move(new_node));
 		}
@@ -124,7 +123,7 @@ public:
 	}
 
 	inline NodeAST * visit(NodePointerRef& node) override {
-		if(node.is_member_ref() and !node.is_engine) {
+		if(determine_inflation_need(node)) {
 			auto new_node = node.inflate_dimension(get_index_ref());
 			return node.replace_reference(std::move(new_node));
 		}
@@ -133,7 +132,7 @@ public:
 
 	inline NodeAST * visit(NodeNDArrayRef& node) override {
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
-		if(node.is_member_ref() and !node.is_engine) {
+		if(determine_inflation_need(node)) {
 			auto new_node = node.inflate_dimension(get_index_ref());
 			return node.replace_reference(std::move(new_node));
 		}
@@ -142,17 +141,6 @@ public:
 
 
 	inline NodeAST * visit(NodeFunctionDefinition& node) override {
-		// no lowering necessary for delete methods
-//		static const std::unordered_set<std::string> destructors = {
-//			OBJ_DELIMITER+"__del__",
-//			OBJ_DELIMITER+"__decr__",
-//			OBJ_DELIMITER+"__incr__"
-//		};
-//		for (const auto& destructor : destructors) {
-//			if (node.header->name.find(destructor) != std::string::npos) {
-//				return &node;
-//			}
-//		}
 		m_current_func = &node;
 		node.header->accept(*this);
 		node.body->accept(*this);
@@ -164,6 +152,14 @@ public:
 	}
 
 private:
+	static bool determine_inflation_need(const NodeReference& ref) {
+		return ref.is_member_ref() and !ref.is_engine and ref.get_declaration()->data_type != DataType::Const;
+	}
+
+	static bool determine_inflation_need(NodeDataStructure& data) {
+		return data.is_member() and !data.is_engine and data.data_type != DataType::Const;
+	}
+
 	/**
 	 * Lower init function by adding:
 	 *  struct.free_idx := search(struct.allocation, 0)
