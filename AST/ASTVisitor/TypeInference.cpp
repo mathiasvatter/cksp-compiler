@@ -240,7 +240,7 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 		auto num_wildcards = node.num_wildcards();
 		// not handed over as array element
 		if(num_wildcards > 0) {
-			node.ty = TypeRegistry::get_composite_type(CompoundKind::Array, node.ty->get_element_type(), num_wildcards);
+			node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), num_wildcards);
         // handed over as array element -> set to element type
 		} else {
         	if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
