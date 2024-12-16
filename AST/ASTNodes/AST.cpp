@@ -236,13 +236,13 @@ Type* NodeDataStructure::cast_type() {
 }
 
 NodeStruct* NodeDataStructure::is_member() {
-	if(parent and parent->get_node_type() == NodeType::SingleDeclaration) {
+	if(parent and parent->cast<NodeSingleDeclaration>()) {
 		auto decl = parent;
-		if(decl->parent and decl->parent->get_node_type() == NodeType::Statement) {
+		if(decl->parent and decl->parent->cast<NodeStatement>()) {
 			auto stmt = decl->parent;
-			if(stmt->parent and stmt->parent->get_node_type() == NodeType::Block) {
+			if(stmt->parent and stmt->parent->cast<NodeBlock>()) {
 				auto body = stmt->parent;
-				if(body->parent and body->parent->get_node_type() == NodeType::Struct) {
+				if(body->parent and body->parent->cast<NodeStruct>()) {
 					return body->parent->cast<NodeStruct>();
 				}
 			}

@@ -63,12 +63,13 @@ struct Note
 end struct
 
 struct Group
+	declare const MAX_GROUPS := 10
 	declare idx: int
-	declare files[100]: string[]
-	declare zone_ids[100]: int[]
+	declare files[self.MAX_GROUPS]: string[]
+	declare zone_ids[self.MAX_GROUPS]: int[]
 
 	function add_zone(self, zone_id: int) : void
-		zone_ids[0] := zone_id
+		self.zone_ids[0] := zone_id
 	end function		
 
 
@@ -130,6 +131,9 @@ on init
 	message(array.SIZE)
 	declare this_list: List // := nil
 	this_list := List(42, nil)
+
+	declare val := List(34, nil).value
+	// message(val)
 
 	declare that_list: List := List(39, List(40, List(41, this_list)))
 	// new type: object Pointer nil := -1

@@ -159,7 +159,6 @@ void Compiler::compile() {
 
 	ASTReturnFunctionRewriting return_function_rewriting(m_program);
 	return_function_rewriting.do_rewriting(*ast);
-	ast->debug_print();
 
 	ASTPreemptiveFunctionInlining pre_inlining(m_program);
 	ast->accept(pre_inlining);

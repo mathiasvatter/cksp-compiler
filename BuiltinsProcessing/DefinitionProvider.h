@@ -153,11 +153,14 @@ public:
 	std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope);
 
 	/// variable error handling
-	static inline CompileError throw_declaration_error(const NodeReference &node) {
+	static inline CompileError throw_declaration_error(const NodeReference &node, const std::string& add_msg="") {
 		auto compile_error = CompileError(ErrorType::VariableError, "", "", node.tok);
 		std::string type = "<Variable>";
-		if(node.get_node_type() == NodeType::Array) type = "<Array>";
-		compile_error.m_message = type+" has not been declared: " + node.tok.val+".";
+		if(node.get_node_type() == NodeType::ArrayRef) type = "<Array>";
+		if(node.get_node_type() == NodeType::NDArrayRef) type = "<NDArray>";
+		if(node.get_node_type() == NodeType::PointerRef) type = "<Pointer>";
+		if(node.get_node_type() == NodeType::ListRef) type = "<List>";
+		compile_error.m_message = type+" has not been declared: " + node.tok.val+". "+add_msg;
 		compile_error.m_expected = "Valid declaration";
 		return compile_error;
 	};

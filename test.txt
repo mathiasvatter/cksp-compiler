@@ -1,27 +1,59 @@
-{ Compiled with cksp version 0.0.7-alpha.2 on Sun Dec 15 18:10:58 2024 }
+{ Compiled with cksp version 0.0.7-alpha.2 on Mon Dec 16 12:11:14 2024 }
 on init
+  declare $_iter3
   declare $row0
   declare $col0
+  declare %array0[30]
   declare $_iter00
   declare %_ndarray0__num_elements[3] := (6, 2, 3)
+  declare %_ndarray0[6]
   declare $RETURN_FLAG00
+  declare $_iter4
   declare $current0
+  declare $_iter2
   declare %_node_array0__num_elements[3] := (400, 100, 4)
   declare %_node_array0[400]
   declare %note0[100]
-  declare %_Group__files__num_elements[3] := (1000000, 10000, 100)
-  declare %_Group__zone_ids__num_elements[3] := (1000000, 10000, 100)
+  declare %event_id0[100]
+  declare %note_off0[100]
+  declare %note_on0[100]
+  declare $Group__free_idx
+  declare %Group__allocation[100000]
+  declare %Group__stack[100000]
+  declare $Group__stack_top
+  declare %Group__idx[100000]
+  declare %_Group__files__num_elements[3] := (1000000, 100000, 10)
+  declare !_Group__files[1000000]
+  declare %_Group__zone_ids__num_elements[3] := (1000000, 100000, 10)
+  declare %_Group__zone_ids[1000000]
+  declare $Note__free_idx
+  declare %Note__allocation[100000]
+  declare %Note__stack[100000]
+  declare $Note__stack_top
+  declare %Note__pitch[100000]
+  declare %Note__velocity[100000]
   declare %_Note__groups__num_elements[3] := (1000000, 100000, 10)
+  declare %_Note__groups[1000000]
   declare $Point__free_idx
   declare %Point__allocation[1 + (1 + (1 + (1 + (1 + abs(num_elements(%ptr_array))))))]
   declare %Point__stack[1 + (1 + (1 + (1 + (1 + abs(num_elements(%ptr_array))))))]
   declare $Point__stack_top
   declare %Point__x[1 + (1 + (1 + (1 + (1 + abs(num_elements(%ptr_array))))))]
   declare %Point__y[1 + (1 + (1 + (1 + (1 + abs(num_elements(%ptr_array))))))]
+  declare $Node__free_idx
+  declare %Node__allocation[1000000]
+  declare %Node__stack[1000000]
+  declare $Node__stack_top
+  declare %Node__value[1000000]
+  declare %Node__left[1000000] := (-1)
+  declare %Node__right[1000000] := (-1)
   declare $List__free_idx
-  declare %List__allocation[4]
-  declare %List__value[4]
-  declare %List__next[4] := (-1)
+  declare %List__allocation[5]
+  declare %List__stack[5]
+  declare $List__stack_top
+  declare %List__value[5]
+  declare %List__next[5] := (-1)
+  declare $_iter5
   declare %_menu_strip_val__num_elements[3] := (9, 3, 3)
   declare %_menu_strip_val[9]
   declare $left
@@ -61,6 +93,7 @@ on init
     end while
     inc($keks0)
   end while
+  declare %n[10] := (0)
   message(num_elements(%array))
   declare $this_list := -1
   $current0 := -1
@@ -76,6 +109,7 @@ on init
     else
       $current0 := -1
     end if
+    $_iter2 := 0
     if(%List__allocation[$this_list] <= 0)
       %List__next[$this_list] := -1
     end if
@@ -99,12 +133,42 @@ on init
     else
       $current0 := -1
     end if
+    $_iter2 := 0
     if(%List__allocation[%List__next[$List__free_idx]] <= 0)
       %List__next[%List__next[$List__free_idx]] := -1
     end if
   end while
   %List__next[$List__free_idx] := -1
   $this_list := $List__free_idx
+  $pupsi0 := 0
+  $List__free_idx := search(%List__allocation, 0)
+  if($List__free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'List'")
+  end if
+  %List__allocation[$List__free_idx] := 1
+  %List__value[$List__free_idx] := 34
+  $current0 := %List__next[$List__free_idx]
+  while($current0 # -1) 
+    %List__allocation[$current0] := %List__allocation[$current0] - 1
+    if(%List__allocation[$current0] > 0)
+      $current0 := -1
+      continue
+    end if
+    %List__next[$List__free_idx] := $current0
+    if(%List__next[$current0] # -1)
+      $current0 := %List__next[$current0]
+    else
+      $current0 := -1
+    end if
+    $_iter2 := 0
+    if(%List__allocation[%List__next[$List__free_idx]] <= 0)
+      %List__next[%List__next[$List__free_idx]] := -1
+    end if
+  end while
+  %List__next[$List__free_idx] := -1
+  $pupsi0 := $List__free_idx
+  declare $val
+  $val := %List__value[$pupsi0]
   $pupsi0 := 0
   $List__free_idx := search(%List__allocation, 0)
   if($List__free_idx = -1)
@@ -125,6 +189,7 @@ on init
     else
       $current0 := -1
     end if
+    $_iter2 := 0
     if(%List__allocation[%List__next[$List__free_idx]] <= 0)
       %List__next[%List__next[$List__free_idx]] := -1
     end if
@@ -154,6 +219,7 @@ on init
     else
       $current0 := -1
     end if
+    $_iter2 := 0
     if(%List__allocation[%List__next[$List__free_idx]] <= 0)
       %List__next[%List__next[$List__free_idx]] := -1
     end if
@@ -183,6 +249,7 @@ on init
     else
       $current0 := -1
     end if
+    $_iter2 := 0
     if(%List__allocation[%List__next[$List__free_idx]] <= 0)
       %List__next[%List__next[$List__free_idx]] := -1
     end if
@@ -206,6 +273,7 @@ on init
     else
       $current0 := -1
     end if
+    $_iter2 := 0
     if(%List__allocation[%List__next[$that_list]] <= 0)
       %List__next[%List__next[$that_list]] := -1
     end if
@@ -229,12 +297,18 @@ on init
     else
       $current0 := -1
     end if
+    $_iter2 := 0
     if(%List__allocation[%List__next[$List__free_idx]] <= 0)
       %List__next[%List__next[$List__free_idx]] := -1
     end if
   end while
   %List__next[$List__free_idx] := -1
   %List__next[$that_list] := $List__free_idx
+  %n[0] := 1
+  %n[1] := 2
+  %n[2] := 3
+  %n[3] := 4
+  %n[4] := 5
   declare %_ndarray__num_elements[3] := (100, 10, 10)
   declare %_ndarray[100]
   declare %_ndarray3__num_elements[5] := (10000, 10, 10, 10, 10)
@@ -276,15 +350,11 @@ on init
   message(%_ndarray__num_elements[2] & ", " & %_ndarray__num_elements[1])
   declare %ptr_array[10]
   $pupsi0 := 0
-  while($pupsi0 < num_elements(%ptr_array)) 
-    %ptr_array[$pupsi0] := 0
-    inc($pupsi0)
-  end while
-  $pupsi0 := 0
   while($pupsi0 <= (num_elements(%ptr_array) - 1)) 
     %Point__stack[$Point__stack_top] := %ptr_array[$pupsi0]
     inc($Point__stack_top)
     while($Point__stack_top > 0) 
+      $_iter3 := 0
       dec($Point__stack_top)
       %ptr_array[$pupsi0] := %Point__stack[$Point__stack_top]
       if(%ptr_array[$pupsi0] = -1)
@@ -294,6 +364,7 @@ on init
       if(%Point__allocation[%ptr_array[$pupsi0]] > 0)
         continue
       end if
+      $_iter4 := 0
     end while
     $Point__free_idx := search(%Point__allocation, 0)
     if($Point__free_idx = -1)
@@ -305,8 +376,13 @@ on init
     %ptr_array[$pupsi0] := $Point__free_idx
     inc($pupsi0)
   end while
+  declare %ptr_array2[10]
+  %ptr_array2[0] := %ptr_array[0]
+  %ptr_array2[1] := %ptr_array[1]
+  declare %ptr_array3[10]
   $pupsi0 := 0
   while($pupsi0 < num_elements(%ptr_array)) 
+    %ptr_array3[$pupsi0] := %ptr_array[$pupsi0]
     inc($pupsi0)
   end while
   $pupsi0 := 0
@@ -345,7 +421,7 @@ on init
   %Point__x[$Point__free_idx] := 3
   %Point__y[$Point__free_idx] := 4
   $key0 := $Point__free_idx
-  declare $_ret50
+  declare $_ret60
   $Point__free_idx := search(%Point__allocation, 0)
   if($Point__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Point'")
@@ -353,8 +429,8 @@ on init
   %Point__allocation[$Point__free_idx] := 1
   %Point__x[$Point__free_idx] := %Point__x[$keks0] + %Point__x[$key0]
   %Point__y[$Point__free_idx] := %Point__y[$keks0] + %Point__y[$key0]
-  $_ret50 := $Point__free_idx
-  message("Point {X: " & %Point__x[$_ret50] & ", Y: " & %Point__y[$_ret50] & "}")
+  $_ret60 := $Point__free_idx
+  message("Point {X: " & %Point__x[$_ret60] & ", Y: " & %Point__y[$_ret60] & "}")
   $_iter00 := 0
   while($_iter00 <= (%_ndarray__num_elements[1] - 1)) 
     %_ndarray[$_iter00] := %_ndarray[$_iter00]
@@ -365,6 +441,7 @@ on init
   %Point__stack[$Point__stack_top] := $number0
   inc($Point__stack_top)
   while($Point__stack_top > 0) 
+    $_iter3 := 0
     dec($Point__stack_top)
     $number0 := %Point__stack[$Point__stack_top]
     if($number0 = -1)
@@ -374,10 +451,12 @@ on init
     if(%Point__allocation[$number0] > 0)
       continue
     end if
+    $_iter4 := 0
   end while
   %Point__stack[$Point__stack_top] := $pupsi0
   inc($Point__stack_top)
   while($Point__stack_top > 0) 
+    $_iter3 := 0
     dec($Point__stack_top)
     $pupsi0 := %Point__stack[$Point__stack_top]
     if($pupsi0 = -1)
@@ -387,6 +466,7 @@ on init
     if(%Point__allocation[$pupsi0] > 0)
       continue
     end if
+    $_iter4 := 0
   end while
 end on
 on note
@@ -396,10 +476,13 @@ on note
   %_node_array0[(($NI_CALLBACK_ID mod 100) * 4) + 3] := 4
   message(%_node_array0[(($NI_CALLBACK_ID mod 100) * 4) + (2 + $EVENT_NOTE)])
   %note0[$NI_CALLBACK_ID mod 100] := $EVENT_NOTE
+  %event_id0[$NI_CALLBACK_ID mod 100] := $EVENT_ID
   wait(10)
   if(%note0[$NI_CALLBACK_ID mod 100] = 0)
+    %note_off0[$NI_CALLBACK_ID mod 100] := 1
     message("Note Off" & ", " & 1)
   else
+    %note_on0[$NI_CALLBACK_ID mod 100] := 1
     message("Note On" & ", " & 1)
   end if
 end on
