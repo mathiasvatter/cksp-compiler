@@ -1,108 +1,13 @@
 on init
-	declare row0 : int
-	declare col0 : int
-	declare _iter00 : int
-	declare _ndarray0::num_elements[3] : int[] := [6, 2, 3]
-	declare RETURN_FLAG00 : int
 	declare current0 : int
 	declare _node_array0[400] : int[]
 	declare note0[100] : int[]
-	declare Point::free_idx : int
-	declare Point::allocation[1 + (1 + (1 + (1 + (1 + abs(num_elements(ptr_array{int[]}){Builtin}){Builtin}))))] : int[]
-	declare Point::stack[1 + (1 + (1 + (1 + (1 + abs(num_elements(ptr_array{int[]}){Builtin}){Builtin}))))] : int[]
-	declare Point::stack_top : int
-	declare Point::x[1 + (1 + (1 + (1 + (1 + abs(num_elements(ptr_array{int[]}){Builtin}){Builtin}))))] : int[]
-	declare Point::y[1 + (1 + (1 + (1 + (1 + abs(num_elements(ptr_array{int[]}){Builtin}){Builtin}))))] : int[]
 	declare List::free_idx : int
-	declare List::allocation[5] : int[]
-	declare List::value[5] : int[]
-	declare List::next[5] : int[] := [-1]
-	declare _menu_strip_val::num_elements[3] : int[] := [9, 3, 3]
-	declare _menu_strip_val[9] : int[]
-	declare left : int := _menu_strip_val[1]{int} + (_menu_strip_val[2]{int} * 2)
-	message(left{int}){Builtin}
-	declare keks0 : int
-	declare number0 : int := 0
-	while(number0{int} < 12) 
-		declare pupsi0 : int := number0{int}
-		message(keks0{int} & ", " & number0{int}){Builtin}
-		number0{int} := number0{int} + 3
-		inc(keks0{int}){Builtin}
-	end while
-	pupsi0{int} := 0
-	number0{int} := 3
-	while(number0{int} > 10) 
-		message(pupsi0{int} & ", " & number0{int}){Builtin}
-		number0{int} := number0{int} + -1
-		inc(pupsi0{int}){Builtin}
-	end while
-	declare array[4] : int[] := [1, 2, 3, 4]
-	pupsi0{int} := 0
-	number0{int} := 0
-	keks0{int} := 0
-	keks0{int} := 0
-	while(keks0{int} <= (_menu_strip_val::num_elements[1]{int} - 1)) 
-		number0{int} := 0
-		while(number0{int} <= (_menu_strip_val::num_elements[2]{int} - 1)) 
-			declare key0 : int
-			pupsi0{int} := 0
-			while(pupsi0{int} <= (num_elements(array{int[]}){Builtin} - 1)) 
-				message(pupsi0{int} & ", " & _menu_strip_val[(keks0{int} * 3) + number0{int}]{int} & ", " & array[pupsi0{int}]{int}){Builtin}
-				inc(pupsi0{int}){Builtin}
-			end while
-			inc(number0{int}){Builtin}
-			inc(pupsi0{int}){Builtin}
-		end while
-		inc(keks0{int}){Builtin}
-	end while
-	message(num_elements(array{int[]}){Builtin}){Builtin}
+	declare List::allocation[4] : int[]
+	declare List::value[4] : int[]
+	declare List::next[4] : int[] := [-1]
 	declare this_list : int := -1
-	current0{int} := -1
-	while(current0{int} # -1) 
-		List::allocation[current0{int}]{int} := List::allocation[current0{int}]{int} - 1
-		if(List::allocation[current0{int}]{int} > 0)
-			current0{int} := -1
-			continue{Builtin}
-		end if
-		this_list{int} := current0{int}
-		if(List::next[current0{int}]{int} # -1)
-			current0{int} := List::next[current0{int}]{int}
-		else
-			current0{int} := -1
-		end if
-		if(List::allocation[this_list{int}]{int} <= 0)
-			List::next[this_list{int}]{int} := -1
-		end if
-	end while
-	List::free_idx{int} := search(List::allocation{int[]}, 0){Builtin}
-	if(List::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'List'"){Builtin}
-	end if
-	List::allocation[List::free_idx{int}]{int} := 1
-	List::value[List::free_idx{int}]{int} := 42
-	current0{int} := List::next[List::free_idx{int}]{int}
-	while(current0{int} # -1) 
-		List::allocation[current0{int}]{int} := List::allocation[current0{int}]{int} - 1
-		if(List::allocation[current0{int}]{int} > 0)
-			current0{int} := -1
-			continue{Builtin}
-		end if
-		List::next[List::free_idx{int}]{int} := current0{int}
-		if(List::next[current0{int}]{int} # -1)
-			current0{int} := List::next[current0{int}]{int}
-		else
-			current0{int} := -1
-		end if
-		if(List::allocation[List::next[List::free_idx{int}]{int}]{int} <= 0)
-			List::next[List::next[List::free_idx{int}]{int}]{int} := -1
-		end if
-	end while
-	List::next[List::free_idx{int}]{int} := -1
-	if(0)
-		List::allocation[List::next[List::free_idx{int}]{int}]{int} := List::allocation[List::next[List::free_idx{int}]{int}]{int} + 1
-	end if
-	this_list{int} := List::free_idx{int}
-	pupsi0{int} := 0
+	declare _ret00 : int
 	List::free_idx{int} := search(List::allocation{int[]}, 0){Builtin}
 	if(List::free_idx{int} = -1)
 		message("Error: No more free space available to allocate objects of type 'List'"){Builtin}
@@ -130,8 +35,8 @@ on init
 	if(0)
 		List::allocation[List::next[List::free_idx{int}]{int}]{int} := List::allocation[List::next[List::free_idx{int}]{int}]{int} + 1
 	end if
-	pupsi0{int} := List::free_idx{int}
-	pupsi0{int} := 0
+	_ret00{int} := List::free_idx{int}
+	_ret00{int} := 0
 	List::free_idx{int} := search(List::allocation{int[]}, 0){Builtin}
 	if(List::free_idx{int} = -1)
 		message("Error: No more free space available to allocate objects of type 'List'"){Builtin}
@@ -159,8 +64,8 @@ on init
 	if(List::next[List::free_idx{int}]{int} # -1)
 		List::allocation[List::next[List::free_idx{int}]{int}]{int} := List::allocation[List::next[List::free_idx{int}]{int}]{int} + 1
 	end if
-	pupsi0{int} := List::free_idx{int}
-	number0{int} := 0
+	_ret00{int} := List::free_idx{int}
+	declare _ret20 : int
 	List::free_idx{int} := search(List::allocation{int[]}, 0){Builtin}
 	if(List::free_idx{int} = -1)
 		message("Error: No more free space available to allocate objects of type 'List'"){Builtin}
@@ -184,12 +89,11 @@ on init
 			List::next[List::next[List::free_idx{int}]{int}]{int} := -1
 		end if
 	end while
-	List::next[List::free_idx{int}]{int} := pupsi0{int}
+	List::next[List::free_idx{int}]{int} := _ret00{int}
 	if(List::next[List::free_idx{int}]{int} # -1)
 		List::allocation[List::next[List::free_idx{int}]{int}]{int} := List::allocation[List::next[List::free_idx{int}]{int}]{int} + 1
 	end if
-	number0{int} := List::free_idx{int}
-	declare that_list : int
+	_ret20{int} := List::free_idx{int}
 	List::free_idx{int} := search(List::allocation{int[]}, 0){Builtin}
 	if(List::free_idx{int} = -1)
 		message("Error: No more free space available to allocate objects of type 'List'"){Builtin}
@@ -213,213 +117,10 @@ on init
 			List::next[List::next[List::free_idx{int}]{int}]{int} := -1
 		end if
 	end while
-	List::next[List::free_idx{int}]{int} := number0{int}
+	List::next[List::free_idx{int}]{int} := _ret20{int}
 	if(List::next[List::free_idx{int}]{int} # -1)
 		List::allocation[List::next[List::free_idx{int}]{int}]{int} := List::allocation[List::next[List::free_idx{int}]{int}]{int} + 1
 	end if
-	that_list{int} := List::free_idx{int}
-	message(List::value[List::next[that_list{int}]{int}]{int} & ", " & List::value[List::next[List::next[that_list{int}]{int}]{int}]{int}){Builtin}
-	current0{int} := List::next[that_list{int}]{int}
-	while(current0{int} # -1) 
-		List::allocation[current0{int}]{int} := List::allocation[current0{int}]{int} - 1
-		if(List::allocation[current0{int}]{int} > 0)
-			current0{int} := -1
-			continue{Builtin}
-		end if
-		List::next[that_list{int}]{int} := current0{int}
-		if(List::next[current0{int}]{int} # -1)
-			current0{int} := List::next[current0{int}]{int}
-		else
-			current0{int} := -1
-		end if
-		if(List::allocation[List::next[that_list{int}]{int}]{int} <= 0)
-			List::next[List::next[that_list{int}]{int}]{int} := -1
-		end if
-	end while
-	List::free_idx{int} := search(List::allocation{int[]}, 0){Builtin}
-	if(List::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'List'"){Builtin}
-	end if
-	List::allocation[List::free_idx{int}]{int} := 1
-	List::value[List::free_idx{int}]{int} := 43
-	current0{int} := List::next[List::free_idx{int}]{int}
-	while(current0{int} # -1) 
-		List::allocation[current0{int}]{int} := List::allocation[current0{int}]{int} - 1
-		if(List::allocation[current0{int}]{int} > 0)
-			current0{int} := -1
-			continue{Builtin}
-		end if
-		List::next[List::free_idx{int}]{int} := current0{int}
-		if(List::next[current0{int}]{int} # -1)
-			current0{int} := List::next[current0{int}]{int}
-		else
-			current0{int} := -1
-		end if
-		if(List::allocation[List::next[List::free_idx{int}]{int}]{int} <= 0)
-			List::next[List::next[List::free_idx{int}]{int}]{int} := -1
-		end if
-	end while
-	List::next[List::free_idx{int}]{int} := -1
-	if(0)
-		List::allocation[List::next[List::free_idx{int}]{int}]{int} := List::allocation[List::next[List::free_idx{int}]{int}]{int} + 1
-	end if
-	List::next[that_list{int}]{int} := List::free_idx{int}
-	declare _ndarray::num_elements[3] : int[] := [100, 10, 10]
-	declare _ndarray[100] : int[]
-	declare _ndarray3[10000] : int[]
-	message(_ndarray3[4567]{int} & ", " & search(_ndarray{int[]}, -1, 20, 29){Builtin}){Builtin}
-	message(search(_ndarray3{int[]}, -1, 3400, 3499){Builtin} & ", " & "NDArray of type <int[]>"){Builtin}
-	message("NDArray of type <int[]>"){Builtin}
-	declare _ndarray2::num_elements[3] : int[] := [100, 10, 10]
-	declare _ndarray2[100] : int[]
-	pupsi0{int} := 0
-	RETURN_FLAG00{int} := 0
-	while(RETURN_FLAG00{int} = 0) 
-		message(_ndarray0::num_elements[0]{int}){Builtin}
-		row0{int} := 0
-		col0{int} := 0
-		row0{int} := 0
-		while((row0{int} <= (_ndarray2::num_elements[1]{int} - 1)) and (RETURN_FLAG00{int} = 0)) 
-			col0{int} := 0
-			while((col0{int} <= (_ndarray2::num_elements[2]{int} - 1)) and (RETURN_FLAG00{int} = 0)) 
-				if(_ndarray2[(row0{int} * _ndarray2::num_elements[2]{int}) + col0{int}]{int} = 3)
-					pupsi0{int} := (row0{int} * 10) + col0{int}
-					RETURN_FLAG00{int} := 1
-					continue{Builtin}
-				end if
-				inc(col0{int}){Builtin}
-			end while
-			if(RETURN_FLAG00{int} = 1)
-				continue{Builtin}
-			end if
-			inc(row0{int}){Builtin}
-		end while
-		if(RETURN_FLAG00{int} = 1)
-			continue{Builtin}
-		end if
-		pupsi0{int} := -1
-		RETURN_FLAG00{int} := 1
-		continue{Builtin}
-	end while
-	message(pupsi0{int} & ", " & "3" & ", " & "f"){Builtin}
-	message(_ndarray::num_elements[2]{int} & ", " & _ndarray::num_elements[1]{int}){Builtin}
-	declare ptr_array[10] : int[]
-	pupsi0{int} := 0
-	pupsi0{int} := 0
-	while(pupsi0{int} <= (num_elements(ptr_array{int[]}){Builtin} - 1)) 
-		Point::stack[Point::stack_top{int}]{int} := ptr_array[pupsi0{int}]{int}
-		inc(Point::stack_top{int}){Builtin}
-		while(Point::stack_top{int} > 0) 
-			dec(Point::stack_top{int}){Builtin}
-			ptr_array[pupsi0{int}]{int} := Point::stack[Point::stack_top{int}]{int}
-			if(ptr_array[pupsi0{int}]{int} = -1)
-				continue{Builtin}
-			end if
-			Point::allocation[ptr_array[pupsi0{int}]{int}]{int} := Point::allocation[ptr_array[pupsi0{int}]{int}]{int} - 1
-			if(Point::allocation[ptr_array[pupsi0{int}]{int}]{int} > 0)
-				continue{Builtin}
-			end if
-			if(Point::allocation[ptr_array[pupsi0{int}]{int}]{int} <= 0)
-			end if
-		end while
-		Point::free_idx{int} := search(Point::allocation{int[]}, 0){Builtin}
-		if(Point::free_idx{int} = -1)
-			message("Error: No more free space available to allocate objects of type 'Point'"){Builtin}
-		end if
-		Point::allocation[Point::free_idx{int}]{int} := 1
-		Point::x[Point::free_idx{int}]{int} := pupsi0{int}
-		Point::y[Point::free_idx{int}]{int} := pupsi0{int} * 2
-		ptr_array[pupsi0{int}]{int} := Point::free_idx{int}
-		inc(pupsi0{int}){Builtin}
-	end while
-	pupsi0{int} := 0
-	while(pupsi0{int} < num_elements(ptr_array{int[]}){Builtin}) 
-		inc(pupsi0{int}){Builtin}
-	end while
-	pupsi0{int} := 0
-	Point::free_idx{int} := search(Point::allocation{int[]}, 0){Builtin}
-	if(Point::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'Point'"){Builtin}
-	end if
-	Point::allocation[Point::free_idx{int}]{int} := 1
-	Point::x[Point::free_idx{int}]{int} := 1
-	Point::y[Point::free_idx{int}]{int} := 2
-	pupsi0{int} := Point::free_idx{int}
-	number0{int} := 0
-	Point::free_idx{int} := search(Point::allocation{int[]}, 0){Builtin}
-	if(Point::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'Point'"){Builtin}
-	end if
-	Point::allocation[Point::free_idx{int}]{int} := 1
-	Point::x[Point::free_idx{int}]{int} := 3
-	Point::y[Point::free_idx{int}]{int} := 4
-	number0{int} := Point::free_idx{int}
-	keks0{int} := 0
-	Point::free_idx{int} := search(Point::allocation{int[]}, 0){Builtin}
-	if(Point::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'Point'"){Builtin}
-	end if
-	Point::allocation[Point::free_idx{int}]{int} := 1
-	Point::x[Point::free_idx{int}]{int} := 1
-	Point::y[Point::free_idx{int}]{int} := 2
-	keks0{int} := Point::free_idx{int}
-	key0{int} := 0
-	Point::free_idx{int} := search(Point::allocation{int[]}, 0){Builtin}
-	if(Point::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'Point'"){Builtin}
-	end if
-	Point::allocation[Point::free_idx{int}]{int} := 1
-	Point::x[Point::free_idx{int}]{int} := 3
-	Point::y[Point::free_idx{int}]{int} := 4
-	key0{int} := Point::free_idx{int}
-	declare _ret60 : int
-	Point::free_idx{int} := search(Point::allocation{int[]}, 0){Builtin}
-	if(Point::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'Point'"){Builtin}
-	end if
-	Point::allocation[Point::free_idx{int}]{int} := 1
-	Point::x[Point::free_idx{int}]{int} := Point::x[keks0{int}]{int} + Point::x[key0{int}]{int}
-	Point::y[Point::free_idx{int}]{int} := Point::y[keks0{int}]{int} + Point::y[key0{int}]{int}
-	_ret60{int} := Point::free_idx{int}
-	message("Point {X: " & Point::x[_ret60{int}]{int} & ", Y: " & Point::y[_ret60{int}]{int} & "}"){Builtin}
-	_iter00{int} := 0
-	_iter00{int} := 0
-	while(_iter00{int} <= (_ndarray::num_elements[1]{int} - 1)) 
-		_ndarray[_iter00{int}]{int} := _ndarray[_iter00{int}]{int}
-		inc(_iter00{int}){Builtin}
-	end while
-	message(List::allocation[(this_list{int} + abs(this_list{int}){Builtin}) / 2]{int}){Builtin}
-	message(_ndarray::num_elements[1]{int}){Builtin}
-	Point::stack[Point::stack_top{int}]{int} := number0{int}
-	inc(Point::stack_top{int}){Builtin}
-	while(Point::stack_top{int} > 0) 
-		dec(Point::stack_top{int}){Builtin}
-		number0{int} := Point::stack[Point::stack_top{int}]{int}
-		if(number0{int} = -1)
-			continue{Builtin}
-		end if
-		Point::allocation[number0{int}]{int} := Point::allocation[number0{int}]{int} - 1
-		if(Point::allocation[number0{int}]{int} > 0)
-			continue{Builtin}
-		end if
-		if(Point::allocation[number0{int}]{int} <= 0)
-		end if
-	end while
-	Point::stack[Point::stack_top{int}]{int} := pupsi0{int}
-	inc(Point::stack_top{int}){Builtin}
-	while(Point::stack_top{int} > 0) 
-		dec(Point::stack_top{int}){Builtin}
-		pupsi0{int} := Point::stack[Point::stack_top{int}]{int}
-		if(pupsi0{int} = -1)
-			continue{Builtin}
-		end if
-		Point::allocation[pupsi0{int}]{int} := Point::allocation[pupsi0{int}]{int} - 1
-		if(Point::allocation[pupsi0{int}]{int} > 0)
-			continue{Builtin}
-		end if
-		if(Point::allocation[pupsi0{int}]{int} <= 0)
-		end if
-	end while
 end on
 
 on note{thread-unsafe}
