@@ -24,7 +24,6 @@ bool ASTOptimizations::optimize(NodeProgram &node, int iterations) {
 	}
 	static VariablePruning variable_pruning;
 	node.accept(variable_pruning);
-	node.debug_print();
 	static DeadCodeElimination dead_code_elimination;
 	node.accept(dead_code_elimination);
 

@@ -521,7 +521,6 @@ void NodeStruct::collect_recursive_structs(NodeProgram *program) {
 	  if (!node_struct) return;
 	  // Inkrementiere den Besuchszähler für das aktuelle NodeStruct
 	  visit_counts[node_struct]++;
-	  recursive_structs.insert(node_struct);
 	  // Wenn das NodeStruct bereits mehr als einmal besucht wurde, füge es den rekursiven Structs hinzu
 	  if (visit_counts[node_struct] > 1) {
 		  // Wir müssen nicht weiter in diesem Pfad suchen, da wir bereits festgestellt haben, dass es rekursiv ist
@@ -543,6 +542,7 @@ void NodeStruct::collect_recursive_structs(NodeProgram *program) {
 			  auto it = program->struct_lookup.find(structName);
 			  if (it != program->struct_lookup.end()) {
 				  NodeStruct* memberStruct = it->second;
+				  recursive_structs.insert(memberStruct);
 				  collect(memberStruct);
 			  }
 		  }
