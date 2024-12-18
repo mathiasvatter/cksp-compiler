@@ -93,7 +93,8 @@ struct NodeAST {
 	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
 	void do_constant_folding();
 	NodeAST* do_array_normalization(NodeProgram *program);
-
+	/// Determines if current Node is function argument
+	[[nodiscard]] bool is_func_arg() const;
 };
 
 template<typename T>
@@ -149,8 +150,6 @@ struct NodeReference : NodeAST {
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_declaration() const;
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure);
-    /// Determines if current reference is function argument
-    bool is_func_arg();
 	std::unique_ptr<struct NodeFunctionCall> wrap_in_get_ui_id();
 	bool needs_get_ui_id();
 	/// determines if reference is reference to struct member

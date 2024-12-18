@@ -5,8 +5,6 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "../../BuiltinsProcessing/DefinitionProvider.h"
-
 
 /**
  * To implement a form of garbage collection, reference counting should be applied.
@@ -26,6 +24,8 @@
  * 1. The struct has no other objects as members: dec(allocation[self])
  * 2. The struct has other objects as members: dec(allocation[self]) and delete(member)
  * 3. The struct has recursive objects as members: while loop with pseudo recursion
+ *
+ * Also marks temporary constructors that have to be deleted later on in ReturnFunctionRewriting
  *
  * Implement also:
  * - determine max_individual_structs_var by looking at where the constructors are called:
@@ -252,6 +252,7 @@ public:
 		}
 
 		if(node.kind == NodeFunctionCall::Kind::Constructor) {
+			node.is_temporary_constructor = node.is_func_arg() || node.parent->cast<NodeAccessChain>();
 			if(auto struct_def = node.get_definition()->parent->cast<NodeStruct>()) {
 				increase_num_constructors(struct_def);
 			}

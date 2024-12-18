@@ -188,6 +188,13 @@ NodeAST *NodeAST::do_array_normalization(NodeProgram *program) {
 	return accept(array_assign);
 }
 
+bool NodeAST::is_func_arg() const {
+	if(!this->parent) return false;
+	if(!this->parent->parent) return false;
+	return this->parent->cast<NodeParamList>() and
+		this->parent->parent->cast<NodeFunctionHeaderRef>();
+}
+
 // ************* NodeDataStructure ***************
 NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
@@ -396,13 +403,6 @@ std::shared_ptr<NodeDataStructure> NodeReference::get_declaration() const {
 //		throw std::runtime_error("Declaration of reference " + name + " is no longer available");
 //	}
 	return ptr;
-}
-
-bool NodeReference::is_func_arg() {
-	if(!this->parent) return false;
-	if(!this->parent->parent) return false;
-	return this->parent->cast<NodeParamList>() and
-		this->parent->parent->cast<NodeFunctionHeaderRef>();
 }
 
 std::unique_ptr<NodeAST> NodeReference::get_size() {

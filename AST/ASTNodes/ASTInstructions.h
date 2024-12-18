@@ -46,6 +46,7 @@ struct NodeFunctionCall : NodeInstruction {
     Kind kind = Undefined;
     bool is_call = false;
 	bool is_new = false;
+	bool is_temporary_constructor = false;
     std::unique_ptr<class NodeFunctionHeaderRef> function;
     std::weak_ptr<NodeFunctionDefinition> definition;
 	explicit NodeFunctionCall(Token tok);

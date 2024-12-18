@@ -173,8 +173,7 @@ public:
 
     /// tries to match the types of reference and declaration by also checking for element typ
     /// in case declaration is a composite type
-    static inline Type* match_reference_declaration(NodeReference& node) {
-		auto declaration = node.get_declaration();
+    static inline Type* match_reference_declaration(NodeReference& node, const std::shared_ptr<NodeDataStructure>& declaration) {
 		// before lowering, the declaration is not necessarily set, check before:
 		if(!declaration) return node.ty;
 
@@ -199,6 +198,29 @@ public:
         declaration->set_element_type(specialize_type(declaration_type, reference_type));
         return node.ty;
     }
+
+	static inline Type* match_element_types(NodeAST& node1, NodeAST& node2) {
+		Type* node2_type = node2.ty->get_element_type();
+		Type* node1_type = node1.ty->get_element_type();
+		if(!node1_type->is_compatible(node2_type)) {
+			throw_type_error(node1, node2.ty).exit();
+		}
+
+		// match type from node2 to reference
+		node1.set_element_type(specialize_type(node1_type, node2_type));
+
+		// do not alter node2 type if it already has a type
+		if(node2.ty->get_element_type() != TypeRegistry::Unknown) return node1.ty;
+
+		node2_type = node2.ty->get_element_type();
+		node1_type = node1.ty->get_element_type();
+		if(!node2_type->is_compatible(node1_type)) {
+			throw_type_error(node2, node1.ty).exit();
+		}
+		// match type from reference to node2
+		node2.set_element_type(specialize_type(node2_type, node1_type));
+		return node1.ty;
+	}
 
     /// tries to find the most specialized type for type1 by looking at type2
     static inline Type* specialize_type(Type* type1, Type* type2) {

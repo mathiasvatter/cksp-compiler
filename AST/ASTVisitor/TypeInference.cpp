@@ -24,6 +24,11 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 	}
 	node.reset_function_visited_flag();
 	cast_data_structure_types(&node, true);
+
+	for(auto & s : node.struct_definitions) {
+		s->collect_recursive_structs(m_program);
+	}
+
 	return &node;
 }
 
@@ -33,7 +38,7 @@ void TypeInference::cast_data_structure_types(NodeProgram* program, bool cast) {
 		auto data_struct = refs.lock();
 		if(!data_struct) continue;
 		for(auto & ref : data_struct->references) {
-			match_reference_declaration(*ref);
+			match_reference_declaration(*ref, ref->get_declaration());
 		}
 	}
 	for(auto& ass : def_provider->get_all_assignments()) {
@@ -53,7 +58,7 @@ void TypeInference::cast_data_structure_types(NodeProgram* program, bool cast) {
 		auto data_struct = refs.lock();
 		if(!data_struct) continue;
 		for(auto & ref : data_struct->references) {
-			match_reference_declaration(*ref);
+			match_reference_declaration(*ref, ref->get_declaration());
 		}
 	}
 	def_provider->m_all_data_structures.clear();
@@ -120,7 +125,7 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 			return new_node->accept(*this);
 		}
 	}
-    match_reference_declaration(node);
+    match_reference_declaration(node, node.get_declaration());
 	m_def_provider->add_to_references(&node);
 	return &node;
 }
@@ -162,7 +167,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 	if(node.ty == TypeRegistry::Unknown) {
 		node.ty = TypeRegistry::Nil;
 	}
-	match_reference_declaration(node);
+	match_reference_declaration(node, node.get_declaration());
 	m_def_provider->add_to_references(&node);
 	return &node;
 }
@@ -205,7 +210,7 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 			if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
 		}
 	}
-    match_reference_declaration(node);
+    match_reference_declaration(node, node.get_declaration());
 	m_def_provider->add_to_references(&node);
 	return &node;
 }
@@ -246,7 +251,7 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
         	if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
 		}
     }
-    match_reference_declaration(node);
+    match_reference_declaration(node, node.get_declaration());
 	m_def_provider->add_to_references(&node);
 	return &node;
 }
@@ -280,7 +285,7 @@ NodeAST * TypeInference::visit(NodeListRef& node) {
         // handed over as list element -> set to element type
         if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
     }
-    match_reference_declaration(node);
+    match_reference_declaration(node, node.get_declaration());
 	m_def_provider->add_to_references(&node);
 	return &node;
 }
@@ -290,7 +295,7 @@ NodeAST * TypeInference::visit(NodeStruct& node) {
 	for(auto & m: node.methods) {
 		m->accept(*this);
 	}
-	// needs to rebuild because has not been rebuild since desugaring
+	// needs to rebuild because has not been rebuilt since desugaring
 	node.rebuild_member_table();
 	node.rebuild_method_table();
 	return &node;
@@ -371,9 +376,17 @@ NodeAST * TypeInference::visit(NodeForEach& node) {
 		match_against(*node.key->variable, TypeRegistry::Integer);
 	}
 
-	if(node.value) node.value->accept(*this);
-	node.range->accept(*this);
 	node.body->accept(*this);
+	node.value->accept(*this);
+
+	node.range->accept(*this);
+	if(auto pairs = node.range->cast<NodePairs>()) {
+		match_element_types(*pairs->range, *node.value->variable);
+	} else {
+		match_element_types(*node.range, *node.value->variable);
+	}
+	node.range->accept(*this);
+
 	return &node;
 };
 
@@ -422,7 +435,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				}
 				reference->declaration = node_declaration;
 				reference->collect_references();
-				match_reference_declaration(*reference);
+				match_reference_declaration(*reference, reference->get_declaration());
 				// if declaration of this reference is unknown and it is not the end of the chain,
 				// we can assume that it is also an object. we can check if the next reference is also in this struct
 				// and then cast this reference to the object of the last
