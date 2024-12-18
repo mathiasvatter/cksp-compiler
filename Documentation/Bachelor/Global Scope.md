@@ -122,18 +122,31 @@ Deine Struktur macht bereits Sinn, aber ich würde die Kapitelreihenfolge leicht
             - Variablenname
             - Typ
             - Array Größe
-      5. Sobald nun ein 
+      5. Sobald nun eine lokale Deklarationssnode besucht wird, versucht der Algorithmus nun, die variable durch eine freie passive Variable zu ersetzen. Dafür wird die Hashfunktion auf die Variable angewendet, die passive variables map durchsucht. Wird eine passende freie passive Variable gefunden, wird in einer separaten Map ein index hochgezählt, der die Variable als belegt markiert und den index der nächsten freien Variable im vector widerspiegelt. 
+      6. In einer replace map wird nun der name der Variable zu ebenjener passiven Variable gemappt, um zukünftige Codereferenzen auf diese Variable zu ersetzen.
+      7. Die Deklarationsnode wird nun durch eine assignment node ersetzt. War im ursprünglichen Deklarationsstatement ein Wert zugewiesen, so wird dieser in die assignment node übernommen, wenn nicht wird ein typ neutraler wert zugewiesen.
+      8. Gemäß des Visitor Patterns werden nun alle Variablen Referenzen bei Besuch durch die in der replace map gemappten Variablen ersetzt und erhalten gleichzeitig einen neuen Pointer zu ihrer neuen Deklaration, um diese eindeutig zu kennzeichnen, da in diesem Schritt in manchen Fällen bereits name clashes auftreten können.
+        ```cksp
+          declare i: int
+          if(i = NUM_GROUPS)
+              declare i: int
+              message("If-Variable j: " & i)
+          else
+              declare j: int
+              message("Else-Variable i: " & j)
+          end if
+        ```
+      Im obigen Beispiel wird die Variable j im elseblock durch die passive lokale variable i ersetzt, die im if block deklariert wurde. Die Referenz auf j wird durch einen Pointer auf die Deklaration von i ersetzt. Würden nur Namen geändert werden, würde die eindeutige Zuordnung verloren gehen.
+      9. Am Ende eines jeden Scopes werden die entsprechenden Maps geleert, um für den nächsten Scope bereit zu sein.
+      10. Währenddessen wurden weak ptr zu allen Deklarationen und Referenzen in globalen Vektoren gespeichert, um später auf sie zugreifen zu können.
+      11. Um nun Namenskollisionen zu vermeiden, wird durch den Vektor aller Deklarationen iteriert und alle lokalen Variablen erhalten mittels Gensym einen neuen Namen, um Kollisionen zu vermeiden. Im Anschluss werden mittels Referenzen Vektor alle Referenzen auf diese Variablen ebenfalls umbenannt, indem sie den gleichen Namen annehmen, wie die Variable, auf die sie durch bereits angesprochenen Pointer zeigen.
+      12. Der Register Reuse Prozess endet mit der eigentlichen promotion zu globalen Variablen, nachdem alle passiven Variablen wenn möglich wiederverwendet wurden. Dazu werden alle übrig gebliebenen lokalen Deklarationstatements durch assignments ersetzt und ohne Value zuweisung an den Anfang des on init Callbacks verschoben.
 
-     - Beim Verlassen eines Scopes werden Variablen zu **passiven Variablen**.  
-   - **Variable Reuse**:  
-     - Passive Variablen (gleicher Typ) werden wiederverwendet, um Speicherverbrauch zu reduzieren.  
-     - Deklarationen werden durch Assignments ersetzt.  
-   - **Gensym für Variablenumbenennung**:  
-     - Jede Variable erhält einen eindeutigen Namen, um Kollisionen zu vermeiden.  
 
 
 
    - **Parameter Promotion** (Lambda Lifting):  
+    Bei der Beschreibung des Register Reuse Algos haben wir Funktionen zunächst außer acht gelassen. Doch was ist mit lokalen Variablen in Funktionen und wie gelangen sie in den on init callback?
      - Lokale Variablen werden in Funktionsparameter umgewandelt.  
      - Beispiel:  
        ```ksp

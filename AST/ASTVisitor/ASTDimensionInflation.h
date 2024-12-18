@@ -24,6 +24,7 @@
  *         message(h[CB_IDX] & g[CB_IDX])
  *     end if
  * end on
+ * Max length of event queue in Kontakt is 8192 (polyphonic var size)
  */
 class ASTDimensionInflation : public ASTVisitor {
 private:

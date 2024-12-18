@@ -100,7 +100,6 @@ on init
 	end for
 
 	declare n[10] := (0)
-	declare array[10] := (1)
 	message(array.SIZE)
 	declare this_list: List := nil
 	this_list := List(42, nil)
