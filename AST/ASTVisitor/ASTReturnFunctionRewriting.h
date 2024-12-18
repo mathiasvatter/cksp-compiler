@@ -8,6 +8,7 @@
 #include "ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
 #include "ReturnFunctionRewriting/ReturnParamPromotion.h"
 #include "ReturnFunctionRewriting/ReturnFunctionIsolation.h"
+#include "ASTTemporaryPointerScope.h"
 
 class ASTReturnFunctionRewriting: public ASTVisitor {
 private:
@@ -23,6 +24,9 @@ public:
 
 		static ReturnFunctionIsolation isolation(m_program);
 		isolation.do_return_function_isolation(node);
+
+		static ASTTemporaryPointerScope temp_scope(m_program);
+		temp_scope.visit(node);
 
 		node.update_function_lookup();
 	}

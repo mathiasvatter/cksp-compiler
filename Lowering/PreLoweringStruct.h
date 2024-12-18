@@ -31,9 +31,9 @@ public:
 			node.member_node_types.insert(member->get_node_type());
 		}
 
+//		node.collect_recursive_structs(m_program);
 		// add compiler struct vars
 		prepend_compiler_struct_vars(&node);
-		node.collect_recursive_structs(m_program);
 //		node.generate_ref_count_methods();
 		node.rebuild_member_table();
 		return &node;

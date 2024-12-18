@@ -65,7 +65,8 @@ NodeFunctionCall::~NodeFunctionCall() {
 
 NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
         : NodeInstruction(other), is_call(other.is_call), is_new(other.is_new), kind(other.kind),
-          function(clone_unique(other.function)), definition(other.definition) {
+          function(clone_unique(other.function)), definition(other.definition),
+		  is_temporary_constructor(other.is_temporary_constructor) {
     set_child_parents();
 }
 
