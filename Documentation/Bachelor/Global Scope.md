@@ -103,7 +103,7 @@ Deine Struktur macht bereits Sinn, aber ich würde die Kapitelreihenfolge leicht
       1. Der Algorithmus benutzt die Visitor Pattern Implementierung des ASTs, um alle Nodes zu besuchen.
       2. Sobald eine NodeBlock Node mit einem Scope betreten wird, wird eine neue Map erstellt, die Namen und Pointer zu alle lokalen Variablen, die in diesem Scope deklariert wurden und die über das Visitor Pattern besucht wurden, speichert.
       3. Anschließend wird bei jedem Besuch eines Deklarationsstatements, die Variable – sofern sie nicht global ist – in die Map des aktuellen Scopes geschrieben. Ist die Variable eine Konstante, so kann sie nicht wiederverwendet werden, da damit reassignments einhergehen. In diesem Fall wird sie zu den Globalen Deklarationen hinzugefügt, um später mit Gensym umbenannt zu werden.
-      4. Beim Verlassen der NodeBlock Node werden die gesammelten Variablen in eine neue, globale Map hinzugefügt, die alle passiven Variablen enthält (Beispiel). Hier kann bereits variable name clashing auftreten (Beispiel), da Variablen aus verschiedenen Scopes in der gleichen Map landen. Daher besitzt die Map pro Hashvalue einen Vector an NodeDatastructures Nodes.
+      4. Beim Verlassen der NodeBlock Node (und des Scopes) werden die gesammelten Variablen in eine neue, globale Map hinzugefügt, die alle passiven Variablen enthält (Beispiel). Hier kann bereits variable name clashing auftreten (Beispiel), da Variablen aus verschiedenen Scopes in der gleichen Map landen. Daher besitzt die Map pro Hashvalue einen Vector an NodeDatastructures Nodes.
 
         ```cksp
             if(i = NUM_GROUPS)
@@ -142,7 +142,22 @@ Deine Struktur macht bereits Sinn, aber ich würde die Kapitelreihenfolge leicht
       11. Um nun Namenskollisionen zu vermeiden, wird durch den Vektor aller Deklarationen iteriert und alle lokalen Variablen erhalten mittels Gensym einen neuen Namen, um Kollisionen zu vermeiden. Im Anschluss werden mittels Referenzen Vektor alle Referenzen auf diese Variablen ebenfalls umbenannt, indem sie den gleichen Namen annehmen, wie die Variable, auf die sie durch bereits angesprochenen Pointer zeigen.
       12. Der Register Reuse Prozess endet mit der eigentlichen promotion zu globalen Variablen, nachdem alle passiven Variablen wenn möglich wiederverwendet wurden. Dazu werden alle übrig gebliebenen lokalen Deklarationstatements durch assignments ersetzt und ohne Value zuweisung an den Anfang des on init Callbacks verschoben.
 
+      ```
+        function register_reuse(ASTNode node) {
+          visit(node)
+        }
 
+        function visit(NodeBlock node) override {
+            
+        }
+
+        function visit(NodeDeclaration node) override {
+
+        }
+
+
+
+      ```
 
 
    - **Parameter Promotion** (Lambda Lifting):  
