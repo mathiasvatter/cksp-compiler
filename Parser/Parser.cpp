@@ -979,7 +979,8 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
 
             if (!exprResult.is_error()) {
 				if(peek(-1).type == token::CLOSED_PARENTH) {
-					params.push_back(std::make_unique<NodeParamList>(get_tok(), std::move(exprResult.unwrap())));
+					auto expr_result = std::move(exprResult.unwrap());
+					params.push_back(std::make_unique<NodeParamList>(expr_result->tok, std::move(expr_result)));
 					params.back()->parent = parent;
 				} else {
                 	params.push_back(std::move(exprResult.unwrap()));

@@ -135,6 +135,7 @@ on init
 
 	// message(use_count(this_list))
 	// message(return_size(ndarray[*, 0]))
+	substitution(1, (3))
 end on
 
 function get_active_idx(value_array, emitter) -> result
@@ -169,6 +170,13 @@ function search_matrix(matrix: number[][], target: number): number
     return -1  // If the target is not found
 end function
 
+function substitution(val: int, arr: int[])
+	declare val3: int
+	declare arr1[10] := arr
+	// val := 1
+	inc(val)
+	return val
+end function	
 
 
 // if threadsafe environment, do no lifting -> all params are promoted to global variables

@@ -19,6 +19,8 @@ public:
 	NodeAST * visit(NodeBlock& node) override;
     /// decide if declaration is local or global
 	NodeAST * visit(NodeSingleDeclaration& node) override;
+	/// check for reassignments of Function Parameters that are immutable
+	NodeAST * visit(NodeSingleAssignment& node) override;
 	/// Check if correctly declared and save declaration
 	NodeAST * visit(NodeArray& node) override;
     /// get declaration

@@ -195,6 +195,10 @@ bool NodeAST::is_func_arg() const {
 		this->parent->parent->cast<NodeFunctionHeaderRef>();
 }
 
+bool NodeAST::is_literal() {
+	return cast<NodeInt>() or cast<NodeReal>() or cast<NodeString>() or cast<NodeInitializerList>();
+}
+
 // ************* NodeDataStructure ***************
 NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
@@ -223,7 +227,7 @@ bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBlock* curr
 
 bool NodeDataStructure::is_function_param() {
 	if(!parent) return false;
-	return parent->cast<NodeFunctionParam>();
+	return parent->cast<NodeFunctionParam>() and parent->parent->cast<NodeFunctionHeader>();
 }
 
 Type* NodeDataStructure::cast_type() {

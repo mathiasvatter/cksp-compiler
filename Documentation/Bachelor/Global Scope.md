@@ -143,15 +143,15 @@ Deine Struktur macht bereits Sinn, aber ich würde die Kapitelreihenfolge leicht
       12. Der Register Reuse Prozess endet mit der eigentlichen promotion zu globalen Variablen, nachdem alle passiven Variablen wenn möglich wiederverwendet wurden. Dazu werden alle übrig gebliebenen lokalen Deklarationstatements durch assignments ersetzt und ohne Value zuweisung an den Anfang des on init Callbacks verschoben.
 
       ```
-        function register_reuse(ASTNode node) {
+        void register_reuse(NodeAST node) {
           visit(node)
         }
 
-        function visit(NodeBlock node) override {
+        NodeAST* visit(NodeBlock node) override {
             
         }
 
-        function visit(NodeDeclaration node) override {
+        NodeAST* visit(NodeDeclaration node) override {
 
         }
 
@@ -162,6 +162,15 @@ Deine Struktur macht bereits Sinn, aber ich würde die Kapitelreihenfolge leicht
 
    - **Parameter Promotion** (Lambda Lifting):  
     Bei der Beschreibung des Register Reuse Algos haben wir Funktionen zunächst außer acht gelassen. Doch was ist mit lokalen Variablen in Funktionen und wie gelangen sie in den on init callback?
+    - Damit Funktionen nicht geinlined werden müssen, damit ihre lokalen Variablen durch womögliche passive Variablen um den Funktionsaufruf herum mehrmals genutzt werden können, ist die Idee von Parameter Promotion:
+      - lokale Funktionsvariablen werden in Funktionsparameter umgewandelt und auf Callback Ebene als Argumente übergeben.
+    1. Auch dieser Algorithmus traversiert den AST mittels visitor pattern. Sobald eine Function Call Node besucht wird, wird ihre Definition traversiert. Um die Anzahl der lokalen Variablen in der Definition möglichst gering zu halten, wird an dieser Stelle bereits der Register Reuse Algorithmus auf das Scope der Definition angewendet. Das hat nicht nur zur Folge, dass in diesem Scope bereits passive Variablen reused wurden, sondern auch dass die zurückgebliebenen Deklarationen umbenannt wurden und zwar so, dass es auch bei einer Bewegung ins globale Scope nicht zu Namenskollisionen kommt.
+    2. Anschließend werden alle übrig gebliebenen Deklarationen des Funktionsbodys zu assignments umgewandelt. War zur Deklaration kein initial value angegeben, wird ein neutraler Wert zugewiesen.
+    Die Deklarationen werden (ohne mögliche value zuweisungen) in eine Map geschrieben, mit einem Pointer auf die node der aktuellen Funktionsdefinition als key value. Dadurch entsteht in dieser Map `local_var_declarations` pro Funktionsdefinition eine Liste an Deklarationen.
+    3. Zurück in der Function Call Node werden die gesammelten Deklarationen in `local_var_declarations` für die aktuelle Funktionsdefinition dem header der definition hinzugefügt. Durch den Aufbau des AST speichert jede Funktionsdefinition Pointer zu ihren Funktionsaufrufen, so können deren Header ebenfalls um die Variablenreferenzen als Argumente erweitert werden.
+    4. 
+
+
      - Lokale Variablen werden in Funktionsparameter umgewandelt.  
      - Beispiel:  
        ```ksp

@@ -14,50 +14,56 @@ public:
 		m_program = main;
 	}
 
-	NodeAST * inline_function(NodeFunctionCall& call) {
-		if(call.is_builtin_kind()) {
-			auto error = CompileError(ErrorType::InternalError, "", "", call.tok);
+	NodeAST* do_function_inlining(NodeFunctionCall& call) {
+//		call.do_param_promotion();
+		return call.accept(*this);
+	}
+
+	inline NodeAST * visit(NodeFunctionCall& node) override {
+		node.function->accept(*this);
+		if(node.is_builtin_kind()) {
+			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
 			error.m_message = "Function of builtin kind can not be inlined.";
+			return &node;
 		}
-		auto definition = call.get_definition();
+		auto definition = node.get_definition();
 		if(!definition) {
-			auto error = CompileError(ErrorType::InternalError, "", "", call.tok);
-			error.m_message = "Function call ready to be inlined has to have a definition.";
+			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+			error.m_message = "Function node ready to be inlined has to have a definition.";
 		}
 
 		// deal here with expression functions
 		if(definition->is_expression_function()) {
 //			definition->is_used = false;
 			auto node_func_body = clone_as<NodeBlock>(definition->body.get());
-			m_substitution_stack.push(get_substitution_map(definition->header.get(), call.function.get()));
+			m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 			node_func_body->accept(*this);
 
 			m_substitution_stack.pop();
-			return call.replace_with(get_expression_return(node_func_body.get()));
+			return node.replace_with(get_expression_return(node_func_body.get()));
 		};
 
 
 		// check if FunctionCall is in statement and not assigned or in a condition etc (Handled bei ReturnFunctionRewriting class)
-		if(!call.parent->cast<NodeStatement>()) {
-			CompileError(ErrorType::InternalError,"Function call was not rewritten and is not within <Statement>.", "", call.tok).exit();
+		if(!node.parent->cast<NodeStatement>()) {
+			CompileError(ErrorType::InternalError, "Function node was not rewritten and is not within <Statement>.", "", node.tok).exit();
 		}
 
 		// inlining process
 		// can not be set to false here, because some func calls might be "called" and some not
 //			definition->is_used = false;
 		auto node_func_body = clone_as<NodeBlock>(definition->body.get());
-		m_substitution_stack.push(get_substitution_map(definition->header.get(), call.function.get()));
+		m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 		node_func_body->accept(*this);
 		m_substitution_stack.pop();
-		return call.replace_with(std::move(node_func_body));
+		return node.replace_with(std::move(node_func_body));
 
 	}
 
 private:
 	static inline std::unique_ptr<NodeAST> get_expression_return(NodeBlock* body) {
 		auto stmt = body->statements[0]->statement.get();
-		if(stmt->get_node_type() == NodeType::Return) {
-			auto ret = static_cast<NodeReturn*>(stmt);
+		if(auto ret = stmt->cast<NodeReturn>()) {
 			return std::move(ret->return_variables[0]);
 		}
 		auto error = CompileError(ErrorType::InternalError, "", "", body->tok);
@@ -246,6 +252,15 @@ private:
 //		if(ref->data_type != DataType::Param) return ref;
 
 		if(auto substitute = get_substitute(ref->name)) {
+			// check if substitute will replace l_value of assignment and is Literal
+			if(ref->is_l_value()) {
+				if(substitute->is_literal()) {
+					auto error = CompileError(ErrorType::SyntaxError, "", "", substitute->tok);
+					error.m_message = "Tried to substitute an l_value of an assignment with a literal value. Left side of assignment must be a reference.";
+					error.exit();
+				}
+			}
+
 			// if substitute and ref are both of type <Composite> and <ArrayRef>: only change name
 			if(auto composite_substitute = substitute_composite_type(ref, substitute.get())) {
 				return composite_substitute;

@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.2 on Wed Dec 18 18:40:00 2024 }
+{ Compiled with cksp version 0.0.7-alpha.2 on Thu Dec 19 19:21:29 2024 }
 on init
   declare $current0
   declare %_node_array0[400]
@@ -117,7 +117,15 @@ on init
       continue
     end if
   end while
-  $current0 := $_iter6
+  $_iter6 := 0
+  declare %arr1[10]
+  $_ret20 := 0
+  while($_ret20 < num_elements(%arr1)) 
+    %arr1[$_ret20] := 3
+    inc($_ret20)
+  end while
+  2
+  $current0 := $p20
   while($current0 # -1) 
     %Point__allocation[$current0] := %Point__allocation[$current0] - 1
     if(%Point__allocation[$current0] > 0)
@@ -125,7 +133,7 @@ on init
       continue
     end if
   end while
-  $current0 := $p20
+  $current0 := $_iter6
   while($current0 # -1) 
     %Point__allocation[$current0] := %Point__allocation[$current0] - 1
     if(%Point__allocation[$current0] > 0)
