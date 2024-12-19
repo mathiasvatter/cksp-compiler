@@ -181,6 +181,12 @@ NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 	return &node;
 }
 
+NodeAST* ASTVariableChecking::visit(NodeSingleAssignment& node) {
+	node.l_value->accept(*this);
+	node.r_value->accept(*this);
+	return &node;
+}
+
 NodeAST* ASTVariableChecking::visit(NodeArray& node) {
 	node.determine_locality(m_program, m_current_block);
 	if(node.size) node.size->accept(*this);

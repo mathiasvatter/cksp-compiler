@@ -159,7 +159,6 @@ void Compiler::compile() {
 
 	ASTReturnFunctionRewriting return_function_rewriting(m_program);
 	return_function_rewriting.do_rewriting(*ast);
-	ast->debug_print();
 
 	ASTPreemptiveFunctionInlining pre_inlining(m_program);
 	ast->accept(pre_inlining);
@@ -174,6 +173,7 @@ void Compiler::compile() {
 	// Data Structure Lowering of NDArrays and Array assignments
 	ASTDataStructureLowering data_structure_lowering(m_program);
 	ast->accept(data_structure_lowering);
+	ast->debug_print();
 
 	compile_time.stop("Data Structure Lowering");
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;

@@ -58,6 +58,7 @@ private:
 			// see if the function is a return-only function
 			if(do_preemptive_function_inlining(node)) {
 				definition->is_used = false;
+//				node.do_param_promotion(m_program);
 				auto new_node = node.do_function_inlining(m_program);
 				m_program->function_call_stack.pop();
 				return new_node;

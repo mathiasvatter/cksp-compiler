@@ -95,6 +95,7 @@ struct NodeAST {
 	NodeAST* do_array_normalization(NodeProgram *program);
 	/// Determines if current Node is function argument
 	[[nodiscard]] bool is_func_arg() const;
+	[[nodiscard]] bool is_literal();
 };
 
 template<typename T>

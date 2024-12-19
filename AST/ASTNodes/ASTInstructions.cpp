@@ -262,7 +262,7 @@ NodeAST *NodeFunctionCall::do_function_call_hoisting(NodeProgram *program) {
 
 NodeAST *NodeFunctionCall::do_function_inlining(NodeProgram *program) {
 	static FunctionInlining inlining(program);
-	return inlining.inline_function(*this);
+	return inlining.do_function_inlining(*this);
 }
 
 // ************* NodeSortSearch ***************
@@ -500,6 +500,10 @@ NodeAST *NodeSingleAssignment::replace_child(NodeAST* oldChild, std::unique_ptr<
 		if(auto new_l_value = cast_node<NodeReference>(newChild.release())) {
 			l_value = std::unique_ptr<NodeReference>(new_l_value);
 			return l_value.get();
+		} else {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", oldChild->tok);
+			error.m_message = "Tried to assign to a non-reference. Left side of assignment must be a reference.";
+			error.exit();
 		}
     } else if (r_value.get() == oldChild) {
         r_value = std::move(newChild);
