@@ -164,11 +164,24 @@ Deine Struktur macht bereits Sinn, aber ich würde die Kapitelreihenfolge leicht
     Bei der Beschreibung des Register Reuse Algos haben wir Funktionen zunächst außer acht gelassen. Doch was ist mit lokalen Variablen in Funktionen und wie gelangen sie in den on init callback?
     - Damit Funktionen nicht geinlined werden müssen, damit ihre lokalen Variablen durch womögliche passive Variablen um den Funktionsaufruf herum mehrmals genutzt werden können, ist die Idee von Parameter Promotion:
       - lokale Funktionsvariablen werden in Funktionsparameter umgewandelt und auf Callback Ebene als Argumente übergeben.
+      - das transformiert paradoxerweise funktionen die zuvor pure waren zu funktionen mit seiteneffekten, was ja in den meisten Programmiersprachen vermieden wird.
     1. Auch dieser Algorithmus traversiert den AST mittels visitor pattern. Sobald eine Function Call Node besucht wird, wird ihre Definition traversiert. Um die Anzahl der lokalen Variablen in der Definition möglichst gering zu halten, wird an dieser Stelle bereits der Register Reuse Algorithmus auf das Scope der Definition angewendet. Das hat nicht nur zur Folge, dass in diesem Scope bereits passive Variablen reused wurden, sondern auch dass die zurückgebliebenen Deklarationen umbenannt wurden und zwar so, dass es auch bei einer Bewegung ins globale Scope nicht zu Namenskollisionen kommt.
     2. Anschließend werden alle übrig gebliebenen Deklarationen des Funktionsbodys zu assignments umgewandelt. War zur Deklaration kein initial value angegeben, wird ein neutraler Wert zugewiesen.
-    Die Deklarationen werden (ohne mögliche value zuweisungen) in eine Map geschrieben, mit einem Pointer auf die node der aktuellen Funktionsdefinition als key value. Dadurch entsteht in dieser Map `local_var_declarations` pro Funktionsdefinition eine Liste an Deklarationen.
+    Die Deklarationen werden (ohne mögliche value zuweisungen) in eine Map geschrieben, mit einem Pointer auf die node der aktuellen Funktionsdefinition als key value. Dadurch entsteht in dieser Map `local_var_declarations` pro Funktionsdefinition eine weitere map an Deklarationen, deren key wiederum der name der deklarierten variable ist.
     3. Zurück in der Function Call Node werden die gesammelten Deklarationen in `local_var_declarations` für die aktuelle Funktionsdefinition dem header der definition hinzugefügt. Durch den Aufbau des AST speichert jede Funktionsdefinition Pointer zu ihren Funktionsaufrufen, so können deren Header ebenfalls um die Variablenreferenzen als Argumente erweitert werden.
-    4. 
+    4. jetzt wird geschaut ob der call nested in einer weiteren Funktion sich befindet, in diesem Fall wird in local_var_declarations ein neues mapping erstellt, welches die gesammelten Deklarationen als values enthält und den Pointer zur Funktionsdefinition als key. Dieser Prozess wird rekursiv durchgeführt, bis der Funktionsaufruf sich nicht mehr in einer Definition, sondern in einem Callback befindet. In diesem Fall werden alle deklarationen, die nun zum key der Funktionsdefinition gehören, direkt über den Aufruf geschrieben. Dabei werden sowohl die deklarationen als auch der funktionsaufruf in einem scope eingefügt.
+    - Warum müssen Variablen übergeben werden, können als Argumente nicht direkt Werte übergeben werden?
+      - nein, variablen können in der funktionsdefinition reassigned werden, was dazu führen würde, dass immutable werte l_values in Assignments werden.
+    - Was passiert, wenn zweimal der gleiche Funktionsaufruf untereinander stattfindet?
+      - die deklarationen aus local_var_declarations werden nicht bewegt, sondern kopiert, damit sie für alle möglichen funktionsaufrufe an allen möglichen stellen verfügbar sind.
+      - dadurch könnte es zu mehreren deklarationen der gleichen variablen kommen, wenn die funktionen am gleichen ort mehrmals aufgerufen werden.  
+      - Das wird innerhalb nested functions bereits dadurch verhindert, dass die inneren maps bei local_var_declarations den variablen namen als key benutzen und somit nur eine mögliche deklaration pro variablennamen zulassen. Und da die variablennamen durch den zuvor aufgerufenen register reuse prozess eindeutig sind, kann es auch hier nicht zu kollisionen kommen.
+      - auf callbackebene hingegen werden pro funktionsaufruf die entsprechenden deklarationen über den call eingefügt. Dadurch kann es zu mehreren deklarationen der gleichen variablen kommen, wenn die funktionen am gleichen ort mehrmals aufgerufen werden. Abhilfe schafft hier dann aber der finale durchlauf des register reuse prozesses, der die deklarationen des ersten aufrufs der funktion nach ihrem scope als passive variablen speichert und die deklarationen der folgenden aufrufe durch diese ersetzt.
+
+
+    - Herausforderungen
+      - hatten bisher nur sequenzielle Callbacks betrachtet, wie gehen wir mit thread-unsafe Callbacks um?
+      - Wann macht parameter promotion sinn und wann nicht?
 
 
      - Lokale Variablen werden in Funktionsparameter umgewandelt.  
