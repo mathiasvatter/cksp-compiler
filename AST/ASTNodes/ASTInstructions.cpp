@@ -265,6 +265,10 @@ NodeAST *NodeFunctionCall::do_function_inlining(NodeProgram *program) {
 	return inlining.do_function_inlining(*this);
 }
 
+bool NodeFunctionCall::is_destructive_builtin_func() const {
+	return kind == NodeFunctionCall::Kind::Builtin and destructive_functions.find(function->name) != destructive_functions.end();
+}
+
 // ************* NodeSortSearch ***************
 NodeAST *NodeSortSearch::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
@@ -602,7 +606,8 @@ ASTLowering* NodeSingleDeclaration::get_post_lowering(NodeProgram *program) cons
 std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(NodeDataStructure* var) {
     // if var provided -> turn to reference else turn variable to reference
     auto node_array_var = var ? var->to_reference() : variable->to_reference();
-	node_array_var->ty = var ? var->ty : variable->ty;
+//	node_array_var->ty = var ? var->ty : variable->ty;
+	node_array_var->do_type_inference(nullptr);
     // if declare stmt has r_value -> clone it else create new NodeInt with value 0
     auto node_assignee = value ? value->clone() : TypeRegistry::get_neutral_element_from_type(variable->ty);
     auto node_assign_statement = std::make_unique<NodeSingleAssignment>(

@@ -293,7 +293,7 @@ public:
 
 	/// continue
 	static std::unique_ptr<NodeFunctionCall> continu(Token &tok) {
-		auto call = std::make_unique<NodeFunctionCall>(
+		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeaderRef>(
 				"continue",
@@ -304,8 +304,10 @@ public:
 			),
 			tok
 		);
-		call->function->has_forced_parenth = false;
-		return call;
+		func_call->function->has_forced_parenth = false;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		func_call->ty = TypeRegistry::Void;
+		return func_call;
 	}
 
 	/// sh_right(a, b)

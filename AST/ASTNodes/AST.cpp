@@ -25,6 +25,7 @@
 #include "../../Optimization/ConstantFolding.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "../../Lowering/LoweringInitializerList.h"
+#include "../ASTVisitor/TypeInference.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -197,6 +198,11 @@ bool NodeAST::is_func_arg() const {
 
 bool NodeAST::is_literal() {
 	return cast<NodeInt>() or cast<NodeReal>() or cast<NodeString>() or cast<NodeInitializerList>();
+}
+
+void NodeAST::do_type_inference(NodeProgram *program) {
+	static TypeInference inference(program);
+	accept(inference);
 }
 
 // ************* NodeDataStructure ***************

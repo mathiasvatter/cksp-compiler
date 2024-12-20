@@ -35,7 +35,7 @@ on init
 	declare Node::value[Node::MAX_STRUCTS{int}] : int[]
 	declare Node::left[Node::MAX_STRUCTS{int}] : int[] := [- 1]
 	declare Node::right[Node::MAX_STRUCTS{int}] : int[] := [- 1]
-	declare const List::MAX_STRUCTS : int := MAX::STRUCTS{unknown}
+	declare const List::MAX_STRUCTS : int := 1
 	declare List::free_idx : int
 	declare List::allocation[List::MAX_STRUCTS{int}] : int[]
 	declare List::stack[List::MAX_STRUCTS{int}] : int[]
@@ -43,6 +43,11 @@ on init
 	declare List::value[List::MAX_STRUCTS{int}] : int[]
 	declare List::next[List::MAX_STRUCTS{int}] : int[] := [- 1]
 	declare local _iter : int
+		declare local _ret0 : int
+		List(_ret0{int}, 34, - 1){Constructor}
+		declare val3 : int := List::value[_ret0{int}]{int}
+		List::__decr__(_ret0{int}, 1){UserDefined}
+
 	declare local ptr_array[10] : int[]
 		declare local i : int
 		i{int} := 0
@@ -67,24 +72,22 @@ on init
 	Point(p1{int}, 1, 2){Constructor}
 	declare local p2 : int
 	Point(p2{int}, 3, 4){Constructor}
-		declare local _ret0 : int
-		Point(_ret0{int}, 1, 2){Constructor}
-			declare local _ret1 : int
-			Point(_ret1{int}, 3, 4){Constructor}
-				declare local _ret2 : int
-				Point::__add__(_ret2{int}, _ret0{int}, _ret1{int}){UserDefined}
-				message("Point {X: " & Point::x[_ret2{int}]{int} & ", Y: " & Point::y[_ret2{int}]{int} & "}"){Builtin}
+		declare local _ret1 : int
+		Point(_ret1{int}, 1, 2){Constructor}
+			declare local _ret2 : int
+			Point(_ret2{int}, 3, 4){Constructor}
+				declare local _ret3 : int
+				Point::__add__(_ret3{int}, _ret1{int}, _ret2{int}){UserDefined}
+				message("Point {X: " & Point::x[_ret3{int}]{int} & ", Y: " & Point::y[_ret3{int}]{int} & "}"){Builtin}
 
-			Point::__decr__(_ret1{int}, 1){UserDefined}
+			Point::__decr__(_ret2{int}, 1){UserDefined}
 
-		Point::__decr__(_ret0{int}, 1){UserDefined}
+		Point::__decr__(_ret1{int}, 1){UserDefined}
 
 		declare local val3 : int
 		declare local arr1[10] : int[] := [3]
-		inc(1){Builtin}
 		_0{int} := 1
 
-	Point::__decr__(p2{int}, 1){UserDefined}
 	Point::__decr__(p1{int}, 1){UserDefined}
 		declare local _iter1 : int
 		_iter1{int} := 0
@@ -93,6 +96,7 @@ on init
 			inc(_iter1{int}){Builtin}
 		end while
 
+	Point::__decr__(p2{int}, 1){UserDefined}
 		declare local _iter2 : int
 		_iter2{int} := 0
 		while(_iter2{int} <= (num_elements(ptr_array2{int[]}){Builtin} - 1)) 
@@ -131,6 +135,50 @@ on note{thread-unsafe}
 		message("Note On" & ", " & note_on[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int}){Builtin}
 	end if
 end on
+
+function List::__init__(ret$1 : int, value : int, next : int)
+	List::free_idx{int} := search(List::allocation{int[]}, 0){Builtin}
+	if(List::free_idx{int} = -1)
+		message("Error: No more free space available to allocate objects of type 'List'"){Builtin}
+	end if
+	List::allocation[List::free_idx{int}]{int[]} := 1
+	List::value[List::free_idx{int}]{int} := value{int}
+	List::__decr__(List::next[List::free_idx{int}]{int}, 1){UserDefined}
+	List::next[List::free_idx{int}]{int} := next{int}
+	List::__incr__(List::next[List::free_idx{int}]{int}, 1){UserDefined}
+	ret$1{int} := List::free_idx{int}
+end function
+
+function List::__del__(self : int)
+	declare local _iter : int
+	if(List::allocation[self{int}]{int} <= 0)
+		List::next[self{int}]{int} := - 1
+	end if
+end function
+
+function List::__decr__(self : int, num_refs : int)
+	declare local current : int := self{int}
+	while(current{int} # - 1) 
+		List::allocation[current{int}]{int} := List::allocation[current{int}]{int} - num_refs{int}
+		if(List::allocation[current{int}]{int} > 0)
+			current{int} := - 1
+			continue{Builtin}
+		end if
+		self{int} := current{int}
+		if(List::next[current{int}]{int} # - 1)
+			current{int} := List::next[current{int}]{int}
+		else
+			current{int} := - 1
+		end if
+		List::__del__(self{int}){UserDefined}
+	end while
+end function
+
+function List::__incr__(self : int, num_refs : int)
+	if(self{int} # - 1)
+		List::allocation[self{int}]{int} := List::allocation[self{int}]{int} + num_refs{int}
+	end if
+end function
 
 function Point::__init__(ret$1 : int, x : int, y : int)
 	Point::free_idx{int} := search(Point::allocation{int[]}, 0){Builtin}

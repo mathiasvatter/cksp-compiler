@@ -1,5 +1,6 @@
-{ Compiled with cksp version 0.0.7-alpha.2 on Thu Dec 19 19:21:29 2024 }
+{ Compiled with cksp version 0.0.7-alpha.2 on Fri Dec 20 14:09:38 2024 }
 on init
+  declare $current1
   declare $current0
   declare %_node_array0[400]
   declare %note0[100]
@@ -7,19 +8,66 @@ on init
   declare %Point__allocation[1 + (1 + (1 + (1 + (1 + abs(num_elements(%ptr_array))))))]
   declare %Point__x[1 + (1 + (1 + (1 + (1 + abs(num_elements(%ptr_array))))))]
   declare %Point__y[1 + (1 + (1 + (1 + (1 + abs(num_elements(%ptr_array))))))]
-  declare %ptr_array[10]
-  declare $_iter6
-  while($_iter6 < num_elements(%ptr_array)) 
-    %ptr_array[$_iter6] := 0
-    inc($_iter6)
+  declare $List__free_idx
+  declare %List__allocation[1]
+  declare %List__value[1]
+  declare %List__next[1] := (-1)
+  declare $_ret00
+  $List__free_idx := search(%List__allocation, 0)
+  if($List__free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'List'")
+  end if
+  %List__allocation[$List__free_idx] := 1
+  %List__value[$List__free_idx] := 34
+  $current0 := %List__next[$List__free_idx]
+  while($current0 # -1) 
+    %List__allocation[$current0] := %List__allocation[$current0] - 1
+    if(%List__allocation[$current0] > 0)
+      $current0 := -1
+      continue
+    end if
+    %List__next[$List__free_idx] := $current0
+    if(%List__next[$current0] # -1)
+      $current0 := %List__next[$current0]
+    else
+      $current0 := -1
+    end if
+    if(%List__allocation[%List__next[$List__free_idx]] <= 0)
+      %List__next[%List__next[$List__free_idx]] := -1
+    end if
   end while
-  $_iter6 := 0
-  while($_iter6 <= (num_elements(%ptr_array) - 1)) 
-    $current0 := %ptr_array[$_iter6]
-    while($current0 # -1) 
-      %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-      if(%Point__allocation[$current0] > 0)
-        $current0 := -1
+  %List__next[$List__free_idx] := -1
+  $_ret00 := $List__free_idx
+  $current0 := $_ret00
+  while($current0 # -1) 
+    %List__allocation[$current0] := %List__allocation[$current0] - 1
+    if(%List__allocation[$current0] > 0)
+      $current0 := -1
+      continue
+    end if
+    $_ret00 := $current0
+    if(%List__next[$current0] # -1)
+      $current0 := %List__next[$current0]
+    else
+      $current0 := -1
+    end if
+    if(%List__allocation[$_ret00] <= 0)
+      %List__next[$_ret00] := -1
+    end if
+  end while
+  declare %ptr_array[10]
+  $_ret00 := 0
+  while($_ret00 < num_elements(%ptr_array)) 
+    %ptr_array[$_ret00] := 0
+    inc($_ret00)
+  end while
+  $_ret00 := 0
+  while($_ret00 <= (num_elements(%ptr_array) - 1)) 
+    $current1 := %ptr_array[$_ret00]
+    while($current1 # -1) 
+      %Point__allocation[$current1] := %Point__allocation[$current1] - 1
+      if(%Point__allocation[$current1] > 0)
+        $current1 := -1
         continue
       end if
     end while
@@ -28,10 +76,10 @@ on init
       message("Error: No more free space available to allocate objects of type 'Point'")
     end if
     %Point__allocation[$Point__free_idx] := 1
-    %Point__x[$Point__free_idx] := $_iter6
-    %Point__y[$Point__free_idx] := $_iter6 * 2
-    %ptr_array[$_iter6] := $Point__free_idx
-    inc($_iter6)
+    %Point__x[$Point__free_idx] := $_ret00
+    %Point__y[$Point__free_idx] := $_ret00 * 2
+    %ptr_array[$_ret00] := $Point__free_idx
+    inc($_ret00)
   end while
   declare %ptr_array2[10]
   %ptr_array2[0] := %ptr_array[0]
@@ -43,19 +91,19 @@ on init
     %Point__allocation[%ptr_array2[1]] := %Point__allocation[%ptr_array2[1]] + (num_elements(%ptr_array2) - 1)
   end if
   declare %ptr_array3[10]
-  $_iter6 := 0
-  while($_iter6 < num_elements(%ptr_array)) 
-    %ptr_array3[$_iter6] := %ptr_array[$_iter6]
-    inc($_iter6)
+  $_ret00 := 0
+  while($_ret00 < num_elements(%ptr_array)) 
+    %ptr_array3[$_ret00] := %ptr_array[$_ret00]
+    inc($_ret00)
   end while
-  $_iter6 := 0
-  while($_iter6 <= (num_elements(%ptr_array3) - 1)) 
-    if(%ptr_array3[$_iter6] # -1)
-      %Point__allocation[%ptr_array3[$_iter6]] := %Point__allocation[%ptr_array3[$_iter6]] + 1
+  $_ret00 := 0
+  while($_ret00 <= (num_elements(%ptr_array3) - 1)) 
+    if(%ptr_array3[$_ret00] # -1)
+      %Point__allocation[%ptr_array3[$_ret00]] := %Point__allocation[%ptr_array3[$_ret00]] + 1
     end if
-    inc($_iter6)
+    inc($_ret00)
   end while
-  $_iter6 := 0
+  $_ret00 := 0
   $Point__free_idx := search(%Point__allocation, 0)
   if($Point__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Point'")
@@ -63,7 +111,7 @@ on init
   %Point__allocation[$Point__free_idx] := 1
   %Point__x[$Point__free_idx] := 1
   %Point__y[$Point__free_idx] := 2
-  $_iter6 := $Point__free_idx
+  $_ret00 := $Point__free_idx
   declare $p20
   $Point__free_idx := search(%Point__allocation, 0)
   if($Point__free_idx = -1)
@@ -73,7 +121,7 @@ on init
   %Point__x[$Point__free_idx] := 3
   %Point__y[$Point__free_idx] := 4
   $p20 := $Point__free_idx
-  declare $_ret00
+  declare $_ret10
   $Point__free_idx := search(%Point__allocation, 0)
   if($Point__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Point'")
@@ -81,15 +129,6 @@ on init
   %Point__allocation[$Point__free_idx] := 1
   %Point__x[$Point__free_idx] := 1
   %Point__y[$Point__free_idx] := 2
-  $_ret00 := $Point__free_idx
-  declare $_ret10
-  $Point__free_idx := search(%Point__allocation, 0)
-  if($Point__free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Point'")
-  end if
-  %Point__allocation[$Point__free_idx] := 1
-  %Point__x[$Point__free_idx] := 3
-  %Point__y[$Point__free_idx] := 4
   $_ret10 := $Point__free_idx
   declare $_ret20
   $Point__free_idx := search(%Point__allocation, 0)
@@ -97,85 +136,93 @@ on init
     message("Error: No more free space available to allocate objects of type 'Point'")
   end if
   %Point__allocation[$Point__free_idx] := 1
-  %Point__x[$Point__free_idx] := %Point__x[$_ret00] + %Point__x[$_ret10]
-  %Point__y[$Point__free_idx] := %Point__y[$_ret00] + %Point__y[$_ret10]
+  %Point__x[$Point__free_idx] := 3
+  %Point__y[$Point__free_idx] := 4
   $_ret20 := $Point__free_idx
-  message("Point {X: " & %Point__x[$_ret20] & ", Y: " & %Point__y[$_ret20] & "}")
-  $current0 := $_ret10
-  while($current0 # -1) 
-    %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-    if(%Point__allocation[$current0] > 0)
-      $current0 := -1
+  declare $_ret30
+  $Point__free_idx := search(%Point__allocation, 0)
+  if($Point__free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'Point'")
+  end if
+  %Point__allocation[$Point__free_idx] := 1
+  %Point__x[$Point__free_idx] := %Point__x[$_ret10] + %Point__x[$_ret20]
+  %Point__y[$Point__free_idx] := %Point__y[$_ret10] + %Point__y[$_ret20]
+  $_ret30 := $Point__free_idx
+  message("Point {X: " & %Point__x[$_ret30] & ", Y: " & %Point__y[$_ret30] & "}")
+  $current1 := $_ret20
+  while($current1 # -1) 
+    %Point__allocation[$current1] := %Point__allocation[$current1] - 1
+    if(%Point__allocation[$current1] > 0)
+      $current1 := -1
       continue
     end if
   end while
-  $current0 := $_ret00
-  while($current0 # -1) 
-    %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-    if(%Point__allocation[$current0] > 0)
-      $current0 := -1
+  $current1 := $_ret10
+  while($current1 # -1) 
+    %Point__allocation[$current1] := %Point__allocation[$current1] - 1
+    if(%Point__allocation[$current1] > 0)
+      $current1 := -1
       continue
     end if
   end while
-  $_iter6 := 0
+  $_ret00 := 0
   declare %arr1[10]
-  $_ret20 := 0
-  while($_ret20 < num_elements(%arr1)) 
-    %arr1[$_ret20] := 3
-    inc($_ret20)
+  $_ret30 := 0
+  while($_ret30 < num_elements(%arr1)) 
+    %arr1[$_ret30] := 3
+    inc($_ret30)
   end while
-  2
-  $current0 := $p20
-  while($current0 # -1) 
-    %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-    if(%Point__allocation[$current0] > 0)
-      $current0 := -1
+  $current1 := $_ret00
+  while($current1 # -1) 
+    %Point__allocation[$current1] := %Point__allocation[$current1] - 1
+    if(%Point__allocation[$current1] > 0)
+      $current1 := -1
       continue
     end if
   end while
-  $current0 := $_iter6
-  while($current0 # -1) 
-    %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-    if(%Point__allocation[$current0] > 0)
-      $current0 := -1
+  $_ret00 := 0
+  while($_ret00 <= (num_elements(%ptr_array3) - 1)) 
+    $current1 := %ptr_array3[$_ret00]
+    while($current1 # -1) 
+      %Point__allocation[$current1] := %Point__allocation[$current1] - 1
+      if(%Point__allocation[$current1] > 0)
+        $current1 := -1
+        continue
+      end if
+    end while
+    inc($_ret00)
+  end while
+  $current1 := $p20
+  while($current1 # -1) 
+    %Point__allocation[$current1] := %Point__allocation[$current1] - 1
+    if(%Point__allocation[$current1] > 0)
+      $current1 := -1
       continue
     end if
   end while
-  $_iter6 := 0
-  while($_iter6 <= (num_elements(%ptr_array3) - 1)) 
-    $current0 := %ptr_array3[$_iter6]
-    while($current0 # -1) 
-      %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-      if(%Point__allocation[$current0] > 0)
-        $current0 := -1
+  $_ret00 := 0
+  while($_ret00 <= (num_elements(%ptr_array2) - 1)) 
+    $current1 := %ptr_array2[$_ret00]
+    while($current1 # -1) 
+      %Point__allocation[$current1] := %Point__allocation[$current1] - 1
+      if(%Point__allocation[$current1] > 0)
+        $current1 := -1
         continue
       end if
     end while
-    inc($_iter6)
+    inc($_ret00)
   end while
-  $_iter6 := 0
-  while($_iter6 <= (num_elements(%ptr_array2) - 1)) 
-    $current0 := %ptr_array2[$_iter6]
-    while($current0 # -1) 
-      %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-      if(%Point__allocation[$current0] > 0)
-        $current0 := -1
+  $_ret00 := 0
+  while($_ret00 <= (num_elements(%ptr_array) - 1)) 
+    $current1 := %ptr_array[$_ret00]
+    while($current1 # -1) 
+      %Point__allocation[$current1] := %Point__allocation[$current1] - 1
+      if(%Point__allocation[$current1] > 0)
+        $current1 := -1
         continue
       end if
     end while
-    inc($_iter6)
-  end while
-  $_iter6 := 0
-  while($_iter6 <= (num_elements(%ptr_array) - 1)) 
-    $current0 := %ptr_array[$_iter6]
-    while($current0 # -1) 
-      %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-      if(%Point__allocation[$current0] > 0)
-        $current0 := -1
-        continue
-      end if
-    end while
-    inc($_iter6)
+    inc($_ret00)
   end while
 end on
 on note

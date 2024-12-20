@@ -12,7 +12,10 @@ private:
 	DefinitionProvider* m_def_provider;
 
 public:
-	explicit TypeInference(NodeProgram* main) : m_def_provider(main->def_provider) {
+	explicit TypeInference(NodeProgram* main) {
+		if(main) {
+			m_def_provider = main->def_provider;
+		}
 		m_program = main;
 	};
 

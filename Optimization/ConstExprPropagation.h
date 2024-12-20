@@ -78,14 +78,14 @@ public:
 	}
 
 	NodeAST* visit(NodeVariableRef& node) override {
-		if(is_value_altering_func_arg(&node)) {
+		if(is_destructive_func_arg(&node)) {
 			remove_constant_expression(&node);
 		}
 		return do_constant_expr_propagation(&node);
 	}
 
 	NodeAST* visit(NodeArrayRef& node) override {
-		if(is_value_altering_func_arg(&node)) {
+		if(is_destructive_func_arg(&node)) {
 			remove_constant_expression(&node);
 		}
 		return do_constant_expr_propagation(&node);
