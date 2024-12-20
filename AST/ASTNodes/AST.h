@@ -93,6 +93,7 @@ struct NodeAST {
 	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
 	void do_constant_folding();
 	NodeAST* do_array_normalization(NodeProgram *program);
+	void do_type_inference(NodeProgram *program);
 	/// Determines if current Node is function argument
 	[[nodiscard]] bool is_func_arg() const;
 	[[nodiscard]] bool is_literal();

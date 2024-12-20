@@ -20,13 +20,11 @@ class ASTVisitor {
 protected:
 	NodeProgram* m_program = nullptr;
 
-	/// map value will be reset after ref is in one of these functions
-	inline static const std::unordered_set<std::string> no_propagation = {
+	/// map value will be reset after ref is in one of these functions, because they have side-effects and
+	/// alter the value (variable) put in
+	inline static const std::unordered_set<std::string> destructive_functions = {
 		"inc", "dec",
 	};
-
-    inline static const std::unordered_map<Type*, std::string> m_return_arrays = {{TypeRegistry::ArrayOfInt, "_return_vars_int"}, {TypeRegistry::ArrayOfReal, "_return_vars_real"}, {TypeRegistry::ArrayOfString, "_return_vars_str"}};
-    inline static const std::unordered_map<Type*, std::string> m_local_var_arrays = {{TypeRegistry::ArrayOfInt, "_loc_var_int"}, {TypeRegistry::ArrayOfReal, "_loc_var_real"}, {TypeRegistry::ArrayOfString, "_loc_var_str"}};
 
 public:
 	static CompileError get_raw_compile_error(ErrorType err_type, const NodeAST& node);

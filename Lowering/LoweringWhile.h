@@ -77,14 +77,12 @@ public:
 		node.condition->parent = &node;
 
 		auto block = std::make_unique<NodeBlock>(node.tok);
-		block->add_stmt(std::make_unique<NodeStatement>(std::move(exit_flag_decl), node.tok));
-		block->add_stmt(std::make_unique<NodeStatement>(
+		block->add_as_stmt(std::move(exit_flag_decl));
+		block->add_as_stmt(
 			std::make_unique<NodeWhile>(
 				std::move(node.condition),
 				std::move(node.body),
 				node.tok
-			),
-			node.tok
 			)
 		);
 		return node.replace_with(std::move(block));
@@ -98,8 +96,8 @@ public:
 			node.tok
 		);
 		auto block = std::make_unique<NodeBlock>(node.tok);
-		block->add_stmt(std::make_unique<NodeStatement>(std::move(exit_flag_assign), node.tok));
-		block->add_stmt(std::make_unique<NodeStatement>(DefinitionProvider::continu(node.tok), node.tok));
+		block->add_as_stmt(std::move(exit_flag_assign));
+		block->add_as_stmt(DefinitionProvider::continu(node.tok));
 		return node.replace_with(std::move(block));
 	}
 

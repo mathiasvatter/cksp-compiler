@@ -254,10 +254,22 @@ private:
 		if(auto substitute = get_substitute(ref->name)) {
 			// check if substitute will replace l_value of assignment and is Literal
 			if(ref->is_l_value()) {
-				if(substitute->is_literal()) {
+				if(substitute->is_constant() and !substitute->ty->cast<CompositeType>()) {
 					auto error = CompileError(ErrorType::SyntaxError, "", "", substitute->tok);
-					error.m_message = "Tried to substitute an l_value of an assignment with a literal value. Left side of assignment must be a reference.";
+					error.m_message = "Tried to substitute an l_value of an assignment with an immutable value. Left side of assignment must be a reference.";
 					error.exit();
+				}
+			}
+			if(ref->is_func_arg()) {
+				auto func_call = ref->parent->parent->parent->cast<NodeFunctionCall>();
+				if(func_call->is_destructive_builtin_func()) {
+					if(substitute->is_constant() and !substitute->ty->cast<CompositeType>()) {
+						auto error = CompileError(ErrorType::TypeError, "", "", ref->tok);
+						error.m_message = "Tried to substitute an argument of a destructive builtin function with an immutable value.";
+						error.m_message += " Destructive functions require a variable as an argument.";
+						error.m_got = substitute->tok.val;
+						error.exit();
+					}
 				}
 			}
 

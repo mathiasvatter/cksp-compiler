@@ -104,8 +104,8 @@ on init
 	// declare this_list: List := nil
 	// this_list := List(42, nil)
 
-	// declare val := List(34, nil).value
-	// // message(val)
+	declare val3 := List(34, nil).value
+	// message(val)
 
 	// declare that_list: List := List(39, List(40, List(41, this_list)))
 	// message(that_list.next.value, that_list.get_next_next_value())
@@ -174,7 +174,7 @@ function substitution(val: int, arr: int[])
 	declare val3: int
 	declare arr1[10] := arr
 	// val := 1
-	inc(val)
+	// inc(val)
 	return val
 end function	
 

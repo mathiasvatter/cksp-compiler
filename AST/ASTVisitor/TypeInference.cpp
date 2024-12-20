@@ -126,7 +126,7 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 		}
 	}
     match_reference_declaration(node, node.get_declaration());
-	m_def_provider->add_to_references(&node);
+//	m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -168,7 +168,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 		node.ty = TypeRegistry::Nil;
 	}
 	match_reference_declaration(node, node.get_declaration());
-	m_def_provider->add_to_references(&node);
+//	m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -211,7 +211,7 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 		}
 	}
     match_reference_declaration(node, node.get_declaration());
-	m_def_provider->add_to_references(&node);
+//	m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -252,7 +252,7 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 		}
     }
     match_reference_declaration(node, node.get_declaration());
-	m_def_provider->add_to_references(&node);
+//	m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -286,7 +286,7 @@ NodeAST * TypeInference::visit(NodeListRef& node) {
         if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
     }
     match_reference_declaration(node, node.get_declaration());
-	m_def_provider->add_to_references(&node);
+//	m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -660,6 +660,16 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	node.bind_definition(m_program);
 	node.function->accept(*this);
+
+	if(node.is_destructive_builtin_func()) {
+		if(node.function->get_arg(0)->is_constant()) {
+			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+			error.m_message = "Destructive functions require a variable as an argument, but an immutable argument was given.";
+			error.m_got = node.function->get_arg(0)->tok.val;
+			error.exit();
+		}
+	}
+
 	auto definition = node.get_definition();
 	if(!definition) {
 		// if definition pre lowering not found -> could be struct __init__ func
@@ -671,7 +681,10 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	}
 
 	if(definition) {
-		if (!definition->visited) definition->accept(*this);
+		if (!definition->visited and !node.is_builtin_kind()) {
+			definition->accept(*this);
+			definition->visited = true;
+		}
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
 			auto &param = definition->get_param(i);
@@ -691,14 +704,29 @@ NodeAST * TypeInference::visit(NodeFunctionHeaderRef& node) {
 	if(node.args) node.args->accept(*this);
 
 	// if declaration type has empty params -> get type from reference
-	if(node.get_declaration()) {
-		auto decl_type = static_cast<FunctionType *>(node.get_declaration()->ty);
-		auto ref_type = static_cast<FunctionType *>(node.ty);
-		if (decl_type->get_params().empty()) {
-			node.get_declaration()->ty = node.ty;
-		} else if (ref_type->get_params().empty()) {
-			node.ty = node.get_declaration()->ty;
+	if(auto decl = node.get_declaration()) {
+		auto decl_type = decl->ty->cast<FunctionType>();
+		auto ref_type = node.ty->cast<FunctionType>();
+		if(!decl_type) {
+			decl->accept(*this);
 		}
+		decl_type = decl->ty->cast<FunctionType>();
+		if(!decl_type) {
+			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+			error.m_message = "Function type expected.";
+			error.exit();
+		} else if (decl_type->get_params().empty() and ref_type) {
+			decl->ty = node.ty;
+		}
+		if(!ref_type) {
+//			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+//			error.m_message = "Function type expected.";
+//			error.exit();
+			node.ty = decl->ty;
+		} else if (ref_type->get_params().empty()) {
+			node.ty = decl->ty;
+		}
+
 	}
 
 	return &node;
@@ -710,7 +738,7 @@ NodeAST * TypeInference::visit(NodeFunctionHeader& node) {
 	if(node.ty == TypeRegistry::Unknown) {
 		node.create_function_type();
 	}
-	if(node.ty->get_type_kind() != TypeKind::Function) {
+	if(!node.ty->cast<FunctionType>()) {
 		auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
 		error.m_message = "Function type expected.";
 		error.exit();
@@ -720,7 +748,7 @@ NodeAST * TypeInference::visit(NodeFunctionHeader& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
-	node.visited = true;
+//	node.visited = true;
 	m_program->function_call_stack.push(node.weak_from_this());
 
 	// add data structures to provider
@@ -732,8 +760,12 @@ NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
     node.body->accept(*this);
 	node.header->accept(*this);
 
-
-	auto header_type = static_cast<FunctionType*>(node.header->ty);
+	auto header_type = node.header->ty->cast<FunctionType>();
+	if(!header_type) {
+		auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+		error.m_message = "Function type expected.";
+		error.exit();
+	}
 	node.set_element_type(specialize_type(node.ty, header_type->get_return_type()));
 	node.header->ty = TypeRegistry::add_function_type(header_type->get_params(), node.ty);
 

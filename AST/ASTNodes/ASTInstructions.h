@@ -90,6 +90,12 @@ struct NodeFunctionCall : NodeInstruction {
 	void do_param_promotion(NodeProgram* program);
 	NodeAST* do_function_call_hoisting(NodeProgram* program);
 	NodeAST* do_function_inlining(NodeProgram* program);
+
+	/// builtin functions with side-effects and alter the value (variable) put in
+	inline static const std::unordered_set<std::string> destructive_functions = {
+		"inc", "dec",
+	};
+	bool is_destructive_builtin_func() const;
 };
 
 struct NodeSortSearch : NodeInstruction {
