@@ -37,7 +37,10 @@ public:
 	}
 
 	void do_param_promotion(NodeFunctionCall& call) {
-		m_program->reset_function_visited_flag();
+//		m_program->reset_function_visited_flag();
+		if(auto decl = call.get_definition()) {
+			decl->visited = false;
+		}
 		call.accept(*this);
 		insert_promoted_declarations();
 

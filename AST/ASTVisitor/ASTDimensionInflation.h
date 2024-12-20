@@ -24,6 +24,7 @@
  *         message(h[CB_IDX] & g[CB_IDX])
  *     end if
  * end on
+ * Max length of event queue in Kontakt is 8192 (polyphonic var size)
  */
 class ASTDimensionInflation : public ASTVisitor {
 private:
@@ -117,6 +118,7 @@ public:
 			if(node.value) {
 				block = std::make_unique<NodeBlock>(node.tok);
 				assignment = node.to_assign_stmt();
+
 				node.variable->references.emplace(assignment->l_value.get());
 			}
 
@@ -151,7 +153,6 @@ public:
 
 	inline NodeAST* visit(NodeVariableRef& node) override {
 		if(!determine_inflation_need(node)) return &node;
-
 		auto inflated = node.inflate_dimension(m_cb_idx->clone());
 		return node.replace_reference(std::move(inflated));
 	}

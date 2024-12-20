@@ -16,6 +16,7 @@
 #include "AST/ASTVisitor/ASTTypeAnnotations.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
 #include "AST/ASTVisitor/ASTDimensionInflation.h"
+#include "AST/ASTVisitor/ASTLowerTypes.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -144,8 +145,13 @@ void Compiler::compile() {
 	ASTCollectLowerings lowering(m_program);
 	ast->accept(lowering);
 
+	ASTLowerTypes lowering_types(m_program);
+	ast->accept(lowering_types);
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
+
+	ASTDimensionInflation dimension_inflation(m_program);
+	ast->accept(dimension_inflation);
 
 	compile_time.stop("Lowering");
 	std::cout << compile_time.print_timer("Lowering") << std::endl;
@@ -161,15 +167,13 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
 	compile_time.start("Data Structure Lowering");
 
-	ASTDimensionInflation dimension_inflation(m_program);
-	ast->accept(dimension_inflation);
-	ast->debug_print();
 
 	NormalizeNDArrayAssign nd_array_assign(m_program);
 	ast->accept(nd_array_assign);
 	// Data Structure Lowering of NDArrays and Array assignments
 	ASTDataStructureLowering data_structure_lowering(m_program);
 	ast->accept(data_structure_lowering);
+	ast->debug_print();
 
 	compile_time.stop("Data Structure Lowering");
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;

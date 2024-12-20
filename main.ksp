@@ -1,21 +1,14 @@
-struct Debug
-	declare value: int
-	declare next[2]: Debug[]
-	// declare prev[10]: Debug[]
-end struct
-
 struct List
 	declare value: int
 	declare next: List
 
-	// function __init__(self, value: int, next: List)
-	// 	self.value := value
-	// 	self.next := next
-	// end function
-
     function get_next_next_value(self)
         return self.next.next.value
     end function
+
+	function add(self, value: int)
+		self.next := List(value, nil)
+	end function
 end struct
 
 struct Node
@@ -42,120 +35,107 @@ struct Point
 	end function
 end struct
 
+define NUM_DYN_GROUPS := 10
+
+struct Note
+	declare pitch: int
+	declare velocity: int
+	declare groups[NUM_DYN_GROUPS]: int[]
+
+	function __init__(self, p: int, v: int, g: int[])
+		self.pitch := p
+		self.velocity := v
+		self.groups := g
+	end function
+
+	function __repr__(self): string
+		return "Note {Pitch: " & self.pitch & ", Velocity: " & self.velocity & "}"
+	end function
+
+	function play(self): int
+		return play_note(self.pitch, self.velocity, 0, 0)
+	end function
+
+	function get_groups(self): int[]
+		return self.groups
+	end function
+
+end struct
+
+struct Group
+	declare const MAX_GROUPS := 10
+	declare idx: int
+	declare files[self.MAX_GROUPS]: string[]
+	declare zone_ids[self.MAX_GROUPS]: int[]
+
+	function add_zone(self, zone_id: int) : void
+		self.zone_ids[0] := zone_id
+	end function		
 
 
-// struct Note
-// 	declare pitch: int
-// 	declare velocities[10]: int[]
-// 	declare play_pos[2, 2]: int[][]
-
-// 	function __init__(self, p: int, v: int[], pp: int[][])
-// 		self.pitch := p
-// 		self.velocities := v
-// 		self.play_pos := pp
-// 	end function
-
-// 	function __repr__(self)
-// 		return "Note {Pitch: " & self.pitch & "}"
-// 	end function
-
-// 	function play(self)
-// 		return play_note(self.pitch, self.velocities[0], self.play_pos[1,2], 0)
-// 	end function
-
-// 	function get_velocities(self)
-// 		return self.velocities
-// 	end function
-
-// end struct
-
+end struct
 
 on init	
 
-	declare bugbug := Debug(3, (nil))
+	// declare menu_strip_val[3,3]
+	// declare left := get_active_idx(menu_strip_val, 0)
+	// message(left)
 
-	declare menu_strip_val[3,3]
-	declare left := get_active_idx(menu_strip_val, 0)
-	message(left)
-
-	for keks, number in pairs((0,3,6,9,12))
-		declare local pupsi := number		
-		message(keks, number)
-	end for	
-
-	for key, value in pairs(range(3, 10, -1))
-		message(key, value)
-	end for	
-
-	declare array[4]: int[] := (1,2,3,4)
-	for key, value in pairs(menu_strip_val)
-		
-		for key, malue in pairs(array)
-			message(key, value, malue)
-	
-		end for		
-	end for
-	
-	// for val in menu_strip_val
-	// 	message(val)
+	// for keks, number in pairs((0,3,6,9,12))
+	// 	declare local pupsi := number		
+	// 	message(keks, number)
 	// end for	
 
-	// declare ui_menu mnu: int, i
-	// declare ari[2]
- 	// mnu->value := (mnu->value + 1) mod num_elements(ari)
-	// i := (i+1) mod num_elements(ari)
-	// declare first_note := Note(69, (3,0), ((10)))
-	// declare ptr: List := List(1, List(3, nil))
-	// message(ptr.next.next)
-	// message(ptr.get_next_next_value())
-	// // declare huihui : (int, int): void
-	// // declare ui_button btn_slot[5]: int[]
+	// for value in range(3, 10, -1)
+	// 	message(value)
+	// end for	
+
+	// declare array[4]: int[] := (1,2,3,4)
+	// for key, value in pairs(menu_strip_val)
+		
+	// 	for key, malue in pairs(array)
+	// 		message(key, value, malue)
 	
-	// declare lists[10]: List[] := (nil)
-	// declare list_ptr: List
-	// for idx, ls in lists
-	// 	ls := List(idx, ls)
-	// 	list_ptr := ls
-	// 	if(idx = 5)
-	// 		break
-	// 	end if
-	// 	message(ls.next)
+	// 	end for		
 	// end for
-	// btn_1, _ := return_twice()
-	declare n[10] := (0)
-	// declare array[10] := (1)
-	message(array.SIZE)
-	declare this_list: List // := nil
-	this_list := List(42, nil)
 
-	declare that_list: List := List(39, List(40, List(41, this_list)))
-	// new type: object Pointer nil := -1
-	message(that_list.next.value)
-	
-	n := (1,2,3,4,5)
+	// declare n[10] := (0)
+	// message(array.SIZE)
+	// declare this_list: List := nil
+	// this_list := List(42, nil)
 
-	declare ndarray[10,10]: int[][]
-	declare ndarray3[10,10,10,10]
-	message(ndarray3[4,5, 6, 7], search(ndarray[2, *], -1))
-	message(search(ndarray3[3, 4, *, *], -1), ndarray3[3, 4, 3, *])
-	message(n[*])
-	declare ndarray2[10,10]: int[][]
-	// message(search_matrix(ndarray, 3.0), "3", "f")
-	message(search_matrix(ndarray2, 3), "3", "f")
-	message(num_elements(ndarray, 2), num_elements(ndarray[*, 0]))
+	declare val3 := List(34, nil).value
+	// message(val)
+
+	// declare that_list: List := List(39, List(40, List(41, this_list)))
+	// message(that_list.next.value, that_list.get_next_next_value())
+	// that_list.add(43)
+
+	// n := (1,2,3,4,5)
+
+	// declare ndarray[10,10]: int[][]
+	// declare ndarray3[10,10,10,10]
+	// message(ndarray3[4,5, 6, 7], search(ndarray[2, *], -1))
+	// message(search(ndarray3[3, 4, *, *], -1), ndarray3[3, 4, 3, *])
+	// message(n[*])
+	// declare ndarray2[10,10]: int[][]
+	// // message(search_matrix(ndarray, 3.0), "3", "f")
+	// message(search_matrix(ndarray2, 3), "3", "f")
+	// message(num_elements(ndarray, 2), num_elements(ndarray[*, 0]))
 	declare local ptr_array[10]
-	for ptr in ptr_array
-		ptr := Point(1,2+1)
+	for i, ptr in pairs(ptr_array)
+		ptr := Point(i,i*2)
 	end for
 	declare local ptr_array2[10] := (ptr_array[0], ptr_array[1])
 	declare local ptr_array3[10] := ptr_array
 	declare local p1 := Point(1, 2)
 	declare local p2 := Point(3, 4)
 	message(Point(1, 2) + Point(3, 4))
-	ndarray[0, *] := ndarray[1, *]
+	// ndarray[0, *] := ndarray[1, *]
 
-	message(use_count(this_list))
-	message(return_size(ndarray[*, 0]))
+	// message(use_count(this_list))
+	// message(return_size(ndarray[*, 0]))
+	substitution(1, (3))
 end on
 
 function get_active_idx(value_array, emitter) -> result
@@ -190,6 +170,13 @@ function search_matrix(matrix: number[][], target: number): number
     return -1  // If the target is not found
 end function
 
+function substitution(val: int, arr: int[])
+	declare val3: int
+	declare arr1[10] := arr
+	// val := 1
+	// inc(val)
+	return val
+end function	
 
 
 // if threadsafe environment, do no lifting -> all params are promoted to global variables
@@ -201,6 +188,8 @@ end function
 											* UI CALLBACKS *
 *******************************************************************************************************************}
 on note
+	
+
 	declare node_array[4]: int[] := (1,2,3,4)
 	message(node_array[2+EVENT_NOTE])
 	declare note := EVENT_NOTE

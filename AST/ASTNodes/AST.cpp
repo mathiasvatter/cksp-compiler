@@ -25,6 +25,7 @@
 #include "../../Optimization/ConstantFolding.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "../../Lowering/LoweringInitializerList.h"
+#include "../ASTVisitor/TypeInference.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -188,10 +189,23 @@ NodeAST *NodeAST::do_array_normalization(NodeProgram *program) {
 	return accept(array_assign);
 }
 
-// ************* NodeDataStructure ***************
-NodeAST *NodeDataStructure::accept(struct ASTVisitor &visitor) {
-	return nullptr;
+bool NodeAST::is_func_arg() const {
+	if(!this->parent) return false;
+	if(!this->parent->parent) return false;
+	return this->parent->cast<NodeParamList>() and
+		this->parent->parent->cast<NodeFunctionHeaderRef>();
 }
+
+bool NodeAST::is_literal() {
+	return cast<NodeInt>() or cast<NodeReal>() or cast<NodeString>() or cast<NodeInitializerList>();
+}
+
+void NodeAST::do_type_inference(NodeProgram *program) {
+	static TypeInference inference(program);
+	accept(inference);
+}
+
+// ************* NodeDataStructure ***************
 NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
 	  is_engine(other.is_engine), is_used(other.is_used), persistence(other.persistence),
@@ -219,7 +233,7 @@ bool NodeDataStructure::determine_locality(NodeProgram* program, NodeBlock* curr
 
 bool NodeDataStructure::is_function_param() {
 	if(!parent) return false;
-	return parent->cast<NodeFunctionParam>();
+	return parent->cast<NodeFunctionParam>() and parent->parent->cast<NodeFunctionHeader>();
 }
 
 Type* NodeDataStructure::cast_type() {
@@ -239,13 +253,13 @@ Type* NodeDataStructure::cast_type() {
 }
 
 NodeStruct* NodeDataStructure::is_member() {
-	if(parent and parent->get_node_type() == NodeType::SingleDeclaration) {
+	if(parent and parent->cast<NodeSingleDeclaration>()) {
 		auto decl = parent;
-		if(decl->parent and decl->parent->get_node_type() == NodeType::Statement) {
+		if(decl->parent and decl->parent->cast<NodeStatement>()) {
 			auto stmt = decl->parent;
-			if(stmt->parent and stmt->parent->get_node_type() == NodeType::Block) {
+			if(stmt->parent and stmt->parent->cast<NodeBlock>()) {
 				auto body = stmt->parent;
-				if(body->parent and body->parent->get_node_type() == NodeType::Struct) {
+				if(body->parent and body->parent->cast<NodeStruct>()) {
 					return body->parent->cast<NodeStruct>();
 				}
 			}
@@ -298,9 +312,6 @@ NodeReference::~NodeReference() {
 	}
 }
 
-NodeAST *NodeReference::accept(struct ASTVisitor &visitor) {
-	return nullptr;
-}
 NodeReference::NodeReference(const NodeReference& other)
 	: NodeAST(other), name(other.name), declaration(other.declaration),
     is_engine(other.is_engine), is_local(other.is_local),
@@ -404,29 +415,16 @@ std::shared_ptr<NodeDataStructure> NodeReference::get_declaration() const {
 	return ptr;
 }
 
-bool NodeReference::is_func_arg() {
-	if(!this->parent) return false;
-	if(!this->parent->parent) return false;
-	return this->parent->cast<NodeParamList>() and
-		this->parent->parent->cast<NodeFunctionHeaderRef>();
-}
-
 std::unique_ptr<NodeAST> NodeReference::get_size() {
 	return std::make_unique<NodeInt>(1, tok);
 }
 
 // ************* NodeInstruction ***************
-NodeAST *NodeInstruction::accept(struct ASTVisitor &visitor) {
-	return nullptr;
-}
 std::unique_ptr<NodeAST> NodeInstruction::clone() const {
     return std::make_unique<NodeInstruction>(*this);
 }
 
 // ************* NodeExpression ***************
-NodeAST *NodeExpression::accept(struct ASTVisitor &visitor) {
-	return nullptr;
-}
 std::unique_ptr<NodeAST> NodeExpression::clone() const {
     return std::make_unique<NodeExpression>(*this);
 }
@@ -965,10 +963,13 @@ void NodeFunctionDefinition::update_token_data(const Token &token) {
 	if(return_variable.has_value()) return_variable.value()->update_token_data(token);
 }
 
-bool NodeFunctionDefinition::is_method() {
+NodeStruct* NodeFunctionDefinition::is_method() {
 	bool has_params = !header->params.empty() and header->get_param(0)->name == "self";
 	bool within_struct = parent and parent->get_node_type() == NodeType::Struct;
-	return has_params and within_struct;
+	if(has_params and within_struct) {
+		return parent->cast<NodeStruct>();
+	}
+	return nullptr;
 }
 
 void NodeFunctionDefinition::update_param_data_type() const {
@@ -1181,9 +1182,11 @@ void NodeProgram::inline_structs() {
 
 void NodeProgram::reset_function_visited_flag() {
 //	for(const auto & def : function_definitions) def->visited = false;
-	parallel_for_each(function_definitions.begin(), function_definitions.end(),
+	parallel_for_each(function_lookup.begin(), function_lookup.end(),
 				  [](auto const& def) {
-					def->visited = false;
+					if(def.second.lock()) {
+						def.second.lock()->visited = false;
+					}
 				  });
 }
 

@@ -147,7 +147,12 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(std::shar
 	if (auto data_struct = get_scoped_data_structure(var->name, global_scope)) {
 		auto compile_error = CompileError(ErrorType::VariableError, "", "", var->tok);
 		compile_error.m_message = "Data Structure has already been declared in this scope. Variables with different types but same names are not allowed. " +
-			var->name + " is a redeclaration of " + data_struct->get_string() + " in line " + std::to_string(data_struct->tok.line) + ".";
+			var->name + " is a redeclaration of " + data_struct->tok.val + " in line " + std::to_string(data_struct->tok.line);
+		if(data_struct->is_function_param()) {
+			compile_error.m_message += " which is a function parameter. Function parameters cannot be shadowed.";
+		} else {
+			compile_error.m_message += ". Try renaming the variable to avoid shadowing.";
+		}
         if(global_scope) compile_error.m_message += "\nVariables declared in the <init> callback are always considered global, no local scopes are created.";
 		compile_error.exit();
 	} else {

@@ -3,7 +3,6 @@
 //
 
 #include "ASTCollectLowerings.h"
-#include "ASTLowerTypes.h"
 #include "ASTHandleStringRepresentations.h"
 
 
@@ -32,8 +31,6 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	ASTHandleStringRepresentations handle_string_representations(m_def_provider);
 	node.accept(handle_string_representations);
 
-	ASTLowerTypes lowering_types(m_def_provider);
-	node.accept(lowering_types);
 	return &node;
 }
 
@@ -111,22 +108,6 @@ NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeGetControl& node) {
 	node.ui_id->accept(*this);
-
-//	/*
-//	 * checks if the parent of the current node is a single assignment statement.
-//	 * If the l_value of the assignment is the get_control statement, then it is a set_control statement.
-//	 * E.g. if it would be
-//	 * 	int_buffer := mnu_output[i+1]->x, this block of code would need to handle it.
-//	 * However, in the case of:
-//	 * 	mnu_output[i+1]->x := int_buffer, the NodeSingleAssignment lowering would handle it.
-//	 */
-//	// is set control
-//	if(node.parent->get_node_type() == NodeType::SingleAssignment) {
-//		if(auto node_assign_stmt = static_cast<NodeSingleAssignment*>(node.parent)) {
-//			if(node_assign_stmt->l_value.get() == &node) return &node;
-//		}
-//	}
-
 	// only handles get control
 	return node.lower(m_program)->accept(*this);
 }
@@ -134,7 +115,6 @@ NodeAST * ASTCollectLowerings::visit(NodeGetControl& node) {
 NodeAST * ASTCollectLowerings::visit(NodeSetControl& node) {
 	node.ui_id->accept(*this);
 	node.value->accept(*this);
-
 	// only handles get control
 	return node.lower(m_program)->accept(*this);
 }
@@ -156,9 +136,6 @@ NodeAST * ASTCollectLowerings::visit(NodeArray& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNDArray& node) {
-//	if(node.parent->get_node_type() == NodeType::SingleAssignment) {
-//		return &node;
-//	}
 	if(node.sizes) node.sizes->accept(*this);
 	if(node.num_elements) node.num_elements->accept(*this);
 	return &node;

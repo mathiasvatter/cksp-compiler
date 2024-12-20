@@ -58,7 +58,6 @@ public:
 				error.exit();
 			}
 			node_expression = NodeBinaryExpr::calculate_index_expression(node.sizes->params, node.indexes->params, 0,node.tok);
-			node_expression->do_constant_folding();
 		}
         auto node_lowered_array = node.to_array_ref(std::move(node_expression));
         node_lowered_array->name = "_" + node_lowered_array->name;
@@ -67,6 +66,7 @@ public:
 		if(!node.indexes) {
 			node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
 		}
+		if(node_lowered_array->index) node_lowered_array->index->do_constant_folding();
 //        return node.replace_reference(std::move(node_lowered_array));
 		return node.replace_with(std::move(node_lowered_array));
     }

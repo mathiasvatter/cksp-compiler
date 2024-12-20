@@ -153,11 +153,14 @@ public:
 	std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope);
 
 	/// variable error handling
-	static inline CompileError throw_declaration_error(const NodeReference &node) {
+	static inline CompileError throw_declaration_error(const NodeReference &node, const std::string& add_msg="") {
 		auto compile_error = CompileError(ErrorType::VariableError, "", "", node.tok);
 		std::string type = "<Variable>";
-		if(node.get_node_type() == NodeType::Array) type = "<Array>";
-		compile_error.m_message = type+" has not been declared: " + node.tok.val+".";
+		if(node.get_node_type() == NodeType::ArrayRef) type = "<Array>";
+		if(node.get_node_type() == NodeType::NDArrayRef) type = "<NDArray>";
+		if(node.get_node_type() == NodeType::PointerRef) type = "<Pointer>";
+		if(node.get_node_type() == NodeType::ListRef) type = "<List>";
+		compile_error.m_message = type+" has not been declared: " + node.tok.val+". "+add_msg;
 		compile_error.m_expected = "Valid declaration";
 		return compile_error;
 	};
@@ -206,6 +209,24 @@ public:
     std::shared_ptr<NodeFunctionDefinition> get_property_function(NodeFunctionHeaderRef* function);
     void set_property_functions(std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions);
 
+	template<typename... Args>
+	inline static std::unique_ptr<NodeFunctionCall> create_builtin_call(const std::string &name, Args&&... args) {
+		auto func_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeaderRef>(
+				name,
+				std::make_unique<NodeParamList>(
+					Token(),
+					std::forward<Args>(std::move(args))... // Pack expansion hier
+				),
+				Token()
+			),
+			Token()
+		);
+		func_call->ty = TypeRegistry::Integer;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		return func_call;
+	}
 
 	static std::unique_ptr<NodeFunctionCall> num_elements(std::unique_ptr<NodeReference> ref) {
 		auto func_call = std::make_unique<NodeFunctionCall>(
@@ -272,7 +293,7 @@ public:
 
 	/// continue
 	static std::unique_ptr<NodeFunctionCall> continu(Token &tok) {
-		auto call = std::make_unique<NodeFunctionCall>(
+		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeaderRef>(
 				"continue",
@@ -283,8 +304,10 @@ public:
 			),
 			tok
 		);
-		call->function->has_forced_parenth = false;
-		return call;
+		func_call->function->has_forced_parenth = false;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		func_call->ty = TypeRegistry::Void;
+		return func_call;
 	}
 
 	/// sh_right(a, b)
