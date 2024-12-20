@@ -1801,7 +1801,6 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent) {
-	auto node_family_statement = std::make_unique<NodeFamily>(get_tok());
 	Token construct = consume(); //consume family
 	token end_construct = token::END_FAMILY;
 	if(peek().type != token::KEYWORD) {
@@ -1809,6 +1808,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 															 "Found unknown family syntax.", "valid prefix", peek()));
 	}
 	auto prefix = consume(); //consume prefix
+	auto node_family_statement = std::make_unique<NodeFamily>(prefix);
 	auto l = consume_linebreak("<family statement>");
 	if(l.is_error())
 		return Result<std::unique_ptr<NodeAST>>(l.get_error());
@@ -1869,7 +1869,7 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 		name.val,
 		std::move(node_member_block),
 		std::move(node_methods),
-		get_tok());
+		name);
 	node_struct -> parent = parent;
 	node_struct->rebuild_method_table();
 	node_struct->rebuild_lookup_sets();
@@ -1877,19 +1877,18 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
-	auto node_list_block = std::make_unique<NodeList>(get_tok());
 	Token construct = consume(); //consume list
 	if(peek().type != token::KEYWORD) {
 		return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
 															 "Found unknown <list> syntax.", "valid <keyword>", peek()));
 	}
 	Token name_tok = consume(); // consume keyword
+	auto node_list_block = std::make_unique<NodeList>(name_tok);
 	std::string name = name_tok.val;
 	auto ty = TypeRegistry::get_type_from_identifier(name[0]);
 	if(ty != TypeRegistry::Unknown) {
 		name = name.erase(0,1);
-		if(ty->get_type_kind() == TypeKind::Composite) {
-			auto comp_ty = static_cast<CompositeType*>(ty);
+		if(auto comp_ty = ty->cast<CompositeType>()) {
 			ty = TypeRegistry::add_composite_type(CompoundKind::List, comp_ty->get_element_type(), comp_ty->get_dimensions());
 		}
 	}
@@ -1947,7 +1946,6 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) {
-	auto node_const_statement = std::make_unique<NodeConst>(get_tok());
 	Token construct = consume(); //consume family, struct, const
 	token end_construct = token::END_CONST;
 	if(peek().type != token::KEYWORD) {
@@ -1955,6 +1953,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) 
 															 "Found unknown const syntax.", "valid prefix", peek()));
 	}
 	auto prefix = consume(); //consume prefix
+	auto node_const_statement = std::make_unique<NodeConst>(prefix);
 
 	if(peek().type != token::LINEBRK) {
 		return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
