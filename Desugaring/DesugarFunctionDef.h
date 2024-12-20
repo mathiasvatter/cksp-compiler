@@ -28,9 +28,8 @@ private:
 	static inline bool transform_expr_only_to_return_function(NodeFunctionDefinition* def) {
 		if(!def->return_variable.has_value()) return false;
 		if(def->body->statements.size() == 1) {
-			auto stmt = def->body->statements[0]->statement.get();
-			if(stmt->get_node_type() == NodeType::SingleAssignment) {
-				auto assignment = static_cast<NodeSingleAssignment*>(stmt);
+			auto stmt = def->body->get_last_statement().get();
+			if(auto assignment = stmt->cast<NodeSingleAssignment>()) {
 				if(assignment->l_value->get_string() == def->return_variable.value()->name) {
 					auto node_return = std::make_unique<NodeReturn>(assignment->tok, std::move(assignment->r_value));
 					stmt->replace_with(std::move(node_return));

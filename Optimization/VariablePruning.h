@@ -71,7 +71,7 @@ public:
 		if(node->get_node_type() == NodeType::UIControl) {
 			return false;
 		}
-		if(node->data_type == DataType::Const) return false;
+//		if(node->data_type == DataType::Const) return false;
 
 		if(node->persistence.has_value()) {
 			return false;

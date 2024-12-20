@@ -202,4 +202,5 @@ add_executable(cksp main.cpp
         Lowering/PostLowering/PostLoweringSortSearch.h
         AST/ASTVisitor/ASTDimensionInflation.h
         Lowering/LoweringInitializerList.h
+        AST/ASTVisitor/ASTTemporaryPointerScope.h
 )

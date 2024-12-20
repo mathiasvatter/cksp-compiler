@@ -5,8 +5,6 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "../../BuiltinsProcessing/DefinitionProvider.h"
-
 
 /**
  * To implement a form of garbage collection, reference counting should be applied.
@@ -26,9 +24,20 @@
  * 1. The struct has no other objects as members: dec(allocation[self])
  * 2. The struct has other objects as members: dec(allocation[self]) and delete(member)
  * 3. The struct has recursive objects as members: while loop with pseudo recursion
+ *
+ * Also marks temporary constructors that have to be deleted later on in ReturnFunctionRewriting
+ *
+ * Implement also:
+ * - determine max_individual_structs_var by looking at where the constructors are called:
+ * - only determine if constructor is called in the on init callback or on persistence_changed
+ * 		- constructor called in linear for loop -> max_individual_structs_var + for loop elements
  */
 class ASTPointerScope : public ASTVisitor {
 private:
+	std::vector<NodeLoop*> m_loop_stack;
+	bool is_linear_environment = false;
+	std::unordered_map<NodeStruct*, std::unique_ptr<NodeAST>> m_num_constructors;
+
 	DefinitionProvider* m_def_provider = nullptr;
 	std::vector<std::unordered_map<StringTypeKey, NodeDataStructure*, StringTypeKeyHash>> m_pointer_scope_stack;
 
@@ -84,8 +93,20 @@ public:
 		for(const auto & callback : node.callbacks) {
 			if(callback.get() != m_program->init_callback) callback->accept(*this);
 		}
+//		for(auto & func_def : node.function_definitions) {
+//			if(!func_def->visited) {
+//				func_def->accept(*this);
+//			}
+//		}
 
 		node.reset_function_visited_flag();
+
+		for(auto & struct_def : m_num_constructors) {
+			struct_def.second->do_constant_folding();
+			struct_def.first->max_individual_structs_count = std::move(struct_def.second);
+			struct_def.first->max_individual_structs_count->parent = struct_def.first;
+		}
+
 		return &node;
 	}
 
@@ -130,24 +151,19 @@ public:
 		return &node;
 	}
 
-	NodeAST* visit(NodeFunctionCall& node) override {
-		node.function->accept(*this);
-		node.bind_definition(m_program);
-		if(node.get_definition() and node.kind != NodeFunctionCall::Kind::Builtin) {
-			if(!node.get_definition()->visited) node.get_definition()->accept(*this);
-			node.get_definition()->visited = true;
-		}
-		return &node;
-	};
-
 	NodeAST* visit(NodeSingleAssignment &node) override {
-		if(node.l_value->is_member_ref()) return &node;
+//		if(node.l_value->is_member_ref()) return &node;
+
+		node.l_value->accept(*this);
+		node.r_value->accept(*this);
 
 		if(alters_ref_count(&node)) {
+			node.remove_references();
 			auto new_assign = std::make_unique<NodeSingleAssignment>(std::move(node.l_value), std::move(node.r_value), node.tok);
+			new_assign->collect_references();
 			auto new_block = std::make_unique<NodeBlock>(node.tok);
 			new_block->add_as_stmt(std::move(new_assign));
-			auto assign = static_cast<NodeSingleAssignment*>(new_block->get_last_statement().get());
+			auto assign = new_block->get_last_statement()->cast<NodeSingleAssignment>();
 			if(auto del = add_delete(*assign)) {
 				new_block->prepend_body(std::move(del));
 			}
@@ -164,6 +180,8 @@ public:
 		if(node.variable->is_member()) return &node;
 
 		node.variable->accept(*this);
+		if(node.value) node.value->accept(*this);
+
 		if(node.variable->is_local and node.variable->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 			m_pointer_scope_stack.back()[{node.variable->name, node.variable->ty}] = node.variable.get();
 		}
@@ -178,6 +196,122 @@ public:
 		}
 
 		return &node;
+	}
+
+	//------- Nodes for struct instance analysis -------
+
+	NodeAST* visit(NodeCallback& node) override {
+		if(&node == m_program->init_callback or node.begin_callback == "on persistence_changed") {
+			is_linear_environment = true;
+		}
+
+		if(node.callback_id) node.callback_id->accept(*this);
+		node.statements->accept(*this);
+
+		is_linear_environment = false;
+		return &node;
+	};
+
+	NodeAST* visit(NodeFor& node) override {
+		node.iterator->accept(*this);
+		node.iterator_end->accept(*this);
+		if(node.step) node.step->accept(*this);
+
+		m_loop_stack.push_back(&node);
+		node.body->accept(*this);
+		m_loop_stack.pop_back();
+		return &node;
+	};
+
+	NodeAST* visit(NodeForEach& node) override {
+		if(node.key) node.key->accept(*this);
+		if(node.value) node.value->accept(*this);
+		node.range->accept(*this);
+
+		m_loop_stack.push_back(&node);
+		node.body->accept(*this);
+		m_loop_stack.pop_back();
+		return &node;
+	};
+
+	NodeAST* visit(NodeWhile& node) override {
+		m_loop_stack.push_back(&node);
+		node.condition->accept(*this);
+		node.body->accept(*this);
+		m_loop_stack.pop_back();
+		return &node;
+	};
+
+	// if constructor, get struct and increase constructor count
+	NodeAST* visit(NodeFunctionCall& node) override {
+		node.function->accept(*this);
+		node.bind_definition(m_program);
+		if(node.get_definition() and node.kind != NodeFunctionCall::Kind::Builtin) {
+			if(!node.get_definition()->visited) node.get_definition()->accept(*this);
+			node.get_definition()->visited = true;
+		}
+
+		if(node.kind == NodeFunctionCall::Kind::Constructor) {
+			node.is_temporary_constructor = node.is_func_arg() || node.parent->cast<NodeAccessChain>();
+			if(auto struct_def = node.get_definition()->parent->cast<NodeStruct>()) {
+				increase_num_constructors(struct_def);
+			}
+		}
+
+
+		return &node;
+	};
+
+	NodeAST* visit(NodeFunctionDefinition& node) override {
+		// do this because function definitions are also in the structs
+		if(node.visited) return &node;
+
+		node.header ->accept(*this);
+		if (node.return_variable.has_value())
+			node.return_variable.value()->accept(*this);
+		node.body->accept(*this);
+		return &node;
+	};
+
+private:
+
+	void add_expr_to_num_constructors(NodeStruct* key, std::unique_ptr<NodeAST> expr) {
+		auto it = m_num_constructors.find(key);
+		if(it != m_num_constructors.end()) {
+			auto& num = it->second;
+			auto new_expr = std::make_unique<NodeBinaryExpr>(token::ADD, std::move(expr), std::move(num), expr->tok);
+			num = std::move(new_expr);
+		} else {
+			m_num_constructors[key] = std::move(expr);
+		}
+	}
+
+	// multiply all loop iterations together if there are multiple loops
+	std::unique_ptr<NodeAST> determine_num_iterations() {
+		std::unique_ptr<NodeAST> all_num;
+		for(auto loop: m_loop_stack) {
+			if(loop->determine_linear()) {
+				if(auto num = loop->get_num_iterations()) {
+					all_num = all_num ? std::make_unique<NodeBinaryExpr>(token::MULT, std::move(all_num), std::move(num), num->tok) : std::move(num);
+				}
+			} else {
+				return nullptr;
+			}
+		}
+		return all_num;
+	}
+
+	void increase_num_constructors(NodeStruct* struct_def) {
+		if(is_linear_environment) {
+			// if the constructor is called in a linear loop environment, add the number of iterations to the constructor count
+			if(!m_loop_stack.empty()) {
+				if(auto num = determine_num_iterations()) {
+					add_expr_to_num_constructors(struct_def, std::move(num));
+				}
+			} else {
+				add_expr_to_num_constructors(struct_def, std::make_unique<NodeInt>(1, Token()));
+			}
+		}
 	}
 
 	// if l_value is of type object and r_value is no constructor
@@ -199,7 +333,8 @@ public:
 
 		if(l_value_type->cast<ObjectType>()) {
 			if(auto func_call = r_value->cast<NodeFunctionCall>()) {
-				if(func_call->kind == NodeFunctionCall::Kind::Constructor) {
+				// when constructor and declaration -> do not alter ref count
+				if(func_call->kind == NodeFunctionCall::Kind::Constructor and node->cast<NodeSingleDeclaration>()) {
 					return false;
 				}
 			}
@@ -211,11 +346,15 @@ public:
 		return false;
 	}
 
-
-
 	static std::unique_ptr<NodeBlock> add_delete(NodeSingleAssignment& assign) {
 		auto variable = assign.l_value.get();
 		auto value = get_return_var_ptr(assign.r_value.get());
+		// add delete before constructor assignment in assign statements only for safety
+		if(auto func_call = assign.r_value->cast<NodeFunctionCall>()) {
+			if (func_call->kind == NodeFunctionCall::Kind::Constructor) {
+				value = func_call;
+			}
+		}
 		if(!value) return nullptr;
 
 		auto del = std::make_unique<NodeBlock>(assign.tok);
@@ -336,7 +475,6 @@ public:
 
 	}
 
-private:
 	/// returns ptr to refernce in retrun statement of functioncall if
 	/// r_value is a function call and the return type is an object
 	/// else will return og r_value
@@ -356,47 +494,6 @@ private:
 			}
 		}
 		return r_value;
-	}
-	static std::unique_ptr<NodeBlock> retain_ptr_ptr(NodePointerRef* l_ref) {
-		auto retain = std::make_unique<NodeBlock>(l_ref->tok);
-		retain->add_as_single_retain(clone_as<NodeReference>(l_ref), std::make_unique<NodeInt>(1, l_ref->tok));
-		return retain;
-	}
-	static std::unique_ptr<NodeBlock> retain_arr_init(NodeArrayRef* l_ref, NodeInitializerList* r_ref, bool is_decl = true) {
-		auto arr_ref = clone_as<NodeArrayRef>(l_ref);
-		arr_ref->ty = l_ref->ty->get_element_type();
-		arr_ref->set_index(std::make_unique<NodeInt>(0, l_ref->tok));
-		// 1. initializer list with one element declare lists[10]: List[] := (ls)
-		// retain whole array
-		if(r_ref->size() == 1) {
-			auto retain = std::make_unique<NodeBlock>(l_ref->tok);
-			retain->add_as_single_retain(std::move(arr_ref), l_ref->get_size());
-			return retain;
-		} else {
-			// 2. initializer list with multiple elements
-			// retain each element
-			auto retain = std::make_unique<NodeBlock>(l_ref->tok);
-			for(int i=0; i<r_ref->size(); i++) {
-				arr_ref->set_index(std::make_unique<NodeInt>(i, l_ref->tok));
-				retain->add_as_single_retain(clone_as<NodeReference>(arr_ref.get()), std::make_unique<NodeInt>(1, l_ref->tok));
-			}
-			if(is_decl) {
-				auto last_retain = static_cast<NodeSingleRetain *>(retain->get_last_statement().get());
-				last_retain->set_num(std::make_unique<NodeBinaryExpr>(
-					token::SUB,
-					l_ref->get_size(),
-					std::make_unique<NodeInt>(r_ref->size() - 1, l_ref->tok),
-					l_ref->tok
-				));
-			}
-			return retain;
-		}
-	}
-	static std::unique_ptr<NodeBlock> retain_arr_arr(NodeArrayRef* l_ref) {
-		// 3. variable is array -> copy into retain stmt
-		auto retain = std::make_unique<NodeBlock>(l_ref->tok);
-		retain->add_as_single_retain(clone_as<NodeReference>(l_ref), std::make_unique<NodeInt>(1, l_ref->tok));
-		return retain;
 	}
 
 };

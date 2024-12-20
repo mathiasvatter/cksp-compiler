@@ -77,7 +77,7 @@ public:
 					// had already a value assigned to it -> remove from constant candidates
 					remove_from_constant_candidates(&node);
 				}
-			} else if(is_value_altering_func_arg(&node)) {
+			} else if(is_destructive_func_arg(&node)) {
 				remove_from_constant_candidates(&node);
 			}
 			m_constant_candidate_references.push_back(&node);

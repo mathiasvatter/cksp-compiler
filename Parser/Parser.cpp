@@ -979,7 +979,8 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
 
             if (!exprResult.is_error()) {
 				if(peek(-1).type == token::CLOSED_PARENTH) {
-					params.push_back(std::make_unique<NodeParamList>(get_tok(), std::move(exprResult.unwrap())));
+					auto expr_result = std::move(exprResult.unwrap());
+					params.push_back(std::make_unique<NodeParamList>(expr_result->tok, std::move(expr_result)));
 					params.back()->parent = parent;
 				} else {
                 	params.push_back(std::move(exprResult.unwrap()));
@@ -1020,8 +1021,9 @@ Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<No
 
 Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAST* parent) {
     std::string func_name;
-    func_name = consume().val;
-    auto node_function_header = std::make_unique<NodeFunctionHeader>(func_name, get_tok());
+	Token func = consume();
+    func_name = func.val;
+    auto node_function_header = std::make_unique<NodeFunctionHeader>(func_name, func);
 	if (peek().type == token::OPEN_PARENTH) {
 		consume(); // consume (
 		if (peek().type != token::CLOSED_PARENTH) {
@@ -1070,8 +1072,9 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
 
 Result<std::unique_ptr<NodeFunctionHeaderRef>> Parser::parse_function_header_ref(NodeAST* parent) {
 	std::string func_name;
-	func_name = consume().val;
-	auto node_function_header_ref = std::make_unique<NodeFunctionHeaderRef>(func_name, get_tok());
+	Token func_ref = consume();
+	func_name = func_ref.val;
+	auto node_function_header_ref = std::make_unique<NodeFunctionHeaderRef>(func_name, func_ref);
 	auto func_args = parse_function_args(node_function_header_ref.get());
 	if(func_args.is_error()) {
 		return Result<std::unique_ptr<NodeFunctionHeaderRef>>(func_args.get_error());

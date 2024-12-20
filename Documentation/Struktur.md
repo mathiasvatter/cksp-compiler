@@ -4,18 +4,44 @@
 - Einführung in das Thema, 
     - was ist Kontakt -> Industriestandard
     - was ist KSP, warum ist es wichtig
+    - realtime audio processing -> speicherplatz und performance
 - Motivation für funktionale Programmierkonzepte in KSP. 
     - Warum nicht gleich in der Sprache? -> underfunded und closed-source
     - Effizienz und Flexibilität?
+- Zielgruppe?
+  - Kontakt-Entwickler, meistens Musiker und Sounddesigner mit wenig Programmiererfahrung.
 - Zielsetzung und Problemstellung: Herausforderungen bei der Umsetzung.
 
 ### 2. Hintergrund
-- KSP Tutorial der Syntax und ihre Limitierungen
+- **KSP Tutorial der Syntax und ihre Limitierungen**
     - Beispiel Code
+- 
+### Einführung in Callbacks in KSP
+
+1. **Grundlage des Kontrollflusses in KSP**:
+   - KSP arbeitet auf Basis eines **Event-Driven Models**, wobei Callbacks zentrale Steuerungselemente sind.
+   - Callbacks wie `on init` und `on note` definieren, wie und wann bestimmte Code-Blöcke ausgeführt werden:
+     - `on init`: Wird einmalig beim Laden des Scripts ausgeführt.
+     - `on note`, `on release`: Werden durch User-Input oder MIDI-Events getriggert.
+   - Die Reihenfolge der Callback-Ausführung wird primär durch Benutzeraktionen und nicht durch den Entwickler kontrolliert.
+
+2. **Synchronität und Variablenlebensdauer**:
+   - Innerhalb eines Callbacks werden alle Anweisungen sequenziell ausgeführt, bevor der nächste Callback aktiviert wird.
+   - Variablen, die in mehreren Callbacks referenziert werden, behalten ihren Zustand, was ihren "globalen" Charakter unterstreicht.
+
+3. **Besonderheiten und Herausforderungen**:
+   - **Asynchrone Operationen**: Funktionen wie `wait` erlauben Unterbrechungen, während andere Callbacks ausgeführt werden können.
+   - **Race Conditions**: Diese treten auf, wenn mehrere Callbacks dieselben Variablen verändern, bevor der ursprüngliche Prozess abgeschlossen ist.
+   - **Wiedereintrittsprobleme**: Wenn ein Callback erneut aufgerufen wird, während er noch läuft, können undefinierte Zustände entstehen.
+
+
+
+
 - Sublime KSP Syntax und Limitierungen
     - Beispiel Code
+- CKSP Compiler pre-thesis?
 
-### 3. Implementierung von Funktionen mit Parametern und return statements
+<!-- ### 3. Implementierung von Funktionen mit Parametern und return statements
 - **Functions in KSP**:
     - Funktionen ohne parameter mit `call` keyword
 - **Vorgehen**:
@@ -24,7 +50,7 @@
     - Function Call Hoisting, Return Parameter Rewriting
     - Function Inlining
 - **Herausforderungen**:
-    - 
+    -  -->
 
 ### 4. Von Lexical to Global Scope mittels Variable Reuse und Parameter Promotion
 - **Control Flow Management in KSP**:

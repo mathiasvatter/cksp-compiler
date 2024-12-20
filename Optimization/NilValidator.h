@@ -21,7 +21,10 @@ public:
 	}
 
 	NodeAST* visit(NodeNil& node) override {
+		if(node.is_func_arg()) return &node;
+
 		m_is_nil = true;
+
 		return &node;
 	}
 

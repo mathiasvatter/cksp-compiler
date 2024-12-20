@@ -63,7 +63,7 @@ private:
 						std::nullopt,
 						return_name,
 						node_ref->ty,
-						DataType::Param, node.return_variables[i]->tok
+						DataType::Return, node.return_variables[i]->tok
 					);
 				} else if(node_ref->ty->get_type_kind() == TypeKind::Composite) {
 					// 	return Note.velocities[self, *]
@@ -115,13 +115,13 @@ private:
 					std::nullopt,
 					return_name,
 					node_return->ty,
-					DataType::Param, node.return_variables[i]->tok
+					DataType::Return, node.return_variables[i]->tok
 					);
 			}
-			new_param->data_type = DataType::Param;
+			new_param->data_type = DataType::Return;
 			auto new_param_ref = new_param->to_reference();
 			new_param_ref->ty = node_return->ty;
-			new_param_ref->data_type = DataType::Param;
+			new_param_ref->data_type = DataType::Return;
 			// replace param in function header in case more than 1 return param
 			// when multiple return statements -> add only return params for the first one
 			if(&node == m_current_function->return_stmts[0]) {

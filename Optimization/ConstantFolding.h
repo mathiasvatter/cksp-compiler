@@ -48,7 +48,7 @@ public:
 //				}
 			} else if (all_params_are_type(node, NodeType::Int)) {
 				int32_t result = 0;
-				auto int_node = static_cast<NodeInt*>(node.function->get_arg(0).get());
+				auto int_node = node.function->get_arg(0)->cast<NodeInt>();
 				// Definition der Funktions-Map für Integer-Operationen
 				static std::unordered_map<std::string, std::function<int32_t(int32_t)>> int_functions = {
 					{"inc", [](int32_t value) { return value + 1; }},
@@ -65,7 +65,7 @@ public:
 				}
 			} else if (all_params_are_type(node, NodeType::Real)) {
 				double result = 0;
-				auto real_node = static_cast<NodeReal*>(node.function->get_arg(0).get());
+				auto real_node = node.function->get_arg(0)->cast<NodeReal>();
 				static std::unordered_map<std::string, std::function<double(double)>> real_functions = {
 					// real number functions
 					{"exp", [](double value) { return std::exp(value); }},
@@ -88,15 +88,15 @@ public:
 		} else if(node.function->get_num_args() == 3) {
 			if(node.function->name == "in_range") {
 				if(all_params_are_type(node, NodeType::Int)) {
-					auto value = static_cast<NodeInt*>(node.function->get_arg(0).get());
-					auto min = static_cast<NodeInt*>(node.function->get_arg(1).get());
-					auto max = static_cast<NodeInt*>(node.function->get_arg(2).get());
+					auto value = node.function->get_arg(0)->cast<NodeInt>();
+					auto min = node.function->get_arg(1)->cast<NodeInt>();
+					auto max = node.function->get_arg(2)->cast<NodeInt>();
 					auto new_node = std::make_unique<NodeInt>(value->value >= min->value && value->value <= max->value, node.tok);
 					return node.replace_with(std::move(new_node));
 				} else if(all_params_are_type(node, NodeType::Real)) {
-					auto value = static_cast<NodeReal*>(node.function->get_arg(0).get());
-					auto min = static_cast<NodeReal*>(node.function->get_arg(1).get());
-					auto max = static_cast<NodeReal*>(node.function->get_arg(2).get());
+					auto value = node.function->get_arg(0)->cast<NodeReal>();
+					auto min = node.function->get_arg(1)->cast<NodeReal>();
+					auto max = node.function->get_arg(2)->cast<NodeReal>();
 					auto new_node = std::make_unique<NodeReal>(value->value >= min->value && value->value <= max->value, node.tok);
 					return node.replace_with(std::move(new_node));
 				}
@@ -104,8 +104,8 @@ public:
 		} else if(node.function->get_num_args() == 2) {
 			if(node.function->name == "sh_left" or node.function->name == "sh_right") {
 				if(all_params_are_type(node, NodeType::Int)) {
-					auto value = static_cast<NodeInt*>(node.function->get_arg(0).get());
-					auto shift = static_cast<NodeInt*>(node.function->get_arg(1).get());
+					auto value = node.function->get_arg(0)->cast<NodeInt>();
+					auto shift = node.function->get_arg(1)->cast<NodeInt>();
 					int32_t result = 0;
 					if(node.function->name == "sh_left") {
 						result = value->value << shift->value;
@@ -122,33 +122,22 @@ public:
 
     NodeAST* visit(NodeUnaryExpr& node) override {
         node.operand->accept(*this);
-
-		switch (node.operand->get_node_type()) {
-			case NodeType::Int: {
-				if (auto int_node = static_cast<NodeInt*>(node.operand.get())) {
-					if (node.op == token::SUB) {
-						auto new_node = std::make_unique<NodeInt>(-int_node->value, node.tok);
-						new_node->parent = node.parent;
-						return node.replace_with(std::move(new_node));
-					} else if (node.op == token::BOOL_NOT) {
-						auto new_node = std::make_unique<NodeInt>(int_node->value == 0 ? 1 : 0, node.tok);
-						new_node->parent = node.parent;
-						return node.replace_with(std::move(new_node));
-					}
-				}
-				break;
+		if (auto int_node = node.operand->cast<NodeInt>()) {
+			if (node.op == token::SUB) {
+				auto new_node = std::make_unique<NodeInt>(-int_node->value, node.tok);
+				new_node->parent = node.parent;
+				return node.replace_with(std::move(new_node));
+			} else if (node.op == token::BOOL_NOT) {
+				auto new_node = std::make_unique<NodeInt>(int_node->value == 0 ? 1 : 0, node.tok);
+				new_node->parent = node.parent;
+				return node.replace_with(std::move(new_node));
 			}
-			case NodeType::Real: {
-				if (auto real_node = static_cast<NodeReal*>(node.operand.get())) {
-					if (node.op == token::SUB) {
-						auto new_node = std::make_unique<NodeReal>(-real_node->value, node.tok);
-						new_node->parent = node.parent;
-						return node.replace_with(std::move(new_node));
-					}
-				}
-				break;
+		} else if (auto real_node = node.operand->cast<NodeReal>()) {
+			if (node.op == token::SUB) {
+				auto new_node = std::make_unique<NodeReal>(-real_node->value, node.tok);
+				new_node->parent = node.parent;
+				return node.replace_with(std::move(new_node));
 			}
-			default: return &node;
 		}
 		return &node;
     }
@@ -157,16 +146,10 @@ public:
 		node.left->accept(*this);
 		node.right->accept(*this);
 
-		NodeInt* right_int = nullptr;
-		NodeInt* left_int = nullptr;
-		NodeReal* right_real = nullptr;
-		NodeReal* left_real = nullptr;
-
-		if(node.right->get_node_type() == NodeType::Int) right_int = static_cast<NodeInt*>(node.right.get());
-		if(node.left->get_node_type() == NodeType::Int) left_int = static_cast<NodeInt*>(node.left.get());
-		if(node.right->get_node_type() == NodeType::Real) right_real = static_cast<NodeReal*>(node.right.get());
-		if(node.left->get_node_type() == NodeType::Real) left_real = static_cast<NodeReal*>(node.left.get());
-
+		auto right_int = node.right->cast<NodeInt>();
+		auto left_int = node.left->cast<NodeInt>();
+		auto right_real = node.right->cast<NodeReal>();
+		auto left_real = node.left->cast<NodeReal>();
 
 		if(right_int || left_int) {
 			if (contains(MATH_TOKENS, node.op) or contains(BITWISE_TOKENS, node.op)) {
@@ -194,6 +177,48 @@ public:
 					auto error = CompileError(ErrorType::MathError,"","", node.tok);
 					error.m_message = "Found division by zero. Result will be infinite.";
 					error.exit();
+				} else if (left_int or right_int) {
+					// der bekannte  Integer
+					NodeInt* known_int = left_int ? left_int : right_int;
+					switch (node.op) {
+						case token::ADD:
+							if (known_int->value == 0) {
+								// Absorbierendes Element, das Ergebnis ist immer der andere Ausdruck
+								node.replace_with(left_int ? std::move(node.right) : std::move(node.left));
+							}
+							break;
+						case token::SUB:
+							if (known_int->value == 0) {
+								// Neutrales Element, das Ergebnis ist immer der andere Ausdruck
+								node.replace_with(left_int ? std::move(node.right) : std::move(node.left));
+							}
+							break;
+						case token::MULT:
+							if (known_int->value == 0) {
+								// Absorbierendes Element, das Ergebnis ist immer 0
+								node.replace_with(get_int(0, node.tok));
+							} else if (known_int->value == 1) {
+								// Neutrales Element, das Ergebnis ist immer der andere Ausdruck
+								node.replace_with(left_int ? std::move(node.right) : std::move(node.left));
+							}
+							break;
+						case token::DIV:
+							if (known_int->value == 0) {
+								// Absorbierendes Element, das Ergebnis ist immer 0
+								node.replace_with(get_int(0, node.tok));
+							} else if (known_int->value == 1) {
+								// Neutrales Element, das Ergebnis ist immer der andere Ausdruck
+								node.replace_with(left_int ? std::move(node.right) : std::move(node.left));
+							}
+							break;
+						case token::MODULO:
+							if (known_int->value == 0) {
+								// Absorbierendes Element, das Ergebnis ist immer 0
+								node.replace_with(get_int(0, node.tok));
+							}
+							break;
+						default: break;
+					}
 				}
 			} else if (contains(BOOL_TOKENS, node.op)) {
 				if (left_int and right_int) {

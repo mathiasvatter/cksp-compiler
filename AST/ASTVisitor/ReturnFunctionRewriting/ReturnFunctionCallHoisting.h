@@ -21,7 +21,7 @@
  */
 class ReturnFunctionCallHoisting : public ASTVisitor {
 private:
-	std::unordered_map<NodeStatement*, std::vector<std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_stmt;
+	std::unordered_map<NodeStatement*, std::vector<std::unique_ptr<NodeAST>>> m_declares_per_stmt;
 	/// function call is hoistable when userdefined and returns values and is not an expression function
 	/// or is in condition statement
 	static inline bool is_hoistable(NodeFunctionCall* node) {
@@ -101,6 +101,14 @@ public:
 				error.m_message = "Unable to find parent statement of <FunctionCall>.";
 				error.exit();
 			}
+			// check if func call is constructor in builtin func args, because then it is temporary constructor!
+			// that needs an extra deletion statement after wards
+//			if(node.kind == NodeFunctionCall::Kind::Constructor) {
+//
+//				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+//				error.m_message = "Constructor call in builtin function argument is not allowed.";
+//				error.exit();
+//			}
 			// clone return variable from function definition if function was already return param promoted
 			auto return_var = clone_shared(node.get_definition()->header->get_param(0));
 			return_var->is_local = true;
