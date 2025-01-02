@@ -5,6 +5,9 @@
     - was ist Kontakt -> Industriestandard
     - was ist KSP, warum ist es wichtig
     - realtime audio processing -> speicherplatz und performance
+    - wird in ram geladen?
+    - pascal syntax
+    - 2004?
 - Motivation für funktionale Programmierkonzepte in KSP. 
     - Warum nicht gleich in der Sprache? -> underfunded und closed-source
     - Effizienz und Flexibilität?
