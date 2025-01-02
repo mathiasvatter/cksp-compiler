@@ -206,7 +206,77 @@ on note
 end on
 
 
+on note
+	foo(2, 4)
+	declare c := 3
+	if(c = 3)
+		declare d := 3
+		message(d)
+	end if
+	foo(2, 4)
+end on
 
+function foo(a: int, b: int) -> int
+	declare d := a - b
+	declare c := a + b
+	return c + d
+end function
+
+
+on note
+	declare f: int
+	fuu(f, 2, 3)
+	play_note(f, EVENT_VELOCITY, 0, -1)
+end on
+
+function foo(ret: int, a: int, b: int)
+	declare d := a - b
+	declare c := a + b
+	ret := c + d
+end function
+
+function fuu(ret: int, a: int, b: int)
+	declare h: int
+	foo(h, 1,2)
+	ret := h + 1
+end function
+
+
+
+on note
+	declare velo: int := EVENT_VELOCITY
+	declare pitch: int
+	process_note(pitch, velo)
+	play_note(pitch, velo, 0, -1)
+end on
+
+function process_note(ret, v)
+	declare offset: int
+	compute_offset(offset, v)
+	ret := offset
+end function
+
+function compute_offset(ret, v)
+	declare offset: int := v / 2
+	ret := offset
+end function
+
+
+
+on ui_controls()
+	if(NI_UI_ID = 1)
+		declare j: int 
+		declare k: int 
+	end if
+	wait(100)
+	if(NI_UI_ID = 2)
+		declare h: int 
+		declare g: int 
+	end if
+end on
+
+{*******************************************************************************************************************
+											* FUNCTIONS *
 
 {*******************************************************************************************************************
 												* MACROS *

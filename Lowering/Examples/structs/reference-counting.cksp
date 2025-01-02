@@ -66,12 +66,9 @@ if(scope)
     // --------- Assignmnets
 
     delete ls1
-    ls1 := List(1, nil)
+    ls1 := List(1, nil) // <- delete before assignment to constructor
 
-    // handling of temporary constructors
-    message(List(1,nil).value) // <- needs to be deleted after usage
-    // idea: mark every constructor as temporary that is
-    // not assigned to a variable and not recursively used
+    message(List(1, nil)) // <- delete after when arg in builtin function
 
     // array copy array
     delete lists

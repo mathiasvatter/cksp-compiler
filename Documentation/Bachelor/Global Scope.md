@@ -26,9 +26,6 @@
         - Mangel an direkter Array-Unterstützung in KSP.
         - Performance-Einbußen bei großen Arrays.
 
-
-Deine Struktur macht bereits Sinn, aber ich würde die Kapitelreihenfolge leicht anpassen und stärker auf den praktischen Ablauf deiner Arbeit eingehen. Ziel ist es, die **Problemstellung**, deine **Herangehensweise** (Algorithmen), die **Herausforderungen** und deine **Lösungen** systematisch darzustellen.
-
 ---
 
 # 4. Von Lexical to Global Scope mittels Variable Reuse und Parameter Promotion  

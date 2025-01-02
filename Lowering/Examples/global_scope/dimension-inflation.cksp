@@ -44,3 +44,27 @@ on ui_controls()
     end if 
 end on
 
+
+on ui_controls()
+	declare i: int := NI_UI_ID
+    wait(1000000)
+    message(i)
+end on
+
+
+
+on ui_controls()
+	declare i: int := NI_UI_ID
+    user_wait(500000)
+    no_wait()
+    message(i)
+end on
+function user_wait(time: int)
+	declare times_two: int := time * 2
+    wait(times_two)
+end function
+function no_wait()
+    declare i: int := 2
+    message(i)
+end function
+
