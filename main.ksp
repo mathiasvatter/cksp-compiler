@@ -206,6 +206,7 @@ on note
 end on
 
 
+
 on note
 	foo(2, 4)
 	declare c := 3

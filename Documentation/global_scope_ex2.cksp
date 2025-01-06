@@ -1,0 +1,125 @@
+#pragma output_path("output.txt")
+
+on init
+    declare ui_button btn_arp
+    declare current_note := 60
+end on
+on note
+    current_note := EVENT_NOTE
+    play_interval(current_note, 4)
+    play_interval(current_note, 7)
+end on
+on ui_control(btn_arp)
+    play_major(current_note)
+end on
+function play_major(note: int)
+    declare major[3]: int[] := (0, 4, 7)
+    declare i: int := 0
+    for i := 0 to num_elements(major) - 1
+        play_interval(note, major[i])	
+        wait(1000)
+    end for    
+end function
+function play_interval(base: int, add: int)
+    declare pitch: int := base + add
+    play_note(pitch, 60, 0, -1)
+end function
+
+// *********** nach thread safe marking und Dimension Inflation
+define CB_IDX := NI_CALLBACK_ID mod MAX::CB::STACK
+on init // thread-safe
+    declare const MAX::CB::STACK: int := 1000
+    declare ui_button btn_arp
+    declare current_note := 60
+end on
+on note // thread-safe
+	current_note := EVENT_NOTE
+    play_interval(current_note, 4)
+    play_interval(current_note, 7)
+end on
+on ui_control(btn_arp) // thread-unsafe
+    play_major(current_note)
+end on
+function play_major(note: int) // thread-unsafe
+    declare major[MAX::CB::STACK, 3]: int[][]
+    major[CB_IDX, *] := (0, 4, 7)
+    declare i[MAX::CB::STACK]: int[]
+    i[CB_IDX] := 0
+    for i[CB_IDX] := 0 to num_elements(major[CB_IDX, *]) - 1
+        play_interval(note, major[CB_IDX, i[CB_IDX]])
+        wait(1000)
+    end for    
+end function
+function play_interval(base: int, add: int) // thread-safe
+    declare pitch: int := base + add
+    play_note(pitch, 60, 0, -1)
+end function
+
+// *********** Parameter Promotion
+define CB_IDX := NI_CALLBACK_ID mod MAX::CB::STACK
+on init // thread-safe
+    declare const MAX::CB::STACK: int := 1000
+    declare ui_button btn_arp
+    declare current_note := 60
+end on
+on note // thread-safe
+	current_note := EVENT_NOTE
+        declare pitch0: int
+        play_interval(current_note, 4, pitch0)
+
+        declare pitch0: int
+        play_interval(current_note, 7, pitch0)
+end on
+on ui_control(btn_arp) // thread-unsafe
+    declare major0[MAX::CB::STACK, 3]: int[][]
+    declare i0[MAX::CB::STACK]: int[]
+    declare pitch0: int
+    play_major(current_note, pitch0, major0, i0)
+end on
+function play_major(note, pitch0, major0, i0) // thread-unsafe
+    major0[CB_IDX, *] := (0, 4, 7)
+    i0[CB_IDX] := 0
+    for i0[CB_IDX] := 0 to num_elements(major0[CB_IDX, *]) - 1
+        play_interval(note, major0[CB_IDX, i0[CB_IDX]], pitch0)
+        wait(1000)
+    end for    
+end function
+function play_interval(base: int, add: int, pitch0: int) // thread-safe
+    pitch0 := base + add
+    play_note(pitch0, 60, 0, -1)
+end function
+
+
+
+
+// *********** Variable Reuse
+define CB_IDX := NI_CALLBACK_ID mod MAX::CB::STACK
+on init // thread-safe
+    declare const MAX::CB::STACK: int := 1000
+    declare ui_button btn_arp
+    declare current_note := 60
+    declare major0[MAX::CB::STACK, 3]: int[][]
+    declare i0[MAX::CB::STACK]: int[]
+    declare pitch0: int
+end on
+on note // thread-safe
+	current_note := EVENT_NOTE
+    play_interval(current_note, 4, pitch0)
+    play_interval(current_note, 7, pitch0)
+end on
+on ui_control(btn_arp) // thread-unsafe
+    play_major(current_note, pitch0, major0, i0)
+end on
+function play_major(note, pitch0, major0, i0) // thread-unsafe
+    major0[CB_IDX, *] := (0, 4, 7)
+    i0[CB_IDX] := 0
+    for i0[CB_IDX] := 0 to num_elements(major0[CB_IDX, *]) - 1
+        play_interval(note, major0[CB_IDX, i0[CB_IDX]], pitch0)
+        wait(1000)
+    end for    
+end function
+function play_interval(base: int, add: int, pitch0: int) // thread-safe
+    pitch0 := base + add
+    play_note(pitch0, 60, 0, -1)
+end function
+
