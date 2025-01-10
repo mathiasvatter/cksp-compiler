@@ -1,0 +1,56 @@
+struct Note
+    declare pitch: int
+    declare velocity: int
+
+    function __init__(self, p: int, v: int)
+        self.pitch = p
+        self.velocity = v
+    end function
+end struct
+
+on init
+
+end on
+
+on note
+    declare curr_note: Note := nil
+    curr_note := Note(EVENT_NOTE, EVENT_VELOCITY)
+    play_note(curr_note.pitch, curr_note.velocity, 0, -1)
+end on
+
+// naive approach
+on note
+    declare curr_note.pitch := EVENT_NOTE
+    declare curr_note.velocity := EVENT_VELOCITY 
+    play_note(curr_note.pitch, curr_note.velocity, 0, -1)
+end on
+
+
+struct List
+    declare value: int
+    declare next: List
+
+    function __init__(self, value: int, next: List)
+        self.value := value
+        self.next := next
+    end function
+end struct
+
+on init
+    declare const List::MAX_STRUCTS: int := MAX_STRUCTS
+    declare List::allocation[List::MAX_STRUCTS]: int[] := (0)
+    declare List::value[List::MAX_STRUCTS]: int[]
+    declare List::next[List::MAX_STRUCTS]: List[] := (nil)
+    declare List::free_idx: int := 0   
+end on
+
+function List::__init__(value: int, next: List)
+    List::free_idx := search(List::allocation, 0)
+    if List::free_idx = nil
+        message("Error: No more free space available to allocate objects of type 'List'") 
+    end if
+    List::allocation[List::free_idx] := 1
+    List::value[List::free_idx] := value
+    List::next[List::free_idx] := next
+    return List::free_idx
+end function
