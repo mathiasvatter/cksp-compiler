@@ -22,6 +22,7 @@
  * end struct
  * post desugaring:
  * struct List
+ *  declare self: List
  *	declare List::value: int
  *	declare List::next: List := nil
  *
