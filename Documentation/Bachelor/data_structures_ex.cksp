@@ -56,6 +56,63 @@ function List::__init__(value: int, next: List)
 end function
 
 
+struct Chord
+    declare name: string
+    declare notes[NOTES_PER_CHORD]: Note[]
+    declare intervals[NOTES_PER_CHORD-1]: int[]
+end struct
+on init
+	declare const NOTES_PER_CHORD: int := 8
+end on
+
+on init
+    declare const Chord::MAX_STRUCTS: int := MAX_STRUCTS/Struct::max(7, 8)
+end on
+function Struct::max(a: int, b: int)
+    return (a + b + abs(a - b)) / 2
+end function
+
+
+// Second Transformation to Third
+struct List
+    declare self : List
+    declare List::value : int
+    declare List::next : List
+
+    function List::__init__(value : int, next: List)
+        List::value := value
+        List::next := next
+    end function
+
+    function List::get_next_next_value(self : List)
+        return (self.next.next.value)
+    end function
+end struct
+
+// Third Transformation
+on init
+    declare const List::MAX_STRUCTS: int := MAX_STRUCTS
+    declare List::allocation[List::MAX_STRUCTS]: int[] := (0)
+    declare List::value[List::MAX_STRUCTS]: int[]
+    declare List::next[List::MAX_STRUCTS]: List[] := (nil)
+    declare List::free_idx: int := 0   
+end on
+
+function List::__init__(value: int, next: List)
+    List::free_idx := search(List::allocation, 0)
+    if List::free_idx = nil
+        message("MemError: No free memory for allocation.") 
+    end if
+    List::allocation[List::free_idx] := 1
+    List::value[List::free_idx] := value
+    List::next[List::free_idx] := next
+    return List::free_idx
+end function
+
+function List::get_next_next_value(self : List)
+    return (self.next.next.value)
+end function
+
 on init
     ...
 	declare this_list := List(42, that_list)
