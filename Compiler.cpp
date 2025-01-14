@@ -144,6 +144,7 @@ void Compiler::compile() {
 
 	ASTCollectLowerings lowering(m_program);
 	ast->accept(lowering);
+	ast->debug_print();
 
 	ASTLowerTypes lowering_types(m_program);
 	ast->accept(lowering_types);
@@ -173,7 +174,6 @@ void Compiler::compile() {
 	// Data Structure Lowering of NDArrays and Array assignments
 	ASTDataStructureLowering data_structure_lowering(m_program);
 	ast->accept(data_structure_lowering);
-	ast->debug_print();
 
 	compile_time.stop("Data Structure Lowering");
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
