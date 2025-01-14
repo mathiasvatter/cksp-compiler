@@ -341,9 +341,9 @@ end function
 // Methode 1 (Lineare Rekursion):
 // Verwende diese Methode, wenn deine Struktur linear ist und jedes Objekt auf maximal ein weiteres Objekt desselben Typs verweist.
 // Beispiele: Einfach verkettete Listen, lineare Ketten von Objekten.
-// Methode 2 (Nicht-lineare Rekursion mit homogenen Typen):
+// Methode 2 (Nicht-lineare direkte Rekursion mit homogenen Typen):
 // Verwende diese Methode, wenn deine Struktur verzweigt ist und Objekte auf mehrere Objekte desselben Typs verweisen können.
 // Beispiele: Bäume, Graphen ohne unterschiedliche Typen.
-// Methode 3 (Nicht-lineare Rekursion mit heterogenen Typen):
+// Methode 3 (Nicht-lineare indirekte Rekursion mit heterogenen Typen):
 // Verwende diese Methode, wenn deine Struktur aus Objekten verschiedener Typen besteht, die sich gegenseitig referenzieren.
 // Beispiele: Gegenseitig rekursive Strukturen wie List und Node, die sich gegenseitig enthalten.
