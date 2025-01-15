@@ -222,11 +222,12 @@ function Node::__decr__(self: Node, num_refs: int)
         end if
 
         // lower reference count
-        Node::allocation[self] := Node::allocation[self] + num_refs
+        Node::allocation[self] := Node::allocation[self] - num_refs
         // object still referenced
         if(Node::allocation[self] > 0) 
         	continue
         end if
+        Node::allocation[self] := 0
 
         // füge left dem stack hinzu
         if Node::left[self] # nil
@@ -281,12 +282,13 @@ function List::__decr__(self: List, num_refs: int)
             end if
 
             // Schritt 1: Referenzzähler reduzieren/erhöhen (je nach num_refs)
-            List::allocation[self] := List::allocation[self] + num_refs
+            List::allocation[self] := List::allocation[self] - num_refs
 
             // Wenn das Objekt noch referenziert wird, überspringe die Löschung
             if List::allocation[self] > 0
                 continue
             end if
+            List::allocation[self] := 0
 
             // Hier kommen Delete-Methoden von anderen Membern hin, die nicht vom Typ Node sind
 
@@ -310,20 +312,19 @@ function List::__decr__(self: List, num_refs: int)
             end if
 
             // Schritt 1: Referenzzähler reduzieren
-            dec(Node::allocation[self])
+            Node::allocation[self] := Node::allocation[self] - num_refs
 
             // Wenn das Objekt noch referenziert wird, überspringe die Löschung
             if Node::allocation[self] > 0
                 continue
             end if
-
+            Node::allocation[self] := 0
             // Hier kommen Delete-Methoden von anderen Membern hin, die nicht vom Typ List sind
 
             // Füge rekursive Member hinzu
-            if self.left # nil
-                // Füge das List-Objekt dem List-Stack hinzu
+            if Node::left[self] # nil
                 inc(List::stack_top)
-                List::stack[List::stack_top] := self.left
+                List::stack[List::stack_top] := Node::left[self]
             end if
 
             if Node::right[self] # nil
