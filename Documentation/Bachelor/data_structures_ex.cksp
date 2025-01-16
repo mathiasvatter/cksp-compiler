@@ -101,7 +101,8 @@ end on
 function List::__init__(value: int, next: List)
     List::free_idx := search(List::allocation, 0)
     if List::free_idx = nil
-        message("MemError: No free memory for allocation.") 
+        message("MemError: No free memory for allocation.")
+        
     end if
     List::allocation[List::free_idx] := 1
     List::value[List::free_idx] := value
@@ -120,4 +121,27 @@ on init
     message(this_list.get_next_next_value())
     message(that_list.get_next().value)
     
+end on
+
+on init
+	declare $i
+end on 
+on note
+	declare n: Note := Note(EVENT_NOTE, EVENT_VELOCITY)
+    Note::__incr__(n, 1)
+	wait(DURATION_EIGHTH)
+	message(n.pitch)
+    Note::__decr__(n, 1)
+end on
+
+
+on init
+	declare n: Note := nil
+end on 
+on note
+    Note::__decr__(n, 1)
+	n := Note(EVENT_NOTE, EVENT_VELOCITY)
+    Note::__incr__(n, 1)
+	wait(DURATION_EIGHTH)
+	message(n.pitch)
 end on
