@@ -10,15 +10,7 @@ struct List
 		declare local self : List := - 1
 		declare List::value[List::MAX_STRUCTS{int}] : int[]
 		declare List::next[List::MAX_STRUCTS{int}] : List[] := [- 1]
-
-	function List::get_next_next_value(self : List)
-		return (List::value[List::next[List::next[self{List}]{List}]{List}]{int})
-	end function
-
-	function List::add(self : List, value : int)
-		List::__decr__(List::next[self{List}]{List}, 1){Undefined}
-		List::next[self{List}]{List} := List(value{int}, - 1){Constructor}
-	end function
+		declare List::point[List::MAX_STRUCTS{int}] : Point[] := [- 1]
 
 	function List::__init__(value : int, next : List)
 		List::free_idx{int} := search(List::allocation{int[]}, 0){Builtin}
@@ -33,6 +25,15 @@ struct List
 		return (List::free_idx{int})
 	end function
 
+	function List::get_next_next_value(self : List)
+		return (List::value[List::next[List::next[self{List}]{List}]{List}]{int})
+	end function
+
+	function List::add(self : List, value : int)
+		List::__decr__(List::next[self{List}]{List}, 1){Undefined}
+		List::next[self{List}]{List} := List(value{int}, - 1){Constructor}
+	end function
+
 	function List::__repr__(self : List)
 		return ("<List> Object: " & self{List})
 	end function
@@ -41,24 +42,48 @@ struct List
 		declare local _iter : int
 		if(List::allocation[self{List}]{int} <= 0)
 			List::next[self{List}]{List} := - 1
+			List::point[self{List}]{Point} := - 1
 		end if
 	end function
 
 	function List::__decr__(self : List, num_refs : int)
-		declare local current : List := self{List}
-		while(current{List} # - 1) 
-			List::allocation[current{List}]{int} := List::allocation[current{List}]{int} - num_refs{int}
-			if(List::allocation[current{List}]{int} > 0)
-				current{List} := - 1
-				continue{Builtin}
-			end if
-			self{List} := current{List}
-			if(List::next[current{List}]{List} # - 1)
-				current{List} := List::next[current{List}]{List}
-			else
-				current{List} := - 1
-			end if
-			List::__del__(self{List}){Undefined}
+		List::stack[List::stack_top{int}]{int} := self{List}
+		inc(List::stack_top{int}){Builtin}
+		while((Point::stack_top{int} > 0) and (List::stack_top{int} > 0)) 
+			while(Point::stack_top{int} > 0) 
+				declare local _iter : int
+				dec(Point::stack_top{int}){Builtin}
+				self{Point} := Point::stack[Point::stack_top{int}]{int}
+				if(self{Point} = - 1)
+					continue{Builtin}
+				end if
+				Point::allocation[self{Point}]{int} := Point::allocation[self{Point}]{int} - num_refs{int}
+				if(Point::allocation[self{Point}]{int} > 0)
+					continue{Builtin}
+				end if
+				Point::__del__(self{Point}){Undefined}
+			end while
+			while(List::stack_top{int} > 0) 
+				declare local _iter : int
+				dec(List::stack_top{int}){Builtin}
+				self{List} := List::stack[List::stack_top{int}]{int}
+				if(self{List} = - 1)
+					continue{Builtin}
+				end if
+				List::allocation[self{List}]{int} := List::allocation[self{List}]{int} - num_refs{int}
+				if(List::allocation[self{List}]{int} > 0)
+					continue{Builtin}
+				end if
+				if(List::next[self{List}]{List} # - 1)
+					inc(List::stack_top{int}){Builtin}
+					List::stack_top{int} := List::next[self{List}]{List}
+				end if
+				if(List::point[self{List}]{Point} # - 1)
+					inc(Point::stack_top{int}){Builtin}
+					Point::stack_top{int} := List::point[self{List}]{Point}
+				end if
+				List::__del__(self{List}){Undefined}
+			end while
 		end while
 	end function
 
