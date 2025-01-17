@@ -156,8 +156,13 @@ end function
 
 // delete funktion, falls das struct nur einen rekursiven member hat
 struct List
-    declare value: int
+    declare note: Note
     declare next: List
+end struct
+
+struct Note
+    declare pitch: int
+    declare velocity: int
 end struct
 function List::__decr__(self: List, num_refs: int)
     declare current: List := self
@@ -171,13 +176,14 @@ function List::__decr__(self: List, num_refs: int)
             current := nil
         	continue
         end if
+        List::allocation[current] := 0
 
-        self := current
-        if(List::next[current] # nil)
-            current := List::next[current]
-        else
-            current := nil
-        end if
+        self := current // <- immer da
+        current := nil // <- immer da (für nicht rekursive structs)
+
+        // other non-recursive members
+        Note::__decr__(List::note[self], 1) // <- für nicht rekursive structs
+        current := List::next[current] // <- für rekursive structs
         
         // actual delete
         List::__del__(self)

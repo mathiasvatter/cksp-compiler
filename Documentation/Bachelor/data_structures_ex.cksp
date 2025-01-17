@@ -102,7 +102,7 @@ function List::__init__(value: int, next: List)
     List::free_idx := search(List::allocation, 0)
     if List::free_idx = nil
         message("MemError: No free memory for allocation.")
-        
+
     end if
     List::allocation[List::free_idx] := 1
     List::value[List::free_idx] := value
@@ -123,9 +123,6 @@ on init
     
 end on
 
-on init
-	declare $i
-end on 
 on note
 	declare n: Note := Note(EVENT_NOTE, EVENT_VELOCITY)
     Note::__incr__(n, 1)

@@ -1,6 +1,12 @@
 struct List
 	declare value: int
 	declare next: List
+	declare point: Point
+
+	function __init__(self, value: int, next: List)
+		self.value := value
+		self.next := next
+	end function		
 
     function get_next_next_value(self)
         return self.next.next.value
@@ -279,4 +285,5 @@ end function
 {*******************************************************************************************************************
 												* MACROS *
 *******************************************************************************************************************}
+
 
