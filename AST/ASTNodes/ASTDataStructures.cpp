@@ -496,7 +496,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::get_overloaded_method(token 
 
 void NodeStruct::generate_ref_count_methods(NodeProgram* program) {
 	NodeStructCreateRefCountFunctions rf_methods(*this);
-	auto del = rf_methods.create_destructor();
+	auto del = rf_methods.create_delete();
 	add_method(std::move(del));
 
 	auto decr = rf_methods.create_decr_function();
@@ -513,45 +513,110 @@ std::unique_ptr<NodeWhile> NodeStruct::generate_ref_count_while(std::shared_ptr<
 	return rf_methods.get_stack_while_loop(std::move(self), std::move(num_refs));
 }
 
-void NodeStruct::collect_recursive_structs(NodeProgram *program) {
-	std::unordered_map<NodeStruct*, int> visit_counts;
+// void NodeStruct::collect_recursive_structs(NodeProgram *program) {
+// 	std::unordered_map<NodeStruct*, int> visit_counts;
+//
+// 	std::function<void(NodeStruct*)> collect = [&](NodeStruct* node_struct) {
+// 	  // base case
+// 	  if (!node_struct) return;
+// 	  // Inkrementiere den Besuchszähler für das aktuelle NodeStruct
+// 	  visit_counts[node_struct]++;
+// 	  // Wenn das NodeStruct bereits mehr als einmal besucht wurde, füge es den rekursiven Structs hinzu
+// 	  if (visit_counts[node_struct] > 1) {
+// 		  // Wir müssen nicht weiter in diesem Pfad suchen, da wir bereits festgestellt haben, dass es rekursiv ist
+// 		  return;
+// 	  }
+//
+// 	  // Iteriere über die Mitglieder in member_table
+// 	  for (const auto& mem : node_struct->member_table) {
+// 		  auto member = mem.second.lock();
+// 		  if(mem.first == "self") continue;
+// 		  if(member->is_engine) continue;
+// 		  if(member->data_type == DataType::Const) continue;
+// 		  // Hole den Typ des Mitglieds
+// 		  Type* mem_type = member->ty->get_element_type();
+// 		  // Überprüfe, ob der Typ ein Struct ist
+// 		  if (mem_type->get_type_kind() == TypeKind::Object) {
+// 			  // Hole den Namen des Structs
+// 			  std::string structName = mem_type->to_string();
+// 			  auto it = program->struct_lookup.find(structName);
+// 			  if (it != program->struct_lookup.end()) {
+// 				  NodeStruct* memberStruct = it->second;
+// 				  recursive_structs.insert(memberStruct);
+// 				  collect(memberStruct);
+// 			  }
+// 		  }
+// 	  }
+// 	};
+//
+// 	collect(this);
+// }
 
-	std::function<void(NodeStruct*)> collect = [&](NodeStruct* node_struct) {
-	  // base case
-	  if (!node_struct) return;
-	  // Inkrementiere den Besuchszähler für das aktuelle NodeStruct
-	  visit_counts[node_struct]++;
-	  // Wenn das NodeStruct bereits mehr als einmal besucht wurde, füge es den rekursiven Structs hinzu
-	  if (visit_counts[node_struct] > 1) {
-		  // Wir müssen nicht weiter in diesem Pfad suchen, da wir bereits festgestellt haben, dass es rekursiv ist
-		  return;
-	  }
+void NodeStruct::collect_recursive_structs(NodeProgram* program)
+{
+    // 1) Hilfsstrukturen
+    std::unordered_map<NodeStruct*, bool>  visited;
+    std::unordered_map<NodeStruct*, bool>  inStack;
+    std::unordered_map<NodeStruct*, NodeStruct*> parent;
+    // Sammler für Zyklus-Knoten
+    std::unordered_set<NodeStruct*>        cycleMembers;
 
-	  // Iteriere über die Mitglieder in member_table
-	  for (const auto& mem : node_struct->member_table) {
-		  auto member = mem.second.lock();
-		  if(mem.first == "self") continue;
-		  if(member->is_engine) continue;
-		  if(member->data_type == DataType::Const) continue;
-		  // Hole den Typ des Mitglieds
-		  Type* mem_type = member->ty->get_element_type();
-		  // Überprüfe, ob der Typ ein Struct ist
-		  if (mem_type->get_type_kind() == TypeKind::Object) {
-			  // Hole den Namen des Structs
-			  std::string structName = mem_type->to_string();
-			  auto it = program->struct_lookup.find(structName);
-			  if (it != program->struct_lookup.end()) {
-				  NodeStruct* memberStruct = it->second;
-				  recursive_structs.insert(memberStruct);
-				  collect(memberStruct);
-			  }
-		  }
-	  }
-	};
+    // DFS-Funktion
+    std::function<void(NodeStruct*)> dfsVisit = [&](NodeStruct* current){
+        visited[current] = true;
+        inStack[current] = true;
 
-	collect(this);
+        // Durch die Member gehen
+        for (const auto& mem : current->member_table) {
+            // Ausschließen, was für Rekursionserkennung irrelevant ist
+            if (mem.first == "self") continue;
+            auto member = mem.second.lock();
+            if (!member || member->is_engine || member->data_type == DataType::Const)
+                continue;
+
+            // Prüfen, ob es sich um ein Struct-Type handelt
+            Type* mem_type = member->ty->get_element_type();
+            if (mem_type->get_type_kind() != TypeKind::Object)
+                continue;
+
+            // Zugehöriges Struct holen
+            std::string structName = mem_type->to_string();
+            auto it = program->struct_lookup.find(structName);
+            if (it == program->struct_lookup.end())
+                continue;
+            NodeStruct* child = it->second;
+
+            // 1. Child noch nicht besucht: DFS aufrufen
+            if (!visited[child]) {
+                parent[child] = current;
+                dfsVisit(child);
+            }
+            // 2. Child ist bereits im 'inStack' => Zyklus gefunden
+            else if (inStack[child]) {
+                // jetzt markieren wir alle Knoten von current zurück bis child
+                // (einschließlich child) als Zyklus-Mitglieder
+                NodeStruct* loopNode = current;
+                cycleMembers.insert(child);  // child gehört sicher zum Zyklus
+                while (loopNode && loopNode != child) {
+                    cycleMembers.insert(loopNode);
+                    loopNode = parent[loopNode];  // zurückwandern im Pfad
+                }
+                // child evtl. nochmal, aber das tut dem Set nicht weh
+                cycleMembers.insert(child);
+            }
+        }
+
+        // Knoten aus dem Stack nehmen (Rückweg fertig)
+        inStack[current] = false;
+    };
+
+    // 2) DFS von `this` aus starten
+    dfsVisit(this);
+
+    // 3) Set zurückgeben
+    // => Enthält **nur** die Knoten, die tatsächlich in einem Zyklus
+    //    mit `this` stehen.
+    recursive_structs = cycleMembers;
 }
-
-
 
 
