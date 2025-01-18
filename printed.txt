@@ -40,50 +40,28 @@ struct List
 
 	function List::__del__(self : List)
 		declare local _iter : int
-		if(List::allocation[self{List}]{int} <= 0)
+		if(self{List} # - 1)
 			List::next[self{List}]{List} := - 1
 			List::point[self{List}]{Point} := - 1
+			List::value[self{List}]{int} := 0
 		end if
 	end function
 
 	function List::__decr__(self : List, num_refs : int)
-		List::stack[List::stack_top{int}]{int} := self{List}
-		inc(List::stack_top{int}){Builtin}
-		while((Point::stack_top{int} > 0) and (List::stack_top{int} > 0)) 
-			while(Point::stack_top{int} > 0) 
-				declare local _iter : int
-				dec(Point::stack_top{int}){Builtin}
-				self{Point} := Point::stack[Point::stack_top{int}]{int}
-				if(self{Point} = - 1)
-					continue{Builtin}
-				end if
-				Point::allocation[self{Point}]{int} := Point::allocation[self{Point}]{int} - num_refs{int}
-				if(Point::allocation[self{Point}]{int} > 0)
-					continue{Builtin}
-				end if
-				Point::__del__(self{Point}){Undefined}
-			end while
-			while(List::stack_top{int} > 0) 
-				declare local _iter : int
-				dec(List::stack_top{int}){Builtin}
-				self{List} := List::stack[List::stack_top{int}]{int}
-				if(self{List} = - 1)
-					continue{Builtin}
-				end if
-				List::allocation[self{List}]{int} := List::allocation[self{List}]{int} - num_refs{int}
-				if(List::allocation[self{List}]{int} > 0)
-					continue{Builtin}
-				end if
-				if(List::next[self{List}]{List} # - 1)
-					inc(List::stack_top{int}){Builtin}
-					List::stack_top{int} := List::next[self{List}]{List}
-				end if
-				if(List::point[self{List}]{Point} # - 1)
-					inc(Point::stack_top{int}){Builtin}
-					Point::stack_top{int} := List::point[self{List}]{Point}
-				end if
-				List::__del__(self{List}){Undefined}
-			end while
+		declare local current : List := self{List}
+		while(current{List} # - 1) 
+			List::allocation[current{List}]{int} := List::allocation[current{List}]{int} - num_refs{int}
+			if(List::allocation[current{List}]{int} > 0)
+				current{List} := - 1
+				continue{Builtin}
+			else
+				List::allocation[current{List}]{int} := 0
+			end if
+			self{List} := current{List}
+			current{List} := - 1
+			Point::__decr__(List::point[self{List}]{Point}, 1){Undefined}
+			current{List} := List::next[self{List}]{List}
+			List::__del__(self{List}){Undefined}
 		end while
 	end function
 
@@ -105,8 +83,9 @@ struct Node
 		declare Node::value[Node::MAX_STRUCTS{int}] : int[]
 		declare Node::left[Node::MAX_STRUCTS{int}] : Node[] := [- 1]
 		declare Node::right[Node::MAX_STRUCTS{int}] : Node[] := [- 1]
+		declare Node::point[Node::MAX_STRUCTS{int}] : Point[] := [- 1]
 
-	function Node::__init__(value : int, left : Node, right : Node)
+	function Node::__init__(value : int, left : Node, right : Node, point : Point)
 		Node::free_idx{int} := search(Node::allocation{int[]}, 0){Builtin}
 		if(Node::free_idx{int} = -1)
 			message("Error: No more free space available to allocate objects of type 'Node'"){Builtin}
@@ -119,6 +98,9 @@ struct Node
 		Node::__decr__(Node::right[Node::free_idx{int}]{Node}, 1){Undefined}
 		Node::right[Node::free_idx{int}]{Node} := right{Node}
 		Node::__incr__(Node::right[Node::free_idx{int}]{Node}, 1){Undefined}
+		Point::__decr__(Node::point[Node::free_idx{int}]{Point}, 1){Undefined}
+		Node::point[Node::free_idx{int}]{Point} := point{Point}
+		Point::__incr__(Node::point[Node::free_idx{int}]{Point}, 1){Undefined}
 		return (Node::free_idx{int})
 	end function
 
@@ -128,9 +110,11 @@ struct Node
 
 	function Node::__del__(self : Node)
 		declare local _iter : int
-		if(Node::allocation[self{Node}]{int} <= 0)
+		if(self{Node} # - 1)
 			Node::right[self{Node}]{Node} := - 1
+			Node::value[self{Node}]{int} := 0
 			Node::left[self{Node}]{Node} := - 1
+			Node::point[self{Node}]{Point} := - 1
 		end if
 	end function
 
@@ -147,7 +131,10 @@ struct Node
 			Node::allocation[self{Node}]{int} := Node::allocation[self{Node}]{int} - num_refs{int}
 			if(Node::allocation[self{Node}]{int} > 0)
 				continue{Builtin}
+			else
+				Node::allocation[self{Node}]{int} := 0
 			end if
+			Point::__decr__(Node::point[self{Node}]{Point}, 1){Undefined}
 			if(Node::right[self{Node}]{Node} # - 1)
 				inc(Node::stack_top{int}){Builtin}
 				Node::stack_top{int} := Node::right[self{Node}]{Node}
@@ -199,7 +186,9 @@ struct Point
 
 	function Point::__del__(self : Point)
 		declare local _iter : int
-		if(Point::allocation[self{Point}]{int} <= 0)
+		if(self{Point} # - 1)
+			Point::y[self{Point}]{int} := 0
+			Point::x[self{Point}]{int} := 0
 		end if
 	end function
 
@@ -210,7 +199,11 @@ struct Point
 			if(Point::allocation[current{Point}]{int} > 0)
 				current{Point} := - 1
 				continue{Builtin}
+			else
+				Point::allocation[current{Point}]{int} := 0
 			end if
+			self{Point} := current{Point}
+			current{Point} := - 1
 			Point::__del__(self{Point}){Undefined}
 		end while
 	end function
@@ -260,7 +253,15 @@ struct Note
 
 	function Note::__del__(self : Note)
 		declare local _iter : int
-		if(Note::allocation[self{Note}]{int} <= 0)
+		if(self{Note} # - 1)
+				_iter{int} := 0
+				while(_iter{int} <= (10 - 1)) 
+					Note::groups[self{Note}, _iter{int}]{int} := [0]
+					inc(_iter{int}){Builtin}
+				end while
+
+			Note::velocity[self{Note}]{int} := 0
+			Note::pitch[self{Note}]{int} := 0
 		end if
 	end function
 
@@ -271,7 +272,11 @@ struct Note
 			if(Note::allocation[current{Note}]{int} > 0)
 				current{Note} := - 1
 				continue{Builtin}
+			else
+				Note::allocation[current{Note}]{int} := 0
 			end if
+			self{Note} := current{Note}
+			current{Note} := - 1
 			Note::__del__(self{Note}){Undefined}
 		end while
 	end function
@@ -318,7 +323,21 @@ struct Group
 
 	function Group::__del__(self : Group)
 		declare local _iter : int
-		if(Group::allocation[self{Group}]{int} <= 0)
+		if(self{Group} # - 1)
+				_iter{int} := 0
+				while(_iter{int} <= (Group::MAX_GROUPS{int} - 1)) 
+					Group::zone_ids[self{Group}, _iter{int}]{int} := [0]
+					inc(_iter{int}){Builtin}
+				end while
+
+				_iter{int} := 0
+				while(_iter{int} <= (Group::MAX_GROUPS{int} - 1)) 
+					Group::files[self{Group}, _iter{int}]{string} := [0]
+					inc(_iter{int}){Builtin}
+				end while
+
+			Group::idx[self{Group}]{int} := 0
+			Group::MAX_GROUPS[self{Group}]{int} := 0
 		end if
 	end function
 
@@ -329,7 +348,11 @@ struct Group
 			if(Group::allocation[current{Group}]{int} > 0)
 				current{Group} := - 1
 				continue{Builtin}
+			else
+				Group::allocation[current{Group}]{int} := 0
 			end if
+			self{Group} := current{Group}
+			current{Group} := - 1
 			Group::__del__(self{Group}){Undefined}
 		end while
 	end function

@@ -21,6 +21,7 @@ struct Node
 	declare value: int
 	declare left: Node
 	declare right: Node
+	declare point: Point
 end struct 
 
 struct Point
