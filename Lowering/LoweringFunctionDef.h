@@ -157,27 +157,6 @@ private:
 		return node_if;
 	}
 
-
-//	/// continue
-//	static std::unique_ptr<NodeFunctionCall> get_continue_call(Token &tok) {
-//		auto call = std::make_unique<NodeFunctionCall>(
-//			false,
-//			std::make_unique<NodeFunctionHeaderRef>(
-//				std::make_unique<NodeFunctionHeader>(
-//					"continue",
-//					std::make_unique<NodeParamList>(
-//						tok
-//					),
-//					tok
-//				),
-//				tok
-//			),
-//			tok
-//		);
-//		call->function->header->has_forced_parenth = false;
-//		return call;
-//	}
-
 	/// adds "and RETURN_FLAG = 0" to condition
 	static std::unique_ptr<NodeBinaryExpr> add_return_condition(std::unique_ptr<NodeAST> condition, NodeDataStructure* return_flag_var) {
 		auto return_flag_ref = return_flag_var->to_reference();
