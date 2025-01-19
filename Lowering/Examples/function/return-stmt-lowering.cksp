@@ -6,8 +6,8 @@
 
 function search_matrix(matrix: int[][], target: int)
     declare row, col: int
-    for row := 0 to matrix.SIZE_D1 - 1
-        for col := 0 to matrix.SIZE_D2 - 1
+    for row := 0 to num_elements(matrix, 1) - 1
+        for col := 0 to num_elements(matrix, 2) - 1
             if matrix[row,col] = target
                 return (row * 10) + col
             end if
@@ -28,8 +28,8 @@ function search_matrix(matrix: int[][], target: int)
 	declare RETURN_FLAG: int
     while(RETURN_FLAG = 0)
         declare row, col: int
-        while(row < matrix.SIZE_D1 and RETURN_FLAG = 0)
-            while(col < matrix.SIZE_D2 and RETURN_FLAG = 0)
+        while(row < num_elements(matrix, 1) and RETURN_FLAG = 0)
+            while(col < num_elements(matrix, 2) and RETURN_FLAG = 0)
                 if matrix[row,col] = target
                     return (row * 10) + col
                     RETURN_FLAG := 1
