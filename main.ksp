@@ -12,9 +12,9 @@ struct List
         return self.next.next.value
     end function
 
-	function add(self, value: int)
-		self.next := List(value, nil)
-	end function
+	// function add(self, value: int)
+	// 	self.next := List(value, nil)
+	// end function
 end struct
 
 struct Node
@@ -37,9 +37,9 @@ struct Point
 		return "Point {X: " & self.x & ", Y: " & self.y & "}"
 	end function
 
-	function __add__(self, other: Point)
-		return Point(self.x + other.x, self.y + other.y)
-	end function
+	// function __add__(self, other: Point)
+	// 	return Point(self.x + other.x, self.y + other.y)
+	// end function
 end struct
 
 define NUM_DYN_GROUPS := 10
@@ -143,6 +143,16 @@ on init
 	// // message(use_count(this_list))
 	// // message(return_size(ndarray[*, 0]))
 	// substitution(1, (3))
+	
+	declare array[10,20] := (0)
+	for i in array
+		message(i)
+	end for	
+
+	declare matrix[3,3]: int[][] := ((1,2,3), (4,5,6), (7,8,9))
+	message(search_matrix(matrix, 5))
+
+	message(that_list.next.next.next.next.value)
 end on
 
 function get_active_idx(value_array, emitter) -> result
@@ -161,21 +171,28 @@ end function
 
 
 function search_matrix(matrix: number[][], target: number): number
-	declare array[30] := (0)
-	declare ndarray[2,3]
-	// declare ui_slider sli(0,1)
-	message(num_elements(ndarray))
     declare row, col: int
     for row := 0 to num_elements(matrix, 1)- 1
         for col := 0 to num_elements(matrix, 2)- 1
             if matrix[row,col] = target
-                return (row * 10) + col
+                return (row * num_elements(matrix,1)) + col
             end if
         end for
     end for
 
     return -1  // If the target is not found
 end function
+
+// function return_me_preemptively(arr: int[])
+// 	for i, el in pairs(arr)
+// 		if(el = 1)
+// 			return
+// 		end if
+// 		message(el)
+// 	end for	
+
+// end function	
+
 
 function substitution(val: int, arr: int[])
 	declare val3: int
@@ -185,6 +202,21 @@ function substitution(val: int, arr: int[])
 	return val
 end function	
 
+on note
+	declare curr_note: int := EVENT_NOTE
+    declare curr_velocity: int := EVENT_VELOCITY
+    play_note(curr_note, clamp(curr_velocity, 90), 0, -1)
+end on
+
+function clamp(value: int, max: int): int
+	declare final: int := value
+    if (value < 0)
+        final := 0
+    else if (value > max)
+        final := max
+    end if
+	return final
+end function
 
 // if threadsafe environment, do no lifting -> all params are promoted to global variables
 // do necessary assignments in function calls if the function had previous params

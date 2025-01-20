@@ -203,4 +203,5 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTDimensionInflation.h
         Lowering/LoweringInitializerList.h
         AST/ASTVisitor/ASTTemporaryPointerScope.h
+        AST/ASTVisitor/FunctionHandling/ReturnPathValidator.h
 )

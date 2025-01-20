@@ -1,13 +1,18 @@
-{ Compiled with cksp version 0.0.7-alpha.2 on Sun Jan 19 00:08:27 2025 }
+{ Compiled with cksp version 0.0.7-alpha.2 on Mon Jan 20 18:57:02 2025 }
 on init
-  declare $current0
+  declare $final0
+  declare $row0
+  declare $col0
+  declare $RETURN_FLAG00
   declare $current1
+  declare $current0
   declare %Point__allocation[1000000]
   declare $List__free_idx
   declare %List__allocation[5]
   declare %List__value[5]
   declare %List__next[5] := (-1)
   declare %List__point[5] := (-1)
+  declare $_iter4
   declare $this_list := -1
   $current0 := -1
   while($current0 # -1) 
@@ -81,6 +86,9 @@ on init
   end while
   %List__next[$List__free_idx] := -1
   $this_list := $List__free_idx
+  if($this_list # -1)
+    %List__allocation[$this_list] := %List__allocation[$this_list] + 1
+  end if
   declare $_ret00
   $List__free_idx := search(%List__allocation, 0)
   if($List__free_idx = -1)
@@ -121,39 +129,6 @@ on init
     end if
   end while
   %List__next[$List__free_idx] := -1
-  $_ret00 := $List__free_idx
-  $current0 := $_ret00
-  while($current0 # -1) 
-    %List__allocation[$current0] := %List__allocation[$current0] - 1
-    if(%List__allocation[$current0] > 0)
-      $current0 := -1
-      continue
-    else
-      %List__allocation[$current0] := 0
-    end if
-    $_ret00 := $current0
-    $current0 := -1
-    $current1 := %List__point[$_ret00]
-    while($current1 # -1) 
-      %Point__allocation[$current1] := %Point__allocation[$current1] - 1
-      if(%Point__allocation[$current1] > 0)
-        $current1 := -1
-        continue
-      else
-        %Point__allocation[$current1] := 0
-      end if
-      %List__point[$_ret00] := $current1
-      $current1 := -1
-      if(%List__point[$_ret00] # -1)
-      end if
-    end while
-    $current0 := %List__next[$_ret00]
-    if($_ret00 # -1)
-      %List__next[$_ret00] := -1
-      %List__point[$_ret00] := -1
-      %List__value[$_ret00] := 0
-    end if
-  end while
   $_ret00 := 0
   $List__free_idx := search(%List__allocation, 0)
   if($List__free_idx = -1)
@@ -242,6 +217,7 @@ on init
     %List__allocation[%List__next[$List__free_idx]] := %List__allocation[%List__next[$List__free_idx]] + 1
   end if
   $_ret20 := $List__free_idx
+  declare $that_list
   $List__free_idx := search(%List__allocation, 0)
   if($List__free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'List'")
@@ -284,69 +260,67 @@ on init
   if(%List__next[$List__free_idx] # -1)
     %List__allocation[%List__next[$List__free_idx]] := %List__allocation[%List__next[$List__free_idx]] + 1
   end if
-  $current0 := $_ret20
-  while($current0 # -1) 
-    %List__allocation[$current0] := %List__allocation[$current0] - 1
-    if(%List__allocation[$current0] > 0)
-      $current0 := -1
-      continue
-    else
-      %List__allocation[$current0] := 0
-    end if
-    $_ret20 := $current0
-    $current0 := -1
-    $current1 := %List__point[$_ret20]
-    while($current1 # -1) 
-      %Point__allocation[$current1] := %Point__allocation[$current1] - 1
-      if(%Point__allocation[$current1] > 0)
-        $current1 := -1
-        continue
-      else
-        %Point__allocation[$current1] := 0
-      end if
-      %List__point[$_ret20] := $current1
-      $current1 := -1
-      if(%List__point[$_ret20] # -1)
-      end if
+  $that_list := $List__free_idx
+  if($that_list # -1)
+    %List__allocation[$that_list] := %List__allocation[$that_list] + 1
+  end if
+  declare %_array__num_elements[3] := (200, 10, 20)
+  declare %_array[200] := (0)
+  $_ret00 := 0
+  $_ret20 := 0
+  while($_ret20 <= (%_array__num_elements[1] - 1)) 
+    $_ret00 := 0
+    while($_ret00 <= (%_array__num_elements[2] - 1)) 
+      message(%_array[($_ret20 * 20) + $_ret00])
+      inc($_ret00)
     end while
-    $current0 := %List__next[$_ret20]
-    if($_ret20 # -1)
-      %List__next[$_ret20] := -1
-      %List__point[$_ret20] := -1
-      %List__value[$_ret20] := 0
-    end if
+    inc($_ret20)
   end while
-  $current0 := $_ret00
-  while($current0 # -1) 
-    %List__allocation[$current0] := %List__allocation[$current0] - 1
-    if(%List__allocation[$current0] > 0)
-      $current0 := -1
-      continue
-    else
-      %List__allocation[$current0] := 0
-    end if
-    $_ret00 := $current0
-    $current0 := -1
-    $current1 := %List__point[$_ret00]
-    while($current1 # -1) 
-      %Point__allocation[$current1] := %Point__allocation[$current1] - 1
-      if(%Point__allocation[$current1] > 0)
-        $current1 := -1
+  declare %_matrix__num_elements[3] := (9, 3, 3)
+  declare %_matrix[9] := (1, 2, 3, 4, 5, 6, 7, 8, 9)
+  $_ret00 := 0
+  $RETURN_FLAG00 := 0
+  while($RETURN_FLAG00 = 0) 
+    $col0 := 0
+    $row0 := 0
+    while(($row0 <= (%_matrix__num_elements[1] - 1)) and ($RETURN_FLAG00 = 0)) 
+      $col0 := 0
+      while(($col0 <= (%_matrix__num_elements[2] - 1)) and ($RETURN_FLAG00 = 0)) 
+        if(%_matrix[($row0 * %_matrix__num_elements[2]) + $col0] = 5)
+          $_ret00 := ($row0 * %_matrix__num_elements[1]) + $col0
+          $RETURN_FLAG00 := 1
+          continue
+        end if
+        inc($col0)
+      end while
+      if($RETURN_FLAG00 = 1)
         continue
-      else
-        %Point__allocation[$current1] := 0
       end if
-      %List__point[$_ret00] := $current1
-      $current1 := -1
-      if(%List__point[$_ret00] # -1)
-      end if
+      inc($row0)
     end while
-    $current0 := %List__next[$_ret00]
-    if($_ret00 # -1)
-      %List__next[$_ret00] := -1
-      %List__point[$_ret00] := -1
-      %List__value[$_ret00] := 0
+    if($RETURN_FLAG00 = 1)
+      continue
     end if
+    $_ret00 := -1
+    $RETURN_FLAG00 := 1
+    continue
   end while
+  message($_ret00)
+  message(%List__value[%List__next[%List__next[%List__next[%List__next[$that_list]]]]])
+end on
+on note
+  $_ret00 := $EVENT_NOTE
+  $_ret20 := $EVENT_VELOCITY
+  $_iter4 := 0
+  $final0 := $EVENT_VELOCITY
+  if($EVENT_VELOCITY < 0)
+    $final0 := 0
+  else
+    if($_ret20 > 90)
+      $final0 := 90
+    end if
+  end if
+  $_iter4 := $final0
+  play_note($_ret00, $_iter4, 0, -1)
 end on
 

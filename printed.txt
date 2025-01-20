@@ -29,11 +29,6 @@ struct List
 		return (List::value[List::next[List::next[self{List}]{List}]{List}]{int})
 	end function
 
-	function List::add(self : List, value : int)
-		List::__decr__(List::next[self{List}]{List}, 1){Undefined}
-		List::next[self{List}]{List} := List(value{int}, - 1){Constructor}
-	end function
-
 	function List::__repr__(self : List)
 		return ("<List> Object: " & self{List})
 	end function
@@ -178,10 +173,6 @@ struct Point
 
 	function Point::__repr__(self : Point)
 		return ("Point {X: " & Point::x[self{Point}]{int} & ", Y: " & Point::y[self{Point}]{int} & "}")
-	end function
-
-	function Point::__add__(self : Point, other : Point)
-		return (Point(Point::x[self{Point}]{int} + Point::x[other{Point}]{int}, Point::y[self{Point}]{int} + Point::y[other{Point}]{int}){Constructor})
 	end function
 
 	function Point::__del__(self : Point)
@@ -370,9 +361,45 @@ on init
 	declare this_list : List := - 1
 	List::__decr__(this_list{List}, 1){Undefined}
 	this_list{List} := List(42, - 1){Constructor}
+	List::__incr__(this_list{List}, 1){Undefined}
 	declare val3 : int := List::value[List(34, - 1){Constructor}]{int}
 	declare that_list : List := List(39, List(40, List(41, this_list{List}){Constructor}){Constructor}){Constructor}
+	List::__incr__(that_list{List}, 1){Undefined}
+	declare array[10, 20] : int[][] := [0]
+		declare local _iter1 : int
+		declare local _iter0 : int
+		_iter0{int} := 0
+		while(_iter0{int} <= (num_elements[array{int[][]}, 1] - 1)) 
+			_iter1{int} := 0
+			while(_iter1{int} <= (num_elements[array{int[][]}, 2] - 1)) 
+				message(array[_iter0{int}, _iter1{int}]{int}){Builtin}
+				inc(_iter1{int}){Builtin}
+			end while
+			inc(_iter0{int}){Builtin}
+		end while
+
+	declare matrix[3, 3] : int[][] := [1, 2, 3, 4, 5, 6, 7, 8, 9]
+	message(search_matrix(matrix{int[][]}, 5){UserDefined}){Builtin}
+	message(List::value[List::next[List::next[List::next[List::next[that_list{List}]{List}]{List}]{List}]{List}]{int}){Builtin}
 end on
+
+on note
+	declare local curr_note : int := EVENT_NOTE{int}
+	declare local curr_velocity : int := EVENT_VELOCITY{int}
+	play_note(curr_note{int}, clamp(curr_velocity{int}, 90){UserDefined}, 0, - 1){Builtin}
+end on
+
+function clamp(value : int, max : int)
+	declare local final : int := value{int}
+	if(value{int} < 0)
+		final{int} := 0
+	else
+		if(value{int} > max{int})
+			final{int} := max{int}
+		end if
+	end if
+	return (final{int})
+end function
 
 function substitution(val : int, arr : int[])
 	declare local val3 : int
@@ -383,9 +410,6 @@ end function
 function search_matrix(matrix : number[][], target : number)
 	declare local RETURN_FLAG0 : int
 	while(RETURN_FLAG0{int} = 0) 
-		declare local array[30] : int[] := [0]
-		declare local ndarray[2, 3] : int[][]
-		message(num_elements[ndarray{int[][]}]){Builtin}
 		declare local row : int
 		declare local col : int
 		row{int} := 0
@@ -393,7 +417,7 @@ function search_matrix(matrix : number[][], target : number)
 			col{int} := 0
 			while((col{int} <= (num_elements[matrix{number[][]}, 2] - 1)) and (RETURN_FLAG0{int} = 0)) 
 				if(matrix[row{int}, col{int}]{number} = target{number})
-					return ((row{int} * 10) + col{int})
+					return ((row{int} * num_elements[matrix{number[][]}, 1]) + col{int})
 					RETURN_FLAG0{int} := 1
 					continue{Builtin}
 				end if

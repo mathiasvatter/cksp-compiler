@@ -81,7 +81,7 @@ public:
 		m_num_nested_loops++;
 		node.body->accept(*this);
 		node.condition = add_return_condition(std::move(node.condition), m_exit_flag_var);
-		if(m_num_nested_loops > 1) {
+//		if(m_num_nested_loops > 1) {
 			// if there are nested loops add exit flag if-condition check
 			auto block = std::make_unique<NodeBlock>(
 				node.tok,
@@ -96,8 +96,8 @@ public:
 				std::make_unique<NodeStatement>(get_return_if_check(m_exit_flag_var, node.tok), node.tok)
 			);
 			return node.replace_with(std::move(block));
-		}
-		return &node;
+//		}
+//		return &node;
 	}
 
 	inline NodeAST* visit(NodeBlock& node) override {
