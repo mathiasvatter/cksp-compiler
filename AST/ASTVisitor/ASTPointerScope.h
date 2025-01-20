@@ -88,6 +88,7 @@ public:
 		m_program->global_declarations->accept(*this);
 		m_program->init_callback->accept(*this);
 		for(const auto & s : node.struct_definitions) {
+//			m_num_constructors[s.get()] = std::make_unique<NodeInt>(1, s->tok);
 			s->accept(*this);
 		}
 		for(const auto & callback : node.callbacks) {
@@ -311,6 +312,9 @@ private:
 			} else {
 				add_expr_to_num_constructors(struct_def, std::make_unique<NodeInt>(1, Token()));
 			}
+//		} else {
+//			// if it is not called in a linear env, remove from constructor count map
+//			m_num_constructors.erase(struct_def);
 		}
 	}
 
@@ -332,12 +336,12 @@ private:
 		}
 
 		if(l_value_type->cast<ObjectType>()) {
-			if(auto func_call = r_value->cast<NodeFunctionCall>()) {
-				// when constructor and declaration -> do not alter ref count
-				if(func_call->kind == NodeFunctionCall::Kind::Constructor and node->cast<NodeSingleDeclaration>()) {
-					return false;
-				}
-			}
+//			if(auto func_call = r_value->cast<NodeFunctionCall>()) {
+//				// when constructor and declaration -> do not alter ref count
+//				if(func_call->kind == NodeFunctionCall::Kind::Constructor and node->cast<NodeSingleDeclaration>()) {
+//					return false;
+//				}
+//			}
 			if(r_value->is_nil()) {
 				return false;
 			}
@@ -350,11 +354,11 @@ private:
 		auto variable = assign.l_value.get();
 		auto value = get_return_var_ptr(assign.r_value.get());
 		// add delete before constructor assignment in assign statements only for safety
-		if(auto func_call = assign.r_value->cast<NodeFunctionCall>()) {
-			if (func_call->kind == NodeFunctionCall::Kind::Constructor) {
-				value = func_call;
-			}
-		}
+//		if(auto func_call = assign.r_value->cast<NodeFunctionCall>()) {
+//			if (func_call->kind == NodeFunctionCall::Kind::Constructor) {
+//				value = func_call;
+//			}
+//		}
 		if(!value) return nullptr;
 
 		auto del = std::make_unique<NodeBlock>(assign.tok);
@@ -481,7 +485,7 @@ private:
 	static NodeAST* get_return_var_ptr(NodeAST* r_value) {
 		if(auto func_call = r_value->cast<NodeFunctionCall>()) {
 			if(func_call->kind == NodeFunctionCall::Kind::Constructor) {
-				return nullptr;
+				return func_call;
 			}
 			if(func_call->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 				if(!func_call->get_definition()) {
