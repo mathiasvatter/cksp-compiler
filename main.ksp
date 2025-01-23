@@ -153,7 +153,17 @@ on init
 	message(search_matrix(matrix, 5))
 
 	message(that_list.next.next.next.next.value)
+
+	declare glob: int := 0
+	declare expr: int
+	expr := 4 * (foo(1, 2) + foo(3, 4))
+
 end on
+
+function foo(z: int, y: int)
+	message(z)
+	return z + y
+end function
 
 function get_active_idx(value_array, emitter) -> result
     result := value_array[emitter,0]*0+value_array[emitter,1]*1+value_array[emitter,2]*2

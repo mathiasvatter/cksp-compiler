@@ -25,6 +25,15 @@ Problem: wenn eine expression-only function inlined wird und als parameter läng
 inne hat, dann wird diese längere funktion mehrmals ausgeführt!!
 }
 
+declare glob: int := 0
+function foo(z: int, y: int)
+    inc(glob)
+    return z + y
+end function
+
+expr := 4 * foo(1, 2) + foo(3, 4)
+expr := foo(1, 2) + (4 * foo(3, 4))
+expr := foo(1, 2) + foo(3, 4) * 4
 
 {-------------------------------------------------------------------------------------------
                                         Post Lowering

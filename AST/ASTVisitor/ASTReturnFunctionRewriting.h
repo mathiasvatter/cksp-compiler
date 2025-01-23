@@ -21,7 +21,7 @@ public:
 	inline void do_rewriting(NodeProgram& node) {
 		node.accept(*this);
 		node.reset_function_visited_flag();
-
+		node.debug_print();
 		static ReturnFunctionIsolation isolation(m_program);
 		isolation.do_return_function_isolation(node);
 
