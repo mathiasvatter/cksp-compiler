@@ -144,7 +144,6 @@ void Compiler::compile() {
 
 	ASTCollectLowerings lowering(m_program);
 	ast->accept(lowering);
-	ast->debug_print();
 
 	ASTLowerTypes lowering_types(m_program);
 	ast->accept(lowering_types);
@@ -160,6 +159,7 @@ void Compiler::compile() {
 
 	ASTReturnFunctionRewriting return_function_rewriting(m_program);
 	return_function_rewriting.do_rewriting(*ast);
+//	ast->debug_print();
 
 	ASTPreemptiveFunctionInlining pre_inlining(m_program);
 	ast->accept(pre_inlining);

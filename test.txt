@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.2 on Mon Jan 20 18:57:02 2025 }
+{ Compiled with cksp version 0.0.7-alpha.2 on Tue Jan 21 15:54:39 2025 }
 on init
   declare $final0
   declare $row0
@@ -301,12 +301,15 @@ on init
     if($RETURN_FLAG00 = 1)
       continue
     end if
-    $_ret00 := -1
     $RETURN_FLAG00 := 1
     continue
   end while
   message($_ret00)
   message(%List__value[%List__next[%List__next[%List__next[%List__next[$that_list]]]]])
+  message(1)
+  $_ret00 := 3
+  message(3)
+  $_ret20 := 7
 end on
 on note
   $_ret00 := $EVENT_NOTE
