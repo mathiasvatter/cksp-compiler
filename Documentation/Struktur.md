@@ -112,7 +112,7 @@
    - **Effizienz der Speicherverwaltung**:
       - Vergleich der Reference Counting-Methoden und deren Auswirkungen auf Speicherverbrauch und Performance.
 
-### 6. **Fazit und Ausblick**
+### 6. **Conclusion und Ausblick**
    - Zusammenfassung der wichtigsten Ergebnisse und Herausforderungen.
    - **Kompilierungszeiten und Optimierungspotenzial**:
       - Analyse der Kompilierungszeiten für komplexe Strukturen und Funktionen.
@@ -120,3 +120,4 @@
       - Evaluation der Praxistauglichkeit für reale Musikproduktionsszenarien in KSP.
    - Ausblick auf zukünftige Verbesserungen und Optimierungsmöglichkeiten im Compilerbau für domänenspezifische Sprachen.
 
+implementing modern
