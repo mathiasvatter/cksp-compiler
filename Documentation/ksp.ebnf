@@ -69,7 +69,7 @@ bitwise_op = ".and." | ".xor." | ".or." | ".not."
 string_op = "&"
 
 char = "A" | ... | "Z" | "a" | ... | "z" | "0" | ... | "9"
-keyword = char | "." | "_" | keyword
+keyword = char | "_" | keyword
 string = "\'" text "\'"
 variable_ident = "$" | "~" | "@"
 array_ident = "!" | "%" | "?"
