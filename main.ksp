@@ -37,9 +37,9 @@ struct Point
 		return "Point {X: " & self.x & ", Y: " & self.y & "}"
 	end function
 
-	// function __add__(self, other: Point)
-	// 	return Point(self.x + other.x, self.y + other.y)
-	// end function
+	function __add__(self, other: Point)
+		return Point(self.x + other.x, self.y + other.y)
+	end function
 end struct
 
 define NUM_DYN_GROUPS := 10
@@ -82,6 +82,7 @@ struct Group
 
 end struct
 
+
 on init	
 
 	// declare menu_strip_val[3,3]
@@ -108,13 +109,13 @@ on init
 
 	// declare n[10] := (0)
 	// message(array.SIZE)
-	declare this_list: List := nil
-	this_list := List(42, nil)
+	// declare this_list: List := nil
+	// this_list := List(42, nil)
+	// message(List(34, List(35, nil)))
+	// declare val3 := List(34, nil).value
+	// // message(val)
 
-	declare val3 := List(34, nil).value
-	// message(val)
-
-	declare that_list: List := List(39, List(40, List(41, this_list)))
+	// declare that_list: List := List(39, List(40, List(41, this_list)))
 	// message(that_list.next.value, that_list.get_next_next_value())
 	// that_list.add(43)
 
@@ -137,7 +138,7 @@ on init
 	// declare local ptr_array3[10] := ptr_array
 	// declare local p1 := Point(1, 2)
 	// declare local p2 := Point(3, 4)
-	// message(Point(1, 2) + Point(3, 4))
+	declare p := (Point(1, 2) + Point(3, 4))
 	// // ndarray[0, *] := ndarray[1, *]
 
 	// // message(use_count(this_list))
@@ -152,7 +153,7 @@ on init
 	declare matrix[3,3]: int[][] := ((1,2,3), (4,5,6), (7,8,9))
 	message(search_matrix(matrix, 5))
 
-	message(that_list.next.next.next.next.value)
+	// message(that_list.next.next.next.next.value)
 
 	declare glob: int := 0
 	declare expr: int
