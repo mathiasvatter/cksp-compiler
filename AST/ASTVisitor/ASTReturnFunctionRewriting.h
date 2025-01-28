@@ -21,12 +21,11 @@ public:
 	inline void do_rewriting(NodeProgram& node) {
 		node.accept(*this);
 		node.reset_function_visited_flag();
-		node.debug_print();
 		static ReturnFunctionIsolation isolation(m_program);
 		isolation.do_return_function_isolation(node);
 
-//		static ASTTemporaryPointerScope temp_scope(m_program);
-//		temp_scope.visit(node);
+		static ASTTemporaryPointerScope temp_scope(m_program);
+		temp_scope.visit(node);
 
 		node.update_function_lookup();
 	}

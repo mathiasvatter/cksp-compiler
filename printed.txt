@@ -20,7 +20,7 @@ on init
 	declare Note::pitch[Note::MAX_STRUCTS{int}] : int[]
 	declare Note::velocity[Note::MAX_STRUCTS{int}] : int[]
 	declare Note::groups[Note::MAX_STRUCTS{int}, 10] : int[][]
-	declare const Point::MAX_STRUCTS : int := MAX::STRUCTS{unknown}
+	declare const Point::MAX_STRUCTS : int := 1 + 2
 	declare Point::free_idx : int
 	declare Point::allocation[Point::MAX_STRUCTS{int}] : int[]
 	declare Point::stack[Point::MAX_STRUCTS{int}] : int[]
@@ -36,7 +36,7 @@ on init
 	declare Node::left[Node::MAX_STRUCTS{int}] : int[] := [- 1]
 	declare Node::right[Node::MAX_STRUCTS{int}] : int[] := [- 1]
 	declare Node::point[Node::MAX_STRUCTS{int}] : int[] := [- 1]
-	declare const List::MAX_STRUCTS : int := 1 + 4
+	declare const List::MAX_STRUCTS : int := MAX::STRUCTS{unknown}
 	declare List::free_idx : int
 	declare List::allocation[List::MAX_STRUCTS{int}] : int[]
 	declare List::stack[List::MAX_STRUCTS{int}] : int[]
@@ -45,19 +45,17 @@ on init
 	declare List::next[List::MAX_STRUCTS{int}] : int[] := [- 1]
 	declare List::point[List::MAX_STRUCTS{int}] : int[] := [- 1]
 	declare local _iter : int
-	declare this_list : int := - 1
-	List::__decr__(this_list{int}, 1){Undefined}
-	this_list{int} := List(42, - 1){Constructor}
-	List::__incr__(this_list{int}, 1){Undefined}
-		declare local _ret0 : int := List(34, - 1){Constructor}
-		declare val3 : int := List::value[_ret0{int}]{int}
+		declare local _ret0 : int
+		Point(_ret0{int}, 1, 2){Constructor}
+			declare local _ret1 : int
+			Point(_ret1{int}, 3, 4){Constructor}
+			declare p : int
+			Point::__add__(p{int}, _ret0{int}, _ret1{int}){UserDefined}
+			Point::__decr__(_ret1{int}, 1){Undefined}
 
-		declare local _ret1 : int := List(41, this_list{int}){Constructor}
-			declare local _ret2 : int := List(40, _ret1{int}){Constructor}
-			declare that_list : int := List(39, _ret2{int}){Constructor}
+		Point::__decr__(_ret0{int}, 1){Undefined}
 
-
-	List::__incr__(that_list{int}, 1){Undefined}
+	Point::__incr__(p{int}, 1){UserDefined}
 	declare array[10, 20] : int[][] := [0]
 		declare local _iter1 : int
 		declare local _iter0 : int
@@ -72,15 +70,17 @@ on init
 		end while
 
 	declare matrix[3, 3] : int[][] := [1, 2, 3, 4, 5, 6, 7, 8, 9]
-		declare local _ret3 : int := search_matrix(matrix{int[][]}, 5){UserDefined}
-		message(_ret3{int}){Builtin}
+		declare local _ret2 : int
+		search_matrix(_ret2{int}, matrix{int[][]}, 5){UserDefined}
+		message(_ret2{int}){Builtin}
 
-	message(List::value[List::next[List::next[List::next[List::next[that_list{int}]{int}]{int}]{int}]{int}]{int}){Builtin}
 	declare glob : int := 0
 	declare expr : int
-		declare local _ret4 : int := foo(1, 2){UserDefined}
-			declare local _ret5 : int := foo(3, 4){UserDefined}
-			expr{int} := 4 * (_ret4{int} + _ret5{int})
+		declare local _ret3 : int
+		foo(_ret3{int}, 1, 2){UserDefined}
+			declare local _ret4 : int
+			foo(_ret4{int}, 3, 4){UserDefined}
+			expr{int} := 4 * (_ret3{int} + _ret4{int})
 
 
 end on
@@ -88,8 +88,9 @@ end on
 on note
 	declare local curr_note : int := EVENT_NOTE{int}
 	declare local curr_velocity : int := EVENT_VELOCITY{int}
-		declare local _ret6 : int := clamp(curr_velocity{int}, 90){UserDefined}
-		play_note(curr_note{int}, _ret6{int}, 0, - 1){Builtin}
+		declare local _ret5 : int
+		clamp(_ret5{int}, curr_velocity{int}, 90){UserDefined}
+		play_note(curr_note{int}, _ret5{int}, 0, - 1){Builtin}
 
 end on
 
@@ -126,7 +127,6 @@ function search_matrix(ret$1 : int, matrix : number[][], target : number)
 			while((col{int} <= (num_elements[matrix{number[][]}, 2] - 1)) and (RETURN_FLAG0{int} = 0)) 
 				if(matrix[row{int}, col{int}]{number} = target{number})
 					ret$1{int} := (row{int} * num_elements[matrix{number[][]}, 1]) + col{int}
-
 					RETURN_FLAG0{int} := 1
 					continue{Builtin}
 				end if
@@ -141,7 +141,6 @@ function search_matrix(ret$1 : int, matrix : number[][], target : number)
 			continue{Builtin}
 		end if
 		ret$1{int} := - 1
-
 		RETURN_FLAG0{int} := 1
 		continue{Builtin}
 	end while
@@ -169,7 +168,7 @@ function int[]::__repr__(self : int[])
 	return ("Array of type <int[]>")
 end function
 
-function List::__init__(ret$1 : int, value : int, next : int)
+function List::__init__(value : int, next : int)
 	List::free_idx{int} := search(List::allocation{int[]}, 0){Builtin}
 	if(List::free_idx{int} = -1)
 		message("Error: No more free space available to allocate objects of type 'List'"){Builtin}
@@ -179,7 +178,7 @@ function List::__init__(ret$1 : int, value : int, next : int)
 	List::__decr__(List::next[List::free_idx{int}]{int}, 1){Undefined}
 	List::next[List::free_idx{int}]{int} := next{int}
 	List::__incr__(List::next[List::free_idx{int}]{int}, 1){Undefined}
-	ret$1{int} := List::free_idx{int}
+	return (List::free_idx{int})
 end function
 
 function List::get_next_next_value(self : int)
@@ -291,7 +290,7 @@ function Node::__incr__(self : int, num_refs : int)
 	end if
 end function
 
-function Point::__init__(x : int, y : int)
+function Point::__init__(ret$1 : int, x : int, y : int)
 	Point::free_idx{int} := search(Point::allocation{int[]}, 0){Builtin}
 	if(Point::free_idx{int} = -1)
 		message("Error: No more free space available to allocate objects of type 'Point'"){Builtin}
@@ -299,11 +298,15 @@ function Point::__init__(x : int, y : int)
 	Point::allocation[Point::free_idx{int}]{int[]} := 1
 	Point::x[Point::free_idx{int}]{int} := x{int}
 	Point::y[Point::free_idx{int}]{int} := y{int}
-	return (Point::free_idx{int})
+	ret$1{int} := Point::free_idx{int}
 end function
 
 function Point::__repr__(self : int)
 	return ("Point {X: " & Point::x[self{int}]{int} & ", Y: " & Point::y[self{int}]{int} & "}")
+end function
+
+function Point::__add__(ret$1 : int, self : int, other : int)
+	Point(ret$1{int}, Point::x[self{int}]{int} + Point::x[other{int}]{int}, Point::y[self{int}]{int} + Point::y[other{int}]{int}){Constructor}
 end function
 
 function Point::__del__(self : int)

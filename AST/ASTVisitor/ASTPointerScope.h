@@ -253,6 +253,7 @@ public:
 		}
 
 		if(node.kind == NodeFunctionCall::Kind::Constructor) {
+			// temporary constructor only  when in access chain or func arg of func that is not constructor
 			node.is_temporary_constructor = node.is_func_arg() || node.parent->cast<NodeAccessChain>();
 			if(auto struct_def = node.get_definition()->parent->cast<NodeStruct>()) {
 				increase_num_constructors(struct_def);
@@ -336,12 +337,12 @@ private:
 		}
 
 		if(l_value_type->cast<ObjectType>()) {
-//			if(auto func_call = r_value->cast<NodeFunctionCall>()) {
-//				// when constructor and declaration -> do not alter ref count
-//				if(func_call->kind == NodeFunctionCall::Kind::Constructor and node->cast<NodeSingleDeclaration>()) {
-//					return false;
-//				}
-//			}
+			if(auto func_call = r_value->cast<NodeFunctionCall>()) {
+				// when constructor and declaration -> do not alter ref count
+				if(func_call->kind == NodeFunctionCall::Kind::Constructor and node->cast<NodeSingleDeclaration>()) {
+					return false;
+				}
+			}
 			if(r_value->is_nil()) {
 				return false;
 			}
@@ -354,11 +355,11 @@ private:
 		auto variable = assign.l_value.get();
 		auto value = get_return_var_ptr(assign.r_value.get());
 		// add delete before constructor assignment in assign statements only for safety
-//		if(auto func_call = assign.r_value->cast<NodeFunctionCall>()) {
-//			if (func_call->kind == NodeFunctionCall::Kind::Constructor) {
-//				value = func_call;
-//			}
-//		}
+		if(auto func_call = assign.r_value->cast<NodeFunctionCall>()) {
+			if (func_call->kind == NodeFunctionCall::Kind::Constructor) {
+				value = func_call;
+			}
+		}
 		if(!value) return nullptr;
 
 		auto del = std::make_unique<NodeBlock>(assign.tok);
