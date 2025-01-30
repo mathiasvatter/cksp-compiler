@@ -1,0 +1,68 @@
+
+struct List
+    declare value: Note
+    declare next: List
+
+    function add_note(self, n: Note)
+    	self.next := List(n, nil)
+    end function        
+end struct
+
+struct Note
+    declare pitch: int
+    declare velocity: int
+end struct
+
+on init
+	declare scale: List
+end on
+
+on note
+    declare curr_note := Note(EVENT_NOTE, EVENT_VELOCITY)
+    if scale = nil
+    	scale := List(curr_note, nil)
+    else
+        scale.add_note(curr_note)
+    end if        
+end on
+
+///////////////////
+on note
+	Note::__init__(curr_note, EVENT_NOTE, EVENT_VELOCITY)
+    List::add_note(scale, curr_note)
+end on
+
+function List::add_note(self, n: Note)
+    List(List::next[self], n, nil)
+end function 
+
+///////////////////
+on note
+	Note::__init__(curr_note, EVENT_NOTE, EVENT_VELOCITY)
+    List(List::next[scale], curr_note, nil)
+end on
+
+///////////////////
+on note
+	
+    Note::free_idx{int} := search(Note::allocation{int[]}, 0)
+	if(Note::free_idx{int} = -1)
+		message("Error: No more free space available to allocate objects of type 'Note'")
+	end if
+	Note::allocation[Note::free_idx{int}]{int[]} := 1
+	Note::pitch[Note::free_idx{int}]{int} := EVENT_NOTE
+	Note::velocity[Note::free_idx{int}]{int} := EVENT_VELOCITY
+	curr_note := Note::free_idx{int}
+
+    List::free_idx{int} := search(List::allocation{int[]}, 0)
+	if(List::free_idx{int} = -1)
+		message("Error: No more free space available to allocate objects of type 'List'")
+	end if
+	List::allocation[List::free_idx{int}]{int[]} := 1
+	List::value[List::free_idx{int}] := curr_note
+	List::__decr__(List::next[List::free_idx{int}]{int}, 1)
+	List::next[List::free_idx{int}]{int} := nil
+	List::__incr__(List::next[List::free_idx{int}]{int}, 1)
+	List::next[scale] := List::free_idx{int}
+
+end on
