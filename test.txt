@@ -1,8 +1,8 @@
-{ Compiled with cksp version 0.0.7-alpha.2 on Tue Jan 28 18:31:02 2025 }
+{ Compiled with cksp version 0.0.7-alpha.2 on Thu Feb 13 20:13:50 2025 }
 on init
   declare $final0
-  declare $col0
   declare $row0
+  declare $col0
   declare $RETURN_FLAG00
   declare $current0
   declare $Point__free_idx
@@ -49,8 +49,8 @@ on init
     $_ret10 := $current0
     $current0 := -1
     if($_ret10 # -1)
-      %Point__y[$_ret10] := 0
       %Point__x[$_ret10] := 0
+      %Point__y[$_ret10] := 0
     end if
   end while
   $current0 := $_ret00
@@ -65,8 +65,8 @@ on init
     $_ret00 := $current0
     $current0 := -1
     if($_ret00 # -1)
-      %Point__y[$_ret00] := 0
       %Point__x[$_ret00] := 0
+      %Point__y[$_ret00] := 0
     end if
   end while
   if($p # -1)

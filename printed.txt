@@ -94,26 +94,10 @@ on note
 
 end on
 
-function clamp(ret$1 : int, value : int, max : int)
-	declare local final : int := value{int}
-	if(value{int} < 0)
-		final{int} := 0
-	else
-		if(value{int} > max{int})
-			final{int} := max{int}
-		end if
-	end if
-	ret$1{int} := final{int}
-end function
-
 function substitution(val : int, arr : int[])
 	declare local val3 : int
 	declare local arr1[10] : int[] := arr{int[]}
 	return (val{int})
-end function
-
-function get_active_idx(value_array : int[][], emitter : unknown)
-	return (((value_array[emitter{unknown}, 0]{int} * 0) + (value_array[emitter{unknown}, 1]{int} * 1)) + (value_array[emitter{unknown}, 2]{int} * 2))
 end function
 
 function search_matrix(ret$1 : int, matrix : number[][], target : number)
@@ -146,13 +130,29 @@ function search_matrix(ret$1 : int, matrix : number[][], target : number)
 	end while
 end function
 
+function return_size(ndarray : int[])
+	return (num_elements[ndarray{int[]}])
+end function
+
+function clamp(ret$1 : int, value : int, max : int)
+	declare local final : int := value{int}
+	if(value{int} < 0)
+		final{int} := 0
+	else
+		if(value{int} > max{int})
+			final{int} := max{int}
+		end if
+	end if
+	ret$1{int} := final{int}
+end function
+
+function get_active_idx(value_array : int[][], emitter : unknown)
+	return (((value_array[emitter{unknown}, 0]{int} * 0) + (value_array[emitter{unknown}, 1]{int} * 1)) + (value_array[emitter{unknown}, 2]{int} * 2))
+end function
+
 function return_init(init : int[])
 	message(int[]::__repr__(init{int[]}){Undefined}){Builtin}
 	return ([1, 2, 3, 4, 5])
-end function
-
-function return_size(ndarray : int[])
-	return (num_elements[ndarray{int[]}])
 end function
 
 function foo(ret$1 : int, z : int, y : int)
@@ -193,8 +193,8 @@ function List::__del__(self : int)
 	declare local _iter : int
 	if(self{int} # - 1)
 		List::next[self{int}]{int} := - 1
-		List::point[self{int}]{int} := - 1
 		List::value[self{int}]{int} := 0
+		List::point[self{int}]{int} := - 1
 	end if
 end function
 
@@ -249,8 +249,8 @@ function Node::__del__(self : int)
 	declare local _iter : int
 	if(self{int} # - 1)
 		Node::right[self{int}]{int} := - 1
-		Node::value[self{int}]{int} := 0
 		Node::left[self{int}]{int} := - 1
+		Node::value[self{int}]{int} := 0
 		Node::point[self{int}]{int} := - 1
 	end if
 end function
@@ -312,8 +312,8 @@ end function
 function Point::__del__(self : int)
 	declare local _iter : int
 	if(self{int} # - 1)
-		Point::y[self{int}]{int} := 0
 		Point::x[self{int}]{int} := 0
+		Point::y[self{int}]{int} := 0
 	end if
 end function
 
@@ -372,8 +372,8 @@ function Note::__del__(self : int)
 				inc(_iter{int}){Builtin}
 			end while
 
-		Note::velocity[self{int}]{int} := 0
 		Note::pitch[self{int}]{int} := 0
+		Note::velocity[self{int}]{int} := 0
 	end if
 end function
 
