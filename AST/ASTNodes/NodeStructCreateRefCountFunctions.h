@@ -551,8 +551,9 @@ private:
 		if(idx) {
 			alloc_ref->set_index(std::move(idx));
 		}
+		auto l_value = clone_as<NodeReference>(alloc_ref.get());
 		return std::make_unique<NodeSingleAssignment>(
-			clone_as<NodeReference>(alloc_ref.get()),
+			std::move(l_value),
 			std::make_unique<NodeBinaryExpr>(
 				token::SUB,
 				std::move(alloc_ref),

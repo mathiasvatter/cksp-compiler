@@ -213,6 +213,8 @@ void CompileError::set_message(const std::string &message) {
 	CompileError::m_message = message;
 }
 
+#if defined(__APPLE__) || defined(__linux__)
+
 std::string exec(const char *cmd) {
     std::array<char, 128> buffer{};
     std::string result;
@@ -226,3 +228,4 @@ std::string exec(const char *cmd) {
     result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
     return result;
 }
+#endif
