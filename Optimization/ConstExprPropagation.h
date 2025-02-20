@@ -69,7 +69,7 @@ public:
 	}
 
 	bool remove_constant_expression(NodeReference* node) {
-		auto it = m_constant_expressions.find(get_hash_value(*node));
+		auto const it = m_constant_expressions.find(get_hash_value(*node));
 		if(it != m_constant_expressions.end()) {
 			m_constant_expressions.erase(it);
 			return true;

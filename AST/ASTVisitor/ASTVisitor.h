@@ -307,13 +307,13 @@ public:
     virtual NodeAST* visit(NodeProgram& node) {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
-		for(auto & struct_def : node.struct_definitions) {
+		for(const auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
 		}
-		for(auto & callback : node.callbacks) {
+		for(const auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-		for(auto & func_def : node.function_definitions) {
+		for(const auto & func_def : node.function_definitions) {
 			func_def->accept(*this);
 		}
 		node.merge_function_definitions();
@@ -321,7 +321,7 @@ public:
 		return &node;
 	};
     virtual NodeAST* visit(NodeBlock& node) {
-        for(auto & stmt : node.statements) {
+        for(const auto & stmt : node.statements) {
 			if(!stmt) {
 				auto error = CompileError(ErrorType::InternalError, "Null statement in block.", "", node.tok);
 				error.exit();

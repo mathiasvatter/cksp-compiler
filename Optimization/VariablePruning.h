@@ -15,12 +15,12 @@
  * Also removes throwaway variables
  */
 class VariablePruning : public ASTOptimizations {
-private:
+
 	std::vector<NodeSingleDeclaration*> m_all_declarations;
 	std::vector<NodeSingleAssignment*> m_all_assignments;
 public:
 
-	inline NodeAST* visit(NodeProgram& node) override {
+	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
@@ -51,15 +51,19 @@ public:
 		}
 	}
 
-	inline NodeAST *visit(NodeSingleDeclaration &node) override {
+	NodeAST *visit(NodeSingleDeclaration &node) override {
 		node.variable->accept(*this);
-		if (node.value) node.value->accept(*this);
+		// claim everything as unused at first
+		node.variable->is_used = false;
+		if (node.value) {
+			// if value is function call, it is used
+			node.value->accept(*this);
+			node.variable->is_used = node.value->cast<NodeFunctionCall>();
+		}
 		// get ui control variables out of the picture
 		if(!is_prune_candidate(node.variable.get())) {
 			return &node;
 		}
-		// claim everything as unused at first
-		node.variable->is_used = false;
 		m_all_declarations.push_back(&node);
 		return &node;
 	}
@@ -67,7 +71,7 @@ public:
 	/// decide whether to potentially prune or not
 	/// ui controls will not be pruned
 	/// persistent data structures will not be pruned
-	static inline bool is_prune_candidate(NodeDataStructure* node) {
+	static bool is_prune_candidate(NodeDataStructure* node) {
 		if(node->get_node_type() == NodeType::UIControl) {
 			return false;
 		}
@@ -80,19 +84,21 @@ public:
 	}
 
 	// is unused if not ui_control and only used as l_value in assignments (if not arrayref) -> adds these assignments to vector
-	inline bool is_used(const NodeReference &node) {
+	// if it is an l_value and the r_value is a function call -> it shall be used (builtins)
+	bool is_used(const NodeReference &node) {
 		if(node.data_type != DataType::UIControl) {
-			if(auto assignment = node.parent->cast<NodeSingleAssignment>()) {
-				if(assignment->l_value.get() == &node) {
-					m_all_assignments.push_back(assignment);
-					return false;
+			if(const auto assignment = node.is_l_value()) {
+				if (assignment->r_value->cast<NodeFunctionCall>()) {
+					return true;
 				}
+				m_all_assignments.push_back(assignment);
+				return false;
 			}
 		}
 		return true;
 	}
 
-	inline NodeAST *visit(NodeSingleAssignment& node) override {
+	NodeAST *visit(NodeSingleAssignment& node) override {
 		if(auto var_ref = node.l_value->cast<NodeVariableRef>()) {
 			if(var_ref->kind == NodeReference::Kind::Throwaway) {
 				return node.remove_node();
@@ -104,7 +110,7 @@ public:
 		return &node;
 	}
 
-	inline NodeAST *visit(NodeVariableRef &node) override {
+	NodeAST *visit(NodeVariableRef &node) override {
 		if(node.kind == NodeReference::Kind::Throwaway) {
 			// if a throwaway variable is not in assignment it has been incorrectly used
 			if(node.parent->cast<NodeSingleAssignment>()) {
@@ -119,7 +125,7 @@ public:
 	}
 
 
-	inline NodeAST *visit(NodeArrayRef &node) override {
+	NodeAST *visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);
 		node.get_declaration()->is_used |= is_used(node);
 		return &node;

@@ -118,7 +118,7 @@ std::unique_ptr<NodeNumElements> NodeVariableRef::transform_array_constant() {
 }
 
 
-std::unique_ptr<NodeReference> NodeVariableRef::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+std::unique_ptr<NodeReference> NodeVariableRef::expand_dimension(std::unique_ptr<NodeAST> new_index) {
 	auto node_array_ref = to_array_ref(std::move(new_index));
 	node_array_ref->match_data_structure(get_declaration());
 	node_array_ref->ty = ty;
@@ -187,7 +187,7 @@ bool NodeArrayRef::is_list_sizes() {
 	return false;
 }
 
-std::unique_ptr<NodeReference> NodeArrayRef::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+std::unique_ptr<NodeReference> NodeArrayRef::expand_dimension(std::unique_ptr<NodeAST> new_index) {
 	// if array has no indexes -> wildcard
 	if(!index) {
 		set_index(std::make_unique<NodeWildcard>("*", tok));
@@ -296,7 +296,7 @@ std::unique_ptr<NodeAccessChain> NodeNDArrayRef::to_method_chain() {
 	return method_chain;
 }
 
-std::unique_ptr<NodeReference> NodeNDArrayRef::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+std::unique_ptr<NodeReference> NodeNDArrayRef::expand_dimension(std::unique_ptr<NodeAST> new_index) {
 	determine_sizes();
 	// if array has no indexes -> everything should be copied -> wildcards for every index of size
 	if (!indexes) {
@@ -523,7 +523,7 @@ ASTLowering* NodePointerRef::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
-std::unique_ptr<NodeReference> NodePointerRef::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+std::unique_ptr<NodeReference> NodePointerRef::expand_dimension(std::unique_ptr<NodeAST> new_index) {
 	auto node_array_ref = to_array_ref(std::move(new_index));
 	node_array_ref->match_data_structure(get_declaration());
 	node_array_ref->ty = ty;

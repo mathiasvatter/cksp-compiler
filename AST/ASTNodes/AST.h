@@ -153,7 +153,7 @@ struct NodeReference : NodeAST {
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure);
 	std::unique_ptr<struct NodeFunctionCall> wrap_in_get_ui_id();
-	bool needs_get_ui_id();
+	bool needs_get_ui_id() const;
 	/// determines if reference is reference to struct member
 	[[nodiscard]] bool is_member_ref() const;
 	/// checks if reference is raw version of multi-dimensional array
@@ -187,12 +187,12 @@ struct NodeReference : NodeAST {
 	/// lower type from object to int if applicable
 	NodeReference* lower_type();
 	/// checks if reference is l_value in an assignment
-	bool is_l_value();
+    [[nodiscard]] struct NodeSingleAssignment* is_l_value() const;
 	/// checks if reference is somewhere in the r_value expresssion
-	bool is_r_value();
+    NodeSingleAssignment *is_r_value() const;
 	/// checks if reference is in a string representation (printing or string assignment)
 	[[nodiscard]] bool is_string_env();
-	virtual std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	virtual std::unique_ptr<NodeReference> expand_dimension(std::unique_ptr<NodeAST> new_index) {
 		return nullptr;
 	}
 	void remove_obj_prefix() {
@@ -707,6 +707,7 @@ struct NodeFunctionDefinition: NodeAST, public std::enable_shared_from_this<Node
 	}
 	void do_register_reuse(NodeProgram* program);
 	void do_return_param_promotion();
+	bool do_return_path_validation();
 };
 
 struct NodeProgram : NodeAST {

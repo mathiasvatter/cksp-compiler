@@ -127,16 +127,18 @@ public:
 	/// TODO: do not kill last assignment is current assignment has the var as r_value
 	/// var := 1*23
 	/// var := var + 1 -> do not kill
+	/// do not kill if r_value is function call (builtin or user defined)
 	bool kill_last_assignment(NodeReference* node) {
 		// only stay in here if current node is left side of assign statement
 		if(!node->is_l_value()) return false;
 		// check if last reference is an assignment statement
 		if(m_last_reference.empty()) return false;
-		auto it = m_last_reference.find(get_hash_value(*node));
+		auto const it = m_last_reference.find(get_hash_value(*node));
 		if(it != m_last_reference.end()) {
 			// check if reference is also somewhere on the right side of the assignment
 			if(it->second->is_l_value() and !node->is_r_value()) {
-				auto assignment = it->second->parent;
+				auto assignment = it->second->parent->cast<NodeSingleAssignment>();
+				if (assignment->r_value->cast<NodeFunctionCall>()) return false;
 				assignment->remove_node();
 				m_last_reference.erase(it);
 				return true;

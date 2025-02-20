@@ -175,7 +175,7 @@ public:
 	/// returns true if struct has more than one recursive member and these members are itself
 	bool is_non_linear_recursive_with_homogenous_types() {
 		if(is_linear_recursive()) return false;
-		for(auto &mem : m_recursive_member_structs) {
+		for(const auto &mem : m_recursive_member_structs) {
 			if(mem->ty->get_element_type() != m_struct.ty) return false;
 		}
 		return true;

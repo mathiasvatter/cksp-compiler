@@ -1,90 +1,93 @@
-struct List
-	declare value: int
-	declare next: List
-	declare point: Point
+// struct List
+// 	declare value: int
+// 	declare next: List
+// 	declare point: Point
 
-	function __init__(self, value: int, next: List)
-		self.value := value
-		self.next := next
-	end function		
+// 	function __init__(self, value: int, next: List)
+// 		self.value := value
+// 		self.next := next
+// 	end function		
 
-    function get_next_next_value(self)
-        return self.next.next.value
-    end function
+//     function get_next_next_value(self)
+//         return self.next.next.value
+//     end function
 
-	// function add(self, value: int)
-	// 	self.next := List(value, nil)
-	// end function
-end struct
+// 	// function add(self, value: int)
+// 	// 	self.next := List(value, nil)
+// 	// end function
+// end struct
 
-struct Node
-	declare value: int
-	declare left: Node
-	declare right: Node
-	declare point: Point
-end struct 
+// struct Node
+// 	declare value: int
+// 	declare left: Node
+// 	declare right: Node
+// 	declare point: Point
+// end struct 
 
-struct Point
-	declare x: int
-	declare y: int
+// struct Point
+// 	declare x: int
+// 	declare y: int
 
-	function __init__(self, x: int, y: int)
-		self.x := x
-		self.y := y
-	end function
+// 	function __init__(self, x: int, y: int)
+// 		self.x := x
+// 		self.y := y
+// 	end function
 
-	function __repr__(self)
-		return "Point {X: " & self.x & ", Y: " & self.y & "}"
-	end function
+// 	function __repr__(self)
+// 		return "Point {X: " & self.x & ", Y: " & self.y & "}"
+// 	end function
 
-	function __add__(self, other: Point)
-		return Point(self.x + other.x, self.y + other.y)
-	end function
-end struct
+// 	function __add__(self, other: Point)
+// 		return Point(self.x + other.x, self.y + other.y)
+// 	end function
+// end struct
 
-define NUM_DYN_GROUPS := 10
+// define NUM_DYN_GROUPS := 10
 
-struct Note
-	declare pitch: int
-	declare velocity: int
-	declare groups[NUM_DYN_GROUPS]: int[]
+// struct Note
+// 	declare pitch: int
+// 	declare velocity: int
+// 	declare groups[NUM_DYN_GROUPS]: int[]
 
-	function __init__(self, p: int, v: int, g: int[])
-		self.pitch := p
-		self.velocity := v
-		self.groups := g
-	end function
+// 	function __init__(self, p: int, v: int, g: int[])
+// 		self.pitch := p
+// 		self.velocity := v
+// 		self.groups := g
+// 	end function
 
-	function __repr__(self): string
-		return "Note {Pitch: " & self.pitch & ", Velocity: " & self.velocity & "}"
-	end function
+// 	function __repr__(self): string
+// 		return "Note {Pitch: " & self.pitch & ", Velocity: " & self.velocity & "}"
+// 	end function
 
-	function play(self): int
-		return play_note(self.pitch, self.velocity, 0, 0)
-	end function
+// 	function play(self): int
+// 		return play_note(self.pitch, self.velocity, 0, 0)
+// 	end function
 
-	function get_groups(self): int[]
-		return self.groups
-	end function
+// 	function get_groups(self): int[]
+// 		return self.groups
+// 	end function
 
-end struct
+// end struct
 
-struct Group
-	declare const MAX_GROUPS := 10
-	declare idx: int
-	declare files[self.MAX_GROUPS]: string[]
-	declare zone_ids[self.MAX_GROUPS]: int[]
+// struct Group
+// 	declare const MAX_GROUPS := 10
+// 	declare idx: int
+// 	declare files[self.MAX_GROUPS]: string[]
+// 	declare zone_ids[self.MAX_GROUPS]: int[]
 
-	function add_zone(self, zone_id: int) : void
-		self.zone_ids[0] := zone_id
-	end function		
+// 	function add_zone(self, zone_id: int) : void
+// 		self.zone_ids[0] := zone_id
+// 	end function		
 
 
-end struct
+// end struct
 
 
 on init	
-
+	
+	declare arr[2]
+	declare foo: int := save_array(arr, 1)
+	// message(foo)
 	// declare menu_strip_val[3,3]
 	// declare left := get_active_idx(menu_strip_val, 0)
 	// message(left)
@@ -138,7 +141,7 @@ on init
 	// declare local ptr_array3[10] := ptr_array
 	// declare local p1 := Point(1, 2)
 	// declare local p2 := Point(3, 4)
-	declare p := (Point(1, 2) + Point(3, 4))
+	// declare p := (Point(1, 2) + Point(3, 4))
 	// // ndarray[0, *] := ndarray[1, *]
 
 	// // message(use_count(this_list))
@@ -194,15 +197,15 @@ function search_matrix(matrix: number[][], target: number): number
     return -1  // If the target is not found
 end function
 
-// function return_me_preemptively(arr: int[])
-// 	for i, el in pairs(arr)
-// 		if(el = 1)
-// 			return
-// 		end if
-// 		message(el)
-// 	end for	
+function return_me_preemptively(arr: int[])
+	for i, el in pairs(arr)
+		if(el = 1)
+			return 1
+		end if
+		message(el)
+	end for	
 
-// end function	
+end function	
 
 
 function substitution(val: int, arr: int[])

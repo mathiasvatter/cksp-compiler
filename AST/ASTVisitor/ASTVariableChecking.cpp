@@ -119,16 +119,19 @@ NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 	node.visited = true;
+
+	m_functions_in_use.insert(&node);
 	m_program->function_call_stack.push(node.weak_from_this());
 	m_def_provider->add_scope();
-
 
 	node.header ->accept(*this);
 	if (node.return_variable.has_value())
 		node.return_variable.value()->accept(*this);
 	node.body->accept(*this);
+
 	m_def_provider->remove_scope();
 	m_program->function_call_stack.pop();
+	m_functions_in_use.erase(&node);
 	return &node;
 }
 
@@ -147,19 +150,16 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 		}
 	}
 
-	if(node.kind == NodeFunctionCall::UserDefined and node.get_definition()) {
-		check_recursion(node.get_definition().get());
-		if(!node.get_definition()->visited) {
-			m_functions_in_use.insert(node.get_definition().get());
-			node.get_definition()->accept(*this);
-			m_functions_in_use.erase(node.get_definition().get());
-		}
+	const auto definition = node.get_definition().get();
+	if(node.kind == NodeFunctionCall::UserDefined and definition) {
+		check_recursion(definition);
+		if(!definition->visited) definition->accept(*this);
 	}
 	node.function->accept(*this);
 
 	// add call sites at second stage when fail is true
-	if(fail and node.get_definition() and node.kind != NodeFunctionCall::Kind::Builtin) {
-		node.get_definition()->call_sites.insert(&node);
+	if(fail and definition and node.kind != NodeFunctionCall::Kind::Builtin) {
+		definition->call_sites.insert(&node);
 	}
 
 	return &node;
