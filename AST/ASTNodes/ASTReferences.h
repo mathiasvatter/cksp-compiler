@@ -38,7 +38,7 @@ struct NodeVariableRef : NodeReference {
 	/// checks if variable list or array size constant
 //	bool is_array_constant();
 	std::unique_ptr<NodeNumElements> transform_array_constant();
-	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+	std::unique_ptr<NodeReference> expand_dimension(std::unique_ptr<NodeAST> new_index) override;
 //	ASTLowering* get_lowering(NodeProgram *program) const override;
 
 };
@@ -92,7 +92,7 @@ struct NodeArrayRef : NodeCompositeRef {
 	std::unique_ptr<NodeAST> get_size() override;
 	/// check if array ref is <list_ref>.size[] array
 	bool is_list_sizes();
-	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+	std::unique_ptr<NodeReference> expand_dimension(std::unique_ptr<NodeAST> new_index) override;
 	void set_index(std::unique_ptr<NodeAST> new_index) {
 		index = std::move(new_index);
 		index->parent = this;
@@ -173,7 +173,7 @@ struct NodeNDArrayRef : NodeCompositeRef {
 	/// depends on the size -> size has to be known beforehand
 	bool add_wildcards();
 
-	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+	std::unique_ptr<NodeReference> expand_dimension(std::unique_ptr<NodeAST> new_index) override;
 	std::unique_ptr<NodeArrayRef> get_indexed_raw_ref(std::unique_ptr<NodeAST> new_index) override {
 		auto array_ref = this->to_array_ref(std::move(new_index));
 		return array_ref;
@@ -263,7 +263,7 @@ struct NodePointerRef : NodeReference {
 
 	ASTLowering* get_lowering(NodeProgram *program) const override;
 
-	std::unique_ptr<NodeReference> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+	std::unique_ptr<NodeReference> expand_dimension(std::unique_ptr<NodeAST> new_index) override;
 };
 
 struct NodeNil : NodePointerRef {

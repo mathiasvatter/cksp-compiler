@@ -105,6 +105,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodeBlock &node) {
 
 NodeAST * ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
 	m_program->function_call_stack.push(node.weak_from_this());
+	// check all return paths
+	node.do_return_path_validation();
 	node.visited = true;
     node.header ->accept(*this);
     if (node.return_variable.has_value())
@@ -130,7 +132,10 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	node.bind_definition(m_program);
 	auto definition = node.get_definition();
 	if(node.kind == NodeFunctionCall::UserDefined and definition) {
-		if(!definition->visited) definition->accept(*this);
+		if(!definition->visited) {
+
+			definition->accept(*this);
+		}
 	}
 
 	// determine thread safety of currently visiting function definition

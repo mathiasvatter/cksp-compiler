@@ -9,17 +9,18 @@
 /// Rewrites all return statements
 /// promotes all return values to function parameters utilizing the typesystem
 class ReturnParamPromotion : public ASTVisitor {
-private:
-	std::string m_return_param_name = "ret$";
+
+	std::string m_return_param_name = "ret";
 	NodeFunctionDefinition* m_current_function = nullptr;
+	Gensym m_gensym;
 public:
 
-	inline void do_return_param_promotion(NodeFunctionDefinition& def) {
+	void do_return_param_promotion(NodeFunctionDefinition& def) {
 		def.accept(*this);
 	}
 
 private:
-	inline NodeAST* visit(NodeFunctionDefinition &node) override {
+	NodeAST* visit(NodeFunctionDefinition &node) override {
 		m_current_function = &node;
 		// do not rewrite if expression function
 		if(node.is_expression_function()) return &node;
@@ -40,7 +41,7 @@ private:
 		return &node;
 	};
 
-	inline NodeAST* visit(NodeReturn &node) override {
+	NodeAST* visit(NodeReturn &node) override {
 		if(node.return_variables.size() != m_current_function->num_return_params) {
 			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 			error.m_message = "Return Statement has incorrect number of return values.";
@@ -86,7 +87,7 @@ private:
 							error.m_message = "Got incorrect type of return parameter. Expected NDArrayRef.";
 							error.exit();
 						}
-						auto node_ndarray_ref = static_cast<NodeNDArrayRef*>(node_ref);
+						auto node_ndarray_ref = node_ref->cast<NodeNDArrayRef>();
 						new_param = std::make_unique<NodeNDArray>(
 							std::nullopt,
 							return_name,

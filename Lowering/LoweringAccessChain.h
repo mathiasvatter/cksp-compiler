@@ -58,7 +58,7 @@ public:
 		}
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string() + OBJ_DELIMITER + node.name;
-		auto node_array = node.inflate_dimension(nullptr);
+		auto node_array = node.expand_dimension(nullptr);
 //		auto node_array = node.to_array_ref(nullptr);
 //		node_array->declaration = node.declaration;
 //		node_array->ty = node.ty;
@@ -71,7 +71,7 @@ public:
 		// no index -> array -> List.array[sth, *]
 //		if(!node.index) node.set_index(std::make_unique<NodeWildcard>("*", node.tok));
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
-		auto node_ndarray_ref = node.inflate_dimension(nullptr);
+		auto node_ndarray_ref = node.expand_dimension(nullptr);
 //		auto node_ndarray_ref = node.to_ndarray_ref();
 //		node_ndarray_ref->declaration = node.declaration;
 //		node_ndarray_ref->determine_sizes();
@@ -82,14 +82,14 @@ public:
 	inline NodeAST * visit(NodeNDArrayRef& node) override {
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
-		auto node_ndarray_ref = node.inflate_dimension(nullptr);
+		auto node_ndarray_ref = node.expand_dimension(nullptr);
 		return &node;
 	}
 
 	inline NodeAST * visit(NodeVariableRef& node) override {
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
-		auto node_array_ref = node.inflate_dimension(nullptr);
+		auto node_array_ref = node.expand_dimension(nullptr);
 //		auto node_array_ref = node.to_array_ref(nullptr);
 //		node_array_ref->declaration = node.declaration;
 //		node_array_ref->ty = node.ty;

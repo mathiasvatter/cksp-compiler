@@ -15,7 +15,7 @@
 #include "AST/ASTVisitor/ASTCollectPostLowerings.h"
 #include "AST/ASTVisitor/ASTTypeAnnotations.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
-#include "AST/ASTVisitor/ASTDimensionInflation.h"
+#include "AST/ASTVisitor/ASTDimensionExpansion.h"
 #include "AST/ASTVisitor/ASTLowerTypes.h"
 
 Compiler::Compiler(CompilerConfig* config)
@@ -150,7 +150,7 @@ void Compiler::compile() {
 	// inline here so inlined struct vars get their declaration for register reuse later on
 	ast->inline_structs();
 
-	ASTDimensionInflation dimension_inflation(m_program);
+	ASTDimensionExpansion dimension_inflation(m_program);
 	ast->accept(dimension_inflation);
 
 	compile_time.stop("Lowering");

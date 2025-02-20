@@ -1,92 +1,29 @@
-{ Compiled with cksp version 0.0.7-alpha.2 on Thu Feb 13 20:13:50 2025 }
+{ Compiled with cksp version 0.0.7-alpha.2 on Thu Feb 20 22:43:30 2025 }
 on init
   declare $final0
-  declare $row0
   declare $col0
+  declare $row0
   declare $RETURN_FLAG00
-  declare $current0
-  declare $Point__free_idx
-  declare %Point__allocation[3]
-  declare %Point__x[3]
-  declare %Point__y[3]
-  declare $_iter3
-  declare $_ret00
-  $Point__free_idx := search(%Point__allocation, 0)
-  if($Point__free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Point'")
-  end if
-  %Point__allocation[$Point__free_idx] := 1
-  %Point__x[$Point__free_idx] := 1
-  %Point__y[$Point__free_idx] := 2
-  $_ret00 := $Point__free_idx
-  declare $_ret10
-  $Point__free_idx := search(%Point__allocation, 0)
-  if($Point__free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Point'")
-  end if
-  %Point__allocation[$Point__free_idx] := 1
-  %Point__x[$Point__free_idx] := 3
-  %Point__y[$Point__free_idx] := 4
-  $_ret10 := $Point__free_idx
-  declare $p
-  $Point__free_idx := search(%Point__allocation, 0)
-  if($Point__free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Point'")
-  end if
-  %Point__allocation[$Point__free_idx] := 1
-  %Point__x[$Point__free_idx] := %Point__x[$_ret00] + %Point__x[$_ret10]
-  %Point__y[$Point__free_idx] := %Point__y[$_ret00] + %Point__y[$_ret10]
-  $p := $Point__free_idx
-  $current0 := $_ret10
-  while($current0 # -1) 
-    %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-    if(%Point__allocation[$current0] > 0)
-      $current0 := -1
-      continue
-    else
-      %Point__allocation[$current0] := 0
-    end if
-    $_ret10 := $current0
-    $current0 := -1
-    if($_ret10 # -1)
-      %Point__x[$_ret10] := 0
-      %Point__y[$_ret10] := 0
-    end if
-  end while
-  $current0 := $_ret00
-  while($current0 # -1) 
-    %Point__allocation[$current0] := %Point__allocation[$current0] - 1
-    if(%Point__allocation[$current0] > 0)
-      $current0 := -1
-      continue
-    else
-      %Point__allocation[$current0] := 0
-    end if
-    $_ret00 := $current0
-    $current0 := -1
-    if($_ret00 # -1)
-      %Point__x[$_ret00] := 0
-      %Point__y[$_ret00] := 0
-    end if
-  end while
-  if($p # -1)
-    %Point__allocation[$p] := %Point__allocation[$p] + 1
-  end if
+  declare $_iter2
+  declare %arr[2]
+  declare $foo
+  $foo := save_array(%arr, 1)
   declare %_array__num_elements[3] := (200, 10, 20)
   declare %_array[200] := (0)
-  $_ret10 := 0
-  $_ret00 := 0
-  while($_ret00 <= (%_array__num_elements[1] - 1)) 
-    $_ret10 := 0
-    while($_ret10 <= (%_array__num_elements[2] - 1)) 
-      message(%_array[($_ret00 * 20) + $_ret10])
-      inc($_ret10)
+  declare $_iter10
+  declare $_iter00
+  $_iter00 := 0
+  while($_iter00 <= (%_array__num_elements[1] - 1)) 
+    $_iter10 := 0
+    while($_iter10 <= (%_array__num_elements[2] - 1)) 
+      message(%_array[($_iter00 * 20) + $_iter10])
+      inc($_iter10)
     end while
-    inc($_ret00)
+    inc($_iter00)
   end while
   declare %_matrix__num_elements[3] := (9, 3, 3)
   declare %_matrix[9] := (1, 2, 3, 4, 5, 6, 7, 8, 9)
-  $_ret10 := 0
+  $_iter00 := 0
   $RETURN_FLAG00 := 0
   while($RETURN_FLAG00 = 0) 
     $col0 := 0
@@ -95,7 +32,7 @@ on init
       $col0 := 0
       while(($col0 <= (%_matrix__num_elements[2] - 1)) and ($RETURN_FLAG00 = 0)) 
         if(%_matrix[($row0 * %_matrix__num_elements[2]) + $col0] = 5)
-          $_ret10 := ($row0 * %_matrix__num_elements[1]) + $col0
+          $_iter00 := ($row0 * %_matrix__num_elements[1]) + $col0
           $RETURN_FLAG00 := 1
           continue
         end if
@@ -112,25 +49,25 @@ on init
     $RETURN_FLAG00 := 1
     continue
   end while
-  message($_ret10)
+  message($_iter00)
   message(1)
-  $_ret10 := 3
+  $_iter00 := 3
   message(3)
-  $_ret00 := 7
+  $_iter10 := 7
 end on
 on note
-  $_ret10 := $EVENT_NOTE
-  $_ret00 := $EVENT_VELOCITY
-  $_iter3 := 0
+  $_iter00 := $EVENT_NOTE
+  $_iter10 := $EVENT_VELOCITY
+  $_iter2 := 0
   $final0 := $EVENT_VELOCITY
   if($EVENT_VELOCITY < 0)
     $final0 := 0
   else
-    if($_ret00 > 90)
+    if($_iter10 > 90)
       $final0 := 90
     end if
   end if
-  $_iter3 := $final0
-  play_note($_ret10, $_iter3, 0, -1)
+  $_iter2 := $final0
+  play_note($_iter00, $_iter2, 0, -1)
 end on
 

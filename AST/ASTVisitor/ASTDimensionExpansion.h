@@ -26,19 +26,19 @@
  * end on
  * Max length of event queue in Kontakt is 8192 (polyphonic var size)
  */
-class ASTDimensionInflation : public ASTVisitor {
-private:
+class ASTDimensionExpansion : public ASTVisitor {
+
 	int m_cb_stack_size = 100;
 	DefinitionProvider* m_def_provider;
 	std::shared_ptr<NodeVariable> m_max_cb_stack;
 	std::unique_ptr<NodeBinaryExpr> m_cb_idx;
 
-	bool inline is_thread_safe_env() {
+	bool is_thread_safe_env() {
 		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or
 			(m_program->get_curr_function() and m_program->get_curr_function()->is_thread_safe);
-	};
+	}
 public:
-	inline explicit ASTDimensionInflation(NodeProgram *main) : m_def_provider(main->def_provider) {
+	explicit ASTDimensionExpansion(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
 		m_program->current_callback = nullptr;
 
@@ -60,7 +60,7 @@ public:
 		m_cb_idx->ty = TypeRegistry::Integer;
 	}
 
-	inline NodeAST* visit(NodeProgram &node) override {
+	NodeAST* visit(NodeProgram &node) override {
 		node.reset_function_visited_flag();
 		m_program = &node;
 
@@ -83,7 +83,7 @@ public:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeCallback& node) override {
+	NodeAST* visit(NodeCallback& node) override {
 		m_program->current_callback = &node;
 		if(!is_thread_safe_env()) {
 			if(node.callback_id) node.callback_id->accept(*this);
@@ -93,7 +93,7 @@ public:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeFunctionCall& node) override {
+	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		if(node.bind_definition(m_program)) {
 			auto definition = node.get_definition();
@@ -108,7 +108,7 @@ public:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeSingleDeclaration& node) override {
+	NodeAST* visit(NodeSingleDeclaration& node) override {
 		if(node.value) node.value->accept(*this);
 
 		if(!is_thread_safe_env() and node.variable->is_local) {
@@ -139,7 +139,7 @@ public:
 		return &node;
 	}
 
-	inline bool determine_inflation_need(const NodeReference& ref) {
+	bool determine_expansion_need(const NodeReference& ref) {
 		if(is_thread_safe_env()) return false;
 		if(ref.kind != NodeReference::User) return false;
 		if(!ref.get_declaration()) {
@@ -151,32 +151,32 @@ public:
 		return false;
 	}
 
-	inline NodeAST* visit(NodeVariableRef& node) override {
-		if(!determine_inflation_need(node)) return &node;
-		auto inflated = node.inflate_dimension(m_cb_idx->clone());
-		return node.replace_reference(std::move(inflated));
+	NodeAST* visit(NodeVariableRef& node) override {
+		if(!determine_expansion_need(node)) return &node;
+		auto expanded = node.expand_dimension(m_cb_idx->clone());
+		return node.replace_reference(std::move(expanded));
 	}
 
-	inline NodeAST* visit(NodeArrayRef& node) override {
+	NodeAST* visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
 
-		if(!determine_inflation_need(node)) return &node;
+		if(!determine_expansion_need(node)) return &node;
 
-		auto inflated = node.inflate_dimension(m_cb_idx->clone());
-		return node.replace_reference(std::move(inflated));
+		auto expanded = node.expand_dimension(m_cb_idx->clone());
+		return node.replace_reference(std::move(expanded));
 	}
 
-	inline NodeAST* visit(NodeNDArrayRef& node) override {
+	NodeAST* visit(NodeNDArrayRef& node) override {
 		if(node.indexes) node.indexes->accept(*this);
 		if(node.sizes) node.sizes->accept(*this);
 
-		if(!determine_inflation_need(node)) return &node;
+		if(!determine_expansion_need(node)) return &node;
 
-		auto inflated = node.inflate_dimension(m_cb_idx->clone());
-		return node.replace_reference(std::move(inflated));
+		auto expanded = node.expand_dimension(m_cb_idx->clone());
+		return node.replace_reference(std::move(expanded));
 	}
 
-	inline NodeAST* visit(NodeBlock &node) override {
+	NodeAST* visit(NodeBlock &node) override {
 		for(auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}

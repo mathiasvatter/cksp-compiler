@@ -720,6 +720,9 @@ struct NodeBlock : NodeInstruction {
             stmt->update_token_data(token);
         }
     }
+    [[nodiscard]] bool empty() const {
+	    return statements.empty();
+    }
     void append_body(std::unique_ptr<NodeBlock> new_body);
     void prepend_body(std::unique_ptr<NodeBlock> new_body);
     /// adds a node statement to internal vector and sets parent pointer, returns pointer to moved object
@@ -1018,7 +1021,7 @@ struct NodeWhile : NodeLoop {
         condition -> update_token_data(token);
         body->update_token_data(token);
     }
-	ASTLowering* get_lowering(struct NodeProgram *program) const override;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
 	void set_condition(std::unique_ptr<NodeBinaryExpr> condition) {
 		condition->parent = this;
 		this->condition = std::move(condition);
@@ -1028,12 +1031,12 @@ struct NodeWhile : NodeLoop {
 struct NodeSelect : NodeInstruction {
     std::unique_ptr<NodeAST> expression;
     std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBlock>>> cases;
-    inline explicit NodeSelect(Token tok) : NodeInstruction(NodeType::Select, std::move(tok)) {}
-    inline NodeSelect(std::unique_ptr<NodeAST> expression, std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBlock>>> cases, Token tok)
+    explicit NodeSelect(Token tok) : NodeInstruction(NodeType::Select, std::move(tok)) {}
+    NodeSelect(std::unique_ptr<NodeAST> expression, std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBlock>>> cases, Token tok)
             : NodeInstruction(NodeType::Select, std::move(tok)), expression(std::move(expression)), cases(std::move(cases)) {
         set_child_parents();
     }
-    NodeAST * accept(struct ASTVisitor &visitor) override;
+    NodeAST * accept(ASTVisitor &visitor) override;
     NodeSelect(const NodeSelect& other);
     NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;

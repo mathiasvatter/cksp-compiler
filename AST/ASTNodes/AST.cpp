@@ -26,6 +26,7 @@
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "../../Lowering/LoweringInitializerList.h"
 #include "../ASTVisitor/TypeInference.h"
+#include "../ASTVisitor/FunctionHandling/ReturnPathValidator.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, NodeType node_type) : tok(std::move(tok)),
@@ -355,16 +356,16 @@ std::unique_ptr<NodeFunctionCall> NodeReference::wrap_in_get_ui_id() {
 	return DefinitionProvider::get_ui_id(clone_as<NodeReference>(this));
 }
 
-bool NodeReference::is_l_value() {
+NodeSingleAssignment* NodeReference::is_l_value() const {
 	if(auto assignment = parent->cast<NodeSingleAssignment>()) {
 		if(assignment->l_value.get() == this) {
-			return true;
+			return assignment;
 		}
 	}
-	return false;
+	return nullptr;
 }
 
-bool NodeReference::needs_get_ui_id() {
+bool NodeReference::needs_get_ui_id() const {
 	bool wrap_it = this->data_type == DataType::UIControl and this->is_func_arg();
 	if(parent and parent->parent and parent->parent->parent
 	and parent->parent->parent->get_node_type() == NodeType::FunctionCall) {
@@ -378,12 +379,14 @@ bool NodeReference::needs_get_ui_id() {
 	return wrap_it;
 }
 
-bool NodeReference::is_r_value() {
+NodeSingleAssignment *NodeReference::is_r_value() const {
 	if(auto assignment = parent->cast<NodeSingleAssignment>()) {
 		static VarExistsValidator var_exists_validator;
-		return var_exists_validator.var_exists(*assignment->r_value, name);
+		if (var_exists_validator.var_exists(*assignment->r_value, name)) {
+			return assignment;
+		}
 	}
-	return false;
+	return nullptr;
 }
 
 NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> new_node) {
@@ -1025,6 +1028,11 @@ void NodeFunctionDefinition::do_register_reuse(NodeProgram *program) {
 void NodeFunctionDefinition::do_return_param_promotion() {
 	static ReturnParamPromotion param_promotion;
 	param_promotion.do_return_param_promotion(*this);
+}
+
+bool NodeFunctionDefinition::do_return_path_validation() {
+	static ReturnPathValidator return_validator;
+	return return_validator.do_return_path_validation(*this);
 }
 
 // ************* NodeProgramm ***************
