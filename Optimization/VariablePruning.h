@@ -14,7 +14,7 @@
  * - never used as r_value
  * Also removes throwaway variables
  */
-class VariablePruning : public ASTOptimizations {
+class VariablePruning final : public ASTOptimizations {
 
 	std::vector<NodeSingleDeclaration*> m_all_declarations;
 	std::vector<NodeSingleAssignment*> m_all_assignments;
@@ -23,13 +23,13 @@ public:
 	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
-		for(auto & struct_def : node.struct_definitions) {
+		for(const auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
 		}
-		for(auto & callback : node.callbacks) {
+		for(const auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-		for(auto & func_def : node.function_definitions) {
+		for(const auto & func_def : node.function_definitions) {
 			func_def->accept(*this);
 		}
 		node.reset_function_visited_flag();
@@ -38,7 +38,7 @@ public:
 	};
 
 	/// deletes unused variables by removing declarations and assignments
-	void prune_unused_variables() {
+	void prune_unused_variables() const {
 		for(auto &ass: m_all_assignments) {
 			if(!ass->l_value->get_declaration()->is_used) {
 				ass->remove_node();
@@ -71,7 +71,7 @@ public:
 	/// decide whether to potentially prune or not
 	/// ui controls will not be pruned
 	/// persistent data structures will not be pruned
-	static bool is_prune_candidate(NodeDataStructure* node) {
+	static bool is_prune_candidate(const NodeDataStructure* node) {
 		if(node->get_node_type() == NodeType::UIControl) {
 			return false;
 		}

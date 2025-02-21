@@ -28,7 +28,7 @@
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 // ************* NodeStatement ***************
-NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeStatement::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeStatement::NodeStatement(const NodeStatement& other)
@@ -48,7 +48,7 @@ NodeAST *NodeStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST
 }
 
 // ************* NodeFunctionCall ***************
-NodeAST *NodeFunctionCall::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeFunctionCall::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeFunctionCall::NodeFunctionCall(Token tok) : NodeInstruction(NodeType::FunctionCall, std::move(tok)) {}
@@ -67,7 +67,7 @@ NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
         : NodeInstruction(other), is_call(other.is_call), is_new(other.is_new), kind(other.kind),
           function(clone_unique(other.function)), definition(other.definition),
 		  is_temporary_constructor(other.is_temporary_constructor) {
-    set_child_parents();
+    NodeFunctionCall::set_child_parents();
 }
 
 std::unique_ptr<NodeAST> NodeFunctionCall::clone() const {
@@ -317,7 +317,7 @@ NodeAST *NodeNumElements::accept(struct ASTVisitor &visitor) {
 NodeNumElements::NodeNumElements(const NodeNumElements& other)
 	: NodeInstruction(other), array(clone_unique(other.array)),
 	  dimension(clone_unique(other.dimension)) {
-	set_child_parents();
+	NodeNumElements::set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeNumElements::clone() const {
 	return std::make_unique<NodeNumElements>(*this);
@@ -1120,7 +1120,7 @@ NodeAST *NodeWhile::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
     }
     return nullptr;
 }
-ASTLowering* NodeWhile::get_lowering(struct NodeProgram *program) const {
+ASTLowering* NodeWhile::get_lowering(NodeProgram *program) const {
 	static LoweringWhile lowering(program);
 	return &lowering;
 }
@@ -1153,7 +1153,7 @@ NodeAST *NodeSelect::accept(struct ASTVisitor &visitor) {
 NodeSelect::NodeSelect(const NodeSelect& other)
         : NodeInstruction(other), expression(clone_unique(other.expression)),
           cases(clone_cases(other.cases)) {
-    set_child_parents();
+    NodeSelect::set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSelect::clone() const {
     return std::make_unique<NodeSelect>(*this);
@@ -1162,12 +1162,11 @@ NodeAST *NodeSelect::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
     if (expression.get() == oldChild) {
         expression = std::move(newChild);
         return expression.get();
-    } else {
-        for ( auto & cas : cases) {
-            if(cas.first[0].get() == oldChild) {
-                cas.first[0] = std::move(newChild);
-                return cas.first[0].get();
-            }
+    }
+    for ( auto & cas : cases) {
+        if(cas.first[0].get() == oldChild) {
+            cas.first[0] = std::move(newChild);
+            return cas.first[0].get();
         }
     }
     return nullptr;

@@ -8,15 +8,21 @@
 
 /// Rewrites all return statements
 /// promotes all return values to function parameters utilizing the typesystem
-class ReturnParamPromotion : public ASTVisitor {
-
+/// The return parameter names are generated be global Gensym instance
+class ReturnParamPromotion final : public ASTVisitor {
+	DefinitionProvider* m_def_provider = nullptr;
 	std::string m_return_param_name = "ret";
+	std::vector<std::string> m_return_param_names;
 	NodeFunctionDefinition* m_current_function = nullptr;
-	Gensym m_gensym;
 public:
+
+	explicit ReturnParamPromotion(NodeProgram* main) : m_def_provider(main->def_provider) {
+        m_program = main;
+    }
 
 	void do_return_param_promotion(NodeFunctionDefinition& def) {
 		def.accept(*this);
+		m_return_param_names.clear();
 	}
 
 private:
@@ -34,7 +40,14 @@ private:
 			node.header->params.insert(node.header->params.begin(), std::move(decl));
 
 			node.return_variable.reset();
+			return &node;
 		}
+
+		// generate return parameters
+		for (int i = 0; i< node.num_return_params; i++) {
+			m_return_param_names.push_back(m_def_provider->get_fresh_name(m_return_param_name));
+		}
+
 		m_current_function->return_stmts.clear();
 		node.body->accept(*this);
 		m_current_function = nullptr;
@@ -55,7 +68,7 @@ private:
 		auto block_replace = std::make_unique<NodeBlock>(Token());
 		for(int i = 0; i<node.return_variables.size(); i++) {
 			auto& node_return = node.return_variables[i];
-			std::string return_name = m_return_param_name+std::to_string(i+1);
+			std::string return_name = m_return_param_names[i];
 			// if return parameter is a reference -> replace with copy
 			std::unique_ptr<NodeDataStructure> new_param = nullptr;
 			if(auto node_ref = cast_node<NodeReference>(node_return.get())) {

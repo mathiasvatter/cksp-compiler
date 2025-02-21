@@ -176,9 +176,9 @@ std::unique_ptr<NodeAST> NodeArrayRef::get_size() {
 	return DefinitionProvider::num_elements(std::move(new_ref));
 }
 
-bool NodeArrayRef::is_list_sizes() {
+bool NodeArrayRef::is_list_sizes() const {
 	if (get_declaration()->get_node_type() == NodeType::List) {
-		auto list = static_pointer_cast<NodeList>(get_declaration());
+		const auto list = static_pointer_cast<NodeList>(get_declaration());
 		const std::string& prefix = list->name + ".sizes";
 		if (name.compare(0, prefix.length(), prefix) == 0) {
 			return true;
@@ -209,7 +209,7 @@ NodeBlock* NodeArrayRef::iterate_over(std::unique_ptr<NodeBlock>& for_loop_block
 }
 
 // ************* NodeNDArrayRef ***************
-NodeAST *NodeNDArrayRef::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeNDArrayRef::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 
@@ -329,7 +329,7 @@ bool NodeNDArrayRef::add_wildcards() {
 	return true;
 }
 
-std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() {
+std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() const {
 	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
 	std::vector<bool> wildcards;
 	// get wildcard dimension
@@ -339,7 +339,7 @@ std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() {
 		return {0, 0};
 	}
 	for(int i = 0; i<indexes->params.size(); i++) {
-		auto &idx = indexes->params[i];
+		const auto &idx = indexes->params[i];
 		bool is_wildcard = idx->cast<NodeWildcard>();
 		wildcards.push_back(is_wildcard);
 		if(wildcards.size() > 2) {
@@ -401,15 +401,15 @@ NodeBlock* NodeNDArrayRef::iterate_over(std::unique_ptr<NodeBlock> &body, NodePr
 
 }
 
-void NodeNDArrayRef::replace_next_wildcard_with_index(std::unique_ptr<NodeInt> new_index) {
-	if(!indexes) throw_missing_indexes_error();
-	if(!sizes) throw_missing_sizes_error();
+void NodeNDArrayRef::replace_next_wildcard_with_index(std::unique_ptr<NodeInt> new_index) const {
+	if(!indexes) throw_missing_indexes_error().exit();
+	if(!sizes) throw_missing_sizes_error().exit();
 	if(num_wildcards() == 0) return;
 
-	auto wildcard_dimensions = get_wildcard_dimensions();
-	indexes->param(wildcard_dimensions.first)->replace_with(std::move(new_index));
-	if(wildcard_dimensions.second != wildcard_dimensions.first) {
-		for(int i = wildcard_dimensions.first+1; i<=wildcard_dimensions.second; i++) {
+	auto [fst, snd] = get_wildcard_dimensions();
+	indexes->param(fst)->replace_with(std::move(new_index));
+	if(snd != fst) {
+		for(int i = fst+1; i<=snd; i++) {
 			indexes->param(i)->replace_with(std::make_unique<NodeInt>(0, indexes->param(i)->tok));
 		}
 	}
@@ -430,7 +430,7 @@ NodeFunctionHeaderRef::NodeFunctionHeaderRef(const NodeFunctionHeaderRef& other)
 	set_child_parents();
 }
 
-NodeAST *NodeFunctionHeaderRef::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeFunctionHeaderRef::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 
@@ -455,7 +455,7 @@ bool NodeFunctionHeaderRef::has_no_args() const {
 	return args->params.empty();
 }
 
-std::unique_ptr<NodeAST>& NodeFunctionHeaderRef::get_arg(int i) {
+std::unique_ptr<NodeAST>& NodeFunctionHeaderRef::get_arg(const int i) const {
 	if(get_num_args() <= i) {
 		CompileError(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
 	}
@@ -476,7 +476,7 @@ void NodeFunctionHeaderRef::set_args(std::unique_ptr<NodeParamList> new_args) {
 }
 
 // ************* NodeListRef ***************
-NodeAST *NodeListRef::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeListRef::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 
@@ -497,13 +497,13 @@ ASTLowering* NodeListRef::get_lowering(NodeProgram *program) const {
 
 
 // ************* NodePointerRef ***************
-NodeAST *NodePointerRef::accept(struct ASTVisitor &visitor) {
+NodeAST *NodePointerRef::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 
 NodePointerRef::NodePointerRef(const NodePointerRef& other)
 	: NodeReference(other) {
-	set_child_parents();
+	NodePointerRef::set_child_parents();
 }
 
 std::unique_ptr<NodeAST> NodePointerRef::clone() const {
@@ -593,12 +593,12 @@ ASTLowering* NodeAccessChain::get_lowering(NodeProgram *program) const {
 
 
 // ************* NodeGetControl ***************
-NodeAST *NodeGetControl::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeGetControl::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeGetControl::NodeGetControl(const NodeGetControl& other)
 	: NodeReference(other), ui_id(clone_unique(other.ui_id)), control_param(other.control_param) {
-	set_child_parents();
+	NodeGetControl::set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeGetControl::clone() const {
 	return std::make_unique<NodeGetControl>(*this);
@@ -611,7 +611,7 @@ NodeAST *NodeGetControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 	return nullptr;
 }
 
-ASTLowering* NodeGetControl::get_lowering(struct NodeProgram *program) const {
+ASTLowering* NodeGetControl::get_lowering(NodeProgram *program) const {
 	static LoweringGetControl lowering(program);
 	return &lowering;
 }
@@ -627,8 +627,8 @@ ASTLowering* NodeGetControl::get_lowering(struct NodeProgram *program) const {
 //	return nullptr;
 //}
 
-Type *NodeGetControl::get_control_type() {
-	std::string control_par = to_lower(control_param);
+Type *NodeGetControl::get_control_type() const {
+	const std::string control_par = to_lower(control_param);
 	static const std::unordered_set<std::string> str_substrings{"name", "path", "picture", "help", "identifier", "label", "text"};
 	static const std::unordered_set<std::string> int_substrings{"state", "alignment", "pos", "shifting"};
 	Type* type = TypeRegistry::Integer;
@@ -648,13 +648,13 @@ Type *NodeGetControl::get_control_type() {
 }
 
 // ************* NodeSetControl ***************
-NodeAST *NodeSetControl::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeSetControl::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeSetControl::NodeSetControl(const NodeSetControl& other)
 	: NodeReference(other), ui_id(clone_unique(other.ui_id)),
 	control_param(other.control_param), value(clone_unique(other.value)) {
-	set_child_parents();
+	NodeSetControl::set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSetControl::clone() const {
 	return std::make_unique<NodeSetControl>(*this);
@@ -663,14 +663,15 @@ NodeAST *NodeSetControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 	if (ui_id.get() == oldChild) {
 		ui_id = std::move(newChild);
 		return ui_id.get();
-	} else if(value.get() == oldChild) {
+	}
+	if(value.get() == oldChild) {
 		value = std::move(newChild);
 		return value.get();
 	}
 	return nullptr;
 }
 
-ASTLowering* NodeSetControl::get_lowering(struct NodeProgram *program) const {
+ASTLowering* NodeSetControl::get_lowering(NodeProgram *program) const {
 	static LoweringGetControl lowering(program);
 	return &lowering;
 }

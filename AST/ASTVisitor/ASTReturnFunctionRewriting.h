@@ -41,7 +41,7 @@ private:
 	};
 
 	NodeAST* visit(NodeFunctionDefinition& node) override {
-		node.do_return_param_promotion();
+		node.do_return_param_promotion(m_program);
 		node.visited = true;
 		node.header->accept(*this);
 		if(node.return_variable.has_value())

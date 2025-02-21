@@ -9,8 +9,26 @@
 /// needs working and fresh m_references_per_data_structure from Definition Provider
 /// promoted constants here do not have to have constant assignments
 /// promoted constants have only at most one assignment throughout the whole program
-class ConstantPromotion : public ASTOptimizations {
-private:
+
+/**
+ * This class is responsible for promoting variables to constants in the AST (Abstract Syntax Tree).
+ * Constant promotion is the process of identifying variables that can be treated as constants
+ * and updating their declarations and references accordingly.
+ *
+ * The class works by visiting various nodes in the AST and checking if a variable meets the criteria
+ * for being promoted to a constant. If a variable is found to be a constant candidate, it is added
+ * to a map of constant candidates. The class then updates the variable's declaration and references
+ * to reflect its new constant status.
+ *
+ * The criteria for a variable to be promoted to a constant are:
+ * - The variable is local.
+ * - The variable is mutable.
+ * - The variable is not of type string.
+ * - The variable has at most one assignment throughout the whole program.
+ *
+ * The class inherits from the ASTOptimizations class and overrides the visit methods for various node types.
+ */
+class ConstantPromotion final : public ASTOptimizations {
 	/// saves constant candidates and their values
 	std::unordered_map<std::shared_ptr<NodeDataStructure>, std::unique_ptr<NodeAST>> m_constant_candidates;
 	std::vector<NodeReference*> m_constant_candidate_references;
@@ -19,30 +37,30 @@ public:
 	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
-		for(auto & struct_def : node.struct_definitions) {
+		for(const auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
 		}
-		for(auto & callback : node.callbacks) {
+		for(const auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-		for(auto & func_def : node.function_definitions) {
+		for(const auto & func_def : node.function_definitions) {
 			func_def->accept(*this);
 		}
 		promote_constants();
 		return &node;
 	};
 
-	inline bool promote_constants() {
+	bool promote_constants() {
 		for (auto & var : m_constant_candidates) {
 			if(var.second) {
-				auto declaration = static_cast<NodeSingleDeclaration*>(var.first->parent);
+				const auto declaration = var.first->parent->cast<NodeSingleDeclaration>();
 				declaration->variable->data_type = DataType::Const;
 				declaration->variable->persistence = std::nullopt;
 				declaration->value = std::move(var.second);
 				declaration->value->parent = declaration;
 			}
 		}
-		for(auto & ref : m_constant_candidate_references) {
+		for(const auto & ref : m_constant_candidate_references) {
 			if(ref->get_declaration()->data_type == DataType::Const) {
 				ref->data_type = DataType::Const;
 			}
@@ -64,21 +82,20 @@ public:
 	/// remove var from constant candidates if reassigned or used value-altering builtin function call
 	NodeAST * visit(NodeVariableRef& node) override {
 		if(node.data_type == DataType::Const) return &node;
-		if(is_in_constant_candidates_map(node.get_declaration())) {
+		if(m_constant_candidates.contains(node.get_declaration())) {
 			// if it gets reassigned, check if it already has a value, if yes, remove from constant candidates
-			if(node.is_l_value()) {
-				auto assignment = static_cast<NodeSingleAssignment*>(node.parent);
+			if(const auto assignment = node.is_l_value()) {
 				// adds value to constant candidates if it has none yet.
 				if(!assignment->r_value->is_constant()) {
 					// if the value is not constant, remove from constant candidates
-					remove_from_constant_candidates(&node);
+					remove_from_constant_candidates(node);
 				}
-				if(!add_value_to_constant_candidates(&node, assignment->r_value)) {
+				if(!add_value_to_constant_candidates(node, assignment->r_value)) {
 					// had already a value assigned to it -> remove from constant candidates
-					remove_from_constant_candidates(&node);
+					remove_from_constant_candidates(node);
 				}
 			} else if(is_destructive_func_arg(&node)) {
-				remove_from_constant_candidates(&node);
+				remove_from_constant_candidates(node);
 			}
 			m_constant_candidate_references.push_back(&node);
 		}
@@ -92,24 +109,20 @@ public:
 		return true;
 	}
 
-	bool remove_from_constant_candidates(NodeVariableRef* node) {
-		m_constant_candidates.erase(node->get_declaration());
+	bool remove_from_constant_candidates(const NodeVariableRef& node) {
+		m_constant_candidates.erase(node.get_declaration());
 		return true;
 	}
 
 	/// if it already has a value, return false, if not, add value to constant candidates and return true
-	bool add_value_to_constant_candidates(NodeVariableRef* ref, std::unique_ptr<NodeAST>& value) {
-		auto it = m_constant_candidates.find(ref->get_declaration());
+	bool add_value_to_constant_candidates(const NodeVariableRef& ref, const std::unique_ptr<NodeAST>& value) {
+		auto const it = m_constant_candidates.find(ref.get_declaration());
 		if(it != m_constant_candidates.end()) {
 			if(it->second) return false;
 			it->second = value->clone();
 			return true;
 		}
 		return false;
-	}
-
-	bool is_in_constant_candidates_map(std::shared_ptr<NodeDataStructure> node) {
-		return m_constant_candidates.find(node) != m_constant_candidates.end();
 	}
 
 	static bool is_constant_candidate(const NodeDataStructure& node) {
