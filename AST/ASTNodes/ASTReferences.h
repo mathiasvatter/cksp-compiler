@@ -4,21 +4,20 @@
 
 #pragma once
 
-#include <utility>
-
 #include "AST.h"
 #include "../TypeRegistry.h"
 
+struct NodeNumElements;
 
-struct NodeVariableRef : NodeReference {
-	inline NodeVariableRef(std::string name, Token tok)
+struct NodeVariableRef final : NodeReference {
+	NodeVariableRef(std::string name, Token tok)
 		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok)) {
 	}
-	inline NodeVariableRef(std::string name, Type* ty, Token tok)
+	NodeVariableRef(std::string name, Type* ty, Token tok)
 		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok)) {
 		this->ty = ty;
 	}
-	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeVariableRef(const NodeVariableRef& other);
 	// Clone Methode
@@ -26,15 +25,15 @@ struct NodeVariableRef : NodeReference {
 	std::string get_string() override {
 		return name;
 	}
-	std::unique_ptr<struct NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) override;
+	std::unique_ptr<NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) override;
 	/// this_list.next.next
-	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
-	std::unique_ptr<struct NodePointerRef> to_pointer_ref() override;
+	std::unique_ptr<NodeAccessChain> to_method_chain() override;
+	std::unique_ptr<NodePointerRef> to_pointer_ref() override;
 
 	/// checks if variable ref is a ndarray size constant by checking the declaration and
 	/// pattern matching the name (....SIZE_D(\d+))
 //	bool is_ndarray_constant();
-	std::unique_ptr<struct NodeNumElements> transform_ndarray_constant();
+	std::unique_ptr<NodeNumElements> transform_ndarray_constant();
 	/// checks if variable list or array size constant
 //	bool is_array_constant();
 	std::unique_ptr<NodeNumElements> transform_array_constant();
@@ -45,15 +44,15 @@ struct NodeVariableRef : NodeReference {
 
 struct NodeCompositeRef : NodeReference {
 	// Konstruktor
-	inline NodeCompositeRef(std::string name, NodeType node_type, Token tok)
+	NodeCompositeRef(std::string name, NodeType node_type, Token tok)
 		: NodeReference(std::move(name), node_type, std::move(tok)) {}
 	// Kopierkonstruktor
 	NodeCompositeRef(const NodeCompositeRef& other) : NodeReference(other) {}
 	// Standardmethoden für gemeinsame Funktionalitäten
-	virtual void update_parents(NodeAST* new_parent) override {
+	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
 	}
-	virtual void set_child_parents() override = 0;  // Wird in den abgeleiteten Klassen implementiert
+	void set_child_parents() override = 0;  // Wird in den abgeleiteten Klassen implementiert
 	/// returns the raw version of ndarray with an index
 	virtual std::unique_ptr<NodeArrayRef> get_indexed_raw_ref(std::unique_ptr<NodeAST> new_index) = 0;
 	[[nodiscard]] virtual int num_wildcards() const = 0;
@@ -63,13 +62,13 @@ struct NodeCompositeRef : NodeReference {
 	virtual void remove_index() = 0;
 };
 
-struct NodeArrayRef : NodeCompositeRef {
+struct NodeArrayRef final : NodeCompositeRef {
 	std::unique_ptr<NodeAST> index;
-	inline NodeArrayRef(std::string name, std::unique_ptr<NodeAST> index, Token tok)
+	NodeArrayRef(std::string name, std::unique_ptr<NodeAST> index, Token tok)
 		: NodeCompositeRef(std::move(name), NodeType::ArrayRef, std::move(tok)), index(std::move(index)) {
 		set_child_parents();
 	}
-	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeArrayRef(const NodeArrayRef& other);
 	// Clone Methode
@@ -81,17 +80,17 @@ struct NodeArrayRef : NodeCompositeRef {
 	}
 	void set_child_parents() override {
 		if(index) index ->parent = this;
-	};
+	}
 	std::string get_string() override {
 		return name;
 	}
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
-	std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() override;
+	std::unique_ptr<NodeNDArrayRef> to_ndarray_ref() override;
 	/// this_list.next.value[6]
-	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
+	std::unique_ptr<NodeAccessChain> to_method_chain() override;
 	std::unique_ptr<NodeAST> get_size() override;
 	/// check if array ref is <list_ref>.size[] array
-	bool is_list_sizes();
+	bool is_list_sizes() const;
 	std::unique_ptr<NodeReference> expand_dimension(std::unique_ptr<NodeAST> new_index) override;
 	void set_index(std::unique_ptr<NodeAST> new_index) {
 		index = std::move(new_index);
@@ -102,7 +101,7 @@ struct NodeArrayRef : NodeCompositeRef {
 		new_ref->set_index(std::move(new_index));
 		return new_ref;
 	}
-	[[nodiscard]] inline int num_wildcards() const override {
+	[[nodiscard]] int num_wildcards() const override {
 		if(index and index->cast<NodeWildcard>()) {
 			return 1;
 		}
@@ -115,14 +114,14 @@ struct NodeArrayRef : NodeCompositeRef {
 	}
 };
 
-struct NodeNDArrayRef : NodeCompositeRef {
+struct NodeNDArrayRef final : NodeCompositeRef {
 	std::unique_ptr<NodeParamList> indexes = nullptr;
     std::unique_ptr<NodeParamList> sizes = nullptr;
-	inline NodeNDArrayRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
+	NodeNDArrayRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
 		: NodeCompositeRef(std::move(name), NodeType::NDArrayRef, std::move(tok)), indexes(std::move(indexes)) {
-		set_child_parents();
+		NodeNDArrayRef::set_child_parents();
 	}
-	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeNDArrayRef(const NodeNDArrayRef& other);
 	// Clone Methode
@@ -152,18 +151,18 @@ struct NodeNDArrayRef : NodeCompositeRef {
 	}
 	std::unique_ptr<NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) override;
 	/// this_list.next.value[6,4]
-	std::unique_ptr<struct NodeAccessChain> to_method_chain() override;
+	std::unique_ptr<NodeAccessChain> to_method_chain() override;
 
 	[[nodiscard]] int num_wildcards() const override;
 	/// clones sizes list from declaration if it is a NDArray
 	bool determine_sizes();
-	inline CompileError throw_missing_indexes_error() {
+	CompileError throw_missing_indexes_error() const {
 		auto compile_error = CompileError(ErrorType::SyntaxError, "","", tok);
 		compile_error.m_message = "NDArray reference requires indexes in this context: " + tok.val + ".";
 		compile_error.m_expected = "Valid indexes";
 		return compile_error;
 	}
-	inline CompileError throw_missing_sizes_error() {
+	CompileError throw_missing_sizes_error() const {
 		auto compile_error = CompileError(ErrorType::InternalError, "","", tok);
 		compile_error.m_message = "NDArray reference has unknown sizes: " + tok.val + ".";
 		compile_error.m_expected = "Valid sizes";
@@ -182,22 +181,22 @@ struct NodeNDArrayRef : NodeCompositeRef {
 	/// contiguous and right aligned (if more than one wildcard) ndarray[*, 2] is allowed
 	/// ndarray[2, *] := (0) -> function returns position of *, returns 2:2
 	/// ndarray[2, *, *] := (0) -> returns 2:3
-	std::pair<int, int> get_wildcard_dimensions();
+	std::pair<int, int> get_wildcard_dimensions() const;
 	/// replaces next wildcard with given index
-	void replace_next_wildcard_with_index(std::unique_ptr<NodeInt> new_index);
+	void replace_next_wildcard_with_index(std::unique_ptr<NodeInt> new_index) const;
 	NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body, NodeProgram* program) override;
 	void remove_index() override {
 		indexes = nullptr;
 	}
 };
 
-struct NodeFunctionHeaderRef : NodeReference {
+struct NodeFunctionHeaderRef final : NodeReference {
 	bool has_forced_parenth = false;
 	std::unique_ptr<NodeParamList> args;
 	NodeFunctionHeaderRef(std::string name, Token tok);
 	NodeFunctionHeaderRef(std::string name, std::unique_ptr<NodeParamList> args, Token tok);
 	~NodeFunctionHeaderRef() override;
-	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeFunctionHeaderRef(const NodeFunctionHeaderRef& other);
 	// Clone Methode
@@ -206,8 +205,8 @@ struct NodeFunctionHeaderRef : NodeReference {
 	void set_child_parents() override;
 	[[nodiscard]] int get_num_args() const;
 	[[nodiscard]] bool has_no_args() const;
-	std::unique_ptr<NodeAST>& get_arg(int i);
-	void set_arg(int i, std::unique_ptr<NodeAST> arg) {
+	std::unique_ptr<NodeAST>& get_arg(int i) const;
+	void set_arg(const int i, std::unique_ptr<NodeAST> arg) const {
 		args->set_param(i, std::move(arg));
 //		if(i >= get_num_args()) {
 //			auto error = CompileError(ErrorType::InternalError, "Index out of bounds", "", tok);
@@ -221,15 +220,15 @@ struct NodeFunctionHeaderRef : NodeReference {
 	void set_args(std::unique_ptr<NodeParamList> new_args);
 };
 
-struct NodeListRef : NodeReference {
+struct NodeListRef final : NodeReference {
 	NodeParamList* sizes = nullptr; // param list of size of the lists in the list
 	NodeParamList* pos = nullptr; // param list of positions in the list
 	std::unique_ptr<NodeParamList> indexes;
 	NodeListRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
 		: NodeReference(std::move(name), NodeType::ListRef, std::move(tok)), indexes(std::move(indexes)) {
-		set_child_parents();
+		NodeListRef::set_child_parents();
 	}
-	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeListRef(const NodeListRef& other);
 	// Clone Methode
@@ -243,16 +242,16 @@ struct NodeListRef : NodeReference {
 	}
 	void set_child_parents() override {
 		if(indexes) indexes->parent = this;
-	};
+	}
 	ASTLowering* get_lowering(NodeProgram *program) const override;
 
 };
 
 struct NodePointerRef : NodeReference {
-	inline NodePointerRef(std::string name, Token tok)
+	NodePointerRef(std::string name, Token tok)
 		: NodeReference(std::move(name), NodeType::PointerRef, std::move(tok)) {
 	}
-	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodePointerRef(const NodePointerRef& other);
 	// Clone Methode
@@ -266,9 +265,9 @@ struct NodePointerRef : NodeReference {
 	std::unique_ptr<NodeReference> expand_dimension(std::unique_ptr<NodeAST> new_index) override;
 };
 
-struct NodeNil : NodePointerRef {
-	inline explicit NodeNil(Token tok) : NodePointerRef(std::move("nil"), std::move(tok)) {node_type = NodeType::Nil;}
-	NodeAST * accept(struct ASTVisitor &visitor) override;
+struct NodeNil final : NodePointerRef {
+	explicit NodeNil(Token tok) : NodePointerRef(std::move("nil"), std::move(tok)) {node_type = NodeType::Nil;}
+	NodeAST * accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeNil(const NodeNil& other) : NodePointerRef(other) {}
 	// Clone Methode
@@ -276,21 +275,21 @@ struct NodeNil : NodePointerRef {
 	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
 };
 
-struct NodeAccessChain : NodeReference {
+struct NodeAccessChain final : NodeReference {
 	std::vector<std::unique_ptr<NodeAST>> chain;
 	std::vector<Type*> types;
-	inline NodeAccessChain(std::vector<std::unique_ptr<NodeAST>> method_chain, Token tok)
+	NodeAccessChain(std::vector<std::unique_ptr<NodeAST>> method_chain, Token tok)
 		: NodeReference("", NodeType::AccessChain, std::move(tok)), chain(std::move(method_chain)) {
-		set_child_parents();
+		NodeAccessChain::set_child_parents();
 	}
-	inline explicit NodeAccessChain(Token tok)
+	explicit NodeAccessChain(Token tok)
 		: NodeReference("", NodeType::AccessChain, std::move(tok)) {}
 	// Variadischer Template-Konstruktor
 	template<typename... Member>
 	explicit NodeAccessChain(Token tok, Member&&... member) : NodeReference("", NodeType::AccessChain, std::move(tok)) {
 		(add_method(std::move(member)), ...);
 	}
-	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeAccessChain(const NodeAccessChain& other);
 	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
@@ -298,11 +297,11 @@ struct NodeAccessChain : NodeReference {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
-		for(auto & c: chain) c->update_parents(this);
+		for(const auto & c: chain) c->update_parents(this);
 	}
 	void set_child_parents() override {
-		for(auto & c: chain) c->parent = this;
-	};
+		for(const auto & c: chain) c->parent = this;
+	}
 	void add_method(std::unique_ptr<NodeAST> m) {
 		m->parent = this;
 		chain.push_back(std::move(m));
@@ -314,7 +313,7 @@ struct NodeAccessChain : NodeReference {
 	}
 	std::string get_string() override {
 		std::string str = "";
-		for(auto & c: chain) {
+		for(const auto & c: chain) {
 			str += c->get_string() + ".";
 		}
 		return str.erase(str.size() - 1);
@@ -344,14 +343,14 @@ struct NodeAccessChain : NodeReference {
 
 };
 
-struct NodeGetControl : NodeReference {
+struct NodeGetControl final : NodeReference {
 	std::unique_ptr<NodeAST> ui_id; //array or variable
 	std::string control_param;
-	inline NodeGetControl(std::unique_ptr<NodeAST> ui_id, std::string controlParam, Token tok)
+	NodeGetControl(std::unique_ptr<NodeAST> ui_id, std::string controlParam, Token tok)
 		: NodeReference(controlParam, NodeType::GetControl, std::move(tok)), ui_id(std::move(ui_id)), control_param(std::move(controlParam)) {
-		set_child_parents();
+		NodeGetControl::set_child_parents();
 	}
-	NodeAST * accept(struct ASTVisitor &visitor) override;
+	NodeAST * accept(ASTVisitor &visitor) override;
 	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	// Kopierkonstruktor
 	NodeGetControl(const NodeGetControl& other);
@@ -363,17 +362,17 @@ struct NodeGetControl : NodeReference {
 	}
 	void set_child_parents() override {
 		if(ui_id) ui_id->parent = this;
-	};
+	}
 	std::string get_string() override {
 		return ui_id->get_string() + " -> " + control_param;
 	}
 	void update_token_data(const Token& token) override {
 		ui_id -> update_token_data(token);
 	}
-	ASTLowering* get_lowering(struct NodeProgram *program) const override;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
 
 //	std::unique_ptr<NodeReference> get_full_control_param(DefinitionProvider* def_provider);
-	Type* get_control_type();
+	Type* get_control_type() const;
 };
 
 struct NodeSetControl : NodeReference {

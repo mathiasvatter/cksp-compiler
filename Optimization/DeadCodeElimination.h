@@ -11,8 +11,7 @@
  * Removes Dead Code:
  * - Assignments that are reassigned without being used
  */
-class DeadCodeElimination : public ASTOptimizations {
-private:
+class DeadCodeElimination final : public ASTOptimizations {
 
 	std::unordered_map<StringTypeKey, NodeReference*, StringTypeKeyHash> m_last_reference;
 
@@ -54,36 +53,34 @@ public:
 		node.else_body->accept(*this);
 
 		// deal with empty if and/or else body
-		if(node.if_body->statements.empty() && node.else_body->statements.empty()) {
-//			m_last_reference.clear();
+		if(node.if_body->empty() && node.else_body->empty()) {
 			return node.remove_node();
+		}
 		// only else body left
-		} else if (node.if_body->statements.empty()) {
-//			m_last_reference.clear();
-			node.if_body = std::move(node.else_body);
-			node.if_body->parent = &node;
-			node.else_body = std::make_unique<NodeBlock>(node.tok);
-			node.else_body->parent = &node;
+		if (node.if_body->empty()) {
+			node.set_if_body(std::move(node.else_body));
+			node.set_else_body(std::make_unique<NodeBlock>(node.tok));
+
+			// negate condition
 			auto negated_condition = std::make_unique<NodeUnaryExpr>(token::BOOL_NOT, std::move(node.condition), node.tok);
 			negated_condition->ty = TypeRegistry::Boolean;
-			node.condition = std::move(negated_condition);
-			node.condition->parent = &node;
+			node.set_condition(std::move(negated_condition));
 			node.condition->do_constant_folding();
 		}
 
 		// if condition is constant, remove one of the branches
-		if(auto node_int = node.condition->cast<NodeInt>()) {
+		if(const auto node_int = node.condition->cast<NodeInt>()) {
 			if(node_int->value == 1) {
 				m_last_reference.clear();
 				return node.replace_with(std::move(node.if_body));
-			} else if(node_int->value == 0) {
-				if(node.else_body->statements.empty()) {
+			}
+			if(node_int->value == 0) {
+				if(node.else_body->empty()) {
 					m_last_reference.clear();
 					return node.remove_node();
-				} else {
-					m_last_reference.clear();
-					return node.replace_with(std::move(node.else_body));
 				}
+				m_last_reference.clear();
+				return node.replace_with(std::move(node.else_body));
 			}
 		}
 
@@ -93,7 +90,7 @@ public:
 	/// reset map every block
 	NodeAST* visit(NodeBlock& node) override {
 		m_last_reference.clear();
-		for(auto & stmt : node.statements) {
+		for(const auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
 		node.flatten();
@@ -101,8 +98,9 @@ public:
 	};
 
 	NodeAST* visit(NodeSingleAssignment& node) override {
-		node.l_value->accept(*this);
+		// important to do r_value first to remove last assignment if necessary
 		node.r_value->accept(*this);
+		node.l_value->accept(*this);
 		return &node;
 	}
 
@@ -136,8 +134,7 @@ public:
 		auto const it = m_last_reference.find(get_hash_value(*node));
 		if(it != m_last_reference.end()) {
 			// check if reference is also somewhere on the right side of the assignment
-			if(it->second->is_l_value() and !node->is_r_value()) {
-				auto assignment = it->second->parent->cast<NodeSingleAssignment>();
+			if(const auto assignment = it->second->is_l_value()) { //and !node->is_r_value()) {
 				if (assignment->r_value->cast<NodeFunctionCall>()) return false;
 				assignment->remove_node();
 				m_last_reference.erase(it);

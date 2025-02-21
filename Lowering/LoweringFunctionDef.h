@@ -11,8 +11,7 @@
 /// - wrapping defs with return stmts (that are not at the end of the init block) in while loop
 /// - placing exit_flag and continue statement after every return statement
 /// -
-class LoweringFunctionDef : public ASTLowering {
-private:
+class LoweringFunctionDef final : public ASTLowering {
 	NodeFunctionDefinition* m_current_function = nullptr;
 	std::string m_exit_flag_name;
 	NodeDataStructure* m_exit_flag_var = nullptr;

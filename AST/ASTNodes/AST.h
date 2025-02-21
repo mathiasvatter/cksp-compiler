@@ -4,21 +4,18 @@
 
 #pragma once
 #include <string>
-#include <utility>
 #include <vector>
-#include <memory>
 #include <optional>
-#include <variant>
-#include <list>
 #include <chrono>
-#include <functional>
-// #include <typeindex>
 
 #include "ASTHelper.h"
 #include "../Types.h"
 #include "../../misc/HashFunctions.h"
 
 class ASTDesugaring;
+class ASTLowering;
+struct NodeProgram;
+struct NodeFunctionHeaderRef;
 
 struct NodeAST {
     Token tok;
@@ -44,16 +41,16 @@ struct NodeAST {
     virtual void update_token_data(const Token& token) {
         tok.line = token.line; tok.file = token.file;
     }
-    [[nodiscard]] virtual ASTDesugaring *get_desugaring(struct NodeProgram *program) const {
+    [[nodiscard]] virtual ASTDesugaring *get_desugaring(NodeProgram *program) const {
         return nullptr;
     }
-	[[nodiscard]] virtual class ASTLowering * get_lowering(NodeProgram *program) const {
+	[[nodiscard]] virtual ASTLowering * get_lowering(NodeProgram *program) const {
 		return nullptr;
 	}
-	[[nodiscard]] virtual class ASTLowering * get_post_lowering(NodeProgram *program) const {
+	[[nodiscard]] virtual ASTLowering * get_post_lowering(NodeProgram *program) const {
 		return nullptr;
 	}
-	[[nodiscard]] virtual class ASTLowering * get_data_lowering(NodeProgram *program) const {
+	[[nodiscard]] virtual ASTLowering * get_data_lowering(NodeProgram *program) const {
 		return nullptr;
 	}
 	virtual NodeAST* desugar(NodeProgram* program);
@@ -92,10 +89,10 @@ struct NodeAST {
 	[[nodiscard]] struct NodeCallback* get_current_callback() const;
 	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
 	void do_constant_folding();
-	NodeAST* do_array_normalization(NodeProgram *program);
+    virtual NodeAST* do_array_normalization(NodeProgram *program);
 	void do_type_inference(NodeProgram *program);
 	/// Determines if current Node is function argument
-	[[nodiscard]] bool is_func_arg() const;
+	[[nodiscard]] NodeFunctionHeaderRef* is_func_arg() const;
 	[[nodiscard]] bool is_literal();
 };
 
@@ -117,9 +114,9 @@ T* get_parent_of_type(const NodeAST& node) {
 	return nullptr;
 }
 
-struct NodeDeadCode : NodeAST {
-    explicit NodeDeadCode(const Token tok) : NodeAST(tok, NodeType::DeadCode) {};
-    NodeAST *accept(struct ASTVisitor &visitor) override;
+struct NodeDeadCode final : NodeAST {
+    explicit NodeDeadCode(const Token &tok) : NodeAST(tok, NodeType::DeadCode) {};
+    NodeAST *accept(ASTVisitor &visitor) override;
     NodeDeadCode(const NodeDeadCode& other) : NodeAST(other) {}
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {return "";}
@@ -133,8 +130,8 @@ struct NodeReference : NodeAST {
 	enum Kind{Builtin, Compiler, User, Throwaway};
 	Kind kind = User;
 	DataType data_type = DataType::Mutable;
-    inline explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::DeadCode) {}
-    inline NodeReference(std::string name, NodeType node_type, Token tok)
+    explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::DeadCode) {}
+    NodeReference(std::string name, NodeType node_type, Token tok)
             : NodeAST(std::move(tok), node_type), name(std::move(name)) {}
 	~NodeReference() override;
     // Kopierkonstruktor
@@ -156,8 +153,8 @@ struct NodeReference : NodeAST {
 	bool needs_get_ui_id() const;
 	/// determines if reference is reference to struct member
 	[[nodiscard]] bool is_member_ref() const;
-	/// checks if reference is raw version of multi-dimensional array
-	bool is_raw_array() {
+	/// checks if reference is raw version of multidimensional array
+	bool is_raw_array() const {
 		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw");
 	}
 	/// when is variable = raw array? if variable has _ in front and is array and was declared without _
@@ -189,14 +186,14 @@ struct NodeReference : NodeAST {
 	/// checks if reference is l_value in an assignment
     [[nodiscard]] struct NodeSingleAssignment* is_l_value() const;
 	/// checks if reference is somewhere in the r_value expresssion
-    NodeSingleAssignment *is_r_value() const;
+    [[nodiscard]] NodeSingleAssignment *is_r_value() const;
 	/// checks if reference is in a string representation (printing or string assignment)
-	[[nodiscard]] bool is_string_env();
+	[[nodiscard]] bool is_string_env() const;
 	virtual std::unique_ptr<NodeReference> expand_dimension(std::unique_ptr<NodeAST> new_index) {
 		return nullptr;
 	}
 	void remove_obj_prefix() {
-		size_t pos = name.find(OBJ_DELIMITER);
+		const size_t pos = name.find(OBJ_DELIMITER);
 		if (pos != std::string::npos)
 			name = name.substr(pos + OBJ_DELIMITER.size());
 	}
@@ -206,7 +203,13 @@ struct NodeReference : NodeAST {
 	virtual std::unique_ptr<NodeAST> get_size();
 };
 
-struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeDataStructure> {
+struct NodeVariable;
+struct NodePointer;
+struct NodeArray;
+struct NodeNDArray;
+struct NodeList;
+
+struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructure> {
 	bool is_used = false;
 	bool is_engine = false;
 	std::optional<Token> persistence;
@@ -217,7 +220,7 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 	DataType data_type;
 	std::string name;
 	std::unordered_set<NodeReference*> references;
-	inline NodeDataStructure(std::string name, Type* ty, Token tok, NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {
+	NodeDataStructure(std::string name, Type* ty, Token tok, const NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {
         this->ty = ty;
     }
 	// Kopierkonstruktor
@@ -229,22 +232,22 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 	}
     virtual std::unique_ptr<NodeReference> to_reference();
 	/// determines if current data structure is local variable and sets is_local flag
-	bool determine_locality(class NodeProgram* program, struct NodeBlock* current_block);
+	bool determine_locality(const NodeProgram* program, const NodeBlock* current_block);
 	/// determines if current data structure is a parameter in a function definition
-	bool is_function_param();
+	bool is_function_param() const;
 	/// determines if current data structure is member of a struct, if yes returns pointer to struct
-	NodeStruct* is_member();
+	NodeStruct* is_member() const;
 	/// tries to infer the type by specializing given type from Number to Integer
 	virtual Type* cast_type();
 	/// returns fitting reference node type for the data structures
 	virtual NodeType get_ref_node_type() {return NodeType::DeadCode;}
 	void match_metadata(const std::shared_ptr<NodeDataStructure>& data_structure);
 	/// methods to change node type. Everything possible is copied over, even the type;
-	virtual std::unique_ptr<class NodeVariable> to_variable() {return nullptr;}
-	virtual std::unique_ptr<class NodePointer> to_pointer() {return nullptr;}
-	virtual std::unique_ptr<class NodeArray> to_array(std::unique_ptr<NodeAST> size) {return nullptr;}
-	virtual std::unique_ptr<class NodeNDArray> to_ndarray() {return nullptr;}
-	virtual std::unique_ptr<class NodeList> to_list() {return nullptr;}
+	virtual std::unique_ptr<NodeVariable> to_variable() {return nullptr;}
+	virtual std::unique_ptr<NodePointer> to_pointer() {return nullptr;}
+	virtual std::unique_ptr<NodeArray> to_array(std::unique_ptr<NodeAST> size) {return nullptr;}
+	virtual std::unique_ptr<NodeNDArray> to_ndarray() {return nullptr;}
+	virtual std::unique_ptr<NodeList> to_list() {return nullptr;}
 	/// lower type from object to int if applicable
 	NodeDataStructure* lower_type();
 	virtual std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) {
@@ -254,7 +257,7 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 	NodeDataStructure *replace_datastruct(std::unique_ptr<NodeDataStructure> new_node);
 	bool is_num_elements_constant() const {
 		if(data_type != DataType::Const) return false;
-		size_t pos = name.find(OBJ_DELIMITER+"num_elements");
+		const size_t pos = name.find(OBJ_DELIMITER+"num_elements");
 		if(pos == std::string::npos) return false;
 		return true;
 	}
@@ -278,25 +281,25 @@ struct NodeDataStructure : NodeAST, public std::enable_shared_from_this<NodeData
 };
 
 struct NodeInstruction : NodeAST {
-    inline explicit NodeInstruction(NodeType node_type, Token tok) : NodeAST(std::move(tok), node_type) {};
+    explicit NodeInstruction(const NodeType node_type, Token tok) : NodeAST(std::move(tok), node_type) {};
     ~NodeInstruction() override = default;
     NodeInstruction(const NodeInstruction& other) : NodeAST(other) {};
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	std::string get_string() override {return "";}
 };
 
-struct NodeExpression : NodeAST {
-    inline explicit NodeExpression(NodeType node_type, Token tok) : NodeAST(std::move(tok), node_type) {};
+struct NodeExpression final : NodeAST {
+    explicit NodeExpression(const NodeType node_type, Token tok) : NodeAST(std::move(tok), node_type) {};
     ~NodeExpression() override = default;
     NodeExpression(const NodeExpression& other) : NodeAST(other) {};
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	std::string get_string() override {return "";}
 };
 
-struct NodeWildcard : NodeAST {
+struct NodeWildcard final : NodeAST {
 	std::string value;
-	inline explicit NodeWildcard(std::string v, Token tok) : NodeAST(std::move(tok), NodeType::Wildcard), value(v) {}
-	NodeAST* accept(struct ASTVisitor &visitor) override;
+	explicit NodeWildcard(std::string v, Token tok) : NodeAST(std::move(tok), NodeType::Wildcard), value(v) {}
+	NodeAST* accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeWildcard(const NodeWildcard& other) : NodeAST(other), value(other.value) {}
 	// Clone Methode
@@ -304,13 +307,13 @@ struct NodeWildcard : NodeAST {
 	std::string get_string() override {
 		return value;
 	}
-	bool check_semantic();
+	bool check_semantic() const;
 };
 
-struct NodeInt : NodeAST {
+struct NodeInt final : NodeAST {
 	int32_t value;
-	inline explicit NodeInt(int32_t v, Token tok) : NodeAST(std::move(tok), NodeType::Int), value(v) {}
-	NodeAST* accept(struct ASTVisitor &visitor) override;
+	explicit NodeInt(const int32_t v, Token tok) : NodeAST(std::move(tok), NodeType::Int), value(v) {}
+	NodeAST* accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeInt(const NodeInt& other) : NodeAST(other), value(other.value) {}
 	// Clone Methode
@@ -320,10 +323,10 @@ struct NodeInt : NodeAST {
 	}
 };
 
-struct NodeReal : NodeAST {
+struct NodeReal final : NodeAST {
     double value;
-    inline explicit NodeReal(double value, Token tok) : NodeAST(std::move(tok), NodeType::Real), value(value) {}
-    NodeAST* accept(struct ASTVisitor &visitor) override;
+    explicit NodeReal(const double value, Token tok) : NodeAST(std::move(tok), NodeType::Real), value(value) {}
+    NodeAST* accept(ASTVisitor &visitor) override;
     // Kopierkonstruktor
     NodeReal(const NodeReal& other) : NodeAST(other), value(other.value) {}
     // Clone Methode
@@ -333,10 +336,10 @@ struct NodeReal : NodeAST {
     }
 };
 
-struct NodeString : NodeAST {
+struct NodeString final : NodeAST {
     std::string value;
-    inline explicit NodeString(std::string value, Token tok) : NodeAST(std::move(tok), NodeType::String), value(std::move(value)) {}
-    NodeAST* accept(struct ASTVisitor &visitor) override;
+    explicit NodeString(const std::string &value, Token tok) : NodeAST(std::move(tok), NodeType::String), value(std::move(value)) {}
+    NodeAST* accept(ASTVisitor &visitor) override;
     // Kopierkonstruktor
     NodeString(const NodeString& other) : NodeAST(other), value(other.value) {}
     // Clone Methode
@@ -346,12 +349,12 @@ struct NodeString : NodeAST {
     }
 };
 
-struct NodeReferenceList: NodeAST {
+struct NodeReferenceList final : NodeAST {
 	std::vector<std::unique_ptr<NodeReference>> references;
-	inline explicit NodeReferenceList(Token tok) : NodeAST(std::move(tok), NodeType::ReferenceList) {
+	explicit NodeReferenceList(Token tok) : NodeAST(std::move(tok), NodeType::ReferenceList) {
 		set_child_parents();
 	}
-	inline explicit NodeReferenceList(std::vector<std::unique_ptr<NodeReference>> references, Token tok) : NodeAST(std::move(tok), NodeType::ReferenceList), references(std::move(references)) {
+	explicit NodeReferenceList(std::vector<std::unique_ptr<NodeReference>> references, Token tok) : NodeAST(std::move(tok), NodeType::ReferenceList), references(std::move(references)) {
 		set_child_parents();
 	}
 	// Variadischer Template-Konstruktor
@@ -360,7 +363,7 @@ struct NodeReferenceList: NodeAST {
 		(add_reference(std::move(references)), ...);
 	}
 
-	NodeAST* accept(struct ASTVisitor &visitor) override;
+	NodeAST* accept(ASTVisitor &visitor) override;
 	NodeAST* replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	// Kopierkonstruktor
 	NodeReferenceList(const NodeReferenceList& other);
@@ -368,21 +371,21 @@ struct NodeReferenceList: NodeAST {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
-		for(auto& ref : references) ref->update_parents(this);
+		for(const auto& ref : references) ref->update_parents(this);
 	}
 	void set_child_parents() override {
 		for(auto& ref : references) {
 			if(ref) ref->parent = this;
 		}
-	};
+	}
 	std::string get_string() override {
 		std::string str;
 		if(references.empty()) return str;
-		for(auto & ref : references) str += ref->get_string() + ", ";
+		for(const auto & ref : references) str += ref->get_string() + ", ";
 		return str.erase(str.size() - 2);
 	}
 	void update_token_data(const Token& token) override {
-		for(auto &p : references) p->update_token_data(token);
+		for(const auto &p : references) p->update_token_data(token);
 	}
 //	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	/**
@@ -390,7 +393,7 @@ struct NodeReferenceList: NodeAST {
 	 * @param node Pointer to the node to find.
 	 * @return Index of the node if found, otherwise -1.
 	 */
-	int get_idx(NodeAST* node);
+	int get_idx(const NodeAST* node) const;
 	std::unique_ptr<NodeReference>& param(int idx) {
 		return references.at(idx);
 	}
@@ -402,26 +405,24 @@ struct NodeReferenceList: NodeAST {
 	}
 	void add_reference(std::unique_ptr<NodeReference> ref);
 	void prepend_reference(std::unique_ptr<NodeReference> ref);
-
-
 };
 
-struct NodeParamList: NodeAST {
+struct NodeParamList final : NodeAST {
     std::vector<std::unique_ptr<NodeAST>> params{};
-    inline explicit NodeParamList(Token tok) : NodeAST(std::move(tok), NodeType::ParamList) {
-        set_child_parents();
+    explicit NodeParamList(Token tok) : NodeAST(std::move(tok), NodeType::ParamList) {
+        NodeParamList::set_child_parents();
     }
-    inline explicit NodeParamList(std::vector<std::unique_ptr<NodeAST>> params, Token tok) : NodeAST(std::move(tok), NodeType::ParamList), params(std::move(params)) {
-		set_child_parents();
+    explicit NodeParamList(std::vector<std::unique_ptr<NodeAST>> params, Token tok) : NodeAST(std::move(tok), NodeType::ParamList), params(std::move(params)) {
+		NodeParamList::set_child_parents();
 	}
 	// Variadischer Template-Konstruktor
 	template<typename... Args>
 	explicit NodeParamList(Token tok, Args&&... args) : NodeAST(std::move(tok), NodeType::ParamList) {
 		(params.push_back(std::move(args)), ...);
-		set_child_parents();
+		NodeParamList::set_child_parents();
 	}
 
-	NodeAST* accept(struct ASTVisitor &visitor) override;
+	NodeAST* accept(ASTVisitor &visitor) override;
 	NodeAST* replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Kopierkonstruktor
     NodeParamList(const NodeParamList& other);
@@ -429,13 +430,13 @@ struct NodeParamList: NodeAST {
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override {
         parent = new_parent;
-        for(auto& param : params) param->update_parents(this);
+        for(const auto& param : params) param->update_parents(this);
     }
 	void set_child_parents() override {
 		for(auto& param : params) {
 			if(param) param->parent = this;
 		}
-	};
+	}
     std::string get_string() override {
         std::string str;
 		if(params.empty()) return str;
@@ -453,7 +454,7 @@ struct NodeParamList: NodeAST {
 	 * @param node Pointer to the node to find.
 	 * @return Index of the node if found, otherwise -1.
 	 */
-	int get_idx(NodeAST* node);
+	int get_idx(const NodeAST* node) const;
 	std::unique_ptr<NodeAST>& param(int idx) {
 		return params.at(idx);
 	}
@@ -488,22 +489,22 @@ struct NodeParamList: NodeAST {
 	std::unique_ptr<struct NodeInitializerList> to_initializer_list();
 };
 
-struct NodeInitializerList: NodeAST {
+struct NodeInitializerList final : NodeAST {
 	std::vector<std::unique_ptr<NodeAST>> elements;
-	inline explicit NodeInitializerList(Token tok) : NodeAST(std::move(tok), NodeType::InitializerList) {
-		set_child_parents();
+	explicit NodeInitializerList(Token tok) : NodeAST(std::move(tok), NodeType::InitializerList) {
+		NodeInitializerList::set_child_parents();
 	}
-	inline explicit NodeInitializerList(std::vector<std::unique_ptr<NodeAST>> elements, Token tok)
+	explicit NodeInitializerList(std::vector<std::unique_ptr<NodeAST>> elements, Token tok)
 	: NodeAST(std::move(tok), NodeType::InitializerList), elements(std::move(elements)) {
-		set_child_parents();
+		NodeInitializerList::set_child_parents();
 	}
 	template<typename... Args>
 	explicit NodeInitializerList(Token tok, Args &&... args) : NodeAST(std::move(tok), NodeType::InitializerList) {
 		(elements.push_back(std::move(args)), ...);
-		set_child_parents();
+		NodeInitializerList::set_child_parents();
 	}
 
-	NodeAST *accept(struct ASTVisitor &visitor) override;
+	NodeAST *accept(ASTVisitor &visitor) override;
 	NodeAST *replace_child(NodeAST *oldChild, std::unique_ptr<NodeAST> newChild) override;
 	// Kopierkonstruktor
 	NodeInitializerList(const NodeInitializerList &other);
@@ -512,24 +513,24 @@ struct NodeInitializerList: NodeAST {
 
 	void update_parents(NodeAST *new_parent) override {
 		parent = new_parent;
-		for (auto &el : elements) el->update_parents(this);
+		for (const auto &el : elements) el->update_parents(this);
 	}
 
 	void set_child_parents() override {
-		for (auto &el : elements) el->parent = this;
-	};
+		for (const auto &el : elements) el->parent = this;
+	}
 
 	std::string get_string() override {
 		std::string str;
 		if (elements.empty()) return str;
-		for (auto &p : elements) {
+		for (const auto &p : elements) {
 			str += p->get_string() + ", ";
 		}
 		return str.erase(str.size() - 2);
 	}
 
 	void update_token_data(const Token &token) override {
-		for (auto &el : elements) el->update_token_data(token);
+		for (const auto &el : elements) el->update_token_data(token);
 	}
 
 	void add_element(std::unique_ptr<NodeAST> param) {
@@ -569,14 +570,15 @@ struct NodeInitializerList: NodeAST {
 
 };
 
-struct NodeUnaryExpr : NodeAST {
+struct NodeUnaryExpr final : NodeAST {
     token op;
     std::unique_ptr<NodeAST> operand;
-    inline explicit NodeUnaryExpr(Token tok) : NodeAST(std::move(tok), NodeType::UnaryExpr) {}
-    inline NodeUnaryExpr(token op, std::unique_ptr<NodeAST> operand, Token tok) : NodeAST(std::move(tok), NodeType::UnaryExpr), operand(std::move(operand)), op(std::move(op)) {
-		set_child_parents();
+    explicit NodeUnaryExpr(Token tok) : NodeAST(std::move(tok), NodeType::UnaryExpr) {}
+    NodeUnaryExpr(token op, std::unique_ptr<NodeAST> operand, Token tok)
+	: NodeAST(std::move(tok), NodeType::UnaryExpr), op(std::move(op)), operand(std::move(operand)) {
+		NodeUnaryExpr::set_child_parents();
 	}
-    NodeAST* accept(struct ASTVisitor &visitor) override;
+    NodeAST* accept(ASTVisitor &visitor) override;
     NodeAST* replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Copy Constructor
     NodeUnaryExpr(const NodeUnaryExpr& other);
@@ -588,25 +590,25 @@ struct NodeUnaryExpr : NodeAST {
     }
 	void set_child_parents() override {
 		if(operand) operand->parent = this;
-	};
+	}
     std::string get_string() override {
-        return tokenStrings[(int)op] + operand->get_string();
+        return tokenStrings[static_cast<int>(op)] + operand->get_string();
     }
     void update_token_data(const Token& token) override {
         operand -> update_token_data(token);
     }
 };
 
-struct NodeBinaryExpr: NodeAST {
+struct NodeBinaryExpr final : NodeAST {
 	std::unique_ptr<NodeAST> left, right;
 	token op;
     bool has_forced_parenth = false;
-    inline explicit NodeBinaryExpr(Token tok) : NodeAST(std::move(tok), NodeType::BinaryExpr) {}
-    inline NodeBinaryExpr(token op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right, Token tok)
-    	: NodeAST(std::move(tok), NodeType::BinaryExpr), op(op), left(std::move(left)), right(std::move(right)) {
+    explicit NodeBinaryExpr(Token tok) : NodeAST(std::move(tok), NodeType::BinaryExpr) {}
+    NodeBinaryExpr(const token op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right, Token tok)
+    	: NodeAST(std::move(tok), NodeType::BinaryExpr), left(std::move(left)), right(std::move(right)), op(op) {
 		set_child_parents();
 	}
-	NodeAST* accept(struct ASTVisitor &visitor) override;
+	NodeAST* accept(ASTVisitor &visitor) override;
 	NodeAST* replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Copy Constructor
     NodeBinaryExpr(const NodeBinaryExpr& other);
@@ -620,9 +622,9 @@ struct NodeBinaryExpr: NodeAST {
 	void set_child_parents() override {
 		if(left) left->parent = this;
 		if(right) right->parent = this;
-	};
+	}
     std::string get_string() override {
-        return left->get_string() + tokenStrings[(int)op] + right->get_string();
+        return left->get_string() + tokenStrings[static_cast<int>(op)] + right->get_string();
     }
     void update_token_data(const Token& token) override {
         left -> update_token_data(token);
@@ -635,7 +637,7 @@ struct NodeBinaryExpr: NodeAST {
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 };
 
-struct NodeCallback: NodeAST {
+struct NodeCallback final : NodeAST {
 	bool is_thread_safe = true;
     std::string begin_callback;
     std::unique_ptr<NodeAST> callback_id = nullptr;
@@ -643,8 +645,8 @@ struct NodeCallback: NodeAST {
     std::string end_callback;
     explicit NodeCallback(Token tok);
 	NodeCallback(std::string begin_callback, std::unique_ptr<NodeBlock> statements, std::string end_callback, Token tok);
-    ~NodeCallback();
-	NodeAST* accept(struct ASTVisitor &visitor) override;
+    // ~NodeCallback();
+	NodeAST* accept(ASTVisitor &visitor) override;
     NodeAST* replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     NodeCallback(const NodeCallback& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
@@ -654,19 +656,22 @@ struct NodeCallback: NodeAST {
     void update_token_data(const Token& token) override;
 };
 
-struct NodeImport : NodeAST {
+struct NodeImport final : NodeAST {
     std::string filepath;
     std::string alias;
-    inline explicit NodeImport(std::string filepath, std::string alias, Token tok)
+    explicit NodeImport(std::string filepath, std::string alias, Token tok)
         : NodeAST(std::move(tok), NodeType::Import), filepath(std::move(filepath)), alias(std::move(alias)) {}
-    NodeAST* accept(struct ASTVisitor &visitor) override;
+    NodeAST* accept(ASTVisitor &visitor) override;
     NodeImport(const NodeImport& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override { return ""; }
     void update_token_data(const Token& token) override {}
 };
 
-struct NodeFunctionDefinition: NodeAST, public std::enable_shared_from_this<NodeFunctionDefinition> {
+struct NodeReturn;
+struct NodeFunctionHeader;
+
+struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<NodeFunctionDefinition> {
 	/// is tagged when restricted builtin functions are used within this function (save_array, load_array, etc)
 	bool is_restricted = false;
 	/// is tagged when non thread-safe builtin functions are used within this function (wait, wait_asnyc, etc)
@@ -676,9 +681,9 @@ struct NodeFunctionDefinition: NodeAST, public std::enable_shared_from_this<Node
 	bool visited = false;
 	int num_return_params = 0;
 	int num_return_stmts = 0;
-	std::vector<struct NodeReturn*> return_stmts;
-    std::unordered_set<class NodeFunctionCall*> call_sites = {};
-    std::shared_ptr<struct NodeFunctionHeader> header;
+	std::vector<NodeReturn*> return_stmts;
+    std::unordered_set<NodeFunctionCall*> call_sites = {};
+    std::shared_ptr<NodeFunctionHeader> header;
     std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;
     std::unique_ptr<NodeBlock> body;
@@ -687,30 +692,30 @@ struct NodeFunctionDefinition: NodeAST, public std::enable_shared_from_this<Node
 						   std::optional<std::unique_ptr<NodeDataStructure>> returnVariable, bool override,
 						   std::unique_ptr<NodeBlock> body, Token tok);
     ~NodeFunctionDefinition() override;
-    NodeAST* accept(struct ASTVisitor &visitor) override;
+    NodeAST* accept(ASTVisitor &visitor) override;
     NodeFunctionDefinition(const NodeFunctionDefinition& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override;
-	void set_child_parents() override;;
+	void set_child_parents() override;
     std::string get_string() override {return "";}
     void update_token_data(const Token& token) override;
 	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
-	NodeStruct* is_method();
+	NodeStruct* is_method() const;
 	void update_param_data_type() const;
-	std::shared_ptr<NodeDataStructure>& get_param(int i);
+	std::shared_ptr<NodeDataStructure>& get_param(int i) const;
 	[[nodiscard]] size_t get_num_params() const;
 	[[nodiscard]] bool has_no_params() const;
-	bool is_expression_function();
+	bool is_expression_function() const;
 	std::shared_ptr<NodeFunctionDefinition> get_shared() {
 		return shared_from_this();
 	}
 	void do_register_reuse(NodeProgram* program);
-	void do_return_param_promotion();
+	void do_return_param_promotion(NodeProgram* program);
 	bool do_return_path_validation();
 };
 
-struct NodeProgram : NodeAST {
+struct NodeProgram final : NodeAST {
 	class DefinitionProvider* def_provider = nullptr;
 	NodeCallback* init_callback = nullptr;
 	NodeCallback* current_callback = nullptr;
@@ -724,19 +729,19 @@ struct NodeProgram : NodeAST {
     std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> additional_function_definitions;
 	std::unordered_map<StringIntKey, std::weak_ptr<NodeFunctionDefinition>, StringIntKeyHash> function_lookup;
-	std::vector<std::unique_ptr<struct NodeStruct>> struct_definitions;
+	std::vector<std::unique_ptr<NodeStruct>> struct_definitions;
 	std::unordered_map<std::string, NodeStruct*> struct_lookup;
 	std::unique_ptr<NodeBlock> global_declarations;
 	explicit NodeProgram(Token tok);
 	NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 					   std::vector<std::shared_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok);
 	~NodeProgram() override;
-    NodeAST* accept(struct ASTVisitor &visitor) override;
+    NodeAST* accept(ASTVisitor &visitor) override;
     // Kopierkonstruktor
     NodeProgram(const NodeProgram& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     void update_parents(NodeAST* new_parent) override;
-	void set_child_parents() override;;
+	void set_child_parents() override;
     std::string get_string() override {return "";}
     void update_token_data(const Token& token) override {}
 	/// update function lookup table
@@ -744,7 +749,7 @@ struct NodeProgram : NodeAST {
 	void add_function_definition(const std::shared_ptr<NodeFunctionDefinition>& def);
 	void update_struct_lookup();
 	/// Checks for uniqueness of all callbacks except "on ui_control"
-	bool check_unique_callbacks();
+	bool check_unique_callbacks() const;
 	/// Checks for existence and uniqueness of "on init" callback
 	/// If found, returns pointer to the callback node
 	NodeCallback* move_on_init_callback();
@@ -755,7 +760,7 @@ struct NodeProgram : NodeAST {
 	void inline_structs();
 	void reset_function_visited_flag();
 	void reset_function_used_flag();
-	bool is_init_callback(NodeCallback* curr_callback) const {
+	bool is_init_callback(const NodeCallback* curr_callback) const {
 		return curr_callback == init_callback;
 	}
 	void remove_unused_functions();

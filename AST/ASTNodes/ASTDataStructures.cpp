@@ -18,12 +18,12 @@
 #include "../../Lowering/PreLoweringStruct.h"
 
 // ************* NodeVariable ***************
-NodeAST *NodeVariable::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeVariable::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeVariable::NodeVariable(const NodeVariable& other)
 	: NodeDataStructure(other) {
-	set_child_parents();
+	NodeVariable::set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeVariable::clone() const {
 	return std::make_unique<NodeVariable>(*this);
@@ -73,7 +73,7 @@ NodeAST *NodePointer::accept(struct ASTVisitor &visitor) {
 }
 NodePointer::NodePointer(const NodePointer& other)
 	: NodeDataStructure(other) {
-	set_child_parents();
+	NodePointer::set_child_parents();
 }
 std::unique_ptr<NodeAST> NodePointer::clone() const {
 	return std::make_unique<NodePointer>(*this);
@@ -111,7 +111,7 @@ std::unique_ptr<NodeDataStructure> NodePointer::inflate_dimension(std::unique_pt
 }
 
 // ************* NodeArray ***************
-NodeAST *NodeArray::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeArray::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeArray::NodeArray(const NodeArray& other)
@@ -164,7 +164,7 @@ std::unique_ptr<NodeDataStructure> NodeArray::inflate_dimension(std::unique_ptr<
 }
 
 // ************* NodeNDArray ***************
-NodeAST *NodeNDArray::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeNDArray::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeNDArray::NodeNDArray(const NodeNDArray& other)
@@ -340,7 +340,7 @@ ASTDesugaring * NodeConst::get_desugaring(NodeProgram *program) const {
 
 
 // ************* NodeStruct ***************
-NodeAST *NodeStruct::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeStruct::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeStruct::NodeStruct(const NodeStruct& other)
