@@ -156,13 +156,13 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 	[[nodiscard]] int num_wildcards() const override;
 	/// clones sizes list from declaration if it is a NDArray
 	bool determine_sizes();
-	CompileError throw_missing_indexes_error() const {
+	[[nodiscard]] CompileError throw_missing_indexes_error() const {
 		auto compile_error = CompileError(ErrorType::SyntaxError, "","", tok);
 		compile_error.m_message = "NDArray reference requires indexes in this context: " + tok.val + ".";
 		compile_error.m_expected = "Valid indexes";
 		return compile_error;
 	}
-	CompileError throw_missing_sizes_error() const {
+	[[nodiscard]] CompileError throw_missing_sizes_error() const {
 		auto compile_error = CompileError(ErrorType::InternalError, "","", tok);
 		compile_error.m_message = "NDArray reference has unknown sizes: " + tok.val + ".";
 		compile_error.m_expected = "Valid sizes";

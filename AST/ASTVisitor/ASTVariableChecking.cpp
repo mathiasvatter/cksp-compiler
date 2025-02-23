@@ -5,19 +5,14 @@
 #include "ASTVariableChecking.h"
 #include <future>
 
-ASTVariableChecking::ASTVariableChecking(NodeProgram* main, bool fail)
-	: m_def_provider(main->def_provider), fail(fail) {
+ASTVariableChecking::ASTVariableChecking(NodeProgram* main)
+	: m_def_provider(main->def_provider) {
+	fail = false;
 	m_program = main;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_program = &node;
-	// update function lookup map because of altered param counts after lambda lifting
-	node.merge_function_definitions();
-    node.update_function_lookup();
-	// erase all previously saved scopes
-	m_def_provider->refresh_scopes();
-	m_def_provider->refresh_data_vectors();
 
 	// refresh call_sites of function definitions
 //	for(const auto & func_def : node.function_definitions) func_def->call_sites.clear();
@@ -243,7 +238,7 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		if(m_current_struct) {
-			auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+			const auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
 			DefinitionProvider::throw_declaration_error(node, msg).exit();
 		}
 		DefinitionProvider::throw_declaration_error(node).exit();
@@ -304,7 +299,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 		} else {
 
 			if(m_current_struct) {
-				auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+				const auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
 				DefinitionProvider::throw_declaration_error(node, msg).exit();
 			}
 
@@ -389,7 +384,7 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 	// add extra members scope
 	m_def_provider->add_scope();
 	node.members->accept(*this);
-	for(auto & m : node.methods) {
+	for(const auto & m : node.methods) {
 		m->accept(*this);
 	}
 	// remove the members scope

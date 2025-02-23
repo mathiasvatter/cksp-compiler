@@ -8,7 +8,7 @@
 #include "ReturnFunctionRewriting/ReturnFunctionIsolation.h"
 #include "ASTTemporaryPointerScope.h"
 
-class ASTReturnFunctionRewriting: public ASTVisitor {
+class ASTReturnFunctionRewriting final : public ASTVisitor {
 	DefinitionProvider *m_def_provider;
 public:
 	explicit ASTReturnFunctionRewriting(NodeProgram *main) : m_def_provider(main->def_provider) {
@@ -33,7 +33,7 @@ private:
 		m_program = &node;
 
 		m_program->global_declarations->accept(*this);
-		for(auto & callback : node.callbacks) {
+		for(const auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
 

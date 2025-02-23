@@ -37,7 +37,7 @@ void Compiler::compile() {
 //	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-	// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
     // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
@@ -65,8 +65,7 @@ void Compiler::compile() {
 	auto tokens = tokenizer.tokenize();
 
 	ImportProcessor imports(tokens, input_filename, &m_definition_provider);
-	auto import_result = imports.process_imports();
-	if(import_result.is_error()) {
+	if(auto import_result = imports.process_imports(); import_result.is_error()) {
 		auto error = import_result.get_error();
         error.m_message += " Preprocessor failed while processing import statements.";
         error.exit();
@@ -116,8 +115,7 @@ void Compiler::compile() {
 	ASTTypeAnnotations type_annotations(m_program);
 	ast->accept(type_annotations);
 
-	ASTVariableChecking variable_checking0(m_program, false);
-	ast->accept(variable_checking0);
+	ast->do_variable_checking(m_program, false);
 	ast->collect_references();
 
 	compile_time.stop("Variable Checking");
@@ -179,8 +177,7 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
 
-	ASTVariableChecking variable_checking1(m_program, true);
-	ast->accept(variable_checking1);
+	ast->do_variable_checking(m_program, true);
 	ast->remove_references();
 	ast->collect_references();
 

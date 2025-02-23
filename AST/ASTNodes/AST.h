@@ -91,6 +91,8 @@ struct NodeAST {
 	void do_constant_folding();
     virtual NodeAST* do_array_normalization(NodeProgram *program);
 	void do_type_inference(NodeProgram *program);
+	NodeAST* do_variable_checking(NodeProgram* program, bool fail);
+
 	/// Determines if current Node is function argument
 	[[nodiscard]] NodeFunctionHeaderRef* is_func_arg() const;
 	[[nodiscard]] bool is_literal();
@@ -150,11 +152,11 @@ struct NodeReference : NodeAST {
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure);
 	std::unique_ptr<struct NodeFunctionCall> wrap_in_get_ui_id();
-	bool needs_get_ui_id() const;
+	[[nodiscard]] bool needs_get_ui_id() const;
 	/// determines if reference is reference to struct member
 	[[nodiscard]] bool is_member_ref() const;
 	/// checks if reference is raw version of multidimensional array
-	bool is_raw_array() const {
+	[[nodiscard]] bool is_raw_array() const {
 		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw");
 	}
 	/// when is variable = raw array? if variable has _ in front and is array and was declared without _
