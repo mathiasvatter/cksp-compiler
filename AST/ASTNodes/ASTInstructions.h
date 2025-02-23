@@ -45,9 +45,10 @@ struct NodeFunctionCall final : NodeInstruction {
 	inline static const std::array<std::string, 7> KindStrings = {"Property","Builtin","UserDefined","Undefined","Method","Constructor","Operator"};
     Kind kind = Undefined;
     bool is_call = false;
+	bool is_callable = false;
 	bool is_new = false;
 	bool is_temporary_constructor = false;
-    std::unique_ptr<class NodeFunctionHeaderRef> function;
+    std::unique_ptr<NodeFunctionHeaderRef> function;
     std::weak_ptr<NodeFunctionDefinition> definition;
 	explicit NodeFunctionCall(Token tok);
 	NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHeaderRef> function, Token tok);
@@ -67,7 +68,7 @@ struct NodeFunctionCall final : NodeInstruction {
     void update_token_data(const Token& token) override;
     ASTLowering* get_lowering(NodeProgram *program) const override;
     /// attempts to get and set the definition pointer of the function call and updates the call sites of the definition
-    std::shared_ptr<NodeFunctionDefinition> find_definition(class NodeProgram *program);
+    std::shared_ptr<NodeFunctionDefinition> find_definition(NodeProgram *program);
     /// attempts to get and match metadata from builtin function to this
     std::shared_ptr<NodeFunctionDefinition> find_builtin_definition(NodeProgram *program);
     /// attempts to get property function that and set definition pointer + error handling
@@ -96,6 +97,7 @@ struct NodeFunctionCall final : NodeInstruction {
 		"inc", "dec",
 	};
 	bool is_destructive_builtin_func() const;
+	bool determine_callability(NodeProgram* program, NodeCallback* current_callback);
 };
 
 struct NodeSortSearch final : NodeInstruction {
@@ -764,10 +766,10 @@ struct NodeBlock final : NodeInstruction {
 						   std::vector<std::unique_ptr<NodeAST>> lower_bounds,
 						   std::vector<std::unique_ptr<NodeAST>> upper_bounds);
 	NodeBlock* wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound, bool declare=true);
-	std::unique_ptr<NodeAST>& get_statement(const size_t index) const {
+	[[nodiscard]] std::unique_ptr<NodeAST>& get_statement(const size_t index) const {
 		return statements[index]->statement;
 	}
-	std::unique_ptr<NodeAST>& get_last_statement() const {
+	[[nodiscard]] std::unique_ptr<NodeAST>& get_last_statement() const {
 		return statements.back()->statement;
 	}
 };

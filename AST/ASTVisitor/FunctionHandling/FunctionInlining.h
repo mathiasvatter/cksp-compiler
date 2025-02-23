@@ -6,8 +6,10 @@
 
 #include "../ASTVisitor.h"
 
+/**
+ * Takes a function call and inlines the function body into the call after substituting all parameters
+ */
 class FunctionInlining : public ASTVisitor {
-private:
 
 public:
 	explicit FunctionInlining(NodeProgram* main) {
@@ -19,7 +21,7 @@ public:
 		return call.accept(*this);
 	}
 
-	inline NodeAST * visit(NodeFunctionCall& node) override {
+	NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		if(node.is_builtin_kind()) {
 			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
@@ -61,9 +63,9 @@ public:
 	}
 
 private:
-	static inline std::unique_ptr<NodeAST> get_expression_return(NodeBlock* body) {
-		auto stmt = body->statements[0]->statement.get();
-		if(auto ret = stmt->cast<NodeReturn>()) {
+	static std::unique_ptr<NodeAST> get_expression_return(NodeBlock* body) {
+		const auto stmt = body->statements[0]->statement.get();
+		if(const auto ret = stmt->cast<NodeReturn>()) {
 			return std::move(ret->return_variables[0]);
 		}
 		auto error = CompileError(ErrorType::InternalError, "", "", body->tok);
@@ -73,22 +75,22 @@ private:
 	}
 
 	/// do substitution
-	inline NodeAST *visit(NodeNDArrayRef &node) override {
+	NodeAST *visit(NodeNDArrayRef &node) override {
 		if(node.indexes) node.indexes->accept(*this);
 		if(node.sizes) node.sizes->accept(*this);
 		return do_substitution(&node);
 	}
 	/// do substitution
-	inline NodeAST *visit(NodeArrayRef &node) override {
+	NodeAST *visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);
 		return do_substitution(&node);
 	}
 	/// do substitution
-	inline NodeAST *visit(NodeVariableRef &node) override {
+	NodeAST *visit(NodeVariableRef &node) override {
 		return do_substitution(&node);
 	}
 	/// do substitution
-	inline NodeAST *visit(NodeFunctionHeaderRef &node) override {
+	NodeAST *visit(NodeFunctionHeaderRef &node) override {
 		if(node.args) node.args->accept(*this);
 		return do_substitution(&node);
 	}
@@ -115,7 +117,7 @@ private:
 	/// returns empty string if ndarray constant pattern is not found
 	static std::string get_ndarray_constant_base(const std::string& input) {
 		// Finde die Position des letzten Punktes
-		size_t pos = input.find_last_of('.');
+		const size_t pos = input.find_last_of('.');
 		if (pos == std::string::npos) {
 			return ""; // Kein Punkt gefunden, also kein gültiges Muster
 		}
@@ -147,7 +149,7 @@ private:
 	NodeAST* substitute_ndarray_constants(NodeReference* ref) {
 		// special case when variable ref is ndarray constant
 		if(ref->data_type == DataType::Const) {
-			std::string ndarray_name = get_ndarray_constant_base(ref->name);
+			const std::string ndarray_name = get_ndarray_constant_base(ref->name);
 			if(ndarray_name.empty()) {
 				// no ndarray constant pattern found -> search for array constant pattern array.SIZE
 				std::string array_name = get_array_constant_base(ref->name);

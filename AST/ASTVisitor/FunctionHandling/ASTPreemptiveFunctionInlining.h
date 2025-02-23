@@ -94,7 +94,7 @@ private:
 		// does not get deleted because it is only ref and not being called
 		// foo(bar: (): void) -> bar is not called but function ref
 		if(node.get_declaration() and node.is_func_arg()) {
-			if(auto def = node.get_declaration()->parent->cast<NodeFunctionDefinition>()) {
+			if(const auto def = node.get_declaration()->parent->cast<NodeFunctionDefinition>()) {
 				def->is_used = true;
 				def->accept(*this);
 				def->visited = true;

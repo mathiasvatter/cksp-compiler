@@ -20,14 +20,14 @@
  * - Tracks all variables and references in lists and renames them using Gensym to avoid variable capturing when a free
  *   "passive variable" has the same name as a variable in the scope.
  */
-class ASTRegisterReuse : public ASTGlobalScope {
+class ASTRegisterReuse final : public ASTGlobalScope {
 public:
 	explicit ASTRegisterReuse(NodeProgram* program) : ASTGlobalScope(program) {
 		m_def_provider->refresh_scopes();
 		clear_all_maps();
 	}
 
-	inline void do_register_reuse(NodeFunctionDefinition& def) {
+	void do_register_reuse(NodeFunctionDefinition& def) {
 		m_program->current_callback = nullptr;
 		m_def_provider->refresh_scopes();
 		def.accept(*this);
@@ -35,7 +35,7 @@ public:
 		clear_all_maps();
 	}
 
-	inline void do_register_reuse(NodeProgram& program) {
+	void do_register_reuse(NodeProgram& program) {
 		m_program = &program;
 		m_program->current_callback = nullptr;
 		m_def_provider->refresh_scopes();
@@ -46,7 +46,7 @@ public:
 	}
 
 public:
-	inline bool promote_to_global_vars() {
+	bool promote_to_global_vars() {
 		// move all passive_vars declarations to global scope
 		auto local_declare_statements = std::make_unique<NodeBlock>(Token());
 		for(auto & callback : m_all_callback_decl) {
@@ -68,7 +68,7 @@ public:
 		return true;
 	}
 
-	inline bool rename_local_vars() {
+	bool rename_local_vars() {
 		// rename local passive_vars with gensym and add to global scope
 		for(auto & local_var : m_all_local_vars) {
 			local_var->name = m_def_provider->get_fresh_name(local_var->name);
@@ -98,13 +98,13 @@ public:
 		return true;
 	}
 
-	bool inline is_thread_safe_env() {
+	bool is_thread_safe_env() {
 		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or
 			(m_program->get_curr_function() and m_program->get_curr_function()->is_thread_safe);
 	};
 
 private:
-	inline NodeAST* visit(NodeProgram& node) override {
+	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		// update because of potentially altered param counts after lambda lifting
 		node.update_function_lookup();
@@ -120,7 +120,7 @@ private:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeCallback& node) override {
+	NodeAST* visit(NodeCallback& node) override {
 		m_program->current_callback = &node;
 
 		if(node.callback_id) node.callback_id->accept(*this);
@@ -130,7 +130,7 @@ private:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeBlock &node) override {
+	NodeAST* visit(NodeBlock &node) override {
 		m_current_body = &node;
 		if(node.scope) {
 			m_def_provider->add_scope();
@@ -157,7 +157,7 @@ private:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeFunctionCall& node) override {
+	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		node.bind_definition(m_program);
 
@@ -166,7 +166,7 @@ private:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeFunctionDefinition& node) override {
+	NodeAST* visit(NodeFunctionDefinition& node) override {
 		// start every function definition with a clean slate
 		clear_passive_vars();
 		m_program->function_call_stack.push(node.weak_from_this());
@@ -184,7 +184,7 @@ private:
 		return node.get_parent_block() == program->global_declarations.get();
 	}
 
-	inline NodeAST* visit(NodeSingleDeclaration& node) override {
+	NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->determine_locality(m_program, m_current_body);
 
 		if(is_in_global_declarations(node, m_program)) {
@@ -234,7 +234,7 @@ private:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeArrayRef& node) override {
+	NodeAST* visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
 
 		// add all references in local scope to vector for later passive_var replacement
@@ -259,7 +259,7 @@ private:
 		return &node;
 	}
 
-	inline NodeAST * visit(NodeArray& node) override {
+	NodeAST * visit(NodeArray& node) override {
 //		node.determine_locality(m_program, m_current_body);
 
 		if(node.size) node.size->accept(*this);
@@ -268,7 +268,7 @@ private:
 		return &node;
 	}
 
-	inline NodeAST * visit(NodeVariableRef& node) override {
+	NodeAST * visit(NodeVariableRef& node) override {
 		// add all references in local scope to vector for later passive_var replacement
 		m_all_local_references.push_back(&node);
 
@@ -292,7 +292,7 @@ private:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeVariable& node) override {
+	NodeAST* visit(NodeVariable& node) override {
 //		node.determine_locality(m_program, m_current_body);
 		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 		return &node;
@@ -309,7 +309,7 @@ private:
 	/// hash values are the types
 	std::unordered_map<std::string, std::vector<std::shared_ptr<NodeDataStructure>>> m_passive_vars_map;
 	std::unordered_map<std::string, int> m_passive_vars_idx;
-	inline void add_passive_vars(const std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual>& map2) {
+	void add_passive_vars(const std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual>& map2) {
 		for(auto & var : map2) {
 			if(var.second->data_type == DataType::Mutable)
 				m_passive_vars_map[get_passive_var_hash(*var.second)].push_back(var.second);
@@ -317,7 +317,7 @@ private:
 	};
 
 	/// get next free passive_var for given type
-	inline std::shared_ptr<NodeDataStructure> get_free_passive_var(NodeDataStructure& data) {
+	std::shared_ptr<NodeDataStructure> get_free_passive_var(NodeDataStructure& data) {
 		auto hash = get_passive_var_hash(data);
 		auto &vec = m_passive_vars_map[hash];
 		auto &idx = m_passive_vars_idx[hash];
@@ -327,7 +327,7 @@ private:
 		return nullptr;
 	}
 	/// search for new declaration to reference if declaration is replaced by passive_var
-	inline std::shared_ptr<NodeDataStructure> get_new_declaration(const std::string& ref_name) {
+	std::shared_ptr<NodeDataStructure> get_new_declaration(const std::string& ref_name) {
 		for (auto rit = m_passive_vars_replace.rbegin(); rit != m_passive_vars_replace.rend(); ++rit) {
 			auto it = rit->find(ref_name);
 			if (it != rit->end()) {

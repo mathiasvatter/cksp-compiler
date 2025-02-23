@@ -25,6 +25,7 @@
 #include "../../Optimization/ConstantFolding.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "../../Lowering/LoweringInitializerList.h"
+#include "../ASTVisitor/ASTVariableChecking.h"
 #include "../ASTVisitor/TypeInference.h"
 #include "../ASTVisitor/FunctionHandling/ReturnPathValidator.h"
 
@@ -206,6 +207,12 @@ bool NodeAST::is_literal() {
 void NodeAST::do_type_inference(NodeProgram *program) {
 	static TypeInference inference(program);
 	accept(inference);
+}
+
+
+NodeAST * NodeAST::do_variable_checking(NodeProgram *program, const bool fail) {
+	static ASTVariableChecking var_checking(program);
+	return var_checking.do_variable_checking(*this, fail);
 }
 
 // ************* NodeDataStructure ***************

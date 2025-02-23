@@ -21,13 +21,13 @@ on note
     foo(_ret0, 2, 4)
 end on
 
-function foo(ret$0: int, a: int, b: int)
+function foo(ret0: int, a: int, b: int)
     if(a = 0)
         message("a is 0")
-        ret$0 := a-b + a+b
+        ret0 := a-b + a+b
     else
         message("a is not 0")
-        ret$0 := a-b*a
+        ret0 := a-b*a
     end if
 end function
 

@@ -25,6 +25,7 @@
 #include "../../Lowering/PostLowering/PostLoweringSingleDeclaration.h"
 #include "../../Lowering/LoweringSortSearch.h"
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
+#include "../ASTVisitor/FunctionHandling/FunctionCallableValidator.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 // ************* NodeStatement ***************
@@ -58,15 +59,15 @@ NodeFunctionCall::NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHea
 }
 
 NodeFunctionCall::~NodeFunctionCall() {
-	if(auto def = definition.lock()) {
+	if(const auto def = definition.lock()) {
 		def->call_sites.erase(this);
 	}
 }
 
 NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
-        : NodeInstruction(other), is_call(other.is_call), is_new(other.is_new), kind(other.kind),
-          function(clone_unique(other.function)), definition(other.definition),
-		  is_temporary_constructor(other.is_temporary_constructor) {
+        : NodeInstruction(other), kind(other.kind), is_call(other.is_call), is_callable(other.is_callable), is_new(other.is_new),
+          is_temporary_constructor(other.is_temporary_constructor), function(clone_unique(other.function)),
+		  definition(other.definition) {
     NodeFunctionCall::set_child_parents();
 }
 
@@ -78,8 +79,8 @@ ASTLowering* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
     return &lowering;
 }
 
-std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(struct NodeProgram *program) {
-    auto it = program->function_lookup.find({function->name, (int)function->args->size()});
+std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(NodeProgram *program) {
+    auto it = program->function_lookup.find({function->name, static_cast<int>(function->args->size())});
     if(it != program->function_lookup.end()) {
 		auto func_def = it->second.lock();
         definition = it->second;
@@ -267,6 +268,11 @@ NodeAST *NodeFunctionCall::do_function_inlining(NodeProgram *program) {
 
 bool NodeFunctionCall::is_destructive_builtin_func() const {
 	return kind == NodeFunctionCall::Kind::Builtin and destructive_functions.find(function->name) != destructive_functions.end();
+}
+
+bool NodeFunctionCall::determine_callability(NodeProgram *program, NodeCallback *current_callback) {
+	static FunctionCallableValidator validator(program);
+	return validator.is_callable(*this, current_callback);
 }
 
 // ************* NodeSortSearch ***************
@@ -868,7 +874,7 @@ NodeBlock* NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, 
 }
 
 // ************* NodeFamily ***************
-NodeAST *NodeFamily::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeFamily::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeFamily::NodeFamily(const NodeFamily& other)

@@ -4,11 +4,6 @@
 
 #pragma once
 
-// #include <iostream>
-// #include <unordered_map>
-// #include <set>
-// #include <unordered_set>
-
 #include "../TypeRegistry.h"
 #include "../ASTNodes/AST.h"
 #include "../ASTNodes/ASTInstructions.h"
@@ -44,70 +39,69 @@ public:
 		return iter;
 	}
 
-public:
 //	explicit ASTVisitor(NodeProgram* program) : m_program(program) {}
 
-    virtual NodeAST* visit(NodeDeadCode& node) {return &node;};
+    virtual NodeAST* visit(NodeDeadCode& node) {return &node;}
 	virtual NodeAST* visit(NodeWildcard& node) {
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeInt& node) {
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeReal& node) {
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeString& node) {
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeNil& node) {
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeVariable& node) {
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeVariableRef& node) {
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodePointerRef& node) {
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodePointer& node) {
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeReferenceList& node) {
-		for(auto & ref : node.references) ref->accept(*this);
+		for(const auto & ref : node.references) ref->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeParamList& node) {
-		for(auto & param : node.params) param->accept(*this);
+		for(const auto & param : node.params) param->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeInitializerList& node) {
-		for(auto & elem : node.elements) elem->accept(*this);
+		for(const auto & elem : node.elements) elem->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeArray& node) {
 		if(node.size) node.size->accept(*this);
 		if(node.num_elements) node.num_elements->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeArrayRef& node) {
 		if(node.index) node.index->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeNDArray& node) {
 		if(node.sizes) node.sizes->accept(*this);
 		if(node.num_elements) node.num_elements->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeNDArrayRef& node) {
 		if(node.indexes) node.indexes->accept(*this);
 		if(node.sizes) node.sizes->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeAccessChain& node) {
-		for(auto & method : node.chain) method->accept(*this);
+		for(const auto & method : node.chain) method->accept(*this);
 		return &node;
 	}
 
@@ -115,161 +109,161 @@ public:
 		node.control_var->accept(*this);
 		node.params->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeUnaryExpr& node) {
 		node.operand->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeBinaryExpr& node) {
 		node.left->accept(*this);
 		node.right->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeFunctionParam& node) {
 		node.variable ->accept(*this);
 		if(node.value) node.value -> accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeDeclaration& node) {
         for(auto const &decl : node.variable) decl->accept(*this);
 		if(node.value) node.value -> accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeSingleDeclaration& node) {
         node.variable ->accept(*this);
 		if(node.value) node.value -> accept(*this);
 		return &node;
-    };
+    }
     virtual NodeAST* visit(NodeAssignment& node) {
 		for(auto& l_val : node.l_values) l_val->accept(*this);
 		node.r_values->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeSingleAssignment& node) {
         node.l_value ->accept(*this);
 		node.r_value -> accept(*this);
 		return &node;
-    };
+    }
 	virtual NodeAST* visit(NodeBreak& node) {return &node;}
 	virtual NodeAST* visit(NodeReturn& node) {
-		for(auto &ret : node.return_variables) ret->accept(*this);
+		for(const auto &ret : node.return_variables) ret->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeSingleReturn& node) {
 		node.return_variable->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeDelete& node) {
 //		CompileError(ErrorType::InternalError, "<Delete> node not yet implemented.", "", node.tok).exit();
-		for(auto &del : node.ptrs) {
+		for(const auto &del : node.ptrs) {
 			del->accept(*this);
 		}
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeSingleDelete& node) {
 		node.ptr->accept(*this);
 		if(node.num) node.num->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeSortSearch& node) {
 		node.array->accept(*this);
 		node.value->accept(*this);
 		if(node.from) node.from->accept(*this);
 		if(node.to) node.to->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeNumElements& node) {
 		node.array->accept(*this);
 		if(node.dimension) node.dimension->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeUseCount& node) {
 		node.ref->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodePairs& node) {
 		node.range->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeRange& node) {
 		if(node.start) node.start->accept(*this);
 		node.stop->accept(*this);
 		if(node.step) node.step->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeSingleRetain& node) {
 		node.ptr->accept(*this);
 		node.num->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeRetain& node) {
 		for(auto &ptr : node.ptrs)
 			ptr->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeGetControl& node) {
 		node.ui_id->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeSetControl& node) {
 		node.ui_id->accept(*this);
 		node.value->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeConst& node) {
         node.constants->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeStruct& node) {
 		node.members->accept(*this);
-		for(auto & m: node.methods) {
+		for(const auto & m: node.methods) {
 			m->accept(*this);
 		}
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeFamily& node) {
         node.members->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeList& node) {
-        for(auto & b : node.body) {
+        for(const auto & b : node.body) {
             b->accept(*this);
         }
 		return &node;
-    };
+    }
 	virtual NodeAST* visit(NodeListRef& node) {
 		node.indexes->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeStatement& node) {
 		node.statement->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeIf& node) {
 		node.condition->accept(*this);
 		node.if_body->accept(*this);
 		node.else_body->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeFor& node) {
 		node.iterator->accept(*this);
 		node.iterator_end->accept(*this);
 		if(node.step) node.step->accept(*this);
         node.body->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeForEach& node) {
 		if(node.key) node.key->accept(*this);
 		if(node.value) node.value->accept(*this);
         node.range->accept(*this);
         node.body->accept(*this);
 		return &node;
-    };
+    }
 	virtual NodeAST* visit(NodeWhile& node) {
 		node.condition->accept(*this);
         node.body->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeSelect& node) {
 		node.expression->accept(*this);
 		for(const auto &cas: node.cases) {
@@ -279,16 +273,16 @@ public:
             cas.second->accept(*this);
 		}
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeCallback& node) {
 		if(node.callback_id) node.callback_id->accept(*this);
 		node.statements->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeFunctionHeader& node) {
 		for(auto &param : node.params) param->variable->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeFunctionHeaderRef& node) {
 		if(node.args) node.args->accept(*this);
 		return &node;
@@ -296,7 +290,7 @@ public:
     virtual NodeAST* visit(NodeFunctionCall& node) {
 		node.function->accept(*this);
 		return &node;
-	};
+	}
 	virtual NodeAST* visit(NodeFunctionDefinition& node) {
 		if(node.visited) return &node;
 		node.header ->accept(*this);
@@ -304,7 +298,7 @@ public:
 			node.return_variable.value()->accept(*this);
         node.body->accept(*this);
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeProgram& node) {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
@@ -320,7 +314,7 @@ public:
 		node.merge_function_definitions();
 		node.reset_function_visited_flag();
 		return &node;
-	};
+	}
     virtual NodeAST* visit(NodeBlock& node) {
         for(const auto & stmt : node.statements) {
 			if(!stmt) {
@@ -330,10 +324,10 @@ public:
 			stmt->accept(*this);
 		}
 		return &node;
-    };
+    }
     virtual NodeAST* visit(NodeImport& node) {
 		return &node;
-    };
+    }
 };
 
 

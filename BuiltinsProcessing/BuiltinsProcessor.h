@@ -38,13 +38,13 @@ private:
     std::string m_builtin_functions_file;
 	std::string m_builtin_widgets_file;
 
-	inline static bool is_threadsafe_function(const std::string& fun_name) {
+	static bool is_threadsafe_function(const std::string& fun_name) {
 		static const std::set<std::string> thread_unsafe_functions = {"wait", "wait_ticks", "wait_async"};
 		return !thread_unsafe_functions.contains(fun_name);
 	}
 
-	inline static bool is_restricted_function(const std::string& fun_name) {
-		static const std::unordered_set<std::string> restricted_functions = {"save_array", "save_array_str", "load_array", "load_array_str"};
+	static bool is_restricted_function(const std::string& fun_name) {
+		static const std::unordered_set<std::string> restricted_functions = {"save_array", "save_array_str", "load_array", "load_array_str", "purge_group"};
 		return restricted_functions.contains(fun_name);
 	}
 
