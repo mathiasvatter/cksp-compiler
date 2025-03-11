@@ -139,15 +139,15 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	}
 
 	// determine thread safety of currently visiting function definition
-	if(definition) {
-		if(auto func = m_program->get_curr_function()) {
-			func->is_thread_safe &= definition->is_thread_safe;
-		}
-		if(m_program->current_callback) m_program->current_callback->is_thread_safe &= definition->is_thread_safe;
-	}
+	// if(definition) {
+	// 	if(const auto func = m_program->get_curr_function()) {
+	// 		func->is_thread_safe &= definition->is_thread_safe;
+	// 	}
+	// 	if(m_program->current_callback) m_program->current_callback->is_thread_safe &= definition->is_thread_safe;
+	// }
 	// determine if currently visiting function in stack is restricted
 	if(definition) {
-		if(auto func = m_program->get_curr_function()) {
+		if(const auto func = m_program->get_curr_function()) {
 			func->is_restricted &= definition->is_restricted;
 		}
 	}
@@ -166,7 +166,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeArray &node) {
 NodeAST * ASTSemanticAnalysis::visit(NodeArrayRef &node) {
     if(node.index) node.index->accept(*this);
 	NodeReference* new_node = &node;
-	if(auto repl = replace_incorrectly_detected_reference(m_program, &node)) {
+	if(const auto repl = replace_incorrectly_detected_reference(m_program, &node)) {
 		new_node = repl;
 		new_node->accept(*this);
 	}
@@ -183,7 +183,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
 
 	if (!node.determine_sizes()) {
 		NodeReference *new_node = &node;
-		if (auto repl = replace_incorrectly_detected_reference(m_program, &node)) {
+		if (const auto repl = replace_incorrectly_detected_reference(m_program, &node)) {
 			new_node = repl;
 			new_node->accept(*this);
 		}

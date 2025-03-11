@@ -200,10 +200,11 @@ add_executable(cksp main.cpp
         Lowering/PostLowering/PostLoweringSingleDeclaration.h
         Lowering/LoweringSortSearch.h
         Lowering/PostLowering/PostLoweringSortSearch.h
-        AST/ASTVisitor/ASTDimensionExpansion.h
+        AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h
         Lowering/LoweringInitializerList.h
         AST/ASTVisitor/ASTTemporaryPointerScope.h
         AST/ASTVisitor/FunctionHandling/ReturnPathValidator.h
         AST/ASTVisitor/FunctionHandling/FunctionStackTransformation.h
         AST/ASTVisitor/FunctionHandling/FunctionCallableValidator.h
+        AST/ASTVisitor/GlobalScope/MarkThreadSafe.h
 )

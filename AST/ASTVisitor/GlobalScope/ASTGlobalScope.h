@@ -47,7 +47,7 @@ class ASTGlobalScope : public ASTVisitor {
 protected:
 	DefinitionProvider* m_def_provider;
 	/// removes array declarations
-	static inline std::unique_ptr<NodeAST> to_assign_statement(NodeSingleDeclaration& node) {
+	static std::unique_ptr<NodeAST> to_assign_statement(NodeSingleDeclaration& node) {
 		if(node.is_promoted) {
 			return std::make_unique<NodeDeadCode>(node.tok);
 		}
@@ -56,7 +56,7 @@ protected:
 //
 //		}
 		auto node_assignment = node.to_assign_stmt();
-		if (auto array_ref = node_assignment->l_value->cast<NodeArrayRef>()) {
+		if (const auto array_ref = node_assignment->l_value->cast<NodeArrayRef>()) {
 			if (!array_ref->index) {
 //				return std::move(node_assignment);
 				return std::make_unique<NodeDeadCode>(node.tok);
@@ -66,12 +66,13 @@ protected:
 	};
 
 
-	static inline std::string get_passive_var_hash(NodeDataStructure& data) {
+	static std::string get_passive_var_hash(NodeDataStructure& data) {
 		auto hash = data.ty->to_string();
 		// add size if it is array
-		if(auto array = data.cast<NodeArray>()) {
+		if(const auto array = data.cast<NodeArray>()) {
 			if(array->size) hash += array->size->get_string();
 		}
+		hash += data.is_thread_safe;
 		if(data.persistence.has_value()) hash += data.persistence.value().val;
 		return hash;
 	}
