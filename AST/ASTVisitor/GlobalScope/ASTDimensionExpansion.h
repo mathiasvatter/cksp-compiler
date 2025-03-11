@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "ASTVisitor.h"
+#include "MarkThreadSafe.h"
+#include "../ASTVisitor.h"
 
 /**
  * declare const MAX_CB_STACK := 1000
@@ -26,16 +27,26 @@
  * end on
  * Max length of event queue in Kontakt is 8192 (polyphonic var size)
  */
-class ASTDimensionExpansion : public ASTVisitor {
+class ASTDimensionExpansion final : public ASTVisitor {
 
 	int m_cb_stack_size = 100;
 	DefinitionProvider* m_def_provider;
 	std::shared_ptr<NodeVariable> m_max_cb_stack;
 	std::unique_ptr<NodeBinaryExpr> m_cb_idx;
 
-	bool is_thread_safe_env() {
+	[[nodiscard]] bool is_thread_safe_env() const {
 		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or
 			(m_program->get_curr_function() and m_program->get_curr_function()->is_thread_safe);
+	}
+
+	NodeAST* mark_thread_safe(NodeProgram& node) const {
+		// first mark threadsafe environments
+		static MarkThreadSafe marker(m_program);
+		for(const auto & callback : node.callbacks) {
+			callback->accept(marker);
+		}
+		node.reset_function_visited_flag();
+		return &node;
 	}
 public:
 	explicit ASTDimensionExpansion(NodeProgram *main) : m_def_provider(main->def_provider) {
@@ -72,11 +83,13 @@ public:
 		);
 		node.init_callback->statements->prepend_as_stmt(std::move(decl));
 
+		mark_thread_safe(node);
+
 		m_program->global_declarations->accept(*this);
-		for(auto & struct_def : node.struct_definitions) {
+		for(const auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
 		}
-		for(auto & callback : node.callbacks) {
+		for(const auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
 		node.reset_function_visited_flag();
@@ -111,7 +124,9 @@ public:
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		if(node.value) node.value->accept(*this);
 
-		if(!is_thread_safe_env() and node.variable->is_local) {
+		const bool is_thread_safe = is_thread_safe_env();
+		node.variable->is_thread_safe = is_thread_safe;
+		if(!is_thread_safe and node.variable->is_local) {
 			// if value -> change to assignment
 			std::unique_ptr<NodeBlock> block = nullptr;
 			std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
@@ -123,7 +138,7 @@ public:
 			}
 
 			auto inflated = node.variable->inflate_dimension(m_max_cb_stack->to_reference());
-			inflated->is_thread_safe = false;
+			// inflated->is_thread_safe = false;
 			node.variable->replace_datastruct(std::move(inflated));
 
 			if(node.value) {

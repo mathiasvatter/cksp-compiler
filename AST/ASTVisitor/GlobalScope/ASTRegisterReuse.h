@@ -213,7 +213,7 @@ private:
 
 
 		if(node.variable->is_local) {
-			if(is_thread_safe_env()) {
+			// if(is_thread_safe_env()) {
 				if (auto free_passive_var = get_free_passive_var(*node.variable)) {
 					m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
 					auto replacement = to_assign_statement(node);
@@ -221,7 +221,7 @@ private:
 					replacement->accept(*this);
 					return node.replace_with(std::move(replacement));
 				}
-			}
+			// }
 			// add local vars w/o free_passive_var to lists for later renaming
 			if(m_program->current_callback)
 				m_all_callback_decl[m_program->current_callback].push_back(&node);
@@ -318,7 +318,7 @@ private:
 
 	/// get next free passive_var for given type
 	std::shared_ptr<NodeDataStructure> get_free_passive_var(NodeDataStructure& data) {
-		auto hash = get_passive_var_hash(data);
+		const auto hash = get_passive_var_hash(data);
 		auto &vec = m_passive_vars_map[hash];
 		auto &idx = m_passive_vars_idx[hash];
 		if(idx < vec.size()) {

@@ -15,7 +15,7 @@
 #include "AST/ASTVisitor/ASTCollectPostLowerings.h"
 #include "AST/ASTVisitor/ASTTypeAnnotations.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
-#include "AST/ASTVisitor/ASTDimensionExpansion.h"
+#include "AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h"
 #include "AST/ASTVisitor/ASTLowerTypes.h"
 
 Compiler::Compiler(CompilerConfig* config)
@@ -37,7 +37,7 @@ void Compiler::compile() {
 //	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+	// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
     // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";

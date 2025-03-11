@@ -12,16 +12,15 @@
 /// NodeNDArrayRef
 /// NodeVariableRef
 /// NodeFunctionHeader
-class ASTPreemptiveFunctionInlining: public ASTVisitor {
-private:
+class ASTPreemptiveFunctionInlining final : public ASTVisitor {
 	DefinitionProvider *m_def_provider;
 
 public:
-	inline explicit ASTPreemptiveFunctionInlining(NodeProgram *main) : m_def_provider(main->def_provider) {
+	explicit ASTPreemptiveFunctionInlining(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
 	}
 
-	static bool inline do_preemptive_function_inlining(NodeFunctionCall& call) {
+	static bool do_preemptive_function_inlining(NodeFunctionCall& call) {
 		auto def = call.get_definition();
 		if(!def) return false;
 		return def->is_expression_function() || is_initializer_function(call) || is_wildcard_function(call);
