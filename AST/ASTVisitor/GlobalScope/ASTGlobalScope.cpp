@@ -3,7 +3,7 @@
 //
 
 #include "ASTGlobalScope.h"
-#include "ASTRegisterReuse.h"
+#include "ASTVariableReuse.h"
 #include "ASTParameterPromotion.h"
 #include "NormalizeArrayAssign.h"
 
@@ -19,8 +19,8 @@ NodeAST * ASTGlobalScope::visit(NodeProgram &node) {
 	param_promotion.do_param_promotion(node);
 
 	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
-	static ASTRegisterReuse register_reuse(m_program);
-	register_reuse.do_register_reuse(node);
+	static ASTVariableReuse register_reuse(m_program);
+	register_reuse.do_variable_reuse(node);
 
 	return &node;
 }

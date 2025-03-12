@@ -143,7 +143,7 @@ add_executable(cksp main.cpp
         AST/ASTNodes/ASTInstructions.h
         AST/ASTNodes/ASTInstructions.cpp
         AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h
-        AST/ASTVisitor/GlobalScope/ASTRegisterReuse.h
+        AST/ASTVisitor/GlobalScope/ASTVariableReuse.h
         AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h
         Desugaring/DesugarStruct.h
         Lowering/LoweringStruct.h

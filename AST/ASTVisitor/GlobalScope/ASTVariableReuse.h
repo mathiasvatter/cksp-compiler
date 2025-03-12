@@ -20,14 +20,14 @@
  * - Tracks all variables and references in lists and renames them using Gensym to avoid variable capturing when a free
  *   "passive variable" has the same name as a variable in the scope.
  */
-class ASTRegisterReuse final : public ASTGlobalScope {
+class ASTVariableReuse final : public ASTGlobalScope {
 public:
-	explicit ASTRegisterReuse(NodeProgram* program) : ASTGlobalScope(program) {
+	explicit ASTVariableReuse(NodeProgram* program) : ASTGlobalScope(program) {
 		m_def_provider->refresh_scopes();
 		clear_all_maps();
 	}
 
-	void do_register_reuse(NodeFunctionDefinition& def) {
+	void do_variable_reuse(NodeFunctionDefinition& def) {
 		m_program->current_callback = nullptr;
 		m_def_provider->refresh_scopes();
 		def.accept(*this);
@@ -35,7 +35,7 @@ public:
 		clear_all_maps();
 	}
 
-	void do_register_reuse(NodeProgram& program) {
+	void do_variable_reuse(NodeProgram& program) {
 		m_program = &program;
 		m_program->current_callback = nullptr;
 		m_def_provider->refresh_scopes();
@@ -131,7 +131,7 @@ private:
 	}
 
 	NodeAST* visit(NodeBlock &node) override {
-		m_current_body = &node;
+		m_current_block.push(&node);
 		if(node.scope) {
 			m_def_provider->add_scope();
 			m_passive_vars_replace.emplace_back();
@@ -140,19 +140,25 @@ private:
 			stmt->accept(*this);
 		}
 		if(node.scope) {
-			auto passive_vars = m_def_provider->remove_scope();
+			const auto new_passive_vars = m_def_provider->remove_scope();
 			// only add new passive vars on thread_safe callbacks and functions not using 'wait'
-			if(is_thread_safe_env()) {
+			// if(is_thread_safe_env()) {
 				// add free memory vars which dynamic extent has ended to passive_vars vector
-				add_passive_vars(passive_vars);
+				add_passive_vars(new_passive_vars);
+			// }
+			// add used vars to passive_vars map
+			const auto passive_used_vars = m_used_passive_vars[get_current_block()];
+			for(auto & passive_var : passive_used_vars) {
+				m_passive_vars_map[get_passive_var_hash(*passive_var)].push_back(passive_var);
 			}
 			// set back passive_var index since scope has ended
-			for(auto & idx : m_passive_vars_idx) {
-				idx.second = 0;
-			}
+			// for(auto & idx : m_passive_vars_idx) {
+			// 	idx.second = 0;
+			// }
 			// clear passive_var replace map
 			m_passive_vars_replace.pop_back();
 		}
+		m_current_block.pop();
 		node.flatten();
 		return &node;
 	}
@@ -185,7 +191,7 @@ private:
 	}
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
-		node.variable->determine_locality(m_program, m_current_body);
+		node.variable->determine_locality(m_program, get_current_block());
 
 		if(is_in_global_declarations(node, m_program)) {
 			node.variable->to_global();
@@ -215,6 +221,7 @@ private:
 		if(node.variable->is_local) {
 			// if(is_thread_safe_env()) {
 				if (auto free_passive_var = get_free_passive_var(*node.variable)) {
+					m_used_passive_vars[get_current_block()].push_back(free_passive_var);
 					m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
 					auto replacement = to_assign_statement(node);
 					// visit replacement (assign statement) to replace local var with passive_var
@@ -260,7 +267,7 @@ private:
 	}
 
 	NodeAST * visit(NodeArray& node) override {
-//		node.determine_locality(m_program, m_current_body);
+//		node.determine_locality(m_program, m_current_body.top());
 
 		if(node.size) node.size->accept(*this);
 
@@ -293,15 +300,18 @@ private:
 	}
 
 	NodeAST* visit(NodeVariable& node) override {
-//		node.determine_locality(m_program, m_current_body);
+//		node.determine_locality(m_program, m_current_body.top());
 		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 		return &node;
 	}
 
 private:
 	std::string loc_var_prefix = "loc_";
-	NodeBlock* m_current_body = nullptr;
-
+	std::stack<NodeBlock*> m_current_block;
+	NodeBlock* get_current_block() const {
+		if (m_current_block.empty()) return nullptr;
+		return m_current_block.top();
+	}
 	/// vector for all local declarations in callbacks
 	std::unordered_map<NodeCallback*, std::vector<NodeSingleDeclaration*>> m_all_callback_decl = {};
 	/// vector for all local vars in functions -> do not get moved into on init
@@ -309,6 +319,7 @@ private:
 	/// hash values are the types
 	std::unordered_map<std::string, std::vector<std::shared_ptr<NodeDataStructure>>> m_passive_vars_map;
 	std::unordered_map<std::string, int> m_passive_vars_idx;
+	std::unordered_map<NodeBlock*, std::vector<std::shared_ptr<NodeDataStructure>>> m_used_passive_vars;
 	void add_passive_vars(const std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual>& map2) {
 		for(auto & var : map2) {
 			if(var.second->data_type == DataType::Mutable)
@@ -320,11 +331,15 @@ private:
 	std::shared_ptr<NodeDataStructure> get_free_passive_var(NodeDataStructure& data) {
 		const auto hash = get_passive_var_hash(data);
 		auto &vec = m_passive_vars_map[hash];
-		auto &idx = m_passive_vars_idx[hash];
-		if(idx < vec.size()) {
-			return vec[idx++];
-		}
-		return nullptr;
+		if(vec.empty()) return nullptr;
+		auto free_var = vec.back();
+		vec.pop_back();
+		return free_var;
+		// auto &idx = m_passive_vars_idx[hash];
+		// if(idx < vec.size()) {
+		// 	return vec[idx++];
+		// }
+		// return nullptr;
 	}
 	/// search for new declaration to reference if declaration is replaced by passive_var
 	std::shared_ptr<NodeDataStructure> get_new_declaration(const std::string& ref_name) {
