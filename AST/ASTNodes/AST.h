@@ -748,7 +748,7 @@ struct NodeProgram final : NodeAST {
     void update_token_data(const Token& token) override {}
 	/// update function lookup table
 	void update_function_lookup();
-	void add_function_definition(const std::shared_ptr<NodeFunctionDefinition>& def);
+	NodeFunctionDefinition *add_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def);
 	void update_struct_lookup();
 	/// Checks for uniqueness of all callbacks except "on ui_control"
 	bool check_unique_callbacks() const;

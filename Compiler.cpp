@@ -37,7 +37,7 @@ void Compiler::compile() {
 //	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-	// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
     // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
@@ -157,7 +157,6 @@ void Compiler::compile() {
 
 	ASTReturnFunctionRewriting return_function_rewriting(m_program);
 	return_function_rewriting.do_rewriting(*ast);
-	ast->debug_print();
 
 	ASTPreemptiveFunctionInlining pre_inlining(m_program);
 	ast->accept(pre_inlining);
@@ -190,6 +189,7 @@ void Compiler::compile() {
 
 	ASTGlobalScope global_scope(m_program);
 	ast->accept(global_scope);
+	ast->debug_print();
 
 	compile_time.stop("Global Scope");
 	std::cout << compile_time.print_timer("Global Scope") << std::endl;

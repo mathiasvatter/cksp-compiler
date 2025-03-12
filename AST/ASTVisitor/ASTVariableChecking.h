@@ -62,8 +62,13 @@ private:
 	// boolean to continue after not finding declaration or fail
 	bool fail = false;
 	NodeStruct* m_current_struct = nullptr;
-    NodeBlock* m_current_block = nullptr;
+    std::stack<NodeBlock*> m_current_block;
 	DefinitionProvider* m_def_provider = nullptr;
+
+	NodeBlock* get_current_block() const {
+		if (m_current_block.empty()) return nullptr;
+		return m_current_block.top();
+	}
 
 	/// track functions in use to search for recursive calls
 	std::unordered_set<NodeFunctionDefinition*> m_functions_in_use;

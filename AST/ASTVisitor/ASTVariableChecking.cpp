@@ -78,7 +78,7 @@ NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 	node.flatten();
-	m_current_block = &node;
+	m_current_block.push(&node);
 
 	node.determine_scope();
 
@@ -100,11 +100,12 @@ NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 			m_def_provider->remove_scope();
 		}
 	}
+	m_current_block.pop();
 	return &node;
 }
 
 NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
-	node.determine_locality(m_program, m_current_block);
+	node.determine_locality(m_program, get_current_block());
 	// function definitions are being visited in the program node
 	// node header as data struct
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
@@ -161,7 +162,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
-	node.variable->determine_locality(m_program, m_current_block);
+	node.variable->determine_locality(m_program, get_current_block());
 
 	if(node.variable->cast<NodeUIControl>() and node.variable->is_local) {
 		auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
@@ -183,7 +184,7 @@ NodeAST* ASTVariableChecking::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeArray& node) {
-	node.determine_locality(m_program, m_current_block);
+	node.determine_locality(m_program, get_current_block());
 	if(node.size) node.size->accept(*this);
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 	return &node;
@@ -221,7 +222,7 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeNDArray& node) {
-	node.determine_locality(m_program, m_current_block);
+	node.determine_locality(m_program, get_current_block());
 	if(node.sizes) node.sizes->accept(*this);
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 	return &node;
@@ -272,7 +273,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
-	node.determine_locality(m_program, m_current_block);
+	node.determine_locality(m_program, get_current_block());
 
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 	return &node;
@@ -315,7 +316,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodePointer& node) {
-	node.determine_locality(m_program, m_current_block);
+	node.determine_locality(m_program, get_current_block());
 
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 	return &node;
@@ -338,7 +339,7 @@ NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeList& node) {
-	node.determine_locality(m_program, m_current_block);
+	node.determine_locality(m_program, get_current_block());
 	for(auto &params : node.body) {
 		params->accept(*this);
 	}

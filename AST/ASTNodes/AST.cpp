@@ -20,7 +20,7 @@
 #include "../ASTVisitor/ReferenceManagement/ASTCollectReferences.h"
 #include "../ASTVisitor/ReferenceManagement/ASTRemoveReferences.h"
 #include "../ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h"
-#include "../ASTVisitor/GlobalScope/ASTRegisterReuse.h"
+#include "../ASTVisitor/GlobalScope/ASTVariableReuse.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h"
 #include "../../Optimization/ConstantFolding.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
@@ -238,6 +238,8 @@ bool NodeDataStructure::determine_locality(const NodeProgram* program, const Nod
 	// not init_callback if var is set to local
 	const bool init_callback = (program->current_callback == program->init_callback and program->function_call_stack.empty() and !is_local) or is_global;
 	is_local = ((current_block and current_block->scope) or is_function_param() or is_member()) and !init_callback;
+	// could also be an old school return variable which would have to be local
+	is_local = is_local or parent->cast<NodeFunctionDefinition>();
 	return is_local;
 }
 
@@ -1045,8 +1047,8 @@ bool NodeFunctionDefinition::has_no_params() const {
 }
 
 void NodeFunctionDefinition::do_register_reuse(NodeProgram *program) {
-	static ASTRegisterReuse register_reuse(program);
-	register_reuse.do_register_reuse(*this);
+	static ASTVariableReuse register_reuse(program);
+	register_reuse.do_variable_reuse(*this);
 }
 
 void NodeFunctionDefinition::do_return_param_promotion(NodeProgram* program) {
@@ -1107,10 +1109,11 @@ void NodeProgram::update_parents(NodeAST *new_parent) {
 	for(const auto & f : function_definitions) f->update_parents(this);
 }
 
-void NodeProgram::add_function_definition(const std::shared_ptr<NodeFunctionDefinition>& def) {
+NodeFunctionDefinition *NodeProgram::add_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def) {
 	def->parent = this;
 	additional_function_definitions.push_back(def);
 	function_lookup.insert({{def->header->name, static_cast<int>(def->header->params.size())}, def});
+	return def.get();
 }
 
 void NodeProgram::update_function_lookup() {

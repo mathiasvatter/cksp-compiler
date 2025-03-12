@@ -43,6 +43,7 @@ struct NodeStatement final : NodeInstruction {
 struct NodeFunctionCall final : NodeInstruction {
     enum Kind{Property, Builtin, UserDefined, Undefined, Method, Constructor, Operator};
 	inline static const std::array<std::string, 7> KindStrings = {"Property","Builtin","UserDefined","Undefined","Method","Constructor","Operator"};
+	enum Strategy{Inlining, PreemptiveInlining, ParameterStack, Call, None};
     Kind kind = Undefined;
     bool is_call = false;
 	bool is_callable = false;
