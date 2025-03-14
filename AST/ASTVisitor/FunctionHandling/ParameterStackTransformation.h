@@ -11,11 +11,11 @@
  * it into a KSP native function by promoting its formal parameters to global variables.
  *
  */
-class FunctionStackTransformation final : public ASTVisitor {
+class ParameterStackTransformation final : public ASTVisitor {
 
 	DefinitionProvider* m_def_provider = nullptr;
 public:
-	explicit FunctionStackTransformation(NodeProgram* main) {
+	explicit ParameterStackTransformation(NodeProgram* main) {
 		m_program = main;
 		m_def_provider = main->def_provider;
 	}
@@ -31,43 +31,62 @@ public:
 private:
 
 	NodeAST* visit(NodeFunctionDefinition& node) override {
-
+		// check if any call site has paramter stack strategy
+		std::vector<NodeFunctionCall*> calls;
+		for (const auto &call : node.call_sites) {
+			if (call->strategy == NodeFunctionCall::Strategy::ParameterStack) {
+				calls.push_back(call);
+			}
+		}
+		if (calls.empty()) return &node;
+		std::cout<< "Transforming function "<<node.header->name<<" to parameter stack strategy"<<std::endl;
+		const std::string new_name = m_def_provider->get_fresh_name("called_"+node.header->name);
 		auto new_def = clone_as<NodeFunctionDefinition>(&node);
-		new_def->header->name = m_def_provider->get_fresh_name("called_"+node.header->name);
+		new_def->call_sites.clear();
+		new_def->is_used = true;
+		new_def->visited = false;
+		new_def->header->name = new_name;
 		new_def->do_variable_checking(m_program, false);
 		new_def->remove_references();
 		new_def->collect_references();
 
-		std::vector<NodeDataStructure*> promoted_params;
+		std::vector<std::shared_ptr<NodeDataStructure>> promoted_params;
 		for (const auto &param : new_def->header->params) {
 			param->variable->name = m_def_provider->get_fresh_name(param->variable->name);
 			for (auto &ref : param->variable->references) {
                 ref->name = param->variable->name;
             }
-			auto decl = std::make_unique<NodeSingleDeclaration>(std::move(param->variable), std::move(param->value), param->tok);
-			promoted_params.push_back(decl->variable.get());
+			param->variable->is_local = false;
+			auto decl = std::make_unique<NodeSingleDeclaration>(param->variable, std::move(param->value), param->tok);
+			promoted_params.push_back(param->variable);
             m_program->global_declarations->add_as_stmt(std::move(decl));
 		}
-
+		new_def->header->params.clear();
 		m_program->add_function_definition(std::move(new_def));
 
 		// replace all call sites with the transformed function
-		for (auto &call : node.call_sites) {
+		for (int i = 0; i<calls.size(); i++) {
+			const auto &call = calls[i];
+			if (call->strategy != NodeFunctionCall::Strategy::ParameterStack) continue;
+
 			auto block = std::make_unique<NodeBlock>(call->tok, true);
 			// get assignments going
-			for (int i = 0; i<promoted_params.size(); i++) {
-				const auto formal_param = promoted_params[i];
-				auto actual_param = std::move(call->function->get_arg(i));
+			for (int ii = 0; ii<promoted_params.size(); ii++) {
+				const auto& formal_param = promoted_params[ii];
+				auto actual_param = std::move(call->function->get_arg(ii));
 				auto assignment = std::make_unique<NodeSingleAssignment>(
 					formal_param->to_reference(),
-                    actual_param,
+                    std::move(actual_param),
                     call->tok
 				);
 				block->add_as_stmt(std::move(assignment));
 			}
-			call->function->args.reset();
+			call->function->args->params.clear();
+			call->function->name = new_name;
+			call->definition.reset();
 			call->bind_definition(m_program, true);
-
+			call->is_call = true;
+			call->strategy = NodeFunctionCall::Strategy::Call;
 			block->add_as_stmt(call->clone());
             call->replace_with(std::move(block));
         }

@@ -19,12 +19,11 @@
  * 		...
  * 	end if
  */
-class ReturnFunctionCallHoisting : public ASTVisitor {
-private:
+class ReturnFunctionCallHoisting final : public ASTVisitor {
 	std::unordered_map<NodeStatement*, std::vector<std::unique_ptr<NodeAST>>> m_declares_per_stmt;
 	/// function call is hoistable when userdefined and returns values and is not an expression function
 	/// or is in condition statement
-	static inline bool is_hoistable(NodeFunctionCall* node) {
+	static bool is_hoistable(NodeFunctionCall* node) {
 		// not hoistable functions are: Undefined, Builtin, Property
 		if(node->is_builtin_kind()) return false;
 		if(!node->get_definition()) {
@@ -60,7 +59,7 @@ public:
 	}
 
 	/// insert declarations from m_declares_per_stmt into the dedicated statements
-	inline void insert_calls_in_statements() {
+	void insert_calls_in_statements() {
 		for(auto & stmt : m_declares_per_stmt) {
 			auto node_body = std::make_unique<NodeBlock>(stmt.first->tok);
 			node_body->scope = true;
@@ -72,7 +71,7 @@ public:
 		}
 	}
 
-	inline NodeAST * visit(NodeProgram& node) override {
+	NodeAST * visit(NodeProgram& node) override {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		for(auto & struct_def : node.struct_definitions) {
@@ -89,7 +88,7 @@ public:
 		return &node;
 	};
 
-	inline NodeAST * visit(NodeFunctionCall& node) override {
+	NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		node.bind_definition(m_program);
 		if(node.get_definition() and node.get_definition()->is_expression_function()) return &node;

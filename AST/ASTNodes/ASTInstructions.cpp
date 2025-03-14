@@ -27,6 +27,7 @@
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
 #include "../ASTVisitor/FunctionHandling/FunctionCallableValidator.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
+#include "../ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(ASTVisitor &visitor) {
@@ -65,7 +66,7 @@ NodeFunctionCall::~NodeFunctionCall() {
 }
 
 NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
-        : NodeInstruction(other), kind(other.kind), is_call(other.is_call), is_callable(other.is_callable), is_new(other.is_new),
+        : NodeInstruction(other), kind(other.kind), strategy(other.strategy), is_call(other.is_call), is_callable(other.is_callable), is_new(other.is_new),
           is_temporary_constructor(other.is_temporary_constructor), function(clone_unique(other.function)),
 		  definition(other.definition) {
     NodeFunctionCall::set_child_parents();
@@ -227,7 +228,7 @@ bool NodeFunctionCall::is_builtin_kind() const {
 	return false;
 }
 
-bool NodeFunctionCall::is_string_env() {
+bool NodeFunctionCall::is_string_env() const {
 	bool is_string = false;
 	// is within string environment
 	is_string |= parent->ty == TypeRegistry::String;
@@ -273,6 +274,11 @@ bool NodeFunctionCall::is_destructive_builtin_func() const {
 bool NodeFunctionCall::determine_callability(NodeProgram *program, NodeCallback *current_callback) {
 	static FunctionCallableValidator validator(program);
 	return validator.is_callable(*this, current_callback);
+}
+
+void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCallback *current_callback) {
+	static ASTFunctionStrategy function_strategy(program);
+	function_strategy.determine_function_strategy(*this, program->current_callback);
 }
 
 // ************* NodeSortSearch ***************

@@ -38,7 +38,16 @@ on note
 
 	end if
 
+	stack_transform_me(1,2,3)
+
 end on
+
+function stack_transform_me(param1, param2, param3)
+	if param1 = param2
+		message(param3)
+	end if
+end function	
+
 
 
 

@@ -59,23 +59,28 @@ void parallel_for_each(Iterator begin, Iterator end, Func func, size_t num_threa
 /*
  * helper function to search vectors for chars, std::String and Keyword obj
  */
-static bool contains(std::vector<char> &vec, char c) {
-	return std::ranges::any_of(vec, [&](const auto& ch) {return ch == c;});
+static bool contains(const std::vector<char>& vec, char c) {
+	return std::any_of(vec.begin(), vec.end(), [c](char ch) { return ch == c; });
 }
-static bool contains(const std::unordered_set<char> &vec, const char c) {
-	return vec.contains(c);
+
+static bool contains(const std::unordered_set<char>& set, char c) {
+	return set.find(c) != set.end();
 }
+
 static bool contains(const std::vector<std::string>& vec, const std::string& value) {
-	return std::ranges::find(vec, value) != vec.end();
+	return std::find(vec.begin(), vec.end(), value) != vec.end();
 }
+
 static bool contains(const std::unordered_set<std::string>& vec, const std::string& value) {
 	return vec.contains(value);
 }
+
 static bool contains(const std::vector<Keyword>& vec, const std::string& value) {
-	return std::ranges::find_if(vec, [&value](const Keyword& kw) {
+	return std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
 	  return kw.value == value;
 	}) != vec.end();
 }
+
 static bool contains(const std::string& string, const std::string& substring) {
 	return string.find(substring) != std::string::npos;
 }
@@ -111,14 +116,14 @@ inline std::vector<std::string> get_namespaces(const std::string& str) {
 
 static std::string to_lower(const std::string& input) {
 	std::string output = input;
-	std::ranges::transform(output, output.begin(),
-	            [](const unsigned char c) { return std::tolower(c); });
+	std::transform(output.begin(), output.end(), output.begin(),
+				   [](unsigned char c) { return std::tolower(c); });
 	return output;
 }
 
 static std::string to_upper(const std::string& input) {
 	std::string output = input;
-	std::ranges::transform(output, output.begin(),
-	            [](const unsigned char c) { return std::toupper(c); });
+	std::transform(output.begin(), output.end(), output.begin(),
+				   [](unsigned char c) { return std::toupper(c); });
 	return output;
 }

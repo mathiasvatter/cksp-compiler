@@ -685,6 +685,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			definition->accept(*this);
 			definition->visited = true;
 		}
+
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
 			auto &param = definition->get_param(i);
@@ -692,6 +693,15 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
 					+ param->ty->to_string() + " as argument type.";
 			match_type(*func_arg, *param, error_message);
+			// infer formal param type only if function is no builtin function
+			if (!node.is_builtin_kind()) {
+				const std::string error_message2 =
+				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
+					+ func_arg->ty->to_string() + " as argument type.";
+				if (param->ty->is_compatible(func_arg->ty)) { // to avoid compatibility mistakes
+					match_against(*param, func_arg->ty, error_message2);
+				}
+			}
 		}
 	}
 	if(definition) {

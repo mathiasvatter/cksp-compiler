@@ -143,6 +143,7 @@ public:
     }
     [[nodiscard]] std::string to_string() const override {
 		std::string output = m_element_type->to_string();
+    	if (m_dimensions == 0) output += "[]";
 		for(int i = 0; i < m_dimensions; i++) {
 			output += "[]";
 		}

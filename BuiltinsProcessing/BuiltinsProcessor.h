@@ -39,7 +39,7 @@ private:
 	std::string m_builtin_widgets_file;
 
 	static bool is_threadsafe_function(const std::string& fun_name) {
-		static const std::set<std::string> thread_unsafe_functions = {"wait", "wait_ticks", "wait_async"};
+		static const std::set<std::string> thread_unsafe_functions = {"wait", "wait_ticks", "wait_async", "stop_wait"};
 		return !thread_unsafe_functions.contains(fun_name);
 	}
 

@@ -131,6 +131,7 @@ void Compiler::compile() {
 
 	TypeInference infer_types(ast.get());
 	ast->accept(infer_types);
+	ast->debug_print();
 
 	compile_time.stop("Type Checking");
 	std::cout << compile_time.print_timer("Type Checking") << std::endl;
@@ -189,7 +190,6 @@ void Compiler::compile() {
 
 	ASTGlobalScope global_scope(m_program);
 	ast->accept(global_scope);
-	ast->debug_print();
 
 	compile_time.stop("Global Scope");
 	std::cout << compile_time.print_timer("Global Scope") << std::endl;

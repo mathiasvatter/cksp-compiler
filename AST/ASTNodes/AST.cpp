@@ -1171,14 +1171,14 @@ bool NodeProgram::check_unique_callbacks() const {
 
 NodeCallback* NodeProgram::move_on_init_callback() {
 	// Finden des ersten (und einzigen) on init Callbacks
-	const auto it = std::ranges::find_if(callbacks, [&](const std::unique_ptr<NodeCallback>& callback) {
-	  return callback.get() == init_callback;
+	auto it = std::find_if(callbacks.begin(), callbacks.end(), [&](const std::unique_ptr<NodeCallback>& callback) {
+		return callback.get() == init_callback;
 	});
 	// Move the callback to the first position
 	if (it != callbacks.end()) {
 		std::rotate(callbacks.begin(), it, std::next(it));
 	}
-	return callbacks.at(0).get(); // Return the pointer to the init callback
+	return callbacks.at(0).get(); // Rückgabe des Zeigers auf den init callback
 }
 
 std::unique_ptr<NodeBlock> NodeProgram::declare_compiler_variables() {
