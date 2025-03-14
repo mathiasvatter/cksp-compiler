@@ -7,6 +7,7 @@
 #include "ASTVisitor.h"
 #include "ReturnFunctionRewriting/ReturnFunctionIsolation.h"
 #include "ASTTemporaryPointerScope.h"
+#include "FunctionHandling/ASTFunctionStrategy.h"
 
 class ASTReturnFunctionRewriting final : public ASTVisitor {
 	DefinitionProvider *m_def_provider;
@@ -16,8 +17,13 @@ public:
 	}
 
 	void do_rewriting(NodeProgram& node) {
+		// static ASTFunctionStrategy function_strategy(m_program);
+		// function_strategy.determine_function_strategies(node);
+
+		// do hoisting and return parameter promotion
 		node.accept(*this);
 		node.reset_function_visited_flag();
+
 		static ReturnFunctionIsolation isolation(m_program);
 		isolation.do_return_function_isolation(node);
 
@@ -58,6 +64,8 @@ private:
 				definition->accept(*this);
 			}
 			definition->visited = true;
+			static ASTFunctionStrategy function_strategy(m_program);
+			function_strategy.determine_function_strategy(node, m_program->current_callback);
 
 		}
 		return node.do_function_call_hoisting(m_program);

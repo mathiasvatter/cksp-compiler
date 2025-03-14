@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "ASTFunctionStrategy.h"
+#include "ParameterStackTransformation.h"
 #include "../ASTVisitor.h"
 
 class ASTFunctionInlining : public ASTVisitor {
@@ -16,8 +18,15 @@ public:
 	}
 
 	/// check for used functions
-	inline NodeAST *visit(NodeProgram &node) override {
+	NodeAST *visit(NodeProgram &node) override {
 		m_program = &node;
+
+		// ASTFunctionStrategy strategy(m_program);
+		// strategy.determine_function_strategies(*m_program);
+
+		static ParameterStackTransformation transform(m_program);
+		transform.do_function_stack_transformation(*m_program);
+
 		node.reset_function_used_flag();
 		node.reset_function_visited_flag();
 		m_program->global_declarations->accept(*this);
@@ -33,7 +42,7 @@ public:
 		return &node;
 	}
 
-	inline NodeAST *visit(NodeCallback &node) override {
+	NodeAST *visit(NodeCallback &node) override {
 		m_current_callback = &node;
 		if(node.callback_id) node.callback_id->accept(*this);
 		node.statements->accept(*this);
@@ -42,7 +51,7 @@ public:
 	}
 
 	/// initiating substitution
-	inline NodeAST *visit(NodeFunctionCall &node) override {
+	NodeAST *visit(NodeFunctionCall &node) override {
 		// visit header
 		node.function->accept(*this);
 		// check if function is called with correct amount of arguments
@@ -105,6 +114,10 @@ public:
 		}
 		definition->visited = true;
 
+		// if (node.function->name == "Array::clip"){
+		//
+		// }
+		node.determine_function_strategy(m_program, m_current_callback);
 		// if node is_call, do not inline and return
 		if(node.is_call) {
 			definition->is_used = true;
@@ -112,10 +125,12 @@ public:
 			return &node;
 		}
 
-		// used can not be set to false here, because some func calls might be "called" and some not
-		auto new_node = node.do_function_inlining(m_program);
-		m_program->function_call_stack.pop();
-		return new_node;
+		// if (node.strategy == NodeFunctionCall::Strategy::Inlining) {
+			// used can not be set to false here, because some func calls might be "called" and some not
+			auto new_node = node.do_function_inlining(m_program);
+			m_program->function_call_stack.pop();
+			return new_node;
+		// }
 	}
 
 };

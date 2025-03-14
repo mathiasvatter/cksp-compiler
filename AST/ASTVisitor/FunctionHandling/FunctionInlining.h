@@ -9,7 +9,7 @@
 /**
  * Takes a function call and inlines the function body into the call after substituting all parameters
  */
-class FunctionInlining : public ASTVisitor {
+class FunctionInlining final : public ASTVisitor {
 
 public:
 	explicit FunctionInlining(NodeProgram* main) {
@@ -35,7 +35,8 @@ public:
 		}
 
 		// deal here with expression functions
-		if(definition->is_expression_function()) {
+		// if (definition->is_expression_function()) {
+		if(node.strategy == NodeFunctionCall::Strategy::ExpressionFunc) {
 //			definition->is_used = false;
 			auto node_func_body = clone_as<NodeBlock>(definition->body.get());
 			m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
@@ -43,7 +44,7 @@ public:
 
 			m_substitution_stack.pop();
 			return node.replace_with(get_expression_return(node_func_body.get()));
-		};
+		}
 
 
 		// check if FunctionCall is in statement and not assigned or in a condition etc (Handled bei ReturnFunctionRewriting class)
@@ -53,7 +54,6 @@ public:
 
 		// inlining process
 		// can not be set to false here, because some func calls might be "called" and some not
-//			definition->is_used = false;
 		auto node_func_body = clone_as<NodeBlock>(definition->body.get());
 		m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 		node_func_body->accept(*this);

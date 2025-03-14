@@ -20,11 +20,10 @@ public:
 		m_program = main;
 	}
 
-	static bool do_preemptive_function_inlining(NodeFunctionCall& call) {
-		auto def = call.get_definition();
-		if(!def) return false;
-		return def->is_expression_function() || is_initializer_function(call) || is_wildcard_function(call);
-	}
+	// static bool do_preemptive_function_inlining(const NodeFunctionCall& call) {
+	// 	return call.strategy == NodeFunctionCall::Strategy::PreemptiveInlining
+	// 	or call.strategy == NodeFunctionCall::Strategy::ExpressionFunc;
+	// }
 
 private:
 	NodeAST* visit(NodeProgram &node) override {
@@ -43,6 +42,14 @@ private:
 		return &node;
 	}
 
+	NodeAST* visit(NodeCallback& node) override {
+		m_program->current_callback = &node;
+		if (node.callback_id) node.callback_id->accept(*this);
+		node.statements->accept(*this);
+		m_program->current_callback = nullptr;
+		return &node;
+	}
+
 	NodeAST* visit(NodeFunctionCall &node) override {
 		node.function->accept(*this);
 
@@ -50,15 +57,16 @@ private:
 			if(node.is_builtin_kind()) return &node;
 			auto definition = node.get_definition();
 			m_program->function_call_stack.push(definition);
-			if(!definition->visited) {
-				definition->accept(*this);
-			}
+			if(!definition->visited) definition->accept(*this);
 			definition->visited = true;
+
+			node.determine_function_strategy(m_program, m_program->current_callback);
 			// see if the function is a return-only function
-			if(do_preemptive_function_inlining(node)) {
+			if(node.strategy == NodeFunctionCall::Strategy::PreemptiveInlining
+				or node.strategy == NodeFunctionCall::Strategy::ExpressionFunc) {
 				definition->is_used = false;
 //				node.do_param_promotion(m_program);
-				auto new_node = node.do_function_inlining(m_program);
+				const auto new_node = node.do_function_inlining(m_program);
 				m_program->function_call_stack.pop();
 				return new_node;
 			} else {
@@ -69,24 +77,24 @@ private:
 		return &node;
 	}
 
-	static inline bool is_initializer_function(const NodeFunctionCall& call) {
-		for(auto &arg : call.function->args->params) {
-			if(arg->cast<NodeInitializerList>()) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	static inline bool is_wildcard_function(const NodeFunctionCall& call) {
-		for(auto &arg : call.function->args->params) {
-			if(auto nd_arg = arg->cast<NodeNDArrayRef>()) {
-				if(nd_arg->num_wildcards())
-					return true;
-			}
-		}
-		return false;
-	}
+	// static inline bool is_initializer_function(const NodeFunctionCall& call) {
+	// 	for(auto &arg : call.function->args->params) {
+	// 		if(arg->cast<NodeInitializerList>()) {
+	// 			return true;
+	// 		}
+	// 	}
+	// 	return false;
+	// }
+	//
+	// static inline bool is_wildcard_function(const NodeFunctionCall& call) {
+	// 	for(auto &arg : call.function->args->params) {
+	// 		if(auto nd_arg = arg->cast<NodeNDArrayRef>()) {
+	// 			if(nd_arg->num_wildcards())
+	// 				return true;
+	// 		}
+	// 	}
+	// 	return false;
+	// }
 
 	NodeAST * visit(NodeFunctionHeaderRef& node) override {
 		// make sure that the function that is arg in a higher-order function

@@ -43,8 +43,9 @@ struct NodeStatement final : NodeInstruction {
 struct NodeFunctionCall final : NodeInstruction {
     enum Kind{Property, Builtin, UserDefined, Undefined, Method, Constructor, Operator};
 	inline static const std::array<std::string, 7> KindStrings = {"Property","Builtin","UserDefined","Undefined","Method","Constructor","Operator"};
-	enum Strategy{Inlining, PreemptiveInlining, ParameterStack, Call, None};
+	enum Strategy{Inlining, PreemptiveInlining, ParameterStack, Call, None, ExpressionFunc};
     Kind kind = Undefined;
+	Strategy strategy = None;
     bool is_call = false;
 	bool is_callable = false;
 	bool is_new = false;
@@ -83,7 +84,7 @@ struct NodeFunctionCall final : NodeInstruction {
 	[[nodiscard]] bool is_builtin_kind() const;
 	[[nodiscard]] std::string get_object_name() const;
 	[[nodiscard]] std::string get_method_name() const;
-	[[nodiscard]] bool is_string_env();
+	[[nodiscard]] bool is_string_env() const;
 	[[nodiscard]] bool do_param_promotion() const;
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	[[nodiscard]] std::shared_ptr<NodeFunctionDefinition> get_definition() const {
@@ -99,6 +100,7 @@ struct NodeFunctionCall final : NodeInstruction {
 	};
 	bool is_destructive_builtin_func() const;
 	bool determine_callability(NodeProgram* program, NodeCallback* current_callback);
+	void determine_function_strategy(NodeProgram* program, NodeCallback* current_callback);
 };
 
 struct NodeSortSearch final : NodeInstruction {
