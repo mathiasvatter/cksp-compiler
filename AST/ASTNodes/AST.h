@@ -91,7 +91,7 @@ struct NodeAST {
 	void do_constant_folding();
     virtual NodeAST* do_array_normalization(NodeProgram *program);
 	void do_type_inference(NodeProgram *program);
-	NodeAST* do_variable_checking(NodeProgram* program, bool fail);
+	NodeAST* collect_declarations(NodeProgram* program);
 
 	/// Determines if current Node is function argument
 	[[nodiscard]] NodeFunctionHeaderRef* is_func_arg() const;

@@ -261,8 +261,8 @@ private:
 		node_function->num_return_stmts = 1;
 		node_function->num_return_params = 1;
 		node_function->return_stmts.push_back(static_cast<NodeReturn*>(node_function->body->statements[0]->statement.get()));
-		// Fügen Sie die neue Funktionsdefinition zum Programm hinzu
 		program->add_function_definition(node_function);
+		program->merge_function_definitions();
 		return true;
 
 	}

@@ -20,7 +20,7 @@ class ASTCollectReferences final : public ASTVisitor {
 	}
 
 	static void add_reference(NodeReference* ref) {
-		if(auto decl = ref->get_declaration()) {
+		if(const auto decl = ref->get_declaration()) {
 			decl->add_reference(ref);
 		}
 	}
@@ -47,7 +47,7 @@ public:
 
 	// set visited flag to true
 	NodeAST *visit(NodeFunctionDefinition &node) override {
-		node.visited = true;
+		// node.visited = true;
 		node.header ->accept(*this);
 		if (node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);
@@ -75,7 +75,7 @@ public:
 		return &node;
 	}
 	NodeAST *visit(NodeFunctionHeader &node) override {
-		for(const auto &param : node.params) param->variable->accept(*this);
+		for(const auto &param : node.params) param->accept(*this);
 		return &node;
 	}
 	NodeAST *visit(NodeFunctionHeaderRef &node) override {

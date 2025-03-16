@@ -56,6 +56,7 @@ NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
 
 	// if var is global -> make assignment and move declaration to global declarations
     if(node.variable->is_global) {
+    	node.variable->is_global = true;
         m_global_variable_declarations->add_as_stmt(
 			std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok)
 		);

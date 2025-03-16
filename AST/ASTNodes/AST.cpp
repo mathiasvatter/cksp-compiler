@@ -28,6 +28,7 @@
 #include "../ASTVisitor/ASTVariableChecking.h"
 #include "../ASTVisitor/TypeInference.h"
 #include "../ASTVisitor/FunctionHandling/ReturnPathValidator.h"
+#include "../ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, const NodeType node_type) : tok(std::move(tok)),
@@ -210,9 +211,9 @@ void NodeAST::do_type_inference(NodeProgram *program) {
 }
 
 
-NodeAST * NodeAST::do_variable_checking(NodeProgram *program, const bool fail) {
-	static ASTVariableChecking var_checking(program);
-	return var_checking.do_variable_checking(*this, fail);
+NodeAST * NodeAST::collect_declarations(NodeProgram *program) {
+	static ASTCollectDeclarations collect(program);
+	return collect.do_collect_declarations(*this);
 }
 
 // ************* NodeDataStructure ***************
@@ -236,8 +237,9 @@ std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
 
 bool NodeDataStructure::determine_locality(const NodeProgram* program, const NodeBlock* current_block) {
 	// not init_callback if var is set to local
+	const bool global_declarations = current_block and current_block == program->global_declarations.get();
 	const bool init_callback = (program->current_callback == program->init_callback and program->function_call_stack.empty() and !is_local) or is_global;
-	is_local = ((current_block and current_block->scope) or is_function_param() or is_member()) and !init_callback;
+	is_local = ((current_block and current_block->scope) or is_function_param() or is_member() or is_local) and !init_callback and !global_declarations;
 	// could also be an old school return variable which would have to be local
 	is_local = is_local or parent->cast<NodeFunctionDefinition>();
 	return is_local;
@@ -306,6 +308,7 @@ NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDat
 void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>& data_structure) {
 	is_engine = data_structure->is_engine;
 	is_local = data_structure->is_local;
+	is_global = data_structure->is_global;
 	data_type = data_structure->data_type;
 	is_thread_safe = data_structure->is_thread_safe;
 }
@@ -952,10 +955,10 @@ NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& oth
         : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
           num_return_params(other.num_return_params), num_return_stmts(other.num_return_stmts),
           return_stmts(other.return_stmts), call_sites(other.call_sites),
-		  header(other.header), override(other.override),
+		  header(clone_shared(other.header)), override(other.override),
 		  body(clone_unique(other.body)) {
     if (other.return_variable) {
-        return_variable = std::make_optional(other.return_variable.value());
+        return_variable = std::make_optional(clone_shared(other.return_variable.value()));
     }
 	set_child_parents();
 }

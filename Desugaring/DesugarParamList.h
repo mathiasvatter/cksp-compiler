@@ -48,7 +48,13 @@ public:
 		}
 
 		// in case we are in a foreach statement
-		if(node.parent->cast<NodeForEach>() or node.parent->parent->cast<NodeForEach>()) {
+		// for i in (1,2,3,4)
+		if(node.parent->cast<NodeForEach>()) {
+			return node.replace_with(node.to_initializer_list());
+		}
+
+		// for idx, el in pairs((1,2,3,4,5))
+		if (node.parent->cast<NodePairs>() and node.parent->parent->cast<NodeForEach>()) {
 			return node.replace_with(node.to_initializer_list());
 		}
 

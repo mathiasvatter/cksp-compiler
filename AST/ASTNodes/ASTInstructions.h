@@ -44,6 +44,7 @@ struct NodeFunctionCall final : NodeInstruction {
     enum Kind{Property, Builtin, UserDefined, Undefined, Method, Constructor, Operator};
 	inline static const std::array<std::string, 7> KindStrings = {"Property","Builtin","UserDefined","Undefined","Method","Constructor","Operator"};
 	enum Strategy{Inlining, PreemptiveInlining, ParameterStack, Call, None, ExpressionFunc};
+	inline static const std::array<std::string, 7> StrategyStrings = {"Inlining","PreemptiveInlining","ParameterStack","Call","None","ExpressionFunc"};
     Kind kind = Undefined;
 	Strategy strategy = None;
     bool is_call = false;
@@ -64,6 +65,12 @@ struct NodeFunctionCall final : NodeInstruction {
 	[[nodiscard]] std::string get_kind_as_string() const {
 		if (static_cast<size_t>(kind) < KindStrings.size()) {
 			return KindStrings[static_cast<size_t>(kind)];
+		}
+		return "";
+	}
+	[[nodiscard]] std::string get_strategy_string() const {
+		if (static_cast<size_t>(strategy) < StrategyStrings.size()) {
+			return StrategyStrings[static_cast<size_t>(strategy)];
 		}
 		return "";
 	}
