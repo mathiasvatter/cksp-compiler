@@ -93,18 +93,23 @@ public:
 					node.strategy = NodeFunctionCall::Strategy::PreemptiveInlining;
 			} else if (node.function->has_no_args()) {
 				node.strategy = NodeFunctionCall::Strategy::Call;
-			} else {
+			} else if (has_only_scalar_params(*definition)) {
 				node.strategy = NodeFunctionCall::Strategy::ParameterStack;
+			} else {
+				node.strategy = NodeFunctionCall::Strategy::Inlining;
 			}
-
 		}
 
-
-
-
-
-
 		return &node;
+	}
+
+	static bool has_only_scalar_params(const NodeFunctionDefinition& def) {
+		for(const auto &param : def.header->params) {
+			if(param->variable->ty->cast<CompositeType>()) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/// function call has initializer list in its actual parameters

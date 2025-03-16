@@ -115,7 +115,8 @@ void Compiler::compile() {
 	ASTTypeAnnotations type_annotations(m_program);
 	ast->accept(type_annotations);
 
-	ast->do_variable_checking(m_program, false);
+	ASTVariableChecking variable_checking(m_program);
+	variable_checking.do_variable_checking(*ast, false);
 	ast->collect_references();
 
 	compile_time.stop("Variable Checking");
@@ -131,7 +132,6 @@ void Compiler::compile() {
 
 	TypeInference infer_types(ast.get());
 	ast->accept(infer_types);
-	ast->debug_print();
 
 	compile_time.stop("Type Checking");
 	std::cout << compile_time.print_timer("Type Checking") << std::endl;
@@ -177,12 +177,12 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
 
-	ast->do_variable_checking(m_program, true);
+	variable_checking.do_variable_checking(*ast, true);
 	ast->remove_references();
 	ast->collect_references();
 
-//	ast->debug_print();
     ast->accept(infer_types);
+	// ast->debug_print();
 
 	compile_time.stop("Variable Checking 1");
 	std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;
@@ -199,6 +199,7 @@ void Compiler::compile() {
 	ASTFunctionInlining func_inlining(m_program);
 	ast->accept(func_inlining);
 	ast->order_function_definitions();
+	ast->debug_print();
 
     compile_time.stop("Function Inlining");
 	std::cout << compile_time.print_timer("Function Inlining") << std::endl;

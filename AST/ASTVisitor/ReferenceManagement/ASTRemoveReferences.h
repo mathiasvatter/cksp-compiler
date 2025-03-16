@@ -77,7 +77,7 @@ public:
 	}
 	inline NodeAST *visit(NodeFunctionHeader &node) override {
 		node.clear_references();
-		for(auto &param : node.params) param->variable->accept(*this);
+		for(auto &param : node.params) param->accept(*this);
 		return &node;
 	}
 	inline NodeAST *visit(NodeFunctionHeaderRef &node) override {

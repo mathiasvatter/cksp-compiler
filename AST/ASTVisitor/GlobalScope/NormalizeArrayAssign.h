@@ -94,7 +94,7 @@ private:
 
 		std::unique_ptr<NodeBlock> node_body = nullptr;
 		if(node.variable->get_node_type() == NodeType::Array) {
-			node_body = std::make_unique<NodeBlock>(node.tok);
+			node_body = std::make_unique<NodeBlock>(node.tok, true);
 			auto node_array = static_cast<NodeArray*>(node.variable.get());
 			auto node_array_ref = node_array->to_reference();
 			// if lhs is arrayref and has no index, check if array is initialized with a list of values

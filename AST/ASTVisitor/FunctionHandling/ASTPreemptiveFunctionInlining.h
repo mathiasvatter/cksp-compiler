@@ -60,6 +60,9 @@ private:
 			if(!definition->visited) definition->accept(*this);
 			definition->visited = true;
 
+			// if (node.function->name == "update_user_preset_to_1_1") {
+			//
+			// }
 			node.determine_function_strategy(m_program, m_program->current_callback);
 			// see if the function is a return-only function
 			if(node.strategy == NodeFunctionCall::Strategy::PreemptiveInlining

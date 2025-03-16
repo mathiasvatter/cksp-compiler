@@ -521,7 +521,7 @@ NodeAST * ASTPrinter::visit(NodeFunctionCall &node) {
         os << "call ";
     }
     node.function->accept(*this);
-	os << "{" << node.get_kind_as_string() << "}";
+	os << "{" << node.get_kind_as_string() << ", " << node.get_strategy_string() << "}";
 	return &node;
 }
 
