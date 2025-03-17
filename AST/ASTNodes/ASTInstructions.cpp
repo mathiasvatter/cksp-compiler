@@ -505,7 +505,7 @@ NodeAST *NodeSingleAssignment::accept(struct ASTVisitor &visitor) {
 }
 NodeSingleAssignment::NodeSingleAssignment(const NodeSingleAssignment& other)
         : NodeInstruction(other), l_value(clone_unique(other.l_value)),
-          r_value(clone_unique(other.r_value)), has_object(other.has_object) {
+          r_value(clone_unique(other.r_value)), has_object(other.has_object), is_parameter_stack(other.is_parameter_stack) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleAssignment::clone() const {

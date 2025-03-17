@@ -10,7 +10,7 @@
  * Takes a function call and inlines the function body into the call after substituting all parameters
  */
 class FunctionInlining final : public ASTVisitor {
-
+	std::vector<NodeSingleAssignment*> m_immutable_param_stack_assignments; // assignments like 0 := param -> to be removed
 public:
 	explicit FunctionInlining(NodeProgram* main) {
 		m_program = main;
@@ -18,6 +18,7 @@ public:
 
 	NodeAST* do_function_inlining(NodeFunctionCall& call) {
 //		call.do_param_promotion();
+		m_immutable_param_stack_assignments.clear();
 		return call.accept(*this);
 	}
 
@@ -58,6 +59,12 @@ public:
 		m_substitution_stack.push(get_substitution_map(definition->header.get(), node.function.get()));
 		node_func_body->accept(*this);
 		m_substitution_stack.pop();
+
+		for (int i=0; i<m_immutable_param_stack_assignments.size(); i++) {
+			auto &assignment = m_immutable_param_stack_assignments[i];
+			assignment->remove_node();
+		}
+
 		return node.replace_with(std::move(node_func_body));
 
 	}
@@ -255,8 +262,13 @@ private:
 
 		if(auto substitute = get_substitute(ref->name)) {
 			// check if substitute will replace l_value of assignment and is Literal
-			if(ref->is_l_value()) {
+			if(auto assignment = ref->is_l_value()) {
 				if(substitute->is_constant() and !substitute->ty->cast<CompositeType>()) {
+					if (assignment->is_parameter_stack) {
+						m_immutable_param_stack_assignments.push_back(assignment);
+						return nullptr;
+					}
+
 					auto error = CompileError(ErrorType::SyntaxError, "", "", substitute->tok);
 					error.m_message = "Tried to substitute an l_value of an assignment with an immutable value. Left side of assignment must be a reference.";
 					error.exit();

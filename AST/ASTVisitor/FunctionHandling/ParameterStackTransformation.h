@@ -89,6 +89,7 @@ private:
 							formal_param->to_reference(),
 							call->tok
 					);
+					assignment_back->is_parameter_stack = true;
 					block_after->add_as_stmt(std::move(assignment_back));
 				}
 				auto assignment = std::make_unique<NodeSingleAssignment>(
@@ -96,6 +97,7 @@ private:
                     std::move(actual_param),
                     call->tok
 				);
+				assignment->is_parameter_stack = true;
 				block->add_as_stmt(std::move(assignment));
 			}
 			call->function->args->params.clear();

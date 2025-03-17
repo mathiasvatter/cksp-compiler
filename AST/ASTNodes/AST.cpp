@@ -28,6 +28,7 @@
 #include "../ASTVisitor/ASTVariableChecking.h"
 #include "../ASTVisitor/TypeInference.h"
 #include "../ASTVisitor/FunctionHandling/ReturnPathValidator.h"
+#include "../ASTVisitor/ReferenceManagement/ASTCollectCallSites.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h"
 
 // ************* NodeAST Base Class ***************
@@ -214,6 +215,11 @@ void NodeAST::do_type_inference(NodeProgram *program) {
 NodeAST * NodeAST::collect_declarations(NodeProgram *program) {
 	static ASTCollectDeclarations collect(program);
 	return collect.do_collect_declarations(*this);
+}
+
+NodeAST * NodeAST::collect_call_sites(NodeProgram *program) {
+	static ASTCollectCallSites call_sites(program);
+	return call_sites.do_collect_call_sites(*this);
 }
 
 // ************* NodeDataStructure ***************
@@ -1049,9 +1055,9 @@ bool NodeFunctionDefinition::has_no_params() const {
 	return header->params.empty();
 }
 
-void NodeFunctionDefinition::do_variable_reuse(NodeProgram *program) {
+std::vector<std::shared_ptr<NodeDataStructure>> NodeFunctionDefinition::do_variable_reuse(NodeProgram *program) {
 	static ASTVariableReuse register_reuse(program);
-	register_reuse.do_variable_reuse(*this);
+	return register_reuse.do_variable_reuse(*this);
 }
 
 void NodeFunctionDefinition::do_return_param_promotion(NodeProgram* program) {

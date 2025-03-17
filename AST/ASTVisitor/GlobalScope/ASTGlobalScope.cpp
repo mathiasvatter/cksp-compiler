@@ -17,12 +17,12 @@ NodeAST * ASTGlobalScope::visit(NodeProgram &node) {
 	// then do parameter promotion directly to global or successively
 	static ASTParameterPromotion param_promotion(m_program);
 	param_promotion.do_param_promotion(node);
-	node.debug_print();
 
 	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
-	static ASTVariableReuse register_reuse(m_program);
-	register_reuse.do_variable_reuse(node);
+	static ASTVariableReuse variable_reuse(m_program);
+	variable_reuse.do_variable_reuse(node);
 
+	// node.debug_print();
 	return &node;
 }
 

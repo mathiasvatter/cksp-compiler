@@ -92,7 +92,7 @@ struct NodeAST {
     virtual NodeAST* do_array_normalization(NodeProgram *program);
 	void do_type_inference(NodeProgram *program);
 	NodeAST* collect_declarations(NodeProgram* program);
-
+	NodeAST* collect_call_sites(NodeProgram* program);
 	/// Determines if current Node is function argument
 	[[nodiscard]] NodeFunctionHeaderRef* is_func_arg() const;
 	[[nodiscard]] bool is_literal();
@@ -712,7 +712,8 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	std::shared_ptr<NodeFunctionDefinition> get_shared() {
 		return shared_from_this();
 	}
-	void do_variable_reuse(NodeProgram* program);
+
+	std::vector<std::shared_ptr<NodeDataStructure>> do_variable_reuse(NodeProgram *program);
 	void do_return_param_promotion(NodeProgram* program);
 	bool do_return_path_validation();
 };
