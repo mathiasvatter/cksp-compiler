@@ -1049,7 +1049,7 @@ bool NodeFunctionDefinition::has_no_params() const {
 	return header->params.empty();
 }
 
-void NodeFunctionDefinition::do_register_reuse(NodeProgram *program) {
+void NodeFunctionDefinition::do_variable_reuse(NodeProgram *program) {
 	static ASTVariableReuse register_reuse(program);
 	register_reuse.do_variable_reuse(*this);
 }

@@ -199,7 +199,6 @@ void Compiler::compile() {
 	ASTFunctionInlining func_inlining(m_program);
 	ast->accept(func_inlining);
 	ast->order_function_definitions();
-	ast->debug_print();
 
     compile_time.stop("Function Inlining");
 	std::cout << compile_time.print_timer("Function Inlining") << std::endl;

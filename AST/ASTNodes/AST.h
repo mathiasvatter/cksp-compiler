@@ -712,7 +712,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	std::shared_ptr<NodeFunctionDefinition> get_shared() {
 		return shared_from_this();
 	}
-	void do_register_reuse(NodeProgram* program);
+	void do_variable_reuse(NodeProgram* program);
 	void do_return_param_promotion(NodeProgram* program);
 	bool do_return_path_validation();
 };
