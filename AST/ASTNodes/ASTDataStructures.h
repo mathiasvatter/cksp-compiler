@@ -221,7 +221,8 @@ struct NodeFunctionHeader final : NodeDataStructure {
 		return ty;
 	}
 	void add_param(std::shared_ptr<NodeDataStructure> param) {
-		auto decl = std::make_unique<NodeFunctionParam>(param, nullptr, param->tok);
+		const auto tok = param->tok;
+		auto decl = std::make_unique<NodeFunctionParam>(std::move(param), nullptr, tok);
 		decl->parent = this;
 		params.push_back(std::move(decl));
 	}

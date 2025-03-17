@@ -209,4 +209,5 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/GlobalScope/MarkThreadSafe.h
         AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h
         AST/ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h
+        AST/ASTVisitor/ReferenceManagement/ASTCollectCallSites.h
 )

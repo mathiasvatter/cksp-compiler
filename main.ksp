@@ -10,8 +10,8 @@ on init
 
 
 
-	declare float_mask[2]: int[]
-	update_user_preset_to_1_1(float_mask)
+	// declare float_mask[2]: int[]
+	// update_user_preset_to_1_1(float_mask)
 end on
 
 

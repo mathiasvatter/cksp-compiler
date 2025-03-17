@@ -23,8 +23,8 @@ public:
 		// ASTFunctionStrategy strategy(m_program);
 		// strategy.determine_function_strategies(*m_program);
 
-		// static ParameterStackTransformation transform(m_program);
-		// transform.do_function_stack_transformation(*m_program);
+		static ParameterStackTransformation transform(m_program);
+		transform.do_function_stack_transformation(*m_program);
 		// node.debug_print();
 
 		node.reset_function_used_flag();
@@ -56,9 +56,10 @@ public:
 		node.function->accept(*this);
 		// check if function is called with correct amount of arguments
 		if(node.is_call and !node.function->has_no_args()) {
-			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-			error.m_message = "Found incorrect amount of function arguments when using <call>.";
-			error.exit();
+			// auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+			// error.m_message = "Found incorrect amount of function arguments when using <call>.";
+			// error.exit();
+			node.is_call = false;
 		}
 
 		node.bind_definition(m_program);
@@ -117,7 +118,7 @@ public:
 		// if (node.function->name == "Array::clip"){
 		//
 		// }
-		node.determine_function_strategy(m_program, m_current_callback);
+		// node.determine_function_strategy(m_program, m_current_callback);
 		// if node is_call, do not inline and return
 		if(node.is_call) {
 			definition->is_used = true;

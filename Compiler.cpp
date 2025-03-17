@@ -196,9 +196,11 @@ void Compiler::compile() {
     compile_time.start("Function Inlining");
 
 //	ast->debug_print();
+	ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 	ASTFunctionInlining func_inlining(m_program);
 	ast->accept(func_inlining);
 	ast->order_function_definitions();
+	ast->debug_print();
 
     compile_time.stop("Function Inlining");
 	std::cout << compile_time.print_timer("Function Inlining") << std::endl;

@@ -153,10 +153,10 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 	}
 	node.function->accept(*this);
 
-	// add call sites at second stage when fail is true
-	if(fail and definition and node.kind != NodeFunctionCall::Kind::Builtin) {
-		definition->call_sites.insert(&node);
-	}
+	// // add call sites at second stage when fail is true
+	// if(fail and definition and node.kind != NodeFunctionCall::Kind::Builtin) {
+	// 	definition->call_sites.insert(&node);
+	// }
 
 	return &node;
 }

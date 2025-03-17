@@ -27,12 +27,14 @@ public:
 		clear_all_maps();
 	}
 
-	void do_variable_reuse(NodeFunctionDefinition& def) {
+	std::vector<std::shared_ptr<NodeDataStructure>> do_variable_reuse(NodeFunctionDefinition& def) {
 		m_program->current_callback = nullptr;
 		m_def_provider->refresh_scopes();
 		def.accept(*this);
 		rename_local_vars();
+		auto local_vars = std::move(m_all_local_vars);
 		clear_all_maps();
+		return std::move(local_vars);
 	}
 
 	void do_variable_reuse(NodeProgram& program) {
@@ -166,7 +168,9 @@ private:
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		node.bind_definition(m_program);
-
+		if (auto definition = node.get_definition()) {
+			node.determine_function_strategy(m_program, m_program->current_callback);
+		}
 		// do not visit definition -> because passive var allocation is separate between callbacks and functions
 //		node.do_param_promotion(m_program);
 		return &node;
