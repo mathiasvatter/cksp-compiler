@@ -41,8 +41,28 @@ on note
 	end if
 	declare global mee[2,2] := ((2,2),(2,2))
 	stack_transform_me(1,2,mee)
-
+update_chord_info_label()
 end on
+
+function update_chord_info_label()
+	declare _acc
+	_acc := get_chord_accidental(0,3)
+end function
+
+function get_chord_accidental(key, mode) -> result
+	declare _pos
+	_pos := Co5.get_pos(key, mode)
+end function
+
+function Co5.get_pos(key, mode) -> result
+	declare _mover := 0
+	declare _counter := 0
+	while _mover # key
+		inc(_counter)
+		_mover := (_mover + 7) mod 12
+	end while
+	result := _counter
+end function
 
 function update_user_preset_to_1_1(float_mask)
 	floatmask.set_range(float_mask, 14, 33, 0)

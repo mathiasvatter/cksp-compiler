@@ -7,8 +7,8 @@
 #include "ParameterStackTransformation.h"
 #include "../ASTVisitor.h"
 
-class ASTFunctionInlining : public ASTVisitor {
-private:
+class ASTFunctionInlining final : public ASTVisitor {
+
 	DefinitionProvider *m_def_provider;
 	NodeCallback* m_current_callback = nullptr;
 public:
@@ -23,9 +23,9 @@ public:
 		// ASTFunctionStrategy strategy(m_program);
 		// strategy.determine_function_strategies(*m_program);
 
-		static ParameterStackTransformation transform(m_program);
-		transform.do_function_stack_transformation(*m_program);
-		node.debug_print();
+		// static ParameterStackTransformation transform(m_program);
+		// transform.do_function_stack_transformation(*m_program);
+		// node.debug_print();
 
 		node.reset_function_used_flag();
 		node.reset_function_visited_flag();
