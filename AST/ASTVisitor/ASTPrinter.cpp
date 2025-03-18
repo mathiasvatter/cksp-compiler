@@ -274,9 +274,6 @@ NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
         node.value->accept(*this);
 	}
 	os << "";
-	if(node.has_object) {
-		os << " // object";
-	}
 	return &node;
 }
 

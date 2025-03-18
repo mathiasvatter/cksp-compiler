@@ -20,7 +20,7 @@
  * 	end if
  */
 class ReturnFunctionCallHoisting final : public ASTVisitor {
-	std::unordered_map<NodeStatement*, std::vector<std::unique_ptr<NodeAST>>> m_declares_per_stmt;
+	std::unordered_map<NodeStatement*, std::vector<std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_stmt;
 	/// function call is hoistable when userdefined and returns values and is not an expression function
 	/// or is in condition statement
 	static bool is_hoistable(NodeFunctionCall* node) {
@@ -64,6 +64,7 @@ public:
 			auto node_body = std::make_unique<NodeBlock>(stmt.first->tok);
 			node_body->scope = true;
 			for(auto &decl : stmt.second) {
+				decl->kind = NodeSingleDeclaration::Kind::ReturnVar;
 				node_body->add_as_stmt(std::move(decl));
 			}
 			node_body->add_as_stmt(std::move(stmt.first->statement));

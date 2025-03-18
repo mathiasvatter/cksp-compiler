@@ -168,9 +168,9 @@ private:
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		node.bind_definition(m_program);
-		if (auto definition = node.get_definition()) {
-			node.determine_function_strategy(m_program, m_program->current_callback);
-		}
+		// if (auto definition = node.get_definition()) {
+		// 	node.determine_function_strategy(m_program, m_program->current_callback);
+		// }
 		// do not visit definition -> because passive var allocation is separate between callbacks and functions
 //		node.do_param_promotion(m_program);
 		return &node;
@@ -312,7 +312,7 @@ private:
 private:
 	std::string loc_var_prefix = "loc_";
 	std::stack<NodeBlock*> m_current_block;
-	NodeBlock* get_current_block() const {
+	[[nodiscard]] NodeBlock* get_current_block() const {
 		if (m_current_block.empty()) return nullptr;
 		return m_current_block.top();
 	}
