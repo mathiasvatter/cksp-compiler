@@ -5,7 +5,6 @@
 #pragma once
 
 #include "../ASTVisitor.h"
-#include "../../../misc/Gensym.h"
 
 /**
  * @class ASTGlobalScope
@@ -48,13 +47,9 @@ protected:
 	DefinitionProvider* m_def_provider;
 	/// removes array declarations
 	static std::unique_ptr<NodeAST> to_assign_statement(NodeSingleDeclaration& node) {
-		if(node.is_promoted) {
+		if(node.kind == NodeSingleDeclaration::Kind::Promoted or node.kind == NodeSingleDeclaration::Kind::ReturnVar) {
 			return std::make_unique<NodeDeadCode>(node.tok);
 		}
-//		if(!node.variable->is_thread_safe) {
-//			return std::make_unique<NodeDeadCode>(node.tok);
-//
-//		}
 		auto node_assignment = node.to_assign_stmt();
 		if (const auto array_ref = node_assignment->l_value->cast<NodeArrayRef>()) {
 			if (!array_ref->index) {

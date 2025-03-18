@@ -37,6 +37,7 @@ public:
 	}
 
 	void do_param_promotion(NodeFunctionCall& call) {
+		m_program->current_callback = nullptr;
 //		m_program->reset_function_visited_flag();
 		if(auto decl = call.get_definition()) {
 			decl->visited = false;
@@ -193,7 +194,7 @@ private:
 				// ref->declaration.reset();
 				node.function->add_arg(std::move(ref));
 				auto promoted_decl = std::make_unique<NodeSingleDeclaration>(std::move(var), decl->tok);
-				promoted_decl->is_promoted = true;
+				promoted_decl->kind = NodeSingleDeclaration::Kind::Promoted;
 				node_body->add_as_stmt(std::move(promoted_decl));
 			}
 			node_body->add_as_stmt(node.clone());

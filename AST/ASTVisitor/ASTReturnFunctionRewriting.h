@@ -16,9 +16,6 @@ public:
 	}
 
 	void do_rewriting(NodeProgram& node) {
-		// static ASTFunctionStrategy function_strategy(m_program);
-		// function_strategy.determine_function_strategies(node);
-
 		// do hoisting and return parameter promotion
 		node.accept(*this);
 		node.reset_function_visited_flag();

@@ -17,6 +17,7 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
 #include "AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h"
 #include "AST/ASTVisitor/ASTLowerTypes.h"
+#include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -196,6 +197,8 @@ void Compiler::compile() {
     compile_time.start("Function Inlining");
 
 //	ast->debug_print();
+	ASTFunctionStrategy function_strategy(m_program);
+	ast->accept(function_strategy);
 	ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 	ASTFunctionInlining func_inlining(m_program);
 	ast->accept(func_inlining);

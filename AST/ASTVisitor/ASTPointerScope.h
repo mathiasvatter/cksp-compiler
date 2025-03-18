@@ -191,8 +191,6 @@ public:
 			if(auto retain = add_retain(node.variable->to_reference().get(), node.value.get(), true)) {
 				retain->prepend_as_stmt(std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok));
 				return node.replace_with(std::move(retain));
-			} else {
-				node.has_object = true;
 			}
 		}
 

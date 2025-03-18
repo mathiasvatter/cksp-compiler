@@ -573,13 +573,12 @@ ASTDesugaring * NodeDeclaration::get_desugaring(NodeProgram *program) const {
 }
 
 // ************* NodeSingleDeclaration ***************
-NodeAST *NodeSingleDeclaration::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeSingleDeclaration::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeSingleDeclaration::NodeSingleDeclaration(const NodeSingleDeclaration& other)
         : NodeInstruction(other), variable(clone_shared(other.variable)),
-          value(clone_unique(other.value)),
-		  has_object(other.has_object), is_promoted(other.is_promoted) {
+          value(clone_unique(other.value)), kind(other.kind) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleDeclaration::clone() const {
@@ -627,7 +626,6 @@ std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(Node
             std::move(node_assignee),
             tok
     );
-	node_assign_statement->has_object = this->has_object;
     return node_assign_statement;
 }
 

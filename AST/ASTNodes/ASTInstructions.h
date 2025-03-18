@@ -515,8 +515,8 @@ struct NodeDeclaration final : NodeInstruction {
 struct NodeSingleDeclaration final : NodeInstruction {
     std::shared_ptr<NodeDataStructure> variable;
     std::unique_ptr<NodeAST> value = nullptr;
-	bool has_object = false;
-	bool is_promoted = false;
+	enum Kind{Promoted, ReturnVar, None};
+	Kind kind = None;
     explicit NodeSingleDeclaration(Token tok) : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)) {}
 	NodeSingleDeclaration(std::shared_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
 		: NodeInstruction(NodeType::SingleDeclaration, std::move(tok)),
