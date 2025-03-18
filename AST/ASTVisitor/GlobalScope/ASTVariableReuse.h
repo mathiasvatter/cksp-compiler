@@ -153,10 +153,6 @@ private:
 			for(auto & passive_var : passive_used_vars) {
 				m_passive_vars_map[get_passive_var_hash(*passive_var)].push_back(passive_var);
 			}
-			// set back passive_var index since scope has ended
-			// for(auto & idx : m_passive_vars_idx) {
-			// 	idx.second = 0;
-			// }
 			// clear passive_var replace map
 			m_passive_vars_replace.pop_back();
 		}
@@ -225,6 +221,7 @@ private:
 		if(node.variable->is_local) {
 			// if(is_thread_safe_env()) {
 				if (auto free_passive_var = get_free_passive_var(*node.variable)) {
+					free_passive_var->num_reuses = free_passive_var->num_reuses + 1 + node.variable->num_reuses;
 					m_used_passive_vars[get_current_block()].push_back(free_passive_var);
 					m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
 					auto replacement = to_assign_statement(node);
@@ -322,7 +319,6 @@ private:
 	std::vector<std::shared_ptr<NodeDataStructure>> m_all_local_vars = {};
 	/// hash values are the types
 	std::unordered_map<std::string, std::vector<std::shared_ptr<NodeDataStructure>>> m_passive_vars_map;
-	std::unordered_map<std::string, int> m_passive_vars_idx;
 	std::unordered_map<NodeBlock*, std::vector<std::shared_ptr<NodeDataStructure>>> m_used_passive_vars;
 	void add_passive_vars(const std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual>& map2) {
 		for(auto & var : map2) {
@@ -339,11 +335,6 @@ private:
 		auto free_var = vec.back();
 		vec.pop_back();
 		return free_var;
-		// auto &idx = m_passive_vars_idx[hash];
-		// if(idx < vec.size()) {
-		// 	return vec[idx++];
-		// }
-		// return nullptr;
 	}
 	/// search for new declaration to reference if declaration is replaced by passive_var
 	std::shared_ptr<NodeDataStructure> get_new_declaration(const std::string& ref_name) {

@@ -219,7 +219,8 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	bool is_global = false;
 	bool has_obj_assigned = false;
 	bool is_thread_safe = true; // gets set to false, if dimension inflation needs to be used because of unsafe declaration environment
-	DataType data_type;
+	int num_reuses = 0;
+	DataType data_type = DataType::Mutable;
 	std::string name;
 	std::unordered_set<NodeReference*> references;
 	NodeDataStructure(std::string name, Type* ty, Token tok, const NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {
