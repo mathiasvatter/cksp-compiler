@@ -243,20 +243,6 @@ bool NodeFunctionCall::is_string_env() const {
 	return is_string;
 }
 
-bool NodeFunctionCall::do_param_promotion() const {
-	auto def = get_definition();
-	if(!def) return false;
-	if(def->is_thread_safe) return false;
-	if(is_call) return false;
-	if(def->call_sites.size() > 2) return false;
-	return true;
-}
-
-void NodeFunctionCall::do_param_promotion(NodeProgram *program) {
-	static ASTParameterPromotion param_promotion(program);
-	param_promotion.do_param_promotion(*this);
-}
-
 NodeAST *NodeFunctionCall::do_function_call_hoisting(NodeProgram *program) {
 	static ReturnFunctionCallHoisting hoisting;
 	return hoisting.do_function_call_hoisting(*this, program);
@@ -268,7 +254,7 @@ NodeAST *NodeFunctionCall::do_function_inlining(NodeProgram *program) {
 }
 
 bool NodeFunctionCall::is_destructive_builtin_func() const {
-	return kind == NodeFunctionCall::Kind::Builtin and destructive_functions.find(function->name) != destructive_functions.end();
+	return kind == NodeFunctionCall::Kind::Builtin and destructive_functions.contains(function->name);
 }
 
 bool NodeFunctionCall::determine_callability(NodeProgram *program, NodeCallback *current_callback) {

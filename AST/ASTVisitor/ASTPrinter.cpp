@@ -273,7 +273,7 @@ NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
         os << " := ";
         node.value->accept(*this);
 	}
-	os << "";
+	os << " {Reuses: " << node.variable->num_reuses << "}";
 	return &node;
 }
 

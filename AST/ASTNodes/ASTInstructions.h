@@ -92,12 +92,10 @@ struct NodeFunctionCall final : NodeInstruction {
 	[[nodiscard]] std::string get_object_name() const;
 	[[nodiscard]] std::string get_method_name() const;
 	[[nodiscard]] bool is_string_env() const;
-	[[nodiscard]] bool do_param_promotion() const;
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	[[nodiscard]] std::shared_ptr<NodeFunctionDefinition> get_definition() const {
 		return definition.lock();
 	}
-	void do_param_promotion(NodeProgram* program);
 	NodeAST* do_function_call_hoisting(NodeProgram* program);
 	NodeAST* do_function_inlining(NodeProgram* program);
 

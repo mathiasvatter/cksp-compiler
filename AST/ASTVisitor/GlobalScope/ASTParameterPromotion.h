@@ -7,7 +7,7 @@
 #include "ASTGlobalScope.h"
 
 /**
- * @brief Promotes parameters (Lambda Lifting?) for all functions until all variables are in callbacks.
+ * @brief Promotes parameters for all functions until all variables are in callbacks.
  *
  * - Visits each function call up to the last nested call, adds local declarations as new parameters,
  *   and maps pointers to the next higher function definitions.
@@ -25,58 +25,10 @@ class ASTParameterPromotion final : public ASTGlobalScope {
 
 public:
 	explicit ASTParameterPromotion(NodeProgram* main) : ASTGlobalScope(main) {}
-	// ~ASTParameterPromotion() = default;
 
 	void do_param_promotion(NodeProgram& program) {
 		program.accept(*this);
-		// insert_promoted_declarations();
-		// clear all maps
-		// m_declares_per_stmt.clear();
-		// m_local_var_declarations.clear();
-		// m_global_function_vars.clear();
-	}
-
-	void do_param_promotion(NodeFunctionCall& call) {
-		m_program->current_callback = nullptr;
-//		m_program->reset_function_visited_flag();
-		if(auto decl = call.get_definition()) {
-			decl->visited = false;
-		}
-		call.accept(*this);
-		insert_promoted_declarations();
-
-		// clear all maps
-		m_declares_per_stmt.clear();
 		m_local_var_declarations.clear();
-		m_global_function_vars.clear();
-	}
-
-private:
-	/// insert declarations from m_declares_per_stmt into callbacks
-	/// - insert right above the function calls when param promoted
-	/// - insert to global declarations when not param promoted
-	void insert_promoted_declarations() {
-		// successivelly promoted local vars
-		for(auto & stmt : m_declares_per_stmt) {
-			// if in callback, put the declarations right above the function call
-			auto node_body = std::make_unique<NodeBlock>(Token());
-			node_body->scope = true;
-			for(auto &[fst, snd] : stmt.second) {
-				// decl.second->is_promoted = true;
-				node_body->add_as_stmt(
-					std::make_unique<NodeSingleDeclaration>(snd, nullptr, snd->tok)
-				);
-			}
-			node_body->add_as_stmt(std::move(stmt.first->statement));
-			stmt.first->set_statement(std::move(node_body));
-		}
-
-		// directly promoted local vars
-		for(auto &[fst, snd] : m_global_function_vars) {
-			m_program->global_declarations->add_as_stmt(
-				std::make_unique<NodeSingleDeclaration>(snd, nullptr, snd->tok)
-			);
-		}
 	}
 
 private:
@@ -108,8 +60,7 @@ private:
 		}
 
 
-		bool needs_param_promotion = node.do_param_promotion();
-		needs_param_promotion = true;
+		bool needs_param_promotion = true;
 		// for now, when function does not need param promotion and has no params and is not in init callback, assume as call
 //		if(!needs_param_promotion and node.get_definition()->has_no_params() and !m_program->is_init_callback(m_program->current_callback)) {
 //			node.is_call = true;
