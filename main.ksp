@@ -1,33 +1,136 @@
-struct List
-	declare note : Note
-	declare next : List
-end struct
-
-struct Note
-	declare pitch: int
-	declare velocity: int
-end struct
-
-
 
 on init
 
+	// declare float_mask[2]: int[]
+	// update_user_preset_to_1_1(float_mask)
 end on
-
 
 on note
-	declare pitch: int := EVENT_NOTE
-	declare velo: int := EVENT_VELOCITY
-	play_note(pitch, clamp(velo, 90), 0, -1)
+	declare a
+	if a = 1
+		declare b
+		if b = 1
+			message(a)
+		end if
+
+		declare c
+		message(c, b)	
+
+	end if
+
+	if a = 2
+		declare d
+		if d = 2
+			message(a)
+		end if
+
+		declare e
+		message(e, d)	
+
+	end if
+	declare global mee[2,2] := ((2,2),(2,2))
+	stack_transform_me(1,2,mee)
+update_chord_info_label()
 end on
 
-function clamp(value: int, max: int) : int
-	declare final :int := value
-	if(value < 0)
-		final := 0
-	else if (value > max)
-		final := max
-	end if
-	return final
+function update_chord_info_label()
+	declare _acc
+	_acc := get_chord_accidental(0,3)
 end function
 
+function get_chord_accidental(key, mode) -> result
+	declare _pos
+	_pos := Co5.get_pos(key, mode)
+end function
+
+function Co5.get_pos(key, mode) -> result
+	declare _mover := 0
+	declare _counter := 0
+	while _mover # key
+		inc(_counter)
+		_mover := (_mover + 7) mod 12
+	end while
+	result := _counter
+end function
+
+function update_user_preset_to_1_1(float_mask)
+	floatmask.set_range(float_mask, 14, 33, 0)
+end function
+
+function floatmask.set_range(float_mask, start_idx, end_idx, val)
+    bitlist.set_range(float_mask[0], min(32, start_idx), min(32, end_idx), val)
+	bitlist.set_range(float_mask[1], max(32, start_idx)-32, max(32, end_idx)-32, val)
+end function
+
+
+function stack_transform_me(param1: int, param2: int, param3: int[][])
+	if param1 = param2
+		declare i
+		for i := 0 to num_elements(param3 ,2)
+			message(param3[1, i])
+		end for
+		stack_transform_me2(1)
+	end if
+end function	
+
+function stack_transform_me2(h: int)
+	declare i
+	for i := 0 to num_elements(mee ,2)
+		message(mee[h, i], h)
+	end for
+end function	
+
+
+
+
+function search_matrix(matrix: number[][], target: number): number
+    declare row, col: int
+    for row := 0 to num_elements(matrix, 1)- 1
+        for col := 0 to num_elements(matrix, 2)- 1
+            if matrix[row,col] = target
+                return (row * num_elements(matrix,1)) + col
+            end if
+        end for
+    end for
+
+    return -1  // If the target is not found
+end function
+
+function return_me_preemptively(arr: int[])
+	for i, el in pairs(arr)
+		if(el = 1)
+			return 1
+		end if
+		message(el)
+	end for	
+
+end function	
+
+
+
+
+{*******************************************************************************************************************
+												* MACROS *
+*******************************************************************************************************************}
+
+
+
+function bitlist.set_range(bit_list, start_idx, end_idx, val)
+	bit_list := eq(val, 1) * (eq(end_idx-start_idx, 32) * sh_right(-1, 32) + (bit_list .or. sh_left(.not. sh_left(-1, end_idx-start_idx), 32-end_idx))) + eq(val, 0) * (lt(end_idx-start_idx, 32) * (bit_list .and. .not. sh_left(.not. sh_left(-1, end_idx-start_idx), 32-end_idx)))
+end function
+
+function max(a,b) -> result
+	result := a - ((a - b) .and. sh_right((a - b), 31))
+end function
+
+function min(a,b) -> result
+	result :=  a - ((a - b) .and. sh_right((b - a), 31))
+end function
+
+function eq(a,b) -> result
+  result := -sh_right(abs(a-b)-1,31)
+end function
+
+function lt(a,b) -> result  { predicate for a < b }
+  result := -sh_right(a-b,31)
+end function

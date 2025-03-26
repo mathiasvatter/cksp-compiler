@@ -32,7 +32,7 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 	return &node;
 }
 
-void TypeInference::cast_data_structure_types(NodeProgram* program, bool cast) {
+void TypeInference::cast_data_structure_types(const NodeProgram* program, const bool cast) {
 	auto def_provider = program->def_provider;
 	for(auto& refs : def_provider->get_all_data_structures()) {
 		auto data_struct = refs.lock();
@@ -694,14 +694,15 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 					+ param->ty->to_string() + " as argument type.";
 			match_type(*func_arg, *param, error_message);
 			// infer formal param type only if function is no builtin function
-			if (!node.is_builtin_kind()) {
-				const std::string error_message2 =
-				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
-					+ func_arg->ty->to_string() + " as argument type.";
-				if (param->ty->is_compatible(func_arg->ty)) { // to avoid compatibility mistakes
-					match_against(*param, func_arg->ty, error_message2);
-				}
-			}
+			// this throws errors with the-pulse
+			// if (!node.is_builtin_kind()) {
+			// 	const std::string error_message2 =
+			// 	"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
+			// 		+ func_arg->ty->to_string() + " as argument type.";
+			// 	if (param->ty->is_compatible(func_arg->ty)) { // to avoid compatibility mistakes
+			// 		match_against(*param, func_arg->ty, error_message2);
+			// 	}
+			// }
 		}
 	}
 	if(definition) {
