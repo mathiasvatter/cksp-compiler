@@ -87,12 +87,12 @@ Type* NodeAST::set_element_type(Type *element_type) {
 	return nullptr;
 }
 
-void NodeAST::debug_print() {
+void NodeAST::debug_print(const std::string &path) {
 	// only print stuff if we are in debug mode
 #ifndef NDEBUG
 	static ASTPrinter printer;
 	this->accept(printer);
-	printer.generate(PRINTER_OUTPUT);
+	printer.generate(path);
 #endif
 }
 
