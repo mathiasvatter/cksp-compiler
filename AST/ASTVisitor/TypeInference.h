@@ -77,7 +77,7 @@ public:
 
     /// iterates through all references and declarations and tries to match the types
     /// with cast set to true -> will cast types of data structures if no type could be infered
-    static void cast_data_structure_types(NodeProgram* program, bool cast= false);
+    static void cast_data_structure_types(const NodeProgram* program, bool cast= false);
 
 public:
     /// error if composite type was not added to the type registry

@@ -64,6 +64,7 @@ public:
 			auto &assignment = m_immutable_param_stack_assignments[i];
 			assignment->remove_node();
 		}
+		m_immutable_param_stack_assignments.clear();
 
 		return node.replace_with(std::move(node_func_body));
 
