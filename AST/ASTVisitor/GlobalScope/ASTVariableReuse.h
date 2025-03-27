@@ -69,7 +69,7 @@ public:
 		return true;
 	}
 
-	bool rename_local_vars() {
+	bool rename_local_vars() const {
 		// rename local passive_vars with gensym and add to global scope
 		for(auto & local_var : m_all_local_vars) {
 			local_var->name = m_def_provider->get_fresh_name(local_var->name);
@@ -99,7 +99,7 @@ public:
 		return true;
 	}
 
-	bool is_thread_safe_env() const {
+	[[nodiscard]] bool is_thread_safe_env() const {
 		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or
 			(m_program->get_curr_function() and m_program->get_curr_function()->is_thread_safe);
 	}
@@ -108,6 +108,9 @@ public:
 	/// - if they were promoted or are return vars
 	static std::unique_ptr<NodeAST> to_assign_statement(NodeSingleDeclaration& node) {
 		if(node.kind == NodeSingleDeclaration::Kind::Promoted or node.kind == NodeSingleDeclaration::Kind::ReturnVar) {
+			return std::make_unique<NodeDeadCode>(node.tok);
+		}
+		if (!node.variable->is_thread_safe) {
 			return std::make_unique<NodeDeadCode>(node.tok);
 		}
 		auto node_assignment = node.to_assign_stmt();
