@@ -135,8 +135,6 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTOptimizations.cpp
         AST/ASTVisitor/ASTVariableChecking.h
         AST/ASTVisitor/ASTVariableChecking.cpp
-        AST/ASTVisitor/GlobalScope/ASTGlobalScope.h
-        AST/ASTVisitor/GlobalScope/ASTGlobalScope.cpp
         AST/ASTVisitor/TypeInference.h
         AST/ASTVisitor/TypeInference.cpp
         Lowering/LoweringFunctionCall.h
