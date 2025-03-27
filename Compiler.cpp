@@ -3,7 +3,6 @@
 //
 
 #include "Compiler.h"
-#include "AST/ASTVisitor/GlobalScope/ASTGlobalScope.h"
 #include "AST/ASTVisitor/TypeInference.h"
 #include "AST/ASTVisitor/ASTReturnFunctionRewriting.h"
 #include "AST/ASTVisitor/ASTDataStructureLowering.h"
@@ -18,6 +17,7 @@
 #include "AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h"
 #include "AST/ASTVisitor/ASTLowerTypes.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
+#include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -38,7 +38,7 @@ void Compiler::compile() {
 //	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-	// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
     // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
@@ -189,8 +189,20 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;
 	compile_time.start("Global Scope");
 
-	ASTGlobalScope global_scope(m_program);
-	ast->accept(global_scope);
+	/// Global Scope lowerings
+	NormalizeArrayAssign desugar_single_assign(m_program);
+	ast->accept(desugar_single_assign);
+
+	// first pass to analyze dynamic extend within function definitions and replace with passive_vars
+	// then do parameter promotion directly to global or successively
+	ASTParameterPromotion param_promotion(m_program);
+	param_promotion.do_param_promotion(*ast);
+
+	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
+	ASTVariableReuse variable_reuse(m_program);
+	variable_reuse.do_variable_reuse(*ast);
+	///
+
 	ast->debug_print();
 
 	compile_time.stop("Global Scope");

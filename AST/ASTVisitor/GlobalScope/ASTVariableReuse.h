@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include "ASTGlobalScope.h"
-#include "../../../Desugaring/ASTDesugaring.h"
+#include "../ASTVisitor.h"
 
 /**
  * @brief Handles the dynamic extension of variables/arrays within different scopes in functions and callbacks and
@@ -20,9 +19,10 @@
  * - Tracks all variables and references in lists and renames them using Gensym to avoid variable capturing when a free
  *   "passive variable" has the same name as a variable in the scope.
  */
-class ASTVariableReuse final : public ASTGlobalScope {
+class ASTVariableReuse final : public ASTVisitor {
 public:
-	explicit ASTVariableReuse(NodeProgram* program) : ASTGlobalScope(program) {
+	explicit ASTVariableReuse(NodeProgram* main) : m_def_provider(main->def_provider) {
+		m_program = main;
 		m_def_provider->refresh_scopes();
 		clear_all_maps();
 	}
@@ -47,8 +47,7 @@ public:
 		clear_all_maps();
 	}
 
-public:
-	bool promote_to_global_vars() {
+	bool promote_to_global_vars() const {
 		// move all passive_vars declarations to global scope
 		auto local_declare_statements = std::make_unique<NodeBlock>(Token());
 		for(auto & callback : m_all_callback_decl) {
@@ -100,10 +99,26 @@ public:
 		return true;
 	}
 
-	bool is_thread_safe_env() {
+	bool is_thread_safe_env() const {
 		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or
 			(m_program->get_curr_function() and m_program->get_curr_function()->is_thread_safe);
-	};
+	}
+
+	/// removes array declarations and deletes them under certain circumstances:
+	/// - if they were promoted or are return vars
+	static std::unique_ptr<NodeAST> to_assign_statement(NodeSingleDeclaration& node) {
+		if(node.kind == NodeSingleDeclaration::Kind::Promoted or node.kind == NodeSingleDeclaration::Kind::ReturnVar) {
+			return std::make_unique<NodeDeadCode>(node.tok);
+		}
+		auto node_assignment = node.to_assign_stmt();
+		if (const auto array_ref = node_assignment->l_value->cast<NodeArrayRef>()) {
+			if (!array_ref->index) {
+				//				return std::move(node_assignment);
+				return std::make_unique<NodeDeadCode>(node.tok);
+			}
+		}
+		return std::move(node_assignment);
+	}
 
 private:
 	NodeAST* visit(NodeProgram& node) override {
@@ -307,6 +322,7 @@ private:
 	}
 
 private:
+	DefinitionProvider* m_def_provider;
 	std::string loc_var_prefix = "loc_";
 	std::stack<NodeBlock*> m_current_block;
 	[[nodiscard]] NodeBlock* get_current_block() const {
@@ -346,6 +362,18 @@ private:
 		}
 		return nullptr;
 	}
+	/// constructs the hash to identify available passive vars h(type, size, thread_safety)
+	static std::string get_passive_var_hash(NodeDataStructure& data) {
+		auto hash = data.ty->to_string();
+		// add size if it is array
+		if(const auto array = data.cast<NodeArray>()) {
+			if(array->size) hash += array->size->get_string();
+		}
+		hash += data.is_thread_safe;
+		if(data.persistence.has_value()) hash += data.persistence.value().val;
+		return hash;
+	}
+
 	/// map for old datastructure name (as keys) that get replaced by new datastructures (passive_vars) (as values)
 	std::vector<std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>>> m_passive_vars_replace;
 	/// vector for all local references that have been replaced by passive_var references

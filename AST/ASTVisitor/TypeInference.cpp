@@ -51,8 +51,6 @@ void TypeInference::cast_data_structure_types(const NodeProgram* program, const 
 		if (decl->value) {
 			match_assignment_types(*decl->variable, *decl->value);
 		}
-		// cast as Integer if still unknown
-		if (cast) decl->variable->cast_type();
 	}
 	for(auto& refs : def_provider->get_all_data_structures()) {
 		auto data_struct = refs.lock();
@@ -60,6 +58,8 @@ void TypeInference::cast_data_structure_types(const NodeProgram* program, const 
 		for(auto & ref : data_struct->references) {
 			match_reference_declaration(*ref, ref->get_declaration());
 		}
+		// cast as Integer if still unknown
+		if (cast) data_struct->cast_type();
 	}
 	def_provider->m_all_data_structures.clear();
 }
@@ -759,7 +759,6 @@ NodeAST * TypeInference::visit(NodeFunctionHeader& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
-//	node.visited = true;
 	m_program->function_call_stack.push(node.weak_from_this());
 
 	// add data structures to provider
