@@ -99,13 +99,13 @@ public:
 								  +node.function->name+"> contains asychronous operations.";
 				error.exit();
 			}
-			if(node.strategy == NodeFunctionCall::Strategy::Call) {
-				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-				error.m_message =
-					"The usage of <call> keyword is not allowed in the <on init> callback. Automatically removed <call> and inlined function. Consider not using the <call> keyword.";
-				error.print();
-				node.strategy = NodeFunctionCall::Strategy::Inlining;
-			}
+			// if(node.strategy == NodeFunctionCall::Strategy::Call) {
+			// 	auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+			// 	error.m_message =
+			// 		"The usage of <call> keyword is not allowed in the <on init> callback. Automatically removed <call> and inlined function. Consider not using the <call> keyword.";
+			// 	error.print();
+			// 	node.strategy = NodeFunctionCall::Strategy::Inlining;
+			// }
 		}
 
 		m_program->function_call_stack.push(definition);

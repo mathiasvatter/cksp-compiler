@@ -84,7 +84,7 @@ public:
 		if (const auto definition = node.get_definition()) {
 			if (!definition->visited) definition->accept(*this);
 			definition->visited = true;
-
+			node.is_call = false;
 			if (definition->is_expression_function()) {
 				node.strategy = NodeFunctionCall::Strategy::ExpressionFunc;
 			} else if (m_current_callback == m_program->init_callback or definition->is_restricted) {
