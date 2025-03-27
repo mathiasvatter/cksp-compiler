@@ -264,7 +264,7 @@ bool NodeFunctionCall::determine_callability(NodeProgram *program, NodeCallback 
 
 void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCallback *current_callback) {
 	static ASTFunctionStrategy function_strategy(program);
-	function_strategy.determine_function_strategy(*this, program->current_callback);
+	function_strategy.determine_function_strategy(*this, current_callback);
 }
 
 // ************* NodeSortSearch ***************
