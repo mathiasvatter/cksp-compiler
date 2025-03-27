@@ -1,6 +1,7 @@
 
 on init
-
+	declare strings[4] := ("a", "b", "c", "d")
+	message(strings[0])
 	// declare float_mask[2]: int[]
 	// update_user_preset_to_1_1(float_mask)
 end on

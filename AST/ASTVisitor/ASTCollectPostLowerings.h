@@ -20,10 +20,10 @@ public:
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
 
-		for(auto & struct_def : node.struct_definitions) {
+		for(const auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
 		}
-		for(auto & callback : node.callbacks) {
+		for(const auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
 //		for(auto & func_def : node.function_definitions) {
@@ -36,7 +36,7 @@ public:
 
 	/// flatten blocks
 	NodeAST * visit(NodeBlock& node) override {
-		for(auto & stmt : node.statements) {
+		for(const auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
 		node.flatten(true);
