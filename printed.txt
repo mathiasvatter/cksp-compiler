@@ -1,325 +1,88 @@
 // Global Declarations:
 	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
 	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
+	declare _mee[2 * 2] : int[] := [2, 2, 2, 2] {Reuses: 0}
 on init
+	declare b0 : int {Reuses: 3}
+	declare c0 : int {Reuses: 3}
+	declare _mover0000 : int {Reuses: 0}
+	declare _counter0000 : int {Reuses: 0}
 	declare const MAX::CB::STACK : int := 100 {Reuses: 0}
-	declare const Note::MAX_STRUCTS : int := MAX::STRUCTS{unknown} {Reuses: 0}
-	declare Note::free_idx : int {Reuses: 0}
-	declare Note::allocation[Note::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare Note::stack[Note::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare Note::stack_top : int {Reuses: 0}
-	declare Note::pitch[Note::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare Note::velocity[Note::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare const List::MAX_STRUCTS : int := MAX::STRUCTS{unknown} {Reuses: 0}
-	declare List::free_idx : int {Reuses: 0}
-	declare List::allocation[List::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare List::stack[List::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare List::stack_top : int {Reuses: 0}
-	declare List::note[List::MAX_STRUCTS{int}] : int[] := [- 1] {Reuses: 0}
-	declare List::next[List::MAX_STRUCTS{int}] : int[] := [- 1] {Reuses: 0}
-	declare local _iter : int {Reuses: 0}
-end on
-
-on note
-	declare local pitch : int := EVENT_NOTE{int} {Reuses: 0}
-	declare local velo : int := EVENT_VELOCITY{int} {Reuses: 0}
-	play_note(pitch{int}, clamp(velo{int}, 90){UserDefined, None}, 0, - 1){Builtin, None}
-end on
-
-function clamp(value : int, max : int)
-	declare local final : int := value{int} {Reuses: 0}
-	if(value{int} < 0)
-		final{int} := 0
-	else
-		if(value{int} > max{int})
-			final{int} := max{int}
-		end if
-	end if
-	return (final{int})
-end function
-
-function List::__init__(note : int, next : int)
-	List::free_idx{int} := search(List::allocation{int[]}, 0){Builtin, None}
-	if(List::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'List'"){Builtin, None}
-	end if
-	List::allocation[List::free_idx{int}]{int[]} := 1
-	Note::__decr__(List::note[List::free_idx{int}]{int}, 1){Undefined, None}
-	List::note[List::free_idx{int}]{int} := note{int}
-	Note::__incr__(List::note[List::free_idx{int}]{int}, 1){Undefined, None}
-	List::__decr__(List::next[List::free_idx{int}]{int}, 1){Undefined, None}
-	List::next[List::free_idx{int}]{int} := next{int}
-	List::__incr__(List::next[List::free_idx{int}]{int}, 1){Undefined, None}
-	return (List::free_idx{int})
-end function
-
-function List::__repr__(self : int)
-	return ("<List> Object: " & self{int})
-end function
-
-function List::__del__(self : int)
-	declare local _iter : int {Reuses: 0}
-	if(self{int} # - 1)
-		List::next[self{int}]{int} := - 1
-		List::note[self{int}]{int} := - 1
-	end if
-end function
-
-function List::__decr__(self : int, num_refs : int)
-	declare local current : int := self{int} {Reuses: 0}
-	while(current{int} # - 1) 
-		List::allocation[current{int}]{int} := List::allocation[current{int}]{int} - num_refs{int}
-		if(List::allocation[current{int}]{int} > 0)
-			current{int} := - 1
-			continue{Builtin, None}
-		else
-			List::allocation[current{int}]{int} := 0
-		end if
-		self{int} := current{int}
-		current{int} := - 1
-		Note::__decr__(List::note[self{int}]{int}, 1){Undefined, None}
-		current{int} := List::next[self{int}]{int}
-		List::__del__(self{int}){Undefined, None}
-	end while
-end function
-
-function List::__incr__(self : int, num_refs : int)
-	if(self{int} # - 1)
-		List::allocation[self{int}]{int} := List::allocation[self{int}]{int} + num_refs{int}
-	end if
-end function
-
-function Note::__init__(pitch : int, velocity : int)
-	Note::free_idx{int} := search(Note::allocation{int[]}, 0){Builtin, None}
-	if(Note::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'Note'"){Builtin, None}
-	end if
-	Note::allocation[Note::free_idx{int}]{int[]} := 1
-	Note::pitch[Note::free_idx{int}]{int} := pitch{int}
-	Note::velocity[Note::free_idx{int}]{int} := velocity{int}
-	return (Note::free_idx{int})
-end function
-
-function Note::__repr__(self : int)
-	return ("<Note> Object: " & self{int})
-end function
-
-function Note::__del__(self : int)
-	declare local _iter : int {Reuses: 0}
-	if(self{int} # - 1)
-		Note::velocity[self{int}]{int} := 0
-		Note::pitch[self{int}]{int} := 0
-	end if
-end function
-
-function Note::__decr__(self : int, num_refs : int)
-	declare local current : int := self{int} {Reuses: 0}
-	while(current{int} # - 1) 
-		Note::allocation[current{int}]{int} := Note::allocation[current{int}]{int} - num_refs{int}
-		if(Note::allocation[current{int}]{int} > 0)
-			current{int} := - 1
-			continue{Builtin, None}
-		else
-			Note::allocation[current{int}]{int} := 0
-		end if
-		self{int} := current{int}
-		current{int} := - 1
-		Note::__del__(self{int}){Undefined, None}
-	end while
-end function
-
-function Note::__incr__(self : int, num_refs : int)
-	if(self{int} # - 1)
-		Note::allocation[self{int}]{int} := Note::allocation[self{int}]{int} + num_refs{int}
-	end if
-end function
-
-
-// Global Declarations:
-	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
-	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
-on init
-	declare const MAX::CB::STACK : int := 100 {Reuses: 0}
-	declare const Note::MAX_STRUCTS : int := MAX::STRUCTS{unknown} {Reuses: 0}
-	declare Note::free_idx : int {Reuses: 0}
-	declare Note::allocation[Note::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare Note::stack[Note::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare Note::stack_top : int {Reuses: 0}
-	declare Note::pitch[Note::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare Note::velocity[Note::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare const List::MAX_STRUCTS : int := MAX::STRUCTS{unknown} {Reuses: 0}
-	declare List::free_idx : int {Reuses: 0}
-	declare List::allocation[List::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare List::stack[List::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare List::stack_top : int {Reuses: 0}
-	declare List::note[List::MAX_STRUCTS{int}] : int[] := [- 1] {Reuses: 0}
-	declare List::next[List::MAX_STRUCTS{int}] : int[] := [- 1] {Reuses: 0}
-	declare local _iter : int {Reuses: 0}
-end on
-
-on note
-	declare local pitch : int := EVENT_NOTE{int} {Reuses: 0}
-	declare local velo : int := EVENT_VELOCITY{int} {Reuses: 0}
-		declare local _ret0 : int {Reuses: 0}
-		clamp(_ret0{int}, velo{int}, 90){UserDefined, None}
-		play_note(pitch{int}, _ret0{int}, 0, - 1){Builtin, None}
-
-end on
-
-function clamp(ret0 : int, value : int, max : int)
-	declare local final : int := value{int} {Reuses: 0}
-	if(value{int} < 0)
-		final{int} := 0
-	else
-		if(value{int} > max{int})
-			final{int} := max{int}
-		end if
-	end if
-	ret0{int} := final{int}
-end function
-
-function List::__init__(note : int, next : int)
-	List::free_idx{int} := search(List::allocation{int[]}, 0){Builtin, None}
-	if(List::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'List'"){Builtin, None}
-	end if
-	List::allocation[List::free_idx{int}]{int[]} := 1
-	Note::__decr__(List::note[List::free_idx{int}]{int}, 1){Undefined, None}
-	List::note[List::free_idx{int}]{int} := note{int}
-	Note::__incr__(List::note[List::free_idx{int}]{int}, 1){Undefined, None}
-	List::__decr__(List::next[List::free_idx{int}]{int}, 1){Undefined, None}
-	List::next[List::free_idx{int}]{int} := next{int}
-	List::__incr__(List::next[List::free_idx{int}]{int}, 1){Undefined, None}
-	return (List::free_idx{int})
-end function
-
-function List::__repr__(self : int)
-	return ("<List> Object: " & self{int})
-end function
-
-function List::__del__(self : int)
-	declare local _iter : int {Reuses: 0}
-	if(self{int} # - 1)
-		List::next[self{int}]{int} := - 1
-		List::note[self{int}]{int} := - 1
-	end if
-end function
-
-function List::__decr__(self : int, num_refs : int)
-	declare local current : int := self{int} {Reuses: 0}
-	while(current{int} # - 1) 
-		List::allocation[current{int}]{int} := List::allocation[current{int}]{int} - num_refs{int}
-		if(List::allocation[current{int}]{int} > 0)
-			current{int} := - 1
-			continue{Builtin, None}
-		else
-			List::allocation[current{int}]{int} := 0
-		end if
-		self{int} := current{int}
-		current{int} := - 1
-		Note::__decr__(List::note[self{int}]{int}, 1){Undefined, None}
-		current{int} := List::next[self{int}]{int}
-		List::__del__(self{int}){Undefined, None}
-	end while
-end function
-
-function List::__incr__(self : int, num_refs : int)
-	if(self{int} # - 1)
-		List::allocation[self{int}]{int} := List::allocation[self{int}]{int} + num_refs{int}
-	end if
-end function
-
-function Note::__init__(pitch : int, velocity : int)
-	Note::free_idx{int} := search(Note::allocation{int[]}, 0){Builtin, None}
-	if(Note::free_idx{int} = -1)
-		message("Error: No more free space available to allocate objects of type 'Note'"){Builtin, None}
-	end if
-	Note::allocation[Note::free_idx{int}]{int[]} := 1
-	Note::pitch[Note::free_idx{int}]{int} := pitch{int}
-	Note::velocity[Note::free_idx{int}]{int} := velocity{int}
-	return (Note::free_idx{int})
-end function
-
-function Note::__repr__(self : int)
-	return ("<Note> Object: " & self{int})
-end function
-
-function Note::__del__(self : int)
-	declare local _iter : int {Reuses: 0}
-	if(self{int} # - 1)
-		Note::velocity[self{int}]{int} := 0
-		Note::pitch[self{int}]{int} := 0
-	end if
-end function
-
-function Note::__decr__(self : int, num_refs : int)
-	declare local current : int := self{int} {Reuses: 0}
-	while(current{int} # - 1) 
-		Note::allocation[current{int}]{int} := Note::allocation[current{int}]{int} - num_refs{int}
-		if(Note::allocation[current{int}]{int} > 0)
-			current{int} := - 1
-			continue{Builtin, None}
-		else
-			Note::allocation[current{int}]{int} := 0
-		end if
-		self{int} := current{int}
-		current{int} := - 1
-		Note::__del__(self{int}){Undefined, None}
-	end while
-end function
-
-function Note::__incr__(self : int, num_refs : int)
-	if(self{int} # - 1)
-		Note::allocation[self{int}]{int} := Note::allocation[self{int}]{int} + num_refs{int}
-	end if
-end function
-
-
-// Global Declarations:
-	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
-	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
-on init
-	declare velo0 : int {Reuses: 0}
-	declare _ret00 : int {Reuses: 0}
-	declare final00 : int {Reuses: 0}
-	declare const MAX::CB::STACK : int := 100 {Reuses: 0}
-	declare const Note::MAX_STRUCTS : int := MAX::STRUCTS{int} {Reuses: 0}
-	declare Note::free_idx : int {Reuses: 0}
-	declare Note::allocation[Note::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare Note::stack[Note::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare Note::stack_top : int {Reuses: 0}
-	declare Note::pitch[Note::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare Note::velocity[Note::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare const List::MAX_STRUCTS : int := MAX::STRUCTS{int} {Reuses: 0}
-	declare List::free_idx : int {Reuses: 0}
-	declare List::allocation[List::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare List::stack[List::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare List::stack_top : int {Reuses: 0}
-	declare List::note[List::MAX_STRUCTS{int}] : int[] := [- 1] {Reuses: 0}
-	declare List::next[List::MAX_STRUCTS{int}] : int[] := [- 1] {Reuses: 0}
 	declare _iter0 : int {Reuses: 1}
+	declare strings[4] : string[] := ["a", "b", "c", "d"] {Reuses: 0}
+	message(strings[0]{string}){Builtin, None}
 end on
 
 on note
-	_iter0{int} := EVENT_NOTE{int}
-	velo0{int} := EVENT_VELOCITY{int}
-		_ret00{int} := 0
-			clamp(_ret00{int}, velo0{int}, 90, final00{int}){UserDefined, ParameterStack}
+	_iter0{int} := 0
+	if(_iter0{int} = 1)
+		b0{int} := 0
+		if(b0{int} = 1)
+			message(_iter0{int}){Builtin, None}
+		end if
+		c0{int} := 0
+		message(c0{int} & ", " & b0{int}){Builtin, None}
+	end if
+	if(_iter0{int} = 2)
+		b0{int} := 0
+		if(b0{int} = 2)
+			message(_iter0{int}){Builtin, None}
+		end if
+		c0{int} := 0
+		message(c0{int} & ", " & b0{int}){Builtin, None}
+	end if
+		stack_transform_me(1, 2, _mee{int[]}, c0{int}, b0{int}){UserDefined, Inlining}
 
-		play_note(_iter0{int}, _ret00{int}, 0, - 1){Builtin, None}
+		update_chord_info_label(b0{int}, c0{int}, _mover0000{int}, _counter0000{int}){UserDefined, Call}
 
 end on
 
-function clamp(ret0 : int, value : int, max : int, final0 : int)
-	final0{int} := value{int}
-	if(value{int} < 0)
-		final0{int} := 0
-	else
-		if(value{int} > max{int})
-			final0{int} := max{int}
-		end if
+function get_chord_accidental(result : unknown, key : int, mode : unknown, _pos0 : int, _mover00 : int, _counter00 : int)
+	_pos0{int} := 0
+		Co5.get_pos(_pos0{int}, key{int}, mode{unknown}, _mover00{int}, _counter00{int}){UserDefined, ParameterStack}
+
+end function
+
+function stack_transform_me2(h : int, i0 : int)
+	i0{int} := 0
+	i0{int} := 0
+	while(i0{int} <= num_elements[_mee{int[]}, Array::clip(2, 2){UserDefined, None}]) 
+		message(_mee[(h{int} * 2) + i0{int}]{int} & ", " & h{int}){Builtin, None}
+		inc(i0{int}){Builtin, None}
+	end while
+end function
+
+function stack_transform_me(param1 : int, param2 : int, _param3 : int[], i1 : int, i00 : int)
+	if(param1{int} = param2{int})
+		i1{int} := 0
+		i1{int} := 0
+		while(i1{int} <= num_elements[_param3{int[]}, Array::clip(2, 2){UserDefined, None}]) 
+			message(_param3[num_elements[_param3{int[]}, 2] + i1{int}]{int}){Builtin, None}
+			inc(i1{int}){Builtin, None}
+		end while
+			stack_transform_me2(1, i00{int}){UserDefined, ParameterStack}
+
 	end if
-	ret0{int} := final0{int}
+end function
+
+function Co5.get_pos(result : int, key : int, mode : unknown, _mover0 : int, _counter0 : int)
+	_mover0{int} := 0
+	_counter0{int} := 0
+	while(_mover0{int} # key{int}) 
+		inc(_counter0{int}){Builtin, None}
+		_mover0{int} := (_mover0{int} + 7) mod 12
+	end while
+	result{int} := _counter0{int}
+end function
+
+function update_chord_info_label(_acc0 : int, _pos00 : int, _mover000 : int, _counter000 : int)
+	_acc0{int} := 0
+		get_chord_accidental(_acc0{int}, 0, 3, _pos00{int}, _mover000{int}, _counter000{int}){UserDefined, ParameterStack}
+
+end function
+
+function Array::clip(x : int, b : int)
+	return (x{int} + ((- x{int} .and. sh_right(x{int}, 31){Builtin, None}) + ((x{int} - b{int}) .and. sh_right(b{int} - x{int}, 31){Builtin, None})))
 end function
 
 

@@ -1,31 +1,67 @@
-{ Compiled with cksp version 0.0.7-alpha.2 on Tue Mar 25 21:23:19 2025 }
+{ Compiled with cksp version 0.0.7-alpha.2 on Thu Mar 27 11:24:47 2025 }
 on init
-  declare $ret00
-  declare $value0
-  declare $max0
-  declare $final01
-  declare $_ret00
-  declare $final00
+  declare %_mee__num_elements[3] := (4, 2, 2)
+  declare %_mee[4] := (2, 2, 2, 2)
+  declare  result0
+  declare $key0
+  declare $_pos01
+  declare $_mover001
+  declare $_counter001
+  declare $h0
+  declare $i01
+  declare $_acc00
+  declare $_pos000
+  declare $_mover0001
+  declare $_counter0001
+  declare $b0
+  declare $c0
+  declare $_mover0000
+  declare $_counter0000
+  declare $_iter0
+  declare !strings[4]
+  !strings[0] := "a"
+  !strings[1] := "b"
+  !strings[2] := "c"
+  !strings[3] := "d"
+  message(!strings[0])
 end on
-function called_clamp0
-  $final01 := $value0
-  if($value0 < 0)
-    $final01 := 0
-  else
-    if($value0 > $max0)
-      $final01 := $max0
-    end if
-  end if
-  $ret00 := $final01
+function called_get_chord_accidental0
+  $_pos01 := 0
+  $_mover001 := 0
+  $_counter001 := 0
+  while($_mover001 # $key0) 
+    inc($_counter001)
+    $_mover001 := ($_mover001 + 7) mod 12
+  end while
+  $_pos01 := $_counter001
+end function
+function called_update_chord_info_label0
+   result0 := 0
+  $key0 := 0
+  $_pos01 := $_pos000
+  $_mover001 := $_mover0001
+  $_counter001 := $_counter0001
+  call called_get_chord_accidental0
+  $_acc00 :=  result0
+  $_pos000 := $_pos01
+  $_mover0001 := $_mover001
+  $_counter0001 := $_counter001
 end function
 on note
-  $ret00 := 0
-  $value0 := $EVENT_VELOCITY
-  $max0 := 90
-  $final01 := $final00
-  call called_clamp0
-  $_ret00 := $ret00
-  $final00 := $final01
-  play_note($EVENT_NOTE, $_ret00, 0, -1)
+  $_iter0 := 0
+  if($_iter0 = 2)
+    $b0 := 0
+    $c0 := 0
+    message(0 & ", " & $b0)
+  end if
+  $_acc00 := $b0
+  $_pos000 := $c0
+  $_mover0001 := $_mover0000
+  $_counter0001 := $_counter0000
+  call called_update_chord_info_label0
+  $b0 := $_acc00
+  $c0 := $_pos000
+  $_mover0000 := $_mover0001
+  $_counter0000 := $_counter0001
 end on
 
