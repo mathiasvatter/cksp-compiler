@@ -143,6 +143,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h
         AST/ASTVisitor/GlobalScope/ASTVariableReuse.h
         AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h
+        AST/ASTVisitor/GlobalScope/NormalizeArrayAssign2.h
         Desugaring/DesugarStruct.h
         Lowering/LoweringStruct.h
         Lowering/LoweringPointer.h
@@ -208,4 +209,5 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h
         AST/ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h
         AST/ASTVisitor/ReferenceManagement/ASTCollectCallSites.h
+        AST/ASTVisitor/GlobalScope/DeflateParameters.h
 )

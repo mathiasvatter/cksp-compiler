@@ -53,6 +53,7 @@ public:
 	}
 
 	NodeAST* determine_function_strategies(NodeProgram& node) {
+		m_current_callback = nullptr;
 		node.reset_function_visited_flag();
 		node.accept(*this);
 		node.reset_function_visited_flag();
@@ -100,6 +101,11 @@ public:
 			}
 		}
 
+		return &node;
+	}
+
+	NodeAST* visit(NodeFunctionDefinition &node) override {
+		node.body->accept(*this);
 		return &node;
 	}
 

@@ -19,9 +19,11 @@
  * Inherits from the ASTVisitor class.
  */
 class NormalizeArrayAssign final : public ASTVisitor {
+	DefinitionProvider* m_def_provider = nullptr;
 public:
 	explicit NormalizeArrayAssign(NodeProgram* program) {
 		m_program = program;
+		m_def_provider = m_program->def_provider;
 	}
 private:
 	NodeAST* visit(NodeProgram& node) override {
@@ -154,9 +156,10 @@ public:
 	}
 
 
-	static std::unique_ptr<NodeBlock> get_array_init_function_call(NodeReference* array_ref, const NodeAST* value) {
+	std::unique_ptr<NodeBlock> get_array_init_function_call(NodeReference* array_ref, const NodeAST* value) {
 		std::string func_name = "array<-init["+array_ref->get_declaration()->ty->get_element_type()->to_string()+"]";
-		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
+		auto iterator_name = m_def_provider->get_fresh_name("_iter");
+		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, iterator_name, TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
 		node_iterator->is_local = true;
 		node_iterator->ty = TypeRegistry::Integer;
 		auto node_iterator_ref = node_iterator->to_reference();
@@ -276,9 +279,10 @@ public:
 		return true;
 	}
 
-	static std::unique_ptr<NodeBlock> get_array_copy_function_call(NodeReference* array_dest, const NodeReference* array_src) {
+	std::unique_ptr<NodeBlock> get_array_copy_function_call(NodeReference* array_dest, const NodeReference* array_src) const {
 		std::string func_name = "array.copy."+array_dest->get_declaration()->ty->get_element_type()->to_string();
-		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, array_dest->tok);
+		auto iterator_name = m_def_provider->get_fresh_name("_iter");
+		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, iterator_name, TypeRegistry::Integer, DataType::Mutable, array_dest->tok);
 		node_iterator->is_local = true;
 		auto node_iterator_ref = node_iterator->to_reference();
 		node_iterator_ref->match_data_structure(node_iterator);

@@ -1,14 +1,19 @@
 
 on init
-	declare strings[4] := ("a", "b", "c", "d")
-	message(strings[0])
+
 	// declare float_mask[2]: int[]
 	// update_user_preset_to_1_1(float_mask)
+	// 
+
+	declare ndarray[2,3]
+	message(ndarray[0,2])
 end on
 
 on note
 	declare a
 	if a = 1
+		declare strings[4] := ("a", "b", "c", "d")
+		message(strings[0])
 		declare b
 		if b = 1
 			message(a)
@@ -17,8 +22,10 @@ on note
 		declare c
 		message(c, b)	
 
+		strings := ("a", "b", "c", "d")
 	end if
-
+	declare strings2[] := ("d", "e", "f", "g")
+	// strings := strings2
 	if a = 2
 		declare d
 		if d = 2

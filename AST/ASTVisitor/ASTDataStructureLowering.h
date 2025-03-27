@@ -14,62 +14,62 @@ public:
 		m_program = main;
 	}
 
-	inline NodeAST* visit(NodeProgram& node) override {
+	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		node.reset_function_visited_flag();
 		m_program->global_declarations->accept(*this);
-		for(auto & struct_def : node.struct_definitions) {
+		for(const auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
 		}
-		for(auto & callback : node.callbacks) {
+		for(const auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
 
 		node.reset_function_visited_flag();
 		return &node;
-	};
-
-	inline NodeAST* visit(NodeFor& node) override {
-		node.body->accept(*this);
-		return node.lower(m_program)->accept(*this);
 	}
 
-	inline NodeAST* visit(NodeSingleDeclaration &node) override {
+	// NodeAST* visit(NodeFor& node) override {
+	// 	node.body->accept(*this);
+	// 	return node.lower(m_program)->accept(*this);
+	// }
+
+	NodeAST* visit(NodeSingleDeclaration &node) override {
 		node.variable->accept(*this);
 		if(node.value) node.value ->accept(*this);
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeSingleAssignment &node) override {
+	NodeAST* visit(NodeSingleAssignment &node) override {
 		node.l_value->accept(*this);
 		node.r_value ->accept(*this);
 		return &node;
 	}
 
-	inline NodeAST * visit(NodeArray& node) override {
+	NodeAST * visit(NodeArray& node) override {
 		if(node.size) node.size->accept(*this);
 		if(node.num_elements) node.num_elements->accept(*this);
 		return node.data_lower(m_program);
 	}
 
-	inline NodeAST * visit(NodeNDArray& node) override {
+	NodeAST * visit(NodeNDArray& node) override {
 		if(node.sizes) node.sizes->accept(*this);
 		if(node.num_elements) node.num_elements->accept(*this);
 		return node.data_lower(m_program);
 	}
 
-	inline NodeAST * visit(NodeNDArrayRef& node) override {
+	NodeAST * visit(NodeNDArrayRef& node) override {
 		if(node.indexes) node.indexes->accept(*this);
 		if(node.sizes) node.sizes->accept(*this);
 		return node.data_lower(m_program);
 	}
 
-	inline NodeAST* visit(NodeArrayRef& node) override {
+	NodeAST* visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
 		return &node;
 	};
 
-	inline NodeAST* visit(NodeFunctionCall& node) override {
+	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		if(node.bind_definition(m_program)) {
 			auto definition = node.get_definition();

@@ -111,12 +111,12 @@ public:
 			return std::make_unique<NodeDeadCode>(node.tok);
 		}
 		auto node_assignment = node.to_assign_stmt();
-		if (const auto array_ref = node_assignment->l_value->cast<NodeArrayRef>()) {
-			if (!array_ref->index) {
-				//				return std::move(node_assignment);
-				return std::make_unique<NodeDeadCode>(node.tok);
-			}
-		}
+		// if (const auto array_ref = node_assignment->l_value->cast<NodeArrayRef>()) {
+		// 	if (!array_ref->index) {
+		// 		//				return std::move(node_assignment);
+		// 		return std::make_unique<NodeDeadCode>(node.tok);
+		// 	}
+		// }
 		return std::move(node_assignment);
 	}
 
@@ -334,7 +334,7 @@ private:
 	/// vector for all local vars in functions -> do not get moved into on init
 	std::vector<std::shared_ptr<NodeDataStructure>> m_all_local_vars = {};
 	/// hash values are the types
-	std::unordered_map<std::string, std::vector<std::shared_ptr<NodeDataStructure>>> m_passive_vars_map;
+	std::unordered_map<std::size_t, std::vector<std::shared_ptr<NodeDataStructure>>> m_passive_vars_map;
 	std::unordered_map<NodeBlock*, std::vector<std::shared_ptr<NodeDataStructure>>> m_used_passive_vars;
 	void add_passive_vars(const std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual>& map2) {
 		for(auto & var : map2) {
@@ -363,15 +363,38 @@ private:
 		return nullptr;
 	}
 	/// constructs the hash to identify available passive vars h(type, size, thread_safety)
-	static std::string get_passive_var_hash(NodeDataStructure& data) {
-		auto hash = data.ty->to_string();
-		// add size if it is array
-		if(const auto array = data.cast<NodeArray>()) {
-			if(array->size) hash += array->size->get_string();
+	// static std::string get_passive_var_hash(NodeDataStructure& data) {
+	// 	auto hash = data.ty->to_string();
+	// 	// add size if it is array
+	// 	if(const auto array = data.cast<NodeArray>()) {
+	// 		if(array->size) hash += array->size->get_string();
+	// 	}
+	// 	hash += data.is_thread_safe;
+	// 	if(data.persistence.has_value()) hash += data.persistence.value().val;
+	// 	return hash;
+	// }
+
+	static std::size_t get_passive_var_hash(NodeDataStructure& data) {
+		std::size_t seed = 0;
+		auto hashCombine = [&seed]<typename T0>(const T0& value) {
+			std::hash<std::decay_t<T0>> hasher;
+			seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		};
+
+		hashCombine(data.ty->to_string());
+
+		// in case of array -> add sizes
+		if (const auto array = data.cast<NodeArray>()) {
+			if (array->size) hashCombine(array->size->get_string());
+		} else if (const auto ndarray = data.cast<NodeNDArray>()) {
+			if (ndarray->sizes) hashCombine(ndarray->sizes->get_string());
 		}
-		hash += data.is_thread_safe;
-		if(data.persistence.has_value()) hash += data.persistence.value().val;
-		return hash;
+
+		hashCombine(data.is_thread_safe);
+
+		if (data.persistence.has_value()) hashCombine(data.persistence.value().val);
+
+		return seed;
 	}
 
 	/// map for old datastructure name (as keys) that get replaced by new datastructures (passive_vars) (as values)

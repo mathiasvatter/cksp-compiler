@@ -723,6 +723,7 @@ struct NodeProgram final : NodeAST {
 	class DefinitionProvider* def_provider = nullptr;
 	NodeCallback* init_callback = nullptr;
 	NodeCallback* current_callback = nullptr;
+	std::shared_ptr<NodeVariable> global_iterator;
 	/// holds the current function definition that is being processed
 	std::stack<std::weak_ptr<NodeFunctionDefinition>> function_call_stack{};
 	std::shared_ptr<NodeFunctionDefinition> get_curr_function() {
@@ -759,7 +760,7 @@ struct NodeProgram final : NodeAST {
 	NodeCallback* move_on_init_callback();
 	/// merges vector of additional function definitions into the main function definitions vector
 	void merge_function_definitions();
-	static std::unique_ptr<NodeBlock> declare_compiler_variables();
+	std::unique_ptr<class NodeSingleDeclaration> declare_global_iterator();
 	void inline_global_variables();
 	void inline_structs();
 	void reset_function_visited_flag();
