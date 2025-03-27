@@ -181,7 +181,7 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 	/// contiguous and right aligned (if more than one wildcard) ndarray[*, 2] is allowed
 	/// ndarray[2, *] := (0) -> function returns position of *, returns 2:2
 	/// ndarray[2, *, *] := (0) -> returns 2:3
-	std::pair<int, int> get_wildcard_dimensions() const;
+	[[nodiscard]] std::pair<int, int> get_wildcard_dimensions() const;
 	/// replaces next wildcard with given index
 	void replace_next_wildcard_with_index(std::unique_ptr<NodeInt> new_index) const;
 	NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body, NodeProgram* program) override;

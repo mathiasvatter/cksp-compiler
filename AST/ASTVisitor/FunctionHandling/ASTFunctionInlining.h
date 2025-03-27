@@ -99,12 +99,12 @@ public:
 								  +node.function->name+"> contains asychronous operations.";
 				error.exit();
 			}
-			if(node.is_call) {
+			if(node.strategy == NodeFunctionCall::Strategy::Call) {
 				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 				error.m_message =
 					"The usage of <call> keyword is not allowed in the <on init> callback. Automatically removed <call> and inlined function. Consider not using the <call> keyword.";
 				error.print();
-				node.is_call = false;
+				node.strategy = NodeFunctionCall::Strategy::Inlining;
 			}
 		}
 
@@ -115,23 +115,19 @@ public:
 		}
 		definition->visited = true;
 
-		// if (node.function->name == "Array::clip"){
-		//
-		// }
-		// node.determine_function_strategy(m_program, m_current_callback);
+		node.determine_function_strategy(m_program, m_current_callback);
 		// if node is_call, do not inline and return
-		if(node.is_call) {
+		if(node.strategy == NodeFunctionCall::Strategy::Call) {
 			definition->is_used = true;
 			m_program->function_call_stack.pop();
+			node.is_call = true;
 			return &node;
 		}
 
-		// if (node.strategy == NodeFunctionCall::Strategy::Inlining) {
-			// used can not be set to false here, because some func calls might be "called" and some not
-			auto new_node = node.do_function_inlining(m_program);
-			m_program->function_call_stack.pop();
-			return new_node;
-		// }
+		// used can not be set to false here, because some func calls might be "called" and some not
+		auto new_node = node.do_function_inlining(m_program);
+		m_program->function_call_stack.pop();
+		return new_node;
 	}
 
 };

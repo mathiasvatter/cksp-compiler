@@ -1190,23 +1190,19 @@ NodeCallback* NodeProgram::move_on_init_callback() {
 	return callbacks.at(0).get(); // Rückgabe des Zeigers auf den init callback
 }
 
-std::unique_ptr<NodeBlock> NodeProgram::declare_compiler_variables() {
-	const std::unordered_map<std::string, Type*> compiler_variables = {{"_iter", TypeRegistry::Integer}};
+std::unique_ptr<NodeSingleDeclaration> NodeProgram::declare_global_iterator() {
 	auto tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
 	auto node_body = std::make_unique<NodeBlock>(tok);
-	for(const auto & var_name: compiler_variables) {
-		auto node_variable = std::make_unique<NodeVariable>(
-			std::nullopt,
-			var_name.first,
-			var_name.second,
-			DataType::Mutable, tok);
-		node_variable->is_engine = true;
-//        node_variable->is_global = true;
-		node_variable->is_local = true;
-		auto node_var_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_variable), nullptr, tok);
-		node_body->add_as_stmt(std::move(node_var_declaration));
-	}
-	return node_body;
+	auto node_variable = std::make_shared<NodeVariable>(
+		std::nullopt,
+		def_provider->get_fresh_name("_iter"),
+		TypeRegistry::Integer,
+		DataType::Mutable, tok);
+	node_variable->is_engine = true;
+    node_variable->is_global = true;
+	global_iterator = node_variable;
+	// node_variable->is_local = true;
+	return std::make_unique<NodeSingleDeclaration>(std::move(node_variable), nullptr, tok);
 }
 
 void NodeProgram::inline_global_variables() {

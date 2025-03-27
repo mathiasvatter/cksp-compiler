@@ -18,6 +18,7 @@
 #include "AST/ASTVisitor/ASTLowerTypes.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
+#include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign2.h"
 
 Compiler::Compiler(CompilerConfig* config)
 	: m_config(config) {
@@ -189,33 +190,35 @@ void Compiler::compile() {
 	std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;
 	compile_time.start("Global Scope");
 
-	/// Global Scope lowerings
-	NormalizeArrayAssign desugar_single_assign(m_program);
-	ast->accept(desugar_single_assign);
+
 
 	// first pass to analyze dynamic extend within function definitions and replace with passive_vars
 	// then do parameter promotion directly to global or successively
+	// eliminate function-local variables
+	ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 	ASTParameterPromotion param_promotion(m_program);
 	param_promotion.do_param_promotion(*ast);
+	ast->debug_print();
 
 	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 	ASTVariableReuse variable_reuse(m_program);
 	variable_reuse.do_variable_reuse(*ast);
-	///
 
-	ast->debug_print();
+	NormalizeArrayAssign2 desugar_single_assign(m_program);
+	ast->accept(desugar_single_assign);
+
 
 	compile_time.stop("Global Scope");
 	std::cout << compile_time.print_timer("Global Scope") << std::endl;
     compile_time.start("Function Inlining");
 
-//	ast->debug_print();
 	ASTFunctionStrategy function_strategy(m_program);
 	ast->accept(function_strategy);
 	ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 	ASTFunctionInlining func_inlining(m_program);
 	ast->accept(func_inlining);
 	ast->order_function_definitions();
+
 
     compile_time.stop("Function Inlining");
 	std::cout << compile_time.print_timer("Function Inlining") << std::endl;

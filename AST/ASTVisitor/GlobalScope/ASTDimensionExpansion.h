@@ -81,7 +81,7 @@ public:
 			std::make_unique<NodeInt>(m_cb_stack_size, Token()),
 			Token()
 		);
-		node.init_callback->statements->prepend_as_stmt(std::move(decl));
+		node.global_declarations->prepend_as_stmt(std::move(decl));
 
 		mark_thread_safe(node);
 

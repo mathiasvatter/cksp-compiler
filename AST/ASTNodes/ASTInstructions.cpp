@@ -837,7 +837,7 @@ NodeBlock* NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStru
 	return for_loop_body;
 }
 
-NodeBlock* NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound, bool declare) {
+NodeBlock* NodeBlock::wrap_in_loop(const std::shared_ptr<NodeDataStructure>& iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound, const bool declare) {
 	std::unique_ptr<NodeBlock> inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
 	inner_body->scope = true;
 	auto node_for = std::make_unique<NodeFor>(

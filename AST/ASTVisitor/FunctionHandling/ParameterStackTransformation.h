@@ -35,6 +35,7 @@ public:
 private:
 
 	NodeAST* visit(NodeFunctionDefinition& node) override {
+
 		// check if any call site has paramter stack strategy
 		std::vector<NodeFunctionCall*> calls;
 		for (const auto &call : node.call_sites) {
