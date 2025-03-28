@@ -10,7 +10,7 @@ Processor::Processor(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {
 		m_curr_token_type = m_tokens.at(0).type;
 }
 
-Token Processor::peek(const std::vector<Token> &tok, int ahead) {
+Token Processor::peek(const std::vector<Token> &tok, const int ahead) {
 	if (tok.size() < m_pos+ahead) {
 		auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
 		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "end token", tok.at(m_pos).val, tok.at(m_pos).file).exit();
@@ -21,13 +21,13 @@ Token Processor::peek(const std::vector<Token> &tok, int ahead) {
 	return tok.at(m_pos+ahead);
 }
 
-Token Processor::peek(int ahead) {
+Token Processor::peek(const int ahead) {
 	return peek(m_tokens, ahead);
 }
 
 Token Processor::consume(const std::vector<Token> &tok) {
 	if (m_pos >= tok.size()) {
-		auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
+		const auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
 		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "end token", tok.at(m_pos).val, tok.at(m_pos).file).exit();
 	}
 	m_curr_token = tok.at(m_pos+1);
@@ -52,14 +52,14 @@ std::vector<Token> Processor::get_token_vector() {
 	return std::move(m_tokens);
 }
 
-void Processor::remove_tokens(std::vector<Token> &tok, size_t start, size_t end) {
+void Processor::remove_tokens(std::vector<Token> &tok, const size_t start, const size_t end) {
 	if (start < end && end <= tok.size()) {
-		tok.erase(tok.begin() + start, tok.begin() + end);
+		tok.erase(start + tok.begin(), tok.begin() + end);
 		// Adjust m_pos if necessary
 		if (m_pos > start)
 			m_pos -= (end - start);
 	} else {
-		auto err_msg = "Attempted to remove a token range out of bounds.";
+		const auto err_msg = "Attempted to remove a token range out of bounds.";
 		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "unknown", tok.at(m_pos).val, tok.at(m_pos).file).print();
 		exit(EXIT_FAILURE);
 	}

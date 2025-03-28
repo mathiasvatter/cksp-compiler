@@ -13,29 +13,30 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 	m_def_provider->m_all_assignments.clear();
 
 	m_program->global_declarations->accept(*this);
-	for(auto & s : node.struct_definitions) {
+	for(const auto & s : node.struct_definitions) {
 		s->accept(*this);
 	}
-	for(auto & callback : node.callbacks) {
+	for(const auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
-	for(auto & func_def : node.function_definitions) {
+	for(const auto & func_def : node.function_definitions) {
 		if(!func_def->visited) func_def->accept(*this);
 	}
 	node.reset_function_visited_flag();
 	cast_data_structure_types(&node, true);
 
-	for(auto & s : node.struct_definitions) {
+	for(const auto & s : node.struct_definitions) {
 		s->collect_recursive_structs(m_program);
 	}
+	m_program->update_function_lookup();
 
 	return &node;
 }
 
 void TypeInference::cast_data_structure_types(const NodeProgram* program, const bool cast) {
-	auto def_provider = program->def_provider;
+	const auto def_provider = program->def_provider;
 	for(auto& refs : def_provider->get_all_data_structures()) {
-		auto data_struct = refs.lock();
+		const auto data_struct = refs.lock();
 		if(!data_struct) continue;
 		for(auto & ref : data_struct->references) {
 			match_reference_declaration(*ref, ref->get_declaration());
@@ -51,15 +52,16 @@ void TypeInference::cast_data_structure_types(const NodeProgram* program, const 
 		if (decl->value) {
 			match_assignment_types(*decl->variable, *decl->value);
 		}
+    	// cast as Integer if still unknown
+    	if (cast) decl->variable->cast_type();
 	}
 	for(auto& refs : def_provider->get_all_data_structures()) {
-		auto data_struct = refs.lock();
+		const auto data_struct = refs.lock();
 		if(!data_struct) continue;
 		for(auto & ref : data_struct->references) {
 			match_reference_declaration(*ref, ref->get_declaration());
 		}
-		// cast as Integer if still unknown
-		if (cast) data_struct->cast_type();
+
 	}
 	def_provider->m_all_data_structures.clear();
 }
@@ -695,17 +697,14 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			match_type(*func_arg, *param, error_message);
 			// infer formal param type only if function is no builtin function
 			// this throws errors with the-pulse
-			// if (!node.is_builtin_kind()) {
-			// 	const std::string error_message2 =
-			// 	"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
-			// 		+ func_arg->ty->to_string() + " as argument type.";
-			// 	if (param->ty->is_compatible(func_arg->ty)) { // to avoid compatibility mistakes
-			// 		match_against(*param, func_arg->ty, error_message2);
-			// 	}
-			// }
+			if (!node.is_builtin_kind()) {
+				const std::string error_message2 =
+				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
+					+ func_arg->ty->to_string() + " as argument type.";
+				match_parameters(*param, func_arg->ty, error_message2);
+			}
 		}
-	}
-	if(definition) {
+
 		match_type(node, *definition);
 	}
 	return &node;
@@ -713,7 +712,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 
 NodeAST * TypeInference::visit(NodeFunctionHeaderRef& node) {
 	if(node.args) node.args->accept(*this);
-
+	// node.create_function_type(TypeRegistry::Unknown);
 	// if declaration type has empty params -> get type from reference
 	if(auto decl = node.get_declaration()) {
 		auto decl_type = decl->ty->cast<FunctionType>();

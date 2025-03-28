@@ -14,6 +14,7 @@
 /// Implements basic functionality for token handling like peek() and consume()
 class Processor {
 public:
+	virtual ~Processor() = default;
 	explicit Processor(std::vector<Token> tokens);;
 	explicit Processor() = default;
 

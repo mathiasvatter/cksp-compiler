@@ -230,6 +230,9 @@ public:
 		if (other->get_type_kind() != TypeKind::Function and other->get_kind() != Kind::Unknown) {
 			return false;
 		}
+		if (other->get_type_kind() == TypeKind::Basic and other->get_kind() == Kind::Unknown) {
+			return true;
+		}
 
 		// Cast auf den Funktionstyp
 		const auto* other_function = dynamic_cast<const FunctionType*>(other);
@@ -254,6 +257,26 @@ public:
 		// Wenn alle Überprüfungen erfolgreich waren, sind die Funktionstypen kompatibel
 		return true;
 	}
+
+	// // Überladener Gleichheitsoperator, der true zurückgibt, wenn alle Parameter,
+	// // deren Anzahl und der Rückgabetyp exakt übereinstimmen.
+	// bool operator==(const FunctionType& other) const {
+	// 	// Anzahl der Parameter vergleichen
+	// 	if (m_params.size() != other.m_params.size()) {
+	// 		return false;
+	// 	}
+	// 	// Jeden Parameter auf exakte Übereinstimmung prüfen (mittels is_same_type)
+	// 	for (size_t i = 0; i < m_params.size(); ++i) {
+	// 		if (!m_params[i]->is_same_type(other.m_params[i])) {
+	// 			return false;
+	// 		}
+	// 	}
+	// 	// Rückgabetyp prüfen
+	// 	if (!m_return_type->is_same_type(other.m_return_type)) {
+	// 		return false;
+	// 	}
+	// 	return true;
+	// }
 
 	std::vector<Type*> m_params;
 	Type* m_return_type;

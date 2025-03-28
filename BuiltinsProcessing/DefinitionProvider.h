@@ -23,7 +23,6 @@
  * data structures and controls.
  */
 class DefinitionProvider {
-private:
 	/// holds all in this program defined variable names for safely issuing new ones that do not get captured
 	Gensym m_gensym;
 public:
@@ -53,12 +52,12 @@ public:
 	/// adds existing declaration to declaration map for look up. Always returns nullptr.
 	std::shared_ptr<NodeDataStructure> set_declaration(std::shared_ptr<NodeDataStructure> var, bool global_scope);
 
-	inline std::string get_fresh_name(const std::string& name) {
+	std::string get_fresh_name(const std::string& name) {
 		return m_gensym.fresh(name);
 	}
 
 	/// detects if user-variable is declared throwaway and throws error if it is
-	static inline void handle_throwaway_var(NodeDataStructure& var) {
+	static void handle_throwaway_var(const NodeDataStructure& var) {
 		if(var.name == "_") {
 			auto error = CompileError(ErrorType::VariableError, "", "", var.tok);
 			error.m_message = "Throwaway variable cannot be declared.";
@@ -66,7 +65,7 @@ public:
 		}
 	}
 	/// returns a static global dummy datastructure that can be used for declarations of throwaway vars
-	std::shared_ptr<NodeDataStructure> get_throwaway_declaration(NodeReference& var) {
+	static std::shared_ptr<NodeDataStructure> get_throwaway_declaration(NodeReference& var) {
 		if(var.name == "_") {
 			var.kind = NodeReference::Kind::Throwaway;
 		}
@@ -81,7 +80,7 @@ public:
 		);
 	}
 	/// returns a static global dummy datastructure that can be used for declarations of compiler vars
-	static std::shared_ptr<NodeDataStructure> get_compiler_declaration(NodeReference& var) {
+	static std::shared_ptr<NodeDataStructure> get_compiler_declaration(const NodeReference& var) {
 		if(var.kind != NodeReference::Kind::Compiler)
 			return nullptr;
 		return std::make_shared<NodeVariable>(
@@ -93,7 +92,7 @@ public:
 		);
 	}
 	/// returns a static global dummy datastructure that can be used for declarations of pgs vars
-	static std::shared_ptr<NodeDataStructure> get_pgs_declaration(NodeReference& var) {
+	static std::shared_ptr<NodeDataStructure> get_pgs_declaration(const NodeReference& var) {
 		if(var.ty != TypeRegistry::PGS) return nullptr;
 		return std::make_shared<NodeVariable>(
 			std::nullopt,
@@ -113,7 +112,7 @@ public:
 		return m_all_references;
 	}
 	std::vector<std::weak_ptr<NodeDataStructure>> m_all_data_structures;
-	void add_to_data_structures(std::weak_ptr<NodeDataStructure> data_struct) {
+	void add_to_data_structures(const std::weak_ptr<NodeDataStructure> &data_struct) {
 		m_all_data_structures.push_back(data_struct);
 	}
 	[[nodiscard]] const std::vector<std::weak_ptr<NodeDataStructure>> &get_all_data_structures() const {
@@ -153,7 +152,7 @@ public:
 	std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope);
 
 	/// variable error handling
-	static inline CompileError throw_declaration_error(const NodeReference &node, const std::string& add_msg="") {
+	static CompileError throw_declaration_error(const NodeReference &node, const std::string& add_msg="") {
 		auto compile_error = CompileError(ErrorType::VariableError, "", "", node.tok);
 		std::string type = "<Variable>";
 		if(node.get_node_type() == NodeType::ArrayRef) type = "<Array>";
@@ -165,23 +164,23 @@ public:
 		return compile_error;
 	};
 
-	static inline CompileError throw_declaration_type_error(NodeReference* node) {
-		auto compile_error = CompileError(ErrorType::VariableError, "", "", node->tok);
-		if(!node->get_declaration()) throw_declaration_error(*node).exit();
-		if(node->get_declaration()->get_node_type() == NodeType::Array && node->get_node_type() == NodeType::Variable) {
-			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Array>: " + node->tok.val+".";
-			compile_error.m_expected = "<Array>";
-			compile_error.m_got = "<Variable>";
-			compile_error.exit();
-		}
-		if(node->get_declaration()->get_node_type() == NodeType::Variable && node->get_node_type() == NodeType::Array) {
-			compile_error.m_message = "Incorrect Reference type. Reference was declared as <Variable>: " + node->tok.val+".";
-			compile_error.m_expected = "<Variable>";
-			compile_error.m_got = "<Array>";
-			compile_error.exit();
-		}
-		return compile_error;
-	}
+	// static CompileError throw_declaration_type_error(NodeReference* node) {
+	// 	auto compile_error = CompileError(ErrorType::VariableError, "", "", node->tok);
+	// 	if(!node->get_declaration()) throw_declaration_error(*node).exit();
+	// 	if(node->get_declaration()->get_node_type() == NodeType::Array && node->get_node_type() == NodeType::Variable) {
+	// 		compile_error.m_message = "Incorrect Reference type. Reference was declared as <Array>: " + node->tok.val+".";
+	// 		compile_error.m_expected = "<Array>";
+	// 		compile_error.m_got = "<Variable>";
+	// 		compile_error.exit();
+	// 	}
+	// 	if(node->get_declaration()->get_node_type() == NodeType::Variable && node->get_node_type() == NodeType::Array) {
+	// 		compile_error.m_message = "Incorrect Reference type. Reference was declared as <Variable>: " + node->tok.val+".";
+	// 		compile_error.m_expected = "<Variable>";
+	// 		compile_error.m_got = "<Array>";
+	// 		compile_error.exit();
+	// 	}
+	// 	return compile_error;
+	// }
 
 
 
@@ -210,7 +209,7 @@ public:
     void set_property_functions(std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions);
 
 	template<typename... Args>
-	inline static std::unique_ptr<NodeFunctionCall> create_builtin_call(const std::string &name, Args&&... args) {
+	static std::unique_ptr<NodeFunctionCall> create_builtin_call(const std::string &name, Args&&... args) {
 		auto func_call = std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeaderRef>(

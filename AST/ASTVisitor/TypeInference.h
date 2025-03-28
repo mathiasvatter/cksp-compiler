@@ -81,13 +81,13 @@ public:
 
 public:
     /// error if composite type was not added to the type registry
-    static inline CompileError throw_composite_error(NodeReference* node) {
+    static CompileError throw_composite_error(NodeReference* node) {
         auto error = CompileError(ErrorType::TypeError,"", "", node->tok);
         error.m_message = "Composite Type is referenced but does not exist: "+node->name;
         return error;
     }
 
-    static inline CompileError throw_type_error(const NodeAST& node1, Type* type, const std::string& message="") {
+    static CompileError throw_type_error(const NodeAST& node1, Type* type, const std::string& message="") {
         auto error = CompileError(ErrorType::TypeError,"", "", node1.tok);
         error.m_message = "Type mismatch: " + node1.ty->to_string() + " and " + type->to_string()+". ";
 		error.m_message += message;
@@ -124,7 +124,8 @@ public:
         return nullptr;
     }
 
-	static inline Type* match_against(NodeAST& node1, Type* type, const std::string& message="") {
+	/// check node against a constant type -> with error handling
+	static Type* match_against(NodeAST& node1, Type* type, const std::string& message="") {
 		if(!node1.ty->is_compatible(type)) {
 			throw_type_error(node1, type, message).exit();
 		}
@@ -141,7 +142,7 @@ public:
 	}
 
 	/// tries to match the type of node 1 to the type of node2 after checking type compatibility
-	static inline Type* match_type(NodeAST& node1, NodeAST& node2, const std::string& message="") {
+	static Type* match_type(NodeAST& node1, NodeAST& node2, const std::string& message="") {
 		if(!node1.ty->is_compatible(node2.ty)) {
             throw_type_error(node1, node2.ty, message).exit();
 		}
@@ -166,7 +167,7 @@ public:
 
 	/// tries to match the types of l_value and r_value after checking type compatibility, skipping
 	/// compatibility check of r_value to l_value because of string and integer
-	static inline Type* match_assignment_types(NodeAST& l_value, NodeAST& r_value) {
+	static Type* match_assignment_types(NodeAST& l_value, NodeAST& r_value) {
 		auto l_value_ty = match_type(l_value, r_value);
 		if(l_value_ty == TypeRegistry::String) return l_value_ty;
 		// specialize types:
@@ -176,7 +177,7 @@ public:
 
     /// tries to match the types of reference and declaration by also checking for element typ
     /// in case declaration is a composite type
-    static inline Type* match_reference_declaration(NodeReference& node, const std::shared_ptr<NodeDataStructure>& declaration) {
+    static Type* match_reference_declaration(NodeReference& node, const std::shared_ptr<NodeDataStructure>& declaration) {
 		// before lowering, the declaration is not necessarily set, check before:
 		if(!declaration) return node.ty;
 
@@ -202,7 +203,7 @@ public:
         return node.ty;
     }
 
-	static inline Type* match_element_types(NodeAST& node1, NodeAST& node2) {
+	static Type* match_element_types(NodeAST& node1, NodeAST& node2) {
 		Type* node2_type = node2.ty->get_element_type();
 		Type* node1_type = node1.ty->get_element_type();
 		if(!node1_type->is_compatible(node2_type)) {
@@ -226,10 +227,10 @@ public:
 	}
 
     /// tries to find the most specialized type for type1 by looking at type2
-    static inline Type* specialize_type(Type* type1, Type* type2) {
+    static Type* specialize_type(const Type* type1, const Type* type2) {
         // get element types if composite type (element typ not nullptr):
-        auto node_1 = type1->get_element_type();
-        auto node_2 = type2->get_element_type();
+        const auto node_1 = type1->get_element_type();
+        const auto node_2 = type2->get_element_type();
 
         // specialize types:
 		// comparison is never the most specialized type
@@ -259,4 +260,62 @@ public:
         // in all other cases, node_1 is already specialized
         return node_1;
     }
+
+	/// tries to generalize type1 by looking at type2
+	/// integer, float -> number
+	/// string, integer, float -> any
+	static Type* generalize_type(const Type* type1, const Type* type2) {
+    	const auto node_1 = type1->get_element_type();
+    	const auto node_2 = type2->get_element_type();
+
+    	// if node 2 is unknown, return type of node1
+    	if(node_2 == TypeRegistry::Unknown) return node_1;
+
+
+    	if(node_1 == TypeRegistry::Unknown) {
+    		if (node_2 == TypeRegistry::Integer) return TypeRegistry::Integer;
+    		if (node_2 == TypeRegistry::Real) return TypeRegistry::Real;
+    		if (node_2 == TypeRegistry::String) return TypeRegistry::String;
+    	}
+
+    	if (node_1 == TypeRegistry::Integer) {
+    		if (node_2 == TypeRegistry::Integer) return node_1;
+    		if (node_2 == TypeRegistry::Real) return TypeRegistry::Number;
+    		if (node_2 == TypeRegistry::String) return TypeRegistry::Any;
+    	}
+
+    	if (node_1 == TypeRegistry::Real) {
+    		if (node_2 == TypeRegistry::Integer) return TypeRegistry::Number;
+    		if (node_2 == TypeRegistry::Real) return node_1;
+    		if (node_2 == TypeRegistry::String) return TypeRegistry::Any;
+    	}
+
+    	if (node_1 == TypeRegistry::String) {
+    		if (node_2 == TypeRegistry::String) {
+    			return node_1;
+    		} else {
+				return TypeRegistry::Any;
+			}
+    	}
+
+    	return node_1;
+    }
+
+	/// only there to match/generalize formal parameter to actual parameter
+	static Type* match_parameters(NodeAST& node1, Type* type, const std::string& message="") {
+    	if(!node1.ty->is_compatible(type)) {
+    		throw_type_error(node1, type, message).exit();
+    	}
+    	// if type is composite and node1 is unknown, set type of node1 to type
+    	if(type->cast<CompositeType>() and node1.ty == TypeRegistry::Unknown) {
+    		// stash elem_typ temporarily
+    		const auto elem_type = node1.ty->get_element_type();
+    		node1.ty = type;
+    		node1.set_element_type(elem_type);
+    	}
+    	// specialize types:
+    	node1.set_element_type(generalize_type(node1.ty, type));
+    	return node1.ty;
+    }
+
 };

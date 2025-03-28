@@ -23,7 +23,6 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	for(const auto & s : node.struct_definitions) {
 		s->accept(*this);
 	}
-//	node.reset_function_visited_flag();
 	for(const auto & callback : node.callbacks) {
 		if(callback.get() != m_program->init_callback) callback->accept(*this);
 	}
@@ -263,6 +262,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
+		// if (!fail) return &node;
 		auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
 		error.m_message = "Function Variable has not been declared: "+node.name;
 		error.exit();
