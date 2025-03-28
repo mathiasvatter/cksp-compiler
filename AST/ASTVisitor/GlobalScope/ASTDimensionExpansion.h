@@ -134,7 +134,7 @@ public:
 				block = std::make_unique<NodeBlock>(node.tok);
 				assignment = node.to_assign_stmt();
 
-				node.variable->references.emplace(assignment->l_value.get());
+				// node.variable->references.emplace(assignment->l_value.get());
 			}
 
 			auto inflated = node.variable->inflate_dimension(m_max_cb_stack->to_reference());
@@ -146,6 +146,7 @@ public:
 
 				block->add_as_stmt(std::make_unique<NodeSingleDeclaration>(node.variable, nullptr, node.tok));
 				block->add_as_stmt(std::move(assignment));
+				block->collect_references();
 				return node.replace_with(std::move(block));
 			}
 

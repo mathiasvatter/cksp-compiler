@@ -32,8 +32,7 @@
  * - only determine if constructor is called in the on init callback or on persistence_changed
  * 		- constructor called in linear for loop -> max_individual_structs_var + for loop elements
  */
-class ASTPointerScope : public ASTVisitor {
-private:
+class ASTPointerScope final : public ASTVisitor {
 	std::vector<NodeLoop*> m_loop_stack;
 	bool is_linear_environment = false;
 	std::unordered_map<NodeStruct*, std::unique_ptr<NodeAST>> m_num_constructors;
@@ -88,17 +87,11 @@ public:
 		m_program->global_declarations->accept(*this);
 		m_program->init_callback->accept(*this);
 		for(const auto & s : node.struct_definitions) {
-//			m_num_constructors[s.get()] = std::make_unique<NodeInt>(1, s->tok);
 			s->accept(*this);
 		}
 		for(const auto & callback : node.callbacks) {
 			if(callback.get() != m_program->init_callback) callback->accept(*this);
 		}
-//		for(auto & func_def : node.function_definitions) {
-//			if(!func_def->visited) {
-//				func_def->accept(*this);
-//			}
-//		}
 
 		node.reset_function_visited_flag();
 

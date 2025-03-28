@@ -130,7 +130,6 @@ add_executable(cksp main.cpp
         misc/Gensym.h
         misc/Timer.h
         Compiler.h
-        Compiler.cpp
         AST/ASTVisitor/ASTOptimizations.h
         AST/ASTVisitor/ASTOptimizations.cpp
         AST/ASTVisitor/ASTVariableChecking.h

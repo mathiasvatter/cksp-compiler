@@ -1,12 +1,21 @@
 
-on init
+struct List
+	declare value: int
+	declare next: List
+end struct
 
+on init
+	// declare ls := List(4, nil)
+	// delete ls
 	// declare float_mask[2]: int[]
 	// update_user_preset_to_1_1(float_mask)
 	// 
 
 	declare ndarray[2,3]
 	message(ndarray[0,2])
+
+	infere_me(1, 5.4, "string")
+	infere_me(2.3, 1, 1)
 end on
 
 on note
@@ -40,6 +49,12 @@ on note
 	stack_transform_me(1,2,mee)
 update_chord_info_label()
 end on
+
+function infere_me(param1, param2, param3: any)
+	message(param1, param2, param3)
+end function
+
+
 
 function update_chord_info_label()
 	declare _acc

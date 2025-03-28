@@ -65,8 +65,8 @@ inline static std::map<token, int> operator_precedence = {
 //	{token::MODULO, 11}
 };
 
-inline static int _get_binop_precedence(token tok) {
-	int precedence = operator_precedence[tok];
+static int _get_binop_precedence(const token tok) {
+	const int precedence = operator_precedence[tok];
 	if (precedence <= 0) {
 		return -1;
 	}
@@ -87,7 +87,7 @@ protected:
     static std::string sanitize_hex(const std::string& input);
 
 	Result<std::unique_ptr<NodeAST>> parse_wildcard(NodeAST* parent);
-    Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base, NodeAST* parent);
+    static Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base, NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_number(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_nil(NodeAST* parent);
     Result<std::unique_ptr<NodeString>> parse_string(NodeAST* parent);

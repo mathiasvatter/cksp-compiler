@@ -218,6 +218,12 @@ struct NodeFunctionHeaderRef final : NodeReference {
 	void prepend_arg(std::unique_ptr<NodeAST> arg) const;
 	void add_arg(std::unique_ptr<NodeAST> arg) const;
 	void set_args(std::unique_ptr<NodeParamList> new_args);
+	Type* create_function_type(Type* return_type = TypeRegistry::Unknown) {
+		std::vector<Type*> func_arg_types;
+		for(const auto &param : args->params) func_arg_types.push_back(param->ty);
+		ty = TypeRegistry::add_function_type(func_arg_types, return_type);
+		return ty;
+	}
 };
 
 struct NodeListRef final : NodeReference {
