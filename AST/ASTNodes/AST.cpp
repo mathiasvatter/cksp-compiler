@@ -1121,21 +1121,27 @@ void NodeProgram::update_parents(NodeAST *new_parent) {
 NodeFunctionDefinition *NodeProgram::add_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def) {
 	def->parent = this;
 	// search function_lookup first for existing function signature
-	const auto hash = StringIntKey{def->header->name, static_cast<int>(def->header->params.size())};
-	if (const auto it = function_lookup.find(hash); it != function_lookup.end()) {
-		for (const auto& weak_func : it->second) {
-			if (const auto func = weak_func.lock()) {
-				if (func->header->ty->is_same_type(def->header->ty)) {
-					auto error = CompileError(ErrorType::SyntaxError, "", "", def->tok);
-					error.m_message = "A function with the same signature already exists.";
-					error.exit();
-					return nullptr;
-				}
-			}
-		}
+	if (auto func = look_up_exact({def->header->name, static_cast<int>(def->header->params.size())}, def->header->ty)) {
+		auto error = CompileError(ErrorType::SyntaxError, "", "", def->tok);
+		error.m_message = "A function with the same signature already exists.";
+		error.exit();
+		return nullptr;
 	}
 	additional_function_definitions.push_back(def);
 	function_lookup[{def->header->name, static_cast<int>(def->header->params.size())}].push_back(def);
+	return def.get();
+}
+
+NodeFunctionDefinition * NodeProgram::replace_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def,
+	const std::shared_ptr<NodeFunctionDefinition> &replacement) {
+	def->header = replacement->header;
+	def->header->parent = def->header.get();
+	def->body = std::move(replacement->body);
+	def->body->parent = def.get();
+	def->return_variable = replacement->return_variable;
+	if (def->return_variable.has_value()) {
+		def->return_variable.value()->parent = def.get();
+	}
 	return def.get();
 }
 
@@ -1171,11 +1177,29 @@ void NodeProgram::update_struct_lookup() {
 }
 
 std::shared_ptr<NodeFunctionDefinition> NodeProgram::look_up_function(const NodeFunctionHeaderRef &header) {
-	const auto it = function_lookup.find({header.name, header.get_num_args()});
+	return look_up_compatible({header.name, header.get_num_args()}, header.ty);
+}
+
+std::shared_ptr<NodeFunctionDefinition> NodeProgram::look_up_exact(const StringIntKey &hash, const Type* ty) {
+	// search function_lookup first for existing function signature
+	const auto it = function_lookup.find(hash);
+	if (it == function_lookup.end()) return nullptr;
+	for (const auto& weak_func : it->second) {
+		if (const auto func = weak_func.lock()) {
+			if (func->header->ty->is_same_type(ty)) {
+				return func;
+			}
+		}
+	}
+	return nullptr;
+}
+
+std::shared_ptr<NodeFunctionDefinition> NodeProgram::look_up_compatible(const StringIntKey &hash, const Type *ty) {
+	const auto it = function_lookup.find(hash);
 	if (it == function_lookup.end()) return nullptr;
 	for (const auto& weak_func : it->second) {
 		if (auto func = weak_func.lock()) {
-			if (func->header->ty->is_compatible(header.ty)) {
+			if (func->header->ty->is_compatible(ty)) {
 				return func;
 			}
 		}
@@ -1207,7 +1231,7 @@ bool NodeProgram::check_unique_callbacks() const {
 
 NodeCallback* NodeProgram::move_on_init_callback() {
 	// Finden des ersten (und einzigen) on init Callbacks
-	auto it = std::find_if(callbacks.begin(), callbacks.end(), [&](const std::unique_ptr<NodeCallback>& callback) {
+	const auto it = std::ranges::find_if(callbacks, [&](const std::unique_ptr<NodeCallback>& callback) {
 		return callback.get() == init_callback;
 	});
 	// Move the callback to the first position

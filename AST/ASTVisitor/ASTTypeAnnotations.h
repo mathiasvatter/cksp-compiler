@@ -62,31 +62,36 @@ public:
 
 	NodeAST* visit(NodeArray& node) override {
 		if(node.size) node.size->accept(*this);
-		check_annotation_with_expected(&node, TypeRegistry::ArrayOfUnknown);
+		check_annotation_with_expected(node, TypeRegistry::ArrayOfUnknown);
+		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
 	NodeAST* visit(NodeVariable& node) override {
-		check_annotation_with_expected(&node, TypeRegistry::Unknown);
+		check_annotation_with_expected(node, TypeRegistry::Unknown);
+		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
 	NodeAST* visit(NodeNDArray& node) override {
 		if(node.sizes) node.sizes->accept(*this);
-		check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions).get());
+		check_annotation_with_expected(node, std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions).get());
+		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
 	NodeAST* visit(NodeFunctionHeader& node) override {
 		for(auto &param : node.params) param->variable->accept(*this);
-//		check_annotation_with_expected(&node, TypeRegistry::Unknown);
+//		check_annotation_with_expected(node, TypeRegistry::Unknown);
 //		return apply_type_annotations(node.get_shared());
 		return &node;
 	}
 	NodeAST* visit(NodePointer& node) override {
-		check_annotation_with_expected(&node, TypeRegistry::Unknown);
+		check_annotation_with_expected(node, TypeRegistry::Unknown);
+		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
 	NodeAST* visit(NodeList& node) override {
 		for(auto & b : node.body) b->accept(*this);
-		check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::List, TypeRegistry::Unknown, 1).get());
+		check_annotation_with_expected(node, std::make_unique<CompositeType>(CompoundKind::List, TypeRegistry::Unknown, 1).get());
+		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
 
@@ -102,18 +107,32 @@ private:
 	}
 
 	/// check if data structure annotations fit with the detected node type if not in func arguments
-	static Type* check_annotation_with_expected(NodeDataStructure* node, Type* expected) {
+	static Type* check_annotation_with_expected(const NodeDataStructure& node, const Type* expected) {
 		// skip function parameters
-		if(node->is_function_param()) return node->ty;
-		if(node->ty == TypeRegistry::Unknown) return node->ty;
-		if(!node->ty->is_same_type(expected)) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
-			error.m_message = "Type Annotation of "+node->name+" does not match expected type kind.";
+		if(node.is_function_param()) return node.ty;
+		if(node.ty == TypeRegistry::Unknown) return node.ty;
+		if(!node.ty->is_compatible(expected)) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+			error.m_message = "Type Annotation of "+node.name+" does not match expected type kind.";
 			error.m_expected =  "<"+expected->get_type_kind_name()+"> Type";
-			error.m_got = "<"+node->ty->get_type_kind_name()+"> Type";
+			error.m_got = "<"+node.ty->get_type_kind_name()+"> Type";
 			error.exit();
 		}
 		return nullptr;
+	}
+
+	void check_for_correct_object_type_annotation(const NodeDataStructure& node) const {
+		const auto element_type = node.ty->get_element_type();
+		if (element_type->get_type_kind() == TypeKind::Object) {
+			if (!NodeReference::get_object_ptr(m_program, element_type->to_string())) {
+				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+				error.m_message = "Found undefined Type. Type Annotation of "+node.name+" does not match any existing <Object> type.";
+				error.m_expected = "valid <Object> Type";
+				error.m_got = "<"+node.ty->to_string()+">";
+				error.exit();
+
+			}
+		}
 	}
 
 	/// apply type annotations given before parse time and replace node types accordingly

@@ -238,6 +238,14 @@ struct NodeFunctionHeader final : NodeDataStructure {
 	std::shared_ptr<NodeDataStructure>& get_param(const int idx) const {
 		return params[idx]->variable;
 	}
+	bool has_union_params() const {
+		for (const auto& param : params) {
+			if (param->variable->ty->get_element_type()->is_union_type()) {
+				return true;
+			}
+		}
+		return false;
+	}
 };
 
 struct NodeUIControl final : NodeDataStructure {

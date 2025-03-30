@@ -36,6 +36,9 @@ public:
 	[[nodiscard]] virtual Type* get_element_type() const {return nullptr;}
     [[nodiscard]] virtual int get_dimensions() const {return 0;}
 	[[nodiscard]] virtual Kind get_kind() const { return m_kind; }
+	[[nodiscard]] bool is_union_type() const {
+		return m_kind == Kind::Any || m_kind == Kind::Number;
+	}
     [[nodiscard]] virtual bool is_compatible(const Type* other) const {
         return m_kind == other->get_kind() && get_type_kind() == other->get_type_kind();
     }

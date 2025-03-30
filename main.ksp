@@ -61,9 +61,9 @@ function infere_me(param1, param2, param3: any)
 	message(param1, param2, param3)
 end function
 
-function infere_me(param1: int, param2: float, param3: string)
-	message(param1, param2, param3)
-end function
+// function infere_me(param1: int, param2: real, param3: string)
+// 	message(param1, param2, param3)
+// end function
 
 
 

@@ -28,7 +28,7 @@ CompileError::CompileError(ErrorType type, std::string message, size_t lineNumbe
 	m_marker_length = 0;
 }
 
-void CompileError::print(ErrorType err) {
+void CompileError::print(const ErrorType err) {
     if (m_got == "\n") {
         m_got = "linebreak";
     }
@@ -75,7 +75,7 @@ void CompileError::print(ErrorType err) {
     }
 }
 
-void CompileError::exit(ErrorType err) {
+void CompileError::exit(const ErrorType err) {
     print(err);
     std::cout << ColorCode::Red << "\nSeems like the compilation exited with a failure." << std::endl;
 	if(!m_file_name.empty()) {
