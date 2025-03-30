@@ -733,7 +733,7 @@ struct NodeProgram final : NodeAST {
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> additional_function_definitions;
-	std::unordered_map<StringIntKey, std::weak_ptr<NodeFunctionDefinition>, StringIntKeyHash> function_lookup;
+	std::unordered_map<StringIntKey, std::vector<std::weak_ptr<NodeFunctionDefinition>>, StringIntKeyHash> function_lookup;
 	std::vector<std::unique_ptr<NodeStruct>> struct_definitions;
 	std::unordered_map<std::string, NodeStruct*> struct_lookup;
 	std::unique_ptr<NodeBlock> global_declarations;
@@ -753,6 +753,7 @@ struct NodeProgram final : NodeAST {
 	void update_function_lookup();
 	NodeFunctionDefinition *add_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def);
 	void update_struct_lookup();
+	std::shared_ptr<NodeFunctionDefinition> look_up_function(const NodeFunctionHeaderRef& header);
 	/// Checks for uniqueness of all callbacks except "on ui_control"
 	bool check_unique_callbacks() const;
 	/// Checks for existence and uniqueness of "on init" callback

@@ -49,6 +49,17 @@ public:
 		return &node;
 	}
 
+	NodeAST* visit(NodeSingleDeclaration& node) override {
+		node.variable->accept(*this);
+		if (node.variable->ty == TypeRegistry::Any or node.variable->ty == TypeRegistry::Number) {
+			auto error = get_apply_type_annotations_error(node.variable);
+			error.m_message += " Union types like <Any> or <Number> can only be used in function parameters.";
+			error.exit();
+		}
+		if (node.value) node.value->accept(*this);
+		return &node;
+	}
+
 	NodeAST* visit(NodeArray& node) override {
 		if(node.size) node.size->accept(*this);
 		check_annotation_with_expected(&node, TypeRegistry::ArrayOfUnknown);
@@ -83,7 +94,7 @@ public:
 private:
 	DefinitionProvider* m_def_provider = nullptr;
 
-	static CompileError get_apply_type_annotations_error(std::shared_ptr<NodeDataStructure> node) {
+	static CompileError get_apply_type_annotations_error(const std::shared_ptr<NodeDataStructure> &node) {
 		auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
 		error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
 		error.m_got = node->ty->to_string();

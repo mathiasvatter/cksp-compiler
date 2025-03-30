@@ -1120,23 +1120,37 @@ void NodeProgram::update_parents(NodeAST *new_parent) {
 
 NodeFunctionDefinition *NodeProgram::add_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def) {
 	def->parent = this;
+	// search function_lookup first for existing function signature
+	const auto hash = StringIntKey{def->header->name, static_cast<int>(def->header->params.size())};
+	if (const auto it = function_lookup.find(hash); it != function_lookup.end()) {
+		for (const auto& weak_func : it->second) {
+			if (const auto func = weak_func.lock()) {
+				if (func->header->ty->is_same_type(def->header->ty)) {
+					auto error = CompileError(ErrorType::SyntaxError, "", "", def->tok);
+					error.m_message = "A function with the same signature already exists.";
+					error.exit();
+					return nullptr;
+				}
+			}
+		}
+	}
 	additional_function_definitions.push_back(def);
-	function_lookup.insert({{def->header->name, static_cast<int>(def->header->params.size())}, def});
+	function_lookup[{def->header->name, static_cast<int>(def->header->params.size())}].push_back(def);
 	return def.get();
 }
 
 void NodeProgram::update_function_lookup() {
 	function_lookup.clear();
 	for(const auto & def : function_definitions) {
-		function_lookup.insert({{def->header->name, static_cast<int>(def->header->params.size())}, def});
+		function_lookup[{def->header->name, static_cast<int>(def->header->params.size())}].push_back(def);
 	}
 	for(const auto & def : additional_function_definitions) {
-		function_lookup.insert({{def->header->name, static_cast<int>(def->header->params.size())}, def});
+		function_lookup[{def->header->name, static_cast<int>(def->header->params.size())}].push_back(def);
 	}
 	// add all struct methods to the lookup
 	for(const auto & struct_def : struct_definitions) {
 		for(const auto & method : struct_def->methods) {
-			function_lookup.insert({{method->header->name, static_cast<int>(method->header->params.size())}, method});
+			function_lookup[{method->header->name, static_cast<int>(method->header->params.size())}].push_back(method);
 		}
 	}
 }
@@ -1154,6 +1168,19 @@ void NodeProgram::update_struct_lookup() {
 	for(const auto & def : struct_definitions) {
 		struct_lookup.insert({def->name, def.get()});
 	}
+}
+
+std::shared_ptr<NodeFunctionDefinition> NodeProgram::look_up_function(const NodeFunctionHeaderRef &header) {
+	const auto it = function_lookup.find({header.name, header.get_num_args()});
+	if (it == function_lookup.end()) return nullptr;
+	for (const auto& weak_func : it->second) {
+		if (auto func = weak_func.lock()) {
+			if (func->header->ty->is_compatible(header.ty)) {
+				return func;
+			}
+		}
+	}
+	return nullptr;
 }
 
 bool NodeProgram::check_unique_callbacks() const {
@@ -1222,11 +1249,9 @@ void NodeProgram::inline_structs() {
 
 void NodeProgram::reset_function_visited_flag() {
 //	for(const auto & def : function_definitions) def->visited = false;
-	parallel_for_each(function_lookup.begin(), function_lookup.end(),
+	parallel_for_each(function_definitions.begin(), function_definitions.end(),
 				  [](auto const& def) {
-					if(def.second.lock()) {
-						def.second.lock()->visited = false;
-					}
+						def->visited = false;
 				  });
 }
 
@@ -1244,7 +1269,7 @@ void NodeProgram::remove_unused_functions() {
 	for(auto const & def : function_definitions) {
 		if(def->is_used) {
 			final_function_definitions.push_back(def);
-			function_lookup.insert({{def->header->name, static_cast<int>(def->header->params.size())}, def});
+			function_lookup[{def->header->name, static_cast<int>(def->header->params.size())}].push_back(def);
 		}
 	}
 	function_definitions.clear();

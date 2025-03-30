@@ -14,8 +14,10 @@ ASTVariableChecking::ASTVariableChecking(NodeProgram* main)
 NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_program = &node;
 
-	// refresh call_sites of function definitions
-//	for(const auto & func_def : node.function_definitions) func_def->call_sites.clear();
+	// add all function definition header variables to global scope
+	for(const auto & func_def : node.function_definitions) {
+		m_def_provider->set_declaration(func_def->header, true);
+	}
 
 	// most func defs will be visited when called, keeping local scopes in mind
 	m_program->global_declarations->accept(*this);
@@ -105,10 +107,13 @@ NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 
 NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
 	node.determine_locality(m_program, get_current_block());
-	// function definitions are being visited in the program node
-	// node header as data struct
-	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 	for(auto &param : node.params) param->accept(*this);
+
+	// global function headers from definition were already added initially
+	if (node.is_local) {
+		// node header as data struct
+		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
+	}
 	return &node;
 }
 
@@ -250,10 +255,12 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(node.args) node.args->accept(*this);
-	if(auto func_call = node.parent->cast<NodeFunctionCall>()) {
-		if(func_call->kind != NodeFunctionCall::Undefined) {
-			if(func_call->get_definition()) {
-				node.declaration = func_call->get_definition()->header;
+
+	// for builtin commands get header variable from its definition
+	if(const auto func_call = node.parent->cast<NodeFunctionCall>()) {
+		if(func_call->is_builtin_kind()) {
+			if(const auto def = func_call->get_definition()) {
+				node.declaration = def->header;
 			}
 			return &node;
 		}

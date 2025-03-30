@@ -1,3 +1,10 @@
+/// function manager
+// 
+// infere_me(param1, param2, param3) -> no annatations, save with no annotations
+// 
+// 
+
+
 
 struct List
 	declare value: int
@@ -51,6 +58,10 @@ update_chord_info_label()
 end on
 
 function infere_me(param1, param2, param3: any)
+	message(param1, param2, param3)
+end function
+
+function infere_me(param1: int, param2: float, param3: string)
 	message(param1, param2, param3)
 end function
 

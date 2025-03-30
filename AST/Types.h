@@ -80,6 +80,9 @@ public:
 		if(string_number) return true;
 		return is_compatible(other);
 	}
+	bool is_same_type(const Type *other) const override {
+	    return get_type_kind() == other->get_type_kind() && m_kind == other->get_kind();
+    }
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		// unknown is compatible with everything
 		bool unknown = m_kind == Kind::Unknown || other->get_kind() == Kind::Unknown;
@@ -162,7 +165,7 @@ public:
 	[[nodiscard]] Type* get_element_type() const override {return m_element_type;}
 	[[nodiscard]] CompoundKind get_compound_type() const {return m_compound_kind;}
 	bool is_same_type(const Type* other) const override {
-		return get_type_kind() == other->get_type_kind() && m_compound_kind == static_cast<const CompositeType*>(other)->get_compound_type() && m_dimensions == other->get_dimensions();
+		return get_type_kind() == other->get_type_kind() && m_compound_kind == other->cast<CompositeType>()->get_compound_type() && m_dimensions == other->get_dimensions();
 	}
 	void set_element_type(Type* element_type) {
 		m_element_type = element_type;
@@ -192,7 +195,7 @@ public:
 		return is_object_type or other->get_kind() == Kind::Unknown or other->get_kind() == Kind::Any;
 	}
 	bool is_same_type(const Type* other) const override {
-		return get_type_kind() == other->get_type_kind() or ((other->get_kind() == Kind::Unknown or other->get_kind() == Kind::Any) and other->get_type_kind() == TypeKind::Basic);
+		return get_type_kind() == other->get_type_kind() and other->get_type_kind() == TypeKind::Basic;
 	}
 private:
     std::string m_name;
@@ -258,29 +261,26 @@ public:
 		return true;
 	}
 
-	// // Überladener Gleichheitsoperator, der true zurückgibt, wenn alle Parameter,
-	// // deren Anzahl und der Rückgabetyp exakt übereinstimmen.
-	// bool operator==(const FunctionType& other) const {
-	// 	// Anzahl der Parameter vergleichen
-	// 	if (m_params.size() != other.m_params.size()) {
-	// 		return false;
-	// 	}
-	// 	// Jeden Parameter auf exakte Übereinstimmung prüfen (mittels is_same_type)
-	// 	for (size_t i = 0; i < m_params.size(); ++i) {
-	// 		if (!m_params[i]->is_same_type(other.m_params[i])) {
-	// 			return false;
-	// 		}
-	// 	}
-	// 	// Rückgabetyp prüfen
-	// 	if (!m_return_type->is_same_type(other.m_return_type)) {
-	// 		return false;
-	// 	}
-	// 	return true;
-	// }
+	bool is_same_type(const FunctionType& other) const {
+		// Anzahl der Parameter vergleichen
+		if (m_params.size() != other.m_params.size()) {
+			return false;
+		}
+		// Jeden Parameter auf exakte Übereinstimmung prüfen (mittels is_same_type)
+		for (size_t i = 0; i < m_params.size(); ++i) {
+			if (!m_params[i]->is_same_type(other.m_params[i])) {
+				return false;
+			}
+		}
+		// Rückgabetyp prüfen
+		if (!m_return_type->is_same_type(other.m_return_type)) {
+			return false;
+		}
+		return true;
+	}
 
 	std::vector<Type*> m_params;
 	Type* m_return_type;
-private:
 };
 
 
