@@ -7,9 +7,9 @@
 #include "ASTVisitor.h"
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
 
-class TypeInference : public ASTVisitor {
-private:
+class TypeInference final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
+	std::vector<NodeFunctionCall*> m_function_calls;
 
 public:
 	explicit TypeInference(NodeProgram* main) {
@@ -17,7 +17,7 @@ public:
 			m_def_provider = main->def_provider;
 		}
 		m_program = main;
-	};
+	}
 
 	NodeAST * visit(NodeProgram& node) override;
 
@@ -79,7 +79,6 @@ public:
     /// with cast set to true -> will cast types of data structures if no type could be infered
     static void cast_data_structure_types(const NodeProgram* program, bool cast= false);
 
-public:
     /// error if composite type was not added to the type registry
     static CompileError throw_composite_error(NodeReference* node) {
         auto error = CompileError(ErrorType::TypeError,"", "", node->tok);

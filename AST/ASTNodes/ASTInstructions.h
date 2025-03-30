@@ -84,7 +84,8 @@ struct NodeFunctionCall final : NodeInstruction {
     std::shared_ptr<NodeFunctionDefinition> find_property_definition(NodeProgram *program);
 	std::shared_ptr<NodeFunctionDefinition> find_constructor_definition(NodeProgram* program);
     /// gets and sets definition ptr or matches builtin func metadata -> throws error if not found when fail set to true
-    bool bind_definition(NodeProgram* program, bool fail= false);
+    /// forces to research for definition if force is set to true
+    bool bind_definition(NodeProgram* program, bool fail= false, bool force=false);
 	std::unique_ptr<NodeAccessChain> to_method_chain() override;
 
 	/// returns true if function call is of kind: Undefined, Builtin or Property

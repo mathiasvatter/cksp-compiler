@@ -81,14 +81,20 @@ ASTLowering* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
 }
 
 std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(NodeProgram *program) {
-    auto it = program->function_lookup.find({function->name, static_cast<int>(function->args->size())});
-    if(it != program->function_lookup.end()) {
-		auto func_def = it->second.lock();
-        definition = it->second;
-        kind = Kind::UserDefined;
-//		func_def->call_sites.emplace(this);
-        return func_def;
-    }
+//     auto it = program->function_lookup.find({function->name, static_cast<int>(function->args->size())});
+//     if(it != program->function_lookup.end()) {
+// 		auto func_def = it->second.lock();
+//         definition = it->second;
+//         kind = Kind::UserDefined;
+// //		func_def->call_sites.emplace(this);
+//         return func_def;
+//     }
+	if (auto func_def = program->look_up_function(*this->function)) {
+		definition = func_def;
+		kind = Kind::UserDefined;
+		//		func_def->call_sites.emplace(this);
+		return func_def;
+	}
     return nullptr;
 }
 
@@ -145,8 +151,8 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_constructor_defin
 }
 
 
-bool NodeFunctionCall::bind_definition(NodeProgram* program, bool fail) {
-    if (get_definition()) {
+bool NodeFunctionCall::bind_definition(NodeProgram* program, const bool fail, const bool force) {
+    if (get_definition() and !force) {
 		// update call sites
 //		if(kind == Kind::UserDefined) {
 //			definition->call_sites.emplace(this);
