@@ -11,6 +11,94 @@ class TypeInference final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
 	std::vector<NodeFunctionCall*> m_function_calls;
 
+	void do_monomorphization() {
+		std::vector<std::shared_ptr<NodeFunctionDefinition>> union_func_defs;
+		std::vector<std::shared_ptr<NodeFunctionDefinition>> func_defs;
+		for (auto& func_def : m_program->function_definitions) {
+			if (func_def->header->has_union_params()) {
+				union_func_defs.push_back(func_def);
+			} else {
+				func_defs.push_back(func_def);
+			}
+		}
+		m_program->function_definitions = func_defs;
+
+		for (int idx = 0; idx < union_func_defs.size(); idx++) {
+			auto& func_def = union_func_defs[idx];
+			// in case of union types, create a new function definition
+			auto headers = monomorphize_header(func_def->header);
+			for (int i=0; i<headers.size(); i++) {
+				auto new_func_def = clone_as<NodeFunctionDefinition>(func_def.get());
+				new_func_def->header = headers[i];
+				new_func_def->update_parents(nullptr);
+				new_func_def->accept(*this);
+				m_program->add_function_definition(std::move(new_func_def));
+			}
+		}
+		m_program->merge_function_definitions();
+		m_program->update_function_lookup();
+	}
+
+	// Monomorphisierung eines NodeFunctionHeader
+	std::vector<std::shared_ptr<NodeFunctionHeader>> monomorphize_header(std::shared_ptr<NodeFunctionHeader> header) {
+	    // Falls keine Union-Parameter vorhanden sind, wird der Header direkt zurückgegeben.
+	    if (!header->has_union_params()) {
+	        return { header };
+	    }
+
+	    // Indizes der Parameter, die Union-Typen enthalten,
+	    // sowie deren Alternativen sammeln.
+	    std::vector<int> union_indices;
+	    std::vector<std::vector<Type*>> alternatives;
+	    for (size_t i = 0; i < header->params.size(); i++) {
+	        // Wir nehmen an, dass param->variable->ty den Typ des Parameters repräsentiert.
+	        // Häufig ist es sinnvoll, die elementaren Typen zu betrachten, daher get_element_type().
+	        if (const auto type = header->params[i]->variable->ty->get_element_type(); type->is_union_type()) {
+	            union_indices.push_back(static_cast<int>(i));
+	            // Hole die Alternativen für diesen Union-Typ.
+	        	if (type == TypeRegistry::Any) {
+	        		alternatives.push_back({TypeRegistry::Integer, TypeRegistry::String, TypeRegistry::Real});
+	        	} else if (type == TypeRegistry::Number) {
+	        		alternatives.push_back({TypeRegistry::Integer, TypeRegistry::Real});
+	        	}
+	        }
+	    }
+
+	    // Berechne den kartesischen Produktraum der Alternativen.
+	    std::vector<std::vector<Type*>> cartesianProducts;
+	    std::function<void(size_t, std::vector<Type*>&)> rec = [&](size_t idx, std::vector<Type*>& current) {
+	        if (idx == alternatives.size()) {
+	            cartesianProducts.push_back(current);
+	            return;
+	        }
+	        for (auto alt : alternatives[idx]) {
+	            current.push_back(alt);
+	            rec(idx + 1, current);
+	            current.pop_back();
+	        }
+	    };
+	    std::vector<Type*> current;
+	    rec(0, current);
+
+	    // Für jede Kombination wird ein neuer Funktionsheader erstellt, der
+	    // die jeweiligen Union-Parameter durch die Alternativen ersetzt.
+	    std::vector<std::shared_ptr<NodeFunctionHeader>> result;
+	    for (auto& combination : cartesianProducts) {
+	        // Es wird angenommen, dass NodeFunctionHeader einen Kopierkonstruktor besitzt,
+	        // der einen Deep Copy macht.
+	        auto newHeader = std::make_shared<NodeFunctionHeader>(*header);
+	        for (size_t j = 0; j < union_indices.size(); j++) {
+	            int idx = union_indices[j];
+	            // Setze den Typ des Parameters auf die jeweilige Alternative.
+	            newHeader->params[idx]->variable->set_element_type(combination[j]);
+	        }
+	    	newHeader->create_function_type();
+	        result.push_back(newHeader);
+	    }
+
+	    return result;
+	}
+
 public:
 	explicit TypeInference(NodeProgram* main) {
 		if(main) {
@@ -74,6 +162,8 @@ public:
 	NodeAST * visit(NodeUseCount& node) override;
 	NodeAST * visit(NodeSortSearch& node) override;
 	NodeAST * visit(NodeForEach& node) override;
+
+
 
     /// iterates through all references and declarations and tries to match the types
     /// with cast set to true -> will cast types of data structures if no type could be infered

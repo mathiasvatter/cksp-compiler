@@ -892,7 +892,7 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
 
 Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
     auto node_program = std::make_unique<NodeProgram>(get_tok());
-	int init_callback_idx = 0;
+	// int init_callback_idx = 0;
     while (peek().type != token::END_TOKEN) {
         _skip_linebreaks();
         if (peek().type == token::BEGIN_CALLBACK) {
@@ -905,21 +905,20 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 			if (function.is_error())
 				return Result<std::unique_ptr<NodeProgram>>(function.get_error());
 			auto node_function = std::move(function.unwrap());
-			auto hash_value =
-				StringIntKey{node_function->header->name, static_cast<int>(node_function->header->params.size())};
-			// if function already defined
-			if (auto it = m_function_definitions.find(hash_value); it != m_function_definitions.end()) {
-				if (node_function->override) {
-					m_function_definitions[hash_value] = std::move(node_function);
-				} else if (!it->second->override) {
-					return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::SyntaxError,
-																			 "Function has already been defined.",
-																			 "",
-																			 node_function->header->tok));
-				}
-			} else {
-				m_function_definitions[hash_value] = std::move(node_function);
-			}
+        	if (auto func = node_program->look_up_exact({node_function->header->name, (int)node_function->header->params.size()}, node_function->header->ty)) {
+        		// was already declared, see if it overrides
+        		if (node_function->override) {
+        			node_program->replace_function_definition(func, node_function);
+        		} else {
+        			auto error = CompileError(ErrorType::SyntaxError,"", "", node_function->header->tok);
+        			error.m_message = "A function with this name and parameter count already exists. \n"
+							 "To override it, use the <override> keyword. \n"
+							 "To overload it, use <Union> types instead to define function templates accepting multiple types.";
+        			return Result<std::unique_ptr<NodeProgram>>(error);
+        		}
+        	} else {
+        		node_program->add_function_definition(std::move(node_function));
+        	}
 		} else if(peek().type == token::STRUCT) {
 			auto struct_def = parse_struct(node_program.get());
 			if(struct_def.is_error())
@@ -935,11 +934,17 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
         _skip_linebreaks();
     }
     node_program->callbacks = std::move(m_callbacks);
-	if(m_init_callback_idx != -1) node_program->init_callback = node_program->callbacks[m_init_callback_idx].get();
-    for(auto &[fst, snd] : m_function_definitions) {
-        node_program->function_definitions.push_back(std::move(snd));
-    }
-	node_program->update_function_lookup();
+	if(m_init_callback_idx != -1) {
+		node_program->init_callback = node_program->callbacks[m_init_callback_idx].get();
+	} else {
+		// no on init callback was declared
+		auto init_tok = node_program->tok;
+		auto init_callback = std::make_unique<NodeCallback>("on init", std::make_unique<NodeBlock>(init_tok), "end on", init_tok);
+		node_program->callbacks.push_back(std::move(init_callback));
+		node_program->init_callback = node_program->callbacks.back().get();
+	}
+	node_program->merge_function_definitions();
+	// node_program->update_function_lookup();
 	node_program->update_struct_lookup();
 	node_program->check_unique_callbacks();
 	node_program->init_callback = node_program->move_on_init_callback();
@@ -2007,12 +2012,6 @@ Result<std::unique_ptr<NodeGetControl>> Parser::parse_get_control_statement(std:
 	return Result<std::unique_ptr<NodeGetControl>>(std::move(node_get_control_statement));
 }
 
-//void Parser::mark_function_as_used(const std::string& func_name, int num_args) {
-//	auto it = m_function_definitions.find({func_name, num_args});
-//	if(it != m_function_definitions.end()) {
-//		it->second->is_used = true;
-//	}
-//}
 
 
 

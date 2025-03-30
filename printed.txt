@@ -54,19 +54,30 @@ on note
 
 end on
 
+function infere_me(param1 : number, param2 : number, param3 : any)
+	message(param1{number} & ", " & param2{number} & ", " & param3{any}){Builtin, None}
+end function
+
+function update_chord_info_label
+	_acc0{int} := 0
+		get_chord_accidental(_acc0{int}, 0, 3){UserDefined, ParameterStack}
+
+end function
+
 function get_chord_accidental(result : int, key : int, mode : int)
 	_pos0{int} := 0
 		Co5.get_pos(_pos0{int}, key{int}, mode{int}){UserDefined, ParameterStack}
 
 end function
 
-function stack_transform_me2(h : int)
-	i0{int} := 0
-	i0{int} := 0
-	while(i0{int} <= num_elements[_mee{int[]}, Array::clip(2, 2){UserDefined, None}]) 
-		message(_mee[(h{int} * 2) + i0{int}]{int} & ", " & h{int}){Builtin, None}
-		inc(i0{int}){Builtin, None}
+function Co5.get_pos(result : int, key : int, mode : int)
+	_mover0{int} := 0
+	_counter0{int} := 0
+	while(_mover0{int} # key{int}) 
+		inc(_counter0{int}){Builtin, None}
+		_mover0{int} := (_mover0{int} + 7) mod 12
 	end while
+	result{int} := _counter0{int}
 end function
 
 function stack_transform_me(param1 : int, param2 : int, _param3 : int[], i1 : int)
@@ -82,24 +93,13 @@ function stack_transform_me(param1 : int, param2 : int, _param3 : int[], i1 : in
 	end if
 end function
 
-function update_chord_info_label
-	_acc0{int} := 0
-		get_chord_accidental(_acc0{int}, 0, 3){UserDefined, ParameterStack}
-
-end function
-
-function infere_me(param1 : number, param2 : number, param3 : any)
-	message(param1{number} & ", " & param2{number} & ", " & param3{any}){Builtin, None}
-end function
-
-function Co5.get_pos(result : int, key : int, mode : int)
-	_mover0{int} := 0
-	_counter0{int} := 0
-	while(_mover0{int} # key{int}) 
-		inc(_counter0{int}){Builtin, None}
-		_mover0{int} := (_mover0{int} + 7) mod 12
+function stack_transform_me2(h : int)
+	i0{int} := 0
+	i0{int} := 0
+	while(i0{int} <= num_elements[_mee{int[]}, Array::clip(2, 2){UserDefined, None}]) 
+		message(_mee[(h{int} * 2) + i0{int}]{int} & ", " & h{int}){Builtin, None}
+		inc(i0{int}){Builtin, None}
 	end while
-	result{int} := _counter0{int}
 end function
 
 function Array::clip(x : int, b : int)

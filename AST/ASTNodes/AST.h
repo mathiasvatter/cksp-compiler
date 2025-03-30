@@ -752,8 +752,13 @@ struct NodeProgram final : NodeAST {
 	/// update function lookup table
 	void update_function_lookup();
 	NodeFunctionDefinition *add_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def);
+	static NodeFunctionDefinition *replace_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def, const std::shared_ptr<NodeFunctionDefinition> &replacement);
 	void update_struct_lookup();
+	/// looks up function with same name and parameter number and compatible types
 	std::shared_ptr<NodeFunctionDefinition> look_up_function(const NodeFunctionHeaderRef& header);
+	/// looks up function with same name and parameter number and SAME types
+	std::shared_ptr<NodeFunctionDefinition> look_up_exact(const StringIntKey &hash, const Type* ty);
+	std::shared_ptr<NodeFunctionDefinition> look_up_compatible(const StringIntKey &hash, const Type* ty);
 	/// Checks for uniqueness of all callbacks except "on ui_control"
 	bool check_unique_callbacks() const;
 	/// Checks for existence and uniqueness of "on init" callback

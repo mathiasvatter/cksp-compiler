@@ -25,6 +25,8 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 	node.reset_function_visited_flag();
 	cast_data_structure_types(&node, true);
 
+	do_monomorphization();
+
 	for(const auto & s : node.struct_definitions) {
 		s->collect_recursive_structs(m_program);
 	}
