@@ -22,18 +22,26 @@ class TypeInference final : public ASTVisitor {
 						match_type(*formal_param, *actual_param);
 						new_header->create_function_type();
 					}
+					if (const auto func = m_program->look_up_exact({new_header->name, (int)new_header->params.size()}, new_header->ty)) {
+						call->definition = func;
+						call->function->declaration = func->header;
+						continue;
+					}
+					// std::cout << "Creating new function definition for " << new_header->name << std::endl;
 					auto new_func_def = std::make_shared<NodeFunctionDefinition>(*definition);
 					// for (auto &ref : definition->header)
 					new_func_def->header = new_header;
-					new_func_def->update_parents(nullptr);
+					// new_func_def->update_parents(nullptr);
+					// new_func_def->collect_declarations(m_program);
 					new_func_def->accept(*this);
 
 					const std::string func_name = m_def_provider->get_fresh_name(call->function->name);
 					call->function->name = func_name;
-					new_func_def->header->name = func_name;
+					// new_func_def->header->name = func_name;
 					call->function->declaration = new_func_def->header;
 					call->definition = new_func_def;
-					m_program->add_function_definition(std::move(new_func_def));
+					auto func_ptr = m_program->add_function_definition(std::move(new_func_def));
+					func_ptr->header->name = func_name;
 				}
 			}
 		}
@@ -53,72 +61,48 @@ class TypeInference final : public ASTVisitor {
 		m_program->update_function_lookup();
 	}
 
-	// Monomorphisierung eines NodeFunctionHeader
-	static std::vector<std::shared_ptr<NodeFunctionHeader>> monomorphize_header(const std::shared_ptr<NodeFunctionHeader>& header) {
-	    // Falls keine Union-Parameter vorhanden sind, wird der Header direkt zurückgegeben.
-	    if (!header->has_union_params()) {
-	        return { header };
-	    }
-
-	    // Indizes der Parameter, die Union-Typen enthalten,
-	    // sowie deren Alternativen sammeln.
-	    std::vector<int> union_indices;
-	    std::vector<std::vector<Type*>> alternatives;
-	    for (size_t i = 0; i < header->params.size(); i++) {
-	        // Wir nehmen an, dass param->variable->ty den Typ des Parameters repräsentiert.
-	        // Häufig ist es sinnvoll, die elementaren Typen zu betrachten, daher get_element_type().
-	        if (const auto type = header->params[i]->variable->ty->get_element_type(); type->is_union_type()) {
-	            union_indices.push_back(static_cast<int>(i));
-	            // Hole die Alternativen für diesen Union-Typ.
-	        	if (type == TypeRegistry::Any) {
-	        		alternatives.push_back({TypeRegistry::Integer, TypeRegistry::String, TypeRegistry::Real});
-	        	} else if (type == TypeRegistry::Number) {
-	        		alternatives.push_back({TypeRegistry::Integer, TypeRegistry::Real});
-	        	}
-	        }
-	    }
-
-	    // Berechne den kartesischen Produktraum der Alternativen.
-	    std::vector<std::vector<Type*>> cartesianProducts;
-	    std::function<void(size_t, std::vector<Type*>&)> rec = [&](size_t idx, std::vector<Type*>& current) {
-	        if (idx == alternatives.size()) {
-	            cartesianProducts.push_back(current);
-	            return;
-	        }
-	        for (auto alt : alternatives[idx]) {
-	            current.push_back(alt);
-	            rec(idx + 1, current);
-	            current.pop_back();
-	        }
-	    };
-	    std::vector<Type*> current;
-	    rec(0, current);
-
-	    // Für jede Kombination wird ein neuer Funktionsheader erstellt, der
-	    // die jeweiligen Union-Parameter durch die Alternativen ersetzt.
-	    std::vector<std::shared_ptr<NodeFunctionHeader>> result;
-	    for (auto& combination : cartesianProducts) {
-	        // Es wird angenommen, dass NodeFunctionHeader einen Kopierkonstruktor besitzt,
-	        // der einen Deep Copy macht.
-	        auto newHeader = std::make_shared<NodeFunctionHeader>(*header);
-	        for (size_t j = 0; j < union_indices.size(); j++) {
-	            int idx = union_indices[j];
-	            // Setze den Typ des Parameters auf die jeweilige Alternative.
-	            newHeader->params[idx]->variable->set_element_type(combination[j]);
-	        }
-	    	newHeader->create_function_type();
-	        result.push_back(newHeader);
-	    }
-
-	    return result;
-	}
 
 public:
 	explicit TypeInference(NodeProgram* main) {
-		if(main) {
-			m_def_provider = main->def_provider;
-		}
+		if(main) m_def_provider = main->def_provider;
 		m_program = main;
+	}
+
+	NodeAST* do_complete_traversal(NodeProgram& node) {
+		m_function_calls.clear();
+		m_def_provider->m_all_declarations.clear();
+		m_def_provider->m_all_references.clear();
+		m_def_provider->m_all_data_structures.clear();
+		m_def_provider->m_all_assignments.clear();
+		m_program->current_callback = nullptr;
+		m_program = &node;
+		node.accept(*this);
+		for(const auto & func_def : node.function_definitions) {
+			if(!func_def->visited) func_def->accept(*this);
+		}
+
+		cast_data_structure_types(&node, true);
+		// do cycle detection
+		for(const auto & s : node.struct_definitions) {
+			s->collect_recursive_structs(m_program);
+		}
+		do_monomorphization();
+		node.reset_function_visited_flag();
+		return &node;
+	}
+
+	NodeAST* do_reachable_traversal(NodeProgram& node) {
+		m_function_calls.clear();
+		m_def_provider->m_all_declarations.clear();
+		m_def_provider->m_all_references.clear();
+		m_def_provider->m_all_data_structures.clear();
+		m_def_provider->m_all_assignments.clear();
+		m_program->current_callback = nullptr;
+		m_program = &node;
+		node.accept(*this);
+		node.reset_function_visited_flag();
+		// cast_data_structure_types(&node, true);
+		return &node;
 	}
 
 	NodeAST * visit(NodeProgram& node) override;

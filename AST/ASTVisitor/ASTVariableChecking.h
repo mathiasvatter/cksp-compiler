@@ -10,7 +10,7 @@ class ASTVariableChecking final : public ASTVisitor {
 public:
 	explicit ASTVariableChecking(NodeProgram* main);
 
-	NodeAST* do_variable_checking(NodeAST& node, const bool fail) {
+	NodeAST* do_complete_traversal(NodeAST& node, const bool fail) {
 		this->fail = fail;
 		// update function lookup map because of altered param counts after lambda lifting
 		m_program->merge_function_definitions();

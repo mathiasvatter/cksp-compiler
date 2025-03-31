@@ -3,17 +3,10 @@
 //
 
 #include "TypeInference.h"
-#include "ASTSemanticAnalysis.h"
+// #include "ASTSemanticAnalysis.h"
 
 NodeAST * TypeInference::visit(NodeProgram& node) {
-//	m_def_provider->refresh_data_vectors();
-	m_function_calls.clear();
-	m_def_provider->m_all_declarations.clear();
-	m_def_provider->m_all_references.clear();
-	m_def_provider->m_all_data_structures.clear();
-	m_def_provider->m_all_assignments.clear();
-
-	m_program->current_callback = nullptr;
+	m_program = &node;
 	m_program->global_declarations->accept(*this);
 	for(const auto & s : node.struct_definitions) {
 		s->accept(*this);
@@ -21,30 +14,22 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 	for(const auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
-	for(const auto & func_def : node.function_definitions) {
-		if(!func_def->visited) func_def->accept(*this);
-	}
-	node.reset_function_visited_flag();
-	cast_data_structure_types(&node, true);
-
-
-	for(const auto & s : node.struct_definitions) {
-		s->collect_recursive_structs(m_program);
-	}
-
-	do_monomorphization();
-	m_program->update_function_lookup();
 
 	return &node;
 }
 
 void TypeInference::cast_data_structure_types(const NodeProgram* program, const bool cast) {
 	const auto def_provider = program->def_provider;
-	for(auto& refs : def_provider->get_all_data_structures()) {
-		const auto data_struct = refs.lock();
-		if(!data_struct) continue;
-		for(auto & ref : data_struct->references) {
-			match_reference_declaration(*ref, ref->get_declaration());
+	// for(auto& refs : def_provider->get_all_data_structures()) {
+	// 	const auto data_struct = refs.lock();
+	// 	if(!data_struct) continue;
+	// 	for(auto & ref : data_struct->references) {
+	// 		match_reference_declaration(*ref, data_struct);
+	// 	}
+	// }
+	for (auto& ref : def_provider->get_all_references()) {
+		if (auto declaration = ref->get_declaration()) {
+			match_reference_declaration(*ref, declaration);
 		}
 	}
 	for(auto& ass : def_provider->get_all_assignments()) {
@@ -60,15 +45,20 @@ void TypeInference::cast_data_structure_types(const NodeProgram* program, const 
     	// cast as Integer if still unknown
     	if (cast) decl->variable->cast_type();
 	}
-	for(auto& refs : def_provider->get_all_data_structures()) {
-		const auto data_struct = refs.lock();
-		if(!data_struct) continue;
-		for(auto & ref : data_struct->references) {
-			match_reference_declaration(*ref, ref->get_declaration());
+	// for(auto& refs : def_provider->get_all_data_structures()) {
+	// 	const auto data_struct = refs.lock();
+	// 	if(!data_struct) continue;
+	// 	for(auto & ref : data_struct->references) {
+	// 		match_reference_declaration(*ref, ref->get_declaration());
+	// 	}
+	// }
+	for (auto& ref : def_provider->get_all_references()) {
+		if (auto declaration = ref->get_declaration()) {
+			match_reference_declaration(*ref, declaration);
 		}
-
 	}
 	def_provider->m_all_data_structures.clear();
+	def_provider->m_all_references.clear();
 }
 
 NodeAST * TypeInference::visit(NodeCallback& node) {
@@ -135,7 +125,7 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 		}
 	}
     match_reference_declaration(node, node.get_declaration());
-//	m_def_provider->add_to_references(&node);
+	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -177,7 +167,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 		node.ty = TypeRegistry::Nil;
 	}
 	match_reference_declaration(node, node.get_declaration());
-//	m_def_provider->add_to_references(&node);
+	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -220,7 +210,7 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 		}
 	}
     match_reference_declaration(node, node.get_declaration());
-//	m_def_provider->add_to_references(&node);
+	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -261,7 +251,7 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 		}
     }
     match_reference_declaration(node, node.get_declaration());
-//	m_def_provider->add_to_references(&node);
+	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -295,7 +285,7 @@ NodeAST * TypeInference::visit(NodeListRef& node) {
         if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
     }
     match_reference_declaration(node, node.get_declaration());
-//	m_def_provider->add_to_references(&node);
+	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
 }
 

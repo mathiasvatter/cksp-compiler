@@ -65,7 +65,7 @@ public:
 //	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 //    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-	// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+	input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
     // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 //    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
@@ -144,7 +144,7 @@ public:
 	ast->accept(type_annotations);
 
 	ASTVariableChecking variable_checking(m_program);
-	variable_checking.do_variable_checking(*ast, false);
+	variable_checking.do_complete_traversal(*ast, false);
 	ast->collect_references();
 
 	compile_time.stop("Variable Checking");
@@ -159,7 +159,7 @@ public:
 	compile_time.start("Type Checking");
 
 	TypeInference infer_types(ast.get());
-	ast->accept(infer_types);
+	infer_types.do_complete_traversal(*ast);
 
 	compile_time.stop("Type Checking");
 	std::cout << compile_time.print_timer("Type Checking") << std::endl;
@@ -169,7 +169,6 @@ public:
 	ast->accept(pointer_scope);
 	ast->collect_references();
 
-	ast->debug_print();
 	ASTCollectLowerings lowering(m_program);
 	ast->accept(lowering);
 
@@ -195,6 +194,7 @@ public:
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
 	compile_time.start("Data Structure Lowering");
 
+	ast->debug_print();
 
 	NormalizeNDArrayAssign nd_array_assign(m_program);
 	ast->accept(nd_array_assign);
@@ -206,11 +206,11 @@ public:
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
 
-	variable_checking.do_variable_checking(*ast, true);
+	variable_checking.do_complete_traversal(*ast, true);
 	ast->remove_references();
 	ast->collect_references();
 
-    ast->accept(infer_types);
+	infer_types.do_reachable_traversal(*ast);
 	// ast->debug_print();
 
 	compile_time.stop("Variable Checking 1");
@@ -223,7 +223,6 @@ public:
 	ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 	ASTParameterPromotion param_promotion(m_program);
 	param_promotion.do_param_promotion(*ast);
-	ast->debug_print();
 
 	// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 	ASTVariableReuse variable_reuse(m_program);

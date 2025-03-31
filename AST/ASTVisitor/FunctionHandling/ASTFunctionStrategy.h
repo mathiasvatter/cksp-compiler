@@ -111,7 +111,7 @@ public:
 
 	static bool has_only_scalar_params(const NodeFunctionDefinition& def) {
 		for(const auto &param : def.header->params) {
-			if(param->variable->ty->cast<CompositeType>()) {
+			if(param->variable->ty->cast<CompositeType>() || param->variable->ty->is_union_type()) {
 				return false;
 			}
 		}
