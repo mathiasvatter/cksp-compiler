@@ -60,6 +60,10 @@ struct NodeCompositeRef : NodeReference {
 	/// if no wildcards are present -> iterates over whole ndarray
 	virtual NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body, NodeProgram* program) = 0;
 	virtual void remove_index() = 0;
+	/// returns true if array reference index is not nullptr
+	virtual bool has_index() const {
+		return false;
+	}
 };
 
 struct NodeArrayRef final : NodeCompositeRef {
@@ -111,6 +115,9 @@ struct NodeArrayRef final : NodeCompositeRef {
 	NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body, NodeProgram* program) override;
 	void remove_index() override {
 		index = nullptr;
+	}
+	bool has_index() const override {
+		return index != nullptr;
 	}
 };
 
@@ -187,6 +194,9 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 	NodeBlock* iterate_over(std::unique_ptr<NodeBlock>& body, NodeProgram* program) override;
 	void remove_index() override {
 		indexes = nullptr;
+	}
+	bool has_index() const override {
+		return indexes != nullptr;
 	}
 };
 

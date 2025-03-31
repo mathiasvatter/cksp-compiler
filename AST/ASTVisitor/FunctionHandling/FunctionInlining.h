@@ -69,7 +69,7 @@ public:
 	}
 
 private:
-	static std::unique_ptr<NodeAST> get_expression_return(NodeBlock* body) {
+	static std::unique_ptr<NodeAST> get_expression_return(const NodeBlock* body) {
 		const auto stmt = body->statements[0]->statement.get();
 		if(const auto ret = stmt->cast<NodeReturn>()) {
 			return std::move(ret->return_variables[0]);
