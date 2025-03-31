@@ -7,11 +7,13 @@
 
 NodeAST * TypeInference::visit(NodeProgram& node) {
 //	m_def_provider->refresh_data_vectors();
+	m_function_calls.clear();
 	m_def_provider->m_all_declarations.clear();
 	m_def_provider->m_all_references.clear();
 	m_def_provider->m_all_data_structures.clear();
 	m_def_provider->m_all_assignments.clear();
 
+	m_program->current_callback = nullptr;
 	m_program->global_declarations->accept(*this);
 	for(const auto & s : node.struct_definitions) {
 		s->accept(*this);
@@ -25,11 +27,12 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 	node.reset_function_visited_flag();
 	cast_data_structure_types(&node, true);
 
-	do_monomorphization();
 
 	for(const auto & s : node.struct_definitions) {
 		s->collect_recursive_structs(m_program);
 	}
+
+	do_monomorphization();
 	m_program->update_function_lookup();
 
 	return &node;
@@ -69,8 +72,10 @@ void TypeInference::cast_data_structure_types(const NodeProgram* program, const 
 }
 
 NodeAST * TypeInference::visit(NodeCallback& node) {
+	m_program->current_callback = &node;
     if(node.callback_id) node.callback_id->accept(*this);
     node.statements->accept(*this);
+	m_program->current_callback = nullptr;
 	return &node;
 }
 
@@ -515,16 +520,6 @@ NodeAST * TypeInference::visit(NodeInitializerList& node) {
 	return &node;
 }
 
-NodeAST * TypeInference::visit(NodeFunctionParam& node) {
-	node.variable->accept(*this);
-	if(node.value) {
-		node.value->accept(*this);
-		match_assignment_types(*node.variable, *node.value);
-		node.variable->accept(*this);
-	}
-	return &node;
-}
-
 NodeAST * TypeInference::visit(NodeSingleDelete& node) {
 	node.ptr->accept(*this);
 	if(node.ptr->ty->get_element_type()->get_type_kind() != TypeKind::Object) {
@@ -549,6 +544,15 @@ NodeAST * TypeInference::visit(NodeSingleRetain& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeFunctionParam& node) {
+	node.variable->accept(*this);
+	if(node.value) {
+		node.value->accept(*this);
+		match_assignment_types(*node.variable, *node.value);
+		node.variable->accept(*this);
+	}
+	return &node;
+}
 
 NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	node.variable->accept(*this);
@@ -662,7 +666,19 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
+	// match_type(node, *node.parent);
 	node.bind_definition(m_program);
+	auto definition = node.get_definition();
+	if (definition) {
+		for (int i = 0; i < node.function->get_num_args(); i++) {
+			auto &func_arg = node.function->get_arg(i);
+			auto &param = definition->get_param(i);
+			const std::string error_message =
+				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
+					+ param->ty->to_string() + " as argument type.";
+			match_type(*func_arg, *param, error_message);
+		}
+	}
 	node.function->accept(*this);
 
 	if(node.is_destructive_builtin_func()) {
@@ -674,7 +690,6 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		}
 	}
 
-	auto definition = node.get_definition();
 	if(!definition) {
 		// if definition pre lowering not found -> could be struct __init__ func
 		// this_list := List(42, nil)
@@ -685,9 +700,22 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	}
 
 	if(definition) {
-		if (!definition->visited and !node.is_builtin_kind()) {
+		// explicitly visit builtin functions regardless of visited flag since its not reset for those anyways
+		if (!definition->visited || node.is_builtin_kind()) {
 			definition->accept(*this);
 			definition->visited = true;
+
+			// apply references to function params
+			for (auto &param : definition->header->params) {
+				for(auto & ref : param->variable->references) {
+					match_reference_declaration(*ref, param->variable);
+				}
+            }
+
+		}
+
+		if (!node.is_builtin_kind() and m_program->current_callback != nullptr) {
+			m_function_calls.push_back(&node);
 		}
 
 		for (int i = 0; i < node.function->get_num_args(); i++) {
@@ -709,6 +737,9 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 
 		match_type(node, *definition);
 	}
+
+
+
 	return &node;
 }
 
@@ -806,6 +837,7 @@ NodeAST * TypeInference::visit(NodeReturn& node) {
 
 
 NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
+	// match_type(node, *node.parent);
 	node.left->accept(*this);
 	node.right->accept(*this);
 
@@ -889,6 +921,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 }
 
 NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
+	// match_type(node, *node.parent);
 	node.operand->accept(*this);
 
 	bool is_compatible = node.ty->is_compatible(node.operand->ty) && node.operand->ty->is_compatible(node.ty);

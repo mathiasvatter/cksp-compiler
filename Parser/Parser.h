@@ -99,8 +99,10 @@ protected:
 	Result<std::unique_ptr<NodeReference>> parse_array_ref(NodeAST *parent);
 	Result<std::unique_ptr<NodeAST>> parse_reference_chain(NodeAST *parent);
 
+	Result<std::unique_ptr<NodeParamList>> parse_multiple_values(NodeAST* parent);
     Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent);
 	Result<SuccessTag> _parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent);
+	Result<std::unique_ptr<NodeAST>> parse_init_list(NodeAST* parent);
     /// parses every expression from binary, string, unary to number and variable
     Result<std::unique_ptr<NodeAST>> parse_expression(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_string_expr(NodeAST* parent);
@@ -115,6 +117,7 @@ protected:
 		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr(NodeAST* parent);
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr(NodeAST* parent);
+    Result<std::unique_ptr<NodeDeclaration>> parse_declare_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAssignment>> parse_assign_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeReturn>> parse_return_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeDelete>> parse_delete_statement(NodeAST* parent);
@@ -126,7 +129,6 @@ protected:
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_declare_array(NodeAST* parent);
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);
-    Result<std::unique_ptr<NodeDeclaration>> parse_declare_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_const_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_list_block(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_family_statement(NodeAST* parent);

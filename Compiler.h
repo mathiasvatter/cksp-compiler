@@ -169,6 +169,7 @@ public:
 	ast->accept(pointer_scope);
 	ast->collect_references();
 
+	ast->debug_print();
 	ASTCollectLowerings lowering(m_program);
 	ast->accept(lowering);
 

@@ -553,6 +553,7 @@ struct NodeSingleDeclaration final : NodeInstruction {
         variable -> update_token_data(token);
         if(value) value -> update_token_data(token);
     }
+	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
     ASTLowering* get_lowering(NodeProgram *program) const override;
 	ASTLowering* get_post_lowering(NodeProgram *program) const override;
 //	ASTLowering *get_data_lowering(NodeProgram *program) const override;

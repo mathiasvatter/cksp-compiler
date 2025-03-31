@@ -6,56 +6,66 @@
 
 
 
-struct List
-	declare value: int
-	declare next: List
-end struct
+// struct List
+// 	declare value: int
+// 	declare next: List
+// end struct
 
 on init
+	declare ui_button btn_keyswitch[5]
+	declare !btn_keyswitch_pictures[5] := ("btn_play_ks_c_v2")
+	set_button_properties(btn_keyswitch[0], "f", !btn_keyswitch_pictures[0])
+		
+
+
+
 	// declare ls := List(4, nil)
 	// delete ls
 	// declare float_mask[2]: int[]
 	// update_user_preset_to_1_1(float_mask)
-	// 
-
-	declare ndarray[2,3]
-	message(ndarray[0,2])
-
+	// declare ui_label lbl_global_accent_bg[(GLOBAL_ACCENTS.MAX_SHOWN_BARS*GLOBAL_ACCENTS.MAX_BEATS)/2] (1,1)
+	declare ndarray[2,3] := (0)
+	// message(ndarray[0,2])
+	search_matrix([2,3,4], 3)
 	infere_me(1, 5.4, "string")
 	infere_me(2.3, 1, 1)
 end on
 
-on note
-	declare a
-	if a = 1
-		declare strings[4] := ("a", "b", "c", "d")
-		message(strings[0])
-		declare b
-		if b = 1
-			message(a)
-		end if
+function higher_order(func: (int, int): string, a: int, b: int): string
+	return func(a, b)
+end function
 
-		declare c
-		message(c, b)	
+// on note
+// 	declare a
+// 	if a = 1
+// 		declare strings[4] := ("a", "b", "c", "d")
+// 		message(strings[0])
+// 		declare b
+// 		if b = 1
+// 			message(a)
+// 		end if
 
-		strings := ("a", "b", "c", "d")
-	end if
-	declare strings2[] := ("d", "e", "f", "g")
-	// strings := strings2
-	if a = 2
-		declare d
-		if d = 2
-			message(a)
-		end if
+// 		declare c
+// 		message(c, b)	
 
-		declare e
-		message(e, d)	
+// 		strings := ("a", "b", "c", "d")
+// 	end if
+// 	declare strings2[] := ("d", "e", "f", "g")
+// 	// strings := strings2
+// 	if a = 2
+// 		declare d
+// 		if d = 2
+// 			message(a)
+// 		end if
 
-	end if
-	declare global mee[2,2] := ((2,2),(2,2))
-	stack_transform_me(1,2,mee)
-update_chord_info_label()
-end on
+// 		declare e
+// 		message(e, d)	
+
+// 	end if
+// 	declare global mee[2,2] := ((2,2),(2,2))
+// 	stack_transform_me(1,2,mee)
+// update_chord_info_label()
+// end on
 
 function infere_me(param1, param2, param3: any)
 	message(param1, param2, param3)
@@ -67,29 +77,29 @@ end function
 
 
 
-function update_chord_info_label()
-	declare _acc
-	_acc := get_chord_accidental(0,3)
-end function
+// function update_chord_info_label()
+// 	declare _acc
+// 	_acc := get_chord_accidental(0,3)
+// end function
 
-function get_chord_accidental(key, mode) -> result
-	declare _pos
-	_pos := Co5.get_pos(key, mode)
-end function
+// function get_chord_accidental(key, mode) -> result
+// 	declare _pos
+// 	_pos := Co5.get_pos(key, mode)
+// end function
 
-function Co5.get_pos(key, mode) -> result
-	declare _mover := 0
-	declare _counter := 0
-	while _mover # key
-		inc(_counter)
-		_mover := (_mover + 7) mod 12
-	end while
-	result := _counter
-end function
+// function Co5.get_pos(key, mode) -> result
+// 	declare _mover := 0
+// 	declare _counter := 0
+// 	while _mover # key
+// 		inc(_counter)
+// 		_mover := (_mover + 7) mod 12
+// 	end while
+// 	result := _counter
+// end function
 
-function update_user_preset_to_1_1(float_mask)
-	floatmask.set_range(float_mask, 14, 33, 0)
-end function
+// function update_user_preset_to_1_1(float_mask)
+// 	floatmask.set_range(float_mask, 14, 33, 0)
+// end function
 
 function floatmask.set_range(float_mask, start_idx, end_idx, val)
     bitlist.set_range(float_mask[0], min(32, start_idx), min(32, end_idx), val)
@@ -97,22 +107,22 @@ function floatmask.set_range(float_mask, start_idx, end_idx, val)
 end function
 
 
-function stack_transform_me(param1: int, param2: int, param3: int[][])
-	if param1 = param2
-		declare i
-		for i := 0 to num_elements(param3 ,2)
-			message(param3[1, i])
-		end for
-		stack_transform_me2(1)
-	end if
-end function	
+// function stack_transform_me(param1: int, param2: int, param3: int[][])
+// 	if param1 = param2
+// 		declare i
+// 		for i := 0 to num_elements(param3 ,2)
+// 			message(param3[1, i])
+// 		end for
+// 		stack_transform_me2(1)
+// 	end if
+// end function	
 
-function stack_transform_me2(h: int)
-	declare i
-	for i := 0 to num_elements(mee ,2)
-		message(mee[h, i], h)
-	end for
-end function	
+// function stack_transform_me2(h: int)
+// 	declare i
+// 	for i := 0 to num_elements(mee ,2)
+// 		message(mee[h, i], h)
+// 	end for
+// end function	
 
 
 
@@ -130,15 +140,15 @@ function search_matrix(matrix: number[][], target: number): number
     return -1  // If the target is not found
 end function
 
-function return_me_preemptively(arr: int[])
-	for i, el in pairs(arr)
-		if(el = 1)
-			return 1
-		end if
-		message(el)
-	end for	
+// function return_me_preemptively(arr: int[])
+// 	for i, el in pairs(arr)
+// 		if(el = 1)
+// 			return 1
+// 		end if
+// 		message(el)
+// 	end for	
 
-end function	
+// end function	
 
 
 

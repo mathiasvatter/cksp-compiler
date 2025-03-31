@@ -1132,6 +1132,43 @@ NodeFunctionDefinition *NodeProgram::add_function_definition(const std::shared_p
 	return def.get();
 }
 
+void NodeProgram::remove_function_definition(const std::shared_ptr<NodeFunctionDefinition>& def) {
+	auto remove_from_vector = [&](std::vector<std::shared_ptr<NodeFunctionDefinition>>& vec) {
+		for (size_t i = 0; i < vec.size(); ) {
+			if (vec[i] == def) {
+				// Swap-and-pop: Tausche das zu löschende Element mit dem letzten Element und entferne es.
+				vec[i] = vec.back();
+				vec.pop_back();
+				// Kein i++ da an Position i nun ein neues Element steht, das geprüft werden muss.
+			} else {
+				++i;
+			}
+		}
+	};
+
+	// Entferne die Funktion aus beiden Vektoren.
+	remove_from_vector(function_definitions);
+	remove_from_vector(additional_function_definitions);
+
+	const auto lookup_it = function_lookup.find({ def->header->name, static_cast<int>(def->header->params.size())});
+	if (lookup_it != function_lookup.end()) {
+		auto& vec = lookup_it->second;
+		for (size_t i = 0; i < vec.size(); ) {
+			if (auto sp = vec[i].lock()) {
+				if (sp == def) {
+					vec[i] = vec.back();
+					vec.pop_back();
+					continue;
+				}
+			}
+			++i;
+		}
+		if (vec.empty()) {
+			function_lookup.erase(lookup_it);
+		}
+	}
+}
+
 NodeFunctionDefinition * NodeProgram::replace_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def,
 	const std::shared_ptr<NodeFunctionDefinition> &replacement) {
 	def->header = replacement->header;
@@ -1231,7 +1268,7 @@ bool NodeProgram::check_unique_callbacks() const {
 
 NodeCallback* NodeProgram::move_on_init_callback() {
 	// Finden des ersten (und einzigen) on init Callbacks
-	const auto it = std::ranges::find_if(callbacks, [&](const std::unique_ptr<NodeCallback>& callback) {
+	const auto it = std::find_if(callbacks.begin(), callbacks.end(), [&](const std::unique_ptr<NodeCallback>& callback) {
 		return callback.get() == init_callback;
 	});
 	// Move the callback to the first position

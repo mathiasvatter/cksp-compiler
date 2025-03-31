@@ -215,9 +215,13 @@ struct NodeFunctionHeader final : NodeDataStructure {
 	}
 	NodeType get_ref_node_type() override {return NodeType::FunctionHeaderRef;}
 	Type* create_function_type(Type* return_type = TypeRegistry::Unknown) {
+		auto ret_type = return_type;
+		if (const auto type = ty->cast<FunctionType>()) {
+			if (return_type == TypeRegistry::Unknown) ret_type = type->m_return_type;
+		}
 		std::vector<Type*> func_arg_types;
 		for(const auto &param : params) func_arg_types.push_back(param->variable->ty);
-		ty = TypeRegistry::add_function_type(func_arg_types, return_type);
+		ty = TypeRegistry::add_function_type(func_arg_types, ret_type);
 		return ty;
 	}
 	void add_param(std::shared_ptr<NodeDataStructure> param) {

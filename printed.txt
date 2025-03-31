@@ -1,109 +1,79 @@
 // Global Declarations:
-	declare const MAX::CB::STACK : int := 100 {Reuses: 0}
 	declare _iter0 : int {Reuses: 0}
 	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
 	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
-	declare _mee[2 * 2] : int[] := [2, 2, 2, 2] {Reuses: 0}
-	declare i0 : int {Reuses: 0}
-	declare _mover0 : int {Reuses: 0}
-	declare _counter0 : int {Reuses: 0}
-	declare _pos0 : int {Reuses: 0}
-	declare _acc0 : int {Reuses: 0}
 on init
-	declare const List::MAX_STRUCTS : int := MAX::STRUCTS{int} {Reuses: 0}
-	declare List::free_idx : int {Reuses: 0}
-	declare List::allocation[List::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare List::stack[List::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare List::stack_top : int {Reuses: 0}
-	declare List::value[List::MAX_STRUCTS{int}] : int[] {Reuses: 0}
-	declare List::next[List::MAX_STRUCTS{int}] : int[] := [- 1] {Reuses: 0}
-	declare _ndarray[2 * 3] : int[] {Reuses: 0}
-	message(_ndarray[2]{int}){Builtin, None}
-		infere_me(1, 5.4, "string"){UserDefined, Inlining}
-
-		infere_me(2.3, 1, 1){UserDefined, Inlining}
-
+	declare ndarray[2, 3] : int[][] := [0] {Reuses: 0}
+	search_matrix0([2, 3, 4], 3){UserDefined, None}
+	infere_me0(1, 5.4, "string"){UserDefined, None}
+	infere_me1(2.3, 1, 1){UserDefined, None}
 end on
 
-on note
-	declare local a : int {Reuses: 0}
-	if(a{int} = 1)
-		declare local strings[4] : string[] := ["a", "b", "c", "d"] {Reuses: 0}
-		message(strings[0]{string}){Builtin, None}
-		declare local b : int {Reuses: 0}
-		if(b{int} = 1)
-			message(a{int}){Builtin, None}
-		end if
-		declare local c : int {Reuses: 0}
-		message(c{int} & ", " & b{int}){Builtin, None}
-		strings{string[]} := ["a", "b", "c", "d"]
-	end if
-	declare local strings2[4] : string[] := ["d", "e", "f", "g"] {Reuses: 0}
-	if(a{int} = 2)
-		declare local d : int {Reuses: 0}
-		if(d{int} = 2)
-			message(a{int}){Builtin, None}
-		end if
-		declare local e : int {Reuses: 0}
-		message(e{int} & ", " & d{int}){Builtin, None}
-	end if
-		declare local i1 : int {Reuses: 0}
-		stack_transform_me(1, 2, _mee{int[]}, i1{int}){UserDefined, Inlining}
-
-		update_chord_info_label{UserDefined, Call}
-
-end on
+function higher_order(func : (int, int): string, a : int, b : int)
+	return (func(a{int}, b{int}){Undefined, None})
+end function
 
 function infere_me(param1 : number, param2 : number, param3 : any)
 	message(param1{number} & ", " & param2{number} & ", " & param3{any}){Builtin, None}
 end function
 
-function update_chord_info_label
-	_acc0{int} := 0
-		get_chord_accidental(_acc0{int}, 0, 3){UserDefined, ParameterStack}
-
+function floatmask.set_range(float_mask : int[], start_idx : int, end_idx : int, val : number)
+	bitlist.set_range(float_mask[0]{int}, min(32, start_idx{int}){UserDefined, None}, min(32, end_idx{int}){UserDefined, None}, val{number}){UserDefined, None}
+	bitlist.set_range(float_mask[1]{int}, max(32, start_idx{int}){UserDefined, None} - 32, max(32, end_idx{int}){UserDefined, None} - 32, val{number}){UserDefined, None}
 end function
 
-function get_chord_accidental(result : int, key : int, mode : int)
-	_pos0{int} := 0
-		Co5.get_pos(_pos0{int}, key{int}, mode{int}){UserDefined, ParameterStack}
-
+function search_matrix(matrix : number[][], target : number)
+	declare local row : int {Reuses: 0}
+	declare local col : int {Reuses: 0}
+	for row{int} := 0 to num_elements[matrix{number[][]}, 1] - 1
+		for col{int} := 0 to num_elements[matrix{number[][]}, 2] - 1
+			if(matrix[row{int}, col{int}]{number} = target{number})
+				return ((row{int} * num_elements[matrix{number[][]}, 1]) + col{int})
+			end if
+		end for
+	end for
+	return (- 1)
 end function
 
-function Co5.get_pos(result : int, key : int, mode : int)
-	_mover0{int} := 0
-	_counter0{int} := 0
-	while(_mover0{int} # key{int}) 
-		inc(_counter0{int}){Builtin, None}
-		_mover0{int} := (_mover0{int} + 7) mod 12
-	end while
-	result{int} := _counter0{int}
+function bitlist.set_range(bit_list : int, start_idx : int, end_idx : int, val : number)
+	bit_list{int} := (eq(val{number}, 1){UserDefined, None} * ((eq(end_idx{int} - start_idx{int}, 32){UserDefined, None} * sh_right(- 1, 32){Builtin, None}) + (bit_list{int} .or. sh_left(.not. sh_left(- 1, end_idx{int} - start_idx{int}){Builtin, None}, 32 - end_idx{int}){Builtin, None}))) + (eq(val{number}, 0){UserDefined, None} * (lt(end_idx{int} - start_idx{int}, 32){UserDefined, None} * (bit_list{int} .and. .not. sh_left(.not. sh_left(- 1, end_idx{int} - start_idx{int}){Builtin, None}, 32 - end_idx{int}){Builtin, None})))
 end function
 
-function stack_transform_me(param1 : int, param2 : int, _param3 : int[], i1 : int)
-	if(param1{int} = param2{int})
-		i1{int} := 0
-		i1{int} := 0
-		while(i1{int} <= num_elements[_param3{int[]}, Array::clip(2, 2){UserDefined, None}]) 
-			message(_param3[num_elements[_param3{int[]}, 2] + i1{int}]{int}){Builtin, None}
-			inc(i1{int}){Builtin, None}
-		end while
-			stack_transform_me2(1){UserDefined, ParameterStack}
-
-	end if
+function max(a : int, b : int)
+	return (a{int} - ((a{int} - b{int}) .and. sh_right(a{int} - b{int}, 31){Builtin, None}))
 end function
 
-function stack_transform_me2(h : int)
-	i0{int} := 0
-	i0{int} := 0
-	while(i0{int} <= num_elements[_mee{int[]}, Array::clip(2, 2){UserDefined, None}]) 
-		message(_mee[(h{int} * 2) + i0{int}]{int} & ", " & h{int}){Builtin, None}
-		inc(i0{int}){Builtin, None}
-	end while
+function min(a : int, b : int)
+	return (a{int} - ((a{int} - b{int}) .and. sh_right(b{int} - a{int}, 31){Builtin, None}))
 end function
 
-function Array::clip(x : int, b : int)
-	return (x{int} + ((- x{int} .and. sh_right(x{int}, 31){Builtin, None}) + ((x{int} - b{int}) .and. sh_right(b{int} - x{int}, 31){Builtin, None})))
+function eq(a : number, b : number)
+	return (- sh_right(abs(a{number} - b{number}){Builtin, None} - 1, 31){Builtin, None})
+end function
+
+function lt(a : number, b : number)
+	return (- sh_right(a{number} - b{number}, 31){Builtin, None})
+end function
+
+function search_matrix0(matrix : int[][], target : int)
+	declare local row : int {Reuses: 0}
+	declare local col : int {Reuses: 0}
+	for row{int} := 0 to num_elements[matrix{number[][]}, 1] - 1
+		for col{int} := 0 to num_elements[matrix{number[][]}, 2] - 1
+			if(matrix[row{int}, col{int}]{number} = target{number})
+				return ((row{int} * num_elements[matrix{number[][]}, 1]) + col{int})
+			end if
+		end for
+	end for
+	return (- 1)
+end function
+
+function infere_me0(param1 : int, param2 : real, param3 : string)
+	message(param1{number} & ", " & param2{number} & ", " & param3{any}){Builtin, None}
+end function
+
+function infere_me1(param1 : real, param2 : int, param3 : int)
+	message(param1{number} & ", " & param2{number} & ", " & param3{any}){Builtin, None}
 end function
 
 

@@ -177,7 +177,7 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
         consume(); // consume [
         // if it is an empty array initialization
         if (peek().type != token::CLOSED_BRACKET) {
-            auto sizes_params = parse_param_list(node_array.get());
+            auto sizes_params = parse_multiple_values(node_array.get());
             if (sizes_params.is_error()) {
                 return Result<std::unique_ptr<NodeDataStructure>>(sizes_params.get_error());
             }
@@ -237,7 +237,7 @@ Result<std::unique_ptr<NodeReference>> Parser::parse_array_ref(NodeAST *parent) 
 			error.m_message += "Empty Array Reference Initialization is not allowed.";
 			return Result<std::unique_ptr<NodeReference>>(error);
 		}
-		auto index_params = parse_param_list(node_array_ref.get());
+		auto index_params = parse_multiple_values(node_array_ref.get());
 		if (index_params.is_error()) {
 			return Result<std::unique_ptr<NodeReference>>(index_params.get_error());
 		}
@@ -385,7 +385,9 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
         return parse_number(parent);
     // unary operators bool_not, bit_not, sub
     } else if (contains(UNARY_TOKENS, peek().type)) {
-		return parse_unary_expr(parent);
+	    return parse_unary_expr(parent);
+    } else if (peek().type == token::OPEN_BRACKET) {
+    	return parse_init_list(parent);
 	} else if (peek().type == token::NIL) {
 		return parse_nil(parent);
 	} else if (peek().type == token::NEW) {
@@ -653,7 +655,7 @@ Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* 
     consume(); // consume :=
 
 	std::unique_ptr<NodeParamList> assignees = nullptr;
-    auto assignee =  parse_param_list(node_assign_statement.get()); //_parse_assignee();
+    auto assignee =  parse_multiple_values(node_assign_statement.get()); //_parse_assignee();
     if(assignee.is_error()) {
         return Result<std::unique_ptr<NodeAssignment>>(assignee.get_error());
     }
@@ -673,7 +675,7 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 		error.m_message = "The <return> keyword is reserved for <Return> Statement within function definitions. Consider using a different name.";
 		error.exit();
 	}
-	auto return_params = parse_param_list(node_return_statement.get());
+	auto return_params = parse_multiple_values(node_return_statement.get());
 	if(return_params.is_error()) {
 		return Result<std::unique_ptr<NodeReturn>>(return_params.get_error());
 	}
@@ -951,62 +953,120 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
     return Result<std::unique_ptr<NodeProgram>>(std::move(node_program));
 }
 
-Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent) {
-    auto param_list = std::make_unique<NodeParamList>(get_tok());
-    param_list->parent = parent;
-    auto result = _parse_into_param_list(param_list->params, param_list.get());
-    if (result.is_error()) {
-        return Result<std::unique_ptr<NodeParamList>>(result.get_error());
-    }
-    return Result<std::unique_ptr<NodeParamList>>(std::move(param_list));
+Result<std::unique_ptr<NodeParamList>> Parser::parse_multiple_values(NodeAST* parent) {
+	auto mult_values = std::make_unique<NodeParamList>(get_tok());
+	while (true) {
+		size_t backup_pos = m_pos; // backup token index
+		if (auto exprResult = parse_expression(parent); !exprResult.is_error()) {
+			mult_values->add_param(std::move(exprResult.unwrap()));
+		} else {
+			m_pos = backup_pos;
+			auto param_list = parse_param_list(parent);
+			if (param_list.is_error()) {
+				return Result<std::unique_ptr<NodeParamList>>(param_list.get_error());
+			}
+			mult_values->add_param(std::move(param_list.unwrap()));
+		}
+		if (peek().type != token::COMMA) break;
+		consume(); // consume comma
+	}
+	mult_values->parent = parent;
+	return Result<std::unique_ptr<NodeParamList>>(std::move(mult_values));
 }
 
-Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent) {
-    size_t end_backup_pos; // in case of declaration list and ui_slider sliddd(0,1), <-
-    while (true) {
-//		_skip_linebreaks();
-        if (peek().type == token::OPEN_PARENTH) {
-            size_t backup_pos = m_pos; // backup token index
-            if (auto exprResult = parse_expression(parent); !exprResult.is_error()) {
-				if(peek(-1).type == token::CLOSED_PARENTH) {
-					auto expr_result = std::move(exprResult.unwrap());
-					params.push_back(std::make_unique<NodeParamList>(expr_result->tok, std::move(expr_result)));
-					params.back()->parent = parent;
-				} else {
-                	params.push_back(std::move(exprResult.unwrap()));
-				}
-            } else {
-                m_pos = backup_pos; // set back token index
-                consume(); // consume (
-                auto nested_param_list = std::make_unique<NodeParamList>(get_tok());
-                nested_param_list->parent = parent;
-                auto nestedResult = _parse_into_param_list(nested_param_list->params, nested_param_list.get());
-                if (nestedResult.is_error()) {
-                    return nestedResult;
-                }
-                params.push_back(std::move(nested_param_list));
-                if (peek().type == token::CLOSED_PARENTH) consume(); // consume )
-            }
-        } else {
-            auto exprResult = parse_expression(parent);
-            if (!exprResult.is_error()) {
-                params.push_back(std::move(exprResult.unwrap()));
-            } else {
-                // eg case declare ui_slider sli_bum(0,100), ui_button btn_buuuuu
-                if(peek(end_backup_pos-m_pos).type == token::COMMA) {
-                    m_pos = end_backup_pos;
-                    break;
-                }
-                return Result<SuccessTag>(exprResult.get_error());
-            }
-        }
-//		_skip_linebreaks();
-        if (peek().type != token::COMMA) break;
-        end_backup_pos = m_pos;
-        consume(); // consume comma
-//		_skip_linebreaks();
-    }
-    return Result<SuccessTag>(SuccessTag{});
+Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent) {
+    // auto param_list = std::make_unique<NodeParamList>(get_tok());
+    // param_list->parent = parent;
+    // auto result = _parse_into_param_list(param_list->params, param_list.get());
+    // if (result.is_error()) {
+    //     return Result<std::unique_ptr<NodeParamList>>(result.get_error());
+    // }
+    // return Result<std::unique_ptr<NodeParamList>>(std::move(param_list));
+
+	auto param_list = std::make_unique<NodeParamList>(get_tok());
+	if (peek().type == token::OPEN_PARENTH) consume(); // consume (
+	while (true) {
+		if (auto exprResult = parse_expression(parent); !exprResult.is_error()) {
+			param_list->add_param(std::move(exprResult.unwrap()));
+		} else {
+			auto error = exprResult.get_error();
+            error.m_message += " Found possible nested <ParameterList> Syntax. To denote <Array> initializers inside <ParameterLists>, use '[' and ']'.";
+			return Result<std::unique_ptr<NodeParamList>>(error);
+		}
+		if (peek().type != token::COMMA) break;
+		consume(); // consume comma
+	}
+	if (peek().type == token::CLOSED_PARENTH) consume(); // consume )
+
+	param_list->parent = parent;
+	return Result<std::unique_ptr<NodeParamList>>(std::move(param_list));
+}
+
+// Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent) {
+//     size_t end_backup_pos; // in case of declaration list and ui_slider sliddd(0,1), <-
+//     while (true) {
+// //		_skip_linebreaks();
+//         if (peek().type == token::OPEN_PARENTH) {
+//             size_t backup_pos = m_pos; // backup token index
+//             if (auto exprResult = parse_expression(parent); !exprResult.is_error()) {
+// 				// if(peek(-1).type == token::CLOSED_PARENTH) {
+// 				// 	auto expr_result = std::move(exprResult.unwrap());
+// 				// 	params.push_back(std::make_unique<NodeParamList>(expr_result->tok, std::move(expr_result)));
+// 				// 	params.back()->parent = parent;
+// 				// } else {
+//                 	params.push_back(std::move(exprResult.unwrap()));
+// 				// }
+//             } else {
+//                 m_pos = backup_pos; // set back token index
+//                 consume(); // consume (
+//                 auto nested_param_list = std::make_unique<NodeParamList>(get_tok());
+//                 nested_param_list->parent = parent;
+//                 auto nestedResult = _parse_into_param_list(nested_param_list->params, nested_param_list.get());
+//                 if (nestedResult.is_error()) {
+//                     return nestedResult;
+//                 }
+//                 params.push_back(std::move(nested_param_list));
+//                 if (peek().type == token::CLOSED_PARENTH) consume(); // consume )
+//             	// auto error = exprResult.get_error();
+//             	// error.m_message += " Found nested <ParameterList> Syntax. To denote <Array> initializers inside <ParameterList>, use '[' and ']'.";
+//             	// return Result<SuccessTag>(error);
+//             }
+//         } else {
+//             auto exprResult = parse_expression(parent);
+//             if (!exprResult.is_error()) {
+//                 params.push_back(std::move(exprResult.unwrap()));
+//             } else {
+//                 // eg case declare ui_slider sli_bum(0,100), ui_button btn_buuuuu
+//                 if(peek(end_backup_pos-m_pos).type == token::COMMA) {
+//                     m_pos = end_backup_pos;
+//                     break;
+//                 }
+//                 return Result<SuccessTag>(exprResult.get_error());
+//             }
+//         }
+// //		_skip_linebreaks();
+//         if (peek().type != token::COMMA) break;
+//         end_backup_pos = m_pos;
+//         consume(); // consume comma
+// //		_skip_linebreaks();
+//     }
+//     return Result<SuccessTag>(SuccessTag{});
+// }
+
+Result<std::unique_ptr<NodeAST>> Parser::parse_init_list(NodeAST* parent) {
+	consume(); // consume [
+	auto init_list = std::make_unique<NodeInitializerList>(get_tok());
+	while (peek().type != token::CLOSED_BRACKET) {
+		if (auto exprResult = parse_expression(parent); !exprResult.is_error()) {
+			init_list->add_element(std::move(exprResult.unwrap()));
+		} else {
+			return Result<std::unique_ptr<NodeAST>>(exprResult.get_error());
+		}
+		if (peek().type == token::COMMA) consume();
+	}
+	consume(); // consume ]
+	init_list->parent = parent;
+	return Result<std::unique_ptr<NodeAST>>(std::move(init_list));
 }
 
 Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAST* parent) {
@@ -1082,21 +1142,19 @@ Result<std::unique_ptr<NodeFunctionHeaderRef>> Parser::parse_function_header_ref
 
 Result<std::unique_ptr<NodeParamList>> Parser::parse_function_args(NodeAST* parent) {
     auto error = CompileError(ErrorType::ParseError,"", "", peek());
-    std::unique_ptr<NodeParamList> func_args = std::make_unique<NodeParamList>(get_tok());
+    auto func_args = std::make_unique<NodeParamList>(get_tok());
     if (peek().type == token::OPEN_PARENTH) {
-        consume(); // consume (
-        if(peek().type != token::CLOSED_PARENTH) {
+    	if (peek(1).type == token::CLOSED_PARENTH) {
+    		consume(); // consume (
+    		consume(); // consume )
+    	} else {
 			auto param_list = parse_param_list(parent);
 			if (param_list.is_error()) {
-				Result<std::unique_ptr<NodeFunctionHeader>>(param_list.get_error());
+				return Result<std::unique_ptr<NodeParamList>>(param_list.get_error());
 			}
 			func_args = std::move(param_list.unwrap());
 			func_args->set_child_parents();
-        }
-//		_skip_linebreaks();
-        if (peek().type == token::CLOSED_PARENTH) {
-            consume();
-        }
+    	}
     }
     return Result<std::unique_ptr<NodeParamList>>(std::move(func_args));
 }
@@ -1247,20 +1305,20 @@ Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST
     // if there is an assignment following
     if (peek().type == token::ASSIGN) {
         consume(); //consume :=
-		// check here if the following assignment starts with a parenthesis in case of array declaration
-		bool starts_with_parenth = peek().type == token::OPEN_PARENTH;
-		bool is_array = to_be_declared.at(0)->get_node_type() == NodeType::Array || to_be_declared.at(0)->get_node_type() == NodeType::NDArray;
+		// // check here if the following assignment starts with a parenthesis in case of array declaration
+		// bool starts_with_parenth = peek().type == token::OPEN_PARENTH;
+		// bool is_array = to_be_declared.at(0)->get_node_type() == NodeType::Array || to_be_declared.at(0)->get_node_type() == NodeType::NDArray;
 
-        auto assignee = parse_param_list(node_declare_statement.get());
+        auto assignee = parse_multiple_values(node_declare_statement.get());
         if(assignee.is_error()) {
             return Result<std::unique_ptr<NodeDeclaration>>(assignee.get_error());
         }
         assignees = std::move(assignee.unwrap());
-		// if assignment starts with parenth and has only one member -> nested param list
-		if(starts_with_parenth and is_array and assignees->params.size() == 1) {
-			auto nested_param_list = std::make_unique<NodeParamList>(get_tok(), std::move(assignees));
-			assignees = std::move(nested_param_list);
-		}
+		// // if assignment starts with parenth and has only one member -> nested param list
+		// if(starts_with_parenth and is_array and assignees->params.size() == 1) {
+		// 	auto nested_param_list = std::make_unique<NodeParamList>(get_tok(), std::move(assignees));
+		// 	assignees = std::move(nested_param_list);
+		// }
     } else {
         // initializes empty param list
         assignees = std::make_unique<NodeParamList>(get_tok());

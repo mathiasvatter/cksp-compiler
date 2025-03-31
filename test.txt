@@ -1,38 +1,6 @@
-{ Compiled with cksp version 0.0.7-alpha.2 on Sun Mar 30 17:43:18 2025 }
+{ Compiled with cksp version 0.0.7-alpha.2 on Mon Mar 31 19:38:30 2025 }
 on init
-  declare %_mee__num_elements[3] := (4, 2, 2)
-  declare %_mee[4] := (2, 2, 2, 2)
-  declare $i0
-  declare $_mover0
-  declare $_counter0
-  declare $a0
-  declare !strings0[4]
-  declare $b0
-  declare $c0
-  declare %_ndarray[6]
-  message(%_ndarray[2])
   message(1 & ", " & 5.400000000000000 & ", " & "string")
   message(2.300000000000000 & ", " & 1 & ", " & 1)
-end on
-function update_chord_info_label
-  $_mover0 := 0
-  $_counter0 := 0
-  while($_mover0 # 0) 
-    inc($_counter0)
-    $_mover0 := ($_mover0 + 7) mod 12
-  end while
-end function
-on note
-  $a0 := 0
-  !strings0[0] := "d"
-  !strings0[1] := "e"
-  !strings0[2] := "f"
-  !strings0[3] := "g"
-  if($a0 = 2)
-    $c0 := 0
-    $b0 := 0
-    message(0 & ", " & $c0)
-  end if
-  call update_chord_info_label
 end on
 

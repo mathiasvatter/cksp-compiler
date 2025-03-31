@@ -9,13 +9,13 @@
 /**
  * Transform Get Control nodes into set control nodes when l_values in assignment
  */
-class DesugarSingleAssignment : public ASTDesugaring {
+class DesugarSingleAssignment final : public ASTDesugaring {
 public:
 	explicit DesugarSingleAssignment(NodeProgram* program) : ASTDesugaring(program) {};
 
-	inline NodeAST* visit(NodeSingleAssignment& node) override {
+	NodeAST* visit(NodeSingleAssignment& node) override {
 
-		if(node.l_value->get_node_type() != NodeType::GetControl) {
+		if(!node.l_value->cast<NodeGetControl>()) {
 			return &node;
 		}
 
