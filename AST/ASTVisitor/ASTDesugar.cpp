@@ -8,13 +8,13 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
 
 	m_program->global_declarations->accept(*this);
-	for(auto & struct_def : node.struct_definitions) {
+	for(const auto & struct_def : node.struct_definitions) {
 		struct_def->accept(*this);
 	}
-    for(auto & callback : node.callbacks) {
+    for(const auto & callback : node.callbacks) {
         callback->accept(*this);
     }
-    for(auto & func_def : node.function_definitions) {
+    for(const auto & func_def : node.function_definitions) {
         func_def->accept(*this);
     }
 	// update because function parameters might have been added which might cause problems in typechecking
@@ -27,7 +27,7 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 }
 
 NodeAST* ASTDesugar::visit(NodeBlock& node) {
-    for(auto & stmt : node.statements) {
+    for(const auto & stmt : node.statements) {
         stmt->accept(*this);
     }
 	node.flatten();
@@ -62,7 +62,7 @@ NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
 		);
 		return node.remove_node();
     }
-	return &node;
+	return node.desugar(m_program);
 }
 
 NodeAST* ASTDesugar::visit(NodeAssignment &node) {

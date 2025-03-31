@@ -209,4 +209,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h
         AST/ASTVisitor/ReferenceManagement/ASTCollectCallSites.h
         AST/ASTVisitor/GlobalScope/DeflateParameters.h
+        Desugaring/DesugarSingleDeclaration.h
 )
+
+target_compile_definitions(cksp PRIVATE PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")

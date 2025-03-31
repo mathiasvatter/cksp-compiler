@@ -12,35 +12,49 @@ class TypeInference final : public ASTVisitor {
 	std::vector<NodeFunctionCall*> m_function_calls;
 
 	void do_monomorphization() {
-		std::vector<std::shared_ptr<NodeFunctionDefinition>> union_func_defs;
-		std::vector<std::shared_ptr<NodeFunctionDefinition>> func_defs;
-		for (auto& func_def : m_program->function_definitions) {
-			if (func_def->header->has_union_params()) {
-				union_func_defs.push_back(func_def);
-			} else {
-				func_defs.push_back(func_def);
-			}
-		}
-		m_program->function_definitions = func_defs;
+		for (auto& call : m_function_calls) {
+			if (auto definition = call->get_definition()) {
+				if (definition->header->has_union_params()) {
+					const auto new_header = std::make_shared<NodeFunctionHeader>(*definition->header);
+					for (int i = 0; i< new_header->params.size(); i++) {
+						auto& actual_param = call->function->get_arg(i);
+						auto& formal_param = new_header->get_param(i);
+						match_type(*formal_param, *actual_param);
+						new_header->create_function_type();
+					}
+					auto new_func_def = std::make_shared<NodeFunctionDefinition>(*definition);
+					// for (auto &ref : definition->header)
+					new_func_def->header = new_header;
+					new_func_def->update_parents(nullptr);
+					new_func_def->accept(*this);
 
-		for (int idx = 0; idx < union_func_defs.size(); idx++) {
-			auto& func_def = union_func_defs[idx];
-			// in case of union types, create a new function definition
-			auto headers = monomorphize_header(func_def->header);
-			for (int i=0; i<headers.size(); i++) {
-				auto new_func_def = clone_as<NodeFunctionDefinition>(func_def.get());
-				new_func_def->header = headers[i];
-				new_func_def->update_parents(nullptr);
-				new_func_def->accept(*this);
-				m_program->add_function_definition(std::move(new_func_def));
+					const std::string func_name = m_def_provider->get_fresh_name(call->function->name);
+					call->function->name = func_name;
+					new_func_def->header->name = func_name;
+					call->function->declaration = new_func_def->header;
+					call->definition = new_func_def;
+					m_program->add_function_definition(std::move(new_func_def));
+				}
 			}
 		}
+
+		// auto& funcs = m_program->function_definitions;
+		// for (size_t i = 0; i < funcs.size(); ) {
+		// 	if (funcs[i]->header->has_union_params()) {
+		// 		funcs[i] = std::move(funcs.back());
+		// 		funcs.pop_back();
+		// 		// Kein i++ da das neu an Position i eingezogene Element geprüft werden muss.
+		// 	} else {
+		// 		++i;
+		// 	}
+		// }
+
 		m_program->merge_function_definitions();
 		m_program->update_function_lookup();
 	}
 
 	// Monomorphisierung eines NodeFunctionHeader
-	std::vector<std::shared_ptr<NodeFunctionHeader>> monomorphize_header(std::shared_ptr<NodeFunctionHeader> header) {
+	static std::vector<std::shared_ptr<NodeFunctionHeader>> monomorphize_header(const std::shared_ptr<NodeFunctionHeader>& header) {
 	    // Falls keine Union-Parameter vorhanden sind, wird der Header direkt zurückgegeben.
 	    if (!header->has_union_params()) {
 	        return { header };
@@ -279,8 +293,10 @@ public:
         // match type from declaration to reference
 		node.set_element_type(specialize_type(reference_type, declaration_type));
 
-		// do not alter declaration type if it already has a type
-		if(declaration->ty->get_element_type() != TypeRegistry::Unknown) return node.ty;
+		// do not alter declaration type if it already has a distinct type
+		// if(declaration->ty->get_element_type() != TypeRegistry::Unknown) {
+		// 	return node.ty;
+		// }
 
         declaration_type = declaration->ty->get_element_type();
         reference_type = node.ty->get_element_type();

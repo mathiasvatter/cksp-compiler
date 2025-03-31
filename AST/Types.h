@@ -198,7 +198,7 @@ public:
 		return is_object_type or other->get_kind() == Kind::Unknown or other->get_kind() == Kind::Any;
 	}
 	bool is_same_type(const Type* other) const override {
-		return get_type_kind() == other->get_type_kind() and other->get_type_kind() == TypeKind::Basic;
+		return get_type_kind() == other->get_type_kind() and m_name == other->to_string();
 	}
 private:
     std::string m_name;
@@ -241,7 +241,7 @@ public:
 		}
 
 		// Cast auf den Funktionstyp
-		const auto* other_function = dynamic_cast<const FunctionType*>(other);
+		const auto other_function = other->cast<FunctionType>();
 
 		// Parameteranzahl prüfen
 		if (m_params.size() != other_function->get_params().size()) {
@@ -264,19 +264,23 @@ public:
 		return true;
 	}
 
-	bool is_same_type(const FunctionType& other) const {
+	bool is_same_type(const Type* other) const override {
+		if (get_type_kind() != other->get_type_kind()) {
+			return false;
+		}
+		const auto other_function = other->cast<FunctionType>();
 		// Anzahl der Parameter vergleichen
-		if (m_params.size() != other.m_params.size()) {
+		if (m_params.size() != other_function->m_params.size()) {
 			return false;
 		}
 		// Jeden Parameter auf exakte Übereinstimmung prüfen (mittels is_same_type)
 		for (size_t i = 0; i < m_params.size(); ++i) {
-			if (!m_params[i]->is_same_type(other.m_params[i])) {
+			if (!m_params[i]->is_same_type(other_function->m_params[i])) {
 				return false;
 			}
 		}
 		// Rückgabetyp prüfen
-		if (!m_return_type->is_same_type(other.m_return_type)) {
+		if (!m_return_type->is_same_type(other_function->m_return_type)) {
 			return false;
 		}
 		return true;

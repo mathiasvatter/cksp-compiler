@@ -17,9 +17,9 @@
 #include "../../Lowering/LoweringMemAlloc.h"
 #include "../../Lowering/LoweringNumElements.h"
 #include "../../Desugaring/DesugarSingleAssignment.h"
+#include "../../Desugaring/DesugarSingleDeclaration.h"
 #include "../../Lowering/PostLowering/PostLoweringNumElements.h"
 #include "../../Lowering/LoweringUseCount.h"
-#include "../ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
 #include "../ASTVisitor/FunctionHandling/FunctionInlining.h"
 #include "../../Lowering/PostLowering/PostLoweringSingleDeclaration.h"
@@ -587,6 +587,11 @@ NodeAST *NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_ptr
         return value.get();
     }
     return nullptr;
+}
+
+ASTDesugaring * NodeSingleDeclaration::get_desugaring(NodeProgram *program) const {
+	static DesugarSingleDeclaration desugaring(program);
+	return &desugaring;
 }
 
 ASTLowering* NodeSingleDeclaration::get_lowering(NodeProgram *program) const {
