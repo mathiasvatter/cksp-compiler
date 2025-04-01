@@ -7,7 +7,7 @@
 #include "ASTLowering.h"
 
 ///
-class LoweringFunctionCall : public ASTLowering {
+class LoweringFunctionCall final : public ASTLowering {
 private:
 public:
 	explicit LoweringFunctionCall(NodeProgram *program) : ASTLowering(program) {}
@@ -88,7 +88,7 @@ public:
 	}
 
 private:
-    inline std::unique_ptr<NodeBlock> inline_property_function(const std::shared_ptr<NodeFunctionHeader>& property_function, std::unique_ptr<NodeFunctionHeaderRef> header_ref) {
+	std::unique_ptr<NodeBlock> inline_property_function(const std::shared_ptr<NodeFunctionHeader>& property_function, std::unique_ptr<NodeFunctionHeaderRef> header_ref) {
         auto node_body = std::make_unique<NodeBlock>(header_ref->tok);
         for(int i = 1; i<header_ref->args->size(); i++) {
             auto node_set_control = std::make_unique<NodeSetControl>(

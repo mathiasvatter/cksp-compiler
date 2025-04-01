@@ -23,9 +23,6 @@ public:
 	NodeAST* do_function_stack_transformation(NodeProgram& node) {
 		for (int i = 0; i<node.function_definitions.size(); i++) {
 			const auto &func_def = node.function_definitions[i];
-			// if (func_def->header->name == "floatmask.get_range") {
-			//
-			// }
 			func_def->accept(*this);
 		}
 		node.merge_function_definitions();

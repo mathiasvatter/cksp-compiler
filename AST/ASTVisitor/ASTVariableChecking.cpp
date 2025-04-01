@@ -3,7 +3,6 @@
 //
 
 #include "ASTVariableChecking.h"
-#include <future>
 
 ASTVariableChecking::ASTVariableChecking(NodeProgram* main)
 	: m_def_provider(main->def_provider) {
@@ -150,6 +149,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 		if(!definition->visited) definition->accept(*this);
 	}
 	node.function->accept(*this);
+
 
 	// // add call sites at second stage when fail is true
 	// if(fail and definition and node.kind != NodeFunctionCall::Kind::Builtin) {

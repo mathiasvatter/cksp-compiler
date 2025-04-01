@@ -158,12 +158,15 @@ public:
 	bool determine_expansion_need(const NodeReference& ref) const {
 		if(is_thread_safe_env()) return false;
 		if(ref.kind != NodeReference::User) return false;
-		if(!ref.get_declaration()) {
-			auto error = CompileError(ErrorType::InternalError, "Reference has no declaration", "", ref.tok);
+		const auto declaration = ref.get_declaration();
+		if(!declaration) {
+			auto error = CompileError(ErrorType::InternalError, "DimensionExpansion : Reference has no declaration", "", ref.tok);
 //			error.exit();
 			return false;
 		}
-		if(ref.get_declaration()->is_local) return true;
+		if(declaration->is_local and !declaration->is_function_param()) {
+			return true;
+		}
 		return false;
 	}
 

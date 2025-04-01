@@ -273,7 +273,7 @@ void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCal
 }
 
 // ************* NodeSortSearch ***************
-NodeAST *NodeSortSearch::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeSortSearch::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeSortSearch::NodeSortSearch(const NodeSortSearch& other)

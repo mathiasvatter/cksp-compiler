@@ -16,7 +16,8 @@ on init
 	declare !btn_keyswitch_pictures[5] := ("btn_play_ks_c_v2")
 	set_button_properties(btn_keyswitch[0], "f", !btn_keyswitch_pictures[0])
 		
-
+	declare ui_button btn
+	sdf(btn)
 
 
 	// declare ls := List(4, nil)
@@ -27,14 +28,19 @@ on init
 	declare ndarray[2,3] := (0)
 	// message(ndarray[0,2])
 	// search_matrix([2,3,4], 3)
-	search_matrix(ndarray, 3)
-	infere_me(1, 5.4, "string")
-	infere_me(2.3, 1, 1)
+	// search_matrix(ndarray, 3)
+	// infere_me(1, 5.4, "string")
+	// infere_me(2.3, 1, 1)
 end on
 
-function higher_order(func: (int, int): string, a: int, b: int): string
-	return func(a, b)
+function sdf(ui_control: int)
+	ui_control-> hide  := HIDE_WHOLE_CONTROL
 end function
+
+
+// function higher_order(func: (int, int): string, a: int, b: int): string
+// 	return func(a, b)
+// end function
 
 // on note
 // 	declare a
@@ -128,18 +134,18 @@ end function
 
 
 
-function search_matrix(matrix: number[][], target: number): number
-    declare row, col: int
-    for row := 0 to num_elements(matrix, 1)- 1
-        for col := 0 to num_elements(matrix, 2)- 1
-            if matrix[row,col] = target
-                return (row * num_elements(matrix,1)) + col
-            end if
-        end for
-    end for
+// function search_matrix(matrix: number[][], target: number): number
+//     declare row, col: int
+//     for row := 0 to num_elements(matrix, 1)- 1
+//         for col := 0 to num_elements(matrix, 2)- 1
+//             if matrix[row,col] = target
+//                 return (row * num_elements(matrix,1)) + col
+//             end if
+//         end for
+//     end for
 
-    return -1  // If the target is not found
-end function
+//     return -1  // If the target is not found
+// end function
 
 // function return_me_preemptively(arr: int[])
 // 	for i, el in pairs(arr)

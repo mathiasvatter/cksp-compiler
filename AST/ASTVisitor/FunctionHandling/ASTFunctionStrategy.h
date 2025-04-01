@@ -90,7 +90,7 @@ public:
 
 	static bool has_only_scalar_params(const NodeFunctionDefinition& def) {
 		for(const auto &param : def.header->params) {
-			if(param->variable->ty->cast<CompositeType>() || param->variable->ty->is_union_type()) {
+			if(param->variable->ty->cast<CompositeType>() || param->variable->ty->is_union_type() || param->variable->data_type == DataType::UIControl) {
 				return false;
 			}
 		}
