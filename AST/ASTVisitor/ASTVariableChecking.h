@@ -5,8 +5,10 @@
 #pragma once
 
 #include "ASTVisitor.h"
+#include "FunctionHandling/FunctionParamDataTypeGetter.h"
 
 class ASTVariableChecking final : public ASTVisitor {
+
 public:
 	explicit ASTVariableChecking(NodeProgram* main);
 
@@ -24,6 +26,8 @@ public:
 		}
 		node.reset_function_visited_flag();
 		m_def_provider->refresh_scopes();
+		FunctionParamDataTypeGetter data_type_getter(m_program);
+		node.accept(data_type_getter);
 		return &node;
     }
 

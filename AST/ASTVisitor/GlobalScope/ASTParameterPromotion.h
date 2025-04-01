@@ -17,6 +17,7 @@
  */
 class ASTParameterPromotion final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
+	NodeCallback* m_current_callback = nullptr;
 	/// map for local variable declarations per function definition to be added to the next/above function
 	std::unordered_map<NodeFunctionDefinition*, std::vector<NodeDataStructure*>> m_local_var_declarations;
 
@@ -40,6 +41,14 @@ private:
 		return &node;
 	}
 
+	NodeAST* visit(NodeCallback& node) override {
+		m_current_callback = &node;
+		if (node.callback_id) node.callback_id->accept(*this);
+		node.statements->accept(*this);
+		m_current_callback = nullptr;
+		return &node;
+	}
+
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		node.bind_definition(m_program);
@@ -56,16 +65,17 @@ private:
 			return &node;
 		}
 
-
 		const auto definition = node.get_definition();
 		if(definition) {
 			// only visit definition if not already visited
 			if (!definition->visited) {
 				definition->accept(*this);
+				definition->visited = true;
 				const auto func_local_vars = std::move(definition->do_variable_reuse(m_program));
 
 				bool has_param_stack = false;
 				for (const auto &call : definition->call_sites) {
+					call->determine_function_strategy(m_program, m_current_callback);
 					if (call->strategy == NodeFunctionCall::Strategy::ParameterStack or call->strategy == NodeFunctionCall::Strategy::Call) {
 						has_param_stack = true;
 						break;
