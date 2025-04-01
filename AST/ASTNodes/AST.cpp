@@ -27,6 +27,7 @@
 #include "../../Lowering/LoweringInitializerList.h"
 #include "../ASTVisitor/ASTVariableChecking.h"
 #include "../ASTVisitor/TypeInference.h"
+#include "../ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h"
 #include "../ASTVisitor/FunctionHandling/ReturnPathValidator.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectCallSites.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h"
@@ -960,7 +961,7 @@ NodeAST *NodeFunctionDefinition::accept(ASTVisitor &visitor) {
 NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& other)
         : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
           num_return_params(other.num_return_params), num_return_stmts(other.num_return_stmts),
-          return_stmts(other.return_stmts), call_sites(other.call_sites),
+          return_stmts(other.return_stmts), call_sites(other.call_sites), allowed_callbacks(other.allowed_callbacks),
 		  header(clone_shared(other.header)), override(other.override),
 		  body(clone_unique(other.body)) {
     if (other.return_variable) {
@@ -1068,6 +1069,10 @@ void NodeFunctionDefinition::do_return_param_promotion(NodeProgram* program) {
 bool NodeFunctionDefinition::do_return_path_validation() {
 	static ReturnPathValidator return_validator;
 	return return_validator.do_return_path_validation(*this);
+}
+
+void NodeFunctionDefinition::write_builtin_function_restrictions() {
+	FunctionRestrictionValidator::write_builtin_function_restrictions(*this);
 }
 
 // ************* NodeProgramm ***************

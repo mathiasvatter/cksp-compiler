@@ -13,12 +13,10 @@ ASTVariableChecking::ASTVariableChecking(NodeProgram* main)
 
 NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_program = &node;
-
 	// add all function definition header variables to global scope
 	for(const auto & func_def : node.function_definitions) {
 		m_def_provider->set_declaration(func_def->header, true);
 	}
-
 	// most func defs will be visited when called, keeping local scopes in mind
 	m_program->global_declarations->accept(*this);
 	m_program->init_callback->accept(*this);
@@ -28,11 +26,7 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	for(const auto & callback : node.callbacks) {
 		if(callback.get() != m_program->init_callback) callback->accept(*this);
 	}
-	for(const auto & func_def : node.function_definitions) {
-		if(!func_def->visited) func_def->accept(*this);
-	}
-	node.reset_function_visited_flag();
-	m_def_provider->refresh_scopes();
+
 	return &node;
 }
 

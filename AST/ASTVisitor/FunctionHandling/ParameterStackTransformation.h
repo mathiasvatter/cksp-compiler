@@ -44,6 +44,10 @@ private:
 			}
 		}
 		if (calls.empty()) return &node;
+		if (calls.size() == 1) {
+			calls.front()->strategy = NodeFunctionCall::Strategy::Inlining;
+			return &node;
+		}
 		std::cout<< "Transforming function "<<node.header->name<<" to parameter stack strategy"<<std::endl;
 		const std::string new_name = m_def_provider->get_fresh_name("called_"+node.header->name);
 		auto new_def = clone_shared<NodeFunctionDefinition>(node.get_shared());

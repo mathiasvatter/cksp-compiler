@@ -10,7 +10,7 @@ class ASTVariableChecking final : public ASTVisitor {
 public:
 	explicit ASTVariableChecking(NodeProgram* main);
 
-	NodeAST* do_complete_traversal(NodeAST& node, const bool fail) {
+	NodeAST* do_complete_traversal(NodeProgram& node, const bool fail) {
 		this->fail = fail;
 		// update function lookup map because of altered param counts after lambda lifting
 		m_program->merge_function_definitions();
@@ -18,8 +18,28 @@ public:
 		// erase all previously saved scopes
 		m_def_provider->refresh_scopes();
 		m_def_provider->refresh_data_vectors();
-        return node.accept(*this);
+        node.accept(*this);
+		for(const auto & func_def : node.function_definitions) {
+			if(!func_def->visited) func_def->accept(*this);
+		}
+		node.reset_function_visited_flag();
+		m_def_provider->refresh_scopes();
+		return &node;
     }
+
+	NodeAST* do_reachable_traversal(NodeProgram& node, const bool fail) {
+		this->fail = fail;
+		// update function lookup map because of altered param counts after lambda lifting
+		m_program->merge_function_definitions();
+		m_program->update_function_lookup();
+		// erase all previously saved scopes
+		m_def_provider->refresh_scopes();
+		m_def_provider->refresh_data_vectors();
+		node.accept(*this);
+		node.reset_function_visited_flag();
+		m_def_provider->refresh_scopes();
+		return &node;
+	}
 
 	NodeAST * visit(NodeProgram& node) override;
 	/// check if on init callback currently
