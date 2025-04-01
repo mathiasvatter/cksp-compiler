@@ -206,7 +206,7 @@ public:
 	std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 	compile_time.start("Variable Checking 1");
 
-	variable_checking.do_complete_traversal(*ast, true);
+	variable_checking.do_reachable_traversal(*ast, true);
 	ast->remove_references();
 	ast->collect_references();
 
@@ -238,7 +238,7 @@ public:
 
 	ASTFunctionStrategy function_strategy(m_program);
 	ast->accept(function_strategy);
-	// ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
+	ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 	ASTFunctionInlining func_inlining(m_program);
 	ast->accept(func_inlining);
 	ast->order_function_definitions();

@@ -686,6 +686,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	int num_return_stmts = 0;
 	std::vector<NodeReturn*> return_stmts;
     std::unordered_set<NodeFunctionCall*> call_sites = {};
+	std::unordered_set<std::string> allowed_callbacks = {};
     std::shared_ptr<NodeFunctionHeader> header;
     std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;
@@ -717,6 +718,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	std::vector<std::shared_ptr<NodeDataStructure>> do_variable_reuse(NodeProgram *program);
 	void do_return_param_promotion(NodeProgram* program);
 	bool do_return_path_validation();
+	void write_builtin_function_restrictions();
 };
 
 struct NodeProgram final : NodeAST {

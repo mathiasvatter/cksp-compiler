@@ -146,11 +146,11 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	// 	if(m_program->current_callback) m_program->current_callback->is_thread_safe &= definition->is_thread_safe;
 	// }
 	// determine if currently visiting function in stack is restricted
-	if(definition) {
-		if(const auto func = m_program->get_curr_function()) {
-			func->is_restricted &= definition->is_restricted;
-		}
-	}
+	// if(definition) {
+	// 	if(const auto func = m_program->get_curr_function()) {
+	// 		func->is_restricted &= definition->is_restricted;
+	// 	}
+	// }
 	// if definition parameters of this function have different node types as the call site -> update
 	update_func_call_node_types(&node);
 

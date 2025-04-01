@@ -203,13 +203,13 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTTemporaryPointerScope.h
         AST/ASTVisitor/FunctionHandling/ReturnPathValidator.h
         AST/ASTVisitor/FunctionHandling/ParameterStackTransformation.h
-        AST/ASTVisitor/FunctionHandling/FunctionCallableValidator.h
         AST/ASTVisitor/GlobalScope/MarkThreadSafe.h
         AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h
         AST/ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h
         AST/ASTVisitor/ReferenceManagement/ASTCollectCallSites.h
         AST/ASTVisitor/GlobalScope/DeflateParameters.h
         Desugaring/DesugarSingleDeclaration.h
+        AST/ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h
 )
 
 target_compile_definitions(cksp PRIVATE PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")

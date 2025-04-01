@@ -19,7 +19,7 @@ public:
 	/// check for used functions
 	NodeAST *visit(NodeProgram &node) override {
 		m_program = &node;
-
+		m_current_callback = nullptr;
 		// ASTFunctionStrategy strategy(m_program);
 		// strategy.determine_function_strategies(*m_program);
 
@@ -30,10 +30,10 @@ public:
 		node.reset_function_used_flag();
 		node.reset_function_visited_flag();
 		m_program->global_declarations->accept(*this);
-		for(auto & struct_def : node.struct_definitions) {
+		for(const auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
 		}
-		for(auto & callback : node.callbacks) {
+		for(const auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
 

@@ -133,8 +133,8 @@ public:
 			if(node.value) {
 				block = std::make_unique<NodeBlock>(node.tok);
 				assignment = node.to_assign_stmt();
-
-				// node.variable->references.emplace(assignment->l_value.get());
+				// important for replace_datastruct afterwards to set new declaration pointer in reference
+				node.variable->references.emplace(assignment->l_value.get());
 			}
 
 			auto inflated = node.variable->inflate_dimension(m_max_cb_stack->to_reference());
@@ -155,7 +155,7 @@ public:
 		return &node;
 	}
 
-	bool determine_expansion_need(const NodeReference& ref) {
+	bool determine_expansion_need(const NodeReference& ref) const {
 		if(is_thread_safe_env()) return false;
 		if(ref.kind != NodeReference::User) return false;
 		if(!ref.get_declaration()) {

@@ -12,27 +12,26 @@ class TypeInference final : public ASTVisitor {
 	std::vector<NodeFunctionCall*> m_function_calls;
 
 	void do_monomorphization() {
-		for (auto& call : m_function_calls) {
+		for (const auto& call : m_function_calls) {
 			if (auto definition = call->get_definition()) {
 				if (definition->header->has_union_params()) {
 					const auto new_header = std::make_shared<NodeFunctionHeader>(*definition->header);
-					for (int i = 0; i< new_header->params.size(); i++) {
+					const size_t param_count = new_header->params.size();
+					for (size_t i = 0; i< param_count; i++) {
 						auto& actual_param = call->function->get_arg(i);
 						auto& formal_param = new_header->get_param(i);
 						match_type(*formal_param, *actual_param);
-						new_header->create_function_type();
 					}
+					new_header->create_function_type();
+
 					if (const auto func = m_program->look_up_exact({new_header->name, (int)new_header->params.size()}, new_header->ty)) {
 						call->definition = func;
 						call->function->declaration = func->header;
 						continue;
 					}
-					// std::cout << "Creating new function definition for " << new_header->name << std::endl;
+
 					auto new_func_def = std::make_shared<NodeFunctionDefinition>(*definition);
-					// for (auto &ref : definition->header)
 					new_func_def->header = new_header;
-					// new_func_def->update_parents(nullptr);
-					// new_func_def->collect_declarations(m_program);
 					new_func_def->accept(*this);
 
 					const std::string func_name = m_def_provider->get_fresh_name(call->function->name);
@@ -40,7 +39,7 @@ class TypeInference final : public ASTVisitor {
 					// new_func_def->header->name = func_name;
 					call->function->declaration = new_func_def->header;
 					call->definition = new_func_def;
-					auto func_ptr = m_program->add_function_definition(std::move(new_func_def));
+					const auto func_ptr = m_program->add_function_definition(std::move(new_func_def));
 					func_ptr->header->name = func_name;
 				}
 			}

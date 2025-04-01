@@ -25,9 +25,9 @@
 #include "../../Lowering/PostLowering/PostLoweringSingleDeclaration.h"
 #include "../../Lowering/LoweringSortSearch.h"
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
-#include "../ASTVisitor/FunctionHandling/FunctionCallableValidator.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "../ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
+#include "../ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(ASTVisitor &visitor) {
@@ -263,9 +263,8 @@ bool NodeFunctionCall::is_destructive_builtin_func() const {
 	return kind == NodeFunctionCall::Kind::Builtin and destructive_functions.contains(function->name);
 }
 
-bool NodeFunctionCall::determine_callability(NodeProgram *program, NodeCallback *current_callback) {
-	static FunctionCallableValidator validator(program);
-	return validator.is_callable(*this, current_callback);
+bool NodeFunctionCall::determine_callability(const NodeCallback& current_callback) const {
+	return FunctionRestrictionValidator::check_function_callability(*this, current_callback);
 }
 
 void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCallback *current_callback) {

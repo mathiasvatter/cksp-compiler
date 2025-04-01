@@ -539,6 +539,9 @@ NodeAST * ASTPrinter::visit(NodeFunctionDefinition &node) {
 	if(!node.is_thread_safe) {
 		os << "{thread-unsafe}";
 	}
+	if (node.is_restricted) {
+		os << "{restricted}";
+	}
     os << "\n";
     node.body->accept(*this);
     os << get_indent() <<  "end function" << std::endl;
