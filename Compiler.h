@@ -78,7 +78,7 @@ public:
 //	input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
-    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
+    // output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
 //    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
 //    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
 //	output_filename = "/Users/Mathias/Scripting/time-textures/Samples/resources/scripts/time-textures-2.txt";
@@ -194,7 +194,7 @@ public:
 	std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
 	compile_time.start("Data Structure Lowering");
 
-	ast->debug_print();
+	// ast->debug_print();
 
 	NormalizeNDArrayAssign nd_array_assign(m_program);
 	ast->accept(nd_array_assign);
@@ -209,9 +209,7 @@ public:
 	variable_checking.do_reachable_traversal(*ast, true);
 	ast->remove_references();
 	ast->collect_references();
-
 	infer_types.do_reachable_traversal(*ast);
-	// ast->debug_print();
 
 	compile_time.stop("Variable Checking 1");
 	std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;
@@ -239,6 +237,8 @@ public:
 	ASTFunctionStrategy function_strategy(m_program);
 	ast->accept(function_strategy);
 	ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
+	ast->debug_print();
+
 	ASTFunctionInlining func_inlining(m_program);
 	ast->accept(func_inlining);
 	ast->order_function_definitions();
