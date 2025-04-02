@@ -146,6 +146,8 @@ private:
 					m_current_function->header->prepend_param(std::move(new_param));
 				}
 			}
+			m_current_function->header->params[0]->kind = NodeInstruction::ReturnVar;
+
 			auto node_assignment = std::make_unique<NodeSingleAssignment>(std::move(new_param_ref), std::move(node.return_variables[i]), node.tok);
 			block_replace->add_as_stmt(std::move(node_assignment));
 		}

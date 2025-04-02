@@ -37,7 +37,7 @@ public:
 private:
 
 	/// visit every function call
-	inline NodeAST *visit(NodeFunctionCall &node) override {
+	NodeAST *visit(NodeFunctionCall &node) override {
 		// visit header
 		node.function->accept(*this);
 

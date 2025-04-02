@@ -78,7 +78,7 @@ public:
 //	input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 
 //    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
-    // output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
+    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
 //    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
 //    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
 //	output_filename = "/Users/Mathias/Scripting/time-textures/Samples/resources/scripts/time-textures-2.txt";
@@ -236,12 +236,14 @@ public:
 
 	ASTFunctionStrategy function_strategy(m_program);
 	ast->accept(function_strategy);
+
+	ast->order_function_definitions();
 	ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
-	ast->debug_print();
 
 	ASTFunctionInlining func_inlining(m_program);
 	ast->accept(func_inlining);
 	ast->order_function_definitions();
+	// ast->debug_print();
 
 
     compile_time.stop("Function Inlining");

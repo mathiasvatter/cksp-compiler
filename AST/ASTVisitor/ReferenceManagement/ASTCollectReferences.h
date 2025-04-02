@@ -45,9 +45,7 @@ public:
 		return &node;
 	}
 
-	// set visited flag to true
 	NodeAST *visit(NodeFunctionDefinition &node) override {
-		// node.visited = true;
 		node.header ->accept(*this);
 		if (node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);

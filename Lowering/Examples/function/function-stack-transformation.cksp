@@ -18,10 +18,12 @@ check maybe
 
 on note
     declare _ret0: int
-    foo(_ret0, 2, 4)
+    declare loci00: int
+    foo(_ret0, 2, 4, loci00)
 end on
 
-function foo(ret0: int, a: int, b: int)
+function foo(ret0: int, a: int, b: int, loci)
+	loci := 4 // param promotion
     if(a = 0)
         message("a is 0")
         ret0 := a-b + a+b
@@ -40,6 +42,7 @@ on init
     declare ret0: int
     declare a0: int
     declare b0: int
+    declare loci00: int
 end on
 
 on note
@@ -47,10 +50,12 @@ on note
     ret0 := _ret0
     a0 := 2
     b0 := 4
+    loci0 := loci00
     call foo()
 end on
 
 function foo()
+    loci0 := 4
     if(a0 = 0)
         message("a is 0")
         ret0 := a0-b0 + a0+b0

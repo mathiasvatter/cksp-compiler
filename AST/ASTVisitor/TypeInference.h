@@ -32,6 +32,7 @@ class TypeInference final : public ASTVisitor {
 
 					auto new_func_def = std::make_shared<NodeFunctionDefinition>(*definition);
 					new_func_def->header = new_header;
+					new_func_def->header->parent = new_func_def.get();
 					new_func_def->accept(*this);
 
 					const std::string func_name = m_def_provider->get_fresh_name(call->function->name);
