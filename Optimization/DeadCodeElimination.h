@@ -131,10 +131,10 @@ public:
 		if(!node->is_l_value()) return false;
 		// check if last reference is an assignment statement
 		if(m_last_reference.empty()) return false;
-		auto const it = m_last_reference.find(get_hash_value(*node));
-		if(it != m_last_reference.end()) {
+		if(auto const it = m_last_reference.find(get_hash_value(*node)); it != m_last_reference.end()) {
 			// check if reference is also somewhere on the right side of the assignment
-			if(const auto assignment = it->second->is_l_value()) { //and !node->is_r_value()) {
+			if (node->is_r_value()) return false;
+			if(const auto assignment = it->second->is_l_value()) {
 				if (assignment->r_value->cast<NodeFunctionCall>()) return false;
 				assignment->remove_node();
 				m_last_reference.erase(it);

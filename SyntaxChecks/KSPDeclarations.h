@@ -23,6 +23,7 @@ public:
 				// get correct declarations and stuff
 				auto new_assignment = std::make_unique<NodeSingleAssignment>(node.variable->to_reference(), std::move(node.value), node.tok);
 				auto new_declaration = std::make_unique<NodeSingleDeclaration>(node.variable, nullptr, node.tok);
+				new_declaration->variable->data_type = DataType::Mutable; // all declarations without values have to be non-constant
 				new_assignment->l_value->ty = new_declaration->variable->ty;
 
 				// declare strings[4] := ("a", "b", "c", "d")
