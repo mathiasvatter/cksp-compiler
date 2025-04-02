@@ -7,26 +7,25 @@
 #include <functional>
 #include "../AST/ASTVisitor/ASTOptimizations.h"
 
-class ConstantFolding : public ASTOptimizations {
-private:
-	static inline bool is_zero(NodeInt* node) {
+class ConstantFolding final : public ASTOptimizations {
+	static bool is_zero(const NodeInt* node) {
 		return node && node->value == 0;
 	}
-	static inline bool is_zero(NodeReal* node) {
+	static bool is_zero(const NodeReal* node) {
 		return node && node->value == 0;
 	}
-	inline static std::unique_ptr<NodeInt> get_int(int32_t value, const Token& tok) {
+	static std::unique_ptr<NodeInt> get_int(int32_t value, const Token& tok) {
 		return std::make_unique<NodeInt>(value, tok);
 	}
-	inline static bool all_params_are_type(const NodeFunctionCall& node, NodeType type) {
-		for(auto & param : node.function->args->params) {
+	static bool all_params_are_type(const NodeFunctionCall& node, NodeType type) {
+		for(const auto & param : node.function->args->params) {
 			if(param->get_node_type() != type) return false;
 		}
 		return true;
 	}
 
 public:
-	inline NodeAST* visit(NodeFunctionCall& node) override {
+	NodeAST* visit(NodeFunctionCall& node) override {
 		// return immediately if the function is not a builtin function to save time
 		if(node.kind != NodeFunctionCall::Kind::Builtin) return &node;
 
@@ -47,16 +46,15 @@ public:
 //					return node.replace_with(std::move(node_size_const));
 //				}
 			} else if (all_params_are_type(node, NodeType::Int)) {
-				int32_t result = 0;
-				auto int_node = node.function->get_arg(0)->cast<NodeInt>();
+				const auto int_node = node.function->get_arg(0)->cast<NodeInt>();
 				// Definition der Funktions-Map für Integer-Operationen
 				static std::unordered_map<std::string, std::function<int32_t(int32_t)>> int_functions = {
-					{"inc", [](int32_t value) { return value + 1; }},
-					{"dec", [](int32_t value) { return value - 1; }},
-					{"abs", [](int32_t value) { return std::abs(value); }},
+					{"inc", [](const int32_t value) { return value + 1; }},
+					{"dec", [](const int32_t value) { return value - 1; }},
+					{"abs", [](const int32_t value) { return std::abs(value); }},
 				};
-				if (int_functions.find(node.function->name) != int_functions.end()) {
-					result = int_functions[node.function->name](int_node->value);
+				if (int_functions.contains(node.function->name)) {
+					int32_t result = int_functions[node.function->name](int_node->value);
 					auto new_node = std::make_unique<NodeInt>(result, node.tok);
 					return node.replace_with(std::move(new_node));
 				} else if(node.function->name == "real") {
@@ -64,20 +62,19 @@ public:
 					return node.replace_with(std::move(new_node));
 				}
 			} else if (all_params_are_type(node, NodeType::Real)) {
-				double result = 0;
-				auto real_node = node.function->get_arg(0)->cast<NodeReal>();
+				const auto real_node = node.function->get_arg(0)->cast<NodeReal>();
 				static std::unordered_map<std::string, std::function<double(double)>> real_functions = {
 					// real number functions
-					{"exp", [](double value) { return std::exp(value); }},
-					{"sin", [](double value) { return std::sin(value); }},
-					{"cos", [](double value) { return std::cos(value); }},
+					{"exp", [](const double value) { return std::exp(value); }},
+					{"sin", [](const double value) { return std::sin(value); }},
+					{"cos", [](const double value) { return std::cos(value); }},
 					// rounding commands
-					{"floor", [](double value) { return std::floor(value); }},
-					{"ceil", [](double value) { return std::ceil(value); }},
-					{"round", [](double value) { return std::round(value); }}
+					{"floor", [](const double value) { return std::floor(value); }},
+					{"ceil", [](const double value) { return std::ceil(value); }},
+					{"round", [](const double value) { return std::round(value); }}
 				};
-				if (real_functions.find(node.function->name) != real_functions.end()) {
-					result = real_functions[node.function->name](real_node->value);
+				if (real_functions.contains(node.function->name)) {
+					double result = real_functions[node.function->name](real_node->value);
 					auto new_node = std::make_unique<NodeReal>(result, node.tok);
 					return node.replace_with(std::move(new_node));
 				} else if (node.function->name == "int") {
@@ -88,15 +85,15 @@ public:
 		} else if(node.function->get_num_args() == 3) {
 			if(node.function->name == "in_range") {
 				if(all_params_are_type(node, NodeType::Int)) {
-					auto value = node.function->get_arg(0)->cast<NodeInt>();
-					auto min = node.function->get_arg(1)->cast<NodeInt>();
-					auto max = node.function->get_arg(2)->cast<NodeInt>();
+					const auto value = node.function->get_arg(0)->cast<NodeInt>();
+					const auto min = node.function->get_arg(1)->cast<NodeInt>();
+					const auto max = node.function->get_arg(2)->cast<NodeInt>();
 					auto new_node = std::make_unique<NodeInt>(value->value >= min->value && value->value <= max->value, node.tok);
 					return node.replace_with(std::move(new_node));
 				} else if(all_params_are_type(node, NodeType::Real)) {
-					auto value = node.function->get_arg(0)->cast<NodeReal>();
-					auto min = node.function->get_arg(1)->cast<NodeReal>();
-					auto max = node.function->get_arg(2)->cast<NodeReal>();
+					const auto value = node.function->get_arg(0)->cast<NodeReal>();
+					const auto min = node.function->get_arg(1)->cast<NodeReal>();
+					const auto max = node.function->get_arg(2)->cast<NodeReal>();
 					auto new_node = std::make_unique<NodeReal>(value->value >= min->value && value->value <= max->value, node.tok);
 					return node.replace_with(std::move(new_node));
 				}
@@ -104,8 +101,8 @@ public:
 		} else if(node.function->get_num_args() == 2) {
 			if(node.function->name == "sh_left" or node.function->name == "sh_right") {
 				if(all_params_are_type(node, NodeType::Int)) {
-					auto value = node.function->get_arg(0)->cast<NodeInt>();
-					auto shift = node.function->get_arg(1)->cast<NodeInt>();
+					const auto value = node.function->get_arg(0)->cast<NodeInt>();
+					const auto shift = node.function->get_arg(1)->cast<NodeInt>();
 					int32_t result = 0;
 					if(node.function->name == "sh_left") {
 						result = value->value << shift->value;
@@ -122,27 +119,24 @@ public:
 
     NodeAST* visit(NodeUnaryExpr& node) override {
         node.operand->accept(*this);
-		if (auto int_node = node.operand->cast<NodeInt>()) {
+		if (const auto int_node = node.operand->cast<NodeInt>()) {
 			if (node.op == token::SUB) {
 				auto new_node = std::make_unique<NodeInt>(-int_node->value, node.tok);
-				new_node->parent = node.parent;
 				return node.replace_with(std::move(new_node));
 			} else if (node.op == token::BOOL_NOT) {
 				auto new_node = std::make_unique<NodeInt>(int_node->value == 0 ? 1 : 0, node.tok);
-				new_node->parent = node.parent;
 				return node.replace_with(std::move(new_node));
 			}
-		} else if (auto real_node = node.operand->cast<NodeReal>()) {
+		} else if (const auto real_node = node.operand->cast<NodeReal>()) {
 			if (node.op == token::SUB) {
 				auto new_node = std::make_unique<NodeReal>(-real_node->value, node.tok);
-				new_node->parent = node.parent;
 				return node.replace_with(std::move(new_node));
 			}
 		}
 		return &node;
     }
 
-	inline NodeAST* visit(NodeBinaryExpr& node) override {
+	NodeAST* visit(NodeBinaryExpr& node) override {
 		node.left->accept(*this);
 		node.right->accept(*this);
 
@@ -156,19 +150,18 @@ public:
 				// constant folding
 				if (left_int and right_int) {
 					// Beide Operanden sind Integers. Führe die Operation aus und ersetze den Knoten.
-					int32_t result = 0;
 					auto static int_operations = std::unordered_map<token, std::function<int32_t(int32_t, int32_t)>>{
-						{token::ADD, [](int32_t a, int32_t b) { return a + b; }},
-						{token::SUB, [](int32_t a, int32_t b) { return a - b; }},
-						{token::MULT, [](int32_t a, int32_t b) { return a * b; }},
-						{token::DIV, [](int32_t a, int32_t b) { return a / b; }},
-						{token::MODULO, [](int32_t a, int32_t b) { return a % b; }},
-						{token::BIT_AND, [](int32_t a, int32_t b) { return a & b; }},
-						{token::BIT_OR, [](int32_t a, int32_t b) { return a | b; }},
-						{token::BIT_XOR, [](int32_t a, int32_t b) { return a ^ b; }}
+						{token::ADD, [](const int32_t a, const int32_t b) { return a + b; }},
+						{token::SUB, [](const int32_t a, const int32_t b) { return a - b; }},
+						{token::MULT, [](const int32_t a, const int32_t b) { return a * b; }},
+						{token::DIV, [](const int32_t a, const int32_t b) { return a / b; }},
+						{token::MODULO, [](const int32_t a, const int32_t b) { return a % b; }},
+						{token::BIT_AND, [](const int32_t a, const int32_t b) { return a & b; }},
+						{token::BIT_OR, [](const int32_t a, const int32_t b) { return a | b; }},
+						{token::BIT_XOR, [](const int32_t a, const int32_t b) { return a ^ b; }}
 					};
-					if (int_operations.find(node.op) != int_operations.end()) {
-						result = int_operations[node.op](left_int->value, right_int->value);
+					if (int_operations.contains(node.op)) {
+						int32_t result = int_operations[node.op](left_int->value, right_int->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						return node.replace_with(std::move(new_node));
 					}
@@ -188,9 +181,12 @@ public:
 							}
 							break;
 						case token::SUB:
-							if (known_int->value == 0) {
-								// Neutrales Element, das Ergebnis ist immer der andere Ausdruck
-								node.replace_with(left_int ? std::move(node.right) : std::move(node.left));
+							// value - 0 = value
+							if (right_int and right_int->value == 0) {
+								node.replace_with(std::move(node.left));
+							// 0 - value = - value
+							} else if (left_int and left_int->value == 0) {
+								node.replace_with(std::make_unique<NodeUnaryExpr>(token::SUB, std::move(node.right), node.tok));
 							}
 							break;
 						case token::MULT:
@@ -222,14 +218,13 @@ public:
 				}
 			} else if (contains(BOOL_TOKENS, node.op)) {
 				if (left_int and right_int) {
-					int32_t result = 0;
 					auto static bool_operations = std::unordered_map<token, std::function<int32_t(int32_t, int32_t)>>{
-						{token::BOOL_AND, [](int32_t a, int32_t b) { return (a && b) ? 1 : 0; }},
-						{token::BOOL_OR, [](int32_t a, int32_t b) { return (a || b) ? 1 : 0; }},
-						{token::BOOL_XOR, [](int32_t a, int32_t b) { return (a ^ b) ? 1 : 0; }},
+						{token::BOOL_AND, [](const int32_t a, const int32_t b) { return (a && b) ? 1 : 0; }},
+						{token::BOOL_OR, [](const int32_t a, const int32_t b) { return (a || b) ? 1 : 0; }},
+						{token::BOOL_XOR, [](const int32_t a, const int32_t b) { return (a ^ b) ? 1 : 0; }},
 					};
-					if (bool_operations.find(node.op) != bool_operations.end()) {
-						result = bool_operations[node.op](left_int->value, right_int->value);
+					if (bool_operations.contains(node.op)) {
+						int32_t result = bool_operations[node.op](left_int->value, right_int->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));
@@ -266,17 +261,16 @@ public:
 				}
 			} else if (contains(COMPARISON_TOKENS, node.op)) {
 				if (left_int and right_int) {
-					int32_t result = 0;
 					auto static bool_operations = std::unordered_map<token, std::function<int32_t(int32_t, int32_t)>>{
-						{token::LESS_THAN, [](int32_t a, int32_t b) { return (a < b) ? 1 : 0; }},
-						{token::GREATER_THAN, [](int32_t a, int32_t b) { return (a > b) ? 1 : 0; }},
-						{token::EQUAL, [](int32_t a, int32_t b) { return (a == b) ? 1 : 0; }},
-						{token::NOT_EQUAL, [](int32_t a, int32_t b) { return (a != b) ? 1 : 0; }},
-						{token::LESS_EQUAL, [](int32_t a, int32_t b) { return (a <= b) ? 1 : 0; }},
-						{token::GREATER_EQUAL, [](int32_t a, int32_t b) { return (a >= b) ? 1 : 0; }},
+						{token::LESS_THAN, [](const int32_t a, const int32_t b) { return (a < b) ? 1 : 0; }},
+						{token::GREATER_THAN, [](const int32_t a, const int32_t b) { return (a > b) ? 1 : 0; }},
+						{token::EQUAL, [](const int32_t a, const int32_t b) { return (a == b) ? 1 : 0; }},
+						{token::NOT_EQUAL, [](const int32_t a, const int32_t b) { return (a != b) ? 1 : 0; }},
+						{token::LESS_EQUAL, [](const int32_t a, const int32_t b) { return (a <= b) ? 1 : 0; }},
+						{token::GREATER_EQUAL, [](const int32_t a, const int32_t b) { return (a >= b) ? 1 : 0; }},
 					};
-					if (bool_operations.find(node.op) != bool_operations.end()) {
-						result = bool_operations[node.op](left_int->value, right_int->value);
+					if (bool_operations.contains(node.op)) {
+						int32_t result = bool_operations[node.op](left_int->value, right_int->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));
@@ -293,33 +287,31 @@ public:
 				}
 				// constant folding
 				if (left_real and right_real) {
-					double result = 0;
 					auto static real_operations = std::unordered_map<token, std::function<double(double, double)>>{
-						{token::ADD, [](double a, double b) { return a + b; }},
-						{token::SUB, [](double a, double b) { return a - b; }},
-						{token::MULT, [](double a, double b) { return a * b; }},
-						{token::DIV, [](double a, double b) { return a / b; }},
-						{token::MODULO, [](double a, double b) { return std::fmod(a, b); }}
+						{token::ADD, [](const double a, const double b) { return a + b; }},
+						{token::SUB, [](const double a, const double b) { return a - b; }},
+						{token::MULT, [](const double a, const double b) { return a * b; }},
+						{token::DIV, [](const double a, const double b) { return a / b; }},
+						{token::MODULO, [](const double a, const double b) { return std::fmod(a, b); }}
 					};
-					if (real_operations.find(node.op) != real_operations.end()) {
-						result = real_operations[node.op](left_real->value, right_real->value);
+					if (real_operations.contains(node.op)) {
+						double result = real_operations[node.op](left_real->value, right_real->value);
 						auto new_node = std::make_unique<NodeReal>(result, node.tok);
 						return node.replace_with(std::move(new_node));
 					}
 				}
 			} else if (contains(COMPARISON_TOKENS, node.op)) {
 				if (left_real and right_real) {
-					int32_t result = 0;
 					auto static bool_operations = std::unordered_map<token, std::function<int32_t(double, double)>>{
-						{token::LESS_THAN, [](double a, double b) { return (a < b) ? 1 : 0; }},
-						{token::GREATER_THAN, [](double a, double b) { return (a > b) ? 1 : 0; }},
-						{token::EQUAL, [](double a, double b) { return (a == b) ? 1 : 0; }},
-						{token::NOT_EQUAL, [](double a, double b) { return (a != b) ? 1 : 0; }},
-						{token::LESS_EQUAL, [](double a, double b) { return (a <= b) ? 1 : 0; }},
-						{token::GREATER_EQUAL, [](double a, double b) { return (a >= b) ? 1 : 0; }},
+						{token::LESS_THAN, [](const double a, const double b) { return (a < b) ? 1 : 0; }},
+						{token::GREATER_THAN, [](const double a, const double b) { return (a > b) ? 1 : 0; }},
+						{token::EQUAL, [](const double a, const double b) { return (a == b) ? 1 : 0; }},
+						{token::NOT_EQUAL, [](const double a, const double b) { return (a != b) ? 1 : 0; }},
+						{token::LESS_EQUAL, [](const double a, const double b) { return (a <= b) ? 1 : 0; }},
+						{token::GREATER_EQUAL, [](const double a, const double b) { return (a >= b) ? 1 : 0; }},
 					};
-					if (bool_operations.find(node.op) != bool_operations.end()) {
-						result = bool_operations[node.op](left_real->value, left_real->value);
+					if (bool_operations.contains(node.op)) {
+						int32_t result = bool_operations[node.op](left_real->value, left_real->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));

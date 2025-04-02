@@ -74,13 +74,13 @@ private:
 				const auto func_local_vars = std::move(definition->do_variable_reuse(m_program));
 
 				bool has_param_stack = false;
-				for (const auto &call : definition->call_sites) {
-					call->determine_function_strategy(m_program, m_current_callback);
-					if (call->strategy == NodeFunctionCall::Strategy::ParameterStack or call->strategy == NodeFunctionCall::Strategy::Call) {
-						has_param_stack = true;
-						break;
-					}
-				}
+				// for (const auto &call : definition->call_sites) {
+				// 	call->determine_function_strategy(m_program, m_current_callback);
+				// 	if (call->strategy == NodeFunctionCall::Strategy::ParameterStack or call->strategy == NodeFunctionCall::Strategy::Call) {
+				// 		has_param_stack = true;
+				// 		break;
+				// 	}
+				// }
 
 				// promote if no param stack
 				for (auto &var : func_local_vars) {
@@ -90,9 +90,20 @@ private:
 						error.exit();
 					}
 					auto assignment = ASTVariableReuse::to_assign_statement(*declaration);
-					if (!has_param_stack) {
+					// if (!has_param_stack) {
+					// 	// add local declarations of function definition to parameters
+					// 	definition->header->add_param(var);
+					// 	definition->header->params.back()->kind = NodeInstruction::Promoted;
+					// 	m_local_var_declarations[definition.get()].push_back(var.get());
+					// } else {
+					// 	auto global_decl = std::make_unique<NodeSingleDeclaration>(var, nullptr, var->tok);
+					// 	var->to_global();
+					// 	m_program->global_declarations->add_as_stmt(std::move(global_decl));
+					// }
+					if (var->is_thread_safe) {
 						// add local declarations of function definition to parameters
 						definition->header->add_param(var);
+						definition->header->params.back()->kind = NodeInstruction::Promoted;
 						m_local_var_declarations[definition.get()].push_back(var.get());
 					} else {
 						auto global_decl = std::make_unique<NodeSingleDeclaration>(var, nullptr, var->tok);
@@ -141,5 +152,6 @@ private:
 		return &node;
     }
 
-
 };
+
+

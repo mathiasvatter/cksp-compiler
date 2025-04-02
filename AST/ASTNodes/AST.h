@@ -284,9 +284,11 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 };
 
 struct NodeInstruction : NodeAST {
+	enum Kind{Promoted, ReturnVar, None, ParameterStack};
+	Kind kind = None;
     explicit NodeInstruction(const NodeType node_type, Token tok) : NodeAST(std::move(tok), node_type) {};
     ~NodeInstruction() override = default;
-    NodeInstruction(const NodeInstruction& other) : NodeAST(other) {};
+    NodeInstruction(const NodeInstruction& other) : NodeAST(other), kind(other.kind) {};
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	std::string get_string() override {return "";}
 };
@@ -739,6 +741,8 @@ struct NodeProgram final : NodeAST {
 	std::vector<std::unique_ptr<NodeStruct>> struct_definitions;
 	std::unordered_map<std::string, NodeStruct*> struct_lookup;
 	std::unique_ptr<NodeBlock> global_declarations;
+	std::shared_ptr<NodeVariable> max_cb_stack;
+	std::unique_ptr<NodeBinaryExpr> cb_idx;
 	explicit NodeProgram(Token tok);
 	NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 					   std::vector<std::shared_ptr<NodeFunctionDefinition>> functionDefinitions, Token tok);

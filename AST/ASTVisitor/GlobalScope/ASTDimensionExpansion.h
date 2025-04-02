@@ -31,8 +31,7 @@ class ASTDimensionExpansion final : public ASTVisitor {
 
 	int m_cb_stack_size = 100;
 	DefinitionProvider* m_def_provider;
-	std::shared_ptr<NodeVariable> m_max_cb_stack;
-	std::unique_ptr<NodeBinaryExpr> m_cb_idx;
+
 
 	[[nodiscard]] bool is_thread_safe_env() const {
 		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or
@@ -53,22 +52,22 @@ public:
 		m_program = main;
 		m_program->current_callback = nullptr;
 
-		m_max_cb_stack = std::make_shared<NodeVariable>(
+		m_program->max_cb_stack = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"MAX::CB::STACK",
 			TypeRegistry::Integer,
 			DataType::Const,
 			Token()
 		);
-		m_max_cb_stack->is_global = true;
+		m_program->max_cb_stack->is_global = true;
 
-		m_cb_idx = std::make_unique<NodeBinaryExpr>(
+		m_program->cb_idx = std::make_unique<NodeBinaryExpr>(
 			token::MODULO,
 			m_def_provider->get_builtin_variable("NI_CALLBACK_ID")->to_reference(),
-			m_max_cb_stack->to_reference(),
+			m_program->max_cb_stack->to_reference(),
 			Token()
 		);
-		m_cb_idx->ty = TypeRegistry::Integer;
+		m_program->cb_idx->ty = TypeRegistry::Integer;
 	}
 
 	NodeAST* visit(NodeProgram &node) override {
@@ -77,7 +76,7 @@ public:
 
 		// add MAX::CB::STACK := 1000 to init callback
 		auto decl = std::make_unique<NodeSingleDeclaration>(
-			m_max_cb_stack,
+			m_program->max_cb_stack,
 			std::make_unique<NodeInt>(m_cb_stack_size, Token()),
 			Token()
 		);
@@ -137,7 +136,7 @@ public:
 				node.variable->references.emplace(assignment->l_value.get());
 			}
 
-			auto inflated = node.variable->inflate_dimension(m_max_cb_stack->to_reference());
+			auto inflated = node.variable->inflate_dimension(m_program->max_cb_stack->to_reference());
 			// inflated->is_thread_safe = false;
 			node.variable->replace_datastruct(std::move(inflated));
 
@@ -172,7 +171,7 @@ public:
 
 	NodeAST* visit(NodeVariableRef& node) override {
 		if(!determine_expansion_need(node)) return &node;
-		auto expanded = node.expand_dimension(m_cb_idx->clone());
+		auto expanded = node.expand_dimension(m_program->cb_idx->clone());
 		return node.replace_reference(std::move(expanded));
 	}
 
@@ -181,7 +180,7 @@ public:
 
 		if(!determine_expansion_need(node)) return &node;
 
-		auto expanded = node.expand_dimension(m_cb_idx->clone());
+		auto expanded = node.expand_dimension(m_program->cb_idx->clone());
 		return node.replace_reference(std::move(expanded));
 	}
 
@@ -191,7 +190,7 @@ public:
 
 		if(!determine_expansion_need(node)) return &node;
 
-		auto expanded = node.expand_dimension(m_cb_idx->clone());
+		auto expanded = node.expand_dimension(m_program->cb_idx->clone());
 		return node.replace_reference(std::move(expanded));
 	}
 

@@ -1319,6 +1319,10 @@ void NodeProgram::reset_function_visited_flag() {
 				  [](auto const& def) {
 						def->visited = false;
 				  });
+	parallel_for_each(additional_function_definitions.begin(), additional_function_definitions.end(),
+			  [](auto const& def) {
+					def->visited = false;
+			  });
 }
 
 void NodeProgram::reset_function_used_flag() {
@@ -1327,6 +1331,10 @@ void NodeProgram::reset_function_used_flag() {
 				  [](auto const& def) {
 					def->is_used = false;
 				  });
+	parallel_for_each(additional_function_definitions.begin(), additional_function_definitions.end(),
+			  [](auto const& def) {
+				def->is_used = false;
+			  });
 }
 
 void NodeProgram::remove_unused_functions() {

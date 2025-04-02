@@ -569,7 +569,7 @@ NodeAST *NodeSingleDeclaration::accept(ASTVisitor &visitor) {
 }
 NodeSingleDeclaration::NodeSingleDeclaration(const NodeSingleDeclaration& other)
         : NodeInstruction(other), variable(clone_shared(other.variable)),
-          value(clone_unique(other.value)), kind(other.kind) {
+          value(clone_unique(other.value)) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleDeclaration::clone() const {

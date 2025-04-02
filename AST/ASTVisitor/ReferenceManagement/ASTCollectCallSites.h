@@ -17,7 +17,10 @@ public:
 	}
 
 	NodeAST* do_collect_call_sites(NodeAST& node) {
-		return node.accept(*this);
+		m_program->reset_function_visited_flag();
+		node.accept(*this);
+		m_program->reset_function_visited_flag();
+		return &node;
 	}
 
 	NodeAST* visit(NodeProgram& node) override {
@@ -30,11 +33,10 @@ public:
 		for(const auto & callback : node.callbacks) {
 			if(callback.get() != m_program->init_callback) callback->accept(*this);
 		}
-		for(const auto & func_def : node.function_definitions) {
-			if(!func_def->visited) func_def->accept(*this);
-		}
+		// for(const auto & func_def : node.function_definitions) {
+		// 	if(!func_def->visited) func_def->accept(*this);
+		// }
 
-		node.reset_function_visited_flag();
 		return &node;
 	}
 

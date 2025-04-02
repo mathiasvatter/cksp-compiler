@@ -514,8 +514,6 @@ struct NodeDeclaration final : NodeInstruction {
 struct NodeSingleDeclaration final : NodeInstruction {
     std::shared_ptr<NodeDataStructure> variable;
     std::unique_ptr<NodeAST> value = nullptr;
-	enum Kind{Promoted, ReturnVar, None};
-	Kind kind = None;
     explicit NodeSingleDeclaration(Token tok) : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)) {}
 	NodeSingleDeclaration(std::shared_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
 		: NodeInstruction(NodeType::SingleDeclaration, std::move(tok)),
@@ -748,18 +746,15 @@ struct NodeBlock final : NodeInstruction {
 	}
 	NodeStatement* add_as_stmt(std::unique_ptr<NodeAST> node) {
 		auto node_stmt = std::make_unique<NodeStatement>(std::move(node), tok);
-		add_stmt(std::move(node_stmt));
-		return statements.back().get();
+		return add_stmt(std::move(node_stmt));
 	}
 	NodeStatement* add_as_single_retain(std::unique_ptr<NodeReference> ref, std::unique_ptr<NodeAST> num) {
 		auto retain = std::make_unique<NodeSingleRetain>(std::move(ref), std::move(num), tok);
-		add_as_stmt(std::move(retain));
-		return statements.back().get();
+		return add_as_stmt(std::move(retain));
 	}
 	NodeStatement* add_as_single_delete(std::unique_ptr<NodeReference> ref, std::unique_ptr<NodeAST> num=nullptr) {
 		auto del = std::make_unique<NodeSingleDelete>(std::move(ref), std::move(num), tok);
-		add_as_stmt(std::move(del));
-		return statements.back().get();
+		return add_as_stmt(std::move(del));
 	}
     /// puts nested statement list in current one
     void flatten(bool force=false);

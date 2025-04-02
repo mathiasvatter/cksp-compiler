@@ -25,7 +25,7 @@ public:
 
 		static ParameterStackTransformation transform(m_program);
 		transform.do_function_stack_transformation(*m_program);
-		// node.debug_print();
+		node.debug_print();
 
 		node.reset_function_used_flag();
 		node.reset_function_visited_flag();
@@ -115,7 +115,12 @@ public:
 		}
 		definition->visited = true;
 
-		node.determine_function_strategy(m_program, m_current_callback);
+		if (node.strategy == NodeFunctionCall::Strategy::ParameterStack) {
+			auto error = get_raw_compile_error(ErrorType::InternalError, node);
+			error.m_message = "ASTFunctionInlining : Found ParameterStack function call. This should not be possible anymore at this stage.";
+			error.exit();
+		}
+		// node.determine_function_strategy(m_program, m_current_callback);
 		// if node is_call, do not inline and return
 		if(node.strategy == NodeFunctionCall::Strategy::Call) {
 			definition->is_used = true;
