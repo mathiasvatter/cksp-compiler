@@ -71,6 +71,8 @@ detect_loudness(zone_id: int, return_var: int): int
 detect_sample_type(zone_id: int, return_var: int): int
 detect_instrument_type(zone_id: int, return_var: int): int
 detect_drum_type(zone_id: int, return_var: int): int
+detect_key(zone_id: int, key_result: int): int
+detect_tempo(zone_id: int, tempo_result: int): int
 disable_logging(log_type: int)
 disallow_group(group_idx: int)
 dont_use_machine_mode(event_id: int)
@@ -98,6 +100,7 @@ get_control_par_str_arr(ui_id: int, control_par: int, index: int): string
 get_engine_par(parameter: int, group: int, slot: int, generic: int): int
 get_engine_par_disp(paramter: int, group: int, slot: int, generic: int): string
 get_engine_par_disp_m(parameter: int, group: int, slot: int, generic: int): string
+get_engine_par_disp_ext(parameter: int, value: int, group: int, slot: int, generic: int): string
 get_engine_par_m(parameter: int, group: int, slot: int, generic: int): int
 get_event_ids(array: int[])
 get_event_mark(event_id: int, bitmark: int): int
@@ -200,6 +203,7 @@ move_control_px(variable: any, x_pos_px: int, y_pos_px: int)
 ms_to_ticks(microseconds: int): int
 msb(value: int): int
 note_off(event_id: int)
+note_off(event_id: int, time_offset: int)
 num_elements(array_variable: any[]): int
 num_slices(group_idx: int): int
 num_slices_zone(zone_id: int): int
@@ -237,7 +241,9 @@ set_control_par_arr(ui_id: any, control_parameter: int, value: int, index: int)
 set_control_par_real_arr(ui_id: any, control_parameter: int, value: real, index: int)
 set_control_par_str(ui_id: any, control_parameter: int, text: any)
 set_control_par_str_arr(ui_id: any, control_parameter: int, value: any, index: int)
-set_controller(cc_num: int, value: int)
+set_controller(controller: int, value: int)
+set_note_controller(controller: int, note_number: int, value: int)
+set_poly_at(note_numer: int, value: int)
 set_engine_par(parameter: int, value: int, group: int, slot: int, generic: int): int
 set_engine_par_m(parameter: int, value: int, group: int, slot: int, generic: int): int
 set_event_mark(event_id: int, bitmark: int)

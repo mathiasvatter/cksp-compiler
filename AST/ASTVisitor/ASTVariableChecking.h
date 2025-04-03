@@ -14,6 +14,7 @@ public:
 
 	NodeAST* do_complete_traversal(NodeProgram& node, const bool fail) {
 		this->fail = fail;
+		m_functions_in_use.clear();
 		// update function lookup map because of altered param counts after lambda lifting
 		m_program->merge_function_definitions();
 		m_program->update_function_lookup();
@@ -32,6 +33,7 @@ public:
     }
 
 	NodeAST* do_reachable_traversal(NodeProgram& node, const bool fail) {
+		m_functions_in_use.clear();
 		this->fail = fail;
 		// update function lookup map because of altered param counts after lambda lifting
 		m_program->merge_function_definitions();
@@ -89,7 +91,7 @@ private:
     std::stack<NodeBlock*> m_current_block;
 	DefinitionProvider* m_def_provider = nullptr;
 
-	NodeBlock* get_current_block() const {
+	[[nodiscard]] NodeBlock* get_current_block() const {
 		if (m_current_block.empty()) return nullptr;
 		return m_current_block.top();
 	}
@@ -100,8 +102,12 @@ private:
 		if(m_functions_in_use.contains(func)) {
 			// recursive function call detected
 			auto error = CompileError(ErrorType::SyntaxError, "", "", func->tok);
-			error.m_message = "Recursive function call detected. Calling functions inside their definition is not allowed.";
-			error.m_got = func->header->name;
+			error.m_message = "Found recursive function call <"+func->header->name+">. Calling functions inside their definition is not allowed.";
+			error.m_got = "Function cycle with: ";
+			for (const auto fun : m_functions_in_use) {
+				error.m_got += "<"+fun->header->name+">, ";
+			}
+			error.m_got.erase(error.m_got.size() - 2);
 			error.exit();
 			return true;
 		}

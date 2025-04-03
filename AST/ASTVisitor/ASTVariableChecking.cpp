@@ -143,9 +143,9 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 		}
 	}
 
-	const auto definition = node.get_definition().get();
+	const auto definition = node.get_definition();
 	if(node.kind == NodeFunctionCall::UserDefined and definition) {
-		check_recursion(definition);
+		check_recursion(definition.get());
 		if(!definition->visited) definition->accept(*this);
 	}
 	node.function->accept(*this);

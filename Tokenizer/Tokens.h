@@ -193,10 +193,9 @@ inline std::unordered_map<std::string, token> END_STATEMENTS = {{"end function",
 inline std::unordered_map<std::string, token> STATEMENTS = {{"function", token::FUNCTION}, {"for", token::FOR}, {"while", token::WHILE}, {"if", token::IF},
                                           {"select", token::SELECT}, {"const", token::CONST}, {"list", token::LIST}, {"family", token::FAMILY},
                                           {"struct", token::STRUCT}, {"macro", token::MACRO}, {"taskfunc", token::TASKFUNC}, {"component", token::COMPONENT}};
-inline std::unordered_set<std::string> CALLBACKS = {"init", "note", "release", "midi_in", "controller",
+inline std::unordered_set<std::string> CALLBACKS = {"init", "note", "release", "midi_in", "controller", "note_controller",
 											 "rpn", "nrpn", "ui_update", "_pgs_changed", "pgs_changed",
 											 "poly_at", "listener", "async_complete", "persistence_changed", "ui_control", "ui_controls"};
-inline std::unordered_set<std::string> RESTRICTED_CALLBACKS = {"init", "persistence_changed", "ui_control", "pgs_changed", "async_complete"};
 
 inline std::unordered_set<std::string> BUILTIN_CONDITIONS = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG"};
 
