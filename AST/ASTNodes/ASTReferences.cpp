@@ -2,8 +2,6 @@
 // Created by Mathias Vatter on 25.04.24.
 //
 
-#include <regex>
-
 #include "ASTReferences.h"
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Lowering/LoweringList.h"

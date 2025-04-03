@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <functional>
 #include "AST.h"
 #include "../TypeRegistry.h"
 
