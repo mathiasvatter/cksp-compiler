@@ -105,7 +105,7 @@ struct NodeFunctionCall final : NodeInstruction {
 		"inc", "dec",
 	};
 	bool is_destructive_builtin_func() const;
-	bool determine_callability(const NodeCallback& current_callback) const;
+	bool check_restricted_environment(NodeCallback *current_callback) const;
 	void determine_function_strategy(NodeProgram* program, NodeCallback* current_callback);
 };
 

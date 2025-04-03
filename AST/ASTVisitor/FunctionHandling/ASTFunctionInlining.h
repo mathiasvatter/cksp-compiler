@@ -20,12 +20,10 @@ public:
 	NodeAST *visit(NodeProgram &node) override {
 		m_program = &node;
 		m_current_callback = nullptr;
-		// ASTFunctionStrategy strategy(m_program);
-		// strategy.determine_function_strategies(*m_program);
 
 		static ParameterStackTransformation transform(m_program);
 		transform.do_function_stack_transformation(*m_program);
-		node.debug_print();
+		// node.debug_print();
 
 		node.reset_function_used_flag();
 		node.reset_function_visited_flag();
@@ -54,13 +52,6 @@ public:
 	NodeAST *visit(NodeFunctionCall &node) override {
 		// visit header
 		node.function->accept(*this);
-		// check if function is called with correct amount of arguments
-		if(node.is_call and !node.function->has_no_args()) {
-			// auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-			// error.m_message = "Found incorrect amount of function arguments when using <call>.";
-			// error.exit();
-			node.is_call = false;
-		}
 
 		node.bind_definition(m_program);
 		auto definition = node.get_definition();
@@ -79,16 +70,8 @@ public:
 			error.m_message = "Unable to find function definition for <"+node.function->name+">.";
 			error.exit();
 		}
-
-		if(node.kind == NodeFunctionCall::Kind::Builtin) return &node;
-
-		if(definition->is_restricted) {
-			if(!contains(RESTRICTED_CALLBACKS, remove_substring(m_current_callback->begin_callback, "on "))) {
-				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-				error.m_message = "<"+node.function->name+"> can only be used in <on init>, <on persistence_changed>, <pgs_changed>, <on ui_control> callbacks.";
-				error.m_got = "<"+m_current_callback->begin_callback+">";
-				error.exit();
-			}
+		if (node.kind == NodeFunctionCall::Builtin) {
+			return &node;
 		}
 
 		// only threadsafe functions can be called in <on init> callback
@@ -99,20 +82,11 @@ public:
 								  +node.function->name+"> contains asychronous operations.";
 				error.exit();
 			}
-			// if(node.strategy == NodeFunctionCall::Strategy::Call) {
-			// 	auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-			// 	error.m_message =
-			// 		"The usage of <call> keyword is not allowed in the <on init> callback. Automatically removed <call> and inlined function. Consider not using the <call> keyword.";
-			// 	error.print();
-			// 	node.strategy = NodeFunctionCall::Strategy::Inlining;
-			// }
 		}
 
 		m_program->function_call_stack.push(definition);
 		// visit everything beforehand to get depth first search
-		if(!definition->visited) {
-			definition->accept(*this);
-		}
+		if(!definition->visited) definition->accept(*this);
 		definition->visited = true;
 
 		if (node.strategy == NodeFunctionCall::Strategy::ParameterStack) {

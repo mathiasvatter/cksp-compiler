@@ -20,13 +20,7 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 
 void TypeInference::cast_data_structure_types(const NodeProgram* program, const bool cast) {
 	const auto def_provider = program->def_provider;
-	// for(auto& refs : def_provider->get_all_data_structures()) {
-	// 	const auto data_struct = refs.lock();
-	// 	if(!data_struct) continue;
-	// 	for(auto & ref : data_struct->references) {
-	// 		match_reference_declaration(*ref, data_struct);
-	// 	}
-	// }
+
 	for (auto& ref : def_provider->get_all_references()) {
 		if (auto declaration = ref->get_declaration()) {
 			match_reference_declaration(*ref, declaration);
@@ -45,13 +39,7 @@ void TypeInference::cast_data_structure_types(const NodeProgram* program, const 
     	// cast as Integer if still unknown
     	if (cast) decl->variable->cast_type();
 	}
-	// for(auto& refs : def_provider->get_all_data_structures()) {
-	// 	const auto data_struct = refs.lock();
-	// 	if(!data_struct) continue;
-	// 	for(auto & ref : data_struct->references) {
-	// 		match_reference_declaration(*ref, ref->get_declaration());
-	// 	}
-	// }
+
 	for (auto& ref : def_provider->get_all_references()) {
 		if (auto declaration = ref->get_declaration()) {
 			match_reference_declaration(*ref, declaration);
@@ -668,7 +656,16 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 					+ param->ty->to_string() + " as argument type.";
 			match_type(*func_arg, *param, error_message);
 		}
+		// sh_right(abs(a{number} - b{number}), 1)
+		// we are abs right now and want to specialize the args to int
+		// specialize every arg to the type of the function
+		if (is_same_input_same_output_type(*definition->header)) {
+			for (auto &param : node.function->args->params) {
+				param->ty = specialize_type(param->ty, node.ty);
+			}
+		}
 	}
+
 	node.function->accept(*this);
 
 	if(node.is_destructive_builtin_func()) {
@@ -864,6 +861,9 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	bool is_compatible = true;
 	auto error = throw_type_error(*node.left, node.right->ty);
 
+	node.left->ty = specialize_type(node.left->ty, node.ty);
+	node.right->ty = specialize_type(node.right->ty, node.ty);
+
 	node.left->ty = specialize_type(node.left->ty, node.right->ty);
 	node.right->ty = specialize_type(node.right->ty, node.left->ty);
 
@@ -912,6 +912,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 
 NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	// match_type(node, *node.parent);
+	node.operand->ty = specialize_type(node.operand->ty, node.ty);
 	node.operand->accept(*this);
 
 	bool is_compatible = node.ty->is_compatible(node.operand->ty) && node.operand->ty->is_compatible(node.ty);

@@ -25,8 +25,18 @@ public:
 		{ "save_array_str", { "init", "persistence_changed", "ui_control", "pgs_changed" } },
 		{ "load_array",     { "init", "persistence_changed", "ui_control", "pgs_changed" } },
 		{ "load_array_str", { "init", "persistence_changed", "ui_control", "pgs_changed" } },
-		{ "fs_get_filename", {"ui_control"}}
-
+		{ "fs_get_filename", {"ui_control"}},
+		{"set_snapshot_type", {"init"}},
+		{ "set_note_controller", ([]() -> std::unordered_set<std::string> {
+		 std::unordered_set<std::string> allowed(CALLBACKS.begin(), CALLBACKS.end());
+		 allowed.erase("init");
+		 return allowed;
+		})() },
+		{ "set_poly_at", ([]() -> std::unordered_set<std::string> {
+		 std::unordered_set<std::string> allowed(CALLBACKS.begin(), CALLBACKS.end());
+		 allowed.erase("init");
+		 return allowed;
+		})() },
 	};
 
 	inline static const std::unordered_map<std::string, std::unordered_set<std::string>> m_thread_unsafe_functions = {
@@ -53,30 +63,33 @@ public:
 	   })() }
 	};
 
-	static bool check_function_callability(const NodeFunctionCall& node, const NodeCallback& callback) {
+	static bool check_function_callability(const NodeFunctionCall& node, NodeCallback* callback) {
+		if (node.kind != NodeFunctionCall::Builtin) return true;
+		if (!callback) return true;
 		const auto definition = node.get_definition();
-		if (!definition) return false;
-
-		if (definition->allowed_callbacks.empty()) return true;
-		const std::string callback_name = remove_substring(callback.begin_callback, "on ");
-		if (definition->allowed_callbacks.contains(callback_name)) {
-			return true;
+		if (!definition) {
+			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+			error.m_message = "Unable to find builtin function definition for <" + node.function->name + ">.";
+			error.exit();
 		}
-		return false;
-
-		// const std::string func_name = node.function->name;
-		// // function is not restricted
-		// const auto it = m_restricted_functions.find(func_name);
-		// if (it == m_restricted_functions.end()) return true;
-		//
-		// // function is restricted
-		// const std::string callback_name = remove_substring(callback.begin_callback, "on ");
-		// // check if function is allowed in current callback
-		// const auto& allowed_callbacks = it->second;
-		// if (allowed_callbacks.contains(callback_name)) {
-		// 	return true;
-		// }
-		// return false;
+		// check if called in restricted callback
+		if (definition->is_restricted || !definition->is_thread_safe) {
+			const auto callback_name = remove_substring(callback->begin_callback, "on ");
+			const auto allowed_callbacks = get_allowed_callbacks(node.function->name);
+			if (!allowed_callbacks.contains(callback_name)) {
+				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+				error.m_message = "Found restricted function. <" + node.function->name + "> can not be used in <" + callback->begin_callback + "> callback.";
+				error.m_expected = "Allowed Callbacks are: \n";
+				for (const auto& allowed_callback : allowed_callbacks) {
+					error.m_expected += "<" + allowed_callback + ">, ";
+				}
+				error.m_expected.erase(error.m_expected.size() - 2);
+				error.m_got = "<" + callback->begin_callback + ">";
+				error.exit();
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/// sets internal flags for builtin functions and their thread safety and restrictions
@@ -104,14 +117,4 @@ public:
 		return allowed;
 	}
 
-	CompileError get_restricted_env_error(const NodeFunctionCall& node, const NodeCallback& callback, const std::unordered_set<std::string> &allowed_callbacks) {
-		auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-		error.m_message = "Found restricted function. <" + node.function->name + "> can not be used in <" + callback.begin_callback + "> callback. ";
-		for (const auto& allowed_callback : allowed_callbacks) {
-			error.m_expected += "<" + allowed_callback + ">, ";
-		}
-		error.m_expected.erase(error.m_expected.size() - 2);
-		error.m_got = "<" + callback.begin_callback + ">";
-		return error;
-	}
 };

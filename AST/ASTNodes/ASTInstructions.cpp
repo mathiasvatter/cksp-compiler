@@ -230,7 +230,7 @@ ASTDesugaring * NodeFunctionCall::get_desugaring(NodeProgram *program) const {
 
 bool NodeFunctionCall::is_builtin_kind() const {
 	static const std::unordered_set<NodeFunctionCall::Kind> builtin_kind = {NodeFunctionCall::Kind::Undefined, NodeFunctionCall::Kind::Builtin, NodeFunctionCall::Kind::Property};
-	if(builtin_kind.find(kind) != builtin_kind.end()) return true;
+	if(builtin_kind.contains(kind)) return true;
 	return false;
 }
 
@@ -263,7 +263,7 @@ bool NodeFunctionCall::is_destructive_builtin_func() const {
 	return kind == NodeFunctionCall::Kind::Builtin and destructive_functions.contains(function->name);
 }
 
-bool NodeFunctionCall::determine_callability(const NodeCallback& current_callback) const {
+bool NodeFunctionCall::check_restricted_environment(NodeCallback *current_callback) const {
 	return FunctionRestrictionValidator::check_function_callability(*this, current_callback);
 }
 

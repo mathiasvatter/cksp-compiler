@@ -60,28 +60,28 @@ public:
 
 	/// insert declarations from m_declares_per_stmt into the dedicated statements
 	void insert_calls_in_statements() {
-		for(auto & stmt : m_declares_per_stmt) {
-			auto node_body = std::make_unique<NodeBlock>(stmt.first->tok);
+		for(auto &[fst, snd] : m_declares_per_stmt) {
+			auto node_body = std::make_unique<NodeBlock>(fst->tok);
 			node_body->scope = true;
-			for(auto &decl : stmt.second) {
+			for(auto &decl : snd) {
 				decl->kind = NodeSingleDeclaration::Kind::ReturnVar;
 				node_body->add_as_stmt(std::move(decl));
 			}
-			node_body->add_as_stmt(std::move(stmt.first->statement));
-			stmt.first->set_statement(std::move(node_body));
+			node_body->add_as_stmt(std::move(fst->statement));
+			fst->set_statement(std::move(node_body));
 		}
 	}
 
 	NodeAST * visit(NodeProgram& node) override {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
-		for(auto & struct_def : node.struct_definitions) {
+		for(const auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);
 		}
-		for(auto & callback : node.callbacks) {
+		for(const auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-		for(auto & def : node.function_definitions) {
+		for(const auto & def : node.function_definitions) {
 			def->accept(*this);
 		}
 
@@ -101,14 +101,7 @@ public:
 				error.m_message = "Unable to find parent statement of <FunctionCall>.";
 				error.exit();
 			}
-			// check if func call is constructor in builtin func args, because then it is temporary constructor!
-			// that needs an extra deletion statement after wards
-//			if(node.kind == NodeFunctionCall::Kind::Constructor) {
-//
-//				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-//				error.m_message = "Constructor call in builtin function argument is not allowed.";
-//				error.exit();
-//			}
+
 			// clone return variable from function definition if function was already return param promoted
 			auto return_var = clone_shared(node.get_definition()->header->get_param(0));
 			return_var->is_local = true;
@@ -123,6 +116,19 @@ public:
 					node.tok
 				)
 			);
+
+			// check for while condition.
+			// in case of while conditions, a function call assignments needs to be prepended to the while loop body
+			const auto stmt = node.get_parent_statement();
+			if (const auto node_while = stmt->statement->cast<NodeWhile>()) {
+				auto assignment = std::make_unique<NodeSingleAssignment>(
+					clone_as<NodeReference>(ref.get()),
+					node.clone(),
+					node.tok
+				);
+				node_while->body->add_as_stmt(std::move(assignment));
+			}
+
 			return node.replace_with(std::move(ref));
 		}
 		return &node;

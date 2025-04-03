@@ -12,9 +12,9 @@
 // end struct
 
 on init
-	declare ui_button btn_keyswitch[5]
-	declare !btn_keyswitch_pictures[5] := ("btn_play_ks_c_v2")
-	set_button_properties(btn_keyswitch[0], "f", !btn_keyswitch_pictures[0])
+	// declare ui_button btn_keyswitch[5]
+	// declare !btn_keyswitch_pictures[5] := ("btn_play_ks_c_v2")
+	// set_button_properties(btn_keyswitch[0], "f", !btn_keyswitch_pictures[0])
 		
 	declare ui_button btn
 	sdf(btn)
@@ -31,11 +31,26 @@ on init
 	// search_matrix(ndarray, 3)
 	// infere_me(1, 5.4, "string")
 	// infere_me(2.3, 1, 1)
+	
+end on
+
+on note
+	declare d: int := 4
+	while(get_input(d) = 1)
+		message(d)
+		inc(d)
+	end while
 end on
 
 function sdf(ui_control: int)
 	ui_control-> hide  := HIDE_WHOLE_CONTROL
 end function
+
+function get_input(input: int)
+	declare b: int := input mod 5
+	return b-1
+end function
+
 
 
 // function higher_order(func: (int, int): string, a: int, b: int): string

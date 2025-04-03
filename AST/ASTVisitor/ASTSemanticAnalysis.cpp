@@ -10,16 +10,16 @@ ASTSemanticAnalysis::ASTSemanticAnalysis(NodeProgram *main)
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeProgram& node) {
-
+	m_program->current_callback = nullptr;
 	m_program->global_declarations->accept(*this);
-	for(auto & s : node.struct_definitions) {
+	for(const auto & s : node.struct_definitions) {
 		s->accept(*this);
 	}
-    for(auto & callback : node.callbacks) {
+    for(const auto & callback : node.callbacks) {
         callback->accept(*this);
     }
 	// visit func defs that are not called. because of replacing incorrectly node params with array
-    for(auto & func_def : node.function_definitions) {
+    for(const auto & func_def : node.function_definitions) {
 		if(!func_def->visited) func_def->accept(*this);
 	}
 	node.reset_function_visited_flag();
@@ -54,7 +54,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSortSearch& node) {
 	if(node.to) node.to->accept(*this);
 
 	// transform var ref to composite type
-	if(auto var = node.array->cast<NodeVariableRef>()) {
+	if(const auto var = node.array->cast<NodeVariableRef>()) {
 		auto node_array_ref = var->to_array_ref(nullptr);
 		return var->replace_reference(std::move(node_array_ref));
 	}
@@ -97,7 +97,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeCallback& node) {
 
 
 NodeAST * ASTSemanticAnalysis::visit(NodeBlock &node) {
-	for(auto & stmt : node.statements) {
+	for(const auto & stmt : node.statements) {
 		stmt->accept(*this);
 	}
 	return &node;
@@ -130,27 +130,12 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
 
 	node.bind_definition(m_program);
-	auto definition = node.get_definition();
-	if(node.kind == NodeFunctionCall::UserDefined and definition) {
-		if(!definition->visited) {
-
-			definition->accept(*this);
-		}
+	if(const auto definition = node.get_definition(); node.kind == NodeFunctionCall::UserDefined and definition) {
+		if(!definition->visited) definition->accept(*this);
 	}
 
-	// determine thread safety of currently visiting function definition
-	// if(definition) {
-	// 	if(const auto func = m_program->get_curr_function()) {
-	// 		func->is_thread_safe &= definition->is_thread_safe;
-	// 	}
-	// 	if(m_program->current_callback) m_program->current_callback->is_thread_safe &= definition->is_thread_safe;
-	// }
-	// determine if currently visiting function in stack is restricted
-	// if(definition) {
-	// 	if(const auto func = m_program->get_curr_function()) {
-	// 		func->is_restricted &= definition->is_restricted;
-	// 	}
-	// }
+	// checks for restricted functions and allowed callbacks -> throws error
+	node.check_restricted_environment(m_program->current_callback);
 	// if definition parameters of this function have different node types as the call site -> update
 	update_func_call_node_types(&node);
 
@@ -235,14 +220,14 @@ NodeAST * ASTSemanticAnalysis::visit(NodeList& node) {
 NodeAST * ASTSemanticAnalysis::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
 	NodeReference* new_node = &node;
-	if(auto repl = replace_incorrectly_detected_reference(m_program, &node)) {
+	if(const auto repl = replace_incorrectly_detected_reference(m_program, &node)) {
 		new_node = repl;
 		new_node->accept(*this);
 	}
 	return replace_incorrectly_detected_data_struct(new_node->get_declaration());
 }
 
-void ASTSemanticAnalysis::update_func_call_node_types(NodeFunctionCall* func_call) {
+void ASTSemanticAnalysis::update_func_call_node_types(const NodeFunctionCall* func_call) {
 	if(func_call->get_definition()) {
 		for(int i=0; i<func_call->function->get_num_args(); i++) {
 			auto & arg = func_call->function->get_arg(i);

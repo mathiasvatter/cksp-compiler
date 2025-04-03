@@ -13,6 +13,7 @@ class TypeInference final : public ASTVisitor {
 
 	void do_monomorphization() {
 		for (const auto& call : m_function_calls) {
+			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
 			if (auto definition = call->get_definition()) {
 				if (definition->header->has_union_params()) {
 					const auto new_header = std::make_shared<NodeFunctionHeader>(*definition->header);
@@ -45,17 +46,6 @@ class TypeInference final : public ASTVisitor {
 				}
 			}
 		}
-
-		// auto& funcs = m_program->function_definitions;
-		// for (size_t i = 0; i < funcs.size(); ) {
-		// 	if (funcs[i]->header->has_union_params()) {
-		// 		funcs[i] = std::move(funcs.back());
-		// 		funcs.pop_back();
-		// 		// Kein i++ da das neu an Position i eingezogene Element geprüft werden muss.
-		// 	} else {
-		// 		++i;
-		// 	}
-		// }
 
 		m_program->merge_function_definitions();
 		m_program->update_function_lookup();
@@ -181,8 +171,22 @@ public:
         return error;
     }
 
+	/// check for function that has same param types as return type
+	static bool is_same_input_same_output_type(const NodeFunctionHeader& header) {
+    	if (!header.ty) return false;
+    	if (header.params.empty()) return false;
+    	const auto func_type = header.ty->cast<FunctionType>();
+    	if (!func_type) return false;
+    	// check if all param types are the same;
+    	if (std::adjacent_find(func_type->m_params.begin(), func_type->m_params.end(), std::not_equal_to<>()) != func_type->m_params.end()) return false;
+    	if (!func_type->m_params[0]->is_union_type()) return false;
+    	// check if return type is the same as param type
+    	if (func_type->m_return_type != func_type->m_params[0]) return false;
+    	return true;
+    }
+
     /// check types of initializations and try to infer overall element type
-    static Type* infer_initialization_types(std::vector<Type*> &type_list, NodeAST* node) {
+    static Type* infer_initialization_types(std::vector<Type*> &type_list, const NodeAST* node) {
         std::set<Type*> types(type_list.begin(), type_list.end());
         auto error = CompileError(ErrorType::TypeError, "", "", node->tok);
         if(types.empty()) CompileError(ErrorType::InternalError, "Found no types in list", "", node->tok).exit();
@@ -196,9 +200,8 @@ public:
             return ty;
         // two types in param list -> only allowed if types are int|real and string
         } else if (types.size() == 2) {
-            auto it = types.find(TypeRegistry::String);
-            if(it != types.end()) {
-                if(types.find(TypeRegistry::Integer) != types.end() or types.find(TypeRegistry::Real) != types.end()) {
+	        if(const auto it = types.find(TypeRegistry::String); it != types.end()) {
+                if(types.contains(TypeRegistry::Integer) or types.contains(TypeRegistry::Real)) {
                     return TypeRegistry::String;
                 } else {
                     error.m_message = "Only <String> and <Integer> or <Real> types are allowed in an initialization.";
@@ -219,7 +222,7 @@ public:
 		// if type is composite and node1 is unknown, set type of node1 to type
 		if(type->cast<CompositeType>() and node1.ty == TypeRegistry::Unknown) {
 			// stash elem_typ temporarily
-			auto elem_type = node1.ty->get_element_type();
+			const auto elem_type = node1.ty->get_element_type();
 			node1.ty = type;
 			node1.set_element_type(elem_type);
 		}

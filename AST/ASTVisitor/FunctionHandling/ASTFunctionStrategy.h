@@ -10,8 +10,6 @@ class ASTFunctionStrategy final : public ASTVisitor {
 	DefinitionProvider *m_def_provider;
 	NodeCallback* m_current_callback = nullptr;
 
-
-
 public:
 	explicit ASTFunctionStrategy(NodeProgram* main) : m_def_provider(main->def_provider) {
 		m_program = main;
@@ -63,7 +61,6 @@ public:
 			definition->visited = true;
 			node.is_call = false;
 
-			// const bool is_callable_env = node.determine_callability(*m_current_callback);
 			const bool is_callable_env = m_current_callback != m_program->init_callback and !definition->is_restricted;
 
 			if (definition->is_expression_function()) {
@@ -72,7 +69,7 @@ public:
 				node.strategy = NodeFunctionCall::Strategy::PreemptiveInlining;
 			} else if (is_callable_env and node.function->has_no_args()) {
 				node.strategy = NodeFunctionCall::Strategy::Call;
-			} else if (is_callable_env and has_only_scalar_params(*definition)) {
+			} else if (is_callable_env and is_parameterstack_candidate(*definition)) {
 				node.strategy = NodeFunctionCall::Strategy::ParameterStack;
 			} else {
 				node.strategy = NodeFunctionCall::Strategy::Inlining;
@@ -88,7 +85,7 @@ public:
 	}
 
 
-	static bool has_only_scalar_params(const NodeFunctionDefinition& def) {
+	static bool is_parameterstack_candidate(const NodeFunctionDefinition& def) {
 		for(const auto &param : def.header->params) {
 			if((param->variable->ty->cast<CompositeType>() and param->variable->is_thread_safe) || param->variable->ty->is_union_type() || param->variable->data_type == DataType::UIControl) {
 				return false;
