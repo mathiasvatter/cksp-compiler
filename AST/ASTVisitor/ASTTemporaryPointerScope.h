@@ -22,7 +22,7 @@ private:
 		if (!m_pointer_scope_stack.empty()) {
 			auto scope = std::move(m_pointer_scope_stack.back());
 			m_pointer_scope_stack.pop_back();
-			return scope;
+			return std::move(scope);
 		}
 		return {}; // Leere Map, wenn kein Scope vorhanden ist
 	}
@@ -57,7 +57,7 @@ public:
 		}
 		// add delete statements for all local pointers
 		if(node.scope) {
-			auto temp_deletes = remove_scope();
+			auto temp_deletes = std::move(remove_scope());
 			for(auto & [key, del] : temp_deletes) {
 				node.add_as_stmt(std::move(del));
 			}
@@ -79,7 +79,7 @@ public:
 			auto &temp_ptr = node.function->get_arg(0);
 			if(auto ref = temp_ptr->cast<NodeVariableRef>()) {
 				auto decr_func = get_decr_func_call(node.function->name, temp_ptr->clone(), std::make_unique<NodeInt>(1, node.tok));
-				m_pointer_scope_stack.back()[{ref->name, ref->ty}] =  std::move(decr_func);
+				m_pointer_scope_stack.back().try_emplace({ref->name, ref->ty}, std::move(decr_func));
 			} else {
 				auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
 				error.m_message = "Temporary constructor must have a variable reference as first argument.";

@@ -10,7 +10,7 @@ if defined CI (
 ) else (
     rem Lokale Pfade (anpassbar)
     set "CMAKE=C:\Program Files\CMake\bin\cmake.exe"
-    set "NINJA=C:\Program Files\JetBrains\CLion 2023.3.2\bin\ninja\win\x64\ninja.exe"
+    set "NINJA=C:\Program Files\JetBrains\CLion 2024.3.2\bin\ninja\win\x64\ninja.exe"
     set "CC=C:/msys64/ucrt64/bin/gcc.exe"
     set "CXX=C:/msys64/ucrt64/bin/g++.exe"
 )

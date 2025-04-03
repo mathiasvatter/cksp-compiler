@@ -115,39 +115,42 @@ public:
 		}
 	}
 
-	std::unique_ptr<NodeFunctionDefinition> create_destructor() {
+	std::unique_ptr<NodeFunctionDefinition> create_delete() {
+		set_self_ref_declaration(m_del_func.get());
 		auto iter_decl = get_iterator_declaration();
-		// if(List::allocation[self] <= 0)
-		auto node_if = std::make_unique<NodeIf>(
-			std::make_unique<NodeBinaryExpr>(
-				token::LESS_EQUAL,
-				m_alloc_ref->clone(),
-				std::make_unique<NodeInt>(0, tok),
+		// if(self # nil)
+		auto nil_check = ASTVisitor::make_nil_check(clone_as<NodeReference>(m_self_ref.get()));
+		// // set everything to nil
+		// for(auto &mem : m_non_recursive_member_structs) {
+		// 	nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+		// 		to_member_chain_ref(mem),
+		// 		std::make_unique<NodeNil>(tok),
+		// 		tok
+		// 	));
+		// 	wrap_in_loop(nil_check->if_body->statements[0], mem, iter_decl->variable);
+		// }
+		for (auto &mem : m_struct.member_table) {
+			auto member = mem.second.lock();
+			if (member->is_engine) continue;
+			if (member == m_struct.node_self) continue;
+			auto assignment = std::make_unique<NodeSingleAssignment>(
+				to_member_chain_ref(member),
+				TypeRegistry::get_neutral_element_from_type(member->ty),
 				tok
-			),
-			std::make_unique<NodeBlock>(tok, true),
-			std::make_unique<NodeBlock>(tok, true),
-			tok
-		);
-		// set everything to nil
-		for(auto &mem : m_non_recursive_member_structs) {
-			node_if->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
-				to_member_chain_ref(mem),
-				std::make_unique<NodeNil>(tok),
-				tok
-			));
-			wrap_in_loop(node_if->if_body->statements[0], mem, iter_decl->variable);
+			);
+			nil_check->if_body->add_as_stmt(std::move(assignment));
+			wrap_in_loop(nil_check->if_body->statements.back(), member, iter_decl->variable);
 		}
-		for(auto &mem : m_recursive_member_structs) {
-			node_if->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
-				to_member_chain_ref(mem),
-				std::make_unique<NodeNil>(tok),
-				tok
-			));
-			wrap_in_loop(node_if->if_body->statements[0], mem, iter_decl->variable);
-		}
+		// for(auto &mem : m_recursive_member_structs) {
+		// 	nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+		// 		to_member_chain_ref(mem),
+		// 		std::make_unique<NodeNil>(tok),
+		// 		tok
+		// 	));
+		// 	wrap_in_loop(nil_check->if_body->statements[0], mem, iter_decl->variable);
+		// }
 		m_del_func->body->add_as_stmt(std::move(iter_decl));
-		m_del_func->body->add_as_stmt(std::move(node_if));
+		m_del_func->body->add_as_stmt(std::move(nil_check));
 		m_del_func->parent = &m_struct;
 		m_del_func->ty = TypeRegistry::Void;
 		m_del_func->header->create_function_type(TypeRegistry::Void);
@@ -172,7 +175,7 @@ public:
 	/// returns true if struct has more than one recursive member and these members are itself
 	bool is_non_linear_recursive_with_homogenous_types() {
 		if(is_linear_recursive()) return false;
-		for(auto &mem : m_recursive_member_structs) {
+		for(const auto &mem : m_recursive_member_structs) {
 			if(mem->ty->get_element_type() != m_struct.ty) return false;
 		}
 		return true;
@@ -295,23 +298,16 @@ public:
 		// if there are object members -> continue recursively
 		if(!m_recursive_member_structs.empty() or !m_non_recursive_member_structs.empty()) {
 			for(auto &mem : m_non_recursive_member_structs) {
-				// if(current.other_struct # nil)
-				auto nil_check = ASTVisitor::make_nil_check(to_member_chain_ref(mem));
-				nil_check->if_body->add_as_stmt(std::make_unique<NodeFunctionCall>(
+				node_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 					false,
 					std::make_unique<NodeFunctionHeaderRef>(
-						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + "__del__",
-						std::make_unique<NodeParamList>(mem->tok, mem->clone()),
+						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + "__decr__",
+						std::make_unique<NodeParamList>(mem->tok, to_member_chain_ref(mem), std::make_unique<NodeInt>(1, mem->tok)),
 						mem->tok
 					),
 					mem->tok
 				));
-				nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
-					to_member_chain_ref(mem),
-					std::make_unique<NodeNil>(mem->tok),
-					mem->tok
-				));
-				node_while->body->add_as_stmt(std::move(nil_check));
+
 				wrap_in_loop(node_while->body->statements.back(), mem, iter_decl->variable);
 			}
 			for(auto & mem : m_recursive_member_structs) {
@@ -372,6 +368,7 @@ public:
 	}
 
 	std::unique_ptr<NodeFunctionDefinition> create_lin_rec_decr() {
+		auto iter_decl = get_iterator_declaration();
 		set_self_ref_declaration(m_decr_func.get());
 		set_num_refs_ref_declaration(m_decr_func.get());
 		// declare current
@@ -405,64 +402,58 @@ public:
 		outer_while->body->add_as_stmt(dec_alloc_array(current_ref->clone()));
 		auto check_for_deletion = alloc_array_check_continue(current_ref->clone());
 		// current := nil
-		check_for_deletion->if_body->prepend_stmt(
-			std::make_unique<NodeStatement>(
-				std::make_unique<NodeSingleAssignment>(
-					clone_as<NodeReference>(current_ref.get()),
-					std::make_unique<NodeNil>(tok),
-					tok
-				),
+		check_for_deletion->if_body->prepend_as_stmt(
+			std::make_unique<NodeSingleAssignment>(
+				clone_as<NodeReference>(current_ref.get()),
+				std::make_unique<NodeNil>(tok),
 				tok
 			)
 		);
 		outer_while->body->add_as_stmt(std::move(check_for_deletion));
 
+		// self := current
+		outer_while->body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+			clone_as<NodeReference>(m_self_ref.get()),
+			current_ref->clone(),
+			tok
+		));
+		// current := nil
+		outer_while->body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+			clone_as<NodeReference>(current_ref.get()),
+			std::make_unique<NodeNil>(tok),
+			tok
+		));
 		// if there are object members -> continue recursively
 		if(!m_recursive_member_structs.empty() or !m_non_recursive_member_structs.empty()) {
 			for(auto &mem : m_non_recursive_member_structs) {
-				// if(current.other_struct # nil)
-				auto nil_check = ASTVisitor::make_nil_check(to_member_chain_ref(mem, current_ref.get()));
-				nil_check->if_body->add_as_stmt(std::make_unique<NodeFunctionCall>(
+				outer_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 					false,
 					std::make_unique<NodeFunctionHeaderRef>(
-						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + "__del__",
-						std::make_unique<NodeParamList>(mem->tok, mem->clone()),
+						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + "__decr__",
+						std::make_unique<NodeParamList>(mem->tok, to_member_chain_ref(mem), std::make_unique<NodeInt>(1, mem->tok)),
 						mem->tok
 					),
 					mem->tok
 				));
-				nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
-					to_member_chain_ref(mem),
-					std::make_unique<NodeNil>(mem->tok),
-					mem->tok
-				));
-				outer_while->body->add_as_stmt(std::move(nil_check));
+				// nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+				// 	to_member_chain_ref(mem),
+				// 	std::make_unique<NodeNil>(mem->tok),
+				// 	mem->tok
+				// ));
+				// outer_while->body->add_as_stmt(std::move(nil_check));
+				wrap_in_loop(outer_while->body->statements.back(), mem, iter_decl->variable);
+
 			}
 			for(auto & mem : m_recursive_member_structs) {
-				// self := current <- save the current object for deletion
-				outer_while->body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
-					clone_as<NodeReference>(m_self_ref.get()),
-					current_ref->clone(),
-					tok
-				));
 				// current.next
-				auto mem_ref = to_member_chain_ref(mem, current_ref.get());
-				// if(current.next # nil)
-				auto nil_check = ASTVisitor::make_nil_check(clone_as<NodeReference>(mem_ref.get()));
-				// current := current.next
-				nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+				auto mem_ref = to_member_chain_ref(mem, m_self_ref.get());
+				// current := self.next
+				outer_while->body->add_as_stmt(
+					std::make_unique<NodeSingleAssignment>(
 					clone_as<NodeReference>(current_ref.get()),
 					mem_ref->clone(),
 					mem->tok
 				));
-				// else : current := nil
-				nil_check->else_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
-					clone_as<NodeReference>(current_ref.get()),
-					std::make_unique<NodeNil>(mem->tok),
-					mem->tok
-				));
-				outer_while->body->add_as_stmt(std::move(nil_check));
-
 			}
 
 		}
@@ -560,8 +551,9 @@ private:
 		if(idx) {
 			alloc_ref->set_index(std::move(idx));
 		}
+		auto l_value = clone_as<NodeReference>(alloc_ref.get());
 		return std::make_unique<NodeSingleAssignment>(
-			clone_as<NodeReference>(alloc_ref.get()),
+			std::move(l_value),
 			std::make_unique<NodeBinaryExpr>(
 				token::SUB,
 				std::move(alloc_ref),
@@ -574,6 +566,8 @@ private:
 
 	///	if (List::allocation[self] > 0)
 	///		continue
+	///	else
+	///		List::allocation[self] := 0
 	///	end if
 	std::unique_ptr<NodeIf> alloc_array_check_continue(std::unique_ptr<NodeAST> idx =nullptr) {
 		auto alloc_ref = clone_as<NodeArrayRef>(m_alloc_ref.get());
@@ -583,7 +577,7 @@ private:
 		auto node_if = std::make_unique<NodeIf>(
 			std::make_unique<NodeBinaryExpr>(
 				token::GREATER_THAN,
-				std::move(alloc_ref),
+				alloc_ref->clone(),
 				std::make_unique<NodeInt>(0, tok),
 				tok
 			),
@@ -592,6 +586,11 @@ private:
 			tok
 		);
 		node_if->if_body->add_as_stmt(DefinitionProvider::continu(tok));
+		node_if->else_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+			std::move(alloc_ref),
+			std::make_unique<NodeInt>(0, tok),
+			tok
+		));
 		return node_if;
 	}
 

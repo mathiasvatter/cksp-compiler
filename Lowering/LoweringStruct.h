@@ -108,7 +108,7 @@ public:
 	inline NodeAST * visit(NodeVariableRef& node) override {
 		// if member reference, turn into array reference with (struct.free_idx as index if in constructor, self as index if not)
 		if(determine_inflation_need(node)) {
-			auto new_node = node.inflate_dimension(get_index_ref());
+			auto new_node = node.expand_dimension(get_index_ref());
 			return node.replace_reference(std::move(new_node));
 		}
 		return &node;
@@ -116,7 +116,7 @@ public:
 	inline NodeAST * visit(NodeArrayRef& node) override {
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(determine_inflation_need(node)) {
-			auto new_node = node.inflate_dimension(get_index_ref());
+			auto new_node = node.expand_dimension(get_index_ref());
 			return node.replace_reference(std::move(new_node));
 		}
 		return &node;
@@ -124,7 +124,7 @@ public:
 
 	inline NodeAST * visit(NodePointerRef& node) override {
 		if(determine_inflation_need(node)) {
-			auto new_node = node.inflate_dimension(get_index_ref());
+			auto new_node = node.expand_dimension(get_index_ref());
 			return node.replace_reference(std::move(new_node));
 		}
 		return &node;
@@ -133,7 +133,7 @@ public:
 	inline NodeAST * visit(NodeNDArrayRef& node) override {
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(determine_inflation_need(node)) {
-			auto new_node = node.inflate_dimension(get_index_ref());
+			auto new_node = node.expand_dimension(get_index_ref());
 			return node.replace_reference(std::move(new_node));
 		}
 		return &node;

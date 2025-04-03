@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <unordered_map>
+// #include <unordered_map>
 
 #include "../AST/ASTNodes/AST.h"
 #include "../AST/ASTNodes/ASTDataStructures.h"
@@ -65,8 +65,8 @@ inline static std::map<token, int> operator_precedence = {
 //	{token::MODULO, 11}
 };
 
-inline static int _get_binop_precedence(token tok) {
-	int precedence = operator_precedence[tok];
+static int _get_binop_precedence(const token tok) {
+	const int precedence = operator_precedence[tok];
 	if (precedence <= 0) {
 		return -1;
 	}
@@ -87,7 +87,7 @@ protected:
     static std::string sanitize_hex(const std::string& input);
 
 	Result<std::unique_ptr<NodeAST>> parse_wildcard(NodeAST* parent);
-    Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base, NodeAST* parent);
+    static Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base, NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_number(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_nil(NodeAST* parent);
     Result<std::unique_ptr<NodeString>> parse_string(NodeAST* parent);
@@ -99,8 +99,10 @@ protected:
 	Result<std::unique_ptr<NodeReference>> parse_array_ref(NodeAST *parent);
 	Result<std::unique_ptr<NodeAST>> parse_reference_chain(NodeAST *parent);
 
+	Result<std::unique_ptr<NodeParamList>> parse_multiple_values(NodeAST* parent);
     Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent);
 	Result<SuccessTag> _parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent);
+	Result<std::unique_ptr<NodeAST>> parse_init_list(NodeAST* parent);
     /// parses every expression from binary, string, unary to number and variable
     Result<std::unique_ptr<NodeAST>> parse_expression(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_string_expr(NodeAST* parent);
@@ -115,6 +117,7 @@ protected:
 		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr(NodeAST* parent);
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr(NodeAST* parent);
+    Result<std::unique_ptr<NodeDeclaration>> parse_declare_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAssignment>> parse_assign_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeReturn>> parse_return_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeDelete>> parse_delete_statement(NodeAST* parent);
@@ -126,7 +129,6 @@ protected:
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_declare_array(NodeAST* parent);
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);
-    Result<std::unique_ptr<NodeDeclaration>> parse_declare_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_const_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_list_block(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_family_statement(NodeAST* parent);
@@ -155,7 +157,6 @@ protected:
 	int m_init_callback_idx = -1;
     std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_function_definitions;
 	std::vector<NodeDataStructure*> m_all_data_structures;
-    void mark_function_as_used(const std::string& func_name, int num_args);
 
 	Result<SuccessTag> consume_linebreak(const std::string& construct);
 

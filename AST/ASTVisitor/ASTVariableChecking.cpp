@@ -3,40 +3,29 @@
 //
 
 #include "ASTVariableChecking.h"
-#include <future>
 
-ASTVariableChecking::ASTVariableChecking(NodeProgram* main, bool fail)
-	: m_def_provider(main->def_provider), fail(fail) {
+ASTVariableChecking::ASTVariableChecking(NodeProgram* main)
+	: m_def_provider(main->def_provider) {
+	fail = false;
 	m_program = main;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_program = &node;
-	// update function lookup map because of altered param counts after lambda lifting
-	node.merge_function_definitions();
-    node.update_function_lookup();
-	// erase all previously saved scopes
-	m_def_provider->refresh_scopes();
-	m_def_provider->refresh_data_vectors();
-
-	// refresh call_sites of function definitions
-//	for(const auto & func_def : node.function_definitions) func_def->call_sites.clear();
-
+	// add all function definition header variables to global scope
+	for(const auto & func_def : node.function_definitions) {
+		m_def_provider->set_declaration(func_def->header, true);
+	}
 	// most func defs will be visited when called, keeping local scopes in mind
 	m_program->global_declarations->accept(*this);
 	m_program->init_callback->accept(*this);
 	for(const auto & s : node.struct_definitions) {
 		s->accept(*this);
 	}
-//	node.reset_function_visited_flag();
 	for(const auto & callback : node.callbacks) {
 		if(callback.get() != m_program->init_callback) callback->accept(*this);
 	}
-	for(const auto & func_def : node.function_definitions) {
-		if(!func_def->visited) func_def->accept(*this);
-	}
-	node.reset_function_visited_flag();
-	m_def_provider->refresh_scopes();
+
 	return &node;
 }
 
@@ -83,7 +72,7 @@ NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 	node.flatten();
-	m_current_block = &node;
+	m_current_block.push(&node);
 
 	node.determine_scope();
 
@@ -105,30 +94,37 @@ NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 			m_def_provider->remove_scope();
 		}
 	}
+	m_current_block.pop();
 	return &node;
 }
 
 NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
-	node.determine_locality(m_program, m_current_block);
-	// function definitions are being visited in the program node
-	// node header as data struct
-	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
+	node.determine_locality(m_program, get_current_block());
 	for(auto &param : node.params) param->accept(*this);
+
+	// global function headers from definition were already added initially
+	if (node.is_local) {
+		// node header as data struct
+		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
+	}
 	return &node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 	node.visited = true;
+
+	m_functions_in_use.insert(&node);
 	m_program->function_call_stack.push(node.weak_from_this());
 	m_def_provider->add_scope();
-
 
 	node.header ->accept(*this);
 	if (node.return_variable.has_value())
 		node.return_variable.value()->accept(*this);
 	node.body->accept(*this);
+
 	m_def_provider->remove_scope();
 	m_program->function_call_stack.pop();
+	m_functions_in_use.erase(&node);
 	return &node;
 }
 
@@ -147,26 +143,24 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 		}
 	}
 
-	if(node.kind == NodeFunctionCall::UserDefined and node.get_definition()) {
-		check_recursion(node.get_definition().get());
-		if(!node.get_definition()->visited) {
-			m_functions_in_use.insert(node.get_definition().get());
-			node.get_definition()->accept(*this);
-			m_functions_in_use.erase(node.get_definition().get());
-		}
+	const auto definition = node.get_definition();
+	if(node.kind == NodeFunctionCall::UserDefined and definition) {
+		check_recursion(definition.get());
+		if(!definition->visited) definition->accept(*this);
 	}
 	node.function->accept(*this);
 
-	// add call sites at second stage when fail is true
-	if(fail and node.get_definition() and node.kind != NodeFunctionCall::Kind::Builtin) {
-		node.get_definition()->call_sites.insert(&node);
-	}
+
+	// // add call sites at second stage when fail is true
+	// if(fail and definition and node.kind != NodeFunctionCall::Kind::Builtin) {
+	// 	definition->call_sites.insert(&node);
+	// }
 
 	return &node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
-	node.variable->determine_locality(m_program, m_current_block);
+	node.variable->determine_locality(m_program, get_current_block());
 
 	if(node.variable->cast<NodeUIControl>() and node.variable->is_local) {
 		auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
@@ -188,7 +182,7 @@ NodeAST* ASTVariableChecking::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeArray& node) {
-	node.determine_locality(m_program, m_current_block);
+	node.determine_locality(m_program, get_current_block());
 	if(node.size) node.size->accept(*this);
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 	return &node;
@@ -226,7 +220,7 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeNDArray& node) {
-	node.determine_locality(m_program, m_current_block);
+	node.determine_locality(m_program, get_current_block());
 	if(node.sizes) node.sizes->accept(*this);
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 	return &node;
@@ -243,7 +237,7 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		if(m_current_struct) {
-			auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+			const auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
 			DefinitionProvider::throw_declaration_error(node, msg).exit();
 		}
 		DefinitionProvider::throw_declaration_error(node).exit();
@@ -255,10 +249,12 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(node.args) node.args->accept(*this);
-	if(auto func_call = node.parent->cast<NodeFunctionCall>()) {
-		if(func_call->kind != NodeFunctionCall::Undefined) {
-			if(func_call->get_definition()) {
-				node.declaration = func_call->get_definition()->header;
+
+	// for builtin commands get header variable from its definition
+	if(const auto func_call = node.parent->cast<NodeFunctionCall>()) {
+		if(func_call->is_builtin_kind()) {
+			if(const auto def = func_call->get_definition()) {
+				node.declaration = def->header;
 			}
 			return &node;
 		}
@@ -267,6 +263,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
+		// if (!fail) return &node;
 		auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
 		error.m_message = "Function Variable has not been declared: "+node.name;
 		error.exit();
@@ -277,7 +274,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
-	node.determine_locality(m_program, m_current_block);
+	node.determine_locality(m_program, get_current_block());
 
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 	return &node;
@@ -304,7 +301,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 		} else {
 
 			if(m_current_struct) {
-				auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+				const auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
 				DefinitionProvider::throw_declaration_error(node, msg).exit();
 			}
 
@@ -320,7 +317,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodePointer& node) {
-	node.determine_locality(m_program, m_current_block);
+	node.determine_locality(m_program, get_current_block());
 
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 	return &node;
@@ -343,7 +340,7 @@ NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeList& node) {
-	node.determine_locality(m_program, m_current_block);
+	node.determine_locality(m_program, get_current_block());
 	for(auto &params : node.body) {
 		params->accept(*this);
 	}
@@ -389,7 +386,7 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 	// add extra members scope
 	m_def_provider->add_scope();
 	node.members->accept(*this);
-	for(auto & m : node.methods) {
+	for(const auto & m : node.methods) {
 		m->accept(*this);
 	}
 	// remove the members scope

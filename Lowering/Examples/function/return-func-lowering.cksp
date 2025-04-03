@@ -20,6 +20,40 @@ function return_array()
     return arr
 end function
 
+
+on note
+	declare curr_note: int := EVENT_NOTE
+    declare curr_velocity: int := EVENT_VELOCITY
+    play_note(curr_note, clamp(curr_velocity, 90), 0, -1)
+end on
+
+function clamp(value: int, max: int): int
+    if (value < 0)
+        return 0
+    else if (value > max)
+        return max
+    else
+        return value
+    end if
+end function
+
+
+on note
+	declare curr_note: int := EVENT_NOTE
+    declare curr_velocity: int := EVENT_VELOCITY
+    declare ret0: int
+    if (curr_velocity < 0)
+        ret0 := 0
+    else if (curr_velocity > 90)
+        ret0 := 90
+    else
+        ret0 := curr_velocity
+    end if
+    play_note(curr_note, ret0, 0, -1)
+end on
+
+
+
 {-------------------------------------------------------------------------------------------
                                     Post Lowering 1
 --------------------------------------------------------------------------------------------}

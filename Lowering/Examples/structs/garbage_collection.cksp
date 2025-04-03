@@ -1,0 +1,151 @@
+
+{-------------------------------------------------------------------------------------------
+                                    Linear direkt Rekursion
+--------------------------------------------------------------------------------------------}
+
+struct List
+    declare value: int
+    declare next: List
+end struct
+
+function List::__reach__(self: List)
+    declare current: List := self
+    while current # nil
+        // Objekt markieren (negative Markierung)
+        if List::allocation[current] > 0
+            List::allocation[current] := -List::allocation[current]
+            Point::__reach__(List::point[current])
+            // Nächstes Objekt
+            current := List::next[current]
+        else 
+            current := nil
+        end if
+    end while
+end function
+
+function List::gc()
+	List::__reach__(ptr1)
+    List::__reach__(ptr2)
+    List::__reach__(ptr3)
+    List::__reach__(ptr4)
+    for all in List::allocation
+        List::allocation[all] := List::allocation[all] * -1
+        if List::allocation[all] < 0
+            List::allocation[all] := 0
+            List::__del__(all)
+        end if
+    end for
+end function    
+
+{-------------------------------------------------------------------------------------------
+                                    non-Linear direkt Rekursion
+--------------------------------------------------------------------------------------------}
+
+struct Node
+    declare value: int
+    declare left: Node
+    declare right: Node
+end struct
+declare Node::stack[MAX_STRUCTS]: Node[]
+declare Node::stack_top: int := 0
+
+function Node::__reach__(self: Node)
+    // Initiales Objekt auf den Stack legen
+    Node::stack[Node::stack_top] := self
+    inc(Node::stack_top)
+
+    while Node::stack_top > 0
+        dec(Node::stack_top)
+        self := Node::stack[Node::stack_top]
+
+        if self = nil
+            continue
+        end if
+
+        // Objekt markieren
+        if Node::allocation[self] > 0
+            Node::allocation[self] := -Node::allocation[self]
+        end if
+
+        // Linken und rechten Knoten hinzufügen
+        if Node::left[self] # nil and Node::allocation[Node::left[self]] > 0
+            Node::stack[Node::stack_top] := Node::left[self]
+            inc(Node::stack_top)
+        end if
+
+        if Node::right[self] # nil and Node::allocation[Node::right[self]] > 0
+            Node::stack[Node::stack_top] := Node::right[self]
+            inc(Node::stack_top)
+        end if
+    end while
+end function
+
+{-------------------------------------------------------------------------------------------
+                                    non-Linear indirekt Rekursion
+--------------------------------------------------------------------------------------------}
+
+struct List
+    declare value: int
+    declare next: Node
+end struct
+
+struct Node
+    declare value: int
+    declare left: List
+    declare right: List
+end struct
+
+function List::__reach__(self: List)
+    // Füge das initiale Objekt dem Stack hinzu
+    List::stack[List::stack_top] := self
+    inc(List::stack_top)
+
+    while List::stack_top > 0 or Node::stack_top > 0
+        // Verarbeite den List-Stack
+        while List::stack_top > 0
+            dec(List::stack_top)
+            self := List::stack[List::stack_top]
+
+            if self = nil
+                continue
+            end if
+
+            // Objekt markieren
+            if List::allocation[self] > 0
+                List::allocation[self] := -List::allocation[self]
+            end if
+
+            // Füge rekursive Member hinzu
+            if List::next[self] # nil and Node::allocation[List::next[self]] > 0
+                Node::stack[Node::stack_top] := List::next[self]
+                inc(Node::stack_top)
+            end if
+        end while
+
+        // Verarbeite den Node-Stack
+        while Node::stack_top > 0
+            dec(Node::stack_top)
+            declare current: Node := Node::stack[Node::stack_top]
+
+            if current = nil
+                continue
+            end if
+
+            // Objekt markieren
+            if Node::allocation[current] > 0
+                Node::allocation[current] := -Node::allocation[current]
+            end if
+
+            // Füge rekursive Member hinzu
+            if Node::left[current] # nil and List::allocation[Node::left[current]] > 0
+                List::stack[List::stack_top] := Node::left[current]
+                inc(List::stack_top)
+            end if
+
+            if Node::right[current] # nil and List::allocation[Node::right[current]] > 0
+                List::stack[List::stack_top] := Node::right[current]
+                inc(List::stack_top)
+            end if
+        end while
+    end while
+end function

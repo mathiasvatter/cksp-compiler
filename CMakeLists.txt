@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.0.7)
-set(PRE_RELEASE_VERSION "-alpha.2")
+set(PRE_RELEASE_VERSION "-alpha.3")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -8,9 +8,9 @@ configure_file(
         ${GENERATED_DIR}/version.h
 )
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 if(WIN32)
-    set(CMAKE_EXE_LINKER_FLAGS -static)
+    set(CMAKE_EXE_LINKER_FLAGS -static) # problems with typinfo tf??
 endif()
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native -flto -fno-plt -fomit-frame-pointer")
 
@@ -130,21 +130,19 @@ add_executable(cksp main.cpp
         misc/Gensym.h
         misc/Timer.h
         Compiler.h
-        Compiler.cpp
         AST/ASTVisitor/ASTOptimizations.h
         AST/ASTVisitor/ASTOptimizations.cpp
         AST/ASTVisitor/ASTVariableChecking.h
         AST/ASTVisitor/ASTVariableChecking.cpp
-        AST/ASTVisitor/GlobalScope/ASTGlobalScope.h
-        AST/ASTVisitor/GlobalScope/ASTGlobalScope.cpp
         AST/ASTVisitor/TypeInference.h
         AST/ASTVisitor/TypeInference.cpp
         Lowering/LoweringFunctionCall.h
         AST/ASTNodes/ASTInstructions.h
         AST/ASTNodes/ASTInstructions.cpp
         AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h
-        AST/ASTVisitor/GlobalScope/ASTRegisterReuse.h
+        AST/ASTVisitor/GlobalScope/ASTVariableReuse.h
         AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h
+        AST/ASTVisitor/GlobalScope/NormalizeArrayAssign2.h
         Desugaring/DesugarStruct.h
         Lowering/LoweringStruct.h
         Lowering/LoweringPointer.h
@@ -200,7 +198,20 @@ add_executable(cksp main.cpp
         Lowering/PostLowering/PostLoweringSingleDeclaration.h
         Lowering/LoweringSortSearch.h
         Lowering/PostLowering/PostLoweringSortSearch.h
-        AST/ASTVisitor/ASTDimensionInflation.h
+        AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h
         Lowering/LoweringInitializerList.h
         AST/ASTVisitor/ASTTemporaryPointerScope.h
+        AST/ASTVisitor/FunctionHandling/ReturnPathValidator.h
+        AST/ASTVisitor/FunctionHandling/ParameterStackTransformation.h
+        AST/ASTVisitor/GlobalScope/MarkThreadSafe.h
+        AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h
+        AST/ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h
+        AST/ASTVisitor/ReferenceManagement/ASTCollectCallSites.h
+        AST/ASTVisitor/GlobalScope/DeflateParameters.h
+        Desugaring/DesugarSingleDeclaration.h
+        AST/ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h
+        AST/ASTVisitor/FunctionHandling/FunctionParamDataTypeGetter.h
+        AST/ASTVisitor/GlobalScope/DimensionDeflator.h
 )
+
+target_compile_definitions(cksp PRIVATE PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")

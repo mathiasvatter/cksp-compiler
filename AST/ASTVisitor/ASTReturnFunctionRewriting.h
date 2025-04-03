@@ -5,20 +5,18 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
-#include "ReturnFunctionRewriting/ReturnParamPromotion.h"
 #include "ReturnFunctionRewriting/ReturnFunctionIsolation.h"
 #include "ASTTemporaryPointerScope.h"
 
-class ASTReturnFunctionRewriting: public ASTVisitor {
-private:
+class ASTReturnFunctionRewriting final : public ASTVisitor {
 	DefinitionProvider *m_def_provider;
 public:
-	inline explicit ASTReturnFunctionRewriting(NodeProgram *main) : m_def_provider(main->def_provider) {
+	explicit ASTReturnFunctionRewriting(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
 	}
 
-	inline void do_rewriting(NodeProgram& node) {
+	void do_rewriting(NodeProgram& node) {
+		// do hoisting and return parameter promotion
 		node.accept(*this);
 		node.reset_function_visited_flag();
 
@@ -33,19 +31,19 @@ public:
 
 private:
 
-	inline NodeAST* visit(NodeProgram& node) override {
+	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 
 		m_program->global_declarations->accept(*this);
-		for(auto & callback : node.callbacks) {
+		for(const auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
 
 		return &node;
 	};
 
-	inline NodeAST* visit(NodeFunctionDefinition& node) override {
-		node.do_return_param_promotion();
+	NodeAST* visit(NodeFunctionDefinition& node) override {
+		node.do_return_param_promotion(m_program);
 		node.visited = true;
 		node.header->accept(*this);
 		if(node.return_variable.has_value())
@@ -54,25 +52,24 @@ private:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeFunctionCall& node) override {
+	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		if(node.bind_definition(m_program)) {
-			auto definition = node.get_definition();
+			const auto definition = node.get_definition();
 			if(!definition->visited) {
 				definition->accept(*this);
 			}
 			definition->visited = true;
-
 		}
 		return node.do_function_call_hoisting(m_program);
 	}
 
-	inline NodeAST * visit(NodeFunctionHeaderRef& node) override {
+	NodeAST * visit(NodeFunctionHeaderRef& node) override {
 		// make sure that the function that is arg in a higher-order function
 		// does not get deleted because it is only ref and not being called
 		// foo(bar: (): void) -> bar is not called but function ref
 		if(node.get_declaration() and node.is_func_arg()) {
-			if(auto def = node.get_declaration()->parent->cast<NodeFunctionDefinition>()) {
+			if(const auto def = node.get_declaration()->parent->cast<NodeFunctionDefinition>()) {
 				if(!def->visited) def->accept(*this);
 				def->visited = true;
 			}
