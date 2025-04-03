@@ -11,8 +11,7 @@
 /// - wrapping defs with return stmts (that are not at the end of the init block) in while loop
 /// - placing exit_flag and continue statement after every return statement
 /// -
-class LoweringFunctionDef : public ASTLowering {
-private:
+class LoweringFunctionDef final : public ASTLowering {
 	NodeFunctionDefinition* m_current_function = nullptr;
 	std::string m_exit_flag_name;
 	NodeDataStructure* m_exit_flag_var = nullptr;
@@ -81,7 +80,7 @@ public:
 		m_num_nested_loops++;
 		node.body->accept(*this);
 		node.condition = add_return_condition(std::move(node.condition), m_exit_flag_var);
-		if(m_num_nested_loops > 1) {
+//		if(m_num_nested_loops > 1) {
 			// if there are nested loops add exit flag if-condition check
 			auto block = std::make_unique<NodeBlock>(
 				node.tok,
@@ -96,8 +95,8 @@ public:
 				std::make_unique<NodeStatement>(get_return_if_check(m_exit_flag_var, node.tok), node.tok)
 			);
 			return node.replace_with(std::move(block));
-		}
-		return &node;
+//		}
+//		return &node;
 	}
 
 	inline NodeAST* visit(NodeBlock& node) override {
@@ -156,27 +155,6 @@ private:
 		node_if->if_body->scope = true;
 		return node_if;
 	}
-
-
-//	/// continue
-//	static std::unique_ptr<NodeFunctionCall> get_continue_call(Token &tok) {
-//		auto call = std::make_unique<NodeFunctionCall>(
-//			false,
-//			std::make_unique<NodeFunctionHeaderRef>(
-//				std::make_unique<NodeFunctionHeader>(
-//					"continue",
-//					std::make_unique<NodeParamList>(
-//						tok
-//					),
-//					tok
-//				),
-//				tok
-//			),
-//			tok
-//		);
-//		call->function->header->has_forced_parenth = false;
-//		return call;
-//	}
 
 	/// adds "and RETURN_FLAG = 0" to condition
 	static std::unique_ptr<NodeBinaryExpr> add_return_condition(std::unique_ptr<NodeAST> condition, NodeDataStructure* return_flag_var) {

@@ -273,10 +273,7 @@ NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
         os << " := ";
         node.value->accept(*this);
 	}
-	os << "";
-	if(node.has_object) {
-		os << " // object";
-	}
+	os << " {Reuses: " << node.variable->num_reuses << "}";
 	return &node;
 }
 
@@ -521,7 +518,7 @@ NodeAST * ASTPrinter::visit(NodeFunctionCall &node) {
         os << "call ";
     }
     node.function->accept(*this);
-	os << "{" << node.get_kind_as_string() << "}";
+	os << "{" << node.get_kind_as_string() << ", " << node.get_strategy_string() << "}";
 	return &node;
 }
 
@@ -541,6 +538,9 @@ NodeAST * ASTPrinter::visit(NodeFunctionDefinition &node) {
     }
 	if(!node.is_thread_safe) {
 		os << "{thread-unsafe}";
+	}
+	if (node.is_restricted) {
+		os << "{restricted}";
 	}
     os << "\n";
     node.body->accept(*this);

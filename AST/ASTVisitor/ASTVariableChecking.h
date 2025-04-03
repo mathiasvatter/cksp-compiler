@@ -5,10 +5,47 @@
 #pragma once
 
 #include "ASTVisitor.h"
+#include "FunctionHandling/FunctionParamDataTypeGetter.h"
 
-class ASTVariableChecking : public ASTVisitor {
+class ASTVariableChecking final : public ASTVisitor {
+
 public:
-	explicit ASTVariableChecking(NodeProgram* main, bool fail=false);
+	explicit ASTVariableChecking(NodeProgram* main);
+
+	NodeAST* do_complete_traversal(NodeProgram& node, const bool fail) {
+		this->fail = fail;
+		m_functions_in_use.clear();
+		// update function lookup map because of altered param counts after lambda lifting
+		m_program->merge_function_definitions();
+		m_program->update_function_lookup();
+		// erase all previously saved scopes
+		m_def_provider->refresh_scopes();
+		m_def_provider->refresh_data_vectors();
+        node.accept(*this);
+		for(const auto & func_def : node.function_definitions) {
+			if(!func_def->visited) func_def->accept(*this);
+		}
+		node.reset_function_visited_flag();
+		m_def_provider->refresh_scopes();
+		FunctionParamDataTypeGetter data_type_getter(m_program);
+		node.accept(data_type_getter);
+		return &node;
+    }
+
+	NodeAST* do_reachable_traversal(NodeProgram& node, const bool fail) {
+		m_functions_in_use.clear();
+		this->fail = fail;
+		// update function lookup map because of altered param counts after lambda lifting
+		m_program->merge_function_definitions();
+		m_program->update_function_lookup();
+		// erase all previously saved scopes
+		m_def_provider->refresh_scopes();
+		m_def_provider->refresh_data_vectors();
+		node.accept(*this);
+		node.reset_function_visited_flag();
+		m_def_provider->refresh_scopes();
+		return &node;
+	}
 
 	NodeAST * visit(NodeProgram& node) override;
 	/// check if on init callback currently
@@ -51,17 +88,26 @@ private:
 	// boolean to continue after not finding declaration or fail
 	bool fail = false;
 	NodeStruct* m_current_struct = nullptr;
-    NodeBlock* m_current_block = nullptr;
+    std::stack<NodeBlock*> m_current_block;
 	DefinitionProvider* m_def_provider = nullptr;
+
+	[[nodiscard]] NodeBlock* get_current_block() const {
+		if (m_current_block.empty()) return nullptr;
+		return m_current_block.top();
+	}
 
 	/// track functions in use to search for recursive calls
 	std::unordered_set<NodeFunctionDefinition*> m_functions_in_use;
-	inline bool check_recursion(NodeFunctionDefinition* func) {
-		if(m_functions_in_use.find(func) != m_functions_in_use.end()) {
+	bool check_recursion(NodeFunctionDefinition* func) const {
+		if(m_functions_in_use.contains(func)) {
 			// recursive function call detected
 			auto error = CompileError(ErrorType::SyntaxError, "", "", func->tok);
-			error.m_message = "Recursive function call detected. Calling functions inside their definition is not allowed.";
-			error.m_got = func->header->name;
+			error.m_message = "Found recursive function call <"+func->header->name+">. Calling functions inside their definition is not allowed.";
+			error.m_got = "Function cycle with: ";
+			for (const auto fun : m_functions_in_use) {
+				error.m_got += "<"+fun->header->name+">, ";
+			}
+			error.m_got.erase(error.m_got.size() - 2);
 			error.exit();
 			return true;
 		}
@@ -71,14 +117,14 @@ private:
 	/// node can be NodeFunctionCall or NodeReference
 	/// transformation when first object is clearly a reference this_list.next.next()
 	/// tries to get declaration of first object and if there is one, replaces it with method chain
-	std::unique_ptr<NodeAccessChain> try_access_chain_transform(const std::string& name, NodeAST* node) {
+	std::unique_ptr<NodeAccessChain> try_access_chain_transform(const std::string& name, NodeAST* node) const {
 		// find object ptr name
-		size_t pos = name.find('.');
+		const size_t pos = name.find('.');
 		if (pos == std::string::npos) {
 			return nullptr;
 		}
-		auto ptr_name = name.substr(0, pos);
-		auto node_declaration = m_def_provider->get_declared_data_structure(ptr_name);
+		const auto ptr_name = name.substr(0, pos);
+		const auto node_declaration = m_def_provider->get_declared_data_structure(ptr_name);
 		if(!node_declaration) return nullptr;
 
 		// different scenarios for different node types
@@ -91,7 +137,7 @@ private:
 
 		auto method_chain = node->to_method_chain();
 		if(!method_chain) return nullptr;
-		auto object = static_cast<NodeReference*>(method_chain->chain[0].get());
+		const auto object = static_cast<NodeReference*>(method_chain->chain[0].get());
 		object->declaration = node_declaration;
 		method_chain->declaration = node_declaration;
 		return method_chain;
@@ -103,9 +149,10 @@ private:
 		if(callback_id->get_node_type() == NodeType::VariableRef) {
 			id_node_type = "<Variable>";
 		}
-		auto node_reference = static_cast<NodeReference*>(callback_id);
+		const auto node_reference = static_cast<NodeReference*>(callback_id);
 		// return prematurely if no declaration yet provided
-		if(!node_reference->get_declaration()) return false;
+		const auto declaration = node_reference->get_declaration();
+		if(!declaration) return false;
 		// check if callback id reference is ui_control
 		auto error = CompileError(ErrorType::TypeError, "", "", callback_id->tok);
 		if(node_reference->data_type != DataType::UIControl) {
@@ -113,8 +160,7 @@ private:
 			error.exit();
 		} else {
 			// var ref is ui control -> check if it is ui_label
-			if(node_reference->get_declaration() and node_reference->get_declaration()->parent and node_reference->get_declaration()->parent->get_node_type() == NodeType::UIControl) {
-				auto ui_control = static_cast<NodeUIControl*>(node_reference->get_declaration()->parent);
+			if(const auto ui_control = declaration->parent->cast<NodeUIControl>()) {
 				if(ui_control->name == "ui_label") {
 					error.m_message = "<UI Label> cannot be referenced in <UI Callback>.";
 					error.exit();

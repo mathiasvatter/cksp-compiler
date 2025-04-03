@@ -8,7 +8,6 @@
 #include <vector>
 #include <cmath>
 #include <map>
-#include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
 #include <sstream>
@@ -26,10 +25,10 @@ void parallel_for_each(Iterator begin, Iterator end, Func func, size_t num_threa
 	}
 
 	// Gesamtlänge berechnen
-	size_t total_elements = std::distance(begin, end);
+	const size_t total_elements = std::distance(begin, end);
 	if (total_elements == 0) return;
 
-	size_t chunk_size = std::ceil(static_cast<double>(total_elements) / num_threads);
+	const size_t chunk_size = std::ceil(static_cast<double>(total_elements) / num_threads);
 
 	// Threads erstellen
 	std::vector<std::thread> threads;
@@ -60,36 +59,40 @@ void parallel_for_each(Iterator begin, Iterator end, Func func, size_t num_threa
 /*
  * helper function to search vectors for chars, std::String and Keyword obj
  */
-inline static bool contains(std::vector<char> &vec, char c) {
-	return std::any_of(vec.begin(), vec.end(), [&](const auto& ch) {return ch == c;});
-};
-inline static bool contains(std::unordered_set<char> &vec, char c) {
-	return vec.find(c) != vec.end();
-};
-inline static bool contains(const std::vector<std::string>& vec, const std::string& value) {
+static bool contains(const std::vector<char>& vec, char c) {
+	return std::any_of(vec.begin(), vec.end(), [c](char ch) { return ch == c; });
+}
+
+static bool contains(const std::unordered_set<char>& set, char c) {
+	return set.find(c) != set.end();
+}
+
+static bool contains(const std::vector<std::string>& vec, const std::string& value) {
 	return std::find(vec.begin(), vec.end(), value) != vec.end();
-};
-inline static bool contains(const std::unordered_set<std::string>& vec, const std::string& value) {
-	return vec.find(value) != vec.end();
-};
-inline static bool contains(const std::vector<Keyword>& vec, const std::string& value) {
+}
+
+static bool contains(const std::unordered_set<std::string>& vec, const std::string& value) {
+	return vec.contains(value);
+}
+
+static bool contains(const std::vector<Keyword>& vec, const std::string& value) {
 	return std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
 	  return kw.value == value;
 	}) != vec.end();
-};
-inline static bool contains(const std::string& string, const std::string& substring) {
+}
+
+static bool contains(const std::string& string, const std::string& substring) {
 	return string.find(substring) != std::string::npos;
 }
-inline static bool contains(const std::unordered_set<token>& token_set, const token& tok) {
-	return token_set.find(tok) != token_set.end();
+static bool contains(const std::unordered_set<token>& token_set, const token& tok) {
+	return token_set.contains(tok);
 }
 
 
 inline std::string remove_substring(const std::string& str, const std::string& substring) {
 	// Suche nach dem Substring im Hauptstring
-	size_t pos = str.find(substring);
 	// Wenn der Substring gefunden wurde, entferne ihn
-	if (pos != std::string::npos) {
+	if (const size_t pos = str.find(substring); pos != std::string::npos) {
 		auto new_str = str;
 		new_str.erase(pos, substring.length());
 		return new_str;
@@ -111,14 +114,14 @@ inline std::vector<std::string> get_namespaces(const std::string& str) {
 }
 
 
-inline static std::string to_lower(const std::string& input) {
+static std::string to_lower(const std::string& input) {
 	std::string output = input;
 	std::transform(output.begin(), output.end(), output.begin(),
 				   [](unsigned char c) { return std::tolower(c); });
 	return output;
 }
 
-inline static std::string to_upper(const std::string& input) {
+static std::string to_upper(const std::string& input) {
 	std::string output = input;
 	std::transform(output.begin(), output.end(), output.begin(),
 				   [](unsigned char c) { return std::toupper(c); });

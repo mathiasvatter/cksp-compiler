@@ -47,7 +47,8 @@ private:
 
 public:
 
-	inline NodeAST* visit(NodeForEach& node) override {
+	NodeAST* visit(NodeForEach& node) override {
+		node.remove_references();
         // check if keys are variable references
 		m_key = node.key ? node.key->variable : nullptr;
 		m_value = node.value->variable;
@@ -71,7 +72,9 @@ public:
 				error.m_got = "1";
 				error.exit();
 			}
-			return node.replace_with(tackle_for_each_pairs(node));
+			auto block = tackle_for_each_pairs(node);
+			block->collect_references();
+			return node.replace_with(std::move(block));
 		// normal for each loop over array with one key
 		} else {
 			if(m_key) {
@@ -81,7 +84,9 @@ public:
 				error.m_got = "2";
 				error.exit();
 			}
-			return node.replace_with(tackle_for_each(node));
+			auto block = tackle_for_each(node);
+			block->collect_references();
+			return node.replace_with(std::move(block));
 		}
 
 		return &node;

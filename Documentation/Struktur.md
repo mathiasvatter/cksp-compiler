@@ -2,9 +2,13 @@
 
 ### 1. Einleitung
 - Einführung in das Thema, 
+    - musikindustrie, filmmusik -> virtuelle instrumente
     - was ist Kontakt -> Industriestandard
     - was ist KSP, warum ist es wichtig
     - realtime audio processing -> speicherplatz und performance
+    - wird in ram geladen?
+    - pascal syntax
+    - 2004?
 - Motivation für funktionale Programmierkonzepte in KSP. 
     - Warum nicht gleich in der Sprache? -> underfunded und closed-source
     - Effizienz und Flexibilität?
@@ -15,8 +19,12 @@
 ### 2. Hintergrund
 - **KSP Tutorial der Syntax und ihre Limitierungen**
     - Beispiel Code
+        - on init, on note, on release callback-driven
+        - Variablen, Arrays, Strukturen
+        - funktionen
+        - strong typing
 - 
-### Einführung in Callbacks in KSP
+<!-- ### Einführung in Callbacks in KSP
 
 1. **Grundlage des Kontrollflusses in KSP**:
    - KSP arbeitet auf Basis eines **Event-Driven Models**, wobei Callbacks zentrale Steuerungselemente sind.
@@ -32,7 +40,7 @@
 3. **Besonderheiten und Herausforderungen**:
    - **Asynchrone Operationen**: Funktionen wie `wait` erlauben Unterbrechungen, während andere Callbacks ausgeführt werden können.
    - **Race Conditions**: Diese treten auf, wenn mehrere Callbacks dieselben Variablen verändern, bevor der ursprüngliche Prozess abgeschlossen ist.
-   - **Wiedereintrittsprobleme**: Wenn ein Callback erneut aufgerufen wird, während er noch läuft, können undefinierte Zustände entstehen.
+   - **Wiedereintrittsprobleme**: Wenn ein Callback erneut aufgerufen wird, während er noch läuft, können undefinierte Zustände entstehen. -->
 
 
 
@@ -104,7 +112,7 @@
    - **Effizienz der Speicherverwaltung**:
       - Vergleich der Reference Counting-Methoden und deren Auswirkungen auf Speicherverbrauch und Performance.
 
-### 6. **Fazit und Ausblick**
+### 6. **Conclusion und Ausblick**
    - Zusammenfassung der wichtigsten Ergebnisse und Herausforderungen.
    - **Kompilierungszeiten und Optimierungspotenzial**:
       - Analyse der Kompilierungszeiten für komplexe Strukturen und Funktionen.
@@ -112,3 +120,4 @@
       - Evaluation der Praxistauglichkeit für reale Musikproduktionsszenarien in KSP.
    - Ausblick auf zukünftige Verbesserungen und Optimierungsmöglichkeiten im Compilerbau für domänenspezifische Sprachen.
 
+implementing modern

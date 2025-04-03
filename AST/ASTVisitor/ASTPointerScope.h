@@ -32,8 +32,7 @@
  * - only determine if constructor is called in the on init callback or on persistence_changed
  * 		- constructor called in linear for loop -> max_individual_structs_var + for loop elements
  */
-class ASTPointerScope : public ASTVisitor {
-private:
+class ASTPointerScope final : public ASTVisitor {
 	std::vector<NodeLoop*> m_loop_stack;
 	bool is_linear_environment = false;
 	std::unordered_map<NodeStruct*, std::unique_ptr<NodeAST>> m_num_constructors;
@@ -93,11 +92,6 @@ public:
 		for(const auto & callback : node.callbacks) {
 			if(callback.get() != m_program->init_callback) callback->accept(*this);
 		}
-//		for(auto & func_def : node.function_definitions) {
-//			if(!func_def->visited) {
-//				func_def->accept(*this);
-//			}
-//		}
 
 		node.reset_function_visited_flag();
 
@@ -190,8 +184,6 @@ public:
 			if(auto retain = add_retain(node.variable->to_reference().get(), node.value.get(), true)) {
 				retain->prepend_as_stmt(std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok));
 				return node.replace_with(std::move(retain));
-			} else {
-				node.has_object = true;
 			}
 		}
 
@@ -252,6 +244,7 @@ public:
 		}
 
 		if(node.kind == NodeFunctionCall::Kind::Constructor) {
+			// temporary constructor only  when in access chain or func arg of func that is not constructor
 			node.is_temporary_constructor = node.is_func_arg() || node.parent->cast<NodeAccessChain>();
 			if(auto struct_def = node.get_definition()->parent->cast<NodeStruct>()) {
 				increase_num_constructors(struct_def);
@@ -311,6 +304,9 @@ private:
 			} else {
 				add_expr_to_num_constructors(struct_def, std::make_unique<NodeInt>(1, Token()));
 			}
+//		} else {
+//			// if it is not called in a linear env, remove from constructor count map
+//			m_num_constructors.erase(struct_def);
 		}
 	}
 
@@ -481,7 +477,7 @@ private:
 	static NodeAST* get_return_var_ptr(NodeAST* r_value) {
 		if(auto func_call = r_value->cast<NodeFunctionCall>()) {
 			if(func_call->kind == NodeFunctionCall::Kind::Constructor) {
-				return nullptr;
+				return func_call;
 			}
 			if(func_call->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 				if(!func_call->get_definition()) {

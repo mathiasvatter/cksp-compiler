@@ -13,12 +13,12 @@ DefinitionProvider::DefinitionProvider(
 		std::unordered_map<std::string, std::shared_ptr<NodeArray>> m_builtin_arrays,
 		std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> m_builtin_widgets,
 		std::vector<std::shared_ptr<NodeDataStructure>> m_external_variables)
-        : builtin_variables(std::move(m_builtin_variables)),
-		  builtin_functions(std::move(m_builtin_functions)),
-		  property_functions(std::move(m_property_functions)), // property functions
-		  builtin_arrays(std::move(m_builtin_arrays)),
+        : external_variables(std::move(m_external_variables)),
+		  builtin_variables(std::move(m_builtin_variables)),
+		  builtin_arrays(std::move(m_builtin_arrays)), // property functions
 		  builtin_widgets(std::move(m_builtin_widgets)),
-		  external_variables(std::move(m_external_variables)) {
+		  builtin_functions(std::move(m_builtin_functions)),
+		  property_functions(std::move(m_property_functions)) {
 	// add default scope to work as global scope
 	this->add_scope();
     for(const auto& var : external_variables) {

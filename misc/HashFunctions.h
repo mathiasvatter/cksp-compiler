@@ -6,6 +6,7 @@
 
 #include <string>
 #include "../AST/ASTNodes/ASTHelper.h"
+#include "../AST/Types.h"
 
 /// Used for Reference Manager and including weak pointers in unordered_map
 struct WeakPtrHash {
@@ -55,6 +56,31 @@ struct StringIntKeyHash {
 	}
 };
 
+
+/// Improved key to access functions by name, number of arguments and function type
+struct StringIntTypeKey {
+	std::string str;
+	int num;
+	const Type* type;
+
+	bool operator==(const StringIntTypeKey& other) const {
+		return str == other.str
+			&& num == other.num
+			&& type->to_string() == other.type->to_string();
+	}
+};
+
+struct StringIntTypeKeyHash {
+	std::size_t operator()(const StringIntTypeKey& key) const {
+		std::size_t h = std::hash<std::string>()(key.str);
+		h ^= std::hash<int>()(key.num) + 0x9e3779b9 + (h << 6) + (h >> 2);
+		h ^= std::hash<std::string>()(key.type->to_string()) + 0x9e3779b9 + (h << 6) + (h >> 2);
+		return h;
+	}
+};
+
+
+
 // user-defined hash functions for comparison of variables and unordered_map
 struct StringHash {
 	size_t operator()(const std::string& key) const {
@@ -63,7 +89,6 @@ struct StringHash {
 		return std::hash<std::string>()(key);
 	}
 };
-
 struct StringEqual {
 	bool operator()(const std::string& a, const std::string& b) const {
 		return string_compare(a, b);

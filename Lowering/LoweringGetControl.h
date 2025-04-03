@@ -6,7 +6,7 @@
 
 #include "ASTLowering.h"
 
-class LoweringGetControl : public ASTLowering {
+class LoweringGetControl final : public ASTLowering {
 
 public:
 	explicit LoweringGetControl(NodeProgram* program) : ASTLowering(program) {}
@@ -50,18 +50,18 @@ public:
 	};
 
 private:
-	inline std::unique_ptr<NodeReference> get_full_control_param(const std::string& control_param) {
+	std::unique_ptr<NodeReference> get_full_control_param(const std::string& control_param) {
 		std::string control_par = to_lower(control_param);
 		if(control_par == "x") control_par = "pos_x";
 		if(control_par == "y") control_par = "pos_y";
 		if(control_par == "default") control_par += "_value";
-		if(auto builtin_var = m_def_provider->get_builtin_variable(to_upper("control_par_"+control_par))) {
+		if(const auto builtin_var = m_def_provider->get_builtin_variable(to_upper("control_par_"+control_par))) {
 			return builtin_var->to_reference();
 		}
 		return nullptr;
 	}
 
-	inline std::unique_ptr<NodeFunctionCall> get_function_call(std::string control_function, const std::string& control_param, NodeAST* node) {
+	std::unique_ptr<NodeFunctionCall> get_function_call(std::string control_function, const std::string& control_param, NodeAST* node) {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 		// get control_param from shorthand
 		auto control_par = get_full_control_param(control_param);

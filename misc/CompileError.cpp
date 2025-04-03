@@ -28,7 +28,7 @@ CompileError::CompileError(ErrorType type, std::string message, size_t lineNumbe
 	m_marker_length = 0;
 }
 
-void CompileError::print(ErrorType err) {
+void CompileError::print(const ErrorType err) {
     if (m_got == "\n") {
         m_got = "linebreak";
     }
@@ -75,7 +75,7 @@ void CompileError::print(ErrorType err) {
     }
 }
 
-void CompileError::exit(ErrorType err) {
+void CompileError::exit(const ErrorType err) {
     print(err);
     std::cout << ColorCode::Red << "\nSeems like the compilation exited with a failure." << std::endl;
 	if(!m_file_name.empty()) {
@@ -213,6 +213,8 @@ void CompileError::set_message(const std::string &message) {
 	CompileError::m_message = message;
 }
 
+#if defined(__APPLE__) || defined(__linux__)
+
 std::string exec(const char *cmd) {
     std::array<char, 128> buffer{};
     std::string result;
@@ -226,3 +228,4 @@ std::string exec(const char *cmd) {
     result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
     return result;
 }
+#endif

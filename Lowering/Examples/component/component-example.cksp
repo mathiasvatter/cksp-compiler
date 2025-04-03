@@ -1,0 +1,21 @@
+
+
+ui_component Popup
+    declare ui_button btn_confirm
+    declare ui_button btn_cancel
+    declare ui_button btn_close
+    declare ui_label lbl_message(1,1)
+    declare ui_label lbl_title(1,1)
+
+
+    function __init__(self, title: string, message: string)
+        self.lbl_title->text := title
+        self.lbl_message->text := message
+        self.btn_confirm->pos_x := 3
+    end function
+
+    function __on_ui__(self)
+        self->hide := true
+    end function
+
+end ui_component

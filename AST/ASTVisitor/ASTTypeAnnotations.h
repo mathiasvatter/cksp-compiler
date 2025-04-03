@@ -14,13 +14,13 @@
  * and checks if the type annotations are compatible with the syntax. Replaces the node types when
  * applicable.
  */
-class ASTTypeAnnotations : public ASTVisitor {
+class ASTTypeAnnotations final : public ASTVisitor {
 public:
 	explicit ASTTypeAnnotations(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
 	}
 
-	inline NodeAST* visit(NodeProgram& node) override {
+	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		m_program->init_callback->accept(*this);
@@ -38,7 +38,7 @@ public:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeFunctionDefinition& node) override {
+	NodeAST* visit(NodeFunctionDefinition& node) override {
 		node.visited = true;
 
 		node.header ->accept(*this);
@@ -49,41 +49,90 @@ public:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeArray& node) override {
+	NodeAST* visit(NodeSingleDeclaration& node) override {
+		node.variable->accept(*this);
+		if (node.variable->ty == TypeRegistry::Any or node.variable->ty == TypeRegistry::Number) {
+			auto error = get_apply_type_annotations_error(node.variable);
+			error.m_message += " Union types like <Any> or <Number> can only be used in function parameters.";
+			error.exit();
+		}
+		if (node.value) node.value->accept(*this);
+		return &node;
+	}
+
+	NodeAST* visit(NodeArray& node) override {
 		if(node.size) node.size->accept(*this);
-		check_annotation_with_expected(&node, TypeRegistry::ArrayOfUnknown);
+		check_annotation_with_expected(node, TypeRegistry::ArrayOfUnknown);
+		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
-	inline NodeAST* visit(NodeVariable& node) override {
-		check_annotation_with_expected(&node, TypeRegistry::Unknown);
+	NodeAST* visit(NodeArrayRef& node) override {
+		convert_composite_to_reference(node);
+		if (node.index) {
+			node.index->accept(*this);
+			check_reference_annotation_with_expected(node, TypeRegistry::Unknown);
+		} else {
+			check_reference_annotation_with_expected(node, TypeRegistry::ArrayOfUnknown);
+		}
+		return &node;
+	}
+
+	NodeAST* visit(NodeVariable& node) override {
+		check_annotation_with_expected(node, TypeRegistry::Unknown);
+		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
-	inline NodeAST* visit(NodeNDArray& node) override {
+	NodeAST* visit(NodeVariableRef& node) override {
+		check_reference_annotation_with_expected(node, TypeRegistry::Unknown);
+		return &node;
+	}
+
+	NodeAST* visit(NodeNDArray& node) override {
 		if(node.sizes) node.sizes->accept(*this);
-		check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions).get());
+		check_annotation_with_expected(node, std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions).get());
+		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
-	inline NodeAST* visit(NodeFunctionHeader& node) override {
+	NodeAST* visit(NodeNDArrayRef& node) override {
+		if(node.indexes) {
+			node.indexes->accept(*this);
+			check_reference_annotation_with_expected(node, TypeRegistry::Unknown);
+		} else {
+			check_reference_annotation_with_expected(node, TypeRegistry::ArrayOfUnknown);
+		}
+		if(node.sizes) node.sizes->accept(*this);
+		convert_composite_to_reference(node);
+		return &node;
+	}
+
+	NodeAST* visit(NodeFunctionHeader& node) override {
 		for(auto &param : node.params) param->variable->accept(*this);
-//		check_annotation_with_expected(&node, TypeRegistry::Unknown);
+//		check_annotation_with_expected(node, TypeRegistry::Unknown);
 //		return apply_type_annotations(node.get_shared());
 		return &node;
 	}
-	inline NodeAST* visit(NodePointer& node) override {
-		check_annotation_with_expected(&node, TypeRegistry::Unknown);
+	NodeAST* visit(NodePointer& node) override {
+		check_annotation_with_expected(node, TypeRegistry::Nil);
+		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
-	inline NodeAST* visit(NodeList& node) override {
+	NodeAST* visit(NodeList& node) override {
 		for(auto & b : node.body) b->accept(*this);
-		check_annotation_with_expected(&node, std::make_unique<CompositeType>(CompoundKind::List, TypeRegistry::Unknown, 1).get());
+		check_annotation_with_expected(node, std::make_unique<CompositeType>(CompoundKind::List, TypeRegistry::Unknown, 1).get());
+		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
+	}
+	NodeAST* visit(NodeListRef &node) override {
+		node.indexes->accept(*this);
+
+		return &node;
 	}
 
 
 private:
 	DefinitionProvider* m_def_provider = nullptr;
 
-	static CompileError get_apply_type_annotations_error(std::shared_ptr<NodeDataStructure> node) {
+	static CompileError get_apply_type_annotations_error(const std::shared_ptr<NodeDataStructure> &node) {
 		auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
 		error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
 		error.m_got = node->ty->to_string();
@@ -91,23 +140,58 @@ private:
 	}
 
 	/// check if data structure annotations fit with the detected node type if not in func arguments
-	static inline Type* check_annotation_with_expected(NodeDataStructure* node, Type* expected) {
+	static Type* check_annotation_with_expected(const NodeDataStructure& node, const Type* expected) {
 		// skip function parameters
-		if(node->is_function_param()) return node->ty;
-		if(node->ty == TypeRegistry::Unknown) return node->ty;
-		if(!node->ty->is_same_type(expected)) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
-			error.m_message = "Type Annotation of "+node->name+" does not match expected type kind.";
+		// if(node.is_function_param()) return node.ty;
+		if(node.ty == TypeRegistry::Unknown) return node.ty;
+		if(!node.ty->is_compatible(expected)) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+			error.m_message = "Type Annotation of "+node.name+" does not match expected type kind.";
 			error.m_expected =  "<"+expected->get_type_kind_name()+"> Type";
-			error.m_got = "<"+node->ty->get_type_kind_name()+"> Type";
+			error.m_got = "<"+node.ty->get_type_kind_name()+"> Type";
 			error.exit();
 		}
 		return nullptr;
 	}
 
+	Type* check_reference_annotation_with_expected(const NodeReference& node, const Type* expected) {
+		if(node.ty == TypeRegistry::Unknown) return node.ty;
+		if(!node.ty->is_compatible(expected)) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+			error.m_message = "Type Annotation of "+node.name+" does not match expected type kind.";
+			error.m_expected =  "<"+expected->get_type_kind_name()+"> Type";
+			error.m_got = "<"+node.ty->get_type_kind_name()+"> Type";
+			error.exit();
+		}
+		return nullptr;
+	}
+
+	static Type* convert_composite_to_reference(NodeCompositeRef& node) {
+		if (!node.has_index()) return node.ty;
+		// array references marked with !, % or ? have to be replaced with the element type
+		if(const auto comp_type = node.ty->cast<CompositeType>()) {
+			node.ty = comp_type->get_element_type();
+		}
+		return node.ty;
+	}
+
+	void check_for_correct_object_type_annotation(const NodeDataStructure& node) const {
+		const auto element_type = node.ty->get_element_type();
+		if (element_type->get_type_kind() == TypeKind::Object) {
+			if (!NodeReference::get_object_ptr(m_program, element_type->to_string())) {
+				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+				error.m_message = "Found undefined Type. Type Annotation of "+node.name+" does not match any existing <Object> type.";
+				error.m_expected = "valid <Object> Type";
+				error.m_got = "<"+node.ty->to_string()+">";
+				error.exit();
+
+			}
+		}
+	}
+
 	/// apply type annotations given before parse time and replace node types accordingly
 	/// returns the new datastructure pointer if replaced, or the old one if not
-	static inline NodeDataStructure* apply_type_annotations(const std::shared_ptr<NodeDataStructure>& node) {
+	static NodeDataStructure* apply_type_annotations(const std::shared_ptr<NodeDataStructure>& node) {
 		if(node->ty == TypeRegistry::Unknown) return node.get();
 
 		NodeAST* new_data_struct = nullptr;

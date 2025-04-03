@@ -8,18 +8,25 @@
 
 /// Rewrites all return statements
 /// promotes all return values to function parameters utilizing the typesystem
-class ReturnParamPromotion : public ASTVisitor {
-private:
-	std::string m_return_param_name = "ret$";
+/// The return parameter names are generated be global Gensym instance
+class ReturnParamPromotion final : public ASTVisitor {
+	DefinitionProvider* m_def_provider = nullptr;
+	std::string m_return_param_name = "ret";
+	std::vector<std::string> m_return_param_names;
 	NodeFunctionDefinition* m_current_function = nullptr;
 public:
 
-	inline void do_return_param_promotion(NodeFunctionDefinition& def) {
+	explicit ReturnParamPromotion(NodeProgram* main) : m_def_provider(main->def_provider) {
+        m_program = main;
+    }
+
+	void do_return_param_promotion(NodeFunctionDefinition& def) {
 		def.accept(*this);
+		m_return_param_names.clear();
 	}
 
 private:
-	inline NodeAST* visit(NodeFunctionDefinition &node) override {
+	NodeAST* visit(NodeFunctionDefinition &node) override {
 		m_current_function = &node;
 		// do not rewrite if expression function
 		if(node.is_expression_function()) return &node;
@@ -33,14 +40,21 @@ private:
 			node.header->params.insert(node.header->params.begin(), std::move(decl));
 
 			node.return_variable.reset();
+			return &node;
 		}
+
+		// generate return parameters
+		for (int i = 0; i< node.num_return_params; i++) {
+			m_return_param_names.push_back(m_def_provider->get_fresh_name(m_return_param_name));
+		}
+
 		m_current_function->return_stmts.clear();
 		node.body->accept(*this);
 		m_current_function = nullptr;
 		return &node;
 	};
 
-	inline NodeAST* visit(NodeReturn &node) override {
+	NodeAST* visit(NodeReturn &node) override {
 		if(node.return_variables.size() != m_current_function->num_return_params) {
 			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 			error.m_message = "Return Statement has incorrect number of return values.";
@@ -54,7 +68,7 @@ private:
 		auto block_replace = std::make_unique<NodeBlock>(Token());
 		for(int i = 0; i<node.return_variables.size(); i++) {
 			auto& node_return = node.return_variables[i];
-			std::string return_name = m_return_param_name+std::to_string(i+1);
+			std::string return_name = m_return_param_names[i];
 			// if return parameter is a reference -> replace with copy
 			std::unique_ptr<NodeDataStructure> new_param = nullptr;
 			if(auto node_ref = cast_node<NodeReference>(node_return.get())) {
@@ -86,7 +100,7 @@ private:
 							error.m_message = "Got incorrect type of return parameter. Expected NDArrayRef.";
 							error.exit();
 						}
-						auto node_ndarray_ref = static_cast<NodeNDArrayRef*>(node_ref);
+						auto node_ndarray_ref = node_ref->cast<NodeNDArrayRef>();
 						new_param = std::make_unique<NodeNDArray>(
 							std::nullopt,
 							return_name,
@@ -132,6 +146,8 @@ private:
 					m_current_function->header->prepend_param(std::move(new_param));
 				}
 			}
+			m_current_function->header->params[0]->kind = NodeInstruction::ReturnVar;
+
 			auto node_assignment = std::make_unique<NodeSingleAssignment>(std::move(new_param_ref), std::move(node.return_variables[i]), node.tok);
 			block_replace->add_as_stmt(std::move(node_assignment));
 		}

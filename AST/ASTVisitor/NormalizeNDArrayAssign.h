@@ -7,8 +7,7 @@
 #include "ASTVisitor.h"
 #include "../../Lowering/DataLowering/NDArrayCopyFunction.h"
 
-class NormalizeNDArrayAssign: public ASTVisitor {
-private:
+class NormalizeNDArrayAssign final : public ASTVisitor {
 	DefinitionProvider *m_def_provider;
 public:
 	explicit NormalizeNDArrayAssign(NodeProgram *main) : m_def_provider(main->def_provider) {
@@ -110,7 +109,7 @@ private:
 
 
 	/// ndarray.<init>.<type>.<num_dimensions>.<dimension>(ndarray: type[][], value: type)
-	static inline std::unique_ptr<NodeFunctionCall> get_ndarray_init_function_call(NodeNDArrayRef* node, NodeAST* value, std::pair<int, int> wildcard_dims) {
+	static std::unique_ptr<NodeFunctionCall> get_ndarray_init_function_call(NodeNDArrayRef* node, NodeAST* value, std::pair<int, int> wildcard_dims) {
 		auto func_name = get_init_func_name(node->ty, node->sizes->params.size(), wildcard_dims);
 
 		auto params = std::make_unique<NodeParamList>(Token());
@@ -151,10 +150,10 @@ private:
 	 * 	end for
 	 * end function
 	 */
-	inline bool add_ndarray_init_function_def(NodeProgram* program, NodeNDArrayRef* node, std::pair<int, int> wildcard_dims) {
+	bool add_ndarray_init_function_def(NodeProgram* program, NodeNDArrayRef* node, const std::pair<int, int> &wildcard_dims) {
 		auto func_name = get_init_func_name(node->ty, node->sizes->params.size(), wildcard_dims);
 		// check if function with this type already exists
-		if(program->function_lookup.find({func_name, wildcard_dims.first+2}) != program->function_lookup.end()) {
+		if(program->function_lookup.contains({func_name, wildcard_dims.first+2})) {
 			return false;
 		}
 		auto node_ndarray = std::make_shared<NodeNDArray>(std::nullopt,
@@ -225,7 +224,7 @@ private:
 		return true;
 	}
 
-	static inline std::string get_init_func_name(Type* ty, int dimension, std::pair<int, int> wildcard_dims) {
+	static std::string get_init_func_name(Type* ty, int dimension, std::pair<int, int> wildcard_dims) {
 		std::string name = "ndarray$dim" + std::to_string(dimension);
 		for(int i=wildcard_dims.first; i<wildcard_dims.second; i++) {
 			name+="$"+std::to_string(i);

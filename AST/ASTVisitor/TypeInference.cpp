@@ -3,42 +3,27 @@
 //
 
 #include "TypeInference.h"
-#include "ASTSemanticAnalysis.h"
+// #include "ASTSemanticAnalysis.h"
 
 NodeAST * TypeInference::visit(NodeProgram& node) {
-//	m_def_provider->refresh_data_vectors();
-	m_def_provider->m_all_declarations.clear();
-	m_def_provider->m_all_references.clear();
-	m_def_provider->m_all_data_structures.clear();
-	m_def_provider->m_all_assignments.clear();
-
+	m_program = &node;
 	m_program->global_declarations->accept(*this);
-	for(auto & s : node.struct_definitions) {
+	for(const auto & s : node.struct_definitions) {
 		s->accept(*this);
 	}
-	for(auto & callback : node.callbacks) {
+	for(const auto & callback : node.callbacks) {
 		callback->accept(*this);
-	}
-	for(auto & func_def : node.function_definitions) {
-		if(!func_def->visited) func_def->accept(*this);
-	}
-	node.reset_function_visited_flag();
-	cast_data_structure_types(&node, true);
-
-	for(auto & s : node.struct_definitions) {
-		s->collect_recursive_structs(m_program);
 	}
 
 	return &node;
 }
 
-void TypeInference::cast_data_structure_types(NodeProgram* program, bool cast) {
-	auto def_provider = program->def_provider;
-	for(auto& refs : def_provider->get_all_data_structures()) {
-		auto data_struct = refs.lock();
-		if(!data_struct) continue;
-		for(auto & ref : data_struct->references) {
-			match_reference_declaration(*ref, ref->get_declaration());
+void TypeInference::cast_data_structure_types(const NodeProgram* program, const bool cast) {
+	const auto def_provider = program->def_provider;
+
+	for (auto& ref : def_provider->get_all_references()) {
+		if (auto declaration = ref->get_declaration()) {
+			match_reference_declaration(*ref, declaration);
 		}
 	}
 	for(auto& ass : def_provider->get_all_assignments()) {
@@ -51,22 +36,24 @@ void TypeInference::cast_data_structure_types(NodeProgram* program, bool cast) {
 		if (decl->value) {
 			match_assignment_types(*decl->variable, *decl->value);
 		}
-		// cast as Integer if still unknown
-		if (cast) decl->variable->cast_type();
+    	// cast as Integer if still unknown
+    	if (cast) decl->variable->cast_type();
 	}
-	for(auto& refs : def_provider->get_all_data_structures()) {
-		auto data_struct = refs.lock();
-		if(!data_struct) continue;
-		for(auto & ref : data_struct->references) {
-			match_reference_declaration(*ref, ref->get_declaration());
+
+	for (auto& ref : def_provider->get_all_references()) {
+		if (auto declaration = ref->get_declaration()) {
+			match_reference_declaration(*ref, declaration);
 		}
 	}
 	def_provider->m_all_data_structures.clear();
+	def_provider->m_all_references.clear();
 }
 
 NodeAST * TypeInference::visit(NodeCallback& node) {
+	m_program->current_callback = &node;
     if(node.callback_id) node.callback_id->accept(*this);
     node.statements->accept(*this);
+	m_program->current_callback = nullptr;
 	return &node;
 }
 
@@ -126,7 +113,7 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 		}
 	}
     match_reference_declaration(node, node.get_declaration());
-//	m_def_provider->add_to_references(&node);
+	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -168,7 +155,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 		node.ty = TypeRegistry::Nil;
 	}
 	match_reference_declaration(node, node.get_declaration());
-//	m_def_provider->add_to_references(&node);
+	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -211,7 +198,7 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 		}
 	}
     match_reference_declaration(node, node.get_declaration());
-//	m_def_provider->add_to_references(&node);
+	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -252,7 +239,7 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 		}
     }
     match_reference_declaration(node, node.get_declaration());
-//	m_def_provider->add_to_references(&node);
+	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -286,7 +273,7 @@ NodeAST * TypeInference::visit(NodeListRef& node) {
         if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
     }
     match_reference_declaration(node, node.get_declaration());
-//	m_def_provider->add_to_references(&node);
+	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
 }
 
@@ -511,16 +498,6 @@ NodeAST * TypeInference::visit(NodeInitializerList& node) {
 	return &node;
 }
 
-NodeAST * TypeInference::visit(NodeFunctionParam& node) {
-	node.variable->accept(*this);
-	if(node.value) {
-		node.value->accept(*this);
-		match_assignment_types(*node.variable, *node.value);
-		node.variable->accept(*this);
-	}
-	return &node;
-}
-
 NodeAST * TypeInference::visit(NodeSingleDelete& node) {
 	node.ptr->accept(*this);
 	if(node.ptr->ty->get_element_type()->get_type_kind() != TypeKind::Object) {
@@ -545,6 +522,15 @@ NodeAST * TypeInference::visit(NodeSingleRetain& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeFunctionParam& node) {
+	node.variable->accept(*this);
+	if(node.value) {
+		node.value->accept(*this);
+		match_assignment_types(*node.variable, *node.value);
+		node.variable->accept(*this);
+	}
+	return &node;
+}
 
 NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	node.variable->accept(*this);
@@ -658,7 +644,28 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
+	// match_type(node, *node.parent);
 	node.bind_definition(m_program);
+	auto definition = node.get_definition();
+	if (definition) {
+		for (int i = 0; i < node.function->get_num_args(); i++) {
+			auto &func_arg = node.function->get_arg(i);
+			auto &param = definition->get_param(i);
+			const std::string error_message =
+				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
+					+ param->ty->to_string() + " as argument type.";
+			match_type(*func_arg, *param, error_message);
+		}
+		// sh_right(abs(a{number} - b{number}), 1)
+		// we are abs right now and want to specialize the args to int
+		// specialize every arg to the type of the function
+		if (is_same_input_same_output_type(*definition->header)) {
+			for (auto &param : node.function->args->params) {
+				param->ty = specialize_type(param->ty, node.ty);
+			}
+		}
+	}
+
 	node.function->accept(*this);
 
 	if(node.is_destructive_builtin_func()) {
@@ -670,7 +677,6 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		}
 	}
 
-	auto definition = node.get_definition();
 	if(!definition) {
 		// if definition pre lowering not found -> could be struct __init__ func
 		// this_list := List(42, nil)
@@ -681,10 +687,24 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	}
 
 	if(definition) {
-		if (!definition->visited and !node.is_builtin_kind()) {
+		// explicitly visit builtin functions regardless of visited flag since its not reset for those anyways
+		if (!definition->visited || node.is_builtin_kind()) {
 			definition->accept(*this);
 			definition->visited = true;
+
+			// apply references to function params
+			for (auto &param : definition->header->params) {
+				for(auto & ref : param->variable->references) {
+					match_reference_declaration(*ref, param->variable);
+				}
+            }
+
 		}
+
+		if (!node.is_builtin_kind() and m_program->current_callback != nullptr) {
+			m_function_calls.push_back(&node);
+		}
+
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
 			auto &param = definition->get_param(i);
@@ -692,17 +712,27 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
 					+ param->ty->to_string() + " as argument type.";
 			match_type(*func_arg, *param, error_message);
+			// infer formal param type only if function is no builtin function
+			// this throws errors with the-pulse
+			if (!node.is_builtin_kind()) {
+				const std::string error_message2 =
+				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
+					+ func_arg->ty->to_string() + " as argument type.";
+				match_parameters(*param, func_arg->ty, error_message2);
+			}
 		}
-	}
-	if(definition) {
+
 		match_type(node, *definition);
 	}
+
+
+
 	return &node;
 }
 
 NodeAST * TypeInference::visit(NodeFunctionHeaderRef& node) {
 	if(node.args) node.args->accept(*this);
-
+	// node.create_function_type(TypeRegistry::Unknown);
 	// if declaration type has empty params -> get type from reference
 	if(auto decl = node.get_declaration()) {
 		auto decl_type = decl->ty->cast<FunctionType>();
@@ -748,7 +778,6 @@ NodeAST * TypeInference::visit(NodeFunctionHeader& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
-//	node.visited = true;
 	m_program->function_call_stack.push(node.weak_from_this());
 
 	// add data structures to provider
@@ -795,6 +824,7 @@ NodeAST * TypeInference::visit(NodeReturn& node) {
 
 
 NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
+	// match_type(node, *node.parent);
 	node.left->accept(*this);
 	node.right->accept(*this);
 
@@ -830,6 +860,9 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 
 	bool is_compatible = true;
 	auto error = throw_type_error(*node.left, node.right->ty);
+
+	node.left->ty = specialize_type(node.left->ty, node.ty);
+	node.right->ty = specialize_type(node.right->ty, node.ty);
 
 	node.left->ty = specialize_type(node.left->ty, node.right->ty);
 	node.right->ty = specialize_type(node.right->ty, node.left->ty);
@@ -878,6 +911,8 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 }
 
 NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
+	// match_type(node, *node.parent);
+	node.operand->ty = specialize_type(node.operand->ty, node.ty);
 	node.operand->accept(*this);
 
 	bool is_compatible = node.ty->is_compatible(node.operand->ty) && node.operand->ty->is_compatible(node.ty);

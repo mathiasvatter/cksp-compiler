@@ -17,18 +17,20 @@
 #include "../../Lowering/LoweringMemAlloc.h"
 #include "../../Lowering/LoweringNumElements.h"
 #include "../../Desugaring/DesugarSingleAssignment.h"
+#include "../../Desugaring/DesugarSingleDeclaration.h"
 #include "../../Lowering/PostLowering/PostLoweringNumElements.h"
 #include "../../Lowering/LoweringUseCount.h"
-#include "../ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
 #include "../ASTVisitor/FunctionHandling/FunctionInlining.h"
 #include "../../Lowering/PostLowering/PostLoweringSingleDeclaration.h"
 #include "../../Lowering/LoweringSortSearch.h"
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
+#include "../ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
+#include "../ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h"
 
 // ************* NodeStatement ***************
-NodeAST *NodeStatement::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeStatement::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeStatement::NodeStatement(const NodeStatement& other)
@@ -48,7 +50,7 @@ NodeAST *NodeStatement::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST
 }
 
 // ************* NodeFunctionCall ***************
-NodeAST *NodeFunctionCall::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeFunctionCall::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeFunctionCall::NodeFunctionCall(Token tok) : NodeInstruction(NodeType::FunctionCall, std::move(tok)) {}
@@ -58,16 +60,16 @@ NodeFunctionCall::NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHea
 }
 
 NodeFunctionCall::~NodeFunctionCall() {
-	if(auto def = definition.lock()) {
+	if(const auto def = definition.lock()) {
 		def->call_sites.erase(this);
 	}
 }
 
 NodeFunctionCall::NodeFunctionCall(const NodeFunctionCall& other)
-        : NodeInstruction(other), is_call(other.is_call), is_new(other.is_new), kind(other.kind),
-          function(clone_unique(other.function)), definition(other.definition),
-		  is_temporary_constructor(other.is_temporary_constructor) {
-    set_child_parents();
+        : NodeInstruction(other), kind(other.kind), strategy(other.strategy), is_call(other.is_call), is_callable(other.is_callable), is_new(other.is_new),
+          is_temporary_constructor(other.is_temporary_constructor), function(clone_unique(other.function)),
+		  definition(other.definition) {
+    NodeFunctionCall::set_child_parents();
 }
 
 std::unique_ptr<NodeAST> NodeFunctionCall::clone() const {
@@ -78,15 +80,21 @@ ASTLowering* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
     return &lowering;
 }
 
-std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(struct NodeProgram *program) {
-    auto it = program->function_lookup.find({function->name, (int)function->args->size()});
-    if(it != program->function_lookup.end()) {
-		auto func_def = it->second.lock();
-        definition = it->second;
-        kind = Kind::UserDefined;
-//		func_def->call_sites.emplace(this);
-        return func_def;
-    }
+std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(NodeProgram *program) {
+//     auto it = program->function_lookup.find({function->name, static_cast<int>(function->args->size())});
+//     if(it != program->function_lookup.end()) {
+// 		auto func_def = it->second.lock();
+//         definition = it->second;
+//         kind = Kind::UserDefined;
+// //		func_def->call_sites.emplace(this);
+//         return func_def;
+//     }
+	if (auto func_def = program->look_up_function(*this->function)) {
+		definition = func_def;
+		kind = Kind::UserDefined;
+		//		func_def->call_sites.emplace(this);
+		return func_def;
+	}
     return nullptr;
 }
 
@@ -143,8 +151,8 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_constructor_defin
 }
 
 
-bool NodeFunctionCall::bind_definition(NodeProgram* program, bool fail) {
-    if (get_definition()) {
+bool NodeFunctionCall::bind_definition(NodeProgram* program, const bool fail, const bool force) {
+    if (get_definition() and !force) {
 		// update call sites
 //		if(kind == Kind::UserDefined) {
 //			definition->call_sites.emplace(this);
@@ -222,11 +230,11 @@ ASTDesugaring * NodeFunctionCall::get_desugaring(NodeProgram *program) const {
 
 bool NodeFunctionCall::is_builtin_kind() const {
 	static const std::unordered_set<NodeFunctionCall::Kind> builtin_kind = {NodeFunctionCall::Kind::Undefined, NodeFunctionCall::Kind::Builtin, NodeFunctionCall::Kind::Property};
-	if(builtin_kind.find(kind) != builtin_kind.end()) return true;
+	if(builtin_kind.contains(kind)) return true;
 	return false;
 }
 
-bool NodeFunctionCall::is_string_env() {
+bool NodeFunctionCall::is_string_env() const {
 	bool is_string = false;
 	// is within string environment
 	is_string |= parent->ty == TypeRegistry::String;
@@ -241,20 +249,6 @@ bool NodeFunctionCall::is_string_env() {
 	return is_string;
 }
 
-bool NodeFunctionCall::do_param_promotion() const {
-	auto def = get_definition();
-	if(!def) return false;
-	if(def->is_thread_safe) return false;
-	if(is_call) return false;
-	if(def->call_sites.size() > 2) return false;
-	return true;
-}
-
-void NodeFunctionCall::do_param_promotion(NodeProgram *program) {
-	static ASTParameterPromotion param_promotion(program);
-	param_promotion.do_param_promotion(*this);
-}
-
 NodeAST *NodeFunctionCall::do_function_call_hoisting(NodeProgram *program) {
 	static ReturnFunctionCallHoisting hoisting;
 	return hoisting.do_function_call_hoisting(*this, program);
@@ -266,11 +260,20 @@ NodeAST *NodeFunctionCall::do_function_inlining(NodeProgram *program) {
 }
 
 bool NodeFunctionCall::is_destructive_builtin_func() const {
-	return kind == NodeFunctionCall::Kind::Builtin and destructive_functions.find(function->name) != destructive_functions.end();
+	return kind == NodeFunctionCall::Kind::Builtin and destructive_functions.contains(function->name);
+}
+
+bool NodeFunctionCall::check_restricted_environment(NodeCallback *current_callback) const {
+	return FunctionRestrictionValidator::check_function_callability(*this, current_callback);
+}
+
+void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCallback *current_callback) {
+	static ASTFunctionStrategy function_strategy(program);
+	function_strategy.determine_function_strategy(*this, current_callback);
 }
 
 // ************* NodeSortSearch ***************
-NodeAST *NodeSortSearch::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeSortSearch::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeSortSearch::NodeSortSearch(const NodeSortSearch& other)
@@ -317,7 +320,7 @@ NodeAST *NodeNumElements::accept(struct ASTVisitor &visitor) {
 NodeNumElements::NodeNumElements(const NodeNumElements& other)
 	: NodeInstruction(other), array(clone_unique(other.array)),
 	  dimension(clone_unique(other.dimension)) {
-	set_child_parents();
+	NodeNumElements::set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeNumElements::clone() const {
 	return std::make_unique<NodeNumElements>(*this);
@@ -493,7 +496,7 @@ NodeAST *NodeSingleAssignment::accept(struct ASTVisitor &visitor) {
 }
 NodeSingleAssignment::NodeSingleAssignment(const NodeSingleAssignment& other)
         : NodeInstruction(other), l_value(clone_unique(other.l_value)),
-          r_value(clone_unique(other.r_value)), has_object(other.has_object) {
+          r_value(clone_unique(other.r_value)), has_object(other.has_object), is_parameter_stack(other.is_parameter_stack) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleAssignment::clone() const {
@@ -561,13 +564,12 @@ ASTDesugaring * NodeDeclaration::get_desugaring(NodeProgram *program) const {
 }
 
 // ************* NodeSingleDeclaration ***************
-NodeAST *NodeSingleDeclaration::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeSingleDeclaration::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeSingleDeclaration::NodeSingleDeclaration(const NodeSingleDeclaration& other)
         : NodeInstruction(other), variable(clone_shared(other.variable)),
-          value(clone_unique(other.value)),
-		  is_promoted(other.is_promoted), has_object(other.has_object) {
+          value(clone_unique(other.value)) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleDeclaration::clone() const {
@@ -584,6 +586,11 @@ NodeAST *NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_ptr
         return value.get();
     }
     return nullptr;
+}
+
+ASTDesugaring * NodeSingleDeclaration::get_desugaring(NodeProgram *program) const {
+	static DesugarSingleDeclaration desugaring(program);
+	return &desugaring;
 }
 
 ASTLowering* NodeSingleDeclaration::get_lowering(NodeProgram *program) const {
@@ -615,7 +622,6 @@ std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(Node
             std::move(node_assignee),
             tok
     );
-	node_assign_statement->has_object = this->has_object;
     return node_assign_statement;
 }
 
@@ -841,7 +847,7 @@ NodeBlock* NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStru
 	return for_loop_body;
 }
 
-NodeBlock* NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound, bool declare) {
+NodeBlock* NodeBlock::wrap_in_loop(const std::shared_ptr<NodeDataStructure>& iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound, const bool declare) {
 	std::unique_ptr<NodeBlock> inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
 	inner_body->scope = true;
 	auto node_for = std::make_unique<NodeFor>(
@@ -868,7 +874,7 @@ NodeBlock* NodeBlock::wrap_in_loop(std::shared_ptr<NodeDataStructure> iterator, 
 }
 
 // ************* NodeFamily ***************
-NodeAST *NodeFamily::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeFamily::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeFamily::NodeFamily(const NodeFamily& other)
@@ -1120,7 +1126,7 @@ NodeAST *NodeWhile::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
     }
     return nullptr;
 }
-ASTLowering* NodeWhile::get_lowering(struct NodeProgram *program) const {
+ASTLowering* NodeWhile::get_lowering(NodeProgram *program) const {
 	static LoweringWhile lowering(program);
 	return &lowering;
 }
@@ -1153,7 +1159,7 @@ NodeAST *NodeSelect::accept(struct ASTVisitor &visitor) {
 NodeSelect::NodeSelect(const NodeSelect& other)
         : NodeInstruction(other), expression(clone_unique(other.expression)),
           cases(clone_cases(other.cases)) {
-    set_child_parents();
+    NodeSelect::set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSelect::clone() const {
     return std::make_unique<NodeSelect>(*this);
@@ -1162,12 +1168,11 @@ NodeAST *NodeSelect::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
     if (expression.get() == oldChild) {
         expression = std::move(newChild);
         return expression.get();
-    } else {
-        for ( auto & cas : cases) {
-            if(cas.first[0].get() == oldChild) {
-                cas.first[0] = std::move(newChild);
-                return cas.first[0].get();
-            }
+    }
+    for ( auto & cas : cases) {
+        if(cas.first[0].get() == oldChild) {
+            cas.first[0] = std::move(newChild);
+            return cas.first[0].get();
         }
     }
     return nullptr;

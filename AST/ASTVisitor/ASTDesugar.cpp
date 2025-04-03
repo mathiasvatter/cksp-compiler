@@ -8,26 +8,26 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
 
 	m_program->global_declarations->accept(*this);
-	for(auto & struct_def : node.struct_definitions) {
+	for(const auto & struct_def : node.struct_definitions) {
 		struct_def->accept(*this);
 	}
-    for(auto & callback : node.callbacks) {
+    for(const auto & callback : node.callbacks) {
         callback->accept(*this);
     }
-    for(auto & func_def : node.function_definitions) {
+    for(const auto & func_def : node.function_definitions) {
         func_def->accept(*this);
     }
 	// update because function parameters might have been added which might cause problems in typechecking
 //	m_program->update_function_lookup();
 	m_program->global_declarations->prepend_body(NodeStruct::declare_struct_constants());
-	m_program->init_callback->statements->prepend_body(NodeProgram::declare_compiler_variables());
+	m_program->global_declarations->prepend_as_stmt(m_program->declare_global_iterator());
 //	m_program->global_declarations->append_body(declare_compiler_variables());
 	m_program->global_declarations->append_body(std::move(m_global_variable_declarations));
 	return &node;
 }
 
 NodeAST* ASTDesugar::visit(NodeBlock& node) {
-    for(auto & stmt : node.statements) {
+    for(const auto & stmt : node.statements) {
         stmt->accept(*this);
     }
 	node.flatten();
@@ -56,12 +56,13 @@ NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
 
 	// if var is global -> make assignment and move declaration to global declarations
     if(node.variable->is_global) {
+    	node.variable->is_global = true;
         m_global_variable_declarations->add_as_stmt(
 			std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok)
 		);
 		return node.remove_node();
     }
-	return &node;
+	return node.desugar(m_program);
 }
 
 NodeAST* ASTDesugar::visit(NodeAssignment &node) {

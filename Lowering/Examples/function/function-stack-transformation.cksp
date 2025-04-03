@@ -1,0 +1,66 @@
+
+/**
+
+Concept: Functions with parameters are transformed in such a way
+that the function is parameterless and can be called as a native
+KSP function.
+For that, the parameters are promoted to global variables and
+get before each call the actual parameters assigned.
+to get it working -> parameter promotion beforehand
+
+thread-unsafe functions cannot be transformed in this way?????
+check maybe
+*/
+
+{-------------------------------------------------------------------------------------------
+                                   Pre Lowering
+--------------------------------------------------------------------------------------------}
+
+on note
+    declare _ret0: int
+    declare loci00: int
+    foo(_ret0, 2, 4, loci00)
+end on
+
+function foo(ret0: int, a: int, b: int, loci)
+	loci := 4 // param promotion
+    if(a = 0)
+        message("a is 0")
+        ret0 := a-b + a+b
+    else
+        message("a is not 0")
+        ret0 := a-b*a
+    end if
+end function
+
+{-------------------------------------------------------------------------------------------
+                                    Post Lowering 1
+--------------------------------------------------------------------------------------------}
+
+on init
+	declare _ret0: int
+    declare ret0: int
+    declare a0: int
+    declare b0: int
+    declare loci00: int
+end on
+
+on note
+	_ret0 := 0
+    ret0 := _ret0
+    a0 := 2
+    b0 := 4
+    loci0 := loci00
+    call foo()
+end on
+
+function foo()
+    loci0 := 4
+    if(a0 = 0)
+        message("a is 0")
+        ret0 := a0-b0 + a0+b0
+    else
+        message("a is not 0")
+        ret0 := a0-b0*a0
+    end if
+end function

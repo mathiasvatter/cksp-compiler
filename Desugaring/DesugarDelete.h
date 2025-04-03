@@ -10,14 +10,13 @@
  * Checks if all reference in Delete Statement are PointerRef, if not -> transform to PointerRef
  * Desugaring Delete Statements with multiple PointerRefs into SingleDelete Nodes
  */
-class DesugarDelete : public ASTDesugaring {
+class DesugarDelete final : public ASTDesugaring {
 public:
 	explicit DesugarDelete(NodeProgram* program) : ASTDesugaring(program) {};
 
-	inline NodeAST* visit(NodeDelete& node) override {
+	NodeAST* visit(NodeDelete& node) override {
 		for(auto &ref : node.ptrs) {
-			if(ref->get_node_type() == NodeType::VariableRef) {
-				auto var_ref = static_cast<NodeVariableRef*>(ref.get());
+			if(const auto var_ref = ref->cast<NodeVariableRef>()) {
 				ref->replace_with(var_ref->to_pointer_ref());
 			}
 		}

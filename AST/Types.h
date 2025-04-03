@@ -36,6 +36,9 @@ public:
 	[[nodiscard]] virtual Type* get_element_type() const {return nullptr;}
     [[nodiscard]] virtual int get_dimensions() const {return 0;}
 	[[nodiscard]] virtual Kind get_kind() const { return m_kind; }
+	[[nodiscard]] bool is_union_type() const {
+		return m_kind == Kind::Any || m_kind == Kind::Number;
+	}
     [[nodiscard]] virtual bool is_compatible(const Type* other) const {
         return m_kind == other->get_kind() && get_type_kind() == other->get_type_kind();
     }
@@ -80,6 +83,9 @@ public:
 		if(string_number) return true;
 		return is_compatible(other);
 	}
+	bool is_same_type(const Type *other) const override {
+	    return get_type_kind() == other->get_type_kind() && m_kind == other->get_kind();
+    }
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		// unknown is compatible with everything
 		bool unknown = m_kind == Kind::Unknown || other->get_kind() == Kind::Unknown;
@@ -143,6 +149,7 @@ public:
     }
     [[nodiscard]] std::string to_string() const override {
 		std::string output = m_element_type->to_string();
+    	if (m_dimensions == 0) output += "[]";
 		for(int i = 0; i < m_dimensions; i++) {
 			output += "[]";
 		}
@@ -161,7 +168,7 @@ public:
 	[[nodiscard]] Type* get_element_type() const override {return m_element_type;}
 	[[nodiscard]] CompoundKind get_compound_type() const {return m_compound_kind;}
 	bool is_same_type(const Type* other) const override {
-		return get_type_kind() == other->get_type_kind() && m_compound_kind == static_cast<const CompositeType*>(other)->get_compound_type() && m_dimensions == other->get_dimensions();
+		return get_type_kind() == other->get_type_kind() && m_compound_kind == other->cast<CompositeType>()->get_compound_type() && m_dimensions == other->get_dimensions();
 	}
 	void set_element_type(Type* element_type) {
 		m_element_type = element_type;
@@ -191,7 +198,7 @@ public:
 		return is_object_type or other->get_kind() == Kind::Unknown or other->get_kind() == Kind::Any;
 	}
 	bool is_same_type(const Type* other) const override {
-		return get_type_kind() == other->get_type_kind() or ((other->get_kind() == Kind::Unknown or other->get_kind() == Kind::Any) and other->get_type_kind() == TypeKind::Basic);
+		return get_type_kind() == other->get_type_kind() and m_name == other->to_string();
 	}
 private:
     std::string m_name;
@@ -229,9 +236,12 @@ public:
 		if (other->get_type_kind() != TypeKind::Function and other->get_kind() != Kind::Unknown) {
 			return false;
 		}
+		if (other->get_type_kind() == TypeKind::Basic and other->get_kind() == Kind::Unknown) {
+			return true;
+		}
 
 		// Cast auf den Funktionstyp
-		const auto* other_function = dynamic_cast<const FunctionType*>(other);
+		const auto other_function = other->cast<FunctionType>();
 
 		// Parameteranzahl prüfen
 		if (m_params.size() != other_function->get_params().size()) {
@@ -254,9 +264,30 @@ public:
 		return true;
 	}
 
+	bool is_same_type(const Type* other) const override {
+		if (get_type_kind() != other->get_type_kind()) {
+			return false;
+		}
+		const auto other_function = other->cast<FunctionType>();
+		// Anzahl der Parameter vergleichen
+		if (m_params.size() != other_function->m_params.size()) {
+			return false;
+		}
+		// Jeden Parameter auf exakte Übereinstimmung prüfen (mittels is_same_type)
+		for (size_t i = 0; i < m_params.size(); ++i) {
+			if (!m_params[i]->is_same_type(other_function->m_params[i])) {
+				return false;
+			}
+		}
+		// Rückgabetyp prüfen
+		if (!m_return_type->is_same_type(other_function->m_return_type)) {
+			return false;
+		}
+		return true;
+	}
+
 	std::vector<Type*> m_params;
 	Type* m_return_type;
-private:
 };
 
 

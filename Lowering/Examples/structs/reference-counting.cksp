@@ -40,21 +40,21 @@ if(scope)
 
     // ------ initializer list of a single object
     declare lists[10]: List[] := (ls)
-    retain(lists[0], 10) // increase ref count by num_elements of lists)
+    increase(lists[0], 10) // increase ref count by num_elements of lists)
     
     // ------ initializer list of a single object
     declare more_lists[10,10]: List[][] := (ls)
-    retain(more_lists[0,0] 10*10) // increase ref count by num_elements of more_lists)
+    increase(more_lists[0,0] 10*10) // increase ref count by num_elements of more_lists)
 
     // ----- initializer list of multiple objects
     declare lists[10] := List[] := (ls, ls1, ls2)
-    retain(lists[0], 1)
-    retain(lists[1], 1)
-    retain(lists[2], 10-2)
+    increase(lists[0], 1)
+    increase(lists[1], 1)
+    increase(lists[2], 10-2)
 
     // ----- single ptr assignment
     declare ls1 := ls
-    retain(ls1, 1) // increase ref count by 1
+    increase(ls1, 1) // increase ref count by 1
 
     // ------ copy of array
     declare lists1[10] := lists
@@ -65,55 +65,58 @@ if(scope)
 
     // --------- Assignmnets
 
-    delete ls1
-    ls1 := List(1, nil)
+    decrease(ls1)
+    ls1 := List(1, nil) // <- decrease before assignment to constructor
 
-    // handling of temporary constructors
-    message(List(1,nil).value) // <- needs to be deleted after usage
-    // idea: mark every constructor as temporary that is
-    // not assigned to a variable and not recursively used
+    message(List(1, nil)) // <- decrease after when arg in builtin function
 
     // array copy array
-    delete lists
+    decrease(lists)
     lists := lists1
-    retain(lists)
+    increase(lists)
 
-    delete lists[*, 1]
+    decrease(lists[*, 1])
     lists[*, 1] := lists[*, 0] // <- same handling? as array copy
-    retain(lists[*, 1], 1)
+    increase(lists[*, 1], 1)
 
 
-    delete lists // delete complete array in for loop
+    decrease(lists) // decrease complete array in for loop
     lists := (ls) // <-
-    retain(lists, num_elements(lists))
+    increase(lists, num_elements(lists))
 
-    delete lists[0]
-    delete lists[1]
-    delete lists[2]
+    decrease(lists[0])
+    decrease(lists[1])
+    decrease(lists[2])
     lists := (ls, ls1, ls2) // <-
-    retain(lists[0], 1)
-    retain(lists[1], 1)
-    retain(lists[2], 1)
+    increase(lists[0], 1)
+    increase(lists[1], 1)
+    increase(lists[2], 1)
 
-    delete more_lists // delete complete array in for loop
+    decrease(more_lists) // decrease complete array in for loop
     more_lists[*, *] := (ls) // <-
-    retain(more_lists, 10*10)
+    increase(more_lists, 10*10)
 
     // if there are different lists as r_values
-    delete more_lists[4,0]
-    delete more_lists[4,1]
+    decrease(more_lists[4,0])
+    decrease(more_lists[4,1])
     more_lists[4, *] := (ls, ls1) // <-
-    retain(more_lists[4,0], 1)
-    retain(more_lists[4,1], 1)
+    increase(more_lists[4,0], 1)
+    increase(more_lists[4,1], 1)
 
 end if
 
+decrease(ls)
+decrease(lists) // decrease in for loop
+decrease(more_lists) // decrease complete array in for loop
+decrease(ls1)
+
+// delete method für manuelles speichermanagement
 delete ls
-delete lists // delete in for loop
-delete more_lists // delete complete array in for loop
-delete ls1
 
-
+// Post Lowering
+if ls # nil
+    List::__decr__(ls, List::allocation[ls])
+end if
 {-------------------------------------------------------------------------------------------
                                         Post Lowering
 --------------------------------------------------------------------------------------------}
@@ -153,14 +156,19 @@ function List::__incr__(self: List, num_refs: int)
 end function
 
 // Betreibt reference counting
-// delete funktion wird aufgerufen, falls:
+// decrease funktion wird aufgerufen, falls:
 // 1. Ein List Objekt l_value in einem Assignment ist -> dann wird delete davor für diesen ptr aufgerufen
 // 2. Am Scope Ende für jeden lokalen Pointer dieses Scopes -> dann wird delete für jeden lokalen ptr aufgerufen
 
 // delete funktion, falls das struct nur einen rekursiven member hat
 struct List
-    declare value: int
+    declare note: Note
     declare next: List
+end struct
+
+struct Note
+    declare pitch: int
+    declare velocity: int
 end struct
 function List::__decr__(self: List, num_refs: int)
     declare current: List := self
@@ -174,13 +182,14 @@ function List::__decr__(self: List, num_refs: int)
             current := nil
         	continue
         end if
+        List::allocation[current] := 0
 
-        self := current
-        if(List::next[current] # nil)
-            current := List::next[current]
-        else
-            current := nil
-        end if
+        self := current // <- immer da
+        current := nil // <- immer da (für nicht rekursive structs)
+
+        // other non-recursive members
+        Note::__decr__(List::note[self], 1) // <- für nicht rekursive structs
+        current := List::next[current] // <- für rekursive structs
         
         // actual delete
         List::__del__(self)
@@ -225,11 +234,12 @@ function Node::__decr__(self: Node, num_refs: int)
         end if
 
         // lower reference count
-        Node::allocation[self] := Node::allocation[self] + num_refs
+        Node::allocation[self] := Node::allocation[self] - num_refs
         // object still referenced
         if(Node::allocation[self] > 0) 
         	continue
         end if
+        Node::allocation[self] := 0
 
         // füge left dem stack hinzu
         if Node::left[self] # nil
@@ -284,12 +294,13 @@ function List::__decr__(self: List, num_refs: int)
             end if
 
             // Schritt 1: Referenzzähler reduzieren/erhöhen (je nach num_refs)
-            List::allocation[self] := List::allocation[self] + num_refs
+            List::allocation[self] := List::allocation[self] - num_refs
 
             // Wenn das Objekt noch referenziert wird, überspringe die Löschung
             if List::allocation[self] > 0
                 continue
             end if
+            List::allocation[self] := 0
 
             // Hier kommen Delete-Methoden von anderen Membern hin, die nicht vom Typ Node sind
 
@@ -313,20 +324,19 @@ function List::__decr__(self: List, num_refs: int)
             end if
 
             // Schritt 1: Referenzzähler reduzieren
-            dec(Node::allocation[self])
+            Node::allocation[self] := Node::allocation[self] - num_refs
 
             // Wenn das Objekt noch referenziert wird, überspringe die Löschung
             if Node::allocation[self] > 0
                 continue
             end if
-
+            Node::allocation[self] := 0
             // Hier kommen Delete-Methoden von anderen Membern hin, die nicht vom Typ List sind
 
             // Füge rekursive Member hinzu
-            if self.left # nil
-                // Füge das List-Objekt dem List-Stack hinzu
+            if Node::left[self] # nil
                 inc(List::stack_top)
-                List::stack[List::stack_top] := self.left
+                List::stack[List::stack_top] := Node::left[self]
             end if
 
             if Node::right[self] # nil
@@ -344,9 +354,9 @@ end function
 // Methode 1 (Lineare Rekursion):
 // Verwende diese Methode, wenn deine Struktur linear ist und jedes Objekt auf maximal ein weiteres Objekt desselben Typs verweist.
 // Beispiele: Einfach verkettete Listen, lineare Ketten von Objekten.
-// Methode 2 (Nicht-lineare Rekursion mit homogenen Typen):
+// Methode 2 (Nicht-lineare direkte Rekursion mit homogenen Typen):
 // Verwende diese Methode, wenn deine Struktur verzweigt ist und Objekte auf mehrere Objekte desselben Typs verweisen können.
 // Beispiele: Bäume, Graphen ohne unterschiedliche Typen.
-// Methode 3 (Nicht-lineare Rekursion mit heterogenen Typen):
+// Methode 3 (Nicht-lineare indirekte Rekursion mit heterogenen Typen):
 // Verwende diese Methode, wenn deine Struktur aus Objekten verschiedener Typen besteht, die sich gegenseitig referenzieren.
 // Beispiele: Gegenseitig rekursive Strukturen wie List und Node, die sich gegenseitig enthalten.

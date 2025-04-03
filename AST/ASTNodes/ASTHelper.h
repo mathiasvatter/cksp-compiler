@@ -4,11 +4,10 @@
 
 #pragma once
 
-#include "../../Tokenizer/Tokens.h"
 #include "../../Tokenizer/Tokenizer.h"
 
-static const std::string PRINTER_OUTPUT = (std::filesystem::path(__FILE__).parent_path().parent_path().parent_path() / "printed.txt").string();
-
+// static const std::string PRINTER_OUTPUT = (std::filesystem::path(__FILE__).parent_path().parent_path().parent_path() / "printed.txt").string();
+static const std::string PRINTER_OUTPUT = (std::filesystem::path(PRINTER_OUTPUT_PATH) / "printed.txt").string();
 
 enum class DataType {
 	Const,
