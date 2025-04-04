@@ -40,6 +40,7 @@ struct NodeVariableRef final : NodeReference {
 	std::unique_ptr<NodeNumElements> transform_array_constant();
 	std::unique_ptr<NodeReference> expand_dimension(std::unique_ptr<NodeAST> new_index) override;
 //	ASTLowering* get_lowering(NodeProgram *program) const override;
+	NodeAST* try_constant_value_replace();
 
 };
 

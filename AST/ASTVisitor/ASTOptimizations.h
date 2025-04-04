@@ -22,7 +22,7 @@ public:
 
 protected:
 
-	inline static StringTypeKey get_hash_value(NodeAST& ref) {
+	static StringTypeKey get_hash_value(NodeAST& ref) {
 		std::string hash_val = ref.get_string();
 		if(ref.get_node_type() == NodeType::ArrayRef) {
 			auto var_ref = static_cast<NodeArrayRef*>(&ref);
@@ -33,7 +33,7 @@ protected:
 		return {hash_val, ref.ty};
 	}
 
-	inline static bool is_destructive_func_arg(NodeReference* node) {
+	static bool is_destructive_func_arg(const NodeReference* node) {
 		if(node->is_func_arg()) {
 			auto func_call = node->parent->parent->parent->cast<NodeFunctionCall>();
 			if(func_call->is_destructive_builtin_func()) {

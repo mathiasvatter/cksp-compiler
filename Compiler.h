@@ -33,6 +33,7 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign2.h"
+#include "Optimization/ArrayInitializationRaising.h"
 
 class Compiler {
 	CompilerConfig* m_config;
@@ -65,7 +66,7 @@ public:
 	//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+		input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 	    // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 	//    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 	//    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
@@ -78,7 +79,7 @@ public:
 		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 
 	//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
-	    // output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
+	    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
 	//    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
 	//    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
 	//	output_filename = "/Users/Mathias/Scripting/time-textures/Samples/resources/scripts/time-textures-2.txt";
@@ -142,7 +143,6 @@ public:
 
 		ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
-		ast->debug_print();
 		ASTVariableChecking variable_checking(m_program);
 		variable_checking.do_complete_traversal(*ast, false);
 		ast->collect_references();
@@ -227,9 +227,11 @@ public:
 		ASTVariableReuse variable_reuse(m_program);
 		variable_reuse.do_variable_reuse(*ast);
 
+		ArrayInitializationRaising array_init_raising;
+		array_init_raising.do_initialization_raising(*ast->init_callback, m_program);
+		ast->debug_print();
 		NormalizeArrayAssign2 desugar_single_assign(m_program);
 		ast->accept(desugar_single_assign);
-
 
 		compile_time.stop("Global Scope");
 		std::cout << compile_time.print_timer("Global Scope") << std::endl;
