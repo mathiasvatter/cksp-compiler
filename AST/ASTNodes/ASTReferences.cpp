@@ -123,6 +123,19 @@ std::unique_ptr<NodeReference> NodeVariableRef::expand_dimension(std::unique_ptr
 	return node_array_ref;
 }
 
+NodeAST * NodeVariableRef::try_constant_value_replace() {
+	if (const auto declaration = get_declaration()) {
+		if (declaration->data_type == DataType::Const) {
+			if (const auto decl = declaration->parent->cast<NodeSingleDeclaration>()) {
+				if (decl->value) {
+					return replace_with(decl->value->clone());
+				}
+			}
+		}
+	}
+	return this;
+}
+
 // ************* NodeArrayRef ***************
 NodeAST *NodeArrayRef::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
@@ -245,7 +258,7 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::get_size(std::unique_ptr<NodeAST> dim) 
 
 
 std::unique_ptr<NodeArrayRef> NodeNDArrayRef::to_array_ref(std::unique_ptr<NodeAST> index) {
-	return std::make_unique<NodeArrayRef>(name, index ? std::make_unique<NodeParamList>(tok, std::move(index)) : nullptr, tok);
+	return std::make_unique<NodeArrayRef>(name, index ? std::move(index) : nullptr, tok);
 }
 
 bool NodeNDArrayRef::determine_sizes() {

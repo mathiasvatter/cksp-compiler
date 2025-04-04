@@ -23,22 +23,22 @@ class ReturnFunctionCallHoisting final : public ASTVisitor {
 	std::unordered_map<NodeStatement*, std::vector<std::unique_ptr<NodeSingleDeclaration>>> m_declares_per_stmt;
 	/// function call is hoistable when userdefined and returns values and is not an expression function
 	/// or is in condition statement
-	static bool is_hoistable(NodeFunctionCall* node) {
+	static bool is_hoistable(const NodeFunctionCall& node) {
 		// not hoistable functions are: Undefined, Builtin, Property
-		if(node->is_builtin_kind()) return false;
-		if(!node->get_definition()) {
+		if(node.is_builtin_kind()) return false;
+		if(!node.get_definition()) {
 			return false;
 		}
-		bool returns_values = node->get_definition() and node->get_definition()->num_return_params > 0;
-		bool is_in_stmt = node->parent->cast<NodeStatement>();
+		bool returns_values = node.get_definition() and node.get_definition()->num_return_params > 0;
+		bool is_in_stmt = node.parent->cast<NodeStatement>();
 		// do not hoist if in declaration -> we do not need an extra declaration var
-		bool is_in_declaration = node->parent->cast<NodeSingleDeclaration>();
-		bool is_in_assignment =  node->parent->cast<NodeSingleAssignment>();
-		bool is_in_return = node->parent->cast<NodeReturn>();
+		bool is_in_declaration = node.parent->cast<NodeSingleDeclaration>();
+		bool is_in_assignment =  node.parent->cast<NodeSingleAssignment>();
+		bool is_in_return = node.parent->cast<NodeReturn>();
 		if(!is_in_stmt and !returns_values) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
-			error.m_message = "Function "+node->function->name+" does not return any value";
-			error.m_got = node->function->name;
+			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+			error.m_message = "Function "+node.function->name+" does not return any value";
+			error.m_got = node.function->name;
 			error.exit();
 		}
 		if(!returns_values) {
@@ -94,8 +94,8 @@ public:
 		node.bind_definition(m_program);
 		if(node.get_definition() and node.get_definition()->is_expression_function()) return &node;
 
-		if(is_hoistable(&node)) {
-			auto last_stmt = node.get_parent_statement();
+		if(is_hoistable(node)) {
+			const auto last_stmt = node.get_parent_statement();
 			if(!last_stmt) {
 				auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
 				error.m_message = "Unable to find parent statement of <FunctionCall>.";
@@ -119,8 +119,7 @@ public:
 
 			// check for while condition.
 			// in case of while conditions, a function call assignments needs to be prepended to the while loop body
-			const auto stmt = node.get_parent_statement();
-			if (const auto node_while = stmt->statement->cast<NodeWhile>()) {
+			if (const auto node_while = last_stmt->statement->cast<NodeWhile>()) {
 				auto assignment = std::make_unique<NodeSingleAssignment>(
 					clone_as<NodeReference>(ref.get()),
 					node.clone(),

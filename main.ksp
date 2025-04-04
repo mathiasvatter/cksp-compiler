@@ -12,6 +12,18 @@ struct List
 end struct
 
 on init
+	declare arr[10]: int[]
+	arr[0] := 1
+	arr[1] := 5
+	arr[5] := 2
+	arr[2] := 3
+	if(arr[0] = 1)
+		message(arr[0])
+		arr[0] := 2
+	end if
+	message(arr)
+	arr[1] := arr[3]
+
 	// declare ui_button btn_keyswitch[5]
 	// declare !btn_keyswitch_pictures[5] := ("btn_play_ks_c_v2")
 	// set_button_properties(btn_keyswitch[0], "f", !btn_keyswitch_pictures[0])
