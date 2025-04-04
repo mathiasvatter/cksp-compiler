@@ -137,9 +137,9 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_property_definiti
 
 
 std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_constructor_definition(NodeProgram *program) {
-	auto it = program->struct_lookup.find(function->name);
+	const auto it = program->struct_lookup.find(function->name);
 	if(it != program->struct_lookup.end()) {
-		auto constructor = it->second->constructor;
+		const auto constructor = it->second->constructor;
 		if(!constructor) return nullptr;
 		function->ty = constructor->header->ty;
 		definition = constructor;

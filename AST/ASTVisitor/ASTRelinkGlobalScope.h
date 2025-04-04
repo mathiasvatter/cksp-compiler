@@ -7,15 +7,14 @@
 #include "ASTVisitor.h"
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
 
-class ASTRelinkGlobalScope : public ASTVisitor {
-private:
+class ASTRelinkGlobalScope final : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
 public:
 	explicit ASTRelinkGlobalScope(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
 	}
 
-	inline NodeAST* visit(NodeProgram& node) override {
+	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		node.reset_function_visited_flag();
 
@@ -39,7 +38,7 @@ public:
 		return &node;
 	}
 
-	inline void relink_global_scope() {
+	void relink_global_scope() const {
 		for(auto & data_struct : m_def_provider->get_all_data_structures()) {
 			m_def_provider->set_declaration(data_struct.lock(), true);
 		}
@@ -50,29 +49,29 @@ public:
 		}
 	}
 
-	inline NodeAST* visit(NodeVariable& node) override {
+	NodeAST* visit(NodeVariable& node) override {
 		m_def_provider->add_to_data_structures(node.get_shared());
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeVariableRef& node) override {
+	NodeAST* visit(NodeVariableRef& node) override {
 		m_def_provider->add_to_references(&node);
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeArray& node) override {
+	NodeAST* visit(NodeArray& node) override {
 		if(node.size) node.size->accept(*this);
 		m_def_provider->add_to_data_structures(node.get_shared());
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeArrayRef& node) override {
+	NodeAST* visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
 		m_def_provider->add_to_references(&node);
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeFunctionCall& node) override {
+	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		if(node.bind_definition(m_program)) {
 			if(node.kind != NodeFunctionCall::Kind::UserDefined) return &node;

@@ -252,16 +252,14 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 
 	// for builtin commands get header variable from its definition
 	if(const auto func_call = node.parent->cast<NodeFunctionCall>()) {
-		if(func_call->is_builtin_kind()) {
-			if(const auto def = func_call->get_definition()) {
-				node.declaration = def->header;
-			}
-			return &node;
+		if(const auto def = func_call->get_definition()) {
+			node.declaration = def->header;
 		}
+		return &node;
 	}
 
 	if(node.get_declaration()) return &node;
-	auto node_declaration = m_def_provider->get_declaration(node);
+	const auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
 		// if (!fail) return &node;
 		auto error = CompileError(ErrorType::VariableError, "", "", node.tok);

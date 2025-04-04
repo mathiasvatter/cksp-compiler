@@ -212,6 +212,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h
         AST/ASTVisitor/FunctionHandling/FunctionParamDataTypeGetter.h
         AST/ASTVisitor/GlobalScope/DimensionDeflator.h
+        Optimization/ArrayInitializationRaising.h
 )
 
 target_compile_definitions(cksp PRIVATE PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")

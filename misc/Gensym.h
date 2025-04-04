@@ -31,7 +31,7 @@ public:
 		do {
 			new_name = var_name + std::to_string(counter);
 			counter++; // Zähler hochzählen
-		} while (m_counters.find(new_name) != m_counters.end());
+		} while (m_counters.contains(new_name));
 
 		m_counters[new_name] = 0;
 		return new_name;
