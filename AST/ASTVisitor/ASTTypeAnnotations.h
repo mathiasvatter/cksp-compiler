@@ -15,6 +15,16 @@
  * applicable.
  */
 class ASTTypeAnnotations final : public ASTVisitor {
+	/// try out function to convert ____ to :: and __ to . to avoid conflicts with internal names
+	/// Error handling needs to be investigated further
+	static void desanitize_ref_name(NodeReference& ref) {
+		ref.name = desanitize_dots(ref.name);
+	}
+
+	static void desanitize_data_name(NodeDataStructure& data) {
+		data.name = desanitize_dots(data.name);
+	}
+
 public:
 	explicit ASTTypeAnnotations(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
@@ -61,12 +71,14 @@ public:
 	}
 
 	NodeAST* visit(NodeArray& node) override {
+		desanitize_data_name(node);
 		if(node.size) node.size->accept(*this);
 		check_annotation_with_expected(node, TypeRegistry::ArrayOfUnknown);
 		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
 	NodeAST* visit(NodeArrayRef& node) override {
+		desanitize_ref_name(node);
 		convert_composite_to_reference(node);
 		if (node.index) {
 			node.index->accept(*this);
@@ -78,22 +90,26 @@ public:
 	}
 
 	NodeAST* visit(NodeVariable& node) override {
+		desanitize_data_name(node);
 		check_annotation_with_expected(node, TypeRegistry::Unknown);
 		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
 	NodeAST* visit(NodeVariableRef& node) override {
+		desanitize_ref_name(node);
 		check_reference_annotation_with_expected(node, TypeRegistry::Unknown);
 		return &node;
 	}
 
 	NodeAST* visit(NodeNDArray& node) override {
+		desanitize_data_name(node);
 		if(node.sizes) node.sizes->accept(*this);
 		check_annotation_with_expected(node, std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions).get());
 		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
 	NodeAST* visit(NodeNDArrayRef& node) override {
+		desanitize_ref_name(node);
 		if(node.indexes) {
 			node.indexes->accept(*this);
 			check_reference_annotation_with_expected(node, TypeRegistry::Unknown);
@@ -106,25 +122,37 @@ public:
 	}
 
 	NodeAST* visit(NodeFunctionHeader& node) override {
-		for(auto &param : node.params) param->variable->accept(*this);
+		desanitize_data_name(node);
+		for(const auto &param : node.params) param->accept(*this);
 //		check_annotation_with_expected(node, TypeRegistry::Unknown);
 //		return apply_type_annotations(node.get_shared());
 		return &node;
 	}
+	NodeAST* visit(NodeFunctionHeaderRef& node) override {
+		desanitize_ref_name(node);
+		if(node.args) node.args->accept(*this);
+		return &node;
+	}
 	NodeAST* visit(NodePointer& node) override {
+		desanitize_data_name(node);
 		check_annotation_with_expected(node, TypeRegistry::Nil);
 		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
+	NodeAST* visit(NodePointerRef& node) override {
+		desanitize_ref_name(node);
+		return &node;
+	}
 	NodeAST* visit(NodeList& node) override {
-		for(auto & b : node.body) b->accept(*this);
+		desanitize_data_name(node);
+		for(const auto & b : node.body) b->accept(*this);
 		check_annotation_with_expected(node, std::make_unique<CompositeType>(CompoundKind::List, TypeRegistry::Unknown, 1).get());
 		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
 	NodeAST* visit(NodeListRef &node) override {
+		desanitize_ref_name(node);
 		node.indexes->accept(*this);
-
 		return &node;
 	}
 

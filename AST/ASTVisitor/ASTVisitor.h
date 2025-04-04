@@ -280,7 +280,7 @@ public:
 		return &node;
 	}
     virtual NodeAST* visit(NodeFunctionHeader& node) {
-		for(auto &param : node.params) param->variable->accept(*this);
+		for(const auto &param : node.params) param->accept(*this);
 		return &node;
 	}
 	virtual NodeAST* visit(NodeFunctionHeaderRef& node) {

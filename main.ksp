@@ -6,19 +6,20 @@
 
 
 
-// struct List
-// 	declare value: int
-// 	declare next: List
-// end struct
+struct List
+	declare value: int
+	declare next: List
+end struct
 
 on init
 	// declare ui_button btn_keyswitch[5]
 	// declare !btn_keyswitch_pictures[5] := ("btn_play_ks_c_v2")
 	// set_button_properties(btn_keyswitch[0], "f", !btn_keyswitch_pictures[0])
-		
+	declare sdfsd: real := 0.0
+	message(sdfsd)
 	declare ui_button btn
 	sdf(btn)
-
+	declare ls := List(4, nil)
 
 	// declare ls := List(4, nil)
 	// delete ls
@@ -31,8 +32,13 @@ on init
 	// search_matrix(ndarray, 3)
 	// infere_me(1, 5.4, "string")
 	// infere_me(2.3, 1, 1)
-	
 end on
+
+function List______init__(pup: int, piep: int) 
+	return 1
+
+end function 
+
 
 on note
 	declare d: int := 4

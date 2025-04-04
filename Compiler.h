@@ -65,7 +65,7 @@ public:
 	//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-		input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 	    // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 	//    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 	//    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
@@ -142,7 +142,7 @@ public:
 
 		ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
-
+		ast->debug_print();
 		ASTVariableChecking variable_checking(m_program);
 		variable_checking.do_complete_traversal(*ast, false);
 		ast->collect_references();
@@ -195,7 +195,7 @@ public:
 		std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
 		compile_time.start("Data Structure Lowering");
 
-		ast->debug_print();
+		// ast->debug_print();
 
 		NormalizeNDArrayAssign nd_array_assign(m_program);
 		ast->accept(nd_array_assign);

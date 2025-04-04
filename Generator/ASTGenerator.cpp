@@ -6,8 +6,7 @@
 
 
 void ASTGenerator::generate(const std::string& path) const {
-	std::ofstream outFile(path);
-	if (outFile) {
+	if (std::ofstream outFile(path); outFile) {
 		outFile << os.str();
 	} else {
 		// Fehlerbehandlung, falls die Datei nicht geöffnet werden kann
@@ -24,7 +23,7 @@ NodeAST * ASTGenerator::visit(NodeProgram &node) {
     os << get_compiled_date_time() << std::endl;
     // get init callback first
     node.callbacks[0]->accept(*this);
-    for(auto & function : node.function_definitions) {
+    for(const auto & function : node.function_definitions) {
         function->accept(*this);
     }
     for(int i = 1; i<node.callbacks.size(); i++) {
@@ -40,16 +39,7 @@ NodeAST * ASTGenerator::visit(NodeInt &node) {
 }
 
 NodeAST * ASTGenerator::visit(NodeReal &node) {
-	std::ios oldState(nullptr);
-	oldState.copyfmt(os); // Speichert den aktuellen Zustand von os
-
-	// Überprüfen, ob der Wert genau einer Ganzzahl entspricht
-	if (std::abs(node.value - std::round(node.value)) < std::numeric_limits<double>::epsilon()) {
-		os << std::fixed << std::setprecision(1) << node.value; // Rundet auf eine Nachkommastelle, für den Fall 0.000000
-	} else {
-		os << std::fixed << std::setprecision(15) << node.value; // Zeigt den Wert mit maximaler Präzision
-	}
-	os.copyfmt(oldState); // Stellt den ursprünglichen Zustand von os wieder her
+	os << format_real(node.value);
 	return &node;
 }
 

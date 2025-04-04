@@ -8,29 +8,17 @@
 #include <sstream>
 #include "../AST/ASTVisitor/ASTVisitor.h"
 
+inline std::string format_real(const double value) {
+	std::ostringstream oss;
+	oss << std::fixed << std::setprecision(15) << value;
+	std::string str = oss.str();
 
-inline std::string sanitize_dots(const std::string& str) {
-	std::string result = str;
-	size_t pos = 0;
-
-	// Ersetze "::" durch "__"
-	while ((pos = result.find("::", pos)) != std::string::npos) {
-		result.replace(pos, 2, "__");
-		pos += 2;  // Gehe zur nächsten Position nach dem Ersetzen
-	}
-
-	pos = 0;
-	// Ersetze "." durch "__"
-	while ((pos = result.find('.', pos)) != std::string::npos) {
-		result.replace(pos, 1, "__");
-		pos += 2;  // Gehe zur nächsten Position nach dem Ersetzen
-	}
-
-	return result;
+	// Entferne überschüssige Nullen am Ende
+	str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+	return str;
 }
 
-
-class ASTGenerator : public ASTVisitor {
+class ASTGenerator final : public ASTVisitor {
 public:
     NodeAST * visit(NodeProgram& node) override;
     NodeAST * visit(NodeInt& node) override;
@@ -70,7 +58,7 @@ public:
 private:
 	std::string m_indent = "  ";
 	int m_scope_count = 0;
-	inline std::string get_indent() {
+	std::string get_indent() const {
 		std::string result;
 		for (int i = 0; i < m_scope_count; i++) {
 			result += m_indent;
