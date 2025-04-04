@@ -42,7 +42,6 @@ private:
 				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 				error.m_message = "<Array> can only be assigned with a list of values.";
 				error.m_expected = "<InitializerList>";
-				error.m_got = node.r_value->get_string();
 				error.exit();
 			} else if (node_array_ref->index and node.r_value->cast<NodeInitializerList>()) {
 				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);

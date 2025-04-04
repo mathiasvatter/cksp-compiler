@@ -55,6 +55,91 @@ void parallel_for_each(Iterator begin, Iterator end, Func func, size_t num_threa
 	}
 }
 
+/*
+ * helper functions to deal with special characters not supported in KSP
+ */
+
+inline std::string sanitize_dots(const std::string& str) {
+	std::string result = str;
+	size_t pos = 0;
+
+	// Ersetze "::" durch "__"
+	while ((pos = result.find("::", pos)) != std::string::npos) {
+		result.replace(pos, 2, "____");
+		pos += 4;  // Gehe zur nächsten Position nach dem Ersetzen
+	}
+
+	pos = 0;
+	// Ersetze "." durch "__"
+	while ((pos = result.find('.', pos)) != std::string::npos) {
+		result.replace(pos, 1, "__");
+		pos += 2;  // Gehe zur nächsten Position nach dem Ersetzen
+	}
+
+	return result;
+}
+
+inline std::string desanitize_dots(const std::string& str) {
+	std::string result = str;
+	size_t pos = 0;
+
+	// Ersetze "____" durch "::"
+	while ((pos = result.find("____", pos)) != std::string::npos) {
+		result.replace(pos, 4, "::");
+		pos += 2;  // Nach dem Ersetzen zur nächsten Position gehen
+	}
+
+	// pos = 0;
+	// // Ersetze "__" durch "."
+	// while ((pos = result.find("__", pos)) != std::string::npos) {
+	// 	result.replace(pos, 2, ".");
+	// 	pos += 1;  // Nach dem Ersetzen zur nächsten Position gehen
+	// }
+
+	return result;
+}
+
+
+// #include <string_view>
+//
+// inline std::string sanitize_dots(const std::string_view str) {
+// 	std::string result;
+// 	result.reserve(str.length() * 2); // Vorab reservieren
+//
+// 	size_t current_pos = 0;
+// 	size_t last_pos = 0;
+//
+// 	while (current_pos < str.length()) {
+// 		if (current_pos + 1 < str.length() && str[current_pos] == ':' && str[current_pos + 1] == ':') {
+// 			// Füge den Teil vor "::" hinzu
+// 			if (current_pos > last_pos) {
+// 				result.append(str.substr(last_pos, current_pos - last_pos));
+// 			}
+// 			result.append("__");
+// 			current_pos += 2;
+// 			last_pos = current_pos; // Update last_pos nach der Ersetzung
+// 		} else if (str[current_pos] == '.') {
+// 			// Füge den Teil vor "." hinzu
+// 			if (current_pos > last_pos) {
+// 				result.append(str.substr(last_pos, current_pos - last_pos));
+// 			}
+// 			result.append("__");
+// 			current_pos += 1;
+// 			last_pos = current_pos; // Update last_pos nach der Ersetzung
+// 		} else {
+// 			// Kein Treffer, einfach weitergehen
+// 			current_pos += 1;
+// 		}
+// 	}
+//
+// 	// Füge den restlichen Teil des Strings hinzu, falls vorhanden
+// 	if (last_pos < str.length()) {
+// 		result.append(str.substr(last_pos));
+// 	}
+//
+// 	return result;
+// }
+
 
 /*
  * helper function to search vectors for chars, std::String and Keyword obj
