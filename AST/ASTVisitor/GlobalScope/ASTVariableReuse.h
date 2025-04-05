@@ -95,6 +95,7 @@ public:
 		m_all_callback_decl.clear();
 		m_all_local_vars.clear();
 		m_passive_vars_map.clear();
+		m_all_local_references.clear();
 		m_def_provider->refresh_scopes();
 		return true;
 	}
