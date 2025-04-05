@@ -61,7 +61,7 @@ struct NodeAST {
 	/// attempts to set the element type of this node to element_type if node has Composite Type
 	/// and elemen_type is Basic Type
 	Type* set_element_type(Type *element_type);
-	void debug_print(const std::string &path = PRINTER_OUTPUT);
+    static void debug_print(const std::string &path = PRINTER_OUTPUT);
 	virtual std::unique_ptr<struct NodeAccessChain> to_method_chain() {return nullptr;}
 	bool is_constant();
 	int get_bison_tokens();
