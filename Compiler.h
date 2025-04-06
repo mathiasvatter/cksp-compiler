@@ -220,20 +220,16 @@ public:
 		// then do parameter promotion directly to global or successively
 		// eliminate function-local variables
 		ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
-		std::cout << "right before param promotion" << std::endl;
 		ASTParameterPromotion param_promotion(m_program);
 		param_promotion.do_param_promotion(*ast);
 
-		std::cout << "right before variable reuse" << std::endl;
 		// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 		ASTVariableReuse variable_reuse(m_program);
 		variable_reuse.do_variable_reuse(*ast);
 
-		std::cout << "before initialization raising" << std::endl;
 		ArrayInitializationRaising array_init_raising;
 		array_init_raising.do_initialization_raising(*ast->init_callback, m_program);
 		ast->debug_print();
-		std::cout << "before normalization" << std::endl;
 		NormalizeArrayAssign2 desugar_single_assign(m_program);
 		ast->accept(desugar_single_assign);
 
