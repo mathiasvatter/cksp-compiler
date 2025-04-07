@@ -128,6 +128,10 @@ jobs:
             # Dateien aus windows-release/ kopieren, bevorzugt neuere Dateien
             rsync -a --update windows-release/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
 
+      - name: Fix permissions for macOS binary
+        run: |
+            find _Releases/${{ needs.build-macos.outputs.version_dir }} -type f ! -name "*.*" -exec chmod +x {} \;          
+
       - name: Push merged _Releases to master
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
