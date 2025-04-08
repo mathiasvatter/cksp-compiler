@@ -280,9 +280,9 @@ public:
 			}
 		}
 		// Rückgabetyp prüfen
-		if (!m_return_type->is_same_type(other_function->m_return_type)) {
-			return false;
-		}
+		// if (!m_return_type->is_same_type(other_function->m_return_type)) {
+		// 	return false;
+		// }
 		return true;
 	}
 

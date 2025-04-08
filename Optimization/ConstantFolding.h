@@ -25,6 +25,11 @@ class ConstantFolding final : public ASTOptimizations {
 	}
 
 public:
+	// check if variable reference is constant and can be substituted
+	NodeAST* visit(NodeVariableRef& node) override {
+		return node.try_constant_value_replace();
+	}
+
 	NodeAST* visit(NodeFunctionCall& node) override {
 		// return immediately if the function is not a builtin function to save time
 		if(node.kind != NodeFunctionCall::Kind::Builtin) return &node;

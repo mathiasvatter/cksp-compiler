@@ -52,8 +52,7 @@ private:
 			const auto type_neutral_el = std::move(type_neutral_val[decl->variable->name]);
 			size_t first_non_nullptr = 0;
 			for (size_t i = list.size(); i-- >0; ) {
-				auto& el = list[i];
-				if (!el and first_non_nullptr != 0) {
+				if (auto& el = list[i]; !el and first_non_nullptr != 0) {
 					el = type_neutral_el->clone();
 				} else if (el and first_non_nullptr == 0) {
 					first_non_nullptr = i;
@@ -81,7 +80,7 @@ private:
 		if (!array->size) return &node;
 		// string arrays should not be raised because of KSP
 		if (array->ty->get_element_type() == TypeRegistry::String) return &node;
-		array->size->accept(*this);
+		// array->size->accept(*this);
 		array->size->do_constant_folding();
 		if (const auto node_int = array->size->cast<NodeInt>()) {
 			arrays_being_tracked.push_back(&node);
@@ -117,11 +116,6 @@ private:
 		for(const auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
-		// // delete all references and initializer lists of arrays declared in the past scope
-		// for (const auto& array : arrays_being_tracked) {
-		// 	array_ref_assignments.erase(array->name);
-		// 	initializer_list.erase(array->name);
-		// }
 		return &node;
 	}
 
@@ -132,7 +126,7 @@ private:
 			if (!node.r_value->is_constant()) return &node;
 			if (node.r_value->cast<NodeFunctionCall>()) return &node;
 			const auto &idx = arr_ref->index;
-			idx->accept(*this);
+			// idx->accept(*this);
 			idx->do_constant_folding();
 			if (const auto node_int = idx->cast<NodeInt>()) {
 				auto& init_list = initializer_list[arr_ref->name];
@@ -153,9 +147,9 @@ private:
 	}
 
 
-	// check if variable reference is constant and can be substituted
-	NodeAST* visit(NodeVariableRef& node) override {
-		return node.try_constant_value_replace();
-	}
+	// // check if variable reference is constant and can be substituted
+	// NodeAST* visit(NodeVariableRef& node) override {
+	// 	return node.try_constant_value_replace();
+	// }
 
 };

@@ -9,7 +9,7 @@
 #include "../../Lowering/LoweringUIControlArray.h"
 #include "../../Lowering/DataLowering/DataLoweringNDArray.h"
 #include "../../Lowering/LoweringList.h"
-#include "../../Desugaring/DesugaringConst.h"
+#include "../../Desugaring/DesugarConst.h"
 #include "../../Lowering/DataLowering/DataLoweringArray.h"
 #include "../../Desugaring/DesugarStruct.h"
 #include "../../Lowering/LoweringStruct.h"
@@ -274,19 +274,31 @@ NodeAST *NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST
 	return nullptr;
 }
 
-ASTLowering* NodeUIControl::get_lowering(NodeProgram *program) const {
-	static LoweringUIControlArray lowering(program);
-	return &lowering;
-}
+// ASTLowering* NodeUIControl::get_lowering(NodeProgram *program) const {
+// 	static LoweringUIControlArray lowering(program);
+// 	return &lowering;
+// }
 
 bool NodeUIControl::is_ui_control_array() const {
 	if(!get_declaration()) return false;
 	if(get_declaration()->control_var->get_node_type() == control_var->get_node_type()) return false;
-	return control_var->get_node_type() == NodeType::Array or control_var->get_node_type() == NodeType::NDArray;
+	return control_var->cast<NodeArray>() or control_var->cast<NodeNDArray>();
+}
+
+std::shared_ptr<NodeUIControl> NodeUIControl::get_builtin_widget(const NodeProgram *program) const {
+	const auto engine_widget = program->def_provider->get_builtin_widget(ui_control_type);
+	if(!engine_widget) {
+		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+		error.m_message = "Unknown Engine Widget";
+		error.m_got = ui_control_type;
+		error.exit();
+		return nullptr;
+	}
+	return engine_widget;
 }
 
 // ************* NodeList ***************
-NodeAST *NodeList::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeList::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 
@@ -335,7 +347,7 @@ std::unique_ptr<NodeAST> NodeConst::clone() const {
 }
 
 ASTDesugaring * NodeConst::get_desugaring(NodeProgram *program) const {
-	static DesugaringConst desugaring(program);
+	static DesugarConst desugaring(program);
 	return &desugaring;
 }
 
