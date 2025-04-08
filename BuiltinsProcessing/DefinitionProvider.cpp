@@ -128,7 +128,7 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declaration(NodeRefer
 	return nullptr;
 }
 
-std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(std::shared_ptr<NodeDataStructure> var, bool global_scope) {
+std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(const std::shared_ptr<NodeDataStructure>& var, bool global_scope) {
 	handle_throwaway_var(*var);
 	m_gensym.ingest(var->name);
 	// get builtin declaration if it exists
@@ -174,24 +174,21 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(std::shar
 
 
 std::shared_ptr<NodeVariable> DefinitionProvider::get_builtin_variable(const std::string& var) {
-    const auto it = builtin_variables.find(var);
-    if(it != builtin_variables.end()) {
+	if(const auto it = builtin_variables.find(var); it != builtin_variables.end()) {
         return it->second;
     }
     return nullptr;
 }
 
 std::shared_ptr<NodeArray> DefinitionProvider::get_builtin_array(const std::string& arr) {
-    const auto it = builtin_arrays.find(arr);
-    if(it != builtin_arrays.end()) {
+	if(const auto it = builtin_arrays.find(arr); it != builtin_arrays.end()) {
         return it->second;
     }
     return nullptr;
 }
 
 std::shared_ptr<NodeUIControl> DefinitionProvider::get_builtin_widget(const std::string &ui_control) {
-    const auto it = builtin_widgets.find(ui_control);
-    if(it != builtin_widgets.end()) {
+	if(const auto it = builtin_widgets.find(ui_control); it != builtin_widgets.end()) {
         return it->second;
     }
     return nullptr;
@@ -224,9 +221,9 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declared_data_structu
     return nullptr;
 }
 
-std::shared_ptr<NodeDataStructure> DefinitionProvider::get_scoped_data_structure(const std::string& data, bool global_scope) {
+std::shared_ptr<NodeDataStructure> DefinitionProvider::get_scoped_data_structure(const std::string& data, const bool global_scope) const {
     const auto& map = global_scope ? m_declared_data_structures.at(0) : m_declared_data_structures.back();
-	auto it = map.find(data);
+	const auto it = map.find(data);
 	if (it != map.end()) {
 		return it->second;
 	}

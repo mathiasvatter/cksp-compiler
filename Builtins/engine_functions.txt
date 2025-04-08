@@ -8,7 +8,7 @@ set_menu_properties(menu: int, picture: string, font_type: int, text_alignment: 
 set_slider_properties(slider: int, default_value: int, picture: string, mouse_behaviour: int)
 set_switch_properties(switch: int, text: any, picture: string, text_alignment: int, font_type: int, textpos_y: int)
 set_table_properties(table: int[], bar_color: int, zero_line_color: int)
-set_text_edit_properties(textedit: int, text: any, picture: string, text_alignment: int, font_type: int, textpos_y: int)
+set_text_edit_properties(textedit: string, text: any, picture: string, text_alignment: int, font_type: int, textpos_y: int)
 set_value_edit_properties(value_edit: int, text: any, font_type: int, textpos_y: int, show_arrows: int)
 set_waveform_properties(waveform: int, bar_color: int, zero_line_color: int, bg_color: int, bg_alpha: int, wave_color: int, wave_cursor_color: int, slicemarkers_color: int, wf_vis_mode: int)
 set_wavetable2d_properties(wavetable: int, wt_zone: int, bg_color: int, bg_alpha: int, wave_color: int, wave_alpha: int, wave_end_color: int, wave_end_alpha: int)

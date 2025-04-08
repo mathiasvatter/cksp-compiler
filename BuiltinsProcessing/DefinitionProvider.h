@@ -50,7 +50,7 @@ public:
 	/// only called by references -> only gets declaration does not add existing declarations to map
 	std::shared_ptr<NodeDataStructure> get_declaration(NodeReference& var);
 	/// adds existing declaration to declaration map for look up. Always returns nullptr.
-	std::shared_ptr<NodeDataStructure> set_declaration(std::shared_ptr<NodeDataStructure> var, bool global_scope);
+	std::shared_ptr<NodeDataStructure> set_declaration(const std::shared_ptr<NodeDataStructure>& var, bool global_scope);
 
 	std::string get_fresh_name(const std::string& name) {
 		return m_gensym.fresh(name);
@@ -149,7 +149,7 @@ public:
 	/// returns data structure declaration searching all scopes
 	std::shared_ptr<NodeDataStructure> get_declared_data_structure(const std::string& data);
 	/// only returns data structure declaration in current scope or global_scope
-	std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope);
+	std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope) const;
 
 	/// variable error handling
 	static CompileError throw_declaration_error(const NodeReference &node, const std::string& add_msg="") {

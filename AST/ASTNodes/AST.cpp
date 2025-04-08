@@ -964,7 +964,7 @@ NodeAST *NodeFunctionDefinition::accept(ASTVisitor &visitor) {
 NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& other)
         : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
           num_return_params(other.num_return_params), num_return_stmts(other.num_return_stmts),
-          return_stmts(other.return_stmts), call_sites(other.call_sites), allowed_callbacks(other.allowed_callbacks),
+          return_stmts(other.return_stmts), call_sites(other.call_sites),
 		  header(clone_shared(other.header)), override(other.override),
 		  body(clone_unique(other.body)) {
     if (other.return_variable) {
@@ -1057,6 +1057,11 @@ size_t NodeFunctionDefinition::get_num_params() const {
 
 bool NodeFunctionDefinition::has_no_params() const {
 	return header->params.empty();
+}
+
+void NodeFunctionDefinition::set_header(std::shared_ptr<struct NodeFunctionHeader> header) {
+	header->parent = this;
+	this->header = std::move(header);
 }
 
 std::vector<std::shared_ptr<NodeDataStructure>> NodeFunctionDefinition::do_variable_reuse(NodeProgram *program) {

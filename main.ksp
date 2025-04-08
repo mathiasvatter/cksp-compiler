@@ -1,7 +1,3 @@
-/// function manager
-// 
-// infere_me(param1, param2, param3) -> no annatations, save with no annotations
-// 
 
 function update.strip.noAutomation(btn_name, UI_array,value_array, emitter)
 	for i := 0 to UI_array.SIZE_D2-1
@@ -14,17 +10,27 @@ function update.strip.noAutomation(btn_name, UI_array,value_array, emitter)
 	end for
 end function
 
+struct List
+	declare val: int
+	declare next: List
+end struct
+
 on init
-	declare i, FALSE, TRUE
-	declare ui_label lbl_lbl[4,2](1,1)
-	declare ui_table array[3,4][128](0,127,1)
-	declare ndarray[2,3, 3, 4]
-	message(num_elements(lbl_lbl))
+	// declare legato_data_sus_release_time[3,4,5,5,6]
+	// legato_data_sus_release_time[0,0,*,*,*] := [4]
+	// declare i, FALSE, TRUE
+	// declare ui_label lbl_lbl[4,2](1,1)
+	// declare ui_table array[3,4][128](0,127,1)
+	// declare ndarray[2,3, 3, 4]
+	// message(num_elements(lbl_lbl, 0))
+
+	// message(legato_data_sus_release_time[1, 1, 1, 1, 1])
+
+	// declare ui_button btn_pups
+	// update.strip.noAutomation(btn_pups, lbl_lbl, lbl_lbl, 2)
 
 
-	declare ui_button btn_pups
-	update.strip.noAutomation(btn_pups, lbl_lbl, lbl_lbl, 2)
-
+	declare scale: List := List(-1, nil)
 	// declare arr[10]: int[]
 	// arr[0] := 1
 	// arr[1] := 5
@@ -60,7 +66,9 @@ on init
 end on
 
 on note
-	message(lbl_lbl[0,0])	
+	scale.next := List(EVENT_NOTE, List(EVENT_NOTE, nil))
+	scale := scale.next
+	// message(lbl_lbl[0,0])	
 end on
 
 

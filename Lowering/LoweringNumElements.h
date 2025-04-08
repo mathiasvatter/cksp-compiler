@@ -43,7 +43,7 @@ public:
 						error.m_message =
 							"Dimension " + std::to_string(dim) + " does not exist in <NDArray> " + node.array->name + ".";
 						error.exit();
-					} else if (dim <= 0) {
+					} else if (dim < 0) {
 						auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
 						error.m_message = "Dimension " + std::to_string(dim) + " is not valid. Dimensions start at 1. If"
 																			   " you want to access the number of all elements, use 0.";

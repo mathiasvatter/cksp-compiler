@@ -22,10 +22,6 @@ public:
 	}
 
 	NodeAST * visit(NodeFunctionCall& node) override {
-
-		if (node.function->name == "update.onoff_state" and node.tok.line == 426) {
-
-		}
 		node.function->accept(*this);
 		if(node.is_builtin_kind()) {
 			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);

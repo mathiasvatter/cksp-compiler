@@ -6,155 +6,88 @@
 
 #include "ASTVisitor.h"
 #include "ReferenceManagement/ASTCollectDeclarations.h"
+#include <chrono>
 
 class TypeInference final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
-	std::unordered_map<NodeFunctionDefinition*, std::vector<NodeFunctionCall*>> m_function_calls;
+	std::vector<NodeFunctionCall*> m_func_calls;
 
 	void do_monomorphization() {
-		for (const auto&[fst, snd] : m_function_calls) {
-			for (const auto& call : snd) {
-				if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
-				if (fst->header->has_union_params()) {
-					const auto new_header = std::make_shared<NodeFunctionHeader>(*fst->header);
-					const size_t param_count = new_header->params.size();
-					for (size_t i = 0; i< param_count; i++) {
-						auto& actual_param = call->function->get_arg(i);
-						auto& formal_param = new_header->get_param(i);
-						match_type(*formal_param, *actual_param);
-					}
-					new_header->create_function_type();
-
-					// if (new_header->name == "scale.range") {
-					//
-					// }
-
-					// if this was already monomorphized in the exact same way, skip this
-					const auto func = m_program->look_up_exact({new_header->name, (int)new_header->params.size()}, new_header->ty);
-					// if there is only one call site skip this
-					if (func) {
-						call->definition = func;
-						call->function->declaration = func->header;
-						continue;
-					}
-					if (snd.size() == 1) {
-						fst->header = new_header;
-						fst->header->parent = fst;
-						continue;
-					}
-
-					std::cout << "Creating monomorphic function definition for " << new_header->name << std::endl;
-					auto new_func_def = std::make_shared<NodeFunctionDefinition>(*fst);
-					new_func_def->header = new_header;
-					new_func_def->header->parent = new_func_def.get();
-					new_func_def->remove_references();
-					// add static class version because we do not want update_function_lookup
-					// and the function lookup table to be updated
-					static ASTCollectDeclarations collect(m_program);
-					new_func_def->accept(collect);
-					// new_func_def->collect_declarations(m_program);
-					new_func_def->collect_references();
-					new_func_def->accept(*this);
-
-					const std::string func_name = m_def_provider->get_fresh_name(call->function->name);
-					call->function->name = func_name;
-					// new_func_def->header->name = func_name;
-					call->function->declaration = new_func_def->header;
-					call->definition = new_func_def;
-					const auto func_ptr = m_program->add_function_definition(new_func_def);
-					func_ptr->header->name = func_name;
+		for (const auto& call : m_func_calls) {
+			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
+			auto const def = call->get_definition();
+			if (!def) continue;
+			if (def->header->has_union_params()) {
+				auto new_header = clone_as<NodeFunctionHeader>(def->header.get());
+				const size_t param_count = new_header->params.size();
+				for (size_t i = 0; i< param_count; i++) {
+					auto& actual_param = call->function->get_arg(i);
+					auto& formal_param = new_header->get_param(i);
+					match_type(*formal_param, *actual_param);
+					formal_param->cast_type();
 				}
+				new_header->create_function_type();
+
+				// if (new_header->name == "update.strip.noAutomation") {
+				//
+				// }
+
+				// if this was already monomorphized in the exact same way, skip this
+				const auto func = m_program->look_up_exact({new_header->name, (int)new_header->params.size()}, new_header->ty);
+				// if there is only one call site skip this
+				if (func) {
+					call->definition = func;
+					call->function->declaration = func->header;
+					continue;
+				}
+				if (def->header->references.size() == 1) {
+					// def->set_header(std::shared_ptr(std::move(new_header)));
+					for (size_t i = 0; i<def->header->params.size(); i++) {
+						auto const& param = def->header->get_param(i);
+						param->ty = new_header->get_param(i)->ty;
+					}
+					def->header->ty = new_header->ty;
+					continue;
+				}
+
+				// std::cout << "Creating monomorphic function definition for " << new_header->name << std::endl;
+
+				// ----- Zeitmessung: Kopieren der Funktionsdefinition -----
+				// auto start_copy = std::chrono::high_resolution_clock::now();
+				auto new_func_def = clone_as<NodeFunctionDefinition>(def.get());
+				new_func_def->set_header(std::shared_ptr(std::move(new_header)));
+				new_func_def->remove_references();
+				// auto end_copy = std::chrono::high_resolution_clock::now();
+				// auto duration_copy = std::chrono::duration_cast<std::chrono::microseconds>(end_copy - start_copy).count();
+				// std::cout << "[Timing] Kopieren der function definition dauerte: " << duration_copy << " µs" << std::endl;
+
+				// ----- Zeitmessung: collect_declarations Schritt -----
+				// auto start_collect = std::chrono::high_resolution_clock::now();
+				static ASTCollectDeclarations collect(m_program);
+				new_func_def->accept(collect);
+				// auto end_collect = std::chrono::high_resolution_clock::now();
+				// auto duration_collect = std::chrono::duration_cast<std::chrono::microseconds>(end_collect - start_collect).count();
+				// std::cout << "[Timing] collect_declarations dauerte: " << duration_collect << " µs" << std::endl;
+
+				new_func_def->collect_references();
+				new_func_def->accept(*this);
+
+				const std::string func_name = m_def_provider->get_fresh_name(call->function->name);
+				call->function->name = func_name;
+				// new_func_def->header->name = func_name;
+				call->function->declaration = new_func_def->header;
+				const auto func_ptr = m_program->add_function_definition(std::move(new_func_def));
+				call->definition = func_ptr->get_shared();
+				func_ptr->header->name = func_name;
 			}
 		}
-
+		// auto start_merge = std::chrono::high_resolution_clock::now();
 		m_program->merge_function_definitions();
 		m_program->update_function_lookup();
+		// auto end_merge = std::chrono::high_resolution_clock::now();
+		// auto duration_merge = std::chrono::duration_cast<std::chrono::microseconds>(end_merge - start_merge).count();
+		// std::cout << "[Timing] Mergen und updaten der function definitions dauerte: " << duration_merge << " µs" << std::endl;
 	}
-
-// #include <mutex>
-// #include <execution>
-// #include <algorithm>
-// #include <omp.h>
-//
-// // Gemeinsamer Mutex zur Absicherung der kritischen Abschnitte.
-// std::mutex global_mutex;
-//
-// void do_monomorphization() {
-//     for (const auto& [fst, snd] : m_function_calls) {
-// 		#pragma omp parallel for
-//     	for (int idx = 0; idx < static_cast<int>(snd.size()); ++idx) {
-//     		auto& call = snd[idx];
-//             if (call->kind != NodeFunctionCall::Kind::UserDefined)
-//                 return;
-//
-//             if (fst->header->has_union_params()) {
-//                 auto new_header = std::make_shared<NodeFunctionHeader>(*fst->header);
-//                 const size_t param_count = new_header->params.size();
-//                 // Loop über Parameter (sequentiell, da der Overhead einer weiteren Parallelisierung oft nicht gerechtfertigt ist)
-//                 for (size_t i = 0; i < param_count; ++i) {
-//                     auto& actual_param = call->function->get_arg(i);
-//                     auto& formal_param = new_header->get_param(i);
-//                     match_type(*formal_param, *actual_param);
-//                 }
-//                 new_header->create_function_type();
-//
-//                 // Kritischer Abschnitt: Suche in m_program.
-//                 {
-//                     std::lock_guard<std::mutex> lock(global_mutex);
-//                     const auto func = m_program->look_up_exact({ new_header->name, static_cast<int>(new_header->params.size()) }, new_header->ty);
-//                     if (func) {
-//                         call->definition = func;
-//                         call->function->declaration = func->header;
-//                         return;
-//                     }
-//                 }
-//
-//                 // Bei nur einem Call, wird direkt der Header ersetzt.
-//                 if (snd.size() == 1) {
-//                     std::lock_guard<std::mutex> lock(global_mutex);
-//                     fst->header = new_header;
-//                     fst->header->parent = fst;
-//                     return;
-//                 }
-//
-//                 // Erzeugen einer neuen Funktionsdefinition.
-//                 auto new_func_def = std::make_shared<NodeFunctionDefinition>(*fst);
-//                 new_func_def->header = new_header;
-//                 new_func_def->header->parent = new_func_def.get();
-//
-//                 // Kritischer Abschnitt: Deklarationen sammeln.
-//                 {
-// 					new_func_def->remove_references();
-//                     std::lock_guard<std::mutex> lock(global_mutex);
-//                     static ASTCollectDeclarations collect(m_program);
-//                     new_func_def->accept(collect);
-// 	                new_func_def->collect_references();
-// 	                new_func_def->accept(*this);
-//                 }
-//
-//
-//                 std::string func_name;
-//                 {
-//                     std::lock_guard<std::mutex> lock(global_mutex);
-//                     func_name = m_def_provider->get_fresh_name(call->function->name);
-//                 }
-//                 call->function->name = func_name;
-//                 call->function->declaration = new_func_def->header;
-//                 call->definition = new_func_def;
-//
-//                 {
-//                     std::lock_guard<std::mutex> lock(global_mutex);
-//                     const auto func_ptr = m_program->add_function_definition(new_func_def);
-//                     func_ptr->header->name = func_name;
-//                 }
-//             }
-//         }
-//     }
-//
-//     m_program->merge_function_definitions();
-//     m_program->update_function_lookup();
-// }
-
 
 
 public:
@@ -164,7 +97,7 @@ public:
 	}
 
 	NodeAST* do_complete_traversal(NodeProgram& node) {
-		m_function_calls.clear();
+		m_func_calls.clear();
 		m_def_provider->m_all_declarations.clear();
 		m_def_provider->m_all_references.clear();
 		m_def_provider->m_all_data_structures.clear();
@@ -188,7 +121,7 @@ public:
 	}
 
 	NodeAST* do_reachable_traversal(NodeProgram& node) {
-		m_function_calls.clear();
+		m_func_calls.clear();
 		m_def_provider->m_all_declarations.clear();
 		m_def_provider->m_all_references.clear();
 		m_def_provider->m_all_data_structures.clear();
