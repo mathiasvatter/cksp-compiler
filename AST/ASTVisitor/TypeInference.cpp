@@ -702,8 +702,9 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		}
 
 		// if it is not builtin kind and it is a function that is actually used in the program
-		if (!node.is_builtin_kind() and m_program->current_callback != nullptr) {
-			m_function_calls[definition.get()].push_back(&node);
+		if (node.kind == NodeFunctionCall::UserDefined and m_program->current_callback != nullptr) {
+			if (definition->header->has_union_params())
+				m_func_calls.push_back(&node);
 		}
 
 		for (int i = 0; i < node.function->get_num_args(); i++) {

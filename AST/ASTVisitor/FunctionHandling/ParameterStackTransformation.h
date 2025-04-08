@@ -46,7 +46,7 @@ private:
 			return &node;
 		}
 		// std::cout<< "Transforming function "<<node.header->name<<" to parameter stack strategy"<<std::endl;
-		const std::string new_name = m_def_provider->get_fresh_name("called_"+node.header->name);
+		const std::string new_name = m_def_provider->get_fresh_name("c_"+node.header->name);
 		const auto new_def = clone_shared<NodeFunctionDefinition>(node.get_shared());
 		// new_def->update_parents(new_def.get());
 		// auto new_def = to_unique_ptr(clone);

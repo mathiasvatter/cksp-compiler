@@ -67,8 +67,8 @@ public:
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-		// input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
-	    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+		input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
+	    // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 	//    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 	//    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 	//    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -161,7 +161,6 @@ public:
 
 		TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
-		ast->debug_print();
 
 		compile_time.stop("Type Checking");
 		std::cout << compile_time.print_timer("Type Checking") << std::endl;
@@ -200,6 +199,8 @@ public:
 
 		NormalizeNDArrayAssign nd_array_assign(m_program);
 		ast->accept(nd_array_assign);
+		ast->debug_print();
+
 		// Data Structure Lowering of NDArrays and Array assignments
 		ASTDataStructureLowering data_structure_lowering(m_program);
 		ast->accept(data_structure_lowering);

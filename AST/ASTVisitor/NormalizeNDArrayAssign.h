@@ -161,6 +161,7 @@ private:
 														  TypeRegistry::add_composite_type(CompoundKind::Array, node->ty->get_element_type(), (int)node->sizes->params.size()),
 														  nullptr, node->tok
 		);
+		node_ndarray->dimensions = node->sizes->params.size();
 		auto node_nd_array_ref = unique_ptr_cast<NodeNDArrayRef>(node_ndarray->to_reference());
 		node_nd_array_ref->set_indexes(clone_as<NodeParamList>(node->indexes.get()));
 		node_nd_array_ref->determine_sizes();
