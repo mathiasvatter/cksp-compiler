@@ -36,7 +36,7 @@ mkdir -p "$LOG_ROOT"
 
 # Build configurations and corresponding executables
 BUILDS=(
-  "debug:$DEBUG_EXEC"
+#  "debug:$DEBUG_EXEC"
   "release:$RELEASE_EXEC"
 )
 

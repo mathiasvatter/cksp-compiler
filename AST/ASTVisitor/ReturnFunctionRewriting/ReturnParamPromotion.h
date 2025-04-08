@@ -38,7 +38,6 @@ private:
 			auto decl = std::make_unique<NodeFunctionParam>(node.return_variable.value(), nullptr, node.tok);
 			decl->parent = node.header.get();
 			node.header->params.insert(node.header->params.begin(), std::move(decl));
-
 			node.return_variable.reset();
 			return &node;
 		}
