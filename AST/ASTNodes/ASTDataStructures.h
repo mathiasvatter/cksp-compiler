@@ -285,7 +285,7 @@ struct NodeUIControl final : NodeDataStructure {
 		control_var -> update_token_data(token);
 		params -> update_token_data(token);
 	}
-	ASTLowering* get_lowering(NodeProgram *program) const override;
+	// ASTLowering* get_lowering(NodeProgram *program) const override;
 	Type* cast_type() override {
 		control_var->cast_type();
 		ty = control_var->ty;
@@ -295,6 +295,7 @@ struct NodeUIControl final : NodeDataStructure {
 	std::shared_ptr<NodeUIControl> get_declaration() const {
 		return declaration.lock();
 	}
+	std::shared_ptr<NodeUIControl> get_builtin_widget(const NodeProgram *program) const;
 };
 
 struct NodeList final : NodeDataStructure {

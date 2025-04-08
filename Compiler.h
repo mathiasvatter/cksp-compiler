@@ -67,8 +67,8 @@ public:
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-		input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
-	    // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+		// input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
+	    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 	//    input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 	//    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 	//    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
@@ -161,7 +161,7 @@ public:
 
 		TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
-		// ast->debug_print();
+		ast->debug_print();
 
 		compile_time.stop("Type Checking");
 		std::cout << compile_time.print_timer("Type Checking") << std::endl;
@@ -230,7 +230,6 @@ public:
 
 		ArrayInitializationRaising array_init_raising;
 		array_init_raising.do_initialization_raising(*ast->init_callback, m_program);
-		ast->debug_print();
 		NormalizeArrayAssign2 desugar_single_assign(m_program);
 		ast->accept(desugar_single_assign);
 

@@ -701,8 +701,9 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 
 		}
 
+		// if it is not builtin kind and it is a function that is actually used in the program
 		if (!node.is_builtin_kind() and m_program->current_callback != nullptr) {
-			m_function_calls.push_back(&node);
+			m_function_calls[definition.get()].push_back(&node);
 		}
 
 		for (int i = 0; i < node.function->get_num_args(); i++) {
@@ -875,6 +876,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 			error.m_message += "<Mathematical Operators> can only be used in between <Integer> or <Real> values.";
 			error.exit();
 		}
+
 		if(is_compatible) node.ty = TypeRegistry::Number;
 		if(node.left->ty == TypeRegistry::Integer and node.right->ty == TypeRegistry::Integer) {
 			node.ty = TypeRegistry::Integer;
@@ -884,6 +886,13 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 		if(node.left->ty != node.right->ty)
 			is_compatible = false;
 		error.m_message += "Please use real() and int() to use <Real> and <Integer> numbers in a single expression.";
+
+		// some operators are only int:
+		if (node.op == token::MODULO) {
+			if(is_compatible) node.ty = TypeRegistry::Integer;
+
+		}
+
 	} else if (contains(BITWISE_TOKENS, node.op)) {
 		node.ty = TypeRegistry::Integer;
 		is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);

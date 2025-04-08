@@ -5,18 +5,18 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "../../BuiltinsProcessing/DefinitionProvider.h"
+#include "ReferenceManagement/ASTCollectDeclarations.h"
 
 class TypeInference final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
-	std::vector<NodeFunctionCall*> m_function_calls;
+	std::unordered_map<NodeFunctionDefinition*, std::vector<NodeFunctionCall*>> m_function_calls;
 
 	void do_monomorphization() {
-		for (const auto& call : m_function_calls) {
-			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
-			if (auto definition = call->get_definition()) {
-				if (definition->header->has_union_params()) {
-					const auto new_header = std::make_shared<NodeFunctionHeader>(*definition->header);
+		for (const auto&[fst, snd] : m_function_calls) {
+			for (const auto& call : snd) {
+				if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
+				if (fst->header->has_union_params()) {
+					const auto new_header = std::make_shared<NodeFunctionHeader>(*fst->header);
 					const size_t param_count = new_header->params.size();
 					for (size_t i = 0; i< param_count; i++) {
 						auto& actual_param = call->function->get_arg(i);
@@ -25,15 +25,35 @@ class TypeInference final : public ASTVisitor {
 					}
 					new_header->create_function_type();
 
-					if (const auto func = m_program->look_up_exact({new_header->name, (int)new_header->params.size()}, new_header->ty)) {
+					// if (new_header->name == "scale.range") {
+					//
+					// }
+
+					// if this was already monomorphized in the exact same way, skip this
+					const auto func = m_program->look_up_exact({new_header->name, (int)new_header->params.size()}, new_header->ty);
+					// if there is only one call site skip this
+					if (func) {
 						call->definition = func;
 						call->function->declaration = func->header;
 						continue;
 					}
+					if (snd.size() == 1) {
+						fst->header = new_header;
+						fst->header->parent = fst;
+						continue;
+					}
 
-					auto new_func_def = std::make_shared<NodeFunctionDefinition>(*definition);
+					std::cout << "Creating monomorphic function definition for " << new_header->name << std::endl;
+					auto new_func_def = std::make_shared<NodeFunctionDefinition>(*fst);
 					new_func_def->header = new_header;
 					new_func_def->header->parent = new_func_def.get();
+					new_func_def->remove_references();
+					// add static class version because we do not want update_function_lookup
+					// and the function lookup table to be updated
+					static ASTCollectDeclarations collect(m_program);
+					new_func_def->accept(collect);
+					// new_func_def->collect_declarations(m_program);
+					new_func_def->collect_references();
 					new_func_def->accept(*this);
 
 					const std::string func_name = m_def_provider->get_fresh_name(call->function->name);
@@ -41,7 +61,7 @@ class TypeInference final : public ASTVisitor {
 					// new_func_def->header->name = func_name;
 					call->function->declaration = new_func_def->header;
 					call->definition = new_func_def;
-					const auto func_ptr = m_program->add_function_definition(std::move(new_func_def));
+					const auto func_ptr = m_program->add_function_definition(new_func_def);
 					func_ptr->header->name = func_name;
 				}
 			}
@@ -50,6 +70,91 @@ class TypeInference final : public ASTVisitor {
 		m_program->merge_function_definitions();
 		m_program->update_function_lookup();
 	}
+
+// #include <mutex>
+// #include <execution>
+// #include <algorithm>
+// #include <omp.h>
+//
+// // Gemeinsamer Mutex zur Absicherung der kritischen Abschnitte.
+// std::mutex global_mutex;
+//
+// void do_monomorphization() {
+//     for (const auto& [fst, snd] : m_function_calls) {
+// 		#pragma omp parallel for
+//     	for (int idx = 0; idx < static_cast<int>(snd.size()); ++idx) {
+//     		auto& call = snd[idx];
+//             if (call->kind != NodeFunctionCall::Kind::UserDefined)
+//                 return;
+//
+//             if (fst->header->has_union_params()) {
+//                 auto new_header = std::make_shared<NodeFunctionHeader>(*fst->header);
+//                 const size_t param_count = new_header->params.size();
+//                 // Loop über Parameter (sequentiell, da der Overhead einer weiteren Parallelisierung oft nicht gerechtfertigt ist)
+//                 for (size_t i = 0; i < param_count; ++i) {
+//                     auto& actual_param = call->function->get_arg(i);
+//                     auto& formal_param = new_header->get_param(i);
+//                     match_type(*formal_param, *actual_param);
+//                 }
+//                 new_header->create_function_type();
+//
+//                 // Kritischer Abschnitt: Suche in m_program.
+//                 {
+//                     std::lock_guard<std::mutex> lock(global_mutex);
+//                     const auto func = m_program->look_up_exact({ new_header->name, static_cast<int>(new_header->params.size()) }, new_header->ty);
+//                     if (func) {
+//                         call->definition = func;
+//                         call->function->declaration = func->header;
+//                         return;
+//                     }
+//                 }
+//
+//                 // Bei nur einem Call, wird direkt der Header ersetzt.
+//                 if (snd.size() == 1) {
+//                     std::lock_guard<std::mutex> lock(global_mutex);
+//                     fst->header = new_header;
+//                     fst->header->parent = fst;
+//                     return;
+//                 }
+//
+//                 // Erzeugen einer neuen Funktionsdefinition.
+//                 auto new_func_def = std::make_shared<NodeFunctionDefinition>(*fst);
+//                 new_func_def->header = new_header;
+//                 new_func_def->header->parent = new_func_def.get();
+//
+//                 // Kritischer Abschnitt: Deklarationen sammeln.
+//                 {
+// 					new_func_def->remove_references();
+//                     std::lock_guard<std::mutex> lock(global_mutex);
+//                     static ASTCollectDeclarations collect(m_program);
+//                     new_func_def->accept(collect);
+// 	                new_func_def->collect_references();
+// 	                new_func_def->accept(*this);
+//                 }
+//
+//
+//                 std::string func_name;
+//                 {
+//                     std::lock_guard<std::mutex> lock(global_mutex);
+//                     func_name = m_def_provider->get_fresh_name(call->function->name);
+//                 }
+//                 call->function->name = func_name;
+//                 call->function->declaration = new_func_def->header;
+//                 call->definition = new_func_def;
+//
+//                 {
+//                     std::lock_guard<std::mutex> lock(global_mutex);
+//                     const auto func_ptr = m_program->add_function_definition(new_func_def);
+//                     func_ptr->header->name = func_name;
+//                 }
+//             }
+//         }
+//     }
+//
+//     m_program->merge_function_definitions();
+//     m_program->update_function_lookup();
+// }
+
 
 
 public:
@@ -76,6 +181,7 @@ public:
 		for(const auto & s : node.struct_definitions) {
 			s->collect_recursive_structs(m_program);
 		}
+		// node.debug_print();
 		do_monomorphization();
 		node.reset_function_visited_flag();
 		return &node;
@@ -177,6 +283,7 @@ public:
     	if (header.params.empty()) return false;
     	const auto func_type = header.ty->cast<FunctionType>();
     	if (!func_type) return false;
+    	if (func_type->m_params.empty()) return false;
     	// check if all param types are the same;
     	if (std::adjacent_find(func_type->m_params.begin(), func_type->m_params.end(), std::not_equal_to<>()) != func_type->m_params.end()) return false;
     	if (!func_type->m_params[0]->is_union_type()) return false;

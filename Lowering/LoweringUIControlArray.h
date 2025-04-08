@@ -9,8 +9,35 @@
 #include <vector>
 
 /// called bei NodeUIControl and NodeSingleDeclaration
-class LoweringUIControlArray : public ASTLowering {
-private:
+
+/**
+ *	Lowers/Desugars ui control arrays into multiple ui controls and an ui array
+ *	Pros of putting this in the lowering phase:
+ *	 - size can have constant declarations
+ *	Pros of putting this in the desugaring phase:
+ *	 - better variable checking because the single ui controls can be linked via name
+ *
+ * Example:
+ * declare ui_label lbl_lbl[4,2](1,1)
+ * gets lowered to:
+ * declare %_lbl_lbl[4*2]
+ * declare const $lbl_lbl__SIZE_D1 := 4
+ * declare const $lbl_lbl__SIZE_D2 := 2
+ * declare ui_label $_lbl_lbl0(1,1)
+ * declare ui_label $_lbl_lbl1(1,1)
+ * declare ui_label $_lbl_lbl2(1,1)
+ * declare ui_label $_lbl_lbl3(1,1)
+ * declare ui_label $_lbl_lbl4(1,1)
+ * declare ui_label $_lbl_lbl5(1,1)
+ * declare ui_label $_lbl_lbl6(1,1)
+ * declare ui_label $_lbl_lbl7(1,1)
+ * $preproc_i := 0
+ * while ($preproc_i<=7)
+ * 	%_lbl_lbl[$preproc_i] := get_ui_id($_lbl_lbl0)+$preproc_i
+ * 	inc($preproc_i)
+ * end while
+ */
+class LoweringUIControlArray final : public ASTLowering {
     // size of e.g. ui_table array
     std::unique_ptr<NodeParamList> m_ui_control_var_size = nullptr;
     // size of the ui array -> number of ui_controls that need to be declared
@@ -21,7 +48,7 @@ public:
 	explicit LoweringUIControlArray(NodeProgram* program) : ASTLowering(program) {}
 
 	NodeAST * visit(NodeSingleDeclaration &node) override {
-		auto node_ui_control = node.variable->cast<NodeUIControl>();
+		const auto node_ui_control = node.variable->cast<NodeUIControl>();
 		if(!node_ui_control)
 			return &node;
 
@@ -33,13 +60,15 @@ public:
 		node_ui_control->control_var->persistence = std::nullopt;
 		m_ui_control_array = clone_as<NodeUIControl>(node_ui_control);
 		m_ui_control_array->control_var->clear_references();
-		if(m_ui_control_array->control_var->get_node_type() == NodeType::NDArray) {
+		if(m_ui_control_array->control_var->cast<NodeNDArray>()) {
 			// get correct size for ui control array by lowering ndarray
+			// get correct single ui control names by lowering
 			m_ui_control_array->control_var->data_lower(m_program);
 		}
 		m_ui_control_array->control_var->accept(*this);
 
-		std::unique_ptr<NodeBlock> body_post_lowering = std::make_unique<NodeBlock>(node.tok);
+		auto body_post_lowering = std::make_unique<NodeBlock>(node.tok);
+		// declare %_lbl_lbl[4*2]
 		auto node_array_declaration = std::make_unique<NodeSingleDeclaration>(
 			node_ui_control->control_var,
 			nullptr, node.tok
@@ -64,31 +93,10 @@ public:
 		return &node;
 	}
 
-/**
- * Example:
- * declare ui_label lbl_lbl[4,2](1,1)
- * gets lowered to:
- * declare %_lbl_lbl[4*2]
- * declare const $lbl_lbl__SIZE_D1 := 4
- * declare const $lbl_lbl__SIZE_D2 := 2
- * declare ui_label $_lbl_lbl0(1,1)
- * declare ui_label $_lbl_lbl1(1,1)
- * declare ui_label $_lbl_lbl2(1,1)
- * declare ui_label $_lbl_lbl3(1,1)
- * declare ui_label $_lbl_lbl4(1,1)
- * declare ui_label $_lbl_lbl5(1,1)
- * declare ui_label $_lbl_lbl6(1,1)
- * declare ui_label $_lbl_lbl7(1,1)
- * $preproc_i := 0
- * while ($preproc_i<=7)
- * 	%_lbl_lbl[$preproc_i] := get_ui_id($_lbl_lbl0)+$preproc_i
- * 	inc($preproc_i)
- * end while
- */
 	std::unique_ptr<NodeBlock> create_ui_controls(NodeUIControl& ui_control, std::unique_ptr<NodeAST> size) {
 		auto node_body = std::make_unique<NodeBlock>(ui_control.tok);
 		// calculate array size
-		SimpleInterpreter eval;
+		static SimpleInterpreter eval;
 		auto array_size_res = eval.evaluate_int_expression(size);
 		if (array_size_res.is_error()) {
 			array_size_res.get_error().exit();

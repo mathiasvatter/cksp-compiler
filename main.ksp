@@ -2,43 +2,56 @@
 // 
 // infere_me(param1, param2, param3) -> no annatations, save with no annotations
 // 
-// 
 
-
-
-struct List
-	declare value: int
-	declare next: List
-end struct
+function update.strip.noAutomation(btn_name, UI_array,value_array, emitter)
+	for i := 0 to UI_array.SIZE_D2-1
+		if UI_array[emitter,i] # get_ui_id(btn_name)
+			UI_array[emitter,i] -> value := FALSE
+		else 
+			UI_array[emitter,i] -> value := TRUE
+		end if
+		value_array[emitter,i] := UI_array[emitter,i] -> value
+	end for
+end function
 
 on init
-	declare arr[10]: int[]
-	arr[0] := 1
-	arr[1] := 5
-	arr[5] := 2
-	arr[2] := 3
-	if(arr[0] = 1)
-		message(arr[0])
-		arr[0] := 2
-	end if
-	message(arr)
-	arr[1] := arr[3]
+	declare i, FALSE, TRUE
+	declare ui_label lbl_lbl[4,2](1,1)
+	declare ui_table array[3,4][128](0,127,1)
+	declare ndarray[2,3, 3, 4]
+	message(num_elements(lbl_lbl))
 
-	// declare ui_button btn_keyswitch[5]
-	// declare !btn_keyswitch_pictures[5] := ("btn_play_ks_c_v2")
-	// set_button_properties(btn_keyswitch[0], "f", !btn_keyswitch_pictures[0])
-	declare sdfsd: real := 0.0
-	message(sdfsd)
-	declare ui_button btn
-	sdf(btn)
-	declare ls := List(4, nil)
+
+	declare ui_button btn_pups
+	update.strip.noAutomation(btn_pups, lbl_lbl, lbl_lbl, 2)
+
+	// declare arr[10]: int[]
+	// arr[0] := 1
+	// arr[1] := 5
+	// arr[5] := 2
+	// arr[2] := 3
+	// if(arr[0] = 1)
+	// 	message(arr[0])
+	// 	arr[0] := 2
+	// end if
+	// message(arr)
+	// arr[1] := arr[3]
+
+	// // declare ui_button btn_keyswitch[5]
+	// // declare !btn_keyswitch_pictures[5] := ("btn_play_ks_c_v2")
+	// // set_button_properties(btn_keyswitch[0], "f", !btn_keyswitch_pictures[0])
+	// declare sdfsd: real := 0.0
+	// message(sdfsd)
+	// declare ui_button btn
+	// sdf(btn)
+	// declare ls := List(4, nil)
 
 	// declare ls := List(4, nil)
 	// delete ls
 	// declare float_mask[2]: int[]
 	// update_user_preset_to_1_1(float_mask)
 	// declare ui_label lbl_global_accent_bg[(GLOBAL_ACCENTS.MAX_SHOWN_BARS*GLOBAL_ACCENTS.MAX_BEATS)/2] (1,1)
-	declare ndarray[2,3] := (0)
+	// declare ndarray[2,3] := (0)
 	// message(ndarray[0,2])
 	// search_matrix([2,3,4], 3)
 	// search_matrix(ndarray, 3)
@@ -46,28 +59,11 @@ on init
 	// infere_me(2.3, 1, 1)
 end on
 
-function List______init__(pup: int, piep: int) 
-	return 1
-
-end function 
-
-
 on note
-	declare d: int := 4
-	while(get_input(d) = 1)
-		message(d)
-		inc(d)
-	end while
+	message(lbl_lbl[0,0])	
 end on
 
-function sdf(ui_control: int)
-	ui_control-> hide  := HIDE_WHOLE_CONTROL
-end function
 
-function get_input(input: int)
-	declare b: int := input mod 5
-	return b-1
-end function
 
 
 

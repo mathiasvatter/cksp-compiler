@@ -9,7 +9,7 @@
 #include "../../Desugaring/DesugarDeclareAssign.h"
 #include "../../Desugaring/DesugarDelete.h"
 #include "../../Lowering/LoweringFunctionCall.h"
-#include "../../Desugaring/DesugaringFamily.h"
+#include "../../Desugaring/DesugarFamily.h"
 #include "../../Lowering/LoweringFor.h"
 #include "../../Lowering/LoweringForEach.h"
 #include "../../Desugaring/DesugarFunctionCall.h"
@@ -17,7 +17,7 @@
 #include "../../Lowering/LoweringMemAlloc.h"
 #include "../../Lowering/LoweringNumElements.h"
 #include "../../Desugaring/DesugarSingleAssignment.h"
-#include "../../Desugaring/DesugarSingleDeclaration.h"
+#include "../../Desugaring/DesugarUIControlArray.h"
 #include "../../Lowering/PostLowering/PostLoweringNumElements.h"
 #include "../../Lowering/LoweringUseCount.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
@@ -589,7 +589,7 @@ NodeAST *NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_ptr
 }
 
 ASTDesugaring * NodeSingleDeclaration::get_desugaring(NodeProgram *program) const {
-	static DesugarSingleDeclaration desugaring(program);
+	static DesugarUIControlArray desugaring(program);
 	return &desugaring;
 }
 
@@ -887,7 +887,7 @@ std::unique_ptr<NodeAST> NodeFamily::clone() const {
 }
 
 ASTDesugaring * NodeFamily::get_desugaring(NodeProgram *program) const {
-    static DesugaringFamily desugaring(program);
+    static DesugarFamily desugaring(program);
     return &desugaring;
 }
 

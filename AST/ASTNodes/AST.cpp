@@ -425,6 +425,9 @@ NodeSingleAssignment *NodeReference::is_r_value() const {
 
 NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> new_node) {
 	const auto decl = get_declaration();
+	if (!decl) {
+		DefinitionProvider::throw_declaration_error(*this).exit();
+	}
 	new_node->match_data_structure(decl);
 	const auto old_ref = this;
 	const auto new_ref = static_cast<NodeReference*>(replace_with(std::move(new_node)));

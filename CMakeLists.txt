@@ -122,7 +122,7 @@ add_executable(cksp main.cpp
         Lowering/LoweringList.h
         Lowering/DataLowering/DataLoweringNDArray.h
         Lowering/LoweringUIControlArray.h
-        Desugaring/DesugaringFamily.h
+        Desugaring/DesugarFamily.h
         Desugaring/ASTDesugaring.h
         Desugaring/DesugarDeclareAssign.h
         Lowering/LoweringFor.h
@@ -208,11 +208,11 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h
         AST/ASTVisitor/ReferenceManagement/ASTCollectCallSites.h
         AST/ASTVisitor/GlobalScope/DeflateParameters.h
-        Desugaring/DesugarSingleDeclaration.h
         AST/ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h
         AST/ASTVisitor/FunctionHandling/FunctionParamDataTypeGetter.h
         AST/ASTVisitor/GlobalScope/DimensionDeflator.h
         Optimization/ArrayInitializationRaising.h
+        Desugaring/DesugarUIControlArray.h
 )
 
 target_compile_definitions(cksp PRIVATE PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")

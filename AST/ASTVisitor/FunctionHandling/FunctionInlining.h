@@ -22,6 +22,10 @@ public:
 	}
 
 	NodeAST * visit(NodeFunctionCall& node) override {
+
+		if (node.function->name == "update.onoff_state" and node.tok.line == 426) {
+
+		}
 		node.function->accept(*this);
 		if(node.is_builtin_kind()) {
 			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
@@ -251,12 +255,11 @@ private:
 		if(auto substitute = get_substitute(ref->name)) {
 			// check if substitute will replace l_value of assignment and is Literal
 			if(auto assignment = ref->is_l_value()) {
+				if (assignment->kind == NodeInstruction::ParameterStack) {
+					m_immutable_param_stack_assignments.push_back(assignment);
+					return nullptr;
+				}
 				if(!substitute->ty->cast<CompositeType>() and substitute->is_constant()) {
-					if (assignment->kind == NodeInstruction::ParameterStack) {
-						m_immutable_param_stack_assignments.push_back(assignment);
-						return nullptr;
-					}
-
 					auto error = CompileError(ErrorType::SyntaxError, "", "", substitute->tok);
 					error.m_message = "Tried to substitute an l_value of an assignment with an immutable value. Left side of assignment must be a reference.";
 					error.exit();
