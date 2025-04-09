@@ -1,4 +1,6 @@
 
+#pragma output_path("test.txt")
+
 function update.strip.noAutomation(btn_name, UI_array,value_array, emitter)
 	for i := 0 to UI_array.SIZE_D2-1
 		if UI_array[emitter,i] # get_ui_id(btn_name)
@@ -15,7 +17,39 @@ struct List
 	declare next: List
 end struct
 
+function array.copy(original, empty)
+	declare i
+	for i := 0 to num_elements(original)-1
+		empty[i] := original[i]
+	end for
+end function
+
 on init
+	if(1=1)
+		declare const PUPU := 0
+
+		declare btn_tags_state[5]
+		declare btn_state_save[5, 5]
+	end if
+	if(1=1)
+		message(PUPU)
+
+		array.copy(btn_tags_state, btn_state_save[NI_CALLBACK_ID, *])
+	end if
+
+
+
+	// declare ui_text_edit !txt_element_marked[14]
+	// message(txt_element_marked[0])
+	 declare ui_text_edit txt_keyswitch_name
+    set_text_edit_properties(txt_keyswitch_name, "-/-", "alpha")
+
+	declare ndarray[3,3,4]  := [0]
+	ndarray := [34,5,5,6,7,8,1,2,3,4,5,6,7,8]
+	message(ndarray[1,2,3] )
+	for _, el in pairs([1,2,3,4,5,6, -1])
+		message(el)
+	end for
 	// declare legato_data_sus_release_time[3,4,5,5,6]
 	// legato_data_sus_release_time[0,0,*,*,*] := [4]
 	// declare i, FALSE, TRUE

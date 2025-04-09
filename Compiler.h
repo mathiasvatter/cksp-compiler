@@ -67,16 +67,16 @@ public:
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-		input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
-	    input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
-	input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
+		// input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
+	    // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+	// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 	//    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
-	//    input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
-	//    input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
-	//    input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
-	//    input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
-	//	input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
-	//    input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
+	// input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
+	// input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
+	// input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
+	// input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
+		// input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
+	input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 
 	//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
@@ -159,6 +159,7 @@ public:
 		std::cout << compile_time.print_timer("Semantic Analysis") << std::endl;
 		compile_time.start("Type Checking");
 
+		// ast->debug_print();
 		TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
 
@@ -188,6 +189,7 @@ public:
 		ASTReturnFunctionRewriting return_function_rewriting(m_program);
 		return_function_rewriting.do_rewriting(*ast);
 
+
 		ASTPreemptiveFunctionInlining pre_inlining(m_program);
 		ast->accept(pre_inlining);
 
@@ -199,7 +201,6 @@ public:
 
 		NormalizeNDArrayAssign nd_array_assign(m_program);
 		ast->accept(nd_array_assign);
-		ast->debug_print();
 
 		// Data Structure Lowering of NDArrays and Array assignments
 		ASTDataStructureLowering data_structure_lowering(m_program);
@@ -241,6 +242,7 @@ public:
 		ASTFunctionStrategy function_strategy(m_program);
 		ast->accept(function_strategy);
 
+		ast->debug_print();
 		ast->order_function_definitions();
 		ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 

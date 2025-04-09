@@ -4,7 +4,6 @@
 BASE_DIR="$(pwd)"
 DEBUG_EXEC="$BASE_DIR/cmake-build-debug/cksp"
 RELEASE_EXEC="$BASE_DIR/cmake-build-release/cksp"
-OUTPUT_FILE="$BASE_DIR/cksp_test_output.txt"
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 RESET='\033[0m'
@@ -33,6 +32,7 @@ done
 # Root directory for log files
 LOG_ROOT="$BASE_DIR/test_logs"
 mkdir -p "$LOG_ROOT"
+OUTPUT_FILE="$LOG_ROOT/cksp_tests_out.txt"
 
 # Build configurations and corresponding executables
 BUILDS=(
@@ -40,9 +40,24 @@ BUILDS=(
   "release:$RELEASE_EXEC"
 )
 
-# Result counters
-#declare -A PASSED
-#declare -A FAILED
+# Spinner-Funktionen
+start_spinner() {
+  local spin_chars='-\|/'
+  i=0
+  tput civis  # Cursor ausblenden
+  while true; do
+    i=$(( (i+1) % 4 ))
+    printf "\r⏳ $CURRENT_FILE ... ${spin_chars:$i:1} "
+    sleep 0.1
+  done
+}
+
+stop_spinner() {
+  kill "$1" &>/dev/null
+  wait "$1" 2>/dev/null
+  tput cnorm  # Cursor wieder einblenden
+}
+
 
 echo "🚀 Starting CKSP Tests..."
 echo "============================="
@@ -50,6 +65,8 @@ echo "============================="
 for entry in "${BUILDS[@]}"; do
   mode="${entry%%:*}"
   executable="${entry#*:}"
+
+  ./build.sh "$mode"
 
   echo ""
   echo "🔧 Testing [$mode] build: $executable"
@@ -81,13 +98,24 @@ for entry in "${BUILDS[@]}"; do
     stdout_log="$log_dir/stdout.log"
     stderr_log="$log_dir/stderr.log"
 
-    echo -n "⏳ $filename ... "
+#    echo -n "⏳ $filename ... "
+    # Aktuellen Dateinamen für Spinner anzeigen
+    CURRENT_FILE="$filename"
 
     # Start time in ms
     start_time=$(date +%s)
+
+    # Start Spinner
+    start_spinner &
+    spinner_pid=$!
+
     # Run and capture output
     "$executable" -o "$OUTPUT_FILE" "$file" >"$log_dir/.tmp_stdout" 2>&1
     exit_code=$?
+
+    # Stop Spinner
+    stop_spinner "$spinner_pid"
+
     end_time=$(date +%s)
     duration_sec=$((end_time-start_time))
     duration_sec=${duration_sec%.*}
@@ -128,3 +156,8 @@ for entry in "${BUILDS[@]}"; do
 done
 
 rm "$OUTPUT_FILE"
+
+
+
+
+

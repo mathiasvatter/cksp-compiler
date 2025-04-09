@@ -35,6 +35,22 @@ public:
 			std::vector<std::shared_ptr<NodeDataStructure>> m_external_variables);
 	explicit DefinitionProvider();
 
+	bool add_external_variables_to_global_scope() {
+		if (m_declared_data_structures.size() < 1) {
+			auto compile_error = CompileError(ErrorType::InternalError, "", -1, "", "", "");
+			compile_error.m_message = "Tried to add external variables to global scope, but there is no global scope.";
+			compile_error.exit();
+			return false;
+		}
+		for(const auto& var : external_variables) {
+			if (const auto ui_control = var->cast<NodeUIControl>()) {
+				m_declared_data_structures[0].insert({ui_control->control_var->name, ui_control->control_var});
+			} else {
+				m_declared_data_structures[0].insert({var->name, var});
+			}
+		}
+		return true;
+	}
 
 	bool add_scope();
 	std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual> remove_scope();

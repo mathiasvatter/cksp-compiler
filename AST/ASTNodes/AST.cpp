@@ -402,15 +402,17 @@ bool NodeReference::needs_get_ui_id() const {
 
 	// In NodeFunctionCall casten und weitere Bedingungen prüfen.
 	const auto node = parent->parent->parent;
-	const auto func_call = node->cast<NodeFunctionCall>();
-	if (func_call and func_call->kind != NodeFunctionCall::Kind::Builtin)
-		return false;
-
-	if (!contains(func_call->function->name, "control_par"))
-		return false;
-
-	// Prüfen, ob diese Referenz das erste Argument ist.
-	return func_call->function->get_arg(0).get() == this;
+	if (const auto func_call = node->cast<NodeFunctionCall>()) {
+		if (func_call->kind == NodeFunctionCall::Kind::Builtin) {
+			if (!contains(func_call->function->name, "control_par"))
+				return false;
+		} else if (func_call->kind != NodeFunctionCall::Kind::Property) {
+				return false;
+		}
+		// Prüfen, ob diese Referenz das erste Argument ist.
+		return func_call->function->get_arg(0).get() == this;
+	}
+	return false;
 }
 
 NodeSingleAssignment *NodeReference::is_r_value() const {

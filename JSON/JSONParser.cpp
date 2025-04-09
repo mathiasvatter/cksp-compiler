@@ -36,13 +36,15 @@ std::unique_ptr<JSONValue> JSONParser::parse_value() {
             return parse_array();
 		case token::KEYWORD:
 			consume();
-            if(tok.val == "false") {
-                return std::make_unique<JSONBool>(false);
-            } else if (tok.val == "true") {
-                return std::make_unique<JSONBool>(true);
-            } else if (tok.val == "null") {
+            if (tok.val == "null") {
                 return std::make_unique<JSONObject>();
             }
+        case token::TRUE:
+            consume();
+            return std::make_unique<JSONBool>(true);
+        case token::FALSE:
+            consume();
+            return std::make_unique<JSONBool>(false);
         default:
             CompileError(ErrorType::ParseError, "Found incorrect json syntax.", tok.line, "", tok.val, tok.file).exit();
             // Handle other cases
