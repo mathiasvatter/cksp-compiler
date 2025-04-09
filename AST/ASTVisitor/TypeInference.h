@@ -17,6 +17,22 @@ class TypeInference final : public ASTVisitor {
 			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
 			auto const def = call->get_definition();
 			if (!def) continue;
+			for (int i = 0; i < call->function->get_num_args(); i++) {
+				auto& func_arg = call->function->get_arg(i);
+				auto& param = def->get_param(i);
+				// infer formal param type only if function is no builtin function
+				// this throws errors with the-pulse
+				// const std::string error_message2 =
+				// "Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
+				// 	+ func_arg->ty->to_string() + " as argument type.";
+				match_parameters(*param, func_arg->ty, "");
+			}
+		}
+
+		for (const auto& call : m_func_calls) {
+			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
+			auto const def = call->get_definition();
+			if (!def) continue;
 			if (def->header->has_union_params()) {
 				auto new_header = clone_as<NodeFunctionHeader>(def->header.get());
 				const size_t param_count = new_header->params.size();
@@ -276,24 +292,31 @@ public:
 		if(!node1.ty->is_compatible(node2.ty)) {
             throw_type_error(node1, node2.ty, message).exit();
 		}
-		// if one of them is composite type -> the other will be too
-		if(node2.ty->get_type_kind() == TypeKind::Composite and node1.ty == TypeRegistry::Unknown) {
-			// stash elem_typ temporarily
-			auto elem_type = node1.ty->get_element_type();
-			node1.ty = node2.ty;
-			node1.set_element_type(elem_type);
-		} else if(node1.ty->get_type_kind() == TypeKind::Composite and node2.ty == TypeRegistry::Unknown) {
-			// stash elem_typ temporarily
-			auto elem_type = node2.ty->get_element_type();
-			node2.ty = node1.ty;
-			node2.set_element_type(elem_type);
-		}
 
+    	match_composite_type(node1, node2);
 		// specialize types:
         node1.set_element_type(specialize_type(node1.ty, node2.ty));
 
         return node1.ty;
 	}
+
+	// matches the outer type of node1 and node2 -> does not check for compatibility
+	static Type* match_composite_type(NodeAST& node1, NodeAST& node2) {
+    	// if one of them is composite type -> the other will be too
+    	if(node2.ty->get_type_kind() == TypeKind::Composite and node1.ty == TypeRegistry::Unknown) {
+    		// stash elem_typ temporarily
+    		const auto elem_type = node1.ty->get_element_type();
+    		node1.ty = node2.ty;
+    		node1.set_element_type(elem_type);
+    	} else if(node1.ty->get_type_kind() == TypeKind::Composite and node2.ty == TypeRegistry::Unknown) {
+    		// stash elem_typ temporarily
+    		const auto elem_type = node2.ty->get_element_type();
+    		node2.ty = node1.ty;
+    		node2.set_element_type(elem_type);
+    	}
+    	return node1.ty;
+    }
+
 
 	/// tries to match the types of l_value and r_value after checking type compatibility, skipping
 	/// compatibility check of r_value to l_value because of string and integer
@@ -363,6 +386,11 @@ public:
         // get element types if composite type (element typ not nullptr):
         const auto node_1 = type1->get_element_type();
         const auto node_2 = type2->get_element_type();
+
+		// if (node_2 == TypeRegistry::String) {
+		// 	if (node_1 == TypeRegistry::String) return node_1;
+		// 	if (node_1 == TypeRegistry::Unknown) return TypeRegistry::Any;
+		// }
 
         // specialize types:
 		// comparison is never the most specialized type
@@ -435,9 +463,9 @@ public:
 
 	/// only there to match/generalize formal parameter to actual parameter
 	static Type* match_parameters(NodeAST& node1, Type* type, const std::string& message="") {
-    	if(!node1.ty->is_compatible(type)) {
-    		throw_type_error(node1, type, message).exit();
-    	}
+    	// if(!node1.ty->is_compatible(type)) {
+    	// 	throw_type_error(node1, type, message).exit();
+    	// }
     	// if type is composite and node1 is unknown, set type of node1 to type
     	if(type->cast<CompositeType>() and node1.ty == TypeRegistry::Unknown) {
     		// stash elem_typ temporarily

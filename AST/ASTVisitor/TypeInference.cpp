@@ -100,19 +100,22 @@ NodeAST * TypeInference::visit(NodeConst& node) {
 }
 
 NodeAST * TypeInference::visit(NodeVariableRef& node) {
-	if(node.get_declaration()) {
+	const auto decl = node.get_declaration();
+	if(decl) {
 		// manual replacement of node type if declaration is a pointer
 		// 	declare this_list := nil
 		//	this_list := List(42, nil)
-		if(node.get_declaration()->get_node_type() == NodeType::Pointer or node.get_declaration()->ty->get_type_kind() == TypeKind::Object
-		or node.ty->get_type_kind() == TypeKind::Object) {
+		if(decl->cast<NodePointer>() or decl->ty->cast<ObjectType>() or node.ty->cast<ObjectType>()) {
 			auto pointer_ref = node.to_pointer_ref();
 			match_type(*pointer_ref, node);
-			auto new_node = node.replace_reference(std::move(pointer_ref));
+			const auto new_node = node.replace_reference(std::move(pointer_ref));
 			return new_node->accept(*this);
 		}
 	}
-    match_reference_declaration(node, node.get_declaration());
+	// if (node.needs_get_ui_id()) {
+	// 	return node.replace_reference(node.wrap_in_get_ui_id())->accept(*this);
+	// }
+    match_reference_declaration(node, decl);
 	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
 }
@@ -608,6 +611,9 @@ NodeAST * TypeInference::visit(NodeSetControl& node) {
 }
 
 NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
+	if (node.l_value->name == "user_preset_titles") {
+
+	}
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
 
@@ -644,17 +650,30 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
+	if (node.function->name == "set_menu_item_str") {
+
+	}
 	// match_type(node, *node.parent);
 	node.bind_definition(m_program);
 	auto definition = node.get_definition();
 	if (definition) {
-		for (int i = 0; i < node.function->get_num_args(); i++) {
-			auto &func_arg = node.function->get_arg(i);
-			auto &param = definition->get_param(i);
-			const std::string error_message =
-				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
-					+ param->ty->to_string() + " as argument type.";
-			match_type(*func_arg, *param, error_message);
+		// do not do this with property functions because of ui_text_edit being string and throwing error then
+		// example of error snippet:
+		// declare ui_text_edit txt_keyswitch_name
+		// set_text_edit_properties(txt_keyswitch_name, "-/-", "alpha")
+		if (node.kind != NodeFunctionCall::Kind::Property) {
+			for (int i = 0; i < node.function->get_num_args(); i++) {
+				auto &func_arg = node.function->get_arg(i);
+				auto &param = definition->get_param(i);
+				const std::string error_message =
+					"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
+						+ param->ty->to_string() + " as argument type.";
+				// if (!param->ty->is_string_int_assignment(func_arg->ty))
+				// this is needed for string -> int stuff -> needs better solution
+				if (param->ty->get_element_type() != TypeRegistry::String)
+					match_type(*func_arg, *param, error_message);
+
+			}
 		}
 		// sh_right(abs(a{number} - b{number}), 1)
 		// we are abs right now and want to specialize the args to int
@@ -703,8 +722,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 
 		// if it is not builtin kind and it is a function that is actually used in the program
 		if (node.kind == NodeFunctionCall::UserDefined and m_program->current_callback != nullptr) {
-			if (definition->header->has_union_params())
-				m_func_calls.push_back(&node);
+			m_func_calls.push_back(&node);
 		}
 
 		for (int i = 0; i < node.function->get_num_args(); i++) {
@@ -713,15 +731,11 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			const std::string error_message =
 				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
 					+ param->ty->to_string() + " as argument type.";
-			match_type(*func_arg, *param, error_message);
-			// infer formal param type only if function is no builtin function
-			// this throws errors with the-pulse
-			if (!node.is_builtin_kind()) {
-				const std::string error_message2 =
-				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
-					+ func_arg->ty->to_string() + " as argument type.";
-				match_parameters(*param, func_arg->ty, error_message2);
-			}
+
+			// if (!param->ty->is_string_int_assignment(func_arg->ty))
+			if (param->ty->get_element_type() != TypeRegistry::String)
+				match_type(*func_arg, *param, error_message);
+
 		}
 
 		match_type(node, *definition);

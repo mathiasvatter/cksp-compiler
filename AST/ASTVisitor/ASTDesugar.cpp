@@ -87,8 +87,8 @@ NodeAST* ASTDesugar::visit(NodeSingleAssignment& node) {
 //}
 
 NodeAST* ASTDesugar::visit(NodeFamily &node) {
-    node.members->accept(*this);
-	return node.desugar(m_program);
+    // node.members->accept(*this);
+	return node.desugar(m_program)->accept(*this);
 }
 
 NodeAST* ASTDesugar::visit(NodeConst &node) {
