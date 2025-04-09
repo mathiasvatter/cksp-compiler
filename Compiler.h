@@ -67,7 +67,7 @@ public:
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-		// input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
+		input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
 	    // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 	// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 	//    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
@@ -76,7 +76,7 @@ public:
 	// input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
 	// input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
 		// input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
-	input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
+	// input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 
 	//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
