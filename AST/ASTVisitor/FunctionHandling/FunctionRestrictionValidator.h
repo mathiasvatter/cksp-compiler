@@ -103,7 +103,6 @@ public:
 		if (m_thread_unsafe_functions.contains(node.header->name)) {
 			node.is_thread_safe = false;
 		}
-		node.allowed_callbacks = get_allowed_callbacks(node.header->name);
 	}
 
 	static std::unordered_set<std::string> get_allowed_callbacks(const std::string& func_name) {

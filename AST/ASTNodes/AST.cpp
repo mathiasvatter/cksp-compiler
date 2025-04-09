@@ -402,15 +402,17 @@ bool NodeReference::needs_get_ui_id() const {
 
 	// In NodeFunctionCall casten und weitere Bedingungen prüfen.
 	const auto node = parent->parent->parent;
-	const auto func_call = node->cast<NodeFunctionCall>();
-	if (func_call and func_call->kind != NodeFunctionCall::Kind::Builtin)
-		return false;
-
-	if (!contains(func_call->function->name, "control_par"))
-		return false;
-
-	// Prüfen, ob diese Referenz das erste Argument ist.
-	return func_call->function->get_arg(0).get() == this;
+	if (const auto func_call = node->cast<NodeFunctionCall>()) {
+		if (func_call->kind == NodeFunctionCall::Kind::Builtin) {
+			if (!contains(func_call->function->name, "control_par"))
+				return false;
+		} else if (func_call->kind != NodeFunctionCall::Kind::Property) {
+				return false;
+		}
+		// Prüfen, ob diese Referenz das erste Argument ist.
+		return func_call->function->get_arg(0).get() == this;
+	}
+	return false;
 }
 
 NodeSingleAssignment *NodeReference::is_r_value() const {
@@ -425,6 +427,9 @@ NodeSingleAssignment *NodeReference::is_r_value() const {
 
 NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> new_node) {
 	const auto decl = get_declaration();
+	if (!decl) {
+		DefinitionProvider::throw_declaration_error(*this).exit();
+	}
 	new_node->match_data_structure(decl);
 	const auto old_ref = this;
 	const auto new_ref = static_cast<NodeReference*>(replace_with(std::move(new_node)));
@@ -961,7 +966,7 @@ NodeAST *NodeFunctionDefinition::accept(ASTVisitor &visitor) {
 NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& other)
         : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
           num_return_params(other.num_return_params), num_return_stmts(other.num_return_stmts),
-          return_stmts(other.return_stmts), call_sites(other.call_sites), allowed_callbacks(other.allowed_callbacks),
+          return_stmts(other.return_stmts), call_sites(other.call_sites),
 		  header(clone_shared(other.header)), override(other.override),
 		  body(clone_unique(other.body)) {
     if (other.return_variable) {
@@ -1054,6 +1059,11 @@ size_t NodeFunctionDefinition::get_num_params() const {
 
 bool NodeFunctionDefinition::has_no_params() const {
 	return header->params.empty();
+}
+
+void NodeFunctionDefinition::set_header(std::shared_ptr<struct NodeFunctionHeader> header) {
+	header->parent = this;
+	this->header = std::move(header);
 }
 
 std::vector<std::shared_ptr<NodeDataStructure>> NodeFunctionDefinition::do_variable_reuse(NodeProgram *program) {

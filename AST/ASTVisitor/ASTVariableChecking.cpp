@@ -43,14 +43,7 @@ NodeAST* ASTVariableChecking::visit(NodeCallback& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
-	auto engine_widget = m_def_provider->get_builtin_widget(node.ui_control_type);
-	if(!engine_widget) {
-		auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-		error.m_message = "Unknown Engine Widget";
-		error.m_got = node.ui_control_type;
-		error.exit();
-	}
-	node.declaration = engine_widget;
+	node.declaration = node.get_builtin_widget(m_program);
 	if(node.is_ui_control_array()) node.control_var->data_type = DataType::UIArray;
 
 	node.control_var->accept(*this);
@@ -60,6 +53,7 @@ NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
 	if(!fail) return &node;
 
 	//check param size
+	const auto engine_widget = node.get_declaration()->cast<NodeUIControl>();
 	if(engine_widget->params->params.size() != node.params->params.size()) {
 		auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 		error.m_message = "Engine Widget has incorrect number of parameters.";

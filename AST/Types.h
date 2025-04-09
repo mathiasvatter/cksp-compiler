@@ -42,6 +42,9 @@ public:
     [[nodiscard]] virtual bool is_compatible(const Type* other) const {
         return m_kind == other->get_kind() && get_type_kind() == other->get_type_kind();
     }
+	virtual bool is_string_int_assignment(const Type* other) const {
+		return false;
+	}
 	virtual bool is_assignable_from(const Type* other) const {
 		return is_compatible(other);
 	}
@@ -83,6 +86,9 @@ public:
 		if(string_number) return true;
 		return is_compatible(other);
 	}
+	bool is_string_int_assignment(const Type* other) const override {
+    	return m_kind == Kind::String && (other->get_kind() == Kind::Number || other->get_kind() == Kind::Integer || other->get_kind() == Kind::Real);
+    }
 	bool is_same_type(const Type *other) const override {
 	    return get_type_kind() == other->get_type_kind() && m_kind == other->get_kind();
     }
@@ -280,9 +286,9 @@ public:
 			}
 		}
 		// Rückgabetyp prüfen
-		if (!m_return_type->is_same_type(other_function->m_return_type)) {
-			return false;
-		}
+		// if (!m_return_type->is_same_type(other_function->m_return_type)) {
+		// 	return false;
+		// }
 		return true;
 	}
 

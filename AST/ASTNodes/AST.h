@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 #include <optional>
-#include <chrono>
 
 #include "ASTHelper.h"
 #include "../Types.h"
@@ -157,7 +156,7 @@ struct NodeReference : NodeAST {
 	[[nodiscard]] bool is_member_ref() const;
 	/// checks if reference is raw version of multidimensional array
 	[[nodiscard]] bool is_raw_array() const {
-		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw");
+		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw()");
 	}
 	/// when is variable = raw array? if variable has _ in front and is array and was declared without _
 	/// returns sanitized name of reference
@@ -166,8 +165,8 @@ struct NodeReference : NodeAST {
 		std::string_view sanitized_name = name;
 		if (sanitized_name[0] == '_' && (sanitized_name.size() == 1 || sanitized_name[1] != '_')) {
 			sanitized_name.remove_prefix(1); // Effizienter als erase
-		} else if (sanitized_name.size() >= 4 && sanitized_name.substr(sanitized_name.size() - 4) == ".raw") {
-			sanitized_name.remove_suffix(4); // Effizienter als replace
+		} else if (sanitized_name.size() >= 6 && sanitized_name.substr(sanitized_name.size() - 6) == ".raw()") {
+			sanitized_name.remove_suffix(6); // Effizienter als replace
 		}
 		return std::string(sanitized_name); // Erzeugt das Resultat nur einmal
 	}
@@ -688,7 +687,6 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	int num_return_stmts = 0;
 	std::vector<NodeReturn*> return_stmts;
     std::unordered_set<NodeFunctionCall*> call_sites = {};
-	std::unordered_set<std::string> allowed_callbacks = {};
     std::shared_ptr<NodeFunctionHeader> header;
     std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;
@@ -716,7 +714,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	std::shared_ptr<NodeFunctionDefinition> get_shared() {
 		return shared_from_this();
 	}
-
+	void set_header(std::shared_ptr<NodeFunctionHeader> header);
 	std::vector<std::shared_ptr<NodeDataStructure>> do_variable_reuse(NodeProgram *program);
 	void do_return_param_promotion(NodeProgram* program);
 	bool do_return_path_validation();

@@ -16,13 +16,13 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 		struct_def->generate_ref_count_methods(m_program);
 	}
 //	node.struct_definitions.at(0)->debug_print();
-	for(auto & struct_def : node.struct_definitions) {
+	for(const auto & struct_def : node.struct_definitions) {
 		struct_def->accept(*this);
 	}
-	for(auto & callback : node.callbacks) {
+	for(const auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
-	for(auto & func_def : node.function_definitions) {
+	for(const auto & func_def : node.function_definitions) {
 		if(!func_def->visited) func_def->accept(*this);
 	}
 	node.merge_function_definitions();

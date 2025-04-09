@@ -66,6 +66,9 @@ struct NodeCompositeRef : NodeReference {
 	virtual bool has_index() const {
 		return false;
 	}
+	virtual NodeAST* get_index(size_t i) const = 0;
+	virtual std::unique_ptr<NodeAST> take_index(size_t i) = 0;
+
 };
 
 struct NodeArrayRef final : NodeCompositeRef {
@@ -121,6 +124,17 @@ struct NodeArrayRef final : NodeCompositeRef {
 	bool has_index() const override {
 		return index != nullptr;
 	}
+	NodeAST* get_index(const size_t i) const override {
+		if(index) return index.get();
+		auto error = CompileError(ErrorType::InternalError, "", "", tok);
+		error.m_message = "ArrayRef has no index: " + name + ".";
+		error.exit();
+		return nullptr;
+	}
+	std::unique_ptr<NodeAST> take_index(size_t i) override {
+		return std::move(index);
+	}
+
 };
 
 struct NodeNDArrayRef final : NodeCompositeRef {
@@ -199,6 +213,12 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 	}
 	bool has_index() const override {
 		return indexes != nullptr;
+	}
+	NodeAST* get_index(const size_t i) const override {
+		return indexes->params[i].get();
+	}
+	std::unique_ptr<NodeAST> take_index(const size_t i) override {
+		return std::move(indexes->params[i]);
 	}
 };
 

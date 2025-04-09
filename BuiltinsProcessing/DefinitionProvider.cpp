@@ -21,17 +21,13 @@ DefinitionProvider::DefinitionProvider(
 		  property_functions(std::move(m_property_functions)) {
 	// add default scope to work as global scope
 	this->add_scope();
-    for(const auto& var : external_variables) {
-        m_declared_data_structures.back().insert({var->name, var});
-    }
+    add_external_variables_to_global_scope();
 }
 
 DefinitionProvider::DefinitionProvider() {
 	// add default scope to work as global scope
 	this->add_scope();
-	for(const auto& var : external_variables) {
-		m_declared_data_structures.back().insert({var->name, var});
-	}
+	add_external_variables_to_global_scope();
 }
 
 bool DefinitionProvider::add_scope() {
@@ -72,9 +68,7 @@ bool DefinitionProvider::refresh_scopes() {
     m_declared_data_structures.clear();
     // add global scope
     add_scope();
-    for(const auto& var : external_variables) {
-        m_declared_data_structures.back().insert({var->name, var});
-    }
+    add_external_variables_to_global_scope();
     return true;
 }
 
@@ -99,10 +93,10 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declaration(NodeRefer
 		var.kind = NodeReference::Kind::User;
 		return pgs_decl;
 	}
-	if(const auto &throwaway = get_throwaway_declaration(var)) {
-		var.kind = NodeReference::Kind::Throwaway;
-		return throwaway;
-	}
+	// if(const auto &throwaway = get_throwaway_declaration(var)) {
+	// 	var.kind = NodeReference::Kind::Throwaway;
+	// 	return throwaway;
+	// }
 
 	// get builtin declaration if it exists
 	std::shared_ptr<NodeDataStructure> node_builtin_declaration = nullptr;
@@ -128,8 +122,8 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declaration(NodeRefer
 	return nullptr;
 }
 
-std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(std::shared_ptr<NodeDataStructure> var, bool global_scope) {
-	handle_throwaway_var(*var);
+std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(const std::shared_ptr<NodeDataStructure>& var, bool global_scope) {
+	// handle_throwaway_var(*var);
 	m_gensym.ingest(var->name);
 	// get builtin declaration if it exists
 	std::shared_ptr<NodeDataStructure> node_builtin_declaration = nullptr;
@@ -174,24 +168,21 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(std::shar
 
 
 std::shared_ptr<NodeVariable> DefinitionProvider::get_builtin_variable(const std::string& var) {
-    const auto it = builtin_variables.find(var);
-    if(it != builtin_variables.end()) {
+	if(const auto it = builtin_variables.find(var); it != builtin_variables.end()) {
         return it->second;
     }
     return nullptr;
 }
 
 std::shared_ptr<NodeArray> DefinitionProvider::get_builtin_array(const std::string& arr) {
-    const auto it = builtin_arrays.find(arr);
-    if(it != builtin_arrays.end()) {
+	if(const auto it = builtin_arrays.find(arr); it != builtin_arrays.end()) {
         return it->second;
     }
     return nullptr;
 }
 
 std::shared_ptr<NodeUIControl> DefinitionProvider::get_builtin_widget(const std::string &ui_control) {
-    const auto it = builtin_widgets.find(ui_control);
-    if(it != builtin_widgets.end()) {
+	if(const auto it = builtin_widgets.find(ui_control); it != builtin_widgets.end()) {
         return it->second;
     }
     return nullptr;
@@ -206,8 +197,7 @@ std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_builtin_function
 }
 
 std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_property_function(NodeFunctionHeaderRef *function) {
-	auto it = property_functions.find(function->name);
-	if(it != property_functions.end()) {
+	if(auto it = property_functions.find(function->name); it != property_functions.end()) {
 		return it->second;
 	}
 	return nullptr;
@@ -216,18 +206,16 @@ std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_property_functio
 std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declared_data_structure(const std::string& data) {
 	// then search in all other scopes
     for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
-		auto it = rit->find(data);
-        if (it != rit->end()) {
+	    if (auto it = rit->find(data); it != rit->end()) {
             return it->second;
         }
     }
     return nullptr;
 }
 
-std::shared_ptr<NodeDataStructure> DefinitionProvider::get_scoped_data_structure(const std::string& data, bool global_scope) {
+std::shared_ptr<NodeDataStructure> DefinitionProvider::get_scoped_data_structure(const std::string& data, const bool global_scope) const {
     const auto& map = global_scope ? m_declared_data_structures.at(0) : m_declared_data_structures.back();
-	auto it = map.find(data);
-	if (it != map.end()) {
+    if (const auto it = map.find(data); it != map.end()) {
 		return it->second;
 	}
 	return nullptr;

@@ -103,6 +103,24 @@ NodeAST * ASTSemanticAnalysis::visit(NodeBlock &node) {
 	return &node;
 }
 
+NodeAST * ASTSemanticAnalysis::visit(NodeSingleDeclaration &node) {
+	node.variable->accept(*this);
+	// due to old KSP code -> initializer lists in declarations are allowed with ()
+	// could be misinterpreted by the parser as expressions and parsed without () -> hence initializer list
+	// might have to be reinstantiated here when variable is array
+	// declare array[] := (0)
+	if (node.value) {
+		if (node.variable->cast<NodeArray>() or node.variable->cast<NodeNDArray>()) {
+			if (!node.value->cast<NodeInitializerList>()) {
+				auto init_list = std::make_unique<NodeInitializerList>(node.tok, std::move(node.value));
+				node.set_value(std::move(init_list));
+			}
+		}
+		node.value->accept(*this);
+	}
+	return &node;
+}
+
 NodeAST * ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
 	m_program->function_call_stack.push(node.weak_from_this());
 	// check all return paths

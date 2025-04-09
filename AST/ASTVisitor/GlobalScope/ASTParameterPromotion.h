@@ -100,7 +100,7 @@ private:
 					// 	var->to_global();
 					// 	m_program->global_declarations->add_as_stmt(std::move(global_decl));
 					// }
-					if (var->is_thread_safe) {
+					if (!var->ty->cast<CompositeType>()) {
 						// add local declarations of function definition to parameters
 						definition->header->add_param(var);
 						definition->header->params.back()->kind = NodeInstruction::Promoted;
