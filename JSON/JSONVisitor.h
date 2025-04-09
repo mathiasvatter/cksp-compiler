@@ -9,7 +9,8 @@
 
 class JSONVisitor {
 public:
-    virtual void visit(JSONObject& object) = 0;
+	virtual ~JSONVisitor() = default;
+	virtual void visit(JSONObject& object) = 0;
     virtual void visit(JSONArray& array) = 0;
     virtual void visit(JSONString& str) = 0;
     virtual void visit(JSONInt& num) = 0;
@@ -37,7 +38,7 @@ inline std::map<int, std::string> UI_CONTROL_INDEX = {
         {15, "ui_mouse_area"},
 };
 
-class NCKPTranslator : public JSONVisitor {
+class NCKPTranslator final : public JSONVisitor {
 public:
 	explicit NCKPTranslator(DefinitionProvider* definition_provider);
 	void visit(JSONObject& object) override;

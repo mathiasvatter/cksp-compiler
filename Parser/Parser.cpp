@@ -911,6 +911,15 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
         		// was already declared, see if it overrides
         		if (node_function->override) {
         			node_program->replace_function_definition(func, node_function);
+        		} else if (func->override and !node_function->override) {
+        			// function in map is already override and encountered function is not
+        			// pass
+        		} else if (func->override and node_function->override) {
+        			auto error = CompileError(ErrorType::SyntaxError,"", "", node_function->header->tok);
+        			error.m_message = "Found duplicate function definition with the same name and parameter count. Both have been marked"
+							 "as <override>. The compiler will use the last encountered definition that has been marked as <override>.\n"
+        					 "Consider removing the <override> keyword from one of the definitions.";
+        			error.print();
         		} else {
         			auto error = CompileError(ErrorType::SyntaxError,"", "", node_function->header->tok);
         			error.m_message = "A function with this name and parameter count already exists. \n"

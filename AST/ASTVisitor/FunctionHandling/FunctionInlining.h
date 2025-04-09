@@ -203,12 +203,24 @@ private:
 			auto ref_array = static_cast<NodeCompositeRef*>(ref);
 			if(nd_substitute and nd_substitute->num_wildcards()) {
 				if(ref_array->num_wildcards()) {
+					// replace when number of wildcards is same -> which it here is
 					return nullptr;
 				} else {
-					auto error = CompileError(ErrorType::SyntaxError, "", "", ref->tok);
-					error.m_message = "Tried to substitute a function argument of type <"+ref->ty->to_string()+"> with "
-									   "an <NDArray> containing wildcards and of type "+substitute->ty->to_string()+".";
-					error.exit();
+					// substitute							ref
+					// btn_state_save[NI_CALLBACK_ID, *] -> empty[i] -> btn_state_save[NI_CALLBACK_ID, i]
+					int ii = 0;
+					for (int i = 0; i<nd_substitute->indexes->size(); ++i) {
+						auto subst_idx = nd_substitute->get_index(i);
+						if (subst_idx->cast<NodeWildcard>()) {
+							subst_idx->replace_with(ref_array->take_index(ii));
+							ii++;
+						}
+					}
+					return nullptr;
+					// auto error = CompileError(ErrorType::SyntaxError, "", "", ref->tok);
+					// error.m_message = "Tried to substitute a function argument of type <"+ref->ty->to_string()+"> with "
+					// 				   "an <NDArray> containing wildcards and of type "+substitute->ty->to_string()+".";
+					// error.exit();
 				}
 			}
 
@@ -251,12 +263,11 @@ private:
 		if(auto substitute = get_substitute(ref->name)) {
 			// check if substitute will replace l_value of assignment and is Literal
 			if(auto assignment = ref->is_l_value()) {
+				if (assignment->kind == NodeInstruction::ParameterStack) {
+					m_immutable_param_stack_assignments.push_back(assignment);
+					return nullptr;
+				}
 				if(!substitute->ty->cast<CompositeType>() and substitute->is_constant()) {
-					if (assignment->kind == NodeInstruction::ParameterStack) {
-						m_immutable_param_stack_assignments.push_back(assignment);
-						return nullptr;
-					}
-
 					auto error = CompileError(ErrorType::SyntaxError, "", "", substitute->tok);
 					error.m_message = "Tried to substitute an l_value of an assignment with an immutable value. Left side of assignment must be a reference.";
 					error.exit();

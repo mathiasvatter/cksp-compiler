@@ -5,7 +5,6 @@
 #pragma once
 
 #include "ASTDesugaring.h"
-#include "../Optimization/ConstantFolding.h"
 
 /**
  * @brief This class is responsible for lowering the const statement.
@@ -22,14 +21,13 @@
  * declare const $fafa__ffifi := 1
  */
 
-class DesugaringConst : public ASTDesugaring {
-private:
+class DesugarConst final : public ASTDesugaring {
     std::stack<std::string> m_const_prefixes;
     std::unique_ptr<NodeAST> m_pre = nullptr;
     std::unique_ptr<NodeAST> m_iter = nullptr;
 
 public:
-	explicit DesugaringConst(NodeProgram* program) : ASTDesugaring(program) {}
+	explicit DesugarConst(NodeProgram* program) : ASTDesugaring(program) {}
 
     NodeAST * visit(NodeVariable& node) override {
 //		if(node.ty == TypeRegistry::Unknown) node.ty = TypeRegistry::Integer;
@@ -106,7 +104,7 @@ public:
 
 //        node.constants->add_stmt(std::make_unique<NodeStatement>(std::move(constant), node.tok));
         m_const_prefixes.pop();
-		static ConstantFolding cf;
-		return node.constants->accept(cf);
+		node.constants->do_constant_folding();
+    	return node.constants.get();
     }
 };

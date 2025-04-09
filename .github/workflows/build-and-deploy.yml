@@ -27,8 +27,9 @@ jobs:
 
       - name: Build CKSP (macOS)
         run: |
-          chmod +x build_script.sh
-          ./build_script.sh
+          chmod +x build.sh
+          chmod +x build_and_package.sh
+          ./build_and_package.sh
 
       - name: Extract version directory (macOS)
         id: extract-version-macos

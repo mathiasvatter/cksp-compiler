@@ -5,50 +5,104 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "../../BuiltinsProcessing/DefinitionProvider.h"
+#include "ReferenceManagement/ASTCollectDeclarations.h"
+#include <chrono>
 
 class TypeInference final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
-	std::vector<NodeFunctionCall*> m_function_calls;
+	std::vector<NodeFunctionCall*> m_func_calls;
 
 	void do_monomorphization() {
-		for (const auto& call : m_function_calls) {
+		for (const auto& call : m_func_calls) {
 			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
-			if (auto definition = call->get_definition()) {
-				if (definition->header->has_union_params()) {
-					const auto new_header = std::make_shared<NodeFunctionHeader>(*definition->header);
-					const size_t param_count = new_header->params.size();
-					for (size_t i = 0; i< param_count; i++) {
-						auto& actual_param = call->function->get_arg(i);
-						auto& formal_param = new_header->get_param(i);
-						match_type(*formal_param, *actual_param);
-					}
-					new_header->create_function_type();
-
-					if (const auto func = m_program->look_up_exact({new_header->name, (int)new_header->params.size()}, new_header->ty)) {
-						call->definition = func;
-						call->function->declaration = func->header;
-						continue;
-					}
-
-					auto new_func_def = std::make_shared<NodeFunctionDefinition>(*definition);
-					new_func_def->header = new_header;
-					new_func_def->header->parent = new_func_def.get();
-					new_func_def->accept(*this);
-
-					const std::string func_name = m_def_provider->get_fresh_name(call->function->name);
-					call->function->name = func_name;
-					// new_func_def->header->name = func_name;
-					call->function->declaration = new_func_def->header;
-					call->definition = new_func_def;
-					const auto func_ptr = m_program->add_function_definition(std::move(new_func_def));
-					func_ptr->header->name = func_name;
-				}
+			auto const def = call->get_definition();
+			if (!def) continue;
+			for (int i = 0; i < call->function->get_num_args(); i++) {
+				auto& func_arg = call->function->get_arg(i);
+				auto& param = def->get_param(i);
+				// infer formal param type only if function is no builtin function
+				// this throws errors with the-pulse
+				// const std::string error_message2 =
+				// "Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
+				// 	+ func_arg->ty->to_string() + " as argument type.";
+				match_parameters(*param, func_arg->ty, "");
 			}
 		}
 
+		for (const auto& call : m_func_calls) {
+			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
+			auto const def = call->get_definition();
+			if (!def) continue;
+			if (def->header->has_union_params()) {
+				auto new_header = clone_as<NodeFunctionHeader>(def->header.get());
+				const size_t param_count = new_header->params.size();
+				for (size_t i = 0; i< param_count; i++) {
+					auto& actual_param = call->function->get_arg(i);
+					auto& formal_param = new_header->get_param(i);
+					match_type(*formal_param, *actual_param);
+					formal_param->cast_type();
+				}
+				new_header->create_function_type();
+
+				// if (new_header->name == "update.strip.noAutomation") {
+				//
+				// }
+
+				// if this was already monomorphized in the exact same way, skip this
+				const auto func = m_program->look_up_exact({new_header->name, (int)new_header->params.size()}, new_header->ty);
+				// if there is only one call site skip this
+				if (func) {
+					call->definition = func;
+					call->function->declaration = func->header;
+					continue;
+				}
+				if (def->header->references.size() == 1) {
+					// def->set_header(std::shared_ptr(std::move(new_header)));
+					for (size_t i = 0; i<def->header->params.size(); i++) {
+						auto const& param = def->header->get_param(i);
+						param->ty = new_header->get_param(i)->ty;
+					}
+					def->header->ty = new_header->ty;
+					continue;
+				}
+
+				// std::cout << "Creating monomorphic function definition for " << new_header->name << std::endl;
+
+				// ----- Zeitmessung: Kopieren der Funktionsdefinition -----
+				// auto start_copy = std::chrono::high_resolution_clock::now();
+				auto new_func_def = clone_as<NodeFunctionDefinition>(def.get());
+				new_func_def->set_header(std::shared_ptr(std::move(new_header)));
+				new_func_def->remove_references();
+				// auto end_copy = std::chrono::high_resolution_clock::now();
+				// auto duration_copy = std::chrono::duration_cast<std::chrono::microseconds>(end_copy - start_copy).count();
+				// std::cout << "[Timing] Kopieren der function definition dauerte: " << duration_copy << " µs" << std::endl;
+
+				// ----- Zeitmessung: collect_declarations Schritt -----
+				// auto start_collect = std::chrono::high_resolution_clock::now();
+				static ASTCollectDeclarations collect(m_program);
+				new_func_def->accept(collect);
+				// auto end_collect = std::chrono::high_resolution_clock::now();
+				// auto duration_collect = std::chrono::duration_cast<std::chrono::microseconds>(end_collect - start_collect).count();
+				// std::cout << "[Timing] collect_declarations dauerte: " << duration_collect << " µs" << std::endl;
+
+				new_func_def->collect_references();
+				new_func_def->accept(*this);
+
+				const std::string func_name = m_def_provider->get_fresh_name(call->function->name);
+				call->function->name = func_name;
+				// new_func_def->header->name = func_name;
+				call->function->declaration = new_func_def->header;
+				const auto func_ptr = m_program->add_function_definition(std::move(new_func_def));
+				call->definition = func_ptr->get_shared();
+				func_ptr->header->name = func_name;
+			}
+		}
+		// auto start_merge = std::chrono::high_resolution_clock::now();
 		m_program->merge_function_definitions();
 		m_program->update_function_lookup();
+		// auto end_merge = std::chrono::high_resolution_clock::now();
+		// auto duration_merge = std::chrono::duration_cast<std::chrono::microseconds>(end_merge - start_merge).count();
+		// std::cout << "[Timing] Mergen und updaten der function definitions dauerte: " << duration_merge << " µs" << std::endl;
 	}
 
 
@@ -59,7 +113,7 @@ public:
 	}
 
 	NodeAST* do_complete_traversal(NodeProgram& node) {
-		m_function_calls.clear();
+		m_func_calls.clear();
 		m_def_provider->m_all_declarations.clear();
 		m_def_provider->m_all_references.clear();
 		m_def_provider->m_all_data_structures.clear();
@@ -76,13 +130,14 @@ public:
 		for(const auto & s : node.struct_definitions) {
 			s->collect_recursive_structs(m_program);
 		}
+		// node.debug_print();
 		do_monomorphization();
 		node.reset_function_visited_flag();
 		return &node;
 	}
 
 	NodeAST* do_reachable_traversal(NodeProgram& node) {
-		m_function_calls.clear();
+		m_func_calls.clear();
 		m_def_provider->m_all_declarations.clear();
 		m_def_provider->m_all_references.clear();
 		m_def_provider->m_all_data_structures.clear();
@@ -177,6 +232,7 @@ public:
     	if (header.params.empty()) return false;
     	const auto func_type = header.ty->cast<FunctionType>();
     	if (!func_type) return false;
+    	if (func_type->m_params.empty()) return false;
     	// check if all param types are the same;
     	if (std::adjacent_find(func_type->m_params.begin(), func_type->m_params.end(), std::not_equal_to<>()) != func_type->m_params.end()) return false;
     	if (!func_type->m_params[0]->is_union_type()) return false;
@@ -236,24 +292,31 @@ public:
 		if(!node1.ty->is_compatible(node2.ty)) {
             throw_type_error(node1, node2.ty, message).exit();
 		}
-		// if one of them is composite type -> the other will be too
-		if(node2.ty->get_type_kind() == TypeKind::Composite and node1.ty == TypeRegistry::Unknown) {
-			// stash elem_typ temporarily
-			auto elem_type = node1.ty->get_element_type();
-			node1.ty = node2.ty;
-			node1.set_element_type(elem_type);
-		} else if(node1.ty->get_type_kind() == TypeKind::Composite and node2.ty == TypeRegistry::Unknown) {
-			// stash elem_typ temporarily
-			auto elem_type = node2.ty->get_element_type();
-			node2.ty = node1.ty;
-			node2.set_element_type(elem_type);
-		}
 
+    	match_composite_type(node1, node2);
 		// specialize types:
         node1.set_element_type(specialize_type(node1.ty, node2.ty));
 
         return node1.ty;
 	}
+
+	// matches the outer type of node1 and node2 -> does not check for compatibility
+	static Type* match_composite_type(NodeAST& node1, NodeAST& node2) {
+    	// if one of them is composite type -> the other will be too
+    	if(node2.ty->get_type_kind() == TypeKind::Composite and node1.ty == TypeRegistry::Unknown) {
+    		// stash elem_typ temporarily
+    		const auto elem_type = node1.ty->get_element_type();
+    		node1.ty = node2.ty;
+    		node1.set_element_type(elem_type);
+    	} else if(node1.ty->get_type_kind() == TypeKind::Composite and node2.ty == TypeRegistry::Unknown) {
+    		// stash elem_typ temporarily
+    		const auto elem_type = node2.ty->get_element_type();
+    		node2.ty = node1.ty;
+    		node2.set_element_type(elem_type);
+    	}
+    	return node1.ty;
+    }
+
 
 	/// tries to match the types of l_value and r_value after checking type compatibility, skipping
 	/// compatibility check of r_value to l_value because of string and integer
@@ -323,6 +386,11 @@ public:
         // get element types if composite type (element typ not nullptr):
         const auto node_1 = type1->get_element_type();
         const auto node_2 = type2->get_element_type();
+
+		// if (node_2 == TypeRegistry::String) {
+		// 	if (node_1 == TypeRegistry::String) return node_1;
+		// 	if (node_1 == TypeRegistry::Unknown) return TypeRegistry::Any;
+		// }
 
         // specialize types:
 		// comparison is never the most specialized type
@@ -395,9 +463,9 @@ public:
 
 	/// only there to match/generalize formal parameter to actual parameter
 	static Type* match_parameters(NodeAST& node1, Type* type, const std::string& message="") {
-    	if(!node1.ty->is_compatible(type)) {
-    		throw_type_error(node1, type, message).exit();
-    	}
+    	// if(!node1.ty->is_compatible(type)) {
+    	// 	throw_type_error(node1, type, message).exit();
+    	// }
     	// if type is composite and node1 is unknown, set type of node1 to type
     	if(type->cast<CompositeType>() and node1.ty == TypeRegistry::Unknown) {
     		// stash elem_typ temporarily

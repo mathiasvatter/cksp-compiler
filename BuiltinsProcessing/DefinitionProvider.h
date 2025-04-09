@@ -35,6 +35,22 @@ public:
 			std::vector<std::shared_ptr<NodeDataStructure>> m_external_variables);
 	explicit DefinitionProvider();
 
+	bool add_external_variables_to_global_scope() {
+		if (m_declared_data_structures.size() < 1) {
+			auto compile_error = CompileError(ErrorType::InternalError, "", -1, "", "", "");
+			compile_error.m_message = "Tried to add external variables to global scope, but there is no global scope.";
+			compile_error.exit();
+			return false;
+		}
+		for(const auto& var : external_variables) {
+			if (const auto ui_control = var->cast<NodeUIControl>()) {
+				m_declared_data_structures[0].insert({ui_control->control_var->name, ui_control->control_var});
+			} else {
+				m_declared_data_structures[0].insert({var->name, var});
+			}
+		}
+		return true;
+	}
 
 	bool add_scope();
 	std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual> remove_scope();
@@ -50,7 +66,7 @@ public:
 	/// only called by references -> only gets declaration does not add existing declarations to map
 	std::shared_ptr<NodeDataStructure> get_declaration(NodeReference& var);
 	/// adds existing declaration to declaration map for look up. Always returns nullptr.
-	std::shared_ptr<NodeDataStructure> set_declaration(std::shared_ptr<NodeDataStructure> var, bool global_scope);
+	std::shared_ptr<NodeDataStructure> set_declaration(const std::shared_ptr<NodeDataStructure>& var, bool global_scope);
 
 	std::string get_fresh_name(const std::string& name) {
 		return m_gensym.fresh(name);
@@ -149,7 +165,7 @@ public:
 	/// returns data structure declaration searching all scopes
 	std::shared_ptr<NodeDataStructure> get_declared_data_structure(const std::string& data);
 	/// only returns data structure declaration in current scope or global_scope
-	std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope);
+	std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope) const;
 
 	/// variable error handling
 	static CompileError throw_declaration_error(const NodeReference &node, const std::string& add_msg="") {

@@ -8,6 +8,8 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
 
 	m_program->global_declarations->accept(*this);
+	m_program->global_declarations->prepend_body(NodeStruct::declare_struct_constants());
+	m_program->global_declarations->prepend_as_stmt(m_program->declare_global_iterator());
 	for(const auto & struct_def : node.struct_definitions) {
 		struct_def->accept(*this);
 	}
@@ -19,8 +21,6 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
     }
 	// update because function parameters might have been added which might cause problems in typechecking
 //	m_program->update_function_lookup();
-	m_program->global_declarations->prepend_body(NodeStruct::declare_struct_constants());
-	m_program->global_declarations->prepend_as_stmt(m_program->declare_global_iterator());
 //	m_program->global_declarations->append_body(declare_compiler_variables());
 	m_program->global_declarations->append_body(std::move(m_global_variable_declarations));
 	return &node;
@@ -87,8 +87,8 @@ NodeAST* ASTDesugar::visit(NodeSingleAssignment& node) {
 //}
 
 NodeAST* ASTDesugar::visit(NodeFamily &node) {
-    node.members->accept(*this);
-	return node.desugar(m_program);
+    // node.members->accept(*this);
+	return node.desugar(m_program)->accept(*this);
 }
 
 NodeAST* ASTDesugar::visit(NodeConst &node) {

@@ -46,9 +46,6 @@ public:
 				const auto func_above = m_program->function_call_stack.top().lock();
 				func_above->is_thread_safe &= definition->is_thread_safe;
 				func_above->is_restricted |= definition->is_restricted;
-				if (!definition->is_thread_safe || definition->is_restricted) {
-					func_above->allowed_callbacks.insert(definition->allowed_callbacks.begin(), definition->allowed_callbacks.end());
-				}
 			}
 			if(m_program->current_callback) {
 				m_program->current_callback->is_thread_safe &= definition->is_thread_safe;
