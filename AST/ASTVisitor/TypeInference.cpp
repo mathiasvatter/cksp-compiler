@@ -611,9 +611,6 @@ NodeAST * TypeInference::visit(NodeSetControl& node) {
 }
 
 NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
-	if (node.l_value->name == "user_preset_titles") {
-
-	}
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
 
@@ -650,9 +647,6 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
-	if (node.function->name == "set_menu_item_str") {
-
-	}
 	// match_type(node, *node.parent);
 	node.bind_definition(m_program);
 	auto definition = node.get_definition();
