@@ -75,7 +75,7 @@ public:
 
 	/// Determining array size at compile time -> not of references!
 	NodeAST * visit(NodeArray& node) override {
-		m_size_is_constant = true;
+		// m_size_is_constant = true;
 		m_current_array = &node;
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 		if (node.parent->get_node_type() != NodeType::SingleDeclaration and
@@ -107,9 +107,9 @@ public:
 			}
 		// array has size -> check if it is a constant variable
 		} else {
-			m_size_is_constant = true;
+			// m_size_is_constant = true;
 			node.size->accept(*this);
-			if(!m_size_is_constant) {
+			if(!node.size->is_constant()) {
 				error.m_message = "Size of <Array> has to be a constant <Variable> or <Integer>.";
 				error.m_got = node.size->get_string();
 				error.exit();
@@ -119,22 +119,22 @@ public:
 		return &node;
 	}
 
-	NodeAST * visit(NodeVariableRef& node) override {
-		if(node.data_type == DataType::Const and node.ty == TypeRegistry::Integer) {
-			m_size_is_constant &= true;
-		}
-		return &node;
-	}
-
-	NodeAST * visit(NodeReal& node) override {
-		m_size_is_constant &= false;
-		return &node;
-	}
-
-	NodeAST * visit(NodeInt& node) override {
-		m_size_is_constant &= true;
-		return &node;
-	}
+	// NodeAST * visit(NodeVariableRef& node) override {
+	// 	if(node.data_type == DataType::Const and node.ty == TypeRegistry::Integer) {
+	// 		m_size_is_constant &= true;
+	// 	}
+	// 	return &node;
+	// }
+	//
+	// NodeAST * visit(NodeReal& node) override {
+	// 	m_size_is_constant &= false;
+	// 	return &node;
+	// }
+	//
+	// NodeAST * visit(NodeInt& node) override {
+	// 	m_size_is_constant &= true;
+	// 	return &node;
+	// }
 
 	NodeAST * visit(NodeFunctionCall& node) override {
 		// check if func is 'num_elements' which returns constant and can be used as array size
@@ -145,11 +145,11 @@ public:
 					error.m_message = "Size of <Array> cannot reference itself.";
 					error.exit();
 				}
-				m_size_is_constant &= true;
-				return &node;
+				// m_size_is_constant &= true;
+				// return &node;
 			}
 		}
-		m_size_is_constant &= false;
+		// m_size_is_constant &= false;
 		return &node;
 	}
 
