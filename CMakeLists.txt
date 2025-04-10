@@ -213,6 +213,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/GlobalScope/DimensionDeflator.h
         Optimization/ArrayInitializationRaising.h
         Desugaring/DesugarUIControlArray.h
+        AST/ASTVisitor/UniqueArrayNamesProvider.h
 )
 
 target_compile_definitions(cksp PRIVATE PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")

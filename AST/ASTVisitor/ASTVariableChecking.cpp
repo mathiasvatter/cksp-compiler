@@ -162,7 +162,6 @@ NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 						  "to be declared in the <on init> callback.";
 		error.exit();
 	}
-
     node.variable->accept(*this);
     if(node.value) node.value->accept(*this);
 	m_def_provider->add_to_declarations(&node);
@@ -178,6 +177,7 @@ NodeAST* ASTVariableChecking::visit(NodeSingleAssignment& node) {
 NodeAST* ASTVariableChecking::visit(NodeArray& node) {
 	node.determine_locality(m_program, get_current_block());
 	if(node.size) node.size->accept(*this);
+	if (node.num_elements) node.num_elements->accept(*this);
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 	return &node;
 }
@@ -216,6 +216,7 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 NodeAST* ASTVariableChecking::visit(NodeNDArray& node) {
 	node.determine_locality(m_program, get_current_block());
 	if(node.sizes) node.sizes->accept(*this);
+	if (node.num_elements) node.num_elements->accept(*this);
 	m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 	return &node;
 }

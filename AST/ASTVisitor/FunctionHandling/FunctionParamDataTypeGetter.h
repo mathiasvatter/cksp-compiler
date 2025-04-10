@@ -32,7 +32,9 @@ public:
 	void write_data_type_per_param() {
 		for (const auto& [param, types] : m_data_type_per_param) {
 			if (types.size() != 1) continue;
-			param->variable->data_type = *types.begin();
+			auto data_type = *types.begin();
+			if (data_type == DataType::UIControl)
+				param->variable->data_type = data_type;
 		}
 	}
 

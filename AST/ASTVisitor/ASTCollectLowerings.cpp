@@ -196,7 +196,7 @@ NodeAST * ASTCollectLowerings::visit(NodeWhile& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeBreak& node) {
-	node.get_nearest_loop();
+	// node.get_nearest_loop();
 	return &node;
 }
 

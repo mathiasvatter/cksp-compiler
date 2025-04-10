@@ -23,8 +23,7 @@
  * - Integrates with the DefinitionProvider to validate whether variables
  *   are constant.
  */
-class ConstExprValidator : public ASTVisitor {
-private:
+class ConstExprValidator final : public ASTVisitor {
 	bool m_is_constant = true;
 
 public:
@@ -58,6 +57,12 @@ public:
 		return &node;
 	}
 
+	NodeAST * visit(NodeNumElements& node) override {
+		node.array->accept(*this);
+		if(node.dimension) node.dimension->accept(*this);
+		return &node;
+	}
+
 	NodeAST * visit(NodeReal& node) override {
 		m_is_constant &= true;
 		return &node;
@@ -74,9 +79,15 @@ public:
 	}
 
 	NodeAST * visit(NodeFunctionCall& node) override {
+		node.function->accept(*this);
 		// check if func is 'num_elements' which returns constant and can be used as array size
 		if(node.kind == NodeFunctionCall::Kind::Builtin and node.function->get_num_args() == 1) {
 			if(node.function->name == "num_elements" or node.function->name == "get_ui_id") {
+				m_is_constant &= true;
+				return &node;
+			}
+		} else if (node.kind == NodeFunctionCall::Kind::UserDefined and node.function->get_num_args() == 2) {
+			if (node.function->name == "Array::clip") {
 				m_is_constant &= true;
 				return &node;
 			}
