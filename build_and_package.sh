@@ -8,6 +8,14 @@ BUILD_DIR="cmake-build-release"
 # build only
 ./build.sh release
 
+# Überprüfen, auf welcher macOS-Architektur man sich befindet und setze target_dir
+ARCH=$(uname -m)
+if [ "$ARCH" == "arm64" ]; then
+    TARGET_DIR="$ARM_DIR"
+else
+    TARGET_DIR="$INTEL_DIR"
+fi
+
 # execute cksp to get the version
 VERSION=$("$BUILD_DIR/cksp" --version | awk '{print $3}')
 
