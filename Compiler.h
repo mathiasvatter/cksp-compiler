@@ -68,10 +68,10 @@ public:
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-		// input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
+		input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
 	    // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 	// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
-	input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
+	// input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 	// input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
 	// input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
 	// input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
@@ -214,7 +214,6 @@ public:
 		compile_time.stop("Data Structure Lowering");
 		std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
 		compile_time.start("Variable Checking 1");
-		ast->debug_print();
 
 		variable_checking.do_reachable_traversal(*ast, true);
 		ast->remove_references();
@@ -238,8 +237,9 @@ public:
 
 		ArrayInitializationRaising array_init_raising;
 		array_init_raising.do_initialization_raising(*ast->init_callback, m_program);
-		NormalizeArrayAssign2 desugar_single_assign(m_program);
-		ast->accept(desugar_single_assign);
+		NormalizeArrayAssign2 normalize_array_assign(m_program);
+		ast->accept(normalize_array_assign);
+		// ast->debug_print();
 
 		compile_time.stop("Global Scope");
 		std::cout << compile_time.print_timer("Global Scope") << std::endl;

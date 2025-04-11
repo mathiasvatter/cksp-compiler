@@ -30,7 +30,19 @@ private:
 		for (const auto &callback : node.callbacks) {
 			callback->accept(*this);
 		}
-		node.merge_function_definitions();
+		node.reset_function_visited_flag();
+		// node.merge_function_definitions();
+		return &node;
+	}
+
+	// in order to traverse the whole ast and visit all functions
+	NodeAST* visit(NodeFunctionCall& node) override {
+		node.function->accept(*this);
+		node.bind_definition(m_program);
+		if (const auto& definition = node.get_definition()) {
+			if (!definition->visited) definition->accept(*this);
+			definition->visited = true;
+		}
 		return &node;
 	}
 

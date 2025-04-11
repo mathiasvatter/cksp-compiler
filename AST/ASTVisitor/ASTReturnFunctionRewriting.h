@@ -89,7 +89,8 @@ private:
 			// if (node.parent->cast<NodeStatement>() and &node != m_just_hoisted) {
 			// 	if (node.is_builtin_kind()) return &node;
 			// 	if (definition->num_return_params > 0) {
-			// 		auto &throwaway_var = definition->header->get_param(0);
+			// 		auto &throwaway_var = definition->header-
+			// 		>get_param(0);
 			// 		auto throwaway_ref = throwaway_var->to_reference();
 			// 		throwaway_ref->name = m_def_provider->get_fresh_name("_");
 			// 		throwaway_ref->kind = NodeReference::Kind::Throwaway;
