@@ -54,6 +54,7 @@ public:
 
 	NodeAST *visit(NodeArray &node) override {
 		if(node.size) node.size->accept(*this);
+		if (node.num_elements) node.num_elements->accept(*this);
 		node.clear_references();
 		return &node;
 	}
@@ -86,6 +87,7 @@ public:
 	NodeAST *visit(NodeNDArray &node) override {
 		node.clear_references();
 		if(node.sizes) node.sizes->accept(*this);
+		if (node.num_elements) node.num_elements->accept(*this);
 		return &node;
 	}
 	NodeAST *visit(NodeNDArrayRef &node) override {

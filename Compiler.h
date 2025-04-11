@@ -30,6 +30,7 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
 #include "AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h"
 #include "AST/ASTVisitor/ASTLowerTypes.h"
+#include "AST/ASTVisitor/UniqueArrayNamesProvider.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign2.h"
@@ -67,16 +68,16 @@ public:
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-		// input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
+		input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
 	    // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 	// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
-	//    input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
+	// input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 	// input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
 	// input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
 	// input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
 	// input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
 		// input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
-	input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
+	// input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 
 	//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
@@ -147,6 +148,8 @@ public:
 		ASTVariableChecking variable_checking(m_program);
 		variable_checking.do_complete_traversal(*ast, false);
 		ast->collect_references();
+		UniqueArrayNamesProvider unique_names_provider(m_program);
+		unique_names_provider.do_renaming(*m_program);
 
 		compile_time.stop("Variable Checking");
 		std::cout << compile_time.print_timer("Variable Checking") << std::endl;
@@ -178,6 +181,8 @@ public:
 		ast->accept(lowering_types);
 		// inline here so inlined struct vars get their declaration for register reuse later on
 		ast->inline_structs();
+
+
 
 		ASTDimensionExpansion dimension_inflation(m_program);
 		ast->accept(dimension_inflation);
@@ -232,8 +237,9 @@ public:
 
 		ArrayInitializationRaising array_init_raising;
 		array_init_raising.do_initialization_raising(*ast->init_callback, m_program);
-		NormalizeArrayAssign2 desugar_single_assign(m_program);
-		ast->accept(desugar_single_assign);
+		NormalizeArrayAssign2 normalize_array_assign(m_program);
+		ast->accept(normalize_array_assign);
+		// ast->debug_print();
 
 		compile_time.stop("Global Scope");
 		std::cout << compile_time.print_timer("Global Scope") << std::endl;
@@ -242,7 +248,6 @@ public:
 		ASTFunctionStrategy function_strategy(m_program);
 		ast->accept(function_strategy);
 
-		ast->debug_print();
 		ast->order_function_definitions();
 		ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 
@@ -250,7 +255,6 @@ public:
 		ast->accept(func_inlining);
 		ast->order_function_definitions();
 		// ast->debug_print();
-
 
 	    compile_time.stop("Function Inlining");
 		std::cout << compile_time.print_timer("Function Inlining") << std::endl;
