@@ -122,9 +122,10 @@ NodeAST * ASTCollectLowerings::visit(NodeSetControl& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
-	if(node.bind_definition(m_program)) {
-		if(!node.get_definition()->visited) node.get_definition()->accept(*this);
-		node.get_definition()->visited = true;
+	node.bind_definition(m_program);
+	if (const auto& definition = node.get_definition()) {
+		if(!definition->visited) definition->accept(*this);
+		definition->visited = true;
 	}
 	return node.lower(m_program);
 }

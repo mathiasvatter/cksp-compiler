@@ -156,6 +156,7 @@ private:
 			),
 			Token()
 		);
+		clip_call->strategy = NodeFunctionCall::Strategy::ExpressionFunc;
 		return clip_call;
 	}
 
@@ -164,7 +165,7 @@ private:
 	 * 	return x + (-x .and. sh_right(x, 31)) - ((x - b) .and. sh_right((b - x), 31))
 	 * end function
 	 */
-	inline bool add_clip_function(NodeProgram* program) {
+	bool add_clip_function(NodeProgram* program) {
 		// Prüfen, ob die Funktion bereits existiert
 		auto it = program->function_lookup.find({m_func_name, 2});
 		if (it != program->function_lookup.end()) {
