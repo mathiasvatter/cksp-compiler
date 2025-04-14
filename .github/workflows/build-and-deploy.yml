@@ -23,13 +23,25 @@ jobs:
           cmake-version: '3.27.0'
 
       - name: Install dependencies
-        run: brew install ninja
+        run: brew install ninja || echo "Ninja is already installed"
 
-      - name: Build CKSP (macOS)
+      - name: Install Rosetta
         run: |
+          sudo softwareupdate --install-rosetta --agree-to-license || echo "Rosetta already installed"
+
+      - name: Build CKSP for ARM64 (native)
+        run: |
+          export CI=true
           chmod +x build.sh
           chmod +x build_and_package.sh
           ./build_and_package.sh
+
+      - name: Build CKSP for x86_64 (Rosetta)
+        run: |
+          export CI=true
+          chmod +x build.sh
+          chmod +x build_and_package.sh
+          arch -x86_64 ./build_and_package.sh
 
       - name: Extract version directory (macOS)
         id: extract-version-macos
