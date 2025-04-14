@@ -11,19 +11,17 @@
  * Throwing necessary errors if the array is not declared correctly
  * e.g. if size is not a constant or not able to be determined at compile time
  */
-class DataLoweringArray : public ASTLowering {
-private:
+class DataLoweringArray final : public ASTLowering {
 	NodeArray* m_current_array = nullptr;
 	bool m_size_is_constant = true;
 
-	static inline bool check_size_against_initializer_list(const NodeSingleDeclaration& node) {
-		if(node.variable->get_node_type() == NodeType::Array) {
-			auto node_array = static_cast<NodeArray*>(node.variable.get());
+	static bool check_size_against_initializer_list(const NodeSingleDeclaration& node) {
+		if(auto node_array = node.variable->cast<NodeArray>()) {
+			if (!node.value) return false;
 			// check if size of array is correct when given initializer list
-			if(node.value and node.value->get_node_type() == NodeType::InitializerList) {
-				auto init_list = static_cast<NodeInitializerList*>(node.value.get());
-				if(node_array->size->get_node_type() == NodeType::Int) {
-					auto node_int = static_cast<NodeInt*>(node_array->size.get());
+			if(auto init_list = node.value->cast<NodeInitializerList>()) {
+				node_array->size->do_constant_folding();
+				if(auto node_int = node_array->size->cast<NodeInt>()) {
 					auto dims = init_list->get_dimensions();
 					if(dims.size() != 1) {
 						auto error = CompileError(ErrorType::SyntaxError, "", "", node_array->tok);
