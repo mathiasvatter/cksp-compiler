@@ -115,9 +115,9 @@ public:
 			output_filename = preprocessor.get_output_path();
 	    if(output_filename.empty())
 	        output_filename = standard_output_path;
-		std::cout << std::endl;
-		std::cout << "Input File: " << input_filename << std::endl;
-		std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << output_filename << std::endl;
+		std::cout << "\n";
+		std::cout << "Input File: " << input_filename << "\n";
+		std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << output_filename << "\n";
 		std::cout << std::endl;
 		std::filesystem::path curr_path = __FILE__;
 
@@ -152,14 +152,14 @@ public:
 		unique_names_provider.do_renaming(*m_program);
 
 		compile_time.stop("Variable Checking");
-		std::cout << compile_time.print_timer("Variable Checking") << std::endl;
+		std::cout << compile_time.print_timer("Variable Checking") << "\n";
 		compile_time.start("Semantic Analysis");
 
 		ASTSemanticAnalysis data_structures(ast.get());
 		ast->accept(data_structures);
 
 		compile_time.stop("Semantic Analysis");
-		std::cout << compile_time.print_timer("Semantic Analysis") << std::endl;
+		std::cout << compile_time.print_timer("Semantic Analysis") << "\n";
 		compile_time.start("Type Checking");
 
 		// ast->debug_print();
@@ -167,7 +167,7 @@ public:
 		infer_types.do_complete_traversal(*ast);
 
 		compile_time.stop("Type Checking");
-		std::cout << compile_time.print_timer("Type Checking") << std::endl;
+		std::cout << compile_time.print_timer("Type Checking") << "\n";
 		compile_time.start("Lowering");
 
 		ASTPointerScope pointer_scope(m_program);
@@ -188,7 +188,7 @@ public:
 		ast->accept(dimension_inflation);
 
 		compile_time.stop("Lowering");
-		std::cout << compile_time.print_timer("Lowering") << std::endl;
+		std::cout << compile_time.print_timer("Lowering") << "\n";
 		compile_time.start("Return Function Rewriting");
 
 		ASTReturnFunctionRewriting return_function_rewriting(m_program);
@@ -199,7 +199,7 @@ public:
 		ast->accept(pre_inlining);
 
 		compile_time.stop("Return Function Rewriting");
-		std::cout << compile_time.print_timer("Return Function Rewriting") << std::endl;
+		std::cout << compile_time.print_timer("Return Function Rewriting") << "\n";
 		compile_time.start("Data Structure Lowering");
 
 		// ast->debug_print();
@@ -212,7 +212,7 @@ public:
 		ast->accept(data_structure_lowering);
 
 		compile_time.stop("Data Structure Lowering");
-		std::cout << compile_time.print_timer("Data Structure Lowering") << std::endl;
+		std::cout << compile_time.print_timer("Data Structure Lowering") << "\n";
 		compile_time.start("Variable Checking 1");
 
 		variable_checking.do_reachable_traversal(*ast, true);
@@ -221,7 +221,7 @@ public:
 		infer_types.do_reachable_traversal(*ast);
 
 		compile_time.stop("Variable Checking 1");
-		std::cout << compile_time.print_timer("Variable Checking 1") << std::endl;
+		std::cout << compile_time.print_timer("Variable Checking 1") << "\n";
 		compile_time.start("Global Scope");
 
 		// first pass to analyze dynamic extend within function definitions and replace with passive_vars
@@ -242,7 +242,7 @@ public:
 		// ast->debug_print();
 
 		compile_time.stop("Global Scope");
-		std::cout << compile_time.print_timer("Global Scope") << std::endl;
+		std::cout << compile_time.print_timer("Global Scope") << "\n";
 	    compile_time.start("Function Inlining");
 
 		ASTFunctionStrategy function_strategy(m_program);
@@ -257,7 +257,7 @@ public:
 		// ast->debug_print();
 
 	    compile_time.stop("Function Inlining");
-		std::cout << compile_time.print_timer("Function Inlining") << std::endl;
+		std::cout << compile_time.print_timer("Function Inlining") << "\n";
 		compile_time.start("Post Lowering");
 
 		ASTCollectPostLowerings post_lowering(m_program);
@@ -267,7 +267,7 @@ public:
 	//	ast->debug_print();
 
 		compile_time.stop("Post Lowering");
-		std::cout << compile_time.print_timer("Post Lowering") << std::endl;
+		std::cout << compile_time.print_timer("Post Lowering") << "\n";
 		compile_time.start("Optimization");
 
 		ast->inline_global_variables();
@@ -275,7 +275,7 @@ public:
 		ASTOptimizations::optimize(*ast);
 
 		compile_time.stop("Optimization");
-		std::cout << compile_time.print_timer("Optimization") << std::endl;
+		std::cout << compile_time.print_timer("Optimization") << "\n";
 		compile_time.start("Generator");
 
 		ASTKSPSyntaxCheck syntax_check(m_program);
@@ -287,9 +287,12 @@ public:
 		generator.generate(output_filename);
 
 		compile_time.stop("Generator");
+		std::cout << compile_time.print_timer("Generator") << "\n";
 		compile_time.stop("Total Time");
 
-		std::cout << compile_time.report() << std::endl;
+		// std::cout << compile_time.report() << std::endl;
+		std::cout << "---------------------------" << "\n";
+		std::cout << ColorCode::Bold << compile_time.print_timer("Total Time") << ColorCode::Reset << "\n";
 
 		std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << output_filename << std::endl;
 	}
