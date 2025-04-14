@@ -137,7 +137,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
 NodeAST * ASTSemanticAnalysis::visit(NodeFunctionHeaderRef& node) {
 	if(node.args) node.args->accept(*this);
 	NodeReference* new_node = &node;
-	if(auto repl = replace_incorrectly_detected_reference(m_program, &node)) {
+	if(auto repl = replace_incorrectly_detected_reference(&node)) {
 		new_node = repl;
 		new_node->accept(*this);
 	}
@@ -169,7 +169,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeArray &node) {
 NodeAST * ASTSemanticAnalysis::visit(NodeArrayRef &node) {
     if(node.index) node.index->accept(*this);
 	NodeReference* new_node = &node;
-	if(const auto repl = replace_incorrectly_detected_reference(m_program, &node)) {
+	if(const auto repl = replace_incorrectly_detected_reference(&node)) {
 		new_node = repl;
 		new_node->accept(*this);
 	}
@@ -186,7 +186,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
 
 	if (!node.determine_sizes()) {
 		NodeReference *new_node = &node;
-		if (const auto repl = replace_incorrectly_detected_reference(m_program, &node)) {
+		if (const auto repl = replace_incorrectly_detected_reference(&node)) {
 			new_node = repl;
 			new_node->accept(*this);
 		}
@@ -208,7 +208,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeVariable &node) {
 
 NodeAST * ASTSemanticAnalysis::visit(NodeVariableRef &node) {
 	NodeReference* new_node = &node;
-	if(auto repl = replace_incorrectly_detected_reference(m_program, &node)) {
+	if(auto repl = replace_incorrectly_detected_reference(&node)) {
 		new_node = repl;
 		new_node->accept(*this);
 	}
@@ -221,7 +221,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodePointer &node) {
 
 NodeAST * ASTSemanticAnalysis::visit(NodePointerRef &node) {
 	NodeReference* new_node = &node;
-	if(auto repl = replace_incorrectly_detected_reference(m_program, &node)) {
+	if(auto repl = replace_incorrectly_detected_reference(&node)) {
 		new_node = repl;
 		new_node->accept(*this);
 	}
@@ -238,7 +238,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeList& node) {
 NodeAST * ASTSemanticAnalysis::visit(NodeListRef& node) {
 	node.indexes->accept(*this);
 	NodeReference* new_node = &node;
-	if(const auto repl = replace_incorrectly_detected_reference(m_program, &node)) {
+	if(const auto repl = replace_incorrectly_detected_reference(&node)) {
 		new_node = repl;
 		new_node->accept(*this);
 	}
@@ -246,12 +246,11 @@ NodeAST * ASTSemanticAnalysis::visit(NodeListRef& node) {
 }
 
 void ASTSemanticAnalysis::update_func_call_node_types(const NodeFunctionCall* func_call) {
-	if(func_call->get_definition()) {
+	if(const auto definition = func_call->get_definition()) {
 		for(int i=0; i<func_call->function->get_num_args(); i++) {
-			auto & arg = func_call->function->get_arg(i);
-			auto & param = func_call->get_definition()->get_param(i);
-			if(arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::Array) {
-				auto node_var_ref = arg->cast<NodeVariableRef>();
+			const auto & arg = func_call->function->get_arg(i);
+			const auto & param = definition->get_param(i);
+			if(const auto node_var_ref = arg->cast<NodeVariableRef>(); node_var_ref and param->cast<NodeArray>()) {
 //				if(!node_var_ref->get_declaration()) return;
 				auto node_array_ref = std::make_unique<NodeArrayRef>(
 					node_var_ref->name,
@@ -259,20 +258,19 @@ void ASTSemanticAnalysis::update_func_call_node_types(const NodeFunctionCall* fu
 					node_var_ref->tok);
 				node_var_ref->replace_reference(std::move(node_array_ref));
 			// problem when desugaring return stmts with multiple return variables -> all get to be variables
-			} else if (arg->get_node_type() == NodeType::ArrayRef and param->get_node_type() == NodeType::Variable) {
+			} else if (arg->cast<NodeArrayRef>() and param->cast<NodeVariable>()) {
 				// only permissible if return variable as function param
 				if(param->data_type == DataType::Return) {
 					auto node_array = param->to_array(nullptr);
 					param->replace_datastruct(std::move(node_array));
 				}
-			} else if (arg->get_node_type() == NodeType::NDArrayRef and param->get_node_type() == NodeType::Variable) {
+			} else if (arg->cast<NodeNDArrayRef>() and param->cast<NodeVariable>()) {
 				// only permissible if return variable
 				if(param->data_type == DataType::Return) {
 					auto node_ndarray = param->to_ndarray();
 					param->replace_datastruct(std::move(node_ndarray));
 				}
-			} else if (arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::FunctionHeader) {
-				auto node_var_ref = arg->cast<NodeVariableRef>();
+			} else if (auto node_var_ref = arg->cast<NodeVariableRef>(); node_var_ref and param->cast<NodeFunctionHeader>()) {
 				auto func_var_ref = std::make_unique<NodeFunctionHeaderRef>(
 					node_var_ref->name,
 					std::make_unique<NodeParamList>(node_var_ref->tok),
@@ -280,14 +278,6 @@ void ASTSemanticAnalysis::update_func_call_node_types(const NodeFunctionCall* fu
 					);
 				func_var_ref->ty = node_var_ref->ty;
 				node_var_ref->replace_reference(std::move(func_var_ref));
-//			} else if(arg->get_node_type() == NodeType::VariableRef and param->get_node_type() == NodeType::Array) {
-//				auto node_var_ref = static_cast<NodeVariableRef*>(arg.get());
-//				auto node_array_ref = std::make_unique<NodeArrayRef>(
-//					node_var_ref->name,
-//					nullptr,
-//					node_var_ref->tok);
-//				node_array_ref->match_data_structure(node_var_ref->declaration);
-
 			}
 		}
 	}
@@ -362,19 +352,19 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 	return data_struct.get();
 }
 
-NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeProgram* program, NodeReference* reference) {
-	auto declaration = reference->get_declaration();
+NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeReference* reference) {
+	const auto declaration = reference->get_declaration();
 	if(!declaration) return nullptr;
 	if(reference->get_node_type() == declaration->get_ref_node_type()) return nullptr;
 
 	std::unique_ptr<NodeReference> node_replacement = nullptr;
 	// if reference is variable ref but declaration is detected as array -> change ref to array ref
-	if(reference->get_node_type() == NodeType::VariableRef and declaration->get_node_type() == NodeType::Array) {
+	if(reference->cast<NodeVariableRef>() and declaration->cast<NodeArray>()) {
 		node_replacement = std::make_unique<NodeArrayRef>(
 			reference->name,
 			nullptr,
 			reference->tok);
-	} else if(reference->get_node_type() == NodeType::VariableRef and declaration->get_node_type() == NodeType::NDArray) {
+	} else if(reference->cast<NodeVariableRef>() and declaration->cast<NodeNDArray>()) {
 		// check if raw array is wanted -> then it is ArrayRef
 		if(reference->is_raw_array()) {
 			node_replacement = std::make_unique<NodeArrayRef>(
@@ -388,32 +378,29 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeP
 				reference->tok);
 		}
 		// check if it is NodeListRef
-	} else if(reference->get_node_type() == NodeType::ArrayRef and declaration->get_node_type() == NodeType::List) {
-		auto node_array_ref = reference->cast<NodeArrayRef>();
+	} else if(auto node_array_ref = reference->cast<NodeArrayRef>(); node_array_ref and declaration->cast<NodeList>()) {
 		node_replacement = std::make_unique<NodeListRef>(
 			reference->name,
 			std::make_unique<NodeParamList>(reference->tok, std::move(node_array_ref->index)),
 			reference->tok);
-	} else if(reference->get_node_type() == NodeType::NDArrayRef and declaration->get_node_type() == NodeType::List) {
-		auto node_nd_array_ref = reference->cast<NodeNDArrayRef>();
+	} else if(auto node_nd_array_ref = reference->cast<NodeNDArrayRef>(); node_nd_array_ref and declaration->cast<NodeList>()) {
 		node_replacement = std::make_unique<NodeListRef>(
 			reference->name,
 			std::move(node_nd_array_ref->indexes),
 			reference->tok);
 	// reference detected as variable ref but declaration is pointer
-	} else if (reference->get_node_type() == NodeType::VariableRef and declaration->get_node_type() == NodeType::Pointer) {
+	} else if (reference->cast<NodeVariableRef>() and declaration->cast<NodePointer>()) {
 		node_replacement = std::make_unique<NodePointerRef>(
 			reference->name,
 			reference->tok);
-	} else if (reference->get_node_type() == NodeType::VariableRef and declaration->get_node_type() == NodeType::FunctionHeader) {
+	} else if (reference->cast<NodeVariableRef>() and declaration->cast<NodeFunctionHeader>()) {
 		node_replacement = std::make_unique<NodeFunctionHeaderRef>(
 			reference->name,
 			std::make_unique<NodeParamList>(reference->tok),
 			reference->tok);
 		node_replacement->ty = reference->ty;
-	} else if(reference->get_node_type() == NodeType::ArrayRef and declaration->get_node_type() == NodeType::NDArray) {
-		auto ref = reference->cast<NodeArrayRef>();
-		if (!ref->is_raw_array()) {
+	} else if(auto node_arr_ref = reference->cast<NodeArrayRef>(); node_array_ref and declaration->cast<NodeNDArray>()) {
+		if (!node_arr_ref->is_raw_array()) {
 			auto error = CompileError(ErrorType::SyntaxError, "", "", reference->tok);
 			error.m_message =
 				"<ArrayRef> was declared as <NDArray> but is no raw array. To reference a raw <NDArray> use '_' as prefix.";
@@ -424,7 +411,7 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeP
 
 	if(node_replacement) {
 		node_replacement->match_data_structure(declaration);
-		auto new_ref = reference->replace_reference(std::move(node_replacement));
+		const auto new_ref = reference->replace_reference(std::move(node_replacement));
 		return new_ref;
 	}
 	return nullptr;

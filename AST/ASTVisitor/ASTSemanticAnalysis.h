@@ -67,7 +67,7 @@ public:
 	/// updates incorrectly detected function params (eg arrays detected as variables)
 	static NodeDataStructure* replace_incorrectly_detected_data_struct(const std::shared_ptr<NodeDataStructure>& data_struct);
 	/// updated incorrectly detected references of function params
-	static NodeReference* replace_incorrectly_detected_reference(NodeProgram* program, NodeReference* reference);
+	static NodeReference* replace_incorrectly_detected_reference(NodeReference* reference);
 
 
 };
