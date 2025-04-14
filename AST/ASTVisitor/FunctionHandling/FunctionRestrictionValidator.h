@@ -21,11 +21,11 @@ public:
 		// purge_group: Nur in "ui_control", "ui_controls" und "persistence_changed" erlaubt
 		{ "purge_group", { "ui_control", "ui_controls", "persistence_changed" } },
 		// save_array und verwandte Funktionen: Erlaubt in "init", "persistence_changed", "ui_control" und "pgs_changed"
-		{ "save_array",     { "init", "persistence_changed", "ui_control", "pgs_changed" } },
-		{ "save_array_str", { "init", "persistence_changed", "ui_control", "pgs_changed" } },
-		{ "load_array",     { "init", "persistence_changed", "ui_control", "pgs_changed" } },
-		{ "load_array_str", { "init", "persistence_changed", "ui_control", "pgs_changed" } },
-		{ "fs_get_filename", {"ui_control"}},
+		{ "save_array",     { "init", "persistence_changed", "ui_control", "pgs_changed", "ui_controls" } },
+		{ "save_array_str", { "init", "persistence_changed", "ui_control", "pgs_changed", "ui_controls" } },
+		{ "load_array",     { "init", "persistence_changed", "ui_control", "pgs_changed", "ui_controls" } },
+		{ "load_array_str", { "init", "persistence_changed", "ui_control", "pgs_changed", "ui_controls" } },
+		{ "fs_get_filename", {"ui_control", "ui_controls"}},
 		{"set_snapshot_type", {"init"}},
 		{ "set_note_controller", ([]() -> std::unordered_set<std::string> {
 		 std::unordered_set<std::string> allowed(CALLBACKS.begin(), CALLBACKS.end());
