@@ -31,10 +31,10 @@ class DataLoweringArray final : public ASTLowering {
 					}
 					if(node_int->value < dims[0]) {
 						auto error = CompileError(ErrorType::SyntaxError, "", "", node_array->tok);
-						error.m_message = "Size of <Array> does not match the size of the initializer list.";
+						error.m_message = "Size of <Array> does not match the size of the initializer list. Kontakt will ignore out of range initializers.";
 						error.m_got = std::to_string(init_list->size());
 						error.m_expected = std::to_string(node_int->value);
-						error.exit();
+						error.print();
 						return false;
 					}
 				} else {
@@ -48,47 +48,25 @@ class DataLoweringArray final : public ASTLowering {
 public:
 	explicit DataLoweringArray(NodeProgram* program) : ASTLowering(program) {}
 
-	NodeAST * visit(NodeSingleDeclaration& node) override {
-		node.variable->accept(*this);
-
-		check_size_against_initializer_list(node);
-		// add size constant ".SIZE" to every array declaration
-//		if(node.variable->get_node_type() == NodeType::Array) {
-//			auto node_array = static_cast<NodeArray*>(node.variable.get());
-//			auto node_body = std::make_unique<NodeBlock>(node.tok);
-////			auto node_var = std::make_unique<NodeVariable>(
-////				std::nullopt,
-////				node_array->name + ".SIZE",
-////				TypeRegistry::Integer,
-////				DataType::Const, node.tok);
-////			auto node_declaration = std::make_unique<NodeSingleDeclaration>(
-////				std::move(node_var),
-////				node_array->size->clone(), node.tok);
-////			node_body->add_as_stmt(std::move(node_declaration));
-//			node_body->add_as_stmt(std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok));
-//			return node.replace_with(std::move(node_body));
-//		}
-		return &node;
-	}
-
 	/// Determining array size at compile time -> not of references!
 	NodeAST * visit(NodeArray& node) override {
 		// m_size_is_constant = true;
 		m_current_array = &node;
+		// check if we are in a declaration or a declaration of a ui control
+		const auto node_declaration = node.parent->cast<NodeSingleDeclaration>();
+		const auto node_ui_control = node.parent->cast<NodeUIControl>();
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-		if (node.parent->get_node_type() != NodeType::SingleDeclaration and
-			node.parent->get_node_type() != NodeType::UIControl and !node.is_function_param()) {
+		if (!node_declaration and !node_ui_control and !node.is_function_param()) {
 			error.m_message = "Array is not a reference even though it is not part of a declaration.";
 			error.m_got = node.name;
 			error.exit();
 		}
 		if(node.is_function_param()) return &node;
 
-		auto node_declaration = cast_node<NodeSingleDeclaration>(node.parent);
 		// infer size from r_value param list
 		if (!node.size) {
 			// in case it is ui_control array and size is not determined
-			if(!node_declaration) {
+			if(node_ui_control) {
 				error.m_message = "Unable to infer array size. Size of UI Control Array has to be determined at compile time.";
 				error.exit();
 			}
@@ -100,7 +78,7 @@ public:
 				error.m_expected = "<Initializer List>";
 				error.exit();
 			}
-			if (auto init_list = cast_node<NodeInitializerList>(node_declaration->value.get())) {
+			if (const auto init_list = cast_node<NodeInitializerList>(node_declaration->value.get())) {
 				node.size = std::make_unique<NodeInt>((int32_t) init_list->size(), node.tok);
 			}
 		// array has size -> check if it is a constant variable
@@ -113,26 +91,12 @@ public:
 				error.exit();
 			}
 		}
+		if (node_declaration) {
+			check_size_against_initializer_list(*node_declaration);
+		}
 
 		return &node;
 	}
-
-	// NodeAST * visit(NodeVariableRef& node) override {
-	// 	if(node.data_type == DataType::Const and node.ty == TypeRegistry::Integer) {
-	// 		m_size_is_constant &= true;
-	// 	}
-	// 	return &node;
-	// }
-	//
-	// NodeAST * visit(NodeReal& node) override {
-	// 	m_size_is_constant &= false;
-	// 	return &node;
-	// }
-	//
-	// NodeAST * visit(NodeInt& node) override {
-	// 	m_size_is_constant &= true;
-	// 	return &node;
-	// }
 
 	NodeAST * visit(NodeFunctionCall& node) override {
 		// check if func is 'num_elements' which returns constant and can be used as array size
