@@ -6,8 +6,7 @@
 
 #include "ASTVisitor.h"
 
-class ASTDataStructureLowering: public ASTVisitor {
-private:
+class ASTDataStructureLowering final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
 public:
 	explicit ASTDataStructureLowering(NodeProgram *main) : m_def_provider(main->def_provider) {

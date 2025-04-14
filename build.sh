@@ -18,6 +18,9 @@ else
     CMAKE_BUILD_TYPE="Release"
 fi
 
+# Architektur bestimmen oder per ENV setzen (z. B. ARCH_OVERRIDE)
+ARCHITECTURE=${ARCH_OVERRIDE:-$(uname -m)}
+
 # Architekturabhängige CMake-Auswahl
 if [ "$CI" == "true" ]; then
     # CI-Umgebung: cmake vom System verwenden
@@ -47,7 +50,7 @@ echo "Using CMake: $CMAKE_DIR"
 echo "Build directory: $BUILD_DIR"
 
 # Konfiguration
-$CMAKE_DIR -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" -S .
+$CMAKE_DIR -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" -DCMAKE_OSX_ARCHITECTURES="$ARCHITECTURE" -S .
 if [ $? -ne 0 ]; then
     echo "Error: CMake configuration failed." >&2
     exit 1
