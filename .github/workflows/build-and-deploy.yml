@@ -39,9 +39,14 @@ jobs:
       - name: Build CKSP for x86_64 (Rosetta)
         run: |
           export CI=true
+          export ARCH_OVERRIDE=x86_64
           chmod +x build.sh
           chmod +x build_and_package.sh
           arch -x86_64 ./build_and_package.sh
+
+      - name: Verify architectures of macOS binaries
+        run: |
+          file _Releases/*/macos_*/cksp
 
       - name: Extract version directory (macOS)
         id: extract-version-macos
@@ -72,11 +77,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install dependencies
+      - name: Check and install dependencies
+        shell: pwsh
         run: |
           choco upgrade chocolatey
-          choco install cmake --version=3.27.0 --force
-          choco install ninja
+      
+          if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
+            choco install cmake --version=3.27.0 --force
+          } else {
+            Write-Host "CMake already installed"
+            cmake --version
+          }
+      
+          if (-not (Get-Command ninja -ErrorAction SilentlyContinue)) {
+            choco install ninja
+          } else {
+            Write-Host "Ninja already installed"
+            ninja --version
+          }
 
       - name: Build CKSP (Windows)
         run: |
