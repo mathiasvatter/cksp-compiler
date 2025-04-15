@@ -1,4 +1,4 @@
-// Global Declarations:
+on init
 	declare const MAX::CB::STACK : int := 100 {Reuses: 0}
 	declare local _iter0 : int {Reuses: 0}
 	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
@@ -139,12 +139,25 @@
 	declare angle_min0 : real {Reuses: 0}
 	declare angle_max0 : real {Reuses: 0}
 	declare new_angle00 : real {Reuses: 0}
-on init
+	declare angle1[100] : real[] {Reuses: 0}
+	declare distance0[100] : real[] {Reuses: 0}
+	declare dy00 : real {Reuses: 3}
+	declare cos_theta00 : real {Reuses: 1}
+	declare angle00 : real {Reuses: 2}
+	declare start_note000 : int {Reuses: 0}
+	declare end_note000 : int {Reuses: 0}
+	declare transition_note000 : int {Reuses: 0}
+	declare transition_type000 : int {Reuses: 0}
+	declare transition_dyn_layer000 : int {Reuses: 0}
+	declare offset000 : int {Reuses: 0}
+	declare _ret22000 : int {Reuses: 12}
+	declare result4000 : int {Reuses: 12}
 	declare controller_value0[100] : int[] {Reuses: 1}
 	declare subarticulation_modulation_strength000 : real {Reuses: 5}
 	declare fade_in_range000 : int {Reuses: 4}
 	declare fade_out_end000 : int {Reuses: 3}
 	declare fade_out_range000 : int {Reuses: 4}
+	declare group_count001 : int {Reuses: 28}
 	declare idx000000 : int {Reuses: 16}
 	declare articulation_event_id000 : int {Reuses: 17}
 	declare set_articulation_event_id000 : int {Reuses: 19}
@@ -154,20 +167,6 @@ on init
 	declare is_free0000 : int {Reuses: 18}
 	declare _ret110000 : int {Reuses: 9}
 	declare result10000 : int {Reuses: 29}
-	declare start_note000 : int {Reuses: 0}
-	declare end_note000 : int {Reuses: 0}
-	declare transition_note000 : int {Reuses: 0}
-	declare transition_type000 : int {Reuses: 0}
-	declare transition_dyn_layer000 : int {Reuses: 0}
-	declare offset000 : int {Reuses: 0}
-	declare _ret22000 : int {Reuses: 12}
-	declare result4000 : int {Reuses: 12}
-	declare angle1[100] : real[] {Reuses: 0}
-	declare distance0[100] : real[] {Reuses: 0}
-	declare dy00 : real {Reuses: 3}
-	declare cos_theta00 : real {Reuses: 1}
-	declare angle00 : real {Reuses: 2}
-	declare group_count001 : int {Reuses: 28}
 	set_script_title("Lux - Orchestral Strings"){Builtin, None}
 	set_control_par_str(INST_ICON_ID{int}, CONTROL_PAR_PICTURE{int}, "sonu-badge"){Builtin, None}
 	set_key_pressed_support(1){Builtin, None}
@@ -2325,7 +2324,7 @@ on init
 		inc(i{int}){Builtin, None}
 	end while
 	declare ui_label lbl_version : int (0, 0) {Reuses: 0}
-	set_control_par_str(lbl_version{int}, CONTROL_PAR_TEXT{int}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "13:15:59" & " " & "04/15/25"){Builtin, None}
+	set_control_par_str(lbl_version{int}, CONTROL_PAR_TEXT{int}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "18:36:50" & " " & "04/15/25"){Builtin, None}
 	set_control_par_str(lbl_version{int}, CONTROL_PAR_PICTURE{int}, "alpha"){Builtin, None}
 	set_control_par(lbl_version{int}, CONTROL_PAR_TEXT_ALIGNMENT{int}, 0){Builtin, None}
 	set_control_par(lbl_version{int}, CONTROL_PAR_FONT_TYPE{int}, fonts_regular_white[0]{int}){Builtin, None}
@@ -2388,6 +2387,7 @@ on persistence_changed
 	subarticulation_id1{int} := 0
 	group_count01{int} := group_count001{int}
 	call c_subarticulation_group_count0{UserDefined, Call}
+	v00{int} := ret00{int}
 	while(i{int} <= (v00{int} - 1)) 
 		purge_group((subarticulations_group_idx[subarticulations_ids_positions[0]{int}]{int} + i{int}) + TITLE_GROUP{int}, TRUE{int} * microphone_position_states[i{int} mod NUM_MIC_POSITIONS{int}]{int}){Builtin, None}
 		inc(i{int}){Builtin, None}
@@ -2395,6 +2395,7 @@ on persistence_changed
 		subarticulation_id1{int} := 0
 		group_count01{int} := group_count001{int}
 		call c_subarticulation_group_count0{UserDefined, Call}
+		v00{int} := ret00{int}
 	end while
 	i{int} := 0
 	v00{int} := 0
@@ -2402,6 +2403,7 @@ on persistence_changed
 	subarticulation_id1{int} := 9
 	group_count01{int} := group_count001{int}
 	call c_subarticulation_group_count0{UserDefined, Call}
+	v00{int} := ret00{int}
 	while(i{int} <= (v00{int} - 1)) 
 		purge_group((subarticulations_group_idx[subarticulations_ids_positions[9]{int}]{int} + i{int}) + TITLE_GROUP{int}, TRUE{int} * microphone_position_states[i{int} mod NUM_MIC_POSITIONS{int}]{int}){Builtin, None}
 		inc(i{int}){Builtin, None}
@@ -2409,6 +2411,7 @@ on persistence_changed
 		subarticulation_id1{int} := 9
 		group_count01{int} := group_count001{int}
 		call c_subarticulation_group_count0{UserDefined, Call}
+		v00{int} := ret00{int}
 	end while
 	i{int} := 0
 	group_count001{int} := 0
@@ -2416,6 +2419,7 @@ on persistence_changed
 	subarticulation_id1{int} := 10
 	group_count01{int} := v00{int}
 	call c_subarticulation_group_count0{UserDefined, Call}
+	group_count001{int} := ret00{int}
 	while(i{int} <= (group_count001{int} - 1)) 
 		purge_group((subarticulations_group_idx[subarticulations_ids_positions[10]{int}]{int} + i{int}) + TITLE_GROUP{int}, TRUE{int} * microphone_position_states[i{int} mod NUM_MIC_POSITIONS{int}]{int}){Builtin, None}
 		inc(i{int}){Builtin, None}
@@ -2423,6 +2427,7 @@ on persistence_changed
 		subarticulation_id1{int} := 10
 		group_count01{int} := v00{int}
 		call c_subarticulation_group_count0{UserDefined, Call}
+		group_count001{int} := ret00{int}
 	end while
 	i{int} := 0
 	v00{int} := 0
@@ -2430,6 +2435,7 @@ on persistence_changed
 	subarticulation_id1{int} := 12
 	group_count01{int} := group_count001{int}
 	call c_subarticulation_group_count0{UserDefined, Call}
+	v00{int} := ret00{int}
 	while(i{int} <= (v00{int} - 1)) 
 		purge_group((subarticulations_group_idx[subarticulations_ids_positions[12]{int}]{int} + i{int}) + TITLE_GROUP{int}, TRUE{int} * microphone_position_states[i{int} mod NUM_MIC_POSITIONS{int}]{int}){Builtin, None}
 		inc(i{int}){Builtin, None}
@@ -2437,6 +2443,7 @@ on persistence_changed
 		subarticulation_id1{int} := 12
 		group_count01{int} := group_count001{int}
 		call c_subarticulation_group_count0{UserDefined, Call}
+		v00{int} := ret00{int}
 	end while
 	i{int} := 0
 	group_count001{int} := 0
@@ -2444,6 +2451,7 @@ on persistence_changed
 	subarticulation_id1{int} := 15
 	group_count01{int} := v00{int}
 	call c_subarticulation_group_count0{UserDefined, Call}
+	group_count001{int} := ret00{int}
 	while(i{int} <= (group_count001{int} - 1)) 
 		purge_group((subarticulations_group_idx[subarticulations_ids_positions[15]{int}]{int} + i{int}) + TITLE_GROUP{int}, TRUE{int} * microphone_position_states[i{int} mod NUM_MIC_POSITIONS{int}]{int}){Builtin, None}
 		inc(i{int}){Builtin, None}
@@ -2451,6 +2459,7 @@ on persistence_changed
 		subarticulation_id1{int} := 15
 		group_count01{int} := v00{int}
 		call c_subarticulation_group_count0{UserDefined, Call}
+		group_count001{int} := ret00{int}
 	end while
 	i{int} := 0
 	v00{int} := 0
@@ -2458,6 +2467,7 @@ on persistence_changed
 	subarticulation_id1{int} := 21
 	group_count01{int} := group_count001{int}
 	call c_subarticulation_group_count0{UserDefined, Call}
+	v00{int} := ret00{int}
 	while(i{int} <= (v00{int} - 1)) 
 		purge_group((subarticulations_group_idx[subarticulations_ids_positions[21]{int}]{int} + i{int}) + TITLE_GROUP{int}, TRUE{int} * microphone_position_states[i{int} mod NUM_MIC_POSITIONS{int}]{int}){Builtin, None}
 		inc(i{int}){Builtin, None}
@@ -2465,6 +2475,7 @@ on persistence_changed
 		subarticulation_id1{int} := 21
 		group_count01{int} := group_count001{int}
 		call c_subarticulation_group_count0{UserDefined, Call}
+		v00{int} := ret00{int}
 	end while
 end on
 
@@ -2630,6 +2641,7 @@ on listener
 						subarticulation1{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
 						result34{int} := group_count001{int}
 						call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
+						v00{int} := ret40{int}
 						delay_buffer[set_articulation_event_id000{int}]{int} := articulation_event_id1{int}
 						delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation1{int}
 						if(v00{int} < 0)
@@ -2661,6 +2673,7 @@ on listener
 							fade_out_end02{int} := is_free0000{int}
 							fade_out_range02{int} := idx3000{int}
 							call c_articulations_compute_level0{UserDefined, Call}
+							i3000{int} := ret70{int}
 							delay_buffer_instrument[set_articulation_event_id000{int}]{int} := instrument_slot2{int}
 							delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} := keyswitch2{int}
 							delay_buffer_note[set_articulation_event_id000{int}]{int} := note4{int}
@@ -2671,6 +2684,7 @@ on listener
 							subarticulation1{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
 							result34{int} := result10000{int}
 							call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
+							idx3000{int} := ret40{int}
 							delay_buffer_prev_note[set_articulation_event_id000{int}]{int} := articulation_event_id1{int}
 							delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation1{int}
 							result10000{int} := 0
@@ -3064,6 +3078,7 @@ on listener
 						subarticulation1{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
 						result34{int} := group_count001{int}
 						call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
+						v00{int} := ret40{int}
 						delay_buffer[set_articulation_event_id000{int}]{int} := articulation_event_id1{int}
 						delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation1{int}
 						message("off event " & delay_buffer[set_articulation_event_id000{int}]{int} & " -> " & v00{int}){Builtin, None}
@@ -3073,6 +3088,7 @@ on listener
 						subarticulation1{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
 						result34{int} := group_count001{int}
 						call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
+						v00{int} := ret40{int}
 						delay_buffer[set_articulation_event_id000{int}]{int} := articulation_event_id1{int}
 						delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation1{int}
 						if(v00{int} >= 0)
@@ -3082,6 +3098,7 @@ on listener
 							subarticulation1{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
 							result34{int} := idx000000{int}
 							call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
+							group_count001{int} := ret40{int}
 							delay_buffer[set_articulation_event_id000{int}]{int} := articulation_event_id1{int}
 							delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation1{int}
 							if(subarticulation_event_articulation_event[group_count001{int}]{int} = delay_buffer[set_articulation_event_id000{int}]{int})
@@ -3091,6 +3108,7 @@ on listener
 								subarticulation1{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
 								result34{int} := i3000{int}
 								call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
+								idx000000{int} := ret40{int}
 								delay_buffer[set_articulation_event_id000{int}]{int} := articulation_event_id1{int}
 								delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation1{int}
 								if(abs(sh_right(abs(- sh_right(abs(subarticulation_event_list[idx000000{int}]{int} - - 1){Builtin, None} - 1, 31){Builtin, None}){Builtin, None} - 1, 31){Builtin, None}){Builtin, None} = TRUE{int})
@@ -3240,6 +3258,7 @@ on ui_controls{thread-unsafe}
 						subarticulation_id1{int} := _loaded_subarticulations[(fade_out_range000{int} * 32) + ((fade_out_end000{int} * 4) + next_free_idx0000{int})]{int}
 						group_count01{int} := is_free0000{int}
 						call c_subarticulation_group_count0{UserDefined, Call}
+						idx3000{int} := ret00{int}
 						while(i{int} <= (idx3000{int} - 1)) 
 							purge_group((subarticulations_group_idx[subarticulations_ids_positions[_loaded_subarticulations[(fade_out_range000{int} * 32) + ((fade_out_end000{int} * 4) + next_free_idx0000{int})]{int}]{int}]{int} + i{int}) + TITLE_GROUP{int}, ON{int} * microphone_position_states[i{int} mod NUM_MIC_POSITIONS{int}]{int}){Builtin, None}
 							inc(i{int}){Builtin, None}
@@ -3247,6 +3266,7 @@ on ui_controls{thread-unsafe}
 							subarticulation_id1{int} := _loaded_subarticulations[(fade_out_range000{int} * 32) + ((fade_out_end000{int} * 4) + next_free_idx0000{int})]{int}
 							group_count01{int} := is_free0000{int}
 							call c_subarticulation_group_count0{UserDefined, Call}
+							idx3000{int} := ret00{int}
 						end while
 					end if
 					inc(next_free_idx0000{int}){Builtin, None}
@@ -3670,6 +3690,7 @@ on ui_control(xy_center_circles{real[]}){thread-unsafe}
 		angle_max0{real} := (NI_MATH_PI{real} * 2) - 0.7
 		new_angle00{real} := dy00{real}
 		call c_angle_to_value0{UserDefined, Call}
+		controller_value0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int} := ret130{int}
 		angle1[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{real} := angle2{real}
 		if((distance0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{real} >= 0.32) and (distance0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{real} < 0.36))
 			selected_subarticulation{int} := 0
@@ -3715,6 +3736,7 @@ on ui_control(xy_center_circles{real[]}){thread-unsafe}
 			angle_max0{real} := (NI_MATH_PI{real} * 2) - 0.7
 			new_angle00{real} := angle00{real}
 			call c_angle_to_value0{UserDefined, Call}
+			controller_value0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int} := ret130{int}
 			angle1[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{real} := angle2{real}
 			if(selected_circle_end{int} = 0)
 				if(controller_value0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int} < ((_loaded_subarticulations_end[(selected_instrument{int} * 32) + ((selected_keyswitch{int} * 4) + selected_subarticulation{int})]{int} - _loaded_subarticulations_fade_out[(selected_instrument{int} * 32) + ((selected_keyswitch{int} * 4) + selected_subarticulation{int})]{int}) - _loaded_subarticulations_fade_in[(selected_instrument{int} * 32) + ((selected_keyswitch{int} * 4) + selected_subarticulation{int})]{int}))
@@ -4175,6 +4197,7 @@ function c_articulations_note_off0
 		note0{int} := note2{int}
 		result22{int} := result200{int}
 		call c_event_list_get_articulation_event0{UserDefined, Call}
+		_ret1000{int} := ret30{int}
 		instrument_slot1{int} := instrument_slot0{int}
 		ks10{int} := keyswitch0{int}
 		note2{int} := note0{int}
@@ -4189,6 +4212,7 @@ function c_articulations_note_off0
 					note0{int} := note2{int}
 					result22{int} := result210{int}
 					call c_event_list_get_articulation_event0{UserDefined, Call}
+					result200{int} := ret30{int}
 					instrument_slot1{int} := instrument_slot0{int}
 					ks10{int} := keyswitch0{int}
 					note2{int} := note0{int}
@@ -4286,6 +4310,7 @@ function c_update_selected_notes0
 										note0{int} := i{int}
 										result22{int} := result10001{int}
 										call c_event_list_get_articulation_event0{UserDefined, Call}
+										next_free_idx0001{int} := ret30{int}
 										if(next_free_idx0001{int} = - 1)
 											_active_notes[(inst{int} * 8) + result000{int}]{int} := _active_notes[(inst{int} * 8) + result000{int}]{int} + 1
 											articulation_id0{int} := articulation_event_id001{int}
@@ -4306,6 +4331,7 @@ function c_update_selected_notes0
 											subarticulation1{int} := i400{int}
 											result34{int} := idx3001{int}
 											call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
+											result10001{int} := ret40{int}
 											if(result10001{int} = - 1)
 												articulation_event_id2{int} := articulation_event_id001{int}
 												subarticulation2{int} := i400{int}
@@ -4336,6 +4362,7 @@ function c_update_selected_notes0
 												subarticulation1{int} := i400{int}
 												result34{int} := result10001{int}
 												call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
+												next_free_idx0001{int} := ret40{int}
 												if(next_free_idx0001{int} = - 1)
 													articulation_event_id2{int} := articulation_event_id001{int}
 													subarticulation2{int} := i400{int}
@@ -4353,6 +4380,7 @@ function c_update_selected_notes0
 												note0{int} := i{int}
 												result22{int} := result10001{int}
 												call c_event_list_get_articulation_event0{UserDefined, Call}
+												next_free_idx0001{int} := ret30{int}
 												if(next_free_idx0001{int} = - 1)
 													if(last_articulation_event[inst{int}]{int} = - 1)
 														articulation_id0{int} := articulation_event_id001{int}
@@ -4401,6 +4429,7 @@ function c_update_selected_notes0
 													subarticulation1{int} := i400{int}
 													result34{int} := idx3001{int}
 													call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
+													result10001{int} := ret40{int}
 													if(result10001{int} = - 1)
 														articulation_event_id2{int} := articulation_event_id001{int}
 														subarticulation2{int} := i400{int}
@@ -4421,6 +4450,7 @@ function c_update_selected_notes0
 													note0{int} := i{int}
 													result22{int} := result10001{int}
 													call c_event_list_get_articulation_event0{UserDefined, Call}
+													next_free_idx0001{int} := ret30{int}
 													if(next_free_idx0001{int} = - 1)
 														articulation_id0{int} := articulation_event_id001{int}
 														instrument0{int} := inst{int}
@@ -4462,6 +4492,7 @@ function c_update_selected_notes0
 						note0{int} := i{int}
 						result22{int} := i400{int}
 						call c_event_list_get_articulation_event0{UserDefined, Call}
+						result000{int} := ret30{int}
 						inst{int} := instrument_slot0{int}
 						ks20{int} := keyswitch0{int}
 						i{int} := note0{int}
@@ -4609,6 +4640,7 @@ function c_cc_on_controller0
 						subarticulation1{int} := i60{int}
 						result34{int} := result300{int}
 						call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
+						_ret1200{int} := ret40{int}
 						_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int} := articulation_event_id1{int}
 						i60{int} := subarticulation1{int}
 						if(_ret1200{int} >= 0)
@@ -4618,6 +4650,7 @@ function c_cc_on_controller0
 							subarticulation1{int} := i60{int}
 							result34{int} := result310{int}
 							call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
+							result300{int} := ret40{int}
 							_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int} := articulation_event_id1{int}
 							i60{int} := subarticulation1{int}
 							result310{int} := 0
@@ -4633,6 +4666,7 @@ function c_cc_on_controller0
 								subarticulation1{int} := i60{int}
 								result34{int} := result320{int}
 								call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
+								result500{int} := ret40{int}
 								_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int} := articulation_event_id1{int}
 								i60{int} := subarticulation1{int}
 								subarticulation_event_id3{int} := result500{int}
@@ -4645,6 +4679,7 @@ function c_cc_on_controller0
 								subarticulation1{int} := i60{int}
 								result34{int} := result320{int}
 								call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
+								result500{int} := ret40{int}
 								_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int} := articulation_event_id1{int}
 								i60{int} := subarticulation1{int}
 								result320{int} := 0
@@ -4659,6 +4694,7 @@ function c_cc_on_controller0
 								fade_out_end02{int} := fade_out_end001{int}
 								fade_out_range02{int} := fade_out_range001{int}
 								call c_articulations_compute_level0{UserDefined, Call}
+								result320{int} := ret70{int}
 								articulation_event_instrument[_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}]{int} := instrument_slot2{int}
 								articulation_event_keyswitch[_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}]{int} := keyswitch2{int}
 								articulation_event_note[_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}]{int} := note4{int}

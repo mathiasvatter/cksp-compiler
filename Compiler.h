@@ -80,6 +80,7 @@ public:
 	// input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 
+		output_filename = "/Users/Mathias/Scripting/lux-strings/Samples/Resources/scripts/lux-orchestral-strings.txt";
 	//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
 	    // output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
 	//    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
@@ -261,7 +262,6 @@ public:
 
 		ASTCollectPostLowerings post_lowering(m_program);
 		ast->accept(post_lowering);
-		ast->debug_print();
 		ASTRelinkGlobalScope relink_global_scope(m_program);
 		ast->accept(relink_global_scope);
 
@@ -269,7 +269,9 @@ public:
 		std::cout << compile_time.print_timer("Post Lowering") << "\n";
 		compile_time.start("Optimization");
 
+		// ast->debug_print();
 		ast->inline_global_variables();
+		ast->debug_print();
 		ASTOptimizations optimizations;
 		ASTOptimizations::optimize(*ast);
 

@@ -10,24 +10,24 @@ class ConstantPropagation final : public ASTVisitor {
 	std::unordered_map<std::string, std::unique_ptr<NodeAST>> m_constants;
 public:
 
-	NodeAST* visit(NodeProgram& node) override {
-		m_program = &node;
-		m_program->global_declarations->accept(*this);
-		for(const auto & callback : node.callbacks) {
-			callback->accept(*this);
-		}
-		node.reset_function_visited_flag();
-		return &node;
-	}
-
-	NodeAST* visit(NodeFunctionCall& node) override {
-		node.function->accept(*this);
-		if (const auto definition = node.get_definition()) {
-			if (!definition->visited) definition->accept(*this);
-			definition->visited = true;
-		}
-		return &node;
-	}
+	// NodeAST* visit(NodeProgram& node) override {
+	// 	m_program = &node;
+	// 	m_program->global_declarations->accept(*this);
+	// 	for(const auto & callback : node.callbacks) {
+	// 		callback->accept(*this);
+	// 	}
+	// 	node.reset_function_visited_flag();
+	// 	return &node;
+	// }
+	//
+	// NodeAST* visit(NodeFunctionCall& node) override {
+	// 	node.function->accept(*this);
+	// 	if (const auto definition = node.get_definition()) {
+	// 		if (!definition->visited) definition->accept(*this);
+	// 		definition->visited = true;
+	// 	}
+	// 	return &node;
+	// }
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);
@@ -61,6 +61,8 @@ public:
 	// to constant propagation (with declared constants) everywhere except left hand of assignments
 	NodeAST* do_constant_propagation(NodeReference* node) {
 		if (node->data_type != DataType::Const) return node;
+		// if builtin return
+		if (node->is_engine) return node;
 		// do not substitute if the variable is on the left side of an assignment
 		if(node->is_l_value()) return node;
 
