@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.3 on Tue Apr 15 11:36:27 2025 }
+{ Compiled with cksp version 0.0.7-alpha.3 on Tue Apr 15 13:16:01 2025 }
 on init
   declare $_iter0
   declare $ksv_cb_id := 0
@@ -119,6 +119,20 @@ on init
   declare ~angle_min0
   declare ~angle_max0
   declare ~new_angle00
+  declare %controller_value0[100]
+  declare ~subarticulation_modulation_strength000
+  declare $fade_in_range000
+  declare $fade_out_end000
+  declare $fade_out_range000
+  declare $idx000000
+  declare $articulation_event_id000
+  declare $set_articulation_event_id000
+  declare $next_free_idx0000
+  declare $idx3000
+  declare $i3000
+  declare $is_free0000
+  declare $_ret110000
+  declare $result10000
   declare $start_note000
   declare $end_note000
   declare $transition_note000
@@ -132,20 +146,6 @@ on init
   declare ~dy00
   declare ~cos_theta00
   declare ~angle00
-  declare $idx000000
-  declare $articulation_event_id000
-  declare $set_articulation_event_id000
-  declare $next_free_idx0000
-  declare $idx3000
-  declare $i3000
-  declare $is_free0000
-  declare $_ret110000
-  declare $result10000
-  declare %controller_value0[100]
-  declare ~subarticulation_modulation_strength000
-  declare $fade_in_range000
-  declare $fade_out_end000
-  declare $fade_out_range000
   declare $group_count001
   set_script_title("Lux - Orchestral Strings")
   set_control_par_str($INST_ICON_ID, $CONTROL_PAR_PICTURE, "sonu-badge")
@@ -2129,7 +2129,7 @@ on init
     inc($i)
   end while
   declare ui_label $lbl_version (0, 0)
-  set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_TEXT, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "11:36:25" & " " & "04/15/25")
+  set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_TEXT, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "13:15:59" & " " & "04/15/25")
   set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_PICTURE, "alpha")
   set_control_par(get_ui_id($lbl_version), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
   set_control_par(get_ui_id($lbl_version), $CONTROL_PAR_FONT_TYPE, %fonts_regular_white[0])
@@ -2718,11 +2718,11 @@ function c_cc_on_controller0
   $_iter300 := 0
   $_iter200 := 0
   $_iter100 := 0
-  while($_iter100 <= (num_elements(%_event_list) - 1)) 
+  while($_iter100 <= 0) 
     $_iter200 := 0
-    while($_iter200 <= (num_elements(%_event_list) - 1)) 
+    while($_iter200 <= 7) 
       $_iter300 := 0
-      while($_iter300 <= (num_elements(%_event_list) - 1)) 
+      while($_iter300 <= 127) 
         if(%_event_list[($_iter100 * 1024) + (($_iter200 * 128) + $_iter300)] >= 0)
           $i60 := 0
           while($i60 <= 3) 
