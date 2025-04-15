@@ -183,7 +183,6 @@ public:
 		ast->inline_structs();
 
 
-
 		ASTDimensionExpansion dimension_inflation(m_program);
 		ast->accept(dimension_inflation);
 
@@ -273,6 +272,7 @@ public:
 		ast->inline_global_variables();
 		ASTOptimizations optimizations;
 		ASTOptimizations::optimize(*ast);
+		ast->debug_print();
 
 		compile_time.stop("Optimization");
 		std::cout << compile_time.print_timer("Optimization") << "\n";

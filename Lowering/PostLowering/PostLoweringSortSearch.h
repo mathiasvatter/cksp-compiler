@@ -11,8 +11,7 @@
  * has to happen after function inlining
  * transformation of separate Node NodeSortSearch into NodeFunctionCall
  */
-class PostLoweringSortSearch : public ASTLowering {
-private:
+class PostLoweringSortSearch final : public ASTLowering {
 
 public:
 	explicit PostLoweringSortSearch(NodeProgram *program) : ASTLowering(program) {}

@@ -124,8 +124,15 @@ std::unique_ptr<NodeReference> NodeVariableRef::expand_dimension(std::unique_ptr
 }
 
 NodeAST * NodeVariableRef::try_constant_value_replace() {
+	// not applicable to builtin variable constants
+	if (is_engine) return this;
 	if (const auto declaration = get_declaration()) {
 		if (declaration->data_type == DataType::Const) {
+			if (!declaration->parent) {
+				auto error = CompileError(ErrorType::InternalError, "", "", tok);
+				error.m_message = "Variable declaration has no parent.";
+				error.exit();
+			}
 			if (const auto decl = declaration->parent->cast<NodeSingleDeclaration>()) {
 				if (decl->value) {
 					return replace_with(decl->value->clone());

@@ -108,7 +108,7 @@ public:
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		if(node.bind_definition(m_program)) {
-			auto definition = node.get_definition();
+			const auto definition = node.get_definition();
 			if(!definition->visited and !definition->is_thread_safe) {
 				m_program->function_call_stack.push(definition);
 				definition->accept(*this);
