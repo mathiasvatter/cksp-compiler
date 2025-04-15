@@ -8,8 +8,7 @@
 #include "../../Desugaring/ASTDesugaring.h"
 
 /// entry points: NodeSingleDeclaration
-class DataLoweringNDArray : public ASTLowering {
-private:
+class DataLoweringNDArray final : public ASTLowering {
 
 public:
 	explicit DataLoweringNDArray(NodeProgram* program) : ASTLowering(program) {}

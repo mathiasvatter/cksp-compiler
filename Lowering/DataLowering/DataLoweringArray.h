@@ -86,7 +86,7 @@ public:
 			// m_size_is_constant = true;
 			node.size->accept(*this);
 			if(!node.size->is_constant()) {
-				error.m_message = "Size of <Array> has to be a constant <Variable> or <Integer>.";
+				error.m_message = "Size of <Array> has to be a constant expression with constant <Variables> and/or <Integers>.";
 				error.m_got = node.size->get_string();
 				error.exit();
 			}
@@ -99,19 +99,27 @@ public:
 	}
 
 	NodeAST * visit(NodeFunctionCall& node) override {
-		// check if func is 'num_elements' which returns constant and can be used as array size
+		// check if array size references itself
 		if(node.kind == NodeFunctionCall::Kind::Builtin and node.function->get_num_args() == 1) {
-			if(node.function->name == "num_elements" or node.function->name == "get_ui_id") {
+			if(node.function->name == "num_elements") {
 				if(node.function->get_arg(0)->get_string() == m_current_array->name) {
 					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 					error.m_message = "Size of <Array> cannot reference itself.";
 					error.exit();
 				}
-				// m_size_is_constant &= true;
-				// return &node;
 			}
 		}
-		// m_size_is_constant &= false;
+		return &node;
+	}
+
+	NodeAST * visit(NodeNumElements& node) override {
+		node.array->accept(*this);
+		if (node.array->name == m_current_array->name) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+			error.m_message = "Size of <Array> cannot reference itself.";
+			error.exit();
+		}
+		if(node.dimension) node.dimension->accept(*this);
 		return &node;
 	}
 

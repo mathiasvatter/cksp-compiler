@@ -63,8 +63,7 @@ private:
 			init_list->elements = std::move(list);
 			init_list->set_child_parents();
 			decl->set_value(std::move(init_list));
-			for (int i = 0; i<assignments.size(); i++) {
-				const auto& assign = assignments[i];
+			for (const auto assign : assignments) {
 				assign->remove_node();
 			}
 		}
@@ -97,8 +96,14 @@ private:
 						type_neutral_val[array->name] = init_list->elements.back()->clone();
 					}
 					// apply to initializer_list data structure
-					for (const auto &el : init_list->elements) {
-						initializer_list[array->name].push_back(el->clone());
+					auto &init_list_saved = initializer_list[array->name];
+					for (int i = 0; i<init_list->elements.size(); i++) {
+						const auto& el = init_list->elements[i];
+						if (i < init_list_saved.size()) {
+							init_list_saved[i] = el->clone();
+						} else {
+							init_list_saved.push_back(el->clone());
+						}
 					}
 				} else {
 					auto error = get_raw_compile_error(ErrorType::SyntaxError, node);

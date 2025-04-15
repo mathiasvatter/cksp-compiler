@@ -21,8 +21,7 @@
  * - Checks if the maximum number of statements in one block is exceeded (memory exhaustion error), caused
  * 	 by the Bison parser stackoverflow -> nest block further to avoid this error
  */
-class ASTKSPSyntaxCheck: public ASTVisitor {
-private:
+class ASTKSPSyntaxCheck final : public ASTVisitor {
 	DefinitionProvider *m_def_provider;
 	std::unordered_map<std::string, int> m_ui_control_count;
 

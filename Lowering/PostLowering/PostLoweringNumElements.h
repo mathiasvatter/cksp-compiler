@@ -33,14 +33,21 @@ public:
 		if(auto node_array = decl->cast<NodeArray>()) {
 			// in case nd array was written in raw array form -> declaration has num_elements but no dimension
 			if(node_array->num_elements and node.dimension) {
-				auto node_block = std::make_unique<NodeBlock>(node_array->tok);
+				node.dimension->do_constant_folding();
+				auto dim_int = node.dimension->cast<NodeInt>();
+				if (!dim_int) {
+					auto error = CompileError(ErrorType::SyntaxError, "", "", node.dimension->tok);
+					error.m_message = "The dimension of <num_elements> could not be folded into an <integer>.";
+					error.exit();
+				}
 
-				auto num_elements_call = std::make_unique<NodeArrayRef>(
-					node_array->name + OBJ_DELIMITER+"num_elements",
-					std::move(node.dimension),
+				// auto node_block = std::make_unique<NodeBlock>(node_array->tok);
+
+				auto num_elements_call = std::make_unique<NodeVariableRef>(
+					node_array->name + OBJ_DELIMITER+"num_elements" + std::to_string(dim_int->value),
+					TypeRegistry::Integer,
 					node.tok
 				);
-				num_elements_call->ty = TypeRegistry::Integer;
 				return node.replace_with(std::move(num_elements_call));
 
 			} else {

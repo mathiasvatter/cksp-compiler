@@ -141,6 +141,7 @@ Result<std::shared_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable(
     auto node_variable = std::make_shared<NodeVariable>(std::optional<Token>(), var_name, type_annotation.unwrap(), DataType::Mutable, name);
     node_variable->is_local = false;
     node_variable->is_engine = true;
+	node_variable->data_type = DataType::Const;
     return Result<std::shared_ptr<NodeVariable>>(std::move(node_variable));
 }
 
@@ -160,6 +161,7 @@ Result<std::shared_ptr<NodeArray>> BuiltinsProcessor::parse_builtin_array() {
 		type_annotation.unwrap(),
 		std::make_unique<NodeParamList>(name), name
 	);
+	node_array->data_type = DataType::Const;
     node_array->is_local = false;
     node_array->is_engine = true;
     return Result<std::shared_ptr<NodeArray>>(std::move(node_array));

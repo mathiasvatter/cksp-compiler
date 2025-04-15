@@ -228,7 +228,7 @@ NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
 	  is_used(other.is_used), is_engine(other.is_engine), persistence(other.persistence),
 	  is_local(other.is_local), is_global(other.is_global), has_obj_assigned(other.has_obj_assigned),
-	  is_thread_safe(other.is_thread_safe), data_type(other.data_type), name(other.name),
+	  is_thread_safe(other.is_thread_safe), data_type(other.data_type), name(other.name), kind(other.kind),
 	  references(other.references), num_reuses(other.num_reuses) {
 	NodeDataStructure::set_child_parents();
 }

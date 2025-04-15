@@ -6,10 +6,28 @@
 
 #include "../AST/ASTVisitor/ASTVisitor.h"
 
-class ConstantPropagation : public ASTVisitor {
-private:
+class ConstantPropagation final : public ASTVisitor {
 	std::unordered_map<std::string, std::unique_ptr<NodeAST>> m_constants;
 public:
+
+	NodeAST* visit(NodeProgram& node) override {
+		m_program = &node;
+		m_program->global_declarations->accept(*this);
+		for(const auto & callback : node.callbacks) {
+			callback->accept(*this);
+		}
+		node.reset_function_visited_flag();
+		return &node;
+	}
+
+	NodeAST* visit(NodeFunctionCall& node) override {
+		node.function->accept(*this);
+		if (const auto definition = node.get_definition()) {
+			if (!definition->visited) definition->accept(*this);
+			definition->visited = true;
+		}
+		return &node;
+	}
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);

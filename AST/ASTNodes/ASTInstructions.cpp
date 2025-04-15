@@ -1173,6 +1173,9 @@ NodeAST *NodeSelect::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
         if(cas.first[0].get() == oldChild) {
             cas.first[0] = std::move(newChild);
             return cas.first[0].get();
+        } else if(cas.first[1].get() == oldChild) {
+        	cas.first[1] = std::move(newChild);
+        	return cas.first[1].get();
         }
     }
     return nullptr;
