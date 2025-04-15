@@ -11,7 +11,7 @@
 #include "../../Optimization/DeadCodeElimination.h"
 #include "../../Optimization/ConstantPromotion.h"
 
-bool ASTOptimizations::optimize(NodeProgram &node, int iterations) {
+bool ASTOptimizations::optimize(NodeProgram &node, const int iterations) {
 //	static ConstantPromotion constant_promotion;
 //	node.accept(constant_promotion);
 	for(int i = 0; i<iterations; i++) {

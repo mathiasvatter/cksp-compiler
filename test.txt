@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.3 on Mon Apr 14 18:30:46 2025 }
+{ Compiled with cksp version 0.0.7-alpha.3 on Tue Apr 15 11:36:27 2025 }
 on init
   declare $_iter0
   declare $ksv_cb_id := 0
@@ -119,12 +119,6 @@ on init
   declare ~angle_min0
   declare ~angle_max0
   declare ~new_angle00
-  declare ?angle1[100]
-  declare ?distance0[100]
-  declare ~dy00
-  declare ~cos_theta00
-  declare ~angle00
-  declare $group_count001
   declare $start_note000
   declare $end_note000
   declare $transition_note000
@@ -133,6 +127,11 @@ on init
   declare $offset000
   declare $_ret22000
   declare $result4000
+  declare ?angle1[100]
+  declare ?distance0[100]
+  declare ~dy00
+  declare ~cos_theta00
+  declare ~angle00
   declare $idx000000
   declare $articulation_event_id000
   declare $set_articulation_event_id000
@@ -147,6 +146,7 @@ on init
   declare $fade_in_range000
   declare $fade_out_end000
   declare $fade_out_range000
+  declare $group_count001
   set_script_title("Lux - Orchestral Strings")
   set_control_par_str($INST_ICON_ID, $CONTROL_PAR_PICTURE, "sonu-badge")
   set_key_pressed_support(1)
@@ -278,7 +278,6 @@ on init
   declare %articulation_event_instrument[32] := (-1)
   declare %articulation_event_keyswitch[32] := (-1)
   declare %articulation_event_note[32] := (-1)
-  declare %_event_list____num_elements[4] := (1024, 1, 8, 128)
   declare %_event_list[1024] := (-1)
   declare %delay_buffer[128] := (-1)
   declare %delay_buffer_instrument[128]
@@ -310,31 +309,24 @@ on init
   declare %note_selections[1] := (0)
   declare %_rr_data_idx[4096] := (0)
   declare %_rr_data_time[4096] := (0)
-  declare %_legato_data_sus_fade_in_time____num_elements[7] := (204800, 1, 8, 4, 2, 128, 25)
   declare %_legato_data_sus_fade_in_time[204800] := (-1)
   make_persistent(%_legato_data_sus_fade_in_time)
   read_persistent_var(%_legato_data_sus_fade_in_time)
-  declare %_legato_data_sus_release_time____num_elements[7] := (204800, 1, 8, 4, 2, 128, 25)
   declare %_legato_data_sus_release_time[204800] := (-1)
   make_persistent(%_legato_data_sus_release_time)
   read_persistent_var(%_legato_data_sus_release_time)
-  declare %_legato_data_sus_wait_time____num_elements[7] := (204800, 1, 8, 4, 2, 128, 25)
   declare %_legato_data_sus_wait_time[204800] := (-1)
   make_persistent(%_legato_data_sus_wait_time)
   read_persistent_var(%_legato_data_sus_wait_time)
-  declare %_legato_data_trans_fade_in_time____num_elements[7] := (204800, 1, 8, 4, 2, 128, 25)
   declare %_legato_data_trans_fade_in_time[204800] := (-1)
   make_persistent(%_legato_data_trans_fade_in_time)
   read_persistent_var(%_legato_data_trans_fade_in_time)
-  declare %_legato_data_trans_fade_out_time____num_elements[7] := (204800, 1, 8, 4, 2, 128, 25)
   declare %_legato_data_trans_fade_out_time[204800] := (-1)
   make_persistent(%_legato_data_trans_fade_out_time)
   read_persistent_var(%_legato_data_trans_fade_out_time)
-  declare %_legato_data_trans_zone_start____num_elements[7] := (204800, 1, 8, 4, 2, 128, 25)
   declare %_legato_data_trans_zone_start[204800] := (-1)
   make_persistent(%_legato_data_trans_zone_start)
   read_persistent_var(%_legato_data_trans_zone_start)
-  declare %_legato_data_trans_zone_volume____num_elements[7] := (204800, 1, 8, 4, 2, 128, 25)
   declare %_legato_data_trans_zone_volume[204800] := (-1)
   make_persistent(%_legato_data_trans_zone_volume)
   read_persistent_var(%_legato_data_trans_zone_volume)
@@ -2063,7 +2055,7 @@ on init
   set_control_par_str(get_ui_id($lbl_sustain_release), $CONTROL_PAR_TEXT, $sli_sustain_release & " ms")
   set_control_par_str(get_ui_id($lbl_trans_start), $CONTROL_PAR_TEXT, $sli_trans_start & " ms")
   set_control_par_str(get_ui_id($lbl_trans_fadeIn), $CONTROL_PAR_TEXT, int((real($sli_trans_fadeIn) / 1000000.) * 750.) & " ms")
-  set_control_par_str(get_ui_id($lbl_trans_volume), $CONTROL_PAR_TEXT, (round((real($sli_trans_volume) / 1000.) * pow(10., int_to_real(2))) / pow(10., int_to_real(2))) & " dB")
+  set_control_par_str(get_ui_id($lbl_trans_volume), $CONTROL_PAR_TEXT, (round((real($sli_trans_volume) / 1000.) * pow(10., 2.)) / pow(10., 2.)) & " dB")
   set_control_par_str(get_ui_id($lbl_trans_fadeOut), $CONTROL_PAR_TEXT, int((real($sli_trans_fadeOut) / 1000000.) * 1000.) & " ms")
   set_control_par_str(get_ui_id($lbl_sustain_wait), $CONTROL_PAR_TEXT, int((real($sli_sustain_wait) / 1000000.) * 500.) & " ms")
   set_control_par_str(get_ui_id($lbl_sustain_fadeIn), $CONTROL_PAR_TEXT, int((real($sli_sustain_fadeIn) / 1000000.) * 500.) & " ms")
@@ -2137,7 +2129,7 @@ on init
     inc($i)
   end while
   declare ui_label $lbl_version (0, 0)
-  set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_TEXT, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "18:30:44" & " " & "04/14/25")
+  set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_TEXT, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "11:36:25" & " " & "04/15/25")
   set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_PICTURE, "alpha")
   set_control_par(get_ui_id($lbl_version), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
   set_control_par(get_ui_id($lbl_version), $CONTROL_PAR_FONT_TYPE, %fonts_regular_white[0])
@@ -2155,7 +2147,8 @@ on init
   set_control_par(get_ui_id($pnl_editor_page), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
   set_control_par(get_ui_id($pnl_mixer_page), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
   set_control_par(get_ui_id($pnl_keyswitches), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
-  declare %octave_layer[1] := (0, 0)
+  declare %octave_layer[1] := (0)
+  %octave_layer[0] := 0
   declare %octave_shift[1] := (0)
   declare %pressed_keys[128] := (-1)
   declare %key_velocity[128] := (0)
@@ -2164,6 +2157,7 @@ on init
   declare %_active_notes[8] := (0)
   declare %last_articulation_event[1] := (-1)
   declare $inst
+  declare $last_on_note_callback := -1
   declare $last_release_callback := -1
   declare $pressed_key_idx
   declare $sustain_pedal := 0
@@ -2511,6 +2505,33 @@ function c_update_selected_notes0
                     $note0 := $i
                     $result22 := $result10001
                     call c_event_list_get_articulation_event0
+                    if($next_free_idx0001 = -1)
+                      %_active_notes[($inst * 8) + $result000] := %_active_notes[($inst * 8) + $result000] + 1
+                      $articulation_id0 := $articulation_event_id001
+                      $instrument0 := $inst
+                      $keyswitch1 := $result000
+                      $subarticulation0 := $i400
+                      $note1 := $i
+                      $velo0 := %key_velocity[$i]
+                      $interval0 := 0
+                      $time0 := $ENGINE_UPTIME
+                      $countdown0 := (($lookahead - %subarticulations_start_offset[%subarticulations_ids_positions[%_loaded_subarticulations[($inst * 32) + (($result000 * 4) + $i400)]]]) + (%pressed_keys[$i] - $ENGINE_UPTIME)) + random(- %_loaded_subarticulations_humanization[($inst * 32) + (($result000 * 4) + $i400)] / 2, %_loaded_subarticulations_humanization[($inst * 32) + (($result000 * 4) + $i400)] / 2)
+                      $previous_note0 := -1
+                      $idx40 := $result10001
+                      call c_delay_buffer_add0
+                      $result10001 := 0
+                      $articulation_event_id1 := $articulation_event_id001
+                      $subarticulation1 := $i400
+                      $result34 := $idx3001
+                      call c_articulation_event_get_subarticulation_event_id0
+                      if($result10001 = -1)
+                        $articulation_event_id2 := $articulation_event_id001
+                        $subarticulation2 := $i400
+                        $subarticulation_event_id1 := -999
+                        call c_articulation_event_set_subarticulation_event_id0
+                      end if
+                      $set_articulation_event_id001 := 1
+                    end if
                   else
                     if(%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($inst * 32) + (($result000 * 4) + $i400)]]] = 3)
                       if(%_active_notes[($inst * 8) + $result000] = 0)
@@ -2697,11 +2718,11 @@ function c_cc_on_controller0
   $_iter300 := 0
   $_iter200 := 0
   $_iter100 := 0
-  while($_iter100 <= (%_event_list____num_elements[1] - 1)) 
+  while($_iter100 <= (num_elements(%_event_list) - 1)) 
     $_iter200 := 0
-    while($_iter200 <= (%_event_list____num_elements[2] - 1)) 
+    while($_iter200 <= (num_elements(%_event_list) - 1)) 
       $_iter300 := 0
-      while($_iter300 <= (%_event_list____num_elements[3] - 1)) 
+      while($_iter300 <= (num_elements(%_event_list) - 1)) 
         if(%_event_list[($_iter100 * 1024) + (($_iter200 * 128) + $_iter300)] >= 0)
           $i60 := 0
           while($i60 <= 3) 
@@ -2750,11 +2771,11 @@ function c_cc_on_controller0
               %articulation_event_keyswitch[%_event_list[($_iter100 * 1024) + (($_iter200 * 128) + $_iter300)]] := $keyswitch2
               %articulation_event_note[%_event_list[($_iter100 * 1024) + (($_iter200 * 128) + $_iter300)]] := $note4
               $i60 := $subarticulation3
-              $subarticulation_event_id4 := 0
-              $level0 := 0
+              $subarticulation_event_id4 := $result500
+              $level0 := $result320
               call c_subarticulation_set_level0
-              $result500 := 0
-              $result320 := 0
+              $result500 := $subarticulation_event_id4
+              $result320 := $level0
             end if
             inc($i60)
           end while
@@ -2801,7 +2822,7 @@ function update_authoring_labels
   set_control_par_str(get_ui_id($lbl_sustain_release), $CONTROL_PAR_TEXT, $sli_sustain_release & " ms")
   set_control_par_str(get_ui_id($lbl_trans_start), $CONTROL_PAR_TEXT, $sli_trans_start & " ms")
   set_control_par_str(get_ui_id($lbl_trans_fadeIn), $CONTROL_PAR_TEXT, int((real($sli_trans_fadeIn) / 1000000.) * 750.) & " ms")
-  set_control_par_str(get_ui_id($lbl_trans_volume), $CONTROL_PAR_TEXT, (round((real($sli_trans_volume) / 1000.) * pow(10., int_to_real(2))) / pow(10., int_to_real(2))) & " dB")
+  set_control_par_str(get_ui_id($lbl_trans_volume), $CONTROL_PAR_TEXT, (round((real($sli_trans_volume) / 1000.) * pow(10., 2.)) / pow(10., 2.)) & " dB")
   set_control_par_str(get_ui_id($lbl_trans_fadeOut), $CONTROL_PAR_TEXT, int((real($sli_trans_fadeOut) / 1000000.) * 1000.) & " ms")
   set_control_par_str(get_ui_id($lbl_sustain_wait), $CONTROL_PAR_TEXT, int((real($sli_sustain_wait) / 1000000.) * 500.) & " ms")
   set_control_par_str(get_ui_id($lbl_sustain_fadeIn), $CONTROL_PAR_TEXT, int((real($sli_sustain_fadeIn) / 1000000.) * 500.) & " ms")
@@ -3100,7 +3121,6 @@ end function
 on persistence_changed
   $frame0 := %CC[1]
   call c_set_background_animation0
-  %CC[1] := $frame0
   $v00 := 0
   while($v00 <= 127) 
     set_key_color($v00, $KEY_COLOR_WHITE)
@@ -3200,9 +3220,10 @@ on note
     %key_velocity[$EVENT_NOTE] := $EVENT_VELOCITY
     inc($num_pressed_keys)
   end if
+  $last_on_note_callback := $NI_CALLBACK_ID
   $wait_time0 := $note_selection_time * 1000
   call c_wait_or_zero0
-  if($NI_CALLBACK_ID = $NI_CALLBACK_ID)
+  if($last_on_note_callback = $NI_CALLBACK_ID)
     $ks20 := $v00
     $result000 := $group_count001
     $i400 := $idx000000
@@ -3258,7 +3279,6 @@ on controller
   if($CC_NUM = 1)
     $frame1 := %CC[1]
     call c_buffer_modwheel_animation0
-    %CC[1] := $frame1
     set_control_par(get_ui_id($sli_modwheel_slider), $CONTROL_PAR_VALUE, %CC[1])
   end if
   if($CC_NUM = 64)
@@ -3720,7 +3740,6 @@ on ui_control($sli_modwheel_slider)
   $note3 := 0
   $value0 := %CC[1]
   call c_set_modulation_position0
-  %CC[1] := $value0
   $i60 := $next_free_idx0000
   $_iter300 := $is_free0000
   $_iter200 := $fade_out_end000
@@ -4025,7 +4044,7 @@ on ui_control($sli_trans_volume)
   else
     %_legato_data_trans_zone_volume[($mnu_authoring_dynamic_layer * 3200) + (($vlue_authoring_start_note * 25) + (abs($vlue_authoring_end_note - $vlue_authoring_start_note) + (- sh_right(- ($vlue_authoring_end_note - $vlue_authoring_start_note), 31) * 12)))] := $sli_trans_volume
   end if
-  set_control_par_str(get_ui_id($lbl_trans_volume), $CONTROL_PAR_TEXT, (round((real($sli_trans_volume) / 1000.) * pow(10., int_to_real(2))) / pow(10., int_to_real(2))) & " dB")
+  set_control_par_str(get_ui_id($lbl_trans_volume), $CONTROL_PAR_TEXT, (round((real($sli_trans_volume) / 1000.) * pow(10., 2.)) / pow(10., 2.)) & " dB")
 end on
 on ui_control($sli_trans_fadeOut)
   if(get_control_par(get_ui_id($btn_authoring_edit_all), $CONTROL_PAR_VALUE) = 1)

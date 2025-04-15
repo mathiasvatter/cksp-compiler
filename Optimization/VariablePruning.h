@@ -23,9 +23,6 @@ public:
 	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
-		for(const auto & struct_def : node.struct_definitions) {
-			struct_def->accept(*this);
-		}
 		for(const auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}

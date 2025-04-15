@@ -30,8 +30,13 @@ public:
 		if(node.dimension) {
 			// check if node is array ref -> no extra dimension allowed
 			if(node.array->cast<NodeArrayRef>()) {
-				auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+				auto error = CompileError(ErrorType::TypeError, "", "", node.array->tok);
 				error.m_message = "The <dimension> parameter of <num_elements> can not be used with <ArrayRef>.";
+				error.exit();
+			}
+			if (!node.dimension->is_constant()) {
+				auto error = CompileError(ErrorType::SyntaxError, "", "", node.dimension->tok);
+				error.m_message = "The <dimension> parameter of <num_elements> has to be a constant expression.";
 				error.exit();
 			}
 			// check if dimension is valid when int literal is used
@@ -39,12 +44,12 @@ public:
 				auto dim = int_node->value;
 				if(auto nd_array = node.array->get_declaration()->cast<NodeNDArray>()) {
 					if (dim > nd_array->dimensions) {
-						auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+						auto error = CompileError(ErrorType::TypeError, "", "", node.dimension->tok);
 						error.m_message =
 							"Dimension " + std::to_string(dim) + " does not exist in <NDArray> " + node.array->name + ".";
 						error.exit();
 					} else if (dim < 0) {
-						auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+						auto error = CompileError(ErrorType::TypeError, "", "", node.dimension->tok);
 						error.m_message = "Dimension " + std::to_string(dim) + " is not valid. Dimensions start at 1. If"
 																			   " you want to access the number of all elements, use 0.";
 						error.exit();
