@@ -153,11 +153,11 @@ jobs:
             # Sicherstellen, dass der Zielordner existiert
             mkdir -p _Releases/${{ needs.build-macos.outputs.version_dir }}
             
-            # Dateien aus macos-release/ kopieren (falls Ziel noch leer ist)
-            rsync -a --update macos-release/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
+            # Dateien aus macos-release/ kopieren
+            rsync -a macos-release/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
             
-            # Dateien aus windows-release/ kopieren, bevorzugt neuere Dateien
-            rsync -a --update windows-release/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
+            # Dateien aus windows-release/ kopieren
+            rsync -a windows-release/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
 
       - name: Fix permissions for macOS binary
         run: |
