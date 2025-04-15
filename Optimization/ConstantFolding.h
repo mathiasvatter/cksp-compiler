@@ -25,12 +25,26 @@ class ConstantFolding final : public ASTOptimizations {
 	}
 
 public:
+
+	NodeAST* visit(NodeProgram& node) override {
+		m_program = &node;
+		m_program->global_declarations->accept(*this);
+		for(const auto & callback : node.callbacks) {
+			callback->accept(*this);
+		}
+		node.reset_function_visited_flag();
+		return &node;
+	}
+
 	// check if variable reference is constant and can be substituted
 	NodeAST* visit(NodeVariableRef& node) override {
 		return node.try_constant_value_replace();
 	}
 
 	NodeAST* visit(NodeFunctionCall& node) override {
+		if (const auto definition = node.get_definition()) {
+			definition->accept(*this);
+		}
 		// return immediately if the function is not a builtin function to save time
 		if(node.kind != NodeFunctionCall::Kind::Builtin) return &node;
 
@@ -62,7 +76,7 @@ public:
 					int32_t result = int_functions[node.function->name](int_node->value);
 					auto new_node = std::make_unique<NodeInt>(result, node.tok);
 					return node.replace_with(std::move(new_node));
-				} else if(node.function->name == "real") {
+				} else if(node.function->name == "real" or node.function->name == "int_to_real") {
 					auto new_node = std::make_unique<NodeReal>(static_cast<double>(int_node->value), node.tok);
 					return node.replace_with(std::move(new_node));
 				}
@@ -82,7 +96,7 @@ public:
 					double result = real_functions[node.function->name](real_node->value);
 					auto new_node = std::make_unique<NodeReal>(result, node.tok);
 					return node.replace_with(std::move(new_node));
-				} else if (node.function->name == "int") {
+				} else if (node.function->name == "int" or node.function->name == "real_to_int") {
 					auto new_node = std::make_unique<NodeInt>(static_cast<int32_t>(real_node->value), node.tok);
 					return node.replace_with(std::move(new_node));
 				}

@@ -46,7 +46,7 @@ public:
 		if(node.index) node.index->accept(*this);
 		if(node.data_type == DataType::Const) {
 			m_is_constant &= true;
-
+			return &node;
 		}
 		// if it is of type composite it references the size -> which is constant
 		if(node.ty->get_type_kind() == TypeKind::Composite) {
@@ -79,10 +79,18 @@ public:
 	}
 
 	NodeAST * visit(NodeFunctionCall& node) override {
+		const std::vector<std::string> constant_functions = {
+			"num_elements",
+			"get_ui_id",
+			"real",
+			"int",
+			"real_to_int",
+			"int_to_real"
+		};
 		node.function->accept(*this);
 		// check if func is 'num_elements' which returns constant and can be used as array size
 		if(node.kind == NodeFunctionCall::Kind::Builtin and node.function->get_num_args() == 1) {
-			if(node.function->name == "num_elements" or node.function->name == "get_ui_id") {
+			if(contains(constant_functions, node.function->name)) {
 				m_is_constant &= true;
 				return &node;
 			}

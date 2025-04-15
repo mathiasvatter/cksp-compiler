@@ -45,6 +45,7 @@ private:
 			calls.front()->strategy = NodeFunctionCall::Strategy::Inlining;
 			return &node;
 		}
+
 		// std::cout<< "Transforming function "<<node.header->name<<" to parameter stack strategy"<<std::endl;
 		const std::string new_name = m_def_provider->get_fresh_name("c_"+node.header->name);
 		const auto new_def = clone_shared<NodeFunctionDefinition>(node.get_shared());
@@ -61,11 +62,6 @@ private:
 		new_def->collect_call_sites(m_program);
 
 		std::vector<std::unique_ptr<NodeFunctionParam>> promoted_params;
-		// static DimensionDeflator deflator(m_program);
-		// for (int i = 0; i<new_def->header->params.size(); i++) {
-		// 	const auto& param = new_def->header->params[i];
-		// 	deflator.convert_to_thread_safe(*param->variable);
-		// }
 		for (int i = 0 ; i<new_def->header->params.size(); i++) {
 			auto& param = new_def->header->params[i];
 			param->variable->name = m_def_provider->get_fresh_name(param->variable->name);

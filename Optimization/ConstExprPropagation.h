@@ -6,16 +6,25 @@
 
 #include "../AST/ASTVisitor/ASTOptimizations.h"
 
-class ConstExprPropagation : public ASTOptimizations {
-private:
+class ConstExprPropagation final : public ASTOptimizations {
 	std::unordered_map<StringTypeKey, std::unique_ptr<NodeAST>, StringTypeKeyHash> m_constant_expressions;
 
 public:
 
+	NodeAST* visit(NodeProgram& node) override {
+		m_program = &node;
+		m_program->global_declarations->accept(*this);
+		for(const auto & callback : node.callbacks) {
+			callback->accept(*this);
+		}
+		node.reset_function_visited_flag();
+		return &node;
+	}
+
 	/// reset the constant expression propagation map every block
 	NodeAST* visit(NodeBlock& node) override {
 		m_constant_expressions.clear();
-		for(auto & stmt : node.statements) {
+		for(const auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
 		m_constant_expressions.clear();
@@ -48,6 +57,11 @@ public:
 		if(node.kind == NodeFunctionCall::Kind::Builtin) {
 			if(!node.get_definition()->is_thread_safe) {
 				m_constant_expressions.clear();
+			}
+		} else {
+			if (const auto definition = node.get_definition()) {
+				if (!definition->visited) definition->accept(*this);
+				definition->visited = true;
 			}
 		}
 		return &node;
@@ -131,7 +145,7 @@ public:
 private:
 
 	std::unique_ptr<NodeAST> get_constant_expression(NodeAST* node) {
-		auto it = m_constant_expressions.find(get_hash_value(*node));
+		const auto it = m_constant_expressions.find(get_hash_value(*node));
 		if(it != m_constant_expressions.end()) {
 			auto constant = it->second->clone();
 			constant->update_parents(nullptr);
