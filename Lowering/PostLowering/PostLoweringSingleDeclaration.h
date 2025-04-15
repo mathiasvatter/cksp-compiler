@@ -42,8 +42,8 @@ public:
 					std::move(node.value),
 					node.tok
 				);
-				node_block->prepend_as_stmt(std::move(node_array_decl));
-				node_array->num_elements = nullptr;
+				node_block->add_as_stmt(std::move(node_array_decl));
+				node_array->num_elements = std::make_unique<NodeParamList>(node.tok);
 				return node.replace_with(std::move(node_block));
 			}
 		}
