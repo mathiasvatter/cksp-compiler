@@ -261,9 +261,9 @@ public:
 
 		ASTCollectPostLowerings post_lowering(m_program);
 		ast->accept(post_lowering);
+		ast->debug_print();
 		ASTRelinkGlobalScope relink_global_scope(m_program);
 		ast->accept(relink_global_scope);
-	//	ast->debug_print();
 
 		compile_time.stop("Post Lowering");
 		std::cout << compile_time.print_timer("Post Lowering") << "\n";
@@ -272,7 +272,6 @@ public:
 		ast->inline_global_variables();
 		ASTOptimizations optimizations;
 		ASTOptimizations::optimize(*ast);
-		ast->debug_print();
 
 		compile_time.stop("Optimization");
 		std::cout << compile_time.print_timer("Optimization") << "\n";
