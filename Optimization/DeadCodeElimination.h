@@ -98,6 +98,9 @@ public:
 	};
 
 	NodeAST* visit(NodeSingleAssignment& node) override {
+		if (node.kind == NodeInstruction::ParameterStack) return &node;
+		if (node.kind == NodeInstruction::ReturnVar) return &node;
+		return &node;
 		// important to do r_value first to remove last assignment if necessary
 		node.r_value->accept(*this);
 		node.l_value->accept(*this);
@@ -129,6 +132,10 @@ public:
 	bool kill_last_assignment(NodeReference* node) {
 		// only stay in here if current node is left side of assign statement
 		if(!node->is_l_value()) return false;
+		// if (auto assignment = node->parent->cast<NodeSingleAssignment>()) {
+		// 	if (assignment->kind == NodeInstruction::ParameterStack) return false;
+		// 	if (assignment->kind == NodeInstruction::ReturnVar) return false;
+		// }
 		// check if last reference is an assignment statement
 		if(m_last_reference.empty()) return false;
 		if(auto const it = m_last_reference.find(get_hash_value(*node)); it != m_last_reference.end()) {
@@ -136,6 +143,8 @@ public:
 			if (node->is_r_value()) return false;
 			if(const auto assignment = it->second->is_l_value()) {
 				if (assignment->r_value->cast<NodeFunctionCall>()) return false;
+				// if (assignment->kind == NodeInstruction::ParameterStack) return false;
+				// if (assignment->kind == NodeInstruction::ReturnVar) return false;
 				assignment->remove_node();
 				m_last_reference.erase(it);
 				return true;
