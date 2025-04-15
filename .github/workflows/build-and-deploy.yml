@@ -134,17 +134,17 @@ jobs:
           echo "Error: VERSION_DIR is not set. Aborting workflow."
           exit 1
 
-      - name: Download macOS artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: macos-build
-          path: macos-release/
-
       - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
           name: windows-build
           path: windows-release/
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-build
+          path: macos-release/
 
       - name: Merge artifacts into _Releases
         run: |
@@ -157,7 +157,7 @@ jobs:
             rsync -a macos-release/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
             
             # Dateien aus windows-release/ kopieren
-            rsync -a windows-release/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
+            rsync -a --update windows-release/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
 
       - name: Fix permissions for macOS binary
         run: |
