@@ -183,8 +183,8 @@ private:
 			std::nullopt,
 			flag_name,
 			TypeRegistry::Integer,
-			DataType::Mutable,
-			tok
+			tok,
+			DataType::Mutable
 		);
 		exit_flag_var->is_local = true;
 		return std::make_unique<NodeSingleDeclaration>(

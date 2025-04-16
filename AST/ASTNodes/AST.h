@@ -132,8 +132,8 @@ struct NodeReference : NodeAST {
 	Kind kind = User;
 	DataType data_type = DataType::Mutable;
     explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::DeadCode) {}
-    NodeReference(std::string name, NodeType node_type, Token tok)
-            : NodeAST(std::move(tok), node_type), name(std::move(name)) {}
+    NodeReference(std::string name, NodeType node_type, Token tok, DataType data_type)
+            : NodeAST(std::move(tok), node_type), name(std::move(name)), data_type(data_type) {}
 	~NodeReference() override;
     // Kopierkonstruktor
     NodeReference(const NodeReference& other);
@@ -224,7 +224,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	DataType data_type = DataType::Mutable;
 	std::string name;
 	std::unordered_set<NodeReference*> references;
-	NodeDataStructure(std::string name, Type* ty, Token tok, const NodeType node_type) : NodeAST(std::move(tok), node_type), name(std::move(name)) {
+	NodeDataStructure(std::string name, Type* ty, Token tok, const NodeType node_type, const DataType data_type) : NodeAST(std::move(tok), node_type), data_type(data_type), name(std::move(name)) {
         this->ty = ty;
     }
 	// Kopierkonstruktor
@@ -259,12 +259,12 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	}
 	/// to be used on datastructures
 	NodeDataStructure *replace_datastruct(std::unique_ptr<NodeDataStructure> new_node);
-	bool is_num_elements_constant() const {
-		if(data_type != DataType::Const) return false;
-		const size_t pos = name.find(OBJ_DELIMITER+"num_elements");
-		if(pos == std::string::npos) return false;
-		return true;
-	}
+	// bool is_num_elements_constant() const {
+	// 	if(data_type != DataType::Const) return false;
+	// 	const size_t pos = name.find(OBJ_DELIMITER+"num_elements");
+	// 	if(pos == std::string::npos) return false;
+	// 	return true;
+	// }
 	std::shared_ptr<NodeDataStructure> get_shared() {
 		return shared_from_this();
 	}

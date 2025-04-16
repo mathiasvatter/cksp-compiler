@@ -76,7 +76,8 @@ private:
 						std::nullopt,
 						return_name,
 						node_ref->ty,
-						DataType::Return, node.return_variables[i]->tok
+						node.return_variables[i]->tok,
+						DataType::Return
 					);
 				} else if(node_ref->ty->get_type_kind() == TypeKind::Composite) {
 					// 	return Note.velocities[self, *]
@@ -128,8 +129,9 @@ private:
 					std::nullopt,
 					return_name,
 					node_return->ty,
-					DataType::Return, node.return_variables[i]->tok
-					);
+					node.return_variables[i]->tok,
+					DataType::Return
+				);
 			}
 			new_param->data_type = DataType::Return;
 			auto new_param_ref = new_param->to_reference();

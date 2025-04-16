@@ -11,11 +11,11 @@
 struct NodeNumElements;
 
 struct NodeVariableRef final : NodeReference {
-	NodeVariableRef(std::string name, Token tok)
-		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok)) {
+	NodeVariableRef(std::string name, Token tok, DataType data_type=DataType::Mutable)
+		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok), data_type) {
 	}
-	NodeVariableRef(std::string name, Type* ty, Token tok)
-		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok)) {
+	NodeVariableRef(std::string name, Type* ty, Token tok, DataType data_type=DataType::Mutable)
+		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok), data_type) {
 		this->ty = ty;
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -31,12 +31,7 @@ struct NodeVariableRef final : NodeReference {
 	std::unique_ptr<NodeAccessChain> to_method_chain() override;
 	std::unique_ptr<NodePointerRef> to_pointer_ref() override;
 
-	/// checks if variable ref is a ndarray size constant by checking the declaration and
-	/// pattern matching the name (....SIZE_D(\d+))
-//	bool is_ndarray_constant();
 	std::unique_ptr<NodeNumElements> transform_ndarray_constant();
-	/// checks if variable list or array size constant
-//	bool is_array_constant();
 	std::unique_ptr<NodeNumElements> transform_array_constant();
 	std::unique_ptr<NodeReference> expand_dimension(std::unique_ptr<NodeAST> new_index) override;
 //	ASTLowering* get_lowering(NodeProgram *program) const override;
@@ -46,8 +41,8 @@ struct NodeVariableRef final : NodeReference {
 
 struct NodeCompositeRef : NodeReference {
 	// Konstruktor
-	NodeCompositeRef(std::string name, NodeType node_type, Token tok)
-		: NodeReference(std::move(name), node_type, std::move(tok)) {}
+	NodeCompositeRef(std::string name, NodeType node_type, Token tok, DataType data_type = DataType::Mutable)
+		: NodeReference(std::move(name), node_type, std::move(tok), data_type) {}
 	// Kopierkonstruktor
 	NodeCompositeRef(const NodeCompositeRef& other) : NodeReference(other) {}
 	// Standardmethoden für gemeinsame Funktionalitäten
@@ -73,8 +68,8 @@ struct NodeCompositeRef : NodeReference {
 
 struct NodeArrayRef final : NodeCompositeRef {
 	std::unique_ptr<NodeAST> index;
-	NodeArrayRef(std::string name, std::unique_ptr<NodeAST> index, Token tok)
-		: NodeCompositeRef(std::move(name), NodeType::ArrayRef, std::move(tok)), index(std::move(index)) {
+	NodeArrayRef(std::string name, std::unique_ptr<NodeAST> index, Token tok, DataType data_type=DataType::Mutable)
+		: NodeCompositeRef(std::move(name), NodeType::ArrayRef, std::move(tok), data_type), index(std::move(index)) {
 		set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -140,8 +135,8 @@ struct NodeArrayRef final : NodeCompositeRef {
 struct NodeNDArrayRef final : NodeCompositeRef {
 	std::unique_ptr<NodeParamList> indexes = nullptr;
     std::unique_ptr<NodeParamList> sizes = nullptr;
-	NodeNDArrayRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
-		: NodeCompositeRef(std::move(name), NodeType::NDArrayRef, std::move(tok)), indexes(std::move(indexes)) {
+	NodeNDArrayRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok, DataType data_type=DataType::Mutable)
+		: NodeCompositeRef(std::move(name), NodeType::NDArrayRef, std::move(tok), data_type), indexes(std::move(indexes)) {
 		NodeNDArrayRef::set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -225,9 +220,12 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 struct NodeFunctionHeaderRef final : NodeReference {
 	bool has_forced_parenth = false;
 	std::unique_ptr<NodeParamList> args;
-	NodeFunctionHeaderRef(std::string name, Token tok);
-	NodeFunctionHeaderRef(std::string name, std::unique_ptr<NodeParamList> args, Token tok);
-	~NodeFunctionHeaderRef() override;
+	NodeFunctionHeaderRef(std::string name, Token tok) : NodeReference(std::move(name), NodeType::FunctionHeaderRef, std::move(tok), DataType::Mutable) {}
+	NodeFunctionHeaderRef(std::string name, std::unique_ptr<NodeParamList> args, Token tok, DataType data_type=DataType::Mutable) :
+	NodeReference(std::move(name), NodeType::FunctionHeaderRef, std::move(tok), data_type), args(std::move(args)) {
+		set_child_parents();
+	}
+	~NodeFunctionHeaderRef() override = default;
 	NodeAST * accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeFunctionHeaderRef(const NodeFunctionHeaderRef& other);
@@ -262,8 +260,8 @@ struct NodeListRef final : NodeReference {
 	NodeParamList* sizes = nullptr; // param list of size of the lists in the list
 	NodeParamList* pos = nullptr; // param list of positions in the list
 	std::unique_ptr<NodeParamList> indexes;
-	NodeListRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok)
-		: NodeReference(std::move(name), NodeType::ListRef, std::move(tok)), indexes(std::move(indexes)) {
+	NodeListRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok, DataType data_type=DataType::Mutable)
+		: NodeReference(std::move(name), NodeType::ListRef, std::move(tok), data_type), indexes(std::move(indexes)) {
 		NodeListRef::set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -286,8 +284,8 @@ struct NodeListRef final : NodeReference {
 };
 
 struct NodePointerRef : NodeReference {
-	NodePointerRef(std::string name, Token tok)
-		: NodeReference(std::move(name), NodeType::PointerRef, std::move(tok)) {
+	NodePointerRef(std::string name, Token tok, DataType data_type=DataType::Mutable)
+		: NodeReference(std::move(name), NodeType::PointerRef, std::move(tok), data_type) {
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
@@ -316,15 +314,15 @@ struct NodeNil final : NodePointerRef {
 struct NodeAccessChain final : NodeReference {
 	std::vector<std::unique_ptr<NodeAST>> chain;
 	std::vector<Type*> types;
-	NodeAccessChain(std::vector<std::unique_ptr<NodeAST>> method_chain, Token tok)
-		: NodeReference("", NodeType::AccessChain, std::move(tok)), chain(std::move(method_chain)) {
+	NodeAccessChain(std::vector<std::unique_ptr<NodeAST>> method_chain, Token tok, DataType data_type=DataType::Mutable)
+		: NodeReference("", NodeType::AccessChain, std::move(tok), data_type), chain(std::move(method_chain)) {
 		NodeAccessChain::set_child_parents();
 	}
 	explicit NodeAccessChain(Token tok)
-		: NodeReference("", NodeType::AccessChain, std::move(tok)) {}
+		: NodeReference("", NodeType::AccessChain, std::move(tok), DataType::Mutable) {}
 	// Variadischer Template-Konstruktor
 	template<typename... Member>
-	explicit NodeAccessChain(Token tok, Member&&... member) : NodeReference("", NodeType::AccessChain, std::move(tok)) {
+	explicit NodeAccessChain(Token tok, Member&&... member) : NodeReference("", NodeType::AccessChain, std::move(tok), DataType::Mutable) {
 		(add_method(std::move(member)), ...);
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -385,7 +383,7 @@ struct NodeGetControl final : NodeReference {
 	std::unique_ptr<NodeAST> ui_id; //array or variable
 	std::string control_param;
 	NodeGetControl(std::unique_ptr<NodeAST> ui_id, std::string controlParam, Token tok)
-		: NodeReference(controlParam, NodeType::GetControl, std::move(tok)), ui_id(std::move(ui_id)), control_param(std::move(controlParam)) {
+		: NodeReference(controlParam, NodeType::GetControl, std::move(tok), DataType::Mutable), ui_id(std::move(ui_id)), control_param(std::move(controlParam)) {
 		NodeGetControl::set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -413,12 +411,12 @@ struct NodeGetControl final : NodeReference {
 	Type* get_control_type() const;
 };
 
-struct NodeSetControl : NodeReference {
+struct NodeSetControl final : NodeReference {
 	std::unique_ptr<NodeAST> ui_id; //array or variable
 	std::string control_param;
 	std::unique_ptr<NodeAST> value;
-	inline NodeSetControl(std::unique_ptr<NodeAST> ui_id, std::string controlParam, std::unique_ptr<NodeAST> value, Token tok)
-		: NodeReference(controlParam, NodeType::SetControl, std::move(tok)),
+	NodeSetControl(std::unique_ptr<NodeAST> ui_id, std::string controlParam, std::unique_ptr<NodeAST> value, Token tok)
+		: NodeReference(controlParam, NodeType::SetControl, std::move(tok), DataType::Mutable),
 		ui_id(std::move(ui_id)), control_param(std::move(controlParam)), value(std::move(value)) {
 		set_child_parents();
 	}

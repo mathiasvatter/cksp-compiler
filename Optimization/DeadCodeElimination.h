@@ -5,7 +5,6 @@
 #pragma once
 
 #include "../AST/ASTVisitor/ASTOptimizations.h"
-#include "ConstantFolding.h"
 
 /**
  * Removes Dead Code:
@@ -99,9 +98,6 @@ public:
 	}
 
 	NodeAST* visit(NodeSingleAssignment& node) override {
-		// if (node.kind == NodeInstruction::ParameterStack) return &node;
-		// if (node.kind == NodeInstruction::ReturnVar) return &node;
-		// return &node;
 		// important to do r_value first to remove last assignment if necessary
 		node.r_value->accept(*this);
 		node.l_value->accept(*this);
@@ -140,7 +136,7 @@ public:
 		}
 		// if we are not an l_value of an assignment, return false
 		if (const auto assign = node->is_l_value()) {
-			if (node->data_type == DataType::Return) return false;
+			// if (node->data_type == DataType::Return) return false;
 			// if we are l_value in an parameter stack related assignment -> return false
 			if (assign->kind == NodeInstruction::ParameterStack) return false;
 			if (assign->kind == NodeInstruction::ReturnVar) return false;

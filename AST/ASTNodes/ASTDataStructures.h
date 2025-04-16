@@ -11,10 +11,9 @@
 #include "../TypeRegistry.h"
 
 struct NodeVariable final : NodeDataStructure {
-	NodeVariable(std::optional<Token> is_persistent, std::string name, Type* ty, const DataType type, Token tok)
-		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::Variable) {
+	NodeVariable(std::optional<Token> is_persistent, std::string name, Type* ty, Token tok, const DataType data_type)
+		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::Variable, data_type) {
 		persistence = std::move(is_persistent);
-		data_type = type;
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
@@ -32,10 +31,9 @@ struct NodeVariable final : NodeDataStructure {
 };
 
 struct NodePointer final : NodeDataStructure {
-	NodePointer(std::optional<Token> is_persistent, std::string name, Type* ty, Token tok)
-		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::Pointer) {
+	NodePointer(std::optional<Token> is_persistent, std::string name, Type* ty, Token tok, const DataType data_type=DataType::Mutable)
+		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::Pointer, data_type) {
 		persistence = std::move(is_persistent);
-		data_type = DataType::Mutable;
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
@@ -55,8 +53,8 @@ struct NodeComposite : NodeDataStructure {
 	bool show_brackets = true;
 	std::unique_ptr<NodeParamList> num_elements = nullptr;
 	// Konstruktor
-	NodeComposite(std::string name, Type* ty, Token tok, const NodeType node_type)
-		: NodeDataStructure(std::move(name), ty, std::move(tok), node_type) {}
+	NodeComposite(std::string name, Type* ty, Token tok, const NodeType node_type, const DataType data_type)
+		: NodeDataStructure(std::move(name), ty, std::move(tok), node_type, data_type) {}
 	// Kopierkonstruktor
 	NodeComposite(const NodeComposite& other) : NodeDataStructure(other),
 		show_brackets(other.show_brackets), num_elements(clone_unique(other.num_elements)) {}
@@ -82,12 +80,11 @@ struct NodeComposite : NodeDataStructure {
 
 struct NodeArray final : NodeComposite {
 	std::unique_ptr<NodeAST> size = nullptr;
-	NodeArray(std::string name, Token tok) : NodeComposite(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::Array) {}
-    NodeArray(std::optional<Token> is_persistent, std::string name, Type* ty, std::unique_ptr<NodeAST> size, Token tok)
-            : NodeComposite(std::move(name), ty, std::move(tok), NodeType::Array),
+	NodeArray(std::string name, Token tok) : NodeComposite(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::Array, DataType::Mutable) {}
+    NodeArray(std::optional<Token> is_persistent, std::string name, Type* ty, std::unique_ptr<NodeAST> size, Token tok, DataType data_type=DataType::Mutable)
+            : NodeComposite(std::move(name), ty, std::move(tok), NodeType::Array, data_type),
               size(std::move(size)) {
         persistence = std::move(is_persistent);
-        this->data_type = DataType::Mutable;
         set_child_parents();
     }
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -116,7 +113,7 @@ struct NodeArray final : NodeComposite {
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::ArrayRef;}
 	std::unique_ptr<NodeVariable> to_variable() override {
-		return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+		return std::make_unique<NodeVariable>(persistence, name, ty, tok, data_type);
 	}
 	std::unique_ptr<NodeNDArray> to_ndarray() override;
 	std::unique_ptr<NodeList> to_list() override;
@@ -133,12 +130,11 @@ struct NodeNDArray final : NodeComposite {
 	int inflation_times = 0;
 	int dimensions = 1;
 	std::unique_ptr<NodeParamList> sizes = nullptr;
-	explicit NodeNDArray(std::string name, Token tok) : NodeComposite(std::move(name), TypeRegistry::Unknown, tok, NodeType::NDArray) {}
-	NodeNDArray(std::optional<Token> is_persistent, std::string name, Type *ty, std::unique_ptr<NodeParamList> sizes, Token tok)
-		: NodeComposite(std::move(name), ty, std::move(tok), NodeType::NDArray),
+	explicit NodeNDArray(std::string name, const Token &tok) : NodeComposite(std::move(name), TypeRegistry::Unknown, tok, NodeType::NDArray, DataType::Mutable) {}
+	NodeNDArray(std::optional<Token> is_persistent, std::string name, Type *ty, std::unique_ptr<NodeParamList> sizes, Token tok, DataType data_type=DataType::Mutable)
+		: NodeComposite(std::move(name), ty, std::move(tok), NodeType::NDArray, data_type),
 		  sizes(std::move(sizes)) {
 		persistence = std::move(is_persistent);
-		this->data_type = DataType::Mutable;
 		set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -165,7 +161,7 @@ struct NodeNDArray final : NodeComposite {
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::NDArrayRef;}
 	std::unique_ptr<NodeVariable> to_variable() override {
-		return std::make_unique<NodeVariable>(persistence, name, ty, DataType::Mutable, tok);
+		return std::make_unique<NodeVariable>(persistence, name, ty, tok, data_type);
 	}
 	std::unique_ptr<NodeArray> to_array(std::unique_ptr<NodeAST> size) override;
 	std::unique_ptr<NodeList> to_list() override;
@@ -177,19 +173,19 @@ struct NodeNDArray final : NodeComposite {
 struct NodeFunctionHeader final : NodeDataStructure {
 	bool has_forced_parenth = false;
 	std::vector<std::unique_ptr<NodeFunctionParam>> params;
-	explicit NodeFunctionHeader(std::string name, Token tok) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader) {}
+	explicit NodeFunctionHeader(std::string name, Token tok) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader, DataType::Mutable) {}
 	NodeFunctionHeader(std::string name, std::vector<std::unique_ptr<NodeFunctionParam>> params, Token tok)
-		: NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader), params(std::move(params)) {
+		: NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader, DataType::Mutable), params(std::move(params)) {
 		set_child_parents();
 	}
 	NodeFunctionHeader(std::string name, std::unique_ptr<NodeFunctionParam> param, Token tok)
-		: NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader) {
+		: NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader, DataType::Mutable) {
 		params.push_back(std::move(param));
 		set_child_parents();
 	}
 	// Variadischer Template-Konstruktor
 	template<typename... Params>
-	explicit NodeFunctionHeader(std::string name, Token tok, Params&&... params) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader) {
+	explicit NodeFunctionHeader(std::string name, Token tok, Params&&... params) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader, DataType::Mutable) {
 		(add_param(std::move(params)), ...);
 	}
 	~NodeFunctionHeader() override = default;
@@ -258,9 +254,9 @@ struct NodeUIControl final : NodeDataStructure {
 	std::unique_ptr<NodeParamList> params;
 	std::unique_ptr<NodeParamList> sizes; // if it is ui_control array
     std::weak_ptr<NodeUIControl> declaration;
-	explicit NodeUIControl(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::UIControl) {}
+	explicit NodeUIControl(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::UIControl, DataType::Mutable) {}
 	NodeUIControl(std::string uiControlType, std::shared_ptr<NodeDataStructure> controlVar, std::unique_ptr<NodeParamList> params, Token tok)
-		: NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::UIControl), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {
+		: NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::UIControl, DataType::Mutable), ui_control_type(std::move(uiControlType)), control_var(std::move(controlVar)), params(std::move(params)) {
 		set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -301,9 +297,9 @@ struct NodeUIControl final : NodeDataStructure {
 struct NodeList final : NodeDataStructure {
 	int32_t size = 0;
 	std::vector<std::unique_ptr<NodeInitializerList>> body;
-	explicit NodeList(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::List) {}
+	explicit NodeList(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::List, DataType::Mutable) {}
 	NodeList(std::string name, Type* ty, const int32_t size, std::vector<std::unique_ptr<NodeInitializerList>> body, Token tok)
-		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::List), size(size), body(std::move(body)) {
+		: NodeDataStructure(std::move(name), ty, std::move(tok), NodeType::List, DataType::Mutable), size(size), body(std::move(body)) {
 		set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -337,9 +333,9 @@ struct NodeList final : NodeDataStructure {
 
 struct NodeConst final : NodeDataStructure {
     std::unique_ptr<NodeBlock> constants;
-    explicit NodeConst(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::Const) {}
+    explicit NodeConst(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::Const, DataType::Const) {}
     NodeConst(std::string name, std::unique_ptr<NodeBlock> constants, Token tok)
-            : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::Const), constants(std::move(constants)) {
+            : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::Const, DataType::Const), constants(std::move(constants)) {
         NodeConst::set_child_parents();
     }
     NodeAST * accept(ASTVisitor &visitor) override;
@@ -381,9 +377,9 @@ struct NodeStruct final : NodeDataStructure {
 	std::unordered_map<token, std::weak_ptr<NodeFunctionDefinition>> overloaded_operators;
 	std::unordered_set<NodeStruct*> recursive_structs;
 	inline static std::unordered_set<NodeType> allowed_member_node_types = {NodeType::Variable, NodeType::Pointer, NodeType::NDArray, NodeType::Array};
-	explicit NodeStruct(const std::string& name, Token tok) : NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct) {}
+	explicit NodeStruct(const std::string& name, Token tok) : NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct, DataType::Mutable) {}
 	NodeStruct(const std::string& name, std::unique_ptr<NodeBlock> members, std::vector<std::shared_ptr<NodeFunctionDefinition>> methods, Token tok)
-		: NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct), members(std::move(members)), methods(std::move(methods)) {
+		: NodeDataStructure(name, TypeRegistry::add_object_type(name), std::move(tok), NodeType::Struct, DataType::Mutable), members(std::move(members)), methods(std::move(methods)) {
 		set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;

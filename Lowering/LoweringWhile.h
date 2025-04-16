@@ -52,8 +52,8 @@ public:
 			std::nullopt,
 			m_exit_flag_name,
 			TypeRegistry::Integer,
-			DataType::Mutable,
-			node.tok
+			node.tok,
+			DataType::Mutable
 		);
 		exit_flag_var->is_local = true;
 		auto exit_flag_ref = exit_flag_var->to_reference();

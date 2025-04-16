@@ -159,7 +159,7 @@ public:
 	std::unique_ptr<NodeBlock> get_array_init_function_call(NodeReference* array_ref, const NodeAST* value) {
 		std::string func_name = "array<-init["+array_ref->get_declaration()->ty->get_element_type()->to_string()+"]";
 		auto iterator_name = m_def_provider->get_fresh_name("_iter");
-		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, iterator_name, TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
+		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, iterator_name, TypeRegistry::Integer, array_ref->tok, DataType::Mutable);
 		node_iterator->is_local = true;
 		node_iterator->ty = TypeRegistry::Integer;
 		auto node_iterator_ref = node_iterator->to_reference();
@@ -218,8 +218,8 @@ public:
 		}
 
 		const auto node_array = std::make_shared<NodeArray>(std::nullopt, "array", TypeRegistry::add_composite_type(CompoundKind::Array, type), nullptr, Token());
-		const auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, Token());
-		const auto node_value = std::make_shared<NodeVariable>(std::nullopt, "value", type, DataType::Mutable, Token());
+		const auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, Token(), DataType::Mutable);
+		const auto node_value = std::make_shared<NodeVariable>(std::nullopt, "value", type, Token(), DataType::Mutable);
 		const auto node_function_def = std::make_shared<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				func_name,
@@ -282,7 +282,7 @@ public:
 	std::unique_ptr<NodeBlock> get_array_copy_function_call(NodeReference* array_dest, const NodeReference* array_src) const {
 		std::string func_name = "array.copy."+array_dest->get_declaration()->ty->get_element_type()->to_string();
 		auto iterator_name = m_def_provider->get_fresh_name("_iter");
-		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, iterator_name, TypeRegistry::Integer, DataType::Mutable, array_dest->tok);
+		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, iterator_name, TypeRegistry::Integer, array_dest->tok, DataType::Mutable);
 		node_iterator->is_local = true;
 		auto node_iterator_ref = node_iterator->to_reference();
 		node_iterator_ref->match_data_structure(node_iterator);
@@ -332,7 +332,7 @@ public:
 
 		auto node_dest = std::make_shared<NodeArray>(std::nullopt, "dest", TypeRegistry::add_composite_type(CompoundKind::Array, type), nullptr, Token());
 		auto node_src = std::make_shared<NodeArray>(std::nullopt, "src", TypeRegistry::add_composite_type(CompoundKind::Array, type), nullptr, Token());
-		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, DataType::Mutable, Token());
+		auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter", TypeRegistry::Integer, Token(), DataType::Mutable);
 		auto node_iterator_ref = node_iterator->to_reference();
 		auto node_dest_ref = unique_ptr_cast<NodeArrayRef>(node_dest->to_reference());
 		node_dest_ref->set_index(node_iterator_ref->clone());

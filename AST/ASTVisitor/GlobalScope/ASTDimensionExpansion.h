@@ -56,8 +56,8 @@ public:
 			std::nullopt,
 			"MAX::CB::STACK",
 			TypeRegistry::Integer,
-			DataType::Const,
-			Token()
+			Token(),
+			DataType::Const
 		);
 		m_program->max_cb_stack->is_global = true;
 

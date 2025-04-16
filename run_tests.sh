@@ -94,6 +94,7 @@ for entry in "${BUILDS[@]}"; do
     filename="${filename%.ksp}"
     filename="${filename%.cksp}"
     log_dir="$LOG_ROOT/$mode/$VERSION/$filename"
+    rm -rf "$log_dir"
     mkdir -p "$log_dir"
     stdout_log="$log_dir/stdout.log"
     stderr_log="$log_dir/stderr.log"
