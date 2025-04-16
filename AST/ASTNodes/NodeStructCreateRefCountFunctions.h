@@ -8,7 +8,6 @@
 #include "../ASTVisitor/ASTVisitor.h"
 
 class NodeStructCreateRefCountFunctions {
-private:
 	NodeStruct& m_struct;
 	Token tok;
 	std::unique_ptr<NodeFunctionDefinition> m_del_func;
@@ -120,35 +119,19 @@ public:
 		auto iter_decl = get_iterator_declaration();
 		// if(self # nil)
 		auto nil_check = ASTVisitor::make_nil_check(clone_as<NodeReference>(m_self_ref.get()));
-		// // set everything to nil
-		// for(auto &mem : m_non_recursive_member_structs) {
-		// 	nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
-		// 		to_member_chain_ref(mem),
-		// 		std::make_unique<NodeNil>(tok),
-		// 		tok
-		// 	));
-		// 	wrap_in_loop(nil_check->if_body->statements[0], mem, iter_decl->variable);
-		// }
-		for (auto &mem : m_struct.member_table) {
-			auto member = mem.second.lock();
+		for (auto &[fst, snd] : m_struct.member_table) {
+			auto member = snd.lock();
 			if (member->is_engine) continue;
 			if (member == m_struct.node_self) continue;
 			auto assignment = std::make_unique<NodeSingleAssignment>(
-				to_member_chain_ref(member),
+				member->to_reference(),
 				TypeRegistry::get_neutral_element_from_type(member->ty),
 				tok
 			);
 			nil_check->if_body->add_as_stmt(std::move(assignment));
-			wrap_in_loop(nil_check->if_body->statements.back(), member, iter_decl->variable);
+			// no need to wrap in loop since array to initializer list assignment
+			// wrap_in_loop(nil_check->if_body->statements.back(), member, iter_decl->variable);
 		}
-		// for(auto &mem : m_recursive_member_structs) {
-		// 	nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
-		// 		to_member_chain_ref(mem),
-		// 		std::make_unique<NodeNil>(tok),
-		// 		tok
-		// 	));
-		// 	wrap_in_loop(nil_check->if_body->statements[0], mem, iter_decl->variable);
-		// }
 		m_del_func->body->add_as_stmt(std::move(iter_decl));
 		m_del_func->body->add_as_stmt(std::move(nil_check));
 		m_del_func->parent = &m_struct;
@@ -497,10 +480,10 @@ private:
 		return func_def;
 	}
 
-	std::unique_ptr<NodeReference> to_member_chain_ref(std::shared_ptr<NodeDataStructure> mem, NodeReference* idx = nullptr) {
+	std::unique_ptr<NodeReference> to_member_chain_ref(std::shared_ptr<NodeDataStructure> mem, NodeReference* idx = nullptr) const {
 		std::unique_ptr<NodeReference> ref;
 		// if composite -> get raw array (if ndarray) and set index to iterator
-		if(auto node_comp = cast_node<NodeComposite>(mem.get())) {
+		if(const auto node_comp = cast_node<NodeComposite>(mem.get())) {
 			auto raw_array = node_comp->get_raw()->to_reference();
 			raw_array->cast<NodeArrayRef>()->set_index(m_iterator_ref->clone());
 			ref = std::move(raw_array);
@@ -525,8 +508,8 @@ private:
 			if(member->is_engine) continue;
 			if(member->data_type ==DataType::Const) continue;
 			if(member->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
-				auto mem_type = member->ty->get_element_type();
-				if(recursive_structs.find(mem_type->to_string()) != recursive_structs.end()) {
+				const auto mem_type = member->ty->get_element_type();
+				if(recursive_structs.contains(mem_type->to_string())) {
 					m_recursive_member_structs.push_back(member);
 				} else {
 					m_non_recursive_member_structs.push_back(member);
@@ -536,12 +519,12 @@ private:
 	}
 
 	/// gets pointer to node_self from function definition and sets the declaration of m_self_ref
-	void set_self_ref_declaration(NodeFunctionDefinition* func_def) {
+	void set_self_ref_declaration(const NodeFunctionDefinition* func_def) const {
 		m_self_ref->declaration = func_def->header->get_param(0);
 	}
 
 	/// gets pointer to num_refs from function definition and sets the declaration of m_num_refs_ref
-	void set_num_refs_ref_declaration(NodeFunctionDefinition* func_def) {
+	void set_num_refs_ref_declaration(const NodeFunctionDefinition* func_def) const {
 		m_num_refs_ref->declaration = func_def->header->get_param(1);
 	}
 
