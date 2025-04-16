@@ -192,7 +192,7 @@ mf_set_byte_two(value: any)
 mf_set_channel(value: any)
 mf_set_command(command: any)
 mf_set_event_par(event_id: int, parameter: int, value: int)
-mf_set_export_area(name: any, startpos: int, endpos: int, start_track: int, end_track: int)
+mf_set_export_area(name: any, startpos: int, endpos: int, start_track: int, end_track: int): int
 mf_set_note_length(value: any)
 mf_set_num_export_areas(value: any)
 mf_set_length(value: any)
