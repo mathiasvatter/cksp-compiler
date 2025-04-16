@@ -76,7 +76,7 @@ on init
 	declare i3001 : int {Reuses: 0}
 	declare is_free0001 : int {Reuses: 3}
 	declare _ret110001 : int {Reuses: 0}
-	declare result10001 : int {Reuses: 10}
+	declare result10002 : int {Reuses: 10}
 	declare frame1 : int {Reuses: 0}
 	declare note3 : int {Reuses: 0}
 	declare value0 : int {Reuses: 0}
@@ -144,29 +144,31 @@ on init
 	declare dy00 : real {Reuses: 3}
 	declare cos_theta00 : real {Reuses: 1}
 	declare angle00 : real {Reuses: 2}
-	declare start_note000 : int {Reuses: 0}
+	declare start_note000 : int {Reuses: 1}
 	declare end_note000 : int {Reuses: 0}
 	declare transition_note000 : int {Reuses: 0}
 	declare transition_type000 : int {Reuses: 0}
 	declare transition_dyn_layer000 : int {Reuses: 0}
 	declare offset000 : int {Reuses: 0}
-	declare _ret22000 : int {Reuses: 12}
+	declare _ret22000 : int {Reuses: 0}
 	declare result4000 : int {Reuses: 12}
+	declare result4100 : int {Reuses: 11}
 	declare controller_value0[100] : int[] {Reuses: 1}
 	declare subarticulation_modulation_strength000 : real {Reuses: 5}
 	declare fade_in_range000 : int {Reuses: 4}
 	declare fade_out_end000 : int {Reuses: 3}
 	declare fade_out_range000 : int {Reuses: 4}
-	declare group_count001 : int {Reuses: 28}
-	declare idx000000 : int {Reuses: 16}
+	declare result10001 : int {Reuses: 23}
+	declare idx000000 : int {Reuses: 17}
 	declare articulation_event_id000 : int {Reuses: 17}
-	declare set_articulation_event_id000 : int {Reuses: 19}
-	declare next_free_idx0000 : int {Reuses: 21}
-	declare idx3000 : int {Reuses: 15}
-	declare i3000 : int {Reuses: 17}
-	declare is_free0000 : int {Reuses: 18}
-	declare _ret110000 : int {Reuses: 9}
-	declare result10000 : int {Reuses: 29}
+	declare set_articulation_event_id000 : int {Reuses: 13}
+	declare next_free_idx0000 : int {Reuses: 23}
+	declare idx3000 : int {Reuses: 17}
+	declare i3000 : int {Reuses: 18}
+	declare is_free0000 : int {Reuses: 16}
+	declare _ret110000 : int {Reuses: 0}
+	declare result10000 : int {Reuses: 19}
+	declare group_count001 : int {Reuses: 26}
 	set_script_title("Lux - Orchestral Strings"){Builtin, None}
 	set_control_par_str(INST_ICON_ID{int}, CONTROL_PAR_PICTURE{int}, "sonu-badge"){Builtin, None}
 	set_key_pressed_support(1){Builtin, None}
@@ -612,7 +614,7 @@ on init
 	set_control_par(btn_main_page{int}, CONTROL_PAR_POS_Y{int}, UI_HEIGHT{int} - 25){Builtin, None}
 	set_control_par(btn_main_page{int}, CONTROL_PAR_WIDTH{int}, 120){Builtin, None}
 	set_control_par(btn_main_page{int}, CONTROL_PAR_HEIGHT{int}, 20){Builtin, None}
-	declare v00 : int {Reuses: 43}
+	declare v00 : int {Reuses: 41}
 	v00{int} := 0
 	v00{int} := 0
 	while(v00{int} <= (num_elements(font_types{int[]}){Builtin, None} - 1)) 
@@ -2324,7 +2326,7 @@ on init
 		inc(i{int}){Builtin, None}
 	end while
 	declare ui_label lbl_version : int (0, 0) {Reuses: 0}
-	set_control_par_str(lbl_version{int}, CONTROL_PAR_TEXT{int}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "18:36:50" & " " & "04/15/25"){Builtin, None}
+	set_control_par_str(lbl_version{int}, CONTROL_PAR_TEXT{int}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "12:26:57" & " " & "04/16/25"){Builtin, None}
 	set_control_par_str(lbl_version{int}, CONTROL_PAR_PICTURE{int}, "alpha"){Builtin, None}
 	set_control_par(lbl_version{int}, CONTROL_PAR_TEXT_ALIGNMENT{int}, 0){Builtin, None}
 	set_control_par(lbl_version{int}, CONTROL_PAR_FONT_TYPE{int}, fonts_regular_white[0]{int}){Builtin, None}
@@ -2520,7 +2522,7 @@ on note{thread-unsafe}
 		i3001{int} := i3000{int}
 		is_free0001{int} := is_free0000{int}
 		_ret110001{int} := _ret110000{int}
-		result10001{int} := result10000{int}
+		result10002{int} := result10000{int}
 		call c_update_selected_notes0{UserDefined, Call}
 	end if
 end on
@@ -2554,8 +2556,8 @@ on release{thread-unsafe}
 				idx3001{int} := next_free_idx0000{int}
 				i3001{int} := idx3000{int}
 				is_free0001{int} := is_free0000{int}
-				_ret110001{int} := _ret110000{int}
-				result10001{int} := result10000{int}
+				_ret110001{int} := result10000{int}
+				result10002{int} := result10001{int}
 				call c_update_selected_notes0{UserDefined, Call}
 			end if
 		end if
@@ -2584,10 +2586,10 @@ on controller{thread-unsafe}
 						instrument_slot1{int} := ii{int}
 						note2{int} := i{int}
 						ks10{int} := result10000{int}
-						i50{int} := _ret110000{int}
-						_ret1000{int} := is_free0000{int}
-						result200{int} := idx3000{int}
-						result210{int} := next_free_idx0000{int}
+						i50{int} := is_free0000{int}
+						_ret1000{int} := idx3000{int}
+						result200{int} := next_free_idx0000{int}
+						result210{int} := i3000{int}
 						call c_articulations_note_off0{UserDefined, Call}
 						ii{int} := instrument_slot1{int}
 						i{int} := note2{int}
@@ -2606,18 +2608,18 @@ on controller{thread-unsafe}
 		value0{int} := controller_value0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int}
 		call c_set_modulation_position0{UserDefined, Call}
 		controller_value0[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int} := value0{int}
-		i60{int} := next_free_idx0000{int}
-		e00{int} := idx3000{int}
-		_iter300{int} := is_free0000{int}
-		_iter200{int} := _ret110000{int}
+		i60{int} := i3000{int}
+		e00{int} := next_free_idx0000{int}
+		_iter300{int} := idx3000{int}
+		_iter200{int} := is_free0000{int}
 		_iter100{int} := result10000{int}
-		_ret1200{int} := i3000{int}
-		result300{int} := idx000000{int}
-		result310{int} := group_count001{int}
-		result500{int} := v00{int}
-		result320{int} := articulation_event_id000{int}
+		_ret1200{int} := idx000000{int}
+		result300{int} := group_count001{int}
+		result310{int} := v00{int}
+		result500{int} := articulation_event_id000{int}
+		result320{int} := set_articulation_event_id000{int}
 		subarticulation_modulation_strength001{real} := subarticulation_modulation_strength000{real}
-		fade_in_start000{int} := set_articulation_event_id000{int}
+		fade_in_start000{int} := result10001{int}
 		fade_in_range001{int} := fade_in_range000{int}
 		fade_out_end001{int} := fade_out_end000{int}
 		fade_out_range001{int} := fade_out_range000{int}
@@ -2626,98 +2628,98 @@ on controller{thread-unsafe}
 end on
 
 on listener
-	set_articulation_event_id000{int} := 0
-	articulation_event_id000{int} := TRUE{int}
+	result10001{int} := 0
+	set_articulation_event_id000{int} := TRUE{int}
 	if(any_delay_event_queued{int} = TRUE{int})
-		set_articulation_event_id000{int} := 0
-		while(set_articulation_event_id000{int} <= (MAX_EVENTS0{int} - 1)) 
-			if(delay_buffer[set_articulation_event_id000{int}]{int} # - 1)
-				delay_buffer_countdown[set_articulation_event_id000{int}]{int} := delay_buffer_countdown[set_articulation_event_id000{int}]{int} - LISTENER_RESOLUTION{int}
-				if(delay_buffer_countdown[set_articulation_event_id000{int}]{int} <= 0)
-					if(delay_buffer_velo[set_articulation_event_id000{int}]{int} >= 0)
-						v00{int} := 0
-						ret40{int} := v00{int}
-						articulation_event_id1{int} := delay_buffer[set_articulation_event_id000{int}]{int}
-						subarticulation1{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
-						result34{int} := group_count001{int}
+		result10001{int} := 0
+		while(result10001{int} <= (MAX_EVENTS0{int} - 1)) 
+			if(delay_buffer[result10001{int}]{int} # - 1)
+				delay_buffer_countdown[result10001{int}]{int} := delay_buffer_countdown[result10001{int}]{int} - LISTENER_RESOLUTION{int}
+				if(delay_buffer_countdown[result10001{int}]{int} <= 0)
+					if(delay_buffer_velo[result10001{int}]{int} >= 0)
+						articulation_event_id000{int} := 0
+						ret40{int} := articulation_event_id000{int}
+						articulation_event_id1{int} := delay_buffer[result10001{int}]{int}
+						subarticulation1{int} := delay_buffer_subarticulation[result10001{int}]{int}
+						result34{int} := v00{int}
 						call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
-						v00{int} := ret40{int}
-						delay_buffer[set_articulation_event_id000{int}]{int} := articulation_event_id1{int}
-						delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation1{int}
-						if(v00{int} < 0)
-							message("delay_buffer_prev_note: " & delay_buffer_prev_note[set_articulation_event_id000{int}]{int}){Builtin, None}
+						articulation_event_id000{int} := ret40{int}
+						delay_buffer[result10001{int}]{int} := articulation_event_id1{int}
+						delay_buffer_subarticulation[result10001{int}]{int} := subarticulation1{int}
+						if(articulation_event_id000{int} < 0)
+							message("delay_buffer_prev_note: " & delay_buffer_prev_note[result10001{int}]{int}){Builtin, None}
+							v00{int} := 0
 							group_count001{int} := 0
 							idx000000{int} := 0
-							i3000{int} := 0
-							if(subarticulations_rrr[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} = 0)
-								i3000{int} := (_rr_data_idx[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 4096) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 512) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * 128) + delay_buffer_note[set_articulation_event_id000{int}]{int}))]{int} + 1) mod subarticulations_rr_num[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int}
+							if(subarticulations_rrr[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} = 0)
+								idx000000{int} := (_rr_data_idx[(delay_buffer_instrument[result10001{int}]{int} * 4096) + ((delay_buffer_keyswitch[result10001{int}]{int} * 512) + ((delay_buffer_subarticulation[result10001{int}]{int} * 128) + delay_buffer_note[result10001{int}]{int}))]{int} + 1) mod subarticulations_rr_num[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int}
 							else
-								if((ENGINE_UPTIME{int} - _rr_data_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 4096) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 512) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * 128) + delay_buffer_note[set_articulation_event_id000{int}]{int}))]{int}) > subarticulations_rrr_reset_time[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int})
-									i3000{int} := (_rr_data_idx[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 4096) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 512) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * 128) + delay_buffer_note[set_articulation_event_id000{int}]{int}))]{int} + 1) mod subarticulations_rrr[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int}
+								if((ENGINE_UPTIME{int} - _rr_data_time[(delay_buffer_instrument[result10001{int}]{int} * 4096) + ((delay_buffer_keyswitch[result10001{int}]{int} * 512) + ((delay_buffer_subarticulation[result10001{int}]{int} * 128) + delay_buffer_note[result10001{int}]{int}))]{int}) > subarticulations_rrr_reset_time[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int})
+									idx000000{int} := (_rr_data_idx[(delay_buffer_instrument[result10001{int}]{int} * 4096) + ((delay_buffer_keyswitch[result10001{int}]{int} * 512) + ((delay_buffer_subarticulation[result10001{int}]{int} * 128) + delay_buffer_note[result10001{int}]{int}))]{int} + 1) mod subarticulations_rrr[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int}
 								else
-									i3000{int} := subarticulations_rrr[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} - ((subarticulations_rrr[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} - ((_rr_data_idx[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 4096) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 512) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * 128) + delay_buffer_note[set_articulation_event_id000{int}]{int}))]{int} + 1) mod subarticulations_rr_num[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int})) .and. sh_right(subarticulations_rrr[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} - ((_rr_data_idx[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 4096) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 512) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * 128) + delay_buffer_note[set_articulation_event_id000{int}]{int}))]{int} + 1) mod subarticulations_rr_num[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int}), 31){Builtin, None})
+									idx000000{int} := subarticulations_rrr[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} - ((subarticulations_rrr[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} - ((_rr_data_idx[(delay_buffer_instrument[result10001{int}]{int} * 4096) + ((delay_buffer_keyswitch[result10001{int}]{int} * 512) + ((delay_buffer_subarticulation[result10001{int}]{int} * 128) + delay_buffer_note[result10001{int}]{int}))]{int} + 1) mod subarticulations_rr_num[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int})) .and. sh_right(subarticulations_rrr[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} - ((_rr_data_idx[(delay_buffer_instrument[result10001{int}]{int} * 4096) + ((delay_buffer_keyswitch[result10001{int}]{int} * 512) + ((delay_buffer_subarticulation[result10001{int}]{int} * 128) + delay_buffer_note[result10001{int}]{int}))]{int} + 1) mod subarticulations_rr_num[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int}), 31){Builtin, None})
 								end if
-								_rr_data_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 4096) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 512) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * 128) + delay_buffer_note[set_articulation_event_id000{int}]{int}))]{int} := ENGINE_UPTIME{int}
+								_rr_data_time[(delay_buffer_instrument[result10001{int}]{int} * 4096) + ((delay_buffer_keyswitch[result10001{int}]{int} * 512) + ((delay_buffer_subarticulation[result10001{int}]{int} * 128) + delay_buffer_note[result10001{int}]{int}))]{int} := ENGINE_UPTIME{int}
 							end if
-							_rr_data_idx[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 4096) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 512) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * 128) + delay_buffer_note[set_articulation_event_id000{int}]{int}))]{int} := i3000{int}
-							idx000000{int} := i3000{int}
-							i3000{int} := 0
-							ret70{int} := i3000{int}
-							instrument_slot2{int} := delay_buffer_instrument[set_articulation_event_id000{int}]{int}
-							keyswitch2{int} := delay_buffer_keyswitch[set_articulation_event_id000{int}]{int}
-							note4{int} := delay_buffer_note[set_articulation_event_id000{int}]{int}
-							subarticulation3{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
+							_rr_data_idx[(delay_buffer_instrument[result10001{int}]{int} * 4096) + ((delay_buffer_keyswitch[result10001{int}]{int} * 512) + ((delay_buffer_subarticulation[result10001{int}]{int} * 128) + delay_buffer_note[result10001{int}]{int}))]{int} := idx000000{int}
+							group_count001{int} := idx000000{int}
+							idx000000{int} := 0
+							ret70{int} := idx000000{int}
+							instrument_slot2{int} := delay_buffer_instrument[result10001{int}]{int}
+							keyswitch2{int} := delay_buffer_keyswitch[result10001{int}]{int}
+							note4{int} := delay_buffer_note[result10001{int}]{int}
+							subarticulation3{int} := delay_buffer_subarticulation[result10001{int}]{int}
 							subarticulation_modulation_strength02{real} := subarticulation_modulation_strength000{real}
 							fade_in_start02{int} := result10000{int}
-							fade_in_range02{int} := _ret110000{int}
-							fade_out_end02{int} := is_free0000{int}
-							fade_out_range02{int} := idx3000{int}
+							fade_in_range02{int} := is_free0000{int}
+							fade_out_end02{int} := idx3000{int}
+							fade_out_range02{int} := next_free_idx0000{int}
 							call c_articulations_compute_level0{UserDefined, Call}
-							i3000{int} := ret70{int}
-							delay_buffer_instrument[set_articulation_event_id000{int}]{int} := instrument_slot2{int}
-							delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} := keyswitch2{int}
-							delay_buffer_note[set_articulation_event_id000{int}]{int} := note4{int}
-							delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation3{int}
-							idx3000{int} := 0
-							ret40{int} := idx3000{int}
-							articulation_event_id1{int} := delay_buffer_prev_note[set_articulation_event_id000{int}]{int}
-							subarticulation1{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
+							idx000000{int} := ret70{int}
+							delay_buffer_instrument[result10001{int}]{int} := instrument_slot2{int}
+							delay_buffer_keyswitch[result10001{int}]{int} := keyswitch2{int}
+							delay_buffer_note[result10001{int}]{int} := note4{int}
+							delay_buffer_subarticulation[result10001{int}]{int} := subarticulation3{int}
+							next_free_idx0000{int} := 0
+							ret40{int} := next_free_idx0000{int}
+							articulation_event_id1{int} := delay_buffer_prev_note[result10001{int}]{int}
+							subarticulation1{int} := delay_buffer_subarticulation[result10001{int}]{int}
 							result34{int} := result10000{int}
 							call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
-							idx3000{int} := ret40{int}
-							delay_buffer_prev_note[set_articulation_event_id000{int}]{int} := articulation_event_id1{int}
-							delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation1{int}
+							next_free_idx0000{int} := ret40{int}
+							delay_buffer_prev_note[result10001{int}]{int} := articulation_event_id1{int}
+							delay_buffer_subarticulation[result10001{int}]{int} := subarticulation1{int}
 							result10000{int} := 0
-							_ret110000{int} := 0
-							is_free0000{int} := - 1
-							_ret110000{int} := 0
-							while(_ret110000{int} < MAX_SUBARTICULATION_EVENTS0{int}) 
-								if((subarticulation_event_list[_ret110000{int}]{int} = - 1) and (subarticulation_event_last_used[_ret110000{int}]{int} < (ENGINE_UPTIME{int} - lookahead{int})))
-									is_free0000{int} := _ret110000{int}
-									_ret110000{int} := MAX_SUBARTICULATION_EVENTS0{int}
+							is_free0000{int} := 0
+							idx3000{int} := - 1
+							is_free0000{int} := 0
+							while(is_free0000{int} < MAX_SUBARTICULATION_EVENTS0{int}) 
+								if((subarticulation_event_list[is_free0000{int}]{int} = - 1) and (subarticulation_event_last_used[is_free0000{int}]{int} < (ENGINE_UPTIME{int} - lookahead{int})))
+									idx3000{int} := is_free0000{int}
+									is_free0000{int} := MAX_SUBARTICULATION_EVENTS0{int}
 								end if
-								_ret110000{int} := _ret110000{int} + 1
+								is_free0000{int} := is_free0000{int} + 1
 							end while
-							result10000{int} := is_free0000{int}
-							_ret110000{int} := 0
-							is_free0000{int} := - 1
-							next_free_idx0000{int} := - 1
+							result10000{int} := idx3000{int}
+							is_free0000{int} := 0
+							idx3000{int} := - 1
+							i3000{int} := - 1
 							fade_out_end000{int} := - 1
 							fade_in_range000{int} := 0
 							fade_out_range000{int} := 0
-							if((result10000{int} # - 1) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} # - 1))
-								message("subarticulations_solo_states: " & _subarticulations_solo_states[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}){Builtin, None}
-								if((subarticulations_solo_states_any_active{int} = FALSE{int}) or (_subarticulations_solo_states[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int} = TRUE{int}))
-									if(subarticulations_type[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} # SUBARTICULATION_TYPE_LEGATO{int})
-										_ret110000{int} := play_note(delay_buffer_note[set_articulation_event_id000{int}]{int} + (octave_shift[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int} * 12), delay_buffer_velo[set_articulation_event_id000{int}]{int}, 0, 0){Builtin, None}
-										if(octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int} # 0)
-											is_free0000{int} := play_note((delay_buffer_note[set_articulation_event_id000{int}]{int} + (octave_shift[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int} * 12)) + (12 * octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int}), delay_buffer_velo[set_articulation_event_id000{int}]{int}, 0, 0){Builtin, None}
+							if((result10000{int} # - 1) and (delay_buffer_subarticulation[result10001{int}]{int} # - 1))
+								message("subarticulations_solo_states: " & _subarticulations_solo_states[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}){Builtin, None}
+								if((subarticulations_solo_states_any_active{int} = FALSE{int}) or (_subarticulations_solo_states[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int} = TRUE{int}))
+									if(subarticulations_type[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} # SUBARTICULATION_TYPE_LEGATO{int})
+										is_free0000{int} := play_note(delay_buffer_note[result10001{int}]{int} + (octave_shift[delay_buffer_instrument[result10001{int}]{int}]{int} * 12), delay_buffer_velo[result10001{int}]{int}, 0, 0){Builtin, None}
+										if(octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int} # 0)
+											idx3000{int} := play_note((delay_buffer_note[result10001{int}]{int} + (octave_shift[delay_buffer_instrument[result10001{int}]{int}]{int} * 12)) + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int}), delay_buffer_velo[result10001{int}]{int}, 0, 0){Builtin, None}
 										end if
 										subarticulation_event_id5{int} := result10000{int}
-										event_id0{int} := _ret110000{int}
+										event_id0{int} := is_free0000{int}
 										call c_subarticulation_event_set_event_id0{UserDefined, Call}
 										subarticulation_event_id6{int} := result10000{int}
-										event_id1{int} := is_free0000{int}
+										event_id1{int} := idx3000{int}
 										call c_subarticulation_octave_layer_set_event_id0{UserDefined, Call}
 										subarticulation_event_id7{int} := result10000{int}
 										mark0{int} := MARK_1{int}
@@ -2725,11 +2727,11 @@ on listener
 										subarticulation_event_id8{int} := result10000{int}
 										call c_subarticulation_event_disallow_groups0{UserDefined, Call}
 										fade_in_range000{int} := 0
-										while(fade_in_range000{int} <= (subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} - 1)) 
+										while(fade_in_range000{int} <= (subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} - 1)) 
 											fade_out_range000{int} := 0
 											while(fade_out_range000{int} <= (NUM_MIC_POSITIONS{int} - 1)) 
 												subarticulation_event_id9{int} := result10000{int}
-												group0{int} := ((((subarticulations_group_idx[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} + TITLE_GROUP{int}) + (((NUM_MIC_POSITIONS{int} * subarticulations_rr_num[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int}) * subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int}) * (delay_buffer_interval[set_articulation_event_id000{int}]{int} * (1 + subarticulations_release_group[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int})))) + (((idx000000{int} * subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int}) * (subarticulations_release_group[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} + 1)) * NUM_MIC_POSITIONS{int})) + ((fade_in_range000{int} * (subarticulations_release_group[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} + 1)) * NUM_MIC_POSITIONS{int})) + fade_out_range000{int}
+												group0{int} := ((((subarticulations_group_idx[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} + TITLE_GROUP{int}) + (((NUM_MIC_POSITIONS{int} * subarticulations_rr_num[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int}) * subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int}) * (delay_buffer_interval[result10001{int}]{int} * (1 + subarticulations_release_group[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int})))) + (((group_count001{int} * subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int}) * (subarticulations_release_group[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} + 1)) * NUM_MIC_POSITIONS{int})) + ((fade_in_range000{int} * (subarticulations_release_group[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} + 1)) * NUM_MIC_POSITIONS{int})) + fade_out_range000{int}
 												call c_subarticulation_event_allow_groups0{UserDefined, Call}
 												inc(fade_out_range000{int}){Builtin, None}
 											end while
@@ -2740,13 +2742,13 @@ on listener
 										end_note000{int} := 0
 										transition_note000{int} := - 1
 										transition_type000{int} := - 1
-										transition_dyn_layer000{int} := int((real(int((1e+06 * (real(_loaded_subarticulations_dynamic_range_lower[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}){Builtin, None} + ((real(modulation_positions[delay_buffer_note[set_articulation_event_id000{int}]{int} * use_polyphonic_modulation{int}]{int}){Builtin, None} / 127) * real(_loaded_subarticulations_dynamic_range_upper[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int} - _loaded_subarticulations_dynamic_range_lower[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}){Builtin, None}))) / 127){Builtin, None}){Builtin, None} / 1e+06) * 127){Builtin, None} / (128 / subarticulations_trans_num[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int})
+										transition_dyn_layer000{int} := int((real(int((1e+06 * (real(_loaded_subarticulations_dynamic_range_lower[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}){Builtin, None} + ((real(modulation_positions[delay_buffer_note[result10001{int}]{int} * use_polyphonic_modulation{int}]{int}){Builtin, None} / 127) * real(_loaded_subarticulations_dynamic_range_upper[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int} - _loaded_subarticulations_dynamic_range_lower[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}){Builtin, None}))) / 127){Builtin, None}){Builtin, None} / 1e+06) * 127){Builtin, None} / (128 / subarticulations_trans_num[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int})
 										offset000{int} := random(- 2, 2){Builtin, None}
 										offset000{int} := offset000{int} * btn_transition_rrs{int}
-										if(idx3000{int} >= 0)
-											start_note000{int} := subarticulation_event_actual_note[idx3000{int}]{int}
-											end_note000{int} := delay_buffer_note[set_articulation_event_id000{int}]{int} + (octave_shift[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int} * 12)
-											if(((authoring_page_active{int} = TRUE{int}) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} = 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} = 0))
+										if(next_free_idx0000{int} >= 0)
+											start_note000{int} := subarticulation_event_actual_note[next_free_idx0000{int}]{int}
+											end_note000{int} := delay_buffer_note[result10001{int}]{int} + (octave_shift[delay_buffer_instrument[result10001{int}]{int}]{int} * 12)
+											if(((authoring_page_active{int} = TRUE{int}) and (delay_buffer_instrument[result10001{int}]{int} = 0)) and (delay_buffer_subarticulation[result10001{int}]{int} = 0))
 												start_note1{int} := start_note000{int}
 												end_note1{int} := end_note000{int}
 												dynamic_layer0{int} := transition_dyn_layer000{int}
@@ -2761,262 +2763,262 @@ on listener
 											end if
 											_ret22000{int} := 0
 											result4000{int} := - 1
-											if((((((((delay_buffer_instrument[set_articulation_event_id000{int}]{int} >= 0) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} >= 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
+											if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 												if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
-													result4000{int} := _legato_data_sus_release_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_sus_release_time::num_elements2{int} * _legato_data_sus_release_time::num_elements3{int}) * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_sus_release_time::num_elements3{int} * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_sus_release_time::num_elements4{int} * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_sus_release_time::num_elements5{int} * _legato_data_sus_release_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_sus_release_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
+													result4000{int} := _legato_data_sus_release_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_sus_release_time::num_elements2{int} * _legato_data_sus_release_time::num_elements3{int}) * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_sus_release_time::num_elements3{int} * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_sus_release_time::num_elements4{int} * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_sus_release_time::num_elements5{int} * _legato_data_sus_release_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_sus_release_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
 												else
 													if((transition_type000{int} / TRANS_VELO_INTERVAL{int}) = - 1)
-														result4000{int} := _legato_data_sus_release_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_sus_release_time::num_elements2{int} * _legato_data_sus_release_time::num_elements3{int}) * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_sus_release_time::num_elements3{int} * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_sus_release_time::num_elements4{int} * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_sus_release_time::num_elements5{int} * _legato_data_sus_release_time::num_elements6{int}))))]{int}
+														result4000{int} := _legato_data_sus_release_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_sus_release_time::num_elements2{int} * _legato_data_sus_release_time::num_elements3{int}) * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_sus_release_time::num_elements3{int} * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_sus_release_time::num_elements4{int} * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_sus_release_time::num_elements5{int} * _legato_data_sus_release_time::num_elements6{int}))))]{int}
 													end if
 												end if
 											end if
 											_ret22000{int} := result4000{int}
-											subarticulation_event_id10{int} := idx3000{int}
+											subarticulation_event_id10{int} := next_free_idx0000{int}
 											fade_time1{int} := _ret22000{int}
 											stop_voice0{int} := TRUE{int}
 											call c_subarticulation_event_fade_out0{UserDefined, Call}
-											if(subarticulation_event_transition_event_id[idx3000{int}]{int} # - 1)
-												_ret22000{int} := 0
-												result4000{int} := - 1
-												if((((((((delay_buffer_instrument[set_articulation_event_id000{int}]{int} >= 0) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} >= 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
+											if(subarticulation_event_transition_event_id[next_free_idx0000{int}]{int} # - 1)
+												result4000{int} := 0
+												result4100{int} := - 1
+												if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 													if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
-														result4000{int} := _legato_data_sus_release_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_sus_release_time::num_elements2{int} * _legato_data_sus_release_time::num_elements3{int}) * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_sus_release_time::num_elements3{int} * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_sus_release_time::num_elements4{int} * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_sus_release_time::num_elements5{int} * _legato_data_sus_release_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_sus_release_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
+														result4100{int} := _legato_data_sus_release_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_sus_release_time::num_elements2{int} * _legato_data_sus_release_time::num_elements3{int}) * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_sus_release_time::num_elements3{int} * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_sus_release_time::num_elements4{int} * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_sus_release_time::num_elements5{int} * _legato_data_sus_release_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_sus_release_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
 													else
 														if((transition_type000{int} / TRANS_VELO_INTERVAL{int}) = - 1)
-															result4000{int} := _legato_data_sus_release_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_sus_release_time::num_elements2{int} * _legato_data_sus_release_time::num_elements3{int}) * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_sus_release_time::num_elements3{int} * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_sus_release_time::num_elements4{int} * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_sus_release_time::num_elements5{int} * _legato_data_sus_release_time::num_elements6{int}))))]{int}
+															result4100{int} := _legato_data_sus_release_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_sus_release_time::num_elements2{int} * _legato_data_sus_release_time::num_elements3{int}) * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_sus_release_time::num_elements3{int} * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_sus_release_time::num_elements4{int} * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_sus_release_time::num_elements5{int} * _legato_data_sus_release_time::num_elements6{int}))))]{int}
 														end if
 													end if
 												end if
-												_ret22000{int} := result4000{int}
-												fade_out(subarticulation_event_transition_event_id[idx3000{int}]{int}, _ret22000{int} * 1000, TRUE{int}){Builtin, None}
+												result4000{int} := result4100{int}
+												fade_out(subarticulation_event_transition_event_id[next_free_idx0000{int}]{int}, result4000{int} * 1000, TRUE{int}){Builtin, None}
 											end if
 											if(transition_type000{int} >= 0)
-												_ret22000{int} := 0
-												result4000{int} := - 1
-												if((((((((delay_buffer_instrument[set_articulation_event_id000{int}]{int} >= 0) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} >= 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
+												result4000{int} := 0
+												result4100{int} := - 1
+												if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 													if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
-														result4000{int} := _legato_data_trans_zone_start[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_zone_start::num_elements2{int} * _legato_data_trans_zone_start::num_elements3{int}) * _legato_data_trans_zone_start::num_elements4{int}) * _legato_data_trans_zone_start::num_elements5{int}) * _legato_data_trans_zone_start::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_zone_start::num_elements3{int} * _legato_data_trans_zone_start::num_elements4{int}) * _legato_data_trans_zone_start::num_elements5{int}) * _legato_data_trans_zone_start::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_zone_start::num_elements4{int} * _legato_data_trans_zone_start::num_elements5{int}) * _legato_data_trans_zone_start::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_zone_start::num_elements5{int} * _legato_data_trans_zone_start::num_elements6{int})) + ((transition_note000{int} * _legato_data_trans_zone_start::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
+														result4100{int} := _legato_data_trans_zone_start[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_zone_start::num_elements2{int} * _legato_data_trans_zone_start::num_elements3{int}) * _legato_data_trans_zone_start::num_elements4{int}) * _legato_data_trans_zone_start::num_elements5{int}) * _legato_data_trans_zone_start::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_zone_start::num_elements3{int} * _legato_data_trans_zone_start::num_elements4{int}) * _legato_data_trans_zone_start::num_elements5{int}) * _legato_data_trans_zone_start::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_zone_start::num_elements4{int} * _legato_data_trans_zone_start::num_elements5{int}) * _legato_data_trans_zone_start::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_zone_start::num_elements5{int} * _legato_data_trans_zone_start::num_elements6{int})) + ((transition_note000{int} * _legato_data_trans_zone_start::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
 													else
 														if((transition_type000{int} / TRANS_VELO_INTERVAL{int}) = - 1)
-															result4000{int} := _legato_data_trans_zone_start[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_zone_start::num_elements2{int} * _legato_data_trans_zone_start::num_elements3{int}) * _legato_data_trans_zone_start::num_elements4{int}) * _legato_data_trans_zone_start::num_elements5{int}) * _legato_data_trans_zone_start::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_zone_start::num_elements3{int} * _legato_data_trans_zone_start::num_elements4{int}) * _legato_data_trans_zone_start::num_elements5{int}) * _legato_data_trans_zone_start::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_zone_start::num_elements4{int} * _legato_data_trans_zone_start::num_elements5{int}) * _legato_data_trans_zone_start::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_zone_start::num_elements5{int} * _legato_data_trans_zone_start::num_elements6{int}))))]{int}
+															result4100{int} := _legato_data_trans_zone_start[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_zone_start::num_elements2{int} * _legato_data_trans_zone_start::num_elements3{int}) * _legato_data_trans_zone_start::num_elements4{int}) * _legato_data_trans_zone_start::num_elements5{int}) * _legato_data_trans_zone_start::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_zone_start::num_elements3{int} * _legato_data_trans_zone_start::num_elements4{int}) * _legato_data_trans_zone_start::num_elements5{int}) * _legato_data_trans_zone_start::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_zone_start::num_elements4{int} * _legato_data_trans_zone_start::num_elements5{int}) * _legato_data_trans_zone_start::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_zone_start::num_elements5{int} * _legato_data_trans_zone_start::num_elements6{int}))))]{int}
 														end if
 													end if
 												end if
-												_ret22000{int} := result4000{int}
-												next_free_idx0000{int} := play_note(transition_note000{int}, transition_type000{int}, _ret22000{int} * 1000, 0){Builtin, None}
-												subarticulation_event_transition_event_id[result10000{int}]{int} := next_free_idx0000{int}
-												set_event_mark(next_free_idx0000{int}, MARK_1{int}){Builtin, None}
-												change_tune(next_free_idx0000{int}, - offset000{int} * 100000, TRUE{int}){Builtin, None}
-												if(octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int} # 0)
-													_ret22000{int} := 0
-													result4000{int} := - 1
-													if((((((((delay_buffer_instrument[set_articulation_event_id000{int}]{int} >= 0) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} >= 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} < 4)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int})) >= 0)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int})) < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
+												result4000{int} := result4100{int}
+												i3000{int} := play_note(transition_note000{int}, transition_type000{int}, result4000{int} * 1000, 0){Builtin, None}
+												subarticulation_event_transition_event_id[result10000{int}]{int} := i3000{int}
+												set_event_mark(i3000{int}, MARK_1{int}){Builtin, None}
+												change_tune(i3000{int}, - offset000{int} * 100000, TRUE{int}){Builtin, None}
+												if(octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int} # 0)
+													result4000{int} := 0
+													result4100{int} := - 1
+													if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) >= 0)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 														if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
-															result4000{int} := _legato_data_sus_release_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_sus_release_time::num_elements2{int} * _legato_data_sus_release_time::num_elements3{int}) * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_sus_release_time::num_elements3{int} * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_sus_release_time::num_elements4{int} * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_sus_release_time::num_elements5{int} * _legato_data_sus_release_time::num_elements6{int})) + (((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int})) * _legato_data_sus_release_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
+															result4100{int} := _legato_data_sus_release_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_sus_release_time::num_elements2{int} * _legato_data_sus_release_time::num_elements3{int}) * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_sus_release_time::num_elements3{int} * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_sus_release_time::num_elements4{int} * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_sus_release_time::num_elements5{int} * _legato_data_sus_release_time::num_elements6{int})) + (((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) * _legato_data_sus_release_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
 														else
 															if((transition_type000{int} / TRANS_VELO_INTERVAL{int}) = - 1)
-																result4000{int} := _legato_data_sus_release_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_sus_release_time::num_elements2{int} * _legato_data_sus_release_time::num_elements3{int}) * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_sus_release_time::num_elements3{int} * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_sus_release_time::num_elements4{int} * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_sus_release_time::num_elements5{int} * _legato_data_sus_release_time::num_elements6{int}))))]{int}
+																result4100{int} := _legato_data_sus_release_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_sus_release_time::num_elements2{int} * _legato_data_sus_release_time::num_elements3{int}) * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_sus_release_time::num_elements3{int} * _legato_data_sus_release_time::num_elements4{int}) * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_sus_release_time::num_elements4{int} * _legato_data_sus_release_time::num_elements5{int}) * _legato_data_sus_release_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_sus_release_time::num_elements5{int} * _legato_data_sus_release_time::num_elements6{int}))))]{int}
 															end if
 														end if
 													end if
-													_ret22000{int} := result4000{int}
-													fade_out_end000{int} := play_note(transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int}), transition_type000{int}, _ret22000{int} * 1000, 0){Builtin, None}
+													result4000{int} := result4100{int}
+													fade_out_end000{int} := play_note(transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int}), transition_type000{int}, result4000{int} * 1000, 0){Builtin, None}
 													subarticulation_event_transition_octave_event_id[result10000{int}]{int} := fade_out_end000{int}
 													set_event_mark(fade_out_end000{int}, MARK_1{int}){Builtin, None}
 													change_tune(fade_out_end000{int}, - offset000{int} * 100000, TRUE{int}){Builtin, None}
 												end if
-												set_event_par_arr(next_free_idx0000{int}, EVENT_PAR_ALLOW_GROUP{int}, OFF{int}, ALL_GROUPS{int}){Builtin, None}
+												set_event_par_arr(i3000{int}, EVENT_PAR_ALLOW_GROUP{int}, OFF{int}, ALL_GROUPS{int}){Builtin, None}
 												if(fade_out_end000{int} # - 1)
 													set_event_par_arr(fade_out_end000{int}, EVENT_PAR_ALLOW_GROUP{int}, OFF{int}, ALL_GROUPS{int}){Builtin, None}
 												end if
 												fade_in_range000{int} := 0
-												while(fade_in_range000{int} <= (subarticulations_trans_num[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} - 1)) 
+												while(fade_in_range000{int} <= (subarticulations_trans_num[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} - 1)) 
 													fade_out_range000{int} := 0
 													while(fade_out_range000{int} <= (NUM_MIC_POSITIONS{int} - 1)) 
-														set_event_par_arr(next_free_idx0000{int}, EVENT_PAR_ALLOW_GROUP{int}, ON{int}, (((subarticulations_group_idx[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} + TITLE_GROUP{int}) + ((NUM_MIC_POSITIONS{int} * subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int}) * 2)) + (fade_in_range000{int} * NUM_MIC_POSITIONS{int})) + fade_out_range000{int}){Builtin, None}
+														set_event_par_arr(i3000{int}, EVENT_PAR_ALLOW_GROUP{int}, ON{int}, (((subarticulations_group_idx[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} + TITLE_GROUP{int}) + ((NUM_MIC_POSITIONS{int} * subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int}) * 2)) + (fade_in_range000{int} * NUM_MIC_POSITIONS{int})) + fade_out_range000{int}){Builtin, None}
 														if(fade_out_end000{int} # - 1)
-															set_event_par_arr(fade_out_end000{int}, EVENT_PAR_ALLOW_GROUP{int}, ON{int}, (((subarticulations_group_idx[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} + TITLE_GROUP{int}) + ((NUM_MIC_POSITIONS{int} * subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int}) * 2)) + (fade_in_range000{int} * NUM_MIC_POSITIONS{int})) + fade_out_range000{int}){Builtin, None}
+															set_event_par_arr(fade_out_end000{int}, EVENT_PAR_ALLOW_GROUP{int}, ON{int}, (((subarticulations_group_idx[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} + TITLE_GROUP{int}) + ((NUM_MIC_POSITIONS{int} * subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int}) * 2)) + (fade_in_range000{int} * NUM_MIC_POSITIONS{int})) + fade_out_range000{int}){Builtin, None}
 														end if
 														inc(fade_out_range000{int}){Builtin, None}
 													end while
 													inc(fade_in_range000{int}){Builtin, None}
 												end while
-												_ret22000{int} := 0
-												result4000{int} := - 1
-												if((((((((delay_buffer_instrument[set_articulation_event_id000{int}]{int} >= 0) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} >= 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
+												result4000{int} := 0
+												result4100{int} := - 1
+												if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 													if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
-														result4000{int} := _legato_data_trans_fade_in_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_fade_in_time::num_elements2{int} * _legato_data_trans_fade_in_time::num_elements3{int}) * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_fade_in_time::num_elements3{int} * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_fade_in_time::num_elements4{int} * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_fade_in_time::num_elements5{int} * _legato_data_trans_fade_in_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_trans_fade_in_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
+														result4100{int} := _legato_data_trans_fade_in_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_fade_in_time::num_elements2{int} * _legato_data_trans_fade_in_time::num_elements3{int}) * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_fade_in_time::num_elements3{int} * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_fade_in_time::num_elements4{int} * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_fade_in_time::num_elements5{int} * _legato_data_trans_fade_in_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_trans_fade_in_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
 													else
 														if((transition_type000{int} / TRANS_VELO_INTERVAL{int}) = - 1)
-															result4000{int} := _legato_data_trans_fade_in_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_fade_in_time::num_elements2{int} * _legato_data_trans_fade_in_time::num_elements3{int}) * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_fade_in_time::num_elements3{int} * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_fade_in_time::num_elements4{int} * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_fade_in_time::num_elements5{int} * _legato_data_trans_fade_in_time::num_elements6{int}))))]{int}
+															result4100{int} := _legato_data_trans_fade_in_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_fade_in_time::num_elements2{int} * _legato_data_trans_fade_in_time::num_elements3{int}) * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_fade_in_time::num_elements3{int} * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_fade_in_time::num_elements4{int} * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_fade_in_time::num_elements5{int} * _legato_data_trans_fade_in_time::num_elements6{int}))))]{int}
 														end if
 													end if
 												end if
-												_ret22000{int} := result4000{int}
-												set_event_par_arr(next_free_idx0000{int}, EVENT_PAR_MOD_VALUE_ID{int}, _ret22000{int}, FADEIN_TRANS_SCRIPT_CC{int}){Builtin, None}
-												_ret22000{int} := 0
-												result4000{int} := - 1
-												if((((((((delay_buffer_instrument[set_articulation_event_id000{int}]{int} >= 0) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} >= 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
+												result4000{int} := result4100{int}
+												set_event_par_arr(i3000{int}, EVENT_PAR_MOD_VALUE_ID{int}, result4000{int}, FADEIN_TRANS_SCRIPT_CC{int}){Builtin, None}
+												result4000{int} := 0
+												result4100{int} := - 1
+												if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 													if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
-														result4000{int} := _legato_data_trans_fade_out_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_fade_out_time::num_elements2{int} * _legato_data_trans_fade_out_time::num_elements3{int}) * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_fade_out_time::num_elements3{int} * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_fade_out_time::num_elements4{int} * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_fade_out_time::num_elements5{int} * _legato_data_trans_fade_out_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_trans_fade_out_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
+														result4100{int} := _legato_data_trans_fade_out_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_fade_out_time::num_elements2{int} * _legato_data_trans_fade_out_time::num_elements3{int}) * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_fade_out_time::num_elements3{int} * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_fade_out_time::num_elements4{int} * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_fade_out_time::num_elements5{int} * _legato_data_trans_fade_out_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_trans_fade_out_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
 													else
 														if((transition_type000{int} / TRANS_VELO_INTERVAL{int}) = - 1)
-															result4000{int} := _legato_data_trans_fade_out_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_fade_out_time::num_elements2{int} * _legato_data_trans_fade_out_time::num_elements3{int}) * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_fade_out_time::num_elements3{int} * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_fade_out_time::num_elements4{int} * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_fade_out_time::num_elements5{int} * _legato_data_trans_fade_out_time::num_elements6{int}))))]{int}
+															result4100{int} := _legato_data_trans_fade_out_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_fade_out_time::num_elements2{int} * _legato_data_trans_fade_out_time::num_elements3{int}) * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_fade_out_time::num_elements3{int} * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_fade_out_time::num_elements4{int} * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_fade_out_time::num_elements5{int} * _legato_data_trans_fade_out_time::num_elements6{int}))))]{int}
 														end if
 													end if
 												end if
-												_ret22000{int} := result4000{int}
-												set_event_par_arr(next_free_idx0000{int}, EVENT_PAR_MOD_VALUE_ID{int}, _ret22000{int}, FADEOUT_TRANS_SCRIPT_CC{int}){Builtin, None}
-												_ret22000{int} := 0
-												result4000{int} := - 1
-												if((((((((delay_buffer_instrument[set_articulation_event_id000{int}]{int} >= 0) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} >= 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
+												result4000{int} := result4100{int}
+												set_event_par_arr(i3000{int}, EVENT_PAR_MOD_VALUE_ID{int}, result4000{int}, FADEOUT_TRANS_SCRIPT_CC{int}){Builtin, None}
+												result4000{int} := 0
+												result4100{int} := - 1
+												if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 													if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
-														result4000{int} := _legato_data_trans_zone_volume[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_zone_volume::num_elements2{int} * _legato_data_trans_zone_volume::num_elements3{int}) * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_zone_volume::num_elements3{int} * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_zone_volume::num_elements4{int} * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_zone_volume::num_elements5{int} * _legato_data_trans_zone_volume::num_elements6{int})) + ((transition_note000{int} * _legato_data_trans_zone_volume::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
+														result4100{int} := _legato_data_trans_zone_volume[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_zone_volume::num_elements2{int} * _legato_data_trans_zone_volume::num_elements3{int}) * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_zone_volume::num_elements3{int} * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_zone_volume::num_elements4{int} * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_zone_volume::num_elements5{int} * _legato_data_trans_zone_volume::num_elements6{int})) + ((transition_note000{int} * _legato_data_trans_zone_volume::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
 													else
 														if((transition_type000{int} / TRANS_VELO_INTERVAL{int}) = - 1)
-															result4000{int} := _legato_data_trans_zone_volume[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_zone_volume::num_elements2{int} * _legato_data_trans_zone_volume::num_elements3{int}) * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_zone_volume::num_elements3{int} * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_zone_volume::num_elements4{int} * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_zone_volume::num_elements5{int} * _legato_data_trans_zone_volume::num_elements6{int}))))]{int}
+															result4100{int} := _legato_data_trans_zone_volume[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_zone_volume::num_elements2{int} * _legato_data_trans_zone_volume::num_elements3{int}) * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_zone_volume::num_elements3{int} * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_zone_volume::num_elements4{int} * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_zone_volume::num_elements5{int} * _legato_data_trans_zone_volume::num_elements6{int}))))]{int}
 														end if
 													end if
 												end if
-												_ret22000{int} := result4000{int}
-												change_vol(next_free_idx0000{int}, _ret22000{int}, TRUE{int}){Builtin, None}
+												result4000{int} := result4100{int}
+												change_vol(i3000{int}, result4000{int}, TRUE{int}){Builtin, None}
 												if(fade_out_end000{int} # - 1)
-													_ret22000{int} := 0
-													result4000{int} := - 1
-													if((((((((delay_buffer_instrument[set_articulation_event_id000{int}]{int} >= 0) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} >= 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} < 4)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int})) >= 0)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int})) < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
+													result4000{int} := 0
+													result4100{int} := - 1
+													if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) >= 0)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 														if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
-															result4000{int} := _legato_data_trans_fade_in_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_fade_in_time::num_elements2{int} * _legato_data_trans_fade_in_time::num_elements3{int}) * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_fade_in_time::num_elements3{int} * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_fade_in_time::num_elements4{int} * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_fade_in_time::num_elements5{int} * _legato_data_trans_fade_in_time::num_elements6{int})) + (((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int})) * _legato_data_trans_fade_in_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
+															result4100{int} := _legato_data_trans_fade_in_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_fade_in_time::num_elements2{int} * _legato_data_trans_fade_in_time::num_elements3{int}) * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_fade_in_time::num_elements3{int} * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_fade_in_time::num_elements4{int} * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_fade_in_time::num_elements5{int} * _legato_data_trans_fade_in_time::num_elements6{int})) + (((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) * _legato_data_trans_fade_in_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
 														else
 															if((transition_type000{int} / TRANS_VELO_INTERVAL{int}) = - 1)
-																result4000{int} := _legato_data_trans_fade_in_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_fade_in_time::num_elements2{int} * _legato_data_trans_fade_in_time::num_elements3{int}) * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_fade_in_time::num_elements3{int} * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_fade_in_time::num_elements4{int} * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_fade_in_time::num_elements5{int} * _legato_data_trans_fade_in_time::num_elements6{int}))))]{int}
+																result4100{int} := _legato_data_trans_fade_in_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_fade_in_time::num_elements2{int} * _legato_data_trans_fade_in_time::num_elements3{int}) * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_fade_in_time::num_elements3{int} * _legato_data_trans_fade_in_time::num_elements4{int}) * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_fade_in_time::num_elements4{int} * _legato_data_trans_fade_in_time::num_elements5{int}) * _legato_data_trans_fade_in_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_fade_in_time::num_elements5{int} * _legato_data_trans_fade_in_time::num_elements6{int}))))]{int}
 															end if
 														end if
 													end if
-													_ret22000{int} := result4000{int}
-													set_event_par_arr(fade_out_end000{int}, EVENT_PAR_MOD_VALUE_ID{int}, _ret22000{int}, FADEIN_TRANS_SCRIPT_CC{int}){Builtin, None}
-													_ret22000{int} := 0
-													result4000{int} := - 1
-													if((((((((delay_buffer_instrument[set_articulation_event_id000{int}]{int} >= 0) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} >= 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} < 4)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int})) >= 0)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int})) < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
+													result4000{int} := result4100{int}
+													set_event_par_arr(fade_out_end000{int}, EVENT_PAR_MOD_VALUE_ID{int}, result4000{int}, FADEIN_TRANS_SCRIPT_CC{int}){Builtin, None}
+													result4000{int} := 0
+													result4100{int} := - 1
+													if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) >= 0)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 														if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
-															result4000{int} := _legato_data_trans_fade_out_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_fade_out_time::num_elements2{int} * _legato_data_trans_fade_out_time::num_elements3{int}) * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_fade_out_time::num_elements3{int} * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_fade_out_time::num_elements4{int} * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_fade_out_time::num_elements5{int} * _legato_data_trans_fade_out_time::num_elements6{int})) + (((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int})) * _legato_data_trans_fade_out_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
+															result4100{int} := _legato_data_trans_fade_out_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_fade_out_time::num_elements2{int} * _legato_data_trans_fade_out_time::num_elements3{int}) * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_fade_out_time::num_elements3{int} * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_fade_out_time::num_elements4{int} * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_fade_out_time::num_elements5{int} * _legato_data_trans_fade_out_time::num_elements6{int})) + (((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) * _legato_data_trans_fade_out_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
 														else
 															if((transition_type000{int} / TRANS_VELO_INTERVAL{int}) = - 1)
-																result4000{int} := _legato_data_trans_fade_out_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_fade_out_time::num_elements2{int} * _legato_data_trans_fade_out_time::num_elements3{int}) * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_fade_out_time::num_elements3{int} * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_fade_out_time::num_elements4{int} * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_fade_out_time::num_elements5{int} * _legato_data_trans_fade_out_time::num_elements6{int}))))]{int}
+																result4100{int} := _legato_data_trans_fade_out_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_fade_out_time::num_elements2{int} * _legato_data_trans_fade_out_time::num_elements3{int}) * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_fade_out_time::num_elements3{int} * _legato_data_trans_fade_out_time::num_elements4{int}) * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_fade_out_time::num_elements4{int} * _legato_data_trans_fade_out_time::num_elements5{int}) * _legato_data_trans_fade_out_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_fade_out_time::num_elements5{int} * _legato_data_trans_fade_out_time::num_elements6{int}))))]{int}
 															end if
 														end if
 													end if
-													_ret22000{int} := result4000{int}
-													set_event_par_arr(fade_out_end000{int}, EVENT_PAR_MOD_VALUE_ID{int}, _ret22000{int}, FADEOUT_TRANS_SCRIPT_CC{int}){Builtin, None}
-													_ret22000{int} := 0
-													result4000{int} := - 1
-													if((((((((delay_buffer_instrument[set_articulation_event_id000{int}]{int} >= 0) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} >= 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
+													result4000{int} := result4100{int}
+													set_event_par_arr(fade_out_end000{int}, EVENT_PAR_MOD_VALUE_ID{int}, result4000{int}, FADEOUT_TRANS_SCRIPT_CC{int}){Builtin, None}
+													result4000{int} := 0
+													result4100{int} := - 1
+													if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 														if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
-															result4000{int} := _legato_data_trans_zone_volume[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_zone_volume::num_elements2{int} * _legato_data_trans_zone_volume::num_elements3{int}) * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_zone_volume::num_elements3{int} * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_zone_volume::num_elements4{int} * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_zone_volume::num_elements5{int} * _legato_data_trans_zone_volume::num_elements6{int})) + ((transition_note000{int} * _legato_data_trans_zone_volume::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
+															result4100{int} := _legato_data_trans_zone_volume[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_zone_volume::num_elements2{int} * _legato_data_trans_zone_volume::num_elements3{int}) * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_zone_volume::num_elements3{int} * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_zone_volume::num_elements4{int} * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_trans_zone_volume::num_elements5{int} * _legato_data_trans_zone_volume::num_elements6{int})) + ((transition_note000{int} * _legato_data_trans_zone_volume::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
 														else
 															if((transition_type000{int} / TRANS_VELO_INTERVAL{int}) = - 1)
-																result4000{int} := _legato_data_trans_zone_volume[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_trans_zone_volume::num_elements2{int} * _legato_data_trans_zone_volume::num_elements3{int}) * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_trans_zone_volume::num_elements3{int} * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_trans_zone_volume::num_elements4{int} * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_zone_volume::num_elements5{int} * _legato_data_trans_zone_volume::num_elements6{int}))))]{int}
+																result4100{int} := _legato_data_trans_zone_volume[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_trans_zone_volume::num_elements2{int} * _legato_data_trans_zone_volume::num_elements3{int}) * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_trans_zone_volume::num_elements3{int} * _legato_data_trans_zone_volume::num_elements4{int}) * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_trans_zone_volume::num_elements4{int} * _legato_data_trans_zone_volume::num_elements5{int}) * _legato_data_trans_zone_volume::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_trans_zone_volume::num_elements5{int} * _legato_data_trans_zone_volume::num_elements6{int}))))]{int}
 															end if
 														end if
 													end if
-													_ret22000{int} := result4000{int}
-													change_vol(fade_out_end000{int}, _ret22000{int}, TRUE{int}){Builtin, None}
+													result4000{int} := result4100{int}
+													change_vol(fade_out_end000{int}, result4000{int}, TRUE{int}){Builtin, None}
 												end if
 												if((authoring_page_active{int} = TRUE{int}) and (btn_play_transitions{int} = OFF{int}))
-													fade_out(next_free_idx0000{int}, 1000, FALSE{int}){Builtin, None}
+													fade_out(i3000{int}, 1000, FALSE{int}){Builtin, None}
 													if(fade_out_end000{int} # - 1)
 														fade_out(fade_out_end000{int}, 1000, FALSE{int}){Builtin, None}
 													end if
 												end if
 											end if
-											_ret110000{int} := play_note(delay_buffer_note[set_articulation_event_id000{int}]{int}, delay_buffer_velo[set_articulation_event_id000{int}]{int}, 800000, 0){Builtin, None}
-											if(octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int} # 0)
-												is_free0000{int} := play_note((delay_buffer_note[set_articulation_event_id000{int}]{int} + (octave_shift[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int} * 12)) + (12 * octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int}), delay_buffer_velo[set_articulation_event_id000{int}]{int}, 800000, 0){Builtin, None}
+											is_free0000{int} := play_note(delay_buffer_note[result10001{int}]{int}, delay_buffer_velo[result10001{int}]{int}, 800000, 0){Builtin, None}
+											if(octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int} # 0)
+												idx3000{int} := play_note((delay_buffer_note[result10001{int}]{int} + (octave_shift[delay_buffer_instrument[result10001{int}]{int}]{int} * 12)) + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int}), delay_buffer_velo[result10001{int}]{int}, 800000, 0){Builtin, None}
 											end if
 											subarticulation_event_id5{int} := result10000{int}
-											event_id0{int} := _ret110000{int}
+											event_id0{int} := is_free0000{int}
 											call c_subarticulation_event_set_event_id0{UserDefined, Call}
 											subarticulation_event_id6{int} := result10000{int}
-											event_id1{int} := is_free0000{int}
+											event_id1{int} := idx3000{int}
 											call c_subarticulation_octave_layer_set_event_id0{UserDefined, Call}
 											subarticulation_event_id7{int} := result10000{int}
 											mark0{int} := MARK_1{int}
 											call c_subarticulation_event_set_event_mark0{UserDefined, Call}
-											_ret22000{int} := 0
-											result4000{int} := - 1
-											if((((((((delay_buffer_instrument[set_articulation_event_id000{int}]{int} >= 0) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} >= 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
+											result4000{int} := 0
+											result4100{int} := - 1
+											if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 												if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
-													result4000{int} := _legato_data_sus_wait_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_sus_wait_time::num_elements2{int} * _legato_data_sus_wait_time::num_elements3{int}) * _legato_data_sus_wait_time::num_elements4{int}) * _legato_data_sus_wait_time::num_elements5{int}) * _legato_data_sus_wait_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_sus_wait_time::num_elements3{int} * _legato_data_sus_wait_time::num_elements4{int}) * _legato_data_sus_wait_time::num_elements5{int}) * _legato_data_sus_wait_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_sus_wait_time::num_elements4{int} * _legato_data_sus_wait_time::num_elements5{int}) * _legato_data_sus_wait_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_sus_wait_time::num_elements5{int} * _legato_data_sus_wait_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_sus_wait_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
+													result4100{int} := _legato_data_sus_wait_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_sus_wait_time::num_elements2{int} * _legato_data_sus_wait_time::num_elements3{int}) * _legato_data_sus_wait_time::num_elements4{int}) * _legato_data_sus_wait_time::num_elements5{int}) * _legato_data_sus_wait_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_sus_wait_time::num_elements3{int} * _legato_data_sus_wait_time::num_elements4{int}) * _legato_data_sus_wait_time::num_elements5{int}) * _legato_data_sus_wait_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_sus_wait_time::num_elements4{int} * _legato_data_sus_wait_time::num_elements5{int}) * _legato_data_sus_wait_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_sus_wait_time::num_elements5{int} * _legato_data_sus_wait_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_sus_wait_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
 												else
 													if((transition_type000{int} / TRANS_VELO_INTERVAL{int}) = - 1)
-														result4000{int} := _legato_data_sus_wait_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_sus_wait_time::num_elements2{int} * _legato_data_sus_wait_time::num_elements3{int}) * _legato_data_sus_wait_time::num_elements4{int}) * _legato_data_sus_wait_time::num_elements5{int}) * _legato_data_sus_wait_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_sus_wait_time::num_elements3{int} * _legato_data_sus_wait_time::num_elements4{int}) * _legato_data_sus_wait_time::num_elements5{int}) * _legato_data_sus_wait_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_sus_wait_time::num_elements4{int} * _legato_data_sus_wait_time::num_elements5{int}) * _legato_data_sus_wait_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_sus_wait_time::num_elements5{int} * _legato_data_sus_wait_time::num_elements6{int}))))]{int}
+														result4100{int} := _legato_data_sus_wait_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_sus_wait_time::num_elements2{int} * _legato_data_sus_wait_time::num_elements3{int}) * _legato_data_sus_wait_time::num_elements4{int}) * _legato_data_sus_wait_time::num_elements5{int}) * _legato_data_sus_wait_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_sus_wait_time::num_elements3{int} * _legato_data_sus_wait_time::num_elements4{int}) * _legato_data_sus_wait_time::num_elements5{int}) * _legato_data_sus_wait_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_sus_wait_time::num_elements4{int} * _legato_data_sus_wait_time::num_elements5{int}) * _legato_data_sus_wait_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_sus_wait_time::num_elements5{int} * _legato_data_sus_wait_time::num_elements6{int}))))]{int}
 													end if
 												end if
 											end if
-											_ret22000{int} := result4000{int}
+											result4000{int} := result4100{int}
 											subarticulation_event_id2{int} := result10000{int}
 											parameter0{int} := EVENT_PAR_MOD_VALUE_ID{int}
-											value1{int} := _ret22000{int}
+											value1{int} := result4000{int}
 											index0{int} := WAIT_TIME_SCRIPT_CC{int}
 											call c_subarticulation_event_set_event_par_arr0{UserDefined, Call}
-											_ret22000{int} := 0
-											result4000{int} := - 1
-											if((((((((delay_buffer_instrument[set_articulation_event_id000{int}]{int} >= 0) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} >= 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
+											result4000{int} := 0
+											result4100{int} := - 1
+											if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 												if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
-													result4000{int} := _legato_data_sus_fade_in_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_sus_fade_in_time::num_elements2{int} * _legato_data_sus_fade_in_time::num_elements3{int}) * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_sus_fade_in_time::num_elements3{int} * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_sus_fade_in_time::num_elements4{int} * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_sus_fade_in_time::num_elements5{int} * _legato_data_sus_fade_in_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_sus_fade_in_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
+													result4100{int} := _legato_data_sus_fade_in_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_sus_fade_in_time::num_elements2{int} * _legato_data_sus_fade_in_time::num_elements3{int}) * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_sus_fade_in_time::num_elements3{int} * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_sus_fade_in_time::num_elements4{int} * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_sus_fade_in_time::num_elements5{int} * _legato_data_sus_fade_in_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_sus_fade_in_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
 												else
 													if((transition_type000{int} / TRANS_VELO_INTERVAL{int}) = - 1)
-														result4000{int} := _legato_data_sus_fade_in_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_sus_fade_in_time::num_elements2{int} * _legato_data_sus_fade_in_time::num_elements3{int}) * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_sus_fade_in_time::num_elements3{int} * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_sus_fade_in_time::num_elements4{int} * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_sus_fade_in_time::num_elements5{int} * _legato_data_sus_fade_in_time::num_elements6{int}))))]{int}
+														result4100{int} := _legato_data_sus_fade_in_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_sus_fade_in_time::num_elements2{int} * _legato_data_sus_fade_in_time::num_elements3{int}) * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_sus_fade_in_time::num_elements3{int} * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_sus_fade_in_time::num_elements4{int} * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_sus_fade_in_time::num_elements5{int} * _legato_data_sus_fade_in_time::num_elements6{int}))))]{int}
 													end if
 												end if
 											end if
-											_ret22000{int} := result4000{int}
+											result4000{int} := result4100{int}
 											subarticulation_event_id2{int} := result10000{int}
 											parameter0{int} := EVENT_PAR_MOD_VALUE_ID{int}
-											value1{int} := _ret22000{int}
+											value1{int} := result4000{int}
 											index0{int} := FADEIN_TIME_SCRIPT_CC{int}
 											call c_subarticulation_event_set_event_par_arr0{UserDefined, Call}
-											_ret22000{int} := 0
-											result4000{int} := - 1
-											if((((((((delay_buffer_instrument[set_articulation_event_id000{int}]{int} >= 0) and (delay_buffer_instrument[set_articulation_event_id000{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} >= 0)) and (delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
+											result4000{int} := 0
+											result4100{int} := - 1
+											if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 												if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
-													result4000{int} := _legato_data_sus_fade_in_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_sus_fade_in_time::num_elements2{int} * _legato_data_sus_fade_in_time::num_elements3{int}) * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_sus_fade_in_time::num_elements3{int} * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_sus_fade_in_time::num_elements4{int} * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_sus_fade_in_time::num_elements5{int} * _legato_data_sus_fade_in_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_sus_fade_in_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
+													result4100{int} := _legato_data_sus_fade_in_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_sus_fade_in_time::num_elements2{int} * _legato_data_sus_fade_in_time::num_elements3{int}) * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_sus_fade_in_time::num_elements3{int} * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_sus_fade_in_time::num_elements4{int} * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((transition_dyn_layer000{int} * (_legato_data_sus_fade_in_time::num_elements5{int} * _legato_data_sus_fade_in_time::num_elements6{int})) + ((transition_note000{int} * _legato_data_sus_fade_in_time::num_elements6{int}) + (transition_type000{int} / TRANS_VELO_INTERVAL{int})))))]{int}
 												else
 													if((transition_type000{int} / TRANS_VELO_INTERVAL{int}) = - 1)
-														result4000{int} := _legato_data_sus_fade_in_time[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * ((((_legato_data_sus_fade_in_time::num_elements2{int} * _legato_data_sus_fade_in_time::num_elements3{int}) * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * (((_legato_data_sus_fade_in_time::num_elements3{int} * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} * ((_legato_data_sus_fade_in_time::num_elements4{int} * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_sus_fade_in_time::num_elements5{int} * _legato_data_sus_fade_in_time::num_elements6{int}))))]{int}
+														result4100{int} := _legato_data_sus_fade_in_time[(delay_buffer_instrument[result10001{int}]{int} * ((((_legato_data_sus_fade_in_time::num_elements2{int} * _legato_data_sus_fade_in_time::num_elements3{int}) * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_keyswitch[result10001{int}]{int} * (((_legato_data_sus_fade_in_time::num_elements3{int} * _legato_data_sus_fade_in_time::num_elements4{int}) * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + ((delay_buffer_subarticulation[result10001{int}]{int} * ((_legato_data_sus_fade_in_time::num_elements4{int} * _legato_data_sus_fade_in_time::num_elements5{int}) * _legato_data_sus_fade_in_time::num_elements6{int})) + (transition_dyn_layer000{int} * (_legato_data_sus_fade_in_time::num_elements5{int} * _legato_data_sus_fade_in_time::num_elements6{int}))))]{int}
 													end if
 												end if
 											end if
-											_ret22000{int} := result4000{int}
-											message("get_legato_data: " & _ret22000{int}){Builtin, None}
+											result4000{int} := result4100{int}
+											message("get_legato_data: " & result4000{int}){Builtin, None}
 											subarticulation_event_id8{int} := result10000{int}
 											call c_subarticulation_event_disallow_groups0{UserDefined, Call}
 											fade_in_range000{int} := 0
-											while(fade_in_range000{int} <= (subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} - 1)) 
+											while(fade_in_range000{int} <= (subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} - 1)) 
 												fade_out_range000{int} := 0
 												while(fade_out_range000{int} <= (NUM_MIC_POSITIONS{int} - 1)) 
 													subarticulation_event_id9{int} := result10000{int}
-													group0{int} := (((subarticulations_group_idx[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} + TITLE_GROUP{int}) + (NUM_MIC_POSITIONS{int} * subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int})) + (fade_in_range000{int} * NUM_MIC_POSITIONS{int})) + fade_out_range000{int}
+													group0{int} := (((subarticulations_group_idx[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} + TITLE_GROUP{int}) + (NUM_MIC_POSITIONS{int} * subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int})) + (fade_in_range000{int} * NUM_MIC_POSITIONS{int})) + fade_out_range000{int}
 													call c_subarticulation_event_allow_groups0{UserDefined, Call}
 													inc(fade_out_range000{int}){Builtin, None}
 												end while
 												inc(fade_in_range000{int}){Builtin, None}
 											end while
 											if((authoring_page_active{int} = TRUE{int}) and (btn_play_sustain{int} = OFF{int}))
-												fade_out(_ret110000{int}, 1000, FALSE{int}){Builtin, None}
-												if(is_free0000{int} # - 1)
-													fade_out(is_free0000{int}, 1000, FALSE{int}){Builtin, None}
+												fade_out(is_free0000{int}, 1000, FALSE{int}){Builtin, None}
+												if(idx3000{int} # - 1)
+													fade_out(idx3000{int}, 1000, FALSE{int}){Builtin, None}
 												end if
 											end if
 										else
-											_ret110000{int} := play_note(delay_buffer_note[set_articulation_event_id000{int}]{int}, delay_buffer_velo[set_articulation_event_id000{int}]{int}, 0, 0){Builtin, None}
-											if(octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int} # 0)
-												is_free0000{int} := play_note((delay_buffer_note[set_articulation_event_id000{int}]{int} + (octave_shift[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int} * 12)) + (12 * octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int}), delay_buffer_velo[set_articulation_event_id000{int}]{int}, 0, 0){Builtin, None}
+											is_free0000{int} := play_note(delay_buffer_note[result10001{int}]{int}, delay_buffer_velo[result10001{int}]{int}, 0, 0){Builtin, None}
+											if(octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int} # 0)
+												idx3000{int} := play_note((delay_buffer_note[result10001{int}]{int} + (octave_shift[delay_buffer_instrument[result10001{int}]{int}]{int} * 12)) + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int}), delay_buffer_velo[result10001{int}]{int}, 0, 0){Builtin, None}
 											end if
 											subarticulation_event_id5{int} := result10000{int}
-											event_id0{int} := _ret110000{int}
+											event_id0{int} := is_free0000{int}
 											call c_subarticulation_event_set_event_id0{UserDefined, Call}
 											subarticulation_event_id6{int} := result10000{int}
-											event_id1{int} := is_free0000{int}
+											event_id1{int} := idx3000{int}
 											call c_subarticulation_octave_layer_set_event_id0{UserDefined, Call}
 											subarticulation_event_id7{int} := result10000{int}
 											mark0{int} := MARK_1{int}
@@ -3024,184 +3026,184 @@ on listener
 											subarticulation_event_id8{int} := result10000{int}
 											call c_subarticulation_event_disallow_groups0{UserDefined, Call}
 											fade_in_range000{int} := 0
-											while(fade_in_range000{int} <= (subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} - 1)) 
+											while(fade_in_range000{int} <= (subarticulations_dynamic_layers[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} - 1)) 
 												fade_out_range000{int} := 0
 												while(fade_out_range000{int} <= (NUM_MIC_POSITIONS{int} - 1)) 
 													subarticulation_event_id9{int} := result10000{int}
-													group0{int} := ((subarticulations_group_idx[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int}]{int} + TITLE_GROUP{int}) + (fade_in_range000{int} * NUM_MIC_POSITIONS{int})) + fade_out_range000{int}
+													group0{int} := ((subarticulations_group_idx[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} + TITLE_GROUP{int}) + (fade_in_range000{int} * NUM_MIC_POSITIONS{int})) + fade_out_range000{int}
 													call c_subarticulation_event_allow_groups0{UserDefined, Call}
 													inc(fade_out_range000{int}){Builtin, None}
 												end while
 												inc(fade_in_range000{int}){Builtin, None}
 											end while
 											if((authoring_page_active{int} = TRUE{int}) and (btn_play_sustain{int} = OFF{int}))
-												fade_out(_ret110000{int}, 1000, FALSE{int}){Builtin, None}
-												if(is_free0000{int} # - 1)
-													fade_out(is_free0000{int}, 1000, FALSE{int}){Builtin, None}
+												fade_out(is_free0000{int}, 1000, FALSE{int}){Builtin, None}
+												if(idx3000{int} # - 1)
+													fade_out(idx3000{int}, 1000, FALSE{int}){Builtin, None}
 												end if
 											end if
 										end if
 									end if
 								end if
-								subarticulation_event_note[result10000{int}]{int} := delay_buffer_note[set_articulation_event_id000{int}]{int}
-								subarticulation_event_actual_note[result10000{int}]{int} := delay_buffer_note[set_articulation_event_id000{int}]{int} + (octave_shift[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int} * 12)
-								subarticulation_event_subarticulation[result10000{int}]{int} := _loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}
-								subarticulation_event_interval[_loaded_subarticulations[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}]{int} := delay_buffer_interval[set_articulation_event_id000{int}]{int}
-								subarticulation_event_octave_layer[result10000{int}]{int} := octave_layer[delay_buffer_instrument[set_articulation_event_id000{int}]{int}]{int}
+								subarticulation_event_note[result10000{int}]{int} := delay_buffer_note[result10001{int}]{int}
+								subarticulation_event_actual_note[result10000{int}]{int} := delay_buffer_note[result10001{int}]{int} + (octave_shift[delay_buffer_instrument[result10001{int}]{int}]{int} * 12)
+								subarticulation_event_subarticulation[result10000{int}]{int} := _loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}
+								subarticulation_event_interval[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int} := delay_buffer_interval[result10001{int}]{int}
+								subarticulation_event_octave_layer[result10000{int}]{int} := octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int}
 								subarticulation_event_id3{int} := result10000{int}
-								modulation0{int} := int((1e+06 * (real(_loaded_subarticulations_dynamic_range_lower[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}){Builtin, None} + ((real(modulation_positions[delay_buffer_note[set_articulation_event_id000{int}]{int} * use_polyphonic_modulation{int}]{int}){Builtin, None} / 127) * real(_loaded_subarticulations_dynamic_range_upper[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int} - _loaded_subarticulations_dynamic_range_lower[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 32) + ((delay_buffer_keyswitch[set_articulation_event_id000{int}]{int} * 4) + delay_buffer_subarticulation[set_articulation_event_id000{int}]{int})]{int}){Builtin, None}))) / 127){Builtin, None}
+								modulation0{int} := int((1e+06 * (real(_loaded_subarticulations_dynamic_range_lower[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}){Builtin, None} + ((real(modulation_positions[delay_buffer_note[result10001{int}]{int} * use_polyphonic_modulation{int}]{int}){Builtin, None} / 127) * real(_loaded_subarticulations_dynamic_range_upper[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int} - _loaded_subarticulations_dynamic_range_lower[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}){Builtin, None}))) / 127){Builtin, None}
 								call c_subarticulation_set_modulation0{UserDefined, Call}
 								subarticulation_event_id4{int} := result10000{int}
-								level0{int} := i3000{int}
+								level0{int} := idx000000{int}
 								call c_subarticulation_set_level0{UserDefined, Call}
-								subarticulation_event_transition_event_id[result10000{int}]{int} := next_free_idx0000{int}
+								subarticulation_event_transition_event_id[result10000{int}]{int} := i3000{int}
 								subarticulation_event_transition_octave_event_id[result10000{int}]{int} := fade_out_end000{int}
 								subarticulation_event_last_used[result10000{int}]{int} := ENGINE_UPTIME{int}
 							else
 								message("WARNING: MAX_SUBARTICULATION_EVENTS reached"){Builtin, None}
 							end if
-							group_count001{int} := result10000{int}
-							articulation_event_id2{int} := delay_buffer[set_articulation_event_id000{int}]{int}
-							subarticulation2{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
-							subarticulation_event_id1{int} := group_count001{int}
+							v00{int} := result10000{int}
+							articulation_event_id2{int} := delay_buffer[result10001{int}]{int}
+							subarticulation2{int} := delay_buffer_subarticulation[result10001{int}]{int}
+							subarticulation_event_id1{int} := v00{int}
 							call c_articulation_event_set_subarticulation_event_id0{UserDefined, Call}
-							delay_buffer[set_articulation_event_id000{int}]{int} := articulation_event_id2{int}
-							delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation2{int}
-							subarticulation_event_articulation_event[group_count001{int}]{int} := delay_buffer[set_articulation_event_id000{int}]{int}
+							delay_buffer[result10001{int}]{int} := articulation_event_id2{int}
+							delay_buffer_subarticulation[result10001{int}]{int} := subarticulation2{int}
+							subarticulation_event_articulation_event[v00{int}]{int} := delay_buffer[result10001{int}]{int}
 						else
-							message("articulation id " & delay_buffer[set_articulation_event_id000{int}]{int} & " already active"){Builtin, None}
+							message("articulation id " & delay_buffer[result10001{int}]{int} & " already active"){Builtin, None}
 						end if
 					else
 						v00{int} := 0
 						ret40{int} := v00{int}
-						articulation_event_id1{int} := delay_buffer[set_articulation_event_id000{int}]{int}
-						subarticulation1{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
-						result34{int} := group_count001{int}
+						articulation_event_id1{int} := delay_buffer[result10001{int}]{int}
+						subarticulation1{int} := delay_buffer_subarticulation[result10001{int}]{int}
+						result34{int} := idx000000{int}
 						call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
 						v00{int} := ret40{int}
-						delay_buffer[set_articulation_event_id000{int}]{int} := articulation_event_id1{int}
-						delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation1{int}
-						message("off event " & delay_buffer[set_articulation_event_id000{int}]{int} & " -> " & v00{int}){Builtin, None}
+						delay_buffer[result10001{int}]{int} := articulation_event_id1{int}
+						delay_buffer_subarticulation[result10001{int}]{int} := subarticulation1{int}
+						message("off event " & delay_buffer[result10001{int}]{int} & " -> " & v00{int}){Builtin, None}
 						v00{int} := 0
 						ret40{int} := v00{int}
-						articulation_event_id1{int} := delay_buffer[set_articulation_event_id000{int}]{int}
-						subarticulation1{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
-						result34{int} := group_count001{int}
+						articulation_event_id1{int} := delay_buffer[result10001{int}]{int}
+						subarticulation1{int} := delay_buffer_subarticulation[result10001{int}]{int}
+						result34{int} := idx000000{int}
 						call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
 						v00{int} := ret40{int}
-						delay_buffer[set_articulation_event_id000{int}]{int} := articulation_event_id1{int}
-						delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation1{int}
+						delay_buffer[result10001{int}]{int} := articulation_event_id1{int}
+						delay_buffer_subarticulation[result10001{int}]{int} := subarticulation1{int}
 						if(v00{int} >= 0)
-							group_count001{int} := 0
-							ret40{int} := group_count001{int}
-							articulation_event_id1{int} := delay_buffer[set_articulation_event_id000{int}]{int}
-							subarticulation1{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
-							result34{int} := idx000000{int}
+							idx000000{int} := 0
+							ret40{int} := idx000000{int}
+							articulation_event_id1{int} := delay_buffer[result10001{int}]{int}
+							subarticulation1{int} := delay_buffer_subarticulation[result10001{int}]{int}
+							result34{int} := next_free_idx0000{int}
 							call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
-							group_count001{int} := ret40{int}
-							delay_buffer[set_articulation_event_id000{int}]{int} := articulation_event_id1{int}
-							delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation1{int}
-							if(subarticulation_event_articulation_event[group_count001{int}]{int} = delay_buffer[set_articulation_event_id000{int}]{int})
-								idx000000{int} := 0
-								ret40{int} := idx000000{int}
-								articulation_event_id1{int} := delay_buffer[set_articulation_event_id000{int}]{int}
-								subarticulation1{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
-								result34{int} := i3000{int}
+							idx000000{int} := ret40{int}
+							delay_buffer[result10001{int}]{int} := articulation_event_id1{int}
+							delay_buffer_subarticulation[result10001{int}]{int} := subarticulation1{int}
+							if(subarticulation_event_articulation_event[idx000000{int}]{int} = delay_buffer[result10001{int}]{int})
+								next_free_idx0000{int} := 0
+								ret40{int} := next_free_idx0000{int}
+								articulation_event_id1{int} := delay_buffer[result10001{int}]{int}
+								subarticulation1{int} := delay_buffer_subarticulation[result10001{int}]{int}
+								result34{int} := idx3000{int}
 								call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
-								idx000000{int} := ret40{int}
-								delay_buffer[set_articulation_event_id000{int}]{int} := articulation_event_id1{int}
-								delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation1{int}
-								if(abs(sh_right(abs(- sh_right(abs(subarticulation_event_list[idx000000{int}]{int} - - 1){Builtin, None} - 1, 31){Builtin, None}){Builtin, None} - 1, 31){Builtin, None}){Builtin, None} = TRUE{int})
-									i3000{int} := subarticulation_event_subarticulation[idx000000{int}]{int}
-									message("subarticulations_release_time: " & subarticulations_release_time[subarticulations_ids_positions[i3000{int}]{int}]{int} & ", ENGINE_UPTIME: " & (ENGINE_UPTIME{int} - last_pressed[subarticulation_event_note[idx000000{int}]{int}]{int})){Builtin, None}
-									if((subarticulations_release_time[subarticulations_ids_positions[i3000{int}]{int}]{int} = 0) or ((ENGINE_UPTIME{int} - last_pressed[subarticulation_event_note[idx000000{int}]{int}]{int}) < subarticulations_release_time[subarticulations_ids_positions[i3000{int}]{int}]{int}))
+								next_free_idx0000{int} := ret40{int}
+								delay_buffer[result10001{int}]{int} := articulation_event_id1{int}
+								delay_buffer_subarticulation[result10001{int}]{int} := subarticulation1{int}
+								if(abs(sh_right(abs(- sh_right(abs(subarticulation_event_list[next_free_idx0000{int}]{int} - - 1){Builtin, None} - 1, 31){Builtin, None}){Builtin, None} - 1, 31){Builtin, None}){Builtin, None} = TRUE{int})
+									idx3000{int} := subarticulation_event_subarticulation[next_free_idx0000{int}]{int}
+									message("subarticulations_release_time: " & subarticulations_release_time[subarticulations_ids_positions[idx3000{int}]{int}]{int} & ", ENGINE_UPTIME: " & (ENGINE_UPTIME{int} - last_pressed[subarticulation_event_note[next_free_idx0000{int}]{int}]{int})){Builtin, None}
+									if((subarticulations_release_time[subarticulations_ids_positions[idx3000{int}]{int}]{int} = 0) or ((ENGINE_UPTIME{int} - last_pressed[subarticulation_event_note[next_free_idx0000{int}]{int}]{int}) < subarticulations_release_time[subarticulations_ids_positions[idx3000{int}]{int}]{int}))
 										message("executing note off"){Builtin, None}
-										note_off(subarticulation_event_list[idx000000{int}]{int}){Builtin, None}
-										if(subarticulation_event_octave_layer_id[idx000000{int}]{int} # - 1)
-											note_off(subarticulation_event_octave_layer_id[idx000000{int}]{int}){Builtin, None}
+										note_off(subarticulation_event_list[next_free_idx0000{int}]{int}){Builtin, None}
+										if(subarticulation_event_octave_layer_id[next_free_idx0000{int}]{int} # - 1)
+											note_off(subarticulation_event_octave_layer_id[next_free_idx0000{int}]{int}){Builtin, None}
 										end if
-										if(subarticulations_type[subarticulations_ids_positions[i3000{int}]{int}]{int} = SUBARTICULATION_TYPE_LEGATO{int})
-											idx3000{int} := 300
-											subarticulation_event_id10{int} := idx000000{int}
-											fade_time1{int} := idx3000{int}
+										if(subarticulations_type[subarticulations_ids_positions[idx3000{int}]{int}]{int} = SUBARTICULATION_TYPE_LEGATO{int})
+											is_free0000{int} := 300
+											subarticulation_event_id10{int} := next_free_idx0000{int}
+											fade_time1{int} := is_free0000{int}
 											stop_voice0{int} := TRUE{int}
 											call c_subarticulation_event_fade_out0{UserDefined, Call}
 										end if
-										if((subarticulations_release_group[subarticulations_ids_positions[i3000{int}]{int}]{int} = TRUE{int}) and ((authoring_page_active{int} = OFF{int}) or (btn_play_sustain{int} = ON{int})))
-											idx3000{int} := play_note(subarticulation_event_note[idx000000{int}]{int}, key_velocity[subarticulation_event_note[idx000000{int}]{int}]{int}, 0, - 1){Builtin, None}
-											is_free0000{int} := - 1
-											if(subarticulation_event_octave_layer[idx000000{int}]{int} # 0)
-												is_free0000{int} := play_note(subarticulation_event_note[idx000000{int}]{int} + 12, key_velocity[subarticulation_event_note[idx000000{int}]{int}]{int}, 0, - 1){Builtin, None}
+										if((subarticulations_release_group[subarticulations_ids_positions[idx3000{int}]{int}]{int} = TRUE{int}) and ((authoring_page_active{int} = OFF{int}) or (btn_play_sustain{int} = ON{int})))
+											is_free0000{int} := play_note(subarticulation_event_note[next_free_idx0000{int}]{int}, key_velocity[subarticulation_event_note[next_free_idx0000{int}]{int}]{int}, 0, - 1){Builtin, None}
+											result10000{int} := - 1
+											if(subarticulation_event_octave_layer[next_free_idx0000{int}]{int} # 0)
+												result10000{int} := play_note(subarticulation_event_note[next_free_idx0000{int}]{int} + 12, key_velocity[subarticulation_event_note[next_free_idx0000{int}]{int}]{int}, 0, - 1){Builtin, None}
 											end if
-											subarticulation_event_id5{int} := idx000000{int}
-											event_id0{int} := idx3000{int}
+											subarticulation_event_id5{int} := next_free_idx0000{int}
+											event_id0{int} := is_free0000{int}
 											call c_subarticulation_event_set_event_id0{UserDefined, Call}
-											subarticulation_event_id6{int} := idx000000{int}
-											event_id1{int} := is_free0000{int}
+											subarticulation_event_id6{int} := next_free_idx0000{int}
+											event_id1{int} := result10000{int}
 											call c_subarticulation_octave_layer_set_event_id0{UserDefined, Call}
-											subarticulation_event_id8{int} := idx000000{int}
+											subarticulation_event_id8{int} := next_free_idx0000{int}
 											call c_subarticulation_event_disallow_groups0{UserDefined, Call}
-											_ret110000{int} := 0
-											result10000{int} := 0
-											_ret110000{int} := 0
-											while(_ret110000{int} <= (subarticulations_dynamic_layers[subarticulations_ids_positions[i3000{int}]{int}]{int} - 1)) 
-												result10000{int} := 0
-												while(result10000{int} <= (NUM_MIC_POSITIONS{int} - 1)) 
-													if(subarticulations_type[subarticulations_ids_positions[i3000{int}]{int}]{int} # SUBARTICULATION_TYPE_LEGATO{int})
-														subarticulation_event_id9{int} := idx000000{int}
-														group0{int} := (((subarticulations_group_idx[subarticulations_ids_positions[i3000{int}]{int}]{int} + TITLE_GROUP{int}) + (((NUM_MIC_POSITIONS{int} * subarticulations_rr_num[subarticulations_ids_positions[i3000{int}]{int}]{int}) * subarticulations_dynamic_layers[subarticulations_ids_positions[i3000{int}]{int}]{int}) * (subarticulation_event_interval[idx000000{int}]{int} * 2))) + (((_ret110000{int} * (subarticulations_release_group[subarticulations_ids_positions[i3000{int}]{int}]{int} + 1)) + 1) * NUM_MIC_POSITIONS{int})) + result10000{int}
+											i3000{int} := 0
+											start_note000{int} := 0
+											i3000{int} := 0
+											while(i3000{int} <= (subarticulations_dynamic_layers[subarticulations_ids_positions[idx3000{int}]{int}]{int} - 1)) 
+												start_note000{int} := 0
+												while(start_note000{int} <= (NUM_MIC_POSITIONS{int} - 1)) 
+													if(subarticulations_type[subarticulations_ids_positions[idx3000{int}]{int}]{int} # SUBARTICULATION_TYPE_LEGATO{int})
+														subarticulation_event_id9{int} := next_free_idx0000{int}
+														group0{int} := (((subarticulations_group_idx[subarticulations_ids_positions[idx3000{int}]{int}]{int} + TITLE_GROUP{int}) + (((NUM_MIC_POSITIONS{int} * subarticulations_rr_num[subarticulations_ids_positions[idx3000{int}]{int}]{int}) * subarticulations_dynamic_layers[subarticulations_ids_positions[idx3000{int}]{int}]{int}) * (subarticulation_event_interval[next_free_idx0000{int}]{int} * 2))) + (((i3000{int} * (subarticulations_release_group[subarticulations_ids_positions[idx3000{int}]{int}]{int} + 1)) + 1) * NUM_MIC_POSITIONS{int})) + start_note000{int}
 														call c_subarticulation_event_allow_groups0{UserDefined, Call}
 													else
-														subarticulation_event_id9{int} := idx000000{int}
-														group0{int} := (((subarticulations_group_idx[subarticulations_ids_positions[i3000{int}]{int}]{int} + TITLE_GROUP{int}) + (NUM_MIC_POSITIONS{int} * ((subarticulations_dynamic_layers[subarticulations_ids_positions[i3000{int}]{int}]{int} * 2) + subarticulations_trans_num[subarticulations_ids_positions[i3000{int}]{int}]{int}))) + (_ret110000{int} * NUM_MIC_POSITIONS{int})) + result10000{int}
+														subarticulation_event_id9{int} := next_free_idx0000{int}
+														group0{int} := (((subarticulations_group_idx[subarticulations_ids_positions[idx3000{int}]{int}]{int} + TITLE_GROUP{int}) + (NUM_MIC_POSITIONS{int} * ((subarticulations_dynamic_layers[subarticulations_ids_positions[idx3000{int}]{int}]{int} * 2) + subarticulations_trans_num[subarticulations_ids_positions[idx3000{int}]{int}]{int}))) + (i3000{int} * NUM_MIC_POSITIONS{int})) + start_note000{int}
 														call c_subarticulation_event_allow_groups0{UserDefined, Call}
 													end if
-													inc(result10000{int}){Builtin, None}
+													inc(start_note000{int}){Builtin, None}
 												end while
-												inc(_ret110000{int}){Builtin, None}
+												inc(i3000{int}){Builtin, None}
 											end while
-											subarticulation_event_id3{int} := idx000000{int}
-											modulation0{int} := subarticulation_event_modulation[idx000000{int}]{int}
+											subarticulation_event_id3{int} := next_free_idx0000{int}
+											modulation0{int} := subarticulation_event_modulation[next_free_idx0000{int}]{int}
 											call c_subarticulation_set_modulation0{UserDefined, Call}
-											subarticulation_event_modulation[idx000000{int}]{int} := modulation0{int}
-											subarticulation_event_id4{int} := idx000000{int}
-											level0{int} := subarticulation_event_level[idx000000{int}]{int}
+											subarticulation_event_modulation[next_free_idx0000{int}]{int} := modulation0{int}
+											subarticulation_event_id4{int} := next_free_idx0000{int}
+											level0{int} := subarticulation_event_level[next_free_idx0000{int}]{int}
 											call c_subarticulation_set_level0{UserDefined, Call}
-											subarticulation_event_level[idx000000{int}]{int} := level0{int}
+											subarticulation_event_level[next_free_idx0000{int}]{int} := level0{int}
 										end if
 									end if
-									subarticulation_event_id5{int} := idx000000{int}
+									subarticulation_event_id5{int} := next_free_idx0000{int}
 									event_id0{int} := - 1
 									call c_subarticulation_event_set_event_id0{UserDefined, Call}
-									subarticulation_event_id6{int} := idx000000{int}
+									subarticulation_event_id6{int} := next_free_idx0000{int}
 									event_id1{int} := - 1
 									call c_subarticulation_octave_layer_set_event_id0{UserDefined, Call}
 								end if
-								subarticulation_event_note[idx000000{int}]{int} := - 1
-								subarticulation_event_actual_note[idx000000{int}]{int} := - 1
-								subarticulation_event_subarticulation[idx000000{int}]{int} := - 1
-								subarticulation_event_modulation[idx000000{int}]{int} := - 1
-								subarticulation_event_level[idx000000{int}]{int} := - 1
-								subarticulation_event_interval[idx000000{int}]{int} := 0
-								subarticulation_event_last_used[idx000000{int}]{int} := ENGINE_UPTIME{int}
-								subarticulation_event_articulation_event[idx000000{int}]{int} := - 1
+								subarticulation_event_note[next_free_idx0000{int}]{int} := - 1
+								subarticulation_event_actual_note[next_free_idx0000{int}]{int} := - 1
+								subarticulation_event_subarticulation[next_free_idx0000{int}]{int} := - 1
+								subarticulation_event_modulation[next_free_idx0000{int}]{int} := - 1
+								subarticulation_event_level[next_free_idx0000{int}]{int} := - 1
+								subarticulation_event_interval[next_free_idx0000{int}]{int} := 0
+								subarticulation_event_last_used[next_free_idx0000{int}]{int} := ENGINE_UPTIME{int}
+								subarticulation_event_articulation_event[next_free_idx0000{int}]{int} := - 1
 							end if
 						end if
-						articulation_event_id2{int} := delay_buffer[set_articulation_event_id000{int}]{int}
-						subarticulation2{int} := delay_buffer_subarticulation[set_articulation_event_id000{int}]{int}
+						articulation_event_id2{int} := delay_buffer[result10001{int}]{int}
+						subarticulation2{int} := delay_buffer_subarticulation[result10001{int}]{int}
 						subarticulation_event_id1{int} := - 1
 						call c_articulation_event_set_subarticulation_event_id0{UserDefined, Call}
-						delay_buffer[set_articulation_event_id000{int}]{int} := articulation_event_id2{int}
-						delay_buffer_subarticulation[set_articulation_event_id000{int}]{int} := subarticulation2{int}
-						_active_notes[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 8) + delay_buffer_keyswitch[set_articulation_event_id000{int}]{int}]{int} := _active_notes[(delay_buffer_instrument[set_articulation_event_id000{int}]{int} * 8) + delay_buffer_keyswitch[set_articulation_event_id000{int}]{int}]{int} - 1
+						delay_buffer[result10001{int}]{int} := articulation_event_id2{int}
+						delay_buffer_subarticulation[result10001{int}]{int} := subarticulation2{int}
+						_active_notes[(delay_buffer_instrument[result10001{int}]{int} * 8) + delay_buffer_keyswitch[result10001{int}]{int}]{int} := _active_notes[(delay_buffer_instrument[result10001{int}]{int} * 8) + delay_buffer_keyswitch[result10001{int}]{int}]{int} - 1
 					end if
-					delay_buffer[set_articulation_event_id000{int}]{int} := - 1
+					delay_buffer[result10001{int}]{int} := - 1
 				end if
-				articulation_event_id000{int} := FALSE{int}
+				set_articulation_event_id000{int} := FALSE{int}
 			end if
-			inc(set_articulation_event_id000{int}){Builtin, None}
+			inc(result10001{int}){Builtin, None}
 		end while
-		if(articulation_event_id000{int} = TRUE{int})
+		if(set_articulation_event_id000{int} = TRUE{int})
 			any_delay_event_queued{int} := FALSE{int}
 		end if
 	end if
@@ -3244,32 +3246,32 @@ on ui_controls{thread-unsafe}
 		microphone_position_states[fade_in_range000{int}]{int} := get_control_par(btn_mixer_channel_enable[fade_in_range000{int}]{int}, CONTROL_PAR_VALUE{int}){Builtin, None}
 		fade_out_range000{int} := 0
 		fade_out_end000{int} := 0
-		next_free_idx0000{int} := 0
+		i3000{int} := 0
 		fade_out_range000{int} := 0
 		while(fade_out_range000{int} <= (NUM_INSTRUMENTS0{int} - 1)) 
 			fade_out_end000{int} := 0
 			while(fade_out_end000{int} <= (NUM_KEYSWITCHES0{int} - 1)) 
-				next_free_idx0000{int} := 0
-				while(next_free_idx0000{int} <= (4 - 1)) 
-					if(_loaded_subarticulations[(fade_out_range000{int} * 32) + ((fade_out_end000{int} * 4) + next_free_idx0000{int})]{int} # - 1)
+				i3000{int} := 0
+				while(i3000{int} <= (4 - 1)) 
+					if(_loaded_subarticulations[(fade_out_range000{int} * 32) + ((fade_out_end000{int} * 4) + i3000{int})]{int} # - 1)
 						i{int} := 0
-						idx3000{int} := 0
-						ret00{int} := idx3000{int}
-						subarticulation_id1{int} := _loaded_subarticulations[(fade_out_range000{int} * 32) + ((fade_out_end000{int} * 4) + next_free_idx0000{int})]{int}
-						group_count01{int} := is_free0000{int}
+						next_free_idx0000{int} := 0
+						ret00{int} := next_free_idx0000{int}
+						subarticulation_id1{int} := _loaded_subarticulations[(fade_out_range000{int} * 32) + ((fade_out_end000{int} * 4) + i3000{int})]{int}
+						group_count01{int} := idx3000{int}
 						call c_subarticulation_group_count0{UserDefined, Call}
-						idx3000{int} := ret00{int}
-						while(i{int} <= (idx3000{int} - 1)) 
-							purge_group((subarticulations_group_idx[subarticulations_ids_positions[_loaded_subarticulations[(fade_out_range000{int} * 32) + ((fade_out_end000{int} * 4) + next_free_idx0000{int})]{int}]{int}]{int} + i{int}) + TITLE_GROUP{int}, ON{int} * microphone_position_states[i{int} mod NUM_MIC_POSITIONS{int}]{int}){Builtin, None}
+						next_free_idx0000{int} := ret00{int}
+						while(i{int} <= (next_free_idx0000{int} - 1)) 
+							purge_group((subarticulations_group_idx[subarticulations_ids_positions[_loaded_subarticulations[(fade_out_range000{int} * 32) + ((fade_out_end000{int} * 4) + i3000{int})]{int}]{int}]{int} + i{int}) + TITLE_GROUP{int}, ON{int} * microphone_position_states[i{int} mod NUM_MIC_POSITIONS{int}]{int}){Builtin, None}
 							inc(i{int}){Builtin, None}
-							ret00{int} := idx3000{int}
-							subarticulation_id1{int} := _loaded_subarticulations[(fade_out_range000{int} * 32) + ((fade_out_end000{int} * 4) + next_free_idx0000{int})]{int}
-							group_count01{int} := is_free0000{int}
+							ret00{int} := next_free_idx0000{int}
+							subarticulation_id1{int} := _loaded_subarticulations[(fade_out_range000{int} * 32) + ((fade_out_end000{int} * 4) + i3000{int})]{int}
+							group_count01{int} := idx3000{int}
 							call c_subarticulation_group_count0{UserDefined, Call}
-							idx3000{int} := ret00{int}
+							next_free_idx0000{int} := ret00{int}
 						end while
 					end if
-					inc(next_free_idx0000{int}){Builtin, None}
+					inc(i3000{int}){Builtin, None}
 				end while
 				inc(fade_out_end000{int}){Builtin, None}
 			end while
@@ -3279,7 +3281,7 @@ on ui_controls{thread-unsafe}
 	idx8[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int} := search(btn_subarticulation_browser_category{int[]}, NI_UI_ID{int}){Builtin, None}
 	if(idx8[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int} # - 1)
 		category0{int} := idx8[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int}
-		i13{int} := is_free0000{int}
+		i13{int} := idx3000{int}
 		call c_subarticulation_browser_load_category0{UserDefined, Call}
 		idx8[NI_CALLBACK_ID{int} mod MAX::CB::STACK{int}]{int} := category0{int}
 	end if
@@ -3304,9 +3306,9 @@ on ui_controls{thread-unsafe}
 				instrument1{int} := selected_instrument{int}
 				keyswitch3{int} := selected_keyswitch{int}
 				subarticulation_idx0{int} := selected_subarticulation{int}
-				dyn_layer_idx00{int} := is_free0000{int}
-				note_idx01{int} := idx3000{int}
-				transition_idx01{int} := next_free_idx0000{int}
+				dyn_layer_idx00{int} := idx3000{int}
+				note_idx01{int} := next_free_idx0000{int}
+				transition_idx01{int} := i3000{int}
 				call c_move_legato_buffer_to_instrument0{UserDefined, Call}
 				selected_instrument{int} := instrument1{int}
 				selected_keyswitch{int} := keyswitch3{int}
@@ -3333,15 +3335,15 @@ on ui_control(btn_editor_page{int})
 	btn_mixer_page{int} := OFF{int}
 	call main_page_close{UserDefined, Call}
 	set_control_par(get_ui_id(pnl_editor_page{int}){Builtin, None}, CONTROL_PAR_HIDE{int}, HIDE_PART_NOTHING{int}){Builtin, None}
-	next_free_idx0000{int} := 0
-	next_free_idx0000{int} := 0
-	while(next_free_idx0000{int} <= (num_elements(btn_edit_subarticulation_selection{int[]}){Builtin, None} - 1)) 
-		if(next_free_idx0000{int} # selected_subarticulation{int})
-			set_control_par(btn_edit_subarticulation_selection[next_free_idx0000{int}]{int}, CONTROL_PAR_VALUE{int}, OFF{int}){Builtin, None}
+	i3000{int} := 0
+	i3000{int} := 0
+	while(i3000{int} <= (num_elements(btn_edit_subarticulation_selection{int[]}){Builtin, None} - 1)) 
+		if(i3000{int} # selected_subarticulation{int})
+			set_control_par(btn_edit_subarticulation_selection[i3000{int}]{int}, CONTROL_PAR_VALUE{int}, OFF{int}){Builtin, None}
 		else
-			set_control_par(btn_edit_subarticulation_selection[next_free_idx0000{int}]{int}, CONTROL_PAR_VALUE{int}, ON{int}){Builtin, None}
+			set_control_par(btn_edit_subarticulation_selection[i3000{int}]{int}, CONTROL_PAR_VALUE{int}, ON{int}){Builtin, None}
 		end if
-		inc(next_free_idx0000{int}){Builtin, None}
+		inc(i3000{int}){Builtin, None}
 	end while
 	if(_loaded_subarticulations[(selected_instrument{int} * 32) + ((selected_keyswitch{int} * 4) + selected_subarticulation{int})]{int} # - 1)
 		set_control_par_str(get_ui_id(btn_subarticulation_title{int}){Builtin, None}, CONTROL_PAR_TEXT{int}, "    " & subarticulations_full_name[subarticulations_ids_positions[_loaded_subarticulations[(selected_instrument{int} * 32) + ((selected_keyswitch{int} * 4) + selected_subarticulation{int})]{int}]{int}]{string}){Builtin, None}
@@ -3491,21 +3493,21 @@ on ui_control(sli_modwheel_slider{int})
 	note3{int} := 0
 	value0{int} := CC[1]{int}
 	call c_set_modulation_position0{UserDefined, Call}
-	i60{int} := next_free_idx0000{int}
-	e00{int} := idx3000{int}
-	_iter300{int} := is_free0000{int}
+	i60{int} := i3000{int}
+	e00{int} := next_free_idx0000{int}
+	_iter300{int} := idx3000{int}
 	_iter200{int} := fade_out_end000{int}
 	_iter100{int} := fade_out_range000{int}
 	_ret1200{int} := fade_in_range000{int}
-	result300{int} := _ret110000{int}
+	result300{int} := is_free0000{int}
 	result310{int} := result10000{int}
-	result500{int} := i3000{int}
-	result320{int} := idx000000{int}
+	result500{int} := idx000000{int}
+	result320{int} := group_count001{int}
 	subarticulation_modulation_strength001{real} := subarticulation_modulation_strength000{real}
-	fade_in_start000{int} := group_count001{int}
-	fade_in_range001{int} := v00{int}
-	fade_out_end001{int} := articulation_event_id000{int}
-	fade_out_range001{int} := set_articulation_event_id000{int}
+	fade_in_start000{int} := v00{int}
+	fade_in_range001{int} := articulation_event_id000{int}
+	fade_out_end001{int} := set_articulation_event_id000{int}
+	fade_out_range001{int} := result10001{int}
 	call c_cc_on_controller0{UserDefined, Call}
 end on
 
@@ -3527,7 +3529,7 @@ end on
 
 on ui_control(txt_keyswitch_name{string})
 	_articulation_names[(selected_instrument{int} * 8) + selected_keyswitch{int}]{string} := txt_keyswitch_name{string}
-	idx00002{int} := set_articulation_event_id000{int}
+	idx00002{int} := result10001{int}
 	call c_update_keyswitch_selection0{UserDefined, Call}
 end on
 
@@ -3544,25 +3546,25 @@ end on
 
 on ui_control(btn_edit_subarticulation_selection0{int})
 	selected_subarticulation{int} := 0
-	idx001{int} := set_articulation_event_id000{int}
+	idx001{int} := result10001{int}
 	call c_update_subarticulation_selection0{UserDefined, Call}
 end on
 
 on ui_control(btn_edit_subarticulation_selection1{int})
 	selected_subarticulation{int} := 1
-	idx001{int} := set_articulation_event_id000{int}
+	idx001{int} := result10001{int}
 	call c_update_subarticulation_selection0{UserDefined, Call}
 end on
 
 on ui_control(btn_edit_subarticulation_selection2{int})
 	selected_subarticulation{int} := 2
-	idx001{int} := set_articulation_event_id000{int}
+	idx001{int} := result10001{int}
 	call c_update_subarticulation_selection0{UserDefined, Call}
 end on
 
 on ui_control(btn_edit_subarticulation_selection3{int})
 	selected_subarticulation{int} := 3
-	idx001{int} := set_articulation_event_id000{int}
+	idx001{int} := result10001{int}
 	call c_update_subarticulation_selection0{UserDefined, Call}
 end on
 
@@ -3571,7 +3573,7 @@ on ui_control(btn_subarticulation_title{int})
 		set_control_par(get_ui_id(pnl_subarticulation_browser{int}){Builtin, None}, CONTROL_PAR_HIDE{int}, HIDE_PART_NOTHING{int}){Builtin, None}
 		if(_loaded_subarticulations[(selected_instrument{int} * 32) + ((selected_keyswitch{int} * 4) + selected_subarticulation{int})]{int} # - 1)
 			category0{int} := type_to_category[subarticulations_type[subarticulations_ids_positions[_loaded_subarticulations[(selected_instrument{int} * 32) + ((selected_keyswitch{int} * 4) + selected_subarticulation{int})]{int}]{int}]{int}]{int}
-			i13{int} := set_articulation_event_id000{int}
+			i13{int} := result10001{int}
 			call c_subarticulation_browser_load_category0{UserDefined, Call}
 			type_to_category[subarticulations_type[subarticulations_ids_positions[_loaded_subarticulations[(selected_instrument{int} * 32) + ((selected_keyswitch{int} * 4) + selected_subarticulation{int})]{int}]{int}]{int}]{int} := category0{int}
 		end if
@@ -3716,7 +3718,7 @@ on ui_control(xy_center_circles{real[]}){thread-unsafe}
 				selected_circle_end{int} := - 1
 			end if
 		end if
-		idx001{int} := set_articulation_event_id000{int}
+		idx001{int} := result10001{int}
 		call c_update_subarticulation_selection0{UserDefined, Call}
 	end if
 	if(NI_MOUSE_EVENT_TYPE{int} = NI_MOUSE_EVENT_TYPE_DRAG{int})
@@ -3771,7 +3773,7 @@ on ui_control(mnu_settings_keyswitch_position{int})
 		inc(i{int}){Builtin, None}
 	end while
 	keyswitch_octave{int} := get_control_par(get_ui_id(mnu_settings_keyswitch_position{int}){Builtin, None}, CONTROL_PAR_VALUE{int}){Builtin, None}
-	idx00002{int} := set_articulation_event_id000{int}
+	idx00002{int} := result10001{int}
 	call c_update_keyswitch_selection0{UserDefined, Call}
 end on
 
@@ -3872,27 +3874,27 @@ end on
 
 on ui_control(btn_save_authoring{int})
 	if(authoring_page_active{int} = TRUE{int})
+		result10001{int} := 0
 		set_articulation_event_id000{int} := 0
 		articulation_event_id000{int} := 0
-		v00{int} := 0
-		set_articulation_event_id000{int} := 0
-		while(set_articulation_event_id000{int} <= (MAX_TRANSITION_DYN_LAYERS0{int} - 1)) 
-			articulation_event_id000{int} := 0
-			while(articulation_event_id000{int} <= 127) 
-				v00{int} := 0
-				while(v00{int} <= (MAX_TRANSITIONS_PER_NOTE0{int} - 1)) 
-					_legato_data_buffer_sus_fade_in_time[(set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int})]{int} := _legato_data_sus_fade_in_time[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int}))))]{int}
-					_legato_data_buffer_sus_release_time[(set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int})]{int} := _legato_data_sus_release_time[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int}))))]{int}
-					_legato_data_buffer_sus_wait_time[(set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int})]{int} := _legato_data_sus_wait_time[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int}))))]{int}
-					_legato_data_buffer_trans_fade_in_time[(set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int})]{int} := _legato_data_trans_fade_in_time[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int}))))]{int}
-					_legato_data_buffer_trans_fade_out_time[(set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int})]{int} := _legato_data_trans_fade_out_time[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int}))))]{int}
-					_legato_data_buffer_trans_zone_start[(set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int})]{int} := _legato_data_trans_zone_start[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int}))))]{int}
-					_legato_data_buffer_trans_zone_volume[(set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int})]{int} := _legato_data_trans_zone_volume[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((set_articulation_event_id000{int} * 3200) + ((articulation_event_id000{int} * 25) + v00{int}))))]{int}
-					inc(v00{int}){Builtin, None}
+		result10001{int} := 0
+		while(result10001{int} <= (MAX_TRANSITION_DYN_LAYERS0{int} - 1)) 
+			set_articulation_event_id000{int} := 0
+			while(set_articulation_event_id000{int} <= 127) 
+				articulation_event_id000{int} := 0
+				while(articulation_event_id000{int} <= (MAX_TRANSITIONS_PER_NOTE0{int} - 1)) 
+					_legato_data_buffer_sus_fade_in_time[(result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int})]{int} := _legato_data_sus_fade_in_time[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int}))))]{int}
+					_legato_data_buffer_sus_release_time[(result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int})]{int} := _legato_data_sus_release_time[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int}))))]{int}
+					_legato_data_buffer_sus_wait_time[(result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int})]{int} := _legato_data_sus_wait_time[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int}))))]{int}
+					_legato_data_buffer_trans_fade_in_time[(result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int})]{int} := _legato_data_trans_fade_in_time[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int}))))]{int}
+					_legato_data_buffer_trans_fade_out_time[(result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int})]{int} := _legato_data_trans_fade_out_time[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int}))))]{int}
+					_legato_data_buffer_trans_zone_start[(result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int})]{int} := _legato_data_trans_zone_start[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int}))))]{int}
+					_legato_data_buffer_trans_zone_volume[(result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int})]{int} := _legato_data_trans_zone_volume[(0 * 204800) + ((0 * 25600) + ((0 * 6400) + ((result10001{int} * 3200) + ((set_articulation_event_id000{int} * 25) + articulation_event_id000{int}))))]{int}
+					inc(articulation_event_id000{int}){Builtin, None}
 				end while
-				inc(articulation_event_id000{int}){Builtin, None}
+				inc(set_articulation_event_id000{int}){Builtin, None}
 			end while
-			inc(set_articulation_event_id000{int}){Builtin, None}
+			inc(result10001{int}){Builtin, None}
 		end while
 		save_array_str(_legato_data_buffer_sus_fade_in_time{int[]}, LEGATO_ARRAY_PATH{string} & "leg" & _loaded_subarticulations[0]{int} & "_sus_fade_in_time.nka"){Builtin, None}
 		save_array_str(_legato_data_buffer_sus_release_time{int[]}, LEGATO_ARRAY_PATH{string} & "leg" & _loaded_subarticulations[0]{int} & "_sus_release_time.nka"){Builtin, None}
@@ -3921,9 +3923,9 @@ on ui_control(btn_load_authoring{int}){thread-unsafe}
 		instrument1{int} := 0
 		keyswitch3{int} := 0
 		subarticulation_idx0{int} := 0
-		dyn_layer_idx00{int} := v00{int}
-		note_idx01{int} := articulation_event_id000{int}
-		transition_idx01{int} := set_articulation_event_id000{int}
+		dyn_layer_idx00{int} := articulation_event_id000{int}
+		note_idx01{int} := set_articulation_event_id000{int}
+		transition_idx01{int} := result10001{int}
 		call c_move_legato_buffer_to_instrument0{UserDefined, Call}
 		start_note1{int} := 60
 		end_note1{int} := 60
@@ -4285,11 +4287,11 @@ function c_update_selected_notes0
 									inc(i3001{int}){Builtin, None}
 								end while
 								_ret110001{int} := 0
-								result10001{int} := FALSE{int}
+								result10002{int} := FALSE{int}
 								if(search(_event_list{int[]}, idx3001{int}){Builtin, None} # - 1)
-									result10001{int} := TRUE{int}
+									result10002{int} := TRUE{int}
 								end if
-								_ret110001{int} := result10001{int}
+								_ret110001{int} := result10002{int}
 								if((is_free0001{int} = TRUE{int}) and (_ret110001{int} = FALSE{int}))
 									next_free_idx0001{int} := idx3001{int}
 								end if
@@ -4308,7 +4310,7 @@ function c_update_selected_notes0
 										instrument_slot0{int} := inst{int}
 										keyswitch0{int} := result000{int}
 										note0{int} := i{int}
-										result22{int} := result10001{int}
+										result22{int} := result10002{int}
 										call c_event_list_get_articulation_event0{UserDefined, Call}
 										next_free_idx0001{int} := ret30{int}
 										if(next_free_idx0001{int} = - 1)
@@ -4323,16 +4325,16 @@ function c_update_selected_notes0
 											time0{int} := ENGINE_UPTIME{int}
 											countdown0{int} := ((lookahead{int} - subarticulations_start_offset[subarticulations_ids_positions[_loaded_subarticulations[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int}]{int}]{int}) + (pressed_keys[i{int}]{int} - ENGINE_UPTIME{int})) + random(- _loaded_subarticulations_humanization[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int} / 2, _loaded_subarticulations_humanization[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int} / 2){Builtin, None}
 											previous_note0{int} := - 1
-											idx40{int} := result10001{int}
+											idx40{int} := result10002{int}
 											call c_delay_buffer_add0{UserDefined, Call}
-											result10001{int} := 0
-											ret40{int} := result10001{int}
+											result10002{int} := 0
+											ret40{int} := result10002{int}
 											articulation_event_id1{int} := articulation_event_id001{int}
 											subarticulation1{int} := i400{int}
 											result34{int} := idx3001{int}
 											call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
-											result10001{int} := ret40{int}
-											if(result10001{int} = - 1)
+											result10002{int} := ret40{int}
+											if(result10002{int} = - 1)
 												articulation_event_id2{int} := articulation_event_id001{int}
 												subarticulation2{int} := i400{int}
 												subarticulation_event_id1{int} := EVENT_IN_PROGRESS{int}
@@ -4360,7 +4362,7 @@ function c_update_selected_notes0
 												ret40{int} := next_free_idx0001{int}
 												articulation_event_id1{int} := articulation_event_id001{int}
 												subarticulation1{int} := i400{int}
-												result34{int} := result10001{int}
+												result34{int} := result10002{int}
 												call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
 												next_free_idx0001{int} := ret40{int}
 												if(next_free_idx0001{int} = - 1)
@@ -4378,7 +4380,7 @@ function c_update_selected_notes0
 												instrument_slot0{int} := inst{int}
 												keyswitch0{int} := result000{int}
 												note0{int} := i{int}
-												result22{int} := result10001{int}
+												result22{int} := result10002{int}
 												call c_event_list_get_articulation_event0{UserDefined, Call}
 												next_free_idx0001{int} := ret30{int}
 												if(next_free_idx0001{int} = - 1)
@@ -4393,11 +4395,11 @@ function c_update_selected_notes0
 														time0{int} := ENGINE_UPTIME{int}
 														countdown0{int} := ((lookahead{int} - subarticulations_start_offset[subarticulations_ids_positions[_loaded_subarticulations[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int}]{int}]{int}) + (pressed_keys[i{int}]{int} - ENGINE_UPTIME{int})) + random(- _loaded_subarticulations_humanization[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int} / 2, _loaded_subarticulations_humanization[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int} / 2){Builtin, None}
 														previous_note0{int} := last_articulation_event[inst{int}]{int}
-														idx40{int} := result10001{int}
+														idx40{int} := result10002{int}
 														call c_delay_buffer_add0{UserDefined, Call}
 														last_articulation_event[inst{int}]{int} := previous_note0{int}
 													else
-														result10001{int} := 0
+														result10002{int} := 0
 														idx3001{int} := - 1
 														if((((((((inst{int} >= 0) and (inst{int} < NUM_INSTRUMENTS0{int})) and (i400{int} >= 0)) and (i400{int} < 4)) and (i{int} >= 0)) and (i{int} < 128)) and (0 >= 0)) and (0 < MAX_TRANSITION_DYN_LAYERS0{int}))
 															if(((abs(articulation_event_note[last_articulation_event[inst{int}]{int}]{int} - i{int}){Builtin, None} + (- sh_right(0 - (articulation_event_note[last_articulation_event[inst{int}]{int}]{int} - i{int}), 31){Builtin, None} * 12)) >= 0) and ((abs(articulation_event_note[last_articulation_event[inst{int}]{int}]{int} - i{int}){Builtin, None} + (- sh_right(0 - (articulation_event_note[last_articulation_event[inst{int}]{int}]{int} - i{int}), 31){Builtin, None} * 12)) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -4408,7 +4410,7 @@ function c_update_selected_notes0
 																end if
 															end if
 														end if
-														result10001{int} := idx3001{int}
+														result10002{int} := idx3001{int}
 														articulation_id0{int} := articulation_event_id001{int}
 														instrument0{int} := inst{int}
 														keyswitch1{int} := result000{int}
@@ -4417,20 +4419,20 @@ function c_update_selected_notes0
 														velo0{int} := key_velocity[i{int}]{int}
 														interval0{int} := 0
 														time0{int} := ENGINE_UPTIME{int}
-														countdown0{int} := (((lookahead{int} - subarticulations_start_offset[subarticulations_ids_positions[_loaded_subarticulations[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int}]{int}]{int}) + (pressed_keys[i{int}]{int} - ENGINE_UPTIME{int})) - (150 - result10001{int})) + random(- _loaded_subarticulations_humanization[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int} / 2, _loaded_subarticulations_humanization[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int} / 2){Builtin, None}
+														countdown0{int} := (((lookahead{int} - subarticulations_start_offset[subarticulations_ids_positions[_loaded_subarticulations[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int}]{int}]{int}) + (pressed_keys[i{int}]{int} - ENGINE_UPTIME{int})) - (150 - result10002{int})) + random(- _loaded_subarticulations_humanization[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int} / 2, _loaded_subarticulations_humanization[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int} / 2){Builtin, None}
 														previous_note0{int} := last_articulation_event[inst{int}]{int}
 														idx40{int} := idx3001{int}
 														call c_delay_buffer_add0{UserDefined, Call}
 														last_articulation_event[inst{int}]{int} := previous_note0{int}
 													end if
-													result10001{int} := 0
-													ret40{int} := result10001{int}
+													result10002{int} := 0
+													ret40{int} := result10002{int}
 													articulation_event_id1{int} := articulation_event_id001{int}
 													subarticulation1{int} := i400{int}
 													result34{int} := idx3001{int}
 													call c_articulation_event_get_subarticulation_event_id0{UserDefined, Call}
-													result10001{int} := ret40{int}
-													if(result10001{int} = - 1)
+													result10002{int} := ret40{int}
+													if(result10002{int} = - 1)
 														articulation_event_id2{int} := articulation_event_id001{int}
 														subarticulation2{int} := i400{int}
 														subarticulation_event_id1{int} := EVENT_IN_PROGRESS{int}
@@ -4448,7 +4450,7 @@ function c_update_selected_notes0
 													instrument_slot0{int} := inst{int}
 													keyswitch0{int} := result000{int}
 													note0{int} := i{int}
-													result22{int} := result10001{int}
+													result22{int} := result10002{int}
 													call c_event_list_get_articulation_event0{UserDefined, Call}
 													next_free_idx0001{int} := ret30{int}
 													if(next_free_idx0001{int} = - 1)
@@ -4462,7 +4464,7 @@ function c_update_selected_notes0
 														time0{int} := ENGINE_UPTIME{int}
 														countdown0{int} := ((lookahead{int} - subarticulations_start_offset[subarticulations_ids_positions[_loaded_subarticulations[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int}]{int}]{int}) + (pressed_keys[i{int}]{int} - ENGINE_UPTIME{int})) + random(- _loaded_subarticulations_humanization[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int} / 2, _loaded_subarticulations_humanization[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int} / 2){Builtin, None}
 														previous_note0{int} := - 1
-														idx40{int} := result10001{int}
+														idx40{int} := result10002{int}
 														call c_delay_buffer_add0{UserDefined, Call}
 													end if
 												end if

@@ -105,7 +105,7 @@ public:
 			// clone return variable from function definition if function was already return param promoted
 			auto return_var = clone_shared(node.get_definition()->header->get_param(0));
 			return_var->is_local = true;
-			return_var->data_type = DataType::Mutable;
+			return_var->data_type = DataType::Return;
 			return_var->name = m_program->def_provider->get_fresh_name("_ret");
 			auto ref = return_var->to_reference();
 			ref->match_data_structure(return_var);
