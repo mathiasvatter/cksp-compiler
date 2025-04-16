@@ -91,8 +91,8 @@ public:
 			std::nullopt,
 			"_",
 			TypeRegistry::Unknown,
-			DataType::Mutable,
-			Token()
+			Token(),
+			DataType::Mutable
 		);
 	}
 	/// returns a static global dummy datastructure that can be used for declarations of compiler vars
@@ -103,8 +103,8 @@ public:
 			std::nullopt,
 			"compiler$dummy",
 			TypeRegistry::Unknown,
-			DataType::Mutable,
-			Token()
+			Token(),
+			DataType::Mutable
 		);
 	}
 	/// returns a static global dummy datastructure that can be used for declarations of pgs vars
@@ -114,8 +114,8 @@ public:
 			std::nullopt,
 			"pgs$dummy",
 			TypeRegistry::PGS,
-			DataType::Mutable,
-			Token()
+			Token(),
+			DataType::Mutable
 		);
 	}
 

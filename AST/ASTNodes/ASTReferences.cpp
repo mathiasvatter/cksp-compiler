@@ -45,40 +45,6 @@ std::unique_ptr<NodeAccessChain> NodeVariableRef::to_method_chain() {
 	return method_chain;
 }
 
-//bool NodeVariableRef::is_array_constant() {
-//	if(kind == NodeReference::Kind::Builtin) return false;
-//	if (declaration && (declaration->get_node_type() == NodeType::Array || declaration->get_node_type() == NodeType::List)) {
-//		auto list = static_cast<NodeList*>(declaration);
-//		const std::string& prefix = list->name + ".SIZE";
-//		if (name.compare(0, prefix.length(), prefix) == 0) {
-//			return true;
-//		}
-//	}
-//	return false;
-//}
-
-//bool NodeVariableRef::is_ndarray_constant() {
-//	if(kind == NodeReference::Kind::Builtin) return false;
-//	size_t pos = name.find(".SIZE_D");
-//	if(pos == std::string::npos) return false;
-//	auto n = name.substr(0, pos);
-//	auto dimension = name.substr(pos+7, name.length());
-//	if (declaration && declaration->get_node_type() == NodeType::NDArray) {
-//		auto ndarray = static_cast<NodeNDArray*>(declaration);
-//		const std::string& prefix = ndarray->name + ".SIZE_D";
-//		if (name.compare(0, prefix.length(), prefix) == 0) {
-//			std::string number_str = name.substr(prefix.length());
-//			try {
-//				int number = std::stoi(number_str);
-//				return number >= 1 && number <= ndarray->dimensions;
-//			} catch (const std::invalid_argument&) {
-//				return false;
-//			}
-//		}
-//	}
-//	return false;
-//}
-
 std::unique_ptr<NodeNumElements> NodeVariableRef::transform_ndarray_constant() {
 	if(kind == NodeReference::Kind::Builtin) return nullptr;
 	size_t pos = name.find(".SIZE_D");
@@ -434,15 +400,6 @@ void NodeNDArrayRef::replace_next_wildcard_with_index(std::unique_ptr<NodeInt> n
 }
 
 // ************* NodeFunctionHeaderRef ***************
-NodeFunctionHeaderRef::NodeFunctionHeaderRef(std::string name, Token tok)
-	: NodeReference(std::move(name), NodeType::FunctionHeaderRef, std::move(tok)) {}
-
-NodeFunctionHeaderRef::NodeFunctionHeaderRef(std::string name, std::unique_ptr<NodeParamList> args, Token tok)
-	: NodeReference(std::move(name), NodeType::FunctionHeaderRef, std::move(tok)), args(std::move(args)) {
-	set_child_parents();
-}
-NodeFunctionHeaderRef::~NodeFunctionHeaderRef() = default;
-
 NodeFunctionHeaderRef::NodeFunctionHeaderRef(const NodeFunctionHeaderRef& other)
 	: NodeReference(other), args(clone_unique(other.args)), has_forced_parenth(other.has_forced_parenth) {
 	set_child_parents();

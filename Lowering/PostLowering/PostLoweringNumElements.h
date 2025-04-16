@@ -13,7 +13,7 @@
  * 	declare ndarray::num_elements[3] := (3*3, 3, 3)
  * if no dimension is given -> was array -> call to num_elements
  */
-class PostLoweringNumElements : public ASTLowering {
+class PostLoweringNumElements final : public ASTLowering {
 
 public:
 	explicit PostLoweringNumElements(NodeProgram *program) : ASTLowering(program) {}

@@ -62,11 +62,14 @@ private:
 			if (definition->is_expression_function()) return &node;
 			if (func_call->is_builtin_kind()) return &node;
 			if (definition->num_return_params > 0) {
+				node.variable->data_type = DataType::Return;
 				func_call->function->prepend_arg(node.variable->to_reference());
 				node.remove_references();
 				auto node_block = std::make_unique<NodeBlock>(node.tok, false);
-				node_block->add_as_stmt(
-					std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok));
+				auto node_decl = std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok);
+				// important for optimization algos
+				node_decl->kind = NodeSingleDeclaration::Kind::ReturnVar;
+				node_block->add_as_stmt(std::move(node_decl));
 				node_block->add_as_stmt(std::move(node.value));
 				m_just_hoisted = func_call;
 				return node.replace_with(std::move(node_block))->accept(*this);

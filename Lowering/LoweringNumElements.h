@@ -181,15 +181,15 @@ private:
 			std::nullopt,
 			"x",
 			TypeRegistry::Integer,
-			DataType::Mutable,
-			Token()
+			Token(),
+			DataType::Mutable
 		);
 		auto b = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"b",
 			TypeRegistry::Integer,
-			DataType::Mutable,
-			Token()
+			Token(),
+			DataType::Mutable
 		);
 
 		// b-x

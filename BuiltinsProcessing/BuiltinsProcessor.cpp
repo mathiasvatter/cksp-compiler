@@ -138,10 +138,9 @@ Result<std::shared_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable(
 	if(type_annotation.is_error()) {
 		return Result<std::shared_ptr<NodeVariable>>(type_annotation.get_error());
 	}
-    auto node_variable = std::make_shared<NodeVariable>(std::optional<Token>(), var_name, type_annotation.unwrap(), DataType::Mutable, name);
+    auto node_variable = std::make_shared<NodeVariable>(std::optional<Token>(), var_name, type_annotation.unwrap(), name, DataType::Const);
     node_variable->is_local = false;
     node_variable->is_engine = true;
-	node_variable->data_type = DataType::Const;
     return Result<std::shared_ptr<NodeVariable>>(std::move(node_variable));
 }
 

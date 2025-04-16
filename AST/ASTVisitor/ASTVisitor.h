@@ -31,8 +31,8 @@ public:
 			std::nullopt,
 			name,
 			TypeRegistry::Integer,
-			DataType::Mutable,
-			tok
+			tok,
+			DataType::Mutable
 		);
 		iter->is_local = true;
 		iter->is_engine = true;

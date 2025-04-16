@@ -29,6 +29,7 @@
 #include "../ASTVisitor/TypeInference.h"
 #include "../ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h"
 #include "../ASTVisitor/FunctionHandling/ReturnPathValidator.h"
+#include "../ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectCallSites.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h"
 
@@ -238,7 +239,7 @@ std::unique_ptr<NodeAST> NodeDataStructure::clone() const {
 }
 
 std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
-	auto ref = std::make_unique<NodeReference>(name, node_type, tok);
+	auto ref = std::make_unique<NodeReference>(name, node_type, tok, data_type);
 	return ref;
 }
 
@@ -1085,6 +1086,11 @@ void NodeFunctionDefinition::write_builtin_function_restrictions() {
 	FunctionRestrictionValidator::write_builtin_function_restrictions(*this);
 }
 
+void NodeFunctionDefinition::mark_threadsafety(NodeProgram *program) {
+	static MarkThreadSafe marker(program);
+	marker.mark_function(*this);
+}
+
 // ************* NodeProgramm ***************
 NodeProgram::NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {
 	global_declarations = std::make_unique<NodeBlock>(Token());
@@ -1300,7 +1306,7 @@ std::unique_ptr<NodeSingleDeclaration> NodeProgram::declare_global_iterator() {
 		std::nullopt,
 		def_provider->get_fresh_name("_iter"),
 		TypeRegistry::Integer,
-		DataType::Mutable, tok);
+		tok, DataType::Mutable);
 	node_variable->is_engine = true;
     node_variable->is_global = true;
 	global_iterator = node_variable;

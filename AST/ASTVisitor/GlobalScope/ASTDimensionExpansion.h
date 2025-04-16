@@ -38,15 +38,6 @@ class ASTDimensionExpansion final : public ASTVisitor {
 			(m_program->get_curr_function() and m_program->get_curr_function()->is_thread_safe);
 	}
 
-	NodeAST* mark_thread_safe(NodeProgram& node) const {
-		// first mark threadsafe environments
-		static MarkThreadSafe marker(m_program);
-		for(const auto & callback : node.callbacks) {
-			callback->accept(marker);
-		}
-		node.reset_function_visited_flag();
-		return &node;
-	}
 public:
 	explicit ASTDimensionExpansion(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
@@ -56,8 +47,8 @@ public:
 			std::nullopt,
 			"MAX::CB::STACK",
 			TypeRegistry::Integer,
-			DataType::Const,
-			Token()
+			Token(),
+			DataType::Const
 		);
 		m_program->max_cb_stack->is_global = true;
 
@@ -82,7 +73,8 @@ public:
 		);
 		node.global_declarations->prepend_as_stmt(std::move(decl));
 
-		mark_thread_safe(node);
+		static MarkThreadSafe marker(&node);
+		marker.mark_environments(node);
 
 		m_program->global_declarations->accept(*this);
 		for(const auto & struct_def : node.struct_definitions) {

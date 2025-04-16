@@ -68,7 +68,7 @@ public:
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-		input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
+		// input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
 	    // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 	// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 	// input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
@@ -80,6 +80,7 @@ public:
 	// input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 
+		// output_filename = "/Users/Mathias/Scripting/lux-strings/Samples/Resources/scripts/lux-orchestral-strings.txt";
 	//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
 	    // output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
 	//    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
@@ -179,6 +180,7 @@ public:
 
 		ASTLowerTypes lowering_types(m_program);
 		ast->accept(lowering_types);
+		ast->debug_print();
 		// inline here so inlined struct vars get their declaration for register reuse later on
 		ast->inline_structs();
 
@@ -261,7 +263,6 @@ public:
 
 		ASTCollectPostLowerings post_lowering(m_program);
 		ast->accept(post_lowering);
-		ast->debug_print();
 		ASTRelinkGlobalScope relink_global_scope(m_program);
 		ast->accept(relink_global_scope);
 
@@ -269,6 +270,7 @@ public:
 		std::cout << compile_time.print_timer("Post Lowering") << "\n";
 		compile_time.start("Optimization");
 
+		// ast->debug_print();
 		ast->inline_global_variables();
 		ASTOptimizations optimizations;
 		ASTOptimizations::optimize(*ast);
