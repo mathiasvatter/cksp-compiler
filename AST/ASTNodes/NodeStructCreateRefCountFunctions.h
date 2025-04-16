@@ -32,8 +32,8 @@ public:
 			std::nullopt,
 			"num_refs",
 			TypeRegistry::Integer,
-			DataType::Mutable,
-			tok
+			tok,
+			DataType::Mutable
 		);
 
 		m_num_refs_ref = m_num_refs->to_reference();
@@ -377,8 +377,8 @@ public:
 				std::nullopt,
 				"current",
 				m_struct.node_self->ty,
-				DataType::Mutable,
-				tok
+				tok,
+				DataType::Mutable
 			),
 			m_self_ref->clone(), tok
 		);

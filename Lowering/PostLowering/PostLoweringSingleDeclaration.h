@@ -26,8 +26,8 @@ public:
 						std::optional<Token>(),
 						node_array->name + OBJ_DELIMITER+"num_elements"+std::to_string(i),
 						TypeRegistry::Integer,
-						DataType::Const,
-						node.tok
+						node.tok,
+						DataType::Const
 					);
 					auto node_num_elements_decl = std::make_unique<NodeSingleDeclaration>(
 						node_num_elements,

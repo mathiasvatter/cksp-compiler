@@ -130,8 +130,9 @@ private:
 				func_call->function->prepend_arg(node.variable->to_reference());
 				node.remove_references();
 				auto node_block = std::make_unique<NodeBlock>(node.tok, false);
-				node_block->add_as_stmt(
-					std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok));
+				auto node_decl = std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok);
+				node_decl->kind = NodeSingleDeclaration::Kind::ReturnVar;
+				node_block->add_as_stmt(std::move(node_decl));
 				node_block->add_as_stmt(std::move(node.value));
 				return node.replace_with(std::move(node_block));
 			}

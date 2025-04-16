@@ -2326,7 +2326,7 @@ on init
 		inc(i{int}){Builtin, None}
 	end while
 	declare ui_label lbl_version : int (0, 0) {Reuses: 0}
-	set_control_par_str(lbl_version{int}, CONTROL_PAR_TEXT{int}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "12:26:57" & " " & "04/16/25"){Builtin, None}
+	set_control_par_str(lbl_version{int}, CONTROL_PAR_TEXT{int}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "14:31:08" & " " & "04/16/25"){Builtin, None}
 	set_control_par_str(lbl_version{int}, CONTROL_PAR_PICTURE{int}, "alpha"){Builtin, None}
 	set_control_par(lbl_version{int}, CONTROL_PAR_TEXT_ALIGNMENT{int}, 0){Builtin, None}
 	set_control_par(lbl_version{int}, CONTROL_PAR_FONT_TYPE{int}, fonts_regular_white[0]{int}){Builtin, None}
@@ -2384,7 +2384,6 @@ on persistence_changed
 	end while
 	call keyswitches_color_keys{UserDefined, Call}
 	i{int} := 0
-	v00{int} := 0
 	ret00{int} := v00{int}
 	subarticulation_id1{int} := 0
 	group_count01{int} := group_count001{int}
@@ -2400,7 +2399,6 @@ on persistence_changed
 		v00{int} := ret00{int}
 	end while
 	i{int} := 0
-	v00{int} := 0
 	ret00{int} := v00{int}
 	subarticulation_id1{int} := 9
 	group_count01{int} := group_count001{int}
@@ -2416,7 +2414,6 @@ on persistence_changed
 		v00{int} := ret00{int}
 	end while
 	i{int} := 0
-	group_count001{int} := 0
 	ret00{int} := group_count001{int}
 	subarticulation_id1{int} := 10
 	group_count01{int} := v00{int}
@@ -2432,7 +2429,6 @@ on persistence_changed
 		group_count001{int} := ret00{int}
 	end while
 	i{int} := 0
-	v00{int} := 0
 	ret00{int} := v00{int}
 	subarticulation_id1{int} := 12
 	group_count01{int} := group_count001{int}
@@ -2448,7 +2444,6 @@ on persistence_changed
 		v00{int} := ret00{int}
 	end while
 	i{int} := 0
-	group_count001{int} := 0
 	ret00{int} := group_count001{int}
 	subarticulation_id1{int} := 15
 	group_count01{int} := v00{int}
@@ -2464,7 +2459,6 @@ on persistence_changed
 		group_count001{int} := ret00{int}
 	end while
 	i{int} := 0
-	v00{int} := 0
 	ret00{int} := v00{int}
 	subarticulation_id1{int} := 21
 	group_count01{int} := group_count001{int}
@@ -2637,7 +2631,6 @@ on listener
 				delay_buffer_countdown[result10001{int}]{int} := delay_buffer_countdown[result10001{int}]{int} - LISTENER_RESOLUTION{int}
 				if(delay_buffer_countdown[result10001{int}]{int} <= 0)
 					if(delay_buffer_velo[result10001{int}]{int} >= 0)
-						articulation_event_id000{int} := 0
 						ret40{int} := articulation_event_id000{int}
 						articulation_event_id1{int} := delay_buffer[result10001{int}]{int}
 						subarticulation1{int} := delay_buffer_subarticulation[result10001{int}]{int}
@@ -2648,8 +2641,6 @@ on listener
 						delay_buffer_subarticulation[result10001{int}]{int} := subarticulation1{int}
 						if(articulation_event_id000{int} < 0)
 							message("delay_buffer_prev_note: " & delay_buffer_prev_note[result10001{int}]{int}){Builtin, None}
-							v00{int} := 0
-							group_count001{int} := 0
 							idx000000{int} := 0
 							if(subarticulations_rrr[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int} = 0)
 								idx000000{int} := (_rr_data_idx[(delay_buffer_instrument[result10001{int}]{int} * 4096) + ((delay_buffer_keyswitch[result10001{int}]{int} * 512) + ((delay_buffer_subarticulation[result10001{int}]{int} * 128) + delay_buffer_note[result10001{int}]{int}))]{int} + 1) mod subarticulations_rr_num[subarticulations_ids_positions[_loaded_subarticulations[(delay_buffer_instrument[result10001{int}]{int} * 32) + ((delay_buffer_keyswitch[result10001{int}]{int} * 4) + delay_buffer_subarticulation[result10001{int}]{int})]{int}]{int}]{int}
@@ -2663,7 +2654,6 @@ on listener
 							end if
 							_rr_data_idx[(delay_buffer_instrument[result10001{int}]{int} * 4096) + ((delay_buffer_keyswitch[result10001{int}]{int} * 512) + ((delay_buffer_subarticulation[result10001{int}]{int} * 128) + delay_buffer_note[result10001{int}]{int}))]{int} := idx000000{int}
 							group_count001{int} := idx000000{int}
-							idx000000{int} := 0
 							ret70{int} := idx000000{int}
 							instrument_slot2{int} := delay_buffer_instrument[result10001{int}]{int}
 							keyswitch2{int} := delay_buffer_keyswitch[result10001{int}]{int}
@@ -2680,7 +2670,6 @@ on listener
 							delay_buffer_keyswitch[result10001{int}]{int} := keyswitch2{int}
 							delay_buffer_note[result10001{int}]{int} := note4{int}
 							delay_buffer_subarticulation[result10001{int}]{int} := subarticulation3{int}
-							next_free_idx0000{int} := 0
 							ret40{int} := next_free_idx0000{int}
 							articulation_event_id1{int} := delay_buffer_prev_note[result10001{int}]{int}
 							subarticulation1{int} := delay_buffer_subarticulation[result10001{int}]{int}
@@ -2689,7 +2678,6 @@ on listener
 							next_free_idx0000{int} := ret40{int}
 							delay_buffer_prev_note[result10001{int}]{int} := articulation_event_id1{int}
 							delay_buffer_subarticulation[result10001{int}]{int} := subarticulation1{int}
-							result10000{int} := 0
 							is_free0000{int} := 0
 							idx3000{int} := - 1
 							is_free0000{int} := 0
@@ -2761,7 +2749,6 @@ on listener
 												transition_note000{int} := end_note000{int}
 												transition_type000{int} := - TRANS_VELO_INTERVAL{int}
 											end if
-											_ret22000{int} := 0
 											result4000{int} := - 1
 											if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 												if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -2778,7 +2765,6 @@ on listener
 											stop_voice0{int} := TRUE{int}
 											call c_subarticulation_event_fade_out0{UserDefined, Call}
 											if(subarticulation_event_transition_event_id[next_free_idx0000{int}]{int} # - 1)
-												result4000{int} := 0
 												result4100{int} := - 1
 												if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 													if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -2793,7 +2779,6 @@ on listener
 												fade_out(subarticulation_event_transition_event_id[next_free_idx0000{int}]{int}, result4000{int} * 1000, TRUE{int}){Builtin, None}
 											end if
 											if(transition_type000{int} >= 0)
-												result4000{int} := 0
 												result4100{int} := - 1
 												if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 													if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -2810,7 +2795,6 @@ on listener
 												set_event_mark(i3000{int}, MARK_1{int}){Builtin, None}
 												change_tune(i3000{int}, - offset000{int} * 100000, TRUE{int}){Builtin, None}
 												if(octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int} # 0)
-													result4000{int} := 0
 													result4100{int} := - 1
 													if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) >= 0)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 														if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -2843,7 +2827,6 @@ on listener
 													end while
 													inc(fade_in_range000{int}){Builtin, None}
 												end while
-												result4000{int} := 0
 												result4100{int} := - 1
 												if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 													if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -2856,7 +2839,6 @@ on listener
 												end if
 												result4000{int} := result4100{int}
 												set_event_par_arr(i3000{int}, EVENT_PAR_MOD_VALUE_ID{int}, result4000{int}, FADEIN_TRANS_SCRIPT_CC{int}){Builtin, None}
-												result4000{int} := 0
 												result4100{int} := - 1
 												if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 													if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -2869,7 +2851,6 @@ on listener
 												end if
 												result4000{int} := result4100{int}
 												set_event_par_arr(i3000{int}, EVENT_PAR_MOD_VALUE_ID{int}, result4000{int}, FADEOUT_TRANS_SCRIPT_CC{int}){Builtin, None}
-												result4000{int} := 0
 												result4100{int} := - 1
 												if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 													if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -2883,7 +2864,6 @@ on listener
 												result4000{int} := result4100{int}
 												change_vol(i3000{int}, result4000{int}, TRUE{int}){Builtin, None}
 												if(fade_out_end000{int} # - 1)
-													result4000{int} := 0
 													result4100{int} := - 1
 													if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) >= 0)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 														if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -2896,7 +2876,6 @@ on listener
 													end if
 													result4000{int} := result4100{int}
 													set_event_par_arr(fade_out_end000{int}, EVENT_PAR_MOD_VALUE_ID{int}, result4000{int}, FADEIN_TRANS_SCRIPT_CC{int}){Builtin, None}
-													result4000{int} := 0
 													result4100{int} := - 1
 													if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) >= 0)) and ((transition_note000{int} + (12 * octave_layer[delay_buffer_instrument[result10001{int}]{int}]{int})) < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 														if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -2909,7 +2888,6 @@ on listener
 													end if
 													result4000{int} := result4100{int}
 													set_event_par_arr(fade_out_end000{int}, EVENT_PAR_MOD_VALUE_ID{int}, result4000{int}, FADEOUT_TRANS_SCRIPT_CC{int}){Builtin, None}
-													result4000{int} := 0
 													result4100{int} := - 1
 													if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 														if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -2943,7 +2921,6 @@ on listener
 											subarticulation_event_id7{int} := result10000{int}
 											mark0{int} := MARK_1{int}
 											call c_subarticulation_event_set_event_mark0{UserDefined, Call}
-											result4000{int} := 0
 											result4100{int} := - 1
 											if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 												if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -2960,7 +2937,6 @@ on listener
 											value1{int} := result4000{int}
 											index0{int} := WAIT_TIME_SCRIPT_CC{int}
 											call c_subarticulation_event_set_event_par_arr0{UserDefined, Call}
-											result4000{int} := 0
 											result4100{int} := - 1
 											if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 												if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -2977,7 +2953,6 @@ on listener
 											value1{int} := result4000{int}
 											index0{int} := FADEIN_TIME_SCRIPT_CC{int}
 											call c_subarticulation_event_set_event_par_arr0{UserDefined, Call}
-											result4000{int} := 0
 											result4100{int} := - 1
 											if((((((((delay_buffer_instrument[result10001{int}]{int} >= 0) and (delay_buffer_instrument[result10001{int}]{int} < NUM_INSTRUMENTS0{int})) and (delay_buffer_subarticulation[result10001{int}]{int} >= 0)) and (delay_buffer_subarticulation[result10001{int}]{int} < 4)) and (transition_note000{int} >= 0)) and (transition_note000{int} < 128)) and (transition_dyn_layer000{int} >= 0)) and (transition_dyn_layer000{int} < MAX_TRANSITION_DYN_LAYERS0{int}))
 												if(((transition_type000{int} / TRANS_VELO_INTERVAL{int}) >= 0) and ((transition_type000{int} / TRANS_VELO_INTERVAL{int}) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -3074,7 +3049,6 @@ on listener
 							message("articulation id " & delay_buffer[result10001{int}]{int} & " already active"){Builtin, None}
 						end if
 					else
-						v00{int} := 0
 						ret40{int} := v00{int}
 						articulation_event_id1{int} := delay_buffer[result10001{int}]{int}
 						subarticulation1{int} := delay_buffer_subarticulation[result10001{int}]{int}
@@ -3084,7 +3058,6 @@ on listener
 						delay_buffer[result10001{int}]{int} := articulation_event_id1{int}
 						delay_buffer_subarticulation[result10001{int}]{int} := subarticulation1{int}
 						message("off event " & delay_buffer[result10001{int}]{int} & " -> " & v00{int}){Builtin, None}
-						v00{int} := 0
 						ret40{int} := v00{int}
 						articulation_event_id1{int} := delay_buffer[result10001{int}]{int}
 						subarticulation1{int} := delay_buffer_subarticulation[result10001{int}]{int}
@@ -3094,7 +3067,6 @@ on listener
 						delay_buffer[result10001{int}]{int} := articulation_event_id1{int}
 						delay_buffer_subarticulation[result10001{int}]{int} := subarticulation1{int}
 						if(v00{int} >= 0)
-							idx000000{int} := 0
 							ret40{int} := idx000000{int}
 							articulation_event_id1{int} := delay_buffer[result10001{int}]{int}
 							subarticulation1{int} := delay_buffer_subarticulation[result10001{int}]{int}
@@ -3104,7 +3076,6 @@ on listener
 							delay_buffer[result10001{int}]{int} := articulation_event_id1{int}
 							delay_buffer_subarticulation[result10001{int}]{int} := subarticulation1{int}
 							if(subarticulation_event_articulation_event[idx000000{int}]{int} = delay_buffer[result10001{int}]{int})
-								next_free_idx0000{int} := 0
 								ret40{int} := next_free_idx0000{int}
 								articulation_event_id1{int} := delay_buffer[result10001{int}]{int}
 								subarticulation1{int} := delay_buffer_subarticulation[result10001{int}]{int}
@@ -3255,7 +3226,6 @@ on ui_controls{thread-unsafe}
 				while(i3000{int} <= (4 - 1)) 
 					if(_loaded_subarticulations[(fade_out_range000{int} * 32) + ((fade_out_end000{int} * 4) + i3000{int})]{int} # - 1)
 						i{int} := 0
-						next_free_idx0000{int} := 0
 						ret00{int} := next_free_idx0000{int}
 						subarticulation_id1{int} := _loaded_subarticulations[(fade_out_range000{int} * 32) + ((fade_out_end000{int} * 4) + i3000{int})]{int}
 						group_count01{int} := idx3000{int}
@@ -4192,7 +4162,6 @@ function c_articulations_note_off0
 	i50{int} := 0
 	ks10{int} := 0
 	while(ks10{int} <= (NUM_KEYSWITCHES0{int} - 1)) 
-		_ret1000{int} := 0
 		ret30{int} := _ret1000{int}
 		instrument_slot0{int} := instrument_slot1{int}
 		keyswitch0{int} := ks10{int}
@@ -4207,7 +4176,6 @@ function c_articulations_note_off0
 			i50{int} := 0
 			while(i50{int} <= (4 - 1)) 
 				if(_loaded_subarticulations[(instrument_slot1{int} * 32) + ((ks10{int} * 4) + i50{int})]{int} # - 1)
-					result200{int} := 0
 					ret30{int} := result200{int}
 					instrument_slot0{int} := instrument_slot1{int}
 					keyswitch0{int} := ks10{int}
@@ -4286,7 +4254,6 @@ function c_update_selected_notes0
 									end if
 									inc(i3001{int}){Builtin, None}
 								end while
-								_ret110001{int} := 0
 								result10002{int} := FALSE{int}
 								if(search(_event_list{int[]}, idx3001{int}){Builtin, None} # - 1)
 									result10002{int} := TRUE{int}
@@ -4305,7 +4272,6 @@ function c_update_selected_notes0
 							while(i400{int} <= (4 - 1)) 
 								if(((_loaded_subarticulations[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int} # - 1) and (i{int} >= subarticulations_range_lower[subarticulations_ids_positions[_loaded_subarticulations[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int}]{int}]{int})) and (i{int} <= subarticulations_range_upper[subarticulations_ids_positions[_loaded_subarticulations[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int}]{int}]{int}))
 									if((subarticulations_type[subarticulations_ids_positions[_loaded_subarticulations[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int}]{int}]{int} = SUBARTICULATION_TYPE_SUSTAINED{int}) or (subarticulations_type[subarticulations_ids_positions[_loaded_subarticulations[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int}]{int}]{int} = SUBARTICULATION_TYPE_ONESHOT{int}))
-										next_free_idx0001{int} := 0
 										ret30{int} := next_free_idx0001{int}
 										instrument_slot0{int} := inst{int}
 										keyswitch0{int} := result000{int}
@@ -4327,7 +4293,6 @@ function c_update_selected_notes0
 											previous_note0{int} := - 1
 											idx40{int} := result10002{int}
 											call c_delay_buffer_add0{UserDefined, Call}
-											result10002{int} := 0
 											ret40{int} := result10002{int}
 											articulation_event_id1{int} := articulation_event_id001{int}
 											subarticulation1{int} := i400{int}
@@ -4358,7 +4323,6 @@ function c_update_selected_notes0
 												previous_note0{int} := - 1
 												idx40{int} := next_free_idx0001{int}
 												call c_delay_buffer_add0{UserDefined, Call}
-												next_free_idx0001{int} := 0
 												ret40{int} := next_free_idx0001{int}
 												articulation_event_id1{int} := articulation_event_id001{int}
 												subarticulation1{int} := i400{int}
@@ -4375,7 +4339,6 @@ function c_update_selected_notes0
 											end if
 										else
 											if(subarticulations_type[subarticulations_ids_positions[_loaded_subarticulations[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int}]{int}]{int} = SUBARTICULATION_TYPE_LEGATO{int})
-												next_free_idx0001{int} := 0
 												ret30{int} := next_free_idx0001{int}
 												instrument_slot0{int} := inst{int}
 												keyswitch0{int} := result000{int}
@@ -4399,7 +4362,6 @@ function c_update_selected_notes0
 														call c_delay_buffer_add0{UserDefined, Call}
 														last_articulation_event[inst{int}]{int} := previous_note0{int}
 													else
-														result10002{int} := 0
 														idx3001{int} := - 1
 														if((((((((inst{int} >= 0) and (inst{int} < NUM_INSTRUMENTS0{int})) and (i400{int} >= 0)) and (i400{int} < 4)) and (i{int} >= 0)) and (i{int} < 128)) and (0 >= 0)) and (0 < MAX_TRANSITION_DYN_LAYERS0{int}))
 															if(((abs(articulation_event_note[last_articulation_event[inst{int}]{int}]{int} - i{int}){Builtin, None} + (- sh_right(0 - (articulation_event_note[last_articulation_event[inst{int}]{int}]{int} - i{int}), 31){Builtin, None} * 12)) >= 0) and ((abs(articulation_event_note[last_articulation_event[inst{int}]{int}]{int} - i{int}){Builtin, None} + (- sh_right(0 - (articulation_event_note[last_articulation_event[inst{int}]{int}]{int} - i{int}), 31){Builtin, None} * 12)) < MAX_TRANSITIONS_PER_NOTE0{int}))
@@ -4425,7 +4387,6 @@ function c_update_selected_notes0
 														call c_delay_buffer_add0{UserDefined, Call}
 														last_articulation_event[inst{int}]{int} := previous_note0{int}
 													end if
-													result10002{int} := 0
 													ret40{int} := result10002{int}
 													articulation_event_id1{int} := articulation_event_id001{int}
 													subarticulation1{int} := i400{int}
@@ -4445,7 +4406,6 @@ function c_update_selected_notes0
 												end if
 											else
 												if(subarticulations_type[subarticulations_ids_positions[_loaded_subarticulations[(inst{int} * 32) + ((result000{int} * 4) + i400{int})]{int}]{int}]{int} = SUBARTICULATION_TYPE_INTERVAL_LONG{int})
-													next_free_idx0001{int} := 0
 													ret30{int} := next_free_idx0001{int}
 													instrument_slot0{int} := inst{int}
 													keyswitch0{int} := result000{int}
@@ -4487,7 +4447,6 @@ function c_update_selected_notes0
 				else
 					ks20{int} := 0
 					while(ks20{int} < NUM_KEYSWITCHES0{int}) 
-						result000{int} := 0
 						ret30{int} := result000{int}
 						instrument_slot0{int} := inst{int}
 						keyswitch0{int} := ks20{int}
@@ -4636,7 +4595,6 @@ function c_cc_on_controller0
 				if(_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int} >= 0)
 					i60{int} := 0
 					while(i60{int} <= (4 - 1)) 
-						_ret1200{int} := 0
 						ret40{int} := _ret1200{int}
 						articulation_event_id1{int} := _event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}
 						subarticulation1{int} := i60{int}
@@ -4646,7 +4604,6 @@ function c_cc_on_controller0
 						_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int} := articulation_event_id1{int}
 						i60{int} := subarticulation1{int}
 						if(_ret1200{int} >= 0)
-							result300{int} := 0
 							ret40{int} := result300{int}
 							articulation_event_id1{int} := _event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}
 							subarticulation1{int} := i60{int}
@@ -4655,14 +4612,12 @@ function c_cc_on_controller0
 							result300{int} := ret40{int}
 							_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int} := articulation_event_id1{int}
 							i60{int} := subarticulation1{int}
-							result310{int} := 0
 							result500{int} := FALSE{int}
 							if(subarticulation_type_behavior_list[subarticulations_type[subarticulations_ids_positions[subarticulation_event_subarticulation[result300{int}]{int}]{int}]{int}]{int} = 1)
 								result500{int} := TRUE{int}
 							end if
 							result310{int} := result500{int}
 							if(result310{int} = TRUE{int})
-								result500{int} := 0
 								ret40{int} := result500{int}
 								articulation_event_id1{int} := _event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}
 								subarticulation1{int} := i60{int}
@@ -4675,7 +4630,6 @@ function c_cc_on_controller0
 								modulation0{int} := int((1e+06 * (real(_loaded_subarticulations_dynamic_range_lower[(articulation_event_instrument[_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}]{int} * 32) + ((articulation_event_keyswitch[_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}]{int} * 4) + i60{int})]{int}){Builtin, None} + ((real(modulation_positions[articulation_event_note[_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}]{int} * use_polyphonic_modulation{int}]{int}){Builtin, None} / 127) * real(_loaded_subarticulations_dynamic_range_upper[(articulation_event_instrument[_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}]{int} * 32) + ((articulation_event_keyswitch[_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}]{int} * 4) + i60{int})]{int} - _loaded_subarticulations_dynamic_range_lower[(articulation_event_instrument[_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}]{int} * 32) + ((articulation_event_keyswitch[_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}]{int} * 4) + i60{int})]{int}){Builtin, None}))) / 127){Builtin, None}
 								call c_subarticulation_set_modulation0{UserDefined, Call}
 								result500{int} := subarticulation_event_id3{int}
-								result500{int} := 0
 								ret40{int} := result500{int}
 								articulation_event_id1{int} := _event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}
 								subarticulation1{int} := i60{int}
@@ -4684,7 +4638,6 @@ function c_cc_on_controller0
 								result500{int} := ret40{int}
 								_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int} := articulation_event_id1{int}
 								i60{int} := subarticulation1{int}
-								result320{int} := 0
 								ret70{int} := result320{int}
 								instrument_slot2{int} := articulation_event_instrument[_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}]{int}
 								keyswitch2{int} := articulation_event_keyswitch[_event_list[(_iter100{int} * 1024) + ((_iter200{int} * 128) + _iter300{int})]{int}]{int}
