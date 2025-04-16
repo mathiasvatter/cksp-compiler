@@ -12,12 +12,12 @@ struct List
 	end function
 end struct
 
+macro legato.load_arrays_per_slot(#n#)
+	array.copy(intervals, s#n#.intervals)
+end macro
 
 on init
-	declare keyswitch[10,10]
-	declare UI_keyswitch[keyswitch.SIZE_D1, keyswitch.SIZE_D2]
-
-	message(UI_keyswitch[1,1])
+	iterate_macro(legato.load_arrays_per_slot) := 0 to 4-1
 end on
 
 on note

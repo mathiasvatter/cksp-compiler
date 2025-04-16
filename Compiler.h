@@ -68,6 +68,7 @@ public:
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+		input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
 		// input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
 	    // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 	// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
@@ -105,6 +106,7 @@ public:
 		tokens = std::move(imports.get_token_vector());
 
 		compile_time.stop("Import");
+		std::cout << compile_time.print_timer("Import") << "\n";
 		compile_time.start("Preprocessor");
 
 		Preprocessor preprocessor(tokens);
@@ -123,6 +125,7 @@ public:
 		std::filesystem::path curr_path = __FILE__;
 
 		compile_time.stop("Preprocessor");
+		std::cout << compile_time.print_timer("Preprocessor") << "\n";
 		compile_time.start("Parsing");
 
 
@@ -136,13 +139,16 @@ public:
 		m_program = ast.get();
 
 		compile_time.stop("Parsing");
+		std::cout << compile_time.print_timer("Parsing") << "\n";
 		compile_time.start("Desugaring");
 
 		ASTDesugar desugar;
 		ast->accept(desugar);
 
 		compile_time.stop("Desugaring");
+		std::cout << compile_time.print_timer("Desugaring") << "\n";
 		compile_time.start("Variable Checking");
+		ast->debug_print();
 
 		ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
@@ -180,7 +186,6 @@ public:
 
 		ASTLowerTypes lowering_types(m_program);
 		ast->accept(lowering_types);
-		ast->debug_print();
 		// inline here so inlined struct vars get their declaration for register reuse later on
 		ast->inline_structs();
 
