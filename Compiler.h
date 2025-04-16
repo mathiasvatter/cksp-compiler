@@ -148,7 +148,6 @@ public:
 		compile_time.stop("Desugaring");
 		std::cout << compile_time.print_timer("Desugaring") << "\n";
 		compile_time.start("Variable Checking");
-		ast->debug_print();
 
 		ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
@@ -220,6 +219,7 @@ public:
 		compile_time.stop("Data Structure Lowering");
 		std::cout << compile_time.print_timer("Data Structure Lowering") << "\n";
 		compile_time.start("Variable Checking 1");
+		ast->debug_print();
 
 		variable_checking.do_reachable_traversal(*ast, true);
 		ast->remove_references();
