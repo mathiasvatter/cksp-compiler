@@ -5,7 +5,6 @@
 #pragma once
 
 #include "../AST/ASTVisitor/ASTOptimizations.h"
-#include "ConstantFolding.h"
 
 /**
  * Removes Dead Code:
@@ -93,9 +92,10 @@ public:
 		for(const auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
+		m_last_reference.clear();
 		node.flatten();
 		return &node;
-	};
+	}
 
 	NodeAST* visit(NodeSingleAssignment& node) override {
 		// important to do r_value first to remove last assignment if necessary
@@ -127,15 +127,30 @@ public:
 	/// var := var + 1 -> do not kill
 	/// do not kill if r_value is function call (builtin or user defined)
 	bool kill_last_assignment(NodeReference* node) {
-		// only stay in here if current node is left side of assign statement
-		if(!node->is_l_value()) return false;
-		// check if last reference is an assignment statement
 		if(m_last_reference.empty()) return false;
+		// if current reference is arg in a function, make sure to not delete the last assignment
+		// remove ref out of last reference map
+		if (node->is_func_arg()) {
+			m_last_reference.erase(get_hash_value(*node));
+            return false;
+		}
+		// if we are not an l_value of an assignment, return false
+		if (const auto assign = node->is_l_value()) {
+			// if (node->data_type == DataType::Return) return false;
+			// if we are l_value in an parameter stack related assignment -> return false
+			if (assign->kind == NodeInstruction::ParameterStack) return false;
+			if (assign->kind == NodeInstruction::ReturnVar) return false;
+		} else {
+			return false;
+		}
+
 		if(auto const it = m_last_reference.find(get_hash_value(*node)); it != m_last_reference.end()) {
 			// check if reference is also somewhere on the right side of the assignment
 			if (node->is_r_value()) return false;
 			if(const auto assignment = it->second->is_l_value()) {
 				if (assignment->r_value->cast<NodeFunctionCall>()) return false;
+				// if (assignment->kind == NodeInstruction::ParameterStack) return false;
+				// if (assignment->kind == NodeInstruction::ReturnVar) return false;
 				assignment->remove_node();
 				m_last_reference.erase(it);
 				return true;

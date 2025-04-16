@@ -165,7 +165,7 @@ private:
 		auto node_nd_array_ref = unique_ptr_cast<NodeNDArrayRef>(node_ndarray->to_reference());
 		node_nd_array_ref->set_indexes(clone_as<NodeParamList>(node->indexes.get()));
 		node_nd_array_ref->determine_sizes();
-		auto node_value = std::make_shared<NodeVariable>(std::nullopt, "value", node->ty->get_element_type(), DataType::Mutable, Token());
+		auto node_value = std::make_shared<NodeVariable>(std::nullopt, "value", node->ty->get_element_type(), Token(), DataType::Mutable);
 
 		// holds all iterators per wildcard
 		std::vector<std::shared_ptr<NodeDataStructure>> iterators; int count = 1; int count2 = 1;
@@ -177,7 +177,7 @@ private:
 		func_header->add_param(node_value);
 		for(auto & param : node_nd_array_ref->indexes->params) {
 			if(param->get_node_type() == NodeType::Wildcard) {
-				auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter"+std::to_string(count), TypeRegistry::Integer, DataType::Mutable, node->tok);
+				auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter"+std::to_string(count), TypeRegistry::Integer, node->tok, DataType::Mutable);
 				node_iterator->is_local = true;
 				param = node_iterator->to_reference();
 				iterators.push_back(std::move(node_iterator));
@@ -186,7 +186,7 @@ private:
 				lower_bounds.push_back(std::make_unique<NodeInt>(0, node->tok));
 				count++;
 			} else {
-				auto node_iterate_dim = std::make_unique<NodeVariable>(std::nullopt, "param"+std::to_string(count2), TypeRegistry::Integer, DataType::Mutable, node->tok);
+				auto node_iterate_dim = std::make_unique<NodeVariable>(std::nullopt, "param"+std::to_string(count2), TypeRegistry::Integer, node->tok, DataType::Mutable);
 				count2++;
 				param = node_iterate_dim->to_reference();
 				func_header->add_param(std::move(node_iterate_dim));

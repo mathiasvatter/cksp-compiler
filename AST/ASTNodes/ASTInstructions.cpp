@@ -622,6 +622,7 @@ std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(Node
             std::move(node_assignee),
             tok
     );
+	node_assign_statement->kind = this->kind;
     return node_assign_statement;
 }
 

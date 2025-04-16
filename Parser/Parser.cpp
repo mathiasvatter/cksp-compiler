@@ -116,7 +116,7 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, co
     std::string var_name = var_token.val;
 	auto ty = TypeRegistry::get_type_from_identifier(var_name[0]);
 	if(ty != TypeRegistry::Unknown) var_name = var_name.erase(0,1);
-    auto node_variable = std::make_unique<NodeVariable>(is_persistent, var_name, ty, var_type, var_token);
+    auto node_variable = std::make_unique<NodeVariable>(is_persistent, var_name, ty, var_token, var_type);
     node_variable->parent = parent;
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }

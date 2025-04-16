@@ -141,7 +141,7 @@ private:
 		int iter_size = iterators.size();
 		// if normal array -> only one _iter1
 		if(array_ref->get_node_type() == NodeType::ArrayRef) {
-			auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter"+std::to_string(iter_size), TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
+			auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter"+std::to_string(iter_size), TypeRegistry::Integer, array_ref->tok, DataType::Mutable);
 			node_iterator->is_local = true;
 			iterators.push_back(std::move(node_iterator));
 		}
@@ -150,7 +150,7 @@ private:
 			int count = iter_size;
 			for (auto &idx : nd_arr_ref->indexes->params) {
 				if (idx->get_node_type() == NodeType::Wildcard) {
-					auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter" + std::to_string(count), TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
+					auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter" + std::to_string(count), TypeRegistry::Integer,  array_ref->tok, DataType::Mutable);
 					node_iterator->is_local = true;
 					iterators.push_back(std::move(node_iterator));
 					count++;
@@ -162,7 +162,7 @@ private:
 		int dims_size = dim_vars_to_copy.size();
 		// if normal array -> only one _iter1
 		if(array_ref->get_node_type() == NodeType::ArrayRef) {
-			auto node_dim = std::make_unique<NodeVariable>(std::nullopt, "dim"+std::to_string(dims_size), TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
+			auto node_dim = std::make_unique<NodeVariable>(std::nullopt, "dim"+std::to_string(dims_size), TypeRegistry::Integer, array_ref->tok, DataType::Mutable);
 			dim_vars_to_copy.push_back(std::move(node_dim));
 		}
 		if(auto nd_arr_ref = array_ref->cast<NodeNDArrayRef>()) {
@@ -170,7 +170,7 @@ private:
 			int count = dims_size;
 			for (auto &idx : nd_arr_ref->indexes->params) {
 				if (idx->get_node_type() != NodeType::Wildcard) {
-					auto node_dim = std::make_unique<NodeVariable>(std::nullopt, "dim" + std::to_string(count), TypeRegistry::Integer, DataType::Mutable, array_ref->tok);
+					auto node_dim = std::make_unique<NodeVariable>(std::nullopt, "dim" + std::to_string(count), TypeRegistry::Integer, array_ref->tok, DataType::Mutable);
 					dim_vars_to_copy.push_back(std::move(node_dim));
 					dims_to_copy.push_back(idx->clone());
 					count++;

@@ -90,16 +90,21 @@ private:
 				auto actual_param = std::move(call->function->get_arg(ii));
 				// return parameters do not need to be assigned back
 				// constants actual parameters do not need to be assigned back
-				if (promoted_params[ii]->kind != NodeInstruction::ReturnVar and promoted_params[ii]->kind != NodeInstruction::Promoted
-					and formal_param->is_thread_safe and !actual_param->is_constant()) {
+				if (/*promoted_params[ii]->kind != NodeInstruction::ReturnVar and */promoted_params[ii]->kind != NodeInstruction::Promoted
+				and formal_param->is_thread_safe and !actual_param->is_constant()) {
 					if (const auto ref = cast_node<NodeReference>(actual_param.get())) {
 						auto assignment_back = std::make_unique<NodeSingleAssignment>(
 								clone_as<NodeReference>(ref),
 								formal_param->to_reference(),
 								call->tok
 						);
-						assignment_back->is_parameter_stack = true;
-						assignment_back->kind = NodeSingleAssignment::Kind::ParameterStack;
+						// so that they are afterwards not removed by ASTFunctionInlining
+						if (promoted_params[ii]->kind != NodeInstruction::ReturnVar) {
+							assignment_back->is_parameter_stack = true;
+							assignment_back->kind = NodeInstruction::ParameterStack;
+						} else {
+							assignment_back->kind = NodeInstruction::ReturnVar;
+						}
 						block_after->add_as_stmt(std::move(assignment_back));
 					}
 				}
@@ -117,7 +122,7 @@ private:
                     call->tok
 				);
 				assignment->is_parameter_stack = true;
-				assignment->kind = NodeSingleAssignment::Kind::ParameterStack;
+				assignment->kind = NodeInstruction::ParameterStack;
 				block->add_as_stmt(std::move(assignment));
 			}
 			call->function->args->params.clear();

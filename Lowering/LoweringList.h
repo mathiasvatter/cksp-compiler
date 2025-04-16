@@ -36,7 +36,9 @@ public:
 					std::nullopt,
 					list_name+".SIZE",
 					TypeRegistry::Integer,
-					DataType::Const, node.tok),
+					node.tok,
+					DataType::Const
+				),
 				std::make_unique<NodeInt>(list_size, node.tok), node.tok);
 
 			node_body->add_as_stmt(std::move(node_declare_main_size));

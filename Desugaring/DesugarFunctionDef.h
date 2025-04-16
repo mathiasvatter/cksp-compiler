@@ -91,7 +91,8 @@ public:
 					std::nullopt,
 					"ret$"+std::to_string(i),
 					TypeRegistry::Unknown,
-					DataType::Return, node.return_variables[i]->tok
+					node.return_variables[i]->tok,
+					DataType::Return
 				);
 				m_current_function->header->add_param(std::move(new_param));
 			}

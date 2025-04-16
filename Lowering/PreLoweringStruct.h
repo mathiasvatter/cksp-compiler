@@ -45,8 +45,8 @@ public:
 			std::nullopt,
 			strct->name+OBJ_DELIMITER+"MAX_STRUCTS",
 			TypeRegistry::Integer,
-			DataType::Const,
-			Token()
+			Token(),
+			DataType::Const
 		);
 		max_structs_var->is_engine = true;
 		strct->max_individual_structs_var = max_structs_var;
@@ -60,8 +60,8 @@ public:
 			std::nullopt,
 			strct->name+OBJ_DELIMITER+"free_idx",
 			TypeRegistry::Integer,
-			DataType::Mutable,
-			Token()
+			Token(),
+			DataType::Mutable
 		);
 		free_idx_var->is_engine = true;
 		strct->free_idx_var = free_idx_var;
@@ -103,8 +103,8 @@ public:
 			std::nullopt,
 			strct->name+OBJ_DELIMITER+"stack_top",
 			TypeRegistry::Integer,
-			DataType::Mutable,
-			Token()
+			Token(),
+			DataType::Mutable
 		);
 		stack_top_var->is_engine = true;
 		strct->stack_top_var = stack_top_var;
@@ -201,8 +201,8 @@ public:
 		}
 
 		// Erstellung der Parameter a und b
-		auto node_a = std::make_shared<NodeVariable>(std::nullopt, "a", TypeRegistry::Integer, DataType::Param, Token());
-		auto node_b = std::make_shared<NodeVariable>(std::nullopt, "b", TypeRegistry::Integer, DataType::Param, Token());
+		auto node_a = std::make_shared<NodeVariable>(std::nullopt, "a", TypeRegistry::Integer, Token(), DataType::Param);
+		auto node_b = std::make_shared<NodeVariable>(std::nullopt, "b", TypeRegistry::Integer, Token(), DataType::Param);
 
 		// Referenzen auf die Parameter
 		auto node_a_ref = node_a->to_reference();

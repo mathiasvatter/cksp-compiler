@@ -6,16 +6,15 @@
 
 #include "ASTLowering.h"
 
-class LoweringStruct : public ASTLowering {
-private:
+class LoweringStruct final : public ASTLowering {
 	NodeFunctionDefinition* m_current_func = nullptr;
 	NodeStruct* m_current_struct = nullptr;
 	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX::STRUCTS", Token());
-	inline bool in_constructor() {
+	bool in_constructor() const {
 		return m_current_func and m_current_struct and m_current_func == m_current_struct->constructor.get();
 	}
 	/// returns free_idx as reference if in constructor, self as reference if not
-	inline std::unique_ptr<NodeReference> get_index_ref() {
+	std::unique_ptr<NodeReference> get_index_ref() const {
 		if(in_constructor()) {
 			return m_current_struct->free_idx_var->to_reference();
 		}
@@ -30,7 +29,7 @@ public:
 
 		node.members->accept(*this);
 		m_current_struct = &node;
-		for(auto & m: node.methods) {
+		for(const auto & m: node.methods) {
 			m->accept(*this);
 		}
 
@@ -39,12 +38,12 @@ public:
 		return &node;
 	}
 
-	inline NodeAST * visit(NodeAccessChain& node) override {
+	NodeAST * visit(NodeAccessChain& node) override {
 		return node.lower(m_program);
 	}
 
-	inline NodeAST * visit(NodeSingleDeclaration& node) override {
-		// "self" gets deleted in the inline_struct method -> ignore here
+	NodeAST * visit(NodeSingleDeclaration& node) override {
+		// "self" gets deleted in the struct method -> ignore here
 		if(node.variable == m_current_struct->node_self) {
 			return &node;
 		}
@@ -57,17 +56,17 @@ public:
 
 		// turn node.value into param list if is member and has been turned into array
 		if(node.variable->is_member() and node.value) {
-			if(node.variable->get_node_type() != NodeType::Array and node.variable->get_node_type() != NodeType::NDArray) {
+			if(!node.variable->cast<NodeArray>() and !node.variable->cast<NodeNDArray>()) {
 				return &node;
 			}
-			if(node.value->get_node_type() != NodeType::InitializerList) {
+			if(!node.value->cast<NodeInitializerList>()) {
 				node.set_value(std::make_unique<NodeInitializerList>(node.tok, std::move(node.value)));
 			}
 		}
 		return &node;
 	}
 
-	inline NodeAST * visit(NodeVariable& node) override {
+	NodeAST * visit(NodeVariable& node) override {
 		// if member, turn into array
 		if(determine_inflation_need(node)) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_structs_var->to_reference());
@@ -75,7 +74,7 @@ public:
 		}
 		return &node;
 	}
-	inline NodeAST * visit(NodePointer& node) override {
+	NodeAST * visit(NodePointer& node) override {
 		// if member, turn into array of pointers
 		if(determine_inflation_need(node)) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_structs_var->to_reference());
@@ -83,7 +82,7 @@ public:
 		}
 		return &node;
 	}
-	inline NodeAST * visit(NodeArray& node) override {
+	NodeAST * visit(NodeArray& node) override {
 		// if member, turn into multi-dimensional array
 		/*
 		 * 	declare velocities[10]: [int]
@@ -95,7 +94,7 @@ public:
 		}
 		return &node;
 	}
-	inline NodeAST * visit(NodeNDArray& node) override {
+	NodeAST * visit(NodeNDArray& node) override {
 		// if member, turn into multi-dimensional array
 		if(determine_inflation_need(node)) {
 			auto new_node = node.inflate_dimension(m_current_struct->max_individual_structs_var->to_reference());
@@ -105,7 +104,7 @@ public:
 		return &node;
 	}
 
-	inline NodeAST * visit(NodeVariableRef& node) override {
+	NodeAST * visit(NodeVariableRef& node) override {
 		// if member reference, turn into array reference with (struct.free_idx as index if in constructor, self as index if not)
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
@@ -113,7 +112,7 @@ public:
 		}
 		return &node;
 	}
-	inline NodeAST * visit(NodeArrayRef& node) override {
+	NodeAST * visit(NodeArrayRef& node) override {
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
@@ -122,7 +121,7 @@ public:
 		return &node;
 	}
 
-	inline NodeAST * visit(NodePointerRef& node) override {
+	NodeAST * visit(NodePointerRef& node) override {
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
 			return node.replace_reference(std::move(new_node));
@@ -130,7 +129,7 @@ public:
 		return &node;
 	}
 
-	inline NodeAST * visit(NodeNDArrayRef& node) override {
+	NodeAST * visit(NodeNDArrayRef& node) override {
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
@@ -140,12 +139,20 @@ public:
 	}
 
 
-	inline NodeAST * visit(NodeFunctionDefinition& node) override {
+	NodeAST * visit(NodeFunctionDefinition& node) override {
 		m_current_func = &node;
 		node.header->accept(*this);
 		node.body->accept(*this);
 		// lower init function
 		if(node.header->name == m_current_struct->name+OBJ_DELIMITER+"__init__") {
+			node.mark_threadsafety(m_program);
+			if (!node.is_thread_safe) {
+				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+				error.m_message = "Constructor of struct <"+m_current_struct->name+"> contains non-threadsafe builtin commands"
+									" which can corrupt value consistency within it. "
+									"Do not use commands like <wait> or <wait_async> in constructors.";
+				error.exit();
+			}
 			lower_init_method(&node);
 		}
 		return &node;
@@ -156,7 +163,7 @@ private:
 		return ref.is_member_ref() and !ref.is_engine and ref.get_declaration()->data_type != DataType::Const;
 	}
 
-	static bool determine_inflation_need(NodeDataStructure& data) {
+	static bool determine_inflation_need(const NodeDataStructure& data) {
 		return data.is_member() and !data.is_engine and data.data_type != DataType::Const;
 	}
 
@@ -170,7 +177,7 @@ private:
 	 * 	...
 	 * 	return struct.free_idx
 	 */
-	inline void lower_init_method(NodeFunctionDefinition* init) {
+	void lower_init_method(NodeFunctionDefinition* init) const {
 		auto node_block = std::make_unique<NodeBlock>(init->tok);
 		auto node_search_call = std::make_unique<NodeFunctionCall>(
 			false,

@@ -11,16 +11,6 @@ class ConstExprPropagation final : public ASTOptimizations {
 
 public:
 
-	NodeAST* visit(NodeProgram& node) override {
-		m_program = &node;
-		m_program->global_declarations->accept(*this);
-		for(const auto & callback : node.callbacks) {
-			callback->accept(*this);
-		}
-		node.reset_function_visited_flag();
-		return &node;
-	}
-
 	/// reset the constant expression propagation map every block
 	NodeAST* visit(NodeBlock& node) override {
 		m_constant_expressions.clear();
@@ -58,16 +48,12 @@ public:
 			if(!node.get_definition()->is_thread_safe) {
 				m_constant_expressions.clear();
 			}
-		} else {
-			if (const auto definition = node.get_definition()) {
-				if (!definition->visited) definition->accept(*this);
-				definition->visited = true;
-			}
 		}
 		return &node;
 	}
 
 	NodeAST* visit(NodeSingleAssignment& node) override {
+
 		node.r_value->accept(*this);
 		// remove constant from constant expression map when it gets reassigned
 		remove_constant_expression(node.l_value.get());
