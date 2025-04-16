@@ -157,7 +157,7 @@ jobs:
             rsync -a macos-release/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
             
             # Dateien aus windows-release/ kopieren
-            rsync -a --update windows-release/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
+            rsync -a windows-release/windows/ _Releases/${{ needs.build-macos.outputs.version_dir }}/windows/
 
       - name: Fix permissions for macOS binary
         run: |
