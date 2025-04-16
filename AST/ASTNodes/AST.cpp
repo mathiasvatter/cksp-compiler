@@ -29,6 +29,7 @@
 #include "../ASTVisitor/TypeInference.h"
 #include "../ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h"
 #include "../ASTVisitor/FunctionHandling/ReturnPathValidator.h"
+#include "../ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectCallSites.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h"
 
@@ -1083,6 +1084,11 @@ bool NodeFunctionDefinition::do_return_path_validation() {
 
 void NodeFunctionDefinition::write_builtin_function_restrictions() {
 	FunctionRestrictionValidator::write_builtin_function_restrictions(*this);
+}
+
+void NodeFunctionDefinition::mark_threadsafety(NodeProgram *program) {
+	static MarkThreadSafe marker(program);
+	marker.mark_function(*this);
 }
 
 // ************* NodeProgramm ***************

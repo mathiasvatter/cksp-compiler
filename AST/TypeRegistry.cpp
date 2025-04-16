@@ -89,7 +89,7 @@ std::string TypeRegistry::get_annotation_from_type(Type* ty) {
 }
 
 
-Type *TypeRegistry::get_type_from_identifier(char identifier) {
+Type *TypeRegistry::get_type_from_identifier(const char identifier) {
     auto it = identifier_to_type.find(identifier);
     if (it != identifier_to_type.end()) {
         return it->second;
@@ -105,7 +105,7 @@ char TypeRegistry::get_identifier_from_type(Type *ty) {
     return ' ';
 }
 
-std::unique_ptr<NodeAST> TypeRegistry::get_neutral_element_from_type(Type* ty) {
+std::unique_ptr<NodeAST> TypeRegistry::get_neutral_element_from_type(const Type* ty) {
 	if (ty == Integer) {
 		return std::make_unique<NodeInt>(0, Token());
 	} else if (ty == Real) {
@@ -124,6 +124,8 @@ std::unique_ptr<NodeAST> TypeRegistry::get_neutral_element_from_type(Type* ty) {
         return std::make_unique<NodeInitializerList>(Token(), std::make_unique<NodeString>("false", Token()));
     } else if (ty->get_type_kind() == TypeKind::Object) {
 		return std::make_unique<NodeNil>(Token());
+	} else if (ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+		return std::make_unique<NodeInitializerList>(Token(), std::make_unique<NodeNil>(Token()));
 	}
 	return nullptr;
 }

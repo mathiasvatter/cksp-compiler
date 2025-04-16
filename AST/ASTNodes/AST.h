@@ -721,6 +721,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	void do_return_param_promotion(NodeProgram* program);
 	bool do_return_path_validation();
 	void write_builtin_function_restrictions();
+	void mark_threadsafety(NodeProgram *program);
 };
 
 struct NodeProgram final : NodeAST {

@@ -2,10 +2,15 @@
 #pragma output_path("test.txt")
 
 
-// struct List
-// 	declare val: int
-// 	declare next: List
-// end struct
+struct List
+	declare vals[3]: int[]
+	declare next[3]: List[]
+
+	function __init__(self, next: List[]) 
+		self.vals := [0]
+		self.next := next
+	end function
+end struct
 
 
 on init
