@@ -8,7 +8,7 @@
 void PreASTIncrementer::visit(PreNodeProgram &node) {
 	m_program = &node;
 
-	for(auto & n : node.program) {
+	for(const auto & n : node.program) {
 		n->accept(*this);
 	}
 }
@@ -41,7 +41,7 @@ bool PreASTIncrementer::substitute_with_incremented_value(const std::string& nam
 }
 
 
-bool PreASTIncrementer::update_last_incrementer_var(PreNodeAST* node, PreNodeInt* substitute, const std::string& node_val, size_t node_line) {
+bool PreASTIncrementer::update_last_incrementer_var(const PreNodeAST* node, PreNodeInt* substitute, const std::string& node_val, size_t node_line) {
 	for(auto & var : m_last_incrementer_var) {
 		if(node_val == var.first->get_string()) {
 			// if not on the same line

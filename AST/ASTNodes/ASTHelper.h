@@ -105,7 +105,7 @@ enum class NodeType {
 };
 
 // forward declaration
-class NodeAST;
+struct NodeAST;
 
 template <typename T>
 std::shared_ptr<T> to_shared_ptr(std::unique_ptr<T> uniquePtr) {

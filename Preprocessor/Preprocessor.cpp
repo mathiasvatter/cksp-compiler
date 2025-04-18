@@ -15,7 +15,7 @@
 Preprocessor::Preprocessor(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {}
 
 void Preprocessor::process() {
-	Result<SuccessTag> result = Result<SuccessTag>(SuccessTag{});
+	auto result = Result<SuccessTag>(SuccessTag{});
 
 	PreprocessorConditions conditions(m_tokens);
 	result = conditions.process_conditions();

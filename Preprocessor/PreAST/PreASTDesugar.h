@@ -6,7 +6,7 @@
 
 #include "PreASTVisitor.h"
 
-class PreASTDesugar : public PreASTVisitor {
+class PreASTDesugar final : public PreASTVisitor {
 public:
 
     void visit(PreNodeProgram& node) override;
@@ -35,12 +35,14 @@ private:
 
 	void do_substitution(PreNodeLiteral& node);
     std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
-    static std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> get_substitution_vector(PreNodeMacroHeader* definition, PreNodeMacroHeader* call);
+    static std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> get_substitution_vector(PreNodeMacroHeader* definition, const PreNodeMacroHeader* call);
     std::unique_ptr<PreNodeMacroDefinition> get_macro_definition(PreNodeMacroHeader* macro_header);
     std::string get_text_replacement(const Token& name);
 
     std::stack<std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>>> m_substitution_stack;
-	bool check_recursion(const Token &tok);
+	// std::stack<std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>>> m_substitution_stack;
+
+	bool check_recursion(const Token &tok) const;
     std::unordered_set<std::string> m_macros_used;
 };
 

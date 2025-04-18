@@ -19,17 +19,27 @@ end struct
 on init
 	declare new_note
 	declare old_id
+	declare global_accent_preset[3,3]
+	iterate_macro(add_to_global_accent_menu(0, #n#)) := 0 to 31
 	outside_macro(new_note, old_id)
 end on
 
+macro add_to_global_accent_menu(id, #idx#)
+	global_accent_preset[id, #idx#] := v#idx#
+end macro
 
 macro outside_macro(note, old_note_id) 
 	message(note, old_note_id)
 	iterate_macro(inside_macro(#n#, note, old_note_id)) := 0 to 10
+	iterate_macro(inside_macro2(old_note_id, #n#)) := 0 to 10
 end macro
 
 macro inside_macro(#n#, note, old_note_id)
 	message(#n#, note, old_note_id)
+end macro
+
+macro inside_macro2(old_note_id, #idx#)
+	message(#idx#, old_note_id)
 end macro
 
 

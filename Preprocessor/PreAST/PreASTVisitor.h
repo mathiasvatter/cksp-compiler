@@ -11,6 +11,7 @@ class PreASTVisitor {
 protected:
 	PreNodeProgram* m_program = nullptr;
 public:
+    virtual ~PreASTVisitor() = default;
     virtual void visit(PreNodeNumber& node) {};
     virtual void visit(PreNodeInt& node) {};
     virtual void visit(PreNodeUnaryExpr& node) {

@@ -6,7 +6,7 @@
 
 #include "PreASTVisitor.h"
 
-class PreASTDefines : public PreASTVisitor {
+class PreASTDefines final : public PreASTVisitor {
 public:
 
 	void visit(PreNodeNumber& node) override;
@@ -29,19 +29,18 @@ public:
 private:
 	std::string m_debug_token;
 
-	std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_definitions;
 	std::unordered_map<std::string, PreNodeDefineStatement*> m_define_lookup;
 
 	void do_substitution(PreNodeLiteral& node);
 	std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
-	std::unique_ptr<PreNodeDefineStatement> get_define_definition(PreNodeDefineHeader* define_header);
-	static std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> get_substitution_vector(PreNodeDefineHeader* definition, PreNodeDefineHeader* call);
+	std::unique_ptr<PreNodeDefineStatement> get_define_definition(const PreNodeDefineHeader* define_header);
+	static std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> get_substitution_vector(PreNodeDefineHeader* definition, const PreNodeDefineHeader* call);
 
 	/// returns substitute for current node.name, or nullptr if there is no substitute
 	std::stack<std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>>> m_substitution_stack;
 
 	std::unordered_set<std::string> m_defines_used;
-	inline bool check_recursion(const Token &tok);
+	bool check_recursion(const Token &tok) const;
 
 	std::unordered_map<std::string, std::unique_ptr<PreNodeAST>> m_builtin_defines;
 	static std::unordered_map<std::string, std::unique_ptr<PreNodeAST>> get_builtin_defines();
