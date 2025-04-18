@@ -397,6 +397,9 @@ struct PreNodeMacroHeader final : PreNodeAST {
 	PreNodeChunk* get_arg(const size_t idx) const {
 	    return args->params[idx].get();
     }
+	size_t num_args() const {
+		return args->params.size();
+	}
 };
 
 
@@ -492,7 +495,6 @@ struct PreNodeDefineStatement final : PreNodeAST {
 
 struct PreNodeMacroCall final : PreNodeAST {
     std::unique_ptr<PreNodeMacroHeader> macro;
-	std::unique_ptr<PreNodeChunk> num_env = nullptr; // #n# environment substitute chunk
 	bool is_iterate_macro = false;
     PreNodeMacroCall(std::unique_ptr<PreNodeMacroHeader> macro, PreNodeAST* parent)
 		: PreNodeAST(parent, PreNodeType::MACRO_CALL), macro(std::move(macro)) {}
@@ -501,12 +503,10 @@ struct PreNodeMacroCall final : PreNodeAST {
     [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
 	void set_child_parents() override {
 		macro->parent = this;
-		if (num_env) num_env->parent = this;
 	}
     void update_parents(PreNodeAST* new_parent) override {
         parent = new_parent;
         macro->update_parents(this);
-		if (num_env) num_env->update_parents(this);
     }
 	std::string get_string() override {
 		return macro->get_string();
@@ -514,10 +514,6 @@ struct PreNodeMacroCall final : PreNodeAST {
     void update_token_data(const Token &token) override {
         macro->update_token_data(token);
     }
-	void set_num_env(std::unique_ptr<PreNodeChunk> num_env) {
-		num_env->parent = this;
-		this->num_env = std::move(num_env);
-	}
 };
 
 struct PreNodeFunctionCall final : PreNodeAST {
@@ -673,6 +669,7 @@ struct PreNodeIncrementer final : PreNodeAST {
 };
 
 struct PreNodeProgram final : PreNodeAST {
+	std::string output_path = "";
 	std::stack<PreNodeDefineStatement*> define_call_stack;
 	std::stack<PreNodeMacroCall*> macro_call_stack;
     std::vector<std::unique_ptr<PreNodeAST>> program;

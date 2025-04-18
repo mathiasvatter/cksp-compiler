@@ -67,7 +67,7 @@ public:
 	//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+		input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
 		// input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
 	    // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
@@ -106,7 +106,6 @@ public:
 		tokens = std::move(imports.get_token_vector());
 
 		compile_time.stop("Import");
-		std::cout << compile_time.print_timer("Import") << "\n";
 		compile_time.start("Preprocessor");
 
 		Preprocessor preprocessor(tokens);
@@ -125,6 +124,7 @@ public:
 		std::filesystem::path curr_path = __FILE__;
 
 		compile_time.stop("Preprocessor");
+		std::cout << compile_time.print_timer("Import") << "\n";
 		std::cout << compile_time.print_timer("Preprocessor") << "\n";
 		compile_time.start("Parsing");
 

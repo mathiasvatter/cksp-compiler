@@ -8,21 +8,17 @@
 
 class PreASTDefines final : public PreASTVisitor {
 public:
-
+	explicit PreASTDefines(PreNodeProgram* program) : PreASTVisitor(program) {}
+	void visit(PreNodePragma& node) override;
 	void visit(PreNodeNumber& node) override;
 	void visit(PreNodeInt& node) override;
 	void visit(PreNodeKeyword& node) override;
 	void visit(PreNodeOther& node) override;
-//	void visit(PreNodeStatement& node) override;
 	void visit(PreNodeChunk& node) override;
 	void visit(PreNodeDefineHeader& node) override;
 	void visit(PreNodeList& node) override;
 	void visit(PreNodeDefineStatement& node) override;
 	void visit(PreNodeDefineCall& node) override;
-//	void visit(PreNodeMacroCall& node) override;
-//	void visit(PreNodeIterateMacro& node) override;
-//	void visit(PreNodeLiterateMacro& node) override;
-//	void visit(PreNodeIncrementer& node) override;
 
 	void visit(PreNodeProgram& node) override;
 
@@ -33,14 +29,14 @@ private:
 
 	void do_substitution(PreNodeLiteral& node);
 	std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
-	std::unique_ptr<PreNodeDefineStatement> get_define_definition(const PreNodeDefineHeader* define_header);
-	static std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> get_substitution_vector(PreNodeDefineHeader* definition, const PreNodeDefineHeader* call);
+	std::unique_ptr<PreNodeDefineStatement> get_define_definition(const PreNodeDefineHeader& define_header);
+	static std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> get_substitution_map(PreNodeDefineHeader& definition, const PreNodeDefineHeader& call);
 
 	/// returns substitute for current node.name, or nullptr if there is no substitute
 	std::stack<std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>>> m_substitution_stack;
 
 	std::unordered_set<std::string> m_defines_used;
-	bool check_recursion(const Token &tok) const;
+	void check_recursion(const Token &tok) const;
 
 	std::unordered_map<std::string, std::unique_ptr<PreNodeAST>> m_builtin_defines;
 	static std::unordered_map<std::string, std::unique_ptr<PreNodeAST>> get_builtin_defines();

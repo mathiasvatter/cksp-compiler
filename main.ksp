@@ -15,18 +15,19 @@ end struct
 // macro legato.load_arrays_per_slot(#n#)
 // 	array.copy(intervals, s#n#.intervals)
 // end macro
+literate_macro(update) on a, b, c
+macro update(#l#)
+	on ui_control (#l#)
+		message(#l#)
+	end on
+end macro
 
 on init
 	declare new_note
 	declare old_id
-	declare global_accent_preset[3,3]
-	iterate_macro(add_to_global_accent_menu(0, #n#)) := 0 to 31
 	outside_macro(new_note, old_id)
 end on
 
-macro add_to_global_accent_menu(id, #idx#)
-	global_accent_preset[id, #idx#] := v#idx#
-end macro
 
 macro outside_macro(note, old_note_id) 
 	message(note, old_note_id)

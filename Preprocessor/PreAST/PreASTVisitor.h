@@ -11,6 +11,7 @@ class PreASTVisitor {
 protected:
 	PreNodeProgram* m_program = nullptr;
 public:
+    explicit PreASTVisitor(PreNodeProgram* program) : m_program(program) {}
     virtual ~PreASTVisitor() = default;
     virtual void visit(PreNodeNumber& node) {};
     virtual void visit(PreNodeInt& node) {};
@@ -34,7 +35,7 @@ public:
         node.statement->accept(*this);
     };
     virtual void visit(PreNodeChunk& node) {
-        for(auto & n : node.chunk) {
+        for(const auto & n : node.chunk) {
             n->accept(*this);
         }
     };
@@ -54,10 +55,10 @@ public:
         node.define->accept(*this);
     };
     virtual void visit(PreNodeProgram& node) {
-        for(auto & def : node.define_statements) {
+        for(const auto & def : node.define_statements) {
             def->accept(*this);
         }
-        for(auto & n : node.program) {
+        for(const auto & n : node.program) {
             n->accept(*this);
         }
     };
@@ -89,7 +90,7 @@ public:
         node.counter->accept(*this);
         node.iterator_start->accept(*this);
         node.iterator_step->accept(*this);
-        for(auto &b : node.body) {
+        for(const auto &b : node.body) {
             b->accept(*this);
         }
     };

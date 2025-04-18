@@ -259,7 +259,7 @@ void PreNodeMacroCall::accept(PreASTVisitor &visitor) {
 
 PreNodeMacroCall::PreNodeMacroCall(const PreNodeMacroCall &other)
 : PreNodeAST(other), macro(clone_unique(other.macro)),
-is_iterate_macro(other.is_iterate_macro), num_env(clone_unique(other.num_env)) {
+is_iterate_macro(other.is_iterate_macro) {
     PreNodeMacroCall::set_child_parents();
 }
 

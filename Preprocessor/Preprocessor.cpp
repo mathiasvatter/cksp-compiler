@@ -34,20 +34,21 @@ void Preprocessor::process() {
         error.exit();
     }
     auto pre_ast = std::move(result_parse.unwrap());
-    PreASTPragma pragma;
-    pre_ast->accept(pragma);
-    m_output_path = pragma.get_output_path();
+    // PreASTPragma pragma;
+    // pre_ast->accept(pragma);
+    // m_output_path = pragma.get_output_path();
 
-	PreASTDefines defines;
+	PreASTDefines defines(pre_ast.get());
 	pre_ast->accept(defines);
+	m_output_path = pre_ast->output_path;
 
-    PreASTIncrementer incrementer;
+    PreASTIncrementer incrementer(pre_ast.get());
     pre_ast->accept(incrementer);
 
-    PreASTDesugar desugar;
+    PreASTDesugar desugar(pre_ast.get());
     pre_ast->accept(desugar);
 
-    PreASTCombine combine;
+    PreASTCombine combine(pre_ast.get());
     pre_ast->accept(combine);
 
     m_tokens = std::move(combine.m_tokens);

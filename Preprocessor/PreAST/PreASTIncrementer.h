@@ -8,6 +8,7 @@
 
 class PreASTIncrementer final : public PreASTVisitor {
 public:
+	explicit PreASTIncrementer(PreNodeProgram* program) : PreASTVisitor(program) {}
     void visit(PreNodeProgram& node) override;
     void visit(PreNodeNumber& node) override;
     void visit(PreNodeInt& node) override;
