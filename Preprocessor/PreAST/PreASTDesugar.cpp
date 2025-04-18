@@ -19,12 +19,12 @@ void PreASTDesugar::visit(PreNodeProgram& node) {
 }
 
 void PreASTDesugar::do_substitution(PreNodeLiteral& node) {
-	if(m_program->macro_call_stack.empty()) return;
+	// if(m_program->macro_call_stack.empty()) return;
 	if (!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.value.val)) {
 			node.replace_with(std::move(substitute));
 			return;
-		} else if(node.get_node_type() == PreNodeType::KEYWORD) {
+		} else if(node.cast<PreNodeKeyword>()) {
 			// in case there are more # substitutions in one word
 			if (count_char(node.value.val, '#') >= 2) {
 				node.value.val = get_text_replacement(node.value);
@@ -78,8 +78,8 @@ void PreASTDesugar::visit(PreNodeList& node) {
     }
 }
 
-bool PreASTDesugar::check_recursion(const Token &tok) {
-	if(m_macros_used.find(tok.val) != m_macros_used.end()) {
+bool PreASTDesugar::check_recursion(const Token &tok) const {
+	if(m_macros_used.contains(tok.val)) {
 		// recursive function call detected
 		auto error = CompileError(ErrorType::PreprocessorError, "", "", tok);
 		error.m_message = "Recursive macro call detected. Calling macros inside their definition is not allowed.";
@@ -96,7 +96,7 @@ void PreASTDesugar::visit(PreNodeMacroCall& node) {
 	m_program->macro_call_stack.push(&node);
     node.macro->accept(*this);
 
-    Token token_name = node.macro->name->value;
+    const Token token_name = node.macro->name->value;
 	check_recursion(token_name);
     // substitution
     auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
@@ -141,32 +141,26 @@ void PreASTDesugar::visit(PreNodeMacroHeader& node) {
 
 void PreASTDesugar::visit(PreNodeIterateMacro& node) {
     if(node.macro_call->params.size()>1) {
-        CompileError(ErrorType::PreprocessorError,"Found incorrect <iterate_macro> syntax.", -1, "", "", "").exit();
+    	auto error = CompileError(ErrorType::PreprocessorError,"",  "", node.to);
+    	error.m_message = "Found incorrect <iterate_macro> syntax.";
+    	error.exit();
     }
 
-    node.macro_call->params[0]->chunk.push_back(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, 0,""),nullptr));
+    node.macro_call->get_element(0)->add_chunk(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, 0,""),nullptr));
 
-//    node.macro_call->accept(*this);
     node.iterator_start->accept(*this);
     node.iterator_end->accept(*this);
     node.step->accept(*this);
 
     SimpleExprInterpreter eval(node.to.file, node.to.line);
     auto from_result = eval.parse_and_evaluate(std::move(node.iterator_start->chunk));
-    if(from_result.is_error()) {
-        from_result.get_error().print();
-        exit(EXIT_FAILURE);
-    }
-    auto to_result = eval.parse_and_evaluate(std::move(node.iterator_end->chunk));
-    if(to_result.is_error()) {
-        to_result.get_error().print();
-        exit(EXIT_FAILURE);
-    }
-    auto step_result = eval.parse_and_evaluate(std::move(node.step->chunk));
-    if(step_result.is_error()) {
-        step_result.get_error().print();
-        exit(EXIT_FAILURE);
-    }
+    if(from_result.is_error()) from_result.get_error().exit();
+
+	auto to_result = eval.parse_and_evaluate(std::move(node.iterator_end->chunk));
+    if(to_result.is_error()) to_result.get_error().exit();
+
+	auto step_result = eval.parse_and_evaluate(std::move(node.step->chunk));
+    if(step_result.is_error()) step_result.get_error().exit();
 
     int from = from_result.unwrap();
     int to = to_result.unwrap();
@@ -188,30 +182,40 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
         node_number_chunk->chunk.push_back(std::move(node_statement));
 		auto node_number_chunk_macro_arg = clone_as<PreNodeChunk>(node_number_chunk.get());
 
-        substitution_vector.push_back(std::pair("#n#", std::move(node_number_chunk)));
+        substitution_vector.emplace_back(std::pair("#n#", std::move(node_number_chunk)));
         m_substitution_stack.push(std::move(substitution_vector));
 
         auto macro_call = node.macro_call->params[0]->clone();
-        macro_call->update_parents(node_new_chunk.get());
+        // macro_call->update_parents(node_new_chunk.get());
 
 		// if is real macro call, add #n# to its arguments
-		if (auto node_chunk = safe_cast<PreNodeChunk>(macro_call.get(), PreNodeType::CHUNK)) {
-			if (auto node_stmt = safe_cast<PreNodeStatement>(node_chunk->chunk[0].get(), PreNodeType::STATEMENT)) {
-				if(auto node_macro_call = safe_cast<PreNodeMacroCall>(node_stmt->statement.get(), PreNodeType::MACRO_CALL)) {
+    	PreNodeMacroCall* node_macro_call = nullptr;
+		if (auto node_chunk = macro_call->cast<PreNodeChunk>()) {
+			if (auto node_stmt = node_chunk->chunk[0]->cast<PreNodeStatement>()) {
+				node_macro_call = node_stmt->statement->cast<PreNodeMacroCall>();
+				if(node_macro_call) {
 					if(get_macro_definition(node_macro_call->macro.get())) {
-						node_macro_call->macro->args->params.push_back(std::move(node_number_chunk_macro_arg));
-						node_macro_call->macro->args->update_parents(node_macro_call->macro.get());
+						// if #n# is not already an arg, add it
+						if (node_macro_call->macro->get_arg("#n#") == -1) {
+							node_macro_call->macro->add_arg(std::move(node_number_chunk_macro_arg));
+						}
 					}
 				}
 			}
 		}
 
-        macro_call->accept(*this);
-        node_new_chunk->chunk.push_back(std::move(macro_call));
+    	// skip the call and visit the header to replace #n#
+    	if (node_macro_call) {
+    		node_macro_call->macro->accept(*this);
+    	} else {
+    		macro_call->accept(*this);
+    	}
         m_substitution_stack.pop();
 
+        node_new_chunk->add_chunk(std::move(macro_call));
         if(node.to.type == token::DOWNTO) i-=step; else i+=step;
     }
+	node_new_chunk->accept(*this);
     node.replace_with(std::move(node_new_chunk));
 }
 
@@ -220,7 +224,7 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
         CompileError(ErrorType::PreprocessorError,"Found incorrect <literate_macro> syntax.", -1, "", "", "").exit();
     }
 
-    node.macro_call->params[0]->chunk.push_back(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, 0, ""),nullptr));
+    node.macro_call->get_element(0)->add_chunk(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, 0, ""),nullptr));
 
 	node.literate_tokens->accept(*this);
 	// if literate_tokens was define call then there are still comma (PreNodeOther) in there. Filter out!
@@ -249,7 +253,6 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
         m_substitution_stack.push(std::move(substitution_vector));
 
         auto macro_call = node.macro_call->params[0]->clone();
-        macro_call->update_parents(node_new_chunk.get());
         macro_call->accept(*this);
         node_new_chunk->chunk.push_back(std::move(macro_call));
         m_substitution_stack.pop();
@@ -258,7 +261,7 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
     node.replace_with(std::move(node_new_chunk));
 }
 
-std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar::get_substitution_vector(PreNodeMacroHeader* definition, PreNodeMacroHeader* call) {
+std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar::get_substitution_vector(PreNodeMacroHeader* definition, const PreNodeMacroHeader* call) {
 	std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
 	for(int i= 0; i<definition->args->params.size(); i++) {
 		auto &var = definition->args->params[i]->chunk[0];
@@ -277,17 +280,17 @@ std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar
 }
 
 std::unique_ptr<PreNodeMacroDefinition> PreASTDesugar::get_macro_definition(PreNodeMacroHeader *macro_header) {
-    auto it = m_macro_lookup.find({macro_header->name->value.val, (int)macro_header->args->params.size()});
+    const auto it = m_macro_lookup.find({macro_header->name->value.val, (int)macro_header->args->params.size()});
     if(it != m_macro_lookup.end()) {
         auto copy = clone_as<PreNodeMacroDefinition>(it->second);
-        copy->update_parents(nullptr);
+        // copy->update_parents(nullptr);
         return copy;
     }
 	// if macro call has no arguments (literate or iterate) and therefore does not match its original definition
-	auto it2 = m_macro_string_lookup.find(macro_header->name->value.val);
+	const auto it2 = m_macro_string_lookup.find(macro_header->name->value.val);
 	if(it2 != m_macro_string_lookup.end()) {
 		auto copy = clone_as<PreNodeMacroDefinition>(it2->second);
-		copy->update_parents(nullptr);
+		// copy->update_parents(nullptr);
 		return copy;
 	}
 

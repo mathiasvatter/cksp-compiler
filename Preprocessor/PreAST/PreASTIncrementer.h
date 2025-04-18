@@ -6,7 +6,7 @@
 
 #include "PreASTVisitor.h"
 
-class PreASTIncrementer : public PreASTVisitor {
+class PreASTIncrementer final : public PreASTVisitor {
 public:
     void visit(PreNodeProgram& node) override;
     void visit(PreNodeNumber& node) override;
@@ -29,5 +29,5 @@ private:
 	PreNodeInt* get_substitute(const std::string& name);
 	/// returns step value of counter_var in m_incrementer_stack -> will return 0 if not found
 	int32_t get_step_value(const std::string& name);
-    bool update_last_incrementer_var(PreNodeAST* node, PreNodeInt* substitute, const std::string& node_val, size_t node_line);
+    bool update_last_incrementer_var(const PreNodeAST* node, PreNodeInt* substitute, const std::string& node_val, size_t node_line);
 };

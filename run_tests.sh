@@ -19,7 +19,7 @@ FILES=(
   "/Users/mathias/Scripting/ro-ki/rho_des.ksp"
   "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp"
 # "/Users/mathias/Scripting/preset-system/main.ksp"
-#  "/Users/Mathias/Scripting/the-score/the-score-lead.ksp"
+  "/Users/Mathias/Scripting/the-score/the-score-lead.ksp"
   "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp"
   "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp"
   "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp"
