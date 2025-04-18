@@ -6,6 +6,7 @@
 #include "../../misc/PathHandler.h"
 
 void PreASTPragma::visit(PreNodeProgram& node) {
+    m_program = &node;
     for(auto & n : node.program) {
         n->accept(*this);
     }
@@ -14,9 +15,12 @@ void PreASTPragma::visit(PreNodeProgram& node) {
 void PreASTPragma::visit(PreNodePragma& node) {
     auto option = node.option->get_string();
     auto token = node.option->value;
-    auto it = m_pragma_directives.find(option);
-    if(it == m_pragma_directives.end()) {
-        CompileError(ErrorType::PreprocessorError, "Found unknown #pragma option.", token.line, "valid option.",option, token.file).exit();
+    if(auto it = m_pragma_directives.find(option); it == m_pragma_directives.end()) {
+        auto error = CompileError(ErrorType::PreprocessorError, "", "", token);
+        error.m_message = "Found unknown <#pragma> option.";
+        error.m_expected = "valid <#pragma> option.";
+        error.m_got = option;
+        error.exit();
     }
     auto argument = node.argument->value.val;
     std::string current_file = node.argument->value.file;
@@ -35,12 +39,8 @@ void PreASTPragma::visit(PreNodePragma& node) {
 			if(valid_output_path.is_error()) {
 				valid_output_path.get_error().exit();
 			}
-			m_output_path = valid_output_path.unwrap();
+			m_program->output_path = valid_output_path.unwrap();
         }
     }
 
-}
-
-const std::string &PreASTPragma::get_output_path() const {
-    return m_output_path;
 }

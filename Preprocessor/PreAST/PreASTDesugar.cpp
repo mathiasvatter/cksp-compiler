@@ -4,7 +4,6 @@
 
 #include "PreASTDesugar.h"
 #include "../../Interpreter/SimpleExprInterpreter.h"
-#include <iterator>
 
 void PreASTDesugar::visit(PreNodeProgram& node) {
     m_program = &node;
@@ -13,7 +12,7 @@ void PreASTDesugar::visit(PreNodeProgram& node) {
         m_macro_lookup.insert({{def->header->name->value.val, (int)def->header->args->params.size()}, def.get()});
 		m_macro_string_lookup.insert({def->header->name->value.val, def.get()});
     }
-    for(auto & n : node.program) {
+    for(const auto & n : node.program) {
         n->accept(*this);
     }
 }
@@ -23,7 +22,6 @@ void PreASTDesugar::do_substitution(PreNodeLiteral& node) {
 	if (!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.value.val)) {
 			node.replace_with(std::move(substitute));
-			return;
 		} else if(node.cast<PreNodeKeyword>()) {
 			// in case there are more # substitutions in one word
 			if (count_char(node.value.val, '#') >= 2) {
@@ -78,16 +76,14 @@ void PreASTDesugar::visit(PreNodeList& node) {
     }
 }
 
-bool PreASTDesugar::check_recursion(const Token &tok) const {
+void PreASTDesugar::check_recursion(const Token &tok) const {
 	if(m_macros_used.contains(tok.val)) {
 		// recursive function call detected
 		auto error = CompileError(ErrorType::PreprocessorError, "", "", tok);
 		error.m_message = "Recursive macro call detected. Calling macros inside their definition is not allowed.";
 		error.m_got = tok.val;
 		error.exit();
-		return true;
 	}
-	return false;
 }
 
 void PreASTDesugar::visit(PreNodeMacroCall& node) {
@@ -102,30 +98,35 @@ void PreASTDesugar::visit(PreNodeMacroCall& node) {
     auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
 
 	// see if parent is iterate or literate -> ignore amount of parameters then
-    if(auto node_macro_definition = get_macro_definition(node.macro.get())) {
+    if(const auto def = get_macro_definition(*node.macro)) {
+    	const auto macro_definition = clone_as<PreNodeMacroDefinition>(def);
         m_macros_used.insert(token_name.val);
-        node_macro_definition->parent = node.parent;
-		if(!node.macro->args->params.empty()) {
-			auto substitution_vec = get_substitution_vector(node_macro_definition->header.get(), node.macro.get());
+        // macro_definition->parent = node.parent;
+		if(node.macro->has_args()) {
+			auto substitution_vec = get_substitution_map(*macro_definition->header, *node.macro);
 			m_substitution_stack.push(std::move(substitution_vec));
 		} else {
         // if parent is literate -> replace #l# in substitution vector with first arg of macro
-            if(node.macro->args->params.empty() and node_macro_definition->header->args->params.size() == 1) {
+            if(!node.macro->has_args() and macro_definition->header->num_args() == 1) {
                 if(!m_substitution_stack.empty()) {
-                    for(auto &subst : m_substitution_stack.top()) {
-                        if(subst.first == "#l#") {
-                            subst.first = node_macro_definition->header->args->params[0]->get_string();
-                        }
-                    }
+                	auto& top_map = m_substitution_stack.top();
+                	// replace #l# with first arg of macro if first arg of macro is not already #l#
+                	const auto first_arg = macro_definition->header->get_arg(0)->get_chunk(0)->get_string();
+                	if (first_arg != "#l#") {
+		                if (const auto it = top_map.find("#l#"); it != top_map.end()) {
+                			top_map[first_arg] = std::move(it->second);
+                			top_map.erase(it);
+                		}
+                	}
 				}
             }
         }
 
-        node_macro_definition->body->accept(*this);
-        node_new_chunk = std::move(node_macro_definition->body);
+        macro_definition->body->accept(*this);
+        node_new_chunk = std::move(macro_definition->body);
 
-        node_new_chunk->parent = node.parent;
-		if(!node.macro->args->params.empty()) {
+        // node_new_chunk->parent = node.parent;
+		if(node.macro->has_args()) {
 			m_substitution_stack.pop();
 		}
         m_macros_used.erase(token_name.val);
@@ -169,7 +170,6 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
     auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
     int i = from;
     while(node.to.type == token::DOWNTO ? i >= to : i <= to) {
-        std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
         auto node_number_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
         auto node_statement = std::make_unique<PreNodeStatement>(
 			std::make_unique<PreNodeNumber>(
@@ -179,11 +179,12 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
 			 ),
 		 	nullptr
 		);
-        node_number_chunk->chunk.push_back(std::move(node_statement));
+        node_number_chunk->add_chunk(std::move(node_statement));
 		auto node_number_chunk_macro_arg = clone_as<PreNodeChunk>(node_number_chunk.get());
 
-        substitution_vector.emplace_back(std::pair("#n#", std::move(node_number_chunk)));
-        m_substitution_stack.push(std::move(substitution_vector));
+        std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> subst_map;
+        subst_map.insert({"#n#", std::move(node_number_chunk)});
+        m_substitution_stack.push(std::move(subst_map));
 
         auto macro_call = node.macro_call->params[0]->clone();
         // macro_call->update_parents(node_new_chunk.get());
@@ -194,7 +195,7 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
 			if (auto node_stmt = node_chunk->chunk[0]->cast<PreNodeStatement>()) {
 				node_macro_call = node_stmt->statement->cast<PreNodeMacroCall>();
 				if(node_macro_call) {
-					if(get_macro_definition(node_macro_call->macro.get())) {
+					if(get_macro_definition(*node_macro_call->macro)) {
 						// if #n# is not already an arg, add it
 						if (node_macro_call->macro->get_arg("#n#") == -1) {
 							node_macro_call->macro->add_arg(std::move(node_number_chunk_macro_arg));
@@ -238,7 +239,6 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
 
     auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
     for (int i = 0; i<node.literate_tokens->chunk.size(); i++) {
-        std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
         auto node_number_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
         auto node_number_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INT, std::to_string(i), 0, 0,""),nullptr), nullptr);
         node_number_chunk->chunk.push_back(std::move(node_number_statement));
@@ -248,9 +248,10 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
         auto node_literate_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
         node_literate_chunk->chunk.push_back(std::move(node_literate_statement));
 
-        substitution_vector.emplace_back("#l#", std::move(node_literate_chunk));
-        substitution_vector.emplace_back("#n#", std::move(node_number_chunk));
-        m_substitution_stack.push(std::move(substitution_vector));
+        std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> subst_map;
+        subst_map.insert({"#l#", std::move(node_literate_chunk)});
+        subst_map.insert({"#n#", std::move(node_number_chunk)});
+        m_substitution_stack.push(std::move(subst_map));
 
         auto macro_call = node.macro_call->params[0]->clone();
         macro_call->accept(*this);
@@ -261,71 +262,66 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
     node.replace_with(std::move(node_new_chunk));
 }
 
-std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> PreASTDesugar::get_substitution_vector(PreNodeMacroHeader* definition, const PreNodeMacroHeader* call) {
-	std::vector<std::pair<std::string, std::unique_ptr<PreNodeChunk>>> substitution_vector;
-	for(int i= 0; i<definition->args->params.size(); i++) {
-		auto &var = definition->args->params[i]->chunk[0];
-		if(definition->args->params[i]->chunk.size() > 1) {
-			auto err_msg = "Unable to substitute <macro> arguments. Found wrong number of substitution tokens in <macro-header>. Only <keywords> or <numbers> can be substituted.";
-			auto error = CompileError(ErrorType::SyntaxError, "", definition->name->value.line, "", definition->get_string(),definition->name->value.file);
-			error.set_message(err_msg);
+std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDesugar::get_substitution_map(PreNodeMacroHeader& definition, const PreNodeMacroHeader& call) {
+	std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> map;
+	map.reserve(definition.num_args());
+	for(int i= 0; i<definition.num_args(); i++) {
+		const auto &var = definition.args->params[i]->chunk[0];
+		if(definition.args->params[i]->chunk.size() > 1) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", definition.name->value);
+			error.m_message = "Unable to substitute <macro> arguments. Found wrong number of substitution tokens in <macro-header>. Only <keywords> or <numbers> can be substituted.";
+			error.m_expected = "<keyword> or <number>";
+			error.m_got = definition.get_string();
 			error.exit();
 		}
-		std::pair<std::string, std::unique_ptr<PreNodeChunk>> pair;
-		pair.first = var->get_string();
-		pair.second = std::move(call->args->params[i]);
-		substitution_vector.push_back(std::move(pair));
+		map[var->get_string()] = std::move(call.args->params[i]);
 	}
-	return substitution_vector;
+	return map;
 }
 
-std::unique_ptr<PreNodeMacroDefinition> PreASTDesugar::get_macro_definition(PreNodeMacroHeader *macro_header) {
-    const auto it = m_macro_lookup.find({macro_header->name->value.val, (int)macro_header->args->params.size()});
+PreNodeMacroDefinition* PreASTDesugar::get_macro_definition(const PreNodeMacroHeader& macro_header) {
+    const auto it = m_macro_lookup.find({macro_header.name->value.val, (int)macro_header.args->params.size()});
     if(it != m_macro_lookup.end()) {
-        auto copy = clone_as<PreNodeMacroDefinition>(it->second);
-        // copy->update_parents(nullptr);
-        return copy;
+        return it->second;
     }
 	// if macro call has no arguments (literate or iterate) and therefore does not match its original definition
-	const auto it2 = m_macro_string_lookup.find(macro_header->name->value.val);
+	const auto it2 = m_macro_string_lookup.find(macro_header.name->value.val);
 	if(it2 != m_macro_string_lookup.end()) {
-		auto copy = clone_as<PreNodeMacroDefinition>(it2->second);
-		// copy->update_parents(nullptr);
-		return copy;
+		return it2->second;
 	}
 
     return nullptr;
 }
 
 std::unique_ptr<PreNodeAST> PreASTDesugar::get_substitute(const std::string& name) {
-    for (auto &pair: m_substitution_stack.top()) {
-        if (pair.first == name) {
-            return pair.second->clone();
-        }
-    }
-    return nullptr;
+	if(m_substitution_stack.empty()) return nullptr;
+	const auto & map = m_substitution_stack.top();
+	if(const auto it = map.find(name); it != map.end()) {
+		return it->second->clone();
+	}
+	return nullptr;
 }
 
 std::string PreASTDesugar::get_text_replacement(const Token& name) {
 	// Zähle einmalig die Anzahl der '#' im Token
-	auto replacements = count_char(name.val, '#');
-	if (replacements % 2 != 0) {
-		CompileError(ErrorType::PreprocessorError,
-					 "Found wrong number of # in macro replacement", name.line, "", name.val, name.file).exit();
+	if (count_char(name.val, '#') % 2 != 0) {
+		auto error = CompileError(ErrorType::PreprocessorError,
+					 "", "", name);
+		error.set_message("Found wrong number of # in macro replacement.");
+		error.exit();
 	}
 	std::string result = name.val;
 	// Iteriere durch die Substitutionen
 	const auto& substitutions = m_substitution_stack.top();
-	for (const auto& replacement : substitutions) {
+	for (const auto&[fst, snd] : substitutions) {
 		// Führe einen frühen Check durch, um zu sehen, ob replacement.first überhaupt qualifiziert ist
-		if (replacement.first.front() == '#' && replacement.first.back() == '#' &&
-			replacements % 2 == 0) {
+		if (fst.front() == '#' && fst.back() == '#') {
 			size_t start = 0;
-			const std::string& replace_with = replacement.second->chunk[0]->get_string();
+			const std::string& replace_with = snd->get_chunk(0)->get_string();
 
 			// Verwende result.find und result.replace direkt, ohne den String mehrfach zu verändern
-			while ((start = result.find(replacement.first, start)) != std::string::npos) {
-				result.replace(start, replacement.first.length(), replace_with);
+			while ((start = result.find(fst, start)) != std::string::npos) {
+				result.replace(start, fst.length(), replace_with);
 				start += replace_with.length();
 			}
 		}
