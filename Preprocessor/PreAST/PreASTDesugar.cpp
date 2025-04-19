@@ -18,7 +18,6 @@ void PreASTDesugar::visit(PreNodeProgram& node) {
 }
 
 void PreASTDesugar::do_substitution(PreNodeLiteral& node) {
-	// if(m_program->macro_call_stack.empty()) return;
 	if (!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.value.val)) {
 			node.replace_with(std::move(substitute));
