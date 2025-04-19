@@ -306,9 +306,7 @@ private:
 		if(m_substitution_stack.empty()) return nullptr;
 		const auto & map = m_substitution_stack.top();
 		if(const auto it = map.find(name); it != map.end()) {
-			auto substitute = it->second->clone();
-			substitute->update_parents(nullptr);
-			return substitute;
+			return it->second->clone();
 		}
 		return nullptr;
 	}

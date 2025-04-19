@@ -896,12 +896,6 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 			is_compatible = false;
 		error.m_message += "Please use real() and int() to use <Real> and <Integer> numbers in a single expression.";
 
-		// some operators are only int:
-		if (node.op == token::MODULO) {
-			if(is_compatible) node.ty = TypeRegistry::Integer;
-
-		}
-
 	} else if (contains(BITWISE_TOKENS, node.op)) {
 		node.ty = TypeRegistry::Integer;
 		is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);

@@ -67,8 +67,8 @@ public:
 	//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
-		input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
+		input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
 		// input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
 	    // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 	// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
@@ -106,7 +106,6 @@ public:
 		tokens = std::move(imports.get_token_vector());
 
 		compile_time.stop("Import");
-		std::cout << compile_time.print_timer("Import") << "\n";
 		compile_time.start("Preprocessor");
 
 		Preprocessor preprocessor(tokens);
@@ -125,6 +124,7 @@ public:
 		std::filesystem::path curr_path = __FILE__;
 
 		compile_time.stop("Preprocessor");
+		std::cout << compile_time.print_timer("Import") << "\n";
 		std::cout << compile_time.print_timer("Preprocessor") << "\n";
 		compile_time.start("Parsing");
 
@@ -147,8 +147,7 @@ public:
 
 		compile_time.stop("Desugaring");
 		std::cout << compile_time.print_timer("Desugaring") << "\n";
-		compile_time.start("Variable Checking");
-		ast->debug_print();
+		compile_time.start("Lexical Scope");
 
 		ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
@@ -158,8 +157,8 @@ public:
 		UniqueArrayNamesProvider unique_names_provider(m_program);
 		unique_names_provider.do_renaming(*m_program);
 
-		compile_time.stop("Variable Checking");
-		std::cout << compile_time.print_timer("Variable Checking") << "\n";
+		compile_time.stop("Lexical Scope");
+		std::cout << compile_time.print_timer("Lexical Scope") << "\n";
 		compile_time.start("Semantic Analysis");
 
 		ASTSemanticAnalysis data_structures(ast.get());
@@ -219,15 +218,16 @@ public:
 
 		compile_time.stop("Data Structure Lowering");
 		std::cout << compile_time.print_timer("Data Structure Lowering") << "\n";
-		compile_time.start("Variable Checking 1");
+		compile_time.start("Variable Checking");
+		ast->debug_print();
 
 		variable_checking.do_reachable_traversal(*ast, true);
 		ast->remove_references();
 		ast->collect_references();
 		infer_types.do_reachable_traversal(*ast);
 
-		compile_time.stop("Variable Checking 1");
-		std::cout << compile_time.print_timer("Variable Checking 1") << "\n";
+		compile_time.stop("Variable Checking");
+		std::cout << compile_time.print_timer("Variable Checking") << "\n";
 		compile_time.start("Global Scope");
 
 		// first pass to analyze dynamic extend within function definitions and replace with passive_vars

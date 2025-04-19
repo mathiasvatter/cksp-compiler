@@ -6,6 +6,8 @@
 #include "../../Interpreter/SimpleExprInterpreter.h"
 #include <sstream>
 
+#include "PreASTPragma.h"
+
 void PreASTDefines::visit(PreNodeProgram& node) {
 	m_program = &node;
 	for(const auto & def : node.define_statements) {
@@ -13,13 +15,17 @@ void PreASTDefines::visit(PreNodeProgram& node) {
 	}
 
 	m_builtin_defines = get_builtin_defines();
-	for(auto & def : node.define_statements) {
+	for(const auto & def : node.define_statements) {
 		def->accept(*this);
 	}
-	for(auto & n : node.program) {
+	for(const auto & n : node.program) {
 		n->accept(*this);
 	}
+}
 
+void PreASTDefines::visit(PreNodePragma &node) {
+	static PreASTPragma pragma(m_program);
+	node.accept(pragma);
 }
 
 void PreASTDefines::do_substitution(PreNodeLiteral& node) {
@@ -28,7 +34,6 @@ void PreASTDefines::do_substitution(PreNodeLiteral& node) {
 		if (auto substitute = get_substitute(node.value.val)) {
 //			substitute->update_token_data(tok);
 			node.replace_with(std::move(substitute));
-			return;
 		}
 	}
 }
@@ -54,7 +59,7 @@ void PreASTDefines::visit(PreNodeKeyword& node) {
 }
 
 std::unique_ptr<PreNodeAST> PreASTDefines::get_builtin_define(const std::string& keyword) {
-	auto it = m_builtin_defines.find(keyword);
+	const auto it = m_builtin_defines.find(keyword);
 	if(it != m_builtin_defines.end()) {
 		return it->second->clone();
 	}
@@ -89,39 +94,36 @@ void PreASTDefines::visit(PreNodeDefineStatement& node) {
 	SimpleExprInterpreter eval("", 0);
 	auto eval_result = eval.parse_and_evaluate(std::move(node_body->chunk));
 	if(!eval_result.is_error()) {
-		Token tok = Token(token::INT, std::to_string(eval_result.unwrap()), 0, 0,"");
+		auto tok = Token(token::INT, std::to_string(eval_result.unwrap()), 0, 0,"");
 		auto int_token = std::make_unique<PreNodeInt>(eval_result.unwrap(), tok, nullptr);
 		auto node_statement = std::make_unique<PreNodeStatement>(std::move(int_token), nullptr);
-		node_statement->update_parents(&node);
 		node.body->chunk.clear();
-		node.body->chunk.push_back(std::move(node_statement));
+		node.body->add_chunk(std::move(node_statement));
 	}
 }
 
-bool PreASTDefines::check_recursion(const Token &tok) {
-	if(m_defines_used.find(tok.val) != m_defines_used.end()) {
+void PreASTDefines::check_recursion(const Token &tok) const {
+	if(m_defines_used.contains(tok.val)) {
 		// recursive function call detected
 		auto error = CompileError(ErrorType::PreprocessorError, "", "", tok);
-		error.m_message = "Recursive define call detected. Calling defines inside their definition is not allowed.";
+		error.m_message = "Recursive <define> call detected. Calling <defines> inside their definition is not allowed.";
 		error.m_got = tok.val;
 		error.exit();
-		return true;
 	}
-	return false;
 }
 
 void PreASTDefines::visit(PreNodeDefineCall& node) {
-	Token token_name = node.define->name->value;
+	const Token token_name = node.define->name->value;
 	check_recursion(token_name);
 
 	node.define->accept(*this);
 	//substitution
 	auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
-	if( auto node_define_definition = get_define_definition(node.define.get())) {
+	if( auto node_define_definition = get_define_definition(*node.define)) {
 		m_defines_used.insert(token_name.val);
 		m_program->define_call_stack.push(node_define_definition.get());
 		node_define_definition->parent = node.parent;
-		auto substitution_vec = get_substitution_vector(node_define_definition->header.get(), node.define.get());
+		auto substitution_vec = get_substitution_map(*node_define_definition->header, *node.define);
 		m_substitution_stack.push(std::move(substitution_vec));
 		node_define_definition->body->accept(*this);
 		node_new_chunk = std::move(node_define_definition->body);
@@ -133,12 +135,10 @@ void PreASTDefines::visit(PreNodeDefineCall& node) {
 	node.replace_with(std::move(node_new_chunk));
 }
 
-std::unique_ptr<PreNodeDefineStatement> PreASTDefines::get_define_definition(PreNodeDefineHeader *define_header) {
-	auto it = m_define_lookup.find(define_header->name->value.val);
+std::unique_ptr<PreNodeDefineStatement> PreASTDefines::get_define_definition(const PreNodeDefineHeader& define_header) {
+	const auto it = m_define_lookup.find(define_header.name->value.val);
 	if(it != m_define_lookup.end()) {
-		auto copy = clone_as<PreNodeDefineStatement>(it->second);
-		copy->update_parents(nullptr);
-		return copy;
+		return clone_as<PreNodeDefineStatement>(it->second);
 	}
 	return nullptr;
 }
@@ -152,20 +152,19 @@ std::unique_ptr<PreNodeAST> PreASTDefines::get_substitute(const std::string& nam
 	return nullptr;
 }
 
-std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDefines::get_substitution_vector(PreNodeDefineHeader* definition, PreNodeDefineHeader* call) {
-	std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> substitution_vector;
-	for(int i= 0; i<definition->args->params.size(); i++) {
-		auto &var = definition->args->params[i]->chunk[0];
-		if(definition->args->params[i]->chunk.size() > 1) {
-			CompileError(ErrorType::SyntaxError,
-			 "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>", definition->name->value.line, "", definition->get_string(),definition->name->value.file).exit();
+std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDefines::get_substitution_map(PreNodeDefineHeader& definition, const PreNodeDefineHeader& call) {
+	std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> map;
+	for(int i= 0; i<definition.num_args(); i++) {
+		const auto &var = definition.get_arg(i)->get_chunk(0);
+		if(definition.get_arg(i)->num_chunks() > 1) {
+			auto error = CompileError(ErrorType::SyntaxError,"", "", definition.name->value);
+			error.m_message = "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>.";
+			error.m_got = definition.get_string();
+			error.exit();
 		}
-		std::pair<std::string, std::unique_ptr<PreNodeChunk>> pair;
-		pair.first = var->get_string();
-		pair.second = std::move(call->args->params[i]);
-		substitution_vector.insert(std::move(pair));
+		map[var->get_string()] = std::move(call.args->params[i]);
 	}
-	return substitution_vector;
+	return map;
 }
 
 std::unordered_map<std::string, std::unique_ptr<PreNodeAST>> PreASTDefines::get_builtin_defines() {

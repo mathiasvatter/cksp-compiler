@@ -6,15 +6,15 @@
 
 #include "Preprocessor.h"
 
-class PreprocessorConditions : public Processor {
+class PreprocessorConditions final : public Processor {
 public:
-    PreprocessorConditions(std::vector<Token> tokens);
+    explicit PreprocessorConditions(std::vector<Token> tokens);
     Result<SuccessTag> process_conditions();
 
 private:
 
     bool is_beginning_of_line_keyword(const std::vector<Token>& tok, token token);
-    bool is_builtin_condition(const Token& token);
+    static bool is_builtin_condition(const Token& token);
     bool is_condition_definition(const std::vector<Token>& tok, const Token& pk, token token_type);
 	void reset_condition(const Token& condition);
 
