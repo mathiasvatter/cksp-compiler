@@ -12,21 +12,36 @@ struct List
 	end function
 end struct
 
-macro legato.load_arrays_per_slot(#n#)
-	array.copy(intervals, s#n#.intervals)
+// macro legato.load_arrays_per_slot(#n#)
+// 	array.copy(intervals, s#n#.intervals)
+// end macro
+literate_macro(update) on a, b, c
+macro update(#l#)
+	on ui_control (#l#)
+		message(#l#)
+	end on
 end macro
 
 on init
-	iterate_macro(legato.load_arrays_per_slot) := 0 to 4-1
-end on
-
-on note
-	// scale.next := List(EVENT_NOTE, List(EVENT_NOTE, nil))
-	// scale := scale.next
-	// message(lbl_lbl[0,0])	
+	declare new_note
+	declare old_id
+	outside_macro(new_note, old_id)
 end on
 
 
+macro outside_macro(note, old_note_id) 
+	message(note, old_note_id)
+	iterate_macro(inside_macro(#n#, note, old_note_id)) := 0 to 10
+	iterate_macro(inside_macro2(old_note_id, #n#)) := 0 to 10
+end macro
+
+macro inside_macro(#n#, note, old_note_id)
+	message(#n#, note, old_note_id)
+end macro
+
+macro inside_macro2(old_note_id, #idx#)
+	message(#idx#, old_note_id)
+end macro
 
 
 

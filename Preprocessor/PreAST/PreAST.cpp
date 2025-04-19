@@ -39,6 +39,12 @@ std::unique_ptr<PreNodeAST> PreNodeInt::clone() const {
 void PreNodeUnaryExpr::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+PreNodeUnaryExpr::PreNodeUnaryExpr(const PreNodeUnaryExpr &other)
+: PreNodeAST(other), op(other.op), operand(clone_unique(other.operand)) {
+    PreNodeUnaryExpr::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeUnaryExpr::clone() const {
     return std::make_unique<PreNodeUnaryExpr>(*this);
 }
@@ -52,6 +58,13 @@ void PreNodeUnaryExpr::replace_child(PreNodeAST* oldChild, std::unique_ptr<PreNo
 void PreNodeBinaryExpr::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+PreNodeBinaryExpr::PreNodeBinaryExpr(const PreNodeBinaryExpr &other)
+: PreNodeAST(other), left(clone_unique(other.left)),
+right(clone_unique(other.right)), op(other.op) {
+    PreNodeBinaryExpr::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeBinaryExpr::clone() const {
     return std::make_unique<PreNodeBinaryExpr>(*this);
 }
@@ -91,6 +104,13 @@ std::unique_ptr<PreNodeAST> PreNodeDeadCode::clone() const {
 void PreNodePragma::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+PreNodePragma::PreNodePragma(const PreNodePragma &other)
+: PreNodeAST(other), option(clone_unique(other.option)),
+argument(clone_unique(other.argument)) {
+    PreNodePragma::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodePragma::clone() const {
     return std::make_unique<PreNodePragma>(*this);
 }
@@ -99,6 +119,12 @@ std::unique_ptr<PreNodeAST> PreNodePragma::clone() const {
 void PreNodeStatement::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+PreNodeStatement::PreNodeStatement(const PreNodeStatement &other)
+: PreNodeAST(other), statement(clone_unique(other.statement)) {
+    PreNodeStatement::set_child_parents();
+}
+
 void PreNodeStatement::replace_child(PreNodeAST* oldChild, std::unique_ptr<PreNodeAST> newChild) {
     if (statement.get() == oldChild) {
         statement = std::move(newChild);
@@ -113,6 +139,12 @@ std::unique_ptr<PreNodeAST> PreNodeStatement::clone() const {
 void PreNodeChunk::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+PreNodeChunk::PreNodeChunk(const PreNodeChunk &other): PreNodeAST(other),
+chunk(clone_vector(other.chunk)) {
+    PreNodeChunk::set_child_parents();
+}
+
 void PreNodeChunk::replace_child(PreNodeAST* oldChild, std::unique_ptr<PreNodeAST> newChild) {
     for (auto& c : chunk) {
         if (c.get() == oldChild) {
@@ -125,10 +157,37 @@ std::unique_ptr<PreNodeAST> PreNodeChunk::clone() const {
     return std::make_unique<PreNodeChunk>(*this);
 }
 
+void PreNodeChunk::flatten() {
+    std::vector<std::unique_ptr<PreNodeAST>> temp;
+    temp.reserve(chunk.size()); // Speicherreservierung um unnötige Allokationen zu vermeiden
+
+    for (auto& i : chunk) {
+        if (const auto node_statement = i->cast<PreNodeStatement>()) {
+            if (const auto node_chunk = node_statement->statement->cast<PreNodeChunk>()) {
+                // Fügen Sie die inneren Statements zum temporären Vector hinzu
+                auto& inner_chunk = node_chunk->chunk;
+                temp.insert(temp.end(),
+                            std::make_move_iterator(inner_chunk.begin()),
+                            std::make_move_iterator(inner_chunk.end()));
+                continue; // Weiter zur nächsten Iteration
+            }
+        }
+        // Fügen Sie das aktuelle Element zum temporären Vector hinzu
+        temp.push_back(std::move(i));
+    }
+    chunk = std::move(temp);
+}
+
 // ************* PreNodeList *************
 void PreNodeList::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+PreNodeList::PreNodeList(const PreNodeList &other): PreNodeAST(other),
+params(clone_vector(other.params)) {
+    PreNodeList::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeList::clone() const {
     return std::make_unique<PreNodeList>(*this);
 }
@@ -137,6 +196,13 @@ std::unique_ptr<PreNodeAST> PreNodeList::clone() const {
 void PreNodeMacroHeader::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+PreNodeMacroHeader::PreNodeMacroHeader(const PreNodeMacroHeader &other)
+: PreNodeAST(other), name(clone_unique(other.name)),
+args(clone_unique(other.args)), has_parenth(other.has_parenth) {
+    PreNodeMacroHeader::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeMacroHeader::clone() const {
     return std::make_unique<PreNodeMacroHeader>(*this);
 }
@@ -145,6 +211,13 @@ std::unique_ptr<PreNodeAST> PreNodeMacroHeader::clone() const {
 void PreNodeDefineHeader::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+PreNodeDefineHeader::PreNodeDefineHeader(const PreNodeDefineHeader &other)
+: PreNodeAST(other), name(clone_unique(other.name)),
+args(clone_unique(other.args)) {
+    PreNodeDefineHeader::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeDefineHeader::clone() const {
     return std::make_unique<PreNodeDefineHeader>(*this);
 }
@@ -153,6 +226,13 @@ std::unique_ptr<PreNodeAST> PreNodeDefineHeader::clone() const {
 void PreNodeMacroDefinition::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+PreNodeMacroDefinition::PreNodeMacroDefinition(const PreNodeMacroDefinition &other)
+: PreNodeAST(other), header(clone_unique(other.header)),
+body(clone_unique(other.body)) {
+    PreNodeMacroDefinition::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeMacroDefinition::clone() const {
     return std::make_unique<PreNodeMacroDefinition>(*this);
 }
@@ -161,6 +241,13 @@ std::unique_ptr<PreNodeAST> PreNodeMacroDefinition::clone() const {
 void PreNodeDefineStatement::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+PreNodeDefineStatement::PreNodeDefineStatement(const PreNodeDefineStatement &other)
+: PreNodeAST(other), header(clone_unique(other.header)),
+body(clone_unique(other.body)) {
+    PreNodeDefineStatement::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeDefineStatement::clone() const {
     return std::make_unique<PreNodeDefineStatement>(*this);
 }
@@ -169,6 +256,13 @@ std::unique_ptr<PreNodeAST> PreNodeDefineStatement::clone() const {
 void PreNodeMacroCall::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+PreNodeMacroCall::PreNodeMacroCall(const PreNodeMacroCall &other)
+: PreNodeAST(other), macro(clone_unique(other.macro)),
+is_iterate_macro(other.is_iterate_macro) {
+    PreNodeMacroCall::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeMacroCall::clone() const {
     return std::make_unique<PreNodeMacroCall>(*this);
 }
@@ -177,6 +271,12 @@ std::unique_ptr<PreNodeAST> PreNodeMacroCall::clone() const {
 void PreNodeFunctionCall::accept(PreASTVisitor &visitor) {
 	visitor.visit(*this);
 }
+
+PreNodeFunctionCall::PreNodeFunctionCall(const PreNodeFunctionCall &other)
+: PreNodeAST(other), function(clone_unique(other.function)) {
+    PreNodeFunctionCall::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeFunctionCall::clone() const {
 	return std::make_unique<PreNodeFunctionCall>(*this);
 }
@@ -185,6 +285,12 @@ std::unique_ptr<PreNodeAST> PreNodeFunctionCall::clone() const {
 void PreNodeDefineCall::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
+PreNodeDefineCall::PreNodeDefineCall(const PreNodeDefineCall &other)
+: PreNodeAST(other), define(clone_unique(other.define)) {
+    PreNodeDefineCall::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeDefineCall::clone() const {
     return std::make_unique<PreNodeDefineCall>(*this);
 }
@@ -193,9 +299,14 @@ std::unique_ptr<PreNodeAST> PreNodeDefineCall::clone() const {
 void PreNodeIterateMacro::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
 PreNodeIterateMacro::PreNodeIterateMacro(const PreNodeIterateMacro& other)
-        : PreNodeAST(other), macro_call(clone_unique(other.macro_call)), iterator_start(clone_unique(other.iterator_start)),
-          iterator_end(clone_unique(other.iterator_end)), step(clone_unique(other.step)) {}
+: PreNodeAST(other), macro_call(clone_unique(other.macro_call)),
+iterator_start(clone_unique(other.iterator_start)),
+iterator_end(clone_unique(other.iterator_end)), step(clone_unique(other.step)) {
+    PreNodeIterateMacro::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeIterateMacro::clone() const {
     return std::make_unique<PreNodeIterateMacro>(*this);
 }
@@ -204,8 +315,13 @@ std::unique_ptr<PreNodeAST> PreNodeIterateMacro::clone() const {
 void PreNodeLiterateMacro::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
 PreNodeLiterateMacro::PreNodeLiterateMacro(const PreNodeLiterateMacro& other)
-        : PreNodeAST(other), macro_call(clone_unique(other.macro_call)), literate_tokens(clone_unique(other.literate_tokens)) {}
+: PreNodeAST(other), macro_call(clone_unique(other.macro_call)),
+literate_tokens(clone_unique(other.literate_tokens)) {
+    PreNodeLiterateMacro::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeLiterateMacro::clone() const {
     return std::make_unique<PreNodeLiterateMacro>(*this);
 }
@@ -214,8 +330,15 @@ std::unique_ptr<PreNodeAST> PreNodeLiterateMacro::clone() const {
 void PreNodeIncrementer::accept(PreASTVisitor &visitor) {
     visitor.visit(*this);
 }
+
 PreNodeIncrementer::PreNodeIncrementer(const PreNodeIncrementer& other)
-        : PreNodeAST(other), incrementation(other.incrementation), tok(other.tok), body(clone_vector(other.body)), counter(clone_unique(other.counter)), iterator_start(clone_unique(other.iterator_start)), iterator_step(clone_unique(other.iterator_step)) {}
+: PreNodeAST(other), tok(other.tok), body(clone_vector(other.body)),
+counter(clone_unique(other.counter)), iterator_start(clone_unique(other.iterator_start)),
+iterator_step(clone_unique(other.iterator_step)),
+incrementation(other.incrementation) {
+    PreNodeIncrementer::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeIncrementer::clone() const {
     return std::make_unique<PreNodeIncrementer>(*this);
 }
@@ -232,6 +355,14 @@ void PreNodeProgram::replace_child(PreNodeAST* oldChild, std::unique_ptr<PreNode
         }
     }
 }
+
+PreNodeProgram::PreNodeProgram(const PreNodeProgram &other)
+: PreNodeAST(other), program(clone_vector(other.program)),
+define_statements(clone_vector(other.define_statements)),
+macro_definitions(clone_vector(other.macro_definitions)) {
+    PreNodeProgram::set_child_parents();
+}
+
 std::unique_ptr<PreNodeAST> PreNodeProgram::clone() const {
     return std::make_unique<PreNodeProgram>(*this);
 }

@@ -149,15 +149,15 @@ Result<Token> PreprocessorConditions::parse_condition_definition(std::vector<Tok
     return Result<Token>(condition);
 }
 
-bool PreprocessorConditions::is_beginning_of_line_keyword(const std::vector<Token>& tok, token token) {
-    if (m_pos > 0)
-        return (peek(tok, -1).type == token::LINEBRK and peek(tok, 0).type == token);
-    else
-        return m_pos == 0 and peek(tok).type == token;
+bool PreprocessorConditions::is_beginning_of_line_keyword(const std::vector<Token>& tok, const token token) {
+    if (m_pos > 0) {
+        return peek(tok, -1).type == token::LINEBRK and peek(tok, 0).type == token;
+    }
+    return m_pos == 0 and peek(tok).type == token;
 }
 
 bool PreprocessorConditions::is_builtin_condition(const Token& token) {
-    return (contains(BUILTIN_CONDITIONS, token.val));
+    return contains(BUILTIN_CONDITIONS, token.val);
 }
 
 bool PreprocessorConditions::is_condition_definition(const std::vector<Token> &tok, const Token &pk, token token_type) {
@@ -165,7 +165,7 @@ bool PreprocessorConditions::is_condition_definition(const std::vector<Token> &t
 }
 
 void PreprocessorConditions::reset_condition(const Token& condition) {
-    auto it = m_conditions.find(condition.val);
+    const auto it = m_conditions.find(condition.val);
 	if (it != m_conditions.end()) {
 		m_conditions.erase(it);
 	}

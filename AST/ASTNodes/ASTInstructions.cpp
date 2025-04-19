@@ -776,25 +776,24 @@ NodeStatement* NodeBlock::add_stmt(std::unique_ptr<NodeStatement> stmt) {
 //    statements = std::move(temp);
 //}
 
-void NodeBlock::flatten(bool force) {
+void NodeBlock::flatten(const bool force) {
 	// Reserviere genug Platz für den schlimmsten Fall, in dem keine Flattening nötig ist
 	std::vector<std::unique_ptr<NodeStatement>> new_statements;
 	new_statements.reserve(statements.size());
 
 	for (auto& statement : statements) {
-		if (statement->statement->get_node_type() == NodeType::Block) {
-			auto node_innner_body = static_cast<NodeBlock*>(statement->statement.get());
+		if (const auto inner_body = statement->statement->cast<NodeBlock>()) {
 //			node_innner_body->flatten();
-			auto& inner_statements = node_innner_body->statements;
+			auto& inner_statements = inner_body->statements;
 
 			// Entfernen Sie DeadCode-Nodes in einem Schritt
 			auto new_end = std::remove_if(inner_statements.begin(), inner_statements.end(),
 										  [](const std::unique_ptr<NodeStatement>& stmt) {
-											return stmt->statement->get_node_type() == NodeType::DeadCode;
+											return stmt->statement->cast<NodeDeadCode>();
 										  });
 			inner_statements.erase(new_end, inner_statements.end());
 
-			if(node_innner_body->scope and !force) {
+			if(inner_body->scope and !force) {
 				new_statements.push_back(std::move(statement));
 				continue;
 			}
@@ -820,7 +819,7 @@ void NodeBlock::flatten(bool force) {
 NodeBlock* NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>> iterators,
 								  std::vector<std::unique_ptr<NodeAST>> lower_bounds,
 								  std::vector<std::unique_ptr<NodeAST>> upper_bounds) {
-	std::unique_ptr<NodeBlock> inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
+	auto inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
 	inner_body->scope = true;
 	NodeBlock* for_loop_body = nullptr;
 	for (int i = (int)iterators.size()-1; i>=0 ; i--) {
@@ -849,7 +848,7 @@ NodeBlock* NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStru
 }
 
 NodeBlock* NodeBlock::wrap_in_loop(const std::shared_ptr<NodeDataStructure>& iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound, const bool declare) {
-	std::unique_ptr<NodeBlock> inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
+	auto inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
 	inner_body->scope = true;
 	auto node_for = std::make_unique<NodeFor>(
 		std::make_unique<NodeSingleAssignment>(iterator->to_reference(), std::move(lower_bound), Token()),
