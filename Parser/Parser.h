@@ -80,7 +80,6 @@ public:
     explicit Parser(std::vector<Token> tokens);
     Result<std::unique_ptr<NodeProgram>> parse();
 
-protected:
     static std::optional<Token> get_persistent_keyword(const Token& tok);
     static std::string sanitize_binary(const std::string& input);
     /// convert eg 0bFFFh into 0xbFFF
