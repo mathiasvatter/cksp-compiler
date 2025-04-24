@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "Preprocessor.h"
+#include "../Processor/Processor.h"
 
 class PreprocessorConditions final : public Processor {
 public:

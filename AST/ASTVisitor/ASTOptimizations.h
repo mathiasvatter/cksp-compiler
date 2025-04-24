@@ -5,7 +5,7 @@
 #pragma once
 
 #include "ASTVisitor.h"
-
+#include "../../misc/CommandLineOptions.h"
 
 /** @brief Class for AST Optimizations
  * Constant Propagation
@@ -14,9 +14,9 @@
  */
 class ASTOptimizations : public ASTVisitor {
 public:
-    ASTOptimizations() = default;
+    explicit ASTOptimizations(): ASTVisitor() {}
 
-	static bool optimize(NodeProgram& node, int iterations = 2);
+	static bool optimize(NodeProgram& node, OptimizationLevel optimize);
 
 protected:
 

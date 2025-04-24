@@ -1,11 +1,3 @@
-Usage: cksp [options] <input-file>
-
-OPTIONS:
- -h, --help                    Display usage information
- -o <file>, --output <file>    Set output file name (default: <input_dir>/out.txt)
- -v, --version                 Display version number
- -d, --debug                   Enable debug output
-
 FEATURES:
 For a more extensive collection of features and an introduction into the syntax of CKSP, please refer to the online documentation:
 https://mathiasvatter.github.io/cksp-compiler/

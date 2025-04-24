@@ -9,7 +9,7 @@
 class PreASTDefines final : public PreASTVisitor {
 public:
 	explicit PreASTDefines(PreNodeProgram* program) : PreASTVisitor(program) {}
-	void visit(PreNodePragma& node) override;
+	// void visit(PreNodePragma& node) override;
 	void visit(PreNodeNumber& node) override;
 	void visit(PreNodeInt& node) override;
 	void visit(PreNodeKeyword& node) override;

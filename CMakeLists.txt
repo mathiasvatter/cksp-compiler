@@ -107,7 +107,6 @@ add_executable(cksp main.cpp
         Preprocessor/PreAST/PreASTDefines.h
         Preprocessor/PreAST/PreASTDefines.cpp
         Preprocessor/PreAST/PreASTPragma.h
-        Preprocessor/PreAST/PreASTPragma.cpp
         misc/FileHandler.h
         misc/FileHandler.cpp
         misc/CommandLineOptions.h
