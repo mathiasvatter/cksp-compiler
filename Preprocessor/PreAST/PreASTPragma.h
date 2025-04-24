@@ -6,14 +6,89 @@
 
 #include "PreASTVisitor.h"
 #include "../ImportProcessor.h"
+#include "../../misc/CommandLineOptions.h"
+#include "../../misc/PathHandler.h"
+
 
 class PreASTPragma final : public PreASTVisitor {
+	CompilerConfig* m_config = nullptr;
+	std::set<std::string> m_pragma_directives = {"output_path"};
+	std::unordered_map<std::string, std::function<void(const std::string&, const Token&)>> pragma_handlers{};
+
 public:
-	explicit PreASTPragma(PreNodeProgram* program) : PreASTVisitor(program) {}
-	void visit(PreNodePragma& node) override;
-    void visit(PreNodeProgram &node) override;
+	explicit PreASTPragma(PreNodeProgram* program, CompilerConfig* config) : PreASTVisitor(program), m_config(config) {
+		register_pragma_handlers();
+	}
+
+	void visit(PreNodePragma& node) override {
+		const std::string& option = node.option->get_string();
+		const Token& token = node.argument->value;
+
+		auto it = pragma_handlers.find(option);
+		if (it == pragma_handlers.end()) {
+			get_pragma_error(token, option, "valid <#pragma> option.").exit();
+		}
+		it->second(node.argument->value.val, token);
+	}
+
+	void visit(PreNodeProgram &node) override {
+		m_program = &node;
+		for(auto & n : node.program) {
+			n->accept(*this);
+		}
+	}
 
 private:
-    std::set<std::string> m_pragma_directives = {"output_path"};
+
+	void register_pragma_handlers() {
+		pragma_handlers["output_path"] = [this](const std::string& arg, const Token& token) {
+			auto path = strip_surrounding_quotes(arg);
+
+			std::string error_message = "Found unknown <output_path> option in <#pragma>. ";
+			static PathHandler path_handler(token, token.file);
+			auto output_path = path_handler.resolve_path(path);
+			if (output_path.is_error()) {
+				auto error = output_path.get_error();
+				error.m_message.insert(0, error_message);
+				error.exit();
+			}
+			auto valid_output_path = path_handler.generate_output_file(output_path.unwrap());
+			if (valid_output_path.is_error()) {
+				auto error = valid_output_path.get_error();
+				error.m_message.insert(0, error_message);
+				error.exit();
+			}
+			m_config->output_filename = valid_output_path.unwrap();
+		};
+
+		pragma_handlers["optimize"] = [this](const std::string& arg, const Token& token) {
+			std::string level = strip_surrounding_quotes(arg);
+
+			const auto it = optimization_level_map.find(level);
+			if (it == optimization_level_map.end()) {
+				get_pragma_error(token, level, "none, simple, standard, or aggressive").exit();
+			}
+			m_config->optimization_level = it->second;
+		};
+	}
+
+	static std::string strip_surrounding_quotes(const std::string& str) {
+		if (str.size() >= 2) {
+			char first = str.front();
+			char last = str.back();
+			if ((first == '\"' && last == '\"') || (first == '\'' && last == '\'')) {
+				return str.substr(1, str.size() - 2);
+			}
+		}
+		return str;
+	}
+
+	static CompileError get_pragma_error(const Token& tok, const std::string& got, const std::string& expected) {
+		auto err = CompileError(ErrorType::PreprocessorError, "", "", tok);
+		err.m_message = "Found unknown <#pragma> option or value.";
+		err.m_expected = expected;
+		err.m_got = got;
+		return err;
+	}
 
 };

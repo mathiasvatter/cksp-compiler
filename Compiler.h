@@ -60,33 +60,25 @@ public:
 	/// Compile the input file
 	void compile() {
 		std::string input_filename = m_config->input_filename;
-		std::string output_filename = m_config->output_filename;
-   		std::string standard_output_path = m_config->standard_output_file;
 
 	#ifndef NDEBUG
-	//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
-	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
-	//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-		input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+		//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
+		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
+		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
+		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
 		// input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
-	    // input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
-	// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
-	// input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
-	// input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
-	// input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
-	// input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
-	// input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
+		// input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+		// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
+		// input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
+		// input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
+		// input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
+		// input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
+		// input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
 		// input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
-	// input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
+		// input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
-
-		// output_filename = "/Users/Mathias/Scripting/lux-strings/Samples/Resources/scripts/lux-orchestral-strings.txt";
-	//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
-	    // output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
-	//    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
-	//    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
-	//	output_filename = "/Users/Mathias/Scripting/time-textures/Samples/resources/scripts/time-textures-2.txt";
 	#endif
 
 		Timer compile_time;
@@ -108,15 +100,26 @@ public:
 		compile_time.stop("Import");
 		compile_time.start("Preprocessor");
 
+		std::string output_filename = m_config->output_filename;
+
 		Preprocessor preprocessor(tokens);
-		preprocessor.process();
+		preprocessor.process(m_config);
 		auto preprocessed_tokens = preprocessor.get_token_vector();
 
 		// ---------- output path -----------
-		if(output_filename.empty() && !preprocessor.get_output_path().empty())
-			output_filename = preprocessor.get_output_path();
-	    if(output_filename.empty())
-	        output_filename = standard_output_path;
+   		std::string standard_output_path = m_config->standard_output_file;
+
+	#ifndef NDEBUG
+		// output_filename = "/Users/Mathias/Scripting/lux-strings/Samples/Resources/scripts/lux-orchestral-strings.txt";
+	//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
+	    // output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
+	//    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
+	//    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
+	//	output_filename = "/Users/Mathias/Scripting/time-textures/Samples/resources/scripts/time-textures-2.txt";
+	#endif
+		if(output_filename.empty() && !m_config->output_filename.empty())
+			output_filename = m_config->output_filename;
+	    if(output_filename.empty()) output_filename = standard_output_path;
 		std::cout << "\n";
 		std::cout << "Input File: " << input_filename << "\n";
 		std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << output_filename << "\n";
@@ -277,8 +280,9 @@ public:
 
 		// ast->debug_print();
 		ast->inline_global_variables();
+
 		ASTOptimizations optimizations;
-		ASTOptimizations::optimize(*ast);
+		ASTOptimizations::optimize(*ast, m_config->optimization_level);
 
 		compile_time.stop("Optimization");
 		std::cout << compile_time.print_timer("Optimization") << "\n";

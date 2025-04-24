@@ -48,6 +48,16 @@ public:
 			if(!node.get_definition()->is_thread_safe) {
 				m_constant_expressions.clear();
 			}
+		} else {
+			// visit functions so that stuff like this does not happen:
+			// active_root := -1
+			// call change_root()
+			// message(active_root) -> message(-1)
+			if (!m_constant_expressions.empty()) {
+				if (const auto definition = node.get_definition()) {
+					definition->accept(*this);
+				}
+			}
 		}
 		return &node;
 	}
