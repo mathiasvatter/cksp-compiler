@@ -54,7 +54,6 @@ add_executable(cksp main.cpp
         misc/CompileError.cpp
         misc/Result.h
         Preprocessor/Preprocessor.h
-        Preprocessor/Preprocessor.cpp
         Preprocessor/ImportProcessor.h
         Preprocessor/ImportProcessor.cpp
         Preprocessor/PreprocessorConditions.h
