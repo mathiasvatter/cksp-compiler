@@ -18,7 +18,7 @@ NodeAST *NodeVariableRef::accept(struct ASTVisitor &visitor) {
 
 NodeVariableRef::NodeVariableRef(const NodeVariableRef& other)
 	: NodeReference(other) {
-	set_child_parents();
+	NodeVariableRef::set_child_parents();
 }
 
 std::unique_ptr<NodeAST> NodeVariableRef::clone() const {
