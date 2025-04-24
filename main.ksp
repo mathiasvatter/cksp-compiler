@@ -1,6 +1,6 @@
 
 #pragma output_path("test.txt")
-
+#pragma optimize("none")
 
 struct List
 	declare vals[3]: int[]
@@ -12,37 +12,20 @@ struct List
 	end function
 end struct
 
-// macro legato.load_arrays_per_slot(#n#)
-// 	array.copy(intervals, s#n#.intervals)
-// end macro
-literate_macro(update) on a, b, c
-macro update(#l#)
-	on ui_control (#l#)
-		message(#l#)
-	end on
-end macro
 
 on init
-	declare new_note
-	declare old_id
-	outside_macro(new_note, old_id)
+	declare active_root
 end on
 
+on note
+	active_root := -1
+	call change_root()
+	message(active_root)
+end on
 
-macro outside_macro(note, old_note_id) 
-	message(note, old_note_id)
-	iterate_macro(inside_macro(#n#, note, old_note_id)) := 0 to 10
-	iterate_macro(inside_macro2(old_note_id, #n#)) := 0 to 10
-end macro
-
-macro inside_macro(#n#, note, old_note_id)
-	message(#n#, note, old_note_id)
-end macro
-
-macro inside_macro2(old_note_id, #idx#)
-	message(#idx#, old_note_id)
-end macro
-
+function change_root()
+	active_root := 4
+end function
 
 
 // function higher_order(func: (int, int): string, a: int, b: int): string
