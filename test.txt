@@ -1,32 +1,2249 @@
-{ Compiled with cksp version 0.0.7-alpha.3 on Thu Apr 24 21:02:45 2025 }
+{ Compiled with cksp version 0.0.7-alpha.3 on Fri Apr 25 18:54:15 2025 }
 on init
-  declare const $MAX____CB____STACK := 100
   declare $_iter0
-  declare const $MAX____STRUCTS := 1000000
-  declare @MEM____WARNING
-  @MEM____WARNING := "Memory Error: No more free space available to allocate objects of type"
-  declare $List____MAX_STRUCTS
-  $List____MAX_STRUCTS := $MAX____STRUCTS / (((3 + 3) + abs(3 - 3)) / 2)
-  declare $List____free_idx
-  declare %List____allocation[$List____MAX_STRUCTS]
-  declare %List____stack[$List____MAX_STRUCTS]
-  declare $List____stack_top
-  declare const $_List____vals____num_elements0 := $List____MAX_STRUCTS * 3
-  declare const $_List____vals____num_elements1 := $List____MAX_STRUCTS
-  declare const $_List____vals____num_elements2 := 3
-  declare %_List____vals[$List____MAX_STRUCTS * 3]
-  declare const $_List____next____num_elements0 := $List____MAX_STRUCTS * 3
-  declare const $_List____next____num_elements1 := $List____MAX_STRUCTS
-  declare const $_List____next____num_elements2 := 3
-  declare %_List____next[$List____MAX_STRUCTS * 3] := (- 1)
-  declare $active_root
+  declare $Boolean0
+  declare $Boolean1
+  make_perfview
+  set_script_title("One Shot Script")
+  message("** Script " & "'" & "One Shot Script" & "'" & " Compile " & "18:54:14" & " " & "04/25/25" & " **")
+  SET_CONDITION( NO_SYS_SCRIPT_PEDAL)
+  SET_CONDITION( NO_SYS_RELEASE_TRIGGER)
+  declare $_id
+  declare %decode[2]
+  make_persistent(%decode)
+  read_persistent_var(%decode)
+  declare @decode_path
+  declare @path00
+  declare $it00
+  %decode[0] := -1
+  $it00 := 0
+  @path00 := ""
+  $_id := load_array_str(%decode, get_folder($GET_FOLDER_PATCH_DIR) & "" & "" & "decode" & ".nka")
+  while((($_id # -1) and ($it00 < 4)) and (%decode[0] # 81202)) 
+    %decode[0] := -1
+    @path00 := @path00 & "../"
+    $_id := load_array_str(%decode, get_folder($GET_FOLDER_PATCH_DIR) & @path00 & "" & "decode" & ".nka")
+    inc($it00)
+  end while
+  @decode_path := get_folder($GET_FOLDER_PATCH_DIR) & @path00 & "decode" & ".nka"
+  %decode[0] := -1
+  $_id := load_array_str(%decode, @decode_path)
+  declare %development[2]
+  make_persistent(%development)
+  read_persistent_var(%development)
+  declare @development_path
+  %development[0] := -1
+  $it00 := 0
+  @path00 := ""
+  $_id := load_array_str(%development, get_folder($GET_FOLDER_PATCH_DIR) & "" & "" & "development" & ".nka")
+  while((($_id # -1) and ($it00 < 4)) and (%development[0] # 22714)) 
+    %development[0] := -1
+    @path00 := @path00 & "../"
+    $_id := load_array_str(%development, get_folder($GET_FOLDER_PATCH_DIR) & @path00 & "" & "development" & ".nka")
+    inc($it00)
+  end while
+  @development_path := get_folder($GET_FOLDER_PATCH_DIR) & @path00 & "development" & ".nka"
+  if(abs(sh_right(abs(- sh_right(abs(%decode[0] - 81202) - 1, 31)) - 1, 31)) = 1)
+    @development_path := get_folder($GET_FOLDER_PATCH_DIR) & "development.nka"
+  end if
+  %development[0] := -1
+  $_id := load_array_str(%development, @development_path)
+  declare @folder_path
+  @folder_path := get_folder($GET_FOLDER_PATCH_DIR) & "../"
+  if(abs(sh_right(abs(- sh_right(abs(%decode[0] - 81202) - 1, 31)) - 1, 31)) = 1)
+    @folder_path := get_folder($GET_FOLDER_LIBRARY_DIR)
+  end if
+  declare @resources_path
+  @resources_path := @folder_path & "samples/<<<" & "rc" & ".nkr>>>/resources/data/"
+  if(- sh_right(abs(%development[0] - 22714) - 1, 31) = 1)
+  end if
+  if(- sh_right(abs(%development[0] - 22714) - 1, 31) = 1)
+    message("***** Script is in DEVELOPMENT Mode *****")
+  else
+    message("***** Script is in FINAL Mode *****")
+  end if
+  if(abs(sh_right(abs(- sh_right(abs(%decode[0] - 81202) - 1, 31)) - 1, 31)) = 1)
+    message("***** Script is ENCODED *****")
+  end if
+  declare ui_panel $__table 
+  set_control_par(get_ui_id($__table), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+  declare %font__types[6]
+  %font__types[0] := $CONTROL_PAR_FONT_TYPE
+  %font__types[1] := $CONTROL_PAR_FONT_TYPE_ON
+  %font__types[2] := $CONTROL_PAR_FONT_TYPE_OFF_PRESSED
+  %font__types[3] := $CONTROL_PAR_FONT_TYPE_ON_PRESSED
+  %font__types[4] := $CONTROL_PAR_FONT_TYPE_OFF_HOVER
+  %font__types[5] := $CONTROL_PAR_FONT_TYPE_ON_HOVER
+  declare %_font__2pt7[14]
+  declare %_font__2pt8[14]
+  declare %_font__3pt3[14]
+  declare %_font__3pt6[14]
+  declare %_font__3pt8[14]
+  declare %_font__4pt5[14]
+  %_font__2pt7[0] := get_font_id("roboto_2pt7_white_off.png")
+  %_font__2pt7[2] := get_font_id("roboto_2pt7_white_on.png")
+  %_font__2pt7[4] := get_font_id("roboto_2pt7_white_off_hover.png")
+  %_font__2pt7[6] := get_font_id("roboto_2pt7_white_on.png")
+  %_font__2pt7[8] := get_font_id("roboto_2pt7_white_off_hover.png")
+  %_font__2pt7[10] := get_font_id("roboto_2pt7_white_on.png")
+  %_font__2pt7[12] := get_font_id("roboto_2pt7_white_disabled.png")
+  %_font__2pt8[0] := get_font_id("roboto_2pt8_white_off.png")
+  %_font__2pt8[2] := get_font_id("roboto_2pt8_white_on.png")
+  %_font__2pt8[4] := get_font_id("roboto_2pt8_white_off_hover.png")
+  %_font__2pt8[6] := get_font_id("roboto_2pt8_white_on.png")
+  %_font__2pt8[8] := get_font_id("roboto_2pt8_white_off_hover.png")
+  %_font__2pt8[10] := get_font_id("roboto_2pt8_white_on.png")
+  %_font__2pt8[12] := get_font_id("roboto_2pt8_white_disabled.png")
+  %_font__3pt3[0] := get_font_id("roboto_3pt3_white_off.png")
+  %_font__3pt3[2] := get_font_id("roboto_3pt3_white_on.png")
+  %_font__3pt3[4] := get_font_id("roboto_3pt3_white_off_hover.png")
+  %_font__3pt3[6] := get_font_id("roboto_3pt3_white_on.png")
+  %_font__3pt3[8] := get_font_id("roboto_3pt3_white_off_hover.png")
+  %_font__3pt3[10] := get_font_id("roboto_3pt3_white_on.png")
+  %_font__3pt3[12] := get_font_id("roboto_3pt3_white_disabled.png")
+  %_font__3pt6[0] := get_font_id("roboto_3pt6_white_off.png")
+  %_font__3pt6[2] := get_font_id("roboto_3pt6_white_on.png")
+  %_font__3pt6[4] := get_font_id("roboto_3pt6_white_off_hover.png")
+  %_font__3pt6[6] := get_font_id("roboto_3pt6_white_on.png")
+  %_font__3pt6[8] := get_font_id("roboto_3pt6_white_off_hover.png")
+  %_font__3pt6[10] := get_font_id("roboto_3pt6_white_on.png")
+  %_font__3pt6[12] := get_font_id("roboto_3pt6_white_disabled.png")
+  %_font__3pt8[0] := get_font_id("roboto_3pt8_white_off.png")
+  %_font__3pt8[2] := get_font_id("roboto_3pt8_white_on.png")
+  %_font__3pt8[4] := get_font_id("roboto_3pt8_white_off_hover.png")
+  %_font__3pt8[6] := get_font_id("roboto_3pt8_white_on.png")
+  %_font__3pt8[8] := get_font_id("roboto_3pt8_white_off_hover.png")
+  %_font__3pt8[10] := get_font_id("roboto_3pt8_white_on.png")
+  %_font__3pt8[12] := get_font_id("roboto_3pt8_white_disabled.png")
+  %_font__4pt5[0] := get_font_id("roboto_4pt5_white_off.png")
+  %_font__4pt5[2] := get_font_id("roboto_4pt5_white_on.png")
+  %_font__4pt5[4] := get_font_id("roboto_4pt5_white_off_hover.png")
+  %_font__4pt5[6] := get_font_id("roboto_4pt5_white_on.png")
+  %_font__4pt5[8] := get_font_id("roboto_4pt5_white_off_hover.png")
+  %_font__4pt5[10] := get_font_id("roboto_4pt5_white_on.png")
+  %_font__4pt5[12] := get_font_id("roboto_4pt5_white_disabled.png")
+  declare $i
+  declare $ii
+  declare $u
+  declare $v
+  declare $keys
+  declare $key
+  declare $event_note
+  make_persistent($event_note)
+  read_persistent_var($event_note)
+  declare $event_velocity
+  declare $zone_id
+  declare $blip_note
+  declare $group_iterator
+  declare polyphonic $release_note
+  declare $pgs_init := 0
+  declare %event_notes[128]
+  declare %event_ids[128]
+  declare %async_ids[25]
+  declare %hide_state[2]
+  %hide_state[0] := $HIDE_WHOLE_CONTROL
+  %hide_state[1] := $HIDE_PART_NOTHING
+  declare %rr_count[128] := (0)
+  declare $NUM_RR_FINAL := $NUM_GROUPS - 1
+  declare $INSTRUMENT_TYPE
+  make_persistent($INSTRUMENT_TYPE)
+  read_persistent_var($INSTRUMENT_TYPE)
+  declare %range[2]
+  make_persistent(%range)
+  read_persistent_var(%range)
+  declare %mapped_notes[128]
+  make_persistent(%mapped_notes)
+  read_persistent_var(%mapped_notes)
+  declare $rr_group := 1
+  set_control_par_str($INST_ICON_ID, $CONTROL_PAR_PICTURE, "sonu-badge")
+  set_control_par_str($INST_WALLPAPER_ID, $CONTROL_PAR_PICTURE, "BG3")
+  declare ui_button $btn_home 
+  set_control_par_str(get_ui_id($btn_home), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($btn_home), $CONTROL_PAR_PICTURE, "btn_home")
+  set_control_par(get_ui_id($btn_home), $CONTROL_PAR_POS_X, 17)
+  set_control_par(get_ui_id($btn_home), $CONTROL_PAR_POS_Y, 11)
+  declare ui_panel $UI_home 
+  set_control_par(get_ui_id($UI_home), $CONTROL_PAR_POS_X, 7)
+  set_control_par(get_ui_id($UI_home), $CONTROL_PAR_POS_Y, 36)
+  declare ui_slider $sli_dynamics (0, 1000000)
+  make_persistent($sli_dynamics)
+  read_persistent_var($sli_dynamics)
+  set_control_par(get_ui_id($sli_dynamics), $CONTROL_PAR_DEFAULT_VALUE, 0)
+  set_control_par_str(get_ui_id($sli_dynamics), $CONTROL_PAR_PICTURE, "slider")
+  set_control_par(get_ui_id($sli_dynamics), $CONTROL_PAR_MOUSE_BEHAVIOUR, 1800)
+  set_control_par(get_ui_id($sli_dynamics), $CONTROL_PAR_POS_X, 35)
+  set_control_par(get_ui_id($sli_dynamics), $CONTROL_PAR_POS_Y, 157)
+  set_control_par(get_ui_id($sli_dynamics), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_home))
+  declare ui_label $lbl_dynamics (1, 1)
+  set_control_par_str(get_ui_id($lbl_dynamics), $CONTROL_PAR_TEXT, "Dynamics")
+  set_control_par_str(get_ui_id($lbl_dynamics), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_dynamics), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_dynamics), $CONTROL_PAR_FONT_TYPE, %_font__3pt3[2])
+  set_control_par(get_ui_id($lbl_dynamics), $CONTROL_PAR_POS_X, 62)
+  set_control_par(get_ui_id($lbl_dynamics), $CONTROL_PAR_POS_Y, 130)
+  set_control_par(get_ui_id($lbl_dynamics), $CONTROL_PAR_WIDTH, 100)
+  set_control_par(get_ui_id($lbl_dynamics), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($lbl_dynamics), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_home))
+  declare ui_label $lbl_dynamics2 (1, 2)
+  set_control_par_str(get_ui_id($lbl_dynamics2), $CONTROL_PAR_TEXT, "Mod wheel controlled")
+  set_control_par_str(get_ui_id($lbl_dynamics2), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_dynamics2), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_dynamics2), $CONTROL_PAR_FONT_TYPE, 18)
+  set_control_par(get_ui_id($lbl_dynamics2), $CONTROL_PAR_POS_X, 21)
+  set_control_par(get_ui_id($lbl_dynamics2), $CONTROL_PAR_POS_Y, 191)
+  set_control_par(get_ui_id($lbl_dynamics2), $CONTROL_PAR_WIDTH, 180)
+  set_control_par(get_ui_id($lbl_dynamics2), $CONTROL_PAR_HEIGHT, 100)
+  add_text_line($lbl_dynamics2, "dynamics (CC103)")
+  set_control_par(get_ui_id($lbl_dynamics2), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_home))
+  declare ui_slider $sli_vibrato (0, 1000000)
+  make_persistent($sli_vibrato)
+  read_persistent_var($sli_vibrato)
+  set_control_par(get_ui_id($sli_vibrato), $CONTROL_PAR_DEFAULT_VALUE, 0)
+  set_control_par_str(get_ui_id($sli_vibrato), $CONTROL_PAR_PICTURE, "slider")
+  set_control_par(get_ui_id($sli_vibrato), $CONTROL_PAR_MOUSE_BEHAVIOUR, 1800)
+  set_control_par(get_ui_id($sli_vibrato), $CONTROL_PAR_POS_X, 221)
+  set_control_par(get_ui_id($sli_vibrato), $CONTROL_PAR_POS_Y, 157)
+  set_control_par(get_ui_id($sli_vibrato), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_home))
+  declare ui_label $lbl_vibrato (1, 1)
+  set_control_par_str(get_ui_id($lbl_vibrato), $CONTROL_PAR_TEXT, "Vibrato")
+  set_control_par_str(get_ui_id($lbl_vibrato), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_vibrato), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_vibrato), $CONTROL_PAR_FONT_TYPE, %_font__3pt3[2])
+  set_control_par(get_ui_id($lbl_vibrato), $CONTROL_PAR_POS_X, 248)
+  set_control_par(get_ui_id($lbl_vibrato), $CONTROL_PAR_POS_Y, 130)
+  set_control_par(get_ui_id($lbl_vibrato), $CONTROL_PAR_WIDTH, 100)
+  set_control_par(get_ui_id($lbl_vibrato), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($lbl_vibrato), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_home))
+  declare ui_label $lbl_vibrato2 (1, 2)
+  set_control_par_str(get_ui_id($lbl_vibrato2), $CONTROL_PAR_TEXT, "Intensity control")
+  set_control_par_str(get_ui_id($lbl_vibrato2), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_vibrato2), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_vibrato2), $CONTROL_PAR_FONT_TYPE, 18)
+  set_control_par(get_ui_id($lbl_vibrato2), $CONTROL_PAR_POS_X, 207)
+  set_control_par(get_ui_id($lbl_vibrato2), $CONTROL_PAR_POS_Y, 191)
+  set_control_par(get_ui_id($lbl_vibrato2), $CONTROL_PAR_WIDTH, 180)
+  set_control_par(get_ui_id($lbl_vibrato2), $CONTROL_PAR_HEIGHT, 100)
+  add_text_line($lbl_vibrato2, "of vibrato fx (CC101)")
+  set_control_par(get_ui_id($lbl_vibrato2), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_home))
+  declare ui_slider $sli_expression (0, 1000000)
+  make_persistent($sli_expression)
+  read_persistent_var($sli_expression)
+  set_control_par(get_ui_id($sli_expression), $CONTROL_PAR_DEFAULT_VALUE, 0)
+  set_control_par_str(get_ui_id($sli_expression), $CONTROL_PAR_PICTURE, "slider")
+  set_control_par(get_ui_id($sli_expression), $CONTROL_PAR_MOUSE_BEHAVIOUR, 1800)
+  set_control_par(get_ui_id($sli_expression), $CONTROL_PAR_POS_X, 405)
+  set_control_par(get_ui_id($sli_expression), $CONTROL_PAR_POS_Y, 157)
+  set_control_par(get_ui_id($sli_expression), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_home))
+  declare ui_label $lbl_expression (1, 1)
+  set_control_par_str(get_ui_id($lbl_expression), $CONTROL_PAR_TEXT, "Expression")
+  set_control_par_str(get_ui_id($lbl_expression), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_expression), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_expression), $CONTROL_PAR_FONT_TYPE, %_font__3pt3[2])
+  set_control_par(get_ui_id($lbl_expression), $CONTROL_PAR_POS_X, 432)
+  set_control_par(get_ui_id($lbl_expression), $CONTROL_PAR_POS_Y, 130)
+  set_control_par(get_ui_id($lbl_expression), $CONTROL_PAR_WIDTH, 100)
+  set_control_par(get_ui_id($lbl_expression), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($lbl_expression), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_home))
+  declare ui_label $lbl_expression2 (1, 2)
+  set_control_par_str(get_ui_id($lbl_expression2), $CONTROL_PAR_TEXT, "Volume control")
+  set_control_par_str(get_ui_id($lbl_expression2), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_expression2), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_expression2), $CONTROL_PAR_FONT_TYPE, 18)
+  set_control_par(get_ui_id($lbl_expression2), $CONTROL_PAR_POS_X, 391)
+  set_control_par(get_ui_id($lbl_expression2), $CONTROL_PAR_POS_Y, 191)
+  set_control_par(get_ui_id($lbl_expression2), $CONTROL_PAR_WIDTH, 180)
+  set_control_par(get_ui_id($lbl_expression2), $CONTROL_PAR_HEIGHT, 100)
+  add_text_line($lbl_expression2, "0-100% (CC11)")
+  set_control_par(get_ui_id($lbl_expression2), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_home))
+  $sli_dynamics := 629921
+  $sli_expression := 1000000
+  declare ui_panel $UI_reverb 
+  set_control_par(get_ui_id($UI_reverb), $CONTROL_PAR_POS_X, 611)
+  set_control_par(get_ui_id($UI_reverb), $CONTROL_PAR_POS_Y, 130)
+  declare %drywet[1001] := (0, 46419, 58484, 66479, 73299, 79042, 83758, 88264, 92351, 95879, 99377, 102644, 105529, 108441, 111205, 113839, 116201, 118620, 120943, 123181, 125207, 127299, 129323, 131287, 133076, 134932, 136628, 138391, 140110, 141685, 143326, 144832, 146404, 147944, 149451, 150838, 152289, 153713, 155111, 156400, 157751, 159080, 160386, 161592, 162859, 164029, 165259, 166396, 167591, 168770, 169933, 171008, 172140, 173258, 174293, 175384, 176461, 177459, 178512, 179487, 180516, 181533, 182477, 183473, 184458, 185432, 186337, 187233, 188179, 189116, 189986, 190905, 191816, 192662, 193556, 194386, 195264, 196081, 196944, 197800, 198649, 199437, 200220, 201048, 201870, 202634, 203442, 204195, 204991, 205782, 206517, 207296, 208021, 208741, 209503, 210260, 210964, 211711, 212406, 213142, 213874, 214555, 215232, 215949, 216662, 217326, 217985, 218684, 219379, 220027, 220671, 221353, 222032, 222664, 223292, 223959, 224581, 225199, 225854, 226506, 227113, 227718, 228359, 228957, 229551, 230183, 230771, 231395, 231977, 232556, 233171, 233745, 234354, 234921, 235487, 236086, 236646, 237202, 237794, 238345, 238894, 239476, 240021, 240598, 241101, 241673, 242207, 242774, 243303, 243830, 244389, 244911, 245431, 245949, 246499, 246978, 247523, 248032, 248574, 249045, 249581, 250082, 250614, 251077, 251605, 252098, 252589, 253077, 253564, 254082, 254565, 255047, 255526, 256004, 256480, 256954, 257427, 257929, 258398, 258865, 259331, 259795, 260257, 260718, 261177, 261634, 262120, 262544, 262997, 263448, 263927, 264346, 264792, 265267, 265710, 266123, 266563, 267003, 267440, 267877, 268311, 268745, 269177, 269608, 270037, 270465, 270891, 271288, 271712, 272136, 272556, 272977, 273396, 273813, 274229, 274617, 275030, 275443, 275854, 276237, 276646, 277054, 277460, 277866, 278243, 278647, 279049, 279449, 279822, 280221, 280619, 280988, 281384, 281778, 282145, 282537, 282928, 283318, 283681, 284069, 284430, 284816, 285201, 285558, 285941, 286298, 286653, 287033, 287412, 287765, 288141, 288492, 288868, 289242, 289590, 289937, 290309, 290654, 291000, 291368, 291735, 292078, 292420, 292784, 293125, 293488, 293826, 294164, 294525, 294860, 295195, 295530, 295887, 296220, 296552, 296907, 297238, 297567, 297897, 298248, 298576, 298903, 299229, 299554, 299902, 300227, 300550, 300872, 301194, 301516, 301836, 302179, 302498, 302794, 303134, 303451, 303768, 304083, 304398, 304713, 305027, 305340, 305653, 305965, 306276, 306586, 306897, 307206, 307493, 307801, 308109, 308416, 308722, 309028, 309333, 309638, 309920, 310223, 310527, 310828, 311109, 311410, 311710, 312010, 312309, 312587, 312885, 313183, 313459, 313755, 314051, 314326, 314621, 314894, 315189, 315481, 315754, 316046, 316317, 316609, 316878, 317169, 317458, 317727, 317995, 318283, 318550, 318837, 319104, 319390, 319655, 319920, 320205, 320469, 320753, 321016, 321279, 321541, 321822, 322084, 322345, 322625, 322885, 323145, 323404, 323663, 323941, 324199, 324456, 324714, 324971, 325227, 325483, 325758, 325994, 326268, 326522, 326775, 327029, 327282, 327535, 327787, 328039, 328291, 328542, 328793, 329024, 329274, 329524, 329773, 330022, 330270, 330518, 330766, 330995, 331242, 331488, 331716, 331962, 332207, 332452, 332697, 332923, 333167, 333411, 333636, 333879, 334104, 334346, 334588, 334811, 335053, 335275, 335516, 335738, 335979, 336200, 336439, 336660, 336899, 337119, 337339, 337577, 337796, 338033, 338252, 338470, 338706, 338924, 339142, 339359, 339594, 339811, 340028, 340244, 340477, 340693, 340908, 341123, 341338, 341552, 341766, 341981, 342212, 342425, 342621, 342851, 343064, 343276, 343470, 343682, 343894, 344123, 344317, 344527, 344737, 344948, 345158, 345367, 345560, 345769, 345978, 346187, 346396, 346586, 346794, 347002, 347193, 347400, 347589, 347796, 348003, 348192, 348398, 348604, 348793, 348981, 349186, 349391, 349579, 349766, 349970, 350157, 350361, 350548, 350734, 350937, 351124, 351310, 351512, 351697, 351899, 352084, 352269, 352454, 352655, 352822, 353023, 353207, 353390, 353574, 353757, 353940, 354123, 354306, 354489, 354671, 354853, 355051, 355216, 355398, 355579, 355761, 355941, 356122, 356303, 356483, 356648, 356827, 357007, 357187, 357366, 357530, 357709, 357888, 358051, 358229, 358408, 358570, 358748, 358910, 359088, 359266, 359427, 359588, 359765, 359942, 360103, 360264, 360440, 360601, 360761, 360937, 361097, 361257, 361432, 361591, 361751, 361910, 362084, 362243, 362402, 362561, 362735, 362893, 363051, 363210, 363368, 363525, 363683, 363840, 363998, 364155, 364312, 364469, 364626, 364782, 364939, 365079, 365236, 365392, 365548, 365704, 365859, 366000, 366155, 366310, 366465, 366605, 366760, 366900, 367055, 367209, 367363, 367502, 367641, 367795, 367934, 368088, 368226, 368379, 368518, 368671, 368809, 368962, 369100, 369237, 369375, 369528, 369665, 369802, 369939, 370092, 370228, 370365, 370502, 370639, 370775, 370911, 371047, 371199, 371320, 371456, 371606, 371742, 371863, 371998, 372134, 372269, 372404, 372540, 372675, 372810, 372930, 373065, 373199, 373334, 373453, 373588, 373722, 373842, 373976, 374095, 374228, 374347, 374482, 374600, 374734, 374853, 374986, 375105, 375238, 375356, 375474, 375607, 375725, 375844, 375976, 376094, 376212, 376329, 376462, 376579, 376697, 376814, 376932, 377049, 377167, 377283, 377400, 377532, 377635, 377751, 377868, 377985, 378102, 378218, 378335, 378451, 378553, 378669, 378785, 378902, 379003, 379119, 379235, 379336, 379452, 379568, 379683, 379785, 379900, 380002, 380117, 380218, 380333, 380434, 380549, 380649, 380750, 380865, 380966, 381066, 381181, 381281, 381381, 381482, 381596, 381696, 381797, 381897, 381997, 382096, 382197, 382296, 382396, 382496, 382610, 382695, 382794, 382894, 382994, 383093, 383193, 383292, 383377, 383476, 383575, 383675, 383773, 383859, 383957, 384056, 384141, 384240, 384324, 384423, 384522, 384606, 384705, 384789, 384888, 384972, 385057, 385155, 385239, 385323, 385422, 385506, 385590, 385674, 385772, 385856, 385940, 386024, 386108, 386205, 386289, 386373, 386457, 386540, 386624, 386708, 386791, 386875, 386958, 387028, 387111, 387195, 387278, 387361, 387445, 387514, 387598, 387681, 387750, 387833, 387916, 387986, 388068, 388151, 388221, 388290, 388372, 388456, 388524, 388594, 388676, 388745, 388814, 388897, 388966, 389035, 389117, 389186, 389255, 389324, 389392, 389475, 389544, 389612, 389680, 389749, 389818, 389886, 389955, 390023, 390092, 390160, 390228, 390297, 390352, 390420, 390489, 390557, 390625, 390680, 390748, 390816, 390871, 390939, 391007, 391062, 391130, 391184, 391252, 391307, 391375, 391429, 391497, 391551, 391606, 391674, 391728, 391783, 391850, 391905, 391959, 392013, 392067, 392135, 392189, 392244, 392297, 392352, 392406, 392460, 392514, 392568, 392622, 392677, 392730, 392784, 392825, 392879, 392933, 392987, 393041, 393082, 393135, 393189, 393230, 393283, 393337, 393378, 393431, 393472, 393526, 393566, 393620, 393661, 393714, 393755, 393795, 393848, 393889, 393929, 393983, 394023, 394063, 394104, 394144, 394197, 394238, 394278, 394318, 394358, 394398, 394439, 394479, 394519, 394559, 394599, 394640, 394679, 394706, 394747, 394786, 394827, 394853, 394894, 394934, 394960, 395001, 395040, 395067, 395107, 395134, 395174, 395200, 395241, 395267, 395307, 395334, 395361, 395401, 395427, 395468, 395494, 395520, 395548, 395574, 395614, 395640, 395667, 395694, 395720, 395747, 395774, 395800, 395827, 395853, 395880, 395907, 395933, 395960, 395986, 395999, 396026, 396053, 396079, 396092, 396119, 396145, 396159, 396186, 396199, 396225, 396252, 396265, 396292, 396305, 396331, 396344, 396358, 396385, 396398, 396411, 396438, 396451, 396464, 396477, 396504, 396517, 396530, 396544, 396557, 396570, 396583, 396596, 396610, 396623, 396636, 396649, 396663, 396676, 396689, 396702, 396702, 396716, 396729, 396742, 396742, 396755, 396768, 396768, 396782, 396782, 396795, 396809, 396809, 396821, 396821, 396821, 396835, 396835, 396848, 396848, 396848, 396862, 396862, 396862, 396862, 396862, 396875, 396875, 396875, 396875, 396875, 396875, 396875)
+  declare ui_button $btn_reverb 
+  make_persistent($btn_reverb)
+  read_persistent_var($btn_reverb)
+  set_control_par_str(get_ui_id($btn_reverb), $CONTROL_PAR_TEXT, "REVERB")
+  set_control_par_str(get_ui_id($btn_reverb), $CONTROL_PAR_PICTURE, "btn_onoff")
+  set_control_par(get_ui_id($btn_reverb), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
+  set_control_par(get_ui_id($btn_reverb), $CONTROL_PAR_TEXTPOS_Y, 1)
+  set_control_par(get_ui_id($btn_reverb), $CONTROL_PAR_POS_X, 0)
+  set_control_par(get_ui_id($btn_reverb), $CONTROL_PAR_POS_Y, 0)
+  set_control_par(get_ui_id($btn_reverb), $CONTROL_PAR_WIDTH, 160)
+  set_control_par(get_ui_id($btn_reverb), $CONTROL_PAR_HEIGHT, 19)
+  set_control_par(get_ui_id($btn_reverb), $CONTROL_PAR_DISABLE_TEXT_SHIFTING, 1)
+  $i := 0
+  while($i <= (num_elements(%font__types) - 1)) 
+    set_control_par(get_ui_id($btn_reverb), %font__types[$i], %_font__3pt6[$i * 2])
+    inc($i)
+  end while
+  set_control_par(get_ui_id($btn_reverb), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_reverb))
+  declare ui_button $btn_prev_rev 
+  set_control_par_str(get_ui_id($btn_prev_rev), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($btn_prev_rev), $CONTROL_PAR_PICTURE, "btn_left_small")
+  set_control_par(get_ui_id($btn_prev_rev), $CONTROL_PAR_POS_X, 0)
+  set_control_par(get_ui_id($btn_prev_rev), $CONTROL_PAR_POS_Y, 43)
+  set_control_par(get_ui_id($btn_prev_rev), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_reverb))
+  declare ui_button $btn_next_rev 
+  set_control_par_str(get_ui_id($btn_next_rev), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($btn_next_rev), $CONTROL_PAR_PICTURE, "btn_right_small")
+  set_control_par(get_ui_id($btn_next_rev), $CONTROL_PAR_POS_X, 11)
+  set_control_par(get_ui_id($btn_next_rev), $CONTROL_PAR_POS_Y, 43)
+  set_control_par(get_ui_id($btn_next_rev), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_reverb))
+  declare !revtypes[15]
+  !revtypes[0] := "Concert Hall 1"
+  !revtypes[1] := "Concert Hall 2"
+  !revtypes[2] := "Medium Hall 1"
+  !revtypes[3] := "Medium Hall 2"
+  !revtypes[4] := "Small Hall 1"
+  !revtypes[5] := "Small Hall 2"
+  !revtypes[6] := "Recording Stage 1"
+  !revtypes[7] := "Recording Stage 2"
+  !revtypes[8] := "Cathedral"
+  !revtypes[9] := "Mystique"
+  !revtypes[10] := "Uialtum"
+  !revtypes[11] := "Silmataurea"
+  !revtypes[12] := "Waenen"
+  !revtypes[13] := "Menomenta"
+  !revtypes[14] := "Namaarie"
+  declare ui_menu $mnu_revtype 
+  make_persistent($mnu_revtype)
+  read_persistent_var($mnu_revtype)
+  set_control_par_str(get_ui_id($mnu_revtype), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($mnu_revtype), $CONTROL_PAR_FONT_TYPE, %_font__3pt3[2])
+  set_control_par(get_ui_id($mnu_revtype), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
+  set_control_par(get_ui_id($mnu_revtype), $CONTROL_PAR_TEXTPOS_Y, 5)
+  set_control_par(get_ui_id($mnu_revtype), $CONTROL_PAR_POS_X, 32)
+  set_control_par(get_ui_id($mnu_revtype), $CONTROL_PAR_POS_Y, 40)
+  set_control_par(get_ui_id($mnu_revtype), $CONTROL_PAR_WIDTH, 140)
+  set_control_par(get_ui_id($mnu_revtype), $CONTROL_PAR_HEIGHT, 25)
+  $i := 0
+  while($i <= (num_elements(!revtypes) - 1)) 
+    add_menu_item($mnu_revtype, !revtypes[$i], $i)
+    inc($i)
+  end while
+  load_ir_sample(!revtypes[$mnu_revtype], 1, 1)
+  set_control_par(get_ui_id($mnu_revtype), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_reverb))
+  declare ui_slider $sli_reverbmix (0, 1000000)
+  make_persistent($sli_reverbmix)
+  read_persistent_var($sli_reverbmix)
+  set_control_par(get_ui_id($sli_reverbmix), $CONTROL_PAR_DEFAULT_VALUE, 200000)
+  set_control_par_str(get_ui_id($sli_reverbmix), $CONTROL_PAR_PICTURE, "sli_small")
+  set_control_par(get_ui_id($sli_reverbmix), $CONTROL_PAR_MOUSE_BEHAVIOUR, -600)
+  set_control_par(get_ui_id($sli_reverbmix), $CONTROL_PAR_POS_X, 10)
+  set_control_par(get_ui_id($sli_reverbmix), $CONTROL_PAR_POS_Y, 75)
+  set_control_par(get_ui_id($sli_reverbmix), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_reverb))
+  declare $last_time_reverbmix
+  declare ui_label $lbl_reverbmix (1, 1)
+  set_control_par_str(get_ui_id($lbl_reverbmix), $CONTROL_PAR_TEXT, "Mix")
+  set_control_par_str(get_ui_id($lbl_reverbmix), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_reverbmix), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
+  set_control_par(get_ui_id($lbl_reverbmix), $CONTROL_PAR_FONT_TYPE, %_font__2pt7[0])
+  set_control_par(get_ui_id($lbl_reverbmix), $CONTROL_PAR_POS_X, 80)
+  set_control_par(get_ui_id($lbl_reverbmix), $CONTROL_PAR_POS_Y, 97)
+  set_control_par(get_ui_id($lbl_reverbmix), $CONTROL_PAR_WIDTH, 70)
+  set_control_par(get_ui_id($lbl_reverbmix), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($lbl_reverbmix), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_reverb))
+  set_engine_par($ENGINE_PAR_EFFECT_TYPE, $EFFECT_TYPE_IRC, -1, 1, $NI_INSERT_BUS)
+  set_engine_par($ENGINE_PAR_SEND_EFFECT_TYPE, $EFFECT_TYPE_NONE, -1, 0, $NI_SEND_BUS)
+  set_engine_par($ENGINE_PAR_SEND_EFFECT_BYPASS, abs($btn_reverb - 1), -1, 1, $NI_INSERT_BUS)
+  declare ui_panel $UI_eq 
+  set_control_par(get_ui_id($UI_eq), $CONTROL_PAR_POS_X, 30)
+  set_control_par(get_ui_id($UI_eq), $CONTROL_PAR_POS_Y, 70)
+  declare ui_button $btn_eq 
+  make_persistent($btn_eq)
+  read_persistent_var($btn_eq)
+  set_control_par_str(get_ui_id($btn_eq), $CONTROL_PAR_TEXT, "EQUALIZER")
+  set_control_par_str(get_ui_id($btn_eq), $CONTROL_PAR_PICTURE, "btn_onoff")
+  set_control_par(get_ui_id($btn_eq), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
+  set_control_par(get_ui_id($btn_eq), $CONTROL_PAR_TEXTPOS_Y, 1)
+  set_control_par(get_ui_id($btn_eq), $CONTROL_PAR_POS_X, 0)
+  set_control_par(get_ui_id($btn_eq), $CONTROL_PAR_POS_Y, 0)
+  set_control_par(get_ui_id($btn_eq), $CONTROL_PAR_WIDTH, 160)
+  set_control_par(get_ui_id($btn_eq), $CONTROL_PAR_HEIGHT, 19)
+  set_control_par(get_ui_id($btn_eq), $CONTROL_PAR_DISABLE_TEXT_SHIFTING, 1)
+  $i := 0
+  while($i <= (num_elements(%font__types) - 1)) 
+    set_control_par(get_ui_id($btn_eq), %font__types[$i], %_font__3pt6[$i * 2])
+    inc($i)
+  end while
+  set_control_par(get_ui_id($btn_eq), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_eq))
+  declare ui_slider $sli_lowGain (0, 1000000)
+  make_persistent($sli_lowGain)
+  read_persistent_var($sli_lowGain)
+  set_control_par(get_ui_id($sli_lowGain), $CONTROL_PAR_DEFAULT_VALUE, 500000)
+  set_control_par_str(get_ui_id($sli_lowGain), $CONTROL_PAR_PICTURE, "sli_small")
+  set_control_par(get_ui_id($sli_lowGain), $CONTROL_PAR_MOUSE_BEHAVIOUR, -600)
+  set_control_par(get_ui_id($sli_lowGain), $CONTROL_PAR_POS_X, 0)
+  set_control_par(get_ui_id($sli_lowGain), $CONTROL_PAR_POS_Y, 30)
+  set_control_par(get_ui_id($sli_lowGain), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_eq))
+  declare $last_time_lowGain
+  declare ui_label $lbl_lowGain (1, 1)
+  set_control_par_str(get_ui_id($lbl_lowGain), $CONTROL_PAR_TEXT, "Low")
+  set_control_par_str(get_ui_id($lbl_lowGain), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_lowGain), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
+  set_control_par(get_ui_id($lbl_lowGain), $CONTROL_PAR_FONT_TYPE, %_font__2pt7[0])
+  set_control_par(get_ui_id($lbl_lowGain), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($sli_lowGain), $CONTROL_PAR_POS_X) + 60)
+  set_control_par(get_ui_id($lbl_lowGain), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_lowGain), $CONTROL_PAR_POS_Y) + 22)
+  set_control_par(get_ui_id($lbl_lowGain), $CONTROL_PAR_WIDTH, 70)
+  set_control_par(get_ui_id($lbl_lowGain), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($lbl_lowGain), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_eq))
+  declare ui_slider $sli_highGain (0, 1000000)
+  make_persistent($sli_highGain)
+  read_persistent_var($sli_highGain)
+  set_control_par(get_ui_id($sli_highGain), $CONTROL_PAR_DEFAULT_VALUE, 500000)
+  set_control_par_str(get_ui_id($sli_highGain), $CONTROL_PAR_PICTURE, "sli_small")
+  set_control_par(get_ui_id($sli_highGain), $CONTROL_PAR_MOUSE_BEHAVIOUR, -600)
+  set_control_par(get_ui_id($sli_highGain), $CONTROL_PAR_POS_X, 105)
+  set_control_par(get_ui_id($sli_highGain), $CONTROL_PAR_POS_Y, 30)
+  set_control_par(get_ui_id($sli_highGain), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_eq))
+  declare $last_time_highGain
+  declare ui_label $lbl_highGain (1, 1)
+  set_control_par_str(get_ui_id($lbl_highGain), $CONTROL_PAR_TEXT, "High")
+  set_control_par_str(get_ui_id($lbl_highGain), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_highGain), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
+  set_control_par(get_ui_id($lbl_highGain), $CONTROL_PAR_FONT_TYPE, %_font__2pt7[0])
+  set_control_par(get_ui_id($lbl_highGain), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($sli_highGain), $CONTROL_PAR_POS_X) + 60)
+  set_control_par(get_ui_id($lbl_highGain), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_highGain), $CONTROL_PAR_POS_Y) + 22)
+  set_control_par(get_ui_id($lbl_highGain), $CONTROL_PAR_WIDTH, 70)
+  set_control_par(get_ui_id($lbl_highGain), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($lbl_highGain), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_eq))
+  set_engine_par($ENGINE_PAR_SEND_EFFECT_TYPE, $EFFECT_TYPE_NONE, -1, 5, $NI_SEND_BUS)
+  set_engine_par($ENGINE_PAR_EFFECT_TYPE, $EFFECT_TYPE_SOLID_GEQ, -1, 0, $NI_INSERT_BUS)
+  set_engine_par($ENGINE_PAR_SEQ_LF_FREQ, 830000, -1, 0, $NI_INSERT_BUS)
+  set_engine_par($ENGINE_PAR_SEQ_HF_FREQ, 410000, -1, 0, $NI_INSERT_BUS)
+  set_engine_par($ENGINE_PAR_SEND_EFFECT_BYPASS, abs($btn_eq - 1), -1, 0, $NI_INSERT_BUS)
+  declare ui_panel $UI_settings 
+  declare ui_button $btn_settings 
+  set_control_par_str(get_ui_id($btn_settings), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($btn_settings), $CONTROL_PAR_PICTURE, "btn_settings")
+  set_control_par(get_ui_id($btn_settings), $CONTROL_PAR_POS_X, 763)
+  set_control_par(get_ui_id($btn_settings), $CONTROL_PAR_POS_Y, 6)
+  set_control_par(get_ui_id($btn_settings), $CONTROL_PAR_DISABLE_TEXT_SHIFTING, 1)
+  declare ui_label $lbl_dynamic_cc (1, 1)
+  set_control_par_str(get_ui_id($lbl_dynamic_cc), $CONTROL_PAR_TEXT, "Dynamics CC")
+  set_control_par_str(get_ui_id($lbl_dynamic_cc), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_dynamic_cc), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
+  set_control_par(get_ui_id($lbl_dynamic_cc), $CONTROL_PAR_FONT_TYPE, %_font__3pt3[2])
+  set_control_par(get_ui_id($lbl_dynamic_cc), $CONTROL_PAR_TEXTPOS_Y, 4)
+  set_control_par(get_ui_id($lbl_dynamic_cc), $CONTROL_PAR_POS_X, 617)
+  set_control_par(get_ui_id($lbl_dynamic_cc), $CONTROL_PAR_POS_Y, 48)
+  set_control_par(get_ui_id($lbl_dynamic_cc), $CONTROL_PAR_WIDTH, 140)
+  set_control_par(get_ui_id($lbl_dynamic_cc), $CONTROL_PAR_HEIGHT, 25)
+  set_control_par(get_ui_id($lbl_dynamic_cc), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_settings))
+  declare ui_menu $mnu_dynamic_cc 
+  make_persistent($mnu_dynamic_cc)
+  read_persistent_var($mnu_dynamic_cc)
+  set_control_par_str(get_ui_id($mnu_dynamic_cc), $CONTROL_PAR_PICTURE, "mnu")
+  set_control_par(get_ui_id($mnu_dynamic_cc), $CONTROL_PAR_FONT_TYPE, %_font__2pt8[2])
+  set_control_par(get_ui_id($mnu_dynamic_cc), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
+  set_control_par(get_ui_id($mnu_dynamic_cc), $CONTROL_PAR_TEXTPOS_Y, 5)
+  set_control_par(get_ui_id($mnu_dynamic_cc), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($lbl_dynamic_cc), $CONTROL_PAR_POS_X))
+  set_control_par(get_ui_id($mnu_dynamic_cc), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($lbl_dynamic_cc), $CONTROL_PAR_POS_Y) + 25)
+  set_control_par(get_ui_id($mnu_dynamic_cc), $CONTROL_PAR_WIDTH, 140)
+  set_control_par(get_ui_id($mnu_dynamic_cc), $CONTROL_PAR_HEIGHT, 25)
+  add_menu_item($mnu_dynamic_cc, "CC 1", 1)
+  add_menu_item($mnu_dynamic_cc, "CC 2", 2)
+  add_menu_item($mnu_dynamic_cc, "CC 11", 11)
+  set_control_par(get_ui_id($mnu_dynamic_cc), $CONTROL_PAR_Z_LAYER, 1)
+  set_control_par(get_ui_id($mnu_dynamic_cc), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_settings))
+  declare $num_dynamic_cc
+  $num_dynamic_cc := get_menu_item_value(get_ui_id($mnu_dynamic_cc), get_control_par(get_ui_id($mnu_dynamic_cc), $CONTROL_PAR_VALUE))
+  declare ui_label $lbl_user_interface (1, 1)
+  set_control_par_str(get_ui_id($lbl_user_interface), $CONTROL_PAR_TEXT, "User Interface")
+  set_control_par_str(get_ui_id($lbl_user_interface), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_user_interface), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
+  set_control_par(get_ui_id($lbl_user_interface), $CONTROL_PAR_FONT_TYPE, %_font__3pt3[2])
+  set_control_par(get_ui_id($lbl_user_interface), $CONTROL_PAR_TEXTPOS_Y, 4)
+  set_control_par(get_ui_id($lbl_user_interface), $CONTROL_PAR_POS_X, 617)
+  set_control_par(get_ui_id($lbl_user_interface), $CONTROL_PAR_POS_Y, 111)
+  set_control_par(get_ui_id($lbl_user_interface), $CONTROL_PAR_WIDTH, 140)
+  set_control_par(get_ui_id($lbl_user_interface), $CONTROL_PAR_HEIGHT, 25)
+  set_control_par(get_ui_id($lbl_user_interface), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_settings))
+  declare !interfaces[4]
+  !interfaces[0] := "Default"
+  !interfaces[1] := "Strings of Winter"
+  !interfaces[2] := "Horns of Hell"
+  !interfaces[3] := "Woods of the Wild"
+  declare ui_menu $mnu_user_interface 
+  make_persistent($mnu_user_interface)
+  read_persistent_var($mnu_user_interface)
+  set_control_par_str(get_ui_id($mnu_user_interface), $CONTROL_PAR_PICTURE, "mnu")
+  set_control_par(get_ui_id($mnu_user_interface), $CONTROL_PAR_FONT_TYPE, %_font__2pt8[2])
+  set_control_par(get_ui_id($mnu_user_interface), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
+  set_control_par(get_ui_id($mnu_user_interface), $CONTROL_PAR_TEXTPOS_Y, 5)
+  set_control_par(get_ui_id($mnu_user_interface), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($lbl_user_interface), $CONTROL_PAR_POS_X))
+  set_control_par(get_ui_id($mnu_user_interface), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($lbl_user_interface), $CONTROL_PAR_POS_Y) + 25)
+  set_control_par(get_ui_id($mnu_user_interface), $CONTROL_PAR_WIDTH, 140)
+  set_control_par(get_ui_id($mnu_user_interface), $CONTROL_PAR_HEIGHT, 25)
+  $i := 0
+  while($i <= (num_elements(!interfaces) - 1)) 
+    add_menu_item($mnu_user_interface, !interfaces[$i], $i)
+    inc($i)
+  end while
+  set_control_par(get_ui_id($mnu_user_interface), $CONTROL_PAR_Z_LAYER, 1)
+  set_control_par(get_ui_id($mnu_user_interface), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_settings))
+  declare ui_slider $sli_transition_volume (0, 1000000)
+  make_persistent($sli_transition_volume)
+  read_persistent_var($sli_transition_volume)
+  set_control_par(get_ui_id($sli_transition_volume), $CONTROL_PAR_DEFAULT_VALUE, 500000)
+  set_control_par_str(get_ui_id($sli_transition_volume), $CONTROL_PAR_PICTURE, "sli_small")
+  set_control_par(get_ui_id($sli_transition_volume), $CONTROL_PAR_MOUSE_BEHAVIOUR, -600)
+  set_control_par(get_ui_id($sli_transition_volume), $CONTROL_PAR_POS_X, 523)
+  set_control_par(get_ui_id($sli_transition_volume), $CONTROL_PAR_POS_Y, 68)
+  set_control_par(get_ui_id($sli_transition_volume), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_settings))
+  declare ui_label $lbl_transition_volume (1, 1)
+  set_control_par_str(get_ui_id($lbl_transition_volume), $CONTROL_PAR_TEXT, "Transition Volume")
+  set_control_par_str(get_ui_id($lbl_transition_volume), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_transition_volume), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_transition_volume), $CONTROL_PAR_FONT_TYPE, 1)
+  set_control_par(get_ui_id($lbl_transition_volume), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($sli_transition_volume), $CONTROL_PAR_POS_X) - 35)
+  set_control_par(get_ui_id($lbl_transition_volume), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_transition_volume), $CONTROL_PAR_POS_Y) + 55)
+  set_control_par(get_ui_id($lbl_transition_volume), $CONTROL_PAR_WIDTH, 120)
+  set_control_par(get_ui_id($lbl_transition_volume), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($lbl_transition_volume), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_settings))
+  declare ui_panel $UI_oneShot 
+  set_control_par(get_ui_id($UI_oneShot), $CONTROL_PAR_POS_X, 0)
+  set_control_par(get_ui_id($UI_oneShot), $CONTROL_PAR_POS_Y, 0)
+  declare ui_button $btn_oneShot 
+  set_control_par_str(get_ui_id($btn_oneShot), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($btn_oneShot), $CONTROL_PAR_PICTURE, "btn_quilt")
+  set_control_par(get_ui_id($btn_oneShot), $CONTROL_PAR_POS_X, 87)
+  set_control_par(get_ui_id($btn_oneShot), $CONTROL_PAR_POS_Y, 11)
+  declare %btn_rr_values[20]
+  make_persistent(%btn_rr_values)
+  read_persistent_var(%btn_rr_values)
+  declare %btn_rr[20]
+  declare ui_button $btn_rr0 
+  make_persistent($btn_rr0)
+  read_persistent_var($btn_rr0)
+  declare ui_button $btn_rr1 
+  make_persistent($btn_rr1)
+  read_persistent_var($btn_rr1)
+  declare ui_button $btn_rr2 
+  make_persistent($btn_rr2)
+  read_persistent_var($btn_rr2)
+  declare ui_button $btn_rr3 
+  make_persistent($btn_rr3)
+  read_persistent_var($btn_rr3)
+  declare ui_button $btn_rr4 
+  make_persistent($btn_rr4)
+  read_persistent_var($btn_rr4)
+  declare ui_button $btn_rr5 
+  make_persistent($btn_rr5)
+  read_persistent_var($btn_rr5)
+  declare ui_button $btn_rr6 
+  make_persistent($btn_rr6)
+  read_persistent_var($btn_rr6)
+  declare ui_button $btn_rr7 
+  make_persistent($btn_rr7)
+  read_persistent_var($btn_rr7)
+  declare ui_button $btn_rr8 
+  make_persistent($btn_rr8)
+  read_persistent_var($btn_rr8)
+  declare ui_button $btn_rr9 
+  make_persistent($btn_rr9)
+  read_persistent_var($btn_rr9)
+  declare ui_button $btn_rr10 
+  make_persistent($btn_rr10)
+  read_persistent_var($btn_rr10)
+  declare ui_button $btn_rr11 
+  make_persistent($btn_rr11)
+  read_persistent_var($btn_rr11)
+  declare ui_button $btn_rr12 
+  make_persistent($btn_rr12)
+  read_persistent_var($btn_rr12)
+  declare ui_button $btn_rr13 
+  make_persistent($btn_rr13)
+  read_persistent_var($btn_rr13)
+  declare ui_button $btn_rr14 
+  make_persistent($btn_rr14)
+  read_persistent_var($btn_rr14)
+  declare ui_button $btn_rr15 
+  make_persistent($btn_rr15)
+  read_persistent_var($btn_rr15)
+  declare ui_button $btn_rr16 
+  make_persistent($btn_rr16)
+  read_persistent_var($btn_rr16)
+  declare ui_button $btn_rr17 
+  make_persistent($btn_rr17)
+  read_persistent_var($btn_rr17)
+  declare ui_button $btn_rr18 
+  make_persistent($btn_rr18)
+  read_persistent_var($btn_rr18)
+  declare ui_button $btn_rr19 
+  make_persistent($btn_rr19)
+  read_persistent_var($btn_rr19)
+  $_iter0 := 0
+  while($_iter0 <= 19) 
+    %btn_rr[$_iter0] := get_ui_id($btn_rr0) + $_iter0
+    inc($_iter0)
+  end while
+  declare %lbl_rr[20]
+  declare ui_label $lbl_rr0 (1, 1)
+  declare ui_label $lbl_rr1 (1, 1)
+  declare ui_label $lbl_rr2 (1, 1)
+  declare ui_label $lbl_rr3 (1, 1)
+  declare ui_label $lbl_rr4 (1, 1)
+  declare ui_label $lbl_rr5 (1, 1)
+  declare ui_label $lbl_rr6 (1, 1)
+  declare ui_label $lbl_rr7 (1, 1)
+  declare ui_label $lbl_rr8 (1, 1)
+  declare ui_label $lbl_rr9 (1, 1)
+  declare ui_label $lbl_rr10 (1, 1)
+  declare ui_label $lbl_rr11 (1, 1)
+  declare ui_label $lbl_rr12 (1, 1)
+  declare ui_label $lbl_rr13 (1, 1)
+  declare ui_label $lbl_rr14 (1, 1)
+  declare ui_label $lbl_rr15 (1, 1)
+  declare ui_label $lbl_rr16 (1, 1)
+  declare ui_label $lbl_rr17 (1, 1)
+  declare ui_label $lbl_rr18 (1, 1)
+  declare ui_label $lbl_rr19 (1, 1)
+  $_iter0 := 0
+  while($_iter0 <= 19) 
+    %lbl_rr[$_iter0] := get_ui_id($lbl_rr0) + $_iter0
+    inc($_iter0)
+  end while
+  declare %lbl_rr_group_name[20]
+  declare ui_label $lbl_rr_group_name0 (1, 1)
+  declare ui_label $lbl_rr_group_name1 (1, 1)
+  declare ui_label $lbl_rr_group_name2 (1, 1)
+  declare ui_label $lbl_rr_group_name3 (1, 1)
+  declare ui_label $lbl_rr_group_name4 (1, 1)
+  declare ui_label $lbl_rr_group_name5 (1, 1)
+  declare ui_label $lbl_rr_group_name6 (1, 1)
+  declare ui_label $lbl_rr_group_name7 (1, 1)
+  declare ui_label $lbl_rr_group_name8 (1, 1)
+  declare ui_label $lbl_rr_group_name9 (1, 1)
+  declare ui_label $lbl_rr_group_name10 (1, 1)
+  declare ui_label $lbl_rr_group_name11 (1, 1)
+  declare ui_label $lbl_rr_group_name12 (1, 1)
+  declare ui_label $lbl_rr_group_name13 (1, 1)
+  declare ui_label $lbl_rr_group_name14 (1, 1)
+  declare ui_label $lbl_rr_group_name15 (1, 1)
+  declare ui_label $lbl_rr_group_name16 (1, 1)
+  declare ui_label $lbl_rr_group_name17 (1, 1)
+  declare ui_label $lbl_rr_group_name18 (1, 1)
+  declare ui_label $lbl_rr_group_name19 (1, 1)
+  $_iter0 := 0
+  while($_iter0 <= 19) 
+    %lbl_rr_group_name[$_iter0] := get_ui_id($lbl_rr_group_name0) + $_iter0
+    inc($_iter0)
+  end while
+  $i := 0
+  while($i <= 19) 
+    set_control_par_str(%btn_rr[$i], $CONTROL_PAR_TEXT, "")
+    set_control_par_str(%btn_rr[$i], $CONTROL_PAR_PICTURE, "fx_handle")
+    set_control_par(%btn_rr[$i], $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+    set_control_par(%btn_rr[$i], $CONTROL_PAR_FONT_TYPE, 0)
+    set_control_par(%btn_rr[$i], $CONTROL_PAR_TEXTPOS_Y, 18)
+    set_control_par(%btn_rr[$i], $CONTROL_PAR_POS_X, 50 + ($i * 105))
+    set_control_par(%btn_rr[$i], $CONTROL_PAR_POS_Y, 160)
+    set_control_par(%btn_rr[$i], $CONTROL_PAR_WIDTH, 90)
+    set_control_par(%btn_rr[$i], $CONTROL_PAR_HEIGHT, 50)
+    $ii := 0
+    while($ii <= (num_elements(%font__types) - 1)) 
+      set_control_par(%btn_rr[$i], %font__types[$ii], %_font__3pt3[$ii * 2])
+      inc($ii)
+    end while
+    set_control_par(%btn_rr[$i], $CONTROL_PAR_DISABLE_TEXT_SHIFTING, 1)
+    set_control_par(%btn_rr[$i], $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+    set_control_par_str(%lbl_rr[$i], $CONTROL_PAR_TEXT, "RR " & ($i + 1))
+    set_control_par_str(%lbl_rr[$i], $CONTROL_PAR_PICTURE, "bg_label")
+    set_control_par(%lbl_rr[$i], $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+    set_control_par(%lbl_rr[$i], $CONTROL_PAR_FONT_TYPE, %_font__3pt3[0])
+    set_control_par(%lbl_rr[$i], $CONTROL_PAR_TEXTPOS_Y, 10)
+    set_control_par(%lbl_rr[$i], $CONTROL_PAR_POS_X, get_control_par(%btn_rr[$i], $CONTROL_PAR_POS_X) + 1)
+    set_control_par(%lbl_rr[$i], $CONTROL_PAR_POS_Y, get_control_par(%btn_rr[$i], $CONTROL_PAR_POS_Y) + 1)
+    set_control_par(%lbl_rr[$i], $CONTROL_PAR_WIDTH, get_control_par(%btn_rr[$i], $CONTROL_PAR_WIDTH) - 2)
+    set_control_par(%lbl_rr[$i], $CONTROL_PAR_HEIGHT, get_control_par(%btn_rr[$i], $CONTROL_PAR_HEIGHT) - 2)
+    set_control_par(%lbl_rr[$i], $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+    set_control_par_str(%lbl_rr_group_name[$i], $CONTROL_PAR_TEXT, group_name($i + 1))
+    set_control_par_str(%lbl_rr_group_name[$i], $CONTROL_PAR_PICTURE, "alpha")
+    set_control_par(%lbl_rr_group_name[$i], $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+    set_control_par(%lbl_rr_group_name[$i], $CONTROL_PAR_FONT_TYPE, 15)
+    set_control_par(%lbl_rr_group_name[$i], $CONTROL_PAR_TEXTPOS_Y, 25)
+    set_control_par(%lbl_rr_group_name[$i], $CONTROL_PAR_POS_X, get_control_par(%btn_rr[$i], $CONTROL_PAR_POS_X) + 1)
+    set_control_par(%lbl_rr_group_name[$i], $CONTROL_PAR_POS_Y, get_control_par(%btn_rr[$i], $CONTROL_PAR_POS_Y) + 1)
+    set_control_par(%lbl_rr_group_name[$i], $CONTROL_PAR_WIDTH, get_control_par(%btn_rr[$i], $CONTROL_PAR_WIDTH) - 2)
+    set_control_par(%lbl_rr_group_name[$i], $CONTROL_PAR_HEIGHT, get_control_par(%btn_rr[$i], $CONTROL_PAR_HEIGHT) - 2)
+    set_control_par(%lbl_rr_group_name[$i], $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+    inc($i)
+  end while
+  declare $btn_rr_sum
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    set_control_par(%btn_rr[$i], $CONTROL_PAR_HIDE, %hide_state[- sh_right($i - ($NUM_GROUPS - 1), 31)])
+    set_control_par(%lbl_rr[$i], $CONTROL_PAR_HIDE, %hide_state[- sh_right($i - ($NUM_GROUPS - 1), 31)])
+    set_control_par(%lbl_rr_group_name[$i], $CONTROL_PAR_HIDE, %hide_state[- sh_right($i - ($NUM_GROUPS - 1), 31)])
+    inc($i)
+  end while
+  declare $elem_width
+  $elem_width := 30 - ((30 - (90 - ((90 - (745 / ($NUM_GROUPS - 1))) .and. sh_right((745 / ($NUM_GROUPS - 1)) - 90, 31)))) .and. sh_right(30 - (90 - ((90 - (745 / ($NUM_GROUPS - 1))) .and. sh_right((745 / ($NUM_GROUPS - 1)) - 90, 31))), 31))
+  declare $spacing
+  $spacing := 1 - ((1 - (10 - ((10 - (abs(745 - ($elem_width * ($NUM_GROUPS - 1))) / ($NUM_GROUPS - 1))) .and. sh_right((abs(745 - ($elem_width * ($NUM_GROUPS - 1))) / ($NUM_GROUPS - 1)) - 10, 31)))) .and. sh_right(1 - (10 - ((10 - (abs(745 - ($elem_width * ($NUM_GROUPS - 1))) / ($NUM_GROUPS - 1))) .and. sh_right((abs(745 - ($elem_width * ($NUM_GROUPS - 1))) / ($NUM_GROUPS - 1)) - 10, 31))), 31))
+  declare $final_width
+  $final_width := ($elem_width * ($NUM_GROUPS - 1)) + ($spacing * (($NUM_GROUPS - 1) - 1))
+  declare $x_pos
+  $x_pos := 402 - ($final_width / 2)
+  $i := 0
+  while($i <= (($NUM_GROUPS - 1) - 1)) 
+    set_control_par(%btn_rr[$i], $CONTROL_PAR_WIDTH, $elem_width)
+    set_control_par(%btn_rr[$i], $CONTROL_PAR_POS_X, $x_pos + (($elem_width + $spacing) * $i))
+    set_control_par(%btn_rr[$i], $CONTROL_PAR_POS_Y, 155)
+    set_control_par(%lbl_rr[$i], $CONTROL_PAR_POS_X, get_control_par(%btn_rr[$i], $CONTROL_PAR_POS_X) + 1)
+    set_control_par(%lbl_rr[$i], $CONTROL_PAR_POS_Y, get_control_par(%btn_rr[$i], $CONTROL_PAR_POS_Y) + 1)
+    set_control_par(%lbl_rr[$i], $CONTROL_PAR_WIDTH, get_control_par(%btn_rr[$i], $CONTROL_PAR_WIDTH) - 2)
+    set_control_par(%lbl_rr[$i], $CONTROL_PAR_HEIGHT, get_control_par(%btn_rr[$i], $CONTROL_PAR_HEIGHT) - 2)
+    set_control_par(%lbl_rr_group_name[$i], $CONTROL_PAR_POS_X, get_control_par(%btn_rr[$i], $CONTROL_PAR_POS_X) + 1)
+    set_control_par(%lbl_rr_group_name[$i], $CONTROL_PAR_POS_Y, get_control_par(%btn_rr[$i], $CONTROL_PAR_POS_Y) + 1)
+    set_control_par(%lbl_rr_group_name[$i], $CONTROL_PAR_WIDTH, get_control_par(%btn_rr[$i], $CONTROL_PAR_WIDTH) - 2)
+    set_control_par(%lbl_rr_group_name[$i], $CONTROL_PAR_HEIGHT, get_control_par(%btn_rr[$i], $CONTROL_PAR_HEIGHT) - 2)
+    inc($i)
+  end while
+  declare ui_label $lbl_filename (1, 1)
+  set_control_par_str(get_ui_id($lbl_filename), $CONTROL_PAR_TEXT, "Filename: ")
+  set_control_par_str(get_ui_id($lbl_filename), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_filename), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_filename), $CONTROL_PAR_FONT_TYPE, %_font__3pt6[2])
+  set_control_par(get_ui_id($lbl_filename), $CONTROL_PAR_POS_X, 117)
+  set_control_par(get_ui_id($lbl_filename), $CONTROL_PAR_POS_Y, 80)
+  set_control_par(get_ui_id($lbl_filename), $CONTROL_PAR_WIDTH, 400)
+  set_control_par(get_ui_id($lbl_filename), $CONTROL_PAR_HEIGHT, 30)
+  set_control_par(get_ui_id($lbl_filename), $CONTROL_PAR_POS_X, 402 - (get_control_par(get_ui_id($lbl_filename), $CONTROL_PAR_WIDTH) / 2))
+  set_control_par(get_ui_id($lbl_filename), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  declare %ADHSR_DEFAULT_PARAMS_INT[6] := (330000, 201000, 0, 254000, 1000000, 585720)
+  declare !instr_type[2]
+  !instr_type[0] := "One Shot"
+  !instr_type[1] := "ADHSR"
+  declare ui_button $btn_one_shot 
+  set_control_par_str(get_ui_id($btn_one_shot), $CONTROL_PAR_TEXT, "One Shot")
+  set_control_par_str(get_ui_id($btn_one_shot), $CONTROL_PAR_PICTURE, "fx_handle")
+  set_control_par(get_ui_id($btn_one_shot), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($btn_one_shot), $CONTROL_PAR_FONT_TYPE, 0)
+  set_control_par(get_ui_id($btn_one_shot), $CONTROL_PAR_TEXTPOS_Y, 8)
+  set_control_par(get_ui_id($btn_one_shot), $CONTROL_PAR_POS_X, 514)
+  set_control_par(get_ui_id($btn_one_shot), $CONTROL_PAR_POS_Y, 257)
+  set_control_par(get_ui_id($btn_one_shot), $CONTROL_PAR_WIDTH, 90)
+  set_control_par(get_ui_id($btn_one_shot), $CONTROL_PAR_HEIGHT, 30)
+  set_control_par(get_ui_id($btn_one_shot), $CONTROL_PAR_DISABLE_TEXT_SHIFTING, 1)
+  $ii := 0
+  while($ii <= (num_elements(%font__types) - 1)) 
+    set_control_par(get_ui_id($btn_one_shot), %font__types[$ii], %_font__3pt3[$ii * 2])
+    inc($ii)
+  end while
+  declare ui_label $lbl_one_shot (1, 1)
+  set_control_par_str(get_ui_id($lbl_one_shot), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($lbl_one_shot), $CONTROL_PAR_PICTURE, "bg_label")
+  set_control_par(get_ui_id($lbl_one_shot), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_one_shot), $CONTROL_PAR_POS_X) + 1)
+  set_control_par(get_ui_id($lbl_one_shot), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_one_shot), $CONTROL_PAR_POS_Y) + 1)
+  set_control_par(get_ui_id($lbl_one_shot), $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_one_shot), $CONTROL_PAR_WIDTH) - 2)
+  set_control_par(get_ui_id($lbl_one_shot), $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_one_shot), $CONTROL_PAR_HEIGHT) - 2)
+  set_control_par(get_ui_id($btn_one_shot), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  set_control_par(get_ui_id($lbl_one_shot), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  declare %ADHSR_ENGINE_PARAMS[6]
+  %ADHSR_ENGINE_PARAMS[0] := $ENGINE_PAR_ATK_CURVE
+  %ADHSR_ENGINE_PARAMS[1] := $ENGINE_PAR_ATTACK
+  %ADHSR_ENGINE_PARAMS[2] := $ENGINE_PAR_HOLD
+  %ADHSR_ENGINE_PARAMS[3] := $ENGINE_PAR_DECAY
+  %ADHSR_ENGINE_PARAMS[4] := $ENGINE_PAR_SUSTAIN
+  %ADHSR_ENGINE_PARAMS[5] := $ENGINE_PAR_RELEASE
+  declare !ADHSR_UNITS[6]
+  !ADHSR_UNITS[0] := "%"
+  !ADHSR_UNITS[1] := "ms"
+  !ADHSR_UNITS[2] := "ms"
+  !ADHSR_UNITS[3] := "ms"
+  !ADHSR_UNITS[4] := "dB"
+  !ADHSR_UNITS[5] := "ms"
+  declare !envRateNames[6]
+  !envRateNames[0] := "Curve"
+  !envRateNames[1] := "Attack"
+  !envRateNames[2] := "Hold"
+  !envRateNames[3] := "Decay"
+  !envRateNames[4] := "Sustain"
+  !envRateNames[5] := "Release"
+  declare ui_slider $sli_envIntCurve (0, 1000000)
+  make_persistent($sli_envIntCurve)
+  read_persistent_var($sli_envIntCurve)
+  set_control_par(get_ui_id($sli_envIntCurve), $CONTROL_PAR_DEFAULT_VALUE, %ADHSR_DEFAULT_PARAMS_INT[0])
+  set_control_par_str(get_ui_id($sli_envIntCurve), $CONTROL_PAR_PICTURE, "sli_smallsmall")
+  set_control_par(get_ui_id($sli_envIntCurve), $CONTROL_PAR_MOUSE_BEHAVIOUR, -600)
+  set_control_par(get_ui_id($sli_envIntCurve), $CONTROL_PAR_POS_X, 227)
+  set_control_par(get_ui_id($sli_envIntCurve), $CONTROL_PAR_POS_Y, 290)
+  declare $last_time_envIntCurve
+  declare ui_label $lbl_envIntCurve (1, 1)
+  set_control_par_str(get_ui_id($lbl_envIntCurve), $CONTROL_PAR_TEXT, !envRateNames[0])
+  set_control_par_str(get_ui_id($lbl_envIntCurve), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_envIntCurve), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_envIntCurve), $CONTROL_PAR_FONT_TYPE, 1)
+  set_control_par(get_ui_id($lbl_envIntCurve), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($sli_envIntCurve), $CONTROL_PAR_POS_X) - 18)
+  set_control_par(get_ui_id($lbl_envIntCurve), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_envIntCurve), $CONTROL_PAR_POS_Y) + 42)
+  set_control_par(get_ui_id($lbl_envIntCurve), $CONTROL_PAR_WIDTH, 80)
+  set_control_par(get_ui_id($lbl_envIntCurve), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($lbl_envIntCurve), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  set_control_par(get_ui_id($sli_envIntCurve), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  declare ui_slider $sli_envIntAttack (0, 1000000)
+  make_persistent($sli_envIntAttack)
+  read_persistent_var($sli_envIntAttack)
+  set_control_par(get_ui_id($sli_envIntAttack), $CONTROL_PAR_DEFAULT_VALUE, %ADHSR_DEFAULT_PARAMS_INT[1])
+  set_control_par_str(get_ui_id($sli_envIntAttack), $CONTROL_PAR_PICTURE, "sli_smallsmall")
+  set_control_par(get_ui_id($sli_envIntAttack), $CONTROL_PAR_MOUSE_BEHAVIOUR, -600)
+  set_control_par(get_ui_id($sli_envIntAttack), $CONTROL_PAR_POS_X, 286)
+  set_control_par(get_ui_id($sli_envIntAttack), $CONTROL_PAR_POS_Y, 290)
+  declare $last_time_envIntAttack
+  declare ui_label $lbl_envIntAttack (1, 1)
+  set_control_par_str(get_ui_id($lbl_envIntAttack), $CONTROL_PAR_TEXT, !envRateNames[1])
+  set_control_par_str(get_ui_id($lbl_envIntAttack), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_envIntAttack), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_envIntAttack), $CONTROL_PAR_FONT_TYPE, 1)
+  set_control_par(get_ui_id($lbl_envIntAttack), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($sli_envIntAttack), $CONTROL_PAR_POS_X) - 18)
+  set_control_par(get_ui_id($lbl_envIntAttack), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_envIntAttack), $CONTROL_PAR_POS_Y) + 42)
+  set_control_par(get_ui_id($lbl_envIntAttack), $CONTROL_PAR_WIDTH, 80)
+  set_control_par(get_ui_id($lbl_envIntAttack), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($sli_envIntAttack), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  set_control_par(get_ui_id($lbl_envIntAttack), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  declare ui_slider $sli_envIntHold (0, 1000000)
+  make_persistent($sli_envIntHold)
+  read_persistent_var($sli_envIntHold)
+  set_control_par(get_ui_id($sli_envIntHold), $CONTROL_PAR_DEFAULT_VALUE, %ADHSR_DEFAULT_PARAMS_INT[2])
+  set_control_par_str(get_ui_id($sli_envIntHold), $CONTROL_PAR_PICTURE, "sli_smallsmall")
+  set_control_par(get_ui_id($sli_envIntHold), $CONTROL_PAR_MOUSE_BEHAVIOUR, -600)
+  set_control_par(get_ui_id($sli_envIntHold), $CONTROL_PAR_POS_X, 345)
+  set_control_par(get_ui_id($sli_envIntHold), $CONTROL_PAR_POS_Y, 290)
+  declare $last_time_envIntHold
+  declare ui_label $lbl_envIntHold (1, 1)
+  set_control_par_str(get_ui_id($lbl_envIntHold), $CONTROL_PAR_TEXT, !envRateNames[2])
+  set_control_par_str(get_ui_id($lbl_envIntHold), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_envIntHold), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_envIntHold), $CONTROL_PAR_FONT_TYPE, 1)
+  set_control_par(get_ui_id($lbl_envIntHold), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($sli_envIntHold), $CONTROL_PAR_POS_X) - 18)
+  set_control_par(get_ui_id($lbl_envIntHold), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_envIntHold), $CONTROL_PAR_POS_Y) + 42)
+  set_control_par(get_ui_id($lbl_envIntHold), $CONTROL_PAR_WIDTH, 80)
+  set_control_par(get_ui_id($lbl_envIntHold), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($sli_envIntHold), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  set_control_par(get_ui_id($lbl_envIntHold), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  declare ui_slider $sli_envIntDecay (0, 1000000)
+  make_persistent($sli_envIntDecay)
+  read_persistent_var($sli_envIntDecay)
+  set_control_par(get_ui_id($sli_envIntDecay), $CONTROL_PAR_DEFAULT_VALUE, %ADHSR_DEFAULT_PARAMS_INT[3])
+  set_control_par_str(get_ui_id($sli_envIntDecay), $CONTROL_PAR_PICTURE, "sli_smallsmall")
+  set_control_par(get_ui_id($sli_envIntDecay), $CONTROL_PAR_MOUSE_BEHAVIOUR, -600)
+  set_control_par(get_ui_id($sli_envIntDecay), $CONTROL_PAR_POS_X, 404)
+  set_control_par(get_ui_id($sli_envIntDecay), $CONTROL_PAR_POS_Y, 290)
+  declare $last_time_envIntDecay
+  declare ui_label $lbl_envIntDecay (1, 1)
+  set_control_par_str(get_ui_id($lbl_envIntDecay), $CONTROL_PAR_TEXT, !envRateNames[3])
+  set_control_par_str(get_ui_id($lbl_envIntDecay), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_envIntDecay), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_envIntDecay), $CONTROL_PAR_FONT_TYPE, 1)
+  set_control_par(get_ui_id($lbl_envIntDecay), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($sli_envIntDecay), $CONTROL_PAR_POS_X) - 18)
+  set_control_par(get_ui_id($lbl_envIntDecay), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_envIntDecay), $CONTROL_PAR_POS_Y) + 42)
+  set_control_par(get_ui_id($lbl_envIntDecay), $CONTROL_PAR_WIDTH, 80)
+  set_control_par(get_ui_id($lbl_envIntDecay), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($sli_envIntDecay), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  set_control_par(get_ui_id($lbl_envIntDecay), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  declare ui_slider $sli_envIntSustain (0, 1000000)
+  make_persistent($sli_envIntSustain)
+  read_persistent_var($sli_envIntSustain)
+  set_control_par(get_ui_id($sli_envIntSustain), $CONTROL_PAR_DEFAULT_VALUE, %ADHSR_DEFAULT_PARAMS_INT[4])
+  set_control_par_str(get_ui_id($sli_envIntSustain), $CONTROL_PAR_PICTURE, "sli_smallsmall")
+  set_control_par(get_ui_id($sli_envIntSustain), $CONTROL_PAR_MOUSE_BEHAVIOUR, -600)
+  set_control_par(get_ui_id($sli_envIntSustain), $CONTROL_PAR_POS_X, 463)
+  set_control_par(get_ui_id($sli_envIntSustain), $CONTROL_PAR_POS_Y, 290)
+  declare $last_time_envIntSustain
+  declare ui_label $lbl_envIntSustain (1, 1)
+  set_control_par_str(get_ui_id($lbl_envIntSustain), $CONTROL_PAR_TEXT, !envRateNames[4])
+  set_control_par_str(get_ui_id($lbl_envIntSustain), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_envIntSustain), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_envIntSustain), $CONTROL_PAR_FONT_TYPE, 1)
+  set_control_par(get_ui_id($lbl_envIntSustain), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($sli_envIntSustain), $CONTROL_PAR_POS_X) - 18)
+  set_control_par(get_ui_id($lbl_envIntSustain), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_envIntSustain), $CONTROL_PAR_POS_Y) + 42)
+  set_control_par(get_ui_id($lbl_envIntSustain), $CONTROL_PAR_WIDTH, 80)
+  set_control_par(get_ui_id($lbl_envIntSustain), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($sli_envIntSustain), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  set_control_par(get_ui_id($lbl_envIntSustain), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  declare ui_slider $sli_envIntRelease (0, 1000000)
+  make_persistent($sli_envIntRelease)
+  read_persistent_var($sli_envIntRelease)
+  set_control_par(get_ui_id($sli_envIntRelease), $CONTROL_PAR_DEFAULT_VALUE, %ADHSR_DEFAULT_PARAMS_INT[5])
+  set_control_par_str(get_ui_id($sli_envIntRelease), $CONTROL_PAR_PICTURE, "sli_smallsmall")
+  set_control_par(get_ui_id($sli_envIntRelease), $CONTROL_PAR_MOUSE_BEHAVIOUR, -600)
+  set_control_par(get_ui_id($sli_envIntRelease), $CONTROL_PAR_POS_X, 522)
+  set_control_par(get_ui_id($sli_envIntRelease), $CONTROL_PAR_POS_Y, 290)
+  declare $last_time_envIntRelease
+  declare ui_label $lbl_envIntRelease (1, 1)
+  set_control_par_str(get_ui_id($lbl_envIntRelease), $CONTROL_PAR_TEXT, !envRateNames[5])
+  set_control_par_str(get_ui_id($lbl_envIntRelease), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_envIntRelease), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_envIntRelease), $CONTROL_PAR_FONT_TYPE, 1)
+  set_control_par(get_ui_id($lbl_envIntRelease), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($sli_envIntRelease), $CONTROL_PAR_POS_X) - 18)
+  set_control_par(get_ui_id($lbl_envIntRelease), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_envIntRelease), $CONTROL_PAR_POS_Y) + 42)
+  set_control_par(get_ui_id($lbl_envIntRelease), $CONTROL_PAR_WIDTH, 80)
+  set_control_par(get_ui_id($lbl_envIntRelease), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($sli_envIntRelease), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  set_control_par(get_ui_id($lbl_envIntRelease), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  declare ?tbl_int__env_array[125]
+  declare %tbl_int__expCurve[125]
+  declare %tbl_int__logCurve[125]
+  declare %tbl_int__linCurve[125]
+  declare %tbl_int__decayCurve[125]
+  declare %tbl_int__releaseCurve[125]
+  declare ~tbl_int__attack
+  declare $tbl_int__attack_idx
+  declare $tbl_int__hold
+  declare ~tbl_int__decay
+  declare $tbl_int__sustain
+  declare ~tbl_int__release
+  declare $tbl_int__curve
+  declare $tbl_int__release_idx
+  declare ~tbl_int__attack_point
+  declare ui_table %tbl_int1[125] (2, 2, 1000)
+  set_control_par_str(get_ui_id(%tbl_int1), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id(%tbl_int1), $CONTROL_PAR_BAR_COLOR, 16711679)
+  set_control_par(get_ui_id(%tbl_int1), $CONTROL_PAR_ZERO_LINE_COLOR, 16711679)
+  set_control_par(get_ui_id(%tbl_int1), $CONTROL_PAR_HIDE, $HIDE_PART_VALUE)
+  set_control_par(get_ui_id(%tbl_int1), $CONTROL_PAR_Z_LAYER, -1)
+  set_control_par(get_ui_id(%tbl_int1), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($sli_envIntCurve), $CONTROL_PAR_POS_X) + 12)
+  set_control_par(get_ui_id(%tbl_int1), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_envIntCurve), $CONTROL_PAR_POS_Y) - 40)
+  set_control_par(get_ui_id(%tbl_int1), $CONTROL_PAR_WIDTH, 257)
+  set_control_par(get_ui_id(%tbl_int1), $CONTROL_PAR_HEIGHT, 40)
+  declare ui_table %tbl_int2[125] (2, 2, 1000)
+  set_control_par_str(get_ui_id(%tbl_int2), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id(%tbl_int2), $CONTROL_PAR_BAR_COLOR, 16711679)
+  set_control_par(get_ui_id(%tbl_int2), $CONTROL_PAR_ZERO_LINE_COLOR, 16711679)
+  set_control_par(get_ui_id(%tbl_int2), $CONTROL_PAR_HIDE, $HIDE_PART_VALUE)
+  set_control_par(get_ui_id(%tbl_int2), $CONTROL_PAR_Z_LAYER, -1)
+  set_control_par(get_ui_id(%tbl_int2), $CONTROL_PAR_POS_X, (get_control_par(get_ui_id($sli_envIntCurve), $CONTROL_PAR_POS_X) + 12) + 1)
+  set_control_par(get_ui_id(%tbl_int2), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_envIntCurve), $CONTROL_PAR_POS_Y) - 40)
+  set_control_par(get_ui_id(%tbl_int2), $CONTROL_PAR_WIDTH, 257)
+  set_control_par(get_ui_id(%tbl_int2), $CONTROL_PAR_HEIGHT, 40)
+  set_control_par(get_ui_id(%tbl_int1), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  set_control_par(get_ui_id(%tbl_int2), $CONTROL_PAR_PARENT_PANEL, get_ui_id($UI_oneShot))
+  $tbl_int__curve := $sli_envIntCurve
+  ~tbl_int__attack_point := pow(10., (log(1.5) / log(10.)) + (0.51 * ((log(0.056) / log(10.)) - (log(1.5) / log(10.)))))
+  $tbl_int__release_idx := 93
+  ~tbl_int__attack := (((int_to_real($sli_envIntAttack) - 0.) * (~tbl_int__attack_point - 1.5)) / 1000000.) + 1.5
+  $tbl_int__hold := ($sli_envIntHold * 18) / 1000000
+  ~tbl_int__decay := (((int_to_real($sli_envIntDecay) - 0.) * 14200.) / 1000000.) + 800.
+  $tbl_int__sustain := ($sli_envIntSustain * 1000) / 1000000
+  ~tbl_int__release := (((int_to_real($sli_envIntRelease) - 0.) * 39200.) / 1000000.) + 800.
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__expCurve[$i] := real_to_int(exp(~tbl_int__attack * int_to_real($i)))
+    %tbl_int__expCurve[$i] := (%tbl_int__expCurve[$i] * (1 + (sh_right(1000 - %tbl_int__expCurve[$i], 31) .or. sh_right(%tbl_int__expCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__expCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__decay - 800.) * 10.99) / 14200.) + 0.01))) * ~tbl_int__decay) - ((((~tbl_int__decay - 800.) * 200.) / 14200.) + 0.))
+    %tbl_int__decayCurve[$i] := (%tbl_int__decayCurve[$i] * (1 + (sh_right(1000 - %tbl_int__decayCurve[$i], 31) .or. sh_right(%tbl_int__decayCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__decayCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := ((%tbl_int__decayCurve[$i] * (1000 - $tbl_int__sustain)) / 1000) + $tbl_int__sustain
+    %tbl_int__releaseCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__release - 800.) * 4.99) / 14200.) + 0.01))) * ~tbl_int__release) - ((((~tbl_int__release - 800.) * 300.) / 14200.) + 0.))
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * (1 + (sh_right(1000 - %tbl_int__releaseCurve[$i], 31) .or. sh_right(%tbl_int__releaseCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__releaseCurve[$i], 31))
+    inc($i)
+  end while
+  $tbl_int__attack_idx := search(%tbl_int__expCurve, 1000)
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__linCurve[$i] := real_to_int((((int_to_real($i) - 0.) * 1000.) / (int_to_real($tbl_int__attack_idx) - 0.)) + 0.)
+    %tbl_int__logCurve[$i] := 1000 - %tbl_int__expCurve[(($tbl_int__attack_idx - $i) * (1 + (sh_right(125 - ($tbl_int__attack_idx - $i), 31) .or. sh_right($tbl_int__attack_idx - $i, 31)))) - (125 * sh_right(125 - ($tbl_int__attack_idx - $i), 31))]
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($tbl_int__curve < 500000)
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__expCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * 1.) / 500000.) + 0.))
+    else
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__logCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * 1.) / 500000.) + 0.))
+    end if
+    if($i > ($tbl_int__attack_idx + $tbl_int__hold))
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__decayCurve[$i - ($tbl_int__attack_idx + $tbl_int__hold)])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * real_to_int(?tbl_int__env_array[$tbl_int__release_idx])) / 1000
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($i > $tbl_int__release_idx)
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__releaseCurve[$i - $tbl_int__release_idx])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= 124) 
+    %tbl_int1[$i] := (((real_to_int(?tbl_int__env_array[$i]) * (1 + (sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31) .or. sh_right(real_to_int(?tbl_int__env_array[$i]), 31)))) - (1000 * sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31))) * 880) / 1000
+    %tbl_int2[$i] := %tbl_int1[$i]
+    inc($i)
+  end while
+  set_ui_height_px(502)
+  set_ui_width_px(805)
+  declare $control_positioner__iterator := 0
+  declare $control_positioner__current_control := -1
+  declare $control_positioner__current_control__parent := -1
+  declare $control_positioner__current_control_offset__x := 0
+  declare $control_positioner__current_control_offset__y := 0
+  declare $control_positioner__last_control := -1
+  declare $control_positioner__once := 0
+  declare $control_positioner__value_edit__x := 0
+  declare $control_position__locked__x := 0
+  declare $control_position__locked__y := 0
+  declare $control_positioner__click__x := -1
+  declare $control_positioner__click__y := -1
+  declare $control_positioner__mouse__x := -1
+  declare $control_positioner__mouse__y := -1
+  declare !control_positioner__export_array[32]
+  !control_positioner__export_array[0] := ""
+  declare ui_xy ?xy_control_positioner[2] 
+  set_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_WIDTH, 805)
+  set_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_HEIGHT, 502)
+  set_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+  set_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_MOUSE_MODE, 2)
+  set_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_Z_LAYER, 1)
+  declare ui_panel $UI_control_position_parent 
+  declare $control_position_parent
+  $control_position_parent := get_ui_id($UI_control_position_parent)
+  set_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_POS_X, 0)
+  set_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_POS_Y, 457)
+  set_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_WIDTH, 130)
+  set_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_HEIGHT, 45)
+  set_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_Z_LAYER, 1)
+  declare ui_label $lbl_control_positioner_title (0, 0)
+  set_control_par_str(get_ui_id($lbl_control_positioner_title), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($lbl_control_positioner_title), $CONTROL_PAR_PICTURE, "")
+  set_control_par(get_ui_id($lbl_control_positioner_title), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_control_positioner_title), $CONTROL_PAR_POS_X, 0)
+  set_control_par(get_ui_id($lbl_control_positioner_title), $CONTROL_PAR_POS_Y, 0)
+  set_control_par(get_ui_id($lbl_control_positioner_title), $CONTROL_PAR_WIDTH, 130)
+  set_control_par(get_ui_id($lbl_control_positioner_title), $CONTROL_PAR_HEIGHT, 45)
+  set_control_par(get_ui_id($lbl_control_positioner_title), $CONTROL_PAR_PARENT_PANEL, $control_position_parent)
+  declare ui_value_edit $vlue_control_positioner__x (0, 805, 1)
+  set_control_par(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_POS_X, 0)
+  set_control_par(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_POS_Y, 25)
+  set_control_par(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_WIDTH, 60)
+  set_control_par(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+  set_control_par(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_Z_LAYER, 1)
+  set_control_par_str(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_TEXT, "x")
+  set_control_par(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_PARENT_PANEL, $control_position_parent)
+  declare ui_value_edit $vlue_control_positioner__y (0, 502, 1)
+  set_control_par(get_ui_id($vlue_control_positioner__y), $CONTROL_PAR_POS_X, 70)
+  set_control_par(get_ui_id($vlue_control_positioner__y), $CONTROL_PAR_POS_Y, 25)
+  set_control_par(get_ui_id($vlue_control_positioner__y), $CONTROL_PAR_WIDTH, 60)
+  set_control_par(get_ui_id($vlue_control_positioner__y), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($vlue_control_positioner__y), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+  set_control_par(get_ui_id($vlue_control_positioner__y), $CONTROL_PAR_Z_LAYER, 1)
+  set_control_par_str(get_ui_id($vlue_control_positioner__y), $CONTROL_PAR_TEXT, "y")
+  set_control_par(get_ui_id($vlue_control_positioner__y), $CONTROL_PAR_PARENT_PANEL, $control_position_parent)
+  declare %control_positioner__controls[32] := (-1)
+  declare !control_positioner__control_names[32]
+  !control_positioner__control_names[0] := ""
+  set_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+  declare ui_button $btn_lock 
+  set_control_par_str(get_ui_id($btn_lock), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($btn_lock), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($btn_lock), $CONTROL_PAR_POS_X, 2)
+  set_control_par(get_ui_id($btn_lock), $CONTROL_PAR_POS_Y, 480)
+  set_control_par(get_ui_id($btn_lock), $CONTROL_PAR_WIDTH, 80)
+  set_control_par(get_ui_id($btn_lock), $CONTROL_PAR_HEIGHT, 20)
+  set_control_par(get_ui_id($btn_lock), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs(- sh_right(abs(%development[0] - 22714) - 1, 31)) - 1, 31))])
+  $btn_home := 0
+  set_control_par(get_ui_id($UI_home), $CONTROL_PAR_HIDE, %hide_state[0])
+  set_control_par(get_ui_id($UI_reverb), $CONTROL_PAR_HIDE, %hide_state[0])
+  set_control_par(get_ui_id($UI_eq), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+  $btn_settings := 0
+  set_control_par(get_ui_id($UI_settings), $CONTROL_PAR_HIDE, %hide_state[0])
+  $btn_oneShot := 0
+  set_control_par(get_ui_id($UI_oneShot), $CONTROL_PAR_HIDE, %hide_state[0])
+  if(- sh_right(abs(%development[0] - 22714) - 1, 31) = 1)
+    message("dev")
+    $btn_oneShot := 1
+    set_control_par(get_ui_id($UI_oneShot), $CONTROL_PAR_HIDE, %hide_state[1])
+    $i := 0
+    while($i <= (num_elements(%btn_rr) - 1)) 
+      %btn_rr_values[$i] := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE)
+      inc($i)
+    end while
+    $btn_one_shot := abs(sh_right(abs($INSTRUMENT_TYPE) - 1, 31))
+    $i := 0
+    while($i <= (num_elements(%btn_rr) - 1)) 
+      set_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE, %btn_rr_values[$i])
+      inc($i)
+    end while
+    $sli_envIntCurve := get_engine_par(%ADHSR_ENGINE_PARAMS[0], $rr_group, find_mod($rr_group, "ENV_AHDSR_VOLUME"), -1)
+    $sli_envIntAttack := get_engine_par(%ADHSR_ENGINE_PARAMS[1], $rr_group, find_mod($rr_group, "ENV_AHDSR_VOLUME"), -1)
+    $sli_envIntHold := get_engine_par(%ADHSR_ENGINE_PARAMS[2], $rr_group, find_mod($rr_group, "ENV_AHDSR_VOLUME"), -1)
+    $sli_envIntDecay := get_engine_par(%ADHSR_ENGINE_PARAMS[3], $rr_group, find_mod($rr_group, "ENV_AHDSR_VOLUME"), -1)
+    $sli_envIntSustain := get_engine_par(%ADHSR_ENGINE_PARAMS[4], $rr_group, find_mod($rr_group, "ENV_AHDSR_VOLUME"), -1)
+    $sli_envIntRelease := get_engine_par(%ADHSR_ENGINE_PARAMS[5], $rr_group, find_mod($rr_group, "ENV_AHDSR_VOLUME"), -1)
+    $tbl_int__curve := $sli_envIntCurve
+    ~tbl_int__attack_point := pow(10., (log(1.5) / log(10.)) + (0.51 * ((log(0.056) / log(10.)) - (log(1.5) / log(10.)))))
+    $tbl_int__release_idx := 93
+    ~tbl_int__attack := (((int_to_real($sli_envIntAttack) - 0.) * (~tbl_int__attack_point - 1.5)) / 1000000.) + 1.5
+    $tbl_int__hold := ($sli_envIntHold * 18) / 1000000
+    ~tbl_int__decay := (((int_to_real($sli_envIntDecay) - 0.) * 14200.) / 1000000.) + 800.
+    $tbl_int__sustain := ($sli_envIntSustain * 1000) / 1000000
+    ~tbl_int__release := (((int_to_real($sli_envIntRelease) - 0.) * 39200.) / 1000000.) + 800.
+    $i := 0
+    while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+      %tbl_int__expCurve[$i] := real_to_int(exp(~tbl_int__attack * int_to_real($i)))
+      %tbl_int__expCurve[$i] := (%tbl_int__expCurve[$i] * (1 + (sh_right(1000 - %tbl_int__expCurve[$i], 31) .or. sh_right(%tbl_int__expCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__expCurve[$i], 31))
+      %tbl_int__decayCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__decay - 800.) * 10.99) / 14200.) + 0.01))) * ~tbl_int__decay) - ((((~tbl_int__decay - 800.) * 200.) / 14200.) + 0.))
+      %tbl_int__decayCurve[$i] := (%tbl_int__decayCurve[$i] * (1 + (sh_right(1000 - %tbl_int__decayCurve[$i], 31) .or. sh_right(%tbl_int__decayCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__decayCurve[$i], 31))
+      %tbl_int__decayCurve[$i] := ((%tbl_int__decayCurve[$i] * (1000 - $tbl_int__sustain)) / 1000) + $tbl_int__sustain
+      %tbl_int__releaseCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__release - 800.) * 4.99) / 14200.) + 0.01))) * ~tbl_int__release) - ((((~tbl_int__release - 800.) * 300.) / 14200.) + 0.))
+      %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * (1 + (sh_right(1000 - %tbl_int__releaseCurve[$i], 31) .or. sh_right(%tbl_int__releaseCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__releaseCurve[$i], 31))
+      inc($i)
+    end while
+    $tbl_int__attack_idx := search(%tbl_int__expCurve, 1000)
+    $i := 0
+    while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+      %tbl_int__linCurve[$i] := real_to_int((((int_to_real($i) - 0.) * 1000.) / (int_to_real($tbl_int__attack_idx) - 0.)) + 0.)
+      %tbl_int__logCurve[$i] := 1000 - %tbl_int__expCurve[(($tbl_int__attack_idx - $i) * (1 + (sh_right(125 - ($tbl_int__attack_idx - $i), 31) .or. sh_right($tbl_int__attack_idx - $i, 31)))) - (125 * sh_right(125 - ($tbl_int__attack_idx - $i), 31))]
+      inc($i)
+    end while
+    $i := 0
+    while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+      if($tbl_int__curve < 500000)
+        ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__expCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * 1.) / 500000.) + 0.))
+      else
+        ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__logCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * 1.) / 500000.) + 0.))
+      end if
+      if($i > ($tbl_int__attack_idx + $tbl_int__hold))
+        ?tbl_int__env_array[$i] := int_to_real(%tbl_int__decayCurve[$i - ($tbl_int__attack_idx + $tbl_int__hold)])
+      end if
+      inc($i)
+    end while
+    $i := 0
+    while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+      %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * real_to_int(?tbl_int__env_array[$tbl_int__release_idx])) / 1000
+      inc($i)
+    end while
+    $i := 0
+    while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+      if($i > $tbl_int__release_idx)
+        ?tbl_int__env_array[$i] := int_to_real(%tbl_int__releaseCurve[$i - $tbl_int__release_idx])
+      end if
+      inc($i)
+    end while
+    $i := 0
+    while($i <= 124) 
+      %tbl_int1[$i] := (((real_to_int(?tbl_int__env_array[$i]) * (1 + (sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31) .or. sh_right(real_to_int(?tbl_int__env_array[$i]), 31)))) - (1000 * sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31))) * 880) / 1000
+      %tbl_int2[$i] := %tbl_int1[$i]
+      inc($i)
+    end while
+    set_control_par_str(get_ui_id($btn_one_shot), $CONTROL_PAR_TEXT, !instr_type[abs(sh_right(abs($btn_one_shot) - 1, 31))])
+    set_control_par(get_ui_id($sli_envIntRelease), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($btn_one_shot) - 1, 31))])
+    set_control_par(get_ui_id($lbl_envIntRelease), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($btn_one_shot) - 1, 31))])
+    if($btn_one_shot = 1)
+      set_control_par(get_ui_id($sli_envIntDecay), $CONTROL_PAR_DEFAULT_VALUE, 660000)
+    else
+      set_control_par(get_ui_id($sli_envIntDecay), $CONTROL_PAR_DEFAULT_VALUE, 254000)
+    end if
+    message(!instr_type[$INSTRUMENT_TYPE])
+  end if
+  $NUM_RR_FINAL := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr_values) - 1)) 
+    $NUM_RR_FINAL := $NUM_RR_FINAL + %btn_rr_values[$i]
+    inc($i)
+  end while
+  $btn_home := abs(sh_right(abs(- sh_right(abs(%development[0] - 22714) - 1, 31)) - 1, 31))
+  set_control_par(get_ui_id($UI_home), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs(- sh_right(abs(%development[0] - 22714) - 1, 31)) - 1, 31))])
+  set_control_par(get_ui_id($UI_reverb), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs(- sh_right(abs(%development[0] - 22714) - 1, 31)) - 1, 31))])
+  set_control_par(get_ui_id($UI_eq), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+  set_control_par(get_ui_id($btn_home), $CONTROL_PAR_HIDE, %hide_state[- sh_right(abs(%development[0] - 22714) - 1, 31)])
+  set_control_par(get_ui_id($btn_oneShot), $CONTROL_PAR_HIDE, %hide_state[- sh_right(abs(%development[0] - 22714) - 1, 31)])
+  set_voice_limit($NI_VL_TMPRO_STANDARD, 128)
 end on
-function change_root
-  $active_root := 4
+function check_one_shot
+  set_control_par_str(get_ui_id($btn_one_shot), $CONTROL_PAR_TEXT, !instr_type[abs(sh_right(abs($btn_one_shot) - 1, 31))])
+  set_control_par(get_ui_id($sli_envIntRelease), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($btn_one_shot) - 1, 31))])
+  set_control_par(get_ui_id($lbl_envIntRelease), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($btn_one_shot) - 1, 31))])
+  if($btn_one_shot = 1)
+    set_control_par(get_ui_id($sli_envIntDecay), $CONTROL_PAR_DEFAULT_VALUE, 660000)
+  else
+    set_control_par(get_ui_id($sli_envIntDecay), $CONTROL_PAR_DEFAULT_VALUE, 254000)
+  end if
 end function
+function c_all_windows__show0
+  $btn_home := $Boolean1
+  set_control_par(get_ui_id($UI_home), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
+  set_control_par(get_ui_id($UI_reverb), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
+  set_control_par(get_ui_id($UI_eq), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+  $btn_settings := $Boolean1
+  set_control_par(get_ui_id($UI_settings), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
+  $btn_oneShot := $Boolean1
+  set_control_par(get_ui_id($UI_oneShot), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
+end function
+function get_keyrange
+  $group_iterator := 1
+  $keys := 0
+  while($keys <= 127) 
+    $blip_note := play_note($keys, 1, 0, 1)
+    set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
+    change_vol($blip_note, -2000000, 0)
+    set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 1, $group_iterator)
+    wait(1)
+    $zone_id := get_event_par($blip_note, $EVENT_PAR_ZONE_ID)
+    if(($zone_id # -1) and ($zone_id # 0))
+      %range[0] := $keys
+      $keys := 127
+    end if
+    fade_out($blip_note, 0, 1)
+    inc($keys)
+  end while
+  $keys := 0
+  while($keys <= 127) 
+    $blip_note := play_note(127 - $keys, 1, 0, 1)
+    set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
+    change_vol($blip_note, -2000000, 0)
+    set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 1, $group_iterator)
+    wait(1)
+    $zone_id := get_event_par($blip_note, $EVENT_PAR_ZONE_ID)
+    if(($zone_id # -1) and ($zone_id # 0))
+      %range[1] := 127 - $keys
+      $keys := 127
+    end if
+    fade_out($blip_note, 0, 1)
+    inc($keys)
+  end while
+end function
+function fill_mapped_notes
+  $keys := 0
+  while($keys <= 127) 
+    %mapped_notes[$keys] := 0
+    $blip_note := play_note($keys, 1, 0, 1)
+    set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
+    change_vol($blip_note, -2000000, 0)
+    set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 1, 1)
+    wait(1)
+    $zone_id := get_event_par($blip_note, $EVENT_PAR_ZONE_ID)
+    if($zone_id # -1)
+      message($zone_id)
+      %mapped_notes[$keys] := 1
+    end if
+    fade_out($blip_note, 0, 1)
+    inc($keys)
+  end while
+end function
+function update__keycolor
+  $keys := 0
+  while($keys <= 127) 
+    set_key_color($keys, $KEY_COLOR_INACTIVE)
+    if(%mapped_notes[$keys] = 1)
+      set_key_color($keys, $KEY_COLOR_DEFAULT)
+    end if
+    inc($keys)
+  end while
+end function
+function update__cc_dynamics
+  set_controller(103, real_to_int((((int_to_real($sli_dynamics) - 0.) * 127.) / 1000000.) + 0.))
+end function
+function update__cc_expression
+  set_controller(111, real_to_int((((int_to_real($sli_expression) - 0.) * 127.) / 1000000.) + 0.))
+end function
+function get_event_notes
+  $key := 0
+  while($key <= (num_elements(%KEY_DOWN) - 1)) 
+    if(%KEY_DOWN[$key] = 1)
+      %event_notes[$key] := $key
+    else
+      %event_notes[$key] := -1
+    end if
+    inc($key)
+  end while
+end function
+function c_home__show0
+  $btn_home := $Boolean0
+  set_control_par(get_ui_id($UI_home), $CONTROL_PAR_HIDE, %hide_state[$Boolean0])
+  set_control_par(get_ui_id($UI_reverb), $CONTROL_PAR_HIDE, %hide_state[$Boolean0])
+  set_control_par(get_ui_id($UI_eq), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+end function
+function control_positioner__remove
+  set_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+  set_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+  $control_positioner__iterator := 0
+  while($control_positioner__iterator <= 31) 
+    if(%control_positioner__controls[$control_positioner__iterator] = -1)
+      $control_positioner__iterator := 32
+    else
+      !control_positioner__export_array[$control_positioner__iterator] := !control_positioner__control_names[$control_positioner__iterator] & ": " & get_control_par(%control_positioner__controls[$control_positioner__iterator], $CONTROL_PAR_POS_X) & ", " & get_control_par(%control_positioner__controls[$control_positioner__iterator], $CONTROL_PAR_POS_Y)
+    end if
+    inc($control_positioner__iterator)
+  end while
+end function
+on ui_control($sli_envIntCurve)
+  $i := 0
+  while($i <= (($NUM_GROUPS - 1) - 1)) 
+    set_engine_par(%ADHSR_ENGINE_PARAMS[0], $sli_envIntCurve, $rr_group + $i, find_mod($rr_group + $i, "ENV_AHDSR_VOLUME"), -1)
+    inc($i)
+  end while
+  $tbl_int__curve := $sli_envIntCurve
+  ~tbl_int__attack_point := pow(10., (log(1.5) / log(10.)) + (0.51 * ((log(0.056) / log(10.)) - (log(1.5) / log(10.)))))
+  $tbl_int__release_idx := 93
+  ~tbl_int__attack := (((int_to_real($sli_envIntAttack) - 0.) * (~tbl_int__attack_point - 1.5)) / 1000000.) + 1.5
+  $tbl_int__hold := ($sli_envIntHold * 18) / 1000000
+  ~tbl_int__decay := (((int_to_real($sli_envIntDecay) - 0.) * 14200.) / 1000000.) + 800.
+  $tbl_int__sustain := ($sli_envIntSustain * 1000) / 1000000
+  ~tbl_int__release := (((int_to_real($sli_envIntRelease) - 0.) * 39200.) / 1000000.) + 800.
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__expCurve[$i] := real_to_int(exp(~tbl_int__attack * int_to_real($i)))
+    %tbl_int__expCurve[$i] := (%tbl_int__expCurve[$i] * (1 + (sh_right(1000 - %tbl_int__expCurve[$i], 31) .or. sh_right(%tbl_int__expCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__expCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__decay - 800.) * 10.99) / 14200.) + 0.01))) * ~tbl_int__decay) - ((((~tbl_int__decay - 800.) * 200.) / 14200.) + 0.))
+    %tbl_int__decayCurve[$i] := (%tbl_int__decayCurve[$i] * (1 + (sh_right(1000 - %tbl_int__decayCurve[$i], 31) .or. sh_right(%tbl_int__decayCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__decayCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := ((%tbl_int__decayCurve[$i] * (1000 - $tbl_int__sustain)) / 1000) + $tbl_int__sustain
+    %tbl_int__releaseCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__release - 800.) * 4.99) / 14200.) + 0.01))) * ~tbl_int__release) - ((((~tbl_int__release - 800.) * 300.) / 14200.) + 0.))
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * (1 + (sh_right(1000 - %tbl_int__releaseCurve[$i], 31) .or. sh_right(%tbl_int__releaseCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__releaseCurve[$i], 31))
+    inc($i)
+  end while
+  $tbl_int__attack_idx := search(%tbl_int__expCurve, 1000)
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__linCurve[$i] := real_to_int((((int_to_real($i) - 0.) * 1000.) / (int_to_real($tbl_int__attack_idx) - 0.)) + 0.)
+    %tbl_int__logCurve[$i] := 1000 - %tbl_int__expCurve[(($tbl_int__attack_idx - $i) * (1 + (sh_right(125 - ($tbl_int__attack_idx - $i), 31) .or. sh_right($tbl_int__attack_idx - $i, 31)))) - (125 * sh_right(125 - ($tbl_int__attack_idx - $i), 31))]
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($tbl_int__curve < 500000)
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__expCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * 1.) / 500000.) + 0.))
+    else
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__logCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * 1.) / 500000.) + 0.))
+    end if
+    if($i > ($tbl_int__attack_idx + $tbl_int__hold))
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__decayCurve[$i - ($tbl_int__attack_idx + $tbl_int__hold)])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * real_to_int(?tbl_int__env_array[$tbl_int__release_idx])) / 1000
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($i > $tbl_int__release_idx)
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__releaseCurve[$i - $tbl_int__release_idx])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= 124) 
+    %tbl_int1[$i] := (((real_to_int(?tbl_int__env_array[$i]) * (1 + (sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31) .or. sh_right(real_to_int(?tbl_int__env_array[$i]), 31)))) - (1000 * sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31))) * 880) / 1000
+    %tbl_int2[$i] := %tbl_int1[$i]
+    inc($i)
+  end while
+  set_control_par_str(get_ui_id($lbl_envIntCurve), $CONTROL_PAR_TEXT, get_engine_par_disp(%ADHSR_ENGINE_PARAMS[0], $rr_group, find_mod($rr_group, "ENV_AHDSR_VOLUME"), -1) & " " & !ADHSR_UNITS[0])
+  $last_time_envIntCurve := $ENGINE_UPTIME
+  wait(800000)
+  if(($ENGINE_UPTIME - $last_time_envIntCurve) > 795)
+    set_text($lbl_envIntCurve, !envRateNames[0])
+  end if
+end on
+on ui_control($sli_envIntAttack)
+  $i := 0
+  while($i <= (($NUM_GROUPS - 1) - 1)) 
+    set_engine_par(%ADHSR_ENGINE_PARAMS[1], $sli_envIntAttack, $rr_group + $i, find_mod($rr_group + $i, "ENV_AHDSR_VOLUME"), -1)
+    inc($i)
+  end while
+  $tbl_int__curve := $sli_envIntCurve
+  ~tbl_int__attack_point := pow(10., (log(1.5) / log(10.)) + (0.51 * ((log(0.056) / log(10.)) - (log(1.5) / log(10.)))))
+  $tbl_int__release_idx := 93
+  ~tbl_int__attack := (((int_to_real($sli_envIntAttack) - 0.) * (~tbl_int__attack_point - 1.5)) / 1000000.) + 1.5
+  $tbl_int__hold := ($sli_envIntHold * 18) / 1000000
+  ~tbl_int__decay := (((int_to_real($sli_envIntDecay) - 0.) * 14200.) / 1000000.) + 800.
+  $tbl_int__sustain := ($sli_envIntSustain * 1000) / 1000000
+  ~tbl_int__release := (((int_to_real($sli_envIntRelease) - 0.) * 39200.) / 1000000.) + 800.
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__expCurve[$i] := real_to_int(exp(~tbl_int__attack * int_to_real($i)))
+    %tbl_int__expCurve[$i] := (%tbl_int__expCurve[$i] * (1 + (sh_right(1000 - %tbl_int__expCurve[$i], 31) .or. sh_right(%tbl_int__expCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__expCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__decay - 800.) * 10.99) / 14200.) + 0.01))) * ~tbl_int__decay) - ((((~tbl_int__decay - 800.) * 200.) / 14200.) + 0.))
+    %tbl_int__decayCurve[$i] := (%tbl_int__decayCurve[$i] * (1 + (sh_right(1000 - %tbl_int__decayCurve[$i], 31) .or. sh_right(%tbl_int__decayCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__decayCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := ((%tbl_int__decayCurve[$i] * (1000 - $tbl_int__sustain)) / 1000) + $tbl_int__sustain
+    %tbl_int__releaseCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__release - 800.) * 4.99) / 14200.) + 0.01))) * ~tbl_int__release) - ((((~tbl_int__release - 800.) * 300.) / 14200.) + 0.))
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * (1 + (sh_right(1000 - %tbl_int__releaseCurve[$i], 31) .or. sh_right(%tbl_int__releaseCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__releaseCurve[$i], 31))
+    inc($i)
+  end while
+  $tbl_int__attack_idx := search(%tbl_int__expCurve, 1000)
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__linCurve[$i] := real_to_int((((int_to_real($i) - 0.) * 1000.) / (int_to_real($tbl_int__attack_idx) - 0.)) + 0.)
+    %tbl_int__logCurve[$i] := 1000 - %tbl_int__expCurve[(($tbl_int__attack_idx - $i) * (1 + (sh_right(125 - ($tbl_int__attack_idx - $i), 31) .or. sh_right($tbl_int__attack_idx - $i, 31)))) - (125 * sh_right(125 - ($tbl_int__attack_idx - $i), 31))]
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($tbl_int__curve < 500000)
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__expCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * 1.) / 500000.) + 0.))
+    else
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__logCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * 1.) / 500000.) + 0.))
+    end if
+    if($i > ($tbl_int__attack_idx + $tbl_int__hold))
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__decayCurve[$i - ($tbl_int__attack_idx + $tbl_int__hold)])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * real_to_int(?tbl_int__env_array[$tbl_int__release_idx])) / 1000
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($i > $tbl_int__release_idx)
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__releaseCurve[$i - $tbl_int__release_idx])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= 124) 
+    %tbl_int1[$i] := (((real_to_int(?tbl_int__env_array[$i]) * (1 + (sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31) .or. sh_right(real_to_int(?tbl_int__env_array[$i]), 31)))) - (1000 * sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31))) * 880) / 1000
+    %tbl_int2[$i] := %tbl_int1[$i]
+    inc($i)
+  end while
+  set_control_par_str(get_ui_id($lbl_envIntAttack), $CONTROL_PAR_TEXT, get_engine_par_disp(%ADHSR_ENGINE_PARAMS[1], $rr_group, find_mod($rr_group, "ENV_AHDSR_VOLUME"), -1) & " " & !ADHSR_UNITS[1])
+  $last_time_envIntAttack := $ENGINE_UPTIME
+  wait(800000)
+  if(($ENGINE_UPTIME - $last_time_envIntAttack) > 795)
+    set_text($lbl_envIntAttack, !envRateNames[1])
+  end if
+end on
+on ui_control($sli_envIntHold)
+  $i := 0
+  while($i <= (($NUM_GROUPS - 1) - 1)) 
+    set_engine_par(%ADHSR_ENGINE_PARAMS[2], $sli_envIntHold, $rr_group + $i, find_mod($rr_group + $i, "ENV_AHDSR_VOLUME"), -1)
+    inc($i)
+  end while
+  $tbl_int__curve := $sli_envIntCurve
+  ~tbl_int__attack_point := pow(10., (log(1.5) / log(10.)) + (0.51 * ((log(0.056) / log(10.)) - (log(1.5) / log(10.)))))
+  $tbl_int__release_idx := 93
+  ~tbl_int__attack := (((int_to_real($sli_envIntAttack) - 0.) * (~tbl_int__attack_point - 1.5)) / 1000000.) + 1.5
+  $tbl_int__hold := ($sli_envIntHold * 18) / 1000000
+  ~tbl_int__decay := (((int_to_real($sli_envIntDecay) - 0.) * 14200.) / 1000000.) + 800.
+  $tbl_int__sustain := ($sli_envIntSustain * 1000) / 1000000
+  ~tbl_int__release := (((int_to_real($sli_envIntRelease) - 0.) * 39200.) / 1000000.) + 800.
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__expCurve[$i] := real_to_int(exp(~tbl_int__attack * int_to_real($i)))
+    %tbl_int__expCurve[$i] := (%tbl_int__expCurve[$i] * (1 + (sh_right(1000 - %tbl_int__expCurve[$i], 31) .or. sh_right(%tbl_int__expCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__expCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__decay - 800.) * 10.99) / 14200.) + 0.01))) * ~tbl_int__decay) - ((((~tbl_int__decay - 800.) * 200.) / 14200.) + 0.))
+    %tbl_int__decayCurve[$i] := (%tbl_int__decayCurve[$i] * (1 + (sh_right(1000 - %tbl_int__decayCurve[$i], 31) .or. sh_right(%tbl_int__decayCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__decayCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := ((%tbl_int__decayCurve[$i] * (1000 - $tbl_int__sustain)) / 1000) + $tbl_int__sustain
+    %tbl_int__releaseCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__release - 800.) * 4.99) / 14200.) + 0.01))) * ~tbl_int__release) - ((((~tbl_int__release - 800.) * 300.) / 14200.) + 0.))
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * (1 + (sh_right(1000 - %tbl_int__releaseCurve[$i], 31) .or. sh_right(%tbl_int__releaseCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__releaseCurve[$i], 31))
+    inc($i)
+  end while
+  $tbl_int__attack_idx := search(%tbl_int__expCurve, 1000)
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__linCurve[$i] := real_to_int((((int_to_real($i) - 0.) * 1000.) / (int_to_real($tbl_int__attack_idx) - 0.)) + 0.)
+    %tbl_int__logCurve[$i] := 1000 - %tbl_int__expCurve[(($tbl_int__attack_idx - $i) * (1 + (sh_right(125 - ($tbl_int__attack_idx - $i), 31) .or. sh_right($tbl_int__attack_idx - $i, 31)))) - (125 * sh_right(125 - ($tbl_int__attack_idx - $i), 31))]
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($tbl_int__curve < 500000)
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__expCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * 1.) / 500000.) + 0.))
+    else
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__logCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * 1.) / 500000.) + 0.))
+    end if
+    if($i > ($tbl_int__attack_idx + $tbl_int__hold))
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__decayCurve[$i - ($tbl_int__attack_idx + $tbl_int__hold)])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * real_to_int(?tbl_int__env_array[$tbl_int__release_idx])) / 1000
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($i > $tbl_int__release_idx)
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__releaseCurve[$i - $tbl_int__release_idx])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= 124) 
+    %tbl_int1[$i] := (((real_to_int(?tbl_int__env_array[$i]) * (1 + (sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31) .or. sh_right(real_to_int(?tbl_int__env_array[$i]), 31)))) - (1000 * sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31))) * 880) / 1000
+    %tbl_int2[$i] := %tbl_int1[$i]
+    inc($i)
+  end while
+  set_control_par_str(get_ui_id($lbl_envIntHold), $CONTROL_PAR_TEXT, get_engine_par_disp(%ADHSR_ENGINE_PARAMS[2], $rr_group, find_mod($rr_group, "ENV_AHDSR_VOLUME"), -1) & " " & !ADHSR_UNITS[2])
+  $last_time_envIntHold := $ENGINE_UPTIME
+  wait(800000)
+  if(($ENGINE_UPTIME - $last_time_envIntHold) > 795)
+    set_text($lbl_envIntHold, !envRateNames[2])
+  end if
+end on
+on ui_control($sli_envIntDecay)
+  $i := 0
+  while($i <= (($NUM_GROUPS - 1) - 1)) 
+    set_engine_par(%ADHSR_ENGINE_PARAMS[3], $sli_envIntDecay, $rr_group + $i, find_mod($rr_group + $i, "ENV_AHDSR_VOLUME"), -1)
+    inc($i)
+  end while
+  $tbl_int__curve := $sli_envIntCurve
+  ~tbl_int__attack_point := pow(10., (log(1.5) / log(10.)) + (0.51 * ((log(0.056) / log(10.)) - (log(1.5) / log(10.)))))
+  $tbl_int__release_idx := 93
+  ~tbl_int__attack := (((int_to_real($sli_envIntAttack) - 0.) * (~tbl_int__attack_point - 1.5)) / 1000000.) + 1.5
+  $tbl_int__hold := ($sli_envIntHold * 18) / 1000000
+  ~tbl_int__decay := (((int_to_real($sli_envIntDecay) - 0.) * 14200.) / 1000000.) + 800.
+  $tbl_int__sustain := ($sli_envIntSustain * 1000) / 1000000
+  ~tbl_int__release := (((int_to_real($sli_envIntRelease) - 0.) * 39200.) / 1000000.) + 800.
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__expCurve[$i] := real_to_int(exp(~tbl_int__attack * int_to_real($i)))
+    %tbl_int__expCurve[$i] := (%tbl_int__expCurve[$i] * (1 + (sh_right(1000 - %tbl_int__expCurve[$i], 31) .or. sh_right(%tbl_int__expCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__expCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__decay - 800.) * 10.99) / 14200.) + 0.01))) * ~tbl_int__decay) - ((((~tbl_int__decay - 800.) * 200.) / 14200.) + 0.))
+    %tbl_int__decayCurve[$i] := (%tbl_int__decayCurve[$i] * (1 + (sh_right(1000 - %tbl_int__decayCurve[$i], 31) .or. sh_right(%tbl_int__decayCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__decayCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := ((%tbl_int__decayCurve[$i] * (1000 - $tbl_int__sustain)) / 1000) + $tbl_int__sustain
+    %tbl_int__releaseCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__release - 800.) * 4.99) / 14200.) + 0.01))) * ~tbl_int__release) - ((((~tbl_int__release - 800.) * 300.) / 14200.) + 0.))
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * (1 + (sh_right(1000 - %tbl_int__releaseCurve[$i], 31) .or. sh_right(%tbl_int__releaseCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__releaseCurve[$i], 31))
+    inc($i)
+  end while
+  $tbl_int__attack_idx := search(%tbl_int__expCurve, 1000)
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__linCurve[$i] := real_to_int((((int_to_real($i) - 0.) * 1000.) / (int_to_real($tbl_int__attack_idx) - 0.)) + 0.)
+    %tbl_int__logCurve[$i] := 1000 - %tbl_int__expCurve[(($tbl_int__attack_idx - $i) * (1 + (sh_right(125 - ($tbl_int__attack_idx - $i), 31) .or. sh_right($tbl_int__attack_idx - $i, 31)))) - (125 * sh_right(125 - ($tbl_int__attack_idx - $i), 31))]
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($tbl_int__curve < 500000)
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__expCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * 1.) / 500000.) + 0.))
+    else
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__logCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * 1.) / 500000.) + 0.))
+    end if
+    if($i > ($tbl_int__attack_idx + $tbl_int__hold))
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__decayCurve[$i - ($tbl_int__attack_idx + $tbl_int__hold)])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * real_to_int(?tbl_int__env_array[$tbl_int__release_idx])) / 1000
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($i > $tbl_int__release_idx)
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__releaseCurve[$i - $tbl_int__release_idx])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= 124) 
+    %tbl_int1[$i] := (((real_to_int(?tbl_int__env_array[$i]) * (1 + (sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31) .or. sh_right(real_to_int(?tbl_int__env_array[$i]), 31)))) - (1000 * sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31))) * 880) / 1000
+    %tbl_int2[$i] := %tbl_int1[$i]
+    inc($i)
+  end while
+  set_control_par_str(get_ui_id($lbl_envIntDecay), $CONTROL_PAR_TEXT, get_engine_par_disp(%ADHSR_ENGINE_PARAMS[3], $rr_group, find_mod($rr_group, "ENV_AHDSR_VOLUME"), -1) & " " & !ADHSR_UNITS[3])
+  $last_time_envIntDecay := $ENGINE_UPTIME
+  wait(800000)
+  if(($ENGINE_UPTIME - $last_time_envIntDecay) > 795)
+    set_text($lbl_envIntDecay, !envRateNames[3])
+  end if
+end on
+on ui_control($sli_envIntSustain)
+  $i := 0
+  while($i <= (($NUM_GROUPS - 1) - 1)) 
+    set_engine_par(%ADHSR_ENGINE_PARAMS[4], $sli_envIntSustain, $rr_group + $i, find_mod($rr_group + $i, "ENV_AHDSR_VOLUME"), -1)
+    inc($i)
+  end while
+  $tbl_int__curve := $sli_envIntCurve
+  ~tbl_int__attack_point := pow(10., (log(1.5) / log(10.)) + (0.51 * ((log(0.056) / log(10.)) - (log(1.5) / log(10.)))))
+  $tbl_int__release_idx := 93
+  ~tbl_int__attack := (((int_to_real($sli_envIntAttack) - 0.) * (~tbl_int__attack_point - 1.5)) / 1000000.) + 1.5
+  $tbl_int__hold := ($sli_envIntHold * 18) / 1000000
+  ~tbl_int__decay := (((int_to_real($sli_envIntDecay) - 0.) * 14200.) / 1000000.) + 800.
+  $tbl_int__sustain := ($sli_envIntSustain * 1000) / 1000000
+  ~tbl_int__release := (((int_to_real($sli_envIntRelease) - 0.) * 39200.) / 1000000.) + 800.
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__expCurve[$i] := real_to_int(exp(~tbl_int__attack * int_to_real($i)))
+    %tbl_int__expCurve[$i] := (%tbl_int__expCurve[$i] * (1 + (sh_right(1000 - %tbl_int__expCurve[$i], 31) .or. sh_right(%tbl_int__expCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__expCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__decay - 800.) * 10.99) / 14200.) + 0.01))) * ~tbl_int__decay) - ((((~tbl_int__decay - 800.) * 200.) / 14200.) + 0.))
+    %tbl_int__decayCurve[$i] := (%tbl_int__decayCurve[$i] * (1 + (sh_right(1000 - %tbl_int__decayCurve[$i], 31) .or. sh_right(%tbl_int__decayCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__decayCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := ((%tbl_int__decayCurve[$i] * (1000 - $tbl_int__sustain)) / 1000) + $tbl_int__sustain
+    %tbl_int__releaseCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__release - 800.) * 4.99) / 14200.) + 0.01))) * ~tbl_int__release) - ((((~tbl_int__release - 800.) * 300.) / 14200.) + 0.))
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * (1 + (sh_right(1000 - %tbl_int__releaseCurve[$i], 31) .or. sh_right(%tbl_int__releaseCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__releaseCurve[$i], 31))
+    inc($i)
+  end while
+  $tbl_int__attack_idx := search(%tbl_int__expCurve, 1000)
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__linCurve[$i] := real_to_int((((int_to_real($i) - 0.) * 1000.) / (int_to_real($tbl_int__attack_idx) - 0.)) + 0.)
+    %tbl_int__logCurve[$i] := 1000 - %tbl_int__expCurve[(($tbl_int__attack_idx - $i) * (1 + (sh_right(125 - ($tbl_int__attack_idx - $i), 31) .or. sh_right($tbl_int__attack_idx - $i, 31)))) - (125 * sh_right(125 - ($tbl_int__attack_idx - $i), 31))]
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($tbl_int__curve < 500000)
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__expCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * 1.) / 500000.) + 0.))
+    else
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__logCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * 1.) / 500000.) + 0.))
+    end if
+    if($i > ($tbl_int__attack_idx + $tbl_int__hold))
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__decayCurve[$i - ($tbl_int__attack_idx + $tbl_int__hold)])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * real_to_int(?tbl_int__env_array[$tbl_int__release_idx])) / 1000
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($i > $tbl_int__release_idx)
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__releaseCurve[$i - $tbl_int__release_idx])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= 124) 
+    %tbl_int1[$i] := (((real_to_int(?tbl_int__env_array[$i]) * (1 + (sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31) .or. sh_right(real_to_int(?tbl_int__env_array[$i]), 31)))) - (1000 * sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31))) * 880) / 1000
+    %tbl_int2[$i] := %tbl_int1[$i]
+    inc($i)
+  end while
+  set_control_par_str(get_ui_id($lbl_envIntSustain), $CONTROL_PAR_TEXT, get_engine_par_disp(%ADHSR_ENGINE_PARAMS[4], $rr_group, find_mod($rr_group, "ENV_AHDSR_VOLUME"), -1) & " " & !ADHSR_UNITS[4])
+  $last_time_envIntSustain := $ENGINE_UPTIME
+  wait(800000)
+  if(($ENGINE_UPTIME - $last_time_envIntSustain) > 795)
+    set_text($lbl_envIntSustain, !envRateNames[4])
+  end if
+end on
+on ui_control($sli_envIntRelease)
+  $i := 0
+  while($i <= (($NUM_GROUPS - 1) - 1)) 
+    set_engine_par(%ADHSR_ENGINE_PARAMS[5], $sli_envIntRelease, $rr_group + $i, find_mod($rr_group + $i, "ENV_AHDSR_VOLUME"), -1)
+    inc($i)
+  end while
+  $tbl_int__curve := $sli_envIntCurve
+  ~tbl_int__attack_point := pow(10., (log(1.5) / log(10.)) + (0.51 * ((log(0.056) / log(10.)) - (log(1.5) / log(10.)))))
+  $tbl_int__release_idx := 93
+  ~tbl_int__attack := (((int_to_real($sli_envIntAttack) - 0.) * (~tbl_int__attack_point - 1.5)) / 1000000.) + 1.5
+  $tbl_int__hold := ($sli_envIntHold * 18) / 1000000
+  ~tbl_int__decay := (((int_to_real($sli_envIntDecay) - 0.) * 14200.) / 1000000.) + 800.
+  $tbl_int__sustain := ($sli_envIntSustain * 1000) / 1000000
+  ~tbl_int__release := (((int_to_real($sli_envIntRelease) - 0.) * 39200.) / 1000000.) + 800.
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__expCurve[$i] := real_to_int(exp(~tbl_int__attack * int_to_real($i)))
+    %tbl_int__expCurve[$i] := (%tbl_int__expCurve[$i] * (1 + (sh_right(1000 - %tbl_int__expCurve[$i], 31) .or. sh_right(%tbl_int__expCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__expCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__decay - 800.) * 10.99) / 14200.) + 0.01))) * ~tbl_int__decay) - ((((~tbl_int__decay - 800.) * 200.) / 14200.) + 0.))
+    %tbl_int__decayCurve[$i] := (%tbl_int__decayCurve[$i] * (1 + (sh_right(1000 - %tbl_int__decayCurve[$i], 31) .or. sh_right(%tbl_int__decayCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__decayCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := ((%tbl_int__decayCurve[$i] * (1000 - $tbl_int__sustain)) / 1000) + $tbl_int__sustain
+    %tbl_int__releaseCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__release - 800.) * 4.99) / 14200.) + 0.01))) * ~tbl_int__release) - ((((~tbl_int__release - 800.) * 300.) / 14200.) + 0.))
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * (1 + (sh_right(1000 - %tbl_int__releaseCurve[$i], 31) .or. sh_right(%tbl_int__releaseCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__releaseCurve[$i], 31))
+    inc($i)
+  end while
+  $tbl_int__attack_idx := search(%tbl_int__expCurve, 1000)
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__linCurve[$i] := real_to_int((((int_to_real($i) - 0.) * 1000.) / (int_to_real($tbl_int__attack_idx) - 0.)) + 0.)
+    %tbl_int__logCurve[$i] := 1000 - %tbl_int__expCurve[(($tbl_int__attack_idx - $i) * (1 + (sh_right(125 - ($tbl_int__attack_idx - $i), 31) .or. sh_right($tbl_int__attack_idx - $i, 31)))) - (125 * sh_right(125 - ($tbl_int__attack_idx - $i), 31))]
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($tbl_int__curve < 500000)
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__expCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * 1.) / 500000.) + 0.))
+    else
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__logCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * 1.) / 500000.) + 0.))
+    end if
+    if($i > ($tbl_int__attack_idx + $tbl_int__hold))
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__decayCurve[$i - ($tbl_int__attack_idx + $tbl_int__hold)])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * real_to_int(?tbl_int__env_array[$tbl_int__release_idx])) / 1000
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($i > $tbl_int__release_idx)
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__releaseCurve[$i - $tbl_int__release_idx])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= 124) 
+    %tbl_int1[$i] := (((real_to_int(?tbl_int__env_array[$i]) * (1 + (sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31) .or. sh_right(real_to_int(?tbl_int__env_array[$i]), 31)))) - (1000 * sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31))) * 880) / 1000
+    %tbl_int2[$i] := %tbl_int1[$i]
+    inc($i)
+  end while
+  set_control_par_str(get_ui_id($lbl_envIntRelease), $CONTROL_PAR_TEXT, get_engine_par_disp(%ADHSR_ENGINE_PARAMS[5], $rr_group, find_mod($rr_group, "ENV_AHDSR_VOLUME"), -1) & " " & !ADHSR_UNITS[5])
+  $last_time_envIntRelease := $ENGINE_UPTIME
+  wait(800000)
+  if(($ENGINE_UPTIME - $last_time_envIntRelease) > 795)
+    set_text($lbl_envIntRelease, !envRateNames[5])
+  end if
+end on
+on ui_control($btn_one_shot)
+  call check_one_shot
+  set_control_par(get_ui_id($sli_envIntRelease), $CONTROL_PAR_VALUE, %ADHSR_DEFAULT_PARAMS_INT[5] * abs(sh_right(abs($btn_one_shot) - 1, 31)))
+  $INSTRUMENT_TYPE := abs(sh_right(abs($btn_one_shot) - 1, 31))
+  message(!instr_type[$INSTRUMENT_TYPE])
+  $i := 0
+  while($i <= (($NUM_GROUPS - 1) - 1)) 
+    set_engine_par(%ADHSR_ENGINE_PARAMS[5], $sli_envIntRelease, $rr_group + $i, find_mod($rr_group + $i, "ENV_AHDSR_VOLUME"), -1)
+    inc($i)
+  end while
+  $tbl_int__curve := $sli_envIntCurve
+  ~tbl_int__attack_point := pow(10., (log(1.5) / log(10.)) + (0.51 * ((log(0.056) / log(10.)) - (log(1.5) / log(10.)))))
+  $tbl_int__release_idx := 93
+  ~tbl_int__attack := (((int_to_real($sli_envIntAttack) - 0.) * (~tbl_int__attack_point - 1.5)) / 1000000.) + 1.5
+  $tbl_int__hold := ($sli_envIntHold * 18) / 1000000
+  ~tbl_int__decay := (((int_to_real($sli_envIntDecay) - 0.) * 14200.) / 1000000.) + 800.
+  $tbl_int__sustain := ($sli_envIntSustain * 1000) / 1000000
+  ~tbl_int__release := (((int_to_real($sli_envIntRelease) - 0.) * 39200.) / 1000000.) + 800.
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__expCurve[$i] := real_to_int(exp(~tbl_int__attack * int_to_real($i)))
+    %tbl_int__expCurve[$i] := (%tbl_int__expCurve[$i] * (1 + (sh_right(1000 - %tbl_int__expCurve[$i], 31) .or. sh_right(%tbl_int__expCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__expCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__decay - 800.) * 10.99) / 14200.) + 0.01))) * ~tbl_int__decay) - ((((~tbl_int__decay - 800.) * 200.) / 14200.) + 0.))
+    %tbl_int__decayCurve[$i] := (%tbl_int__decayCurve[$i] * (1 + (sh_right(1000 - %tbl_int__decayCurve[$i], 31) .or. sh_right(%tbl_int__decayCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__decayCurve[$i], 31))
+    %tbl_int__decayCurve[$i] := ((%tbl_int__decayCurve[$i] * (1000 - $tbl_int__sustain)) / 1000) + $tbl_int__sustain
+    %tbl_int__releaseCurve[$i] := real_to_int(((1. / (int_to_real($i) + ((((~tbl_int__release - 800.) * 4.99) / 14200.) + 0.01))) * ~tbl_int__release) - ((((~tbl_int__release - 800.) * 300.) / 14200.) + 0.))
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * (1 + (sh_right(1000 - %tbl_int__releaseCurve[$i], 31) .or. sh_right(%tbl_int__releaseCurve[$i], 31)))) - (1000 * sh_right(1000 - %tbl_int__releaseCurve[$i], 31))
+    inc($i)
+  end while
+  $tbl_int__attack_idx := search(%tbl_int__expCurve, 1000)
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__linCurve[$i] := real_to_int((((int_to_real($i) - 0.) * 1000.) / (int_to_real($tbl_int__attack_idx) - 0.)) + 0.)
+    %tbl_int__logCurve[$i] := 1000 - %tbl_int__expCurve[(($tbl_int__attack_idx - $i) * (1 + (sh_right(125 - ($tbl_int__attack_idx - $i), 31) .or. sh_right($tbl_int__attack_idx - $i, 31)))) - (125 * sh_right(125 - ($tbl_int__attack_idx - $i), 31))]
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($tbl_int__curve < 500000)
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__expCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real(($tbl_int__curve * (1 + (sh_right(500000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve, 31)))) - (500000 * sh_right(500000 - $tbl_int__curve, 31))) - 0.) * 1.) / 500000.) + 0.))
+    else
+      ?tbl_int__env_array[$i] := (int_to_real(%tbl_int__linCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * -1.) / 500000.) + 1.)) + (int_to_real(%tbl_int__logCurve[$i]) * ((((int_to_real((($tbl_int__curve * (1 + (sh_right(1000000 - $tbl_int__curve, 31) .or. sh_right($tbl_int__curve - 500000, 31)))) - (500000 * sh_right($tbl_int__curve - 500000, 31))) - (1000000 * sh_right(1000000 - $tbl_int__curve, 31))) - 500000.) * 1.) / 500000.) + 0.))
+    end if
+    if($i > ($tbl_int__attack_idx + $tbl_int__hold))
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__decayCurve[$i - ($tbl_int__attack_idx + $tbl_int__hold)])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    %tbl_int__releaseCurve[$i] := (%tbl_int__releaseCurve[$i] * real_to_int(?tbl_int__env_array[$tbl_int__release_idx])) / 1000
+    inc($i)
+  end while
+  $i := 0
+  while($i <= (num_elements(?tbl_int__env_array) - 1)) 
+    if($i > $tbl_int__release_idx)
+      ?tbl_int__env_array[$i] := int_to_real(%tbl_int__releaseCurve[$i - $tbl_int__release_idx])
+    end if
+    inc($i)
+  end while
+  $i := 0
+  while($i <= 124) 
+    %tbl_int1[$i] := (((real_to_int(?tbl_int__env_array[$i]) * (1 + (sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31) .or. sh_right(real_to_int(?tbl_int__env_array[$i]), 31)))) - (1000 * sh_right(1000 - real_to_int(?tbl_int__env_array[$i]), 31))) * 880) / 1000
+    %tbl_int2[$i] := %tbl_int1[$i]
+    inc($i)
+  end while
+  set_control_par_str(get_ui_id($lbl_envIntRelease), $CONTROL_PAR_TEXT, get_engine_par_disp(%ADHSR_ENGINE_PARAMS[5], $rr_group, find_mod($rr_group, "ENV_AHDSR_VOLUME"), -1) & " " & !ADHSR_UNITS[5])
+  $last_time_envIntRelease := $ENGINE_UPTIME
+  wait(800000)
+  if(($ENGINE_UPTIME - $last_time_envIntRelease) > 795)
+    set_text($lbl_envIntRelease, !envRateNames[5])
+  end if
+end on
+on ui_control($btn_oneShot)
+  $Boolean1 := 0
+  call c_all_windows__show0
+  $btn_oneShot := 1
+  $btn_oneShot := $btn_oneShot
+  set_control_par(get_ui_id($UI_oneShot), $CONTROL_PAR_HIDE, %hide_state[$btn_oneShot])
+end on
+on ui_control($btn_rr0)
+  %btn_rr_values[0] := get_control_par(get_ui_id($btn_rr0), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr1)
+  %btn_rr_values[1] := get_control_par(get_ui_id($btn_rr1), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr2)
+  %btn_rr_values[2] := get_control_par(get_ui_id($btn_rr2), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr3)
+  %btn_rr_values[3] := get_control_par(get_ui_id($btn_rr3), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr4)
+  %btn_rr_values[4] := get_control_par(get_ui_id($btn_rr4), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr5)
+  %btn_rr_values[5] := get_control_par(get_ui_id($btn_rr5), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr6)
+  %btn_rr_values[6] := get_control_par(get_ui_id($btn_rr6), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr7)
+  %btn_rr_values[7] := get_control_par(get_ui_id($btn_rr7), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr8)
+  %btn_rr_values[8] := get_control_par(get_ui_id($btn_rr8), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr9)
+  %btn_rr_values[9] := get_control_par(get_ui_id($btn_rr9), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr10)
+  %btn_rr_values[10] := get_control_par(get_ui_id($btn_rr10), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr11)
+  %btn_rr_values[11] := get_control_par(get_ui_id($btn_rr11), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr12)
+  %btn_rr_values[12] := get_control_par(get_ui_id($btn_rr12), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr13)
+  %btn_rr_values[13] := get_control_par(get_ui_id($btn_rr13), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr14)
+  %btn_rr_values[14] := get_control_par(get_ui_id($btn_rr14), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr15)
+  %btn_rr_values[15] := get_control_par(get_ui_id($btn_rr15), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr16)
+  %btn_rr_values[16] := get_control_par(get_ui_id($btn_rr16), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr17)
+  %btn_rr_values[17] := get_control_par(get_ui_id($btn_rr17), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr18)
+  %btn_rr_values[18] := get_control_par(get_ui_id($btn_rr18), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on ui_control($btn_rr19)
+  %btn_rr_values[19] := get_control_par(get_ui_id($btn_rr19), $CONTROL_PAR_VALUE)
+  $btn_rr_sum := 0
+  $i := 0
+  while($i <= (num_elements(%btn_rr) - 1)) 
+    $btn_rr_sum := get_control_par(%btn_rr[$i], $CONTROL_PAR_VALUE) + $btn_rr_sum
+    inc($i)
+  end while
+  $NUM_RR_FINAL := $btn_rr_sum
+end on
+on persistence_changed
+  if($pgs_init = 0)
+    $pgs_init := 1
+    if(- sh_right(abs(%development[0] - 22714) - 1, 31) = 1)
+      call get_keyrange
+      call fill_mapped_notes
+    end if
+    call update__keycolor
+  end if
+end on
+on controller
+  if($CC_NUM = 1)
+    $sli_dynamics := real_to_int((((int_to_real(%CC[1]) - 0.) * 1000000.) / 127.) + 0.)
+    call update__cc_dynamics
+  end if
+  if($CC_NUM = 111)
+    $sli_expression := real_to_int((((int_to_real(%CC[111]) - 0.) * 1000000.) / 127.) + 0.)
+    call update__cc_expression
+  end if
+end on
 on note
-  $active_root := - 1
-  call change_root
-  message($active_root)
+  ignore_event($EVENT_ID)
+  $event_note := $EVENT_NOTE
+  $event_velocity := $EVENT_VELOCITY
+  if(- sh_right(abs(%development[0] - 22714) - 1, 31) = 1)
+    call get_event_notes
+    if(in_range($event_note, %range[0] - 1, %range[1] + 1))
+      sort(%event_notes, 1)
+      $btn_rr_sum := 0
+      $u := 0
+      while($u <= (num_elements(%btn_rr) - 1)) 
+        $btn_rr_sum := %btn_rr_values[$u] + $btn_rr_sum
+        inc($u)
+      end while
+      if($btn_rr_sum # 0)
+        %rr_count[$event_note] := (%rr_count[$event_note] + 1) mod ($NUM_GROUPS - 1)
+        while(%btn_rr_values[%rr_count[$event_note]] # 1) 
+          %rr_count[$event_note] := (%rr_count[$event_note] + 1) mod ($NUM_GROUPS - 1)
+        end while
+        select($INSTRUMENT_TYPE)
+          case 1
+            %event_ids[$event_note] := play_note($event_note, $event_velocity, 0, -1)
+          case 0
+            %event_ids[$event_note] := play_note($event_note, $event_velocity, 0, 0)
+        end select
+        set_event_par_arr(%event_ids[$event_note], $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
+        set_event_par_arr(%event_ids[$event_note], $EVENT_PAR_ALLOW_GROUP, 1, $rr_group + %rr_count[$event_note])
+        if(search(%event_notes, -1) = 1)
+          wait(1)
+          set_control_par_str(get_ui_id($lbl_filename), $CONTROL_PAR_TEXT, "Filename: " & get_sample(get_event_par(%event_ids[$event_note], $EVENT_PAR_ZONE_ID), $NI_FILE_NAME))
+          $v := 0
+          while($v <= (($NUM_GROUPS - 1) - 1)) 
+            set_control_par(%lbl_rr[$v], $CONTROL_PAR_FONT_TYPE, %_font__3pt3[0])
+            inc($v)
+          end while
+          set_control_par(%lbl_rr[%rr_count[$event_note]], $CONTROL_PAR_FONT_TYPE, %_font__3pt3[2])
+        else
+          set_control_par_str(get_ui_id($lbl_filename), $CONTROL_PAR_TEXT, "Polyphonic")
+        end if
+      end if
+    end if
+  end if
+  if(not (- sh_right(abs(%development[0] - 22714) - 1, 31) = 1))
+    if(%event_notes[$event_note] # $event_note)
+      %event_notes[$event_note] := $event_note
+      %rr_count[$event_note] := (%rr_count[$event_note] + 1) mod $NUM_RR_FINAL
+      %event_ids[$event_note] := play_note($event_note, $event_velocity, 0, ($INSTRUMENT_TYPE * -1) + abs(sh_right(abs($INSTRUMENT_TYPE) - 1, 31)))
+      set_event_par_arr(%event_ids[$event_note], $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
+      set_event_par_arr(%event_ids[$event_note], $EVENT_PAR_ALLOW_GROUP, 1, %rr_count[$event_note] + $rr_group)
+    end if
+  end if
+end on
+on release
+  $release_note := $EVENT_NOTE
+  %event_ids[$release_note] := -1
+  %event_notes[$release_note] := -1
+end on
+on ui_control($btn_home)
+  $Boolean1 := 0
+  call c_all_windows__show0
+  $btn_home := 1
+  $Boolean0 := $btn_home
+  call c_home__show0
+  $btn_home := $Boolean0
+end on
+on ui_control($sli_dynamics)
+  set_controller(103, real_to_int((((int_to_real($sli_dynamics) - 0.) * 127.) / 1000000.) + 0.))
+end on
+on ui_control($sli_expression)
+  set_controller(111, real_to_int((((int_to_real($sli_expression) - 0.) * 127.) / 1000000.) + 0.))
+end on
+on ui_control($btn_reverb)
+  set_engine_par($ENGINE_PAR_SEND_EFFECT_BYPASS, abs($btn_reverb - 1), -1, 1, $NI_INSERT_BUS)
+end on
+on ui_control($mnu_revtype)
+  %async_ids[0] := load_ir_sample(!revtypes[$mnu_revtype], 1, 1)
+  wait_async(%async_ids[0])
+end on
+on ui_control($btn_next_rev)
+  $btn_next_rev := 0
+  $mnu_revtype := ($mnu_revtype + 1) mod num_elements(!revtypes)
+  %async_ids[0] := load_ir_sample(!revtypes[$mnu_revtype], 1, 1)
+  wait_async(%async_ids[0])
+end on
+on ui_control($btn_prev_rev)
+  $btn_prev_rev := 0
+  $mnu_revtype := (($mnu_revtype - 1) + num_elements(!revtypes)) mod num_elements(!revtypes)
+  %async_ids[0] := load_ir_sample(!revtypes[$mnu_revtype], 1, 1)
+  wait_async(%async_ids[0])
+end on
+on ui_control($sli_reverbmix)
+  set_engine_par($ENGINE_PAR_SEND_EFFECT_DRY_LEVEL, %drywet[(1000000 - $sli_reverbmix) / 1000], -1, 1, $NI_INSERT_BUS)
+  set_engine_par($ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, %drywet[$sli_reverbmix / 1000], -1, 1, $NI_INSERT_BUS)
+  set_control_par_str(get_ui_id($lbl_reverbmix), $CONTROL_PAR_TEXT, ($sli_reverbmix / 10000) & " %")
+  $last_time_reverbmix := $ENGINE_UPTIME
+  wait(800000)
+  if(($ENGINE_UPTIME - $last_time_reverbmix) > 795)
+    set_text($lbl_reverbmix, "Mix")
+  end if
+end on
+on ui_control($btn_eq)
+  set_engine_par($ENGINE_PAR_SEND_EFFECT_BYPASS, abs($btn_eq - 1), -1, 0, $NI_INSERT_BUS)
+end on
+on ui_control($sli_lowGain)
+  set_engine_par($ENGINE_PAR_SEQ_LF_GAIN, $sli_lowGain, -1, 0, $NI_INSERT_BUS)
+  set_control_par_str(get_ui_id($lbl_lowGain), $CONTROL_PAR_TEXT, get_engine_par_disp($ENGINE_PAR_SEQ_LF_GAIN, -1, 0, $NI_INSERT_BUS) & " dB")
+  $last_time_lowGain := $ENGINE_UPTIME
+  wait(800000)
+  if(($ENGINE_UPTIME - $last_time_lowGain) > 795)
+    set_text($lbl_lowGain, "Low")
+  end if
+end on
+on ui_control($sli_highGain)
+  set_engine_par($ENGINE_PAR_SEQ_HF_GAIN, $sli_highGain, -1, 0, $NI_INSERT_BUS)
+  set_control_par_str(get_ui_id($lbl_highGain), $CONTROL_PAR_TEXT, get_engine_par_disp($ENGINE_PAR_SEQ_HF_GAIN, -1, 0, $NI_INSERT_BUS) & " dB")
+  $last_time_highGain := $ENGINE_UPTIME
+  wait(800000)
+  if(($ENGINE_UPTIME - $last_time_highGain) > 795)
+    set_text($lbl_highGain, "High")
+  end if
+end on
+on ui_control($mnu_dynamic_cc)
+  $num_dynamic_cc := get_menu_item_value(get_ui_id($mnu_dynamic_cc), get_control_par(get_ui_id($mnu_dynamic_cc), $CONTROL_PAR_VALUE))
+  call update__cc_dynamics
+end on
+on ui_control($btn_settings)
+  if($btn_settings = 1)
+    $Boolean1 := 0
+    call c_all_windows__show0
+    $btn_settings := 1
+    set_control_par(get_ui_id($UI_settings), $CONTROL_PAR_HIDE, %hide_state[1])
+  else
+    $Boolean1 := 0
+    call c_all_windows__show0
+    $Boolean0 := 1
+    call c_home__show0
+  end if
+end on
+on ui_control(?xy_control_positioner)
+  if($NI_MOUSE_EVENT_TYPE = $NI_MOUSE_EVENT_TYPE_LEFT_BUTTON_DOWN)
+    $control_positioner__click__x := real_to_int(round(?xy_control_positioner[0] * int_to_real(get_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_WIDTH))))
+    $control_positioner__click__y := get_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_HEIGHT) - real_to_int(round(?xy_control_positioner[1] * int_to_real(get_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_HEIGHT))))
+    $control_positioner__iterator := 0
+    while($control_positioner__iterator <= 31) 
+      if(%control_positioner__controls[$control_positioner__iterator] = -1)
+        $control_positioner__iterator := 32
+      else
+        if(get_control_par(%control_positioner__controls[$control_positioner__iterator], $CONTROL_PAR_PARENT_PANEL) # 0)
+          $control_positioner__current_control__parent := get_control_par(%control_positioner__controls[$control_positioner__iterator], $CONTROL_PAR_PARENT_PANEL)
+          $control_positioner__current_control_offset__x := get_control_par($control_positioner__current_control__parent, $CONTROL_PAR_POS_X)
+          $control_positioner__current_control_offset__y := get_control_par($control_positioner__current_control__parent, $CONTROL_PAR_POS_Y)
+        else
+          $control_positioner__current_control__parent := -1
+          $control_positioner__current_control_offset__x := 0
+          $control_positioner__current_control_offset__y := 0
+        end if
+        if(in_range($control_positioner__click__x - $control_positioner__current_control_offset__x, get_control_par(%control_positioner__controls[$control_positioner__iterator], $CONTROL_PAR_POS_X), get_control_par(%control_positioner__controls[$control_positioner__iterator], $CONTROL_PAR_POS_X) + get_control_par(%control_positioner__controls[$control_positioner__iterator], $CONTROL_PAR_WIDTH)) and in_range($control_positioner__click__y - $control_positioner__current_control_offset__y, get_control_par(%control_positioner__controls[$control_positioner__iterator], $CONTROL_PAR_POS_Y), get_control_par(%control_positioner__controls[$control_positioner__iterator], $CONTROL_PAR_POS_Y) + get_control_par(%control_positioner__controls[$control_positioner__iterator], $CONTROL_PAR_HEIGHT)))
+          $control_positioner__current_control := %control_positioner__controls[$control_positioner__iterator]
+          set_control_par_str(get_ui_id($lbl_control_positioner_title), $CONTROL_PAR_TEXT, !control_positioner__control_names[$control_positioner__iterator])
+          if($control_positioner__current_control__parent # -1)
+            set_control_par_str(get_ui_id($lbl_control_positioner_title), $CONTROL_PAR_TEXT, get_control_par_str(get_ui_id($lbl_control_positioner_title), $CONTROL_PAR_TEXT) & "(Child)")
+          end if
+          $control_positioner__last_control := $control_positioner__current_control
+          set_control_par(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_VALUE, get_control_par($control_positioner__current_control, $CONTROL_PAR_POS_X))
+          set_control_par(get_ui_id($vlue_control_positioner__y), $CONTROL_PAR_VALUE, get_control_par($control_positioner__current_control, $CONTROL_PAR_POS_Y))
+          $control_positioner__iterator := 32
+        else
+          $control_positioner__current_control := -1
+        end if
+      end if
+      inc($control_positioner__iterator)
+    end while
+    if(in_range($control_positioner__click__x, get_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_POS_X), get_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_POS_X) + get_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_WIDTH)))
+      if(in_range($control_positioner__click__y, get_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_POS_Y), (get_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_POS_Y) + get_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_HEIGHT)) - 20))
+        $control_positioner__current_control := $control_position_parent
+        $control_positioner__last_control := -1
+        set_control_par_str(get_ui_id($lbl_control_positioner_title), $CONTROL_PAR_TEXT, "SELF")
+      else
+        if(in_range($control_positioner__click__y, get_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_POS_Y) + 25, get_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_POS_Y) + get_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_HEIGHT)))
+          if(in_range($control_positioner__click__x, get_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_POS_X), get_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_POS_X) + (get_control_par(get_ui_id($UI_control_position_parent), $CONTROL_PAR_WIDTH) / 2)))
+            if(get_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_KEY_SHIFT) # 1)
+              $control_positioner__value_edit__x := 1
+            else
+              $control_position__locked__x := abs($control_position__locked__x - 1)
+            end if
+          else
+            if(get_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_KEY_SHIFT) # 1)
+            else
+              $control_position__locked__y := abs($control_position__locked__y - 1)
+            end if
+          end if
+        end if
+      end if
+    end if
+    if(get_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_KEY_ALT) = 1)
+      call control_positioner__remove
+      save_array(!control_positioner__export_array, 0)
+    end if
+    if($control_position__locked__x = 1)
+      set_control_par(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_FONT_TYPE, 6)
+    else
+      set_control_par(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_FONT_TYPE, 0)
+    end if
+    if($control_position__locked__y = 1)
+      set_control_par(get_ui_id($vlue_control_positioner__y), $CONTROL_PAR_FONT_TYPE, 6)
+    else
+      set_control_par(get_ui_id($vlue_control_positioner__y), $CONTROL_PAR_FONT_TYPE, 0)
+    end if
+  else
+    if($NI_MOUSE_EVENT_TYPE = $NI_MOUSE_EVENT_TYPE_DRAG)
+      $control_positioner__mouse__x := real_to_int(round(?xy_control_positioner[0] * int_to_real(get_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_WIDTH))))
+      $control_positioner__mouse__y := get_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_HEIGHT) - real_to_int(round(?xy_control_positioner[1] * int_to_real(get_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_HEIGHT))))
+      if(get_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_KEY_CONTROL) = 1)
+        $control_positioner__mouse__x := (($control_positioner__mouse__x + 5) / 10) * 10
+        $control_positioner__mouse__y := (($control_positioner__mouse__y + 5) / 10) * 10
+      end if
+      if($control_positioner__current_control # -1)
+        if($control_position__locked__x # 1)
+          set_control_par($control_positioner__current_control, $CONTROL_PAR_POS_X, (get_control_par($control_positioner__current_control, $CONTROL_PAR_POS_X) + $control_positioner__mouse__x) - $control_positioner__click__x)
+        end if
+        if($control_position__locked__y # 1)
+          set_control_par($control_positioner__current_control, $CONTROL_PAR_POS_Y, (get_control_par($control_positioner__current_control, $CONTROL_PAR_POS_Y) + $control_positioner__mouse__y) - $control_positioner__click__y)
+        end if
+        if((get_control_par(get_ui_id(?xy_control_positioner), $CONTROL_PAR_KEY_CONTROL) = 1) and ($control_positioner__once = 0))
+          set_control_par($control_positioner__current_control, $CONTROL_PAR_POS_X, ((get_control_par($control_positioner__current_control, $CONTROL_PAR_POS_X) + 5) / 10) * 10)
+          set_control_par($control_positioner__current_control, $CONTROL_PAR_POS_Y, ((get_control_par($control_positioner__current_control, $CONTROL_PAR_POS_Y) + 5) / 10) * 10)
+          $control_positioner__once := 1
+        end if
+        set_control_par(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_VALUE, get_control_par($control_positioner__current_control, $CONTROL_PAR_POS_X))
+        set_control_par(get_ui_id($vlue_control_positioner__y), $CONTROL_PAR_VALUE, get_control_par($control_positioner__current_control, $CONTROL_PAR_POS_Y))
+      end if
+      if($control_positioner__value_edit__x = 1)
+        set_control_par($control_positioner__last_control, $CONTROL_PAR_POS_X, (get_control_par($control_positioner__last_control, $CONTROL_PAR_POS_X) + $control_positioner__mouse__y) - $control_positioner__click__y)
+        set_control_par(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_VALUE, get_control_par($control_positioner__last_control, $CONTROL_PAR_POS_X))
+      end if
+      $control_positioner__click__x := $control_positioner__mouse__x
+      $control_positioner__click__y := $control_positioner__mouse__y
+    else
+      if($NI_MOUSE_EVENT_TYPE = $NI_MOUSE_EVENT_TYPE_LEFT_BUTTON_UP)
+        $control_positioner__value_edit__x := 0
+        $control_positioner__once := 0
+        $control_positioner__current_control__parent := -1
+        $control_positioner__current_control_offset__x := 0
+        $control_positioner__current_control_offset__y := 0
+      end if
+    end if
+  end if
+end on
+on ui_control($vlue_control_positioner__x)
+  if($control_positioner__last_control # -1)
+    set_control_par($control_positioner__last_control, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($vlue_control_positioner__x), $CONTROL_PAR_VALUE))
+  end if
+end on
+on ui_control($vlue_control_positioner__y)
+  if($control_positioner__last_control # -1)
+    set_control_par($control_positioner__last_control, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($vlue_control_positioner__y), $CONTROL_PAR_VALUE))
+  end if
 end on
 

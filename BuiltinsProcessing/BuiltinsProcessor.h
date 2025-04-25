@@ -14,12 +14,13 @@ public:
 	/// main function to process the tokens and parse the builtins
     void process() override;
 
+    Result<SuccessTag> parse_builtin_constants(const std::string &file);
     Result<SuccessTag> parse_builtin_variables(const std::string &file);
     Result<SuccessTag> parse_builtin_functions(const std::string &file);
 	Result<SuccessTag> parse_builtin_widgets(const std::string &file);
 	Result<SuccessTag> parse_boolean_functions(const std::string &file);
 
-    Result<std::shared_ptr<NodeVariable>> parse_builtin_variable();
+    Result<std::shared_ptr<NodeVariable>> parse_builtin_variable(DataType data_type);
     Result<std::shared_ptr<NodeArray>> parse_builtin_array();
     Result<std::shared_ptr<NodeFunctionDefinition>> parse_builtin_function();
 	Result<std::shared_ptr<NodeUIControl>> parse_builtin_ui_control();
@@ -37,6 +38,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> m_builtin_widgets;
 
     std::string m_builtin_variables_file;
+	std::string m_builtin_constants_file;
     std::string m_builtin_functions_file;
 	std::string m_builtin_widgets_file;
 	std::string m_boolean_functions_file;

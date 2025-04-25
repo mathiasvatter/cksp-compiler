@@ -10,6 +10,7 @@ class PreprocessorConditions final : public Processor {
 public:
     explicit PreprocessorConditions(std::vector<Token> tokens);
     Result<SuccessTag> process_conditions();
+	inline static std::unordered_set<std::string> BUILTIN_CONDITIONS = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG", "NO_SYS_RELEASE_TRIGGER"};
 
 private:
 

@@ -66,6 +66,7 @@ public:
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
 		// input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
