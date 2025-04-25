@@ -197,8 +197,6 @@ inline std::unordered_set<std::string> CALLBACKS = {"init", "note", "release", "
 											 "rpn", "nrpn", "ui_update", "_pgs_changed", "pgs_changed",
 											 "poly_at", "listener", "async_complete", "persistence_changed", "ui_control", "ui_controls"};
 
-inline std::unordered_set<std::string> BUILTIN_CONDITIONS = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG"};
-
 inline std::unordered_map<token, std::vector<std::string>> PERSISTENCE_TOKENS = {{token::READ, {"make_persistent", "read_persistent_var"}},
 															{token::PERS, {"make_persistent"}},
 															{token::INSTPERS, {"make_instr_persistent"}}};

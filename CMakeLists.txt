@@ -40,6 +40,7 @@ foreach(TEXT_FILE ${TEXT_FILES})
     # Fügen Sie die generierte Header-Datei zur Liste der Quelldateien hinzu
     list(APPEND GENERATED_HEADERS ${HEADER_FILENAME})
 endforeach()
+add_custom_target(generate_headers DEPENDS ${GENERATED_HEADERS})
 
 include_directories(${GENERATED_HEADERS_DIR}
         ${GENERATED_DIR})
@@ -213,5 +214,6 @@ add_executable(cksp main.cpp
         Desugaring/DesugarUIControlArray.h
         AST/ASTVisitor/UniqueArrayNamesProvider.h
 )
+add_dependencies(cksp generate_headers)
 
 target_compile_definitions(cksp PRIVATE PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")
