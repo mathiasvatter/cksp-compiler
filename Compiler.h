@@ -69,7 +69,7 @@ public:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		// input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
+		input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
 		// input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
@@ -171,6 +171,7 @@ public:
 		compile_time.stop("Semantic Analysis");
 		std::cout << compile_time.print_timer("Semantic Analysis") << "\n";
 		compile_time.start("Type Checking");
+		ast->debug_print();
 
 		// ast->debug_print();
 		TypeInference infer_types(ast.get());
@@ -223,7 +224,6 @@ public:
 		compile_time.stop("Data Structure Lowering");
 		std::cout << compile_time.print_timer("Data Structure Lowering") << "\n";
 		compile_time.start("Variable Checking");
-		ast->debug_print();
 
 		variable_checking.do_reachable_traversal(*ast, true);
 		ast->remove_references();
