@@ -3,27 +3,70 @@
 //
 
 #pragma once
-#include <unordered_set>
+
 #include <utility>
 
-//#include "../AST/ASTNodes/AST.h"
+#include "../misc/CommandLineOptions.h"
 #include "../Processor/Processor.h"
+#include "PreprocessorConditions.h"
+#include "PreprocessorParser.h"
+#include "PreAST/PreASTDesugar.h"
+#include "PreAST/PreASTCombine.h"
+#include "PreAST/PreASTIncrementer.h"
+#include "PreAST/PreASTDefines.h"
+#include "PreAST/PreASTPragma.h"
 
 /// Bundles all preprocessor related classes and steps in one class
 class Preprocessor {
+	std::vector<Token> m_tokens{};
+
 public:
-    explicit Preprocessor(std::vector<Token> tokens);
+    explicit Preprocessor(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {}
+
 	~Preprocessor() = default;
 
 	/// main function to process the tokens
-    void process();
-    [[nodiscard]] const std::string &get_output_path() const;
-	std::vector<Token> get_token_vector();
+    void process(CompilerConfig* config) {
+    	auto result = Result<SuccessTag>(SuccessTag{});
 
-private:
-	std::vector<Token> m_tokens{};
-	/// output path from pragma
-    std::string m_output_path;
+    	PreprocessorConditions conditions(m_tokens);
+    	result = conditions.process_conditions();
+    	if(result.is_error()) {
+    		auto error = result.get_error();
+    		error.m_message += " Preprocessor failed while processing conditions.";
+    		error.exit();
+    	}
+    	m_tokens = std::move(conditions.get_token_vector());
+
+    	PreprocessorParser parser(m_tokens);
+    	auto result_parse = parser.parse_program(nullptr);
+    	if(result_parse.is_error()) {
+    		auto error = result_parse.get_error();
+    		error.m_message += " Preprocessor parsing failed.";
+    		error.exit();
+    	}
+    	auto pre_ast = std::move(result_parse.unwrap());
+    	PreASTPragma pragma(pre_ast.get(), config);
+    	pre_ast->accept(pragma);
+
+    	PreASTDefines defines(pre_ast.get());
+    	pre_ast->accept(defines);
+
+    	PreASTIncrementer incrementer(pre_ast.get());
+    	pre_ast->accept(incrementer);
+
+    	PreASTDesugar desugar(pre_ast.get());
+    	pre_ast->accept(desugar);
+
+    	PreASTCombine combine(pre_ast.get());
+    	pre_ast->accept(combine);
+
+    	m_tokens = std::move(combine.m_tokens);
+    }
+
+	std::vector<Token> get_token_vector() {
+		return std::move(m_tokens);
+	}
 
 };
 

@@ -23,10 +23,10 @@ void PreASTDefines::visit(PreNodeProgram& node) {
 	}
 }
 
-void PreASTDefines::visit(PreNodePragma &node) {
-	static PreASTPragma pragma(m_program);
-	node.accept(pragma);
-}
+// void PreASTDefines::visit(PreNodePragma &node) {
+// 	static PreASTPragma pragma(m_program);
+// 	node.accept(pragma);
+// }
 
 void PreASTDefines::do_substitution(PreNodeLiteral& node) {
 	if(m_program->define_call_stack.empty()) return;

@@ -3,24 +3,31 @@
 //
 
 #include "BuiltinsProcessor.h"
+#include "../Parser/Parser.h"
 
 #include <memory>
 #include "engine_widgets.h"
 #include "engine_variables.h"
+#include "engine_constants.h"
 #include "engine_functions.h"
+#include "engine_bool.h"
 
 BuiltinsProcessor::BuiltinsProcessor(DefinitionProvider* definition_provider)
-: Processor(), m_def_provider(definition_provider) {
+: Processor(), m_def_provider(definition_provider), m_builtin_variables_file("engine_variables.h"),
+m_builtin_constants_file("engine_constants.h"),
+m_builtin_functions_file("engine_functions.h"), m_builtin_widgets_file("engine_widgets.h"),
+m_boolean_functions_file("engine_bool.h") {
     m_pos = 0;
-    m_builtin_variables_file = "engine_variables.h";
-    m_builtin_functions_file = "engine_functions.h";
-	m_builtin_widgets_file = "engine_widgets.h";
 }
 
 void BuiltinsProcessor::process() {
-    auto builtin_vars = parse_builtin_variables(m_builtin_variables_file);
-    if(builtin_vars.is_error())
-        builtin_vars.get_error().exit();
+    auto builtin_consts = parse_builtin_constants(m_builtin_constants_file);
+    if(builtin_consts.is_error())
+        builtin_consts.get_error().exit();
+
+	auto builtin_vars = parse_builtin_variables(m_builtin_variables_file);
+	if(builtin_vars.is_error())
+		builtin_vars.get_error().exit();
 
     auto builtin_functions = parse_builtin_functions(m_builtin_functions_file);
     if(builtin_functions.is_error())
@@ -30,6 +37,10 @@ void BuiltinsProcessor::process() {
 	if(builtin_widgets.is_error())
 		builtin_widgets.get_error().exit();
 
+	auto boolean_functions = parse_boolean_functions(m_boolean_functions_file);
+	if(boolean_functions.is_error())
+		boolean_functions.get_error().exit();
+
 	m_def_provider->set_builtin_variables(std::move(m_builtin_variables));
 	m_def_provider->set_builtin_arrays(std::move(m_builtin_arrays));
 	m_def_provider->set_builtin_functions(std::move(m_builtin_functions));
@@ -37,16 +48,40 @@ void BuiltinsProcessor::process() {
 	m_def_provider->set_property_functions(std::move(m_property_functions));
 }
 
-
 Result<SuccessTag> BuiltinsProcessor::parse_builtin_variables(const std::string &file) {
-    std::string data(reinterpret_cast<char*>(engine_variables), engine_variables_len);
+	std::string data(reinterpret_cast<char*>(engine_variables), engine_variables_len);
+	Tokenizer tokenizer(data, file);
+	m_tokens = tokenizer.tokenize();
+	m_pos = 0;
+	while(peek(m_tokens).type != token::END_TOKEN) {
+		if(peek(m_tokens).type == token::KEYWORD) {
+			if(contains(VAR_IDENT, peek(m_tokens).val[0])) {
+				auto node_variable_res = parse_builtin_variable(DataType::Const);
+				if(node_variable_res.is_error()) {
+					return Result<SuccessTag>(node_variable_res.get_error());
+				}
+				auto node_variable = std::move(node_variable_res.unwrap());
+				m_builtin_variables.insert({node_variable->name, std::move(node_variable)});
+
+			} else {
+	             return Result<SuccessTag>(CompileError(ErrorType::PreprocessorError,
+	            "Failed loading builtin constants. Found builtin variable without variable identifier.", peek(m_tokens).line, "<identifier>", peek(m_tokens).val, peek(m_tokens).file));
+			}
+		} else consume(m_tokens);
+	}
+	return Result<SuccessTag>(SuccessTag{});
+}
+
+
+Result<SuccessTag> BuiltinsProcessor::parse_builtin_constants(const std::string &file) {
+    std::string data(reinterpret_cast<char*>(engine_constants), engine_constants_len);
     Tokenizer tokenizer(data, file);
     m_tokens = tokenizer.tokenize();
     m_pos = 0;
     while(peek(m_tokens).type != token::END_TOKEN) {
         if(peek(m_tokens).type == token::KEYWORD) {
             if(contains(VAR_IDENT, peek(m_tokens).val[0])) {
-				auto node_variable_res = parse_builtin_variable();
+				auto node_variable_res = parse_builtin_variable(DataType::Mutable);
 				if(node_variable_res.is_error()) {
 					return Result<SuccessTag>(node_variable_res.get_error());
 				}
@@ -59,16 +94,16 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_variables(const std::string 
 				}
 				auto node_array = std::move(node_array_res.unwrap());
                 m_builtin_arrays.insert({node_array->name, std::move(node_array)});
-            } else if(contains(BUILTIN_CONDITIONS, peek(m_tokens).val)) {
-				auto node_variable_res = parse_builtin_variable();
+            } else {
+				auto node_variable_res = parse_builtin_variable(DataType::Mutable);
 				if(node_variable_res.is_error()) {
 					return Result<SuccessTag>(node_variable_res.get_error());
 				}
 				auto node_variable = std::move(node_variable_res.unwrap());
 				m_builtin_variables.insert({node_variable->name, std::move(node_variable)});
-			} else {
-                return Result<SuccessTag>(CompileError(ErrorType::PreprocessorError,
-               "Failed loading builtins. Found builtin variable without identifier.", peek(m_tokens).line, "<identifier>", peek(m_tokens).val, peek(m_tokens).file));
+			// } else {
+   //              return Result<SuccessTag>(CompileError(ErrorType::PreprocessorError,
+   //             "Failed loading builtins. Found builtin variable without identifier.", peek(m_tokens).line, "<identifier>", peek(m_tokens).val, peek(m_tokens).file));
             }
         } else consume(m_tokens);
     }
@@ -125,8 +160,24 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_widgets(const std::string &f
 	return Result<SuccessTag>(SuccessTag{});
 }
 
+Result<SuccessTag> BuiltinsProcessor::parse_boolean_functions(const std::string &file) {
+	std::string data(reinterpret_cast<char*>(engine_bool), engine_bool_len);
+	Tokenizer tokenizer(data, file);
+	m_tokens = tokenizer.tokenize();
+	m_pos = 0;
+	Parser parser(m_tokens);
+	auto bool_prog = parser.parse();
+	if (bool_prog.is_error()) return Result<SuccessTag>(bool_prog.get_error());
+	auto bool_program = std::move(bool_prog.unwrap());
+	for (const auto& def : bool_program->function_definitions) {
+		auto node_function = std::move(def);
+		node_function->header->name = "CKSP"+OBJ_DELIMITER+node_function->header->name;
+		m_builtin_functions[{node_function->header->name, (int)node_function->header->params.size()}] = std::move(node_function);
+	}
+	return Result<SuccessTag>(SuccessTag{});
+}
 
-Result<std::shared_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable() {
+Result<std::shared_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable(DataType data_type) {
     Token name = consume(m_tokens); // consume variable name token
     // cut away identifier
     std::string var_name = name.val;
@@ -138,7 +189,7 @@ Result<std::shared_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable(
 	if(type_annotation.is_error()) {
 		return Result<std::shared_ptr<NodeVariable>>(type_annotation.get_error());
 	}
-    auto node_variable = std::make_shared<NodeVariable>(std::optional<Token>(), var_name, type_annotation.unwrap(), name, DataType::Const);
+    auto node_variable = std::make_shared<NodeVariable>(std::optional<Token>(), var_name, type_annotation.unwrap(), name, data_type);
     node_variable->is_local = false;
     node_variable->is_engine = true;
     return Result<std::shared_ptr<NodeVariable>>(std::move(node_variable));
@@ -241,7 +292,7 @@ Result<std::shared_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 		if(peek(m_tokens).type == token::KEYWORD) consume(m_tokens);
 		if(peek(m_tokens).type == token::CLOSED_BRACKET) consume(m_tokens);
 	} else {
-		auto node_var_res = parse_builtin_variable();
+		auto node_var_res = parse_builtin_variable(DataType::Mutable);
 		if(node_var_res.is_error()) {
 			return Result<std::shared_ptr<NodeUIControl>>(node_var_res.get_error());
 		}
@@ -280,7 +331,7 @@ Result<std::unique_ptr<NodeParamList>> BuiltinsProcessor::parse_builtin_args_lis
         if(peek(m_tokens).type == token::CLOSED_PARENTH) break;
         if(peek(m_tokens).type == token::KEYWORD or peek(m_tokens).type == token::TO) {
             Token tok = peek(m_tokens);
-			auto node_arg_res = parse_builtin_variable();
+			auto node_arg_res = parse_builtin_variable(DataType::Mutable);
 			if(node_arg_res.is_error()) {
 				return Result<std::unique_ptr<NodeParamList>>(node_arg_res.get_error());
 			}
@@ -302,7 +353,7 @@ Result<std::vector<std::unique_ptr<NodeFunctionParam>>> BuiltinsProcessor::parse
 		if(peek(m_tokens).type == token::CLOSED_PARENTH) break;
 		if(peek(m_tokens).type == token::KEYWORD or peek(m_tokens).type == token::TO) {
 			Token tok = peek(m_tokens);
-			auto node_arg_res = parse_builtin_variable();
+			auto node_arg_res = parse_builtin_variable(DataType::Mutable);
 			if(node_arg_res.is_error()) {
 				return Result<std::vector<std::unique_ptr<NodeFunctionParam>>>(node_arg_res.get_error());
 			}

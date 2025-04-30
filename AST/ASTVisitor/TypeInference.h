@@ -219,11 +219,21 @@ public:
         return error;
     }
 
-    static CompileError throw_type_error(const NodeAST& node1, Type* type, const std::string& message="") {
+    static CompileError throw_type_error(const NodeAST& node1, const Type* type, const std::string& message="") {
         auto error = CompileError(ErrorType::TypeError,"", "", node1.tok);
         error.m_message = "Type mismatch: " + node1.ty->to_string() + " and " + type->to_string()+". ";
 		error.m_message += message;
         return error;
+    }
+
+	static CompileError throw_type_error(const NodeAST& node1, const NodeAST& node2, const std::string& message="") {
+    	auto error = CompileError(ErrorType::TypeError,"", "", node1.tok);
+    	error.m_message = "Type mismatch: The types of '"+ node1.tok.val+"' (<" + node1.ty->to_string() + ">) and '"+
+    		node2.tok.val+"' (<" + node2.ty->to_string()+">) are incompatible.";
+    	error.m_got = node1.ty->to_string();
+    	error.m_expected = node2.ty->to_string();
+    	error.m_message += message;
+    	return error;
     }
 
 	/// check for function that has same param types as return type
@@ -290,7 +300,7 @@ public:
 	/// tries to match the type of node 1 to the type of node2 after checking type compatibility
 	static Type* match_type(NodeAST& node1, NodeAST& node2, const std::string& message="") {
 		if(!node1.ty->is_compatible(node2.ty)) {
-            throw_type_error(node1, node2.ty, message).exit();
+            throw_type_error(node1, node2, message).exit();
 		}
 
     	match_composite_type(node1, node2);
@@ -337,7 +347,7 @@ public:
         Type* declaration_type = declaration->ty->get_element_type();
         Type* reference_type = node.ty->get_element_type();
         if(!reference_type->is_compatible(declaration_type)) {
-            throw_type_error(node, declaration->ty).exit();
+            throw_type_error(node, *declaration).exit();
         }
 
         // match type from declaration to reference
@@ -351,7 +361,7 @@ public:
         declaration_type = declaration->ty->get_element_type();
         reference_type = node.ty->get_element_type();
         if(!declaration_type->is_compatible(reference_type)) {
-            throw_type_error(*declaration, node.ty).exit();
+            throw_type_error(*declaration, node).exit();
         }
         // match type from reference to declaration
         declaration->set_element_type(specialize_type(declaration_type, reference_type));
@@ -362,7 +372,7 @@ public:
 		Type* node2_type = node2.ty->get_element_type();
 		Type* node1_type = node1.ty->get_element_type();
 		if(!node1_type->is_compatible(node2_type)) {
-			throw_type_error(node1, node2.ty).exit();
+			throw_type_error(node1, node2).exit();
 		}
 
 		// match type from node2 to reference
@@ -374,7 +384,7 @@ public:
 		node2_type = node2.ty->get_element_type();
 		node1_type = node1.ty->get_element_type();
 		if(!node2_type->is_compatible(node1_type)) {
-			throw_type_error(node2, node1.ty).exit();
+			throw_type_error(node2, node1).exit();
 		}
 		// match type from reference to node2
 		node2.set_element_type(specialize_type(node2_type, node1_type));

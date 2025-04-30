@@ -1,0 +1,65 @@
+
+{doc:-----------------------------------------------
+*	GREATER THAN. Returns TRUE for a > b, otherwise FALSE
+*	@param	a		<int>
+*	@param	b		<int>
+---------------------------------------------------}
+function __gt__(a: int, b: int): int
+  return -sh_right(b-a,31)
+end function
+
+{doc:-----------------------------------------------
+*	GREATER EQUAL. Returns TRUE if a >= b, otherwise FALSE
+*	@param	a		<int>
+*	@param	b		<int>		
+---------------------------------------------------}
+function __ge__(a: int, b: int): int
+	return sh_right(a-b,31)+1
+end function
+
+{doc:-----------------------------------------------
+*	EQUAL. Returns TRUE if a == b and FALSE if a # b
+*	@param	a		<int>
+*	@param	b		<int>
+---------------------------------------------------}
+function __eq__(a: int, b: int): int
+  return -sh_right(abs(a-b)-1,31)
+end function
+
+{doc:-----------------------------------------------
+*	LESS THAN. Returns TRUE if a < b, otherwise FALSE
+*	@param	a		<int>
+*	@param	b		<int>
+---------------------------------------------------}
+function __lt__(a: int, b: int): int
+  return -sh_right(a-b,31)
+end function
+
+{doc:-----------------------------------------------
+*	LESS EQUAL. Returns TRUE if a <= b, otherwise FALSE
+*	@param	a		<int>
+*	@param	b		<int>
+---------------------------------------------------}
+function __le__(a: int, b: int): int
+  return 1+sh_right(b-a,31)
+end function
+
+{doc:-----------------------------------------------
+*	Negates input boolean. Returns TRUE if x = FALSE, returns FALSE if x = TRUE
+*	@param	x		input <int>		
+---------------------------------------------------}
+function __ne__(x: int): int
+	return abs(sh_right(abs(x)-1,31))
+end function
+
+{doc:-----------------------------------------------
+*	Turns input into boolean. Returns 1/TRUE if x # 0 and 0/FALSE if x = 0
+*	@param	x		input <int>		
+---------------------------------------------------}
+function bool(x: int): int
+  return 1+sh_right(abs(x)-1,31)
+end function
+
+
+
+

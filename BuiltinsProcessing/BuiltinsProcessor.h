@@ -14,11 +14,13 @@ public:
 	/// main function to process the tokens and parse the builtins
     void process() override;
 
+    Result<SuccessTag> parse_builtin_constants(const std::string &file);
     Result<SuccessTag> parse_builtin_variables(const std::string &file);
     Result<SuccessTag> parse_builtin_functions(const std::string &file);
 	Result<SuccessTag> parse_builtin_widgets(const std::string &file);
+	Result<SuccessTag> parse_boolean_functions(const std::string &file);
 
-    Result<std::shared_ptr<NodeVariable>> parse_builtin_variable();
+    Result<std::shared_ptr<NodeVariable>> parse_builtin_variable(DataType data_type);
     Result<std::shared_ptr<NodeArray>> parse_builtin_array();
     Result<std::shared_ptr<NodeFunctionDefinition>> parse_builtin_function();
 	Result<std::shared_ptr<NodeUIControl>> parse_builtin_ui_control();
@@ -30,25 +32,16 @@ private:
     std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables;
     std::unordered_map<std::string, std::shared_ptr<NodeArray>> m_builtin_arrays;
     std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions;
+	// std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_boolean_functions;
 
     std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> m_property_functions;
     std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> m_builtin_widgets;
 
     std::string m_builtin_variables_file;
+	std::string m_builtin_constants_file;
     std::string m_builtin_functions_file;
 	std::string m_builtin_widgets_file;
-
-	// static bool is_threadsafe_function(const std::string& fun_name) {
-	// 	static const std::set<std::string> thread_unsafe_functions = {"wait", "wait_ticks", "wait_async", "stop_wait"};
-	// 	return !thread_unsafe_functions.contains(fun_name);
-	// }
-	//
-	// static bool is_restricted_function(const std::string& fun_name) {
-	// 	static const std::unordered_set<std::string> restricted_functions = {"save_array", "save_array_str", "load_array", "load_array_str", "purge_group"};
-	// 	return restricted_functions.contains(fun_name);
-	// }
-
-//	static void apply_builtin_information(NodeDataStructure* node);
+	std::string m_boolean_functions_file;
 
 	static void apply_annotation_information(NodeDataStructure* node);
 
