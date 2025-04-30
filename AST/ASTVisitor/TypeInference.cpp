@@ -3,7 +3,6 @@
 //
 
 #include "TypeInference.h"
-// #include "ASTSemanticAnalysis.h"
 
 NodeAST * TypeInference::visit(NodeProgram& node) {
 	m_program = &node;

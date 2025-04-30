@@ -6,21 +6,30 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <unordered_map>
 
 
 enum class CmdOptions {
     Help,
     Version,
     Output,
-    Compression
+    Compression,
+	Optimization
 };
 
-// Enum für Optimierungsstufen
 enum class OptimizationLevel {
-	None,       // Keine Optimierung
-	Standard,   // Standard-Optimierung
-	Aggressive  // Aggressive Optimierung
+	None,       // No optimization
+	Simple,     // Simple optimizations only
+	Standard,   // Default optimization level
+	Aggressive  // Maximal optimization
 };
+inline const std::unordered_map<std::string, OptimizationLevel> optimization_level_map = {
+	{ "none",       OptimizationLevel::None      },
+	{ "simple",     OptimizationLevel::Simple    },
+	{ "standard",   OptimizationLevel::Standard  },
+	{ "aggressive", OptimizationLevel::Aggressive}
+};
+
 
 // Enum für Debugging-Modi
 enum class DebugMode {
@@ -50,7 +59,7 @@ public:
     CommandLineOptions(int argc, char* argv[]);
     ~CommandLineOptions() = default;
 
-	CompilerConfig* get_compiler_config() const;
+	[[nodiscard]] CompilerConfig* get_compiler_config() const;
 
 private:
 	std::unique_ptr<CompilerConfig> m_compiler_config = nullptr;
@@ -58,9 +67,15 @@ private:
             {"h", "help", "", CmdOptions::Help, "Display usage information"},
             {"o", "output", "<file>", CmdOptions::Output, "Set output file name (default: <input_dir>/out.txt)"},
             {"v", "version", "", CmdOptions::Version, "Display version number"},
+			{"O", "optimize", "<level>", CmdOptions::Optimization, "Set optimization level: none, simple, standard, aggressive"},
+			{"", "-O0", "", CmdOptions::Optimization, "Equivalent to --optimize=none"},
+			{"", "-O1", "", CmdOptions::Optimization, "Equivalent to --optimize=simple"},
+			{"", "-O2", "", CmdOptions::Optimization, "Equivalent to --optimize=standard"},
+			{"", "-O3", "", CmdOptions::Optimization, "Equivalent to --optimize=aggressive"},
+
     };
 
-	std::string get_help_option();
+	[[nodiscard]] std::string get_help_option() const;
 };
 
 

@@ -297,6 +297,10 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 	}
 	if(ref_types.empty()) return data_struct.get();
 
+	// in the case of one wrong reference (being array type), all other references will be changed to array
+	// check this when parameter is strongly typed as basic type
+	// how to do that -> i dont know
+
 	std::unique_ptr<NodeDataStructure> new_data_struct = nullptr;
 	// if some of the references were detected as Array References -> change data_struct type
 	if(ref_types.contains(NodeType::ArrayRef)) {
