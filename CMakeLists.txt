@@ -213,6 +213,7 @@ add_executable(cksp main.cpp
         Optimization/ArrayInitializationRaising.h
         Desugaring/DesugarUIControlArray.h
         AST/ASTVisitor/UniqueArrayNamesProvider.h
+        AST/ASTVisitor/UniqueParameterNamesProvider.h
 )
 add_dependencies(cksp generate_headers)
 

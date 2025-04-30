@@ -30,7 +30,7 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
 #include "AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h"
 #include "AST/ASTVisitor/ASTLowerTypes.h"
-#include "AST/ASTVisitor/UniqueArrayNamesProvider.h"
+#include "AST/ASTVisitor/UniqueParameterNamesProvider.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign2.h"
@@ -158,7 +158,7 @@ public:
 		ASTVariableChecking variable_checking(m_program);
 		variable_checking.do_complete_traversal(*ast, false);
 		ast->collect_references();
-		UniqueArrayNamesProvider unique_names_provider(m_program);
+		UniqueParameterNamesProvider unique_names_provider(m_program);
 		unique_names_provider.do_renaming(*m_program);
 
 		compile_time.stop("Lexical Scope");
