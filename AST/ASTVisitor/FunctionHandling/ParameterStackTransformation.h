@@ -90,9 +90,10 @@ private:
 				auto actual_param = std::move(call->function->get_arg(ii));
 				// return parameters do not need to be assigned back
 				// constants actual parameters do not need to be assigned back
-				if (/*promoted_params[ii]->kind != NodeInstruction::ReturnVar and */promoted_params[ii]->kind != NodeInstruction::Promoted
-				and formal_param->is_thread_safe and !actual_param->is_constant()) {
+				// engine actual parameters cannot be assigned back
+				if (promoted_params[ii]->kind != NodeInstruction::Promoted and formal_param->is_thread_safe and !actual_param->is_constant()) {
 					if (const auto ref = cast_node<NodeReference>(actual_param.get())) {
+						if (ref->is_engine) continue; // if actual parameter is engine constant or variable -> do not assign back!!!
 						auto assignment_back = std::make_unique<NodeSingleAssignment>(
 								clone_as<NodeReference>(ref),
 								formal_param->to_reference(),
