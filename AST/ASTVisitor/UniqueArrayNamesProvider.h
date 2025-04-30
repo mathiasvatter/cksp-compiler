@@ -7,6 +7,10 @@
 #include "ASTVisitor.h"
 
 /**
+ * ----- DEPRECATED ------
+ * This class is deprecated because the way it tries to fix the underlying problem breaks persistency
+ *  -> better way: Change the names of the function parameters instead of all arrays
+ *
  * Renames Arrays or NDArrays that are used to describe the size of another array
  * Because in rare cases this can lead to name collisions
  * declare read keyswitch[NUM_KEYSWITCHES,num_elements(keyswitch_idx)] <-

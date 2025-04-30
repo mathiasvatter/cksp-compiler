@@ -246,6 +246,9 @@ struct NodeFunctionHeader final : NodeDataStructure {
 		}
 		return false;
 	}
+	bool has_no_params() const {
+		return params.empty();
+	}
 };
 
 struct NodeUIControl final : NodeDataStructure {
