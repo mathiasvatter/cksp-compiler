@@ -301,6 +301,35 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 	// check this when parameter is strongly typed as basic type
 	// how to do that -> i dont know
 
+	// check if ref_types has only two entries and one of them is VariableRef. Otherwise throw error
+	if(ref_types.size() > 1) {
+		static std::unordered_map<NodeType, std::string> ref_type_map = {
+			{NodeType::VariableRef, "VariableRef"},
+			{NodeType::ArrayRef, "ArrayRef"},
+			{NodeType::NDArrayRef, "NDArrayRef"},
+			{NodeType::PointerRef, "PointerRef"},
+			{NodeType::FunctionHeaderRef, "FunctionHeaderRef"}
+		};
+		std::unordered_set<NodeReference*> refs;
+		std::unordered_set<std::string> ref_names;
+		for(auto & ref : data_struct->references) {
+			if (ref->get_node_type() != NodeType::VariableRef) {
+				refs.insert(ref);
+				auto it = ref_type_map.find(ref->get_node_type());
+				if (it != ref_type_map.end()) {
+					ref_names.insert(it->second);
+				}
+			}
+		}
+		auto error = CompileError(ErrorType::SyntaxError, "", "", data_struct->tok);
+		error.m_message = "Found different reference types for the same function parameter: " + data_struct->tok.val + ".";
+		for(const auto & ref : ref_names) {
+			error.m_got += " as <" + ref + ">, ";
+		}
+		error.m_got.erase(error.m_got.size() - 2);
+		error.exit();
+	}
+
 	std::unique_ptr<NodeDataStructure> new_data_struct = nullptr;
 	// if some of the references were detected as Array References -> change data_struct type
 	if(ref_types.contains(NodeType::ArrayRef)) {
