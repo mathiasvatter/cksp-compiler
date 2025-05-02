@@ -231,6 +231,6 @@ jobs:
             fi
             gh release create "${{ needs.build-macos.outputs.tag }}" \
             _Releases/${{ needs.build-macos.outputs.version_dir }}.zip \
-            --title "Release ${{ needs.build-macos.outputs.tag }}" \
+            --title "${{ needs.build-macos.outputs.tag }}" \
             --notes "Automatically generated release for ${{ needs.build-macos.outputs.tag }}" \
             --prerelease=$IS_PRERELEASE
