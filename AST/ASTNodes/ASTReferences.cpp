@@ -244,8 +244,8 @@ bool NodeNDArrayRef::determine_sizes() {
 	if(get_declaration()->get_node_type() != NodeType::NDArray) {
 		if(get_declaration()->get_node_type() == NodeType::List) return false;
 		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "NDArray reference has to be declared as NDArray.";
-		error.m_got = get_declaration()->get_string();
+		error.m_message = "<NDArray> reference has to be declared as <NDArray>.";
+		error.m_got = get_declaration()->tok.val;
 		error.exit();
 		return false;
 	}
