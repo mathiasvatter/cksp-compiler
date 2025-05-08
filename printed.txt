@@ -29,6 +29,7 @@ on init
 	declare note_selection_time : int := 30 {Reuses: 0}
 	declare input_acceptance_time : int := 300 {Reuses: 0}
 	declare lookahead : int := 200 {Reuses: 0}
+	declare use_constant_delay : int := 1 {Reuses: 0}
 	declare LEGATO_ARRAY_PATH : string := get_folder(GET_FOLDER_PATCH_DIR{unknown}){Builtin, None} & "../legato data/" {Reuses: 0}
 	declare const OFF : unknown := 0 {Reuses: 0}
 	declare const ON : unknown := 1 {Reuses: 0}
@@ -253,8 +254,10 @@ on init
 	declare legato_buffer_is_loading : int := FALSE{unknown} {Reuses: 0}
 	declare const MAX_SUBARTICULATIONS_IN_REPETITION_ENGINE : int := 64 {Reuses: 0}
 	declare repetition_engine_subarticulation_events[MAX_SUBARTICULATIONS_IN_REPETITION_ENGINE{unknown}] : int[] := [- 1] {Reuses: 0}
+	declare repetition_played_subarticulation_events[MAX_SUBARTICULATIONS_IN_REPETITION_ENGINE{unknown}] : int[] := [- 1] {Reuses: 0}
 	declare tempo : real := 0 {Reuses: 0}
 	declare repetition_interval_time[NUM_INSTRUMENTS{unknown}, NUM_KEYSWITCHES{unknown}, NUM_SUBARTICULATIONS{unknown}] : int[][][] := [0] {Reuses: 0}
+	declare repetition_interval_time_humanization[NUM_INSTRUMENTS{unknown}, NUM_KEYSWITCHES{unknown}, NUM_SUBARTICULATIONS{unknown}] : int[][][] := [0] {Reuses: 0}
 	repetition_engine_update_tempo{UserDefined, None}
 	declare repetition_engine_active : int := FALSE{unknown} {Reuses: 0}
 	declare repetition_engine_start_time : int := - 1 {Reuses: 0}
@@ -349,6 +352,18 @@ on init
 	set_bounds(btn_polyphonic_aftertouch{unknown}, (UI_WIDTH{unknown} - 100) - 145, 0, 145, 20){Property, None}
 	set_font_types(get_ui_id(btn_polyphonic_aftertouch{unknown}){Builtin, None}, fonts_regular_white{unknown}){UserDefined, None}
 	btn_polyphonic_aftertouch{unknown} -> parent_panel := get_ui_id(pnl_main_page{unknown}){Builtin, None}
+	declare ui_button btn_mode_live : unknown  {Reuses: 0}
+	set_button_properties(btn_mode_live{unknown}, "Live", "btn_ab_rounded_left", 1, 0, 3){Property, None}
+	set_bounds(btn_mode_live{unknown}, 30, 25, 60, 20){Property, None}
+	set_font_types(get_ui_id(btn_mode_live{unknown}){Builtin, None}, fonts_regular_white{unknown}){UserDefined, None}
+	btn_mode_live{unknown} -> parent_panel := get_ui_id(pnl_main_page{unknown}){Builtin, None}
+	btn_mode_live{unknown} -> value := ne(use_constant_delay{unknown}){UserDefined, None}
+	declare ui_button btn_mode_playback : unknown  {Reuses: 0}
+	set_button_properties(btn_mode_playback{unknown}, "Playback", "btn_ab_rounded_right", 1, 0, 3){Property, None}
+	set_bounds(btn_mode_playback{unknown}, 30 + 60, 25, 60, 20){Property, None}
+	set_font_types(get_ui_id(btn_mode_playback{unknown}){Builtin, None}, fonts_regular_white{unknown}){UserDefined, None}
+	btn_mode_playback{unknown} -> parent_panel := get_ui_id(pnl_main_page{unknown}){Builtin, None}
+	btn_mode_playback{unknown} -> value := use_constant_delay{unknown}
 	declare ui_panel pnl_editor_page : unknown  {Reuses: 0}
 	declare lbl_center_circle[4] : unknown {Reuses: 0}
 	declare ui_label lbl_center_circle0 : int (0, 0) {Reuses: 0}
@@ -836,7 +851,7 @@ on init
 	set_bounds(lbl_articulation_humanize_title{unknown}, sli_articulation_humanize{unknown} -> x - 38, sli_articulation_humanize{unknown} -> y - 20, 120, 20){Property, None}
 	lbl_articulation_humanize_title{unknown} -> parent_panel := get_ui_id(pnl_editor_page{unknown}){Builtin, None}
 	lbl_articulation_humanize_title{unknown} -> z_layer := 0
-	declare ui_slider sli_articulation_release : unknown (0, 250) {Reuses: 0}
+	declare ui_slider sli_articulation_release : unknown (100, 800) {Reuses: 0}
 	set_slider_properties(sli_articulation_release{unknown}, 0, "sli_smallsmall", - 200){Property, None}
 	set_bounds(sli_articulation_release{unknown}, 220, 320){Property, None}
 	sli_articulation_release{unknown} -> parent_panel := get_ui_id(pnl_editor_page{unknown}){Builtin, None}
@@ -851,6 +866,17 @@ on init
 	set_bounds(lbl_articulation_release_title{unknown}, sli_articulation_release{unknown} -> x - 38, sli_articulation_release{unknown} -> y - 20, 120, 20){Property, None}
 	lbl_articulation_release_title{unknown} -> parent_panel := get_ui_id(pnl_editor_page{unknown}){Builtin, None}
 	lbl_articulation_release_title{unknown} -> z_layer := 0
+	declare ui_button btn_articulation_release_blocker : unknown  {Reuses: 0}
+	set_button_properties(btn_articulation_release_blocker{unknown}, "", "darken"){Property, None}
+	set_bounds(btn_articulation_release_blocker{unknown}, sli_articulation_release{unknown} -> x - 33, sli_articulation_release{unknown} -> y - 20, 110, 100){Property, None}
+	btn_articulation_release_blocker{unknown} -> parent_panel := get_ui_id(pnl_editor_page{unknown}){Builtin, None}
+	btn_articulation_release_blocker{unknown} -> z_layer := 0
+	declare ui_button btn_articulation_release : unknown  {Reuses: 0}
+	set_button_properties(btn_articulation_release{unknown}, "Auto", "btn_ab_rounded", 1, 0, 3){Property, None}
+	set_bounds(btn_articulation_release{unknown}, sli_articulation_release{unknown} -> x + 35, sli_articulation_release{unknown} -> y + 60, 40, 20){Property, None}
+	set_font_types(btn_articulation_release{unknown}, fonts_regular_white{unknown}){UserDefined, None}
+	btn_articulation_release{unknown} -> parent_panel := get_ui_id(pnl_editor_page{unknown}){Builtin, None}
+	btn_articulation_release{unknown} -> z_layer := 1
 	declare ui_slider sli_subarticulation_volume : unknown (- 12, 12) {Reuses: 0}
 	set_slider_properties(sli_subarticulation_volume{unknown}, 0, "modwheel-slider", 1000){Property, None}
 	set_bounds(sli_subarticulation_volume{unknown}, 635, 320){Property, None}
@@ -1467,7 +1493,7 @@ on init
 		set_control_par_str(INST_LIB_DESCRIPTION_ID{int}, CONTROL_PAR_TEXTLINE{int}, credits[i{unknown}]{unknown}){Builtin, None}
 	end for
 	declare ui_label lbl_version : unknown (0, 0) {Reuses: 0}
-	set_label_properties(lbl_version{unknown}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "11:53:32" & " " & "04/30/25", "alpha", 0, fonts_regular_white[0]{unknown}, 0){Property, None}
+	set_label_properties(lbl_version{unknown}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "12:57:08" & " " & "05/08/25", "alpha", 0, fonts_regular_white[0]{unknown}, 0){Property, None}
 	set_bounds(lbl_version{unknown}, 5, 5, 800, 15){Property, None}
 	declare next_modwheel_animation_frame : int := - 1 {Reuses: 0}
 	declare animation_frame_counter : unknown := 0 {Reuses: 0}
@@ -1556,7 +1582,7 @@ on controller
 			end for
 		end if
 	end if
-	wait_or_zero(lookahead{unknown} * 1000){UserDefined, None}
+	wait_or_zero((lookahead{unknown} * 1000) * use_constant_delay{unknown}){UserDefined, None}
 	sustain_pedal{unknown} := sustain_pedal_actual{unknown}
 	if(CC_NUM{unknown} = 1)
 		set_modulation_position(0, controller_value{unknown}){UserDefined, None}
@@ -1663,6 +1689,18 @@ on ui_control(btn_polyphonic_aftertouch{unknown})
 	else
 		use_polyphonic_modulation{unknown} := FALSE{unknown}
 	end if
+end on
+
+on ui_control(btn_mode_live{unknown})
+	use_constant_delay{unknown} := FALSE{unknown}
+	btn_mode_live{unknown} -> value := ON{unknown}
+	btn_mode_playback{unknown} -> value := OFF{unknown}
+end on
+
+on ui_control(btn_mode_playback{unknown})
+	use_constant_delay{unknown} := TRUE{unknown}
+	btn_mode_live{unknown} -> value := OFF{unknown}
+	btn_mode_playback{unknown} -> value := ON{unknown}
 end on
 
 on ui_control(txt_keyswitch_name{unknown})
@@ -1802,6 +1840,18 @@ end on
 on ui_control(sli_articulation_release{unknown})
 	lbl_articulation_release{unknown} -> text := sli_articulation_release{unknown} & " ms"
 	articulation_release[selected_instrument{unknown}, selected_keyswitch{unknown}]{unknown} := sli_articulation_release{unknown}
+end on
+
+on ui_control(btn_articulation_release{unknown})
+	if(btn_articulation_release{unknown} = ON{unknown})
+		articulation_release[selected_instrument{unknown}, selected_keyswitch{unknown}]{unknown} := - 1
+		lbl_articulation_release{unknown} -> text := ""
+		btn_articulation_release_blocker{unknown} -> hide := HIDE_PART_NOTHING{unknown}
+	else
+		articulation_release[selected_instrument{unknown}, selected_keyswitch{unknown}]{unknown} := sli_articulation_release{unknown}
+		lbl_articulation_release{unknown} -> text := sli_articulation_release{unknown} & " ms"
+		btn_articulation_release_blocker{unknown} -> hide := HIDE_WHOLE_CONTROL{unknown}
+	end if
 end on
 
 on ui_control(sli_subarticulation_volume{unknown})
@@ -2403,12 +2453,14 @@ function array.remove(array0 : unknown, idx12 : unknown)
 end function
 
 function array.clear(array1 : unknown)
+	declare local lib.i : int {Reuses: 0}
 	for lib.i{unknown} := 0 to num_elements[array1{unknown}] - 1
 		array1[lib.i{unknown}]{unknown} := 0
 	end for
 end function
 
 function array.reset(array2 : unknown, val13 : unknown)
+	declare local lib.i : int {Reuses: 0}
 	for lib.i{unknown} := 0 to num_elements[array2{unknown}] - 1
 		array2[lib.i{unknown}]{unknown} := val13{unknown}
 	end for
@@ -2937,8 +2989,7 @@ function subarticulation_play_note(instrument1 : int, keyswitch0 : int, subartic
 				subarticulation_event_change_vol(subarticulation_event_id{unknown}, loaded_subarticulations_volume[instrument1{unknown}, keyswitch0{unknown}, subarticulation_idx0{unknown}]{unknown} * 1000, TRUE{unknown}){UserDefined, None}
 				if(subarticulations_type[subarticulations_ids_positions[subarticulation_id2{unknown}]{unknown}]{unknown} = SUBARTICULATION_TYPE_REPETITION{unknown})
 					repetition_engine_add(subarticulation_event_id{unknown}){UserDefined, None}
-					if(((ENGINE_UPTIME{unknown} - repetition_engine_start_time{unknown}) mod repetition_interval_time[instrument1{unknown}, keyswitch0{unknown}, subarticulation_idx0{unknown}]{unknown}) > LISTENER_RESOLUTION{unknown})
-						subarticulation_event_fade_out(subarticulation_event_id{unknown}, 1, FALSE{unknown}){UserDefined, None}
+					if(((ENGINE_UPTIME{unknown} - repetition_engine_start_time{unknown}) mod (repetition_interval_time[instrument1{unknown}, keyswitch0{unknown}, subarticulation_idx0{unknown}]{unknown} + repetition_interval_time_humanization[instrument1{unknown}, keyswitch0{unknown}, subarticulation_idx0{unknown}]{unknown})) > LISTENER_RESOLUTION{unknown})
 						message("fade out " & subarticulation_event_id{unknown}){Builtin, None}
 					end if
 				end if
@@ -3112,19 +3163,24 @@ function subarticulation_note_off(subarticulation_event_id13 : int)
 		message("end subartevent " & subarticulation_event_id13{unknown}){Builtin, None}
 		repetition_engine_remove(subarticulation_event_id13{unknown}){UserDefined, None}
 		if((subarticulations_release_time[subarticulations_ids_positions[subarticulation_id{unknown}]{unknown}]{unknown} = 0) or ((ENGINE_UPTIME{unknown} - last_pressed[subarticulation_event_note[subarticulation_event_id13{unknown}]{unknown}]{unknown}) < subarticulations_release_time[subarticulations_ids_positions[subarticulation_id{unknown}]{unknown}]{unknown}))
-			note_off(subarticulation_event_get_event_id(subarticulation_event_id13{unknown}){UserDefined, None}){Builtin, None}
-			if(subarticulation_octave_layer_get_event_id(subarticulation_event_id13{unknown}){UserDefined, None} # - 1)
-				note_off(subarticulation_octave_layer_get_event_id(subarticulation_event_id13{unknown}){UserDefined, None}){Builtin, None}
+			declare local release_time : int := articulation_release[articulation_event_instrument[subarticulation_event_articulation_event[subarticulation_event_id13{unknown}]{unknown}]{unknown}, articulation_event_keyswitch[subarticulation_event_articulation_event[subarticulation_event_id13{unknown}]{unknown}]{unknown}]{unknown} {Reuses: 0}
+			if(release_time{unknown} >= 0)
+				subarticulation_event_fade_out(subarticulation_event_id13{unknown}, release_time{unknown}, TRUE{unknown}){UserDefined, None}
+			else
+				note_off(subarticulation_event_get_event_id(subarticulation_event_id13{unknown}){UserDefined, None}){Builtin, None}
+				if(subarticulation_octave_layer_get_event_id(subarticulation_event_id13{unknown}){UserDefined, None} # - 1)
+					note_off(subarticulation_octave_layer_get_event_id(subarticulation_event_id13{unknown}){UserDefined, None}){Builtin, None}
+				end if
 			end if
 			if(subarticulations_type[subarticulations_ids_positions[subarticulation_id{unknown}]{unknown}]{unknown} = SUBARTICULATION_TYPE_LEGATO{unknown})
 				declare local fade_time : unknown := 300 {Reuses: 0}
 				subarticulation_event_fade_out(subarticulation_event_id13{unknown}, fade_time{unknown}, TRUE{unknown}){UserDefined, None}
 			end if
 			if((subarticulations_release_group[subarticulations_ids_positions[subarticulation_id{unknown}]{unknown}]{unknown} = TRUE{unknown}) and ((authoring_page_active{unknown} = OFF{unknown}) or (btn_play_sustain{unknown} = ON{unknown})))
-				declare local event : int := play_note(subarticulation_event_note[subarticulation_event_id13{unknown}]{unknown}, key_velocity[subarticulation_event_note[subarticulation_event_id13{unknown}]{unknown}]{unknown}, 0, 0){Builtin, None} {Reuses: 0}
+				declare local event : int := play_note(subarticulation_event_note[subarticulation_event_id13{unknown}]{unknown}, key_velocity[subarticulation_event_note[subarticulation_event_id13{unknown}]{unknown}]{unknown}, 0, 1){Builtin, None} {Reuses: 0}
 				declare local octave_event : int := - 1 {Reuses: 0}
 				if(subarticulation_event_octave_layer[subarticulation_event_id13{unknown}]{unknown} # 0)
-					octave_event{unknown} := play_note(subarticulation_event_note[subarticulation_event_id13{unknown}]{unknown} + 12, key_velocity[subarticulation_event_note[subarticulation_event_id13{unknown}]{unknown}]{unknown}, 0, 0){Builtin, None}
+					octave_event{unknown} := play_note(subarticulation_event_note[subarticulation_event_id13{unknown}]{unknown} + 12, key_velocity[subarticulation_event_note[subarticulation_event_id13{unknown}]{unknown}]{unknown}, 0, 1){Builtin, None}
 				end if
 				subarticulation_event_set_event_id(subarticulation_event_id13{unknown}, event{unknown}){UserDefined, None}
 				subarticulation_octave_layer_set_event_id(subarticulation_event_id13{unknown}, octave_event{unknown}){UserDefined, None}
@@ -3320,7 +3376,7 @@ function articulations_on_note(instrument_slot0 : int, note4 : int, velocity1 : 
 				if(((loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown} # - 1) and (note4{unknown} >= subarticulations_range_lower[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown})) and (note4{unknown} <= subarticulations_range_upper[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown}))
 					if(((subarticulations_type[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown} = SUBARTICULATION_TYPE_SUSTAINED{unknown}) or (subarticulations_type[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown} = SUBARTICULATION_TYPE_ONESHOT{unknown})) or (subarticulations_type[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown} = SUBARTICULATION_TYPE_REPETITION{unknown}))
 						if(event_list_get_articulation_event(instrument_slot0{unknown}, ks{unknown}, note4{unknown}){UserDefined, None} = - 1)
-							delay_buffer_add(articulation_event_id{unknown}, instrument_slot0{unknown}, ks{unknown}, i{unknown}, note4{unknown}, velocity1{unknown}, 0, ENGINE_UPTIME{unknown}, ((lookahead{unknown} - subarticulations_start_offset[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown}) + timing_offset0{unknown}) + humanize_by_ms(articulation_humanization[instrument_slot0{unknown}, ks{unknown}]{unknown}){UserDefined, None}, last_articulation_event[instrument_slot0{unknown}, ks{unknown}, note4{unknown}]{unknown}){UserDefined, None}
+							delay_buffer_add(articulation_event_id{unknown}, instrument_slot0{unknown}, ks{unknown}, i{unknown}, note4{unknown}, velocity1{unknown}, 0, ENGINE_UPTIME{unknown}, (((lookahead{unknown} * use_constant_delay{unknown}) - subarticulations_start_offset[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown}) + timing_offset0{unknown}) + humanize_by_ms(articulation_humanization[instrument_slot0{unknown}, ks{unknown}]{unknown}){UserDefined, None}, last_articulation_event[instrument_slot0{unknown}, ks{unknown}, note4{unknown}]{unknown}){UserDefined, None}
 							if(articulation_event_get_subarticulation_event_id(articulation_event_id{unknown}, i{unknown}){UserDefined, None} = - 1)
 								articulation_event_set_subarticulation_event_id(articulation_event_id{unknown}, i{unknown}, EVENT_IN_PROGRESS{unknown}){UserDefined, None}
 							end if
@@ -3330,7 +3386,7 @@ function articulations_on_note(instrument_slot0 : int, note4 : int, velocity1 : 
 						if(subarticulations_type[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown} = SUBARTICULATION_TYPE_LEGATO_ATTACK{unknown})
 							message("active_notes: " & active_notes[instrument_slot0{unknown}, ks{unknown}]{unknown}){Builtin, None}
 							if(active_notes[instrument_slot0{unknown}, ks{unknown}]{unknown} = 0)
-								delay_buffer_add(articulation_event_id{unknown}, instrument_slot0{unknown}, ks{unknown}, i{unknown}, note4{unknown}, velocity1{unknown}, 0, ENGINE_UPTIME{unknown}, ((lookahead{unknown} - subarticulations_start_offset[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown}) + timing_offset0{unknown}) + humanize_by_ms(articulation_humanization[instrument_slot0{unknown}, ks{unknown}]{unknown}){UserDefined, None}, last_articulation_event[instrument_slot0{unknown}, ks{unknown}, note4{unknown}]{unknown}){UserDefined, None}
+								delay_buffer_add(articulation_event_id{unknown}, instrument_slot0{unknown}, ks{unknown}, i{unknown}, note4{unknown}, velocity1{unknown}, 0, ENGINE_UPTIME{unknown}, (((lookahead{unknown} * use_constant_delay{unknown}) - subarticulations_start_offset[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown}) + timing_offset0{unknown}) + humanize_by_ms(articulation_humanization[instrument_slot0{unknown}, ks{unknown}]{unknown}){UserDefined, None}, last_articulation_event[instrument_slot0{unknown}, ks{unknown}, note4{unknown}]{unknown}){UserDefined, None}
 								if(articulation_event_get_subarticulation_event_id(articulation_event_id{unknown}, i{unknown}){UserDefined, None} = - 1)
 									articulation_event_set_subarticulation_event_id(articulation_event_id{unknown}, i{unknown}, EVENT_IN_PROGRESS{unknown}){UserDefined, None}
 								end if
@@ -3340,9 +3396,9 @@ function articulations_on_note(instrument_slot0 : int, note4 : int, velocity1 : 
 							if(subarticulations_type[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown} = SUBARTICULATION_TYPE_LEGATO{unknown})
 								if(event_list_get_articulation_event(instrument_slot0{unknown}, ks{unknown}, note4{unknown}){UserDefined, None} = - 1)
 									if(last_articulation_event[instrument_slot0{unknown}, ks{unknown}, note_to_string(0, note4{unknown}){UserDefined, None} * allow_double_stops{unknown}]{unknown} = - 1)
-										delay_buffer_add(articulation_event_id{unknown}, instrument_slot0{unknown}, ks{unknown}, i{unknown}, note4{unknown}, velocity1{unknown}, 0, ENGINE_UPTIME{unknown}, ((lookahead{unknown} - subarticulations_start_offset[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown}) + timing_offset0{unknown}) + humanize_by_ms(articulation_humanization[instrument_slot0{unknown}, ks{unknown}]{unknown}){UserDefined, None}, last_articulation_event[instrument_slot0{unknown}, ks{unknown}, note_to_string(0, note4{unknown}){UserDefined, None} * allow_double_stops{unknown}]{unknown}){UserDefined, None}
+										delay_buffer_add(articulation_event_id{unknown}, instrument_slot0{unknown}, ks{unknown}, i{unknown}, note4{unknown}, velocity1{unknown}, 0, ENGINE_UPTIME{unknown}, (((lookahead{unknown} * use_constant_delay{unknown}) - subarticulations_start_offset[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown}) + timing_offset0{unknown}) + humanize_by_ms(articulation_humanization[instrument_slot0{unknown}, ks{unknown}]{unknown}){UserDefined, None}, last_articulation_event[instrument_slot0{unknown}, ks{unknown}, note_to_string(0, note4{unknown}){UserDefined, None} * allow_double_stops{unknown}]{unknown}){UserDefined, None}
 									else
-										delay_buffer_add(articulation_event_id{unknown}, instrument_slot0{unknown}, ks{unknown}, i{unknown}, note4{unknown}, velocity1{unknown}, 0, ENGINE_UPTIME{unknown}, (((lookahead{unknown} - subarticulations_start_offset[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown}) + timing_offset0{unknown}) - (200 - get_legato_data(legato_data_trans_zone_start{unknown}, legato_data_trans_zone_start_offset{unknown}, instrument_slot0{unknown}, ks{unknown}, i{unknown}, note4{unknown}, 0, transition_notes_to_type(note4{unknown}, articulation_event_note[last_articulation_event[instrument_slot0{unknown}, ks{unknown}, note_to_string(0, note4{unknown}){UserDefined, None} * allow_double_stops{unknown}]{unknown}]{unknown}){UserDefined, None}, 1 - (real(min(ENGINE_UPTIME{unknown} - articulation_event_timestamp[last_articulation_event[instrument_slot0{unknown}, ks{unknown}, 0]{unknown}]{unknown}, 500){UserDefined, None}){Builtin, None} / 500)){UserDefined, None})) + humanize_by_ms(articulation_humanization[instrument_slot0{unknown}, ks{unknown}]{unknown}){UserDefined, None}, last_articulation_event[instrument_slot0{unknown}, ks{unknown}, note_to_string(0, note4{unknown}){UserDefined, None} * allow_double_stops{unknown}]{unknown}){UserDefined, None}
+										delay_buffer_add(articulation_event_id{unknown}, instrument_slot0{unknown}, ks{unknown}, i{unknown}, note4{unknown}, velocity1{unknown}, 0, ENGINE_UPTIME{unknown}, ((((lookahead{unknown} * use_constant_delay{unknown}) - subarticulations_start_offset[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown}) + timing_offset0{unknown}) - (200 - get_legato_data(legato_data_trans_zone_start{unknown}, legato_data_trans_zone_start_offset{unknown}, instrument_slot0{unknown}, ks{unknown}, i{unknown}, note4{unknown}, 0, transition_notes_to_type(note4{unknown}, articulation_event_note[last_articulation_event[instrument_slot0{unknown}, ks{unknown}, note_to_string(0, note4{unknown}){UserDefined, None} * allow_double_stops{unknown}]{unknown}]{unknown}){UserDefined, None}, 1 - (real(min(ENGINE_UPTIME{unknown} - articulation_event_timestamp[last_articulation_event[instrument_slot0{unknown}, ks{unknown}, 0]{unknown}]{unknown}, 500){UserDefined, None}){Builtin, None} / 500)){UserDefined, None})) + humanize_by_ms(articulation_humanization[instrument_slot0{unknown}, ks{unknown}]{unknown}){UserDefined, None}, last_articulation_event[instrument_slot0{unknown}, ks{unknown}, note_to_string(0, note4{unknown}){UserDefined, None} * allow_double_stops{unknown}]{unknown}){UserDefined, None}
 									end if
 									if(articulation_event_get_subarticulation_event_id(articulation_event_id{unknown}, i{unknown}){UserDefined, None} = - 1)
 										articulation_event_set_subarticulation_event_id(articulation_event_id{unknown}, i{unknown}, EVENT_IN_PROGRESS{unknown}){UserDefined, None}
@@ -3359,7 +3415,16 @@ function articulations_on_note(instrument_slot0 : int, note4 : int, velocity1 : 
 							else
 								if(subarticulations_type[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown} = SUBARTICULATION_TYPE_INTERVAL_LONG{unknown})
 									if(event_list_get_articulation_event(instrument_slot0{unknown}, ks{unknown}, note4{unknown}){UserDefined, None} = - 1)
-										delay_buffer_add(articulation_event_id{unknown}, instrument_slot0{unknown}, ks{unknown}, i{unknown}, note4{unknown}, velocity1{unknown}, 0, ENGINE_UPTIME{unknown}, ((lookahead{unknown} - subarticulations_start_offset[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown}) + timing_offset0{unknown}) + humanize_by_ms(articulation_humanization[instrument_slot0{unknown}, ks{unknown}]{unknown}){UserDefined, None}, - 1){UserDefined, None}
+										declare local interval : int {Reuses: 0}
+										for interval{unknown} := 1 to 5
+											if(pressed_keys[note4{unknown} + interval{unknown}]{unknown} >= 0)
+												delay_buffer_add(articulation_event_id{unknown}, instrument_slot0{unknown}, ks{unknown}, i{unknown}, note4{unknown}, velocity1{unknown}, interval{unknown} - 1, ENGINE_UPTIME{unknown}, (((lookahead{unknown} * use_constant_delay{unknown}) - subarticulations_start_offset[subarticulations_ids_positions[loaded_subarticulations[instrument_slot0{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown}) + timing_offset0{unknown}) + humanize_by_ms(articulation_humanization[instrument_slot0{unknown}, ks{unknown}]{unknown}){UserDefined, None}, - 1){UserDefined, None}
+												if(articulation_event_get_subarticulation_event_id(articulation_event_id{unknown}, i{unknown}){UserDefined, None} = - 1)
+													articulation_event_set_subarticulation_event_id(articulation_event_id{unknown}, i{unknown}, EVENT_IN_PROGRESS{unknown}){UserDefined, None}
+												end if
+												set_articulation_event_id{unknown} := TRUE{unknown}
+											end if
+										end for
 									end if
 								end if
 							end if
@@ -3384,14 +3449,16 @@ function articulations_note_off(instrument_slot1 : int, note5 : int)
 	declare local release_offset : int := 0 {Reuses: 0}
 	for ks{unknown} := 0 to NUM_KEYSWITCHES{unknown} - 1
 		if(event_list_get_articulation_event(instrument_slot1{unknown}, ks{unknown}, note5{unknown}){UserDefined, None} # - 1)
+			message("RELEASE NOTE " & note5{unknown}){Builtin, None}
 			for i{unknown} := 0 to 4 - 1
 				if(loaded_subarticulations[instrument_slot1{unknown}, ks{unknown}, i{unknown}]{unknown} # - 1)
+					release_offset{unknown} := 0
 					if((subarticulations_type[subarticulations_ids_positions[loaded_subarticulations[instrument_slot1{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown} = SUBARTICULATION_TYPE_ONESHOT{unknown}) or (subarticulations_type[subarticulations_ids_positions[loaded_subarticulations[instrument_slot1{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown} = SUBARTICULATION_TYPE_INTERVAL_SHORT{unknown}))
 						if(subarticulations_release_group[subarticulations_ids_positions[loaded_subarticulations[instrument_slot1{unknown}, ks{unknown}, i{unknown}]{unknown}]{unknown}]{unknown} = 0)
 							release_offset{unknown} := 500
 						end if
 					end if
-					delay_buffer_add(event_list_get_articulation_event(instrument_slot1{unknown}, ks{unknown}, note5{unknown}){UserDefined, None}, instrument_slot1{unknown}, ks{unknown}, i{unknown}, note5{unknown}, - 1, 0, ENGINE_UPTIME{unknown}, lookahead{unknown} + release_offset{unknown}, - 1){UserDefined, None}
+					delay_buffer_add(event_list_get_articulation_event(instrument_slot1{unknown}, ks{unknown}, note5{unknown}){UserDefined, None}, instrument_slot1{unknown}, ks{unknown}, i{unknown}, note5{unknown}, - 1, 0, ENGINE_UPTIME{unknown}, (lookahead{unknown} * use_constant_delay{unknown}) + release_offset{unknown}, - 1){UserDefined, None}
 				end if
 			end for
 			event_list_remove_articulation_event(instrument_slot1{unknown}, ks{unknown}, note5{unknown}){UserDefined, None}
@@ -3493,6 +3560,7 @@ function delay_buffer_execute
 				if(delay_buffer_countdown[i{unknown}]{unknown} <= 0)
 					if(delay_buffer_velo[i{unknown}]{unknown} >= 0)
 						if(articulation_event_get_subarticulation_event_id(delay_buffer[i{unknown}]{unknown}, delay_buffer_subarticulation[i{unknown}]{unknown}){UserDefined, None} < 0)
+							message("play note"){Builtin, None}
 							declare local id : int := subarticulation_play_note(delay_buffer_instrument[i{unknown}]{unknown}, delay_buffer_keyswitch[i{unknown}]{unknown}, delay_buffer_subarticulation[i{unknown}]{unknown}, loaded_subarticulations[delay_buffer_instrument[i{unknown}]{unknown}, delay_buffer_keyswitch[i{unknown}]{unknown}, delay_buffer_subarticulation[i{unknown}]{unknown}]{unknown}, delay_buffer_note[i{unknown}]{unknown}, delay_buffer_velo[i{unknown}]{unknown}, delay_buffer_interval[i{unknown}]{unknown}, get_next_rr(delay_buffer_instrument[i{unknown}]{unknown}, delay_buffer_keyswitch[i{unknown}]{unknown}, delay_buffer_subarticulation[i{unknown}]{unknown}, delay_buffer_note[i{unknown}]{unknown}){UserDefined, None}, articulations_compute_modulation(delay_buffer_instrument[i{unknown}]{unknown}, delay_buffer_keyswitch[i{unknown}]{unknown}, delay_buffer_note[i{unknown}]{unknown}, delay_buffer_subarticulation[i{unknown}]{unknown}){UserDefined, None}, articulations_compute_level(delay_buffer_instrument[i{unknown}]{unknown}, delay_buffer_keyswitch[i{unknown}]{unknown}, delay_buffer_note[i{unknown}]{unknown}, delay_buffer_subarticulation[i{unknown}]{unknown}){UserDefined, None}, octave_shift[delay_buffer_instrument[i{unknown}]{unknown}]{unknown} * 12, octave_layer[delay_buffer_instrument[i{unknown}]{unknown}]{unknown}, articulation_event_get_subarticulation_event_id(delay_buffer_prev_note[i{unknown}]{unknown}, delay_buffer_subarticulation[i{unknown}]{unknown}){UserDefined, None}){UserDefined, None} {Reuses: 0}
 							articulation_event_set_subarticulation_event_id(delay_buffer[i{unknown}]{unknown}, delay_buffer_subarticulation[i{unknown}]{unknown}, id{unknown}){UserDefined, None}
 							subarticulation_event_articulation_event[id{unknown}]{unknown} := delay_buffer[i{unknown}]{unknown}
@@ -3743,17 +3811,25 @@ function repetition_engine_listener
 	declare local any_event_played : int := FALSE{unknown} {Reuses: 0}
 	declare local any_event_active : int := FALSE{unknown} {Reuses: 0}
 	if(repetition_engine_active{unknown} = TRUE{unknown})
+		i{unknown} := 0
+		while((i{unknown} < num_elements[repetition_played_subarticulation_events{unknown}]) and (repetition_played_subarticulation_events[i{unknown}]{unknown} # - 1)) 
+			repetition_played_subarticulation_events[i{unknown}]{unknown} := - 1
+			inc(i{unknown}){Builtin, None}
+		end while
 		for event : unknown in repetition_engine_subarticulation_events{unknown}
 			if(event{unknown} # - 1)
 				any_event_active{unknown} := TRUE{unknown}
 				if(subarticulation_event_is_event_active(event{unknown}){UserDefined, None} = TRUE{unknown})
-					declare local timing : int := repetition_interval_time[articulation_event_instrument[subarticulation_event_articulation_event[event{unknown}]{unknown}]{unknown}, articulation_event_keyswitch[subarticulation_event_articulation_event[event{unknown}]{unknown}]{unknown}, subarticulation_event_subarticulation_idx[event{unknown}]{unknown}]{unknown} {Reuses: 0}
-					if(((((ENGINE_UPTIME{unknown} - repetition_engine_start_time{unknown}) mod timing{unknown}) < LISTENER_RESOLUTION{unknown}) and ((ENGINE_UPTIME{unknown} - subarticulation_event_last_used[event{unknown}]{unknown}) > LISTENER_RESOLUTION{unknown})) and ((pressed_keys[subarticulation_event_note[event{unknown}]{unknown}]{unknown} >= 0) or (sustain_pedal{unknown} = ON{unknown})))
+					declare local inst : int := articulation_event_instrument[subarticulation_event_articulation_event[event{unknown}]{unknown}]{unknown} {Reuses: 0}
+					declare local ks : int := articulation_event_keyswitch[subarticulation_event_articulation_event[event{unknown}]{unknown}]{unknown} {Reuses: 0}
+					declare local timing : int := repetition_interval_time[inst{unknown}, ks{unknown}, subarticulation_event_subarticulation_idx[event{unknown}]{unknown}]{unknown} {Reuses: 0}
+					if((((((ENGINE_UPTIME{unknown} + repetition_interval_time_humanization[inst{unknown}, ks{unknown}, subarticulation_event_subarticulation_idx[event{unknown}]{unknown}]{unknown}) - repetition_engine_start_time{unknown}) mod timing{unknown}) < LISTENER_RESOLUTION{unknown}) and ((ENGINE_UPTIME{unknown} - subarticulation_event_last_used[event{unknown}]{unknown}) > ((timing{unknown} - articulation_humanization[inst{unknown}, ks{unknown}]{unknown}) - LISTENER_RESOLUTION{unknown}))) and ((pressed_keys[subarticulation_event_note[event{unknown}]{unknown}]{unknown} >= 0) or (sustain_pedal{unknown} = ON{unknown})))
+						message("play"){Builtin, None}
 						any_event_played{unknown} := TRUE{unknown}
-						declare local id : int := subarticulation_play_note(articulation_event_instrument[subarticulation_event_articulation_event[event{unknown}]{unknown}]{unknown}, articulation_event_keyswitch[subarticulation_event_articulation_event[event{unknown}]{unknown}]{unknown}, subarticulation_event_subarticulation_idx[event{unknown}]{unknown}, subarticulation_event_subarticulation[event{unknown}]{unknown}, subarticulation_event_note[event{unknown}]{unknown}, (get_modulation_position(subarticulation_event_note[event{unknown}]{unknown}){UserDefined, None} * gt(ENGINE_UPTIME{unknown} - pressed_keys[subarticulation_event_note[event{unknown}]{unknown}]{unknown}, timing{unknown}){UserDefined, None}) + (key_velocity[subarticulation_event_note[event{unknown}]{unknown}]{unknown} * le(ENGINE_UPTIME{unknown} - pressed_keys[subarticulation_event_note[event{unknown}]{unknown}]{unknown}, timing{unknown}){UserDefined, None}), subarticulation_event_interval[event{unknown}]{unknown}, get_next_rr(articulation_event_instrument[subarticulation_event_articulation_event[event{unknown}]{unknown}]{unknown}, articulation_event_keyswitch[subarticulation_event_articulation_event[event{unknown}]{unknown}]{unknown}, subarticulation_event_subarticulation_idx[event{unknown}]{unknown}, subarticulation_event_note[event{unknown}]{unknown}){UserDefined, None}, subarticulation_event_modulation[event{unknown}]{unknown}, subarticulation_event_level[event{unknown}]{unknown}, octave_shift[articulation_event_instrument[subarticulation_event_articulation_event[event{unknown}]{unknown}]{unknown}]{unknown} * 12, octave_layer[articulation_event_instrument[subarticulation_event_articulation_event[event{unknown}]{unknown}]{unknown}]{unknown}, event{unknown}){UserDefined, None} {Reuses: 0}
+						repetition_played_subarticulation_events[search[repetition_played_subarticulation_events{unknown}, - 1]]{unknown} := event{unknown}
+						declare local id : int := subarticulation_play_note(inst{unknown}, ks{unknown}, subarticulation_event_subarticulation_idx[event{unknown}]{unknown}, subarticulation_event_subarticulation[event{unknown}]{unknown}, subarticulation_event_note[event{unknown}]{unknown}, (get_modulation_position(subarticulation_event_note[event{unknown}]{unknown}){UserDefined, None} * gt(ENGINE_UPTIME{unknown} - pressed_keys[subarticulation_event_note[event{unknown}]{unknown}]{unknown}, timing{unknown}){UserDefined, None}) + (key_velocity[subarticulation_event_note[event{unknown}]{unknown}]{unknown} * le(ENGINE_UPTIME{unknown} - pressed_keys[subarticulation_event_note[event{unknown}]{unknown}]{unknown}, timing{unknown}){UserDefined, None}), subarticulation_event_interval[event{unknown}]{unknown}, get_next_rr(inst{unknown}, ks{unknown}, subarticulation_event_subarticulation_idx[event{unknown}]{unknown}, subarticulation_event_note[event{unknown}]{unknown}){UserDefined, None}, subarticulation_event_modulation[event{unknown}]{unknown}, subarticulation_event_level[event{unknown}]{unknown}, octave_shift[inst{unknown}]{unknown} * 12, octave_layer[inst{unknown}]{unknown}, event{unknown}){UserDefined, None} {Reuses: 0}
 						articulation_event_set_subarticulation_event_id(subarticulation_event_articulation_event[event{unknown}]{unknown}, subarticulation_event_subarticulation_idx[event{unknown}]{unknown}, id{unknown}){UserDefined, None}
 						subarticulation_event_articulation_event[id{unknown}]{unknown} := subarticulation_event_articulation_event[event{unknown}]{unknown}
-						subarticulation_note_off(event{unknown}){UserDefined, None}
 					end if
 				else
 					declare local id : int := event{unknown} {Reuses: 0}
@@ -3763,6 +3839,11 @@ function repetition_engine_listener
 		end for
 		if(any_event_played{unknown} = TRUE{unknown})
 			repetition_engine_update_tempo{UserDefined, None}
+			i{unknown} := 0
+			while((i{unknown} < num_elements[repetition_played_subarticulation_events{unknown}]) and (repetition_played_subarticulation_events[i{unknown}]{unknown} # - 1)) 
+				repetition_interval_time_humanization[articulation_event_instrument[subarticulation_event_articulation_event[repetition_played_subarticulation_events[i{unknown}]{unknown}]{unknown}]{unknown}, articulation_event_keyswitch[subarticulation_event_articulation_event[repetition_played_subarticulation_events[i{unknown}]{unknown}]{unknown}]{unknown}, subarticulation_event_subarticulation_idx[repetition_played_subarticulation_events[i{unknown}]{unknown}]{unknown}]{unknown} := humanize_by_ms(articulation_humanization[articulation_event_instrument[subarticulation_event_articulation_event[repetition_played_subarticulation_events[i{unknown}]{unknown}]{unknown}]{unknown}, articulation_event_keyswitch[subarticulation_event_articulation_event[repetition_played_subarticulation_events[i{unknown}]{unknown}]{unknown}]{unknown}]{unknown}){UserDefined, None}
+				inc(i{unknown}){Builtin, None}
+			end while
 		end if
 		if(any_event_active{unknown} = FALSE{unknown})
 			repetition_engine_active{unknown} := FALSE{unknown}
@@ -3774,7 +3855,6 @@ end function
 function repetition_engine_update_tempo
 	declare local new_tempo : real := real(ms_to_ticks(60000000){Builtin, None}){Builtin, None} / 960 {Reuses: 0}
 	if((new_tempo{unknown} # tempo{unknown}) or (NI_CALLBACK_TYPE{unknown} # NI_CB_TYPE_LISTENER{unknown}))
-		tempo{unknown} := new_tempo{unknown}
 		declare local i : unknown {Reuses: 0}
 		declare local ii : unknown {Reuses: 0}
 		declare local iii : int {Reuses: 0}
@@ -3782,11 +3862,12 @@ function repetition_engine_update_tempo
 			for ii{unknown} := 0 to NUM_KEYSWITCHES{unknown} - 1
 				for iii{unknown} := 0 to NUM_SUBARTICULATIONS{unknown} - 1
 					if(subarticulations_type[subarticulations_ids_positions[loaded_subarticulations[i{unknown}, ii{unknown}, iii{unknown}]{unknown}]{unknown}]{unknown} = SUBARTICULATION_TYPE_REPETITION{unknown})
-						repetition_interval_time[i{unknown}, ii{unknown}, iii{unknown}]{unknown} := int((60000 / tempo{unknown}) * (4 / real(loaded_subarticulations_repetition_speed[i{unknown}, ii{unknown}, iii{unknown}]{unknown}){Builtin, None})){Builtin, None}
+						repetition_interval_time[i{unknown}, ii{unknown}, iii{unknown}]{unknown} := int((60000 / new_tempo{unknown}) * (4 / real(loaded_subarticulations_repetition_speed[i{unknown}, ii{unknown}, iii{unknown}]{unknown}){Builtin, None})){Builtin, None}
 					end if
 				end for
 			end for
 		end for
+		tempo{unknown} := new_tempo{unknown}
 	end if
 end function
 
@@ -3856,8 +3937,16 @@ function editor_page_open
 	pnl_editor_page{unknown} -> hide := HIDE_PART_NOTHING{unknown}
 	sli_articulation_humanize{unknown} -> value := articulation_humanization[selected_instrument{unknown}, selected_keyswitch{unknown}]{unknown}
 	lbl_articulation_humanize{unknown} -> text := sli_articulation_humanize{unknown} & " ms"
-	sli_articulation_release{unknown} -> value := articulation_release[selected_instrument{unknown}, selected_keyswitch{unknown}]{unknown}
-	lbl_articulation_release{unknown} -> text := sli_articulation_release{unknown} & " ms"
+	if(articulation_release[selected_instrument{unknown}, selected_keyswitch{unknown}]{unknown} >= 0)
+		sli_articulation_release{unknown} -> value := articulation_release[selected_instrument{unknown}, selected_keyswitch{unknown}]{unknown}
+		lbl_articulation_release{unknown} -> text := sli_articulation_release{unknown} & " ms"
+		btn_articulation_release_blocker{unknown} -> hide := HIDE_WHOLE_CONTROL{unknown}
+		btn_articulation_release{unknown} := OFF{unknown}
+	else
+		lbl_articulation_release{unknown} -> text := ""
+		btn_articulation_release_blocker{unknown} -> hide := HIDE_PART_NOTHING{unknown}
+		btn_articulation_release{unknown} := ON{unknown}
+	end if
 	call update_keyswitch_volume_curve{UserDefined, None}
 	call update_subarticulation_selection{UserDefined, None}
 	call update_keyswitch_settings{UserDefined, None}

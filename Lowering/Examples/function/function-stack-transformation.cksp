@@ -64,3 +64,91 @@ function foo()
         ret0 := a0-b0*a0
     end if
 end function
+
+{-------------------------------------------------------------------------------------------
+                                   Pre Lowering 2
+--------------------------------------------------------------------------------------------}
+declare const MAX_CB_STACK := 1000
+define CB_IDX := NI_CALLBACK_ID mod MAX_CB_STACK
+on note
+    declare _ret0: int
+    foo(_ret0, 2, 4)
+end on
+
+function foo(ret0: int, a: int, b: int)
+	loci[CB_IDX] := 4 // param promotion
+    if(a = 0)
+        message("a is 0")
+        ret0 := a-b + a+b
+    else
+        message("a is not 0")
+        ret0 := a-b*a
+    end if
+    wait(10)
+end function
+
+// -> parameter stack transformation
+on note
+    declare _ret0: int
+    declare loci[MAX_CB_STACK]: int
+    ret0 := _ret0
+    a := 2
+    b := 4
+    call foo()
+end on 
+
+// ->inlining 
+on note
+    declare _ret0: int
+    declare loci[MAX_CB_STACK]: int
+    ret0 := _ret0
+    a := 2
+    b := 4
+    loci[CB_IDX] := 4 // param promotion
+    if(a = 0)
+        message("a is 0")
+        ret0 := a-b + a+b
+    else
+        message("a is not 0")
+        ret0 := a-b*a
+    end if
+    wait(10)
+end on 
+
+
+/////// special cases
+on persistence_changed
+    declare array[3] : int[] := [3, 0, 0]
+    for idx := 0 to num_elements(array) - 1
+        if array[idx] # 0
+            array_remove(array[idx])
+        end if
+    end for 
+end on
+
+function array_remove(ref value: int)
+    declare idx1: int := search(array, value)
+    array[idx1] := 0
+    value := value + 1
+end function
+
+
+/// ----> after transformation
+on persistence_changed
+    declare value: int
+    declare array[3] : int[] := [3, 0, 0]
+    for idx := 0 to num_elements(array) - 1
+        if array[idx] # 0
+            value := array[idx]
+            call array_remove()
+            array[idx] := value
+        end if
+    end for 
+end on
+
+/// lösung: keine copy-in, copy-out semantic. Sobald ref benutzt wird und der User pass-by-reference
+/// will, dann wird die funktion inlined. alle anderen parameter werden an formale parameter variablen
+/// zugewiesen, außer die ref parameter -> hier werden alle referenzen im funktions body mit dem 
+/// actual parameter substituiert
+/// im on init callback wird immer inlined.
+

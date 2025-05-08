@@ -93,7 +93,6 @@ private:
 				// engine actual parameters cannot be assigned back
 				if (promoted_params[ii]->kind != NodeInstruction::Promoted and formal_param->is_thread_safe and !actual_param->is_constant()) {
 					if (const auto ref = cast_node<NodeReference>(actual_param.get())) {
-						if (ref->is_engine) continue; // if actual parameter is engine constant or variable -> do not assign back!!!
 						auto assignment_back = std::make_unique<NodeSingleAssignment>(
 								clone_as<NodeReference>(ref),
 								formal_param->to_reference(),
@@ -106,7 +105,10 @@ private:
 						} else {
 							assignment_back->kind = NodeInstruction::ReturnVar;
 						}
-						block_after->add_as_stmt(std::move(assignment_back));
+						// if actual parameter is engine constant or variable -> do not assign back!!!
+						if (!ref->is_engine) {
+							block_after->add_as_stmt(std::move(assignment_back));
+						}
 					}
 				}
 				// $allowed02 := %allowed003 -> $allowed02 := %allowed003[NI_CALLBACK_ID]

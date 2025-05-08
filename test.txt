@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.3 on Wed Apr 30 11:53:32 2025 }
+{ Compiled with cksp version 0.0.7-alpha.3 on Thu May 08 12:55:04 2025 }
 on init
   declare $_iter0
   declare $ksv_cb_id := 0
@@ -59,7 +59,7 @@ on init
   declare $ks10
   declare $i60
   declare $release_offset00
-  declare $_ret1600
+  declare $_ret1700
   declare $result200
   declare $result210
   declare $ks20
@@ -100,7 +100,7 @@ on init
   declare $_iter300
   declare $_iter200
   declare $_iter100
-  declare $_ret1800
+  declare $_ret1900
   declare $result300
   declare $result310
   declare $result500
@@ -139,10 +139,11 @@ on init
   declare $subarticulation_event_id130
   declare $subarticulation_id40
   declare $idx2400
+  declare $fade_time11
   declare $octave_event01
   declare $i111
   declare $ii11
-  declare $_ret4101
+  declare $_ret4201
   declare $reduced_note011
   declare $string011
   declare $string021
@@ -174,15 +175,16 @@ on init
   declare $transition_dyn_layer02
   declare $offset12
   declare ~transition_speed01
-  declare $_ret2802
+  declare $_ret2902
   declare $result702
   declare $i902
   declare $i8002
   declare $i1002
+  declare $fade_time102
   declare $octave_event002
   declare $i1102
   declare $ii102
-  declare $_ret41002
+  declare $_ret42002
   declare $reduced_note0102
   declare $string0102
   declare $string0202
@@ -210,18 +212,20 @@ on init
   declare $transition_type200
   declare $transition_dyn_layer000
   declare $offset100
-  declare $_ret28000
+  declare $_ret29000
   declare $result7000
   declare $i9000
   declare $i80000
   declare $i10000
+  declare $fade_time1000
   declare $octave_event0000
   declare $i11000
   declare $ii1000
-  declare $_ret410000
+  declare $_ret420000
   declare $reduced_note01000
   declare $string01000
   declare $string02000
+  declare $string02010
   declare %controller_value0[100]
   declare $fade_out_range000
   declare $string0001
@@ -244,6 +248,7 @@ on init
   declare $note_selection_time := 30
   declare $input_acceptance_time := 300
   declare $lookahead := 200
+  declare $use_constant_delay := 1
   declare @LEGATO_ARRAY_PATH
   @LEGATO_ARRAY_PATH := get_folder($GET_FOLDER_PATCH_DIR) & "../legato data/"
   declare !microphone_positions[6]
@@ -486,15 +491,16 @@ on init
   declare %_legato_data_buffer_trans_zone_start_offset[6400] := (-1)
   declare %_legato_data_buffer_trans_zone_volume_offset[6400] := (-1)
   declare %repetition_engine_subarticulation_events[64] := (-1)
+  declare %repetition_played_subarticulation_events[64] := (-1)
   declare ~tempo := 0.
   declare %_repetition_interval_time[4096] := (0)
+  declare %_repetition_interval_time_humanization[4096] := (0)
   declare ~new_tempo00
   declare $i00
   declare $ii00
   declare $iii00
   ~new_tempo00 := real(ms_to_ticks(60000000)) / 960.
   if((~new_tempo00 # 0.) or ($NI_CALLBACK_TYPE # $NI_CB_TYPE_LISTENER))
-    ~tempo := ~new_tempo00
     $ii00 := 0
     $iii00 := 0
     $i00 := 0
@@ -504,7 +510,7 @@ on init
         $iii00 := 0
         while($iii00 <= 511) 
           if(%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($i00 * 32) + (($ii00 * 4) + $iii00)]]] = 6)
-            %_repetition_interval_time[($i00 * 4096) + (($ii00 * 512) + $iii00)] := int((60000. / ~tempo) * (4. / real(%_loaded_subarticulations_repetition_speed[($i00 * 32) + (($ii00 * 4) + $iii00)])))
+            %_repetition_interval_time[($i00 * 4096) + (($ii00 * 512) + $iii00)] := int((60000. / ~new_tempo00) * (4. / real(%_loaded_subarticulations_repetition_speed[($i00 * 32) + (($ii00 * 4) + $iii00)])))
           end if
           inc($iii00)
         end while
@@ -512,6 +518,7 @@ on init
       end while
       inc($i00)
     end while
+    ~tempo := ~new_tempo00
   end if
   declare $repetition_engine_active := 0
   declare $repetition_engine_start_time := -1
@@ -709,6 +716,40 @@ on init
     inc($i00)
   end while
   set_control_par(get_ui_id($btn_polyphonic_aftertouch), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_main_page))
+  declare ui_button $btn_mode_live 
+  set_control_par_str(get_ui_id($btn_mode_live), $CONTROL_PAR_TEXT, "Live")
+  set_control_par_str(get_ui_id($btn_mode_live), $CONTROL_PAR_PICTURE, "btn_ab_rounded_left")
+  set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_FONT_TYPE, 0)
+  set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_TEXTPOS_Y, 3)
+  set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_POS_X, 30)
+  set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_POS_Y, 25)
+  set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_WIDTH, 60)
+  set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_HEIGHT, 20)
+  $i00 := 0
+  while($i00 <= (num_elements(%font_types) - 1)) 
+    set_control_par(get_ui_id($btn_mode_live), %font_types[$i00], %fonts_regular_white[$i00])
+    inc($i00)
+  end while
+  set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_main_page))
+  set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_VALUE, abs(sh_right(abs($use_constant_delay) - 1, 31)))
+  declare ui_button $btn_mode_playback 
+  set_control_par_str(get_ui_id($btn_mode_playback), $CONTROL_PAR_TEXT, "Playback")
+  set_control_par_str(get_ui_id($btn_mode_playback), $CONTROL_PAR_PICTURE, "btn_ab_rounded_right")
+  set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_FONT_TYPE, 0)
+  set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_TEXTPOS_Y, 3)
+  set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_POS_X, 90)
+  set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_POS_Y, 25)
+  set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_WIDTH, 60)
+  set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_HEIGHT, 20)
+  $i00 := 0
+  while($i00 <= (num_elements(%font_types) - 1)) 
+    set_control_par(get_ui_id($btn_mode_playback), %font_types[$i00], %fonts_regular_white[$i00])
+    inc($i00)
+  end while
+  set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_main_page))
+  set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_VALUE, $use_constant_delay)
   declare ui_panel $pnl_editor_page 
   declare %lbl_center_circle[4]
   declare ui_label $lbl_center_circle0 (0, 0)
@@ -1379,7 +1420,7 @@ on init
   set_control_par(get_ui_id($lbl_articulation_humanize_title), $CONTROL_PAR_HEIGHT, 20)
   set_control_par(get_ui_id($lbl_articulation_humanize_title), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_editor_page))
   set_control_par(get_ui_id($lbl_articulation_humanize_title), $CONTROL_PAR_Z_LAYER, 0)
-  declare ui_slider $sli_articulation_release (0, 250)
+  declare ui_slider $sli_articulation_release (100, 800)
   set_control_par(get_ui_id($sli_articulation_release), $CONTROL_PAR_DEFAULT_VALUE, 0)
   set_control_par_str(get_ui_id($sli_articulation_release), $CONTROL_PAR_PICTURE, "sli_smallsmall")
   set_control_par(get_ui_id($sli_articulation_release), $CONTROL_PAR_MOUSE_BEHAVIOUR, -200)
@@ -1409,6 +1450,32 @@ on init
   set_control_par(get_ui_id($lbl_articulation_release_title), $CONTROL_PAR_HEIGHT, 20)
   set_control_par(get_ui_id($lbl_articulation_release_title), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_editor_page))
   set_control_par(get_ui_id($lbl_articulation_release_title), $CONTROL_PAR_Z_LAYER, 0)
+  declare ui_button $btn_articulation_release_blocker 
+  set_control_par_str(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_PICTURE, "darken")
+  set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($sli_articulation_release), $CONTROL_PAR_POS_X) - 33)
+  set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_articulation_release), $CONTROL_PAR_POS_Y) - 20)
+  set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_WIDTH, 110)
+  set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_HEIGHT, 100)
+  set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_editor_page))
+  set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_Z_LAYER, 0)
+  declare ui_button $btn_articulation_release 
+  set_control_par_str(get_ui_id($btn_articulation_release), $CONTROL_PAR_TEXT, "Auto")
+  set_control_par_str(get_ui_id($btn_articulation_release), $CONTROL_PAR_PICTURE, "btn_ab_rounded")
+  set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_FONT_TYPE, 0)
+  set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_TEXTPOS_Y, 3)
+  set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($sli_articulation_release), $CONTROL_PAR_POS_X) + 35)
+  set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_articulation_release), $CONTROL_PAR_POS_Y) + 60)
+  set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_WIDTH, 40)
+  set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_HEIGHT, 20)
+  $i00 := 0
+  while($i00 <= (num_elements(%font_types) - 1)) 
+    set_control_par(get_ui_id($btn_articulation_release), %font_types[$i00], %fonts_regular_white[$i00])
+    inc($i00)
+  end while
+  set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_editor_page))
+  set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_Z_LAYER, 1)
   declare ui_slider $sli_subarticulation_volume (-12, 12)
   set_control_par(get_ui_id($sli_subarticulation_volume), $CONTROL_PAR_DEFAULT_VALUE, 0)
   set_control_par_str(get_ui_id($sli_subarticulation_volume), $CONTROL_PAR_PICTURE, "modwheel-slider")
@@ -1888,8 +1955,16 @@ on init
     set_control_par(get_ui_id($pnl_editor_page), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
     set_control_par(get_ui_id($sli_articulation_humanize), $CONTROL_PAR_VALUE, %_articulation_humanization[($selected_instrument * 8) + $selected_keyswitch])
     set_control_par_str(get_ui_id($lbl_articulation_humanize), $CONTROL_PAR_TEXT, $sli_articulation_humanize & " ms")
-    set_control_par(get_ui_id($sli_articulation_release), $CONTROL_PAR_VALUE, %_articulation_release[($selected_instrument * 8) + $selected_keyswitch])
-    set_control_par_str(get_ui_id($lbl_articulation_release), $CONTROL_PAR_TEXT, $sli_articulation_release & " ms")
+    if(%_articulation_release[($selected_instrument * 8) + $selected_keyswitch] >= 0)
+      set_control_par(get_ui_id($sli_articulation_release), $CONTROL_PAR_VALUE, %_articulation_release[($selected_instrument * 8) + $selected_keyswitch])
+      set_control_par_str(get_ui_id($lbl_articulation_release), $CONTROL_PAR_TEXT, $sli_articulation_release & " ms")
+      set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+      $btn_articulation_release := 0
+    else
+      set_control_par_str(get_ui_id($lbl_articulation_release), $CONTROL_PAR_TEXT, "")
+      set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+      $btn_articulation_release := 1
+    end if
     set_control_par(get_ui_id($sli_keyswitch_volume_curve_min), $CONTROL_PAR_VALUE, %_articulation_volume_min[($selected_instrument * 8) + $selected_keyswitch])
     set_control_par(get_ui_id($sli_keyswitch_volume_curve_max), $CONTROL_PAR_VALUE, %_articulation_volume_max[($selected_instrument * 8) + $selected_keyswitch])
     set_control_par(get_ui_id($sli_keyswitch_volume_curve), $CONTROL_PAR_VALUE, %_articulation_volume_curve[($selected_instrument * 8) + $selected_keyswitch] * -1)
@@ -2766,7 +2841,7 @@ on init
     inc($i)
   end while
   declare ui_label $lbl_version (0, 0)
-  set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_TEXT, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "11:53:32" & " " & "04/30/25")
+  set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_TEXT, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "12:55:03" & " " & "05/08/25")
   set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_PICTURE, "alpha")
   set_control_par(get_ui_id($lbl_version), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
   set_control_par(get_ui_id($lbl_version), $CONTROL_PAR_FONT_TYPE, %fonts_regular_white[0])
@@ -2841,8 +2916,16 @@ function c_update_keyswitch_selection0
     set_control_par(get_ui_id($pnl_editor_page), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
     set_control_par(get_ui_id($sli_articulation_humanize), $CONTROL_PAR_VALUE, %_articulation_humanization[($selected_instrument * 8) + $selected_keyswitch])
     set_control_par_str(get_ui_id($lbl_articulation_humanize), $CONTROL_PAR_TEXT, $sli_articulation_humanize & " ms")
-    set_control_par(get_ui_id($sli_articulation_release), $CONTROL_PAR_VALUE, %_articulation_release[($selected_instrument * 8) + $selected_keyswitch])
-    set_control_par_str(get_ui_id($lbl_articulation_release), $CONTROL_PAR_TEXT, $sli_articulation_release & " ms")
+    if(%_articulation_release[($selected_instrument * 8) + $selected_keyswitch] >= 0)
+      set_control_par(get_ui_id($sli_articulation_release), $CONTROL_PAR_VALUE, %_articulation_release[($selected_instrument * 8) + $selected_keyswitch])
+      set_control_par_str(get_ui_id($lbl_articulation_release), $CONTROL_PAR_TEXT, $sli_articulation_release & " ms")
+      set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+      $btn_articulation_release := 0
+    else
+      set_control_par_str(get_ui_id($lbl_articulation_release), $CONTROL_PAR_TEXT, "")
+      set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+      $btn_articulation_release := 1
+    end if
     set_control_par(get_ui_id($sli_keyswitch_volume_curve_min), $CONTROL_PAR_VALUE, %_articulation_volume_min[($selected_instrument * 8) + $selected_keyswitch])
     set_control_par(get_ui_id($sli_keyswitch_volume_curve_max), $CONTROL_PAR_VALUE, %_articulation_volume_max[($selected_instrument * 8) + $selected_keyswitch])
     set_control_par(get_ui_id($sli_keyswitch_volume_curve), $CONTROL_PAR_VALUE, %_articulation_volume_curve[($selected_instrument * 8) + $selected_keyswitch] * -1)
@@ -3109,20 +3192,22 @@ function c_articulations_note_off0
   $release_offset00 := 0
   $ks10 := 0
   while($ks10 <= 7) 
-    $ret30 := $_ret1600
+    $ret30 := $_ret1700
     $instrument_slot40 := $instrument_slot10
     $keyswitch50 := $ks10
     $note80 := $note50
     $result22 := $result200
     call c_event_list_get_articulation_event0
-    $_ret1600 := $ret30
+    $_ret1700 := $ret30
     $instrument_slot10 := $instrument_slot40
     $ks10 := $keyswitch50
     $note50 := $note80
-    if($_ret1600 # -1)
+    if($_ret1700 # -1)
+      message("RELEASE NOTE " & $note50)
       $i60 := 0
       while($i60 <= 3) 
         if(%_loaded_subarticulations[($instrument_slot10 * 32) + (($ks10 * 4) + $i60)] # -1)
+          $release_offset00 := 0
           if((%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($instrument_slot10 * 32) + (($ks10 * 4) + $i60)]]] = 0) or (%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($instrument_slot10 * 32) + (($ks10 * 4) + $i60)]]] = 5))
             if(%subarticulations_release_group[%subarticulations_ids_positions[%_loaded_subarticulations[($instrument_slot10 * 32) + (($ks10 * 4) + $i60)]]] = 0)
               $release_offset00 := 500
@@ -3146,7 +3231,7 @@ function c_articulations_note_off0
           $velo00 := -1
           $interval10 := 0
           $time10 := $ENGINE_UPTIME
-          $countdown00 := $lookahead + $release_offset00
+          $countdown00 := ($lookahead * $use_constant_delay) + $release_offset00
           $previous_note10 := -1
           $idx190 := $result210
           call c_delay_buffer_add0
@@ -3237,7 +3322,7 @@ function c_update_selected_notes0
                       $velo00 := %key_velocity[$i]
                       $interval10 := 0
                       $time10 := $ENGINE_UPTIME
-                      $countdown00 := (($lookahead - %subarticulations_start_offset[%subarticulations_ids_positions[%_loaded_subarticulations[($inst * 32) + (($result000 * 4) + $i500)]]]) + (%pressed_keys[$i] - $ENGINE_UPTIME)) + random(- %_articulation_humanization[($inst * 8) + $result000] / 2, %_articulation_humanization[($inst * 8) + $result000] / 2)
+                      $countdown00 := ((($lookahead * $use_constant_delay) - %subarticulations_start_offset[%subarticulations_ids_positions[%_loaded_subarticulations[($inst * 32) + (($result000 * 4) + $i500)]]]) + (%pressed_keys[$i] - $ENGINE_UPTIME)) + random(- %_articulation_humanization[($inst * 8) + $result000] / 2, %_articulation_humanization[($inst * 8) + $result000] / 2)
                       $previous_note10 := %_last_articulation_event[($inst * 1024) + (($result000 * 128) + $i)]
                       $idx190 := $result10001
                       call c_delay_buffer_add0
@@ -3268,7 +3353,7 @@ function c_update_selected_notes0
                         $velo00 := %key_velocity[$i]
                         $interval10 := 0
                         $time10 := $ENGINE_UPTIME
-                        $countdown00 := (($lookahead - %subarticulations_start_offset[%subarticulations_ids_positions[%_loaded_subarticulations[($inst * 32) + (($result000 * 4) + $i500)]]]) + (%pressed_keys[$i] - $ENGINE_UPTIME)) + random(- %_articulation_humanization[($inst * 8) + $result000] / 2, %_articulation_humanization[($inst * 8) + $result000] / 2)
+                        $countdown00 := ((($lookahead * $use_constant_delay) - %subarticulations_start_offset[%subarticulations_ids_positions[%_loaded_subarticulations[($inst * 32) + (($result000 * 4) + $i500)]]]) + (%pressed_keys[$i] - $ENGINE_UPTIME)) + random(- %_articulation_humanization[($inst * 8) + $result000] / 2, %_articulation_humanization[($inst * 8) + $result000] / 2)
                         $previous_note10 := %_last_articulation_event[($inst * 1024) + (($result000 * 128) + $i)]
                         $idx190 := $next_free_idx0001
                         call c_delay_buffer_add0
@@ -3320,7 +3405,7 @@ function c_update_selected_notes0
                             $velo00 := %key_velocity[$i]
                             $interval10 := 0
                             $time10 := $ENGINE_UPTIME
-                            $countdown00 := (($lookahead - %subarticulations_start_offset[%subarticulations_ids_positions[%_loaded_subarticulations[($inst * 32) + (($result000 * 4) + $i500)]]]) + (%pressed_keys[$i] - $ENGINE_UPTIME)) + random(- %_articulation_humanization[($inst * 8) + $result000] / 2, %_articulation_humanization[($inst * 8) + $result000] / 2)
+                            $countdown00 := ((($lookahead * $use_constant_delay) - %subarticulations_start_offset[%subarticulations_ids_positions[%_loaded_subarticulations[($inst * 32) + (($result000 * 4) + $i500)]]]) + (%pressed_keys[$i] - $ENGINE_UPTIME)) + random(- %_articulation_humanization[($inst * 8) + $result000] / 2, %_articulation_humanization[($inst * 8) + $result000] / 2)
                             $previous_note10 := %_last_articulation_event[($inst * 1024) + (($result000 * 128) + ($i4001 * $allow_double_stops))]
                             $idx190 := $is_free0001
                             call c_delay_buffer_add0
@@ -3359,7 +3444,7 @@ function c_update_selected_notes0
                             $velo00 := %key_velocity[$i]
                             $interval10 := 0
                             $time10 := $ENGINE_UPTIME
-                            $countdown00 := ((($lookahead - %subarticulations_start_offset[%subarticulations_ids_positions[%_loaded_subarticulations[($inst * 32) + (($result000 * 4) + $i500)]]]) + (%pressed_keys[$i] - $ENGINE_UPTIME)) - (200 - $idx18001)) + random(- %_articulation_humanization[($inst * 8) + $result000] / 2, %_articulation_humanization[($inst * 8) + $result000] / 2)
+                            $countdown00 := (((($lookahead * $use_constant_delay) - %subarticulations_start_offset[%subarticulations_ids_positions[%_loaded_subarticulations[($inst * 32) + (($result000 * 4) + $i500)]]]) + (%pressed_keys[$i] - $ENGINE_UPTIME)) - (200 - $idx18001)) + random(- %_articulation_humanization[($inst * 8) + $result000] / 2, %_articulation_humanization[($inst * 8) + $result000] / 2)
                             $previous_note10 := %_last_articulation_event[($inst * 1024) + (($result000 * 128) + ($is_free0001 * $allow_double_stops))]
                             $idx190 := $reduced_note0001
                             call c_delay_buffer_add0
@@ -3403,18 +3488,37 @@ function c_update_selected_notes0
                           call c_event_list_get_articulation_event0
                           $next_free_idx0001 := $ret30
                           if($next_free_idx0001 = -1)
-                            $articulation_id10 := $articulation_event_id401
-                            $instrument40 := $inst
-                            $keyswitch80 := $result000
-                            $subarticulation40 := $i500
-                            $note110 := $i
-                            $velo00 := %key_velocity[$i]
-                            $interval10 := 0
-                            $time10 := $ENGINE_UPTIME
-                            $countdown00 := (($lookahead - %subarticulations_start_offset[%subarticulations_ids_positions[%_loaded_subarticulations[($inst * 32) + (($result000 * 4) + $i500)]]]) + (%pressed_keys[$i] - $ENGINE_UPTIME)) + random(- %_articulation_humanization[($inst * 8) + $result000] / 2, %_articulation_humanization[($inst * 8) + $result000] / 2)
-                            $previous_note10 := -1
-                            $idx190 := $result10001
-                            call c_delay_buffer_add0
+                            $result10001 := 1
+                            while($result10001 <= 5) 
+                              if(%pressed_keys[$i + $result10001] >= 0)
+                                $articulation_id10 := $articulation_event_id401
+                                $instrument40 := $inst
+                                $keyswitch80 := $result000
+                                $subarticulation40 := $i500
+                                $note110 := $i
+                                $velo00 := %key_velocity[$i]
+                                $interval10 := $result10001 - 1
+                                $time10 := $ENGINE_UPTIME
+                                $countdown00 := ((($lookahead * $use_constant_delay) - %subarticulations_start_offset[%subarticulations_ids_positions[%_loaded_subarticulations[($inst * 32) + (($result000 * 4) + $i500)]]]) + (%pressed_keys[$i] - $ENGINE_UPTIME)) + random(- %_articulation_humanization[($inst * 8) + $result000] / 2, %_articulation_humanization[($inst * 8) + $result000] / 2)
+                                $previous_note10 := -1
+                                $idx190 := $idx18001
+                                call c_delay_buffer_add0
+                                $ret40 := $idx18001
+                                $articulation_event_id00 := $articulation_event_id401
+                                $subarticulation00 := $i500
+                                $result34 := $i4001
+                                call c_articulation_event_get_subarticulation_event_id0
+                                $idx18001 := $ret40
+                                if($idx18001 = -1)
+                                  $articulation_event_id10 := $articulation_event_id401
+                                  $subarticulation10 := $i500
+                                  $subarticulation_event_id160 := -999
+                                  call c_articulation_event_set_subarticulation_event_id0
+                                end if
+                                $set_articulation_event_id001 := 1
+                              end if
+                              inc($result10001)
+                            end while
                           end if
                         end if
                       end if
@@ -3463,7 +3567,7 @@ function c_update_selected_notes0
               $ks10 := $i500
               $i60 := $articulation_event_id401
               $release_offset00 := $set_articulation_event_id001
-              $_ret1600 := $i4001
+              $_ret1700 := $i4001
               $result200 := $string0002
               $result210 := $next_free_idx0001
               call c_articulations_note_off0
@@ -3494,7 +3598,7 @@ function c_update_selected_notes0
             $ks10 := $result000
             $i60 := $next_free_idx0001
             $release_offset00 := $string0002
-            $_ret1600 := $i4001
+            $_ret1700 := $i4001
             $result200 := $set_articulation_event_id001
             $result210 := $articulation_event_id401
             call c_articulations_note_off0
@@ -3527,6 +3631,7 @@ function c_subarticulation_event_set_event_par_arr0
 end function
 function c_subarticulation_set_modulation0
   $subarticulation_event_id60 := $subarticulation_event_id140
+  $parameter00 := $EVENT_PAR_MOD_VALUE_ID
   $value40 := $modulation10
   $index00 := 1
   call c_subarticulation_event_set_event_par_arr0
@@ -3560,6 +3665,7 @@ function c_articulations_compute_level0
 end function
 function c_subarticulation_set_level0
   $subarticulation_event_id60 := $subarticulation_event_id150
+  $parameter00 := $EVENT_PAR_MOD_VALUE_ID
   $value40 := $level10
   $index00 := 2
   call c_subarticulation_event_set_event_par_arr0
@@ -3586,15 +3692,15 @@ function c_cc_on_controller0
         if(%_event_list[($_iter100 * 1024) + (($_iter200 * 128) + $_iter300)] >= 0)
           $i70 := 0
           while($i70 <= 3) 
-            $ret40 := $_ret1800
+            $ret40 := $_ret1900
             $articulation_event_id00 := %_event_list[($_iter100 * 1024) + (($_iter200 * 128) + $_iter300)]
             $subarticulation00 := $i70
             $result34 := $result300
             call c_articulation_event_get_subarticulation_event_id0
-            $_ret1800 := $ret40
+            $_ret1900 := $ret40
             %_event_list[($_iter100 * 1024) + (($_iter200 * 128) + $_iter300)] := $articulation_event_id00
             $i70 := $subarticulation00
-            if($_ret1800 >= 0)
+            if($_ret1900 >= 0)
               $ret40 := $result300
               $articulation_event_id00 := %_event_list[($_iter100 * 1024) + (($_iter200 * 128) + $_iter300)]
               $subarticulation00 := $i70
@@ -3713,12 +3819,15 @@ function c_subarticulation_event_set_event_mark0
 end function
 function c_subarticulation_event_disallow_groups0
   $subarticulation_event_id60 := $subarticulation_event_id70
+  $parameter00 := $EVENT_PAR_ALLOW_GROUP
   $value40 := 0
+  $index00 := $ALL_GROUPS
   call c_subarticulation_event_set_event_par_arr0
   $subarticulation_event_id70 := $subarticulation_event_id60
 end function
 function c_subarticulation_event_allow_groups0
   $subarticulation_event_id60 := $subarticulation_event_id80
+  $parameter00 := $EVENT_PAR_ALLOW_GROUP
   $value40 := 1
   $index00 := $group00
   call c_subarticulation_event_set_event_par_arr0
@@ -3789,30 +3898,40 @@ function c_subarticulation_note_off0
     call c_repetition_engine_remove0
     $subarticulation_event_id130 := $subarticulation_event10
     if((%subarticulations_release_time[%subarticulations_ids_positions[$subarticulation_id40]] = 0) or (($ENGINE_UPTIME - %last_pressed[%subarticulation_event_note[$subarticulation_event_id130]]) < %subarticulations_release_time[%subarticulations_ids_positions[$subarticulation_id40]]))
-      note_off(%subarticulation_event_list[$subarticulation_event_id130])
-      if(%subarticulation_event_octave_layer_id[$subarticulation_event_id130] # -1)
-        note_off(%subarticulation_event_octave_layer_id[$subarticulation_event_id130])
+      $idx2400 := %_articulation_release[(%articulation_event_instrument[%subarticulation_event_articulation_event[$subarticulation_event_id130]] * 8) + %articulation_event_keyswitch[%subarticulation_event_articulation_event[$subarticulation_event_id130]]]
+      if($idx2400 >= 0)
+        $subarticulation_event_id120 := $subarticulation_event_id130
+        $fade_time00 := $idx2400
+        $stop_voice00 := 1
+        call c_subarticulation_event_fade_out0
+        $subarticulation_event_id130 := $subarticulation_event_id120
+        $idx2400 := $fade_time00
+      else
+        note_off(%subarticulation_event_list[$subarticulation_event_id130])
+        if(%subarticulation_event_octave_layer_id[$subarticulation_event_id130] # -1)
+          note_off(%subarticulation_event_octave_layer_id[$subarticulation_event_id130])
+        end if
       end if
       if(%subarticulations_type[%subarticulations_ids_positions[$subarticulation_id40]] = 2)
-        $idx2400 := 300
+        $fade_time11 := 300
         $subarticulation_event_id120 := $subarticulation_event_id130
         $fade_time00 := 300
         $stop_voice00 := 1
         call c_subarticulation_event_fade_out0
         $subarticulation_event_id130 := $subarticulation_event_id120
-        $idx2400 := $fade_time00
+        $fade_time11 := $fade_time00
       end if
       if((%subarticulations_release_group[%subarticulations_ids_positions[$subarticulation_id40]] = 1) and (($authoring_page_active = 0) or ($btn_play_sustain = 1)))
-        $idx2400 := play_note(%subarticulation_event_note[$subarticulation_event_id130], %key_velocity[%subarticulation_event_note[$subarticulation_event_id130]], 0, 0)
+        $fade_time11 := play_note(%subarticulation_event_note[$subarticulation_event_id130], %key_velocity[%subarticulation_event_note[$subarticulation_event_id130]], 0, 1)
         $octave_event01 := -1
         if(%subarticulation_event_octave_layer[$subarticulation_event_id130] # 0)
-          $octave_event01 := play_note(%subarticulation_event_note[$subarticulation_event_id130] + 12, %key_velocity[%subarticulation_event_note[$subarticulation_event_id130]], 0, 0)
+          $octave_event01 := play_note(%subarticulation_event_note[$subarticulation_event_id130] + 12, %key_velocity[%subarticulation_event_note[$subarticulation_event_id130]], 0, 1)
         end if
         $subarticulation_event_id00 := $subarticulation_event_id130
-        $event_id00 := $idx2400
+        $event_id00 := $fade_time11
         call c_subarticulation_event_set_event_id0
         $subarticulation_event_id130 := $subarticulation_event_id00
-        $idx2400 := $event_id00
+        $fade_time11 := $event_id00
         $subarticulation_event_id18 := $subarticulation_event_id130
         $event_id10 := $octave_event01
         call c_subarticulation_octave_layer_set_event_id0
@@ -3852,15 +3971,15 @@ function c_subarticulation_note_off0
         $subarticulation_event_id130 := $subarticulation_event_id150
         %subarticulation_event_level[$subarticulation_event_id130] := $level10
         if(%subarticulations_type[%subarticulations_ids_positions[$subarticulation_id40]] = 2)
-          $ret50 := $_ret4101
+          $ret50 := $_ret4201
           $instrument00 := 0
           $note00 := %subarticulation_event_note[$subarticulation_event_id130]
           $reduced_note02 := $reduced_note011
           $string03 := $string011
           call c_note_to_string0
-          $_ret4101 := $ret50
+          $_ret4201 := $ret50
           %subarticulation_event_note[$subarticulation_event_id130] := $note00
-          %_release_per_string[(%articulation_event_instrument[%subarticulation_event_articulation_event[$subarticulation_event_id130]] * 4) + $_ret4101] := $idx2400
+          %_release_per_string[(%articulation_event_instrument[%subarticulation_event_articulation_event[$subarticulation_event_id130]] * 4) + $_ret4201] := $fade_time11
           $ret50 := $reduced_note011
           $instrument00 := 0
           $note00 := %subarticulation_event_note[$subarticulation_event_id130] + 12
@@ -3937,6 +4056,7 @@ function c_subarticulation_play_note0
         $subarticulation_event_id170 := $subarticulation_event_id18
         $result601 := $event_id10
         $subarticulation_event_id90 := $subarticulation_event_id170
+        $mark00 := $MARK_1
         call c_subarticulation_event_set_event_mark0
         $subarticulation_event_id170 := $subarticulation_event_id90
         $subarticulation_event_id70 := $subarticulation_event_id170
@@ -3970,12 +4090,7 @@ function c_subarticulation_play_note0
           else
             message("REACHED MAX_SUBARTICULATIONS_IN_REPETITION_ENGINE")
           end if
-          if((($ENGINE_UPTIME - $repetition_engine_start_time) mod %_repetition_interval_time[($instrument10 * 4096) + (($keyswitch00 * 512) + $subarticulation_idx00)]) > 5)
-            $subarticulation_event_id120 := $subarticulation_event_id170
-            $fade_time00 := 1
-            $stop_voice00 := 0
-            call c_subarticulation_event_fade_out0
-            $subarticulation_event_id170 := $subarticulation_event_id120
+          if((($ENGINE_UPTIME - $repetition_engine_start_time) mod (%_repetition_interval_time[($instrument10 * 4096) + (($keyswitch00 * 512) + $subarticulation_idx00)] + %_repetition_interval_time_humanization[($instrument10 * 4096) + (($keyswitch00 * 512) + $subarticulation_idx00)])) > 5)
             message("fade out " & $subarticulation_event_id170)
           end if
         end if
@@ -4036,8 +4151,8 @@ function c_subarticulation_play_note0
               end if
               inc($i902)
             end while
-            $_ret2802 := $result702
-            if($_ret2802 = 1)
+            $_ret2902 := $result702
+            if($_ret2902 = 1)
               $offset12 := 3
             else
               $result702 := -1
@@ -4246,10 +4361,11 @@ function c_subarticulation_play_note0
             $subarticulation_event_id130 := $previous_note00
             $subarticulation_id40 := $i1002
             $idx2400 := $i902
+            $fade_time11 := $fade_time102
             $octave_event01 := $octave_event002
             $i111 := $i1102
             $ii11 := $ii102
-            $_ret4101 := $_ret41002
+            $_ret4201 := $_ret42002
             $reduced_note011 := $reduced_note0102
             $string011 := $string0102
             $string021 := $string0202
@@ -4313,6 +4429,7 @@ function c_subarticulation_play_note0
           $subarticulation_event_id170 := $subarticulation_event_id18
           $result601 := $event_id10
           $subarticulation_event_id90 := $subarticulation_event_id170
+          $mark00 := $MARK_1
           call c_subarticulation_event_set_event_mark0
           $subarticulation_event_id170 := $subarticulation_event_id90
           $result702 := -1
@@ -4327,6 +4444,7 @@ function c_subarticulation_play_note0
           end if
           $i8002 := $result702
           $subarticulation_event_id60 := $subarticulation_event_id170
+          $parameter00 := $EVENT_PAR_MOD_VALUE_ID
           $value40 := $i8002
           $index00 := 0
           call c_subarticulation_event_set_event_par_arr0
@@ -4344,6 +4462,7 @@ function c_subarticulation_play_note0
           end if
           $i8002 := $result702
           $subarticulation_event_id60 := $subarticulation_event_id170
+          $parameter00 := $EVENT_PAR_MOD_VALUE_ID
           $value40 := $i8002
           $index00 := 4
           call c_subarticulation_event_set_event_par_arr0
@@ -4397,6 +4516,7 @@ function c_subarticulation_play_note0
           $subarticulation_event_id170 := $subarticulation_event_id18
           $result601 := $event_id10
           $subarticulation_event_id90 := $subarticulation_event_id170
+          $mark00 := $MARK_1
           call c_subarticulation_event_set_event_mark0
           $subarticulation_event_id170 := $subarticulation_event_id90
           $subarticulation_event_id70 := $subarticulation_event_id170
@@ -4455,7 +4575,6 @@ end function
 function c_repetition_engine_update_tempo0
   ~new_tempo01 := real(ms_to_ticks(60000000)) / 960.
   if((~new_tempo01 # ~tempo) or ($NI_CALLBACK_TYPE # $NI_CB_TYPE_LISTENER))
-    ~tempo := ~new_tempo01
     $ii01 := 0
     $iii01 := 0
     $i01 := 0
@@ -4465,7 +4584,7 @@ function c_repetition_engine_update_tempo0
         $iii01 := 0
         while($iii01 <= 511) 
           if(%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($i01 * 32) + (($ii01 * 4) + $iii01)]]] = 6)
-            %_repetition_interval_time[($i01 * 4096) + (($ii01 * 512) + $iii01)] := int((60000. / ~tempo) * (4. / real(%_loaded_subarticulations_repetition_speed[($i01 * 32) + (($ii01 * 4) + $iii01)])))
+            %_repetition_interval_time[($i01 * 4096) + (($ii01 * 512) + $iii01)] := int((60000. / ~new_tempo01) * (4. / real(%_loaded_subarticulations_repetition_speed[($i01 * 32) + (($ii01 * 4) + $iii01)])))
           end if
           inc($iii01)
         end while
@@ -4473,6 +4592,7 @@ function c_repetition_engine_update_tempo0
       end while
       inc($i01)
     end while
+    ~tempo := ~new_tempo01
   end if
 end function
 function c_subarticulation_browser_load_category0
@@ -4936,7 +5056,7 @@ on release
       $ks10 := $i00
       $i60 := $iii00
       $release_offset00 := $ii00
-      $_ret1600 := $articulation_event_id400
+      $_ret1700 := $articulation_event_id400
       $result200 := $is_free0000
       $result210 := $set_articulation_event_id000
       call c_articulations_note_off0
@@ -4985,7 +5105,7 @@ on controller
             $ks10 := $string0000
             $i60 := $i4000
             $release_offset00 := $result10000
-            $_ret1600 := $idx18000
+            $_ret1700 := $idx18000
             $result200 := $reduced_note0000
             $result210 := $next_free_idx0000
             call c_articulations_note_off0
@@ -4998,7 +5118,7 @@ on controller
       end while
     end if
   end if
-  $wait_time00 := $lookahead * 1000
+  $wait_time00 := ($lookahead * 1000) * $use_constant_delay
   call c_wait_or_zero0
   $sustain_pedal := $sustain_pedal_actual
   if($CC_NUM = 1)
@@ -5010,7 +5130,7 @@ on controller
     $_iter300 := $idx18000
     $_iter200 := $result10000
     $_iter100 := $i4000
-    $_ret1800 := $string0000
+    $_ret1900 := $string0000
     $result300 := $i00
     $result310 := $iii00
     $result500 := $ii00
@@ -5031,7 +5151,7 @@ on poly_at
   $_iter300 := $is_free0000
   $_iter200 := $articulation_event_id400
   $_iter100 := $ii00
-  $_ret1800 := $iii00
+  $_ret1900 := $iii00
   $result300 := $i00
   $result310 := $string0000
   $result500 := $i4000
@@ -5064,6 +5184,7 @@ on listener
             %delay_buffer[$fade_out_range000] := $articulation_event_id00
             %delay_buffer_subarticulation[$fade_out_range000] := $subarticulation00
             if($result10000 < 0)
+              message("play note")
               $ret90 := $string0000
               $instrument50 := %delay_buffer_instrument[$fade_out_range000]
               $keyswitch90 := %delay_buffer_keyswitch[$fade_out_range000]
@@ -5128,15 +5249,16 @@ on listener
               $transition_dyn_layer02 := $transition_dyn_layer000
               $offset12 := $offset100
               ~transition_speed01 := ~new_tempo00
-              $_ret2802 := $_ret28000
+              $_ret2902 := $_ret29000
               $result702 := $result7000
               $i902 := $i9000
               $i8002 := $i80000
               $i1002 := $i10000
+              $fade_time102 := $fade_time1000
               $octave_event002 := $octave_event0000
               $i1102 := $i11000
               $ii102 := $ii1000
-              $_ret41002 := $_ret410000
+              $_ret42002 := $_ret420000
               $reduced_note0102 := $reduced_note01000
               $string0102 := $string01000
               $string0202 := $string02000
@@ -5190,13 +5312,14 @@ on listener
                 $subarticulation_event_id130 := $is_free0000
                 $subarticulation_id40 := $articulation_event_id400
                 $idx2400 := $ii00
-                $octave_event01 := $iii00
-                $i111 := $string0001
-                $ii11 := $ii1000
-                $_ret4101 := $reduced_note01000
-                $reduced_note011 := $i1200
-                $string011 := $ii200
-                $string021 := $set_articulation_event_id000
+                $fade_time11 := $iii00
+                $octave_event01 := $string0001
+                $i111 := $ii1000
+                $ii11 := $reduced_note01000
+                $_ret4201 := $i1200
+                $reduced_note011 := $ii200
+                $string011 := $set_articulation_event_id000
+                $string021 := $offset100
                 call c_subarticulation_note_off0
               end if
               $articulation_event_id10 := %delay_buffer[$fade_out_range000]
@@ -5206,21 +5329,21 @@ on listener
               %delay_buffer[$fade_out_range000] := $articulation_event_id10
               %delay_buffer_subarticulation[$fade_out_range000] := $subarticulation10
               $is_free0000 := 0
-              $set_articulation_event_id000 := 0
+              $offset100 := 0
               if(%delay_buffer[$fade_out_range000] >= 0)
-                $set_articulation_event_id000 := 0
-                while($set_articulation_event_id000 <= 3) 
-                  if(%_articulation_event_list[(%delay_buffer[$fade_out_range000] * 4) + $set_articulation_event_id000] # -1)
-                    if(abs(sh_right(abs(- sh_right(abs(%subarticulation_event_list[%_articulation_event_list[(%delay_buffer[$fade_out_range000] * 4) + $set_articulation_event_id000]] - -1) - 1, 31)) - 1, 31)) = 1)
+                $offset100 := 0
+                while($offset100 <= 3) 
+                  if(%_articulation_event_list[(%delay_buffer[$fade_out_range000] * 4) + $offset100] # -1)
+                    if(abs(sh_right(abs(- sh_right(abs(%subarticulation_event_list[%_articulation_event_list[(%delay_buffer[$fade_out_range000] * 4) + $offset100]] - -1) - 1, 31)) - 1, 31)) = 1)
                       $is_free0000 := 1
                     else
-                      if(%_articulation_event_list[(%delay_buffer[$fade_out_range000] * 4) + $set_articulation_event_id000] >= 0)
-                        $ii200 := 0
+                      if(%_articulation_event_list[(%delay_buffer[$fade_out_range000] * 4) + $offset100] >= 0)
+                        $set_articulation_event_id000 := 0
                         if(%delay_buffer[$fade_out_range000] # -1)
-                          $ii200 := 0
-                          while($ii200 <= 3) 
-                            %_articulation_event_list[(%delay_buffer[$fade_out_range000] * 4) + $ii200] := -1
-                            inc($ii200)
+                          $set_articulation_event_id000 := 0
+                          while($set_articulation_event_id000 <= 3) 
+                            %_articulation_event_list[(%delay_buffer[$fade_out_range000] * 4) + $set_articulation_event_id000] := -1
+                            inc($set_articulation_event_id000)
                           end while
                           %articulation_event_instrument[%delay_buffer[$fade_out_range000]] := -1
                           %articulation_event_keyswitch[%delay_buffer[$fade_out_range000]] := -1
@@ -5230,7 +5353,7 @@ on listener
                       end if
                     end if
                   end if
-                  inc($set_articulation_event_id000)
+                  inc($offset100)
                 end while
               end if
               $i00 := $is_free0000
@@ -5256,102 +5379,96 @@ on listener
   $string0001 := 0
   $set_articulation_event_id000 := 0
   if($repetition_engine_active = 1)
+    $i := 0
+    while(($i < num_elements(%repetition_played_subarticulation_events)) and (%repetition_played_subarticulation_events[$i] # -1)) 
+      %repetition_played_subarticulation_events[$i] := -1
+      inc($i)
+    end while
     $is_free0000 := 0
     while($is_free0000 <= (num_elements(%repetition_engine_subarticulation_events) - 1)) 
       if(%repetition_engine_subarticulation_events[$is_free0000] # -1)
         $set_articulation_event_id000 := 1
         if(abs(sh_right(abs(- sh_right(abs(%subarticulation_event_list[%repetition_engine_subarticulation_events[$is_free0000]] - -1) - 1, 31)) - 1, 31)) = 1)
-          $articulation_event_id400 := %_repetition_interval_time[(%articulation_event_instrument[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]] * 4096) + ((%articulation_event_keyswitch[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]] * 512) + %subarticulation_event_subarticulation_idx[%repetition_engine_subarticulation_events[$is_free0000]])]
-          if((((($ENGINE_UPTIME - $repetition_engine_start_time) mod $articulation_event_id400) < 5) and (($ENGINE_UPTIME - %subarticulation_event_last_used[%repetition_engine_subarticulation_events[$is_free0000]]) > 5)) and ((%pressed_keys[%subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]]] >= 0) or ($sustain_pedal = 1)))
+          $articulation_event_id400 := %articulation_event_instrument[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]]
+          $ii00 := %articulation_event_keyswitch[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]]
+          $iii00 := %_repetition_interval_time[($articulation_event_id400 * 4096) + (($ii00 * 512) + %subarticulation_event_subarticulation_idx[%repetition_engine_subarticulation_events[$is_free0000]])]
+          if(((((($ENGINE_UPTIME + %_repetition_interval_time_humanization[($articulation_event_id400 * 4096) + (($ii00 * 512) + %subarticulation_event_subarticulation_idx[%repetition_engine_subarticulation_events[$is_free0000]])]) - $repetition_engine_start_time) mod $iii00) < 5) and (($ENGINE_UPTIME - %subarticulation_event_last_used[%repetition_engine_subarticulation_events[$is_free0000]]) > (($iii00 - %_articulation_humanization[($articulation_event_id400 * 8) + $ii00]) - 5))) and ((%pressed_keys[%subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]]] >= 0) or ($sustain_pedal = 1)))
+            message("play")
             $string0001 := 1
-            $ret90 := $iii00
-            $instrument50 := %articulation_event_instrument[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]]
-            $keyswitch90 := %articulation_event_keyswitch[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]]
+            %repetition_played_subarticulation_events[search(%repetition_played_subarticulation_events, -1)] := %repetition_engine_subarticulation_events[$is_free0000]
+            $ret90 := $string0000
+            $instrument50 := $articulation_event_id400
+            $keyswitch90 := $ii00
             $subarticulation_idx30 := %subarticulation_event_subarticulation_idx[%repetition_engine_subarticulation_events[$is_free0000]]
             $note140 := %subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]]
-            $rr12 := $i00
+            $rr12 := $i4000
             call c_get_next_rr0
-            $iii00 := $ret90
-            %articulation_event_instrument[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]] := $instrument50
-            %articulation_event_keyswitch[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]] := $keyswitch90
+            $string0000 := $ret90
             %subarticulation_event_subarticulation_idx[%repetition_engine_subarticulation_events[$is_free0000]] := $subarticulation_idx30
             %subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]] := $note140
-            $ret100 := $ii00
-            $instrument10 := %articulation_event_instrument[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]]
-            $keyswitch00 := %articulation_event_keyswitch[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]]
+            $ret100 := $i00
+            $instrument10 := $articulation_event_id400
+            $keyswitch00 := $ii00
             $subarticulation_idx00 := %subarticulation_event_subarticulation_idx[%repetition_engine_subarticulation_events[$is_free0000]]
             $subarticulation_id20 := %subarticulation_event_subarticulation[%repetition_engine_subarticulation_events[$is_free0000]]
             $note17 := %subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]]
-            $velocity00 := (%modulation_positions[%subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]] * $use_polyphonic_modulation] * - sh_right($articulation_event_id400 - ($ENGINE_UPTIME - %pressed_keys[%subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]]]), 31)) + (%key_velocity[%subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]]] * (1 + sh_right($articulation_event_id400 - ($ENGINE_UPTIME - %pressed_keys[%subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]]]), 31)))
+            $velocity00 := (%modulation_positions[%subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]] * $use_polyphonic_modulation] * - sh_right($iii00 - ($ENGINE_UPTIME - %pressed_keys[%subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]]]), 31)) + (%key_velocity[%subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]]] * (1 + sh_right($iii00 - ($ENGINE_UPTIME - %pressed_keys[%subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]]]), 31)))
             $interval00 := %subarticulation_event_interval[%repetition_engine_subarticulation_events[$is_free0000]]
-            $rr00 := $iii00
+            $rr00 := $string0000
             $modulation00 := %subarticulation_event_modulation[%repetition_engine_subarticulation_events[$is_free0000]]
             $level00 := %subarticulation_event_level[%repetition_engine_subarticulation_events[$is_free0000]]
-            $transpose00 := %octave_shift[%articulation_event_instrument[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]]] * 12
-            $octave_layer00 := %octave_layer[%articulation_event_instrument[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]]]
+            $transpose00 := %octave_shift[$articulation_event_id400] * 12
+            $octave_layer00 := %octave_layer[$articulation_event_id400]
             $previous_note00 := %repetition_engine_subarticulation_events[$is_free0000]
-            $subarticulation_event_id170 := $i00
-            $idx2101 := $string0000
-            $result601 := $i4000
-            $transition_note_event02 := $result10000
-            $transition_octave_event02 := $idx18000
-            $i122 := $reduced_note0000
-            $ii22 := $next_free_idx0000
-            $idx2202 := $fade_out_range000
-            $end_note22 := $i1200
-            $transition_note02 := $offset100
-            $transition_type22 := $result7000
-            $transition_dyn_layer02 := $i80000
-            $offset12 := $idx22000
+            $subarticulation_event_id170 := $i4000
+            $idx2101 := $result10000
+            $result601 := $idx18000
+            $transition_note_event02 := $reduced_note0000
+            $transition_octave_event02 := $next_free_idx0000
+            $i122 := $fade_out_range000
+            $ii22 := $i1200
+            $idx2202 := $offset100
+            $end_note22 := $result7000
+            $transition_note02 := $i80000
+            $transition_type22 := $idx22000
+            $transition_dyn_layer02 := $transition_dyn_layer000
+            $offset12 := $ii200
             ~transition_speed01 := ~new_tempo00
-            $_ret2802 := $transition_dyn_layer000
-            $result702 := $ii200
-            $i902 := $reduced_note01000
-            $i8002 := $string01000
-            $i1002 := $string02000
-            $octave_event002 := $end_note200
-            $i1102 := $transition_type200
-            $ii102 := $transition_note000
-            $_ret41002 := $i10000
-            $reduced_note0102 := $i9000
+            $_ret2902 := $reduced_note01000
+            $result702 := $string01000
+            $i902 := $string02000
+            $i8002 := $end_note200
+            $i1002 := $transition_type200
+            $fade_time102 := $transition_note000
+            $octave_event002 := $i10000
+            $i1102 := $i9000
+            $ii102 := $fade_time1000
+            $_ret42002 := $octave_event0000
+            $reduced_note0102 := $i11000
             $string0102 := $ii1000
-            $string0202 := $octave_event0000
+            $string0202 := $string02010
             call c_subarticulation_play_note0
-            $ii00 := $ret100
-            %articulation_event_instrument[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]] := $instrument10
-            %articulation_event_keyswitch[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]] := $keyswitch00
+            $i00 := $ret100
             %subarticulation_event_subarticulation_idx[%repetition_engine_subarticulation_events[$is_free0000]] := $subarticulation_idx00
             %subarticulation_event_subarticulation[%repetition_engine_subarticulation_events[$is_free0000]] := $subarticulation_id20
             %subarticulation_event_note[%repetition_engine_subarticulation_events[$is_free0000]] := $note17
             %subarticulation_event_interval[%repetition_engine_subarticulation_events[$is_free0000]] := $interval00
             %subarticulation_event_modulation[%repetition_engine_subarticulation_events[$is_free0000]] := $modulation00
             %subarticulation_event_level[%repetition_engine_subarticulation_events[$is_free0000]] := $level00
-            %octave_layer[%articulation_event_instrument[%subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]]] := $octave_layer00
+            %octave_layer[$articulation_event_id400] := $octave_layer00
             %repetition_engine_subarticulation_events[$is_free0000] := $previous_note00
             $articulation_event_id10 := %subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]
             $subarticulation10 := %subarticulation_event_subarticulation_idx[%repetition_engine_subarticulation_events[$is_free0000]]
-            $subarticulation_event_id160 := $ii00
+            $subarticulation_event_id160 := $i00
             call c_articulation_event_set_subarticulation_event_id0
             %subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]] := $articulation_event_id10
             %subarticulation_event_subarticulation_idx[%repetition_engine_subarticulation_events[$is_free0000]] := $subarticulation10
-            %subarticulation_event_articulation_event[$ii00] := %subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]
-            $subarticulation_event_id130 := %repetition_engine_subarticulation_events[$is_free0000]
-            $subarticulation_id40 := $i00
-            $idx2400 := $ii200
-            $octave_event01 := $reduced_note0000
-            $i111 := $idx18000
-            $ii11 := $transition_note000
-            $_ret4101 := $i9000
-            $reduced_note011 := $next_free_idx0000
-            $string011 := $ii1000
-            $string021 := $result10000
-            call c_subarticulation_note_off0
-            %repetition_engine_subarticulation_events[$is_free0000] := $subarticulation_event_id130
+            %subarticulation_event_articulation_event[$i00] := %subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$is_free0000]]
           end if
         else
           $articulation_event_id400 := %repetition_engine_subarticulation_events[$is_free0000]
           $subarticulation_event10 := $articulation_event_id400
-          $idx241 := $result10000
+          $idx241 := $iii00
           call c_repetition_engine_remove0
         end if
       end if
@@ -5361,8 +5478,13 @@ on listener
       ~new_tempo01 := ~new_tempo00
       $i01 := $is_free0000
       $ii01 := $articulation_event_id400
-      $iii01 := $result10000
+      $iii01 := $iii00
       call c_repetition_engine_update_tempo0
+      $i := 0
+      while(($i < num_elements(%repetition_played_subarticulation_events)) and (%repetition_played_subarticulation_events[$i] # -1)) 
+        %_repetition_interval_time_humanization[(%articulation_event_instrument[%subarticulation_event_articulation_event[%repetition_played_subarticulation_events[$i]]] * 4096) + ((%articulation_event_keyswitch[%subarticulation_event_articulation_event[%repetition_played_subarticulation_events[$i]]] * 512) + %subarticulation_event_subarticulation_idx[%repetition_played_subarticulation_events[$i]])] := random(- %_articulation_humanization[(%articulation_event_instrument[%subarticulation_event_articulation_event[%repetition_played_subarticulation_events[$i]]] * 8) + %articulation_event_keyswitch[%subarticulation_event_articulation_event[%repetition_played_subarticulation_events[$i]]]] / 2, %_articulation_humanization[(%articulation_event_instrument[%subarticulation_event_articulation_event[%repetition_played_subarticulation_events[$i]]] * 8) + %articulation_event_keyswitch[%subarticulation_event_articulation_event[%repetition_played_subarticulation_events[$i]]]] / 2)
+        inc($i)
+      end while
     end if
     if($set_articulation_event_id000 = 0)
       $repetition_engine_active := 0
@@ -5384,71 +5506,71 @@ on listener
   $animation_frame_counter := ($animation_frame_counter + 1) mod 4
 end on
 on ui_controls
-  $octave_event0000 := search(%swi_keyswitch, $NI_UI_ID)
-  if($octave_event0000 # -1)
-    if(get_control_par(%swi_keyswitch[$octave_event0000], $CONTROL_PAR_KEY_SHIFT) = 0)
+  $ii1000 := search(%swi_keyswitch, $NI_UI_ID)
+  if($ii1000 # -1)
+    if(get_control_par(%swi_keyswitch[$ii1000], $CONTROL_PAR_KEY_SHIFT) = 0)
       $i := 0
       while($i <= 7) 
         %_keyswitch_states[($selected_instrument * 8) + $i] := 0
         inc($i)
       end while
     end if
-    %_keyswitch_states[($selected_instrument * 8) + $octave_event0000] := 1
-    $selected_keyswitch := $octave_event0000
-    $idx170002 := $ii1000
+    %_keyswitch_states[($selected_instrument * 8) + $ii1000] := 1
+    $selected_keyswitch := $ii1000
+    $idx170002 := $i11000
     call c_update_keyswitch_selection0
   end if
-  $ii1000 := search(%sli_mixer_channel_volume, $NI_UI_ID)
-  if($ii1000 # -1)
-    set_engine_par($ENGINE_PAR_VOLUME, get_control_par(%sli_mixer_channel_volume[$ii1000], $CONTROL_PAR_VALUE), -1, -1, $NI_BUS_OFFSET + $ii1000)
-    if($ii1000 = 4)
-      set_engine_par($ENGINE_PAR_VOLUME, get_control_par(%sli_mixer_channel_volume[$ii1000], $CONTROL_PAR_VALUE), -1, -1, $NI_BUS_OFFSET + 5)
+  $i11000 := search(%sli_mixer_channel_volume, $NI_UI_ID)
+  if($i11000 # -1)
+    set_engine_par($ENGINE_PAR_VOLUME, get_control_par(%sli_mixer_channel_volume[$i11000], $CONTROL_PAR_VALUE), -1, -1, $NI_BUS_OFFSET + $i11000)
+    if($i11000 = 4)
+      set_engine_par($ENGINE_PAR_VOLUME, get_control_par(%sli_mixer_channel_volume[$i11000], $CONTROL_PAR_VALUE), -1, -1, $NI_BUS_OFFSET + 5)
     end if
   end if
-  $ii1000 := search(%btn_mixer_channel_enable, $NI_UI_ID)
-  if($ii1000 # -1)
-    if($ii1000 < 4)
-      %microphone_position_states[$ii1000] := get_control_par(%btn_mixer_channel_enable[$ii1000], $CONTROL_PAR_VALUE)
+  $i11000 := search(%btn_mixer_channel_enable, $NI_UI_ID)
+  if($i11000 # -1)
+    if($i11000 < 4)
+      %microphone_position_states[$i11000] := get_control_par(%btn_mixer_channel_enable[$i11000], $CONTROL_PAR_VALUE)
     else
-      %microphone_position_states[$ii1000 + $mnu_mixer_bleed_channel] := get_control_par(%btn_mixer_channel_enable[$ii1000], $CONTROL_PAR_VALUE)
-      %microphone_position_states[$ii1000 + (1 - $mnu_mixer_bleed_channel)] := 0
+      %microphone_position_states[$i11000 + $mnu_mixer_bleed_channel] := get_control_par(%btn_mixer_channel_enable[$i11000], $CONTROL_PAR_VALUE)
+      %microphone_position_states[$i11000 + (1 - $mnu_mixer_bleed_channel)] := 0
     end if
-    $i9000 := 0
-    $i10000 := 0
     $octave_event0000 := 0
-    while($octave_event0000 <= 0) 
-      $i9000 := 0
-      while($i9000 <= 7) 
-        $i10000 := 0
-        while($i10000 <= 3) 
-          if(%_loaded_subarticulations[($octave_event0000 * 32) + (($i9000 * 4) + $i10000)] # -1)
+    $fade_time1000 := 0
+    $ii1000 := 0
+    while($ii1000 <= 0) 
+      $octave_event0000 := 0
+      while($octave_event0000 <= 7) 
+        $fade_time1000 := 0
+        while($fade_time1000 <= 3) 
+          if(%_loaded_subarticulations[($ii1000 * 32) + (($octave_event0000 * 4) + $fade_time1000)] # -1)
             $i := 0
-            $ret00 := $transition_note000
-            $subarticulation_id00 := %_loaded_subarticulations[($octave_event0000 * 32) + (($i9000 * 4) + $i10000)]
-            $group_count01 := $transition_type200
+            $ret00 := $i9000
+            $subarticulation_id00 := %_loaded_subarticulations[($ii1000 * 32) + (($octave_event0000 * 4) + $fade_time1000)]
+            $group_count01 := $i10000
             call c_subarticulation_group_count0
-            $transition_note000 := $ret00
-            while($i <= ($transition_note000 - 1)) 
-              purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[%_loaded_subarticulations[($octave_event0000 * 32) + (($i9000 * 4) + $i10000)]]] + $i) + 1, %microphone_position_states[$i mod 6])
+            $i9000 := $ret00
+            while($i <= ($i9000 - 1)) 
+              purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[%_loaded_subarticulations[($ii1000 * 32) + (($octave_event0000 * 4) + $fade_time1000)]]] + $i) + 1, %microphone_position_states[$i mod 6])
               inc($i)
-              $ret00 := $transition_note000
-              $subarticulation_id00 := %_loaded_subarticulations[($octave_event0000 * 32) + (($i9000 * 4) + $i10000)]
-              $group_count01 := $transition_type200
+              $ret00 := $i9000
+              $subarticulation_id00 := %_loaded_subarticulations[($ii1000 * 32) + (($octave_event0000 * 4) + $fade_time1000)]
+              $group_count01 := $i10000
               call c_subarticulation_group_count0
-              $transition_note000 := $ret00
+              $i9000 := $ret00
             end while
           end if
-          inc($i10000)
+          inc($fade_time1000)
         end while
-        inc($i9000)
+        inc($octave_event0000)
       end while
-      inc($octave_event0000)
+      inc($ii1000)
     end while
   end if
   %idx27[$NI_CALLBACK_ID mod 100] := search(%btn_subarticulation_browser_category, $NI_UI_ID)
   if(%idx27[$NI_CALLBACK_ID mod 100] # -1)
     $category00 := %idx27[$NI_CALLBACK_ID mod 100]
-    $i22 := $transition_type200
+    $i22 := $i10000
     call c_subarticulation_browser_load_category0
     %idx27[$NI_CALLBACK_ID mod 100] := $category00
   end if
@@ -5478,9 +5600,9 @@ on ui_controls
         $instrument70 := $selected_instrument
         $keyswitch110 := $selected_keyswitch
         $subarticulation_idx50 := $selected_subarticulation
-        $dyn_layer_idx00 := $transition_type200
-        $note_idx01 := $transition_note000
-        $transition_idx01 := $i10000
+        $dyn_layer_idx00 := $i10000
+        $note_idx01 := $i9000
+        $transition_idx01 := $fade_time1000
         call c_move_legato_buffer_to_instrument0
         $selected_instrument := $instrument70
         $selected_keyswitch := $keyswitch110
@@ -5507,8 +5629,16 @@ on ui_control($btn_editor_page)
   set_control_par(get_ui_id($pnl_editor_page), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
   set_control_par(get_ui_id($sli_articulation_humanize), $CONTROL_PAR_VALUE, %_articulation_humanization[($selected_instrument * 8) + $selected_keyswitch])
   set_control_par_str(get_ui_id($lbl_articulation_humanize), $CONTROL_PAR_TEXT, $sli_articulation_humanize & " ms")
-  set_control_par(get_ui_id($sli_articulation_release), $CONTROL_PAR_VALUE, %_articulation_release[($selected_instrument * 8) + $selected_keyswitch])
-  set_control_par_str(get_ui_id($lbl_articulation_release), $CONTROL_PAR_TEXT, $sli_articulation_release & " ms")
+  if(%_articulation_release[($selected_instrument * 8) + $selected_keyswitch] >= 0)
+    set_control_par(get_ui_id($sli_articulation_release), $CONTROL_PAR_VALUE, %_articulation_release[($selected_instrument * 8) + $selected_keyswitch])
+    set_control_par_str(get_ui_id($lbl_articulation_release), $CONTROL_PAR_TEXT, $sli_articulation_release & " ms")
+    set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+    $btn_articulation_release := 0
+  else
+    set_control_par_str(get_ui_id($lbl_articulation_release), $CONTROL_PAR_TEXT, "")
+    set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+    $btn_articulation_release := 1
+  end if
   set_control_par(get_ui_id($sli_keyswitch_volume_curve_min), $CONTROL_PAR_VALUE, %_articulation_volume_min[($selected_instrument * 8) + $selected_keyswitch])
   set_control_par(get_ui_id($sli_keyswitch_volume_curve_max), $CONTROL_PAR_VALUE, %_articulation_volume_max[($selected_instrument * 8) + $selected_keyswitch])
   set_control_par(get_ui_id($sli_keyswitch_volume_curve), $CONTROL_PAR_VALUE, %_articulation_volume_curve[($selected_instrument * 8) + $selected_keyswitch] * -1)
@@ -5518,14 +5648,14 @@ on ui_control($btn_editor_page)
     set_control_par(%lbl_keyswitch_volume_curve_envelope[$i], $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($lbl_keyswitch_volume_curve_line), $CONTROL_PAR_POS_Y) - get_control_par(%lbl_keyswitch_volume_curve_envelope[$i], $CONTROL_PAR_HEIGHT))
     inc($i)
   end while
-  $i10000 := 0
-  while($i10000 <= (num_elements(%btn_edit_subarticulation_selection) - 1)) 
-    if($i10000 # $selected_subarticulation)
-      set_control_par(%btn_edit_subarticulation_selection[$i10000], $CONTROL_PAR_VALUE, 0)
+  $fade_time1000 := 0
+  while($fade_time1000 <= (num_elements(%btn_edit_subarticulation_selection) - 1)) 
+    if($fade_time1000 # $selected_subarticulation)
+      set_control_par(%btn_edit_subarticulation_selection[$fade_time1000], $CONTROL_PAR_VALUE, 0)
     else
-      set_control_par(%btn_edit_subarticulation_selection[$i10000], $CONTROL_PAR_VALUE, 1)
+      set_control_par(%btn_edit_subarticulation_selection[$fade_time1000], $CONTROL_PAR_VALUE, 1)
     end if
-    inc($i10000)
+    inc($fade_time1000)
   end while
   if(%_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)] # -1)
     set_control_par_str(get_ui_id($btn_subarticulation_title), $CONTROL_PAR_TEXT, "    " & !subarticulations_full_name[%subarticulations_ids_positions[%_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)]]])
@@ -5716,20 +5846,20 @@ on ui_control($sli_modwheel_slider)
   $note130 := 0
   $value50 := %CC[1]
   call c_set_modulation_position0
-  $i70 := $i10000
-  $_iter300 := $transition_type200
-  $_iter200 := $i9000
-  $_iter100 := $octave_event0000
-  $_ret1800 := $ii1000
-  $result300 := $end_note200
-  $result310 := $string02000
-  $result500 := $string01000
-  $result320 := $reduced_note01000
+  $i70 := $fade_time1000
+  $_iter300 := $i10000
+  $_iter200 := $octave_event0000
+  $_iter100 := $ii1000
+  $_ret1900 := $i11000
+  $result300 := $transition_note000
+  $result310 := $transition_type200
+  $result500 := $end_note200
+  $result320 := $string02000
   ~subarticulation_modulation_strength000 := ~new_tempo00
-  $fade_in_start000 := $ii200
-  $fade_in_range000 := $transition_dyn_layer000
-  $fade_out_end000 := $idx22000
-  $fade_out_range001 := $i80000
+  $fade_in_start000 := $string01000
+  $fade_in_range000 := $reduced_note01000
+  $fade_out_end000 := $ii200
+  $fade_out_range001 := $transition_dyn_layer000
   call c_cc_on_controller0
 end on
 on ui_control($btn_octave_layer)
@@ -5752,9 +5882,19 @@ on ui_control($btn_polyphonic_aftertouch)
     $use_polyphonic_modulation := 0
   end if
 end on
+on ui_control($btn_mode_live)
+  $use_constant_delay := 0
+  set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_VALUE, 1)
+  set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_VALUE, 0)
+end on
+on ui_control($btn_mode_playback)
+  $use_constant_delay := 1
+  set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_VALUE, 0)
+  set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_VALUE, 1)
+end on
 on ui_control(@txt_keyswitch_name)
   !_articulation_names[($selected_instrument * 8) + $selected_keyswitch] := @txt_keyswitch_name
-  $idx170002 := $i80000
+  $idx170002 := $transition_dyn_layer000
   call c_update_keyswitch_selection0
 end on
 on ui_control($btn_solo_subarticulation)
@@ -5769,22 +5909,22 @@ on ui_control($btn_solo_subarticulation)
 end on
 on ui_control($btn_edit_subarticulation_selection0)
   $selected_subarticulation := 0
-  $idx1701 := $i80000
+  $idx1701 := $transition_dyn_layer000
   call c_update_subarticulation_selection0
 end on
 on ui_control($btn_edit_subarticulation_selection1)
   $selected_subarticulation := 1
-  $idx1701 := $i80000
+  $idx1701 := $transition_dyn_layer000
   call c_update_subarticulation_selection0
 end on
 on ui_control($btn_edit_subarticulation_selection2)
   $selected_subarticulation := 2
-  $idx1701 := $i80000
+  $idx1701 := $transition_dyn_layer000
   call c_update_subarticulation_selection0
 end on
 on ui_control($btn_edit_subarticulation_selection3)
   $selected_subarticulation := 3
-  $idx1701 := $i80000
+  $idx1701 := $transition_dyn_layer000
   call c_update_subarticulation_selection0
 end on
 on ui_control($btn_subarticulation_title)
@@ -5792,7 +5932,7 @@ on ui_control($btn_subarticulation_title)
     set_control_par(get_ui_id($pnl_subarticulation_browser), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
     if(%_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)] # -1)
       $category00 := %type_to_category[%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)]]]]
-      $i22 := $i80000
+      $i22 := $transition_dyn_layer000
       call c_subarticulation_browser_load_category0
       %type_to_category[%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)]]]] := $category00
     end if
@@ -5888,6 +6028,17 @@ on ui_control($sli_articulation_release)
   set_control_par_str(get_ui_id($lbl_articulation_release), $CONTROL_PAR_TEXT, $sli_articulation_release & " ms")
   %_articulation_release[($selected_instrument * 8) + $selected_keyswitch] := $sli_articulation_release
 end on
+on ui_control($btn_articulation_release)
+  if($btn_articulation_release = 1)
+    %_articulation_release[($selected_instrument * 8) + $selected_keyswitch] := -1
+    set_control_par_str(get_ui_id($lbl_articulation_release), $CONTROL_PAR_TEXT, "")
+    set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+  else
+    %_articulation_release[($selected_instrument * 8) + $selected_keyswitch] := $sli_articulation_release
+    set_control_par_str(get_ui_id($lbl_articulation_release), $CONTROL_PAR_TEXT, $sli_articulation_release & " ms")
+    set_control_par(get_ui_id($btn_articulation_release_blocker), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+  end if
+end on
 on ui_control($sli_subarticulation_volume)
   set_control_par_str(get_ui_id($lbl_subarticulation_volume), $CONTROL_PAR_TEXT, $sli_subarticulation_volume & " dB")
   %_loaded_subarticulations_volume[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)] := $sli_subarticulation_volume
@@ -5903,9 +6054,9 @@ end on
 on ui_control($mnu_subarticulation_repetition_speed)
   %_loaded_subarticulations_repetition_speed[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)] := $mnu_subarticulation_repetition_speed
   ~new_tempo01 := ~new_tempo00
-  $i01 := $i80000
-  $ii01 := $idx22000
-  $iii01 := $transition_dyn_layer000
+  $i01 := $transition_dyn_layer000
+  $ii01 := $ii200
+  $iii01 := $reduced_note01000
   call c_repetition_engine_update_tempo0
 end on
 on ui_control($sli_subarticulation_trans_volume)
@@ -5968,7 +6119,7 @@ on ui_control(?xy_center_circles)
         $selected_circle_end := -1
       end if
     end if
-    $idx1701 := $transition_dyn_layer000
+    $idx1701 := $reduced_note01000
     call c_update_subarticulation_selection0
   end if
   if($NI_MOUSE_EVENT_TYPE = $NI_MOUSE_EVENT_TYPE_DRAG)
@@ -6007,51 +6158,51 @@ on ui_control(?xy_center_circles)
   end if
 end on
 on ui_control($mnu_mixer_bleed_channel)
-  $transition_dyn_layer000 := search(%sli_mixer_channel_volume, %btn_mixer_channel_enable[4])
-  if($transition_dyn_layer000 # -1)
-    set_engine_par($ENGINE_PAR_VOLUME, get_control_par(%sli_mixer_channel_volume[$transition_dyn_layer000], $CONTROL_PAR_VALUE), -1, -1, $NI_BUS_OFFSET + $transition_dyn_layer000)
-    if($transition_dyn_layer000 = 4)
-      set_engine_par($ENGINE_PAR_VOLUME, get_control_par(%sli_mixer_channel_volume[$transition_dyn_layer000], $CONTROL_PAR_VALUE), -1, -1, $NI_BUS_OFFSET + 5)
+  $reduced_note01000 := search(%sli_mixer_channel_volume, %btn_mixer_channel_enable[4])
+  if($reduced_note01000 # -1)
+    set_engine_par($ENGINE_PAR_VOLUME, get_control_par(%sli_mixer_channel_volume[$reduced_note01000], $CONTROL_PAR_VALUE), -1, -1, $NI_BUS_OFFSET + $reduced_note01000)
+    if($reduced_note01000 = 4)
+      set_engine_par($ENGINE_PAR_VOLUME, get_control_par(%sli_mixer_channel_volume[$reduced_note01000], $CONTROL_PAR_VALUE), -1, -1, $NI_BUS_OFFSET + 5)
     end if
   end if
-  $transition_dyn_layer000 := search(%btn_mixer_channel_enable, %btn_mixer_channel_enable[4])
-  if($transition_dyn_layer000 # -1)
-    if($transition_dyn_layer000 < 4)
-      %microphone_position_states[$transition_dyn_layer000] := get_control_par(%btn_mixer_channel_enable[$transition_dyn_layer000], $CONTROL_PAR_VALUE)
+  $reduced_note01000 := search(%btn_mixer_channel_enable, %btn_mixer_channel_enable[4])
+  if($reduced_note01000 # -1)
+    if($reduced_note01000 < 4)
+      %microphone_position_states[$reduced_note01000] := get_control_par(%btn_mixer_channel_enable[$reduced_note01000], $CONTROL_PAR_VALUE)
     else
-      %microphone_position_states[$transition_dyn_layer000 + $mnu_mixer_bleed_channel] := get_control_par(%btn_mixer_channel_enable[$transition_dyn_layer000], $CONTROL_PAR_VALUE)
-      %microphone_position_states[$transition_dyn_layer000 + (1 - $mnu_mixer_bleed_channel)] := 0
+      %microphone_position_states[$reduced_note01000 + $mnu_mixer_bleed_channel] := get_control_par(%btn_mixer_channel_enable[$reduced_note01000], $CONTROL_PAR_VALUE)
+      %microphone_position_states[$reduced_note01000 + (1 - $mnu_mixer_bleed_channel)] := 0
     end if
-    $i80000 := 0
+    $transition_dyn_layer000 := 0
+    $string01000 := 0
     $ii200 := 0
-    $idx22000 := 0
-    while($idx22000 <= 0) 
-      $i80000 := 0
-      while($i80000 <= 7) 
-        $ii200 := 0
-        while($ii200 <= 3) 
-          if(%_loaded_subarticulations[($idx22000 * 32) + (($i80000 * 4) + $ii200)] # -1)
+    while($ii200 <= 0) 
+      $transition_dyn_layer000 := 0
+      while($transition_dyn_layer000 <= 7) 
+        $string01000 := 0
+        while($string01000 <= 3) 
+          if(%_loaded_subarticulations[($ii200 * 32) + (($transition_dyn_layer000 * 4) + $string01000)] # -1)
             $i := 0
-            $ret00 := $reduced_note01000
-            $subarticulation_id00 := %_loaded_subarticulations[($idx22000 * 32) + (($i80000 * 4) + $ii200)]
-            $group_count01 := $string01000
+            $ret00 := $string02000
+            $subarticulation_id00 := %_loaded_subarticulations[($ii200 * 32) + (($transition_dyn_layer000 * 4) + $string01000)]
+            $group_count01 := $end_note200
             call c_subarticulation_group_count0
-            $reduced_note01000 := $ret00
-            while($i <= ($reduced_note01000 - 1)) 
-              purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[%_loaded_subarticulations[($idx22000 * 32) + (($i80000 * 4) + $ii200)]]] + $i) + 1, %microphone_position_states[$i mod 6])
+            $string02000 := $ret00
+            while($i <= ($string02000 - 1)) 
+              purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[%_loaded_subarticulations[($ii200 * 32) + (($transition_dyn_layer000 * 4) + $string01000)]]] + $i) + 1, %microphone_position_states[$i mod 6])
               inc($i)
-              $ret00 := $reduced_note01000
-              $subarticulation_id00 := %_loaded_subarticulations[($idx22000 * 32) + (($i80000 * 4) + $ii200)]
-              $group_count01 := $string01000
+              $ret00 := $string02000
+              $subarticulation_id00 := %_loaded_subarticulations[($ii200 * 32) + (($transition_dyn_layer000 * 4) + $string01000)]
+              $group_count01 := $end_note200
               call c_subarticulation_group_count0
-              $reduced_note01000 := $ret00
+              $string02000 := $ret00
             end while
           end if
-          inc($ii200)
+          inc($string01000)
         end while
-        inc($i80000)
+        inc($transition_dyn_layer000)
       end while
-      inc($idx22000)
+      inc($ii200)
     end while
   end if
 end on
@@ -6061,36 +6212,36 @@ on ui_control($btn_unpurge_all)
     %microphone_position_states[$i] := 1
     inc($i)
   end while
-  $reduced_note01000 := 0
-  $ii200 := 0
+  $string02000 := 0
   $string01000 := 0
-  while($string01000 <= 0) 
-    $reduced_note01000 := 0
-    while($reduced_note01000 <= 7) 
-      $ii200 := 0
-      while($ii200 <= 3) 
-        if(%_loaded_subarticulations[($string01000 * 32) + (($reduced_note01000 * 4) + $ii200)] # -1)
+  $end_note200 := 0
+  while($end_note200 <= 0) 
+    $string02000 := 0
+    while($string02000 <= 7) 
+      $string01000 := 0
+      while($string01000 <= 3) 
+        if(%_loaded_subarticulations[($end_note200 * 32) + (($string02000 * 4) + $string01000)] # -1)
           $i := 0
-          $ret00 := $i80000
-          $subarticulation_id00 := %_loaded_subarticulations[($string01000 * 32) + (($reduced_note01000 * 4) + $ii200)]
-          $group_count01 := $idx22000
+          $ret00 := $transition_dyn_layer000
+          $subarticulation_id00 := %_loaded_subarticulations[($end_note200 * 32) + (($string02000 * 4) + $string01000)]
+          $group_count01 := $ii200
           call c_subarticulation_group_count0
-          $i80000 := $ret00
-          while($i <= ($i80000 - 1)) 
-            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[%_loaded_subarticulations[($string01000 * 32) + (($reduced_note01000 * 4) + $ii200)]]] + $i) + 1, %microphone_position_states[$i mod 6])
+          $transition_dyn_layer000 := $ret00
+          while($i <= ($transition_dyn_layer000 - 1)) 
+            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[%_loaded_subarticulations[($end_note200 * 32) + (($string02000 * 4) + $string01000)]]] + $i) + 1, %microphone_position_states[$i mod 6])
             inc($i)
-            $ret00 := $i80000
-            $subarticulation_id00 := %_loaded_subarticulations[($string01000 * 32) + (($reduced_note01000 * 4) + $ii200)]
-            $group_count01 := $idx22000
+            $ret00 := $transition_dyn_layer000
+            $subarticulation_id00 := %_loaded_subarticulations[($end_note200 * 32) + (($string02000 * 4) + $string01000)]
+            $group_count01 := $ii200
             call c_subarticulation_group_count0
-            $i80000 := $ret00
+            $transition_dyn_layer000 := $ret00
           end while
         end if
-        inc($ii200)
+        inc($string01000)
       end while
-      inc($reduced_note01000)
+      inc($string02000)
     end while
-    inc($string01000)
+    inc($end_note200)
   end while
 end on
 on ui_control($btn_subarticulation_browser_close)
@@ -6107,7 +6258,7 @@ on ui_control($mnu_settings_keyswitch_position)
     inc($i)
   end while
   $keyswitch_octave := get_control_par(get_ui_id($mnu_settings_keyswitch_position), $CONTROL_PAR_VALUE)
-  $idx170002 := $idx22000
+  $idx170002 := $ii200
   call c_update_keyswitch_selection0
 end on
 on ui_control($mnu_lookahead)
@@ -6290,33 +6441,33 @@ on ui_control($sli_sustain_fadeIn_offset)
 end on
 on ui_control($btn_save_authoring)
   if($authoring_page_active = 1)
-    $i80000 := 0
+    $transition_dyn_layer000 := 0
+    $string01000 := 0
     $ii200 := 0
-    $idx22000 := 0
-    while($idx22000 <= 1) 
-      $i80000 := 0
-      while($i80000 <= 127) 
-        $ii200 := 0
-        while($ii200 <= 24) 
-          %_legato_data_buffer_sus_fade_in_time[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_sus_fade_in_time[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          %_legato_data_buffer_sus_release_time[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_sus_release_time[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          %_legato_data_buffer_sus_wait_time[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_sus_wait_time[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          %_legato_data_buffer_trans_fade_in_time[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_trans_fade_in_time[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          %_legato_data_buffer_trans_fade_out_time[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_trans_fade_out_time[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          %_legato_data_buffer_trans_zone_start[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_trans_zone_start[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          %_legato_data_buffer_trans_zone_volume[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_trans_zone_volume[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          %_legato_data_buffer_sus_fade_in_time_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_sus_fade_in_time_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          %_legato_data_buffer_sus_release_time_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_sus_release_time_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          %_legato_data_buffer_sus_wait_time_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_sus_wait_time_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          %_legato_data_buffer_trans_fade_in_time_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_trans_fade_in_time_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          %_legato_data_buffer_trans_fade_out_time_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_trans_fade_out_time_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          %_legato_data_buffer_trans_zone_start_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_trans_zone_start_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          %_legato_data_buffer_trans_zone_volume_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)] := %_legato_data_trans_zone_volume_offset[($idx22000 * 3200) + (($i80000 * 25) + $ii200)]
-          inc($ii200)
+    while($ii200 <= 1) 
+      $transition_dyn_layer000 := 0
+      while($transition_dyn_layer000 <= 127) 
+        $string01000 := 0
+        while($string01000 <= 24) 
+          %_legato_data_buffer_sus_fade_in_time[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_sus_fade_in_time[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          %_legato_data_buffer_sus_release_time[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_sus_release_time[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          %_legato_data_buffer_sus_wait_time[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_sus_wait_time[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          %_legato_data_buffer_trans_fade_in_time[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_trans_fade_in_time[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          %_legato_data_buffer_trans_fade_out_time[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_trans_fade_out_time[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          %_legato_data_buffer_trans_zone_start[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_trans_zone_start[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          %_legato_data_buffer_trans_zone_volume[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_trans_zone_volume[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          %_legato_data_buffer_sus_fade_in_time_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_sus_fade_in_time_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          %_legato_data_buffer_sus_release_time_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_sus_release_time_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          %_legato_data_buffer_sus_wait_time_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_sus_wait_time_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          %_legato_data_buffer_trans_fade_in_time_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_trans_fade_in_time_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          %_legato_data_buffer_trans_fade_out_time_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_trans_fade_out_time_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          %_legato_data_buffer_trans_zone_start_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_trans_zone_start_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          %_legato_data_buffer_trans_zone_volume_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)] := %_legato_data_trans_zone_volume_offset[($ii200 * 3200) + (($transition_dyn_layer000 * 25) + $string01000)]
+          inc($string01000)
         end while
-        inc($i80000)
+        inc($transition_dyn_layer000)
       end while
-      inc($idx22000)
+      inc($ii200)
     end while
     save_array_str(%_legato_data_buffer_sus_fade_in_time, @LEGATO_ARRAY_PATH & "leg" & %_loaded_subarticulations[0] & "_sus_fade_in_time.nka")
     save_array_str(%_legato_data_buffer_sus_release_time, @LEGATO_ARRAY_PATH & "leg" & %_loaded_subarticulations[0] & "_sus_release_time.nka")
@@ -6356,9 +6507,9 @@ on ui_control($btn_load_authoring)
     $instrument70 := 0
     $keyswitch110 := 0
     $subarticulation_idx50 := 0
-    $dyn_layer_idx00 := $ii200
-    $note_idx01 := $i80000
-    $transition_idx01 := $idx22000
+    $dyn_layer_idx00 := $string01000
+    $note_idx01 := $transition_dyn_layer000
+    $transition_idx01 := $ii200
     call c_move_legato_buffer_to_instrument0
     $start_note00 := 60
     $end_note00 := 60
