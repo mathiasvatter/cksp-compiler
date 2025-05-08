@@ -6,32 +6,16 @@ on init
 end on
 
 on persistence_changed
-    array_add(3)
-    array_remove(3)
-    array_add(3)
-    message(array[0])
-    for elem in array
-        if elem # 0
-            array_remove(elem)
+    for idx := 0 to num_elements(array) - 1
+        if array[idx] # 0
+            array_remove(array[idx])
         end if
-    end for
-    message(array[0])    
+    end for 
 end on
 
-function array_add(value: int)
-    declare idx: int := search(array, 0)
-    if idx # -1
-        array[idx] := value
-    else
-        message("REACHED MAX_ARRAY_SIZE")
-    end if
-end function
-
-function array_remove(value: int)
+function array_remove(ref value: int)
     declare idx: int := search(array, value)
-    if idx # -1
-        array[idx] := 0
-    end if
+    array[idx] := 0
 end function
 
 
