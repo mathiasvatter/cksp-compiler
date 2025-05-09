@@ -636,7 +636,7 @@ NodeAST *NodeFunctionParam::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeFunctionParam::NodeFunctionParam(const NodeFunctionParam& other)
-	: NodeInstruction(other), variable(clone_shared(other.variable)),
+	: NodeInstruction(other), is_pass_by_ref(other.is_pass_by_ref), variable(clone_shared(other.variable)),
 	  value(clone_unique(other.value)) {
 	set_child_parents();
 }

@@ -566,6 +566,7 @@ struct NodeSingleDeclaration final : NodeInstruction {
 };
 
 struct NodeFunctionParam final : NodeInstruction {
+	bool is_pass_by_ref = false;
 	std::shared_ptr<NodeDataStructure> variable;
 	std::unique_ptr<NodeAST> value = nullptr;
 	explicit NodeFunctionParam(Token tok) : NodeInstruction(NodeType::FunctionParam, std::move(tok)) {}

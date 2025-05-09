@@ -117,6 +117,7 @@
     XX(END_INC, "end_inc") \
     XX(UI_CONTROL, "ui_control")\
     XX(RETURN, "return")\
+    XX(REF, "ref")\
     XX(FALSE, "false")\
     XX(TRUE, "true")\
     XX(NEW, "new")\
@@ -180,7 +181,7 @@ inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{"#pragma",
                                                    {"USE_CODE_IF", token::USE_CODE_IF}, {"USE_CODE_IF_NOT", token::USE_CODE_IF_NOT}, {"END_USE_CODE", token::END_USE_CODE}};
 inline std::unordered_map<std::string, token> STATEMENT_SYNTAX = {{"to", token::TO}, {"downto", token::DOWNTO}, {"step", token::STEP}, {"else", token::ELSE},
 																  {"case", token::CASE}, {"in", token::IN}, {"default", token::DEFAULT}, {"break", token::BREAK}};
-inline std::unordered_map<std::string, token> FUNCTION_SYNTAX = {{"override", token::OVERRIDE}, {"call", token::CALL}, {"return", token::RETURN}};
+inline std::unordered_map<std::string, token> FUNCTION_SYNTAX = {{"override", token::OVERRIDE}, {"call", token::CALL}, {"return", token::RETURN}, {"ref", token::REF}};
 inline std::unordered_map<std::string, token> OBJECT_SYNTAX = {{"new", token::NEW}, {"delete", token::DELETE}, {"nil", token::NIL}, {"static", token::STATIC}};
 inline std::unordered_map<std::string, token> BOOLEAN_SYNTAX = {{"false", token::FALSE}, {"true", token::TRUE}};
 
