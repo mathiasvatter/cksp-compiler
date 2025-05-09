@@ -476,6 +476,11 @@ Result<std::unique_ptr<NodeFunctionParam>> Parser::parse_function_param(NodeAST*
 		return Result<std::unique_ptr<NodeFunctionParam>>(error);
 	}
 
+	if (peek().type == token::REF) {
+		consume(); // consume ref
+		node_func_param->is_pass_by_ref = true;
+	}
+
 	if (is_array_declaration()) {
 		auto parsed_arr = parse_declare_array(node_func_param.get());
 		if(parsed_arr.is_error()) {

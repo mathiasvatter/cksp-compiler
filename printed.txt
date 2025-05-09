@@ -1493,7 +1493,7 @@ on init
 		set_control_par_str(INST_LIB_DESCRIPTION_ID{int}, CONTROL_PAR_TEXTLINE{int}, credits[i{unknown}]{unknown}){Builtin, None}
 	end for
 	declare ui_label lbl_version : unknown (0, 0) {Reuses: 0}
-	set_label_properties(lbl_version{unknown}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "12:57:08" & " " & "05/08/25", "alpha", 0, fonts_regular_white[0]{unknown}, 0){Property, None}
+	set_label_properties(lbl_version{unknown}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "10:07:01" & " " & "05/09/25", "alpha", 0, fonts_regular_white[0]{unknown}, 0){Property, None}
 	set_bounds(lbl_version{unknown}, 5, 5, 800, 15){Property, None}
 	declare next_modwheel_animation_frame : int := - 1 {Reuses: 0}
 	declare animation_frame_counter : unknown := 0 {Reuses: 0}
