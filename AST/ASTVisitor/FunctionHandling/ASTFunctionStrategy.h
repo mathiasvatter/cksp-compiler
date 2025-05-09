@@ -87,7 +87,9 @@ public:
 
 	static bool is_parameterstack_candidate(const NodeFunctionDefinition& def) {
 		for(const auto &param : def.header->params) {
-			if((param->variable->ty->cast<CompositeType>() and param->variable->is_thread_safe) || param->variable->ty->is_union_type() || param->variable->data_type == DataType::UIControl) {
+			if((param->variable->ty->cast<CompositeType>() and param->variable->is_thread_safe)
+				|| param->variable->ty->is_union_type() || param->variable->data_type == DataType::UIControl ||
+				param->is_pass_by_ref) {
 				return false;
 			}
 		}

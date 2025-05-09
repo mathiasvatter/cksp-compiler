@@ -469,16 +469,15 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_parenth_expr(NodeAST* parent) {
 
 Result<std::unique_ptr<NodeFunctionParam>> Parser::parse_function_param(NodeAST* parent) {
 	auto node_func_param = std::make_unique<NodeFunctionParam>(get_tok());
-	auto error = CompileError(ErrorType::ParseError,
-	"Incorrect syntax in declare statement.", "", peek());
-	if(peek().type != token::KEYWORD) {
-		error.m_expected = "<ui_control>, <variable>, <array>";
-		return Result<std::unique_ptr<NodeFunctionParam>>(error);
-	}
-
 	if (peek().type == token::REF) {
 		consume(); // consume ref
 		node_func_param->is_pass_by_ref = true;
+	}
+
+	auto error = CompileError(ErrorType::ParseError,"Incorrect syntax in declare statement.", "", peek());
+	if(peek().type != token::KEYWORD) {
+		error.m_expected = "<ui_control>, <variable>, <array>";
+		return Result<std::unique_ptr<NodeFunctionParam>>(error);
 	}
 
 	if (is_array_declaration()) {
@@ -1092,7 +1091,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
 		consume(); // consume (
 		if (peek().type != token::CLOSED_PARENTH) {
 			while (peek().type != token::CLOSED_PARENTH) {
-				if (peek().type != token::KEYWORD) {
+				if (peek().type != token::KEYWORD and peek().type != token::REF) {
 					auto error = CompileError(ErrorType::SyntaxError, "Found invalid <FunctionHeader> Syntax.", "", peek());
 					error.m_message += " Only valid <Variables> can be parameters in a function definition.";
 					error.exit();

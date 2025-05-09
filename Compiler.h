@@ -32,6 +32,7 @@
 #include "AST/ASTVisitor/ASTLowerTypes.h"
 #include "AST/ASTVisitor/UniqueParameterNamesProvider.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
+#include "AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign2.h"
 #include "Optimization/ArrayInitializationRaising.h"
@@ -173,7 +174,6 @@ public:
 		compile_time.stop("Semantic Analysis");
 		std::cout << compile_time.print_timer("Semantic Analysis") << "\n";
 		compile_time.start("Type Checking");
-		ast->debug_print();
 
 		// ast->debug_print();
 		TypeInference infer_types(ast.get());
@@ -206,6 +206,13 @@ public:
 		ASTReturnFunctionRewriting return_function_rewriting(m_program);
 		return_function_rewriting.do_rewriting(*ast);
 
+		ASTFunctionStrategy function_strategy1(m_program);
+		ast->accept(function_strategy1);
+
+		ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
+		static ParameterAssignmentTransformation assignment_transformation(m_program);
+		assignment_transformation.do_parameter_assignment(*m_program);
+		ast -> debug_print();
 
 		ASTPreemptiveFunctionInlining pre_inlining(m_program);
 		ast->accept(pre_inlining);
@@ -257,8 +264,8 @@ public:
 		std::cout << compile_time.print_timer("Global Scope") << "\n";
 	    compile_time.start("Function Inlining");
 
-		ASTFunctionStrategy function_strategy(m_program);
-		ast->accept(function_strategy);
+		ASTFunctionStrategy function_strategy2(m_program);
+		ast->accept(function_strategy2);
 
 		ast->order_function_definitions();
 		ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation

@@ -23,7 +23,6 @@ public:
 
 		static ParameterStackTransformation transform(m_program);
 		transform.do_function_stack_transformation(*m_program);
-		// node.debug_print();
 
 		node.reset_function_used_flag();
 		node.reset_function_visited_flag();

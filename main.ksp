@@ -6,6 +6,7 @@ on init
 end on
 
 on persistence_changed
+    declare idx: int
     for idx := 0 to num_elements(array) - 1
         if array[idx] # 0
             array_remove(array[idx])

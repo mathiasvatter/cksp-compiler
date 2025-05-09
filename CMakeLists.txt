@@ -214,6 +214,7 @@ add_executable(cksp main.cpp
         Desugaring/DesugarUIControlArray.h
         AST/ASTVisitor/UniqueArrayNamesProvider.h
         AST/ASTVisitor/UniqueParameterNamesProvider.h
+        AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h
 )
 add_dependencies(cksp generate_headers)
 

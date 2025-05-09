@@ -5,7 +5,6 @@
 #pragma once
 
 #include "../ASTVisitor.h"
-#include "../GlobalScope/DimensionDeflator.h"
 
 /**
  * Takes an isolated function call with parameters (no local variables or return statements) and turns
@@ -62,17 +61,17 @@ private:
 		new_def->collect_call_sites(m_program);
 
 		std::vector<std::unique_ptr<NodeFunctionParam>> promoted_params;
-		for (int i = 0 ; i<new_def->header->params.size(); i++) {
-			auto& param = new_def->header->params[i];
-			param->variable->name = m_def_provider->get_fresh_name(param->variable->name);
-			for (auto &ref : param->variable->references) {
-                ref->name = param->variable->name;
-            }
-			param->variable->is_local = false;
-			auto decl = std::make_unique<NodeSingleDeclaration>(param->variable, std::move(param->value), param->tok);
-			promoted_params.push_back(std::move(param));
-            m_program->global_declarations->add_as_stmt(std::move(decl));
-		}
+		// for (int i = 0 ; i<new_def->header->params.size(); i++) {
+		// 	auto& param = new_def->header->params[i];
+		// 	param->variable->name = m_def_provider->get_fresh_name(param->variable->name);
+		// 	for (auto &ref : param->variable->references) {
+  //               ref->name = param->variable->name;
+  //           }
+		// 	param->variable->is_local = false;
+		// 	auto decl = std::make_unique<NodeSingleDeclaration>(param->variable, std::move(param->value), param->tok);
+		// 	promoted_params.push_back(std::move(param));
+  //           m_program->global_declarations->add_as_stmt(std::move(decl));
+		// }
 		new_def->header->params.clear();
 		m_program->add_function_definition(new_def);
 
@@ -83,51 +82,51 @@ private:
 
 			auto block = std::make_unique<NodeBlock>(call->tok, true);
 			/// block after the call to get the formal params back to the actual params in case of variables (side effects)
-			auto block_after = std::make_unique<NodeBlock>(call->tok, false);
+			// auto block_after = std::make_unique<NodeBlock>(call->tok, false);
 			// get assignments going
-			for (int ii = 0; ii<promoted_params.size(); ii++) {
-				const auto& formal_param = promoted_params[ii]->variable;
-				auto actual_param = std::move(call->function->get_arg(ii));
-				// return parameters do not need to be assigned back
-				// constants actual parameters do not need to be assigned back
-				// engine actual parameters cannot be assigned back
-				if (promoted_params[ii]->kind != NodeInstruction::Promoted and formal_param->is_thread_safe and !actual_param->is_constant()) {
-					if (const auto ref = cast_node<NodeReference>(actual_param.get())) {
-						auto assignment_back = std::make_unique<NodeSingleAssignment>(
-								clone_as<NodeReference>(ref),
-								formal_param->to_reference(),
-								call->tok
-						);
-						// so that they are afterwards not removed by ASTFunctionInlining
-						if (promoted_params[ii]->kind != NodeInstruction::ReturnVar) {
-							assignment_back->is_parameter_stack = true;
-							assignment_back->kind = NodeInstruction::ParameterStack;
-						} else {
-							assignment_back->kind = NodeInstruction::ReturnVar;
-						}
-						// if actual parameter is engine constant or variable -> do not assign back!!!
-						if (!ref->is_engine) {
-							block_after->add_as_stmt(std::move(assignment_back));
-						}
-					}
-				}
-				// $allowed02 := %allowed003 -> $allowed02 := %allowed003[NI_CALLBACK_ID]
-				// add thread_safe index
-				// if (const auto array_ref = actual_param->cast<NodeArrayRef>()) {
-				// 	if (!array_ref->has_index()) {
-				// 		array_ref->set_index(m_program->cb_idx->clone());
-				// 	}
-				// }
-
-				auto assignment = std::make_unique<NodeSingleAssignment>(
-					formal_param->to_reference(),
-                    std::move(actual_param),
-                    call->tok
-				);
-				assignment->is_parameter_stack = true;
-				assignment->kind = NodeInstruction::ParameterStack;
-				block->add_as_stmt(std::move(assignment));
-			}
+			// for (int ii = 0; ii<promoted_params.size(); ii++) {
+			// 	const auto& formal_param = promoted_params[ii]->variable;
+			// 	auto actual_param = std::move(call->function->get_arg(ii));
+			// 	// return parameters do not need to be assigned back
+			// 	// constants actual parameters do not need to be assigned back
+			// 	// engine actual parameters cannot be assigned back
+			// 	if (promoted_params[ii]->kind != NodeInstruction::Promoted and formal_param->is_thread_safe and !actual_param->is_constant()) {
+			// 		if (const auto ref = cast_node<NodeReference>(actual_param.get())) {
+			// 			auto assignment_back = std::make_unique<NodeSingleAssignment>(
+			// 					clone_as<NodeReference>(ref),
+			// 					formal_param->to_reference(),
+			// 					call->tok
+			// 			);
+			// 			// so that they are afterwards not removed by ASTFunctionInlining
+			// 			if (promoted_params[ii]->kind != NodeInstruction::ReturnVar) {
+			// 				assignment_back->is_parameter_stack = true;
+			// 				assignment_back->kind = NodeInstruction::ParameterStack;
+			// 			} else {
+			// 				assignment_back->kind = NodeInstruction::ReturnVar;
+			// 			}
+			// 			// if actual parameter is engine constant or variable -> do not assign back!!!
+			// 			if (!ref->is_engine) {
+			// 				block_after->add_as_stmt(std::move(assignment_back));
+			// 			}
+			// 		}
+			// 	}
+			// 	// $allowed02 := %allowed003 -> $allowed02 := %allowed003[NI_CALLBACK_ID]
+			// 	// add thread_safe index
+			// 	// if (const auto array_ref = actual_param->cast<NodeArrayRef>()) {
+			// 	// 	if (!array_ref->has_index()) {
+			// 	// 		array_ref->set_index(m_program->cb_idx->clone());
+			// 	// 	}
+			// 	// }
+   //
+			// 	auto assignment = std::make_unique<NodeSingleAssignment>(
+			// 		formal_param->to_reference(),
+   //                  std::move(actual_param),
+   //                  call->tok
+			// 	);
+			// 	assignment->is_parameter_stack = true;
+			// 	assignment->kind = NodeInstruction::ParameterStack;
+			// 	block->add_as_stmt(std::move(assignment));
+			// }
 			call->function->args->params.clear();
 			call->function->name = new_name;
 			call->definition.reset();
@@ -137,8 +136,8 @@ private:
 			call->is_call = true;
 			call->strategy = NodeFunctionCall::Strategy::Call;
 			block->add_as_stmt(call->clone());
-			if (!block_after->statements.empty())
-				block->append_body(std::move(block_after));
+			// if (!block_after->statements.empty())
+			// 	block->append_body(std::move(block_after));
             call->replace_with(std::move(block));
         }
 
