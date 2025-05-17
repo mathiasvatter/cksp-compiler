@@ -2464,7 +2464,7 @@ on init
 		inc(i{int}){Builtin, None}
 	end while
 	declare ui_label lbl_version : int (0, 0) {Reuses: 0}
-	set_control_par_str(lbl_version{int}, CONTROL_PAR_TEXT{int}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "12:46:01" & " " & "05/09/25"){Builtin, None}
+	set_control_par_str(lbl_version{int}, CONTROL_PAR_TEXT{int}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "19:07:59" & " " & "05/17/25"){Builtin, None}
 	set_control_par_str(lbl_version{int}, CONTROL_PAR_PICTURE{int}, "alpha"){Builtin, None}
 	set_control_par(lbl_version{int}, CONTROL_PAR_TEXT_ALIGNMENT{int}, 0){Builtin, None}
 	set_control_par(lbl_version{int}, CONTROL_PAR_FONT_TYPE{int}, fonts_regular_white[0]{int}){Builtin, None}
