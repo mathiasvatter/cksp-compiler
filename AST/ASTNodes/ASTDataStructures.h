@@ -93,6 +93,9 @@ struct NodeArray final : NodeComposite {
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	std::string get_string() override {
+		return name + "[" + (size ? size->get_string() : "") + "]";
+	}
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
 		if (size) size->update_parents(this);
@@ -150,7 +153,7 @@ struct NodeNDArray final : NodeComposite {
 		if (sizes) sizes->parent = this;
 	}
 	std::string get_string() override {
-		return name;
+		return name + "[" + (sizes ? sizes->get_string() : "") + "]";
 	}
 	void update_token_data(const Token& token) override {
 		if(sizes) sizes->update_token_data(token);

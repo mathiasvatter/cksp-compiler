@@ -206,13 +206,13 @@ public:
 		ASTReturnFunctionRewriting return_function_rewriting(m_program);
 		return_function_rewriting.do_rewriting(*ast);
 
-		ASTFunctionStrategy function_strategy1(m_program);
-		ast->accept(function_strategy1);
+		// ASTFunctionStrategy function_strategy1(m_program);
+		// ast->accept(function_strategy1);
 
-		ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
-		static ParameterAssignmentTransformation assignment_transformation(m_program);
-		assignment_transformation.do_parameter_assignment(*m_program);
-		ast -> debug_print();
+		// ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
+		// static ParameterAssignmentTransformation assignment_transformation(m_program);
+		// assignment_transformation.do_parameter_assignment(*m_program);
+		// ast -> debug_print();
 
 		ASTPreemptiveFunctionInlining pre_inlining(m_program);
 		ast->accept(pre_inlining);
