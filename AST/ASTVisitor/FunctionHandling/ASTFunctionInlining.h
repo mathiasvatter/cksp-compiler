@@ -21,8 +21,8 @@ public:
 		m_program = &node;
 		m_current_callback = nullptr;
 
-		static ParameterStackTransformation transform(m_program);
-		transform.do_function_stack_transformation(*m_program);
+		// static ParameterStackTransformation transform(m_program);
+		// transform.do_function_stack_transformation(*m_program);
 
 		node.reset_function_used_flag();
 		node.reset_function_visited_flag();

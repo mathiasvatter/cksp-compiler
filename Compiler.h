@@ -30,6 +30,7 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
 #include "AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h"
 #include "AST/ASTVisitor/ASTLowerTypes.h"
+#include "AST/ASTVisitor/ASTParameterQualifier.h"
 #include "AST/ASTVisitor/UniqueParameterNamesProvider.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
@@ -206,13 +207,24 @@ public:
 		ASTReturnFunctionRewriting return_function_rewriting(m_program);
 		return_function_rewriting.do_rewriting(*ast);
 
-		// ASTFunctionStrategy function_strategy1(m_program);
-		// ast->accept(function_strategy1);
+		{
+			// then do parameter promotion directly to global or successively
+			// eliminate function-local variables
+			ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
+			ASTParameterPromotion param_promotion(m_program);
+			param_promotion.do_param_promotion(*ast);
 
-		// ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
-		// static ParameterAssignmentTransformation assignment_transformation(m_program);
-		// assignment_transformation.do_parameter_assignment(*m_program);
-		// ast -> debug_print();
+			static ASTParameterQualifier parameter_qualifier(m_program);
+			ast->accept(parameter_qualifier);
+
+			ASTFunctionStrategy function_strategy1(m_program);
+			function_strategy1.determine_function_strategies(*m_program);
+
+			ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
+			static ParameterAssignmentTransformation assignment_transformation(m_program);
+			assignment_transformation.do_parameter_assignment(*m_program);
+			ast->debug_print();
+		}
 
 		ASTPreemptiveFunctionInlining pre_inlining(m_program);
 		ast->accept(pre_inlining);
@@ -221,7 +233,6 @@ public:
 		std::cout << compile_time.print_timer("Return Function Rewriting") << "\n";
 		compile_time.start("Data Structure Lowering");
 
-		// ast->debug_print();
 
 		NormalizeNDArrayAssign nd_array_assign(m_program);
 		ast->accept(nd_array_assign);
@@ -243,12 +254,7 @@ public:
 		std::cout << compile_time.print_timer("Variable Checking") << "\n";
 		compile_time.start("Global Scope");
 
-		// first pass to analyze dynamic extend within function definitions and replace with passive_vars
-		// then do parameter promotion directly to global or successively
-		// eliminate function-local variables
-		ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
-		ASTParameterPromotion param_promotion(m_program);
-		param_promotion.do_param_promotion(*ast);
+
 
 		// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 		ASTVariableReuse variable_reuse(m_program);
@@ -265,7 +271,8 @@ public:
 	    compile_time.start("Function Inlining");
 
 		ASTFunctionStrategy function_strategy2(m_program);
-		ast->accept(function_strategy2);
+		function_strategy2.determine_function_strategies(*m_program);
+		// ast -> debug_print();
 
 		ast->order_function_definitions();
 		ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
@@ -273,7 +280,7 @@ public:
 		ASTFunctionInlining func_inlining(m_program);
 		ast->accept(func_inlining);
 		ast->order_function_definitions();
-		// ast->debug_print();
+		ast->debug_print();
 
 	    compile_time.stop("Function Inlining");
 		std::cout << compile_time.print_timer("Function Inlining") << "\n";
