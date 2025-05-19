@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "../AST/ASTVisitor/ASTKSPSyntaxCheck.h"
 #include "../AST/ASTVisitor/ASTOptimizations.h"
 
 /**
@@ -82,6 +83,15 @@ private:
 		// array->size->accept(*this);
 		array->size->do_constant_folding();
 		if (const auto node_int = array->size->cast<NodeInt>()) {
+			// check if size is negative due to buffer overflow
+			if (node_int->value < 0) {
+				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+				error.m_message = "Array size cannot be negative. This is most likely due to a buffer overflow.";
+				error.exit();
+			}
+			if (node_int->value > MAX_ARRAY_ELEMENTS) {
+				return &node;
+			}
 			arrays_being_tracked.push_back(&node);
 			array_ref_assignments[array->name].clear();
 			initializer_list[array->name].resize(node_int->value);

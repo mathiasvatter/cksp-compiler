@@ -233,7 +233,7 @@ std::shared_ptr<NodeArray> NodeNDArray::get_raw() {
 }
 
 std::unique_ptr<NodeAST> NodeNDArray::get_size() {
-	auto nd_array_ref = to_reference()->cast<NodeArrayRef>();
+	auto nd_array_ref = to_reference()->cast<NodeNDArrayRef>();
 	nd_array_ref->remove_index();
 	return nd_array_ref->get_size();
 }

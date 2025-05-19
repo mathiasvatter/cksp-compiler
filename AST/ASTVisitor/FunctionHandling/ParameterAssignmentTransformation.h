@@ -58,7 +58,7 @@ private:
 				auto decl = std::make_unique<NodeSingleDeclaration>(param->variable, std::move(param->value), param->tok);
 				promoted_params.push_back(std::move(param));
 				promoted_param_indices.push_back(i);
-				m_program->global_declarations->add_as_stmt(std::move(decl));
+				m_program->init_callback->statements->add_as_stmt(std::move(decl));
 			}
 		}
 

@@ -2,21 +2,24 @@
 #pragma output_path("test.txt")
 
 on init
-    declare array[8]: int[] := (0)
+    declare array[3]: int[] := (1, 2, 3)
+    ar(array)
+    declare array_big[100]: int[] := (1)
+    ar(array_big)
 end on
 
 on persistence_changed
-    declare idx: int
-    for idx := 0 to num_elements(array) - 1
-        if array[idx] # 0
-            array_remove(array[idx])
-        end if
-    end for 
+    ar(array)
+    ar(array_big)
 end on
 
-function array_remove(ref value: int)
-    declare idx: int := search(array, value)
-    array[idx] := 0
+function ar(array1: int[])
+    declare idx: int := 0
+    while idx < num_elements(array1)
+        array1[idx] := array1[idx] * 2
+        message(array1[idx])
+        inc(idx)
+    end while
 end function
 
 
@@ -56,9 +59,9 @@ end function
 // update_chord_info_label()
 // end on
 
-function infere_me(param1, param2, param3: any)
-	message(param1, param2, param3)
-end function
+// function infere_me(param1, param2, param3: any)
+// 	message(param1, param2, param3)
+// end function
 
 // function infere_me(param1: int, param2: real, param3: string)
 // 	message(param1, param2, param3)
@@ -90,10 +93,10 @@ end function
 // 	floatmask.set_range(float_mask, 14, 33, 0)
 // end function
 
-function floatmask.set_range(float_mask, start_idx, end_idx, val)
-    bitlist.set_range(float_mask[0], min(32, start_idx), min(32, end_idx), val)
-	bitlist.set_range(float_mask[1], max(32, start_idx)-32, max(32, end_idx)-32, val)
-end function
+// function floatmask.set_range(float_mask, start_idx, end_idx, val)
+//     bitlist.set_range(float_mask[0], min(32, start_idx), min(32, end_idx), val)
+// 	bitlist.set_range(float_mask[1], max(32, start_idx)-32, max(32, end_idx)-32, val)
+// end function
 
 
 // function stack_transform_me(param1: int, param2: int, param3: int[][])
@@ -148,22 +151,22 @@ end function
 
 
 
-function bitlist.set_range(bit_list, start_idx, end_idx, val)
-	bit_list := eq(val, 1) * (eq(end_idx-start_idx, 32) * sh_right(-1, 32) + (bit_list .or. sh_left(.not. sh_left(-1, end_idx-start_idx), 32-end_idx))) + eq(val, 0) * (lt(end_idx-start_idx, 32) * (bit_list .and. .not. sh_left(.not. sh_left(-1, end_idx-start_idx), 32-end_idx)))
-end function
+// function bitlist.set_range(bit_list, start_idx, end_idx, val)
+// 	bit_list := eq(val, 1) * (eq(end_idx-start_idx, 32) * sh_right(-1, 32) + (bit_list .or. sh_left(.not. sh_left(-1, end_idx-start_idx), 32-end_idx))) + eq(val, 0) * (lt(end_idx-start_idx, 32) * (bit_list .and. .not. sh_left(.not. sh_left(-1, end_idx-start_idx), 32-end_idx)))
+// end function
 
-function max(a,b) -> result
-	result := a - ((a - b) .and. sh_right((a - b), 31))
-end function
+// function max(a,b) -> result
+// 	result := a - ((a - b) .and. sh_right((a - b), 31))
+// end function
 
-function min(a,b) -> result
-	result :=  a - ((a - b) .and. sh_right((b - a), 31))
-end function
+// function min(a,b) -> result
+// 	result :=  a - ((a - b) .and. sh_right((b - a), 31))
+// end function
 
-function eq(a,b) -> result
-  result := -sh_right(abs(a-b)-1,31)
-end function
+// function eq(a,b) -> result
+//   result := -sh_right(abs(a-b)-1,31)
+// end function
 
-function lt(a,b) -> result  { predicate for a < b }
-  result := -sh_right(a-b,31)
-end function
+// function lt(a,b) -> result  { predicate for a < b }
+//   result := -sh_right(a-b,31)
+// end function

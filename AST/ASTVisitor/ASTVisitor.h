@@ -292,7 +292,7 @@ public:
 		return &node;
 	}
 	virtual NodeAST* visit(NodeFunctionDefinition& node) {
-		if(node.visited) return &node;
+		// if(node.visited) return &node;
 		node.header ->accept(*this);
 		if (node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);

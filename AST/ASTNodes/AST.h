@@ -282,6 +282,11 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 		is_global = true;
 		is_local = false;
 	}
+
+	/// only overridden in NodeArray and NodeNDArray
+	virtual std::unique_ptr<NodeAST> get_size() {
+		return nullptr;
+	}
 };
 
 struct NodeInstruction : NodeAST {

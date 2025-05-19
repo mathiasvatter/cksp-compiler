@@ -40,6 +40,12 @@ public:
 		return &node;
 	}
 
+	NodeAST* do_renaming(NodeFunctionDefinition& node) {
+		if (node.header->has_no_params()) return &node;
+		return node.accept(*this);
+	}
+
+private:
 	// rename all function parameters
 	NodeAST* visit(NodeFunctionParam& node) override {
 		node.variable->accept(*this);

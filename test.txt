@@ -1,18 +1,66 @@
-{ Compiled with cksp version 0.0.7-alpha.4 on Fri May 09 11:56:58 2025 }
+{ Compiled with cksp version 0.0.7-alpha.4 on Mon May 19 17:34:42 2025 }
 on init
-  declare $idx0
-  declare $idx1
-  declare $idx00
-  declare %array[8] := (0)
-end on
-on persistence_changed
-  $idx1 := 0
-  while($idx1 <= (num_elements(%array) - 1)) 
-    if(%array[$idx1] # 0)
-      $idx0 := search(%array, %array[$idx1])
-      %array[$idx0] := 0
-    end if
-    inc($idx1)
+  declare $_iter0
+  declare %array[3] := (1, 2, 3)
+  declare $idx01
+  $_iter0 := 0
+  while($_iter0 <= (num_elements(%array) - 1)) 
+    %array10[$_iter0] := %array[$_iter0]
+    inc($_iter0)
   end while
+  $idx0 := 0
+  while($idx0 < num_elements(%array10)) 
+    %array10[$idx0] := %array10[$idx0] * 2
+    message(%array10[$idx0])
+    inc($idx0)
+  end while
+  declare %array_big[100] := (1)
+  $_iter0 := 0
+  while($_iter0 <= (num_elements(%array_big) - 1)) 
+    %array100[$_iter0] := %array_big[$_iter0]
+    inc($_iter0)
+  end while
+  $idx00 := 0
+  while($idx00 < num_elements(%array100)) 
+    %array100[$idx00] := %array100[$idx00] * 2
+    message(%array100[$idx00])
+    inc($idx00)
+  end while
+  declare %array10[num_elements(%array)]
+  declare $idx0
+  declare %array100[num_elements(%array_big)]
+  declare $idx00
+end on
+function ar
+  $idx0 := 0
+  while($idx0 < num_elements(%array10)) 
+    %array10[$idx0] := %array10[$idx0] * 2
+    message(%array10[$idx0])
+    inc($idx0)
+  end while
+end function
+function ar0
+  $idx00 := 0
+  while($idx00 < num_elements(%array100)) 
+    %array100[$idx00] := %array100[$idx00] * 2
+    message(%array100[$idx00])
+    inc($idx00)
+  end while
+end function
+on persistence_changed
+  $_iter0 := 0
+  while($_iter0 <= (num_elements(%array) - 1)) 
+    %array10[$_iter0] := %array[$_iter0]
+    inc($_iter0)
+  end while
+  $idx01 := $idx01
+  call ar
+  $_iter0 := 0
+  while($_iter0 <= (num_elements(%array_big) - 1)) 
+    %array100[$_iter0] := %array_big[$_iter0]
+    inc($_iter0)
+  end while
+  $idx00 := $idx01
+  call ar0
 end on
 
