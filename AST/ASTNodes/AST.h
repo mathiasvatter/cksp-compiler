@@ -88,7 +88,6 @@ struct NodeAST {
 	[[nodiscard]] struct NodeCallback* get_current_callback() const;
 	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
 	void do_constant_folding();
-    virtual NodeAST* do_array_normalization(NodeProgram *program);
 	void do_type_inference(NodeProgram *program);
 	NodeAST* collect_declarations(NodeProgram* program);
 	NodeAST* collect_call_sites(NodeProgram* program);
@@ -733,7 +732,8 @@ struct NodeProgram final : NodeAST {
 	class DefinitionProvider* def_provider = nullptr;
 	NodeCallback* init_callback = nullptr;
 	NodeCallback* current_callback = nullptr;
-	std::shared_ptr<NodeVariable> global_iterator;
+	// std::shared_ptr<NodeVariable> global_iterator;
+	std::vector<std::shared_ptr<NodeVariable>> global_iterators;
 	/// holds the current function definition that is being processed
 	std::stack<std::weak_ptr<NodeFunctionDefinition>> function_call_stack{};
 	std::shared_ptr<NodeFunctionDefinition> get_curr_function() {
@@ -779,7 +779,8 @@ struct NodeProgram final : NodeAST {
 	NodeCallback* move_on_init_callback();
 	/// merges vector of additional function definitions into the main function definitions vector
 	void merge_function_definitions();
-	std::unique_ptr<class NodeSingleDeclaration> declare_global_iterator();
+	std::shared_ptr<NodeVariable> add_global_iterator();
+	std::shared_ptr<NodeVariable> get_global_iterator(size_t idx = 0);
 	void inline_global_variables();
 	void inline_structs();
 	void reset_function_visited_flag();

@@ -20,7 +20,7 @@ class ASTParameterPromotion final : public ASTVisitor {
 	NodeCallback* m_current_callback = nullptr;
 	/// map for local variable declarations per function definition to be added to the next/above function
 	std::unordered_map<NodeFunctionDefinition*, std::vector<NodeDataStructure*>> m_local_var_declarations;
-
+	std::vector<std::unique_ptr<NodeSingleDeclaration>> m_global_declarations;
 public:
 	explicit ASTParameterPromotion(NodeProgram* main) : m_def_provider(main->def_provider) {
 		m_program = main;
@@ -108,7 +108,14 @@ private:
 					} else {
 						auto global_decl = std::make_unique<NodeSingleDeclaration>(var, nullptr, var->tok);
 						var->to_global();
-						m_program->global_declarations->add_as_stmt(std::move(global_decl));
+						// if the call is currently in the on init callback, do not move to global_declarations but directly
+						// above the call (with the interim map m_global_declarations)
+						if (m_current_callback == m_program->init_callback) {
+							m_global_declarations.push_back(std::move(global_decl));
+						} else {
+							// add to global declarations
+							m_program->global_declarations->add_as_stmt(std::move(global_decl));
+						}
 					}
 					declaration->replace_with(std::move(assignment));
 				}
@@ -125,6 +132,14 @@ private:
 				auto promoted_decl = std::make_unique<NodeSingleDeclaration>(std::move(var), decl->tok);
 				promoted_decl->kind = NodeSingleDeclaration::Kind::Promoted;
 				node_body->add_as_stmt(std::move(promoted_decl));
+			}
+			// add the directly promoted global variables to node_body if not empty
+			if (!m_global_declarations.empty()) {
+				for (size_t i = 0; i < m_global_declarations.size(); ++i) {
+					auto decl = std::move(m_global_declarations[i]);
+					node_body->add_as_stmt(std::move(decl));
+				}
+				m_global_declarations.clear();
 			}
 			node_body->add_as_stmt(node.clone());
 			return node.replace_with(std::move(node_body));

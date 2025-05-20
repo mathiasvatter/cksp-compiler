@@ -91,7 +91,7 @@ public:
 			node_body->add_as_stmt(std::move(node_sizes_declaration));
 			node_body->add_as_stmt(std::move(node_positions_declaration));
 
-			const auto node_iterator_var = m_program->global_iterator->to_reference();
+			const auto node_iterator_var = m_program->get_global_iterator()->to_reference();
 			for(int i = 0; i<list_body.size(); i++) {
 				auto node_array = std::make_unique<NodeArray>(
 					std::nullopt,

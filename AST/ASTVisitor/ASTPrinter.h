@@ -63,7 +63,7 @@ public:
 	NodeAST * visit(NodeSetControl& node) override;
 	NodeAST * visit(NodeAccessChain& node) override;
 
-    inline void generate(const std::string& path) const {
+    inline void generate(const std::string& path) {
         std::ofstream outFile(path);
         if (outFile) {
             outFile << os.str();
@@ -71,10 +71,12 @@ public:
             // Fehlerbehandlung, falls die Datei nicht geöffnet werden kann
             std::cerr << "Fehler beim Öffnen der Datei: " << path << std::endl;
         }
+    	os.str("");
     }
 
-    inline void print() const {
+    inline void print() {
         std::cout << os.str();
+    	os.str("");
     }
 private:
     std::ostringstream os;
