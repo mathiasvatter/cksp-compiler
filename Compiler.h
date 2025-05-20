@@ -35,7 +35,7 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
-#include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign2.h"
+#include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "Optimization/ArrayInitializationRaising.h"
 
 class Compiler {
@@ -208,6 +208,7 @@ public:
 		return_function_rewriting.do_rewriting(*ast);
 
 		{
+
 			// then do parameter promotion directly to global or successively
 			// eliminate function-local variables
 			ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
@@ -216,6 +217,7 @@ public:
 
 			static ASTParameterQualifier parameter_qualifier(m_program);
 			ast->accept(parameter_qualifier);
+			ast->debug_print();
 
 			ASTFunctionStrategy function_strategy1(m_program);
 			function_strategy1.determine_function_strategies(*m_program);
@@ -236,7 +238,7 @@ public:
 
 		NormalizeNDArrayAssign nd_array_assign(m_program);
 		ast->accept(nd_array_assign);
-
+		ast->debug_print();
 		// Data Structure Lowering of NDArrays and Array assignments
 		ASTDataStructureLowering data_structure_lowering(m_program);
 		ast->accept(data_structure_lowering);
@@ -259,10 +261,10 @@ public:
 		// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 		ASTVariableReuse variable_reuse(m_program);
 		variable_reuse.do_variable_reuse(*ast);
-
+		ast->debug_print();
 		ArrayInitializationRaising array_init_raising;
 		array_init_raising.do_initialization_raising(*ast->init_callback, m_program);
-		NormalizeArrayAssign2 normalize_array_assign(m_program);
+		NormalizeArrayAssign normalize_array_assign(m_program);
 		ast->accept(normalize_array_assign);
 		// ast->debug_print();
 
@@ -270,9 +272,8 @@ public:
 		std::cout << compile_time.print_timer("Global Scope") << "\n";
 	    compile_time.start("Function Inlining");
 
-		ASTFunctionStrategy function_strategy2(m_program);
-		function_strategy2.determine_function_strategies(*m_program);
-		// ast -> debug_print();
+		// ASTFunctionStrategy function_strategy2(m_program);
+		// function_strategy2.determine_function_strategies(*m_program);
 
 		ast->order_function_definitions();
 		ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation

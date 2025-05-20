@@ -140,7 +140,7 @@ public:
 		 * %_lbl_lbl := (get_ui_id($_lbl_lbl0)+inc)
 		 */
 
-		auto node_iterator_var_ref = m_program->global_iterator->to_reference();
+		auto node_iterator_var_ref = m_program->get_global_iterator()->to_reference();
 		auto node_while_body = std::make_unique<NodeBlock>(ui_control.tok);
 
 		// this is the $_lbl_lbl0 from the above example
