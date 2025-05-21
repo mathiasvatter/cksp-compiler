@@ -62,6 +62,8 @@ private:
 			definition->visited = true;
 			node.is_call = false;
 
+			decide_by_ref_or_value(*definition->header, *node.function);
+
 			const bool is_callable_env = m_current_callback != m_program->init_callback and !definition->is_restricted;
 
 			if (definition->is_expression_function()) {
@@ -83,6 +85,21 @@ private:
 	NodeAST* visit(NodeFunctionDefinition &node) override {
 		node.body->accept(*this);
 		return &node;
+	}
+
+	bool decide_by_ref_or_value(NodeFunctionHeader& header, NodeFunctionHeaderRef& header_ref) {
+		for (size_t i = 0; i < header.get_num_params(); i++) {
+			auto& formal_param = header.params[i];
+			auto& actual_param = header_ref.get_arg(i);
+
+			if (formal_param->variable->ty->cast<CompositeType>()) {
+				formal_param->is_pass_by_ref = true;
+			}
+			// if (actual_param->cast<NodeInitializerList>()) {
+			// 	formal_param->is_pass_by_ref = false;
+			// }
+
+		}
 	}
 
 

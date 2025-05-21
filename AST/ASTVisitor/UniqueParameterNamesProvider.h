@@ -84,6 +84,7 @@ private:
 
 	NodeAST* visit(NodeNDArrayRef& node) override {
 		if (node.indexes) node.indexes->accept(*this);
+		if (node.sizes) node.sizes->accept(*this);
 		rename_func_param_ref(node);
 		return &node;
 	}

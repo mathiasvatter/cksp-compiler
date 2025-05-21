@@ -292,9 +292,10 @@ private:
 	}
 
 	NodeAST * visit(NodeArray& node) override {
-//		node.determine_locality(m_program, m_current_body.top());
+		// node.determine_locality(m_program, m_current_body.top());
 
 		if(node.size) node.size->accept(*this);
+		if (node.num_elements) node.num_elements->accept(*this);
 
 		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 		return &node;
@@ -326,6 +327,43 @@ private:
 
 	NodeAST* visit(NodeVariable& node) override {
 //		node.determine_locality(m_program, m_current_body.top());
+		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
+		return &node;
+	}
+
+	NodeAST* visit(NodeNDArrayRef& node) override {
+		if(node.indexes) node.indexes->accept(*this);
+
+		// add all references in local scope to vector for later passive_var replacement
+		m_all_local_references.push_back(&node);
+
+		if(!m_passive_vars_replace.empty()) {
+			// search if declaration was local var and has been replaced by passive_var -> replace declaration and reference name
+			if(auto new_declaration = get_new_declaration(node.name)) {
+				node.match_data_structure(new_declaration);
+				node.name = new_declaration->name;
+				return &node;
+			}
+		}
+
+		// connect promoted refs and their declarations
+		if(!node.get_declaration()) {
+			auto node_declaration = m_def_provider->get_declaration(node);
+			if (!node_declaration) {
+				DefinitionProvider::throw_declaration_error(node).exit();
+			}
+
+			node.match_data_structure(node_declaration);
+		}
+		return &node;
+	}
+
+	NodeAST * visit(NodeNDArray& node) override {
+		//		node.determine_locality(m_program, m_current_body.top());
+
+		if(node.sizes) node.sizes->accept(*this);
+		if (node.num_elements) node.num_elements->accept(*this);
+
 		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 		return &node;
 	}

@@ -90,27 +90,30 @@ class ASTParameterQualifier : public ASTVisitor {
 			auto& arg = header_ref.get_arg(i);
 			auto& param = header.params[i];
 			std::unique_ptr<NodeAST> size = nullptr;
-			if (!param->is_pass_by_ref and arg->ty->cast<CompositeType>()) {
-				if (auto arr_ref = arg->cast<NodeArrayRef>()) {
-					if (auto decl = arr_ref->get_declaration()) {
-						size = decl->get_size();
-					} else {
-						auto error = CompileError(ErrorType::InternalError, "", "", header_ref.tok);
-						error.m_message = "ArrayRef has to have a declaration to be transformed.";
-						error.exit();
-					}
-				} else if (auto ndarr_ref = arg->cast<NodeNDArrayRef>()) {
-					if (auto decl = ndarr_ref->get_declaration()) {
-						size = decl->get_size();
-					} else {
-						auto error = CompileError(ErrorType::InternalError, "", "", header_ref.tok);
-						error.m_message = "NDArrayRef has to have a declaration to be transformed.";
-						error.exit();
-					}
-				}
-				if (size) {
-					hash += "_" + size->get_string();
-				}
+			// if (!param->is_pass_by_ref and arg->ty->cast<CompositeType>()) {
+			// 	if (auto arr_ref = arg->cast<NodeArrayRef>()) {
+			// 		if (auto decl = arr_ref->get_declaration()) {
+			// 			size = decl->get_size();
+			// 		} else {
+			// 			auto error = CompileError(ErrorType::InternalError, "", "", header_ref.tok);
+			// 			error.m_message = "ArrayRef has to have a declaration to be transformed.";
+			// 			error.exit();
+			// 		}
+			// 	} else if (auto ndarr_ref = arg->cast<NodeNDArrayRef>()) {
+			// 		if (auto decl = ndarr_ref->get_declaration()) {
+			// 			size = decl->get_size();
+			// 		} else {
+			// 			auto error = CompileError(ErrorType::InternalError, "", "", header_ref.tok);
+			// 			error.m_message = "NDArrayRef has to have a declaration to be transformed.";
+			// 			error.exit();
+			// 		}
+			// 	}
+			// 	if (size) {
+			// 		hash += "_" + size->get_string();
+			// 	}
+			// }
+			if (arg->cast<NodeInitializerList>()) {
+				hash += "_" + arg->get_string();
 			}
 		}
 		return hash;

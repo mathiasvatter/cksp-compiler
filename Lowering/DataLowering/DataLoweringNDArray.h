@@ -68,8 +68,7 @@ public:
 			node_lowered_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1);
 		}
 		if(node_lowered_array->index) node_lowered_array->index->do_constant_folding();
-        // return node.replace_reference(std::move(node_lowered_array));
-		return node.replace_with(std::move(node_lowered_array));
+        return node.replace_reference(std::move(node_lowered_array));
     }
 };
 
