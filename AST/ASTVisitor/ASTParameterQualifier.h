@@ -22,24 +22,22 @@ private:
 	// possible r_values: ArrayRef, NDArrayRef, NodeInitializerList
 	NodeAST* visit(NodeArrayRef& node) override {
 		if (auto decl = node.get_declaration()) {
-			if (auto arr = decl->cast<NodeArray>()) {
-				if (arr->size) {
-					m_variable->set_size(arr->size->clone());
-					return &node;
-				}
-			}
+			m_variable->set_size(decl->get_size());
+		} else {
+			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+			error.m_message = "ArraySizeFromRValue: ArrayRef has to have a declaration.";
+			error.exit();
 		}
 		// m_variable->set_size(node.get_size());
 		return &node;
 	}
 	NodeAST* visit(NodeNDArrayRef& node) override {
 		if (auto decl = node.get_declaration()) {
-			if (auto arr = decl->cast<NodeNDArray>()) {
-				if (arr->sizes) {
-					m_variable->set_size(arr->sizes->clone());
-					return &node;
-				}
-			}
+			m_variable->set_size(decl->get_size());
+		} else {
+			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
+			error.m_message = "ArraySizeFromRValue: NDArrayRef has to have a declaration.";
+			error.exit();
 		}
 
 		// m_variable->set_size(node.get_size());
@@ -92,15 +90,23 @@ class ASTParameterQualifier : public ASTVisitor {
 			auto& arg = header_ref.get_arg(i);
 			auto& param = header.params[i];
 			std::unique_ptr<NodeAST> size = nullptr;
-			if (!param->is_pass_by_ref) {
-				if (auto arr = arg->cast<NodeArray>()) {
-					size = arr->get_size();
-				} else if (auto ndarr = arg->cast<NodeNDArray>()) {
-					size = ndarr->get_size();
-				} else if (auto arr_ref = arg->cast<NodeArrayRef>()) {
-					size = arr_ref->get_size();
+			if (!param->is_pass_by_ref and arg->ty->cast<CompositeType>()) {
+				if (auto arr_ref = arg->cast<NodeArrayRef>()) {
+					if (auto decl = arr_ref->get_declaration()) {
+						size = decl->get_size();
+					} else {
+						auto error = CompileError(ErrorType::InternalError, "", "", header_ref.tok);
+						error.m_message = "ArrayRef has to have a declaration to be transformed.";
+						error.exit();
+					}
 				} else if (auto ndarr_ref = arg->cast<NodeNDArrayRef>()) {
-					size = ndarr_ref->get_size();
+					if (auto decl = ndarr_ref->get_declaration()) {
+						size = decl->get_size();
+					} else {
+						auto error = CompileError(ErrorType::InternalError, "", "", header_ref.tok);
+						error.m_message = "NDArrayRef has to have a declaration to be transformed.";
+						error.exit();
+					}
 				}
 				if (size) {
 					hash += "_" + size->get_string();
@@ -147,7 +153,6 @@ public:
 		auto definition = node.get_definition();
 		if (!definition) return &node;
 		if (node.is_builtin_kind()) return &node;
-
 
 		auto size_hash = get_size_function_hash(*node.function, *definition->header);
 		// if function is not yet in map -> not processed yet -> add to map and set array sizes

@@ -136,6 +136,9 @@ private:
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
+		for (auto & func_def : node.function_definitions) {
+			func_def->accept(*this);
+		}
 
 		node.reset_function_visited_flag();
 		return &node;
@@ -279,7 +282,9 @@ private:
 		// connect promoted refs and their declarations
 		if(!node.get_declaration()) {
 			auto node_declaration = m_def_provider->get_declaration(node);
-			if (!node_declaration) DefinitionProvider::throw_declaration_error(node).exit();
+			if (!node_declaration) {
+				DefinitionProvider::throw_declaration_error(node).exit();
+			}
 
 			node.match_data_structure(node_declaration);
 		}

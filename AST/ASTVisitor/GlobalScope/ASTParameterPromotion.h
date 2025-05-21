@@ -29,6 +29,7 @@ public:
 	void do_param_promotion(NodeProgram& program) {
 		program.accept(*this);
 		m_local_var_declarations.clear();
+		m_global_declarations.clear();
 	}
 
 private:
@@ -114,7 +115,7 @@ private:
 							m_global_declarations.push_back(std::move(global_decl));
 						} else {
 							// add to global declarations
-							m_program->global_declarations->add_as_stmt(std::move(global_decl));
+							m_program->init_callback->statements->add_as_stmt(std::move(global_decl));
 						}
 					}
 					declaration->replace_with(std::move(assignment));

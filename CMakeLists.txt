@@ -215,6 +215,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/UniqueParameterNamesProvider.h
         AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h
         AST/ASTVisitor/ASTParameterQualifier.h
+        AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation2.h
 )
 add_dependencies(cksp generate_headers)
 
