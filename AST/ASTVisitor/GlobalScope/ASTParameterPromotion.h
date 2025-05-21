@@ -6,6 +6,7 @@
 
 #include "../ASTVisitor.h"
 #include "ASTVariableReuse.h"
+#include "../FunctionHandling/ParameterAssignmentTransformation2.h"
 
 /**
  * @brief Promotes parameters for all functions until all variables are in callbacks.
@@ -20,13 +21,17 @@ class ASTParameterPromotion final : public ASTVisitor {
 	NodeCallback* m_current_callback = nullptr;
 	/// map for local variable declarations per function definition to be added to the next/above function
 	std::unordered_map<NodeFunctionDefinition*, std::vector<NodeDataStructure*>> m_local_var_declarations;
-	std::vector<std::unique_ptr<NodeSingleDeclaration>> m_global_declarations;
+	std::unordered_map<NodeFunctionCall*, std::vector<std::unique_ptr<NodeSingleDeclaration>>> m_global_declarations;
+	std::vector<NodeFunctionCall*> m_function_call_stack;
+
+
 public:
 	explicit ASTParameterPromotion(NodeProgram* main) : m_def_provider(main->def_provider) {
 		m_program = main;
 	}
 
 	void do_param_promotion(NodeProgram& program) {
+		m_current_callback = nullptr;
 		program.accept(*this);
 		m_local_var_declarations.clear();
 		m_global_declarations.clear();
@@ -70,6 +75,7 @@ private:
 		if(definition) {
 			// only visit definition if not already visited
 			if (!definition->visited) {
+				m_function_call_stack.push_back(&node);
 				definition->accept(*this);
 				definition->visited = true;
 				const auto func_local_vars = std::move(definition->do_variable_reuse(m_program));
@@ -112,7 +118,7 @@ private:
 						// if the call is currently in the on init callback, do not move to global_declarations but directly
 						// above the call (with the interim map m_global_declarations)
 						if (m_current_callback == m_program->init_callback) {
-							m_global_declarations.push_back(std::move(global_decl));
+							m_global_declarations[m_function_call_stack[0]].push_back(std::move(global_decl));
 						} else {
 							// add to global declarations
 							m_program->init_callback->statements->add_as_stmt(std::move(global_decl));
@@ -120,7 +126,17 @@ private:
 					}
 					declaration->replace_with(std::move(assignment));
 				}
+				m_function_call_stack.pop_back();
+			}
 
+			auto node_global_decl_body = std::make_unique<NodeBlock>(Token(), false);
+			// add global declaration if available
+			auto it = m_global_declarations.find(&node);
+			if (it != m_global_declarations.end()) {
+				for (auto & decl : it->second) {
+					node_global_decl_body->add_as_stmt(std::move(decl));
+				}
+				m_global_declarations.erase(it);
 			}
 
 			// move declarations of promoted function-local variables above the function call
@@ -134,15 +150,15 @@ private:
 				promoted_decl->kind = NodeSingleDeclaration::Kind::Promoted;
 				node_body->add_as_stmt(std::move(promoted_decl));
 			}
-			// add the directly promoted global variables to node_body if not empty
-			if (!m_global_declarations.empty()) {
-				for (size_t i = 0; i < m_global_declarations.size(); ++i) {
-					auto decl = std::move(m_global_declarations[i]);
-					node_body->add_as_stmt(std::move(decl));
-				}
-				m_global_declarations.clear();
+			ParameterAssignmentTransformation2::swap_call(node, node_body);
+
+			// add the body to the global_decl_body (wo scope) if there are things to globally declare and we are in the on init
+			if (!node_global_decl_body->statements.empty()) {
+				node_global_decl_body->add_as_stmt(std::move(node_body));
+				return node.replace_with(std::move(node_global_decl_body));
 			}
-			node_body->add_as_stmt(node.clone());
+
+			// node_body->add_as_stmt(node.clone());
 			return node.replace_with(std::move(node_body));
 		}
 

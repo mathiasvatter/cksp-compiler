@@ -227,6 +227,7 @@ std::shared_ptr<NodeArray> NodeNDArray::get_raw() {
 
 		raw_array->set_num_elements(clone_as<NodeParamList>(sizes.get()));
 		raw_array->num_elements->prepend_param(raw_array->size->clone());
+		raw_array->num_elements->collect_references();
 	}
 	raw_array->match_metadata(this->get_shared());
 	return raw_array;

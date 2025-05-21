@@ -83,7 +83,7 @@ public:
 		// input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
 		// input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
 		// input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
-		input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
+		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 	#endif
 
 		Timer compile_time;
@@ -163,8 +163,7 @@ public:
 		ASTVariableChecking variable_checking(m_program);
 		variable_checking.do_complete_traversal(*ast, false);
 		ast->collect_references();
-		UniqueParameterNamesProvider unique_names_provider(m_program);
-		unique_names_provider.do_renaming(*m_program);
+
 
 		compile_time.stop("Lexical Scope");
 		std::cout << compile_time.print_timer("Lexical Scope") << "\n";
@@ -180,6 +179,11 @@ public:
 		// ast->debug_print();
 		TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
+		ast->debug_print();
+
+		UniqueParameterNamesProvider unique_names_provider(m_program);
+		unique_names_provider.do_renaming(*m_program);
+		ast->debug_print();
 
 		compile_time.stop("Type Checking");
 		std::cout << compile_time.print_timer("Type Checking") << "\n";
@@ -222,12 +226,11 @@ public:
 
 			// static ASTParameterQualifier parameter_qualifier(m_program);
 			// ast->accept(parameter_qualifier);
-			// ast->debug_print();
+			ast->debug_print();
 
 			ASTFunctionStrategy function_strategy1(m_program);
 			function_strategy1.determine_function_strategies(*m_program);
 
-			ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 			static ParameterAssignmentTransformation2 assignment_transformation(m_program);
 			assignment_transformation.do_parameter_assignment(*m_program);
 			ast->debug_print();
@@ -251,6 +254,7 @@ public:
 		ast->collect_references();
 		ASTDataStructureLowering data_structure_lowering(m_program);
 		ast->accept(data_structure_lowering);
+		ast->debug_print();
 
 		compile_time.stop("Data Structure Lowering");
 		std::cout << compile_time.print_timer("Data Structure Lowering") << "\n";

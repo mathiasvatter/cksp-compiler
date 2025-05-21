@@ -156,6 +156,8 @@ NodeAST * ASTPrinter::visit(NodeVariable &node) {
 	return &node;
 }
 
+
+
 NodeAST * ASTPrinter::visit(NodeVariableRef &node) {
 	os << node.name;
 	auto type = TypeRegistry::get_annotation_from_type(node.ty);
@@ -202,6 +204,7 @@ NodeAST * ASTPrinter::visit(NodeArrayRef &node) {
 	}
 	auto type = TypeRegistry::get_annotation_from_type(node.ty);
 	if(!type.empty()) os << "{" << type << "}";
+	add_declaration_info(node);
 	return &node;
 }
 
@@ -228,6 +231,7 @@ NodeAST * ASTPrinter::visit(NodeNDArrayRef &node) {
 	}
 	auto type = TypeRegistry::get_annotation_from_type(node.ty);
 	if(!type.empty()) os << "{" << type << "}";
+	add_declaration_info(node);
 	return &node;
 }
 

@@ -39,6 +39,34 @@ public:
 		return n;
 	}
 
+	/// takes a block and a function call and wraps the block around the function call, ready to replace
+	/// the function call
+	static void swap_call(NodeFunctionCall& old, const std::unique_ptr<NodeBlock>& new_block) {
+		auto definition = old.get_definition();
+		if (!definition) {
+			auto error = CompileError(ErrorType::InternalError, "", "", old.tok);
+			error.m_message = "FunctionAssignmentTransformation : Function node has to have a definition to be transformed.";
+			error.exit();
+		}
+		// create new call for easy replacement
+		auto new_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::move(old.function),
+			old.tok
+		);
+		new_call->definition = old.definition;
+		new_call->kind = old.kind;
+		new_call->strategy = old.strategy;
+
+		// if call was ParameterStack strategy and has no args anymore -> Call strategy
+		if (new_call->strategy == NodeFunctionCall::ParameterStack and new_call->function->has_no_args()) {
+			new_call->is_call = true;
+			new_call->strategy = NodeFunctionCall::Call;
+		}
+		new_block->add_as_stmt(std::move(new_call));
+		definition->call_sites.erase(&old);
+		definition->call_sites.insert(new_block->get_last_statement()->cast<NodeFunctionCall>());
+	}
 
 private:
 
@@ -106,13 +134,18 @@ private:
 			for (int i = 0; i < func_data.promoted_params.size(); i++) {
 				const auto &formal_param = func_data.promoted_params[i]->variable;
 				auto actual_param = std::move(node.function->get_arg(func_data.promoted_param_indices[i]));
-				auto assign = std::make_unique<NodeSingleAssignment>(
-					formal_param->to_reference(),
-					std::move(actual_param),
-					node.tok
-				);
-				assign->kind = NodeInstruction::ParameterStack;
-				block->add_as_stmt(std::move(assign));
+
+				// check if formal and actual param are the same
+				if (formal_param->name != actual_param->get_string()) {
+					auto assign = std::make_unique<NodeSingleAssignment>(
+						formal_param->to_reference(),
+						std::move(actual_param),
+						node.tok
+					);
+					assign->kind = NodeInstruction::ParameterStack;
+					block->add_as_stmt(std::move(assign));
+				}
+
 			}
 
 			// now there might be nullptr in the call args. Collect the args by reference
@@ -131,46 +164,16 @@ private:
 		return &node;
 	}
 
-	/// takes a block and a function call and wraps the block around the function call, ready to replace
-	/// the function call
-	static void swap_call(NodeFunctionCall& old, const std::unique_ptr<NodeBlock>& new_block) {
-		auto definition = old.get_definition();
-		if (!definition) {
-			auto error = CompileError(ErrorType::InternalError, "", "", old.tok);
-			error.m_message = "FunctionAssignmentTransformation : Function node has to have a definition to be transformed.";
-			error.exit();
-		}
-		// create new call for easy replacement
-		auto new_call = std::make_unique<NodeFunctionCall>(
-			false,
-			std::move(old.function),
-			old.tok
-		);
-		new_call->definition = old.definition;
-		new_call->kind = old.kind;
-		new_call->strategy = old.strategy;
-
-		// if call was ParameterStack strategy and has no args anymore -> Call strategy
-		if (new_call->strategy == NodeFunctionCall::ParameterStack and new_call->function->has_no_args()) {
-			new_call->is_call = true;
-			new_call->strategy = NodeFunctionCall::Call;
-		}
-		new_block->add_as_stmt(std::move(new_call));
-		definition->call_sites.erase(&old);
-		definition->call_sites.insert(new_block->get_last_statement()->cast<NodeFunctionCall>());
-	}
-
-
-	/// IMPORTANT: all parameters of type array are automatically passed by reference
-	NodeAST* visit(NodeFunctionParam& node) override {
-		if (node.variable->is_function_param()) {
-			if (node.variable->ty->cast<CompositeType>()) {
-				// if the param is an array, it is passed by reference
-				node.is_pass_by_ref = true;
-			}
-		}
-		return &node;
-	}
+	// /// IMPORTANT: all parameters of type array are automatically passed by reference
+	// NodeAST* visit(NodeFunctionParam& node) override {
+	// 	if (node.variable->is_function_param()) {
+	// 		if (node.variable->ty->cast<CompositeType>()) {
+	// 			// if the param is an array, it is passed by reference
+	// 			node.is_pass_by_ref = true;
+	// 		}
+	// 	}
+	// 	return &node;
+	// }
 
 	NodeAST* visit(NodeFunctionDefinition& node) override {
 		// if(node.visited) return &node;
