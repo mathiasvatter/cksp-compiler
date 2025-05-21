@@ -71,10 +71,11 @@ private:
 	}
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
-		if (node.variable->data_type == DataType::Const) {
-			clear_data_structures();
-			return &node;
-		}
+		/// WHY WAS THIS HERE???
+		// if (node.variable->data_type == DataType::Const) {
+		// 	clear_data_structures();
+		// 	return &node;
+		// }
 		const auto array = node.variable->cast<NodeArray>();
 		if (!array) return &node;
 		if (!array->size) return &node;
@@ -115,11 +116,11 @@ private:
 							init_list_saved.push_back(el->clone());
 						}
 					}
-				} else {
-					auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-					error.m_message = "<Array> can only be assigned with a list of values.";
-					error.m_expected = "<InitializerList>";
-					error.exit();
+				// } else {
+				// 	auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+				// 	error.m_message = "<Array> can only be assigned with a list of values.";
+				// 	error.m_expected = "<InitializerList>";
+				// 	error.exit();
 				}
 				return &node;
 			}

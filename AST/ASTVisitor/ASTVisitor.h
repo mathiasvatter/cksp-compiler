@@ -294,7 +294,7 @@ public:
 	virtual NodeAST* visit(NodeFunctionDefinition& node) {
 		// if(node.visited) return &node;
 		node.header ->accept(*this);
-		if (node.return_variable.has_value())
+		if (node.return_variable)
 			node.return_variable.value()->accept(*this);
         node.body->accept(*this);
 		return &node;
@@ -311,7 +311,7 @@ public:
 		for(const auto & func_def : node.function_definitions) {
 			func_def->accept(*this);
 		}
-		node.merge_function_definitions();
+		// node.merge_function_definitions();
 		node.reset_function_visited_flag();
 		return &node;
 	}

@@ -34,6 +34,7 @@
 #include "AST/ASTVisitor/UniqueParameterNamesProvider.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
+#include "AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation2.h"
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "Optimization/ArrayInitializationRaising.h"
@@ -82,7 +83,7 @@ public:
 		// input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
 		// input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
 		// input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
-		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
+		input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 	#endif
 
 		Timer compile_time;
@@ -208,6 +209,10 @@ public:
 		return_function_rewriting.do_rewriting(*ast);
 
 		{
+			variable_checking.do_reachable_traversal(*ast, true);
+			ast->remove_references();
+			ast->collect_references();
+			infer_types.do_reachable_traversal(*ast);
 
 			// then do parameter promotion directly to global or successively
 			// eliminate function-local variables
@@ -215,15 +220,15 @@ public:
 			ASTParameterPromotion param_promotion(m_program);
 			param_promotion.do_param_promotion(*ast);
 
-			static ASTParameterQualifier parameter_qualifier(m_program);
-			ast->accept(parameter_qualifier);
-			ast->debug_print();
+			// static ASTParameterQualifier parameter_qualifier(m_program);
+			// ast->accept(parameter_qualifier);
+			// ast->debug_print();
 
 			ASTFunctionStrategy function_strategy1(m_program);
 			function_strategy1.determine_function_strategies(*m_program);
 
 			ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
-			static ParameterAssignmentTransformation assignment_transformation(m_program);
+			static ParameterAssignmentTransformation2 assignment_transformation(m_program);
 			assignment_transformation.do_parameter_assignment(*m_program);
 			ast->debug_print();
 		}
@@ -239,7 +244,11 @@ public:
 		NormalizeNDArrayAssign nd_array_assign(m_program);
 		ast->accept(nd_array_assign);
 		ast->debug_print();
+
 		// Data Structure Lowering of NDArrays and Array assignments
+		// so that replace datastruct works
+		ast->remove_references();
+		ast->collect_references();
 		ASTDataStructureLowering data_structure_lowering(m_program);
 		ast->accept(data_structure_lowering);
 
@@ -247,26 +256,27 @@ public:
 		std::cout << compile_time.print_timer("Data Structure Lowering") << "\n";
 		compile_time.start("Variable Checking");
 
-		variable_checking.do_reachable_traversal(*ast, true);
-		ast->remove_references();
-		ast->collect_references();
-		infer_types.do_reachable_traversal(*ast);
+
 
 		compile_time.stop("Variable Checking");
 		std::cout << compile_time.print_timer("Variable Checking") << "\n";
 		compile_time.start("Global Scope");
 
 
+		ast->debug_print();
 
 		// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 		ASTVariableReuse variable_reuse(m_program);
 		variable_reuse.do_variable_reuse(*ast);
 		ast->debug_print();
+
 		ArrayInitializationRaising array_init_raising;
 		array_init_raising.do_initialization_raising(*ast->init_callback, m_program);
+		ast->debug_print();
+
 		NormalizeArrayAssign normalize_array_assign(m_program);
 		ast->accept(normalize_array_assign);
-		// ast->debug_print();
+		ast->debug_print();
 
 		compile_time.stop("Global Scope");
 		std::cout << compile_time.print_timer("Global Scope") << "\n";
@@ -299,6 +309,7 @@ public:
 		// ast->debug_print();
 		ast->inline_global_variables();
 
+		ast->debug_print();
 		ASTOptimizations optimizations;
 		ASTOptimizations::optimize(*ast, m_config->optimization_level);
 

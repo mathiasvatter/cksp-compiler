@@ -6,6 +6,15 @@ on init
     ar(array)
     declare array_big[100]: int[] := (1)
     ar(array_big)
+
+    declare preset.array[100]
+    declare ndarray[10,10] := [1,2,3,3,4]
+    declare preset.n: int := 0
+    for el in ndarray
+        el := preset.array[preset.n]
+        // message(el)
+        inc(preset.n)
+    end for
 end on
 
 on persistence_changed
@@ -21,6 +30,18 @@ function ar(array1: int[])
         inc(idx)
     end while
 end function
+
+macro preset.load_seq_tables(#array#)
+    for i:=0 to NUM_KEYSWITCHES-1
+        for ii:=0 to #array#.SIZE_D2-1
+            #array#[i,ii] := preset__array[preset.n]
+            inc(preset.n)
+        end for
+    end for
+end macro
+
+
+
 
 
 // function higher_order(func: (int, int): string, a: int, b: int): string

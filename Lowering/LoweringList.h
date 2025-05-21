@@ -11,8 +11,6 @@ public:
 	explicit LoweringList(NodeProgram* program) : ASTLowering(program) {}
 
 	NodeAST * visit(NodeSingleDeclaration &node) override {
-		if(node.variable->get_node_type() != NodeType::List) return &node;
-
 		if(auto list = node.variable->cast<NodeList>()) {
 
 			std::string list_name = list->name;
@@ -146,7 +144,8 @@ public:
 			std::make_unique<NodeInt>(node.size,node.tok),
 			node.tok
 		);
-		return node.replace_with(std::move(node_main_array));
+		return node.replace_datastruct(std::move(node_main_array));
+		// return node.replace_with(std::move(node_main_array));
 	};
 
 	NodeAST * visit(NodeListRef& node) override {
@@ -189,7 +188,8 @@ public:
 
 		lowered_list_ref->set_index(std::move(node_expression));
 		lowered_list_ref->name = "_"+lowered_list_ref->name;
-		return node.replace_with(std::move(lowered_list_ref));
+		return node.replace_reference(std::move(lowered_list_ref));
+		// return node.replace_with(std::move(lowered_list_ref));
 	}
 
 private:
