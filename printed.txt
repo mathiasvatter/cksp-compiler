@@ -459,9 +459,6 @@ on init
 	declare dy00 : real {Reuses: 3}
 	declare cos_theta00 : real {Reuses: 1}
 	declare angle10 : real {Reuses: 2}
-	declare controller_value0[100] : int[] {Reuses: 1}
-	declare _ret150001 : int {Reuses: 0}
-	declare result91001 : int {Reuses: 4}
 	declare articulation_event_id500 : int {Reuses: 19}
 	declare set_articulation_event_id000 : int {Reuses: 26}
 	declare next_free_idx0000 : int {Reuses: 41}
@@ -476,6 +473,9 @@ on init
 	declare is_free1000 : int {Reuses: 28}
 	declare _ret150000 : int {Reuses: 0}
 	declare result91000 : int {Reuses: 19}
+	declare controller_value0[100] : int[] {Reuses: 1}
+	declare _ret150001 : int {Reuses: 0}
+	declare result91001 : int {Reuses: 4}
 	set_script_title("Lux - Orchestral Strings"){Builtin, None}
 	set_control_par_str(INST_ICON_ID{int}, CONTROL_PAR_PICTURE{int}, "sonu-badge"){Builtin, None}
 	set_key_pressed_support(1){Builtin, None}
@@ -3562,7 +3562,7 @@ on init
 		inc(i{int}){Builtin, None}
 	end while
 	declare ui_label lbl_version : int (0, 0) {Reuses: 0}
-	set_control_par_str(lbl_version{int}, CONTROL_PAR_TEXT{int}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "17:39:40" & " " & "05/21/25"){Builtin, None}
+	set_control_par_str(lbl_version{int}, CONTROL_PAR_TEXT{int}, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "17:18:54" & " " & "05/25/25"){Builtin, None}
 	set_control_par_str(lbl_version{int}, CONTROL_PAR_PICTURE{int}, "alpha"){Builtin, None}
 	set_control_par(lbl_version{int}, CONTROL_PAR_TEXT_ALIGNMENT{int}, 0){Builtin, None}
 	set_control_par(lbl_version{int}, CONTROL_PAR_FONT_TYPE{int}, fonts_regular_white[0]{int} {fonts_regular_white} ){Builtin, None}

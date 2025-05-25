@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.4 on Wed May 21 17:39:41 2025 }
+{ Compiled with cksp version 0.0.7-alpha.4 on Sun May 25 17:18:55 2025 }
 on init
   declare $_iter0
   declare $ksv_cb_id := 0
@@ -3215,7 +3215,7 @@ on init
     inc($i)
   end while
   declare ui_label $lbl_version (0, 0)
-  set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_TEXT, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "17:39:40" & " " & "05/21/25")
+  set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_TEXT, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "17:18:54" & " " & "05/25/25")
   set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_PICTURE, "alpha")
   set_control_par(get_ui_id($lbl_version), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
   set_control_par(get_ui_id($lbl_version), $CONTROL_PAR_FONT_TYPE, %fonts_regular_white[0])

@@ -34,7 +34,6 @@
 #include "AST/ASTVisitor/UniqueParameterNamesProvider.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
-#include "AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation2.h"
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "Optimization/ArrayInitializationRaising.h"
@@ -231,7 +230,7 @@ public:
 			ASTFunctionStrategy function_strategy1(m_program);
 			function_strategy1.determine_function_strategies(*m_program);
 
-			static ParameterAssignmentTransformation2 assignment_transformation(m_program);
+			static ParameterAssignmentTransformation assignment_transformation(m_program);
 			assignment_transformation.do_parameter_assignment(*m_program);
 			ast->debug_print();
 		}
