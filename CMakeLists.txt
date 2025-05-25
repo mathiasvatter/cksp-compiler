@@ -200,7 +200,6 @@ add_executable(cksp main.cpp
         Lowering/LoweringInitializerList.h
         AST/ASTVisitor/ASTTemporaryPointerScope.h
         AST/ASTVisitor/FunctionHandling/ReturnPathValidator.h
-        AST/ASTVisitor/FunctionHandling/ParameterStackTransformation.h
         AST/ASTVisitor/GlobalScope/MarkThreadSafe.h
         AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h
         AST/ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h
@@ -213,9 +212,8 @@ add_executable(cksp main.cpp
         Desugaring/DesugarUIControlArray.h
         AST/ASTVisitor/UniqueArrayNamesProvider.h
         AST/ASTVisitor/UniqueParameterNamesProvider.h
-        AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h
         AST/ASTVisitor/ASTParameterQualifier.h
-        AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation2.h
+        AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h
 )
 add_dependencies(cksp generate_headers)
 

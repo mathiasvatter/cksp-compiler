@@ -87,7 +87,7 @@ private:
 		return &node;
 	}
 
-	bool decide_by_ref_or_value(NodeFunctionHeader& header, NodeFunctionHeaderRef& header_ref) {
+	static void decide_by_ref_or_value(const NodeFunctionHeader& header, const NodeFunctionHeaderRef& header_ref) {
 		for (size_t i = 0; i < header.get_num_params(); i++) {
 			auto& formal_param = header.params[i];
 			auto& actual_param = header_ref.get_arg(i);

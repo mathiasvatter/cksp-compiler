@@ -6,7 +6,7 @@
 
 #include "../ASTVisitor.h"
 #include "ASTVariableReuse.h"
-#include "../FunctionHandling/ParameterAssignmentTransformation2.h"
+#include "../FunctionHandling/ParameterAssignmentTransformation.h"
 
 /**
  * @brief Promotes parameters for all functions until all variables are in callbacks.
@@ -150,7 +150,7 @@ private:
 				promoted_decl->kind = NodeSingleDeclaration::Kind::Promoted;
 				node_body->add_as_stmt(std::move(promoted_decl));
 			}
-			ParameterAssignmentTransformation2::swap_call(node, node_body);
+			ParameterAssignmentTransformation::swap_call(node, node_body);
 
 			// add the body to the global_decl_body (wo scope) if there are things to globally declare and we are in the on init
 			if (!node_global_decl_body->statements.empty()) {
