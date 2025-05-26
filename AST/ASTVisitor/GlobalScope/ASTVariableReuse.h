@@ -115,13 +115,31 @@ public:
 			return std::make_unique<NodeDeadCode>(node.tok);
 		}
 		auto node_assignment = node.to_assign_stmt();
-		// if (const auto array_ref = node_assignment->l_value->cast<NodeArrayRef>()) {
-		// 	if (!array_ref->index) {
-		// 		//				return std::move(node_assignment);
-		// 		return std::make_unique<NodeDeadCode>(node.tok);
-		// 	}
-		// }
+		node_assignment->collect_references();
 		return std::move(node_assignment);
+	}
+
+	static std::size_t get_passive_var_hash(NodeDataStructure& data) {
+		std::size_t seed = 0;
+		auto hash_combine = [&seed]<typename T0>(const T0& value) {
+			std::hash<std::decay_t<T0>> hasher;
+			seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		};
+
+		hash_combine(data.ty->to_string());
+
+		// in case of array -> add sizes
+		if (const auto array = data.cast<NodeArray>()) {
+			if (array->size) hash_combine(array->size->get_string());
+		} else if (const auto ndarray = data.cast<NodeNDArray>()) {
+			if (ndarray->sizes) hash_combine(ndarray->sizes->get_string());
+		}
+
+		hash_combine(data.is_thread_safe);
+
+		if (data.persistence.has_value()) hash_combine(data.persistence.value().val);
+
+		return seed;
 	}
 
 private:
@@ -135,6 +153,9 @@ private:
 		m_program->global_declarations->accept(*this);
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
+		}
+		for (auto & func_def : node.function_definitions) {
+			func_def->accept(*this);
 		}
 
 		node.reset_function_visited_flag();
@@ -183,11 +204,7 @@ private:
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		node.bind_definition(m_program);
-		// if (auto definition = node.get_definition()) {
-		// 	node.determine_function_strategy(m_program, m_program->current_callback);
-		// }
 		// do not visit definition -> because passive var allocation is separate between callbacks and functions
-//		node.do_param_promotion(m_program);
 		return &node;
 	}
 
@@ -272,6 +289,7 @@ private:
 			if(auto new_declaration = get_new_declaration(node.name)) {
 				node.match_data_structure(new_declaration);
 				node.name = new_declaration->name;
+				node.collect_references();
 				return &node;
 			}
 		}
@@ -279,7 +297,9 @@ private:
 		// connect promoted refs and their declarations
 		if(!node.get_declaration()) {
 			auto node_declaration = m_def_provider->get_declaration(node);
-			if (!node_declaration) DefinitionProvider::throw_declaration_error(node).exit();
+			if (!node_declaration) {
+				DefinitionProvider::throw_declaration_error(node).exit();
+			}
 
 			node.match_data_structure(node_declaration);
 		}
@@ -287,9 +307,10 @@ private:
 	}
 
 	NodeAST * visit(NodeArray& node) override {
-//		node.determine_locality(m_program, m_current_body.top());
+		// node.determine_locality(m_program, m_current_body.top());
 
 		if(node.size) node.size->accept(*this);
+		if (node.num_elements) node.num_elements->accept(*this);
 
 		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
 		return &node;
@@ -304,6 +325,7 @@ private:
 			if(auto new_declaration = get_new_declaration(node.name)) {
 				node.match_data_structure(new_declaration);
 				node.name = new_declaration->name;
+				node.collect_references();
 				return &node;
 			}
 		}
@@ -325,9 +347,46 @@ private:
 		return &node;
 	}
 
+	NodeAST* visit(NodeNDArrayRef& node) override {
+		if(node.indexes) node.indexes->accept(*this);
+
+		// add all references in local scope to vector for later passive_var replacement
+		m_all_local_references.push_back(&node);
+
+		if(!m_passive_vars_replace.empty()) {
+			// search if declaration was local var and has been replaced by passive_var -> replace declaration and reference name
+			if(auto new_declaration = get_new_declaration(node.name)) {
+				node.match_data_structure(new_declaration);
+				node.name = new_declaration->name;
+				node.collect_references();
+				return &node;
+			}
+		}
+
+		// connect promoted refs and their declarations
+		if(!node.get_declaration()) {
+			auto node_declaration = m_def_provider->get_declaration(node);
+			if (!node_declaration) {
+				DefinitionProvider::throw_declaration_error(node).exit();
+			}
+
+			node.match_data_structure(node_declaration);
+		}
+		return &node;
+	}
+
+	NodeAST * visit(NodeNDArray& node) override {
+		//		node.determine_locality(m_program, m_current_body.top());
+
+		if(node.sizes) node.sizes->accept(*this);
+		if (node.num_elements) node.num_elements->accept(*this);
+
+		m_def_provider->set_declaration(node.get_shared(), !node.is_local);
+		return &node;
+	}
+
 private:
 	DefinitionProvider* m_def_provider;
-	std::string loc_var_prefix = "loc_";
 	std::stack<NodeBlock*> m_current_block;
 	[[nodiscard]] NodeBlock* get_current_block() const {
 		if (m_current_block.empty()) return nullptr;
@@ -345,7 +404,12 @@ private:
 			if(var.second->data_type == DataType::Mutable)
 				m_passive_vars_map[get_passive_var_hash(*var.second)].push_back(var.second);
 		}
-	};
+	}
+
+	/// map for old datastructure name (as keys) that get replaced by new datastructures (passive_vars) (as values)
+	std::vector<std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>>> m_passive_vars_replace;
+	/// vector for all local references that have been replaced by passive_var references
+	std::vector<NodeReference*> m_all_local_references;
 
 	/// get next free passive_var for given type
 	std::shared_ptr<NodeDataStructure> get_free_passive_var(NodeDataStructure& data) {
@@ -366,44 +430,9 @@ private:
 		}
 		return nullptr;
 	}
-	/// constructs the hash to identify available passive vars h(type, size, thread_safety)
-	// static std::string get_passive_var_hash(NodeDataStructure& data) {
-	// 	auto hash = data.ty->to_string();
-	// 	// add size if it is array
-	// 	if(const auto array = data.cast<NodeArray>()) {
-	// 		if(array->size) hash += array->size->get_string();
-	// 	}
-	// 	hash += data.is_thread_safe;
-	// 	if(data.persistence.has_value()) hash += data.persistence.value().val;
-	// 	return hash;
-	// }
 
-	static std::size_t get_passive_var_hash(NodeDataStructure& data) {
-		std::size_t seed = 0;
-		auto hashCombine = [&seed]<typename T0>(const T0& value) {
-			std::hash<std::decay_t<T0>> hasher;
-			seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-		};
 
-		hashCombine(data.ty->to_string());
 
-		// in case of array -> add sizes
-		if (const auto array = data.cast<NodeArray>()) {
-			if (array->size) hashCombine(array->size->get_string());
-		} else if (const auto ndarray = data.cast<NodeNDArray>()) {
-			if (ndarray->sizes) hashCombine(ndarray->sizes->get_string());
-		}
 
-		hashCombine(data.is_thread_safe);
-
-		if (data.persistence.has_value()) hashCombine(data.persistence.value().val);
-
-		return seed;
-	}
-
-	/// map for old datastructure name (as keys) that get replaced by new datastructures (passive_vars) (as values)
-	std::vector<std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>>> m_passive_vars_replace;
-	/// vector for all local references that have been replaced by passive_var references
-	std::vector<NodeReference*> m_all_local_references;
 
 };

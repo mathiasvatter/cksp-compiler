@@ -13,6 +13,7 @@ class TypeInference final : public ASTVisitor {
 	std::vector<NodeFunctionCall*> m_func_calls;
 
 	void do_monomorphization() {
+
 		for (const auto& call : m_func_calls) {
 			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
 			auto const def = call->get_definition();
@@ -29,10 +30,17 @@ class TypeInference final : public ASTVisitor {
 			}
 		}
 
+		m_program->reset_function_visited_flag();
+
 		for (const auto& call : m_func_calls) {
 			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
 			auto const def = call->get_definition();
 			if (!def) continue;
+			// visit function again to propagate correct formal param types
+			if (!def->visited) {
+				def->accept(*this);
+				def->visited = true;
+			}
 			if (def->header->has_union_params()) {
 				auto new_header = clone_as<NodeFunctionHeader>(def->header.get());
 				const size_t param_count = new_header->params.size();
@@ -43,10 +51,6 @@ class TypeInference final : public ASTVisitor {
 					formal_param->cast_type();
 				}
 				new_header->create_function_type();
-
-				// if (new_header->name == "update.strip.noAutomation") {
-				//
-				// }
 
 				// if this was already monomorphized in the exact same way, skip this
 				const auto func = m_program->look_up_exact({new_header->name, (int)new_header->params.size()}, new_header->ty);

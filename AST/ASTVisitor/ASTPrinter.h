@@ -7,6 +7,10 @@
 #include "ASTVisitor.h"
 
 class ASTPrinter : public ASTVisitor {
+	std::ostringstream os;
+	std::string m_indent = "\t";
+	int m_scope_count = 0;
+
 public:
     NodeAST * visit(NodeProgram& node) override;
 	NodeAST * visit(NodeInt& node) override;
@@ -63,7 +67,7 @@ public:
 	NodeAST * visit(NodeSetControl& node) override;
 	NodeAST * visit(NodeAccessChain& node) override;
 
-    inline void generate(const std::string& path) const {
+    void generate(const std::string& path) {
         std::ofstream outFile(path);
         if (outFile) {
             outFile << os.str();
@@ -71,20 +75,31 @@ public:
             // Fehlerbehandlung, falls die Datei nicht geöffnet werden kann
             std::cerr << "Fehler beim Öffnen der Datei: " << path << std::endl;
         }
+    	os.str("");
     }
 
-    inline void print() const {
+	void print() {
         std::cout << os.str();
+    	os.str("");
     }
+
 private:
-    std::ostringstream os;
-    std::string m_indent = "\t";
-    int m_scope_count = 0;
-    inline std::string get_indent() {
+	void add_declaration_info(const NodeReference& node) {
+		auto declaration = node.get_declaration();
+		if (declaration) {
+			os << " {" << declaration->name << "} ";
+		} else {
+			os << " {no declaration} ";
+		}
+	}
+
+    std::string get_indent() const {
         std::string result;
         for (int i = 0; i < m_scope_count; i++) {
             result += m_indent;
         }
         return result;
     }
+
+
 };

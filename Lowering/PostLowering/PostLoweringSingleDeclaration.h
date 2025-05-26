@@ -37,13 +37,21 @@ public:
 					node_block->add_as_stmt(std::move(node_num_elements_decl));
 
 				}
+				node_array->num_elements = std::make_unique<NodeParamList>(node.tok);
+
+				// wip fix: if array declaration is in global scope -> add to end of init callback
+				if (node.get_parent_block() == m_program->global_declarations.get()) {
+					m_program->init_callback->statements->append_body(std::move(node_block));
+					return &node;
+				}
+
 				auto node_array_decl = std::make_unique<NodeSingleDeclaration>(
 					std::move(node.variable),
 					std::move(node.value),
 					node.tok
 				);
 				node_block->add_as_stmt(std::move(node_array_decl));
-				node_array->num_elements = std::make_unique<NodeParamList>(node.tok);
+
 				return node.replace_with(std::move(node_block));
 			}
 		}

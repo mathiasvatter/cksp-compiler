@@ -152,3 +152,27 @@ end on
 /// actual parameter substituiert
 /// im on init callback wird immer inlined.
 
+/// was machen mit array sizes von parametern die unbekannt sind, when transforming to global variables?
+declare array[3]: int[] := (1, 2, 3)
+ar(array)
+declare array_big[100]: int[] := (1)
+ar(array_big)
+
+function ar(array1: int[])
+    declare idx: int := 0
+    while idx < num_elements(array1)
+        array1[idx] := array1[idx] * 2
+        message(array1[idx])
+        inc(idx)
+    end while
+end function
+
+/// post transformation
+/// 
+declare array1[3]: int[] // <- global parameter variable
+
+declare array[3]: int[] := (1, 2, 3)
+array1 := array
+call ar()
+
+
