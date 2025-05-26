@@ -232,10 +232,13 @@ struct NodeFunctionHeaderRef final : NodeReference {
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	void update_parents(NodeAST* new_parent) override;
+	std::string get_string() override {
+		return name + "(" + (args ? args->get_string() : "") + ")";
+	}
 	void set_child_parents() override;
 	[[nodiscard]] int get_num_args() const;
 	[[nodiscard]] bool has_no_args() const;
-	std::unique_ptr<NodeAST>& get_arg(int i) const;
+	[[nodiscard]] std::unique_ptr<NodeAST>& get_arg(int i) const;
 	void set_arg(const int i, std::unique_ptr<NodeAST> arg) const {
 		args->set_param(i, std::move(arg));
 //		if(i >= get_num_args()) {

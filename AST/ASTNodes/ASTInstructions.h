@@ -471,7 +471,7 @@ struct NodeSingleAssignment final : NodeInstruction {
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
 //	ASTLowering *get_data_lowering(NodeProgram *program) const override;
-	NodeAST* do_array_normalization(NodeProgram *program) override;
+	NodeAST* do_array_normalization(NodeProgram *program);
 
 };
 
@@ -555,7 +555,6 @@ struct NodeSingleDeclaration final : NodeInstruction {
     ASTLowering* get_lowering(NodeProgram *program) const override;
 	ASTLowering* get_post_lowering(NodeProgram *program) const override;
 //	ASTLowering *get_data_lowering(NodeProgram *program) const override;
-	NodeAST* do_array_normalization(NodeProgram *program) override;
     /// returns new assign statement with the declared variable and r_value or neutral element. Can optionally take new
     /// variable to make reference of
     [[nodiscard]] std::unique_ptr<NodeSingleAssignment> to_assign_stmt(NodeDataStructure* var=nullptr);
@@ -771,7 +770,7 @@ struct NodeBlock final : NodeInstruction {
 	}
 	NodeBlock* wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>> iterators,
 						   std::vector<std::unique_ptr<NodeAST>> lower_bounds,
-						   std::vector<std::unique_ptr<NodeAST>> upper_bounds);
+						   std::vector<std::unique_ptr<NodeAST>> upper_bounds, bool declare=true);
 	NodeBlock* wrap_in_loop(const std::shared_ptr<NodeDataStructure>& iterator, std::unique_ptr<NodeAST> lower_bound, std::unique_ptr<NodeAST> upper_bound, bool declare=true);
 	[[nodiscard]] std::unique_ptr<NodeAST>& get_statement(const size_t index) const {
 		return statements[index]->statement;

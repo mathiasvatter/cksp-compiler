@@ -21,28 +21,28 @@
  * - Checks if the maximum number of statements in one block is exceeded (memory exhaustion error), caused
  * 	 by the Bison parser stackoverflow -> nest block further to avoid this error
  */
+static constexpr int MAX_UI_CONTROLS = 999;
+static constexpr int MAX_ARRAY_ELEMENTS = 1000000;
+
 class ASTKSPSyntaxCheck final : public ASTVisitor {
 	DefinitionProvider *m_def_provider;
 	std::unordered_map<std::string, int> m_ui_control_count;
 
-	static const int MAX_UI_CONTROLS = 999;
-	static const int MAX_ARRAY_ELEMENTS = 1000000;
-
-	static void check_max_array_size(NodeArray* node) {
-		if(node->size->get_node_type() == NodeType::Int) {
-			auto node_int = static_cast<NodeInt*>(node->size.get());
+	static void check_max_array_size(const NodeArray& node) {
+		if(auto node_int = node.size->cast<NodeInt>()) {
 			if(node_int->value > MAX_ARRAY_ELEMENTS) {
-				auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *node->size);
+				auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, node);
 				error.m_message = "Array size exceeds maximum of " + std::to_string(MAX_ARRAY_ELEMENTS) + ".";
+				error.m_got = std::to_string(node_int->value);
 				error.exit();
 			}
 		}
 	}
 
-	void check_max_ui_controls(NodeUIControl* node) {
-		if(m_ui_control_count[node->ui_control_type] > MAX_UI_CONTROLS) {
-			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *node);
-			error.m_message = "Maximum number of UI controls exceeded for <"+node->ui_control_type+">. Counted "+std::to_string(m_ui_control_count[node->ui_control_type])+" controls.";
+	void check_max_ui_controls(NodeUIControl& node) {
+		if(m_ui_control_count[node.ui_control_type] > MAX_UI_CONTROLS) {
+			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, node);
+			error.m_message = "Maximum number of UI controls exceeded for <"+node.ui_control_type+">. Counted "+std::to_string(m_ui_control_count[node.ui_control_type])+" controls.";
 			error.exit();
 		}
 	}
@@ -78,7 +78,7 @@ public:
 
 	NodeAST* visit(NodeArray& node) override {
 		node.size->accept(*this);
-		check_max_array_size(&node);
+		check_max_array_size(node);
 		return &node;
 	}
 
@@ -99,7 +99,7 @@ public:
 
 	NodeAST* visit(NodeUIControl& node) override {
 		m_ui_control_count[node.ui_control_type]++;
-		check_max_ui_controls(&node);
+		check_max_ui_controls(node);
 		node.control_var->accept(*this);
 		node.params->accept(*this);
 		return &node;

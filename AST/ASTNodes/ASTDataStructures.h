@@ -74,7 +74,8 @@ struct NodeComposite : NodeDataStructure {
 		this->num_elements = std::move(num_elem);
 	}
 	virtual std::shared_ptr<NodeArray> get_raw() = 0;
-	virtual std::unique_ptr<NodeAST> get_size() = 0;
+	std::unique_ptr<NodeAST> get_size() override = 0;
+	virtual void set_size(std::unique_ptr<NodeAST> size) = 0;
 };
 
 
@@ -93,6 +94,9 @@ struct NodeArray final : NodeComposite {
 	// Clone Methode
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	std::string get_string() override {
+		return name + "[" + (size ? size->get_string() : "") + "]";
+	}
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
 		if (size) size->update_parents(this);
@@ -103,7 +107,7 @@ struct NodeArray final : NodeComposite {
 	void update_token_data(const Token& token) override {
 		if(size) size->update_token_data(token);
 	}
-	void set_size(std::unique_ptr<NodeAST> size) {
+	void set_size(std::unique_ptr<NodeAST> size) override {
 		size->parent = this;
 		this->size = std::move(size);
 	}
@@ -150,7 +154,7 @@ struct NodeNDArray final : NodeComposite {
 		if (sizes) sizes->parent = this;
 	}
 	std::string get_string() override {
-		return name;
+		return name + "[" + (sizes ? sizes->get_string() : "") + "]";
 	}
 	void update_token_data(const Token& token) override {
 		if(sizes) sizes->update_token_data(token);
@@ -167,7 +171,19 @@ struct NodeNDArray final : NodeComposite {
 	std::unique_ptr<NodeList> to_list() override;
 	std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
 	std::shared_ptr<NodeArray> get_raw() override;
+	/// returns size of the raw underlying one-dim array via num_elements(0, <name>)
 	std::unique_ptr<NodeAST> get_size() override;
+	void set_size(std::unique_ptr<NodeAST> size) override {
+		if (size->cast<NodeParamList>()) {
+			size -> parent = this;
+			sizes = unique_ptr_cast<NodeParamList>(std::move(size));
+		} else {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+			error.m_message = "Tried setting NDArray size. NDArray size has to be a <ParamList>.";
+			error.m_got = size->get_string();
+			error.exit();
+		}
+	}
 };
 
 struct NodeFunctionHeader final : NodeDataStructure {
@@ -248,6 +264,9 @@ struct NodeFunctionHeader final : NodeDataStructure {
 	}
 	bool has_no_params() const {
 		return params.empty();
+	}
+	size_t get_num_params() const {
+		return params.size();
 	}
 };
 

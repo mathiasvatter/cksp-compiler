@@ -23,7 +23,6 @@
 #include "../ASTVisitor/GlobalScope/ASTVariableReuse.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h"
 #include "../../Optimization/ConstantFolding.h"
-#include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "../../Lowering/LoweringInitializerList.h"
 #include "../ASTVisitor/ASTVariableChecking.h"
 #include "../ASTVisitor/TypeInference.h"
@@ -192,11 +191,6 @@ void NodeAST::do_constant_folding() {
 	accept(constant_folding);
 }
 
-NodeAST *NodeAST::do_array_normalization(NodeProgram *program) {
-	static NormalizeArrayAssign array_assign(program);
-	return accept(array_assign);
-}
-
 NodeFunctionHeaderRef* NodeAST::is_func_arg() const {
 	if(!this->parent) return nullptr;
 	if(!this->parent->parent) return nullptr;
@@ -299,14 +293,15 @@ NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDat
 	const auto new_data_struct = static_cast<NodeDataStructure*>(replace_with(std::move(new_node)));
 	auto new_data = new_data_struct->get_shared();
 
-	new_data->references = std::move(old_data->references);
+	// new_data->references = std::move(old_data->references);
 //	for(auto const &ref : new_data->references) {
 //		ref->declaration = new_data;
 //	}
-	parallel_for_each(new_data->references.begin(), new_data->references.end(),
+	parallel_for_each(old_data->references.begin(), old_data->references.end(),
 				  [&new_data](auto const& ref) {
 					ref->declaration = new_data;
 				  });
+	new_data->references.insert(old_data->references.begin(), old_data->references.end());
 	if(const auto strct = new_data->is_member()) {
 		strct->replace_member_in_table(old_data, new_data);
 	}
@@ -1299,19 +1294,25 @@ NodeCallback* NodeProgram::move_on_init_callback() {
 	return callbacks.at(0).get(); // Rückgabe des Zeigers auf den init callback
 }
 
-std::unique_ptr<NodeSingleDeclaration> NodeProgram::declare_global_iterator() {
+std::shared_ptr<NodeVariable> NodeProgram::add_global_iterator() {
 	auto tok = Token(token::KEYWORD, "compiler_variable", -1, 0,"");
-	auto node_body = std::make_unique<NodeBlock>(tok);
 	auto node_variable = std::make_shared<NodeVariable>(
 		std::nullopt,
 		def_provider->get_fresh_name("_iter"),
 		TypeRegistry::Integer,
 		tok, DataType::Mutable);
 	node_variable->is_engine = true;
-    node_variable->is_global = true;
-	global_iterator = node_variable;
-	// node_variable->is_local = true;
-	return std::make_unique<NodeSingleDeclaration>(std::move(node_variable), nullptr, tok);
+	node_variable->is_global = true;
+	global_iterators.push_back(node_variable);
+	global_declarations->prepend_as_stmt(std::make_unique<NodeSingleDeclaration>(node_variable, nullptr, tok));
+	return node_variable;
+}
+
+std::shared_ptr<NodeVariable> NodeProgram::get_global_iterator(const size_t idx) {
+	if (idx >= global_iterators.size()) {
+		return add_global_iterator();
+	}
+	return global_iterators[idx];
 }
 
 void NodeProgram::inline_global_variables() {

@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "ParameterStackTransformation.h"
 #include "../ASTVisitor.h"
 
 class ASTFunctionInlining final : public ASTVisitor {
@@ -21,12 +20,6 @@ public:
 		m_program = &node;
 		m_current_callback = nullptr;
 
-		static ParameterStackTransformation transform(m_program);
-		transform.do_function_stack_transformation(*m_program);
-		// node.debug_print();
-
-		node.reset_function_used_flag();
-		node.reset_function_visited_flag();
 		m_program->global_declarations->accept(*this);
 		for(const auto & struct_def : node.struct_definitions) {
 			struct_def->accept(*this);

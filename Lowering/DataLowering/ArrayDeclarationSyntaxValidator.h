@@ -11,7 +11,7 @@
  * Throwing necessary errors if the array is not declared correctly
  * e.g. if size is not a constant or not able to be determined at compile time
  */
-class DataLoweringArray final : public ASTLowering {
+class ArrayDeclarationSyntaxValidator final : public ASTLowering {
 	NodeArray* m_current_array = nullptr;
 	bool m_size_is_constant = true;
 
@@ -46,7 +46,7 @@ class DataLoweringArray final : public ASTLowering {
 	}
 
 public:
-	explicit DataLoweringArray(NodeProgram* program) : ASTLowering(program) {}
+	explicit ArrayDeclarationSyntaxValidator(NodeProgram* program) : ASTLowering(program) {}
 
 	/// Determining array size at compile time -> not of references!
 	NodeAST * visit(NodeArray& node) override {
