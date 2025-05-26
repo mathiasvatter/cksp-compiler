@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "DataLoweringNDArray.h"
+#include "../../AST/ASTVisitor/ASTVisitor.h"
 
 class NDArrayCopyFunction {
 public:
@@ -92,6 +92,7 @@ public:
 		if(program->function_lookup.find({func_call->function->name, (int)func_params.size()}) != program->function_lookup.end()) {
 			return func_call;
 		}
+		func_call->strategy = NodeFunctionCall::Inlining;
 		// generate function definition
 		auto node_function_def = generate_function_def();
 		program->add_function_definition(node_function_def);
@@ -99,6 +100,24 @@ public:
 		// update function lookup so that the new function can be found
 //		program->update_function_lookup();
 		return func_call;
+	}
+
+	std::unique_ptr<NodeBlock> generate_copy_body() {
+		// new Assignment Node
+		auto assignment = std::make_unique<NodeSingleAssignment>(
+			add_indexes(array),
+			add_indexes(array_to_copy),
+			array->tok
+		);
+		auto body = std::make_unique<NodeBlock>(Token(), true);
+		body->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), array->tok));
+		body->wrap_in_loop_nest(iterators, std::move(lower_bounds), std::move(upper_bounds), false);
+
+		// desugar for loop
+		body->get_last_statement()->desugar(program);
+		body->collect_references();
+
+		return body;
 	}
 
 private:
@@ -120,6 +139,8 @@ private:
 
 
 	void generate_bounds() {
+		lower_bounds.clear();
+		upper_bounds.clear();
 		// if normal array -> only one bound
 		if(auto arr_ref = array->cast<NodeArrayRef>()) {
 			lower_bounds.push_back(std::make_unique<NodeInt>(0, arr_ref->tok));
@@ -138,27 +159,26 @@ private:
 		}
 	}
 	void generate_iterators(NodeReference* array_ref) {
+		iterators.clear();
 		int iter_size = iterators.size();
 		// if normal array -> only one _iter1
 		if(array_ref->get_node_type() == NodeType::ArrayRef) {
-			auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter"+std::to_string(iter_size), TypeRegistry::Integer, array_ref->tok, DataType::Mutable);
-			node_iterator->is_local = true;
-			iterators.push_back(std::move(node_iterator));
+			iterators.push_back(program->get_global_iterator());
 		}
 		if(auto nd_arr_ref = array_ref->cast<NodeNDArrayRef>()) {
 			// holds all iterators per wildcard
 			int count = iter_size;
-			for (auto &idx : nd_arr_ref->indexes->params) {
+			for (size_t i = 0; i < nd_arr_ref->indexes->size(); i++) {
+				auto &idx = nd_arr_ref->indexes->param(i);
 				if (idx->get_node_type() == NodeType::Wildcard) {
-					auto node_iterator = std::make_shared<NodeVariable>(std::nullopt, "_iter" + std::to_string(count), TypeRegistry::Integer,  array_ref->tok, DataType::Mutable);
-					node_iterator->is_local = true;
-					iterators.push_back(std::move(node_iterator));
+					iterators.push_back(program->get_global_iterator(i));
 					count++;
 				}
 			}
 		}
 	}
 	void generate_dims_params(NodeReference* array_ref) {
+		dim_vars_to_copy.clear();
 		int dims_size = dim_vars_to_copy.size();
 		// if normal array -> only one _iter1
 		if(array_ref->get_node_type() == NodeType::ArrayRef) {
@@ -219,8 +239,7 @@ private:
 		if(array_ref->get_node_type() == NodeType::ArrayRef) {
 			auto node_array_ref = clone_as<NodeArrayRef>(array_ref);
 			indexes->add_param(iterators[0]->to_reference());
-			node_array_ref->index = std::move(indexes);
-			node_array_ref->index->parent = node_array_ref.get();
+			node_array_ref->set_index(std::move(indexes));
 			return node_array_ref;
 		} else if(array_ref->get_node_type() == NodeType::NDArrayRef) {
 			auto node_nd_array_ref = clone_as<NodeNDArrayRef>(array_ref);
@@ -235,8 +254,7 @@ private:
 					count2++;
 				}
 			}
-			node_nd_array_ref->indexes = std::move(indexes);
-			node_nd_array_ref->indexes->parent = node_nd_array_ref.get();
+			node_nd_array_ref->set_indexes(std::move(indexes));
 			return node_nd_array_ref;
 		}
 		return nullptr;

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "../AST/ASTVisitor/ASTKSPSyntaxCheck.h"
 #include "../AST/ASTVisitor/ASTOptimizations.h"
 
 /**
@@ -70,10 +71,11 @@ private:
 	}
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
-		if (node.variable->data_type == DataType::Const) {
-			clear_data_structures();
-			return &node;
-		}
+		/// WHY WAS THIS HERE???
+		// if (node.variable->data_type == DataType::Const) {
+		// 	clear_data_structures();
+		// 	return &node;
+		// }
 		const auto array = node.variable->cast<NodeArray>();
 		if (!array) return &node;
 		if (!array->size) return &node;
@@ -82,6 +84,15 @@ private:
 		// array->size->accept(*this);
 		array->size->do_constant_folding();
 		if (const auto node_int = array->size->cast<NodeInt>()) {
+			// check if size is negative due to buffer overflow
+			if (node_int->value < 0) {
+				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+				error.m_message = "Array size cannot be negative. This is most likely due to a buffer overflow.";
+				error.exit();
+			}
+			if (node_int->value > MAX_ARRAY_ELEMENTS) {
+				return &node;
+			}
 			arrays_being_tracked.push_back(&node);
 			array_ref_assignments[array->name].clear();
 			initializer_list[array->name].resize(node_int->value);
@@ -105,11 +116,11 @@ private:
 							init_list_saved.push_back(el->clone());
 						}
 					}
-				} else {
-					auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-					error.m_message = "<Array> can only be assigned with a list of values.";
-					error.m_expected = "<InitializerList>";
-					error.exit();
+				// } else {
+				// 	auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+				// 	error.m_message = "<Array> can only be assigned with a list of values.";
+				// 	error.m_expected = "<InitializerList>";
+				// 	error.exit();
 				}
 				return &node;
 			}

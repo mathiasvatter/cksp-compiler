@@ -9,7 +9,9 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 
 	m_program->global_declarations->accept(*this);
 	m_program->global_declarations->prepend_body(NodeStruct::declare_struct_constants());
-	m_program->global_declarations->prepend_as_stmt(m_program->declare_global_iterator());
+	m_program->add_global_iterator();
+
+	// m_program->global_declarations->prepend_as_stmt(m_program->declare_global_iterators());
 	for(const auto & struct_def : node.struct_definitions) {
 		struct_def->accept(*this);
 	}

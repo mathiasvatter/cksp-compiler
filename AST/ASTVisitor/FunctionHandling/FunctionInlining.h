@@ -10,14 +10,14 @@
  * Takes a function call and inlines the function body into the call after substituting all parameters
  */
 class FunctionInlining final : public ASTVisitor {
-	std::vector<NodeSingleAssignment*> m_immutable_param_stack_assignments; // assignments like 0 := param -> to be removed
+	// std::vector<NodeSingleAssignment*> m_immutable_param_stack_assignments; // assignments like 0 := param -> to be removed
 public:
 	explicit FunctionInlining(NodeProgram* main) {
 		m_program = main;
 	}
 
 	NodeAST* do_function_inlining(NodeFunctionCall& call) {
-		m_immutable_param_stack_assignments.clear();
+		// m_immutable_param_stack_assignments.clear();
 		return call.accept(*this);
 	}
 
@@ -59,10 +59,10 @@ public:
 		node_func_body->accept(*this);
 		m_substitution_stack.pop();
 
-		for (auto & assignment : m_immutable_param_stack_assignments) {
-			assignment->remove_node();
-		}
-		m_immutable_param_stack_assignments.clear();
+		// for (auto & assignment : m_immutable_param_stack_assignments) {
+		// 	assignment->remove_node();
+		// }
+		// m_immutable_param_stack_assignments.clear();
 
 		return node.replace_with(std::move(node_func_body));
 	}
@@ -200,6 +200,7 @@ private:
 			// is substitution is array with no index or one wildcard -> continue name change
 			// then ref has to have no indexes or also wildcards
 			auto nd_substitute = substitute->cast<NodeNDArrayRef>();
+			auto ref_ndarray = ref->cast<NodeNDArrayRef>();
 			auto ref_array = static_cast<NodeCompositeRef*>(ref);
 			if(nd_substitute and nd_substitute->num_wildcards()) {
 				if(ref_array->num_wildcards()) {
@@ -222,6 +223,14 @@ private:
 					// 				   "an <NDArray> containing wildcards and of type "+substitute->ty->to_string()+".";
 					// error.exit();
 				}
+			}
+
+			if (ref->name == "value_array0") {
+
+			}
+			if (nd_substitute and ref_ndarray) {
+				// sizes of nd_substitute have to moved to ref_ndarray
+				if (nd_substitute->sizes) ref_ndarray->set_sizes(std::move(nd_substitute->sizes));
 			}
 
 			auto array_ref = static_cast<NodeReference*>(substitute);
@@ -263,10 +272,10 @@ private:
 		if(auto substitute = get_substitute(ref->name)) {
 			// check if substitute will replace l_value of assignment and is Literal
 			if(auto assignment = ref->is_l_value()) {
-				if (assignment->kind == NodeInstruction::ParameterStack) {
-					m_immutable_param_stack_assignments.push_back(assignment);
-					return nullptr;
-				}
+				// if (assignment->kind == NodeInstruction::ParameterStack) {
+				// 	m_immutable_param_stack_assignments.push_back(assignment);
+				// 	return nullptr;
+				// }
 				if(!substitute->ty->cast<CompositeType>() and substitute->is_constant()) {
 					auto error = CompileError(ErrorType::SyntaxError, "", "", substitute->tok);
 					error.m_message = "Tried to substitute an l_value of an assignment with an immutable value. Left side of assignment must be a reference.";

@@ -25,9 +25,9 @@
 #include "../../Lowering/PostLowering/PostLoweringSingleDeclaration.h"
 #include "../../Lowering/LoweringSortSearch.h"
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
-#include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "../ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "../ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h"
+#include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(ASTVisitor &visitor) {
@@ -626,17 +626,13 @@ std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(Node
     return node_assign_statement;
 }
 
-NodeAST *NodeSingleDeclaration::do_array_normalization(NodeProgram *program) {
-	static NormalizeArrayAssign array_assign(program);
-	return accept(array_assign);
-}
 
 // ************* NodeFunctionParam ***************
 NodeAST *NodeFunctionParam::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeFunctionParam::NodeFunctionParam(const NodeFunctionParam& other)
-	: NodeInstruction(other), variable(clone_shared(other.variable)),
+	: NodeInstruction(other), is_pass_by_ref(other.is_pass_by_ref), variable(clone_shared(other.variable)),
 	  value(clone_unique(other.value)) {
 	set_child_parents();
 }
@@ -818,7 +814,7 @@ void NodeBlock::flatten(const bool force) {
 
 NodeBlock* NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>> iterators,
 								  std::vector<std::unique_ptr<NodeAST>> lower_bounds,
-								  std::vector<std::unique_ptr<NodeAST>> upper_bounds) {
+								  std::vector<std::unique_ptr<NodeAST>> upper_bounds, bool declare) {
 	auto inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
 	inner_body->scope = true;
 	NodeBlock* for_loop_body = nullptr;
@@ -835,10 +831,12 @@ NodeBlock* NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStru
 		inner_body->add_as_stmt(std::move(node_for));
 		inner_body->get_last_statement()->lower(nullptr);
 	}
-	for(auto & iterator : iterators) {
-		iterator->is_local = true;
-		auto node_decl = std::make_unique<NodeSingleDeclaration>(iterator, nullptr, Token());
-		inner_body->prepend_as_stmt(std::move(node_decl));
+	if (declare) {
+		for(auto & iterator : iterators) {
+			// iterator->is_local = true;
+			auto node_decl = std::make_unique<NodeSingleDeclaration>(iterator, nullptr, Token());
+			inner_body->prepend_as_stmt(std::move(node_decl));
+		}
 	}
 	statements = std::move(inner_body->statements);
 	scope = true;
@@ -861,7 +859,7 @@ NodeBlock* NodeBlock::wrap_in_loop(const std::shared_ptr<NodeDataStructure>& ite
 	inner_body = std::make_unique<NodeBlock>(Token(), true);
 	inner_body->add_as_stmt(std::move(node_for));
 	inner_body->get_last_statement()->lower(nullptr);
-	iterator->is_local = true;
+	// iterator->is_local = true;
 	if(declare) {
 		auto node_decl = std::make_unique<NodeSingleDeclaration>(iterator, nullptr, Token());
 		inner_body->prepend_as_stmt(std::move(node_decl));
