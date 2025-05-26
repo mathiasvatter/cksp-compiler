@@ -10,7 +10,7 @@
 #include "../../Lowering/DataLowering/DataLoweringNDArray.h"
 #include "../../Lowering/LoweringList.h"
 #include "../../Desugaring/DesugarConst.h"
-#include "../../Lowering/DataLowering/DataLoweringArray.h"
+#include "../../Lowering/DataLowering/ArrayDeclarationSyntaxValidator.h"
 #include "../../Desugaring/DesugarStruct.h"
 #include "../../Lowering/LoweringStruct.h"
 #include "../../Lowering/LoweringPointer.h"
@@ -130,7 +130,7 @@ NodeAST *NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 }
 
 ASTLowering* NodeArray::get_data_lowering(NodeProgram *program) const {
-	static DataLoweringArray lowering(program);
+	static ArrayDeclarationSyntaxValidator lowering(program);
 	return &lowering;
 }
 
@@ -227,15 +227,28 @@ std::shared_ptr<NodeArray> NodeNDArray::get_raw() {
 
 		raw_array->set_num_elements(clone_as<NodeParamList>(sizes.get()));
 		raw_array->num_elements->prepend_param(raw_array->size->clone());
+		raw_array->num_elements->collect_references();
 	}
 	raw_array->match_metadata(this->get_shared());
 	return raw_array;
 }
 
 std::unique_ptr<NodeAST> NodeNDArray::get_size() {
-	auto nd_array_ref = to_reference()->cast<NodeArrayRef>();
-	nd_array_ref->remove_index();
-	return nd_array_ref->get_size();
+	if (!sizes) return nullptr;
+	auto size_expr = NodeBinaryExpr::create_right_nested_binary_expr(
+			sizes->params,
+			0,
+			token::MULT
+		);
+	size_expr->do_constant_folding();
+	return size_expr;
+
+	// auto ref = to_reference();
+	// ref->match_data_structure(get_shared());
+	// ref->cast<NodeNDArrayRef>()->remove_index();
+	// // return nd_array_ref->get_size();
+	// return std::make_unique<NodeNumElements>(std::move(ref), nullptr, tok);
+
 }
 
 // ************* NodeFunctionHeader ***************

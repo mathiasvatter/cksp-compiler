@@ -30,10 +30,12 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
 #include "AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h"
 #include "AST/ASTVisitor/ASTLowerTypes.h"
+#include "AST/ASTVisitor/ASTParameterQualifier.h"
 #include "AST/ASTVisitor/UniqueParameterNamesProvider.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
+#include "AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
-#include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign2.h"
+#include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "Optimization/ArrayInitializationRaising.h"
 
 class Compiler {
@@ -160,8 +162,7 @@ public:
 		ASTVariableChecking variable_checking(m_program);
 		variable_checking.do_complete_traversal(*ast, false);
 		ast->collect_references();
-		UniqueParameterNamesProvider unique_names_provider(m_program);
-		unique_names_provider.do_renaming(*m_program);
+
 
 		compile_time.stop("Lexical Scope");
 		std::cout << compile_time.print_timer("Lexical Scope") << "\n";
@@ -173,11 +174,15 @@ public:
 		compile_time.stop("Semantic Analysis");
 		std::cout << compile_time.print_timer("Semantic Analysis") << "\n";
 		compile_time.start("Type Checking");
-		ast->debug_print();
 
 		// ast->debug_print();
 		TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
+		ast->debug_print();
+
+		UniqueParameterNamesProvider unique_names_provider(m_program);
+		unique_names_provider.do_renaming(*m_program);
+		ast->debug_print();
 
 		compile_time.stop("Type Checking");
 		std::cout << compile_time.print_timer("Type Checking") << "\n";
@@ -195,7 +200,6 @@ public:
 		// inline here so inlined struct vars get their declaration for register reuse later on
 		ast->inline_structs();
 
-
 		ASTDimensionExpansion dimension_inflation(m_program);
 		ast->accept(dimension_inflation);
 
@@ -206,6 +210,29 @@ public:
 		ASTReturnFunctionRewriting return_function_rewriting(m_program);
 		return_function_rewriting.do_rewriting(*ast);
 
+		{
+			variable_checking.do_reachable_traversal(*ast, true);
+			ast->remove_references();
+			ast->collect_references();
+			infer_types.do_reachable_traversal(*ast);
+
+			// then do parameter promotion directly to global or successively
+			// eliminate function-local variables
+			ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
+			ASTParameterPromotion param_promotion(m_program);
+			param_promotion.do_param_promotion(*ast);
+
+			// static ASTParameterQualifier parameter_qualifier(m_program);
+			// ast->accept(parameter_qualifier);
+			ast->debug_print();
+
+			ASTFunctionStrategy function_strategy1(m_program);
+			function_strategy1.determine_function_strategies(*m_program);
+
+			static ParameterAssignmentTransformation assignment_transformation(m_program);
+			assignment_transformation.do_parameter_assignment(*m_program);
+			ast->debug_print();
+		}
 
 		ASTPreemptiveFunctionInlining pre_inlining(m_program);
 		ast->accept(pre_inlining);
@@ -214,59 +241,50 @@ public:
 		std::cout << compile_time.print_timer("Return Function Rewriting") << "\n";
 		compile_time.start("Data Structure Lowering");
 
-		// ast->debug_print();
 
 		NormalizeNDArrayAssign nd_array_assign(m_program);
 		ast->accept(nd_array_assign);
+		ast->debug_print();
 
 		// Data Structure Lowering of NDArrays and Array assignments
+		// so that replace datastruct works
+		ast->remove_references();
+		ast->collect_references();
 		ASTDataStructureLowering data_structure_lowering(m_program);
 		ast->accept(data_structure_lowering);
+		ast->debug_print();
 
 		compile_time.stop("Data Structure Lowering");
 		std::cout << compile_time.print_timer("Data Structure Lowering") << "\n";
-		compile_time.start("Variable Checking");
-
-		variable_checking.do_reachable_traversal(*ast, true);
-		ast->remove_references();
-		ast->collect_references();
-		infer_types.do_reachable_traversal(*ast);
-
-		compile_time.stop("Variable Checking");
-		std::cout << compile_time.print_timer("Variable Checking") << "\n";
-		compile_time.start("Global Scope");
-
-		// first pass to analyze dynamic extend within function definitions and replace with passive_vars
-		// then do parameter promotion directly to global or successively
-		// eliminate function-local variables
-		ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
-		ASTParameterPromotion param_promotion(m_program);
-		param_promotion.do_param_promotion(*ast);
+		compile_time.start("Variable Reuse");
 
 		// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 		ASTVariableReuse variable_reuse(m_program);
 		variable_reuse.do_variable_reuse(*ast);
+		ast->debug_print();
 
 		ArrayInitializationRaising array_init_raising;
 		array_init_raising.do_initialization_raising(*ast->init_callback, m_program);
-		NormalizeArrayAssign2 normalize_array_assign(m_program);
-		ast->accept(normalize_array_assign);
-		// ast->debug_print();
+		ast->debug_print();
 
-		compile_time.stop("Global Scope");
-		std::cout << compile_time.print_timer("Global Scope") << "\n";
+		NormalizeArrayAssign normalize_array_assign(m_program);
+		ast->accept(normalize_array_assign);
+		ast->debug_print();
+
+		compile_time.stop("Variable Reuse");
+		std::cout << compile_time.print_timer("Variable Reuse") << "\n";
 	    compile_time.start("Function Inlining");
 
-		ASTFunctionStrategy function_strategy(m_program);
-		ast->accept(function_strategy);
+		// ASTFunctionStrategy function_strategy2(m_program);
+		// function_strategy2.determine_function_strategies(*m_program);
 
-		ast->order_function_definitions();
-		ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
+		// ast->order_function_definitions();
+		// ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 
 		ASTFunctionInlining func_inlining(m_program);
 		ast->accept(func_inlining);
 		ast->order_function_definitions();
-		// ast->debug_print();
+		ast->debug_print();
 
 	    compile_time.stop("Function Inlining");
 		std::cout << compile_time.print_timer("Function Inlining") << "\n";
@@ -284,6 +302,7 @@ public:
 		// ast->debug_print();
 		ast->inline_global_variables();
 
+		ast->debug_print();
 		ASTOptimizations optimizations;
 		ASTOptimizations::optimize(*ast, m_config->optimization_level);
 

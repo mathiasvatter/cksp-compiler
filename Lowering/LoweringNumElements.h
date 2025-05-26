@@ -184,6 +184,7 @@ private:
 			Token(),
 			DataType::Mutable
 		);
+		x -> is_local = true;
 		auto b = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"b",
@@ -191,6 +192,7 @@ private:
 			Token(),
 			DataType::Mutable
 		);
+		b -> is_local = true;
 
 		// b-x
 		auto b_minus_x = std::make_unique<NodeBinaryExpr>(

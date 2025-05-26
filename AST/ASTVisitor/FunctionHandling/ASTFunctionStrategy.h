@@ -30,6 +30,7 @@ public:
 		return &call;
 	}
 
+private:
 	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
@@ -61,6 +62,8 @@ public:
 			definition->visited = true;
 			node.is_call = false;
 
+			decide_by_ref_or_value(*definition->header, *node.function);
+
 			const bool is_callable_env = m_current_callback != m_program->init_callback and !definition->is_restricted;
 
 			if (definition->is_expression_function()) {
@@ -84,10 +87,26 @@ public:
 		return &node;
 	}
 
+	static void decide_by_ref_or_value(const NodeFunctionHeader& header, const NodeFunctionHeaderRef& header_ref) {
+		for (size_t i = 0; i < header.get_num_params(); i++) {
+			auto& formal_param = header.params[i];
+			auto& actual_param = header_ref.get_arg(i);
+
+			if (formal_param->variable->ty->cast<CompositeType>()) {
+				formal_param->is_pass_by_ref = true;
+			}
+			// if (actual_param->cast<NodeInitializerList>()) {
+			// 	formal_param->is_pass_by_ref = false;
+			// }
+
+		}
+	}
+
 
 	static bool is_parameterstack_candidate(const NodeFunctionDefinition& def) {
 		for(const auto &param : def.header->params) {
-			if((param->variable->ty->cast<CompositeType>() and param->variable->is_thread_safe) || param->variable->ty->is_union_type() || param->variable->data_type == DataType::UIControl) {
+			if (param->variable->ty->is_union_type() || param->variable->data_type == DataType::UIControl ||
+				param->is_pass_by_ref) {
 				return false;
 			}
 		}
