@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "ParameterReuse.h"
 #include "../ASTVisitor.h"
 
 /**
@@ -23,6 +24,10 @@ class ParameterAssignmentTransformation final : public ASTVisitor {
 	std::unordered_map<NodeFunctionDefinition*, FunctionTransformData> m_func_transform_data;
 	std::unordered_map<NodeFunctionCall*, std::vector<std::unique_ptr<NodeSingleDeclaration>>> m_global_declarations;
 
+	// those are all functions that get called within one function definition -> they depend on each other
+	std::unordered_map<NodeFunctionDefinition*, std::unordered_set<NodeFunctionDefinition*>> m_subcalls_per_function;
+	std::unordered_map<NodeFunctionDefinition*, std::vector<NodeDataStructure*>> m_param_decl_per_function;
+
 public:
 	explicit ParameterAssignmentTransformation(NodeProgram* main) {
 		m_program = main;
@@ -35,6 +40,12 @@ public:
 		auto n = node.accept(*this);
 		m_function_call_stack.clear();
 		m_global_declarations.clear();
+
+		static ParameterReuse reuse(&node);
+		reuse.do_parameter_reuse(
+			m_subcalls_per_function,
+			m_param_decl_per_function
+		);
 
 		return n;
 	}
@@ -143,6 +154,7 @@ private:
 						node.tok
 					);
 					assign->kind = NodeInstruction::ParameterStack;
+					assign->collect_references();
 					block->add_as_stmt(std::move(assign));
 				}
 
@@ -154,6 +166,7 @@ private:
 				actual_params_by_ref->add_param(std::move(node.function->get_arg(idx)));
 			}
 			node.function->set_args(std::move(actual_params_by_ref));
+			node.function->collect_references();
 		}
 
 		if (!block->statements.empty()) {
@@ -182,6 +195,16 @@ private:
 			node.return_variable.value()->accept(*this);
 		node.body->accept(*this);
 
+		// insert all function definitions currently on the call stack to subcalls per function
+		// add all definitions on the callstack to all other functions as subcalls
+		for (const auto& call : m_function_call_stack) {
+			auto existing_def = call->get_definition().get();
+			auto current_def = &node;
+			if (existing_def && existing_def != current_def) {
+				m_subcalls_per_function[current_def].insert(existing_def);
+				m_subcalls_per_function[existing_def].insert(current_def);
+			}
+		}
 
 		{
 			if (node.is_expression_function()) return &node;
@@ -201,6 +224,7 @@ private:
 					// if not pass-by-reference, promote to global var directly above the function call
 					param->variable->to_global();
 					auto decl = std::make_unique<NodeSingleDeclaration>(param->variable, nullptr, param->tok);
+					m_param_decl_per_function[&node].push_back(decl->variable.get());
 					decl->kind = NodeInstruction::ParameterStack;
 					promoted_params.push_back(std::move(param));
 					promoted_param_indices.push_back(i);
@@ -227,10 +251,11 @@ private:
 			};
 		}
 
-
-
-
 		return &node;
 	}
 
+
+
 };
+
+

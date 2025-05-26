@@ -293,14 +293,15 @@ NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDat
 	const auto new_data_struct = static_cast<NodeDataStructure*>(replace_with(std::move(new_node)));
 	auto new_data = new_data_struct->get_shared();
 
-	new_data->references = std::move(old_data->references);
+	// new_data->references = std::move(old_data->references);
 //	for(auto const &ref : new_data->references) {
 //		ref->declaration = new_data;
 //	}
-	parallel_for_each(new_data->references.begin(), new_data->references.end(),
+	parallel_for_each(old_data->references.begin(), old_data->references.end(),
 				  [&new_data](auto const& ref) {
 					ref->declaration = new_data;
 				  });
+	new_data->references.insert(old_data->references.begin(), old_data->references.end());
 	if(const auto strct = new_data->is_member()) {
 		strct->replace_member_in_table(old_data, new_data);
 	}

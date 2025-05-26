@@ -20,7 +20,14 @@ end on
 on persistence_changed
     ar(array)
     ar(array_big)
-    ar([1,2,3,4])
+    // ar([1,2,3,4])
+
+    test_func(1, 2)
+    test_func2(3, 4, 2)
+    test_func(1, 2)
+    test_func2(3, 4, 3)
+    test_func3(3, 4, 3)
+    test_func3(3, 4, 3)
 end on
 
 function ar(array1: int[])
@@ -32,14 +39,18 @@ function ar(array1: int[])
     end while
 end function
 
-macro preset.load_seq_tables(#array#)
-    for i:=0 to NUM_KEYSWITCHES-1
-        for ii:=0 to #array#.SIZE_D2-1
-            #array#[i,ii] := preset__array[preset.n]
-            inc(preset.n)
-        end for
-    end for
-end macro
+
+function test_func(a: int, b: int)
+    message(a + b)
+end function
+
+function test_func2(c: int, d: int, e: int)
+    message(c * d / e)
+end function
+
+function test_func3(c: int, d: int, e: int)
+    message(c * d / e)
+end function
 
 
 

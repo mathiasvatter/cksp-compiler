@@ -146,6 +146,7 @@ private:
 				// add references to those local variables in the function call
 				auto ref = var->to_reference();
 				node.function->add_arg(std::move(ref));
+				node.function->args->params.back()->collect_references();
 				auto promoted_decl = std::make_unique<NodeSingleDeclaration>(std::move(var), decl->tok);
 				promoted_decl->kind = NodeSingleDeclaration::Kind::Promoted;
 				node_body->add_as_stmt(std::move(promoted_decl));
