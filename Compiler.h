@@ -200,7 +200,6 @@ public:
 		// inline here so inlined struct vars get their declaration for register reuse later on
 		ast->inline_structs();
 
-
 		ASTDimensionExpansion dimension_inflation(m_program);
 		ast->accept(dimension_inflation);
 
@@ -230,8 +229,6 @@ public:
 			ASTFunctionStrategy function_strategy1(m_program);
 			function_strategy1.determine_function_strategies(*m_program);
 
-			ast->remove_references();
-			ast->collect_references();
 			static ParameterAssignmentTransformation assignment_transformation(m_program);
 			assignment_transformation.do_parameter_assignment(*m_program);
 			ast->debug_print();
@@ -259,16 +256,7 @@ public:
 
 		compile_time.stop("Data Structure Lowering");
 		std::cout << compile_time.print_timer("Data Structure Lowering") << "\n";
-		compile_time.start("Variable Checking");
-
-
-
-		compile_time.stop("Variable Checking");
-		std::cout << compile_time.print_timer("Variable Checking") << "\n";
-		compile_time.start("Global Scope");
-
-
-		ast->debug_print();
+		compile_time.start("Variable Reuse");
 
 		// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 		ASTVariableReuse variable_reuse(m_program);
@@ -283,8 +271,8 @@ public:
 		ast->accept(normalize_array_assign);
 		ast->debug_print();
 
-		compile_time.stop("Global Scope");
-		std::cout << compile_time.print_timer("Global Scope") << "\n";
+		compile_time.stop("Variable Reuse");
+		std::cout << compile_time.print_timer("Variable Reuse") << "\n";
 	    compile_time.start("Function Inlining");
 
 		// ASTFunctionStrategy function_strategy2(m_program);
