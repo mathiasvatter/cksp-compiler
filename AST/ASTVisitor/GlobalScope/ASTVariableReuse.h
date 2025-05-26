@@ -204,11 +204,7 @@ private:
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		node.bind_definition(m_program);
-		// if (auto definition = node.get_definition()) {
-		// 	node.determine_function_strategy(m_program, m_program->current_callback);
-		// }
 		// do not visit definition -> because passive var allocation is separate between callbacks and functions
-//		node.do_param_promotion(m_program);
 		return &node;
 	}
 
@@ -293,6 +289,7 @@ private:
 			if(auto new_declaration = get_new_declaration(node.name)) {
 				node.match_data_structure(new_declaration);
 				node.name = new_declaration->name;
+				node.collect_references();
 				return &node;
 			}
 		}
@@ -328,6 +325,7 @@ private:
 			if(auto new_declaration = get_new_declaration(node.name)) {
 				node.match_data_structure(new_declaration);
 				node.name = new_declaration->name;
+				node.collect_references();
 				return &node;
 			}
 		}
@@ -360,6 +358,7 @@ private:
 			if(auto new_declaration = get_new_declaration(node.name)) {
 				node.match_data_structure(new_declaration);
 				node.name = new_declaration->name;
+				node.collect_references();
 				return &node;
 			}
 		}
