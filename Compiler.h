@@ -230,6 +230,8 @@ public:
 			ASTFunctionStrategy function_strategy1(m_program);
 			function_strategy1.determine_function_strategies(*m_program);
 
+			ast->remove_references();
+			ast->collect_references();
 			static ParameterAssignmentTransformation assignment_transformation(m_program);
 			assignment_transformation.do_parameter_assignment(*m_program);
 			ast->debug_print();
@@ -288,8 +290,8 @@ public:
 		// ASTFunctionStrategy function_strategy2(m_program);
 		// function_strategy2.determine_function_strategies(*m_program);
 
-		ast->order_function_definitions();
-		ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
+		// ast->order_function_definitions();
+		// ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 
 		ASTFunctionInlining func_inlining(m_program);
 		ast->accept(func_inlining);
