@@ -61,7 +61,7 @@ std::unique_ptr<NodeList> NodeVariable::to_list() {
 	return node_list;
 }
 
-std::unique_ptr<NodeDataStructure> NodeVariable::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+std::unique_ptr<NodeDataStructure> NodeVariable::expand_dimension(std::unique_ptr<NodeAST> new_index) {
 	auto node_array = to_array(std::move(new_index));
 	node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type());
 	return node_array;
@@ -104,7 +104,7 @@ std::unique_ptr<NodeVariable> NodePointer::to_variable() {
 	return node_var;
 }
 
-std::unique_ptr<NodeDataStructure> NodePointer::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+std::unique_ptr<NodeDataStructure> NodePointer::expand_dimension(std::unique_ptr<NodeAST> new_index) {
 	auto node_array = to_array(std::move(new_index));
 	node_array->ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type());
 	return node_array;
@@ -154,7 +154,7 @@ std::unique_ptr<NodeList> NodeArray::to_list() {
 	return node_list;
 }
 
-std::unique_ptr<NodeDataStructure> NodeArray::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+std::unique_ptr<NodeDataStructure> NodeArray::expand_dimension(std::unique_ptr<NodeAST> new_index) {
 	auto node_ndarray = to_ndarray();
 	node_ndarray->inflation_times++;
 	node_ndarray->sizes->prepend_param(std::move(new_index));
@@ -203,7 +203,7 @@ std::unique_ptr<NodeList> NodeNDArray::to_list() {
 	return node_list;
 }
 
-std::unique_ptr<NodeDataStructure> NodeNDArray::inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+std::unique_ptr<NodeDataStructure> NodeNDArray::expand_dimension(std::unique_ptr<NodeAST> new_index) {
 	sizes->prepend_param(std::move(new_index));
 	inflation_times++;
 	dimensions = sizes->params.size();

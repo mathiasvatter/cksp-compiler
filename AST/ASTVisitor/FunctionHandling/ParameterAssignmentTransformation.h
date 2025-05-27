@@ -47,6 +47,7 @@ public:
 			m_param_decl_per_function
 		);
 
+		node.reset_function_visited_flag();
 		return n;
 	}
 

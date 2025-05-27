@@ -132,8 +132,8 @@ private:
 
 			}
 
-			for (size_t i = 0; i<params_reused_in_function.size(); i++) {
-				add_free_param(std::move(params_reused_in_function[i]));
+			for (auto & i : params_reused_in_function) {
+				add_free_param(std::move(i));
 			}
 			params_reused_in_function.clear();
 

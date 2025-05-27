@@ -26,7 +26,7 @@
 #include "../../Lowering/LoweringSortSearch.h"
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
 #include "../ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
-#include "../ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h"
+#include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 // ************* NodeStatement ***************
@@ -264,7 +264,7 @@ bool NodeFunctionCall::is_destructive_builtin_func() const {
 }
 
 bool NodeFunctionCall::check_restricted_environment(NodeCallback *current_callback) const {
-	return FunctionRestrictionValidator::check_function_callability(*this, current_callback);
+	return BuiltinRestrictionValidator::check_function_callability(*this, current_callback);
 }
 
 void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCallback *current_callback) {

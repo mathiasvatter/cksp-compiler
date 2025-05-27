@@ -53,10 +53,6 @@ private:
 	NodeAST* visit(NodeFunctionCall &node) override {
 		node.function->accept(*this);
 
-		if (node.function->name == "get_active_idx") {
-
-		}
-
 		if(node.bind_definition(m_program)) {
 			if(node.is_builtin_kind()) return &node;
 			const auto definition = node.get_definition();

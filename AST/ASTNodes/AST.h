@@ -219,6 +219,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	Kind kind = None;
 	bool has_obj_assigned = false;
 	bool is_thread_safe = true; // gets set to false, if dimension inflation needs to be used because of unsafe declaration environment
+	bool is_restricted = false;
 	int num_reuses = 0;
 	DataType data_type = DataType::Mutable;
 	std::string name;
@@ -253,7 +254,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	virtual std::unique_ptr<NodeList> to_list() {return nullptr;}
 	/// lower type from object to int if applicable
 	NodeDataStructure* lower_type();
-	virtual std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	virtual std::unique_ptr<NodeDataStructure> expand_dimension(std::unique_ptr<NodeAST> new_index) {
 		return nullptr;
 	}
 	/// to be used on datastructures
@@ -724,7 +725,6 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	std::vector<std::shared_ptr<NodeDataStructure>> do_variable_reuse(NodeProgram *program);
 	void do_return_param_promotion(NodeProgram* program);
 	bool do_return_path_validation();
-	void write_builtin_function_restrictions();
 	void mark_threadsafety(NodeProgram *program);
 };
 

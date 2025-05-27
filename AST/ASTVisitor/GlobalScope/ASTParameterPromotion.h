@@ -71,6 +71,10 @@ private:
 			return &node;
 		}
 
+		// if (node.function->name == "update_key_colors") {
+		//
+		// }
+
 		const auto definition = node.get_definition();
 		if(definition) {
 			// only visit definition if not already visited
@@ -89,7 +93,7 @@ private:
 					}
 					auto assignment = ASTVariableReuse::to_assign_statement(*declaration);
 
-					if (!var->ty->cast<CompositeType>()) {
+					if (!var->ty->cast<CompositeType>() and var->is_thread_safe) {
 						// add local declarations of function definition to parameters
 						definition->header->add_param(var);
 						definition->header->params.back()->kind = NodeInstruction::Promoted;
