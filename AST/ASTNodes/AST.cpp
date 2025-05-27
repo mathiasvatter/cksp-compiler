@@ -222,9 +222,10 @@ NodeAST * NodeAST::collect_call_sites(NodeProgram *program) {
 NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
 	  is_used(other.is_used), is_engine(other.is_engine), persistence(other.persistence),
-	  is_local(other.is_local), is_global(other.is_global), has_obj_assigned(other.has_obj_assigned),
-	  is_thread_safe(other.is_thread_safe), data_type(other.data_type), name(other.name), kind(other.kind),
-	  references(other.references), num_reuses(other.num_reuses) {
+	  is_local(other.is_local), is_global(other.is_global), kind(other.kind),
+	  has_obj_assigned(other.has_obj_assigned), is_thread_safe(other.is_thread_safe),
+	  is_restricted(other.is_restricted), num_reuses(other.num_reuses), data_type(other.data_type),
+	  name(other.name), references(other.references) {
 	NodeDataStructure::set_child_parents();
 }
 
@@ -1075,10 +1076,6 @@ void NodeFunctionDefinition::do_return_param_promotion(NodeProgram* program) {
 bool NodeFunctionDefinition::do_return_path_validation() {
 	static ReturnPathValidator return_validator;
 	return return_validator.do_return_path_validation(*this);
-}
-
-void NodeFunctionDefinition::write_builtin_function_restrictions() {
-	FunctionRestrictionValidator::write_builtin_function_restrictions(*this);
 }
 
 void NodeFunctionDefinition::mark_threadsafety(NodeProgram *program) {

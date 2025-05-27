@@ -162,6 +162,7 @@ NodeAST * ASTPrinter::visit(NodeVariableRef &node) {
 	os << node.name;
 	auto type = TypeRegistry::get_annotation_from_type(node.ty);
 	if(!type.empty()) os << "{" << type << "}";
+	add_declaration_info(node);
 	return &node;
 }
 
@@ -178,6 +179,7 @@ NodeAST * ASTPrinter::visit(NodePointerRef &node) {
 	os << node.name << "{Ptr}";
 	auto type = TypeRegistry::get_annotation_from_type(node.ty);
 	if(!type.empty()) os << "{" << type << "}";
+	add_declaration_info(node);
 	return &node;
 }
 
@@ -273,6 +275,9 @@ NodeAST * ASTPrinter::visit(NodeSingleDeclaration &node) {
 		os << "local ";
 	}
 	node.variable->accept(*this);
+	if(!node.variable->is_thread_safe) {
+		os << " {thread-unsafe}";
+	}
 	if(node.value) {
         os << " := ";
         node.value->accept(*this);

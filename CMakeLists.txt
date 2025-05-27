@@ -205,7 +205,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h
         AST/ASTVisitor/ReferenceManagement/ASTCollectCallSites.h
         AST/ASTVisitor/GlobalScope/DeflateParameters.h
-        AST/ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h
+        AST/ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h
         AST/ASTVisitor/FunctionHandling/FunctionParamDataTypeGetter.h
         AST/ASTVisitor/GlobalScope/DimensionDeflator.h
         Optimization/ArrayInitializationRaising.h
