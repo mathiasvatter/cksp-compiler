@@ -81,6 +81,30 @@ private:
 		return &node;
 	}
 
+	NodeAST* visit(NodeVariableRef& node) override {
+		if (!m_program->function_call_stack.empty()) {
+			if (auto decl = node.get_declaration()) {
+				if (!decl->is_engine) return &node;
+				const auto func_above = m_program->function_call_stack.top().lock();
+				func_above->is_restricted |= decl->is_restricted;
+			}
+		}
+		return &node;
+	}
+
+	NodeAST* visit(NodeArrayRef& node) override {
+		if (node.index) node.index->accept(*this);
+
+		if (!m_program->function_call_stack.empty()) {
+			if (auto decl = node.get_declaration()) {
+				if (!decl->is_engine) return &node;
+				const auto func_above = m_program->function_call_stack.top().lock();
+				func_above->is_restricted |= decl->is_restricted;
+			}
+		}
+		return &node;
+	}
+
 };
 
 /**
@@ -110,10 +134,23 @@ public:
 		return &node;
 	}
 
-	bool is_thread_safe_env() const {
+	[[nodiscard]] bool is_thread_safe_env() const {
 		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or // in callback
 		(m_program->get_curr_function() and m_program->get_curr_function()->is_thread_safe) or // in function
 		(!m_program->current_callback and !m_program->get_curr_function()); // global declarations
+	}
+
+	bool determine_thread_safety(NodeDataStructure& node) const {
+		// the following data types can be thread unsafe and might need to be handled
+		static const std::unordered_set<DataType> thread_unsafe_data_types = {
+			DataType::Mutable, DataType::Return, DataType::Param
+		};
+		if (!is_thread_safe_env()) {
+			if (thread_unsafe_data_types.contains(node.data_type)) {
+				node.is_thread_safe = false;
+			}
+		}
+		return node.is_thread_safe;
 	}
 
 
@@ -153,13 +190,15 @@ private:
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		if (node.value) node.value->accept(*this);
-		node.variable->is_thread_safe = is_thread_safe_env();
+		// node.variable->is_thread_safe = is_thread_safe_env();
+		determine_thread_safety(*node.variable);
 		return &node;
 	}
 
 	NodeAST* visit(NodeFunctionParam& node) override {
 		if (node.value) node.value->accept(*this);
-		node.variable->is_thread_safe = is_thread_safe_env();
+		// node.variable->is_thread_safe = is_thread_safe_env();
+		determine_thread_safety(*node.variable);
 		return &node;
 	}
 

@@ -261,6 +261,9 @@ NodeAST * ASTPrinter::visit(NodeDeclaration &node) {
 }
 
 NodeAST * ASTPrinter::visit(NodeFunctionParam & node) {
+	if (node.is_pass_by_ref) {
+		os << "ref ";
+	}
 	node.variable->accept(*this);
 	if(node.value) {
 		os << " := ";
