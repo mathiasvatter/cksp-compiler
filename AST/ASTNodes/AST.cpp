@@ -26,7 +26,7 @@
 #include "../../Lowering/LoweringInitializerList.h"
 #include "../ASTVisitor/ASTVariableChecking.h"
 #include "../ASTVisitor/TypeInference.h"
-#include "../ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h"
+#include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
 #include "../ASTVisitor/FunctionHandling/ReturnPathValidator.h"
 #include "../ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectCallSites.h"

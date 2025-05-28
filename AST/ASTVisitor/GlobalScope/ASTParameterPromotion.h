@@ -71,10 +71,6 @@ private:
 			return &node;
 		}
 
-		// if (node.function->name == "update_key_colors") {
-		//
-		// }
-
 		const auto definition = node.get_definition();
 		if(definition) {
 			// only visit definition if not already visited
@@ -129,12 +125,12 @@ private:
 			auto node_body = std::make_unique<NodeBlock>(Token(), true);
 			for (const auto &decl : m_local_var_declarations[definition.get()]) {
 				auto var = clone_as<NodeDataStructure>(decl);
-				// add references to those local variables in the function call
-				auto ref = var->to_reference();
-				node.function->add_arg(std::move(ref));
-				node.function->args->params.back()->collect_references();
 				auto promoted_decl = std::make_unique<NodeSingleDeclaration>(std::move(var), decl->tok);
 				promoted_decl->kind = NodeSingleDeclaration::Kind::Promoted;
+				// add references to those local variables in the function call
+				auto ref = promoted_decl->variable->to_reference();
+				node.function->add_arg(std::move(ref));
+				node.function->args->params.back()->collect_references();
 				node_body->add_as_stmt(std::move(promoted_decl));
 			}
 			ParameterAssignmentTransformation::swap_call(node, node_body);

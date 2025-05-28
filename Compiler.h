@@ -171,12 +171,12 @@ public:
 
 		ASTSemanticAnalysis data_structures(ast.get());
 		ast->accept(data_structures);
+		ast->debug_print();
 
 		compile_time.stop("Semantic Analysis");
 		std::cout << compile_time.print_timer("Semantic Analysis") << "\n";
 		compile_time.start("Type Checking");
 
-		// ast->debug_print();
 		TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
 		ast->debug_print();
@@ -200,8 +200,6 @@ public:
 		ast->accept(lowering_types);
 		// inline here so inlined struct vars get their declaration for register reuse later on
 		ast->inline_structs();
-
-
 
 		compile_time.stop("Lowering");
 		std::cout << compile_time.print_timer("Lowering") << "\n";

@@ -95,6 +95,10 @@ private:
 			if (formal_param->variable->ty->cast<CompositeType>()) {
 				formal_param->is_pass_by_ref = true;
 			}
+			if (formal_param->variable->data_type == DataType::UIControl) {
+				formal_param->is_pass_by_ref = true;
+			}
+
 			// if (actual_param->cast<NodeInitializerList>()) {
 			// 	formal_param->is_pass_by_ref = false;
 			// }
